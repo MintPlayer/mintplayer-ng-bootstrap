@@ -97,16 +97,18 @@ using (var scope = app.Services.CreateScope())
 
 static async Task<bool> IsLegacyEnsureCreatedDbAsync(DemoDbContext db)
 {
-    if (!await db.Database.CanConnectAsync()) return false;
     // Existing data table but no migration history → EnsureCreated'd db.
     // We probe `Customers` (present since the very first seed) and
     // `__EFMigrationsHistory` (the table MigrateAsync would maintain).
-    var conn = db.Database.GetDbConnection();
-    var opened = conn.State != System.Data.ConnectionState.Open;
-    if (opened) await conn.OpenAsync();
+    //
+    // Use `Database.OpenConnectionAsync()` / `CloseConnectionAsync()` rather
+    // than manipulating the underlying `DbConnection` directly so EF Core's
+    // internal connection-state tracking stays consistent for the
+    // `EnsureDeletedAsync` / `MigrateAsync` calls that follow.
+    await db.Database.OpenConnectionAsync();
     try
     {
-        await using var cmd = conn.CreateCommand();
+        await using var cmd = db.Database.GetDbConnection().CreateCommand();
         cmd.CommandText = "SELECT name FROM sqlite_master WHERE type='table' AND name IN ('Customers', '__EFMigrationsHistory');";
         var found = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
         await using (var reader = await cmd.ExecuteReaderAsync())
@@ -117,7 +119,7 @@ static async Task<bool> IsLegacyEnsureCreatedDbAsync(DemoDbContext db)
     }
     finally
     {
-        if (opened) await conn.CloseAsync();
+        await db.Database.CloseConnectionAsync();
     }
 }
 
