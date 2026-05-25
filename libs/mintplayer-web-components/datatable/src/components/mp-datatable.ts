@@ -10,6 +10,13 @@ import type {
   HeaderRenderer,
   RowKey,
   RowRenderer,
+  RowRenderContext,
+  TreeFetchRequestDetail,
+  TreeFetchResponse,
+  TreeRowExpandDetail,
+  TreeExpandedIdsChangeDetail,
+  TreeIdKey,
+  TreeSelectionStrategy,
 } from '../types';
 
 // Side-effect import: registers <mp-pagination> for the footer.
@@ -34,6 +41,22 @@ export interface SortChangeEventDetail {
 
 export interface SelectionChangeEventDetail {
   selectedIds: string[];
+}
+
+/**
+ * One entry in the flattened visible-row list. In flat mode every entry has
+ * `depth: 0`, `isExpanded: false`, `isPlaceholder: false`, `parentId: null`.
+ * In tree mode children of expanded rows are inlined as siblings with
+ * `depth > 0`; not-yet-loaded children appear as placeholder entries with
+ * `row: undefined` so the viewport can reserve vertical space for them.
+ */
+interface FlatVisibleRow {
+  row: unknown | undefined;
+  key: string;
+  depth: number;
+  parentId: unknown | null;
+  isExpanded: boolean;
+  isPlaceholder: boolean;
 }
 
 let instanceCounter = 0;
@@ -64,6 +87,9 @@ export class MpDatatable extends LitElement {
       'empty-message',
       'virtual-scroll',
       'item-size',
+      'tree',
+      'tree-indent',
+      'selection-strategy',
     ];
   }
 
@@ -99,6 +125,20 @@ export class MpDatatable extends LitElement {
   private _resizeObserver: ResizeObserver | null = null;
   private _scrollListener: (() => void) | null = null;
   private _viewportHeight = 0;
+
+  // ─── Tree-mode state ─────────────────────────────────────────────────────
+  private _tree = false;
+  private _idKey: TreeIdKey | null = null;
+  private _childCountKey: string | null = null;
+  private _treeIndent = 1.25;
+  private _expandedIds: Set<unknown> = new Set();
+  private _selectionStrategy: TreeSelectionStrategy = 'flat';
+  /** Children fetched per parentId (only first page for v1). */
+  private _childCache: Map<unknown, unknown[]> = new Map();
+  /** Server-reported totalRecords per parentId; missing = use childCountKey on the row. */
+  private _childTotals: Map<unknown, number> = new Map();
+  /** Parents with an in-flight fetch; suppresses re-requests. */
+  private _pendingFetches: Set<unknown> = new Set();
 
   /** When true, the WC sorts `data` itself using `sortRows`. Set `false` if the consumer sorts externally. */
   get autoSort(): boolean {
@@ -223,6 +263,75 @@ export class MpDatatable extends LitElement {
     this.requestUpdate();
   }
 
+  // ─── Tree-mode public API ────────────────────────────────────────────────
+
+  /** Enable tree mode (chevron column, nested expansion, lazy children). */
+  get tree(): boolean {
+    return this._tree;
+  }
+  set tree(value: boolean) {
+    const next = !!value;
+    if (this._tree !== next) {
+      this._tree = next;
+      this.requestUpdate();
+    }
+  }
+
+  /**
+   * Property name or function that extracts the stable row identity used as
+   * the expansion key and as `parentId` in `mp-datatable-fetch-request`.
+   * Required when `tree=true`.
+   */
+  get idKey(): TreeIdKey | null {
+    return this._idKey;
+  }
+  set idKey(value: TreeIdKey | null) {
+    this._idKey = value;
+    this.requestUpdate();
+  }
+
+  /**
+   * Property name on the row that holds the direct-child count. Drives both
+   * chevron visibility AND placeholder reservation. Required when `tree=true`.
+   */
+  get childCountKey(): string | null {
+    return this._childCountKey;
+  }
+  set childCountKey(value: string | null) {
+    this._childCountKey = value || null;
+    this.requestUpdate();
+  }
+
+  /** Indent in rem per depth level on the chevron cell. Default `1.25`. */
+  get treeIndent(): number {
+    return this._treeIndent;
+  }
+  set treeIndent(value: number) {
+    const n = Number(value);
+    this._treeIndent = Number.isFinite(n) && n >= 0 ? n : 1.25;
+    this.requestUpdate();
+  }
+
+  /** Two-way binding target: set of expanded-row id values (per `idKey`). */
+  get expandedIds(): Set<unknown> {
+    return new Set(this._expandedIds);
+  }
+  set expandedIds(value: Set<unknown> | ReadonlyArray<unknown> | null | undefined) {
+    if (!value) this._expandedIds = new Set();
+    else if (value instanceof Set) this._expandedIds = new Set(value);
+    else this._expandedIds = new Set(value);
+    this.requestUpdate();
+  }
+
+  /** `'flat'` (default) or `'cascading'`. When `tree=true`, cascading is recommended. */
+  get selectionStrategy(): TreeSelectionStrategy {
+    return this._selectionStrategy;
+  }
+  set selectionStrategy(value: TreeSelectionStrategy) {
+    this._selectionStrategy = value === 'cascading' ? 'cascading' : 'flat';
+    this.requestUpdate();
+  }
+
   get loading(): boolean {
     return this._loading;
   }
@@ -320,6 +429,13 @@ export class MpDatatable extends LitElement {
     } else if (name === 'item-size') {
       const n = Number(newValue);
       if (Number.isFinite(n)) this.itemSize = n;
+    } else if (name === 'tree') {
+      this.tree = newValue !== null;
+    } else if (name === 'tree-indent') {
+      const n = Number(newValue);
+      if (Number.isFinite(n)) this.treeIndent = n;
+    } else if (name === 'selection-strategy') {
+      this.selectionStrategy = newValue === 'cascading' ? 'cascading' : 'flat';
     }
   }
 
@@ -378,24 +494,52 @@ export class MpDatatable extends LitElement {
       this._virtualRange = { startIndex: start, endIndex: end };
       this.requestUpdate();
     }
+    // Tree-mode: lazily fetch children whose placeholder rows enter the viewport.
+    if (this._tree) this.maybeFetchPlaceholdersInViewport();
+  }
+
+  /**
+   * Walk the visible viewport for placeholder rows whose parent isn't cached
+   * and isn't already in-flight. Emit a fetch-request per such parent.
+   */
+  private maybeFetchPlaceholdersInViewport(): void {
+    const list = this.getFlatList();
+    const { startIndex, endIndex } = this._virtualRange;
+    const lo = this._virtualScroll ? startIndex : 0;
+    const hi = this._virtualScroll ? endIndex : list.length;
+    const toFetch = new Set<unknown>();
+    for (let i = lo; i < hi; i++) {
+      const r = list[i];
+      if (!r.isPlaceholder || r.parentId == null) continue;
+      if (this._childCache.has(r.parentId) || this._pendingFetches.has(r.parentId)) continue;
+      toFetch.add(r.parentId);
+    }
+    for (const parentId of toFetch) this.requestChildrenFetch(parentId);
   }
 
   override render(): TemplateResult {
     const rows = this.computeVisibleRows();
     const paginationDenominator = this._totalRecords ?? this._data.length;
-    const totalPages = this.pagination ? Math.max(1, Math.ceil(paginationDenominator / this._perPage)) : 1;
+    const totalPages = this.pagination && !this._tree
+      ? Math.max(1, Math.ceil(paginationDenominator / this._perPage))
+      : 1;
     const showCheckboxes = this._selectionMode === 'multiple';
-    const totalColumnCount = this._columns.length + (showCheckboxes ? 1 : 0);
+    const totalColumnCount =
+      this._columns.length + (showCheckboxes ? 1 : 0) + (this._tree ? 1 : 0);
 
     // Virtual scroll: spacer rows at top and bottom.
     const virtualMeta = this.getVirtualSpacerHeights();
+    const ariaRowcount = (this._tree ? this.getFlatList().length : this._data.length) + 1;
 
     return html`
       <div class="datatable-shell">
         <div class="datatable-scroll ${this._virtualScroll ? 'datatable-virtual' : ''}" role="presentation">
-          <table role="grid" aria-rowcount=${this._data.length + 1}>
+          <table role=${this._tree ? 'treegrid' : 'grid'} aria-rowcount=${ariaRowcount}>
             <thead>
               <tr role="row" aria-rowindex="1">
+                ${this._tree
+                  ? html`<th class="tree-chevron-cell" scope="col" aria-label="Expand or collapse"></th>`
+                  : nothing}
                 ${showCheckboxes
                   ? html`<th class="checkbox-cell" scope="col">
                       <mp-checkbox
@@ -423,7 +567,7 @@ export class MpDatatable extends LitElement {
                       ${repeat(
                         rows,
                         ({ key }) => key,
-                        ({ row, key, rowIndex }) => this.renderRow(row, key, rowIndex, showCheckboxes),
+                        ({ key, rowIndex, flat }) => this.renderRow(flat, key, rowIndex, showCheckboxes),
                       )}
                       ${virtualMeta.bottom > 0
                         ? html`<tr class="virtual-spacer" aria-hidden="true"><td colspan=${totalColumnCount} style=${styleMap({ height: `${virtualMeta.bottom}px`, padding: '0', border: '0' })}></td></tr>`
@@ -432,7 +576,7 @@ export class MpDatatable extends LitElement {
             </tbody>
           </table>
         </div>
-        ${this._pagination ? this.renderFooter(totalPages) : nothing}
+        ${this._pagination && !this._tree ? this.renderFooter(totalPages) : nothing}
       </div>
     `;
   }
@@ -492,44 +636,76 @@ export class MpDatatable extends LitElement {
     `;
   }
 
-  private renderRow(row: unknown, key: string, rowIndex: number, showCheckboxes: boolean): TemplateResult {
-    const selected = this._selectedIds.has(key);
-    const cut = this._cutIds.has(key);
-    const focused = this._focusedRowKey === key;
+  private renderRow(flat: FlatVisibleRow, key: string, rowIndex: number, showCheckboxes: boolean): TemplateResult {
+    const { row, depth, isExpanded, isPlaceholder } = flat;
+    const selected = !isPlaceholder && this._selectedIds.has(key);
+    const cut = !isPlaceholder && this._cutIds.has(key);
+    const focused = !isPlaceholder && this._focusedRowKey === key;
+    const childCount = isPlaceholder ? 0 : this.extractChildCount(row);
+    const hasChevron = this._tree && !isPlaceholder && childCount > 0;
+    const indeterminate = !isPlaceholder && row != null && this.isParentIndeterminate(row);
 
     return html`
       <tr
         role="row"
         aria-rowindex=${rowIndex + 2}
-        aria-selected=${this._selectionMode !== 'none' ? (selected ? 'true' : 'false') : nothing}
+        aria-level=${this._tree ? depth + 1 : nothing}
+        aria-expanded=${this._tree && childCount > 0 ? (isExpanded ? 'true' : 'false') : nothing}
+        aria-busy=${isPlaceholder ? 'true' : nothing}
+        aria-selected=${!isPlaceholder && this._selectionMode !== 'none' ? (selected ? 'true' : 'false') : nothing}
         data-row-key=${key}
         data-selected=${selected ? 'true' : 'false'}
         data-cut=${cut ? 'true' : 'false'}
         data-focused=${focused ? 'true' : 'false'}
-        data-clickable=${this._selectionMode !== 'none' || this.hasRowClickListeners() ? 'true' : 'false'}
-        @click=${(ev: MouseEvent) => this.onRowClick(row, key, rowIndex, ev)}
-        @dblclick=${(ev: MouseEvent) => this.onRowDblClick(row, key, rowIndex, ev)}
-        @contextmenu=${(ev: MouseEvent) => this.onRowContextMenu(row, key, rowIndex, ev)}
+        data-placeholder=${isPlaceholder ? 'true' : 'false'}
+        data-depth=${this._tree ? String(depth) : nothing}
+        data-clickable=${!isPlaceholder && (this._selectionMode !== 'none' || this.hasRowClickListeners()) ? 'true' : 'false'}
+        @click=${isPlaceholder ? null : (ev: MouseEvent) => this.onRowClick(row, key, rowIndex, ev)}
+        @dblclick=${isPlaceholder ? null : (ev: MouseEvent) => this.onRowDblClick(row, key, rowIndex, ev)}
+        @contextmenu=${isPlaceholder ? null : (ev: MouseEvent) => this.onRowContextMenu(row, key, rowIndex, ev)}
+        @keydown=${this._tree && !isPlaceholder ? (ev: KeyboardEvent) => this.onRowKeydown(row!, flat.parentId, depth, isExpanded, childCount, ev) : null}
       >
+        ${this._tree
+          ? html`<td class="tree-chevron-cell" style=${styleMap({ paddingInlineStart: `${depth * this._treeIndent}rem` })}>
+              ${hasChevron
+                ? html`<button
+                    type="button"
+                    class="tree-chevron"
+                    aria-label=${isExpanded ? 'Collapse row' : 'Expand row'}
+                    aria-expanded=${isExpanded ? 'true' : 'false'}
+                    data-expanded=${isExpanded ? 'true' : 'false'}
+                    @click=${(ev: MouseEvent) => this.toggleExpand(row!, flat.parentId, depth, ev)}
+                  >${isExpanded ? '▾' : '▸'}</button>`
+                : nothing}
+            </td>`
+          : nothing}
         ${showCheckboxes
           ? html`<td class="checkbox-cell" @click=${(e: Event) => e.stopPropagation()}>
-              <mp-checkbox
-                aria-label=${`Select row ${rowIndex + 1}`}
-                .checked=${selected}
-                @change=${(ev: Event) => this.onRowCheckboxToggle(row, key, rowIndex, ev)}
-              ></mp-checkbox>
+              ${isPlaceholder
+                ? nothing
+                : html`<mp-checkbox
+                    aria-label=${`Select row ${rowIndex + 1}`}
+                    .checked=${selected}
+                    .indeterminate=${indeterminate}
+                    @change=${(ev: Event) => this.onRowCheckboxToggle(row, key, rowIndex, ev)}
+                  ></mp-checkbox>`}
             </td>`
           : nothing}
         ${this._rowRenderer
-          ? this.renderRowFromRenderer(row, rowIndex)
-          : this._columns.map((col) => this.renderCell(row, col, rowIndex))}
+          ? this.renderRowFromRenderer(row, rowIndex, { depth, isExpanded, isPlaceholder })
+          : isPlaceholder
+            ? html`<td colspan=${this._columns.length} class="tree-placeholder-cell" aria-label="Loading">…</td>`
+            : this._columns.map((col) => this.renderCell(row, col, rowIndex))}
       </tr>
     `;
   }
 
-  private renderRowFromRenderer(row: unknown, rowIndex: number): unknown {
-    const out = this._rowRenderer!(row, rowIndex);
+  private renderRowFromRenderer(row: unknown, rowIndex: number, ctx: RowRenderContext): unknown {
+    const out = this._rowRenderer!(row, rowIndex, ctx);
     if (out == null) {
+      if (ctx.isPlaceholder) {
+        return html`<td colspan=${this._columns.length} class="tree-placeholder-cell" aria-label="Loading">…</td>`;
+      }
       return this._columns.map((col) => this.renderCell(row, col, rowIndex));
     }
     if (Array.isArray(out) || isIterableNotString(out)) {
@@ -597,6 +773,13 @@ export class MpDatatable extends LitElement {
   }
 
   private getEffectiveData(): unknown[] {
+    // In tree mode the source for virtual-scroll math is the flattened tree
+    // (real rows + placeholders); callers that need row metadata use
+    // `getFlatList()` instead. We keep this method returning a `unknown[]`
+    // so `_data.length`-style code paths stay valid.
+    if (this._tree) {
+      return this.getFlatList().map((r) => r.row);
+    }
     let rows: unknown[] = this._data;
     if (this._autoSort && this._sortColumns.length > 0) {
       rows = sortRows(rows, this._sortColumns);
@@ -611,20 +794,264 @@ export class MpDatatable extends LitElement {
     return rows;
   }
 
-  private computeVisibleRows(): Array<{ row: unknown; key: string; rowIndex: number }> {
-    const effective = this.getEffectiveData();
-    const pageOffset = this._pagination ? (this._page - 1) * this._perPage : 0;
-    let sliced = effective;
+  /**
+   * Flat list of visible rows including expansion + placeholders. Computed
+   * each render in tree mode; flat mode produces a trivial mapping of `_data`
+   * (after sort+pagination) with default metadata.
+   */
+  private getFlatList(): FlatVisibleRow[] {
+    if (!this._tree) {
+      const rows = (() => {
+        let r: unknown[] = this._data;
+        if (this._autoSort && this._sortColumns.length > 0) r = sortRows(r, this._sortColumns);
+        if (this._pagination && !this.isExternallyPaged()) {
+          const start = (this._page - 1) * this._perPage;
+          r = r.slice(start, start + this._perPage);
+        }
+        return r;
+      })();
+      return rows.map((row, i) => ({
+        row,
+        key: this._rowKey(row, i),
+        depth: 0,
+        parentId: null,
+        isExpanded: false,
+        isPlaceholder: false,
+      }));
+    }
+
+    const out: FlatVisibleRow[] = [];
+    const rootRows = this._autoSort && this._sortColumns.length > 0
+      ? sortRows(this._data, this._sortColumns)
+      : this._data;
+
+    const walk = (rows: unknown[], depth: number, parentId: unknown | null): void => {
+      for (const row of rows) {
+        const id = this.extractId(row);
+        const isExpanded = id != null && this._expandedIds.has(id);
+        const childCount = this.extractChildCount(row);
+        const key = this._rowKey(row, out.length);
+        out.push({ row, key, depth, parentId, isExpanded, isPlaceholder: false });
+
+        if (!isExpanded || childCount === 0 || id == null) continue;
+
+        const cached = this._childCache.get(id);
+        if (cached && cached.length > 0) {
+          const sortedChildren = this._autoSort && this._sortColumns.length > 0
+            ? sortRows(cached, this._sortColumns)
+            : cached;
+          walk(sortedChildren, depth + 1, id);
+          // Reserve placeholders for any not-yet-loaded children of this parent.
+          const total = this._childTotals.get(id) ?? cached.length;
+          const remaining = Math.max(0, total - cached.length);
+          for (let j = 0; j < remaining; j++) {
+            out.push({
+              row: undefined,
+              key: `__placeholder-${String(id)}-${cached.length + j}`,
+              depth: depth + 1,
+              parentId: id,
+              isExpanded: false,
+              isPlaceholder: true,
+            });
+          }
+        } else {
+          // Expanded but children not loaded yet — reserve childCount placeholders.
+          for (let j = 0; j < childCount; j++) {
+            out.push({
+              row: undefined,
+              key: `__placeholder-${String(id)}-${j}`,
+              depth: depth + 1,
+              parentId: id,
+              isExpanded: false,
+              isPlaceholder: true,
+            });
+          }
+        }
+      }
+    };
+
+    walk(rootRows, 0, null);
+    return out;
+  }
+
+  private computeVisibleRows(): Array<{ row: unknown; key: string; rowIndex: number; flat: FlatVisibleRow }> {
+    const flatList = this.getFlatList();
+    const pageOffset = this._tree
+      ? 0
+      : this._pagination ? (this._page - 1) * this._perPage : 0;
+    let sliced = flatList;
     let sliceOffset = 0;
     if (this._virtualScroll) {
       const { startIndex, endIndex } = this._virtualRange;
-      sliced = effective.slice(startIndex, endIndex);
+      sliced = flatList.slice(startIndex, endIndex);
       sliceOffset = startIndex;
     }
-    return sliced.map((row, indexWithinSlice) => {
+    return sliced.map((flat, indexWithinSlice) => {
       const rowIndex = pageOffset + sliceOffset + indexWithinSlice;
-      return { row, rowIndex, key: this._rowKey(row, rowIndex) };
+      return { row: flat.row, rowIndex, key: flat.key, flat };
     });
+  }
+
+  // ─── Tree-mode helpers ───────────────────────────────────────────────────
+
+  private extractId(row: unknown): unknown {
+    if (!this._idKey || row == null || typeof row !== 'object') return null;
+    if (typeof this._idKey === 'function') return (this._idKey as (r: unknown) => unknown)(row);
+    return (row as Record<string, unknown>)[this._idKey as string];
+  }
+
+  private extractChildCount(row: unknown): number {
+    if (!this._childCountKey || row == null || typeof row !== 'object') return 0;
+    const v = (row as Record<string, unknown>)[this._childCountKey];
+    return typeof v === 'number' && v > 0 ? v : 0;
+  }
+
+  /** Walks the loaded subtree of `row` and returns the rowKey for every descendant. */
+  private collectDescendantKeys(row: unknown): string[] {
+    const id = this.extractId(row);
+    const cached = id != null ? this._childCache.get(id) : undefined;
+    if (!cached) return [];
+    const out: string[] = [];
+    for (const child of cached) {
+      out.push(this._rowKey(child, -1));
+      const sub = this.collectDescendantKeys(child);
+      for (const k of sub) out.push(k);
+    }
+    return out;
+  }
+
+  /** Some-but-not-all loaded descendants selected → indeterminate parent checkbox. */
+  private isParentIndeterminate(row: unknown): boolean {
+    if (this._selectionStrategy !== 'cascading') return false;
+    const descendants = this.collectDescendantKeys(row);
+    if (descendants.length === 0) return false;
+    let some = false;
+    let all = true;
+    for (const k of descendants) {
+      if (this._selectedIds.has(k)) some = true;
+      else all = false;
+    }
+    return some && !all;
+  }
+
+  /**
+   * Toggle a row's expanded state. On expand, fires a fetch-request event if
+   * children aren't cached yet so the wrapper can bridge to the consumer's
+   * `[fetch]` callback. Always fires `expanded-ids-change`.
+   */
+  private toggleExpand(row: unknown, parentId: unknown | null, depth: number, ev: Event): void {
+    ev.stopPropagation();
+    ev.preventDefault();
+    const id = this.extractId(row);
+    if (id == null) return;
+    const next = new Set(this._expandedIds);
+    let willBeExpanded: boolean;
+    if (next.has(id)) {
+      next.delete(id);
+      willBeExpanded = false;
+    } else {
+      next.add(id);
+      willBeExpanded = true;
+    }
+    this._expandedIds = next;
+
+    if (willBeExpanded) {
+      this.dispatchEvent(
+        new CustomEvent<TreeRowExpandDetail>('mp-datatable-row-expand', {
+          detail: { row, depth, parentId },
+          bubbles: true,
+          composed: true,
+        }),
+      );
+      // Fire a fetch request if the consumer hasn't already populated the cache.
+      const cc = this.extractChildCount(row);
+      if (cc > 0 && !this._childCache.has(id) && !this._pendingFetches.has(id)) {
+        this.requestChildrenFetch(id);
+      }
+    } else {
+      this.dispatchEvent(
+        new CustomEvent<TreeRowExpandDetail>('mp-datatable-row-collapse', {
+          detail: { row, depth, parentId },
+          bubbles: true,
+          composed: true,
+        }),
+      );
+    }
+
+    this.emitExpandedIdsChange();
+    this.requestUpdate();
+  }
+
+  private emitExpandedIdsChange(): void {
+    this.dispatchEvent(
+      new CustomEvent<TreeExpandedIdsChangeDetail>('mp-datatable-expanded-ids-change', {
+        detail: { expandedIds: new Set(this._expandedIds) },
+        bubbles: true,
+        composed: true,
+      }),
+    );
+  }
+
+  /** Emit a fetch-request event the wrapper will bridge to the consumer's `[fetch]`. */
+  private requestChildrenFetch(parentId: unknown | null): void {
+    if (parentId != null) this._pendingFetches.add(parentId);
+    this.dispatchEvent(
+      new CustomEvent<TreeFetchRequestDetail>('mp-datatable-fetch-request', {
+        detail: {
+          parentId,
+          page: 1,
+          perPage: this._perPage,
+          sortColumns: [...this._sortColumns],
+        },
+        bubbles: true,
+        composed: true,
+      }),
+    );
+  }
+
+  /**
+   * Public method called by the framework wrapper after the consumer's
+   * `[fetch]` callback resolves. Populates the cache + total for the parent,
+   * clears the pending flag, and rerenders so placeholders disappear.
+   */
+  public setFetchResponse(parentId: unknown | null, response: TreeFetchResponse): void {
+    if (parentId == null) return; // root-level fetches use the `data` setter directly
+    this._pendingFetches.delete(parentId);
+    this._childCache.set(parentId, [...response.data]);
+    this._childTotals.set(parentId, response.totalRecords);
+    this.requestUpdate();
+  }
+
+  /** Drop cached children for one parent (or all). Used on sort change / refresh. */
+  public invalidateChildren(parentId?: unknown): void {
+    if (parentId === undefined) {
+      this._childCache.clear();
+      this._childTotals.clear();
+      this._pendingFetches.clear();
+    } else {
+      this._childCache.delete(parentId);
+      this._childTotals.delete(parentId);
+      this._pendingFetches.delete(parentId);
+    }
+    this.requestUpdate();
+  }
+
+  /** Keyboard handling on a tree-mode row. Arrow keys + Enter/Space toggle expansion. */
+  private onRowKeydown(
+    row: unknown,
+    parentId: unknown | null,
+    depth: number,
+    isExpanded: boolean,
+    childCount: number,
+    ev: KeyboardEvent,
+  ): void {
+    if (ev.key === 'ArrowRight' && childCount > 0 && !isExpanded) {
+      this.toggleExpand(row, parentId, depth, ev);
+    } else if (ev.key === 'ArrowLeft' && isExpanded) {
+      this.toggleExpand(row, parentId, depth, ev);
+    } else if ((ev.key === 'Enter' || ev.key === ' ') && childCount > 0) {
+      this.toggleExpand(row, parentId, depth, ev);
+    }
   }
 
   private hasRowClickListeners(): boolean {
@@ -691,14 +1118,25 @@ export class MpDatatable extends LitElement {
     );
   }
 
-  private onRowCheckboxToggle(_row: unknown, key: string, _rowIndex: number, _ev: Event): void {
+  private onRowCheckboxToggle(row: unknown, key: string, _rowIndex: number, _ev: Event): void {
     if (this._selectionMode === 'none') return;
     if (this._selectionMode === 'single') {
       this._selectedIds = new Set([key]);
     } else {
       const next = new Set(this._selectedIds);
-      if (next.has(key)) next.delete(key);
-      else next.add(key);
+      const willSelect = !next.has(key);
+      if (willSelect) next.add(key);
+      else next.delete(key);
+
+      // Cascading: propagate to all currently-loaded descendants.
+      if (this._tree && this._selectionStrategy === 'cascading' && row != null) {
+        const descendantKeys = this.collectDescendantKeys(row);
+        if (willSelect) {
+          for (const k of descendantKeys) next.add(k);
+        } else {
+          for (const k of descendantKeys) next.delete(k);
+        }
+      }
       this._selectedIds = next;
     }
     this.emitSelectionChange();

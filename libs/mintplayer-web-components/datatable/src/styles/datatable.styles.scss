@@ -171,6 +171,52 @@ tbody tr[data-focused="true"] {
   text-align: center;
 }
 
+// ── Tree mode ──────────────────────────────────────────────────────────────
+.tree-chevron-cell {
+  width: 2rem;
+  padding-right: 0;
+  white-space: nowrap;
+  user-select: none;
+}
+
+.tree-chevron {
+  appearance: none;
+  background: transparent;
+  border: 0;
+  padding: 0;
+  width: 1.5rem;
+  height: 1.5rem;
+  line-height: 1;
+  cursor: pointer;
+  color: var(--bs-body-color, inherit);
+  font-size: 0.85em;
+  border-radius: 0.25rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+
+  &:hover {
+    background-color: var(--mp-datatable-row-hover-bg);
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--bs-primary, #0d6efd);
+    outline-offset: 1px;
+  }
+}
+
+tbody tr[data-placeholder="true"] {
+  cursor: default;
+  opacity: 0.6;
+  pointer-events: none;
+}
+
+.tree-placeholder-cell {
+  color: var(--bs-secondary-color, #6c757d);
+  font-style: italic;
+  padding-left: 1.25rem;
+}
+
 .empty-state,
 .loading-state {
   padding: 2rem 1rem;

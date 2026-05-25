@@ -15,9 +15,21 @@ export type HeaderRenderer<T = unknown> = (
 export type RowKey<T = unknown> = (row: T, rowIndex: number) => string;
 
 /**
+ * Per-row renderer context — tree-mode metadata passed alongside the row.
+ * In flat mode every field is its trivial default (depth 0, not expanded, not a placeholder).
+ */
+export interface RowRenderContext {
+  depth: number;
+  isExpanded: boolean;
+  isPlaceholder: boolean;
+}
+
+/**
  * Per-row renderer. Returns the cell content for an entire row: either an
  * array of `Node`s (one `<td>` per data column, in column order) or a single
  * `Node` that already contains the cells.
+ *
+ * `row` is `undefined` for placeholder rows (tree-mode, children pending fetch).
  *
  * Used by the Angular wrapper to bridge `*bsRowTemplate` Angular templates
  * into the WC's shadow DOM via EmbeddedViewRef-managed nodes.
@@ -25,6 +37,7 @@ export type RowKey<T = unknown> = (row: T, rowIndex: number) => string;
 export type RowRenderer<T = unknown> = (
   row: T | undefined,
   rowIndex: number,
+  context?: RowRenderContext,
 ) => ReadonlyArray<Node> | Node | undefined;
 
 export interface DatatableColumnDef<T = unknown> {
