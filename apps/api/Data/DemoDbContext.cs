@@ -8,6 +8,7 @@ public class DemoDbContext(DbContextOptions<DemoDbContext> options) : DbContext(
     public DbSet<Customer> Customers => Set<Customer>();
     public DbSet<Order> Orders => Set<Order>();
     public DbSet<LineItem> LineItems => Set<LineItem>();
+    public DbSet<TreeItem> TreeItems => Set<TreeItem>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -30,6 +31,16 @@ public class DemoDbContext(DbContextOptions<DemoDbContext> options) : DbContext(
                 .HasForeignKey(li => li.OrderId)
                 .OnDelete(DeleteBehavior.Cascade);
             b.Property(li => li.UnitPrice).HasColumnType("decimal(18, 2)");
+        });
+
+        modelBuilder.Entity<TreeItem>(b =>
+        {
+            b.HasOne(t => t.Parent)
+                .WithMany(t => t.Children)
+                .HasForeignKey(t => t.ParentId)
+                .OnDelete(DeleteBehavior.Cascade);
+            b.HasIndex(t => t.ParentId);
+            b.HasIndex(t => t.Name);
         });
     }
 }
