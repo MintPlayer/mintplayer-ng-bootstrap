@@ -14,6 +14,11 @@ public static class DemoSeed
         "Thingamajig F", "Whatchamacallit G", "Doodad H", "Contraption I", "Apparatus J",
     };
 
+    private static readonly string[] DivisionPool = {
+        "Engineering", "Sales", "Marketing", "Operations", "Finance",
+        "HR", "Research", "Customer Success", "Legal", "IT",
+    };
+
     public static async Task RunAsync(DemoDbContext db, CancellationToken ct = default)
     {
         if (await db.Customers.AnyAsync(ct)) return;
@@ -78,5 +83,67 @@ public static class DemoSeed
         }
         db.LineItems.AddRange(lineItems);
         await db.SaveChangesAsync(ct);
+    }
+
+    /// <summary>
+    /// Seeds a deterministic 4-level tree (~26k rows) for the tree-mode datatable demo.
+    /// Idempotent — skips if TreeItems already has any rows. Independent of <see cref="RunAsync"/>
+    /// so it runs even on a database that already has Customers seeded.
+    /// </summary>
+    public static async Task SeedTreeItemsAsync(DemoDbContext db, CancellationToken ct = default)
+    {
+        if (await db.TreeItems.AnyAsync(ct)) return;
+
+        var rng = new Random(99);
+        var roots = new List<TreeItem>(50);
+        for (int i = 0; i < 50; i++)
+        {
+            var divisionName = DivisionPool[i % DivisionPool.Length];
+            var groupIndex = (i / DivisionPool.Length) + 1;
+            var rootCode = $"D{i + 1:D2}";
+            roots.Add(BuildTreeNode(rng, depth: 0, code: rootCode, name: $"{divisionName} {groupIndex:D2}"));
+        }
+
+        // EF Core walks navigation properties when adding aggregate roots, so the entire
+        // forest is inserted in one SaveChangesAsync call.
+        db.TreeItems.AddRange(roots);
+        await db.SaveChangesAsync(ct);
+    }
+
+    private static TreeItem BuildTreeNode(Random rng, int depth, string code, string name)
+    {
+        var node = new TreeItem { Name = name, Code = code };
+
+        int childCount = depth switch
+        {
+            0 => rng.Next(10, 26),  // L0 → L1: 10-25 children per division
+            1 => rng.Next(3, 11),   // L1 → L2:  3-10 teams per department
+            2 => rng.Next(0, 9),    // L2 → L3:  0-8  members per team (0 makes some L2 nodes leaves)
+            _ => 0,
+        };
+
+        node.ChildCount = childCount;
+
+        if (childCount == 0)
+        {
+            node.Headcount = rng.Next(1, 6);
+            return node;
+        }
+
+        int totalHeadcount = 0;
+        for (int j = 1; j <= childCount; j++)
+        {
+            var (childName, childCodeSuffix) = depth switch
+            {
+                0 => ($"Department {j:D2}", $".D{j:D2}"),
+                1 => ($"Team {j:D2}",       $".T{j:D2}"),
+                _ => ($"Member {j:D3}",     $".M{j:D3}"),
+            };
+            var child = BuildTreeNode(rng, depth + 1, code + childCodeSuffix, childName);
+            node.Children.Add(child);
+            totalHeadcount += child.Headcount;
+        }
+        node.Headcount = totalHeadcount;
+        return node;
     }
 }

@@ -13,6 +13,8 @@ import { BsCodeSnippetComponent } from '@mintplayer/ng-bootstrap/code-snippet';
 import { dedent } from 'ts-dedent';
 import { Artist } from '../../../entities/artist';
 import { ArtistService } from '../../../services/artist/artist.service';
+import { TreeItem } from '../../../entities/tree-item';
+import { TreeItemService } from '../../../services/tree-item/tree-item.service';
 
 @Component({
   selector: 'demo-datatables',
@@ -29,6 +31,7 @@ import { ArtistService } from '../../../services/artist/artist.service';
 export class DatatablesComponent {
 
   private artistService = inject(ArtistService);
+  private treeItemService = inject(TreeItemService);
 
   mode = signal<'pagination' | 'virtualScroll'>('pagination');
   virtualScroll = computed(() => this.mode() === 'virtualScroll');
@@ -49,6 +52,24 @@ export class DatatablesComponent {
   compareArtists = (a: Artist, b: Artist) => a.id === b.id;
 
   rowKey = (a: Artist) => String(a.id);
+
+  // ─── Tree-mode demo ────────────────────────────────────────────────────
+
+  treeSettings = signal(new DatatableSettings({
+    sortColumns: [],
+    perPage: { values: [50, 100, 200], selected: 100 },
+    page: { values: [1], selected: 1 },
+  }));
+
+  treeExpanded = signal<Set<unknown>>(new Set());
+  treeSelection = signal<TreeItem[]>([]);
+
+  fetchTreeItems: BsDatatableFetch<TreeItem> = this.treeItemService.fetch;
+
+  treeRowKey = (item: TreeItem) => String(item.id);
+  treeIdKey: keyof TreeItem = 'id';
+  treeChildCountKey: keyof TreeItem = 'childCount';
+  compareTreeItems = (a: TreeItem, b: TreeItem) => a.id === b.id;
 
   protected readonly snippetBasicHtml = dedent`
     <bs-datatable
@@ -137,5 +158,105 @@ export class DatatablesComponent {
   protected readonly snippetSelectionTs = dedent`
     selection = signal<Artist[]>([]);
     rowKey = (a: Artist) => String(a.id);
+  `;
+
+  protected readonly snippetTreeHtml = dedent`
+    <!-- Tree mode: virtual scrolling composes with nested expandable rows.
+         Each expanded row's children load lazily on demand; placeholders
+         reserve viewport space until the children arrive so the scrollbar
+         stays accurate. -->
+    <bs-datatable class="flex-grow-1"
+      [virtualScroll]="true"
+      [itemSize]="40"
+      [tree]="true"
+      [idKey]="treeIdKey"
+      [childCountKey]="treeChildCountKey"
+      [fetch]="fetchTreeItems"
+      [(settings)]="treeSettings"
+      [(expandedIds)]="treeExpanded"
+      [rowKey]="treeRowKey"
+      [compareWith]="compareTreeItems"
+      selectionMode="multiple"
+      selectionStrategy="cascading"
+      [(selection)]="treeSelection">
+
+      <div *bsDatatableColumn="'name'; sortable: true">Name</div>
+      <div *bsDatatableColumn="'code'; sortable: true">Code</div>
+      <div *bsDatatableColumn="'headcount'; sortable: true">Headcount</div>
+
+      <ng-container *bsRowTemplate="let item; let isPlaceholder = isPlaceholder">
+        @if (isPlaceholder) {
+          <td colspan="3" class="text-muted small fst-italic">Loading…</td>
+        } @else {
+          <td class="text-nowrap">{{ item?.name }}</td>
+          <td class="text-nowrap font-monospace small">{{ item?.code }}</td>
+          <td class="text-nowrap">{{ item?.headcount }}</td>
+        }
+      </ng-container>
+    </bs-datatable>
+  `;
+
+  protected readonly snippetTreeTs = dedent`
+    import { Component, inject, signal } from '@angular/core';
+    import { PaginationRequest } from '@mintplayer/pagination';
+    import {
+      BsDatatableComponent,
+      BsDatatableColumnDirective,
+      BsRowTemplateDirective,
+      BsDatatableFetch,
+      BsDatatableFetchRequest,
+      DatatableSettings,
+    } from '@mintplayer/ng-bootstrap/datatable';
+    import { TreeItem } from './tree-item';
+    import { TreeItemService } from './tree-item.service';
+
+    @Component({
+      selector: 'org-tree',
+      templateUrl: './org-tree.component.html',
+      imports: [
+        BsDatatableComponent,
+        BsDatatableColumnDirective,
+        BsRowTemplateDirective,
+      ],
+    })
+    export class OrgTreeComponent {
+      private treeItemService = inject(TreeItemService);
+
+      treeSettings = signal(new DatatableSettings({
+        perPage: { values: [50, 100, 200], selected: 100 },
+        page: { values: [1], selected: 1 },
+      }));
+
+      treeExpanded = signal<Set<unknown>>(new Set());
+      treeSelection = signal<TreeItem[]>([]);
+
+      // Single callback for both roots and children — branches on parentId.
+      fetchTreeItems: BsDatatableFetch<TreeItem> = this.treeItemService.fetch;
+
+      treeRowKey = (item: TreeItem) => String(item.id);
+      treeIdKey: keyof TreeItem = 'id';
+      treeChildCountKey: keyof TreeItem = 'childCount';
+      compareTreeItems = (a: TreeItem, b: TreeItem) => a.id === b.id;
+    }
+  `;
+
+  protected readonly snippetTreeServiceTs = dedent`
+    // tree-item.service.ts — branches on req.parentId for roots vs children.
+    @Injectable({ providedIn: 'root' })
+    export class TreeItemService {
+      private readonly http = inject(HttpClient);
+
+      fetch: BsDatatableFetch<TreeItem> = async (req: BsDatatableFetchRequest) => {
+        const url = req.parentId == null
+          ? '/api/treeItems'
+          : \`/api/treeItems/\${req.parentId}/children\`;
+        const params = new HttpParams()
+          .set('page', String(req.page ?? 1))
+          .set('perPage', String(req.perPage ?? 50));
+        // ... map PagedResult<TreeItem> → PaginationResponse<TreeItem>
+        return firstValueFrom(this.http.get<PagedResult<TreeItem>>(url, { params }))
+          .then(r => ({ data: r.items, totalRecords: r.totalCount, ... }));
+      };
+    }
   `;
 }

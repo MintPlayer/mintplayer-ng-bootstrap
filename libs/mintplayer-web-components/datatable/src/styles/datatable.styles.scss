@@ -40,6 +40,21 @@
     z-index: 1;
     background-color: var(--bs-body-bg, #fff);
   }
+
+  // The generic `thead th[data-sortable]:hover` rule below sets a
+  // semi-transparent `--mp-datatable-row-hover-bg` (rgba(0,0,0,0.04))
+  // as the background-color. On a sticky header that fully replaces
+  // the opaque body bg above, so scrolled rows behind the header
+  // bleed through. Apply the hover tint as a layered
+  // `background-image` instead so it stacks ON TOP of the opaque
+  // body bg — same visual hover effect, but the header stays opaque.
+  thead th[data-sortable="true"]:hover {
+    background-color: var(--bs-body-bg, #fff);
+    background-image: linear-gradient(
+      var(--mp-datatable-row-hover-bg),
+      var(--mp-datatable-row-hover-bg)
+    );
+  }
 }
 
 tr.virtual-spacer {
@@ -54,7 +69,26 @@ table {
   width: 100%;
   border-collapse: collapse;
   margin: 0;
+  // Until the measure-once pass runs (see `_hasMeasuredInitial`), columns
+  // sized by their natural content. Once measurement locks a width onto
+  // each header, the `.measured` modifier switches the table to fixed
+  // layout so the widths are authoritative and overflowing rows clip with
+  // ellipsis rather than expanding the column.
   table-layout: auto;
+}
+
+table.measured {
+  table-layout: fixed;
+}
+
+tbody td {
+  // Pair with `table-layout: fixed` so wider content in later
+  // virtual-scroll slices clips with ellipsis instead of wrapping or
+  // shifting the column. Consumers that need wrapping cells can opt out
+  // via `cellClass` / their own row-template td styling.
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 thead th {
@@ -169,6 +203,52 @@ tbody tr[data-focused="true"] {
 .checkbox-cell {
   width: 2.5rem;
   text-align: center;
+}
+
+// ── Tree mode ──────────────────────────────────────────────────────────────
+.tree-chevron-cell {
+  width: 2rem;
+  padding-right: 0;
+  white-space: nowrap;
+  user-select: none;
+}
+
+.tree-chevron {
+  appearance: none;
+  background: transparent;
+  border: 0;
+  padding: 0;
+  width: 1.5rem;
+  height: 1.5rem;
+  line-height: 1;
+  cursor: pointer;
+  color: var(--bs-body-color, inherit);
+  font-size: 0.85em;
+  border-radius: 0.25rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+
+  &:hover {
+    background-color: var(--mp-datatable-row-hover-bg);
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--bs-primary, #0d6efd);
+    outline-offset: 1px;
+  }
+}
+
+tbody tr[data-placeholder="true"] {
+  cursor: default;
+  opacity: 0.6;
+  pointer-events: none;
+}
+
+.tree-placeholder-cell {
+  color: var(--bs-secondary-color, #6c757d);
+  font-style: italic;
+  padding-left: 1.25rem;
 }
 
 .empty-state,

@@ -76,6 +76,7 @@ using (var scope = app.Services.CreateScope())
     var db = scope.ServiceProvider.GetRequiredService<DemoDbContext>();
     await db.Database.EnsureCreatedAsync();
     await DemoSeed.RunAsync(db);
+    await DemoSeed.SeedTreeItemsAsync(db);
 }
 
 app.Run();

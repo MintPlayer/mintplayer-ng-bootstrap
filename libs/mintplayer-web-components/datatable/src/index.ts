@@ -12,6 +12,13 @@ export type {
   HeaderRenderer,
   RowKey,
   RowRenderer,
+  RowRenderContext,
+  TreeIdKey,
+  TreeSelectionStrategy,
+  TreeFetchRequestDetail,
+  TreeFetchResponse,
+  TreeRowExpandDetail,
+  TreeExpandedIdsChangeDetail,
 } from './types';
 export type { SortColumn, SortDirection } from './sort';
 export { computeNextSort, sortRows } from './sort';

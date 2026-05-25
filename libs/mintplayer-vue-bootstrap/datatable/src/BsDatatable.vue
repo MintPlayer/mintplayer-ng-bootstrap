@@ -4,37 +4,144 @@ import '@mintplayer/web-components/datatable';
 import {
   MpDatatable,
   type DatatableColumnDef,
+  type RowKey,
+  type DatatableSelectionMode,
+  type TreeIdKey,
+  type TreeSelectionStrategy,
+  type TreeFetchRequestDetail,
+  type TreeFetchResponse,
+  type TreeRowExpandDetail,
+  type TreeExpandedIdsChangeDetail,
+  type RowEventDetail,
+  type SortChangeEventDetail,
+  type SelectionChangeEventDetail,
 } from '@mintplayer/web-components/datatable';
-import { ref, watch, onMounted } from 'vue';
+import { ref, watch, onMounted, onBeforeUnmount } from 'vue';
 
 defineOptions({ inheritAttrs: false });
 
-// Props that are JS objects (arrays, columns) must be assigned to the
-// element's properties — not its attributes — because the WC reads them
-// off `this.columns` / `this.data` directly. Vue's `v-bind`/`:foo="..."`
-// serializes to attribute when the value is a primitive but uses
-// `.prop` style under-the-hood for objects on custom elements.
+// Object-valued props (arrays, Sets, functions) must be assigned to the
+// element's JS properties — Vue's attribute serialization can't carry them.
+// Scalar props (`tree`, `virtualScroll`, `itemSize`, `selectionMode`, …)
+// flow through `v-bind="$attrs"` on the template element.
 const props = defineProps<{
   columns?: DatatableColumnDef[];
   data?: unknown[];
+  rowKey?: RowKey;
+  // Tree-mode JS-property props
+  tree?: boolean;
+  idKey?: TreeIdKey | string | null;
+  childCountKey?: string | null;
+  treeIndent?: number;
+  expandedIds?: Set<unknown> | ReadonlyArray<unknown>;
+  selectionMode?: DatatableSelectionMode;
+  selectionStrategy?: TreeSelectionStrategy;
+  selectedIds?: string[] | ReadonlyArray<string>;
+}>();
+
+const emit = defineEmits<{
+  (e: 'update:expandedIds', value: Set<unknown>): void;
+  (e: 'update:selectedIds', value: string[]): void;
+  (e: 'fetchRequest', detail: TreeFetchRequestDetail): void;
+  (e: 'rowExpand', detail: TreeRowExpandDetail): void;
+  (e: 'rowCollapse', detail: TreeRowExpandDetail): void;
+  (e: 'sortChange', detail: SortChangeEventDetail): void;
+  (e: 'selectionChange', detail: SelectionChangeEventDetail): void;
+  (e: 'rowClick', detail: RowEventDetail): void;
+  (e: 'rowDblClick', detail: RowEventDetail): void;
+  (e: 'rowContextMenu', detail: RowEventDetail): void;
+  (e: 'pageChange', detail: { page: number }): void;
+  (e: 'perPageChange', detail: { perPage: number }): void;
 }>();
 
 const el = ref<MpDatatable | null>(null);
 
-// Forward `?? []` so consumers can clear the table by binding the prop
-// back to `undefined` / `null`. The WC's setters (`set columns` /
-// `set data` on MpDatatable) already coerce non-arrays to `[]`, so the
-// explicit `?? []` here is what carries the clear gesture through — a
-// truthiness guard would silently drop it and leave the previous rows.
 const syncProps = () => {
   if (!el.value) return;
-  el.value.columns = props.columns ?? [];
+  el.value.columns = (props.columns ?? []) as DatatableColumnDef[];
   el.value.data = props.data ?? [];
+  if (props.rowKey !== undefined) el.value.rowKey = props.rowKey;
+  if (props.tree !== undefined) el.value.tree = props.tree;
+  if (props.idKey !== undefined) el.value.idKey = props.idKey as TreeIdKey | null;
+  if (props.childCountKey !== undefined) el.value.childCountKey = props.childCountKey;
+  if (props.treeIndent !== undefined) el.value.treeIndent = props.treeIndent;
+  if (props.expandedIds !== undefined) {
+    el.value.expandedIds = props.expandedIds instanceof Set
+      ? new Set(props.expandedIds)
+      : new Set(props.expandedIds);
+  }
+  if (props.selectionMode !== undefined) el.value.selectionMode = props.selectionMode;
+  if (props.selectionStrategy !== undefined) el.value.selectionStrategy = props.selectionStrategy;
+  if (props.selectedIds !== undefined) el.value.selectedIds = [...props.selectedIds];
 };
 
-onMounted(syncProps);
-watch(() => props.columns, syncProps);
-watch(() => props.data, syncProps);
+// One handler per dispatched WC event; the WC's `mp-datatable-*` names
+// flatten to camelCase Vue events. `update:expandedIds` is the v-model
+// channel so `v-model:expandedIds` works on consumers.
+const handlers: Record<string, (e: Event) => void> = {
+  'mp-datatable-fetch-request': (e) => emit('fetchRequest', (e as CustomEvent<TreeFetchRequestDetail>).detail),
+  'mp-datatable-row-expand': (e) => emit('rowExpand', (e as CustomEvent<TreeRowExpandDetail>).detail),
+  'mp-datatable-row-collapse': (e) => emit('rowCollapse', (e as CustomEvent<TreeRowExpandDetail>).detail),
+  'mp-datatable-expanded-ids-change': (e) => {
+    const detail = (e as CustomEvent<TreeExpandedIdsChangeDetail>).detail;
+    emit('update:expandedIds', new Set(detail.expandedIds));
+  },
+  'mp-datatable-sort-change': (e) => emit('sortChange', (e as CustomEvent<SortChangeEventDetail>).detail),
+  'mp-datatable-selection-change': (e) => {
+    const detail = (e as CustomEvent<SelectionChangeEventDetail>).detail;
+    emit('selectionChange', detail);
+    emit('update:selectedIds', [...detail.selectedIds]);
+  },
+  'mp-datatable-row-click': (e) => emit('rowClick', (e as CustomEvent<RowEventDetail>).detail),
+  'mp-datatable-row-dblclick': (e) => emit('rowDblClick', (e as CustomEvent<RowEventDetail>).detail),
+  'mp-datatable-row-contextmenu': (e) => emit('rowContextMenu', (e as CustomEvent<RowEventDetail>).detail),
+  'mp-datatable-page-change': (e) => emit('pageChange', (e as CustomEvent<{ page: number }>).detail),
+  'mp-datatable-per-page-change': (e) => emit('perPageChange', (e as CustomEvent<{ perPage: number }>).detail),
+};
+
+const attachEvents = () => {
+  if (!el.value) return;
+  for (const [name, handler] of Object.entries(handlers)) {
+    el.value.addEventListener(name, handler);
+  }
+};
+
+const detachEvents = () => {
+  if (!el.value) return;
+  for (const [name, handler] of Object.entries(handlers)) {
+    el.value.removeEventListener(name, handler);
+  }
+};
+
+onMounted(() => {
+  syncProps();
+  attachEvents();
+});
+
+onBeforeUnmount(detachEvents);
+
+watch(() => props.columns, syncProps, { deep: false });
+watch(() => props.data, syncProps, { deep: false });
+watch(() => props.rowKey, syncProps);
+watch(() => props.tree, syncProps);
+watch(() => props.idKey, syncProps);
+watch(() => props.childCountKey, syncProps);
+watch(() => props.treeIndent, syncProps);
+watch(() => props.expandedIds, syncProps, { deep: false });
+watch(() => props.selectionMode, syncProps);
+watch(() => props.selectionStrategy, syncProps);
+watch(() => props.selectedIds, syncProps, { deep: false });
+
+// Expose the underlying element + the two tree-mode imperative methods
+// so consumers can feed lazy-fetched children back into the WC.
+const setFetchResponse = (parentId: unknown, response: TreeFetchResponse) => {
+  el.value?.setFetchResponse(parentId, response);
+};
+const invalidateChildren = (parentId?: unknown) => {
+  el.value?.invalidateChildren(parentId);
+};
+
+defineExpose({ el, setFetchResponse, invalidateChildren });
 </script>
 
 <template>

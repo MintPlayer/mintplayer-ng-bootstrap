@@ -51,3 +51,51 @@
 
 <bs-code-snippet [codeToCopy]="snippetSelectionHtml" [language]="'html'"></bs-code-snippet>
 <bs-code-snippet [codeToCopy]="snippetSelectionTs" [language]="'ts'"></bs-code-snippet>
+
+<h2>Tree mode &mdash; expandable rows</h2>
+
+<p>
+  Click a chevron to expand a row. Children load lazily on first expand and
+  stay cached for subsequent collapse/expand cycles. Placeholder rows reserve
+  viewport space while the fetch is in flight so the scrollbar stays
+  accurate. Cascading selection: checking a parent selects all currently-loaded
+  descendants; partially-selected parents render an indeterminate state.
+</p>
+
+<bs-datatable class="flex-grow-1"
+  [virtualScroll]="true"
+  [itemSize]="40"
+  [tree]="true"
+  [idKey]="treeIdKey"
+  [childCountKey]="treeChildCountKey"
+  [fetch]="fetchTreeItems"
+  [(settings)]="treeSettings"
+  [(expandedIds)]="treeExpanded"
+  [rowKey]="treeRowKey"
+  [compareWith]="compareTreeItems"
+  selectionMode="multiple"
+  selectionStrategy="cascading"
+  [(selection)]="treeSelection">
+
+  <div *bsDatatableColumn="'name'; sortable: true">Name</div>
+  <div *bsDatatableColumn="'code'; sortable: true">Code</div>
+  <div *bsDatatableColumn="'headcount'; sortable: true">Headcount</div>
+
+  <ng-container *bsRowTemplate="let item; let isPlaceholder = isPlaceholder">
+    @if (isPlaceholder) {
+      <td colspan="3" class="text-muted small fst-italic">Loading&hellip;</td>
+    } @else {
+      <td class="text-nowrap">{{ $any(item)?.name }}</td>
+      <td class="text-nowrap font-monospace small">{{ $any(item)?.code }}</td>
+      <td class="text-nowrap">{{ $any(item)?.headcount }}</td>
+    }
+  </ng-container>
+</bs-datatable>
+
+@if (treeSelection().length) {
+  <small class="text-muted">Selected {{ treeSelection().length }} item(s).</small>
+}
+
+<bs-code-snippet [codeToCopy]="snippetTreeHtml" [language]="'html'"></bs-code-snippet>
+<bs-code-snippet [codeToCopy]="snippetTreeTs" [language]="'ts'"></bs-code-snippet>
+<bs-code-snippet [codeToCopy]="snippetTreeServiceTs" [language]="'ts'"></bs-code-snippet>

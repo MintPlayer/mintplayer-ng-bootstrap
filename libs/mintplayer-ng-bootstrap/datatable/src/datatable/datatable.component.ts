@@ -30,13 +30,18 @@ import {
   type RowRenderer,
   type SortChangeEventDetail,
   type SelectionChangeEventDetail,
+  type TreeFetchRequestDetail,
+  type TreeRowExpandDetail,
+  type TreeExpandedIdsChangeDetail,
+  type TreeIdKey,
+  type TreeSelectionStrategy,
 } from '@mintplayer/web-components/datatable';
 
 // Side-effect import: registers <mp-datatable>.
 import '@mintplayer/web-components/datatable';
 
 import { DatatableSettings } from '../datatable-settings';
-import { BsDatatableFetch } from '../datatable-fetch';
+import { BsDatatableFetch, BsDatatableFetchRequest } from '../datatable-fetch';
 import { BsDatatableColumnDirective } from '../datatable-column/datatable-column.directive';
 import { BsRowTemplateDirective, BsRowTemplateContext } from '../row-template/row-template.directive';
 
@@ -45,6 +50,12 @@ export interface BsDatatableRowEvent<T> {
   rowIndex: number;
   rowKey: string;
   originalEvent: Event;
+}
+
+export interface BsDatatableTreeRowEvent<T> {
+  row: T;
+  depth: number;
+  parentId: unknown | null;
 }
 
 @Component({
@@ -114,6 +125,44 @@ export class BsDatatableComponent<TData> implements AfterViewInit {
   /** Emitted on row context-menu. */
   readonly rowContextMenu = output<BsDatatableRowEvent<TData>>();
 
+  // ─── Tree-mode inputs / models / outputs ─────────────────────────────────
+
+  /** Enable tree mode (chevron column, nested expansion, lazy children). */
+  readonly tree = input<boolean>(false);
+
+  /**
+   * Property name (or function) that extracts the row's stable identity.
+   * Required when `tree=true`. Used as the expansion key and as the
+   * `parentId` value the WC sends in `mp-datatable-fetch-request`.
+   */
+  readonly idKey = input<TreeIdKey<TData> | null>(null);
+
+  /**
+   * Property name on the row holding the direct-child count. Drives chevron
+   * visibility AND placeholder reservation for lazy children. Required when
+   * `tree=true`.
+   */
+  readonly childCountKey = input<string | null>(null);
+
+  /** Indent in rem per depth level on the chevron cell. Default `1.25`. */
+  readonly treeIndent = input<number>(1.25);
+
+  /** Two-way bound set of expanded-row ids (keyed by `idKey`). */
+  readonly expandedIds = model<Set<unknown>>(new Set());
+
+  /**
+   * `'flat'` (default) leaves selection to per-row toggles; `'cascading'`
+   * (recommended in tree mode) propagates a parent toggle to all loaded
+   * descendants and surfaces an indeterminate state on partially-selected
+   * parents.
+   */
+  readonly selectionStrategy = input<TreeSelectionStrategy>('flat');
+
+  /** Emitted after a row is expanded. */
+  readonly rowExpand = output<BsDatatableTreeRowEvent<TData>>();
+  /** Emitted after a row is collapsed. */
+  readonly rowCollapse = output<BsDatatableTreeRowEvent<TData>>();
+
   readonly datatableRef = viewChild<ElementRef<MpDatatable>>('datatable');
 
   /** Column directives (header template + sortable). Wrapper-level discovery. */
@@ -179,16 +228,30 @@ export class BsDatatableComponent<TData> implements AfterViewInit {
       }
     });
 
-    // Async fetch: re-run on fetch / settings changes. In virtual mode the
-    // WC's virtualizer slices the in-memory `currentData` array, so the
-    // wrapper drains every page from the fetcher up front. Per-viewport
-    // on-demand fetching would need a sparse-array model in the WC.
+    // Async fetch: re-run on fetch / settings changes. In virtual flat mode
+    // the WC's virtualizer slices the in-memory `currentData` array, so the
+    // wrapper drains every page from the fetcher up front. In tree mode the
+    // wrapper does one root-page fetch; the WC pulls children on demand via
+    // `mp-datatable-fetch-request` (bridged by `onFetchRequest` below), so
+    // virtual + tree composes without front-loading.
     effect(() => {
       if (isPlatformServer(this.platformId)) return;
       const fetcher = this.fetch();
       if (!fetcher) return;
       const settings = this.settings();
-      if (this.virtualScroll()) {
+      if (this.tree()) {
+        const req: BsDatatableFetchRequest = {
+          page: settings.page.selected,
+          perPage: settings.perPage.selected,
+          sortColumns: settings.sortColumns,
+          parentId: undefined,
+        };
+        // Sort changes invalidate the per-parent child cache (server-side sort
+        // applies within siblings, so cached children are stale).
+        const el = this.datatableRef()?.nativeElement;
+        if (el && typeof el.invalidateChildren === 'function') el.invalidateChildren();
+        void this.runFetch(fetcher, req, settings);
+      } else if (this.virtualScroll()) {
         void this.runVirtualFetchAll(fetcher, settings.sortColumns);
       } else {
         const req: PaginationRequest = {
@@ -258,6 +321,28 @@ export class BsDatatableComponent<TData> implements AfterViewInit {
       el.virtualBuffer = this.virtualBuffer();
     });
 
+    // Tree-mode prop sync to the WC.
+    effect(() => {
+      const el = this.datatableRef()?.nativeElement;
+      if (!el) return;
+      el.tree = this.tree();
+      el.idKey = this.idKey() as TreeIdKey;
+      el.childCountKey = this.childCountKey();
+      el.treeIndent = this.treeIndent();
+      el.selectionStrategy = this.selectionStrategy();
+    });
+
+    // Two-way bind `expandedIds` to the WC. Skip-on-echo via structural equality
+    // — the WC's getter returns a fresh Set on every read.
+    effect(() => {
+      const desired = this.expandedIds();
+      const el = this.datatableRef()?.nativeElement;
+      if (!el) return;
+      const current = el.expandedIds;
+      if (setsEqual(current, desired)) return;
+      el.expandedIds = desired;
+    });
+
     // Wire the row renderer when *bsRowTemplate is provided.
     effect(() => {
       const el = this.datatableRef()?.nativeElement;
@@ -288,19 +373,33 @@ export class BsDatatableComponent<TData> implements AfterViewInit {
   }
 
   private buildRowRenderer(tpl: BsRowTemplateDirective<TData>): RowRenderer<TData> {
-    return (row, rowIndex) => {
-      if (row === undefined) return undefined;
-      const key = this.rowKey()(row as TData, rowIndex);
+    return (row, rowIndex, ctx) => {
+      // Placeholder rows (tree-mode, children pending fetch) get a synthetic key
+      // so the view is reused per slot. Consumers detect them via `isPlaceholder`.
+      const isPlaceholder = ctx?.isPlaceholder ?? row === undefined;
+      const depth = ctx?.depth ?? 0;
+      const isExpanded = ctx?.isExpanded ?? false;
+      const key = isPlaceholder
+        ? `__placeholder-${rowIndex}`
+        : this.rowKey()(row as TData, rowIndex);
       let viewRef = this.rowViews.get(key);
       if (!viewRef) {
-        viewRef = this.vcr.createEmbeddedView(tpl.templateRef, { $implicit: row as TData, index: rowIndex });
+        const context = new BsRowTemplateContext<TData>();
+        context.$implicit = row as TData | undefined;
+        context.index = rowIndex;
+        context.depth = depth;
+        context.isExpanded = isExpanded;
+        context.isPlaceholder = isPlaceholder;
+        viewRef = this.vcr.createEmbeddedView(tpl.templateRef, context);
         this.rowViews.set(key, viewRef);
       } else {
-        viewRef.context.$implicit = row as TData;
+        viewRef.context.$implicit = row as TData | undefined;
         viewRef.context.index = rowIndex;
+        viewRef.context.depth = depth;
+        viewRef.context.isExpanded = isExpanded;
+        viewRef.context.isPlaceholder = isPlaceholder;
       }
       viewRef.detectChanges();
-      // Filter to Node instances; <td> elements come through here.
       const nodes = viewRef.rootNodes.filter((n: unknown): n is Node => n instanceof Node);
       return nodes;
     };
@@ -426,6 +525,59 @@ export class BsDatatableComponent<TData> implements AfterViewInit {
     this.rowContextMenu.emit(this.toBsEvent(event));
   }
 
+  // ─── Tree-mode event handlers ────────────────────────────────────────────
+
+  /**
+   * Bridge the WC's fetch-request to the consumer's `[fetch]` callback. The
+   * WC fires this when a row is expanded (or scrolled into view as a
+   * placeholder) without cached children. We resolve the consumer's promise
+   * and hand the response back to the WC via `setFetchResponse`.
+   */
+  onFetchRequest(event: Event): void {
+    const detail = (event as CustomEvent<TreeFetchRequestDetail>).detail;
+    const fetcher = this.fetch();
+    if (!fetcher) return;
+    void (async () => {
+      try {
+        const response = await fetcher({
+          page: detail.page,
+          perPage: detail.perPage,
+          sortColumns: detail.sortColumns as SortColumn[],
+          parentId: detail.parentId ?? undefined,
+        });
+        const el = this.datatableRef()?.nativeElement;
+        if (!el) return;
+        el.setFetchResponse(detail.parentId, {
+          data: response.data ?? [],
+          totalRecords: response.totalRecords ?? response.data?.length ?? 0,
+          page: response.page ?? detail.page,
+          perPage: response.perPage ?? detail.perPage,
+        });
+      } catch (err) {
+        // Surface failures to the consumer via the rowExpand event chain in a
+        // future iteration. For v1 logging is sufficient to debug bad fetches.
+        console.error('[bs-datatable] tree fetch failed', err);
+      }
+    })();
+  }
+
+  onRowExpand(event: Event): void {
+    const detail = (event as CustomEvent<TreeRowExpandDetail<TData>>).detail;
+    this.rowExpand.emit({ row: detail.row, depth: detail.depth, parentId: detail.parentId });
+  }
+
+  onRowCollapse(event: Event): void {
+    const detail = (event as CustomEvent<TreeRowExpandDetail<TData>>).detail;
+    this.rowCollapse.emit({ row: detail.row, depth: detail.depth, parentId: detail.parentId });
+  }
+
+  onExpandedIdsChange(event: Event): void {
+    const detail = (event as CustomEvent<TreeExpandedIdsChangeDetail>).detail;
+    const next = new Set(detail.expandedIds);
+    if (setsEqual(this.expandedIds(), next)) return;
+    this.expandedIds.set(next);
+  }
+
   private toBsEvent(event: Event): BsDatatableRowEvent<TData> {
     const detail = (event as CustomEvent<RowEventDetail<TData>>).detail;
     return {
@@ -435,6 +587,23 @@ export class BsDatatableComponent<TData> implements AfterViewInit {
       originalEvent: detail.originalEvent,
     };
   }
+}
+
+function setsEqual<T>(
+  a: Set<T> | ReadonlyArray<T> | null | undefined,
+  b: Set<T> | ReadonlyArray<T> | null | undefined,
+): boolean {
+  // In SSR the WC isn't upgraded yet, so reading `el.expandedIds` returns
+  // `undefined` instead of the getter's `new Set()`. Treat both-missing as
+  // equal so the sync effect short-circuits cleanly during pre-hydration.
+  if (a == null && b == null) return true;
+  if (a == null || b == null) return false;
+  const aSize = a instanceof Set ? a.size : a.length;
+  const bSize = b instanceof Set ? b.size : b.length;
+  if (aSize !== bSize) return false;
+  const bSet = b instanceof Set ? b : new Set(b);
+  for (const v of a) if (!bSet.has(v)) return false;
+  return true;
 }
 
 export { computeNextSort };

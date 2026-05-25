@@ -5,6 +5,9 @@ import {
   type RowEventDetail,
   type SortChangeEventDetail,
   type SelectionChangeEventDetail,
+  type TreeFetchRequestDetail,
+  type TreeRowExpandDetail,
+  type TreeExpandedIdsChangeDetail,
 } from '@mintplayer/web-components/datatable';
 
 /**
@@ -12,10 +15,17 @@ import {
  * the import above. The `events` map surfaces each CustomEvent the WC
  * dispatches as an idiomatic React `on*` prop with full detail typing.
  *
- * Note: complex props like `columns` and `rows` are typed by the
- * MpDatatable class fields. Set them as JS objects via the spread/prop
- * APIs; @lit/react forwards them as properties (not attributes) so
- * arrays/functions/Maps round-trip correctly.
+ * Note: complex props like `columns`, `data`, `expandedIds`, `idKey`,
+ * and `childCountKey` are typed by the MpDatatable class fields. Set
+ * them as JS objects via the React props; @lit/react forwards them as
+ * properties (not attributes) so Sets/arrays/functions round-trip
+ * correctly.
+ *
+ * Tree-mode lazy fetch: the WC emits `mp-datatable-fetch-request` when
+ * it needs children for an expanded row (surfaced here as
+ * `onFetchRequest`). The consumer resolves the request and calls
+ * `setFetchResponse(parentId, response)` on the element ref to feed
+ * the children back into the WC's cache.
  */
 export const BsDatatable = createComponent({
   react: React,
@@ -29,5 +39,9 @@ export const BsDatatable = createComponent({
     onRowDblClick: 'mp-datatable-row-dblclick' as EventName<CustomEvent<RowEventDetail>>,
     onRowContextMenu: 'mp-datatable-row-contextmenu' as EventName<CustomEvent<RowEventDetail>>,
     onSelectionChange: 'mp-datatable-selection-change' as EventName<CustomEvent<SelectionChangeEventDetail>>,
+    onFetchRequest: 'mp-datatable-fetch-request' as EventName<CustomEvent<TreeFetchRequestDetail>>,
+    onRowExpand: 'mp-datatable-row-expand' as EventName<CustomEvent<TreeRowExpandDetail>>,
+    onRowCollapse: 'mp-datatable-row-collapse' as EventName<CustomEvent<TreeRowExpandDetail>>,
+    onExpandedIdsChange: 'mp-datatable-expanded-ids-change' as EventName<CustomEvent<TreeExpandedIdsChangeDetail>>,
   },
 });
