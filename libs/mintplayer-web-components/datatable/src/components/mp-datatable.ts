@@ -469,6 +469,16 @@ export class MpDatatable extends LitElement {
     this.refreshVirtualRange();
   }
 
+  protected override updated(changedProperties: Map<string, unknown>): void {
+    super.updated(changedProperties);
+    // Re-evaluate the visible range after every render so it stays in sync
+    // with state changes that grow/shrink the flat list (data set, children
+    // lazy-loaded, expandedIds toggled). Idempotent — refreshVirtualRange
+    // only requestUpdates when the range actually changes, so this can't
+    // loop.
+    this.refreshVirtualRange();
+  }
+
   override disconnectedCallback(): void {
     super.disconnectedCallback();
     if (this._scrollElement && this._scrollListener) {
