@@ -40,6 +40,21 @@
     z-index: 1;
     background-color: var(--bs-body-bg, #fff);
   }
+
+  // The generic `thead th[data-sortable]:hover` rule below sets a
+  // semi-transparent `--mp-datatable-row-hover-bg` (rgba(0,0,0,0.04))
+  // as the background-color. On a sticky header that fully replaces
+  // the opaque body bg above, so scrolled rows behind the header
+  // bleed through. Apply the hover tint as a layered
+  // `background-image` instead so it stacks ON TOP of the opaque
+  // body bg — same visual hover effect, but the header stays opaque.
+  thead th[data-sortable="true"]:hover {
+    background-color: var(--bs-body-bg, #fff);
+    background-image: linear-gradient(
+      var(--mp-datatable-row-hover-bg),
+      var(--mp-datatable-row-hover-bg)
+    );
+  }
 }
 
 tr.virtual-spacer {
