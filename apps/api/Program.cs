@@ -69,14 +69,58 @@ app.MapControllers();
 // Lightweight liveness/readiness probe.
 app.MapGet("/", () => Results.Ok(new { name = "mintplayer-ng-bootstrap-api", status = "ok" }));
 
-// Migrate + seed on startup. EnsureCreated creates a fresh SQLite file on
-// first boot; the seed runs only when the Customers table is empty.
+// Migrate + seed on startup.
+//
+// Schema evolution is now driven by EF Core migrations. The first one
+// (Migrations/*_InitialCreate.cs) creates every table the demo needs.
+// MigrateAsync applies any unapplied migration in order.
+//
+// Legacy-db self-heal: production VPS deploys before this commit ran
+// `EnsureCreatedAsync()` which doesn't write the `__EFMigrationsHistory`
+// table. The persisted volume at /data/demo.db therefore has data tables
+// (Customers / Orders / LineItems) but no migration history. If we call
+// MigrateAsync against it, EF tries to apply InitialCreate from scratch
+// and CREATE TABLE fails on existing tables. Detect that case and drop
+// the legacy db before migrating — demo data is deterministic and
+// re-seeds in seconds, so the data loss is acceptable.
 using (var scope = app.Services.CreateScope())
 {
     var db = scope.ServiceProvider.GetRequiredService<DemoDbContext>();
-    await db.Database.EnsureCreatedAsync();
+    if (await IsLegacyEnsureCreatedDbAsync(db))
+    {
+        await db.Database.EnsureDeletedAsync();
+    }
+    await db.Database.MigrateAsync();
     await DemoSeed.RunAsync(db);
     await DemoSeed.SeedTreeItemsAsync(db);
+}
+
+static async Task<bool> IsLegacyEnsureCreatedDbAsync(DemoDbContext db)
+{
+    // Existing data table but no migration history → EnsureCreated'd db.
+    // We probe `Customers` (present since the very first seed) and
+    // `__EFMigrationsHistory` (the table MigrateAsync would maintain).
+    //
+    // Use `Database.OpenConnectionAsync()` / `CloseConnectionAsync()` rather
+    // than manipulating the underlying `DbConnection` directly so EF Core's
+    // internal connection-state tracking stays consistent for the
+    // `EnsureDeletedAsync` / `MigrateAsync` calls that follow.
+    await db.Database.OpenConnectionAsync();
+    try
+    {
+        await using var cmd = db.Database.GetDbConnection().CreateCommand();
+        cmd.CommandText = "SELECT name FROM sqlite_master WHERE type='table' AND name IN ('Customers', '__EFMigrationsHistory');";
+        var found = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        await using (var reader = await cmd.ExecuteReaderAsync())
+        {
+            while (await reader.ReadAsync()) found.Add(reader.GetString(0));
+        }
+        return found.Contains("Customers") && !found.Contains("__EFMigrationsHistory");
+    }
+    finally
+    {
+        await db.Database.CloseConnectionAsync();
+    }
 }
 
 app.Run();
