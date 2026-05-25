@@ -589,7 +589,15 @@ export class BsDatatableComponent<TData> implements AfterViewInit {
   }
 }
 
-function setsEqual<T>(a: Set<T> | ReadonlyArray<T>, b: Set<T> | ReadonlyArray<T>): boolean {
+function setsEqual<T>(
+  a: Set<T> | ReadonlyArray<T> | null | undefined,
+  b: Set<T> | ReadonlyArray<T> | null | undefined,
+): boolean {
+  // In SSR the WC isn't upgraded yet, so reading `el.expandedIds` returns
+  // `undefined` instead of the getter's `new Set()`. Treat both-missing as
+  // equal so the sync effect short-circuits cleanly during pre-hydration.
+  if (a == null && b == null) return true;
+  if (a == null || b == null) return false;
   const aSize = a instanceof Set ? a.size : a.length;
   const bSize = b instanceof Set ? b.size : b.length;
   if (aSize !== bSize) return false;
