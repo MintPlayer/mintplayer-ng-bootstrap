@@ -54,7 +54,26 @@ table {
   width: 100%;
   border-collapse: collapse;
   margin: 0;
+  // Until the measure-once pass runs (see `_hasMeasuredInitial`), columns
+  // sized by their natural content. Once measurement locks a width onto
+  // each header, the `.measured` modifier switches the table to fixed
+  // layout so the widths are authoritative and overflowing rows clip with
+  // ellipsis rather than expanding the column.
   table-layout: auto;
+}
+
+table.measured {
+  table-layout: fixed;
+}
+
+tbody td {
+  // Pair with `table-layout: fixed` so wider content in later
+  // virtual-scroll slices clips with ellipsis instead of wrapping or
+  // shifting the column. Consumers that need wrapping cells can opt out
+  // via `cellClass` / their own row-template td styling.
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 thead th {

@@ -107,6 +107,8 @@ export class MpDatatable extends LitElement {
     return r && r.id != null ? String(r.id) : `row-${index}`;
   };
   private _columnWidths: Map<string, number> = new Map();
+  /** Becomes `true` after the first measure-once pass locks column widths. Drives the `.measured` class on the table (→ `table-layout: fixed`). */
+  private _hasMeasuredInitial = false;
   private _loading = false;
   private _emptyMessage = 'No data';
   private _pagination = false;
@@ -477,6 +479,58 @@ export class MpDatatable extends LitElement {
     // only requestUpdates when the range actually changes, so this can't
     // loop.
     this.refreshVirtualRange();
+    // Measure-once: lock per-column widths the first time a non-empty body
+    // is in the DOM, then switch the table to `table-layout: fixed` so
+    // later rows clip with ellipsis instead of growing the column. See the
+    // unified datatable PRD's "Resizable columns" section for the design.
+    this.maybeMeasureInitialColumnWidths();
+  }
+
+  /**
+   * Run the auto-size-once pass after the first batch of rows lands in the
+   * DOM. Columns with an explicit `col.width` are pinned to that value
+   * without measurement; the rest are measured from their natural
+   * (`table-layout: auto`) width via `getBoundingClientRect()` on the
+   * `<th>`. Once any column gets a width, `_hasMeasuredInitial` flips and
+   * the table renders with `table-layout: fixed` so the widths are
+   * authoritative and overflowing content clips with ellipsis.
+   */
+  private maybeMeasureInitialColumnWidths(): void {
+    if (this._hasMeasuredInitial) return;
+    if (this._columns.length === 0 || this._data.length === 0) return;
+    if (!this.shadowRoot) return;
+    const bodyRows = this.shadowRoot.querySelectorAll('tbody tr[data-row-key]:not([data-placeholder="true"])');
+    if (bodyRows.length === 0) return; // wait for the first real row before measuring
+
+    const next = new Map(this._columnWidths);
+    let anyAdded = false;
+    for (const col of this._columns) {
+      if (next.has(col.name)) continue;
+      if (typeof col.width === 'number') {
+        next.set(col.name, col.width);
+        anyAdded = true;
+        continue;
+      }
+      const w = this.measureColumnWidth(col.name);
+      if (w != null) {
+        next.set(col.name, w);
+        anyAdded = true;
+      }
+    }
+
+    if (anyAdded) {
+      this._columnWidths = next;
+      this._hasMeasuredInitial = true;
+      this.requestUpdate();
+    }
+  }
+
+  private measureColumnWidth(name: string): number | null {
+    if (!this.shadowRoot) return null;
+    const th = this.shadowRoot.querySelector(`th[data-column="${name}"]`) as HTMLElement | null;
+    if (!th) return null;
+    const w = Math.ceil(th.getBoundingClientRect().width);
+    return w > 0 ? w : null;
   }
 
   override disconnectedCallback(): void {
@@ -544,7 +598,11 @@ export class MpDatatable extends LitElement {
     return html`
       <div class="datatable-shell">
         <div class="datatable-scroll ${this._virtualScroll ? 'datatable-virtual' : ''}" role="presentation">
-          <table role=${this._tree ? 'treegrid' : 'grid'} aria-rowcount=${ariaRowcount}>
+          <table
+            role=${this._tree ? 'treegrid' : 'grid'}
+            aria-rowcount=${ariaRowcount}
+            class=${this._hasMeasuredInitial ? 'measured' : ''}
+          >
             <thead>
               <tr role="row" aria-rowindex="1">
                 ${this._tree
