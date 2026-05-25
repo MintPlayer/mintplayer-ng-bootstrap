@@ -602,11 +602,7 @@ function setsEqual<T>(
   const bSize = b instanceof Set ? b.size : b.length;
   if (aSize !== bSize) return false;
   const bSet = b instanceof Set ? b : new Set(b);
-  if (a instanceof Set) {
-    for (const v of a) if (!bSet.has(v)) return false;
-  } else {
-    for (const v of a) if (!bSet.has(v)) return false;
-  }
+  for (const v of a) if (!bSet.has(v)) return false;
   return true;
 }
 

@@ -141,6 +141,10 @@ export class MpDatatable extends LitElement {
   private _childTotals: Map<unknown, number> = new Map();
   /** Parents with an in-flight fetch; suppresses re-requests. */
   private _pendingFetches: Set<unknown> = new Set();
+  /** Per-render memo of `getFlatList()`. Invalidated in `willUpdate`. */
+  private _cachedFlatList: FlatVisibleRow[] | null = null;
+  /** Per-render memo of the set of row keys whose loaded subtree is partially selected. */
+  private _cachedIndeterminateKeys: Set<string> | null = null;
 
   /** When true, the WC sorts `data` itself using `sortRows`. Set `false` if the consumer sorts externally. */
   get autoSort(): boolean {
@@ -469,6 +473,19 @@ export class MpDatatable extends LitElement {
       }
     }
     this.refreshVirtualRange();
+  }
+
+  protected override willUpdate(changedProperties: Map<string, unknown>): void {
+    super.willUpdate(changedProperties);
+    // Invalidate per-render memos before each render. `getFlatList` is hit
+    // from `computeVisibleRows`, `getVirtualSpacerHeights`, and the
+    // `aria-rowcount` computation in `render()` — and re-runs sorting +
+    // walks the loaded forest on every call. The indeterminate-set is hit
+    // once per visible row in `renderRow`. Memoising both per render
+    // collapses these to single passes regardless of how often they're
+    // sampled.
+    this._cachedFlatList = null;
+    this._cachedIndeterminateKeys = null;
   }
 
   protected override updated(changedProperties: Map<string, unknown>): void {
@@ -866,8 +883,13 @@ export class MpDatatable extends LitElement {
    * Flat list of visible rows including expansion + placeholders. Computed
    * each render in tree mode; flat mode produces a trivial mapping of `_data`
    * (after sort+pagination) with default metadata.
+   *
+   * Memoised via `_cachedFlatList`, cleared in `willUpdate`. Multiple calls
+   * during the same render cycle (`computeVisibleRows`,
+   * `getVirtualSpacerHeights`, aria-rowcount) share one computation.
    */
   private getFlatList(): FlatVisibleRow[] {
+    if (this._cachedFlatList !== null) return this._cachedFlatList;
     if (!this._tree) {
       const rows = (() => {
         let r: unknown[] = this._data;
@@ -878,7 +900,7 @@ export class MpDatatable extends LitElement {
         }
         return r;
       })();
-      return rows.map((row, i) => ({
+      return this._cachedFlatList = rows.map((row, i) => ({
         row,
         key: this._rowKey(row, i),
         depth: 0,
@@ -939,7 +961,7 @@ export class MpDatatable extends LitElement {
     };
 
     walk(rootRows, 0, null);
-    return out;
+    return this._cachedFlatList = out;
   }
 
   private computeVisibleRows(): Array<{ row: unknown; key: string; rowIndex: number; flat: FlatVisibleRow }> {
@@ -990,16 +1012,48 @@ export class MpDatatable extends LitElement {
 
   /** Some-but-not-all loaded descendants selected → indeterminate parent checkbox. */
   private isParentIndeterminate(row: unknown): boolean {
-    if (this._selectionStrategy !== 'cascading') return false;
-    const descendants = this.collectDescendantKeys(row);
-    if (descendants.length === 0) return false;
-    let some = false;
-    let all = true;
-    for (const k of descendants) {
-      if (this._selectedIds.has(k)) some = true;
-      else all = false;
+    if (this._selectionStrategy !== 'cascading' || row == null) return false;
+    return this.getIndeterminateKeys().has(this._rowKey(row, -1));
+  }
+
+  /**
+   * Per-render memo: the set of row keys whose loaded subtree is partially
+   * selected. Built in one DFS over `_childCache` so each loaded parent is
+   * visited exactly once per render. Replaces the previous
+   * `collectDescendantKeys`-per-visible-row recursion which was O(visible ×
+   * descendants) per render.
+   */
+  private getIndeterminateKeys(): Set<string> {
+    if (this._cachedIndeterminateKeys !== null) return this._cachedIndeterminateKeys;
+    const out = new Set<string>();
+    if (this._selectionStrategy !== 'cascading' || !this._tree) {
+      return this._cachedIndeterminateKeys = out;
     }
-    return some && !all;
+
+    // Returns the row's descendant-only (selectedCount, totalCount).
+    // Adds the row's key to `out` if `0 < selected < total`.
+    const visit = (row: unknown): { selected: number; total: number } => {
+      const id = this.extractId(row);
+      if (id == null) return { selected: 0, total: 0 };
+      const children = this._childCache.get(id);
+      if (!children || children.length === 0) return { selected: 0, total: 0 };
+      let selected = 0;
+      let total = 0;
+      for (const child of children) {
+        const childKey = this._rowKey(child, -1);
+        const childSelected = this._selectedIds.has(childKey) ? 1 : 0;
+        const sub = visit(child);
+        selected += childSelected + sub.selected;
+        total += 1 + sub.total;
+      }
+      if (total > 0 && selected > 0 && selected < total) {
+        out.add(this._rowKey(row, -1));
+      }
+      return { selected, total };
+    };
+
+    for (const row of this._data) visit(row);
+    return this._cachedIndeterminateKeys = out;
   }
 
   /**
