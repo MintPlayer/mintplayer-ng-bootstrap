@@ -8,8 +8,11 @@
     // Layout & components
     @import "node_modules/bootstrap/scss/accordion";
 
-    // Custom SCSS
-    bs-accordion {
-        margin: -1px;
-    }
+    // Pre-WC this scope had `bs-accordion { margin: -1px }` so a nested
+    // accordion overlapped the outer accordion-body by 1px and the two
+    // borders visually shared a line. The WC's `.accordion-content` now uses
+    // `overflow: hidden` (required for the grid-template-rows slide
+    // animation), and the 1px negative margin gets clipped — taking the
+    // nested accordion's entire 1px border with it. Removed; nested
+    // accordions sit flush inside the parent body with their own borders.
 }

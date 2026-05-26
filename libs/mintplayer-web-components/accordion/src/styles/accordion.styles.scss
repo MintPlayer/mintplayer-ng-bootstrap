@@ -1,0 +1,109 @@
+@import 'node_modules/bootstrap/scss/functions';
+@import 'node_modules/bootstrap/scss/variables';
+@import 'node_modules/bootstrap/scss/variables-dark';
+@import 'node_modules/bootstrap/scss/maps';
+@import 'node_modules/bootstrap/scss/mixins';
+@import 'node_modules/bootstrap/scss/accordion';
+
+:host {
+  display: block;
+}
+
+// Bootstrap's `_accordion.scss` declares every `--bs-accordion-*` custom
+// property on `.accordion`. Because our shadow root contains its own
+// `.accordion` div, that declaration *shadows* any value a consumer set on
+// a light-DOM ancestor. Override to `inherit` so consumer overrides via the
+// standard custom properties (set on `<bs-accordion class="multi-level">` in
+// light DOM) actually reach the button/body inside our shadow. Defaults are
+// provided by the global Bootstrap stylesheet attached to the `.accordion`
+// class on the `<bs-accordion>` host (in light DOM).
+.accordion {
+  --bs-accordion-color: inherit;
+  --bs-accordion-bg: inherit;
+  --bs-accordion-transition: inherit;
+  --bs-accordion-border-color: inherit;
+  --bs-accordion-border-width: inherit;
+  --bs-accordion-border-radius: inherit;
+  --bs-accordion-inner-border-radius: inherit;
+  --bs-accordion-btn-padding-x: inherit;
+  --bs-accordion-btn-padding-y: inherit;
+  --bs-accordion-btn-color: inherit;
+  --bs-accordion-btn-bg: inherit;
+  --bs-accordion-btn-icon: inherit;
+  --bs-accordion-btn-icon-width: inherit;
+  --bs-accordion-btn-icon-transform: inherit;
+  --bs-accordion-btn-icon-transition: inherit;
+  --bs-accordion-btn-active-icon: inherit;
+  --bs-accordion-btn-focus-border-color: inherit;
+  --bs-accordion-btn-focus-box-shadow: inherit;
+  --bs-accordion-body-padding-x: inherit;
+  --bs-accordion-body-padding-y: inherit;
+  --bs-accordion-active-color: inherit;
+  --bs-accordion-active-bg: inherit;
+}
+
+// The hidden SSR-only form inputs that drive the CSS state machine. They never
+// appear in the client render — `.d-none` here keeps them out of layout.
+input.d-none {
+  display: none;
+}
+
+// Slide-up-down animation via the grid-template-rows trick: a grid container
+// whose single row transitions between `0fr` (collapsed) and `1fr` (content
+// height) animates smoothly through arbitrary content heights. The inner
+// child gets `min-height: 0` + `overflow: hidden` so the row size genuinely
+// clips during the transition.
+.accordion-collapse {
+  display: grid;
+  grid-template-rows: 0fr;
+  transition: grid-template-rows 0.35s ease;
+}
+
+.accordion-collapse > .accordion-content {
+  min-height: 0;
+  overflow: hidden;
+}
+
+// Open state — two paths into the same outcome:
+//   • SSR / no-JS: the hidden `<input>` is `:checked` (label click toggles
+//     it natively); sibling combinator opens the matching collapse.
+//   • JS-driven: the WC re-rendered without an input but the button now
+//     carries `aria-expanded="true"`. `:has()` lets us route off the
+//     adjacent header without needing JS to set a class.
+input:checked ~ .accordion-collapse,
+.accordion-header:has([aria-expanded='true']) + .accordion-collapse {
+  grid-template-rows: 1fr;
+}
+
+// SSR/no-JS active state. The `<input>` is `:checked` but `class="collapsed"`
+// stays in place (no JS to toggle it), so Bootstrap's own
+// `.accordion-button:not(.collapsed) { background: var(--bs-accordion-active-bg) }`
+// rule does not fire. Mirror it using the radio's :checked state instead.
+// IMPORTANT: read from `--bs-accordion-active-bg` and `--bs-accordion-active-color`
+// (not hardcoded `--bs-primary-bg-subtle`) so consumer overrides set on the
+// host (e.g. `.multi-level { --bs-accordion-active-bg: #333 }`) take effect.
+//
+// The JS-driven open state (button without `.collapsed`) is handled by
+// Bootstrap's own rule — no override needed here.
+input:checked + .accordion-header > .accordion-button {
+  background-color: var(--bs-accordion-active-bg);
+  color: var(--bs-accordion-active-color);
+
+  &::after {
+    transform: var(--bs-accordion-btn-icon-transform);
+  }
+}
+
+// Label-based header used by the SSR branch needs explicit cursor styling
+// because <label> isn't a native button.
+.accordion-header > label.accordion-button {
+  cursor: pointer;
+  user-select: none;
+}
+
+// Respect prefers-reduced-motion — skip the slide animation, snap instantly.
+@media (prefers-reduced-motion: reduce) {
+  .accordion-collapse {
+    transition: none;
+  }
+}

@@ -1,3 +1,8 @@
+// IMPORTANT: lit-ssr-middleware must load before `@angular/ssr/node` so the
+// DOM shim and WC `customElements.define` calls run before Angular's SSR
+// pipeline imports any WC-consuming Angular component module.
+import { enrichSsrHtml } from './lit-ssr-middleware';
+
 import {
   AngularNodeAppEngine,
   createNodeRequestHandler,
@@ -7,8 +12,12 @@ import {
 import express from 'express';
 import { join } from 'node:path';
 
-// const browserDistFolder = join(__dirname, '../browser');
-const browserDistFolder = join(process.cwd(), 'dist/apps/ng-bootstrap-demo/browser');
+// Angular CLI's "server" outputMode produces a nested split:
+//   dist/apps/ng-bootstrap-demo/browser/browser/  <- static assets, chunks, prerendered HTML
+//   dist/apps/ng-bootstrap-demo/browser/server/   <- this server bundle
+// Resolve relative to the server file itself so the path stays correct
+// regardless of where node is invoked from.
+const browserDistFolder = join(import.meta.dirname, '../browser');
 
 const app = express();
 const angularApp = new AngularNodeAppEngine();
@@ -60,9 +69,32 @@ app.use((req, res, next) => {
   }
   angularApp
     .handle(req)
-    .then((response) =>
-      response ? writeResponseToNodeResponse(response, res) : next(),
-    )
+    .then(async (response) => {
+      if (!response) return next();
+
+      const contentType = response.headers.get('content-type');
+      if (!contentType?.startsWith('text/html')) {
+        return writeResponseToNodeResponse(response, res);
+      }
+
+      // Post-process the Angular SSR HTML to splice DSD into every Lit WC
+      // host. The middleware short-circuits when no target tags appear, so
+      // non-component routes only pay the body-clone cost.
+      const original = await response.text();
+      const enriched = enrichSsrHtml(original);
+
+      // Strip `content-length` so the Response recomputes it from the
+      // enriched body (DSD adds bytes; the original length would lie).
+      const headers = new Headers(response.headers);
+      headers.delete('content-length');
+
+      const enrichedResponse = new Response(enriched, {
+        status: response.status,
+        statusText: response.statusText,
+        headers,
+      });
+      return writeResponseToNodeResponse(enrichedResponse, res);
+    })
     .catch(next);
 });
 

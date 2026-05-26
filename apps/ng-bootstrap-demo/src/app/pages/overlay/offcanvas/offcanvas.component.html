@@ -54,11 +54,11 @@
                         <bs-offcanvas-body [noPadding]="true">
                             <bs-accordion class="d-block">
                                 <bs-accordion-tab>
-                                    <bs-accordion-tab-header>Dishes</bs-accordion-tab-header>
+                                    <ng-container *bsAccordionTabHeader>Dishes</ng-container>
             
                                     <bs-accordion class="d-block">
                                         <bs-accordion-tab>
-                                            <bs-accordion-tab-header>Appetizer</bs-accordion-tab-header>
+                                            <ng-container *bsAccordionTabHeader>Appetizer</ng-container>
                                             <bs-accordion class="d-block">
                                                 <a [routerLink]='[]' class="d-block p-2">Shrimp salad</a>
                                                 <a [routerLink]='[]' class="d-block p-2">Cucumber salad</a>
@@ -66,14 +66,14 @@
                                             </bs-accordion>
                                         </bs-accordion-tab>
                                         <bs-accordion-tab>
-                                            <bs-accordion-tab-header>First course</bs-accordion-tab-header>
+                                            <ng-container *bsAccordionTabHeader>First course</ng-container>
                                             <bs-accordion class="d-block">
                                                 <a [routerLink]='[]' class="d-block p-2">Croque monsieur</a>
                                                 <a [routerLink]='[]' class="d-block p-2">Mini pizzas</a>
                                             </bs-accordion>
                                         </bs-accordion-tab>
                                         <bs-accordion-tab>
-                                            <bs-accordion-tab-header>Main course</bs-accordion-tab-header>
+                                            <ng-container *bsAccordionTabHeader>Main course</ng-container>
                                             <bs-accordion class="d-block">
                                                 <a [routerLink]='[]' class="d-block p-2">Macaroni</a>
                                                 <a [routerLink]='[]' class="d-block p-2">Lasagne Bolognaise</a>
@@ -82,11 +82,11 @@
                                         </bs-accordion-tab>
             
                                         <bs-accordion-tab>
-                                            <bs-accordion-tab-header>Dessert</bs-accordion-tab-header>
+                                            <ng-container *bsAccordionTabHeader>Dessert</ng-container>
                                             <bs-accordion class="d-block">
             
                                                 <bs-accordion-tab>
-                                                    <bs-accordion-tab-header>Anything with chocolate</bs-accordion-tab-header>
+                                                    <ng-container *bsAccordionTabHeader>Anything with chocolate</ng-container>
                                                     <bs-accordion class="d-block">
                                                         <a [routerLink]='[]' class="d-block p-2">Chocolate mousse</a>
                                                         <a [routerLink]='[]' class="d-block p-2">Chocolate cake</a>
@@ -95,7 +95,7 @@
                                                 </bs-accordion-tab>
             
                                                 <bs-accordion-tab>
-                                                    <bs-accordion-tab-header>Anything with cream</bs-accordion-tab-header>
+                                                    <ng-container *bsAccordionTabHeader>Anything with cream</ng-container>
                                                     <bs-accordion class="d-block">
                                                         <a [routerLink]='[]' class="d-block p-2">Ice cream</a>
                                                         <a [routerLink]='[]' class="d-block p-2">Dame blanche</a>
@@ -107,7 +107,7 @@
                                     </bs-accordion>
                                 </bs-accordion-tab>
                                 <bs-accordion-tab>
-                                    <bs-accordion-tab-header>Management</bs-accordion-tab-header>
+                                    <ng-container *bsAccordionTabHeader>Management</ng-container>
                                     <bs-accordion class="d-block">
                                         <a [routerLink]='[]' class="d-block p-2">Manage categories</a>
                                         <a [routerLink]='[]' class="d-block p-2">Manage dishes</a>

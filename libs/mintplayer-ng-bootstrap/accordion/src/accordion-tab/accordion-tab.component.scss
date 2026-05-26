@@ -1,30 +1,3 @@
-// Custom SCSS
-.card, .card-header, .card-block {
-    border-radius: 0;
-}
-.card {
-    margin-bottom: -1px;
-}
-
-:host ::ng-deep {
-    // Noscript: hide all tab content by default
-    .noscript > .accordion-collapse {
-        height: 0 !important;
-    }
-
-    // Noscript: show content and style header when input is checked
-    .noscript > input[type="radio"]:checked,
-    .noscript > input[type="checkbox"]:checked {
-        + bs-accordion-tab-header > h2 > label {
-            background-color: var(--bs-primary-bg-subtle);
-
-            &::after {
-                transform: var(--bs-accordion-btn-icon-transform);
-            }
-        }
-
-        ~ .accordion-collapse {
-            height: auto !important;
-        }
-    }
-}
+// All accordion visual styling now lives inside the <mp-accordion-tab> shadow
+// DOM (libs/mintplayer-web-components/accordion/src/styles/accordion-tab.styles.scss).
+// The Angular wrapper is purely a content-projection layer.
