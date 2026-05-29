@@ -1,6 +1,15 @@
 <script setup lang="ts">
-import { ref } from 'vue';
-import { BsTimeline, BsTimelineItem, type TimelineItem } from '@mintplayer/vue-bootstrap/timeline';
+import { computed, ref } from 'vue';
+import {
+  BsTimeline,
+  BsTimelineItem,
+  type TimelineAlign,
+  type TimelineItem,
+  type TimelineOrientation,
+  type TimelineSelectable,
+} from '@mintplayer/vue-bootstrap/timeline';
+import { BsCheckbox } from '@mintplayer/vue-bootstrap/checkbox';
+import { BsSelect } from '@mintplayer/vue-bootstrap/select';
 import { BsCodeSnippet } from '@mintplayer/vue-bootstrap/code-snippet';
 
 const milestones: TimelineItem[] = [
@@ -10,49 +19,61 @@ const milestones: TimelineItem[] = [
   { id: 'ship',    title: 'Shipped v1',      description: 'First public release.',                time: '2026-05-01', icon: 'bi bi-rocket-takeoff', color: '#198754' },
 ];
 
-// Section 4 — reverse toggle.
+// Playground controls — one <BsSelect> / <BsCheckbox> per input.
+const orientation = ref<TimelineOrientation>('vertical');
+const align = ref<TimelineAlign>('start');
+const selectable = ref<TimelineSelectable>('none');
 const reverse = ref(false);
-
-// Section 7 — two-way bound selection.
+const customMarkers = ref(false);
+const cardContent = ref(false);
 const selected = ref<TimelineItem[]>([]);
 
-const BASIC_SOURCE = `<BsTimeline :items="milestones" />`;
+// <BsSelect> takes a JS `options` array of { value, label }.
+const orientationOptions = (['vertical', 'horizontal'] as const).map((v) => ({ value: v, label: v }));
+const alignOptions = (['start', 'end', 'alternate', 'alternate-reverse'] as const).map((v) => ({ value: v, label: v }));
+const selectableOptions = (['none', 'single', 'multiple'] as const).map((v) => ({ value: v, label: v }));
 
-const HORIZONTAL_SOURCE = `<BsTimeline :items="milestones" orientation="horizontal" />`;
+const selectedTitles = computed(() => selected.value.map((m) => m.title ?? '(untitled)'));
 
-const ALTERNATE_SOURCE = `<BsTimeline :items="milestones" align="alternate" />`;
+// Keep the copyable snippet in sync with the live controls.
+const playgroundSource = computed(() => {
+  const attrs = [':items="milestones"'];
+  if (orientation.value !== 'vertical') attrs.push(`orientation="${orientation.value}"`);
+  if (align.value !== 'start') attrs.push(`align="${align.value}"`);
+  if (reverse.value) attrs.push(':reverse="true"');
+  if (selectable.value !== 'none') {
+    attrs.push(`selectable="${selectable.value}"`);
+    attrs.push('v-model:selection="selected"');
+  }
 
-const REVERSE_SOURCE = `<button class="btn btn-outline-primary btn-sm mb-3" @click="reverse = !reverse">
-  Toggle reverse
-</button>
+  const slots: string[] = [];
+  if (customMarkers.value) {
+    slots.push(
+      '  <template #marker="{ item }">',
+      '    <span class="timeline-dot" :class="`timeline-dot--${item.id}`"><i :class="item.icon"></i></span>',
+      '  </template>',
+    );
+  }
+  if (cardContent.value) {
+    slots.push(
+      '  <template #content="{ item }">',
+      '    <div class="card"><div class="card-body">',
+      '      <h6 class="card-title mb-1">{{ item.title }}</h6>',
+      '      <p class="card-text small text-body-secondary mb-0">{{ item.description }}</p>',
+      '    </div></div>',
+      '  </template>',
+    );
+  }
 
-<BsTimeline :items="milestones" :reverse="reverse" />`;
+  const attrBlock = attrs.length === 1 ? attrs[0] : `\n  ${attrs.join('\n  ')}\n`;
+  if (!slots.length) {
+    return attrs.length === 1 ? `<BsTimeline ${attrs[0]} />` : `<BsTimeline${attrBlock}/>`;
+  }
+  const openTag = attrs.length === 1 ? `<BsTimeline ${attrs[0]}>` : `<BsTimeline${attrBlock}>`;
+  return `${openTag}\n${slots.join('\n')}\n</BsTimeline>`;
+});
 
-const MARKER_SOURCE = `<BsTimeline :items="milestones">
-  <template #marker="{ item }">
-    <span class="timeline-dot" :style="{ backgroundColor: item.color }">
-      <i :class="item.icon"></i>
-    </span>
-  </template>
-</BsTimeline>`;
-
-const CARD_SOURCE = `<!-- render-prop / scoped slot -->
-<BsTimeline :items="milestones" align="alternate">
-  <template #content="{ item }">
-    <div class="card">
-      <div class="card-body">
-        <h6 class="card-title mb-1">{{ item.title }}</h6>
-        <p class="card-text small text-body-secondary mb-0">{{ item.description }}</p>
-      </div>
-    </div>
-  </template>
-  <template #timestamp="{ item }">
-    <small class="text-body-secondary">{{ item.time }}</small>
-  </template>
-</BsTimeline>
-
-<!-- declarative child elements -->
-<BsTimeline align="alternate">
+const DECLARATIVE_SOURCE = `<BsTimeline align="alternate">
   <BsTimelineItem item-id="kickoff" color="#6c757d">
     <div slot="content" class="card">
       <div class="card-body">
@@ -72,17 +93,6 @@ const CARD_SOURCE = `<!-- render-prop / scoped slot -->
     <small slot="opposite" class="text-body-secondary">2026-05-01</small>
   </BsTimelineItem>
 </BsTimeline>`;
-
-const SELECTABLE_SOURCE = `<BsTimeline
-  :items="milestones"
-  selectable="multiple"
-  v-model:selection="selected"
-/>
-
-<!-- selected is a TimelineItem[] kept in sync both ways -->
-<ul>
-  <li v-for="item in selected" :key="item.id">{{ item.title }}</li>
-</ul>`;
 </script>
 
 <template>
@@ -98,49 +108,62 @@ const SELECTABLE_SOURCE = `<BsTimeline
     </p>
 
     <section>
-      <h2>Basic vertical</h2>
-      <BsTimeline :items="milestones" />
-      <BsCodeSnippet :code="BASIC_SOURCE" language="html" />
-    </section>
+      <h2>Playground</h2>
+      <p class="text-body-secondary">
+        Toggle each input with a <code>&lt;BsSelect&gt;</code> or
+        <code>&lt;BsCheckbox&gt;</code> and watch the single live timeline — and
+        the copyable snippet beneath it — update to match.
+      </p>
 
-    <section>
-      <h2>Horizontal</h2>
-      <BsTimeline :items="milestones" orientation="horizontal" />
-      <BsCodeSnippet :code="HORIZONTAL_SOURCE" language="html" />
-    </section>
+      <div class="playground-controls">
+        <div class="control-field">
+          <label class="form-label mb-1">Orientation</label>
+          <BsSelect
+            :model-value="orientation"
+            :options="orientationOptions"
+            @update:model-value="orientation = $event as TimelineOrientation"
+          />
+        </div>
 
-    <section>
-      <h2>Alternate alignment</h2>
-      <BsTimeline :items="milestones" align="alternate" />
-      <BsCodeSnippet :code="ALTERNATE_SOURCE" language="html" />
-    </section>
+        <div class="control-field">
+          <label class="form-label mb-1">Alignment</label>
+          <BsSelect
+            :model-value="align"
+            :options="alignOptions"
+            @update:model-value="align = $event as TimelineAlign"
+          />
+        </div>
 
-    <section>
-      <h2>Reverse</h2>
-      <button class="btn btn-outline-primary btn-sm mb-3" @click="reverse = !reverse">
-        Toggle reverse ({{ reverse ? 'on' : 'off' }})
-      </button>
-      <BsTimeline :items="milestones" :reverse="reverse" />
-      <BsCodeSnippet :code="REVERSE_SOURCE" language="html" />
-    </section>
+        <div class="control-field">
+          <label class="form-label mb-1">Selectable</label>
+          <BsSelect
+            :model-value="selectable"
+            :options="selectableOptions"
+            @update:model-value="selectable = $event as TimelineSelectable"
+          />
+        </div>
 
-    <section>
-      <h2>Custom markers + colors</h2>
-      <BsTimeline :items="milestones">
-        <template #marker="{ item }">
+        <div class="control-toggles">
+          <BsCheckbox type="switch" v-model="reverse">Reverse</BsCheckbox>
+          <BsCheckbox type="switch" v-model="customMarkers">Custom markers</BsCheckbox>
+          <BsCheckbox type="switch" v-model="cardContent">Card content</BsCheckbox>
+        </div>
+      </div>
+
+      <BsTimeline
+        :items="milestones"
+        :orientation="orientation"
+        :align="align"
+        :reverse="reverse"
+        :selectable="selectable"
+        v-model:selection="selected"
+      >
+        <template v-if="customMarkers" #marker="{ item }">
           <span class="timeline-dot" :class="`timeline-dot--${item.id}`">
             <i :class="item.icon"></i>
           </span>
         </template>
-      </BsTimeline>
-      <BsCodeSnippet :code="MARKER_SOURCE" language="html" />
-    </section>
-
-    <section>
-      <h2>Connected card (headline)</h2>
-      <p class="text-body-secondary">Scoped-slot render prop:</p>
-      <BsTimeline :items="milestones" align="alternate">
-        <template #content="{ item }">
+        <template v-if="cardContent" #content="{ item }">
           <div class="card">
             <div class="card-body">
               <h6 class="card-title mb-1">{{ item.title }}</h6>
@@ -148,12 +171,25 @@ const SELECTABLE_SOURCE = `<BsTimeline
             </div>
           </div>
         </template>
-        <template #timestamp="{ item }">
-          <small class="text-body-secondary">{{ item.time }}</small>
-        </template>
       </BsTimeline>
 
-      <p class="text-body-secondary mt-4">Declarative child elements:</p>
+      <div v-if="selectable !== 'none'" class="mt-3">
+        <strong>Selected:</strong>
+        <span v-if="!selectedTitles.length" class="text-body-secondary"> none</span>
+        <span v-else> {{ selectedTitles.join(', ') }}</span>
+      </div>
+
+      <BsCodeSnippet :code="playgroundSource" language="html" />
+    </section>
+
+    <section>
+      <h2>Declarative authoring</h2>
+      <p class="text-body-secondary">
+        Instead of binding <code>:items</code>, drop
+        <code>&lt;BsTimelineItem&gt;</code> children directly inside
+        <code>&lt;BsTimeline&gt;</code> and project into the named slots. Handy
+        when each item's markup is bespoke rather than uniform.
+      </p>
       <BsTimeline align="alternate">
         <BsTimelineItem item-id="kickoff" color="#6c757d">
           <div slot="content" class="card">
@@ -174,29 +210,32 @@ const SELECTABLE_SOURCE = `<BsTimeline
           <small slot="opposite" class="text-body-secondary">2026-05-01</small>
         </BsTimelineItem>
       </BsTimeline>
-      <BsCodeSnippet :code="CARD_SOURCE" language="html" />
-    </section>
-
-    <section>
-      <h2>Selectable</h2>
-      <BsTimeline
-        :items="milestones"
-        selectable="multiple"
-        v-model:selection="selected"
-      />
-      <div class="mt-3">
-        <strong>Selected:</strong>
-        <span v-if="!selected.length" class="text-body-secondary"> none</span>
-        <ul v-else class="mb-0">
-          <li v-for="item in selected" :key="item.id">{{ item.title }}</li>
-        </ul>
-      </div>
-      <BsCodeSnippet :code="SELECTABLE_SOURCE" language="html" />
+      <BsCodeSnippet :code="DECLARATIVE_SOURCE" language="html" />
     </section>
   </div>
 </template>
 
 <style scoped>
+.playground-controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+  align-items: flex-end;
+  margin-bottom: 1rem;
+}
+
+.control-field {
+  display: flex;
+  flex-direction: column;
+  min-width: 12rem;
+}
+
+.control-toggles {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
 .timeline-dot {
   display: inline-flex;
   align-items: center;

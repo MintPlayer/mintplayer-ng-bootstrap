@@ -1,14 +1,19 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import {
   BsTimeline,
   BsTimelineItem,
+  type TimelineAlign,
   type TimelineItem,
   type TimelineItemClickDetail,
+  type TimelineOrientation,
+  type TimelineSelectable,
 } from '@mintplayer/react-bootstrap/timeline';
+import { BsCheckbox } from '@mintplayer/react-bootstrap/checkbox';
+import { BsSelect } from '@mintplayer/react-bootstrap/select';
 import { BsCodeSnippet } from '@mintplayer/react-bootstrap/code-snippet';
 import './TimelinePage.css';
 
-// Shared seed data — a list of project milestones reused across every section.
+// Shared seed data — a list of project milestones.
 const MILESTONES: TimelineItem[] = [
   { id: 'kickoff', title: 'Kickoff',         description: 'Project scoping and team assembly.', time: '2026-01-10', icon: 'bi bi-flag',           color: '#6c757d' },
   { id: 'design',  title: 'Design approved', description: 'PRD signed off after design review.', time: '2026-02-02', icon: 'bi bi-pencil-square', color: '#0d6efd' },
@@ -16,50 +21,30 @@ const MILESTONES: TimelineItem[] = [
   { id: 'ship',    title: 'Shipped v1',      description: 'First public release.',               time: '2026-05-01', icon: 'bi bi-rocket-takeoff', color: '#198754' },
 ];
 
-// ── Source snippets (shown after each live demo) ──────────────────────────────
+// <bs-select> takes a JS `options` array of { value, label }.
+const ORIENTATION_OPTIONS = (['vertical', 'horizontal'] as const).map((v) => ({ value: v, label: v }));
+const ALIGN_OPTIONS = (['start', 'end', 'alternate', 'alternate-reverse'] as const).map((v) => ({ value: v, label: v }));
+const SELECTABLE_OPTIONS = (['none', 'single', 'multiple'] as const).map((v) => ({ value: v, label: v }));
 
-const BASIC_SOURCE = `<BsTimeline items={milestones} />`;
-
-const HORIZONTAL_SOURCE = `<BsTimeline items={milestones} orientation="horizontal" />`;
-
-const ALTERNATE_SOURCE = `<BsTimeline items={milestones} align="alternate" />`;
-
-const REVERSE_SOURCE = `const [reverse, setReverse] = useState(false);
-
-<button className="btn btn-outline-primary btn-sm mb-3" onClick={() => setReverse(r => !r)}>
-  {reverse ? 'Newest first' : 'Oldest first'}
-</button>
-<BsTimeline items={milestones} reverse={reverse} />`;
-
-const MARKERS_SOURCE = `<BsTimeline
-  items={milestones}
-  renderMarker={(item) => (
+const RENDER_MARKER_SOURCE = `  renderMarker={(item) => (
     <span
       className="timeline-marker-dot d-inline-flex align-items-center justify-content-center rounded-circle text-white"
-      data-color={item.color}
+      data-color={item.color as string}
     >
       <i className={item.icon as string} />
     </span>
-  )}
-/>`;
+  )}`;
 
-const CARD_SOURCE = `// Render-prop content beside each bullet.
-<BsTimeline
-  items={milestones}
-  align="alternate"
-  renderContent={(item) => (
+const RENDER_CONTENT_SOURCE = `  renderContent={(item) => (
     <div className="card shadow-sm">
       <div className="card-body py-2 px-3">
         <h3 className="h6 card-title mb-1">{item.title}</h3>
         <p className="card-text small text-body-secondary mb-0">{item.description}</p>
       </div>
     </div>
-  )}
-  renderTimestamp={(item) => <small className="text-body-secondary">{item.time as string}</small>}
-/>
+  )}`;
 
-// Same thing, authored declaratively with <BsTimelineItem> children.
-<BsTimeline align="alternate">
+const DECLARATIVE_SOURCE = `<BsTimeline align="alternate">
   {milestones.map((m) => (
     <BsTimelineItem key={m.id} itemId={m.id} color={m.color}>
       <div slot="content" className="card shadow-sm">
@@ -73,21 +58,52 @@ const CARD_SOURCE = `// Render-prop content beside each bullet.
   ))}
 </BsTimeline>`;
 
-const SELECTABLE_SOURCE = `const [selected, setSelected] = useState<TimelineItem[]>([]);
-
-<BsTimeline
-  items={milestones}
-  selectable="multiple"
-  selection={selected}
-  onSelectionChange={setSelected}
-/>
-<ul>
-  {selected.map((s) => <li key={s.id}>{s.title}</li>)}
-</ul>`;
-
 export function TimelinePage() {
+  const [orientation, setOrientation] = useState<TimelineOrientation>('vertical');
+  const [align, setAlign] = useState<TimelineAlign>('start');
+  const [selectable, setSelectable] = useState<TimelineSelectable>('none');
   const [reverse, setReverse] = useState(false);
+  const [customMarkers, setCustomMarkers] = useState(false);
+  const [cardContent, setCardContent] = useState(false);
   const [selected, setSelected] = useState<TimelineItem[]>([]);
+
+  // Keep the copyable snippet in sync with the live controls.
+  const playgroundSource = useMemo(() => {
+    const lines = ['  items={milestones}'];
+    if (orientation !== 'vertical') lines.push(`  orientation="${orientation}"`);
+    if (align !== 'start') lines.push(`  align="${align}"`);
+    if (reverse) lines.push('  reverse');
+    if (selectable !== 'none') {
+      lines.push(`  selectable="${selectable}"`);
+      lines.push('  selection={selected}');
+      lines.push('  onSelectionChange={setSelected}');
+    }
+    if (customMarkers) lines.push(RENDER_MARKER_SOURCE);
+    if (cardContent) lines.push(RENDER_CONTENT_SOURCE);
+    return `<BsTimeline\n${lines.join('\n')}\n/>`;
+  }, [orientation, align, reverse, selectable, customMarkers, cardContent]);
+
+  const renderMarker = customMarkers
+    ? (item: TimelineItem) => (
+        <span
+          className="timeline-marker-dot d-inline-flex align-items-center justify-content-center rounded-circle text-white"
+          data-color={item.color as string}
+        >
+          <i className={item.icon as string} />
+        </span>
+      )
+    : undefined;
+
+  const renderContent = cardContent
+    ? (item: TimelineItem) => (
+        <div className="card shadow-sm">
+          <div className="card-body py-2 px-3">
+            <h3 className="h6 card-title mb-1">{item.title}</h3>
+            <p className="card-text small text-body-secondary mb-0">{item.description}</p>
+          </div>
+        </div>
+      )
+    : undefined;
 
   return (
     <div className="demo-page">
@@ -102,71 +118,88 @@ export function TimelinePage() {
       </p>
 
       <section>
-        <h2>Basic vertical</h2>
-        <BsTimeline items={MILESTONES} />
-        <BsCodeSnippet code={BASIC_SOURCE} language="tsx" />
-      </section>
+        <h2>Playground</h2>
+        <p className="text-body-secondary">
+          Toggle each input with a <code>&lt;BsSelect&gt;</code> or{' '}
+          <code>&lt;BsCheckbox&gt;</code> and watch the single live timeline —
+          and the copyable snippet beneath it — update to match.
+        </p>
 
-      <section>
-        <h2>Horizontal</h2>
-        <BsTimeline items={MILESTONES} orientation="horizontal" />
-        <BsCodeSnippet code={HORIZONTAL_SOURCE} language="tsx" />
-      </section>
+        <div className="playground-controls">
+          <div className="control-field">
+            <label className="form-label mb-1">Orientation</label>
+            <BsSelect
+              value={orientation}
+              options={ORIENTATION_OPTIONS}
+              onValueChange={(e) => setOrientation(e.detail.value as TimelineOrientation)}
+            />
+          </div>
 
-      <section>
-        <h2>Alternate alignment</h2>
-        <BsTimeline items={MILESTONES} align="alternate" />
-        <BsCodeSnippet code={ALTERNATE_SOURCE} language="tsx" />
-      </section>
+          <div className="control-field">
+            <label className="form-label mb-1">Alignment</label>
+            <BsSelect
+              value={align}
+              options={ALIGN_OPTIONS}
+              onValueChange={(e) => setAlign(e.detail.value as TimelineAlign)}
+            />
+          </div>
 
-      <section>
-        <h2>Reverse</h2>
-        <button
-          type="button"
-          className="btn btn-outline-primary btn-sm mb-3"
-          onClick={() => setReverse((r) => !r)}
-        >
-          {reverse ? 'Newest first' : 'Oldest first'}
-        </button>
-        <BsTimeline items={MILESTONES} reverse={reverse} />
-        <BsCodeSnippet code={REVERSE_SOURCE} language="tsx" />
-      </section>
+          <div className="control-field">
+            <label className="form-label mb-1">Selectable</label>
+            <BsSelect
+              value={selectable}
+              options={SELECTABLE_OPTIONS}
+              onValueChange={(e) => setSelectable(e.detail.value as TimelineSelectable)}
+            />
+          </div>
 
-      <section>
-        <h2>Custom markers + colors</h2>
+          <div className="control-toggles">
+            <BsCheckbox type="switch" checked={reverse} onChange={(e) => setReverse(e.detail.checked)}>
+              Reverse
+            </BsCheckbox>
+            <BsCheckbox type="switch" checked={customMarkers} onChange={(e) => setCustomMarkers(e.detail.checked)}>
+              Custom markers
+            </BsCheckbox>
+            <BsCheckbox type="switch" checked={cardContent} onChange={(e) => setCardContent(e.detail.checked)}>
+              Card content
+            </BsCheckbox>
+          </div>
+        </div>
+
         <BsTimeline
           items={MILESTONES}
-          renderMarker={(item) => (
-            <span
-              className="timeline-marker-dot d-inline-flex align-items-center justify-content-center rounded-circle text-white"
-              data-color={item.color as string}
-            >
-              <i className={item.icon as string} />
-            </span>
-          )}
+          orientation={orientation}
+          align={align}
+          reverse={reverse}
+          selectable={selectable}
+          selection={selected}
+          onSelectionChange={setSelected}
+          onItemClick={(detail: TimelineItemClickDetail) => console.log('clicked', detail.item.title)}
+          renderMarker={renderMarker}
+          renderContent={renderContent}
         />
-        <BsCodeSnippet code={MARKERS_SOURCE} language="tsx" />
+
+        {selectable !== 'none' && (
+          <div className="mt-3">
+            <strong className="small text-body-secondary">Selected:</strong>{' '}
+            {selected.length === 0 ? (
+              <span className="text-body-secondary small">none</span>
+            ) : (
+              <span>{selected.map((s) => s.title).join(', ')}</span>
+            )}
+          </div>
+        )}
+
+        <BsCodeSnippet code={playgroundSource} language="tsx" />
       </section>
 
       <section>
-        <h2>Connected card (headline)</h2>
-        <BsTimeline
-          items={MILESTONES}
-          align="alternate"
-          renderContent={(item) => (
-            <div className="card shadow-sm">
-              <div className="card-body py-2 px-3">
-                <h3 className="h6 card-title mb-1">{item.title}</h3>
-                <p className="card-text small text-body-secondary mb-0">{item.description}</p>
-              </div>
-            </div>
-          )}
-          renderTimestamp={(item) => (
-            <small className="text-body-secondary">{item.time as string}</small>
-          )}
-        />
-
-        <h3 className="h6 mt-4 mb-2 text-body-secondary">Declarative authoring</h3>
+        <h2>Declarative authoring</h2>
+        <p className="text-body-secondary">
+          Instead of binding <code>items</code>, render{' '}
+          <code>&lt;BsTimelineItem&gt;</code> children and project into the named
+          slots. Handy when each item's markup is bespoke rather than uniform.
+        </p>
         <BsTimeline align="alternate">
           {MILESTONES.map((m) => (
             <BsTimelineItem key={m.id} itemId={m.id} color={m.color}>
@@ -180,38 +213,7 @@ export function TimelinePage() {
             </BsTimelineItem>
           ))}
         </BsTimeline>
-
-        <BsCodeSnippet code={CARD_SOURCE} language="tsx" />
-      </section>
-
-      <section>
-        <h2>Selectable</h2>
-        <p className="text-body-secondary">
-          Click rows to toggle their selection (Ctrl/Shift for ranges). The
-          selected milestones are mirrored below via two-way binding.
-        </p>
-        <BsTimeline
-          items={MILESTONES}
-          selectable="multiple"
-          selection={selected}
-          onSelectionChange={setSelected}
-          onItemClick={(detail: TimelineItemClickDetail) =>
-            console.log('clicked', detail.item.title)
-          }
-        />
-        <div className="mt-3">
-          <strong className="small text-body-secondary">Selected:</strong>{' '}
-          {selected.length === 0 ? (
-            <span className="text-body-secondary small">none</span>
-          ) : (
-            <ul className="mb-0">
-              {selected.map((s) => (
-                <li key={s.id}>{s.title}</li>
-              ))}
-            </ul>
-          )}
-        </div>
-        <BsCodeSnippet code={SELECTABLE_SOURCE} language="tsx" />
+        <BsCodeSnippet code={DECLARATIVE_SOURCE} language="tsx" />
       </section>
     </div>
   );

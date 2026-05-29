@@ -7,16 +7,20 @@ import {
   signal,
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { Color } from '@mintplayer/ng-bootstrap';
-import { BsButtonTypeDirective } from '@mintplayer/ng-bootstrap/button-type';
+import { FormsModule } from '@angular/forms';
+import { BsCheckboxComponent } from '@mintplayer/ng-bootstrap/checkbox';
 import { BsCodeSnippetComponent } from '@mintplayer/ng-bootstrap/code-snippet';
+import { BsSelectComponent, BsSelectOption } from '@mintplayer/ng-bootstrap/select';
 import {
   BsTimelineComponent,
   BsTimelineMarkerDirective,
   BsTimelineContentDirective,
   BsTimelineTimestampDirective,
+  type TimelineAlign,
   type TimelineItem,
   type TimelineItemClickDetail,
+  type TimelineOrientation,
+  type TimelineSelectable,
 } from '@mintplayer/ng-bootstrap/timeline';
 import { dedent } from 'ts-dedent';
 
@@ -26,8 +30,11 @@ import { dedent } from 'ts-dedent';
   styleUrls: ['./timeline.component.scss'],
   imports: [
     CommonModule,
-    BsButtonTypeDirective,
+    FormsModule,
+    BsCheckboxComponent,
     BsCodeSnippetComponent,
+    BsSelectComponent,
+    BsSelectOption,
     BsTimelineComponent,
     BsTimelineMarkerDirective,
     BsTimelineContentDirective,
@@ -37,8 +44,6 @@ import { dedent } from 'ts-dedent';
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class TimelineComponent {
-  protected readonly colors = Color;
-
   /** Shared seed data — a list of project milestones. */
   protected readonly milestones = signal<TimelineItem[]>([
     { id: 'kickoff', title: 'Kickoff', description: 'Project scoping and team assembly.', time: '2026-01-10', icon: 'bi bi-flag', color: '#6c757d' },
@@ -47,105 +52,96 @@ export class TimelineComponent {
     { id: 'ship', title: 'Shipped v1', description: 'First public release.', time: '2026-05-01', icon: 'bi bi-rocket-takeoff', color: '#198754' },
   ]);
 
-  // --- Section 4: Reverse toggle -------------------------------------------
-  protected readonly reverse = signal<boolean>(false);
+  // --- Playground controls -------------------------------------------------
+  // Each input is driven by a <bs-select> / <bs-checkbox> instead of a
+  // dedicated example per combination.
+  protected readonly orientation = model<TimelineOrientation>('vertical');
+  protected readonly align = model<TimelineAlign>('start');
+  protected readonly selectable = model<TimelineSelectable>('none');
+  protected readonly reverse = model<boolean>(false);
+  protected readonly customMarkers = model<boolean>(false);
+  protected readonly cardContent = model<boolean>(false);
 
-  // --- Section 7: Selectable -----------------------------------------------
-  protected readonly selectedMilestones = model<TimelineItem[]>([]);
-  protected readonly selectedTitles = computed(() => this.selectedMilestones().map((m) => m.title ?? '(untitled)'));
+  protected readonly orientations: TimelineOrientation[] = ['vertical', 'horizontal'];
+  protected readonly alignments: TimelineAlign[] = ['start', 'end', 'alternate', 'alternate-reverse'];
+  protected readonly selectables: TimelineSelectable[] = ['none', 'single', 'multiple'];
 
-  protected toggleReverse(): void {
-    this.reverse.update((value) => !value);
-  }
+  /** Two-way bound selection, surfaced below the playground. */
+  protected readonly selected = model<TimelineItem[]>([]);
+  protected readonly selectedTitles = computed(() => this.selected().map((m) => m.title ?? '(untitled)'));
 
   protected onItemClick(detail: TimelineItemClickDetail): void {
-    // Presentational demo — the selectable section drives the visible state via
-    // two-way [(selection)]; this just shows the click payload is wired up.
     console.log('Timeline item clicked:', detail.item.title);
   }
 
-  // --- Snippets ------------------------------------------------------------
+  // --- Live snippet --------------------------------------------------------
+  // Mirrors the current control state so the copyable code always matches the
+  // live demo above it.
+  protected readonly playgroundSnippet = computed(() => {
+    const attrs = ['[items]="milestones()"'];
+    if (this.orientation() !== 'vertical') attrs.push(`orientation="${this.orientation()}"`);
+    if (this.align() !== 'start') attrs.push(`align="${this.align()}"`);
+    if (this.reverse()) attrs.push('[reverse]="true"');
+    if (this.selectable() !== 'none') {
+      attrs.push(`selectable="${this.selectable()}"`);
+      attrs.push('[(selection)]="selected"');
+    }
 
-  protected readonly snippetBasicHtml = dedent`
-    <bs-timeline [items]="milestones()">
-      <small *bsTimelineTimestamp="let item">{{ item.time }}</small>
-    </bs-timeline>
-  `;
+    const inner: string[] = [];
+    if (this.customMarkers()) {
+      inner.push(
+        '  <span *bsTimelineMarker="let item" class="tl-marker">',
+        '    <i [class]="item.icon" aria-hidden="true"></i>',
+        '  </span>',
+      );
+    }
+    if (this.cardContent()) {
+      inner.push(
+        '  <div *bsTimelineContent="let item" class="card">',
+        '    <div class="card-body">',
+        '      <h6 class="card-title mb-1">{{ item.title }}</h6>',
+        '      <p class="card-text mb-0">{{ item.description }}</p>',
+        '    </div>',
+        '  </div>',
+      );
+    }
+    inner.push('  <small *bsTimelineTimestamp="let item">{{ item.time }}</small>');
 
-  protected readonly snippetBasicTs = dedent`
-    import { Component, signal } from '@angular/core';
-    import { BsTimelineComponent, BsTimelineTimestampDirective, type TimelineItem }
-      from '@mintplayer/ng-bootstrap/timeline';
+    const open = attrs.length === 1 ? `<bs-timeline ${attrs[0]}>` : `<bs-timeline\n  ${attrs.join('\n  ')}>`;
+    return `${open}\n${inner.join('\n')}\n</bs-timeline>`;
+  });
+
+  protected readonly snippetSetupTs = dedent`
+    import { Component, model, signal } from '@angular/core';
+    import { FormsModule } from '@angular/forms';
+    import { BsCheckboxComponent } from '@mintplayer/ng-bootstrap/checkbox';
+    import { BsSelectComponent, BsSelectOption } from '@mintplayer/ng-bootstrap/select';
+    import {
+      BsTimelineComponent, BsTimelineMarkerDirective, BsTimelineContentDirective,
+      BsTimelineTimestampDirective, type TimelineItem,
+    } from '@mintplayer/ng-bootstrap/timeline';
 
     @Component({
       selector: 'my-roadmap',
       templateUrl: './my-roadmap.component.html',
-      imports: [BsTimelineComponent, BsTimelineTimestampDirective],
+      imports: [
+        FormsModule, BsCheckboxComponent, BsSelectComponent, BsSelectOption,
+        BsTimelineComponent, BsTimelineMarkerDirective, BsTimelineContentDirective,
+        BsTimelineTimestampDirective,
+      ],
     })
     export class MyRoadmapComponent {
       milestones = signal<TimelineItem[]>([
         { id: 'kickoff', title: 'Kickoff', description: 'Project scoping.', time: '2026-01-10', icon: 'bi bi-flag', color: '#6c757d' },
         { id: 'ship', title: 'Shipped v1', description: 'First public release.', time: '2026-05-01', icon: 'bi bi-rocket-takeoff', color: '#198754' },
       ]);
+
+      orientation = model<'vertical' | 'horizontal'>('vertical');
+      align = model<'start' | 'end' | 'alternate' | 'alternate-reverse'>('start');
+      selectable = model<'none' | 'single' | 'multiple'>('none');
+      reverse = model(false);
+      selected = model<TimelineItem[]>([]);
     }
-  `;
-
-  protected readonly snippetHorizontalHtml = dedent`
-    <bs-timeline [items]="milestones()" orientation="horizontal">
-      <small *bsTimelineTimestamp="let item">{{ item.time }}</small>
-    </bs-timeline>
-  `;
-
-  protected readonly snippetAlternateHtml = dedent`
-    <bs-timeline [items]="milestones()" align="alternate">
-      <small *bsTimelineTimestamp="let item">{{ item.time }}</small>
-    </bs-timeline>
-  `;
-
-  protected readonly snippetReverseHtml = dedent`
-    <button [color]="colors.primary" (click)="toggleReverse()">
-      {{ reverse() ? 'Newest last' : 'Newest first' }}
-    </button>
-
-    <bs-timeline [items]="milestones()" [reverse]="reverse()">
-      <small *bsTimelineTimestamp="let item">{{ item.time }}</small>
-    </bs-timeline>
-  `;
-
-  protected readonly snippetReverseTs = dedent`
-    reverse = signal<boolean>(false);
-
-    toggleReverse(): void {
-      this.reverse.update((value) => !value);
-    }
-  `;
-
-  protected readonly snippetCustomMarkerHtml = dedent`
-    <bs-timeline [items]="milestones()" align="alternate">
-      <!-- *bsTimelineMarker exposes the item as $implicit; render-prop style.
-           The wrapper mirrors item.color onto the --mp-tl-item-color CSS var,
-           so the marker class reads it — no inline styles needed. -->
-      <span *bsTimelineMarker="let item" class="tl-marker">
-        <i [class]="item.icon" aria-hidden="true"></i>
-      </span>
-      <small *bsTimelineTimestamp="let item">{{ item.time }}</small>
-    </bs-timeline>
-  `;
-
-  protected readonly snippetCardHtml = dedent`
-    <!-- Data-driven: custom content template renders a Bootstrap card -->
-    <bs-timeline [items]="milestones()" align="alternate">
-      <span *bsTimelineMarker="let item" class="tl-marker">
-        <i [class]="item.icon" aria-hidden="true"></i>
-      </span>
-      <div *bsTimelineContent="let item" class="card">
-        <div class="card-body">
-          <h6 class="card-title mb-1">{{ item.title }}</h6>
-          <p class="card-text mb-0">{{ item.description }}</p>
-        </div>
-      </div>
-      <small *bsTimelineTimestamp="let item">{{ item.time }}</small>
-    </bs-timeline>
   `;
 
   protected readonly snippetCardDeclarativeHtml = dedent`
@@ -170,23 +166,5 @@ export class TimelineComponent {
         </div>
       </mp-timeline-item>
     </bs-timeline>
-  `;
-
-  protected readonly snippetSelectableHtml = dedent`
-    <bs-timeline
-      [items]="milestones()"
-      selectable="multiple"
-      [(selection)]="selectedMilestones">
-      <small *bsTimelineTimestamp="let item">{{ item.time }}</small>
-    </bs-timeline>
-
-    <p>Selected: {{ selectedTitles().join(', ') || 'none' }}</p>
-  `;
-
-  protected readonly snippetSelectableTs = dedent`
-    import { Component, computed, model, signal } from '@angular/core';
-
-    selectedMilestones = model<TimelineItem[]>([]);
-    selectedTitles = computed(() => this.selectedMilestones().map((m) => m.title));
   `;
 }

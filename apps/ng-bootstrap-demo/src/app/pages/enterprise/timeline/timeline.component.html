@@ -3,123 +3,107 @@
 <p>
   A data-driven timeline of events. Bind <code>[items]</code> and the component
   renders a marker, title, description and an opposite-side timestamp for each
-  one. Layout is configurable via <code>orientation</code>, <code>align</code>
-  and <code>reverse</code>; every region can be overridden with a structural
-  template directive (<code>*bsTimelineMarker</code>,
-  <code>*bsTimelineContent</code>, <code>*bsTimelineTimestamp</code>). Items can
-  also be authored declaratively as <code>&lt;mp-timeline-item&gt;</code>
-  children.
+  one. Layout is configurable via <code>orientation</code>, <code>align</code>,
+  <code>reverse</code> and <code>selectable</code>; every region can be
+  overridden with a structural template directive
+  (<code>*bsTimelineMarker</code>, <code>*bsTimelineContent</code>,
+  <code>*bsTimelineTimestamp</code>). Items can also be authored declaratively
+  as <code>&lt;mp-timeline-item&gt;</code> children.
 </p>
 
-<h2>Basic vertical</h2>
+<h2>Playground</h2>
 
 <p>
-  Bind the items; the default markers render each item's icon in an accent
-  circle, with the title + description beside the line and the timestamp on the
-  opposite side.
+  Toggle each input below with a <code>&lt;bs-select&gt;</code> or
+  <code>&lt;bs-checkbox&gt;</code> and watch the single live timeline — and the
+  copyable snippet beneath it — update to match.
 </p>
 
-<div class="timeline-container mb-3">
-  <bs-timeline [items]="milestones()">
-    <small *bsTimelineTimestamp="let item">{{ item.time }}</small>
-  </bs-timeline>
+<div class="playground-controls d-flex flex-wrap gap-3 align-items-end mb-3">
+  <div class="control-field">
+    <label class="form-label mb-1">Orientation</label>
+    <bs-select [(ngModel)]="orientation">
+      @for (o of orientations; track o) {
+        <option [ngValue]="o">{{ o }}</option>
+      }
+    </bs-select>
+  </div>
+
+  <div class="control-field">
+    <label class="form-label mb-1">Alignment</label>
+    <bs-select [(ngModel)]="align">
+      @for (a of alignments; track a) {
+        <option [ngValue]="a">{{ a }}</option>
+      }
+    </bs-select>
+  </div>
+
+  <div class="control-field">
+    <label class="form-label mb-1">Selectable</label>
+    <bs-select [(ngModel)]="selectable">
+      @for (s of selectables; track s) {
+        <option [ngValue]="s">{{ s }}</option>
+      }
+    </bs-select>
+  </div>
+
+  <div class="control-toggles">
+    <bs-checkbox type="switch" [(ngModel)]="reverse">Reverse</bs-checkbox>
+    <bs-checkbox type="switch" [(ngModel)]="customMarkers">Custom markers</bs-checkbox>
+    <bs-checkbox type="switch" [(ngModel)]="cardContent">Card content</bs-checkbox>
+  </div>
 </div>
 
-<bs-code-snippet [codeToCopy]="snippetBasicHtml" [language]="'html'"></bs-code-snippet>
-<bs-code-snippet [codeToCopy]="snippetBasicTs" [language]="'ts'"></bs-code-snippet>
-
-<h2>Horizontal</h2>
-
-<p>Set <code>orientation="horizontal"</code> to run the line left-to-right.</p>
-
-<div class="timeline-container timeline-horizontal mb-3">
-  <bs-timeline [items]="milestones()" orientation="horizontal">
-    <small *bsTimelineTimestamp="let item">{{ item.time }}</small>
-  </bs-timeline>
-</div>
-
-<bs-code-snippet [codeToCopy]="snippetHorizontalHtml" [language]="'html'"></bs-code-snippet>
-
-<h2>Alternate alignment</h2>
-
-<p>Set <code>align="alternate"</code> to zig-zag items either side of the line.</p>
-
-<div class="timeline-container mb-3">
-  <bs-timeline [items]="milestones()" align="alternate">
-    <small *bsTimelineTimestamp="let item">{{ item.time }}</small>
-  </bs-timeline>
-</div>
-
-<bs-code-snippet [codeToCopy]="snippetAlternateHtml" [language]="'html'"></bs-code-snippet>
-
-<h2>Reverse</h2>
-
-<p>Flip render order with <code>[reverse]</code> — handy for "newest first" feeds.</p>
-
-<div class="mb-2">
-  <button [color]="colors.primary" (click)="toggleReverse()">
-    {{ reverse() ? 'Newest last' : 'Newest first' }}
-  </button>
-</div>
-
-<div class="timeline-container mb-3">
-  <bs-timeline [items]="milestones()" [reverse]="reverse()">
-    <small *bsTimelineTimestamp="let item">{{ item.time }}</small>
-  </bs-timeline>
-</div>
-
-<bs-code-snippet [codeToCopy]="snippetReverseHtml" [language]="'html'"></bs-code-snippet>
-<bs-code-snippet [codeToCopy]="snippetReverseTs" [language]="'ts'"></bs-code-snippet>
-
-<h2>Custom markers + colors</h2>
-
-<p>
-  Override the bullet with <code>*bsTimelineMarker="let item"</code>. The wrapper
-  mirrors each item's <code>color</code> onto a CSS custom property, so the
-  custom marker class can paint the circle from <code>var(--mp-tl-item-color)</code>
-  and drop in the per-item icon — no inline styles required.
-</p>
-
-<div class="timeline-container mb-3">
-  <bs-timeline [items]="milestones()" align="alternate">
-    <span *bsTimelineMarker="let item" class="tl-marker">
-      <i [class]="item.icon" aria-hidden="true"></i>
-    </span>
-    <small *bsTimelineTimestamp="let item">{{ item.time }}</small>
-  </bs-timeline>
-</div>
-
-<bs-code-snippet [codeToCopy]="snippetCustomMarkerHtml" [language]="'html'"></bs-code-snippet>
-
-<h2>Connected card (headline)</h2>
-
-<p>
-  Use <code>*bsTimelineContent="let item"</code> to project arbitrary markup —
-  here a Bootstrap card — beside the bullet.
-</p>
-
-<div class="timeline-container mb-3">
-  <bs-timeline [items]="milestones()" align="alternate">
-    <span *bsTimelineMarker="let item" class="tl-marker">
-      <i [class]="item.icon" aria-hidden="true"></i>
-    </span>
-    <div *bsTimelineContent="let item" class="card">
-      <div class="card-body">
-        <h6 class="card-title mb-1">{{ item.title }}</h6>
-        <p class="card-text mb-0">{{ item.description }}</p>
+<div
+  class="timeline-container mb-3"
+  [class.timeline-horizontal]="orientation() === 'horizontal'">
+  <bs-timeline
+    [items]="milestones()"
+    [orientation]="orientation()"
+    [align]="align()"
+    [reverse]="reverse()"
+    [selectable]="selectable()"
+    [(selection)]="selected"
+    (itemClick)="onItemClick($event)">
+    @if (customMarkers()) {
+      <span *bsTimelineMarker="let item" class="tl-marker">
+        <i [class]="item.icon" aria-hidden="true"></i>
+      </span>
+    }
+    @if (cardContent()) {
+      <div *bsTimelineContent="let item" class="card">
+        <div class="card-body">
+          <h6 class="card-title mb-1">{{ item.title }}</h6>
+          <p class="card-text mb-0">{{ item.description }}</p>
+        </div>
       </div>
-    </div>
+    }
     <small *bsTimelineTimestamp="let item">{{ item.time }}</small>
   </bs-timeline>
 </div>
 
-<bs-code-snippet [codeToCopy]="snippetCardHtml" [language]="'html'"></bs-code-snippet>
+@if (selectable() !== 'none') {
+  <p>
+    <strong>Selected:</strong>
+    @if (selectedTitles().length) {
+      <span>{{ selectedTitles().join(', ') }}</span>
+    } @else {
+      <span class="text-muted">none</span>
+    }
+  </p>
+}
 
-<p class="mt-3">
-  The same result with the <strong>declarative</strong> authoring mode: drop
+<bs-code-snippet [codeToCopy]="playgroundSnippet()" [language]="'html'"></bs-code-snippet>
+<bs-code-snippet [codeToCopy]="snippetSetupTs" [language]="'ts'"></bs-code-snippet>
+
+<h2>Declarative authoring</h2>
+
+<p>
+  Instead of binding <code>[items]</code>, drop
   <code>&lt;mp-timeline-item&gt;</code> children directly inside
-  <code>&lt;bs-timeline&gt;</code> (no <code>[items]</code>) and project into the
-  named slots.
+  <code>&lt;bs-timeline&gt;</code> and project into the named slots
+  (<code>opposite</code>, <code>content</code>). Handy when each item's markup
+  is bespoke rather than uniform.
 </p>
 
 <div class="timeline-container mb-3">
@@ -146,33 +130,3 @@
 </div>
 
 <bs-code-snippet [codeToCopy]="snippetCardDeclarativeHtml" [language]="'html'"></bs-code-snippet>
-
-<h2>Selectable</h2>
-
-<p>
-  Opt into selection with <code>selectable="multiple"</code> and two-way bind
-  <code>[(selection)]</code> to a local list. Click items (or focus + Space) to
-  toggle them; the current selection is shown below.
-</p>
-
-<div class="timeline-container mb-3">
-  <bs-timeline
-    [items]="milestones()"
-    selectable="multiple"
-    [(selection)]="selectedMilestones"
-    (itemClick)="onItemClick($event)">
-    <small *bsTimelineTimestamp="let item">{{ item.time }}</small>
-  </bs-timeline>
-</div>
-
-<p>
-  <strong>Selected:</strong>
-  @if (selectedTitles().length) {
-    <span>{{ selectedTitles().join(', ') }}</span>
-  } @else {
-    <span class="text-muted">none</span>
-  }
-</p>
-
-<bs-code-snippet [codeToCopy]="snippetSelectableHtml" [language]="'html'"></bs-code-snippet>
-<bs-code-snippet [codeToCopy]="snippetSelectableTs" [language]="'ts'"></bs-code-snippet>
