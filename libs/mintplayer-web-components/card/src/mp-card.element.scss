@@ -29,7 +29,6 @@
   --mp-card-border-width: var(--bs-border-width, 1px);
   --mp-card-border-color: var(--bs-border-color, #dee2e6);
   --mp-card-border-radius: var(--bs-border-radius, 0.375rem);
-  --mp-card-inner-border-radius: calc(var(--mp-card-border-radius) - var(--mp-card-border-width));
   --mp-card-cap-padding-y: 0.5rem;
   --mp-card-cap-padding-x: 1rem;
   --mp-card-cap-bg: var(--bs-tertiary-bg, rgba(0, 0, 0, 0.03));

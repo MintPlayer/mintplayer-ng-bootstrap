@@ -1,4 +1,4 @@
-<!-- Light-DOM family — children stay where the consumer puts them.
-     This file exists so codegen-wc emits a `styles` constant from the sibling
-     .scss; the `template` export is intentionally unused (mp-card injects the
-     compiled CSS into document.head once on first connection). -->
+<!-- mp-card renders its own shadow template (a default <slot>) in mp-card.element.ts.
+     This file exists only so codegen-wc emits the `styles` constant from the
+     sibling .scss for the element's `static styles`; the generated `template`
+     export is intentionally unused. -->
