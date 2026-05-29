@@ -231,7 +231,11 @@ export class MpTimelineItem extends LitElement {
         <div class="content">
           <div class="title"><slot name="title">${this._title ?? nothing}</slot></div>
           <div class="body">
-            <slot><slot name="content">${this._description ?? nothing}</slot></slot>
+            <!-- Only the named content slot - no default slot. A default slot
+                 would let stray whitespace in the consumer's light DOM claim it
+                 (and suppress any nested fallback), leaving slotted content with
+                 no rendered box. The description attribute is the fallback. -->
+            <slot name="content">${this._description ?? nothing}</slot>
           </div>
         </div>
       </div>
