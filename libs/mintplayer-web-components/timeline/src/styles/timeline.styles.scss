@@ -1,0 +1,56 @@
+:host {
+  display: block;
+  box-sizing: border-box;
+
+  // Theming hooks (inherit through the shadow boundary into the items).
+  --mp-tl-gap: 1rem;
+  --mp-tl-line-width: 2px;
+  --mp-tl-line-color: var(--bs-border-color, #dee2e6);
+  --mp-tl-marker-size: 1rem;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+.timeline {
+  display: flex;
+  flex-direction: column;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+// The default slot must not introduce its own box, otherwise every projected
+// item would be wrapped in a single flex child. display:contents promotes the
+// assigned items to direct flex children of .timeline.
+.timeline > slot {
+  display: contents;
+}
+
+// Items arrive either as slotted light-DOM children (declarative mode) or as
+// shadow-rendered children (items[] mode) — style both.
+::slotted(mp-timeline-item),
+.timeline mp-timeline-item {
+  display: block;
+}
+
+:host([orientation='horizontal']) .timeline {
+  flex-direction: row;
+  align-items: stretch;
+}
+
+:host([orientation='horizontal']) ::slotted(mp-timeline-item),
+:host([orientation='horizontal']) .timeline mp-timeline-item {
+  flex: 1 1 0;
+  min-width: 0;
+}
+
+// Reverse flips render order via the flex axis; it never reorders the DOM.
+:host([reverse]) .timeline {
+  flex-direction: column-reverse;
+}
+
+:host([orientation='horizontal'][reverse]) .timeline {
+  flex-direction: row-reverse;
+}
