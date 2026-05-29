@@ -10,6 +10,7 @@ import {
 } from '@mintplayer/react-bootstrap/timeline';
 import { BsCheckbox } from '@mintplayer/react-bootstrap/checkbox';
 import { BsSelect } from '@mintplayer/react-bootstrap/select';
+import { BsCard, BsCardBody, BsCardTitle, BsCardText } from '@mintplayer/react-bootstrap/card';
 import { BsCodeSnippet } from '@mintplayer/react-bootstrap/code-snippet';
 import './TimelinePage.css';
 
@@ -36,23 +37,23 @@ const RENDER_MARKER_SOURCE = `  renderMarker={(item) => (
   )}`;
 
 const RENDER_CONTENT_SOURCE = `  renderContent={(item) => (
-    <div className="card shadow-sm">
-      <div className="card-body py-2 px-3">
-        <h3 className="h6 card-title mb-1">{item.title}</h3>
-        <p className="card-text small text-body-secondary mb-0">{item.description}</p>
-      </div>
-    </div>
+    <BsCard className="shadow-sm">
+      <BsCardBody className="py-2 px-3">
+        <BsCardTitle className="h6 mb-1">{item.title}</BsCardTitle>
+        <BsCardText className="small text-body-secondary mb-0">{item.description}</BsCardText>
+      </BsCardBody>
+    </BsCard>
   )}`;
 
 const DECLARATIVE_SOURCE = `<BsTimeline align="alternate">
   {milestones.map((m) => (
     <BsTimelineItem key={m.id} itemId={m.id} color={m.color}>
-      <div slot="content" className="card shadow-sm">
-        <div className="card-body py-2 px-3">
-          <h3 className="h6 card-title mb-1">{m.title}</h3>
-          <p className="card-text small text-body-secondary mb-0">{m.description}</p>
-        </div>
-      </div>
+      <BsCard slot="content" className="shadow-sm">
+        <BsCardBody className="py-2 px-3">
+          <BsCardTitle className="h6 mb-1">{m.title}</BsCardTitle>
+          <BsCardText className="small text-body-secondary mb-0">{m.description}</BsCardText>
+        </BsCardBody>
+      </BsCard>
       <small slot="opposite" className="text-body-secondary">{m.time as string}</small>
     </BsTimelineItem>
   ))}
@@ -96,12 +97,12 @@ export function TimelinePage() {
 
   const renderContent = cardContent
     ? (item: TimelineItem) => (
-        <div className="card shadow-sm">
-          <div className="card-body py-2 px-3">
-            <h3 className="h6 card-title mb-1">{item.title}</h3>
-            <p className="card-text small text-body-secondary mb-0">{item.description}</p>
-          </div>
-        </div>
+        <BsCard className="shadow-sm">
+          <BsCardBody className="py-2 px-3">
+            <BsCardTitle className="h6 mb-1">{item.title}</BsCardTitle>
+            <BsCardText className="small text-body-secondary mb-0">{item.description}</BsCardText>
+          </BsCardBody>
+        </BsCard>
       )
     : undefined;
 
@@ -203,12 +204,12 @@ export function TimelinePage() {
         <BsTimeline align="alternate">
           {MILESTONES.map((m) => (
             <BsTimelineItem key={m.id} itemId={m.id} color={m.color}>
-              <div slot="content" className="card shadow-sm">
-                <div className="card-body py-2 px-3">
-                  <h3 className="h6 card-title mb-1">{m.title}</h3>
-                  <p className="card-text small text-body-secondary mb-0">{m.description}</p>
-                </div>
-              </div>
+              <BsCard slot="content" className="shadow-sm">
+                <BsCardBody className="py-2 px-3">
+                  <BsCardTitle className="h6 mb-1">{m.title}</BsCardTitle>
+                  <BsCardText className="small text-body-secondary mb-0">{m.description}</BsCardText>
+                </BsCardBody>
+              </BsCard>
               <small slot="opposite" className="text-body-secondary">{m.time as string}</small>
             </BsTimelineItem>
           ))}

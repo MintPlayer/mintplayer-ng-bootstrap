@@ -12,6 +12,12 @@ import { BsCheckboxComponent } from '@mintplayer/ng-bootstrap/checkbox';
 import { BsCodeSnippetComponent } from '@mintplayer/ng-bootstrap/code-snippet';
 import { BsSelectComponent, BsSelectOption } from '@mintplayer/ng-bootstrap/select';
 import {
+  BsCardComponent,
+  BsCardBodyComponent,
+  BsCardTitleComponent,
+  BsCardTextComponent,
+} from '@mintplayer/ng-bootstrap/card';
+import {
   BsTimelineComponent,
   BsTimelineMarkerDirective,
   BsTimelineContentDirective,
@@ -35,6 +41,10 @@ import { dedent } from 'ts-dedent';
     BsCodeSnippetComponent,
     BsSelectComponent,
     BsSelectOption,
+    BsCardComponent,
+    BsCardBodyComponent,
+    BsCardTitleComponent,
+    BsCardTextComponent,
     BsTimelineComponent,
     BsTimelineMarkerDirective,
     BsTimelineContentDirective,
@@ -97,12 +107,12 @@ export class TimelineComponent {
     }
     if (this.cardContent()) {
       inner.push(
-        '  <div *bsTimelineContent="let item" class="card">',
-        '    <div class="card-body">',
-        '      <h6 class="card-title mb-1">{{ item.title }}</h6>',
-        '      <p class="card-text mb-0">{{ item.description }}</p>',
-        '    </div>',
-        '  </div>',
+        '  <bs-card *bsTimelineContent="let item">',
+        '    <bs-card-body>',
+        '      <bs-card-title class="mb-1">{{ item.title }}</bs-card-title>',
+        '      <bs-card-text class="mb-0">{{ item.description }}</bs-card-text>',
+        '    </bs-card-body>',
+        '  </bs-card>',
       );
     }
     inner.push('  <small *bsTimelineTimestamp="let item">{{ item.time }}</small>');
@@ -116,6 +126,8 @@ export class TimelineComponent {
     import { FormsModule } from '@angular/forms';
     import { BsCheckboxComponent } from '@mintplayer/ng-bootstrap/checkbox';
     import { BsSelectComponent, BsSelectOption } from '@mintplayer/ng-bootstrap/select';
+    import { BsCardComponent, BsCardBodyComponent, BsCardTitleComponent, BsCardTextComponent }
+      from '@mintplayer/ng-bootstrap/card';
     import {
       BsTimelineComponent, BsTimelineMarkerDirective, BsTimelineContentDirective,
       BsTimelineTimestampDirective, type TimelineItem,
@@ -126,6 +138,7 @@ export class TimelineComponent {
       templateUrl: './my-roadmap.component.html',
       imports: [
         FormsModule, BsCheckboxComponent, BsSelectComponent, BsSelectOption,
+        BsCardComponent, BsCardBodyComponent, BsCardTitleComponent, BsCardTextComponent,
         BsTimelineComponent, BsTimelineMarkerDirective, BsTimelineContentDirective,
         BsTimelineTimestampDirective,
       ],
@@ -149,21 +162,21 @@ export class TimelineComponent {
     <bs-timeline align="alternate">
       <mp-timeline-item item-id="kickoff" color="#6c757d">
         <small slot="opposite">2026-01-10</small>
-        <div slot="content" class="card">
-          <div class="card-body">
-            <h6 class="card-title mb-1">Kickoff</h6>
-            <p class="card-text mb-0">Project scoping and team assembly.</p>
-          </div>
-        </div>
+        <bs-card slot="content">
+          <bs-card-body>
+            <bs-card-title class="mb-1">Kickoff</bs-card-title>
+            <bs-card-text class="mb-0">Project scoping and team assembly.</bs-card-text>
+          </bs-card-body>
+        </bs-card>
       </mp-timeline-item>
       <mp-timeline-item item-id="ship" color="#198754">
         <small slot="opposite">2026-05-01</small>
-        <div slot="content" class="card">
-          <div class="card-body">
-            <h6 class="card-title mb-1">Shipped v1</h6>
-            <p class="card-text mb-0">First public release.</p>
-          </div>
-        </div>
+        <bs-card slot="content">
+          <bs-card-body>
+            <bs-card-title class="mb-1">Shipped v1</bs-card-title>
+            <bs-card-text class="mb-0">First public release.</bs-card-text>
+          </bs-card-body>
+        </bs-card>
       </mp-timeline-item>
     </bs-timeline>
   `;

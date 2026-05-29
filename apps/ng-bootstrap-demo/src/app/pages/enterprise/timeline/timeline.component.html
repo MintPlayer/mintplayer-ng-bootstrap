@@ -71,12 +71,12 @@
       </span>
     }
     @if (cardContent()) {
-      <div *bsTimelineContent="let item" class="card">
-        <div class="card-body">
-          <h6 class="card-title mb-1">{{ item.title }}</h6>
-          <p class="card-text mb-0">{{ item.description }}</p>
-        </div>
-      </div>
+      <bs-card *bsTimelineContent="let item">
+        <bs-card-body>
+          <bs-card-title class="mb-1">{{ item.title }}</bs-card-title>
+          <bs-card-text class="mb-0">{{ item.description }}</bs-card-text>
+        </bs-card-body>
+      </bs-card>
     }
     <small *bsTimelineTimestamp="let item">{{ item.time }}</small>
   </bs-timeline>
@@ -110,21 +110,21 @@
   <bs-timeline align="alternate">
     <mp-timeline-item item-id="kickoff" color="#6c757d">
       <small slot="opposite">2026-01-10</small>
-      <div slot="content" class="card">
-        <div class="card-body">
-          <h6 class="card-title mb-1">Kickoff</h6>
-          <p class="card-text mb-0">Project scoping and team assembly.</p>
-        </div>
-      </div>
+      <bs-card slot="content">
+        <bs-card-body>
+          <bs-card-title class="mb-1">Kickoff</bs-card-title>
+          <bs-card-text class="mb-0">Project scoping and team assembly.</bs-card-text>
+        </bs-card-body>
+      </bs-card>
     </mp-timeline-item>
     <mp-timeline-item item-id="ship" color="#198754">
       <small slot="opposite">2026-05-01</small>
-      <div slot="content" class="card">
-        <div class="card-body">
-          <h6 class="card-title mb-1">Shipped v1</h6>
-          <p class="card-text mb-0">First public release.</p>
-        </div>
-      </div>
+      <bs-card slot="content">
+        <bs-card-body>
+          <bs-card-title class="mb-1">Shipped v1</bs-card-title>
+          <bs-card-text class="mb-0">First public release.</bs-card-text>
+        </bs-card-body>
+      </bs-card>
     </mp-timeline-item>
   </bs-timeline>
 </div>

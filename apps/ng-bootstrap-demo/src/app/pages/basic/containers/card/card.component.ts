@@ -146,6 +146,21 @@ export class CardComponent {
     </bs-card>
   `;
 
+  protected readonly snippetNestedHtml = dedent`
+    <bs-card class="d-block" style="max-width: 24rem;">
+      <bs-card-body>
+        <bs-card-title>Outer card</bs-card-title>
+        <bs-card-text>A card can be nested inside another card's body:</bs-card-text>
+        <bs-card>
+          <bs-card-body>
+            <bs-card-title>Inner card</bs-card-title>
+            <bs-card-text>This card is slotted into the outer card's body.</bs-card-text>
+          </bs-card-body>
+        </bs-card>
+      </bs-card-body>
+    </bs-card>
+  `;
+
   protected readonly snippetListGroupHtml = dedent`
     <bs-card class="d-block">
       <bs-card-header>List of elements</bs-card-header>

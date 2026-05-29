@@ -10,6 +10,7 @@ import {
 } from '@mintplayer/vue-bootstrap/timeline';
 import { BsCheckbox } from '@mintplayer/vue-bootstrap/checkbox';
 import { BsSelect } from '@mintplayer/vue-bootstrap/select';
+import { BsCard, BsCardBody, BsCardTitle, BsCardText } from '@mintplayer/vue-bootstrap/card';
 import { BsCodeSnippet } from '@mintplayer/vue-bootstrap/code-snippet';
 
 const milestones: TimelineItem[] = [
@@ -57,10 +58,12 @@ const playgroundSource = computed(() => {
   if (cardContent.value) {
     slots.push(
       '  <template #content="{ item }">',
-      '    <div class="card"><div class="card-body">',
-      '      <h6 class="card-title mb-1">{{ item.title }}</h6>',
-      '      <p class="card-text small text-body-secondary mb-0">{{ item.description }}</p>',
-      '    </div></div>',
+      '    <BsCard>',
+      '      <BsCardBody>',
+      '        <BsCardTitle class="mb-1">{{ item.title }}</BsCardTitle>',
+      '        <BsCardText class="small text-body-secondary mb-0">{{ item.description }}</BsCardText>',
+      '      </BsCardBody>',
+      '    </BsCard>',
       '  </template>',
     );
   }
@@ -75,21 +78,21 @@ const playgroundSource = computed(() => {
 
 const DECLARATIVE_SOURCE = `<BsTimeline align="alternate">
   <BsTimelineItem item-id="kickoff" color="#6c757d">
-    <div slot="content" class="card">
-      <div class="card-body">
-        <h6 class="card-title mb-1">Kickoff</h6>
-        <p class="card-text small text-body-secondary mb-0">Project scoping and team assembly.</p>
-      </div>
-    </div>
+    <BsCard slot="content">
+      <BsCardBody>
+        <BsCardTitle class="mb-1">Kickoff</BsCardTitle>
+        <BsCardText class="small text-body-secondary mb-0">Project scoping and team assembly.</BsCardText>
+      </BsCardBody>
+    </BsCard>
     <small slot="opposite" class="text-body-secondary">2026-01-10</small>
   </BsTimelineItem>
   <BsTimelineItem item-id="ship" color="#198754">
-    <div slot="content" class="card">
-      <div class="card-body">
-        <h6 class="card-title mb-1">Shipped v1</h6>
-        <p class="card-text small text-body-secondary mb-0">First public release.</p>
-      </div>
-    </div>
+    <BsCard slot="content">
+      <BsCardBody>
+        <BsCardTitle class="mb-1">Shipped v1</BsCardTitle>
+        <BsCardText class="small text-body-secondary mb-0">First public release.</BsCardText>
+      </BsCardBody>
+    </BsCard>
     <small slot="opposite" class="text-body-secondary">2026-05-01</small>
   </BsTimelineItem>
 </BsTimeline>`;
@@ -164,12 +167,12 @@ const DECLARATIVE_SOURCE = `<BsTimeline align="alternate">
           </span>
         </template>
         <template v-if="cardContent" #content="{ item }">
-          <div class="card">
-            <div class="card-body">
-              <h6 class="card-title mb-1">{{ item.title }}</h6>
-              <p class="card-text small text-body-secondary mb-0">{{ item.description }}</p>
-            </div>
-          </div>
+          <BsCard>
+            <BsCardBody>
+              <BsCardTitle class="mb-1">{{ item.title }}</BsCardTitle>
+              <BsCardText class="small text-body-secondary mb-0">{{ item.description }}</BsCardText>
+            </BsCardBody>
+          </BsCard>
         </template>
       </BsTimeline>
 
@@ -192,21 +195,21 @@ const DECLARATIVE_SOURCE = `<BsTimeline align="alternate">
       </p>
       <BsTimeline align="alternate">
         <BsTimelineItem item-id="kickoff" color="#6c757d">
-          <div slot="content" class="card">
-            <div class="card-body">
-              <h6 class="card-title mb-1">Kickoff</h6>
-              <p class="card-text small text-body-secondary mb-0">Project scoping and team assembly.</p>
-            </div>
-          </div>
+          <BsCard slot="content">
+            <BsCardBody>
+              <BsCardTitle class="mb-1">Kickoff</BsCardTitle>
+              <BsCardText class="small text-body-secondary mb-0">Project scoping and team assembly.</BsCardText>
+            </BsCardBody>
+          </BsCard>
           <small slot="opposite" class="text-body-secondary">2026-01-10</small>
         </BsTimelineItem>
         <BsTimelineItem item-id="ship" color="#198754">
-          <div slot="content" class="card">
-            <div class="card-body">
-              <h6 class="card-title mb-1">Shipped v1</h6>
-              <p class="card-text small text-body-secondary mb-0">First public release.</p>
-            </div>
-          </div>
+          <BsCard slot="content">
+            <BsCardBody>
+              <BsCardTitle class="mb-1">Shipped v1</BsCardTitle>
+              <BsCardText class="small text-body-secondary mb-0">First public release.</BsCardText>
+            </BsCardBody>
+          </BsCard>
           <small slot="opposite" class="text-body-secondary">2026-05-01</small>
         </BsTimelineItem>
       </BsTimeline>
