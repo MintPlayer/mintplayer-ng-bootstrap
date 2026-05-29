@@ -1,14 +1,14 @@
 import * as React from 'react';
-import { createComponent } from '@lit/react';
-import { MpCardTextElement } from '@mintplayer/web-components/card';
+import { forwardRef, HTMLAttributes, PropsWithChildren } from 'react';
+
+const cx = (...c: (string | false | null | undefined)[]) => c.filter(Boolean).join(' ');
+
 /**
- * React wrapper for `<mp-card-text>`. Side-effect-registers the WC via
- * the import above. Typed props/events extend off MpCardTextElement;
- * hand-edit this file to add an `events: { onXxx: 'xxx' as EventName<...> }`
- * block if you need typed event listeners.
+ * Plain React `card-text` element. Renders a `div.card-text` that gets
+ * slotted into `<mp-card>` and styled by mp-card's shadow + the global
+ * card sheet. Merges an incoming `className` and spreads remaining props.
  */
-export const BsCardText = createComponent({
-  react: React,
-  tagName: 'mp-card-text',
-  elementClass: MpCardTextElement,
-});
+export const BsCardText = forwardRef<HTMLDivElement, PropsWithChildren<HTMLAttributes<HTMLDivElement>>>(
+  ({ className, ...rest }, ref) => <div ref={ref} className={cx('card-text', className)} {...rest} />,
+);
+BsCardText.displayName = 'BsCardText';

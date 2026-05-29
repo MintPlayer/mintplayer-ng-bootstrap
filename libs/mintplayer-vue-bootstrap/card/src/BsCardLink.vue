@@ -1,12 +1,11 @@
 <script setup lang="ts">
-// Side-effect-registers <mp-card-link> via the upstream WC entry.
-import '@mintplayer/web-components/card';
-
 defineOptions({ inheritAttrs: false });
+
+defineProps<{ href?: string }>();
 </script>
 
 <template>
-  <mp-card-link v-bind="$attrs">
+  <a class="card-link" :href="href" v-bind="$attrs">
     <slot />
-  </mp-card-link>
+  </a>
 </template>

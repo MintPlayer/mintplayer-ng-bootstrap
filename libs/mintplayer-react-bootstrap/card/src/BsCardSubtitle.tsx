@@ -1,14 +1,14 @@
 import * as React from 'react';
-import { createComponent } from '@lit/react';
-import { MpCardSubtitleElement } from '@mintplayer/web-components/card';
+import { forwardRef, HTMLAttributes, PropsWithChildren } from 'react';
+
+const cx = (...c: (string | false | null | undefined)[]) => c.filter(Boolean).join(' ');
+
 /**
- * React wrapper for `<mp-card-subtitle>`. Side-effect-registers the WC via
- * the import above. Typed props/events extend off MpCardSubtitleElement;
- * hand-edit this file to add an `events: { onXxx: 'xxx' as EventName<...> }`
- * block if you need typed event listeners.
+ * Plain React `card-subtitle` element. Renders a `div.card-subtitle` that
+ * gets slotted into `<mp-card>` and styled by mp-card's shadow + the global
+ * card sheet. Merges an incoming `className` and spreads remaining props.
  */
-export const BsCardSubtitle = createComponent({
-  react: React,
-  tagName: 'mp-card-subtitle',
-  elementClass: MpCardSubtitleElement,
-});
+export const BsCardSubtitle = forwardRef<HTMLDivElement, PropsWithChildren<HTMLAttributes<HTMLDivElement>>>(
+  ({ className, ...rest }, ref) => <div ref={ref} className={cx('card-subtitle', className)} {...rest} />,
+);
+BsCardSubtitle.displayName = 'BsCardSubtitle';

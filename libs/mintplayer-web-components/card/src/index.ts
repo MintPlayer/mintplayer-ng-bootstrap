@@ -1,13 +1,9 @@
+// `mp-card` is the single card web component. The former mp-card-* sub-elements
+// (header/body/footer/title/text/img/link/group) were collapsed away: consumers
+// (or the framework BsCard* wrappers) project plain class-carrying elements
+// (`.card-header`, `.card-body`, …) into <mp-card>'s slot, which mp-card styles
+// via :host + ::slotted plus the global card sheet.
 export * from './mp-card.element';
-export * from './mp-card-body.element';
-export * from './mp-card-footer.element';
-export * from './mp-card-group.element';
-export * from './mp-card-header.element';
-export * from './mp-card-img.element';
-export * from './mp-card-link.element';
-export * from './mp-card-subtitle.element';
-export * from './mp-card-text.element';
-export * from './mp-card-title.element';
 export * from './card-classes';
 export * from './types/card-image-position';
 export * from './types/card-header-nav-style';
