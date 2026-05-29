@@ -27,8 +27,8 @@ withDefaults(
     :icon="icon ?? undefined"
     :color="color ?? undefined"
     :item-class="cssClass ?? undefined"
-    :disabled="disabled ? '' : undefined"
-    :selected="selected ? '' : undefined"
+    :disabled="!!disabled"
+    :selected="!!selected"
   >
     <slot />
   </mp-timeline-item>

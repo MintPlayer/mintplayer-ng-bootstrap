@@ -1,7 +1,6 @@
 export { BsTimeline } from './BsTimeline';
 export type { BsTimelineProps } from './BsTimeline';
 export { BsTimelineItem } from './BsTimelineItem';
-export type { BsTimelineItemProps } from './BsTimelineItem';
 
 export type {
   TimelineItem,

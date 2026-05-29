@@ -10,7 +10,7 @@ import type {
   TimelineSelectable,
   TimelineSelectionChangeDetail,
 } from '@mintplayer/web-components/timeline-core';
-import { computed, onBeforeUnmount, onMounted, ref, useSlots, watch } from 'vue';
+import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue';
 
 defineOptions({ inheritAttrs: false });
 
@@ -32,7 +32,15 @@ const emit = defineEmits<{
   (e: 'update:selection', selected: TimelineItem[]): void;
 }>();
 
-const slots = useSlots();
+type SlotProps = { item: TimelineItem; ctx: TimelineItemContext };
+const slots = defineSlots<{
+  marker?(props: SlotProps): unknown;
+  title?(props: SlotProps): unknown;
+  timestamp?(props: SlotProps): unknown;
+  opposite?(props: SlotProps): unknown;
+  content?(props: SlotProps): unknown;
+  default?(props: Record<string, never>): unknown;
+}>();
 const hasSlots = computed(
   () => !!(slots.marker || slots.title || slots.timestamp || slots.opposite || slots.content),
 );
@@ -103,7 +111,7 @@ watch(() => props.selectable, syncSelection);
     ref="el"
     :orientation="orientation"
     :align="align"
-    :reverse="reverse ? '' : undefined"
+    :reverse="reverse"
     :selectable="selectable"
     v-bind="$attrs"
   >
@@ -118,7 +126,7 @@ watch(() => props.selectable, syncSelection);
         :icon="item.icon ?? undefined"
         :color="item.color ?? undefined"
         :item-class="item.cssClass ?? undefined"
-        :disabled="item.disabled ? '' : undefined"
+        :disabled="!!item.disabled"
       >
         <span v-if="slots.marker" slot="marker"><slot name="marker" :item="item" :ctx="ctxFor(item, i)" /></span>
         <span v-if="slots.title" slot="title"><slot name="title" :item="item" :ctx="ctxFor(item, i)" /></span>

@@ -1,7 +1,8 @@
 import * as React from 'react';
+import { createComponent, type EventName } from '@lit/react';
 // Side-effect import: registers <mp-timeline> + <mp-timeline-item>.
 import '@mintplayer/web-components/timeline';
-import { resolveSides, type MpTimeline } from '@mintplayer/web-components/timeline';
+import { MpTimeline, resolveSides } from '@mintplayer/web-components/timeline';
 import type {
   TimelineAlign,
   TimelineItem,
@@ -11,8 +12,19 @@ import type {
   TimelineSelectable,
   TimelineSelectionChangeDetail,
 } from '@mintplayer/web-components/timeline-core';
+import { BsTimelineItem } from './BsTimelineItem';
 
 type RenderProp = (item: TimelineItem, ctx: TimelineItemContext) => React.ReactNode;
+
+const MpTimelineBase = createComponent({
+  react: React,
+  tagName: 'mp-timeline',
+  elementClass: MpTimeline,
+  events: {
+    onItemClick: 'item-click' as EventName<CustomEvent<TimelineItemClickDetail>>,
+    onSelectionChange: 'selection-change' as EventName<CustomEvent<TimelineSelectionChangeDetail>>,
+  },
+});
 
 export interface BsTimelineProps {
   items?: TimelineItem[];
@@ -24,7 +36,7 @@ export interface BsTimelineProps {
   selection?: TimelineItem[];
   onSelectionChange?: (selected: TimelineItem[]) => void;
   onItemClick?: (detail: TimelineItemClickDetail) => void;
-  /** Render-props — lowered into `<mp-timeline-item>` children. */
+  /** Render-props — lowered into `<BsTimelineItem>` children. */
   renderMarker?: RenderProp;
   renderTitle?: RenderProp;
   renderTimestamp?: RenderProp;
@@ -40,10 +52,10 @@ const idOf = (item: TimelineItem, index: number): string | number => item.id ?? 
 /**
  * `<BsTimeline>` — React wrapper around `<mp-timeline>`.
  *
- * Render-props lower into `<mp-timeline-item>` children with their output in
- * the item's named slots (one shadow boundary). With no render-props, the
- * `items` array is set as the WC property, or declarative `<BsTimelineItem>`
- * children pass straight through.
+ * Render-props lower into `<BsTimelineItem>` children with their output in the
+ * item's named slots (one shadow boundary). With no render-props, `items` is
+ * set as the WC property, or declarative `<BsTimelineItem>` children pass
+ * straight through.
  */
 export function BsTimeline(props: BsTimelineProps): React.ReactElement {
   const {
@@ -64,59 +76,36 @@ export function BsTimeline(props: BsTimelineProps): React.ReactElement {
     children,
   } = props;
 
-  const ref = React.useRef<MpTimeline | null>(null);
   const hasTemplates = !!(renderMarker || renderTitle || renderTimestamp || renderOpposite || renderContent);
+  const dataMode = !!items && !hasTemplates;
   const lowering = hasTemplates && !!items;
 
-  // Custom-event listeners (React doesn't bind custom events via on* props).
-  React.useEffect(() => {
-    const el = ref.current;
-    if (!el) return;
-    const onClick = (e: Event) => onItemClick?.((e as CustomEvent<TimelineItemClickDetail>).detail);
-    const onSel = (e: Event) => {
-      const detail = (e as CustomEvent<TimelineSelectionChangeDetail>).detail;
-      if (items && items.length) {
-        const ids = el.selectedIds ?? detail.selected.map((m, i) => m.id ?? i);
-        const byId = new Map(items.map((it, i) => [idOf(it, i), it] as const));
-        onSelectionChange?.(
-          ids.map((id) => byId.get(id)).filter((x): x is TimelineItem => x !== undefined),
-        );
-      } else {
-        onSelectionChange?.(detail.selected);
-      }
-    };
-    el.addEventListener('item-click', onClick);
-    el.addEventListener('selection-change', onSel);
-    return () => {
-      el.removeEventListener('item-click', onClick);
-      el.removeEventListener('selection-change', onSel);
-    };
-  }, [items, onItemClick, onSelectionChange]);
-
-  // Controlled selection → WC.
-  React.useEffect(() => {
-    const el = ref.current;
-    if (!el || selectable === 'none') return;
-    el.selectedIds = (selection ?? []).map((it, i) => idOf(it, i));
-  }, [selection, selectable]);
-
-  // Data path: set the WC `items` property only when not lowering to children.
-  React.useEffect(() => {
-    const el = ref.current;
-    if (!el) return;
-    el.items = !lowering && items ? items : [];
-  }, [items, lowering]);
+  const handleItemClick = (e: CustomEvent<TimelineItemClickDetail>): void => onItemClick?.(e.detail);
+  const handleSelectionChange = (e: CustomEvent<TimelineSelectionChangeDetail>): void => {
+    const detail = e.detail;
+    if (items && items.length) {
+      const byId = new Map(items.map((it, i) => [String(idOf(it, i)), it] as const));
+      onSelectionChange?.(
+        detail.selected.map((m) => byId.get(String(m.id ?? '')) ?? m),
+      );
+    } else {
+      onSelectionChange?.(detail.selected);
+    }
+  };
 
   const sides = resolveSides(items?.length ?? 0, align, reverse);
 
   return (
-    <mp-timeline
-      ref={ref}
+    <MpTimelineBase
       orientation={orientation}
       align={align}
-      reverse={reverse ? '' : undefined}
+      reverse={reverse}
       selectable={selectable}
       className={className}
+      onItemClick={handleItemClick}
+      onSelectionChange={handleSelectionChange}
+      {...(dataMode ? { items } : {})}
+      {...(selectable !== 'none' && selection ? { selectedIds: selection.map((it, i) => idOf(it, i)) } : {})}
     >
       {lowering && items
         ? items.map((item, i) => {
@@ -132,26 +121,28 @@ export function BsTimeline(props: BsTimelineProps): React.ReactElement {
             };
             const time = item.time instanceof Date ? item.time.toLocaleDateString() : item.time;
             return (
-              <mp-timeline-item
+              <BsTimelineItem
                 key={item.id ?? i}
-                item-id={item.id}
+                itemId={item.id}
                 title={item.title}
                 description={item.description}
-                time={time}
+                time={time ?? undefined}
                 icon={item.icon}
                 color={item.color}
-                item-class={item.cssClass}
-                disabled={item.disabled ? '' : undefined}
+                itemClass={item.cssClass}
+                disabled={item.disabled}
               >
                 {renderMarker && <span slot="marker">{renderMarker(item, ctx)}</span>}
                 {renderTitle && <span slot="title">{renderTitle(item, ctx)}</span>}
                 {renderTimestamp && <span slot="opposite">{renderTimestamp(item, ctx)}</span>}
                 {renderOpposite && <span slot="opposite">{renderOpposite(item, ctx)}</span>}
                 {renderContent && <div slot="content">{renderContent(item, ctx)}</div>}
-              </mp-timeline-item>
+              </BsTimelineItem>
             );
           })
-        : children}
-    </mp-timeline>
+        : dataMode
+          ? null
+          : children}
+    </MpTimelineBase>
   );
 }

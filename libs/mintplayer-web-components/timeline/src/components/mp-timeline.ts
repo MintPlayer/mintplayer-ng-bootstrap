@@ -53,6 +53,12 @@ export class MpTimeline extends LitElement {
 
   private _items: TimelineItem[] = [];
   private _selectedSet = new Set<string | number>();
+  private _orientation: TimelineOrientation = 'vertical';
+  private _align: TimelineAlign = 'start';
+  private _reverse = false;
+  private _selectable: TimelineSelectable = 'none';
+  private _isServerSide = false;
+
   /** True once a consumer assigns `selectedIds` — suppresses declarative seeding. */
   private _selectionExplicit = false;
   private _selectionSeeded = false;
@@ -61,7 +67,7 @@ export class MpTimeline extends LitElement {
   /** Anchor for shift-range selection. */
   private _anchorIndex = -1;
 
-  // ----- properties (JS-shaped) -------------------------------------------
+  // ----- properties --------------------------------------------------------
 
   get items(): TimelineItem[] {
     return this._items;
@@ -80,24 +86,58 @@ export class MpTimeline extends LitElement {
     this.requestUpdate();
   }
 
-  // ----- attribute-backed getters -----------------------------------------
-
-  private get orientation(): TimelineOrientation {
-    return this.getAttribute('orientation') === 'horizontal' ? 'horizontal' : 'vertical';
+  get orientation(): TimelineOrientation {
+    return this._orientation;
+  }
+  set orientation(value: TimelineOrientation) {
+    const next: TimelineOrientation = value === 'horizontal' ? 'horizontal' : 'vertical';
+    if (this._orientation === next) return;
+    this._orientation = next;
+    this.reflectString('orientation', next);
+    this.requestUpdate();
   }
 
-  private get align(): TimelineAlign {
-    const v = this.getAttribute('align');
-    return v && VALID_ALIGN.has(v) ? (v as TimelineAlign) : 'start';
+  get align(): TimelineAlign {
+    return this._align;
+  }
+  set align(value: TimelineAlign) {
+    const next = VALID_ALIGN.has(value) ? value : 'start';
+    if (this._align === next) return;
+    this._align = next;
+    this.reflectString('align', next);
+    this.requestUpdate();
   }
 
-  private get reverse(): boolean {
-    return this.hasAttribute('reverse') && this.getAttribute('reverse') !== 'false';
+  get reverse(): boolean {
+    return this._reverse;
+  }
+  set reverse(value: boolean) {
+    const next = !!value;
+    if (this._reverse === next) return;
+    this._reverse = next;
+    this.reflectBoolean('reverse', next);
+    this.requestUpdate();
   }
 
-  private get selectable(): TimelineSelectable {
-    const v = this.getAttribute('selectable');
-    return v && VALID_SELECTABLE.has(v) ? (v as TimelineSelectable) : 'none';
+  get selectable(): TimelineSelectable {
+    return this._selectable;
+  }
+  set selectable(value: TimelineSelectable) {
+    const next = VALID_SELECTABLE.has(value) ? value : 'none';
+    if (this._selectable === next) return;
+    this._selectable = next;
+    this.reflectString('selectable', next);
+    this.requestUpdate();
+  }
+
+  get isServerSide(): boolean {
+    return this._isServerSide;
+  }
+  set isServerSide(value: boolean) {
+    const next = !!value;
+    if (this._isServerSide === next) return;
+    this._isServerSide = next;
+    this.reflectBoolean('is-server-side', next);
   }
 
   // ----- lifecycle ---------------------------------------------------------
@@ -109,12 +149,42 @@ export class MpTimeline extends LitElement {
   ): void {
     super.attributeChangedCallback(name, oldValue, newValue);
     if (oldValue === newValue) return;
+    switch (name) {
+      case 'orientation':
+        this._orientation = newValue === 'horizontal' ? 'horizontal' : 'vertical';
+        break;
+      case 'align':
+        this._align = newValue && VALID_ALIGN.has(newValue) ? (newValue as TimelineAlign) : 'start';
+        break;
+      case 'reverse':
+        this._reverse = newValue !== null && newValue !== 'false';
+        break;
+      case 'selectable':
+        this._selectable =
+          newValue && VALID_SELECTABLE.has(newValue) ? (newValue as TimelineSelectable) : 'none';
+        break;
+      case 'is-server-side':
+        this._isServerSide = newValue !== null && newValue !== 'false';
+        break;
+    }
     this.requestUpdate();
   }
 
   protected override updated(): void {
     // Declarative mode: project state onto slotted items (client only).
     if (!isServer && this._items.length === 0) this.enhanceDeclarativeItems();
+  }
+
+  private reflectString(name: string, value: string): void {
+    if (this.getAttribute(name) !== value) this.setAttribute(name, value);
+  }
+
+  private reflectBoolean(name: string, value: boolean): void {
+    if (value) {
+      if (!this.hasAttribute(name)) this.setAttribute(name, '');
+    } else if (this.hasAttribute(name)) {
+      this.removeAttribute(name);
+    }
   }
 
   // ----- identity ----------------------------------------------------------
@@ -134,29 +204,29 @@ export class MpTimeline extends LitElement {
   // ----- render ------------------------------------------------------------
 
   override render(): TemplateResult {
-    const selectable = this.selectable;
-    const role = selectable !== 'none' ? 'listbox' : 'list';
+    const role = this._selectable !== 'none' ? 'listbox' : 'list';
     return html`
       <div
         class="timeline"
         role=${role}
-        aria-orientation=${this.orientation}
-        aria-multiselectable=${selectable === 'multiple' ? 'true' : nothing}
+        aria-orientation=${this._orientation}
+        aria-multiselectable=${this._selectable === 'multiple' ? 'true' : nothing}
         @click=${this.onClick}
         @keydown=${this.onKeydown}
       >
-        ${this._items.length ? this.renderDataItems() : html`<slot @slotchange=${this.onSlotChange}></slot>`}
+        ${this._items.length
+          ? this.renderDataItems()
+          : html`<slot @slotchange=${this.onSlotChange}></slot>`}
       </div>
     `;
   }
 
   private renderDataItems(): TemplateResult {
     const items = this._items;
-    const align = this.align;
-    const reverse = this.reverse;
-    const orientation = this.orientation;
-    const selectable = this.selectable;
-    const sides: TimelineSide[] = resolveSides(items.length, align, reverse);
+    const orientation = this._orientation;
+    const selectable = this._selectable;
+    const reverse = this._reverse;
+    const sides: TimelineSide[] = resolveSides(items.length, this._align, reverse);
     const activeIndex = this.resolvedActiveIndex(items.length, (i) => !items[i].disabled);
 
     return html`
@@ -222,11 +292,10 @@ export class MpTimeline extends LitElement {
   private enhanceDeclarativeItems(): void {
     const els = this.declarativeItems;
     if (!els.length) return;
-    const align = this.align;
-    const reverse = this.reverse;
-    const orientation = this.orientation;
-    const selectable = this.selectable;
-    const sides = resolveSides(els.length, align, reverse);
+    const orientation = this._orientation;
+    const selectable = this._selectable;
+    const reverse = this._reverse;
+    const sides = resolveSides(els.length, this._align, reverse);
     const visualLast = reverse ? 0 : els.length - 1;
     const activeIndex = this.resolvedActiveIndex(els.length, (i) => !els[i].hasAttribute('disabled'));
 
@@ -265,7 +334,7 @@ export class MpTimeline extends LitElement {
         composed: true,
       }),
     );
-    if (this.selectable !== 'none') {
+    if (this._selectable !== 'none') {
       const me = ev as MouseEvent;
       this.applySelection(index, { toggle: me.ctrlKey || me.metaKey, range: me.shiftKey });
       this.setActiveIndex(index);
@@ -273,7 +342,7 @@ export class MpTimeline extends LitElement {
   };
 
   private onKeydown = (ev: KeyboardEvent): void => {
-    if (this.selectable === 'none') return;
+    if (this._selectable === 'none') return;
     const els = this.itemElements;
     if (!els.length) return;
     const current = this.itemFromEvent(ev).index;
@@ -304,7 +373,10 @@ export class MpTimeline extends LitElement {
       case ' ': {
         if (current < 0) return;
         ev.preventDefault();
-        this.applySelection(current, { toggle: ev.key === ' ' && this.selectable === 'multiple', range: ev.shiftKey });
+        this.applySelection(current, {
+          toggle: ev.key === ' ' && this._selectable === 'multiple',
+          range: ev.shiftKey,
+        });
         return;
       }
     }
@@ -342,7 +414,7 @@ export class MpTimeline extends LitElement {
     const id = this.idForId(index, el);
     const before = new Set(this._selectedSet);
 
-    if (this.selectable === 'single') {
+    if (this._selectable === 'single') {
       this._selectedSet = new Set([id]);
     } else if (opts.range && this._anchorIndex >= 0) {
       const [lo, hi] = [Math.min(this._anchorIndex, index), Math.max(this._anchorIndex, index)];
@@ -369,7 +441,9 @@ export class MpTimeline extends LitElement {
   }
 
   private idForId(index: number, el: MpTimelineItem): string | number {
-    return this._items.length ? this.idForItem(this._items[index], index) : this.idForElement(el, index);
+    return this._items.length
+      ? this.idForItem(this._items[index], index)
+      : this.idForElement(el, index);
   }
 
   private emitSelectionChange(before: Set<string | number>): void {
@@ -417,7 +491,8 @@ export class MpTimeline extends LitElement {
   }
 
   private moveFocus(from: number, dir: 1 | -1, els: MpTimelineItem[]): void {
-    const start = from < 0 ? this.resolvedActiveIndex(els.length, (i) => !els[i].hasAttribute('disabled')) : from;
+    const start =
+      from < 0 ? this.resolvedActiveIndex(els.length, (i) => !els[i].hasAttribute('disabled')) : from;
     let next = start;
     for (let step = 0; step < els.length; step++) {
       next = (next + dir + els.length) % els.length;
