@@ -10,7 +10,7 @@ import type {
   TimelineSelectable,
   TimelineSelectionChangeDetail,
 } from '@mintplayer/web-components/timeline-core';
-import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue';
+import { computed, onBeforeUnmount, onMounted, onUpdated, ref, watch } from 'vue';
 
 defineOptions({ inheritAttrs: false });
 
@@ -41,10 +41,15 @@ const slots = defineSlots<{
   content?(props: SlotProps): unknown;
   default?(props: Record<string, never>): unknown;
 }>();
-const hasSlots = computed(
-  () => !!(slots.marker || slots.title || slots.timestamp || slots.opposite || slots.content),
-);
-const lowering = computed(() => hasSlots.value && !!props.items?.length);
+// FUNCTIONS, not computed: `slots.*` is NOT tracked as a reactive dependency
+// inside a computed, so a computed would never re-evaluate when a scoped slot
+// is added/removed at runtime (e.g. a `<template v-if=... #marker>` toggled by
+// the consumer). Called from the template (re-evaluated every render — and the
+// component re-renders when its slots change) and from `syncItems` in
+// onMounted/onUpdated, both of which see the current slot set.
+const hasSlots = (): boolean =>
+  !!(slots.marker || slots.title || slots.timestamp || slots.opposite || slots.content);
+const lowering = (): boolean => hasSlots() && !!props.items?.length;
 
 const el = ref<MpTimeline | null>(null);
 
@@ -83,7 +88,7 @@ const onSel = (e: Event): void => {
 
 const syncItems = (): void => {
   if (!el.value) return;
-  el.value.items = !lowering.value && props.items ? props.items : [];
+  el.value.items = !lowering() && props.items ? props.items : [];
 };
 const syncSelection = (): void => {
   if (!el.value || props.selectable === 'none') return;
@@ -101,7 +106,11 @@ onBeforeUnmount(() => {
   el.value?.removeEventListener('selection-change', onSel);
 });
 watch(() => props.items, syncItems);
-watch(lowering, syncItems);
+// Re-sync after every render so a runtime slot toggle (which re-renders this
+// component but is invisible to watchers) flips the WC between items-property
+// and lowered-children modes. Setting a DOM property here doesn't feed back
+// into Vue reactivity, so this cannot loop.
+onUpdated(syncItems);
 watch(() => props.selection, syncSelection);
 watch(() => props.selectable, syncSelection);
 </script>
@@ -115,7 +124,7 @@ watch(() => props.selectable, syncSelection);
     :selectable="selectable"
     v-bind="$attrs"
   >
-    <template v-if="lowering">
+    <template v-if="lowering()">
       <mp-timeline-item
         v-for="(item, i) in items ?? []"
         :key="item.id ?? i"
