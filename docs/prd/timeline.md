@@ -80,9 +80,9 @@ in the request).
   containing `src/index.ts` becomes a published sub-entrypoint
   (`@mintplayer/web-components/timeline`,
   `@mintplayer/web-components/timeline-core`) — handled by the existing
-  `discoverEntries()` scan in `libs/mintplayer-web-components/vite.config.*`.
-  No manual `exports` edits, but add both subpaths to
-  `docs/prd/wc-inventory.md`.
+  `discoverEntries()` scan in `libs/mintplayer-web-components/vite.config.*`,
+  plus the `@mintplayer/web-components/*` path wildcard in `tsconfig.base.json`.
+  No manual `exports` / `tsconfig` / central-file edits.
 * **Styling:** SCSS authored in `src/styles/*.styles.scss`, compiled to
   `*.styles.ts` by the `codegen-wc` Nx target
   (`node tools/scripts/build-web-components.mjs libs/mintplayer-web-components`).
@@ -234,12 +234,12 @@ export interface TimelineConnectorContext {
 }
 
 /** Single source of truth for side resolution; consumed by BOTH the WC and the
- *  wrappers so they never disagree under reverse + alternate + rtl. */
+ *  wrappers so they never disagree under reverse + alternate. Logical sides are
+ *  dir-agnostic; CSS maps start/end to physical left/right per `dir`. */
 export function resolveSides(
   count: number,
   align: 'start' | 'end' | 'alternate' | 'alternate-reverse',
   reverse: boolean,
-  dir: 'ltr' | 'rtl',
 ): ('start' | 'end')[];
 ```
 
@@ -353,11 +353,11 @@ merge two lists.
    slots in this model.)
 6. **Reverse** flips iteration order only (CSS `order`); `id`/source index
    preserved, only `visualIndex` changes. Identical in both modes.
-7. **Side** = `resolveSides(count, align, reverse, dir)` — a pure function of
-   `visualIndex`. CSS implements it (`:nth-child` + `[align]` + `[dir]`); the
-   same exported helper feeds render-prop `ctx.side` so the WC and wrappers
-   never disagree. (`ctx.side` may be provisional when `dir` is inherited at
-   runtime; consumers needing exactness read it back post-mount.)
+7. **Side** = `resolveSides(count, align, reverse)` — a pure function of
+   `visualIndex`. The WC sets a `side` attribute per item and CSS maps it
+   (`:host([side=end])`); the same exported helper feeds render-prop
+   `ctx.side` so the WC and wrappers never disagree. Logical sides are
+   dir-agnostic; CSS grid columns flip physically under RTL automatically.
 8. **Wrapper mutual-exclusivity (load-bearing).** When a wrapper lowers
    `items` + templates into `<mp-timeline-item>` children, it **must not also
    set the WC `items` property** (or the WC would see non-empty `items` +
@@ -624,9 +624,9 @@ identically in both authoring modes (both render `<mp-timeline-item>` rows).
 
 **Angular wrapper** — `libs/mintplayer-ng-bootstrap/timeline/`
 * `src/timeline/timeline.component.{ts,html,scss}`
-* `src/timeline-item/timeline-item.component.ts`
-* `src/timeline-*/*.directive.ts` (marker, title, timestamp, content, opposite, connector)
+* `src/directives/timeline-template.directives.ts` (6 directives + context classes)
 * `src/index.ts`, `index.ts`, `ng-package.js`
+* (Declarative Angular authoring uses the `<mp-timeline-item>` tag directly — an Angular `bs-timeline-item` host would nest between `<mp-timeline>` and `<mp-timeline-item>` and break slot detection.)
 
 **React wrapper** — `libs/mintplayer-react-bootstrap/timeline/`
 * `src/BsTimeline.tsx`, `src/BsTimelineItem.tsx`, `src/index.ts`, `index.ts`
@@ -639,7 +639,7 @@ identically in both authoring modes (both render `<mp-timeline-item>` rows).
 * React: `apps/react-bootstrap-demo/src/app/pages/enterprise/TimelinePage.tsx` + route + nav
 * Vue: `apps/vue-bootstrap-demo/src/views/enterprise/TimelineView.vue` + route + nav
 
-**Docs:** this PRD; add the two subpaths to `docs/prd/wc-inventory.md`.
+**Docs:** this PRD. (No `wc-inventory.md` exists yet; nothing central to edit.)
 
 ---
 
@@ -717,3 +717,38 @@ one declarative variant, not a full second port.
    declarative scaffold must be pure-template. Data-mode row construction may
    be imperative (hydration-dependent only). Flag this divergence for
    reviewers expecting a tab-page/splitter-shaped implementation.
+
+## Implementation notes (v1, as built)
+
+Pragmatic refinements made during implementation; they tighten the design
+above without changing the consumer-facing shape:
+
+* **All three wrappers lower to `<mp-timeline-item>` children** — including
+  Angular, via `@for` + `ngTemplateOutlet` projecting each directive template
+  into a slot-attributed wrapper. The WC's `*Renderer` callback properties
+  (`markerRenderer`, …) are **deferred** (not implemented in v1): no wrapper
+  needs them, and raw-HTML consumers use declarative `<mp-timeline-item>` for
+  custom rendering. `items[]` (data mode) renders the default attribute-driven
+  row.
+* **Data mode renders rows in the parent shadow via the Lit template** (not
+  imperative light-DOM child generation): `render()` maps `items` to
+  `<mp-timeline-item>` in `<mp-timeline>`'s shadow; declarative mode renders a
+  single default `<slot>`. Layout CSS targets both `::slotted(mp-timeline-item)`
+  and shadow `mp-timeline-item`.
+* **`resolveSides(count, align, reverse)`** — `dir` dropped (logical sides are
+  dir-agnostic; CSS grid flips physically under RTL).
+* **Angular declarative** uses the `<mp-timeline-item>` tag directly (no
+  `bs-timeline-item` component — see Files to add).
+* **React** uses intrinsic custom elements + JSX augmentation + a
+  `ref`/`addEventListener` bridge for `item-click` / `selection-change`
+  (not `@lit/react` `createComponent`, which can't carry the lowered children
+  + kebab attributes ergonomically). `BsTimelineItem` renders `<mp-timeline-item>`
+  directly.
+* **Connector slot** (`connector` on `<mp-timeline-item>`) is wired; default
+  connectors are item-owned CSS; `:host([last])` suppresses the trailing one.
+* **SSR** `is-server-side` is observed for forward-compat only (infra still
+  not built).
+* No `docs/prd/wc-inventory.md` exists yet; the WC sub-entrypoints
+  (`timeline`, `timeline-core`) are auto-discovered by the lib's
+  `vite.config` scan + the `tsconfig.base.json` path wildcard — no central
+  edits.
