@@ -1,44 +1,37 @@
 import {
   ChangeDetectionStrategy,
   Component,
-  ElementRef,
-  effect,
-  inject,
+  computed,
+  CUSTOM_ELEMENTS_SCHEMA,
   input,
 } from '@angular/core';
 import { Color } from '@mintplayer/ng-bootstrap';
-import { applyCardColorClasses, ensureCardStylesInjected } from '@mintplayer/web-components/card';
+// Side-effect import registers <mp-card>.
+import '@mintplayer/web-components/card';
 
 /**
  * Angular wrapper for the Bootstrap card root.
  *
- * The wrapper applies `.card` (+ optional colour/outline classes) directly to
- * its own host element rather than rendering an inner `<mp-card>`. This keeps
- * Bootstrap's parent-child selectors (`.card > .card-header`, `.card > .list-
- * group + .card-footer`) matching when sibling Angular wrappers like
- * `<bs-card-header>` sit underneath. The Lit `mp-card` element registers as
- * a side-effect import — direct WC consumers still work, but Angular
- * templates use `<bs-card>` instead of `<mp-card>` to avoid the extra
- * nesting level.
+ * Renders an inner `<mp-card>` — the single card web component, which owns the
+ * card chrome (border / radius / background) in its shadow DOM. Projected
+ * `<bs-card-*>` content lands in `<mp-card>`'s default slot and is styled via
+ * the WC's `::slotted()` rules (header / body / footer / img) plus the global
+ * typography sheet (title / text). This is what makes the card render
+ * correctly even when itself slotted inside another web component.
  */
 @Component({
   selector: 'bs-card',
-  template: '<ng-content></ng-content>',
-  host: { class: 'card' },
+  template: `<mp-card [attr.color]="colorName()" [attr.outline]="outline() ? '' : null"><ng-content></ng-content></mp-card>`,
+  styles: [':host { display: block; }'],
+  schemas: [CUSTOM_ELEMENTS_SCHEMA],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class BsCardComponent {
-  private readonly el = inject<ElementRef<HTMLElement>>(ElementRef);
-
   readonly color = input<Color | undefined>(undefined);
   readonly outline = input(false);
 
-  constructor() {
-    ensureCardStylesInjected();
-    effect(() => {
-      const c = this.color();
-      const name = c === undefined ? null : Color[c];
-      applyCardColorClasses(this.el.nativeElement, name, this.outline());
-    });
-  }
+  protected readonly colorName = computed(() => {
+    const c = this.color();
+    return c === undefined ? null : Color[c];
+  });
 }

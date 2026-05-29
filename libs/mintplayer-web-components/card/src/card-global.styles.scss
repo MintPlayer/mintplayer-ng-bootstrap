@@ -1,0 +1,115 @@
+// Global card sheet — injected once into document.head by
+// `ensureCardStylesInjected()`. Holds only what `mp-card`'s shadow `::slotted()`
+// rules cannot reach: typography nested inside a card-body (`.card-title`,
+// `.card-text`, …) and the `text-bg-*` colour utilities used by header/footer
+// colour and the card colour contract when the host app doesn't load full
+// Bootstrap CSS.
+@import "node_modules/bootstrap/scss/functions";
+@import "node_modules/bootstrap/scss/variables";
+@import "node_modules/bootstrap/scss/variables-dark";
+@import "node_modules/bootstrap/scss/mixins";
+
+// ── Card regions ───────────────────────────────────────────────────────────
+// Styled at document level (NOT via mp-card's shadow `::slotted`) so they
+// out-rank Bootstrap's own `.card-*` rules. `::slotted()` is the lowest-priority
+// way to style slotted content, so Bootstrap's `.card-header` (present when the
+// host app loads full Bootstrap, as React/Vue do) would otherwise win over it
+// and collapse padding/borders to 0 (its `--bs-card-*` vars are unset without a
+// `.card` ancestor). These read mp-card's `--mp-card-*` tokens (inherited from
+// the host) with literal fallbacks for standalone use. Ordered before the
+// `text-bg-*` utilities so a header/footer colour overrides the cap background.
+.card-body {
+  display: block;
+  flex: 1 1 auto;
+  padding: var(--mp-card-spacer-y, 1rem) var(--mp-card-spacer-x, 1rem);
+  color: var(--mp-card-color, inherit);
+}
+
+.card-header {
+  display: block;
+  padding: var(--mp-card-cap-padding-y, 0.5rem) var(--mp-card-cap-padding-x, 1rem);
+  margin-bottom: 0;
+  background-color: var(--mp-card-cap-bg, rgba(0, 0, 0, 0.03));
+  border-bottom: var(--mp-card-border-width, 1px) solid var(--mp-card-border-color, #dee2e6);
+}
+
+.card-footer {
+  display: block;
+  padding: var(--mp-card-cap-padding-y, 0.5rem) var(--mp-card-cap-padding-x, 1rem);
+  background-color: var(--mp-card-cap-bg, rgba(0, 0, 0, 0.03));
+  border-top: var(--mp-card-border-width, 1px) solid var(--mp-card-border-color, #dee2e6);
+}
+
+.card-group {
+  display: block;
+}
+
+.card-img,
+.card-img-top,
+.card-img-bottom {
+  width: 100%;
+}
+
+// ── Deep typography (lives inside a slotted card-body) ─────────────────────
+.card-title {
+  display: block;
+  margin-bottom: var(--mp-card-title-spacer-y, #{$card-title-spacer-y});
+}
+
+.card-subtitle {
+  display: block;
+  margin-top: calc(-0.5 * var(--mp-card-title-spacer-y, #{$card-title-spacer-y}));
+  margin-bottom: 0;
+}
+
+.card-text {
+  display: block;
+}
+
+.card-text:last-child {
+  margin-bottom: 0;
+}
+
+.card-link {
+  &:hover {
+    text-decoration: if($link-hover-decoration == null, null, $link-hover-decoration);
+  }
+  + .card-link {
+    margin-left: var(--mp-card-spacer-x, #{$card-spacer-x});
+  }
+}
+
+// Nav inside a card header.
+.card-header-tabs {
+  margin-right: calc(-0.5 * #{$card-cap-padding-x});
+  margin-bottom: calc(-1 * #{$card-cap-padding-y});
+  margin-left: calc(-0.5 * #{$card-cap-padding-x});
+  border-bottom: 0;
+}
+.card-header-pills {
+  margin-right: calc(-0.5 * #{$card-cap-padding-x});
+  margin-left: calc(-0.5 * #{$card-cap-padding-x});
+}
+
+// ── Colour utilities ───────────────────────────────────────────────────────
+// Bootstrap normally generates these; reproduce them so header/footer colour
+// and the card colour contract work even without full Bootstrap CSS loaded.
+@each $name, $value in $theme-colors {
+  .text-bg-#{$name} {
+    color: color-contrast($value) if($enable-important-utilities, !important, null);
+    background-color: RGBA($value, var(--bs-bg-opacity, 1)) if($enable-important-utilities, !important, null);
+  }
+}
+
+.text-bg-body {
+  color: var(--bs-body-color);
+  background-color: var(--bs-body-bg);
+}
+.text-bg-white {
+  color: #000;
+  background-color: #fff;
+}
+.text-bg-transparent {
+  color: inherit;
+  background-color: transparent;
+}
