@@ -33,6 +33,7 @@ const SECTIONS = [
     title: 'Enterprise',
     routes: [
       { path: '/enterprise/scheduler', label: 'Scheduler' },
+      { path: '/enterprise/timeline', label: 'Timeline' },
       { path: '/enterprise/dock', label: 'Dock manager' },
       { path: '/enterprise/ribbon', label: 'Ribbon' },
       { path: '/enterprise/tile-manager', label: 'Tile manager' },

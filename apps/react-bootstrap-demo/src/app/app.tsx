@@ -45,6 +45,7 @@ const TabControlPage   = lazyNamed(() => import('./pages/TabControlPage'),   'Ta
 const TreeviewPage     = lazyNamed(() => import('./pages/TreeviewPage'),     'TreeviewPage');
 const SplitterPage     = lazyNamed(() => import('./pages/advanced/SplitterPage'), 'SplitterPage');
 const SchedulerPage    = lazyNamed(() => import('./pages/enterprise/SchedulerPage'), 'SchedulerPage');
+const TimelinePage     = lazyNamed(() => import('./pages/enterprise/TimelinePage'),  'TimelinePage');
 
 function PageFallback() {
   return (
@@ -87,6 +88,7 @@ export function App() {
           <Route path="/enterprise/query-builder" element={<QueryBuilderPage />} />
           <Route path="/enterprise/ribbon" element={<RibbonPage />} />
           <Route path="/enterprise/scheduler" element={<SchedulerPage />} />
+          <Route path="/enterprise/timeline" element={<TimelinePage />} />
           <Route path="*" element={<ComingSoonPage />} />
         </Routes>
       </Suspense>
