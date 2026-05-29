@@ -2,10 +2,10 @@
 
 <p>
   <code>bs-accordion</code> wraps a stack of <code>bs-accordion-tab</code> children.
-  Each tab contributes a header via <code>bs-accordion-tab-header</code>; the rest of
-  the tab body is projected below. Set <code>[multi]="true"</code> to allow multiple
-  tabs to stay open simultaneously, or <code>[highlightActiveTab]="true"</code> to
-  visually mark the active tab.
+  Each tab declares its header via the <code>*bsAccordionTabHeader</code> structural
+  directive; the rest of the tab body is projected below. Set
+  <code>[multi]="true"</code> to allow multiple tabs to stay open simultaneously,
+  or <code>[highlightActiveTab]="true"</code> to visually mark the active tab.
 </p>
 
 <h2>Basic usage</h2>
@@ -18,24 +18,24 @@ Requires the <b>BrowserAnimationsModule</b> to be imported in the AppModule.
 
 <bs-accordion class="d-block mb-3" [highlightActiveTab]="true">
     <bs-accordion-tab>
-        <bs-accordion-tab-header>
+        <ng-container *bsAccordionTabHeader>
             <span class="triangle me-2"></span>
             Profile
-        </bs-accordion-tab-header>
+        </ng-container>
         <span class="d-block px-3 py-2">Label 1</span>
     </bs-accordion-tab>
     <bs-accordion-tab>
-        <bs-accordion-tab-header>
+        <ng-container *bsAccordionTabHeader>
             <span class="triangle me-2"></span>
             Sign in
-        </bs-accordion-tab-header>
+        </ng-container>
         <span class="d-block px-3 py-2">Label 2</span>
     </bs-accordion-tab>
     <bs-accordion-tab>
-        <bs-accordion-tab-header>
+        <ng-container *bsAccordionTabHeader>
             <span class="triangle me-2"></span>
             Payment
-        </bs-accordion-tab-header>
+        </ng-container>
         <span class="d-block px-3 py-2">Label 3</span>
     </bs-accordion-tab>
 </bs-accordion>
@@ -46,24 +46,24 @@ Requires the <b>BrowserAnimationsModule</b> to be imported in the AppModule.
 
 <bs-accordion class="d-block mb-3" [multi]="true">
     <bs-accordion-tab>
-        <bs-accordion-tab-header>
+        <ng-container *bsAccordionTabHeader>
             <span class="triangle me-2"></span>
             Profile
-        </bs-accordion-tab-header>
+        </ng-container>
         <span class="d-block px-3 py-2">Label 1</span>
     </bs-accordion-tab>
     <bs-accordion-tab>
-        <bs-accordion-tab-header>
+        <ng-container *bsAccordionTabHeader>
             <span class="triangle me-2"></span>
             Sign in
-        </bs-accordion-tab-header>
+        </ng-container>
         <span class="d-block px-3 py-2">Label 2</span>
     </bs-accordion-tab>
     <bs-accordion-tab>
-        <bs-accordion-tab-header>
+        <ng-container *bsAccordionTabHeader>
             <span class="triangle me-2"></span>
             Payment
-        </bs-accordion-tab-header>
+        </ng-container>
         <span class="d-block px-3 py-2">Label 3</span>
     </bs-accordion-tab>
 </bs-accordion>
@@ -74,72 +74,72 @@ Requires the <b>BrowserAnimationsModule</b> to be imported in the AppModule.
 
 <bs-accordion class="d-block mb-3 multi-level">
     <bs-accordion-tab>
-        <bs-accordion-tab-header>
+        <ng-container *bsAccordionTabHeader>
             <span class="triangle me-2"></span>
             Profile
-        </bs-accordion-tab-header>
+        </ng-container>
 
         <bs-accordion class="d-block">
             <bs-accordion-tab>
-                <bs-accordion-tab-header>
+                <ng-container *bsAccordionTabHeader>
                     <span class="triangle me-2"></span>
                     Email address
-                </bs-accordion-tab-header>
-                
+                </ng-container>
+
                 <bs-accordion class="d-block">
                     <bs-accordion-tab>
-                        <bs-accordion-tab-header>
+                        <ng-container *bsAccordionTabHeader>
                             <span class="triangle me-2"></span>
                             Email address
-                        </bs-accordion-tab-header>
+                        </ng-container>
                         <span class="d-block px-3 py-2">info&#64;mintplayer.com</span>
                     </bs-accordion-tab>
                     <bs-accordion-tab>
-                        <bs-accordion-tab-header>
+                        <ng-container *bsAccordionTabHeader>
                             <span class="triangle me-2"></span>
                             Username
-                        </bs-accordion-tab-header>
+                        </ng-container>
                         <span class="d-block px-3 py-2">Pieterjan</span>
                     </bs-accordion-tab>
                     <bs-accordion-tab>
-                        <bs-accordion-tab-header>
+                        <ng-container *bsAccordionTabHeader>
                             <span class="triangle me-2"></span>
                             Password
-                        </bs-accordion-tab-header>
+                        </ng-container>
                         <span class="d-block px-3 py-2">Change it here</span>
                     </bs-accordion-tab>
                 </bs-accordion>
 
             </bs-accordion-tab>
             <bs-accordion-tab>
-                <bs-accordion-tab-header>
+                <ng-container *bsAccordionTabHeader>
                     <span class="triangle me-2"></span>
                     Username
-                </bs-accordion-tab-header>
+                </ng-container>
                 <span class="d-block px-3 py-2">Pieterjan</span>
             </bs-accordion-tab>
             <bs-accordion-tab>
-                <bs-accordion-tab-header>
+                <ng-container *bsAccordionTabHeader>
                     <span class="triangle me-2"></span>
                     Password
-                </bs-accordion-tab-header>
+                </ng-container>
                 <span class="d-block px-3 py-2">Change it here</span>
             </bs-accordion-tab>
         </bs-accordion>
 
     </bs-accordion-tab>
     <bs-accordion-tab>
-        <bs-accordion-tab-header>
+        <ng-container *bsAccordionTabHeader>
             <span class="triangle me-2"></span>
             Sign in
-        </bs-accordion-tab-header>
+        </ng-container>
         <span class="d-block px-3 py-2">Label 2</span>
     </bs-accordion-tab>
     <bs-accordion-tab>
-        <bs-accordion-tab-header>
+        <ng-container *bsAccordionTabHeader>
             <span class="triangle me-2"></span>
             Payment
-        </bs-accordion-tab-header>
+        </ng-container>
         <span class="d-block px-3 py-2">Label 3</span>
     </bs-accordion-tab>
 </bs-accordion>

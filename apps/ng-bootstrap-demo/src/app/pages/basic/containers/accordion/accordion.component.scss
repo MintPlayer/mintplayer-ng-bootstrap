@@ -1,35 +1,38 @@
-::ng-deep .multi-level bs-accordion-tab {
-    border-width: 0 !important;
-}
-
-
+// The multi-level demo theming previously used `::ng-deep` to reach into the
+// accordion-button and accordion-body markup. With the WC migration those
+// elements live inside `<mp-accordion-tab>`'s shadow root, which `::ng-deep`
+// can't pierce. Theming now goes through Bootstrap's CSS custom properties,
+// which DO inherit across the shadow boundary.
+//
+// Bootstrap reads each `--bs-accordion-*` variable inside its own accordion
+// stylesheet, so setting them on the host element cascades down to the
+// shadow-rendered button + body without us touching the WC at all.
 .multi-level {
+    // Level 0 — the outermost <bs-accordion class="multi-level">.
+    --bs-accordion-border-width: 0;
+    --bs-accordion-bg: #ccc;
+    --bs-accordion-color: #000;
+    --bs-accordion-btn-bg: #333;
+    --bs-accordion-btn-color: #fff;
+    --bs-accordion-active-bg: #333;
+    --bs-accordion-active-color: #fff;
+    // Chevron needs to be white over the dark button. Bootstrap exposes both
+    // states; mirror the original demo's inline SVG.
+    --bs-accordion-btn-icon: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='%23ffffff'><path fill-rule='evenodd' d='M1.646 4.646a.5.5 0 0 1 .708 0L8 10.293l5.646-5.647a.5.5 0 0 1 .708.708l-6 6a.5.5 0 0 1-.708 0l-6-6a.5.5 0 0 1 0-.708z'/></svg>");
+    --bs-accordion-btn-active-icon: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='%23ffffff'><path fill-rule='evenodd' d='M1.646 4.646a.5.5 0 0 1 .708 0L8 10.293l5.646-5.647a.5.5 0 0 1 .708.708l-6 6a.5.5 0 0 1-.708 0l-6-6a.5.5 0 0 1 0-.708z'/></svg>");
+    // Suppress the focus ring so the colored treatment stays clean.
+    --bs-accordion-btn-focus-box-shadow: none;
 
-    ::ng-deep > .accordion > bs-accordion-tab {
-        .accordion-body {
-            background-color: #CCC !important;
-        }
+    // Level 1 — first level of nested <bs-accordion> inside the multi-level
+    // container. Overrides the inherited button/active background.
+    bs-accordion {
+        --bs-accordion-btn-bg: #666;
+        --bs-accordion-active-bg: #666;
+    }
 
-        .accordion-button {
-            color: #FFF !important;
-            background-color: #333 !important;
-            box-shadow: none;
-
-            &:after {
-                background-image: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='%23ffffff'><path fill-rule='evenodd' d='M1.646 4.646a.5.5 0 0 1 .708 0L8 10.293l5.646-5.647a.5.5 0 0 1 .708.708l-6 6a.5.5 0 0 1-.708 0l-6-6a.5.5 0 0 1 0-.708z'/></svg>") !important;
-            }
-        }
-
-        bs-accordion-tab {
-            .accordion-button {
-                background-color: #666 !important;
-            }
-            
-            bs-accordion-tab {
-                .accordion-button {
-                    background-color: #999 !important;
-                }
-            }
-        }
+    // Level 2 — second level of nesting.
+    bs-accordion bs-accordion {
+        --bs-accordion-btn-bg: #999;
+        --bs-accordion-active-bg: #999;
     }
 }

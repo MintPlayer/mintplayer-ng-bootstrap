@@ -1,3 +1,15 @@
-<div class="accordion">
+<mp-accordion
+    [attr.is-server-side]="isServerSide ? '' : null"
+    [attr.multi]="multi() ? '' : null"
+    [attr.highlight-active]="highlightActiveTab() ? '' : null"
+    [attr.group-name]="accordionName()"
+    (mp-accordion-tab-toggle)="onTabToggle($event)">
+    @for (tab of tabPages(); track tab) {
+        @if (tab.headerTemplate(); as header) {
+            <span [attr.slot]="tab.accordionTabName() + '-header'">
+                <ng-container [ngTemplateOutlet]="header.template"></ng-container>
+            </span>
+        }
+    }
     <ng-content></ng-content>
-</div>
+</mp-accordion>

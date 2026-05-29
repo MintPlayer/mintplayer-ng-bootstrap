@@ -1,5 +1,5 @@
 import { Component, ChangeDetectionStrategy} from '@angular/core';
-import { BsAccordionComponent, BsAccordionTabComponent, BsAccordionTabHeaderComponent } from '@mintplayer/ng-bootstrap/accordion';
+import { BsAccordionComponent, BsAccordionTabComponent, BsAccordionTabHeaderDirective } from '@mintplayer/ng-bootstrap/accordion';
 import { BsCodeSnippetComponent } from '@mintplayer/ng-bootstrap/code-snippet';
 import { dedent } from 'ts-dedent';
 
@@ -7,22 +7,22 @@ import { dedent } from 'ts-dedent';
   selector: 'demo-accordion',
   templateUrl: './accordion.component.html',
   styleUrls: ['./accordion.component.scss'],
-  imports: [BsCodeSnippetComponent, BsAccordionComponent, BsAccordionTabComponent, BsAccordionTabHeaderComponent],
+  imports: [BsCodeSnippetComponent, BsAccordionComponent, BsAccordionTabComponent, BsAccordionTabHeaderDirective],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class AccordionComponent {
   protected readonly snippetBasicHtml = dedent`
     <bs-accordion class="d-block" [highlightActiveTab]="true">
       <bs-accordion-tab>
-        <bs-accordion-tab-header>Profile</bs-accordion-tab-header>
+        <ng-container *bsAccordionTabHeader>Profile</ng-container>
         <span class="d-block px-3 py-2">Profile content</span>
       </bs-accordion-tab>
       <bs-accordion-tab>
-        <bs-accordion-tab-header>Sign in</bs-accordion-tab-header>
+        <ng-container *bsAccordionTabHeader>Sign in</ng-container>
         <span class="d-block px-3 py-2">Sign-in content</span>
       </bs-accordion-tab>
       <bs-accordion-tab>
-        <bs-accordion-tab-header>Payment</bs-accordion-tab-header>
+        <ng-container *bsAccordionTabHeader>Payment</ng-container>
         <span class="d-block px-3 py-2">Payment content</span>
       </bs-accordion-tab>
     </bs-accordion>
@@ -33,7 +33,7 @@ export class AccordionComponent {
     import {
       BsAccordionComponent,
       BsAccordionTabComponent,
-      BsAccordionTabHeaderComponent,
+      BsAccordionTabHeaderDirective,
     } from '@mintplayer/ng-bootstrap/accordion';
 
     @Component({
@@ -42,7 +42,7 @@ export class AccordionComponent {
       imports: [
         BsAccordionComponent,
         BsAccordionTabComponent,
-        BsAccordionTabHeaderComponent,
+        BsAccordionTabHeaderDirective,
       ],
     })
     export class MyAccordionDemoComponent {}
@@ -53,11 +53,11 @@ export class AccordionComponent {
          single-open behaviour means opening one closes the others. -->
     <bs-accordion class="d-block" [highlightActiveTab]="true">
       <bs-accordion-tab>
-        <bs-accordion-tab-header>Profile</bs-accordion-tab-header>
+        <ng-container *bsAccordionTabHeader>Profile</ng-container>
         <span class="d-block px-3 py-2">Profile content</span>
       </bs-accordion-tab>
       <bs-accordion-tab>
-        <bs-accordion-tab-header>Sign in</bs-accordion-tab-header>
+        <ng-container *bsAccordionTabHeader>Sign in</ng-container>
         <span class="d-block px-3 py-2">Sign-in content</span>
       </bs-accordion-tab>
     </bs-accordion>
@@ -67,11 +67,11 @@ export class AccordionComponent {
     <!-- [multi]="true" lets several tabs stay open simultaneously. -->
     <bs-accordion class="d-block" [multi]="true">
       <bs-accordion-tab>
-        <bs-accordion-tab-header>Profile</bs-accordion-tab-header>
+        <ng-container *bsAccordionTabHeader>Profile</ng-container>
         <span class="d-block px-3 py-2">Profile content</span>
       </bs-accordion-tab>
       <bs-accordion-tab>
-        <bs-accordion-tab-header>Sign in</bs-accordion-tab-header>
+        <ng-container *bsAccordionTabHeader>Sign in</ng-container>
         <span class="d-block px-3 py-2">Sign-in content</span>
       </bs-accordion-tab>
     </bs-accordion>
@@ -81,14 +81,14 @@ export class AccordionComponent {
     <!-- Nest accordions inside tabs to build a tree. -->
     <bs-accordion class="d-block">
       <bs-accordion-tab>
-        <bs-accordion-tab-header>Profile</bs-accordion-tab-header>
+        <ng-container *bsAccordionTabHeader>Profile</ng-container>
         <bs-accordion class="d-block">
           <bs-accordion-tab>
-            <bs-accordion-tab-header>Email</bs-accordion-tab-header>
+            <ng-container *bsAccordionTabHeader>Email</ng-container>
             <span class="d-block px-3 py-2">info&#64;example.com</span>
           </bs-accordion-tab>
           <bs-accordion-tab>
-            <bs-accordion-tab-header>Username</bs-accordion-tab-header>
+            <ng-container *bsAccordionTabHeader>Username</ng-container>
             <span class="d-block px-3 py-2">user-name</span>
           </bs-accordion-tab>
         </bs-accordion>
