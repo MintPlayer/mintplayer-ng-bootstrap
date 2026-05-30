@@ -1,6 +1,6 @@
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { inject, Injectable } from '@angular/core';
-import { firstValueFrom } from 'rxjs';
+import { Observable } from 'rxjs';
 import {
   NodePage,
   NodeRequest,
@@ -56,10 +56,40 @@ export class TreeSelectHttpProvider implements TreeSelectProvider {
       .set('perPage', String(this.perPage));
     if (query !== undefined) params = params.set('q', query);
 
-    const result = await firstValueFrom(
+    const result = await this.toPromise(
       this.http.get<PagedResult<TreeItemDto>>(url, { params }),
+      req.signal,
     );
     return this.toNodePage(result);
+  }
+
+  /**
+   * Angular's HttpClient cancels via unsubscription (it has no `signal`
+   * option), so we bridge the request's AbortSignal to an unsubscribe — this
+   * actually cancels the in-flight XHR when a newer search supersedes it.
+   */
+  private toPromise<T>(obs: Observable<T>, signal: AbortSignal): Promise<T> {
+    return new Promise<T>((resolve, reject) => {
+      if (signal.aborted) {
+        reject(new DOMException('Aborted', 'AbortError'));
+        return;
+      }
+      const onAbort = () => {
+        sub.unsubscribe();
+        reject(new DOMException('Aborted', 'AbortError'));
+      };
+      const sub = obs.subscribe({
+        next: (value) => {
+          signal.removeEventListener('abort', onAbort);
+          resolve(value);
+        },
+        error: (err) => {
+          signal.removeEventListener('abort', onAbort);
+          reject(err);
+        },
+      });
+      signal.addEventListener('abort', onAbort, { once: true });
+    });
   }
 
   private toNodePage(result: PagedResult<TreeItemDto>): NodePage {

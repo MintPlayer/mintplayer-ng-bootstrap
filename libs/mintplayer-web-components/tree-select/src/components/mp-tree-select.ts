@@ -322,22 +322,31 @@ export class MpTreeSelect extends LitElement {
   private readonly treeviewLoadChildren = async (parentId: string): Promise<TreeNode[]> => {
     if (!this._provider) return [];
     const controller = new AbortController();
-    const page = await this._provider.loadChildren(parentId, { offset: 0, signal: controller.signal });
-    const parent = this._byId.get(parentId);
-    if (parent) {
-      parent.children = page.nodes;
-      // New ref so the treeview rebuilds its index and re-renders.
-      if (this._searchResults) this._searchResults = [...this._searchResults];
-      else this._nodes = [...this._nodes];
-      this.reindexActive();
+    try {
+      const page = await this._provider.loadChildren(parentId, { offset: 0, signal: controller.signal });
+      const parent = this._byId.get(parentId);
+      if (parent) {
+        parent.children = page.nodes;
+        // New ref so the treeview rebuilds its index and re-renders.
+        if (this._searchResults) this._searchResults = [...this._searchResults];
+        else this._nodes = [...this._nodes];
+        this.reindexActive();
+      }
+      // If a cascaded parent is selected, extend the cascade to freshly-loaded kids.
+      if (this._mode === 'checkbox' && this._cascadeSelect && parent && this._selected.has(parentId)) {
+        for (const child of page.nodes) this.applyDown(child, true);
+        this.recomputeIndeterminate();
+      }
+      this.requestUpdate();
+      return page.nodes;
+    } catch (err) {
+      // Parity with runRequest: surface the failure instead of leaking an
+      // unhandled rejection, and let consumers react to load-error.
+      this.dispatchEvent(
+        new CustomEvent('load-error', { detail: { error: err }, bubbles: true, composed: true }),
+      );
+      return [];
     }
-    // If a cascaded parent is selected, extend the cascade to freshly-loaded kids.
-    if (this._mode === 'checkbox' && this._cascadeSelect && parent && this._selected.has(parentId)) {
-      for (const child of page.nodes) this.applyDown(child, true);
-      this.recomputeIndeterminate();
-    }
-    this.requestUpdate();
-    return page.nodes;
   };
 
   private onLoadMore(): void {
@@ -382,6 +391,15 @@ export class MpTreeSelect extends LitElement {
   }
 
   private onPanelClosed(): void {
+    // Reset search so reopening shows a fresh browse tree, not stale results.
+    if (this._query || this._searchResults) {
+      this._abort?.abort();
+      this._query = '';
+      this._searchResults = null;
+      this._loading = false;
+      this.reindexActive();
+      this.requestUpdate();
+    }
     this.dispatchEvent(new CustomEvent('close', { bubbles: true, composed: true }));
   }
 

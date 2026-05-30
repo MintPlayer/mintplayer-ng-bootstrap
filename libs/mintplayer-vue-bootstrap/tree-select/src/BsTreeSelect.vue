@@ -70,11 +70,28 @@ function track(c: HTMLElement): HTMLElement {
 function nodeSlot(name: 'item' | 'suggestion') {
   const slot = slots[name];
   if (!slot) return undefined;
+  // LRU-bounded (mirrors the Angular wrapper) so browsing a large server tree
+  // doesn't accumulate per-node containers/render scopes without limit. Evicted
+  // views are unmounted via render(null, el) and dropped from `containers`.
+  const MAX_VIEWS = 400;
   const cache = new Map<string, HTMLElement>();
   return (node: TreeNode, query: string) => {
     let c = cache.get(node.id);
     if (!c) {
       c = track(document.createElement('span'));
+      cache.set(node.id, c);
+      if (cache.size > MAX_VIEWS) {
+        const oldest = cache.keys().next().value as string;
+        const oldestEl = cache.get(oldest);
+        if (oldestEl) {
+          render(null, oldestEl);
+          const idx = containers.indexOf(oldestEl);
+          if (idx > -1) containers.splice(idx, 1);
+        }
+        cache.delete(oldest);
+      }
+    } else {
+      cache.delete(node.id);
       cache.set(node.id, c);
     }
     render(h('span', null, slot({ node, query })), c);
