@@ -43,11 +43,16 @@ test('checkbox + cascade demo selects descendants when a parent is checked', asy
   await demo.locator('.ts-control').click();
   const panel = demo.locator('.ts-panel');
   await expect(panel).toBeVisible();
+  await expect(panel.getByText('Engineering')).toBeVisible();
 
-  // Checking a leaf-less parent selects the parent itself (a chip is not
-  // rendered in checkbox mode, but the selection summary text updates).
+  // Expand the first root so its children load (they're lazy), then check the
+  // parent. Cascade selects the parent + its loaded descendants, which surface
+  // as chips on the trigger (checkbox mode renders chips too).
+  await panel.locator('.treeview-chevron').first().click();
+  await expect(panel.getByText('Frontend')).toBeVisible();
+
   await panel.locator('.ts-node-check').first().check();
 
-  const summary = page.locator('section').nth(2).locator('code');
-  await expect(summary).not.toHaveText('—');
+  // Parent + descendants → more than one chip (proves the cascade).
+  await expect.poll(async () => demo.locator('.ts-chip').count()).toBeGreaterThan(1);
 });
