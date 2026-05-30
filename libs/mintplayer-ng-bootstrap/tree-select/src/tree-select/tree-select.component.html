@@ -5,4 +5,20 @@
   (open)="onOpen()"
   (close)="onClose()"
   (clear)="onClear()"
-></mp-tree-select>
+>
+  <!-- Per-chip template (bsTreeSelectItem): rendered once per selected node and
+       projected into the WC's `slot="chips"`. The template's root element must
+       carry `slot="chips"`. Content stays in the consumer's light DOM, so
+       Bootstrap CSS + directives (cdkDrag/cdkDragHandle) work. -->
+  @if (itemTpl(); as tpl) {
+    @for (node of chipNodes(); track node.id) {
+      <ng-container
+        [ngTemplateOutlet]="tpl.templateRef"
+        [ngTemplateOutletContext]="itemCtx(node)"
+      ></ng-container>
+    }
+  }
+  <!-- Also allow direct light-DOM projection (e.g. `slot="value"`, or fully
+       hand-authored chips when not using bsTreeSelectItem). -->
+  <ng-content></ng-content>
+</mp-tree-select>

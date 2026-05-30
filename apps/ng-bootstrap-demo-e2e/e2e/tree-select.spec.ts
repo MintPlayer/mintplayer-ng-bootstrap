@@ -15,12 +15,19 @@ import { test, expect, type Page } from '@playwright/test';
 // Open the dropdown for the Nth <mp-tree-select> by clicking its anchor inside
 // shadow DOM, then wait for the host to report open + the panel to be visible.
 async function openTreeSelect(page: Page, index: number) {
-  await page.evaluate((i) => {
-    const els = document.querySelectorAll('mp-tree-select');
-    const wc = els[i] as (Element & { shadowRoot: ShadowRoot | null }) | undefined;
-    const anchor = wc?.shadowRoot?.querySelector<HTMLElement>('.ts-anchor');
-    if (!anchor) throw new Error(`anchor for tree-select #${i} not found`);
-    anchor.click();
+  // Wait until THIS element is upgraded and the Angular wrapper has wired its
+  // provider (else open() early-returns), then call the public open() directly
+  // — more reliable than racing a click against hydration.
+  await page.waitForFunction((i) => {
+    const el = document.querySelectorAll('mp-tree-select')[i] as
+      | (Element & { shadowRoot: ShadowRoot | null; provider?: unknown })
+      | undefined;
+    return !!el && !!el.shadowRoot && !!el.provider;
+  }, index);
+
+  await page.evaluate(async (i) => {
+    const el = document.querySelectorAll('mp-tree-select')[i] as Element & { open(): Promise<void> };
+    await el.open();
   }, index);
 
   await expect
@@ -89,11 +96,14 @@ async function chipLabels(page: Page, index: number) {
 test.describe('tree-select demo', () => {
   test.beforeEach(async ({ page }) => {
     await page.goto('/basic/tree-select');
-    await page.waitForLoadState('networkidle');
-    // Ensure the custom elements have upgraded before reaching into shadow DOM.
+    // Wait until the elements have upgraded AND the Angular wrapper has wired
+    // them (provider property pushed) — a reliable post-hydration signal on
+    // both browsers, where networkidle is flaky on this page.
     await page.waitForFunction(() => {
       const els = document.querySelectorAll('mp-tree-select');
-      return els.length >= 4 && !!(els[1] as Element & { shadowRoot: ShadowRoot | null }).shadowRoot;
+      if (els.length < 5) return false;
+      const el = els[1] as Element & { shadowRoot: ShadowRoot | null; provider?: unknown };
+      return !!el.shadowRoot && !!el.provider;
     });
   });
 
@@ -124,5 +134,20 @@ test.describe('tree-select demo', () => {
     // trigger (mode=checkbox renders chips too).
     await toggleCheckbox(page, 2, 'Fruit');
     await expect.poll(async () => (await chipLabels(page, 2)).length).toBeGreaterThan(0);
+  });
+
+  test('custom templates: bsTreeSelectSuggestion rows + bsTreeSelectItem chip render', async ({ page }) => {
+    // index 4 = the "Custom templates" demo (multiple mode). The suggestion
+    // template changes the row text, so assert structurally (not by label).
+    const ts = page.locator('mp-tree-select').nth(4);
+    await openTreeSelect(page, 4);
+
+    // Custom suggestion row carries a light badge (suggestionTemplate).
+    await expect(ts.locator('.badge.text-bg-light').first()).toBeVisible();
+
+    // Toggle the first row's checkbox → the custom chip (a light-DOM badge
+    // projected into slot="chips" by bsTreeSelectItem) appears.
+    await ts.locator('.ts-node-check').first().check();
+    await expect(ts.locator('.badge.text-bg-primary')).toHaveCount(1);
   });
 });
