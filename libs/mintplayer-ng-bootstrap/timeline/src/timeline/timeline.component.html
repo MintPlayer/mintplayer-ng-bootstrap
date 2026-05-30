@@ -1,0 +1,57 @@
+<mp-timeline
+  #timeline
+  [attr.orientation]="orientation()"
+  [attr.align]="align()"
+  [attr.reverse]="reverse() ? '' : null"
+  [attr.selectable]="selectable()"
+  (item-click)="onItemClick($event)"
+  (selection-change)="onSelectionChange($event)"
+>
+  @if (items().length) {
+    @for (item of items(); track item.id ?? $index; let i = $index) {
+      <mp-timeline-item
+        [attr.item-id]="idAttr(item)"
+        [attr.title]="item.title ?? null"
+        [attr.description]="item.description ?? null"
+        [attr.time]="timeAttr(item)"
+        [attr.icon]="item.icon ?? null"
+        [attr.color]="item.color ?? null"
+        [attr.item-class]="item.cssClass ?? null"
+        [attr.disabled]="item.disabled ? '' : null"
+      >
+        @if (markerTpl()) {
+          <span slot="marker">
+            <ng-container [ngTemplateOutlet]="markerTpl()!.templateRef" [ngTemplateOutletContext]="ctx(item, i)"></ng-container>
+          </span>
+        }
+        @if (titleTpl()) {
+          <span slot="title">
+            <ng-container [ngTemplateOutlet]="titleTpl()!.templateRef" [ngTemplateOutletContext]="ctx(item, i)"></ng-container>
+          </span>
+        }
+        @if (timestampTpl()) {
+          <span slot="opposite">
+            <ng-container [ngTemplateOutlet]="timestampTpl()!.templateRef" [ngTemplateOutletContext]="ctx(item, i)"></ng-container>
+          </span>
+        }
+        @if (oppositeTpl()) {
+          <span slot="opposite">
+            <ng-container [ngTemplateOutlet]="oppositeTpl()!.templateRef" [ngTemplateOutletContext]="ctx(item, i)"></ng-container>
+          </span>
+        }
+        @if (contentTpl()) {
+          <div slot="content">
+            <ng-container [ngTemplateOutlet]="contentTpl()!.templateRef" [ngTemplateOutletContext]="ctx(item, i)"></ng-container>
+          </div>
+        }
+        @if (connectorTpl()) {
+          <span slot="connector">
+            <ng-container [ngTemplateOutlet]="connectorTpl()!.templateRef" [ngTemplateOutletContext]="connectorCtx(item, i)"></ng-container>
+          </span>
+        }
+      </mp-timeline-item>
+    }
+  } @else {
+    <ng-content></ng-content>
+  }
+</mp-timeline>

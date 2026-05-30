@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { BsCard, BsCardBody, BsCardTitle, BsCardText, BsCardImg } from '@mintplayer/vue-bootstrap/card';
+import { BsCard, BsCardBody, BsCardTitle, BsCardText, BsCardImg, BsCardHeader, BsCardFooter } from '@mintplayer/vue-bootstrap/card';
 import { BsCodeSnippet } from '@mintplayer/vue-bootstrap/code-snippet';
 
 const SOURCE = `<script setup lang="ts">
@@ -26,6 +26,28 @@ import { BsCard, BsCardBody, BsCardTitle, BsCardText, BsCardImg } from '@mintpla
     <BsCardBody>
       <BsCardTitle>With image</BsCardTitle>
       <BsCardText>Image at the top, body below.</BsCardText>
+    </BsCardBody>
+  </BsCard>
+
+  <BsCard style="max-width: 20rem">
+    <BsCardHeader>Featured</BsCardHeader>
+    <BsCardBody>
+      <BsCardTitle>Special title treatment</BsCardTitle>
+      <BsCardText>With supporting text below.</BsCardText>
+    </BsCardBody>
+    <BsCardFooter class="text-body-secondary">2 days ago</BsCardFooter>
+  </BsCard>
+
+  <!-- A card nested inside another card's body -->
+  <BsCard style="max-width: 24rem">
+    <BsCardBody>
+      <BsCardTitle>Outer card</BsCardTitle>
+      <BsCard>
+        <BsCardBody>
+          <BsCardTitle>Inner card</BsCardTitle>
+          <BsCardText>Slotted into the outer card's body.</BsCardText>
+        </BsCardBody>
+      </BsCard>
     </BsCardBody>
   </BsCard>
 </template>`;
@@ -66,6 +88,34 @@ import { BsCard, BsCardBody, BsCardTitle, BsCardText, BsCardImg } from '@mintpla
         <BsCardBody>
           <BsCardTitle>With image</BsCardTitle>
           <BsCardText>Image at the top, body below.</BsCardText>
+        </BsCardBody>
+      </BsCard>
+    </section>
+
+    <section>
+      <h2>Header &amp; footer</h2>
+      <BsCard style="max-width: 20rem">
+        <BsCardHeader>Featured</BsCardHeader>
+        <BsCardBody>
+          <BsCardTitle>Special title treatment</BsCardTitle>
+          <BsCardText>With supporting text below as a natural lead-in to additional content.</BsCardText>
+        </BsCardBody>
+        <BsCardFooter class="text-body-secondary">2 days ago</BsCardFooter>
+      </BsCard>
+    </section>
+
+    <section>
+      <h2>Nested card</h2>
+      <BsCard style="max-width: 24rem">
+        <BsCardBody>
+          <BsCardTitle>Outer card</BsCardTitle>
+          <BsCardText>A card can be nested inside another card's body:</BsCardText>
+          <BsCard>
+            <BsCardBody>
+              <BsCardTitle>Inner card</BsCardTitle>
+              <BsCardText>This card is slotted into the outer card's body.</BsCardText>
+            </BsCardBody>
+          </BsCard>
         </BsCardBody>
       </BsCard>
     </section>

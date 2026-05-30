@@ -112,7 +112,12 @@
       },
       "defaultConfiguration": "development",
       "continuous": true,
-      "dependsOn": [{ "projects": ["api"], "target": "serve" }]
+      "dependsOn": [
+        { "projects": ["api"], "target": "serve" },
+        { "projects": ["mintplayer-web-components"], "target": "codegen-wc" },
+        { "projects": ["mintplayer-ng-bootstrap"], "target": "codegen-wc" },
+        { "projects": ["mintplayer-web-components"], "target": "codegen-wc-watch" }
+      ]
     },
     "extract-i18n": {
       "executor": "@angular-devkit/build-angular:extract-i18n",

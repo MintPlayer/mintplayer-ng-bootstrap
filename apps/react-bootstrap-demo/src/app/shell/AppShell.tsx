@@ -1,6 +1,7 @@
 import { type ReactNode } from 'react';
 import { Link, NavLink } from 'react-router-dom';
 import { FrameworkLinks } from './FrameworkLinks';
+import { GithubLink } from './GithubLink';
 const SECTIONS = [
   { title: 'Basic', routes: [
     { path: '/basic/card', label: 'Card' },
@@ -24,6 +25,7 @@ const SECTIONS = [
   ]},
   { title: 'Enterprise', routes: [
     { path: '/enterprise/scheduler', label: 'Scheduler' },
+    { path: '/enterprise/timeline', label: 'Timeline' },
     { path: '/enterprise/dock', label: 'Dock manager' },
     { path: '/enterprise/ribbon', label: 'Ribbon' },
     { path: '/enterprise/tile-manager', label: 'Tile manager' },
@@ -44,6 +46,7 @@ export function AppShell({ children }: { children: ReactNode }) {
           <span className="text-body-secondary small">demo</span>
           <div className="flex-grow-1" />
           <FrameworkLinks />
+          <GithubLink />
         </div>
       </header>
       <div className="d-flex flex-grow-1">

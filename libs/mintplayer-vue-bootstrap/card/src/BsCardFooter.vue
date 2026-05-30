@@ -1,12 +1,11 @@
 <script setup lang="ts">
-// Side-effect-registers <mp-card-footer> via the upstream WC entry.
-import '@mintplayer/web-components/card';
-
 defineOptions({ inheritAttrs: false });
+
+defineProps<{ color?: string }>();
 </script>
 
 <template>
-  <mp-card-footer v-bind="$attrs">
+  <div class="card-footer" :class="color ? 'text-bg-' + color : null" v-bind="$attrs">
     <slot />
-  </mp-card-footer>
+  </div>
 </template>

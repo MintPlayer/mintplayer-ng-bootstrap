@@ -1,12 +1,33 @@
 <script setup lang="ts">
-// Side-effect-registers <mp-card-img> via the upstream WC entry.
-import '@mintplayer/web-components/card';
+import { computed } from 'vue';
 
 defineOptions({ inheritAttrs: false });
+
+const props = defineProps<{
+  position?: 'top' | 'bottom' | 'overlay';
+  src?: string;
+  alt?: string;
+}>();
+
+const imgClass = computed(() => {
+  switch (props.position) {
+    case 'bottom':
+      return 'card-img-bottom';
+    case 'overlay':
+      return 'card-img';
+    case 'top':
+    default:
+      return 'card-img-top';
+  }
+});
 </script>
 
 <template>
-  <mp-card-img v-bind="$attrs">
-    <slot />
-  </mp-card-img>
+  <template v-if="position === 'overlay'">
+    <img class="card-img" :src="src" :alt="alt" v-bind="$attrs" />
+    <div class="card-img-overlay">
+      <slot />
+    </div>
+  </template>
+  <img v-else :class="imgClass" :src="src" :alt="alt" v-bind="$attrs" />
 </template>

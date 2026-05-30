@@ -42,6 +42,23 @@
 
 <bs-code-snippet [codeToCopy]="snippetHeaderBodyFooterHtml" [language]="'html'"></bs-code-snippet>
 
+<h2>Nested card</h2>
+
+<bs-card class="d-block mb-3" style="max-width: 24rem;">
+    <bs-card-body>
+        <bs-card-title>Outer card</bs-card-title>
+        <bs-card-text>A card can be nested inside another card's body:</bs-card-text>
+        <bs-card>
+            <bs-card-body>
+                <bs-card-title>Inner card</bs-card-title>
+                <bs-card-text>This card is slotted into the outer card's body.</bs-card-text>
+            </bs-card-body>
+        </bs-card>
+    </bs-card-body>
+</bs-card>
+
+<bs-code-snippet [codeToCopy]="snippetNestedHtml" [language]="'html'"></bs-code-snippet>
+
 <h2>With list-group</h2>
 
 <bs-card class="d-block mb-3">

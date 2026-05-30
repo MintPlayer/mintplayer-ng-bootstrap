@@ -1,0 +1,135 @@
+<h1 class="text-center">Timeline</h1>
+
+<p>
+  A data-driven timeline of events. Bind <code>[items]</code> and the component
+  renders a marker, title, description and an opposite-side timestamp for each
+  one. Layout is configurable via <code>orientation</code>, <code>align</code>,
+  <code>reverse</code> and <code>selectable</code>; every region can be
+  overridden with a structural template directive
+  (<code>*bsTimelineMarker</code>, <code>*bsTimelineContent</code>,
+  <code>*bsTimelineTimestamp</code>). Items can also be authored declaratively
+  as <code>&lt;mp-timeline-item&gt;</code> children.
+</p>
+
+<h2>Playground</h2>
+
+<p>
+  Toggle each input below with a <code>&lt;bs-select&gt;</code> or
+  <code>&lt;bs-checkbox&gt;</code> and watch the single live timeline — and the
+  copyable snippet beneath it — update to match.
+</p>
+
+<div class="playground-controls d-flex flex-wrap gap-3 align-items-end mb-3">
+  <div class="control-field">
+    <label class="form-label mb-1">Orientation</label>
+    <bs-select [(ngModel)]="orientation">
+      @for (o of orientations; track o) {
+        <option [ngValue]="o">{{ o }}</option>
+      }
+    </bs-select>
+  </div>
+
+  <div class="control-field">
+    <label class="form-label mb-1">Alignment</label>
+    <bs-select [(ngModel)]="align">
+      @for (a of alignments; track a) {
+        <option [ngValue]="a">{{ a }}</option>
+      }
+    </bs-select>
+  </div>
+
+  <div class="control-field">
+    <label class="form-label mb-1">Selectable</label>
+    <bs-select [(ngModel)]="selectable">
+      @for (s of selectables; track s) {
+        <option [ngValue]="s">{{ s }}</option>
+      }
+    </bs-select>
+  </div>
+
+  <div class="control-toggles">
+    <bs-checkbox type="switch" [(ngModel)]="reverse">Reverse</bs-checkbox>
+    <bs-checkbox type="switch" [(ngModel)]="customMarkers">Custom markers</bs-checkbox>
+    <bs-checkbox type="switch" [(ngModel)]="cardContent">Card content</bs-checkbox>
+  </div>
+</div>
+
+<div
+  class="timeline-container mb-3"
+  [class.timeline-horizontal]="orientation() === 'horizontal'">
+  <bs-timeline
+    [items]="milestones()"
+    [orientation]="orientation()"
+    [align]="align()"
+    [reverse]="reverse()"
+    [selectable]="selectable()"
+    [(selection)]="selected"
+    (itemClick)="onItemClick($event)">
+    @if (customMarkers()) {
+      <span *bsTimelineMarker="let item" class="tl-marker">
+        <i [class]="item.icon" aria-hidden="true"></i>
+      </span>
+    }
+    @if (cardContent()) {
+      <bs-card *bsTimelineContent="let item">
+        <bs-card-header>{{ item.title }}</bs-card-header>
+        <bs-card-body>
+          <bs-card-text class="mb-0">{{ item.description }}</bs-card-text>
+        </bs-card-body>
+        <bs-card-footer><small class="text-body-secondary">{{ item.time }}</small></bs-card-footer>
+      </bs-card>
+    }
+    <small *bsTimelineTimestamp="let item">{{ item.time }}</small>
+  </bs-timeline>
+</div>
+
+@if (selectable() !== 'none') {
+  <p>
+    <strong>Selected:</strong>
+    @if (selectedTitles().length) {
+      <span>{{ selectedTitles().join(', ') }}</span>
+    } @else {
+      <span class="text-muted">none</span>
+    }
+  </p>
+}
+
+<bs-code-snippet [codeToCopy]="playgroundSnippet()" [language]="'html'"></bs-code-snippet>
+<bs-code-snippet [codeToCopy]="snippetSetupTs" [language]="'ts'"></bs-code-snippet>
+
+<h2>Declarative authoring</h2>
+
+<p>
+  Instead of binding <code>[items]</code>, drop
+  <code>&lt;mp-timeline-item&gt;</code> children directly inside
+  <code>&lt;bs-timeline&gt;</code> and project into the named slots
+  (<code>opposite</code>, <code>content</code>). Handy when each item's markup
+  is bespoke rather than uniform.
+</p>
+
+<div class="timeline-container mb-3">
+  <bs-timeline align="alternate">
+    <mp-timeline-item item-id="kickoff" color="#6c757d">
+      <small slot="opposite">2026-01-10</small>
+      <bs-card slot="content">
+        <bs-card-header>Kickoff</bs-card-header>
+        <bs-card-body>
+          <bs-card-text class="mb-0">Project scoping and team assembly.</bs-card-text>
+        </bs-card-body>
+        <bs-card-footer><small class="text-body-secondary">2026-01-10</small></bs-card-footer>
+      </bs-card>
+    </mp-timeline-item>
+    <mp-timeline-item item-id="ship" color="#198754">
+      <small slot="opposite">2026-05-01</small>
+      <bs-card slot="content">
+        <bs-card-header>Shipped v1</bs-card-header>
+        <bs-card-body>
+          <bs-card-text class="mb-0">First public release.</bs-card-text>
+        </bs-card-body>
+        <bs-card-footer><small class="text-body-secondary">2026-05-01</small></bs-card-footer>
+      </bs-card>
+    </mp-timeline-item>
+  </bs-timeline>
+</div>
+
+<bs-code-snippet [codeToCopy]="snippetCardDeclarativeHtml" [language]="'html'"></bs-code-snippet>

@@ -1,0 +1,173 @@
+:host {
+  display: block;
+  box-sizing: border-box;
+  outline: none;
+
+  --mp-tl-gap: 1rem;
+  --mp-tl-line-width: 2px;
+  --mp-tl-line-color: var(--bs-border-color, #dee2e6);
+  --mp-tl-marker-size: 1rem;
+  --mp-tl-marker-color: var(--mp-tl-item-color, var(--bs-primary, #0d6efd));
+  --mp-tl-connector-color: var(--mp-tl-item-color, var(--mp-tl-line-color));
+}
+
+* {
+  box-sizing: border-box;
+}
+
+.item {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  column-gap: var(--mp-tl-gap);
+  align-items: start;
+}
+
+// Default side=start: content on the start (left) side, opposite on the end.
+// Every region is placed in BOTH axes explicitly — leaving one axis to grid
+// auto-placement makes the sparse algorithm spill the regions into separate
+// tracks (a row each, vertically), which traps the line in its own track and
+// stops the connector from spanning down to the next item's marker.
+.content {
+  grid-row: 1;
+  grid-column: 1;
+  min-width: 0;
+  padding-bottom: var(--mp-tl-gap);
+}
+
+.line {
+  grid-row: 1;
+  grid-column: 2;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  // Fill the row's full height so the flex-grow connector can reach the
+  // bottom of the row (= the next item's marker).
+  align-self: stretch;
+  min-height: 100%;
+}
+
+.opposite {
+  grid-row: 1;
+  grid-column: 3;
+  min-width: 0;
+  padding-bottom: var(--mp-tl-gap);
+  color: var(--bs-secondary-color, #6c757d);
+  font-size: 0.875rem;
+}
+
+:host([side='end']) .content {
+  grid-column: 3;
+}
+
+:host([side='end']) .opposite {
+  grid-column: 1;
+  text-align: end;
+}
+
+.marker {
+  flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.marker-dot {
+  // Fixed-size flex child: Firefox shrinks these without an explicit basis.
+  flex: 0 0 auto;
+  width: var(--mp-tl-marker-size);
+  height: var(--mp-tl-marker-size);
+  border-radius: 50%;
+  background: var(--mp-tl-marker-color);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  font-size: calc(var(--mp-tl-marker-size) * 0.7);
+  line-height: 1;
+}
+
+.connector {
+  flex: 1 1 auto;
+  width: var(--mp-tl-line-width);
+  min-height: var(--mp-tl-gap);
+  background: var(--mp-tl-connector-color);
+}
+
+:host([last]) .connector {
+  display: none;
+}
+
+.title {
+  font-weight: 600;
+}
+
+.body {
+  color: var(--bs-body-color);
+}
+
+:host([disabled]) {
+  opacity: 0.55;
+  pointer-events: none;
+}
+
+:host([selected]) .marker-dot {
+  box-shadow: 0 0 0 3px var(--bs-primary-bg-subtle, rgba(13, 110, 253, 0.35));
+}
+
+:host(:focus-visible) .item {
+  outline: 2px solid var(--bs-primary, #0d6efd);
+  outline-offset: 2px;
+  border-radius: var(--bs-border-radius, 0.375rem);
+}
+
+// Horizontal orientation: stack opposite / line / content as rows in a single
+// full-width column. The explicit single column (minmax(0, 1fr)) keeps every
+// region in column 1 — same reasoning as the vertical case, but with the axes
+// swapped — so the connector can grow across to the next item's marker.
+:host([orientation='horizontal']) .item {
+  grid-template-columns: minmax(0, 1fr);
+  grid-template-rows: 1fr auto 1fr;
+  row-gap: var(--mp-tl-gap);
+  column-gap: 0;
+  height: 100%;
+}
+
+:host([orientation='horizontal']) .content {
+  grid-row: 3;
+  grid-column: 1;
+  padding: 0 var(--mp-tl-gap) 0 0;
+}
+
+:host([orientation='horizontal']) .opposite {
+  grid-row: 1;
+  grid-column: 1;
+  padding: 0 var(--mp-tl-gap) 0 0;
+  text-align: start;
+}
+
+:host([orientation='horizontal'][side='end']) .content {
+  grid-row: 1;
+}
+
+:host([orientation='horizontal'][side='end']) .opposite {
+  grid-row: 3;
+}
+
+:host([orientation='horizontal']) .line {
+  grid-row: 2;
+  grid-column: 1;
+  flex-direction: row;
+  // Reset the vertical-mode stretch; here the line fills the column width
+  // (justify-self) and sits centered in its row band instead.
+  align-self: center;
+  justify-self: stretch;
+  min-height: 0;
+  min-width: 100%;
+}
+
+:host([orientation='horizontal']) .connector {
+  width: auto;
+  height: var(--mp-tl-line-width);
+  min-height: 0;
+  min-width: var(--mp-tl-gap);
+}

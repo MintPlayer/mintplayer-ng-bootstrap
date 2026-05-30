@@ -1,0 +1,36 @@
+/* Playground control bar — labelled selects + a stacked group of switches. */
+.playground-controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+  align-items: flex-end;
+  margin-bottom: 1rem;
+}
+
+.playground-controls .control-field {
+  display: flex;
+  flex-direction: column;
+  min-width: 12rem;
+}
+
+.playground-controls .control-toggles {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+/* Custom-marker demo: a colored circle that renders the item's icon.
+ * The accent color is data-driven via [data-color] selectors so the JSX
+ * stays free of inline styles. */
+.timeline-marker-dot {
+  width: 2rem;
+  height: 2rem;
+  flex: 0 0 auto;
+  font-size: 0.9rem;
+  background-color: var(--bs-secondary);
+}
+
+.timeline-marker-dot[data-color='#6c757d'] { background-color: #6c757d; }
+.timeline-marker-dot[data-color='#0d6efd'] { background-color: #0d6efd; }
+.timeline-marker-dot[data-color='#fd7e14'] { background-color: #fd7e14; }
+.timeline-marker-dot[data-color='#198754'] { background-color: #198754; }

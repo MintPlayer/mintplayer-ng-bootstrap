@@ -1,86 +1,100 @@
-// Bootstrap configuration prerequisites for the card slice.
+// Bootstrap configuration prerequisites — gives us the $card-* / $theme-colors
+// SCSS values we use as the *fallbacks* in the var() chains below.
 @import "node_modules/bootstrap/scss/functions";
 @import "node_modules/bootstrap/scss/variables";
 @import "node_modules/bootstrap/scss/variables-dark";
 @import "node_modules/bootstrap/scss/mixins";
 
-// Bootstrap card layer.
-@import "node_modules/bootstrap/scss/card";
+// ─────────────────────────────────────────────────────────────────────────
+// mp-card now renders into SHADOW DOM (a single default <slot>). The card
+// "chrome" (border, radius, background) lives here on :host, so it renders
+// correctly wherever the element is placed — including deeply slotted inside
+// another web component (e.g. mp-timeline), where Bootstrap's inherited
+// `--bs-*` custom properties don't reach the light-DOM content. Every token
+// reads the live `--bs-*` value when present (theme-aware) and falls back to
+// the compiled Bootstrap default otherwise (renders even when inheritance is
+// blocked across slot boundaries).
+// ─────────────────────────────────────────────────────────────────────────
 
-// Custom elements behave as inline by default. Promote the structural pieces
-// to block so Bootstrap's flow rules (padding, borders, list-group / footer
-// adjacency) apply as they would on real <div> wrappers. Both selectors
-// (mp-* for direct WC consumers, bs-* for Angular wrapper consumers) need
-// the same default — the wrappers are sibling implementations, not nested.
-mp-card,
-mp-card-header,
-mp-card-body,
-mp-card-footer,
-mp-card-img,
-mp-card-group,
-bs-card,
-bs-card-header,
-bs-card-body,
-bs-card-footer,
-bs-card-img,
-bs-card-group {
-  display: block;
-}
+:host {
+  // Card design tokens, defined ON the host so slotted regions inherit them
+  // from mp-card itself (nesting-proof) rather than from the document root.
+  // Bootstrap's $card-* SCSS vars are themselves `var(--bs-*)` references, so
+  // they make useless fallbacks — use LITERAL defaults so the chrome still
+  // renders when the `--bs-*` tokens don't inherit (deeply slotted case). When
+  // they DO inherit (normal use) the live value wins and stays theme-aware.
+  --mp-card-spacer-y: 1rem;
+  --mp-card-spacer-x: 1rem;
+  --mp-card-title-spacer-y: 0.5rem;
+  --mp-card-border-width: var(--bs-border-width, 1px);
+  --mp-card-border-color: var(--bs-border-color, #dee2e6);
+  --mp-card-border-radius: var(--bs-border-radius, 0.375rem);
+  --mp-card-cap-padding-y: 0.5rem;
+  --mp-card-cap-padding-x: 1rem;
+  --mp-card-cap-bg: var(--bs-tertiary-bg, rgba(0, 0, 0, 0.03));
+  --mp-card-bg: var(--bs-body-bg, #fff);
+  --mp-card-color: var(--bs-body-color, #212529);
 
-mp-card-title,
-mp-card-subtitle,
-mp-card-text,
-bs-card-title,
-bs-card-subtitle,
-bs-card-text {
-  display: block;
-}
-
-// card-link wrappers stay inline so adjacent links flow horizontally with
-// Bootstrap's `.card-link + .card-link { margin-left: ... }` spacing between
-// them (reproduced via the wrapper-adjacency rule above). If the wrappers were
-// block, the second link would wrap to a new line and the margin would render
-// as an indent.
-mp-card-link,
-bs-card-link {
-  display: inline;
-}
-
-// The image wrappers carry the same `.card-img-*` class as their inner <img>
-// (so Bootstrap's `.card > .card-img-top` adjacency selectors match the host
-// rather than a grandchild). Clip the inner img to the host's rounded corners.
-mp-card-img.card-img-top,
-mp-card-img.card-img-bottom,
-mp-card-img.card-img,
-bs-card-img.card-img-top,
-bs-card-img.card-img-bottom,
-bs-card-img.card-img {
+  // Flow children (header / body / footer / img / list-group) stack in
+  // document order, exactly like a Bootstrap card.
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  min-width: 0;
+  height: var(--mp-card-height, auto);
+  color: var(--mp-card-color);
+  word-wrap: break-word;
+  background-color: var(--mp-card-bg);
+  background-clip: border-box;
+  border: var(--mp-card-border-width) solid var(--mp-card-border-color);
+  border-radius: var(--mp-card-border-radius);
+  // Clip the caps/images to the rounded corners. Simpler than Bootstrap's
+  // per-first/last-child rounding; acceptable for a card container.
   overflow: hidden;
 }
 
-// Bootstrap's `.card-link + .card-link { margin-left: ... }` adjacency does
-// not match across <mp-card-link> / <bs-card-link> wrapper boundaries (each
-// link's `.card-link` is a child <a>, not a sibling). Compensate by
-// reproducing the rule on the wrapper elements.
-mp-card-link + mp-card-link > .card-link,
-bs-card-link + bs-card-link > .card-link {
-  margin-left: var(--bs-card-spacer-x);
+// NOTE: the inner regions (.card-header / .card-body / .card-footer / .card-img-*)
+// are styled by the GLOBAL sheet (card-global.styles.scss), NOT here via
+// `::slotted()`. `::slotted()` is the lowest-priority way to style slotted
+// content — any document rule (e.g. Bootstrap's own `.card-header`, present when
+// the host app loads full Bootstrap as React/Vue do) wins over it regardless of
+// specificity. The global sheet's document-level rules out-rank Bootstrap on
+// source order, so they apply consistently across all three frameworks. Only the
+// card *chrome* (above, on :host — which Bootstrap's `.card` selector never
+// matches, since mp-card carries no `.card` class) and the colour contract
+// (below) stay in the shadow.
+
+// ── Colour contract (filled + outline) ─────────────────────────────────────
+// Driven by the reflected `color` / `outline` attributes, generated from the
+// Bootstrap theme map plus the extra body/white/transparent tokens the Color
+// enum exposes. Encapsulated on :host — no dependency on global utilities.
+@each $name, $value in $theme-colors {
+  :host([color="#{$name}"]) {
+    color: color-contrast($value);
+    background-color: $value;
+    border-color: $value;
+  }
+  :host([color="#{$name}"][outline]) {
+    color: inherit;
+    background-color: transparent;
+    border-color: $value;
+  }
 }
 
-// Bootstrap defines `text-bg-*` only for the named scale (primary…dark). The
-// Color enum we expose also includes `body`, `white`, and `transparent` — fill
-// in the matching trio locally so every enum member maps to a valid class.
-.text-bg-body {
+:host([color="body"]) {
   color: var(--bs-body-color);
-  background-color: var(--bs-body-bg);
+  background-color: var(--bs-body-bg, #{$card-bg});
 }
-
-.text-bg-white {
+:host([color="white"]) {
   color: #000;
   background-color: #fff;
 }
-
-.text-bg-transparent {
+:host([color="transparent"]) {
   color: inherit;
+  background-color: transparent;
+}
+:host([color="body"][outline]),
+:host([color="white"][outline]),
+:host([color="transparent"][outline]) {
   background-color: transparent;
 }

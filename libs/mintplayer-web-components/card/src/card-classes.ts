@@ -52,28 +52,6 @@ export function clearPrefixedClasses(el: HTMLElement, prefix: string): void {
 }
 
 /**
- * Apply the card root's colour contract to an element: `text-bg-<name>` for
- * the filled variant, or `border border-<name> bg-transparent` for outline.
- * Used by both `mp-card` and the Angular `bs-card` wrapper so both layers
- * stay byte-identical without each duplicating the bootstrap-utility logic.
- */
-export function applyCardColorClasses(
-  el: HTMLElement,
-  color: string | null,
-  outline: boolean,
-): void {
-  clearPrefixedClasses(el, 'text-bg-');
-  clearPrefixedClasses(el, 'border-');
-  el.classList.remove('border', 'bg-transparent');
-  if (!isCardColorName(color)) return;
-  if (outline) {
-    el.classList.add('border', `border-${color}`, 'bg-transparent');
-  } else {
-    el.classList.add(`text-bg-${color}`);
-  }
-}
-
-/**
  * Apply the `text-bg-<name>` background to `el`, clearing any prior value.
  * Used by the header / footer Bootstrap-classed regions, which don't have an
  * outline mode upstream.

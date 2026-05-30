@@ -1,0 +1,45 @@
+:host {
+  display: block;
+}
+
+// Playground control bar — labelled selects + a stacked group of switches.
+.control-field {
+  display: flex;
+  flex-direction: column;
+  min-width: 12rem;
+}
+
+.control-toggles {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.timeline-container {
+  border: 1px solid var(--bs-border-color, #dee2e6);
+  border-radius: 4px;
+  padding: 1rem;
+}
+
+// The horizontal timeline needs room to run left-to-right and may overflow.
+.timeline-horizontal {
+  overflow-x: auto;
+}
+
+// Custom marker (shown when the playground's "Custom markers" switch is on).
+// The marker template is projected through the bs-timeline wrapper's view,
+// so ::ng-deep is required to reach it. Colour comes from the per-item CSS
+// custom property the wrapper sets on each <mp-timeline-item> — no inline
+// styles. Bootstrap-icons render via the projected `bi bi-*` class.
+::ng-deep .tl-marker {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
+  width: 2rem;
+  height: 2rem;
+  border-radius: 50%;
+  background: var(--mp-tl-item-color, var(--bs-secondary, #6c757d));
+  color: #fff;
+  font-size: 0.875rem;
+}
