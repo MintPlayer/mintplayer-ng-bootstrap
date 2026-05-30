@@ -35,6 +35,33 @@ public class TreeItemsController(DemoDbContext db) : ControllerBase
         CancellationToken ct = default)
         => PageAsync(db.TreeItems.Where(t => t.ParentId == parentId), sort, page, perPage, ct);
 
+    /// <summary>
+    /// GET /api/treeItems/search?q=&amp;page=&amp;perPage=
+    /// Server-side search across the whole tree. Returns a flat, paged list of
+    /// items whose Name or Code contains <paramref name="q"/> (case-insensitive).
+    /// Empty query returns an empty page. Backs the tree-select server-search demo.
+    /// </summary>
+    [HttpGet("search")]
+    public Task<ActionResult<PagedResult<TreeItemDto>>> Search(
+        [FromQuery] string q = "",
+        [FromQuery] int page = 1,
+        [FromQuery] int perPage = 50,
+        CancellationToken ct = default)
+    {
+        var term = (q ?? string.Empty).Trim().ToLower();
+        if (term.Length == 0)
+            return PageAsync(db.TreeItems.Where(_ => false), null, page, perPage, ct);
+
+        // NOTE: keep the ToLower() calls. EF Core (SQLite provider) translates
+        // string.Contains to instr(), which is CASE-SENSITIVE — dropping ToLower
+        // would make search miss "Apple" for "apple". A substring match is a
+        // leading-wildcard scan that can't use an index anyway, so there is no
+        // sargability to recover here.
+        return PageAsync(
+            db.TreeItems.Where(t => t.Name.ToLower().Contains(term) || t.Code.ToLower().Contains(term)),
+            "name:asc", page, perPage, ct);
+    }
+
     private static async Task<ActionResult<PagedResult<TreeItemDto>>> PageAsync(
         IQueryable<TreeItem> q, string? sort, int page, int perPage, CancellationToken ct)
     {

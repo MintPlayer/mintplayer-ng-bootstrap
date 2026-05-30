@@ -38,7 +38,7 @@ export class BsDropdownItemComponent {
 
   /**
    * Roving tabindex in menu mode: the focused item is 0, others -1.
-   * In listbox mode (typeahead/select2/etc.), the consumer applies bsRovingFocusItem
+   * In listbox mode (typeahead/tree-select/etc.), the consumer applies bsRovingFocusItem
    * externally for activedescendant management; this binding stays null so it
    * doesn't fight that directive.
    */

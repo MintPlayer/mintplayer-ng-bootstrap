@@ -22,6 +22,7 @@ export const ROUTES: Routes = [
   { path: 'button-type', loadComponent: () => import('./button-type/button-type.component').then(m => m.ButtonTypeComponent) },
   { path: 'containers', loadChildren: () => import('./containers/containers.routes').then(m => m.ROUTES) },
   { path: 'treeview', loadComponent: () => import('./treeview/treeview.component').then(m => m.TreeviewComponent) },
+  { path: 'tree-select', loadComponent: () => import('./tree-select/tree-select.component').then(m => m.TreeSelectComponent) },
   { path: 'marquee', loadComponent: () => import('./marquee/marquee.component').then(m => m.MarqueeComponent) },
   { path: 'icon', loadComponent: () => import('./icon/icon.component').then(m => m.IconComponent) },
 ];

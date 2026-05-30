@@ -88,18 +88,6 @@
             "</bs-modal>"
         ]
     },
-    "Select2": {
-        "prefix": "bs-select2",
-        "description": "Select2 component (multiselect)",
-        "body": [
-            "<bs-select2 (provideSuggestions)=\"onProvide${1:Tag}Suggestions(\\$event)\" [suggestions]=\"${1/(.)(.*)/${1:/downcase}$2/}Suggestions\" [selectedItems]=\"selected${1}s\">",
-            "\t<span *bsItemTemplate=\"let item=item; let select2=select2\" class=\"select2-item\" [style.background]=\"${3:item.category.color}\" [style.color]=\"${3} | bsFontColor\">",
-            "\t\t<span [style.color]=\"${3} | bsFontColor\" (click)=\"select2.onRemove${1}(item,\\$event)\">×</span>",
-            "\t\t{{ ${4:item.text} }}",
-            "\t</span>",
-            "</bs-select2>"
-        ]
-    },
     "Alert": {
         "prefix": "bs-alert",
         "description": "Bootstrap Alert",
@@ -357,19 +345,6 @@
             "\t\t{{ node.label }}",
             "\t</ng-container>",
             "</bs-treeview>"
-        ]
-    },
-    "MultiSelect": {
-        "prefix": "bs-multiselect",
-        "description": "Bootstrap Multiselect",
-        "body": [
-            "<bs-multiselect [items]=\"${1:items}\" [selectedItems]=\"${2:selectedItems}\">",
-            "\t<div *bsHeaderTemplate>${3:Header}</div>",
-            "\t<div *bsFooterTemplate>${4:Footer}</div>",
-            "\t<ng-container *bsButtonTemplate=\"let count\">",
-            "\t\t{{ count }} geselecteerd",
-            "\t</ng-container>",
-            "</bs-multiselect>"
         ]
     },
     "Offcanvas": {

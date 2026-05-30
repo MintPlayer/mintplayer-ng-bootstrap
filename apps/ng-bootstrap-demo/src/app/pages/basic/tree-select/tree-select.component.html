@@ -1,0 +1,86 @@
+<h1 class="text-center">Tree select</h1>
+
+<p>
+    A dropdown that lets users pick node(s) from a (possibly huge, lazily-loaded)
+    tree. Data is supplied through a <code>TreeSelectProvider</code> — either an
+    <code>InMemoryTreeSelectProvider</code> for static trees or a custom provider
+    that pages a backend. <code>&lt;bs-tree-select&gt;</code> is a
+    <code>ControlValueAccessor</code>, so it works with <code>[(ngModel)]</code>
+    and <code>formControlName</code>. It must live inside a
+    <code>&lt;bs-form&gt;</code>.
+</p>
+
+<h2>Single select with server search</h2>
+<p>
+    Backed by an HTTP provider that calls <code>/api/treeItems</code>,
+    <code>/api/treeItems/&#123;id&#125;/children</code> and
+    <code>/api/treeItems/search</code>. Roots and children load lazily; typing
+    queries the server. (Requires the demo backend running.)
+</p>
+
+<bs-form>
+    <bs-tree-select
+        [provider]="httpProvider"
+        placeholder="Search the org tree…"
+        [(value)]="singleValue">
+    </bs-tree-select>
+</bs-form>
+
+<bs-code-snippet [codeToCopy]="snippetSingleHtml" [language]="'html'"></bs-code-snippet>
+<bs-code-snippet [codeToCopy]="snippetSingleTs" [language]="'ts'"></bs-code-snippet>
+
+<h2 class="mt-4">Multiple (chips)</h2>
+<p>
+    <code>mode="multiple"</code> renders each selected node as a removable chip.
+    This example uses an in-memory provider — no backend required.
+</p>
+
+<bs-form>
+    <bs-tree-select
+        mode="multiple"
+        [provider]="memoryProvider"
+        placeholder="Pick a few…"
+        [(value)]="multipleValue">
+    </bs-tree-select>
+</bs-form>
+
+<bs-code-snippet [codeToCopy]="snippetMultipleHtml" [language]="'html'"></bs-code-snippet>
+<bs-code-snippet [codeToCopy]="snippetMultipleTs" [language]="'ts'"></bs-code-snippet>
+
+<h2 class="mt-4">Checkbox + cascade</h2>
+<p>
+    <code>mode="checkbox"</code> with <code>[cascadeSelect]="true"</code> shows a
+    checkbox per node and cascades selection down to descendants (and reflects
+    indeterminate parents).
+</p>
+
+<bs-form>
+    <bs-tree-select
+        mode="checkbox"
+        [cascadeSelect]="true"
+        [provider]="memoryProvider"
+        placeholder="Select branches…"
+        [(value)]="checkboxValue">
+    </bs-tree-select>
+</bs-form>
+
+<bs-code-snippet [codeToCopy]="snippetCheckboxHtml" [language]="'html'"></bs-code-snippet>
+
+<h2 class="mt-4">Button variant + clear</h2>
+<p>
+    <code>variant="button"</code> renders the trigger as a button with the search
+    box inside the panel. <code>[showClear]="true"</code> adds a clear affordance
+    once something is selected.
+</p>
+
+<bs-form>
+    <bs-tree-select
+        variant="button"
+        [showClear]="true"
+        [provider]="memoryProvider"
+        placeholder="Choose one"
+        [(value)]="buttonValue">
+    </bs-tree-select>
+</bs-form>
+
+<bs-code-snippet [codeToCopy]="snippetButtonHtml" [language]="'html'"></bs-code-snippet>

@@ -1,4 +1,4 @@
-// In activedescendant mode (e.g. typeahead/select2 combobox) the item
+// In activedescendant mode (e.g. typeahead/tree-select combobox) the item
 // never receives DOM focus, so the browser's :focus style never paints.
 // Mirror Bootstrap's .dropdown-item:hover appearance when the parent
 // roving-focus marks this item as the active descendant.
