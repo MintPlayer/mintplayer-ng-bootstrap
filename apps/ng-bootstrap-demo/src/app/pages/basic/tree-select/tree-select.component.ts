@@ -176,18 +176,20 @@ export class TreeSelectComponent {
   protected readonly snippetTemplatesHtml = dedent`
     <bs-form>
       <bs-tree-select mode="multiple" [provider]="memoryProvider" [(value)]="value">
-        <!-- Custom chip (projected light-DOM; root carries slot="chips"). -->
+        <!-- Custom chip (projected light-DOM; root carries slot="chips").
+             Style it with your own page CSS (.ts-tpl-chip). -->
         <ng-template bsTreeSelectItem let-node let-remove="remove">
-          <span slot="chips" class="badge text-bg-primary d-inline-flex align-items-center gap-1">
+          <span slot="chips" class="ts-tpl-chip">
             {{ node.label }}
-            <button type="button" class="btn-close btn-close-white" (click)="remove()"></button>
+            <button type="button" class="ts-tpl-chip-remove" (click)="remove()">&times;</button>
           </span>
         </ng-template>
 
-        <!-- Custom dropdown row. -->
+        <!-- Suggestion rows render in the treeview shadow — page CSS can't reach
+             them, so use intrinsic elements (or inline styles). -->
         <ng-template bsTreeSelectSuggestion let-node>
           <strong>{{ node.label }}</strong>
-          <span class="badge text-bg-light ms-2">{{ node.id }}</span>
+          <small>&nbsp;({{ node.id }})</small>
         </ng-template>
       </bs-tree-select>
     </bs-form>

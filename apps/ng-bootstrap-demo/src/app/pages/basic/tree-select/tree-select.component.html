@@ -96,15 +96,18 @@
 <bs-form>
     <bs-tree-select mode="multiple" [provider]="memoryProvider" [(value)]="templatesValue">
         <ng-template bsTreeSelectItem let-node let-remove="remove">
-            <span slot="chips" class="badge text-bg-primary d-inline-flex align-items-center gap-1">
+            <span slot="chips" class="ts-tpl-chip">
                 {{ node.label }}
-                <button type="button" class="btn-close btn-close-white" style="font-size:0.6rem" (click)="remove()" aria-label="Remove"></button>
+                <button type="button" class="ts-tpl-chip-remove" (click)="remove()" aria-label="Remove">&times;</button>
             </span>
         </ng-template>
 
+        <!-- Suggestion rows render inside the nested mp-treeview shadow, so page
+             CSS classes can't reach them — use elements with intrinsic styling
+             (or inline styles) instead. -->
         <ng-template bsTreeSelectSuggestion let-node>
             <strong>{{ node.label }}</strong>
-            <span class="badge text-bg-light ms-2">{{ node.id }}</span>
+            <small>&nbsp;({{ node.id }})</small>
         </ng-template>
     </bs-tree-select>
 </bs-form>

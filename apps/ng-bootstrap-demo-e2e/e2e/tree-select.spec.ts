@@ -142,12 +142,12 @@ test.describe('tree-select demo', () => {
     const ts = page.locator('mp-tree-select').nth(4);
     await openTreeSelect(page, 4);
 
-    // Custom suggestion row carries a light badge (suggestionTemplate).
-    await expect(ts.locator('.badge.text-bg-light').first()).toBeVisible();
+    // Custom suggestion row renders intrinsic markup (suggestionTemplate).
+    await expect(ts.locator('strong').first()).toBeVisible();
 
-    // Toggle the first row's checkbox → the custom chip (a light-DOM badge
-    // projected into slot="chips" by bsTreeSelectItem) appears.
+    // Toggle the first row's checkbox → the custom chip (projected into
+    // slot="chips" by bsTreeSelectItem) appears.
     await ts.locator('.ts-node-check').first().check();
-    await expect(ts.locator('.badge.text-bg-primary')).toHaveCount(1);
+    await expect(ts.locator('.ts-tpl-chip')).toHaveCount(1);
   });
 });
