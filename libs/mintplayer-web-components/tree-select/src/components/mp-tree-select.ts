@@ -102,6 +102,11 @@ export class MpTreeSelect extends LitElement {
     return this._provider;
   }
   set provider(value: TreeSelectProvider | undefined) {
+    // Idempotent on identical reference. @lit/react re-assigns every element
+    // property on every React render WITHOUT value-diffing (it assumes elements
+    // dirty-check themselves), so without this guard a selection-driven
+    // re-render would re-run the destructive reset below and collapse the tree.
+    if (value === this._provider) return;
     this._provider = value;
     this._rootsLoaded = false;
     this._nodes = [];

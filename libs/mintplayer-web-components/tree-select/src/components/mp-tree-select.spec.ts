@@ -158,4 +158,28 @@ describe('<mp-tree-select>', () => {
     expect((el.value as TreeNode[]).length).toBe(0);
     expect(cleared).toBe(true);
   });
+
+  it('keeps the expanded tree when the SAME provider reference is re-assigned (@lit/react idempotency)', async () => {
+    // @lit/react re-applies every element property on every React render without
+    // value-diffing, so a selection-driven re-render re-assigns `provider`. The
+    // setter must be idempotent on an unchanged reference, or the tree collapses.
+    const provider = makeProvider();
+    const el = document.createElement('mp-tree-select') as MpTreeSelect;
+    el.searchDebounceMs = 0;
+    el.mode = 'checkbox';
+    el.provider = provider;
+    host.appendChild(el);
+    await settled(el);
+    await el.open();
+    await flush(el);
+
+    (row(el, '1').querySelector('.treeview-chevron') as HTMLElement).click();
+    await flush(el);
+    expect(row(el, '1a')).toBeTruthy(); // children loaded + expanded
+
+    // Re-assign the identical reference (what @lit/react does each render).
+    el.provider = provider;
+    await flush(el);
+    expect(row(el, '1a')).toBeTruthy(); // still expanded — not collapsed/reset
+  });
 });
