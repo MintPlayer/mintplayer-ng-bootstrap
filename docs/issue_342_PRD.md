@@ -187,9 +187,12 @@ Reaching an advanced case is one attribute: `mode="checkbox" [cascadeSelect]="tr
 - [x] Demo pages in all three apps (single+server-search / chips / checkbox+cascade / button+clear); build green.
 - [x] Playwright e2e specs in all three apps (backend-independent assertions against the in-memory demos).
 
-### Milestone 4: Deletion
-- [ ] Remove select2 / searchbox / multiselect libs, demos, tests, exports, routes, references.
-- [ ] Grep sweep for dangling references; build all libs + demos green.
+### Milestone 4: Deletion ✓
+- [x] Removed `select2` / `searchbox` / `multiselect` libs + their demo pages + routes + nav + VS Code snippets.
+- [x] Edited incidental consumers (`autofocus`, `modal` demos) to drop `bs-select2` for a plain input.
+- [x] **Reworked** (not deleted) the `select2-drag-drop` sample → `tree-select-drag-drop`: `bs-tree-select` (multiple) for picking + a separate CDK `cdkDropList` to reorder the selection (order flows back via `[value]`).
+- [x] Updated stale doc comments in dropdown/combobox libs that named the removed components.
+- [x] Grep sweep clean (zero dangling references in app code); `ng-bootstrap-demo` builds green.
 
 ---
 

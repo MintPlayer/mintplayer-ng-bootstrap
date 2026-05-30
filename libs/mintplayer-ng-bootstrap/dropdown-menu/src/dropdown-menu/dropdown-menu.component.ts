@@ -27,7 +27,7 @@ export class BsDropdownMenuComponent implements AfterViewInit {
   /**
    * Items projected into this menu. Used in menu mode (popupRole='menu') to
    * implement roving-tabindex keyboard navigation. In listbox mode, callers
-   * (typeahead/select2/etc.) typically apply their own bsRovingFocus directly,
+   * (typeahead/tree-select/etc.) typically apply their own bsRovingFocus directly,
    * so this menu's keyboard handler is a no-op.
    */
   readonly dropdownItems = contentChildren(BsDropdownItemComponent, { descendants: true });

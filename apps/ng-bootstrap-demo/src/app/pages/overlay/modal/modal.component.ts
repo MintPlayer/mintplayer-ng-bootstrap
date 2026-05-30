@@ -1,14 +1,10 @@
-import { Component, inject, signal, ChangeDetectionStrategy} from '@angular/core';
+import { Component, inject, ChangeDetectionStrategy} from '@angular/core';
 import { Color } from '@mintplayer/ng-bootstrap';
-import { Tag } from '../../../entities/tag';
-import { TagService } from '../../../services/tag/tag.service';
 import { BsCodeSnippetComponent } from '@mintplayer/ng-bootstrap/code-snippet';
 import { BsGridComponent, BsGridRowDirective, BsGridColumnDirective, BsGridColDirective, BsColFormLabelDirective } from '@mintplayer/ng-bootstrap/grid';
 import { BsModalHostComponent, BsModalDirective, BsModalHeaderDirective, BsModalBodyDirective, BsModalFooterDirective, BsModalCloseDirective } from '@mintplayer/ng-bootstrap/modal';
-import { BsSelect2Component, BsItemTemplateDirective } from '@mintplayer/ng-bootstrap/select2';
 import { BsButtonTypeDirective } from '@mintplayer/ng-bootstrap/button-type';
 import { FocusOnLoadDirective } from '@mintplayer/ng-focus-on-load';
-import { BsFontColorPipe } from '@mintplayer/ng-bootstrap/font-color';
 import { GIT_REPO } from '../../../providers/git-repo.provider';
 import { dedent } from 'ts-dedent';
 
@@ -16,25 +12,14 @@ import { dedent } from 'ts-dedent';
   selector: 'demo-modal',
   templateUrl: './modal.component.html',
   styleUrls: ['./modal.component.scss'],
-  imports: [BsCodeSnippetComponent, BsGridComponent, BsGridRowDirective, BsGridColumnDirective, BsGridColDirective, BsColFormLabelDirective, BsModalHostComponent, BsModalDirective, BsModalHeaderDirective, BsModalBodyDirective, BsModalFooterDirective, BsModalCloseDirective, BsSelect2Component, BsItemTemplateDirective, BsButtonTypeDirective, FocusOnLoadDirective, BsFontColorPipe],
+  imports: [BsCodeSnippetComponent, BsGridComponent, BsGridRowDirective, BsGridColumnDirective, BsGridColDirective, BsColFormLabelDirective, BsModalHostComponent, BsModalDirective, BsModalHeaderDirective, BsModalBodyDirective, BsModalFooterDirective, BsModalCloseDirective, BsButtonTypeDirective, FocusOnLoadDirective],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class ModalComponent {
-  private tagService = inject(TagService);
   gitRepo = inject(GIT_REPO);
 
   isOpen = false;
   colors = Color;
-  tagSuggestions = signal<Tag[]>([]);
-  selectedTags = signal<Tag[]>([]);
-
-  onProvideTagSuggestions(search: string) {
-    this.tagService.suggestTags(search, true).then((tags) => {
-      if (tags) {
-        this.tagSuggestions.set(tags);
-      }
-    });
-  }
 
   protected readonly snippetBasicHtml = dedent`
     <button [color]="colors.primary" (click)="isOpen = true">Open modal</button>

@@ -6,7 +6,7 @@ export type BsComboboxNavigateDirection = 'next' | 'prev' | 'first' | 'last';
 
 /**
  * APG Combobox pattern — turns a plain `<input>` into a combobox that drives
- * an adjacent `bsDropdown` popup (typeahead, select2, multiselect, searchbox).
+ * an adjacent `bsDropdown` popup (typeahead, tree-select, etc.).
  *
  * The directive owns the input-side ARIA wiring:
  * - `role="combobox"` on the host
