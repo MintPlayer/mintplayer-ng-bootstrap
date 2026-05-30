@@ -29,6 +29,7 @@ const router = createRouter({
     { path: '/basic/toggle-button', name: 'toggle-button', component: () => import('../views/ToggleButtonView.vue') },
     { path: '/basic/tab-control',   name: 'tab-control',   component: () => import('../views/TabControlView.vue') },
     { path: '/basic/treeview',      name: 'treeview',      component: () => import('../views/TreeviewView.vue') },
+    { path: '/basic/tree-select',   name: 'tree-select',   component: () => import('../views/TreeSelectView.vue') },
     // Enterprise
     { path: '/enterprise/datatables', name: 'datatable', component: () => import('../views/DatatableView.vue') },
     { path: '/enterprise/dock',         name: 'dock',          component: () => import('../views/enterprise/DockView.vue') },

@@ -25,6 +25,7 @@ const SECTIONS = [
       { path: '/basic/toggle-button', label: 'Toggle button' },
       { path: '/basic/pagination', label: 'Pagination' },
       { path: '/basic/treeview', label: 'Treeview' },
+      { path: '/basic/tree-select', label: 'Tree select' },
       { path: '/basic/tab-control', label: 'Tab control' },
       { path: '/basic/code-snippet', label: 'Code snippet' },
     ],

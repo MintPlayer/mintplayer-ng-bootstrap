@@ -182,9 +182,10 @@ Reaching an advanced case is one attribute: `mode="checkbox" [cascadeSelect]="tr
 - [x] Vue `BsTreeSelect` (`v-model` + property sync).
 - [x] Secondary-entry exports + package wiring for all three (resolve via `@mintplayer/*-bootstrap/*` wildcards).
 
-### Milestone 3: Demos + e2e
-- [ ] Demo pages in all three apps (single / chips / checkbox+cascade / server-search).
-- [ ] Playwright e2e in all three apps.
+### Milestone 3: Backend + Demos + e2e ✓
+- [x] `GET /api/treeItems/search?q=` endpoint (reuses TreeItem entity/seed; no migration).
+- [x] Demo pages in all three apps (single+server-search / chips / checkbox+cascade / button+clear); build green.
+- [x] Playwright e2e specs in all three apps (backend-independent assertions against the in-memory demos).
 
 ### Milestone 4: Deletion
 - [ ] Remove select2 / searchbox / multiselect libs, demos, tests, exports, routes, references.
