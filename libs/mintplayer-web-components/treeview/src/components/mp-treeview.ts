@@ -362,7 +362,12 @@ export class MpTreeview extends LitElement {
   }
 
   private onChevronClick(node: TreeNode, ev: MouseEvent): void {
-    if (!node.children || node.children.length === 0) return;
+    // Honor lazy nodes: the chevron is rendered whenever a node is expandable
+    // (`hasChildren || lazy`), so a mouse click must trigger the lazy load too —
+    // not just keyboard ArrowRight. Without this, async/lazy trees can't be
+    // expanded by pointer.
+    const expandable = (node.children?.length ?? 0) > 0 || !!node.lazy;
+    if (!expandable) return;
     ev.stopPropagation();
     this.focusNode(node.id);
     this.toggleExpansion(node);

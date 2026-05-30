@@ -168,12 +168,13 @@ Reaching an advanced case is one attribute: `mode="checkbox" [cascadeSelect]="tr
 
 ## Timeline & Milestones
 
-### Milestone 1: WC core
-- [ ] Scaffold `tree-select` WC lib + `codegen-wc` wiring.
-- [ ] DataProvider port + paging + abort; compose `OverlayController` + `mp-treeview`.
-- [ ] Selection modes, `cascadeSelect` (with lazy-suppression), `value-change`.
-- [ ] Trigger variants, search/debounce, state machine, render-callback defaults.
-- [ ] `InMemoryTreeSelectProvider` + WC unit tests.
+### Milestone 1: WC core ✓
+- [x] Scaffold `tree-select` WC lib + `codegen-wc` wiring.
+- [x] DataProvider port + paging + abort; compose `OverlayController` + `mp-treeview`.
+- [x] Selection modes, `cascadeSelect` (best-effort over loaded nodes), `value-change`.
+- [x] Trigger variants, search/debounce, state machine, render-callback defaults.
+- [x] `InMemoryTreeSelectProvider` + WC unit tests (7 specs, green).
+- [x] Fix `mp-treeview` chevron-click to honor lazy nodes (mouse lazy-expand).
 
 ### Milestone 2: Framework wrappers
 - [ ] Angular `bs-tree-select` (CVA + `<bs-form>` + ng-template directive bridging).
