@@ -72,10 +72,11 @@
     }
     @if (cardContent()) {
       <bs-card *bsTimelineContent="let item">
+        <bs-card-header>{{ item.title }}</bs-card-header>
         <bs-card-body>
-          <bs-card-title class="mb-1">{{ item.title }}</bs-card-title>
           <bs-card-text class="mb-0">{{ item.description }}</bs-card-text>
         </bs-card-body>
+        <bs-card-footer><small class="text-body-secondary">{{ item.time }}</small></bs-card-footer>
       </bs-card>
     }
     <small *bsTimelineTimestamp="let item">{{ item.time }}</small>
@@ -111,19 +112,21 @@
     <mp-timeline-item item-id="kickoff" color="#6c757d">
       <small slot="opposite">2026-01-10</small>
       <bs-card slot="content">
+        <bs-card-header>Kickoff</bs-card-header>
         <bs-card-body>
-          <bs-card-title class="mb-1">Kickoff</bs-card-title>
           <bs-card-text class="mb-0">Project scoping and team assembly.</bs-card-text>
         </bs-card-body>
+        <bs-card-footer><small class="text-body-secondary">2026-01-10</small></bs-card-footer>
       </bs-card>
     </mp-timeline-item>
     <mp-timeline-item item-id="ship" color="#198754">
       <small slot="opposite">2026-05-01</small>
       <bs-card slot="content">
+        <bs-card-header>Shipped v1</bs-card-header>
         <bs-card-body>
-          <bs-card-title class="mb-1">Shipped v1</bs-card-title>
           <bs-card-text class="mb-0">First public release.</bs-card-text>
         </bs-card-body>
+        <bs-card-footer><small class="text-body-secondary">2026-05-01</small></bs-card-footer>
       </bs-card>
     </mp-timeline-item>
   </bs-timeline>

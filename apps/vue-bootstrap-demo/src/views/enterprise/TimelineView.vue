@@ -10,7 +10,7 @@ import {
 } from '@mintplayer/vue-bootstrap/timeline';
 import { BsCheckbox } from '@mintplayer/vue-bootstrap/checkbox';
 import { BsSelect } from '@mintplayer/vue-bootstrap/select';
-import { BsCard, BsCardBody, BsCardTitle, BsCardText } from '@mintplayer/vue-bootstrap/card';
+import { BsCard, BsCardHeader, BsCardBody, BsCardText, BsCardFooter } from '@mintplayer/vue-bootstrap/card';
 import { BsCodeSnippet } from '@mintplayer/vue-bootstrap/code-snippet';
 
 const milestones: TimelineItem[] = [
@@ -59,10 +59,11 @@ const playgroundSource = computed(() => {
     slots.push(
       '  <template #content="{ item }">',
       '    <BsCard>',
+      '      <BsCardHeader>{{ item.title }}</BsCardHeader>',
       '      <BsCardBody>',
-      '        <BsCardTitle class="mb-1">{{ item.title }}</BsCardTitle>',
       '        <BsCardText class="small text-body-secondary mb-0">{{ item.description }}</BsCardText>',
       '      </BsCardBody>',
+      '      <BsCardFooter><small class="text-body-secondary">{{ item.time }}</small></BsCardFooter>',
       '    </BsCard>',
       '  </template>',
     );
@@ -79,19 +80,21 @@ const playgroundSource = computed(() => {
 const DECLARATIVE_SOURCE = `<BsTimeline align="alternate">
   <BsTimelineItem item-id="kickoff" color="#6c757d">
     <BsCard slot="content">
+      <BsCardHeader>Kickoff</BsCardHeader>
       <BsCardBody>
-        <BsCardTitle class="mb-1">Kickoff</BsCardTitle>
         <BsCardText class="small text-body-secondary mb-0">Project scoping and team assembly.</BsCardText>
       </BsCardBody>
+      <BsCardFooter><small class="text-body-secondary">2026-01-10</small></BsCardFooter>
     </BsCard>
     <small slot="opposite" class="text-body-secondary">2026-01-10</small>
   </BsTimelineItem>
   <BsTimelineItem item-id="ship" color="#198754">
     <BsCard slot="content">
+      <BsCardHeader>Shipped v1</BsCardHeader>
       <BsCardBody>
-        <BsCardTitle class="mb-1">Shipped v1</BsCardTitle>
         <BsCardText class="small text-body-secondary mb-0">First public release.</BsCardText>
       </BsCardBody>
+      <BsCardFooter><small class="text-body-secondary">2026-05-01</small></BsCardFooter>
     </BsCard>
     <small slot="opposite" class="text-body-secondary">2026-05-01</small>
   </BsTimelineItem>
@@ -168,10 +171,11 @@ const DECLARATIVE_SOURCE = `<BsTimeline align="alternate">
         </template>
         <template v-if="cardContent" #content="{ item }">
           <BsCard>
+            <BsCardHeader>{{ item.title }}</BsCardHeader>
             <BsCardBody>
-              <BsCardTitle class="mb-1">{{ item.title }}</BsCardTitle>
               <BsCardText class="small text-body-secondary mb-0">{{ item.description }}</BsCardText>
             </BsCardBody>
+            <BsCardFooter><small class="text-body-secondary">{{ item.time }}</small></BsCardFooter>
           </BsCard>
         </template>
       </BsTimeline>
@@ -196,19 +200,21 @@ const DECLARATIVE_SOURCE = `<BsTimeline align="alternate">
       <BsTimeline align="alternate">
         <BsTimelineItem item-id="kickoff" color="#6c757d">
           <BsCard slot="content">
+            <BsCardHeader>Kickoff</BsCardHeader>
             <BsCardBody>
-              <BsCardTitle class="mb-1">Kickoff</BsCardTitle>
               <BsCardText class="small text-body-secondary mb-0">Project scoping and team assembly.</BsCardText>
             </BsCardBody>
+            <BsCardFooter><small class="text-body-secondary">2026-01-10</small></BsCardFooter>
           </BsCard>
           <small slot="opposite" class="text-body-secondary">2026-01-10</small>
         </BsTimelineItem>
         <BsTimelineItem item-id="ship" color="#198754">
           <BsCard slot="content">
+            <BsCardHeader>Shipped v1</BsCardHeader>
             <BsCardBody>
-              <BsCardTitle class="mb-1">Shipped v1</BsCardTitle>
               <BsCardText class="small text-body-secondary mb-0">First public release.</BsCardText>
             </BsCardBody>
+            <BsCardFooter><small class="text-body-secondary">2026-05-01</small></BsCardFooter>
           </BsCard>
           <small slot="opposite" class="text-body-secondary">2026-05-01</small>
         </BsTimelineItem>
