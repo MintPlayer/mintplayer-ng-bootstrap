@@ -32,10 +32,10 @@ jobs:
     
     steps:
     - name: Checkout
-      uses: actions/checkout@v4
+      uses: actions/checkout@v6
     
     - name: Setup node
-      uses: actions/setup-node@v4
+      uses: actions/setup-node@v6
       with:
         node-version: 24
 
@@ -59,7 +59,7 @@ jobs:
     # snippets job checks the repo out separately — no need to bundle
     # that dir into this artifact.
     - name: Upload dist artifact
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@v7
       with:
         name: dist
         path: dist/
@@ -67,7 +67,7 @@ jobs:
 
     - name: Publish to Visual Studio Marketplace
       # uses: MintPlayer/publish-vscode-extension@v4.0.3
-      uses: HaaLeo/publish-vscode-extension@v1.5.0
+      uses: HaaLeo/publish-vscode-extension@v2
       with:
         packagePath: 'libs/mintplayer-ng-bootstrap-snippets'
         pat: ${{ secrets.PUBLISH_SNIPPETS }}
@@ -100,7 +100,7 @@ jobs:
         labels: ${{ steps.meta-ghcr.outputs.labels }}
 
     - name: Generate artifact attestation
-      uses: actions/attest-build-provenance@v1
+      uses: actions/attest-build-provenance@v4
       with:
         subject-name: ghcr.io/${{ github.repository }}
         subject-digest: ${{ steps.push-ghcr.outputs.digest }}
@@ -126,7 +126,7 @@ jobs:
         labels: ${{ steps.meta-react-demo.outputs.labels }}
 
     - name: Generate React demo artifact attestation
-      uses: actions/attest-build-provenance@v1
+      uses: actions/attest-build-provenance@v4
       with:
         subject-name: ghcr.io/${{ github.repository }}-react-demo
         subject-digest: ${{ steps.push-react-demo.outputs.digest }}
@@ -152,7 +152,7 @@ jobs:
         labels: ${{ steps.meta-vue-demo.outputs.labels }}
 
     - name: Generate Vue demo artifact attestation
-      uses: actions/attest-build-provenance@v1
+      uses: actions/attest-build-provenance@v4
       with:
         subject-name: ghcr.io/${{ github.repository }}-vue-demo
         subject-digest: ${{ steps.push-vue-demo.outputs.digest }}
@@ -161,7 +161,7 @@ jobs:
     # ---- ASP.NET Core API ----
 
     - name: Setup .NET 10
-      uses: actions/setup-dotnet@v4
+      uses: actions/setup-dotnet@v5
       with:
         dotnet-version: '10.0.x'
 
@@ -189,7 +189,7 @@ jobs:
         labels: ${{ steps.meta-api.outputs.labels }}
 
     - name: Generate API artifact attestation
-      uses: actions/attest-build-provenance@v1
+      uses: actions/attest-build-provenance@v4
       with:
         subject-name: ghcr.io/${{ github.repository }}-api
         subject-digest: ${{ steps.push-api.outputs.digest }}
@@ -243,10 +243,10 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Download dist artifact
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           name: dist
           path: dist
@@ -274,7 +274,7 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Publish snippets to NPM
         uses: MintPlayer/github-actions/publish-npm-packages@b08fbddf0b285a8633ac138b89d79ceb8cc8c888
@@ -296,7 +296,7 @@ jobs:
 
     steps:
       - name: Deploy to VPS
-        uses: appleboy/ssh-action@v1.0.0
+        uses: appleboy/ssh-action@v1.2.5
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
