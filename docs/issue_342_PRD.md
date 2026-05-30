@@ -2,13 +2,21 @@
 
 **Issue**: #342
 **Title**: TreeSelect
-**Status**: Draft
+**Status**: Complete
 **Created**: 2026-05-30
 **Last Updated**: 2026-05-30
 
 ---
 
-## Summary
+## Summary (as built)
+
+Shipped a new framework-agnostic Lit web component **`mp-tree-select`** (`libs/mintplayer-web-components/tree-select`) that unifies and replaces the three legacy Angular-only controls — `select2`, `searchbox`, `multiselect` — all now **deleted** (source, demos, routes, nav, VS Code snippets), with no back-compat shims. The WC composes the existing `mp-treeview` + `OverlayController`; data is **async-only** via a typed `TreeSelectProvider` port (`loadRoots`/`search`/`loadChildren`, each abortable + paged via `NodePage{nodes,hasMore}`); selection is held as full `TreeNode` objects (scalar in `single`, array in `multiple`/`checkbox`); `cascadeSelect` is best-effort over *loaded* descendants with indeterminate roll-up and never fetches unloaded children. Two trigger variants (`textbox`/`button`), `showClear`, server-search with debounce, "load more" paging, and seven optional render-callbacks. Hand-written **Angular** (`bs-tree-select` — `ControlValueAccessor`, requires `<bs-form>`, 7 `ng-template` bridges), **React** (`@lit/react`), and **Vue** (`v-model` + scoped-slot bridges) wrappers. Backend: one new `GET /api/treeItems/search` action reusing the existing `TreeItem` entity/seed (no EF migration). Demos + Playwright e2e in all three apps; the `select2-drag-drop` sample was **reworked** (not dropped) into `tree-select-drag-drop`. A new repo `CLAUDE.md` documents the WC + wrapper architecture and the scss/codegen flow.
+
+**Load-bearing decisions (chosen / rejected / why):** 3-method explicit provider over a single muxed callback (named ops, maps 1:1 onto `mp-treeview.loadChildren`); built-in selection modes + one `cascadeSelect` boolean over a pluggable strategy (closed problem, can't break invariants); one `DataProvider` port, no `Scheduler` clock port (over-porting — tests use `searchDebounceMs=0`); fixed render-callbacks over an open slot registry. **Traps a reviewer should keep in mind:** the index (`_byId`/`_parentById`) must track the *displayed* tree — search returns fresh shallow copies, so it re-indexes the active set and restores the browse index on clear (else cascade/lazy-expand break post-search); the Angular `EmbeddedViewRef` node cache is LRU-bounded (400) to avoid a leak on large server trees; `mp-treeview`'s chevron handler was extended to honor lazy nodes (mouse lazy-expand).
+
+---
+
+## Summary (planning, retained)
 
 Issue #342 asked for a PrimeNG-style TreeSelect. Rather than add a fourth overlapping control, we **merge four into one**: the (not-yet-built) TreeSelect plus the three existing Angular-only controls — `BsSelect2` (chips), `BsSearchbox` (single-select typeahead), and `BsMultiselect` (checkbox dropdown) — into a single framework-agnostic Lit web component **`mp-tree-select`**, shipped with hand-written Angular / React / Vue wrappers like every other WC (dock, scheduler, timeline, treeview). The three legacy components are **deleted permanently** — source, demos, tests, and public-API exports — with **no back-compat shims** (BC is not a constraint in this repo). The native flat `mp-select` / `BsSelect` is unrelated and stays.
 
@@ -144,25 +152,25 @@ Reaching an advanced case is one attribute: `mode="checkbox" [cascadeSelect]="tr
 ## Functional Requirements
 
 ### Must Have (P0)
-- [ ] **FR-1**: New WC `mp-tree-select` under `libs/mintplayer-web-components/tree-select/`, following the `.element.ts` / `.element.scss` / generated `.element.template.ts` convention; registered via `customElements.define`; `observedAttributes` as a static getter.
-- [ ] **FR-2**: Async data via `TreeSelectProvider` (`loadRoots`/`search`/`loadChildren`), each abortable (`AbortSignal`) and paged (`NodePage { nodes, hasMore }` + `offset`).
-- [ ] **FR-3**: Selection modes `single` | `multiple` | `checkbox`. `value` = full `TreeNode` object(s); scalar in `single`, array otherwise. Emits `value-change`.
-- [ ] **FR-4**: `cascadeSelect` boolean (checkbox mode, default `false`). When `true`, selecting a node selects it **plus all currently-available (loaded) descendants** — best-effort; it does **not** eagerly fetch unloaded lazy children, and never selects unseen nodes. A parent with only some loaded children selected renders **indeterminate**. When `false`, selecting a node selects only that node. Up-propagation/indeterminate reflect loaded nodes only.
-- [ ] **FR-5**: Two trigger variants — `textbox` (inline search opens panel) and `button` (button opens panel containing search). `showClear` clears selection and emits `clear`.
-- [ ] **FR-6**: Server-side search with `searchDebounceMs` debounce; stale-request cancellation; tree-view vs search-results view switching; loading / no-results / enter-search-term / empty states.
-- [ ] **FR-7**: Optional render-callbacks: `itemTemplate`, `suggestionTemplate`, `buttonTemplate`, `headerTemplate`, `footerTemplate`, `noResultsTemplate`, `enterSearchTermTemplate`; sensible label+icon defaults.
-- [ ] **FR-8**: Angular wrapper `bs-tree-select` — `ControlValueAccessor` (`ngModel`/`formControlName`), requires `<bs-form>` ancestor, two-way `[(value)]`, ng-template directives bridged to render-callbacks.
-- [ ] **FR-9**: React wrapper `BsTreeSelect` (`@lit/react`, controlled value + onChange, render-props) and Vue wrapper `BsTreeSelect` (`v-model`, scoped slots), under new `tree-select` secondary entries of `@mintplayer/react-bootstrap` and `@mintplayer/vue-bootstrap`.
-- [ ] **FR-10**: Ship `InMemoryTreeSelectProvider` as a public helper (test/demo/e2e backing, no network).
-- [ ] **FR-11**: **Delete** `libs/mintplayer-ng-bootstrap/select2`, `.../searchbox`, `.../multiselect` — source, directives, demos, tests, public-api/secondary-entry exports — with no remaining references anywhere (apps, docs, routes, READMEs).
-- [ ] **FR-12**: Demo pages in `ng-bootstrap-demo`, `react-bootstrap-demo`, `vue-bootstrap-demo`, each with live demo before the `<bs-code-snippet>`, covering single / multiple-chips / checkbox+cascade / server-search.
-- [ ] **FR-13**: Playwright e2e in all three demo apps (open panel, search, lazy-expand, select across modes, clear). Note WC SCSS edits require a `codegen-wc` re-run before reload.
-- [ ] **FR-17 (Backend)**: Add a **search endpoint** to the existing `TreeItemsController` — `GET /api/treeItems/search?q=&page=&perPage=` — returning paged flat `TreeItemDto` matches (case-insensitive `Name`/`Code` contains), in the same `PagedResult<TreeItemDto>` shape as roots/children. **Reuse** the existing `GET /api/treeItems` (roots) and `GET /api/treeItems/{parentId}/children` endpoints; the `TreeItem` entity and its seed already exist, so **no new entity and no EF migration are required**. The server-search demos consume the real API; unit tests + e2e determinism use `InMemoryTreeSelectProvider`.
+- [x] **FR-1**: New WC `mp-tree-select` under `libs/mintplayer-web-components/tree-select/`, following the `.element.ts` / `.element.scss` / generated `.element.template.ts` convention; registered via `customElements.define`; `observedAttributes` as a static getter.
+- [x] **FR-2**: Async data via `TreeSelectProvider` (`loadRoots`/`search`/`loadChildren`), each abortable (`AbortSignal`) and paged (`NodePage { nodes, hasMore }` + `offset`).
+- [x] **FR-3**: Selection modes `single` | `multiple` | `checkbox`. `value` = full `TreeNode` object(s); scalar in `single`, array otherwise. Emits `value-change`.
+- [x] **FR-4**: `cascadeSelect` boolean (checkbox mode, default `false`). When `true`, selecting a node selects it **plus all currently-available (loaded) descendants** — best-effort; it does **not** eagerly fetch unloaded lazy children, and never selects unseen nodes. A parent with only some loaded children selected renders **indeterminate**. When `false`, selecting a node selects only that node. Up-propagation/indeterminate reflect loaded nodes only.
+- [x] **FR-5**: Two trigger variants — `textbox` (inline search opens panel) and `button` (button opens panel containing search). `showClear` clears selection and emits `clear`.
+- [x] **FR-6**: Server-side search with `searchDebounceMs` debounce; stale-request cancellation; tree-view vs search-results view switching; loading / no-results / enter-search-term / empty states.
+- [x] **FR-7**: Optional render-callbacks: `itemTemplate`, `suggestionTemplate`, `buttonTemplate`, `headerTemplate`, `footerTemplate`, `noResultsTemplate`, `enterSearchTermTemplate`; sensible label+icon defaults.
+- [x] **FR-8**: Angular wrapper `bs-tree-select` — `ControlValueAccessor` (`ngModel`/`formControlName`), requires `<bs-form>` ancestor, two-way `[(value)]`, ng-template directives bridged to render-callbacks.
+- [x] **FR-9**: React wrapper `BsTreeSelect` (`@lit/react`, controlled value + onChange, render-callback props) and Vue wrapper `BsTreeSelect` (`v-model`, scoped slots bridged to the render-callbacks via `render()`), under new `tree-select` secondary entries of `@mintplayer/react-bootstrap` and `@mintplayer/vue-bootstrap`.
+- [x] **FR-10**: Ship `InMemoryTreeSelectProvider` as a public helper (test/demo/e2e backing, no network).
+- [x] **FR-11**: **Delete** `libs/mintplayer-ng-bootstrap/select2`, `.../searchbox`, `.../multiselect` — source, directives, demos, tests, public-api/secondary-entry exports — with no remaining references anywhere (apps, docs, routes, READMEs).
+- [x] **FR-12**: Demo pages in `ng-bootstrap-demo`, `react-bootstrap-demo`, `vue-bootstrap-demo`, each with live demo before the `<bs-code-snippet>`, covering single / multiple-chips / checkbox+cascade / server-search.
+- [x] **FR-13**: Playwright e2e in all three demo apps (open panel, search, lazy-expand, select across modes, clear). Note WC SCSS edits require a `codegen-wc` re-run before reload.
+- [x] **FR-17 (Backend)**: Add a **search endpoint** to the existing `TreeItemsController` — `GET /api/treeItems/search?q=&page=&perPage=` — returning paged flat `TreeItemDto` matches (case-insensitive `Name`/`Code` contains), in the same `PagedResult<TreeItemDto>` shape as roots/children. **Reuse** the existing `GET /api/treeItems` (roots) and `GET /api/treeItems/{parentId}/children` endpoints; the `TreeItem` entity and its seed already exist, so **no new entity and no EF migration are required**. The server-search demos consume the real API; unit tests + e2e determinism use `InMemoryTreeSelectProvider`.
 
 ### Should Have (P1)
-- [ ] **FR-14**: Accessibility — combobox+tree ARIA wiring (delegating tree roving-tabindex/keyboard to `mp-treeview`), keyboard open/close/select, live-announcer for result counts (searchbox parity).
-- [ ] **FR-15**: "Load more" affordance (or auto-load on scroll-to-end) driven by `NodePage.hasMore`.
-- [ ] **FR-16**: Unit tests for selection math (single/multiple/checkbox + cascade + indeterminate + lazy-suppression) driven by `InMemoryTreeSelectProvider` with `searchDebounceMs = 0`.
+- [ ] **FR-14** (partial): Accessibility — combobox+tree ARIA wiring (delegating tree roving-tabindex/keyboard to `mp-treeview`), keyboard open/close/select are in place. *Live-announcer for result counts (searchbox parity) is NOT yet implemented — deferred follow-up.*
+- [x] **FR-15**: "Load more" affordance (or auto-load on scroll-to-end) driven by `NodePage.hasMore`.
+- [x] **FR-16**: Unit tests for selection math (single/multiple/checkbox + cascade + indeterminate + lazy-suppression) driven by `InMemoryTreeSelectProvider` with `searchDebounceMs = 0`.
 
 ---
 

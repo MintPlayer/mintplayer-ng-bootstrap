@@ -184,6 +184,12 @@ export class BsTreeSelectComponent implements ControlValueAccessor, AfterViewIni
     dir: { templateRef: import('@angular/core').TemplateRef<BsTreeSelectNodeContext> } | undefined,
   ): ((node: TreeNode, query: string) => Node) | undefined {
     if (!dir) return undefined;
+    // LRU-bounded so browsing a large server tree (every distinct node id seen
+    // over the component's lifetime) can't grow the cache without limit. Map
+    // iteration is insertion-ordered; re-inserting on hit marks recency, and we
+    // destroy the oldest entry past the cap. Currently-rendered nodes are the
+    // most-recently-used, so eviction only ever targets off-screen views.
+    const MAX_VIEWS = 400;
     const cache = new Map<string, EmbeddedViewRef<BsTreeSelectNodeContext>>();
     this.nodeCaches.add(cache as Map<string, EmbeddedViewRef<unknown>>);
     return (node, query) => {
@@ -191,7 +197,14 @@ export class BsTreeSelectComponent implements ControlValueAccessor, AfterViewIni
       if (!view) {
         view = this.vcr.createEmbeddedView(dir.templateRef, { $implicit: node, query });
         cache.set(node.id, view);
+        if (cache.size > MAX_VIEWS) {
+          const oldest = cache.keys().next().value as string;
+          cache.get(oldest)?.destroy();
+          cache.delete(oldest);
+        }
       } else {
+        cache.delete(node.id);
+        cache.set(node.id, view);
         view.context.$implicit = node;
         view.context.query = query;
       }

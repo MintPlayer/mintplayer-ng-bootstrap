@@ -245,6 +245,20 @@ export class MpTreeSelect extends LitElement {
     }
   }
 
+  /**
+   * Rebuild the id/parent index from the *currently displayed* tree
+   * (search results when searching, else the browse tree). Providers hand
+   * back fresh shallow node copies per call, so search must not pollute the
+   * browse index — re-indexing the active set keeps cascade + lazy-expand
+   * pointing at the objects actually rendered, and restores the browse index
+   * when a search is cleared.
+   */
+  private reindexActive(): void {
+    this._byId.clear();
+    this._parentById.clear();
+    this.indexNodes(this._searchResults ?? this._nodes, null);
+  }
+
   // ---- data loading ------------------------------------------------------
   private async ensureRoots(): Promise<void> {
     if (this._rootsLoaded || !this._provider) return;
@@ -259,7 +273,7 @@ export class MpTreeSelect extends LitElement {
     this._nodes = append ? [...this._nodes, ...page.nodes] : page.nodes;
     this._rootsHasMore = !!page.hasMore;
     this._rootsLoaded = true;
-    this.indexNodes(page.nodes, null);
+    this.reindexActive();
     this.requestUpdate();
   }
 
@@ -271,7 +285,7 @@ export class MpTreeSelect extends LitElement {
     if (!page) return;
     this._searchResults = append ? [...(this._searchResults ?? []), ...page.nodes] : page.nodes;
     this._searchHasMore = !!page.hasMore;
-    this.indexNodes(page.nodes, null);
+    this.reindexActive();
     this.requestUpdate();
   }
 
@@ -307,10 +321,10 @@ export class MpTreeSelect extends LitElement {
     const parent = this._byId.get(parentId);
     if (parent) {
       parent.children = page.nodes;
-      this.indexNodes(page.nodes, parent);
       // New ref so the treeview rebuilds its index and re-renders.
       if (this._searchResults) this._searchResults = [...this._searchResults];
       else this._nodes = [...this._nodes];
+      this.reindexActive();
     }
     // If a cascaded parent is selected, extend the cascade to freshly-loaded kids.
     if (this._mode === 'checkbox' && this._cascadeSelect && parent && this._selected.has(parentId)) {
@@ -338,6 +352,8 @@ export class MpTreeSelect extends LitElement {
         this._abort?.abort();
         this._searchResults = null;
         this._loading = false;
+        // Restore the browse-tree index (search may have overwritten it).
+        this.reindexActive();
         this.requestUpdate();
       }
       this.dispatchEvent(
@@ -477,10 +493,18 @@ export class MpTreeSelect extends LitElement {
   }
 
   // ---- treeview node renderer (checkbox / custom row) --------------------
+  // Memoized so the embedded treeview doesn't see a new function (and re-render
+  // every row, recreating checkbox listeners) on each unrelated update. The
+  // closure reads selection/indeterminate/query live at call time, so only the
+  // shape-determining inputs (mode, presence of suggestionTemplate) key it.
+  private _nodeRendererFn: TreeNodeRenderer | undefined;
+  private _nodeRendererKey = '';
   private get nodeRenderer(): TreeNodeRenderer | undefined {
     const showCheckbox = this._mode === 'multiple' || this._mode === 'checkbox';
-    if (!showCheckbox && !this.suggestionTemplate) return undefined;
-    return (node) => {
+    const key = `${this._mode}|${this.suggestionTemplate ? '1' : '0'}`;
+    if (key === this._nodeRendererKey) return this._nodeRendererFn;
+    this._nodeRendererKey = key;
+    this._nodeRendererFn = !showCheckbox && !this.suggestionTemplate ? undefined : (node) => {
       const wrap = document.createElement('span');
       wrap.className = 'ts-node';
       if (showCheckbox) {
@@ -504,6 +528,7 @@ export class MpTreeSelect extends LitElement {
       wrap.appendChild(label);
       return wrap;
     };
+    return this._nodeRendererFn;
   }
 
   // ---- render ------------------------------------------------------------
