@@ -49,8 +49,10 @@ async function readOptionLabels(page: Page, index: number) {
   }, index);
 }
 
-// Click an option by its label inside the open panel.
-async function clickOption(page: Page, index: number, label: string) {
+// Toggle the checkbox for an option. In multiple/checkbox modes the inner
+// treeview runs with selectionMode="none" and selection is driven by the
+// per-row checkbox (.ts-node-check) — clicking the label only expands folders.
+async function toggleCheckbox(page: Page, index: number, label: string) {
   await page.evaluate(
     ({ i, lbl }) => {
       const els = document.querySelectorAll('mp-tree-select');
@@ -60,11 +62,15 @@ async function clickOption(page: Page, index: number, label: string) {
         | null;
       const root = tv?.shadowRoot ?? wc?.shadowRoot?.querySelector('.ts-panel');
       if (!root) throw new Error('panel/treeview not found');
-      const label = Array.from(root.querySelectorAll('.treeview-label')).find(
+      const labelEl = Array.from(root.querySelectorAll('.treeview-label')).find(
         (n) => (n.textContent ?? '').trim() === lbl,
       );
-      if (!label) throw new Error(`option "${lbl}" not found`);
-      (label as HTMLElement).click();
+      const cb = labelEl?.closest('.ts-node')?.querySelector('input.ts-node-check') as
+        | HTMLInputElement
+        | null;
+      if (!cb) throw new Error(`checkbox for "${lbl}" not found`);
+      cb.checked = !cb.checked;
+      cb.dispatchEvent(new Event('change', { bubbles: true }));
     },
     { i: index, lbl: label },
   );
@@ -102,10 +108,10 @@ test.describe('tree-select demo', () => {
     await openTreeSelect(page, 1);
     await expect.poll(async () => readOptionLabels(page, 1)).toContain('Fruit');
 
-    await clickOption(page, 1, 'Fruit');
+    await toggleCheckbox(page, 1, 'Fruit');
     await expect.poll(async () => chipLabels(page, 1)).toContain('Fruit');
 
-    await clickOption(page, 1, 'Vegetables');
+    await toggleCheckbox(page, 1, 'Vegetables');
     await expect.poll(async () => (await chipLabels(page, 1)).length).toBe(2);
     expect(await chipLabels(page, 1)).toEqual(expect.arrayContaining(['Fruit', 'Vegetables']));
   });
@@ -114,25 +120,9 @@ test.describe('tree-select demo', () => {
     await openTreeSelect(page, 2);
     await expect.poll(async () => readOptionLabels(page, 2)).toContain('Fruit');
 
-    // Toggle the "Fruit" checkbox; cascade selects descendants. The selection is
-    // surfaced as chips on the trigger (mode=checkbox renders chips too).
-    await page.evaluate(() => {
-      const wc = document.querySelectorAll('mp-tree-select')[2] as Element & {
-        shadowRoot: ShadowRoot | null;
-      };
-      const tv = wc.shadowRoot?.querySelector('.ts-panel mp-treeview') as
-        | (Element & { shadowRoot: ShadowRoot | null })
-        | null;
-      const root = tv?.shadowRoot ?? wc.shadowRoot;
-      const labels = Array.from(root?.querySelectorAll('.treeview-label') ?? []);
-      const fruit = labels.find((n) => (n.textContent ?? '').trim() === 'Fruit');
-      const wrap = fruit?.closest('.treeview-node-content') ?? fruit?.parentElement;
-      const cb = wrap?.querySelector('input[type="checkbox"]') as HTMLInputElement | null;
-      if (!cb) throw new Error('Fruit checkbox not found');
-      cb.checked = true;
-      cb.dispatchEvent(new Event('change', { bubbles: true }));
-    });
-
+    // Toggle the "Fruit" checkbox; the selection surfaces as chips on the
+    // trigger (mode=checkbox renders chips too).
+    await toggleCheckbox(page, 2, 'Fruit');
     await expect.poll(async () => (await chipLabels(page, 2)).length).toBeGreaterThan(0);
   });
 });
