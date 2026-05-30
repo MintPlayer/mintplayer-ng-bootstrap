@@ -39,6 +39,30 @@ body {
   height: 20px;
 }
 
+.github-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  white-space: nowrap;
+  text-decoration: none;
+  color: var(--bs-body-color);
+  opacity: 0.7;
+  transition: opacity 120ms ease;
+}
+
+.github-link:hover {
+  opacity: 1;
+}
+
+.github-link-version {
+  font-size: 0.875rem;
+}
+
+.github-link-icon {
+  width: 24px;
+  height: 24px;
+}
+
 /* Flex items default to min-width: auto, which refuses to shrink below the
  * intrinsic min-content width of descendants. The ribbon page has wide
  * non-wrapping toolbar groups, so the shell's <main> would grow past the
