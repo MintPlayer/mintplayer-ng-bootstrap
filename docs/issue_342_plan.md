@@ -35,6 +35,7 @@ Removes ~3 components' worth of duplicated surface; gives all three frameworks a
 
 ### Files to Modify
 - Secondary-entry / package exports for all four libs; demo routes in each app.
+- `apps/api/Controllers/TreeItemsController.cs` — add a `GET /api/treeItems/search?q=&page=&perPage=` action (case-insensitive `Name`/`Code` contains, paged `PagedResult<TreeItemDto>`). The roots (`GET /api/treeItems`) and children (`GET /api/treeItems/{parentId}/children`) endpoints already exist and are reused as-is. `TreeItem` + seed already exist → **no new entity, no EF migration**.
 
 ### Files to Delete
 - `libs/mintplayer-ng-bootstrap/select2/` (component, `BsItemTemplateDirective`, `BsSuggestionTemplateDirective`, specs).
@@ -45,6 +46,7 @@ Removes ~3 components' worth of duplicated surface; gives all three frameworks a
 
 ### Dependencies
 - Reuse: `mp-treeview` (`libs/mintplayer-web-components/treeview`), `OverlayController` (`libs/mintplayer-web-components/overlay`), cascading/indeterminate logic in `mp-datatable`.
+- Reuse the existing `apps/api` `TreeItem` entity + seed (~26k-row 4-level tree) and the roots/children endpoints; only a search action is added.
 - `@lit/react` for the React wrapper.
 - `tools/scripts/build-web-components.mjs` (`codegen-wc`) — rerun on `.element.scss`/`.element.html` edits.
 
@@ -70,13 +72,15 @@ See PRD **Chosen Design** (hybrid C+D): one `TreeSelectProvider` port (`loadRoot
 10. Vue `BsTreeSelect` (`v-model`, scoped slots).
 11. Secondary-entry exports + package wiring for all three.
 
-### Phase 3: Demos + e2e
-12. Demo pages (single / chips / checkbox+cascade / server-search) in all three apps; live demo before `<bs-code-snippet>`.
-13. Playwright e2e in all three apps.
+### Phase 3: Backend + Demos + e2e
+12. Add the `GET /api/treeItems/search?q=` action to `TreeItemsController` (paged `Name`/`Code` contains); roots/children endpoints reused as-is. No migration.
+13. A `TreeSelectProvider` HTTP adapter in each demo app mapping `TreeItemDto`→`TreeNode` (`id`=Id, `label`=Name, `lazy`=ChildCount>0) and `PagedResult`→`NodePage` (`hasMore`=Page*PageSize<TotalCount), wired to the three endpoints.
+14. Demo pages (single / chips / checkbox+cascade / server-search against the real API) in all three apps; live demo before `<bs-code-snippet>`.
+15. Playwright e2e in all three apps (API running per the dcg:playwright backend helper).
 
 ### Phase 4: Deletion + sweep
-14. Delete select2/searchbox/multiselect libs, demos, routes, exports.
-15. Grep sweep for dangling references; build all libs + all demos; e2e green.
+16. Delete select2/searchbox/multiselect libs, demos, routes, exports.
+17. Grep sweep for dangling references; build all libs + all demos; e2e green.
 
 ---
 
@@ -112,8 +116,9 @@ See PRD **Chosen Design** (hybrid C+D): one `TreeSelectProvider` port (`loadRoot
 ## Acceptance Criteria
 
 - [ ] `mp-tree-select` + Angular/React/Vue wrappers built and exported.
-- [ ] All PRD P0 FRs (FR-1…FR-13) satisfied.
+- [ ] All PRD P0 FRs (FR-1…FR-13, FR-17) satisfied.
 - [ ] select2/searchbox/multiselect fully removed; zero remaining references; all builds + e2e green.
+- [ ] `GET /api/treeItems/search?q=` added and returning paged matches; roots/children reused.
 - [ ] Demo pages + Playwright e2e in all three apps.
 
 ---
@@ -133,6 +138,10 @@ nx build mintplayer-vue-bootstrap
 # Unit tests
 nx test mintplayer-web-components
 
+# API (search endpoint) — no migration needed
+dotnet build apps/api/Api.csproj -c Debug
+dotnet test apps/api/Tests/Api.Tests.csproj -c Debug
+
 # Demos / e2e (per app)
 nx e2e ng-bootstrap-demo-e2e
 nx e2e react-bootstrap-demo-e2e
@@ -147,4 +156,5 @@ nx e2e vue-bootstrap-demo-e2e
 - `libs/mintplayer-web-components/datatable/src/components/mp-datatable.ts` (cascade/indeterminate)
 - `libs/mintplayer-ng-bootstrap/dock/` , `libs/mintplayer-react-bootstrap/dock/` , `libs/mintplayer-vue-bootstrap/dock/` (wrapper precedents)
 - `tools/scripts/build-web-components.mjs`
+- `apps/api/Controllers/TreeItemsController.cs` + `apps/api/Models/TreeItem.cs` + `apps/api/Data/DemoSeed.cs` (existing tree backend — add search action)
 - To delete: `libs/mintplayer-ng-bootstrap/{select2,searchbox,multiselect}/`
