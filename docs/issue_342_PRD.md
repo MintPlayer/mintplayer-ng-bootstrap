@@ -176,11 +176,11 @@ Reaching an advanced case is one attribute: `mode="checkbox" [cascadeSelect]="tr
 - [x] `InMemoryTreeSelectProvider` + WC unit tests (7 specs, green).
 - [x] Fix `mp-treeview` chevron-click to honor lazy nodes (mouse lazy-expand).
 
-### Milestone 2: Framework wrappers
-- [ ] Angular `bs-tree-select` (CVA + `<bs-form>` + ng-template directive bridging).
-- [ ] React `BsTreeSelect` (`@lit/react`).
-- [ ] Vue `BsTreeSelect` (`v-model` + slots).
-- [ ] Secondary-entry exports + package wiring for all three.
+### Milestone 2: Framework wrappers ✓
+- [x] Angular `bs-tree-select` (CVA + `<bs-form>` + 7 ng-template directive bridges via EmbeddedViewRef).
+- [x] React `BsTreeSelect` (`@lit/react` createComponent).
+- [x] Vue `BsTreeSelect` (`v-model` + property sync).
+- [x] Secondary-entry exports + package wiring for all three (resolve via `@mintplayer/*-bootstrap/*` wildcards).
 
 ### Milestone 3: Demos + e2e
 - [ ] Demo pages in all three apps (single / chips / checkbox+cascade / server-search).
