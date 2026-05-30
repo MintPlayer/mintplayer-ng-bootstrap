@@ -66,6 +66,8 @@ export class MpTimeline extends LitElement {
   private _activeIndex = -1;
   /** Anchor for shift-range selection. */
   private _anchorIndex = -1;
+  /** Declarative-mode observer for runtime child add/remove/attr changes. */
+  private _observer: MutationObserver | null = null;
 
   // ----- properties --------------------------------------------------------
 
@@ -141,6 +143,36 @@ export class MpTimeline extends LitElement {
   }
 
   // ----- lifecycle ---------------------------------------------------------
+
+  override connectedCallback(): void {
+    super.connectedCallback();
+    // Declarative mode: slotchange only fires when children are added/removed,
+    // not when an existing child's attributes change. Observe the light DOM so
+    // a runtime toggle of `disabled` / `item-id` (or a child add/remove) re-
+    // derives sides, roving-tabindex and selection. Gated behind `isServer`
+    // (no light DOM on the server). The attributeFilter is scoped to the item
+    // inputs the parent reads but never writes — the parent's own enhancement
+    // writes (side/selected/tabindex/…) are excluded, so this can't feed back
+    // into a loop. Handler is idempotent and also runs via updated()/slotchange.
+    if (!isServer && !this._observer) {
+      this._observer = new MutationObserver(() => {
+        this.seedDeclarativeSelection();
+        this.enhanceDeclarativeItems();
+      });
+      this._observer.observe(this, {
+        childList: true,
+        subtree: true,
+        attributes: true,
+        attributeFilter: ['disabled', 'item-id'],
+      });
+    }
+  }
+
+  override disconnectedCallback(): void {
+    super.disconnectedCallback();
+    this._observer?.disconnect();
+    this._observer = null;
+  }
 
   override attributeChangedCallback(
     name: string,

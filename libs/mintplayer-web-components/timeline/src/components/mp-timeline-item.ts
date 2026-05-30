@@ -160,7 +160,15 @@ export class MpTimelineItem extends LitElement {
     if (oldValue === newValue) return;
     switch (name) {
       case 'item-id':
-        this._itemId = newValue;
+        // Preserve a numeric itemId set via the property: our own setter
+        // reflects it to the string attribute, which echoes back here. Only
+        // adopt the raw string when it doesn't round-trip to the current value
+        // (i.e. it was set externally via setAttribute), so a number we own is
+        // never silently stringified — and string ids like "007" are kept
+        // verbatim rather than coerced to a number.
+        if (this._itemId === null || String(this._itemId) !== newValue) {
+          this._itemId = newValue;
+        }
         break;
       case 'title':
         this._title = newValue;

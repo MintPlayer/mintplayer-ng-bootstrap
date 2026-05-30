@@ -111,7 +111,11 @@ watch(() => props.items, syncItems);
 // and lowered-children modes. Setting a DOM property here doesn't feed back
 // into Vue reactivity, so this cannot loop.
 onUpdated(syncItems);
-watch(() => props.selection, syncSelection);
+// `deep` so in-place mutations of the selection array (push/splice without
+// replacing the reference) still sync to the WC — matches React, which
+// re-syncs on every render. Setting the DOM property doesn't feed back into
+// Vue reactivity, so this can't loop.
+watch(() => props.selection, syncSelection, { deep: true });
 watch(() => props.selectable, syncSelection);
 </script>
 

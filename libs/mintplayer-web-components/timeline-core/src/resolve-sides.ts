@@ -31,5 +31,10 @@ function sideFor(align: TimelineAlign, visualIndex: number): TimelineSide {
       return visualIndex % 2 === 0 ? 'start' : 'end';
     case 'alternate-reverse':
       return visualIndex % 2 === 0 ? 'end' : 'start';
+    default:
+      // Defensive fallback for an unsanitized align reaching the core helper
+      // directly (the WC sanitizes via VALID_ALIGN, but resolveSides is also
+      // exported and called by the framework wrappers with raw input).
+      return 'start';
   }
 }

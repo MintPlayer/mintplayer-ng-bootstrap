@@ -105,7 +105,7 @@ export function BsTimeline(props: BsTimelineProps): React.ReactElement {
       onItemClick={handleItemClick}
       onSelectionChange={handleSelectionChange}
       {...(dataMode ? { items } : {})}
-      {...(selectable !== 'none' && selection ? { selectedIds: selection.map((it, i) => idOf(it, i)) } : {})}
+      {...(selectable !== 'none' ? { selectedIds: selection ? selection.map((it, i) => idOf(it, i)) : [] } : {})}
     >
       {lowering && items
         ? items.map((item, i) => {
