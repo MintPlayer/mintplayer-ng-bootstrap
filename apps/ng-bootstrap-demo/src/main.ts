@@ -1,3 +1,10 @@
+// MUST precede the web-component import: teaches Lit to HYDRATE the server-
+// rendered Declarative Shadow DOM instead of re-rendering into it. The SSR'd
+// <mp-shell> already has a parser-attached DSD shadow; when it upgrades (line
+// below), without this shim Lit would append a SECOND copy of the chrome (a
+// duplicate top bar/toggle flashing below the sidebar) before Angular's
+// destructive bootstrap recreates the element.
+import '@lit-labs/ssr-client/lit-element-hydrate-support.js';
 import { bootstrapApplication } from '@angular/platform-browser';
 import { AppComponent } from './app/app.component';
 import { config } from './app/app.config';
