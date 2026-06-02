@@ -4,6 +4,7 @@ import { BsCodeSnippet } from '@mintplayer/react-bootstrap/code-snippet';
 import {
   generateEventId,
   type SchedulerEvent,
+  type ViewType,
 } from '@mintplayer/web-components/scheduler-core';
 import type { MpScheduler } from '@mintplayer/web-components/scheduler';
 
@@ -20,9 +21,16 @@ const SEED: SchedulerEvent[] = [
   { id: '3', title: 'Lunch',         start: at(12), end: at(13),    color: '#198754' },
 ];
 
-const SOURCE = `<BsScheduler
+const SOURCE = `// \`view\` is a controlled prop: @lit/react re-asserts element
+// properties on every render, so pair it with onViewChange (the
+// React equivalent of Angular's [view]/(viewChange)) — otherwise a
+// re-render would clobber a WC-driven view switch back to the literal.
+const [view, setView] = useState<ViewType>('day');
+
+<BsScheduler
   events={events}
-  view="day"
+  view={view}
+  onViewChange={e => setView(e.detail.view)}
   onEventCreate={e => {
     setEvents([...events, {
       id: generateEventId(), title: 'New Event',
@@ -35,6 +43,11 @@ const SOURCE = `<BsScheduler
 
 export function SchedulerPage() {
   const [events, setEvents] = useState<SchedulerEvent[]>(SEED);
+  // Controlled view. @lit/react re-applies element properties on every
+  // render without dirty-checking, so `view` must track the WC's own
+  // view changes (via onViewChange) — otherwise a re-render after a drag
+  // would re-assert a stale literal and snap the scheduler back.
+  const [view, setView] = useState<ViewType>('day');
 
   return (
     <div className="demo-page">
@@ -51,7 +64,8 @@ export function SchedulerPage() {
       <section style={{ height: 540 }}>
         <h2>Today's agenda</h2>
         <BsScheduler
-          {...{ events, view: 'day' } as React.ComponentProps<typeof BsScheduler>}
+          {...{ events, view } as React.ComponentProps<typeof BsScheduler>}
+          onViewChange={(e) => setView(e.detail.view)}
           onEventUpdate={(e) => {
             setEvents((current) =>
               current.map((ev) => (ev.id === e.detail.event.id ? e.detail.event : ev)),
