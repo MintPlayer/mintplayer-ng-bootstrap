@@ -1,0 +1,231 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Nested shadow-DOM: what page CSS can &amp; can't reach</title>
+
+    <!--
+      ───────────────────────────────────────────────────────────────────────
+      This file reproduces the mp-tree-select → mp-treeview nesting with plain
+      vanilla web components (no Lit/Angular needed — just open it in a browser).
+
+        <demo-chips>            ← outer WC, own shadow root   (≈ mp-tree-select)
+          └─ <demo-tree>        ← inner WC, own shadow root   (≈ mp-treeview)
+
+      It demonstrates the load-bearing rule from CLAUDE.md / the PRD:
+
+        • Content that reaches its render spot via <slot> projection stays in
+          the LIGHT DOM — page CSS matches it, EVEN across two nested shadow
+          boundaries (slot-forwarding). See the GREEN chips + rows below.
+
+        • Content a WC creates and appends INTO ITS OWN shadow root is genuinely
+          shadow content — page CSS cannot reach it; only the WC's own shadow
+          stylesheet, ::slotted(), CSS custom properties, or inline styles can.
+          See the RED row below: the page tries to style it and fails.
+      ───────────────────────────────────────────────────────────────────────
+    -->
+
+    <style>
+      /* ── PAGE styles (the "document stylesheet") ───────────────────────── */
+      body {
+        font-family: system-ui, sans-serif;
+        margin: 2rem;
+        max-width: 60rem;
+        color: #222;
+        line-height: 1.5;
+      }
+      h1 { font-size: 1.4rem; }
+      h2 { font-size: 1.05rem; margin-top: 2rem; }
+      code { background: #f3f3f3; padding: 0.1em 0.35em; border-radius: 4px; }
+      .legend { font-size: 0.9rem; color: #555; }
+
+      /* These two rules are the whole experiment. They target classes used by
+         content the page projects into the web components. The question is:
+         does the rule reach the content once it renders inside nested shadows? */
+      .page-chip {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.4rem;
+        padding: 0.2rem 0.6rem;
+        border-radius: 50rem;
+        background: #198754;            /* GREEN = a page style landed */
+        color: #fff;
+        font-size: 0.85rem;
+      }
+      .page-chip button {
+        all: unset;
+        cursor: pointer;
+        width: 1rem; height: 1rem;
+        display: inline-flex; align-items: center; justify-content: center;
+        border-radius: 50%;
+        background: rgba(255, 255, 255, 0.3);
+      }
+      .page-row {
+        padding: 0.35rem 0.6rem;
+        border-left: 4px solid #198754;  /* GREEN = a page style landed */
+        background: #e8f5ee;
+      }
+      .page-row strong { color: #0f5132; }
+
+      /* This rule TRIES to style the shadow-inserted row. It will NOT apply,
+         because that content lives inside <demo-tree>'s shadow root. */
+      .shadow-inserted-row {
+        padding: 0.35rem 0.6rem;
+        border-left: 4px solid #dc3545; /* RED — but you'll never see it */
+        background: #fde8ea;
+      }
+    </style>
+  </head>
+
+  <body>
+    <h1>Nested shadow-DOM: what page CSS can &amp; can't reach</h1>
+    <p class="legend">
+      <strong style="color:#198754">Green</strong> = a page (document) CSS rule
+      reached the content. <strong style="color:#dc3545">Red</strong> = it would,
+      if the rule applied — but it doesn't, so the content shows up
+      <em>unstyled</em>. Open your devtools and inspect the trees.
+    </p>
+
+    <!-- ═══════════════════════════════════════════════════════════════════
+         CASE A — slot-forwarded content (light DOM through BOTH boundaries)
+
+         The <span class="page-chip"> and <div class="page-row"> below are
+         authored HERE, in the page's light DOM. demo-chips forwards them down
+         to demo-tree, which forwards them again into its row markup — two
+         <slot> hops. They never enter any shadow root, so the page's
+         .page-chip / .page-row rules style them. → GREEN.
+         ═══════════════════════════════════════════════════════════════════ -->
+    <h2>Case A — content projected via <code>&lt;slot&gt;</code> (slot-forwarded)</h2>
+    <demo-chips>
+      <span slot="chip" class="page-chip">
+        Apple <button title="remove">×</button>
+      </span>
+      <span slot="chip" class="page-chip">
+        Banana <button title="remove">×</button>
+      </span>
+
+      <div slot="row" class="page-row">
+        <strong>Citrus</strong> <small>(slot-forwarded into the tree row)</small>
+      </div>
+    </demo-chips>
+
+    <!-- ═══════════════════════════════════════════════════════════════════
+         CASE B — the SAME page CSS, but the row is created by the inner WC and
+         appended into ITS OWN shadow (the "render-callback into shadow" model
+         that mp-tree-select.suggestionTemplate uses today).
+
+         We pass a render function; demo-tree calls it and appends the returned
+         node into its shadow root. The node carries class="shadow-inserted-row",
+         but the page's .shadow-inserted-row rule CANNOT cross the boundary.
+         → the row renders UNSTYLED (no red border).
+         ═══════════════════════════════════════════════════════════════════ -->
+    <h2>Case B — content the WC inserts into its own shadow (render callback)</h2>
+    <demo-tree id="callback-tree"></demo-tree>
+
+    <p class="legend" style="margin-top:2rem">
+      Takeaway: the shadow boundary doesn't block page CSS for <em>slotted</em>
+      content — only for content the component places inside its shadow. Slotting
+      relocates <em>where</em> a light-DOM node renders, not <em>which tree</em>
+      it lives in for styling.
+    </p>
+
+    <script>
+      // ── Inner WC ≈ mp-treeview ─────────────────────────────────────────
+      // It owns its shadow root and renders "rows". It supports BOTH content
+      // models so we can contrast them:
+      //   • a forwarded <slot name="row"> for light-DOM projection (Case A)
+      //   • a `rowRenderer` callback whose result it appends into its shadow
+      //     (Case B) — this is the not-page-styleable path.
+      class DemoTree extends HTMLElement {
+        constructor() {
+          super();
+          this.attachShadow({ mode: 'open' });
+          this.shadowRoot.innerHTML = `
+            <style>
+              /* This stylesheet is scoped to demo-tree's shadow ONLY. */
+              .tree {
+                border: 1px solid #ccc;
+                border-radius: 8px;
+                padding: 0.5rem;
+                background: #fff;
+              }
+              .tree-title { font-weight: 600; margin-bottom: 0.4rem; }
+
+              /* A shadow rule CAN style shadow-inserted content. This is the
+                 only kind of rule that reaches Case B's row. (Commented out so
+                 you can SEE the row land unstyled; uncomment to prove a shadow
+                 rule would catch it.)
+              .shadow-inserted-row { border-left: 4px solid #0d6efd; background:#e7f1ff; }
+              */
+            </style>
+            <div class="tree">
+              <div class="tree-title">demo-tree (inner shadow root)</div>
+              <!-- Case A: forwarded light-DOM rows render here, still light DOM. -->
+              <slot name="row"></slot>
+              <!-- Case B: callback-produced rows get appended here, in shadow. -->
+              <div class="callback-rows"></div>
+            </div>
+          `;
+        }
+
+        // Case B entry point: the consumer hands us a function returning a DOM
+        // node; we append it into OUR shadow. Mirrors suggestionTemplate today.
+        set rowRenderer(fn) {
+          const host = this.shadowRoot.querySelector('.callback-rows');
+          host.textContent = '';
+          host.appendChild(fn());
+        }
+      }
+      customElements.define('demo-tree', DemoTree);
+
+      // ── Outer WC ≈ mp-tree-select ──────────────────────────────────────
+      // Owns its shadow root; nests a demo-tree inside it and FORWARDS its own
+      // slots down into the inner element's slots (two-hop slot-forwarding).
+      class DemoChips extends HTMLElement {
+        constructor() {
+          super();
+          this.attachShadow({ mode: 'open' });
+          this.shadowRoot.innerHTML = `
+            <style>
+              .control {
+                border: 2px solid #6c757d;
+                border-radius: 10px;
+                padding: 0.6rem;
+                background: #f8f9fa;
+              }
+              .chips { display: flex; gap: 0.4rem; margin-bottom: 0.6rem; flex-wrap: wrap; }
+              .label { font-size: 0.8rem; color: #6c757d; margin-bottom: 0.3rem; }
+            </style>
+            <div class="control">
+              <div class="label">demo-chips (outer shadow root)</div>
+              <div class="chips">
+                <!-- Hop 1: forward the host's "chip" light children to render
+                     here. They stay light DOM. -->
+                <slot name="chip"></slot>
+              </div>
+              <demo-tree>
+                <!-- Hop 2: re-project the host's "row" light children down into
+                     the nested demo-tree's "row" slot. <slot> as a slot's child
+                     forwards assigned nodes across the boundary. -->
+                <slot name="row" slot="row"></slot>
+              </demo-tree>
+            </div>
+          `;
+        }
+      }
+      customElements.define('demo-chips', DemoChips);
+
+      // Wire up Case B: build the row node in script and hand it to demo-tree,
+      // which appends it into ITS shadow. The class matches a PAGE rule that
+      // will NOT apply (proving the point).
+      const callbackTree = document.getElementById('callback-tree');
+      callbackTree.rowRenderer = () => {
+        const row = document.createElement('div');
+        row.className = 'shadow-inserted-row';
+        row.innerHTML = '<strong>Orange</strong> <small>(inserted into demo-tree shadow — page CSS cannot reach it)</small>';
+        return row;
+      };
+    </script>
+  </body>
+</html>

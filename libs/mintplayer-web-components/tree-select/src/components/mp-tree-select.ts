@@ -62,7 +62,10 @@ export class MpTreeSelect extends LitElement {
   private _searchDebounceMs = 200;
 
   // ---- render callbacks (property-only) ----------------------------------
-  itemTemplate?: NodeTemplate;
+  // NOTE: the selected chip / single-value content is projected through
+  // light-DOM <slot>s (`slot="chips"` / `slot="value"`), NOT a callback, so the
+  // consumer's markup stays in the light DOM. `suggestionTemplate` remains a
+  // callback because dropdown rows render inside the nested mp-treeview shadow.
   suggestionTemplate?: NodeTemplate;
   buttonTemplate?: ValueTemplate;
   headerTemplate?: PanelTemplate;
@@ -618,20 +621,28 @@ export class MpTreeSelect extends LitElement {
   private renderSelectedLabel(): unknown {
     const node = this._selected.values().next().value as TreeNode | undefined;
     if (!node) return nothing;
-    if (this.itemTemplate) return this.itemTemplate(node, this._query);
-    return node.label;
+    // Light-DOM slot: a wrapper projects custom single-value content here (it
+    // stays in the consumer's light DOM, so Bootstrap CSS + framework
+    // directives apply). Fallback = the plain label.
+    return html`<slot name="value">${node.label}</slot>`;
   }
 
   private renderChips(): unknown {
     if (this._mode === 'single' || !this.hasSelection) return nothing;
+    // Chips render through a light-DOM slot so a wrapper can project fully
+    // custom, stylable chip content (Bootstrap classes, cdkDrag/cdkDragHandle,
+    // etc.) that lives in the consumer's view tree. When nothing is projected,
+    // the slot's fallback renders the built-in chips.
+    return html`<slot name="chips">${this.renderDefaultChips()}</slot>`;
+  }
+
+  private renderDefaultChips(): unknown {
     return repeat(
       [...this._selected.values()],
       (node) => node.id,
       (node) => html`
         <span class="ts-chip">
-          <span class="ts-chip-label"
-            >${this.itemTemplate ? this.itemTemplate(node, this._query) : node.label}</span
-          >
+          <span class="ts-chip-label">${node.label}</span>
           <button
             class="ts-chip-remove"
             type="button"
@@ -646,6 +657,16 @@ export class MpTreeSelect extends LitElement {
         </span>
       `,
     );
+  }
+
+  /**
+   * Remove a node from the selection by id — public so a wrapper that projects
+   * its own chips (with a custom remove control) can drive removal. Mirrors the
+   * built-in chip remove button.
+   */
+  removeById(id: string): void {
+    const node = this._selected.get(id);
+    if (node) this.removeNode(node);
   }
 
   private renderClear(): unknown {

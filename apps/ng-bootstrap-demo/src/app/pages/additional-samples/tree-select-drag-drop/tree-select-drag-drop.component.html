@@ -1,40 +1,81 @@
 <h1 class="text-center">Tree-select with Drag-drop</h1>
 
 <p>
-  Combine <code>bs-tree-select</code> (in <code>multiple</code> mode) with Angular CDK's
-  <code>cdkDropList</code> + <code>cdkDrag</code> to let users reorder the selected items by
-  dragging. The tree-select renders its chips inside its own shadow DOM, so the draggable
-  list lives <em>alongside</em> it: pick items in the dropdown, then drag to reorder. The new
-  order is pushed back into <code>[value]</code>, so the chips re-render in the chosen order.
+  Two <code>bs-tree-select</code> instances whose selected chips are draggable
+  <strong>between</strong> them. Each chip is custom light-DOM content projected
+  via <code>slot="chips"</code> with a <code>cdkDragHandle</code>; each
+  tree-select sits in its own <code>cdkDropList</code>, and the two lists are
+  connected so a chip dropped on the other list transfers (via
+  <code>transferArrayItem</code>) — moving that node's selection across.
 </p>
 
 <h2>Basic usage</h2>
 
-<bs-form>
-  <bs-tree-select
-    mode="multiple"
-    [provider]="provider"
-    [value]="selected()"
-    (valueChange)="onValueChange($event)"
-    placeholder="Pick technologies">
-  </bs-tree-select>
-</bs-form>
+<bs-grid>
+  <div bsRow>
+    <div [md]="6">
+      <h3 class="h6">Team A</h3>
+      <bs-form>
+        <div
+          cdkDropList
+          #listA="cdkDropList"
+          [cdkDropListData]="left"
+          [cdkDropListConnectedTo]="[listB]"
+          (cdkDropListDropped)="drop($event)"
+          cdkDropListOrientation="mixed"
+          class="ts-dnd-list"
+        >
+          <bs-tree-select
+            mode="multiple"
+            [provider]="provider"
+            [value]="left"
+            (valueChange)="setLeft($event)"
+            placeholder="Pick technologies"
+          >
+            <ng-template bsTreeSelectItem let-node let-remove="remove">
+              <span slot="chips" cdkDrag class="ts-dnd-chip">
+                <span class="ts-dnd-handle" cdkDragHandle aria-label="Drag">&#9776;</span>
+                <span class="ts-dnd-label">{{ node.label }}</span>
+                <button type="button" class="ts-dnd-remove" (click)="remove()" aria-label="Remove">&times;</button>
+              </span>
+            </ng-template>
+          </bs-tree-select>
+        </div>
+      </bs-form>
+    </div>
 
-<div
-  cdkDropList
-  cdkDropListOrientation="mixed"
-  (cdkDropListDropped)="onDrop($event)"
-  class="dnd-list mt-3">
-  @for (item of selected(); track item.id) {
-    <span cdkDrag class="dnd-chip">
-      <span class="drag-handle">&#9776;</span>
-      {{ item.label }}
-      <button type="button" class="dnd-remove" (click)="remove(item)" aria-label="Remove">&times;</button>
-    </span>
-  } @empty {
-    <span class="text-muted">Nothing selected yet — pick a few items above.</span>
-  }
-</div>
+    <div [md]="6">
+      <h3 class="h6">Team B</h3>
+      <bs-form>
+        <div
+          cdkDropList
+          #listB="cdkDropList"
+          [cdkDropListData]="right"
+          [cdkDropListConnectedTo]="[listA]"
+          (cdkDropListDropped)="drop($event)"
+          cdkDropListOrientation="mixed"
+          class="ts-dnd-list"
+        >
+          <bs-tree-select
+            mode="multiple"
+            [provider]="provider"
+            [value]="right"
+            (valueChange)="setRight($event)"
+            placeholder="Pick technologies"
+          >
+            <ng-template bsTreeSelectItem let-node let-remove="remove">
+              <span slot="chips" cdkDrag class="ts-dnd-chip">
+                <span class="ts-dnd-handle" cdkDragHandle aria-label="Drag">&#9776;</span>
+                <span class="ts-dnd-label">{{ node.label }}</span>
+                <button type="button" class="ts-dnd-remove" (click)="remove()" aria-label="Remove">&times;</button>
+              </span>
+            </ng-template>
+          </bs-tree-select>
+        </div>
+      </bs-form>
+    </div>
+  </div>
+</bs-grid>
 
-<bs-code-snippet [codeToCopy]="snippetBasicHtml" [language]="'html'"></bs-code-snippet>
-<bs-code-snippet [codeToCopy]="snippetBasicTs" [language]="'ts'"></bs-code-snippet>
+<bs-code-snippet [codeToCopy]="snippetHtml" [language]="'html'"></bs-code-snippet>
+<bs-code-snippet [codeToCopy]="snippetTs" [language]="'ts'"></bs-code-snippet>

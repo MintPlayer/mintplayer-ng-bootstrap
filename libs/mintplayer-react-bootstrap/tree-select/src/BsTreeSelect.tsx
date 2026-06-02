@@ -5,12 +5,23 @@ import { MpTreeSelect, type TreeSelectChangeEventDetail } from '@mintplayer/web-
 /**
  * React wrapper for `<mp-tree-select>`. Side-effect-registers the WC.
  *
- * Object/function props (`provider`, `value`, `*Template` render-callbacks)
- * are forwarded by @lit/react as element properties; string/boolean props
- * (`mode`, `variant`, `cascadeSelect`, …) flow through as attributes.
+ * Object props (`provider`, `value`) are forwarded by @lit/react as element
+ * properties; string/boolean props (`mode`, `variant`, `cascadeSelect`, …) flow
+ * through as attributes.
  *
- * A `*Template` callback must return a DOM `Node` (the WC inserts it directly),
- * e.g. `itemTemplate={(node) => { const s = document.createElement('span'); … }}`.
+ * Custom chips / single-value content are projected as light-DOM children with
+ * `slot="chips"` / `slot="value"` (JSX children pass through), so the content
+ * stays in React's tree and the document light DOM — Bootstrap CSS and DnD
+ * libraries work. The consumer owns the `value.map(...)`:
+ *
+ * ```tsx
+ * <BsTreeSelect mode="multiple" value={tags} provider={p} onValueChange={…}>
+ *   {tags.map((t) => <span slot="chips" key={t.id} className="badge">{t.label}</span>)}
+ * </BsTreeSelect>
+ * ```
+ *
+ * `suggestionTemplate` remains a callback returning a DOM `Node` (dropdown rows
+ * render inside the nested mp-treeview shadow).
  */
 export const BsTreeSelect = createComponent({
   react: React,

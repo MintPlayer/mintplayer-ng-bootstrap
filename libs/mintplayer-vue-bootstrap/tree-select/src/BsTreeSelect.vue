@@ -67,7 +67,7 @@ function track(c: HTMLElement): HTMLElement {
   return c;
 }
 
-function nodeSlot(name: 'item' | 'suggestion') {
+function nodeSlot(name: 'suggestion') {
   const slot = slots[name];
   if (!slot) return undefined;
   // LRU-bounded (mirrors the Angular wrapper) so browsing a large server tree
@@ -122,7 +122,9 @@ function staticSlot(name: 'header' | 'footer' | 'noResults' | 'enterSearchTerm')
 const applyTemplates = () => {
   const e = el.value;
   if (!e) return;
-  e.itemTemplate = nodeSlot('item');
+  // Chips / single value are projected as light-DOM slot content via the
+  // default <slot/> (consumers place `slot="chips"` / `slot="value"` elements),
+  // not a callback. suggestionTemplate stays a callback (treeview shadow).
   e.suggestionTemplate = nodeSlot('suggestion');
   e.buttonTemplate = valueSlot();
   e.headerTemplate = staticSlot('header');
@@ -171,5 +173,9 @@ function onValueChange(ev: Event) {
     ref="el"
     v-bind="$attrs"
     @value-change="onValueChange"
-  />
+  >
+    <!-- Default slot passthrough: consumers project `slot="chips"` / `slot="value"`
+         light-DOM content (custom chips, drag handles, Bootstrap markup). -->
+    <slot />
+  </mp-tree-select>
 </template>

@@ -3,6 +3,8 @@ import { FormsModule } from '@angular/forms';
 import { BsFormComponent } from '@mintplayer/ng-bootstrap/form';
 import {
   BsTreeSelectComponent,
+  BsTreeSelectItemTemplateDirective,
+  BsTreeSelectSuggestionTemplateDirective,
   InMemoryTreeSelectProvider,
   type TreeNode,
 } from '@mintplayer/ng-bootstrap/tree-select';
@@ -43,10 +45,19 @@ const SAMPLE_TREE: TreeNode[] = [
   selector: 'demo-tree-select',
   templateUrl: './tree-select.component.html',
   styleUrls: ['./tree-select.component.scss'],
-  imports: [FormsModule, BsCodeSnippetComponent, BsFormComponent, BsTreeSelectComponent],
+  imports: [
+    FormsModule,
+    BsCodeSnippetComponent,
+    BsFormComponent,
+    BsTreeSelectComponent,
+    BsTreeSelectItemTemplateDirective,
+    BsTreeSelectSuggestionTemplateDirective,
+  ],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class TreeSelectComponent {
+  // 5. Custom templates: a bsTreeSelectItem chip + a bsTreeSelectSuggestion row.
+  protected readonly templatesValue = signal<Value>([]);
   // 1. Single select with server search — hits the real /api/treeItems backend.
   protected readonly httpProvider = inject(TreeSelectHttpProvider);
   protected readonly singleValue = signal<Value>(null);
@@ -158,6 +169,28 @@ export class TreeSelectComponent {
         [provider]="memoryProvider"
         placeholder="Choose one"
         [(value)]="buttonValue">
+      </bs-tree-select>
+    </bs-form>
+  `;
+
+  protected readonly snippetTemplatesHtml = dedent`
+    <bs-form>
+      <bs-tree-select mode="multiple" [provider]="memoryProvider" [(value)]="value">
+        <!-- Custom chip (projected light-DOM; root carries slot="chips").
+             Style it with your own page CSS (.ts-tpl-chip). -->
+        <ng-template bsTreeSelectItem let-node let-remove="remove">
+          <span slot="chips" class="ts-tpl-chip">
+            {{ node.label }}
+            <button type="button" class="ts-tpl-chip-remove" (click)="remove()">&times;</button>
+          </span>
+        </ng-template>
+
+        <!-- Suggestion rows render in the treeview shadow — page CSS can't reach
+             them, so use intrinsic elements (or inline styles). -->
+        <ng-template bsTreeSelectSuggestion let-node>
+          <strong>{{ node.label }}</strong>
+          <small>&nbsp;({{ node.id }})</small>
+        </ng-template>
       </bs-tree-select>
     </bs-form>
   `;

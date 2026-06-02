@@ -18,6 +18,7 @@ import {
   ViewContainerRef,
   viewChild,
 } from '@angular/core';
+import { NgTemplateOutlet } from '@angular/common';
 import { ControlValueAccessor, NG_VALUE_ACCESSOR } from '@angular/forms';
 import { BsFormComponent } from '@mintplayer/ng-bootstrap/form';
 import {
@@ -37,6 +38,7 @@ import {
   BsTreeSelectEnterSearchTermTemplateDirective,
   BsTreeSelectFooterTemplateDirective,
   BsTreeSelectHeaderTemplateDirective,
+  type BsTreeSelectItemContext,
   BsTreeSelectItemTemplateDirective,
   type BsTreeSelectNodeContext,
   BsTreeSelectNoResultsTemplateDirective,
@@ -54,6 +56,7 @@ type Value = TreeNode | TreeNode[] | null;
 @Component({
   selector: 'bs-tree-select',
   templateUrl: './tree-select.component.html',
+  imports: [NgTemplateOutlet],
   schemas: [CUSTOM_ELEMENTS_SCHEMA],
   changeDetection: ChangeDetectionStrategy.OnPush,
   providers: [
@@ -84,8 +87,23 @@ export class BsTreeSelectComponent implements ControlValueAccessor, AfterViewIni
 
   readonly elementRef = viewChild<ElementRef<MpTreeSelect>>('el');
 
-  private readonly itemTpl = contentChild(BsTreeSelectItemTemplateDirective);
+  protected readonly itemTpl = contentChild(BsTreeSelectItemTemplateDirective);
   private readonly suggestionTpl = contentChild(BsTreeSelectSuggestionTemplateDirective);
+
+  /** Selected nodes as chips (multiple / checkbox modes; single mode has none). */
+  protected readonly chipNodes = computed<TreeNode[]>(() => {
+    const v = this.value();
+    return Array.isArray(v) ? v : [];
+  });
+
+  /** Context for a per-chip template instance; `remove` deselects via the WC. */
+  protected itemCtx(node: TreeNode): BsTreeSelectItemContext {
+    return {
+      $implicit: node,
+      query: '',
+      remove: () => this.elementRef()?.nativeElement.removeById(node.id),
+    };
+  }
   private readonly buttonTpl = contentChild(BsTreeSelectButtonTemplateDirective);
   private readonly headerTpl = contentChild(BsTreeSelectHeaderTemplateDirective);
   private readonly footerTpl = contentChild(BsTreeSelectFooterTemplateDirective);
@@ -126,8 +144,10 @@ export class BsTreeSelectComponent implements ControlValueAccessor, AfterViewIni
     this.bindProp((el) => (el.provider = this.provider()));
     this.bindProp((el) => (el.value = this.value()));
 
-    // Wire render-callbacks from any provided ng-templates.
-    this.bindProp((el) => (el.itemTemplate = this.nodeRenderer(this.itemTpl())));
+    // Wire render-callbacks from any provided ng-templates. (Chips / single
+    // value are projected as light-DOM slot content via <ng-content>, not a
+    // callback — see the template. suggestionTemplate stays a callback because
+    // dropdown rows render inside the nested mp-treeview shadow.)
     this.bindProp((el) => (el.suggestionTemplate = this.nodeRenderer(this.suggestionTpl())));
     this.bindProp((el) => (el.buttonTemplate = this.valueRenderer(this.buttonTpl())));
     this.bindProp((el) => (el.headerTemplate = this.staticRenderer(this.headerTpl())));
