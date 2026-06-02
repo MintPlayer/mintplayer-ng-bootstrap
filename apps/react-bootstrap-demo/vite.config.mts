@@ -3,7 +3,7 @@ import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 import { nxViteTsPaths } from '@nx/vite/plugins/nx-tsconfig-paths.plugin';
 import { nxCopyAssetsPlugin } from '@nx/vite/plugins/nx-copy-assets.plugin';
-export default defineConfig(() => ({
+export default defineConfig(({ isSsrBuild }) => ({
   root: import.meta.dirname,
   cacheDir: '../../node_modules/.vite/apps/react-bootstrap-demo',
   server: {
@@ -30,11 +30,22 @@ export default defineConfig(() => ({
   //   plugins: () => [ nxViteTsPaths() ],
   // },
   build: {
-    outDir: '../../dist/apps/react-bootstrap-demo',
+    // Split into browser/ + server/ — the standard Vite SSR layout server.mjs
+    // reads in production. The SSR bundle targets Node (esnext: allows the
+    // top-level await some deps emit); the client keeps Vite's browser target.
+    outDir: isSsrBuild
+      ? '../../dist/apps/react-bootstrap-demo/server'
+      : '../../dist/apps/react-bootstrap-demo/browser',
+    target: isSsrBuild ? 'esnext' : 'modules',
     emptyOutDir: true,
     reportCompressedSize: true,
     commonjsOptions: {
       transformMixedEsModules: true,
     },
+  },
+  // Bundle all deps into the SSR server build so the production runtime image
+  // only needs express + compression — no monorepo node_modules to ship.
+  ssr: {
+    noExternal: true,
   },
 }));

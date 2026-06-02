@@ -12,7 +12,7 @@
       ],
       "defaultConfiguration": "production",
       "options": {
-        "outputPath": "dist/apps/react-bootstrap-demo"
+        "outputPath": "dist/apps/react-bootstrap-demo/browser"
       },
       "configurations": {
         "development": {
@@ -21,6 +21,18 @@
         "production": {
           "mode": "production"
         }
+      }
+    },
+    "build-ssr": {
+      "executor": "nx:run-commands",
+      "outputs": [
+        "{workspaceRoot}/dist/apps/react-bootstrap-demo/server"
+      ],
+      "dependsOn": [
+        "^build"
+      ],
+      "options": {
+        "command": "npx vite build --config apps/react-bootstrap-demo/vite.config.mts --ssr src/entry-server.tsx"
       }
     },
     "serve": {

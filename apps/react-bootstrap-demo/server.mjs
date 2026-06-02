@@ -10,18 +10,21 @@
 // to import the framework libraries.
 import fs from 'node:fs/promises';
 import path from 'node:path';
-import { fileURLToPath } from 'node:url';
+import { fileURLToPath, pathToFileURL } from 'node:url';
 import express from 'express';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const isProd = process.env.NODE_ENV === 'production';
 const port = Number(process.env.PORT) || 4000;
-const host = process.env.HOST || 'localhost';
+// Bind all interfaces in production (containers reach the server through
+// Docker port-forwarding, which can't see a loopback-only `localhost` bind);
+// keep `localhost` in dev so `nx serve` doesn't expose the machine on the LAN.
+const host = process.env.HOST || (isProd ? '0.0.0.0' : 'localhost');
 
 // Built layout (prod): dist/apps/react-bootstrap-demo/{browser,server}.
 const distDir = path.resolve(__dirname, '../../dist/apps/react-bootstrap-demo');
 const clientDir = path.join(distDir, 'browser');
-const serverEntry = path.join(distDir, 'server', 'entry-server.js');
+const serverEntry = path.join(distDir, 'server', 'entry-server.mjs');
 
 async function createServer() {
   const app = express();
@@ -62,7 +65,7 @@ async function createServer() {
         render = (await vite.ssrLoadModule('/src/entry-server.tsx')).render;
       } else {
         template = await fs.readFile(path.join(clientDir, 'index.html'), 'utf-8');
-        render = (await import(serverEntry)).render;
+        render = (await import(pathToFileURL(serverEntry).href)).render;
       }
 
       const appHtml = await render(url);
