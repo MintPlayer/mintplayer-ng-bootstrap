@@ -39,7 +39,12 @@ The currently-shipped workaround for "WC + noscript" is the dual-template wrappe
 
 - ✅ **Tests + ARIA (Phase 7)** — **no-JS Playwright e2e on all three** (`shell-nojs.spec.ts` in each `*-e2e`: `javaScriptEnabled:false`, asserts the DSD attached + the hamburger toggles the sidebar both ways via pure CSS) — all green. **Hydration regression guard** (React + Vue `shell-hydration.spec.ts`: the WC upgrade keeps a *single* shadow chrome — guards the duplicate-top-bar bug). React/Vue e2e `webServer` now runs the **SSR server** (was static `preview`). **ARIA:** `aria-label="Toggle sidebar"` on the focusable checkbox, `title` on the hamburger, `aria-label="Sidebar"` on the `<aside>` complementary landmark. **Demo pages:** Angular keeps `/overlays/shell`; React/Vue use `mp-shell` as the whole app layout, so no dedicated demo page (per user).
 
-**Remaining:** only smaller follow-ups — external-trigger **global** bridge stylesheet (+ outer-vs-`:host` cascade check), a **codegen Nx target** to own the chrome regen (currently a manual script), and **Firefox** parity. The core migration (Phases 0–7) is complete.
+**Remaining follow-ups:**
+- ✅ **Codegen Nx target** — `nx run mintplayer-web-components:codegen-shell-chrome` (dependsOn `build`) now owns the DSD-chrome regeneration; verified deterministic.
+- ✅ **Firefox parity** — the no-JS + hydration e2e pass on Firefox for all three frameworks (native DSD + `:has()`/`:checked`; no code change needed).
+- ⬜ **External-trigger global `:has()` bridge stylesheet** — for a hamburger placed in a *separate* component (not the `topbar` slot). The `external-toggle` attribute + built-in-hamburger hiding already exist; the document-level `:has()`→`--mp-shell-open` bridge is the remaining piece. **Largely superseded** by the top-bar (`topbar` slot puts consumer nav beside the built-in hamburger), so this is now an edge case with no demo consumer.
+
+The core migration (Phases 0–7) is complete.
 
 ## Locked decisions (confirmed with the user)
 

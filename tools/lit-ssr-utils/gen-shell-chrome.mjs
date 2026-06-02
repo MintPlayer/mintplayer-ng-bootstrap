@@ -3,9 +3,12 @@
 // servers inject that constant after each <mp-shell> tag so the component
 // renders/toggles with JavaScript disabled.
 //
-//   node tools/lit-ssr-utils/gen-shell-chrome.mjs
+//   nx run mintplayer-web-components:codegen-shell-chrome   (preferred — owns
+//                                                            the build dep)
+//   node tools/lit-ssr-utils/gen-shell-chrome.mjs            (direct; needs a
+//                                                            prior WC build)
 //
-// Prereq: `nx build mintplayer-web-components` (reads the built dist element).
+// Reads the built dist element, so the Nx target dependsOn the WC `build`.
 import '@lit-labs/ssr/lib/install-global-dom-shim.js';
 import { writeFile } from 'node:fs/promises';
 import { fileURLToPath, pathToFileURL } from 'node:url';
