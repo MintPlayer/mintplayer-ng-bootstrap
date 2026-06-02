@@ -1,7 +1,8 @@
 import { provideHttpClient, withFetch } from "@angular/common/http";
 import { ApplicationConfig, provideBrowserGlobalErrorListeners, provideZonelessChangeDetection } from "@angular/core";
+import { provideClientHydration, withEventReplay } from "@angular/platform-browser";
 import { provideAnimations } from "@angular/platform-browser/animations";
-import { PreloadAllModules, withEnabledBlockingInitialNavigation, withPreloading, withInMemoryScrolling } from "@angular/router";
+import { PreloadAllModules, withPreloading, withInMemoryScrolling } from "@angular/router";
 import { provideHighlightOptions } from 'ngx-highlightjs';
 import ngBootstrapJson from '@mintplayer/ng-bootstrap/package.json';
 import { provideNavigationLock, provideNavigationLockRouter } from '@mintplayer/ng-bootstrap/navigation-lock';
@@ -10,6 +11,13 @@ import { BOOTSTRAP_VERSION } from "./providers/bootstrap-version.provider";
 
 export const config: ApplicationConfig = {
     providers: [
+        // Reuse the server-rendered DOM instead of a destructive re-render. This
+        // removes the brief two-<mp-shell> overlap on reload (Angular used to build
+        // its fresh tree — a second shell + hamburger — before discarding the SSR
+        // one). The WC's DSD shadow is parser-attached and invisible to Angular's
+        // light-DOM hydration walk, so the element + its slotted children are
+        // simply adopted; Lit hydrates the DSD (see main.ts).
+        provideClientHydration(withEventReplay()),
         provideAnimations(),
         provideHttpClient(withFetch()),
         provideZonelessChangeDetection(),
@@ -19,7 +27,8 @@ export const config: ApplicationConfig = {
                 { path: '', loadChildren: () => import('./pages/pages.routes').then(m => m.ROUTES) },
             ],
             withPreloading(PreloadAllModules),
-            withEnabledBlockingInitialNavigation(),
+            // No withEnabledBlockingInitialNavigation(): it contradicts hydration
+            // (NG05001). Hydration already blocks the initial navigation.
             withInMemoryScrolling({
                 scrollPositionRestoration: 'enabled',
                 anchorScrolling: 'enabled',

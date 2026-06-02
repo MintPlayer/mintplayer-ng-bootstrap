@@ -2,7 +2,7 @@ import { LitElement, html } from 'lit';
 import { shellStyles } from '../styles';
 
 export interface ShellStateChangeEventDetail {
-  /** Whether the sidebar is now open (the toggle's checked state). */
+  /** Whether the sidebar is now (visually) open after the toggle. */
   open: boolean;
 }
 
@@ -51,6 +51,35 @@ export class MpShell extends LitElement {
     ];
   }
 
+  protected override createRenderRoot(): HTMLElement | DocumentFragment {
+    // When this element is server-rendered as Declarative Shadow DOM, the parser
+    // attaches a shadow root pre-filled with an *inert* copy of our chrome (no
+    // lit-html "part" link). There are two ways the client can take over it:
+    //
+    //  - True hydration, when @lit-labs/ssr-client's hydrate-support has patched
+    //    *this* element's LitElement. The app and this WC must then share a single
+    //    `lit` instance (the case in the React/Vue demos). Detect it via the
+    //    `defer-hydration` attribute the shim adds to `observedAttributes`, and
+    //    defer entirely to the patched `super` (which reuses the DSD via hydrate()).
+    //
+    //  - Plain re-render, when the shim hasn't reached us — e.g. a host that
+    //    bundles `lit` as a *different* instance than this WC (Vite dep
+    //    pre-bundling a workspace lib's lit separately, as in the Angular demo).
+    //    Then lit-element's createRenderRoot pins `renderOptions.renderBefore` to
+    //    the first SSR node and the first render() inserts a SECOND copy ahead of
+    //    it (a duplicate top bar/hamburger). Clear the inert SSR chrome BEFORE
+    //    `super` captures it so render() repopulates the shadow exactly once.
+    //    `super` re-adopts our styles via adoptedStyleSheets (not children), and
+    //    the result is visually identical because the chrome is static — the DSD
+    //    still does its only job, the no-JS render before this element upgrades.
+    const hydrateSupportActive =
+      (this.constructor as typeof MpShell).observedAttributes.includes('defer-hydration');
+    if (!hydrateSupportActive) {
+      this.shadowRoot?.replaceChildren();
+    }
+    return super.createRenderRoot();
+  }
+
   override attributeChangedCallback(name: string, oldValue: string | null, newValue: string | null): void {
     super.attributeChangedCallback(name, oldValue, newValue);
     // `state`, `breakpoint` and `external-toggle` drive the layout purely via
@@ -66,21 +95,74 @@ export class MpShell extends LitElement {
     return this.renderRoot?.querySelector<HTMLInputElement>('.shell-toggle') ?? null;
   }
 
-  /** Whether the sidebar toggle is currently open. */
+  /**
+   * The *resolved, visual* open state — read straight from the value the CSS
+   * computed (`--mp-shell-open`), so it accounts for `state`, `breakpoint`, the
+   * viewport and the toggle checkbox all at once. The CSS is the single source
+   * of truth; we don't re-derive the matrix in JS.
+   */
+  #cssOpen(): boolean {
+    if (typeof window === 'undefined') return false;
+    // Read it off `.sidebar-root`: in `auto` the matrix sets the lever there
+    // (per breakpoint); with an explicit `state` the host sets it and it
+    // inherits down. Either way `.sidebar-root` carries the resolved value.
+    const root = this.renderRoot?.querySelector<HTMLElement>('.sidebar-root');
+    if (!root) return false;
+    return getComputedStyle(root).getPropertyValue('--mp-shell-open').trim() === '1';
+  }
+
+  /** An explicit `state` (`show`/`hide`) freezes the CSS checkbox. */
+  #hasExplicitState(): boolean {
+    const state = this.getAttribute('state');
+    return state === 'show' || state === 'hide';
+  }
+
+  /**
+   * Wide (sidebar pushes content) vs narrow (sidebar overlays) — read from the
+   * layout the CSS actually applied (`position: relative` vs `absolute` on
+   * `.sidebar`), again avoiding any breakpoint duplication in JS.
+   */
+  #isWide(): boolean {
+    if (typeof window === 'undefined') return true;
+    const sidebar = this.renderRoot?.querySelector<HTMLElement>('.sidebar');
+    return sidebar ? getComputedStyle(sidebar).position !== 'absolute' : true;
+  }
+
+  /**
+   * Keep the checkbox encoding the resolved open for the current viewport, so
+   * that returning to `auto` (where the checkbox drives the CSS again) resolves
+   * to the same visual state instead of jumping. In `auto` the checkbox means
+   * "inverted from the responsive default": wide default = open (checked ⇒
+   * closed); narrow default = closed (checked ⇒ open).
+   */
+  #syncCheckbox(open: boolean): void {
+    const input = this.toggleInput;
+    if (!input) return;
+    input.checked = this.#isWide() ? !open : open;
+  }
+
+  /** Whether the sidebar is currently (visually) open. */
   get open(): boolean {
-    return this.toggleInput?.checked ?? false;
+    return this.#cssOpen();
   }
 
   /** Programmatically open/close the sidebar. Pass a boolean to force a state. */
   toggle(force?: boolean): void {
-    const input = this.toggleInput;
-    if (!input) return;
-    input.checked = force ?? !input.checked;
-    this.#emit(input.checked);
+    const next = force ?? !this.open;
+    this.#syncCheckbox(next);
+    this.#emit(next);
   }
 
-  #onToggleChange = (event: Event): void => {
-    this.#emit((event.target as HTMLInputElement).checked);
+  #onToggleChange = (): void => {
+    // The checkbox has just flipped. In `auto` it already drove the CSS to the
+    // new visual state, so the resolved value IS the new state. With an explicit
+    // `state` the CSS ignores the checkbox, so the click means "flip the frozen
+    // value". Either way `next` is the new visual open; the consumer drives
+    // `state` from our event (controlled), we never mutate `state` ourselves.
+    const cssOpen = this.#cssOpen();
+    const next = this.#hasExplicitState() ? !cssOpen : cssOpen;
+    this.#syncCheckbox(next);
+    this.#emit(next);
   };
 
   #emit(open: boolean): void {

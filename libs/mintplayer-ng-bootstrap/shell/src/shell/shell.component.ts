@@ -1,6 +1,6 @@
-import { afterNextRender, ChangeDetectionStrategy, Component, CUSTOM_ELEMENTS_SCHEMA, ElementRef, input, viewChild } from '@angular/core';
+import { afterNextRender, ChangeDetectionStrategy, Component, CUSTOM_ELEMENTS_SCHEMA, ElementRef, input, output, viewChild } from '@angular/core';
 import { Breakpoint } from '@mintplayer/ng-bootstrap';
-import type { MpShell } from '@mintplayer/web-components/shell';
+import type { MpShell, ShellStateChangeEventDetail } from '@mintplayer/web-components/shell';
 import { BsShellState } from '../shell-state';
 
 /**
@@ -27,7 +27,21 @@ export class BsShellComponent {
   readonly state = input<BsShellState>('auto');
   readonly breakpoint = input<Breakpoint>('md');
 
+  /** Fires when the sidebar toggle flips (re-emits the WC's `statechange`). */
+  readonly statechange = output<ShellStateChangeEventDetail>();
+
   private readonly shellRef = viewChild.required<ElementRef<MpShell>>('wc');
+
+  protected onStatechange(event: Event) {
+    // The WC's `statechange` is a general-purpose DOM event (bubbles + composed).
+    // In Angular the public API is this typed `output()`, so consume the raw
+    // event here. Without `stopPropagation` it keeps bubbling to the consumer's
+    // `<bs-shell>` host, where their `(statechange)` binding fires a SECOND time
+    // with the raw `CustomEvent` (Angular doesn't unwrap `.detail`), clobbering
+    // whatever the typed emit just set.
+    event.stopPropagation();
+    this.statechange.emit((event as CustomEvent<ShellStateChangeEventDetail>).detail);
+  }
 
   constructor() {
     afterNextRender(() => {

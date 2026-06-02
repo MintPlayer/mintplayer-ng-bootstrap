@@ -14,7 +14,7 @@
 <h2>Basic usage</h2>
 
 <div class="shell-demo">
-<bs-shell [state]="shellState" [breakpoint]="'md'" #shell>
+<bs-shell [state]="shellState" [breakpoint]="'md'" #shell (statechange)="onShellToggle($event)">
     <div bsShellSidebar class="text-light">
         <bs-accordion>
             <bs-accordion-tab>
