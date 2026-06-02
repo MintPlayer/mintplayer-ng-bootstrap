@@ -103,13 +103,13 @@ export class MpShell extends LitElement {
         @change=${this.#onToggleChange}
       />
       <div class="topbar" part="topbar">
-        <label for="mp-shell-toggle" class="shell-hamburger" part="hamburger">
+        <label for="mp-shell-toggle" class="shell-hamburger" part="hamburger" title="Toggle sidebar">
           <slot name="hamburger">&#9776;</slot>
         </label>
         <slot name="topbar"></slot>
       </div>
       <div class="sidebar-root" part="sidebar-root">
-        <aside class="sidebar" part="sidebar"><slot name="sidebar"></slot></aside>
+        <aside class="sidebar" part="sidebar" aria-label="Sidebar"><slot name="sidebar"></slot></aside>
         <div class="content" part="content"><slot></slot></div>
       </div>
       <slot name="toggle"></slot>
