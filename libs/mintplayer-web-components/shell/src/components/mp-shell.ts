@@ -119,13 +119,15 @@ export class MpShell extends LitElement {
 
   /**
    * Wide (sidebar pushes content) vs narrow (sidebar overlays) — read from the
-   * layout the CSS actually applied (`position: relative` vs `absolute` on
-   * `.sidebar`), again avoiding any breakpoint duplication in JS.
+   * `--mp-shell-wide` lever the media queries resolved (1 = wide, 0 = narrow),
+   * avoiding any breakpoint duplication in JS. (The sidebar is now
+   * `position: absolute` in BOTH modes, so position no longer discriminates.)
    */
   #isWide(): boolean {
     if (typeof window === 'undefined') return true;
-    const sidebar = this.renderRoot?.querySelector<HTMLElement>('.sidebar');
-    return sidebar ? getComputedStyle(sidebar).position !== 'absolute' : true;
+    const root = this.renderRoot?.querySelector<HTMLElement>('.sidebar-root');
+    if (!root) return true;
+    return getComputedStyle(root).getPropertyValue('--mp-shell-wide').trim() === '1';
   }
 
   /**

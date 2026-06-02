@@ -5,19 +5,24 @@
 // The sidebar's open/closed state funnels through ONE numeric lever,
 // `--mp-shell-open` (1 = open, 0 = closed), computed once from `state` /
 // `breakpoint` / the toggle checkbox (see the state matrix at the bottom).
-// Two layout *mechanisms* read that lever, picked by the viewport:
-//   - Wide (>= breakpoint): the sidebar is in-flow with a FIXED width and
-//     slides via a negative `margin-inline-start`, so the content reclaims the
-//     space (the width is fixed, so contents never reflow/word-wrap).
-//   - Narrow (< breakpoint): the sidebar is an OVERLAY — absolutely positioned,
-//     FULL width, on top of the (now full-width) content — sliding via
-//     translateX. This is the mobile-drawer behaviour.
+// In BOTH modes the sidebar is absolutely positioned (out of flow) and slides
+// via `translateX` of its own width; the difference is purely:
+//   - Wide (>= breakpoint): sidebar is a FIXED width and the content is pushed
+//     right by a transitioned `margin-inline-start` (= open * size). The margin
+//     is the thing that animates, so a breakpoint crossing slides the content
+//     smoothly instead of snapping (a flex-driven offset can't transition).
+//   - Narrow (< breakpoint): sidebar is FULL width and OVERLAYS the (full-width)
+//     content — content margin is 0. This is the mobile-drawer behaviour.
+// `--mp-shell-wide` (1 = wide/push, 0 = narrow/overlay) mirrors which mechanism
+// the media queries picked, so JS can read the resolved mode without
+// re-deriving the breakpoint.
 :host {
   display: flex;
   flex-direction: column;            // top bar over the sidebar/content row
   position: relative;
   --mp-shell-size: 15rem;            // expanded sidebar width (consumer override via `size` / this var)
   --mp-shell-open: 0;                // closed by default; the matrix below overrides
+  --mp-shell-wide: 0;                // overlay by default; the loop below overrides per breakpoint
 }
 
 // Full-width bar above the sidebar/content row. Holds the built-in hamburger
@@ -42,12 +47,11 @@
   overflow-x: hidden;                // horizontal slide is clipped by .sidebar-root
   overflow-y: auto;                  // a tall sidebar scrolls within itself
   min-block-size: 0;
-  // Transition every lever both mechanisms use. `inline-size` is included so a
-  // cross-breakpoint resize (fixed width <-> 100%) animates smoothly instead of
-  // snapping to full width and then sliding out.
+  // The sidebar slides via `transform` (its own box width) in both modes;
+  // `inline-size` is transitioned so a cross-breakpoint resize (fixed width <->
+  // 100%) animates smoothly instead of snapping.
   transition:
     transform 0.3s ease-in-out,
-    margin-inline-start 0.3s ease-in-out,
     inline-size 0.3s ease-in-out;
 }
 
@@ -60,6 +64,11 @@
   // knowing the top bar's height. Only engages when the consumer gives the host
   // a bounded height (e.g. `height: 100dvh`); with an auto height it just grows.
   overflow-y: auto;
+  // The content's left offset is what animates the push/collapse (mirrors a
+  // classic margin-left sidebar). Because it's a transitioned property — unlike
+  // a flex-driven offset, which snaps — a breakpoint crossing slides the content
+  // fluidly as the sidebar leaves/enters the flow. Set per-breakpoint below.
+  transition: margin-inline-start 0.3s ease-in-out;
 }
 
 // Visually-hidden but focusable toggle (the no-JS state holder).
@@ -94,13 +103,22 @@
 }
 
 // --- layout mechanism, per breakpoint (independent of open/closed) ----------
-// Reads `--mp-shell-open`: wide uses margin (push), narrow uses translateX
-// (overlay). `(open - 1)` maps 1 -> 0 and 0 -> -1.
+// The sidebar is absolutely positioned in BOTH modes and slides via translateX
+// of its own width: `(open - 1) * 100%` maps open=1 -> 0% and open=0 -> -100%
+// (fully off-screen). The mode only differs in the sidebar's width and in the
+// content's offset — push gives the content a transitioned `margin-inline-start`
+// (= open * size), overlay leaves it at 0 and the sidebar sits on top.
 @mixin sidebar-push {
-  position: relative;
+  position: absolute;
+  inset-block: 0;
+  inset-inline-start: 0;
   inline-size: var(--mp-shell-size);
-  transform: none;
-  margin-inline-start: calc((var(--mp-shell-open) - 1) * var(--mp-shell-size));
+  z-index: 1030;
+  transform: translateX(calc((var(--mp-shell-open) - 1) * 100%));
+}
+
+@mixin content-push {
+  margin-inline-start: calc(var(--mp-shell-open) * var(--mp-shell-size));
 }
 
 @mixin sidebar-overlay {
@@ -108,9 +126,12 @@
   inset-block: 0;
   inset-inline-start: 0;
   inline-size: 100%;
-  margin-inline-start: 0;
   z-index: 1030;
   transform: translateX(calc((var(--mp-shell-open) - 1) * 100%));
+}
+
+@mixin content-overlay {
+  margin-inline-start: 0;
 }
 
 @each $name, $min in $grid-breakpoints {
@@ -118,13 +139,19 @@
     @if $min and $min > 0 {
       @include media-breakpoint-up($name, $grid-breakpoints) {
         .sidebar { @include sidebar-push; }
+        .content { @include content-push; }
+        .sidebar-root { --mp-shell-wide: 1; }
       }
       @include media-breakpoint-down($name, $grid-breakpoints) {
         .sidebar { @include sidebar-overlay; }
+        .content { @include content-overlay; }
+        .sidebar-root { --mp-shell-wide: 0; }
       }
     } @else {
       // xs (min 0): always the overlay mechanism.
       .sidebar { @include sidebar-overlay; }
+      .content { @include content-overlay; }
+      .sidebar-root { --mp-shell-wide: 0; }
     }
   }
 }
