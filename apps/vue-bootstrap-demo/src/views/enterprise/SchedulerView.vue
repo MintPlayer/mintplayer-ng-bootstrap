@@ -5,6 +5,7 @@ import { BsCodeSnippet } from '@mintplayer/vue-bootstrap/code-snippet';
 import {
   generateEventId,
   type SchedulerEvent,
+  type ViewType,
 } from '@mintplayer/web-components/scheduler-core';
 import type { MpScheduler } from '@mintplayer/web-components/scheduler';
 
@@ -22,6 +23,11 @@ const events = ref<SchedulerEvent[]>([
   { id: '2', title: 'Design review', start: at(11), end: at(12),    color: '#6f42c1' },
   { id: '3', title: 'Lunch',         start: at(12), end: at(13),    color: '#198754' },
 ]);
+
+// `v-model:view` keeps the bound ref in sync with the WC's own view
+// switcher — the scheduler emits `view-change`, the wrapper writes it
+// back into this ref, so it always reflects the active view.
+const view = ref<ViewType>('day');
 
 function onEventUpdate(e: Event) {
   const detail = (e as CustomEvent<{ event: SchedulerEvent }>).detail;
@@ -52,9 +58,10 @@ function onEventDelete(e: Event) {
   events.value = events.value.filter((ev) => ev.id !== detail.event.id);
 }
 
-const SOURCE = `<BsScheduler
+const SOURCE = `<!-- v-model:view tracks the WC's own view switcher both ways -->
+<BsScheduler
   :events="events"
-  view="day"
+  v-model:view="view"
   @event-create="(e) => {
     events = [...events, {
       id: generateEventId(), title: 'New Event',
@@ -82,7 +89,7 @@ const SOURCE = `<BsScheduler
       <h2>Today's agenda</h2>
       <BsScheduler
         :events="events"
-        view="day"
+        v-model:view="view"
         style="display: block; height: 100%"
         @event-update="onEventUpdate"
         @event-create="onEventCreate"
