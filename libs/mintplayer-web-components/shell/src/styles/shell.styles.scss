@@ -1,0 +1,83 @@
+@import "bootstrap/scss/functions";
+@import "bootstrap/scss/variables";
+@import "bootstrap/scss/mixins/breakpoints";
+
+// The sidebar keeps a FIXED width (`--mp-shell-size`) so its contents never
+// reflow/word-wrap; open/close slides it via a negative `margin-inline-start`
+// (like the original `margin-left`), which also lets the content reclaim the
+// space. All rules funnel through one lever: `--mp-shell-margin`
+// (0 = open, `calc(-1 * size)` = closed).
+:host {
+  display: block;
+  position: relative;
+  --mp-shell-size: 15rem;            // expanded sidebar width (consumer override via `size` / this var)
+}
+
+.sidebar-root {
+  display: flex;
+  align-items: stretch;
+  overflow: hidden;                  // clip the sidebar as it slides past the edge
+}
+
+.sidebar {
+  flex: 0 0 auto;
+  inline-size: var(--mp-shell-size, 15rem);
+  margin-inline-start: var(--mp-shell-margin, calc(-1 * var(--mp-shell-size, 15rem)));
+  overflow: hidden;
+  transition: margin-inline-start 0.3s ease-in-out;
+}
+
+.content {
+  flex: 1 1 auto;
+  min-inline-size: 0;
+}
+
+// Visually-hidden but focusable toggle (the no-JS state holder).
+.shell-toggle {
+  position: absolute;
+  inline-size: 1px;
+  block-size: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+.shell-hamburger {
+  display: inline-flex;
+  cursor: pointer;
+}
+
+// External-trigger mode hides the built-in hamburger (host attribute is
+// shadow-visible; the slotted checkbox's state is bridged via a global rule).
+:host([external-toggle]) .shell-hamburger {
+  display: none;
+}
+
+// Explicit state override wins over the responsive/toggle rules.
+:host([state="show"]) { --mp-shell-margin: 0; }
+:host([state="hide"]) { --mp-shell-margin: calc(-1 * var(--mp-shell-size)); }
+
+// Responsive `auto` + interactive toggle (self-contained mode), per breakpoint:
+//   unchecked = responsive default (collapsed below bp, expanded at/above);
+//   checked   = the inverse for the current viewport.
+@each $name, $min in $grid-breakpoints {
+  :host([breakpoint="#{$name}"]:not([state="show"]):not([state="hide"]):not([external-toggle])) {
+    @if $min and $min > 0 {
+      @include media-breakpoint-down($name, $grid-breakpoints) {
+        .shell-toggle:not(:checked) ~ .sidebar-root { --mp-shell-margin: calc(-1 * var(--mp-shell-size)); }
+        .shell-toggle:checked ~ .sidebar-root { --mp-shell-margin: 0; }
+      }
+      @include media-breakpoint-up($name, $grid-breakpoints) {
+        .shell-toggle:not(:checked) ~ .sidebar-root { --mp-shell-margin: 0; }
+        .shell-toggle:checked ~ .sidebar-root { --mp-shell-margin: calc(-1 * var(--mp-shell-size)); }
+      }
+    } @else {
+      // xs (min 0): always narrow semantics.
+      .shell-toggle:not(:checked) ~ .sidebar-root { --mp-shell-margin: calc(-1 * var(--mp-shell-size)); }
+      .shell-toggle:checked ~ .sidebar-root { --mp-shell-margin: 0; }
+    }
+  }
+}

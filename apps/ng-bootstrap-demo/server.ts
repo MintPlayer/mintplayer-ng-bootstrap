@@ -6,6 +6,8 @@ import {
 } from '@angular/ssr/node';
 import express from 'express';
 import { join } from 'node:path';
+// Injects <mp-shell>'s Declarative Shadow DOM into SSR output — see docs/prd/shell-wc-ssr.md
+import { injectMpShellDsd } from '@mintplayer/ng-bootstrap/shell';
 
 // const browserDistFolder = join(__dirname, '../browser');
 const browserDistFolder = join(process.cwd(), 'dist/apps/ng-bootstrap-demo/browser');
@@ -60,9 +62,20 @@ app.use((req, res, next) => {
   }
   angularApp
     .handle(req)
-    .then((response) =>
-      response ? writeResponseToNodeResponse(response, res) : next(),
-    )
+    .then(async (response) => {
+      if (!response) return next();
+      // Inject <mp-shell>'s Declarative Shadow DOM so the WC renders/toggles
+      // with JS disabled (shadow chrome is static; slotted light DOM is
+      // Angular's). Reusable helper from @mintplayer/ng-bootstrap/shell.
+      const contentType = response.headers.get('content-type') ?? '';
+      if (contentType.includes('text/html')) {
+        const body = injectMpShellDsd(await response.text());
+        const headers = new Headers(response.headers);
+        headers.delete('content-length');
+        return writeResponseToNodeResponse(new Response(body, { status: response.status, headers }), res);
+      }
+      return writeResponseToNodeResponse(response, res);
+    })
     .catch(next);
 });
 

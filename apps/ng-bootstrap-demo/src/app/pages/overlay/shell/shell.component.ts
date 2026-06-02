@@ -27,13 +27,13 @@ export class ShellComponent {
 
   protected readonly snippetBasicHtml = dedent`
     <bs-shell [state]="'auto'" [breakpoint]="'md'">
-      <nav *bsShellSidebar>
+      <nav bsShellSidebar>
         <span class="d-block p-3">Home</span>
         <span class="d-block p-3">Settings</span>
       </nav>
 
       <main class="p-3">
-        Main content lives outside the *bsShellSidebar template.
+        Main content is any non-[bsShellSidebar] child.
       </main>
     </bs-shell>
   `;

@@ -1,32 +1,49 @@
-import { NgTemplateOutlet } from '@angular/common';
-import { ChangeDetectionStrategy, Component, computed, ElementRef, input, signal, TemplateRef, viewChild } from '@angular/core';
-import { BsShellState } from '../shell-state';
+import { afterNextRender, ChangeDetectionStrategy, Component, CUSTOM_ELEMENTS_SCHEMA, ElementRef, input, viewChild } from '@angular/core';
 import { Breakpoint } from '@mintplayer/ng-bootstrap';
+import type { MpShell } from '@mintplayer/web-components/shell';
+import { BsShellState } from '../shell-state';
 
+/**
+ * `<bs-shell>` — Angular wrapper around the `<mp-shell>` web component.
+ *
+ * Layout, the responsive `auto` behaviour and the no-JS toggle all live in the
+ * WC (single source of truth). This wrapper only bridges inputs to attributes
+ * and projects content into the WC's slots:
+ *  - mark the sidebar element with `bsShellSidebar` (→ `slot="sidebar"`);
+ *  - everything else becomes the main content.
+ *
+ * The WC is registered **client-side only** (`afterNextRender`); on the server
+ * Angular emits a bare `<mp-shell>` tag and the SSR layer injects its
+ * Declarative Shadow DOM (see `injectMpShellDsd`), so it renders with JS off.
+ */
 @Component({
   selector: 'bs-shell',
   templateUrl: './shell.component.html',
   styleUrl: './shell.component.scss',
-  imports: [NgTemplateOutlet],
   changeDetection: ChangeDetectionStrategy.OnPush,
+  schemas: [CUSTOM_ELEMENTS_SCHEMA],
 })
 export class BsShellComponent {
+  readonly state = input<BsShellState>('auto');
+  readonly breakpoint = input<Breakpoint>('md');
 
-  sidebarTemplate = signal<TemplateRef<any> | null>(null);
-  readonly rootElement = viewChild.required<ElementRef<HTMLDivElement>>('root');
+  private readonly shellRef = viewChild.required<ElementRef<MpShell>>('wc');
 
-  state = input<BsShellState>('auto');
-  breakpoint = input<Breakpoint>('md');
+  constructor() {
+    afterNextRender(() => {
+      // Side-effect import registers <mp-shell>; client-only so SSR stays a
+      // bare tag for DSD injection.
+      import('@mintplayer/web-components/shell');
+    });
+  }
 
-  stateClass = computed(() => {
-    const state = this.state();
-    if (state === 'auto') return null;
-    else return state;
-  });
+  /** Set the expanded sidebar width (any CSS length, e.g. `'20rem'`). */
+  setSize(size: string) {
+    this.shellRef().nativeElement.setAttribute('size', size);
+  }
 
-  breakpointClass = computed(() => `shell-${this.breakpoint()}`);
-
-  public setSize(size: string) {
-    this.rootElement().nativeElement.style.setProperty('--size', size);
+  /** Programmatically open/close the sidebar (no-op until the WC has upgraded). */
+  toggle(force?: boolean) {
+    this.shellRef().nativeElement.toggle?.(force);
   }
 }
