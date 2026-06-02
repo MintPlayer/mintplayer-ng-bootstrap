@@ -42,9 +42,9 @@ The currently-shipped workaround for "WC + noscript" is the dual-template wrappe
 **Remaining follow-ups:**
 - ✅ **Codegen Nx target** — `nx run mintplayer-web-components:codegen-shell-chrome` (dependsOn `build`) now owns the DSD-chrome regeneration; verified deterministic.
 - ✅ **Firefox parity** — the no-JS + hydration e2e pass on Firefox for all three frameworks (native DSD + `:has()`/`:checked`; no code change needed).
-- ⬜ **External-trigger global `:has()` bridge stylesheet** — for a hamburger placed in a *separate* component (not the `topbar` slot). The `external-toggle` attribute + built-in-hamburger hiding already exist; the document-level `:has()`→`--mp-shell-open` bridge is the remaining piece. **Largely superseded** by the top-bar (`topbar` slot puts consumer nav beside the built-in hamburger), so this is now an edge case with no demo consumer.
+- ✅ **External-trigger global `:has()` bridge stylesheet — decided: NOT shipping (superseded).** The original locked decision #5 ("hamburger placeable in a consumer navbar, no-JS") is satisfied by the **top bar**: consumers put their nav in the `topbar` slot, right beside the built-in hamburger. A hamburger in a *separate* component outside the shell is now an edge case with no demo consumer, so shipping a speculative global stylesheet + fixture + test isn't warranted. The `external-toggle` attribute (hides the built-in hamburger) stays in the WC for advanced users who want to wire their own `slot="toggle"` checkbox + a document-level `mp-shell:has(> input[slot="toggle"]:checked){ --mp-shell-open:1 }` rule themselves (spike-verified mechanism), but no global CSS is shipped.
 
-The core migration (Phases 0–7) is complete.
+**All phases (0–7) and follow-ups are complete.**
 
 ## Locked decisions (confirmed with the user)
 
