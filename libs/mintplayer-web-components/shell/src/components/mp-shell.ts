@@ -18,9 +18,14 @@ export interface ShellStateChangeEventDetail {
  * Authoring (vanilla):
  *
  *     <mp-shell breakpoint="md">
+ *       <div slot="topbar">…brand / nav…</div>
  *       <nav slot="sidebar">…</nav>
  *       <main>…</main>
  *     </mp-shell>
+ *
+ * Layout: a full-width top bar (the built-in hamburger toggle on its left, plus
+ * the `topbar` slot) sits above a row of `sidebar` + default (content) slots.
+ * The sidebar slides in/out below the top bar, which stays put.
  *
  * Attributes:
  *  - `state` — `auto` (default) | `show` | `hide`.
@@ -97,9 +102,12 @@ export class MpShell extends LitElement {
         aria-label="Toggle sidebar"
         @change=${this.#onToggleChange}
       />
-      <label for="mp-shell-toggle" class="shell-hamburger" part="hamburger">
-        <slot name="hamburger">&#9776;</slot>
-      </label>
+      <div class="topbar" part="topbar">
+        <label for="mp-shell-toggle" class="shell-hamburger" part="hamburger">
+          <slot name="hamburger">&#9776;</slot>
+        </label>
+        <slot name="topbar"></slot>
+      </div>
       <div class="sidebar-root" part="sidebar-root">
         <aside class="sidebar" part="sidebar"><slot name="sidebar"></slot></aside>
         <div class="content" part="content"><slot></slot></div>

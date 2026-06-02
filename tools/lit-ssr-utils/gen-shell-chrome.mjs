@@ -28,7 +28,7 @@ if (!match) {
 
 const out = resolve(
   repoRoot,
-  'libs/mintplayer-ng-bootstrap/shell/src/ssr/mp-shell-chrome.generated.ts',
+  'libs/mintplayer-web-components/shell/ssr/mp-shell-chrome.generated.ts',
 );
 const content = `// AUTO-GENERATED — do not edit by hand.
 // Regenerate with: node tools/lit-ssr-utils/gen-shell-chrome.mjs

@@ -1,10 +1,15 @@
-import 'bootstrap/dist/css/bootstrap.min.css';
-import 'bootstrap-icons/font/bootstrap-icons.css';
-import './styles.css';
-import router from './router';
-import { createApp } from 'vue';
+import { createSSRApp } from 'vue';
 import App from './app/App.vue';
+import { createAppRouter } from './router';
 
-const app = createApp(App);
-app.use(router);
-app.mount('#root');
+// Shared app factory used by both entries. `createSSRApp` (not `createApp`) so
+// the client hydrates the server-rendered markup instead of discarding it.
+// Styles (incl. Bootstrap) are linked as a real stylesheet from index.html
+// (`/src/styles.css`, which @imports Bootstrap) so the SSR'd page is styled
+// with JavaScript disabled — they are intentionally NOT imported here.
+export function createApp(ssr = false) {
+  const app = createSSRApp(App);
+  const router = createAppRouter(ssr);
+  app.use(router);
+  return { app, router };
+}

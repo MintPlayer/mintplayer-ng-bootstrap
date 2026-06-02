@@ -7,7 +7,8 @@ import {
 import express from 'express';
 import { join } from 'node:path';
 // Injects <mp-shell>'s Declarative Shadow DOM into SSR output — see docs/prd/shell-wc-ssr.md
-import { injectMpShellDsd } from '@mintplayer/ng-bootstrap/shell';
+// Framework-agnostic helper, shared by all three SSR servers.
+import { injectMpShellDsd } from '@mintplayer/web-components/shell/ssr';
 
 // const browserDistFolder = join(__dirname, '../browser');
 const browserDistFolder = join(process.cwd(), 'dist/apps/ng-bootstrap-demo/browser');

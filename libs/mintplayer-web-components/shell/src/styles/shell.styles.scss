@@ -2,34 +2,64 @@
 @import "bootstrap/scss/variables";
 @import "bootstrap/scss/mixins/breakpoints";
 
-// The sidebar keeps a FIXED width (`--mp-shell-size`) so its contents never
-// reflow/word-wrap; open/close slides it via a negative `margin-inline-start`
-// (like the original `margin-left`), which also lets the content reclaim the
-// space. All rules funnel through one lever: `--mp-shell-margin`
-// (0 = open, `calc(-1 * size)` = closed).
+// The sidebar's open/closed state funnels through ONE numeric lever,
+// `--mp-shell-open` (1 = open, 0 = closed), computed once from `state` /
+// `breakpoint` / the toggle checkbox (see the state matrix at the bottom).
+// Two layout *mechanisms* read that lever, picked by the viewport:
+//   - Wide (>= breakpoint): the sidebar is in-flow with a FIXED width and
+//     slides via a negative `margin-inline-start`, so the content reclaims the
+//     space (the width is fixed, so contents never reflow/word-wrap).
+//   - Narrow (< breakpoint): the sidebar is an OVERLAY — absolutely positioned,
+//     FULL width, on top of the (now full-width) content — sliding via
+//     translateX. This is the mobile-drawer behaviour.
 :host {
-  display: block;
+  display: flex;
+  flex-direction: column;            // top bar over the sidebar/content row
   position: relative;
   --mp-shell-size: 15rem;            // expanded sidebar width (consumer override via `size` / this var)
+  --mp-shell-open: 0;                // closed by default; the matrix below overrides
+}
+
+// Full-width bar above the sidebar/content row. Holds the built-in hamburger
+// (left) + the consumer's `topbar` slot; stays put while the sidebar slides.
+.topbar {
+  display: flex;
+  align-items: center;
+  flex: 0 0 auto;
 }
 
 .sidebar-root {
   display: flex;
   align-items: stretch;
-  overflow: hidden;                  // clip the sidebar as it slides past the edge
+  overflow: hidden;                  // clip the sidebar (slid off-screen, both modes)
+  flex: 1 1 auto;                    // fill the height below the top bar
+  min-block-size: 0;
+  position: relative;                // anchor for the narrow-mode overlay sidebar
 }
 
 .sidebar {
   flex: 0 0 auto;
-  inline-size: var(--mp-shell-size, 15rem);
-  margin-inline-start: var(--mp-shell-margin, calc(-1 * var(--mp-shell-size, 15rem)));
-  overflow: hidden;
-  transition: margin-inline-start 0.3s ease-in-out;
+  overflow-x: hidden;                // horizontal slide is clipped by .sidebar-root
+  overflow-y: auto;                  // a tall sidebar scrolls within itself
+  min-block-size: 0;
+  // Transition every lever both mechanisms use. `inline-size` is included so a
+  // cross-breakpoint resize (fixed width <-> 100%) animates smoothly instead of
+  // snapping to full width and then sliding out.
+  transition:
+    transform 0.3s ease-in-out,
+    margin-inline-start 0.3s ease-in-out,
+    inline-size 0.3s ease-in-out;
 }
 
 .content {
   flex: 1 1 auto;
   min-inline-size: 0;
+  min-block-size: 0;
+  // The content is the scroll region. Combined with the flex column above, the
+  // top bar + sidebar stay put while content scrolls — WITHOUT this component
+  // knowing the top bar's height. Only engages when the consumer gives the host
+  // a bounded height (e.g. `height: 100dvh`); with an auto height it just grows.
+  overflow-y: auto;
 }
 
 // Visually-hidden but focusable toggle (the no-JS state holder).
@@ -47,7 +77,14 @@
 
 .shell-hamburger {
   display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
   cursor: pointer;
+  padding: 0.5rem 0.75rem;
+  font-size: 1.25rem;
+  line-height: 1;
+  user-select: none;
 }
 
 // External-trigger mode hides the built-in hamburger (host attribute is
@@ -56,28 +93,64 @@
   display: none;
 }
 
-// Explicit state override wins over the responsive/toggle rules.
-:host([state="show"]) { --mp-shell-margin: 0; }
-:host([state="hide"]) { --mp-shell-margin: calc(-1 * var(--mp-shell-size)); }
+// --- layout mechanism, per breakpoint (independent of open/closed) ----------
+// Reads `--mp-shell-open`: wide uses margin (push), narrow uses translateX
+// (overlay). `(open - 1)` maps 1 -> 0 and 0 -> -1.
+@mixin sidebar-push {
+  position: relative;
+  inline-size: var(--mp-shell-size);
+  transform: none;
+  margin-inline-start: calc((var(--mp-shell-open) - 1) * var(--mp-shell-size));
+}
 
-// Responsive `auto` + interactive toggle (self-contained mode), per breakpoint:
-//   unchecked = responsive default (collapsed below bp, expanded at/above);
-//   checked   = the inverse for the current viewport.
+@mixin sidebar-overlay {
+  position: absolute;
+  inset-block: 0;
+  inset-inline-start: 0;
+  inline-size: 100%;
+  margin-inline-start: 0;
+  z-index: 1030;
+  transform: translateX(calc((var(--mp-shell-open) - 1) * 100%));
+}
+
+@each $name, $min in $grid-breakpoints {
+  :host([breakpoint="#{$name}"]) {
+    @if $min and $min > 0 {
+      @include media-breakpoint-up($name, $grid-breakpoints) {
+        .sidebar { @include sidebar-push; }
+      }
+      @include media-breakpoint-down($name, $grid-breakpoints) {
+        .sidebar { @include sidebar-overlay; }
+      }
+    } @else {
+      // xs (min 0): always the overlay mechanism.
+      .sidebar { @include sidebar-overlay; }
+    }
+  }
+}
+
+// --- open/closed state matrix (sets --mp-shell-open) ------------------------
+// Explicit `state` wins and is viewport-independent.
+:host([state="show"]) { --mp-shell-open: 1; }
+:host([state="hide"]) { --mp-shell-open: 0; }
+
+// `auto`: responsive default (collapsed below the breakpoint, expanded at/above)
+// with the toggle inverting it for the current viewport.
 @each $name, $min in $grid-breakpoints {
   :host([breakpoint="#{$name}"]:not([state="show"]):not([state="hide"]):not([external-toggle])) {
     @if $min and $min > 0 {
-      @include media-breakpoint-down($name, $grid-breakpoints) {
-        .shell-toggle:not(:checked) ~ .sidebar-root { --mp-shell-margin: calc(-1 * var(--mp-shell-size)); }
-        .shell-toggle:checked ~ .sidebar-root { --mp-shell-margin: 0; }
+      @include media-breakpoint-up($name, $grid-breakpoints) {       // wide: default open
+        .shell-toggle:not(:checked) ~ .sidebar-root { --mp-shell-open: 1; }
+        .shell-toggle:checked ~ .sidebar-root { --mp-shell-open: 0; }
       }
-      @include media-breakpoint-up($name, $grid-breakpoints) {
-        .shell-toggle:not(:checked) ~ .sidebar-root { --mp-shell-margin: 0; }
-        .shell-toggle:checked ~ .sidebar-root { --mp-shell-margin: calc(-1 * var(--mp-shell-size)); }
+      @include media-breakpoint-down($name, $grid-breakpoints) {     // narrow: default closed
+        .shell-toggle:not(:checked) ~ .sidebar-root { --mp-shell-open: 0; }
+        .shell-toggle:checked ~ .sidebar-root { --mp-shell-open: 1; }
       }
     } @else {
-      // xs (min 0): always narrow semantics.
-      .shell-toggle:not(:checked) ~ .sidebar-root { --mp-shell-margin: calc(-1 * var(--mp-shell-size)); }
-      .shell-toggle:checked ~ .sidebar-root { --mp-shell-margin: 0; }
+      // xs (min 0): always narrow semantics (default closed).
+      .shell-toggle:not(:checked) ~ .sidebar-root { --mp-shell-open: 0; }
+      .shell-toggle:checked ~ .sidebar-root { --mp-shell-open: 1; }
     }
   }
 }

@@ -5,6 +5,7 @@
     <link rel="icon" type="image/svg+xml" href="/favicon.svg">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>vue-bootstrap-demo</title>
+    <link rel="stylesheet" href="/src/styles.css">
     <script>
       // Pre-boot: mirror the OS prefers-color-scheme to Bootstrap's
       // data-bs-theme attribute before the Vue app paints. The Vue
@@ -23,7 +24,7 @@
     </script>
   </head>
   <body>
-    <div id="root"></div>
-    <script type="module" src="/src/main.ts"></script>
+    <div id="root"><!--app-html--></div>
+    <script type="module" src="/src/entry-client.ts"></script>
   </body>
 </html>
