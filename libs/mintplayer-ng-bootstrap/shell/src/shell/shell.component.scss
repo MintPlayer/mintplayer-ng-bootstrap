@@ -1,3 +1,15 @@
+// Forward the wrapper's box to the inner web component so a consumer-set height
+// on `bs-shell` reaches `<mp-shell>` (whose own host is a flex column that fills
+// any bounded height). Without this the host stays `display:block` and
+// `<mp-shell>` sizes to content, so a height on `bs-shell` only adds empty space
+// below the shell instead of stretching it. With no height set, `flex:1 1 auto`
+// still resolves to content height — auto-height consumers are unaffected.
 :host {
-    display: block;
+    display: flex;
+    flex-direction: column;
+}
+
+mp-shell {
+    flex: 1 1 auto;
+    min-block-size: 0;
 }

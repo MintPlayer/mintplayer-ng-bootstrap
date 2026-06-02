@@ -4,10 +4,13 @@
   background-color: var(--bs-secondary-bg);
   border-radius: 0.5rem;
   padding: 1.5rem;
-  min-block-size: 8rem;
 
+  // A fixed height keeps the shell the same size across breakpoints. In narrow
+  // mode the sidebar becomes an out-of-flow overlay, so the shell would
+  // otherwise collapse to the (short) content height; a defined height keeps
+  // wide and narrow consistent. The `bs-shell` wrapper forwards this height to
+  // the inner <mp-shell>, which fills it (flex column).
   bs-shell {
-    display: block;
-    min-block-size: 8rem;
+    block-size: 13rem;
   }
 }
