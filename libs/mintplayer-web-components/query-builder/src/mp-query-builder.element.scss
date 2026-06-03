@@ -97,6 +97,15 @@
   }
 }
 
+// `.qb-sort-add` is a btn-outline-secondary sitting on the toolbar's
+// tertiary-bg (#f8f9fa). Bootstrap's resting secondary text (#6c757d) is only
+// 4.44:1 there — just under WCAG AA (4.5:1). Nudge the resting colour darker so
+// it clears the threshold; the hover invert (white on filled secondary) is
+// unaffected.
+.qb-sort-add {
+  --bs-btn-color: #646b72;
+}
+
 .qb-too-deep {
   padding: 0.5rem;
   color: var(--bs-warning-text-emphasis, #997404);
