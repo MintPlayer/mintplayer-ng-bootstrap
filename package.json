@@ -21,6 +21,9 @@
     "check:ribbon-size": "node tools/scripts/check-ribbon-bundle-size.mjs"
   },
   "private": true,
+  "engines": {
+    "node": "^22.22.3 || ^24.15.0 || >=26.0.0"
+  },
   "dependencies": {
     "@angular/animations": "~22.0.0",
     "@angular/cdk": "~22.0.0",
