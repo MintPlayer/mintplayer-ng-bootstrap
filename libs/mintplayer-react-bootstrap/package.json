@@ -1,6 +1,6 @@
 {
   "name": "@mintplayer/react-bootstrap",
-  "version": "19.4.1",
+  "version": "19.5.0",
   "description": "React 19 wrappers around @mintplayer/web-components. Each sub-entry maps one-to-one with a WC sub-entry and exposes typed React components via @lit/react's createComponent.",
   "license": "MIT",
   "repository": {

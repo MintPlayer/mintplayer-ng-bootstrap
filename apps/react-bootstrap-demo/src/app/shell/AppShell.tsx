@@ -34,6 +34,7 @@ const SECTIONS = [
     { path: '/enterprise/query-builder', label: 'Query builder' },
     { path: '/enterprise/datatables', label: 'Datatable' },
     { path: '/enterprise/file-manager', label: 'File manager' },
+    { path: '/enterprise/shell', label: 'Shell' },
   ]},
 ];
 

@@ -51,9 +51,15 @@ export default defineConfig(({ isSsrBuild }) => ({
       transformMixedEsModules: true,
     },
   },
-  // Bundle all deps into the SSR server build so the production runtime image
-  // only needs express + compression — no monorepo node_modules to ship.
+  // Production SSR *build*: bundle every dep so the runtime image needs only
+  // express + compression (no monorepo node_modules to ship).
+  // Dev SSR server (`node server.mjs` → Vite middleware + ssrLoadModule): only
+  // the workspace `@mintplayer/*` libs are noExternal — they're tsconfig-path
+  // aliases (nxViteTsPaths) Node can't resolve on its own, so Vite must process
+  // them. Everything else stays external so Node loads it normally; forcing CJS
+  // deps (node-domexception, …) through Vite's ESM module runner throws
+  // `module is not defined`.
   ssr: {
-    noExternal: true,
+    noExternal: isSsrBuild ? true : [/^@mintplayer\//],
   },
 }));

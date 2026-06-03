@@ -1,6 +1,6 @@
 {
   "name": "@mintplayer/web-components",
-  "version": "1.4.1",
+  "version": "1.5.0",
   "description": "Framework-agnostic Lit web components for the @mintplayer/bootstrap design system. Consumed by @mintplayer/ng-bootstrap, @mintplayer/react-bootstrap, and @mintplayer/vue-bootstrap.",
   "license": "MIT",
   "repository": {

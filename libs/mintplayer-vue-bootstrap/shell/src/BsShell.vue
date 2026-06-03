@@ -57,6 +57,7 @@ onBeforeUnmount(() => el.value?.removeEventListener('statechange', onStatechange
   -->
   <mp-shell
     ref="el"
+    v-bind="$attrs"
     :state="state"
     :breakpoint="breakpoint"
     :size="size"
