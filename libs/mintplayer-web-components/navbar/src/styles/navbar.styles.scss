@@ -50,6 +50,17 @@
   overflow: hidden;
 }
 
+// Two nav groups: default slot (start) + `slot="end"` (pushed right when wide).
+// Items slot in via the UA-default `display:contents` `<slot>`, so the slotted
+// per-element item WCs are the flex children of `.navbar-nav`.
+.navbar-nav {
+  display: flex;
+  flex-direction: column;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
 // Reveal: checked (mouse/touch via <label for>) OR focus anywhere in the nav
 // (keyboard — crosses the shadow boundary to slotted links). `!important` beats
 // the per-breakpoint collapsed default without specificity games (mirrors the
@@ -66,7 +77,9 @@
       @include media-breakpoint-up($name, $grid-breakpoints) {
         // Wide: nav inline + always visible; hamburger hidden.
         .navbar-toggle, .navbar-toggler { display: none; }
-        .navbar-collapse { flex-basis: auto; overflow: visible; }
+        .navbar-collapse { flex-basis: auto; overflow: visible; display: flex; align-items: center; }
+        .navbar-nav { flex-direction: row; align-items: center; }
+        .nav-end { margin-inline-start: auto; }  // push the end group right
       }
       @include media-breakpoint-down($name, $grid-breakpoints) {
         // Narrow: collapsed until revealed.

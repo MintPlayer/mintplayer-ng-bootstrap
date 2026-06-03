@@ -1,2 +1,4 @@
-// `navbar.styles.ts` is GENERATED from navbar.styles.scss by codegen-wc.
+// `*.styles.ts` are GENERATED from the sibling `*.styles.scss` by codegen-wc.
 export { navbarStyles } from './navbar.styles';
+export { navbarItemStyles } from './navbar-item.styles';
+export { navbarBrandStyles } from './navbar-brand.styles';

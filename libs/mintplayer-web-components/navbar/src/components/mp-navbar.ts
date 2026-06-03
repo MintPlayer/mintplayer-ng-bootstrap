@@ -132,7 +132,10 @@ export class MpNavbar extends LitElement {
         <label for="mp-navbar-toggle" class="navbar-toggler" part="toggler" aria-hidden="true">
           <span class="navbar-toggler-icon"></span>
         </label>
-        <div class="navbar-collapse" part="collapse"><slot></slot></div>
+        <div class="navbar-collapse" part="collapse">
+          <ul class="navbar-nav nav-start" part="nav"><slot></slot></ul>
+          <ul class="navbar-nav nav-end" part="nav-end"><slot name="end"></slot></ul>
+        </div>
       </nav>
     `;
   }
