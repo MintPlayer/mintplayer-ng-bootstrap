@@ -42,10 +42,7 @@
         ],
         "scripts": [],
         "stylePreprocessorOptions": {
-          "includePaths": [
-            ".",
-            "node_modules"
-          ],
+          "includePaths": [".", "node_modules"],
           "sass": {
             "silenceDeprecations": [
               "import",
@@ -113,10 +110,22 @@
       "defaultConfiguration": "development",
       "continuous": true,
       "dependsOn": [
-        { "projects": ["api"], "target": "serve" },
-        { "projects": ["mintplayer-web-components"], "target": "codegen-wc" },
-        { "projects": ["mintplayer-ng-bootstrap"], "target": "codegen-wc" },
-        { "projects": ["mintplayer-web-components"], "target": "codegen-wc-watch" }
+        {
+          "projects": ["api"],
+          "target": "serve"
+        },
+        {
+          "projects": ["mintplayer-web-components"],
+          "target": "codegen-wc"
+        },
+        {
+          "projects": ["mintplayer-ng-bootstrap"],
+          "target": "codegen-wc"
+        },
+        {
+          "projects": ["mintplayer-web-components"],
+          "target": "codegen-wc-watch"
+        }
       ]
     },
     "extract-i18n": {
