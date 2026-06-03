@@ -48,6 +48,17 @@
   cursor: pointer;
 }
 
+// A navigable item slots a real `<a href>` (e.g. navbar dropdown links): make it
+// fill the item and inherit the item's color so it looks like a plain dropdown
+// item and navigates with no JavaScript.
+::slotted(a) {
+  display: block;
+  margin: calc(-1 * var(--bs-dropdown-item-padding-y, 0.25rem)) calc(-1 * var(--bs-dropdown-item-padding-x, 1rem));
+  padding: var(--bs-dropdown-item-padding-y, 0.25rem) var(--bs-dropdown-item-padding-x, 1rem);
+  color: inherit;
+  text-decoration: none;
+}
+
 // Hover, and keyboard focus (the host carries the roving tabindex, so focus
 // lands on the host — mirror the hover appearance like Bootstrap's :focus rule).
 .dropdown-item:hover,

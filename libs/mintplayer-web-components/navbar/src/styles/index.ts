@@ -2,3 +2,4 @@
 export { navbarStyles } from './navbar.styles';
 export { navbarItemStyles } from './navbar-item.styles';
 export { navbarBrandStyles } from './navbar-brand.styles';
+export { navbarDropdownStyles } from './navbar-dropdown.styles';
