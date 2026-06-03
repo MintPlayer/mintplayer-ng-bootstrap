@@ -4,6 +4,7 @@ import { fileURLToPath } from 'url';
 import js from '@eslint/js';
 import baseConfig from '../../eslint.config.mjs';
 import nx from '@nx/eslint-plugin';
+import angularRelax from '../../eslint.config.angular-relax.mjs';
 
 const compat = new FlatCompat({
   baseDirectory: dirname(fileURLToPath(import.meta.url)),
@@ -41,4 +42,5 @@ export default [
       },
     })),
   ...nx.configs['flat/angular-template'],
+  ...angularRelax,
 ];

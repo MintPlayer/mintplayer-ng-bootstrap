@@ -25,7 +25,7 @@ export class BsSelectValueAccessor implements ControlValueAccessor {
   registerOnTouched(fn: () => void): void {
     this.onTouched = fn;
   }
-  registerOnChange(fn: (p: any) => {}) {
+  registerOnChange(fn: (p: any) => void) {
     this.onChange = (valueString: string) => {
       // View -> Model
       this.value = this.getOptionValue(valueString);
@@ -151,9 +151,9 @@ export class BsSelectOption implements OnDestroy {
 
   id!: string;
 
-  readonly ngValue = input<any>(undefined, { alias: 'ngValue' });
+  readonly ngValue = input<any>(undefined);
 
-  readonly value = input<any>(undefined, { alias: 'value' });
+  readonly value = input<any>(undefined);
 
   setElementValue(value: string) {
     // console.log('setElementValue', value);
