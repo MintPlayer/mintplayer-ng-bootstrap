@@ -1,8 +1,15 @@
-// `mp-navbar-dropdown` — a navbar nav entry that opens a dropdown. It renders
-// the trigger (a `.nav-link.dropdown-toggle`) in its shadow and slots an
-// `mp-dropdown-menu` as the panel. First-level positioning is pure CSS
-// (absolute below the trigger, capped height + scroll), revealed via
-// `:focus-within` (no-JS keyboard) or the `data-open` attribute (JS click).
+// `mp-navbar-dropdown` — a navbar entry that opens a dropdown. Renders the
+// trigger (`.nav-link.dropdown-toggle`, or a `.dropdown-item`-styled trigger
+// when nested as a submenu) in shadow and slots an `<mp-dropdown-menu>` panel.
+//
+// Reveal contract (mirrors the Angular bs-navbar / navbar-noscript.md):
+//   - No-JS: `:focus-within` reveals the panel. Gated on `:not([data-js])` —
+//     `data-js` is set in connectedCallback, so once hydrated ONLY clicks
+//     (data-open / data-menu-open) control visibility (the "click, never focus"
+//     rule for JS-enabled tests).
+//   - First-level: panel absolute below the trigger, capped height + scroll (#2).
+//   - Submenu (nested in an mp-dropdown-menu): inline-in-parent with no JS (#4);
+//     a fixed-positioned overlay placed by OverlayController with JS (#3).
 
 :host, *, *::before, *::after { box-sizing: border-box; }
 :host { position: relative; display: block; }
@@ -19,11 +26,11 @@
   border: 0;
 }
 .nav-link.dropdown-toggle:hover,
-:host(:focus-within) .nav-link.dropdown-toggle {
+:host(:not([data-js]):focus-within) .nav-link.dropdown-toggle {
   color: var(--bs-nav-link-hover-color, var(--bs-navbar-hover-color, inherit));
 }
 
-// Bootstrap caret.
+// Down caret (first level).
 .nav-link.dropdown-toggle::after {
   display: inline-block;
   margin-left: 0.255em;
@@ -35,8 +42,27 @@
   border-left: 0.3em solid transparent;
 }
 
-// The slotted panel (mp-dropdown-menu). Absolute below the trigger, hidden until
-// revealed; first-level scrolls within the viewport (requirement #2).
+// --- submenu trigger: styled as a .dropdown-item with a right-pointing caret ---
+:host([data-submenu]) .nav-link.dropdown-toggle {
+  justify-content: space-between;
+  width: 100%;
+  padding: var(--bs-dropdown-item-padding-y, 0.25rem) var(--bs-dropdown-item-padding-x, 1rem);
+  color: var(--bs-dropdown-link-color, inherit);
+}
+:host([data-submenu]) .nav-link.dropdown-toggle:hover {
+  color: var(--bs-dropdown-link-hover-color, inherit);
+  background-color: var(--bs-dropdown-link-hover-bg, transparent);
+}
+:host([data-submenu]) .nav-link.dropdown-toggle::after {
+  margin-left: 0.5rem;
+  border-top: 0.3em solid transparent;
+  border-bottom: 0.3em solid transparent;
+  border-left: 0.3em solid;
+  border-right: 0;
+}
+
+// --- panel (slotted mp-dropdown-menu) -----------------------------------------
+// First-level default: absolute below, capped height + scroll (#2).
 ::slotted(mp-dropdown-menu) {
   position: absolute;
   top: 100%;
@@ -47,7 +73,31 @@
   overflow-y: auto;
 }
 
-:host(:focus-within) ::slotted(mp-dropdown-menu),
+// Reveal: no-JS focus-within (gated) OR JS click (data-open).
+:host(:not([data-js]):focus-within) ::slotted(mp-dropdown-menu),
 :host([data-open]) ::slotted(mp-dropdown-menu) {
+  display: block;
+}
+
+// Submenu, no-JS: render inline within the parent menu (#4).
+:host([data-submenu]) ::slotted(mp-dropdown-menu) {
+  position: static;
+  max-height: none;
+  overflow: visible;
+  margin-inline-start: 0.5rem;
+}
+
+// Submenu, JS (hydrated): a fixed overlay positioned by OverlayController,
+// shown only while open (data-menu-open, set by the controller) (#3).
+:host([data-submenu][data-js]) ::slotted(mp-dropdown-menu) {
+  position: fixed;
+  inset-inline-start: auto;
+  top: auto;
+  z-index: 1050;
+  margin: 0;
+  max-height: calc(100vh - 1rem);
+  overflow-y: auto;
+}
+:host([data-submenu][data-menu-open]) ::slotted(mp-dropdown-menu) {
   display: block;
 }

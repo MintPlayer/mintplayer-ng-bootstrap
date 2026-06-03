@@ -1,27 +1,56 @@
 import { html } from 'lit';
+import { OverlayController } from '@mintplayer/web-components/overlay';
 import { MpNavbarElement } from './mp-navbar-element';
 import { navbarDropdownStyles } from '../styles';
 
 /**
- * `<mp-navbar-dropdown>` — a navbar nav entry that opens a dropdown. Slot the
+ * `<mp-navbar-dropdown>` — a navbar entry that opens a dropdown. Slot the
  * trigger label into `slot="label"` and an `<mp-dropdown-menu>` as the default
- * content (the panel).
+ * content (the panel). Nest one inside a dropdown item to make a submenu.
  *
  *     <mp-navbar-dropdown>
  *       <span slot="label">Products</span>
  *       <mp-dropdown-menu>
  *         <mp-dropdown-item><a href="/p1">Product 1</a></mp-dropdown-item>
+ *         <mp-navbar-dropdown>              <!-- submenu -->
+ *           <span slot="label">More</span>
+ *           <mp-dropdown-menu>…</mp-dropdown-menu>
+ *         </mp-navbar-dropdown>
  *       </mp-dropdown-menu>
  *     </mp-navbar-dropdown>
  *
- * No-JS: the panel reveals on `:focus-within` (the trigger is focusable). With
- * JS, a click toggles it (reflected as `data-open`) and an outside click / Esc
- * closes it. First-level panel is positioned + height-capped purely in CSS (see
- * navbar-dropdown.styles.scss). Sub-dropdowns (an mp-navbar-dropdown nested in a
- * dropdown item) are handled separately.
+ * Reveal (see navbar-dropdown.styles.scss): no-JS uses `:focus-within`; once
+ * `connectedCallback` sets `data-js`, only clicks control visibility. A
+ * first-level panel is positioned + height-capped in CSS. A **submenu** renders
+ * inline within its parent with no JS, and — with JS — opens as a fixed overlay
+ * positioned to the side by the shared `OverlayController`.
  */
 export class MpNavbarDropdown extends MpNavbarElement {
   static override styles = [navbarDropdownStyles];
+
+  #isSubmenu = false;
+  #overlay: OverlayController | null = null;
+
+  override connectedCallback(): void {
+    super.connectedCallback();
+    // Mark JS as present so the no-JS `:focus-within` reveal disengages.
+    this.setAttribute('data-js', '');
+    // A dropdown nested inside a menu is a submenu (overlay/inline behaviour).
+    this.#isSubmenu = !!this.closest('mp-dropdown-menu');
+    if (this.#isSubmenu) {
+      this.setAttribute('data-submenu', '');
+      this.#overlay = new OverlayController(this, {
+        anchor: () => this.renderRoot?.querySelector<HTMLElement>('.dropdown-toggle') ?? null,
+        trigger: () => this.renderRoot?.querySelector<HTMLElement>('.dropdown-toggle') ?? null,
+        panel: () => this.querySelector<HTMLElement>('mp-dropdown-menu'),
+        // Open to the right of the trigger; flip to the left if it won't fit.
+        positions: [
+          { originX: 'end', originY: 'top', overlayX: 'start', overlayY: 'top' },
+          { originX: 'start', originY: 'top', overlayX: 'end', overlayY: 'top' },
+        ],
+      });
+    }
+  }
 
   override disconnectedCallback(): void {
     super.disconnectedCallback();
@@ -43,17 +72,25 @@ export class MpNavbarDropdown extends MpNavbarElement {
     if (!event.composedPath().includes(this)) this.#setOpen(false);
   };
 
+  #toggle(): void {
+    // Submenu uses the OverlayController (fixed overlay + outside-click/Esc/scroll);
+    // first-level uses the CSS-positioned panel + a lightweight outside-click close.
+    if (this.#overlay) this.#overlay.toggle();
+    else this.#setOpen(!this.#open);
+  }
+
   #onToggle = (event: Event): void => {
     event.preventDefault();
-    this.#setOpen(!this.#open);
+    this.#toggle();
   };
 
   #onKeydown = (event: KeyboardEvent): void => {
     if (event.key === 'Enter' || event.key === ' ' || event.key === 'Spacebar') {
       event.preventDefault();
-      this.#setOpen(!this.#open);
-    } else if (event.key === 'Escape' && this.#open) {
-      this.#setOpen(false);
+      this.#toggle();
+    } else if (event.key === 'Escape') {
+      if (this.#overlay) this.#overlay.close();
+      else this.#setOpen(false);
     }
   };
 
