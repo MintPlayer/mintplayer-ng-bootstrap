@@ -1,0 +1,6 @@
+/* The dropdown menu is presentational (always shown, no trigger of its own),
+ * so cap its width on the demo page rather than letting it stretch full-width. */
+.demo-dropdown-menu {
+  display: inline-block;
+  min-width: 14rem;
+}

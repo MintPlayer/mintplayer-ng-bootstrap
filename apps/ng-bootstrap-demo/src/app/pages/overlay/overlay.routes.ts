@@ -11,4 +11,5 @@ export const ROUTES: Routes = [
   { path: 'popover', loadComponent: () => import('./popover/popover.component').then(m => m.PopoverComponent) },
   { path: 'toast', loadComponent: () => import('./toast/toast.component').then(m => m.ToastComponent) },
   { path: 'shell', loadComponent: () => import('./shell/shell.component').then(m => m.ShellComponent) },
+  { path: 'dropdown-wc', loadComponent: () => import('./dropdown-wc/dropdown-wc.component').then(m => m.DropdownWcComponent) },
 ];

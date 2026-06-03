@@ -1,0 +1,31 @@
+<h1 class="text-center">Dropdown menu (WC)</h1>
+
+<p>
+  <code>bs-dropdown-wc-menu</code> is the Angular wrapper around the
+  framework-agnostic <code>&lt;mp-dropdown-menu&gt;</code> web component. The
+  menu, its keyboard navigation (roving tabindex in <code>menu</code> mode),
+  ARIA roles and theme-aware styling all live in the WC. Project
+  <code>bs-dropdown-wc-item</code>, <code>bs-dropdown-wc-divider</code> and
+  <code>bs-dropdown-wc-header</code> children. Activating an enabled item fires
+  <code>(select)</code> with the item's opaque <code>value</code>.
+</p>
+
+<h2>Basic usage</h2>
+
+<div class="dropdown-wc-demo">
+  <bs-dropdown-wc-menu (select)="onSelect($event)">
+    <bs-dropdown-wc-header>Actions</bs-dropdown-wc-header>
+    <bs-dropdown-wc-item [value]="'new'">New file</bs-dropdown-wc-item>
+    <bs-dropdown-wc-item [value]="'open'" [selected]="true">Open…</bs-dropdown-wc-item>
+    <bs-dropdown-wc-item [value]="'save'" [disabled]="true">Save (disabled)</bs-dropdown-wc-item>
+    <bs-dropdown-wc-divider></bs-dropdown-wc-divider>
+    <bs-dropdown-wc-item [value]="'exit'">Exit</bs-dropdown-wc-item>
+  </bs-dropdown-wc-menu>
+
+  <p class="selected-readout">
+    Last selected value: <code>{{ selectedValue() ?? '(none)' }}</code>
+  </p>
+</div>
+
+<bs-code-snippet [codeToCopy]="snippetHtml" [language]="'html'"></bs-code-snippet>
+<bs-code-snippet [codeToCopy]="snippetTs" [language]="'ts'"></bs-code-snippet>
