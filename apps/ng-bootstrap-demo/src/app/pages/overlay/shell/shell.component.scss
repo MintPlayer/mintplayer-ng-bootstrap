@@ -1,8 +1,16 @@
-$margin: 59px;
+// Frame the live shell so it reads as a contained example rather than floating
+// on the page: a gray-ish surface with padding and a minimum height.
+.shell-demo {
+  background-color: var(--bs-secondary-bg);
+  border-radius: 0.5rem;
+  padding: 1.5rem;
 
-::ng-deep {
-    .sidebar-body {
-        margin-top: $margin;
-        height: calc(100% - $margin);
-    }
+  // A fixed height keeps the shell the same size across breakpoints. In narrow
+  // mode the sidebar becomes an out-of-flow overlay, so the shell would
+  // otherwise collapse to the (short) content height; a defined height keeps
+  // wide and narrow consistent. The `bs-shell` wrapper forwards this height to
+  // the inner <mp-shell>, which fills it (flex column).
+  bs-shell {
+    block-size: 13rem;
+  }
 }

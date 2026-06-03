@@ -1,34 +1,33 @@
-# Stage 1: Compile and Build angular codebase
+# Stage 1: build the Angular app (browser/ + SSR server/ bundles)
+FROM node:22-alpine AS builder
 
-# Use official node image as the base image
-FROM node:latest as node_image
-
-# Set the working directory
 WORKDIR /usr/local/app
-
-# Add the source code to app
 COPY ./ /usr/local/app/
+RUN npm install --legacy-peer-deps
+RUN npx nx build ng-bootstrap-demo --configuration=production
 
-# Install all the dependencies
-RUN npm install
-
-# Generate the build of the application
-RUN npm run build -- --configuration=production
-
-
-# Stage 2: Serve app with nginx server
-
-# Use official nginx image as the base image
-FROM nginx:latest
+# Stage 2: serve via the Node SSR server (request-time SSR so <mp-shell>'s
+# Declarative Shadow DOM is injected — the old static nginx deploy served
+# prerendered HTML without the DSD, so the no-JS shell didn't work in prod).
+FROM node:22-alpine
 LABEL org.opencontainers.image.source="https://github.com/MintPlayer/mintplayer-ng-bootstrap"
 
-# Copy the build output to replace the default nginx contents.
-COPY --from=node_image /usr/local/app/dist/apps/ng-bootstrap-demo/browser/browser /usr/share/nginx/html
-COPY --from=node_image /usr/local/app/dist/apps/ng-bootstrap-demo/browser/browser/nginx.conf /etc/nginx/conf.d/default.conf
+WORKDIR /app
+ENV NODE_ENV=production
+ENV PORT=80
+# Angular 19 SSR rejects unknown Host headers (SSRF protection) and silently
+# falls back to client-side rendering. The allowed host(s) are set per
+# deployment in docker-compose.yml (NG_ALLOWED_HOSTS); default to localhost so
+# `docker run` works out of the box.
+ENV NG_ALLOWED_HOSTS=localhost
 
-# Expose port 80
+# The Angular SSR server bundle is self-contained (express is bundled), so the
+# runtime only needs the build output — no node_modules / npm install.
+COPY --from=builder /usr/local/app/dist/apps/ng-bootstrap-demo ./dist/apps/ng-bootstrap-demo
+
 EXPOSE 80
+CMD ["node", "dist/apps/ng-bootstrap-demo/browser/server/server.mjs"]
 
-# docker build --tag 'ng-bootstrap-demo' .
-# docker run -p 4201:80 ng-bootstrap-demo
+# docker build -f apps/ng-bootstrap-demo/Dockerfile -t ng-bootstrap-demo .
+# docker run -p 4201:80 -e NG_ALLOWED_HOSTS=localhost ng-bootstrap-demo
 # Visit http://localhost:4201

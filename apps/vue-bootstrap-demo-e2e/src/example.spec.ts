@@ -11,7 +11,10 @@ test('framework switcher links to Angular and React with matching path', async (
   const angularLink = page.getByRole('link', { name: 'Open the same page in the Angular demo' });
   const reactLink = page.getByRole('link', { name: 'Open the same page in the React demo' });
 
-  // Localhost dev hosts per FrameworkLinks: Angular=4200, React=4000.
-  await expect(angularLink).toHaveAttribute('href', 'http://localhost:4200/basic/forms/datepicker');
-  await expect(reactLink).toHaveAttribute('href', 'http://localhost:4000/basic/forms/datepicker');
+  // FrameworkLinks picks the origin from Vite's build-time `import.meta.env.DEV`:
+  // localhost ports under the dev server, the prod subdomains in a built/SSR run
+  // (the e2e serves the production build). Accept either — the assertion's point
+  // is that the *path* is preserved across the target framework's origin.
+  await expect(angularLink).toHaveAttribute('href', /^(http:\/\/localhost:4200|https:\/\/bootstrap\.mintplayer\.com)\/basic\/forms\/datepicker$/);
+  await expect(reactLink).toHaveAttribute('href', /^(http:\/\/localhost:4000|https:\/\/react\.bootstrap\.mintplayer\.com)\/basic\/forms\/datepicker$/);
 });

@@ -970,6 +970,15 @@ export class MpRibbon extends LitElement {
   };
 
   override updated(changed: Map<string, unknown>): void {
+    // Self-heal the default tab selection. `processSlot` picks the first tab
+    // when none is active, but under SSR hydration a wrapper binding can write
+    // an empty `active-tab-id` *after* that default lands (e.g. the Angular
+    // `[attr.active-tab-id]` reflecting an as-yet-empty signal), clearing it.
+    // Re-apply the default here so the ribbon is never left without an active
+    // tab — mirrors the same rule in `processSlot`.
+    if (!this.activeTabId && this.tabsList.length > 0) {
+      this.activeTabId = this.tabsList[0].tabId;
+    }
     if (changed.has('activeTabId')) {
       this.applyActiveAttribute();
       // Keep the roving-focus cursor (`currentTabIndex`) aligned with the

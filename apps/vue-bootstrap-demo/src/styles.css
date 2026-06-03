@@ -1,4 +1,10 @@
-/* Demo-only styles. Bootstrap stylesheet is loaded via main.ts. */
+/* Global styles, loaded as a real <link rel="stylesheet"> from index.html (not
+ * via a JS import) so the page is fully styled even with JavaScript disabled —
+ * the no-JS SSR requirement. Bootstrap is pulled in here via @import so it is
+ * part of that one linked stylesheet; Vite inlines + url()-rebases these in dev
+ * and bundles them into a hashed stylesheet in the production build. */
+@import 'bootstrap/dist/css/bootstrap.min.css';
+@import 'bootstrap-icons/font/bootstrap-icons.css';
 
 body {
   margin: 0;
@@ -70,6 +76,31 @@ body {
  * <main> shrink with the row and the ribbon's adaptive layout collapses. */
 .app-shell-main {
   min-width: 0;
+}
+
+/* The top-bar slot lays brand + framework links out in a row with consistent
+ * gaps (was an inline style; kept here so the markup stays class-driven). */
+.app-shell-header {
+  gap: 1rem;
+}
+
+/* <mp-shell> is the full-viewport layout root: a top bar over a sidebar/content
+ * row. A BOUNDED height (not min-height) makes the shell exactly viewport-tall,
+ * so the top bar + sidebar stay put and the content/sidebar scroll internally
+ * (the shell handles that via flexbox — no position:fixed, no body padding).
+ * Style the top bar via its shadow ::part so the bar chrome (border + bg) spans
+ * the full width including under the hamburger. */
+.app-shell {
+  height: 100dvh;
+}
+
+.app-shell::part(topbar) {
+  border-bottom: 1px solid var(--bs-border-color);
+  background-color: var(--bs-tertiary-bg);
+}
+
+.app-shell-sidebar {
+  min-height: 100%;
 }
 
 .demo-page {

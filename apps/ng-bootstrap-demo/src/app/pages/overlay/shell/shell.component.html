@@ -2,8 +2,9 @@
 
 <p>
   <code>bs-shell</code> is a responsive app-shell layout with a collapsible
-  sidebar. The sidebar template is projected via the <code>*bsShellSidebar</code>
-  structural directive; all other children form the main content area. The
+  sidebar. The sidebar is projected via the <code>bsShellSidebar</code>
+  attribute directive (sets <code>slot="sidebar"</code>); all other children
+  form the main content area. The
   <code>[state]</code> input (<code>'auto'</code>, <code>'show'</code>,
   <code>'hide'</code>) controls visibility, while <code>[breakpoint]</code> sets
   the viewport size at which <code>'auto'</code> reveals the sidebar.
@@ -12,8 +13,9 @@
 
 <h2>Basic usage</h2>
 
-<bs-shell [state]="shellState" [breakpoint]="'md'" #shell>
-    <div *bsShellSidebar class="text-light">
+<div class="shell-demo">
+<bs-shell [state]="shellState" [breakpoint]="'md'" #shell (statechange)="onShellToggle($event)">
+    <div bsShellSidebar class="text-light">
         <bs-accordion>
             <bs-accordion-tab>
                 <bs-accordion-tab-header>Receipes</bs-accordion-tab-header>
@@ -54,6 +56,7 @@
         <button [color]="colors.primary" (click)="setSize(20)">Change sidebar width</button>
     </div>
 </bs-shell>
+</div>
 
 <bs-code-snippet [codeToCopy]="snippetBasicHtml" [language]="'html'"></bs-code-snippet>
 <bs-code-snippet [codeToCopy]="snippetBasicTs" [language]="'ts'"></bs-code-snippet>

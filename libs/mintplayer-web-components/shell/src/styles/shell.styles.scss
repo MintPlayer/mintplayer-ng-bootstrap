@@ -1,0 +1,183 @@
+@import "bootstrap/scss/functions";
+@import "bootstrap/scss/variables";
+@import "bootstrap/scss/mixins/breakpoints";
+
+// The sidebar's open/closed state funnels through ONE numeric lever,
+// `--mp-shell-open` (1 = open, 0 = closed), computed once from `state` /
+// `breakpoint` / the toggle checkbox (see the state matrix at the bottom).
+// In BOTH modes the sidebar is absolutely positioned (out of flow) and slides
+// via `translateX` of its own width; the difference is purely:
+//   - Wide (>= breakpoint): sidebar is a FIXED width and the content is pushed
+//     right by a transitioned `margin-inline-start` (= open * size). The margin
+//     is the thing that animates, so a breakpoint crossing slides the content
+//     smoothly instead of snapping (a flex-driven offset can't transition).
+//   - Narrow (< breakpoint): sidebar is FULL width and OVERLAYS the (full-width)
+//     content — content margin is 0. This is the mobile-drawer behaviour.
+// `--mp-shell-wide` (1 = wide/push, 0 = narrow/overlay) mirrors which mechanism
+// the media queries picked, so JS can read the resolved mode without
+// re-deriving the breakpoint.
+:host {
+  display: flex;
+  flex-direction: column;            // top bar over the sidebar/content row
+  position: relative;
+  --mp-shell-size: 15rem;            // expanded sidebar width (consumer override via `size` / this var)
+  --mp-shell-open: 0;                // closed by default; the matrix below overrides
+  --mp-shell-wide: 0;                // overlay by default; the loop below overrides per breakpoint
+}
+
+// Full-width bar above the sidebar/content row. Holds the built-in hamburger
+// (left) + the consumer's `topbar` slot; stays put while the sidebar slides.
+.topbar {
+  display: flex;
+  align-items: center;
+  flex: 0 0 auto;
+}
+
+.sidebar-root {
+  display: flex;
+  align-items: stretch;
+  overflow: hidden;                  // clip the sidebar (slid off-screen, both modes)
+  flex: 1 1 auto;                    // fill the height below the top bar
+  min-block-size: 0;
+  position: relative;                // anchor for the narrow-mode overlay sidebar
+}
+
+.sidebar {
+  flex: 0 0 auto;
+  overflow-x: hidden;                // horizontal slide is clipped by .sidebar-root
+  overflow-y: auto;                  // a tall sidebar scrolls within itself
+  min-block-size: 0;
+  // The sidebar slides via `transform` (its own box width) in both modes;
+  // `inline-size` is transitioned so a cross-breakpoint resize (fixed width <->
+  // 100%) animates smoothly instead of snapping.
+  transition:
+    transform 0.3s ease-in-out,
+    inline-size 0.3s ease-in-out;
+}
+
+.content {
+  flex: 1 1 auto;
+  min-inline-size: 0;
+  min-block-size: 0;
+  // The content is the scroll region. Combined with the flex column above, the
+  // top bar + sidebar stay put while content scrolls — WITHOUT this component
+  // knowing the top bar's height. Only engages when the consumer gives the host
+  // a bounded height (e.g. `height: 100dvh`); with an auto height it just grows.
+  overflow-y: auto;
+  // The content's left offset is what animates the push/collapse (mirrors a
+  // classic margin-left sidebar). Because it's a transitioned property — unlike
+  // a flex-driven offset, which snaps — a breakpoint crossing slides the content
+  // fluidly as the sidebar leaves/enters the flow. Set per-breakpoint below.
+  transition: margin-inline-start 0.3s ease-in-out;
+}
+
+// Visually-hidden but focusable toggle (the no-JS state holder).
+.shell-toggle {
+  position: absolute;
+  inline-size: 1px;
+  block-size: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+.shell-hamburger {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
+  cursor: pointer;
+  padding: 0.5rem 0.75rem;
+  font-size: 1.25rem;
+  line-height: 1;
+  user-select: none;
+}
+
+// External-trigger mode hides the built-in hamburger (host attribute is
+// shadow-visible; the slotted checkbox's state is bridged via a global rule).
+:host([external-toggle]) .shell-hamburger {
+  display: none;
+}
+
+// --- layout mechanism, per breakpoint (independent of open/closed) ----------
+// The sidebar is absolutely positioned in BOTH modes and slides via translateX
+// of its own width: `(open - 1) * 100%` maps open=1 -> 0% and open=0 -> -100%
+// (fully off-screen). The mode only differs in the sidebar's width and in the
+// content's offset — push gives the content a transitioned `margin-inline-start`
+// (= open * size), overlay leaves it at 0 and the sidebar sits on top.
+@mixin sidebar-push {
+  position: absolute;
+  inset-block: 0;
+  inset-inline-start: 0;
+  inline-size: var(--mp-shell-size);
+  z-index: 1030;
+  transform: translateX(calc((var(--mp-shell-open) - 1) * 100%));
+}
+
+@mixin content-push {
+  margin-inline-start: calc(var(--mp-shell-open) * var(--mp-shell-size));
+}
+
+@mixin sidebar-overlay {
+  position: absolute;
+  inset-block: 0;
+  inset-inline-start: 0;
+  inline-size: 100%;
+  z-index: 1030;
+  transform: translateX(calc((var(--mp-shell-open) - 1) * 100%));
+}
+
+@mixin content-overlay {
+  margin-inline-start: 0;
+}
+
+@each $name, $min in $grid-breakpoints {
+  :host([breakpoint="#{$name}"]) {
+    @if $min and $min > 0 {
+      @include media-breakpoint-up($name, $grid-breakpoints) {
+        .sidebar { @include sidebar-push; }
+        .content { @include content-push; }
+        .sidebar-root { --mp-shell-wide: 1; }
+      }
+      @include media-breakpoint-down($name, $grid-breakpoints) {
+        .sidebar { @include sidebar-overlay; }
+        .content { @include content-overlay; }
+        .sidebar-root { --mp-shell-wide: 0; }
+      }
+    } @else {
+      // xs (min 0): always the overlay mechanism.
+      .sidebar { @include sidebar-overlay; }
+      .content { @include content-overlay; }
+      .sidebar-root { --mp-shell-wide: 0; }
+    }
+  }
+}
+
+// --- open/closed state matrix (sets --mp-shell-open) ------------------------
+// Explicit `state` wins and is viewport-independent.
+:host([state="show"]) { --mp-shell-open: 1; }
+:host([state="hide"]) { --mp-shell-open: 0; }
+
+// `auto`: responsive default (collapsed below the breakpoint, expanded at/above)
+// with the toggle inverting it for the current viewport.
+@each $name, $min in $grid-breakpoints {
+  :host([breakpoint="#{$name}"]:not([state="show"]):not([state="hide"]):not([external-toggle])) {
+    @if $min and $min > 0 {
+      @include media-breakpoint-up($name, $grid-breakpoints) {       // wide: default open
+        .shell-toggle:not(:checked) ~ .sidebar-root { --mp-shell-open: 1; }
+        .shell-toggle:checked ~ .sidebar-root { --mp-shell-open: 0; }
+      }
+      @include media-breakpoint-down($name, $grid-breakpoints) {     // narrow: default closed
+        .shell-toggle:not(:checked) ~ .sidebar-root { --mp-shell-open: 0; }
+        .shell-toggle:checked ~ .sidebar-root { --mp-shell-open: 1; }
+      }
+    } @else {
+      // xs (min 0): always narrow semantics (default closed).
+      .shell-toggle:not(:checked) ~ .sidebar-root { --mp-shell-open: 0; }
+      .shell-toggle:checked ~ .sidebar-root { --mp-shell-open: 1; }
+    }
+  }
+}

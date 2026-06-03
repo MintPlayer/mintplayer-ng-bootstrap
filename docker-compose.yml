@@ -1,11 +1,17 @@
 services:
   ng-bootstrap:
     image: ghcr.io/mintplayer/mintplayer-ng-bootstrap:master
+    # The Angular Node SSR server validates the Host header (SSRF protection)
+    # and falls back to CSR for unknown hosts — allow the public domain so it
+    # renders the DSD at request time.
+    environment:
+      - "NG_ALLOWED_HOSTS=bootstrap.mintplayer.com"
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.ng-bootstrap.rule=Host(`bootstrap.mintplayer.com`)"
       - "traefik.http.routers.ng-bootstrap.entrypoints=websecure"
       - "traefik.http.routers.ng-bootstrap.tls.certresolver=letsencrypt"
+      - "traefik.http.services.ng-bootstrap.loadbalancer.server.port=80"
     networks:
       - web
     restart: unless-stopped

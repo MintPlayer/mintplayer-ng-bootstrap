@@ -21,12 +21,19 @@ export default defineConfig({
     /* Collect trace when retrying the failed test. See https://playwright.dev/docs/trace-viewer */
     trace: 'on-first-retry',
   },
-  /* Run your local dev server before starting the tests */
+  /* Run the real SSR server (not the static `preview`) so e2e exercises the
+   * server-rendered Declarative Shadow DOM — the no-JS shell test needs
+   * request-time SSR. Locally this reuses the running dev server on :4000
+   * (also SSR, via Vite middleware); in CI it builds client + SSR bundles and
+   * runs the production Node server. */
   webServer: {
-    command: 'npx nx run react-bootstrap-demo:preview',
+    command:
+      'npx nx run react-bootstrap-demo:build && npx nx run react-bootstrap-demo:build-ssr && node apps/react-bootstrap-demo/server.mjs',
     url: 'http://localhost:4000',
     reuseExistingServer: true,
-    cwd: workspaceRoot
+    cwd: workspaceRoot,
+    timeout: 300_000,
+    env: { NODE_ENV: 'production', PORT: '4000' },
   },
   projects: [
     { name: 'chromium', use: { ...devices['Desktop Chrome'] } },

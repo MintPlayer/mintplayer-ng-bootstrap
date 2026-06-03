@@ -1,4 +1,4 @@
-import { createRouter, createWebHistory } from 'vue-router';
+import { createRouter, createMemoryHistory, createWebHistory } from 'vue-router';
 
 // Per-component views are added incrementally in the WC-extraction PRs
 // (PR-4 through PR-9). Until then every non-home route renders the
@@ -7,9 +7,19 @@ import { createRouter, createWebHistory } from 'vue-router';
 // Each route loads its view via a dynamic import, so Vue Router code-
 // splits one chunk per view — the initial bundle only ships shell +
 // router + Home.
-const router = createRouter({
-  history: createWebHistory(import.meta.env.BASE_URL),
-  routes: [
+//
+// Created per request so SSR gets its own router instance with in-memory
+// history (the client uses real browser history). Sharing one router across
+// SSR requests would leak navigation state between responses. The history mode
+// is passed in explicitly by the entry rather than sniffed from
+// `import.meta.env.SSR` — the lit-ssr DOM shim defines a global `window`, which
+// makes runtime environment detection unreliable.
+export function createAppRouter(ssr: boolean) {
+  return createRouter({
+    history: ssr
+      ? createMemoryHistory(import.meta.env.BASE_URL)
+      : createWebHistory(import.meta.env.BASE_URL),
+    routes: [
     { path: '/', name: 'home', component: () => import('../views/HomeView.vue') },
     // Basic
     { path: '/basic/calendar',      name: 'calendar',      component: () => import('../views/CalendarView.vue') },
@@ -39,8 +49,8 @@ const router = createRouter({
     { path: '/enterprise/ribbon', name: 'ribbon', component: () => import('../views/enterprise/RibbonView.vue') },
     { path: '/enterprise/scheduler', name: 'scheduler', component: () => import('../views/enterprise/SchedulerView.vue') },
     { path: '/enterprise/timeline', name: 'timeline', component: () => import('../views/enterprise/TimelineView.vue') },
+    { path: '/enterprise/shell', name: 'shell', component: () => import('../views/enterprise/ShellView.vue') },
     { path: '/:pathMatch(.*)*', name: 'coming-soon', component: () => import('../views/ComingSoonView.vue') },
-  ],
-});
-
-export default router;
+    ],
+  });
+}

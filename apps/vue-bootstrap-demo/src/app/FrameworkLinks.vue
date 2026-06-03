@@ -15,11 +15,12 @@ const DEV_HOSTS: Record<Framework, string> = {
   vue: 'http://localhost:4100',
 };
 
+// Decide dev vs prod from Vite's build-time flag rather than `window.location`
+// — under SSR the server has a shimmed `window` whose location wouldn't match
+// the client, causing a hydration mismatch. `import.meta.env.DEV` is replaced
+// identically in the server and client builds, so the hrefs always agree.
 function originFor(framework: Framework): string {
-  if (typeof window !== 'undefined' && window.location.hostname === 'localhost') {
-    return DEV_HOSTS[framework];
-  }
-  return PROD_HOSTS[framework];
+  return import.meta.env.DEV ? DEV_HOSTS[framework] : PROD_HOSTS[framework];
 }
 
 const ACTIVE: Framework = 'vue';

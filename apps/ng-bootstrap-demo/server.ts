@@ -5,10 +5,16 @@ import {
   writeResponseToNodeResponse,
 } from '@angular/ssr/node';
 import express from 'express';
-import { join } from 'node:path';
+import { dirname, resolve } from 'node:path';
+import { fileURLToPath } from 'node:url';
+// Injects <mp-shell>'s Declarative Shadow DOM into SSR output — see docs/prd/shell-wc-ssr.md
+// Framework-agnostic helper, shared by all three SSR servers.
+import { injectMpShellDsd } from '@mintplayer/web-components/shell/ssr';
 
-// const browserDistFolder = join(__dirname, '../browser');
-const browserDistFolder = join(process.cwd(), 'dist/apps/ng-bootstrap-demo/browser');
+// Resolve browser assets relative to the *bundled* server (canonical Angular
+// pattern) so the standalone Node SSR server finds them in production.
+const serverDistFolder = dirname(fileURLToPath(import.meta.url));
+const browserDistFolder = resolve(serverDistFolder, '../browser');
 
 const app = express();
 const angularApp = new AngularNodeAppEngine();
@@ -60,9 +66,20 @@ app.use((req, res, next) => {
   }
   angularApp
     .handle(req)
-    .then((response) =>
-      response ? writeResponseToNodeResponse(response, res) : next(),
-    )
+    .then(async (response) => {
+      if (!response) return next();
+      // Inject <mp-shell>'s Declarative Shadow DOM so the WC renders/toggles
+      // with JS disabled (shadow chrome is static; slotted light DOM is
+      // Angular's). Reusable helper from @mintplayer/ng-bootstrap/shell.
+      const contentType = response.headers.get('content-type') ?? '';
+      if (contentType.includes('text/html')) {
+        const body = injectMpShellDsd(await response.text());
+        const headers = new Headers(response.headers);
+        headers.delete('content-length');
+        return writeResponseToNodeResponse(new Response(body, { status: response.status, headers }), res);
+      }
+      return writeResponseToNodeResponse(response, res);
+    })
     .catch(next);
 });
 

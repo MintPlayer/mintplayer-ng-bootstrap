@@ -58,6 +58,20 @@
         "command": "custom-elements-manifest analyze --litelement"
       }
     },
+    "codegen-shell-chrome": {
+      "executor": "nx:run-commands",
+      "outputs": ["{projectRoot}/shell/ssr/mp-shell-chrome.generated.ts"],
+      "inputs": [
+        "{projectRoot}/shell/src/components/mp-shell.ts",
+        "{projectRoot}/shell/src/styles/shell.styles.scss",
+        "{workspaceRoot}/tools/lit-ssr-utils/gen-shell-chrome.mjs"
+      ],
+      "dependsOn": ["build"],
+      "cache": true,
+      "options": {
+        "command": "node tools/lit-ssr-utils/gen-shell-chrome.mjs"
+      }
+    },
     "build": {
       "executor": "@nx/vite:build",
       "outputs": ["{options.outputPath}"],

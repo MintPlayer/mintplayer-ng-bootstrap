@@ -11,7 +11,7 @@
       ],
       "defaultConfiguration": "production",
       "options": {
-        "outputPath": "dist/apps/vue-bootstrap-demo",
+        "outputPath": "dist/apps/vue-bootstrap-demo/browser",
         "skipTypeCheck": true
       },
       "configurations": {
@@ -23,9 +23,20 @@
         }
       }
     },
+    "build-ssr": {
+      "executor": "nx:run-commands",
+      "outputs": [
+        "{workspaceRoot}/dist/apps/vue-bootstrap-demo/server"
+      ],
+      "dependsOn": [
+        "^build"
+      ],
+      "options": {
+        "command": "npx vite build --config apps/vue-bootstrap-demo/vite.config.mts --ssr src/entry-server.ts"
+      }
+    },
     "serve": {
-      "executor": "@nx/vite:dev-server",
-      "defaultConfiguration": "development",
+      "executor": "nx:run-commands",
       "continuous": true,
       "dependsOn": [
         { "projects": ["api"], "target": "serve" },
@@ -33,18 +44,7 @@
         { "projects": ["mintplayer-web-components"], "target": "codegen-wc-watch" }
       ],
       "options": {
-        "buildTarget": "vue-bootstrap-demo:build",
-        "open": true
-      },
-      "configurations": {
-        "development": {
-          "buildTarget": "vue-bootstrap-demo:build:development",
-          "hmr": true
-        },
-        "production": {
-          "buildTarget": "vue-bootstrap-demo:build:production",
-          "hmr": false
-        }
+        "command": "node apps/vue-bootstrap-demo/server.mjs"
       }
     },
     "preview": {

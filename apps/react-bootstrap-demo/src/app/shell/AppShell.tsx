@@ -1,5 +1,6 @@
 import { type ReactNode } from 'react';
 import { Link, NavLink } from 'react-router-dom';
+import { BsShell } from '@mintplayer/react-bootstrap/shell';
 import { FrameworkLinks } from './FrameworkLinks';
 import { GithubLink } from './GithubLink';
 const SECTIONS = [
@@ -33,51 +34,48 @@ const SECTIONS = [
     { path: '/enterprise/query-builder', label: 'Query builder' },
     { path: '/enterprise/datatables', label: 'Datatable' },
     { path: '/enterprise/file-manager', label: 'File manager' },
+    { path: '/enterprise/shell', label: 'Shell' },
   ]},
 ];
 
 export function AppShell({ children }: { children: ReactNode }) {
   return (
-    <div className="d-flex flex-column min-vh-100">
-      <header className="border-bottom bg-body-tertiary">
-        <div className="d-flex align-items-center px-3 py-2" style={{ gap: '1rem' }}>
-          <Link to="/" className="text-decoration-none fw-semibold text-body fs-5">
-            @mintplayer/react-bootstrap
-          </Link>
-          <span className="text-body-secondary small">demo</span>
-          <div className="flex-grow-1" />
-          <FrameworkLinks />
-          <GithubLink />
-        </div>
-      </header>
-      <div className="d-flex flex-grow-1">
-        <aside className="border-end bg-body-tertiary p-3" style={{ width: '14rem', minWidth: '14rem' }}>
-          <nav>
-            {SECTIONS.map((section) => (
-              <div key={section.title} className="mb-3">
-                <div className="text-uppercase small text-body-secondary fw-semibold mb-2">
-                  {section.title}
-                </div>
-                <ul className="list-unstyled mb-0">
-                  {section.routes.map((r) => (
-                    <li key={r.path}>
-                      <NavLink
-                        to={r.path}
-                        className={({ isActive }) =>
-                          `d-block px-2 py-1 rounded text-decoration-none ${isActive ? 'bg-primary-subtle text-primary fw-semibold' : 'text-body'}`
-                        }
-                      >
-                        {r.label}
-                      </NavLink>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            ))}
-          </nav>
-        </aside>
-        <main className="app-shell-main flex-grow-1">{children}</main>
+    <BsShell breakpoint="md" size="14rem" className="app-shell" dismissOnNavigate>
+      {/* Top bar: the shell renders the hamburger toggle at its left; this slot
+          fills the rest with the brand + framework links. */}
+      <div slot="topbar" className="d-flex align-items-center px-3 py-2 app-shell-header flex-grow-1">
+        <Link to="/" className="text-decoration-none fw-semibold text-body fs-5">
+          @mintplayer/react-bootstrap
+        </Link>
+        <span className="text-body-secondary small">demo</span>
+        <div className="flex-grow-1" />
+        <FrameworkLinks />
+        <GithubLink />
       </div>
-    </div>
+      <nav slot="sidebar" className="border-end bg-body-tertiary p-3 app-shell-sidebar">
+        {SECTIONS.map((section) => (
+          <div key={section.title} className="mb-3">
+            <div className="text-uppercase small text-body-secondary fw-semibold mb-2">
+              {section.title}
+            </div>
+            <ul className="list-unstyled mb-0">
+              {section.routes.map((r) => (
+                <li key={r.path}>
+                  <NavLink
+                    to={r.path}
+                    className={({ isActive }) =>
+                      `d-block px-2 py-1 rounded text-decoration-none ${isActive ? 'bg-primary-subtle text-primary fw-semibold' : 'text-body'}`
+                    }
+                  >
+                    {r.label}
+                  </NavLink>
+                </li>
+              ))}
+            </ul>
+          </div>
+        ))}
+      </nav>
+      <main className="app-shell-main flex-grow-1">{children}</main>
+    </BsShell>
   );
 }
