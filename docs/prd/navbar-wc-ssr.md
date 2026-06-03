@@ -93,7 +93,24 @@ mp-navbar
 - **No-JS**: works — light-DOM children are server-rendered by each framework normally and appear in their slots when the DSD chrome attaches at parse time. Dropdown reveal via `:focus-within` must reach across the slot, which `::slotted`/`:has` interaction makes fragile.
 - **Cost**: smaller API break, but a leakier encapsulation boundary and harder, less-portable CSS for dropdowns.
 
-> **Recommendation: Option A.** It is the only shape that keeps Bootstrap CSS fully shadow-encapsulated (the entire reason `mp-shell` works no-JS across three frameworks without shipping global CSS), and it matches the data + render-callback precedent already set by `mp-treeview` / `mp-tree-select`. Option B trades a cleaner migration path for a permanent global-Bootstrap dependency and brittle dropdown CSS. **This is the decision to confirm before detailed design proceeds.**
+### DECISION (resolved 2026-06-03) — Option A2, hybrid
+
+After the `mp-dropdown-menu` build validated the per-element-WC + light-DOM-slot + DSD pattern end to end, we chose **A2 (hybrid)**:
+
+- `mp-navbar` owns the **chrome + the responsive collapse/hamburger state machine** in its shadow root (static DSD, like `mp-shell`).
+- **Brand / nav-item / nav-link are small per-element WCs** (e.g. `mp-navbar-item`), each styling its own `.nav-link` / `.navbar-brand` in its own shadow — the exact pattern `mp-dropdown-item` proved — slotted into the navbar as light DOM. This keeps a compositional API AND full Bootstrap encapsulation (no global stylesheet), and sidesteps `::slotted` limitations.
+- **Dropdowns reuse the already-built `mp-dropdown-menu`** rather than reinventing a menu.
+- The menu/item discovery uses the light-DOM `querySelectorAll` pattern from `mp-dropdown-menu`, so it tolerates the wrapper-host nesting Angular components introduce at every level of the tree.
+- **Routing stays out of the WC** (href + `navigate`/`select` events); wrappers integrate the router.
+
+**Required behaviours to preserve (from the current Angular `bs-navbar`):**
+
+1. **No-JS compatible.** The collapse reveal and dropdown reveal must work with JavaScript disabled, via `:focus-within` (keyboard) **and** the hidden-checkbox `:checked` (mouse/touch) paths — the contract in [`navbar-noscript.md`](./navbar-noscript.md). Re-expressed inside the shadow root.
+2. **First-level dropdowns scroll.** A first-level (non-submenu) dropdown gets `max-height: calc(100vh - 100% - 1rem)` (the current value) + `overflow-y: auto`, so a long menu scrolls within the viewport rather than overflowing it.
+3. **Second-level dropdowns overlay (JS on).** With JavaScript enabled, a sub-dropdown (submenu) is pulled out and positioned in an **overlay** — as `bs-navbar` does today via CDK overlay. The WC reuses the framework-agnostic `OverlayController` (`libs/.../overlay`, per CLAUDE.md) instead of CDK.
+4. **Second-level dropdowns inline (JS off).** With JavaScript disabled, sub-dropdowns **remain inline within the parent dropdown** (the current `position: initial` no-JS behaviour) — this works today and must be preserved. The overlay is a pure progressive enhancement layered on top.
+
+> Options A and B above are retained for context; A2 is the chosen path.
 
 ## 5. Target file layout (mirrors `shell/`)
 
@@ -141,6 +158,24 @@ Port the shell's pattern. Inside the shadow root:
 - The "open" state funnels through one numeric CSS lever (`--mp-navbar-open`, like `--mp-shell-open`), with `expanded` / explicit attributes overriding the responsive default.
 
 Because the state machine is **inside** the shadow root and rendered into the DSD template, it is interactive in a DSD-capable browser **before any script** — no `.noscript` class, no hydration handoff, no Angular `isServerSide` branch.
+
+### Collapse — VALIDATED ✓ (spike, 2026-06-03)
+
+Spiked at `libs/mintplayer-web-components/_spike-navbar-collapse/` (throwaway; delete before the feature PR). A hand-written DSD `<template shadowrootmode>` (no `<script>` on the page) with the collapse SCSS in the shadow `<style>`, the brand + nav items slotted as light DOM, breakpoint driven by a `breakpoint="lg"` host attribute. All confirmed in Chromium with `customElements` undefined (pure DSD/CSS):
+
+- **Wide (≥ bp):** nav inline + visible, hamburger hidden (`display:none`).
+- **Narrow, initial:** `.navbar-collapse` height `0` (hidden), hamburger visible.
+- **`:checked`** (label click): collapse reveals (`height:auto`).
+- **`:focus-within`** (focus the hidden checkbox *or a slotted link*): collapse reveals and stays open while focus is inside — confirming focus-within crosses the shadow boundary to slotted light-DOM links.
+
+Working SCSS shape (adopt for `mp-navbar`): per-breakpoint `media-breakpoint-up`/`-down` loop keyed on `:host([breakpoint="…"])` sets the collapsed default + hides the toggler when wide; the two reveal rules use `height: auto !important` (mirroring the current `bs-navbar`, sidestepping specificity):
+
+```scss
+.navbar-toggle:checked ~ .navbar-collapse,
+:host(:focus-within) .navbar-collapse { height: auto !important; overflow: visible !important; }
+```
+
+Reboot defaults (`box-sizing`) re-declared in-shadow, as for the dropdown.
 
 ## 7. SSR via Declarative Shadow DOM (copy the shell mechanism exactly)
 

@@ -1,0 +1,77 @@
+// `mp-navbar` chrome styling. Bootstrap's navbar partial is compiled into the
+// shadow root (gives `.navbar`, `.navbar-toggler`, `.navbar-toggler-icon`,
+// `.navbar-collapse` base, and the `--bs-navbar-*` vars), on top of which we add
+// the responsive collapse state machine proven by the _spike-navbar-collapse
+// spike. The brand + nav items are slotted per-element WCs that style themselves
+// in their own shadow, so this stylesheet only owns the bar chrome.
+
+@import "bootstrap/scss/functions";
+@import "bootstrap/scss/variables";
+@import "bootstrap/scss/variables-dark";
+@import "bootstrap/scss/maps";
+@import "bootstrap/scss/mixins";
+@import "bootstrap/scss/navbar";
+
+// Reboot defaults don't cross the shadow boundary.
+:host, *, *::before, *::after { box-sizing: border-box; }
+:host { display: block; }
+
+.navbar {
+  position: relative;
+  z-index: 20;
+}
+
+// --- `color` background -------------------------------------------------------
+// Bootstrap bg utilities don't cross the shadow boundary, so re-resolve them
+// from the inherited tokens. Theme colors map to `--bs-{name}`; the adaptive
+// `body-*` names map to their page-theme-aware tokens (text contrast for the
+// solid colors is handled by `data-bs-theme`, set on the host in JS).
+@each $name, $val in $theme-colors {
+  :host([color="#{$name}"]) .navbar { background-color: var(--bs-#{$name}); }
+}
+:host([color="body"]) .navbar { background-color: var(--bs-body-bg); }
+:host([color="body-secondary"]) .navbar { background-color: var(--bs-secondary-bg); }
+:host([color="body-tertiary"]) .navbar { background-color: var(--bs-tertiary-bg); }
+
+// --- collapse state machine (no-JS; see navbar-noscript.md) -------------------
+// Visually-hidden but focusable checkbox is the no-JS state holder.
+.navbar-toggle {
+  position: absolute;
+  width: 1px; height: 1px;
+  margin: -1px; padding: 0;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+.navbar-collapse {
+  flex-basis: 100%;
+  overflow: hidden;
+}
+
+// Reveal: checked (mouse/touch via <label for>) OR focus anywhere in the nav
+// (keyboard — crosses the shadow boundary to slotted links). `!important` beats
+// the per-breakpoint collapsed default without specificity games (mirrors the
+// current bs-navbar).
+.navbar-toggle:checked ~ .navbar-collapse,
+:host(:focus-within) .navbar-collapse {
+  height: auto !important;
+  overflow: visible !important;
+}
+
+@each $name, $min in $grid-breakpoints {
+  @if $min and $min > 0 {
+    :host([breakpoint="#{$name}"]) {
+      @include media-breakpoint-up($name, $grid-breakpoints) {
+        // Wide: nav inline + always visible; hamburger hidden.
+        .navbar-toggle, .navbar-toggler { display: none; }
+        .navbar-collapse { flex-basis: auto; overflow: visible; }
+      }
+      @include media-breakpoint-down($name, $grid-breakpoints) {
+        // Narrow: collapsed until revealed.
+        .navbar-collapse { height: 0; }
+      }
+    }
+  }
+}
