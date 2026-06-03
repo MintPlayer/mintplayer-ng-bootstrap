@@ -19,6 +19,7 @@ const SECTIONS = [
     { path: '/basic/treeview', label: 'Treeview' },
     { path: '/basic/tree-select', label: 'Tree select' },
     { path: '/basic/dropdown-menu', label: 'Dropdown menu' },
+    { path: '/basic/navbar', label: 'Navbar' },
     { path: '/basic/tab-control', label: 'Tab control' },
     { path: '/basic/code-snippet', label: 'Code snippet' },
   ]},

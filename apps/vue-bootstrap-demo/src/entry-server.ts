@@ -17,6 +17,9 @@ import { injectMpShellDsd } from '@mintplayer/web-components/shell/ssr';
 // Splices the dropdown elements' Declarative Shadow DOM into the HTML so the
 // menu chrome is server-rendered alongside <mp-shell>'s.
 import { injectMpDropdownDsd } from '@mintplayer/web-components/dropdown-menu/ssr';
+// Splices the navbar elements' Declarative Shadow DOM into the HTML so the bar
+// chrome is server-rendered alongside <mp-shell>'s and the dropdowns'.
+import { injectMpNavbarDsd } from '@mintplayer/web-components/navbar/ssr';
 import { createApp } from './main';
 
 /**
@@ -30,5 +33,5 @@ export async function render(url: string): Promise<string> {
   await router.push(url);
   await router.isReady();
   const html = await renderToString(app);
-  return injectMpDropdownDsd(injectMpShellDsd(html));
+  return injectMpNavbarDsd(injectMpDropdownDsd(injectMpShellDsd(html)));
 }

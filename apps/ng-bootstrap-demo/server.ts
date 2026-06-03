@@ -13,6 +13,10 @@ import { injectMpShellDsd } from '@mintplayer/web-components/shell/ssr';
 // Injects <mp-dropdown-menu> & friends' Declarative Shadow DOM into SSR output
 // so the dropdown WC renders with JS disabled. Composed with injectMpShellDsd.
 import { injectMpDropdownDsd } from '@mintplayer/web-components/dropdown-menu/ssr';
+// Injects <mp-navbar> & friends' Declarative Shadow DOM into SSR output so the
+// navbar WC renders — and collapses/reveals via its CSS state machine — with JS
+// disabled. Composed with the shell + dropdown injectors.
+import { injectMpNavbarDsd } from '@mintplayer/web-components/navbar/ssr';
 
 // Resolve browser assets relative to the *bundled* server (canonical Angular
 // pattern) so the standalone Node SSR server finds them in production.
@@ -76,7 +80,7 @@ app.use((req, res, next) => {
       // Angular's). Reusable helper from @mintplayer/ng-bootstrap/shell.
       const contentType = response.headers.get('content-type') ?? '';
       if (contentType.includes('text/html')) {
-        const body = injectMpDropdownDsd(injectMpShellDsd(await response.text()));
+        const body = injectMpNavbarDsd(injectMpDropdownDsd(injectMpShellDsd(await response.text())));
         const headers = new Headers(response.headers);
         headers.delete('content-length');
         return writeResponseToNodeResponse(new Response(body, { status: response.status, headers }), res);
