@@ -104,7 +104,7 @@
     "chokidar": "^5.0.0",
     "concurrently": "^9.1.2",
     "eslint": "8.57.0",
-    "eslint-config-prettier": "10.0.0",
+    "eslint-config-prettier": "^10.1.8",
     "jiti": "2.7.0",
     "jsdom": "^27.2.0",
     "jsonc-eslint-parser": "^2.1.0",
