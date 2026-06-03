@@ -25,7 +25,7 @@ The currently-shipped workaround for "WC + noscript" is the dual-template wrappe
 ## Implementation status (2026-06-02)
 
 **Done + verified (in this branch):**
-- ✅ **`mp-shell` Lit WC** — `libs/mintplayer-web-components/shell/`. Shadow chrome: a full-width **top bar** (built-in hamburger toggle on the left + a `topbar` slot) above a `sidebar`/default(content) row; also `toggle`/`hamburger` slots. `state`/`breakpoint`/`size` attrs (+ `--mp-shell-size`), `toggle()`, `open`, `statechange`. Open/closed funnels through one numeric lever **`--mp-shell-open`** (1/0), read by two viewport-gated mechanisms: **wide (≥ breakpoint)** = in-flow fixed-width sidebar that slides via negative `margin-inline-start` so content reclaims the space (no reflow); **narrow (< breakpoint)** = full-width **overlay drawer** (absolute, on top of the full-width content) sliding via `translateX`. `nx build mintplayer-web-components` passes; all four states (wide/narrow × default/toggled) verified no-JS-style in Chromium.
+- ✅ **`mp-shell` Lit WC** — `libs/mintplayer-web-components/shell/`. Shadow chrome: a full-width **top bar** (built-in hamburger toggle on the left + a `topbar` slot) above a `sidebar`/default(content) row; also `toggle`/`hamburger` slots. `state`/`breakpoint`/`size` attrs (+ `--mp-shell-size`), `toggle()`, `open`, `statechange`. Open/closed funnels through one numeric lever **`--mp-shell-open`** (1/0), read by two viewport-gated mechanisms: **wide (≥ breakpoint)** = in-flow fixed-width sidebar that slides via negative `margin-inline-start` so content reclaims the space (no reflow); **narrow (< breakpoint)** = full-width **overlay drawer** (absolute, on top of the full-width content) sliding via `translateX`. **⚠️ Revised 2026-06-03 (see "Post-merge round 2 §1"): wide mode no longer uses an in-flow margin-push — the sidebar is now `position: absolute` in both modes and the content carries a transitioned `margin-inline-start`, for fluid breakpoint-crossing resize; `--mp-shell-wide` is an added lever.** `nx build mintplayer-web-components` passes; all four states (wide/narrow × default/toggled) verified no-JS-style in Chromium.
 - ✅ **Angular `bs-shell` wrapper** — `libs/mintplayer-ng-bootstrap/shell/`. Single `<mp-shell>` (no dual-template), client-only WC define; keeps `[state]`/`[breakpoint]`/`setSize()`. `bsShellSidebar` is now an attribute directive → `slot="sidebar"` (breaking). `nx build mintplayer-ng-bootstrap` passes.
 - ✅ **SSR DSD injection** — reusable `injectMpShellDsd(html)` + generated `MP_SHELL_DSD_CHROME`, now framework-agnostic at **`@mintplayer/web-components/shell/ssr`** (side-effect-free: imports no element, safe on any Node SSR server); generator `tools/lit-ssr-utils/gen-shell-chrome.mjs` writes there. Wired into `apps/ng-bootstrap-demo/server.ts` *and* `apps/react-bootstrap-demo/src/entry-server.tsx`. *(Relocated in Phase 4. The Angular lib no longer re-exports it — clean move, no shim; nothing published consumed it.)*
 - ✅ **Deps** — `@lit-labs/ssr`/`ssr-client`/`ssr-dom-shim` in `package.json`.
@@ -72,7 +72,7 @@ The currently-shipped workaround for "WC + noscript" is the dual-template wrappe
 - **Note (pre-existing, unrelated):** the prod Node server enforces `@angular/ssr`'s SSRF host allow-list (`allowedHosts: []` in the manifest → set `NG_ALLOWED_HOSTS` for non-proxied local runs); not affected by these changes.
 - **Files:** `apps/ng-bootstrap-demo/src/app/app.routes.server.ts` (NEW), `apps/ng-bootstrap-demo/src/app/app.config.server.ts` (NEW), `apps/ng-bootstrap-demo/src/main.server.ts`, `apps/ng-bootstrap-demo/src/app/app.config.ts`, `apps/ng-bootstrap-demo/src/main.ts` (reverted), `libs/mintplayer-web-components/shell/src/components/mp-shell.ts` (`createRenderRoot`); deleted `apps/ng-bootstrap-demo/src/hydrate-support.ts`. `server.ts`'s `injectMpShellDsd` was investigated and exonerated (it never touches `ng-state`).
 
-### Uncommitted working-tree changes (branch `feat/shell-wc-ssr`, nothing committed since PRD commit `7cebf07a`)
+### Uncommitted working-tree changes (branch `feat/shell-wc-ssr`) — ⚠️ SUPERSEDED: all of the below (plus "Post-merge round 2") is now committed + pushed; CI green
 - `libs/mintplayer-web-components/shell/src/components/mp-shell.ts` — Issue A (resolved-open semantics, `#cssOpen`/`#isWide`/`#syncCheckbox`/`#onToggleChange`/`toggle`).
 - `libs/mintplayer-ng-bootstrap/shell/src/shell/shell.component.ts` — Issue A (`onStatechange` `stopPropagation` + typed `output()`).
 - `apps/ng-bootstrap-demo/src/app/pages/overlay/shell/shell.component.{ts,html}` — demo `onShellToggle` + `(statechange)` binding (now correct).
@@ -85,7 +85,43 @@ The currently-shipped workaround for "WC + noscript" is the dual-template wrappe
 - `libs/mintplayer-web-components/shell/src/components/mp-shell.ts` — Issue A + Issue B (`createRenderRoot` adopts/clears the SSR DSD).
 - deleted `apps/ng-bootstrap-demo/src/hydrate-support.ts` — the app-level shim patched the wrong `lit` instance; superseded by the WC `createRenderRoot` fix.
 - `docs/prd/shell-wc-ssr.md` — this section.
-- Both Issue A and Issue B are fully resolved + verified (dev SSR and prod Node SSR), nothing committed yet on this branch.
+- Both Issue A and Issue B are fully resolved + verified (dev SSR and prod Node SSR). *(Committed + pushed since — see "Post-merge round 2" below.)*
+
+## Post-merge round 2 (2026-06-03 — branch `feat/shell-wc-ssr`, PR #381)
+
+Follow-on work after Issues A + B. **All committed + pushed on `feat/shell-wc-ssr`; CI green.** Library versions bumped to web-components **1.5.0**, ng-bootstrap **21.47.0**, react-bootstrap **19.5.0**, vue-bootstrap **3.5.0**.
+
+### 1. Fluid resize — layout mechanism changed (SUPERSEDES the margin-push design)
+- **Symptom:** with `state="auto"`, dragging the window across the breakpoint was janky — the main content snapped to full width in one frame instead of sliding (the toggle animation was already smooth).
+- **Root cause:** wide mode kept the sidebar *in-flow* (`position: relative`) and the content had **no transitionable offset** — its left edge was decided by flexbox, which can't animate; the breakpoint crossing (`relative`↔`absolute`) snapped it. (Matches the MintPlayer ClientApp, where the main area is offset by a transitioned `margin-left`.)
+- **Fix:** the sidebar is now **`position: absolute` in BOTH modes** and slides via `translateX` of its own width; `.content` carries the offset as a **transitioned `margin-inline-start`** (`open × size` in wide/push, `0` in overlay). A new **`--mp-shell-wide`** lever (1 = wide, 0 = narrow) lets JS read the resolved mode — `#isWide()` now reads it instead of `.sidebar` `position`. This **supersedes** the in-flow negative-`margin-inline-start` "margin-push" mechanism in §Implementation status and §Component design; the `--mp-shell-margin` lever no longer exists (`--mp-shell-open` / `--mp-shell-wide` are the levers).
+- **Trade-off:** an absolute sidebar no longer stretches an *unbounded-height* host; for the normal bounded app-shell (`height: 100dvh`) it's identical and matches the proven MintPlayer model.
+- **Files:** `shell.styles.scss` (→ regenerated `shell.styles.ts`), `mp-shell.ts` (`#isWide`), regenerated `ssr/mp-shell-chrome.generated.ts`.
+
+### 2. `dismiss-on-navigate` — auto-close the overlay drawer on navigation
+- Opt-in attribute on `<mp-shell>`: in **narrow** mode, clicking a navigation link (`<a href>`) inside the `sidebar` slot closes the drawer; wide mode never closes. Generic in the WC (host `click` listener → `composedPath()` gate + `#isWide()` + `toggle(false)`); no `observedAttributes`/markup/SSR-chrome change; progressive enhancement (no-JS just navigates).
+- **Opt-out** per link with `data-no-dismiss` (on the link or any wrapper) — for parent items that only expand a sub-list / highlight the active path and cancel their own navigation. Opt-out (not opt-in) keeps the common case (every leaf link dismisses) annotation-free.
+- Exposed as a first-class prop on all three wrappers (`dismissOnNavigate` / `dismiss-on-navigate`); enabled in the React + Vue app shells.
+- **Files:** `mp-shell.ts`; wrappers `BsShell.tsx`, `BsShell.vue`, `shell.component.{ts,html}`; demos `AppShell.tsx`, `App.vue`.
+
+### 3. React/Vue shell demo pages (SUPERSEDES "no dedicated demo page")
+- Added `enterprise/shell` documentation pages (code snippets + API table, incl. the `data-no-dismiss` opt-out) to the React and Vue demos, wired into routing + sidebar nav. The Angular demo keeps `/overlays/shell`. (Earlier the React/Vue shell had no standalone page because it *is* the app chrome; these pages document the API without a nested live demo.) Supersedes the line in §Implementation status / Phase 7.
+- **Files:** `apps/react-bootstrap-demo/src/app/pages/enterprise/ShellPage.tsx` (+ route in `app.tsx`, nav in `AppShell.tsx`); `apps/vue-bootstrap-demo/src/views/enterprise/ShellView.vue` (+ route in `router/index.ts`, nav in `App.vue`).
+
+### 4. Vue wrapper `$attrs` passthrough (full-height bug)
+- The Vue `BsShell` had `inheritAttrs: false` but never re-bound `$attrs`, so `class`/`style` (e.g. `class="app-shell"` → `height: 100dvh`) never reached `<mp-shell>` — the Vue shell collapsed to content height (React was fine; it spreads props). **Fix:** `v-bind="$attrs"` on `<mp-shell>` (brings it in line with the other 35 Vue wrappers). Verified live: host gets `app-shell`, spans the viewport.
+- **Files:** `libs/mintplayer-vue-bootstrap/shell/src/BsShell.vue`.
+
+### 5. Dev-mode SSR fix for `npm start`
+- `ssr.noExternal: true` (for the prod self-contained bundle) also applied to the **dev** SSR server, forcing CJS deps (react/jsx-dev-runtime, node-domexception, …) through Vite's ESM module runner → `ReferenceError: module is not defined`. **Fix:** gate it — `noExternal: isSsrBuild ? true : [/^@mintplayer\//]` (dev externalizes third-party deps so Node loads CJS; keeps the workspace `@mintplayer/*` libs noExternal for tsconfig-path resolution). Prod `build-ssr` unchanged. *(Updates the `ssr.noExternal: true` references in §Implementation status / Hosting / Phase 6.)*
+- **Files:** `apps/{react,vue}-bootstrap-demo/vite.config.mts`.
+
+### 6. e2e: framework-switcher host assertion
+- The React/Vue `example.spec.ts` hard-coded dev localhost hosts, but the e2e serves the **prod** SSR build (required for the no-JS shell test), so `FrameworkLinks` emits the prod subdomains. Now matches either host via regex (path-preservation is the real assertion).
+
+### Reviewer feedback (PR #381, gemini-code-assist) — all 7 threads resolved
+- **Implemented:** per-`<mp-shell>` negative-lookahead idempotency regex in `injectMpShellDsd` (replaces the page-global `shadowrootmode` short-circuit, which would skip injection when any *other* component on the page emits DSD); prod `index.html` in-memory caching in the React/Vue `server.mjs`; React `entry-server` safety-valve timer cleanup in `final`/`onError`.
+- **Pushed back (with reasoning):** converting the WC's manual `observedAttributes`/`attributeChangedCallback` to Lit reactive properties + `reflect: true` — the levers are CSS-selector-driven (no JS reactivity needed) and `reflect: true` risks attribute churn during the tuned DSD hydration.
 
 ## Locked decisions (confirmed with the user)
 
@@ -129,7 +165,7 @@ Shadow template (single source of truth), conceptually:
 ```
 
 - **Slots:** named `sidebar` slot + default content slot (replaces the `[bsShellSidebar]` `TemplateRef` directive) + a `toggle` slot for external-trigger mode. Slotted content is light DOM and visible without JS.
-- **State machine (restored `breakpoint`/`auto` + interactive toggle):** the original `shell.component.scss` behaviour is re-expressed in the shadow `static styles`. **The sidebar keeps a fixed width (`--mp-shell-size`) and open/close _slides_ it via a negative `margin-inline-start`** (the original `margin-left` behaviour, RTL-correct) — contents never reflow/word-wrap, and the main content reclaims the freed space. Everything funnels through one lever, `--mp-shell-margin` (`0` = open, `calc(-1 * size)` = closed); `.sidebar-root` is `overflow: hidden` to clip the sidebar as it slides past the edge. Three layers:
+- **State machine (restored `breakpoint`/`auto` + interactive toggle):** the original `shell.component.scss` behaviour is re-expressed in the shadow `static styles`. **⚠️ Superseded 2026-06-03 (see "Post-merge round 2 §1"): wide mode now uses an absolute sidebar + a transitioned content `margin-inline-start`; the levers are `--mp-shell-open` / `--mp-shell-wide`, not `--mp-shell-margin`. The description below records the original margin-push design.** **The sidebar keeps a fixed width (`--mp-shell-size`) and open/close _slides_ it via a negative `margin-inline-start`** (the original `margin-left` behaviour, RTL-correct) — contents never reflow/word-wrap, and the main content reclaims the freed space. Everything funnels through one lever, `--mp-shell-margin` (`0` = open, `calc(-1 * size)` = closed); `.sidebar-root` is `overflow: hidden` to clip the sidebar as it slides past the edge. Three layers:
   - **`state` input override (consumer-declarative):** reflected to a host attribute, shadow-visible. `:host([state="show"])` forces open, `:host([state="hide"])` forces closed — these win over everything and work no-JS (SSR reflects the input).
   - **`auto` (default / `state="auto"`): responsive, the untouched no-JS state.** `@media` rules on the **unchecked** toggle collapse the sidebar below `breakpoint` and expand it at/above — pure CSS. Breakpoint px values are inlined (Bootstrap mixins don't cross the shadow boundary). ✅ spike-verified at 500px (collapsed) and 1100px (expanded), no JS.
   - **interactive toggle:** the `:checked` state means *"the inverse of the `auto` default for the current viewport"* — `@media`+`:checked` rules flip it. So below `breakpoint` the toggler expands, at/above it collapses. ✅ spike-verified (wide-toggled→collapsed, narrow-toggled→expanded), no JS.
