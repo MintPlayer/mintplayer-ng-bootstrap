@@ -56,7 +56,7 @@ const SECTIONS = [
 </script>
 
 <template>
-  <BsShell breakpoint="md" size="14rem" class="app-shell">
+  <BsShell breakpoint="md" size="14rem" class="app-shell" dismiss-on-navigate>
     <!-- Top bar: the shell renders the hamburger toggle at its left; this slot
          fills the rest with the brand + framework links. -->
     <div slot="topbar" class="d-flex align-items-center px-3 py-2 app-shell-header flex-grow-1">

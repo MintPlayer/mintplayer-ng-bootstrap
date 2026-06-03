@@ -23,6 +23,8 @@ withDefaults(
     size?: string;
     /** Hide the built-in hamburger and drive the toggle from a consumer control. */
     externalToggle?: boolean;
+    /** Auto-close the overlay drawer when a sidebar link is clicked (narrow mode only). */
+    dismissOnNavigate?: boolean;
   }>(),
   {
     state: 'auto',
@@ -62,6 +64,7 @@ onBeforeUnmount(() => el.value?.removeEventListener('statechange', onStatechange
     :breakpoint="breakpoint"
     :size="size"
     :external-toggle="externalToggle ? '' : undefined"
+    :dismiss-on-navigate="dismissOnNavigate ? '' : undefined"
   >
     <slot />
   </mp-shell>

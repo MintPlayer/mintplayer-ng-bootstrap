@@ -40,7 +40,7 @@ const SECTIONS = [
 
 export function AppShell({ children }: { children: ReactNode }) {
   return (
-    <BsShell breakpoint="md" size="14rem" className="app-shell">
+    <BsShell breakpoint="md" size="14rem" className="app-shell" dismissOnNavigate>
       {/* Top bar: the shell renders the hamburger toggle at its left; this slot
           fills the rest with the brand + framework links. */}
       <div slot="topbar" className="d-flex align-items-center px-3 py-2 app-shell-header flex-grow-1">

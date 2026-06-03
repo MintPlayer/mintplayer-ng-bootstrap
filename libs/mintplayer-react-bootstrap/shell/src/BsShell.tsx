@@ -18,6 +18,8 @@ export interface BsShellProps {
   size?: string;
   /** Hide the built-in hamburger and drive the toggle from a consumer-supplied control. */
   externalToggle?: boolean;
+  /** Auto-close the overlay drawer when a sidebar link is clicked (narrow mode only). */
+  dismissOnNavigate?: boolean;
   /** Fires when the sidebar toggle flips. */
   onStatechange?: (event: CustomEvent<ShellStateChangeEventDetail>) => void;
   className?: string;
@@ -31,8 +33,9 @@ export interface BsShellProps {
  * React props → attributes. We retype its props to the clean public surface;
  * the runtime forwards everything to the element unchanged.
  */
-type MpShellInnerProps = Omit<BsShellProps, 'externalToggle'> & {
+type MpShellInnerProps = Omit<BsShellProps, 'externalToggle' | 'dismissOnNavigate'> & {
   'external-toggle'?: '';
+  'dismiss-on-navigate'?: '';
 } & React.RefAttributes<MpShell>;
 
 const MpShellComponent = createComponent({
@@ -59,13 +62,14 @@ const MpShellComponent = createComponent({
  *     </BsShell>
  */
 export const BsShell = React.forwardRef<MpShell, BsShellProps>(function BsShell(
-  { externalToggle, ...props },
+  { externalToggle, dismissOnNavigate, ...props },
   ref,
 ) {
   return (
     <MpShellComponent
       ref={ref}
       {...(externalToggle ? { 'external-toggle': '' as const } : {})}
+      {...(dismissOnNavigate ? { 'dismiss-on-navigate': '' as const } : {})}
       {...props}
     />
   );

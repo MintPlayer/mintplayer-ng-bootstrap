@@ -35,6 +35,13 @@ export interface ShellStateChangeEventDetail {
  *    `--mp-shell-size` custom property.
  *  - `external-toggle` — hides the built-in hamburger; the consumer supplies a
  *    `<label for>` + a `slot="toggle"` checkbox and a global bridge rule.
+ *  - `dismiss-on-navigate` — opt-in: when a navigation link (`<a href>`) inside
+ *    the `sidebar` slot is clicked while in narrow/overlay mode, auto-close the
+ *    drawer (the mobile-drawer convention). No effect in wide mode; a pure
+ *    progressive enhancement (with JS off the link just navigates). Mark a link
+ *    (or any wrapper around it) with `data-no-dismiss` to exclude it — e.g. a
+ *    parent nav item that only expands a sub-list or highlights the active path
+ *    and cancels its own navigation.
  *
  * Events: `statechange` (`detail: { open }`) when the toggle flips.
  */
@@ -79,6 +86,46 @@ export class MpShell extends LitElement {
     }
     return super.createRenderRoot();
   }
+
+  override connectedCallback(): void {
+    super.connectedCallback();
+    // Progressive enhancement for the `dismiss-on-navigate` opt-in: a click on a
+    // sidebar link closes the overlay drawer (narrow mode only). The listener is
+    // on the host, so it catches clicks bubbling out of the slotted sidebar.
+    this.addEventListener('click', this.#onSidebarClick);
+  }
+
+  override disconnectedCallback(): void {
+    super.disconnectedCallback();
+    this.removeEventListener('click', this.#onSidebarClick);
+  }
+
+  /**
+   * Auto-close the drawer when a navigation link inside the `sidebar` slot is
+   * clicked — only when `dismiss-on-navigate` is set AND the shell is in
+   * narrow/overlay mode. Reads the attribute on demand (no reactive property).
+   * The anchor must sit *before* the sidebar slot in the composed path, i.e.
+   * inside the slotted sidebar content — so topbar/content clicks are ignored.
+   * Opt-out: a clicked link (or any wrapper around it) carrying `data-no-dismiss`
+   * is ignored — for parent items that only expand a sub-list / highlight the
+   * active path and cancel their own navigation. Opt-out (rather than opt-in)
+   * keeps the common case — every leaf link dismisses — annotation-free.
+   */
+  #onSidebarClick = (event: MouseEvent): void => {
+    if (!this.hasAttribute('dismiss-on-navigate')) return;
+    if (this.#isWide()) return;
+    const path = event.composedPath();
+    const sidebarSlot = this.renderRoot?.querySelector('slot[name="sidebar"]');
+    const slotIndex = sidebarSlot ? path.indexOf(sidebarSlot) : -1;
+    if (slotIndex < 0) return;
+    // The slotted sidebar subtree the click passed through (target → … → slot).
+    const within = path.slice(0, slotIndex);
+    if (within.some((el) => el instanceof HTMLElement && el.hasAttribute('data-no-dismiss'))) return;
+    const clickedSidebarLink = within.some(
+      (el) => el instanceof HTMLElement && el.tagName === 'A' && el.hasAttribute('href'),
+    );
+    if (clickedSidebarLink && this.open) this.toggle(false);
+  };
 
   override attributeChangedCallback(name: string, oldValue: string | null, newValue: string | null): void {
     super.attributeChangedCallback(name, oldValue, newValue);

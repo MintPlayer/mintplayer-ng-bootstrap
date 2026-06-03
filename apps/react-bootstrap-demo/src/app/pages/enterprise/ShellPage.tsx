@@ -143,6 +143,17 @@ export function ShellPage() {
               <td>Hide the built-in hamburger; drive the toggle from your own control.</td>
             </tr>
             <tr>
+              <td><code>dismissOnNavigate</code></td>
+              <td><code>boolean</code></td>
+              <td><code>false</code></td>
+              <td>
+                Auto-close the overlay drawer when a sidebar link is clicked
+                (narrow mode only). Mark a link (or a wrapper) with{' '}
+                <code>data-no-dismiss</code> to exclude it — e.g. a parent that
+                only expands a sub-list.
+              </td>
+            </tr>
+            <tr>
               <td><code>onStatechange</code></td>
               <td><code>(e: CustomEvent&lt;{'{'} open: boolean {'}'}&gt;) =&gt; void</code></td>
               <td>—</td>

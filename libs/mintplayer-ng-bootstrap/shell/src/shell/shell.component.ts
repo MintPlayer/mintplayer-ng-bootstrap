@@ -26,6 +26,8 @@ import { BsShellState } from '../shell-state';
 export class BsShellComponent {
   readonly state = input<BsShellState>('auto');
   readonly breakpoint = input<Breakpoint>('md');
+  /** Auto-close the overlay drawer when a sidebar link is clicked (narrow mode only). */
+  readonly dismissOnNavigate = input(false);
 
   /** Fires when the sidebar toggle flips (re-emits the WC's `statechange`). */
   readonly statechange = output<ShellStateChangeEventDetail>();
