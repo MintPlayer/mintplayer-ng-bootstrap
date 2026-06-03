@@ -4,8 +4,16 @@ services:
     # The Angular Node SSR server validates the Host header (SSRF protection)
     # and falls back to CSR for unknown hosts — allow the public domain so it
     # renders the DSD at request time.
+    #
+    # NG_TRUST_PROXY_HEADERS: @angular/ssr deopts to client-side rendering (200 +
+    # empty shell) for ANY incoming `x-forwarded-*` header it doesn't trust. The
+    # default trusted set is only x-forwarded-host + x-forwarded-proto, but Traefik
+    # also sends x-forwarded-for/-port/-server — so without this list every prod
+    # request silently fell back to CSR. The list must be explicit: the env reader
+    # comma-splits, so `=true` would be parsed as the literal header name "true".
     environment:
       - "NG_ALLOWED_HOSTS=bootstrap.mintplayer.com"
+      - "NG_TRUST_PROXY_HEADERS=x-forwarded-host,x-forwarded-proto,x-forwarded-for,x-forwarded-port,x-forwarded-prefix,x-forwarded-server"
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.ng-bootstrap.rule=Host(`bootstrap.mintplayer.com`)"

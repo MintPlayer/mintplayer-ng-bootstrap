@@ -70,6 +70,35 @@ and visit [http://localhost:4200](http://localhost:4200).
 ## Deployment
 See [deployment documentation](DEPLOYMENT.md) for instructions on setting up automatic deployment to a VPS.
 
+### SSR behind a reverse proxy (Angular)
+
+All three demos are deployed with **request-time SSR** so the `<mp-shell>` Declarative Shadow DOM is in the HTML and the layout renders with JavaScript disabled. The Angular SSR server has two `@angular/ssr` security guards that must be configured for the public domain, or it silently falls back to **client-side rendering** (you get an HTTP `200` with an empty `<demo-bootstrap-root></demo-bootstrap-root>` shell — no server-rendered content, no DSD):
+
+1. **`NG_ALLOWED_HOSTS`** — the Host-header SSRF allow-list. Must contain the public domain (e.g. `bootstrap.mintplayer.com`). A *mismatch* here returns a hard `400`; an *empty* list falls back to CSR.
+2. **`NG_TRUST_PROXY_HEADERS`** — the list of `x-forwarded-*` headers to trust. **This is the one that bit us in production.** `@angular/ssr` deopts to CSR for *any* incoming `x-forwarded-*` header it doesn't trust, and its default trusted set is only `x-forwarded-host` + `x-forwarded-proto`. Traefik also forwards `x-forwarded-for`, `x-forwarded-port`, and `x-forwarded-server`, so every proxied request silently deopted to CSR until these were trusted.
+
+Both are set on the `ng-bootstrap` service in [`docker-compose.yml`](docker-compose.yml):
+
+```yaml
+environment:
+  - "NG_ALLOWED_HOSTS=bootstrap.mintplayer.com"
+  - "NG_TRUST_PROXY_HEADERS=x-forwarded-host,x-forwarded-proto,x-forwarded-for,x-forwarded-port,x-forwarded-prefix,x-forwarded-server"
+```
+
+Gotchas:
+
+- **`NG_TRUST_PROXY_HEADERS=true` does not work.** The env value is comma-split into a list of header names, so `true` is read as a header literally named `true`. List the headers explicitly.
+- **The React/Vue demos are unaffected** — their plain Express SSR servers have no host/proxy-header validation, which is why they kept rendering correctly while Angular did not.
+- **Local `nx serve` / `node server.mjs` without a proxy works regardless**, because no `x-forwarded-*` headers are present — the deopt only manifests once a reverse proxy sits in front. To reproduce, replay the proxy headers against a production build:
+
+  ```bash
+  curl -s -o out.html -H "Host: bootstrap.mintplayer.com" \
+    -H "X-Forwarded-Host: bootstrap.mintplayer.com" -H "X-Forwarded-Proto: https" \
+    -H "X-Forwarded-For: 203.0.113.7" -H "X-Forwarded-Port: 443" \
+    http://localhost:4000/overlays/shell
+  # without NG_TRUST_PROXY_HEADERS → ~6.5 KB CSR shell; with it → full SSR + <template shadowrootmode>
+  ```
+
 ## Fonts
 The `<bs-icon>` uses fonts from bootstrap-icons which need to be included in the application. Since there's no `"assets"` field in an angular library its project configuration, we seem to have no other option than to explicitly tell the application to include them.
 
