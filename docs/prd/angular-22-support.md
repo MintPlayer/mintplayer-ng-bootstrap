@@ -102,28 +102,34 @@ self-reference syntax forces those peers to the root-declared `~22.0.0` and sile
 - ✅ **Clean install resolves** — `npm update` after wiping `node_modules`/lockfile: `changed 2239 packages`, **no ERESOLVE**. `npm ls` confirms `@angular-devkit/build-angular@22.0.0 overridden`, `@angular/core@22.0.0`, `typescript@6.0.3`, `ng-packagr@22.0.0` deduped under `@nx/angular`, `@analogjs`, and root.
 - ✅ **TS 6 fix** — `libs/mintplayer-web-components/src/test-setup.ts`: TS 6's `lib.dom.d.ts` added `scrollMargin` to `IntersectionObserver`; the jsdom mock now declares it.
 - ✅ **All Angular libraries build** — `nx build mintplayer-ng-bootstrap` (+ its 9 dependent tasks incl. `mintplayer-web-components`) and `nx build mintplayer-ng-animations` pass under Angular 22 / ng-packagr 22 / TS 6.0.3, with Nx 22.7.5 forced via overrides.
+- ✅ **Source migration for full AOT** — the four Angular 22 breaking-change fixes below.
+  `nx build ng-bootstrap-demo` (full AOT, 14 tasks) and `nx test mintplayer-ng-bootstrap`
+  (**515 tests / 172 files, all pass**) are green.
 
-## Remaining work — source migration for full AOT (NOT yet done)
+### Source migration (done)
 
 ng-packagr's **partial compilation** builds the libraries, but the consumer app's **full
-AOT** build (`nx build ng-bootstrap-demo`) surfaces genuine Angular 22 breaking-change
+AOT** build (`nx build ng-bootstrap-demo`) surfaced genuine Angular 22 breaking-change
 errors in library source. Four root fixes (the three `NG2012` "imports must be standalone"
-errors are *cascade* failures that disappear once the `NG1054` collisions below are fixed):
+errors were *cascade* failures that cleared once the `NG1054` collisions were fixed —
+standalone has defaulted to `true` since Angular 19):
 
-1. **NG1054 — `model()` already emits `<name>Change`; the explicit output collides.** In
-   Angular 22 a `model('x')` auto-registers an `xChange` output, so a sibling
-   `xChange = output()` is now an error. Remove the redundant output and route emissions
-   through the model (`this.x.set(v)` instead of `this.xChange.emit(v)`); audit `ControlValueAccessor`
-   wiring for the two form controls.
-   - `libs/.../color-picker/components/color-wheel/color-wheel.component.ts` — `hs` model + `hsChange`
-   - `libs/.../multi-range/src/lib/components/multi-range.component.ts` — `value` model + `valueChange` (form control)
-   - `libs/.../otp-input/src/lib/components/otp-input.component.ts` — `value` model + `valueChange` (form control)
-   - ⚠️ The 19 other `XChange = output()` declarations are paired with *unrelated* model/input names (e.g. `slideChange`, `selectionChange`) and are **not** collisions — leave them.
+1. **NG1054 — `model()` already emits `<name>Change`; the explicit output collided.** A
+   `model('x')` auto-registers an `xChange` output, so a sibling `xChange = output()` is an
+   error in Angular 22. Removed the redundant output (and any manual `.emit()` / re-emitting
+   effect); `model.set()` drives the auto-output. The two form controls were unaffected — their
+   `ControlValueAccessor`s listen to the WC's DOM events directly, not the wrapper output.
+   - `color-picker/.../color-wheel.component.ts` — removed `hsChange` output + the constructor
+     effect that re-emitted it (the effect also echoed on parent-driven `[(hs)]` updates — a
+     latent loop; the model's auto-output is strictly more correct).
+   - `multi-range/.../multi-range.component.ts` — removed `valueChange` output + its emit.
+   - `otp-input/.../otp-input.component.ts` — removed `valueChange` output + its emit.
+   - ⚠️ The 19 other `XChange = output()` declarations pair with *unrelated* model/input names
+     (e.g. `slideChange`, `selectionChange`) and are **not** collisions — left as-is.
 2. **`ComponentFactoryResolver` removed from `@angular/core` in v22.**
-   - `libs/.../modal/src/components/modal-host/modal-host.component.ts` — migrate to `ViewContainerRef.createComponent()` (no resolver needed).
-
-After these, re-run `nx build ng-bootstrap-demo` and the full `nx run-many --target=test`
-suite to catch any further runtime/test fallout from Angular 22 + TS 6.
+   - `modal/.../modal-host.component.ts` — it was injected but **never used** (only a
+     commented-out `ComponentPortal` arg referenced it; the portal-factory provider replaced it).
+     Removed the import + injection; no `ViewContainerRef.createComponent()` migration needed.
 
 ## Follow-ups / watch list
 

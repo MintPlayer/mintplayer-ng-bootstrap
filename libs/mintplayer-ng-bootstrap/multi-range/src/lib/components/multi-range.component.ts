@@ -55,9 +55,11 @@ export class BsMultiRangeComponent {
   // Default is `undefined` so the effect doesn't clobber a writeValue() from a
   // form-control binding that hasn't fired yet. Once the model is set (either
   // by [(value)] binding or by user interaction), the effect drives the WC.
+  // `model()` already exposes a `valueChange` output, so a two-way [(value)]
+  // binding works without declaring it explicitly (Angular 22 errors — NG1054 —
+  // if both exist). `value.set()` below drives that auto-output.
   readonly value = model<number[] | undefined>(undefined);
 
-  readonly valueChange = output<number[]>();
   readonly valueInput = output<number[]>();
 
   readonly elementRef = viewChild.required<ElementRef<MintMultiRangeElement>>('el');
@@ -90,7 +92,6 @@ export class BsMultiRangeComponent {
     const detail = (event as CustomEvent<number[]>).detail;
     if (!detail) return;
     this.value.set(detail);
-    this.valueChange.emit(detail);
   }
 
   /** Imperatively read the currently-rendered values from the WC. */
