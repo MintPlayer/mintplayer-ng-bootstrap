@@ -25,6 +25,8 @@ const host = process.env.HOST || (isProd ? '0.0.0.0' : 'localhost');
 const distDir = path.resolve(__dirname, '../../dist/apps/react-bootstrap-demo');
 const clientDir = path.join(distDir, 'browser');
 const serverEntry = path.join(distDir, 'server', 'entry-server.mjs');
+// Cache the immutable prod index.html in memory — avoids a disk read per request.
+let prodTemplate;
 
 async function createServer() {
   const app = express();
@@ -64,7 +66,7 @@ async function createServer() {
         template = await vite.transformIndexHtml(url, template);
         render = (await vite.ssrLoadModule('/src/entry-server.tsx')).render;
       } else {
-        template = await fs.readFile(path.join(clientDir, 'index.html'), 'utf-8');
+        template = prodTemplate ??= await fs.readFile(path.join(clientDir, 'index.html'), 'utf-8');
         render = (await import(pathToFileURL(serverEntry).href)).render;
       }
 

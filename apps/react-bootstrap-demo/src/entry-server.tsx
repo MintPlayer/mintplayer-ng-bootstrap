@@ -29,12 +29,16 @@ import App from './app/app';
 export function render(url: string): Promise<string> {
   return new Promise<string>((resolve, reject) => {
     const chunks: Buffer[] = [];
+    // Cleared on completion/error so a settled render leaves no timer in the
+    // event loop (which would otherwise accumulate under load).
+    let timer: ReturnType<typeof setTimeout>;
     const writable = new Writable({
       write(chunk, _enc, cb) {
         chunks.push(Buffer.from(chunk));
         cb();
       },
       final(cb) {
+        clearTimeout(timer);
         resolve(injectMpShellDsd(Buffer.concat(chunks).toString('utf-8')));
         cb();
       },
@@ -51,12 +55,13 @@ export function render(url: string): Promise<string> {
           pipe(writable);
         },
         onError(error) {
+          clearTimeout(timer);
           reject(error);
         },
       },
     );
 
     // Safety valve: never let a hung render keep a request open forever.
-    setTimeout(() => abort(), 10_000);
+    timer = setTimeout(() => abort(), 10_000);
   });
 }
