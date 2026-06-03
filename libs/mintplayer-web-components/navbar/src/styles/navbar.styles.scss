@@ -61,12 +61,18 @@
   padding: 0;
 }
 
-// Reveal: checked (mouse/touch via <label for>) OR focus anywhere in the nav
-// (keyboard — crosses the shadow boundary to slotted links). `!important` beats
-// the per-breakpoint collapsed default without specificity games (mirrors the
-// current bs-navbar).
+// Reveal paths:
+//   - `:checked` — mouse/touch (the <label for> toggles the hidden checkbox).
+//   - `.navbar-collapse:focus-within` — keyboard. SCOPED TO THE COLLAPSE, not the
+//     whole navbar: tabbing into the (clipped-but-focusable) nav links reveals it.
+//     It must NOT be `:host(:focus-within)` — the toggler lives in the host too,
+//     so clicking the toggler to CLOSE would leave focus on it and immediately
+//     re-reveal the menu (the close-then-reopen bug). With focus-within on the
+//     collapse only, clicking the toggler (a sibling of the collapse) cleanly
+//     toggles it shut.
+// `!important` beats the per-breakpoint collapsed default without specificity games.
 .navbar-toggle:checked ~ .navbar-collapse,
-:host(:focus-within) .navbar-collapse {
+.navbar-collapse:focus-within {
   height: auto !important;
   overflow: visible !important;
 }
