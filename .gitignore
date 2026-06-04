@@ -63,3 +63,4 @@ libs/mintplayer-web-components/**/*.element.template.ts
 libs/**/*.styles.ts
 libs/mintplayer-web-components/custom-elements.json
 .claude/worktrees
+libs/mintplayer-web-components/**/*.generated.ts
