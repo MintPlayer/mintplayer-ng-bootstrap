@@ -10,17 +10,28 @@
     "importHelpers": true,
     "target": "es2020",
     "module": "esnext",
-    "lib": ["es2022", "dom"],
+    "lib": [
+      "es2022",
+      "dom"
+    ],
     "skipLibCheck": true,
     "skipDefaultLibCheck": true,
     "paths": {
-      "@mintplayer/dijkstra": ["./libs/mintplayer-dijkstra/src/index.ts"],
-      "@mintplayer/encode-utf8": ["./libs/mintplayer-encode-utf8/src/index.ts"],
+      "@mintplayer/dijkstra": [
+        "./libs/mintplayer-dijkstra/src/index.ts"
+      ],
+      "@mintplayer/encode-utf8": [
+        "./libs/mintplayer-encode-utf8/src/index.ts"
+      ],
       "@mintplayer/ng-animations": [
         "./libs/mintplayer-ng-animations/src/index.ts"
       ],
-      "@mintplayer/ng-bootstrap": ["./libs/mintplayer-ng-bootstrap/src/index.ts"],
-      "@mintplayer/ng-bootstrap/*": ["./libs/mintplayer-ng-bootstrap/*"],
+      "@mintplayer/ng-bootstrap": [
+        "./libs/mintplayer-ng-bootstrap/src/index.ts"
+      ],
+      "@mintplayer/ng-bootstrap/*": [
+        "./libs/mintplayer-ng-bootstrap/*"
+      ],
       "@mintplayer/ng-bootstrap/package.json": [
         "./libs/mintplayer-ng-bootstrap/package.ts"
       ],
@@ -30,18 +41,44 @@
       "@mintplayer/ng-focus-on-load": [
         "./libs/mintplayer-ng-focus-on-load/src/index.ts"
       ],
-      "@mintplayer/ng-qr-code": ["./libs/mintplayer-ng-qr-code/src/index.ts"],
-      "@mintplayer/ng-swiper": ["./libs/mintplayer-ng-swiper/src/index.ts"],
-      "@mintplayer/ng-swiper/*": ["./libs/mintplayer-ng-swiper/*"],
-      "@mintplayer/pagination": ["./libs/mintplayer-pagination/src/index.ts"],
-      "@mintplayer/qr-code": ["./libs/mintplayer-qr-code/src/index.ts"],
-      "@mintplayer/web-components": ["./libs/mintplayer-web-components/src/index.ts"],
-      "@mintplayer/web-components/*": ["./libs/mintplayer-web-components/*/index.ts"],
-      "@mintplayer/react-bootstrap": ["./libs/mintplayer-react-bootstrap/src/index.ts"],
-      "@mintplayer/react-bootstrap/*": ["./libs/mintplayer-react-bootstrap/*"],
-      "@mintplayer/vue-bootstrap": ["./libs/mintplayer-vue-bootstrap/src/index.ts"],
-      "@mintplayer/vue-bootstrap/*": ["./libs/mintplayer-vue-bootstrap/*"]
+      "@mintplayer/ng-qr-code": [
+        "./libs/mintplayer-ng-qr-code/src/index.ts"
+      ],
+      "@mintplayer/ng-swiper": [
+        "./libs/mintplayer-ng-swiper/src/index.ts"
+      ],
+      "@mintplayer/ng-swiper/*": [
+        "./libs/mintplayer-ng-swiper/*"
+      ],
+      "@mintplayer/pagination": [
+        "./libs/mintplayer-pagination/src/index.ts"
+      ],
+      "@mintplayer/qr-code": [
+        "./libs/mintplayer-qr-code/src/index.ts"
+      ],
+      "@mintplayer/web-components": [
+        "./libs/mintplayer-web-components/src/index.ts"
+      ],
+      "@mintplayer/web-components/*": [
+        "./libs/mintplayer-web-components/*/index.ts",
+        "./libs/mintplayer-web-components/*"
+      ],
+      "@mintplayer/react-bootstrap": [
+        "./libs/mintplayer-react-bootstrap/src/index.ts"
+      ],
+      "@mintplayer/react-bootstrap/*": [
+        "./libs/mintplayer-react-bootstrap/*"
+      ],
+      "@mintplayer/vue-bootstrap": [
+        "./libs/mintplayer-vue-bootstrap/src/index.ts"
+      ],
+      "@mintplayer/vue-bootstrap/*": [
+        "./libs/mintplayer-vue-bootstrap/*"
+      ]
     }
   },
-  "exclude": ["node_modules", "tmp"]
+  "exclude": [
+    "node_modules",
+    "tmp"
+  ]
 }
