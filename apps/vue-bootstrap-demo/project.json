@@ -21,7 +21,11 @@
         "production": {
           "mode": "production"
         }
-      }
+      },
+      "dependsOn": [
+        "^build",
+        "mintplayer-web-components:codegen-shell-chrome"
+      ]
     },
     "build-ssr": {
       "executor": "nx:run-commands",
@@ -39,9 +43,24 @@
       "executor": "nx:run-commands",
       "continuous": true,
       "dependsOn": [
-        { "projects": ["api"], "target": "serve" },
-        { "projects": ["mintplayer-web-components"], "target": "codegen-wc" },
-        { "projects": ["mintplayer-web-components"], "target": "codegen-wc-watch" }
+        {
+          "projects": [
+            "api"
+          ],
+          "target": "serve"
+        },
+        {
+          "projects": [
+            "mintplayer-web-components"
+          ],
+          "target": "codegen-wc"
+        },
+        {
+          "projects": [
+            "mintplayer-web-components"
+          ],
+          "target": "codegen-wc-watch"
+        }
       ],
       "options": {
         "command": "node apps/vue-bootstrap-demo/server.mjs"
