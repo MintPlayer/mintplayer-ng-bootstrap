@@ -36,7 +36,7 @@
       "@mintplayer/pagination": ["./libs/mintplayer-pagination/src/index.ts"],
       "@mintplayer/qr-code": ["./libs/mintplayer-qr-code/src/index.ts"],
       "@mintplayer/web-components": ["./libs/mintplayer-web-components/src/index.ts"],
-      "@mintplayer/web-components/*": ["./libs/mintplayer-web-components/*"],
+      "@mintplayer/web-components/*": ["./libs/mintplayer-web-components/*/index.ts"],
       "@mintplayer/react-bootstrap": ["./libs/mintplayer-react-bootstrap/src/index.ts"],
       "@mintplayer/react-bootstrap/*": ["./libs/mintplayer-react-bootstrap/*"],
       "@mintplayer/vue-bootstrap": ["./libs/mintplayer-vue-bootstrap/src/index.ts"],
