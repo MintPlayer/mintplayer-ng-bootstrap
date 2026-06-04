@@ -15,6 +15,7 @@ if (typeof globalThis.IntersectionObserver === 'undefined') {
   globalThis.IntersectionObserver = class {
     root: Element | Document | null = null;
     rootMargin = '';
+    scrollMargin = '';
     thresholds: readonly number[] = [];
     observe(): void {}
     unobserve(): void {}

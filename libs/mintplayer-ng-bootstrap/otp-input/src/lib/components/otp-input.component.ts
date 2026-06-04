@@ -54,9 +54,11 @@ export class BsOtpInputComponent {
   readonly invalid = input(false);
   readonly label = input<string | null>(null);
 
+  // `model()` already exposes a `valueChange` output for two-way [(value)]
+  // binding; declaring it explicitly is an error in Angular 22 (NG1054).
+  // `value.set()` in onValueChange drives that auto-output.
   readonly value = model<string | undefined>(undefined);
 
-  readonly valueChange = output<string>();
   readonly complete = output<string>();
 
   readonly elementRef = viewChild.required<ElementRef<MintOtpInputElement>>('el');
@@ -141,7 +143,6 @@ export class BsOtpInputComponent {
   protected onValueChange(event: Event): void {
     const detail = (event as CustomEvent<string>).detail ?? '';
     this.value.set(detail);
-    this.valueChange.emit(detail);
   }
 
   protected onCompleteEvent(event: Event): void {

@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, computed, effect, ElementRef, input, model, output, signal, viewChild } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, ElementRef, input, model, signal, viewChild } from '@angular/core';
 import { HS } from '../../interfaces/hs';
 import { hs2polar, polar2hs } from '../../color-math';
 
@@ -26,8 +26,10 @@ export class BsColorWheelComponent {
   height = model<number>(150);
   brightness = model<number>(1);
 
+  // `model()` exposes a `hsChange` output for [(hs)] / (hsChange) consumers;
+  // declaring it explicitly collides in Angular 22 (NG1054). Every `hs.set()`
+  // below drives that auto-output, so no manual emit/effect is needed.
   hs = model<HS>({ hue: 0, saturation: 0 });
-  hsChange = output<HS>();
 
   disabled = input<boolean>(false);
   ariaLabel = input<string>('Color wheel: arrow left and right adjust hue, arrow up and down adjust saturation');
@@ -53,13 +55,6 @@ export class BsColorWheelComponent {
     const { dx, dy } = hs2polar(hs.hue, hs.saturation, radius);
     return { x: cx + dx, y: cy + dy };
   });
-
-  constructor() {
-    effect(() => {
-      const hs = this.hs();
-      this.hsChange.emit(hs);
-    });
-  }
 
   onPointerDown(ev: MouseEvent | TouchEvent) {
     if (this.disabled()) return;

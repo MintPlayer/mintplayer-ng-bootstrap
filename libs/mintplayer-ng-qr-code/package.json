@@ -1,7 +1,7 @@
 {
   "name": "@mintplayer/ng-qr-code",
   "private": false,
-  "version": "21.4.0",
+  "version": "22.0.0",
   "license": "Apache-2.0",
   "repository": {
     "type": "git",
@@ -9,8 +9,8 @@
     "directory": "libs/mintplayer-ng-qr-code"
   },
   "peerDependencies": {
-    "@angular/common": "^21.0.0",
-    "@angular/core": "^21.0.0",
+    "@angular/common": "^22.0.0",
+    "@angular/core": "^22.0.0",
     "@mintplayer/qr-code": "^1.5.0"
   },
   "dependencies": {
