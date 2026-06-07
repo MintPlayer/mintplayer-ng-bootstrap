@@ -53,12 +53,10 @@ export class DatatablesComponent {
 
   rowKey = (a: Artist) => String(a.id);
 
-  // ─── Lazy windowed-fetch demo ──────────────────────────────────────────
-  // A large synthetic dataset with simulated server latency so the windowing
-  // is visible: only the pages near the viewport are ever fetched, and
-  // placeholder rows hold the scroll position until each window arrives.
-
-  protected readonly windowedTotal = 5000;
+  // ─── Lazy windowed-fetch demo (real artist API, server-paged) ──────────
+  // Reuses the same real, server-paged artist endpoint as the basic section.
+  // The WC fetches only the pages near the viewport; the log proves it never
+  // drains the whole result set.
 
   windowedSettings = signal(new DatatableSettings({
     sortColumns: [],
@@ -69,37 +67,12 @@ export class DatatablesComponent {
   /** Pages actually fetched — proof that scrolling drives O(visible/perPage) requests, not a full drain. */
   windowedFetchedPages = signal<number[]>([]);
 
-  protected readonly windowedTotalPages = computed(() =>
-    Math.ceil(this.windowedTotal / this.windowedSettings().perPage.selected),
-  );
-
-  private makeArtist(id: number): Artist {
-    const yearStarted = 1960 + (id % 60);
-    return <Artist>{
-      id,
-      name: `Artist #${id}`,
-      yearStarted,
-      yearQuit: id % 3 === 0 ? null : yearStarted + 5 + (id % 20),
-    };
-  }
-
   fetchWindowedArtists: BsDatatableFetch<Artist> = async (req: PaginationRequest) => {
-    const perPage = req.perPage ?? 25;
-    const page = req.page ?? 1;
     this.windowedFetchedPages.update((pages) =>
-      pages.includes(page) ? pages : [...pages, page].sort((a, b) => a - b),
+      pages.includes(req.page) ? pages : [...pages, req.page].sort((a, b) => a - b),
     );
-    // Simulated server latency so placeholder rows render before they fill.
-    await new Promise((resolve) => setTimeout(resolve, 400));
-    const start = (page - 1) * perPage;
-    const data = Array.from(
-      { length: Math.max(0, Math.min(perPage, this.windowedTotal - start)) },
-      (_, i) => this.makeArtist(start + i + 1),
-    );
-    return <PaginationResponse<Artist>>{
-      data, totalRecords: this.windowedTotal, page, perPage,
-      totalPages: Math.ceil(this.windowedTotal / perPage),
-    };
+    const response = await this.artistService.pageArtists(req);
+    return response ?? <PaginationResponse<Artist>>{ data: [], totalRecords: 0, totalPages: 1, page: req.page, perPage: req.perPage };
   };
 
   // ─── Tree-mode demo ────────────────────────────────────────────────────

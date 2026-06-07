@@ -17,8 +17,9 @@ export type {
   SelectionChangeEventDetail,
   TreeIdKey,
   TreeSelectionStrategy,
-  TreeFetchRequestDetail,
-  TreeFetchResponse,
+  DatatableFetchRequest,
+  DatatableFetchResponse,
+  DatatableFetch,
   TreeRowExpandDetail,
   TreeExpandedIdsChangeDetail,
 } from '@mintplayer/web-components/datatable';

@@ -11,8 +11,7 @@ import type {
   RowKey,
   RowRenderer,
   RowRenderContext,
-  TreeFetchRequestDetail,
-  TreeFetchResponse,
+  DatatableFetch,
   TreeRowExpandDetail,
   TreeExpandedIdsChangeDetail,
   TreeIdKey,
@@ -39,8 +38,16 @@ export interface SortChangeEventDetail {
   sortColumns: SortColumn[];
 }
 
-export interface SelectionChangeEventDetail {
+export interface SelectionChangeEventDetail<T = unknown> {
   selectedIds: string[];
+  /**
+   * The selected row objects, resolved from the WC's loaded data (page 1 +
+   * fetched windows + tree children). Since the WC owns the data when fetching,
+   * consumers can't resolve ids → rows themselves — this is how a consumer gets
+   * the actual selected records. An id whose row isn't currently loaded is
+   * omitted (shouldn't happen: you can only select a row you can see).
+   */
+  selectedRows: T[];
 }
 
 /**
@@ -161,6 +168,23 @@ export class MpDatatable extends LitElement {
   /** Pages with an in-flight fetch; suppresses re-requests. */
   private _pendingPageFetches: Set<number> = new Set();
 
+  // ─── High-level fetch-callback ownership ────────────────────────────────
+  // When `_fetch` is set, the WC owns the whole server-paged loop: it calls the
+  // callback for page 1, every window, every tree child, every page change, and
+  // reloads on sort/perPage — deriving totalRecords from the response. The
+  // existing `mp-datatable-fetch-request` event + `setFetchResponse` remain the
+  // lower-level path used when no callback is provided; when one is, the WC
+  // self-handles its own event so the same cache code is reused, not duplicated.
+  private _fetch: DatatableFetch | null = null;
+  /** Bumped on invalidation; in-flight responses from an older generation are dropped. */
+  private _fetchGeneration = 0;
+  /** Guards the one-time initial page-1 load. Reset by `invalidateData`. */
+  private _initialFetchDone = false;
+  /** Coalesces multiple setter calls in one flush into a single reload. */
+  private _reloadScheduled = false;
+  /** Last loaded {sort,perPage,page} signature — echoes with the same key skip. */
+  private _lastReloadKey: string | null = null;
+
   /** Per-render memo of `getFlatList()`. Invalidated in `willUpdate`. */
   private _cachedFlatList: FlatVisibleRow[] | null = null;
   /** Per-render memo of the set of row keys whose loaded subtree is partially selected. */
@@ -240,12 +264,34 @@ export class MpDatatable extends LitElement {
     this.requestUpdate();
   }
 
+  /**
+   * High-level fetch callback. When set, the WC owns the entire server-paged
+   * loop and the consumer provides nothing else — no page-1 seeding via `data`,
+   * no separate `totalRecords`, no event bridge. Works with any framework or
+   * none (`el.fetch = fn`). Setting it kicks off the initial page-1 load.
+   */
+  get fetch(): DatatableFetch | null {
+    return this._fetch;
+  }
+  set fetch(value: DatatableFetch | null) {
+    this._fetch = typeof value === 'function' ? value : null;
+    if (this._fetch) {
+      // The server owns sorting/paging when fetching; never client-sort.
+      this._autoSort = false;
+      // (Re)seed from the callback. New callback ⇒ fresh data.
+      this._initialFetchDone = false;
+      this._lastReloadKey = null;
+      this.scheduleFetchReload();
+    }
+  }
+
   get sortColumns(): SortColumn[] {
     return [...this._sortColumns];
   }
   set sortColumns(value: SortColumn[]) {
     this._sortColumns = Array.isArray(value) ? [...value] : [];
     this.requestUpdate();
+    this.scheduleFetchReload(); // no-op unless `fetch` is set; coalesced + echo-deduped
   }
 
   get selectionMode(): DatatableSelectionMode {
@@ -390,6 +436,7 @@ export class MpDatatable extends LitElement {
     if (this._page !== next) {
       this._page = next;
       this.requestUpdate();
+      this.scheduleFetchReload(); // non-virtual page change → fetch that page (coalesced)
     }
   }
 
@@ -402,6 +449,7 @@ export class MpDatatable extends LitElement {
       this._perPage = next;
       this._page = 1;
       this.requestUpdate();
+      this.scheduleFetchReload();
     }
   }
 
@@ -414,19 +462,12 @@ export class MpDatatable extends LitElement {
   }
 
   /**
-   * Caller-supplied total record count for external paging. Set this when
-   * `[fetch]` returns one page at a time so the pagination footer can show
-   * the correct total. Leave as `null` (default) to use `_data.length`.
+   * Read-only grand total. Derived by the WC from the `fetch` response (server
+   * paging) or `_data.length` (static data) — consumers never set it. Exposed
+   * so a consumer can render "row X of N" if it wants.
    */
   get totalRecords(): number | null {
     return this._totalRecords;
-  }
-  set totalRecords(value: number | null) {
-    const next = value == null ? null : Math.max(0, Math.floor(value));
-    if (this._totalRecords !== next) {
-      this._totalRecords = next;
-      this.requestUpdate();
-    }
   }
 
   /** True when the consumer is paging externally (totalRecords exceeds the in-memory rows). */
@@ -631,7 +672,7 @@ export class MpDatatable extends LitElement {
       if (this._childCache.has(r.parentId) || this._pendingFetches.has(r.parentId)) continue;
       toFetch.add(r.parentId);
     }
-    for (const parentId of toFetch) this.requestChildrenFetch(parentId);
+    for (const parentId of toFetch) void this.fetchChildren(parentId);
   }
 
   /**
@@ -653,7 +694,7 @@ export class MpDatatable extends LitElement {
       if (this._pageCache.has(r.page) || this._pendingPageFetches.has(r.page)) continue;
       toFetch.add(r.page);
     }
-    for (const page of toFetch) this.requestPageFetch(page);
+    for (const page of toFetch) void this.fetchWindowPage(page);
   }
 
   override render(): TemplateResult {
@@ -898,6 +939,7 @@ export class MpDatatable extends LitElement {
     this._perPage = next;
     this._page = 1;
     this.requestUpdate();
+    this.scheduleFetchReload();
     this.dispatchEvent(
       new CustomEvent<{ perPage: number }>('mp-datatable-per-page-change', {
         detail: { perPage: next },
@@ -1183,10 +1225,10 @@ export class MpDatatable extends LitElement {
           composed: true,
         }),
       );
-      // Fire a fetch request if the consumer hasn't already populated the cache.
+      // Lazily load this node's children if not already cached / in-flight.
       const cc = this.extractChildCount(row);
       if (cc > 0 && !this._childCache.has(id) && !this._pendingFetches.has(id)) {
-        this.requestChildrenFetch(id);
+        void this.fetchChildren(id);
       }
     } else {
       this.dispatchEvent(
@@ -1212,97 +1254,101 @@ export class MpDatatable extends LitElement {
     );
   }
 
-  /** Emit a fetch-request event the wrapper will bridge to the consumer's `[fetch]`. */
-  private requestChildrenFetch(parentId: unknown | null): void {
-    if (parentId != null) this._pendingFetches.add(parentId);
-    this.dispatchEvent(
-      new CustomEvent<TreeFetchRequestDetail>('mp-datatable-fetch-request', {
-        detail: {
-          parentId,
-          page: 1,
-          perPage: this._perPage,
-          sortColumns: [...this._sortColumns],
-        },
-        bubbles: true,
-        composed: true,
-      }),
-    );
-  }
+  // ─── Fetch-callback driver (the WC owns the whole server-paged loop) ─────
 
   /**
-   * Flat-window counterpart of `requestChildrenFetch`: emit a fetch-request for
-   * a specific page (≥ 2). `parentId: null` + a real `page` is the wire shape
-   * the wrapper bridges to `[fetch]({ page, perPage, sortColumns })`.
+   * Fetch a windowed root page (≥ 2) into the page cache. Called when a root
+   * placeholder scrolls into view. Keyed on the requested page, so a server
+   * that echoes a different page number can't deadlock the window.
+   * Generation-guarded against responses that land after an invalidation.
    */
-  private requestPageFetch(page: number): void {
+  private async fetchWindowPage(page: number): Promise<void> {
+    if (!this._fetch || page <= 1) return;
     this._pendingPageFetches.add(page);
-    this.dispatchEvent(
-      new CustomEvent<TreeFetchRequestDetail>('mp-datatable-fetch-request', {
-        detail: {
-          parentId: null,
-          page,
-          perPage: this._perPage,
-          sortColumns: [...this._sortColumns],
-        },
-        bubbles: true,
-        composed: true,
-      }),
-    );
+    const generation = this._fetchGeneration;
+    try {
+      const resp = await this._fetch({ parentId: null, page, perPage: this._perPage, sortColumns: [...this._sortColumns] });
+      if (generation !== this._fetchGeneration || !this._fetch) return;
+      this._pendingPageFetches.delete(page);
+      this._pageCache.set(page, [...(resp?.data ?? [])]);
+      const total = resp?.totalRecords == null ? null : Math.max(0, Math.floor(resp.totalRecords));
+      if (total != null) this._totalRecords = total;
+      this.requestUpdate();
+    } catch {
+      this._pendingPageFetches.delete(page);
+    }
   }
 
   /**
-   * Public method called by the framework wrapper after the consumer's
-   * `[fetch]` callback resolves. Populates the cache + total, clears the
-   * pending flag, and rerenders so placeholders disappear.
-   *
-   * `parentId == null` is a **root window** (flat rows, or the top level of a
-   * tree): `response.page` keys the page cache. Page 1 is owned by the `data`
-   * setter, so a page-1 response here is a no-op. `parentId != null` is a tree
-   * child set, keyed by parentId. Root-window vs child is decided by parentId,
-   * not by `this._tree`, so a virtual tree windows BOTH its roots and children.
+   * Fetch a node's children into the child cache. Called on expand or when a
+   * child placeholder scrolls into view. Generation-guarded.
    */
-  public setFetchResponse(parentId: unknown | null, response: TreeFetchResponse): void {
-    if (parentId == null) {
-      // Root window: store by page. Page 1 lives in `_data` (seeded by the
-      // wrapper's first-page fetch), so ignore it here.
-      const page = response.page;
-      if (page == null || page <= 1) return;
-      this._pendingPageFetches.delete(page);
-      this._pageCache.set(page, [...response.data]);
-      const total = response.totalRecords == null ? null : Math.max(0, Math.floor(response.totalRecords));
-      if (total != null && total !== this._totalRecords) this._totalRecords = total;
+  private async fetchChildren(parentId: unknown): Promise<void> {
+    if (!this._fetch || parentId == null) return;
+    this._pendingFetches.add(parentId);
+    const generation = this._fetchGeneration;
+    try {
+      const resp = await this._fetch({ parentId, page: 1, perPage: this._perPage, sortColumns: [...this._sortColumns] });
+      if (generation !== this._fetchGeneration || !this._fetch) return;
+      this._pendingFetches.delete(parentId);
+      this._childCache.set(parentId, [...(resp?.data ?? [])]);
+      this._childTotals.set(parentId, resp?.totalRecords ?? (resp?.data?.length ?? 0));
       this.requestUpdate();
+    } catch {
+      this._pendingFetches.delete(parentId);
+    }
+  }
+
+  /**
+   * Fetch a single page of roots and make it the page-1 data (initial load and
+   * non-virtual pagination). The grand total is read from the response —
+   * consumers never set `totalRecords`. Generation-guarded against stale loads.
+   */
+  private async loadPage(page: number): Promise<void> {
+    if (!this._fetch) return;
+    const generation = this._fetchGeneration;
+    let resp: { data?: unknown[]; totalRecords?: number } | undefined;
+    try {
+      resp = await this._fetch({ parentId: null, page, perPage: this._perPage, sortColumns: [...this._sortColumns] });
+    } catch {
       return;
     }
-    this._pendingFetches.delete(parentId);
-    this._childCache.set(parentId, [...response.data]);
-    this._childTotals.set(parentId, response.totalRecords);
+    if (generation !== this._fetchGeneration || !this._fetch) return;
+    this._data = [...(resp?.data ?? [])];
+    const total = resp?.totalRecords == null ? null : Math.max(0, Math.floor(resp.totalRecords));
+    this._totalRecords = total;
+    this._initialFetchDone = true;
     this.requestUpdate();
   }
 
-  /** Drop cached children for one parent (or all). Used on sort change / refresh. */
-  public invalidateChildren(parentId?: unknown): void {
-    if (parentId === undefined) {
+  /**
+   * Coalesce sort/perPage/page changes (which arrive both as user actions and
+   * as echoed property pushes) into a single reload. A microtask debounces the
+   * burst; a `{sort,perPage,page}` change-key skips echoes that didn't actually
+   * change anything.
+   */
+  private scheduleFetchReload(): void {
+    if (!this._fetch || this._reloadScheduled) return;
+    this._reloadScheduled = true;
+    queueMicrotask(() => {
+      this._reloadScheduled = false;
+      if (!this._fetch) return;
+      const key = JSON.stringify({
+        s: this._sortColumns,
+        pp: this._perPage,
+        p: this._virtualScroll ? 1 : this._page,
+      });
+      if (this._initialFetchDone && key === this._lastReloadKey) return; // echo, no real change
+      this._lastReloadKey = key;
+      // New sort/perPage/page ⇒ the cached windows + children are stale.
+      this._fetchGeneration++;
+      this._pageCache.clear();
+      this._pendingPageFetches.clear();
       this._childCache.clear();
       this._childTotals.clear();
       this._pendingFetches.clear();
-    } else {
-      this._childCache.delete(parentId);
-      this._childTotals.delete(parentId);
-      this._pendingFetches.delete(parentId);
-    }
-    this.requestUpdate();
-  }
-
-  /**
-   * Drop the flat virtual-window page cache + in-flight set. Called by the
-   * wrapper on sort/settings change before refetching page 1, so stale pages
-   * don't survive a re-sort (mirrors `invalidateChildren` for tree mode).
-   */
-  public invalidateData(): void {
-    this._pageCache.clear();
-    this._pendingPageFetches.clear();
-    this.requestUpdate();
+      void this.loadPage(this._virtualScroll ? 1 : this._page);
+    });
   }
 
   /** Keyboard handling on a tree-mode row. Arrow keys + Enter/Space toggle expansion. */
@@ -1335,7 +1381,9 @@ export class MpDatatable extends LitElement {
     if (target.closest('.resize-handle')) return;
     const next = computeNextSort(this._sortColumns, col.name, ev.shiftKey);
     this._sortColumns = next;
+    this._page = 1; // a new sort returns to the first page
     this.requestUpdate();
+    this.scheduleFetchReload(); // re-fetch from page 1 under the new sort (if fetching)
     this.dispatchEvent(
       new CustomEvent<SortChangeEventDetail>('mp-datatable-sort-change', {
         detail: { sortColumns: next },
@@ -1460,13 +1508,31 @@ export class MpDatatable extends LitElement {
   }
 
   private emitSelectionChange(): void {
+    const ids = [...this._selectedIds];
     this.dispatchEvent(
       new CustomEvent<SelectionChangeEventDetail>('mp-datatable-selection-change', {
-        detail: { selectedIds: [...this._selectedIds] },
+        detail: { selectedIds: ids, selectedRows: this.resolveRows(ids) },
         bubbles: true,
         composed: true,
       }),
     );
+  }
+
+  /**
+   * Resolve row keys → row objects across every loaded source (page-1 `_data`,
+   * fetched windows in `_pageCache`, tree children in `_childCache`). One pass
+   * builds a key→row index; unresolvable ids are skipped.
+   */
+  private resolveRows(ids: string[]): unknown[] {
+    if (ids.length === 0) return [];
+    const byKey = new Map<string, unknown>();
+    const index = (rows: unknown[]): void => {
+      for (const row of rows) byKey.set(this._rowKey(row, -1), row);
+    };
+    index(this._data);
+    for (const rows of this._pageCache.values()) index(rows);
+    for (const rows of this._childCache.values()) index(rows);
+    return ids.map((id) => byKey.get(id)).filter((row): row is unknown => row !== undefined);
   }
 
   private gotoPage(page: number): void {
@@ -1474,6 +1540,7 @@ export class MpDatatable extends LitElement {
     const totalPages = Math.max(1, Math.ceil(denominator / this._perPage));
     this._page = Math.max(1, Math.min(totalPages, page));
     this.requestUpdate();
+    this.scheduleFetchReload(); // non-virtual page change → fetch that page (if fetching)
     this.dispatchEvent(
       new CustomEvent<{ page: number }>('mp-datatable-page-change', {
         detail: { page: this._page },

@@ -4,12 +4,11 @@ import '@mintplayer/web-components/datatable';
 import {
   MpDatatable,
   type DatatableColumnDef,
+  type DatatableFetch,
   type RowKey,
   type DatatableSelectionMode,
   type TreeIdKey,
   type TreeSelectionStrategy,
-  type TreeFetchRequestDetail,
-  type TreeFetchResponse,
   type TreeRowExpandDetail,
   type TreeExpandedIdsChangeDetail,
   type RowEventDetail,
@@ -27,6 +26,8 @@ defineOptions({ inheritAttrs: false });
 const props = defineProps<{
   columns?: DatatableColumnDef[];
   data?: unknown[];
+  /** Server-paged source. The WC owns the whole fetch loop; nothing else to wire. */
+  fetch?: DatatableFetch | null;
   rowKey?: RowKey;
   // Tree-mode JS-property props
   tree?: boolean;
@@ -42,7 +43,6 @@ const props = defineProps<{
 const emit = defineEmits<{
   (e: 'update:expandedIds', value: Set<unknown>): void;
   (e: 'update:selectedIds', value: string[]): void;
-  (e: 'fetchRequest', detail: TreeFetchRequestDetail): void;
   (e: 'rowExpand', detail: TreeRowExpandDetail): void;
   (e: 'rowCollapse', detail: TreeRowExpandDetail): void;
   (e: 'sortChange', detail: SortChangeEventDetail): void;
@@ -59,7 +59,10 @@ const el = ref<MpDatatable | null>(null);
 const syncProps = () => {
   if (!el.value) return;
   el.value.columns = (props.columns ?? []) as DatatableColumnDef[];
-  el.value.data = props.data ?? [];
+  // `fetch` and static `data` are mutually exclusive — when fetching, the WC
+  // owns the rows, so don't also push `data` (it would clobber fetched pages).
+  if (props.fetch != null) el.value.fetch = props.fetch;
+  else el.value.data = props.data ?? [];
   if (props.rowKey !== undefined) el.value.rowKey = props.rowKey;
   if (props.tree !== undefined) el.value.tree = props.tree;
   if (props.idKey !== undefined) el.value.idKey = props.idKey as TreeIdKey | null;
@@ -79,7 +82,6 @@ const syncProps = () => {
 // flatten to camelCase Vue events. `update:expandedIds` is the v-model
 // channel so `v-model:expandedIds` works on consumers.
 const handlers: Record<string, (e: Event) => void> = {
-  'mp-datatable-fetch-request': (e) => emit('fetchRequest', (e as CustomEvent<TreeFetchRequestDetail>).detail),
   'mp-datatable-row-expand': (e) => emit('rowExpand', (e as CustomEvent<TreeRowExpandDetail>).detail),
   'mp-datatable-row-collapse': (e) => emit('rowCollapse', (e as CustomEvent<TreeRowExpandDetail>).detail),
   'mp-datatable-expanded-ids-change': (e) => {
@@ -122,6 +124,7 @@ onBeforeUnmount(detachEvents);
 
 watch(() => props.columns, syncProps, { deep: false });
 watch(() => props.data, syncProps, { deep: false });
+watch(() => props.fetch, syncProps);
 watch(() => props.rowKey, syncProps);
 watch(() => props.tree, syncProps);
 watch(() => props.idKey, syncProps);
@@ -132,23 +135,9 @@ watch(() => props.selectionMode, syncProps);
 watch(() => props.selectionStrategy, syncProps);
 watch(() => props.selectedIds, syncProps, { deep: false });
 
-// Expose the underlying element + the imperative fetch methods so consumers
-// can feed lazy-fetched data back into the WC. `setFetchResponse` serves both
-// tree children (non-null parentId) and flat virtual windows (parentId null,
-// keyed by `response.page`). `invalidateChildren` drops the tree child cache;
-// `invalidateData` drops the flat virtual-window page cache (call it on
-// sort/settings change before refetching page 1).
-const setFetchResponse = (parentId: unknown, response: TreeFetchResponse) => {
-  el.value?.setFetchResponse(parentId, response);
-};
-const invalidateChildren = (parentId?: unknown) => {
-  el.value?.invalidateChildren(parentId);
-};
-const invalidateData = () => {
-  el.value?.invalidateData();
-};
-
-defineExpose({ el, setFetchResponse, invalidateChildren, invalidateData });
+// The WC owns the fetch loop, so there are no imperative fetch methods to
+// expose any more — just the underlying element for advanced access.
+defineExpose({ el });
 </script>
 
 <template>

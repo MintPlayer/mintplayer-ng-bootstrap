@@ -56,19 +56,17 @@
 
 <p>
   With <code>[virtualScroll]</code> + <code>[fetch]</code> the table fetches
-  only the pages whose rows are in (or near) the viewport. Scroll through this
-  {{ windowedTotal }}-row list and watch the fetch log below: it never drains
-  all {{ windowedTotalPages() }} pages up front &mdash; placeholder rows hold
-  the scroll position until each window arrives. Sorting or changing settings
-  drops the cached windows and refetches the visible range. The public
-  <code>[fetch]</code> contract is unchanged &mdash; the same page/perPage
-  callback as paginated mode.
+  only the pages whose rows are in (or near) the viewport &mdash; against the
+  same real, server-paged artist endpoint as the basic section. Scroll and
+  watch the fetch log below: it never drains the whole result set up front;
+  placeholder rows hold the scroll position until each window arrives. Sorting
+  or changing settings drops the cached windows and refetches the visible range.
 </p>
 
 <p class="small text-muted flex-shrink-0">
   Pages fetched:
   <span class="font-monospace">{{ windowedFetchedPages().join(', ') || '&mdash;' }}</span>
-  ({{ windowedFetchedPages().length }} of {{ windowedTotalPages() }})
+  ({{ windowedFetchedPages().length }} so far)
 </p>
 
 <bs-datatable class="windowed-table flex-shrink-0"

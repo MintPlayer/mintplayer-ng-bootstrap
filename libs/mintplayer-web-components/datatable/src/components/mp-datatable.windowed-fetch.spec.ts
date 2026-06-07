@@ -1,291 +1,221 @@
 import { describe, it, expect, afterEach } from 'vitest';
 import './mp-datatable';
 import { MpDatatable } from './mp-datatable';
-import type { DatatableColumnDef } from '../types';
+import type {
+  DatatableColumnDef,
+  DatatableFetch,
+  DatatableFetchRequest,
+  SelectionChangeEventDetail,
+} from '../types';
+
+// These tests use the web component with NO framework — just
+// `document.createElement('mp-datatable')` + `el.fetch = fn`. That is exactly
+// the vanilla / Rollup usage contract: one callback, nothing else.
 
 interface Row {
   id: number;
   name: string;
+  childCount?: number;
 }
 
 const columns: DatatableColumnDef<Row>[] = [
   { name: 'name', label: 'Name', cellRenderer: (r) => r.name },
 ];
 
-function makePage(page: number, perPage: number): Row[] {
-  // 1-based page; ids are globally unique so rowKey (default `id`) is stable.
-  return Array.from({ length: perPage }, (_, i) => {
-    const id = (page - 1) * perPage + i + 1;
-    return { id, name: `p${page}-${i}` };
-  });
-}
+const makeRows = (page: number, perPage: number, total: number): Row[] => {
+  const start = (page - 1) * perPage;
+  return Array.from({ length: Math.max(0, Math.min(perPage, total - start)) }, (_, i) => ({
+    id: start + i + 1,
+    name: `r${start + i + 1}`,
+  }));
+};
 
-/**
- * Build a flat virtual + external-paging datatable: page 1 seeded into `data`,
- * `totalRecords` larger than one page so `isFlatWindowed()` is true. jsdom does
- * no layout (`clientHeight === 0`), so `refreshVirtualRange` lands a viewport of
- * `[0, virtualBuffer * 2)` on first render — with `perPage` of 10 and a buffer
- * of 10 that covers pages 1 and 2, which is exactly what these tests exercise.
- */
-async function makeWindowed(opts: {
-  totalRecords: number;
-  perPage: number;
-  page1?: Row[];
-  onRequest?: (detail: { parentId: unknown; page: number; perPage: number }) => void;
-}): Promise<MpDatatable> {
-  const el = document.createElement('mp-datatable') as MpDatatable;
-  el.columns = columns as DatatableColumnDef[];
-  el.virtualScroll = true;
-  el.perPage = opts.perPage;
-  el.autoSort = false; // fetch mode: server owns ordering
-  el.data = (opts.page1 ?? makePage(1, opts.perPage)) as unknown[];
-  el.totalRecords = opts.totalRecords;
-  if (opts.onRequest) {
-    el.addEventListener('mp-datatable-fetch-request', (ev) => {
-      opts.onRequest!((ev as CustomEvent).detail);
-    });
-  }
-  document.body.appendChild(el);
+/** Flush the WC's reload microtask + async fetch, then settle the render. */
+const flush = async (el: MpDatatable): Promise<void> => {
   await el.updateComplete;
-  return el;
-}
+  await new Promise((r) => setTimeout(r));
+  await el.updateComplete;
+};
 
 function placeholderCount(el: MpDatatable): number {
   return el.shadowRoot!.querySelectorAll('tbody tr[data-placeholder="true"]').length;
 }
-
 function realRowCount(el: MpDatatable): number {
   return el.shadowRoot!.querySelectorAll('tbody tr[data-placeholder="false"]').length;
 }
 
-describe('mp-datatable — flat virtual windowed fetch', () => {
+/**
+ * Create a fetch-driven table. `latch:false` makes the fetch resolve
+ * immediately; `latch:true` returns promises you resolve manually via
+ * `release()` (so placeholders can be observed before data arrives).
+ */
+function setup(opts: {
+  total: number;
+  perPage: number;
+  tree?: boolean;
+  latch?: boolean;
+}): {
+  el: MpDatatable;
+  calls: DatatableFetchRequest[];
+  release: () => Promise<void>;
+} {
+  const calls: DatatableFetchRequest[] = [];
+  const pending: Array<() => void> = [];
+  const fetchFn: DatatableFetch<Row> = (req) => {
+    calls.push({ ...req });
+    const make = () => {
+      if (req.parentId == null) {
+        // Roots / flat windows. In tree mode give roots a child count so
+        // expansion reserves child placeholders (which triggers a child fetch).
+        const rows = makeRows(req.page, req.perPage, opts.total);
+        const data = opts.tree ? rows.map((r) => ({ ...r, childCount: 2 })) : rows;
+        return { data, totalRecords: opts.total };
+      }
+      return { data: [{ id: 10000 + Number(req.parentId), name: `child-of-${String(req.parentId)}` }], totalRecords: 2 };
+    };
+    // Page 1 always resolves immediately (the total must be known before any
+    // windowing/placeholders exist); only pages ≥ 2 latch when requested.
+    return opts.latch && req.parentId == null && req.page > 1
+      ? new Promise<{ data: Row[]; totalRecords: number }>((res) => pending.push(() => res(make())))
+      : Promise.resolve(make());
+  };
+
+  const el = document.createElement('mp-datatable') as MpDatatable;
+  el.columns = columns as DatatableColumnDef[];
+  el.virtualScroll = true;
+  el.perPage = opts.perPage;
+  if (opts.tree) {
+    el.tree = true;
+    el.idKey = 'id';
+    el.childCountKey = 'childCount';
+  }
+  el.fetch = fetchFn as DatatableFetch;
+  document.body.appendChild(el);
+
+  return {
+    el,
+    calls,
+    release: async () => {
+      pending.splice(0).forEach((r) => r());
+      await flush(el);
+    },
+  };
+}
+
+describe('mp-datatable — fetch-callback (vanilla, no framework)', () => {
   let el: MpDatatable | undefined;
   afterEach(() => {
     el?.remove();
     el = undefined;
   });
 
-  it('renders placeholders for unloaded pages and sizes aria-rowcount from totalRecords', async () => {
-    el = await makeWindowed({ totalRecords: 50, perPage: 10 });
+  it('loads page 1 from `fetch` alone — no data/totalRecords wiring', async () => {
+    const h = setup({ total: 50, perPage: 10 });
+    el = h.el;
+    await flush(el);
 
-    // Viewport is [0, 20): page 1 (indices 0-9, in `data`) is real, page 2
-    // (indices 10-19, not yet fetched) is placeholders.
-    expect(realRowCount(el)).toBe(10);
-    expect(placeholderCount(el)).toBe(10);
+    // Page 1 fetched with parentId null; rows rendered.
+    expect(h.calls[0]).toMatchObject({ parentId: null, page: 1, perPage: 10 });
+    expect(realRowCount(el)).toBeGreaterThanOrEqual(10);
+  });
 
-    // Scrollbar/structure sized from the full total, not the 10 loaded rows.
+  it('derives totalRecords from the response (consumer never sets it)', async () => {
+    const h = setup({ total: 50, perPage: 10 });
+    el = h.el;
+    await flush(el);
+    expect(el.totalRecords).toBe(50);
     const table = el.shadowRoot!.querySelector('table')!;
     expect(table.getAttribute('aria-rowcount')).toBe('51'); // 50 + header
   });
 
-  it('requests exactly the viewport pages on demand and dedups in-flight pages', async () => {
-    const requested: number[] = [];
-    el = await makeWindowed({
-      totalRecords: 50,
-      perPage: 10,
-      onRequest: (d) => requested.push(d.page),
-    });
+  it('fetches only the viewport pages on demand, and dedups them', async () => {
+    const h = setup({ total: 50, perPage: 10 });
+    el = h.el;
+    await flush(el);
 
-    // Page 2 is the only unloaded page in the viewport — page 1 is in `data`,
-    // pages 3-5 are below the fold and must NOT be fetched.
-    expect(requested).toEqual([2]);
+    const pages = h.calls.filter((c) => c.parentId == null).map((c) => c.page).sort((a, b) => a - b);
+    // Page 1 (initial) + page 2 (in the jsdom viewport [0,20)); pages 3-5 below the fold.
+    expect(pages).toEqual([1, 2]);
 
-    // A second scan (scroll jitter; scrollTop stays 0 in jsdom) must not
-    // re-request page 2 — it's already in `_pendingPageFetches`.
+    // A second scan (scroll jitter) must not re-request page 2.
     const scroll = el.shadowRoot!.querySelector('.datatable-scroll')!;
     scroll.dispatchEvent(new Event('scroll'));
-    await el.updateComplete;
-    expect(requested).toEqual([2]);
+    await flush(el);
+    expect(h.calls.filter((c) => c.parentId == null && c.page === 2)).toHaveLength(1);
   });
 
-  it('carries parentId:null + the requested page/perPage on the fetch-request', async () => {
-    let detail: { parentId: unknown; page: number; perPage: number } | undefined;
-    el = await makeWindowed({ totalRecords: 50, perPage: 10, onRequest: (d) => (detail = d) });
-    expect(detail).toBeDefined();
-    expect(detail!.parentId).toBeNull();
-    expect(detail!.page).toBe(2);
-    expect(detail!.perPage).toBe(10);
-  });
-
-  it('setFetchResponse(null, …) fills a page and clears its placeholders', async () => {
-    el = await makeWindowed({ totalRecords: 50, perPage: 10 });
+  it('renders placeholders for not-yet-resolved windows, then real rows', async () => {
+    const h = setup({ total: 50, perPage: 10, latch: true });
+    el = h.el;
+    await flush(el);
+    // Page 1 resolved (10 real rows); page 2 is in flight → its slots are
+    // placeholders in the viewport [0,20).
+    expect(realRowCount(el)).toBe(10);
     expect(placeholderCount(el)).toBe(10);
 
-    el.setFetchResponse(null, {
-      data: makePage(2, 10) as unknown[],
-      totalRecords: 50,
-      page: 2,
-      perPage: 10,
-    });
-    await el.updateComplete;
-
-    // Page 2 is now loaded — the whole visible window [0,20) is real rows.
-    expect(placeholderCount(el)).toBe(0);
+    await h.release();
+    // Page 2 resolved → the whole visible window is real rows.
     expect(realRowCount(el)).toBe(20);
-  });
-
-  it('keys the page cache on response.page, ignoring page 1 (page 1 lives in data)', async () => {
-    el = await makeWindowed({ totalRecords: 50, perPage: 10 });
-
-    // A stray page-1 response is a no-op: page 1 is owned by the `data` setter.
-    el.setFetchResponse(null, {
-      data: [{ id: 999, name: 'bogus' }] as unknown[],
-      totalRecords: 50,
-      page: 1,
-      perPage: 10,
-    });
-    await el.updateComplete;
-    expect(el.shadowRoot!.textContent).not.toContain('bogus');
-  });
-
-  it('invalidateData() clears the page cache so placeholders reappear', async () => {
-    el = await makeWindowed({ totalRecords: 50, perPage: 10 });
-    el.setFetchResponse(null, {
-      data: makePage(2, 10) as unknown[],
-      totalRecords: 50,
-      page: 2,
-      perPage: 10,
-    });
-    await el.updateComplete;
     expect(placeholderCount(el)).toBe(0);
-
-    el.invalidateData();
-    await el.updateComplete;
-    expect(placeholderCount(el)).toBe(10); // page 2 reverted to placeholders
   });
 
-  it('re-fetches the visible window after invalidateData without needing a scroll', async () => {
-    // Parity with the old VirtualDatatableDataSource.reset(): invalidation must
-    // re-request the currently-visible pages on the next render (driven by
-    // updated() → refreshVirtualRange), not wait for the next scroll event.
-    const requested: number[] = [];
-    el = await makeWindowed({
-      totalRecords: 50,
-      perPage: 10,
-      onRequest: (d) => requested.push(d.page),
-    });
-    el.setFetchResponse(null, {
-      data: makePage(2, 10) as unknown[],
-      totalRecords: 50,
-      page: 2,
-      perPage: 10,
-    });
-    await el.updateComplete;
-    expect(requested).toEqual([2]); // initial request only
+  it('reloads from page 1 under the new sort when a sort header is clicked', async () => {
+    const h = setup({ total: 50, perPage: 10 });
+    el = h.el;
+    await flush(el);
+    const before = h.calls.length;
 
-    el.invalidateData();
-    await el.updateComplete;
-    // Page 2 is visible and no longer cached/pending → requested again.
-    expect(requested).toEqual([2, 2]);
+    const th = el.shadowRoot!.querySelector('th[data-column="name"]') as HTMLElement;
+    th.click();
+    await flush(el);
+
+    const after = h.calls.slice(before).filter((c) => c.parentId == null);
+    expect(after.some((c) => c.page === 1 && c.sortColumns.length > 0)).toBe(true);
   });
 
-  it('does not window a single-page list (totalRecords ≤ data.length)', async () => {
-    const onlyPage = makePage(1, 5);
-    const requested: number[] = [];
-    el = await makeWindowed({
-      totalRecords: 5,
-      perPage: 10,
-      page1: onlyPage,
-      onRequest: (d) => requested.push(d.page),
+  it('emits selected ROW objects, not just ids', async () => {
+    const h = setup({ total: 50, perPage: 10 });
+    el = h.el;
+    el.selectionMode = 'multiple';
+    await flush(el);
+
+    let detail: SelectionChangeEventDetail<Row> | undefined;
+    el.addEventListener('mp-datatable-selection-change', (e) => {
+      detail = (e as CustomEvent<SelectionChangeEventDetail<Row>>).detail;
     });
 
-    // Not externally paged → trivial flat mapping, no placeholders, no fetches.
-    expect(placeholderCount(el)).toBe(0);
-    expect(realRowCount(el)).toBe(5);
-    expect(requested).toEqual([]);
+    const firstCheckbox = el.shadowRoot!.querySelector('tbody tr[data-placeholder="false"] mp-checkbox') as HTMLElement;
+    firstCheckbox?.dispatchEvent(new CustomEvent('change', { detail: { checked: true }, bubbles: true, composed: true }));
+    await flush(el);
+
+    expect(detail).toBeDefined();
+    expect(detail!.selectedRows.length).toBe(detail!.selectedIds.length);
+    expect(detail!.selectedRows[0]).toMatchObject({ id: expect.any(Number), name: expect.any(String) });
   });
 });
 
-interface RootRow {
-  id: number;
-  name: string;
-  childCount: number;
-}
-
-function makeRoots(startId: number, count: number, childCount = 0): RootRow[] {
-  return Array.from({ length: count }, (_, i) => ({
-    id: startId + i,
-    name: `root-${startId + i}`,
-    childCount,
-  }));
-}
-
-async function makeTreeWindowed(opts: {
-  totalRecords: number;
-  perPage: number;
-  page1Roots: RootRow[];
-  onRequest?: (detail: { parentId: unknown; page: number }) => void;
-}): Promise<MpDatatable> {
-  const el = document.createElement('mp-datatable') as MpDatatable;
-  el.columns = columns as DatatableColumnDef[];
-  el.tree = true;
-  el.idKey = 'id';
-  el.childCountKey = 'childCount';
-  el.virtualScroll = true;
-  el.perPage = opts.perPage;
-  el.autoSort = false;
-  el.data = opts.page1Roots as unknown[];
-  el.totalRecords = opts.totalRecords;
-  if (opts.onRequest) {
-    el.addEventListener('mp-datatable-fetch-request', (ev) => {
-      opts.onRequest!((ev as CustomEvent).detail);
-    });
-  }
-  document.body.appendChild(el);
-  await el.updateComplete;
-  return el;
-}
-
-describe('mp-datatable — tree-mode lazy root windowing', () => {
+describe('mp-datatable — fetch-callback tree mode', () => {
   let el: MpDatatable | undefined;
   afterEach(() => {
     el?.remove();
     el = undefined;
   });
 
-  it('reserves root placeholders and requests unloaded root pages (parentId null)', async () => {
-    const requested: { parentId: unknown; page: number }[] = [];
-    el = await makeTreeWindowed({
-      totalRecords: 50,
-      perPage: 10,
-      page1Roots: makeRoots(1, 10),
-      onRequest: (d) => requested.push(d),
-    });
+  it('fetches roots (parentId null) and children (parentId set) through one callback', async () => {
+    const h = setup({ total: 50, perPage: 10, tree: true });
+    el = h.el;
+    // Give roots a child count so expansion triggers a child fetch.
+    await flush(el);
+    el.data; // (roots are owned by the WC; nothing to assert directly here)
 
-    // Viewport [0,20): root page 1 (0-9) is real, root page 2 (10-19) is
-    // placeholders — the regression was that these never existed in tree mode.
-    expect(realRowCount(el)).toBe(10);
-    expect(placeholderCount(el)).toBe(10);
-    // The root page is fetched with parentId null (a root window), not a child id.
-    expect(requested.some((r) => r.parentId === null && r.page === 2)).toBe(true);
-  });
+    // Roots were fetched with parentId null.
+    expect(h.calls.some((c) => c.parentId === null && c.page === 1)).toBe(true);
 
-  it('fills a root page via setFetchResponse(null, …) and clears its placeholders', async () => {
-    el = await makeTreeWindowed({ totalRecords: 50, perPage: 10, page1Roots: makeRoots(1, 10) });
-    expect(placeholderCount(el)).toBe(10);
-
-    el.setFetchResponse(null, {
-      data: makeRoots(11, 10) as unknown[],
-      totalRecords: 50,
-      page: 2,
-      perPage: 10,
-    });
-    await el.updateComplete;
-    expect(placeholderCount(el)).toBe(0);
-    expect(realRowCount(el)).toBe(20);
-  });
-
-  it('windows roots AND still reserves child placeholders under an expanded root', async () => {
-    // Root id 1 has 2 children (not yet loaded); the rest are leaves.
-    const roots = makeRoots(1, 10).map((r, i) => (i === 0 ? { ...r, childCount: 2 } : r));
-    el = await makeTreeWindowed({ totalRecords: 50, perPage: 10, page1Roots: roots });
+    // Expand the first root → its child placeholders enter the viewport → a
+    // child fetch with that parentId.
     el.expandedIds = new Set([1]);
-    await el.updateComplete;
-
-    // 50 root slots (10 real + 40 placeholders) + 2 child placeholders under
-    // root 1 + 1 header row → aria-rowcount 53. Proves root windowing and child
-    // reservation compose (the interleaving the flat case never exercises).
-    const table = el.shadowRoot!.querySelector('table')!;
-    expect(table.getAttribute('aria-rowcount')).toBe('53');
+    await flush(el);
+    await flush(el);
+    expect(h.calls.some((c) => c.parentId === 1)).toBe(true);
   });
 });

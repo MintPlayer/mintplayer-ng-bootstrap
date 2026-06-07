@@ -5,7 +5,6 @@ import {
   type RowEventDetail,
   type SortChangeEventDetail,
   type SelectionChangeEventDetail,
-  type TreeFetchRequestDetail,
   type TreeRowExpandDetail,
   type TreeExpandedIdsChangeDetail,
 } from '@mintplayer/web-components/datatable';
@@ -21,11 +20,12 @@ import {
  * properties (not attributes) so Sets/arrays/functions round-trip
  * correctly.
  *
- * Tree-mode lazy fetch: the WC emits `mp-datatable-fetch-request` when
- * it needs children for an expanded row (surfaced here as
- * `onFetchRequest`). The consumer resolves the request and calls
- * `setFetchResponse(parentId, response)` on the element ref to feed
- * the children back into the WC's cache.
+ * Server paging: set the `fetch` prop to a callback returning
+ * `{ data, totalRecords }`. `createComponent` forwards it to the element's
+ * `fetch` property, and the web component owns the whole loop — initial page,
+ * on-demand windows, tree children, pagination, sort/perPage reloads. The
+ * consumer wires nothing else (no `totalRecords`, no event bridge). Selected
+ * row objects arrive on `onSelectionChange`'s `detail.selectedRows`.
  */
 export const BsDatatable = createComponent({
   react: React,
@@ -39,7 +39,6 @@ export const BsDatatable = createComponent({
     onRowDblClick: 'mp-datatable-row-dblclick' as EventName<CustomEvent<RowEventDetail>>,
     onRowContextMenu: 'mp-datatable-row-contextmenu' as EventName<CustomEvent<RowEventDetail>>,
     onSelectionChange: 'mp-datatable-selection-change' as EventName<CustomEvent<SelectionChangeEventDetail>>,
-    onFetchRequest: 'mp-datatable-fetch-request' as EventName<CustomEvent<TreeFetchRequestDetail>>,
     onRowExpand: 'mp-datatable-row-expand' as EventName<CustomEvent<TreeRowExpandDetail>>,
     onRowCollapse: 'mp-datatable-row-collapse' as EventName<CustomEvent<TreeRowExpandDetail>>,
     onExpandedIdsChange: 'mp-datatable-expanded-ids-change' as EventName<CustomEvent<TreeExpandedIdsChangeDetail>>,

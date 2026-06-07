@@ -20,7 +20,7 @@ import {
   viewChild,
 } from '@angular/core';
 import { isPlatformServer } from '@angular/common';
-import { PaginationRequest, PaginationResponse, SortColumn } from '@mintplayer/pagination';
+import { SortColumn } from '@mintplayer/pagination';
 import {
   computeNextSort,
   type DatatableColumnDef,
@@ -30,7 +30,6 @@ import {
   type RowRenderer,
   type SortChangeEventDetail,
   type SelectionChangeEventDetail,
-  type TreeFetchRequestDetail,
   type TreeRowExpandDetail,
   type TreeExpandedIdsChangeDetail,
   type TreeIdKey,
@@ -41,7 +40,7 @@ import {
 import '@mintplayer/web-components/datatable';
 
 import { DatatableSettings } from '../datatable-settings';
-import { BsDatatableFetch, BsDatatableFetchRequest } from '../datatable-fetch';
+import { BsDatatableFetch } from '../datatable-fetch';
 import { BsDatatableColumnDirective } from '../datatable-column/datatable-column.directive';
 import { BsRowTemplateDirective, BsRowTemplateContext } from '../row-template/row-template.directive';
 
@@ -171,10 +170,6 @@ export class BsDatatableComponent<TData> implements AfterViewInit {
   /** Optional row template. When present, drives a per-row EmbeddedView render path. */
   readonly rowTemplate = contentChild(BsRowTemplateDirective<TData>);
 
-  /** Internal data source — populated either from `data()` or from `fetch()` responses. */
-  protected readonly currentData = signal<TData[]>([]);
-  protected readonly totalRecords = signal<number>(0);
-
   /**
    * Merged column defs:
    *  - `[columns]` if provided
@@ -219,69 +214,33 @@ export class BsDatatableComponent<TData> implements AfterViewInit {
       this.rowViews.clear();
     });
 
-    // Sync data input → internal source.
+    // Forward the `[fetch]` callback to the WC, which owns the entire
+    // server-paged loop (initial page, on-demand windows, tree children,
+    // pagination, sort/perPage reloads) and derives `totalRecords` from the
+    // response. The wrapper no longer runs any fetch loop. Skipped on the
+    // server so SSR doesn't kick off a client fetch.
     effect(() => {
-      const d = this.data();
-      if (d !== null) {
-        this.currentData.set(d);
-        this.totalRecords.set(d.length);
-      }
-    });
-
-    // Async fetch: re-run on fetch / settings changes. In flat virtual mode the
-    // wrapper fetches only page 1 (for the total + initial rows); the WC pulls
-    // the remaining pages on demand as they scroll into view via
-    // `mp-datatable-fetch-request` (bridged by `onFetchRequest` below). In tree
-    // mode the wrapper does one root-page fetch and the WC pulls children the
-    // same way. Neither front-loads the whole result set.
-    effect(() => {
+      const el = this.datatableRef()?.nativeElement;
+      if (!el) return;
       if (isPlatformServer(this.platformId)) return;
-      const fetcher = this.fetch();
-      if (!fetcher) return;
-      const settings = this.settings();
-      if (this.tree()) {
-        const req: BsDatatableFetchRequest = {
-          page: settings.page.selected,
-          perPage: settings.perPage.selected,
-          sortColumns: settings.sortColumns,
-          parentId: undefined,
-        };
-        // Sort changes invalidate the per-parent child cache (server-side sort
-        // applies within siblings, so cached children are stale) AND the lazy
-        // root-page window cache (root ordering across pages changes too).
-        const el = this.datatableRef()?.nativeElement;
-        if (el && typeof el.invalidateChildren === 'function') el.invalidateChildren();
-        if (el && typeof el.invalidateData === 'function') el.invalidateData();
-        void this.runFetch(fetcher, req, settings);
-      } else if (this.virtualScroll()) {
-        // Sort/settings changes invalidate the windowed page cache (the page
-        // boundaries + ordering are stale) before the page-1 refetch — mirrors
-        // the tree `invalidateChildren()` above.
-        const el = this.datatableRef()?.nativeElement;
-        if (el && typeof el.invalidateData === 'function') el.invalidateData();
-        void this.runVirtualFetchFirst(fetcher, settings);
-      } else {
-        const req: PaginationRequest = {
-          page: settings.page.selected,
-          perPage: settings.perPage.selected,
-          sortColumns: settings.sortColumns,
-        };
-        void this.runFetch(fetcher, req, settings);
-      }
+      el.fetch = (this.fetch() as unknown as MpDatatable['fetch']) ?? null;
     });
 
-    // Forward columns + data to the WC.
+    // Forward columns to the WC.
     effect(() => {
       const el = this.datatableRef()?.nativeElement;
       if (!el) return;
       el.columns = this.effectiveColumns() as DatatableColumnDef[];
     });
 
+    // Static `[data]` only. When `[fetch]` is set the WC owns the rows, so the
+    // wrapper must not also push `el.data` (it would clobber fetched pages).
     effect(() => {
       const el = this.datatableRef()?.nativeElement;
       if (!el) return;
-      el.data = this.currentData() as unknown[];
-      // Stale row views for rows no longer present are pruned lazily on next render.
+      if (this.fetch()) return;
+      const d = this.data();
+      el.data = (d ?? []) as unknown[];
     });
 
     effect(() => {
@@ -298,7 +257,6 @@ export class BsDatatableComponent<TData> implements AfterViewInit {
       el.page = settings.page.selected;
       el.perPage = settings.perPage.selected;
       el.perPageOptions = settings.perPage.values;
-      el.totalRecords = fetching ? this.totalRecords() : null;
     });
 
     effect(() => {
@@ -412,58 +370,6 @@ export class BsDatatableComponent<TData> implements AfterViewInit {
     };
   }
 
-  /** Generation token: invalidates an in-flight virtual-mode fetch when sort/fetcher changes. */
-  private virtualFetchToken = 0;
-
-  /**
-   * Flat virtual mode: fetch only page 1 and report the total. The WC seeds
-   * page 1 from `currentData` (via the `el.data` effect), sizes the scroll
-   * region from `totalRecords`, and pulls pages ≥ 2 lazily as they scroll into
-   * view — bridged back through `onFetchRequest`. The window size is
-   * `settings.perPage`, so the WC's page index matches the fetch page.
-   *
-   * The `virtualFetchToken` guard drops a stale page-1 response from a previous
-   * sort/fetcher generation so it can't clobber the current window.
-   */
-  private async runVirtualFetchFirst(
-    fetcher: BsDatatableFetch<TData>,
-    settings: DatatableSettings,
-  ): Promise<void> {
-    const token = ++this.virtualFetchToken;
-    const first = await fetcher({
-      page: 1,
-      perPage: settings.perPage.selected,
-      sortColumns: settings.sortColumns,
-    });
-    if (!first || token !== this.virtualFetchToken) return;
-    this.currentData.set(first.data ?? []);
-    this.totalRecords.set(first.totalRecords ?? first.data?.length ?? 0);
-  }
-
-  private async runFetch(
-    fetcher: BsDatatableFetch<TData>,
-    req: PaginationRequest,
-    settings: DatatableSettings,
-  ): Promise<void> {
-    const response = await fetcher(req);
-    if (!response) return;
-    this.currentData.set(response.data ?? []);
-    this.totalRecords.set(response.totalRecords ?? response.data?.length ?? 0);
-
-    const desiredPageCount = Math.max(1, response.totalPages ?? 1);
-    if (settings.page.values.length !== desiredPageCount) {
-      this.settings.set(
-        new DatatableSettings({
-          ...settings,
-          page: {
-            values: Array.from({ length: desiredPageCount }, (_, i) => i + 1),
-            selected: Math.min(settings.page.selected, desiredPageCount),
-          },
-        }),
-      );
-    }
-  }
-
   // ─── WC event handlers ───────────────────────────────────────────────────
 
   onSortChange(event: Event): void {
@@ -479,27 +385,11 @@ export class BsDatatableComponent<TData> implements AfterViewInit {
   }
 
   onSelectionChange(event: Event): void {
-    const detail = (event as CustomEvent<SelectionChangeEventDetail>).detail;
-    const keyFn = this.rowKey();
-
-    // The naïve `currentData().filter(id ∈ idSet)` drops cross-page
-    // selections in pagination mode — `currentData` only holds the
-    // currently-visible page, so any id selected on a page the user has
-    // since navigated away from disappears. Look up known IDs in
-    // `selection()` first (rows from earlier pages we still remember),
-    // then fall back to `currentData()` for IDs the WC just acknowledged
-    // from the current page.
-    const existingById = new Map<string, TData>();
-    this.selection().forEach((row, i) => existingById.set(keyFn(row, i), row));
-    const currentById = new Map<string, TData>();
-    this.currentData().forEach((row, i) => currentById.set(keyFn(row, i), row));
-
-    const next: TData[] = [];
-    for (const id of detail.selectedIds) {
-      const row = existingById.get(id) ?? currentById.get(id);
-      if (row !== undefined) next.push(row);
-    }
-    this.selection.set(next);
+    const detail = (event as CustomEvent<SelectionChangeEventDetail<TData>>).detail;
+    // The WC owns the data and resolves ids → row objects itself (across page 1,
+    // fetched windows, and tree children), so we take the rows straight from the
+    // event — no wrapper-side row bookkeeping.
+    this.selection.set([...detail.selectedRows]);
   }
 
   onPageChange(event: Event): void {
@@ -536,47 +426,6 @@ export class BsDatatableComponent<TData> implements AfterViewInit {
   }
 
   // ─── Tree-mode event handlers ────────────────────────────────────────────
-
-  /**
-   * Bridge the WC's fetch-request to the consumer's `[fetch]` callback. Fires
-   * for tree-mode children (a non-null `parentId` is scrolled/expanded into
-   * view without cached children) AND for flat virtual windows (`parentId`
-   * null, `page` ≥ 2 scrolled into view). We resolve the consumer's promise and
-   * hand the response back via `setFetchResponse`.
-   *
-   * The page handed to `setFetchResponse` is the *requested* `detail.page`, not
-   * `response.page`: in flat-window mode the WC keys both its page cache and
-   * its in-flight set on the requested page, so a server that normalises/echoes
-   * a different page number would otherwise leave the placeholder unresolved
-   * and the page stuck pending.
-   */
-  onFetchRequest(event: Event): void {
-    const detail = (event as CustomEvent<TreeFetchRequestDetail>).detail;
-    const fetcher = this.fetch();
-    if (!fetcher) return;
-    void (async () => {
-      try {
-        const response = await fetcher({
-          page: detail.page,
-          perPage: detail.perPage,
-          sortColumns: detail.sortColumns as SortColumn[],
-          parentId: detail.parentId ?? undefined,
-        });
-        const el = this.datatableRef()?.nativeElement;
-        if (!el) return;
-        el.setFetchResponse(detail.parentId, {
-          data: response.data ?? [],
-          totalRecords: response.totalRecords ?? response.data?.length ?? 0,
-          page: detail.page,
-          perPage: response.perPage ?? detail.perPage,
-        });
-      } catch (err) {
-        // Surface failures to the consumer via the rowExpand event chain in a
-        // future iteration. For v1 logging is sufficient to debug bad fetches.
-        console.error('[bs-datatable] tree fetch failed', err);
-      }
-    })();
-  }
 
   onRowExpand(event: Event): void {
     const detail = (event as CustomEvent<TreeRowExpandDetail<TData>>).detail;
