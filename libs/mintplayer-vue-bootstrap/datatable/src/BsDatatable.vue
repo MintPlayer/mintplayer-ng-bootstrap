@@ -132,16 +132,23 @@ watch(() => props.selectionMode, syncProps);
 watch(() => props.selectionStrategy, syncProps);
 watch(() => props.selectedIds, syncProps, { deep: false });
 
-// Expose the underlying element + the two tree-mode imperative methods
-// so consumers can feed lazy-fetched children back into the WC.
+// Expose the underlying element + the imperative fetch methods so consumers
+// can feed lazy-fetched data back into the WC. `setFetchResponse` serves both
+// tree children (non-null parentId) and flat virtual windows (parentId null,
+// keyed by `response.page`). `invalidateChildren` drops the tree child cache;
+// `invalidateData` drops the flat virtual-window page cache (call it on
+// sort/settings change before refetching page 1).
 const setFetchResponse = (parentId: unknown, response: TreeFetchResponse) => {
   el.value?.setFetchResponse(parentId, response);
 };
 const invalidateChildren = (parentId?: unknown) => {
   el.value?.invalidateChildren(parentId);
 };
+const invalidateData = () => {
+  el.value?.invalidateData();
+};
 
-defineExpose({ el, setFetchResponse, invalidateChildren });
+defineExpose({ el, setFetchResponse, invalidateChildren, invalidateData });
 </script>
 
 <template>
