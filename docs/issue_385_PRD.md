@@ -129,14 +129,14 @@ fetchUsers = (req: PaginationRequest): Promise<PaginationResponse<User>> =>
 ## Timeline & Milestones
 
 ### Milestone 1: WC flat-window data model
-- [ ] Add `_pageCache` + `_pendingPageFetches` fields and `page?: number` on the placeholder row shape.
-- [ ] `isFlatWindowed()` helper; rewrite the flat `getFlatList` branch to build the sparse length-`totalRecords` list.
-- [ ] `getEffectiveData()` + `aria-rowcount` use the sparse length in flat-windowed mode.
+- [x] Add `_pageCache` + `_pendingPageFetches` fields and `page?: number` on the placeholder row shape.
+- [x] `isFlatWindowed()` helper; rewrite the flat `getFlatList` branch to build the sparse length-`totalRecords` list.
+- [x] `getEffectiveData()` + `aria-rowcount` use the sparse length in flat-windowed mode.
 
 ### Milestone 2: WC on-demand fetch + cache writes
-- [ ] Call `maybeFetchPlaceholdersInViewport()` for flat-windowed mode; handle `parentId == null` page placeholders.
-- [ ] `requestPageFetch(page)`; extend `setFetchResponse` for the `!_tree` page-cache branch.
-- [ ] `invalidateData()`.
+- [x] Call the viewport scan for flat-windowed mode (`maybeFetchPagesInViewport()`, sibling of the tree path); handle `parentId == null` page placeholders.
+- [x] `requestPageFetch(page)`; extend `setFetchResponse` for the `!_tree` page-cache branch.
+- [x] `invalidateData()`.
 
 ### Milestone 3: Angular wrapper
 - [ ] Replace `runVirtualFetchAll` with `runVirtualFetchFirst` (page-1 only + totalRecords).

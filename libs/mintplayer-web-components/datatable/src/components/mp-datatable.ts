@@ -603,8 +603,10 @@ export class MpDatatable extends LitElement {
       this._virtualRange = { startIndex: start, endIndex: end };
       this.requestUpdate();
     }
-    // Tree-mode: lazily fetch children whose placeholder rows enter the viewport.
+    // Lazily fetch data whose placeholder rows enter the viewport:
+    // tree-mode children (keyed by parentId) or flat-window pages (keyed by page).
     if (this._tree) this.maybeFetchPlaceholdersInViewport();
+    else if (this.isFlatWindowed()) this.maybeFetchPagesInViewport();
   }
 
   /**
@@ -624,6 +626,28 @@ export class MpDatatable extends LitElement {
       toFetch.add(r.parentId);
     }
     for (const parentId of toFetch) this.requestChildrenFetch(parentId);
+  }
+
+  /**
+   * Flat-window counterpart of `maybeFetchPlaceholdersInViewport`: scan the
+   * visible range for flat placeholder rows, collect the distinct pages they
+   * belong to that aren't cached or already in-flight, and request each once.
+   * Page 1 is never requested here — it lives in `_data` (seeded by the
+   * wrapper's first-page fetch).
+   */
+  private maybeFetchPagesInViewport(): void {
+    const list = this.getFlatList();
+    const { startIndex, endIndex } = this._virtualRange;
+    const lo = this._virtualScroll ? startIndex : 0;
+    const hi = this._virtualScroll ? endIndex : list.length;
+    const toFetch = new Set<number>();
+    for (let i = lo; i < hi; i++) {
+      const r = list[i];
+      if (!r.isPlaceholder || r.page == null || r.page <= 1) continue;
+      if (this._pageCache.has(r.page) || this._pendingPageFetches.has(r.page)) continue;
+      toFetch.add(r.page);
+    }
+    for (const page of toFetch) this.requestPageFetch(page);
   }
 
   override render(): TemplateResult {
@@ -1189,12 +1213,50 @@ export class MpDatatable extends LitElement {
   }
 
   /**
+   * Flat-window counterpart of `requestChildrenFetch`: emit a fetch-request for
+   * a specific page (≥ 2). `parentId: null` + a real `page` is the wire shape
+   * the wrapper bridges to `[fetch]({ page, perPage, sortColumns })`.
+   */
+  private requestPageFetch(page: number): void {
+    this._pendingPageFetches.add(page);
+    this.dispatchEvent(
+      new CustomEvent<TreeFetchRequestDetail>('mp-datatable-fetch-request', {
+        detail: {
+          parentId: null,
+          page,
+          perPage: this._perPage,
+          sortColumns: [...this._sortColumns],
+        },
+        bubbles: true,
+        composed: true,
+      }),
+    );
+  }
+
+  /**
    * Public method called by the framework wrapper after the consumer's
    * `[fetch]` callback resolves. Populates the cache + total for the parent,
    * clears the pending flag, and rerenders so placeholders disappear.
+   *
+   * In flat (non-tree) mode this is the flat-window page sink: `parentId` is
+   * ignored and `response.page` keys the page cache. `parentId == null` here
+   * is a flat window, NOT a tree root — the two are mutually exclusive, so the
+   * WC disambiguates by `this._tree`.
    */
   public setFetchResponse(parentId: unknown | null, response: TreeFetchResponse): void {
-    if (parentId == null) return; // root-level fetches use the `data` setter directly
+    if (!this._tree) {
+      // Flat virtual-window: store by page. Page 1 lives in `_data` (seeded by
+      // the wrapper's first-page fetch), so ignore it here.
+      const page = response.page;
+      if (page == null || page <= 1) return;
+      this._pendingPageFetches.delete(page);
+      this._pageCache.set(page, [...response.data]);
+      const total = response.totalRecords == null ? null : Math.max(0, Math.floor(response.totalRecords));
+      if (total != null && total !== this._totalRecords) this._totalRecords = total;
+      this.requestUpdate();
+      return;
+    }
+    if (parentId == null) return; // tree root-level fetches use the `data` setter directly
     this._pendingFetches.delete(parentId);
     this._childCache.set(parentId, [...response.data]);
     this._childTotals.set(parentId, response.totalRecords);
@@ -1212,6 +1274,17 @@ export class MpDatatable extends LitElement {
       this._childTotals.delete(parentId);
       this._pendingFetches.delete(parentId);
     }
+    this.requestUpdate();
+  }
+
+  /**
+   * Drop the flat virtual-window page cache + in-flight set. Called by the
+   * wrapper on sort/settings change before refetching page 1, so stale pages
+   * don't survive a re-sort (mirrors `invalidateChildren` for tree mode).
+   */
+  public invalidateData(): void {
+    this._pageCache.clear();
+    this._pendingPageFetches.clear();
     this.requestUpdate();
   }
 
