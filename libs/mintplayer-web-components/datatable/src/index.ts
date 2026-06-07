@@ -15,8 +15,9 @@ export type {
   RowRenderContext,
   TreeIdKey,
   TreeSelectionStrategy,
-  TreeFetchRequestDetail,
-  TreeFetchResponse,
+  DatatableFetchRequest,
+  DatatableFetchResponse,
+  DatatableFetch,
   TreeRowExpandDetail,
   TreeExpandedIdsChangeDetail,
 } from './types';

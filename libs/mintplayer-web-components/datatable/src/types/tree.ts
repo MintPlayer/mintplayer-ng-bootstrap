@@ -17,25 +17,36 @@ export type TreeIdKey<T = unknown> = keyof T | string | ((row: T) => unknown);
 export type TreeSelectionStrategy = 'flat' | 'cascading';
 
 /**
- * Detail of `mp-datatable-fetch-request` — emitted by the WC when it needs
- * data for a parent (tree mode, lazy children). The wrapper bridges this to
- * the consumer's `[fetch]` callback and calls `setFetchResponse()` with the
- * result. `parentId === null` means roots.
+ * Request passed to the `fetch` callback. `parentId === null` is a root window
+ * (flat rows, or the tree's top level — pages ≥ 2 are windowed lazily); a
+ * non-null `parentId` is a tree node's children.
  */
-export interface TreeFetchRequestDetail {
+export interface DatatableFetchRequest {
   parentId: unknown | null;
   page: number;
   perPage: number;
   sortColumns: SortColumn[];
 }
 
-/** Response shape consumed by `setFetchResponse()`. */
-export interface TreeFetchResponse<T = unknown> {
+/**
+ * Response returned from the `fetch` callback. Only `data` + `totalRecords` are
+ * required — the WC already knows the page/perPage it asked for, and derives
+ * the grand total from `totalRecords`, so consumers never set a separate
+ * `totalRecords` property.
+ */
+export interface DatatableFetchResponse<T = unknown> {
   data: T[];
   totalRecords: number;
-  page: number;
-  perPage: number;
 }
+
+/**
+ * High-level fetch callback — the ONLY server-paging API. Set `el.fetch` and
+ * the web component owns the whole loop: initial page, on-demand windows, tree
+ * children, pagination, and sort/perPage reloads, deriving `totalRecords` from
+ * the response. Works standalone (no framework) — `el.fetch = fn` is all a
+ * plain web-components consumer needs.
+ */
+export type DatatableFetch<T = unknown> = (req: DatatableFetchRequest) => Promise<DatatableFetchResponse<T>>;
 
 export interface TreeRowExpandDetail<T = unknown> {
   row: T;

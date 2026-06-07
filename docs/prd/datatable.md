@@ -167,17 +167,25 @@ keep working — function parameter contravariance accepts the wider input.
 
 ### Mode dispatch
 
+The web component **owns the entire server-fetch loop** behind a single
+`fetch` callback (`el.fetch = (req) => Promise<{ data, totalRecords }>`). It
+calls the callback itself — for page 1, each window, and each tree child —
+derives `totalRecords` from the response, and re-renders. There is no event /
+`setFetchResponse` bridge and no consumer-set `totalRecords`. Framework wrappers
+just forward `el.fetch`; a vanilla/Rollup consumer sets it directly.
+
 | Mode | Trigger | Behaviour |
 |---|---|---|
-| **Paginated** | default | One `fetch({ page, perPage, sortColumns })` per settings change. `parentId` undefined. |
-| **Virtual flat** | `[virtualScroll]="true"` | Wrapper drains every page from the fetcher sequentially up front into `currentData`; WC slices the in-memory array via virtualized `_virtualRange`. |
-| **Paginated tree** | `[tree]="true"` | One root fetch on settings change; one child fetch per parent on expand. |
-| **Virtual tree + lazy** | `[tree]` + `[virtualScroll]` | Root fetch; child fetch on expand; child fetch when a placeholder enters the viewport. |
+| **Paginated** | default | WC calls `fetch({ parentId: null, page, perPage, sortColumns })` per page; the footer drives page changes. |
+| **Virtual flat** | `[virtualScroll]="true"` | WC fetches page 1, then each root page on demand as its placeholder rows enter the viewport (`_pageCache`); scroll region sized from `totalRecords`. |
+| **Paginated tree** | `[tree]="true"` | Root page fetch; one child fetch per parent on expand. |
+| **Virtual tree + lazy** | `[tree]` + `[virtualScroll]` | Root windowing (as flat) **and** child fetch on expand / when a child placeholder enters the viewport. |
 
-The WC stays framework-agnostic: in tree mode it dispatches
-`mp-datatable-fetch-request`; the wrapper resolves the consumer's
-`fetch` callback and hands the response back via
-`setFetchResponse(parentId, response)` on the element ref.
+`parentId === null` is a root window (flat rows or the tree top level); a
+non-null `parentId` is a node's children — the WC branches on it internally.
+A generation token drops responses that resolve after an invalidation, and
+sort/perPage/page changes are coalesced so two-way-binding echoes don't
+double-fetch.
 
 ## Virtual scroll — weighted-rows model
 
@@ -238,18 +246,16 @@ the post-render call can't loop.
 
 ### Lazy children — wire protocol
 
-1. User clicks a chevron OR a placeholder enters the viewport.
-2. WC dispatches `mp-datatable-fetch-request` with `{ parentId, page: 1,
-   perPage, sortColumns }`.
-3. Wrapper resolves the consumer's `[fetch]` callback with the request
-   (now carrying `parentId`).
-4. Wrapper calls `setFetchResponse(parentId, response)` on the WC.
-5. WC populates `_childCache[parentId]` + `_childTotals[parentId]` and
+1. User clicks a chevron OR a child placeholder enters the viewport.
+2. WC calls its `fetch` callback directly with `{ parentId, page: 1,
+   perPage, sortColumns }` (a non-null `parentId`).
+3. WC populates `_childCache[parentId]` + `_childTotals[parentId]` and
    re-renders. Placeholders replaced with real rows.
 
-Cache invalidation: sort change triggers `invalidateChildren()` (drops
-the per-parent cache) before the next root fetch. Server-side sort
-applies within siblings only.
+Cache invalidation: a sort/perPage change bumps the WC's fetch-generation
+token and clears the caches (roots + children), then reloads page 1.
+Server-side sort applies within siblings only. (There is no consumer-side
+bridge: the WC owns the call and the cache.)
 
 ### Demo backend
 
@@ -414,23 +420,25 @@ Tree-mode-specific:
 `createComponent` property-forwarding path — no explicit
 declarations needed.
 
-Consumer pattern for lazy children:
+Consumer pattern — one `fetch` callback drives everything (roots, windows,
+children); branch on `req.parentId`:
 
 ```tsx
-const ref = useRef<MpDatatable | null>(null);
-const onFetchRequest = useCallback(async (e: CustomEvent<TreeFetchRequestDetail>) => {
-  const result = await fetchTreeItems(e.detail.parentId as number);
-  ref.current?.setFetchResponse(e.detail.parentId, { ... });
-}, []);
+const fetchData = useCallback(
+  async (req: DatatableFetchRequest): Promise<DatatableFetchResponse<Row>> => {
+    const r = await api.list(req.parentId, req.page, req.perPage, req.sortColumns);
+    return { data: r.items, totalRecords: r.totalCount };
+  }, []);
+// <BsDatatable fetch={fetchData} ... />  — selected rows arrive on onSelectionChange's detail.selectedRows
 ```
 
 ### Vue (`BsDatatable.vue`)
 
-`<script setup>` syncing JS-property props (arrays, Sets, functions
-can't ride attributes). Adds `addEventListener` per CustomEvent →
-`emit('camelCase', detail)`. Exposes `setFetchResponse` +
-`invalidateChildren` via `defineExpose` so consumers can drive the
-WC imperatively from a template ref.
+`<script setup>` syncing JS-property props (arrays, Sets, functions —
+including `fetch` — can't ride attributes). Adds `addEventListener` per
+CustomEvent → `emit('camelCase', detail)`. Exposes only `el` via
+`defineExpose` (the WC owns the fetch loop, so there are no imperative
+fetch methods to expose).
 
 `v-model:expandedIds` and `v-model:selectedIds` are supported via the
 matching `update:` emits.

@@ -52,6 +52,49 @@
 <bs-code-snippet [codeToCopy]="snippetSelectionHtml" [language]="'html'"></bs-code-snippet>
 <bs-code-snippet [codeToCopy]="snippetSelectionTs" [language]="'ts'"></bs-code-snippet>
 
+<h2>Virtual scrolling &mdash; lazy windowed fetch</h2>
+
+<p>
+  With <code>[virtualScroll]</code> + <code>[fetch]</code> the table fetches
+  only the pages whose rows are in (or near) the viewport &mdash; against the
+  same real, server-paged artist endpoint as the basic section. Scroll and
+  watch the fetch log below: it never drains the whole result set up front;
+  placeholder rows hold the scroll position until each window arrives. Sorting
+  or changing settings drops the cached windows and refetches the visible range.
+</p>
+
+<p class="small text-muted flex-shrink-0">
+  Pages fetched:
+  <span class="font-monospace">{{ windowedFetchedPages().join(', ') || '&mdash;' }}</span>
+  ({{ windowedFetchedPages().length }} so far)
+</p>
+
+<bs-datatable class="windowed-table flex-shrink-0"
+  [virtualScroll]="true"
+  [itemSize]="40"
+  [isResponsive]="true"
+  [fetch]="fetchWindowedArtists"
+  [(settings)]="windowedSettings"
+  [rowKey]="rowKey">
+
+  <div *bsDatatableColumn="'Name'">Artist</div>
+  <div *bsDatatableColumn="'YearStarted'">Year started</div>
+  <div *bsDatatableColumn="'YearQuit'">Year quit</div>
+
+  <ng-container *bsRowTemplate="let artist; let isPlaceholder = isPlaceholder">
+    @if (isPlaceholder) {
+      <td colspan="3" class="text-muted small fst-italic">Loading&hellip;</td>
+    } @else {
+      <td class="text-nowrap">{{ $any(artist)?.name }}</td>
+      <td class="text-nowrap">{{ $any(artist)?.yearStarted }}</td>
+      <td class="text-nowrap">{{ $any(artist)?.yearQuit }}</td>
+    }
+  </ng-container>
+</bs-datatable>
+
+<bs-code-snippet [codeToCopy]="snippetWindowedHtml" [language]="'html'"></bs-code-snippet>
+<bs-code-snippet [codeToCopy]="snippetWindowedTs" [language]="'ts'"></bs-code-snippet>
+
 <h2>Tree mode &mdash; expandable rows</h2>
 
 <p>

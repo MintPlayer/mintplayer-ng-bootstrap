@@ -53,6 +53,28 @@ export class DatatablesComponent {
 
   rowKey = (a: Artist) => String(a.id);
 
+  // ─── Lazy windowed-fetch demo (real artist API, server-paged) ──────────
+  // Reuses the same real, server-paged artist endpoint as the basic section.
+  // The WC fetches only the pages near the viewport; the log proves it never
+  // drains the whole result set.
+
+  windowedSettings = signal(new DatatableSettings({
+    sortColumns: [],
+    perPage: { values: [25, 50, 100], selected: 25 },
+    page: { values: [1], selected: 1 },
+  }));
+
+  /** Pages actually fetched — proof that scrolling drives O(visible/perPage) requests, not a full drain. */
+  windowedFetchedPages = signal<number[]>([]);
+
+  fetchWindowedArtists: BsDatatableFetch<Artist> = async (req: PaginationRequest) => {
+    this.windowedFetchedPages.update((pages) =>
+      pages.includes(req.page) ? pages : [...pages, req.page].sort((a, b) => a - b),
+    );
+    const response = await this.artistService.pageArtists(req);
+    return response ?? <PaginationResponse<Artist>>{ data: [], totalRecords: 0, totalPages: 1, page: req.page, perPage: req.perPage };
+  };
+
   // ─── Tree-mode demo ────────────────────────────────────────────────────
 
   treeSettings = signal(new DatatableSettings({
@@ -158,6 +180,47 @@ export class DatatablesComponent {
   protected readonly snippetSelectionTs = dedent`
     selection = signal<Artist[]>([]);
     rowKey = (a: Artist) => String(a.id);
+  `;
+
+  protected readonly snippetWindowedHtml = dedent`
+    <!-- Virtual + fetch: the table fetches only the pages whose rows are in
+         (or near) the viewport, keyed by settings.perPage. Placeholder rows
+         (isPlaceholder) hold the scroll position until each window arrives.
+         The public [fetch] contract is unchanged — no new callback. -->
+    <bs-datatable
+      [virtualScroll]="true"
+      [itemSize]="40"
+      [fetch]="fetchWindowedArtists"
+      [(settings)]="windowedSettings"
+      [rowKey]="rowKey">
+
+      <div *bsDatatableColumn="'Name'">Artist</div>
+      <div *bsDatatableColumn="'YearStarted'">Year started</div>
+      <div *bsDatatableColumn="'YearQuit'">Year quit</div>
+
+      <ng-container *bsRowTemplate="let artist; let isPlaceholder = isPlaceholder">
+        @if (isPlaceholder) {
+          <td colspan="3" class="text-muted small fst-italic">Loading…</td>
+        } @else {
+          <td>{{ artist?.name }}</td>
+          <td>{{ artist?.yearStarted }}</td>
+          <td>{{ artist?.yearQuit }}</td>
+        }
+      </ng-container>
+    </bs-datatable>
+  `;
+
+  protected readonly snippetWindowedTs = dedent`
+    // The same [fetch] callback as paginated/non-virtual mode — page + perPage.
+    // In flat virtual mode the table calls it once per *needed page* as the
+    // user scrolls, instead of draining every page up front.
+    windowedSettings = signal(new DatatableSettings({
+      perPage: { values: [25, 50, 100], selected: 25 },
+      page: { values: [1], selected: 1 },
+    }));
+
+    fetchWindowedArtists: BsDatatableFetch<Artist> = (req: PaginationRequest) =>
+      this.artistService.pageArtists(req); // resolves PaginationResponse<Artist>
   `;
 
   protected readonly snippetTreeHtml = dedent`

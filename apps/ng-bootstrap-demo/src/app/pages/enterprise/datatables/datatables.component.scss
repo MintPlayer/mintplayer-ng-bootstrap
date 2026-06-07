@@ -3,3 +3,9 @@
   flex-direction: column;
   height: 100%;
 }
+
+// Bounded viewport so the windowed-fetch demo actually scrolls (the toggled
+// basic-usage and tree tables fill the page via flex-grow instead).
+.windowed-table {
+  height: 360px;
+}

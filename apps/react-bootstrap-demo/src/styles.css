@@ -121,3 +121,9 @@ body {
   font-size: 1.25rem;
   margin-bottom: 1rem;
 }
+
+/* Bounded viewport so the windowed-fetch datatable demo actually scrolls. */
+.windowed-table {
+  display: block;
+  height: 360px;
+}

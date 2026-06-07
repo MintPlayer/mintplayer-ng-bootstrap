@@ -8,8 +8,9 @@ export type {
   RowRenderContext,
 } from './column-def';
 export type {
-  TreeFetchRequestDetail,
-  TreeFetchResponse,
+  DatatableFetchRequest,
+  DatatableFetchResponse,
+  DatatableFetch,
   TreeRowExpandDetail,
   TreeExpandedIdsChangeDetail,
   TreeIdKey,
