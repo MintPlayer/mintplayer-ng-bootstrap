@@ -144,9 +144,9 @@ fetchUsers = (req: PaginationRequest): Promise<PaginationResponse<User>> =>
 - [x] Extend `onFetchRequest` for `parentId == null` flat windows (key the page cache on the requested `detail.page`, not `response.page`, so a server that normalises page numbers can't deadlock the window).
 
 ### Milestone 4: Tests + demo
-- [ ] WC unit tests (placeholder render, window-request dedup, cache populate, invalidation, spacer sizing).
-- [ ] Wrapper unit tests (page-1-first, `parentId == null` bridge, invalidation).
-- [ ] Virtual + fetch demo example.
+- [x] WC unit tests (placeholder render, window-request dedup, cache populate, invalidation, aria-rowcount/spacer sizing, single-page fallback) — `mp-datatable.windowed-fetch.spec.ts` (7 tests).
+- [x] Wrapper unit tests (page-1-first, `parentId == null` bridge, requested-page-key lock, invalidation) — `datatable.windowed-fetch.spec.ts` (4 tests).
+- [ ] Virtual + fetch demo example (→ Milestone 5, with build/publish).
 
 ### Milestone 5: Publish + cross-repo handoff
 - [ ] Build all libs + run tests; bump + publish `@mintplayer/ng-bootstrap`.
