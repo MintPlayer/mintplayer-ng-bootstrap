@@ -106,7 +106,7 @@ fetchUsers = (req: PaginationRequest): Promise<PaginationResponse<User>> =>
 ## Out of Scope
 
 - **Tree mode** — already lazy; only regression-guarded here. *Rationale: the lazy-children path already does on-demand fetch; this issue is exclusively the flat path.*
-- **React / Vue datatable ports of this behavior** — *Rationale: separate follow-up; this issue ships the WC + Angular wrapper, which is what unblocks Spark #178.*
+- ~~**React / Vue datatable ports of this behavior**~~ — *Originally deferred; **brought into scope** mid-implementation ("no half jobs"). The WC change is framework-agnostic, so React needed no wrapper change (its `@lit/react` ref already exposes `setFetchResponse`/`invalidateData`), Vue's wrapper now exposes `invalidateData`, and both demo apps gained a lazy windowed-fetch section showing the consumer-side orchestration. See Milestones 6–8.*
 - **Changing the public `[fetch]` signature** — *Rationale: a contract change would break every consumer; the whole design reuses page/perPage to avoid it.*
 - **Non-virtual flat fetch** — *Rationale: already correct (single-page `runFetch`); untouched.*
 - **Cache eviction / LRU** — *Rationale: v1 keeps all loaded pages; LRU is deferred until a real memory problem is observed (see Open Questions).*
@@ -159,6 +159,13 @@ fetchUsers = (req: PaginationRequest): Promise<PaginationResponse<User>> =>
 - [x] Bump versions: `@mintplayer/web-components` 1.6.0 → 1.7.0 (the fix), `@mintplayer/ng-bootstrap` 22.2.0 → 22.3.0, and raise ng-bootstrap's `@mintplayer/web-components` peer floor to `^1.7.0` (the new wrapper requires the new WC flat-window API).
 - [ ] Publish — automatic via `publish-master.yml` on merge to `master` (`skipDuplicate`); no manual publish.
 - [ ] Notify so MintPlayer.Spark #178 bumps ng-bootstrap and resumes (post-merge).
+
+### Milestone 6: React/Vue wrapper parity (added mid-implementation)
+- [x] Vue `BsDatatable` exposes `invalidateData()`; bump `@mintplayer/vue-bootstrap` 3.5.0 → 3.6.0 + peer floor `^1.7.0`.
+- [x] React needs no wrapper change — `@lit/react`'s ref is the `MpDatatable` instance, so `setFetchResponse`/`invalidateData` are already callable and `TreeFetchRequestDetail` already covers the flat `{ parentId: null, page }` shape.
+
+### Milestone 7–8: React + Vue demos
+- [x] "Virtual scrolling — lazy windowed fetch" section in both demo apps: 5000-row synthetic source, simulated latency, live fetch-page log, `invalidateData()` Refresh button, consumer-side flat-window orchestration (seed page 1, bridge the flat `fetch-request`, key on the requested page).
 
 ---
 
