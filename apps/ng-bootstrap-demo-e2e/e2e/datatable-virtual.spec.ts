@@ -35,18 +35,24 @@ async function mockArtistApi(page: Page) {
 
 // Read rows out of the mp-datatable's shadow DOM. The Lit WC renders a single
 // <table> inside shadow root, so we have to reach in via evaluate().
-async function countBodyRows(page: Page): Promise<number> {
+// Count only the *materialized* rows — placeholders (rows whose page hasn't
+// been fetched yet) are excluded. In lazy virtual mode this stays a small
+// viewport-sized window, never the full result set.
+async function countRealRows(page: Page): Promise<number> {
   return await page.evaluate(() => {
     const wc = document.querySelector('mp-datatable');
     if (!wc?.shadowRoot) return 0;
-    return wc.shadowRoot.querySelectorAll('tbody tr[data-row-key]').length;
+    return wc.shadowRoot.querySelectorAll('tbody tr[data-row-key]:not([data-placeholder="true"])').length;
   });
 }
 
-async function totalDataLength(page: Page): Promise<number> {
+// totalRecords is now DERIVED from the fetch response by the WC itself — the
+// consumer never sets it. Reading it back proves the fetch loop ran and the
+// virtualizer knows the full size without having drained every page.
+async function totalRecords(page: Page): Promise<number> {
   return await page.evaluate(() => {
-    const wc = document.querySelector('mp-datatable') as (HTMLElement & { data?: unknown[] }) | null;
-    return wc?.data?.length ?? 0;
+    const wc = document.querySelector('mp-datatable') as (HTMLElement & { totalRecords?: number | null }) | null;
+    return wc?.totalRecords ?? 0;
   });
 }
 
@@ -59,20 +65,22 @@ test.describe('bs-datatable virtual mode', () => {
     await page.waitForLoadState('networkidle');
   });
 
-  test('virtual mode preloads every record and scrolls them', async ({ page }) => {
+  test('virtual mode lazily fetches only the viewport window, never the full set', async ({ page }) => {
     await page.locator('bs-select select').selectOption('virtualScroll');
 
-    // The wrapper drains every page from the fetcher in virtual mode, so
-    // mp-datatable.data should hold all 200 mocked artists.
-    await expect.poll(() => totalDataLength(page), {
+    // The WC owns the fetch loop: it fetches page 1, derives totalRecords from
+    // the response (200), and reserves scroll space for all of them — WITHOUT
+    // draining every page. The consumer never sets totalRecords.
+    await expect.poll(() => totalRecords(page), {
       timeout: 5000,
-      message: 'wrapper should preload every page into mp-datatable.data',
+      message: 'WC should derive totalRecords from the first fetch response',
     }).toBe(200);
 
-    // The viewport-driven virtualizer renders a subset of those 200 rows.
-    const rendered = await countBodyRows(page);
-    expect(rendered).toBeGreaterThan(0);
-    expect(rendered).toBeLessThanOrEqual(200);
+    // Lazy proof: only a viewport-sized window of rows is materialized. If the
+    // table had eager-drained all 200 pages, every row would be real.
+    const real = await countRealRows(page);
+    expect(real).toBeGreaterThan(0);
+    expect(real).toBeLessThan(200);
   });
 
   test('paginated mode renders the mp-pagination footer with the correct total pages', async ({ page }) => {
@@ -97,15 +105,19 @@ test.describe('bs-datatable virtual mode', () => {
 
     // virtual → pagination → virtual: this used to hit a CDK viewport
     // re-query bug; with a single-table WC it just needs to keep rendering.
+    // totalRecords stays 200 (server-derived) across both modes; what changes
+    // is how many rows are materialized.
     await select.selectOption('virtualScroll');
-    await expect.poll(() => totalDataLength(page), { timeout: 5000 }).toBe(200);
+    await expect.poll(() => totalRecords(page), { timeout: 5000 }).toBe(200);
+    expect(await countRealRows(page)).toBeGreaterThan(0);
 
+    // Pagination renders exactly one page worth of rows (perPage = 20).
     await select.selectOption('pagination');
-    await expect.poll(() => totalDataLength(page), { timeout: 5000 }).toBe(20);
+    await expect.poll(() => countRealRows(page), { timeout: 5000 }).toBe(20);
+    expect(await totalRecords(page)).toBe(200);
 
     await select.selectOption('virtualScroll');
-    await expect.poll(() => totalDataLength(page), { timeout: 5000 }).toBe(200);
-
-    expect(await countBodyRows(page)).toBeGreaterThan(0);
+    await expect.poll(() => totalRecords(page), { timeout: 5000 }).toBe(200);
+    expect(await countRealRows(page)).toBeGreaterThan(0);
   });
 });
