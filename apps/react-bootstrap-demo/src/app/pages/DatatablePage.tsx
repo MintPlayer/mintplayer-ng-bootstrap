@@ -71,6 +71,73 @@ async function fetchTreeItems(parentId: number | null | undefined, page = 1, per
   return r.json();
 }
 
+// ─── Lazy windowed-fetch demo ───────────────────────────────────────────────
+// A large synthetic dataset with simulated latency so the windowing is visible:
+// only the pages near the viewport are fetched, with placeholder rows holding
+// the scroll position until each window arrives. The React wrapper is a thin
+// passthrough, so the consumer orchestrates: seed page 1 into `data`, bridge
+// `onFetchRequest` (parentId null = a flat window) to setFetchResponse, and
+// call invalidateData() on the ref to drop the cache.
+
+const WINDOWED_TOTAL = 5000;
+const WINDOWED_PER_PAGE = 25;
+const GENRES = ['Alternative', 'Electronic', 'Psychedelic', 'Progressive', 'Jazz', 'Hip-Hop'];
+
+const WINDOWED_COLUMNS: DatatableColumnDef[] = [
+  { name: 'name',    label: 'Name',    cellRenderer: (row) => (row as Artist)?.name ?? '' },
+  { name: 'genre',   label: 'Genre',   cellRenderer: (row) => (row as Artist)?.genre ?? '' },
+  { name: 'founded', label: 'Founded', cellRenderer: (row) => String((row as Artist)?.founded ?? '') },
+];
+
+function makeWindowedRow(id: number): Artist {
+  return { id, name: `Artist #${id}`, genre: GENRES[id % GENRES.length], founded: 1960 + (id % 60) };
+}
+
+async function fetchWindowedPage(page: number, perPage: number): Promise<PagedResult<Artist>> {
+  await new Promise((resolve) => setTimeout(resolve, 400)); // simulated server latency
+  const start = (page - 1) * perPage;
+  const items = Array.from(
+    { length: Math.max(0, Math.min(perPage, WINDOWED_TOTAL - start)) },
+    (_, i) => makeWindowedRow(start + i + 1),
+  );
+  return { items, totalCount: WINDOWED_TOTAL, page, pageSize: perPage };
+}
+
+const WINDOWED_SOURCE = `// Flat virtual + windowed fetch. The wrapper is a passthrough, so the
+// consumer seeds page 1, bridges the flat fetch-request, and invalidates.
+const ref = useRef<MpDatatable | null>(null);
+const [page1, setPage1] = useState<Artist[]>([]);
+const [total, setTotal] = useState(0);
+
+useEffect(() => {
+  fetchPage(1, 25).then((r) => { setPage1(r.items); setTotal(r.totalCount); });
+}, []);
+
+// parentId === null is a flat window (page >= 2). Key setFetchResponse on the
+// REQUESTED page (detail.page), not the server-echoed page, so a normalising
+// server can't leave the placeholder unresolved.
+const onFetchRequest = useCallback((e: CustomEvent<TreeFetchRequestDetail>) => {
+  const { parentId, page, perPage } = e.detail;
+  if (parentId != null || page <= 1) return;
+  fetchPage(page, perPage).then((r) =>
+    ref.current?.setFetchResponse(null, {
+      data: r.items, totalRecords: r.totalCount, page, perPage: r.pageSize,
+    }),
+  );
+}, []);
+
+<BsDatatable
+  ref={ref}
+  columns={COLUMNS}
+  data={page1}
+  totalRecords={total}
+  virtualScroll
+  itemSize={40}
+  perPage={25}
+  rowKey={(row) => String((row as Artist).id)}
+  onFetchRequest={onFetchRequest}
+/>`;
+
 const TREE_SOURCE = `// Tree mode: virtual scroll + lazy children + cascading selection.
 // The WC fires \`onFetchRequest\` when a row is expanded without cached
 // children; the consumer resolves it and calls \`setFetchResponse(parentId, response)\`
@@ -101,6 +168,43 @@ export function DatatablePage() {
   const [expandedIds, setExpandedIds] = useState<Set<unknown>>(() => new Set());
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const datatableRef = useRef<MpDatatable | null>(null);
+
+  // Windowed-fetch state
+  const [windowedPage1, setWindowedPage1] = useState<Artist[]>([]);
+  const [windowedTotal, setWindowedTotal] = useState(0);
+  const [fetchedPages, setFetchedPages] = useState<number[]>([]);
+  const windowedRef = useRef<MpDatatable | null>(null);
+  const windowedTotalPages = Math.ceil(WINDOWED_TOTAL / WINDOWED_PER_PAGE);
+
+  const loadWindowedPage1 = useCallback(async () => {
+    setFetchedPages([1]);
+    const result = await fetchWindowedPage(1, WINDOWED_PER_PAGE);
+    setWindowedPage1(result.items);
+    setWindowedTotal(result.totalCount);
+  }, []);
+
+  useEffect(() => { void loadWindowedPage1(); }, [loadWindowedPage1]);
+
+  // Bridge the flat window fetch-request (parentId null, page >= 2) to the
+  // page fetch, keyed by the REQUESTED page so a normalising server can't
+  // deadlock the window.
+  const onWindowedFetchRequest = useCallback(async (e: CustomEvent<TreeFetchRequestDetail>) => {
+    const { parentId, page, perPage } = e.detail;
+    if (parentId != null || page <= 1) return;
+    setFetchedPages((prev) => (prev.includes(page) ? prev : [...prev, page].sort((a, b) => a - b)));
+    const result = await fetchWindowedPage(page, perPage);
+    windowedRef.current?.setFetchResponse(null, {
+      data: result.items,
+      totalRecords: result.totalCount,
+      page,
+      perPage: result.pageSize,
+    });
+  }, []);
+
+  const refreshWindowed = useCallback(() => {
+    windowedRef.current?.invalidateData(); // drop the cached pages…
+    void loadWindowedPage1();               // …and re-seed page 1
+  }, [loadWindowedPage1]);
 
   // Initial root fetch.
   useEffect(() => {
@@ -145,6 +249,46 @@ export function DatatablePage() {
         <h2>Simple in-memory table</h2>
         <BsDatatable columns={COLUMNS} data={ARTISTS} />
         <BsCodeSnippet code={SIMPLE_SOURCE} language="tsx" />
+      </section>
+
+      <section>
+        <h2>Virtual scrolling &mdash; lazy windowed fetch</h2>
+        <p>
+          With <code>virtualScroll</code> + a server-paged source the table
+          fetches only the pages whose rows are in (or near) the viewport.
+          Scroll through this {WINDOWED_TOTAL}-row list and watch the fetch
+          log: it never drains all {windowedTotalPages} pages up front &mdash;
+          placeholder rows hold the scroll position until each window arrives.
+          The React wrapper is a thin passthrough, so the consumer seeds page 1,
+          bridges <code>onFetchRequest</code> for flat windows
+          (<code>parentId === null</code>), and calls{' '}
+          <code>invalidateData()</code> on the ref to drop the cache.
+        </p>
+
+        <p className="text-body-secondary">
+          <small>
+            Pages fetched: <code>{fetchedPages.join(', ') || '—'}</code>{' '}
+            ({fetchedPages.length} of {windowedTotalPages}){' '}
+          </small>
+          <button type="button" className="btn btn-sm btn-outline-secondary" onClick={refreshWindowed}>
+            Refresh (invalidateData)
+          </button>
+        </p>
+
+        <BsDatatable
+          ref={windowedRef}
+          className="windowed-table"
+          columns={WINDOWED_COLUMNS}
+          data={windowedPage1}
+          totalRecords={windowedTotal}
+          virtualScroll
+          itemSize={40}
+          perPage={WINDOWED_PER_PAGE}
+          rowKey={(row: unknown) => String((row as Artist).id)}
+          onFetchRequest={onWindowedFetchRequest}
+        />
+
+        <BsCodeSnippet code={WINDOWED_SOURCE} language="tsx" />
       </section>
 
       <section>
