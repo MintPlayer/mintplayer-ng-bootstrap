@@ -1274,8 +1274,9 @@ export class MpDatatable extends LitElement {
       const total = resp?.totalRecords == null ? null : Math.max(0, Math.floor(resp.totalRecords));
       if (total != null) this._totalRecords = total;
       this.requestUpdate();
-    } catch {
+    } catch (err) {
       this._pendingPageFetches.delete(page);
+      console.error('[mp-datatable] fetch failed for root page', page, err);
     }
   }
 
@@ -1294,8 +1295,9 @@ export class MpDatatable extends LitElement {
       this._childCache.set(parentId, [...(resp?.data ?? [])]);
       this._childTotals.set(parentId, resp?.totalRecords ?? (resp?.data?.length ?? 0));
       this.requestUpdate();
-    } catch {
+    } catch (err) {
       this._pendingFetches.delete(parentId);
+      console.error('[mp-datatable] fetch failed for children of', parentId, err);
     }
   }
 
@@ -1310,7 +1312,8 @@ export class MpDatatable extends LitElement {
     let resp: { data?: unknown[]; totalRecords?: number } | undefined;
     try {
       resp = await this._fetch({ parentId: null, page, perPage: this._perPage, sortColumns: [...this._sortColumns] });
-    } catch {
+    } catch (err) {
+      console.error('[mp-datatable] fetch failed for page', page, err);
       return;
     }
     if (generation !== this._fetchGeneration || !this._fetch) return;

@@ -56,7 +56,10 @@ const ORDER_COLUMNS: DatatableColumnDef[] = [
   { name: 'id',        label: 'Order',  cellRenderer: (r) => `#${(r as Order)?.id}` },
   { name: 'total',     label: 'Total',  cellRenderer: (r) => `€${((r as Order)?.total ?? 0).toFixed(2)}` },
   { name: 'status',    label: 'Status', cellRenderer: (r) => (r as Order)?.status ?? '' },
-  { name: 'orderDate', label: 'Date',   cellRenderer: (r) => new Date((r as Order)?.orderDate).toLocaleDateString() },
+  { name: 'orderDate', label: 'Date',   cellRenderer: (r) => {
+    const d = (r as Order)?.orderDate;
+    return d ? new Date(d).toLocaleDateString() : '';
+  } },
 ];
 
 async function fetchOrders(req: DatatableFetchRequest): Promise<DatatableFetchResponse<Order>> {

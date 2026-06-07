@@ -61,8 +61,14 @@ const syncProps = () => {
   el.value.columns = (props.columns ?? []) as DatatableColumnDef[];
   // `fetch` and static `data` are mutually exclusive — when fetching, the WC
   // owns the rows, so don't also push `data` (it would clobber fetched pages).
-  if (props.fetch != null) el.value.fetch = props.fetch;
-  else el.value.data = props.data ?? [];
+  // When `fetch` is cleared at runtime, drop the stale callback off the WC and
+  // fall back to static `data` (otherwise the WC keeps server-paging forever).
+  if (props.fetch != null) {
+    el.value.fetch = props.fetch;
+  } else {
+    el.value.fetch = null;
+    el.value.data = props.data ?? [];
+  }
   if (props.rowKey !== undefined) el.value.rowKey = props.rowKey;
   if (props.tree !== undefined) el.value.tree = props.tree;
   if (props.idKey !== undefined) el.value.idKey = props.idKey as TreeIdKey | null;
