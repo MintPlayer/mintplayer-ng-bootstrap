@@ -2,7 +2,7 @@
 
 **Issue**: #385
 **Title**: feat(datatable): lazy windowed fetch for `[fetch]` + `[virtualScroll]` (flat mode eager-loads all pages)
-**Status**: Draft
+**Status**: Complete
 **Created**: 2026-06-07
 **Last Updated**: 2026-06-07
 
@@ -10,7 +10,13 @@
 
 ## Summary
 
-Flat (non-tree) datatables that combine server-side `[fetch]` with `[virtualScroll]` currently eager-load the entire result set (`runVirtualFetchAll` drains every page into memory before virtualizing) — a behavior regression versus the removed `virtual-datatable`. This work makes that path **lazy and windowed**: fetch page 1 for the total, then fetch additional pages only as their rows scroll into view, rendering placeholders for unloaded ranges and sizing the scrollbar from `totalRecords`. The chosen approach **reuses the existing tree lazy-fetch machinery** (`mp-datatable-fetch-request` / `setFetchResponse` / placeholder rows) keyed by **page** instead of `parentId`, with the window size equal to `settings.perPage`. The public `[fetch]` contract is **unchanged** — consumers (notably MintPlayer.Spark #178, which this unblocks) need zero changes. The load-bearing trade-off: reusing page/perPage keeps the contract stable but means request count scales with `1/perPage`; consumers tune it by raising `perPage`.
+**As built.** Flat (non-tree) datatables that combine server-side `[fetch]` with `[virtualScroll]` previously eager-loaded the entire result set (`runVirtualFetchAll` drained every page into memory before virtualizing) — a behavior regression versus the removed `virtual-datatable`. That path is now **lazy and windowed**: the wrapper fetches page 1 for the total (`runVirtualFetchFirst`), then the WC fetches additional pages only as their rows scroll into view, rendering placeholders for unloaded ranges and sizing the scroll region from `totalRecords`. The implementation **reuses the tree lazy-fetch machinery** (`mp-datatable-fetch-request` / `setFetchResponse` / placeholder rows) keyed by **page** instead of `parentId`: a dedicated `_pageCache`/`_pendingPageFetches` pair plus a sibling viewport scanner `maybeFetchPagesInViewport()` (the tree `maybeFetchPlaceholdersInViewport` stays parentId-keyed), all disambiguated by `!this._tree`. Window size = `settings.perPage`, so the WC page index equals the fetch page identity. The public `[fetch]` contract is **unchanged** — consumers (notably MintPlayer.Spark #178, which this unblocks) need zero changes.
+
+**Load-bearing decisions:** (1) page/perPage windowing over a new `{skip,take}` callback — keeps the contract stable; request count scales with `1/perPage`, tuned by raising `perPage`. (2) Page-keyed storage branched on `!this._tree` rather than reusing the `parentId: null` tree-root path, which has its own early-return semantics. (3) `onFetchRequest` keys `setFetchResponse` on the **requested** `detail.page`, not `response.page`, so a server that normalises page numbers can't deadlock the window (guarded by a test). (4) Page-1 mirrors tree roots in `_data`; pages ≥2 in `_pageCache`.
+
+**Restoration parity:** this closes the only capability the #306 `virtual-datatable` merge dropped — the old `VirtualDatatableDataSource`'s lazy `(skip,take)` windowing with placeholder fill, multi-page viewport fetch, and `reset()`-immediate-refetch. All of those are restored (`reset()` ↔ `invalidateData()` + the `updated()`→`refreshVirtualRange()`→rescan that re-fetches the visible window with no scroll; proven by test). Everything else the old `bs-virtual-datatable` exposed — `isResponsive`, `itemSize`, sorting, row template, ARIA rowcount — was already present in the merged datatable.
+
+**Tests:** 8 WC tests (`mp-datatable.windowed-fetch.spec.ts`) + 4 wrapper tests (`datatable.windowed-fetch.spec.ts`); full suites green (758 WC / 519 wrapper). Reviewed via the DCG gate — verdict passes-with-fixes; the one should-fix (plan doc drift) is resolved, residual items are benign nits.
 
 ---
 
@@ -110,19 +116,19 @@ fetchUsers = (req: PaginationRequest): Promise<PaginationResponse<User>> =>
 ## Functional Requirements
 
 ### Must Have (P0)
-- [ ] **FR-1**: Flat virtual + external `[fetch]` fetches page 1 on open (one fetch), not all pages.
-- [ ] **FR-2**: Pages ≥2 are fetched only when their rows enter the viewport (+ buffer), via `mp-datatable-fetch-request { parentId: null, page, perPage, sortColumns }`.
-- [ ] **FR-3**: Unloaded ranges render placeholder rows (`isPlaceholder: true`), replaced by real rows on response.
-- [ ] **FR-4**: The virtual scroll region / spacers are sized from `totalRecords`, not `_data.length`.
-- [ ] **FR-5**: In-flight pages are deduped via `_pendingPageFetches` (no duplicate request for a page already loading).
-- [ ] **FR-6**: `setFetchResponse(null, resp)` populates the page cache (keyed by `resp.page`) and clears the corresponding placeholders.
-- [ ] **FR-7**: `invalidateData()` clears the page cache + pending set; the wrapper calls it on sort/settings change, then refetches page 1.
-- [ ] **FR-8**: The public `[fetch]` contract is unchanged; existing consumers compile and behave identically.
-- [ ] **FR-9**: Tree mode and non-virtual flat fetch behavior are unchanged.
+- [x] **FR-1**: Flat virtual + external `[fetch]` fetches page 1 on open (one fetch), not all pages.
+- [x] **FR-2**: Pages ≥2 are fetched only when their rows enter the viewport (+ buffer), via `mp-datatable-fetch-request { parentId: null, page, perPage, sortColumns }`.
+- [x] **FR-3**: Unloaded ranges render placeholder rows (`isPlaceholder: true`), replaced by real rows on response.
+- [x] **FR-4**: The virtual scroll region / spacers are sized from `totalRecords`, not `_data.length`.
+- [x] **FR-5**: In-flight pages are deduped via `_pendingPageFetches` (no duplicate request for a page already loading).
+- [x] **FR-6**: `setFetchResponse(null, resp)` populates the page cache (keyed by `resp.page`) and clears the corresponding placeholders.
+- [x] **FR-7**: `invalidateData()` clears the page cache + pending set; the wrapper calls it on sort/settings change, then refetches page 1.
+- [x] **FR-8**: The public `[fetch]` contract is unchanged; existing consumers compile and behave identically.
+- [x] **FR-9**: Tree mode and non-virtual flat fetch behavior are unchanged.
 
 ### Should Have (P1)
-- [ ] **FR-10**: `aria-rowcount` reflects `totalRecords` (full virtual list) in flat-windowed mode.
-- [ ] **FR-11**: A "Virtual scroll + server-side fetch" demo example on the ng datatable demo page (demo before snippet).
+- [x] **FR-10**: `aria-rowcount` reflects `totalRecords` (full virtual list) in flat-windowed mode.
+- [x] **FR-11**: A "Virtual scroll + server-side fetch" demo example on the ng datatable demo page (demo before snippet).
 
 ---
 
