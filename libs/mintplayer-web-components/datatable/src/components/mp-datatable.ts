@@ -49,6 +49,10 @@ export interface SelectionChangeEventDetail {
  * In tree mode children of expanded rows are inlined as siblings with
  * `depth > 0`; not-yet-loaded children appear as placeholder entries with
  * `row: undefined` so the viewport can reserve vertical space for them.
+ *
+ * In flat virtual + external-paging mode (`isFlatWindowed()`) placeholder
+ * entries additionally carry `page` — the 1-based page the missing row belongs
+ * to — so the viewport scan can request that page without re-deriving it.
  */
 interface FlatVisibleRow {
   row: unknown | undefined;
@@ -57,6 +61,8 @@ interface FlatVisibleRow {
   parentId: unknown | null;
   isExpanded: boolean;
   isPlaceholder: boolean;
+  /** Flat-window placeholders only: the 1-based page this slot belongs to. */
+  page?: number;
 }
 
 let instanceCounter = 0;
@@ -141,6 +147,18 @@ export class MpDatatable extends LitElement {
   private _childTotals: Map<unknown, number> = new Map();
   /** Parents with an in-flight fetch; suppresses re-requests. */
   private _pendingFetches: Set<unknown> = new Set();
+
+  // ─── Flat virtual windowed-fetch state ──────────────────────────────────
+  // Flat (non-tree) virtual + external `[fetch]` is lazy and page-keyed: page 1
+  // lives in `_data` (mirroring tree roots), pages ≥ 2 are fetched on demand as
+  // their rows scroll into view and stored here. Kept separate from the tree
+  // caches because `parentId: null` already means "tree root" — the WC
+  // disambiguates by `this._tree` being false. Cleared by `invalidateData()`.
+  /** Loaded rows per 1-based page (pages ≥ 2; page 1 is `_data`). */
+  private _pageCache: Map<number, unknown[]> = new Map();
+  /** Pages with an in-flight fetch; suppresses re-requests. */
+  private _pendingPageFetches: Set<number> = new Set();
+
   /** Per-render memo of `getFlatList()`. Invalidated in `willUpdate`. */
   private _cachedFlatList: FlatVisibleRow[] | null = null;
   /** Per-render memo of the set of row keys whose loaded subtree is partially selected. */
@@ -414,6 +432,16 @@ export class MpDatatable extends LitElement {
     return this._totalRecords != null && this._totalRecords > this._data.length;
   }
 
+  /**
+   * True when flat (non-tree) virtual scrolling is driving lazy windowed
+   * fetches: the consumer pages externally and the WC pulls pages ≥ 2 on
+   * demand. When false (single page, no virtual scroll, or tree mode) the WC
+   * falls back to the trivial flat mapping of `_data`.
+   */
+  private isFlatWindowed(): boolean {
+    return this._virtualScroll && !this._tree && this.isExternallyPaged();
+  }
+
   override attributeChangedCallback(name: string, oldValue: string | null, newValue: string | null): void {
     super.attributeChangedCallback(name, oldValue, newValue);
 
@@ -610,7 +638,7 @@ export class MpDatatable extends LitElement {
 
     // Virtual scroll: spacer rows at top and bottom.
     const virtualMeta = this.getVirtualSpacerHeights();
-    const ariaRowcount = (this._tree ? this.getFlatList().length : this._data.length) + 1;
+    const ariaRowcount = (this._tree || this.isFlatWindowed() ? this.getFlatList().length : this._data.length) + 1;
 
     return html`
       <div class="datatable-shell">
@@ -862,7 +890,9 @@ export class MpDatatable extends LitElement {
     // (real rows + placeholders); callers that need row metadata use
     // `getFlatList()` instead. We keep this method returning a `unknown[]`
     // so `_data.length`-style code paths stay valid.
-    if (this._tree) {
+    if (this._tree || this.isFlatWindowed()) {
+      // Tree: flattened forest (rows + placeholders). Flat-window: the sparse
+      // length-`totalRecords` list. Both drive the virtual-scroll row count.
       return this.getFlatList().map((r) => r.row);
     }
     let rows: unknown[] = this._data;
@@ -891,6 +921,33 @@ export class MpDatatable extends LitElement {
   private getFlatList(): FlatVisibleRow[] {
     if (this._cachedFlatList !== null) return this._cachedFlatList;
     if (!this._tree) {
+      // Flat virtual + external paging: build a sparse list of length
+      // `_totalRecords`. Loaded rows come from `_data` (page 1) and
+      // `_pageCache` (pages ≥ 2); every not-yet-loaded slot is a placeholder so
+      // the virtualizer sizes the scroll region from the true total and
+      // `maybeFetchPlaceholdersInViewport` can pull the missing pages on demand.
+      // No client sort here: `_autoSort` is false in fetch mode (the server
+      // owns ordering), so page ordering is authoritative.
+      //
+      // NOTE: this materialises one entry per total row. It is memoised per
+      // render (cleared in `willUpdate`) and the realistic totals for
+      // server-paged lists are bounded; revisit with slice-only
+      // materialisation if very large totals ever jank.
+      if (this.isFlatWindowed()) {
+        const total = this._totalRecords ?? this._data.length;
+        const perPage = Math.max(1, this._perPage);
+        const out: FlatVisibleRow[] = new Array(total);
+        for (let i = 0; i < total; i++) {
+          const page = Math.floor(i / perPage) + 1;
+          const pos = i % perPage;
+          const row = page === 1 ? this._data[pos] : this._pageCache.get(page)?.[pos];
+          out[i] = row !== undefined
+            ? { row, key: this._rowKey(row, i), depth: 0, parentId: null, isExpanded: false, isPlaceholder: false }
+            : { row: undefined, key: `__placeholder-flat-${i}`, depth: 0, parentId: null, page, isExpanded: false, isPlaceholder: true };
+        }
+        return this._cachedFlatList = out;
+      }
+
       const rows = (() => {
         let r: unknown[] = this._data;
         if (this._autoSort && this._sortColumns.length > 0) r = sortRows(r, this._sortColumns);
