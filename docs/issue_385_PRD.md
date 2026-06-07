@@ -8,9 +8,18 @@
 
 ---
 
+> ⚠️ **Superseded by #386 (same branch).** This PRD documents #385 *as it was
+> built* — a consumer/wrapper-driven design using the `mp-datatable-fetch-request`
+> event, `setFetchResponse()`, `invalidateData()`, and a consumer-set
+> `totalRecords`. #386 replaced that **driving mechanism** with a WC-owned `fetch`
+> callback (those APIs are removed; `totalRecords` is derived from the response).
+> The **windowing internals** described here (placeholders, `_pageCache`, sparse
+> `getFlatList`, tree-root windowing) still stand. For the current contract see
+> **`docs/issue_386_PRD.md`**. The mechanics below are retained as the #385 record.
+
 ## Summary
 
-**As built.** Flat (non-tree) datatables that combine server-side `[fetch]` with `[virtualScroll]` previously eager-loaded the entire result set (`runVirtualFetchAll` drained every page into memory before virtualizing) — a behavior regression versus the removed `virtual-datatable`. That path is now **lazy and windowed**: the wrapper fetches page 1 for the total (`runVirtualFetchFirst`), then the WC fetches additional pages only as their rows scroll into view, rendering placeholders for unloaded ranges and sizing the scroll region from `totalRecords`. The implementation **reuses the tree lazy-fetch machinery** (`mp-datatable-fetch-request` / `setFetchResponse` / placeholder rows) keyed by **page** instead of `parentId`: a dedicated `_pageCache`/`_pendingPageFetches` pair plus a sibling viewport scanner `maybeFetchPagesInViewport()` (the tree `maybeFetchPlaceholdersInViewport` stays parentId-keyed), all disambiguated by `!this._tree`. Window size = `settings.perPage`, so the WC page index equals the fetch page identity. The public `[fetch]` contract is **unchanged** — consumers (notably MintPlayer.Spark #178, which this unblocks) need zero changes.
+**As built (pre-#386).** Flat (non-tree) datatables that combine server-side `[fetch]` with `[virtualScroll]` previously eager-loaded the entire result set (`runVirtualFetchAll` drained every page into memory before virtualizing) — a behavior regression versus the removed `virtual-datatable`. That path is now **lazy and windowed**: the wrapper fetches page 1 for the total (`runVirtualFetchFirst`), then the WC fetches additional pages only as their rows scroll into view, rendering placeholders for unloaded ranges and sizing the scroll region from `totalRecords`. The implementation **reuses the tree lazy-fetch machinery** (`mp-datatable-fetch-request` / `setFetchResponse` / placeholder rows) keyed by **page** instead of `parentId`: a dedicated `_pageCache`/`_pendingPageFetches` pair plus a sibling viewport scanner `maybeFetchPagesInViewport()` (the tree `maybeFetchPlaceholdersInViewport` stays parentId-keyed), all disambiguated by `!this._tree`. Window size = `settings.perPage`, so the WC page index equals the fetch page identity. The public `[fetch]` contract is **unchanged** — consumers (notably MintPlayer.Spark #178, which this unblocks) need zero changes.
 
 **Load-bearing decisions:** (1) page/perPage windowing over a new `{skip,take}` callback — keeps the contract stable; request count scales with `1/perPage`, tuned by raising `perPage`. (2) Page-keyed storage branched on `!this._tree` rather than reusing the `parentId: null` tree-root path, which has its own early-return semantics. (3) `onFetchRequest` keys `setFetchResponse` on the **requested** `detail.page`, not `response.page`, so a server that normalises page numbers can't deadlock the window (guarded by a test). (4) Page-1 mirrors tree roots in `_data`; pages ≥2 in `_pageCache`.
 

@@ -5,6 +5,13 @@
 **Type**: Feature / Enhancement
 **Priority**: High (blocks MintPlayer.Spark #178)
 
+> ⚠️ **Superseded by #386 (same branch).** The fetch *driving* mechanism in this
+> plan (`mp-datatable-fetch-request` event, `setFetchResponse`, `invalidateData`,
+> `runVirtualFetchFirst`, consumer-set `totalRecords`) was replaced by a WC-owned
+> `fetch` callback in #386. The windowing internals (placeholders, `_pageCache`,
+> sparse `getFlatList`, tree-root windowing) remain. Current contract:
+> **`docs/issue_386_PRD.md`**. Kept as the #385 implementation record.
+
 ## Executive Summary
 
 In ng-bootstrap 22 the flat (non-tree) datatable, when combined with server-side `[fetch]` and `[virtualScroll]`, eagerly drains the **entire** result set up front (`runVirtualFetchAll` loops every page in 200-row chunks into memory) and only then virtualizes the in-memory array. That defeats virtual scrolling and is a behavior regression versus the removed `virtual-datatable`'s true lazy `(skip,take)` windowing.
