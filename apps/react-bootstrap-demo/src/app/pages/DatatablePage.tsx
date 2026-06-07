@@ -53,6 +53,10 @@ interface PagedResult<T> {
   pageSize: number;
 }
 
+// The WC's perPage must equal the fetch perPage, or its root-page math
+// misaligns with the loaded rows. One constant drives both.
+const TREE_PER_PAGE = 100;
+
 const TREE_COLUMNS: DatatableColumnDef[] = [
   { name: 'name',      label: 'Name',      sortable: true,
     cellRenderer: (row) => (row as TreeItem)?.name ?? '' },
@@ -165,6 +169,7 @@ const TREE_SOURCE = `// Tree mode: virtual scroll + lazy children + cascading se
 export function DatatablePage() {
   // Tree mode state
   const [roots, setRoots] = useState<TreeItem[]>([]);
+  const [rootTotal, setRootTotal] = useState(0);
   const [expandedIds, setExpandedIds] = useState<Set<unknown>>(() => new Set());
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const datatableRef = useRef<MpDatatable | null>(null);
@@ -206,25 +211,32 @@ export function DatatablePage() {
     void loadWindowedPage1();               // …and re-seed page 1
   }, [loadWindowedPage1]);
 
-  // Initial root fetch.
+  // Initial root page-1 fetch. `rootTotal` enables lazy root windowing when
+  // there are more roots than one page.
   useEffect(() => {
     let cancelled = false;
-    fetchTreeItems(null)
-      .then((result) => { if (!cancelled) setRoots(result.items); })
+    fetchTreeItems(null, 1, TREE_PER_PAGE)
+      .then((result) => {
+        if (cancelled) return;
+        setRoots(result.items);
+        setRootTotal(result.totalCount);
+      })
       .catch(() => { /* surfaced via the page when needed; demo is best-effort */ });
     return () => { cancelled = true; };
   }, []);
 
-  // Bridge `mp-datatable-fetch-request` → fetch + setFetchResponse.
+  // Bridge `mp-datatable-fetch-request` → fetch + setFetchResponse. This fires
+  // for tree children (non-null parentId) AND lazy root windows (parentId
+  // null, page ≥ 2). Page 1 is seeded by the effect above, so only pages ≥ 2
+  // reach here for the root level. Key on the REQUESTED page (detail.page).
   const onFetchRequest = useCallback(async (e: CustomEvent<TreeFetchRequestDetail>) => {
     const detail = e.detail;
-    if (detail.parentId == null) return; // root fetch is handled by the useEffect above
     try {
-      const result = await fetchTreeItems(detail.parentId as number, detail.page, detail.perPage);
+      const result = await fetchTreeItems(detail.parentId as number | null, detail.page, detail.perPage);
       datatableRef.current?.setFetchResponse(detail.parentId, {
         data: result.items,
         totalRecords: result.totalCount,
-        page: result.page,
+        page: detail.page,
         perPage: result.pageSize,
       });
     } catch (err) {
@@ -305,6 +317,8 @@ export function DatatablePage() {
           ref={datatableRef}
           columns={TREE_COLUMNS}
           data={roots}
+          totalRecords={rootTotal}
+          perPage={TREE_PER_PAGE}
           virtualScroll
           itemSize={40}
           tree

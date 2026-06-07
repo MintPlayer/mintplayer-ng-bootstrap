@@ -69,28 +69,36 @@ async function fetchTreeItems(parentId: number | null, page = 1, perPage = 100):
   return r.json();
 }
 
+// The WC's perPage must equal the fetch perPage, or its root-page math
+// misaligns with the loaded rows. One constant drives both.
+const TREE_PER_PAGE = 100;
+
 const roots = ref<TreeItem[]>([]);
+const rootTotal = ref(0);
 const expandedIds = ref<Set<unknown>>(new Set());
 const selectedIds = ref<string[]>([]);
 const tableRef = ref<InstanceType<typeof BsDatatable> | null>(null);
 
 onMounted(async () => {
   try {
-    const result = await fetchTreeItems(null);
+    const result = await fetchTreeItems(null, 1, TREE_PER_PAGE);
     roots.value = result.items;
+    rootTotal.value = result.totalCount; // enables lazy root windowing past page 1
   } catch {
     // Best-effort demo — surfaces the empty table if the api isn't up.
   }
 });
 
+// Fires for tree children (non-null parentId) AND lazy root windows (parentId
+// null, page ≥ 2). Page 1 is seeded by onMounted, so only pages ≥ 2 reach here
+// for the root level. Key on the REQUESTED page (detail.page).
 async function onFetchRequest(detail: TreeFetchRequestDetail) {
-  if (detail.parentId == null) return; // root fetch handled by onMounted above
   try {
-    const result = await fetchTreeItems(detail.parentId as number, detail.page, detail.perPage);
+    const result = await fetchTreeItems(detail.parentId as number | null, detail.page, detail.perPage);
     tableRef.value?.setFetchResponse(detail.parentId, {
       data: result.items,
       totalRecords: result.totalCount,
-      page: result.page,
+      page: detail.page,
       perPage: result.pageSize,
     });
   } catch (e) {
@@ -279,6 +287,8 @@ const TREE_SOURCE = `<!-- Tree mode: virtual scroll + lazy children + cascading 
         ref="tableRef"
         :columns="TREE_COLUMNS"
         :data="roots"
+        :totalRecords="rootTotal"
+        :perPage="TREE_PER_PAGE"
         :virtualScroll="true"
         :itemSize="40"
         :tree="true"
