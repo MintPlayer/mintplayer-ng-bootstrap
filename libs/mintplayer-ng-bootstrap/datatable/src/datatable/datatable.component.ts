@@ -247,9 +247,11 @@ export class BsDatatableComponent<TData> implements AfterViewInit {
           parentId: undefined,
         };
         // Sort changes invalidate the per-parent child cache (server-side sort
-        // applies within siblings, so cached children are stale).
+        // applies within siblings, so cached children are stale) AND the lazy
+        // root-page window cache (root ordering across pages changes too).
         const el = this.datatableRef()?.nativeElement;
         if (el && typeof el.invalidateChildren === 'function') el.invalidateChildren();
+        if (el && typeof el.invalidateData === 'function') el.invalidateData();
         void this.runFetch(fetcher, req, settings);
       } else if (this.virtualScroll()) {
         // Sort/settings changes invalidate the windowed page cache (the page

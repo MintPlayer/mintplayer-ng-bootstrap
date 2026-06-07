@@ -195,3 +195,97 @@ describe('mp-datatable — flat virtual windowed fetch', () => {
     expect(requested).toEqual([]);
   });
 });
+
+interface RootRow {
+  id: number;
+  name: string;
+  childCount: number;
+}
+
+function makeRoots(startId: number, count: number, childCount = 0): RootRow[] {
+  return Array.from({ length: count }, (_, i) => ({
+    id: startId + i,
+    name: `root-${startId + i}`,
+    childCount,
+  }));
+}
+
+async function makeTreeWindowed(opts: {
+  totalRecords: number;
+  perPage: number;
+  page1Roots: RootRow[];
+  onRequest?: (detail: { parentId: unknown; page: number }) => void;
+}): Promise<MpDatatable> {
+  const el = document.createElement('mp-datatable') as MpDatatable;
+  el.columns = columns as DatatableColumnDef[];
+  el.tree = true;
+  el.idKey = 'id';
+  el.childCountKey = 'childCount';
+  el.virtualScroll = true;
+  el.perPage = opts.perPage;
+  el.autoSort = false;
+  el.data = opts.page1Roots as unknown[];
+  el.totalRecords = opts.totalRecords;
+  if (opts.onRequest) {
+    el.addEventListener('mp-datatable-fetch-request', (ev) => {
+      opts.onRequest!((ev as CustomEvent).detail);
+    });
+  }
+  document.body.appendChild(el);
+  await el.updateComplete;
+  return el;
+}
+
+describe('mp-datatable — tree-mode lazy root windowing', () => {
+  let el: MpDatatable | undefined;
+  afterEach(() => {
+    el?.remove();
+    el = undefined;
+  });
+
+  it('reserves root placeholders and requests unloaded root pages (parentId null)', async () => {
+    const requested: { parentId: unknown; page: number }[] = [];
+    el = await makeTreeWindowed({
+      totalRecords: 50,
+      perPage: 10,
+      page1Roots: makeRoots(1, 10),
+      onRequest: (d) => requested.push(d),
+    });
+
+    // Viewport [0,20): root page 1 (0-9) is real, root page 2 (10-19) is
+    // placeholders — the regression was that these never existed in tree mode.
+    expect(realRowCount(el)).toBe(10);
+    expect(placeholderCount(el)).toBe(10);
+    // The root page is fetched with parentId null (a root window), not a child id.
+    expect(requested.some((r) => r.parentId === null && r.page === 2)).toBe(true);
+  });
+
+  it('fills a root page via setFetchResponse(null, …) and clears its placeholders', async () => {
+    el = await makeTreeWindowed({ totalRecords: 50, perPage: 10, page1Roots: makeRoots(1, 10) });
+    expect(placeholderCount(el)).toBe(10);
+
+    el.setFetchResponse(null, {
+      data: makeRoots(11, 10) as unknown[],
+      totalRecords: 50,
+      page: 2,
+      perPage: 10,
+    });
+    await el.updateComplete;
+    expect(placeholderCount(el)).toBe(0);
+    expect(realRowCount(el)).toBe(20);
+  });
+
+  it('windows roots AND still reserves child placeholders under an expanded root', async () => {
+    // Root id 1 has 2 children (not yet loaded); the rest are leaves.
+    const roots = makeRoots(1, 10).map((r, i) => (i === 0 ? { ...r, childCount: 2 } : r));
+    el = await makeTreeWindowed({ totalRecords: 50, perPage: 10, page1Roots: roots });
+    el.expandedIds = new Set([1]);
+    await el.updateComplete;
+
+    // 50 root slots (10 real + 40 placeholders) + 2 child placeholders under
+    // root 1 + 1 header row → aria-rowcount 53. Proves root windowing and child
+    // reservation compose (the interleaving the flat case never exercises).
+    const table = el.shadowRoot!.querySelector('table')!;
+    expect(table.getAttribute('aria-rowcount')).toBe('53');
+  });
+});

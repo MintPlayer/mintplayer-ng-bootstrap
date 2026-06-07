@@ -50,9 +50,11 @@ export interface SelectionChangeEventDetail {
  * `depth > 0`; not-yet-loaded children appear as placeholder entries with
  * `row: undefined` so the viewport can reserve vertical space for them.
  *
- * In flat virtual + external-paging mode (`isFlatWindowed()`) placeholder
- * entries additionally carry `page` — the 1-based page the missing row belongs
- * to — so the viewport scan can request that page without re-deriving it.
+ * In root-windowed mode (`isRootWindowed()`) unloaded **root** slots are
+ * placeholders (`parentId: null`) that additionally carry `page` — the 1-based
+ * root page the missing row belongs to — so the viewport scan can request that
+ * page without re-deriving it. (Child placeholders carry `parentId` and no
+ * `page`.)
  */
 interface FlatVisibleRow {
   row: unknown | undefined;
@@ -61,7 +63,7 @@ interface FlatVisibleRow {
   parentId: unknown | null;
   isExpanded: boolean;
   isPlaceholder: boolean;
-  /** Flat-window placeholders only: the 1-based page this slot belongs to. */
+  /** Root-window placeholders only: the 1-based root page this slot belongs to. */
   page?: number;
 }
 
@@ -433,13 +435,15 @@ export class MpDatatable extends LitElement {
   }
 
   /**
-   * True when flat (non-tree) virtual scrolling is driving lazy windowed
-   * fetches: the consumer pages externally and the WC pulls pages ≥ 2 on
-   * demand. When false (single page, no virtual scroll, or tree mode) the WC
-   * falls back to the trivial flat mapping of `_data`.
+   * True when virtual scrolling is driving lazy windowed fetches at the **root**
+   * level: the consumer pages externally and the WC pulls root pages ≥ 2 on
+   * demand. Applies to BOTH flat mode (the rows are the roots) and tree mode
+   * (the top-level rows; their children are windowed separately, keyed by
+   * parentId). When false (single page or no virtual scroll) the WC falls back
+   * to the trivial mapping of `_data`.
    */
-  private isFlatWindowed(): boolean {
-    return this._virtualScroll && !this._tree && this.isExternallyPaged();
+  private isRootWindowed(): boolean {
+    return this._virtualScroll && this.isExternallyPaged();
   }
 
   override attributeChangedCallback(name: string, oldValue: string | null, newValue: string | null): void {
@@ -603,10 +607,12 @@ export class MpDatatable extends LitElement {
       this._virtualRange = { startIndex: start, endIndex: end };
       this.requestUpdate();
     }
-    // Lazily fetch data whose placeholder rows enter the viewport:
-    // tree-mode children (keyed by parentId) or flat-window pages (keyed by page).
+    // Lazily fetch data whose placeholder rows enter the viewport. Tree-mode
+    // children are keyed by parentId; root-window pages (flat rows, or the
+    // top level of a tree) are keyed by page. A virtual tree needs both: its
+    // roots paginate AND its expanded children load on demand.
     if (this._tree) this.maybeFetchPlaceholdersInViewport();
-    else if (this.isFlatWindowed()) this.maybeFetchPagesInViewport();
+    if (this.isRootWindowed()) this.maybeFetchPagesInViewport();
   }
 
   /**
@@ -662,7 +668,7 @@ export class MpDatatable extends LitElement {
 
     // Virtual scroll: spacer rows at top and bottom.
     const virtualMeta = this.getVirtualSpacerHeights();
-    const ariaRowcount = (this._tree || this.isFlatWindowed() ? this.getFlatList().length : this._data.length) + 1;
+    const ariaRowcount = (this._tree || this.isRootWindowed() ? this.getFlatList().length : this._data.length) + 1;
 
     return html`
       <div class="datatable-shell">
@@ -914,9 +920,9 @@ export class MpDatatable extends LitElement {
     // (real rows + placeholders); callers that need row metadata use
     // `getFlatList()` instead. We keep this method returning a `unknown[]`
     // so `_data.length`-style code paths stay valid.
-    if (this._tree || this.isFlatWindowed()) {
-      // Tree: flattened forest (rows + placeholders). Flat-window: the sparse
-      // length-`totalRecords` list. Both drive the virtual-scroll row count.
+    if (this._tree || this.isRootWindowed()) {
+      // Tree: flattened forest (rows + placeholders). Root-windowed flat: the
+      // sparse length-`totalRecords` list. Both drive the virtual-scroll count.
       return this.getFlatList().map((r) => r.row);
     }
     let rows: unknown[] = this._data;
@@ -963,7 +969,7 @@ export class MpDatatable extends LitElement {
       // perPage while the total spans multiple pages, indices past `_data`
       // would map to page 1 and never resolve (`maybeFetchPagesInViewport`
       // skips page ≤ 1) — out of contract, not handled here.
-      if (this.isFlatWindowed()) {
+      if (this.isRootWindowed()) {
         const total = this._totalRecords ?? this._data.length;
         const perPage = Math.max(1, this._perPage);
         const out: FlatVisibleRow[] = new Array(total);
@@ -997,57 +1003,62 @@ export class MpDatatable extends LitElement {
       }));
     }
 
+    // ── Tree mode ──
     const out: FlatVisibleRow[] = [];
-    const rootRows = this._autoSort && this._sortColumns.length > 0
-      ? sortRows(this._data, this._sortColumns)
-      : this._data;
+    const perPage = Math.max(1, this._perPage);
+    const sortChildren = (rows: unknown[]): unknown[] =>
+      this._autoSort && this._sortColumns.length > 0 ? sortRows(rows, this._sortColumns) : rows;
 
-    const walk = (rows: unknown[], depth: number, parentId: unknown | null): void => {
-      for (const row of rows) {
-        const id = this.extractId(row);
-        const isExpanded = id != null && this._expandedIds.has(id);
-        const childCount = this.extractChildCount(row);
-        const key = this._rowKey(row, out.length);
-        out.push({ row, key, depth, parentId, isExpanded, isPlaceholder: false });
+    // Push a real node and, when it's expanded, its loaded children followed by
+    // placeholders for any not-yet-loaded children of that parent.
+    const pushNode = (row: unknown, depth: number, parentId: unknown | null): void => {
+      const id = this.extractId(row);
+      const isExpanded = id != null && this._expandedIds.has(id);
+      const childCount = this.extractChildCount(row);
+      out.push({ row, key: this._rowKey(row, out.length), depth, parentId, isExpanded, isPlaceholder: false });
 
-        if (!isExpanded || childCount === 0 || id == null) continue;
+      if (!isExpanded || childCount === 0 || id == null) return;
 
-        const cached = this._childCache.get(id);
-        if (cached && cached.length > 0) {
-          const sortedChildren = this._autoSort && this._sortColumns.length > 0
-            ? sortRows(cached, this._sortColumns)
-            : cached;
-          walk(sortedChildren, depth + 1, id);
-          // Reserve placeholders for any not-yet-loaded children of this parent.
-          const total = this._childTotals.get(id) ?? cached.length;
-          const remaining = Math.max(0, total - cached.length);
-          for (let j = 0; j < remaining; j++) {
-            out.push({
-              row: undefined,
-              key: `__placeholder-${String(id)}-${cached.length + j}`,
-              depth: depth + 1,
-              parentId: id,
-              isExpanded: false,
-              isPlaceholder: true,
-            });
-          }
-        } else {
-          // Expanded but children not loaded yet — reserve childCount placeholders.
-          for (let j = 0; j < childCount; j++) {
-            out.push({
-              row: undefined,
-              key: `__placeholder-${String(id)}-${j}`,
-              depth: depth + 1,
-              parentId: id,
-              isExpanded: false,
-              isPlaceholder: true,
-            });
-          }
+      const cached = this._childCache.get(id);
+      if (cached && cached.length > 0) {
+        for (const child of sortChildren(cached)) pushNode(child, depth + 1, id);
+        const total = this._childTotals.get(id) ?? cached.length;
+        for (let j = 0; j < Math.max(0, total - cached.length); j++) {
+          out.push({ row: undefined, key: `__placeholder-${String(id)}-${cached.length + j}`, depth: depth + 1, parentId: id, isExpanded: false, isPlaceholder: true });
+        }
+      } else {
+        // Expanded but children not loaded yet — reserve childCount placeholders.
+        for (let j = 0; j < childCount; j++) {
+          out.push({ row: undefined, key: `__placeholder-${String(id)}-${j}`, depth: depth + 1, parentId: id, isExpanded: false, isPlaceholder: true });
         }
       }
     };
 
-    walk(rootRows, 0, null);
+    if (this.isRootWindowed()) {
+      // Roots paginate lazily, exactly like flat mode: root page 1 is `_data`,
+      // pages ≥ 2 come from `_pageCache`, and unloaded root slots are
+      // placeholders (keyed by page, parentId null) so the scroll region spans
+      // every root and scrolling pulls the missing root pages via
+      // `maybeFetchPagesInViewport`. Loaded + expanded roots still inline their
+      // children. No client sort — the server owns root ordering in fetch mode.
+      const rootTotal = this._totalRecords ?? this._data.length;
+      for (let r = 0; r < rootTotal; r++) {
+        const page = Math.floor(r / perPage) + 1;
+        const pos = r % perPage;
+        const root = page === 1 ? this._data[pos] : this._pageCache.get(page)?.[pos];
+        if (root === undefined) {
+          out.push({ row: undefined, key: `__placeholder-root-${r}`, depth: 0, parentId: null, page, isExpanded: false, isPlaceholder: true });
+        } else {
+          pushNode(root, 0, null);
+        }
+      }
+    } else {
+      const rootRows = this._autoSort && this._sortColumns.length > 0
+        ? sortRows(this._data, this._sortColumns)
+        : this._data;
+      for (const row of rootRows) pushNode(row, 0, null);
+    }
+
     return this._cachedFlatList = out;
   }
 
@@ -1241,18 +1252,19 @@ export class MpDatatable extends LitElement {
 
   /**
    * Public method called by the framework wrapper after the consumer's
-   * `[fetch]` callback resolves. Populates the cache + total for the parent,
-   * clears the pending flag, and rerenders so placeholders disappear.
+   * `[fetch]` callback resolves. Populates the cache + total, clears the
+   * pending flag, and rerenders so placeholders disappear.
    *
-   * In flat (non-tree) mode this is the flat-window page sink: `parentId` is
-   * ignored and `response.page` keys the page cache. `parentId == null` here
-   * is a flat window, NOT a tree root — the two are mutually exclusive, so the
-   * WC disambiguates by `this._tree`.
+   * `parentId == null` is a **root window** (flat rows, or the top level of a
+   * tree): `response.page` keys the page cache. Page 1 is owned by the `data`
+   * setter, so a page-1 response here is a no-op. `parentId != null` is a tree
+   * child set, keyed by parentId. Root-window vs child is decided by parentId,
+   * not by `this._tree`, so a virtual tree windows BOTH its roots and children.
    */
   public setFetchResponse(parentId: unknown | null, response: TreeFetchResponse): void {
-    if (!this._tree) {
-      // Flat virtual-window: store by page. Page 1 lives in `_data` (seeded by
-      // the wrapper's first-page fetch), so ignore it here.
+    if (parentId == null) {
+      // Root window: store by page. Page 1 lives in `_data` (seeded by the
+      // wrapper's first-page fetch), so ignore it here.
       const page = response.page;
       if (page == null || page <= 1) return;
       this._pendingPageFetches.delete(page);
@@ -1262,7 +1274,6 @@ export class MpDatatable extends LitElement {
       this.requestUpdate();
       return;
     }
-    if (parentId == null) return; // tree root-level fetches use the `data` setter directly
     this._pendingFetches.delete(parentId);
     this._childCache.set(parentId, [...response.data]);
     this._childTotals.set(parentId, response.totalRecords);
