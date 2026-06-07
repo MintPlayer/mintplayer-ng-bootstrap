@@ -66,8 +66,8 @@ This change makes flat virtual + `[fetch]` fetch **only the visible window (+ bu
 6. Update `aria-rowcount` (`render()` `:613`) to use `getFlatList().length` in flat-windowed mode (currently `_data.length` for non-tree).
 
 ### Phase 2: WC on-demand fetch + cache writes (`mp-datatable.ts`)
-1. In `refreshVirtualRange` (`:564-580`): call `maybeFetchPlaceholdersInViewport()` when `this._tree || this.isFlatWindowed()` (currently tree-only).
-2. Extend `maybeFetchPlaceholdersInViewport` (`:586-599`): for flat placeholders (`parentId == null`, has `page`), collect the page set in `[startIndex,endIndex)`, skip pages already in `_pageCache` or `_pendingPageFetches`, and emit one fetch-request per needed page. Keep the existing tree path for `parentId != null`.
+1. In `refreshVirtualRange` (`:564-580`): drive the viewport scan in flat-windowed mode too — `if (this._tree) maybeFetchPlaceholdersInViewport(); else if (this.isFlatWindowed()) maybeFetchPagesInViewport();` (the tree scan stays as-is).
+2. Add a sibling `maybeFetchPagesInViewport()` (rather than overloading the tree scan, which keys by `parentId`): for flat placeholders (`parentId == null`, has `page`), collect the page set in `[startIndex,endIndex)`, skip pages already in `_pageCache` or `_pendingPageFetches`, and emit one fetch-request per needed page. `maybeFetchPlaceholdersInViewport` stays tree-only.
 3. Add `requestPageFetch(page: number)`: add to `_pendingPageFetches`, dispatch `mp-datatable-fetch-request` with `{ parentId: null, page, perPage: this._perPage, sortColumns: [...this._sortColumns] }`.
 4. Extend `setFetchResponse(parentId, response)`: when `!this._tree` (flat-window), `_pendingPageFetches.delete(response.page)`, `_pageCache.set(response.page, [...response.data])`, set `_totalRecords` if changed, `requestUpdate()`. Keep the tree path (`parentId != null` → `_childCache`) and the existing null early-return only for the tree case.
 5. Add `public invalidateData(): void` — clears `_pageCache` + `_pendingPageFetches`, `requestUpdate()`.

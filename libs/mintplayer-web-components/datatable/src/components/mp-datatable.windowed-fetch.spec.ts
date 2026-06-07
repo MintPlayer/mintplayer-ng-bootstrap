@@ -154,6 +154,31 @@ describe('mp-datatable — flat virtual windowed fetch', () => {
     expect(placeholderCount(el)).toBe(10); // page 2 reverted to placeholders
   });
 
+  it('re-fetches the visible window after invalidateData without needing a scroll', async () => {
+    // Parity with the old VirtualDatatableDataSource.reset(): invalidation must
+    // re-request the currently-visible pages on the next render (driven by
+    // updated() → refreshVirtualRange), not wait for the next scroll event.
+    const requested: number[] = [];
+    el = await makeWindowed({
+      totalRecords: 50,
+      perPage: 10,
+      onRequest: (d) => requested.push(d.page),
+    });
+    el.setFetchResponse(null, {
+      data: makePage(2, 10) as unknown[],
+      totalRecords: 50,
+      page: 2,
+      perPage: 10,
+    });
+    await el.updateComplete;
+    expect(requested).toEqual([2]); // initial request only
+
+    el.invalidateData();
+    await el.updateComplete;
+    // Page 2 is visible and no longer cached/pending → requested again.
+    expect(requested).toEqual([2, 2]);
+  });
+
   it('does not window a single-page list (totalRecords ≤ data.length)', async () => {
     const onlyPage = makePage(1, 5);
     const requested: number[] = [];

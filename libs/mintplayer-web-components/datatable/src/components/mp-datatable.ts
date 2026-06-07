@@ -949,7 +949,7 @@ export class MpDatatable extends LitElement {
       // `_totalRecords`. Loaded rows come from `_data` (page 1) and
       // `_pageCache` (pages ≥ 2); every not-yet-loaded slot is a placeholder so
       // the virtualizer sizes the scroll region from the true total and
-      // `maybeFetchPlaceholdersInViewport` can pull the missing pages on demand.
+      // `maybeFetchPagesInViewport` can pull the missing pages on demand.
       // No client sort here: `_autoSort` is false in fetch mode (the server
       // owns ordering), so page ordering is authoritative.
       //
@@ -957,6 +957,12 @@ export class MpDatatable extends LitElement {
       // render (cleared in `willUpdate`) and the realistic totals for
       // server-paged lists are bounded; revisit with slice-only
       // materialisation if very large totals ever jank.
+      //
+      // Page 1 is assumed to fill `_data` to `perPage` rows (the `[fetch]`
+      // contract honours the requested perPage). If a server caps page 1 below
+      // perPage while the total spans multiple pages, indices past `_data`
+      // would map to page 1 and never resolve (`maybeFetchPagesInViewport`
+      // skips page ≤ 1) — out of contract, not handled here.
       if (this.isFlatWindowed()) {
         const total = this._totalRecords ?? this._data.length;
         const perPage = Math.max(1, this._perPage);
