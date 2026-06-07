@@ -228,12 +228,12 @@ export class BsDatatableComponent<TData> implements AfterViewInit {
       }
     });
 
-    // Async fetch: re-run on fetch / settings changes. In virtual flat mode
-    // the WC's virtualizer slices the in-memory `currentData` array, so the
-    // wrapper drains every page from the fetcher up front. In tree mode the
-    // wrapper does one root-page fetch; the WC pulls children on demand via
-    // `mp-datatable-fetch-request` (bridged by `onFetchRequest` below), so
-    // virtual + tree composes without front-loading.
+    // Async fetch: re-run on fetch / settings changes. In flat virtual mode the
+    // wrapper fetches only page 1 (for the total + initial rows); the WC pulls
+    // the remaining pages on demand as they scroll into view via
+    // `mp-datatable-fetch-request` (bridged by `onFetchRequest` below). In tree
+    // mode the wrapper does one root-page fetch and the WC pulls children the
+    // same way. Neither front-loads the whole result set.
     effect(() => {
       if (isPlatformServer(this.platformId)) return;
       const fetcher = this.fetch();
@@ -252,7 +252,12 @@ export class BsDatatableComponent<TData> implements AfterViewInit {
         if (el && typeof el.invalidateChildren === 'function') el.invalidateChildren();
         void this.runFetch(fetcher, req, settings);
       } else if (this.virtualScroll()) {
-        void this.runVirtualFetchAll(fetcher, settings.sortColumns);
+        // Sort/settings changes invalidate the windowed page cache (the page
+        // boundaries + ordering are stale) before the page-1 refetch — mirrors
+        // the tree `invalidateChildren()` above.
+        const el = this.datatableRef()?.nativeElement;
+        if (el && typeof el.invalidateData === 'function') el.invalidateData();
+        void this.runVirtualFetchFirst(fetcher, settings);
       } else {
         const req: PaginationRequest = {
           page: settings.page.selected,
@@ -405,29 +410,32 @@ export class BsDatatableComponent<TData> implements AfterViewInit {
     };
   }
 
-  /** Generation token: invalidates an in-flight virtual-mode preload when sort/fetcher changes. */
+  /** Generation token: invalidates an in-flight virtual-mode fetch when sort/fetcher changes. */
   private virtualFetchToken = 0;
 
-  private async runVirtualFetchAll(
+  /**
+   * Flat virtual mode: fetch only page 1 and report the total. The WC seeds
+   * page 1 from `currentData` (via the `el.data` effect), sizes the scroll
+   * region from `totalRecords`, and pulls pages ≥ 2 lazily as they scroll into
+   * view — bridged back through `onFetchRequest`. The window size is
+   * `settings.perPage`, so the WC's page index matches the fetch page.
+   *
+   * The `virtualFetchToken` guard drops a stale page-1 response from a previous
+   * sort/fetcher generation so it can't clobber the current window.
+   */
+  private async runVirtualFetchFirst(
     fetcher: BsDatatableFetch<TData>,
-    sortColumns: SortColumn[],
+    settings: DatatableSettings,
   ): Promise<void> {
     const token = ++this.virtualFetchToken;
-    const perPage = 200;
-    const first = await fetcher({ page: 1, perPage, sortColumns });
+    const first = await fetcher({
+      page: 1,
+      perPage: settings.perPage.selected,
+      sortColumns: settings.sortColumns,
+    });
     if (!first || token !== this.virtualFetchToken) return;
-    const accumulator: TData[] = [...(first.data ?? [])];
-    const totalRecords = first.totalRecords ?? accumulator.length;
-    const totalPages = Math.max(1, first.totalPages ?? Math.ceil(totalRecords / perPage));
-    this.currentData.set(accumulator);
-    this.totalRecords.set(totalRecords);
-    const remaining = Array.from({ length: totalPages - 1 }, (_, i) => i + 2);
-    for (const page of remaining) {
-      const response = await fetcher({ page, perPage, sortColumns });
-      if (!response || token !== this.virtualFetchToken) return;
-      accumulator.push(...(response.data ?? []));
-      this.currentData.set([...accumulator]);
-    }
+    this.currentData.set(first.data ?? []);
+    this.totalRecords.set(first.totalRecords ?? first.data?.length ?? 0);
   }
 
   private async runFetch(
@@ -528,10 +536,17 @@ export class BsDatatableComponent<TData> implements AfterViewInit {
   // ─── Tree-mode event handlers ────────────────────────────────────────────
 
   /**
-   * Bridge the WC's fetch-request to the consumer's `[fetch]` callback. The
-   * WC fires this when a row is expanded (or scrolled into view as a
-   * placeholder) without cached children. We resolve the consumer's promise
-   * and hand the response back to the WC via `setFetchResponse`.
+   * Bridge the WC's fetch-request to the consumer's `[fetch]` callback. Fires
+   * for tree-mode children (a non-null `parentId` is scrolled/expanded into
+   * view without cached children) AND for flat virtual windows (`parentId`
+   * null, `page` ≥ 2 scrolled into view). We resolve the consumer's promise and
+   * hand the response back via `setFetchResponse`.
+   *
+   * The page handed to `setFetchResponse` is the *requested* `detail.page`, not
+   * `response.page`: in flat-window mode the WC keys both its page cache and
+   * its in-flight set on the requested page, so a server that normalises/echoes
+   * a different page number would otherwise leave the placeholder unresolved
+   * and the page stuck pending.
    */
   onFetchRequest(event: Event): void {
     const detail = (event as CustomEvent<TreeFetchRequestDetail>).detail;
@@ -550,7 +565,7 @@ export class BsDatatableComponent<TData> implements AfterViewInit {
         el.setFetchResponse(detail.parentId, {
           data: response.data ?? [],
           totalRecords: response.totalRecords ?? response.data?.length ?? 0,
-          page: response.page ?? detail.page,
+          page: detail.page,
           perPage: response.perPage ?? detail.perPage,
         });
       } catch (err) {

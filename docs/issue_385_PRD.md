@@ -139,9 +139,9 @@ fetchUsers = (req: PaginationRequest): Promise<PaginationResponse<User>> =>
 - [x] `invalidateData()`.
 
 ### Milestone 3: Angular wrapper
-- [ ] Replace `runVirtualFetchAll` with `runVirtualFetchFirst` (page-1 only + totalRecords).
-- [ ] `el.invalidateData()` on sort/settings change before refetch.
-- [ ] Extend `onFetchRequest` for `parentId == null` flat windows.
+- [x] Replace `runVirtualFetchAll` with `runVirtualFetchFirst` (page-1 only + totalRecords).
+- [x] `el.invalidateData()` on sort/settings change before refetch.
+- [x] Extend `onFetchRequest` for `parentId == null` flat windows (key the page cache on the requested `detail.page`, not `response.page`, so a server that normalises page numbers can't deadlock the window).
 
 ### Milestone 4: Tests + demo
 - [ ] WC unit tests (placeholder render, window-request dedup, cache populate, invalidation, spacer sizing).
