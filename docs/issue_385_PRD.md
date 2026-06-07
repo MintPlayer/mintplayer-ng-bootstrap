@@ -146,11 +146,13 @@ fetchUsers = (req: PaginationRequest): Promise<PaginationResponse<User>> =>
 ### Milestone 4: Tests + demo
 - [x] WC unit tests (placeholder render, window-request dedup, cache populate, invalidation, aria-rowcount/spacer sizing, single-page fallback) — `mp-datatable.windowed-fetch.spec.ts` (7 tests).
 - [x] Wrapper unit tests (page-1-first, `parentId == null` bridge, requested-page-key lock, invalidation) — `datatable.windowed-fetch.spec.ts` (4 tests).
-- [ ] Virtual + fetch demo example (→ Milestone 5, with build/publish).
+- [x] Virtual + fetch demo example — dedicated "Virtual scrolling — lazy windowed fetch" section on the ng datatable demo page (5000-row synthetic source, simulated latency, live fetch-page log, placeholder-aware rows).
 
 ### Milestone 5: Publish + cross-repo handoff
-- [ ] Build all libs + run tests; bump + publish `@mintplayer/ng-bootstrap`.
-- [ ] Notify so MintPlayer.Spark #178 bumps ng-bootstrap and resumes.
+- [x] Build all libs + run tests (WC + wrapper + demo all green).
+- [x] Bump versions: `@mintplayer/web-components` 1.6.0 → 1.7.0 (the fix), `@mintplayer/ng-bootstrap` 22.2.0 → 22.3.0, and raise ng-bootstrap's `@mintplayer/web-components` peer floor to `^1.7.0` (the new wrapper requires the new WC flat-window API).
+- [ ] Publish — automatic via `publish-master.yml` on merge to `master` (`skipDuplicate`); no manual publish.
+- [ ] Notify so MintPlayer.Spark #178 bumps ng-bootstrap and resumes (post-merge).
 
 ---
 
