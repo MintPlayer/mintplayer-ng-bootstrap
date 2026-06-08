@@ -89,6 +89,33 @@ describe('<mp-tree-select>', () => {
     expect((el.value as TreeNode[]).map((n) => n.id)).toEqual(['a', 'b']);
   });
 
+  it('accepts value set BEFORE first render without throwing (renderRoot undefined)', async () => {
+    // Angular/React/Vue set the `value` property on a freshly-created element
+    // before it has ever rendered, so `this.renderRoot` is still undefined. The
+    // setter -> syncTreeviewSelection() path must not throw on that null shadow
+    // root, or the error propagates out of the setter and blanks the host.
+    const el = document.createElement('mp-tree-select') as MpTreeSelect;
+    el.mode = 'multiple';
+    el.provider = makeProvider();
+    // Not yet connected -> renderRoot is undefined here.
+    expect(() => {
+      el.value = [
+        { id: '1', label: 'Fruit' },
+        { id: '2', label: 'Vegetables' },
+      ];
+    }).not.toThrow();
+    // The selection is still recorded...
+    expect((el.value as TreeNode[]).map((n) => n.id)).toEqual(['1', '2']);
+
+    // ...and after a real render the treeview receives it declaratively.
+    host.appendChild(el);
+    await settled(el);
+    await el.open();
+    await flush(el);
+    const treeview = tv(el) as unknown as { selectedIds: string[] };
+    expect([...treeview.selectedIds].sort()).toEqual(['1', '2']);
+  });
+
   it('loads roots from the provider on open', async () => {
     const el = await mount((e) => (e.mode = 'single'));
     expect(row(el, '1')).toBeTruthy();

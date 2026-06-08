@@ -511,7 +511,7 @@ export class MpTreeSelect extends LitElement {
   }
 
   private syncTreeviewSelection(): void {
-    const tv = this.renderRoot.querySelector<MpTreeview>('mp-treeview');
+    const tv = this.renderRoot?.querySelector<MpTreeview>('mp-treeview');
     if (tv) tv.selectedIds = [...this._selected.keys()];
   }
 
