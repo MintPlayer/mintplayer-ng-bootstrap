@@ -153,6 +153,11 @@ mp-splitter {
 
 mp-datatable {
   width: 100%;
+  // Cap the file/folder icons rendered into the datatable's name column.
+  // The icons live in the datatable's shadow root (it owns the cell markup),
+  // so this custom property — which inherits across the boundary — is how we
+  // size them from here.
+  --mp-datatable-cell-media-max-width: 3rem;
 }
 
 .icon-grid {
