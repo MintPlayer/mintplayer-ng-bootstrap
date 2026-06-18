@@ -1,5 +1,6 @@
 import { Component, inject, ChangeDetectionStrategy} from '@angular/core';
 import { Color } from '@mintplayer/ng-bootstrap';
+import { BsFormComponent, BsFormControlDirective } from '@mintplayer/ng-bootstrap/form';
 import { BsCodeSnippetComponent } from '@mintplayer/ng-bootstrap/code-snippet';
 import { BsGridComponent, BsGridRowDirective, BsGridColumnDirective, BsGridColDirective, BsColFormLabelDirective } from '@mintplayer/ng-bootstrap/grid';
 import { BsModalHostComponent, BsModalDirective, BsModalHeaderDirective, BsModalBodyDirective, BsModalFooterDirective, BsModalCloseDirective } from '@mintplayer/ng-bootstrap/modal';
@@ -12,7 +13,7 @@ import { dedent } from 'ts-dedent';
   selector: 'demo-modal',
   templateUrl: './modal.component.html',
   styleUrls: ['./modal.component.scss'],
-  imports: [BsCodeSnippetComponent, BsGridComponent, BsGridRowDirective, BsGridColumnDirective, BsGridColDirective, BsColFormLabelDirective, BsModalHostComponent, BsModalDirective, BsModalHeaderDirective, BsModalBodyDirective, BsModalFooterDirective, BsModalCloseDirective, BsButtonTypeDirective, FocusOnLoadDirective],
+  imports: [BsCodeSnippetComponent, BsFormComponent, BsFormControlDirective, BsGridComponent, BsGridRowDirective, BsGridColumnDirective, BsGridColDirective, BsColFormLabelDirective, BsModalHostComponent, BsModalDirective, BsModalHeaderDirective, BsModalBodyDirective, BsModalFooterDirective, BsModalCloseDirective, BsButtonTypeDirective, FocusOnLoadDirective],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class ModalComponent {

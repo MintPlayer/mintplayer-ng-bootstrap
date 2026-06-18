@@ -21,19 +21,21 @@
                         <h5 class="modal-title">Modal title</h5>
                     </div>
                     <div bsModalBody class="text-nowrap p-2 d-flex flex-row align-items-center justify-content-between">
-                        <bs-grid>
-                            <div bsRow class="form-group">
-                                <div [col] bsColFormLabel>Search for tags</div>
-                            </div>
-                            <div bsRow class="form-group">
-                                <div [md]="3" [lg]="6">
-                                    <input type="text" class="form-control" placeholder="Search for tags" autofocus>
+                        <bs-form>
+                            <bs-grid>
+                                <div bsRow class="form-group">
+                                    <div [col] bsColFormLabel>Search for tags</div>
                                 </div>
-                                <div [md]="9" [lg]="6">
-                                    <input type="text" class="form-control" placeholder="More tags">
+                                <div bsRow class="form-group">
+                                    <div [md]="3" [lg]="6">
+                                        <input type="text" placeholder="Search for tags" autofocus>
+                                    </div>
+                                    <div [md]="9" [lg]="6">
+                                        <input type="text" placeholder="More tags">
+                                    </div>
                                 </div>
-                            </div>
-                        </bs-grid>
+                            </bs-grid>
+                        </bs-form>
                     </div>
                     <div bsModalFooter>
                         <button type="button" bsModalClose [color]="colors.secondary" aria-label="Close">Close</button>
