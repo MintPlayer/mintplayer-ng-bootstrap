@@ -13,7 +13,7 @@
   "targets": {
     "build": {
       "//silenceDeprecations": "stylePreprocessorOptions.sass.silenceDeprecations below is needed only because Bootstrap 5.3.x's SCSS triggers these Sass 3.0 deprecation IDs (twbs/bootstrap#40849, #40962). Upstream's fix PR (twbs/bootstrap#41112) was closed without merging; the cleanup landed only on v6-dev as part of a full rewrite. Drop the silenceDeprecations array here AND in libs/mintplayer-ng-bootstrap/ng-package.json (lib.sass.silenceDeprecations) when bumping the bootstrap peer dep to v6.",
-      "executor": "@angular-devkit/build-angular:application",
+      "executor": "@angular/build:application",
       "outputs": [
         "{options.outputPath}"
       ],
@@ -98,7 +98,7 @@
       ]
     },
     "serve": {
-      "executor": "@angular-devkit/build-angular:dev-server",
+      "executor": "@angular/build:dev-server",
       "options": {
         "proxyConfig": "apps/ng-bootstrap-demo/proxy.conf.json",
         "open": true
@@ -148,7 +148,7 @@
       ]
     },
     "extract-i18n": {
-      "executor": "@angular-devkit/build-angular:extract-i18n",
+      "executor": "@angular/build:extract-i18n",
       "options": {
         "buildTarget": "ng-bootstrap-demo:build"
       }

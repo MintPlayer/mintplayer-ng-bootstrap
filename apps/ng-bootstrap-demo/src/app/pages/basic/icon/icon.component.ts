@@ -46,7 +46,7 @@ export class IconComponent {
     {
       "architect": {
         "build": {
-          "builderOrExecutor": "@angular-devkit/build-angular:application",
+          "builderOrExecutor": "@angular/build:application",
           "options": {
             "loader": {
               ".svg": "text"
