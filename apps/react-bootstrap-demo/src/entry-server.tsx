@@ -16,6 +16,7 @@ import { Writable } from 'node:stream';
 // Framework-agnostic helper: splices `<mp-shell>`'s Declarative Shadow DOM into
 // the HTML so the sidebar + hamburger toggle work with JavaScript disabled.
 import { injectMpShellDsd } from '@mintplayer/web-components/shell/ssr';
+import { injectMpCarouselDsd } from '@mintplayer/web-components/carousel/ssr';
 import App from './app/app';
 
 /**
@@ -39,7 +40,7 @@ export function render(url: string): Promise<string> {
       },
       final(cb) {
         clearTimeout(timer);
-        resolve(injectMpShellDsd(Buffer.concat(chunks).toString('utf-8')));
+        resolve(injectMpCarouselDsd(injectMpShellDsd(Buffer.concat(chunks).toString('utf-8'))));
         cb();
       },
     });

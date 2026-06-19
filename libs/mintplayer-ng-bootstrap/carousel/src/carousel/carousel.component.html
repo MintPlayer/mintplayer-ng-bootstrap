@@ -1,5 +1,8 @@
 <mp-carousel
   #el
+  [attr.animation]="animation()"
+  [attr.orientation]="orientation()"
+  [attr.aria-label]="ariaLabel()"
   (slide-change)="onSlideChange($event)"
   (paused-change)="onPausedChange($event)"
   (animation-start)="animationStart.emit()"

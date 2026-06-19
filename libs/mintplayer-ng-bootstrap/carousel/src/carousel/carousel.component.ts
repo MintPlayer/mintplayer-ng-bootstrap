@@ -1,4 +1,5 @@
 import {
+  AfterViewInit,
   ChangeDetectionStrategy,
   Component,
   CUSTOM_ELEMENTS_SCHEMA,
@@ -40,7 +41,7 @@ import '@mintplayer/web-components/carousel';
   schemas: [CUSTOM_ELEMENTS_SCHEMA],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class BsCarouselComponent {
+export class BsCarouselComponent implements AfterViewInit {
   readonly orientation = input<CarouselOrientation>('horizontal');
   readonly animation = input<CarouselAnimation>('slide');
   readonly interval = input<number | null>(null);
@@ -61,21 +62,28 @@ export class BsCarouselComponent {
   private readonly elementRef = viewChild<ElementRef<MpCarousel>>('el');
 
   constructor() {
-    this.bindProp((el) => (el.orientation = this.orientation()));
-    this.bindProp((el) => (el.animation = this.animation()));
+    // `animation`, `orientation` and `aria-label` are bound as [attr.…] in the
+    // template instead of here: the WC reads them as attributes, and they must
+    // be present in the *server-rendered* markup so injectMpCarouselDsd can build
+    // the matching no-JS Declarative Shadow DOM (a property set runs client-only).
     this.bindProp((el) => (el.interval = this.interval()));
     this.bindProp((el) => (el.wrap = this.wrap()));
     this.bindProp((el) => (el.indicators = this.indicators()));
     this.bindProp((el) => (el.keyboardEvents = this.keyboardEvents()));
-    this.bindProp((el) => {
-      const label = this.ariaLabel();
-      if (label != null) el.setAttribute('aria-label', label);
-      else el.removeAttribute('aria-label');
-    });
     this.bindProp((el) => (el.paused = this.paused()));
     this.bindProp((el) => {
       if (el.index !== this.index()) el.index = this.index();
     });
+  }
+
+  ngAfterViewInit(): void {
+    // SSR hint: stamp the projected slide count so injectMpCarouselDsd can size
+    // the no-JS Declarative Shadow DOM (lit-ssr can't count slotted children
+    // server-side). Runs during SSR before the DOM is serialized, so the
+    // attribute lands in the response. The WC recounts itself from slotchange
+    // once it upgrades, so this only needs to be right at server-render time.
+    const el = this.elementRef()?.nativeElement;
+    if (el) el.setAttribute('slide-count', String(el.childElementCount));
   }
 
   /** Run `apply` against the WC element whenever a tracked signal changes. */

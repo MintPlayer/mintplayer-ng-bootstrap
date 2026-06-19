@@ -14,6 +14,7 @@ import { renderToString } from 'vue/server-renderer';
 // Framework-agnostic helper: splices <mp-shell>'s Declarative Shadow DOM into
 // the HTML so the sidebar + hamburger toggle work with JavaScript disabled.
 import { injectMpShellDsd } from '@mintplayer/web-components/shell/ssr';
+import { injectMpCarouselDsd } from '@mintplayer/web-components/carousel/ssr';
 import { createApp } from './main';
 
 /**
@@ -27,5 +28,5 @@ export async function render(url: string): Promise<string> {
   await router.push(url);
   await router.isReady();
   const html = await renderToString(app);
-  return injectMpShellDsd(html);
+  return injectMpCarouselDsd(injectMpShellDsd(html));
 }

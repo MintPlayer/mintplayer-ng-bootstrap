@@ -8,7 +8,7 @@ import type {
   CarouselSlideChangeEventDetail,
   MpCarousel,
 } from '@mintplayer/web-components/carousel';
-import { onMounted, ref, watch } from 'vue';
+import { computed, Comment, Fragment, onMounted, ref, Text, useSlots, watch, type VNode } from 'vue';
 
 defineOptions({ inheritAttrs: false });
 
@@ -41,6 +41,21 @@ const index = defineModel<number>('index', { default: 0 });
 const emit = defineEmits<{ animationStart: []; animationEnd: [] }>();
 
 const el = ref<MpCarousel | null>(null);
+
+// `slide-count` is a server-render hint: lit-ssr can't see slotted children, so
+// injectMpCarouselDsd reads this attribute to size the no-JS fallback. Count the
+// element/component vnodes in the default slot (flattening v-for fragments,
+// skipping comment/text nodes). The WC recounts itself from slotchange once it
+// upgrades, so a stale value only affects the no-JS render.
+const slots = useSlots();
+function countSlides(vnodes: VNode[] | undefined): number {
+  return (vnodes ?? []).reduce((n, v) => {
+    if (v.type === Fragment) return n + countSlides(v.children as VNode[]);
+    if (v.type === Comment || v.type === Text) return n;
+    return n + 1;
+  }, 0);
+}
+const slideCount = computed(() => countSlides(slots.default?.()));
 
 const syncConfig = () => {
   const e = el.value;
@@ -91,6 +106,11 @@ function onPausedChange(ev: Event) {
 <template>
   <mp-carousel
     ref="el"
+    v-bind="$attrs"
+    :slide-count="slideCount"
+    :animation="animation"
+    :orientation="orientation"
+    :aria-label="ariaLabel ?? undefined"
     @slide-change="onSlideChange"
     @paused-change="onPausedChange"
     @animation-start="emit('animationStart')"

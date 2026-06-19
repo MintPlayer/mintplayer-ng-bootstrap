@@ -1,4 +1,4 @@
-import { LitElement, html, nothing, type TemplateResult } from 'lit';
+import { adoptStyles, LitElement, html, nothing, type TemplateResult } from 'lit';
 import { classMap } from 'lit/directives/class-map.js';
 import { styleMap } from 'lit/directives/style-map.js';
 import {
@@ -36,12 +36,34 @@ import type {
  *       <img src="b.jpg" />
  *     </mp-carousel>
  *
- * NOTE: the no-JS render (in-shadow `:checked` state machine + SSR DSD) and the
- * play/pause `toggle` slot are tracked Wave-1 follow-ups; this build covers the
- * full interactive (hydrated) behaviour.
+ * No-JS / SSR: when server-rendered as Declarative Shadow DOM (see
+ * `@mintplayer/web-components/carousel/ssr`), the carousel stays usable with
+ * JavaScript disabled — `slide`/`none` degrade to a native scroll-snap strip,
+ * `fade` to an in-shadow radio + dot crossfade machine. That DSD is the *no-JS*
+ * tier and is deliberately different markup from this hydrated render(), so it
+ * is discarded on upgrade (see {@link createRenderRoot}).
  */
 export class MpCarousel extends LitElement implements SwipeEngineHost {
   static override styles = [carouselStyles];
+
+  protected override createRenderRoot(): HTMLElement | DocumentFragment {
+    // The DSD we serve is the no-JS tier — hand-built markup (no lit-html part
+    // markers) that intentionally differs from this element's hydrated render(),
+    // so it cannot be hydrated in any framework. Take over the DSD-attached
+    // shadow root ourselves instead of calling super, which would otherwise:
+    //   - (plain LitElement) pin `renderBefore` to the first inert DSD node and
+    //     render a SECOND copy ahead of it; or
+    //   - (@lit-labs/ssr-client hydrate-support, active in the React/Vue single
+    //     lit-instance demos) try to hydrate the non-matching markup AND skip
+    //     style adoption, leaving the element unstyled.
+    // So: reuse the shadow root, drop the inert no-JS chrome, and adopt our
+    // styles for the fresh client render. Slotted slides are light DOM, untouched.
+    const ctor = this.constructor as typeof MpCarousel;
+    const renderRoot = this.shadowRoot ?? this.attachShadow(ctor.shadowRootOptions);
+    renderRoot.replaceChildren();
+    adoptStyles(renderRoot, ctor.elementStyles);
+    return renderRoot;
+  }
 
   static override get observedAttributes(): string[] {
     return [
@@ -295,7 +317,26 @@ export class MpCarousel extends LitElement implements SwipeEngineHost {
       : [];
     this.rebuildClones();
     this.measureSlides();
+    this.observeSlides();
     this.updateActiveSlide();
+  }
+
+  /**
+   * (Re-)observe the viewport and every slide with the ResizeObserver. A slide's
+   * box is unknown until its content sizes — an `<img>` measures 0×0 until its
+   * bytes arrive, and any slide reflows when the viewport width changes — and
+   * the viewport's own height is driven *by* these measurements, so observing it
+   * alone can't catch a late-loading image. Observing each slide makes the
+   * carousel height converge on real content size for images and arbitrary
+   * content alike. Browser-only: there is no ResizeObserver in Node SSR (where
+   * this never runs), so the no-JS render simply keeps its natural height.
+   */
+  private observeSlides(): void {
+    const ro = this.resizeObserver;
+    if (!ro) return;
+    ro.disconnect();
+    if (this.viewportEl) ro.observe(this.viewportEl);
+    this.slideEls.forEach((el) => ro.observe(el));
   }
 
   private rebuildClones(): void {

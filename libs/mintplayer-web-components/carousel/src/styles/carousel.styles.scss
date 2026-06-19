@@ -33,6 +33,11 @@
 }
 .carousel:not(.carousel-vertical) .carousel-track {
   flex-direction: row;
+  // Top-align, never stretch: a flex row defaults to `align-items: stretch`,
+  // which would force every slide to the tallest slide's height — distorting
+  // images (height no longer follows their aspect ratio) and pinning the
+  // viewport to the tallest slide instead of letting it track the active one.
+  align-items: flex-start;
 }
 .carousel.carousel-vertical .carousel-track {
   flex-direction: column;
@@ -49,12 +54,17 @@
   pointer-events: auto;
 }
 // Vertical cells are pinned to the tallest slide via the WC-set custom
-// property, so the column steps by a uniform height.
+// property, so the column steps by a uniform height; shorter content is
+// centered within that uniform box (horizontal mode keeps natural top-aligned
+// flow instead — see below).
 .carousel.carousel-vertical .carousel-track > .carousel-clone,
 .carousel.carousel-vertical .carousel-track ::slotted(*) {
   flex: 0 0 auto;
   width: 100%;
   height: var(--mp-carousel-slide-height, auto);
+  display: flex;
+  align-items: center;
+  justify-content: center;
   pointer-events: auto;
 }
 
@@ -93,7 +103,14 @@
 }
 
 // Fade mode: slides overlap via absolute positioning; only the active is opaque.
+// The ACTIVE slide stays in flow (position: relative) so it establishes the
+// carousel's width and height — the inactive slides overlay it absolutely. (If
+// every slide were absolute, the carousel would have no in-flow content and
+// collapse to its controls' width in a shrink-to-fit container.)
 .carousel.fade {
+  .carousel-inner {
+    position: relative;
+  }
   .carousel-track > .carousel-clone,
   .carousel-track ::slotted(*) {
     position: absolute;
@@ -106,6 +123,7 @@
   }
   .carousel-track > .carousel-clone.active,
   .carousel-track ::slotted(.active) {
+    position: relative;
     opacity: 1;
     pointer-events: auto;
   }
@@ -242,5 +260,111 @@
   }
   &.carousel-control-next .carousel-control-next-icon {
     transform: rotate(90deg);
+  }
+}
+
+// ===========================================================================
+// No-JS / pre-upgrade fallback (Declarative Shadow DOM)
+// ---------------------------------------------------------------------------
+// When the element is server-rendered as DSD and JavaScript is disabled (or
+// simply before it upgrades), the SwipeEngine never runs. Everything below is
+// gated by `:host(:not(:defined))`, so it applies only until the element is
+// defined and then vanishes — letting the JS layout take over with no fight.
+//
+// The fallback mirrors the configured mode:
+//   - slide / none : a native scroll-snap strip (swipe / scroll, no JS).
+//   - fade         : an in-shadow `<input type=radio>` + `<label>` (dot) machine.
+//                    The per-index `#…-sN:checked ~ …` crossfade + active-dot
+//                    rules depend on the slide count, which static CSS can't
+//                    express, so `buildMpCarouselDsd` appends them to the DSD's
+//                    inline <style>. These two structural pieces (radios + dots)
+//                    are emitted ONLY in the SSR'd DSD — the hydrated render()
+//                    never produces them, so there is no markup to keep in sync.
+//
+// This whole stylesheet is the single styling source for both tiers: the client
+// adopts it via `static styles` (adoptedStyleSheets); the DSD inlines its
+// `.cssText` into a <style> (constructable sheets don't apply without JS).
+// ===========================================================================
+
+// The radios + no-JS dots are a DSD-only artifact — never shown once upgraded.
+.nojs-radio,
+.nojs-indicators {
+  display: none;
+}
+
+:host(:not(:defined)) {
+  // Visually-hidden but still flippable by their `<label for>` (the dots).
+  .nojs-radio {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    margin: -1px;
+    padding: 0;
+    overflow: hidden;
+    opacity: 0;
+    pointer-events: none;
+  }
+
+  // The arrow controls + play/pause need JS handlers — useless without them.
+  .carousel-control-prev,
+  .carousel-control-next,
+  .carousel-play-pause,
+  .carousel-indicators {
+    display: none;
+  }
+
+  // --- slide / none: native scroll-snap strip ------------------------------
+  // No JS means no height measurement, so we don't size the viewport — slides
+  // keep their natural height and are centered vertically against the tallest
+  // (`align-items: center`), which is the best we can do without measuring.
+  .carousel:not(.fade) {
+    .carousel-inner {
+      overflow-x: auto;
+      overflow-y: hidden;
+      scroll-snap-type: x mandatory;
+      -webkit-overflow-scrolling: touch;
+    }
+    .carousel-track {
+      align-items: center;
+    }
+    .carousel-track ::slotted(*) {
+      scroll-snap-align: start;
+    }
+
+    &.carousel-vertical .carousel-inner {
+      overflow-x: hidden;
+      overflow-y: auto;
+      scroll-snap-type: y mandatory;
+      max-height: 70vh;
+    }
+  }
+
+  // --- fade: the stacking + crossfade come from the always-on `.carousel.fade`
+  // rules above; here we only add the no-JS indicator dots. With no JS there is
+  // no `.active` class, so buildMpCarouselDsd appends per-index `:checked` rules
+  // that promote the checked slide to opaque + in-flow (mirroring `.active`).
+  .carousel.fade {
+    // no-JS indicator dots (emitted by the DSD builder for fade mode).
+    .nojs-indicators {
+      display: flex;
+      position: absolute;
+      bottom: 1rem;
+      left: 0;
+      right: 0;
+      justify-content: center;
+      gap: 0.5rem;
+      z-index: 2;
+      margin: 0;
+      padding: 0;
+    }
+    .nojs-indicator {
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      border: none;
+      background-color: rgba(255, 255, 255, 0.5);
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+      cursor: pointer;
+    }
   }
 }

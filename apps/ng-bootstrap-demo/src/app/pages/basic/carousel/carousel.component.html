@@ -13,7 +13,7 @@
         <h2>Demo</h2>
         <div bsRow class="mb-3">
             <div [col]>
-                <bs-carousel [orientation]="orientation()" [animation]="mode()" [indicators]="true"
+                <bs-carousel [orientation]="orientation()" [animation]="mode()" [indicators]="indicators()"
                              [interval]="interval()" [(paused)]="paused" ariaLabel="Animal photos" class="mx-auto">
                     <!-- The carousel ships a default Play/Pause button whenever an
                          interval is set. Slides are plain projected children. -->
@@ -48,6 +48,14 @@
                 </bs-select>
             </div>
         </div>
+        <div bsRow>
+            <span [col] bsColFormLabel class="text-end">
+                Indicators
+            </span>
+            <div [col]>
+                <bs-checkbox [type]="'checkbox'" [(ngModel)]="indicators">Show indicators</bs-checkbox>
+            </div>
+        </div>
         <h2>Features</h2>
         <div bsRow>
             <div [col]>
@@ -59,6 +67,40 @@
         </div>
     </bs-grid>
 </bs-form>
+
+<h2>Without JavaScript (server-rendered)</h2>
+<p>
+    These are the same, fully-interactive carousels as above — they're here to show they keep
+    working with JavaScript <em>off</em>, served as ready-rendered HTML: <code>slide</code>
+    degrades to a native scroll-snap strip, <code>fade</code> to a pure-CSS radio + dot machine
+    (click a dot). To try it, open your browser's DevTools and toggle <em>Disable JavaScript</em>
+    (<kbd>Ctrl/Cmd+Shift+P</kbd> &rarr; &ldquo;Disable JavaScript&rdquo;), then reload — browsers
+    don't allow a page to link to that setting directly.
+</p>
+<div class="d-flex flex-wrap gap-4 mb-3">
+    <div>
+        <h3 class="h6">Fade</h3>
+        <bs-carousel animation="fade" [indicators]="true" ariaLabel="Fade carousel" style="display: block; max-width: 320px">
+            <img src="/assets/resized/deer.png">
+            <img src="/assets/resized/duck.png">
+            <img src="/assets/resized/leopard.png">
+            <img src="/assets/resized/lion.png">
+            <img src="/assets/resized/peacock.png">
+            <img src="/assets/resized/tiger.png">
+        </bs-carousel>
+    </div>
+    <div>
+        <h3 class="h6">Slide (scroll-snap)</h3>
+        <bs-carousel animation="slide" ariaLabel="Slide carousel" style="display: block; max-width: 320px">
+            <img src="/assets/resized/deer.png">
+            <img src="/assets/resized/duck.png">
+            <img src="/assets/resized/leopard.png">
+            <img src="/assets/resized/lion.png">
+            <img src="/assets/resized/peacock.png">
+            <img src="/assets/resized/tiger.png">
+        </bs-carousel>
+    </div>
+</div>
 
 <bs-code-snippet [codeToCopy]="snippetBasicHtml" [language]="'html'"></bs-code-snippet>
 <bs-code-snippet [codeToCopy]="snippetBasicTs" [language]="'ts'"></bs-code-snippet>
