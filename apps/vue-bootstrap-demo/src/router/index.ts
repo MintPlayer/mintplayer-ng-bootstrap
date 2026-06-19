@@ -24,6 +24,7 @@ export function createAppRouter(ssr: boolean) {
     // Basic
     { path: '/basic/calendar',      name: 'calendar',      component: () => import('../views/CalendarView.vue') },
     { path: '/basic/card',          name: 'card',          component: () => import('../views/CardView.vue') },
+    { path: '/basic/carousel',      name: 'carousel',      component: () => import('../views/CarouselView.vue') },
     { path: '/basic/checkbox',      name: 'checkbox',      component: () => import('../views/CheckboxView.vue') },
     { path: '/basic/code-snippet',  name: 'code-snippet',  component: () => import('../views/CodeSnippetView.vue') },
     { path: '/basic/forms/datepicker',      name: 'datepicker',      component: () => import('../views/forms/DatepickerView.vue') },

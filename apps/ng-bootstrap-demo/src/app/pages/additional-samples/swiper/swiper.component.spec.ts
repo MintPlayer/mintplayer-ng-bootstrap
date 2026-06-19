@@ -6,7 +6,7 @@ import { vi } from 'vitest';
 import { SwiperComponent } from './swiper.component';
 import { BsGridComponent, BsGridRowDirective, BsGridColumnDirective, BsColFormLabelDirective } from '@mintplayer/ng-bootstrap/grid';
 import { BsAlertComponent, BsAlertCloseComponent } from '@mintplayer/ng-bootstrap/alert';
-import { BsCarouselComponent, BsCarouselImageDirective, BsCarouselImgDirective } from '@mintplayer/ng-bootstrap/carousel';
+import { BsCarouselComponent } from '@mintplayer/ng-bootstrap/carousel';
 
 describe('SwiperComponent', () => {
   let component: SwiperComponent;
@@ -26,7 +26,7 @@ describe('SwiperComponent', () => {
         NoopAnimationsModule,
         MockComponent(BsGridComponent), MockDirective(BsGridRowDirective), MockDirective(BsGridColumnDirective), MockDirective(BsColFormLabelDirective),
         MockComponent(BsAlertComponent), MockComponent(BsAlertCloseComponent),
-        MockComponent(BsCarouselComponent), MockDirective(BsCarouselImageDirective), MockDirective(BsCarouselImgDirective),
+        MockComponent(BsCarouselComponent),
         SwiperComponent,
       ]
     })

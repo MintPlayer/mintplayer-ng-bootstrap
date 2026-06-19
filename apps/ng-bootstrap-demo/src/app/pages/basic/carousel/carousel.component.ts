@@ -4,14 +4,14 @@ import { BsCodeSnippetComponent } from '@mintplayer/ng-bootstrap/code-snippet';
 import { BsFormComponent } from '@mintplayer/ng-bootstrap/form';
 import { BsGridComponent, BsGridRowDirective, BsGridColDirective, BsColFormLabelDirective } from '@mintplayer/ng-bootstrap/grid';
 import { BsSelectComponent } from '@mintplayer/ng-bootstrap/select';
-import { BsCarouselComponent, BsCarouselImageDirective } from '@mintplayer/ng-bootstrap/carousel';
+import { BsCarouselComponent } from '@mintplayer/ng-bootstrap/carousel';
 import { dedent } from 'ts-dedent';
 
 @Component({
   selector: 'demo-carousel',
   templateUrl: './carousel.component.html',
   styleUrls: ['./carousel.component.scss'],
-  imports: [FormsModule, BsCodeSnippetComponent, BsFormComponent, BsGridComponent, BsGridRowDirective, BsGridColDirective, BsColFormLabelDirective, BsSelectComponent, BsCarouselComponent, BsCarouselImageDirective],
+  imports: [FormsModule, BsCodeSnippetComponent, BsFormComponent, BsGridComponent, BsGridRowDirective, BsGridColDirective, BsColFormLabelDirective, BsSelectComponent, BsCarouselComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class CarouselComponent {
@@ -25,20 +25,20 @@ export class CarouselComponent {
 
   protected readonly snippetBasicHtml = dedent`
     <bs-carousel ariaLabel="Animal photos">
-      <img *bsCarouselImage src="/assets/resized/deer.png">
-      <img *bsCarouselImage src="/assets/resized/duck.png">
-      <img *bsCarouselImage src="/assets/resized/lion.png">
+      <img src="/assets/resized/deer.png">
+      <img src="/assets/resized/duck.png">
+      <img src="/assets/resized/lion.png">
     </bs-carousel>
   `;
 
   protected readonly snippetBasicTs = dedent`
     import { Component } from '@angular/core';
-    import { BsCarouselComponent, BsCarouselImageDirective } from '@mintplayer/ng-bootstrap/carousel';
+    import { BsCarouselComponent } from '@mintplayer/ng-bootstrap/carousel';
 
     @Component({
       selector: 'my-carousel-demo',
       templateUrl: './my-carousel-demo.component.html',
-      imports: [BsCarouselComponent, BsCarouselImageDirective],
+      imports: [BsCarouselComponent],
     })
     export class MyCarouselDemoComponent {}
   `;

@@ -4,7 +4,7 @@
   The swiper is the touch-friendly gesture layer that powers <code>bs-carousel</code>:
   pointer/touch swipes advance slides while keyboard and indicator controls remain available.
   Use it by simply enabling the carousel's <code>[animation]="'slide'"</code> mode and
-  projecting images with <code>*bsCarouselImage</code> — the swipe gestures are wired
+  projecting images as child elements — the swipe gestures are wired
   automatically.
 </p>
 
@@ -23,7 +23,7 @@
         <div [col]>
             <bs-carousel [indicators]="true" [animation]="'slide'">
                 @for (image of images; track $index) {
-                    <img *bsCarouselImage [src]="image">
+                    <img [src]="image">
                 }
             </bs-carousel>
         </div>

@@ -6,7 +6,7 @@ import { vi } from 'vitest';
 import { CarouselComponent } from './carousel.component';
 import { BsFormComponent, BsFormGroupDirective, BsFormControlDirective } from '@mintplayer/ng-bootstrap/form';
 import { BsGridComponent, BsGridRowDirective, BsGridColumnDirective, BsColFormLabelDirective } from '@mintplayer/ng-bootstrap/grid';
-import { BsCarouselComponent, BsCarouselImageDirective, BsCarouselImgDirective } from '@mintplayer/ng-bootstrap/carousel';
+import { BsCarouselComponent } from '@mintplayer/ng-bootstrap/carousel';
 import { BsSelectComponent } from '@mintplayer/ng-bootstrap/select';
 
 describe('CarouselComponent', () => {
@@ -29,7 +29,7 @@ describe('CarouselComponent', () => {
         MockComponent(BsFormComponent), MockDirective(BsFormGroupDirective), MockDirective(BsFormControlDirective),
         MockComponent(BsGridComponent), MockDirective(BsGridRowDirective), MockDirective(BsGridColumnDirective), MockDirective(BsColFormLabelDirective),
         MockComponent(BsSelectComponent),
-        MockComponent(BsCarouselComponent), MockDirective(BsCarouselImageDirective), MockDirective(BsCarouselImgDirective),
+        MockComponent(BsCarouselComponent),
         CarouselComponent,
       ]
     })

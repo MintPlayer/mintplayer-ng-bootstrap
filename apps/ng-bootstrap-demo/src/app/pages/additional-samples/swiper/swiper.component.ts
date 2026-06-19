@@ -1,7 +1,7 @@
 import { Component, ChangeDetectionStrategy} from '@angular/core';
 import { Color } from '@mintplayer/ng-bootstrap';
 import { BsAlertComponent } from '@mintplayer/ng-bootstrap/alert';
-import { BsCarouselComponent, BsCarouselImageDirective } from '@mintplayer/ng-bootstrap/carousel';
+import { BsCarouselComponent } from '@mintplayer/ng-bootstrap/carousel';
 import { BsCodeSnippetComponent } from '@mintplayer/ng-bootstrap/code-snippet';
 import { BsGridComponent, BsGridRowDirective, BsGridColDirective } from '@mintplayer/ng-bootstrap/grid';
 import { dedent } from 'ts-dedent';
@@ -10,7 +10,7 @@ import { dedent } from 'ts-dedent';
   selector: 'demo-swiper',
   templateUrl: './swiper.component.html',
   styleUrls: ['./swiper.component.scss'],
-  imports: [BsGridComponent, BsGridRowDirective, BsGridColDirective, BsAlertComponent, BsCarouselComponent, BsCarouselImageDirective, BsCodeSnippetComponent],
+  imports: [BsGridComponent, BsGridRowDirective, BsGridColDirective, BsAlertComponent, BsCarouselComponent, BsCodeSnippetComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class SwiperComponent {
@@ -28,22 +28,19 @@ export class SwiperComponent {
   protected readonly snippetBasicHtml = dedent`
     <bs-carousel [indicators]="true" [animation]="'slide'">
       @for (image of images; track image) {
-        <img *bsCarouselImage [src]="image">
+        <img [src]="image">
       }
     </bs-carousel>
   `;
 
   protected readonly snippetBasicTs = dedent`
     import { Component } from '@angular/core';
-    import {
-      BsCarouselComponent,
-      BsCarouselImageDirective,
-    } from '@mintplayer/ng-bootstrap/carousel';
+    import { BsCarouselComponent } from '@mintplayer/ng-bootstrap/carousel';
 
     @Component({
       selector: 'my-swiper-demo',
       templateUrl: './my-swiper-demo.component.html',
-      imports: [BsCarouselComponent, BsCarouselImageDirective],
+      imports: [BsCarouselComponent],
     })
     export class MySwiperDemoComponent {
       protected images = [
