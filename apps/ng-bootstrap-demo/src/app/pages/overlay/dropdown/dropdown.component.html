@@ -9,7 +9,29 @@
   container that renders the menu.
 </p>
 
-<h2>Basic usage</h2>
+<h2>Menu dropdown (<code>bs-dropdown</code>)</h2>
+
+<p>
+  The WC-backed menu dropdown: a native <code>&lt;details&gt;</code> toggle that works
+  with JavaScript disabled (server-rendered as Declarative Shadow DOM) and repositions
+  as a floating overlay once hydrated. Mark the trigger with <code>bsDropdownTrigger</code>
+  — it must be non-interactive content (the WC's <code>&lt;summary&gt;</code> is the toggle).
+</p>
+
+<bs-dropdown data-test="menu-dropdown">
+    <span bsDropdownTrigger class="btn btn-secondary">Menu</span>
+    <a href="#action-1" data-test="mi-1">Action</a>
+    <a href="#action-2" data-test="mi-2">Another action</a>
+    <hr>
+    <a href="#action-3" data-test="mi-3">Separated link</a>
+    <bs-dropdown data-test="submenu">
+        <span bsDropdownTrigger>More options</span>
+        <a href="#sub-a">Sub A</a>
+        <a href="#sub-b">Sub B</a>
+    </bs-dropdown>
+</bs-dropdown>
+
+<h2>Container directive (<code>bsDropdown</code>)</h2>
 
 <!-- <bs-dropdown [closeOnClickOutside]="true"></bs-dropdown> -->
 <bs-has-overlay></bs-has-overlay>

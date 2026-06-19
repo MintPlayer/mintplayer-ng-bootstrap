@@ -72,6 +72,20 @@
         "command": "node tools/lit-ssr-utils/gen-shell-chrome.mjs"
       }
     },
+    "codegen-dropdown-chrome": {
+      "executor": "nx:run-commands",
+      "outputs": ["{projectRoot}/dropdown/ssr/mp-dropdown-chrome.generated.ts"],
+      "inputs": [
+        "{projectRoot}/dropdown/src/components/mp-dropdown.ts",
+        "{projectRoot}/dropdown/src/styles/dropdown.styles.scss",
+        "{workspaceRoot}/tools/lit-ssr-utils/gen-dropdown-chrome.mjs"
+      ],
+      "dependsOn": ["build"],
+      "cache": true,
+      "options": {
+        "command": "node tools/lit-ssr-utils/gen-dropdown-chrome.mjs"
+      }
+    },
     "build": {
       "executor": "@nx/vite:build",
       "outputs": ["{options.outputPath}"],

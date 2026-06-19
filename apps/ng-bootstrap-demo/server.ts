@@ -10,6 +10,7 @@ import { fileURLToPath } from 'node:url';
 // Injects <mp-shell>'s Declarative Shadow DOM into SSR output — see docs/prd/shell-wc-ssr.md
 // Framework-agnostic helper, shared by all three SSR servers.
 import { injectMpShellDsd } from '@mintplayer/web-components/shell/ssr';
+import { injectMpDropdownDsd } from '@mintplayer/web-components/dropdown/ssr';
 
 // Resolve browser assets relative to the *bundled* server (canonical Angular
 // pattern) so the standalone Node SSR server finds them in production.
@@ -73,7 +74,7 @@ app.use((req, res, next) => {
       // Angular's). Reusable helper from @mintplayer/ng-bootstrap/shell.
       const contentType = response.headers.get('content-type') ?? '';
       if (contentType.includes('text/html')) {
-        const body = injectMpShellDsd(await response.text());
+        const body = injectMpDropdownDsd(injectMpShellDsd(await response.text()));
         const headers = new Headers(response.headers);
         headers.delete('content-length');
         return writeResponseToNodeResponse(new Response(body, { status: response.status, headers }), res);
