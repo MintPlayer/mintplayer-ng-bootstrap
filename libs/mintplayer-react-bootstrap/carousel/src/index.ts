@@ -1,4 +1,4 @@
-export * from './carousel/carousel.component';
+export { BsCarousel } from './BsCarousel';
 export type {
   CarouselAnimation,
   CarouselOrientation,

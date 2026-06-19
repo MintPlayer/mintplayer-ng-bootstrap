@@ -1,4 +1,4 @@
-export * from './carousel/carousel.component';
+export { default as BsCarousel } from './BsCarousel.vue';
 export type {
   CarouselAnimation,
   CarouselOrientation,
