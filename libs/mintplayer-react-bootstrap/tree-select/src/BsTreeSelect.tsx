@@ -1,6 +1,10 @@
 import * as React from 'react';
 import { createComponent, type EventName } from '@lit/react';
-import { MpTreeSelect, type TreeSelectChangeEventDetail } from '@mintplayer/web-components/tree-select';
+import {
+  MpTreeSelect,
+  type TreeSelectChangeEventDetail,
+  type TreeSelectReorderEventDetail,
+} from '@mintplayer/web-components/tree-select';
 
 /**
  * React wrapper for `<mp-tree-select>`. Side-effect-registers the WC.
@@ -18,6 +22,7 @@ export const BsTreeSelect = createComponent({
   elementClass: MpTreeSelect,
   events: {
     onValueChange: 'value-change' as EventName<CustomEvent<TreeSelectChangeEventDetail>>,
+    onReorder: 'reorder' as EventName<CustomEvent<TreeSelectReorderEventDetail>>,
     onOpen: 'open' as EventName<CustomEvent<void>>,
     onClose: 'close' as EventName<CustomEvent<void>>,
     onClear: 'clear' as EventName<CustomEvent<void>>,
