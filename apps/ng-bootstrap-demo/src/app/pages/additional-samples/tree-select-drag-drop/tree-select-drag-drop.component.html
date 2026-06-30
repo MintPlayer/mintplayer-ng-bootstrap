@@ -1,11 +1,18 @@
 <h1 class="text-center">Tree-select with Drag-drop</h1>
 
 <p>
-  Combine <code>bs-tree-select</code> (in <code>multiple</code> mode) with Angular CDK's
-  <code>cdkDropList</code> + <code>cdkDrag</code> to let users reorder the selected items by
-  dragging. The tree-select renders its chips inside its own shadow DOM, so the draggable
-  list lives <em>alongside</em> it: pick items in the dropdown, then drag to reorder. The new
-  order is pushed back into <code>[value]</code>, so the chips re-render in the chosen order.
+  Add the <code>reorderable</code> attribute to a <code>multiple</code> /
+  <code>checkbox</code> <code>bs-tree-select</code> to let users reorder the selected chips
+  <strong>directly inside the component</strong> — drag a chip with the pointer, or focus it and
+  press <kbd>M</kbd> then the arrow keys. The new order is emitted through
+  <code>valueChange</code>, so the form value stays in sync.
+</p>
+
+<p>
+  Reordering is <em>opt-in</em>: import <code>BsTreeSelectReorderDirective</code> from
+  <code>&#64;mintplayer/ng-bootstrap/tree-select/reorder</code> and add it to your component's
+  <code>imports</code>. Without that import the drag-drop code is tree-shaken out and
+  <code>reorderable</code> stays inert.
 </p>
 
 <h2>Basic usage</h2>
@@ -13,6 +20,7 @@
 <bs-form>
   <bs-tree-select
     mode="multiple"
+    reorderable
     [provider]="provider"
     [value]="selected()"
     (valueChange)="onValueChange($event)"
@@ -20,21 +28,14 @@
   </bs-tree-select>
 </bs-form>
 
-<div
-  cdkDropList
-  cdkDropListOrientation="mixed"
-  (cdkDropListDropped)="onDrop($event)"
-  class="dnd-list mt-3">
-  @for (item of selected(); track item.id) {
-    <span cdkDrag class="dnd-chip">
-      <span class="drag-handle">&#9776;</span>
-      {{ item.label }}
-      <button type="button" class="dnd-remove" (click)="remove(item)" aria-label="Remove">&times;</button>
-    </span>
-  } @empty {
-    <span class="text-muted">Nothing selected yet — pick a few items above.</span>
+<p class="mt-3">
+  Current order:
+  @if (selected().length) {
+    <strong>{{ orderLabels() }}</strong>
+  } @else {
+    <span class="text-muted">nothing selected yet; pick a few items above.</span>
   }
-</div>
+</p>
 
 <bs-code-snippet [codeToCopy]="snippetBasicHtml" [language]="'html'"></bs-code-snippet>
 <bs-code-snippet [codeToCopy]="snippetBasicTs" [language]="'ts'"></bs-code-snippet>

@@ -1,5 +1,6 @@
 import {
   AfterViewInit,
+  booleanAttribute,
   ChangeDetectionStrategy,
   Component,
   computed,
@@ -83,7 +84,7 @@ export class BsTreeSelectComponent implements ControlValueAccessor, AfterViewIni
    * `BsTreeSelectReorderDirective` from `@mintplayer/ng-bootstrap/tree-select/reorder`
    * (which registers it). Without that import, this flag is inert.
    */
-  readonly reorderable = input<boolean>(false);
+  readonly reorderable = input(false, { transform: booleanAttribute });
 
   readonly value = model<Value>(null);
 
