@@ -1,6 +1,7 @@
 import { LitElement, html, nothing, type TemplateResult } from 'lit';
 import { repeat } from 'lit/directives/repeat.js';
 import { OverlayController } from '@mintplayer/web-components/overlay';
+import { LiveAnnouncerController } from '@mintplayer/web-components/a11y';
 import '@mintplayer/web-components/treeview';
 import type {
   MpTreeview,
@@ -15,8 +16,10 @@ import type {
   TreeSelectChangeEventDetail,
   TreeSelectMode,
   TreeSelectProvider,
+  TreeSelectReorderEventDetail,
   TreeSelectVariant,
 } from '../types';
+import { getTreeSelectSortable, type TreeSelectSortableHandle } from './sortable-registry';
 
 const CARET_SVG =
   '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true" width="100%" height="100%">' +
@@ -48,6 +51,7 @@ export class MpTreeSelect extends LitElement {
       'scroll-height',
       'disabled',
       'search-debounce-ms',
+      'reorderable',
     ];
   }
 
@@ -60,6 +64,7 @@ export class MpTreeSelect extends LitElement {
   private _scrollHeight = '300px';
   private _disabled = false;
   private _searchDebounceMs = 200;
+  private _reorderable = false;
 
   // ---- render callbacks (property-only) ----------------------------------
   itemTemplate?: NodeTemplate;
@@ -89,6 +94,10 @@ export class MpTreeSelect extends LitElement {
   // ---- infrastructure ----------------------------------------------------
   private _abort?: AbortController;
   private _debounceTimer = 0;
+  /** Lazily built once a sortable factory is registered (see sortable-registry). */
+  private _sortableHandle?: TreeSelectSortableHandle;
+  private _reorderWarned = false;
+  private readonly announcer = new LiveAnnouncerController(this);
   private readonly overlay = new OverlayController(this, {
     anchor: () => this.renderRoot.querySelector<HTMLElement>('.ts-anchor'),
     panel: () => this.renderRoot.querySelector<HTMLElement>('.ts-panel'),
@@ -205,6 +214,19 @@ export class MpTreeSelect extends LitElement {
     this._searchDebounceMs = Math.max(0, Number(value) || 0);
   }
 
+  /**
+   * Enables drag/keyboard reordering of the selected chips (`multiple` /
+   * `checkbox` modes). Inert unless a sortable implementation has been
+   * registered via an opt-in import — see {@link getTreeSelectSortable}.
+   */
+  get reorderable(): boolean {
+    return this._reorderable;
+  }
+  set reorderable(value: boolean) {
+    this._reorderable = !!value;
+    this.requestUpdate();
+  }
+
   override attributeChangedCallback(name: string, oldValue: string | null, newValue: string | null): void {
     super.attributeChangedCallback(name, oldValue, newValue);
     switch (name) {
@@ -231,6 +253,9 @@ export class MpTreeSelect extends LitElement {
         break;
       case 'search-debounce-ms':
         this.searchDebounceMs = Number(newValue);
+        break;
+      case 'reorderable':
+        this.reorderable = newValue !== null;
         break;
     }
   }
@@ -556,7 +581,73 @@ export class MpTreeSelect extends LitElement {
 
   // ---- render ------------------------------------------------------------
   override render(): TemplateResult {
-    return html`${this.renderTrigger()}${this.renderPanel()}`;
+    return html`${this.renderTrigger()}${this.renderPanel()}${this.announcer.template()}`;
+  }
+
+  override updated(changed: Map<PropertyKey, unknown>): void {
+    super.updated(changed);
+    this.maybeWireReorder();
+  }
+
+  /**
+   * Lazily attach chip reordering once it's enabled, the mode shows chips, and a
+   * sortable factory has been registered by an opt-in import. The controller is
+   * built once; `attach()` is idempotent across re-renders.
+   */
+  private maybeWireReorder(): void {
+    if (!this._reorderable || this._mode === 'single') return;
+    if (!this._sortableHandle) {
+      const factory = getTreeSelectSortable();
+      if (!factory) {
+        if (!this._reorderWarned) {
+          this._reorderWarned = true;
+          console.warn(
+            '[mp-tree-select] `reorderable` is set but no reorder implementation is registered. ' +
+              "Import '@mintplayer/web-components/tree-select-reorder' (or your framework wrapper's " +
+              'reorder directive) to enable chip reordering.',
+          );
+        }
+        return;
+      }
+      this._sortableHandle = factory(this, {
+        items: () => [...this._selected.values()],
+        itemId: (node) => node.id,
+        label: (node) => node.label,
+        announce: (message) => this.announcer.announce(message),
+        onDrop: ({ previousIndex, currentIndex }) => this.onReorderDrop(previousIndex, currentIndex),
+      });
+    }
+    const container =
+      this.renderRoot.querySelector<HTMLElement>('.ts-control') ??
+      this.renderRoot.querySelector<HTMLElement>('.ts-button-body');
+    if (container) this._sortableHandle.attach(container);
+  }
+
+  /** Apply a chip reorder to the selection, then emit `value-change` + `reorder`. */
+  private onReorderDrop(previousIndex: number, currentIndex: number): void {
+    const entries = [...this._selected.entries()];
+    if (
+      previousIndex < 0 ||
+      currentIndex < 0 ||
+      previousIndex >= entries.length ||
+      currentIndex >= entries.length ||
+      previousIndex === currentIndex
+    ) {
+      return;
+    }
+    const [moved] = entries.splice(previousIndex, 1);
+    entries.splice(currentIndex, 0, moved);
+    this._selected = new Map(entries);
+    // value-change keeps forms/CVA in sync with the new order (no add/remove).
+    this.emitChange(undefined, undefined);
+    this.dispatchEvent(
+      new CustomEvent<TreeSelectReorderEventDetail>('reorder', {
+        detail: { value: this.value, previousIndex, currentIndex },
+        bubbles: true,
+        composed: true,
+      }),
+    );
+    this.requestUpdate();
   }
 
   private get hasSelection(): boolean {
@@ -624,11 +715,20 @@ export class MpTreeSelect extends LitElement {
 
   private renderChips(): unknown {
     if (this._mode === 'single' || !this.hasSelection) return nothing;
+    const draggable = this._reorderable;
     return repeat(
       [...this._selected.values()],
       (node) => node.id,
       (node) => html`
-        <span class="ts-chip">
+        <span
+          class=${draggable ? 'ts-chip ts-chip--draggable' : 'ts-chip'}
+          data-sortable-id=${draggable ? node.id : nothing}
+          tabindex=${draggable ? '0' : nothing}
+          @click=${draggable ? (e: Event) => e.stopPropagation() : nothing}
+        >
+          ${draggable
+            ? html`<span class="ts-chip-grip" aria-hidden="true">⠿</span>`
+            : nothing}
           <span class="ts-chip-label"
             >${this.itemTemplate ? this.itemTemplate(node, this._query) : node.label}</span
           >

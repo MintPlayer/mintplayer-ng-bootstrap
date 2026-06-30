@@ -55,4 +55,14 @@ export interface TreeSelectChangeEventDetail {
   removed?: TreeNode;
 }
 
+/** Detail of the `reorder` event (multiple/checkbox chip drag/keyboard reorder). */
+export interface TreeSelectReorderEventDetail {
+  /** The full selection in its new order. */
+  value: TreeNode | TreeNode[] | null;
+  /** Index the moved chip came from. */
+  previousIndex: number;
+  /** Index the moved chip landed at. */
+  currentIndex: number;
+}
+
 export type { TreeNode };

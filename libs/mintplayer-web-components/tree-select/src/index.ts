@@ -1,5 +1,14 @@
 export { MpTreeSelect } from './components';
 export type { NodeTemplate, ValueTemplate, PanelTemplate } from './components';
+export {
+  registerTreeSelectSortable,
+  getTreeSelectSortable,
+} from './components/sortable-registry';
+export type {
+  TreeSelectSortableHandle,
+  TreeSelectSortableOptions,
+  TreeSelectSortableFactory,
+} from './components/sortable-registry';
 export type {
   TreeSelectMode,
   TreeSelectVariant,
@@ -7,6 +16,7 @@ export type {
   NodeRequest,
   TreeSelectProvider,
   TreeSelectChangeEventDetail,
+  TreeSelectReorderEventDetail,
   TreeNode,
 } from './types';
 export { InMemoryTreeSelectProvider } from './providers/in-memory-provider';
