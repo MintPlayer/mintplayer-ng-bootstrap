@@ -26,6 +26,7 @@ import {
   type TreeSelectChangeEventDetail,
   type TreeSelectMode,
   type TreeSelectProvider,
+  type TreeSelectReorderEventDetail,
   type TreeSelectVariant,
 } from '@mintplayer/web-components/tree-select';
 
@@ -75,12 +76,21 @@ export class BsTreeSelectComponent implements ControlValueAccessor, AfterViewIni
   readonly panelScrollHeight = input<string>('300px');
   readonly searchDebounceMs = input<number>(200);
   readonly disabled = input<boolean>(false);
+  /**
+   * Enables drag/keyboard reordering of selected chips (multiple/checkbox).
+   * This input only forwards a flag to the WC — it contains no drag code. The
+   * reorder implementation is bundled separately: import
+   * `BsTreeSelectReorderDirective` from `@mintplayer/ng-bootstrap/tree-select/reorder`
+   * (which registers it). Without that import, this flag is inert.
+   */
+  readonly reorderable = input<boolean>(false);
 
   readonly value = model<Value>(null);
 
   readonly opened = output<void>();
   readonly closed = output<void>();
   readonly cleared = output<void>();
+  readonly reordered = output<TreeSelectReorderEventDetail>();
 
   readonly elementRef = viewChild<ElementRef<MpTreeSelect>>('el');
 
@@ -123,6 +133,7 @@ export class BsTreeSelectComponent implements ControlValueAccessor, AfterViewIni
     this.bindProp((el) => (el.panelScrollHeight = this.panelScrollHeight()));
     this.bindProp((el) => (el.searchDebounceMs = this.searchDebounceMs()));
     this.bindProp((el) => (el.disabled = this.effectiveDisabled()));
+    this.bindProp((el) => (el.reorderable = this.reorderable()));
     this.bindProp((el) => (el.provider = this.provider()));
     this.bindProp((el) => (el.value = this.value()));
 
@@ -152,6 +163,14 @@ export class BsTreeSelectComponent implements ControlValueAccessor, AfterViewIni
     const detail = (event as CustomEvent<TreeSelectChangeEventDetail>).detail;
     this.value.set(detail.value);
     this.onChange(detail.value);
+  }
+
+  onReorder(event: Event): void {
+    const detail = (event as CustomEvent<TreeSelectReorderEventDetail>).detail;
+    // Reorder changes the selection order; flow it back through the form value.
+    this.value.set(detail.value);
+    this.onChange(detail.value);
+    this.reordered.emit(detail);
   }
 
   onOpen(): void {
