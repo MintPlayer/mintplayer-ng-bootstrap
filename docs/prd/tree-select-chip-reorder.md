@@ -1,6 +1,6 @@
 # PRD — Tree-select chip reorder + reusable drag-drop primitive
 
-**Status:** Planned
+**Status:** Implemented (branch `feature/tree-select-chip-reorder`)
 **Owner:** pieterjan@2sky.be
 **Created:** 2026-06-30
 **Affected libs:** `@mintplayer/web-components` (new `drag-drop` primitive + `tree-select`),
