@@ -53,6 +53,14 @@ import { BS_DROPDOWN_MENU_CONTEXT } from '../tokens/menu-context.token';
       border: 0;
       font: inherit;
     }
+    /* Active route (routerLinkActive classes the ANCHOR, which ::slotted can't
+       reach) — stock .dropdown-item.active look; the negative-margin fill above
+       makes the anchor paint the FULL item row. */
+    .dropdown-item > a.active,
+    .dropdown-item > button.active {
+      color: var(--bs-dropdown-link-active-color, #fff);
+      background-color: var(--bs-dropdown-link-active-bg, var(--bs-primary));
+    }
   `],
 })
 export class BsDropdownMenuComponent {

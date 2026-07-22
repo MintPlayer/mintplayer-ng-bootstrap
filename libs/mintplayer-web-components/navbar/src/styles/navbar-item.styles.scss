@@ -36,8 +36,14 @@
   color: var(--bs-nav-link-hover-color, var(--bs-navbar-hover-color, inherit)) !important;
 }
 
+// Active state — two equivalent channels (stock `.nav-link.active` parity):
+//  - the `active` HOST attribute (the wrappers' [active] input / prop);
+//  - the Bootstrap-conventional `active` CLASS on the slotted control itself,
+//    which is what router integrations (Angular's routerLinkActive) write.
 :host([active]) ::slotted(a),
-:host([active]) ::slotted(button) {
+:host([active]) ::slotted(button),
+::slotted(a.active),
+::slotted(button.active) {
   color: var(--bs-nav-link-active-color, var(--bs-navbar-active-color, inherit)) !important;
 }
 

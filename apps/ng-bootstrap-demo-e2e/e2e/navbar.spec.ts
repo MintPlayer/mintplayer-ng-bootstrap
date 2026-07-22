@@ -277,6 +277,82 @@ test.describe('navbar — small mode (JS enabled)', () => {
   });
 });
 
+test.describe('navbar — active-route highlighting', () => {
+  test.beforeEach(async ({ page }) => {
+    await page.setViewportSize({ width: 1280, height: 900 });
+    await goto(page);
+  });
+
+  test('the top-level link of the current route recolors (nav-link.active)', async ({ page }) => {
+    // '/' is active on load (exact match). Compare against an inactive link's
+    // color rather than a hard-coded token value.
+    const colors = await page.evaluate(() => {
+      const links = [...document.querySelectorAll('mp-navbar-item a')];
+      const home = links.find((a) => a.textContent === 'Home')!;
+      return {
+        homeActive: home.classList.contains('active'),
+        home: getComputedStyle(home).color,
+        inactive: getComputedStyle(links.find((a) => a.textContent !== 'Home')!).color,
+      };
+    });
+    expect(colors.homeActive).toBe(true);
+    expect(colors.home).not.toBe(colors.inactive);
+  });
+
+  test('the menu item of the current route paints the full row with the active background', async ({ page }) => {
+    await trigger(page, 'Basic').click();
+    await page.getByRole('menuitem', { name: 'Alert', exact: true }).click();
+    await expect(page).toHaveURL(/\/basic\/alert$/);
+
+    await trigger(page, 'Basic').click(); // reopen to inspect the item
+    const info = await page.evaluate(() => {
+      const a = [...document.querySelectorAll('.dropdown-item > a')].find((x) => x.textContent === 'Alert')!;
+      const item = a.closest('.dropdown-item')!;
+      const ar = a.getBoundingClientRect();
+      const ir = item.getBoundingClientRect();
+      return {
+        active: a.classList.contains('active'),
+        bg: getComputedStyle(a).backgroundColor,
+        fillsRow: Math.abs(ar.width - ir.width) < 1, // negative-margin fill = legacy full-row look
+      };
+    });
+    expect(info.active).toBe(true);
+    expect(info.bg).not.toBe('rgba(0, 0, 0, 0)'); // primary active background
+    expect(info.fillsRow).toBe(true);
+  });
+
+  test('the trigger CHAIN of the active route highlights without opening anything', async ({ page }) => {
+    // Navigate to a nested route (Basic → Forms → Select), then assert both
+    // ancestor triggers carry the WC `active` attribute while closed.
+    await trigger(page, 'Basic').click();
+    await trigger(page, 'Forms').click();
+    await page.getByRole('menuitem', { name: 'Select', exact: true }).click();
+    await expect(page).toHaveURL(/\/basic\/forms\/select$/);
+
+    const state = await page.evaluate(() => {
+      const byLabel = (name: string) =>
+        [...document.querySelectorAll('mp-navbar-dropdown')].find(
+          (d) => (d.querySelector(':scope > [slot="label"], :scope > span[slot="label"]')?.textContent || '').trim() === name,
+        );
+      const basic = byLabel('Basic')!;
+      const trigger = basic.shadowRoot!.querySelector('.dropdown-toggle')!;
+      return {
+        basicActive: basic.hasAttribute('active'),
+        formsActive: byLabel('Forms')!.hasAttribute('active'),
+        overlaysActive: byLabel('Overlays')!.hasAttribute('active'),
+        anyOpen: !!document.querySelector('mp-navbar-dropdown[data-open]'),
+        triggerColor: getComputedStyle(trigger).color,
+        inactiveColor: getComputedStyle(byLabel('Overlays')!.shadowRoot!.querySelector('.dropdown-toggle')!).color,
+      };
+    });
+    expect(state.anyOpen).toBe(false); // dismiss-on-navigate closed everything
+    expect(state.basicActive).toBe(true);
+    expect(state.formsActive).toBe(true);
+    expect(state.overlaysActive).toBe(false);
+    expect(state.triggerColor).not.toBe(state.inactiveColor); // recolored while closed
+  });
+});
+
 test.describe('navbar — keyboard a11y', () => {
   const deepActive = (page: Page) =>
     page.evaluate(() => {

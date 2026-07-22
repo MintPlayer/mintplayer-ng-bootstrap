@@ -55,6 +55,15 @@
   border-left: 0.3em solid transparent;
 }
 
+// Active-route trigger (the `active` host attribute — set by the Angular
+// wrapper's RouterLinkActive bridge when a descendant link's route is active,
+// or by React/Vue consumers directly). Top-level = text recolor, exactly like
+// stock `.nav-link.active`; the submenu variant below gets the dropdown-item
+// active look instead.
+:host([active]) .nav-link.dropdown-toggle {
+  color: var(--bs-nav-link-active-color, var(--bs-navbar-active-color, inherit));
+}
+
 // --- submenu trigger: styled as a .dropdown-item with a right-pointing caret ---
 :host([data-submenu]) .nav-link.dropdown-toggle {
   justify-content: space-between;
@@ -65,6 +74,13 @@
 :host([data-submenu]) .nav-link.dropdown-toggle:hover {
   color: var(--bs-dropdown-link-hover-color, inherit);
   background-color: var(--bs-dropdown-link-hover-bg, transparent);
+}
+// Submenu trigger of the active route: the stock `.dropdown-item.active` look
+// (primary background + white text — the legacy visual). The tokens inherit in
+// through the flat tree from the surrounding menu's shadow.
+:host([data-submenu][active]) .nav-link.dropdown-toggle {
+  color: var(--bs-dropdown-link-active-color, #fff);
+  background-color: var(--bs-dropdown-link-active-bg, var(--bs-primary));
 }
 :host([data-submenu]) .nav-link.dropdown-toggle::after {
   margin-left: 0.5rem;
