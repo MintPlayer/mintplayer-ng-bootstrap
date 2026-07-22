@@ -11,7 +11,12 @@ import type { NavbarExpandedChangeEventDetail } from '../types';
  *
  * Authoring (vanilla): slot the brand into `slot="brand"`, the nav items as the
  * default slot (they are per-element WCs — `mp-navbar-item` etc. — that style
- * themselves; the navbar only owns the bar chrome).
+ * themselves; the navbar only owns the bar chrome). The hamburger is the
+ * `toggler` slot's fallback — an animated 3-bar → X glyph driven by the same
+ * no-JS `:checked` machine as the collapse. Slot a custom glyph via
+ * `slot="toggler"`: it must be NON-interactive (no `<button>`/`<a href>`, or
+ * native label→checkbox click forwarding dies) and can derive its open-state
+ * from the inherited `--mp-navbar-expanded: 0|1` custom property.
  *
  *     <mp-navbar breakpoint="lg" color="body-tertiary">
  *       <a slot="brand" href="/">MyApp</a>
@@ -193,7 +198,11 @@ export class MpNavbar extends LitElement {
           @change=${this.#onToggleChange}
         />
         <label for="mp-navbar-toggle" class="navbar-toggler" part="toggler" aria-hidden="true">
-          <span class="navbar-toggler-icon"></span>
+          <slot name="toggler">
+            <span class="navbar-toggler-bar"></span>
+            <span class="navbar-toggler-bar"></span>
+            <span class="navbar-toggler-bar"></span>
+          </slot>
         </label>
         <div class="navbar-collapse" part="collapse">
           <div class="navbar-collapse-inner">

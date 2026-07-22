@@ -122,6 +122,33 @@ test.describe('navbar — small mode (JS enabled)', () => {
     await expect.poll(rows).toBe('0px'); // slid shut
   });
 
+  test('the hamburger morphs into an X while open (animated toggler)', async ({ page }) => {
+    // The 3 shadow bars key their transforms off the same in-shadow `:checked`
+    // machine as the collapse (no-JS-safe; the JS-enabled spec carries the
+    // visual assertion because computed styles are unreadable with JS off).
+    const bars = () => page.evaluate(() => {
+      const sr = document.querySelector('mp-navbar')!.shadowRoot!;
+      const [b1, b2, b3] = [...sr.querySelectorAll('.navbar-toggler-bar')].map((b) => getComputedStyle(b));
+      return { t1: b1.transform, o2: b2.opacity, t3: b3.transform };
+    });
+
+    const closed = await bars();
+    expect(closed.t1).toBe('none'); // resting hamburger
+    expect(closed.o2).toBe('1');
+
+    await toggler(page).click();
+    // The 0.4s transition ends in the crossed state: bars 1/3 rotated, bar 2 gone.
+    await expect.poll(async () => (await bars()).o2).toBe('0');
+    const open = await bars();
+    expect(open.t1).not.toBe('none');
+    expect(open.t3).not.toBe('none');
+    expect(open.t1).not.toBe(open.t3); // opposite diagonals
+
+    await toggler(page).click();
+    await expect.poll(async () => (await bars()).o2).toBe('1'); // morphs back
+    expect((await bars()).t1).toBe('none');
+  });
+
   test('the brand is centered (equal auto inline margins)', async ({ page }) => {
     const m = await page.evaluate(() => {
       const brand = document.querySelector('[slot="brand"]')!;
@@ -184,8 +211,8 @@ test.describe('navbar — dark mode', () => {
     await expect(page.locator('html')).toHaveAttribute('data-bs-theme', 'dark');
 
     const rgb = await page.evaluate(() => {
-      const icon = document.querySelector('mp-navbar')!.shadowRoot!.querySelector('.navbar-toggler-icon')!;
-      return getComputedStyle(icon).backgroundColor; // painted via mask + var(--bs-navbar-color)
+      const bar = document.querySelector('mp-navbar')!.shadowRoot!.querySelector('.navbar-toggler-bar')!;
+      return getComputedStyle(bar).backgroundColor; // painted via var(--bs-navbar-color)
     });
     const [r, g, b] = rgb.match(/\d+(\.\d+)?/g)!.map(Number);
     const luminance = (0.2126 * r + 0.7152 * g + 0.0722 * b) / 255;

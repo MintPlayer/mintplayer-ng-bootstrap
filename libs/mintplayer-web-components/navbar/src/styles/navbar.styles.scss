@@ -43,23 +43,41 @@
 :host([color="body-secondary"]) .navbar { background-color: var(--bs-secondary-bg); }
 :host([color="body-tertiary"]) .navbar { background-color: var(--bs-tertiary-bg); }
 
-// --- toggler icon: theme-aware across the shadow boundary ---------------------
-// Bootstrap bakes `--bs-navbar-toggler-icon-bg` to an SVG with a fixed light-mode
-// (dark) stroke and only swaps it via `[data-bs-theme=dark] .navbar-toggler-icon`,
-// which can't cross the shadow boundary — and adaptive `color="body-*"` leaves the
-// host `data-bs-theme` unset, so on a dark page the hamburger stays dark. Paint it
-// with `--bs-navbar-color` (the theme-aware token that DOES inherit in, same color
-// as the nav links) via a mask instead: correct for adaptive AND solid colors,
-// with no host `data-bs-theme` needed. The mask SVG's own stroke is irrelevant
-// (mask uses alpha); the visible color comes from `background-color`.
-:host {
-  --mp-toggler-mask: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 30 30'%3e%3cpath stroke='%23000' stroke-linecap='round' stroke-miterlimit='10' stroke-width='2' d='M4 7h22M4 15h22M4 23h22'/%3e%3c/svg%3e");
+// --- toggler: animated hamburger→X, no-JS-safe ---------------------------------
+// Three shadow bars (the `toggler` slot's FALLBACK content) replace Bootstrap's
+// static masked SVG icon, restoring the pre-WC animated bs-navbar-toggler with
+// its verbatim transforms. The X-morph keys off the SAME in-shadow `:checked`
+// machine that reveals the collapse, so it works with JavaScript disabled. Bars
+// are painted with `--bs-navbar-color` — the theme-aware token that inherits
+// across the shadow boundary (same color as the nav links), correct for adaptive
+// `color="body-*"` AND solid colors with no host `data-bs-theme` needed.
+// A consumer may slot a custom glyph (`slot="toggler"`); it must NOT be an
+// interactive element (<button>/<a href>) or the native label→checkbox click
+// forwarding dies. Its open-state arrives via the `--mp-navbar-expanded: 0|1`
+// custom-property bridge below (inherits into the slotted subtree; derive the
+// morph with calc(), transitions on the derived transform/opacity animate).
+.navbar-toggler {
+  padding: 0.75rem 1rem;
+  border: none;
+  background: transparent;
+  cursor: pointer;
 }
-.navbar-toggler-icon {
-  background-image: none;
+.navbar-toggler-bar {
+  display: block;
+  width: 25px;
+  height: 2px;
+  margin: 6px 0;
   background-color: var(--bs-navbar-color, currentColor);
-  -webkit-mask: var(--mp-toggler-mask) center / 100% 100% no-repeat;
-          mask: var(--mp-toggler-mask) center / 100% 100% no-repeat;
+  transition: 0.4s;
+}
+// Open: bars 1/3 rotate into the diagonals — rotate FIRST, so each translate
+// runs in its bar's already-rotated coordinate space (that's why the vectors
+// look asymmetric; reordering misaligns the X). Bar 2 fades out.
+.navbar-toggle:checked ~ .navbar-toggler {
+  .navbar-toggler-bar:nth-child(1) { transform: rotate(-45deg) translate(-7px, 5px); }
+  .navbar-toggler-bar:nth-child(2) { opacity: 0; }
+  .navbar-toggler-bar:nth-child(3) { transform: rotate(45deg) translate(-6px, -4px); }
+  ::slotted([slot="toggler"]) { --mp-navbar-expanded: 1; }
 }
 
 // --- collapse state machine (no-JS; see navbar-noscript.md) -------------------
@@ -94,6 +112,7 @@
 }
 @media (prefers-reduced-motion: reduce) {
   .navbar-collapse { transition: none; }
+  .navbar-toggler-bar { transition: none; }
 }
 
 // Two nav groups: default slot (start) + `slot="end"` (pushed right when wide).
