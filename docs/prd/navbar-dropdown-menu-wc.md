@@ -165,17 +165,19 @@ Items are now plain light-DOM `<li bsDropdownItem>` **slotted** into `mp-dropdow
 
 1. **Author shape:** `<li bsDropdownItem>` is the item; a nested `<a routerLink>` / `<button>` (or plain text) lives inside it. `bsDropdownItem` applies `.dropdown-item` to the **`<li>`** (the repo's existing convention — the current `bs-dropdown-item` also renders `<li class="dropdown-item">`). Note this deviates from Bootstrap 5's own markup (`<li><a class="dropdown-item">`), consistent with what this repo already ships.
 2. **Menu shadow (`::slotted`):** `mp-dropdown-menu` styles the item *box* — padding, color, hover, active, disabled, dark theme — via `::slotted(.dropdown-item)` re-bound to `--bs-dropdown-*` live tokens. This reaches the `<li>` itself (the directly-slotted element).
-3. **Companion light-DOM stylesheet (CONFIRMED, not optional):** the one thing `::slotted` cannot reach is the *inner* link. Each wrapper package ships a tiny light-DOM rule so a nested `<a>` fills and inherits the item box:
+3. **Companion light-DOM stylesheet (CONFIRMED, not optional):** the things `::slotted` cannot reach are the descendants of the slotted `<li>` — the item's inner link, and (because Bootstrap puts their class on an inner `<hr>`/`<h6>`) the divider and header. Each wrapper package ships a small, **class-scoped** light-DOM sheet that uses only globally-available `--bs-*` tokens:
    ```css
    /* shipped with the ng/react/vue wrapper — NOT global Bootstrap, NOT the WC shadow */
    .dropdown-item > a,
-   .dropdown-item > button { display:block; width:100%; color:inherit; text-decoration:none; }
+   .dropdown-item > button { display:block; width:100%; color:inherit; text-decoration:none; background:none; border:0; }
+   .dropdown-header  { display:block; padding:.5rem 1rem; font-size:.875rem; color:var(--bs-secondary-color); white-space:nowrap; }
+   .dropdown-divider { height:0; margin:.5rem 0; border-top:1px solid var(--bs-border-color-translucent); }
    ```
-   This is the single deliberate place styling lives outside the WC shadow. It is called out here so it never surprises a maintainer, and it is scoped to `.dropdown-item >` (not a global reset).
+   This is the single deliberate place styling lives outside the WC shadow. The *expensive* part — the item box and its hover/active/disabled/focus states — stays encapsulated in the shadow via `::slotted(.dropdown-item)`; only these few descendant rules ship light-DOM.
 
 **Rejected:** an item WC (branch B's approach — self-contained but contradicts decision #2); rendering the menu in light DOM (`createRenderRoot → this`) so plain `.dropdown-item` applies (breaks shadow encapsulation and the "WC carries the styles" property).
 
-**Phase 0 spike** verifies pixel parity of `<li bsDropdownItem><a></a></li>` vs today's Bootstrap dropdown item (hover / active / disabled / dark theme) using the `::slotted` box rules + the companion link-reset — i.e. it confirms the chosen design renders correctly, not *which* design to use.
+**Phase 0 spike — DONE ✅ (2026-07-22).** `docs/prd/_spike-dropdown-slotted.html` (+ `_spike-min-bootstrap.css`, the exact minimal ng-bootstrap sheet — no `.dropdown-*` rules). Under minimal-global-CSS-only, a slotted `<li class="dropdown-item"><a></a></li>` styled by shadow `::slotted(.dropdown-item)` + the companion sheet is **pixel-identical** to a real Bootstrap dropdown (isolated iframe) across header/normal/active/disabled/divider in **both light and dark themes** (verified via Playwright screenshot + computed-style assertions: box padding `4px 16px`, active `#0d6efd`/white, disabled 50%-alpha, nested `<a>` `display:block` fills box + inherits color + no underline). Confirms the chosen design renders correctly — it was a parity check, not a design fork. The spike surfaced that header/divider join the item's link in the companion sheet (folded into resolution 3 above). Throwaway files to delete before the PR.
 
 ## Naming & collision (one open sub-decision)
 
@@ -185,7 +187,7 @@ Decision #6 reclaims `bs-dropdown-menu` / `bs-dropdown-item`. **But a legacy `bs
 
 ## Risks & mitigations
 
-- **`::slotted` item styling (design decided; verify parity).** The box is styled via `::slotted(.dropdown-item)`; the nested `<a>` via the confirmed companion light-DOM stylesheet. *Residual risk is only pixel parity*, not architecture. *Mitigation:* Phase 0 spike screenshot-compares the chosen shape against today's Bootstrap item across states + dark theme.
+- ~~**`::slotted` item styling**~~ **RETIRED (Phase 0 passed).** Box via `::slotted(.dropdown-item)`; nested `<a>` + header + divider via the companion light-DOM sheet. Verified pixel-identical to Bootstrap under minimal-global-CSS-only, light + dark (see "The item-styling problem" → Phase 0 spike).
 - **Legacy `bs-dropdown-menu` selector collision.** *Mitigation:* audit consumers of the legacy component first (typeahead, tree-select, dropdown-button); decide rename vs mode-split before touching Angular selectors.
 - **Rebase packaging conflicts** in `tsconfig.base.json` + `libs/*/package.json` from master's #382 (Angular 22), #383 (subpath exports), and the `@mintplayer/web-components`+`lit` peerDependencies commit. *Mitigation:* re-register branch B's navbar/dropdown-menu element + `/ssr` subpaths under master's *newer* export scheme and peerDep rule; OverlayController is byte-identical so no feature-code reconciliation.
 - **DSD injector tag-boundary bugs** (`mp-navbar` vs `mp-navbar-item`). *Mitigation:* keep branch B's `(?=[\s>/])` boundary + per-element negative-lookahead idempotency; e2e asserts each element gets exactly one chrome template.

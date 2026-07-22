@@ -78,10 +78,11 @@ Branch B already built ~all of it (10 WCs + 3× wrappers + SSR injectors/generat
 
 ## Implementation Plan
 
-### Phase 0 — spike (GATE)
-1. Minimal `mp-dropdown-menu` with `::slotted(.dropdown-item)` box rules **+ the companion light-DOM `.dropdown-item > a` reset**; author the confirmed shape `<li bsDropdownItem><a routerLink></a></li>`; screenshot-compare hover/active/disabled/dark-theme against the current Bootstrap dropdown item.
-2. Re-confirm no-JS `:focus-within` reveal + `OverlayController` submenu overlay + height cap still work with items as plain light-DOM `<li>` (branch B proved it with item WCs).
-3. **Exit gate:** the `<li bsDropdownItem>` + nested `<a>` renders pixel-correct via the `::slotted` box rules + the companion link reset.
+### Phase 0 — spike (GATE) ✅ DONE (2026-07-22)
+1. ✅ Built `docs/prd/_spike-dropdown-slotted.html` + compiled the exact minimal ng-bootstrap sheet (`_spike-min-bootstrap.css`, 0 `.dropdown-*` rules). Under minimal-global-CSS-only, `<li class="dropdown-item"><a></a></li>` styled by shadow `::slotted(.dropdown-item)` + the companion light-DOM sheet is **pixel-identical** to a real Bootstrap dropdown (isolated iframe), light + dark, across header/normal/active/disabled/divider. Verified via Playwright screenshot + computed styles.
+2. Finding: the companion sheet carries `.dropdown-item > a` reset **plus** `.dropdown-header` + `.dropdown-divider` (Bootstrap puts those on inner elements ::slotted can't reach). The item *box* + states stay in the shadow.
+3. ⬜ Deferred to Phase 1/5 (needs branch B present): re-confirm no-JS `:focus-within` reveal + `OverlayController` submenu + height cap with items as plain light-DOM `<li>` (branch B proved it with item WCs; low risk).
+4. **Exit gate met:** the chosen design renders correctly; it was a parity check, not a design fork. Throwaway spike files to delete before the PR.
 
 ### Phase 1 — rebase branch B onto master
 1. Create the working branch off `master`; rebase/cherry-pick branch B's 8 commits.
@@ -92,7 +93,10 @@ Branch B already built ~all of it (10 WCs + 3× wrappers + SSR injectors/generat
 1. Add `::slotted(.dropdown-item / .dropdown-divider / .dropdown-header)` box rules (re-bound to `--bs-dropdown-*`) to `dropdown-menu.styles.scss`; `nx run mintplayer-web-components:codegen-wc`; regenerate dropdown DSD chrome.
 2. Delete `mp-dropdown-{item,divider,header}` WCs + wrappers + chrome constants.
 3. Add Angular `[bsDropdownItem]` / `[bsDropdownDivider]` / `[bsDropdownHeader]` directives (`host: { '[class.dropdown-item]': 'true' }`, etc.).
-4. Ship the **companion light-DOM link-reset stylesheet** (`.dropdown-item > a, .dropdown-item > button { display:block; width:100%; color:inherit; text-decoration:none }`) with each wrapper package (Angular component/global style, React/Vue imported CSS).
+4. Ship the **companion light-DOM sheet** with each wrapper package (Angular global style, React/Vue imported CSS) — validated in Phase 0:
+   - `.dropdown-item > a, .dropdown-item > button { display:block; width:100%; color:inherit; text-decoration:none; background:none; border:0 }`
+   - `.dropdown-header { display:block; padding:.5rem 1rem; font-size:.875rem; color:var(--bs-secondary-color); white-space:nowrap }`
+   - `.dropdown-divider { height:0; margin:.5rem 0; border-top:1px solid var(--bs-border-color-translucent) }`
 5. Add React/Vue presentational `<BsDropdownItem>` / `<BsDropdownDivider>` / `<BsDropdownHeader>` (render `<li className="dropdown-item">` etc.).
 6. Verify item styling parity (Phase 0 criteria) through the WCs + wrappers, standalone and in the navbar.
 
