@@ -191,3 +191,15 @@ Five navbar regressions found in in-browser review (see PRD "Post-PR review fixe
 5. **#4 inline (small) vs overlay (wide)** — `mp-navbar.ts`: publish `--mp-navbar-breakpoint` + `data-breakpoint` on breakpoint change. `navbar-dropdown.styles.scss`: default panels inline (`position:static`); `@each $grid-breakpoints` `media-breakpoint-up` re-enables first-level `absolute` gated on `:host([data-expand="<bp>"])`. `mp-navbar-dropdown.ts`: read `--mp-navbar-breakpoint`, set own `data-expand`; gate `OverlayController` construction/engagement behind `matchMedia(min-width)`, re-eval on `change`, cleanup in `disconnectedCallback`; small-mode submenu opens inline via `data-open`.
 
 **Verification:** rebuild web-components + ng-bootstrap + ng demo; re-run Playwright checks (nav-links no underline; toggler light on dark page; navbar fixed/top/full-width in the Angular demo; collapse slides; small-mode dropdowns inline, wide-mode nested submenus overlay). React/Vue unaffected except the shared WC CSS improvements.
+
+## Phase 6 continued — post-PR review rounds (2026-07-22)
+
+Full detail in the PRD ("Post-PR review fixes", Rounds 1–5). Summary of what shipped after the migration PR (all on `feat/navbar-dropdown-menu-wc`, pushed to PR #390):
+
+- **R1** — 5 regressions: nav-link underline; collapse slide (`grid-template-rows`); Angular-demo fixed positioning; small-inline vs wide-overlay dropdowns (breakpoint via `--mp-navbar-breakpoint` + matchMedia); dark toggler (mask + `--bs-navbar-color`).
+- **R2** — `positioning="fixed"` input on `mp-navbar` (bridged ng/react/vue; demo uses it); brand centering + submenu/first-level insets restored vs the live master navbar.
+- **R3** — dismiss-on-navigate (`mp-navbar` closes dropdowns + collapses on `<a href>` click); first-level left inset.
+- **R4** — `*-chrome.generated.ts` gitignored as build artifacts; new `codegen-ssr-chrome` aggregate; demos `dependsOn` it (documented in CLAUDE.md).
+- **R5** — navbar demo moved Overlays → **Enterprise** (`/enterprise/navbar`); fixed-bar small-mode internal scroll (`max-height:100dvh; overflow:hidden auto`, `:host([breakpoint=x][positioning=fixed])` — both attrs inside `:host()`); scrollbar hidden via `scrollbar-width:none` (not the OS-specific `-17px`); `serve` now `dependsOn codegen-ssr-chrome` (SSR/no-JS on a fresh checkout); version bumps (wc 2.1.0 / ng 22.5.0 / react 19.7.0 / vue 3.8.0).
+
+**Tests (behavior lock-in):** `apps/ng-bootstrap-demo-e2e/e2e/navbar.spec.ts` — 11 Playwright tests, chromium + firefox, JS-enabled (see PRD "Test coverage"). `navbar-nojs.spec.ts` (JS disabled, chromium + firefox) — asserts the SSR DSD attaches with no upgrade and the collapse toggles via the native `<label>`→in-shadow-`<input type=checkbox>` state (`toBeChecked()`); with JS off, `page.evaluate`/computed-style is unavailable and the collapse reveal is a paint-clip with unchanged bounding boxes, so the native checked-state is the observable proxy for the CSS `:checked ~` reveal. Layout/CSS can't be asserted in the jsdom WC unit tests, so it lives in e2e.

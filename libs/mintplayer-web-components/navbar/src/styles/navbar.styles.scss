@@ -159,6 +159,17 @@
       :host([breakpoint="#{$name}"][positioning="fixed"]) {
         max-height: 100dvh;
         overflow: hidden auto;
+        // Hide the internal scrollbar (the pre-WC navbar did this with a
+        // Windows-only `margin-right: -17px` that pushed a classic 17px scrollbar
+        // off-screen; that assumes a fixed scrollbar width + OS detection this
+        // framework-agnostic WC doesn't have and would clip content on
+        // overlay-scrollbar platforms). `scrollbar-width`/`::-webkit-scrollbar`
+        // hide it cross-platform while keeping wheel/touch scrolling.
+        scrollbar-width: none;
+      }
+      :host([breakpoint="#{$name}"][positioning="fixed"])::-webkit-scrollbar {
+        width: 0;
+        height: 0;
       }
     }
   }

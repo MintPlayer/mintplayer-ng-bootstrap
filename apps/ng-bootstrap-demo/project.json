@@ -144,7 +144,8 @@
             "mintplayer-web-components"
           ],
           "target": "codegen-wc-watch"
-        }
+        },
+        "mintplayer-web-components:codegen-ssr-chrome"
       ]
     },
     "extract-i18n": {
