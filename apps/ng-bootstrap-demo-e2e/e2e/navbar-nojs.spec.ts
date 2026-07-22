@@ -33,6 +33,22 @@ test('the navbar DSD attaches server-side (no JS, no upgrade)', async ({ page })
   await expect(page.getByRole('link', { name: 'Home', exact: true })).toHaveCount(1);
 });
 
+test('nested dropdowns are marked data-submenu server-side (no-JS styling parity)', async ({ page }) => {
+  // `data-submenu` gates every submenu-specific shadow style (the
+  // dropdown-item trigger padding, right caret, 0.5rem panel inset) but is
+  // normally set by connectedCallback — JS. The SSR injector must mark
+  // structurally-nested dropdowns itself, or a no-JS submenu trigger falls
+  // back to first-level nav-link padding and renders flush-left (the
+  // "Forms glued to the left" regression).
+  const nested = page.locator('mp-dropdown-menu mp-navbar-dropdown');
+  const marked = page.locator('mp-navbar-dropdown[data-submenu]');
+  expect(await nested.count()).toBeGreaterThan(0);
+  expect(await marked.count()).toBe(await nested.count()); // every nested one is marked…
+  expect(await page.locator('mp-dropdown-menu mp-navbar-dropdown:not([data-submenu])').count()).toBe(0);
+  // …and only nested ones (first-level dropdowns exist and stay unmarked).
+  expect(await page.locator('mp-navbar-dropdown').count()).toBeGreaterThan(await marked.count());
+});
+
 test('the hamburger toggles the collapse via the native checkbox (CSS only)', async ({ page }) => {
   const navbar = page.locator('mp-navbar').first();
   // The in-shadow checkbox is the no-JS state holder; `:checked ~ .navbar-collapse`
