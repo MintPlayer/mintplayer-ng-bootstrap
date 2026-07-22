@@ -4,12 +4,6 @@
     height: 100%;
 }
 
-// The navbar is pinned via the WC's `positioning="fixed"` input (see
-// app.component.html); offset the routed content below the fixed bar.
-.app-content {
-    padding-top: 76px;
-}
-
 .brand {
     height: 57px;
     border: 1px solid currentColor;

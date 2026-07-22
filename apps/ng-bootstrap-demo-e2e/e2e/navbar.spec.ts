@@ -74,6 +74,18 @@ test.describe('navbar — wide mode (JS enabled)', () => {
     expect(box.coversWidth).toBe(true);
   });
 
+  test('page content clears the fixed bar by its live height (bsNavbarContent)', async ({ page }) => {
+    // The directive replaces a hand-maintained padding constant: a
+    // ResizeObserver sets the content's padding-top to the bar's offsetHeight.
+    await expect
+      .poll(() => page.evaluate(() => {
+        const bar = document.querySelector('mp-navbar') as HTMLElement;
+        const content = document.querySelector('.app-content') as HTMLElement;
+        return Math.abs(parseFloat(getComputedStyle(content).paddingTop) - bar.offsetHeight) < 1;
+      }))
+      .toBe(true);
+  });
+
   test('a first-level dropdown opens as an absolute overlay below the trigger', async ({ page }) => {
     await trigger(page, 'Basic').click();
     const info = await panelInfo(page, 'Basic');

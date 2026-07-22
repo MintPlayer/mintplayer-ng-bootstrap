@@ -1,4 +1,4 @@
-import { afterNextRender, ChangeDetectionStrategy, Component, computed, CUSTOM_ELEMENTS_SCHEMA, input, output } from '@angular/core';
+import { afterNextRender, ChangeDetectionStrategy, Component, computed, CUSTOM_ELEMENTS_SCHEMA, ElementRef, inject, input, output } from '@angular/core';
 import type { NavbarBreakpoint, NavbarExpandedChangeEventDetail } from '@mintplayer/web-components/navbar';
 
 /**
@@ -23,6 +23,9 @@ import type { NavbarBreakpoint, NavbarExpandedChangeEventDetail } from '@mintpla
   schemas: [CUSTOM_ELEMENTS_SCHEMA],
 })
 export class BsNavbarComponent {
+  /** Host element — measured by `[bsNavbarContent]` to offset page content. */
+  readonly elementRef = inject<ElementRef<HTMLElement>>(ElementRef);
+
   /** Bootstrap breakpoint the navbar expands at; collapses below it. */
   readonly breakpoint = input<NavbarBreakpoint>('md');
   /** Theme color of the navbar background (e.g. `primary`, `dark`, `body-tertiary`). */

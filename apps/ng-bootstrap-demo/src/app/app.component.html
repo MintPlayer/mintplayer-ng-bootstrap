@@ -1,4 +1,4 @@
-<bs-navbar [color]="'body-tertiary'" [breakpoint]="'lg'" [ariaLabel]="'Main navigation'" [positioning]="'fixed'">
+<bs-navbar [color]="'body-tertiary'" [breakpoint]="'lg'" [ariaLabel]="'Main navigation'" [positioning]="'fixed'" #nav>
   <bs-navbar-brand>
     <a [routerLink]='["/"]'>
       <span class="brand d-block px-3 pb-3 pt-3">
@@ -159,7 +159,7 @@
     </bs-navbar-item>
   </bs-navbar-nav>
 </bs-navbar>
-<div class="flex-grow-1 app-content">
+<div class="flex-grow-1 app-content" [bsNavbarContent]="nav">
   <router-outlet></router-outlet>
 </div>
 
