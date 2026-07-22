@@ -1,6 +1,6 @@
 <bs-has-overlay></bs-has-overlay>
 <bs-form>
-    <div bsDropdown popupRole="listbox" [(isOpen)]="isOpen" [hasBackdrop]="false" [sameDropdownWidth]="true">
+    <div bsDropdown #dd="bsDropdown" popupRole="listbox" [(isOpen)]="isOpen" [hasBackdrop]="false" [sameDropdownWidth]="true">
         <input type="text"
             #textbox
             [ngModel]="searchterm()"
@@ -10,23 +10,33 @@
             (cancel)="onCancel()"
             (keydown.enter)="onSubmit($event)"
             autocomplete="off" />
-        <bs-dropdown-menu *bsDropdownMenu bsRovingFocus mode="activedescendant">
+        <!--
+          `mode="activedescendant"` drives the a11y `bsRovingFocus` primitive;
+          `menuMode="listbox"` drives the WC-backed `bs-dropdown-menu`. Both
+          directives sit on this one element (so roving's `contentChildren` finds
+          the option `<li>`s as direct children) — the menu's mode input is aliased
+          to `menuMode` precisely so it doesn't clobber roving's `mode`. The menu
+          also mirrors the trigger's generated id + popup role (the `aria-controls`
+          target) via the exported `bsDropdown` reference.
+        -->
+        <bs-dropdown-menu *bsDropdownMenu bsRovingFocus mode="activedescendant" menuMode="listbox"
+            [attr.id]="dd.menuId() || null" [attr.role]="dd.popupRole()">
             @if (isLoading()) {
                 <bs-progress [height]="2" [isIndeterminate]="true"></bs-progress>
-                <bs-dropdown-item [disabled]="true">
+                <li bsDropdownItem [disabled]="true">
                     {{ isLoadingText() }}
-                </bs-dropdown-item>
+                </li>
             }
             @if (!isLoading()) {
                 @if (showNoSuggestions()) {
-                    <bs-dropdown-item [disabled]="true">
+                    <li bsDropdownItem [disabled]="true">
                         {{ noSuggestionsText() }}
-                    </bs-dropdown-item>
+                    </li>
                 }
                 @for (suggestion of suggestions(); track suggestion) {
-                    <bs-dropdown-item bsRovingFocusItem (click)="suggestionClicked(suggestion)">
+                    <li bsDropdownItem bsRovingFocusItem (click)="suggestionClicked(suggestion)">
                         {{ suggestion.text }}
-                    </bs-dropdown-item>
+                    </li>
                 }
             }
         </bs-dropdown-menu>

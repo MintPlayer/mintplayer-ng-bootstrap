@@ -7,7 +7,7 @@
   toggle and the theme-aware styling all live in the WC. Mark the brand with
   <code>bs-navbar-wc-brand</code>, add <code>bs-navbar-wc-item</code> links
   (one <code>[active]</code>), open a <code>bs-navbar-wc-dropdown</code> whose
-  panel is a <code>bs-dropdown-wc-menu</code>, and push an item to the right
+  panel is a <code>bs-dropdown-menu</code>, and push an item to the right
   with <code>slot="end"</code>. Toggling the collapse fires
   <code>(expandedchange)</code>.
 </p>
@@ -28,11 +28,11 @@
     </bs-navbar-wc-item>
 
     <bs-navbar-wc-dropdown [label]="'Products'">
-      <bs-dropdown-wc-menu>
-        <bs-dropdown-wc-item><a routerLink="/products/widgets">Widgets</a></bs-dropdown-wc-item>
-        <bs-dropdown-wc-item><a routerLink="/products/gadgets">Gadgets</a></bs-dropdown-wc-item>
-        <bs-dropdown-wc-item><a routerLink="/products/gizmos">Gizmos</a></bs-dropdown-wc-item>
-      </bs-dropdown-wc-menu>
+      <bs-dropdown-menu>
+        <li bsDropdownItem><a routerLink="/products/widgets">Widgets</a></li>
+        <li bsDropdownItem><a routerLink="/products/gadgets">Gadgets</a></li>
+        <li bsDropdownItem><a routerLink="/products/gizmos">Gizmos</a></li>
+      </bs-dropdown-menu>
     </bs-navbar-wc-dropdown>
 
     <bs-navbar-wc-item slot="end">

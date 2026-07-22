@@ -7,7 +7,7 @@ import {
   BsNavbarBrandWc,
   BsNavbarDropdownWc,
 } from '@mintplayer/ng-bootstrap/navbar-wc';
-import { BsDropdownMenuWc, BsDropdownItemWc } from '@mintplayer/ng-bootstrap/dropdown-menu-wc';
+import { BsDropdownMenuComponent, BsDropdownItemDirective } from '@mintplayer/ng-bootstrap/dropdown-menu';
 import type { NavbarExpandedChangeEventDetail } from '@mintplayer/web-components/navbar';
 import { dedent } from 'ts-dedent';
 
@@ -20,8 +20,8 @@ import { dedent } from 'ts-dedent';
     BsNavbarItemWc,
     BsNavbarBrandWc,
     BsNavbarDropdownWc,
-    BsDropdownMenuWc,
-    BsDropdownItemWc,
+    BsDropdownMenuComponent,
+    BsDropdownItemDirective,
   ],
   templateUrl: './navbar-wc.component.html',
   styleUrl: './navbar-wc.component.scss',
@@ -48,11 +48,11 @@ export class NavbarWcComponent {
       </bs-navbar-wc-item>
 
       <bs-navbar-wc-dropdown [label]="'Products'">
-        <bs-dropdown-wc-menu>
-          <bs-dropdown-wc-item><a routerLink="/products/widgets">Widgets</a></bs-dropdown-wc-item>
-          <bs-dropdown-wc-item><a routerLink="/products/gadgets">Gadgets</a></bs-dropdown-wc-item>
-          <bs-dropdown-wc-item><a routerLink="/products/gizmos">Gizmos</a></bs-dropdown-wc-item>
-        </bs-dropdown-wc-menu>
+        <bs-dropdown-menu>
+          <li bsDropdownItem><a routerLink="/products/widgets">Widgets</a></li>
+          <li bsDropdownItem><a routerLink="/products/gadgets">Gadgets</a></li>
+          <li bsDropdownItem><a routerLink="/products/gizmos">Gizmos</a></li>
+        </bs-dropdown-menu>
       </bs-navbar-wc-dropdown>
 
       <bs-navbar-wc-item slot="end">
@@ -70,7 +70,7 @@ export class NavbarWcComponent {
       BsNavbarBrandWc,
       BsNavbarDropdownWc,
     } from '@mintplayer/ng-bootstrap/navbar-wc';
-    import { BsDropdownMenuWc, BsDropdownItemWc } from '@mintplayer/ng-bootstrap/dropdown-menu-wc';
+    import { BsDropdownMenuComponent, BsDropdownItemDirective } from '@mintplayer/ng-bootstrap/dropdown-menu';
     import type { NavbarExpandedChangeEventDetail } from '@mintplayer/web-components/navbar';
 
     @Component({
@@ -82,8 +82,8 @@ export class NavbarWcComponent {
         BsNavbarItemWc,
         BsNavbarBrandWc,
         BsNavbarDropdownWc,
-        BsDropdownMenuWc,
-        BsDropdownItemWc,
+        BsDropdownMenuComponent,
+        BsDropdownItemDirective,
       ],
     })
     export class MyNavbarDemoComponent {

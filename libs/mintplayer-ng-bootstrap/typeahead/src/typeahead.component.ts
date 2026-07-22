@@ -2,7 +2,7 @@ import { ChangeDetectionStrategy, Component, computed, effect, ElementRef, injec
 import { FormsModule } from '@angular/forms';
 import { BsLiveAnnouncerService, BsRovingFocusDirective, BsRovingFocusItemDirective } from '@mintplayer/ng-bootstrap/a11y';
 import { BsComboboxDirective, BsDropdownDirective, BsDropdownMenuDirective } from '@mintplayer/ng-bootstrap/dropdown';
-import { BsDropdownMenuComponent, BsDropdownItemComponent } from '@mintplayer/ng-bootstrap/dropdown-menu';
+import { BsDropdownMenuComponent, BsDropdownItemDirective } from '@mintplayer/ng-bootstrap/dropdown-menu';
 import { BsFormComponent, BsFormControlDirective } from '@mintplayer/ng-bootstrap/form';
 import { BsHasOverlayComponent } from '@mintplayer/ng-bootstrap/has-overlay';
 import { BsProgressComponent } from '@mintplayer/ng-bootstrap/progress-bar';
@@ -14,7 +14,7 @@ import { BsProgressComponent } from '@mintplayer/ng-bootstrap/progress-bar';
   imports: [
     FormsModule,
     BsFormComponent, BsFormControlDirective,
-    BsDropdownDirective, BsDropdownMenuDirective, BsDropdownMenuComponent, BsDropdownItemComponent,
+    BsDropdownDirective, BsDropdownMenuDirective, BsDropdownMenuComponent, BsDropdownItemDirective,
     BsComboboxDirective,
     BsRovingFocusDirective, BsRovingFocusItemDirective,
     BsProgressComponent, BsHasOverlayComponent,

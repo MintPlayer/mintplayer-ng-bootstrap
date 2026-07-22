@@ -5,9 +5,8 @@ import { ChangeDetectionStrategy, Component, CUSTOM_ELEMENTS_SCHEMA, input } fro
  *
  * The trigger text is the `label` input (rendered into the WC's `label` slot).
  * The dropdown panel is projected into the default slot — supply a
- * `<bs-dropdown-wc-menu>` (`@mintplayer/ng-bootstrap/dropdown-menu-wc`) of
- * link items. Reveal/positioning and the no-JS `:focus-within` fallback all
- * live in the WC.
+ * `<bs-dropdown-menu>` (`@mintplayer/ng-bootstrap/dropdown-menu`) of link items.
+ * Reveal/positioning and the no-JS `:focus-within` fallback all live in the WC.
  *
  * Distinct selector from the legacy `bs-navbar-dropdown`
  * (`@mintplayer/ng-bootstrap/navbar`) to avoid a collision.

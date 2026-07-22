@@ -3,7 +3,7 @@
 <p>
   The <code>*bsContextMenu</code> structural directive attaches a custom right-click
   menu to any host element. Its template projects a <code>&lt;bs-dropdown-menu&gt;</code>
-  (with <code>&lt;bs-dropdown-item&gt;</code> entries), and the overlay is positioned at
+  (with <code>&lt;li bsDropdownItem&gt;</code> entries), and the overlay is positioned at
   the pointer. A <code>&lt;bs-has-overlay&gt;</code> placed elsewhere on the page
   provides the shared overlay container.
 </p>
@@ -14,11 +14,11 @@
 <bs-has-overlay></bs-has-overlay>
 <div class="has-custom-context-menu w-100">
     <bs-dropdown-menu *bsContextMenu>
-        <bs-dropdown-item>Item 1</bs-dropdown-item>
-        <bs-dropdown-item>Item 2</bs-dropdown-item>
-        <bs-dropdown-item>Item 3</bs-dropdown-item>
-        <bs-dropdown-item>Item 4</bs-dropdown-item>
-        <bs-dropdown-item>Item 5</bs-dropdown-item>
+        <li bsDropdownItem>Item 1</li>
+        <li bsDropdownItem>Item 2</li>
+        <li bsDropdownItem>Item 3</li>
+        <li bsDropdownItem>Item 4</li>
+        <li bsDropdownItem>Item 5</li>
     </bs-dropdown-menu>
 </div>
 <div class="space"></div>

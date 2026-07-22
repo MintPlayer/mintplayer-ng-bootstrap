@@ -44,9 +44,10 @@ Branch B is the base, but three things change:
 
 ## Non-goals
 
-- **The combobox / listbox / typeahead and the legacy `[bsDropdown]` directive are out of scope** (menu-dropdown only). A typeable `<input>` trigger is a different control; it stays on its existing implementation. (Consistent with the original dropdown-WC scope lock.)
 - No new general SSR framework — we reuse the shell's Declarative-Shadow-DOM string-injection pattern (`@lit-labs/ssr` at build time → constant → runtime regex insert), already proven and framework-agnostic.
 - No behavior change to `mp-shell`, `tree-select`, or other shipped WCs.
+
+> ⚠️ **Scope reversal (2026-07-22, user decision).** The combobox / listbox / typeahead / `[bsDropdown]` directive were originally out of scope. The user has since directed a **full migration with no backward compatibility**: those controls move onto the new WC-backed `bs-dropdown-menu` (`mode="listbox"`) + `[bsDropdownItem]`, and the **legacy `libs/mintplayer-ng-bootstrap/dropdown-menu` component is deleted entirely.** This resolves the selector collision by removing the legacy occupant. See Locked decision #6 and the expanded plan phases.
 
 ## Locked decisions (confirmed with the user)
 
@@ -57,7 +58,7 @@ Branch B is the base, but three things change:
 | 3 | **Salvage & rebase branch B**, don't greenfield. | Rebase B onto `master`; reconcile packaging conflicts; apply deltas D1–D3. |
 | 4 | **Overlay-pull via `OverlayController`, not CDK `DomPortal`.** | Works in all three frameworks; no `@angular/cdk` dependency in the WC layer. Already how branch B does it. |
 | 5 | **Include `bootstrap/scss/nav` in `mp-navbar`.** | `_navbar.scss` only adds contextual overrides; the base `.nav-link` box (display, padding, color, focus/hover/disabled) is defined in `_nav.scss`. Answers the user's "should nav also be included?" — yes. |
-| 6 | **Breaking changes are acceptable; reclaim the clean `bs-` selectors.** | The legacy Angular navbar dropdown system (`bs-navbar-dropdown` / `bs-navbar-item`) is retired; the new WC-backed components take `bs-navbar` / `bs-dropdown-menu` / `bs-dropdown-item`. See "Naming & collision" for the one unresolved sub-decision. |
+| 6 | **Breaking changes are acceptable; reclaim the clean `bs-` selectors; full migration, no back-compat (2026-07-22).** | The legacy Angular navbar dropdown system (`bs-navbar-dropdown`/`bs-navbar-item`) AND the legacy `bs-dropdown-menu`/`bs-dropdown-item` component are **deleted**. The combobox / `[bsDropdown]` directive / typeahead are migrated onto the new WC-backed `bs-dropdown-menu` (`mode="listbox"`) + `[bsDropdownItem]`. The new components take the clean `bs-navbar` / `bs-dropdown-menu` selectors. |
 | 7 | **One feature branch / one PR**, created only on explicit go-ahead. | The phasing below is internal sequencing, not separate PRs. |
 
 ## Core architecture

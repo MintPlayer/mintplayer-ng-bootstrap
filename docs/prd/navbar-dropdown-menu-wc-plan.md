@@ -102,11 +102,16 @@ Refinement adopted: **every menu child is an `<li>` and each directive marks the
 5. Add React/Vue presentational `<BsDropdownItem>` / `<BsDropdownDivider>` / `<BsDropdownHeader>` (render `<li className="dropdown-item">` etc.).
 6. Verify item styling parity (Phase 0 criteria) through the WCs + wrappers, standalone and in the navbar.
 
-### Phase 3 — reclaim `bs-` names + unify (D3)
-1. Rename new Angular wrappers off `-wc-` to `bs-navbar` / `bs-dropdown-menu`.
-2. Resolve the legacy `bs-dropdown-menu` collision (rename legacy listbox component to internal, or mode-split — per the naming decision).
-3. Retire the legacy navbar dropdown system (`bs-navbar-dropdown`/`bs-navbar-item` components).
-4. Wire the Angular demo: `<bs-dropdown-menu>` with `[bsDropdownItem]` children nested inside `<bs-navbar>`.
+### Phase 3 — reclaim `bs-` names + FULL migration, no back-compat (D3)
+**Scope reversal (2026-07-22, user):** delete BOTH legacy systems, migrate all consumers, no shims. Scoping confirmed low-risk — the trigger/overlay/a11y stack (`[bsDropdown]`, `*bsDropdownMenu`, `[bsDropdownToggle]`, `input[bsCombobox]`, `bsRovingFocus`/`Item`) is KEPT and doesn't couple to the visual components (coupling is inverted); `bsRovingFocusItem` already generates the aria-activedescendant id; the WC's listbox mode defers keyboard to `bsRovingFocus`.
+
+Dropdown-menu:
+1. ✅ Deleted legacy `dropdown-menu` visual components; relocated the WC wrapper into the `dropdown-menu` entry point (selector `bs-dropdown-menu`, class `BsDropdownMenuComponent`).
+2. ⏳ Migrate consumers (typeahead listbox, context-menu/offcanvas/dropdown demos, specs) to `<bs-dropdown-menu>` + `<li bsDropdownItem>` (`isSelected`→`active`); `mode="listbox"` for combobox/typeahead.
+
+Navbar:
+3. Delete legacy navbar lib (`bs-navbar`/`-dropdown`/`-item`/`-brand` @Components); relocate navbar-wc into the `navbar` entry point; rename `bs-navbar-wc*`→`bs-navbar*`.
+4. Migrate the demo shell (`app.component.html`) + navbar demo to the new navbar with `<bs-dropdown-menu>` + `[bsDropdownItem]` nested inside `<bs-navbar>`.
 
 ### Phase 4 — React + Vue parity + SSR
 1. Bring `BsNavbar*` + `BsDropdownMenu` wrappers to parity in both frameworks.

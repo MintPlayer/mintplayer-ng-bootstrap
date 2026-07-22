@@ -1,7 +1,7 @@
 import { Component, ChangeDetectionStrategy} from '@angular/core';
 import { BsCodeSnippetComponent } from '@mintplayer/ng-bootstrap/code-snippet';
 import { BsContextMenuDirective } from '@mintplayer/ng-bootstrap/context-menu';
-import { BsDropdownMenuComponent, BsDropdownItemComponent } from '@mintplayer/ng-bootstrap/dropdown-menu';
+import { BsDropdownMenuComponent, BsDropdownItemDirective } from '@mintplayer/ng-bootstrap/dropdown-menu';
 import { BsHasOverlayComponent } from '@mintplayer/ng-bootstrap/has-overlay';
 import { dedent } from 'ts-dedent';
 
@@ -9,7 +9,7 @@ import { dedent } from 'ts-dedent';
   selector: 'demo-context-menu',
   templateUrl: './context-menu.component.html',
   styleUrls: ['./context-menu.component.scss'],
-  imports: [BsCodeSnippetComponent, BsDropdownMenuComponent, BsDropdownItemComponent, BsContextMenuDirective, BsHasOverlayComponent],
+  imports: [BsCodeSnippetComponent, BsDropdownMenuComponent, BsDropdownItemDirective, BsContextMenuDirective, BsHasOverlayComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class ContextMenuComponent {
@@ -18,9 +18,9 @@ export class ContextMenuComponent {
     <div class="target-area">
       Right-click me
       <bs-dropdown-menu *bsContextMenu>
-        <bs-dropdown-item>Cut</bs-dropdown-item>
-        <bs-dropdown-item>Copy</bs-dropdown-item>
-        <bs-dropdown-item>Paste</bs-dropdown-item>
+        <li bsDropdownItem>Cut</li>
+        <li bsDropdownItem>Copy</li>
+        <li bsDropdownItem>Paste</li>
       </bs-dropdown-menu>
     </div>
   `;
@@ -28,12 +28,12 @@ export class ContextMenuComponent {
   protected readonly snippetBasicTs = dedent`
     import { Component } from '@angular/core';
     import { BsContextMenuDirective } from '@mintplayer/ng-bootstrap/context-menu';
-    import { BsDropdownMenuComponent, BsDropdownItemComponent } from '@mintplayer/ng-bootstrap/dropdown-menu';
+    import { BsDropdownMenuComponent, BsDropdownItemDirective } from '@mintplayer/ng-bootstrap/dropdown-menu';
 
     @Component({
       selector: 'my-context-menu-demo',
       templateUrl: './my-context-menu-demo.component.html',
-      imports: [BsContextMenuDirective, BsDropdownMenuComponent, BsDropdownItemComponent],
+      imports: [BsContextMenuDirective, BsDropdownMenuComponent, BsDropdownItemDirective],
     })
     export class MyContextMenuDemoComponent {}
   `;

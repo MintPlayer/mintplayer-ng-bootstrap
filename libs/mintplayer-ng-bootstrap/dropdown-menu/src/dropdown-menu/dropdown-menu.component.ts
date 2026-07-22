@@ -1,124 +1,96 @@
-import { AfterViewInit, Component, computed, contentChildren, ElementRef, inject, input, signal, ChangeDetectionStrategy } from '@angular/core';
-import { BsDropdownDirective } from '@mintplayer/ng-bootstrap/dropdown';
-import { BsDropdownItemComponent } from '../dropdown-item/dropdown-item.component';
+import { afterNextRender, ChangeDetectionStrategy, Component, computed, CUSTOM_ELEMENTS_SCHEMA, input, output, ViewEncapsulation } from '@angular/core';
+import type { DropdownMode, DropdownSelectEventDetail } from '@mintplayer/web-components/dropdown-menu';
 
+/**
+ * `<bs-dropdown-menu>` — Angular wrapper around the `<mp-dropdown-menu>` web
+ * component. This is the single dropdown-menu implementation: it is used
+ * standalone (projected through `*bsDropdownMenu` by the `[bsDropdown]` trigger
+ * stack), inside `<bs-navbar>`, and as the listbox panel for the combobox /
+ * typeahead (`mode="listbox"`).
+ *
+ * Keyboard navigation, roving tabindex, the ARIA roles and the theme-aware
+ * styling all live in the WC (single source of UI truth). This wrapper bridges
+ * inputs to attributes and projects `[bsDropdownItem]` / `[bsDropdownDivider]` /
+ * `[bsDropdownHeader]` `<li>`s into the WC's default slot.
+ *
+ * The WC is registered **client-side only** (`afterNextRender`); on the server
+ * Angular emits a bare `<mp-dropdown-menu>` tag and the SSR layer injects its
+ * Declarative Shadow DOM (see `injectMpDropdownDsd`), so it renders with JS off.
+ *
+ * This wrapper stays framework-agnostic of the `[bsDropdown]` trigger stack (it
+ * lives in a sibling entry point). When projected as a combobox/listbox panel,
+ * the consumer sets `mode="listbox"` and mirrors the trigger's `menuId`/
+ * `popupRole` onto this host (`[attr.id]`/`[attr.role]`) via the exported
+ * `bsDropdown` reference — the same directive the toggle and combobox read.
+ */
 @Component({
   selector: 'bs-dropdown-menu',
   templateUrl: './dropdown-menu.component.html',
-  styleUrls: ['./dropdown-menu.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush,
-  host: {
-    '[style.width]': 'dropdownWith()',
-    '(window:resize)': 'onResize()',
-    '[attr.role]': 'menuRole()',
-    '[attr.id]': 'menuId()',
-    '(keydown)': 'onKeydown($event)',
-  },
+  schemas: [CUSTOM_ELEMENTS_SCHEMA],
+  // The COMPANION light-DOM sheet: the one thing the menu's shadow `::slotted`
+  // rules cannot reach is a nested `<a>`/`<button>` inside an item. Ship it as an
+  // un-encapsulated (global, class-scoped) rule so the link fills the padded item
+  // box and inherits its color — the whole row navigates, like Bootstrap. The
+  // `--bs-dropdown-item-padding-*` tokens inherit out of the menu's shadow through
+  // the flat tree (fallbacks cover standalone use).
+  encapsulation: ViewEncapsulation.None,
+  styles: [`
+    .dropdown-item > a,
+    .dropdown-item > button {
+      display: block;
+      width: auto;
+      margin: calc(-1 * var(--bs-dropdown-item-padding-y, 0.25rem)) calc(-1 * var(--bs-dropdown-item-padding-x, 1rem));
+      padding: var(--bs-dropdown-item-padding-y, 0.25rem) var(--bs-dropdown-item-padding-x, 1rem);
+      color: inherit;
+      text-decoration: none;
+      text-align: inherit;
+      background: none;
+      border: 0;
+      font: inherit;
+    }
+  `],
 })
-export class BsDropdownMenuComponent implements AfterViewInit {
-  private bsDropdown = inject(BsDropdownDirective, { optional: true });
-
-  readonly maxHeight = input<number | null>(null);
-  dropdownWith = signal<string | null>(null);
-
-  readonly menuRole = computed(() => this.bsDropdown?.popupRole() ?? null);
-  readonly menuId = computed(() => this.bsDropdown?.menuId() || null);
-
+export class BsDropdownMenuComponent {
   /**
-   * Items projected into this menu. Used in menu mode (popupRole='menu') to
-   * implement roving-tabindex keyboard navigation. In listbox mode, callers
-   * (typeahead/tree-select/etc.) typically apply their own bsRovingFocus directly,
-   * so this menu's keyboard handler is a no-op.
+   * `menu` (default, roving-tabindex nav) | `listbox` (consumer manages focus).
+   *
+   * Aliased to `menuMode` so it never collides with the `mode` input of the
+   * a11y `bsRovingFocus` directive when a combobox/listbox stacks both on this
+   * one element (same reason `bsCombobox` aliases its `autocomplete`).
    */
-  readonly dropdownItems = contentChildren(BsDropdownItemComponent, { descendants: true });
+  readonly mode = input<DropdownMode>('menu', { alias: 'menuMode' });
+  /** Pixel cap on the menu height; scrolls beyond. */
+  readonly maxHeight = input<number>();
+  /** Id of an external label, set as `aria-labelledby` on the WC's list. */
+  readonly labelId = input<string>();
 
-  /** True when this is a plain menu (default), false when used as a combobox listbox. */
-  readonly isMenuMode = computed(() => this.bsDropdown?.popupRole() !== 'listbox');
+  /** Fires when an enabled item is activated (re-emits the WC's `select`). */
+  readonly select = output<DropdownSelectEventDetail>();
 
-  /** Index into dropdownItems() of the item that currently holds the roving tabindex (menu mode). */
-  readonly focusedIndex = signal<number>(0);
+  /** `max-height` attribute is numeric-or-absent; derive once via a signal. */
+  protected readonly maxHeightAttr = computed(() => {
+    const value = this.maxHeight();
+    return value === undefined ? null : `${value}`;
+  });
 
-  isItemFocused(item: BsDropdownItemComponent): boolean {
-    if (!this.isMenuMode()) return false;
-    return this.dropdownItems()[this.focusedIndex()] === item;
+  protected readonly labelIdAttr = computed(() => this.labelId() ?? null);
+
+  protected onSelect(event: Event) {
+    // The WC's `select` is a general-purpose DOM event (bubbles + composed).
+    // The public Angular API is this typed `output()`, so consume the raw
+    // event here. Without `stopPropagation` it keeps bubbling to the consumer's
+    // `<bs-dropdown-menu>` host, where their `(select)` binding fires a
+    // SECOND time with the raw `CustomEvent` (Angular doesn't unwrap `.detail`).
+    event.stopPropagation();
+    this.select.emit((event as CustomEvent<DropdownSelectEventDetail>).detail);
   }
 
-  setFocusedItem(item: BsDropdownItemComponent) {
-    if (!this.isMenuMode()) return;
-    const idx = this.dropdownItems().indexOf(item);
-    if (idx >= 0) this.focusedIndex.set(idx);
-  }
-
-  onResize() {
-    if ((typeof window !== 'undefined') && this.bsDropdown && this.bsDropdown.sameDropdownWidth()) {
-      const element = this.bsDropdown.elementRef.nativeElement;
-      this.dropdownWith.set(window.getComputedStyle(element).width);
-    }
-  }
-
-  ngAfterViewInit() {
-    this.onResize();
-  }
-
-  onKeydown(event: KeyboardEvent) {
-    if (!this.isMenuMode()) return;
-    const items = this.dropdownItems();
-    if (items.length === 0) return;
-
-    let handled = false;
-    switch (event.key) {
-      case 'ArrowDown':
-        this.moveFocus(+1);
-        handled = true;
-        break;
-      case 'ArrowUp':
-        this.moveFocus(-1);
-        handled = true;
-        break;
-      case 'Home':
-        this.moveTo(this.firstEnabledIndex());
-        handled = true;
-        break;
-      case 'End':
-        this.moveTo(this.lastEnabledIndex());
-        handled = true;
-        break;
-    }
-    if (handled) event.preventDefault();
-  }
-
-  private moveFocus(delta: 1 | -1): void {
-    const items = this.dropdownItems();
-    const total = items.length;
-    if (total === 0) return;
-    let cursor = this.focusedIndex();
-    for (let i = 0; i < total; i++) {
-      cursor = (cursor + delta + total) % total;
-      if (!items[cursor].disabled()) {
-        this.moveTo(cursor);
-        return;
-      }
-    }
-  }
-
-  private firstEnabledIndex(): number {
-    return this.dropdownItems().findIndex(it => !it.disabled());
-  }
-
-  private lastEnabledIndex(): number {
-    const items = this.dropdownItems();
-    for (let i = items.length - 1; i >= 0; i--) {
-      if (!items[i].disabled()) return i;
-    }
-    return -1;
-  }
-
-  private moveTo(index: number): void {
-    if (index < 0) return;
-    this.focusedIndex.set(index);
-    const target = this.dropdownItems()[index];
-    if (target) {
-      target.elementRef.nativeElement.focus();
-    }
+  constructor() {
+    afterNextRender(() => {
+      // Side-effect import registers <mp-dropdown-menu> and friends; client-only
+      // so SSR stays a bare tag for DSD injection.
+      import('@mintplayer/web-components/dropdown-menu');
+    });
   }
 }

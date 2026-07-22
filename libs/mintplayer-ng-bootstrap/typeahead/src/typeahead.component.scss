@@ -2,3 +2,11 @@ bs-progress {
     margin-top: -8px;
     margin-bottom: 6px;
 }
+
+// The suggestion list sits in a CDK overlay whose root is the `<bs-dropdown-menu>`
+// host; `[sameDropdownWidth]` sizes that host to the input. The Angular host is
+// inline by default, so make it block for the width to take and the list to match
+// the input.
+bs-dropdown-menu {
+    display: block;
+}

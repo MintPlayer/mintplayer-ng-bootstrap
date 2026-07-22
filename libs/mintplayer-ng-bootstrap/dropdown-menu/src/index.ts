@@ -1,2 +1,4 @@
 export * from './dropdown-menu/dropdown-menu.component';
-export * from './dropdown-item/dropdown-item.component';
+export * from './directives/dropdown-item.directive';
+export * from './directives/dropdown-divider.directive';
+export * from './directives/dropdown-header.directive';

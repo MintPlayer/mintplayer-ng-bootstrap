@@ -1,17 +1,17 @@
 import { ChangeDetectionStrategy, Component, signal } from '@angular/core';
 import { BsCodeSnippetComponent } from '@mintplayer/ng-bootstrap/code-snippet';
 import {
-  BsDropdownMenuWc,
-  BsDropdownItemWc,
-  BsDropdownDividerWc,
-  BsDropdownHeaderWc,
-} from '@mintplayer/ng-bootstrap/dropdown-menu-wc';
+  BsDropdownMenuComponent,
+  BsDropdownItemDirective,
+  BsDropdownDividerDirective,
+  BsDropdownHeaderDirective,
+} from '@mintplayer/ng-bootstrap/dropdown-menu';
 import type { DropdownSelectEventDetail } from '@mintplayer/web-components/dropdown-menu';
 import { dedent } from 'ts-dedent';
 
 @Component({
   selector: 'demo-dropdown-wc',
-  imports: [BsCodeSnippetComponent, BsDropdownMenuWc, BsDropdownItemWc, BsDropdownDividerWc, BsDropdownHeaderWc],
+  imports: [BsCodeSnippetComponent, BsDropdownMenuComponent, BsDropdownItemDirective, BsDropdownDividerDirective, BsDropdownHeaderDirective],
   templateUrl: './dropdown-wc.component.html',
   styleUrl: './dropdown-wc.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -24,30 +24,30 @@ export class DropdownWcComponent {
   }
 
   protected readonly snippetHtml = dedent`
-    <bs-dropdown-wc-menu (select)="onSelect($event)">
-      <bs-dropdown-wc-header>Actions</bs-dropdown-wc-header>
-      <bs-dropdown-wc-item [value]="'new'">New file</bs-dropdown-wc-item>
-      <bs-dropdown-wc-item [value]="'open'" [selected]="true">Open…</bs-dropdown-wc-item>
-      <bs-dropdown-wc-item [value]="'save'" [disabled]="true">Save (disabled)</bs-dropdown-wc-item>
-      <bs-dropdown-wc-divider></bs-dropdown-wc-divider>
-      <bs-dropdown-wc-item [value]="'exit'">Exit</bs-dropdown-wc-item>
-    </bs-dropdown-wc-menu>
+    <bs-dropdown-menu (select)="onSelect($event)">
+      <li bsDropdownHeader>Actions</li>
+      <li bsDropdownItem [value]="'new'">New file</li>
+      <li bsDropdownItem [value]="'open'" [active]="true">Open…</li>
+      <li bsDropdownItem [value]="'save'" [disabled]="true">Save (disabled)</li>
+      <li bsDropdownDivider></li>
+      <li bsDropdownItem [value]="'exit'">Exit</li>
+    </bs-dropdown-menu>
   `;
 
   protected readonly snippetTs = dedent`
     import { Component, signal } from '@angular/core';
     import {
-      BsDropdownMenuWc,
-      BsDropdownItemWc,
-      BsDropdownDividerWc,
-      BsDropdownHeaderWc,
-    } from '@mintplayer/ng-bootstrap/dropdown-menu-wc';
+      BsDropdownMenuComponent,
+      BsDropdownItemDirective,
+      BsDropdownDividerDirective,
+      BsDropdownHeaderDirective,
+    } from '@mintplayer/ng-bootstrap/dropdown-menu';
     import type { DropdownSelectEventDetail } from '@mintplayer/web-components/dropdown-menu';
 
     @Component({
       selector: 'my-dropdown-demo',
       templateUrl: './my-dropdown-demo.component.html',
-      imports: [BsDropdownMenuWc, BsDropdownItemWc, BsDropdownDividerWc, BsDropdownHeaderWc],
+      imports: [BsDropdownMenuComponent, BsDropdownItemDirective, BsDropdownDividerDirective, BsDropdownHeaderDirective],
     })
     export class MyDropdownDemoComponent {
       readonly selectedValue = signal<string | null>(null);
