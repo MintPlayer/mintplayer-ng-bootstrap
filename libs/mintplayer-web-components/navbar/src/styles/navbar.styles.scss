@@ -16,6 +16,16 @@
 :host, *, *::before, *::after { box-sizing: border-box; }
 :host { display: block; }
 
+// `positioning="fixed"` pins the bar to the top of the viewport, full width
+// (Bootstrap `.fixed-top`). Opt-in; the consumer offsets content below it. Used
+// by the Angular demo to preserve the pre-WC fixed navbar.
+:host([positioning="fixed"]) {
+  position: fixed;
+  inset: 0 0 auto;   // top/left/right: 0
+  width: 100%;
+  z-index: 1030;     // Bootstrap $zindex-fixed
+}
+
 .navbar {
   position: relative;
   z-index: 20;
@@ -128,6 +138,9 @@
       @include media-breakpoint-down($name, $grid-breakpoints) {
         // Narrow: collapsed (row 0fr) until revealed.
         .navbar-collapse { grid-template-rows: 0fr; }
+        // Center the brand (matches the pre-WC navbar): auto inline margins on the
+        // brand absorb the free space, pushing the toggler to the right edge.
+        ::slotted([slot="brand"]) { margin-inline: auto; }
       }
     }
   }

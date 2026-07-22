@@ -84,9 +84,13 @@
   max-height: none;
   overflow: visible;
 }
-// submenu inline indent (small mode).
+// First-level panel keeps the pre-WC right inset (was `.dropdown-menu.me-3`).
+:host(:not([data-submenu])) ::slotted(:not([slot="label"])) {
+  margin-inline-end: 1rem;
+}
+// submenu inline inset (small mode) — matches the pre-WC `.submenu { margin: 0 .5rem }`.
 :host([data-submenu]) ::slotted(:not([slot="label"])) {
-  margin-inline-start: 0.5rem;
+  margin: 0 0.5rem;
 }
 
 // Reveal: no-JS focus-within (gated) OR JS click. `data-open` = first-level and
@@ -109,6 +113,7 @@
         top: 100%;
         inset-inline-start: 0;
         z-index: 1000;
+        margin: 0;   // reset the small-mode inline inset for the floated panel
         max-height: calc(100vh - 100% - 1rem);
         overflow-y: auto;
       }

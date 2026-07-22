@@ -23,6 +23,8 @@ withDefaults(
     expanded?: boolean;
     /** Accessible label for the navbar landmark. */
     ariaLabel?: string;
+    /** `fixed` pins the bar to the top of the viewport, full width; omit for in-flow. */
+    positioning?: 'fixed';
   }>(),
   {
     breakpoint: 'md',
@@ -62,6 +64,7 @@ onBeforeUnmount(() => el.value?.removeEventListener('expandedchange', onExpanded
     :color="color"
     :aria-label="ariaLabel"
     :expanded="expanded ? '' : undefined"
+    :positioning="positioning"
   >
     <slot />
   </mp-navbar>

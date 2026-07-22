@@ -13,6 +13,8 @@ export interface BsNavbarProps {
   color?: string;
   /** Programmatic collapse state (narrow mode); reflects the toggle. */
   expanded?: boolean;
+  /** `fixed` pins the bar to the top of the viewport, full width; omit for in-flow. */
+  positioning?: 'fixed';
   /** Landmark label for the `<nav>` (default `Main navigation`). Maps to `aria-label`. */
   ariaLabel?: string;
   /** Fires when the collapse toggles; `detail.expanded` carries the new state. */

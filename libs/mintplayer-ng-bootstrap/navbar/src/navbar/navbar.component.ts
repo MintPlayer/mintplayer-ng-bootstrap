@@ -31,6 +31,8 @@ export class BsNavbarComponent {
   readonly ariaLabel = input<string>();
   /** Whether the collapse is (visually) expanded; reflected to the WC. */
   readonly expanded = input(false);
+  /** `fixed` pins the bar to the top of the viewport, full width; omit for in-flow. */
+  readonly positioning = input<'fixed'>();
 
   /** Fires when the collapse toggles (re-emits the WC's `expandedchange`). */
   readonly expandedchange = output<NavbarExpandedChangeEventDetail>();
@@ -38,6 +40,7 @@ export class BsNavbarComponent {
   /** String-or-absent attributes derived once via signals. */
   protected readonly colorAttr = computed(() => this.color() ?? null);
   protected readonly ariaLabelAttr = computed(() => this.ariaLabel() ?? null);
+  protected readonly positioningAttr = computed(() => this.positioning() ?? null);
   /** Presence attribute: `''` when expanded, `null` when collapsed. */
   protected readonly expandedAttr = computed(() => (this.expanded() ? '' : null));
 

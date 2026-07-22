@@ -27,6 +27,9 @@ import type { NavbarExpandedChangeEventDetail } from '../types';
  *    `data-bs-theme` on the host for text/link contrast.
  *  - `expanded` — programmatic collapse state (narrow mode); reflects the toggle.
  *  - `aria-label` — landmark label for the `<nav>` (default `Main navigation`).
+ *  - `positioning` — `fixed` pins the bar to the top of the viewport, full width
+ *    (like Bootstrap's `.fixed-top`); omit for the default in-flow bar. The
+ *    consumer is responsible for offsetting page content below a fixed bar.
  *
  * Events: `expandedchange` (`detail: { expanded }`) when the collapse toggles.
  */
@@ -40,6 +43,7 @@ export class MpNavbar extends LitElement {
       'color',
       'expanded',
       'aria-label',
+      'positioning',
     ];
   }
 

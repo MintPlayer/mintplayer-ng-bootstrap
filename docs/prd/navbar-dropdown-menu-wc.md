@@ -241,3 +241,13 @@ In-browser review of the migrated Angular navbar (Playwright) surfaced five regr
 | 5 | Dark-mode toggler lines are dark (near-invisible) | The compiled navbar bakes `--bs-navbar-toggler-icon-bg` to an SVG with `stroke=rgba(33,37,41,.75)`; the light-stroke swap is `[data-bs-theme=dark] .navbar-toggler-icon`, but `data-bs-theme` doesn't cross the shadow boundary and adaptive `color="body-tertiary"` leaves the host theme unset. | Shadow CSS: drop the baked SVG `background-image`; render the hamburger as a `mask` + `background-color: var(--bs-navbar-color)` (the theme-aware token that already inherits across the boundary). Follows page theme for adaptive colors AND solid colors, no host `data-bs-theme` needed. |
 
 Implementation order: #1, #5, #3, #2, #4 (isolated → most surface). Verify each in-browser (wide + narrow + dark). Follow-up still open: per-item active-route highlighting.
+
+### Round 2 (2026-07-22) — `positioning` input + spacing parity vs the live (master) navbar
+
+- **`positioning="fixed"` is now a real `mp-navbar` input** (not a demo-only CSS hack). `:host([positioning="fixed"])` → `position:fixed; inset:0 0 auto; width:100%; z-index:1030`. Bridged through the ng/react/vue wrappers. The **Angular demo** sets `[positioning]="'fixed'"` (preserving the pre-WC fixed bar) + a content `padding-top`; React/Vue leave it in-flow. Fix #3's demo-only `bs-navbar{position:fixed}` rule is removed.
+- **Spacing regressions restored** by comparing computed styles against the live site (which runs master). In small mode:
+  - **Brand centered** — `::slotted([slot="brand"]) { margin-inline: auto }` in the narrow media block (auto margins center the brand, toggler stays right). Matches master (brand host resolved to `margin: … auto`).
+  - **Nested submenu inset** — `:host([data-submenu]) ::slotted(...) { margin: 0 0.5rem }` (was master's `.submenu { margin: 0 .5rem }`).
+  - **First-level right inset** — `:host(:not([data-submenu])) ::slotted(...) { margin-inline-end: 1rem }` (was master's `.dropdown-menu.me-3`); reset to `0` in the wide floated-overlay rule.
+  - Item padding (`4px 16px`) and navbar padding (`8px 0`) already matched master via the compiled Bootstrap partials.
+  - Verified in-browser: fixed bar top/full-width; brand centered; first-level `margin: 0 16px 0 0` and submenu `0 8px` in small mode (identical to live); wide overlay unaffected.

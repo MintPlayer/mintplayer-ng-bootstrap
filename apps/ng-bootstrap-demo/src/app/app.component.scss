@@ -4,17 +4,8 @@
     height: 100%;
 }
 
-// Demo-only: pin the navbar to the top of the page, full width (as on master).
-// This lives in the demo, not the WC — the WC navbar is in-flow by default so
-// consumers choose their own placement. `bs-navbar` is in this component's view,
-// so Emulated encapsulation styles it without a global rule.
-bs-navbar {
-    position: fixed;
-    inset: 0 0 auto;   // top/left/right: 0
-    z-index: 1030;     // Bootstrap $zindex-fixed
-}
-
-// Offset the routed content below the fixed bar.
+// The navbar is pinned via the WC's `positioning="fixed"` input (see
+// app.component.html); offset the routed content below the fixed bar.
 .app-content {
     padding-top: 76px;
 }
