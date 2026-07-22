@@ -42,7 +42,12 @@ export class MpNavbarDropdown extends MpNavbarElement {
       this.#overlay = new OverlayController(this, {
         anchor: () => this.renderRoot?.querySelector<HTMLElement>('.dropdown-toggle') ?? null,
         trigger: () => this.renderRoot?.querySelector<HTMLElement>('.dropdown-toggle') ?? null,
-        panel: () => this.querySelector<HTMLElement>('mp-dropdown-menu'),
+        // The default-slotted panel: `<mp-dropdown-menu>` directly (React/Vue), or a
+        // framework wrapper host that contains it (Angular's `<bs-dropdown-menu>`).
+        // Match the direct child that isn't the trigger label so the element the
+        // CSS positions (`::slotted(:not([slot="label"]))`) is the same one the
+        // controller moves.
+        panel: () => this.querySelector<HTMLElement>(':scope > :not([slot="label"])'),
         // Open to the right of the trigger; flip to the left if it won't fit.
         positions: [
           { originX: 'end', originY: 'top', overlayX: 'start', overlayY: 'top' },

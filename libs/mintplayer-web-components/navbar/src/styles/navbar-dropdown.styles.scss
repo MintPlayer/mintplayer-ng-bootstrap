@@ -61,9 +61,13 @@
   border-right: 0;
 }
 
-// --- panel (slotted mp-dropdown-menu) -----------------------------------------
+// --- panel (the default-slotted dropdown menu) --------------------------------
+// Target the default-slotted panel by "not the label slot" rather than the
+// `mp-dropdown-menu` tag: a framework wrapper (Angular's `<bs-dropdown-menu>`)
+// slots a HOST element that CONTAINS the `<mp-dropdown-menu>`, so a tag selector
+// would miss it. React/Vue slot the element directly; both are covered.
 // First-level default: absolute below, capped height + scroll (#2).
-::slotted(mp-dropdown-menu) {
+::slotted(:not([slot="label"])) {
   position: absolute;
   top: 100%;
   inset-inline-start: 0;
@@ -74,13 +78,13 @@
 }
 
 // Reveal: no-JS focus-within (gated) OR JS click (data-open).
-:host(:not([data-js]):focus-within) ::slotted(mp-dropdown-menu),
-:host([data-open]) ::slotted(mp-dropdown-menu) {
+:host(:not([data-js]):focus-within) ::slotted(:not([slot="label"])),
+:host([data-open]) ::slotted(:not([slot="label"])) {
   display: block;
 }
 
 // Submenu, no-JS: render inline within the parent menu (#4).
-:host([data-submenu]) ::slotted(mp-dropdown-menu) {
+:host([data-submenu]) ::slotted(:not([slot="label"])) {
   position: static;
   max-height: none;
   overflow: visible;
@@ -89,7 +93,7 @@
 
 // Submenu, JS (hydrated): a fixed overlay positioned by OverlayController,
 // shown only while open (data-menu-open, set by the controller) (#3).
-:host([data-submenu][data-js]) ::slotted(mp-dropdown-menu) {
+:host([data-submenu][data-js]) ::slotted(:not([slot="label"])) {
   position: fixed;
   inset-inline-start: auto;
   top: auto;
@@ -98,6 +102,6 @@
   max-height: calc(100vh - 1rem);
   overflow-y: auto;
 }
-:host([data-submenu][data-menu-open]) ::slotted(mp-dropdown-menu) {
+:host([data-submenu][data-menu-open]) ::slotted(:not([slot="label"])) {
   display: block;
 }
