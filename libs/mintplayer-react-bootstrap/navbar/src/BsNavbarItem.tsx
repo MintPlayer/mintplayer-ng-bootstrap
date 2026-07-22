@@ -7,6 +7,8 @@ export interface BsNavbarItemProps {
   active?: boolean;
   /** Non-interactive. Reflected boolean attribute. */
   disabled?: boolean;
+  /** Navbar slot; set `"end"` to place the item in the right-aligned group. */
+  slot?: string;
   className?: string;
   children?: React.ReactNode;
 }
