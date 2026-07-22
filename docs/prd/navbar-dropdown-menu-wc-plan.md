@@ -117,11 +117,11 @@ Navbar:
 1. Bring `BsNavbar*` + `BsDropdownMenu` wrappers to parity in both frameworks.
 2. Compose `injectMpNavbarDsd(injectMpDropdownDsd(injectMpShellDsd(html)))` in the React/Vue demo servers (Angular already wired on branch B).
 
-### Phase 5 — tests, demos, a11y, hosting
-1. No-JS Playwright specs (all three + Firefox): `:focus-within` reveal, checkbox collapse, inline submenu.
-2. JS specs: click-to-open (post-`data-js`), submenu overlay-pull + flip, first-level height cap.
-3. ARIA: `role="menu"`/`menuitem`, `aria-haspopup`, toggler label, nav landmark.
-4. Demo pages (demo-before-snippet) in all three demos; confirm the three prod SSR servers emit the DSD.
+### Phase 5 — tests, demos, a11y, hosting — ⏳ IN PROGRESS (2026-07-22)
+- ✅ **All four libs + all three demo apps build green**; WC unit tests 758/758, Angular unit tests 472/472.
+- ✅ **In-browser verification (Angular demo, Playwright, JS on):** the migrated navbar renders as a proper horizontal bar; first-level dropdowns are hidden until click and open on click (`data-open`); 35 items render with correct nested-link theming (dropdown color, no underline via the companion sheet); submenu carets present. **This caught + fixed a real bug** — the `mp-navbar-dropdown` reveal/positioning used `::slotted(mp-dropdown-menu)` which the Angular `<bs-dropdown-menu>` wrapper host defeated; retargeted to `::slotted(:not([slot="label"]))` (+ overlay panel getter), regenerated the navbar DSD chrome.
+- ⬜ **Remaining (CI / follow-up):** the pre-existing Playwright e2e (`smoke`/`routing`/`navigation-lock`/`shell`/`carousel` + new no-JS specs) run in CI — selectors were updated; not run locally (no browser matrix here). No-JS `:focus-within` + submenu-overlay + Firefox parity to confirm via CI/manual. React/Vue demo pages already build; SSR DSD injectors composed (`injectMpNavbarDsd`/`injectMpDropdownDsd`).
+- ⬜ **Known follow-up (documented):** active-route highlighting isn't wired per-item on the new navbar (legacy auto-highlighted the current route); needs `routerLinkActive`→`[active]` plumbing on `bs-navbar-item`/`bsDropdownItem`.
 
 ## Test Scenarios
 
