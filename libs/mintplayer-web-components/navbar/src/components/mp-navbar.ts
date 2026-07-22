@@ -112,9 +112,10 @@ export class MpNavbar extends LitElement {
     } else if (name === 'breakpoint') {
       this.#publishBreakpoint(newValue);
     } else if (name === 'expanded') {
-      // Programmatic control: keep the CSS checkbox in sync with the attribute.
-      const input = this.#toggleInput;
-      if (input) input.checked = newValue !== null;
+      // Programmatic control: sync the checkbox + aria, without re-emitting
+      // (the attribute write is the consumer's own act, not a state change to
+      // announce back).
+      this.#setExpanded(newValue !== null, false);
     } else if (name === 'aria-label') {
       this.requestUpdate();
     }
@@ -165,19 +166,37 @@ export class MpNavbar extends LitElement {
     this.toggle(v);
   }
 
-  /** Programmatically open/close the collapse. */
-  toggle(force?: boolean): void {
+  /**
+   * The single write path for the collapse state: checkbox + `aria-expanded`
+   * (+ event). Programmatic writes (`toggle()`, the `expanded` attribute,
+   * dismiss-on-navigate) don't fire the checkbox's `change` event, so syncing
+   * aria only there left `aria-expanded` stale after every programmatic close.
+   */
+  #setExpanded(expanded: boolean, emit = true): void {
     const input = this.#toggleInput;
     if (!input) return;
-    input.checked = force ?? !input.checked;
-    this.#emit(input.checked);
+    input.checked = expanded;
+    input.setAttribute('aria-expanded', String(expanded));
+    if (emit) this.#emit(expanded);
+  }
+
+  /** Programmatically open/close the collapse. */
+  toggle(force?: boolean): void {
+    this.#setExpanded(force ?? !(this.#toggleInput?.checked ?? false));
   }
 
   #onToggleChange = (): void => {
-    const input = this.#toggleInput;
-    const expanded = input?.checked ?? false;
-    input?.setAttribute('aria-expanded', String(expanded));
-    this.#emit(expanded);
+    // Native toggle (label click / Space): the checked state already flipped.
+    this.#setExpanded(this.#toggleInput?.checked ?? false);
+  };
+
+  #onToggleKeydown = (event: KeyboardEvent): void => {
+    // The checkbox presents as a disclosure BUTTON (role=button); support
+    // Enter like a real button — native checkboxes only toggle on Space.
+    if (event.key === 'Enter') {
+      event.preventDefault();
+      this.toggle();
+    }
   };
 
   #emit(expanded: boolean): void {
@@ -199,9 +218,12 @@ export class MpNavbar extends LitElement {
           type="checkbox"
           id="mp-navbar-toggle"
           class="navbar-toggle"
+          role="button"
           aria-label="Toggle navigation"
           aria-expanded="false"
+          aria-controls="navbar-collapse"
           @change=${this.#onToggleChange}
+          @keydown=${this.#onToggleKeydown}
         />
         <label for="mp-navbar-toggle" class="navbar-toggler" part="toggler" aria-hidden="true">
           <slot name="toggler">
@@ -210,7 +232,7 @@ export class MpNavbar extends LitElement {
             <span class="navbar-toggler-bar"></span>
           </slot>
         </label>
-        <div class="navbar-collapse" part="collapse">
+        <div class="navbar-collapse" id="navbar-collapse" part="collapse">
           <div class="navbar-collapse-inner">
             <ul class="navbar-nav nav-start" part="nav-start"><slot></slot></ul>
             <ul class="navbar-nav nav-end" part="nav-end"><slot name="end"></slot></ul>
