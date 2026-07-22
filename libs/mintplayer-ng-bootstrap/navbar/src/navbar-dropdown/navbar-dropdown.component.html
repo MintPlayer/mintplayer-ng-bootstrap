@@ -1,5 +1,5 @@
 <mp-navbar-dropdown>
-    <span slot="label">{{ label() }}</span>
+    <span slot="label"><ng-container [ngTemplateOutlet]="label().templateRef"></ng-container></span>
     <bs-dropdown-menu>
         <ng-content></ng-content>
     </bs-dropdown-menu>

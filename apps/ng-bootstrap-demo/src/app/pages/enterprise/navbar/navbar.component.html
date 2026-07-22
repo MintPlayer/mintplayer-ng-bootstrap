@@ -9,7 +9,9 @@
   (<code>align="end"</code> pushes a group to the far edge), and use
   <code>bs-navbar-item</code> for every entry — directly in a group as a
   nav-link, or inside a <code>bs-navbar-dropdown</code> as a menu item; the
-  same element adapts to where it is authored. Toggling the collapse fires
+  same element adapts to where it is authored. A dropdown's trigger is the
+  element marked <code>bsNavbarDropdownLabel</code> — any HTML (give an
+  icon-only label an <code>aria-label</code>). Toggling the collapse fires
   <code>(expandedchange)</code>.
 </p>
 
@@ -29,7 +31,8 @@
         <a routerLink="/about">About</a>
       </bs-navbar-item>
 
-      <bs-navbar-dropdown [label]="'Products'">
+      <bs-navbar-dropdown>
+        <span *bsNavbarDropdownLabel>Products</span>
         <bs-navbar-item><a routerLink="/products/widgets">Widgets</a></bs-navbar-item>
         <bs-navbar-item><a routerLink="/products/gadgets">Gadgets</a></bs-navbar-item>
         <bs-navbar-item><a routerLink="/products/gizmos">Gizmos</a></bs-navbar-item>

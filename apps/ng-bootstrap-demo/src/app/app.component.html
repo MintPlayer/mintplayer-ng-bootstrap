@@ -13,9 +13,11 @@
       <a [routerLink]='["/"]' [routerLinkActiveOptions]="{exact: true}">Home</a>
     </bs-navbar-item>
 
-    <bs-navbar-dropdown [label]="'Basic'">
+    <bs-navbar-dropdown>
+      <span *bsNavbarDropdownLabel>Basic</span>
       <bs-navbar-item><a [routerLink]='["/basic", "alert"]'>Alert</a></bs-navbar-item>
-      <bs-navbar-dropdown [label]="'Forms'">
+      <bs-navbar-dropdown>
+        <span *bsNavbarDropdownLabel>Forms</span>
         <bs-navbar-item><a [routerLink]='["/basic", "forms", "floating-labels"]'>Floating labels</a></bs-navbar-item>
         <bs-navbar-item><a [routerLink]='["/basic", "forms", "input-group"]'>Input group</a></bs-navbar-item>
         <bs-navbar-item><a [routerLink]='["/basic", "forms", "multi-range"]'>Multi-range</a></bs-navbar-item>
@@ -27,7 +29,8 @@
         <bs-navbar-item><a [routerLink]='["/basic", "forms", "timepicker"]'>Timepicker</a></bs-navbar-item>
         <bs-navbar-item><a [routerLink]='["/basic", "forms", "datetime-picker"]'>DateTime picker</a></bs-navbar-item>
       </bs-navbar-dropdown>
-      <bs-navbar-dropdown [label]="'Containers'">
+      <bs-navbar-dropdown>
+        <span *bsNavbarDropdownLabel>Containers</span>
         <bs-navbar-item><a [routerLink]='["/basic", "containers", "grid"]'>Grid</a></bs-navbar-item>
         <bs-navbar-item><a [routerLink]='["/basic", "containers", "card"]'>Card</a></bs-navbar-item>
         <bs-navbar-item><a [routerLink]='["/basic", "containers", "accordion"]'>Accordion</a></bs-navbar-item>
@@ -56,7 +59,8 @@
       <bs-navbar-item><a [routerLink]='["/basic", "icon"]'>Icon</a></bs-navbar-item>
     </bs-navbar-dropdown>
 
-    <bs-navbar-dropdown [label]="'Overlays'">
+    <bs-navbar-dropdown>
+      <span *bsNavbarDropdownLabel>Overlays</span>
       <bs-navbar-item><a [routerLink]='["/overlays", "modals"]'>Modals</a></bs-navbar-item>
       <bs-navbar-item><a [routerLink]='["/overlays", "offcanvas"]'>Offcanvas</a></bs-navbar-item>
       <bs-navbar-item><a [routerLink]='["/overlays", "tooltip"]'>Tooltip</a></bs-navbar-item>
@@ -69,10 +73,12 @@
       <bs-navbar-item><a [routerLink]='["/overlays", "dropdown-wc"]'>Dropdown menu (WC)</a></bs-navbar-item>
     </bs-navbar-dropdown>
 
-    <bs-navbar-dropdown [label]="'Advanced'">
+    <bs-navbar-dropdown>
+      <span *bsNavbarDropdownLabel>Advanced</span>
       <bs-navbar-item><a [routerLink]='["/advanced", "copy"]'>Copy</a></bs-navbar-item>
       <bs-navbar-item><a [routerLink]='["/advanced", "code-snippet"]'>Code snippet</a></bs-navbar-item>
-      <bs-navbar-dropdown [label]="'Pipes'">
+      <bs-navbar-dropdown>
+        <span *bsNavbarDropdownLabel>Pipes</span>
         <bs-navbar-item><a [routerLink]='["/advanced", "pipes", "trust-html"]'>Trust-html</a></bs-navbar-item>
         <bs-navbar-item><a [routerLink]='["/advanced", "pipes", "split-string"]'>Split-string</a></bs-navbar-item>
         <bs-navbar-item><a [routerLink]='["/advanced", "pipes", "linify"]'>Linify</a></bs-navbar-item>
@@ -103,7 +109,8 @@
       <bs-navbar-item><a [routerLink]='["/advanced", "navigation-lock-master-detail"]'>Navigation lock (master/detail)</a></bs-navbar-item>
     </bs-navbar-dropdown>
 
-    <bs-navbar-dropdown [label]="'Enterprise'">
+    <bs-navbar-dropdown>
+      <span *bsNavbarDropdownLabel>Enterprise</span>
       <bs-navbar-item><a [routerLink]='["/enterprise", "scheduler"]'>Scheduler</a></bs-navbar-item>
       <bs-navbar-item><a [routerLink]='["/enterprise", "timeline"]'>Timeline</a></bs-navbar-item>
       <bs-navbar-item><a [routerLink]='["/enterprise", "dock"]'>Dock</a></bs-navbar-item>
@@ -116,13 +123,15 @@
       <bs-navbar-item><a [routerLink]='["/enterprise", "navbar"]'>Navbar</a></bs-navbar-item>
     </bs-navbar-dropdown>
 
-    <bs-navbar-dropdown [label]="'Animations'">
+    <bs-navbar-dropdown>
+      <span *bsNavbarDropdownLabel>Animations</span>
       <bs-navbar-item><a [routerLink]='["/animations", "slide-up-down"]'>Slide up/down</a></bs-navbar-item>
       <bs-navbar-item><a [routerLink]='["/animations", "fade-in-out"]'>Fade in/out</a></bs-navbar-item>
       <bs-navbar-item><a [routerLink]='["/animations", "color-transition"]'>Color transition</a></bs-navbar-item>
     </bs-navbar-dropdown>
 
-    <bs-navbar-dropdown [label]="'Additional samples'">
+    <bs-navbar-dropdown>
+      <span *bsNavbarDropdownLabel>Additional samples</span>
       <bs-navbar-item><a [routerLink]='["/additional-samples", "collapse"]'>Collapse</a></bs-navbar-item>
       <bs-navbar-item><a [routerLink]='["/additional-samples", "focus-trap"]'>FocusTrap</a></bs-navbar-item>
       <bs-navbar-item><a [routerLink]='["/additional-samples", "drag-drop"]'>Drag-drop</a></bs-navbar-item>
@@ -131,7 +140,8 @@
       <bs-navbar-item><a [routerLink]='["/additional-samples", "swiper"]'>Swiper</a></bs-navbar-item>
       <bs-navbar-item><a [routerLink]='["/additional-samples", "stepper"]'>Stepper</a></bs-navbar-item>
       <bs-navbar-item><a [routerLink]='["/additional-samples", "theming"]'>Theming</a></bs-navbar-item>
-      <bs-navbar-dropdown [label]="'Anchor scrolling'">
+      <bs-navbar-dropdown>
+        <span *bsNavbarDropdownLabel>Anchor scrolling</span>
         <bs-navbar-item><a [routerLink]='["/additional-samples", "anchor-scrolling"]' fragment="section1">Section 1</a></bs-navbar-item>
         <bs-navbar-item><a [routerLink]='["/additional-samples", "anchor-scrolling"]' fragment="section2">Section 2</a></bs-navbar-item>
         <bs-navbar-item><a [routerLink]='["/additional-samples", "anchor-scrolling"]' fragment="section3">Section 3</a></bs-navbar-item>

@@ -7,6 +7,7 @@ import {
   BsNavbarItemComponent,
   BsNavbarBrandComponent,
   BsNavbarDropdownComponent,
+  BsNavbarDropdownLabelDirective,
 } from '@mintplayer/ng-bootstrap/navbar';
 import type { NavbarExpandedChangeEventDetail } from '@mintplayer/web-components/navbar';
 import { dedent } from 'ts-dedent';
@@ -21,6 +22,7 @@ import { dedent } from 'ts-dedent';
     BsNavbarItemComponent,
     BsNavbarBrandComponent,
     BsNavbarDropdownComponent,
+    BsNavbarDropdownLabelDirective,
   ],
   templateUrl: './navbar.component.html',
   styleUrl: './navbar.component.scss',
@@ -47,7 +49,8 @@ export class NavbarComponent {
           <a routerLink="/about">About</a>
         </bs-navbar-item>
 
-        <bs-navbar-dropdown [label]="'Products'">
+        <bs-navbar-dropdown>
+          <span *bsNavbarDropdownLabel>Products</span>
           <bs-navbar-item><a routerLink="/products/widgets">Widgets</a></bs-navbar-item>
           <bs-navbar-item><a routerLink="/products/gadgets">Gadgets</a></bs-navbar-item>
           <bs-navbar-item><a routerLink="/products/gizmos">Gizmos</a></bs-navbar-item>
@@ -71,6 +74,7 @@ export class NavbarComponent {
       BsNavbarItemComponent,
       BsNavbarBrandComponent,
       BsNavbarDropdownComponent,
+      BsNavbarDropdownLabelDirective,
     } from '@mintplayer/ng-bootstrap/navbar';
     import type { NavbarExpandedChangeEventDetail } from '@mintplayer/web-components/navbar';
 
@@ -84,6 +88,7 @@ export class NavbarComponent {
         BsNavbarItemComponent,
         BsNavbarBrandComponent,
         BsNavbarDropdownComponent,
+        BsNavbarDropdownLabelDirective,
       ],
     })
     export class MyNavbarDemoComponent {
