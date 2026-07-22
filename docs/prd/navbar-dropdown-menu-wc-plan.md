@@ -179,3 +179,15 @@ npx nx test mintplayer-web-components                    # vitest + jsdom (--poo
 - `libs/mintplayer-web-components/overlay/src/overlay-controller.ts`
 - `docs/prd/shell-wc-ssr.md` (the SSR/no-JS pattern being reused)
 - branch `feat/dropdown-menu-wc` (salvage base)
+
+## Phase 6 — post-PR navbar review fixes (2026-07-22, PR #390)
+
+Five navbar regressions found in in-browser review (see PRD "Post-PR review fixes" for root causes + fix rationale). Implement in order; regenerate **both** codegens (`nx run mintplayer-web-components:codegen-wc` + `nx run mintplayer-web-components:codegen-navbar-chrome`) after any shadow-CSS/`render()` change; re-verify each in the running Angular demo (wide + narrow + dark).
+
+1. **#1 underline** — `navbar-item.styles.scss` + `navbar-brand.styles.scss`: `text-decoration: none !important` on `::slotted(a),::slotted(button)`.
+2. **#5 dark toggler** — `navbar.styles.scss`: `.navbar-toggler-icon` → `background-image:none; background-color:var(--bs-navbar-color); mask:var(--mp-toggler-mask) …`; define `--mp-toggler-mask` (hamburger SVG) on `:host`.
+3. **#3 fixed positioning (Angular demo only)** — de-dup `part="nav"` in `mp-navbar.ts` (start `<ul>` → `part="nav-start"`); `apps/ng-bootstrap-demo/src/styles.scss`: `demo-bootstrap-root mp-navbar{position:fixed;inset:0 0 auto;width:100%;z-index:1030}`; content-wrapper `padding-top` = bar height in `app.component.{html,scss}`, align `ViewportScroller.setOffset`.
+4. **#2 collapse animation** — `mp-navbar.ts render()`: add `.navbar-collapse-inner` wrapper; `navbar.styles.scss`: `.navbar-collapse{display:grid;grid-template-rows:0fr;transition:grid-template-rows .35s ease}` + open→`1fr`, inner `min-height:0;overflow:hidden`, wide-mode reset `display:flex;grid-template-rows:none`, `prefers-reduced-motion` guard.
+5. **#4 inline (small) vs overlay (wide)** — `mp-navbar.ts`: publish `--mp-navbar-breakpoint` + `data-breakpoint` on breakpoint change. `navbar-dropdown.styles.scss`: default panels inline (`position:static`); `@each $grid-breakpoints` `media-breakpoint-up` re-enables first-level `absolute` gated on `:host([data-expand="<bp>"])`. `mp-navbar-dropdown.ts`: read `--mp-navbar-breakpoint`, set own `data-expand`; gate `OverlayController` construction/engagement behind `matchMedia(min-width)`, re-eval on `change`, cleanup in `disconnectedCallback`; small-mode submenu opens inline via `data-open`.
+
+**Verification:** rebuild web-components + ng-bootstrap + ng demo; re-run Playwright checks (nav-links no underline; toggler light on dark page; navbar fixed/top/full-width in the Angular demo; collapse slides; small-mode dropdowns inline, wide-mode nested submenus overlay). React/Vue unaffected except the shared WC CSS improvements.
