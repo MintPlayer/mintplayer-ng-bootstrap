@@ -63,6 +63,12 @@ export class MpNavbar extends LitElement {
 
   override connectedCallback(): void {
     super.connectedCallback();
+    // Mark JS as present so the no-JS `:focus-within` collapse reveal
+    // disengages (mirrors mp-navbar-dropdown). Without the gate, clicking a
+    // top-level nav link leaves focus on a still-visible anchor inside the
+    // collapse, and `:focus-within` holds the menu open against the
+    // dismiss-on-navigate `toggle(false)`.
+    this.setAttribute('data-js', '');
     // Ensure the breakpoint is published even when the attribute is absent
     // (attributeChangedCallback only fires when it's present/changes).
     if (!this.style.getPropertyValue('--mp-navbar-breakpoint')) {

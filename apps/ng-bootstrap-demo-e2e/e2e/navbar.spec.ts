@@ -206,6 +206,23 @@ test.describe('navbar — small mode (JS enabled)', () => {
     expect((await bars()).t1).toBe('none');
   });
 
+  test('clicking a TOP-LEVEL nav link collapses the bar', async ({ page }) => {
+    // The regression: dismiss-on-navigate unchecked the checkbox, but the
+    // no-JS `:focus-within` reveal wasn't data-js-gated, so focus resting on
+    // the still-visible top-level link held the menu open. (Dropdown leaves
+    // hide on close and drop focus, which masked it — so this test clicks a
+    // TOP-LEVEL link, not a menu item.)
+    const rows = () => page.evaluate(() =>
+      getComputedStyle(document.querySelector('mp-navbar')!.shadowRoot!.querySelector('.navbar-collapse')!).gridTemplateRows);
+
+    await toggler(page).click();
+    await expect.poll(rows).not.toBe('0px'); // open
+
+    await page.getByRole('link', { name: 'Home', exact: true }).click();
+    await expect(page).toHaveURL(/\/$/);
+    await expect.poll(rows).toBe('0px'); // slid shut despite focus on the link
+  });
+
   test('the brand is centered (equal auto inline margins)', async ({ page }) => {
     const m = await page.evaluate(() => {
       const brand = document.querySelector('[slot="brand"]')!;

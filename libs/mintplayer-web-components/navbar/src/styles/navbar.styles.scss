@@ -128,18 +128,22 @@
 
 // Reveal paths:
 //   - `:checked` — mouse/touch (the <label for> toggles the hidden checkbox).
-//   - `.navbar-collapse:focus-within` — keyboard. SCOPED TO THE COLLAPSE, not the
-//     whole navbar: tabbing into the (clipped-but-focusable) nav links reveals it.
-//     It must NOT be `:host(:focus-within)` — the toggler lives in the host too,
-//     so clicking the toggler to CLOSE would leave focus on it and immediately
-//     re-reveal the menu (the close-then-reopen bug). With focus-within on the
-//     collapse only, clicking the toggler (a sibling of the collapse) cleanly
-//     toggles it shut.
-// `!important` beats the per-breakpoint collapsed default without specificity games.
+//   - `.navbar-collapse:focus-within` — keyboard, NO-JS ONLY (gated on
+//     `:host(:not([data-js]))`, set in connectedCallback — mirrors
+//     mp-navbar-dropdown). Once hydrated, only the checkbox controls the
+//     collapse: an ungated focus-within would hold the menu open against
+//     dismiss-on-navigate whenever the clicked link stays visible (clicking a
+//     TOP-LEVEL link leaves focus on it inside the collapse — dropdown leaves
+//     hide on close and drop focus, which masked the bug).
+//     SCOPED TO THE COLLAPSE, not the whole navbar: tabbing into the
+//     (clipped-but-focusable) nav links reveals it, and it must NOT be
+//     `:host(:focus-within)` — the toggler lives in the host too, so clicking
+//     the toggler to CLOSE would leave focus on it and immediately re-reveal
+//     the menu (the close-then-reopen bug).
 // `!important` beats the per-breakpoint collapsed default without specificity
 // games; inert in wide mode (display:flex ignores grid-template-rows).
 .navbar-toggle:checked ~ .navbar-collapse,
-.navbar-collapse:focus-within {
+:host(:not([data-js])) .navbar-collapse:focus-within {
   grid-template-rows: 1fr !important;
 }
 
