@@ -159,10 +159,14 @@
 .navbar-toggle:checked ~ .navbar-collapse,
 :host(:not([data-js])) .navbar-collapse:focus-within {
   grid-template-rows: 1fr !important;
-  // Un-hide on reveal — instantly, because this state leaves the hide-delay
-  // custom property at its 0s default. (Beats the collapsed rule below by
-  // specificity: its host attributes are wrapped in :where().)
+  // Un-hide on reveal — INSTANTLY: the delay var must be reset here, because
+  // the narrow-mode rule below sets it for the whole mode (not per-direction);
+  // without the reset the reveal would inherit the 0.35s exit delay and the
+  // menu's links would stay unfocusable while sliding open (caught by the
+  // "menu items ARE tabbable again" e2e). Beats that rule by specificity —
+  // its host attributes are wrapped in :where().
   visibility: visible;
+  --mp-collapse-hide-delay: 0s;
 }
 
 @each $name, $min in $grid-breakpoints {

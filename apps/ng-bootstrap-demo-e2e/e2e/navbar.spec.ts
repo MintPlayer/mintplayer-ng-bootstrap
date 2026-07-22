@@ -277,6 +277,80 @@ test.describe('navbar — small mode (JS enabled)', () => {
   });
 });
 
+test.describe('navbar — keyboard a11y', () => {
+  const deepActive = (page: Page) =>
+    page.evaluate(() => {
+      let el = document.activeElement;
+      while (el?.shadowRoot?.activeElement) el = el.shadowRoot.activeElement;
+      if (!el || el === document.body) return null;
+      return {
+        desc: el.tagName.toLowerCase() + (el.className && typeof el.className === 'string' ? '.' + el.className.split(' ')[0] : ''),
+        text: (el.textContent || el.getAttribute('aria-label') || '').trim().slice(0, 20),
+        inNavbar: !!el.closest('mp-navbar') || !!(el.getRootNode() as ShadowRoot).host?.closest?.('mp-navbar') || (el.getRootNode() as ShadowRoot).host?.tagName === 'MP-NAVBAR',
+      };
+    });
+
+  test('small mode: Tab reaches the toggler with a visible rounded focus ring', async ({ page }) => {
+    await page.setViewportSize({ width: 600, height: 900 });
+    await goto(page);
+
+    // Tab: brand link → the toggle checkbox (real keyboard so :focus-visible applies).
+    await page.keyboard.press('Tab');
+    await page.keyboard.press('Tab');
+    expect((await deepActive(page))?.desc).toBe('input.navbar-toggle');
+
+    // The ring paints on the visible label (sibling selector), rounded.
+    const ring = await page.evaluate(() => {
+      const label = document.querySelector('mp-navbar')!.shadowRoot!.querySelector('.navbar-toggler')!;
+      const c = getComputedStyle(label);
+      return { boxShadow: c.boxShadow, borderRadius: parseFloat(c.borderRadius) };
+    });
+    expect(ring.boxShadow).not.toBe('none');
+    expect(ring.borderRadius).toBeGreaterThan(0);
+  });
+
+  test('small mode collapsed: the menu is OUT of the tab order (no focus into invisible content)', async ({ page }) => {
+    await page.setViewportSize({ width: 600, height: 900 });
+    await goto(page);
+
+    await page.keyboard.press('Tab'); // brand
+    await page.keyboard.press('Tab'); // toggler checkbox
+    await page.keyboard.press('Tab'); // must SKIP the hidden collapse entirely
+    const stop = await deepActive(page);
+    expect(stop?.inNavbar ?? false).toBe(false); // lands in page content, not invisible links
+  });
+
+  test('small mode expanded: menu items ARE tabbable again', async ({ page }) => {
+    await page.setViewportSize({ width: 600, height: 900 });
+    await goto(page);
+
+    await page.keyboard.press('Tab');
+    await page.keyboard.press('Tab');
+    await page.keyboard.press('Space'); // open the collapse via the checkbox
+    await page.keyboard.press('Tab');
+    expect((await deepActive(page))?.text).toBe('Home');
+  });
+
+  test('wide mode: ArrowDown enters the menu; Escape closes and returns focus to the trigger', async ({ page }) => {
+    await page.setViewportSize({ width: 1280, height: 900 });
+    await goto(page);
+
+    // Focus the "Basic" trigger (its shadow <a>) and arrow into the menu.
+    await page.evaluate(() => {
+      const dd = [...document.querySelectorAll('mp-navbar-dropdown:not([data-submenu])')]
+        .find((d) => (d.querySelector('[slot="label"]')?.textContent || '').trim() === 'Basic')!;
+      dd.shadowRoot!.querySelector<HTMLElement>('.dropdown-toggle')!.focus();
+    });
+    await page.keyboard.press('ArrowDown');
+    expect((await panelInfo(page, 'Basic'))?.open).toBe(true);
+    expect((await deepActive(page))?.text).toBe('Alert'); // first item control focused
+
+    await page.keyboard.press('Escape');
+    expect((await panelInfo(page, 'Basic'))?.open).toBe(false);
+    expect((await deepActive(page))?.desc).toBe('a.nav-link'); // back on the trigger
+  });
+});
+
 test.describe('navbar — dark mode', () => {
   test('the hamburger icon is light on a dark navbar', async ({ page }) => {
     await page.emulateMedia({ colorScheme: 'dark' });
