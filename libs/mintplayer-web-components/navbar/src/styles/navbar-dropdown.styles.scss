@@ -7,9 +7,19 @@
 //     `data-js` is set in connectedCallback, so once hydrated ONLY clicks
 //     (data-open / data-menu-open) control visibility (the "click, never focus"
 //     rule for JS-enabled tests).
-//   - First-level: panel absolute below the trigger, capped height + scroll (#2).
-//   - Submenu (nested in an mp-dropdown-menu): inline-in-parent with no JS (#4);
-//     a fixed-positioned overlay placed by OverlayController with JS (#3).
+// Position contract (matches the legacy isSmallMode behaviour):
+//   - SMALL mode (below the navbar breakpoint) AND no-JS: panels render INLINE
+//     (in flow) so opening a dropdown pushes siblings down, never overlaps.
+//   - WIDE mode (>= breakpoint, JS on): first-level floats absolute below the
+//     trigger; nested submenus are pulled into a fixed OverlayController overlay.
+//   The wide rules are gated on `:host([data-expand="<bp>"])` — `mp-navbar-dropdown`
+//   sets `data-expand` from the inherited `--mp-navbar-breakpoint` (published by
+//   mp-navbar), paired with `media-breakpoint-up`. No-JS => no `data-expand` =>
+//   inline everywhere (the safe baseline).
+
+@import "bootstrap/scss/functions";
+@import "bootstrap/scss/variables";
+@import "bootstrap/scss/mixins";
 
 :host, *, *::before, *::after { box-sizing: border-box; }
 :host { position: relative; display: block; }
@@ -66,42 +76,51 @@
 // `mp-dropdown-menu` tag: a framework wrapper (Angular's `<bs-dropdown-menu>`)
 // slots a HOST element that CONTAINS the `<mp-dropdown-menu>`, so a tag selector
 // would miss it. React/Vue slot the element directly; both are covered.
-// First-level default: absolute below, capped height + scroll (#2).
+
+// DEFAULT (small mode / no-JS): inline, in flow, hidden until revealed.
 ::slotted(:not([slot="label"])) {
-  position: absolute;
-  top: 100%;
-  inset-inline-start: 0;
-  z-index: 1000;
   display: none;
-  max-height: calc(100vh - 100% - 1rem);
-  overflow-y: auto;
-}
-
-// Reveal: no-JS focus-within (gated) OR JS click (data-open).
-:host(:not([data-js]):focus-within) ::slotted(:not([slot="label"])),
-:host([data-open]) ::slotted(:not([slot="label"])) {
-  display: block;
-}
-
-// Submenu, no-JS: render inline within the parent menu (#4).
-:host([data-submenu]) ::slotted(:not([slot="label"])) {
   position: static;
   max-height: none;
   overflow: visible;
+}
+// submenu inline indent (small mode).
+:host([data-submenu]) ::slotted(:not([slot="label"])) {
   margin-inline-start: 0.5rem;
 }
 
-// Submenu, JS (hydrated): a fixed overlay positioned by OverlayController,
-// shown only while open (data-menu-open, set by the controller) (#3).
-:host([data-submenu][data-js]) ::slotted(:not([slot="label"])) {
-  position: fixed;
-  inset-inline-start: auto;
-  top: auto;
-  z-index: 1050;
-  margin: 0;
-  max-height: calc(100vh - 1rem);
-  overflow-y: auto;
-}
-:host([data-submenu][data-menu-open]) ::slotted(:not([slot="label"])) {
+// Reveal: no-JS focus-within (gated) OR JS click. `data-open` = first-level and
+// small-mode submenus (inline); `data-menu-open` = wide-mode submenu overlay
+// (set by OverlayController).
+:host(:not([data-js]):focus-within) ::slotted(:not([slot="label"])),
+:host([data-open]) ::slotted(:not([slot="label"])),
+:host([data-menu-open]) ::slotted(:not([slot="label"])) {
   display: block;
+}
+
+// WIDE mode (>= navbar breakpoint, JS sets `data-expand`): first-level floats
+// absolute below the trigger; nested submenus become a fixed OverlayController
+// overlay. One rule per breakpoint, gated by `media-breakpoint-up`.
+@each $name, $min in $grid-breakpoints {
+  @if $min and $min > 0 {
+    @include media-breakpoint-up($name, $grid-breakpoints) {
+      :host([data-expand="#{$name}"]:not([data-submenu])) ::slotted(:not([slot="label"])) {
+        position: absolute;
+        top: 100%;
+        inset-inline-start: 0;
+        z-index: 1000;
+        max-height: calc(100vh - 100% - 1rem);
+        overflow-y: auto;
+      }
+      :host([data-expand="#{$name}"][data-submenu]) ::slotted(:not([slot="label"])) {
+        position: fixed;
+        inset-inline-start: auto;
+        top: auto;
+        z-index: 1050;
+        margin: 0;
+        max-height: calc(100vh - 1rem);
+        overflow-y: auto;
+      }
+    }
+  }
 }

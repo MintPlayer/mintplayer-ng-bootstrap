@@ -33,6 +33,25 @@
 :host([color="body-secondary"]) .navbar { background-color: var(--bs-secondary-bg); }
 :host([color="body-tertiary"]) .navbar { background-color: var(--bs-tertiary-bg); }
 
+// --- toggler icon: theme-aware across the shadow boundary ---------------------
+// Bootstrap bakes `--bs-navbar-toggler-icon-bg` to an SVG with a fixed light-mode
+// (dark) stroke and only swaps it via `[data-bs-theme=dark] .navbar-toggler-icon`,
+// which can't cross the shadow boundary — and adaptive `color="body-*"` leaves the
+// host `data-bs-theme` unset, so on a dark page the hamburger stays dark. Paint it
+// with `--bs-navbar-color` (the theme-aware token that DOES inherit in, same color
+// as the nav links) via a mask instead: correct for adaptive AND solid colors,
+// with no host `data-bs-theme` needed. The mask SVG's own stroke is irrelevant
+// (mask uses alpha); the visible color comes from `background-color`.
+:host {
+  --mp-toggler-mask: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 30 30'%3e%3cpath stroke='%23000' stroke-linecap='round' stroke-miterlimit='10' stroke-width='2' d='M4 7h22M4 15h22M4 23h22'/%3e%3c/svg%3e");
+}
+.navbar-toggler-icon {
+  background-image: none;
+  background-color: var(--bs-navbar-color, currentColor);
+  -webkit-mask: var(--mp-toggler-mask) center / 100% 100% no-repeat;
+          mask: var(--mp-toggler-mask) center / 100% 100% no-repeat;
+}
+
 // --- collapse state machine (no-JS; see navbar-noscript.md) -------------------
 // Visually-hidden but focusable checkbox is the no-JS state holder.
 .navbar-toggle {
@@ -45,9 +64,26 @@
   border: 0;
 }
 
+// Collapse slides via an animatable `grid-template-rows: 0fr↔1fr` (height:auto
+// isn't animatable). The single grid child `.navbar-collapse-inner` clips with
+// `overflow:hidden`+`min-height:0` while the row collapses. Shown by default;
+// the per-breakpoint narrow block below sets the collapsed `0fr`. No-JS-safe
+// (the reveal is the same CSS state machine).
 .navbar-collapse {
   flex-basis: 100%;
+  display: grid;
+  grid-template-rows: 1fr;
+  transition: grid-template-rows 0.35s ease;
+  // Clip the inner while the row collapses to 0 (narrow mode). The wide-mode
+  // override below restores `overflow: visible` so floated dropdown panels can
+  // escape the bar.
   overflow: hidden;
+}
+.navbar-collapse-inner {
+  min-height: 0;
+}
+@media (prefers-reduced-motion: reduce) {
+  .navbar-collapse { transition: none; }
 }
 
 // Two nav groups: default slot (start) + `slot="end"` (pushed right when wide).
@@ -71,25 +107,27 @@
 //     collapse only, clicking the toggler (a sibling of the collapse) cleanly
 //     toggles it shut.
 // `!important` beats the per-breakpoint collapsed default without specificity games.
+// `!important` beats the per-breakpoint collapsed default without specificity
+// games; inert in wide mode (display:flex ignores grid-template-rows).
 .navbar-toggle:checked ~ .navbar-collapse,
 .navbar-collapse:focus-within {
-  height: auto !important;
-  overflow: visible !important;
+  grid-template-rows: 1fr !important;
 }
 
 @each $name, $min in $grid-breakpoints {
   @if $min and $min > 0 {
     :host([breakpoint="#{$name}"]) {
       @include media-breakpoint-up($name, $grid-breakpoints) {
-        // Wide: nav inline + always visible; hamburger hidden.
+        // Wide: nav inline + always visible; hamburger hidden; no grid animation.
         .navbar-toggle, .navbar-toggler { display: none; }
-        .navbar-collapse { flex-basis: auto; overflow: visible; display: flex; align-items: center; }
+        .navbar-collapse { flex-basis: auto; display: flex; align-items: center; grid-template-rows: none; overflow: visible; }
+        .navbar-collapse-inner { display: contents; }  // uls become the flex children
         .navbar-nav { flex-direction: row; align-items: center; }
         .nav-end { margin-inline-start: auto; }  // push the end group right
       }
       @include media-breakpoint-down($name, $grid-breakpoints) {
-        // Narrow: collapsed until revealed.
-        .navbar-collapse { height: 0; }
+        // Narrow: collapsed (row 0fr) until revealed.
+        .navbar-collapse { grid-template-rows: 0fr; }
       }
     }
   }

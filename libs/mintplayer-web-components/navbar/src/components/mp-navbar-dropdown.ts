@@ -30,6 +30,17 @@ export class MpNavbarDropdown extends MpNavbarElement {
 
   #isSubmenu = false;
   #overlay: OverlayController | null = null;
+  #mql: MediaQueryList | null = null;
+
+  /** min-width px per Bootstrap breakpoint — mirrors mp-navbar's map. */
+  static readonly #BREAKPOINT_PX: Record<string, number> = {
+    xs: 0, sm: 576, md: 768, lg: 992, xl: 1200, xxl: 1400,
+  };
+
+  /** Wide mode = at/above the navbar breakpoint (matchMedia). Small/no-JS = false. */
+  get #isWide(): boolean {
+    return this.#mql?.matches ?? false;
+  }
 
   override connectedCallback(): void {
     super.connectedCallback();
@@ -37,6 +48,20 @@ export class MpNavbarDropdown extends MpNavbarElement {
     this.setAttribute('data-js', '');
     // A dropdown nested inside a menu is a submenu (overlay/inline behaviour).
     this.#isSubmenu = !!this.closest('mp-dropdown-menu');
+
+    // Resolve the navbar breakpoint and publish it as `data-expand` (drives the
+    // CSS inline↔float switch via media-breakpoint-up) + a matchMedia (gates the
+    // JS OverlayController so it engages ONLY in wide mode; small mode stays
+    // inline). Read the navbar's authored `breakpoint` attribute (present from
+    // markup regardless of upgrade order).
+    const bpName = this.closest('mp-navbar')?.getAttribute('breakpoint') ?? 'md';
+    this.setAttribute('data-expand', bpName);
+    if (typeof window !== 'undefined' && window.matchMedia) {
+      const bpPx = MpNavbarDropdown.#BREAKPOINT_PX[bpName] ?? 768;
+      this.#mql = window.matchMedia(`(min-width: ${bpPx}px)`);
+      this.#mql.addEventListener('change', this.#onModeChange);
+    }
+
     if (this.#isSubmenu) {
       this.setAttribute('data-submenu', '');
       this.#overlay = new OverlayController(this, {
@@ -60,7 +85,15 @@ export class MpNavbarDropdown extends MpNavbarElement {
   override disconnectedCallback(): void {
     super.disconnectedCallback();
     document.removeEventListener('mousedown', this.#onDocMouseDown, true);
+    this.#mql?.removeEventListener('change', this.#onModeChange);
   }
+
+  // Resize crossed the breakpoint: close any open panel so state doesn't leak
+  // across the inline↔overlay switch (the CSS + #toggle re-resolve on next open).
+  #onModeChange = (): void => {
+    this.#overlay?.close();
+    this.#setOpen(false);
+  };
 
   get #open(): boolean {
     return this.hasAttribute('data-open');
@@ -78,9 +111,10 @@ export class MpNavbarDropdown extends MpNavbarElement {
   };
 
   #toggle(): void {
-    // Submenu uses the OverlayController (fixed overlay + outside-click/Esc/scroll);
-    // first-level uses the CSS-positioned panel + a lightweight outside-click close.
-    if (this.#overlay) this.#overlay.toggle();
+    // WIDE submenu → OverlayController (fixed overlay + outside-click/Esc/scroll).
+    // Everything else — first-level at any width, and submenus in SMALL mode —
+    // opens inline via the CSS-positioned panel + a lightweight outside-click close.
+    if (this.#isSubmenu && this.#isWide && this.#overlay) this.#overlay.toggle();
     else this.#setOpen(!this.#open);
   }
 
@@ -94,8 +128,9 @@ export class MpNavbarDropdown extends MpNavbarElement {
       event.preventDefault();
       this.#toggle();
     } else if (event.key === 'Escape') {
-      if (this.#overlay) this.#overlay.close();
-      else this.#setOpen(false);
+      // Close whichever path is open (wide overlay or inline).
+      this.#overlay?.close();
+      this.#setOpen(false);
     }
   };
 

@@ -19,7 +19,10 @@
   font-size: var(--bs-nav-link-font-size);
   font-weight: var(--bs-nav-link-font-weight);
   color: var(--bs-nav-link-color, var(--bs-navbar-color, inherit)) !important;
-  text-decoration: none;
+  // `!important` for the same reason as `color`: a slotted anchor is light DOM,
+  // so Reboot's global `a { text-decoration: underline }` beats a plain shadow
+  // `::slotted` declaration across the boundary.
+  text-decoration: none !important;
   background: transparent;
   border: 0;
   cursor: pointer;

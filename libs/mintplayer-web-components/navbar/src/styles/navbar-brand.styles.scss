@@ -14,7 +14,8 @@
   margin-right: var(--bs-navbar-brand-margin-end, 1rem);
   font-size: var(--bs-navbar-brand-font-size, 1.25rem);
   color: var(--bs-navbar-brand-color, inherit) !important;
-  text-decoration: none;
+  // `!important`: slotted anchor is light DOM; beats Reboot's global underline.
+  text-decoration: none !important;
   white-space: nowrap;
 }
 

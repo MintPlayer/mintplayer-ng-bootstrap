@@ -52,10 +52,21 @@ export class MpNavbar extends LitElement {
     return super.createRenderRoot();
   }
 
+  override connectedCallback(): void {
+    super.connectedCallback();
+    // Ensure the breakpoint is published even when the attribute is absent
+    // (attributeChangedCallback only fires when it's present/changes).
+    if (!this.style.getPropertyValue('--mp-navbar-breakpoint')) {
+      this.#publishBreakpoint(this.getAttribute('breakpoint'));
+    }
+  }
+
   override attributeChangedCallback(name: string, oldValue: string | null, newValue: string | null): void {
     super.attributeChangedCallback(name, oldValue, newValue);
     if (name === 'color') {
       this.#applyTheme(newValue);
+    } else if (name === 'breakpoint') {
+      this.#publishBreakpoint(newValue);
     } else if (name === 'expanded') {
       // Programmatic control: keep the CSS checkbox in sync with the attribute.
       const input = this.#toggleInput;
@@ -77,6 +88,25 @@ export class MpNavbar extends LitElement {
     if (color === 'light' || color === 'white') return 'light';
     if (color === 'body' || color === 'transparent' || color.startsWith('body-')) return null;
     return 'dark'; // primary, secondary, success, danger, warning, info, dark
+  }
+
+  /** min-width px for each Bootstrap breakpoint (xs = always collapsed → 0). */
+  static readonly #BREAKPOINT_PX: Record<string, number> = {
+    xs: 0, sm: 576, md: 768, lg: 992, xl: 1200, xxl: 1400,
+  };
+
+  /**
+   * Publish the resolved breakpoint so DESCENDANT dropdowns (a different shadow
+   * tree) can switch inline↔overlay. `data-breakpoint` is a convenience for JS;
+   * `--mp-navbar-breakpoint` is the load-bearing channel — CSS custom properties
+   * inherit THROUGH shadow boundaries, so `mp-navbar-dropdown` reads the px in JS
+   * (matchMedia gate) without any DI/context.
+   */
+  #publishBreakpoint(name: string | null): void {
+    const key = name ?? 'md';
+    const px = MpNavbar.#BREAKPOINT_PX[key] ?? 768;
+    this.setAttribute('data-breakpoint', key);
+    this.style.setProperty('--mp-navbar-breakpoint', `${px}px`);
   }
 
   get #toggleInput(): HTMLInputElement | null {
@@ -133,8 +163,10 @@ export class MpNavbar extends LitElement {
           <span class="navbar-toggler-icon"></span>
         </label>
         <div class="navbar-collapse" part="collapse">
-          <ul class="navbar-nav nav-start" part="nav"><slot></slot></ul>
-          <ul class="navbar-nav nav-end" part="nav-end"><slot name="end"></slot></ul>
+          <div class="navbar-collapse-inner">
+            <ul class="navbar-nav nav-start" part="nav-start"><slot></slot></ul>
+            <ul class="navbar-nav nav-end" part="nav-end"><slot name="end"></slot></ul>
+          </div>
         </div>
       </nav>
     `;
