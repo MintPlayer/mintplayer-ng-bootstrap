@@ -1,14 +1,6 @@
-<bs-has-overlay></bs-has-overlay>
-<ul #dd class="dropdown-menu me-3" [class.show]="showClass()" [class.submenu]="!!parentDropdown" [class.overflow-y-auto]="isBrowser" [style.max-height]="maxHeightOrNull()" bsNoNoscript (clickOutside)="isVisible.set(false)" [exclude]="elementsToExclude" aria-labelledby="navbarDropdown">
-    <ng-content></ng-content>
-</ul>
-
-<!--
-    - Working demo: https://codepen.io/agop/pen/VwwMGR
-    - Location must be set through javascript
-    - bsNoScript => If noscript, 2nd-level submenus must be shown inside the 1st-level submenu
- -->
- <!--
-    - Another option: https://stackblitz.com/edit/web-platform-vmsr4l?file=index.html
-    - But this doesn't seem to work here
-  -->
+<mp-navbar-dropdown>
+    <span slot="label"><ng-container [ngTemplateOutlet]="label().templateRef"></ng-container></span>
+    <bs-dropdown-menu>
+        <ng-content></ng-content>
+    </bs-dropdown-menu>
+</mp-navbar-dropdown>

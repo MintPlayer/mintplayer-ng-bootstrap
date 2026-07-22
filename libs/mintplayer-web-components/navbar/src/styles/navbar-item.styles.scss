@@ -1,0 +1,48 @@
+// `mp-navbar-item` wraps a consumer-provided link (`<a href>`) so it works with
+// no JavaScript — the light-DOM anchor is server-rendered with its href and
+// navigates natively. We style it as a Bootstrap `.nav-link` via `::slotted`
+// (nav-link is flat enough that ::slotted reaches all of it), reading the
+// `--bs-nav-link-*` tokens the parent navbar sets on `.navbar-nav` (inherited in
+// through the slot). `!important` ensures the navbar theme wins over a page's
+// default `a { color }`.
+
+:host, *, *::before, *::after { box-sizing: border-box; }
+:host { display: block; }
+
+::slotted(a),
+::slotted(button) {
+  display: block;
+  // Bootstrap zeroes `--bs-nav-link-padding-x` on `.navbar-nav` and only re-adds
+  // horizontal spacing at the expand breakpoint via a class we don't emit, so
+  // use a fixed 0.5rem here (matches `$navbar-nav-link-padding-x`).
+  padding: var(--bs-nav-link-padding-y, 0.5rem) 0.5rem;
+  font-size: var(--bs-nav-link-font-size);
+  font-weight: var(--bs-nav-link-font-weight);
+  color: var(--bs-nav-link-color, var(--bs-navbar-color, inherit)) !important;
+  // `!important` for the same reason as `color`: a slotted anchor is light DOM,
+  // so Reboot's global `a { text-decoration: underline }` beats a plain shadow
+  // `::slotted` declaration across the boundary.
+  text-decoration: none !important;
+  background: transparent;
+  border: 0;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+::slotted(a:hover),
+::slotted(a:focus),
+::slotted(button:hover),
+::slotted(button:focus) {
+  color: var(--bs-nav-link-hover-color, var(--bs-navbar-hover-color, inherit)) !important;
+}
+
+:host([active]) ::slotted(a),
+:host([active]) ::slotted(button) {
+  color: var(--bs-nav-link-active-color, var(--bs-navbar-active-color, inherit)) !important;
+}
+
+:host([disabled]) ::slotted(a),
+:host([disabled]) ::slotted(button) {
+  color: var(--bs-nav-link-disabled-color, var(--bs-navbar-disabled-color, inherit)) !important;
+  pointer-events: none;
+}

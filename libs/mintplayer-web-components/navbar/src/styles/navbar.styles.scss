@@ -1,0 +1,199 @@
+// `mp-navbar` chrome styling. Bootstrap's navbar partial is compiled into the
+// shadow root (gives `.navbar`, `.navbar-toggler`, `.navbar-toggler-icon`,
+// `.navbar-collapse` base, and the `--bs-navbar-*` vars), on top of which we add
+// the responsive collapse state machine proven by the _spike-navbar-collapse
+// spike. The brand + nav items are slotted per-element WCs that style themselves
+// in their own shadow, so this stylesheet only owns the bar chrome.
+
+@import "bootstrap/scss/functions";
+@import "bootstrap/scss/variables";
+@import "bootstrap/scss/variables-dark";
+@import "bootstrap/scss/maps";
+@import "bootstrap/scss/mixins";
+@import "bootstrap/scss/navbar";
+
+// Reboot defaults don't cross the shadow boundary.
+:host, *, *::before, *::after { box-sizing: border-box; }
+:host { display: block; }
+
+// `positioning="fixed"` pins the bar to the top of the viewport, full width
+// (Bootstrap `.fixed-top`). Opt-in; the consumer offsets content below it. Used
+// by the Angular demo to preserve the pre-WC fixed navbar.
+:host([positioning="fixed"]) {
+  position: fixed;
+  inset: 0 0 auto;   // top/left/right: 0
+  width: 100%;
+  z-index: 1030;     // Bootstrap $zindex-fixed
+}
+
+.navbar {
+  position: relative;
+  z-index: 20;
+}
+
+// --- `color` background -------------------------------------------------------
+// Bootstrap bg utilities don't cross the shadow boundary, so re-resolve them
+// from the inherited tokens. Theme colors map to `--bs-{name}`; the adaptive
+// `body-*` names map to their page-theme-aware tokens (text contrast for the
+// solid colors is handled by `data-bs-theme`, set on the host in JS).
+@each $name, $val in $theme-colors {
+  :host([color="#{$name}"]) .navbar { background-color: var(--bs-#{$name}); }
+}
+:host([color="body"]) .navbar { background-color: var(--bs-body-bg); }
+:host([color="body-secondary"]) .navbar { background-color: var(--bs-secondary-bg); }
+:host([color="body-tertiary"]) .navbar { background-color: var(--bs-tertiary-bg); }
+
+// --- toggler: animated hamburger→X, no-JS-safe ---------------------------------
+// Three shadow bars (the `toggler` slot's FALLBACK content) replace Bootstrap's
+// static masked SVG icon, restoring the pre-WC animated bs-navbar-toggler with
+// its verbatim transforms. The X-morph keys off the SAME in-shadow `:checked`
+// machine that reveals the collapse, so it works with JavaScript disabled. Bars
+// are painted with `--bs-navbar-color` — the theme-aware token that inherits
+// across the shadow boundary (same color as the nav links), correct for adaptive
+// `color="body-*"` AND solid colors with no host `data-bs-theme` needed.
+// A consumer may slot a custom glyph (`slot="toggler"`); it must NOT be an
+// interactive element (<button>/<a href>) or the native label→checkbox click
+// forwarding dies. Its open-state arrives via the `--mp-navbar-expanded: 0|1`
+// custom-property bridge below (inherits into the slotted subtree; derive the
+// morph with calc(), transitions on the derived transform/opacity animate).
+.navbar-toggler {
+  padding: 0.75rem 1rem;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+}
+.navbar-toggler-bar {
+  display: block;
+  width: 25px;
+  height: 2px;
+  margin: 6px 0;
+  background-color: var(--bs-navbar-color, currentColor);
+  transition: 0.4s;
+}
+// Open: bars 1/3 rotate into the diagonals — rotate FIRST, so each translate
+// runs in its bar's already-rotated coordinate space (that's why the vectors
+// look asymmetric; reordering misaligns the X). Bar 2 fades out.
+.navbar-toggle:checked ~ .navbar-toggler {
+  .navbar-toggler-bar:nth-child(1) { transform: rotate(-45deg) translate(-7px, 5px); }
+  .navbar-toggler-bar:nth-child(2) { opacity: 0; }
+  .navbar-toggler-bar:nth-child(3) { transform: rotate(45deg) translate(-6px, -4px); }
+  ::slotted([slot="toggler"]) { --mp-navbar-expanded: 1; }
+}
+
+// --- collapse state machine (no-JS; see navbar-noscript.md) -------------------
+// Visually-hidden but focusable checkbox is the no-JS state holder.
+.navbar-toggle {
+  position: absolute;
+  width: 1px; height: 1px;
+  margin: -1px; padding: 0;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+// Collapse slides via an animatable `grid-template-rows: 0fr↔1fr` (height:auto
+// isn't animatable). The single grid child `.navbar-collapse-inner` clips with
+// `overflow:hidden`+`min-height:0` while the row collapses. Shown by default;
+// the per-breakpoint narrow block below sets the collapsed `0fr`. No-JS-safe
+// (the reveal is the same CSS state machine).
+.navbar-collapse {
+  flex-basis: 100%;
+  display: grid;
+  grid-template-rows: 1fr;
+  transition: grid-template-rows 0.35s ease;
+  // Clip the inner while the row collapses to 0 (narrow mode). The wide-mode
+  // override below restores `overflow: visible` so floated dropdown panels can
+  // escape the bar.
+  overflow: hidden;
+}
+.navbar-collapse-inner {
+  min-height: 0;
+}
+@media (prefers-reduced-motion: reduce) {
+  .navbar-collapse { transition: none; }
+  .navbar-toggler-bar { transition: none; }
+}
+
+// Two nav groups: default slot (start) + `slot="end"` (pushed right when wide).
+// Items slot in via the UA-default `display:contents` `<slot>`, so the slotted
+// per-element item WCs are the flex children of `.navbar-nav`.
+.navbar-nav {
+  display: flex;
+  flex-direction: column;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+// Reveal paths:
+//   - `:checked` — mouse/touch (the <label for> toggles the hidden checkbox).
+//   - `.navbar-collapse:focus-within` — keyboard, NO-JS ONLY (gated on
+//     `:host(:not([data-js]))`, set in connectedCallback — mirrors
+//     mp-navbar-dropdown). Once hydrated, only the checkbox controls the
+//     collapse: an ungated focus-within would hold the menu open against
+//     dismiss-on-navigate whenever the clicked link stays visible (clicking a
+//     TOP-LEVEL link leaves focus on it inside the collapse — dropdown leaves
+//     hide on close and drop focus, which masked the bug).
+//     SCOPED TO THE COLLAPSE, not the whole navbar: tabbing into the
+//     (clipped-but-focusable) nav links reveals it, and it must NOT be
+//     `:host(:focus-within)` — the toggler lives in the host too, so clicking
+//     the toggler to CLOSE would leave focus on it and immediately re-reveal
+//     the menu (the close-then-reopen bug).
+// `!important` beats the per-breakpoint collapsed default without specificity
+// games; inert in wide mode (display:flex ignores grid-template-rows).
+.navbar-toggle:checked ~ .navbar-collapse,
+:host(:not([data-js])) .navbar-collapse:focus-within {
+  grid-template-rows: 1fr !important;
+}
+
+@each $name, $min in $grid-breakpoints {
+  @if $min and $min > 0 {
+    :host([breakpoint="#{$name}"]) {
+      @include media-breakpoint-up($name, $grid-breakpoints) {
+        // Wide: nav inline + always visible; hamburger hidden; no grid animation.
+        .navbar-toggle, .navbar-toggler { display: none; }
+        .navbar-collapse { flex-basis: auto; display: flex; align-items: center; grid-template-rows: none; overflow: visible; }
+        .navbar-collapse-inner { display: contents; }  // uls become the flex children
+        .navbar-nav { flex-direction: row; align-items: center; }
+        .nav-end { margin-inline-start: auto; }  // push the end group right
+      }
+      @include media-breakpoint-down($name, $grid-breakpoints) {
+        // Narrow: collapsed (row 0fr) until revealed.
+        .navbar-collapse { grid-template-rows: 0fr; }
+        // Center the brand (matches the pre-WC navbar): auto inline margins on the
+        // brand absorb the free space, pushing the toggler to the right edge.
+        ::slotted([slot="brand"]) { margin-inline: auto; }
+      }
+    }
+  }
+}
+
+// A FIXED bar whose open menu is taller than the viewport scrolls internally
+// instead of running off-screen (matches the pre-WC navbar's `max-height:100%;
+// overflow-y` on the fixed bar in small mode). Both attributes must live INSIDE
+// `:host(...)` — `:host([a])[b]` does not match the host — so this can't nest
+// under the `:host([breakpoint])` block above and is emitted here instead.
+// `overflow-x: hidden` avoids the spurious horizontal scrollbar a single-axis
+// overflow value would otherwise force.
+@each $name, $min in $grid-breakpoints {
+  @if $min and $min > 0 {
+    @include media-breakpoint-down($name, $grid-breakpoints) {
+      :host([breakpoint="#{$name}"][positioning="fixed"]) {
+        max-height: 100dvh;
+        overflow: hidden auto;
+        // Hide the internal scrollbar (the pre-WC navbar did this with a
+        // Windows-only `margin-right: -17px` that pushed a classic 17px scrollbar
+        // off-screen; that assumes a fixed scrollbar width + OS detection this
+        // framework-agnostic WC doesn't have and would clip content on
+        // overlay-scrollbar platforms). `scrollbar-width`/`::-webkit-scrollbar`
+        // hide it cross-platform while keeping wheel/touch scrolling.
+        scrollbar-width: none;
+      }
+      :host([breakpoint="#{$name}"][positioning="fixed"])::-webkit-scrollbar {
+        width: 0;
+        height: 0;
+      }
+    }
+  }
+}

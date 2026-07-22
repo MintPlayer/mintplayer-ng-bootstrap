@@ -16,6 +16,13 @@ import { Writable } from 'node:stream';
 // Framework-agnostic helper: splices `<mp-shell>`'s Declarative Shadow DOM into
 // the HTML so the sidebar + hamburger toggle work with JavaScript disabled.
 import { injectMpShellDsd } from '@mintplayer/web-components/shell/ssr';
+// Splices each `<mp-dropdown-menu>`'s Declarative Shadow DOM into the HTML so
+// the menu renders styled with JavaScript disabled.
+import { injectMpDropdownDsd } from '@mintplayer/web-components/dropdown-menu/ssr';
+// Splices each `<mp-navbar>` family element's Declarative Shadow DOM into the
+// HTML so the navbar renders — and collapses/reveals via its pure-CSS state
+// machine — with JavaScript disabled.
+import { injectMpNavbarDsd } from '@mintplayer/web-components/navbar/ssr';
 import App from './app/app';
 
 /**
@@ -39,7 +46,7 @@ export function render(url: string): Promise<string> {
       },
       final(cb) {
         clearTimeout(timer);
-        resolve(injectMpShellDsd(Buffer.concat(chunks).toString('utf-8')));
+        resolve(injectMpNavbarDsd(injectMpDropdownDsd(injectMpShellDsd(Buffer.concat(chunks).toString('utf-8')))));
         cb();
       },
     });

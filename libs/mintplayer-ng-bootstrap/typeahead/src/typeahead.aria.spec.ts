@@ -4,6 +4,9 @@ import { OverlayContainer, OverlayModule } from '@angular/cdk/overlay';
 import { MockProvider } from 'ng-mocks';
 import { BS_DEVELOPMENT } from '@mintplayer/ng-bootstrap';
 import { BsTypeaheadComponent } from './typeahead.component';
+// Register <mp-dropdown-menu> so the projected option <li>s get their
+// WC-driven listbox roles (role=option) synchronously in the test.
+import '@mintplayer/web-components/dropdown-menu';
 
 @Component({
   selector: 'bs-typeahead-aria-harness',
@@ -42,9 +45,19 @@ describe('BsTypeaheadComponent ARIA — primitive migration', () => {
     fixture.detectChanges();
   });
 
+  // Open the popup and let the projected <li>s get their generated ids
+  // (bsRovingFocusItem, afterNextRender) and WC-driven option roles.
+  const open = async () => {
+    host.isOpen.set(true);
+    fixture.detectChanges();
+    await fixture.whenStable();
+    await new Promise<void>(resolve => setTimeout(resolve));
+    fixture.detectChanges();
+  };
+
   const input = () => fixture.nativeElement.querySelector<HTMLInputElement>('input')!;
   const menu = () => overlay.querySelector<HTMLElement>('bs-dropdown-menu');
-  const items = () => Array.from(overlay.querySelectorAll<HTMLElement>('bs-dropdown-item'));
+  const items = () => Array.from(overlay.querySelectorAll<HTMLElement>('li[bsDropdownItem]'));
   const press = (key: string) => {
     input().dispatchEvent(new KeyboardEvent('keydown', { key, bubbles: true, cancelable: true }));
     fixture.detectChanges();
@@ -56,11 +69,10 @@ describe('BsTypeaheadComponent ARIA — primitive migration', () => {
     expect(input().getAttribute('aria-autocomplete')).toBe('list');
   });
 
-  it('aria-expanded + aria-controls reflect the dropdown state', () => {
+  it('aria-expanded + aria-controls reflect the dropdown state', async () => {
     expect(input().getAttribute('aria-expanded')).toBe('false');
 
-    host.isOpen.set(true);
-    fixture.detectChanges();
+    await open();
 
     expect(input().getAttribute('aria-expanded')).toBe('true');
     const controls = input().getAttribute('aria-controls');
@@ -68,31 +80,28 @@ describe('BsTypeaheadComponent ARIA — primitive migration', () => {
     expect(menu()!.id).toBe(controls);
   });
 
-  it('menu is role="listbox", items are role="option" (auto from popupRole="listbox")', () => {
-    host.isOpen.set(true);
-    fixture.detectChanges();
+  it('menu is role="listbox", items are role="option" (listbox mode wired from popupRole="listbox")', async () => {
+    await open();
 
     expect(menu()!.getAttribute('role')).toBe('listbox');
     items().forEach(item => expect(item.getAttribute('role')).toBe('option'));
   });
 
-  it('ArrowDown updates aria-activedescendant to the next option id without moving browser focus', () => {
-    host.isOpen.set(true);
-    fixture.detectChanges();
+  it('ArrowDown updates aria-activedescendant to the next option id without moving browser focus', async () => {
+    await open();
 
     input().focus();
     press('ArrowDown');
 
     const activeDesc = input().getAttribute('aria-activedescendant');
-    expect(activeDesc).toMatch(/^bs-dropdown-item-\d+$/);
+    expect(activeDesc).toMatch(/^bs-rovingitem-\d+$/);
     // First-arrow moves to the second item (activeIndex started at 0)
     expect(activeDesc).toBe(items()[1].id);
     expect(document.activeElement).toBe(input());
   });
 
-  it('Enter on a highlighted option emits suggestionSelected', () => {
-    host.isOpen.set(true);
-    fixture.detectChanges();
+  it('Enter on a highlighted option emits suggestionSelected', async () => {
+    await open();
 
     input().focus();
     press('ArrowDown');
@@ -101,9 +110,8 @@ describe('BsTypeaheadComponent ARIA — primitive migration', () => {
     expect(host.lastSelected()).toEqual({ text: 'Banana' });
   });
 
-  it('Escape closes the dropdown', () => {
-    host.isOpen.set(true);
-    fixture.detectChanges();
+  it('Escape closes the dropdown', async () => {
+    await open();
     expect(host.isOpen()).toBe(true);
 
     input().focus();
@@ -112,9 +120,8 @@ describe('BsTypeaheadComponent ARIA — primitive migration', () => {
     expect(host.isOpen()).toBe(false);
   });
 
-  it('Tab inside the open list advances aria-activedescendant without leaving the input', () => {
-    host.isOpen.set(true);
-    fixture.detectChanges();
+  it('Tab inside the open list advances aria-activedescendant without leaving the input', async () => {
+    await open();
 
     input().focus();
     const event = new KeyboardEvent('keydown', { key: 'Tab', bubbles: true, cancelable: true });
@@ -127,9 +134,8 @@ describe('BsTypeaheadComponent ARIA — primitive migration', () => {
     expect(host.isOpen()).toBe(true);
   });
 
-  it('Tab on the last option closes the dropdown and lets focus exit', () => {
-    host.isOpen.set(true);
-    fixture.detectChanges();
+  it('Tab on the last option closes the dropdown and lets focus exit', async () => {
+    await open();
 
     input().focus();
     press('End'); // jump to last option
@@ -142,9 +148,8 @@ describe('BsTypeaheadComponent ARIA — primitive migration', () => {
     expect(host.isOpen()).toBe(false);
   });
 
-  it('Shift+Tab on the first option closes the dropdown and lets focus exit', () => {
-    host.isOpen.set(true);
-    fixture.detectChanges();
+  it('Shift+Tab on the first option closes the dropdown and lets focus exit', async () => {
+    await open();
 
     input().focus();
     // Already on first option (activeIndex=0)

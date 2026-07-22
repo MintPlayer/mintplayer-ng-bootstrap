@@ -72,6 +72,45 @@
         "command": "node tools/lit-ssr-utils/gen-shell-chrome.mjs"
       }
     },
+    "codegen-dropdown-chrome": {
+      "executor": "nx:run-commands",
+      "outputs": ["{projectRoot}/dropdown-menu/ssr/mp-dropdown-chrome.generated.ts"],
+      "inputs": [
+        "{projectRoot}/dropdown-menu/src/components/*.ts",
+        "{projectRoot}/dropdown-menu/src/styles/*.styles.scss",
+        "{workspaceRoot}/tools/lit-ssr-utils/gen-dropdown-chrome.mjs"
+      ],
+      "dependsOn": ["build"],
+      "cache": true,
+      "options": {
+        "command": "node tools/lit-ssr-utils/gen-dropdown-chrome.mjs"
+      }
+    },
+    "codegen-navbar-chrome": {
+      "executor": "nx:run-commands",
+      "outputs": ["{projectRoot}/navbar/ssr/mp-navbar-chrome.generated.ts"],
+      "inputs": [
+        "{projectRoot}/navbar/src/components/*.ts",
+        "{projectRoot}/navbar/src/styles/*.styles.scss",
+        "{workspaceRoot}/tools/lit-ssr-utils/gen-navbar-chrome.mjs"
+      ],
+      "dependsOn": ["build"],
+      "cache": true,
+      "options": {
+        "command": "node tools/lit-ssr-utils/gen-navbar-chrome.mjs"
+      }
+    },
+    "codegen-ssr-chrome": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "echo \"SSR DSD chrome generated (shell + navbar + dropdown)\""
+      },
+      "dependsOn": [
+        "codegen-shell-chrome",
+        "codegen-navbar-chrome",
+        "codegen-dropdown-chrome"
+      ]
+    },
     "build": {
       "executor": "@nx/vite:build",
       "outputs": ["{options.outputPath}"],

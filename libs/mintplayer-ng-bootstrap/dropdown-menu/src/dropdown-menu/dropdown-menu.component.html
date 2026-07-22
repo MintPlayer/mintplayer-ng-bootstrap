@@ -1,3 +1,3 @@
-<ul role="presentation" class="dropdown-menu position-static w-100 overflow-auto show" [style.max-height.px]="maxHeight()">
+<mp-dropdown-menu [attr.mode]="mode()" [attr.max-height]="maxHeightAttr()" [attr.label-id]="labelIdAttr()" (select)="onSelect($event)">
     <ng-content></ng-content>
-</ul>
+</mp-dropdown-menu>

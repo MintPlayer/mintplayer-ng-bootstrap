@@ -1,0 +1,136 @@
+// `mp-navbar-dropdown` — a navbar entry that opens a dropdown. Renders the
+// trigger (`.nav-link.dropdown-toggle`, or a `.dropdown-item`-styled trigger
+// when nested as a submenu) in shadow and slots an `<mp-dropdown-menu>` panel.
+//
+// Reveal contract (mirrors the Angular bs-navbar / navbar-noscript.md):
+//   - No-JS: `:focus-within` reveals the panel. Gated on `:not([data-js])` —
+//     `data-js` is set in connectedCallback, so once hydrated ONLY clicks
+//     (data-open / data-menu-open) control visibility (the "click, never focus"
+//     rule for JS-enabled tests).
+// Position contract (matches the legacy isSmallMode behaviour):
+//   - SMALL mode (below the navbar breakpoint) AND no-JS: panels render INLINE
+//     (in flow) so opening a dropdown pushes siblings down, never overlaps.
+//   - WIDE mode (>= breakpoint, JS on): first-level floats absolute below the
+//     trigger; nested submenus are pulled into a fixed OverlayController overlay.
+//   The wide rules are gated on `:host([data-expand="<bp>"])` — `mp-navbar-dropdown`
+//   sets `data-expand` from the inherited `--mp-navbar-breakpoint` (published by
+//   mp-navbar), paired with `media-breakpoint-up`. No-JS => no `data-expand` =>
+//   inline everywhere (the safe baseline).
+
+@import "bootstrap/scss/functions";
+@import "bootstrap/scss/variables";
+@import "bootstrap/scss/mixins";
+
+:host, *, *::before, *::after { box-sizing: border-box; }
+:host { position: relative; display: block; }
+
+.nav-link.dropdown-toggle {
+  display: flex;
+  align-items: center;
+  padding: var(--bs-nav-link-padding-y, 0.5rem) 0.5rem;
+  color: var(--bs-nav-link-color, var(--bs-navbar-color, inherit));
+  text-decoration: none;
+  white-space: nowrap;
+  cursor: pointer;
+  background: transparent;
+  border: 0;
+  // The toggle acts on mousedown (press-time resolution — see #onTriggerPress);
+  // without preventDefault, rapid toggling would start text selection on the label.
+  user-select: none;
+}
+.nav-link.dropdown-toggle:hover,
+:host(:not([data-js]):focus-within) .nav-link.dropdown-toggle {
+  color: var(--bs-nav-link-hover-color, var(--bs-navbar-hover-color, inherit));
+}
+
+// Down caret (first level).
+.nav-link.dropdown-toggle::after {
+  display: inline-block;
+  margin-left: 0.255em;
+  vertical-align: 0.255em;
+  content: "";
+  border-top: 0.3em solid;
+  border-right: 0.3em solid transparent;
+  border-bottom: 0;
+  border-left: 0.3em solid transparent;
+}
+
+// --- submenu trigger: styled as a .dropdown-item with a right-pointing caret ---
+:host([data-submenu]) .nav-link.dropdown-toggle {
+  justify-content: space-between;
+  width: 100%;
+  padding: var(--bs-dropdown-item-padding-y, 0.25rem) var(--bs-dropdown-item-padding-x, 1rem);
+  color: var(--bs-dropdown-link-color, inherit);
+}
+:host([data-submenu]) .nav-link.dropdown-toggle:hover {
+  color: var(--bs-dropdown-link-hover-color, inherit);
+  background-color: var(--bs-dropdown-link-hover-bg, transparent);
+}
+:host([data-submenu]) .nav-link.dropdown-toggle::after {
+  margin-left: 0.5rem;
+  border-top: 0.3em solid transparent;
+  border-bottom: 0.3em solid transparent;
+  border-left: 0.3em solid;
+  border-right: 0;
+}
+
+// --- panel (the default-slotted dropdown menu) --------------------------------
+// Target the default-slotted panel by "not the label slot" rather than the
+// `mp-dropdown-menu` tag: a framework wrapper (Angular's `<bs-dropdown-menu>`)
+// slots a HOST element that CONTAINS the `<mp-dropdown-menu>`, so a tag selector
+// would miss it. React/Vue slot the element directly; both are covered.
+
+// DEFAULT (small mode / no-JS): inline, in flow, hidden until revealed.
+::slotted(:not([slot="label"])) {
+  display: none;
+  position: static;
+  max-height: none;
+  overflow: visible;
+}
+// First-level panel (small mode): inset from both edges so it isn't glued to the
+// window edge — right keeps the pre-WC `.dropdown-menu.me-3` (1rem); left adds a
+// matching inset. Reset to 0 by the wide floated-overlay rule below.
+:host(:not([data-submenu])) ::slotted(:not([slot="label"])) {
+  margin: 0 1rem;
+}
+// submenu inline inset (small mode) — matches the pre-WC `.submenu { margin: 0 .5rem }`.
+:host([data-submenu]) ::slotted(:not([slot="label"])) {
+  margin: 0 0.5rem;
+}
+
+// Reveal: no-JS focus-within (gated) OR JS click. `data-open` = first-level and
+// small-mode submenus (inline); `data-menu-open` = wide-mode submenu overlay
+// (set by OverlayController).
+:host(:not([data-js]):focus-within) ::slotted(:not([slot="label"])),
+:host([data-open]) ::slotted(:not([slot="label"])),
+:host([data-menu-open]) ::slotted(:not([slot="label"])) {
+  display: block;
+}
+
+// WIDE mode (>= navbar breakpoint, JS sets `data-expand`): first-level floats
+// absolute below the trigger; nested submenus become a fixed OverlayController
+// overlay. One rule per breakpoint, gated by `media-breakpoint-up`.
+@each $name, $min in $grid-breakpoints {
+  @if $min and $min > 0 {
+    @include media-breakpoint-up($name, $grid-breakpoints) {
+      :host([data-expand="#{$name}"]:not([data-submenu])) ::slotted(:not([slot="label"])) {
+        position: absolute;
+        top: 100%;
+        inset-inline-start: 0;
+        z-index: 1000;
+        margin: 0;   // reset the small-mode inline inset for the floated panel
+        max-height: calc(100vh - 100% - 1rem);
+        overflow-y: auto;
+      }
+      :host([data-expand="#{$name}"][data-submenu]) ::slotted(:not([slot="label"])) {
+        position: fixed;
+        inset-inline-start: auto;
+        top: auto;
+        z-index: 1050;
+        margin: 0;
+        max-height: calc(100vh - 1rem);
+        overflow-y: auto;
+      }
+    }
+  }
+}

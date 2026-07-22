@@ -94,7 +94,7 @@
       "defaultConfiguration": "production",
       "dependsOn": [
         "^build",
-        "mintplayer-web-components:codegen-shell-chrome"
+        "mintplayer-web-components:codegen-ssr-chrome"
       ]
     },
     "serve": {
@@ -144,7 +144,8 @@
             "mintplayer-web-components"
           ],
           "target": "codegen-wc-watch"
-        }
+        },
+        "mintplayer-web-components:codegen-ssr-chrome"
       ]
     },
     "extract-i18n": {
