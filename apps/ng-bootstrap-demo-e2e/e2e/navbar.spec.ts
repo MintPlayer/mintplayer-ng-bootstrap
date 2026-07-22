@@ -116,15 +116,37 @@ test.describe('navbar — wide mode (JS enabled)', () => {
   });
 
   test('switching between dropdowns closes the previous and opens the next', async ({ page }) => {
-    // The regression: a real click (mousedown closes the open one via the
-    // document outside-click listener; click opens the next). `.click()` here is
-    // a trusted Playwright click, so it exercises that full path.
+    // Open + close both ride the mousedown (press-time resolution): the open
+    // dropdown's document capture listener closes it, then the pressed
+    // trigger's own handler opens the next — one event, deterministic order.
+    // Assert VISIBILITY, not just the state flag (a flag-only check once
+    // passed while the panel wasn't painted).
+    await trigger(page, 'Overlays').click();
+    expect(await panelInfo(page, 'Overlays')).toMatchObject({ open: true, display: 'block' });
+
+    await trigger(page, 'Advanced').click();
+    expect(await panelInfo(page, 'Overlays')).toMatchObject({ open: false, display: 'none' });
+    expect(await panelInfo(page, 'Advanced')).toMatchObject({ open: true, display: 'block' });
+  });
+
+  test('switching survives a drifting click (press-time resolution)', async ({ page }) => {
+    // The real-mouse failure mode: press on the "Advanced" trigger, release a
+    // few px lower — in the zone where the open "Overlays" panel bleeds under
+    // this trigger. With a click-based open, the mid-gesture panel removal
+    // retargets the click to the common ancestor and the dropdown never opens
+    // (the user needed a second click). Press-time resolution is immune: the
+    // toggle fires on mousedown, before any drift.
     await trigger(page, 'Overlays').click();
     expect((await panelInfo(page, 'Overlays'))?.open).toBe(true);
 
-    await trigger(page, 'Advanced').click();
-    expect((await panelInfo(page, 'Overlays'))?.open).toBe(false);
-    expect((await panelInfo(page, 'Advanced'))?.open).toBe(true);
+    const box = (await trigger(page, 'Advanced').boundingBox())!;
+    await page.mouse.move(box.x + box.width / 2, box.y + box.height - 4);
+    await page.mouse.down();
+    await page.mouse.move(box.x + box.width / 2, box.y + box.height + 6); // drift below the trigger
+    await page.mouse.up();
+
+    expect(await panelInfo(page, 'Advanced')).toMatchObject({ open: true, display: 'block' });
+    expect(await panelInfo(page, 'Overlays')).toMatchObject({ open: false, display: 'none' });
   });
 
   test('clicking a nav link dismisses the open dropdown and navigates', async ({ page }) => {

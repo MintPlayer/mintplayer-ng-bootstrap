@@ -34,6 +34,9 @@
   cursor: pointer;
   background: transparent;
   border: 0;
+  // The toggle acts on mousedown (press-time resolution — see #onTriggerPress);
+  // without preventDefault, rapid toggling would start text selection on the label.
+  user-select: none;
 }
 .nav-link.dropdown-toggle:hover,
 :host(:not([data-js]):focus-within) .nav-link.dropdown-toggle {

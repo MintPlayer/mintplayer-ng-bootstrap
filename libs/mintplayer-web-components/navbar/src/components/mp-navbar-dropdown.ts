@@ -125,8 +125,18 @@ export class MpNavbarDropdown extends MpNavbarElement {
     this.#setOpen(false);
   }
 
-  #onToggle = (event: Event): void => {
-    event.preventDefault();
+  /**
+   * Toggle on MOUSEDOWN, not click — the whole gesture must resolve at press
+   * time. Dismissal of a sibling's open dropdown also happens on mousedown
+   * (its document capture listener, which runs before this target handler), so
+   * open+close ride the SAME event, in a guaranteed order. With a click-based
+   * open, a real pointer that drifts a few px between press and release makes
+   * the browser retarget `click` to the common ancestor (mousedown/mouseup
+   * targets differ once the sibling's panel — which bleeds under this trigger —
+   * is yanked out mid-gesture), and the dropdown silently fails to open.
+   * No preventDefault: it would suppress focus moving to the trigger.
+   */
+  #onTriggerPress = (): void => {
     this.#toggle();
   };
 
@@ -149,7 +159,7 @@ export class MpNavbarDropdown extends MpNavbarElement {
         role="button"
         tabindex="0"
         aria-haspopup="menu"
-        @click=${this.#onToggle}
+        @mousedown=${this.#onTriggerPress}
         @keydown=${this.#onKeydown}
       ><slot name="label"></slot></a>
       <slot></slot>
