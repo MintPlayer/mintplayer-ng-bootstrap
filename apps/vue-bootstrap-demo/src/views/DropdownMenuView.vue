@@ -18,7 +18,7 @@ function onSelect(detail: DropdownSelectEventDetail) {
 const SOURCE = `<BsDropdownMenu @select="onSelect">
   <BsDropdownHeader>Actions</BsDropdownHeader>
   <BsDropdownItem value="new">New file</BsDropdownItem>
-  <BsDropdownItem value="open" selected>Open…</BsDropdownItem>
+  <BsDropdownItem value="open" active>Open…</BsDropdownItem>
   <BsDropdownItem value="save">Save</BsDropdownItem>
   <BsDropdownItem value="export" disabled>Export (Pro)</BsDropdownItem>
   <BsDropdownDivider />
@@ -44,7 +44,7 @@ const SOURCE = `<BsDropdownMenu @select="onSelect">
       <BsDropdownMenu @select="onSelect">
         <BsDropdownHeader>Actions</BsDropdownHeader>
         <BsDropdownItem value="new">New file</BsDropdownItem>
-        <BsDropdownItem value="open" selected>Open…</BsDropdownItem>
+        <BsDropdownItem value="open" active>Open…</BsDropdownItem>
         <BsDropdownItem value="save">Save</BsDropdownItem>
         <BsDropdownItem value="export" disabled>Export (Pro)</BsDropdownItem>
         <BsDropdownDivider />

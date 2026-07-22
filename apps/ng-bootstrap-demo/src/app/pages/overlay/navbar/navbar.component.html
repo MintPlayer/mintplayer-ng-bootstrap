@@ -1,12 +1,12 @@
-<h1 class="text-center">Navbar (WC)</h1>
+<h1 class="text-center">Navbar</h1>
 
 <p>
-  <code>bs-navbar-wc</code> is the Angular wrapper around the
+  <code>bs-navbar</code> is the Angular wrapper around the
   framework-agnostic <code>&lt;mp-navbar&gt;</code> web component. The bar
   chrome, the responsive collapse (a pure-CSS state machine), the hamburger
   toggle and the theme-aware styling all live in the WC. Mark the brand with
-  <code>bs-navbar-wc-brand</code>, add <code>bs-navbar-wc-item</code> links
-  (one <code>[active]</code>), open a <code>bs-navbar-wc-dropdown</code> whose
+  <code>bs-navbar-brand</code>, add <code>bs-navbar-item</code> links
+  (one <code>[active]</code>), open a <code>bs-navbar-dropdown</code> whose
   panel is a <code>bs-dropdown-menu</code>, and push an item to the right
   with <code>slot="end"</code>. Toggling the collapse fires
   <code>(expandedchange)</code>.
@@ -14,31 +14,31 @@
 
 <h2>Basic usage</h2>
 
-<div class="navbar-wc-demo">
-  <bs-navbar-wc [breakpoint]="'lg'" [color]="'body-tertiary'" [ariaLabel]="'Demo navigation'" (expandedchange)="onExpandedchange($event)">
-    <bs-navbar-wc-brand>
+<div class="navbar-demo">
+  <bs-navbar [breakpoint]="'lg'" [color]="'body-tertiary'" [ariaLabel]="'Demo navigation'" (expandedchange)="onExpandedchange($event)">
+    <bs-navbar-brand>
       <a routerLink="/">MyApp</a>
-    </bs-navbar-wc-brand>
+    </bs-navbar-brand>
 
-    <bs-navbar-wc-item [active]="true">
+    <bs-navbar-item [active]="true">
       <a routerLink="/">Home</a>
-    </bs-navbar-wc-item>
-    <bs-navbar-wc-item>
+    </bs-navbar-item>
+    <bs-navbar-item>
       <a routerLink="/about">About</a>
-    </bs-navbar-wc-item>
+    </bs-navbar-item>
 
-    <bs-navbar-wc-dropdown [label]="'Products'">
+    <bs-navbar-dropdown [label]="'Products'">
       <bs-dropdown-menu>
         <li bsDropdownItem><a routerLink="/products/widgets">Widgets</a></li>
         <li bsDropdownItem><a routerLink="/products/gadgets">Gadgets</a></li>
         <li bsDropdownItem><a routerLink="/products/gizmos">Gizmos</a></li>
       </bs-dropdown-menu>
-    </bs-navbar-wc-dropdown>
+    </bs-navbar-dropdown>
 
-    <bs-navbar-wc-item slot="end">
+    <bs-navbar-item slot="end">
       <a routerLink="/sign-in">Sign in</a>
-    </bs-navbar-wc-item>
-  </bs-navbar-wc>
+    </bs-navbar-item>
+  </bs-navbar>
 
   <p class="expanded-readout">
     Collapse expanded: <code>{{ expanded() }}</code>

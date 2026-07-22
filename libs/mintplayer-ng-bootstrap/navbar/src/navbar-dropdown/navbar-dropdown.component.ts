@@ -1,157 +1,21 @@
-import { DOCUMENT, isPlatformServer } from '@angular/common';
-import { ChangeDetectionStrategy, Component, contentChildren, computed, DestroyRef, effect, ElementRef, forwardRef, inject, Injector, input, OnDestroy, PLATFORM_ID, signal, SkipSelf, viewChild } from '@angular/core';
-import { ClickOutsideDirective } from '@mintplayer/ng-click-outside';
-import { BsHasOverlayComponent } from '@mintplayer/ng-bootstrap/has-overlay';
-import { BsNoNoscriptDirective } from '@mintplayer/ng-bootstrap/no-noscript';
-import { BsNavbarComponent } from '../navbar/navbar.component';
-import { BsNavbarItemComponent } from '../navbar-item/navbar-item.component';
-import { DomPortal } from '@angular/cdk/portal';
-import { OverlayRef } from '@angular/cdk/overlay';
+import { ChangeDetectionStrategy, Component, CUSTOM_ELEMENTS_SCHEMA, input } from '@angular/core';
 
+/**
+ * `<bs-navbar-dropdown>` — Angular wrapper around `<mp-navbar-dropdown>`.
+ *
+ * The trigger text is the `label` input (rendered into the WC's `label` slot).
+ * The dropdown panel is projected into the default slot — supply a
+ * `<bs-dropdown-menu>` (`@mintplayer/ng-bootstrap/dropdown-menu`) of link items.
+ * Nest another `<bs-navbar-dropdown>` inside that menu to make a submenu.
+ * Reveal/positioning and the no-JS `:focus-within` fallback all live in the WC.
+ */
 @Component({
   selector: 'bs-navbar-dropdown',
   templateUrl: './navbar-dropdown.component.html',
-  styleUrls: ['./navbar-dropdown.component.scss'],
-  imports: [BsHasOverlayComponent, BsNoNoscriptDirective, ClickOutsideDirective],
   changeDetection: ChangeDetectionStrategy.OnPush,
+  schemas: [CUSTOM_ELEMENTS_SCHEMA],
 })
-export class BsNavbarDropdownComponent implements OnDestroy {
-
-  private navbar = inject(BsNavbarComponent);
-  parentDropdown = inject(BsNavbarDropdownComponent, { skipSelf: true, optional: true });
-  navbarItem = inject(forwardRef(() => BsNavbarItemComponent), { host: true });
-  element = inject<ElementRef<HTMLElement>>(ElementRef);
-  private injector = inject(Injector);
-  private document = inject(DOCUMENT);
-  private platformId = inject(PLATFORM_ID);
-
-  private readonly isAttached = signal<boolean>(false);
-  private readonly isDestroyed = signal<boolean>(false);
-  private domPortal?: DomPortal;
-  private overlay?: OverlayRef;
-  private pendingShowInOverlay: boolean | null = null;
-
-  autoclose = input(true);
-  readonly dropdownElement = viewChild.required<ElementRef<HTMLDivElement>>('dd');
-  isBrowser = !isPlatformServer(this.platformId);
-
-  isVisible = signal<boolean>(false);
-  topPos = signal<number | null>(null);
-
-  /**
-   * Top-level dropdowns render in-place; only nested submenus go through the
-   * CDK overlay. The visible-flash bug only affects the overlay path.
-   */
-  private readonly isOverlayMounted = computed(() => !!this.parentDropdown && this.isBrowser);
-
-  /**
-   * `.show` is gated on this for overlay-mounted submenus so the user never
-   * sees the menu at its stale top-left position. False until updatePosition
-   * has run at least once for the current open cycle; reset on close.
-   */
-  private readonly isPositioned = signal<boolean>(false);
-
-  /** What `[class.show]` actually binds to. */
-  readonly showClass = computed(() =>
-    this.isOverlayMounted()
-      ? this.isVisible() && this.isPositioned()
-      : this.isVisible()
-  );
-
-  maxHeight = computed(() => {
-    const topPos = this.topPos();
-    const w: Window | null = this.document.defaultView;
-    if (!topPos) {
-      return null;
-    } else if (w && this.dropdownElement()) {
-      const style = w.getComputedStyle(this.dropdownElement().nativeElement);
-      return `calc(100vh - ${topPos}px - ${style.getPropertyValue('padding-top')} - ${style.getPropertyValue('padding-bottom')})`;
-    } else {
-      return null;
-    }
-  });
-
-  maxHeightOrNull = computed(() => {
-    const maxHeight = this.maxHeight();
-    const isSmallMode = this.navbar.isSmallMode();
-    if (isSmallMode) {
-      return null;
-    } else if (isPlatformServer(this.platformId)) {
-      return this.parentDropdown ? null : maxHeight;
-    } else {
-      return maxHeight;
-    }
-  });
-
-  constructor() {
-    effect(() => {
-      const isVisible = this.isVisible();
-      if (isVisible) {
-        // Overlay was attached at ngAfterContentInit when the connected
-        // navbar-item was still inside a closed parent dropdown — its
-        // getBoundingClientRect was (0, 0) and the overlay cached top-left.
-        // Compute the real position now, before .show flips on, so the user
-        // never sees the menu painted at the stale top-left.
-        try { this.overlay?.updatePosition(); }
-        catch (ex) { }
-        this.isPositioned.set(true);
-        this.topPos.set(this.element.nativeElement.offsetTop);
-      } else {
-        this.isPositioned.set(false);
-        this.topPos.set(null);
-      }
-    });
-
-    if (!!this.parentDropdown && this.isBrowser) {
-      import('@angular/cdk/overlay').then(({ Overlay }) => {
-        // Guard against accessing injector after component is destroyed
-        if (this.isDestroyed()) {
-          return;
-        }
-        const overlayService = this.injector.get(Overlay);
-        this.domPortal = new DomPortal(this.element);
-        this.overlay = overlayService.create({
-          positionStrategy: overlayService.position()
-            .flexibleConnectedTo(this.navbarItem.element)
-            .withPositions([
-              { originX: 'end', originY: 'top', overlayX: 'start', overlayY: 'top', offsetX: -9, offsetY: -9 }
-            ])
-        });
-
-        // Apply pending showInOverlay state if it was set before overlay was ready
-        if (this.pendingShowInOverlay !== null) {
-          const pending = this.pendingShowInOverlay;
-          this.pendingShowInOverlay = null;
-          this.showInOverlay = pending;
-        }
-      });
-    }
-  }
-
-  ngOnDestroy() {
-    this.isDestroyed.set(true);
-    this.overlay?.dispose();
-  }
-
-  public set showInOverlay(value: boolean) {
-    if (this.overlay && this.domPortal) {
-      if (value && !this.isAttached()) {
-        this.overlay.attach(this.domPortal);
-        this.isAttached.set(true);
-      }
-      if (!value && this.isAttached()) {
-        this.overlay.detach();
-        this.isAttached.set(false);
-      }
-    } else {
-      // Store the value to apply once the overlay is ready
-      this.pendingShowInOverlay = value;
-    }
-  }
-
-  get elementsToExclude() {
-    return [this.navbarItem.anchorTag].filter((a) => a).map((a) => <HTMLElement>a);
-  }
-
-  readonly childDropdowns = contentChildren<BsNavbarDropdownComponent>(forwardRef(() => BsNavbarDropdownComponent), { descendants: true });
+export class BsNavbarDropdownComponent {
+  /** Text shown on the dropdown trigger. */
+  readonly label = input<string>('');
 }

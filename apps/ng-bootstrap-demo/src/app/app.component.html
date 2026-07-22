@@ -1,5 +1,4 @@
-<bs-navbar [color]="'body-tertiary'" [breakpoint]="'lg'" #nav>
-  <bs-navbar-toggler *bsExpandButton="let state" [state]="state" [toggleOnClick]="false"></bs-navbar-toggler>
+<bs-navbar [color]="'body-tertiary'" [breakpoint]="'lg'" [ariaLabel]="'Main navigation'">
   <bs-navbar-brand>
     <a [routerLink]='["/"]'>
       <span class="brand d-block px-3 pb-3 pt-3">
@@ -7,380 +6,173 @@
       </span>
     </a>
   </bs-navbar-brand>
-  <bs-navbar-nav [collapse]="true">
-    <bs-navbar-item>
-      <a [routerLink]='["/"]' [routerLinkActiveOptions]="{exact: true}">Home</a>
-    </bs-navbar-item>
-    <bs-navbar-item>
-      <a bsNavbarTrigger="/basic">Basic</a>
-      <bs-navbar-dropdown>
-        <bs-navbar-item>
-          <a [routerLink]='["/basic", "alert"]'>Alert</a>
-        </bs-navbar-item>
-        <bs-navbar-item>
-          <a bsNavbarTrigger="/basic/forms">Forms</a>
-          <bs-navbar-dropdown>
-            <bs-navbar-item>
-              <a [routerLink]='["/basic", "forms", "floating-labels"]'>Floating labels</a>
-            </bs-navbar-item>
-            <bs-navbar-item>
-              <a [routerLink]='["/basic", "forms", "input-group"]'>Input group</a>
-            </bs-navbar-item>
-            <bs-navbar-item>
-              <a [routerLink]='["/basic", "forms", "multi-range"]'>Multi-range</a>
-            </bs-navbar-item>
-            <bs-navbar-item>
-              <a [routerLink]='["/basic", "forms", "range"]'>Range</a>
-            </bs-navbar-item>
-            <bs-navbar-item>
-              <a [routerLink]='["/basic", "forms", "select"]'>Select</a>
-            </bs-navbar-item>
-            <bs-navbar-item>
-              <a [routerLink]='["/basic", "forms", "radio"]'>Radio</a>
-            </bs-navbar-item>
-            <bs-navbar-item>
-              <a [routerLink]='["/basic", "forms", "checkbox"]'>Checkbox</a>
-            </bs-navbar-item>
-            <bs-navbar-item>
-              <a [routerLink]='["/basic", "forms", "datepicker"]'>Datepicker</a>
-            </bs-navbar-item>
-            <bs-navbar-item>
-              <a [routerLink]='["/basic", "forms", "timepicker"]'>Timepicker</a>
-            </bs-navbar-item>
-            <bs-navbar-item>
-              <a [routerLink]='["/basic", "forms", "datetime-picker"]'>DateTime picker</a>
-            </bs-navbar-item>
-          </bs-navbar-dropdown>
-        </bs-navbar-item>
-        <bs-navbar-item>
-          <a bsNavbarTrigger="/basic/containers">Containers</a>
-          <bs-navbar-dropdown>
-            <bs-navbar-item>
-              <a [routerLink]='["/basic", "containers", "grid"]'>Grid</a>
-            </bs-navbar-item>
-            <bs-navbar-item>
-              <a [routerLink]='["/basic", "containers", "card"]'>Card</a>
-            </bs-navbar-item>
-            <bs-navbar-item>
-              <a [routerLink]='["/basic", "containers", "accordion"]'>Accordion</a>
-            </bs-navbar-item>
-            <bs-navbar-item>
-              <a [routerLink]='["/basic", "containers", "tab-control"]'>Tab control</a>
-            </bs-navbar-item>
-          </bs-navbar-dropdown>
-        </bs-navbar-item>
-        <bs-navbar-item>
-          <a [routerLink]='["/basic", "rating"]'>Rating</a>
-        </bs-navbar-item>
-        <bs-navbar-item>
-          <a [routerLink]='["/basic", "badge"]'>Badge</a>
-        </bs-navbar-item>
-        <bs-navbar-item>
-          <a [routerLink]='["/basic", "breadcrumb"]'>Breadcrumb</a>
-        </bs-navbar-item>
-        <bs-navbar-item>
-          <a [routerLink]='["/basic", "button-group"]'>Button group</a>
-        </bs-navbar-item>
-        <bs-navbar-item>
-          <a [routerLink]='["/basic", "button-type"]'>Button type</a>
-        </bs-navbar-item>
-        <bs-navbar-item>
-          <a [routerLink]='["/basic", "calendar"]'>Calendar</a>
-        </bs-navbar-item>
-        <bs-navbar-item>
-          <a [routerLink]='["/basic", "marquee"]'>Marquee</a>
-        </bs-navbar-item>
-        <bs-navbar-item>
-          <a [routerLink]='["/basic", "list-group"]'>List group</a>
-        </bs-navbar-item>
-        <bs-navbar-item>
-          <a [routerLink]='["/basic", "treeview"]'>Treeview</a>
-        </bs-navbar-item>
-        <bs-navbar-item>
-          <a [routerLink]='["/basic", "tree-select"]'>Tree select</a>
-        </bs-navbar-item>
-        <bs-navbar-item>
-          <a [routerLink]='["/basic", "table"]'>Table</a>
-        </bs-navbar-item>
-        <bs-navbar-item>
-          <a [routerLink]='["/basic", "carousel"]'>Carousel</a>
-        </bs-navbar-item>
-        <bs-navbar-item>
-          <a [routerLink]='["/basic", "close"]'>Close</a>
-        </bs-navbar-item>
-        <bs-navbar-item>
-          <a [routerLink]='["/basic", "pagination"]'>Pagination</a>
-        </bs-navbar-item>
-        <bs-navbar-item>
-          <a [routerLink]='["/basic", "placeholder"]'>Placeholder</a>
-        </bs-navbar-item>
-        <bs-navbar-item>
-          <a [routerLink]='["/basic", "spinner"]'>Spinner</a>
-        </bs-navbar-item>
-        <bs-navbar-item>
-          <a [routerLink]='["/basic", "color-picker"]'>Color picker</a>
-        </bs-navbar-item>
-        <bs-navbar-item>
-          <a [routerLink]='["/basic", "progress-bar"]'>Progress bar</a>
-        </bs-navbar-item>
-        <hr bsDropdownDivider>
-        <bs-navbar-item>
-          <a [routerLink]='["/basic", "for-directive"]'>For directive</a>
-        </bs-navbar-item>
-        <bs-navbar-item>
-          <a [routerLink]='["/basic", "icon"]'>Icon</a>
-        </bs-navbar-item>
+
+  <bs-navbar-item>
+    <a [routerLink]='["/"]' [routerLinkActiveOptions]="{exact: true}">Home</a>
+  </bs-navbar-item>
+
+  <bs-navbar-dropdown [label]="'Basic'">
+    <bs-dropdown-menu>
+      <li bsDropdownItem><a [routerLink]='["/basic", "alert"]'>Alert</a></li>
+      <bs-navbar-dropdown [label]="'Forms'">
+        <bs-dropdown-menu>
+          <li bsDropdownItem><a [routerLink]='["/basic", "forms", "floating-labels"]'>Floating labels</a></li>
+          <li bsDropdownItem><a [routerLink]='["/basic", "forms", "input-group"]'>Input group</a></li>
+          <li bsDropdownItem><a [routerLink]='["/basic", "forms", "multi-range"]'>Multi-range</a></li>
+          <li bsDropdownItem><a [routerLink]='["/basic", "forms", "range"]'>Range</a></li>
+          <li bsDropdownItem><a [routerLink]='["/basic", "forms", "select"]'>Select</a></li>
+          <li bsDropdownItem><a [routerLink]='["/basic", "forms", "radio"]'>Radio</a></li>
+          <li bsDropdownItem><a [routerLink]='["/basic", "forms", "checkbox"]'>Checkbox</a></li>
+          <li bsDropdownItem><a [routerLink]='["/basic", "forms", "datepicker"]'>Datepicker</a></li>
+          <li bsDropdownItem><a [routerLink]='["/basic", "forms", "timepicker"]'>Timepicker</a></li>
+          <li bsDropdownItem><a [routerLink]='["/basic", "forms", "datetime-picker"]'>DateTime picker</a></li>
+        </bs-dropdown-menu>
       </bs-navbar-dropdown>
-    </bs-navbar-item>
-    <bs-navbar-item>
-      <a bsNavbarTrigger="/overlays">Overlays</a>
-      <bs-navbar-dropdown>
-        <bs-navbar-item>
-          <a [routerLink]='["/overlays", "modals"]'>Modals</a>
-        </bs-navbar-item>
-        <bs-navbar-item>
-          <a [routerLink]='["/overlays", "offcanvas"]'>Offcanvas</a>
-        </bs-navbar-item>
-        <bs-navbar-item>
-          <a [routerLink]='["/overlays", "tooltip"]'>Tooltip</a>
-        </bs-navbar-item>
-        <bs-navbar-item>
-          <a [routerLink]='["/overlays", "toast"]'>Toast</a>
-        </bs-navbar-item>
-        <bs-navbar-item>
-          <a [routerLink]='["/overlays", "popover"]'>Popover</a>
-        </bs-navbar-item>
-        <bs-navbar-item>
-          <a [routerLink]='["/overlays", "dropdown"]'>Dropdown</a>
-        </bs-navbar-item>
-        <bs-navbar-item>
-          <a [routerLink]='["/overlays", "typeahead"]'>Typeahead</a>
-        </bs-navbar-item>
-        <bs-navbar-item>
-          <a [routerLink]='["/overlays", "context-menu"]'>Context menu</a>
-        </bs-navbar-item>
-        <bs-navbar-item>
-          <a [routerLink]='["/overlays", "shell"]'>Shell</a>
-        </bs-navbar-item>
-        <bs-navbar-item>
-          <a [routerLink]='["/overlays", "dropdown-wc"]'>Dropdown menu (WC)</a>
-        </bs-navbar-item>
-        <bs-navbar-item>
-          <a [routerLink]='["/overlays", "navbar-wc"]'>Navbar (WC)</a>
-        </bs-navbar-item>
+      <bs-navbar-dropdown [label]="'Containers'">
+        <bs-dropdown-menu>
+          <li bsDropdownItem><a [routerLink]='["/basic", "containers", "grid"]'>Grid</a></li>
+          <li bsDropdownItem><a [routerLink]='["/basic", "containers", "card"]'>Card</a></li>
+          <li bsDropdownItem><a [routerLink]='["/basic", "containers", "accordion"]'>Accordion</a></li>
+          <li bsDropdownItem><a [routerLink]='["/basic", "containers", "tab-control"]'>Tab control</a></li>
+        </bs-dropdown-menu>
       </bs-navbar-dropdown>
-    </bs-navbar-item>
-    <bs-navbar-item>
-      <a bsNavbarTrigger="/advanced">Advanced</a>
-      <bs-navbar-dropdown>
-        <bs-navbar-item>
-          <a [routerLink]='["/advanced", "copy"]'>Copy</a>
-        </bs-navbar-item>
-        <bs-navbar-item>
-          <a [routerLink]='["/advanced", "code-snippet"]'>Code snippet</a>
-        </bs-navbar-item>
-        <bs-navbar-item>
-          <a bsNavbarTrigger="/advanced/pipes">Pipes</a>
-          <bs-navbar-dropdown>
-            <bs-navbar-item>
-              <a [routerLink]='["/advanced", "pipes", "trust-html"]'>Trust-html</a>
-            </bs-navbar-item>
-            <bs-navbar-item>
-              <a [routerLink]='["/advanced", "pipes", "split-string"]'>Split-string</a>
-            </bs-navbar-item>
-            <bs-navbar-item>
-              <a [routerLink]='["/advanced", "pipes", "linify"]'>Linify</a>
-            </bs-navbar-item>
-            <bs-navbar-item>
-              <a [routerLink]='["/advanced", "pipes", "slugify"]'>Slugify</a>
-            </bs-navbar-item>
-            <bs-navbar-item>
-              <a [routerLink]='["/advanced", "pipes", "word-count"]'>Word-count</a>
-            </bs-navbar-item>
-            <bs-navbar-item>
-              <a [routerLink]='["/advanced", "pipes", "font-color"]'>Font-color</a>
-            </bs-navbar-item>
-            <bs-navbar-item>
-              <a [routerLink]='["/advanced", "pipes", "has-property"]'>Has-property</a>
-            </bs-navbar-item>
-          </bs-navbar-dropdown>
-        </bs-navbar-item>
-        <bs-navbar-item>
-          <a [routerLink]='["/advanced", "toggle-buttons"]'>Toggle buttons</a>
-        </bs-navbar-item>
-        <bs-navbar-item>
-          <a [routerLink]='["/advanced", "sticky-footer"]'>Sticky footer</a>
-        </bs-navbar-item>
-        <bs-navbar-item>
-          <a [routerLink]='["/advanced", "autofocus"]'>Autofocus</a>
-        </bs-navbar-item>
-        <bs-navbar-item>
-          <a [routerLink]='["/advanced", "track-by"]'>TrackBy</a>
-        </bs-navbar-item>
-        <bs-navbar-item>
-          <a [routerLink]='["/advanced", "splitter"]'>Splitter</a>
-        </bs-navbar-item>
-        <bs-navbar-item>
-          <a [routerLink]='["/advanced", "async-host-binding"]'>Async HostBinding</a>
-        </bs-navbar-item>
-        <bs-navbar-item>
-          <a [routerLink]='["/advanced", "instance-of"]'>Instance of</a>
-        </bs-navbar-item>
-        <bs-navbar-item>
-          <a [routerLink]='["/advanced", "is-interface"]'>Is interface</a>
-        </bs-navbar-item>
-        <bs-navbar-item>
-          <a [routerLink]='["/advanced", "resizable"]'>Resizable</a>
-        </bs-navbar-item>
-        <bs-navbar-item>
-          <a [routerLink]='["/advanced", "ordinal-number"]'>Ordinal numbers</a>
-        </bs-navbar-item>
-        <bs-navbar-item>
-          <a [routerLink]='["/advanced", "markdown"]'>Markdown</a>
-        </bs-navbar-item>
-        <bs-navbar-item>
-          <a [routerLink]='["/advanced", "parallax"]'>Parallax</a>
-        </bs-navbar-item>
-        <bs-navbar-item>
-          <a [routerLink]='["/advanced", "priority-nav"]'>Priority navigation</a>
-        </bs-navbar-item>
-        <bs-navbar-item>
-          <a [routerLink]='["/advanced", "scrollspy"]'>Scrollspy</a>
-        </bs-navbar-item>
-        <bs-navbar-item>
-          <a [routerLink]='["/advanced", "file-upload"]'>File upload</a>
-        </bs-navbar-item>
-        <bs-navbar-item>
-          <a [routerLink]='["/advanced", "signature-pad"]'>Signature pad</a>
-        </bs-navbar-item>
-        <bs-navbar-item>
-          <a [routerLink]='["/advanced", "lazy-loading-components"]'>Lazy-loading components</a>
-        </bs-navbar-item>
-        <bs-navbar-item>
-          <a [routerLink]='["/advanced", "user-agent"]'>User-agent</a>
-        </bs-navbar-item>
-        <bs-navbar-item>
-          <a [routerLink]='["/advanced", "navigation-lock"]'>Navigation lock</a>
-        </bs-navbar-item>
-        <bs-navbar-item>
-          <a [routerLink]='["/advanced", "navigation-lock-master-detail"]'>Navigation lock (master/detail)</a>
-        </bs-navbar-item>
+      <li bsDropdownItem><a [routerLink]='["/basic", "rating"]'>Rating</a></li>
+      <li bsDropdownItem><a [routerLink]='["/basic", "badge"]'>Badge</a></li>
+      <li bsDropdownItem><a [routerLink]='["/basic", "breadcrumb"]'>Breadcrumb</a></li>
+      <li bsDropdownItem><a [routerLink]='["/basic", "button-group"]'>Button group</a></li>
+      <li bsDropdownItem><a [routerLink]='["/basic", "button-type"]'>Button type</a></li>
+      <li bsDropdownItem><a [routerLink]='["/basic", "calendar"]'>Calendar</a></li>
+      <li bsDropdownItem><a [routerLink]='["/basic", "marquee"]'>Marquee</a></li>
+      <li bsDropdownItem><a [routerLink]='["/basic", "list-group"]'>List group</a></li>
+      <li bsDropdownItem><a [routerLink]='["/basic", "treeview"]'>Treeview</a></li>
+      <li bsDropdownItem><a [routerLink]='["/basic", "tree-select"]'>Tree select</a></li>
+      <li bsDropdownItem><a [routerLink]='["/basic", "table"]'>Table</a></li>
+      <li bsDropdownItem><a [routerLink]='["/basic", "carousel"]'>Carousel</a></li>
+      <li bsDropdownItem><a [routerLink]='["/basic", "close"]'>Close</a></li>
+      <li bsDropdownItem><a [routerLink]='["/basic", "pagination"]'>Pagination</a></li>
+      <li bsDropdownItem><a [routerLink]='["/basic", "placeholder"]'>Placeholder</a></li>
+      <li bsDropdownItem><a [routerLink]='["/basic", "spinner"]'>Spinner</a></li>
+      <li bsDropdownItem><a [routerLink]='["/basic", "color-picker"]'>Color picker</a></li>
+      <li bsDropdownItem><a [routerLink]='["/basic", "progress-bar"]'>Progress bar</a></li>
+      <li bsDropdownDivider></li>
+      <li bsDropdownItem><a [routerLink]='["/basic", "for-directive"]'>For directive</a></li>
+      <li bsDropdownItem><a [routerLink]='["/basic", "icon"]'>Icon</a></li>
+    </bs-dropdown-menu>
+  </bs-navbar-dropdown>
+
+  <bs-navbar-dropdown [label]="'Overlays'">
+    <bs-dropdown-menu>
+      <li bsDropdownItem><a [routerLink]='["/overlays", "modals"]'>Modals</a></li>
+      <li bsDropdownItem><a [routerLink]='["/overlays", "offcanvas"]'>Offcanvas</a></li>
+      <li bsDropdownItem><a [routerLink]='["/overlays", "tooltip"]'>Tooltip</a></li>
+      <li bsDropdownItem><a [routerLink]='["/overlays", "toast"]'>Toast</a></li>
+      <li bsDropdownItem><a [routerLink]='["/overlays", "popover"]'>Popover</a></li>
+      <li bsDropdownItem><a [routerLink]='["/overlays", "dropdown"]'>Dropdown</a></li>
+      <li bsDropdownItem><a [routerLink]='["/overlays", "typeahead"]'>Typeahead</a></li>
+      <li bsDropdownItem><a [routerLink]='["/overlays", "context-menu"]'>Context menu</a></li>
+      <li bsDropdownItem><a [routerLink]='["/overlays", "shell"]'>Shell</a></li>
+      <li bsDropdownItem><a [routerLink]='["/overlays", "dropdown-wc"]'>Dropdown menu (WC)</a></li>
+      <li bsDropdownItem><a [routerLink]='["/overlays", "navbar"]'>Navbar</a></li>
+    </bs-dropdown-menu>
+  </bs-navbar-dropdown>
+
+  <bs-navbar-dropdown [label]="'Advanced'">
+    <bs-dropdown-menu>
+      <li bsDropdownItem><a [routerLink]='["/advanced", "copy"]'>Copy</a></li>
+      <li bsDropdownItem><a [routerLink]='["/advanced", "code-snippet"]'>Code snippet</a></li>
+      <bs-navbar-dropdown [label]="'Pipes'">
+        <bs-dropdown-menu>
+          <li bsDropdownItem><a [routerLink]='["/advanced", "pipes", "trust-html"]'>Trust-html</a></li>
+          <li bsDropdownItem><a [routerLink]='["/advanced", "pipes", "split-string"]'>Split-string</a></li>
+          <li bsDropdownItem><a [routerLink]='["/advanced", "pipes", "linify"]'>Linify</a></li>
+          <li bsDropdownItem><a [routerLink]='["/advanced", "pipes", "slugify"]'>Slugify</a></li>
+          <li bsDropdownItem><a [routerLink]='["/advanced", "pipes", "word-count"]'>Word-count</a></li>
+          <li bsDropdownItem><a [routerLink]='["/advanced", "pipes", "font-color"]'>Font-color</a></li>
+          <li bsDropdownItem><a [routerLink]='["/advanced", "pipes", "has-property"]'>Has-property</a></li>
+        </bs-dropdown-menu>
       </bs-navbar-dropdown>
-    </bs-navbar-item>
-    <bs-navbar-item>
-      <a bsNavbarTrigger="/enterprise">Enterprise</a>
-      <bs-navbar-dropdown>
-        <bs-navbar-item>
-          <a [routerLink]='["/enterprise", "scheduler"]'>Scheduler</a>
-        </bs-navbar-item>
-        <bs-navbar-item>
-          <a [routerLink]='["/enterprise", "timeline"]'>Timeline</a>
-        </bs-navbar-item>
-        <bs-navbar-item>
-          <a [routerLink]='["/enterprise", "dock"]'>Dock</a>
-        </bs-navbar-item>
-        <bs-navbar-item>
-          <a [routerLink]='["/enterprise", "ribbon"]'>Ribbon</a>
-        </bs-navbar-item>
-        <bs-navbar-item>
-          <a [routerLink]='["/enterprise", "tile-manager"]'>Tile manager</a>
-        </bs-navbar-item>
-        <bs-navbar-item>
-          <a [routerLink]='["/enterprise", "datatables"]'>Datatables</a>
-        </bs-navbar-item>
-        <bs-navbar-item>
-          <a [routerLink]='["/enterprise", "file-manager"]'>File manager</a>
-        </bs-navbar-item>
-        <bs-navbar-item>
-          <a [routerLink]='["/enterprise", "query-builder"]'>Query builder</a>
-        </bs-navbar-item>
-        <bs-navbar-item>
-          <a [routerLink]='["/enterprise", "otp-input"]'>OTP input</a>
-        </bs-navbar-item>
+      <li bsDropdownItem><a [routerLink]='["/advanced", "toggle-buttons"]'>Toggle buttons</a></li>
+      <li bsDropdownItem><a [routerLink]='["/advanced", "sticky-footer"]'>Sticky footer</a></li>
+      <li bsDropdownItem><a [routerLink]='["/advanced", "autofocus"]'>Autofocus</a></li>
+      <li bsDropdownItem><a [routerLink]='["/advanced", "track-by"]'>TrackBy</a></li>
+      <li bsDropdownItem><a [routerLink]='["/advanced", "splitter"]'>Splitter</a></li>
+      <li bsDropdownItem><a [routerLink]='["/advanced", "async-host-binding"]'>Async HostBinding</a></li>
+      <li bsDropdownItem><a [routerLink]='["/advanced", "instance-of"]'>Instance of</a></li>
+      <li bsDropdownItem><a [routerLink]='["/advanced", "is-interface"]'>Is interface</a></li>
+      <li bsDropdownItem><a [routerLink]='["/advanced", "resizable"]'>Resizable</a></li>
+      <li bsDropdownItem><a [routerLink]='["/advanced", "ordinal-number"]'>Ordinal numbers</a></li>
+      <li bsDropdownItem><a [routerLink]='["/advanced", "markdown"]'>Markdown</a></li>
+      <li bsDropdownItem><a [routerLink]='["/advanced", "parallax"]'>Parallax</a></li>
+      <li bsDropdownItem><a [routerLink]='["/advanced", "priority-nav"]'>Priority navigation</a></li>
+      <li bsDropdownItem><a [routerLink]='["/advanced", "scrollspy"]'>Scrollspy</a></li>
+      <li bsDropdownItem><a [routerLink]='["/advanced", "file-upload"]'>File upload</a></li>
+      <li bsDropdownItem><a [routerLink]='["/advanced", "signature-pad"]'>Signature pad</a></li>
+      <li bsDropdownItem><a [routerLink]='["/advanced", "lazy-loading-components"]'>Lazy-loading components</a></li>
+      <li bsDropdownItem><a [routerLink]='["/advanced", "user-agent"]'>User-agent</a></li>
+      <li bsDropdownItem><a [routerLink]='["/advanced", "navigation-lock"]'>Navigation lock</a></li>
+      <li bsDropdownItem><a [routerLink]='["/advanced", "navigation-lock-master-detail"]'>Navigation lock (master/detail)</a></li>
+    </bs-dropdown-menu>
+  </bs-navbar-dropdown>
+
+  <bs-navbar-dropdown [label]="'Enterprise'">
+    <bs-dropdown-menu>
+      <li bsDropdownItem><a [routerLink]='["/enterprise", "scheduler"]'>Scheduler</a></li>
+      <li bsDropdownItem><a [routerLink]='["/enterprise", "timeline"]'>Timeline</a></li>
+      <li bsDropdownItem><a [routerLink]='["/enterprise", "dock"]'>Dock</a></li>
+      <li bsDropdownItem><a [routerLink]='["/enterprise", "ribbon"]'>Ribbon</a></li>
+      <li bsDropdownItem><a [routerLink]='["/enterprise", "tile-manager"]'>Tile manager</a></li>
+      <li bsDropdownItem><a [routerLink]='["/enterprise", "datatables"]'>Datatables</a></li>
+      <li bsDropdownItem><a [routerLink]='["/enterprise", "file-manager"]'>File manager</a></li>
+      <li bsDropdownItem><a [routerLink]='["/enterprise", "query-builder"]'>Query builder</a></li>
+      <li bsDropdownItem><a [routerLink]='["/enterprise", "otp-input"]'>OTP input</a></li>
+    </bs-dropdown-menu>
+  </bs-navbar-dropdown>
+
+  <bs-navbar-dropdown [label]="'Animations'">
+    <bs-dropdown-menu>
+      <li bsDropdownItem><a [routerLink]='["/animations", "slide-up-down"]'>Slide up/down</a></li>
+      <li bsDropdownItem><a [routerLink]='["/animations", "fade-in-out"]'>Fade in/out</a></li>
+      <li bsDropdownItem><a [routerLink]='["/animations", "color-transition"]'>Color transition</a></li>
+    </bs-dropdown-menu>
+  </bs-navbar-dropdown>
+
+  <bs-navbar-dropdown [label]="'Additional samples'">
+    <bs-dropdown-menu>
+      <li bsDropdownItem><a [routerLink]='["/additional-samples", "collapse"]'>Collapse</a></li>
+      <li bsDropdownItem><a [routerLink]='["/additional-samples", "focus-trap"]'>FocusTrap</a></li>
+      <li bsDropdownItem><a [routerLink]='["/additional-samples", "drag-drop"]'>Drag-drop</a></li>
+      <li bsDropdownItem><a [routerLink]='["/additional-samples", "tree-select-drag-drop"]'>Tree-select drag-drop</a></li>
+      <li bsDropdownItem><a [routerLink]='["/additional-samples", "qr-code"]'>QR-code viewer</a></li>
+      <li bsDropdownItem><a [routerLink]='["/additional-samples", "swiper"]'>Swiper</a></li>
+      <li bsDropdownItem><a [routerLink]='["/additional-samples", "stepper"]'>Stepper</a></li>
+      <li bsDropdownItem><a [routerLink]='["/additional-samples", "theming"]'>Theming</a></li>
+      <bs-navbar-dropdown [label]="'Anchor scrolling'">
+        <bs-dropdown-menu>
+          <li bsDropdownItem><a [routerLink]='["/additional-samples", "anchor-scrolling"]' fragment="section1">Section 1</a></li>
+          <li bsDropdownItem><a [routerLink]='["/additional-samples", "anchor-scrolling"]' fragment="section2">Section 2</a></li>
+          <li bsDropdownItem><a [routerLink]='["/additional-samples", "anchor-scrolling"]' fragment="section3">Section 3</a></li>
+          <li bsDropdownItem><a [routerLink]='["/additional-samples", "anchor-scrolling"]' fragment="section4">Section 4</a></li>
+          <li bsDropdownItem><a [routerLink]='["/additional-samples", "anchor-scrolling"]' fragment="section5">Section 5</a></li>
+        </bs-dropdown-menu>
       </bs-navbar-dropdown>
-    </bs-navbar-item>
-    <bs-navbar-item>
-      <a bsNavbarTrigger="/animations">Animations</a>
-      <bs-navbar-dropdown>
-        <bs-navbar-item>
-          <a [routerLink]='["/animations", "slide-up-down"]'>Slide up/down</a>
-        </bs-navbar-item>
-        <bs-navbar-item>
-          <a [routerLink]='["/animations", "fade-in-out"]'>Fade in/out</a>
-        </bs-navbar-item>
-        <bs-navbar-item>
-          <a [routerLink]='["/animations", "color-transition"]'>Color transition</a>
-        </bs-navbar-item>
-      </bs-navbar-dropdown>
-    </bs-navbar-item>
-    <bs-navbar-item>
-      <a bsNavbarTrigger="/additional-samples">Additional samples</a>
-      <bs-navbar-dropdown>
-        <bs-navbar-item>
-          <a [routerLink]='["/additional-samples", "collapse"]'>Collapse</a>
-        </bs-navbar-item>
-        <bs-navbar-item>
-          <a [routerLink]='["/additional-samples", "focus-trap"]'>FocusTrap</a>
-        </bs-navbar-item>
-        <bs-navbar-item>
-          <a [routerLink]='["/additional-samples", "drag-drop"]'>Drag-drop</a>
-        </bs-navbar-item>
-        <bs-navbar-item>
-          <a [routerLink]='["/additional-samples", "tree-select-drag-drop"]'>Tree-select drag-drop</a>
-        </bs-navbar-item>
-        <bs-navbar-item>
-          <a [routerLink]='["/additional-samples", "qr-code"]'>QR-code viewer</a>
-        </bs-navbar-item>
-        <bs-navbar-item>
-          <a [routerLink]='["/additional-samples", "swiper"]'>Swiper</a>
-        </bs-navbar-item>
-        <bs-navbar-item>
-          <a [routerLink]='["/additional-samples", "stepper"]'>Stepper</a>
-        </bs-navbar-item>
-        <bs-navbar-item>
-          <a [routerLink]='["/additional-samples", "theming"]'>Theming</a>
-        </bs-navbar-item>
-        <bs-navbar-item>
-          <a bsNavbarTrigger="/additional-samples/anchor-scrolling">Anchor scrolling</a>
-          <bs-navbar-dropdown>
-            <bs-navbar-item>
-              <a [routerLink]='["/additional-samples", "anchor-scrolling"]' fragment="section1">Section 1</a>
-            </bs-navbar-item>
-            <bs-navbar-item>
-              <a [routerLink]='["/additional-samples", "anchor-scrolling"]' fragment="section2">Section 2</a>
-            </bs-navbar-item>
-            <bs-navbar-item>
-              <a [routerLink]='["/additional-samples", "anchor-scrolling"]' fragment="section3">Section 3</a>
-            </bs-navbar-item>
-            <bs-navbar-item>
-              <a [routerLink]='["/additional-samples", "anchor-scrolling"]' fragment="section4">Section 4</a>
-            </bs-navbar-item>
-            <bs-navbar-item>
-              <a [routerLink]='["/additional-samples", "anchor-scrolling"]' fragment="section5">Section 5</a>
-            </bs-navbar-item>
-          </bs-navbar-dropdown>
-        </bs-navbar-item>
-      </bs-navbar-dropdown>
-    </bs-navbar-item>
-  </bs-navbar-nav>
-  <bs-navbar-nav class="me-0">
-    <bs-navbar-item>
-      <demo-theme-toggle />
-    </bs-navbar-item>
-    <bs-navbar-item>
-      <demo-framework-links />
-    </bs-navbar-item>
-    <bs-navbar-item>
-      <a class="text-nowrap d-inline-flex align-items-center" href="https://github.com/MintPlayer/mintplayer-ng-bootstrap" title="@mintplayer/ng-bootstrap on GitHub">
-        <span class="me-2 align-middle">{{ versionInfo }}</span>
-        <svg class="github-icon" viewBox="0 0 16 16" aria-hidden="true">
-          <path fill="currentColor" d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0 0 16 8c0-4.42-3.58-8-8-8Z" />
-        </svg>
-      </a>
-    </bs-navbar-item>
-  </bs-navbar-nav>
+    </bs-dropdown-menu>
+  </bs-navbar-dropdown>
+
+  <bs-navbar-item slot="end">
+    <demo-theme-toggle />
+  </bs-navbar-item>
+  <bs-navbar-item slot="end">
+    <demo-framework-links />
+  </bs-navbar-item>
+  <bs-navbar-item slot="end">
+    <a class="text-nowrap d-inline-flex align-items-center" href="https://github.com/MintPlayer/mintplayer-ng-bootstrap" title="@mintplayer/ng-bootstrap on GitHub">
+      <span class="me-2 align-middle">{{ versionInfo }}</span>
+      <svg class="github-icon" viewBox="0 0 16 16" aria-hidden="true">
+        <path fill="currentColor" d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0 0 16 8c0-4.42-3.58-8-8-8Z" />
+      </svg>
+    </a>
+  </bs-navbar-item>
 </bs-navbar>
-<!-- class="position-relative" -->
-<div [bsNavbarContent]="nav" class="flex-grow-1" style="padding-top:10px">
+<div class="flex-grow-1" style="padding-top:10px">
   <router-outlet></router-outlet>
 </div>

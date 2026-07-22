@@ -17,7 +17,7 @@ const MENU_SOURCE = `const [selected, setSelected] = useState<string>('—');
 >
   <BsDropdownHeader>Actions</BsDropdownHeader>
   <BsDropdownItem value="new">New file</BsDropdownItem>
-  <BsDropdownItem value="open" selected>Open…</BsDropdownItem>
+  <BsDropdownItem value="open" active>Open…</BsDropdownItem>
   <BsDropdownItem value="save">Save</BsDropdownItem>
   <BsDropdownDivider />
   <BsDropdownItem value="delete" disabled>Delete</BsDropdownItem>
@@ -47,7 +47,7 @@ export function DropdownMenuPage() {
         >
           <BsDropdownHeader>Actions</BsDropdownHeader>
           <BsDropdownItem value="new">New file</BsDropdownItem>
-          <BsDropdownItem value="open" selected>
+          <BsDropdownItem value="open" active>
             Open…
           </BsDropdownItem>
           <BsDropdownItem value="save">Save</BsDropdownItem>

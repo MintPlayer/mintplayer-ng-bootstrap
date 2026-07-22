@@ -1,22 +1,19 @@
-import { AfterContentChecked, Component, ElementRef, inject, input, ChangeDetectionStrategy} from '@angular/core';
+import { ChangeDetectionStrategy, Component, CUSTOM_ELEMENTS_SCHEMA } from '@angular/core';
 
+/**
+ * `<bs-navbar-brand>` — Angular wrapper around `<mp-navbar-brand>`.
+ *
+ * Project an `<a routerLink>` / text as the brand. The host sets
+ * `slot="brand"` so the wrapper element lands in `<mp-navbar>`'s `brand` slot
+ * (mirrors `BsShellSidebarDirective`, which sets `slot="sidebar"`).
+ */
 @Component({
   selector: 'bs-navbar-brand',
-  templateUrl: './navbar-brand.component.html',
-  styleUrls: ['./navbar-brand.component.scss'],
+  template: '<mp-navbar-brand><ng-content></ng-content></mp-navbar-brand>',
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: {
-    '[class.mx-auto]': 'true',
+    '[attr.slot]': "'brand'",
   },
+  schemas: [CUSTOM_ELEMENTS_SCHEMA],
 })
-export class BsNavbarBrandComponent implements AfterContentChecked {
-  private element = inject(ElementRef);
-  readonly routerLink = input<any[]>([]);
-
-  ngAfterContentChecked() {
-    const anchor = this.element.nativeElement.querySelector('a');
-    if (anchor) {
-      anchor.classList.add('nav-link');
-    }
-  }
-}
+export class BsNavbarBrandComponent {}
