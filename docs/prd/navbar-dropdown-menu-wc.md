@@ -366,3 +366,5 @@ User requirements added: consumers must still be able to supply their **own** to
 - **Angular sugar:** a `[bsNavbarToggler]` directive sets `slot="toggler"` on its host (no leaked slot names, per the re-alignment principle). The standalone `@mintplayer/ng-bootstrap/navbar-toggler` lib stays untouched for standalone use — and must NOT be slotted as-is (it renders a `<button>`).
 
 **PR target resolved (user): Phase 7 ships in PR #390.**
+
+**Implemented (2026-07-22):** all of the above shipped — `bs-navbar-nav [align]`, context-aware `bs-navbar-item`, menu-owning `bs-navbar-dropdown`, the animated slot+fallback toggler, `[bsNavbarToggler]`, `[bsNavbarContent]` — with the demo fully migrated to the re-aligned API. See the plan's "Phase 7 — EXECUTED" section for commits and deviations (notably: the demo now hydrates — `provideClientHydration(withEventReplay())` — so `bsNavbarContent` must remove its own SSR-inline approximation before measuring the author baseline; and `bsNavbarTrigger` was deliberately not restored).

@@ -86,6 +86,29 @@ test.describe('navbar — wide mode (JS enabled)', () => {
       .toBe(true);
   });
 
+  test('bs-navbar-nav groups flatten into the nav row; the end group right-aligns', async ({ page }) => {
+    // The grouping container is display:contents, so its items must be REAL
+    // flex children of the WC's .navbar-nav (same row as any bare item), and
+    // align="end" must land the group in the right-pushed end list — the
+    // mechanism the Phase-7 spike validated, locked in against the live app.
+    const info = await page.evaluate(() => {
+      const home = [...document.querySelectorAll('mp-navbar-item a')].find((a) => a.textContent === 'Home')!;
+      const groups = [...document.querySelectorAll('bs-navbar-nav')];
+      const endItem = document.querySelector('bs-navbar-nav[slot="end"] mp-navbar-item')!;
+      const hr = home.getBoundingClientRect();
+      const er = endItem.getBoundingClientRect();
+      return {
+        displays: groups.map((g) => getComputedStyle(g).display),
+        rowAligned: Math.abs(hr.y + hr.height / 2 - (er.y + er.height / 2)) < 2,
+        endX: er.x,
+        vw: window.innerWidth,
+      };
+    });
+    expect(info.displays).toEqual(['contents', 'contents']);
+    expect(info.rowAligned).toBe(true); // grouped items are flex peers of bare items
+    expect(info.endX).toBeGreaterThan(info.vw / 2); // end group pushed right
+  });
+
   test('a first-level dropdown opens as an absolute overlay below the trigger', async ({ page }) => {
     await trigger(page, 'Basic').click();
     const info = await panelInfo(page, 'Basic');

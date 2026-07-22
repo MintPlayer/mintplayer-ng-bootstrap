@@ -241,3 +241,13 @@ Validate `display:contents` on a slotted wrapper flattening its children into th
 
 ### Verification
 `nx build` the 4 libs + 3 demos; WC unit tests green (Step 3 touches `mp-navbar`'s render — update any toggler-icon assertions); regenerated SSR chrome (aggregate) — verify the DSD toggler morphs under no-JS manually or via the JS-enabled spec; navbar JS + no-JS e2e green chromium + firefox; new grouping/alignment + crossed-toggler e2e green.
+
+### Phase 7 — EXECUTED (2026-07-22)
+
+All five steps implemented and committed milestone-by-milestone on `feat/navbar-dropdown-menu-wc` (PR #390): `57721f6a` (bs-navbar-nav), `9652ab00` (context-aware item + menu-owning dropdown + demo migration), `9f98b722` (animated toggler), `e99c0a1c` (bsNavbarContent). Deviations and discoveries vs the plan:
+
+- **Demo migration folded into step 2** (not step 5): `bs-navbar-dropdown` owning its menu is breaking, so `app.component.html` + the enterprise/navbar demo page (live demo + both code snippets) were rewritten in the same commit to keep every milestone green. Step 5 reduced to lock-in tests + full verification.
+- **`bsNavbarTrigger` not restored** (plan's own default): `bs-navbar-dropdown [label]` owns the trigger; a non-navigating trigger-anchor directive would have zero consumers.
+- **Hydration discovery:** `app.config.ts` now has `provideClientHydration(withEventReplay())` — the old "destructive bootstrap" note is outdated. Consequence for `bsNavbarContent`: the client REUSES the SSR element, so the directive's own server-side `padding-top: 58px` approximation is still inline when the client measures the author baseline — it must `removeStyle` before measuring or it double-counts (was: 58 + 70 = 128px). Fixed in `e99c0a1c`.
+- **Wedged-watcher incident (repeat of the known failure mode):** after the step-4 edits the SSR bundle was current (`padding-top: 58px` in the served HTML) while the browser bundle was stale (old CSS, no directive) — recovered by restarting the dev server, never `ng build`.
+- **e2e lock-in grew to 16 tests/browser (32 total):** added `bs-navbar-nav` grouping/alignment (display:contents flattening + end-group right-align, replacing the deleted throwaway spike as a permanent guard), hamburger→X morph (JS-enabled spec carries the visual assertion; computed styles are unreadable no-JS), `bsNavbarContent` live-height offset, dark-mode luminance retargeted to the bars.
