@@ -84,10 +84,11 @@ Branch B already built ~all of it (10 WCs + 3× wrappers + SSR injectors/generat
 3. ⬜ Deferred to Phase 1/5 (needs branch B present): re-confirm no-JS `:focus-within` reveal + `OverlayController` submenu + height cap with items as plain light-DOM `<li>` (branch B proved it with item WCs; low risk).
 4. **Exit gate met:** the chosen design renders correctly; it was a parity check, not a design fork. Throwaway spike files to delete before the PR.
 
-### Phase 1 — rebase branch B onto master
-1. Create the working branch off `master`; rebase/cherry-pick branch B's 8 commits.
-2. Resolve conflicts in `tsconfig.base.json` + the two `package.json`s (re-register navbar/dropdown-menu element + `/ssr` subpaths under the post-#383 export scheme; add the `@mintplayer/web-components`+`lit` peerDeps; inherit the Angular 22 versions).
-3. Green baseline (item WCs still present): `nx build mintplayer-web-components` + `nx build mintplayer-ng-bootstrap` + React/Vue builds; WC unit tests.
+### Phase 1 — rebase branch B onto master ✅ DONE (2026-07-22)
+1. ✅ Cherry-picked branch B's 8 commits (`b8a5ec3a`..`2ecaebb4`) onto `feat/navbar-dropdown-menu-wc`.
+2. ✅ Only conflicts were in `tsconfig.base.json` (two commits) — branch B's explicit `@mintplayer/ng-bootstrap/{dropdown-menu-wc,navbar-wc}` aliases, made redundant by master's post-#383 wildcard `@mintplayer/ng-bootstrap/*` → `./libs/mintplayer-ng-bootstrap/*` (kept the wildcard, dropped the explicit aliases). The `@mintplayer/web-components/*` wildcard likewise covers the new WC subpaths. No `package.json` conflicts arose.
+3. ✅ Green baseline (item WCs still present, `-wc-` selectors): `nx build mintplayer-web-components` (dropdown-menu 18 kB + navbar 25 kB emitted), `nx build mintplayer-ng-bootstrap` (all secondary entries), React + Vue builds, and **758/758 WC unit tests** all pass.
+   - ⚠️ Watch-item for Phase 3/5: verify the new libs' `package.json` declare `@mintplayer/web-components` + `lit` as peerDeps (master's rule) before publish; the local build doesn't exercise that.
 
 ### Phase 2 — items → directives + `::slotted` (D1 + D2)
 1. Add `::slotted(.dropdown-item / .dropdown-divider / .dropdown-header)` box rules (re-bound to `--bs-dropdown-*`) to `dropdown-menu.styles.scss`; `nx run mintplayer-web-components:codegen-wc`; regenerate dropdown DSD chrome.
