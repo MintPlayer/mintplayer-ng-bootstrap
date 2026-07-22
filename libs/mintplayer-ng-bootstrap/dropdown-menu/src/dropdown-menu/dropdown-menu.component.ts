@@ -1,5 +1,6 @@
 import { afterNextRender, ChangeDetectionStrategy, Component, computed, CUSTOM_ELEMENTS_SCHEMA, input, output, ViewEncapsulation } from '@angular/core';
 import type { DropdownMode, DropdownSelectEventDetail } from '@mintplayer/web-components/dropdown-menu';
+import { BS_DROPDOWN_MENU_CONTEXT } from '../tokens/menu-context.token';
 
 /**
  * `<bs-dropdown-menu>` — Angular wrapper around the `<mp-dropdown-menu>` web
@@ -28,6 +29,9 @@ import type { DropdownMode, DropdownSelectEventDetail } from '@mintplayer/web-co
   templateUrl: './dropdown-menu.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
   schemas: [CUSTOM_ELEMENTS_SCHEMA],
+  // Marks content authored between these tags as "inside a menu" so
+  // context-aware children (bs-navbar-item) render their dropdown-item shape.
+  providers: [{ provide: BS_DROPDOWN_MENU_CONTEXT, useValue: true }],
   // The COMPANION light-DOM sheet: the one thing the menu's shadow `::slotted`
   // rules cannot reach is a nested `<a>`/`<button>` inside an item. Ship it as an
   // un-encapsulated (global, class-scoped) rule so the link fills the padded item

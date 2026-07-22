@@ -5,10 +5,11 @@
   framework-agnostic <code>&lt;mp-navbar&gt;</code> web component. The bar
   chrome, the responsive collapse (a pure-CSS state machine), the hamburger
   toggle and the theme-aware styling all live in the WC. Mark the brand with
-  <code>bs-navbar-brand</code>, add <code>bs-navbar-item</code> links
-  (one <code>[active]</code>), open a <code>bs-navbar-dropdown</code> whose
-  panel is a <code>bs-dropdown-menu</code>, and push an item to the right
-  with <code>slot="end"</code>. Toggling the collapse fires
+  <code>bs-navbar-brand</code>, group entries in a <code>bs-navbar-nav</code>
+  (<code>align="end"</code> pushes a group to the far edge), and use
+  <code>bs-navbar-item</code> for every entry — directly in a group as a
+  nav-link, or inside a <code>bs-navbar-dropdown</code> as a menu item; the
+  same element adapts to where it is authored. Toggling the collapse fires
   <code>(expandedchange)</code>.
 </p>
 
@@ -20,24 +21,26 @@
       <a routerLink="/">MyApp</a>
     </bs-navbar-brand>
 
-    <bs-navbar-item [active]="true">
-      <a routerLink="/">Home</a>
-    </bs-navbar-item>
-    <bs-navbar-item>
-      <a routerLink="/about">About</a>
-    </bs-navbar-item>
+    <bs-navbar-nav>
+      <bs-navbar-item [active]="true">
+        <a routerLink="/">Home</a>
+      </bs-navbar-item>
+      <bs-navbar-item>
+        <a routerLink="/about">About</a>
+      </bs-navbar-item>
 
-    <bs-navbar-dropdown [label]="'Products'">
-      <bs-dropdown-menu>
-        <li bsDropdownItem><a routerLink="/products/widgets">Widgets</a></li>
-        <li bsDropdownItem><a routerLink="/products/gadgets">Gadgets</a></li>
-        <li bsDropdownItem><a routerLink="/products/gizmos">Gizmos</a></li>
-      </bs-dropdown-menu>
-    </bs-navbar-dropdown>
+      <bs-navbar-dropdown [label]="'Products'">
+        <bs-navbar-item><a routerLink="/products/widgets">Widgets</a></bs-navbar-item>
+        <bs-navbar-item><a routerLink="/products/gadgets">Gadgets</a></bs-navbar-item>
+        <bs-navbar-item><a routerLink="/products/gizmos">Gizmos</a></bs-navbar-item>
+      </bs-navbar-dropdown>
+    </bs-navbar-nav>
 
-    <bs-navbar-item slot="end">
-      <a routerLink="/sign-in">Sign in</a>
-    </bs-navbar-item>
+    <bs-navbar-nav align="end">
+      <bs-navbar-item>
+        <a routerLink="/sign-in">Sign in</a>
+      </bs-navbar-item>
+    </bs-navbar-nav>
   </bs-navbar>
 
   <p class="expanded-readout">

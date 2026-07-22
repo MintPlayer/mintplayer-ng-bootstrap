@@ -1,8 +1,8 @@
 /// <reference types="../types" />
 
 import { Component, inject, ChangeDetectionStrategy } from '@angular/core';
-import { BsNavbarComponent, BsNavbarDropdownComponent, BsNavbarItemComponent, BsNavbarBrandComponent } from '@mintplayer/ng-bootstrap/navbar';
-import { BsDropdownMenuComponent, BsDropdownItemDirective, BsDropdownDividerDirective } from '@mintplayer/ng-bootstrap/dropdown-menu';
+import { BsNavbarComponent, BsNavbarNavComponent, BsNavbarDropdownComponent, BsNavbarItemComponent, BsNavbarBrandComponent } from '@mintplayer/ng-bootstrap/navbar';
+import { BsDropdownDividerDirective } from '@mintplayer/ng-bootstrap/dropdown-menu';
 import { ViewportScroller } from '@angular/common';
 import { RouterLink, RouterOutlet } from '@angular/router';
 import { NavbarRouterLinkActiveDirective } from './directives/navbar-routerlink-active/navbar-router-link-active.directive';
@@ -14,7 +14,7 @@ import { FrameworkLinksComponent } from './components/framework-links/framework-
   selector: 'demo-bootstrap-root',
   templateUrl: './app.component.html',
   styleUrls: ['./app.component.scss'],
-  imports: [RouterOutlet, RouterLink, BsNavbarComponent, BsNavbarDropdownComponent, BsNavbarItemComponent, BsNavbarBrandComponent, BsDropdownMenuComponent, BsDropdownItemDirective, BsDropdownDividerDirective, NavbarRouterLinkActiveDirective, ThemeToggleComponent, FrameworkLinksComponent],
+  imports: [RouterOutlet, RouterLink, BsNavbarComponent, BsNavbarNavComponent, BsNavbarDropdownComponent, BsNavbarItemComponent, BsNavbarBrandComponent, BsDropdownDividerDirective, NavbarRouterLinkActiveDirective, ThemeToggleComponent, FrameworkLinksComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class AppComponent {

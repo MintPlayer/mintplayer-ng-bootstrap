@@ -6,8 +6,8 @@ import { RouterTestingModule } from '@angular/router/testing';
 import { MockComponent, MockDirective } from 'ng-mocks';
 import { AppComponent } from './app.component';
 import { BOOTSTRAP_VERSION } from './providers/bootstrap-version.provider';
-import { BsNavbarComponent, BsNavbarBrandComponent, BsNavbarDropdownComponent, BsNavbarItemComponent } from '@mintplayer/ng-bootstrap/navbar';
-import { BsDropdownMenuComponent, BsDropdownItemDirective, BsDropdownDividerDirective } from '@mintplayer/ng-bootstrap/dropdown-menu';
+import { BsNavbarComponent, BsNavbarNavComponent, BsNavbarBrandComponent, BsNavbarDropdownComponent, BsNavbarItemComponent } from '@mintplayer/ng-bootstrap/navbar';
+import { BsDropdownDividerDirective } from '@mintplayer/ng-bootstrap/dropdown-menu';
 
 describe('AppComponent', () => {
   beforeEach(async () => {
@@ -19,7 +19,7 @@ describe('AppComponent', () => {
         ]),
 
         // Mock dependencies
-        MockComponent(BsNavbarComponent), MockComponent(BsNavbarBrandComponent), MockComponent(BsNavbarDropdownComponent), MockComponent(BsNavbarItemComponent), MockComponent(BsDropdownMenuComponent), MockDirective(BsDropdownItemDirective), MockDirective(BsDropdownDividerDirective),
+        MockComponent(BsNavbarComponent), MockComponent(BsNavbarNavComponent), MockComponent(BsNavbarBrandComponent), MockComponent(BsNavbarDropdownComponent), MockComponent(BsNavbarItemComponent), MockDirective(BsDropdownDividerDirective),
 
         // Component to test (standalone)
         AppComponent,

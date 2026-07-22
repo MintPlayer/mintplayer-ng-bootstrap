@@ -3,11 +3,11 @@ import { RouterLink } from '@angular/router';
 import { BsCodeSnippetComponent } from '@mintplayer/ng-bootstrap/code-snippet';
 import {
   BsNavbarComponent,
+  BsNavbarNavComponent,
   BsNavbarItemComponent,
   BsNavbarBrandComponent,
   BsNavbarDropdownComponent,
 } from '@mintplayer/ng-bootstrap/navbar';
-import { BsDropdownMenuComponent, BsDropdownItemDirective } from '@mintplayer/ng-bootstrap/dropdown-menu';
 import type { NavbarExpandedChangeEventDetail } from '@mintplayer/web-components/navbar';
 import { dedent } from 'ts-dedent';
 
@@ -17,11 +17,10 @@ import { dedent } from 'ts-dedent';
     RouterLink,
     BsCodeSnippetComponent,
     BsNavbarComponent,
+    BsNavbarNavComponent,
     BsNavbarItemComponent,
     BsNavbarBrandComponent,
     BsNavbarDropdownComponent,
-    BsDropdownMenuComponent,
-    BsDropdownItemDirective,
   ],
   templateUrl: './navbar.component.html',
   styleUrl: './navbar.component.scss',
@@ -40,24 +39,26 @@ export class NavbarComponent {
         <a routerLink="/">MyApp</a>
       </bs-navbar-brand>
 
-      <bs-navbar-item [active]="true">
-        <a routerLink="/">Home</a>
-      </bs-navbar-item>
-      <bs-navbar-item>
-        <a routerLink="/about">About</a>
-      </bs-navbar-item>
+      <bs-navbar-nav>
+        <bs-navbar-item [active]="true">
+          <a routerLink="/">Home</a>
+        </bs-navbar-item>
+        <bs-navbar-item>
+          <a routerLink="/about">About</a>
+        </bs-navbar-item>
 
-      <bs-navbar-dropdown [label]="'Products'">
-        <bs-dropdown-menu>
-          <li bsDropdownItem><a routerLink="/products/widgets">Widgets</a></li>
-          <li bsDropdownItem><a routerLink="/products/gadgets">Gadgets</a></li>
-          <li bsDropdownItem><a routerLink="/products/gizmos">Gizmos</a></li>
-        </bs-dropdown-menu>
-      </bs-navbar-dropdown>
+        <bs-navbar-dropdown [label]="'Products'">
+          <bs-navbar-item><a routerLink="/products/widgets">Widgets</a></bs-navbar-item>
+          <bs-navbar-item><a routerLink="/products/gadgets">Gadgets</a></bs-navbar-item>
+          <bs-navbar-item><a routerLink="/products/gizmos">Gizmos</a></bs-navbar-item>
+        </bs-navbar-dropdown>
+      </bs-navbar-nav>
 
-      <bs-navbar-item slot="end">
-        <a routerLink="/sign-in">Sign in</a>
-      </bs-navbar-item>
+      <bs-navbar-nav align="end">
+        <bs-navbar-item>
+          <a routerLink="/sign-in">Sign in</a>
+        </bs-navbar-item>
+      </bs-navbar-nav>
     </bs-navbar>
   `;
 
@@ -66,11 +67,11 @@ export class NavbarComponent {
     import { RouterLink } from '@angular/router';
     import {
       BsNavbarComponent,
+      BsNavbarNavComponent,
       BsNavbarItemComponent,
       BsNavbarBrandComponent,
       BsNavbarDropdownComponent,
     } from '@mintplayer/ng-bootstrap/navbar';
-    import { BsDropdownMenuComponent, BsDropdownItemDirective } from '@mintplayer/ng-bootstrap/dropdown-menu';
     import type { NavbarExpandedChangeEventDetail } from '@mintplayer/web-components/navbar';
 
     @Component({
@@ -79,11 +80,10 @@ export class NavbarComponent {
       imports: [
         RouterLink,
         BsNavbarComponent,
+        BsNavbarNavComponent,
         BsNavbarItemComponent,
         BsNavbarBrandComponent,
         BsNavbarDropdownComponent,
-        BsDropdownMenuComponent,
-        BsDropdownItemDirective,
       ],
     })
     export class MyNavbarDemoComponent {
