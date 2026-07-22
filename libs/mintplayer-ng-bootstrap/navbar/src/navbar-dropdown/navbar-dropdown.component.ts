@@ -1,5 +1,7 @@
 import { NgTemplateOutlet } from '@angular/common';
-import { ChangeDetectionStrategy, Component, contentChild, CUSTOM_ELEMENTS_SCHEMA } from '@angular/core';
+import { ChangeDetectionStrategy, Component, contentChild, CUSTOM_ELEMENTS_SCHEMA, inject, signal } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { RouterLinkActive } from '@angular/router';
 import { BS_DROPDOWN_MENU_CONTEXT, BsDropdownMenuComponent } from '@mintplayer/ng-bootstrap/dropdown-menu';
 import { BsNavbarDropdownLabelDirective } from './navbar-dropdown-label.directive';
 
@@ -21,6 +23,15 @@ import { BsNavbarDropdownLabelDirective } from './navbar-dropdown-label.directiv
  * consumer template's nesting, not the projection site — the internally
  * rendered menu is invisible to projected children's injectors), so nested
  * `<bs-navbar-item>`s render their `.dropdown-item` shape.
+ *
+ * **Active-route trigger highlighting:** a `RouterLinkActive` host directive
+ * collects the projected descendant `routerLink`s; when any is active
+ * (non-exact — the whole subtree counts, like the legacy `[bsNavbarTrigger]`
+ * prefix match) the WC gets its `active` attribute, which recolors the
+ * shadow-rendered trigger (primary background for submenu triggers). Nested
+ * dropdowns each report their own subtree, so the full trigger chain of the
+ * active route highlights. Renders server-side, so it works with JS off.
+ *
  * Reveal/positioning and the no-JS `:focus-within` fallback all live in the WC.
  */
 @Component({
@@ -30,7 +41,20 @@ import { BsNavbarDropdownLabelDirective } from './navbar-dropdown-label.directiv
   schemas: [CUSTOM_ELEMENTS_SCHEMA],
   imports: [NgTemplateOutlet, BsDropdownMenuComponent],
   providers: [{ provide: BS_DROPDOWN_MENU_CONTEXT, useValue: true }],
+  hostDirectives: [RouterLinkActive],
 })
 export class BsNavbarDropdownComponent {
   protected readonly label = contentChild.required(BsNavbarDropdownLabelDirective);
+
+  /** A projected descendant link's route is active → highlight the trigger. */
+  protected readonly routeActive = signal(false);
+
+  constructor() {
+    const rla = inject(RouterLinkActive, { self: true });
+    // No class on this host — the state is bridged to the WC's `active`
+    // attribute instead (the trigger lives in the WC's shadow, out of reach
+    // of any class-based styling from here).
+    rla.routerLinkActive = [];
+    rla.isActiveChange.pipe(takeUntilDestroyed()).subscribe((active) => this.routeActive.set(active));
+  }
 }

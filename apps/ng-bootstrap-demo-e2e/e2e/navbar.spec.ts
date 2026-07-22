@@ -277,6 +277,156 @@ test.describe('navbar — small mode (JS enabled)', () => {
   });
 });
 
+test.describe('navbar — active-route highlighting', () => {
+  test.beforeEach(async ({ page }) => {
+    await page.setViewportSize({ width: 1280, height: 900 });
+    await goto(page);
+  });
+
+  test('the top-level link of the current route recolors (nav-link.active)', async ({ page }) => {
+    // '/' is active on load (exact match). Compare against an inactive link's
+    // color rather than a hard-coded token value.
+    const colors = await page.evaluate(() => {
+      const links = [...document.querySelectorAll('mp-navbar-item a')];
+      const home = links.find((a) => a.textContent === 'Home')!;
+      return {
+        homeActive: home.classList.contains('active'),
+        home: getComputedStyle(home).color,
+        inactive: getComputedStyle(links.find((a) => a.textContent !== 'Home')!).color,
+      };
+    });
+    expect(colors.homeActive).toBe(true);
+    expect(colors.home).not.toBe(colors.inactive);
+  });
+
+  test('the menu item of the current route paints the full row with the active background', async ({ page }) => {
+    await trigger(page, 'Basic').click();
+    await page.getByRole('menuitem', { name: 'Alert', exact: true }).click();
+    await expect(page).toHaveURL(/\/basic\/alert$/);
+
+    await trigger(page, 'Basic').click(); // reopen to inspect the item
+    const info = await page.evaluate(() => {
+      const a = [...document.querySelectorAll('.dropdown-item > a')].find((x) => x.textContent === 'Alert')!;
+      const item = a.closest('.dropdown-item')!;
+      const ar = a.getBoundingClientRect();
+      const ir = item.getBoundingClientRect();
+      return {
+        active: a.classList.contains('active'),
+        bg: getComputedStyle(a).backgroundColor,
+        fillsRow: Math.abs(ar.width - ir.width) < 1, // negative-margin fill = legacy full-row look
+      };
+    });
+    expect(info.active).toBe(true);
+    expect(info.bg).not.toBe('rgba(0, 0, 0, 0)'); // primary active background
+    expect(info.fillsRow).toBe(true);
+  });
+
+  test('the trigger CHAIN of the active route highlights without opening anything', async ({ page }) => {
+    // Navigate to a nested route (Basic → Forms → Select), then assert both
+    // ancestor triggers carry the WC `active` attribute while closed.
+    await trigger(page, 'Basic').click();
+    await trigger(page, 'Forms').click();
+    await page.getByRole('menuitem', { name: 'Select', exact: true }).click();
+    await expect(page).toHaveURL(/\/basic\/forms\/select$/);
+
+    const state = await page.evaluate(() => {
+      const byLabel = (name: string) =>
+        [...document.querySelectorAll('mp-navbar-dropdown')].find(
+          (d) => (d.querySelector(':scope > [slot="label"], :scope > span[slot="label"]')?.textContent || '').trim() === name,
+        );
+      const basic = byLabel('Basic')!;
+      const trigger = basic.shadowRoot!.querySelector('.dropdown-toggle')!;
+      return {
+        basicActive: basic.hasAttribute('active'),
+        formsActive: byLabel('Forms')!.hasAttribute('active'),
+        overlaysActive: byLabel('Overlays')!.hasAttribute('active'),
+        anyOpen: !!document.querySelector('mp-navbar-dropdown[data-open]'),
+        triggerColor: getComputedStyle(trigger).color,
+        inactiveColor: getComputedStyle(byLabel('Overlays')!.shadowRoot!.querySelector('.dropdown-toggle')!).color,
+      };
+    });
+    expect(state.anyOpen).toBe(false); // dismiss-on-navigate closed everything
+    expect(state.basicActive).toBe(true);
+    expect(state.formsActive).toBe(true);
+    expect(state.overlaysActive).toBe(false);
+    expect(state.triggerColor).not.toBe(state.inactiveColor); // recolored while closed
+  });
+});
+
+test.describe('navbar — keyboard a11y', () => {
+  const deepActive = (page: Page) =>
+    page.evaluate(() => {
+      let el = document.activeElement;
+      while (el?.shadowRoot?.activeElement) el = el.shadowRoot.activeElement;
+      if (!el || el === document.body) return null;
+      return {
+        desc: el.tagName.toLowerCase() + (el.className && typeof el.className === 'string' ? '.' + el.className.split(' ')[0] : ''),
+        text: (el.textContent || el.getAttribute('aria-label') || '').trim().slice(0, 20),
+        inNavbar: !!el.closest('mp-navbar') || !!(el.getRootNode() as ShadowRoot).host?.closest?.('mp-navbar') || (el.getRootNode() as ShadowRoot).host?.tagName === 'MP-NAVBAR',
+      };
+    });
+
+  test('small mode: Tab reaches the toggler with a visible rounded focus ring', async ({ page }) => {
+    await page.setViewportSize({ width: 600, height: 900 });
+    await goto(page);
+
+    // Tab: brand link → the toggle checkbox (real keyboard so :focus-visible applies).
+    await page.keyboard.press('Tab');
+    await page.keyboard.press('Tab');
+    expect((await deepActive(page))?.desc).toBe('input.navbar-toggle');
+
+    // The ring paints on the visible label (sibling selector), rounded.
+    const ring = await page.evaluate(() => {
+      const label = document.querySelector('mp-navbar')!.shadowRoot!.querySelector('.navbar-toggler')!;
+      const c = getComputedStyle(label);
+      return { boxShadow: c.boxShadow, borderRadius: parseFloat(c.borderRadius) };
+    });
+    expect(ring.boxShadow).not.toBe('none');
+    expect(ring.borderRadius).toBeGreaterThan(0);
+  });
+
+  test('small mode collapsed: the menu is OUT of the tab order (no focus into invisible content)', async ({ page }) => {
+    await page.setViewportSize({ width: 600, height: 900 });
+    await goto(page);
+
+    await page.keyboard.press('Tab'); // brand
+    await page.keyboard.press('Tab'); // toggler checkbox
+    await page.keyboard.press('Tab'); // must SKIP the hidden collapse entirely
+    const stop = await deepActive(page);
+    expect(stop?.inNavbar ?? false).toBe(false); // lands in page content, not invisible links
+  });
+
+  test('small mode expanded: menu items ARE tabbable again', async ({ page }) => {
+    await page.setViewportSize({ width: 600, height: 900 });
+    await goto(page);
+
+    await page.keyboard.press('Tab');
+    await page.keyboard.press('Tab');
+    await page.keyboard.press('Space'); // open the collapse via the checkbox
+    await page.keyboard.press('Tab');
+    expect((await deepActive(page))?.text).toBe('Home');
+  });
+
+  test('wide mode: ArrowDown enters the menu; Escape closes and returns focus to the trigger', async ({ page }) => {
+    await page.setViewportSize({ width: 1280, height: 900 });
+    await goto(page);
+
+    // Focus the "Basic" trigger (its shadow <a>) and arrow into the menu.
+    await page.evaluate(() => {
+      const dd = [...document.querySelectorAll('mp-navbar-dropdown:not([data-submenu])')]
+        .find((d) => (d.querySelector('[slot="label"]')?.textContent || '').trim() === 'Basic')!;
+      dd.shadowRoot!.querySelector<HTMLElement>('.dropdown-toggle')!.focus();
+    });
+    await page.keyboard.press('ArrowDown');
+    expect((await panelInfo(page, 'Basic'))?.open).toBe(true);
+    expect((await deepActive(page))?.text).toBe('Alert'); // first item control focused
+
+    await page.keyboard.press('Escape');
+    expect((await panelInfo(page, 'Basic'))?.open).toBe(false);
+    expect((await deepActive(page))?.desc).toBe('a.nav-link'); // back on the trigger
+  });
+});
+
 test.describe('navbar — dark mode', () => {
   test('the hamburger icon is light on a dark navbar', async ({ page }) => {
     await page.emulateMedia({ colorScheme: 'dark' });

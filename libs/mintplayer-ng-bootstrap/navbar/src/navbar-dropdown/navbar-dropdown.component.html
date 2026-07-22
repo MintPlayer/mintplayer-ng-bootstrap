@@ -1,4 +1,4 @@
-<mp-navbar-dropdown>
+<mp-navbar-dropdown [attr.active]="routeActive() ? '' : null">
     <span slot="label"><ng-container [ngTemplateOutlet]="label().templateRef"></ng-container></span>
     <bs-dropdown-menu>
         <ng-content></ng-content>

@@ -252,6 +252,14 @@ All five steps implemented and committed milestone-by-milestone on `feat/navbar-
 - **Wedged-watcher incident (repeat of the known failure mode):** after the step-4 edits the SSR bundle was current (`padding-top: 58px` in the served HTML) while the browser bundle was stale (old CSS, no directive) — recovered by restarting the dev server, never `ng build`.
 - **e2e lock-in grew to 16 tests/browser (32 total):** added `bs-navbar-nav` grouping/alignment (display:contents flattening + end-group right-align, replacing the deleted throwaway spike as a permanent guard), hamburger→X morph (JS-enabled spec carries the visual assertion; computed styles are unreadable no-JS), `bsNavbarContent` live-height offset, dark-mode luminance retargeted to the bars.
 
+### Round 8 (2026-07-22, branch `feat/navbar-wc-a11y`) — active-route highlighting
+
+Full detail in the PRD ("Round 8"). Legacy highlight was pure stock Bootstrap on the ANCHOR's `.active` (nav-link = text recolor; dropdown-item = primary bg) + `[bsNavbarTrigger]` prefix-matching for the trigger chain. Fix: `::slotted(a.active)` (nav items), `.dropdown-item > a.active` in the companion sheets ×3 frameworks (menu items, full-row via the negative-margin fill), `:host([active])` trigger hooks in the WC (text recolor top-level, primary bg for `[data-submenu]`), driven in Angular by `hostDirectives: [RouterLinkActive]` on `bs-navbar-dropdown` (`isActiveChange` → `[attr.active]`). SSR/no-JS correct (CSS-only + server-rendered classes/attrs). e2e: menu-item row bg, trigger-chain highlight without opening, top-level recolor.
+
+### Round 7 (2026-07-22, post-squash, branch `feat/navbar-wc-a11y`) — accessibility restoration
+
+Full detail in the PRD ("Round 7"). Restores the PR-#327 navbar a11y contract lost with the legacy deletion: toggler focus ring (`:focus-visible ~` sibling), role=button + Enter, aria-controls, single `#setExpanded` write path (stale-aria fix), collapsed menu out of the tab order (`visibility` + `--mp-collapse-hide-delay`; reveal resets the delay), dropdown trigger `aria-expanded` (both flags), ArrowDown menu entry + host-level Escape with focus return. 9 jsdom aria tests + 4 e2e keyboard tests; 46/46 navbar e2e chromium + firefox.
+
 ### Round 6 (2026-07-22) — press-time dropdown toggle + `*bsNavbarDropdownLabel`
 
 Full analysis in the PRD ("Round 6"). Commits: `95061674` (fix: toggle on mousedown — press-time gesture resolution; drift-proof switching; switching e2e asserts computed visibility + new drifting-pointer test) and `908add0a` (feat!: `[label]` input REMOVED; trigger label is a structural-directive template `*bsNavbarDropdownLabel` rendered via `ngTemplateOutlet` — repo idiom per user correction, not `<ng-content select>`; demo + enterprise page + snippets migrated). e2e now 17 tests/browser (34 total), green chromium + firefox.
