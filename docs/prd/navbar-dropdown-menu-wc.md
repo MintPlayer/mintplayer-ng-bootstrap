@@ -251,3 +251,8 @@ Implementation order: #1, #5, #3, #2, #4 (isolated → most surface). Verify eac
   - **First-level right inset** — `:host(:not([data-submenu])) ::slotted(...) { margin-inline-end: 1rem }` (was master's `.dropdown-menu.me-3`); reset to `0` in the wide floated-overlay rule.
   - Item padding (`4px 16px`) and navbar padding (`8px 0`) already matched master via the compiled Bootstrap partials.
   - Verified in-browser: fixed bar top/full-width; brand centered; first-level `margin: 0 16px 0 0` and submenu `0 8px` in small mode (identical to live); wide overlay unaffected.
+
+### Round 3 (2026-07-22)
+
+- **Dismiss-on-navigate.** `mp-navbar` listens for clicks; when a real nav link (`<a href>` — a routerLink renders one; dropdown *triggers* are `<a role="button">` without `href`, excluded) is clicked it `close()`s every descendant `mp-navbar-dropdown` and `toggle(false)`s the collapse — so the menu slides shut in small mode (no-op in wide) and open dropdowns close (both modes). Added a public `close()` to `mp-navbar-dropdown` (closes the overlay + the inline `data-open`). Verified: clicking a leaf link navigates, closes the dropdown, and collapses the bar.
+- **First-level dropdown left inset (small mode).** Changed the first-level panel from `margin-inline-end: 1rem` to `margin: 0 1rem` so it isn't glued to the window's left edge; still reset to `0` by the wide floated-overlay rule (wide unaffected). Verified `margin: 0px 16px` in small mode, `0` in wide.

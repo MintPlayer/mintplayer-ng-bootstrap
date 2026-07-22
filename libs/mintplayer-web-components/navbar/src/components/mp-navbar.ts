@@ -63,7 +63,36 @@ export class MpNavbar extends LitElement {
     if (!this.style.getPropertyValue('--mp-navbar-breakpoint')) {
       this.#publishBreakpoint(this.getAttribute('breakpoint'));
     }
+    this.addEventListener('click', this.#onNavLinkClick);
   }
+
+  override disconnectedCallback(): void {
+    super.disconnectedCallback();
+    this.removeEventListener('click', this.#onNavLinkClick);
+  }
+
+  /**
+   * Clicking a navigation link (an `<a href>` — a routerLink renders one) should
+   * dismiss the menu: close every open dropdown and, in small mode, slide the
+   * collapse shut. Dropdown *triggers* are `<a role="button">` with no `href`
+   * (excluded), so opening a dropdown doesn't collapse the bar. Collapsing in
+   * wide mode is a no-op (the collapse is always shown there).
+   */
+  #onNavLinkClick = (event: MouseEvent): void => {
+    const link = event
+      .composedPath()
+      .find(
+        (el): el is HTMLAnchorElement =>
+          el instanceof HTMLAnchorElement &&
+          el.hasAttribute('href') &&
+          !el.classList.contains('dropdown-toggle'),
+      );
+    if (!link) return;
+    this.querySelectorAll('mp-navbar-dropdown').forEach((d) =>
+      (d as HTMLElement & { close?: () => void }).close?.(),
+    );
+    this.toggle(false);
+  };
 
   override attributeChangedCallback(name: string, oldValue: string | null, newValue: string | null): void {
     super.attributeChangedCallback(name, oldValue, newValue);

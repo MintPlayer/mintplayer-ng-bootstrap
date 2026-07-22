@@ -118,6 +118,13 @@ export class MpNavbarDropdown extends MpNavbarElement {
     else this.#setOpen(!this.#open);
   }
 
+  /** Close the dropdown (both the overlay and the inline paths). Public so the
+   *  parent `mp-navbar` can dismiss every dropdown when a nav link is clicked. */
+  close(): void {
+    this.#overlay?.close();
+    this.#setOpen(false);
+  }
+
   #onToggle = (event: Event): void => {
     event.preventDefault();
     this.#toggle();

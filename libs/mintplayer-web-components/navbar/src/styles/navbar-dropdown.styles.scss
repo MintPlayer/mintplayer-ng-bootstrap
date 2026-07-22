@@ -84,9 +84,11 @@
   max-height: none;
   overflow: visible;
 }
-// First-level panel keeps the pre-WC right inset (was `.dropdown-menu.me-3`).
+// First-level panel (small mode): inset from both edges so it isn't glued to the
+// window edge — right keeps the pre-WC `.dropdown-menu.me-3` (1rem); left adds a
+// matching inset. Reset to 0 by the wide floated-overlay rule below.
 :host(:not([data-submenu])) ::slotted(:not([slot="label"])) {
-  margin-inline-end: 1rem;
+  margin: 0 1rem;
 }
 // submenu inline inset (small mode) — matches the pre-WC `.submenu { margin: 0 .5rem }`.
 :host([data-submenu]) ::slotted(:not([slot="label"])) {
