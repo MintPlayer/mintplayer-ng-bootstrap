@@ -49,11 +49,85 @@
   --bs-dropdown-header-color: var(--bs-secondary-color);
 
   // Presentational: this WC has no trigger/positioning of its own (that is the
-  // future `mp-dropdown` behaviour layer), so the menu flows in place, shows
-  // unconditionally, fills the host width, and scrolls when `max-height` caps it.
+  // `mp-navbar-dropdown` / standalone trigger behaviour layer), so the menu flows
+  // in place, shows unconditionally, fills the host width, and scrolls when
+  // `max-height` caps it.
   position: static;
   display: block;
   width: 100%;
   max-height: var(--mp-dropdown-max-height, none);
   overflow-y: auto;
+}
+
+// Items / dividers / headers are PLAIN LIGHT-DOM elements slotted in by the
+// consumer (Angular's `[bsDropdownItem]` etc. add the class, no host element).
+// Bootstrap's `@import` above emits `.dropdown-item {}` as an ordinary selector,
+// which cannot match slotted (light-DOM) content — only `::slotted()` reaches it.
+// So re-express the box rules here against `::slotted`; the `--bs-dropdown-*`
+// tokens set on `.dropdown-menu` inherit to the slotted elements through the flat
+// tree, so they resolve exactly as Bootstrap intends. The one thing `::slotted`
+// CANNOT reach is a nested `<a>`/`<button>` inside an item — that is handled by
+// the companion light-DOM sheet each framework wrapper ships. (Validated in the
+// _spike-dropdown-slotted spike: pixel-identical to Bootstrap, light + dark.)
+::slotted(*) {
+  box-sizing: border-box;
+}
+
+::slotted(.dropdown-item) {
+  display: block;
+  width: 100%;
+  padding: var(--bs-dropdown-item-padding-y, 0.25rem) var(--bs-dropdown-item-padding-x, 1rem);
+  clear: both;
+  font-weight: 400;
+  color: var(--bs-dropdown-link-color);
+  text-align: inherit;
+  text-decoration: none;
+  white-space: nowrap;
+  background-color: transparent;
+  border: 0;
+  border-radius: var(--bs-dropdown-item-border-radius, 0);
+  cursor: pointer;
+}
+
+// Hover, and keyboard focus (the item's control carries the roving tabindex, so
+// focus lands inside the item — mirror the hover appearance like Bootstrap's
+// `:focus` rule).
+::slotted(.dropdown-item:hover),
+::slotted(.dropdown-item:focus),
+::slotted(.dropdown-item:focus-within) {
+  color: var(--bs-dropdown-link-hover-color);
+  background-color: var(--bs-dropdown-link-hover-bg);
+}
+
+::slotted(.dropdown-item.active) {
+  color: var(--bs-dropdown-link-active-color);
+  background-color: var(--bs-dropdown-link-active-bg);
+}
+
+::slotted(.dropdown-item.disabled),
+::slotted(.dropdown-item[aria-disabled="true"]) {
+  color: var(--bs-dropdown-link-disabled-color);
+  background-color: transparent;
+  pointer-events: none;
+  cursor: default;
+}
+
+::slotted(.dropdown-divider) {
+  height: 0;
+  margin: 0.5rem 0;
+  overflow: hidden;
+  border-top: 1px solid var(--bs-dropdown-divider-bg);
+  opacity: 1;
+  display: block;
+  list-style: none;
+}
+
+::slotted(.dropdown-header) {
+  display: block;
+  padding: var(--bs-dropdown-header-padding-y, 0.5rem) var(--bs-dropdown-header-padding-x, 1rem);
+  margin: 0;
+  font-size: 0.875rem;
+  color: var(--bs-dropdown-header-color);
+  white-space: nowrap;
+  list-style: none;
 }

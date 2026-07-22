@@ -1,11 +1,11 @@
 <script setup lang="ts">
-import '@mintplayer/web-components/dropdown-menu';
-
+// Renders a plain <li class="dropdown-header">; the menu WC styles it via
+// `::slotted(.dropdown-header)`. The label is the slotted content.
 defineOptions({ inheritAttrs: false });
 </script>
 
 <template>
-  <mp-dropdown-header v-bind="$attrs">
+  <li v-bind="$attrs" class="dropdown-header">
     <slot />
-  </mp-dropdown-header>
+  </li>
 </template>

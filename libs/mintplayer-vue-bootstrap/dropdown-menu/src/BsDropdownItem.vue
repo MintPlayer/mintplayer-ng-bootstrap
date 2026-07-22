@@ -1,45 +1,41 @@
 <script setup lang="ts">
-import '@mintplayer/web-components/dropdown-menu';
-import type { MpDropdownItem } from '@mintplayer/web-components/dropdown-menu';
+// No per-item web component: renders a plain <li class="dropdown-item"> that the
+// menu WC styles via its shadow `::slotted(.dropdown-item)` rule. Put navigable
+// content inside, e.g. <BsDropdownItem><a href="/x">Action</a></BsDropdownItem>.
 import { onMounted, ref, watch } from 'vue';
 
 defineOptions({ inheritAttrs: false });
 
 const props = withDefaults(
   defineProps<{
-    /** Marks the item as the current selection (boolean attribute). */
-    selected?: boolean;
-    /** Disables activation (boolean attribute). */
+    /** Bootstrap `.active` appearance (also drives `aria-selected` in a listbox). */
+    active?: boolean;
+    /** Non-interactive; removed from the menu's roving order. */
     disabled?: boolean;
     /** Opaque value surfaced in the menu's `select` event — assigned as a JS property. */
     value?: unknown;
   }>(),
-  {
-    selected: false,
-    disabled: false,
-  },
+  { active: false, disabled: false },
 );
 
-const el = ref<MpDropdownItem | null>(null);
+const el = ref<HTMLLIElement | null>(null);
 
-// `value` is opaque (any JS value), so it can't ride a DOM attribute — push it
-// to the element via its property setter, mirroring how object props are
-// assigned in the other wrappers.
+// `value` is opaque, so push it to the <li> as a property (the menu reads it).
 const syncValue = () => {
-  if (el.value) el.value.value = props.value;
+  if (el.value) (el.value as unknown as { value?: unknown }).value = props.value;
 };
-
 onMounted(syncValue);
 watch(() => props.value, syncValue);
 </script>
 
 <template>
-  <mp-dropdown-item
+  <li
     ref="el"
     v-bind="$attrs"
-    :selected="selected ? '' : undefined"
-    :disabled="disabled ? '' : undefined"
+    class="dropdown-item"
+    :class="{ active, disabled }"
+    :aria-disabled="disabled ? 'true' : undefined"
   >
     <slot />
-  </mp-dropdown-item>
+  </li>
 </template>

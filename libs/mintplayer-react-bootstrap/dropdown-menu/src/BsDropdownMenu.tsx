@@ -5,6 +5,9 @@ import {
   type DropdownMode,
   type DropdownSelectEventDetail,
 } from '@mintplayer/web-components/dropdown-menu';
+// Companion light-DOM sheet (nested-link reset ::slotted can't reach). Imported
+// here so it lands in the app's static CSS bundle — present with JS disabled.
+import './dropdown-menu.css';
 
 export interface BsDropdownMenuProps {
   /** `menu` (default, roving-tabindex keyboard nav) | `listbox`. */

@@ -1,9 +1,9 @@
 <script setup lang="ts">
-import '@mintplayer/web-components/dropdown-menu';
-
+// Renders a plain <li class="dropdown-divider">; the menu WC styles it via
+// `::slotted(.dropdown-divider)`.
 defineOptions({ inheritAttrs: false });
 </script>
 
 <template>
-  <mp-dropdown-divider v-bind="$attrs" />
+  <li v-bind="$attrs" role="separator" class="dropdown-divider" />
 </template>

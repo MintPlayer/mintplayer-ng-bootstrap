@@ -90,8 +90,9 @@ Branch B already built ~all of it (10 WCs + 3× wrappers + SSR injectors/generat
 3. ✅ Green baseline (item WCs still present, `-wc-` selectors): `nx build mintplayer-web-components` (dropdown-menu 18 kB + navbar 25 kB emitted), `nx build mintplayer-ng-bootstrap` (all secondary entries), React + Vue builds, and **758/758 WC unit tests** all pass.
    - ⚠️ Watch-item for Phase 3/5: verify the new libs' `package.json` declare `@mintplayer/web-components` + `lit` as peerDeps (master's rule) before publish; the local build doesn't exercise that.
 
-### Phase 2 — items → directives + `::slotted` (D1 + D2)
-1. Add `::slotted(.dropdown-item / .dropdown-divider / .dropdown-header)` box rules (re-bound to `--bs-dropdown-*`) to `dropdown-menu.styles.scss`; `nx run mintplayer-web-components:codegen-wc`; regenerate dropdown DSD chrome.
+### Phase 2 — items → directives + `::slotted` (D1 + D2) ✅ DONE (2026-07-22)
+Refinement adopted: **every menu child is an `<li>` and each directive marks the `<li>`**, so `::slotted(.dropdown-item|.dropdown-divider|.dropdown-header)` styles all three in the shadow and the companion light-DOM sheet shrinks to just the item's nested `<a>`/`<button>` reset (via negative-margin expansion so the whole row navigates, matching Bootstrap). Verified: all 4 libs build, 758/758 WC tests pass, and the **real generated `mp-dropdown-menu` DSD renders correct no-JS** (Playwright: header/normal/active/disabled/divider, light + dark). Steps as executed:
+1. Added `::slotted(.dropdown-item / .dropdown-divider / .dropdown-header)` box rules (resolving `--bs-dropdown-*` inherited through the flat tree) to `dropdown-menu.styles.scss`; re-ran codegen-wc; regenerated the dropdown DSD chrome (now menu-only).
 2. Delete `mp-dropdown-{item,divider,header}` WCs + wrappers + chrome constants.
 3. Add Angular `[bsDropdownItem]` / `[bsDropdownDivider]` / `[bsDropdownHeader]` directives (`host: { '[class.dropdown-item]': 'true' }`, etc.).
 4. Ship the **companion light-DOM sheet** with each wrapper package (Angular global style, React/Vue imported CSS) — validated in Phase 0:

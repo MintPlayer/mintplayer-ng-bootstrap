@@ -1,14 +1,17 @@
 import * as React from 'react';
-import { createComponent } from '@lit/react';
-import { MpDropdownHeader } from '@mintplayer/web-components/dropdown-menu';
 
 /**
- * `<BsDropdownHeader>` — a Bootstrap `.dropdown-header` labelling a group of
- * items inside `<BsDropdownMenu>`. Slot content (the label) is passed as
- * children. Side-effect-registers the WC on import.
+ * `<BsDropdownHeader>` — a Bootstrap `.dropdown-header` labelling a group of items
+ * inside `<BsDropdownMenu>`. Renders a plain `<li class="dropdown-header">` that
+ * the menu WC styles via `::slotted(.dropdown-header)`. The label is the children.
  */
-export const BsDropdownHeader = createComponent({
-  react: React,
-  tagName: 'mp-dropdown-header',
-  elementClass: MpDropdownHeader,
-});
+export const BsDropdownHeader = React.forwardRef<HTMLLIElement, React.LiHTMLAttributes<HTMLLIElement>>(
+  function BsDropdownHeader({ className, children, ...rest }, ref) {
+    const classes = ['dropdown-header', className ?? ''].filter(Boolean).join(' ');
+    return (
+      <li ref={ref} className={classes} {...rest}>
+        {children}
+      </li>
+    );
+  },
+);

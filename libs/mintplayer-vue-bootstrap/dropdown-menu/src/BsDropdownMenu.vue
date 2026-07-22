@@ -10,6 +10,9 @@ import type {
   DropdownSelectEventDetail,
 } from '@mintplayer/web-components/dropdown-menu';
 import { onBeforeUnmount, onMounted, ref } from 'vue';
+// Companion light-DOM sheet (nested-link reset ::slotted can't reach). Imported
+// here so it lands in the app's static CSS bundle — present with JS disabled.
+import './dropdown-menu.css';
 
 defineOptions({ inheritAttrs: false });
 

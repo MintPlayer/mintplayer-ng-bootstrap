@@ -3,8 +3,8 @@ export type DropdownMode = 'menu' | 'listbox';
 
 /** `detail` of the `select` event the menu dispatches when an item is activated. */
 export interface DropdownSelectEventDetail {
-  /** The activated `<mp-dropdown-item>`. */
+  /** The activated `.dropdown-item` element. */
   item: HTMLElement;
-  /** The item's `value` property (opaque), if set. */
+  /** The item's opaque value (a `value` JS property or `data-value` attribute), if set. */
   value?: unknown;
 }

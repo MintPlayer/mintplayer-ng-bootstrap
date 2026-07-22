@@ -1,14 +1,13 @@
 import * as React from 'react';
-import { createComponent } from '@lit/react';
-import { MpDropdownDivider } from '@mintplayer/web-components/dropdown-menu';
 
 /**
  * `<BsDropdownDivider>` — a Bootstrap `.dropdown-divider` separating groups of
- * items inside `<BsDropdownMenu>`. No props. Side-effect-registers the WC on
- * import.
+ * items inside `<BsDropdownMenu>`. Renders a plain `<li class="dropdown-divider">`
+ * that the menu WC styles via `::slotted(.dropdown-divider)`.
  */
-export const BsDropdownDivider = createComponent({
-  react: React,
-  tagName: 'mp-dropdown-divider',
-  elementClass: MpDropdownDivider,
-});
+export const BsDropdownDivider = React.forwardRef<HTMLLIElement, React.LiHTMLAttributes<HTMLLIElement>>(
+  function BsDropdownDivider({ className, ...rest }, ref) {
+    const classes = ['dropdown-divider', className ?? ''].filter(Boolean).join(' ');
+    return <li ref={ref} role="separator" className={classes} {...rest} />;
+  },
+);

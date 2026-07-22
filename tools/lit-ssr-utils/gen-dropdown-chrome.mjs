@@ -26,13 +26,12 @@ await import(
   ).href
 );
 
-// tag → constant name. Each element's chrome is static (independent of slotted
-// content / per-instance attributes), so one constant per tag suffices.
+// Only `<mp-dropdown-menu>` has a shadow root / DSD chrome. Items, dividers and
+// headers are plain light-DOM elements (Bootstrap-classed via attribute
+// directives) styled by the menu's `::slotted(...)` rules + a companion
+// light-DOM sheet — they have no shadow, so no chrome to inject.
 const ELEMENTS = [
   { tag: 'mp-dropdown-menu', constant: 'MP_DROPDOWN_MENU_DSD_CHROME', tpl: html`<mp-dropdown-menu></mp-dropdown-menu>` },
-  { tag: 'mp-dropdown-item', constant: 'MP_DROPDOWN_ITEM_DSD_CHROME', tpl: html`<mp-dropdown-item></mp-dropdown-item>` },
-  { tag: 'mp-dropdown-divider', constant: 'MP_DROPDOWN_DIVIDER_DSD_CHROME', tpl: html`<mp-dropdown-divider></mp-dropdown-divider>` },
-  { tag: 'mp-dropdown-header', constant: 'MP_DROPDOWN_HEADER_DSD_CHROME', tpl: html`<mp-dropdown-header></mp-dropdown-header>` },
 ];
 
 const lines = [];

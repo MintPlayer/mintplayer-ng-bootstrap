@@ -1,4 +1,4 @@
-import { afterNextRender, ChangeDetectionStrategy, Component, computed, CUSTOM_ELEMENTS_SCHEMA, input, output } from '@angular/core';
+import { afterNextRender, ChangeDetectionStrategy, Component, computed, CUSTOM_ELEMENTS_SCHEMA, input, output, ViewEncapsulation } from '@angular/core';
 import type { DropdownMode, DropdownSelectEventDetail } from '@mintplayer/web-components/dropdown-menu';
 
 /**
@@ -22,6 +22,28 @@ import type { DropdownMode, DropdownSelectEventDetail } from '@mintplayer/web-co
   templateUrl: './dropdown-menu-wc.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
   schemas: [CUSTOM_ELEMENTS_SCHEMA],
+  // The COMPANION light-DOM sheet: the one thing the menu's shadow `::slotted`
+  // rules cannot reach is a nested `<a>`/`<button>` inside an item. Ship it as an
+  // un-encapsulated (global, class-scoped) rule so the link fills the padded item
+  // box and inherits its color — the whole row navigates, like Bootstrap. The
+  // `--bs-dropdown-item-padding-*` tokens inherit out of the menu's shadow through
+  // the flat tree (fallbacks cover standalone use).
+  encapsulation: ViewEncapsulation.None,
+  styles: [`
+    .dropdown-item > a,
+    .dropdown-item > button {
+      display: block;
+      width: auto;
+      margin: calc(-1 * var(--bs-dropdown-item-padding-y, 0.25rem)) calc(-1 * var(--bs-dropdown-item-padding-x, 1rem));
+      padding: var(--bs-dropdown-item-padding-y, 0.25rem) var(--bs-dropdown-item-padding-x, 1rem);
+      color: inherit;
+      text-decoration: none;
+      text-align: inherit;
+      background: none;
+      border: 0;
+      font: inherit;
+    }
+  `],
 })
 export class BsDropdownMenuWc {
   /** `menu` (default, roving-tabindex nav) | `listbox` (consumer manages focus). */

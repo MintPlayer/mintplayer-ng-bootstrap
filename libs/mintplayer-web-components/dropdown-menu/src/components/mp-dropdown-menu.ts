@@ -1,6 +1,5 @@
 import { html, nothing } from 'lit';
 import { MpDropdownElement } from './mp-dropdown-element';
-import { MpDropdownItem } from './mp-dropdown-item';
 import { dropdownMenuStyles } from '../styles';
 import type { DropdownMode, DropdownSelectEventDetail } from '../types';
 
@@ -9,20 +8,29 @@ import type { DropdownMode, DropdownSelectEventDetail } from '../types';
  * root, with theme-aware styling that follows the page theme across the shadow
  * boundary (no `data-bs-theme` selector needed inside — see
  * `dropdown-menu.styles.scss`). Purely presentational: it has no trigger or
- * positioning of its own (that is a future `mp-dropdown` behaviour layer); the
- * menu flows in place and is always shown.
+ * positioning of its own (that is the `mp-navbar-dropdown` / standalone trigger
+ * behaviour layer); the menu flows in place and is always shown.
  *
- * Slot `<mp-dropdown-item>` / `<mp-dropdown-divider>` / `<mp-dropdown-header>`
- * children. In `menu` mode (default) the menu provides roving-tabindex keyboard
- * navigation (Arrow keys / Home / End) over the enabled items and assigns their
- * `role="menuitem"`. In `listbox` mode it assigns `role="option"` +
- * `aria-selected` and leaves focus management to the consumer.
+ * Children are **plain light-DOM elements** carrying Bootstrap classes — there
+ * is no per-item web component. The item box, divider and header are styled by
+ * `::slotted(.dropdown-item|.dropdown-divider|.dropdown-header)` in this shadow
+ * (see the stylesheet); a nested `<a>`/`<button>` inside an item is the one thing
+ * `::slotted` can't reach and is handled by the companion light-DOM sheet each
+ * framework wrapper ships. In Angular the classes come from the `[bsDropdownItem]`
+ * / `[bsDropdownDivider]` / `[bsDropdownHeader]` attribute directives.
+ *
+ * In `menu` mode (default) the menu provides roving-tabindex keyboard navigation
+ * (Arrow keys / Home / End) over the enabled items and assigns `role="menuitem"`
+ * to each item's interactive control. In `listbox` mode it assigns `role="option"`
+ * + `aria-selected` and leaves focus management to the consumer.
  *
  * Attributes:
  *  - `mode` — `menu` (default) | `listbox`.
  *  - `max-height` — px cap; maps to `--mp-dropdown-max-height` (scrolls beyond).
  *  - `label-id` — id of an external label, set as `aria-labelledby` on the list.
  *
+ * An item is disabled via the `.disabled` class (or `aria-disabled="true"`), and
+ * carries an opaque `value` via a `value` JS property or a `data-value` attribute.
  * Events: `select` (`detail: { item, value }`) when an enabled item is activated.
  */
 export class MpDropdownMenu extends MpDropdownElement {
@@ -32,7 +40,7 @@ export class MpDropdownMenu extends MpDropdownElement {
     return [...(super.observedAttributes ?? []), 'mode', 'max-height', 'label-id'];
   }
 
-  /** Index (into the full item list) holding the roving tabindex in menu mode. */
+  /** Index (into the item list) holding the roving tabindex in menu mode. */
   #focusedIndex = 0;
 
   // `mode`/`labelId` reflect to attributes (the layout/roles read the attribute).
@@ -84,16 +92,30 @@ export class MpDropdownMenu extends MpDropdownElement {
   // --- item bookkeeping ------------------------------------------------------
 
   /**
-   * The interactive items (excludes dividers/headers), in DOM order. Queries the
-   * light-DOM subtree rather than only the slot's directly-assigned elements: a
-   * framework wrapper — notably Angular, whose components always emit a host
-   * element — nests `<mp-dropdown-item>` inside its own tag, so the slot assigns
-   * the wrapper, not the item. `querySelectorAll` finds the items in document
-   * order however deeply a wrapper nests them. (No submenus in this component, so
-   * there is no nested-menu subtree to exclude.)
+   * The interactive items (the `.dropdown-item` elements), in DOM order, scoped
+   * to THIS menu. Queries the light-DOM subtree — items are plain light-DOM
+   * `<li class="dropdown-item">` (Angular's `[bsDropdownItem]` adds no host
+   * element). Items belonging to a nested `<mp-dropdown-menu>` (navbar submenus)
+   * are excluded so this menu only manages its own.
    */
-  #items(): MpDropdownItem[] {
-    return Array.from(this.querySelectorAll('mp-dropdown-item')) as MpDropdownItem[];
+  #items(): HTMLElement[] {
+    return Array.from(this.querySelectorAll<HTMLElement>('.dropdown-item')).filter(
+      (el) => el.closest('mp-dropdown-menu') === this,
+    );
+  }
+
+  /** The focusable control for an item — its first `<a>`/`<button>`, else itself. */
+  #controlOf(item: HTMLElement): HTMLElement {
+    return item.querySelector<HTMLElement>('a, button') ?? item;
+  }
+
+  #isDisabled(item: HTMLElement): boolean {
+    return item.classList.contains('disabled') || item.getAttribute('aria-disabled') === 'true';
+  }
+
+  #valueOf(item: HTMLElement): unknown {
+    const prop = (item as HTMLElement & { value?: unknown }).value;
+    return prop !== undefined ? prop : item.dataset['value'];
   }
 
   #onSlotChange = (): void => {
@@ -106,19 +128,25 @@ export class MpDropdownMenu extends MpDropdownElement {
     if (items.length === 0) return;
 
     // Keep the roving index on an enabled item.
-    if (!items[this.#focusedIndex] || items[this.#focusedIndex].disabled) {
-      const firstEnabled = items.findIndex((it) => !it.disabled);
+    if (!items[this.#focusedIndex] || this.#isDisabled(items[this.#focusedIndex])) {
+      const firstEnabled = items.findIndex((it) => !this.#isDisabled(it));
       this.#focusedIndex = firstEnabled >= 0 ? firstEnabled : 0;
     }
 
     const listbox = this.mode === 'listbox';
-    items.forEach((it, i) => {
-      it.setAttribute('role', listbox ? 'option' : 'menuitem');
-      if (listbox) it.setAttribute('aria-selected', it.selected ? 'true' : 'false');
-      else it.removeAttribute('aria-selected');
+    items.forEach((item, i) => {
+      const control = this.#controlOf(item);
+      // The <li> is presentational when a real control carries the role.
+      if (control !== item) item.setAttribute('role', 'presentation');
+      control.setAttribute('role', listbox ? 'option' : 'menuitem');
+      const disabled = this.#isDisabled(item);
+      if (listbox) control.setAttribute('aria-selected', item.classList.contains('active') ? 'true' : 'false');
+      else control.removeAttribute('aria-selected');
+      if (disabled) control.setAttribute('aria-disabled', 'true');
+      else control.removeAttribute('aria-disabled');
       // Roving tabindex only in menu mode; listbox consumers manage activedescendant.
-      const tabbable = !listbox && i === this.#focusedIndex && !it.disabled;
-      it.setAttribute('tabindex', tabbable ? '0' : '-1');
+      const tabbable = !listbox && i === this.#focusedIndex && !disabled;
+      control.setAttribute('tabindex', tabbable ? '0' : '-1');
     });
   }
 
@@ -136,13 +164,13 @@ export class MpDropdownMenu extends MpDropdownElement {
         event.preventDefault();
         break;
       case 'Home':
-        this.#moveTo(this.#items().findIndex((it) => !it.disabled));
+        this.#moveTo(this.#items().findIndex((it) => !this.#isDisabled(it)));
         event.preventDefault();
         break;
       case 'End': {
         const items = this.#items();
         for (let i = items.length - 1; i >= 0; i--) {
-          if (!items[i].disabled) {
+          if (!this.#isDisabled(items[i])) {
             this.#moveTo(i);
             break;
           }
@@ -160,7 +188,7 @@ export class MpDropdownMenu extends MpDropdownElement {
     let cursor = this.#focusedIndex;
     for (let n = 0; n < total; n++) {
       cursor = (cursor + delta + total) % total;
-      if (!items[cursor].disabled) {
+      if (!this.#isDisabled(items[cursor])) {
         this.#moveTo(cursor);
         return;
       }
@@ -172,7 +200,7 @@ export class MpDropdownMenu extends MpDropdownElement {
     if (index < 0 || index >= items.length) return;
     this.#focusedIndex = index;
     this.#syncItems();
-    items[index].focus();
+    this.#controlOf(items[index]).focus();
   }
 
   // --- activation ------------------------------------------------------------
@@ -181,13 +209,13 @@ export class MpDropdownMenu extends MpDropdownElement {
     const item = event
       .composedPath()
       .find(
-        (el): el is MpDropdownItem =>
-          el instanceof HTMLElement && el.localName === 'mp-dropdown-item',
+        (el): el is HTMLElement =>
+          el instanceof HTMLElement && el.classList.contains('dropdown-item'),
       );
-    if (!item || item.disabled) return;
+    if (!item || this.#isDisabled(item) || item.closest('mp-dropdown-menu') !== this) return;
     this.dispatchEvent(
       new CustomEvent<DropdownSelectEventDetail>('select', {
-        detail: { item, value: item.value },
+        detail: { item, value: this.#valueOf(item) },
         bubbles: true,
         composed: true,
       }),
