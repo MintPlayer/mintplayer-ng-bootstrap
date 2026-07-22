@@ -145,3 +145,21 @@
     }
   }
 }
+
+// A FIXED bar whose open menu is taller than the viewport scrolls internally
+// instead of running off-screen (matches the pre-WC navbar's `max-height:100%;
+// overflow-y` on the fixed bar in small mode). Both attributes must live INSIDE
+// `:host(...)` — `:host([a])[b]` does not match the host — so this can't nest
+// under the `:host([breakpoint])` block above and is emitted here instead.
+// `overflow-x: hidden` avoids the spurious horizontal scrollbar a single-axis
+// overflow value would otherwise force.
+@each $name, $min in $grid-breakpoints {
+  @if $min and $min > 0 {
+    @include media-breakpoint-down($name, $grid-breakpoints) {
+      :host([breakpoint="#{$name}"][positioning="fixed"]) {
+        max-height: 100dvh;
+        overflow: hidden auto;
+      }
+    }
+  }
+}

@@ -12,5 +12,4 @@ export const ROUTES: Routes = [
   { path: 'toast', loadComponent: () => import('./toast/toast.component').then(m => m.ToastComponent) },
   { path: 'shell', loadComponent: () => import('./shell/shell.component').then(m => m.ShellComponent) },
   { path: 'dropdown-wc', loadComponent: () => import('./dropdown-wc/dropdown-wc.component').then(m => m.DropdownWcComponent) },
-  { path: 'navbar', loadComponent: () => import('./navbar/navbar.component').then(m => m.NavbarComponent) },
 ];
