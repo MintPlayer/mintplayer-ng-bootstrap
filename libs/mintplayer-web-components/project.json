@@ -100,6 +100,17 @@
         "command": "node tools/lit-ssr-utils/gen-navbar-chrome.mjs"
       }
     },
+    "codegen-ssr-chrome": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "echo \"SSR DSD chrome generated (shell + navbar + dropdown)\""
+      },
+      "dependsOn": [
+        "codegen-shell-chrome",
+        "codegen-navbar-chrome",
+        "codegen-dropdown-chrome"
+      ]
+    },
     "build": {
       "executor": "@nx/vite:build",
       "outputs": ["{options.outputPath}"],

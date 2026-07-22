@@ -29,7 +29,8 @@
         "{workspaceRoot}/dist/apps/react-bootstrap-demo/server"
       ],
       "dependsOn": [
-        "^build"
+        "^build",
+        "mintplayer-web-components:codegen-ssr-chrome"
       ],
       "options": {
         "command": "npx vite build --config apps/react-bootstrap-demo/vite.config.mts --ssr src/entry-server.tsx"
