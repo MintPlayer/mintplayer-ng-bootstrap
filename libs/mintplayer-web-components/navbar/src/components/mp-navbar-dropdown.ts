@@ -28,9 +28,30 @@ import { navbarDropdownStyles } from '../styles';
 export class MpNavbarDropdown extends MpNavbarElement {
   static override styles = [navbarDropdownStyles];
 
+  static override get observedAttributes(): string[] {
+    // `data-open` (inline) / `data-menu-open` (OverlayController) are the two
+    // open-state flags; observe both to mirror them onto the trigger's
+    // `aria-expanded` regardless of which path opened the panel.
+    return [...(super.observedAttributes ?? []), 'data-open', 'data-menu-open'];
+  }
+
   #isSubmenu = false;
   #overlay: OverlayController | null = null;
   #mql: MediaQueryList | null = null;
+
+  /** Open via either path — inline (`data-open`) or overlay (`data-menu-open`). */
+  get #anyOpen(): boolean {
+    return this.hasAttribute('data-open') || this.hasAttribute('data-menu-open');
+  }
+
+  override attributeChangedCallback(name: string, oldValue: string | null, newValue: string | null): void {
+    super.attributeChangedCallback(name, oldValue, newValue);
+    if (name === 'data-open' || name === 'data-menu-open') {
+      this.renderRoot
+        ?.querySelector('.dropdown-toggle')
+        ?.setAttribute('aria-expanded', String(this.#anyOpen));
+    }
+  }
 
   /** min-width px per Bootstrap breakpoint — mirrors mp-navbar's map. */
   static readonly #BREAKPOINT_PX: Record<string, number> = {
@@ -62,6 +83,11 @@ export class MpNavbarDropdown extends MpNavbarElement {
       this.#mql.addEventListener('change', this.#onModeChange);
     }
 
+    // Host-level Escape: catches the composed keydown whether focus is on the
+    // shadow trigger OR inside the slotted (light-DOM) menu — closes the
+    // innermost open dropdown and returns focus to its trigger.
+    this.addEventListener('keydown', this.#onHostKeydown);
+
     if (this.#isSubmenu) {
       this.setAttribute('data-submenu', '');
       this.#overlay = new OverlayController(this, {
@@ -84,6 +110,7 @@ export class MpNavbarDropdown extends MpNavbarElement {
 
   override disconnectedCallback(): void {
     super.disconnectedCallback();
+    this.removeEventListener('keydown', this.#onHostKeydown);
     document.removeEventListener('mousedown', this.#onDocMouseDown, true);
     this.#mql?.removeEventListener('change', this.#onModeChange);
   }
@@ -144,12 +171,38 @@ export class MpNavbarDropdown extends MpNavbarElement {
     if (event.key === 'Enter' || event.key === ' ' || event.key === 'Spacebar') {
       event.preventDefault();
       this.#toggle();
-    } else if (event.key === 'Escape') {
-      // Close whichever path is open (wide overlay or inline).
-      this.#overlay?.close();
-      this.#setOpen(false);
+    } else if (event.key === 'ArrowDown') {
+      // Disclosure-nav pattern: ArrowDown opens (if needed) and moves focus
+      // into the menu; the menu's roving tabindex takes over from there.
+      event.preventDefault();
+      if (!this.#anyOpen) this.#toggle();
+      this.#focusFirstItem();
     }
+    // Escape is handled at the host level (#onHostKeydown) so it also works
+    // with focus inside the slotted menu, and returns focus to the trigger.
   };
+
+  /** Escape closes the INNERMOST open dropdown and returns focus to its
+   *  trigger — fires for the shadow trigger and slotted menu content alike
+   *  (keydown is composed). Closed hosts let the event bubble to an open
+   *  ancestor, so nested submenus unwind one level per press. */
+  #onHostKeydown = (event: KeyboardEvent): void => {
+    if (event.key !== 'Escape' || !this.#anyOpen) return;
+    event.stopPropagation();
+    this.close();
+    this.renderRoot?.querySelector<HTMLElement>('.dropdown-toggle')?.focus();
+  };
+
+  /** Move focus to the first item control of the slotted menu (this menu's own
+   *  items only — nested submenus keep theirs). */
+  #focusFirstItem(): void {
+    const panel = this.querySelector(':scope > :not([slot="label"])');
+    const menu = panel?.matches('mp-dropdown-menu') ? panel : panel?.querySelector('mp-dropdown-menu');
+    if (!menu) return;
+    const item = [...menu.querySelectorAll('.dropdown-item')].find((i) => i.closest('mp-dropdown-menu') === menu);
+    const control = item?.querySelector<HTMLElement>('a, button') ?? (item as HTMLElement | undefined);
+    control?.focus();
+  }
 
   override render() {
     return html`
@@ -159,6 +212,7 @@ export class MpNavbarDropdown extends MpNavbarElement {
         role="button"
         tabindex="0"
         aria-haspopup="menu"
+        aria-expanded="false"
         @mousedown=${this.#onTriggerPress}
         @keydown=${this.#onKeydown}
       ><slot name="label"></slot></a>
