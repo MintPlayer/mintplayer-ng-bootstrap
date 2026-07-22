@@ -203,3 +203,40 @@ Full detail in the PRD ("Post-PR review fixes", Rounds 1–5). Summary of what s
 - **R5** — navbar demo moved Overlays → **Enterprise** (`/enterprise/navbar`); fixed-bar small-mode internal scroll (`max-height:100dvh; overflow:hidden auto`, `:host([breakpoint=x][positioning=fixed])` — both attrs inside `:host()`); scrollbar hidden via `scrollbar-width:none` (not the OS-specific `-17px`); `serve` now `dependsOn codegen-ssr-chrome` (SSR/no-JS on a fresh checkout); version bumps (wc 2.1.0 / ng 22.5.0 / react 19.7.0 / vue 3.8.0).
 
 **Tests (behavior lock-in):** `apps/ng-bootstrap-demo-e2e/e2e/navbar.spec.ts` — 11 Playwright tests, chromium + firefox, JS-enabled (see PRD "Test coverage"). `navbar-nojs.spec.ts` (JS disabled, chromium + firefox) — asserts the SSR DSD attaches with no upgrade and the collapse toggles via the native `<label>`→in-shadow-`<input type=checkbox>` state (`toBeChecked()`); with JS off, `page.evaluate`/computed-style is unavailable and the collapse reveal is a paint-clip with unchanged bounding boxes, so the native checked-state is the observable proxy for the CSS `:checked ~` reveal. Layout/CSS can't be asserted in the jsdom WC unit tests, so it lives in e2e.
+
+## Phase 7 — Angular API re-alignment over the frozen WC (investigated 2026-07-22)
+
+Goal: restore the old ergonomic Angular authoring API (grouping `<bs-navbar-nav>`, uniform `<bs-navbar-item>` dropdown items, no leaked `slot="end"`) **without changing the WC**. Full analysis + feasibility table + recommended API + constraints in the PRD ("Angular API re-alignment over the frozen WC"). This phase is **additive Angular wrapper surface** — no WC or SSR-chrome change — so it can ship in a separate follow-up PR from #390.
+
+**Scope confirmed (2026-07-22): option C (maximal)**, plus the animated hamburger→X toggler restored on the navbar (see PRD "Scope decision + animated-toggler investigation" — the WC owns the cross via its in-shadow `:checked` machine; verdict table there). The "WC stays frozen" premise is relaxed for exactly one change: the toggler render/styles (a zero-WC-change animated toggler is provably impossible — no-JS state can't leave the shadow). **Still open: PR target** (#390 vs follow-up; recommended follow-up).
+
+### Step 0 — spike (GATE, do first)
+Validate `display:contents` on a slotted wrapper flattening its children into the shadow `.navbar-nav` flex row, in **both** alignment groups, **Chromium + Firefox** (older Firefox dropped display:contents flex items). Throwaway page: `<mp-navbar breakpoint="lg">` with `<div style="display:contents"><mp-navbar-item>…</mp-navbar-item></div>` in the default slot and another `slot="end"`. Assert: (1) row (wide) / column (narrow) layout matches bare items; (2) `end` group right-aligns (`margin-inline-start:auto`); (3) link color (`--bs-nav-link-*`) reaches items; (4) no-JS collapse reveals grouped items. If Firefox fails → fall back to per-item `[align]` (option A) and stop.
+
+### Step 1 — `<bs-navbar-nav [align]>` grouping container (`libs/mintplayer-ng-bootstrap/navbar/src/navbar-nav/`)
+- Component: template `<ng-content></ng-content>`; host `[attr.slot]` = `align()==='end' ? 'end' : null`; **static** `display:contents` (host style / encapsulated sheet — NOT via `afterNextRender`, per PRD no-JS-flash constraint).
+- Input `align = input<'start'|'end'>('start')`. **Omit `[collapse]`** (WC owns one shared collapse region — blocked). Export from the navbar entry `index.ts`.
+- Removes raw `slot="end"` from consumer templates (mirrors how `bs-navbar-brand` hides `slot="brand"`).
+
+### Step 2 — context-aware `bs-navbar-item` dropdown items
+- Add an injection token (e.g. `BS_DROPDOWN_MENU_CONTEXT`) provided by `bs-dropdown-menu` **and** `bs-navbar-dropdown`.
+- `bs-navbar-item` `@Optional() inject`s it: **outside** a menu → current `<mp-navbar-item>` render (`.nav-link`); **inside** a menu → `<li class="dropdown-item"><a>…` with the anchor as an **immediate child** (companion reset uses `.dropdown-item > a`). Reuse `[bsDropdownItem]`'s class/aria/roving wiring; ensure `mp-dropdown-menu`'s `querySelectorAll('.dropdown-item')` (scoped by `closest`) + `querySelector('a,button')` still resolve.
+- `bs-dropdown-menu` + `[bsDropdownItem]` stay the public API for **standalone** menus — unchanged.
+
+### Step 3 — animated hamburger→X toggler (the one WC change)
+- `mp-navbar.ts` `render()`: replace `<span class="navbar-toggler-icon">` with three `<span class="navbar-toggler-bar">` inside the existing `<label>` (checkbox, `for` wiring, and `part="toggler"` untouched).
+- `navbar.styles.scss`: bars `25px×2px`, `margin: 6px 0`, `background-color: var(--bs-navbar-color)`, `transition: 0.4s`; X-morph via `.navbar-toggle:checked ~ .navbar-toggler .navbar-toggler-bar:nth-child(…)` using the **verbatim old transforms** (bar 1 `rotate(-45deg) translate(-7px, 5px)`, bar 2 `opacity: 0`, bar 3 `rotate(45deg) translate(-6px, -4px)` — rotate-then-translate order is load-bearing); drop the now-unused `--mp-toggler-mask`; add the bars to the `prefers-reduced-motion` block.
+- Codegen: `codegen-wc` + `codegen-navbar-chrome` (auto via the `codegen-ssr-chrome` aggregate). Wrappers (ng/react/vue) and demos: **no change**. The standalone `@mintplayer/ng-bootstrap/navbar-toggler` lib (toggle-buttons demo) stays as-is.
+- e2e: extend `navbar.spec.ts` (crossed state after `.click()` — never focus — e.g. bar 1 computed `transform` ≠ `none` when open, back to `none`/identity when closed) and `navbar-nojs.spec.ts` can't read computed styles, so the JS-enabled spec carries the visual assertion; the no-JS spec already proves the `:checked` machine the morph keys off.
+
+### Step 4 — `[bsNavbarTrigger]` + `[bsNavbarContent]`/`#nav` directives
+- `bsNavbarContent`: `ResizeObserver` on the `bs-navbar` host → content `padding-top` (replaces hard-coded `76px`).
+- `bsNavbarTrigger`: only if the trigger-anchor idiom is restored; otherwise keep `bs-navbar-dropdown [label]` (recommended) and skip.
+- No functional light-DOM toggler (no-JS-dead — PRD verdict table); no no-op shim needed since the real `bs-navbar-toggler` lib still exists for standalone use.
+
+### Step 5 — migrate the demo + tests
+- Rewrite `apps/ng-bootstrap-demo/src/app/app.component.html` to the re-aligned API (two `<bs-navbar-nav>` groups; uniform `<bs-navbar-item>` dropdown items). Keep the existing navbar e2e specs green (they assert behavior, which is unchanged) and add a spec asserting the `end` group right-aligns and grouped items lay out correctly (guards the display:contents mechanism). Re-run chromium + firefox.
+- **(Optional) React/Vue parity** — mirror `bs-navbar-nav` + context-aware item; else document the Angular-only asymmetry.
+
+### Verification
+`nx build` the 4 libs + 3 demos; WC unit tests green (Step 3 touches `mp-navbar`'s render — update any toggler-icon assertions); regenerated SSR chrome (aggregate) — verify the DSD toggler morphs under no-JS manually or via the JS-enabled spec; navbar JS + no-JS e2e green chromium + firefox; new grouping/alignment + crossed-toggler e2e green.

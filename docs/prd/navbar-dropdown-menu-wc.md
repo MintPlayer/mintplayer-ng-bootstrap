@@ -277,3 +277,80 @@ The navbar behavior/layout is locked by **Playwright e2e**, not the WC unit test
 - **`navbar-nojs.spec.ts`** (`javaScriptEnabled: false`, chromium + firefox) — the server-rendered DSD attaches with no upgrade (shadow chrome + slotted nav links present), and the hamburger drives the collapse via the **native `<label for>` → in-shadow `<input type=checkbox>`** (`:checked ~ .navbar-collapse`), asserted two-way with `toBeChecked()`. Note: with JS disabled `page.evaluate`/computed-style is unavailable, and the collapse reveal is a *paint-clip* (`overflow:hidden` + grid `0fr↔1fr`) that leaves bounding boxes unchanged — so it can't be measured geometrically (unlike `mp-shell`'s off-screen translate). The native checked-state is the honest, observable proxy for the CSS reveal it gates.
 
 Not covered by unit tests (deliberately — layout can't be asserted in jsdom); the pure-DOM bits (`close()`, `data-expand` derivation, roving roles) remain a possible future jsdom unit-test add.
+
+## Angular API re-alignment over the frozen WC (2026-07-22)
+
+**Problem raised:** the migration changed the *public Angular authoring API* severely, and in ways that quietly break the library's own conventions. Two smells:
+1. **`slot="end"` leaks the WC's shadow-slot name** into consumer templates. `bs-navbar-brand` correctly hides its slot (`host:{'[attr.slot]':"'brand'"}`); the start/end grouping does not — so right-aligning an item means writing a raw WC attribute. Information-hiding violation.
+2. **`<bs-navbar-nav>` disappeared** and dropdown items changed from the uniform `<bs-navbar-item><a>…</a></bs-navbar-item>` idiom (at every nesting level) to `<bs-dropdown-menu>` + raw `<li bsDropdownItem>`.
+
+**Principle that unblocks the fix:** shadow-DOM encapsulation hides the WC's *internals*; it does **not** constrain the light DOM we feed it. Angular wrapper components can render exactly the flat, slot-tagged structure `mp-navbar`/`mp-dropdown-menu` expect — so we can restore the old ergonomic Angular API **without changing the (final) WC**. The WC stays the single source of UI truth; the wrappers become richer authoring sugar over it.
+
+### Feasibility (investigated — two read-only agents; WC contracts + old-API audit)
+
+| Old-API element | Verdict | Mechanism / note |
+|---|---|---|
+| **`<bs-navbar-nav [align]>`** grouping container | ✅ **Works** | Host `[attr.slot]="align==='end' ? 'end' : null"` + `display:contents`. Authored inside `<bs-navbar>`, the `<bs-navbar-nav>` host is projected as a **direct** child of `<mp-navbar>` (so it is slotted); `display:contents` elides its box so its `<bs-navbar-item>` children become the flex children of the WC's `<ul class="navbar-nav">`. **This is the identical display:contents-flattening the WC already relies on** for its own default slot + `.navbar-collapse-inner` — the wrapper just adds one more level of the same kind. Custom props (`--bs-nav-link-*`, `--mp-navbar-breakpoint`) inherit straight through. |
+| **`<bs-navbar-nav [collapse]>`** | ❌ **Blocked** | The WC has ONE collapse region wrapping *both* nav groups; there is no per-group collapse hook. Drop the input (or accept it as a documented no-op). Not restorable without changing the WC. |
+| **Uniform `<bs-navbar-item><a></bs-navbar-item>` as a dropdown item** | ⚠️ **Works with caveat** | `bs-navbar-item` must become **context-aware**: `bs-dropdown-menu` / `bs-navbar-dropdown` provide an injection token; inside a menu the item renders `<li class="dropdown-item"><a>…` (the light DOM `mp-dropdown-menu` queries — it does `querySelectorAll('.dropdown-item')` scoped by `closest('mp-dropdown-menu')===this`, control = `item.querySelector('a,button')`), instead of its normal `<mp-navbar-item>` (`.nav-link`) render. **Caveat:** the companion link-reset sheet uses a **direct-child** combinator `.dropdown-item > a`, so the anchor must stay an immediate child (no `mp-navbar-item` in between). Dual-mode component, not "reuse unchanged". |
+| **`<bs-navbar-toggler>` / `*bsExpandButton`** (custom/consumer toggler) | ❌ **Blocked** | The hamburger is a **shadow-internal no-JS CSS state machine** (`<input type=checkbox>` + `<label for>` + `:checked ~`). A light-DOM consumer toggler can't join that `:checked` machine (checkbox is in the shadow) → **no-JS-dead**, defeating the WC's central no-JS guarantee; a JS-only toggler duplicates the built-in one. Recommendation: **don't restore as functional.** Keep programmatic control via `[expanded]`/`(expandedchange)`; if the symbol must exist for source-compat, ship a documented no-op/deprecation marker. |
+| **`[bsNavbarTrigger]`** (non-navigating active-state anchor) | ✅ **Works** (wrapper directive) | Pure Angular-router concern (sets `.active` on URL match, never navigates). Only needed if we restore the *trigger-anchor* dropdown idiom; the current `<bs-navbar-dropdown [label]>` (WC owns the trigger) is cleaner and is **recommended to keep** instead. |
+| **`[bsNavbarContent]="nav"` + `#nav`** (fixed-bar content padding) | ✅ **Works** (wrapper directive) | `ResizeObserver` on the `bs-navbar` host → `padding-top` on page content; replaces the current hard-coded `padding-top:76px`. Optional ergonomic nicety. |
+| **CDK `DomPortal` overlay-pull of nested submenus** | ➖ **N/A — superseded** | Deliberately replaced by the WC's self-contained `position:fixed` shadow dropdown. CDK overlays can't cross the shadow boundary anyway; nothing to restore. |
+
+### Recommended re-aligned API (over the unchanged WC)
+```html
+<bs-navbar [color]="'body-tertiary'" [breakpoint]="'lg'" [positioning]="'fixed'">
+  <bs-navbar-brand><a routerLink="/">ng-bootstrap</a></bs-navbar-brand>
+
+  <bs-navbar-nav>                         <!-- start group (default slot) -->
+    <bs-navbar-item><a routerLink="/">Home</a></bs-navbar-item>
+    <bs-navbar-dropdown [label]="'Basic'">
+      <bs-navbar-item><a routerLink="/basic/alert">Alert</a></bs-navbar-item>   <!-- context-aware -->
+      <bs-navbar-dropdown [label]="'Forms'"> … </bs-navbar-dropdown>            <!-- recursive -->
+    </bs-navbar-dropdown>
+  </bs-navbar-nav>
+
+  <bs-navbar-nav align="end">             <!-- end group (slot="end") -->
+    <bs-navbar-item><demo-theme-toggle /></bs-navbar-item>
+  </bs-navbar-nav>
+</bs-navbar>
+```
+No raw `slot=`, no raw `<li bsDropdownItem>`, no `<bs-dropdown-menu>` boilerplate inside the navbar; `<bs-navbar-nav align>` restores the familiar grouping and hides the slot. `bs-dropdown-menu` + `[bsDropdownItem]` **remain** the public API for **standalone** menus (typeahead / tree-select / `[bsDropdown]`) — the navbar just stops requiring consumers to hand-assemble them.
+
+### Constraints locked in by the investigation
+- **`display:contents` grouping must be static** (component stylesheet or static host binding), **never applied via `afterNextRender`/JS** — else a no-JS layout flash. SSR/DSD-safe as pure CSS.
+- **Context-switching item render is a compile-time structural branch** (identical server-side) — SSR-safe.
+- **Cross-browser spike required** before committing: `display:contents` on a slotted wrapper whose children must become flex items of the shadow `.navbar-nav`, in **both** alignment groups, Chromium **and** Firefox (older Firefox historically dropped display:contents flex items). Assert: row/column layout matches bare items; `end` right-aligns via `margin-inline-start:auto`; link colors (`--bs-nav-link-*`) reach the items; no-JS collapse still reveals the grouped items.
+- **React/Vue parity:** this is Angular *authoring ergonomics* — the WC contract is identical across frameworks, so correctness never depends on it. The grouping container + context-aware item can be mirrored in React/Vue (same display:contents+slot mechanism) but that's a deliberate opt-in; until then Angular gains `<bs-navbar-nav>` that React/Vue lack. `[collapse]` is unsupportable everywhere — don't expose it in any framework.
+
+### Open scope decisions (need confirmation before implementation)
+1. **How far to re-align:** (A) minimal — just add `[align]` to items to kill the `slot="end"` leak; (B) **recommended** — restore `<bs-navbar-nav [align]>` grouping + context-aware `bs-navbar-item` dropdown items; (C) maximal — also restore `bsNavbarTrigger` trigger-anchor idiom + `bsNavbarContent`/`#nav` + no-op toggler shim.
+2. **Dropdown-item authoring:** keep `<li bsDropdownItem>` inside the navbar, or make `bs-navbar-item` dual-mode so items are uniform at every level (option B). Standalone `bs-dropdown-menu` keeps `[bsDropdownItem]` regardless.
+3. **Toggler symbols:** omit entirely (breaking) vs ship a no-op/deprecated `bs-navbar-toggler`/`*bsExpandButton` for source-compat.
+4. **Ship in PR #390 or a follow-up PR** (this is additive wrapper surface over a frozen WC, so it can land separately without touching the WC).
+
+### Scope decision + animated-toggler investigation (2026-07-22, round 2)
+
+**User decisions:** scope **C (maximal)** confirmed — which subsumes B (grouping container + dual-mode items), so open decisions 1–2 above are resolved. Additionally: **re-introduce the animated hamburger→X ("cross") toggler** on the navbar. Decision 3 is superseded by the investigation below (the WC owns the animated cross; no shim). Decision 4 (PR #390 vs follow-up) is **still open** — recommendation: follow-up PR (additive surface; #390 is green and review-gated).
+
+**Status-quo correction:** the standalone `@mintplayer/ng-bootstrap/navbar-toggler` lib was **never deleted** — it still exists and `advanced/toggle-buttons` still uses `<bs-navbar-toggler [(state)]>` standalone. What the migration lost is the animated cross **on the navbar itself** (the WC toggler is a static masked SVG). "Re-introduce" therefore means: restore the animated X on the navbar's own toggler — not resurrect a deleted component.
+
+**Old visual, recovered verbatim from `master`** (reproduce faithfully): three bars `25px×2px`, `margin: 6px 0`, `transition: 0.4s` (all-props, ease), no keyframes, default transform-origin. Open state by `nth`: bar 1 `rotate(-45deg) translate(-7px, 5px)`; bar 2 `opacity: 0`; bar 3 `rotate(45deg) translate(-6px, -4px)`. **Rotate-then-translate order is load-bearing** — the translate runs in the bar's already-rotated coordinate space; reordering misaligns the X. Color: old used `var(--bs-secondary-color)`; the WC version should use `var(--bs-navbar-color)` — the theme-aware token its current masked icon already uses (correct across the shadow boundary for adaptive and solid navbar colors).
+
+**Mechanism verdicts** (crux: does the X-morph *state* work with JS disabled?):
+
+| Mechanism | no-JS X-morph | no-JS click | Verdict |
+|---|:---:|:---:|---|
+| **1. WC-internal bars** — replace the icon span with 3 shadow bar spans; X driven by the existing sibling machine `.navbar-toggle:checked ~ .navbar-toggler .navbar-toggler-bar` | ✅ | ✅ | **RECOMMENDED** |
+| 2. `slot="toggler"` inside the shadow `<label>` + custom-property state bridge (`:checked ~ .navbar-toggler ::slotted([slot=toggler]) { --mp-toggler-open: 1 }`; consumer glyph derives transforms via `calc()`) | ✅ | ✅* | Viable, over-scoped |
+| 3. `::part(toggler)` styling only (no WC change) | ❌ | ✅ | Reject |
+| 4. JS-only light-DOM toggler calling `navbar.toggle()` | ❌ | ❌ | Reject |
+
+**Key finding — a zero-WC-change animated toggler is impossible.** The open/closed state lives in the in-shadow checkbox; with JS off nothing can reflect it to the host, `::part()` cannot select the part's descendants, and consumer CSS can never see the shadow `:checked`. Every no-JS-correct option is a WC change, so the minimal one wins: **option 1**, the same `:checked ~` sibling pattern that already reveals the collapse (DOM order verified: checkbox precedes the label). No new component in any framework; the WC owns the animated cross as its default toggler (WC = single source of UI truth). `::part(toggler)` stays for consumer padding/border tweaks; bars join the existing `prefers-reduced-motion` block; the mask custom property is dropped. Effort ~half a day incl. codegen + one e2e assertion.
+
+Option 2 (kept in the back pocket, only if consumer-swappable toggler graphics ever become a real requirement) is technically sound — custom properties set on a slotted element inherit into its light-DOM subtree, and the *derived* transform/opacity longhands transition when the var flips — with one hard constraint worth recording: **native label activation does not forward clicks from interactive descendants**, so a slotted toggler must render `<div>`/`<span>` bars, never a `<button>`/`<a>`, or the no-JS click dies.
+
+**Host `expanded` reflection:** not needed and wouldn't help — with JS off nothing runs to reflect it (that's exactly why the design keys off in-shadow `:checked`). One-liner later if JS-present consumers ever want `:host([expanded])` styling; orthogonal to this work.
+
+**No-JS technique noted for the record (from the user):** tri-state controls sometimes use a checkbox's `indeterminate` as the default "auto" state. Caveat that governs its use here: `indeterminate` is a DOM **property with no HTML attribute** — a script-free document can never start a checkbox `:indeterminate` (it parses unchecked), so nothing load-bearing for no-JS may hang off it. The natively no-JS tri-state is a **radio group with no `checked`** (all radios match `:indeterminate` with zero script). Irrelevant to the binary navbar toggle; recorded for future no-JS state machines.
