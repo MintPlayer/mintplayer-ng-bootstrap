@@ -130,6 +130,30 @@ button {
   white-space: nowrap;
 }
 
+.ts-chip--draggable {
+  // touch-action:none lets the long-press drag take over without the browser
+  // hijacking the gesture for scrolling (the gesture is frozen at touchstart).
+  touch-action: none;
+  user-select: none;
+  cursor: grab;
+}
+
+.ts-chip--draggable:active {
+  cursor: grabbing;
+}
+
+.ts-chip--draggable:focus-visible {
+  outline: 2px solid var(--bs-primary, #0d6efd);
+  outline-offset: 1px;
+}
+
+.ts-chip-grip {
+  display: inline-flex;
+  align-items: center;
+  line-height: 1;
+  color: var(--bs-secondary-color, #6c757d);
+}
+
 .ts-chip-remove,
 .ts-clear {
   display: inline-flex;

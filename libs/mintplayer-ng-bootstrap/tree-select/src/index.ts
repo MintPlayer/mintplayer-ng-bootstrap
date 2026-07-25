@@ -7,6 +7,7 @@ export type {
   TreeSelectVariant,
   TreeSelectProvider,
   TreeSelectChangeEventDetail,
+  TreeSelectReorderEventDetail,
   NodePage,
   NodeRequest,
 } from '@mintplayer/web-components/tree-select';

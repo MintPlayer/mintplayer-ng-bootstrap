@@ -5,5 +5,6 @@ export type {
   NodeRequest,
   TreeSelectProvider,
   TreeSelectChangeEventDetail,
+  TreeSelectReorderEventDetail,
   TreeNode,
 } from './tree-select';

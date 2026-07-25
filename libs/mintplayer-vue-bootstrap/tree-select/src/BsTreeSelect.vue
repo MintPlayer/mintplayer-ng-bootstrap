@@ -5,6 +5,7 @@ import type {
   TreeNode,
   TreeSelectMode,
   TreeSelectProvider,
+  TreeSelectReorderEventDetail,
   TreeSelectVariant,
 } from '@mintplayer/web-components/tree-select';
 import { h, onBeforeUnmount, onMounted, ref, render, useSlots, watch } from 'vue';
@@ -25,6 +26,7 @@ const props = withDefaults(
     panelScrollHeight?: string;
     searchDebounceMs?: number;
     disabled?: boolean;
+    reorderable?: boolean;
   }>(),
   {
     mode: 'single',
@@ -35,8 +37,11 @@ const props = withDefaults(
     panelScrollHeight: '300px',
     searchDebounceMs: 200,
     disabled: false,
+    reorderable: false,
   },
 );
+
+const emit = defineEmits<{ reorder: [TreeSelectReorderEventDetail] }>();
 
 const model = defineModel<TreeNode | TreeNode[] | null>({ default: null });
 const el = ref<MpTreeSelect | null>(null);
@@ -52,6 +57,7 @@ const syncConfig = () => {
   e.panelScrollHeight = props.panelScrollHeight;
   e.searchDebounceMs = props.searchDebounceMs;
   e.disabled = props.disabled;
+  e.reorderable = props.reorderable;
   e.provider = props.provider;
 };
 
@@ -149,6 +155,7 @@ watch(
     props.panelScrollHeight,
     props.searchDebounceMs,
     props.disabled,
+    props.reorderable,
     props.provider,
   ],
   syncConfig,
@@ -164,6 +171,14 @@ function onValueChange(ev: Event) {
   const detail = (ev as CustomEvent<{ value: TreeNode | TreeNode[] | null }>).detail;
   model.value = detail?.value ?? null;
 }
+
+function onReorder(ev: Event) {
+  const detail = (ev as CustomEvent<TreeSelectReorderEventDetail>).detail;
+  if (!detail) return;
+  // Reorder changes the selection order; flow it back through v-model.
+  model.value = detail.value;
+  emit('reorder', detail);
+}
 </script>
 
 <template>
@@ -171,5 +186,6 @@ function onValueChange(ev: Event) {
     ref="el"
     v-bind="$attrs"
     @value-change="onValueChange"
+    @reorder="onReorder"
   />
 </template>
