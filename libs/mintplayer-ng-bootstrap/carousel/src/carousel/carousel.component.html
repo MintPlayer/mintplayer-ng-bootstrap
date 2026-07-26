@@ -1,124 +1,16 @@
-@if (isServerSide) {
-    <div class="carousel mx-auto noscript"
-        role="region"
-        aria-roledescription="carousel"
-        [attr.aria-label]="ariaLabel()"
-        [class.carousel-vertical]="orientation() === 'vertical'">
-        <div class="carousel-inner d-grid">
-            @let imagesValue = images();
-            @if (imageCount(); as imageCount) {
-                @for (image of imagesValue; track image.id; let i = $index) {
-                    <input type="radio" [id]="'car-' + i" [name]="'car'" class="car-radio d-none" bsNoNoscript [checked]="i === 0">
-                    <div class="carousel-item fade d-flex flex-row h-100 align-items-center"
-                        role="group"
-                        aria-roledescription="slide"
-                        [attr.aria-label]="(i + 1) + ' of ' + imageCount"
-                        [class.flex-column]="orientation() === 'vertical'">
-                        <div class="w-100 position-relative">
-                            <ng-container [ngTemplateOutlet]="image.itemTemplate"></ng-container>
-                            @if (indicators()) {
-                                <div class="carousel-indicators"
-                                    [class.carousel-indicators-vertical]="orientation() === 'vertical'">
-                                    @for (image of imagesValue; track image.id; let j = $index) {
-                                        <label [attr.for]="'car-' + (j % imageCount)" [attr.aria-label]="'Slide ' + (j + 1)" [class.active]="i === j" data-bs-target></label>
-                                    }
-                                </div>
-                            }
-                        </div>
-                    </div>
-
-                    <label class="carousel-control-prev cursor-pointer" [for]="'car-' + ((i - 1 + imageCount) % imageCount)"
-                        [class.carousel-control-vertical]="orientation() === 'vertical'">
-                        <span class="carousel-control-prev-icon" aria-hidden="true"></span>
-                        <span class="visually-hidden">Previous</span>
-                    </label>
-                    <label class="carousel-control-next cursor-pointer" [for]="'car-' + ((i + 1) % imageCount)"
-                        [class.carousel-control-vertical]="orientation() === 'vertical'">
-                        <span class="carousel-control-next-icon" aria-hidden="true"></span>
-                        <span class="visually-hidden">Next</span>
-                    </label>
-                }
-            }
-        </div>
-    </div>
-} @else {
-    <div class="carousel mx-auto"
-        role="region"
-        aria-roledescription="carousel"
-        [attr.aria-label]="ariaLabel()"
-        [class.slide]="animation() === 'slide'"
-        [class.fade]="animation() === 'fade'"
-        [class.carousel-vertical]="orientation() === 'vertical'">
-        @if (playPauseTemplate() || (interval() ?? 0) > 0) {
-            <div class="carousel-play-pause">
-                <ng-container *ngTemplateOutlet="playPauseTemplate() ?? defaultPlayPauseTemplate; context: { $implicit: paused(), paused: paused(), toggle: togglePaused }"></ng-container>
-            </div>
-        }
-        @if (indicators()) {
-            <div class="carousel-indicators" [class.carousel-indicators-vertical]="orientation() === 'vertical'">
-                @for (image of images(); track image.id; let i = $index) {
-                    <button type="button" (click)="goto(i)"
-                        [class.active]="currentImageIndex() === i" data-bs-target
-                        [attr.aria-current]="currentImageIndex() === i ? true : null"
-                        [attr.aria-label]="'Slide ' + (i + 1)"></button>
-                }
-            </div>
-        }
-        <div class="carousel-inner" bsSwipeViewport #innerElement [style.height.px]="slideHeight()"
-            [ariaLive]="slideAriaLive()"
-            [ariaBusy]="container.isAnimating() ? true : null">
-            <div bsSwipeContainer #container="bsSwipeContainer"
-                [minimumOffset]="50"
-                [animation]="animation()"
-                [orientation]="orientation()"
-                [keyboardEvents]="keyboardEvents()"
-                [(imageIndex)]="currentImageIndex"
-                (animationStart)="onContainerAnimationStart()"
-                (animationEnd)="onContainerAnimationEnd()">
-                @if (animation() === 'slide') {
-                    <div class="carousel-item" bsSwipe [offside]="true">
-                        <ng-container *ngTemplateOutlet="lastImageTemplate()"></ng-container>
-                    </div>
-                }
-                @for (image of images(); track image.id; let i = $index) {
-                    <div class="carousel-item" bsSwipe
-                        [class.active]="currentImageIndex() === i">
-                        <ng-container *ngTemplateOutlet="image.itemTemplate"></ng-container>
-                    </div>
-                }
-                @if (animation() === 'slide') {
-                    <div class="carousel-item" bsSwipe [offside]="true">
-                        <ng-container *ngTemplateOutlet="firstImageTemplate()"></ng-container>
-                    </div>
-                }
-            </div>
-        </div>
-        <button class="carousel-control-prev" type="button" (click)="previous()"
-            [class.carousel-control-vertical]="orientation() === 'vertical'"
-            aria-label="Previous slide">
-            <span class="carousel-control-prev-icon" aria-hidden="true"></span>
-            <span class="visually-hidden">Previous</span>
-        </button>
-        <button class="carousel-control-next" type="button" (click)="next()"
-            [class.carousel-control-vertical]="orientation() === 'vertical'"
-            aria-label="Next slide">
-            <span class="carousel-control-next-icon" aria-hidden="true"></span>
-            <span class="visually-hidden">Next</span>
-        </button>
-    </div>
-}
-
-<!-- Fallback rendered when the consumer does not supply a `*bsCarouselPlayPause`
-     template but auto-advance is configured. APG requires auto-advancing
-     carousels to expose a pause control; this is the carousel's "make it
-     correct by default" path so consumers don't have to write boilerplate. -->
-<ng-template #defaultPlayPauseTemplate let-paused="paused" let-toggle="toggle">
-    <button type="button"
-            class="carousel-play-pause-btn"
-            [class.carousel-play-pause-paused]="paused"
-            [class.carousel-play-pause-playing]="!paused"
-            (click)="toggle()" [attr.aria-pressed]="paused"
-            [attr.aria-label]="paused ? 'Resume auto-advance' : 'Pause auto-advance'">
-        <span class="carousel-play-pause-icon" aria-hidden="true"></span>
-    </button>
-</ng-template>
+<mp-carousel
+    #element
+    [attr.animation]="animation()"
+    [attr.orientation]="orientation()"
+    [attr.indicators]="indicatorsAttr()"
+    [attr.interval]="intervalAttr()"
+    [attr.wrap]="wrapAttr()"
+    [attr.keyboard-events]="keyboardEventsAttr()"
+    [attr.paused]="pausedAttr()"
+    [attr.aria-label]="ariaLabel()"
+    (slide-change)="onSlideChange($event)"
+    (paused-change)="onPausedChange($event)"
+    (animation-start)="onAnimationStart($event)"
+    (animation-end)="onAnimationEnd($event)">
+    <ng-content></ng-content>
+</mp-carousel>

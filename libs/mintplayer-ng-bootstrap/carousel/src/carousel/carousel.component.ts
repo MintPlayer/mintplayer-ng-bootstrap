@@ -1,234 +1,136 @@
-import { isPlatformServer, NgTemplateOutlet } from '@angular/common';
-import { AfterViewInit, ChangeDetectionStrategy, Component, computed, contentChildren, DestroyRef, effect, ElementRef, forwardRef, inject, input, model, OnDestroy, output, PLATFORM_ID, signal, TemplateRef, viewChild } from '@angular/core';
-import { Color } from '@mintplayer/ng-bootstrap';
-import { BsSwipeContainerDirective, BsSwipeDirective, BsSwipeViewportDirective } from '@mintplayer/ng-swiper/swiper';
-import { BsNoNoscriptDirective } from '@mintplayer/ng-bootstrap/no-noscript';
-import { BsReducedMotionDirective } from '@mintplayer/ng-bootstrap/reduced-motion';
-import { BsCarouselImageDirective } from '../carousel-image/carousel-image.directive';
-import type { BsCarouselPlayPauseContext } from '../carousel-play-pause/carousel-play-pause.directive';
+import {
+  afterNextRender,
+  ChangeDetectionStrategy,
+  Component,
+  computed,
+  CUSTOM_ELEMENTS_SCHEMA,
+  ElementRef,
+  input,
+  model,
+  output,
+  viewChild,
+} from '@angular/core';
+import type {
+  CarouselAnimation,
+  CarouselOrientation,
+  CarouselPausedChangeEventDetail,
+  CarouselSlideChangeEventDetail,
+  MpCarousel,
+} from '@mintplayer/web-components/carousel';
 
+/**
+ * `<bs-carousel>` — Angular wrapper around the `<mp-carousel>` web component.
+ *
+ * Slides are plain content children (no structural directive):
+ *
+ *     <bs-carousel animation="fade" [indicators]="true" [interval]="4000" ariaLabel="Photos">
+ *       <img src="a.png" alt="…">
+ *       <img src="b.png" alt="…">
+ *     </bs-carousel>
+ *
+ * Track layout, gestures, keyboard, ARIA, the radio-driven no-JS tier and the
+ * height contract all live in the WC (single source of UI truth); this wrapper
+ * only bridges inputs to attributes and re-emits the WC's typed events. A
+ * custom play/pause control can be projected with `slot="play-pause"` — wire
+ * it to `togglePaused()` (or listen to `pausedChange`).
+ *
+ * The WC is registered **client-side only** (`afterNextRender`); on the server
+ * Angular emits a bare `<mp-carousel>` tag and the SSR layer injects its
+ * Declarative Shadow DOM (see `injectMpCarouselDsd`), so the carousel renders
+ * — and navigates — with JS off.
+ */
 @Component({
   selector: 'bs-carousel',
   templateUrl: './carousel.component.html',
-  styleUrls: ['./carousel.component.scss'],
-  imports: [
-    NgTemplateOutlet,
-    BsSwipeContainerDirective,
-    BsSwipeDirective,
-    BsSwipeViewportDirective,
-    BsNoNoscriptDirective,
-  ],
   changeDetection: ChangeDetectionStrategy.OnPush,
-  hostDirectives: [BsReducedMotionDirective],
-  host: {
-    '[@.disabled]': 'animationsDisabled()',
-  },
+  schemas: [CUSTOM_ELEMENTS_SCHEMA],
 })
-export class BsCarouselComponent implements AfterViewInit, OnDestroy {
-  private platformId = inject(PLATFORM_ID);
-  private destroyRef = inject(DestroyRef);
-  private readonly reducedMotion = inject(BsReducedMotionDirective);
+export class BsCarouselComponent {
+  /** Slide transition: `slide` (default), `fade`, or `none`. */
+  readonly animation = input<CarouselAnimation>('slide');
+  /** Slide axis; vertical also pins every slide to the tallest one. */
+  readonly orientation = input<CarouselOrientation>('horizontal');
+  /** Show the indicator dots. */
+  readonly indicators = input(false);
+  /** Auto-advance interval in ms; `null`/`0` disables autoplay. */
+  readonly interval = input<number | null>(null);
+  /** Wrap around at the ends (buttons, keyboard AND swipe). */
+  readonly wrap = input(true);
+  /** Arrow/Home/End navigation on the focused viewport. */
+  readonly keyboardEvents = input(true);
+  /** Accessible label for the carousel region. */
+  readonly ariaLabel = input<string | null>(null);
+  /** Two-way: whether autoplay is paused. */
+  readonly paused = model(false);
 
-  readonly colors = Color;
-  readonly isServerSide = isPlatformServer(this.platformId);
-  currentImageIndex = signal(0);
-  readonly images = contentChildren<BsCarouselImageDirective>(forwardRef(() => BsCarouselImageDirective));
-  resizeObserver?: ResizeObserver;
-  private intervalId?: ReturnType<typeof setInterval>;
-  private isDestroyed = false;
+  /** The committed slide index changed. */
+  readonly slideChange = output<number>();
+  readonly animationStart = output<void>();
+  readonly animationEnd = output<void>();
 
-  // Inputs
-  indicators = input(false);
-  keyboardEvents = input(true);
-  orientation = input<'horizontal' | 'vertical'>('horizontal');
-  animation = input<'fade' | 'slide' | 'none'>('slide');
-  interval = input<number | null>(null);
-  wrap = input(true);
-  ariaLabel = input<string | null>(null);
+  protected readonly element = viewChild<ElementRef<MpCarousel>>('element');
 
-  // Two-way: pause / resume the auto-advance timer. Toggled by the
-  // consumer's `*bsCarouselPlayPause` template via the `toggle` callback in
-  // its context, or by the public `play()` / `pause()` methods. Default
-  // false (auto-advance allowed); has no effect when `interval` is null/0.
-  paused = model<boolean>(false);
-
-  /**
-   * Template projected via `*bsCarouselPlayPause`. When set, the carousel
-   * renders it in a control row above the slides. Per APG, auto-advancing
-   * carousels must expose a play/pause control — this is how consumers
-   * provide one without us imposing a button style.
-   */
-  readonly playPauseTemplate = signal<TemplateRef<BsCarouselPlayPauseContext> | null>(null);
-
-  // Outputs
-  slideChange = output<number>();
-  animationStart = output<void>();
-  animationEnd = output<void>();
-
-  // Computed signals
-  imageCount = computed(() => this.images().length);
-
-  readonly innerElement = viewChild<ElementRef<HTMLDivElement>>('innerElement');
-  readonly swipeContainer = viewChild<BsSwipeContainerDirective>('container');
-
-  // Returns 200 when swipeContainer isn't ready or height is null/0, ensuring images render and ResizeObserver triggers
-  slideHeight = computed(() => {
-    const container = this.swipeContainer();
-    const height = container?.currentSlideHeight();
-    return (height && height > 0) ? height : 200;
+  /** Presence/string-or-absent attributes derived once via signals. */
+  protected readonly indicatorsAttr = computed(() => (this.indicators() ? '' : null));
+  protected readonly intervalAttr = computed(() => {
+    const value = this.interval();
+    return value && value > 0 ? String(value) : null;
   });
-
-  firstImageTemplate = computed<TemplateRef<any> | null>(() => {
-    const images = this.images();
-    if (images.length === 0) return null;
-
-    const img = images[0];
-    if (!img) return null;
-
-    return img.itemTemplate;
-  });
-
-  lastImageTemplate = computed<TemplateRef<any> | null>(() => {
-    const images = this.images();
-    if (images.length === 0) return null;
-
-    const img = images[images.length - 1];
-    if (!img) return null;
-
-    return img.itemTemplate;
-  });
-
-  readonly animationsDisabled = signal<boolean>(false);
-
-  /**
-   * `aria-live` value for the slide viewport. Stays `off` while
-   * auto-advance is actually rotating — otherwise the SR would re-read the
-   * active slide every interval — and switches to `polite` whenever the
-   * rotation is paused (by `paused`, missing/zero `interval`, or
-   * `prefers-reduced-motion`), so manual prev/next/indicator clicks get
-   * announced.
-   */
-  readonly slideAriaLive = computed<'off' | 'polite'>(() => {
-    const intervalTime = this.interval();
-    if (!intervalTime || intervalTime <= 0) return 'polite';
-    if (this.paused()) return 'polite';
-    if (this.reducedMotion.matches()) return 'polite';
-    return 'off';
-  });
+  protected readonly wrapAttr = computed(() => (this.wrap() ? null : 'false'));
+  protected readonly keyboardEventsAttr = computed(() => (this.keyboardEvents() ? null : 'false'));
+  protected readonly pausedAttr = computed(() => (this.paused() ? '' : null));
 
   constructor() {
-    // Mark first image whenever images change
-    effect(() => {
-      const images = this.images();
-      images.forEach((item, index) => item.isFirst = (index === 0));
-    });
-
-    // Setup auto-advance interval effect — gated on the two new axes added
-    // by the APG carousel bundle (PRD aria-accessibility-audit §13.2):
-    //   • `paused` model: lets the consumer (or the projected play/pause
-    //     button) suspend rotation.
-    //   • prefers-reduced-motion: suppresses auto-advance entirely when
-    //     the user opts out of motion at the OS level.
-    effect(() => {
-      const intervalTime = this.interval();
-      const isPaused = this.paused();
-      const reduceMotion = this.reducedMotion.matches();
-      this.clearAutoAdvance();
-
-      if (intervalTime && intervalTime > 0 && !isPaused && !reduceMotion) {
-        this.intervalId = setInterval(() => {
-          this.next();
-        }, intervalTime);
-      }
-    });
-
-    // Emit slideChange when currentImageIndex changes
-    effect(() => {
-      const index = this.currentImageIndex();
-      if (!this.isDestroyed) {
-        this.slideChange.emit(index);
-      }
-    });
-
-    // Cleanup on destroy
-    this.destroyRef.onDestroy(() => {
-      this.isDestroyed = true;
-      this.clearAutoAdvance();
-      this.resizeObserver?.disconnect();
+    afterNextRender(() => {
+      // Side-effect import registers <mp-carousel>; client-only so SSR stays
+      // a bare tag for DSD injection.
+      import('@mintplayer/web-components/carousel');
     });
   }
 
-  /** Resume auto-advance. No-op if `interval` is unset or reduce-motion is on. */
-  play() {
+  previous(): void {
+    this.element()?.nativeElement.previous?.();
+  }
+
+  next(): void {
+    this.element()?.nativeElement.next?.();
+  }
+
+  goto(index: number): void {
+    this.element()?.nativeElement.goto?.(index);
+  }
+
+  play(): void {
     this.paused.set(false);
   }
 
-  /** Pause auto-advance. Manual prev/next/goto still work. */
-  pause() {
+  pause(): void {
     this.paused.set(true);
   }
 
-  /** Toggle the paused state. Used as the `toggle` callback in `BsCarouselPlayPauseContext`. */
-  togglePaused = () => {
-    this.paused.update((p) => !p);
+  togglePaused = (): void => {
+    this.paused.set(!this.paused());
   };
 
-  private clearAutoAdvance() {
-    if (this.intervalId) {
-      clearInterval(this.intervalId);
-      this.intervalId = undefined;
-    }
+  protected onSlideChange(event: Event) {
+    // stopPropagation so the composed WC event doesn't ALSO fire the
+    // consumer's binding on the <bs-carousel> host with the raw CustomEvent.
+    event.stopPropagation();
+    this.slideChange.emit((event as CustomEvent<CarouselSlideChangeEventDetail>).detail.index);
   }
 
-  previous() {
-    if (!this.wrap() && this.currentImageIndex() === 0) return;
-    this.swipeContainer()?.previous();
+  protected onPausedChange(event: Event) {
+    event.stopPropagation();
+    this.paused.set((event as CustomEvent<CarouselPausedChangeEventDetail>).detail.paused);
   }
 
-  next() {
-    if (!this.wrap() && this.currentImageIndex() === this.imageCount() - 1) return;
-    this.swipeContainer()?.next();
-  }
-
-  goto(index: number) {
-    if (index < 0 || index >= this.imageCount()) return;
-    this.swipeContainer()?.goto(index);
-  }
-
-  readonly imageCounter = signal<number>(1);
-
-  ngAfterViewInit() {
-    if (!this.isServerSide) {
-      this.resizeObserver = new ResizeObserver(() => {
-        // Signals automatically trigger change detection in zoneless mode
-        // The resize will be picked up by the observe-size directive
-      });
-      const el = this.innerElement();
-      if (el) {
-        this.resizeObserver.observe(el.nativeElement);
-      }
-    }
-  }
-
-  ngOnDestroy() {
-    this.isDestroyed = true;
-    const innerEl = this.innerElement();
-    if (innerEl) {
-      this.resizeObserver?.unobserve(innerEl.nativeElement);
-    }
-    this.resizeObserver?.disconnect();
-    this.clearAutoAdvance();
-  }
-
-  onContainerAnimationStart() {
+  protected onAnimationStart(event: Event) {
+    event.stopPropagation();
     this.animationStart.emit();
   }
 
-  onContainerAnimationEnd() {
+  protected onAnimationEnd(event: Event) {
+    event.stopPropagation();
     this.animationEnd.emit();
-  }
-
-  onImageIndexChange(index: number) {
-    this.currentImageIndex.set(index);
   }
 }

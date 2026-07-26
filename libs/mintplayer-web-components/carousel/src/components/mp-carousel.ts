@@ -202,30 +202,68 @@ export class MpCarousel extends LitElement {
     this.#machine?.goto(value, { animate: false });
   }
 
+  // Config is attribute-backed (the no-JS CSS selects on the attributes); the
+  // setters reflect so property bindings (@lit/react, Vue's in-element check)
+  // land on the same single store. Lenient coercion: framework bridges may
+  // deliver 'false' strings or undefined for "back to default".
+
   get animation(): CarouselAnimation {
     const value = this.getAttribute('animation');
     return value === 'fade' || value === 'none' ? value : 'slide';
+  }
+  set animation(value: CarouselAnimation | null | undefined) {
+    if (value) this.setAttribute('animation', value);
+    else this.removeAttribute('animation');
   }
 
   get orientation(): CarouselOrientation {
     return this.getAttribute('orientation') === 'vertical' ? 'vertical' : 'horizontal';
   }
+  set orientation(value: CarouselOrientation | null | undefined) {
+    if (value) this.setAttribute('orientation', value);
+    else this.removeAttribute('orientation');
+  }
 
   get wrap(): boolean {
     return this.getAttribute('wrap') !== 'false';
+  }
+  set wrap(value: boolean | string | null | undefined) {
+    if (value === false || value === 'false') this.setAttribute('wrap', 'false');
+    else this.removeAttribute('wrap');
   }
 
   get interval(): number {
     const value = Number(this.getAttribute('interval'));
     return Number.isFinite(value) && value > 0 ? value : 0;
   }
+  set interval(value: number | string | null | undefined) {
+    const ms = Number(value);
+    if (Number.isFinite(ms) && ms > 0) this.setAttribute('interval', String(ms));
+    else this.removeAttribute('interval');
+  }
 
   get paused(): boolean {
     return this.hasAttribute('paused');
   }
+  set paused(value: boolean | string | null | undefined) {
+    // Property writes are programmatic: reflect silently (no paused-change).
+    this.#setPaused(value === true || value === '' || value === 'true', false);
+  }
+
+  get indicators(): boolean {
+    return this.hasAttribute('indicators');
+  }
+  set indicators(value: boolean | string | null | undefined) {
+    if (value === true || value === '' || value === 'true') this.setAttribute('indicators', '');
+    else this.removeAttribute('indicators');
+  }
 
   get keyboardEvents(): boolean {
     return this.getAttribute('keyboard-events') !== 'false';
+  }
+  set keyboardEvents(value: boolean | string | null | undefined) {
+    if (value === false || value === 'false') this.setAttribute('keyboard-events', 'false');
+    else this.removeAttribute('keyboard-events');
   }
 
   previous(): void {
