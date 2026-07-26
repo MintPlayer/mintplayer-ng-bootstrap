@@ -166,6 +166,10 @@ version bumps. PRD status flipped to "as built" with spike outcomes recorded.
    no flash between DSD and upgraded render.
 10. `slide-change` fires once per user navigation; `paused-change` only on user intent.
 11. priority-nav + sticky-footer still green against relocated `observe-size`.
+12. **Nested carousel** (horizontal `mp-carousel` slide inside a vertical one): inner claims
+    horizontal strokes (direction lock + stopPropagation), vertical strokes bubble to the outer;
+    inner arrow keys don't drive the outer (keydown-target guard); no-JS radio groups stay
+    independent (shadow scoping). Demo section + e2e.
 
 ## Acceptance criteria
 

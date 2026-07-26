@@ -218,6 +218,13 @@ JS-side index shadowing the radio state) fails review against this table.
 
 ## 6. `swiper-core` — designed for two consumers
 
+**Build-vs-buy (user raised swiper.js, decision delegated + made): hand-rolled.** The carousel's
+actual need is ~300 dependency-free lines (pointer arbiter + index machine, fully unit-tested).
+swiper.js is itself a full carousel (wrapping it inside `mp-carousel` doubles the abstraction),
+ships far more code than is ever exercised here, has no DSD/no-JS story (it would fight the
+radio machine and slot-projected cells head-on), and doesn't encode the Firefox-Android PTR
+defence this repo already paid for. Leanness is an explicit user requirement.
+
 `libs/mintplayer-web-components/swiper-core/` (naming precedent: `scheduler-core`,
 `timeline-core`). Two composable pieces, **not** one engine class — the autopsy's 60/40 verdict
 made the monolith shape the root cause of the old API's carousel leakage:
