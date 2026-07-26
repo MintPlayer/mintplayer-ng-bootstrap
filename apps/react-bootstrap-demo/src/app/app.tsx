@@ -24,6 +24,7 @@ function lazyNamed<P>(
 // chunk — the initial bundle only ships the shell + router + Home.
 const CalendarPage     = lazyNamed(() => import('./pages/CalendarPage'),     'CalendarPage');
 const CardPage         = lazyNamed(() => import('./pages/CardPage'),         'CardPage');
+const CarouselPage     = lazyNamed(() => import('./pages/CarouselPage'),     'CarouselPage');
 const CheckboxPage     = lazyNamed(() => import('./pages/CheckboxPage'),     'CheckboxPage');
 const DatatablePage    = lazyNamed(() => import('./pages/DatatablePage'),    'DatatablePage');
 const DatepickerPage   = lazyNamed(() => import('./pages/forms/DatepickerPage'),     'DatepickerPage');
@@ -69,6 +70,7 @@ export function App() {
           {/* Basic */}
           <Route path="/basic/calendar" element={<CalendarPage />} />
           <Route path="/basic/card" element={<CardPage />} />
+          <Route path="/basic/carousel" element={<CarouselPage />} />
           <Route path="/basic/checkbox" element={<CheckboxPage />} />
           <Route path="/basic/code-snippet" element={<CodeSnippetPage />} />
           <Route path="/basic/forms/datepicker" element={<DatepickerPage />} />

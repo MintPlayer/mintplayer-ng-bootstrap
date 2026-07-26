@@ -1,6 +1,6 @@
 {
   "name": "@mintplayer/react-bootstrap",
-  "version": "19.7.1",
+  "version": "19.8.0",
   "description": "React 19 wrappers around @mintplayer/web-components. Each sub-entry maps one-to-one with a WC sub-entry and exposes typed React components via @lit/react's createComponent.",
   "license": "MIT",
   "repository": {
@@ -14,7 +14,10 @@
     "email": "info@mintplayer.com"
   },
   "type": "module",
-  "sideEffects": ["**/src/index.{ts,js,mjs,tsx,jsx}", "**/Bs*.{mjs,js,tsx,jsx}"],
+  "sideEffects": [
+    "**/src/index.{ts,js,mjs,tsx,jsx}",
+    "**/Bs*.{mjs,js,tsx,jsx}"
+  ],
   "main": "./index.mjs",
   "types": "./src/index.d.ts",
   "exports": {

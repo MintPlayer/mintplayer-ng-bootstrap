@@ -1,4 +1,4 @@
-import { LitElement, html, nothing } from 'lit';
+import { LitElement, adoptStyles, html, nothing } from 'lit';
 import { map } from 'lit/directives/map.js';
 import { range } from 'lit/directives/range.js';
 import { unsafeHTML } from 'lit/directives/unsafe-html.js';
@@ -84,17 +84,25 @@ export class MpCarousel extends LitElement {
   // ---- element lifecycle ----------------------------------------------------
 
   protected override createRenderRoot(): HTMLElement | DocumentFragment {
-    // DSD handoff — same rationale as mp-shell.createRenderRoot (read it
-    // there). One carousel addition: the checked radio in the inert chrome is
-    // the slide the no-JS user navigated to; capture it before clearing so the
-    // upgrade lands on the same slide.
-    const hydrateSupportActive =
-      (this.constructor as typeof MpCarousel).observedAttributes.includes('defer-hydration');
-    if (!hydrateSupportActive && this.shadowRoot) {
+    // DSD handoff: ALWAYS destructive — unlike mp-shell/mp-navbar (static,
+    // branch-free chrome that true hydration can adopt), the carousel's
+    // render() is legitimately state-dependent (count-dependent parts, the
+    // play/pause branch, interactive viewport attributes), so
+    // lit-element-hydrate-support's hydrate() throws structural mismatches.
+    // Returning the existing root DIRECTLY (not via the patched super)
+    // side-steps its hydrate flag; styles are adopted manually because only
+    // the original createRenderRoot would have done it. The DSD chrome's one
+    // job — the interactive no-JS render before upgrade — is already done.
+    // Carousel addition: the checked radio in the inert chrome is the slide
+    // the no-JS user navigated to; capture it before clearing so the upgrade
+    // lands on the same slide.
+    if (this.shadowRoot) {
       const radios = [...this.shadowRoot.querySelectorAll<HTMLInputElement>('.car-radio')];
       const checked = radios.findIndex((r) => r.checked);
       if (checked > 0) this.#dsdIndex = checked;
       this.shadowRoot.replaceChildren();
+      adoptStyles(this.shadowRoot, (this.constructor as typeof MpCarousel).elementStyles ?? []);
+      return this.shadowRoot;
     }
     return super.createRenderRoot();
   }
@@ -160,7 +168,7 @@ export class MpCarousel extends LitElement {
     if (oldValue === newValue) return;
     switch (name) {
       case 'orientation':
-        this.#arbiter?.setOrientation(this.orientation);
+        this.#arbiter?.setOrientation(this.#orientation);
         this.#applyHeights();
         this.#applyRatio(this.#index);
         this.requestUpdate();
@@ -172,7 +180,7 @@ export class MpCarousel extends LitElement {
         this.requestUpdate();
         break;
       case 'wrap':
-        this.#machine?.setConfig({ wrap: this.wrap });
+        this.#machine?.setConfig({ wrap: this.#wrap });
         break;
       case 'interval':
         this.#syncAutoplay();
@@ -202,34 +210,29 @@ export class MpCarousel extends LitElement {
     this.#machine?.goto(value, { animate: false });
   }
 
-  // Config is attribute-backed (the no-JS CSS selects on the attributes); the
-  // setters reflect so property bindings (@lit/react, Vue's in-element check)
-  // land on the same single store. Lenient coercion: framework bridges may
-  // deliver 'false' strings or undefined for "back to default".
+  // Config is attribute-only, DELIBERATELY not exposed as prototype
+  // properties: the no-JS CSS and the DSD injector select on the attributes,
+  // and framework bridges (@lit/react) strip prototype-matching props from
+  // server HTML to set them as client-side properties — which would erase
+  // exactly the attributes the no-JS tier needs (navbar/shell doctrine).
+  // `interval` and `paused` are the exception (client-only semantics), with
+  // reflecting setters for property bindings.
 
-  get animation(): CarouselAnimation {
+  get #animation(): CarouselAnimation {
     const value = this.getAttribute('animation');
     return value === 'fade' || value === 'none' ? value : 'slide';
   }
-  set animation(value: CarouselAnimation | null | undefined) {
-    if (value) this.setAttribute('animation', value);
-    else this.removeAttribute('animation');
-  }
 
-  get orientation(): CarouselOrientation {
+  get #orientation(): CarouselOrientation {
     return this.getAttribute('orientation') === 'vertical' ? 'vertical' : 'horizontal';
   }
-  set orientation(value: CarouselOrientation | null | undefined) {
-    if (value) this.setAttribute('orientation', value);
-    else this.removeAttribute('orientation');
-  }
 
-  get wrap(): boolean {
+  get #wrap(): boolean {
     return this.getAttribute('wrap') !== 'false';
   }
-  set wrap(value: boolean | string | null | undefined) {
-    if (value === false || value === 'false') this.setAttribute('wrap', 'false');
-    else this.removeAttribute('wrap');
+
+  get #keyboardEvents(): boolean {
+    return this.getAttribute('keyboard-events') !== 'false';
   }
 
   get interval(): number {
@@ -248,22 +251,6 @@ export class MpCarousel extends LitElement {
   set paused(value: boolean | string | null | undefined) {
     // Property writes are programmatic: reflect silently (no paused-change).
     this.#setPaused(value === true || value === '' || value === 'true', false);
-  }
-
-  get indicators(): boolean {
-    return this.hasAttribute('indicators');
-  }
-  set indicators(value: boolean | string | null | undefined) {
-    if (value === true || value === '' || value === 'true') this.setAttribute('indicators', '');
-    else this.removeAttribute('indicators');
-  }
-
-  get keyboardEvents(): boolean {
-    return this.getAttribute('keyboard-events') !== 'false';
-  }
-  set keyboardEvents(value: boolean | string | null | undefined) {
-    if (value === false || value === 'false') this.setAttribute('keyboard-events', 'false');
-    else this.removeAttribute('keyboard-events');
   }
 
   previous(): void {
@@ -312,14 +299,14 @@ export class MpCarousel extends LitElement {
       },
       {
         count: this.#slides.length,
-        wrap: this.wrap,
+        wrap: this.#wrap,
         durationMs: this.#durationMs,
         minimumOffsetPx: 50,
         prefersReducedMotion: () => this.#reducedMotion?.matches ?? false,
       },
     );
     this.#arbiter = new PointerArbiter(
-      { orientation: this.orientation },
+      { orientation: this.#orientation },
       {
         onDragStart: () => this.#machine?.beginDrag(),
         onDragMove: (deltaPx) => this.#machine?.dragBy(deltaPx, this.#extent()),
@@ -329,12 +316,12 @@ export class MpCarousel extends LitElement {
   }
 
   get #durationMs(): number {
-    return this.animation === 'none' ? 0 : 500;
+    return this.#animation === 'none' ? 0 : 500;
   }
 
   /** Drag/transform distance for one slide, in px. */
   #extent(): number {
-    return this.orientation === 'horizontal'
+    return this.#orientation === 'horizontal'
       ? this.#innerEl?.clientWidth ?? 0
       : this.#maxSlideHeight;
   }
@@ -419,13 +406,13 @@ export class MpCarousel extends LitElement {
 
     // >10px validity gate (carried from master): images measure 0 until their
     // bytes arrive; an invalid measurement must not collapse the viewport.
-    const viewport = this.orientation === 'vertical' ? max : current;
+    const viewport = this.#orientation === 'vertical' ? max : current;
     if (viewport > 10) {
       this.style.setProperty('--mp-carousel-viewport-height', `${viewport}px`);
     } else {
       this.style.removeProperty('--mp-carousel-viewport-height');
     }
-    if (this.orientation === 'vertical' && max > 10) {
+    if (this.#orientation === 'vertical' && max > 10) {
       this.style.setProperty('--mp-carousel-slide-height', `${max}px`);
     } else {
       this.style.removeProperty('--mp-carousel-slide-height');
@@ -442,7 +429,7 @@ export class MpCarousel extends LitElement {
   #applyRatio(ratio: number): void {
     const track = this.#trackEl;
     if (!track) return;
-    if (this.animation === 'fade') {
+    if (this.#animation === 'fade') {
       // Grid stacking owns the layout; a stale transform from a previous
       // slide-mode session would shift the whole stack.
       track.style.transform = '';
@@ -455,7 +442,7 @@ export class MpCarousel extends LitElement {
 
   #transformFor(ratio: number): string {
     const physical = ratio + 1;
-    return this.orientation === 'horizontal'
+    return this.#orientation === 'horizontal'
       ? `translate3d(${-physical * 100}%, 0, 0)`
       : `translate3d(0, ${-physical * this.#maxSlideHeight}px, 0)`;
   }
@@ -473,7 +460,7 @@ export class MpCarousel extends LitElement {
   }
 
   #runTransition(from: number, to: number, duration: number, onDone: () => void): TransitionHandle {
-    if (this.animation === 'fade') {
+    if (this.#animation === 'fade') {
       this.#setActiveCell(this.#wrapIndex(to));
       let timer: ReturnType<typeof setTimeout> | null = setTimeout(() => {
         timer = null;
@@ -543,7 +530,7 @@ export class MpCarousel extends LitElement {
   /** During a live drag past the deck's edges, keep the wrap cell populated. */
   #syncDragTeleport(ratio: number): void {
     const n = this.#slides.length;
-    if (n < 2 || !this.wrap) return;
+    if (n < 2 || !this.#wrap) return;
     if (ratio > n - 1) this.#teleport(this.#slides[0], 'wrapA');
     else if (ratio < 0) this.#teleport(this.#slides[n - 1], 'wrapB');
     else if (this.#teleported && Number.isInteger(ratio)) this.#restoreTeleport();
@@ -571,7 +558,7 @@ export class MpCarousel extends LitElement {
     // so this cannot loop.
     const radios = this.renderRoot?.querySelectorAll<HTMLInputElement>('.car-radio');
     radios?.forEach((r, i) => (r.checked = i === index));
-    if (this.animation !== 'fade') this.#setActiveCell(index);
+    if (this.#animation !== 'fade') this.#setActiveCell(index);
     this.#applyHeights();
     this.requestUpdate();
     this.#emit<CarouselSlideChangeEventDetail>('slide-change', { index });
@@ -654,8 +641,8 @@ export class MpCarousel extends LitElement {
     // APG: only keys pressed on the viewport itself navigate — focusable
     // slide content (or a nested carousel) keeps its own keys.
     if (event.target !== event.currentTarget) return;
-    if (!this.keyboardEvents) return;
-    const intent = keyToIntent(event.key, this.orientation);
+    if (!this.#keyboardEvents) return;
+    const intent = keyToIntent(event.key, this.#orientation);
     if (!intent) return;
     event.preventDefault();
     this.#machine?.intent(intent);
@@ -741,9 +728,9 @@ export class MpCarousel extends LitElement {
         tabindex=${isBrowser ? '0' : nothing}
         aria-live=${isBrowser ? this.#ariaLive : nothing}
         aria-atomic=${isBrowser ? 'false' : nothing}
-        aria-orientation=${isBrowser ? this.orientation : nothing}
-        aria-keyshortcuts=${isBrowser && this.keyboardEvents
-          ? this.orientation === 'horizontal'
+        aria-orientation=${isBrowser ? this.#orientation : nothing}
+        aria-keyshortcuts=${isBrowser && this.#keyboardEvents
+          ? this.#orientation === 'horizontal'
             ? 'ArrowLeft ArrowRight Home End'
             : 'ArrowUp ArrowDown Home End'
           : nothing}

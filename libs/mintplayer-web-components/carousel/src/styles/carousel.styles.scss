@@ -81,8 +81,10 @@
 
 // Neutralise Bootstrap's .carousel-item slide machinery (display:none /
 // float / negative margin / its own transform transition) — the cells are
-// plain flex/grid boxes; motion belongs to the track.
-.carousel-item {
+// plain flex/grid boxes; motion belongs to the track. `.carousel-track
+// .carousel-item` (0,2,0) so it also beats the partial's
+// `.carousel-item.active { display: block }` on the active cell.
+.carousel-track .carousel-item {
   display: flex;
   align-items: center;
   justify-content: center;
@@ -166,9 +168,13 @@
 
   // Horizontal slide/none: the cell is a flex strip translated per-index by
   // the generated :checked rules (its width equals the viewport, so
-  // translateX(-i * 100%) is exactly i slides).
+  // translateX(-i * 100%) is exactly i slides). justify-content MUST be
+  // flex-start: the cell inherits the .carousel-item centering, and centering
+  // an overflowing N*100% strip shifts it left by (N-1)*50% — breaking the
+  // translate origin.
   .nojs-cell {
     display: flex;
+    justify-content: flex-start;
     transition: transform 0.5s ease;
   }
 

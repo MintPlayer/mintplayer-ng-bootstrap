@@ -1,6 +1,20 @@
 # PRD — `mp-carousel` web component + cross-framework wrappers (v2)
 
-Status: **architecture confirmed — Phase 0 spikes passed 2026-07-26 (18/18, Chromium + Firefox); verdicts in §8**
+Status: **as built (2026-07-26)** — Phase 0 spikes passed 18/18 (Chromium + Firefox, verdicts in §8);
+implementation landed on `feat/carousel-wc`. Two deviations discovered during implementation:
+
+1. **DSD handoff is always destructive** (also under React/Vue's `lit-element-hydrate-support`):
+   unlike navbar/shell's static branch-free chrome, the carousel's `render()` is legitimately
+   state-dependent (count-dependent parts, the play/pause branch, interactive viewport
+   attributes), so lit's true hydration throws structural mismatches. `createRenderRoot`
+   reads the checked-radio index, clears the inert chrome, adopts styles manually, and returns
+   the root directly (bypassing hydrate-support's hydrate flag). Verified live: zero console
+   errors, no duplicated chrome, pre-upgrade slide preserved.
+2. **Config is attribute-only on purpose — no prototype properties** (except `interval`/`paused`
+   + the `index` accessor): `@lit/react` strips prototype-matching props from server HTML to set
+   them as client properties, which erased exactly the attributes the no-JS CSS and injector
+   select on. Framework property bridges flow through attributes instead (React facade emits
+   attribute-shaped props; Vue's in-element check falls through to attributes).
 Branch: `feat/carousel-wc` (fresh from `master`; supersedes the abandoned `feat/carousel-web-component` / PR #388)
 Companion plan: `docs/prd/carousel-wc-plan.md`
 

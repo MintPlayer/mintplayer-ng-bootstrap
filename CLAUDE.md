@@ -22,7 +22,7 @@ Each WC lives at `libs/mintplayer-web-components/<name>/` with this shape:
 ```
 <name>/
   index.ts                       → export * from './src'
-  ng-package.js                  → secondary-entry shim (mirror an existing one)
+  (no ng-package.js — the WC lib builds with Vite; the 5 stray ng-package.js files in older WC dirs are inert)
   src/
     index.ts                     → public API barrel
     components/<el>.ts           → the LitElement (calls customElements.define at the bottom)
@@ -44,14 +44,14 @@ Some larger components instead use `<el>.element.html` + `<el>.element.scss` →
   npx nx run mintplayer-web-components:codegen-wc-watch
   ```
 - `nx build mintplayer-web-components` runs `codegen-wc` + `cem` (custom-elements manifest) automatically as `dependsOn`.
-- Generated files (`*.styles.ts`, `*.element.template.ts`) are committed but are build artifacts — regenerate, don't hand-edit.
+- Generated files (`*.styles.ts`, `*.element.template.ts`, `custom-elements.json`) are **gitignored build artifacts** (`.gitignore`: `libs/**/*.styles.ts` etc.) — never stage or hand-edit them; only the `.scss`/`.html` sources are tracked.
 
 ### SSR chrome codegen (`*-chrome.generated.ts`)
 
 WCs with a no-JS SSR path ship a Declarative-Shadow-DOM "chrome" constant, rendered from the **built** element via `@lit-labs/ssr`:
 
 - `tools/lit-ssr-utils/gen-<name>-chrome.mjs` → `libs/mintplayer-web-components/<name>/ssr/mp-<name>-chrome.generated.ts`, produced by the Nx target `codegen-<name>-chrome`, which `dependsOn` the WC `build` (it imports the compiled `dist` element, so it can't be part of `build` — that would be circular).
-- **Unlike `*.styles.ts` (committed), these `*-chrome.generated.ts` files are gitignored build artifacts** (`.gitignore`: `libs/mintplayer-web-components/**/*.generated.ts`). Never commit or hand-edit them.
+- Like all generated files, `*-chrome.generated.ts` are gitignored build artifacts (`.gitignore`: `libs/mintplayer-web-components/**/*.generated.ts`). Never commit or hand-edit them.
 - They regenerate automatically because every SSR demo build `dependsOn` the aggregate **`mintplayer-web-components:codegen-ssr-chrome`** (it fans out to the per-component `codegen-*-chrome` targets). **When adding a new SSR WC, add its `codegen-<name>-chrome` to that aggregate** — the demos need no change. After editing a WC's shadow markup/styles, rerun `nx run mintplayer-web-components:codegen-ssr-chrome` (or just build a demo) so the SSR chrome isn't stale.
 
 ### WC gotchas
