@@ -3,4 +3,4 @@ import { carouselNojsSuite } from '../../../tools/e2e-shared/carousel-suites';
 
 test.use({ javaScriptEnabled: false });
 
-carouselNojsSuite(test, expect);
+carouselNojsSuite(test, expect, { path: '/enterprise/carousel' });

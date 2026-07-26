@@ -5,7 +5,6 @@ export const ROUTES: Routes = [
   { path: 'calendar', loadComponent: () => import('./calendar/calendar.component').then(m => m.CalendarComponent) },
   { path: 'alert', loadComponent: () => import('./alert/alert.component').then(m => m.AlertComponent) },
   { path: 'forms', loadChildren: () => import('./forms/forms.routes').then(m => m.ROUTES) },
-  { path: 'carousel', loadComponent: () => import('./carousel/carousel.component').then(m => m.CarouselComponent) },
   { path: 'color-picker', loadComponent: () => import('./color-picker/color-picker.component').then(m => m.ColorPickerComponent) },
   { path: 'rating', loadComponent: () => import('./rating/rating.component').then(m => m.RatingComponent) },
   { path: 'progress-bar', loadComponent: () => import('./progress-bar/progress-bar.component').then(m => m.ProgressBarComponent) },

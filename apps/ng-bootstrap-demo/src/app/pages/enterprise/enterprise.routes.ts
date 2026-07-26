@@ -2,6 +2,7 @@ import { Routes } from '@angular/router';
 
 export const ROUTES: Routes = [
   { path: '', loadChildren: () => [], pathMatch: 'full', canActivate: [() => false] },
+  { path: 'carousel', loadComponent: () => import('./carousel/carousel.component').then(m => m.CarouselComponent) },
   { path: 'datatables', loadComponent: () => import('./datatables/datatables.component').then(m => m.DatatablesComponent) },
   { path: 'file-manager', loadComponent: () => import('./file-manager/file-manager.component').then(m => m.FileManagerDemoComponent) },
   { path: 'scheduler', loadComponent: () => import('./scheduler/scheduler.component').then(m => m.SchedulerComponent) },
