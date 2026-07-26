@@ -100,15 +100,30 @@
         "command": "node tools/lit-ssr-utils/gen-navbar-chrome.mjs"
       }
     },
+    "codegen-carousel-chrome": {
+      "executor": "nx:run-commands",
+      "outputs": ["{projectRoot}/carousel/ssr/mp-carousel-chrome.generated.ts"],
+      "inputs": [
+        "{projectRoot}/carousel/src/components/*.ts",
+        "{projectRoot}/carousel/src/styles/*.styles.scss",
+        "{workspaceRoot}/tools/lit-ssr-utils/gen-carousel-chrome.mjs"
+      ],
+      "dependsOn": ["build"],
+      "cache": true,
+      "options": {
+        "command": "node tools/lit-ssr-utils/gen-carousel-chrome.mjs"
+      }
+    },
     "codegen-ssr-chrome": {
       "executor": "nx:run-commands",
       "options": {
-        "command": "echo \"SSR DSD chrome generated (shell + navbar + dropdown)\""
+        "command": "echo \"SSR DSD chrome generated (shell + navbar + dropdown + carousel)\""
       },
       "dependsOn": [
         "codegen-shell-chrome",
         "codegen-navbar-chrome",
-        "codegen-dropdown-chrome"
+        "codegen-dropdown-chrome",
+        "codegen-carousel-chrome"
       ]
     },
     "build": {

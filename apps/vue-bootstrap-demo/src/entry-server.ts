@@ -20,6 +20,9 @@ import { injectMpDropdownDsd } from '@mintplayer/web-components/dropdown-menu/ss
 // Splices the navbar elements' Declarative Shadow DOM into the HTML so the bar
 // chrome is server-rendered alongside <mp-shell>'s and the dropdowns'.
 import { injectMpNavbarDsd } from '@mintplayer/web-components/navbar/ssr';
+// Same pattern for <mp-carousel>: count-variant DSD chrome so the radio-driven
+// no-JS carousel navigates with JS disabled. Composed with the other injectors.
+import { injectMpCarouselDsd } from '@mintplayer/web-components/carousel/ssr';
 import { createApp } from './main';
 
 /**
@@ -33,5 +36,5 @@ export async function render(url: string): Promise<string> {
   await router.push(url);
   await router.isReady();
   const html = await renderToString(app);
-  return injectMpNavbarDsd(injectMpDropdownDsd(injectMpShellDsd(html)));
+  return injectMpCarouselDsd(injectMpNavbarDsd(injectMpDropdownDsd(injectMpShellDsd(html))));
 }

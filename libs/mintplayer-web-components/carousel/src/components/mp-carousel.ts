@@ -1,4 +1,4 @@
-import { LitElement, html, isServer, nothing } from 'lit';
+import { LitElement, html, nothing } from 'lit';
 import { map } from 'lit/directives/map.js';
 import { range } from 'lit/directives/range.js';
 import { unsafeHTML } from 'lit/directives/unsafe-html.js';
@@ -678,13 +678,14 @@ export class MpCarousel extends LitElement {
     const n = this.#slides.length || Number(this.getAttribute('slide-count')) || 0;
     const index = this.#index;
     const interval = this.interval;
-    // isServer guard: the lit-ssr DOM shim (chrome generation) has no
-    // querySelector on elements; with no interval the control is JS-only anyway.
+    // data-js is set by connectedCallback, which never runs during lit-ssr
+    // chrome generation — and the ssr DOM shim has no querySelector anyway.
+    const isBrowser = this.hasAttribute('data-js');
     const showPlayPause =
-      interval > 0 || (!isServer && this.querySelector('[slot="play-pause"]') !== null);
+      interval > 0 || (isBrowser && this.querySelector('[slot="play-pause"]') !== null);
 
     return html`
-      <style>${unsafeHTML(this.#perIndexCss(n))}</style>
+      ${unsafeHTML(`<style>${this.#perIndexCss(n)}</style>`)}
       ${map(range(n), (i) => html`
         <input
           type="radio"
@@ -699,11 +700,11 @@ export class MpCarousel extends LitElement {
       <div
         class="carousel-inner"
         part="inner"
-        tabindex="0"
-        aria-live=${this.#ariaLive}
-        aria-atomic="false"
-        aria-orientation=${this.orientation}
-        aria-keyshortcuts=${this.keyboardEvents
+        tabindex=${isBrowser ? '0' : nothing}
+        aria-live=${isBrowser ? this.#ariaLive : nothing}
+        aria-atomic=${isBrowser ? 'false' : nothing}
+        aria-orientation=${isBrowser ? this.orientation : nothing}
+        aria-keyshortcuts=${isBrowser && this.keyboardEvents
           ? this.orientation === 'horizontal'
             ? 'ArrowLeft ArrowRight Home End'
             : 'ArrowUp ArrowDown Home End'

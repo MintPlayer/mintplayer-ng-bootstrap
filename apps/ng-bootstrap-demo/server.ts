@@ -17,6 +17,9 @@ import { injectMpDropdownDsd } from '@mintplayer/web-components/dropdown-menu/ss
 // navbar WC renders — and collapses/reveals via its CSS state machine — with JS
 // disabled. Composed with the shell + dropdown injectors.
 import { injectMpNavbarDsd } from '@mintplayer/web-components/navbar/ssr';
+// Same pattern for <mp-carousel>: count-variant DSD chrome so the radio-driven
+// no-JS carousel navigates with JS disabled. Composed with the other injectors.
+import { injectMpCarouselDsd } from '@mintplayer/web-components/carousel/ssr';
 
 // Resolve browser assets relative to the *bundled* server (canonical Angular
 // pattern) so the standalone Node SSR server finds them in production.
@@ -80,7 +83,7 @@ app.use((req, res, next) => {
       // Angular's). Reusable helper from @mintplayer/ng-bootstrap/shell.
       const contentType = response.headers.get('content-type') ?? '';
       if (contentType.includes('text/html')) {
-        const body = injectMpNavbarDsd(injectMpDropdownDsd(injectMpShellDsd(await response.text())));
+        const body = injectMpCarouselDsd(injectMpNavbarDsd(injectMpDropdownDsd(injectMpShellDsd(await response.text()))));
         const headers = new Headers(response.headers);
         headers.delete('content-length');
         return writeResponseToNodeResponse(new Response(body, { status: response.status, headers }), res);
