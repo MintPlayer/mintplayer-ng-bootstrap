@@ -145,5 +145,6 @@ Then run following commands
 ## Features
 - Uses `@angular/cdk/overlay`
 - Uses per-component styles. Only non-generic bootstrap styles are bundled in the main bundle
-- Carousel: supports touch-events
-- Noscript support for **Navbar** and **Carousel**, requires `@angular/universal`
+- Framework-agnostic web components (`@mintplayer/web-components`) with Angular, React and Vue wrappers
+- Carousel: touch-events, keyboard navigation, full APG carousel ARIA
+- Interactive no-JS support for **Navbar**, **Shell**, **Dropdown menu** and **Carousel** on server-rendered pages (Declarative Shadow DOM + pure-CSS state machines) — works in all three framework demos

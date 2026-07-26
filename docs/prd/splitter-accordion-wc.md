@@ -1,7 +1,10 @@
 # PRD — restore `bs-splitter` over `<mp-splitter>` + migrate the accordion to `<mp-accordion>`
 
-Status: draft — executes on **`feat/carousel-wc` (PR #392)**; explicitly NO new branch/PR (user
-directive). Companion plan: `docs/prd/splitter-accordion-wc-plan.md`. Shared doctrine (two-tier
+Status: **approved, NOT yet implemented** (docs only as of 2026-07-26) — executes on
+**`feat/carousel-wc` (PR #392)**; explicitly NO new branch/PR (user directive). User confirmed:
+the pilot branch's request-time lit-labs SSR is ignored; the accordion reuses the SSR machinery
+already merged to master (build-time chrome + injector), per §5.2. Companion plan:
+`docs/prd/splitter-accordion-wc-plan.md`. Shared doctrine (two-tier
 no-JS, count-variant DSD chrome, attribute-only config, wrapper anatomy) is established in
 `docs/prd/carousel-wc.md` and is referenced rather than repeated.
 

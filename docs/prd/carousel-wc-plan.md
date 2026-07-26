@@ -1,5 +1,10 @@
 # Plan — `mp-carousel` web component migration (v2)
 
+Status: **EXECUTED 2026-07-26** on `feat/carousel-wc` (PR #392) — all phases complete, spikes
+deleted after recording verdicts, 829 vitest + 106 e2e green. This file is the historical
+execution order; the as-built record (incl. two deviations) lives in the PRD's status header.
+Post-plan addition: the ng demo page moved to `/enterprise/carousel` (WC-backed taxonomy).
+
 Companion PRD: `docs/prd/carousel-wc.md` (read it first; this file is the execution order).
 Branch: `feat/carousel-wc` → targets `master`, squash-merge.
 
