@@ -1,6 +1,6 @@
 # PRD — `mp-carousel` web component + cross-framework wrappers (v2)
 
-Status: **draft — Phase 0 spikes must pass before the architecture below is final**
+Status: **architecture confirmed — Phase 0 spikes passed 2026-07-26 (18/18, Chromium + Firefox); verdicts in §8**
 Branch: `feat/carousel-wc` (fresh from `master`; supersedes the abandoned `feat/carousel-web-component` / PR #388)
 Companion plan: `docs/prd/carousel-wc-plan.md`
 
@@ -277,12 +277,12 @@ in this repo; per-slide shadow cells over slotted light DOM combined with a coun
 interactive DSD does not. The four spikes (throwaway, under `docs/prd/_spike-carousel-*`,
 verified Chromium + Firefox, deleted before merge — only conclusions flow back into this PRD):
 
-| Spike | Question | Fallback if it fails |
+| Spike | Question | Verdict (2026-07-26, 18/18 green Chromium + Firefox) |
 |---|---|---|
-| S1 — projection | Manual slot assignment vs `slot`-attribute stamping: can each light-DOM slide land in its own shadow cell, reactively on `slotchange`, surviving slide add/remove and `animation`/`orientation` hot-swap? | Bare default slot + "slides are single elements" contract |
-| S2 — DSD handover | Default-slot DSD chrome (with radios) upgrading into per-slide cells with no flash/duplication, under Angular's non-hydrating WC path *and* React/Vue's `lit-element-hydrate-support`; injector-side count splicing | Pre-rendered count variants (§5.5.2); worst case `slide-count` attribute |
-| S3 — wrap clones | Duplicate slot projection vs reorder-on-commit for offside cells, no `cloneNode` | Reorder-only (brief blank clone cell during drag at the seam) |
-| S4 — no-JS slide translate | Radio-driven `transform` per-index rules give a real slide animation with JS off (both orientations; vertical needs equal-height cells) | Crossfade for all modes with JS off (exact master parity) |
+| S1 — projection | Manual slot assignment vs `slot`-attribute stamping | **PASS — both work**, incl. reactive add/remove (MutationObserver → re-stamp). **Stamping chosen** (symmetric pre/post upgrade, DSD-compatible); manual assignment is the proven fallback. Its "unassigned children render nothing" hazard confirmed — reinforces default-slot DSD. |
+| S2 — DSD handover | Default-slot DSD chrome (with radios) upgrading into per-slide cells | **PASS.** No-JS tier fully interactive pre-upgrade: crossfade, indicators, prev/next with wrap-around (per-index reveal of a linear label set — no O(n²)), and **native radiogroup arrow keys work with JS off** (they even wrap). Upgrade: checked-radio index read before `replaceChildren`, restored after; exactly one chrome; same radios drive the transformed track post-upgrade. `::slotted(:nth-child(i))` per-index reveal confirmed in both browsers. |
+| S3 — wrap clones | Wrap without `cloneNode` | **PASS — slot reassignment.** Slide 0's light node teleports into the after-last cell for the wrap animation, snaps home on commit; light DOM untouched (still N children), wrap cell empty afterwards. |
+| S4 — no-JS slide translate | Radio-driven `transform` per-index rules with JS off | **PASS horizontal** (track width = viewport width, so `translateX(-i*100%)` is exact). **Vertical: fallback to crossfade** — `grid-auto-rows: 1fr` + `translateY(calc(-i*100%/N))` moves exactly one cell, but the viewport's own clip height (= one cell) cannot be derived without measurement, and a CSS-only tier cannot measure. Crossfade ≥ master (master crossfades *every* mode with JS off). |
 
 Risk table for everything else:
 

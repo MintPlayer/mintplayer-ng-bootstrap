@@ -1,0 +1,89 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>S2 — DSD radio chrome, no-JS interaction, upgrade handover</title>
+<style>
+  spike-car2 { display: block; width: 300px; }
+  spike-car2 > div { height: 80px; }
+  .sl0 { background: #fa0; } .sl1 { background: #0af; } .sl2 { background: #af0; }
+</style>
+
+<spike-car2 id="car">
+  <template shadowrootmode="open">
+    <style>
+      :host { display: block; }
+      .vh { position: absolute; width: 1px; height: 1px; margin: -1px; padding: 0; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0; }
+      .stack { display: grid; }
+      ::slotted(*) { grid-row: 1; grid-column: 1; opacity: 0; transition: opacity .1s; }
+      #r0:checked ~ .stack ::slotted(:nth-child(1)) { opacity: 1; }
+      #r1:checked ~ .stack ::slotted(:nth-child(2)) { opacity: 1; }
+      #r2:checked ~ .stack ::slotted(:nth-child(3)) { opacity: 1; }
+      .indicators label { display: inline-block; width: 16px; height: 16px; background: #999; margin: 2px; cursor: pointer; }
+      #r0:checked ~ .indicators [for="r0"],
+      #r1:checked ~ .indicators [for="r1"],
+      #r2:checked ~ .indicators [for="r2"] { background: #000; }
+      .controls label { display: none; cursor: pointer; padding: 0 6px; }
+      #r0:checked ~ .controls .p0, #r0:checked ~ .controls .n0,
+      #r1:checked ~ .controls .p1, #r1:checked ~ .controls .n1,
+      #r2:checked ~ .controls .p2, #r2:checked ~ .controls .n2 { display: inline-block; }
+    </style>
+    <input class="vh nojs-radio" type="radio" name="idx" id="r0" checked aria-label="Slide 1">
+    <input class="vh nojs-radio" type="radio" name="idx" id="r1" aria-label="Slide 2">
+    <input class="vh nojs-radio" type="radio" name="idx" id="r2" aria-label="Slide 3">
+    <div class="stack"><slot></slot></div>
+    <div class="indicators">
+      <label for="r0"></label><label for="r1"></label><label for="r2"></label>
+    </div>
+    <div class="controls">
+      <label class="prev p0" for="r2">prev</label><label class="prev p1" for="r0">prev</label><label class="prev p2" for="r1">prev</label>
+      <label class="next n0" for="r1">next</label><label class="next n1" for="r2">next</label><label class="next n2" for="r0">next</label>
+    </div>
+  </template>
+  <div class="sl0" id="sl-0">one</div>
+  <div class="sl1" id="sl-1">two</div>
+  <div class="sl2" id="sl-2">three</div>
+</spike-car2>
+
+<script type="module">
+// Upgrade is behind window.__define so the test can assert the pre-upgrade
+// (pure-DSD) behavior first, then trigger the handover deterministically.
+window.__define = () => {
+  class SpikeCar2 extends HTMLElement {
+    connectedCallback() {
+      const sr = this.shadowRoot; // attached by the DSD parser
+      // Read the pre-upgrade state (checked radio = current index) BEFORE
+      // destroying the inert chrome, so the user's slide survives the upgrade.
+      const radios = [...sr.querySelectorAll('.nojs-radio')];
+      const index = Math.max(0, radios.findIndex((r) => r.checked));
+      sr.replaceChildren();
+      const kids = [...this.children];
+      sr.innerHTML = `<style>
+        :host { display: block; }
+        .vh { position: absolute; width: 1px; height: 1px; margin: -1px; padding: 0; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0; }
+        .viewport { overflow: hidden; }
+        .track { display: flex; transition: transform .1s; }
+        .cell { flex: 0 0 100%; min-width: 0; }
+        .indicators label { display: inline-block; width: 16px; height: 16px; background: #999; margin: 2px; cursor: pointer; }
+      </style>
+      ${kids.map((_, i) => `<input class="vh nojs-radio" type="radio" name="idx" id="r${i}" aria-label="Slide ${i + 1}">`).join('')}
+      <div class="viewport"><div class="track">
+        ${kids.map((_, i) => `<div class="cell" data-i="${i}"><slot name="s${i}"></slot></div>`).join('')}
+      </div></div>
+      <div class="indicators">${kids.map((_, i) => `<label for="r${i}"></label>`).join('')}</div>`;
+      kids.forEach((k, i) => k.setAttribute('slot', `s${i}`));
+      const upgraded = [...sr.querySelectorAll('.nojs-radio')];
+      upgraded[index].checked = true;
+      const track = sr.querySelector('.track');
+      const apply = () => {
+        const cur = upgraded.findIndex((r) => r.checked);
+        track.style.transform = `translateX(-${cur * 100}%)`;
+      };
+      upgraded.forEach((r) => r.addEventListener('change', apply));
+      track.style.transition = 'none';
+      apply();
+      requestAnimationFrame(() => { track.style.transition = ''; });
+      this.setAttribute('data-js', '');
+    }
+  }
+  customElements.define('spike-car2', SpikeCar2);
+};
+</script>

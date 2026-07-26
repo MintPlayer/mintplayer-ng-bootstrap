@@ -1,0 +1,64 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>S3 — wrap-around via slot reassignment (no cloneNode)</title>
+<style>
+  spike-wrap { display: block; width: 300px; }
+  .slide { height: 80px; }
+  .s0 { background: #fa0; } .s1 { background: #0af; } .s2 { background: #af0; }
+</style>
+
+<spike-wrap id="wrap">
+  <div class="slide s0" id="w-0">0</div>
+  <div class="slide s1" id="w-1">1</div>
+  <div class="slide s2" id="w-2">2</div>
+</spike-wrap>
+
+<script type="module">
+class SpikeWrap extends HTMLElement {
+  connectedCallback() {
+    this.attachShadow({ mode: 'open' });
+    this.shadowRoot.innerHTML = `<style>
+      :host { display: block; }
+      .viewport { overflow: hidden; }
+      .track { display: flex; }
+      .cell { flex: 0 0 100%; min-width: 0; }
+    </style>
+    <div class="viewport"><div class="track">
+      <div class="cell"><slot name="s0"></slot></div>
+      <div class="cell"><slot name="s1"></slot></div>
+      <div class="cell"><slot name="s2"></slot></div>
+      <div class="cell wrap-after"><slot name="wrapA"></slot></div>
+    </div></div>`;
+    [...this.children].forEach((k, i) => k.setAttribute('slot', `s${i}`));
+    this.track = this.shadowRoot.querySelector('.track');
+    this.goto(0);
+  }
+  goto(i) {
+    this.track.style.transition = 'none';
+    this.track.style.transform = `translateX(-${i * 100}%)`;
+  }
+  // Forward wrap from the last slide back to slide 0: teleport slide 0's light
+  // node into the after-last cell for the duration of the animation, then snap.
+  wrapNext() {
+    const first = this.children[0];
+    first.setAttribute('slot', 'wrapA');
+    requestAnimationFrame(() => requestAnimationFrame(() => {
+      this.track.style.transition = 'transform .4s';
+      this.track.style.transform = 'translateX(-300%)';
+      this.track.addEventListener('transitionend', () => {
+        this.track.style.transition = 'none';
+        this.track.style.transform = 'translateX(0)';
+        first.setAttribute('slot', 's0');
+        this.setAttribute('data-committed', '');
+      }, { once: true });
+    }));
+  }
+}
+customElements.define('spike-wrap', SpikeWrap);
+
+window.__wrap = () => {
+  const el = document.getElementById('wrap');
+  el.goto(2);
+  requestAnimationFrame(() => requestAnimationFrame(() => el.wrapNext()));
+};
+</script>
