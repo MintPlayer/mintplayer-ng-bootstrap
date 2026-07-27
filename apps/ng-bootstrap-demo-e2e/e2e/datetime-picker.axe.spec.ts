@@ -10,7 +10,9 @@ test.describe('datetime-picker — axe-core a11y audit', () => {
 
   test.beforeEach(async ({ page }) => {
     await page.goto('/basic/forms/datetime-picker');
-    await page.waitForLoadState('networkidle');
+    await page.waitForLoadState('networkidle', { timeout: 2000 }).catch(() => {
+      /* HMR keeps the socket open, so the network never idles: settle briefly, never hang */
+    });
     await page.waitForFunction(
       () => !!document.querySelector('bs-datetime-picker'),
     );

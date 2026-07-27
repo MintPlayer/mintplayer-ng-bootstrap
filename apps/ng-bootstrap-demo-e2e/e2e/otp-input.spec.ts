@@ -23,7 +23,9 @@ import { test, expect, Page } from '@playwright/test';
 //    focus inside its hidden input. Same end-state, different signal.
 async function waitReady(page: Page, browserName: string): Promise<void> {
   if (browserName !== 'firefox') {
-    await page.waitForLoadState('networkidle');
+    await page.waitForLoadState('networkidle', { timeout: 2000 }).catch(() => {
+      /* HMR keeps the socket open, so the network never idles: settle briefly, never hang */
+    });
     return;
   }
   await page.waitForLoadState('domcontentloaded');

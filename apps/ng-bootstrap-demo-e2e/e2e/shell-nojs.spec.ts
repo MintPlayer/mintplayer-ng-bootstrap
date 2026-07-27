@@ -13,7 +13,9 @@ test('mp-shell sidebar toggles with JavaScript disabled (DSD + CSS only)', async
   // overlay), so opening it is an unambiguous viewport change.
   await page.setViewportSize({ width: 500, height: 900 });
   await page.goto('/overlays/shell');
-  await page.waitForLoadState('networkidle');
+  await page.waitForLoadState('networkidle', { timeout: 2000 }).catch(() => {
+    /* HMR keeps the socket open, so the network never idles: settle briefly, never hang */
+  });
 
   const shell = page.locator('mp-shell').first();
   await expect(shell).toBeVisible();

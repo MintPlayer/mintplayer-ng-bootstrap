@@ -61,7 +61,9 @@ async function keyTipMode(page: Page): Promise<string> {
 test.describe('ribbon demo', () => {
   test.beforeEach(async ({ page }) => {
     await page.goto('/enterprise/ribbon');
-    await page.waitForLoadState('networkidle');
+    await page.waitForLoadState('networkidle', { timeout: 2000 }).catch(() => {
+      /* HMR keeps the socket open, so the network never idles: settle briefly, never hang */
+    });
     await page.waitForFunction(
       () => !!document.querySelector('mp-ribbon')?.shadowRoot?.querySelector('[role="tab"]')
     );

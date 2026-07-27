@@ -9,7 +9,9 @@ import { test, expect } from '@playwright/test';
 // rendering + its capture API end-to-end without coupling to drag internals.
 test('dock manager renders panels and captures a layout snapshot', async ({ page }) => {
   await page.goto('/enterprise/dock');
-  await page.waitForLoadState('networkidle');
+  await page.waitForLoadState('networkidle', { timeout: 2000 }).catch(() => {
+    /* HMR keeps the socket open, so the network never idles: settle briefly, never hang */
+  });
 
   await expect(page.getByRole('heading', { name: 'Panel 1' })).toBeVisible();
 

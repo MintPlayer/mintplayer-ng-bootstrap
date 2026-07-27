@@ -11,7 +11,9 @@ test('mp-shell sidebar toggles with JavaScript disabled (DSD + CSS only)', async
   // Below the `md` breakpoint the sidebar starts collapsed (off-screen overlay).
   await page.setViewportSize({ width: 500, height: 900 });
   await page.goto('/');
-  await page.waitForLoadState('networkidle');
+  await page.waitForLoadState('networkidle', { timeout: 2000 }).catch(() => {
+    /* HMR keeps the socket open, so the network never idles: settle briefly, never hang */
+  });
 
   const shell = page.locator('mp-shell').first();
   await expect(shell).toBeVisible();

@@ -62,7 +62,9 @@ test.describe('bs-datatable virtual mode', () => {
     await page.goto('/enterprise/datatables');
     // SSR boot can race the route handler if we don't wait for the network
     // to settle before interacting with the page (see project_e2e_destructive_bootstrap).
-    await page.waitForLoadState('networkidle');
+    await page.waitForLoadState('networkidle', { timeout: 2000 }).catch(() => {
+      /* HMR keeps the socket open, so the network never idles: settle briefly, never hang */
+    });
   });
 
   test('virtual mode lazily fetches only the viewport window, never the full set', async ({ page }) => {

@@ -14,7 +14,9 @@ test.use({ javaScriptEnabled: false });
 test.beforeEach(async ({ page }) => {
   await page.setViewportSize({ width: 600, height: 900 });
   await page.goto('/');
-  await page.waitForLoadState('networkidle');
+  await page.waitForLoadState('networkidle', { timeout: 2000 }).catch(() => {
+    /* HMR keeps the socket open, so the network never idles: settle briefly, never hang */
+  });
 });
 
 test('the navbar DSD attaches server-side (no JS, no upgrade)', async ({ page }) => {

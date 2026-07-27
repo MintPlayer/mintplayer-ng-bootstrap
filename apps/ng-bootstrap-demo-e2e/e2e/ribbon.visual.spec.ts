@@ -56,7 +56,9 @@ test.describe('ribbon — visual regression per version', () => {
   test.beforeEach(async ({ page }) => {
     await page.setViewportSize({ width: 1280, height: 200 });
     await page.goto('/enterprise/ribbon');
-    await page.waitForLoadState('networkidle');
+    await page.waitForLoadState('networkidle', { timeout: 2000 }).catch(() => {
+      /* HMR keeps the socket open, so the network never idles: settle briefly, never hang */
+    });
     await page.waitForFunction(
       () => !!document.querySelector('mp-ribbon')?.shadowRoot?.querySelector('[role="tab"]')
     );

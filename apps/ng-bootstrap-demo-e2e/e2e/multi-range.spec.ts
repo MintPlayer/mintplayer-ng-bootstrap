@@ -65,7 +65,9 @@ test.describe('multi-range — RTL rendering and behaviour', () => {
     await page.goto('/basic/forms/multi-range');
     // Per project_e2e_destructive_bootstrap memory: SSR demo needs networkidle
     // after goto so destructive bootstrap finishes wiring up the page.
-    await page.waitForLoadState('networkidle');
+    await page.waitForLoadState('networkidle', { timeout: 2000 }).catch(() => {
+      /* HMR keeps the socket open, so the network never idles: settle briefly, never hang */
+    });
   });
 
   test('thumbs flip to right-anchored positions in RTL', async ({ page }) => {
