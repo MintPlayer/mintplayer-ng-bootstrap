@@ -1,6 +1,11 @@
 @forward '../../../libs/mintplayer-ng-bootstrap/bootstrap';
 
-html, body { height: 100%; }
+// `min-height`, not `height`: a fixed 100% pins <html> to the viewport, and
+// `bs-sticky-footer` anchors its absolutely-positioned footer to <html>'s
+// bottom — so on any page taller than the viewport the footer landed at the
+// fold and scrolled away with the content. Pages that need a definite height
+// to size against (the virtual datatable, file manager) set their own.
+html, body { min-height: 100%; }
 body { padding: 1rem; }
 
 @media (min-width: 768px) {

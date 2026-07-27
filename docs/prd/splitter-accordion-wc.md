@@ -292,7 +292,23 @@ SSR pipeline, then the accordion wrappers/demos/SSR wiring.
 - The no-JS `multi` e2e reproduced the carousel's Chromium/no-JS hang (two click targets in one
   test). Every no-JS test is now one click at most, then focus + keyboard.
 
-**Verification:** 864 WC vitest, 466 ng-bootstrap vitest, 97 ng-demo unit, all four library
+**Verification:** 866 WC vitest, 466 ng-bootstrap vitest, 97 ng-demo unit, all four library
 builds and all three demo app builds green; ng e2e green for splitter and accordion on Chromium
 and Firefox (the suite's 10 unrelated pre-existing failures — stale visual baselines and
 Firefox `networkidle` timeouts — are untouched by this work).
+
+## 9. Also fixed here: the sticky footer never stuck
+
+Found during the same live review and unrelated to the WC work, but folded in on request.
+`bs-sticky-footer` anchors an absolutely-positioned footer to `<html>`, for which its own
+stylesheet sets `min-height: 100%`. The demo app's global `styles.scss` had
+`html, body { height: 100% }` (added 2026-03-08 in #276), and `height` is not `min-height`: it
+pinned `<html>` to exactly the viewport while the page content overflowed it, so `bottom: 0`
+resolved to the fold. The footer looked right at scroll 0 and then scrolled away.
+
+Changed to `min-height: 100%`. Verified against the two things that could plausibly have
+depended on a definite height: the virtual datatable still windows its rows (20/1/33 rendered,
+`.datatable-scroll` bounded) and the offcanvas is unaffected in all four directions — it is
+`position: fixed`, so its percentages resolve against the viewport, not `<html>` (measured with
+a 1404px document in a 645px viewport: the bottom panel sits flush at 645, the side panel is
+645 tall, neither stretched to the document).
