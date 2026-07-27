@@ -1,5 +1,11 @@
 # Plan — bs-splitter restore + accordion WC migration
 
+Status: **EXECUTED 2026-07-27** on `feat/carousel-wc` (PR #392). Kept as the historical record
+of what was planned; the PRD (`docs/prd/splitter-accordion-wc.md`) carries the as-built state
+and §8 lists where reality diverged. Phases A0 and A landed as one commit — the nested-close
+gate turned out to be a plain light-DOM query, so there was nothing to decide before
+proceeding. Phase D's checks ran as one sweep at the end rather than per phase.
+
 Companion PRD: `docs/prd/splitter-accordion-wc.md`. Branch: **`feat/carousel-wc` (PR #392)** —
 no new branch/PR (user directive); commits land on the open PR.
 

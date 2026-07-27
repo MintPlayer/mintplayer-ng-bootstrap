@@ -74,6 +74,12 @@ WCs with a no-JS SSR path ship a Declarative-Shadow-DOM "chrome" constant, rende
 
 ## Build & test
 
+**Run test suites only once ALL milestones of a task are implemented — never after each one.**
+The suites here are slow (`nx test mintplayer-ng-bootstrap` alone is ~2.5 min, a full
+cross-app e2e sweep far longer), so a per-milestone run costs more time than it saves.
+Verify intermediate work by reading the code and type-checking; commit per milestone if you
+like, but batch the build + unit + e2e sweep into a single pass at the end.
+
 ```bash
 npx nx build mintplayer-web-components
 npx nx build mintplayer-ng-bootstrap        # ng-packagr secondary entries

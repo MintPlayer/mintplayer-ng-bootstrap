@@ -10,6 +10,25 @@ import {
  */
 const ATTRS = `(?:"[^"]*"|'[^']*'|[^"'>])*`;
 
+/**
+ * One attribute of a tag: name plus an optional quoted or bare value. Scanning
+ * with this rather than searching the raw attribute text is what keeps a value
+ * from being read as a name — `aria-label="multi tabs"` does not make an
+ * accordion `multi`, and `class="accordion-tabs"` does not make an element a
+ * tab marker.
+ */
+const ATTR_TOKEN = /([a-zA-Z_:][-\w:.]*)(?:\s*=\s*(?:"([^"]*)"|'([^']*)'|([^\s"'`=<>]+)))?/g;
+
+/** The attribute's value, `''` when valueless, or `null` when absent. */
+function readAttribute(attrs: string, name: string): string | null {
+  ATTR_TOKEN.lastIndex = 0;
+  let match: RegExpExecArray | null;
+  while ((match = ATTR_TOKEN.exec(attrs))) {
+    if (match[1].toLowerCase() === name) return match[2] ?? match[3] ?? match[4] ?? '';
+  }
+  return null;
+}
+
 /** HTML elements with no closing tag. */
 const VOID_ELEMENTS = new Set([
   'area', 'base', 'br', 'col', 'embed', 'hr', 'img', 'input',
@@ -39,7 +58,7 @@ function countTabs(html: string, from: number): number {
       continue;
     }
     const isVoid = VOID_ELEMENTS.has(rawName.toLowerCase()) || /\/\s*$/.test(attrs);
-    if (depth === 0 && /\baccordion-tab(?![\w-])/.test(attrs)) {
+    if (depth === 0 && readAttribute(attrs, 'accordion-tab') !== null) {
       count++;
     }
     if (!isVoid) depth++;
@@ -79,7 +98,8 @@ export function injectMpAccordionDsd(html: string): string {
       result += m[0]; // already has a DSD — leave untouched
       continue;
     }
-    const multi = /\bmulti(?![\w-])(?!\s*=\s*(?:"false"|'false'))/.test(m[1]);
+    const multiAttribute = readAttribute(m[1], 'multi');
+    const multi = multiAttribute !== null && multiAttribute !== 'false';
     const variants = multi
       ? MP_ACCORDION_MULTI_DSD_CHROME_BY_COUNT
       : MP_ACCORDION_DSD_CHROME_BY_COUNT;

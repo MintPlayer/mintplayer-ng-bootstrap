@@ -144,31 +144,36 @@ export function accordionNojsSuite(test: Test, expect: Expect, options: Accordio
       await expect(input(accordion, 0)).not.toBeChecked();
     });
 
-    test('single-open: clicking a header checks its radio and unchecks the previous', async ({ page }) => {
+    // At most ONE click per test from here on: Chromium with JS disabled
+    // intermittently hangs the actionability stability wait when a test
+    // switches click targets between elements (carousel suite lesson).
+    // Everything after the first click is driven by focus + keyboard, which
+    // skip that wait — and which is the no-JS keyboard story anyway.
+
+    test('single-open: activating a header checks its radio and unchecks the previous', async ({ page }) => {
       const accordion = single(page);
       await button(accordion, 0).click();
       await expect(input(accordion, 0)).toBeChecked();
 
-      await button(accordion, 1).click();
+      await input(accordion, 1).focus();
+      await page.keyboard.press('Space');
       await expect(input(accordion, 1)).toBeChecked();
       await expect(input(accordion, 0)).not.toBeChecked();
     });
 
-    test('multi: checkboxes let tabs stay open together', async ({ page }) => {
+    test('multi: the hidden checkboxes are keyboard-operable and stay open together', async ({ page }) => {
       const accordion = multi(page);
       await accordion.scrollIntoViewIfNeeded();
-      await button(accordion, 0).click();
-      await button(accordion, 1).click();
-      await expect(input(accordion, 0)).toBeChecked();
-      await expect(input(accordion, 1)).toBeChecked();
-    });
 
-    test('keyboard: the hidden input is focusable and Space toggles it', async ({ page }) => {
-      const accordion = multi(page);
-      await accordion.scrollIntoViewIfNeeded();
       await input(accordion, 0).focus();
       await page.keyboard.press('Space');
+      // Tab reaches the next tab's input: the <label> header is not focusable,
+      // and unlike a radio group a checkbox does not swallow the sequence.
+      await page.keyboard.press('Tab');
+      await page.keyboard.press('Space');
+
       await expect(input(accordion, 0)).toBeChecked();
+      await expect(input(accordion, 1)).toBeChecked();
     });
 
     test('two accordions on one page keep independent state (shadow-scoped groups)', async ({ page }) => {

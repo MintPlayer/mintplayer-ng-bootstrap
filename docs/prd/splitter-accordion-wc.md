@@ -1,12 +1,14 @@
 # PRD — restore `bs-splitter` over `<mp-splitter>` + migrate the accordion to `<mp-accordion>`
 
-Status: **approved, NOT yet implemented** (docs only as of 2026-07-26) — executes on
-**`feat/carousel-wc` (PR #392)**; explicitly NO new branch/PR (user directive). User confirmed:
-the pilot branch's request-time lit-labs SSR is ignored; the accordion reuses the SSR machinery
-already merged to master (build-time chrome + injector), per §5.2. Companion plan:
-`docs/prd/splitter-accordion-wc-plan.md`. Shared doctrine (two-tier
+Status: **as built, 2026-07-27** — implemented on **`feat/carousel-wc` (PR #392)**; no new
+branch/PR (user directive). The pilot branch's request-time lit-labs SSR was dropped as
+planned; the accordion reuses the build-time chrome + injector machinery already on master,
+per §5.2. Companion plan: `docs/prd/splitter-accordion-wc-plan.md`. Shared doctrine (two-tier
 no-JS, count-variant DSD chrome, attribute-only config, wrapper anatomy) is established in
 `docs/prd/carousel-wc.md` and is referenced rather than repeated.
+
+**Deviations from the plan** are recorded inline where they belong (§4 event handling, §5.2
+markers/slots) and summarised in §8.
 
 ## 1. Problem
 
@@ -57,7 +59,8 @@ verbatim — all 94 entries use `.json`):
   `setAttribute` accessors, so `[attr.x]` bindings are the whole bridge.
 - **Outputs**: `resizeStart` / `resizing` / `resizeEnd` re-emitting the WC's typed
   `{sizes, orientation}` details. **Guard on `event.target === nativeElement`, then
-  `stopPropagation()`** — claim-then-stop (amended during implementation from guard-only).
+  `stopPropagation()`** — claim-then-stop (amended during implementation from guard-only;
+  the accordion wrapper follows the same rule for `mp-accordion-tab-toggle`).
   The guard keeps the bs-navbar swallow-everything idiom's failure away (an outer wrapper
   never claims a nested splitter's bubbled events); the stop after it is required because
   Angular registers BOTH a DOM listener and the output subscription for an element event
@@ -99,12 +102,32 @@ structural directive replacing the header component).
   `:host{display:block}` shadow — the `mp-tab-page` precedent. Forced by no-JS single-open:
   radio groups only form within one node tree, so per-item shadow roots can't be exclusive
   without JS. The wrapper (or the element, CSR) stamps `slot="hN"/"cN"` on header/body content.
-- Drop entirely: `isServerSide` dual templates, the `createRenderRoot` hydration bypass,
-  `snapshotSsrCheckedState`, all middleware wiring. Tier gating is `:host(:not([data-js]))`;
-  the checked radio/checkbox state is read before chrome replacement (carousel precedent).
-- **Injector** `injectMpAccordionDsd`: counts `<mp-accordion-tab>` children (the carousel's
-  attribute-value-safe depth-scan counter generalizes), reads `multi` off the tag, splices the
-  matching variant. `codegen-accordion-chrome` joins the `codegen-ssr-chrome` aggregate.
+  - **As built:** markers are identified by the `accordion-tab` / `accordion-header`
+    ATTRIBUTES, not by tag name. Named slots only accept direct children of the shadow host,
+    and an Angular component can only render inside its own host element — so requiring an
+    `<mp-accordion-tab>` tag would put every Angular marker one level too deep to ever be
+    slotted. `<bs-accordion-tab>`'s host IS the marker; `<mp-accordion-tab>` stays as the
+    vanilla convenience element and tags itself. Because children connect *after* their
+    parent, the accordion also watches its children for that attribute arriving a tick late.
+  - **As built:** the same constraint means a tab's header cannot live inside the tab. It is
+    authored with `*bsAccordionTabHeader` (React/Vue: a `header` prop/slot) and **hoisted** by
+    the parent into a sibling of the tab. Pairing is by position: i-th header ↔ i-th tab.
+- Drop entirely: `isServerSide` dual templates, `snapshotSsrCheckedState` as a separate mode,
+  all middleware wiring. Tier gating is `:host(:not([data-js]))`; the checked radio/checkbox
+  state is read before chrome replacement (carousel precedent).
+  - **As built:** the `createRenderRoot` hydration bypass is KEPT, not dropped. The server
+    chrome is the input-driven no-JS tier and the client render is the button-driven JS tier,
+    so the handoff is necessarily destructive and hydration would bind parts to the wrong
+    nodes — exactly the carousel's situation.
+- **Injector** `injectMpAccordionDsd`: counts tab markers (the carousel's attribute-value-safe
+  depth-scan counter generalizes), reads `multi` off the tag, splices the matching variant.
+  `codegen-accordion-chrome` joins the `codegen-ssr-chrome` aggregate.
+  - **As built:** attribute *names* are read with a tokenizer rather than searched for in the
+    raw attribute text. A substring search made `aria-label="multi tabs"` turn an accordion
+    into a checkbox machine — caught by its own unit test.
+  - **Known limitation** (shared with the carousel, which always parks on slide 0): the
+    pre-generated chrome renders every tab collapsed, so a tab declared open renders closed
+    until JS upgrades. No-JS visitors simply start from a fully collapsed accordion.
 
 ### 5.3 Behavior contracts to preserve (from the current Angular component)
 
@@ -114,14 +137,25 @@ structural directive replacing the header component).
    `mp-accordion` within the closing tab's slotted light DOM and calls a public
    `closeAll()`. This is the **#1 risk** — validated early by a dedicated vitest with nested
    structure before the rest of Phase B proceeds.
+   - **As built:** the risk did not materialise. Nested accordions sit in the closing tab's
+     own light-DOM subtree, so one `querySelectorAll('mp-accordion')` reaches every depth
+     with no shadow-piercing at all, and each nested `closeAll()` recurses in turn. The
+     bubbling-event fallback design was not needed. The cascade also runs for closes written
+     straight to the marker by a framework binding, which never pass through the click path.
 3. `highlightActiveTab`; arbitrary projected header content (slots, not strings).
 4. Tolerates children with no tab identity (offcanvas uses `bs-accordion` as a bare link
    container with zero tabs).
 5. Reduced-motion: the only real assertions in the old Angular specs (live `matchMedia`
    tracking) — re-expressed against the WC.
+   - **As built:** this is now a `@media (prefers-reduced-motion: reduce)` rule in the
+     shadow stylesheet, so there is no signal left to assert and no `BsReducedMotionDirective`
+     on the wrapper. CSS tracks the preference live, which is what the old specs checked for.
 6. In-lib consumers keep compiling: `sticky-footer`, `offcanvas`, `shell` components author
    `bs-accordion` internally; the wrapper API stays shape-compatible (header component →
    structural directive is the one breaking change, as on the pilot branch).
+   - **Correction:** those three are **demo pages**, not library components — no library code
+     consumes the accordion. Four demo pages were migrated (sticky-footer, offcanvas, shell,
+     and the accordion page itself).
 
 ### 5.4 ARIA
 
@@ -170,3 +204,43 @@ that way, not the other.
   `docs/prd/wc-aria-accessibility.md`.
 - Pilot branch: `feat/wc-ssr-accordion-pilot` @ `d0f1c0c6` (salvage source — cherry-pick
   nothing wholesale; port files individually).
+
+## 8. As built
+
+Three commits on `feat/carousel-wc` (PR #392): the splitter restore, the accordion element +
+SSR pipeline, then the accordion wrappers/demos/SSR wiring.
+
+**Deviations from the plan**, each detailed in place above:
+
+1. **Splitter events are claim-then-stop, not guard-only** (§4). Angular registers *both* a DOM
+   listener and the output subscription for an element event binding, so without the stop a
+   consumer's `(resizing)` handler fires twice — once with the typed detail, once with the raw
+   CustomEvent. The guard alone was not enough.
+2. **Markers are attributes, not tags** (§5.2). `accordion-tab` / `accordion-header` on any
+   direct child, because an Angular component cannot render a tag as a direct child of the
+   element it wraps, and named slots accept nothing else. This also forced header **hoisting**
+   into the parent's template, and index pairing by position.
+3. **The `createRenderRoot` hydration bypass is kept, not dropped** (§5.2) — the two tiers
+   render different markup, so the DSD handoff is necessarily destructive.
+4. **Reduced motion is CSS-only** (§5.3.5); `BsReducedMotionDirective` is gone from the
+   accordion wrapper and there is no signal left to assert.
+5. **The nested-close risk did not materialise** (§5.3.2). A plain `querySelectorAll` over the
+   closing tab's light-DOM subtree reaches every depth; no shadow-piercing, no event-based
+   fallback. The cascade also covers closes written straight to the marker by a framework.
+6. **No library code consumed the accordion** (§5.3.6) — the three named "in-lib consumers" are
+   demo pages.
+
+**Bugs the new tests caught during the sweep**, worth remembering:
+
+- The element scanned for markers before its children had connected (parents connect first), so
+  a self-tagging `<mp-accordion-tab>` was invisible. Fixed by observing every child for the
+  attribute arriving late.
+- The injector read `multi` by substring, so `aria-label="multi tabs"` silently switched an
+  accordion to the checkbox machine. Attribute *names* are now read with a tokenizer.
+- The no-JS `multi` e2e reproduced the carousel's Chromium/no-JS hang (two click targets in one
+  test). Every no-JS test is now one click at most, then focus + keyboard.
+
+**Verification:** 864 WC vitest, 466 ng-bootstrap vitest, 97 ng-demo unit, all four library
+builds and all three demo app builds green; ng e2e green for splitter and accordion on Chromium
+and Firefox (the suite's 10 unrelated pre-existing failures — stale visual baselines and
+Firefox `networkidle` timeouts — are untouched by this work).
