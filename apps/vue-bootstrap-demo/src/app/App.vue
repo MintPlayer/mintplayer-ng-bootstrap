@@ -53,6 +53,7 @@ const SECTIONS = [
       { path: '/enterprise/datatables', label: 'Datatable' },
       { path: '/enterprise/file-manager', label: 'File manager' },
       { path: '/enterprise/shell', label: 'Shell' },
+      { path: '/enterprise/accordion', label: 'Accordion' },
     ],
   },
 ];

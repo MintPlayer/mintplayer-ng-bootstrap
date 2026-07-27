@@ -29,6 +29,7 @@ const SECTIONS = [
     { path: '/advanced/otp-input', label: 'OTP input' },
   ]},
   { title: 'Enterprise', routes: [
+    { path: '/enterprise/accordion', label: 'Accordion' },
     { path: '/enterprise/scheduler', label: 'Scheduler' },
     { path: '/enterprise/timeline', label: 'Timeline' },
     { path: '/enterprise/dock', label: 'Dock manager' },

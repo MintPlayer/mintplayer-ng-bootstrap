@@ -244,11 +244,23 @@ export class MpAccordion extends LitElement {
       }),
     );
 
+    const previous = this.#tabs;
     this.#tabElements = tabElements;
     this.#tabs = tabElements.map((tab) => ({
       active: tab.hasAttribute('is-active'),
       disabled: tab.hasAttribute('disabled'),
     }));
+
+    // A framework's two-way binding can close a tab by writing the marker
+    // directly, never passing through #setActive — the nested-collapse
+    // contract has to hold for those writes too. Only meaningful while the
+    // tabs line up; after an add/remove the indexes describe different tabs.
+    if (previous.length === this.#tabs.length) {
+      this.#tabs.forEach((tab, index) => {
+        if (!tab.active && previous[index].active) this.#closeNested(index, null);
+      });
+    }
+
     this.requestUpdate();
   }
 

@@ -1,3 +1,14 @@
-<div class="accordion">
+<mp-accordion
+    #element
+    [attr.multi]="multiAttr()"
+    [attr.highlight-active-tab]="highlightActiveTabAttr()"
+    (mp-accordion-tab-toggle)="onTabToggle($event)">
+    @for (tab of tabPages(); track tab; let i = $index) {
+        <span accordion-header [attr.slot]="'h' + i">
+            @if (tab.headerTemplate(); as header) {
+                <ng-container [ngTemplateOutlet]="header.template"></ng-container>
+            }
+        </span>
+    }
     <ng-content></ng-content>
-</div>
+</mp-accordion>

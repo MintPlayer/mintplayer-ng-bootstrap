@@ -51,6 +51,7 @@ const SplitterPage     = lazyNamed(() => import('./pages/advanced/SplitterPage')
 const SchedulerPage    = lazyNamed(() => import('./pages/enterprise/SchedulerPage'), 'SchedulerPage');
 const TimelinePage     = lazyNamed(() => import('./pages/enterprise/TimelinePage'),  'TimelinePage');
 const ShellPage        = lazyNamed(() => import('./pages/enterprise/ShellPage'),     'ShellPage');
+const AccordionPage    = lazyNamed(() => import('./pages/enterprise/AccordionPage'), 'AccordionPage');
 
 function PageFallback() {
   return (
@@ -90,6 +91,7 @@ export function App() {
           <Route path="/advanced/otp-input" element={<OtpInputPage />} />
           <Route path="/advanced/splitter" element={<SplitterPage />} />
           {/* Enterprise */}
+          <Route path="/enterprise/accordion" element={<AccordionPage />} />
           <Route path="/enterprise/dock" element={<DockPage />} />
           <Route path="/enterprise/tile-manager" element={<TileManagerPage />} />
           <Route path="/enterprise/datatables" element={<DatatablePage />} />

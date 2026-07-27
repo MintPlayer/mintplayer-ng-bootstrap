@@ -1,0 +1,28 @@
+// The accordion chrome lives in the web component's shadow root, so the old
+// `::ng-deep .accordion-button` rules no longer match anything. Theming now
+// goes through Bootstrap's custom properties (which cascade into the shadow,
+// where the element declares them on :host so light-DOM values win) and the
+// parts the element exposes.
+.multi-level {
+    --bs-accordion-btn-bg: #333;
+    --bs-accordion-btn-color: #fff;
+    --bs-accordion-active-bg: #444;
+    --bs-accordion-active-color: #fff;
+    // White chevron, since the header is dark at every level.
+    --bs-accordion-btn-icon: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='%23ffffff'><path fill-rule='evenodd' d='M1.646 4.646a.5.5 0 0 1 .708 0L8 10.293l5.646-5.647a.5.5 0 0 1 .708.708l-6 6a.5.5 0 0 1-.708 0l-6-6a.5.5 0 0 1 0-.708z'/></svg>");
+    --bs-accordion-btn-active-icon: var(--bs-accordion-btn-icon);
+
+    &::part(content) {
+        background-color: #ccc;
+    }
+
+    // Each nesting level gets a lighter header. Custom properties inherit, so
+    // a value set on a nested accordion overrides it for that subtree only.
+    bs-accordion {
+        --bs-accordion-btn-bg: #666;
+
+        bs-accordion {
+            --bs-accordion-btn-bg: #999;
+        }
+    }
+}

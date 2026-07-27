@@ -26,6 +26,9 @@ import { injectMpNavbarDsd } from '@mintplayer/web-components/navbar/ssr';
 // Same pattern for <mp-carousel>: count-variant DSD chrome so the radio-driven
 // no-JS carousel navigates with JS disabled. Composed with the other injectors.
 import { injectMpCarouselDsd } from '@mintplayer/web-components/carousel/ssr';
+// Same pattern for <mp-accordion>: [multi] x [tab-count] DSD chrome variants,
+// so tabs open and close through the shadow input state machine with JS off.
+import { injectMpAccordionDsd } from '@mintplayer/web-components/accordion/ssr';
 import App from './app/app';
 
 /**
@@ -49,7 +52,7 @@ export function render(url: string): Promise<string> {
       },
       final(cb) {
         clearTimeout(timer);
-        resolve(injectMpCarouselDsd(injectMpNavbarDsd(injectMpDropdownDsd(injectMpShellDsd(Buffer.concat(chunks).toString('utf-8'))))));
+        resolve(injectMpAccordionDsd(injectMpCarouselDsd(injectMpNavbarDsd(injectMpDropdownDsd(injectMpShellDsd(Buffer.concat(chunks).toString('utf-8')))))));
         cb();
       },
     });

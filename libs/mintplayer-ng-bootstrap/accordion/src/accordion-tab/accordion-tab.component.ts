@@ -1,48 +1,56 @@
-import { ChangeDetectionStrategy, Component, contentChildren, forwardRef, inject, model, computed, signal } from '@angular/core';
-import { SlideUpDownAnimation } from '@mintplayer/ng-animations';
-import { BsNoNoscriptDirective } from '@mintplayer/ng-bootstrap/no-noscript';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  computed,
+  contentChild,
+  inject,
+  input,
+  model,
+} from '@angular/core';
 import { BsAccordionComponent } from '../accordion/accordion.component';
+import { BsAccordionTabHeaderDirective } from '../accordion-tab-header/accordion-tab-header.directive';
 
+/**
+ * `<bs-accordion-tab>` — one tab of a `<bs-accordion>`.
+ *
+ * This host element IS the tab marker the web component reads: it carries
+ * `accordion-tab`, its index slot and the tab's state, and its projected
+ * children become the tab body. There is no separate `<mp-accordion-tab>`
+ * here — an Angular component can only render inside its own host, which
+ * would put that element one level too deep to be slotted.
+ *
+ * The header is declared with `*bsAccordionTabHeader` and rendered by the
+ * parent accordion (see `BsAccordionComponent`).
+ */
 @Component({
   selector: 'bs-accordion-tab',
   templateUrl: './accordion-tab.component.html',
-  styleUrls: ['./accordion-tab.component.scss'],
-  imports: [BsNoNoscriptDirective],
-  animations: [SlideUpDownAnimation],
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: {
-    'class': 'accordion-item d-block',
+    'accordion-tab': '',
+    '[attr.slot]': '"c" + index()',
+    '[attr.is-active]': 'isActive() ? "" : null',
+    '[attr.disabled]': 'disabled() ? "" : null',
   },
 })
 export class BsAccordionTabComponent {
-  accordion = inject(BsAccordionComponent);
-  accordionTabId = signal<number>(0);
-  accordionTabName = computed(() => `${this.accordion.accordionName()}-${this.accordionTabId()}`);
-  readonly childAccordions = contentChildren<BsAccordionComponent>(forwardRef(() => BsAccordionComponent));
+  readonly accordion = inject(BsAccordionComponent);
 
-  constructor() {
-    this.accordionTabId.set(++this.accordion.accordionTabCounter);
-  }
+  /** Two-way: whether this tab is open. */
+  readonly isActive = model<boolean>(false);
+  readonly disabled = input<boolean>(false);
 
-  isActive = model<boolean>(false);
+  readonly headerTemplate = contentChild(BsAccordionTabHeaderDirective);
 
-  setActive(value: boolean) {
-    if (this.isActive() !== value) {
-      this.isActive.set(value);
-      if (value && !this.accordion.multi()) {
-        this.accordion.tabPages().filter((tab) => {
-          return tab !== this;
-        }).forEach((tab) => {
-          tab.isActive.set(false);
-        });
-      }
-      if (!value) {
-        this.childAccordions().forEach((accordion) => {
-          accordion.tabPages().forEach((tab: BsAccordionTabComponent) => {
-            tab.isActive.set(false);
-          });
-        });
-      }
-    }
+  /** Position among its siblings — the tab's identity for slots and events. */
+  readonly index = computed(() => this.accordion.tabPages().indexOf(this));
+
+  /**
+   * Open or close this tab through the web component, so single-open
+   * exclusivity and the nested-accordion collapse both apply — unlike
+   * writing `isActive` directly.
+   */
+  setActive(value: boolean): void {
+    this.accordion.setActive(this.index(), value);
   }
 }
