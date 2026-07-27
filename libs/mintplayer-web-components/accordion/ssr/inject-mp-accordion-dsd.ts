@@ -87,15 +87,25 @@ export function injectMpAccordionDsd(html: string): string {
   }
   // `(?=[\s>/])` keeps this from matching <mp-accordion-tab>.
   const open = new RegExp(`<mp-accordion(?=[\\s>/])(${ATTRS})>`, 'g');
+  const close = /<\/mp-accordion\s*>/g;
   let result = '';
   let last = 0;
+  // How many enclosing accordions are still open at the current position —
+  // the element itself can only work this out in connectedCallback, which
+  // never runs server-side, so the nesting flag is stamped here instead.
+  let depth = 0;
   let m: RegExpExecArray | null;
   while ((m = open.exec(html))) {
     const end = open.lastIndex;
+    close.lastIndex = last;
+    let c: RegExpExecArray | null;
+    while ((c = close.exec(html)) && c.index < m.index) depth = Math.max(0, depth - 1);
     result += html.slice(last, m.index);
     last = end;
+
     if (/^\s*<template[^>]*shadowrootmode/.test(html.slice(end, end + 120))) {
       result += m[0]; // already has a DSD — leave untouched
+      depth++;
       continue;
     }
     const multiAttribute = readAttribute(m[1], 'multi');
@@ -104,7 +114,12 @@ export function injectMpAccordionDsd(html: string): string {
       ? MP_ACCORDION_MULTI_DSD_CHROME_BY_COUNT
       : MP_ACCORDION_DSD_CHROME_BY_COUNT;
     const count = countTabs(html, end);
-    result += m[0] + (count < variants.length ? variants[count] : variants[0]);
+    const openTag =
+      depth > 0 && readAttribute(m[1], 'data-nested') === null
+        ? m[0].replace(/\s*\/?>$/, (tail) => ` data-nested${tail}`)
+        : m[0];
+    result += openTag + (count < variants.length ? variants[count] : variants[0]);
+    depth++;
   }
   return result + html.slice(last);
 }

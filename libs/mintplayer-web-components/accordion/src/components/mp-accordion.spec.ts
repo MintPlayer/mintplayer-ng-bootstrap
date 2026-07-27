@@ -123,6 +123,40 @@ describe('mp-accordion projection', () => {
     expect(tab.getAttribute('slot')).toBe('c0');
   });
 
+  it('keeps the collapse clipper free of padding', async () => {
+    // Regression: `.accordion-content` was originally BOTH the clipper and
+    // the padded box. A grid row at 0fr sizes the row to zero, but an
+    // element's own padding still occupies its border box and is not clipped
+    // by its own `overflow: hidden` — so every CLOSED tab showed a padding
+    // strip and the content behind it. Spacing must live one level in.
+    const el = await make({ tabs: ['One'] });
+    const clip = shadow(el).querySelector('.accordion-collapse > .accordion-clip');
+    expect(clip).toBeTruthy();
+    expect(clip!.getAttribute('part')).toBeNull();
+
+    const content = clip!.querySelector('.accordion-content');
+    expect(content).toBeTruthy();
+    expect(content!.getAttribute('part')).toBe('content');
+    expect(content!.querySelector('slot')?.getAttribute('name')).toBe('c0');
+  });
+
+  it('flags a nested accordion so its doubled border can collapse', async () => {
+    const { outer, inner } = await (async () => {
+      const outer = build({ tabs: ['Outer'], active: [0] });
+      const inner = build({ tabs: ['Inner'] });
+      const host = document.createElement('bs-accordion');
+      host.appendChild(inner);
+      outer.querySelector('[accordion-tab]')!.appendChild(host);
+      document.body.appendChild(outer);
+      await flush(outer);
+      await flush(inner);
+      return { outer, inner };
+    })();
+
+    expect(inner.hasAttribute('data-nested')).toBe(true);
+    expect(outer.hasAttribute('data-nested')).toBe(false);
+  });
+
   it('tolerates an accordion with no tabs at all', async () => {
     // The offcanvas nav uses bs-accordion as a bare styled link container.
     const el = document.createElement('mp-accordion') as MpAccordion;

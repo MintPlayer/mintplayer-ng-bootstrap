@@ -86,7 +86,13 @@
 // `.carousel-item.active { display: block }` on the active cell.
 .carousel-track .carousel-item {
   display: flex;
-  align-items: center;
+  // Row direction here, so align-items is the VERTICAL axis, and horizontal
+  // SLIDE mode wants slides flush to the top: the viewport is sized to the
+  // CURRENT slide while the flex track stretches to the TALLEST one, so
+  // centring parks every slide at its own offset (measured 0/51/27/6/12/6px
+  // down from the viewport for the six demo images) and the top edge jumps
+  // on every navigation. Fade and vertical centre instead — see below.
+  align-items: flex-start;
   justify-content: center;
   float: none;
   flex: 0 0 100%;
@@ -108,9 +114,21 @@
   height: auto;
 }
 
+// Fade stacks the slides on one spot rather than sliding past a shared edge,
+// so they read best sharing a centre line — no top edge is travelling for the
+// eye to track. Applies in both tiers, hence no `[data-js]` here.
+:host([animation="fade"]) .carousel-item {
+  align-items: center;
+}
+
 :host([orientation="vertical"]) .carousel-item {
   flex: 0 0 auto;
   flex-direction: column;
+  // Column direction swaps the axes: align-items is now HORIZONTAL (centre
+  // the slide across the width) and the inherited `justify-content: center`
+  // is what centres it vertically inside the tallest-slide cell — which is
+  // the contract for this orientation.
+  align-items: center;
   // Vertical contract: every cell pinned to the tallest slide. The px value
   // is also the transform distance unit, so layout and motion agree. Pinning
   // the CELL (not the slotted slide) is what lets measurements shrink again.

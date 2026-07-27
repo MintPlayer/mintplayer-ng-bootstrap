@@ -95,6 +95,16 @@ export class MpAccordion extends LitElement {
     // Disengage the no-JS CSS state machine; from here JS owns the visuals.
     this.setAttribute('data-js', '');
 
+    // Nesting is always light-DOM (a nested accordion is authored inside a
+    // tab's body), so an ordinary ancestor walk finds it — no shadow
+    // crossing. The stylesheet uses this to collapse the doubled border
+    // between a tab and the accordion inside it.
+    if (this.parentElement?.closest('mp-accordion')) {
+      this.setAttribute('data-nested', '');
+    } else {
+      this.removeAttribute('data-nested');
+    }
+
     // Only this element's own child list matters — observing the subtree
     // would re-scan on every mutation a consumer makes inside a tab body.
     // Marker attributes are watched per marker instead, re-registered by
@@ -402,11 +412,20 @@ export class MpAccordion extends LitElement {
     `;
   }
 
+  /**
+   * Three nested boxes, not two: `.accordion-collapse` is the grid that
+   * animates, `.accordion-clip` is the zero-min-height clipper, and only
+   * `.accordion-content` may carry spacing. Padding on the clipper would
+   * survive the collapse — an element's own padding is not clipped by its
+   * `overflow: hidden`, so a closed tab would keep showing a padding strip.
+   */
   #renderCollapse(index: number): TemplateResult {
     return html`
       <div class="accordion-collapse" id="c${index}" role="region" aria-labelledby="h${index}">
-        <div class="accordion-content" part="content">
-          <slot name="c${index}"></slot>
+        <div class="accordion-clip">
+          <div class="accordion-content" part="content">
+            <slot name="c${index}"></slot>
+          </div>
         </div>
       </div>
     `;

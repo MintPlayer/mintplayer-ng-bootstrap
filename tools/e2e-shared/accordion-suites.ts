@@ -44,6 +44,13 @@ export function accordionJsSuite(test: Test, expect: Expect, options: AccordionS
   }
 
   test.describe('accordion (JS)', () => {
+    // Opening a tab pushes every header below it down over 0.35s, so a click
+    // target is in motion for a third of a second after the previous click.
+    // These tests assert the state machine, not transition smoothness, and the
+    // component honours the preference — so collapse instantly and stop
+    // racing Playwright's actionability checks.
+    test.use({ reducedMotion: 'reduce' });
+
     test('replaces the SSR chrome with the button tier, once', async ({ page }) => {
       await goto(page);
       const counts = await single(page).evaluate((el: Element) => {
@@ -56,6 +63,23 @@ export function accordionJsSuite(test: Test, expect: Expect, options: AccordionS
         };
       });
       expect(counts).toEqual({ items: 3, buttons: 3, inputs: 0 });
+    });
+
+    test('a closed tab occupies no height at all', async ({ page }) => {
+      // Regression, and only a real browser can catch it: the collapse used
+      // to carry its padding on the element that clips it, and an element's
+      // own padding is not clipped by its own `overflow: hidden` — so every
+      // closed tab kept a visible strip of body.
+      await goto(page);
+      const heights = await single(page).evaluate((el: Element) => {
+        const shadow = (el as HTMLElement & { shadowRoot: ShadowRoot }).shadowRoot;
+        return [...shadow.querySelectorAll('.accordion-item')].map((item) => ({
+          open: item.classList.contains('open'),
+          collapse: item.querySelector('.accordion-collapse')!.getBoundingClientRect().height,
+        }));
+      });
+      expect(heights.length).toBeGreaterThan(0);
+      heights.filter((row) => !row.open).forEach((row) => expect(row.collapse).toBe(0));
     });
 
     test('opens a tab on click and closes the previous one', async ({ page }) => {
@@ -142,6 +166,10 @@ export function accordionNojsSuite(test: Test, expect: Expect, options: Accordio
       await expect(accordion.locator('label.accordion-button')).toHaveCount(3);
       // Everything starts collapsed: the pre-rendered chrome carries no state.
       await expect(input(accordion, 0)).not.toBeChecked();
+      // ...and collapsed means zero height, with no padding strip showing
+      // through — the server chrome has to get this right too.
+      const collapsed = await accordion.locator('.accordion-collapse').first().boundingBox();
+      expect(collapsed?.height ?? 0).toBe(0);
     });
 
     // At most ONE click per test from here on: Chromium with JS disabled

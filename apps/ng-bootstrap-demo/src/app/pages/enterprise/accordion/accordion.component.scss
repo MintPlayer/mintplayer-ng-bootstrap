@@ -1,27 +1,59 @@
+// Decorative marker in the tab headers. It exists to show that a header can
+// carry arbitrary projected content, not just a string — so it has to be
+// styled here, on the page. Header content stays in the LIGHT DOM (it is
+// slotted into the element), which is exactly why a page rule still reaches
+// it after the move into the shadow root.
+.triangle {
+    width: 0;
+    height: 0;
+    border-left: 5px solid transparent;
+    border-right: 5px solid transparent;
+    border-bottom: 10px solid currentColor;
+    // Its parent is the plain header span, not a flex container, so the
+    // triangle is an inline box and would sit ON the text baseline. Centring
+    // it against the text is what `vertical-align: middle` on an inline-block
+    // does — and it beats the tab-control page's `float` + `margin-top: 7px`,
+    // which only lines up at one font size.
+    display: inline-block;
+    vertical-align: middle;
+}
+
 // The accordion chrome lives in the web component's shadow root, so the old
-// `::ng-deep .accordion-button` rules no longer match anything. Theming now
-// goes through Bootstrap's custom properties (which cascade into the shadow,
-// where the element declares them on :host so light-DOM values win) and the
-// parts the element exposes.
-.multi-level {
+// `::ng-deep .accordion-button` rules no longer match anything. Theming goes
+// through Bootstrap's custom properties and the parts the element exposes.
+//
+// Both selectors below must name `mp-accordion` itself, NOT the `bs-accordion`
+// wrapper the class sits on:
+//   - the element declares the Bootstrap defaults on `:host`, i.e. ON itself,
+//     and a value set directly on an element always beats one inherited from
+//     an ancestor — so `.multi-level { --bs-accordion-btn-bg: … }` alone is
+//     silently ignored. A light-DOM rule matching the host does win (an outer
+//     tree context outranks the shadow's `:host`), which is why this works.
+//   - `::part()` only applies to the element that owns the shadow root, and
+//     `bs-accordion` is a plain Angular component with no shadow root at all.
+// React and Vue put the consumer's class straight onto `<mp-accordion>`, so
+// only Angular needs the extra descendant step — and `::ng-deep` with it,
+// because `<mp-accordion>` is emitted by the WRAPPER's template and so carries
+// the wrapper's emulated-encapsulation attribute, not this page's.
+.multi-level ::ng-deep mp-accordion {
     --bs-accordion-btn-bg: #333;
     --bs-accordion-btn-color: #fff;
     --bs-accordion-active-bg: #444;
     --bs-accordion-active-color: #fff;
-    // White chevron, since the header is dark at every level.
-    --bs-accordion-btn-icon: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='%23ffffff'><path fill-rule='evenodd' d='M1.646 4.646a.5.5 0 0 1 .708 0L8 10.293l5.646-5.647a.5.5 0 0 1 .708.708l-6 6a.5.5 0 0 1-.708 0l-6-6a.5.5 0 0 1 0-.708z'/></svg>");
-    --bs-accordion-btn-active-icon: var(--bs-accordion-btn-icon);
+    // Replaces the old `::ng-deep .multi-level bs-accordion-tab { border-width: 0 }`.
+    --bs-accordion-border-width: 0;
+    // No chevron-colour override needed: the element masks the icon with
+    // currentColor, so it follows --bs-accordion-btn-color automatically.
 
     &::part(content) {
         background-color: #ccc;
     }
 
-    // Each nesting level gets a lighter header. Custom properties inherit, so
-    // a value set on a nested accordion overrides it for that subtree only.
-    bs-accordion {
+    // Each nesting level gets a lighter header.
+    mp-accordion {
         --bs-accordion-btn-bg: #666;
 
-        bs-accordion {
+        mp-accordion {
             --bs-accordion-btn-bg: #999;
         }
     }

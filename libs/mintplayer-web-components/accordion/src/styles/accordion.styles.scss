@@ -7,13 +7,17 @@
 
 // Bootstrap declares every --bs-accordion-* custom property on `.accordion`.
 // That class is deliberately NOT used inside this shadow root (the container
-// is `.accordion-root`): if it were, its declarations would shadow whatever a
-// consumer set on the host and theming would silently stop working. The same
-// block lives on `:host` instead — the weakest possible match for the host
-// element, so any light-DOM rule targeting it wins, and
-// `.multi-level { --bs-accordion-btn-bg: … }` just works. Bootstrap's other
-// selectors (.accordion-item / -button / -header) are plain class selectors
-// and apply unchanged. The tab-control idiom.
+// is `.accordion-root`): a declaration on a shadow DESCENDANT would shadow
+// consumer values for everything below it. The block lives on `:host`
+// instead. Bootstrap's other selectors (.accordion-item / -button / -header)
+// are plain class selectors and apply unchanged.
+//
+// What that means for consumers: a rule MATCHING this element overrides these
+// (an outer tree context outranks `:host`), but a value merely INHERITED from
+// an ancestor does not — a directly-set value always wins over inheritance.
+// So `mp-accordion { --bs-accordion-btn-bg: … }` works and
+// `.some-wrapper { --bs-accordion-btn-bg: … }` silently does nothing.
+// See docs/prd/splitter-accordion-wc.md §5.5 for the per-framework table.
 :host {
   display: block;
 
@@ -34,10 +38,22 @@
   --bs-accordion-btn-icon-transition: #{$accordion-icon-transition};
   --bs-accordion-btn-active-icon: #{escape-svg($accordion-button-active-icon)};
   --bs-accordion-btn-focus-box-shadow: #{$accordion-button-focus-box-shadow};
-  --bs-accordion-body-padding-x: #{$accordion-body-padding-x};
-  --bs-accordion-body-padding-y: #{$accordion-body-padding-y};
+  // Deliberately 0, not Bootstrap's #{$accordion-body-padding-y}/x — see
+  // `.accordion-content` below for why the consumer owns body spacing here.
+  --bs-accordion-body-padding-x: 0;
+  --bs-accordion-body-padding-y: 0;
   --bs-accordion-active-color: #{$accordion-button-active-color};
   --bs-accordion-active-bg: #{$accordion-button-active-bg};
+}
+
+// A nested accordion sits inside its parent tab's body, so its own item
+// border lands right against the parent's — a doubled 1px line at every
+// level. Pulling in by exactly one border-width overlaps them, which is what
+// `bs-accordion { margin: -1px }` did before the shadow move (and it tracks
+// the border width instead of assuming 1px, so a themed or border-less
+// accordion stays flush).
+:host([data-nested]) {
+  margin: calc(-1 * var(--bs-accordion-border-width));
 }
 
 // Reboot's box-sizing does not cross the shadow boundary.
@@ -76,7 +92,12 @@
   transition: grid-template-rows 0.35s ease;
 }
 
-.accordion-collapse > .accordion-content {
+// The clipper must carry NO padding of its own. A grid row at 0fr sizes the
+// row to zero, but an element's padding still occupies its border box — so
+// padding here would survive the collapse as a visible strip (and `overflow:
+// hidden` does not clip an element's own padding). Anything with spacing goes
+// in the child below.
+.accordion-collapse > .accordion-clip {
   min-height: 0;
   overflow: hidden;
 }
@@ -88,6 +109,12 @@
   grid-template-rows: 1fr;
 }
 
+// Body padding defaults to ZERO, unlike Bootstrap's own accordion. This
+// component has always let the consumer pad its own projected content (the
+// pre-WC template hard-coded `class="accordion-body p-0"`, and every existing
+// consumer passes e.g. `px-3 py-2`), so adopting Bootstrap's 1rem here would
+// double every inset and compound at each nesting level. The custom
+// properties still work for consumers who want Bootstrap's spacing.
 .accordion-content {
   padding: var(--bs-accordion-body-padding-y) var(--bs-accordion-body-padding-x);
 }
@@ -97,6 +124,35 @@
 .accordion-header > label.accordion-button {
   cursor: pointer;
   user-select: none;
+}
+
+// Bootstrap swaps in a light chevron for dark mode with
+// `[data-bs-theme="dark"] .accordion-button::after` — an ANCESTOR selector
+// that can never match from in here, because the themed <html> is outside
+// this shadow root (and `:host-context()`, the usual escape hatch, is not
+// implemented in Firefox). So the chevron stayed dark-on-dark.
+//
+// Painting it as a MASK filled with `currentColor` drops the dependency on
+// the theme being visible: the chevron simply takes the header's own text
+// colour, which is already correct in both modes and under any consumer
+// override. The `--bs-accordion-btn-icon` properties keep working as the
+// SHAPE knob; their colour is now ignored.
+.accordion-button::after {
+  background-image: none;
+  background-color: currentColor;
+  mask-image: var(--bs-accordion-btn-icon);
+  mask-repeat: no-repeat;
+  mask-size: var(--bs-accordion-btn-icon-width);
+  -webkit-mask-image: var(--bs-accordion-btn-icon);
+  -webkit-mask-repeat: no-repeat;
+  -webkit-mask-size: var(--bs-accordion-btn-icon-width);
+}
+
+.accordion-button:not(.collapsed)::after,
+.acc-input:checked + .accordion-header > .accordion-button::after {
+  background-image: none;
+  mask-image: var(--bs-accordion-btn-active-icon);
+  -webkit-mask-image: var(--bs-accordion-btn-active-icon);
 }
 
 // No-JS active state. `.collapsed` stays on the label (no script to remove

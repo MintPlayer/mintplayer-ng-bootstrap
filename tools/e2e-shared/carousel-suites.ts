@@ -126,6 +126,50 @@ export function carouselJsSuite(test: Test, expect: Expect, options: CarouselSui
       await expect(slideImg(car, 3)).toBeInViewport();
     });
 
+    test('slides top-align in horizontal slide mode and centre in fade/vertical', async ({ page }) => {
+      // The demo images have different aspect ratios, so their rendered
+      // heights differ by ~165px at the same width. The viewport tracks the
+      // CURRENT slide while the flex track stretches to the TALLEST, so
+      // centring in horizontal-slide mode parks each slide at its own offset
+      // and the top edge jumps on every navigation (PRD §2.2b).
+      await goto(page);
+      const car = main(page);
+
+      const gaps = async () =>
+        car.evaluate((el: Element) => {
+          const shadow = (el as HTMLElement & { shadowRoot: ShadowRoot }).shadowRoot;
+          const top = shadow.querySelector('.carousel-inner')!.getBoundingClientRect().top;
+          return [...el.querySelectorAll(':scope > img')].map((img) =>
+            Math.round(img.getBoundingClientRect().top - top));
+        });
+
+      // Horizontal slide: every slide flush with the viewport top (±1px of
+      // subpixel rounding, which differs between engines).
+      const slideGaps = await gaps();
+      expect(slideGaps.length).toBeGreaterThan(1);
+      slideGaps.forEach((gap) => expect(Math.abs(gap)).toBeLessThanOrEqual(1));
+
+      // Fade: centred, so the shorter images sit lower than the tallest one.
+      await car.evaluate((el: Element) => el.setAttribute('animation', 'fade'));
+      const fadeGaps = await gaps();
+      expect(Math.max(...fadeGaps)).toBeGreaterThan(0);
+
+      // Vertical keeps its own contract: cells pinned to the tallest slide,
+      // content centred inside them (column direction, so that is
+      // justify-content — align-items is the horizontal axis there).
+      await car.evaluate((el: Element) => {
+        el.setAttribute('animation', 'slide');
+        el.setAttribute('orientation', 'vertical');
+      });
+      const cellAlign = await car.evaluate((el: Element) => {
+        const shadow = (el as HTMLElement & { shadowRoot: ShadowRoot }).shadowRoot;
+        const cell = shadow.querySelector('.carousel-item')!;
+        const style = getComputedStyle(cell);
+        return { dir: style.flexDirection, justify: style.justifyContent };
+      });
+      expect(cellAlign).toEqual({ dir: 'column', justify: 'center' });
+    });
+
     test('the ARIA contract holds on the hydrated tree', async ({ page }) => {
       await goto(page);
       const car = main(page);

@@ -167,17 +167,69 @@ APG accordion pattern as today, plus the audit's noted gaps as value-add: `Home`
 `bootstrap/scss/accordion` behind the config partials, inside the shadow only. The pilot's
 approach (un-commenting accordion in the global `_bootstrap.scss` + 23 lines of
 `--bs-accordion-*: inherit`) is rejected: it ships the whole module globally for a theming
-side-effect and the inherit-list rots. Instead the defaults live on `:host` — shadow `:host`
-declarations naturally lose to light-DOM rules targeting the host, so consumer theming
-(`.multi-level { --bs-accordion-btn-bg: … }`) wins without any global import (the
-`tab-control.styles.scss` idiom). Utilities that don't cross the boundary (`d-none`, `d-block`,
+side-effect and the inherit-list rots. Instead the defaults live on `:host`, and the container
+is `.accordion-root` so Bootstrap's own `.accordion { --bs-accordion-*: … }` block never
+matches inside the shadow. Utilities that don't cross the boundary (`d-none`, `d-block`,
 `overflow-hidden`, `p-0`, reboot box-sizing) get explicit shadow rules; consumer content
 utilities (`px-3`, `me-2`) are slotted light DOM and safe.
+
+**Where a custom property may be set — and where it silently does nothing.** A value set
+*directly on an element* always beats one *inherited from an ancestor*, and `:host` declares
+these ON the host. So:
+
+| Consumer writes | Works? |
+|---|---|
+| `mp-accordion { --bs-accordion-btn-bg: … }` (a light-DOM rule matching the host) | ✅ an outer tree context outranks the shadow's `:host` |
+| `.wrapper mp-accordion { … }` | ✅ same — still matches the host |
+| `.wrapper { … }` on an ANCESTOR of the accordion | ❌ only an inherited value; the `:host` default wins |
+
+React and Vue put the consumer's class straight onto `<mp-accordion>`, so the natural thing
+works there. **Angular does not** — `bs-accordion` is a separate host element, so a class on it
+is an ancestor, and page CSS must name the inner element AND use `::ng-deep` (the element
+carries the *wrapper's* emulated-encapsulation attribute, not the page's). This bit the
+multi-level demo, whose theming was silently inert until it was rewritten to
+`.multi-level ::ng-deep mp-accordion { … }`.
+
+**Theme-dependent Bootstrap rules do not survive the move into a shadow root.** Bootstrap
+themes the chevron with `[data-bs-theme="dark"] .accordion-button::after`, an ANCESTOR
+selector — and the themed `<html>` is outside the shadow, so it can never match (`:host-context()`
+is the usual escape hatch and Firefox does not implement it). The chevron stayed dark-on-dark in
+dark mode. Fixed by painting it as a `mask-image` filled with `currentColor`, which needs no
+knowledge of the theme at all; the `--bs-accordion-btn-icon` properties remain the *shape* knob.
+**Rule for future migrations: grep the Bootstrap partial you are importing for `color-mode`
+/ `data-bs-theme` before assuming it works inside a shadow root.**
+
+### 5.5b Body spacing is the CONSUMER's, and the collapse clipper must stay bare
+
+Two rules that the first implementation broke, both worth stating explicitly because neither is
+visible from the element's own code:
+
+1. **The tab body has NO padding by default.** The pre-WC template hard-coded
+   `<div class="accordion-body p-0">` and every consumer pads its own projected content
+   (`class="d-block px-3 py-2"`). Adopting Bootstrap's `1rem` here doubled every inset and
+   compounded at each nesting level. `--bs-accordion-body-padding-x/y` therefore default to
+   **0**, and remain available for consumers who want Bootstrap's spacing.
+2. **Never put padding on the element that clips the collapse.** The grid-rows trick sizes the
+   row to `0fr`, but an element's own padding still occupies its border box and is *not* clipped
+   by its own `overflow: hidden` — so a closed tab kept showing a padding strip with the body
+   behind it. The structure must stay three deep:
+   `.accordion-collapse` (the animating grid) → `.accordion-clip` (`min-height: 0; overflow:
+   hidden`, no spacing ever) → `.accordion-content` (the only box allowed to have padding).
+   Guarded by a unit test on the structure and an e2e assertion that a closed tab measures
+   exactly 0px in a real browser — jsdom has no layout, so only the e2e catches a regression.
 
 ### 5.6 Demo impact
 
 The ng accordion demo's `.multi-level ::ng-deep .accordion-body/.accordion-button` rules stop
-matching (those classes move into the shadow) — rewritten against `::part(header|button|content)`.
+matching (those classes move into the shadow) — rewritten against `::part(header|button|content)`
+plus the custom properties, with the Angular-specific selector caveat from §5.5.
+
+Anything the page styled that is now *slotted* keeps working, because slotted content stays in
+the light DOM — but only if the page actually defines the rule. The demo's
+`<span class="triangle">`, there to show a header can carry arbitrary content rather than a
+string, was styled only in the **tab-control** page's stylesheet and so had never rendered on
+the accordion page at all; it is now defined locally (and centred with `vertical-align: middle`
+rather than the tab-control page's font-size-specific `float` + `margin-top` hack).
 Accordion and splitter demo pages move to **Enterprise** (WC-backed taxonomy), with the
 cross-framework path caveat already noted on the carousel move. The splitter demo gains a second
 example exercising `min-panel-size`, `touch-mode`, the events and the size API — the gap runs

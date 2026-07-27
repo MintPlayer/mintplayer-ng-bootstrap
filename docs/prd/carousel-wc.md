@@ -40,6 +40,21 @@ This PRD restarts the migration from scratch on that newer pattern.
    - horizontal + fade → `.carousel-inner` height = height of the **current** slide;
    - vertical → `.carousel-inner` height = height of the **largest** slide, always
      (ResizeObserver stores all slide heights; further computation derives from that set).
+2b. **Alignment contract (user-confirmed 2026-07-27):** slides of unequal aspect ratio must
+   line up predictably within that viewport —
+   - horizontal **slide** → slides are **top-aligned**;
+   - **fade** and **vertical** → slides are **vertically centred**.
+
+   This is not cosmetic detail: because the viewport tracks the CURRENT slide while the flex
+   track stretches to the TALLEST, centring in horizontal-slide mode parks every slide at its
+   own offset (measured 0/51/27/6/12/6px down from the viewport top for the six demo images)
+   and the top edge visibly jumps on each navigation. Fade has no travelling edge for the eye
+   to follow, so centring reads better there.
+
+   **Implementation trap:** vertical mode sets `flex-direction: column` on the cell, which
+   SWAPS the axes — `align-items` becomes horizontal and `justify-content` becomes vertical.
+   Any change to cell alignment has to be checked in all four `animation` × `orientation`
+   combinations, not just the one being edited.
 3. **Interactive no-JS tier (Tier 1), radio-driven** — the carousel keeps *functioning* with
    JavaScript disabled: prev/next (with wrap-around), indicators, and keyboard slide selection,
    via visually-hidden radios + `<label for>` + `:checked` CSS, as master's `isServerSide` branch
