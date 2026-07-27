@@ -1,19 +1,123 @@
 # Plan — screen-reader accessibility across the four libraries
 
-Status: **not started** — 2026-07-27. Companion PRD: `docs/prd/screen-reader-accessibility.md`
-(findings, design rationale, and decisions D1–D5).
+Status: **not started; decisions resolved** — 2026-07-27. Companion PRD:
+`docs/prd/screen-reader-accessibility.md` (findings, design rationale, decisions D1–D5 in §11, and
+the live-state principle in §11a).
 
-Seven phases, A→G. Each is independently shippable and is one coherent PR. **A, B and C close the
+A spike phase then seven implementation phases, 0 → A → G, all on the single branch
+`feat/screen-reader-accessibility`. Each phase is one coherent commit set. **A, B and C close the
 majority of user-visible impact**; D–F are deep but narrower; G closes it out. Branch base is
 `master`. Per `CLAUDE.md`, verify intermediate work by reading code and type-checking — the build +
 unit + e2e sweep runs **once**, in G.
 
-## Decisions to settle before starting
+**Phase 0 is a gate, not a formality.** Spike 0.1 (can `<details>`/`<summary>` reproduce the
+Bootstrap accordion exactly, with no UX change?) can send D1 back; 0.2 and 0.3 de-risk Phases B
+and F. Nothing in D should be written before 0.1 passes.
 
-D1 (`<details name>` for the accordion's no-JS tier) gates **Phase D**. D2 (datatable
-`role="grid"`) gates **Phase E**. D3 (`inputLabel` rename) gates **Phase B**. D4 (move-mode key)
-gates a one-line change in E. D5 (is FACE in scope) gates whether **Phase F** happens at all.
-A–C need none of them, so work can start while D1–D5 are open.
+## Decisions (all resolved — see PRD §11)
+
+- **D1** — the accordion uses `<details name>` + `<summary>` in **both** tiers, always. Animation
+  dropped. Enlarges Phase D but *removes* net code. **Gated on spike 0.1** — visual and UX parity
+  with the current Bootstrap accordion is a precondition, not an assumption. Known trade:
+  accordion headers leave heading navigation; Phase D carries an SR check on it. Known open risk:
+  `<summary>` cannot be `disabled`, which 0.1 must resolve.
+- **D2** — the datatable's role follows **interactivity**, not flat-vs-tree: no role when
+  non-interactive, `grid` when rows are selectable, `treegrid` under `[tree]`, with the keyboard
+  model implemented wherever the role is present. Placement stays on the inner `<table>`.
+- **D3** — `mp-otp-input.label` → `inputLabel`, breaking, in Phase B.
+- **D4** — the scheduler accepts both `M` and `Enter`; `M` is canonical.
+- **D5** — form association is **in scope for this PR**; Phase F is last but not droppable.
+
+**Every phase inherits PRD §11a**: an ARIA attribute must be correct at every moment, not at first
+render. Prefer a native element that owns its own state; derive state in `render()` from reactive
+state rather than writing it from an event handler; where a value cannot be kept correct, omit it.
+Specs assert **transitions**.
+
+---
+
+## Phase 0 — spikes (GATES, before any implementation)
+
+Three cheap spikes, each de-risking a decision the plan already commits to. Each is throwaway
+(`libs/mintplayer-web-components/_spike-*/` per the `_spike-lit-context` precedent, or a temporary
+demo route) and is **deleted before merge** — except the assertions worth keeping, which move into
+real specs.
+
+### 0.1 — `<details>`/`<summary>` visual + UX parity (gates Phase D's accordion rewrite)
+
+**The question:** can `mp-accordion` be rebuilt on `<details>`/`<summary>` and look and behave
+*exactly* like the current Bootstrap accordion, with no user-experience change? D1 is only
+affordable if the answer is yes.
+
+**Build it as a temporary route in `apps/ng-bootstrap-demo`** rendering the current `bs-accordion`
+and a `<details>`-based variant **side by side** with identical content — the repo's stated way to
+verify a WC is through the demo apps, and CSS parity is not something a unit test can judge. Add a
+Playwright screenshot comparison across **Chromium, Firefox and WebKit** (all three are already in
+the e2e matrix), at default and at a narrow breakpoint, in light and dark
+(`data-bs-theme="dark"`), collapsed and expanded.
+
+**Visual questions, in the order they are likely to bite:**
+
+| # | Question | Why it is a risk |
+|---|---|---|
+| 1 | Does the disclosure marker fully disappear in all three engines? | Needs `list-style: none` **and** `::marker { content: '' }` **and** `::-webkit-details-marker { display: none }`; Firefox and Safari have historically each needed a different one of the three |
+| 2 | Does `display: flex` on `<summary>` reproduce `.accordion-button`'s layout? | `<summary>` defaults to `display: list-item`; Bootstrap's button is `display: flex; align-items: center; width: 100%; text-align: left` with its own padding |
+| 3 | Does `.accordion-button::after` (the chevron SVG) still render and rotate? | The rotation selector moves from `.accordion-button:not(.collapsed)` to `[open] > summary`; confirm `::after` composes with `::marker` removal |
+| 4 | Is the focus ring identical? | `.accordion-button:focus` uses `--bs-accordion-btn-focus-box-shadow`, which `accordion.styles.scss:40` re-declares on `:host` for the shadow boundary — confirm it still applies to `<summary>:focus-visible` |
+| 5 | `cursor`, `user-select`, and double-click behaviour | `<summary>` is `cursor: default` in some engines and **double-click selects its text**, where a `<button>` does not. This is the most likely source of a felt UX difference |
+| 6 | Does the active/`is-active` background and border treatment survive? | The state selector changes from a class to `[open]`; check the collapsed/expanded border-radius seams between adjacent items |
+
+**Behavioural questions — two are potential blockers, not polish:**
+
+- **Disabled tabs.** `mp-accordion` supports `?disabled` on the header, and **`<summary>` cannot be
+  disabled.** The workaround is `pointer-events: none` + `aria-disabled="true"` + swallowing the
+  key handler — and, because the `toggle` event is **not cancellable**, any path that still opens a
+  disabled tab can only be corrected by closing it again, which flashes. The spike must establish
+  whether a disabled tab can be made genuinely inert without a visible flash. **If it cannot, that
+  is grounds to revisit D1** for the JS tier.
+- **`toggle` is not cancellable and fires *after* the state change.** Confirm that
+  `mp-accordion-tab-toggle` can still be emitted with the same detail shape and timing, that
+  `#closeNested` works when the *UA* closes a sibling via `name` exclusivity (does it fire `toggle`
+  on the one it closed? assume yes, verify), and that a consumer cannot observe an intermediate
+  state during exclusive switching.
+- Enter and Space activate `<summary>` natively; Arrow/Home/End between headers still needs the
+  existing handler, and the spike should confirm the native activation does not double-fire
+  alongside it.
+
+**Two things the spike should confirm as *wins*, since they offset the risks:** closed content is
+removed from the accessibility tree and the tab order with no CSS (closing §4.5's accordion
+Critical), and the DSD chrome can express initial state as a plain `[open]` attribute — which the
+current radio machine **cannot**, because the generator has no active tab at generation time
+(§4.6). Verify the injector can stamp `[open]` on the right tab.
+
+**Gate:** pixel parity in all three engines (or a documented, accepted difference), a disabled tab
+that is inert without a flash, and the toggle-event contract preserved. **Pass →** Phase D proceeds
+as written. **Fail on styling →** document the delta and get sign-off. **Fail on disabled or on the
+event contract →** fall back to the original D1 scope (`<details>` for the no-JS tier only,
+`<button aria-expanded>` + `role="heading"` retained when hydrated), which also recovers the
+heading-navigation loss.
+
+### 0.2 — cross-root ARIA element references (gates Phase B's tier 2)
+
+30 lines, three engines: a WC with an `<input>` in its shadow root, a `<label id>` in the document,
+and `internals.ariaLabelledByElements = [thatLabel]`. Assert the computed accessible name via
+Playwright's accessibility snapshot in Chromium, Firefox and WebKit. `ariaLabelledByElements` is
+Baseline April 2025 and the inner→outer direction is the permitted one — but Phase B's entire
+naming architecture rests on it, and the two authoritative sources disagreed during the audit (a
+stale WICG explainer still says "behind a flag in Firefox"). Also assert the negative that motivates
+the whole design: the same reference expressed as an `aria-labelledby` **string** on the shadow
+input resolves to nothing. **Fail →** tier 2 falls back to label properties only (tier 1), and
+`aria-errormessage` needs a different design.
+
+### 0.3 — `formDisabledCallback` vs `ControlValueAccessor` (gates Phase F)
+
+The known two-writers-on-`disabled` hazard, which the repo has already been bitten by
+(`otp-input.component.ts:124-131`). Take `mp-checkbox`, add `formAssociated` + the mixin sketch,
+wrap it in a `<fieldset disabled>` inside a reactive form that also calls `setDisabledState`, and
+confirm the single `#disabled` source of truth resolves both without a loop or a stale attribute.
+Small, but it is the one part of Phase F that is design rather than boilerplate.
+
+**Sequencing:** 0.2 and 0.3 are independent of everything and can run in parallel with Phase A.
+**0.1 must complete before Phase D starts** — it is the only one whose failure changes a decision.
 
 ---
 
@@ -145,15 +249,41 @@ to the carousel's no-JS per-index CSS; mirror the shell's state matrix a second 
 `inert` to `bs-priority-nav`'s measurement clone (`visibility: hidden` also works there —
 measurement needs geometry, not visibility; `display: none` would zero the measurements).
 
-**Tier 1 machines** — `bs-tab-control` and `bs-priority-nav` SSR branches: swap `d-none` for the
-1px-clip class, move `role`/`aria-selected`/`aria-controls`/`aria-haspopup` onto the input, strip
-`role`/`tabindex` from the `<label>`, paint the focus ring via a sibling selector. `mp-navbar`:
-emit the checkbox **without** `role="button"`/`aria-expanded` in the static chrome (native
-`checked` is a correct self-updating channel) and upgrade in `connectedCallback`. `mp-shell`:
-`id` on the `<aside>` + `aria-controls` on the input (both in the same shadow root — the one place
-a shadow-internal IDREF is trivially available and unused), `aria-expanded` under `data-js` driven
-by `#cssOpen()` **not** the inverted raw `checked`, plus the missing `:focus-visible` ring and a
-`prefers-reduced-motion` guard. Accordion no-JS per D1.
+**The accordion rewrite (D1)** — `mp-accordion` moves to `<details name>` + `<summary>` in both
+tiers. This is the largest single item in the plan and it **removes** more than it adds:
+
+| Delete | Replace with |
+|---|---|
+| `#renderJsItem` + `#renderNoJsItem` (two templates) | one template |
+| the clipped `<input type=radio\|checkbox>` machine and every `:checked` selector | `<details ?name=${!multi ? 'acc' : nothing}>` |
+| the `data-js` branch in this component | — (state is UA-owned in both tiers) |
+| `grid-template-rows` animation + `.accordion-clip` + its reduced-motion guard | — (animation waived under D1) |
+| the §4.5 `visibility` fix for collapsed panels | — (`<details>` removes closed content from both trees natively) |
+| `role="heading"` + `aria-level` on the header | **nothing** — the known D1 trade; see the SR check below |
+
+Preserve, and re-point at `[open]` instead of `:checked`: the destructive DSD handoff reading
+pre-upgrade state onto the light-DOM `is-active` markers; `#setActive` / `closeAll` / the nested
+recursive close, now driven from the `toggle` event rather than clicks; the
+`mp-accordion-tab-toggle` event contract and detail shape; `aria-controls`↔`aria-labelledby`
+round-trips in the chrome; `multi` semantics, which reduce to the presence or absence of `name`.
+Bootstrap styling: `display: flex` + `list-style: none` + `::marker { content: '' }` +
+`::-webkit-details-marker { display: none }` on `<summary>`; `.accordion-button`'s `::after`
+chevron is unaffected. Regenerate the `[multi] × [count]` chrome — index-named slots still need
+count variants. **Rewrite `mp-accordion.spec.ts` first, then the element**, and add an
+NVDA + VoiceOver check specifically on whether losing heading navigation is acceptable in practice;
+if not, the reversal is `role="heading"` + `<button aria-expanded>` in the hydrated branch only.
+Angular/React/Vue wrappers and the three demo pages follow.
+
+**Tier 1 machines** — the accordion is no longer one of these. `bs-tab-control` and
+`bs-priority-nav` SSR branches: swap `d-none` for the 1px-clip class, move
+`role`/`aria-selected`/`aria-controls`/`aria-haspopup` onto the input, strip `role`/`tabindex` from
+the `<label>`, paint the focus ring via a sibling selector. `mp-navbar`: emit the checkbox
+**without** `role="button"`/`aria-expanded` in the static chrome (native `checked` is a correct
+self-updating channel) and upgrade in `connectedCallback`. `mp-shell`: `id` on the `<aside>` +
+`aria-controls` on the input (both in the same shadow root — the one place a shadow-internal IDREF
+is trivially available and unused), `aria-expanded` under `data-js` driven by `#cssOpen()` **not**
+the inverted raw `checked`, plus the missing `:focus-visible` ring and a `prefers-reduced-motion`
+guard.
 
 **Also**: `mp-shell` gains landmark roles for topbar/content and **a skip link** — there is none
 anywhere in the repo, so WCAG 2.4.1 (Level A) is unmet for every app built on `bs-shell`.
@@ -274,7 +404,8 @@ Specs land **with** each phase; this phase adds what is cross-cutting and closes
 | `CLAUDE.md` `## Accessibility` | Eleven rules + the two no-JS tier rules + a six-item pre-PR checklist, inserted after `## Framework wrappers`. Text drafted in the audit; keep it ruthlessly concise |
 | Demo keymap parity | Port the `<details>Keyboard shortcuts</details>` panels to the React and Vue dock / scheduler / tile-manager / timeline / splitter pages (only Calendar and Ribbon have one today); add the missing ng timeline panel; **correct the false claims** in the tile-manager and file-manager panels |
 | Stale-doc fixes | `swiper-aria.md`, `aria-accessibility-audit.md` §13.2 (reduced-motion directive, carousel structural directive), `navbar-noscript.md` — fix the prose; do **not** re-implement deleted APIs. Delete or re-document the zero-consumer `BsReducedMotionDirective` |
-| PRD status | Flip both documents to as-built; record D1–D5 as resolved; update the memory of record |
+| Spike cleanup | Delete `_spike-*` directories and the temporary accordion comparison route; record each spike's verdict in the PRD (especially 0.1, which may have narrowed D1) |
+| PRD status | Flip both documents to as-built; record D1–D5 as resolved with outcomes; update the memory of record |
 
 Then the single sweep: `nx build` for all four libs, `nx test mintplayer-web-components`,
 `nx test mintplayer-ng-bootstrap`, the new React/Vue test targets, the React type-test, and the
@@ -284,7 +415,12 @@ full e2e + `e2e-a11y` matrix across all three demo apps.
 
 ## Acceptance criteria (programme level)
 
+- [ ] All three Phase-0 spikes concluded, each with a written verdict in the PRD; spike artifacts
+      and the temporary demo route deleted, and any assertion worth keeping moved into a real spec.
 - [ ] All 42 Critical findings closed; all ~110 Major closed or explicitly deferred with a reason.
+- [ ] **Every exposed state is live** (PRD §11a): for each state attribute touched, a spec asserts
+      it after a *transition*, not only at first render — including programmatic changes, not just
+      user-driven ones. No attribute is written from an event handler as a side effect.
 - [ ] **Criteria are observable, never attribute presence.** For each closed finding: what a screen
       reader says, and where focus lands. "Present but inert" is this library's characteristic
       failure and it passes attribute-level assertions by construction.

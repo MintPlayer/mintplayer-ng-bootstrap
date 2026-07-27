@@ -1,7 +1,8 @@
 # PRD — screen-reader accessibility across the four libraries
 
-Status: **audit complete, not started** — 2026-07-27. Companion plan:
-`docs/prd/screen-reader-accessibility-plan.md`.
+Status: **audit complete, decisions resolved, implementation not started** — 2026-07-27. Companion
+plan: `docs/prd/screen-reader-accessibility-plan.md`. Decisions D1–D5 settled in §11; the
+cross-cutting principle the programme is judged on is §11a.
 
 This supersedes neither `docs/prd/aria-accessibility-audit.md` (Angular-era, May 2026) nor
 `docs/prd/wc-aria-accessibility.md` (four Lit WCs, May 2026) — both shipped what they promised.
@@ -46,6 +47,10 @@ definition of done**, and that nothing in the repo enforces it.
 1. **Every component operable and perceivable by a screen-reader user, in every framework** —
    role, name, state, relationships, keyboard, focus, and status announcements, judged against
    WCAG 2.2 AA and the APG pattern for the widget.
+2. **Exposed state is live at every moment, never a first-render snapshot** (§11a). This is the
+   axis the programme is judged on: a stale attribute is worse than an absent one, because a blind
+   user cannot detect that what they were told stopped being true. Acceptance criteria test
+   transitions, not initial renders.
 2. **Close all 41 Critical and ~100 Major findings** (§4), plus the Minor set where it rides
    along with work already being done.
 3. **Fix the causes, not only the instances.** Six shared primitives in the WC a11y library
@@ -193,7 +198,8 @@ rendering at all.
 
 - **accordion** — collapsed panels are `grid-template-rows: 0fr` + `overflow: hidden` and nothing
   else, so every panel's content is read after a header announcing `aria-expanded="false"`; the
-  nesting demo is four levels deep.
+  nesting demo is four levels deep. **Closed by construction by decision D1**: `<details>` removes
+  closed content from both trees natively, so this needs no CSS work.
 - **shell** — the closed sidebar is `translateX(-100%)`; that is the entire mobile default.
 - **carousel, no-JS tier** — all N slides' content exposed simultaneously with nothing marking
   boundaries or the current slide.
@@ -347,8 +353,10 @@ reference implementations the fixes should copy.
   that solved geometric hiding (with the directional `visibility` delay and a comment explaining
   the reveal-side reset), and the only `:checked` machine with role, state, focus ring and Enter
   all correct.
-- **`mp-accordion`**'s two-tier `data-js` branch is the cleanest no-JS pattern in the repo, and
-  its DSD chrome ships genuinely usable pre-hydration semantics.
+- **`mp-accordion`**'s two-tier `data-js` branch is the cleanest no-JS pattern in the repo and
+  stays the reference for that *pattern* — even though decision D1 removes the accordion itself
+  from it. Its DSD chrome ships genuinely usable pre-hydration semantics, including
+  `aria-controls`↔`aria-labelledby` round-trips that the rewrite must preserve.
 - **`mp-treeview`** is the reference shadow-DOM composite: roving tabindex, deferred `.focus()`,
   full `aria-level`/`-setsize`/`-posinset`/`-expanded`/`-selected`.
 - **`mp-splitter`** is a faithful APG Window Splitter, and PR #392's restore did **not** regress
@@ -513,8 +521,9 @@ mirror would never fire once. Same phase or earlier, never after.
 **`aria-errormessage` cannot ship before the tier-2 mixin** — the message element lives in light
 DOM and there is no legal way to point at it from inside the shadow root until then.
 
-**Form association (`static formAssociated` + `attachInternals`) lands last.** It is Baseline
-since March 2023 — the *more* mature of the two APIs — and it repairs shipped API rather than
+**Form association (`static formAssociated` + `attachInternals`) lands last, but is in scope for
+this pull request** (decision D5). It is Baseline since March 2023 — the *more* mature of the two
+APIs — and it repairs shipped API rather than
 adding a feature: the `name` attribute on `mp-checkbox`/`mp-radio`/`mp-select` submits nothing
 today. It coexists with `ControlValueAccessor` (orthogonal channels; removing the CVAs would
 break every `[(ngModel)]` consumer for no gain), with one real conflict to design around:
@@ -607,7 +616,11 @@ injectors are careful regex over serialised HTML, and extending them to *write* 
 consumer markup is a step up in risk from reading it — `inject-mp-dropdown-dsd.ts` has no spec at
 all and needs one first.
 
-**`<details name>` for the accordion's no-JS tier** — see §11, decision D1.
+**The accordion is exempt from Tier 1 entirely** — decision D1 moves it to `<details name>` +
+`<summary>` in *both* tiers, so it has no `:checked` machine to govern and its expanded state is
+UA-owned and live. It remains the reference for the `data-js` two-tier *pattern* for other
+components, but stops being an instance of it. The remaining Tier-1 machines are `mp-navbar`,
+`mp-shell`, `mp-carousel`, `bs-tab-control` and `bs-priority-nav`.
 
 ### 5.8 Announcements
 
@@ -625,13 +638,20 @@ does not survive concatenation, and `typeahead`/`searchbox` already established 
 ## 6. Normative rules (`CLAUDE.md`)
 
 `CLAUDE.md` currently contains **zero** accessibility content, and every finding in this audit is
-a rule nobody wrote down. Add an `## Accessibility` section after `## Framework wrappers`: eleven
-rules (role and name; state on the role-bearing element; IDREFs never cross a shadow boundary; a
-`label` property where the role is on an inner node; wrappers are transparent; every pointer
-gesture has a keyboard equivalent; focus ring inside the shadow root; hidden means hidden from
-both trees; accessible names are localized strings; focus survives a rebuild; reduced motion),
-the two no-JS tier rules from §5.7, and a six-item pre-PR checklist. Full proposed text is in the
-plan's Phase G.
+a rule nobody wrote down. Add an `## Accessibility` section after `## Framework wrappers`: twelve
+rules (role and name; **state is live, never a snapshot** — §11a, stated first because it is the
+one the programme is judged on; state on the role-bearing element; IDREFs never cross a shadow
+boundary; a `label` property where the role is on an inner node; wrappers are transparent; every
+pointer gesture has a keyboard equivalent; focus ring inside the shadow root; hidden means hidden
+from both trees; accessible names are localized strings; focus survives a rebuild; reduced
+motion), the two no-JS tier rules from §5.7, and a six-item pre-PR checklist. Full proposed text
+is in the plan's Phase G.
+
+One rule earns its place from §11a and is worth spelling out for contributors: **prefer a native
+element that owns its own state over an ARIA attribute you have to remember to update.**
+`<details>`/`<summary>`, a real `<button>`, and a `:checked` input that keeps its native role all
+stay correct without a write path; `aria-expanded` on a `<div>` is correct only for as long as
+every code path remembers it.
 
 Deliberately excluded to protect the word budget: colour contrast (the design system owns the
 palette, not component authors) and screen-reader test-matrix guidance (belongs in §7).
@@ -683,17 +703,19 @@ data-display Criticals; it is a floor, not the gate.
 
 ## 8. Rollout
 
-Seven phases, ordered by dependency and by accessibility gained per hour. Detail, file lists and
-per-phase acceptance criteria are in `docs/prd/screen-reader-accessibility-plan.md`.
+A spike phase then seven implementation phases, ordered by dependency and by accessibility gained
+per hour. Detail, file lists and per-phase acceptance criteria are in
+`docs/prd/screen-reader-accessibility-plan.md`.
 
 | Phase | Content | Why here |
 |---|---|---|
+| **0** | Three spikes: `<details>` visual/UX parity (**gates D**), cross-root ARIA element references (**gates B**), `formDisabledCallback` vs CVA (**gates F**) | Each can change a committed decision. 0.1 must pass before any of D is written |
 | **A** | WC a11y primitives (§5.1) + `OverlayController` focus/dismiss changes | Blocks B, D, E. Six `role="dialog"` popups and five focus-loss bugs fall out of it |
 | **B** | Naming + wrapper transparency (§5.2, §5.3 tier 1) + localization | Most user-visible gain per hour; unblocks the validity mirror |
 | **C** | Keyboard operability — the 11 pointer-only Criticals + focus restore | The largest Critical class; several fixes already exist elsewhere in the same file |
-| **D** | Hidden content + both no-JS tiers + SSR chrome (§5.6, §5.7) | Independent of B/C; carries decision D1 |
-| **E** | State, structure, roles and live regions (§4.7, §4.8) + validity (§5.4) + `<mp-radio-group>` (§5.5) | Depends on A (roving focus), B (tier-2 mixin for `aria-errormessage`) |
-| **F** | Form association (§5.4) | Non-blocking; Baseline-safe; repairs the dead `name` API |
+| **D** | Hidden content + both no-JS tiers + SSR chrome (§5.6, §5.7) + the accordion's `<details>` rewrite (D1) | Independent of B/C. The accordion rewrite is the largest single item and *removes* code |
+| **E** | State, structure, roles and live regions (§4.7, §4.8) + validity (§5.4) + `<mp-radio-group>` (§5.5) + the datatable role rule (D2) | Depends on A (roving focus), B (tier-2 mixin for `aria-errormessage`) |
+| **F** | Form association (§5.4) | Last in order, **in scope for this PR** (D5); Baseline-safe; repairs the dead `name` API |
 | **G** | Guards, CI gate, `CLAUDE.md` rules, demo keymap parity | Specs land *with* each phase; the gate and docs close it out |
 
 Per `CLAUDE.md`, the build + unit + e2e sweep runs **once** at the end, not per phase.
@@ -704,7 +726,11 @@ Per `CLAUDE.md`, the build + unit + e2e sweep runs **once** at the end, not per 
 |---|---|
 | `HostAriaController` moves the role from an inner node to the host — behaviour change for consumers styling `::part`/inner nodes | Adopt per component with its aria spec written first; the role move is invisible to CSS, only to AT |
 | Injector stamping writes attributes onto consumer markup via regex | `inject-mp-dropdown-dsd.ts` gets a spec before any stamping; reuse the existing attribute-value-safe tokenisers, which already handle quoted `>` and self-closing tags |
-| `<details>` for the accordion loses the no-JS collapse animation outside Chromium | Decision D1 — accept explicitly, or keep the input machine and lose live expanded state |
+| **`<details>` in both tiers loses `role="heading"` on accordion headers**, so they leave the heading rotor / H-key navigation — a primary skim mechanism | Accepted under D1 and flagged there. Phase D includes an NVDA + VoiceOver check on exactly this point; reversal is localized to `#renderJsItem` |
+| **`<summary>` cannot be `disabled`**, and `toggle` is not cancellable, so a disabled accordion tab may flash open | Spike 0.1 gates D1 on resolving this; failure narrows D1 to the no-JS tier |
+| `<details>` cannot reproduce Bootstrap's accordion chrome exactly (marker removal, `display`, chevron, focus ring, double-click text selection) | Spike 0.1 is a three-engine screenshot comparison against the current component, at the maintainer's direction |
+| `<details>` cannot animate its collapse outside Chromium | Moot — animation was explicitly waived under D1, and the `grid-template-rows` animation is dropped in both tiers |
+| The accordion rewrite touches the destructive DSD handoff, nested recursive close, and the toggle event contract | All three have existing specs (`mp-accordion.spec.ts`, the `[multi]×[count]` chrome, the shared e2e suite); rewrite the specs first, then the element |
 | Two writers on `disabled` once FACE lands | One internal source of truth; the shape is already documented at `otp-input.component.ts:124-131` |
 | The axe baseline is large enough to be ignored | Per-route allow-list with issue links, never a lowered threshold; axe is a floor, and the keyboard walkthrough is the real gate |
 | `role="listitem"`/other fixes added in `connectedCallback` are absent from the DSD | The `data-js` rule (§5.7) plus per-phase no-JS checks; `mp-navbar-item` is the known instance |
@@ -722,41 +748,131 @@ satisfied by construction; `navbar-dropdown`'s no-JS `:focus-within` reveal deli
 collapsed links focusable (the first Tab *opens* the menu) and must not be "fixed"; menu-divider
 `role="separator"` elements are correctly non-focusable.
 
-## 11. Decisions needed
+## 11. Decisions — resolved 2026-07-27
 
-**D1 — `<details name>` for the accordion's no-JS tier.** `splitter-accordion-wc.md:49-50`
-rejected it on two grounds. Ground 2 ("same single-tree restriction as radios") is **factually
-correct** — but the restriction is *identical*, not worse, and `mp-accordion` already satisfies
-it, so it rules nothing out. Ground 1 (UA widget vs shadow-owned Bootstrap chrome) is
-substantially answerable: only `<summary>` is the UA widget, de-styling it is cheap, and the
-three-box collapse stays author-controlled. The real cost is that `::details-content` is
-Chromium-only, so **the no-JS collapse animation becomes instant in Firefox and Safari**.
-*Recommendation: adopt.* The decisive argument is not ARIA — today's single-open radio tier
-**physically cannot re-close a tab**, because a checked radio has no un-check. That is a
-functional bug for every user, and `aria-expanded` cannot be statically emitted into a DSD
-because it could never update.
+All five settled by the maintainer. Two carry consequences that go beyond the question asked; both
+are recorded here rather than discovered during implementation.
 
-**D2 — the datatable's `role="grid"`.** Option (a): drop the role, honouring the May-2026
-decision, and keep `aria-rowcount`/`-rowindex`, which are valid on a plain table. Option (b):
-keep `grid`/`treegrid` and implement the APG model — roving tabindex over rows, Arrow/Home/End/
-PageUp/PageDown, `aria-expanded` from the focused row, which also revives the dead keydown handler
-and gives keyboard row selection. *Recommendation: (a) for flat mode, (b) for tree mode only* —
-`treegrid` is what makes expandable rows perceivable, and flat mode gains nothing from grid
-semantics that native table semantics do not already give.
+**D1 — `<details>`/`<summary>` for the accordion: RESOLVED, and widened.** Not just the no-JS
+tier — **`mp-accordion` uses `<details name>` + `<summary>` in *both* tiers, always.** Animation
+is explicitly not a requirement, so the Chromium-only `::details-content` limitation is moot and
+the `grid-template-rows` animation is dropped outright. The maintainer also waived the
+single-open-cannot-close concern; `<details name>` permits closing anyway, so it resolves either
+way.
 
-**D3 — the `inputLabel` rename.** Standardising means renaming `mp-otp-input.label` →
-`inputLabel` plus its wrapper inputs: a documented breaking change. *Recommendation: take it* —
-the alternative is permanent two-name inconsistency in the very API being standardised.
+This is a **simplification**, not just a swap. It collapses `#renderJsItem` and `#renderNoJsItem`
+into one template, deletes the clipped-input machine and every `:checked` selector, removes the
+`data-js` branch from this component, and — because `<details>` natively removes closed content
+from the accessibility tree *and* the tab order — **closes the accordion half of §4.5's Critical
+by construction, with no CSS work.** `aria-expanded` becomes live and UA-owned in both tiers,
+which is exactly what a statically-rendered DSD could never provide.
 
-**D4 — the move-mode key.** `wc-aria-accessibility.md` §10 Q2 settled on `M` library-wide;
-`scheduler-keyboard-grid-nav.md` later changed the scheduler to `Enter`, so a user who learns `M`
-on the tile board gets nothing on a scheduler event. *Recommendation: accept both on the
-scheduler* (`Enter` for continuity, `M` for the library-wide mnemonic) and record which is
-canonical. Project memory's "`M` library-wide" note is stale either way.
+> **Consequence not in the question: heading navigation is lost.** The current JS tier wraps its
+> header `<button>` in `role="heading" aria-level="2"`, and the DSD chrome ships that too
+> (measured: `role="heading"` ×3 + `aria-level="2"` ×3 per variant). With `<details>`, a heading
+> cannot wrap `<summary>` — `<summary>` must be the `<details>`' first child — and a heading
+> *inside* `<summary>` is dropped by ARIA's presentational-children rule, because `<summary>` maps
+> to a button. So accordion headers stop appearing in the heading rotor / H-key navigation, which
+> is a primary skim mechanism for screen-reader users. Judged worth trading for live native state
+> in both tiers plus one template instead of two — but flagged because it was not part of the
+> question. **Reversal is cheap and localized** if SR testing disagrees: restore
+> `role="heading"` + `<button aria-expanded>` in `#renderJsItem` only, keeping `<details>` for the
+> no-JS tier (the original D1 recommendation). Phase D should include an NVDA/VoiceOver check on
+> this specific point.
 
-**D5 — is Phase F (form association) in this PRD's scope, or its own?** It is architecturally
-independent, Baseline-safe, and nothing WCAG-blocking waits on it. *Recommendation: keep it in
-scope but last*, so it can be dropped without disturbing A–E.
+**Gated on a spike** (plan Phase 0.1), at the maintainer's direction: `<details>`/`<summary>` must
+reproduce the current Bootstrap accordion *exactly*, with no user-experience change, before the
+rewrite proceeds. Two risks that spike must resolve, both surfaced while planning rather than in
+the original question:
+
+- **`<summary>` cannot be `disabled`.** `mp-accordion` supports disabled tabs today via `?disabled`
+  on the header `<button>`. The only workaround is `pointer-events: none` + `aria-disabled` + a
+  swallowed key handler — and because the `toggle` event is **not cancellable**, any path that
+  still opens a disabled tab can only be corrected by closing it again, which flashes. If a
+  disabled tab cannot be made inert without a visible flash, that is grounds to narrow D1 back to
+  the no-JS tier.
+- **`toggle` fires after the state change and cannot be prevented**, so `#closeNested`, the
+  `is-active` markers and `mp-accordion-tab-toggle` must all be driven from a *post-hoc* signal,
+  including when the UA itself closes a sibling through `name` exclusivity.
+
+One offsetting win worth confirming in the same spike: the DSD chrome can express initial state as
+a plain `[open]` attribute, which the current radio machine **cannot** — the generator has no
+active tab at generation time (§4.6), so today's no-JS accordion renders every panel closed
+regardless of the authored state.
+
+Integration work this pulls in: the destructive DSD handoff currently reads pre-upgrade `:checked`
+state back onto the light-DOM `is-active` markers and must read `[open]` instead; `#setActive`,
+`closeAll` and the nested recursive close must be driven from `toggle` events rather than clicks;
+`mp-accordion-tab-toggle` must still fire with the same detail. The `[multi] × [count]` chrome
+matrix survives in shape — index-named slots still need count variants — but `multi` reduces to
+the presence or absence of `name` on the `<details>`. Bootstrap styling is preserved by
+`display: flex` + `list-style: none` + `::marker { content: '' }` on `<summary>` (plus
+`::-webkit-details-marker { display: none }`); `.accordion-button`'s `::after` chevron is
+unaffected, and the collapse/body boxes stay author-controlled inside the `<details>`.
+
+**D2 — the datatable's role: RESOLVED as "pick the correct implementation", placement immaterial.**
+Neither of the two options I offered was quite right, because both keyed the decision on
+flat-vs-tree when the honest predicate is **interactivity**. A role is a promise about keyboard
+behaviour, so:
+
+| Configuration | Role | Keyboard |
+|---|---|---|
+| flat, no row selection | **none** — plain `<table>` | none; `<td>` maps to `cell`, so SRs stay in simple table-reading mode, which is what a data table wants |
+| flat, rows selectable | **`role="grid"`** | roving tabindex over rows, Arrow/Home/End/PageUp/PageDown, Space/Enter to select, `aria-selected` |
+| tree (`[tree]`) | **`role="treegrid"`** | the same, plus ArrowRight/ArrowLeft expand/collapse and `aria-expanded` on the focused row |
+
+`aria-rowcount`/`aria-rowindex` are valid on a plain `<table>`, so the no-role case loses nothing.
+This honours the May-2026 decision where it applies (a non-interactive table should not claim a
+grid) while making the role legitimate wherever it is kept — and it revives the currently dead
+`onRowKeydown` (`mp-datatable.ts:1358-1373`) and closes the pointer-only single-select Critical
+(§4.2) in the same change. Placement stays on the inner `<table>`, per the existing comment at
+`connectedCallback` about axe checking `aria-required-children` against the host's direct
+children; the maintainer confirmed placement is immaterial, so the cheaper option stands.
+
+`aria-colcount`/`aria-colindex` remain a **prerequisite** for any future column hiding, reordering
+or column virtualisation, unchanged by this decision.
+
+**D3 — the `inputLabel` rename: RESOLVED, take it.** `mp-otp-input.label` → `inputLabel` across
+the WC, all three wrappers and the demos, as a documented breaking change.
+
+**D4 — the move-mode key: RESOLVED, accept both on the scheduler.** Add `M`/`m` to
+`handleEventKeyDown` alongside the existing `Enter`; document **`M` as canonical** since
+tile-manager and dock already use it. Verified no conflict: the scheduler's letter shortcuts live
+in `handleAltShortcut` and are Alt-gated, so bare `m` on a focused event is currently unbound.
+Project memory's "`M` library-wide" note is corrected rather than stale.
+
+**D5 — form association: RESOLVED, in scope and in this pull request.** Phase F stays last in the
+ordering (nothing WCAG-blocking waits on it) but is no longer droppable.
+
+## 11a. Cross-cutting principle — exposed state must be live
+
+Stated separately at the maintainer's direction, because it is the axis the whole programme is
+judged on: **an ARIA attribute must be correct at every moment, not merely at first render.** A
+snapshot that goes stale is worse than an absent attribute, because a blind user has no way to
+detect that what they were told is no longer true.
+
+This is not a new rule so much as the single thread through §4.6, §4.7 and §4.8. Every one of
+these is the same defect: `aria-expanded` frozen at `"false"` in DSD chrome because only JS writes
+it; `aria-current="true"` baked onto carousel indicator 1 where CSS cannot move it;
+tile-manager's `keyboardState` kept off the reactive `properties` map, so entering move mode
+re-renders nothing; `aria-pressed` written only when `true`, correct today only because the
+element is torn down and rebuilt; `mp-dropdown-menu`'s item ARIA computed once in `firstUpdated`
+and left stale when a consumer toggles the `.active` class; the Angular no-JS tab strip's
+`aria-selected` being a server-time snapshot that never updates as the user clicks.
+
+Three consequences for implementation, which the phases already encode but which are worth naming
+once:
+
+1. **Prefer a native element that owns its own state** over an ARIA attribute the component has to
+   remember to update — this is the strongest argument for D1's `<details>` and for keeping a
+   `:checked` input's native role (§5.7 Tier 1).
+2. **State must be derived in `render()` from reactive state**, never written imperatively from an
+   event handler as a side effect. Where a component renders imperatively, the state write belongs
+   in the same function as the DOM write.
+3. **Where a value cannot be kept correct, omit it.** Static-and-absent degrades honestly;
+   static-and-wrong misinforms. The carousel's `isBrowser ? … : nothing` gating is the idiom.
+
+Acceptance criteria in §7 are written to test transitions, not initial renders, for this reason.
 
 ## 12. References
 
