@@ -13,4 +13,5 @@ export const ROUTES: Routes = [
   { path: 'query-builder', loadComponent: () => import('./query-builder/query-builder.component').then(m => m.QueryBuilderDemoComponent) },
   { path: 'otp-input', loadComponent: () => import('./otp-input/otp-input.component').then(m => m.OtpInputDemoComponent) },
   { path: 'navbar', loadComponent: () => import('./navbar/navbar.component').then(m => m.NavbarComponent) },
+  { path: 'splitter', loadComponent: () => import('./splitter/splitter.component').then(m => m.SplitterComponent) },
 ];

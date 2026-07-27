@@ -16,7 +16,7 @@ export type { ResizeManagerOptions } from './managers';
 
 // Input handling
 export { InputHandler, normalizePointerEvent } from './input';
-export type { InputHandlerCallbacks, NormalizedPointerEvent } from './input';
+export type { InputHandlerCallbacks, NormalizedPointerEvent, ResizeKey } from './input';
 
 // Styles (for custom styling extensions)
 export { splitterStyles } from './styles';

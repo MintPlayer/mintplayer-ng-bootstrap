@@ -1,7 +1,7 @@
 import { BsSplitter } from '@mintplayer/react-bootstrap/splitter';
 import { BsCodeSnippet } from '@mintplayer/react-bootstrap/code-snippet';
 
-const SOURCE = `<BsSplitter direction="horizontal" style={{ height: 240 }}>
+const SOURCE = `<BsSplitter orientation="horizontal" style={{ height: 240 }}>
   <div>Left pane</div>
   <div>Right pane</div>
 </BsSplitter>`;
@@ -20,7 +20,7 @@ export function SplitterPage() {
       <section>
         <h2>Horizontal split</h2>
         <BsSplitter
-          {...{ direction: 'horizontal' } as React.ComponentProps<typeof BsSplitter>}
+          orientation="horizontal"
           style={{ height: 240, border: '1px solid var(--bs-border-color)' }}
         >
           <div style={{ padding: '0.75rem' }}>Left pane</div>

@@ -10,9 +10,11 @@ import {
  * the import above. Surfaces the 3-stage resize lifecycle as React
  * `on*` props with full detail typing.
  *
- * Consumers compose splitter panels as projected children (any
- * elements; the splitter measures + sizes them based on the
- * `mp-splitter-panel-` data attributes or its default heuristic).
+ * Each direct child becomes a resizable panel with draggable dividers
+ * auto-inserted between them. Configure via the `orientation`
+ * (`horizontal` | `vertical`), `minPanelSize` and `touchMode` props;
+ * read/write sizes programmatically through a ref
+ * (`getPanelSizes()` / `setPanelSizes()` / `resizeDividerBy()`).
  */
 export const BsSplitter = createComponent({
   react: React,

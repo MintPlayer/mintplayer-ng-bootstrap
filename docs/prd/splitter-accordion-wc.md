@@ -56,9 +56,16 @@ verbatim — all 94 entries use `.json`):
   `min-panel-size`), `touchMode` (presence → `touch-mode`). All three WC properties are thin
   `setAttribute` accessors, so `[attr.x]` bindings are the whole bridge.
 - **Outputs**: `resizeStart` / `resizing` / `resizeEnd` re-emitting the WC's typed
-  `{sizes, orientation}` details. **Guard on `event.target === nativeElement` instead of
-  `stopPropagation()`** — nested splitters are the normal case and the dock's delegation
-  depends on bubbling; bs-navbar's swallow-the-event idiom would break the inner splitter.
+  `{sizes, orientation}` details. **Guard on `event.target === nativeElement`, then
+  `stopPropagation()`** — claim-then-stop (amended during implementation from guard-only).
+  The guard keeps the bs-navbar swallow-everything idiom's failure away (an outer wrapper
+  never claims a nested splitter's bubbled events); the stop after it is required because
+  Angular registers BOTH a DOM listener and the output subscription for an element event
+  binding (verified in `listenerInternal`/`listenToDomEvent`, core), so a consumer's
+  `(resizing)` handler would otherwise fire twice — typed detail plus the identically-named
+  raw CustomEvent. Unclaimed events (nested *raw* `mp-splitter`) still bubble untouched, and
+  the dock is unaffected either way: its splitters live inside its own shadow root with no
+  wrapper attached.
 - **Methods**: `getPanelSizes()` / `setPanelSizes()` / `resizeDividerBy()` delegated via
   `viewChild`.
 - **Panes**: plain `<ng-content>` — the WC slots direct element children itself (`panel-N`).

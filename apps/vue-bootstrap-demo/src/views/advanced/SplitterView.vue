@@ -2,7 +2,7 @@
 import { BsSplitter } from '@mintplayer/vue-bootstrap/splitter';
 import { BsCodeSnippet } from '@mintplayer/vue-bootstrap/code-snippet';
 
-const SOURCE = `<BsSplitter direction="horizontal" style="height: 240px">
+const SOURCE = `<BsSplitter orientation="horizontal" style="height: 240px">
   <div>Left pane</div>
   <div>Right pane</div>
 </BsSplitter>`;
@@ -20,7 +20,7 @@ const SOURCE = `<BsSplitter direction="horizontal" style="height: 240px">
 
     <section>
       <h2>Horizontal split</h2>
-      <BsSplitter direction="horizontal" style="height: 240px; border: 1px solid var(--bs-border-color)">
+      <BsSplitter orientation="horizontal" style="height: 240px; border: 1px solid var(--bs-border-color)">
         <div style="padding: 0.75rem">Left pane</div>
         <div style="padding: 0.75rem">Right pane</div>
       </BsSplitter>

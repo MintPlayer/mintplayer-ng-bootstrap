@@ -1,15 +1,23 @@
-.dock {
-    height: 500px;
-    max-height: calc(100% - 100px);
+// Unscoped on purpose (ViewEncapsulation.None): the fallback rules below must
+// match the consumer-projected pane children, which don't carry this
+// component's encapsulation attribute.
+
+// Mirror the WC host's sizing so the wrapper element is layout-neutral
+// between the consumer's container and <mp-splitter> — including as a nested
+// pane inside another splitter.
+bs-splitter {
+    display: block;
+    width: 100%;
+    height: 100%;
 }
 
-// CSS variables for fallback divider styling
 $splitter-size: 8px;
 $splitter-thumb-margin: 3px;
-$splitter-divider-color: #eee;
+$splitter-divider-color: var(--bs-border-color, #eee);
 
-// Fallback styles for when JavaScript is disabled
-// These styles will be overridden by the shadow DOM when JS is enabled
+// Static-layout fallback while the custom element is not (yet) defined:
+// pre-upgrade paint and no-JS pages. The shadow DOM takes over — and these
+// rules stop matching — the moment the element upgrades.
 mp-splitter:not(:defined) {
     display: flex;
     width: 100%;

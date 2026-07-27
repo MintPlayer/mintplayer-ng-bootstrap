@@ -1,0 +1,9 @@
+.dock {
+    height: 500px;
+    max-height: calc(100% - 100px);
+}
+
+.dock-small {
+    height: 240px;
+    border: 1px solid var(--bs-border-color);
+}
