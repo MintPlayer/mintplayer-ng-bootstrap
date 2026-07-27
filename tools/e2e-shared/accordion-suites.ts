@@ -155,9 +155,13 @@ export function accordionNojsSuite(test: Test, expect: Expect, options: Accordio
     // which keeps Playwright's stability checks deterministic on cold servers.
     test.use({ reducedMotion: 'reduce' });
 
+    // No `waitForLoadState('networkidle')`: the dev server holds an HMR
+    // websocket open, so the network never goes idle and the wait burns its
+    // full timeout on Firefox. Nothing here needs it either — everything
+    // under test is in the server-rendered HTML, `goto` already waits for
+    // `load`, and every assertion below auto-retries.
     test.beforeEach(async ({ page }) => {
       await page.goto(path);
-      await page.waitForLoadState('networkidle');
     });
 
     test('the DSD attaches server-side with the input machine in place', async ({ page }) => {
