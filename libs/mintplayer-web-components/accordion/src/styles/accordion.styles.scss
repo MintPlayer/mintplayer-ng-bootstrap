@@ -1,0 +1,135 @@
+@import 'node_modules/bootstrap/scss/functions';
+@import 'node_modules/bootstrap/scss/variables';
+@import 'node_modules/bootstrap/scss/variables-dark';
+@import 'node_modules/bootstrap/scss/maps';
+@import 'node_modules/bootstrap/scss/mixins';
+@import 'node_modules/bootstrap/scss/accordion';
+
+// Bootstrap declares every --bs-accordion-* custom property on `.accordion`.
+// That class is deliberately NOT used inside this shadow root (the container
+// is `.accordion-root`): if it were, its declarations would shadow whatever a
+// consumer set on the host and theming would silently stop working. The same
+// block lives on `:host` instead — the weakest possible match for the host
+// element, so any light-DOM rule targeting it wins, and
+// `.multi-level { --bs-accordion-btn-bg: … }` just works. Bootstrap's other
+// selectors (.accordion-item / -button / -header) are plain class selectors
+// and apply unchanged. The tab-control idiom.
+:host {
+  display: block;
+
+  --bs-accordion-color: #{$accordion-color};
+  --bs-accordion-bg: #{$accordion-bg};
+  --bs-accordion-transition: #{$accordion-transition};
+  --bs-accordion-border-color: #{$accordion-border-color};
+  --bs-accordion-border-width: #{$accordion-border-width};
+  --bs-accordion-border-radius: #{$accordion-border-radius};
+  --bs-accordion-inner-border-radius: #{$accordion-inner-border-radius};
+  --bs-accordion-btn-padding-x: #{$accordion-button-padding-x};
+  --bs-accordion-btn-padding-y: #{$accordion-button-padding-y};
+  --bs-accordion-btn-color: #{$accordion-button-color};
+  --bs-accordion-btn-bg: #{$accordion-button-bg};
+  --bs-accordion-btn-icon: #{escape-svg($accordion-button-icon)};
+  --bs-accordion-btn-icon-width: #{$accordion-icon-width};
+  --bs-accordion-btn-icon-transform: #{$accordion-icon-transform};
+  --bs-accordion-btn-icon-transition: #{$accordion-icon-transition};
+  --bs-accordion-btn-active-icon: #{escape-svg($accordion-button-active-icon)};
+  --bs-accordion-btn-focus-box-shadow: #{$accordion-button-focus-box-shadow};
+  --bs-accordion-body-padding-x: #{$accordion-body-padding-x};
+  --bs-accordion-body-padding-y: #{$accordion-body-padding-y};
+  --bs-accordion-active-color: #{$accordion-button-active-color};
+  --bs-accordion-active-bg: #{$accordion-button-active-bg};
+}
+
+// Reboot's box-sizing does not cross the shadow boundary.
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+.accordion-item {
+  // Contains the absolutely-positioned no-JS input.
+  position: relative;
+}
+
+// The no-JS state machine's only state. Clipped rather than `display: none`
+// so it keeps its place in the tab order — this input IS the control with
+// JS off, and its <label> header is only its visual skin.
+.acc-input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+// Collapse animation via grid-template-rows: a single row transitioning
+// 0fr <-> 1fr animates smoothly through content of any height, which the
+// height-in-px approach never managed for dynamic content.
+.accordion-collapse {
+  display: grid;
+  grid-template-rows: 0fr;
+  transition: grid-template-rows 0.35s ease;
+}
+
+.accordion-collapse > .accordion-content {
+  min-height: 0;
+  overflow: hidden;
+}
+
+// Open, JS tier: the element owns the class.
+.accordion-item.open > .accordion-collapse,
+// Open, no-JS tier: the checked input owns it.
+.acc-input:checked ~ .accordion-collapse {
+  grid-template-rows: 1fr;
+}
+
+.accordion-content {
+  padding: var(--bs-accordion-body-padding-y) var(--bs-accordion-body-padding-x);
+}
+
+// A <label> is not a button: it needs the affordances Bootstrap's rule set
+// assumes are native.
+.accordion-header > label.accordion-button {
+  cursor: pointer;
+  user-select: none;
+}
+
+// No-JS active state. `.collapsed` stays on the label (no script to remove
+// it), so Bootstrap's own `:not(.collapsed)` rules never fire — mirror them
+// off `:checked` instead. Reading the --bs-accordion-active-* properties
+// (not hardcoded colors) keeps consumer theming in charge.
+.acc-input:checked + .accordion-header > .accordion-button {
+  color: var(--bs-accordion-active-color);
+  background-color: var(--bs-accordion-active-bg);
+
+  &::after {
+    background-image: var(--bs-accordion-btn-active-icon);
+    transform: var(--bs-accordion-btn-icon-transform);
+  }
+}
+
+// Focus lives on the visually-hidden input; paint its ring on the label.
+.acc-input:focus-visible + .accordion-header > .accordion-button {
+  z-index: 3;
+  outline: 0;
+  box-shadow: var(--bs-accordion-btn-focus-box-shadow);
+}
+
+// `highlightActiveTab` opt-in: without it an open header keeps the resting
+// background, matching the pre-WC component's default.
+:host(:not([highlight-active-tab])) .accordion-button:not(.collapsed),
+:host(:not([highlight-active-tab])) .acc-input:checked + .accordion-header > .accordion-button {
+  background-color: unset;
+  color: inherit;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .accordion-collapse {
+    transition: none;
+  }
+}
