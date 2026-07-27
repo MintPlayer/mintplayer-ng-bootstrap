@@ -16,13 +16,17 @@ test('live API: schema endpoint responds and the WC mounts', async ({ page, requ
 
   // The demo page consumes the same endpoint via proxy.
   await page.goto('/enterprise/query-builder');
-  await page.waitForLoadState('networkidle');
+  await page.waitForLoadState('networkidle', { timeout: 2000 }).catch(() => {
+    /* HMR keeps the socket open, so the network never idles: settle briefly, never hang */
+  });
   await expect(page.locator('bs-query-builder')).toBeVisible();
 });
 
 test('live API: empty-tree search returns a non-empty paged result', async ({ page }) => {
   await page.goto('/enterprise/query-builder');
-  await page.waitForLoadState('networkidle');
+  await page.waitForLoadState('networkidle', { timeout: 2000 }).catch(() => {
+    /* HMR keeps the socket open, so the network never idles: settle briefly, never hang */
+  });
 
   // Empty AND-group → matches everything per Appendix A.
   await page.getByRole('button', { name: 'Search' }).click();

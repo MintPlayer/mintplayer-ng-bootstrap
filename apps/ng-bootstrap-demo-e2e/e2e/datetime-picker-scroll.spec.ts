@@ -10,7 +10,9 @@ import { expect, test } from '@playwright/test';
 test.describe('datetime-picker — popup stays in viewport (issue #332 follow-up)', () => {
   test.beforeEach(async ({ page }) => {
     await page.goto('/basic/forms/datetime-picker');
-    await page.waitForLoadState('networkidle');
+    await page.waitForLoadState('networkidle', { timeout: 2000 }).catch(() => {
+      /* HMR keeps the socket open, so the network never idles: settle briefly, never hang */
+    });
   });
 
   test('calendar popup of the bottom picker stays fully visible', async ({ page }) => {

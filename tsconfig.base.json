@@ -44,12 +44,6 @@
       "@mintplayer/ng-qr-code": [
         "./libs/mintplayer-ng-qr-code/src/index.ts"
       ],
-      "@mintplayer/ng-swiper": [
-        "./libs/mintplayer-ng-swiper/src/index.ts"
-      ],
-      "@mintplayer/ng-swiper/*": [
-        "./libs/mintplayer-ng-swiper/*"
-      ],
       "@mintplayer/pagination": [
         "./libs/mintplayer-pagination/src/index.ts"
       ],

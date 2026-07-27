@@ -8,7 +8,9 @@ test('navigates to /basic/alert via the navbar dropdown', async ({ page }) => {
   // the SSR/DSD snapshot has no click handler; the no-JS `:focus-within` reveal
   // is disengaged (`data-js`) as soon as the WC connects. `networkidle` is a
   // proxy for "the page has settled enough that the WCs have upgraded".
-  await page.waitForLoadState('networkidle');
+  await page.waitForLoadState('networkidle', { timeout: 2000 }).catch(() => {
+    /* HMR keeps the socket open, so the network never idles: settle briefly, never hang */
+  });
 
   // `bs-navbar` is still the Angular host selector (it wraps `<mp-navbar>`), and
   // the nav items / dropdown labels stay in its light DOM, so these locators

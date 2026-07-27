@@ -45,7 +45,9 @@ test.describe('@a11y query-builder', () => {
   test('initial page state has no serious/critical axe violations', async ({ page }) => {
     await setupMocks(page);
     await page.goto('/enterprise/query-builder');
-    await page.waitForLoadState('networkidle');
+    await page.waitForLoadState('networkidle', { timeout: 2000 }).catch(() => {
+      /* HMR keeps the socket open, so the network never idles: settle briefly, never hang */
+    });
     await expect(page.locator('bs-query-builder')).toBeVisible();
 
     const results = await new AxeBuilder({ page })
@@ -63,7 +65,9 @@ test.describe('@a11y query-builder', () => {
   test('after adding a condition row, no new serious/critical violations', async ({ page }) => {
     await setupMocks(page);
     await page.goto('/enterprise/query-builder');
-    await page.waitForLoadState('networkidle');
+    await page.waitForLoadState('networkidle', { timeout: 2000 }).catch(() => {
+      /* HMR keeps the socket open, so the network never idles: settle briefly, never hang */
+    });
 
     // Click the "+ Add condition" button inside the WC's shadow root.
     await page.locator('mp-query-builder').evaluate((el) => {

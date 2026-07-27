@@ -31,7 +31,9 @@ test.describe('navigation-lock', () => {
     page.on('dialog', handler);
 
     await page.goto('/advanced/navigation-lock');
-    await page.waitForLoadState('networkidle');
+    await page.waitForLoadState('networkidle', { timeout: 2000 }).catch(() => {
+      /* HMR keeps the socket open, so the network never idles: settle briefly, never hang */
+    });
 
     // Default state is allowExit=false; canExit will call confirm() on every
     // navigation attempt regardless of form contents.
@@ -68,7 +70,9 @@ test.describe('navigation-lock', () => {
     page.on('dialog', handler);
 
     await page.goto('/advanced/navigation-lock');
-    await page.waitForLoadState('networkidle');
+    await page.waitForLoadState('networkidle', { timeout: 2000 }).catch(() => {
+      /* HMR keeps the socket open, so the network never idles: settle briefly, never hang */
+    });
 
     await page
       .locator('bs-navbar a')
@@ -90,7 +94,9 @@ test.describe('navigation-lock', () => {
     page.on('dialog', handler);
 
     await page.goto('/advanced/navigation-lock');
-    await page.waitForLoadState('networkidle');
+    await page.waitForLoadState('networkidle', { timeout: 2000 }).catch(() => {
+      /* HMR keeps the socket open, so the network never idles: settle briefly, never hang */
+    });
 
     // Toggle the demo's "Allow exit" checkbox. We can't reach in through
     // `ng.getComponent` here — Playwright runs against a production build of

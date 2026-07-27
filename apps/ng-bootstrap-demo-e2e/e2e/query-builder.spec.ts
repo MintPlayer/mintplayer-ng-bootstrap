@@ -57,7 +57,9 @@ async function setupMocks(page: import('@playwright/test').Page) {
 test('query-builder demo: schema fetch + search round-trip', async ({ page }) => {
   await setupMocks(page);
   await page.goto('/enterprise/query-builder');
-  await page.waitForLoadState('networkidle');
+  await page.waitForLoadState('networkidle', { timeout: 2000 }).catch(() => {
+    /* HMR keeps the socket open, so the network never idles: settle briefly, never hang */
+  });
 
   // The bs-query-builder host renders inside the page.
   const qb = page.locator('bs-query-builder');
@@ -96,7 +98,9 @@ test('query-builder demo: error response is surfaced', async ({ page }) => {
     });
   });
   await page.goto('/enterprise/query-builder');
-  await page.waitForLoadState('networkidle');
+  await page.waitForLoadState('networkidle', { timeout: 2000 }).catch(() => {
+    /* HMR keeps the socket open, so the network never idles: settle briefly, never hang */
+  });
 
   await page.getByRole('button', { name: 'Search' }).click();
   await expect(page.getByText(/INVALID_OPERATOR_FOR_TYPE/)).toBeVisible();

@@ -11,7 +11,9 @@ import { test, expect, type Page } from '@playwright/test';
 async function openScrollspyModal(page: Page) {
   await page.goto('/advanced/scrollspy');
   // Demo SSR uses destructive bootstrap — wait for hydration before clicking.
-  await page.waitForLoadState('networkidle');
+  await page.waitForLoadState('networkidle', { timeout: 2000 }).catch(() => {
+    /* HMR keeps the socket open, so the network never idles: settle briefly, never hang */
+  });
   await page.getByRole('button', { name: 'Open modal', exact: true }).click();
   await expect(page.getByText('Scrollspy in modal', { exact: true })).toBeVisible();
   // The modal animates in via EnterFromTop (animating `top`, not `transform`)
@@ -112,7 +114,9 @@ test.describe('scrollspy inside a scrollable modal', () => {
 
   test('opening and closing the modal preserves the page scroll position', async ({ page }) => {
     await page.goto('/advanced/scrollspy');
-    await page.waitForLoadState('networkidle');
+    await page.waitForLoadState('networkidle', { timeout: 2000 }).catch(() => {
+      /* HMR keeps the socket open, so the network never idles: settle briefly, never hang */
+    });
 
     // Scroll the page down before opening the modal. The trigger button is
     // now well above the viewport — focus restore on close used to yank the

@@ -1,0 +1,12 @@
+/* The chrome lives in the web component's shadow root, so page CSS reaches it
+   through Bootstrap's custom properties and the exposed parts. */
+.multi-level {
+  --bs-accordion-btn-bg: #333;
+  --bs-accordion-btn-color: #fff;
+  --bs-accordion-active-bg: #444;
+  --bs-accordion-active-color: #fff;
+}
+
+.multi-level::part(content) {
+  background-color: #ccc;
+}

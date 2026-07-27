@@ -1,0 +1,78 @@
+<h1 class="text-center">Splitter</h1>
+
+<p>
+    <code>bs-splitter</code> lays out its direct children as resizable panels, backed by the
+    <code>mp-splitter</code> web component. Set <code>orientation</code> to
+    <code>horizontal</code> or <code>vertical</code>, and nest splitters to build dock-style
+    layouts.
+</p>
+
+<h2>Basic usage</h2>
+
+<bs-checkbox [(ngModel)]="bgWarning">Yellow background</bs-checkbox>
+<details class="mt-2 mb-2">
+    <summary>Keyboard shortcuts</summary>
+    <ul class="mb-0">
+        <li><kbd>Tab</kbd> — focus the next divider</li>
+        <li><kbd>←</kbd> / <kbd>→</kbd> — resize a horizontal splitter by 10% (<kbd>Shift</kbd>: 1%)</li>
+        <li><kbd>↑</kbd> / <kbd>↓</kbd> — resize a vertical splitter by 10% (<kbd>Shift</kbd>: 1%)</li>
+        <li><kbd>Home</kbd> — shrink the leading panel to its minimum size</li>
+        <li><kbd>End</kbd> — grow the leading panel to its maximum size</li>
+    </ul>
+</details>
+<div class="dock">
+    <bs-splitter orientation="horizontal">
+        <div class="d-flex w-100 h-100 align-items-center justify-content-center" [class.bg-warning]="bgWarning()">
+            <span>Panel 1</span>
+        </div>
+        <bs-splitter orientation="vertical">
+            <div class="d-flex w-100 h-100 align-items-center justify-content-center" [class.bg-warning]="bgWarning()">
+                <span>Panel 2a</span>
+            </div>
+            <div class="d-flex w-100 h-100 align-items-center justify-content-center" [class.bg-warning]="bgWarning()">
+                <span>Panel 2b</span>
+            </div>
+            <div class="d-flex w-100 h-100 align-items-center justify-content-center" [class.bg-warning]="bgWarning()">
+                <span>Panel 2c</span>
+            </div>
+        </bs-splitter>
+    </bs-splitter>
+</div>
+
+<bs-code-snippet [codeToCopy]="snippetBasicHtml" [language]="'html'"></bs-code-snippet>
+<bs-code-snippet [codeToCopy]="snippetBasicTs" [language]="'ts'"></bs-code-snippet>
+
+<h2 class="mt-4">Sizing &amp; events</h2>
+
+<p>
+    <code>minPanelSize</code> caps how small a panel can be dragged (120px here),
+    <code>touchMode</code> widens the divider hit area, and the
+    <code>resizeStart</code> / <code>resizing</code> / <code>resizeEnd</code> outputs report the
+    panel sizes in px. <code>getPanelSizes()</code> / <code>setPanelSizes()</code> /
+    <code>resizeDividerBy()</code> drive the same machinery programmatically.
+</p>
+
+<bs-checkbox [(ngModel)]="touchMode">Touch mode (wider divider hit area)</bs-checkbox>
+
+<div class="dock dock-small mt-2">
+    <bs-splitter #sized [minPanelSize]="120" [touchMode]="touchMode()"
+        (resizing)="onResizing($event)" (resizeEnd)="onResizeEnd($event)">
+        <div class="d-flex w-100 h-100 align-items-center justify-content-center">
+            <span>Left (min 120px)</span>
+        </div>
+        <div class="d-flex w-100 h-100 align-items-center justify-content-center">
+            <span>Right (min 120px)</span>
+        </div>
+    </bs-splitter>
+</div>
+
+<div class="mt-2 d-flex gap-2 flex-wrap align-items-center">
+    <button [color]="Color.primary" (click)="readSizes()">Read sizes</button>
+    <button [color]="Color.secondary" (click)="splitEvenly()">Split evenly</button>
+    <button [color]="Color.secondary" (click)="nudgeDivider()">Nudge divider +10%</button>
+    <span>Sizes: <code>{{ sizesDisplay() }}</code></span>
+</div>
+<p class="mt-1 mb-2">Last event: <code>{{ lastEvent() ?? '—' }}</code></p>
+
+<bs-code-snippet [codeToCopy]="snippetSizedHtml" [language]="'html'"></bs-code-snippet>
+<bs-code-snippet [codeToCopy]="snippetSizedTs" [language]="'ts'"></bs-code-snippet>

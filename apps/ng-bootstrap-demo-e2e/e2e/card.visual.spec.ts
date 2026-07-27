@@ -26,7 +26,9 @@ test.describe('card — visual regression', () => {
     // Per project_e2e_destructive_bootstrap: SSR bootstrap is destructive,
     // so waiting on `networkidle` after goto is the supported way to settle
     // before asserting on the DOM.
-    await page.waitForLoadState('networkidle');
+    await page.waitForLoadState('networkidle', { timeout: 2000 }).catch(() => {
+      /* HMR keeps the socket open, so the network never idles: settle briefly, never hang */
+    });
     // The demo loads placeholder images from placehold.co; wait for the
     // first one to paint so the snapshot doesn't catch the loading state.
     await page.waitForFunction(

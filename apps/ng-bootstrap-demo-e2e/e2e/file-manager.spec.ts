@@ -5,7 +5,9 @@ import { test, expect } from '@playwright/test';
 // can locate the breadcrumb, tree, and datatable via accessible names.
 test('file manager renders tree, datatable and breadcrumb on the enterprise route', async ({ page }) => {
   await page.goto('/enterprise/file-manager');
-  await page.waitForLoadState('networkidle');
+  await page.waitForLoadState('networkidle', { timeout: 2000 }).catch(() => {
+    /* HMR keeps the socket open, so the network never idles: settle briefly, never hang */
+  });
 
   // Page heading
   await expect(page.getByRole('heading', { name: 'File manager' })).toBeVisible();
@@ -29,7 +31,9 @@ test('file manager renders tree, datatable and breadcrumb on the enterprise rout
 
 test('navigating into a folder updates the breadcrumb', async ({ page }) => {
   await page.goto('/enterprise/file-manager');
-  await page.waitForLoadState('networkidle');
+  await page.waitForLoadState('networkidle', { timeout: 2000 }).catch(() => {
+    /* HMR keeps the socket open, so the network never idles: settle briefly, never hang */
+  });
 
   // Double-click the Documents folder row to navigate in
   await page.getByRole('row', { name: /Documents/ }).first().dblclick();
@@ -43,7 +47,9 @@ test('navigating into a folder updates the breadcrumb', async ({ page }) => {
 
 test('view mode toggle switches to icons grid', async ({ page }) => {
   await page.goto('/enterprise/file-manager');
-  await page.waitForLoadState('networkidle');
+  await page.waitForLoadState('networkidle', { timeout: 2000 }).catch(() => {
+    /* HMR keeps the socket open, so the network never idles: settle briefly, never hang */
+  });
 
   // Switch to icons via the toolbar toggle.
   await page.getByRole('button', { name: 'Icons view' }).click();

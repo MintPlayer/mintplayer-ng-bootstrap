@@ -100,15 +100,45 @@
         "command": "node tools/lit-ssr-utils/gen-navbar-chrome.mjs"
       }
     },
+    "codegen-carousel-chrome": {
+      "executor": "nx:run-commands",
+      "outputs": ["{projectRoot}/carousel/ssr/mp-carousel-chrome.generated.ts"],
+      "inputs": [
+        "{projectRoot}/carousel/src/components/*.ts",
+        "{projectRoot}/carousel/src/styles/*.styles.scss",
+        "{workspaceRoot}/tools/lit-ssr-utils/gen-carousel-chrome.mjs"
+      ],
+      "dependsOn": ["build"],
+      "cache": true,
+      "options": {
+        "command": "node tools/lit-ssr-utils/gen-carousel-chrome.mjs"
+      }
+    },
+    "codegen-accordion-chrome": {
+      "executor": "nx:run-commands",
+      "outputs": ["{projectRoot}/accordion/ssr/mp-accordion-chrome.generated.ts"],
+      "inputs": [
+        "{projectRoot}/accordion/src/components/*.ts",
+        "{projectRoot}/accordion/src/styles/*.styles.scss",
+        "{workspaceRoot}/tools/lit-ssr-utils/gen-accordion-chrome.mjs"
+      ],
+      "dependsOn": ["build"],
+      "cache": true,
+      "options": {
+        "command": "node tools/lit-ssr-utils/gen-accordion-chrome.mjs"
+      }
+    },
     "codegen-ssr-chrome": {
       "executor": "nx:run-commands",
       "options": {
-        "command": "echo \"SSR DSD chrome generated (shell + navbar + dropdown)\""
+        "command": "echo \"SSR DSD chrome generated (shell + navbar + dropdown + carousel + accordion)\""
       },
       "dependsOn": [
         "codegen-shell-chrome",
         "codegen-navbar-chrome",
-        "codegen-dropdown-chrome"
+        "codegen-dropdown-chrome",
+        "codegen-carousel-chrome",
+        "codegen-accordion-chrome"
       ]
     },
     "build": {

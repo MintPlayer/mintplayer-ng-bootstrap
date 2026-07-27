@@ -1,0 +1,176 @@
+<h1 class="text-center">Accordion</h1>
+
+<p>
+  <code>bs-accordion</code> wraps a stack of <code>bs-accordion-tab</code> children,
+  backed by the <code>mp-accordion</code> web component. Each tab declares its header
+  with the <code>*bsAccordionTabHeader</code> structural directive; the rest of the tab
+  body is projected below. Set <code>[multi]="true"</code> to allow multiple tabs to
+  stay open simultaneously, or <code>[highlightActiveTab]="true"</code> to visually
+  mark the active tab.
+</p>
+
+<p>
+  The accordion stays interactive with JavaScript disabled: the server-rendered shadow
+  DOM carries a hidden radio (or checkbox, under <code>[multi]</code>) per tab, so
+  opening and closing are pure CSS. Headers are reachable with <kbd>Tab</kbd> and,
+  once focused, <kbd>&uarr;</kbd>&nbsp;/&nbsp;<kbd>&darr;</kbd>, <kbd>Home</kbd> and
+  <kbd>End</kbd> move between them.
+</p>
+
+<h2>Basic usage</h2>
+
+<bs-code-snippet [codeToCopy]="snippetBasicHtml" [language]="'html'"></bs-code-snippet>
+<bs-code-snippet [codeToCopy]="snippetBasicTs" [language]="'ts'"></bs-code-snippet>
+
+<h2>Single-level</h2>
+
+<div data-demo="single">
+<bs-accordion class="mb-3" [highlightActiveTab]="true">
+    <bs-accordion-tab>
+        <ng-container *bsAccordionTabHeader>
+            <span class="triangle me-2"></span>
+            Profile
+        </ng-container>
+        <span class="d-block px-3 py-2">Label 1</span>
+    </bs-accordion-tab>
+    <bs-accordion-tab>
+        <ng-container *bsAccordionTabHeader>
+            <span class="triangle me-2"></span>
+            Sign in
+        </ng-container>
+        <span class="d-block px-3 py-2">Label 2</span>
+    </bs-accordion-tab>
+    <bs-accordion-tab>
+        <ng-container *bsAccordionTabHeader>
+            <span class="triangle me-2"></span>
+            Payment
+        </ng-container>
+        <span class="d-block px-3 py-2">Label 3</span>
+    </bs-accordion-tab>
+</bs-accordion>
+
+</div>
+
+<bs-code-snippet [codeToCopy]="snippetSingleHtml" [language]="'html'"></bs-code-snippet>
+
+<h2>Multi (multiple tabs open)</h2>
+
+<div data-demo="multi">
+<bs-accordion class="mb-3" [multi]="true">
+    <bs-accordion-tab>
+        <ng-container *bsAccordionTabHeader>
+            <span class="triangle me-2"></span>
+            Profile
+        </ng-container>
+        <span class="d-block px-3 py-2">Label 1</span>
+    </bs-accordion-tab>
+    <bs-accordion-tab>
+        <ng-container *bsAccordionTabHeader>
+            <span class="triangle me-2"></span>
+            Sign in
+        </ng-container>
+        <span class="d-block px-3 py-2">Label 2</span>
+    </bs-accordion-tab>
+    <bs-accordion-tab>
+        <ng-container *bsAccordionTabHeader>
+            <span class="triangle me-2"></span>
+            Payment
+        </ng-container>
+        <span class="d-block px-3 py-2">Label 3</span>
+    </bs-accordion-tab>
+</bs-accordion>
+
+</div>
+
+<bs-code-snippet [codeToCopy]="snippetMultiHtml" [language]="'html'"></bs-code-snippet>
+
+<h2>Multi-level</h2>
+
+<div data-demo="nested">
+<bs-accordion class="mb-3 multi-level">
+    <bs-accordion-tab>
+        <ng-container *bsAccordionTabHeader>
+            <span class="triangle me-2"></span>
+            Profile
+        </ng-container>
+
+        <bs-accordion>
+            <bs-accordion-tab>
+                <ng-container *bsAccordionTabHeader>
+                    <span class="triangle me-2"></span>
+                    Email address
+                </ng-container>
+                
+                <bs-accordion>
+                    <bs-accordion-tab>
+                        <ng-container *bsAccordionTabHeader>
+                            <span class="triangle me-2"></span>
+                            Email address
+                        </ng-container>
+                        <span class="d-block px-3 py-2">info&#64;mintplayer.com</span>
+                    </bs-accordion-tab>
+                    <bs-accordion-tab>
+                        <ng-container *bsAccordionTabHeader>
+                            <span class="triangle me-2"></span>
+                            Username
+                        </ng-container>
+                        <span class="d-block px-3 py-2">Pieterjan</span>
+                    </bs-accordion-tab>
+                    <bs-accordion-tab>
+                        <ng-container *bsAccordionTabHeader>
+                            <span class="triangle me-2"></span>
+                            Password
+                        </ng-container>
+                        <span class="d-block px-3 py-2">Change it here</span>
+                    </bs-accordion-tab>
+                </bs-accordion>
+
+            </bs-accordion-tab>
+            <bs-accordion-tab>
+                <ng-container *bsAccordionTabHeader>
+                    <span class="triangle me-2"></span>
+                    Username
+                </ng-container>
+                <span class="d-block px-3 py-2">Pieterjan</span>
+            </bs-accordion-tab>
+            <bs-accordion-tab>
+                <ng-container *bsAccordionTabHeader>
+                    <span class="triangle me-2"></span>
+                    Password
+                </ng-container>
+                <span class="d-block px-3 py-2">Change it here</span>
+            </bs-accordion-tab>
+        </bs-accordion>
+
+    </bs-accordion-tab>
+    <bs-accordion-tab>
+        <ng-container *bsAccordionTabHeader>
+            <span class="triangle me-2"></span>
+            Sign in
+        </ng-container>
+        <span class="d-block px-3 py-2">Label 2</span>
+    </bs-accordion-tab>
+    <bs-accordion-tab>
+        <ng-container *bsAccordionTabHeader>
+            <span class="triangle me-2"></span>
+            Payment
+        </ng-container>
+        <span class="d-block px-3 py-2">Label 3</span>
+    </bs-accordion-tab>
+</bs-accordion>
+
+</div>
+
+<bs-code-snippet [codeToCopy]="snippetMultiLevelHtml" [language]="'html'"></bs-code-snippet>
+
+<h2>Theming across the shadow boundary</h2>
+
+<p>
+  The chrome now lives inside the web component's shadow root, so the page reaches it
+  through Bootstrap's <code>--bs-accordion-*</code> custom properties and the exposed
+  <code>::part(header)</code>, <code>::part(button)</code> and
+  <code>::part(content)</code> — which is how the dark multi-level example above is
+  styled.
+</p>
+
+<bs-code-snippet [codeToCopy]="snippetThemingScss" [language]="'scss'"></bs-code-snippet>

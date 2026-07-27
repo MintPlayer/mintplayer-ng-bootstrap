@@ -27,7 +27,9 @@ async function countHandlesForLayout(
 test.describe('mint-dock-manager — cross-layer intersection-glyph regression', () => {
   test.beforeEach(async ({ page }) => {
     await page.goto('/enterprise/dock');
-    await page.waitForLoadState('networkidle');
+    await page.waitForLoadState('networkidle', { timeout: 2000 }).catch(() => {
+      /* HMR keeps the socket open, so the network never idles: settle briefly, never hang */
+    });
   });
 
   test('no intersection handle when a docked splitter and a floating-pane splitter cross-align', async ({

@@ -115,11 +115,15 @@ test.describe('bs-datatable tree mode', () => {
     // Destructive-bootstrap demo: wait for the first paint + initial fetches
     // to land before interacting. The tree-mode section is below the
     // existing basic example — scroll it into view to mount/render.
-    await page.waitForLoadState('networkidle');
+    await page.waitForLoadState('networkidle', { timeout: 2000 }).catch(() => {
+      /* HMR keeps the socket open, so the network never idles: settle briefly, never hang */
+    });
     await page
       .getByRole('heading', { name: /Tree mode/i })
       .scrollIntoViewIfNeeded();
-    await page.waitForLoadState('networkidle');
+    await page.waitForLoadState('networkidle', { timeout: 2000 }).catch(() => {
+      /* HMR keeps the socket open, so the network never idles: settle briefly, never hang */
+    });
   });
 
   test('renders root rows with collapsed chevrons and aria-level=1', async ({ page }) => {

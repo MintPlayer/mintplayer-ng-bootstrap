@@ -1,0 +1,88 @@
+// Unscoped on purpose (ViewEncapsulation.None): the fallback rules below must
+// match the consumer-projected pane children, which don't carry this
+// component's encapsulation attribute.
+
+// Mirror the WC host's sizing so the wrapper element is layout-neutral
+// between the consumer's container and <mp-splitter> — including as a nested
+// pane inside another splitter.
+bs-splitter {
+    display: block;
+    width: 100%;
+    height: 100%;
+}
+
+$splitter-size: 8px;
+$splitter-thumb-margin: 3px;
+$splitter-divider-color: var(--bs-border-color, #eee);
+
+// Static-layout fallback while the custom element is not (yet) defined:
+// pre-upgrade paint and no-JS pages. The shadow DOM takes over — and these
+// rules stop matching — the moment the element upgrades.
+mp-splitter:not(:defined) {
+    display: flex;
+    width: 100%;
+    height: 100%;
+
+    // Default horizontal layout
+    flex-direction: row;
+
+    > * {
+        flex-grow: 1;
+        overflow: hidden;
+        position: relative;
+
+        &:not(:first-child) {
+            margin-left: calc(-1 * $splitter-thumb-margin);
+        }
+        &:not(:last-child) {
+            margin-right: calc(-1 * $splitter-thumb-margin);
+        }
+
+        // Add divider after each panel except the last one
+        &:not(:last-child)::after {
+            content: "";
+            display: block;
+            position: absolute;
+            right: calc(-1 * ($splitter-size / 2 + $splitter-thumb-margin));
+            top: 0;
+            width: calc($splitter-size + 2 * $splitter-thumb-margin);
+            height: 100%;
+            border-left: $splitter-thumb-margin solid transparent;
+            border-right: $splitter-thumb-margin solid transparent;
+            background-color: $splitter-divider-color;
+            background-image: url(data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAUAAAAeCAYAAADkftS9AAAAIklEQVQoU2M4c+bMfxAGAgYYmwGrIIiDjrELjpo5aiZeMwF+yNnOs5KSvgAAAABJRU5ErkJggg==);
+            background-position: center center;
+            background-repeat: no-repeat;
+            background-clip: content-box;
+            z-index: 3;
+        }
+    }
+}
+
+mp-splitter[orientation="vertical"]:not(:defined) {
+    flex-direction: column;
+
+    > * {
+        &:not(:first-child) {
+            margin-left: 0;
+            margin-top: calc(-1 * $splitter-thumb-margin);
+        }
+        &:not(:last-child) {
+            margin-right: 0;
+            margin-bottom: calc(-1 * $splitter-thumb-margin);
+        }
+
+        &:not(:last-child)::after {
+            right: 0;
+            bottom: calc(-1 * ($splitter-size / 2 + $splitter-thumb-margin));
+            top: auto;
+            width: 100%;
+            height: calc($splitter-size + 2 * $splitter-thumb-margin);
+            border-left: 0;
+            border-right: 0;
+            border-top: $splitter-thumb-margin solid transparent;
+            border-bottom: $splitter-thumb-margin solid transparent;
+            background-image: url(data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAB4AAAAFCAMAAABl/6zIAAAABlBMVEUAAADMzMzIT8AyAAAAAXRSTlMAQObYZgAAABRJREFUeAFjYGRkwIMJSeMHlBkOABP7AEGzSuPKAAAAAElFTkSuQmCC);
+        }
+    }
+}

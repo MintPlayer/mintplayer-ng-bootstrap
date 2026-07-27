@@ -3,7 +3,9 @@ import { test, expect } from '@playwright/test';
 test.describe('bs-datetime-picker', () => {
   test.beforeEach(async ({ page }) => {
     await page.goto('/basic/forms/datetime-picker');
-    await page.waitForLoadState('networkidle');
+    await page.waitForLoadState('networkidle', { timeout: 2000 }).catch(() => {
+      /* HMR keeps the socket open, so the network never idles: settle briefly, never hang */
+    });
   });
 
   test('opens calendar popup from the 📅 trigger and selects a date', async ({ page }) => {

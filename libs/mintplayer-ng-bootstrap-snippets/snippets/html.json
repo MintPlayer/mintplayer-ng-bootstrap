@@ -15,17 +15,6 @@
             "<qr-code [value]=\"${1:text}\"></qr-code>"
         ]
     },
-    "Swipe": {
-        "prefix": "bs-swipe-container",
-        "description": "Swiper",
-        "body": [
-            "<div bsSwipeContainer #${1:container}=\"bsSwipeContainer\">",
-            "\t<div *ngFor=\"let image of ${2:images}\" bsSwipe>",
-            "\t\t<ng-container *ngTemplateOutlet=\"image.itemTemplate\"></ng-container>",
-            "\t</div>",
-            "</div>"
-        ]
-    },
     "CodeSnippet": {
         "prefix": "bs-code-snippet",
         "description": "Code Snippet using highlight.js",
@@ -144,9 +133,9 @@
         "prefix": "bs-carousel",
         "description": "Bootstrap Carousel",
         "body": [
-            "<bs-carousel [animation]=\"'${1|fade,slide|}'\" [indicators]=\"true\">",
-            "\t<img *bsCarouselImage src=\"${2:\/assets\/deer.png}\">",
-            "\t<img *bsCarouselImage src=\"${3:\/assets\/duck.png}\" loading=\"lazy\">",
+            "<bs-carousel [animation]=\"'${1|slide,fade|}'\" [indicators]=\"true\" ariaLabel=\"${2:Photos}\">",
+            "\t<img src=\"${3:\/assets\/deer.png}\" alt=\"${4:A deer}\">",
+            "\t<img src=\"${5:\/assets\/duck.png}\" alt=\"${6:A duck}\">",
             "</bs-carousel>"
         ]
     },

@@ -89,7 +89,9 @@ async function chipLabels(page: Page, index: number) {
 test.describe('tree-select demo', () => {
   test.beforeEach(async ({ page }) => {
     await page.goto('/basic/tree-select');
-    await page.waitForLoadState('networkidle');
+    await page.waitForLoadState('networkidle', { timeout: 2000 }).catch(() => {
+      /* HMR keeps the socket open, so the network never idles: settle briefly, never hang */
+    });
     // Ensure the custom elements have upgraded before reaching into shadow DOM.
     await page.waitForFunction(() => {
       const els = document.querySelectorAll('mp-tree-select');

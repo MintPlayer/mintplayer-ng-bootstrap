@@ -1,4 +1,4 @@
-<bs-navbar [color]="'body-tertiary'" [breakpoint]="'lg'" [ariaLabel]="'Main navigation'" [positioning]="'fixed'" #nav>
+<bs-navbar [color]="'body-tertiary'" [breakpoint]="'xl'" [ariaLabel]="'Main navigation'" [positioning]="'fixed'" #nav>
   <bs-navbar-brand>
     <a [routerLink]='["/"]'>
       <span class="brand d-block px-3 pb-3 pt-3">
@@ -33,7 +33,6 @@
         <span *bsNavbarDropdownLabel>Containers</span>
         <bs-navbar-item><a [routerLink]='["/basic", "containers", "grid"]'>Grid</a></bs-navbar-item>
         <bs-navbar-item><a [routerLink]='["/basic", "containers", "card"]'>Card</a></bs-navbar-item>
-        <bs-navbar-item><a [routerLink]='["/basic", "containers", "accordion"]'>Accordion</a></bs-navbar-item>
         <bs-navbar-item><a [routerLink]='["/basic", "containers", "tab-control"]'>Tab control</a></bs-navbar-item>
       </bs-navbar-dropdown>
       <bs-navbar-item><a [routerLink]='["/basic", "rating"]'>Rating</a></bs-navbar-item>
@@ -47,7 +46,6 @@
       <bs-navbar-item><a [routerLink]='["/basic", "treeview"]'>Treeview</a></bs-navbar-item>
       <bs-navbar-item><a [routerLink]='["/basic", "tree-select"]'>Tree select</a></bs-navbar-item>
       <bs-navbar-item><a [routerLink]='["/basic", "table"]'>Table</a></bs-navbar-item>
-      <bs-navbar-item><a [routerLink]='["/basic", "carousel"]'>Carousel</a></bs-navbar-item>
       <bs-navbar-item><a [routerLink]='["/basic", "close"]'>Close</a></bs-navbar-item>
       <bs-navbar-item><a [routerLink]='["/basic", "pagination"]'>Pagination</a></bs-navbar-item>
       <bs-navbar-item><a [routerLink]='["/basic", "placeholder"]'>Placeholder</a></bs-navbar-item>
@@ -91,7 +89,6 @@
       <bs-navbar-item><a [routerLink]='["/advanced", "sticky-footer"]'>Sticky footer</a></bs-navbar-item>
       <bs-navbar-item><a [routerLink]='["/advanced", "autofocus"]'>Autofocus</a></bs-navbar-item>
       <bs-navbar-item><a [routerLink]='["/advanced", "track-by"]'>TrackBy</a></bs-navbar-item>
-      <bs-navbar-item><a [routerLink]='["/advanced", "splitter"]'>Splitter</a></bs-navbar-item>
       <bs-navbar-item><a [routerLink]='["/advanced", "async-host-binding"]'>Async HostBinding</a></bs-navbar-item>
       <bs-navbar-item><a [routerLink]='["/advanced", "instance-of"]'>Instance of</a></bs-navbar-item>
       <bs-navbar-item><a [routerLink]='["/advanced", "is-interface"]'>Is interface</a></bs-navbar-item>
@@ -111,6 +108,7 @@
 
     <bs-navbar-dropdown>
       <span *bsNavbarDropdownLabel>Enterprise</span>
+      <bs-navbar-item><a [routerLink]='["/enterprise", "carousel"]'>Carousel</a></bs-navbar-item>
       <bs-navbar-item><a [routerLink]='["/enterprise", "scheduler"]'>Scheduler</a></bs-navbar-item>
       <bs-navbar-item><a [routerLink]='["/enterprise", "timeline"]'>Timeline</a></bs-navbar-item>
       <bs-navbar-item><a [routerLink]='["/enterprise", "dock"]'>Dock</a></bs-navbar-item>
@@ -121,6 +119,8 @@
       <bs-navbar-item><a [routerLink]='["/enterprise", "query-builder"]'>Query builder</a></bs-navbar-item>
       <bs-navbar-item><a [routerLink]='["/enterprise", "otp-input"]'>OTP input</a></bs-navbar-item>
       <bs-navbar-item><a [routerLink]='["/enterprise", "navbar"]'>Navbar</a></bs-navbar-item>
+      <bs-navbar-item><a [routerLink]='["/enterprise", "splitter"]'>Splitter</a></bs-navbar-item>
+      <bs-navbar-item><a [routerLink]='["/enterprise", "accordion"]'>Accordion</a></bs-navbar-item>
     </bs-navbar-dropdown>
 
     <bs-navbar-dropdown>
@@ -137,7 +137,6 @@
       <bs-navbar-item><a [routerLink]='["/additional-samples", "drag-drop"]'>Drag-drop</a></bs-navbar-item>
       <bs-navbar-item><a [routerLink]='["/additional-samples", "tree-select-drag-drop"]'>Tree-select drag-drop</a></bs-navbar-item>
       <bs-navbar-item><a [routerLink]='["/additional-samples", "qr-code"]'>QR-code viewer</a></bs-navbar-item>
-      <bs-navbar-item><a [routerLink]='["/additional-samples", "swiper"]'>Swiper</a></bs-navbar-item>
       <bs-navbar-item><a [routerLink]='["/additional-samples", "stepper"]'>Stepper</a></bs-navbar-item>
       <bs-navbar-item><a [routerLink]='["/additional-samples", "theming"]'>Theming</a></bs-navbar-item>
       <bs-navbar-dropdown>

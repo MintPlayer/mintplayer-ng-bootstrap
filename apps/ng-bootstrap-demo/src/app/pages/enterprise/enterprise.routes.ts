@@ -2,6 +2,7 @@ import { Routes } from '@angular/router';
 
 export const ROUTES: Routes = [
   { path: '', loadChildren: () => [], pathMatch: 'full', canActivate: [() => false] },
+  { path: 'carousel', loadComponent: () => import('./carousel/carousel.component').then(m => m.CarouselComponent) },
   { path: 'datatables', loadComponent: () => import('./datatables/datatables.component').then(m => m.DatatablesComponent) },
   { path: 'file-manager', loadComponent: () => import('./file-manager/file-manager.component').then(m => m.FileManagerDemoComponent) },
   { path: 'scheduler', loadComponent: () => import('./scheduler/scheduler.component').then(m => m.SchedulerComponent) },
@@ -12,4 +13,6 @@ export const ROUTES: Routes = [
   { path: 'query-builder', loadComponent: () => import('./query-builder/query-builder.component').then(m => m.QueryBuilderDemoComponent) },
   { path: 'otp-input', loadComponent: () => import('./otp-input/otp-input.component').then(m => m.OtpInputDemoComponent) },
   { path: 'navbar', loadComponent: () => import('./navbar/navbar.component').then(m => m.NavbarComponent) },
+  { path: 'splitter', loadComponent: () => import('./splitter/splitter.component').then(m => m.SplitterComponent) },
+  { path: 'accordion', loadComponent: () => import('./accordion/accordion.component').then(m => m.AccordionComponent) },
 ];

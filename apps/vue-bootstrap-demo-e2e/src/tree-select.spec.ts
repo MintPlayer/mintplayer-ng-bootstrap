@@ -6,7 +6,9 @@ import { test, expect } from '@playwright/test';
 
 test('tree-select page renders its heading and four demo sections', async ({ page }) => {
   await page.goto('/basic/tree-select');
-  await page.waitForLoadState('networkidle');
+  await page.waitForLoadState('networkidle', { timeout: 2000 }).catch(() => {
+    /* HMR keeps the socket open, so the network never idles: settle briefly, never hang */
+  });
 
   await expect(page.locator('h1')).toContainText('Tree select');
   await expect(page.locator('section h2')).toHaveCount(4);
@@ -14,7 +16,9 @@ test('tree-select page renders its heading and four demo sections', async ({ pag
 
 test('multiple demo opens a panel and selecting a node adds a chip', async ({ page }) => {
   await page.goto('/basic/tree-select');
-  await page.waitForLoadState('networkidle');
+  await page.waitForLoadState('networkidle', { timeout: 2000 }).catch(() => {
+    /* HMR keeps the socket open, so the network never idles: settle briefly, never hang */
+  });
 
   // Second section is the in-memory "Multiple — chips" demo.
   const demo = page.locator('section').nth(1).locator('mp-tree-select');
@@ -35,7 +39,9 @@ test('multiple demo opens a panel and selecting a node adds a chip', async ({ pa
 
 test('checkbox + cascade demo selects descendants when a parent is checked', async ({ page }) => {
   await page.goto('/basic/tree-select');
-  await page.waitForLoadState('networkidle');
+  await page.waitForLoadState('networkidle', { timeout: 2000 }).catch(() => {
+    /* HMR keeps the socket open, so the network never idles: settle briefly, never hang */
+  });
 
   // Third section is the "Checkbox — cascade" demo.
   const demo = page.locator('section').nth(2).locator('mp-tree-select');

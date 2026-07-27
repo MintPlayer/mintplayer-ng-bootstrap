@@ -107,7 +107,9 @@ test.describe('mint-dock-manager — keyboard pane move-mode', () => {
     await page.goto('/enterprise/dock');
     // Demo SSR uses destructive bootstrap; the WC needs networkidle to settle
     // before its shadow tree is populated (see memory project_e2e_destructive_bootstrap).
-    await page.waitForLoadState('networkidle');
+    await page.waitForLoadState('networkidle', { timeout: 2000 }).catch(() => {
+      /* HMR keeps the socket open, so the network never idles: settle briefly, never hang */
+    });
     await expect(page.getByRole('heading', { name: 'Panel 1' })).toBeVisible();
   });
 

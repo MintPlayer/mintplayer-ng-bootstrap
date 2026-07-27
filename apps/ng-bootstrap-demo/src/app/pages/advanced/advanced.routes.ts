@@ -20,7 +20,6 @@ export const ROUTES: Routes = [
       import('./navigation-lock-master-detail/navigation-lock-master-detail.routes')
         .then(m => m.ROUTES),
   },
-  { path: 'splitter', loadComponent: () => import('./splitter/splitter.component').then(m => m.SplitterComponent) },
   { path: 'instance-of', loadComponent: () => import('./instance-of/instance-of.component').then(m => m.InstanceOfComponent) },
   { path: 'resizable', loadComponent: () => import('./resizable/resizable.component').then(m => m.ResizableComponent) },
   { path: 'signature-pad', loadComponent: () => import('./signature-pad/signature-pad.component').then(m => m.SignaturePadComponent) },

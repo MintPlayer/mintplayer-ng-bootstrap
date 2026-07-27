@@ -1,0 +1,10 @@
+<mp-splitter
+    #element
+    [attr.orientation]="orientation()"
+    [attr.min-panel-size]="minPanelSizeAttr()"
+    [attr.touch-mode]="touchModeAttr()"
+    (resize-start)="onResizeStart($event)"
+    (resizing)="onResizing($event)"
+    (resize-end)="onResizeEnd($event)">
+    <ng-content></ng-content>
+</mp-splitter>

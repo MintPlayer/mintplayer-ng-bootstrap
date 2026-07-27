@@ -6,7 +6,7 @@ import {
 import { Breakpoint } from '@mintplayer/ng-bootstrap';
 import { BsOverlayStackService } from '@mintplayer/ng-bootstrap/a11y';
 import { BsNoNoscriptDirective } from '@mintplayer/ng-bootstrap/no-noscript';
-import { BsObserveSizeDirective } from '@mintplayer/ng-swiper/observe-size';
+import { BsObserveSizeDirective } from '@mintplayer/ng-bootstrap/observe-size';
 import { BsPriorityNavItemDirective } from '../priority-nav-item/priority-nav-item.directive';
 
 @Component({

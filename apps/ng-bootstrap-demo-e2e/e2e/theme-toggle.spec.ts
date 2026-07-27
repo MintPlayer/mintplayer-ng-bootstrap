@@ -16,7 +16,9 @@ test.describe('theme toggle', () => {
       localStorage.setItem('bs-theme-mode', 'dark');
     });
     await page.goto('/');
-    await page.waitForLoadState('networkidle');
+    await page.waitForLoadState('networkidle', { timeout: 2000 }).catch(() => {
+      /* HMR keeps the socket open, so the network never idles: settle briefly, never hang */
+    });
 
     const attr = await page.locator('html').getAttribute('data-bs-theme');
     expect(attr).toBe('dark');
@@ -24,7 +26,9 @@ test.describe('theme toggle', () => {
 
   test('toggle cycles auto → light → dark → auto', async ({ page }) => {
     await page.goto('/');
-    await page.waitForLoadState('networkidle');
+    await page.waitForLoadState('networkidle', { timeout: 2000 }).catch(() => {
+      /* HMR keeps the socket open, so the network never idles: settle briefly, never hang */
+    });
 
     const toggle = page.locator('demo-theme-toggle button');
     const html = page.locator('html');
@@ -54,7 +58,9 @@ test.describe('theme toggle', () => {
 
   test('mode persists across reloads', async ({ page }) => {
     await page.goto('/');
-    await page.waitForLoadState('networkidle');
+    await page.waitForLoadState('networkidle', { timeout: 2000 }).catch(() => {
+      /* HMR keeps the socket open, so the network never idles: settle briefly, never hang */
+    });
 
     const toggle = page.locator('demo-theme-toggle button');
     // auto → light
@@ -62,7 +68,9 @@ test.describe('theme toggle', () => {
     expect(await page.evaluate(() => localStorage.getItem('bs-theme-mode'))).toBe('light');
 
     await page.reload();
-    await page.waitForLoadState('networkidle');
+    await page.waitForLoadState('networkidle', { timeout: 2000 }).catch(() => {
+      /* HMR keeps the socket open, so the network never idles: settle briefly, never hang */
+    });
 
     await expect(page.locator('html')).toHaveAttribute('data-bs-theme', 'light');
     expect(await page.evaluate(() => localStorage.getItem('bs-theme-mode'))).toBe('light');
@@ -70,13 +78,17 @@ test.describe('theme toggle', () => {
 
   test('body background-color differs between light and dark', async ({ page }) => {
     await page.goto('/');
-    await page.waitForLoadState('networkidle');
+    await page.waitForLoadState('networkidle', { timeout: 2000 }).catch(() => {
+      /* HMR keeps the socket open, so the network never idles: settle briefly, never hang */
+    });
 
     const toggle = page.locator('demo-theme-toggle button');
     // Set to light explicitly.
     await page.evaluate(() => localStorage.setItem('bs-theme-mode', 'light'));
     await page.reload();
-    await page.waitForLoadState('networkidle');
+    await page.waitForLoadState('networkidle', { timeout: 2000 }).catch(() => {
+      /* HMR keeps the socket open, so the network never idles: settle briefly, never hang */
+    });
     const lightBg = await page.evaluate(() => getComputedStyle(document.body).backgroundColor);
 
     // Cycle to dark via the toggle (light → dark).

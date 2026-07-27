@@ -15,6 +15,7 @@ const SECTIONS = [
     title: 'Basic',
     routes: [
       { path: '/basic/card', label: 'Card' },
+      { path: '/basic/carousel', label: 'Carousel' },
       { path: '/basic/calendar', label: 'Calendar' },
       { path: '/basic/forms/datepicker', label: 'Datepicker' },
       { path: '/basic/forms/datetime-picker', label: 'Datetime picker' },
@@ -52,6 +53,7 @@ const SECTIONS = [
       { path: '/enterprise/datatables', label: 'Datatable' },
       { path: '/enterprise/file-manager', label: 'File manager' },
       { path: '/enterprise/shell', label: 'Shell' },
+      { path: '/enterprise/accordion', label: 'Accordion' },
     ],
   },
 ];

@@ -2,7 +2,9 @@ import { test, expect } from '@playwright/test';
 
 test('datepicker selects a date and updates the display', async ({ page }) => {
   await page.goto('/basic/forms/datepicker');
-  await page.waitForLoadState('networkidle');
+  await page.waitForLoadState('networkidle', { timeout: 2000 }).catch(() => {
+    /* HMR keeps the socket open, so the network never idles: settle briefly, never hang */
+  });
 
   // Sanity: the demo's "selected date" line is on screen.
   const dateDisplay = page.getByText(/The selected date is:/);

@@ -1,0 +1,108 @@
+<h1 class="text-center">Carousel</h1>
+
+<p>
+  <code>bs-carousel</code> wraps the framework-agnostic <code>&lt;mp-carousel&gt;</code> web
+  component: slides are plain child elements, with optional indicators, auto-advance,
+  slide/fade animation in both orientations, touch swipe, keyboard + reduced-motion support,
+  and a radio-driven no-JS tier (server-rendered pages keep navigating with JavaScript
+  disabled).
+</p>
+
+<h2>Basic usage</h2>
+
+<bs-form>
+    <bs-grid>
+        <h2>Demo</h2>
+        <div bsRow class="mb-3">
+            <div [col]>
+                <bs-carousel [orientation]="orientation()" [animation]="mode()" [indicators]="true"
+                             [interval]="interval()" [(paused)]="paused" ariaLabel="Animal photos">
+                    <!-- The carousel ships a default Play/Pause button whenever an
+                         interval is set. Consumers wanting a custom control can
+                         project one with slot="play-pause". -->
+                    <img src="/assets/resized/deer.png" alt="A deer">
+                    <img src="/assets/resized/duck.png" alt="A duck">
+                    <img src="/assets/resized/leopard.png" alt="A leopard">
+                    <img src="/assets/resized/lion.png" alt="A lion">
+                    <img src="/assets/resized/peacock.png" alt="A peacock">
+                    <img src="/assets/resized/tiger.png" alt="A tiger">
+                </bs-carousel>
+            </div>
+        </div>
+        <div bsRow class="mb-3">
+            <span [col] bsColFormLabel class="text-end">
+                Carousel mode
+            </span>
+            <div [col]>
+                <bs-select [(ngModel)]="mode" class="d-inline-block">
+                    <option value="slide">Slide</option>
+                    <option value="fade">Fade</option>
+                </bs-select>
+            </div>
+        </div>
+        <div bsRow>
+            <span [col] bsColFormLabel class="text-end">
+                Orientation
+            </span>
+            <div [col]>
+                <bs-select [(ngModel)]="orientation" class="d-inline-block">
+                    <option value="horizontal">Horizontal</option>
+                    <option value="vertical">Vertical</option>
+                </bs-select>
+            </div>
+        </div>
+        <h2>Features</h2>
+        <div bsRow>
+            <div [col]>
+                <ul>
+                    <li>Touch-event support</li>
+                    <li><code>&lt;noscript&gt;</code> support (interactive: indicators, prev/next with wrap-around, radiogroup arrow keys)</li>
+                    <li>Full APG carousel ARIA pattern</li>
+                </ul>
+            </div>
+        </div>
+    </bs-grid>
+</bs-form>
+
+<bs-code-snippet [codeToCopy]="snippetBasicHtml" [language]="'html'"></bs-code-snippet>
+<bs-code-snippet [codeToCopy]="snippetBasicTs" [language]="'ts'"></bs-code-snippet>
+
+<h2>Without JavaScript (server-rendered)</h2>
+
+<p>
+  Two independent carousels: with JS disabled each keeps its own radio-driven state
+  (indicators + prev/next + keyboard), proving instances don't collide.
+</p>
+
+<div class="nojs-pair">
+    <bs-carousel animation="fade" [indicators]="true" ariaLabel="Fade pair" data-testid="nojs-fade">
+        <img src="/assets/resized/deer.png" alt="A deer">
+        <img src="/assets/resized/duck.png" alt="A duck">
+        <img src="/assets/resized/leopard.png" alt="A leopard">
+    </bs-carousel>
+    <bs-carousel animation="slide" [indicators]="true" ariaLabel="Slide pair" data-testid="nojs-slide">
+        <img src="/assets/resized/lion.png" alt="A lion">
+        <img src="/assets/resized/peacock.png" alt="A peacock">
+        <img src="/assets/resized/tiger.png" alt="A tiger">
+    </bs-carousel>
+</div>
+
+<h2>Nested carousels</h2>
+
+<p>
+  A horizontal carousel as a slide of a vertical one: the inner claims horizontal swipes,
+  vertical swipes bubble to the outer, and each viewport keeps its own arrow keys.
+</p>
+
+<bs-carousel orientation="vertical" [indicators]="true" ariaLabel="Outer vertical" data-testid="nested-outer">
+    <img src="/assets/resized/deer.png" alt="A deer">
+    <div>
+        <bs-carousel animation="slide" [indicators]="true" ariaLabel="Inner horizontal" data-testid="nested-inner">
+            <img src="/assets/resized/duck.png" alt="A duck">
+            <img src="/assets/resized/leopard.png" alt="A leopard">
+        </bs-carousel>
+    </div>
+    <img src="/assets/resized/lion.png" alt="A lion">
+</bs-carousel>
+
+<bs-code-snippet [codeToCopy]="snippetNestedHtml" [language]="'html'"></bs-code-snippet>

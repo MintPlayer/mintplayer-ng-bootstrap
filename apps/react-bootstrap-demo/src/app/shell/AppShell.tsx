@@ -6,6 +6,7 @@ import { GithubLink } from './GithubLink';
 const SECTIONS = [
   { title: 'Basic', routes: [
     { path: '/basic/card', label: 'Card' },
+    { path: '/basic/carousel', label: 'Carousel' },
     { path: '/basic/calendar', label: 'Calendar' },
     { path: '/basic/forms/datepicker', label: 'Datepicker' },
     { path: '/basic/forms/datetime-picker', label: 'Datetime picker' },
@@ -28,6 +29,7 @@ const SECTIONS = [
     { path: '/advanced/otp-input', label: 'OTP input' },
   ]},
   { title: 'Enterprise', routes: [
+    { path: '/enterprise/accordion', label: 'Accordion' },
     { path: '/enterprise/scheduler', label: 'Scheduler' },
     { path: '/enterprise/timeline', label: 'Timeline' },
     { path: '/enterprise/dock', label: 'Dock manager' },

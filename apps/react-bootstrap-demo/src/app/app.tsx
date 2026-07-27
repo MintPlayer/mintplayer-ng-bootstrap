@@ -24,6 +24,7 @@ function lazyNamed<P>(
 // chunk — the initial bundle only ships the shell + router + Home.
 const CalendarPage     = lazyNamed(() => import('./pages/CalendarPage'),     'CalendarPage');
 const CardPage         = lazyNamed(() => import('./pages/CardPage'),         'CardPage');
+const CarouselPage     = lazyNamed(() => import('./pages/CarouselPage'),     'CarouselPage');
 const CheckboxPage     = lazyNamed(() => import('./pages/CheckboxPage'),     'CheckboxPage');
 const DatatablePage    = lazyNamed(() => import('./pages/DatatablePage'),    'DatatablePage');
 const DatepickerPage   = lazyNamed(() => import('./pages/forms/DatepickerPage'),     'DatepickerPage');
@@ -50,6 +51,7 @@ const SplitterPage     = lazyNamed(() => import('./pages/advanced/SplitterPage')
 const SchedulerPage    = lazyNamed(() => import('./pages/enterprise/SchedulerPage'), 'SchedulerPage');
 const TimelinePage     = lazyNamed(() => import('./pages/enterprise/TimelinePage'),  'TimelinePage');
 const ShellPage        = lazyNamed(() => import('./pages/enterprise/ShellPage'),     'ShellPage');
+const AccordionPage    = lazyNamed(() => import('./pages/enterprise/AccordionPage'), 'AccordionPage');
 
 function PageFallback() {
   return (
@@ -69,6 +71,7 @@ export function App() {
           {/* Basic */}
           <Route path="/basic/calendar" element={<CalendarPage />} />
           <Route path="/basic/card" element={<CardPage />} />
+          <Route path="/basic/carousel" element={<CarouselPage />} />
           <Route path="/basic/checkbox" element={<CheckboxPage />} />
           <Route path="/basic/code-snippet" element={<CodeSnippetPage />} />
           <Route path="/basic/forms/datepicker" element={<DatepickerPage />} />
@@ -88,6 +91,7 @@ export function App() {
           <Route path="/advanced/otp-input" element={<OtpInputPage />} />
           <Route path="/advanced/splitter" element={<SplitterPage />} />
           {/* Enterprise */}
+          <Route path="/enterprise/accordion" element={<AccordionPage />} />
           <Route path="/enterprise/dock" element={<DockPage />} />
           <Route path="/enterprise/tile-manager" element={<TileManagerPage />} />
           <Route path="/enterprise/datatables" element={<DatatablePage />} />
