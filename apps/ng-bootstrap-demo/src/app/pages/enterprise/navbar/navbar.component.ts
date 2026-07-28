@@ -36,7 +36,7 @@ export class NavbarComponent {
   }
 
   protected readonly snippetHtml = dedent`
-    <bs-navbar [breakpoint]="'lg'" [color]="'body-tertiary'" [ariaLabel]="'Main navigation'" (expandedchange)="onExpandedchange($event)">
+    <bs-navbar [breakpoint]="'lg'" [color]="'body-tertiary'" aria-label="Main navigation" (expandedchange)="onExpandedchange($event)">
       <bs-navbar-brand>
         <a routerLink="/">MyApp</a>
       </bs-navbar-brand>

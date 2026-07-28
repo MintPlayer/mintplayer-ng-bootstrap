@@ -4,7 +4,7 @@ import type { CarouselAnimation, CarouselOrientation, CarouselSlideChangeEventDe
 import { BsCodeSnippet } from '@mintplayer/react-bootstrap/code-snippet';
 import './CarouselPage.css';
 
-const BASIC_SOURCE = `<BsCarousel indicators interval={4000} ariaLabel="Animal photos"
+const BASIC_SOURCE = `<BsCarousel indicators interval={4000} aria-label="Animal photos"
   onSlideChange={(e) => setIndex(e.detail.index)}>
   <img src="/assets/resized/deer.png" alt="A deer" />
   <img src="/assets/resized/duck.png" alt="A duck" />
@@ -43,7 +43,7 @@ export function CarouselPage() {
           indicators
           interval={4000}
           paused={paused}
-          ariaLabel="Animal photos"
+          aria-label="Animal photos"
           onSlideChange={(e: CustomEvent<CarouselSlideChangeEventDetail>) => setIndex(e.detail.index)}
           onPausedChange={(e: CustomEvent<CarouselPausedChangeEventDetail>) => setPaused(e.detail.paused)}
         >
@@ -81,12 +81,12 @@ export function CarouselPage() {
           Two independent carousels: with JS disabled each keeps its own radio-driven state.
         </p>
         <div className="nojs-pair">
-          <BsCarousel animation="fade" indicators ariaLabel="Fade pair">
+          <BsCarousel animation="fade" indicators aria-label="Fade pair">
             {IMAGES.slice(0, 3).map((img) => (
               <img key={img.src} src={img.src} alt={img.alt} />
             ))}
           </BsCarousel>
-          <BsCarousel animation="slide" indicators ariaLabel="Slide pair">
+          <BsCarousel animation="slide" indicators aria-label="Slide pair">
             {IMAGES.slice(3).map((img) => (
               <img key={img.src} src={img.src} alt={img.alt} />
             ))}

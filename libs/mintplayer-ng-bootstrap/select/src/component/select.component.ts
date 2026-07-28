@@ -7,7 +7,6 @@ import {
   forwardRef,
   inject,
   input,
-  Renderer2,
   viewChild,
 } from '@angular/core';
 import { BsSelectValueAccessor } from '../value-accessors/select-value-accessor';
@@ -31,8 +30,6 @@ import { BsForwardAriaDirective } from '@mintplayer/ng-bootstrap/a11y';
   }],
 })
 export class BsSelectComponent {
-  private renderer = inject(Renderer2);
-
   constructor() {
     effect(() => {
       const el = this.selectBox()?.nativeElement;
@@ -41,9 +38,6 @@ export class BsSelectComponent {
       el.multiple = this.multiple();
       el.numberVisible = this.numberVisible();
       el.disabled = this.disabled();
-      const label = this.ariaLabel();
-      if (label == null) this.renderer.removeAttribute(el, 'aria-label');
-      else this.renderer.setAttribute(el, 'aria-label', label);
     });
   }
 
@@ -59,5 +53,4 @@ export class BsSelectComponent {
   multiple = input<boolean>(false);
   numberVisible = input<number | null>(null);
   disabled = input<boolean>(false);
-  ariaLabel = input<string | null>(null);
 }

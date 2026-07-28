@@ -27,8 +27,6 @@ withDefaults(
     wrap?: boolean;
     /** Arrow/Home/End navigation on the focused viewport. */
     keyboardEvents?: boolean;
-    /** Accessible label for the carousel region. */
-    ariaLabel?: string;
   }>(),
   { animation: 'slide', orientation: 'horizontal', wrap: true, keyboardEvents: true },
 );
@@ -83,7 +81,6 @@ onBeforeUnmount(() => {
     :wrap="wrap === false ? 'false' : undefined"
     :keyboard-events="keyboardEvents === false ? 'false' : undefined"
     :paused="paused ? '' : undefined"
-    :aria-label="ariaLabel"
   >
     <slot />
     <!-- Custom play/pause control: a native custom element needs the slot

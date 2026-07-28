@@ -15,8 +15,6 @@ export interface BsNavbarProps {
   expanded?: boolean;
   /** `fixed` pins the bar to the top of the viewport, full width; omit for in-flow. */
   positioning?: 'fixed';
-  /** Landmark label for the `<nav>` (default `Main navigation`). Maps to `aria-label`. */
-  ariaLabel?: string;
   /** Fires when the collapse toggles; `detail.expanded` carries the new state. */
   onExpandedChange?: (event: CustomEvent<NavbarExpandedChangeEventDetail>) => void;
   className?: string;
@@ -27,11 +25,11 @@ export interface BsNavbarProps {
  * Inner `@lit/react` component. `breakpoint`/`color` aren't reactive element
  * *properties* (the WC reads them as attributes to keep the collapse pure-CSS /
  * SSR- and no-JS-friendly), so `createComponent` forwards them as React props →
- * attributes. `ariaLabel` is surfaced as the `aria-label` attribute, and
- * `expanded` as the reflected boolean attribute. We retype its props to the
+ * attributes. `expanded` is forwarded as the reflected boolean attribute, and
+ * `aria-label` reaches the element through the ordinary `...props` spread. We retype its props to the
  * clean public surface; the runtime forwards everything to the element unchanged.
  */
-type MpNavbarInnerProps = Omit<BsNavbarProps, 'ariaLabel' | 'expanded'> & {
+type MpNavbarInnerProps = Omit<BsNavbarProps, 'expanded'> & {
   'aria-label'?: string;
   expanded?: '';
 } & React.RefAttributes<MpNavbar>;
@@ -62,13 +60,12 @@ const MpNavbarComponent = createComponent({
  *     </BsNavbar>
  */
 export const BsNavbar = React.forwardRef<MpNavbar, BsNavbarProps>(function BsNavbar(
-  { ariaLabel, expanded, ...props },
+  { expanded, ...props },
   ref,
 ) {
   return (
     <MpNavbarComponent
       ref={ref}
-      {...(ariaLabel != null ? { 'aria-label': ariaLabel } : {})}
       {...(expanded ? { expanded: '' as const } : {})}
       {...props}
     />

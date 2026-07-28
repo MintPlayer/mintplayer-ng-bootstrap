@@ -7,7 +7,7 @@ import {
 } from '@mintplayer/react-bootstrap/navbar';
 import { BsDropdownMenu, BsDropdownItem } from '@mintplayer/react-bootstrap/dropdown-menu';
 
-const NAVBAR_SOURCE = `<BsNavbar breakpoint="lg" color="body-tertiary" ariaLabel="Demo navigation">
+const NAVBAR_SOURCE = `<BsNavbar breakpoint="lg" color="body-tertiary" aria-label="Demo navigation">
   <BsNavbarBrand slot="brand">
     <a href="/">MintPlayer</a>
   </BsNavbarBrand>
@@ -53,7 +53,7 @@ export function NavbarPage() {
 
       <section data-demo="navbar">
         <h2>Navbar</h2>
-        <BsNavbar breakpoint="lg" color="body-tertiary" ariaLabel="Demo navigation">
+        <BsNavbar breakpoint="lg" color="body-tertiary" aria-label="Demo navigation">
           <BsNavbarBrand slot="brand">
             <a href="/">MintPlayer</a>
           </BsNavbarBrand>

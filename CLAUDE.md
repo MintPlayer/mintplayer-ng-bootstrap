@@ -90,4 +90,15 @@ npx nx test mintplayer-web-components        # vitest + jsdom
 dotnet build apps/api/Api.csproj -c Debug
 ```
 
-Issue branches target **`master`** (not `development`). PRs squash-merge. Breaking changes are acceptable when documented — the libraries favor a clean API over back-compat shims.
+Issue branches target **`master`** (not `development`). Breaking changes are acceptable when documented — the libraries favor a clean API over back-compat shims.
+
+**All pull requests are squashed into `master`.** No intermediate commit ever lands on the default
+branch, so a commit part-way through a PR does **not** have to build or pass tests — only the final
+state of the branch does. Commit freely at each milestone to keep the work reviewable and revertable;
+don't hold back a commit because the suite is mid-refactor, and don't spend a run proving an
+intermediate commit green. This is the other half of the batching rule above: verify by reading and
+type-checking as you go, and run the suites once at the end.
+
+A corollary for commit messages: since they are squashed away, the durable record of *why* is the PR
+description and the docs under `docs/prd/` — put reasoning that outlives the branch there, not only in
+a commit body.

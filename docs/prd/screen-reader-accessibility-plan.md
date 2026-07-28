@@ -730,6 +730,38 @@ owned children; no ARIA attribute states something false. Asserted in the existi
 
 Depends on A (roving focus) and B (tier-2 mixin, for `aria-errormessage`).
 
+### `mp-navbar-dropdown`'s `aria-expanded` — confirmed defect, exact mechanism
+
+Raised as a question mid-Phase-B ("does the migration also add `aria-haspopup` and update the
+dropdown-open state?") and worth writing down precisely, because the attributes *are already there*
+and still do not work — which is the hardest kind of finding to spot in review.
+
+`aria-haspopup="menu"` is correct and static, so it needs nothing. `aria-expanded` is the problem
+(`mp-navbar-dropdown.ts:215` and `:47-54`):
+
+- `render()` emits a **literal** `aria-expanded="false"`, not a binding.
+- `attributeChangedCallback` then patches it imperatively:
+  `this.renderRoot?.querySelector('.dropdown-toggle')?.setAttribute('aria-expanded', …)`.
+
+Two writers, and the imperative one loses the race that matters. When `data-open` is already present
+before the first render — SSR/DSD markup for an initially-open dropdown, or an attribute set before
+upgrade — the callback fires while `renderRoot` is still undefined, the optional chain swallows the
+write, and the subsequent first render stamps `false`. No further callback fires, because the
+attribute did not change again. **The dropdown then announces "collapsed" for its entire life while
+visibly open.** The no-JS tier is worse: nothing updates the attribute at all, so a CSS-driven open
+panel is always announced collapsed.
+
+Fix, and it is the §11a rule rather than a patch: **derive it in `render()` from `#anyOpen` and delete
+the imperative write.** One writer, correct at every moment, correct on the first paint, and correct
+under SSR because the same expression runs there. Where a native disclosure can own the state instead
+(`<details>`/`<summary>`, per D1 and the `mp-dropdown` design), prefer that — the UA then exposes the
+expanded state itself and there is no attribute to keep in sync at all.
+
+Audit the same shape elsewhere before assuming this is the only instance: `mp-datepicker.element.ts:175`
+and `mp-datetime-picker.element.ts:425,437` bind `aria-expanded` from an **expression**, which is
+correct; the navbar dropdown is the one that hardcodes it. Grep for a literal
+`aria-expanded="false"` in a template as the signature.
+
 **Roles and structure** — datatable `role="grid"` per D2; file-manager icon grid → `listbox`/
 `option` with roving focus; priority-nav drops `role="menu"`/`menuitem` for plain disclosure +
 list; scheduler adds `role="presentation"` to the un-roled wrappers breaking the grid chain and a

@@ -33,7 +33,6 @@ export class BsNavbarComponent {
   /** Theme color of the navbar background (e.g. `primary`, `dark`, `body-tertiary`). */
   readonly color = input<string>();
   /** Accessible label for the `<nav>` landmark. */
-  readonly ariaLabel = input<string>();
   /** Whether the collapse is (visually) expanded; reflected to the WC. */
   readonly expanded = input(false);
   /** `fixed` pins the bar to the top of the viewport, full width; omit for in-flow. */
@@ -44,7 +43,6 @@ export class BsNavbarComponent {
 
   /** String-or-absent attributes derived once via signals. */
   protected readonly colorAttr = computed(() => this.color() ?? null);
-  protected readonly ariaLabelAttr = computed(() => this.ariaLabel() ?? null);
   protected readonly positioningAttr = computed(() => this.positioning() ?? null);
   /** Presence attribute: `''` when expanded, `null` when collapsed. */
   protected readonly expandedAttr = computed(() => (this.expanded() ? '' : null));

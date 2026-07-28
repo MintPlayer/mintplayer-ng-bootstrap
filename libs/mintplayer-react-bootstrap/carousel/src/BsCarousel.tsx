@@ -24,8 +24,6 @@ export interface BsCarouselProps {
   keyboardEvents?: boolean;
   /** Whether autoplay is paused (controlled via onPausedChange). */
   paused?: boolean;
-  /** Accessible label for the carousel region. Maps to `aria-label`. */
-  ariaLabel?: string;
   onSlideChange?: (event: CustomEvent<CarouselSlideChangeEventDetail>) => void;
   onPausedChange?: (event: CustomEvent<CarouselPausedChangeEventDetail>) => void;
   onAnimationStart?: (event: CustomEvent<void>) => void;
@@ -72,13 +70,12 @@ const MpCarouselComponent = createComponent({
 }) as unknown as React.ForwardRefExoticComponent<MpCarouselInnerProps>;
 
 export const BsCarousel = React.forwardRef<MpCarousel, BsCarouselProps>(function BsCarousel(
-  { ariaLabel, indicators, interval, wrap, keyboardEvents, paused, ...props },
+  { indicators, interval, wrap, keyboardEvents, paused, ...props },
   ref,
 ) {
   return (
     <MpCarouselComponent
       ref={ref}
-      {...(ariaLabel != null ? { 'aria-label': ariaLabel } : {})}
       {...(indicators ? { indicators: true } : {})}
       {...(interval && interval > 0 ? { interval } : {})}
       {...(wrap === false ? { wrap: 'false' as const } : {})}

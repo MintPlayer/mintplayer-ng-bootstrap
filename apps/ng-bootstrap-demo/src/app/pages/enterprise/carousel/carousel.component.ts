@@ -24,7 +24,7 @@ export class CarouselComponent {
   paused = model<boolean>(false);
 
   protected readonly snippetBasicHtml = dedent`
-    <bs-carousel [indicators]="true" [interval]="4000" ariaLabel="Animal photos">
+    <bs-carousel [indicators]="true" [interval]="4000" aria-label="Animal photos">
       <img src="/assets/resized/deer.png" alt="A deer">
       <img src="/assets/resized/duck.png" alt="A duck">
       <img src="/assets/resized/lion.png" alt="A lion">
@@ -44,10 +44,10 @@ export class CarouselComponent {
   `;
 
   protected readonly snippetNestedHtml = dedent`
-    <bs-carousel orientation="vertical" [indicators]="true" ariaLabel="Outer vertical">
+    <bs-carousel orientation="vertical" [indicators]="true" aria-label="Outer vertical">
       <img src="/assets/resized/deer.png" alt="A deer">
       <div>
-        <bs-carousel animation="slide" [indicators]="true" ariaLabel="Inner horizontal">
+        <bs-carousel animation="slide" [indicators]="true" aria-label="Inner horizontal">
           <img src="/assets/resized/duck.png" alt="A duck">
           <img src="/assets/resized/leopard.png" alt="A leopard">
         </bs-carousel>
