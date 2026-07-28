@@ -509,9 +509,21 @@ say in their header that spike 0.2 is the only verification of the positive path
 text lands in a `<span class="form-check-label">` which is **not** associated with the input by
 `for`/`id` across the boundary, so it never becomes the accessible name. Asserted.
 
-**Remaining in B:** `inputLabel` on the other ~16 components, the `mp-otp-input.label` → `inputLabel`
-rename, `mp-dropdown-menu`'s `label-id`, `bs-carousel`/`bs-navbar`'s bespoke `[ariaLabel]` inputs and
-`bs-select`'s `Renderer2` call, the React/Vue passthrough fixes, and the 44 hardcoded strings.
+#### ✓ LANDED (B5) — `f60c97cc`: radio, toggle-button, dropdown-menu, otp rename
+
+`mp-radio` and `mp-toggle-button` get the exact checkbox pattern (they had **no** aria handling at
+all). `mint-otp-input.label` → `inputLabel` per D3, keeping its `'One-time code'` default and gaining
+the standard host-`aria-label`-wins precedence. `mp-dropdown-menu`'s `label-id` is **deleted, not
+aliased** — it wrote `aria-labelledby` on the shadow `<ul>` pointing at a document id, the dead-IDREF
+pattern itself, inert since the day it shipped; the plan's deprecated-alias idea was the
+`textContent` hack §5.3 forbids and fell to the no-loose-ends ruling. Its wrappers lose `labelId` in
+all three frameworks. Framing per §5.2b: for the three toggles, `input-label` is an *override* —
+slotted text already names them.
+
+**Remaining in B:** `inputLabel`/naming on the picker+composite tail (datepicker, timepicker,
+tree-select +`search-label`, datatable +`caption`, timeline, code-snippet, ribbon `regionLabel`,
+typeahead, progress-bar, close, rating, breadcrumb, floating-label, card-img `alt`), the Vue
+conformance guard, the 12 Angular-only `ariaLabel`-input components, and the 44 hardcoded strings.
 
 **Angular** — new `BsForwardAriaDirective` in `@mintplayer/ng-bootstrap/a11y`, applied to the inner
 `mp-*` element of all 22 nested-host wrappers, plus `role="presentation"` on the `bs-*` host and
