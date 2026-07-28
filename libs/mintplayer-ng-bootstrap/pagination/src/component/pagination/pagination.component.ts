@@ -44,8 +44,6 @@ export class BsPaginationComponent {
   readonly showArrows = input<boolean>(true);
   /** Page number size. */
   readonly size = input<Size>('medium');
-  /** Accessible name on the surrounding `<nav>` landmark. */
-  readonly ariaLabel = input<string>('Pagination');
 
   protected readonly paginationRef = viewChild<ElementRef<MpPagination>>('pagination');
 
@@ -58,7 +56,6 @@ export class BsPaginationComponent {
       el.numberOfBoxes = this.numberOfBoxes();
       el.showArrows = this.showArrows();
       el.size = SIZE_MAP[this.size()] ?? 'medium';
-      el.setAttribute('aria-label', this.ariaLabel());
     });
   }
 
