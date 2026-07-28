@@ -281,10 +281,11 @@ export class MpSelect extends LitElement {
     const select = this._selectRef.value;
     if (!select) return;
 
-    // Re-assigned every commit, not just on attribute change: element references
-    // point at a specific node, and the `<select>` is not guaranteed to be the same
-    // node after a re-render. Assigning once in connectedCallback would leave the
-    // name silently attached to a discarded element.
+    // After every render, not just on attribute change: element references point at
+    // a specific node, and the `<select>` is not guaranteed to be the same node
+    // after a re-render. Assigning once in connectedCallback would leave the name
+    // silently attached to a discarded element. See `mp-checkbox`'s aria spec,
+    // where a `type` switch demonstrates the failure concretely.
     this.hostAria.syncReferences();
 
     if (this._multiple) {

@@ -264,9 +264,12 @@ export class MpCheckbox extends LitElement {
     const input = this._inputRef.value;
     if (input) input.indeterminate = this._indeterminate && this._type !== 'toggle_button';
 
-    // Every commit, not once: element references point at a specific node, and
-    // switching `type` between `toggle_button` and the others replaces the <input>
-    // entirely. Assigning once would leave the name on a discarded element.
+    // After every render, not once at startup. `ariaLabelledByElements` stores a
+    // real element reference, and stores it on the node it is assigned to —
+    // switching `type` between `toggle_button` and the others makes Lit build a
+    // different <input>, so assigning only in connectedCallback would leave the
+    // name on a discarded node while the host attribute still looked correct.
+    // Covered by "reference re-sync across a type change" in the aria spec.
     this.hostAria.syncReferences();
   }
 
