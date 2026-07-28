@@ -520,10 +520,19 @@ pattern itself, inert since the day it shipped; the plan's deprecated-alias idea
 all three frameworks. Framing per §5.2b: for the three toggles, `input-label` is an *override* —
 slotted text already names them.
 
-**Remaining in B:** `inputLabel`/naming on the picker+composite tail (datepicker, timepicker,
-tree-select +`search-label`, datatable +`caption`, timeline, code-snippet, ribbon `regionLabel`,
-typeahead, progress-bar, close, rating, breadcrumb, floating-label, card-img `alt`), the Vue
-conformance guard, the 12 Angular-only `ariaLabel`-input components, and the 44 hardcoded strings.
+#### ✓ LANDED (B6) — `05fee5c8`: picker/composite naming + the shared WC guard
+
+datepicker/timepicker (the **readonly display input** was the unnamed node; category-2 defaults),
+tree-select (`input-label` + `search-label`; placeholder fallback preserved exactly), timeline
+(had no naming path at all), datatable (`caption` = the native *visible* table name, `input-label`
+the invisible one that wins in accname). `_conformance/naming.spec.ts` asserts the whole contract
+across all 11 implementing components (46 cases) so the next component cannot drift. Lit
+static-properties elements observe host attributes via phantom property entries — non-obvious,
+recorded in the code.
+
+**Remaining in B:** code-snippet + ribbon `regionLabel`, the Angular-only tail (typeahead,
+progress-bar, close, rating, breadcrumb, floating-label, card-img `alt`, the 12 `ariaLabel`-input
+components), the Vue conformance guard, and the 44 hardcoded strings.
 
 **Angular** — new `BsForwardAriaDirective` in `@mintplayer/ng-bootstrap/a11y`, applied to the inner
 `mp-*` element of all 22 nested-host wrappers, plus `role="presentation"` on the `bs-*` host and

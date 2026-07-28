@@ -49,6 +49,13 @@ export default defineConfig(() => ({
       pathsToAliases: false,
     }),
   ],
+  /* Runtime half of the ARIA passthrough guard. _conformance/ has no
+     src/index.ts, so entry discovery ignores it and it can never be published. */
+  test: {
+    environment: 'jsdom',
+    include: ['**/*.spec.ts'],
+    exclude: ['**/node_modules/**', '**/dist/**'],
+  },
   build: {
     outDir: '../../dist/libs/mintplayer-vue-bootstrap',
     emptyOutDir: true,

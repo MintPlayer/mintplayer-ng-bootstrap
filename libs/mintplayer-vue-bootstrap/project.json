@@ -27,6 +27,15 @@
       "options": {
         "packageRoot": "dist/{projectRoot}"
       }
+    },
+    "test": {
+      "executor": "@nx/vite:test",
+      "outputs": [
+        "{workspaceRoot}/coverage/libs/mintplayer-vue-bootstrap"
+      ],
+      "options": {
+        "configFile": "vite.config.mts"
+      }
     }
   },
   "release": {
