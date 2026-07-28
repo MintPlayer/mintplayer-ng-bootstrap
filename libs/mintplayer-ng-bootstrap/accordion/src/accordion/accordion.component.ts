@@ -15,6 +15,7 @@ import {
 import '@mintplayer/web-components/accordion';
 import type { AccordionTabToggleDetail, MpAccordion } from '@mintplayer/web-components/accordion';
 import { BsAccordionTabComponent } from '../accordion-tab/accordion-tab.component';
+import { BsForwardAriaDirective } from '@mintplayer/ng-bootstrap/a11y';
 
 /**
  * `<bs-accordion>` — Angular wrapper around the `<mp-accordion>` web component.
@@ -42,7 +43,7 @@ import { BsAccordionTabComponent } from '../accordion-tab/accordion-tab.componen
   templateUrl: './accordion.component.html',
   styleUrls: ['./accordion.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [NgTemplateOutlet],
+  imports: [BsForwardAriaDirective, NgTemplateOutlet],
   schemas: [CUSTOM_ELEMENTS_SCHEMA],
 })
 export class BsAccordionComponent {

@@ -19,6 +19,7 @@ import type {
   ResizeKey,
   SplitterResizeEventDetail,
 } from '@mintplayer/web-components/splitter';
+import { BsForwardAriaDirective } from '@mintplayer/ng-bootstrap/a11y';
 
 /**
  * `<bs-splitter>` — Angular wrapper around the `<mp-splitter>` web component.
@@ -51,6 +52,7 @@ import type {
 @Component({
   selector: 'bs-splitter',
   templateUrl: './splitter.component.html',
+  imports: [BsForwardAriaDirective],
   styleUrls: ['./splitter.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush,
   // The fallback stylesheet must match the CONSUMER-projected pane children,

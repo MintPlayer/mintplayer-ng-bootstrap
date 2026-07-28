@@ -2,6 +2,7 @@ import { afterNextRender, ChangeDetectionStrategy, Component, CUSTOM_ELEMENTS_SC
 import { Breakpoint } from '@mintplayer/ng-bootstrap';
 import type { MpShell, ShellStateChangeEventDetail } from '@mintplayer/web-components/shell';
 import { BsShellState } from '../shell-state';
+import { BsForwardAriaDirective } from '@mintplayer/ng-bootstrap/a11y';
 
 /**
  * `<bs-shell>` — Angular wrapper around the `<mp-shell>` web component.
@@ -19,6 +20,7 @@ import { BsShellState } from '../shell-state';
 @Component({
   selector: 'bs-shell',
   templateUrl: './shell.component.html',
+  imports: [BsForwardAriaDirective],
   styleUrl: './shell.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
   schemas: [CUSTOM_ELEMENTS_SCHEMA],

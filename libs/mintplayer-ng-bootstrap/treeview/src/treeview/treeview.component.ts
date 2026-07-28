@@ -30,10 +30,12 @@ import {
 import '@mintplayer/web-components/treeview';
 
 import { BsTreeviewNodeTemplateDirective } from '../treeview-node-template/treeview-node-template.directive';
+import { BsForwardAriaDirective } from '@mintplayer/ng-bootstrap/a11y';
 
 @Component({
   selector: 'bs-treeview',
   templateUrl: './treeview.component.html',
+  imports: [BsForwardAriaDirective],
   styleUrls: ['./treeview.component.scss'],
   schemas: [CUSTOM_ELEMENTS_SCHEMA],
   changeDetection: ChangeDetectionStrategy.OnPush,

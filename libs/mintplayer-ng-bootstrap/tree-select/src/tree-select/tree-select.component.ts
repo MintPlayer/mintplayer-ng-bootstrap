@@ -43,6 +43,7 @@ import {
   BsTreeSelectSuggestionTemplateDirective,
   type BsTreeSelectValueContext,
 } from '../directives/template-directives';
+import { BsForwardAriaDirective } from '@mintplayer/ng-bootstrap/a11y';
 
 type Value = TreeNode | TreeNode[] | null;
 
@@ -54,6 +55,7 @@ type Value = TreeNode | TreeNode[] | null;
 @Component({
   selector: 'bs-tree-select',
   templateUrl: './tree-select.component.html',
+  imports: [BsForwardAriaDirective],
   schemas: [CUSTOM_ELEMENTS_SCHEMA],
   changeDetection: ChangeDetectionStrategy.OnPush,
   providers: [

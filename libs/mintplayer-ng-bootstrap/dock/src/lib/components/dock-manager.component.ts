@@ -24,12 +24,13 @@ import { BsDockPaneComponent } from './dock-pane.component';
 
 // Side-effect import: registers <mint-dock-manager>.
 import '@mintplayer/web-components/dock';
+import { BsForwardAriaDirective } from '@mintplayer/ng-bootstrap/a11y';
 
 @Component({
   selector: 'bs-dock-manager',
   templateUrl: './dock-manager.component.html',
   styleUrls: ['./dock-manager.component.scss'],
-  imports: [NgTemplateOutlet],
+  imports: [BsForwardAriaDirective, NgTemplateOutlet],
   schemas: [CUSTOM_ELEMENTS_SCHEMA],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })

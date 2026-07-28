@@ -8,7 +8,12 @@ import { BsDatatableComponent } from '@mintplayer/ng-bootstrap/datatable';
 import { BsDockManagerComponent } from '@mintplayer/ng-bootstrap/dock';
 import { BsDropdownMenuComponent } from '@mintplayer/ng-bootstrap/dropdown-menu';
 import { BsFileManagerComponent } from '@mintplayer/ng-bootstrap/file-manager';
-import { BsNavbarComponent, BsNavbarDropdownComponent } from '@mintplayer/ng-bootstrap/navbar';
+import {
+  BsNavbarComponent,
+  BsNavbarDropdownComponent,
+  BsNavbarDropdownLabelDirective,
+} from '@mintplayer/ng-bootstrap/navbar';
+import { BsFormComponent } from '@mintplayer/ng-bootstrap/form';
 import { BsPaginationComponent } from '@mintplayer/ng-bootstrap/pagination';
 import { BsQueryBuilderComponent } from '@mintplayer/ng-bootstrap/query-builder';
 import { BsRadioComponent } from '@mintplayer/ng-bootstrap/radio';
@@ -25,21 +30,36 @@ import { BsTreeviewComponent } from '@mintplayer/ng-bootstrap/treeview';
  * must be **transparent to ARIA**: a consumer's `aria-label`, `role`, `id` and
  * `tabindex` set on the `bs-*` element have to reach the custom element inside.
  *
- * Why this fails today, and why it is invisible without a test: every wrapper is
+ * Why this was broken, and why it was invisible without a test: every wrapper is
  * a *nested host*. `<bs-checkbox>` renders `<mp-checkbox>` as a child, so a
- * consumer's `aria-label` lands on `<bs-checkbox>` — an element with no role,
- * where ARIA 1.2 prohibits naming, so browsers drop it. The `<mp-checkbox>`
- * inside never sees it and stays nameless. `tabindex` is worse than useless: it
- * makes the *wrapper* focusable, adding a dead tab stop in front of the real
- * control.
+ * consumer's `aria-label` landed on `<bs-checkbox>` — an element with no role,
+ * which AT does not navigate to as a named object, so nothing reached the
+ * `<mp-checkbox>` inside and it stayed nameless. `tabindex` was worse than
+ * useless: it made the *wrapper* focusable, adding a dead tab stop in front of
+ * the real control.
  *
- * This spec exists **before** the fix, deliberately. A regression net written
+ * This spec was written **before** the fix, deliberately, and every case here was
+ * an `it.fails` until `BsForwardAriaDirective` landed. A regression net written
  * after the work it guards is not a net — it has to fail on the broken wrappers
- * first, then go green as each is repaired, so "forwarded" is proven rather than
- * assumed. Wrappers that do not forward yet are marked `it.fails`, which is
- * self-policing in both directions: CI stays green while the defect is
- * documented, and the moment a wrapper starts forwarding its `it.fails` entry
- * *itself* fails, forcing the list to shrink rather than rot.
+ * first, then go green as they are repaired, so "forwarded" is proven rather than
+ * assumed. It paid for itself immediately: it corrected the audit's numbers
+ * (0 of 19 wrappers were transparent, not "22 of 24 discard ARIA with 2
+ * exceptions" — `bs-checkbox`/`bs-radio` mirrored `aria-*` via a
+ * `MutationObserver` but forwarded no `role`/`id`/`tabindex`, and
+ * `bs-carousel`/`bs-navbar` took a bespoke `[ariaLabel]` *input*, so a consumer
+ * writing the natural attribute got `null`). Had the directive been built against
+ * the audit's figures it would have skipped two wrappers believing they worked.
+ *
+ * **A caveat about `it.fails` that cost real time, worth knowing before using the
+ * idiom again.** It passes when the test throws for *any* reason, so it cannot
+ * distinguish "the wrapper does not forward" from "the harness cannot render this
+ * wrapper at all". Two entries were in the second category and nobody knew:
+ * `bs-tree-select` throws in its constructor unless nested in a `<bs-form>`, and
+ * `bs-navbar-dropdown` has a `contentChild.required` label that fails NG0951 when
+ * absent. Both looked like ordinary forwarding failures until the directive landed
+ * and they were the only two still red. Hence `wrap` and `needs` below: each
+ * wrapper's real preconditions are now explicit, so a render error can never again
+ * masquerade as an ARIA finding.
  *
  * **Why this lives in `_conformance/` and not in `a11y/src/`.** It imports 19
  * sibling secondary entry points. `a11y` is itself a published entry point, and
@@ -82,10 +102,16 @@ interface WrapperCase {
   /** The custom element that must receive the attributes. */
   tag: string;
   component: Type<unknown>;
-  /** Minimal content or inputs needed to render without throwing. */
+  /** Minimal content needed to render without throwing. */
   content?: string;
-  /** What the wrapper forwards today, if anything. Measured, not assumed. */
-  forwardsAriaAttributes?: true;
+  /**
+   * Markup the wrapper must be nested inside, as `[open, close]`. Some wrappers
+   * throw in their constructor without an ancestor — `bs-tree-select` requires a
+   * `<bs-form>`.
+   */
+  wrap?: readonly [string, string];
+  /** Extra components/directives the harness template needs for `content`/`wrap`. */
+  needs?: Type<unknown>[];
 }
 
 /**
@@ -97,22 +123,38 @@ interface WrapperCase {
 const WRAPPERS: WrapperCase[] = [
   { selector: 'bs-accordion', tag: 'mp-accordion', component: BsAccordionComponent },
   { selector: 'bs-carousel', tag: 'mp-carousel', component: BsCarouselComponent },
-  { selector: 'bs-checkbox', tag: 'mp-checkbox', component: BsCheckboxComponent, forwardsAriaAttributes: true },
+  { selector: 'bs-checkbox', tag: 'mp-checkbox', component: BsCheckboxComponent },
   { selector: 'bs-datatable', tag: 'mp-datatable', component: BsDatatableComponent },
   { selector: 'bs-dock-manager', tag: 'mint-dock-manager', component: BsDockManagerComponent },
   { selector: 'bs-dropdown-menu', tag: 'mp-dropdown-menu', component: BsDropdownMenuComponent },
   { selector: 'bs-file-manager', tag: 'mp-file-manager', component: BsFileManagerComponent },
   { selector: 'bs-navbar', tag: 'mp-navbar', component: BsNavbarComponent },
-  { selector: 'bs-navbar-dropdown', tag: 'mp-navbar-dropdown', component: BsNavbarDropdownComponent },
+  {
+    selector: 'bs-navbar-dropdown',
+    tag: 'mp-navbar-dropdown',
+    component: BsNavbarDropdownComponent,
+    // contentChild.required(BsNavbarDropdownLabelDirective) — NG0951 without it.
+    // Must be an <ng-template>: the directive injects TemplateRef (the wrapper
+    // renders it through ngTemplateOutlet), so on a plain element it fails NG0201.
+    content: '<ng-template bsNavbarDropdownLabel>label</ng-template>',
+    needs: [BsNavbarDropdownLabelDirective],
+  },
   { selector: 'bs-pagination', tag: 'mp-pagination', component: BsPaginationComponent },
   { selector: 'bs-query-builder', tag: 'mp-query-builder', component: BsQueryBuilderComponent },
-  { selector: 'bs-radio', tag: 'mp-radio', component: BsRadioComponent, forwardsAriaAttributes: true },
+  { selector: 'bs-radio', tag: 'mp-radio', component: BsRadioComponent },
   { selector: 'bs-scheduler', tag: 'mp-scheduler', component: BsSchedulerComponent },
   { selector: 'bs-select', tag: 'mp-select', component: BsSelectComponent },
   { selector: 'bs-shell', tag: 'mp-shell', component: BsShellComponent },
   { selector: 'bs-splitter', tag: 'mp-splitter', component: BsSplitterComponent },
   { selector: 'bs-timeline', tag: 'mp-timeline', component: BsTimelineComponent },
-  { selector: 'bs-tree-select', tag: 'mp-tree-select', component: BsTreeSelectComponent },
+  {
+    selector: 'bs-tree-select',
+    tag: 'mp-tree-select',
+    component: BsTreeSelectComponent,
+    // Its constructor throws '<bs-tree-select> must be inside a <bs-form>'.
+    wrap: ['<bs-form>', '</bs-form>'],
+    needs: [BsFormComponent],
+  },
   { selector: 'bs-treeview', tag: 'mp-treeview', component: BsTreeviewComponent },
 ];
 
@@ -122,11 +164,19 @@ function probeAttributes(): string {
     .join(' ');
 }
 
-/** Render `<bs-x aria-label=… role=… id=… tabindex=…>` and return the inner custom element. */
-async function renderAndFindTarget(entry: WrapperCase): Promise<HTMLElement | null> {
+/**
+ * Render `<bs-x aria-label=… role=… id=… tabindex=…>` and return both the wrapper
+ * host and the inner custom element. Both are needed: forwarding is only correct
+ * if the attributes arrive on the target *and* the moved ones leave the host, and
+ * the host cannot be found with `document.querySelector` because the fixture is
+ * not necessarily attached to the document.
+ */
+async function render(entry: WrapperCase): Promise<{ host: HTMLElement; target: HTMLElement | null }> {
+  const [open, close] = entry.wrap ?? ['', ''];
+
   @Component({
-    imports: [entry.component],
-    template: `<${entry.selector} ${probeAttributes()}>${entry.content ?? ''}</${entry.selector}>`,
+    imports: [entry.component, ...(entry.needs ?? [])],
+    template: `${open}<${entry.selector} ${probeAttributes()}>${entry.content ?? ''}</${entry.selector}>${close}`,
   })
   class Harness {}
 
@@ -135,12 +185,30 @@ async function renderAndFindTarget(entry: WrapperCase): Promise<HTMLElement | nu
   fixture.detectChanges();
   await Promise.resolve();
   fixture.detectChanges();
-  // Several wrappers register their custom element from `afterNextRender` via a
-  // dynamic import(). Let that settle before the environment is torn down, or the
-  // late module resolution surfaces as an unhandled rejection.
-  await new Promise((resolve) => setTimeout(resolve, 0));
 
-  return fixture.nativeElement.querySelector(entry.tag) as HTMLElement | null;
+  /* Several wrappers register their custom element from `afterNextRender` via a
+     dynamic `import()`. Waiting a single macrotask is not enough: the
+     carousel → swiper-core chain is several modules deep, so the import could
+     still be in flight at teardown and surface as
+     `EnvironmentTeardownError: Cannot load … after the environment was torn down`.
+     That failed only in the full-suite run, where worker timing differs — it
+     passed when this file ran alone, which is the signature of a settle that is
+     too weak rather than a real defect.
+
+     Waiting on the definition itself is the precise condition: it resolves exactly
+     when the import chain has finished. The race keeps a wrapper that legitimately
+     never defines its element (or is renamed) reporting as a null target below,
+     rather than hanging the suite. */
+  await Promise.race([
+    customElements.whenDefined(entry.tag),
+    new Promise((resolve) => setTimeout(resolve, 250)),
+  ]);
+  fixture.detectChanges();
+
+  return {
+    host: fixture.nativeElement.querySelector(entry.selector) as HTMLElement,
+    target: fixture.nativeElement.querySelector(entry.tag) as HTMLElement | null,
+  };
 }
 
 describe('Angular wrapper ARIA passthrough', () => {
@@ -148,12 +216,13 @@ describe('Angular wrapper ARIA passthrough', () => {
     TestBed.resetTestingModule();
   });
 
-  // Measured, not assumed: NONE of the 19 forwards the full set today. Remove a
-  // wrapper's entry from WRAPPERS' failing group as it is fixed — the `it.fails`
-  // then starts failing, which forces the inventory to shrink rather than rot.
-  describe.each(WRAPPERS)('$selector (not yet transparent)', (entry) => {
-    it.fails(`does not yet forward role/id/tabindex to <${entry.tag}>`, async () => {
-      const target = await renderAndFindTarget(entry);
+  /* All 19 now forward, via `BsForwardAriaDirective` on each wrapper's template
+     root. These were `it.fails` until the directive landed — the inventory went
+     from 0/19 transparent to 19/19 in one change, which is the whole reason the
+     guard was written before the fix rather than after it. */
+  describe.each(WRAPPERS)('$selector', (entry) => {
+    it(`forwards aria-label, role, id and tabindex to <${entry.tag}>`, async () => {
+      const { target } = await render(entry);
 
       expect(target, `<${entry.tag}> was not rendered by <${entry.selector}>`).not.toBeNull();
       expect(target!.getAttribute('aria-label')).toBe(PROBE['aria-label']);
@@ -161,22 +230,17 @@ describe('Angular wrapper ARIA passthrough', () => {
       expect(target!.getAttribute('id')).toBe(PROBE.id);
       expect(target!.getAttribute('tabindex')).toBe(PROBE.tabindex);
     });
-  });
 
-  // The partial forwarding that DOES exist, asserted positively so repairing the
-  // rest cannot silently regress it. Only these two mirror `aria-*` (via a
-  // MutationObserver on the wrapper host); the others forward nothing at all.
-  //
-  // Worth recording precisely, because it is narrower than it looks: bs-carousel
-  // and bs-navbar are often described as "forwarding aria-label", but they accept
-  // a bespoke [ariaLabel] *input* — a consumer who writes the natural
-  // `aria-label="…"` attribute gets null on the inner element.
-  describe.each(WRAPPERS.filter((w) => w.forwardsAriaAttributes))('$selector', (entry) => {
-    it(`already mirrors aria-* to <${entry.tag}>`, async () => {
-      const target = await renderAndFindTarget(entry);
+    it(`moves id and tabindex off <${entry.selector}> rather than duplicating them`, async () => {
+      const { host } = await render(entry);
 
-      expect(target).not.toBeNull();
-      expect(target!.getAttribute('aria-label')).toBe(PROBE['aria-label']);
+      // Two elements with one id breaks every IDREF pointing at it, and a
+      // duplicated tabindex is the dead-tab-stop defect this phase exists to fix.
+      expect(host.hasAttribute('id')).toBe(false);
+      expect(host.hasAttribute('tabindex')).toBe(false);
+      // The consumer's role moved to the target, so the host carries only the
+      // directive's own marker.
+      expect(host.getAttribute('role')).toBe('presentation');
     });
   });
 

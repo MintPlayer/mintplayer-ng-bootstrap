@@ -1,5 +1,6 @@
 import { afterNextRender, ChangeDetectionStrategy, Component, computed, CUSTOM_ELEMENTS_SCHEMA, ElementRef, inject, input, output } from '@angular/core';
 import type { NavbarBreakpoint, NavbarExpandedChangeEventDetail } from '@mintplayer/web-components/navbar';
+import { BsForwardAriaDirective } from '@mintplayer/ng-bootstrap/a11y';
 
 /**
  * `<bs-navbar>` — Angular wrapper around the `<mp-navbar>` web component.
@@ -19,6 +20,7 @@ import type { NavbarBreakpoint, NavbarExpandedChangeEventDetail } from '@mintpla
 @Component({
   selector: 'bs-navbar',
   templateUrl: './navbar.component.html',
+  imports: [BsForwardAriaDirective],
   changeDetection: ChangeDetectionStrategy.OnPush,
   schemas: [CUSTOM_ELEMENTS_SCHEMA],
 })

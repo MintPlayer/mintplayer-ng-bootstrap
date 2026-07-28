@@ -1,4 +1,5 @@
 export * from './service/id.service';
+export * from './forward-aria/forward-aria.directive';
 export * from './roving-focus/roving-focus.directive';
 export * from './roving-focus/roving-focus-item.directive';
 export * from './overlay-focus/overlay-focus.directive';

@@ -16,10 +16,12 @@ import type { MpSelect } from '@mintplayer/web-components/select';
 
 // Side-effect import: registers <mp-select>.
 import '@mintplayer/web-components/select';
+import { BsForwardAriaDirective } from '@mintplayer/ng-bootstrap/a11y';
 
 @Component({
   selector: 'bs-select',
   templateUrl: './select.component.html',
+  imports: [BsForwardAriaDirective],
   styleUrls: ['./select.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush,
   schemas: [CUSTOM_ELEMENTS_SCHEMA],

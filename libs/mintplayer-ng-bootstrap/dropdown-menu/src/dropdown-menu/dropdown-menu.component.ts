@@ -1,6 +1,7 @@
 import { afterNextRender, ChangeDetectionStrategy, Component, computed, CUSTOM_ELEMENTS_SCHEMA, input, output, ViewEncapsulation } from '@angular/core';
 import type { DropdownMode, DropdownSelectEventDetail } from '@mintplayer/web-components/dropdown-menu';
 import { BS_DROPDOWN_MENU_CONTEXT } from '../tokens/menu-context.token';
+import { BsForwardAriaDirective } from '@mintplayer/ng-bootstrap/a11y';
 
 /**
  * `<bs-dropdown-menu>` — Angular wrapper around the `<mp-dropdown-menu>` web
@@ -27,6 +28,7 @@ import { BS_DROPDOWN_MENU_CONTEXT } from '../tokens/menu-context.token';
 @Component({
   selector: 'bs-dropdown-menu',
   templateUrl: './dropdown-menu.component.html',
+  imports: [BsForwardAriaDirective],
   changeDetection: ChangeDetectionStrategy.OnPush,
   schemas: [CUSTOM_ELEMENTS_SCHEMA],
   // Marks content authored between these tags as "inside a menu" so

@@ -17,6 +17,7 @@ import {
 
 // Side-effect import: registers <mp-pagination>.
 import '@mintplayer/web-components/pagination';
+import { BsForwardAriaDirective } from '@mintplayer/ng-bootstrap/a11y';
 
 const SIZE_MAP: Record<Size, PaginationSize> = {
   small: 'small',
@@ -27,6 +28,7 @@ const SIZE_MAP: Record<Size, PaginationSize> = {
 @Component({
   selector: 'bs-pagination',
   templateUrl: './pagination.component.html',
+  imports: [BsForwardAriaDirective],
   styleUrls: ['./pagination.component.scss'],
   schemas: [CUSTOM_ELEMENTS_SCHEMA],
   changeDetection: ChangeDetectionStrategy.OnPush,

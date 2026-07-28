@@ -17,6 +17,7 @@ import type {
   CarouselSlideChangeEventDetail,
   MpCarousel,
 } from '@mintplayer/web-components/carousel';
+import { BsForwardAriaDirective } from '@mintplayer/ng-bootstrap/a11y';
 
 /**
  * `<bs-carousel>` — Angular wrapper around the `<mp-carousel>` web component.
@@ -42,6 +43,7 @@ import type {
 @Component({
   selector: 'bs-carousel',
   templateUrl: './carousel.component.html',
+  imports: [BsForwardAriaDirective],
   changeDetection: ChangeDetectionStrategy.OnPush,
   schemas: [CUSTOM_ELEMENTS_SCHEMA],
 })
