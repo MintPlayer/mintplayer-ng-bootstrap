@@ -149,11 +149,30 @@ per node, with all the bookkeeping that implies on rebuild.
 **Fold two `RovingFocus` assertions into the same page**, since it is already exercising real Tab
 behaviour and the marginal cost is near zero:
 
-- **The one-tab-stop invariant.** `roving-focus.spec.ts` has 16 tests, and none of them can prove
-  the thing roving tabindex exists to deliver: **jsdom implements no sequential focus navigation**,
-  so a synthetic Tab moves focus nowhere and the specs verify `tabIndex` *values* only. Assert the
-  behaviour instead — Tab into the widget lands on exactly one item, arrows move within it, one more
-  Tab leaves it entirely.
+- **The one-tab-stop invariant.** `roving-focus.spec.ts` has 16 tests and none of them can prove the
+  thing roving tabindex exists to deliver. The reason is not a jsdom gap — it is that **sequential
+  focus navigation is not a DOM API**. There is no `document.tabForward()`; Tab is user-agent
+  behaviour triggered by *trusted* input, which is why jsdom's README lists only Navigation and
+  Layout as out of scope and never mentions focus order. A synthetic
+  `KeyboardEvent({key:'Tab'})` moves focus in **no** environment, real browsers included, because
+  untrusted events do not run default actions. So this is inherently an e2e concern that only
+  WebDriver/CDP-level input can reach (`page.keyboard.press('Tab')`) — not something a future jsdom
+  release or a better fake DOM could close. Assert the behaviour: Tab into the widget lands on
+  exactly one item, arrows move within it, one more Tab leaves it entirely.
+
+  The mechanism, so this is not re-litigated: every `Event` carries an `isTrusted` flag that is true
+  only for events the user agent created from real input, and the UA performs focus navigation from
+  its own input pipeline — it never sees a constructed event as input. Note the asymmetry:
+  `preventDefault()` on a *real* Tab keydown does suppress the focus move, so the move is
+  **cancellable** by script but not **causable** by it. Only WebDriver/CDP-level injection
+  (`page.keyboard.press('Tab')`, which Playwright implements via `Input.dispatchKeyEvent`) produces a
+  trusted event. `jsdom/jsdom#2102` asks exactly this and was closed the day it was filed.
+
+  Worth recording so it is not proposed later: adding a userland Tab simulator such as
+  `@testing-library/user-event`'s `userEvent.tab()` would **not** substitute. It computes tab order
+  from `tabIndex` using its own implementation of the same rules our code applies, so the test would
+  check our arithmetic against a second copy of our arithmetic and pass while the browser disagreed.
+  Circular by construction.
 - **RTL arrow inversion.** `RovingFocus` reads `getComputedStyle(el).direction`, which jsdom does not
   meaningfully resolve from an ancestor `dir="rtl"`, so that branch is effectively unexecuted today.
 
