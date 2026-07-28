@@ -95,10 +95,19 @@ describe('mp-checkbox naming', () => {
     expect(input.getAttribute('aria-label')).toBe('From host');
   });
 
-  it('needs input-label even with slotted visible text, which is NOT the name', async () => {
-    // The slotted label sits in a <span class="form-check-label"> that is not
-    // associated with the input by for/id across the shadow boundary, so it does
-    // not name the control. This is why a label property is required at all.
+  it('writes NO aria-label when the consumer slots visible text — the slot already names it', async () => {
+    /* Reads like a gap and is the opposite. The shadow `<label>` wraps the `<input>`
+       and contains the `<slot>`, and accessible-name computation walks the flat
+       tree, so `<mp-checkbox>Accept terms</mp-checkbox>` computes the name
+       "Accept terms" natively — measured in Chromium's real accessibility tree by
+       `_spike-slotted-label/`. Writing an `aria-label` here would be worse than
+       useless: `aria-label` OVERRIDES the label association, so it would replace a
+       correct, automatically-translated name with a copy that silently drifts.
+
+       This assertion is therefore "the component does not interfere", not "the
+       component fails to name". jsdom cannot compute the name, which is precisely
+       why an earlier version of this test drew the wrong conclusion from the same
+       passing assertion. */
     const { input } = await mount('<mp-checkbox>Accept terms</mp-checkbox>');
     expect(input.hasAttribute('aria-label')).toBe(false);
   });

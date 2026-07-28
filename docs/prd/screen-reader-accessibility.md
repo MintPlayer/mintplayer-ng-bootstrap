@@ -533,6 +533,57 @@ down), and add `...rest` to the two. **The guard must probe `role`/`id`/`tabInde
 **Vue — no action** beyond one ordering fix: `v-bind="$attrs"` placed *before* an explicit
 `:aria-label` binding lets an undefined prop overwrite a consumer's attribute.
 
+### 5.2b How much must a consumer pass? (the naming-effort policy)
+
+Asked directly during Phase B — "do consumers always have to pass these aria inputs? I want the
+components to be as easily usable as possible" — and worth settling as policy, because the answer
+differs by *kind* of value and getting it wrong in either direction is harmful.
+
+**Four categories, in order of how much the consumer must do:**
+
+1. **Derived state and structure — the consumer passes nothing, ever.** Roles, `aria-expanded`,
+   `aria-checked`, `aria-valuenow`, `aria-current`, `aria-level`, slide counters ("3 of 6"),
+   `aria-roledescription="slide"`, Previous/Next button labels. The component owns these because only
+   it knows them. Anything in this category appearing as a consumer input is a design bug — that is
+   what §5.2's retired `[ariaLabel]` idioms were.
+2. **Generic "kind of thing" labels — defaulted by the web component.** Where a page normally has one
+   of something and the useful name is generic, the WC ships the default and the consumer overrides
+   only if they want to: `mp-pagination` → `'Pagination'`, progress → `'Loading'`, navbar-toggler →
+   `'Toggle navigation'`. **The default belongs in the WC, not in a wrapper** — `bs-pagination` had it
+   in the Angular wrapper and that duplication became an active bug once forwarding landed.
+3. **Names derivable from content the consumer already writes — free, and the best case.**
+   **Verified in Chromium's real accessibility tree (`_spike-slotted-label/`): slotted light-DOM text
+   DOES name a control inside the shadow root.** The shadow `<label>` wraps the `<input>` and contains
+   the `<slot>`, and name computation walks the *flat* tree, so
+   `<mp-checkbox>Accept terms</mp-checkbox>` computes `"Accept terms"` with nothing else passed.
+   This corrects an earlier claim in this document that the slot boundary broke the association.
+   Consequence: **do not write `aria-label` when visible text is slotted** — `aria-label` *overrides*
+   the label association, so it would replace a correct, automatically-translated name with a copy
+   that drifts. Applies to checkbox, radio, toggle-button, dropdown items, accordion headers.
+4. **The instance's own name — optional, never invented.** `"Animal photos"`, `"Country"`,
+   `"Main navigation"`. Only the consumer knows it. It stays optional and the component degrades to
+   *no name* rather than a made-up one. **A generic default here is actively harmful**: three
+   carousels all called "Carousel" are indistinguishable when navigating by landmark, and a
+   present-but-useless name passes an automated audit while telling the user nothing — the
+   "present but inert" failure this PRD exists to remove. Measured examples of honest degradation:
+   a bare `mp-checkbox` computes `""`, and a bare `mp-select` computes `""` with role `combobox`
+   (confirming the audit's "no fallback naming path" for `mp-select`, which has no text of its own to
+   draw on — hence `inputLabel`).
+
+**How the wrappers expose category 4, and why there is no per-component input.** The request was for
+"an optional input that forwards the value to the web component". Angular now gets that for all 19
+wrappers at once through `BsForwardAriaDirective`: the consumer writes the standard
+`aria-label` / `aria-labelledby` on the `bs-*` element and it reaches the custom element. That is
+strictly better than a per-component `[ariaLabel]` input — one idiom instead of nineteen, no second
+writer to conflict with, and it works for every ARIA attribute rather than just the one someone
+remembered to add. React and Vue reach the element through `...props` and `v-bind="$attrs"`
+respectively. **This is why the bespoke `[ariaLabel]` inputs were deleted rather than kept: they were
+a worse spelling of a capability the consumer already has.**
+
+The net effect on effort: for a checkbox, radio or toggle-button with visible text — **nothing**. For
+a landmark or a control with no intrinsic text — one standard attribute, the same one the consumer
+would write on plain HTML.
+
 ### 5.3 Naming shadow-encapsulated controls — two tiers
 
 **Tier 1: a label property on every WC whose role lives on an inner node.** Standardise on

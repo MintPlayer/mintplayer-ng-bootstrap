@@ -105,16 +105,23 @@ export class MpCheckbox extends LitElement {
   private readonly _inputRef: Ref<HTMLInputElement> = createRef();
 
   /**
-   * Accessible name for the inner `<input>`, as `inputLabel` / `input-label`.
+   * Optional override for the inner `<input>`'s accessible name, as
+   * `inputLabel` / `input-label`. Standardised on this name across the library
+   * rather than `label`, because the value lands on the control *inside* the shadow
+   * root.
    *
-   * Standardised across the library on this name rather than `label`, because the
-   * value lands on the control *inside* the shadow root. Needed here even though
-   * the component slots a visible label: the slotted text sits in a
-   * `<span class="form-check-label">` that is **not** associated with the input via
-   * `for`/`id` across the boundary, so it is not the accessible name.
+   * **Usually unnecessary — do not reach for it by default.** The shadow `<label>`
+   * wraps the `<input>` and contains the `<slot>`, and accessible-name computation
+   * walks the *flat* tree, so slotted light-DOM text already names the control:
+   * `<mp-checkbox>Accept terms</mp-checkbox>` computes the name "Accept terms" with
+   * nothing else passed. Verified against Chromium's real accessibility tree in
+   * `_spike-slotted-label/` — an earlier version of this comment claimed the
+   * opposite, on the assumption that the slot boundary broke the association. It
+   * does not.
    *
-   * Tier 1. A host `aria-labelledby` (tier 2) is a live element reference and takes
-   * precedence; this is the always-available fallback.
+   * So this exists for the two cases that genuinely need it: a checkbox with **no**
+   * visible text, and a name that must differ from the visible text. When both are
+   * present this wins, which is the right precedence for an override.
    */
   get inputLabel(): string | null {
     return this._inputLabel;
