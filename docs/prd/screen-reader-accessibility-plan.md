@@ -1,6 +1,6 @@
 # Plan — screen-reader accessibility across the four libraries
 
-Status: **not started; decisions resolved** — 2026-07-27. Companion PRD:
+Status: **Phase A landed; Phase 0 spikes and B–G outstanding** — 2026-07-27. Companion PRD:
 `docs/prd/screen-reader-accessibility.md` (findings, design rationale, decisions D1–D5 in §11, and
 the live-state principle in §11a).
 
@@ -121,10 +121,24 @@ Small, but it is the one part of Phase F that is design rather than boilerplate.
 
 ---
 
-## Phase A — WC a11y primitives
+## Phase A — WC a11y primitives ✓ LANDED
 
 Nothing else in the plan works properly without these. `HostAriaController` is first: the Angular
 wrapper fix in B has nowhere to deliver attributes without it.
+
+**As built** — seven commits, `2c13e5b0`…`27893419`, one per file below. Everything type-checks; per
+the batching rule the suites run once, in G. Two things learned in passing that change later phases:
+
+- **jsdom implements `attachInternals()` and the `ElementInternals` ARIA state properties, but not
+  `ariaLabelledByElements`.** So role and state are unit-testable and cross-root reference
+  resolution is not — it needs a real browser in all three engines. That is exactly spike 0.2, and
+  it is now load-bearing rather than precautionary: `HostAriaController.syncReferences()` has an
+  untested-in-CI path. `host-aria.spec.ts` documents the gap instead of pretending to cover it.
+- **`RovingFocus` deliberately omits an `aria-activedescendant` mode**, unlike the Angular directive
+  it ports. Inside a shadow root that attribute cannot work (it is an IDREF), which is precisely why
+  `mp-time-list` is inert. Any Phase C or E work that reaches for activedescendant should use
+  roving tabindex instead — including the combobox work, where the popup and the input must
+  therefore end up in the same tree.
 
 | File | Content |
 |---|---|
