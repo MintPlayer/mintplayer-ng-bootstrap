@@ -243,8 +243,8 @@ export class MpQueryConditionElement extends LitElement {
           class="qb-drag-handle"
           part="drag-handle"
           ?disabled=${disabled}
-          aria-label="Drag or use Alt+Up/Down to reorder"
-          title="Drag or use Alt+Up/Down to reorder"
+          aria-label=${messages.reorderHint}
+          title=${messages.reorderHint}
           @pointerdown=${this._onDragPointerDown}
         >⋮</button>
         <mp-select
@@ -254,7 +254,7 @@ export class MpQueryConditionElement extends LitElement {
           .value=${node.field}
           ?disabled=${disabled}
           @change=${this._onFieldChange}
-          aria-label="Field"
+          aria-label=${messages.field}
         >
           ${fields.map((f) => html`<option value=${f.name}>${f.label}</option>`)}
           ${field ? nothing : html`<option value=${node.field}>(${node.field})</option>`}
@@ -266,7 +266,7 @@ export class MpQueryConditionElement extends LitElement {
           .value=${node.operator}
           ?disabled=${disabled || !field}
           @change=${this._onOperatorChange}
-          aria-label="Operator"
+          aria-label=${messages.operator}
         >
           ${operators.map((op) => html`
             <option value=${op}>${messages.operators[op] ?? op}</option>
@@ -282,8 +282,8 @@ export class MpQueryConditionElement extends LitElement {
           part="remove"
           ?disabled=${disabled}
           @click=${this._onRemove}
-          aria-label="Remove condition"
-          title="Remove"
+          aria-label=${messages.removeRow}
+          title=${messages.removeRow}
         >×</button>
       </div>
     `;

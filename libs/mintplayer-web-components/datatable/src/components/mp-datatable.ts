@@ -1,5 +1,6 @@
 import { LitElement, html, nothing, type TemplateResult } from 'lit';
 import { HostAriaController } from '@mintplayer/web-components/a11y';
+import { DEFAULT_DATATABLE_LABELS, type DatatableLabels } from '../types/labels';
 import { repeat } from 'lit/directives/repeat.js';
 import { classMap } from 'lit/directives/class-map.js';
 import { styleMap } from 'lit/directives/style-map.js';
@@ -141,6 +142,17 @@ export class MpDatatable extends LitElement {
     if (this._caption === next) return;
     this._caption = next;
     this.requestUpdate();
+  }
+
+  /**
+   * User-visible strings, overridable per key for localisation
+   * (see DatatableLabels). Property-only: it holds functions.
+   */
+  labels: Partial<DatatableLabels> | undefined = undefined;
+
+  /** Merged view of labels — consumer keys over the English defaults. */
+  private get mergedLabels(): DatatableLabels {
+    return { ...DEFAULT_DATATABLE_LABELS, ...(this.labels ?? {}) };
   }
 
   /** Optional invisible accessible name for the <table>. Host aria-label wins. */
@@ -780,12 +792,12 @@ export class MpDatatable extends LitElement {
             <thead>
               <tr role="row" aria-rowindex="1">
                 ${this._tree
-                  ? html`<th class="tree-chevron-cell" scope="col" aria-label="Expand or collapse"></th>`
+                  ? html`<th class="tree-chevron-cell" scope="col" aria-label=${this.mergedLabels.treeChevronColumn}></th>`
                   : nothing}
                 ${showCheckboxes
                   ? html`<th class="checkbox-cell" scope="col">
                       <mp-checkbox
-                        aria-label="Deselect all"
+                        aria-label=${this.mergedLabels.deselectAll}
                         aria-hidden=${this._selectedIds.size === 0 ? 'true' : nothing}
                         style=${styleMap({ visibility: this._selectedIds.size > 0 ? 'visible' : 'hidden' })}
                         .checked=${false}
@@ -870,7 +882,7 @@ export class MpDatatable extends LitElement {
               class="resize-handle"
               role="separator"
               aria-orientation="vertical"
-              aria-label="Resize column ${col.label ?? col.name}"
+              aria-label=${this.mergedLabels.resizeColumn(col.label ?? col.name)}
               @pointerdown=${(ev: PointerEvent) => this.startColumnResize(col, ev)}
             ></span>`
           : nothing}
@@ -913,7 +925,7 @@ export class MpDatatable extends LitElement {
                 ? html`<button
                     type="button"
                     class="tree-chevron"
-                    aria-label=${isExpanded ? 'Collapse row' : 'Expand row'}
+                    aria-label=${isExpanded ? this.mergedLabels.collapseRow : this.mergedLabels.expandRow}
                     aria-expanded=${isExpanded ? 'true' : 'false'}
                     data-expanded=${isExpanded ? 'true' : 'false'}
                     @click=${(ev: MouseEvent) => this.toggleExpand(row!, flat.parentId, depth, ev)}
@@ -926,7 +938,7 @@ export class MpDatatable extends LitElement {
               ${isPlaceholder
                 ? nothing
                 : html`<mp-checkbox
-                    aria-label=${`Select row ${rowIndex + 1}`}
+                    aria-label=${this.mergedLabels.selectRow(rowIndex + 1)}
                     .checked=${selected}
                     .indeterminate=${indeterminate}
                     @change=${(ev: Event) => this.onRowCheckboxToggle(row, key, rowIndex, ev)}
@@ -936,7 +948,7 @@ export class MpDatatable extends LitElement {
         ${this._rowRenderer
           ? this.renderRowFromRenderer(row, rowIndex, { depth, isExpanded, isPlaceholder })
           : isPlaceholder
-            ? html`<td colspan=${this._columns.length} class="tree-placeholder-cell" aria-label="Loading">…</td>`
+            ? html`<td colspan=${this._columns.length} class="tree-placeholder-cell" aria-label=${this.mergedLabels.loading}>…</td>`
             : this._columns.map((col) => this.renderCell(row, col, rowIndex))}
       </tr>
     `;
@@ -946,7 +958,7 @@ export class MpDatatable extends LitElement {
     const out = this._rowRenderer!(row, rowIndex, ctx);
     if (out == null) {
       if (ctx.isPlaceholder) {
-        return html`<td colspan=${this._columns.length} class="tree-placeholder-cell" aria-label="Loading">…</td>`;
+        return html`<td colspan=${this._columns.length} class="tree-placeholder-cell" aria-label=${this.mergedLabels.loading}>…</td>`;
       }
       return this._columns.map((col) => this.renderCell(row, col, rowIndex));
     }
@@ -971,7 +983,7 @@ export class MpDatatable extends LitElement {
       <div class="datatable-footer">
         <mp-pagination
           class="datatable-per-page"
-          aria-label="Rows per page"
+          aria-label=${this.mergedLabels.rowsPerPage}
           .pageNumbers=${this._perPageOptions}
           .selectedPageNumber=${this._perPage}
           .showArrows=${false}

@@ -50,6 +50,8 @@ export interface FileManagerMessages {
 
   // ARIA labels
   ariaToolbar: string;
+  ariaFileOperations: string;
+  ariaViewMode: string;
   ariaBreadcrumb: string;
   ariaFileList: string;
   ariaFileManager: string;
@@ -85,6 +87,8 @@ export const DEFAULT_FILE_MANAGER_MESSAGES: FileManagerMessages = {
   conflictSkip: 'Skip',
   conflictRename: 'Keep both',
   ariaToolbar: 'File manager toolbar',
+  ariaFileOperations: 'File operations',
+  ariaViewMode: 'View mode',
   ariaBreadcrumb: 'Breadcrumb',
   ariaFileList: 'Files and folders',
   ariaFileManager: 'File manager',

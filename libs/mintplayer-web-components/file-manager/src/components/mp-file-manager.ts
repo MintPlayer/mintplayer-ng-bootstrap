@@ -699,7 +699,7 @@ export class MpFileManager extends LitElement {
       <ul
         class="context-menu"
         role="menu"
-        aria-label="File operations"
+        aria-label=${this._messages.ariaFileOperations}
         style=${styleMap({ left: `${menu.x}px`, top: `${menu.y}px` })}
         @click=${(ev: MouseEvent) => ev.stopPropagation()}
       >
@@ -819,7 +819,7 @@ export class MpFileManager extends LitElement {
           @input=${(ev: InputEvent) => this.onSearchInput(ev)}
           aria-label=${m.searchPlaceholder}
         />
-        <div class="view-toggle" role="group" aria-label="View mode">
+        <div class="view-toggle" role="group" aria-label=${this._messages.ariaViewMode}>
           <button
             type="button"
             data-active=${this._viewMode === 'list' ? 'true' : 'false'}
@@ -947,7 +947,7 @@ export class MpFileManager extends LitElement {
 
   private renderIconGridView(children: FileSystemNode[]): TemplateResult {
     return html`
-      <div class="icon-grid" role="grid" aria-label="Files and folders" @keydown=${this.onContentKeydown} tabindex="0">
+      <div class="icon-grid" role="grid" aria-label=${this._messages.ariaFileList} @keydown=${this.onContentKeydown} tabindex="0">
         ${repeat(
           children,
           (node) => node.id,

@@ -54,6 +54,7 @@ export class MpTreeSelect extends LitElement {
       'aria-label',
       'input-label',
       'search-label',
+      'clear-label',
       // Resolved into cross-root element references, never copied as IDREFs.
       'aria-labelledby',
       'aria-describedby',
@@ -69,6 +70,26 @@ export class MpTreeSelect extends LitElement {
   private _scrollHeight = '300px';
   private _inputLabel: string | null = null;
   private _searchLabel: string | null = null;
+  private _clearLabel = 'Clear';
+
+  /**
+   * Accessible name for a chip's remove button. A formatter taking the node's
+   * label, because a bare "Remove" among ten chips tells the user nothing about
+   * WHICH selection the button removes — and word order differs across
+   * languages, so prefix/suffix pairs cannot express a translated middle.
+   */
+  removeLabel: (label: string) => string = (label) => `Remove ${label}`;
+
+  /** Accessible name for the clear-all button. */
+  get clearLabel(): string {
+    return this._clearLabel;
+  }
+  set clearLabel(value: string) {
+    const next = value || 'Clear';
+    if (this._clearLabel === next) return;
+    this._clearLabel = next;
+    this.requestUpdate();
+  }
 
   /** Tier-2 naming: references resolve in the host's tree, land on the search input. */
   private readonly hostAria = new HostAriaController(this, {
@@ -258,6 +279,9 @@ export class MpTreeSelect extends LitElement {
       case 'search-label':
         this._searchLabel = newValue;
         this.requestUpdate();
+        break;
+      case 'clear-label':
+        this.clearLabel = newValue ?? 'Clear';
         break;
       case 'aria-labelledby':
       case 'aria-describedby':
@@ -698,7 +722,7 @@ export class MpTreeSelect extends LitElement {
           <button
             class="ts-chip-remove"
             type="button"
-            aria-label="Remove"
+            aria-label=${this.removeLabel(String(node.label ?? ''))}
             @click=${(e: Event) => {
               e.stopPropagation();
               this.removeNode(node);
@@ -716,7 +740,7 @@ export class MpTreeSelect extends LitElement {
     return html`<button
       class="ts-clear"
       type="button"
-      aria-label="Clear"
+      aria-label=${this._clearLabel}
       @click=${(e: Event) => this.clearAll(e)}
     >
       ×

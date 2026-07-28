@@ -516,7 +516,7 @@ export class MpQueryBuilderElement extends LitElement {
             placeholder=${messages.saveCurrentAs}
             .value=${this._saveDraftName}
             @input=${this._onSaveDraftInput}
-            aria-label="Name for saved query"
+            aria-label=${messages.savedQueryName}
           />
           <button
             type="button"
@@ -541,6 +541,7 @@ export class MpQueryBuilderElement extends LitElement {
     if (this.schema.length < 2) return nothing;
     const currentEntity = this.schema.find((e) => e.name === this.rootEntity);
     const projectableFields = currentEntity?.fields.filter((f) => f.type !== 'relation') ?? [];
+    const messages = this._messages();
     return html`
       <div class="qb-toolbar" part="toolbar">
         <label class="qb-toolbar-label">
@@ -552,14 +553,14 @@ export class MpQueryBuilderElement extends LitElement {
             .value=${this.rootEntity}
             ?disabled=${this.disabled}
             @change=${this._onRootEntityChange}
-            aria-label="Entity"
+            aria-label=${messages.entity}
           >
             ${this.schema.map((e) => html`<option value=${e.name}>${e.label}</option>`)}
           </mp-select>
         </label>
         ${projectableFields.length > 0 ? html`
-          <span class="qb-toolbar-section qb-field-projection" part="field-projection" role="group" aria-label="Columns">
-            <span class="qb-toolbar-label">Columns:</span>
+          <span class="qb-toolbar-section qb-field-projection" part="field-projection" role="group" aria-label=${messages.columns}>
+            <span class="qb-toolbar-label">${messages.columns}:</span>
             ${projectableFields.map((f) => html`
               <mp-checkbox
                 class="qb-field-checkbox"
@@ -578,9 +579,10 @@ export class MpQueryBuilderElement extends LitElement {
   }
 
   private _renderSortBy(projectableFields: FieldDef[]): TemplateResult {
+    const messages = this._messages();
     return html`
-      <span class="qb-toolbar-section qb-sort-by" part="sort-by" role="group" aria-label="Sort by">
-        <span class="qb-toolbar-label">Sort by:</span>
+      <span class="qb-toolbar-section qb-sort-by" part="sort-by" role="group" aria-label=${messages.sortBy}>
+        <span class="qb-toolbar-label">${messages.sortBy}:</span>
         ${this.sortBy.map((s, i) => html`
           <span class="qb-sort-row" part="sort-row">
             <mp-select
