@@ -1,4 +1,5 @@
 import type { ReactiveController, ReactiveControllerHost } from 'lit';
+import { dismissStack } from '@mintplayer/web-components/a11y';
 
 export type OverlayOriginX = 'start' | 'center' | 'end';
 export type OverlayOriginY = 'top' | 'center' | 'bottom';
@@ -104,29 +105,26 @@ const DEFAULT_POSITIONS: OverlayPosition[] = [
  * return on close. M1+ build out behaviour.
  */
 export class OverlayController implements ReactiveController {
-  private static readonly openStack: symbol[] = [];
-
   /**
-   * Allocate a frame on top of the shared overlay stack. Use this from code
-   * paths that don't own a full `OverlayController` instance. Pair every
+   * Allocate a frame on the document's dismiss stack. Use this from code paths
+   * that don't own a full `OverlayController` instance. Pair every
    * `pushFrame()` with a `releaseFrame(token)`.
+   *
+   * These delegate to the shared stack in `@mintplayer/web-components/a11y`
+   * rather than owning a private static, so web-component overlays and Angular
+   * overlays (via `BsOverlayStackService`, now a facade over the same array)
+   * cannot each believe they are top-most and both consume one Escape.
    */
   static pushFrame(): symbol {
-    const token = Symbol('overlay-frame-external');
-    OverlayController.openStack.push(token);
-    return token;
+    return dismissStack.push('overlay-frame-external');
   }
 
   static releaseFrame(token: symbol): void {
-    const idx = OverlayController.openStack.lastIndexOf(token);
-    if (idx >= 0) OverlayController.openStack.splice(idx, 1);
+    dismissStack.release(token);
   }
 
   static isFrameTop(token: symbol): boolean {
-    return (
-      OverlayController.openStack.length > 0 &&
-      OverlayController.openStack[OverlayController.openStack.length - 1] === token
-    );
+    return dismissStack.isTop(token);
   }
 
   private readonly host: ReactiveControllerHost & HTMLElement;

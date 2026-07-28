@@ -4,3 +4,4 @@ export { FocusRestore, FocusRestoreController, deepActiveElement } from './focus
 export type { FocusRestoreOptions, FocusRestoreOutcome } from './focus-restore';
 export { inertRegions } from './inert-regions';
 export type { InertRegions } from './inert-regions';
+export { dismissStack } from './dismiss-stack';
