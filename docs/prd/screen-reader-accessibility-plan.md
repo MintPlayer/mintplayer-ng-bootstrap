@@ -1,7 +1,7 @@
 # Plan — screen-reader accessibility across the four libraries
 
 Status: **Phase A landed; Phase 0 gates all cleared (0.1b + 0.3b deferred as noted); Phase B
-milestone 1 landed (19/19 wrappers transparent); rest of B–G outstanding** — 2026-07-28.
+milestones 1–2 landed (19/19 wrappers transparent; both naming tiers on mp-select + mp-checkbox); rest of B–G outstanding** — 2026-07-28.
 Companion PRD:
 `docs/prd/screen-reader-accessibility.md` (findings, design rationale, decisions D1–D5 in §11, and
 the live-state principle in §11a).
@@ -467,6 +467,51 @@ only control with no fallback naming path at all), then `mp-radio`, `mp-toggle-b
 form control. Delete `mp-checkbox`'s IDREF forwarding (`:245-246`, `:271-272`); replace
 `mp-dropdown-menu`'s `label-id` with a string `label`, keeping `label-id` as a deprecated alias
 that reads the referenced element's `textContent`.
+
+#### ✓ LANDED (B2) — `91453272`: both tiers, on `mp-select` and `mp-checkbox`
+
+**A gap in Phase A's primitive surfaced immediately.** `HostAriaController` could only assign
+references to the **host's** `ElementInternals`, but tier 2 needs them on the inner role-bearing node
+— which is the direction spike 0.2b actually verified. Added a `referenceTarget` option; which node
+is correct is not cosmetic:
+
+- Host carries the role via `internals.role` (`mp-datatable`, `mp-timeline`) → omit it.
+- Role belongs to a native control in the shadow root (`mp-select`'s `<select>`, `mp-checkbox`'s
+  `<input>`) → return that element. **Naming the host instead yields either nothing (the host is
+  `generic`) or a double announcement, one per role.**
+
+`supportsAriaElementReferences()` now checks `Element.prototype` **and**
+`ElementInternals.prototype`, since references land on one or the other depending on that choice.
+
+**`mp-checkbox`'s dead IDREF forwarding is gone.** It copied `aria-labelledby`/`aria-describedby` id
+*strings* onto its shadow `<input>`, where they resolve against the shadow root and find nothing —
+visible in devtools, conveying nothing, which is worse than an omission because it reads as correct
+in review. Its **7 pre-existing tests pass untouched**, which is itself evidence the removed code was
+inert. Two spec cases now fail if anyone restores it.
+
+**References are re-synced on every commit, not once.** They point at a specific node, and these
+components re-render — switching `mp-checkbox.type` between `toggle_button` and the others replaces
+the `<input>` outright, so a once-assigned name would sit on a discarded element. Any component
+adopting tier 2 must do the same.
+
+**Precedence, applied consistently:** host `aria-label` > `inputLabel`. The host attribute is the more
+idiomatic thing for a consumer to write and `BsForwardAriaDirective` now copies it down from the
+Angular wrapper; `inputLabel` is the fallback for consumers who cannot express a name as a host
+attribute, and the documented fallback where element references are unavailable.
+
+**A coverage boundary to state rather than paper over:** the *positive* cross-root assertion cannot be
+unit-tested — jsdom implements neither `ariaLabelledByElements` nor an accessibility tree. Both new
+spec files assert the **degraded** contract (no throw, no fabricated name, no IDREF copied inward) and
+say in their header that spike 0.2 is the only verification of the positive path. Do not add a
+"passing" cross-root unit test later; it would be asserting jsdom's silence.
+
+`mp-checkbox` also shows why a label property is needed at all even when visible text is slotted: that
+text lands in a `<span class="form-check-label">` which is **not** associated with the input by
+`for`/`id` across the boundary, so it never becomes the accessible name. Asserted.
+
+**Remaining in B:** `inputLabel` on the other ~16 components, the `mp-otp-input.label` → `inputLabel`
+rename, `mp-dropdown-menu`'s `label-id`, `bs-carousel`/`bs-navbar`'s bespoke `[ariaLabel]` inputs and
+`bs-select`'s `Renderer2` call, the React/Vue passthrough fixes, and the 44 hardcoded strings.
 
 **Angular** — new `BsForwardAriaDirective` in `@mintplayer/ng-bootstrap/a11y`, applied to the inner
 `mp-*` element of all 22 nested-host wrappers, plus `role="presentation"` on the `bs-*` host and
