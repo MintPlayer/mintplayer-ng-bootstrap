@@ -547,6 +547,22 @@ Three things worth carrying forward:
   `<ng-template>` (the directive injects `TemplateRef`). **Neither wrapper's forwarding had ever been
   exercised.** The harness now declares preconditions explicitly (`wrap`, `needs`). Use `it.fails`
   for known-red assertions only where a render error is impossible, or pair it with a smoke case.
+- **SSR made the directive move its own marker inward, and only a browser could show it**
+  (fixed in `4187e0b4`). The server pass serialises `role="presentation"` onto the `bs-*` host; the
+  client hydrates with a **fresh directive instance** whose "did I write the marker?" flag is `false`,
+  so it read the marker as a consumer role and moved it onto the custom element. All five demo
+  carousels came out `role="presentation"` instead of `role="region"` — silently unnameable, with the
+  attribute visibly present. **An instance flag cannot survive rehydration**; the fix is a value check
+  on the attribute, which makes the pass idempotent — the property that was missing. Generalise this:
+  any wrapper-side code that *writes* DOM state must be idempotent over its own serialised output, and
+  **jsdom can never catch it, because there is no server pass to leave state behind.**
+
+**Verification rule this establishes for the rest of the programme.** Unit tests prove the forwarding
+contract; only the running demo proves the chain. A consumer's name crosses three boundaries —
+`bs-*` host → `mp-*` element → the role-bearing node in the shadow root — and the middle hop is the one
+CI reaches. After each phase that touches naming, check one page in the browser and read the actual
+attributes on all three nodes. Confirmed working end-to-end after B3: carousels expose
+`role="region"` with their own label, and the navbar's label reaches its shadow `<nav>` landmark.
 
 Also replaced the spec's `setTimeout(0)` settle with `customElements.whenDefined` — the precise
 condition rather than a guess. The carousel → swiper-core dynamic-import chain was still in flight at
