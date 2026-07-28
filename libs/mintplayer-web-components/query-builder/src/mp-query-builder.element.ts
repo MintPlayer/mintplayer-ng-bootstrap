@@ -342,6 +342,10 @@ export class MpQueryBuilderElement extends LitElement {
     if (!tree) return;
     // Protect the root: removing the root group is a no-op.
     if (tree.id === id) return;
+    // The removed row carried focus (its Remove button was just pressed);
+    // re-home on the parent group's row via the existing refocus machinery.
+    const located = findParentGroup(tree, id);
+    this._pendingRefocusId = located?.parent.id ?? tree.id;
     this._mutate(removeNode(tree, id));
   };
 

@@ -7,7 +7,7 @@ import '@mintplayer/web-components/tab-control';
 // Side-effect import: registers <mp-splitter>. Each DockSplitNode is rendered
 // as a nested <mp-splitter>, so this lib must load before any layout renders.
 import '@mintplayer/web-components/splitter';
-import { LiveAnnouncerController } from '@mintplayer/web-components/a11y';
+import { FocusRestore, LiveAnnouncerController } from '@mintplayer/web-components/a11y';
 import {
   DockFloatingPaneBounds,
   DockFloatingStackLayout,
@@ -513,11 +513,27 @@ export class MintDockManagerElement extends LitElement {
     };
   }
 
+  /**
+   * renderLayout() clears with innerHTML = '' — the exact rebuild FocusRestore
+   * exists for: a focused intersection handle (id'd by data-key) or a pane's
+   * tab button (id tabId + '-header-button', one shadow root deeper) is
+   * destroyed on every relayout, dropping focus to <body> mid-drag or between
+   * keyboard moves.
+   */
+  private readonly layoutFocusRestore = new FocusRestore(() => this.shadowRoot, {
+    selector: '.intersection-handle[data-key], mp-tab-control, .dock-tab[data-tab-id]',
+    keyOf: (el) =>
+      el.dataset['key']
+      ?? el.dataset['tabId']
+      ?? (el.id || null),
+  });
+
   private renderLayout(): void {
     // The layout setter may run before firstUpdated() has populated the
     // shadow-DOM fields (e.g. when an attribute is set on the markup).
     // Bail out; firstUpdated() will call renderLayout() once ready.
     if (!this.dockedEl) return;
+    this.layoutFocusRestore.capture();
     this.dockedEl.innerHTML = '';
     this.floatingLayerEl.innerHTML = '';
     this.hideDropIndicator();
@@ -528,6 +544,7 @@ export class MintDockManagerElement extends LitElement {
     }
 
     this.renderFloatingPanes();
+    this.layoutFocusRestore.restore();
     // Note: intersection handles are repositioned reactively via observers
     // wired up in firstUpdated (rootResizeObserver, dockedMutationObserver,
     // and delegated 'resizing' / 'resize-end' events). The MutationObserver

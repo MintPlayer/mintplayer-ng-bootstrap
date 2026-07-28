@@ -1,4 +1,5 @@
 import { LitElement, html, type TemplateResult } from 'lit';
+import { FocusRestore } from '@mintplayer/web-components/a11y';
 import { SplitterStateManager } from '../state';
 import { InputHandler, type ResizeKey } from '../input';
 import { ResizeManager } from '../managers';
@@ -258,6 +259,17 @@ export class MpSplitter extends LitElement {
     });
   }
 
+  /**
+   * updatePanelsFromSlot clears with innerHTML = '' — a focused divider is
+   * destroyed on every slot change (panes added/removed while the user is
+   * mid-resize), dropping focus to <body>. Keyed by position: divider N still
+   * separates the same region after a rebuild.
+   */
+  private readonly dividerFocusRestore = new FocusRestore(() => this.shadowRoot, {
+    selector: '.divider',
+    keyOf: (el) => el.dataset['key'] ?? null,
+  });
+
   private updatePanelsFromSlot(): void {
     if (!this.container) return;
 
@@ -267,6 +279,7 @@ export class MpSplitter extends LitElement {
 
     if (children.length === 0) return;
 
+    this.dividerFocusRestore.capture();
     // Clear existing wrappers and dividers
     this.container.innerHTML = '';
     this.panelWrappers = [];
@@ -294,6 +307,7 @@ export class MpSplitter extends LitElement {
       if (index < panelCount - 1) {
         const divider = document.createElement('div');
         divider.className = 'divider';
+        divider.dataset['key'] = `divider-${index}`;
         divider.setAttribute('role', 'separator');
         divider.setAttribute('aria-orientation', dividerAriaOrientation);
         divider.setAttribute('tabindex', '0');
@@ -310,6 +324,10 @@ export class MpSplitter extends LitElement {
         this.container!.appendChild(divider);
       }
     });
+
+    // Dividers exist again — re-home focus before any size bookkeeping, so it
+    // happens on every exit path below.
+    this.dividerFocusRestore.restore();
 
     // Re-apply previously-stored sizes when the panel count still matches.
     // Two cases where this matters:
