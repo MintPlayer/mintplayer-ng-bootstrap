@@ -23,14 +23,14 @@ export const BsCardImg = forwardRef<HTMLImageElement, PropsWithChildren<BsCardIm
     if (position === 'overlay') {
       return (
         <>
-          <img ref={ref} className={cx('card-img', className)} src={src} alt={alt} {...rest} />
+          <img ref={ref} className={cx('card-img', className)} src={src} alt={alt ?? ''} {...rest} />
           <div className="card-img-overlay">{children}</div>
         </>
       );
     }
 
     const positionClass = position === 'bottom' ? 'card-img-bottom' : 'card-img-top';
-    return <img ref={ref} className={cx(positionClass, className)} src={src} alt={alt} {...rest} />;
+    return <img ref={ref} className={cx(positionClass, className)} src={src} alt={alt ?? ''} {...rest} />;
   },
 );
 BsCardImg.displayName = 'BsCardImg';

@@ -26,6 +26,13 @@ export class BsTypeaheadComponent {
 
   isOpen = model(false);
 
+  /**
+   * Accessible name for the text input. Optional — a consumer wrapping the
+   * typeahead in bs-floating-label gets a real <label> association instead —
+   * but without either the control is unnamed.
+   */
+  inputLabel = input<string | null>(null);
+
   suggestions = input<any[]>([]);
   isLoading = signal<boolean>(false);
   showNoSuggestions = computed(() => this.suggestions().length === 0);

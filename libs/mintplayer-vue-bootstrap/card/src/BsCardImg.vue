@@ -24,10 +24,10 @@ const imgClass = computed(() => {
 
 <template>
   <template v-if="position === 'overlay'">
-    <img class="card-img" :src="src" :alt="alt" v-bind="$attrs" />
+    <img class="card-img" :src="src" :alt="alt ?? ''" v-bind="$attrs" />
     <div class="card-img-overlay">
       <slot />
     </div>
   </template>
-  <img v-else :class="imgClass" :src="src" :alt="alt" v-bind="$attrs" />
+  <img v-else :class="imgClass" :src="src" :alt="alt ?? ''" v-bind="$attrs" />
 </template>

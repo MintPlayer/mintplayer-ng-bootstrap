@@ -27,7 +27,8 @@ export class BsProgressBarComponent {
   color = input<Color>(Color.primary);
   striped = input(false);
   animated = input(false);
-  ariaLabel = input<string | null>(null);
+  /** Accessible name for the progressbar. Override for localisation. */
+  ariaLabel = input<string>('Progress');
 
   percentage = computed(() => {
     const min = this.minimum();

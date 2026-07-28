@@ -7,7 +7,7 @@ import { ChangeDetectionStrategy, Component, computed, effect, ElementRef, input
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: {
     'role': 'radiogroup',
-    'aria-label': 'Rating',
+    '[attr.aria-label]': 'ariaLabel()',
     '(mouseleave)': 'onMouseLeave()',
     '(keydown)': 'onKeydown($event)',
   },
@@ -21,12 +21,30 @@ export class BsRatingComponent {
     });
   }
 
+  /** Accessible name for the radiogroup. Override for localisation. */
+  ariaLabel = input<string>('Rating');
+  /**
+   * Per-star accessible name. A formatter, not a prefix/suffix pair, because
+   * word order differs across languages and an interpolated middle cannot be
+   * expressed any other way.
+   */
+  starLabel = input<(star: number, maximum: number) => string>(
+    (star, maximum) => `Rate ${star} out of ${maximum} stars`,
+  );
+
   maximum = input<number>(5);
   value = model<number>(3);
   previewValue = signal<number | null>(null);
   starsChange = output<number>();
 
   readonly starButtons = viewChildren<ElementRef<HTMLButtonElement>>('star');
+
+  /** Hoisted per the computed-over-inline-expression rule. */
+  readonly starLabels = computed(() => {
+    const format = this.starLabel();
+    const max = this.maximum();
+    return [...Array(max).keys()].map((i) => format(i + 1, max));
+  });
 
   stars = computed(() => {
     const v = this.previewValue() ?? this.value();

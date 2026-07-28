@@ -6,7 +6,7 @@
         [attr.tabindex]="value() === (i + 1) ? 0 : -1"
         (mouseenter)="hoverValue(i)"
         (click)="selectValue(i)"
-        [attr.aria-label]="'Rate ' + (i + 1) + ' out of ' + maximum() + ' stars'"
+        [attr.aria-label]="starLabels()[i]"
         [attr.aria-checked]="value() === (i + 1)">
         <span aria-hidden="true">{{ star ? '&#9733;' : '&#9734;' }}</span>
     </button>

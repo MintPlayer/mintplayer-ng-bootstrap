@@ -1,4 +1,7 @@
 <div class="form-floating">
-    <ng-content select="input"></ng-content>
+    <!-- Widened from select="input": Bootstrap's form-floating supports
+         select and textarea too, and the narrow selector silently DROPPED
+         those controls from projection entirely. -->
+    <ng-content select="input,select,textarea"></ng-content>
     <ng-content select="label"></ng-content>
 </div>

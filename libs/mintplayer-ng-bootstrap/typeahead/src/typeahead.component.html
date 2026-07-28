@@ -3,6 +3,7 @@
     <div bsDropdown #dd="bsDropdown" popupRole="listbox" [(isOpen)]="isOpen" [hasBackdrop]="false" [sameDropdownWidth]="true">
         <input type="text"
             #textbox
+            [attr.aria-label]="inputLabel()"
             [ngModel]="searchterm()"
             (ngModelChange)="onProvideSuggestions($event)"
             bsCombobox

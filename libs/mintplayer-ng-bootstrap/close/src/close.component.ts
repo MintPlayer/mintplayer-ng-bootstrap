@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, output } from '@angular/core';
+import { ChangeDetectionStrategy, Component, input, output } from '@angular/core';
 
 @Component({
   selector: 'bs-close',
@@ -7,6 +7,9 @@ import { ChangeDetectionStrategy, Component, output } from '@angular/core';
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class BsCloseComponent {
+  /** Accessible name for the close button. Override for localisation. */
+  ariaLabel = input<string>('Close');
+
   click = output<void>();
 
   onClose(ev: MouseEvent) {
