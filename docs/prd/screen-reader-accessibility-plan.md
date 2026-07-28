@@ -1,8 +1,7 @@
 # Plan — screen-reader accessibility across the four libraries
 
-Status: **Phase A landed; Phase 0 gates all cleared (0.1b + 0.3b deferred as noted); Phase B
-milestones 1–2 landed (19/19 wrappers transparent; both naming tiers on mp-select + mp-checkbox); rest of B–G outstanding** — 2026-07-28.
-Companion PRD:
+Status: **Phases A and B landed (B in 10 milestones — see the as-built blocks); Phase 0 gates all
+cleared (0.1b + 0.3b deferred as noted); C–G outstanding** — 2026-07-28. Companion PRD:
 `docs/prd/screen-reader-accessibility.md` (findings, design rationale, decisions D1–D5 in §11, and
 the live-state principle in §11a).
 
@@ -539,9 +538,27 @@ four representatives mounted at runtime. Vue gets its first test target. `mp-rib
 trap as the directive's presentation marker, solved the same way. `mp-code-snippet`'s copy button
 takes `copy-label` with a `${language}` placeholder (formatter-not-prefix, first consumer).
 
-**Remaining in B:** the Angular-only tail (typeahead, progress-bar, close, rating, breadcrumb,
-floating-label, card-img `alt`, the 12 `ariaLabel`-input components) and the ~40 remaining hardcoded
-strings (tree-select's Remove/Clear, datatable's, query-builder/file-manager bundles).
+#### ✓ LANDED (B9–B10) — `afdf7d4c`, `7dc90262`: the Angular tail + the strings sweep. **PHASE B COMPLETE.**
+
+B9 scoping decision worth keeping: the 12 Angular-only `ariaLabel` inputs are **kept** — every one
+forwards to an inner role-bearing node with a category-2 default, i.e. they are the Angular-only
+equivalent of `input-label` and no directive competes with them. What changed: close/rating/
+breadcrumb/typeahead/progress-bar gained inputs (rating's per-star label is a **formatter**),
+`bs-card-img`'s absent `alt` now means *decorative* (`alt=""`) in all three frameworks rather than
+unlabelled, and `bs-floating-label` both widens its projection (select/textarea were silently
+dropped) and actually associates the label via `for`/`id` — the pattern looks labelled with zero
+association. Knock-on: typeahead's aria spec now reads role/id from `mp-dropdown-menu`, where the
+forwarding directive moves them.
+
+B10 routes every hardcoded ARIA string through a bundle: 8 new query-builder message keys (fixing
+the audit's title-defeat — a localized `title` was silently overridden by a hardcoded English
+`aria-label`), 2 new + 1 unused file-manager keys wired, tree-select's chip remove became a
+formatter (`Remove <label>` — a bare "Remove" among ten chips identifies nothing), and datatable
+gained a `DatatableLabels` bundle covering its seven strings.
+
+**Phase B acceptance met**: names reach the role-bearing node from all three frameworks; host
+`aria-labelledby` resolves to live element references; no bare English `aria-label` literal remains
+in a component that parameterises its visible text.
 
 **Angular** — new `BsForwardAriaDirective` in `@mintplayer/ng-bootstrap/a11y`, applied to the inner
 `mp-*` element of all 22 nested-host wrappers, plus `role="presentation"` on the `bs-*` host and
