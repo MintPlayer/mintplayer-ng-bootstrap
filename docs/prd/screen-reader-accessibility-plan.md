@@ -715,10 +715,18 @@ The largest Critical class. Several fixes already exist elsewhere in the same fi
 - **C5** tree-select search input: role=combobox, aria-haspopup=tree, LIVE aria-expanded,
   ArrowDown opens then hands focus to the embedded treeview, Escape closes unconditionally.
 
-**Remaining in C:** C6 the Angular-side items ([bsDropdown] ArrowDown/Escape, popover trigger +
-[bsOverlayFocus], context-menu directive, tooltip focusin/focusout, offcanvas closeOnEscape +
-conditional aria-modal, multi-range aria-disabled, bs-rating unset-value tab stop, treeview
-composedPath guard, query-builder Alt+Arrow handle); C7 FocusRestore adoption (dock, scheduler
+- **C6** (`5eaba1ea`) the nine-component small-keyboard sweep: bs-rating unset-value tab stop
+  (first star holds the stop); mp-multi-range thumbs aria-disabled instead of native disabled
+  (perceivable while disabled); mp-treeview composedPath guard (nested template inputs typable);
+  query-builder drag handle accepts the Alt+Arrow it advertises; [bsDropdownToggle] ArrowDown
+  opens-and-enters via focusFirst; [bsDropdownMenu] Escape unconditional (closeOnClickOutside gates
+  pointer dismissal only); [bsTooltip] focusin/focusout + 150ms hoverable delay + addEventListener
+  (property writes clobbered consumer handlers); [bsPopover] non-focusable triggers become
+  role=button tabbable, panel gets bsOverlayFocus; bs-offcanvas aria-modal conditional on
+  hasBackdrop + Escape closes; [bsContextMenu] Shift+F10/ContextMenu opens at the focused element,
+  focus in + Escape + focus return. dropdown.aria.spec reads mp-dropdown-menu now.
+
+**Remaining in C:** C6 leftovers — none. Next: C7 FocusRestore adoption (dock, scheduler
 views via BaseView, splitter, tree-select chips, query-builder _pendingRefocusId, bs-alert,
 pagination repeat keying); C8 initialFocus on the six dialogs + dock move-mode scoping +
 signature-pad typed alternative.
