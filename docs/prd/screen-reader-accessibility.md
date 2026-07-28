@@ -1,10 +1,21 @@
 # PRD — screen-reader accessibility across the four libraries
 
 Status: **audit complete; decisions resolved; Phase A (shared primitives) landed and verified;
-Phase 0 spikes and B–G outstanding** — 2026-07-27. Companion plan:
+Phase 0's four gate spikes all cleared; B–G outstanding** — 2026-07-28. Companion plan:
 `docs/prd/screen-reader-accessibility-plan.md`. Decisions D1–D5 settled in §11; the cross-cutting
 principle the programme is judged on is §11a. Phase A's as-built notes, including three defects its
 targeted test run caught, are in the plan.
+
+**Phase 0 changed this document in four places — read these before quoting it.** (a) §5.3's claim
+that a name on a role-less host is "dropped under ARIA's prohibition on naming `role="generic"`" is
+**wrong for Chromium**, which computes the name anyway; the correct argument is that the host stays
+`generic`, so there is no role for a name to attach to. (b) §7 gains a fourth CI limit that applies to
+**e2e as well**: Playwright's own accessible-name matchers cannot see `internals.role`, so ARIA
+name/role assertions must be Chromium-projected via CDP. (c) D1's accordion carries three newly-found
+`toggle` constraints (non-bubbling, async, coalescing) and needs a keydown guard to disable a tab.
+(d) Phase F cannot use a single `disabled` field — a property write silently defeats
+`<fieldset disabled>`. Everything else the spikes touched was confirmed as written, including the
+`inert`-through-slots claim Phase A had already shipped against.
 
 This supersedes neither `docs/prd/aria-accessibility-audit.md` (Angular-era, May 2026) nor
 `docs/prd/wc-aria-accessibility.md` (four Lit WCs, May 2026) — both shipped what they promised.
@@ -532,13 +543,22 @@ control and avoids collision with `<option label>`/`<optgroup label>` semantics 
 documented breaking change on a public input, taken because the alternative is permanent
 two-name inconsistency in the API this PRD exists to standardise.
 
-Both tiers rest on an assumption worth naming, because it is the widest-blast-radius unproven claim
-in this document and **CI cannot reach it**: that `internals.role` makes a host nameable at all, so
-that `aria-label` on a role-less-by-attribute host is exposed rather than dropped under ARIA's
-prohibition on naming `role="generic"`. jsdom implements `attachInternals()` and the ARIA state
-properties but not the element-reference properties, so the whole cross-root story is verified only
-by spike 0.2 in three real engines. If 0.2a fails, the role must be expressed as a `role`
-*attribute* on the host instead, and ~18 components change shape.
+Both tiers rested on the widest-blast-radius unproven claim in this document — that `internals.role`
+makes a host nameable at all — which **CI cannot reach**, since jsdom implements `attachInternals()`
+and the ARIA state properties but not the element-reference properties. **Spike 0.2 has now verified
+it against Chromium's real accessibility tree: `internals.role = 'group'` (and `'listbox'`) yields
+AX role `group`/`listbox` with the consumer's `aria-label` as the computed name, on a host carrying
+no `role` attribute.** Tier 1 and tier 2 both proceed as written; ~18 components keep their shape.
+
+**One framing in this PRD did not survive the spike, and the corrected version must be used in
+review and in code comments.** The claim above says a name on a role-less host is "dropped under
+ARIA's prohibition on naming `role="generic"`". Chromium does **not** enforce that prohibition: a
+role-less host computes role `generic` *and* name `"Country"`. So the defect is **not** that the
+name is discarded. What is true, and what actually justifies Phase B, is that the host stays
+`generic` — a node AT does not navigate to or announce as a named object — so the name has nowhere
+to surface. Argue from "there is no role for the name to attach to", never from "the name is thrown
+away". (Playwright's own accname implementation, which follows ARIA 1.2, *does* drop it — that is
+evidence about the spec, not about any shipping engine.)
 
 **Tier 2: host-attribute → element-reference translation, as a shared mixin.** The consumer keeps
 writing idiomatic `aria-labelledby="my-label"` on the **host**; the WC resolves the ids in the
@@ -743,6 +763,24 @@ claims they are the **only** verification that will ever exist, which is why eac
 fail-path. And it is why the keyboard walkthrough below is a Playwright artifact rather than a unit
 suite.
 
+**A fourth limit, found by spike 0.2 and stricter than the three above, because it applies to e2e
+too.** Playwright's `toHaveAccessibleName()` and `ariaSnapshot()` do **not** read the browser's
+accessibility tree — they are computed by Playwright's own injected accname implementation, which
+cannot see another element's `ElementInternals` and therefore reports **no role** for a host whose
+role comes from `internals.role`. Using them to check host naming yields a confident false negative.
+`page.accessibility.snapshot()`, which *was* backed by each engine's real AX tree, was **removed in
+Playwright 1.60**. A genuine AX read is therefore **Chromium-only, via CDP
+`Accessibility.queryAXTree`**; Firefox and WebKit expose no scriptable accessibility surface at all
+(no `computedRole`/`computedLabel`, no `window.internals`, no `accessibilityController`). So:
+
+- ARIA **name and role** assertions belong in a **Chromium-projected** spec using CDP. Widening its
+  project list does not broaden coverage — it silently substitutes Playwright's computation for the
+  browser's.
+- Firefox and WebKit naming coverage exists **only** in the manual NVDA/VoiceOver pass. That pass is
+  therefore not optional polish; it is the sole verification for two of three engines.
+- Playwright's matchers remain fine for *structure* (roles that come from real tags or `role`
+  attributes), which is most of the suite.
+
 Four guards, each catching a class the others cannot:
 
 1. **`*.aria.spec.ts` per element-bearing WC.** 20 of 30 have none; 9 have no spec file at all,
@@ -838,7 +876,9 @@ Per `CLAUDE.md`, the build + unit + e2e sweep runs **once** at the end, not per 
 | `HostAriaController` moves the role from an inner node to the host — behaviour change for consumers styling `::part`/inner nodes | Adopt per component with its aria spec written first; the role move is invisible to CSS, only to AT |
 | Injector stamping writes attributes onto consumer markup via regex | `inject-mp-dropdown-dsd.ts` gets a spec before any stamping; reuse the existing attribute-value-safe tokenisers, which already handle quoted `>` and self-closing tags |
 | **`<details>` in both tiers loses `role="heading"` on accordion headers**, so they leave the heading rotor / H-key navigation — a primary skim mechanism | Accepted under D1 and flagged there. Phase D includes an NVDA + VoiceOver check on exactly this point; reversal is localized to `#renderJsItem` |
-| **`<summary>` cannot be `disabled`**, and `toggle` is not cancellable, so a disabled accordion tab may flash open | Spike 0.1 gates D1 on resolving this; failure narrows D1 to the no-JS tier |
+| **`<summary>` cannot be `disabled`**, and `toggle` is not cancellable, so a disabled accordion tab may flash open | **RESOLVED by spike 0.1a — risk closed.** `pointer-events: none` + `tabindex="-1"` + `aria-disabled` is *not* sufficient: programmatic focus + Enter still opened the tab in all three engines. `preventDefault()` on **keydown** (which *is* cancellable, unlike `toggle`) suppresses activation outright, giving a fully inert tab with **no flash**. D1 keeps its full scope |
+| **`toggle` does not bubble, fires asynchronously, and coalesces same-task changes** | Found by spike 0.1a; all three would have produced a state-sync bug. Delegate with `capture: true`; never count `toggle` events — treat it as a notification and re-read `open` from every tab, which is also what PRD §11a requires |
+| **A property write silently defeats `<fieldset disabled>`**, and `formDisabledCallback` ordering differs between WebKit and Chromium/Firefox | Found by spike 0.3a. Phase F must track form-owner disabled state **separately** from author state and expose the OR — a single `#disabled` field cannot represent "author enabled, fieldset forbids". Keep every writer idempotent so engine ordering cannot matter |
 | `<details>` cannot reproduce Bootstrap's accordion chrome exactly (marker removal, `display`, chevron, focus ring, double-click text selection) | Spike 0.1 is a three-engine screenshot comparison against the current component, at the maintainer's direction |
 | `<details>` cannot animate its collapse outside Chromium | Moot — animation was explicitly waived under D1, and the `grid-template-rows` animation is dropped in both tiers |
 | The accordion rewrite touches the destructive DSD handoff, nested recursive close, and the toggle event contract | All three have existing specs (`mp-accordion.spec.ts`, the `[multi]×[count]` chrome, the shared e2e suite); rewrite the specs first, then the element |
@@ -910,6 +950,28 @@ One offsetting win worth confirming in the same spike: the DSD chrome can expres
 a plain `[open]` attribute, which the current radio machine **cannot** — the generator has no
 active tab at generation time (§4.6), so today's no-JS accordion renders every panel closed
 regardless of the authored state.
+
+> **Spike 0.1a outcome (2026-07-28) — D1 confirmed at full scope, with four constraints.** 51/51 in
+> Chromium, Firefox and WebKit; details in the plan's Phase 0 "RESULT 0.1a". Both risks above are
+> closed, and two of the four constraints were not anticipated here:
+>
+> 1. **Disabled tabs are solvable.** `pointer-events: none` + `tabindex="-1"` + `aria-disabled` is
+>    *not* enough — programmatic focus + Enter still opened the tab. Cancelling **keydown** (which is
+>    cancellable, unlike `toggle`) suppresses activation completely: inert, no flash.
+> 2. **`toggle` does not bubble.** Delegate with `capture: true`, since non-bubbling events still
+>    propagate in the capture phase; otherwise a single shadow-root listener silently receives nothing.
+> 3. **`toggle` is asynchronous and same-task changes coalesce** to one event carrying the *final*
+>    state. So the element must never count events or infer a delta — it must re-read `open` from
+>    every tab on notification. This failed in Chromium and WebKit while passing in Firefox.
+> 4. **Confirmed as assumed:** `<details name>` exclusivity is scoped **per shadow root**, so
+>    single-open needs no JS bookkeeping and two accordions cannot interfere; the UA **does** fire
+>    `toggle` on the sibling it auto-closes, so `#closeNested` and the `is-active` markers have their
+>    signal; `[open]` does express initial state for the DSD chrome; and marker removal with all three
+>    mechanisms gives a **0px** text offset in every engine.
+>
+> Still outstanding: **0.1b**, pixel parity against real Bootstrap CSS in a demo route. 0.1a
+> deliberately used minimal CSS, so it establishes that the structure and behaviour work, not that the
+> result looks identical.
 
 Integration work this pulls in: the destructive DSD handoff currently reads pre-upgrade `:checked`
 state back onto the light-DOM `is-active` markers and must read `[open]` instead; `#setActive`,

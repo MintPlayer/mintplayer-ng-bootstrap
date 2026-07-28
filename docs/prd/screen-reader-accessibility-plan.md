@@ -1,6 +1,7 @@
 # Plan — screen-reader accessibility across the four libraries
 
-Status: **Phase A landed; Phase 0 spikes and B–G outstanding** — 2026-07-27. Companion PRD:
+Status: **Phase A landed; Phase 0 gates all cleared (0.1b + 0.3b deferred as noted); B–G
+outstanding** — 2026-07-28. Companion PRD:
 `docs/prd/screen-reader-accessibility.md` (findings, design rationale, decisions D1–D5 in §11, and
 the live-state principle in §11a).
 
@@ -14,6 +15,8 @@ unit + e2e sweep runs **once**, in G.
 Bootstrap accordion exactly, with no UX change?) can send D1 back; 0.2 gates **all** of Phase B and
 0.3 gates F; 0.4 verifies the `inert` and Tab-order claims Phase A already shipped against. Nothing
 in D should be written before 0.1 and 0.4 pass, and nothing in B before 0.2 does.
+**All four gates are now cleared** — see "Results" in Phase 0 for the four places the spikes changed
+this plan, and for the two deferred halves (0.1b pixel parity, 0.3b the Angular CVA bridge).
 
 For all four, the reason a spike exists rather than a test is the same: they cover platform behaviour
 **CI structurally cannot reach** — trusted input, `inert`'s focusability effect, cross-root ARIA
@@ -40,13 +43,44 @@ Specs assert **transitions**.
 
 ---
 
-## Phase 0 — spikes (GATES, before any implementation)
+## Phase 0 — spikes (GATES, before any implementation) — ✓ **ALL FOUR GATES CLEARED**
 
 Four cheap spikes. Three de-risk a decision the plan already commits to; 0.4 verifies a claim Phase A
 has **already shipped code against**, which is the more uncomfortable kind. Each is throwaway
 (`libs/mintplayer-web-components/_spike-*/` per the `_spike-lit-context` precedent, or a temporary
 demo route) and is **deleted before merge** — except the assertions worth keeping, which move into
 real specs.
+
+### Results — 2026-07-28
+
+| Spike | Verdict | Tests | Effect on the plan |
+|---|---|---|---|
+| **0.1a** behaviour of `<details>`/`<summary>` | ✓ **PASS** | 51/51 × 3 engines | D1 proceeds. Three new implementation constraints (below) |
+| **0.1b** pixel parity vs Bootstrap CSS | ⏳ **outstanding** | — | Needs a demo route; blocks only D's *styling*, not its structure |
+| **0.2** host naming via `ElementInternals` | ✓ **PASS** | 9/9 | **Phase B unblocked, architecture unchanged.** One PRD justification corrected |
+| **0.3a** `formDisabledCallback` platform semantics | ✓ **PASS** | 21/21 × 3 engines | Phase F proceeds, with a **mandatory** design change (below) |
+| **0.3b** Angular CVA `setDisabledState` bridge | ⏳ **outstanding** | — | Needs Angular; do at the head of F |
+| **0.4** `inert` through slots + Tab/RTL | ✓ **PASS** | 33/33 × 3 engines | **Phase A's shipped `inertRegions` confirmed correct.** D's carousel fix proceeds |
+
+Spike code lives in `libs/mintplayer-web-components/_spike-{host-aria,inert-roving,details-accordion,form-disabled}/`,
+each with its own throwaway `playwright.config.ts` and **no `webServer`** — every assertion is pure
+platform behaviour, so `page.setContent()` + `addScriptTag()` is sufficient and costs no demo build.
+0.4 bundles the **real** `inert-regions.ts` and `roving-focus.ts` with esbuild rather than
+re-implementing them, so it tests shipped source; a hand-written copy would check our arithmetic
+against a second copy of our arithmetic.
+
+**Methodology finding that governs every future ARIA e2e test in this repo.** Playwright's
+`toHaveAccessibleName()` / `ariaSnapshot()` are computed by Playwright's *own* injected accname
+implementation, which cannot read another element's `ElementInternals` — it reports **no role** for an
+internals-only host. It is therefore structurally incapable of verifying host naming, and using it
+would have produced a confident false negative. `page.accessibility.snapshot()`, which used to be
+backed by each engine's real AX tree, was **removed in Playwright 1.60**. So a real accessibility-tree
+read is **Chromium-only, via CDP `Accessibility.queryAXTree`**; Firefox and WebKit expose no
+scriptable AX surface at all (no `computedRole`/`computedLabel`, no `window.internals`, no
+`accessibilityController`). Consequence: **Phase G's ARIA assertions must be Chromium-projected**, and
+Firefox/WebKit naming coverage can only come from the manual NVDA/VoiceOver pass. Do not "fix" a
+Chromium-only a11y spec by widening its project list — it will silently start measuring Playwright
+instead of the browser.
 
 ### 0.1 — `<details>`/`<summary>` visual + UX parity (gates Phase D's accordion rewrite)
 
@@ -112,6 +146,54 @@ event contract →** fall back to the original D1 scope (`<details>` for the no-
 `<button aria-expanded>` + `role="heading"` retained when hydrated), which also recovers the
 heading-navigation loss.
 
+#### RESULT 0.1a — ✓ PASS, 51/51 in Chromium + Firefox + WebKit
+
+`_spike-details-accordion/`. **D1 stands.** Every one of the six visual questions and both potential
+blockers resolved in favour of `<details>`. But the first run failed **15 tests identically in all
+three engines**, and the causes are constraints the accordion rewrite must obey — they were
+assumptions in the plan, not oversights in the fixture:
+
+1. **`toggle` does not bubble** (`bubbles: false`). The obvious delegated listener on the shadow root
+   never fires. Non-bubbling events *do* propagate in the **capture** phase, so delegate with
+   `capture: true` — that keeps one listener for the whole accordion instead of one per `<details>`
+   plus add/remove bookkeeping as tabs come and go.
+2. **`toggle` is asynchronous** — the UA *queues* a details-toggle task rather than dispatching
+   inline. `details.open` is authoritative immediately; the event is not. This failed in Chromium and
+   WebKit while **passing in Firefox**, which is exactly the shape of bug that ships if only one
+   engine is tested.
+3. **Same-task toggles are coalesced.** A flip-flop (`open = true; open = false`) delivered exactly
+   **one** event, carrying the *final* state. So the element must **never count `toggle` events** to
+   track state. Combined with (2), the rule is: treat `toggle` purely as a notification and re-read
+   `open` from every tab. That is order-, async- and coalescing-safe, and it satisfies PRD §11a
+   (state correct at every moment) which an event-delta approach cannot.
+
+   Worth recording because it will recur in D's own specs: three spike tests that read the event log
+   synchronously after a click **passed on one run and failed on the next**. Asynchrony makes
+   "act then read" a race in both directions — a presence assertion can miss the event, and an
+   *absence* assertion can pass merely because the queued task has not run yet. Every accordion
+   assertion about `toggle` must poll for presence and use a settle window for absence.
+4. **A disabled `<summary>` needs a keydown guard.** `pointer-events: none` + `tabindex="-1"` +
+   `aria-disabled` blocks the pointer and Tab, but **programmatic focus followed by Enter still
+   opened the tab** — and since `toggle` is not cancellable there is no way to undo it without the
+   visible flash the plan named as grounds to revisit D1. `preventDefault()` on **keydown** (which
+   *is* cancellable) suppresses activation outright. With that one addition the disabled tab is fully
+   inert with **no flash**, so the gate is met rather than failed.
+
+Confirmed as expected: `<details name>` exclusivity **is** scoped per shadow root (same root →
+mutually exclusive, two roots with the same name → fully independent), so single-open needs no
+JS bookkeeping. The UA **does** fire `toggle` on the sibling it auto-closes, so `#closeNested` and
+the `is-active` markers have the signal they need. Both offsetting wins hold: closed content is out
+of the tab order **and** the accessibility tree with zero CSS (closing PRD §4.5's Critical), and
+`[open]` expresses initial state for the DSD chrome (closing §4.6's generator gap). Marker removal
+with all three mechanisms yields a **0px** text offset in all three engines, `display: flex` applies
+to `<summary>`, and `::after` composes with `::marker` removal.
+
+**Still outstanding — 0.1b, pixel parity.** These assertions deliberately avoid Bootstrap CSS, so
+they establish that the *structure* works, not that it looks identical. 0.1b remains as written
+(demo route, screenshots, light/dark, narrow breakpoint) and gates only D's styling. Note the ng
+e2e matrix is **chromium + firefox only** — WebKit is configured in the react and vue projects, so
+run 0.1b's third engine there or add webkit to the ng config for the run.
+
 ### 0.2 — host naming via `ElementInternals` (gates **all** of Phase B)
 
 Two independent assumptions, both load-bearing, both currently unverified anywhere. Phase A's
@@ -136,6 +218,35 @@ two authoritative sources disagreed during the audit (a stale WICG explainer sti
 flag in Firefox"). Also assert the negative that motivates the design: the same relationship
 expressed as an `aria-labelledby` **string** on the shadow input resolves to nothing. **Fail →**
 tier 2 falls back to label properties only, and `aria-errormessage` needs a different design.
+
+#### RESULT 0.2 — ✓ PASS, 9/9. **Phase B is unblocked and its architecture is unchanged.**
+
+`_spike-host-aria/`. Measured against Chromium's real AX tree via CDP.
+
+- **0.2a ✓** A host whose role exists *only* via `internals.role`, carrying no `role` attribute,
+  computes AX role `group` with name `"Country"` from the consumer's `aria-label`. Holds for a widget
+  role too (`listbox`, with `multiselectable`/`orientation`/`required` properties present). The ~18
+  components slated to get a host role keep their planned shape.
+- **0.2b ✓** `input.ariaLabelledByElements = [documentLabel]`, assigned from inside a shadow root to a
+  label in the document, computes name `"Country"` with `labelledby → relatedNodes: [outer-label]`.
+  Inner→outer is permitted, as designed. `internals.ariaLabelledByElements` likewise names the host.
+- **0.2b negative ✓** The same relationship as an `aria-labelledby` **string** computes name `""`,
+  and Chromium marks the source `"invalid": true` — an unusually emphatic confirmation of the premise
+  that IDREFs cannot cross the boundary.
+- **Plumbing ✓ all three engines.** `attachInternals`, `internals.role`, and
+  `ariaLabelledByElements`/`ariaDescribedByElements` on both `Element` and `ElementInternals` exist and
+  retain live element references in Chromium, Firefox and WebKit. So
+  `supportsAriaElementReferences()`'s fallback branch is **dead code in every current engine** — keep
+  it as insurance, but do not expect a test to cover it, and do not treat it as a tested path.
+
+**Correction to the PRD, now applied in §5.3.** The expected control result was "no role ⇒ naming
+prohibited ⇒ name discarded". Chromium does **not** enforce the prohibition: a role-less host computes
+role `generic` **and** name `"Country"`. The defect is therefore *not* that the name is thrown away —
+it is that the host stays `generic`, which AT does not navigate to or announce as a named object, so
+the name has nowhere to surface. Argue Phase B from "no role for the name to attach to". The spike's
+control assertion was rewritten to check **role**, not name, so it stays true in engines that *do*
+implement the prohibition. (Playwright's accname implementation does drop it — evidence about ARIA
+1.2, not about a shipping engine.)
 
 ### 0.4 — `inert` propagation through slots (gates Phase D's carousel fix)
 
@@ -182,6 +293,30 @@ behaviour and the marginal cost is near zero:
 - **RTL arrow inversion.** `RovingFocus` reads `getComputedStyle(el).direction`, which jsdom does not
   meaningfully resolve from an ancestor `dir="rtl"`, so that branch is effectively unexecuted today.
 
+#### RESULT 0.4 — ✓ PASS, 33/33 in Chromium + Firefox + WebKit, first run
+
+`_spike-inert-roving/`, bundling the real `inert-regions.ts` and `roving-focus.ts` via esbuild.
+**The uncomfortable spike came out clean: `inertRegions` as already shipped in Phase A is correct.**
+
+- **`inert` propagates through slots**, in both the tab order and the accessibility tree, in all three
+  engines. Inerting a node in the *shadow root* removed the consumer's **slotted light-DOM** button
+  from Tab and from the AX snapshot. So the `assignedElements()` walk plus per-node `tabindex="-1"`
+  bookkeeping in the fail-path is **not needed** — the reason `inert` was chosen over a tabindex sweep
+  holds. Releasing the set restores both.
+- **Focus rescue verified.** Focusing the slotted button and then inerting its ancestor does not strand
+  focus on `<body>` — the deliberate move-out in `hide()` works in a real engine, which the jsdom spec
+  could not show.
+- **The one-tab-stop invariant holds** under real trusted Tab (`Input.dispatchKeyEvent`): Tab into the
+  widget lands on exactly one item, arrows move within it, one more Tab leaves entirely, Shift+Tab
+  re-enters at the **moved** tab stop rather than resetting to the first item, and clamping at the end
+  does not escape the widget. `roving-focus.spec.ts`'s 25 unit tests could never assert this.
+- **RTL inversion executes and is correct**: under `dir="rtl"` ArrowLeft moves forward and ArrowRight
+  moves back, skipping the disabled item, while an LTR widget on the same page is unaffected.
+
+These assertions **graduate rather than being deleted**: the roving-focus ones move to
+`tools/e2e-shared/roving-focus-suites.ts` (per-consumer, as `RovingFocus` is adopted in C and E), and
+the inert-through-slots ones to the carousel's e2e suite in D.
+
 ### 0.3 — `formDisabledCallback` vs `ControlValueAccessor` (gates Phase F)
 
 The known two-writers-on-`disabled` hazard, which the repo has already been bitten by
@@ -189,6 +324,35 @@ The known two-writers-on-`disabled` hazard, which the repo has already been bitt
 wrap it in a `<fieldset disabled>` inside a reactive form that also calls `setDisabledState`, and
 confirm the single `#disabled` source of truth resolves both without a loop or a stale attribute.
 Small, but it is the one part of Phase F that is design rather than boilerplate.
+
+#### RESULT 0.3a — ✓ PASS, 21/21 × 3 engines, but with a **mandatory design change** for Phase F
+
+`_spike-form-disabled/`. All 21 assertions pass; the *recorded observations* are the payload, and one
+of them overturns the "single `#disabled` source of truth" sketch as written.
+
+1. **The UA writes no `disabled` attribute when a `<fieldset disabled>` disables the element.** The
+   control is genuinely disabled while `hasAttribute('disabled') === false`. So **the attribute is not
+   a usable source of truth** — a consumer or wrapper reading it sees `false` on a disabled control.
+2. **`formDisabledCallback` also fires for the element's own `disabled` attribute**, not only for
+   form-owner state. One user action therefore invokes **three** writers:
+   `attributeChangedCallback`, the property setter, and `formDisabledCallback`.
+3. **Their order is engine-dependent.** WebKit fires `formDisabledCallback` **before**
+   `attributeChangedCallback`; Chromium and Firefox fire it **after**. Any design that depends on
+   which runs first is broken on one engine or the other. The idempotent-setter shape survives only
+   because it is order-independent — keep that property deliberately, and assert it.
+4. **A property write silently defeats `<fieldset disabled>`.** Setting `disabled = false` on a
+   control inside a still-disabled fieldset **enables it**, and the UA never re-asserts. This is the
+   real find: **the mixin must track form-owner disabled state separately from author state and expose
+   the OR of the two**, rather than funnelling both into one field. A single field cannot represent
+   "the author wants it enabled but the fieldset forbids it", and Angular's `setDisabledState` is
+   exactly a property writer, so a reactive form inside a disabled fieldset would re-enable its own
+   controls.
+
+No recursion occurs when the callback writes state during the callback (guard verified), and repeated
+fieldset toggling leaves no stale attribute or `aria-disabled`.
+
+**Still outstanding — 0.3b**, the Angular half: `setDisabledState` against a `<fieldset disabled>` in a
+real reactive form. Do it at the head of Phase F, and design against finding 4 from the start.
 
 **Sequencing:** **0.2 must complete before Phase B starts** — 0.2a can invalidate B's architecture,
 not merely narrow it, and Phase A already shipped code written against it. **0.1 must complete
@@ -200,6 +364,17 @@ cannot** reach, because jsdom implements neither `ariaLabelledByElements` nor `i
 effect, and cannot judge visual parity. They are not a formality before "real" work — they are the
 only verification these particular claims will ever get, which is why each carries an explicit
 fail-path above.
+
+**Sequencing status (2026-07-28):** 0.2 ✓ → **B may start**. 0.4 ✓ → D's carousel work unblocked.
+0.1a ✓ → D's accordion *structure* unblocked; 0.1b still gates its *styling*. 0.3a ✓ → F's design is
+settled, subject to 0.3b at F's head.
+
+**Was Phase 0 worth it?** It changed the plan in four places that would otherwise have been found in
+review or in production: the `generic`-naming justification is wrong as written (0.2), the accordion
+cannot delegate or count `toggle` events and needs a keydown guard to disable a tab (0.1a), a single
+`#disabled` field cannot express author-vs-form-owner state (0.3a), and Playwright's built-in
+accessible-name matchers silently measure Playwright rather than the browser (methodology). Only 0.4
+confirmed its claim outright — and that was the one already shipped.
 
 ---
 
@@ -632,6 +807,24 @@ npx nx run-many --target=e2e-a11y                               # NEW (Phase G)
 ```
 
 `NX_ISOLATE_PLUGINS=false NX_DAEMON=false` if the Nx plugin worker flakes.
+
+**Phase 0's spikes** are plain Playwright, outside Nx, and need no dev server — run any of the four
+directly (drop `--project` to sweep all three engines):
+
+```bash
+npx playwright test --config libs/mintplayer-web-components/_spike-host-aria/playwright.config.ts
+npx playwright test --config libs/mintplayer-web-components/_spike-inert-roving/playwright.config.ts
+npx playwright test --config libs/mintplayer-web-components/_spike-details-accordion/playwright.config.ts
+npx playwright test --config libs/mintplayer-web-components/_spike-form-disabled/playwright.config.ts
+```
+
+Their specs are named `*.spike-test.ts`, **not** `*.spec.ts`, and each config sets `testMatch`
+accordingly. That is deliberate: the `mintplayer-web-components` vitest target matches any `.spec.ts`
+or `.test.ts` under the lib and runs it in **jsdom**, so a conventionally-named spike spec would be
+swept into `nx test` and fail on its `@playwright/test` import. Two traps worth not rediscovering: the
+`_spike-*` dirs must contain no `src/index.ts`, or `vite.config.mts` auto-discovers them as published
+sub-entrypoints; and `/test-results` in `.gitignore` is **root-anchored**, so Playwright output
+written under `libs/mintplayer-web-components/` is not ignored — delete it rather than committing it.
 
 ## Key references
 
