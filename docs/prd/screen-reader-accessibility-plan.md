@@ -146,6 +146,17 @@ before it and assert focus skips to after it, and assert the button is absent fr
 snapshot. **Fail →** `inertRegions` needs to walk `assignedElements()` and write `tabindex="-1"`
 per node, with all the bookkeeping that implies on rebuild.
 
+**Fold two `RovingFocus` assertions into the same page**, since it is already exercising real Tab
+behaviour and the marginal cost is near zero:
+
+- **The one-tab-stop invariant.** `roving-focus.spec.ts` has 16 tests, and none of them can prove
+  the thing roving tabindex exists to deliver: **jsdom implements no sequential focus navigation**,
+  so a synthetic Tab moves focus nowhere and the specs verify `tabIndex` *values* only. Assert the
+  behaviour instead — Tab into the widget lands on exactly one item, arrows move within it, one more
+  Tab leaves it entirely.
+- **RTL arrow inversion.** `RovingFocus` reads `getComputedStyle(el).direction`, which jsdom does not
+  meaningfully resolve from an ancestor `dir="rtl"`, so that branch is effectively unexecuted today.
+
 ### 0.3 — `formDisabledCallback` vs `ControlValueAccessor` (gates Phase F)
 
 The known two-writers-on-`disabled` hazard, which the repo has already been bitten by
@@ -485,7 +496,8 @@ Specs land **with** each phase; this phase adds what is cross-cutting and closes
 | ~~Wrapper passthrough spec ×3~~ | **Moved to Phase B** — it guards B's work and must precede it. Spec shape: `import.meta.glob` enumeration so new wrappers are covered with zero edits; opt-out and required-children registries as literal arrays *in the spec*; the load-bearing assertion is that the element receiving the probe `id` has a tag matching `MP-`/`MINT-`. Add `test` targets + `vite.config.mts` to the React and Vue libs (vitest + jsdom, `--pool=threads`); no new dependencies |
 | ~~React type-test target~~ | **Moved to Phase B.** `tsc --noEmit` over a committed probe, one line per exported wrapper, probing **`role`/`id`/`tabIndex` — never `aria-*`**, because TypeScript exempts hyphenated JSX attribute names from excess-property checking and an `aria-*` probe passes vacuously on every broken wrapper. Put that sentence in a comment at the top of the probe |
 | `e2e-a11y` axe target ×3 apps | Table-driven over a route list; `withTags(['wcag2a','wcag2aa','wcag21a','wcag21aa','wcag22aa','best-practice'])`; fail on `critical` + `serious`; two states per route (load + one interaction); **plus a `javaScriptEnabled: false` pass**. Separate CI step so `nx affected` cannot silence it. Per-route allow-list with issue links, never a lowered threshold |
-| Keyboard-only walkthrough | One Playwright spec per interactive component: every visible control focusable and activatable. This is the gate that would have caught all seven migration regressions |
+| Keyboard-only walkthrough | One Playwright spec per interactive component: every visible control focusable and activatable. This is the gate that would have caught all seven migration regressions. **It must also assert the inverse — that a composite widget is exactly ONE tab stop.** "Every control is reachable" is necessary and not sufficient: a widget where *every* item is tabbable satisfies it and is still broken, which is literally the `mp-time-list` 97-tab-stops and file-manager 201-tab-stops findings. Nothing in the repo asserts this invariant today |
+| `tools/e2e-shared/roving-focus-suites.ts` | Parameterised suite matching the existing `accordion-suites.ts` / `carousel-suites.ts` shape, run from all three demo apps against every component that adopts `RovingFocus`: enter → exactly one Tab lands inside → arrows move within → one Tab exits; Home/End; disabled items skipped; Alt/Ctrl/Meta chords **not** intercepted. Written per-consumer as the primitive is adopted in C and E, not against a synthetic fixture — a harness page would test assumptions rather than real usage, and the repo's convention is to verify through the wrappers and demo apps |
 | `CLAUDE.md` `## Accessibility` | Eleven rules + the two no-JS tier rules + a six-item pre-PR checklist, inserted after `## Framework wrappers`. Text drafted in the audit; keep it ruthlessly concise |
 | Demo keymap parity | Port the `<details>Keyboard shortcuts</details>` panels to the React and Vue dock / scheduler / tile-manager / timeline / splitter pages (only Calendar and Ribbon have one today); add the missing ng timeline panel; **correct the false claims** in the tile-manager and file-manager panels |
 | Stale-doc fixes | `swiper-aria.md`, `aria-accessibility-audit.md` §13.2 (reduced-motion directive, carousel structural directive), `navbar-noscript.md` — fix the prose; do **not** re-implement deleted APIs. Delete or re-document the zero-consumer `BsReducedMotionDirective` |
