@@ -29,7 +29,7 @@ import { BsOtpInputValueAccessor } from '../value-accessor/otp-input-value-acces
       [attr.case]="case()"
       [attr.size]="size()"
       [attr.invalid]="invalidAttr()"
-      [attr.label]="label()"
+      [attr.input-label]="inputLabel()"
       (value-change)="onValueChange($event)"
       (complete)="onCompleteEvent($event)"
     ></mp-otp-input>
@@ -52,7 +52,7 @@ export class BsOtpInputComponent {
   readonly size = input<OtpInputSize>('md');
   readonly disabled = input(false);
   readonly invalid = input(false);
-  readonly label = input<string | null>(null);
+  readonly inputLabel = input<string | null>(null);
 
   // `model()` already exposes a `valueChange` output for two-way [(value)]
   // binding; declaring it explicitly is an error in Angular 22 (NG1054).

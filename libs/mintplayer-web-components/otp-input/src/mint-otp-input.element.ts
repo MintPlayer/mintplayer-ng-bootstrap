@@ -34,7 +34,12 @@ export class MintOtpInputElement extends LitElement {
       'case',
       'size',
       'disabled',
-      'label',
+      // Renamed from 'label' (breaking, decision D3): the library-wide name for
+      // "accessible name of the control inside the shadow root" is input-label,
+      // and a second spelling on one component is precisely the inconsistency
+      // the rename removes. Optional — the WC defaults to 'One-time code'.
+      'input-label',
+      'aria-label',
       'invalid',
       'groups',
     ];
@@ -59,7 +64,11 @@ export class MintOtpInputElement extends LitElement {
     case: { attribute: 'case', type: String, reflect: true },
     size: { attribute: 'size', type: String, reflect: true },
     disabled: { attribute: 'disabled', type: Boolean, reflect: true },
-    label: { attribute: 'label', type: String, reflect: false },
+    inputLabel: { attribute: 'input-label', type: String, reflect: false },
+    // Not a real property; listed so a host aria-label change re-renders. The
+    // consumer's aria-label wins over inputLabel, same precedence as every other
+    // form control in the library.
+    ariaLabelForRender: { attribute: 'aria-label', type: String, reflect: false },
     invalid: { attribute: 'invalid', type: Boolean, reflect: true },
   };
 
@@ -67,7 +76,9 @@ export class MintOtpInputElement extends LitElement {
   case: OtpInputCase = 'upper';
   size: OtpInputSize = 'md';
   disabled = false;
-  label: string | null = null;
+  inputLabel: string | null = null;
+  /** Mirror of the host aria-label attribute; exists only to trigger re-renders. */
+  ariaLabelForRender: string | null = null;
   invalid = false;
 
   static readonly MAX_GROUP_SIZE = 10;
@@ -366,7 +377,7 @@ export class MintOtpInputElement extends LitElement {
     const isClassicOtp = this.type === 'numeric' && groups.every(g => g === 1);
     const autocomplete = isClassicOtp ? 'one-time-code' : 'off';
     const inputMode = this.type === 'numeric' ? 'numeric' : 'text';
-    const labelText = this.label ?? 'One-time code';
+    const labelText = this.getAttribute('aria-label') ?? this.inputLabel ?? 'One-time code';
 
     return html`
       <div class="container" part="container">

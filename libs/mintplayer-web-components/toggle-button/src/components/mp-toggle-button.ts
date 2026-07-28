@@ -1,4 +1,6 @@
 import { LitElement, html, nothing, type TemplateResult } from 'lit';
+import { createRef, ref, type Ref } from 'lit/directives/ref.js';
+import { HostAriaController } from '@mintplayer/web-components/a11y';
 import { toggleButtonStyles } from '../styles';
 
 /** Bootstrap button-color tokens that map to a `.btn-<color>` class. */
@@ -49,6 +51,14 @@ export class MpToggleButton extends LitElement {
       'name',
       'value',
       'color',
+      // Copied to the inner <input>; the slotted label already names the control
+      // (flat-tree label association), so these are overrides.
+      'aria-label',
+      'input-label',
+      // Resolved into element references against the host's tree — an IDREF
+      // string cannot cross the shadow boundary.
+      'aria-labelledby',
+      'aria-describedby',
     ];
   }
 
@@ -57,7 +67,30 @@ export class MpToggleButton extends LitElement {
   private _name: string | null = null;
   private _value: string | null = null;
   private _color: ToggleButtonColor = 'primary';
+  private _inputLabel: string | null = null;
+
+  /** Tier-2 naming; references target the real control inside the shadow root. */
+  private readonly hostAria = new HostAriaController(this, {
+    referenceTarget: () => this._inputRef.value ?? null,
+  });
   private readonly _inputId = `mp-toggle-button-${++instanceCounter}`;
+  private readonly _inputRef: Ref<HTMLInputElement> = createRef();
+
+  /**
+   * Optional override for the inner <input>'s accessible name. Usually
+   * unnecessary — the slotted visible text names the control through the
+   * flat-tree label association (_spike-slotted-label/). For an icon-only
+   * toggle, or a name that must differ from the visible text, set this.
+   */
+  get inputLabel(): string | null {
+    return this._inputLabel;
+  }
+  set inputLabel(value: string | null) {
+    const next = value ?? null;
+    if (this._inputLabel === next) return;
+    this._inputLabel = next;
+    this.requestUpdate();
+  }
 
   get checked(): boolean {
     return this._checked;
@@ -139,12 +172,30 @@ export class MpToggleButton extends LitElement {
           this.requestUpdate();
         }
         break;
+      case 'aria-label':
+        this.requestUpdate();
+        break;
+      case 'input-label':
+        this._inputLabel = newValue;
+        this.requestUpdate();
+        break;
+      case 'aria-labelledby':
+      case 'aria-describedby':
+        this.hostAria.syncReferences();
+        break;
     }
+  }
+
+  // After every render — element references point at a specific node, and Lit
+  // may replace the <input> on re-render.
+  protected override updated(): void {
+    this.hostAria.syncReferences();
   }
 
   override render(): TemplateResult {
     return html`
       <input
+        ${ref(this._inputRef)}
         type="checkbox"
         class="btn-check"
         id=${this._inputId}
@@ -152,6 +203,7 @@ export class MpToggleButton extends LitElement {
         ?disabled=${this._disabled}
         name=${this._name ?? nothing}
         value=${this._value ?? nothing}
+        aria-label=${this.getAttribute('aria-label') ?? this._inputLabel ?? nothing}
         @change=${this.onInputChange}
       />
       <label class="btn btn-${this._color}" for=${this._inputId}>

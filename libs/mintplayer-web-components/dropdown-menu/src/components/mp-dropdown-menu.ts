@@ -1,4 +1,5 @@
 import { html, nothing } from 'lit';
+import { HostAriaController } from '@mintplayer/web-components/a11y';
 import { MpDropdownElement } from './mp-dropdown-element';
 import { dropdownMenuStyles } from '../styles';
 import type { DropdownMode, DropdownSelectEventDetail } from '../types';
@@ -27,7 +28,9 @@ import type { DropdownMode, DropdownSelectEventDetail } from '../types';
  * Attributes:
  *  - `mode` — `menu` (default) | `listbox`.
  *  - `max-height` — px cap; maps to `--mp-dropdown-max-height` (scrolls beyond).
- *  - `label-id` — id of an external label, set as `aria-labelledby` on the list.
+ *  - naming: `aria-label` / `input-label`, or `aria-labelledby` on the host
+ *    (resolved into cross-root element references). The old `label-id` is gone —
+ *    it copied an IDREF into the shadow root, where it resolved to nothing.
  *
  * An item is disabled via the `.disabled` class (or `aria-disabled="true"`), and
  * carries an opaque `value` via a `value` JS property or a `data-value` attribute.
@@ -37,13 +40,26 @@ export class MpDropdownMenu extends MpDropdownElement {
   static override styles = [dropdownMenuStyles];
 
   static override get observedAttributes(): string[] {
-    return [...(super.observedAttributes ?? []), 'mode', 'max-height', 'label-id'];
+    return [
+      ...(super.observedAttributes ?? []),
+      'mode',
+      'max-height',
+      // Copied to the role-bearing <ul> in render(); label-id is DELETED, not
+      // aliased: it wrote aria-labelledby on a node inside the shadow root
+      // pointing at a document id — an IDREF cannot cross that boundary, so it
+      // never conveyed anything. Use aria-label / input-label, or aria-labelledby
+      // on the HOST, which is resolved into element references.
+      'aria-label',
+      'input-label',
+      'aria-labelledby',
+      'aria-describedby',
+    ];
   }
 
   /** Index (into the item list) holding the roving tabindex in menu mode. */
   #focusedIndex = 0;
 
-  // `mode`/`labelId` reflect to attributes (the layout/roles read the attribute).
+  // `mode` reflects to its attribute (the layout/roles read the attribute).
   // Setters matter for `@lit/react`'s createComponent, which sets matching props.
   get mode(): DropdownMode {
     return this.getAttribute('mode') === 'listbox' ? 'listbox' : 'menu';
@@ -53,13 +69,27 @@ export class MpDropdownMenu extends MpDropdownElement {
     else this.removeAttribute('mode');
   }
 
-  get labelId(): string | null {
-    return this.getAttribute('label-id');
+  private _inputLabel: string | null = null;
+
+  /**
+   * Optional accessible name for the menu list. A menu has no intrinsic text of
+   * its own, so unlike the form toggles this is genuinely useful — but a host
+   * aria-label wins, and aria-labelledby on the host (tier 2) beats both.
+   */
+  get inputLabel(): string | null {
+    return this._inputLabel;
   }
-  set labelId(v: string | null) {
-    if (v) this.setAttribute('label-id', v);
-    else this.removeAttribute('label-id');
+  set inputLabel(v: string | null) {
+    const next = v ?? null;
+    if (this._inputLabel === next) return;
+    this._inputLabel = next;
+    this.requestUpdate();
   }
+
+  /** Tier-2 naming: references resolved in the host's tree, assigned to the <ul>. */
+  readonly #hostAria = new HostAriaController(this, {
+    referenceTarget: () => this.renderRoot?.querySelector('ul') ?? null,
+  });
 
   override connectedCallback(): void {
     super.connectedCallback();
@@ -78,8 +108,13 @@ export class MpDropdownMenu extends MpDropdownElement {
     if (name === 'max-height') {
       if (newValue) this.style.setProperty('--mp-dropdown-max-height', `${newValue}px`);
       else this.style.removeProperty('--mp-dropdown-max-height');
-    } else if (name === 'mode' || name === 'label-id') {
-      // `mode`/`label-id` are read in render(); re-render and re-sync item roles.
+    } else if (name === 'aria-labelledby' || name === 'aria-describedby') {
+      this.#hostAria.syncReferences();
+    } else if (name === 'input-label') {
+      this._inputLabel = newValue;
+      this.requestUpdate();
+    } else if (name === 'mode' || name === 'aria-label') {
+      // Read in render(); re-render and re-sync item roles.
       this.requestUpdate();
       this.#syncItems();
     }
@@ -87,6 +122,13 @@ export class MpDropdownMenu extends MpDropdownElement {
 
   protected override firstUpdated(): void {
     this.#syncItems();
+  }
+
+  // After every render: a reference attribute set in the HTML fires
+  // attributeChangedCallback before the <ul> exists, so the assignment there
+  // finds no target — this pass is what actually lands it.
+  protected override updated(): void {
+    this.#hostAria.syncReferences();
   }
 
   // --- item bookkeeping ------------------------------------------------------
@@ -228,7 +270,7 @@ export class MpDropdownMenu extends MpDropdownElement {
         class="dropdown-menu show"
         role=${this.mode}
         part="menu"
-        aria-labelledby=${this.labelId ?? nothing}
+        aria-label=${this.getAttribute('aria-label') ?? this._inputLabel ?? nothing}
       >
         <slot @slotchange=${this.#onSlotChange}></slot>
       </ul>

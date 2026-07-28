@@ -77,7 +77,6 @@ export class BsDropdownMenuComponent {
   /** Pixel cap on the menu height; scrolls beyond. */
   readonly maxHeight = input<number>();
   /** Id of an external label, set as `aria-labelledby` on the WC's list. */
-  readonly labelId = input<string>();
 
   /** Fires when an enabled item is activated (re-emits the WC's `select`). */
   readonly select = output<DropdownSelectEventDetail>();
@@ -88,7 +87,6 @@ export class BsDropdownMenuComponent {
     return value === undefined ? null : `${value}`;
   });
 
-  protected readonly labelIdAttr = computed(() => this.labelId() ?? null);
 
   protected onSelect(event: Event) {
     // The WC's `select` is a general-purpose DOM event (bubbles + composed).

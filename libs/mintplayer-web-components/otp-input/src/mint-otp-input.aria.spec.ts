@@ -32,7 +32,7 @@ describe('mp-otp-input — ARIA contract', () => {
   });
 
   it('applies a custom aria-label when label is set', async () => {
-    el.label = 'Verification code';
+    el.inputLabel = 'Verification code';
     await (el as unknown as { updateComplete: Promise<void> }).updateComplete;
     const input = el.shadowRoot?.querySelector('input');
     expect(input?.getAttribute('aria-label')).toBe('Verification code');

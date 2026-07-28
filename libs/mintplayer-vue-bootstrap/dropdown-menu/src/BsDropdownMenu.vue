@@ -23,7 +23,6 @@ withDefaults(
     /** Max panel height in px before the item list scrolls. */
     maxHeight?: number;
     /** `id` of an external element that labels the menu (aria-labelledby). */
-    labelId?: string;
   }>(),
   {
     mode: 'menu',
@@ -49,7 +48,6 @@ onBeforeUnmount(() => el.value?.removeEventListener('select', onSelect));
     v-bind="$attrs"
     :mode="mode"
     :max-height="maxHeight"
-    :label-id="labelId"
   >
     <slot />
   </mp-dropdown-menu>
