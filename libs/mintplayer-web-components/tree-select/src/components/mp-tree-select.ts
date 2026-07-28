@@ -495,6 +495,32 @@ export class MpTreeSelect extends LitElement {
     else void this.open();
   }
 
+  /**
+   * The BsComboboxDirective contract, inside the shadow root where the
+   * directive cannot reach: ArrowDown opens the popup (and a second ArrowDown
+   * hands focus to the tree, whose own roving model takes over); Escape closes
+   * unconditionally and keeps focus in the input. aria-expanded re-renders with
+   * the overlay state, so it is live rather than a first-render snapshot.
+   */
+  private onComboboxKeydown(e: KeyboardEvent): void {
+    if (e.key === 'ArrowDown') {
+      e.preventDefault();
+      if (!this.overlay.isOpen) {
+        void this.open();
+        return;
+      }
+      const tv = this.renderRoot?.querySelector<HTMLElement>('mp-treeview');
+      tv?.focus();
+      return;
+    }
+    if (e.key === 'Escape' && this.overlay.isOpen) {
+      e.preventDefault();
+      e.stopPropagation();
+      void this.overlay.close();
+      return;
+    }
+  }
+
   private focusSearchAndOpen(): void {
     void this.open();
     requestAnimationFrame(() => {
@@ -682,12 +708,17 @@ export class MpTreeSelect extends LitElement {
         <input
           class="ts-search"
           type="text"
+          role="combobox"
+          aria-haspopup="tree"
+          aria-expanded=${this.overlay.isOpen ? 'true' : 'false'}
+          aria-autocomplete="list"
           .value=${this._query}
           ?disabled=${this._disabled}
           placeholder=${!this.hasSelection ? this._placeholder : ''}
           aria-label=${this.getAttribute('aria-label') ?? this._inputLabel ?? (this._placeholder || 'Search')}
           @input=${(e: Event) => this.onSearchInput(e)}
           @focus=${() => this.open()}
+          @keydown=${(e: KeyboardEvent) => this.onComboboxKeydown(e)}
         />
         ${this.renderClear()}
         <span class="ts-caret">${this.renderCaret()}</span>
