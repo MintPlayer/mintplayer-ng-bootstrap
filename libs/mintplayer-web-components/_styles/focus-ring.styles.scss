@@ -1,0 +1,61 @@
+// Shared focus-ring token and mixin for every web component.
+//
+// Why this exists rather than each component reaching for Bootstrap's
+// `.focus-ring` utility or `--bs-focus-ring-*`: **Bootstrap's utilities do not
+// cross a shadow boundary.** A component that writes `outline: none` and trusts
+// a global utility to paint a replacement ends up with no visible focus
+// indicator at all — WCAG 2.4.7. Each component therefore has to declare its
+// own ring, and the audit found them drifting: two components dropped the ring
+// entirely, and four replaced it with a background tint shared with `:hover`,
+// so keyboard focus became indistinguishable from a mouse hover (and invisible
+// on a device with no hover at all).
+//
+// The custom properties are declared on `:host` so a consumer can retheme the
+// ring per component instance from outside the shadow root — custom properties
+// are one of the few things that *do* inherit through the boundary.
+//
+// Values mirror Bootstrap 5.3's focus ring so a component's ring matches the
+// rest of the page, but they resolve against `--bs-*` first where the consumer
+// has set them.
+
+:host {
+  --mp-focus-ring-width: var(--bs-focus-ring-width, 0.25rem);
+  --mp-focus-ring-opacity: var(--bs-focus-ring-opacity, 0.25);
+  --mp-focus-ring-color: var(--bs-focus-ring-color, rgba(13, 110, 253, 0.25));
+  --mp-focus-ring-outline-width: 2px;
+  --mp-focus-ring-outline-offset: 2px;
+}
+
+// Outline-based ring. The default: an outline is painted outside the box, so it
+// cannot be clipped by the element's own `overflow: hidden` and does not shift
+// layout. Use this unless the element sits flush against a container edge.
+//
+// `outline-offset` is negative for elements that fill their container (a grid
+// cell, a table header) so the ring stays inside the visible box.
+@mixin mp-focus-ring($offset: null) {
+  outline: var(--mp-focus-ring-outline-width) solid
+    var(--mp-focus-ring-color-solid, var(--bs-primary, #0d6efd));
+  outline-offset: if($offset, $offset, var(--mp-focus-ring-outline-offset));
+}
+
+// Box-shadow ring, matching Bootstrap's form-control focus treatment. Use on
+// inputs and buttons that already have a border, so the ring reads as a halo
+// around it rather than a second border.
+@mixin mp-focus-ring-shadow {
+  box-shadow: 0 0 0 var(--mp-focus-ring-width) var(--mp-focus-ring-color);
+}
+
+// Convenience wrapper for the overwhelmingly common case.
+//
+// Always keyed on `:focus-visible`, never `:focus` — a ring on `:focus` fires
+// for mouse clicks too, which is the reason authors reach for `outline: none`
+// in the first place and how the indicator gets lost.
+@mixin mp-focus-visible-ring($offset: null) {
+  &:focus {
+    outline: none;
+  }
+
+  &:focus-visible {
+    @include mp-focus-ring($offset);
+  }
+}
