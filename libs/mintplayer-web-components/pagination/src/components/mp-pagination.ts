@@ -1,4 +1,5 @@
 import { LitElement, html, nothing, type TemplateResult } from 'lit';
+import { repeat } from 'lit/directives/repeat.js';
 import { paginationStyles } from '../styles';
 
 export type PaginationSize = 'small' | 'medium' | 'large';
@@ -177,7 +178,7 @@ export class MpPagination extends LitElement {
                 </button>
               </li>`
             : nothing}
-          ${layout.items.map((item) =>
+          ${repeat(layout.items, (item, index) => (item.kind === 'gap' ? `gap-${index}` : `page-${item.page}`), (item) =>
             item.kind === 'gap'
               ? html`<li>
                   <span class="ellipsis" aria-hidden="true">&hellip;</span>

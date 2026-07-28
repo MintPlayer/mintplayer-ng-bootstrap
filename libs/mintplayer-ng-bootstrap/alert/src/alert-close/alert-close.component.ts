@@ -11,6 +11,8 @@ export class BsAlertCloseComponent {
   private alert = inject(BsAlertComponent);
 
   closeAlert() {
+    // Order matters: the rescue must read focus while the button still exists.
+    this.alert.rescueFocus();
     this.alert.isVisible.set(false);
     return false;
   }

@@ -1,7 +1,7 @@
 import { LitElement, html, nothing, type TemplateResult } from 'lit';
 import { repeat } from 'lit/directives/repeat.js';
 import { OverlayController } from '@mintplayer/web-components/overlay';
-import { HostAriaController } from '@mintplayer/web-components/a11y';
+import { deepActiveElement, HostAriaController } from '@mintplayer/web-components/a11y';
 import '@mintplayer/web-components/treeview';
 import type {
   MpTreeview,
@@ -556,6 +556,14 @@ export class MpTreeSelect extends LitElement {
   }
 
   private removeNode(node: TreeNode): void {
+    // The remove button the user just pressed is about to be destroyed with its
+    // chip, which drops focus to <body>. Re-home it deterministically: the next
+    // chip's remove button if one exists, else the search input.
+    const removeButtons = Array.from(
+      this.renderRoot?.querySelectorAll<HTMLElement>('.ts-chip-remove') ?? [],
+    );
+    const removedIndex = removeButtons.findIndex((b) => b.closest('.ts-chip')?.contains(deepActiveElement()));
+
     if (this._mode === 'checkbox' && this._cascadeSelect) {
       this.applyDown(node, false);
       this.applyUp(node);
@@ -566,6 +574,17 @@ export class MpTreeSelect extends LitElement {
     this.emitChange(undefined, node);
     this.syncTreeviewSelection();
     this.requestUpdate();
+
+    if (removedIndex >= 0) {
+      void this.updateComplete.then(() => {
+        const remaining = Array.from(
+          this.renderRoot?.querySelectorAll<HTMLElement>('.ts-chip-remove') ?? [],
+        );
+        const next = remaining[Math.min(removedIndex, remaining.length - 1)]
+          ?? this.renderRoot?.querySelector<HTMLElement>('input.ts-search');
+        next?.focus();
+      });
+    }
   }
 
   private clearAll(ev?: Event): void {
