@@ -157,6 +157,13 @@ export class MpDropdownMenu extends MpDropdownElement {
 
   #valueOf(item: HTMLElement): unknown {
     const prop = (item as HTMLElement & { value?: unknown }).value;
+    // <li> has a NATIVE numeric `value` (its <ol> ordinal, default 0), so for a
+    // bare <li class="dropdown-item"> the property is always "set" and the
+    // consumer's data-value was unreachable — every selection emitted 0. Only
+    // trust the property on an <li> when the consumer explicitly authored it.
+    if (item instanceof HTMLLIElement && !item.hasAttribute('value')) {
+      return item.dataset['value'] ?? (prop !== 0 ? prop : undefined);
+    }
     return prop !== undefined ? prop : item.dataset['value'];
   }
 
@@ -218,6 +225,32 @@ export class MpDropdownMenu extends MpDropdownElement {
           }
         }
         event.preventDefault();
+        break;
+      }
+      case 'Enter':
+      case ' ': {
+        /* A bare `<li class="dropdown-item">` (no inner link or button) IS the
+           focusable menuitem, and a plain element has no native activation —
+           Enter/Space on it did nothing while click worked, the audit's
+           pointer-only finding for this menu. Synthesize the click, but only
+           where the UA would not: Enter self-activates a <button> or <a href>,
+           Space only a <button>. Synthesizing there too would double-fire. */
+        const target = event.composedPath()[0];
+        if (!(target instanceof HTMLElement)) return;
+        const item = target.closest<HTMLElement>('.dropdown-item');
+        if (!item || item.closest('mp-dropdown-menu') !== this || this.#isDisabled(item)) return;
+
+        const control = this.#controlOf(item);
+        const nativelyActivated =
+          event.key === 'Enter'
+            ? control instanceof HTMLButtonElement
+              || (control instanceof HTMLAnchorElement && control.hasAttribute('href'))
+            : control instanceof HTMLButtonElement;
+        if (nativelyActivated) return;
+
+        // Space must not scroll the page; Enter must not submit an outer form.
+        event.preventDefault();
+        control.click();
         break;
       }
     }
