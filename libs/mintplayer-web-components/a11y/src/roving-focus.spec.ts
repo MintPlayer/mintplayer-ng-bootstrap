@@ -1,5 +1,5 @@
 import { describe, it, expect, afterEach, vi } from 'vitest';
-import { RovingFocus } from './roving-focus';
+import { RovingFocus, nextEnabledIndex, firstEnabledIndex, lastEnabledIndex } from './roving-focus';
 import { deepActiveElement } from './focus-restore';
 
 function list(count: number, disabled: number[] = []): HTMLElement[] {
@@ -148,6 +148,28 @@ describe('RovingFocus', () => {
     expect(roving.index).toBe(0);
   });
 
+  it('does not intercept browser and OS chords', () => {
+    // Alt+Arrow is history navigation, Ctrl+Home jumps to the top of the
+    // document, Cmd+Arrow is word-jump on macOS. The Angular directive guards
+    // these; the comparison with it is what surfaced their absence here.
+    const items = list(3);
+    const roving = new RovingFocus({ items: () => items });
+    roving.sync();
+
+    for (const modifier of ['altKey', 'ctrlKey', 'metaKey'] as const) {
+      const event = new KeyboardEvent('keydown', {
+        key: 'ArrowDown',
+        [modifier]: true,
+        bubbles: true,
+        cancelable: true,
+        composed: true,
+      });
+      items[0].dispatchEvent(event);
+      expect(roving.onKeydown(event)).toBe(false);
+    }
+    expect(roving.index).toBe(0);
+  });
+
   it('reports the active item and notifies on change', () => {
     const items = list(3);
     const onActiveChange = vi.fn();
@@ -192,5 +214,55 @@ describe('RovingFocus', () => {
     roving.onKeydown(arrow(items[0], 'ArrowDown'));
 
     expect(deepActiveElement()).toBe(items[2]);
+  });
+});
+
+describe('shared navigation arithmetic', () => {
+  const none = () => false;
+
+  it('clamps at the ends without wrap', () => {
+    expect(nextEnabledIndex(3, 2, 1, false, none)).toBe(-1);
+    expect(nextEnabledIndex(3, 0, -1, false, none)).toBe(-1);
+  });
+
+  it('wraps when asked', () => {
+    expect(nextEnabledIndex(3, 2, 1, true, none)).toBe(0);
+    expect(nextEnabledIndex(3, 0, -1, true, none)).toBe(2);
+  });
+
+  it('skips disabled indexes', () => {
+    const disabled = (i: number) => i === 1 || i === 2;
+    expect(nextEnabledIndex(4, 0, 1, false, disabled)).toBe(3);
+  });
+
+  it('resolves back to the current index when wrapping past only-disabled siblings', () => {
+    // Not a nowhere-to-go: with wrap, the sole enabled item is the one we are
+    // on, so the walk legitimately comes back around to it. Matches the shipped
+    // Angular directive, which is the behaviour to preserve.
+    expect(nextEnabledIndex(3, 0, 1, true, (i) => i !== 0)).toBe(0);
+  });
+
+  it('reports nowhere-to-go when every other index is disabled and wrap is off', () => {
+    expect(nextEnabledIndex(3, 0, 1, false, (i) => i !== 0)).toBe(-1);
+  });
+
+  it('is inert on an empty set', () => {
+    expect(nextEnabledIndex(0, 0, 1, true, none)).toBe(-1);
+    expect(firstEnabledIndex(0, none)).toBe(-1);
+    expect(lastEnabledIndex(0, none)).toBe(-1);
+  });
+
+  it('reports -1 rather than 0 when every index is disabled', () => {
+    // The Angular directive's contract, which the WC controller then clamps to a
+    // tab stop of its own choosing. Keeping -1 here means neither caller has to
+    // guess whether 0 meant "first" or "none".
+    expect(firstEnabledIndex(3, () => true)).toBe(-1);
+    expect(lastEnabledIndex(3, () => true)).toBe(-1);
+  });
+
+  it('finds the first and last enabled indexes', () => {
+    const disabled = (i: number) => i === 0 || i === 3;
+    expect(firstEnabledIndex(4, disabled)).toBe(1);
+    expect(lastEnabledIndex(4, disabled)).toBe(2);
   });
 });

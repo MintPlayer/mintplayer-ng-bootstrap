@@ -414,6 +414,23 @@ change.
 `aria-invalid`/`aria-required` (copy `mp-otp-input:385`), then the Angular wrappers mirroring
 `NgControl.invalid && touched`, then `aria-errormessage` pointing at an in-shadow node.
 
+**Retire the duplicated roving-focus arithmetic.** `BsRovingFocusDirective` predates the WC
+`RovingFocus` controller and had independently identical `step` / `firstEnabledIndex` /
+`lastEnabledIndex` logic — already drifted on the wrap-vs-clamp default. Phase A extracted the pure
+index math (`nextEnabledIndex`, `firstEnabledIndex`, `lastEnabledIndex` in
+`@mintplayer/web-components/a11y`) and moved the WC controller onto it; **point the Angular
+directive at the same functions here**, deleting its private copies. Its 190-line spec is the
+regression net, so it should stay green untouched.
+
+Deliberately **not** collapsing the two into one class, for two concrete reasons rather than taste:
+the Angular directive writes `tabindex` through a host binding on each item directive while the
+controller writes `el.tabIndex` imperatively, so delegating wholesale would put **two writers on one
+attribute** — the hazard already documented at `otp-input.component.ts:124-131`; and the directive's
+`activedescendant` mode is *correct* for its light-DOM consumers (`bs-typeahead`,
+`bs-dropdown`'s combobox), where IDREFs resolve fine. The WC controller omits that mode because it
+cannot work across a shadow boundary, which is a constraint of shadow DOM, not a judgment that
+activedescendant is wrong. Angular keeps its content-query discovery, its signals, and that mode.
+
 **`<mp-radio-group>`** — after `mp-radio` exposes its inner input's `tabindex` (`delegatesFocus`
 means host `tabindex="-1"` does not remove the inner input from the tab order). Roving tabindex
 with the tab stop on the **first enabled radio when nothing is checked**, arrow move-and-select

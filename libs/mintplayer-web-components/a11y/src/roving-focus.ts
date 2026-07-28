@@ -1,5 +1,69 @@
 export type RovingFocusOrientation = 'vertical' | 'horizontal' | 'both';
 
+/**
+ * Index arithmetic for roving navigation, with no DOM and no framework in it.
+ *
+ * Extracted so the Angular `BsRovingFocusDirective` can share it rather than
+ * keep a second copy. That directive predates this controller and the two had
+ * independently identical `step` / `firstEnabled` / `lastEnabled` logic — and
+ * they had already drifted on the wrap-vs-clamp default, which is precisely the
+ * inconsistency a shared primitive exists to remove.
+ *
+ * Only the arithmetic is shared. The adapters stay separate on purpose: Angular
+ * discovers items through `contentChildren`, exposes `activeIndex` as a signal,
+ * and writes `tabindex` through a host binding on each item directive, while
+ * this controller takes a callback and writes `tabIndex` imperatively. Making
+ * Angular delegate to the class below would put two writers on one attribute —
+ * the hazard the workspace has already been bitten by once (see
+ * `otp-input.component.ts:124-131`).
+ *
+ * @param count      number of candidate items
+ * @param from       current index
+ * @param delta      +1 or -1
+ * @param wrap       pass the ends, or stop at them
+ * @param isDisabled by index, so callers can consult signals or attributes
+ * @returns the next enabled index, or `-1` when there is nowhere to go
+ */
+export function nextEnabledIndex(
+  count: number,
+  from: number,
+  delta: 1 | -1,
+  wrap: boolean,
+  isDisabled: (index: number) => boolean,
+): number {
+  if (count === 0) return -1;
+
+  let cursor = from;
+  for (let attempt = 0; attempt < count; attempt++) {
+    cursor += delta;
+    if (cursor < 0) {
+      if (!wrap) return -1;
+      cursor = count - 1;
+    } else if (cursor >= count) {
+      if (!wrap) return -1;
+      cursor = 0;
+    }
+    if (!isDisabled(cursor)) return cursor;
+  }
+  return -1;
+}
+
+/** First enabled index, or `-1` when every item is disabled. */
+export function firstEnabledIndex(count: number, isDisabled: (index: number) => boolean): number {
+  for (let i = 0; i < count; i++) {
+    if (!isDisabled(i)) return i;
+  }
+  return -1;
+}
+
+/** Last enabled index, or `-1` when every item is disabled. */
+export function lastEnabledIndex(count: number, isDisabled: (index: number) => boolean): number {
+  for (let i = count - 1; i >= 0; i--) {
+    if (!isDisabled(i)) return i;
+  }
+  return -1;
+}
+
 export interface RovingFocusOptions {
   /**
    * The navigable items, in tab order, recomputed on every interaction.
@@ -97,6 +161,13 @@ export class RovingFocus {
    * where a consumer's node template could not be typed into at all.
    */
   onKeydown(event: KeyboardEvent): boolean {
+    // Never intercept browser/OS chords: Alt+Arrow is history navigation,
+    // Ctrl+Home jumps to the top of the document, Cmd+Arrow is word-jump on
+    // macOS. Swallowing those breaks the platform for everyone and is a defect
+    // this workspace already fixed once, on the Angular side, in the May-2026
+    // programme (`aria-review-fixes.md`) — worth not reintroducing here.
+    if (event.altKey || event.ctrlKey || event.metaKey) return false;
+
     const items = this.options.items();
     if (items.length === 0) return false;
 
@@ -115,13 +186,13 @@ export class RovingFocus {
     switch (event.key) {
       case 'ArrowDown':
         if (!vertical) return false;
-        return this.step(+1);
+        return this.step(1);
       case 'ArrowUp':
         if (!vertical) return false;
         return this.step(-1);
       case forwardKey:
         if (!horizontal) return false;
-        return this.step(+1);
+        return this.step(1);
       case backKey:
         if (!horizontal) return false;
         return this.step(-1);
@@ -159,33 +230,23 @@ export class RovingFocus {
     this.sync();
   }
 
-  private step(delta: number): boolean {
+  private step(delta: 1 | -1): boolean {
     const items = this.options.items();
-    const wrap = this.options.wrap ?? false;
-    const count = items.length;
-
-    let next = this.activeIndex;
-    for (let attempt = 0; attempt < count; attempt++) {
-      next += delta;
-      if (next < 0 || next >= count) {
-        if (!wrap) return false;
-        next = next < 0 ? count - 1 : 0;
-      }
-      if (!this.isDisabled(items[next])) return this.moveTo(next);
-    }
-    return false;
+    const next = nextEnabledIndex(items.length, this.activeIndex, delta, this.options.wrap ?? false, (i) =>
+      this.isDisabled(items[i]),
+    );
+    return next < 0 ? false : this.moveTo(next);
   }
 
+  /** First enabled index, falling back to 0 so a fully-disabled set still has a tab stop. */
   private firstEnabledIndex(items: HTMLElement[]): number {
-    const index = items.findIndex((item) => !this.isDisabled(item));
+    const index = firstEnabledIndex(items.length, (i) => this.isDisabled(items[i]));
     return index < 0 ? 0 : index;
   }
 
   private lastEnabledIndex(items: HTMLElement[]): number {
-    for (let i = items.length - 1; i >= 0; i--) {
-      if (!this.isDisabled(items[i])) return i;
-    }
-    return 0;
+    const index = lastEnabledIndex(items.length, (i) => this.isDisabled(items[i]));
+    return index < 0 ? 0 : index;
   }
 
   private isDisabled(el: HTMLElement): boolean {

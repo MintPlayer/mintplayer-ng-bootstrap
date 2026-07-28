@@ -11,3 +11,4 @@ export { RovingFocus } from './roving-focus';
 export type { RovingFocusOptions, RovingFocusOrientation } from './roving-focus';
 export { HostAriaController, sharedInternals, supportsAriaElementReferences } from './host-aria';
 export type { HostAriaOptions, HostAriaState } from './host-aria';
+export { nextEnabledIndex, firstEnabledIndex, lastEnabledIndex } from './roving-focus';
