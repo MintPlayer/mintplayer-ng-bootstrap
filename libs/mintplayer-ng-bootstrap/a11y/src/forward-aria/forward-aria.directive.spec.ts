@@ -87,6 +87,51 @@ describe('BsForwardAriaDirective', () => {
     expect(host.getAttribute('role')).toBe('presentation');
   });
 
+  /* The SSR/rehydration case, and the one the original spec missed entirely.
+     Every test here constructs a *pristine* host, so nothing exercised a host that
+     already carried the marker before the directive initialised — which is exactly
+     what the client sees after a server pass has serialised it. The old
+     implementation tracked "did I write the marker?" in an instance field, and a
+     fresh client instance answered "no", moved the marker onto the custom element,
+     and discarded the forwarded name. Caught in a real browser against the SSR dev
+     server, not by CI. */
+  it('does not move a pre-existing presentation marker inward (post-SSR rehydration)', async () => {
+    const { host, target } = await render(
+      `<bs-stand-in role="presentation" aria-label="probe"></bs-stand-in>`,
+    );
+
+    // The marker stays where the server put it...
+    expect(host.getAttribute('role')).toBe('presentation');
+    // ...and must NOT be forwarded: a presentational custom element is removed from
+    // the accessibility tree, so the name would have nowhere to land.
+    expect(target.hasAttribute('role')).toBe(false);
+    expect(target.getAttribute('aria-label')).toBe('probe');
+  });
+
+  it('still forwards role="none", which is a consumer statement rather than our marker', async () => {
+    // The two are ARIA synonyms, so this asymmetry is deliberate and worth pinning:
+    // only `presentation` is claimed by the directive.
+    const { target } = await render(`<bs-stand-in role="none"></bs-stand-in>`);
+    expect(target.getAttribute('role')).toBe('none');
+  });
+
+  it('is idempotent when applied twice to an already-forwarded host', async () => {
+    // Second pass over its own output must be a no-op, which is the general property
+    // the SSR case is one instance of.
+    const { host, target } = await render(
+      `<bs-stand-in role="group" id="probe-id" tabindex="0"></bs-stand-in>`,
+    );
+    expect(target.getAttribute('role')).toBe('group');
+
+    host.setAttribute('aria-label', 'trigger another pass');
+    await new Promise((resolve) => setTimeout(resolve, 0));
+
+    expect(target.getAttribute('role')).toBe('group');
+    expect(target.getAttribute('id')).toBe('probe-id');
+    expect(target.getAttribute('tabindex')).toBe('0');
+    expect(host.getAttribute('role')).toBe('presentation');
+  });
+
   it('does not let its own presentation marker overwrite the consumer role on the target', async () => {
     // The regression this guards: forward() writes role="presentation" on the
     // host, which fires the MutationObserver; a naive second pass moves that

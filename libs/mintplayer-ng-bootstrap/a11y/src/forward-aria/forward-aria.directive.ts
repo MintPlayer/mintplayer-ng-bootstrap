@@ -66,12 +66,23 @@ export class BsForwardAriaDirective implements OnInit {
   private static readonly MOVED = ['role', 'id', 'tabindex'] as const;
 
   /**
-   * Set once this directive has written `role="presentation"` itself, so the next
-   * observer pass does not treat its own marker as a consumer role and move it
-   * onto the target — which would overwrite the role the consumer actually asked
-   * for.
+   * The role this directive writes on the host itself, which must therefore never
+   * be treated as a *consumer's* role and moved inward.
+   *
+   * Checked by **value** rather than tracked in an instance flag, and that
+   * distinction is the whole fix for an SSR defect: the server pass runs this
+   * directive and serialises `role="presentation"` into the HTML, so the client
+   * gets a **fresh instance** whose flag is `false` staring at a host that already
+   * carries the marker. It moved the marker onto the custom element — making the
+   * real component presentational and discarding the name just forwarded to it.
+   * A flag cannot survive rehydration; a value check needs nothing to survive.
+   *
+   * Only `presentation` is claimed, not `none`. They are synonyms to ARIA, but a
+   * consumer writing `role="none"` is making a deliberate statement about the
+   * *inner* element and it is still forwarded; `presentation` on a wrapper asks for
+   * exactly what this directive already does, so there is nothing to forward.
    */
-  private authoredPresentation = false;
+  private static readonly HOST_ROLE = 'presentation';
 
   constructor() {
     // Attribute *bindings* from the consumer's template are written during the
@@ -104,16 +115,17 @@ export class BsForwardAriaDirective implements OnInit {
     for (const name of BsForwardAriaDirective.MOVED) {
       const value = this.host.getAttribute(name);
       if (value === null) continue;
-      if (name === 'role' && this.authoredPresentation) continue;
+      // Our own marker, whether this instance wrote it or a server pass did.
+      if (name === 'role' && value === BsForwardAriaDirective.HOST_ROLE) continue;
       this.target.setAttribute(name, value);
       this.host.removeAttribute(name);
     }
 
     // Only after any consumer role has been moved off it, so this never wins
-    // over what the consumer asked for.
+    // over what the consumer asked for. Idempotent: a second pass — including the
+    // first client pass after SSR — finds the marker already present.
     if (!this.host.hasAttribute('role')) {
-      this.host.setAttribute('role', 'presentation');
-      this.authoredPresentation = true;
+      this.host.setAttribute('role', BsForwardAriaDirective.HOST_ROLE);
     }
   }
 
