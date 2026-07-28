@@ -2,7 +2,7 @@ import * as React from 'react';
 import { createComponent } from '@lit/react';
 import { MpNavbarDropdown } from '@mintplayer/web-components/navbar';
 
-export interface BsNavbarDropdownProps {
+export interface BsNavbarDropdownProps extends React.HTMLAttributes<HTMLElement> {
   /** Set when nesting the dropdown into a parent slot (e.g. `"end"`). */
   slot?: string;
   className?: string;

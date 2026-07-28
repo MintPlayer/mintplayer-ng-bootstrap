@@ -10,7 +10,13 @@ import {
   type CarouselSlideChangeEventDetail,
 } from '@mintplayer/web-components/carousel';
 
-export interface BsCarouselProps {
+/* Omits React's native CSS-animation handlers because this component's
+   `onAnimationStart`/`onAnimationEnd` are the WC's own lifecycle events and
+   collide by name. Consequence worth knowing: a consumer cannot attach the real
+   DOM animation listeners to <BsCarousel>. Renaming ours (e.g. onTransitionStart)
+   would remove the collision, but that is a public API change tracked separately. */
+export interface BsCarouselProps
+  extends Omit<React.HTMLAttributes<HTMLElement>, 'onAnimationStart' | 'onAnimationEnd'> {
   /** Slide transition: `slide` (default), `fade`, or `none`. */
   animation?: CarouselAnimation;
   orientation?: CarouselOrientation;

@@ -9,7 +9,11 @@ import {
 // here so it lands in the app's static CSS bundle — present with JS disabled.
 import './dropdown-menu.css';
 
-export interface BsDropdownMenuProps {
+/* Omits React's native `onSelect` (a text-selection event) because this
+   component's `onSelect` is the menu-item selection event and collides by name.
+   Same trade as BsCarousel's animation handlers. */
+export interface BsDropdownMenuProps
+  extends Omit<React.HTMLAttributes<HTMLElement>, 'onSelect'> {
   /** `menu` (default, roving-tabindex keyboard nav) | `listbox`. */
   mode?: DropdownMode;
   /** px cap on the menu height; scrolls beyond. Maps to the `max-height` attribute. */

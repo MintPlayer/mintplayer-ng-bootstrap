@@ -2,7 +2,7 @@ import * as React from 'react';
 import { createComponent } from '@lit/react';
 import { MpNavbarItem } from '@mintplayer/web-components/navbar';
 
-export interface BsNavbarItemProps {
+export interface BsNavbarItemProps extends React.HTMLAttributes<HTMLElement> {
   /** Current page (`.active` appearance). Reflected boolean attribute. */
   active?: boolean;
   /** Non-interactive. Reflected boolean attribute. */

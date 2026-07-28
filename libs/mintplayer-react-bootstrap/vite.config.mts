@@ -40,6 +40,14 @@ export default defineConfig(() => ({
       pathsToAliases: false,
     }),
   ],
+  /* Runtime half of the ARIA passthrough guard. `_conformance/` has no
+     `src/index.ts`, so discoverEntries() ignores it and it can never be published. */
+  test: {
+    environment: 'jsdom',
+    include: ['**/*.spec.{ts,tsx}'],
+    exclude: ['**/node_modules/**', '**/dist/**'],
+    setupFiles: ['./_conformance/vitest-setup.ts'],
+  },
   build: {
     outDir: '../../dist/libs/mintplayer-react-bootstrap',
     emptyOutDir: true,

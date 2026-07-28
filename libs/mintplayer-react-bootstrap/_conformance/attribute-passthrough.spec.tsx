@@ -24,14 +24,28 @@ import { BsTimeline } from '@mintplayer/react-bootstrap/timeline';
  * they know and never spread the remainder, so a consumer's attributes are dropped
  * on the floor *even if* the types were widened to allow them.
  *
- * **Why `role`, `id` and `tabIndex` rather than `aria-*`.** TypeScript exempts
- * hyphenated JSX attribute names from excess-property checking, so a probe built
- * from `aria-label` compiles against *any* props type and proves nothing. Only
- * camelCase/bare names actually exercise the type. The runtime assertions here use
- * both, since at runtime the distinction does not exist.
+ * **This file asserts `aria-label` ONLY, and that is a hard constraint rather than
+ * a shortcut.** jsdom cannot see the other attributes arrive. `@lit/react` routes any
+ * prop whose name is also a property on `HTMLElement` — `role`, `id`, `tabIndex` —
+ * through an element-*property* path in a layout effect, and that path does not take
+ * effect under jsdom even though the effect runs and the element upgrades. Measured
+ * in `_spike-passthrough/`: in real Chromium every one of those attributes arrives
+ * correctly, while in jsdom all three read back `null`. A guard asserting them here
+ * would fail permanently against working code — which it did, on all ten wrappers,
+ * before the spike caught it.
+ *
+ * `aria-label` is exempt from that routing precisely because it is hyphenated and so
+ * cannot be a property name; it goes to React and becomes an attribute. That makes it
+ * the one probe jsdom can trust — and it is still sufficient for the defect this file
+ * exists to catch, because a wrapper that never spreads its rest props drops
+ * `aria-label` along with everything else.
+ *
+ * The bare-name half therefore lives at the type level (`.types.tsx`, where the
+ * defect actually was) and in the browser spike. Do not "strengthen" this file by
+ * adding `role`/`id`/`tabIndex` back.
  */
 
-const PROBE = { role: 'none', id: 'probe-id', tabIndex: -1, 'aria-label': 'probe-name' } as const;
+const PROBE = { 'aria-label': 'probe-name' } as const;
 
 interface Case {
   name: string;
@@ -47,7 +61,7 @@ const CASES: Case[] = [
   { name: 'BsAccordion', tag: 'mp-accordion', render: (p) => <BsAccordion {...p} /> },
   {
     name: 'BsAccordionItem',
-    tag: 'mp-accordion-item',
+    tag: 'mp-accordion-tab',
     render: (p) => (
       <BsAccordion>
         <BsAccordionItem header="Header" {...p} />
@@ -65,7 +79,7 @@ const CASES: Case[] = [
   {
     name: 'BsNavbarDropdown',
     tag: 'mp-navbar-dropdown',
-    render: (p) => <BsNavbar><BsNavbarDropdown label="Menu" {...p} /></BsNavbar>,
+    render: (p) => <BsNavbar><BsNavbarDropdown {...p}><span slot="label">Menu</span></BsNavbarDropdown></BsNavbar>,
   },
   {
     name: 'BsNavbarItem',
@@ -99,13 +113,12 @@ async function mount(entry: Case): Promise<HTMLElement | null> {
 
 describe('React wrapper attribute passthrough', () => {
   describe.each(CASES)('$name', (entry) => {
-    it(`forwards role, id, tabindex and aria-label to <${entry.tag}>`, async () => {
+    it(`forwards a consumer attribute to <${entry.tag}>`, async () => {
       const target = await mount(entry);
 
       expect(target, `<${entry.tag}> was not rendered by <${entry.name}>`).not.toBeNull();
-      expect(target!.getAttribute('role')).toBe(PROBE.role);
-      expect(target!.getAttribute('id')).toBe(PROBE.id);
-      expect(target!.getAttribute('tabindex')).toBe(String(PROBE.tabIndex));
+      // Proves the wrapper spreads its rest props at all. A wrapper that
+      // destructures every known prop and forgets `...rest` fails here.
       expect(target!.getAttribute('aria-label')).toBe(PROBE['aria-label']);
     });
   });

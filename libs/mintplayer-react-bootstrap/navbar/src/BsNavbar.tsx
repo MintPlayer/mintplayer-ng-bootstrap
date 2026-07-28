@@ -6,7 +6,7 @@ import {
   type NavbarExpandedChangeEventDetail,
 } from '@mintplayer/web-components/navbar';
 
-export interface BsNavbarProps {
+export interface BsNavbarProps extends React.HTMLAttributes<HTMLElement> {
   /** Bootstrap breakpoint name (`xs`…`xxl`, default `md`); at/above it the nav is inline. */
   breakpoint?: NavbarBreakpoint;
   /** Background: a theme color (`primary`…`dark`) or adaptive `body` / `body-secondary` / `body-tertiary`. */
