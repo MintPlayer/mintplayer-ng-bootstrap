@@ -39,6 +39,18 @@ export class BsRatingComponent {
 
   readonly starButtons = viewChildren<ElementRef<HTMLButtonElement>>('star');
 
+  /**
+   * Exactly one star must stay tabbable or the whole widget leaves the tab
+   * order: with no value set, the old binding gave EVERY star tabindex="-1"
+   * and the rating could never be entered by keyboard (the audit's bs-rating
+   * Critical, and the reason RovingFocus's first-enabled fallback exists).
+   */
+  readonly starTabIndexes = computed(() => {
+    const v = this.value();
+    const max = this.maximum();
+    return [...Array(max).keys()].map((i) => (v ? v === i + 1 : i === 0) ? 0 : -1);
+  });
+
   /** Hoisted per the computed-over-inline-expression rule. */
   readonly starLabels = computed(() => {
     const format = this.starLabel();

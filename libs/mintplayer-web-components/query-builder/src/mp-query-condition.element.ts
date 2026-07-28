@@ -179,10 +179,15 @@ export class MpQueryConditionElement extends LitElement {
     if (!e.altKey || (e.key !== 'ArrowUp' && e.key !== 'ArrowDown')) return;
     const node = this.node;
     if (!node || this.isDisabled()) return;
-    // Only react when focus is on the row itself, not on a child input/select
-    // where the arrow keys have native semantics (cursor / option navigation).
+    // React when focus is on the row itself OR on the drag handle — the handle
+    // is the element whose aria-label ADVERTISES Alt+Up/Down, so rejecting it
+    // made the advertised keys do nothing precisely where users were told to
+    // press them. Child inputs/selects are still excluded (their arrows have
+    // native semantics).
     const row = this.shadowRoot?.querySelector('.qb-condition');
-    if (e.composedPath()[0] !== row) return;
+    const origin = e.composedPath()[0];
+    const isHandle = origin instanceof HTMLElement && origin.classList.contains('qb-drag-handle');
+    if (origin !== row && !isHandle) return;
     e.preventDefault();
     this.dispatchEvent(new CustomEvent('qb-keyboard-move', {
       detail: { id: node.id, direction: e.key === 'ArrowUp' ? 'up' : 'down' },

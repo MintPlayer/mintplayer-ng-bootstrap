@@ -3,7 +3,7 @@
         #star
         class="cursor-pointer btn-star"
         role="radio"
-        [attr.tabindex]="value() === (i + 1) ? 0 : -1"
+        [attr.tabindex]="starTabIndexes()[i]"
         (mouseenter)="hoverValue(i)"
         (click)="selectValue(i)"
         [attr.aria-label]="starLabels()[i]"

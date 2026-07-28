@@ -10,7 +10,7 @@
     [style.height.px]="height()"
     [style.width.px]="width()"
     role="dialog"
-    aria-modal="true"
+    [attr.aria-modal]="hasBackdrop() ? 'true' : null"
     [attr.aria-labelledby]="context.headerId()"
     [attr.aria-describedby]="context.bodyId()"
     [bsOverlayFocus]="isVisible()"

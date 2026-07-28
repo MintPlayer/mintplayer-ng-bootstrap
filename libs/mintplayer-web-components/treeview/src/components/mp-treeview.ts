@@ -374,6 +374,11 @@ export class MpTreeview extends LitElement {
   }
 
   private onRowKeydown(node: TreeNode, ev: KeyboardEvent): void {
+    // Only act when the key originated on the row itself. A consumer's node
+    // template can contain inputs/selects, and reinterpreting their arrows as
+    // tree navigation made them impossible to type into — the audit's finding,
+    // and the same guard RovingFocus carries.
+    if (ev.composedPath()[0] !== ev.currentTarget) return;
     const hasChildren = !!(node.children && node.children.length > 0);
     const expanded = this._expandedIds.has(node.id);
 

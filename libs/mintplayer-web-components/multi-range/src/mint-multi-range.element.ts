@@ -344,7 +344,7 @@ export class MintMultiRangeElement extends LitElement {
         aria-valuenow=${value}
         aria-orientation=${this.orientation}
         aria-valuetext=${valueText ?? nothing}
-        ?disabled=${this.disabled}
+        aria-disabled=${this.disabled ? 'true' : nothing}
         style=${style}
         @pointerdown=${(ev: PointerEvent) => this.onThumbPointerDown(index, ev)}
         @keydown=${(ev: KeyboardEvent) => this.onThumbKeyDown(index, ev)}

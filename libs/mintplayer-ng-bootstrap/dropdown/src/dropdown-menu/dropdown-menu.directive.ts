@@ -99,7 +99,10 @@ export class BsDropdownMenuDirective extends ClickOutsideDirective {
 
   onEscape(event: Event) {
     if (this.stackToken !== null && this.overlayStack.isTop(this.stackToken)) {
-      this.doClose();
+      // Unconditional: closeOnClickOutside gates POINTER dismissal semantics.
+      // Escape is the keyboard's universal exit, and routing it through
+      // doClose() made a closeOnClickOutside=false dropdown a keyboard trap.
+      if (this.dropdown.isOpen()) this.dropdown.isOpen.set(false);
     }
   }
 
