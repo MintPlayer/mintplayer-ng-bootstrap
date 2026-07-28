@@ -1,7 +1,8 @@
 # Plan — screen-reader accessibility across the four libraries
 
-Status: **Phase A landed; Phase 0 gates all cleared (0.1b + 0.3b deferred as noted); B–G
-outstanding** — 2026-07-28. Companion PRD:
+Status: **Phase A landed; Phase 0 gates all cleared (0.1b + 0.3b deferred as noted); Phase B
+milestone 1 landed (19/19 wrappers transparent); rest of B–G outstanding** — 2026-07-28.
+Companion PRD:
 `docs/prd/screen-reader-accessibility.md` (findings, design rationale, decisions D1–D5 in §11, and
 the live-state principle in §11a).
 
@@ -472,6 +473,51 @@ that reads the referenced element's `textContent`.
 `tabindex` stripped from it. Retire the three ad-hoc idioms (`carousel`/`navbar` bespoke inputs,
 `bs-select`'s `Renderer2` call). Forward `inputLabel` on `bs-datetime-picker` (currently the one
 label input the wrapper omits).
+
+#### ✓ LANDED (B1) — `51d3ca72`: 19 of 19 wrappers transparent
+
+The conformance matrix went from **0/19 to 19/19** in one change; its 19 `it.fails` are now real
+assertions, and it grew a second case per wrapper (moved attributes must *leave* the host).
+39/39 green, plus 9 for the directive itself.
+
+**Copy versus move turned out to be the load-bearing design choice.** `aria-*` is copied and kept
+live through a `MutationObserver` — it carries state that must be correct at every moment (§11a).
+`role`/`id`/`tabindex` are **moved**, because leaving them is actively wrong: two elements with one
+`id` breaks every IDREF pointing at it, and a duplicated `tabindex` *is* the dead-tab-stop defect.
+Known limit, documented on the directive: adding a moved attribute later is tracked (an addition is
+an observable mutation), **removing one after the move is not**, since it is no longer on the host to
+observe. Acceptable because those three are structural while the genuinely dynamic ones are `aria-*`.
+
+Three things worth carrying forward:
+
+- **`inject(ElementRef, { skipSelf: true })` resolves to the component host** from a directive on a
+  template root — no DOM walking. The directive's first spec case pins that assumption down on
+  purpose, so a future Angular change cannot silently make forwarding read the wrong element.
+- **The directive's own `role="presentation"` marker nearly became a consumer role.** Writing it
+  fires the observer, and a naive second pass moved the marker onto the target, destroying the role
+  the consumer asked for. Caught by its own spec, not by review.
+- **`it.fails` hides render errors, because it passes when a test throws for *any* reason.** Two
+  entries were not forwarding failures at all: `bs-tree-select` throws in its constructor unless
+  nested in a `<bs-form>`, and `bs-navbar-dropdown`'s `contentChild.required` label must be an
+  `<ng-template>` (the directive injects `TemplateRef`). **Neither wrapper's forwarding had ever been
+  exercised.** The harness now declares preconditions explicitly (`wrap`, `needs`). Use `it.fails`
+  for known-red assertions only where a render error is impossible, or pair it with a smoke case.
+
+Also replaced the spec's `setTimeout(0)` settle with `customElements.whenDefined` — the precise
+condition rather than a guess. The carousel → swiper-core dynamic-import chain was still in flight at
+teardown, producing two `EnvironmentTeardownError`s in the full-suite run while passing when the file
+ran alone; that is the signature of a weak settle, not a defect.
+
+Retired two of the three ad-hoc idioms: `bs-checkbox`'s and `bs-radio`'s hand-rolled `aria-*`
+observers are deleted (they forwarded no `role`/`id`/`tabindex` and would have become a second writer
+on the same attributes), along with their now-dead `ElementRef`/`PLATFORM_ID`/`DestroyRef` injections
+and `AfterViewInit` implementations. **Still to retire in B: `bs-carousel`/`bs-navbar`'s bespoke
+`[ariaLabel]` inputs and `bs-select`'s `Renderer2` call.**
+
+**Useful for the rest of this phase:** run these specs with
+`cd libs/mintplayer-ng-bootstrap && npx vitest run --pool=threads <filter>` (seconds) rather than
+`nx test mintplayer-ng-bootstrap`, which ignores `--testPathPattern` — it is a *vitest* target, so the
+jest-style flag silently runs the whole 174-second suite.
 
 **React** — 10 files: extend `React.HTMLAttributes<I>` on the public **and** private inner props
 types (fixing only the public one leaves attributes rejected one level down — see
