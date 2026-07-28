@@ -25,9 +25,24 @@ export function sharedInternals(host: HTMLElement): ElementInternals | null {
   return internals;
 }
 
-/** True when the browser supports assigning cross-root ARIA element references. */
+/**
+ * True when the browser supports assigning cross-root ARIA element references.
+ *
+ * Checked on both surfaces because references land in one of two places depending
+ * on where the role lives: on `ElementInternals` when the host itself carries the
+ * role, or on a plain `Element` when the role belongs to a focusable node inside
+ * the shadow root (`mp-select`'s `<select>`, `mp-checkbox`'s `<input>`). Spike 0.2
+ * measured both as present in Chromium, Firefox and WebKit, so in practice this
+ * returns true everywhere and the degraded path below is insurance rather than a
+ * tested branch.
+ */
 export function supportsAriaElementReferences(): boolean {
-  return typeof ElementInternals !== 'undefined' && 'ariaLabelledByElements' in ElementInternals.prototype;
+  return (
+    typeof ElementInternals !== 'undefined'
+    && 'ariaLabelledByElements' in ElementInternals.prototype
+    && typeof Element !== 'undefined'
+    && 'ariaLabelledByElements' in Element.prototype
+  );
 }
 
 /** ARIA state this controller can reflect onto the host. Values of `null` remove the state. */
@@ -63,6 +78,24 @@ export interface HostAriaOptions {
    * Default: `['aria-labelledby', 'aria-describedby']`.
    */
   referenceAttributes?: string[];
+  /**
+   * The node the resolved references should be assigned to, when it is **not** the
+   * host.
+   *
+   * Which node it must be is determined by where the role is, and getting it wrong
+   * produces a name nothing announces. Two shapes exist in this library:
+   *
+   * - The host carries the role via `internals.role` (`mp-datatable`,
+   *   `mp-timeline`). Omit this — references go on `ElementInternals`.
+   * - The role belongs to a real focusable element inside the shadow root, because
+   *   it is a native control (`mp-select`'s `<select>`, `mp-checkbox`'s `<input>`).
+   *   Return that element. Naming the host instead would either be ignored, or
+   *   announce twice — once for the host's role and once for the control's.
+   *
+   * A callback rather than an element because these components re-render and the
+   * node identity changes; it is re-read on every `syncReferences()`.
+   */
+  referenceTarget?: () => Element | null | undefined;
 }
 
 const DEFAULT_REFERENCE_ATTRIBUTES = ['aria-labelledby', 'aria-describedby'];
@@ -104,6 +137,16 @@ export function resetReferenceWarningForTesting(): void {
  * `aria-label` drifts silently the moment the label is edited or translated, and
  * a stale name is worse than a missing one. The documented fallback is the
  * component's own `inputLabel` property.
+ *
+ * **References land on one of two nodes, and the choice is not cosmetic.** By
+ * default they go on the host's `ElementInternals`, which is right when the host
+ * carries the role. When the role belongs to a native control inside the shadow
+ * root — `mp-select`'s `<select>`, `mp-checkbox`'s `<input>` — pass
+ * `referenceTarget` and they go on that element instead. Naming the host in that
+ * case gives either nothing (the host is `generic`) or a double announcement, one
+ * for each role. Spike 0.2 verified both directions against a real accessibility
+ * tree; jsdom implements neither, so the positive path has **no** unit coverage by
+ * construction and the specs below assert only the degraded contract.
  */
 export class HostAriaController {
   private readonly internals: ElementInternals | null;
@@ -160,7 +203,12 @@ export class HostAriaController {
    * Returns the attributes it could not honour, so a caller can warn.
    */
   syncReferences(): string[] {
-    if (!this.internals || !supportsAriaElementReferences()) {
+    // Resolved per call: these components re-render, so an inner target's node
+    // identity is not stable.
+    const target = this.options.referenceTarget?.() ?? null;
+    const holder: ElementInternals | Element | null = target ?? this.internals;
+
+    if (!holder || !supportsAriaElementReferences()) {
       const present = this.referenceAttributes.filter((attr) => this.host.hasAttribute(attr));
       if (present.length > 0 && !warnedAboutReferences) {
         warnedAboutReferences = true;
@@ -182,7 +230,7 @@ export class HostAriaController {
 
       const raw = this.host.getAttribute(attribute);
       if (raw === null) {
-        this.assignReferences(property, null);
+        this.assignReferences(holder, property, null);
         continue;
       }
 
@@ -194,15 +242,18 @@ export class HostAriaController {
         .filter((el): el is HTMLElement => el instanceof HTMLElement);
 
       if (elements.length !== ids.length) unresolved.push(attribute);
-      this.assignReferences(property, elements.length > 0 ? elements : null);
+      this.assignReferences(holder, property, elements.length > 0 ? elements : null);
     }
     return unresolved;
   }
 
-  private assignReferences(property: string, elements: HTMLElement[] | null): void {
-    if (!this.internals) return;
+  private assignReferences(
+    holder: ElementInternals | Element,
+    property: string,
+    elements: HTMLElement[] | null,
+  ): void {
     try {
-      (this.internals as unknown as Record<string, unknown>)[property] = elements;
+      (holder as unknown as Record<string, unknown>)[property] = elements;
     } catch {
       // Some engines reject assignment when the referenced element is not in a
       // valid scope; nothing useful to do but leave the name unset.

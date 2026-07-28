@@ -6,6 +6,7 @@ import { createRef, ref, type Ref } from 'lit/directives/ref.js';
 // Lives outside the per-entry tree at libs/.../_styles/ — internal helper, not
 // a public sub-entry of @mintplayer/web-components.
 import { formSelectStyles } from '../../../_styles/form-select.styles';
+import { HostAriaController } from '@mintplayer/web-components/a11y';
 
 export type MpSelectSize = 'sm' | 'md' | 'lg';
 
@@ -64,6 +65,11 @@ export class MpSelect extends LitElement {
       'disabled',
       'value',
       'aria-label',
+      'input-label',
+      // Watched so a consumer's reference can be re-resolved when it changes; the
+      // ids themselves resolve in the host's tree, never inside the shadow root.
+      'aria-labelledby',
+      'aria-describedby',
     ];
   }
 
@@ -72,11 +78,22 @@ export class MpSelect extends LitElement {
   private _numberVisible: number | null = null;
   private _disabled = false;
   private _value: string | null = null;
+  private _inputLabel: string | null = null;
   private _values: string[] = [];
   private _options: MpSelectOption[] | null = null;
   private _slotOptions: MpSelectOption[] = [];
   private readonly _selectRef: Ref<HTMLSelectElement> = createRef();
   private _slotObserver: MutationObserver | null = null;
+
+  /**
+   * Tier-2 naming. No `role` is passed on purpose: the inner `<select>` already
+   * carries the real role, and adding one to the host would announce the control
+   * twice. For the same reason the references are targeted at that `<select>`
+   * rather than at the host's `ElementInternals`.
+   */
+  private readonly hostAria = new HostAriaController(this, {
+    referenceTarget: () => this._selectRef.value ?? null,
+  });
 
   get size(): MpSelectSize {
     return this._size;
@@ -116,6 +133,29 @@ export class MpSelect extends LitElement {
     if (this._disabled === next) return;
     this._disabled = next;
     this.reflectBoolean('disabled', next);
+    this.requestUpdate();
+  }
+
+  /**
+   * Accessible name for the inner `<select>`, as `inputLabel` / `input-label`.
+   *
+   * Named for where it lands rather than what it is: the value is written to the
+   * control *inside* the shadow root, not to the host. Plain `label` was rejected
+   * because `<option label>` and `<optgroup label>` are literally in play in this
+   * component's own markup, so `label` would read as one of those.
+   *
+   * This is the tier-1 naming path — always available, and the documented fallback
+   * where cross-root element references are not. `aria-labelledby` on the host is
+   * tier 2 and takes precedence, being a live reference rather than a copied
+   * string.
+   */
+  get inputLabel(): string | null {
+    return this._inputLabel;
+  }
+  set inputLabel(value: string | null) {
+    const next = value ?? null;
+    if (this._inputLabel === next) return;
+    this._inputLabel = next;
     this.requestUpdate();
   }
 
@@ -181,6 +221,14 @@ export class MpSelect extends LitElement {
         // `this.getAttribute('aria-label')` in render().
         this.requestUpdate();
         break;
+      case 'input-label':
+        this._inputLabel = newValue;
+        this.requestUpdate();
+        break;
+      case 'aria-labelledby':
+      case 'aria-describedby':
+        this.hostAria.syncReferences();
+        break;
     }
   }
 
@@ -195,7 +243,11 @@ export class MpSelect extends LitElement {
     const sizeClass = this._size === 'sm' || this._size === 'lg'
       ? `form-select form-select-${this._size}`
       : 'form-select';
-    const ariaLabel = this.getAttribute('aria-label');
+    /* Host `aria-label` wins over `input-label`: it is the more specific, more
+       idiomatic thing for a consumer to write, and `BsForwardAriaDirective` copies
+       it down from the Angular wrapper. `input-label` is the fallback for
+       consumers who cannot express a name as an attribute on the host. */
+    const ariaLabel = this.getAttribute('aria-label') ?? this._inputLabel;
     return html`
       <select
         ${ref(this._selectRef)}
@@ -228,6 +280,13 @@ export class MpSelect extends LitElement {
   protected override updated(): void {
     const select = this._selectRef.value;
     if (!select) return;
+
+    // Re-assigned every commit, not just on attribute change: element references
+    // point at a specific node, and the `<select>` is not guaranteed to be the same
+    // node after a re-render. Assigning once in connectedCallback would leave the
+    // name silently attached to a discarded element.
+    this.hostAria.syncReferences();
+
     if (this._multiple) {
       Array.from(select.options).forEach((opt) => {
         opt.selected = this._values.includes(opt.value);

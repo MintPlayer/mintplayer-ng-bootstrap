@@ -8,6 +8,7 @@ import { ref, createRef, type Ref } from 'lit/directives/ref.js';
 // Lives outside the per-entry tree at libs/.../_styles/ — an internal
 // directory, NOT a public sub-entry of @mintplayer/web-components.
 import { formCheckStyles } from '../../../_styles/form-check.styles';
+import { HostAriaController } from '@mintplayer/web-components/a11y';
 
 // `toggleButtonStyles` covers the `toggle_button` variant (`.btn` rules).
 // Side-effect-imports `<mp-toggle-button>` too — same module.
@@ -72,9 +73,12 @@ export class MpCheckbox extends LitElement {
       'name',
       'value',
       'color',
-      // Forwarded to the inner <input> in render() so consumers using the
-      // WC directly (without the Angular wrapper) can label the control.
+      // Copied to the inner <input> in render() so consumers using the WC
+      // directly (without the Angular wrapper) can label the control.
       'aria-label',
+      'input-label',
+      // NOT copied inward — resolved into element references against the host's
+      // tree by hostAria.syncReferences(). See renderCheckOrSwitch().
       'aria-labelledby',
       'aria-describedby',
     ];
@@ -87,8 +91,40 @@ export class MpCheckbox extends LitElement {
   private _name: string | null = null;
   private _value: string | null = null;
   private _color: ToggleButtonColor = 'primary';
+  private _inputLabel: string | null = null;
+
+  /**
+   * Tier-2 naming. No `role` is passed: the inner <input> is the real control and
+   * already carries one, so a role on the host would announce the checkbox twice.
+   * References therefore target that <input> rather than the host's internals.
+   */
+  private readonly hostAria = new HostAriaController(this, {
+    referenceTarget: () => this._inputRef.value ?? null,
+  });
   private readonly _inputId = `mp-checkbox-${++instanceCounter}`;
   private readonly _inputRef: Ref<HTMLInputElement> = createRef();
+
+  /**
+   * Accessible name for the inner `<input>`, as `inputLabel` / `input-label`.
+   *
+   * Standardised across the library on this name rather than `label`, because the
+   * value lands on the control *inside* the shadow root. Needed here even though
+   * the component slots a visible label: the slotted text sits in a
+   * `<span class="form-check-label">` that is **not** associated with the input via
+   * `for`/`id` across the boundary, so it is not the accessible name.
+   *
+   * Tier 1. A host `aria-labelledby` (tier 2) is a live element reference and takes
+   * precedence; this is the always-available fallback.
+   */
+  get inputLabel(): string | null {
+    return this._inputLabel;
+  }
+  set inputLabel(value: string | null) {
+    const next = value ?? null;
+    if (this._inputLabel === next) return;
+    this._inputLabel = next;
+    this.requestUpdate();
+  }
 
   get type(): MpCheckboxType {
     return this._type;
@@ -201,11 +237,17 @@ export class MpCheckbox extends LitElement {
         }
         break;
       case 'aria-label':
-      case 'aria-labelledby':
-      case 'aria-describedby':
         // Re-render so the inner <input> picks up the new value via
         // `this.getAttribute(...)` in render().
         this.requestUpdate();
+        break;
+      case 'input-label':
+        this._inputLabel = newValue;
+        this.requestUpdate();
+        break;
+      case 'aria-labelledby':
+      case 'aria-describedby':
+        this.hostAria.syncReferences();
         break;
     }
   }
@@ -221,13 +263,21 @@ export class MpCheckbox extends LitElement {
   protected override updated(): void {
     const input = this._inputRef.value;
     if (input) input.indeterminate = this._indeterminate && this._type !== 'toggle_button';
+
+    // Every commit, not once: element references point at a specific node, and
+    // switching `type` between `toggle_button` and the others replaces the <input>
+    // entirely. Assigning once would leave the name on a discarded element.
+    this.hostAria.syncReferences();
   }
 
   private renderCheckOrSwitch(): TemplateResult {
     const isSwitch = this._type === 'switch';
-    const ariaLabel = this.getAttribute('aria-label') ?? undefined;
-    const ariaLabelledBy = this.getAttribute('aria-labelledby') ?? undefined;
-    const ariaDescribedBy = this.getAttribute('aria-describedby') ?? undefined;
+    // Only aria-label can be copied inward. The IDREF forms are handled by
+    // `hostAria.syncReferences()`, which assigns resolved ELEMENTS to this input —
+    // copying the id strings here produced an attribute that resolved against the
+    // shadow root, where the consumer's element does not exist, and was silently
+    // dead while looking correct in devtools.
+    const ariaLabel = this.getAttribute('aria-label') ?? this._inputLabel ?? undefined;
     return html`
       <label class=${isSwitch ? 'form-check form-switch' : 'form-check'}>
         <input
@@ -242,8 +292,6 @@ export class MpCheckbox extends LitElement {
           role=${isSwitch ? 'switch' : nothing}
           aria-checked=${this._indeterminate ? 'mixed' : nothing}
           aria-label=${ifDefined(ariaLabel)}
-          aria-labelledby=${ifDefined(ariaLabelledBy)}
-          aria-describedby=${ifDefined(ariaDescribedBy)}
           @change=${this.onInputChange}
         />
         <span class="form-check-label"><slot></slot></span>
@@ -252,9 +300,12 @@ export class MpCheckbox extends LitElement {
   }
 
   private renderToggleButton(): TemplateResult {
-    const ariaLabel = this.getAttribute('aria-label') ?? undefined;
-    const ariaLabelledBy = this.getAttribute('aria-labelledby') ?? undefined;
-    const ariaDescribedBy = this.getAttribute('aria-describedby') ?? undefined;
+    // Only aria-label can be copied inward. The IDREF forms are handled by
+    // `hostAria.syncReferences()`, which assigns resolved ELEMENTS to this input —
+    // copying the id strings here produced an attribute that resolved against the
+    // shadow root, where the consumer's element does not exist, and was silently
+    // dead while looking correct in devtools.
+    const ariaLabel = this.getAttribute('aria-label') ?? this._inputLabel ?? undefined;
     return html`
       <input
         ${ref(this._inputRef)}
@@ -268,8 +319,6 @@ export class MpCheckbox extends LitElement {
         role="button"
         aria-pressed=${this._checked ? 'true' : 'false'}
         aria-label=${ifDefined(ariaLabel)}
-        aria-labelledby=${ifDefined(ariaLabelledBy)}
-        aria-describedby=${ifDefined(ariaDescribedBy)}
         @change=${this.onInputChange}
       />
       <label class="btn btn-${this._color}" for=${this._inputId}>
