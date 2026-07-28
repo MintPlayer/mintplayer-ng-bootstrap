@@ -426,7 +426,9 @@ Six additions, all in `libs/mintplayer-web-components/a11y/src/`:
    sugar over a bare object, the inverse of `live-announcer.ts`. The scheduler's four hand-rolled
    copies are the de-facto specification and collapse into it. This is a safety net, not a licence:
    for the dock the primary fix remains to reposition handles by `data-key` instead of rebuilding.
-6. **`inertRegions`** (`inert-regions.ts`) — writes `inert` **and** `aria-hidden` together so they
+6. **`inertRegions`** (`inert-regions.ts`) — gated on spike 0.4, because jsdom does not implement
+   `inert`'s focusability effect and so cannot verify the claim the choice rests on. Writes `inert`
+   **and** `aria-hidden` together so they
    cannot desync; callers declare the **current hidden set**, never deltas, so an interrupted
    animation cannot leave a stale `inert`; `suspend()`/`resume()` is reference-counted for
    transitions, because during one **both** the outgoing and incoming region must be non-inert;
@@ -484,6 +486,14 @@ control and avoids collision with `<option label>`/`<optgroup label>` semantics 
 `mp-otp-input.label` → `inputLabel` and its `[label]` input across all three wrappers: a
 documented breaking change on a public input, taken because the alternative is permanent
 two-name inconsistency in the API this PRD exists to standardise.
+
+Both tiers rest on an assumption worth naming, because it is the widest-blast-radius unproven claim
+in this document and **CI cannot reach it**: that `internals.role` makes a host nameable at all, so
+that `aria-label` on a role-less-by-attribute host is exposed rather than dropped under ARIA's
+prohibition on naming `role="generic"`. jsdom implements `attachInternals()` and the ARIA state
+properties but not the element-reference properties, so the whole cross-root story is verified only
+by spike 0.2 in three real engines. If 0.2a fails, the role must be expressed as a `role`
+*attribute* on the host instead, and ~18 components change shape.
 
 **Tier 2: host-attribute → element-reference translation, as a shared mixin.** The consumer keeps
 writing idiomatic `aria-labelledby="my-label"` on the **host**; the WC resolves the ids in the
@@ -667,7 +677,10 @@ Four guards, each catching a class the others cannot:
 1. **`*.aria.spec.ts` per element-bearing WC.** 20 of 30 have none; 9 have no spec file at all,
    including `dropdown-menu`, `select`, `treeview`, `datatable`, `shell` and `timeline`. Assert
    role, name and **each state transition** — not just the initial render.
-2. **A wrapper passthrough spec per framework**, enumerated with `import.meta.glob` so a new
+2. **A wrapper passthrough spec per framework** — written in **Phase B, before** the 22 Angular
+   wrappers are touched, not in Phase G. A regression net authored after the work it guards is not a
+   net: it must fail on the defective wrappers first, then go green as they are fixed, so
+   "forwarded" is proven rather than assumed. Enumerated with `import.meta.glob` so a new
    wrapper is covered with zero edits. The load-bearing assertion is that the element receiving
    the probe `id` has a tag matching `MP-`/`MINT-` — that is what distinguishes "forwarded" from
    "sitting on a wrapper `<div>` where ARIA is ignored". React and Vue have **no test target at
@@ -709,7 +722,7 @@ per hour. Detail, file lists and per-phase acceptance criteria are in
 
 | Phase | Content | Why here |
 |---|---|---|
-| **0** | Three spikes: `<details>` visual/UX parity (**gates D**), cross-root ARIA element references (**gates B**), `formDisabledCallback` vs CVA (**gates F**) | Each can change a committed decision. 0.1 must pass before any of D is written |
+| **0** | Four spikes: `<details>` visual/UX parity (**gates D**), host naming via `ElementInternals` (**gates all of B**), `formDisabledCallback` vs CVA (**gates F**), `inert` through slots (**gates D's carousel**) | Each covers a platform behaviour CI structurally cannot reach. 0.2 must pass before B, and Phase A already shipped code written against it |
 | **A** | WC a11y primitives (§5.1) + `OverlayController` focus/dismiss changes | Blocks B, D, E. Six `role="dialog"` popups and five focus-loss bugs fall out of it |
 | **B** | Naming + wrapper transparency (§5.2, §5.3 tier 1) + localization | Most user-visible gain per hour; unblocks the validity mirror |
 | **C** | Keyboard operability — the 11 pointer-only Criticals + focus restore | The largest Critical class; several fixes already exist elsewhere in the same file |

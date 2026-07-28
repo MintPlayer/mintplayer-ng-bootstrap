@@ -82,6 +82,16 @@ the e2e matrix), at default and at a narrow breakpoint, in light and dark
 - Enter and Space activate `<summary>` natively; Arrow/Home/End between headers still needs the
   existing handler, and the spike should confirm the native activation does not double-fire
   alongside it.
+- **Does `<details name>` exclusivity scope to the shadow root?** The entire single-open behaviour
+  rests on it. The spec says grouping is per node tree, the same rule as radios — and
+  `mp-accordion` already satisfies it — but "same as radios" is reasoning by analogy, and analogy
+  is what needed checking once already on this decision. Assert it directly: two accordions in two
+  shadow roots must not close each other's tabs, and two in the *same* root must.
+- **Does the UA fire `toggle` on the sibling it auto-closes?** Assumed yes, never verified, and
+  every piece of state sync depends on the answer — the `is-active` light-DOM markers,
+  `#closeNested`, and the `mp-accordion-tab-toggle` contract all need a signal when exclusivity
+  closes a tab the user did not touch. If the answer is no, the element needs a different mechanism
+  to notice, and that is a design change rather than a detail.
 
 **Two things the spike should confirm as *wins*, since they offset the risks:** closed content is
 removed from the accessibility tree and the tab order with no CSS (closing §4.5's accordion
@@ -96,17 +106,45 @@ event contract →** fall back to the original D1 scope (`<details>` for the no-
 `<button aria-expanded>` + `role="heading"` retained when hydrated), which also recovers the
 heading-navigation loss.
 
-### 0.2 — cross-root ARIA element references (gates Phase B's tier 2)
+### 0.2 — host naming via `ElementInternals` (gates **all** of Phase B)
 
-30 lines, three engines: a WC with an `<input>` in its shadow root, a `<label id>` in the document,
-and `internals.ariaLabelledByElements = [thatLabel]`. Assert the computed accessible name via
-Playwright's accessibility snapshot in Chromium, Firefox and WebKit. `ariaLabelledByElements` is
-Baseline April 2025 and the inner→outer direction is the permitted one — but Phase B's entire
-naming architecture rests on it, and the two authoritative sources disagreed during the audit (a
-stale WICG explainer still says "behind a flag in Firefox"). Also assert the negative that motivates
-the whole design: the same reference expressed as an `aria-labelledby` **string** on the shadow
-input resolves to nothing. **Fail →** tier 2 falls back to label properties only (tier 1), and
-`aria-errormessage` needs a different design.
+Two independent assumptions, both load-bearing, both currently unverified anywhere. Phase A's
+`HostAriaController` is written against them, and **jsdom cannot test either** — it implements
+`attachInternals()` and the ARIA state properties but not `ariaLabelledByElements`, so CI will never
+exercise this. One Playwright file, Chromium + Firefox + WebKit, using accessibility snapshots.
+
+**0.2a — does `internals.role` make a host nameable at all?** This is the keystone of Phase B and
+has the widest blast radius of anything unproven in the plan: ~18 components are slated to get a
+role on the host precisely so a consumer's `aria-label` lands somewhere legal. Assert that
+`<mp-thing aria-label="Country">`, whose role exists *only* via `internals.role` and which carries
+no `role` attribute, computes "Country" as its accessible name. Assert the control case too: the
+same host with **no** role exposes no name, because naming is prohibited on `role="generic"` — which
+is the defect being fixed. **Fail →** Phase B's whole architecture changes: the role has to be
+expressed as a `role` *attribute* on the host, or naming stays inside the shadow root and every
+component needs an explicit label property with no cross-root path at all.
+
+**0.2b — do cross-root element references resolve inner→outer?** A WC with an `<input>` in its
+shadow root, a `<label id>` in the document, and `internals.ariaLabelledByElements = [thatLabel]`.
+`ariaLabelledByElements` is Baseline April 2025 and inner→outer is the permitted direction — but the
+two authoritative sources disagreed during the audit (a stale WICG explainer still says "behind a
+flag in Firefox"). Also assert the negative that motivates the design: the same relationship
+expressed as an `aria-labelledby` **string** on the shadow input resolves to nothing. **Fail →**
+tier 2 falls back to label properties only, and `aria-errormessage` needs a different design.
+
+### 0.4 — `inert` propagation through slots (gates Phase D's carousel fix)
+
+Created by Phase A rather than discovered in the audit: `inertRegions` writes `inert` +
+`aria-hidden` together, but **jsdom does not implement `inert`'s focusability effect at all**, so
+`inert-regions.spec.ts` can only assert that the attribute lands. The load-bearing claim is
+untested — that `inert` propagates down the **flat** tree, so marking a shadow-DOM wrapper cell also
+removes the consumer's *slotted* content from the tab order and the accessibility tree. That is the
+entire reason `inert` was chosen over a `tabindex="-1"` sweep, and Phase D's carousel fix depends on
+it because slides are slotted light DOM.
+
+One page, three engines: a WC with a slotted `<button>` inside an `inert` shadow wrapper. Tab from
+before it and assert focus skips to after it, and assert the button is absent from the accessibility
+snapshot. **Fail →** `inertRegions` needs to walk `assignedElements()` and write `tabindex="-1"`
+per node, with all the bookkeeping that implies on rebuild.
 
 ### 0.3 — `formDisabledCallback` vs `ControlValueAccessor` (gates Phase F)
 
@@ -116,8 +154,16 @@ wrap it in a `<fieldset disabled>` inside a reactive form that also calls `setDi
 confirm the single `#disabled` source of truth resolves both without a loop or a stale attribute.
 Small, but it is the one part of Phase F that is design rather than boilerplate.
 
-**Sequencing:** 0.2 and 0.3 are independent of everything and can run in parallel with Phase A.
-**0.1 must complete before Phase D starts** — it is the only one whose failure changes a decision.
+**Sequencing:** **0.2 must complete before Phase B starts** — 0.2a can invalidate B's architecture,
+not merely narrow it, and Phase A already shipped code written against it. **0.1 must complete
+before Phase D**, and **0.4 before D's carousel work**. 0.3 is independent and can run any time
+before F.
+
+Note what these three have in common: each covers a platform behaviour that **CI structurally
+cannot** reach, because jsdom implements neither `ariaLabelledByElements` nor `inert`'s focusability
+effect, and cannot judge visual parity. They are not a formality before "real" work — they are the
+only verification these particular claims will ever get, which is why each carries an explicit
+fail-path above.
 
 ---
 
@@ -194,6 +240,14 @@ at runtime. Includes `BsNavbarBrand`/`BsNavbarDropdown`, whose defect hides behi
 
 **Vue** — one ordering fix: `v-bind="$attrs"` **after** the explicit `:aria-label` in the navbar
 SFCs.
+
+**The wrapper passthrough spec lands HERE, first, before the 22 wrappers are touched** — moved out
+of Phase G, where it was listed. It is this phase's regression net, and a net written after the work
+it guards is not a net: the whole point is to fail on the 22 Angular wrappers *before* the fix, then
+go green as they land, so "forwarded" is proven rather than assumed. Same for the React
+`tsc --noEmit` type-test — write it, watch it fail on the 10 known-defective wrappers, then fix them.
+Spec details are in Phase G's table; only the ordering changes. Phase G keeps the axe gate, the
+per-component ARIA specs and the docs.
 
 **Localization** — route `query-builder`'s and `file-manager`'s hardcoded `aria-label`s through the
 message bundles they already ship (zero design work); add label properties for the other 18
@@ -411,8 +465,8 @@ Specs land **with** each phase; this phase adds what is cross-cutting and closes
 | Item | Detail |
 |---|---|
 | `*.aria.spec.ts` per element-bearing WC | 20 of 30 have none; 9 have no spec file at all. Assert role, name and **each state transition**. Use `expectIdrefResolves` for every IDREF |
-| Wrapper passthrough spec ×3 | `import.meta.glob` enumeration so new wrappers are covered with zero edits; opt-out and required-children registries as literal arrays *in the spec*; the load-bearing assertion is that the element receiving the probe `id` has a tag matching `MP-`/`MINT-`. Add `test` targets + `vite.config.mts` to the React and Vue libs (vitest + jsdom, `--pool=threads`); no new dependencies |
-| React type-test target | `tsc --noEmit` over a committed probe, one line per exported wrapper, probing **`role`/`id`/`tabIndex` — never `aria-*`**, because TypeScript exempts hyphenated JSX attribute names from excess-property checking and an `aria-*` probe passes vacuously on every broken wrapper. Put that sentence in a comment at the top of the probe |
+| ~~Wrapper passthrough spec ×3~~ | **Moved to Phase B** — it guards B's work and must precede it. Spec shape: `import.meta.glob` enumeration so new wrappers are covered with zero edits; opt-out and required-children registries as literal arrays *in the spec*; the load-bearing assertion is that the element receiving the probe `id` has a tag matching `MP-`/`MINT-`. Add `test` targets + `vite.config.mts` to the React and Vue libs (vitest + jsdom, `--pool=threads`); no new dependencies |
+| ~~React type-test target~~ | **Moved to Phase B.** `tsc --noEmit` over a committed probe, one line per exported wrapper, probing **`role`/`id`/`tabIndex` — never `aria-*`**, because TypeScript exempts hyphenated JSX attribute names from excess-property checking and an `aria-*` probe passes vacuously on every broken wrapper. Put that sentence in a comment at the top of the probe |
 | `e2e-a11y` axe target ×3 apps | Table-driven over a route list; `withTags(['wcag2a','wcag2aa','wcag21a','wcag21aa','wcag22aa','best-practice'])`; fail on `critical` + `serious`; two states per route (load + one interaction); **plus a `javaScriptEnabled: false` pass**. Separate CI step so `nx affected` cannot silence it. Per-route allow-list with issue links, never a lowered threshold |
 | Keyboard-only walkthrough | One Playwright spec per interactive component: every visible control focusable and activatable. This is the gate that would have caught all seven migration regressions |
 | `CLAUDE.md` `## Accessibility` | Eleven rules + the two no-JS tier rules + a six-item pre-PR checklist, inserted after `## Framework wrappers`. Text drafted in the audit; keep it ruthlessly concise |
