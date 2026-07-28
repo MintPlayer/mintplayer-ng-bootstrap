@@ -731,13 +731,20 @@ The largest Critical class. Several fixes already exist elsewhere in the same fi
   the search input); bs-alert dismiss rescues focus to the next tabbable after the alert — all
   three only act when focus was actually inside (the scoped-capture rule).
 
-**Remaining in C:** C7 part 2 — FocusRestore adoption in mint-dock-manager (intersection handles by
-data-key, panes by `${tabId}-header-button`), the five scheduler views via BaseView (collapsing the
-four hand-rolled rAF blocks), mp-splitter, and mp-query-builder's remove paths setting
-_pendingRefocusId (machinery exists). C8 — initialFocus on the six role="dialog" popups (pickers
-focus the selected date cell per APG), dock move-mode scoped to the originating tab + cleared on
-focusout, signature-pad typed-signature alternative + Clear/Undo in the tab order. Then the
-keyboard-only Playwright walkthrough per affected component (acceptance).
+- **C7 part 2** (`60d31731`): FocusRestore adopted in mint-dock-manager (renderLayout teardown;
+  keyed data-key/data-tab-id/id) and mp-splitter (dividers keyed by position); query-builder's
+  remove path re-homes focus on the PARENT group via the existing _pendingRefocusId machinery.
+  **Deliberate deviation:** the scheduler's two hand-rolled restore blocks stay — correct,
+  documented, keyed by domain identity, and their sync+rAF dual covers a case the primitive's
+  single retry does not. The primitive prevents new hand-rolls; it does not erase good ones.
+
+**Remaining in C (the ONLY C work left):** **C8** — `initialFocus` on the six `role="dialog"`
+popups (datepicker/timepicker/datetime-picker pickers focus the selected date cell per APG;
+popover/offcanvas/modal verify against `OverlayController.initialFocus` where applicable); dock
+move-mode scoped to the originating tab and cleared on `focusout`; signature-pad typed-signature
+alternative + Clear/Undo in the tab order (documenting honestly that freehand drawing has no
+keyboard equivalent). Then C's acceptance: the keyboard-only Playwright walkthrough per affected
+component (no interaction leaves activeElement on <body>; every demo keymap claim true).
 
 Old item list for reference: C7 FocusRestore adoption (dock, scheduler
 views via BaseView, splitter, tree-select chips, query-builder _pendingRefocusId, bs-alert,
