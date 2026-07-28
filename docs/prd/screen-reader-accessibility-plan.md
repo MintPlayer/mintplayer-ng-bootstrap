@@ -689,6 +689,40 @@ parameterises its visible text.
 
 The largest Critical class. Several fixes already exist elsewhere in the same file.
 
+### As-built so far (C1–C5, commits `61372f7c`…`908f108a`)
+
+- **C1** `mp-time-list` rewritten on `RovingFocus` — the dangling host `aria-activedescendant`
+  (IDREF into its own shadow root, announced nothing) replaced by real focus; host tabindex removed
+  (was a second silent stop); Enter/Space became native button activation; `host.focus()` lands on
+  the active option. `mp-dropdown-menu` Enter/Space synthesized ONLY where the UA is not native
+  (bare `<li>` always; `<a href>` for Space); found + fixed `#valueOf` reading `HTMLLIElement`'s
+  native ordinal `value` (default 0) so a bare li's `data-value` was unreachable.
+- **C2** datatable: sortable headers are real `<button>`s; resize handle focusable with
+  ArrowLeft/Right (same 40px floor as pointer); rows rove when selectable, ArrowUp/Down move focus,
+  Enter/Space select with pointer-modifier parity. Found + fixed: **shift-range selection never
+  worked** — `_focusedRowKey` was set before the range check compared against it; ranges now anchor
+  on `_selectionAnchorKey`, moved only by non-shift selections.
+- **C3** file-manager: Enter opens the single selection in both views (was dblclick-only); upload
+  button un-gated from `pointer: coarse` (drag-drop was the only mouse/keyboard upload path);
+  context menu focuses in, arrows via `RovingFocus`, focus RETURNS (deepActiveElement capture,
+  `<body>` excluded — `FocusRestore` deliberately not used: it is the rebuild-continuity primitive,
+  not a popup capture/return).
+- **C4** scheduler month chips get the week/day treatment (role=button, tabindex, aria-label;
+  focusing selects via handleFocusIn); "+N more" and year month-headers activated by a
+  scheduler-level Enter/Space handler replaying the click delegation. Timeline gains opt-in
+  `activatable` (roving + Enter/Space → item-click; container honestly becomes group-of-buttons —
+  a listitem may not be interactive). Opt-in because listener introspection is impossible.
+- **C5** tree-select search input: role=combobox, aria-haspopup=tree, LIVE aria-expanded,
+  ArrowDown opens then hands focus to the embedded treeview, Escape closes unconditionally.
+
+**Remaining in C:** C6 the Angular-side items ([bsDropdown] ArrowDown/Escape, popover trigger +
+[bsOverlayFocus], context-menu directive, tooltip focusin/focusout, offcanvas closeOnEscape +
+conditional aria-modal, multi-range aria-disabled, bs-rating unset-value tab stop, treeview
+composedPath guard, query-builder Alt+Arrow handle); C7 FocusRestore adoption (dock, scheduler
+views via BaseView, splitter, tree-select chips, query-builder _pendingRefocusId, bs-alert,
+pagination repeat keying); C8 initialFocus on the six dialogs + dock move-mode scoping +
+signature-pad typed alternative.
+
 **Pointer-only → keyboard-operable**: datatable header sort (wrap the label in a real `<button>`)
 and column resize (port `13e1e03d~1:…/datatable.component.ts:634-662` nearly verbatim — same
 `_columnWidths` model) and single-mode row selection; dock's 8 floating resizers (copy the
