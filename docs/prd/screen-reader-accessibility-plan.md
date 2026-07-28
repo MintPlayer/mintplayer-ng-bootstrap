@@ -726,7 +726,20 @@ The largest Critical class. Several fixes already exist elsewhere in the same fi
   hasBackdrop + Escape closes; [bsContextMenu] Shift+F10/ContextMenu opens at the focused element,
   focus in + Escape + focus return. dropdown.aria.spec reads mp-dropdown-menu now.
 
-**Remaining in C:** C6 leftovers — none. Next: C7 FocusRestore adoption (dock, scheduler
+- **C7 part 1** (`1440b486`): mp-pagination pages keyed by page number (a reflow cannot relabel
+  the focused button); mp-tree-select chip removal re-homes focus (next chip's remove button, else
+  the search input); bs-alert dismiss rescues focus to the next tabbable after the alert — all
+  three only act when focus was actually inside (the scoped-capture rule).
+
+**Remaining in C:** C7 part 2 — FocusRestore adoption in mint-dock-manager (intersection handles by
+data-key, panes by `${tabId}-header-button`), the five scheduler views via BaseView (collapsing the
+four hand-rolled rAF blocks), mp-splitter, and mp-query-builder's remove paths setting
+_pendingRefocusId (machinery exists). C8 — initialFocus on the six role="dialog" popups (pickers
+focus the selected date cell per APG), dock move-mode scoped to the originating tab + cleared on
+focusout, signature-pad typed-signature alternative + Clear/Undo in the tab order. Then the
+keyboard-only Playwright walkthrough per affected component (acceptance).
+
+Old item list for reference: C7 FocusRestore adoption (dock, scheduler
 views via BaseView, splitter, tree-select chips, query-builder _pendingRefocusId, bs-alert,
 pagination repeat keying); C8 initialFocus on the six dialogs + dock move-mode scoping +
 signature-pad typed alternative.
