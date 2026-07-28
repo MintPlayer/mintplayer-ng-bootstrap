@@ -7,3 +7,5 @@ export type { InertRegions } from './inert-regions';
 export { dismissStack } from './dismiss-stack';
 export { FocusTrap, collectTabbables, containsComposed } from './focus-trap';
 export type { FocusTrapOptions, InitialFocusTarget } from './focus-trap';
+export { RovingFocus } from './roving-focus';
+export type { RovingFocusOptions, RovingFocusOrientation } from './roving-focus';
