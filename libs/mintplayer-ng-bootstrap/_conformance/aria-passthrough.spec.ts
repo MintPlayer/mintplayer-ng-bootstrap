@@ -41,6 +41,25 @@ import { BsTreeviewComponent } from '@mintplayer/ng-bootstrap/treeview';
  * documented, and the moment a wrapper starts forwarding its `it.fails` entry
  * *itself* fails, forcing the list to shrink rather than rot.
  *
+ * **Why this lives in `_conformance/` and not in `a11y/src/`.** It imports 19
+ * sibling secondary entry points. `a11y` is itself a published entry point, and
+ * the wrappers already import *from* it (`dropdown`, `modal`, `offcanvas`,
+ * `file-upload` today; all 19 once `BsForwardAriaDirective` lands there). Placing
+ * this inside `a11y` therefore pointed the primitives entry point at its own
+ * consumers — a circular dependency between published entry points, hidden only
+ * by `tsconfig.lib.json` excluding `*.spec.ts` from the build. Latent, but the
+ * moment a helper is lifted out of a spec into `src/` it becomes a build failure.
+ * `_conformance/` has no `ng-package.js`, so it is not an entry point at all and
+ * cannot be published — the same arrangement as the existing
+ * `_spike-lit-context/`.
+ *
+ * It stayed a vitest spec rather than moving to the e2e project on purpose:
+ * attribute forwarding is a plain DOM fact that a real browser adds nothing to,
+ * unlike the checks that genuinely need one (Tab order, `inert` focusability,
+ * cross-root ARIA references — see the plan's Phase 0). Putting a 19-wrapper
+ * conformance matrix in Playwright would need a bespoke demo page and couple the
+ * guard to demo content, for no additional signal.
+ *
  * Scope boundary, deliberately narrow: this asserts the attributes reach the
  * `mp-*` host and stops there. Whether the web component then re-exposes them on
  * the role-bearing node inside its shadow root is the *component's* contract and

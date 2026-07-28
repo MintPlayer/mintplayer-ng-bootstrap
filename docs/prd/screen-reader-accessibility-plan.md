@@ -317,6 +317,30 @@ at runtime. Includes `BsNavbarBrand`/`BsNavbarDropdown`, whose defect hides behi
 **Vue** — one ordering fix: `v-bind="$attrs"` **after** the explicit `:aria-label` in the navbar
 SFCs.
 
+**Where the conformance specs live — not in the entry point they guard.** The Angular passthrough
+spec is at `libs/mintplayer-ng-bootstrap/_conformance/`, deliberately **not** `a11y/src/`. It imports
+19 sibling secondary entry points, `a11y` is itself published, and the wrappers already import *from*
+`a11y` (`dropdown`, `modal`, `offcanvas`, `file-upload` today; **all 19** once
+`BsForwardAriaDirective` lands there). Inside `a11y` it would point the primitives entry point at its
+own consumers — a cycle between published entry points, masked only by `tsconfig.lib.json` excluding
+`*.spec.ts` from the build. Latent today, a build failure the moment a helper moves from a spec into
+`src/`. A `_conformance/` folder has no `ng-package.js`, so it is not an entry point and cannot be
+published; same arrangement as the existing `_spike-lit-context/`. Apply the same rule to the React
+and Vue passthrough specs.
+
+It stays a **vitest** spec rather than moving to e2e: attribute forwarding is a plain DOM fact a real
+browser adds nothing to, unlike the three checks that genuinely need one (Tab order, `inert`
+focusability, cross-root ARIA references — Phase 0). A 19-wrapper conformance matrix in Playwright
+would need a bespoke demo page and couple the guard to demo content for no extra signal.
+
+**As built:** the guard landed first (`97f8e734`) and immediately corrected the audit. **0 of 19
+wrappers forward the full set**, not "22 of 24 discard ARIA with 2 exceptions": `bs-checkbox` and
+`bs-radio` mirror `aria-*` via a `MutationObserver` (which the audit missed) but forward no
+`role`/`id`/`tabindex`, and **`bs-carousel`/`bs-navbar` do not forward `aria-label` at all** — they
+accept a bespoke `[ariaLabel]` *input*, so a consumer writing the natural attribute gets `null`. Had
+the directive been written against the audit's numbers it would have been built believing two
+wrappers already worked.
+
 **The wrapper passthrough spec lands HERE, first, before the 22 wrappers are touched** — moved out
 of Phase G, where it was listed. It is this phase's regression net, and a net written after the work
 it guards is not a net: the whole point is to fail on the 22 Angular wrappers *before* the fix, then
