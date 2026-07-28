@@ -1,4 +1,5 @@
 import { LitElement, html, nothing, type TemplateResult } from 'lit';
+import { deepActiveElement, RovingFocus } from '@mintplayer/web-components/a11y';
 import { repeat } from 'lit/directives/repeat.js';
 import { unsafeHTML } from 'lit/directives/unsafe-html.js';
 import { ref, createRef, type Ref } from 'lit/directives/ref.js';
@@ -702,6 +703,7 @@ export class MpFileManager extends LitElement {
         aria-label=${this._messages.ariaFileOperations}
         style=${styleMap({ left: `${menu.x}px`, top: `${menu.y}px` })}
         @click=${(ev: MouseEvent) => ev.stopPropagation()}
+        @keydown=${this.onContextMenuKeydown}
       >
         ${this.opEnabled('rename')
           ? html`<li role="none"><button class="menu-item" role="menuitem" ?disabled=${this._selection.size !== 1 || !this.opEnabledOnSelection('rename')} @click=${() => { this.closeContextMenu(); this.beginRenameFromToolbar(); }}>${m.rename}</button></li>`
@@ -727,12 +729,34 @@ export class MpFileManager extends LitElement {
     `;
   }
 
+  /**
+   * Where focus returns when the menu closes. Captured at open, before focus
+   * moves into the menu; <body> is excluded so an unfocused open cannot
+   * "restore" to nowhere (the OverlayController lesson).
+   */
+  private _contextMenuReturnTarget: HTMLElement | null = null;
+
+  /** APG menu: one tab stop, arrows move focus, disabled items are skipped. */
+  private readonly contextMenuRoving = new RovingFocus({
+    items: () =>
+      Array.from(this.renderRoot?.querySelectorAll<HTMLElement>('.context-menu .menu-item:not([disabled])') ?? []),
+    orientation: 'vertical',
+    wrap: true,
+  });
+
   private openContextMenu(targetId: string, x: number, y: number): void {
     if (this._allowOperations === false) return;
+    const active = deepActiveElement();
+    this._contextMenuReturnTarget =
+      active instanceof HTMLElement && active !== active.ownerDocument.body ? active : null;
     this._contextMenu = { x, y, targetId };
     this.requestUpdate();
     // Close on document click / Escape — wire one-shot listeners.
     void this.updateComplete.then(() => {
+      // APG: focus moves INTO the menu when it opens.
+      this.contextMenuRoving.sync();
+      this.contextMenuRoving.moveTo(0);
+
       const close = (ev?: Event) => {
         if (ev instanceof KeyboardEvent && ev.key !== 'Escape') return;
         this.closeContextMenu();
@@ -746,10 +770,16 @@ export class MpFileManager extends LitElement {
     });
   }
 
+  private onContextMenuKeydown = (ev: KeyboardEvent): void => {
+    if (this.contextMenuRoving.onKeydown(ev)) ev.preventDefault();
+  };
+
   private closeContextMenu(): void {
     if (this._contextMenu) {
       this._contextMenu = null;
       this.requestUpdate();
+      this._contextMenuReturnTarget?.focus();
+      this._contextMenuReturnTarget = null;
     }
   }
 
@@ -803,7 +833,7 @@ export class MpFileManager extends LitElement {
               aria-label=${m.paste}
             >📥 ${m.paste}</button>`
           : nothing}
-        ${this._allowUpload && this._isTouchMode
+        ${this._allowUpload
           ? html`<button
               type="button"
               @click=${this.openUploadPicker}
@@ -1094,6 +1124,18 @@ export class MpFileManager extends LitElement {
   }
 
   private onContentKeydown = (ev: KeyboardEvent): void => {
+    if (ev.key === 'Enter' && this._selection.size === 1) {
+      // Same action as double-click: open the folder / activate the file. One
+      // rule for both views — opening was pointer-only (dblclick) before.
+      // Skip when the rename editor is active; its own handler owns Enter.
+      const target = ev.composedPath()[0];
+      if (target instanceof HTMLElement && target.closest('input, [contenteditable]')) return;
+      ev.preventDefault();
+      const [id] = this._selection;
+      const node = this._nodes.find((n) => n.id === id);
+      if (node) this.activateNode(node);
+      return;
+    }
     if ((ev.key === 'ContextMenu' || (ev.key === 'F10' && ev.shiftKey)) && this._selection.size > 0) {
       ev.preventDefault();
       const target = ev.target as HTMLElement | null;
