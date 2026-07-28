@@ -530,9 +530,18 @@ across all 11 implementing components (46 cases) so the next component cannot dr
 static-properties elements observe host attributes via phantom property entries — non-obvious,
 recorded in the code.
 
-**Remaining in B:** code-snippet + ribbon `regionLabel`, the Angular-only tail (typeahead,
-progress-bar, close, rating, breadcrumb, floating-label, card-img `alt`, the 12 `ariaLabel`-input
-components), the Vue conformance guard, and the 44 hardcoded strings.
+#### ✓ LANDED (B7–B8) — `c5d27372`, `743e254c`: Vue guard + ribbon/code-snippet
+
+The Vue guard asserts the **invariant** rather than mounting 47 wrappers: every
+`inheritAttrs: false` SFC must contain `v-bind="$attrs"` (statically, with a glob-count canary), plus
+four representatives mounted at runtime. Vue gets its first test target. `mp-ribbon`'s unconditional
+`aria-label` clobber is fixed via `regionLabel` with **value-based** ownership — the same rehydration
+trap as the directive's presentation marker, solved the same way. `mp-code-snippet`'s copy button
+takes `copy-label` with a `${language}` placeholder (formatter-not-prefix, first consumer).
+
+**Remaining in B:** the Angular-only tail (typeahead, progress-bar, close, rating, breadcrumb,
+floating-label, card-img `alt`, the 12 `ariaLabel`-input components) and the ~40 remaining hardcoded
+strings (tree-select's Remove/Clear, datatable's, query-builder/file-manager bundles).
 
 **Angular** — new `BsForwardAriaDirective` in `@mintplayer/ng-bootstrap/a11y`, applied to the inner
 `mp-*` element of all 22 nested-host wrappers, plus `role="presentation"` on the `bs-*` host and
