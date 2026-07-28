@@ -48,6 +48,10 @@ export class MpTimeline extends LitElement {
       'align',
       'reverse',
       'selectable',
+      // Opt-in: click-only consumers (no selection) whose items must still be
+      // keyboard-reachable. The WC cannot introspect whether anyone listens to
+      // item-click, so this cannot default on without adding dead tab stops.
+      'activatable',
       'is-server-side',
       // Naming: copied onto the role-bearing .timeline node (list/listbox).
       // Host aria-label wins over input-label, as everywhere.
@@ -64,6 +68,7 @@ export class MpTimeline extends LitElement {
   private _align: TimelineAlign = 'start';
   private _reverse = false;
   private _selectable: TimelineSelectable = 'none';
+  private _activatable = false;
   private _isServerSide = false;
   private _inputLabel: string | null = null;
 
@@ -226,6 +231,9 @@ export class MpTimeline extends LitElement {
       case 'is-server-side':
         this._isServerSide = newValue !== null && newValue !== 'false';
         break;
+      case 'activatable':
+        this._activatable = newValue !== null && newValue !== 'false';
+        break;
       case 'input-label':
         this._inputLabel = newValue;
         break;
@@ -274,7 +282,10 @@ export class MpTimeline extends LitElement {
   // ----- render ------------------------------------------------------------
 
   override render(): TemplateResult {
-    const role = this._selectable !== 'none' ? 'listbox' : 'list';
+    // activatable-without-selection = buttons in a group: a `listitem` may not
+    // be interactive, so the list semantics honestly give way to what the items
+    // actually are in that mode.
+    const role = this._selectable !== 'none' ? 'listbox' : this._activatable ? 'group' : 'list';
     return html`
       <div
         class="timeline"
@@ -318,10 +329,10 @@ export class MpTimeline extends LitElement {
           side=${sides[i]}
           orientation=${orientation}
           ?last=${isLast}
-          role=${selectable !== 'none' ? 'option' : 'listitem'}
+          role=${selectable !== 'none' ? 'option' : this._activatable ? 'button' : 'listitem'}
           ?selected=${selected}
           aria-selected=${selectable !== 'none' ? (selected ? 'true' : 'false') : nothing}
-          tabindex=${selectable !== 'none' ? (i === activeIndex ? '0' : '-1') : nothing}
+          tabindex=${selectable !== 'none' || this._activatable ? (i === activeIndex ? '0' : '-1') : nothing}
           data-index=${i}
         ></mp-timeline-item>`;
       })}
@@ -412,8 +423,60 @@ export class MpTimeline extends LitElement {
     }
   };
 
+  /** The item-click emission shared by pointer and keyboard activation. */
+  private emitItemClick(index: number, originalEvent: Event): void {
+    const el = this.itemElements[index];
+    if (!el || el.hasAttribute('disabled')) return;
+    const model = this.modelFor(el, index);
+    this.dispatchEvent(
+      new CustomEvent<TimelineItemClickDetail>('item-click', {
+        detail: { item: model, index, originalEvent },
+        bubbles: true,
+        composed: true,
+      }),
+    );
+  }
+
+  /** Arrows rove; Enter/Space emit item-click — activation without selection. */
+  private onActivatableKeydown(ev: KeyboardEvent): void {
+    const els = this.itemElements;
+    if (!els.length) return;
+    const current = this.itemFromEvent(ev).index;
+    switch (ev.key) {
+      case 'ArrowDown':
+      case 'ArrowRight':
+        ev.preventDefault();
+        this.moveFocus(current, 1, els);
+        return;
+      case 'ArrowUp':
+      case 'ArrowLeft':
+        ev.preventDefault();
+        this.moveFocus(current, -1, els);
+        return;
+      case 'Home':
+        ev.preventDefault();
+        this.moveFocusTo(this.firstFocusable(els), els);
+        return;
+      case 'End':
+        ev.preventDefault();
+        this.moveFocusTo(this.lastFocusable(els), els);
+        return;
+      case 'Enter':
+      case ' ': {
+        if (current < 0) return;
+        ev.preventDefault();
+        this.emitItemClick(current, ev);
+        return;
+      }
+    }
+  }
+
   private onKeydown = (ev: KeyboardEvent): void => {
-    if (this._selectable === 'none') return;
+    if (this._selectable === 'none') {
+      if (!this._activatable) return;
+      this.onActivatableKeydown(ev);
+      return;
+    }
     const els = this.itemElements;
     if (!els.length) return;
     const current = this.itemFromEvent(ev).index;
