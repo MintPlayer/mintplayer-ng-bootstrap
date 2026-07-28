@@ -987,6 +987,14 @@ Acceptance criteria in §7 are written to test transitions, not initial renders,
 
 ## 12. References
 
+**Raw audit reports — `.a11y-audit/` (untracked, local only).** 20 per-slice and per-sweep reports
+with `file:line` for every finding, plus `INDEX.md` describing each. Deliberately gitignored rather
+than committed: this PRD carries all 42 Criticals and the ten root causes, but the ~110 Majors and
+~75 Minors keep their citations only there, and Phases D–G are where that long tail lives. If the
+folder is missing, the PRD and plan are self-sufficient for A–C; D–G will need findings re-derived.
+
+
+
 Prior PRDs: `aria-accessibility-audit.md` (§13 follow-ups), `wc-aria-accessibility.md` (§12; and
 line 399, the deferral this PRD triggers), `aria-review-fixes.md`, `swiper-aria.md`,
 `scheduler-keyboard-grid-nav.md`, `scheduler-controlled-selection.md`, `timeline.md`,

@@ -64,3 +64,6 @@ libs/**/*.styles.ts
 libs/mintplayer-web-components/custom-elements.json
 .claude/worktrees
 libs/mintplayer-web-components/**/*.generated.ts
+
+# Raw a11y audit reports (local only, see docs/prd/screen-reader-accessibility.md)
+/.a11y-audit
