@@ -237,7 +237,8 @@ Four things learned that change later phases:
 - **jsdom implements `attachInternals()` and the `ElementInternals` ARIA state properties, but not
   `ariaLabelledByElements`.** So role and state are unit-testable and cross-root reference
   resolution is not. That is spike 0.2, now load-bearing rather than precautionary:
-  `HostAriaController.syncReferences()` has a path CI cannot exercise.
+  `HostAriaController.syncReferences()` has a path CI cannot exercise, and `host-aria.spec.ts`
+  documents that gap rather than pretending to cover it.
 - **Tab order cannot be unit-tested at all**, and not because of jsdom — see the mechanism under
   spike 0.4. Consequence: the one-tab-stop invariant is a Playwright concern by nature.
 - **`RovingFocus` deliberately omits an `aria-activedescendant` mode.** Inside a shadow root that
@@ -250,17 +251,6 @@ Four things learned that change later phases:
   The Angular directive guards these, and that guard was itself a May-2026 fix
   (`aria-review-fixes.md`, `f2e04db2`) — so this would have reintroduced a defect already fixed once.
   Phase E deletes the Angular duplicates.
-
-- **jsdom implements `attachInternals()` and the `ElementInternals` ARIA state properties, but not
-  `ariaLabelledByElements`.** So role and state are unit-testable and cross-root reference
-  resolution is not — it needs a real browser in all three engines. That is exactly spike 0.2, and
-  it is now load-bearing rather than precautionary: `HostAriaController.syncReferences()` has an
-  untested-in-CI path. `host-aria.spec.ts` documents the gap instead of pretending to cover it.
-- **`RovingFocus` deliberately omits an `aria-activedescendant` mode**, unlike the Angular directive
-  it ports. Inside a shadow root that attribute cannot work (it is an IDREF), which is precisely why
-  `mp-time-list` is inert. Any Phase C or E work that reaches for activedescendant should use
-  roving tabindex instead — including the combobox work, where the popup and the input must
-  therefore end up in the same tree.
 
 | File | Content |
 |---|---|

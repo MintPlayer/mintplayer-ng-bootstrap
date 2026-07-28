@@ -467,17 +467,46 @@ background `inert` stay **out** of the controller: it cannot know whether its ho
 dialog or a menu, and `aria-modal="true"` on a non-modal popup hides the page from AT.
 `mint-dock-manager.element.ts:565-570` models the honest case.
 
+Two implementation constraints that only surfaced once it was built and tested, both non-obvious
+enough to state here rather than leave in the code:
+
+- **`document.body` must be excluded from the captured target.** It is what `activeElement` reports
+  when nothing is focused, and it *is* an `HTMLElement`, so a naive capture takes it and then beats
+  the configured `trigger` — reproducing the exact "stranded on `<body>`" failure the capture exists
+  to fix. A programmatic open with no prior focus must fall through to the trigger. Caught by a
+  pre-existing overlay test, which was right and the new code wrong.
+- **The return target must be read *before* the panel is hidden.** Removing `data-menu-open` applies
+  the consumer's `display: none` synchronously, which blurs anything focused inside the panel to
+  `<body>` — so reading the target afterwards reads the wrong answer.
+
 ### 5.2 Wrapper transparency
 
-**Angular — 22 of 24 wrappers discard consumer ARIA.** Every wrapper is a nested host:
-`<bs-checkbox>` renders `<mp-checkbox>` as a child, so a consumer's `aria-label` lands on a
-role-less `bs-*` element and is ignored, and `tabindex="0"` adds a dead tab stop *in front of*
-the real control. Only `carousel` and `navbar` forward anything, and only `aria-label`, via a
-bespoke input; `bs-select` does it a third way imperatively. Fix: one shared
-`BsForwardAriaDirective` in `@mintplayer/ng-bootstrap/a11y` copying an allow-list
+**Angular — 0 of 19 wrappers are transparent to ARIA.** *Measured, superseding the audit's estimate;
+see the correction below.* Every wrapper is a nested host: `<bs-checkbox>` renders `<mp-checkbox>` as
+a child, so a consumer's `aria-label` lands on a role-less `bs-*` element and is ignored, and
+`tabindex="0"` adds a dead tab stop *in front of* the real control.
+
+Fix: one shared `BsForwardAriaDirective` in `@mintplayer/ng-bootstrap/a11y` copying an allow-list
 (`aria-*`, `role`, `id`, `tabindex`, `title`, `lang`, `dir`) from the `bs-*` host onto the `mp-*`
-child, plus `MutationObserver` for later changes, plus `role="presentation"` on the wrapper host
-so it is invisible to AT rather than a mislabelled generic. One PR fixes all 22.
+child, plus `MutationObserver` for later changes, plus `role="presentation"` on the wrapper host so
+it is invisible to AT rather than a mislabelled generic. One PR fixes all 19.
+
+> **Correction — the audit's numbers here were wrong, and the guard found it.** The audit reported
+> "22 of 24 wrappers discard consumer ARIA; only `carousel` and `navbar` forward anything, and only
+> `aria-label`". The Phase B passthrough guard (`97f8e734`) measured it instead, and the real state
+> is different in both directions:
+>
+> - **The population is 19**, being the wrappers whose template root is an `mp-*`/`mint-*` element.
+> - **`bs-checkbox` and `bs-radio` *do* mirror `aria-*`**, via a `MutationObserver` on the wrapper
+>   host — which the audit missed entirely. Neither forwards `role`, `id` or `tabindex`.
+> - **`bs-carousel` and `bs-navbar` do *not* forward `aria-label`.** They accept a bespoke
+>   `[ariaLabel]` **input**, which is a different thing: a consumer who writes the natural
+>   `aria-label="…"` attribute gets `null` on the inner element. So the audit's two "exceptions"
+>   were not exceptions to the attribute problem at all — worse than reported, not better.
+>
+> Recorded because it is the clearest argument in this programme for guard-before-fix: written
+> against the audit's numbers, `BsForwardAriaDirective` would have been built believing two wrappers
+> already worked and two others needed nothing beyond `aria-*`.
 
 **React — 10 of 67 exports defective, and the shape is not what it looks like.** TypeScript
 exempts hyphenated JSX attribute names from excess-property checking, so `aria-*` and `data-*`
@@ -743,6 +772,24 @@ Four guards, each catching a class the others cannot:
    already exist. Run as a separate `e2e-a11y` target so `nx affected` cannot silence it.
    Expect a baseline; allow-list per route with a comment and an issue link rather than lowering
    the threshold.
+
+**Where conformance specs live, and why not in e2e.** Two rules, both learned in Phase B:
+
+- **Never inside the entry point they guard.** The Angular passthrough spec imports 19 sibling
+  secondary entry points. `a11y` is itself published, and the wrappers already import *from* it
+  (`dropdown`, `modal`, `offcanvas`, `file-upload` today; **all 19** once `BsForwardAriaDirective`
+  lands there), so hosting the spec in `a11y/src/` pointed the primitives entry point at its own
+  consumers — a cycle between published entry points, masked only by `tsconfig.lib.json` excluding
+  `*.spec.ts` from the build. Latent, and a build failure the moment a helper moves from a spec into
+  `src/`. These live in `libs/mintplayer-ng-bootstrap/_conformance/`, which has no `ng-package.js`
+  and therefore cannot be published — the `_spike-lit-context/` arrangement. Same rule for the React
+  and Vue passthrough specs.
+- **Unit vs e2e is decided by whether a browser adds signal, not by how integration-ish the test
+  feels.** Attribute forwarding is a plain DOM fact, so it stays in vitest even though it renders 19
+  real components. The three checks that genuinely need a browser are the ones no unit environment
+  can reach at all (above): Tab order, `inert` focusability, cross-root ARIA references. Putting a
+  19-wrapper conformance *matrix* in Playwright would need a bespoke demo page and couple the guard
+  to demo content for no extra signal.
 
 Two shared helpers worth more than their size: **`expectIdrefResolves(el, attr)`**, resolving each
 token against `el.getRootNode()` — the *holder's* root, which is what the browser uses. It fails
