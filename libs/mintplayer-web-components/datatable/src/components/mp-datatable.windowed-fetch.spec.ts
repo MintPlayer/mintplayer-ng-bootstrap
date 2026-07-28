@@ -165,8 +165,12 @@ describe('mp-datatable — fetch-callback (vanilla, no framework)', () => {
     await flush(el);
     const before = h.calls.length;
 
-    const th = el.shadowRoot!.querySelector('th[data-column="name"]') as HTMLElement;
-    th.click();
+    // Sort activation lives on a real <button> now (keyboard-operable), not on
+    // the <th> itself.
+    const sortButton = el.shadowRoot!.querySelector(
+      'th[data-column="name"] button.header-sort',
+    ) as HTMLElement;
+    sortButton.click();
     await flush(el);
 
     const after = h.calls.slice(before).filter((c) => c.parentId == null);

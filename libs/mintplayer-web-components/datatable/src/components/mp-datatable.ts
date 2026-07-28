@@ -869,21 +869,32 @@ export class MpDatatable extends LitElement {
             : 'descending'
           : 'none'}
         style=${styleMap(style)}
-        @click=${(ev: MouseEvent) => this.onHeaderClick(col, ev)}
       >
-        <span class="header-cell">
-          <span>${renderContent(headerContent)}</span>
-          ${sortIndex >= 0 && this._sortColumns.length > 1
-            ? html`<span class="sort-index">${sortIndex + 1}</span>`
-            : nothing}
-        </span>
+        ${sortable
+          ? html`<button
+              type="button"
+              class="header-cell header-sort"
+              @click=${(ev: MouseEvent) => this.onHeaderClick(col, ev)}
+            >
+              <span>${renderContent(headerContent)}</span>
+              ${sortIndex >= 0 && this._sortColumns.length > 1
+                ? html`<span class="sort-index">${sortIndex + 1}</span>`
+                : nothing}
+            </button>`
+          : html`<span class="header-cell">
+              <span>${renderContent(headerContent)}</span>
+            </span>`}
         ${this._resizableColumns
           ? html`<span
               class="resize-handle"
               role="separator"
+              tabindex="0"
               aria-orientation="vertical"
               aria-label=${this.mergedLabels.resizeColumn(col.label ?? col.name)}
+              aria-valuemin="40"
+              aria-valuenow=${Math.round(width ?? 0) || nothing}
               @pointerdown=${(ev: PointerEvent) => this.startColumnResize(col, ev)}
+              @keydown=${(ev: KeyboardEvent) => this.onResizeHandleKeydown(col, ev)}
             ></span>`
           : nothing}
       </th>
@@ -914,10 +925,14 @@ export class MpDatatable extends LitElement {
         data-placeholder=${isPlaceholder ? 'true' : 'false'}
         data-depth=${this._tree ? String(depth) : nothing}
         data-clickable=${!isPlaceholder && (this._selectionMode !== 'none' || this.hasRowClickListeners()) ? 'true' : 'false'}
+        tabindex=${!isPlaceholder && (this._selectionMode !== 'none' || this._tree)
+          ? (this._focusedRowKey === key || (this._focusedRowKey === null && rowIndex === 0) ? '0' : '-1')
+          : nothing}
+        @focus=${isPlaceholder ? null : () => { this._focusedRowKey = key; this.requestUpdate(); }}
         @click=${isPlaceholder ? null : (ev: MouseEvent) => this.onRowClick(row, key, rowIndex, ev)}
         @dblclick=${isPlaceholder ? null : (ev: MouseEvent) => this.onRowDblClick(row, key, rowIndex, ev)}
         @contextmenu=${isPlaceholder ? null : (ev: MouseEvent) => this.onRowContextMenu(row, key, rowIndex, ev)}
-        @keydown=${this._tree && !isPlaceholder ? (ev: KeyboardEvent) => this.onRowKeydown(row!, flat.parentId, depth, isExpanded, childCount, ev) : null}
+        @keydown=${!isPlaceholder ? (ev: KeyboardEvent) => this.onRowKeydown(row, key, rowIndex, flat.parentId, depth, isExpanded, childCount, ev) : null}
       >
         ${this._tree
           ? html`<td class="tree-chevron-cell" style=${styleMap({ paddingInlineStart: `${depth * this._treeIndent}rem` })}>
@@ -1427,18 +1442,59 @@ export class MpDatatable extends LitElement {
   /** Keyboard handling on a tree-mode row. Arrow keys + Enter/Space toggle expansion. */
   private onRowKeydown(
     row: unknown,
+    key: string,
+    rowIndex: number,
     parentId: unknown | null,
     depth: number,
     isExpanded: boolean,
     childCount: number,
     ev: KeyboardEvent,
   ): void {
-    if (ev.key === 'ArrowRight' && childCount > 0 && !isExpanded) {
-      this.toggleExpand(row, parentId, depth, ev);
-    } else if (ev.key === 'ArrowLeft' && isExpanded) {
-      this.toggleExpand(row, parentId, depth, ev);
-    } else if ((ev.key === 'Enter' || ev.key === ' ') && childCount > 0) {
-      this.toggleExpand(row, parentId, depth, ev);
+    // Never intercept Alt chords (browser history navigation). Ctrl/Cmd are NOT
+    // bailed on: they compose with selection below (Ctrl+Space = toggle without
+    // clearing), mirroring the pointer path's modifier semantics.
+    if (ev.altKey) return;
+
+    if (ev.key === 'ArrowDown' || ev.key === 'ArrowUp') {
+      ev.preventDefault();
+      const rows = Array.from(
+        this.renderRoot.querySelectorAll<HTMLTableRowElement>('tbody tr[data-row-key]'),
+      );
+      const current = rows.findIndex((r) => r.dataset['rowKey'] === key);
+      const next = rows[current + (ev.key === 'ArrowDown' ? 1 : -1)];
+      if (next) next.focus();
+      return;
+    }
+
+    if (this._tree) {
+      if (ev.key === 'ArrowRight' && childCount > 0 && !isExpanded) {
+        this.toggleExpand(row, parentId, depth, ev);
+        return;
+      }
+      if (ev.key === 'ArrowLeft' && isExpanded) {
+        this.toggleExpand(row, parentId, depth, ev);
+        return;
+      }
+      if ((ev.key === 'Enter' || ev.key === ' ') && childCount > 0) {
+        this.toggleExpand(row, parentId, depth, ev);
+        return;
+      }
+    }
+
+    if ((ev.key === 'Enter' || ev.key === ' ') && this._selectionMode !== 'none') {
+      // The keyboard face of onRowClick's selection: same modifier semantics
+      // (Ctrl toggles, Shift ranges), same event, same focused-row bookkeeping.
+      ev.preventDefault();
+      this._focusedRowKey = key;
+      this.handleSelectionOnClick(key, ev as unknown as MouseEvent);
+      this.requestUpdate();
+      this.dispatchEvent(
+        new CustomEvent<RowEventDetail>('mp-datatable-row-click', {
+          detail: { row, rowIndex, rowKey: key, originalEvent: ev },
+          bubbles: true,
+          composed: true,
+        }),
+      );
     }
   }
 
@@ -1547,6 +1603,16 @@ export class MpDatatable extends LitElement {
     this.requestUpdate();
   }
 
+  /**
+   * Range selections anchor here, NOT on `_focusedRowKey`. The focused-row
+   * marker is deliberately volatile — every click and keyboard focus move
+   * updates it, and both used to update it *before* this method ran, so the
+   * shift-range check compared the clicked key against itself and ranges never
+   * fired. The anchor only moves on a NON-shift selection, which is the
+   * convention every desktop file/table UI follows.
+   */
+  private _selectionAnchorKey: string | null = null;
+
   private handleSelectionOnClick(key: string, ev: MouseEvent): void {
     if (this._selectionMode === 'none') return;
     if (this._selectionMode === 'single') {
@@ -1555,10 +1621,10 @@ export class MpDatatable extends LitElement {
       return;
     }
     // multiple
-    if (ev.shiftKey && this._focusedRowKey && this._focusedRowKey !== key) {
+    if (ev.shiftKey && this._selectionAnchorKey && this._selectionAnchorKey !== key) {
       // Range select between focused row and clicked row
       const rows = this.computeVisibleRows();
-      const fromIdx = rows.findIndex((r) => r.key === this._focusedRowKey);
+      const fromIdx = rows.findIndex((r) => r.key === this._selectionAnchorKey);
       const toIdx = rows.findIndex((r) => r.key === key);
       if (fromIdx >= 0 && toIdx >= 0) {
         const [lo, hi] = fromIdx < toIdx ? [fromIdx, toIdx] : [toIdx, fromIdx];
@@ -1573,10 +1639,12 @@ export class MpDatatable extends LitElement {
       if (next.has(key)) next.delete(key);
       else next.add(key);
       this._selectedIds = next;
+      this._selectionAnchorKey = key;
       this.emitSelectionChange();
       return;
     }
     this._selectedIds = new Set([key]);
+    this._selectionAnchorKey = key;
     this.emitSelectionChange();
   }
 
@@ -1630,6 +1698,28 @@ export class MpDatatable extends LitElement {
     startWidth: number;
     handle: HTMLElement;
   } | null = null;
+
+  /**
+   * Keyboard column resize — the same ±px model as the pointer path, same 40px
+   * floor. The handle is a focusable role="separator"; without this it was the
+   * audit's pointer-only finding for the datatable.
+   */
+  private onResizeHandleKeydown(col: DatatableColumnDef, ev: KeyboardEvent): void {
+    if (!this._resizableColumns) return;
+    if (ev.key !== 'ArrowLeft' && ev.key !== 'ArrowRight') return;
+    ev.preventDefault();
+    ev.stopPropagation();
+
+    const handle = ev.currentTarget as HTMLElement;
+    const th = handle.closest('th');
+    const current = this._columnWidths.get(col.name)
+      ?? th?.getBoundingClientRect().width
+      ?? 100;
+    const next = Math.max(40, current + (ev.key === 'ArrowRight' ? 10 : -10));
+    this._columnWidths = new Map(this._columnWidths);
+    this._columnWidths.set(col.name, next);
+    this.requestUpdate();
+  }
 
   private startColumnResize(col: DatatableColumnDef, ev: PointerEvent): void {
     if (!this._resizableColumns) return;

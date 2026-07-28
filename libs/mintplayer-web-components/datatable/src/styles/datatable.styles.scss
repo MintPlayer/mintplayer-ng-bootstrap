@@ -143,6 +143,31 @@ thead th[data-sortable="true"]:hover {
   gap: 0.4rem;
 }
 
+// The sortable header is a real <button> (keyboard-activatable), restyled to be
+// visually indistinguishable from the plain header span. font/color inherit is
+// needed because a UA button does not inherit either.
+button.header-sort {
+  border: 0;
+  padding: 0;
+  margin: 0;
+  background: none;
+  font: inherit;
+  color: inherit;
+  text-align: inherit;
+  cursor: pointer;
+}
+
+.resize-handle:focus-visible,
+button.header-sort:focus-visible {
+  outline: 2px solid var(--mp-datatable-resize-handle-color);
+  outline-offset: 1px;
+}
+
+tbody tr:focus-visible {
+  outline: 2px solid var(--mp-datatable-resize-handle-color);
+  outline-offset: -2px;
+}
+
 .sort-index {
   position: absolute;
   right: 0.1em;
