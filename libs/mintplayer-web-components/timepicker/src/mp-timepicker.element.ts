@@ -1,6 +1,7 @@
 import { LitElement, html, nothing, type TemplateResult } from 'lit';
 import { query } from 'lit/decorators.js';
 import { OverlayController } from '@mintplayer/web-components/overlay';
+import { HostAriaController } from '@mintplayer/web-components/a11y';
 import { MpTimeListElement, type TimeStep, type Hour12Mode } from './mp-time-list.element';
 import { styles } from './mp-timepicker.element.template';
 
@@ -38,6 +39,12 @@ export class MpTimepickerElement extends LitElement {
     disabled: { attribute: 'disabled', type: Boolean, reflect: true },
     placeholder: { attribute: 'placeholder', type: String, reflect: true },
     triggerLabel: { attribute: 'trigger-label', type: String, reflect: true },
+    inputLabel: { attribute: 'input-label', type: String, reflect: true },
+    // Phantom properties: re-render / re-sync when the host attributes change.
+    // The consumer's aria-label wins over inputLabel, as everywhere.
+    ariaLabelForRender: { attribute: 'aria-label', type: String, reflect: false },
+    ariaLabelledByForSync: { attribute: 'aria-labelledby', type: String, reflect: false },
+    ariaDescribedByForSync: { attribute: 'aria-describedby', type: String, reflect: false },
   };
 
   selectedTime: Date | null = null;
@@ -49,9 +56,27 @@ export class MpTimepickerElement extends LitElement {
   disabled = false;
   placeholder = '';
   triggerLabel = 'Choose time';
+  /** Accessible name for the readonly display input — the one node that had none. */
+  inputLabel = 'Selected time';
+  ariaLabelForRender: string | null = null;
+  ariaLabelledByForSync: string | null = null;
+  ariaDescribedByForSync: string | null = null;
 
   private readonly instanceId = `mp-tp-${++instanceCounter}`;
   private readonly popupId = `${this.instanceId}-popup`;
+
+  @query('input.form-control')
+  private displayInputEl?: HTMLInputElement;
+
+  /** Tier-2 naming: host aria-labelledby/-describedby resolve to the display input. */
+  private readonly hostAria = new HostAriaController(this, {
+    referenceTarget: () => this.displayInputEl ?? null,
+  });
+
+  // After every render: the display input does not exist before the first one.
+  protected override updated(): void {
+    this.hostAria.syncReferences();
+  }
 
   @query('button.trigger')
   private triggerEl?: HTMLButtonElement;
@@ -142,6 +167,7 @@ export class MpTimepickerElement extends LitElement {
           type="text"
           readonly
           aria-readonly="true"
+          aria-label="${this.getAttribute('aria-label') ?? this.inputLabel}"
           .value="${displayValue}"
           placeholder="${this.placeholder || nothing}"
           ?disabled="${this.disabled}"

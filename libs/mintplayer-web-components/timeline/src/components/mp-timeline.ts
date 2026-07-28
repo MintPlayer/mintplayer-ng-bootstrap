@@ -1,4 +1,5 @@
 import { LitElement, html, isServer, nothing, type TemplateResult } from 'lit';
+import { HostAriaController } from '@mintplayer/web-components/a11y';
 import {
   resolveSides,
   type TimelineAlign,
@@ -48,6 +49,12 @@ export class MpTimeline extends LitElement {
       'reverse',
       'selectable',
       'is-server-side',
+      // Naming: copied onto the role-bearing .timeline node (list/listbox).
+      // Host aria-label wins over input-label, as everywhere.
+      'aria-label',
+      'input-label',
+      'aria-labelledby',
+      'aria-describedby',
     ];
   }
 
@@ -58,6 +65,27 @@ export class MpTimeline extends LitElement {
   private _reverse = false;
   private _selectable: TimelineSelectable = 'none';
   private _isServerSide = false;
+  private _inputLabel: string | null = null;
+
+  /** Tier-2 naming: references resolve in the host's tree, land on the list node. */
+  private readonly hostAria = new HostAriaController(this, {
+    referenceTarget: () => this.renderRoot?.querySelector('.timeline') ?? null,
+  });
+
+  /**
+   * Optional accessible name for the timeline list. A timeline has no intrinsic
+   * text of its own, so the name is the consumer's to give (optional — degrades
+   * to an unnamed list rather than an invented name).
+   */
+  get inputLabel(): string | null {
+    return this._inputLabel;
+  }
+  set inputLabel(value: string | null) {
+    const next = value ?? null;
+    if (this._inputLabel === next) return;
+    this._inputLabel = next;
+    this.requestUpdate();
+  }
 
   /** True once a consumer assigns `selectedIds` — suppresses declarative seeding. */
   private _selectionExplicit = false;
@@ -198,6 +226,14 @@ export class MpTimeline extends LitElement {
       case 'is-server-side':
         this._isServerSide = newValue !== null && newValue !== 'false';
         break;
+      case 'input-label':
+        this._inputLabel = newValue;
+        break;
+      case 'aria-labelledby':
+      case 'aria-describedby':
+        this.hostAria.syncReferences();
+        break;
+      // aria-label falls through to the unconditional requestUpdate below.
     }
     this.requestUpdate();
   }
@@ -205,6 +241,8 @@ export class MpTimeline extends LitElement {
   protected override updated(): void {
     // Declarative mode: project state onto slotted items (client only).
     if (!isServer && this._items.length === 0) this.enhanceDeclarativeItems();
+    // References point at a specific node; re-land them after every render.
+    this.hostAria.syncReferences();
   }
 
   private reflectString(name: string, value: string): void {
@@ -241,6 +279,7 @@ export class MpTimeline extends LitElement {
       <div
         class="timeline"
         role=${role}
+        aria-label=${this.getAttribute('aria-label') ?? this._inputLabel ?? nothing}
         aria-orientation=${this._orientation}
         aria-multiselectable=${this._selectable === 'multiple' ? 'true' : nothing}
         @click=${this.onClick}

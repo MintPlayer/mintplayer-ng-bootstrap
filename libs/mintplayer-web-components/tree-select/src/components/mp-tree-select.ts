@@ -1,6 +1,7 @@
 import { LitElement, html, nothing, type TemplateResult } from 'lit';
 import { repeat } from 'lit/directives/repeat.js';
 import { OverlayController } from '@mintplayer/web-components/overlay';
+import { HostAriaController } from '@mintplayer/web-components/a11y';
 import '@mintplayer/web-components/treeview';
 import type {
   MpTreeview,
@@ -48,6 +49,14 @@ export class MpTreeSelect extends LitElement {
       'scroll-height',
       'disabled',
       'search-debounce-ms',
+      // Naming. aria-label on the host wins over input-label; both land on the
+      // main search input, which is the control a user actually operates.
+      'aria-label',
+      'input-label',
+      'search-label',
+      // Resolved into cross-root element references, never copied as IDREFs.
+      'aria-labelledby',
+      'aria-describedby',
     ];
   }
 
@@ -58,6 +67,13 @@ export class MpTreeSelect extends LitElement {
   private _placeholder = '';
   private _showClear = false;
   private _scrollHeight = '300px';
+  private _inputLabel: string | null = null;
+  private _searchLabel: string | null = null;
+
+  /** Tier-2 naming: references resolve in the host's tree, land on the search input. */
+  private readonly hostAria = new HostAriaController(this, {
+    referenceTarget: () => this.renderRoot?.querySelector('input.ts-search') ?? null,
+  });
   private _disabled = false;
   private _searchDebounceMs = 200;
 
@@ -232,7 +248,54 @@ export class MpTreeSelect extends LitElement {
       case 'search-debounce-ms':
         this.searchDebounceMs = Number(newValue);
         break;
+      case 'aria-label':
+        this.requestUpdate();
+        break;
+      case 'input-label':
+        this._inputLabel = newValue;
+        this.requestUpdate();
+        break;
+      case 'search-label':
+        this._searchLabel = newValue;
+        this.requestUpdate();
+        break;
+      case 'aria-labelledby':
+      case 'aria-describedby':
+        this.hostAria.syncReferences();
+        break;
     }
+  }
+
+  /**
+   * Optional accessible name for the control (the main search input). Without
+   * it the name falls back to the placeholder, then 'Search' — functional, but a
+   * placeholder is a hint, not a name, so real consumers should set one of
+   * aria-label / input-label / aria-labelledby on the host.
+   */
+  get inputLabel(): string | null {
+    return this._inputLabel;
+  }
+  set inputLabel(value: string | null) {
+    const next = value ?? null;
+    if (this._inputLabel === next) return;
+    this._inputLabel = next;
+    this.requestUpdate();
+  }
+
+  /** Accessible name for the button-variant panel search box. Default 'Search'. */
+  get searchLabel(): string | null {
+    return this._searchLabel;
+  }
+  set searchLabel(value: string | null) {
+    const next = value ?? null;
+    if (this._searchLabel === next) return;
+    this._searchLabel = next;
+    this.requestUpdate();
+  }
+
+  // After every render — the search input is re-created across variant switches.
+  protected override updated(): void {
+    this.hostAria.syncReferences();
   }
 
   override disconnectedCallback(): void {
@@ -598,7 +661,7 @@ export class MpTreeSelect extends LitElement {
           .value=${this._query}
           ?disabled=${this._disabled}
           placeholder=${!this.hasSelection ? this._placeholder : ''}
-          aria-label=${this._placeholder || 'Search'}
+          aria-label=${this.getAttribute('aria-label') ?? this._inputLabel ?? (this._placeholder || 'Search')}
           @input=${(e: Event) => this.onSearchInput(e)}
           @focus=${() => this.open()}
         />
@@ -680,7 +743,7 @@ export class MpTreeSelect extends LitElement {
                 type="text"
                 .value=${this._query}
                 placeholder=${this._placeholder || 'Search'}
-                aria-label="Search"
+                aria-label=${this._searchLabel ?? 'Search'}
                 @input=${(e: Event) => this.onSearchInput(e)}
               />
             </div>`

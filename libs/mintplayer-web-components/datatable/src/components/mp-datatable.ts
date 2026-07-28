@@ -1,4 +1,5 @@
 import { LitElement, html, nothing, type TemplateResult } from 'lit';
+import { HostAriaController } from '@mintplayer/web-components/a11y';
 import { repeat } from 'lit/directives/repeat.js';
 import { classMap } from 'lit/directives/class-map.js';
 import { styleMap } from 'lit/directives/style-map.js';
@@ -105,10 +106,53 @@ export class MpDatatable extends LitElement {
       'tree',
       'tree-indent',
       'selection-strategy',
+      // Naming for the inner <table> (the role-bearing node): caption renders a
+      // real <caption>, the native, visible table name; aria-label / input-label
+      // are the invisible alternative and win in the accessible-name computation
+      // when both are present.
+      'caption',
+      'aria-label',
+      'input-label',
+      'aria-labelledby',
+      'aria-describedby',
     ];
   }
 
   private readonly instanceId = `mp-datatable-${++instanceCounter}`;
+  private _caption: string | null = null;
+  private _inputLabel: string | null = null;
+
+  /** Tier-2 naming: references resolve in the host's tree, land on the <table>. */
+  private readonly hostAria = new HostAriaController(this, {
+    referenceTarget: () => this.renderRoot?.querySelector('table') ?? null,
+  });
+
+  /**
+   * Visible table caption, rendered as a real <caption> — the native way to name
+   * a table, and the only one sighted users benefit from too. For an invisible
+   * name use aria-label / input-label instead (they win over the caption in the
+   * accessible-name computation when both are set).
+   */
+  get caption(): string | null {
+    return this._caption;
+  }
+  set caption(value: string | null) {
+    const next = value ?? null;
+    if (this._caption === next) return;
+    this._caption = next;
+    this.requestUpdate();
+  }
+
+  /** Optional invisible accessible name for the <table>. Host aria-label wins. */
+  get inputLabel(): string | null {
+    return this._inputLabel;
+  }
+  set inputLabel(value: string | null) {
+    const next = value ?? null;
+    if (this._inputLabel === next) return;
+    this._inputLabel = next;
+    this.requestUpdate();
+  }
 
   private _columns: DatatableColumnDef[] = [];
   private _data: unknown[] = [];
@@ -490,7 +534,17 @@ export class MpDatatable extends LitElement {
   override attributeChangedCallback(name: string, oldValue: string | null, newValue: string | null): void {
     super.attributeChangedCallback(name, oldValue, newValue);
 
-    if (name === 'selection-mode') {
+    if (name === 'caption') {
+      this._caption = newValue;
+      this.requestUpdate();
+    } else if (name === 'input-label') {
+      this._inputLabel = newValue;
+      this.requestUpdate();
+    } else if (name === 'aria-label') {
+      this.requestUpdate();
+    } else if (name === 'aria-labelledby' || name === 'aria-describedby') {
+      this.hostAria.syncReferences();
+    } else if (name === 'selection-mode') {
       const v = newValue;
       if (v === 'none' || v === 'single' || v === 'multiple') {
         this.selectionMode = v;
@@ -546,6 +600,8 @@ export class MpDatatable extends LitElement {
       }
     }
     this.refreshVirtualRange();
+    // References point at a specific node; re-land them after every render.
+    this.hostAria.syncReferences();
   }
 
   protected override willUpdate(changedProperties: Map<string, unknown>): void {
@@ -717,8 +773,10 @@ export class MpDatatable extends LitElement {
           <table
             role=${this._tree ? 'treegrid' : 'grid'}
             aria-rowcount=${ariaRowcount}
+            aria-label=${this.getAttribute('aria-label') ?? this._inputLabel ?? nothing}
             class=${this._hasMeasuredInitial ? 'measured' : ''}
           >
+            ${this._caption ? html`<caption>${this._caption}</caption>` : nothing}
             <thead>
               <tr role="row" aria-rowindex="1">
                 ${this._tree
