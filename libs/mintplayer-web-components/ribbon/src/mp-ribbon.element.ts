@@ -552,6 +552,15 @@ export class MpRibbon extends LitElement {
   @property({ type: String, reflect: true })
   layout: 'classic' | 'simplified' = 'classic';
 
+  /**
+   * Accessible name for the ribbon's region landmark. Category-2 default
+   * ('Ribbon'); a consumer's own aria-label always wins and is never clobbered —
+   * the old code overwrote it on every connect, which was the audit's
+   * "unconditional setAttribute" finding.
+   */
+  @property({ type: String, attribute: 'region-label' })
+  regionLabel = 'Ribbon';
+
   /** True if ribbon is minimized (shows only tab strip) */
   @property({ type: Boolean })
   minimized: boolean = false;
@@ -633,14 +642,31 @@ export class MpRibbon extends LitElement {
     super();
   }
 
+  /**
+   * Consumer aria-label wins; otherwise regionLabel (default 'Ribbon').
+   * Idempotent by VALUE, not by instance flag — the value this element would
+   * write is the only aria-label it ever claims as its own, so a serialized
+   * copy from SSR is recognised rather than treated as consumer-authored.
+   * (Same trap as BsForwardAriaDirective's presentation marker.)
+   */
+  private lastAppliedRegionLabel: string | null = null;
+  private applyRegionLabel(): void {
+    const current = this.getAttribute('aria-label');
+    if (current !== null && current !== this.lastAppliedRegionLabel && current !== this.regionLabel) {
+      return; // consumer-authored — never touch it
+    }
+    this.setAttribute('aria-label', this.regionLabel);
+    this.lastAppliedRegionLabel = this.regionLabel;
+  }
+
   override connectedCallback() {
     super.connectedCallback();
     // role="region" + aria-label gives the ribbon a screen-reader landmark
     // without claiming role="application", which would tell AT to disable
     // its own keyboard handling. The ribbon plays nicely with the browser's
     // default tab navigation, so it's a region, not an application.
-    this.setAttribute('role', 'region');
-    this.setAttribute('aria-label', 'Ribbon');
+    if (!this.hasAttribute('role')) this.setAttribute('role', 'region');
+    this.applyRegionLabel();
 
     if (typeof ResizeObserver !== 'undefined') {
       this.resizeObserver = new ResizeObserver(() => this.scheduleReflow());
@@ -970,6 +996,9 @@ export class MpRibbon extends LitElement {
   };
 
   override updated(changed: Map<string, unknown>): void {
+    // A regionLabel change re-applies the landmark name; a consumer-authored
+    // aria-label still wins inside applyRegionLabel.
+    if (changed.has('regionLabel')) this.applyRegionLabel();
     // Self-heal the default tab selection. `processSlot` picks the first tab
     // when none is active, but under SSR hydration a wrapper binding can write
     // an empty `active-tab-id` *after* that default lands (e.g. the Angular

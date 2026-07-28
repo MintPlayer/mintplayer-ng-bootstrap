@@ -153,6 +153,12 @@ export class MpCodeSnippet extends LitElement {
   // No manual observedAttributes override needed: Lit's @property decorator
   // (with the default attribute: true) auto-registers 'language' and 'code'.
   @property({ type: String }) language = '';
+  /**
+   * Accessible name for the copy button. Category-2 default derived from the
+   * detected language; override for localisation. The ${language} placeholder
+   * is substituted, so a translated pattern keeps the dynamic part.
+   */
+  @property({ type: String, attribute: 'copy-label' }) copyLabel = 'Copy ${language} code to clipboard';
   @property({ type: String }) code = '';
 
   @state() private detectedLanguage = 'code';
@@ -246,7 +252,7 @@ export class MpCodeSnippet extends LitElement {
         class="copy"
         part="copy-button"
         @click=${this.handleCopy}
-        aria-label="Copy ${this.detectedLanguage} code to clipboard"
+        aria-label="${this.copyLabel.replace('${language}', this.detectedLanguage)}"
       >Copy ${this.detectedLanguage}</button>
       <pre part="pre"><code part="code" class="hljs">${unsafeHTML(this.highlighted)}</code></pre>
       <div class="toast ${this.toastVisible ? 'visible' : ''}" part="toast" aria-hidden="${!this.toastVisible}">Copied!</div>
