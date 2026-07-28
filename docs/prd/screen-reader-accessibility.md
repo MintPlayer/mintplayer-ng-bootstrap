@@ -1,8 +1,10 @@
 # PRD — screen-reader accessibility across the four libraries
 
-Status: **audit complete, decisions resolved, implementation not started** — 2026-07-27. Companion
-plan: `docs/prd/screen-reader-accessibility-plan.md`. Decisions D1–D5 settled in §11; the
-cross-cutting principle the programme is judged on is §11a.
+Status: **audit complete; decisions resolved; Phase A (shared primitives) landed and verified;
+Phase 0 spikes and B–G outstanding** — 2026-07-27. Companion plan:
+`docs/prd/screen-reader-accessibility-plan.md`. Decisions D1–D5 settled in §11; the cross-cutting
+principle the programme is judged on is §11a. Phase A's as-built notes, including three defects its
+targeted test run caught, are in the plan.
 
 This supersedes neither `docs/prd/aria-accessibility-audit.md` (Angular-era, May 2026) nor
 `docs/prd/wc-aria-accessibility.md` (four Lit WCs, May 2026) — both shipped what they promised.
@@ -407,9 +409,23 @@ Six additions, all in `libs/mintplayer-web-components/a11y/src/`:
 3. **`dismissStack`** (`dismiss-stack.ts`) — one document-scoped LIFO. `OverlayController` and a
    rewritten `BsOverlayStackService` both delegate, so a `bs-tree-select` inside a `bs-modal`
    stops consuming one Escape for two overlays.
-4. **`RovingFocusController`** (`roving-focus.ts`) — one Arrow/Home/End/wrap model with an
-   `itemsProvider` spanning shadow **and** `assignedElements()`. Migrate opportunistically; the
-   value is that the next component does not hand-roll a fifteenth variant.
+4. **`RovingFocus`** (`roving-focus.ts`) — one Arrow/Home/End/wrap model with an items callback
+   spanning shadow **and** `assignedElements()`. Migrate opportunistically; the value is that the
+   next component does not hand-roll a fifteenth variant. Three decisions taken while building it:
+   - **The pure index arithmetic is extracted** (`nextEnabledIndex`, `firstEnabledIndex`,
+     `lastEnabledIndex`) and shared with Angular's `BsRovingFocusDirective`, which had an
+     independently identical copy already drifted on the wrap-vs-clamp default. Phase E deletes the
+     Angular duplicates.
+   - **The two are not collapsed into one class.** The directive writes `tabindex` through a host
+     binding on each item directive while the controller writes `el.tabIndex` imperatively, so
+     delegating wholesale would put two writers on one attribute — the hazard already documented at
+     `otp-input.component.ts:124-131`. Angular keeps its content-query discovery and signals.
+   - **No `aria-activedescendant` mode**, unlike the directive. Inside a shadow root the attribute
+     cannot resolve, which is why `mp-time-list` announces nothing. That is a constraint of shadow
+     DOM, not a verdict on the pattern: the directive's light-DOM consumers (`bs-typeahead`,
+     `bs-dropdown`'s combobox) use it correctly and keep it. **Consequence for later phases:** the
+     combobox work in C cannot reach for activedescendant either, so its popup and input must end up
+     in the same tree.
 5. **`FocusRestore`** (`focus-restore.ts`) — capture-and-restore across an imperative rebuild, by
    stable key rather than index, resolving through nested shadow roots. Four design points carry
    real weight. **Capture is scoped**, using `ShadowRoot.activeElement` as both the cheap check
@@ -672,6 +688,32 @@ palette, not component authors) and screen-reader test-matrix guidance (belongs 
 migration, the four that came out *better* all have ARIA specs; the four that **regressed have
 none.** That correlation, not any individual finding, is the case for the gate.
 
+### What CI structurally cannot reach
+
+Established while building Phase A, and it shapes every guard below: three of this programme's
+load-bearing claims are **not verifiable in a unit-test environment at all**, for reasons that no
+future jsdom release changes.
+
+- **Tab order.** Sequential focus navigation is not a DOM API — there is no `focusNext()` to call.
+  The user agent performs it from its own input pipeline, off events whose `isTrusted` flag it set
+  itself, and it never treats a constructed event as input. So a synthetic
+  `KeyboardEvent({key:'Tab'})` moves focus in **no** environment, real browsers included. Note the
+  asymmetry: `preventDefault()` on a *real* Tab keydown does suppress the move, so it is cancellable
+  by script but not causable by it. Only WebDriver/CDP injection produces a trusted event. A
+  userland simulator (`userEvent.tab()`) is not a substitute here — it computes order from
+  `tabIndex` with its own copy of the same rules our code applies, so it would check our arithmetic
+  against our arithmetic. (`jsdom/jsdom#2102` asks this and was closed the day it was filed.)
+- **`inert`'s focusability effect.** jsdom does not implement it, so `inertRegions` can only be
+  unit-tested to the point of "the attribute landed". Spike 0.4.
+- **Cross-root ARIA element references.** jsdom implements `attachInternals()` and the
+  `ElementInternals` ARIA *state* properties but not `ariaLabelledByElements`, so
+  `HostAriaController.syncReferences()` has a path CI will never exercise. Spike 0.2.
+
+The consequence is that Phase 0's spikes are not a preamble to the real work — for these three
+claims they are the **only** verification that will ever exist, which is why each carries an explicit
+fail-path. And it is why the keyboard walkthrough below is a Playwright artifact rather than a unit
+suite.
+
 Four guards, each catching a class the others cannot:
 
 1. **`*.aria.spec.ts` per element-bearing WC.** 20 of 30 have none; 9 have no spec file at all,
@@ -708,6 +750,15 @@ on exactly the six dead references today, and three currently-green tests assert
 while the relationship resolves to nothing. And a **keyboard-only Playwright walkthrough** per
 interactive component, asserting that every control a mouse user can see is focusable and
 activatable — which is what would have caught all seven migration regressions.
+
+That walkthrough must also assert the **inverse**, which the plan originally missed: that a composite
+widget is exactly **one** tab stop. "Every control is reachable" is necessary and not sufficient — a
+widget where *every* item is tabbable satisfies it and is still broken, and that is literally the
+`mp-time-list` 97-tab-stops and `file-manager` 201-tab-stops findings. Nothing in the repo asserts
+this invariant today. For components adopting `RovingFocus` it lands as a shared parameterised suite
+(`tools/e2e-shared/roving-focus-suites.ts`, matching the existing accordion/carousel shape), written
+per consumer as the primitive is adopted rather than against a synthetic fixture — a harness page
+would test the author's assumptions instead of real usage.
 
 **Acceptance criteria must be observable — what is spoken, where focus lands — never "attribute X
 is set".** "Present but inert" is this library's characteristic failure and it passes

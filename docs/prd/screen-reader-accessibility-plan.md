@@ -11,8 +11,13 @@ majority of user-visible impact**; D–F are deep but narrower; G closes it out.
 unit + e2e sweep runs **once**, in G.
 
 **Phase 0 is a gate, not a formality.** Spike 0.1 (can `<details>`/`<summary>` reproduce the
-Bootstrap accordion exactly, with no UX change?) can send D1 back; 0.2 and 0.3 de-risk Phases B
-and F. Nothing in D should be written before 0.1 passes.
+Bootstrap accordion exactly, with no UX change?) can send D1 back; 0.2 gates **all** of Phase B and
+0.3 gates F; 0.4 verifies the `inert` and Tab-order claims Phase A already shipped against. Nothing
+in D should be written before 0.1 and 0.4 pass, and nothing in B before 0.2 does.
+
+For all four, the reason a spike exists rather than a test is the same: they cover platform behaviour
+**CI structurally cannot reach** — trusted input, `inert`'s focusability effect, cross-root ARIA
+element references, and visual parity. See PRD §7, "What CI structurally cannot reach".
 
 ## Decisions (all resolved — see PRD §11)
 
@@ -37,7 +42,8 @@ Specs assert **transitions**.
 
 ## Phase 0 — spikes (GATES, before any implementation)
 
-Three cheap spikes, each de-risking a decision the plan already commits to. Each is throwaway
+Four cheap spikes. Three de-risk a decision the plan already commits to; 0.4 verifies a claim Phase A
+has **already shipped code against**, which is the more uncomfortable kind. Each is throwaway
 (`libs/mintplayer-web-components/_spike-*/` per the `_spike-lit-context` precedent, or a temporary
 demo route) and is **deleted before merge** — except the assertions worth keeping, which move into
 real specs.
@@ -202,8 +208,48 @@ fail-path above.
 Nothing else in the plan works properly without these. `HostAriaController` is first: the Angular
 wrapper fix in B has nowhere to deliver attributes without it.
 
-**As built** — seven commits, `2c13e5b0`…`27893419`, one per file below. Everything type-checks; per
-the batching rule the suites run once, in G. Two things learned in passing that change later phases:
+**As built** — seven commits, `2c13e5b0`…`27893419`, one per file below, plus `9580ca28` (fixes) and
+`dd9b4006` (shared arithmetic).
+
+**The suites were run early for this phase only, and it was the right call.** A3/A4 changed
+`OverlayController`, which has 9 web-component consumers and 5 Angular ones, so deferring
+verification to G would have built five phases on top of an unexercised primitive. A targeted
+two-file run (seconds, not the 2.5-minute sweep) surfaced **12 failures across 3 distinct causes**;
+**149 tests now pass**, including all 35 pre-existing overlay tests. The batching rule still holds
+for everything else.
+
+What it caught, worth recording because two are lessons rather than typos:
+
+1. **`OverlayController` returned focus to `<body>` — a defect I introduced.** With nothing focused,
+   `activeElement` *is* `document.body`, which is an `HTMLElement`, so it was captured as the return
+   target and beat the configured trigger: the exact "stranded on `<body>`" failure the capture was
+   added to fix. Caught by a **pre-existing** test asserting focus returns to the chosen anchor — the
+   test was right and the new code was wrong.
+2. **`FocusTrap` swallowed Tab across the whole page after its region was detached.** A component
+   torn down without `deactivate()` kept a document-level listener, found no tabbables in the
+   detached region, and consumed every Tab via the "nothing to cycle" branch. Now bails when the
+   region is not connected — the fix belongs in the source, not the spec.
+3. **`RovingFocus.onKeydown` ignored every key when called after dispatch.** `composedPath()` is only
+   populated *during* dispatch and returns `[]` afterwards. Falls back to `event.target`.
+
+Four things learned that change later phases:
+
+- **jsdom implements `attachInternals()` and the `ElementInternals` ARIA state properties, but not
+  `ariaLabelledByElements`.** So role and state are unit-testable and cross-root reference
+  resolution is not. That is spike 0.2, now load-bearing rather than precautionary:
+  `HostAriaController.syncReferences()` has a path CI cannot exercise.
+- **Tab order cannot be unit-tested at all**, and not because of jsdom — see the mechanism under
+  spike 0.4. Consequence: the one-tab-stop invariant is a Playwright concern by nature.
+- **`RovingFocus` deliberately omits an `aria-activedescendant` mode.** Inside a shadow root that
+  attribute cannot resolve, which is precisely why `mp-time-list` is inert. Any Phase C or E work
+  that reaches for activedescendant must use roving tabindex instead — including the combobox, where
+  the popup and the input therefore have to end up in the same tree.
+- **The pure navigation arithmetic is now shared** (`nextEnabledIndex` / `firstEnabledIndex` /
+  `lastEnabledIndex`), and comparing the two implementations found a real bug: the new controller was
+  intercepting Alt/Ctrl/Meta chords, so Alt+Arrow, Ctrl+Home and Cmd+Arrow would have been swallowed.
+  The Angular directive guards these, and that guard was itself a May-2026 fix
+  (`aria-review-fixes.md`, `f2e04db2`) — so this would have reintroduced a defect already fixed once.
+  Phase E deletes the Angular duplicates.
 
 - **jsdom implements `attachInternals()` and the `ElementInternals` ARIA state properties, but not
   `ariaLabelledByElements`.** So role and state are unit-testable and cross-root reference
