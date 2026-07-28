@@ -103,7 +103,10 @@ export class FocusTrap {
     if (this.options.enabled && !this.options.enabled()) return;
 
     const region = this.region();
-    if (!region) return;
+    // A trap whose region has been detached is stale and must not consume keys.
+    // Without this a component torn down without `deactivate()` keeps a
+    // document-level listener that swallows every Tab on the page.
+    if (!region || !region.isConnected) return;
 
     const tabbables = collectTabbables(region);
     if (tabbables.length === 0) {

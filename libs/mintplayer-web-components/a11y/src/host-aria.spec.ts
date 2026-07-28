@@ -1,5 +1,10 @@
-import { describe, it, expect, afterEach, vi } from 'vitest';
-import { HostAriaController, sharedInternals, supportsAriaElementReferences } from './host-aria';
+import { describe, it, expect, afterEach, beforeEach, vi } from 'vitest';
+import {
+  HostAriaController,
+  sharedInternals,
+  supportsAriaElementReferences,
+  resetReferenceWarningForTesting,
+} from './host-aria';
 
 class PlainHost extends HTMLElement {}
 customElements.define('ha-plain-host', PlainHost);
@@ -154,6 +159,12 @@ describe('HostAriaController — state', () => {
 });
 
 describe('HostAriaController — cross-root references', () => {
+  beforeEach(() => {
+    // The warning is deliberately once-per-process so an app is not spammed,
+    // which means it has to be re-armed between tests.
+    resetReferenceWarningForTesting();
+  });
+
   afterEach(() => {
     document.body.innerHTML = '';
     vi.restoreAllMocks();

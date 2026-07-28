@@ -219,8 +219,14 @@ export class OverlayController implements ReactiveController {
     this._open = true;
     // Capture before anything can move focus, so the target is whatever the
     // user was actually on when they opened this.
+    //
+    // `<body>` is explicitly not a target: it is what `activeElement` reports
+    // when nothing is focused, and returning focus there is the very bug this
+    // capture exists to fix. Falling through to the configured trigger is right
+    // for a programmatic open with no prior focus.
     const active = deepActiveElement();
-    this.restoreTo = active instanceof HTMLElement ? active : null;
+    this.restoreTo =
+      active instanceof HTMLElement && active !== active.ownerDocument.body ? active : null;
     this.stackToken = OverlayController.pushFrame();
     this.host.setAttribute('data-menu-open', '');
     this.host.requestUpdate();

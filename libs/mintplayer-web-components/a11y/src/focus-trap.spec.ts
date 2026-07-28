@@ -154,9 +154,11 @@ describe('FocusTrap', () => {
     // never told it opened.
     const panel = panelWith('<p>Just a message.</p>');
 
-    new FocusTrap(() => panel).activate();
+    const trap = new FocusTrap(() => panel);
+    trap.activate();
 
     expect(deepActiveElement()).toBe(panel);
+    trap.deactivate();
     expect(panel.getAttribute('tabindex')).toBe('-1');
   });
 
@@ -164,9 +166,11 @@ describe('FocusTrap', () => {
     const panel = panelWith('<button id="a"></button><button id="b"></button>');
     const second = panel.querySelector<HTMLElement>('#b')!;
 
-    new FocusTrap(() => panel, { initialFocus: second }).activate();
+    const trap = new FocusTrap(() => panel, { initialFocus: second });
+    trap.activate();
 
     expect(deepActiveElement()).toBe(second);
+    trap.deactivate();
   });
 
   it('leaves focus alone with initialFocus "none"', () => {
@@ -175,9 +179,11 @@ describe('FocusTrap', () => {
     trigger.focus();
     const panel = panelWith('<button id="a"></button>');
 
-    new FocusTrap(() => panel, { initialFocus: 'none' }).activate();
+    const trap = new FocusTrap(() => panel, { initialFocus: 'none' });
+    trap.activate();
 
     expect(deepActiveElement()).toBe(trigger);
+    trap.deactivate();
   });
 
   it('wraps Tab from the last tabbable back to the first', () => {

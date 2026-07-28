@@ -69,6 +69,11 @@ const DEFAULT_REFERENCE_ATTRIBUTES = ['aria-labelledby', 'aria-describedby'];
 
 let warnedAboutReferences = false;
 
+/** Re-arm the once-only reference warning. Tests only. */
+export function resetReferenceWarningForTesting(): void {
+  warnedAboutReferences = false;
+}
+
 /**
  * Puts a web component's role and ARIA state on its **host**, and makes the
  * consumer's `aria-labelledby` / `aria-describedby` actually work.

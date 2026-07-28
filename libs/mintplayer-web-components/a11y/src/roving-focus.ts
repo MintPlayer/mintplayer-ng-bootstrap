@@ -100,7 +100,11 @@ export class RovingFocus {
     const items = this.options.items();
     if (items.length === 0) return false;
 
-    const target = event.composedPath()[0];
+    // composedPath() is the precise answer inside a shadow root, but it is only
+    // populated *during* dispatch — it returns [] once dispatch has finished, so
+    // fall back to `target` for callers that defer their handling.
+    const path = event.composedPath();
+    const target = path.length > 0 ? path[0] : event.target;
     if (!(target instanceof HTMLElement) || !items.includes(target)) return false;
 
     const horizontal = this.options.orientation !== 'vertical';
