@@ -1198,8 +1198,16 @@ Actions and to plain-`<form>` submission. Nothing WCAG-blocking waits on it.
   rows and subquery headers carry role=group + a live field/operator-derived name (they were
   bare tab stops announcing nothing); tile-manager's instructions moved onto the TILES
   (describedby is read at the focus target) and aria-pressed became the reactive move-mode
-  token. Still deferred: dock keyboard drop-target enumeration (an enhancement over the working
-  M + T/R/B/L/F move model), aria-errormessage, tree-select/query-builder reduced-motion.
+  token. Dock keyboard drop-target enumeration also shipped: while move mode is armed the arrow
+  keys cycle (forward on `ArrowRight`/`ArrowDown`, backward on `ArrowLeft`/`ArrowUp`, wrapping) an
+  enumerated candidate list of every docked leaf stack except the moving pane's own — four side
+  zones each, then a single "float" candidate — highlighting each with the pointer path's own drop
+  indicator and announcing "&lt;Side&gt; of &lt;target pane titles&gt;, option N of M."; `Enter`
+  commits the highlighted candidate through the same synthetic-drag `handleDrop` call the T/R/B/L
+  keys use, only parameterised on the candidate's `data-path`, so it lands identically to the
+  equivalent pointer drop. `Escape` still cancels and now also clears the highlight. T/R/B/L/F stay
+  the fast path for the current stack. Still deferred: aria-errormessage,
+  tree-select/query-builder reduced-motion.
 
 ---
 

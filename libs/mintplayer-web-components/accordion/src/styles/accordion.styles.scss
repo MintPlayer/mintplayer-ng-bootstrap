@@ -145,3 +145,33 @@ summary.accordion-button:focus-visible {
   background-color: unset;
   color: inherit;
 }
+
+// Slide open/close, restored as a pure-CSS progressive enhancement (D1
+// originally waived the animation when the accordion moved to native
+// <details>). `interpolate-size: allow-keywords` lets block-size animate
+// to/from `auto`; `::details-content` is the UA's wrapper around the
+// disclosed content. Engines without either feature simply snap — the UA
+// still owns the disclosure state either way.
+// On :host (it inherits): the shadow root's wrapper is .accordion-root,
+// and details/::details-content must all resolve keyword sizes.
+:host {
+  interpolate-size: allow-keywords;
+}
+
+details.accordion-item::details-content {
+  block-size: 0;
+  overflow-y: clip;
+  transition:
+    block-size 0.35s ease,
+    content-visibility 0.35s allow-discrete;
+}
+
+details.accordion-item[open]::details-content {
+  block-size: auto;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  details.accordion-item::details-content {
+    transition: none;
+  }
+}

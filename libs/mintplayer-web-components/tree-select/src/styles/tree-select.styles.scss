@@ -254,3 +254,14 @@ button {
   margin: 0;
   cursor: pointer;
 }
+
+// Chevron rotation and the busy spinner are the panel's only motion; both
+// stop under reduced motion (the spinner stays visible as a static glyph —
+// aria-busy carries the state).
+@media (prefers-reduced-motion: reduce) {
+  * {
+    transition-duration: 0.01ms !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+  }
+}

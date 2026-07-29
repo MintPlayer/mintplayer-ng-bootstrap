@@ -263,3 +263,168 @@ describe('mint-dock-manager — keyboard move announces the actual outcome (4.10
     expect(live()).not.toContain('docked to');
   });
 });
+
+describe('mint-dock-manager — keyboard drop-target enumeration (arrows cycle, Enter commits)', () => {
+  let dock: MintDockManagerElement;
+
+  // Two docked stacks side by side so the enumeration has a target that is not
+  // the moving pane's own stack: d:0 holds Alpha, d:1 holds Beta + Gamma.
+  beforeEach(async () => {
+    dock = document.createElement('mint-dock-manager') as MintDockManagerElement;
+    document.body.appendChild(dock);
+    dock.getBoundingClientRect = () => makeRect(0, 0, HOST_WIDTH, HOST_HEIGHT);
+    dock.layout = {
+      root: {
+        kind: 'split',
+        direction: 'horizontal',
+        sizes: [0.5, 0.5],
+        children: [
+          { kind: 'stack', panes: ['Alpha'], activePane: 'Alpha' },
+          { kind: 'stack', panes: ['Beta', 'Gamma'], activePane: 'Beta' },
+        ],
+      },
+      titles: { Alpha: 'Alpha Pane', Beta: 'Beta Pane', Gamma: 'Gamma Pane' },
+      floating: [],
+    } as never;
+    await (dock as unknown as { updateComplete: Promise<void> }).updateComplete;
+    await nextRaf();
+  });
+  afterEach(() => dock.remove());
+
+  interface CycleInternals {
+    paneMoveMode: { paneName: string; sourcePath: unknown } | null;
+    paneMoveCandidateIndex: number | null;
+    handlePaneMoveModeKey: (e: KeyboardEvent) => void;
+    buildPaneMoveCandidates: () => { pathStr: string | null; zone: string; targetTitles: string }[];
+  }
+  const internalsOf = () => dock as unknown as CycleInternals;
+  const live = () => dock.shadowRoot!.querySelector('[role="status"]')!.textContent ?? '';
+  const arm = (paneName: string, segments: number[]) => {
+    const internals = internalsOf();
+    internals.paneMoveMode = { paneName, sourcePath: { type: 'docked', segments } };
+    return internals;
+  };
+  const press = (internals: CycleInternals, key: string) =>
+    internals.handlePaneMoveModeKey(new KeyboardEvent('keydown', { key, cancelable: true }));
+
+  it('enumerates four zones per foreign docked stack plus one float candidate', () => {
+    const internals = arm('Alpha', [0]);
+    const candidates = internals.buildPaneMoveCandidates();
+    // Only d:1 is foreign to the moving pane's stack (d:0): 4 zones + float.
+    expect(candidates.length).toBe(5);
+    expect(candidates.filter((c) => c.pathStr === 'd:1').map((c) => c.zone)).toEqual([
+      'top',
+      'right',
+      'bottom',
+      'left',
+    ]);
+    expect(candidates.at(-1)).toEqual({ pathStr: null, zone: 'float', targetTitles: '' });
+    expect(candidates.some((c) => c.pathStr === 'd:0')).toBe(false);
+  });
+
+  it('ArrowRight announces the first candidate by zone, target titles and position', () => {
+    const internals = arm('Alpha', [0]);
+    press(internals, 'ArrowRight');
+    expect(internals.paneMoveCandidateIndex).toBe(0);
+    expect(live()).toBe('Top of Beta Pane, Gamma Pane, option 1 of 5.');
+  });
+
+  it('ArrowDown cycles forward and wraps past the float candidate back to the first', () => {
+    const internals = arm('Alpha', [0]);
+    const seen = Array.from({ length: 6 }, () => {
+      press(internals, 'ArrowDown');
+      return live();
+    });
+    expect(seen).toEqual([
+      'Top of Beta Pane, Gamma Pane, option 1 of 5.',
+      'Right of Beta Pane, Gamma Pane, option 2 of 5.',
+      'Bottom of Beta Pane, Gamma Pane, option 3 of 5.',
+      'Left of Beta Pane, Gamma Pane, option 4 of 5.',
+      'Float, option 5 of 5.',
+      'Top of Beta Pane, Gamma Pane, option 1 of 5.',
+    ]);
+    expect(internals.paneMoveCandidateIndex).toBe(0);
+  });
+
+  it('ArrowLeft / ArrowUp cycle backward, starting at the last candidate', () => {
+    const internals = arm('Alpha', [0]);
+    press(internals, 'ArrowLeft');
+    expect(live()).toBe('Float, option 5 of 5.');
+    press(internals, 'ArrowUp');
+    expect(live()).toBe('Left of Beta Pane, Gamma Pane, option 4 of 5.');
+    expect(internals.paneMoveCandidateIndex).toBe(3);
+  });
+
+  it('Enter commits the highlighted candidate into the target stack, not the source', async () => {
+    const internals = arm('Alpha', [0]);
+    press(internals, 'ArrowRight');
+    press(internals, 'ArrowRight');
+    expect(live()).toBe('Right of Beta Pane, Gamma Pane, option 2 of 5.');
+
+    press(internals, 'Enter');
+    await (dock as unknown as { updateComplete: Promise<void> }).updateComplete;
+    await nextRaf();
+
+    expect(internals.paneMoveMode).toBeNull();
+    expect(internals.paneMoveCandidateIndex).toBeNull();
+    expect(live()).toContain('docked to right');
+
+    // Alpha left d:0 (which collapsed away) and is now the right sibling of the
+    // Beta/Gamma stack — the same shape a pointer drop on that stack produces.
+    const paths = Array.from(dock.shadowRoot!.querySelectorAll<HTMLElement>('.dock-stack')).map(
+      (s) => s.dataset['path'],
+    );
+    expect(paths.length).toBe(2);
+    const alphaTab = dock.shadowRoot!.querySelector<HTMLElement>('.dock-tab[data-pane="Alpha"]')!;
+    const alphaPath = alphaTab.closest<HTMLElement>('.dock-stack')!.dataset['path'];
+    expect(alphaPath).toBe('d:1');
+  });
+
+  it('Enter on the float candidate tears the pane off', async () => {
+    const internals = arm('Alpha', [0]);
+    press(internals, 'ArrowLeft');
+    expect(live()).toBe('Float, option 5 of 5.');
+    press(internals, 'Enter');
+    await (dock as unknown as { updateComplete: Promise<void> }).updateComplete;
+    await nextRaf();
+    expect(dock.shadowRoot!.querySelectorAll('.dock-floating').length).toBe(1);
+    expect(internals.paneMoveCandidateIndex).toBeNull();
+  });
+
+  it('Enter without a cycled candidate commits nothing and stays armed', () => {
+    const internals = arm('Alpha', [0]);
+    press(internals, 'Enter');
+    expect(internals.paneMoveMode).not.toBeNull();
+    expect(live()).not.toContain('docked to');
+  });
+
+  it('Escape clears the highlight and reverts nothing', async () => {
+    const internals = arm('Alpha', [0]);
+    press(internals, 'ArrowRight');
+    press(internals, 'Escape');
+    await (dock as unknown as { updateComplete: Promise<void> }).updateComplete;
+
+    expect(internals.paneMoveMode).toBeNull();
+    expect(internals.paneMoveCandidateIndex).toBeNull();
+    expect(live()).toContain('Move cancelled');
+    const indicator = dock.shadowRoot!.querySelector<HTMLElement>('.dock-drop-indicator');
+    expect(indicator?.dataset['visible']).toBe('false');
+
+    const paths = Array.from(dock.shadowRoot!.querySelectorAll<HTMLElement>('.dock-stack')).map(
+      (s) => s.dataset['path'],
+    );
+    expect(paths).toEqual(['d:0', 'd:1']);
+    expect(dock.shadowRoot!.querySelectorAll('.dock-floating').length).toBe(0);
+  });
+
+  it('arrows typed into an editable inside a pane cycle nothing', () => {
+    const internals = arm('Alpha', [0]);
+    const input = document.createElement('input');
+    dock.appendChild(input);
+    const event = new KeyboardEvent('keydown', { key: 'ArrowRight', cancelable: true, composed: true });
+    Object.defineProperty(event, 'composedPath', { value: () => [input, dock] });
+    internals.handlePaneMoveModeKey(event);
+    input.remove();
+    expect(internals.paneMoveCandidateIndex).toBeNull();
+  });
+});
