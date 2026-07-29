@@ -66,6 +66,8 @@ export class MpRadio extends LitElement {
   static override get observedAttributes(): string[] {
     return [
       ...(super.observedAttributes ?? []),
+      'invalid',
+      'required',
       'type',
       'checked',
       'disabled',
@@ -248,6 +250,8 @@ export class MpRadio extends LitElement {
           id=${this._inputId}
           .checked=${this._checked}
           ?disabled=${this._disabled}
+          aria-invalid=${this.hasAttribute('invalid') ? 'true' : nothing}
+          aria-required=${this.hasAttribute('required') ? 'true' : nothing}
           name=${this._name ?? nothing}
           value=${this._value ?? nothing}
           aria-label=${this.getAttribute('aria-label') ?? this._inputLabel ?? nothing}
@@ -267,6 +271,8 @@ export class MpRadio extends LitElement {
         id=${this._inputId}
         .checked=${this._checked}
         ?disabled=${this._disabled}
+          aria-invalid=${this.hasAttribute('invalid') ? 'true' : nothing}
+          aria-required=${this.hasAttribute('required') ? 'true' : nothing}
         name=${this._name ?? nothing}
         value=${this._value ?? nothing}
         aria-label=${this.getAttribute('aria-label') ?? this._inputLabel ?? nothing}

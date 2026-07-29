@@ -5,3 +5,4 @@ export * from './roving-focus/roving-focus-item.directive';
 export * from './overlay-focus/overlay-focus.directive';
 export * from './live-announcer/live-announcer.service';
 export * from './overlay-stack/overlay-stack.service';
+export * from './control-validity/control-validity.directive';

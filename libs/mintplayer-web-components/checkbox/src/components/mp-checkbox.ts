@@ -66,6 +66,8 @@ export class MpCheckbox extends LitElement {
   static override get observedAttributes(): string[] {
     return [
       ...(super.observedAttributes ?? []),
+      'invalid',
+      'required',
       'type',
       'checked',
       'indeterminate',
@@ -297,6 +299,8 @@ export class MpCheckbox extends LitElement {
           id=${this._inputId}
           .checked=${this._checked}
           ?disabled=${this._disabled}
+          aria-invalid=${this.hasAttribute('invalid') ? 'true' : nothing}
+          aria-required=${this.hasAttribute('required') ? 'true' : nothing}
           name=${this._name ?? nothing}
           value=${this._value ?? nothing}
           role=${isSwitch ? 'switch' : nothing}
@@ -324,6 +328,8 @@ export class MpCheckbox extends LitElement {
         id=${this._inputId}
         .checked=${this._checked}
         ?disabled=${this._disabled}
+          aria-invalid=${this.hasAttribute('invalid') ? 'true' : nothing}
+          aria-required=${this.hasAttribute('required') ? 'true' : nothing}
         name=${this._name ?? nothing}
         value=${this._value ?? nothing}
         role="button"

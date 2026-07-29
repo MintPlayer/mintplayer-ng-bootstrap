@@ -15,7 +15,7 @@ import type { MpSelect } from '@mintplayer/web-components/select';
 
 // Side-effect import: registers <mp-select>.
 import '@mintplayer/web-components/select';
-import { BsForwardAriaDirective } from '@mintplayer/ng-bootstrap/a11y';
+import { BsForwardAriaDirective, BsControlValidityDirective } from '@mintplayer/ng-bootstrap/a11y';
 
 @Component({
   selector: 'bs-select',
@@ -26,7 +26,7 @@ import { BsForwardAriaDirective } from '@mintplayer/ng-bootstrap/a11y';
   schemas: [CUSTOM_ELEMENTS_SCHEMA],
   hostDirectives: [{
     directive: forwardRef(() => BsSelectValueAccessor),
-    inputs: ['compareWith'],
+    inputs: ['compareWith', BsControlValidityDirective],
   }],
 })
 export class BsSelectComponent {

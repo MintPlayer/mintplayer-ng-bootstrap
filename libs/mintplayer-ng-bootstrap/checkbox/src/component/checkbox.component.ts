@@ -17,7 +17,7 @@ import type { CheckboxChangeEventDetail, MpCheckbox } from '@mintplayer/web-comp
 
 // Side-effect import: registers <mp-checkbox>.
 import '@mintplayer/web-components/checkbox';
-import { BsForwardAriaDirective } from '@mintplayer/ng-bootstrap/a11y';
+import { BsForwardAriaDirective, BsControlValidityDirective } from '@mintplayer/ng-bootstrap/a11y';
 
 @Component({
   selector: 'bs-checkbox',
@@ -25,7 +25,7 @@ import { BsForwardAriaDirective } from '@mintplayer/ng-bootstrap/a11y';
   imports: [BsForwardAriaDirective],
   schemas: [CUSTOM_ELEMENTS_SCHEMA],
   changeDetection: ChangeDetectionStrategy.OnPush,
-  hostDirectives: [BsCheckboxValueAccessor],
+  hostDirectives: [BsCheckboxValueAccessor, BsControlValidityDirective],
   host: {
     'class': 'd-inline-block',
   },

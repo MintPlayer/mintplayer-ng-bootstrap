@@ -16,9 +16,10 @@ import type { MpRadio, RadioChangeEventDetail } from '@mintplayer/web-components
 
 // Side-effect import: registers <mp-radio>.
 import '@mintplayer/web-components/radio';
-import { BsForwardAriaDirective } from '@mintplayer/ng-bootstrap/a11y';
+import { BsForwardAriaDirective, BsControlValidityDirective } from '@mintplayer/ng-bootstrap/a11y';
 
 @Component({
+  hostDirectives: [BsControlValidityDirective],
   selector: 'bs-radio',
   templateUrl: './radio.component.html',
   imports: [BsForwardAriaDirective],

@@ -16,6 +16,19 @@ export interface MpSelectOption {
   disabled?: boolean;
 }
 
+export interface MpSelectOptgroup {
+  label: string;
+  disabled?: boolean;
+  options: MpSelectOption[];
+}
+
+/** One entry of the rendered list: a plain option, or a labelled group of them. */
+export type MpSelectItem = MpSelectOption | MpSelectOptgroup;
+
+function isOptgroup(item: MpSelectItem): item is MpSelectOptgroup {
+  return Array.isArray((item as MpSelectOptgroup).options);
+}
+
 export interface SelectChangeEventDetail {
   value: string | null;
   values: string[];
@@ -80,8 +93,8 @@ export class MpSelect extends LitElement {
   private _value: string | null = null;
   private _inputLabel: string | null = null;
   private _values: string[] = [];
-  private _options: MpSelectOption[] | null = null;
-  private _slotOptions: MpSelectOption[] = [];
+  private _options: MpSelectItem[] | null = null;
+  private _slotOptions: MpSelectItem[] = [];
   private readonly _selectRef: Ref<HTMLSelectElement> = createRef();
   private _slotObserver: MutationObserver | null = null;
 
@@ -179,10 +192,10 @@ export class MpSelect extends LitElement {
     this.requestUpdate();
   }
 
-  get options(): MpSelectOption[] | null {
+  get options(): MpSelectItem[] | null {
     return this._options;
   }
-  set options(value: MpSelectOption[] | null) {
+  set options(value: MpSelectItem[] | null) {
     this._options = value;
     this.requestUpdate();
   }
@@ -210,6 +223,10 @@ export class MpSelect extends LitElement {
         break;
       case 'disabled':
         this._disabled = newValue !== null;
+        this.requestUpdate();
+        break;
+      case 'invalid':
+      case 'required':
         this.requestUpdate();
         break;
       case 'value':
@@ -256,16 +273,16 @@ export class MpSelect extends LitElement {
         ?disabled=${this._disabled}
         size=${ifDefined(this._numberVisible ?? undefined)}
         aria-label=${ariaLabel ?? nothing}
+        aria-invalid=${this.hasAttribute('invalid') ? 'true' : nothing}
+        aria-required=${this.hasAttribute('required') ? 'true' : nothing}
         @change=${this.onNativeChange}
       >
-        ${effective.map(
-          (o) => html`
-            <option
-              value=${o.value}
-              ?selected=${this.isSelected(o.value)}
-              ?disabled=${!!o.disabled}
-            >${o.label}</option>
-          `,
+        ${effective.map((item) =>
+          isOptgroup(item)
+            ? html`<optgroup label=${item.label} ?disabled=${!!item.disabled}>
+                ${item.options.map((o) => this.renderOption(o))}
+              </optgroup>`
+            : this.renderOption(item),
         )}
       </select>
       <slot hidden @slotchange=${this.onSlotChange}></slot>
@@ -297,22 +314,52 @@ export class MpSelect extends LitElement {
     }
   }
 
+  private renderOption(o: MpSelectOption): TemplateResult {
+    return html`
+      <option
+        value=${o.value}
+        ?selected=${this.isSelected(o.value)}
+        ?disabled=${!!o.disabled}
+      >${o.label}</option>
+    `;
+  }
+
   private isSelected(optionValue: string): boolean {
     return this._multiple
       ? this._values.includes(optionValue)
       : this._value === optionValue;
   }
 
+  /**
+   * Mirror slotted <option>/<optgroup> children. Optgroups previously
+   * vanished WITH ALL THEIR OPTIONS (audit Critical): the filter kept only
+   * top-level OPTION tags, so anything grouped never reached the shadow
+   * <select>.
+   */
+  private collectSlotItems(assigned: Element[]): MpSelectItem[] {
+    const toOption = (opt: HTMLOptionElement): MpSelectOption => ({
+      value: opt.value,
+      label: opt.textContent?.trim() ?? '',
+      disabled: opt.disabled,
+    });
+    return assigned.flatMap((el): MpSelectItem[] => {
+      if (el.tagName === 'OPTION') return [toOption(el as HTMLOptionElement)];
+      if (el.tagName === 'OPTGROUP') {
+        const group = el as HTMLOptGroupElement;
+        return [{
+          label: group.label,
+          disabled: group.disabled,
+          options: Array.from(group.querySelectorAll('option')).map(toOption),
+        }];
+      }
+      return [];
+    });
+  }
+
   private onSlotChange = (ev: Event): void => {
     const slot = ev.target as HTMLSlotElement;
     const assigned = slot.assignedElements({ flatten: true });
-    this._slotOptions = assigned
-      .filter((el): el is HTMLOptionElement => el.tagName === 'OPTION')
-      .map((opt) => ({
-        value: opt.value,
-        label: opt.textContent?.trim() ?? '',
-        disabled: opt.disabled,
-      }));
+    this._slotOptions = this.collectSlotItems(assigned);
     this.observeSlottedMutations(assigned);
     this.requestUpdate();
   };
@@ -341,14 +388,7 @@ export class MpSelect extends LitElement {
   private refreshSlotOptions(): void {
     const slot = this.shadowRoot?.querySelector('slot');
     if (!slot) return;
-    const assigned = slot.assignedElements({ flatten: true });
-    this._slotOptions = assigned
-      .filter((el): el is HTMLOptionElement => el.tagName === 'OPTION')
-      .map((opt) => ({
-        value: opt.value,
-        label: opt.textContent?.trim() ?? '',
-        disabled: opt.disabled,
-      }));
+    this._slotOptions = this.collectSlotItems(slot.assignedElements({ flatten: true }));
     this.requestUpdate();
   }
 

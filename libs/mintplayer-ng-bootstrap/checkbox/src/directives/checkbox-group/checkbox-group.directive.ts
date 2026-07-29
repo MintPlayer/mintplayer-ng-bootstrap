@@ -24,6 +24,10 @@ import { BsCheckboxComponent } from '../../component/checkbox.component';
   }],
   host: {
     '(change)': 'onChildChange()',
+    // focusout is composed: the shadow input's blur reaches the host. The
+    // stored onTouched was never CALLED before, which kept every
+    // invalid-after-touched mirror dead (audit 4.9 prerequisite).
+    '(focusout)': 'onTouched?.()',
   },
 })
 export class BsCheckboxGroupDirective implements ControlValueAccessor {
