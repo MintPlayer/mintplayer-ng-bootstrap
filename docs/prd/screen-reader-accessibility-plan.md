@@ -893,7 +893,7 @@ tiers. This is the largest single item in the plan and it **removes** more than 
 | `#renderJsItem` + `#renderNoJsItem` (two templates) | one template |
 | the clipped `<input type=radio\|checkbox>` machine and every `:checked` selector | `<details ?name=${!multi ? 'acc' : nothing}>` |
 | the `data-js` branch in this component | — (state is UA-owned in both tiers) |
-| `grid-template-rows` animation + `.accordion-clip` + its reduced-motion guard | — (animation waived under D1) |
+| `grid-template-rows` animation + `.accordion-clip` + its reduced-motion guard | — (animation waived under D1; later RESTORED pure-CSS on `::details-content` — see the Post-G closeout) |
 | the §4.5 `visibility` fix for collapsed panels | — (`<details>` removes closed content from both trees natively) |
 | `role="heading"` + `aria-level` on the header | **nothing** — the known D1 trade; see the SR check below |
 
@@ -1219,7 +1219,30 @@ Actions and to plain-`<form>` submission. Nothing WCAG-blocking waits on it.
   keys use, only parameterised on the candidate's `data-path`, so it lands identically to the
   equivalent pointer drop. `Escape` still cancels and now also clears the highlight. T/R/B/L/F stay
   the fast path for the current stack. `aria-errormessage` shipped too — see the Phase F as-built
-  block. Still deferred: tree-select/query-builder reduced-motion.
+  block. The tree-select/query-builder `prefers-reduced-motion` passes shipped as well (chevron/
+  spinner/drop-slot motion collapses; `aria-busy` still carries the spinner's state), which
+  empties the deferred list entirely — the human NVDA/VoiceOver pass is the programme's only
+  open item.
+  **Accordion slide animation restored** (D1 had waived it): pure-CSS progressive enhancement,
+  split by `@supports` — engines with `interpolate-size` tween `block-size` to `auto` on
+  `::details-content` (Blink, 18 measured animation frames); engines with `::details-content`
+  but no `interpolate-size` get the same slide via the grid `0fr -> 1fr` fr-track trick (Gecko
+  20 frames, WebKit 18 frames — measured against a PRODUCTION build in plain Playwright
+  engines); anything older snaps gracefully, and reduced motion disables all of it. The UA still
+  owns the disclosure state in every branch. Verification trap recorded twice over: the Nx build
+  cache does NOT hash the gitignored generated `.styles.ts`, so style edits vanish from cached
+  app builds — probe against `--skip-nx-cache` builds; and the Playwright MCP browser freezes
+  ALL CSS transitions, so never judge animation through it.
+  **Versions bumped for release** (breaking rides the minor; majors track framework majors, the
+  #390/#392 precedent): web-components 2.3.0 · ng-bootstrap 22.7.0 · react-bootstrap 19.9.0 ·
+  vue-bootstrap 3.10.0.
+  **Three CI-only fixes after local green**, each an environment truth worth keeping: the
+  react/vue `test` targets pointed at a workspace-root vite config (now `@nx/vitest:test` with
+  project-root auto-detection); `mp-radio-group` needed a reflected `name` PROPERTY because
+  @lit/react derives wrapper prop types from the element class; and the no-JS axe pass must
+  intercept the document request and navigate for real — a `setContent` page is `about:blank`,
+  whose CORS request for production's `crossorigin` stylesheet has no valid origin, so CI was
+  auditing unstyled pages while dev servers (CSS via script modules) masked it locally.
 
 ---
 
