@@ -61,7 +61,7 @@ real specs.
 | Spike | Verdict | Tests | Effect on the plan |
 |---|---|---|---|
 | **0.1a** behaviour of `<details>`/`<summary>` | ✓ **PASS** | 51/51 × 3 engines | D1 proceeds. Three new implementation constraints (below) |
-| **0.1b** pixel parity vs Bootstrap CSS | ⏳ **outstanding** | — | Needs a demo route; blocks only D's *styling*, not its structure |
+| **0.1b** pixel parity vs Bootstrap CSS | ✓ **PASS** | 30/30 × 3 engines | D1 styling unblocked; 5 carry-over findings + 1 accepted delta (headers gain the page font) |
 | **0.2** host naming via `ElementInternals` | ✓ **PASS** | 9/9 | **Phase B unblocked, architecture unchanged.** One PRD justification corrected |
 | **0.3a** `formDisabledCallback` platform semantics | ✓ **PASS** | 21/21 × 3 engines | Phase F proceeds, with a **mandatory** design change (below) |
 | **0.3b** Angular CVA `setDisabledState` bridge | ⏳ **outstanding** | — | Needs Angular; do at the head of F |
@@ -193,11 +193,41 @@ of the tab order **and** the accessibility tree with zero CSS (closing PRD §4.5
 with all three mechanisms yields a **0px** text offset in all three engines, `display: flex` applies
 to `<summary>`, and `::after` composes with `::marker` removal.
 
-**Still outstanding — 0.1b, pixel parity.** These assertions deliberately avoid Bootstrap CSS, so
-they establish that the *structure* works, not that it looks identical. 0.1b remains as written
-(demo route, screenshots, light/dark, narrow breakpoint) and gates only D's styling. Note the ng
-e2e matrix is **chromium + firefox only** — WebKit is configured in the react and vue projects, so
-run 0.1b's third engine there or add webkit to the ng config for the run.
+#### RESULT 0.1b — ✓ PASS, 30/30 in Chromium + Firefox + WebKit (2026-07-29)
+
+**Pixel-exact: 0 differing pixels** on all three pairs (default-open, collapsed, highlight-open)
+in Chromium once the styling below was in place; the full matrix (3 engines × light/dark ×
+desktop/narrow, `< 0.5%` tolerance) passes, plus the dblclick/cursor UX check (visual question 5:
+`cursor: pointer` + `user-select: none` suppress summary text selection). Spike artifacts:
+`/spike/accordion-parity` route + `accordion-parity.spike.spec.ts` + `playwright.spike.config.ts`
+(spike specs are `testIgnore`'d from the base config) — throwaway, deleted before merge. **The
+spike page's transposed SCSS is D1's stylesheet**: Bootstrap's accordion partial imported
+unchanged, with everything keyed on `.accordion-button:not(.collapsed)` moved to
+`details[open] > summary` and a static `.collapsed` class left on the summary so Bootstrap's own
+`:not(.collapsed)` never misfires.
+
+Findings D1 must carry, beyond the transposition:
+
+1. **Pin `line-height: normal` on the summary.** The shipping WC's `<button>` headers render at
+   the UA line-height (Reboot's `button { line-height: inherit }` does not cross the shadow
+   boundary) → 52px headers, not stock Bootstrap's 56px. `<summary>` inherits the page's 1.5 and
+   would be 4px taller; the pin reproduces the shipping look exactly.
+2. **ACCEPTED DELTA — headers gain the page font.** The same missing-Reboot mechanism leaves the
+   shipping WC's headers in the UA button font (Arial on Windows Chromium) while the rest of the
+   page runs the system stack. `<summary>` inherits correctly, so D1 headers will match the page —
+   a fidelity IMPROVEMENT over the shipping component, equalized inside the spike via
+   `::part(button) { font-family: inherit }` so the diff measured everything else.
+3. **Angular drops a bare static `open` attribute on `<details>`** during the client render (the
+   demos bootstrap destructively, and the same applies inside any Angular template): server HTML
+   carries `open=""`, the re-render creates the element without it, and no code ever "removes" it
+   — invisible to attribute-mutation tracing. Bind `[attr.open]` explicitly in Angular templates
+   and wrapper code; verify the same in the React/Vue wrappers.
+4. **Custom-property overrides must sit on `.accordion` itself** (or on `:host` in the shadow,
+   which outranks descendants): Bootstrap declares the `--bs-accordion-*` tokens on `.accordion`,
+   so a body-padding zero on a mere ancestor silently loses.
+5. Bootstrap's `.accordion-item:first/last-of-type` radius rules work unchanged because
+   `<details>` items are same-tag siblings; open summaries need explicit
+   `border-bottom-radius: 0` to mirror what removing `.collapsed` did on last-of-type.
 
 ### 0.2 — host naming via `ElementInternals` (gates **all** of Phase B)
 
