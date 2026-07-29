@@ -185,6 +185,17 @@ export class MpNavbar extends LitElement {
     this.#setExpanded(force ?? !(this.#toggleInput?.checked ?? false));
   }
 
+  protected override firstUpdated(): void {
+    // The JS tier presents the toggle as a disclosure button with a live
+    // aria-expanded — #setExpanded keeps it true from here on. lit-ssr never
+    // runs this, so the static chrome stays a plain (honest) checkbox.
+    const input = this.#toggleInput;
+    if (input) {
+      input.setAttribute('role', 'button');
+      input.setAttribute('aria-expanded', String(input.checked));
+    }
+  }
+
   #onToggleChange = (): void => {
     // Native toggle (label click / Space): the checked state already flipped.
     this.#setExpanded(this.#toggleInput?.checked ?? false);
@@ -214,13 +225,15 @@ export class MpNavbar extends LitElement {
     return html`
       <nav class="navbar" part="nav" aria-label=${label}>
         <slot name="brand"></slot>
+        <!-- No role="button"/aria-expanded HERE: this render is also the
+             static DSD chrome, where no script can keep aria-expanded true —
+             the native checkbox's checked state is the correct self-updating
+             channel with JS off. firstUpdated() upgrades the live tier. -->
         <input
           type="checkbox"
           id="mp-navbar-toggle"
           class="navbar-toggle"
-          role="button"
           aria-label="Toggle navigation"
-          aria-expanded="false"
           aria-controls="navbar-collapse"
           @change=${this.#onToggleChange}
           @keydown=${this.#onToggleKeydown}

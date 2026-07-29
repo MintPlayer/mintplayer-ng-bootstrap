@@ -1,4 +1,4 @@
-import { LitElement, html } from 'lit';
+import { LitElement, html, nothing } from 'lit';
 import { shellStyles } from '../styles';
 
 export interface ShellStateChangeEventDetail {
@@ -89,16 +89,61 @@ export class MpShell extends LitElement {
 
   override connectedCallback(): void {
     super.connectedCallback();
+    // Hydration marker (lit-ssr never runs this): gates the JS-only skip link
+    // in render() and the live aria-expanded upgrade.
+    this.setAttribute('data-js', '');
     // Progressive enhancement for the `dismiss-on-navigate` opt-in: a click on a
     // sidebar link closes the overlay drawer (narrow mode only). The listener is
     // on the host, so it catches clicks bubbling out of the slotted sidebar.
     this.addEventListener('click', this.#onSidebarClick);
+    // A breakpoint crossing flips the RESOLVED open state in `auto` mode with
+    // no toggle event — aria-expanded must follow (PRD 11a).
+    if (typeof window !== 'undefined') window.addEventListener('resize', this.#onResize);
   }
 
   override disconnectedCallback(): void {
     super.disconnectedCallback();
     this.removeEventListener('click', this.#onSidebarClick);
+    if (typeof window !== 'undefined') window.removeEventListener('resize', this.#onResize);
+    if (this.#resizeFrame !== null) cancelAnimationFrame(this.#resizeFrame);
   }
+
+  #resizeFrame: number | null = null;
+
+  #onResize = (): void => {
+    if (this.#resizeFrame !== null) return;
+    this.#resizeFrame = requestAnimationFrame(() => {
+      this.#resizeFrame = null;
+      this.#syncAria();
+    });
+  };
+
+  /**
+   * The live aria-expanded upgrade — driven by the RESOLVED visual state
+   * (#cssOpen), never the raw checkbox: in `auto` wide mode the checkbox is
+   * INVERTED (checked means closed), so mirroring `checked` would announce
+   * the opposite of the truth. Only the JS tier writes it; the static chrome
+   * keeps the honest native checkbox.
+   */
+  #syncAria(): void {
+    const input = this.toggleInput;
+    if (!input || !this.hasAttribute('data-js')) return;
+    input.setAttribute('role', 'button');
+    input.setAttribute('aria-expanded', String(this.#cssOpen()));
+  }
+
+  protected override firstUpdated(): void {
+    this.#syncAria();
+  }
+
+  /** Skip link (WCAG 2.4.1): the shell is the app frame, so it owns the one
+   *  bypass block an app needs. JS tier only — with no script the click could
+   *  not move focus into the shadow content region. */
+  #onSkipLink = (event: Event): void => {
+    event.preventDefault();
+    const content = this.renderRoot?.querySelector<HTMLElement>('.content');
+    content?.focus();
+  };
 
   /**
    * Auto-close the drawer when a navigation link inside the `sidebar` slot is
@@ -136,6 +181,8 @@ export class MpShell extends LitElement {
       if (newValue) this.style.setProperty('--mp-shell-size', newValue);
       else this.style.removeProperty('--mp-shell-size');
     }
+    // `state` flips the resolved open with no checkbox event.
+    if (name === 'state') this.#syncAria();
   }
 
   private get toggleInput(): HTMLInputElement | null {
@@ -199,6 +246,7 @@ export class MpShell extends LitElement {
   toggle(force?: boolean): void {
     const next = force ?? !this.open;
     this.#syncCheckbox(next);
+    this.#syncAria();
     this.#emit(next);
   }
 
@@ -211,6 +259,7 @@ export class MpShell extends LitElement {
     const cssOpen = this.#cssOpen();
     const next = this.#hasExplicitState() ? !cssOpen : cssOpen;
     this.#syncCheckbox(next);
+    this.#syncAria();
     this.#emit(next);
   };
 
@@ -225,23 +274,28 @@ export class MpShell extends LitElement {
   }
 
   override render() {
+    const isBrowser = this.hasAttribute('data-js');
     return html`
+      ${isBrowser
+        ? html`<a href="#" class="skip-link" @click=${this.#onSkipLink}>Skip to content</a>`
+        : nothing}
       <input
         type="checkbox"
         id="mp-shell-toggle"
         class="shell-toggle"
         aria-label="Toggle sidebar"
+        aria-controls="shell-sidebar"
         @change=${this.#onToggleChange}
       />
-      <div class="topbar" part="topbar">
+      <div class="topbar" part="topbar" role="banner">
         <label for="mp-shell-toggle" class="shell-hamburger" part="hamburger" title="Toggle sidebar">
           <slot name="hamburger">&#9776;</slot>
         </label>
         <slot name="topbar"></slot>
       </div>
       <div class="sidebar-root" part="sidebar-root">
-        <aside class="sidebar" part="sidebar" aria-label="Sidebar"><slot name="sidebar"></slot></aside>
-        <div class="content" part="content"><slot></slot></div>
+        <aside id="shell-sidebar" class="sidebar" part="sidebar" aria-label="Sidebar"><slot name="sidebar"></slot></aside>
+        <div class="content" part="content" role="main" tabindex="-1"><slot></slot></div>
       </div>
       <slot name="toggle"></slot>
     `;

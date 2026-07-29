@@ -133,6 +133,25 @@
     }
 
     // CSS-only More toggle: checkbox sibling reveals the overflow menu
+    // The clipped disclosure checkbox: focusable, never display:none.
+    > input.priority-nav-more-checkbox {
+        position: absolute;
+        width: 1px;
+        height: 1px;
+        padding: 0;
+        margin: -1px;
+        overflow: hidden;
+        clip: rect(0, 0, 0, 0);
+        white-space: nowrap;
+        border: 0;
+    }
+
+    // Focus lives on the clipped checkbox; paint its ring on the visual toggle.
+    > input.priority-nav-more-checkbox:focus-visible ~ .priority-nav-strip .priority-nav-more-toggle-noscript {
+        outline: 2px solid var(--bs-primary, #0d6efd);
+        outline-offset: 2px;
+    }
+
     > input.priority-nav-more-checkbox.noscript:checked ~ .priority-nav-overflow {
         display: block;
     }
