@@ -229,6 +229,9 @@ export class MpTabControl extends LitElement {
   }
 
   private handleKeydown(tab: TabInfo, ev: KeyboardEvent): void {
+    // Modified arrows/Home/End are browser/OS chords (Alt+Left history,
+    // Ctrl+Home document start); they must pass through (RovingFocus rule).
+    if (ev.altKey || ev.ctrlKey || ev.metaKey) return;
     switch (ev.key) {
       case 'Enter':
       case ' ':

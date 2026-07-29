@@ -32,7 +32,8 @@ export interface RadioGroupChangeEventDetail {
  *    (`delegatesFocus` means a host tabindex can't remove the input from the
  *    tab order — the input's own tabindex is the only lever);
  *  - moves-and-selects on Arrow keys with wrap and RTL inversion, Home/End;
- *  - stamps aria-posinset/aria-setsize on the radios;
+ *  - stamps aria-posinset/aria-setsize on each radio's inner input (the
+ *    role bearer — a role-less host would drop them);
  *  - submits the checked radio's value under ITS OWN `name` attribute.
  *
  * Emits `group-change` with `detail: { value }` on user changes.
@@ -69,6 +70,14 @@ export class MpRadioGroup extends FormAssociatedMixin(LitElement) {
     });
     // Children upgrade after the parent connects; sync once they have.
     queueMicrotask(() => this.#syncRadios());
+  }
+
+  override attributeChangedCallback(name: string, oldValue: string | null, newValue: string | null): void {
+    super.attributeChangedCallback(name, oldValue, newValue);
+    // required/disabled feed the aria-required mirror and validity; name is
+    // the submission key. All resolved inside #syncRadios/syncFormValue.
+    if (name === 'required' || name === 'disabled') this.#syncRadios();
+    if (name === 'name') this.syncFormValue();
   }
 
   override disconnectedCallback(): void {
@@ -121,6 +130,10 @@ export class MpRadioGroup extends FormAssociatedMixin(LitElement) {
 
   /** APG radio group: arrows move AND select, wrapping; Home/End to the ends. */
   #onKeydown = (event: KeyboardEvent): void => {
+    // Modified arrows are browser/OS chords (Alt+Left history, Ctrl+Home
+    // document start); swallowing them breaks the platform (same rule as
+    // RovingFocus).
+    if (event.altKey || event.ctrlKey || event.metaKey) return;
     const radios = this.#radios();
     if (radios.length === 0) return;
     const rtl = getComputedStyle(this).direction === 'rtl';
@@ -188,11 +201,17 @@ export class MpRadioGroup extends FormAssociatedMixin(LitElement) {
         : firstEnabledIndex(radios.length, (i) => radios[i].hasAttribute('disabled'));
     radios.forEach((radio, index) => {
       radio.groupTabIndex = index === stop ? 0 : -1;
-      radio.setAttribute('aria-posinset', String(index + 1));
-      radio.setAttribute('aria-setsize', String(radios.length));
+      // On the inner input (via mp-radio), never the host: posinset on a
+      // role-less element is dropped by AT, and shadow roots keep native
+      // name-grouping (the usual "2 of 3" source) from forming.
+      radio.groupPosInSet = index + 1;
+      radio.groupSetSize = radios.length;
     });
+    const required = this.hasAttribute('required');
+    if (required) this.setAttribute('aria-required', 'true');
+    else this.removeAttribute('aria-required');
     this.setFormValidity(
-      { valueMissing: this.hasAttribute('required') && checked < 0 },
+      { valueMissing: required && checked < 0 },
       'Please select an option.',
     );
   }

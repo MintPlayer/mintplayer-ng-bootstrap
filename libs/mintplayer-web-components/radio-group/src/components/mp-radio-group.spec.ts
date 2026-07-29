@@ -140,6 +140,23 @@ describe('<mp-radio-group>', () => {
     expect(radios[0].checked).toBe(true);
   });
 
+  it('never intercepts modified arrows — browser/OS chords pass through', async () => {
+    const { group, radios } = await build(THREE);
+    userCheck(radios[0]);
+    const event = new KeyboardEvent('keydown', {
+      key: 'ArrowRight',
+      ctrlKey: true,
+      bubbles: true,
+      composed: true,
+      cancelable: true,
+    });
+    radios[0].dispatchEvent(event);
+    await synced(group);
+    expect(event.defaultPrevented).toBe(false);
+    expect(radios[0].checked).toBe(true);
+    expect(radios[1].checked).toBe(false);
+  });
+
   it('inverts ArrowLeft/ArrowRight under direction: rtl', async () => {
     const { group, radios } = await build(THREE);
     group.style.direction = 'rtl';
@@ -149,10 +166,10 @@ describe('<mp-radio-group>', () => {
     expect(radios[1].checked).toBe(true);
   });
 
-  it('stamps aria-posinset and aria-setsize on the radios', async () => {
+  it('stamps aria-posinset and aria-setsize on the role-bearing inner inputs', async () => {
     const { radios } = await build(THREE);
-    expect(radios.map((r) => r.getAttribute('aria-posinset'))).toEqual(['1', '2', '3']);
-    expect(radios.map((r) => r.getAttribute('aria-setsize'))).toEqual(['3', '3', '3']);
+    expect(radios.map((r) => innerInput(r).getAttribute('aria-posinset'))).toEqual(['1', '2', '3']);
+    expect(radios.map((r) => innerInput(r).getAttribute('aria-setsize'))).toEqual(['3', '3', '3']);
   });
 
   it('exposes value as the checked radio, settable to move the selection', async () => {
@@ -163,6 +180,14 @@ describe('<mp-radio-group>', () => {
     expect(group.value).toBe('cherry');
     group.value = null;
     expect(radios.some((r) => r.checked)).toBe(false);
+  });
+
+  it('mirrors required as aria-required on the radiogroup host, both directions', async () => {
+    const { group } = await build(THREE.replace('<mp-radio-group', '<mp-radio-group required'));
+    expect(group.getAttribute('aria-required')).toBe('true');
+    group.removeAttribute('required');
+    await synced(group);
+    expect(group.hasAttribute('aria-required')).toBe(false);
   });
 
   it('formResetCallback restores the markup-declared checked radio', async () => {
@@ -186,6 +211,6 @@ describe('<mp-radio-group>', () => {
     const inner = group.querySelector<MpRadio>('mp-radio[value="inner-a"]')!;
     userCheck(outer);
     expect(inner.checked).toBe(true);
-    expect(outer.getAttribute('aria-setsize')).toBe('1');
+    expect(innerInput(outer).getAttribute('aria-setsize')).toBe('1');
   });
 });

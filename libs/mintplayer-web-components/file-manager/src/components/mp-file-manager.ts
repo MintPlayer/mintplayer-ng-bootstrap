@@ -1165,16 +1165,29 @@ export class MpFileManager extends LitElement {
   }
 
   private onContentKeydown = (ev: KeyboardEvent): void => {
-    if (ev.key === 'Enter' && this._selection.size === 1) {
+    // The rename editor (or any editable) owns EVERY key it receives —
+    // Delete must delete a character, Ctrl+C must copy text. Guarding only
+    // Enter left the rest of the shortcuts hijacking the text field.
+    const origin0 = ev.composedPath()[0];
+    if (origin0 instanceof HTMLElement && origin0.closest('input, textarea, [contenteditable]')) return;
+    if (ev.key === 'Enter') {
       // Same action as double-click: open the folder / activate the file. One
       // rule for both views — opening was pointer-only (dblclick) before.
-      // Skip when the rename editor is active; its own handler owns Enter.
-      const target = ev.composedPath()[0];
-      if (target instanceof HTMLElement && target.closest('input, [contenteditable]')) return;
+      // In icon view Enter must act on the FOCUSED card: preventDefault below
+      // suppresses the button's native activation, so acting on _selection
+      // would open a stale node.
+      const focusedCard =
+        origin0 instanceof HTMLElement && origin0.classList.contains('icon-card') ? origin0 : null;
+      const id = focusedCard ? focusedCard.dataset['nodeId'] : this._selection.size === 1 ? [...this._selection][0] : undefined;
+      const node = id != null ? this._nodes.find((n) => n.id === id) : undefined;
+      if (!node) return;
       ev.preventDefault();
-      const [id] = this._selection;
-      const node = this._nodes.find((n) => n.id === id);
-      if (node) this.activateNode(node);
+      if (focusedCard && this._selectionMode !== 'none') {
+        this._selection = new Set([node.id]);
+        this.emitSelectionChange();
+        this.requestUpdate();
+      }
+      this.activateNode(node);
       return;
     }
     if ((ev.key === 'ContextMenu' || (ev.key === 'F10' && ev.shiftKey)) && this._selection.size > 0) {

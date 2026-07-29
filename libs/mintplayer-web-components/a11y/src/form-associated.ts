@@ -50,7 +50,13 @@ export interface FormAssociatedElement {
  *    write can therefore never silently defeat a disabled fieldset
  *    (0.3a finding 4 — Angular's setDisabledState is exactly such a writer).
  */
-export function FormAssociatedMixin<TBase extends Constructor<HTMLElement>>(Base: TBase) {
+// The explicit return type is load-bearing: without it, declaration emit
+// tries to serialise the anonymous class and fails on the #private members
+// (TS4094). It is also the mixin's public contract — consumers see
+// FormAssociatedElement, not the plumbing.
+export function FormAssociatedMixin<TBase extends Constructor<HTMLElement>>(
+  Base: TBase,
+): TBase & Constructor<FormAssociatedElement> {
   class FormAssociated extends Base implements FormAssociatedElement {
     static formAssociated = true;
 
@@ -102,5 +108,5 @@ export function FormAssociatedMixin<TBase extends Constructor<HTMLElement>>(Base
       this.syncFormValue();
     }
   }
-  return FormAssociated;
+  return FormAssociated as unknown as TBase & Constructor<FormAssociatedElement>;
 }

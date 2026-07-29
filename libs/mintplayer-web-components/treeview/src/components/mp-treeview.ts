@@ -240,6 +240,7 @@ export class MpTreeview extends LitElement {
           ${this.renderNodes(this._items, 1)}
         </ul>
       </div>
+      ${this.liveAnnouncer.template()}
     `;
   }
 

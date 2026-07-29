@@ -107,7 +107,7 @@ export class MpRadio extends LitElement {
   /**
    * Optional override for the inner <input>'s accessible name. Usually
    * unnecessary: the slotted visible text already names the control through the
-   * flat-tree label association (verified in _spike-slotted-label/). For a radio
+   * flat-tree label association (slotted-label spike; verdict in the plan). For a radio
    * with no visible text, or a name that must differ from it, set this.
    */
   get inputLabel(): string | null {
@@ -181,6 +181,8 @@ export class MpRadio extends LitElement {
   }
 
   private _groupTabIndex: number | null = null;
+  private _groupPosInSet: number | null = null;
+  private _groupSetSize: number | null = null;
 
   /**
    * Roving tab stop, written by an enclosing `<mp-radio-group>`. With
@@ -196,6 +198,32 @@ export class MpRadio extends LitElement {
     const next = value ?? null;
     if (this._groupTabIndex === next) return;
     this._groupTabIndex = next;
+    this.requestUpdate();
+  }
+
+  /**
+   * Set-position pair, written by the enclosing group. They belong on the
+   * inner `<input>` — the role bearer — because aria-posinset on a role-less
+   * host is dropped by AT, and shadow roots keep native name-grouping (the
+   * usual "2 of 3" source) from ever forming.
+   */
+  get groupPosInSet(): number | null {
+    return this._groupPosInSet;
+  }
+  set groupPosInSet(value: number | null) {
+    const next = value ?? null;
+    if (this._groupPosInSet === next) return;
+    this._groupPosInSet = next;
+    this.requestUpdate();
+  }
+
+  get groupSetSize(): number | null {
+    return this._groupSetSize;
+  }
+  set groupSetSize(value: number | null) {
+    const next = value ?? null;
+    if (this._groupSetSize === next) return;
+    this._groupSetSize = next;
     this.requestUpdate();
   }
 
@@ -274,6 +302,8 @@ export class MpRadio extends LitElement {
           name=${this._name ?? nothing}
           value=${this._value ?? nothing}
           tabindex=${this._groupTabIndex ?? nothing}
+          aria-posinset=${this._groupPosInSet ?? nothing}
+          aria-setsize=${this._groupSetSize ?? nothing}
           aria-label=${this.getAttribute('aria-label') ?? this._inputLabel ?? nothing}
           @change=${this.onInputChange}
         />
@@ -296,6 +326,8 @@ export class MpRadio extends LitElement {
         name=${this._name ?? nothing}
         value=${this._value ?? nothing}
         tabindex=${this._groupTabIndex ?? nothing}
+        aria-posinset=${this._groupPosInSet ?? nothing}
+        aria-setsize=${this._groupSetSize ?? nothing}
         aria-label=${this.getAttribute('aria-label') ?? this._inputLabel ?? nothing}
         @change=${this.onInputChange}
       />

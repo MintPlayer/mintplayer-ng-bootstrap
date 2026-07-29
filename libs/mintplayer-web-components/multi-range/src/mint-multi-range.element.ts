@@ -323,6 +323,27 @@ export class MintMultiRangeElement extends LitElement {
     return html`<div class="fill" part="fill" style=${style}></div>`;
   }
 
+  private _thumbLabels: string[] | null = null;
+
+  /** Per-thumb accessible names. Defaults: Minimum/Maximum value for a pair,
+   *  "Value K of N" beyond that — two identical "20, slider" announcements
+   *  are indistinguishable without a name. Property-only. */
+  get thumbLabels(): string[] | null {
+    return this._thumbLabels;
+  }
+  set thumbLabels(value: string[] | null) {
+    this._thumbLabels = value ?? null;
+    this.requestUpdate();
+  }
+
+  private thumbName(index: number): string {
+    const custom = this._thumbLabels?.[index];
+    if (custom) return custom;
+    const count = this.value.length;
+    if (count === 2) return index === 0 ? 'Minimum value' : 'Maximum value';
+    return `Value ${index + 1} of ${count}`;
+  }
+
   private renderThumb(value: number, index: number, vertical: boolean): TemplateResult {
     const pct = this.percent(value);
     // Logical `inset-inline-start` so the thumb position flips in RTL.
@@ -337,6 +358,7 @@ export class MintMultiRangeElement extends LitElement {
         part="thumb"
         type="button"
         role="slider"
+        aria-label=${this.thumbName(index)}
         data-thumb-index=${index}
         data-dragging=${isDragging ? 'true' : 'false'}
         aria-valuemin=${this.min}

@@ -532,7 +532,7 @@ export class MintDockManagerElement extends LitElement {
    * keyboard moves.
    */
   private readonly layoutFocusRestore = new FocusRestore(() => this.shadowRoot, {
-    selector: '.intersection-handle[data-key], mp-tab-control, .dock-tab[data-tab-id]',
+    selector: '.dock-intersection-handle[data-key], mp-tab-control, .dock-tab[data-tab-id]',
     keyOf: (el) =>
       el.dataset['key']
       ?? el.dataset['tabId']
@@ -4002,6 +4002,8 @@ export class MintDockManagerElement extends LitElement {
       this.handlePaneMoveModeKey(event);
       return;
     }
+    // Modified M is someone else's shortcut (Ctrl+M etc.); never arm on it.
+    if (event.altKey || event.ctrlKey || event.metaKey) return;
     if (event.key !== 'm' && event.key !== 'M') return;
     const focused = this.findFocusedPaneOrigin();
     if (!focused) return;
@@ -4042,6 +4044,16 @@ export class MintDockManagerElement extends LitElement {
       event.stopPropagation();
       this.paneMoveMode = null;
       this.liveAnnouncer.announce('Move cancelled.');
+      return;
+    }
+    // Move mode stays armed while focus travels within the dock — but letters
+    // typed into an editable INSIDE a pane are text, not commands. Without
+    // this, typing "left" into a pane's input commits a dock move.
+    const origin = event.composedPath()[0];
+    if (
+      origin instanceof HTMLElement &&
+      (origin.isContentEditable || ['INPUT', 'TEXTAREA', 'SELECT'].includes(origin.tagName))
+    ) {
       return;
     }
     const key = event.key.toLowerCase();
