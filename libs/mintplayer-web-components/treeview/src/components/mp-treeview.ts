@@ -1,4 +1,5 @@
 import { LitElement, html, nothing, type TemplateResult } from 'lit';
+import { LiveAnnouncerController } from '@mintplayer/web-components/a11y';
 import { repeat } from 'lit/directives/repeat.js';
 import { unsafeHTML } from 'lit/directives/unsafe-html.js';
 import { treeviewStyles } from '../styles';
@@ -88,6 +89,9 @@ export class MpTreeview extends LitElement {
   private _loadingIds: Set<string> = new Set();
   /** Last load error per node id. */
   private _errorIds: Map<string, string> = new Map();
+
+  /** Lazy loads have no visible focus move; announce start, finish and ERROR. */
+  private readonly liveAnnouncer = new LiveAnnouncerController(this);
 
   // Roving tabindex: which node currently has tabindex=0
   private _focusedId: string | null = null;
@@ -217,6 +221,12 @@ export class MpTreeview extends LitElement {
     }
   }
 
+  protected override updated(): void {
+    // Live (PRD 11a): selection-mode can change at runtime.
+    if (this._selectionMode === 'multiple') this.setAttribute('aria-multiselectable', 'true');
+    else this.removeAttribute('aria-multiselectable');
+  }
+
   override render(): TemplateResult {
     this._visibleOrder = this.computeVisibleOrder(this._items);
 
@@ -295,8 +305,11 @@ export class MpTreeview extends LitElement {
           style=${`padding-left:${indentation + 12}px`}
           @click=${(ev: MouseEvent) => this.onRowClick(node, ev)}
           @keydown=${(ev: KeyboardEvent) => this.onRowKeydown(node, ev)}
-          title=${loadError ?? nothing}
+          aria-describedby=${loadError ? `${rowId}-error` : nothing}
         >
+          ${loadError
+            ? html`<span id="${rowId}-error" class="treeview-load-error">${loadError}</span>`
+            : nothing}
           <span
             class=${`treeview-chevron${isExpandable ? '' : ' invisible'}${isLoading ? ' loading' : ''}`}
             data-expanded=${expanded ? 'true' : 'false'}
@@ -506,10 +519,14 @@ export class MpTreeview extends LitElement {
     if (!hasChildren && node.lazy && this._loadChildren && !this._loadingIds.has(node.id)) {
       this._loadingIds.add(node.id);
       this._errorIds.delete(node.id);
+      this.liveAnnouncer.announce(`Loading ${node.label}.`);
       this.requestUpdate();
       void this._loadChildren(node.id).then(
         (children) => {
           this._loadingIds.delete(node.id);
+          this.liveAnnouncer.announce(
+            `${node.label} loaded, ${children?.length ?? 0} item${(children?.length ?? 0) === 1 ? '' : 's'}.`,
+          );
           // Add to expanded only after the consumer pushes children back
           // via the `items` property. We emit the expand event so the
           // consumer can update `items` synchronously in their handler.
@@ -528,6 +545,7 @@ export class MpTreeview extends LitElement {
         (err) => {
           this._loadingIds.delete(node.id);
           this._errorIds.set(node.id, err instanceof Error ? err.message : String(err));
+          this.liveAnnouncer.announce(`Loading ${node.label} failed.`);
           this.requestUpdate();
           this.dispatchEvent(
             new CustomEvent('tree-node-load-error', {

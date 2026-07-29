@@ -1,7 +1,7 @@
 import { LitElement, html, nothing, type TemplateResult } from 'lit';
 import { repeat } from 'lit/directives/repeat.js';
 import { OverlayController } from '@mintplayer/web-components/overlay';
-import { deepActiveElement, HostAriaController } from '@mintplayer/web-components/a11y';
+import { deepActiveElement, HostAriaController, LiveAnnouncerController } from '@mintplayer/web-components/a11y';
 import '@mintplayer/web-components/treeview';
 import type {
   MpTreeview,
@@ -111,6 +111,9 @@ export class MpTreeSelect extends LitElement {
   private _provider?: TreeSelectProvider;
   private _nodes: TreeNode[] = [];
   private _searchResults: TreeNode[] | null = null;
+
+  /** Chip add/remove, clear and result counts move no visible focus; say them. */
+  private readonly liveAnnouncer = new LiveAnnouncerController(this);
   private _query = '';
   private _loading = false;
   private _rootsLoaded = false;
@@ -376,6 +379,10 @@ export class MpTreeSelect extends LitElement {
     const page = await this.runRequest((signal) => this._provider!.search(query, { offset, signal }));
     if (!page) return;
     this._searchResults = append ? [...(this._searchResults ?? []), ...page.nodes] : page.nodes;
+    if (!append) {
+      const n = this._searchResults.length;
+      this.liveAnnouncer.announce(n === 1 ? '1 result.' : `${n} results.`);
+    }
     this._searchHasMore = !!page.hasMore;
     this.reindexActive();
     this.requestUpdate();
@@ -633,6 +640,9 @@ export class MpTreeSelect extends LitElement {
   }
 
   private emitChange(added?: TreeNode, removed?: TreeNode): void {
+    if (added) this.liveAnnouncer.announce(`${added.label} selected.`);
+    else if (removed) this.liveAnnouncer.announce(`${removed.label} removed.`);
+    else this.liveAnnouncer.announce('Selection cleared.');
     this.dispatchEvent(
       new CustomEvent<TreeSelectChangeEventDetail>('value-change', {
         detail: { value: this.value, added, removed },
@@ -688,7 +698,8 @@ export class MpTreeSelect extends LitElement {
 
   // ---- render ------------------------------------------------------------
   override render(): TemplateResult {
-    return html`${this.renderTrigger()}${this.renderPanel()}`;
+    return html`
+      ${this.liveAnnouncer.template()}${this.renderTrigger()}${this.renderPanel()}`;
   }
 
   private get hasSelection(): boolean {
@@ -808,7 +819,7 @@ export class MpTreeSelect extends LitElement {
 
   private renderPanel(): TemplateResult {
     return html`
-      <div class="ts-panel" role="dialog">
+      <div class="ts-panel" role="dialog" aria-busy=${this._loading ? 'true' : nothing}>
         ${this.headerTemplate ? html`<div class="ts-panel-header">${this.headerTemplate()}</div>` : nothing}
         ${this._variant === 'button'
           ? html`<div class="ts-panel-header">
