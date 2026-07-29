@@ -48,6 +48,15 @@ export interface FileManagerMessages {
   conflictSkip: string;
   conflictRename: string;
 
+  // Live-region announcements (Phase E)
+  announceDeleted: (count: number) => string;
+  announcePasted: (count: number) => string;
+  announceNewFolder: (name: string) => string;
+  announceRenamed: (from: string, to: string) => string;
+  announceUploadDone: (name: string) => string;
+  announceUploadFailed: (name: string) => string;
+  announceSearchResults: (count: number) => string;
+
   // ARIA labels
   ariaToolbar: string;
   ariaFileOperations: string;
@@ -86,6 +95,13 @@ export const DEFAULT_FILE_MANAGER_MESSAGES: FileManagerMessages = {
   conflictReplace: 'Replace',
   conflictSkip: 'Skip',
   conflictRename: 'Keep both',
+  announceDeleted: (count) => (count === 1 ? '1 item deleted.' : `${count} items deleted.`),
+  announcePasted: (count) => (count === 1 ? '1 item pasted.' : `${count} items pasted.`),
+  announceNewFolder: (name) => `Folder ${name} created.`,
+  announceRenamed: (from, to) => `${from} renamed to ${to}.`,
+  announceUploadDone: (name) => `Upload of ${name} complete.`,
+  announceUploadFailed: (name) => `Upload of ${name} failed.`,
+  announceSearchResults: (count) => (count === 1 ? '1 result.' : `${count} results.`),
   ariaToolbar: 'File manager toolbar',
   ariaFileOperations: 'File operations',
   ariaViewMode: 'View mode',

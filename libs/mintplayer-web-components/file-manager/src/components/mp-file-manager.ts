@@ -1,5 +1,5 @@
 import { LitElement, html, nothing, type TemplateResult } from 'lit';
-import { deepActiveElement, RovingFocus } from '@mintplayer/web-components/a11y';
+import { deepActiveElement, RovingFocus, LiveAnnouncerController} from '@mintplayer/web-components/a11y';
 import { repeat } from 'lit/directives/repeat.js';
 import { unsafeHTML } from 'lit/directives/unsafe-html.js';
 import { ref, createRef, type Ref } from 'lit/directives/ref.js';
@@ -186,6 +186,14 @@ export class MpFileManager extends LitElement {
   private _expandedTreeIds: Set<string> = new Set();
   private _clipboard: { mode: 'cut' | 'copy'; ids: string[] } | null = null;
   private _searchQuery = '';
+  private _searchAnnounceTimer: ReturnType<typeof setTimeout> | null = null;
+  /** Roving tab stop for the icon-view options. */
+  private _iconFocusId: string | null = null;
+
+  /** Operations + async outcomes are invisible without announcements. */
+  private readonly liveAnnouncer = new LiveAnnouncerController(this);
+  /** Upload FAILURE interrupts (assertive) — a missed failure costs data. */
+  private readonly alertAnnouncer = new LiveAnnouncerController(this, { politeness: 'assertive' });
   private _renameTarget: string | null = null;
   private _renameInputRef: Ref<HTMLInputElement> = createRef();
   private _dragDepth = 0;
@@ -379,8 +387,15 @@ export class MpFileManager extends LitElement {
   reportUploadProgress(uploadId: string, progress: number, status?: UploadEntry['status'], error?: string): void {
     const idx = this._uploads.findIndex((u) => u.id === uploadId);
     if (idx < 0) return;
-    const next = { ...this._uploads[idx], progress, ...(status ? { status } : {}), ...(error ? { error } : {}) };
+    const previous = this._uploads[idx];
+    const next = { ...previous, progress, ...(status ? { status } : {}), ...(error ? { error } : {}) };
     this._uploads = [...this._uploads.slice(0, idx), next, ...this._uploads.slice(idx + 1)];
+    // Announce OUTCOME transitions only (progress ticks would drown the SR).
+    // Failure is assertive: silence here costs the user their file.
+    if (previous.status !== next.status) {
+      if (next.status === 'done') this.liveAnnouncer.announce(this._messages.announceUploadDone(next.name));
+      else if (next.status === 'error') this.alertAnnouncer.announce(this._messages.announceUploadFailed(next.name));
+    }
     this.requestUpdate();
   }
 
@@ -652,6 +667,8 @@ export class MpFileManager extends LitElement {
     const breadcrumb = this.getBreadcrumb();
 
     return html`
+      ${this.liveAnnouncer.template()}
+      ${this.alertAnnouncer.template()}
       ${this.renderToolbar()}
       ${this.renderBreadcrumb(breadcrumb)}
       <div class="split-area">
@@ -975,31 +992,43 @@ export class MpFileManager extends LitElement {
     `;
   }
 
+  /**
+   * listbox/option, not grid/gridcell (Phase E): the cards were gridcells
+   * with no row chain — an invalid grid — and the wrap-reflow layout has no
+   * stable row/column geometry to expose anyway. Options rove: one tab stop
+   * for the whole surface, arrows move between cards.
+   */
   private renderIconGridView(children: FileSystemNode[]): TemplateResult {
     return html`
-      <div class="icon-grid" role="grid" aria-label=${this._messages.ariaFileList} @keydown=${this.onContentKeydown} tabindex="0">
+      <div class="icon-grid" role="listbox" aria-multiselectable="true" aria-label=${this._messages.ariaFileList} @keydown=${this.onContentKeydown}>
         ${repeat(
           children,
           (node) => node.id,
-          (node) => this.renderIconCard(node),
+          (node, index) => this.renderIconCard(node, index, children),
         )}
       </div>
     `;
   }
 
-  private renderIconCard(node: FileSystemNode): TemplateResult {
+  private renderIconCard(node: FileSystemNode, index: number, children: FileSystemNode[]): TemplateResult {
     const selected = this._selection.has(node.id);
     const cut = this._clipboard?.mode === 'cut' && this._clipboard.ids.includes(node.id);
     const icon = this.resolveIcon(node);
+    // Roving tab stop: the focused card, else the first selected, else card 0.
+    const stopId = this._iconFocusId && children.some((c) => c.id === this._iconFocusId)
+      ? this._iconFocusId
+      : children.find((c) => this._selection.has(c.id))?.id ?? children[0]?.id;
     return html`
       <button
         class="icon-card"
         type="button"
-        role="gridcell"
+        role="option"
+        tabindex=${node.id === stopId ? '0' : '-1'}
         data-node-id=${node.id}
         data-selected=${selected ? 'true' : 'false'}
         data-cut=${cut ? 'true' : 'false'}
         aria-selected=${selected ? 'true' : 'false'}
+        @focus=${() => { this._iconFocusId = node.id; }}
         @click=${(ev: MouseEvent) => this.onIconCardClick(node, ev)}
         @dblclick=${() => this.activateNode(node)}
         @contextmenu=${(ev: MouseEvent) => this.onIconCardContextMenu(node, ev)}
@@ -1117,6 +1146,15 @@ export class MpFileManager extends LitElement {
   private onSearchInput(ev: InputEvent): void {
     this._searchQuery = (ev.target as HTMLInputElement).value;
     this.requestUpdate();
+    // Result count, debounced past the keystroke burst.
+    if (this._searchAnnounceTimer) clearTimeout(this._searchAnnounceTimer);
+    this._searchAnnounceTimer = setTimeout(() => {
+      this._searchAnnounceTimer = null;
+      if (!this._searchQuery.trim()) return;
+      this.liveAnnouncer.announce(
+        this._messages.announceSearchResults(this.getCurrentChildren().length),
+      );
+    }, 500);
   }
 
   private setViewMode(mode: FileManagerViewMode): void {
@@ -1176,6 +1214,28 @@ export class MpFileManager extends LitElement {
       this.promptNewFolder();
       return;
     }
+    // Icon view: arrows rove between the option cards (one tab stop for the
+    // surface; the wrap-reflow layout has no stable 2D geometry, so all four
+    // arrows walk the linear order).
+    if (['ArrowRight', 'ArrowDown', 'ArrowLeft', 'ArrowUp', 'Home', 'End'].includes(ev.key)) {
+      const origin = ev.composedPath()[0];
+      if (!(origin instanceof HTMLElement) || !origin.classList.contains('icon-card')) return;
+      const grid = origin.closest('.icon-grid');
+      if (!grid) return;
+      const cards = [...grid.querySelectorAll('.icon-card')] as HTMLElement[];
+      const current = cards.indexOf(origin);
+      if (current < 0) return;
+      ev.preventDefault();
+      let target: number;
+      if (ev.key === 'Home') target = 0;
+      else if (ev.key === 'End') target = cards.length - 1;
+      else if (ev.key === 'ArrowRight' || ev.key === 'ArrowDown') target = Math.min(cards.length - 1, current + 1);
+      else target = Math.max(0, current - 1);
+      this._iconFocusId = cards[target].dataset['nodeId'] ?? null;
+      cards[target].focus();
+      this.requestUpdate();
+      return;
+    }
   };
 
   // ─── Navigation ─────────────────────────────────────────────────────────
@@ -1221,6 +1281,7 @@ export class MpFileManager extends LitElement {
       defaultValue: m.defaultNewFolderName,
     });
     if (typeof answer !== 'string' || !answer.trim()) return;
+    this.liveAnnouncer.announce(this._messages.announceNewFolder(answer.trim()));
     this.dispatchEvent(
       new CustomEvent<OperationEventDetail>('mp-operation', {
         detail: { kind: 'new-folder', parentId: this._currentFolderId, name: answer.trim() },
@@ -1262,6 +1323,7 @@ export class MpFileManager extends LitElement {
     this._renameTarget = null;
     this.requestUpdate();
     if (!trimmed || trimmed === row.name) return;
+    this.liveAnnouncer.announce(this._messages.announceRenamed(row.name, trimmed));
     this.dispatchEvent(
       new CustomEvent<OperationEventDetail>('mp-operation', {
         detail: { kind: 'rename', nodeId: row.id, previousName: row.name, newName: trimmed },
@@ -1294,6 +1356,7 @@ export class MpFileManager extends LitElement {
     if (!confirmed) return;
     const ids = [...this._selection];
     this._selection.clear();
+    this.liveAnnouncer.announce(this._messages.announceDeleted(ids.length));
     this.requestUpdate();
     this.dispatchEvent(
       new CustomEvent<OperationEventDetail>('mp-operation', {
@@ -1317,6 +1380,7 @@ export class MpFileManager extends LitElement {
     const conflicts = await this.resolveConflictsForPaste(ids, this._currentFolderId);
     if (conflicts === null) return; // resolver indicated abort
 
+    this.liveAnnouncer.announce(this._messages.announcePasted(ids.length));
     this.dispatchEvent(
       new CustomEvent<OperationEventDetail>('mp-operation', {
         detail: {
