@@ -1101,6 +1101,36 @@ naming; carousel play/pause moved first in DOM order, pause-on-hover/focus, and 
 updates in the same render; every async transition announces; the token used is justified against
 the container role; no `role` remains without its pattern's keyboard model.
 
+- **Phase E as-built** (2026-07-29, ~12 commits): navbar-dropdown aria-expanded derived in render
+  (first-paint regression pinned); datatable D2 roles + colcount + busy + sort/page/selection/
+  loaded announcements; scheduler grid chain via `applyGridRoles` (+ month week-rows through
+  `display: contents`), aria-current="date" on `.today`, selection moved to always-written
+  aria-pressed (aria-selected is invalid on role=button; move mode is announced, not attributed),
+  loading-edge announcements; file-manager icon LISTBOX (the gridcell buttons had no row chain)
+  with roving options + operation/upload/search announcements (upload failure assertive);
+  treeview lazy-load announcements + error as describedby text (was a title tooltip) +
+  live aria-multiselectable; tree-select chip/clear/result-count announcements + panel busy; the
+  VALIDITY CHAIN (four dead onTouched → composed focusout; invalid/required →
+  aria-invalid/aria-required on checkbox/radio/toggle-button/select inner inputs;
+  BsControlValidityDirective mirroring NgControl invalid-once-touched + both required-validator
+  spellings); mp-select optgroup Critical closed; roving index math deduplicated (directive →
+  shared functions, 190-line net untouched); toast container pointer-events + announcer-service
+  channel (in-DOM role/aria-live removed — region+text in one task is never spoken) + the
+  alert-close stub fixed (silently red since C7); dock region role; alert role opt-in; bsCopy
+  announced; placeholder honest; scrollspy title dedup; tab-page duplicate ARIA dropped; splitter
+  pair valuetext; query-builder aria-level; calendar corner header spoken + nav row presentational;
+  carousel play/pause first-in-DOM + hover/focus rotation pause; badge unit/decorative; card-title
+  level; list-group-item active/disabled; progress valueText; marquee pause control + role;
+  spinner reduce guard restored; navbar-item aria-current="page" bridge (both modes);
+  mp-code-snippet's role=status already existed (stale audit row); FM drop overlay silenced.
+  **Explicitly OUTSTANDING from E** (scoped, not silently dropped):
+  `mp-radio-group` + `[bsCheckboxGroup]` role=group (folded into Phase F where the radio work
+  lives); aria-errormessage (needs an error-text channel on the WCs — none exists; design in F
+  alongside FACE validity); tile-manager aria-describedby-onto-tiles + reactive move-mode token;
+  dock keyboard drop-target enumeration (a feature, not an attribute); resize-glyph/dock-handle
+  aria-valuenow (label + orientation shipped; honest value semantics need the resizable to publish
+  bounds); tree-select/query-builder prefers-reduced-motion passes.
+
 ---
 
 ## Phase F — form association (per D5)
