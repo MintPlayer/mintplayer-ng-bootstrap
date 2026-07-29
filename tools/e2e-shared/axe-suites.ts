@@ -52,6 +52,9 @@ async function audit(page: Page, route: AxeRoute, expect: Expect): Promise<void>
       rule: v.id,
       impact: v.impact,
       nodes: v.nodes.slice(0, 5).map((n) => n.target.join(' ')),
+      // WHICH check failed — rules like target-size bundle several
+      // (too small / obscured / insufficient spacing).
+      why: v.nodes[0]?.failureSummary,
       help: v.helpUrl,
     })),
     `axe violations on ${route.path}`,
@@ -111,12 +114,21 @@ export function axeNojsSuite(test: Test, expect: Expect, routes: AxeRoute[]) {
     test.slow();
 
     const suites = routes.map((route) => {
-      test(route.path, async ({ page, request, baseURL }) => {
-        const response = await request.get(route.path);
-        const html = (await response.text())
-          .replace(/<script\b[^>]*>[\s\S]*?<\/script>/gi, '')
-          .replace(/<head([^>]*)>/i, `<head$1><base href="${baseURL}/">`);
-        await page.setContent(html, { waitUntil: 'load' });
+      test(route.path, async ({ page }) => {
+        // Intercept the DOCUMENT and strip its scripts, then navigate for
+        // real: the page keeps its true origin and URL, so stylesheets —
+        // including `crossorigin` ones, which an about:blank/setContent
+        // page cannot fetch — load exactly as they do for a no-JS user.
+        await page.route('**/*', async (handler) => {
+          if (handler.request().resourceType() !== 'document') {
+            await handler.continue();
+            return;
+          }
+          const response = await handler.fetch();
+          const html = (await response.text()).replace(/<script\b[^>]*>[\s\S]*?<\/script>/gi, '');
+          await handler.fulfill({ response, body: html });
+        });
+        await page.goto(route.path, { waitUntil: 'load' });
         await audit(page, route, expect);
       });
       return route.path;
