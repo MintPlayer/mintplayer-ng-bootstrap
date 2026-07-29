@@ -6,7 +6,7 @@ import { createRef, ref, type Ref } from 'lit/directives/ref.js';
 // Lives outside the per-entry tree at libs/.../_styles/ — internal helper, not
 // a public sub-entry of @mintplayer/web-components.
 import { formSelectStyles } from '../../../_styles/form-select.styles';
-import { HostAriaController } from '@mintplayer/web-components/a11y';
+import { HostAriaController, FormAssociatedMixin } from '@mintplayer/web-components/a11y';
 
 export type MpSelectSize = 'sm' | 'md' | 'lg';
 
@@ -61,7 +61,7 @@ const VALID_SIZES: ReadonlySet<MpSelectSize> = new Set(['sm', 'md', 'lg']);
  * a `composed: true` `change` event so consumers using the native event
  * name continue to fire.
  */
-export class MpSelect extends LitElement {
+export class MpSelect extends FormAssociatedMixin(LitElement) {
   static override styles = [formSelectStyles];
 
   static override shadowRootOptions = {
@@ -312,6 +312,12 @@ export class MpSelect extends LitElement {
     } else if (this._value != null) {
       select.value = this._value;
     }
+
+    this.syncFormValue();
+    this.setFormValidity(
+      { valueMissing: this.hasAttribute('required') && this._value == null && this._values.length === 0 },
+      'Please select an item.',
+    );
   }
 
   private renderOption(o: MpSelectOption): TemplateResult {
@@ -416,6 +422,35 @@ export class MpSelect extends LitElement {
   private reflectBoolean(attr: string, value: boolean): void {
     if (value) this.setAttribute(attr, '');
     else this.removeAttribute(attr);
+  }
+
+  // ---- form association (FormAssociatedHost, Phase F) ----
+
+  formValue(): string | FormData | null {
+    if (this._multiple) {
+      // Multi-select submits one entry PER selected option, which needs
+      // FormData (a single string cannot repeat the name).
+      const name = this.getAttribute('name');
+      if (!name || this._values.length === 0) return null;
+      const data = new FormData();
+      this._values.forEach((value) => data.append(name, value));
+      return data;
+    }
+    return this._value;
+  }
+
+  formReset(): void {
+    this._value = null;
+    this._values = [];
+    this.requestUpdate();
+  }
+
+  formRestore(state: string | FormData | File | null): void {
+    if (typeof state === 'string') this.value = state;
+  }
+
+  formValidityAnchor(): HTMLElement | null {
+    return this._selectRef.value ?? null;
   }
 }
 

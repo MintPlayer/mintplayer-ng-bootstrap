@@ -1,4 +1,5 @@
 import { LitElement, html, type TemplateResult } from 'lit';
+import { FormAssociatedMixin } from '@mintplayer/web-components/a11y';
 import { styles } from './mint-otp-input.element.template';
 import { OtpInputType } from './types/otp-input-type';
 import { OtpInputCase } from './types/otp-input-case';
@@ -24,7 +25,7 @@ import { OtpInputSize } from './types/otp-input-size';
  *
  * Both bubble and compose so an Angular wrapper's host listeners pick them up.
  */
-export class MintOtpInputElement extends LitElement {
+export class MintOtpInputElement extends FormAssociatedMixin(LitElement) {
   static override styles = [styles];
 
   static override get observedAttributes(): string[] {
@@ -346,7 +347,26 @@ export class MintOtpInputElement extends LitElement {
 
   // ------- event dispatch -------
 
+  // ---- form association (FormAssociatedHost, Phase F) ----
+
+  formValue(): string | null {
+    return this._value || null;
+  }
+
+  formReset(): void {
+    this.clear();
+  }
+
+  formRestore(state: string | FormData | File | null): void {
+    if (typeof state === 'string') this.value = state;
+  }
+
+  formValidityAnchor(): HTMLElement | null {
+    return this._inputEl;
+  }
+
   private dispatchValueChange(): void {
+    this.syncFormValue();
     this.dispatchEvent(new CustomEvent<string>('value-change', {
       detail: this._value,
       bubbles: true,

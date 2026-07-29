@@ -1,6 +1,6 @@
 import { LitElement, html, nothing, type TemplateResult } from 'lit';
 import { createRef, ref, type Ref } from 'lit/directives/ref.js';
-import { HostAriaController } from '@mintplayer/web-components/a11y';
+import { HostAriaController, FormAssociatedMixin } from '@mintplayer/web-components/a11y';
 import { toggleButtonStyles } from '../styles';
 
 /** Bootstrap button-color tokens that map to a `.btn-<color>` class. */
@@ -35,7 +35,7 @@ let instanceCounter = 0;
  * Emits a native-style `change` event with
  * `detail: { checked, value }` when toggled.
  */
-export class MpToggleButton extends LitElement {
+export class MpToggleButton extends FormAssociatedMixin(LitElement) {
   static override styles = [toggleButtonStyles];
 
   static override shadowRootOptions = {
@@ -191,6 +191,7 @@ export class MpToggleButton extends LitElement {
   // After every render — element references point at a specific node, and Lit
   // may replace the <input> on re-render.
   protected override updated(): void {
+    this.syncFormValue();
     this.hostAria.syncReferences();
   }
 
@@ -233,6 +234,27 @@ export class MpToggleButton extends LitElement {
       }),
     );
   };
+
+  // ---- form association (FormAssociatedHost, Phase F) ----
+
+  formValue(): string | null {
+    return this._checked ? (this._value ?? 'on') : null;
+  }
+
+  formReset(): void {
+    this._checked = false;
+    if (this.hasAttribute('checked')) this.removeAttribute('checked');
+    this.requestUpdate();
+  }
+
+  formRestore(state: string | FormData | File | null): void {
+    this._checked = state != null;
+    this.requestUpdate();
+  }
+
+  formValidityAnchor(): HTMLElement | null {
+    return this._inputRef.value ?? null;
+  }
 }
 
 if (typeof customElements !== 'undefined' && !customElements.get('mp-toggle-button')) {
