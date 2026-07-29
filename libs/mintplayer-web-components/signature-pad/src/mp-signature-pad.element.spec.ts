@@ -147,7 +147,7 @@ describe('mp-signature-pad — CSS-scaled canvas coordinate mapping', () => {
   });
 });
 
-describe('mp-signature-pad — hide-typed-input (opt-OUT of the keyboard path)', () => {
+describe('mp-signature-pad — showAccessibilityToggle (opt-OUT of the keyboard path)', () => {
   let el: MpSignaturePadElement;
   afterEach(() => el.remove());
 
@@ -156,15 +156,20 @@ describe('mp-signature-pad — hide-typed-input (opt-OUT of the keyboard path)',
     expect(shadow(el).querySelector('input.form-control')).not.toBeNull();
   });
 
-  it('hide-typed-input removes the input but keeps Undo/Clear in the tab order', async () => {
-    el = await mount((host) => host.setAttribute('hide-typed-input', ''));
+  it('show-accessibility-toggle="false" removes the input but keeps Undo/Clear in the tab order', async () => {
+    el = await mount((host) => host.setAttribute('show-accessibility-toggle', 'false'));
     expect(shadow(el).querySelector('input.form-control')).toBeNull();
     expect(shadow(el).querySelectorAll('button').length).toBe(2);
   });
 
+  it('bare attribute presence still means true (only an explicit "false" disables)', async () => {
+    el = await mount((host) => host.setAttribute('show-accessibility-toggle', ''));
+    expect(shadow(el).querySelector('input.form-control')).not.toBeNull();
+  });
+
   it('flipping the property live restores the input (state is live, PRD 11a)', async () => {
-    el = await mount((host) => host.setAttribute('hide-typed-input', ''));
-    el.hideTypedInput = false;
+    el = await mount((host) => host.setAttribute('show-accessibility-toggle', 'false'));
+    el.showAccessibilityToggle = true;
     await el.updateComplete;
     expect(shadow(el).querySelector('input.form-control')).not.toBeNull();
   });

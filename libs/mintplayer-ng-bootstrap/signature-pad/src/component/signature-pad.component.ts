@@ -32,7 +32,7 @@ void MpSignaturePadElement;
       [attr.type-label]="typeLabel()"
       [attr.undo-label]="undoLabel()"
       [attr.clear-label]="clearLabel()"
-      [attr.hide-typed-input]="hideTypedInput() ? '' : null"
+      [attr.show-accessibility-toggle]="showAccessibilityToggle() ? null : 'false'"
       (signature-change)="onSignatureChange($event)"
     ></mp-signature-pad>
   `,
@@ -52,8 +52,12 @@ export class BsSignaturePadComponent {
   readonly typeLabel = input<string | null>(null);
   readonly undoLabel = input<string | null>(null);
   readonly clearLabel = input<string | null>(null);
-  /** Opt-OUT of the typed alternative — it is the only keyboard path, so it shows by default. */
-  readonly hideTypedInput = input(false);
+  /**
+   * Shows the typed alternative; named identically to bs-color-picker's input.
+   * ON by default — it is the only keyboard path — so turning it off is a
+   * deliberate draw-only decision.
+   */
+  readonly showAccessibilityToggle = input(true);
 
   // `model()` already exposes a `signatureChange` output for two-way
   // [(signature)] binding; `signature.set()` in onSignatureChange drives it.
