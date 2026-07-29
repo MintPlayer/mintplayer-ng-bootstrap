@@ -1068,6 +1068,24 @@ Project memory's "`M` library-wide" note is corrected rather than stale.
 **D5 — form association: RESOLVED, in scope and in this pull request.** Phase F stays last in the
 ordering (nothing WCAG-blocking waits on it) but is no longer droppable.
 
+**D6 — signature-pad: RESOLVED 2026-07-29 (maintainer-directed, mid-Phase-C), scope expanded from
+"fix the Angular component" to "migrate it".** The §4.2 remedy — a typed-signature alternative
+plus Undo/Clear in the tab order — was about to land inside `bs-signature-pad`; the maintainer
+directed the component become a 3-fronted WC instead, so the accessibility work ships to all
+three frameworks at once rather than Angular-only. As delivered: `mp-signature-pad` owns freehand
+drawing, the typed alternative (`Signature.text`, rendered onto the canvas in a script font — the
+keyboard user produces the same artifact through the same model), Undo/Clear as real buttons, and
+`focus()` delegating to the typed input; pointer coordinates map through
+bitmap-size/rendered-rect so a CSS-sized canvas draws correctly. Freehand drawing itself has no
+keyboard equivalent — the typed input IS the alternative, and the demo pages say so plainly. The
+WC follows the §5.2b/5.3 naming contract (`input-label` → the `role="img"` canvas, host
+`aria-label` wins, category-2 default "Signature pad") and joined every conformance registry
+(12th WC in the naming contract; `bs-signature-pad`, now a thin wrapper, is the 20th entry in the
+Angular passthrough matrix; React uses `createComponent`, exempt from the runtime guard by
+construction; the Vue SFC is auto-covered by the static `v-bind="$attrs"` invariant). Ships no
+DSD chrome — the visible-only-after-hydration tier, consistent with the §3 non-goal of not
+expanding the no-JS tier.
+
 ## 11a. Cross-cutting principle — exposed state must be live
 
 Stated separately at the maintainer's direction, because it is the axis the whole programme is

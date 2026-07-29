@@ -1,8 +1,10 @@
 # Plan — screen-reader accessibility across the four libraries
 
-Status: **Phases A and B landed (B in 10 milestones — see the as-built blocks); Phase 0 gates all
-cleared (0.1b + 0.3b deferred as noted); C–G outstanding** — 2026-07-28. Companion PRD:
-`docs/prd/screen-reader-accessibility.md` (findings, design rationale, decisions D1–D5 in §11, and
+Status: **Phases A, B and C's implementation landed (B in 10 milestones, C in C1–C8 — see the
+as-built blocks); Phase 0 gates all cleared (0.1b + 0.3b deferred as noted); C's acceptance
+walkthrough plus D–G outstanding** — 2026-07-29. Scope grew mid-C: the signature-pad remediation
+became a full WC migration (decision **D6**, PRD §11). Companion PRD:
+`docs/prd/screen-reader-accessibility.md` (findings, design rationale, decisions D1–D6 in §11, and
 the live-state principle in §11a).
 
 A spike phase then seven implementation phases, 0 → A → G, all on the single branch
@@ -35,6 +37,9 @@ element references, and visual parity. See PRD §7, "What CI structurally cannot
 - **D3** — `mp-otp-input.label` → `inputLabel`, breaking, in Phase B.
 - **D4** — the scheduler accepts both `M` and `Enter`; `M` is canonical.
 - **D5** — form association is **in scope for this PR**; Phase F is last but not droppable.
+- **D6** (added 2026-07-29, mid-C) — the signature-pad's C8 remedy shipped as a **3-fronted WC
+  migration** (`mp-signature-pad` + ng/react/vue wrappers) rather than an Angular-only fix, so the
+  typed alternative reaches every framework. See the C8 part 3 as-built block and PRD §11 D6.
 
 **Every phase inherits PRD §11a**: an ARIA attribute must be correct at every moment, not at first
 render. Prefer a native element that owns its own state; derive state in `render()` from reactive
@@ -801,7 +806,8 @@ selected date cell per APG); scope the dock's move mode to the originating tab a
 `focusout`.
 
 **Signature-pad** ships a typed-signature alternative plus Clear/Undo in the tab order; document
-honestly that freehand drawing has no keyboard equivalent.
+honestly that freehand drawing has no keyboard equivalent. *(As built, this grew into the full WC
+migration — decision D6; see the C8 part 3 as-built block above.)*
 
 **Acceptance**: a keyboard-only Playwright walkthrough per affected component proves every control
 a mouse user can see is focusable and activatable; no interaction leaves `document.activeElement`
