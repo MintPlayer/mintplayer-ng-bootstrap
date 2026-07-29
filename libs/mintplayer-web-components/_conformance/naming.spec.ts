@@ -106,6 +106,66 @@ describe.each(CASES)('$tag naming contract', ({ tag, target, extra, defaultName 
   });
 });
 
+/**
+ * The `error-text` channel, asserted across every form control that has one — same
+ * reason as the naming contract above: five components, seven render branches, and
+ * two rules that are easy to implement *almost* right.
+ *
+ * A message may only be referenced while the control is invalid (`aria-errormessage`
+ * is undefined otherwise), and `aria-describedby` must carry the same node because
+ * `aria-errormessage` support is uneven — so both references appear together, point
+ * at the same in-shadow node, and disappear together.
+ */
+const ERROR_TEXT_CASES = CASES.filter(({ tag }) =>
+  ['mp-select', 'mp-checkbox', 'mp-radio', 'mp-toggle-button', 'mp-otp-input'].includes(tag),
+);
+
+describe.each(ERROR_TEXT_CASES)('$tag error-text contract', ({ tag, target, extra }) => {
+  beforeEach(() => {
+    document.body.innerHTML = '';
+  });
+
+  const attrs = extra ?? '';
+  const host = () => document.querySelector(tag) as HTMLElement & { updateComplete: Promise<unknown> };
+
+  it('references nothing and renders nothing while the control is valid', async () => {
+    const node = await mount(`<${tag} ${attrs} error-text="Probe message."></${tag}>`, tag, target);
+    expect(node.hasAttribute('aria-errormessage')).toBe(false);
+    expect(node.hasAttribute('aria-describedby')).toBe(false);
+    expect(host().shadowRoot!.querySelector('.invalid-feedback')).toBeNull();
+  });
+
+  it('points BOTH references at an in-shadow message node when invalid', async () => {
+    const node = await mount(
+      `<${tag} ${attrs} invalid error-text="Probe message."></${tag}>`,
+      tag,
+      target,
+    );
+    const id = node.getAttribute('aria-errormessage');
+
+    expect(id, `${tag}: no aria-errormessage`).toBeTruthy();
+    expect(node.getAttribute('aria-describedby')).toBe(id);
+    const message = host().shadowRoot!.getElementById(id!);
+    expect(message, `${tag}: aria-errormessage does not resolve in its own shadow root`).not.toBeNull();
+    expect(message!.textContent).toBe('Probe message.');
+  });
+
+  it('drops node and both references when validity clears', async () => {
+    const node = await mount(
+      `<${tag} ${attrs} invalid error-text="Probe message."></${tag}>`,
+      tag,
+      target,
+    );
+
+    host().removeAttribute('invalid');
+    await host().updateComplete;
+
+    expect(node.hasAttribute('aria-errormessage')).toBe(false);
+    expect(node.hasAttribute('aria-describedby')).toBe(false);
+    expect(host().shadowRoot!.querySelector('.invalid-feedback')).toBeNull();
+  });
+});
+
 describe('mp-datatable caption', () => {
   beforeEach(() => {
     document.body.innerHTML = '';

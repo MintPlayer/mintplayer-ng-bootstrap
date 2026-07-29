@@ -8,7 +8,13 @@ import { ref, createRef, type Ref } from 'lit/directives/ref.js';
 // Lives outside the per-entry tree at libs/.../_styles/ — an internal
 // directory, NOT a public sub-entry of @mintplayer/web-components.
 import { formCheckStyles } from '../../../_styles/form-check.styles';
-import { HostAriaController, FormAssociatedMixin } from '@mintplayer/web-components/a11y';
+import { invalidFeedbackStyles } from '../../../_styles/invalid-feedback.styles';
+import {
+  HostAriaController,
+  FormAssociatedMixin,
+  errorFeedback,
+  errorFeedbackElements,
+} from '@mintplayer/web-components/a11y';
 
 // `toggleButtonStyles` covers the `toggle_button` variant (`.btn` rules).
 // Side-effect-imports `<mp-toggle-button>` too — same module.
@@ -63,7 +69,7 @@ let instanceCounter = 0;
  * (spike 0.3a).
  */
 export class MpCheckbox extends FormAssociatedMixin(LitElement) {
-  static override styles = [formCheckStyles, toggleButtonStyles];
+  static override styles = [formCheckStyles, toggleButtonStyles, invalidFeedbackStyles];
 
   static override shadowRootOptions = {
     ...LitElement.shadowRootOptions,
@@ -75,6 +81,9 @@ export class MpCheckbox extends FormAssociatedMixin(LitElement) {
       ...(super.observedAttributes ?? []),
       'invalid',
       'required',
+      // Validation message rendered inside the shadow root and referenced by the
+      // inner <input>; shown only while `invalid` is also set.
+      'error-text',
       'type',
       'checked',
       'indeterminate',
@@ -101,6 +110,7 @@ export class MpCheckbox extends FormAssociatedMixin(LitElement) {
   private _value: string | null = null;
   private _color: ToggleButtonColor = 'primary';
   private _inputLabel: string | null = null;
+  private _errorText: string | null = null;
 
   /**
    * Tier-2 naming. No `role` is passed: the inner <input> is the real control and
@@ -109,8 +119,10 @@ export class MpCheckbox extends FormAssociatedMixin(LitElement) {
    */
   private readonly hostAria = new HostAriaController(this, {
     referenceTarget: () => this._inputRef.value ?? null,
+    describedByExtras: () => errorFeedbackElements(this.renderRoot),
   });
   private readonly _inputId = `mp-checkbox-${++instanceCounter}`;
+  private readonly _errorId = `mp-checkbox-${instanceCounter}-error`;
   private readonly _inputRef: Ref<HTMLInputElement> = createRef();
 
   /**
@@ -139,6 +151,28 @@ export class MpCheckbox extends FormAssociatedMixin(LitElement) {
     const next = value ?? null;
     if (this._inputLabel === next) return;
     this._inputLabel = next;
+    this.requestUpdate();
+  }
+
+  /**
+   * Validation message, as `errorText` / `error-text`. Rendered as a
+   * `.invalid-feedback` node inside the shadow root and referenced from the inner
+   * `<input>` by `aria-errormessage` **and** `aria-describedby` — but only while
+   * `invalid` is set, because `aria-errormessage` means nothing on a control that
+   * is not `aria-invalid`.
+   *
+   * Text rather than a node because the alternative does not work: a consumer's
+   * own `<small id="…">` lives outside this shadow root, and an IDREF from the
+   * inner input cannot reach it. On the Angular side `BsControlValidityDirective`
+   * fills this in from `NgControl.errors`.
+   */
+  get errorText(): string | null {
+    return this._errorText;
+  }
+  set errorText(value: string | null) {
+    const next = value ?? null;
+    if (this._errorText === next) return;
+    this._errorText = next;
     this.requestUpdate();
   }
 
@@ -220,6 +254,19 @@ export class MpCheckbox extends FormAssociatedMixin(LitElement) {
   ): void {
     super.attributeChangedCallback(name, oldValue, newValue);
     switch (name) {
+      // Both are read straight from the host in render(), so a change has to ask
+      // for one. Without this the aria-invalid / aria-required the audit added
+      // were frozen at their first-render values, and the error message could
+      // never appear on a control that started out valid — which is every
+      // control driven by a form, since validity is mirrored after touch.
+      case 'invalid':
+      case 'required':
+        this.requestUpdate();
+        break;
+      case 'error-text':
+        this._errorText = newValue;
+        this.requestUpdate();
+        break;
       case 'type':
         if (newValue && VALID_TYPES.has(newValue)) {
           this._type = newValue as MpCheckboxType;
@@ -304,6 +351,7 @@ export class MpCheckbox extends FormAssociatedMixin(LitElement) {
     // shadow root, where the consumer's element does not exist, and was silently
     // dead while looking correct in devtools.
     const ariaLabel = this.getAttribute('aria-label') ?? this._inputLabel ?? undefined;
+    const error = this.errorFeedback();
     return html`
       <label class=${isSwitch ? 'form-check form-switch' : 'form-check'}>
         <input
@@ -315,6 +363,8 @@ export class MpCheckbox extends FormAssociatedMixin(LitElement) {
           ?disabled=${this._disabled}
           aria-invalid=${this.hasAttribute('invalid') ? 'true' : nothing}
           aria-required=${this.hasAttribute('required') ? 'true' : nothing}
+          aria-errormessage=${error.id}
+          aria-describedby=${error.id}
           name=${this._name ?? nothing}
           value=${this._value ?? nothing}
           role=${isSwitch ? 'switch' : nothing}
@@ -324,7 +374,12 @@ export class MpCheckbox extends FormAssociatedMixin(LitElement) {
         />
         <span class="form-check-label"><slot></slot></span>
       </label>
+      ${error.node}
     `;
+  }
+
+  private errorFeedback() {
+    return errorFeedback(this._errorId, this._errorText, this.hasAttribute('invalid'));
   }
 
   private renderToggleButton(): TemplateResult {
@@ -334,6 +389,7 @@ export class MpCheckbox extends FormAssociatedMixin(LitElement) {
     // shadow root, where the consumer's element does not exist, and was silently
     // dead while looking correct in devtools.
     const ariaLabel = this.getAttribute('aria-label') ?? this._inputLabel ?? undefined;
+    const error = this.errorFeedback();
     return html`
       <input
         ${ref(this._inputRef)}
@@ -344,6 +400,8 @@ export class MpCheckbox extends FormAssociatedMixin(LitElement) {
         ?disabled=${this._disabled}
           aria-invalid=${this.hasAttribute('invalid') ? 'true' : nothing}
           aria-required=${this.hasAttribute('required') ? 'true' : nothing}
+        aria-errormessage=${error.id}
+        aria-describedby=${error.id}
         name=${this._name ?? nothing}
         value=${this._value ?? nothing}
         role="button"
@@ -354,6 +412,7 @@ export class MpCheckbox extends FormAssociatedMixin(LitElement) {
       <label class="btn btn-${this._color}" for=${this._inputId}>
         <slot></slot>
       </label>
+      ${error.node}
     `;
   }
 

@@ -25,7 +25,10 @@ import { BsForwardAriaDirective, BsControlValidityDirective } from '@mintplayer/
   imports: [BsForwardAriaDirective],
   schemas: [CUSTOM_ELEMENTS_SCHEMA],
   changeDetection: ChangeDetectionStrategy.OnPush,
-  hostDirectives: [BsCheckboxValueAccessor, BsControlValidityDirective],
+  hostDirectives: [BsCheckboxValueAccessor, {
+    directive: BsControlValidityDirective,
+    inputs: ['errorMessages'],
+  }],
   host: {
     'class': 'd-inline-block',
   },

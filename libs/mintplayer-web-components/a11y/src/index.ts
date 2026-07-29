@@ -12,5 +12,7 @@ export type { RovingFocusOptions, RovingFocusOrientation } from './roving-focus'
 export { HostAriaController, sharedInternals, supportsAriaElementReferences } from './host-aria';
 export type { HostAriaOptions, HostAriaState } from './host-aria';
 export { nextEnabledIndex, firstEnabledIndex, lastEnabledIndex } from './roving-focus';
+export { errorFeedback, errorFeedbackElements } from './error-text';
+export type { ErrorFeedback } from './error-text';
 export { FormAssociatedMixin } from './form-associated';
 export type { FormAssociatedHost, FormAssociatedElement } from './form-associated';

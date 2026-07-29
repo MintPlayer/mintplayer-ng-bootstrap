@@ -1125,8 +1125,8 @@ the container role; no `role` remains without its pattern's keyboard model.
   mp-code-snippet's role=status already existed (stale audit row); FM drop overlay silenced.
   **Explicitly OUTSTANDING from E** (scoped, not silently dropped):
   `mp-radio-group` + `[bsCheckboxGroup]` role=group (folded into Phase F where the radio work
-  lives); aria-errormessage (needs an error-text channel on the WCs — none exists; design in F
-  alongside FACE validity); tile-manager aria-describedby-onto-tiles + reactive move-mode token;
+  lives); aria-errormessage (needed an error-text channel on the WCs — designed in F alongside
+  FACE validity and shipped there, see that block); tile-manager aria-describedby-onto-tiles + reactive move-mode token;
   dock keyboard drop-target enumeration (a feature, not an attribute); resize-glyph/dock-handle
   aria-valuenow (label + orientation shipped; honest value semantics need the resizable to publish
   bounds); tree-select/query-builder prefers-reduced-motion passes.
@@ -1183,12 +1183,24 @@ Actions and to plain-`<form>` submission. Nothing WCAG-blocking waits on it.
   demo on the legacy shape, documented as such). Also fixed in passing: `overlay-stack.spec.ts`
   was silently red since the stack became a facade over the module-singleton `dismissStack` —
   frames leaked across tests; it now calls `resetForTesting()` per test.
-  **Explicitly OUTSTANDING from F**: `aria-errormessage` stays deferred (design settled:
-  each form WC gains an `error-text` attribute rendered as an in-shadow feedback node that the
-  inner input references via `aria-errormessage` + `aria-describedby`, fed on the Angular side by
-  `BsControlValidityDirective` from `NgControl.errors`; deferred because no WC has an error-text
-  channel today and inventing one touches every form control's template — follow-up scoped in the
-  outstanding-followups memory). Group-level `disabled` on `<mp-radio-group>` disables submission
+  **`aria-errormessage` — SHIPPED (2026-07-29, same PR), as designed**: `error-text` /
+  `errorText` on `mp-checkbox`, `mp-radio`, `mp-toggle-button`, `mp-select` and `mp-otp-input`
+  renders an in-shadow `<small class="invalid-feedback" id>` that the inner control references by
+  `aria-errormessage` **and** `aria-describedby` (the latter because errormessage support is
+  uneven), both only while the control is `invalid` — `aria-errormessage` is undefined on a valid
+  control, so all three go away together. Fed on the Angular side by
+  `BsControlValidityDirective`'s new `[errorMessages]` (`Record<errorKey, string>`, exposed
+  through the checkbox/radio/select wrappers' `hostDirectives`), which writes the first active
+  error's message on the same touched-and-invalid predicate as `invalid`. The contract is shared
+  (`a11y/error-text.ts`) and registry-asserted in `_conformance/naming.spec.ts` across all five.
+  Two defects surfaced doing it: `invalid`/`required` were **not** live on any of the four
+  Lit-shadow controls (`attributeChangedCallback` had no case for them, and `mp-select` did not
+  even observe them), so `aria-invalid` was frozen at first render — i.e. never true in a real
+  form, where validity is mirrored after touch; and assigning `ariaDescribedByElements` *removes*
+  the `aria-describedby` content attribute (measured in Chromium), so an in-shadow describedby is
+  erased by `HostAriaController` on every engine that supports element references while surviving
+  in jsdom. The message node is therefore also handed to the controller as `describedByExtras`,
+  appended after the consumer's own description. Group-level `disabled` on `<mp-radio-group>` disables submission
   state only, not the individual radios — per-radio `disabled` remains the API, matching native
   fieldset-less radio groups.
   **Post-G closeout (2026-07-29, same PR)**: three of the deferred items were closed after the
@@ -1206,8 +1218,8 @@ Actions and to plain-`<form>` submission. Nothing WCAG-blocking waits on it.
   commits the highlighted candidate through the same synthetic-drag `handleDrop` call the T/R/B/L
   keys use, only parameterised on the candidate's `data-path`, so it lands identically to the
   equivalent pointer drop. `Escape` still cancels and now also clears the highlight. T/R/B/L/F stay
-  the fast path for the current stack. Still deferred: aria-errormessage,
-  tree-select/query-builder reduced-motion.
+  the fast path for the current stack. `aria-errormessage` shipped too — see the Phase F as-built
+  block. Still deferred: tree-select/query-builder reduced-motion.
 
 ---
 

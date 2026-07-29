@@ -50,3 +50,67 @@ describe('mp-toggle-button naming', () => {
     expect(input.hasAttribute('aria-label')).toBe(false);
   });
 });
+
+/**
+ * The `error-text` channel — one render path, so the three states and nothing more.
+ * `mp-checkbox`'s aria spec carries the rationale and the element-reference half.
+ */
+describe('mp-toggle-button error-text', () => {
+  beforeEach(() => {
+    document.body.innerHTML = '';
+  });
+
+  const feedback = (host: MpToggleButton) =>
+    host.shadowRoot!.querySelector('.invalid-feedback');
+
+  it('renders no message and no references while the control is valid', async () => {
+    const { host, input } = await mount(
+      '<mp-toggle-button error-text="Pick at least one."></mp-toggle-button>',
+    );
+    expect(feedback(host)).toBeNull();
+    expect(input.hasAttribute('aria-errormessage')).toBe(false);
+    expect(input.hasAttribute('aria-describedby')).toBe(false);
+  });
+
+  it('renders the message and BOTH references when invalid, resolving in this shadow root', async () => {
+    const { host, input } = await mount(
+      '<mp-toggle-button invalid error-text="Pick at least one.">Bold</mp-toggle-button>',
+    );
+    const id = input.getAttribute('aria-errormessage');
+
+    expect(id).toBeTruthy();
+    expect(input.getAttribute('aria-describedby')).toBe(id);
+    expect(host.shadowRoot!.getElementById(id!)).toBe(feedback(host));
+    expect(feedback(host)!.textContent).toBe('Pick at least one.');
+  });
+
+  it('appears when the control turns invalid after render — PRD 11a', async () => {
+    const { host, input } = await mount(
+      '<mp-toggle-button error-text="Pick at least one."></mp-toggle-button>',
+    );
+    host.setAttribute('invalid', '');
+    await host.updateComplete;
+
+    expect(input.getAttribute('aria-errormessage')).toBe(feedback(host)!.id);
+  });
+
+  it('removes the node AND both references again when validity clears', async () => {
+    const { host, input } = await mount(
+      '<mp-toggle-button invalid error-text="Pick at least one."></mp-toggle-button>',
+    );
+    host.removeAttribute('invalid');
+    await host.updateComplete;
+
+    expect(feedback(host)).toBeNull();
+    expect(input.hasAttribute('aria-errormessage')).toBe(false);
+    expect(input.hasAttribute('aria-describedby')).toBe(false);
+  });
+
+  it('takes the message from the errorText property as well as the attribute', async () => {
+    const { host, input } = await mount('<mp-toggle-button invalid></mp-toggle-button>');
+    host.errorText = 'Pick at least one.';
+    await host.updateComplete;
+
+    expect(input.getAttribute('aria-describedby')).toBe(feedback(host)!.id);
+  });
+});

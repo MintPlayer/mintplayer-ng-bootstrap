@@ -16,7 +16,12 @@ import {
 // form-check stylesheet, alongside `mp-checkbox`. Internal `_styles/` dir,
 // reached via relative path — not a public sub-entry of the package.
 import { formCheckStyles } from '../../../_styles/form-check.styles';
-import { HostAriaController } from '@mintplayer/web-components/a11y';
+import { invalidFeedbackStyles } from '../../../_styles/invalid-feedback.styles';
+import {
+  HostAriaController,
+  errorFeedback,
+  errorFeedbackElements,
+} from '@mintplayer/web-components/a11y';
 
 export type MpRadioType = 'radio' | 'toggle_button';
 
@@ -56,7 +61,7 @@ let instanceCounter = 0;
  * transitions to the checked state.
  */
 export class MpRadio extends LitElement {
-  static override styles = [formCheckStyles, toggleButtonStyles];
+  static override styles = [formCheckStyles, toggleButtonStyles, invalidFeedbackStyles];
 
   static override shadowRootOptions = {
     ...LitElement.shadowRootOptions,
@@ -68,6 +73,9 @@ export class MpRadio extends LitElement {
       ...(super.observedAttributes ?? []),
       'invalid',
       'required',
+      // Validation message rendered inside the shadow root and referenced by the
+      // inner <input>; shown only while `invalid` is also set.
+      'error-text',
       'type',
       'checked',
       'disabled',
@@ -93,6 +101,7 @@ export class MpRadio extends LitElement {
   private _value: string | null = null;
   private _color: ToggleButtonColor = 'secondary';
   private _inputLabel: string | null = null;
+  private _errorText: string | null = null;
 
   /**
    * Tier-2 naming. No role on the host: the inner <input> is the real control, so
@@ -100,8 +109,10 @@ export class MpRadio extends LitElement {
    */
   private readonly hostAria = new HostAriaController(this, {
     referenceTarget: () => this._inputRef.value ?? null,
+    describedByExtras: () => errorFeedbackElements(this.renderRoot),
   });
   private readonly _inputId = `mp-radio-${++instanceCounter}`;
+  private readonly _errorId = `mp-radio-${instanceCounter}-error`;
   private readonly _inputRef: Ref<HTMLInputElement> = createRef();
 
   /**
@@ -117,6 +128,28 @@ export class MpRadio extends LitElement {
     const next = value ?? null;
     if (this._inputLabel === next) return;
     this._inputLabel = next;
+    this.requestUpdate();
+  }
+
+  /**
+   * Validation message, as `errorText` / `error-text`. Rendered as a
+   * `.invalid-feedback` node inside the shadow root and referenced from the inner
+   * `<input>` by `aria-errormessage` **and** `aria-describedby`, but only while
+   * `invalid` is set — `aria-errormessage` is meaningless on a control that is not
+   * `aria-invalid`.
+   *
+   * On a radio the message belongs to the whole group, not to one option, so put
+   * it on the radio the group's validity is anchored to (or on each, which
+   * repeats it). Text rather than a node because a consumer's own element lives
+   * outside this shadow root, where an IDREF from the inner input cannot reach it.
+   */
+  get errorText(): string | null {
+    return this._errorText;
+  }
+  set errorText(value: string | null) {
+    const next = value ?? null;
+    if (this._errorText === next) return;
+    this._errorText = next;
     this.requestUpdate();
   }
 
@@ -234,6 +267,17 @@ export class MpRadio extends LitElement {
   ): void {
     super.attributeChangedCallback(name, oldValue, newValue);
     switch (name) {
+      // Read from the host in render(), so a change has to ask for one — without
+      // this, aria-invalid / aria-required froze at their first-render values and
+      // an error message could never appear on a control that started out valid.
+      case 'invalid':
+      case 'required':
+        this.requestUpdate();
+        break;
+      case 'error-text':
+        this._errorText = newValue;
+        this.requestUpdate();
+        break;
       case 'type':
         if (newValue && VALID_TYPES.has(newValue)) {
           this._type = newValue as MpRadioType;
@@ -288,6 +332,7 @@ export class MpRadio extends LitElement {
   }
 
   private renderRadio(): TemplateResult {
+    const error = this.errorFeedback();
     return html`
       <label class="form-check">
         <input
@@ -299,6 +344,8 @@ export class MpRadio extends LitElement {
           ?disabled=${this._disabled}
           aria-invalid=${this.hasAttribute('invalid') ? 'true' : nothing}
           aria-required=${this.hasAttribute('required') ? 'true' : nothing}
+          aria-errormessage=${error.id}
+          aria-describedby=${error.id}
           name=${this._name ?? nothing}
           value=${this._value ?? nothing}
           tabindex=${this._groupTabIndex ?? nothing}
@@ -309,10 +356,16 @@ export class MpRadio extends LitElement {
         />
         <span class="form-check-label"><slot></slot></span>
       </label>
+      ${error.node}
     `;
   }
 
+  private errorFeedback() {
+    return errorFeedback(this._errorId, this._errorText, this.hasAttribute('invalid'));
+  }
+
   private renderToggleButton(): TemplateResult {
+    const error = this.errorFeedback();
     return html`
       <input
         ${ref(this._inputRef)}
@@ -323,6 +376,8 @@ export class MpRadio extends LitElement {
         ?disabled=${this._disabled}
           aria-invalid=${this.hasAttribute('invalid') ? 'true' : nothing}
           aria-required=${this.hasAttribute('required') ? 'true' : nothing}
+        aria-errormessage=${error.id}
+        aria-describedby=${error.id}
         name=${this._name ?? nothing}
         value=${this._value ?? nothing}
         tabindex=${this._groupTabIndex ?? nothing}
@@ -334,6 +389,7 @@ export class MpRadio extends LitElement {
       <label class="btn btn-${this._color}" for=${this._inputId}>
         <slot></slot>
       </label>
+      ${error.node}
     `;
   }
 

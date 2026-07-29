@@ -104,3 +104,77 @@ describe('mp-select naming', () => {
     expect(select.getAttribute('aria-label')).toBe('Country');
   });
 });
+
+/**
+ * The `error-text` channel — the validation message rendered inside this shadow
+ * root, because a consumer's own `<small>` sits outside it where an IDREF from the
+ * `<select>` cannot reach. `mp-checkbox`'s aria spec carries the full rationale.
+ *
+ * The liveness tests here are not ceremony: `invalid` and `required` were listed in
+ * this element's `attributeChangedCallback` but missing from `observedAttributes`,
+ * so the callback never fired for them and `aria-invalid` was frozen at whatever the
+ * first render saw. A form mirrors validity only after the control is touched, i.e.
+ * always later than that.
+ */
+describe('mp-select error-text', () => {
+  beforeEach(() => {
+    document.body.innerHTML = '';
+  });
+
+  const feedback = (host: MpSelect) => host.shadowRoot!.querySelector('.invalid-feedback');
+
+  it('renders no message and no references while the control is valid', async () => {
+    const { host, select } = await mount(
+      `<mp-select error-text="Choose a country.">${OPTIONS}</mp-select>`,
+    );
+    expect(feedback(host)).toBeNull();
+    expect(select.hasAttribute('aria-errormessage')).toBe(false);
+    expect(select.hasAttribute('aria-describedby')).toBe(false);
+  });
+
+  it('renders the message and BOTH references when invalid, resolving in this shadow root', async () => {
+    const { host, select } = await mount(
+      `<mp-select invalid error-text="Choose a country.">${OPTIONS}</mp-select>`,
+    );
+    const id = select.getAttribute('aria-errormessage');
+
+    expect(id).toBeTruthy();
+    expect(select.getAttribute('aria-describedby')).toBe(id);
+    expect(host.shadowRoot!.getElementById(id!)).toBe(feedback(host));
+    expect(feedback(host)!.textContent).toBe('Choose a country.');
+  });
+
+  it('appears when the control turns invalid after render — PRD 11a', async () => {
+    const { host, select } = await mount(
+      `<mp-select error-text="Choose a country.">${OPTIONS}</mp-select>`,
+    );
+    expect(feedback(host)).toBeNull();
+
+    host.setAttribute('invalid', '');
+    await host.updateComplete;
+
+    expect(select.getAttribute('aria-invalid')).toBe('true');
+    expect(select.getAttribute('aria-errormessage')).toBe(feedback(host)!.id);
+  });
+
+  it('removes the node AND both references again when validity clears', async () => {
+    const { host, select } = await mount(
+      `<mp-select invalid error-text="Choose a country.">${OPTIONS}</mp-select>`,
+    );
+    host.removeAttribute('invalid');
+    await host.updateComplete;
+
+    expect(select.hasAttribute('aria-invalid')).toBe(false);
+    expect(feedback(host)).toBeNull();
+    expect(select.hasAttribute('aria-errormessage')).toBe(false);
+    expect(select.hasAttribute('aria-describedby')).toBe(false);
+  });
+
+  it('mirrors a late `required` too, for the same reason', async () => {
+    const { host, select } = await mount(`<mp-select>${OPTIONS}</mp-select>`);
+    host.setAttribute('required', '');
+    await host.updateComplete;
+
+    expect(select.getAttribute('aria-required')).toBe('true');
+  });
+});

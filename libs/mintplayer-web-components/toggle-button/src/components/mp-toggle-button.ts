@@ -1,7 +1,13 @@
 import { LitElement, html, nothing, type TemplateResult } from 'lit';
 import { createRef, ref, type Ref } from 'lit/directives/ref.js';
-import { HostAriaController, FormAssociatedMixin } from '@mintplayer/web-components/a11y';
+import {
+  HostAriaController,
+  FormAssociatedMixin,
+  errorFeedback,
+  errorFeedbackElements,
+} from '@mintplayer/web-components/a11y';
 import { toggleButtonStyles } from '../styles';
+import { invalidFeedbackStyles } from '../../../_styles/invalid-feedback.styles';
 
 /** Bootstrap button-color tokens that map to a `.btn-<color>` class. */
 export type ToggleButtonColor =
@@ -36,7 +42,7 @@ let instanceCounter = 0;
  * `detail: { checked, value }` when toggled.
  */
 export class MpToggleButton extends FormAssociatedMixin(LitElement) {
-  static override styles = [toggleButtonStyles];
+  static override styles = [toggleButtonStyles, invalidFeedbackStyles];
 
   static override shadowRootOptions = {
     ...LitElement.shadowRootOptions,
@@ -48,6 +54,9 @@ export class MpToggleButton extends FormAssociatedMixin(LitElement) {
       ...(super.observedAttributes ?? []),
       'invalid',
       'required',
+      // Validation message rendered inside the shadow root and referenced by the
+      // inner <input>; shown only while `invalid` is also set.
+      'error-text',
       'checked',
       'disabled',
       'name',
@@ -70,12 +79,15 @@ export class MpToggleButton extends FormAssociatedMixin(LitElement) {
   private _value: string | null = null;
   private _color: ToggleButtonColor = 'primary';
   private _inputLabel: string | null = null;
+  private _errorText: string | null = null;
 
   /** Tier-2 naming; references target the real control inside the shadow root. */
   private readonly hostAria = new HostAriaController(this, {
     referenceTarget: () => this._inputRef.value ?? null,
+    describedByExtras: () => errorFeedbackElements(this.renderRoot),
   });
   private readonly _inputId = `mp-toggle-button-${++instanceCounter}`;
+  private readonly _errorId = `mp-toggle-button-${instanceCounter}-error`;
   private readonly _inputRef: Ref<HTMLInputElement> = createRef();
 
   /**
@@ -91,6 +103,24 @@ export class MpToggleButton extends FormAssociatedMixin(LitElement) {
     const next = value ?? null;
     if (this._inputLabel === next) return;
     this._inputLabel = next;
+    this.requestUpdate();
+  }
+
+  /**
+   * Validation message, as `errorText` / `error-text`. Rendered as a
+   * `.invalid-feedback` node inside the shadow root and referenced from the inner
+   * `<input>` by `aria-errormessage` **and** `aria-describedby`, but only while
+   * `invalid` is set — `aria-errormessage` is meaningless on a control that is not
+   * `aria-invalid`. Text rather than a node, because a consumer's own element sits
+   * outside this shadow root where an IDREF from the input cannot reach it.
+   */
+  get errorText(): string | null {
+    return this._errorText;
+  }
+  set errorText(value: string | null) {
+    const next = value ?? null;
+    if (this._errorText === next) return;
+    this._errorText = next;
     this.requestUpdate();
   }
 
@@ -152,6 +182,17 @@ export class MpToggleButton extends FormAssociatedMixin(LitElement) {
   ): void {
     super.attributeChangedCallback(name, oldValue, newValue);
     switch (name) {
+      // Read from the host in render(), so a change has to ask for one — without
+      // this, aria-invalid / aria-required froze at their first-render values and
+      // an error message could never appear on a control that started out valid.
+      case 'invalid':
+      case 'required':
+        this.requestUpdate();
+        break;
+      case 'error-text':
+        this._errorText = newValue;
+        this.requestUpdate();
+        break;
       case 'checked':
         this._checked = newValue !== null;
         this.requestUpdate();
@@ -196,6 +237,7 @@ export class MpToggleButton extends FormAssociatedMixin(LitElement) {
   }
 
   override render(): TemplateResult {
+    const error = errorFeedback(this._errorId, this._errorText, this.hasAttribute('invalid'));
     return html`
       <input
         ${ref(this._inputRef)}
@@ -206,6 +248,8 @@ export class MpToggleButton extends FormAssociatedMixin(LitElement) {
         ?disabled=${this._disabled}
           aria-invalid=${this.hasAttribute('invalid') ? 'true' : nothing}
           aria-required=${this.hasAttribute('required') ? 'true' : nothing}
+        aria-errormessage=${error.id}
+        aria-describedby=${error.id}
         name=${this._name ?? nothing}
         value=${this._value ?? nothing}
         aria-label=${this.getAttribute('aria-label') ?? this._inputLabel ?? nothing}
@@ -214,6 +258,7 @@ export class MpToggleButton extends FormAssociatedMixin(LitElement) {
       <label class="btn btn-${this._color}" for=${this._inputId}>
         <slot></slot>
       </label>
+      ${error.node}
     `;
   }
 

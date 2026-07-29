@@ -61,3 +61,62 @@ describe('mp-otp-input — ARIA contract', () => {
     expect(input?.disabled).toBe(true);
   });
 });
+
+/**
+ * The `error-text` channel. Rationale in `mp-checkbox`'s aria spec; this element has
+ * no `HostAriaController`, so the two references are plain attributes on the hidden
+ * input and nothing later overwrites them.
+ */
+describe('mp-otp-input error-text', () => {
+  let el: MintOtpInputElement;
+
+  const settled = () => (el as unknown as { updateComplete: Promise<void> }).updateComplete;
+  const input = () => el.shadowRoot!.querySelector('input') as HTMLInputElement;
+  const feedback = () => el.shadowRoot!.querySelector('.invalid-feedback');
+
+  beforeEach(async () => {
+    el = document.createElement('mp-otp-input') as MintOtpInputElement;
+    el.errorText = 'Enter all 6 digits.';
+    document.body.appendChild(el);
+    await settled();
+  });
+
+  afterEach(() => { el.remove(); });
+
+  it('renders no message and no references while the control is valid', () => {
+    expect(feedback()).toBeNull();
+    expect(input().hasAttribute('aria-errormessage')).toBe(false);
+    expect(input().hasAttribute('aria-describedby')).toBe(false);
+  });
+
+  it('renders the message and BOTH references once invalid, resolving in this shadow root', async () => {
+    el.invalid = true;
+    await settled();
+
+    const id = input().getAttribute('aria-errormessage');
+    expect(id).toBeTruthy();
+    expect(input().getAttribute('aria-describedby')).toBe(id);
+    expect(el.shadowRoot!.getElementById(id!)).toBe(feedback());
+    expect(feedback()!.textContent).toBe('Enter all 6 digits.');
+  });
+
+  it('removes the node AND both references again when validity clears', async () => {
+    el.invalid = true;
+    await settled();
+    el.invalid = false;
+    await settled();
+
+    expect(feedback()).toBeNull();
+    expect(input().hasAttribute('aria-errormessage')).toBe(false);
+    expect(input().hasAttribute('aria-describedby')).toBe(false);
+  });
+
+  it('takes the message from the error-text attribute as well as the property', async () => {
+    el.errorText = null;
+    el.setAttribute('error-text', 'Code is incomplete.');
+    el.invalid = true;
+    await settled();
+
+    expect(feedback()!.textContent).toBe('Code is incomplete.');
+  });
+});

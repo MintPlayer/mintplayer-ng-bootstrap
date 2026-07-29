@@ -1,0 +1,23 @@
+// Styling for the `error-text` channel's in-shadow message node, shared by
+// every form WC that has one (`mp-checkbox`, `mp-radio`, `mp-toggle-button`,
+// `mp-select`, `mp-otp-input`). Each includes `invalidFeedbackStyles` in its
+// own `static styles`; referencing the same `CSSResult` means Lit attaches a
+// single underlying `CSSStyleSheet` to all of those shadow roots.
+//
+// Bootstrap's own `.invalid-feedback` lives in `forms/form-validation`, which
+// is deliberately not imported: its rules are `display: none` until a sibling
+// `.is-invalid`/`:invalid` matches, and the node here is rendered only while
+// the control is invalid in the first place. So the visibility toggle is the
+// element's render path, and this is the appearance only.
+
+@import "node_modules/bootstrap/scss/functions";
+@import "node_modules/bootstrap/scss/variables";
+@import "node_modules/bootstrap/scss/variables-dark";
+
+.invalid-feedback {
+  display: block;
+  width: 100%;
+  margin-top: $form-feedback-margin-top;
+  font-size: $form-feedback-font-size;
+  color: var(--#{$prefix}form-invalid-color, #{$form-feedback-invalid-color});
+}

@@ -152,6 +152,185 @@ describe('mp-checkbox naming', () => {
 });
 
 /**
+ * The `error-text` channel, whose contract is shared by all five form controls and
+ * asserted in full here; the other four specs assert the same three states more
+ * briefly.
+ *
+ * Two rules make it correct, and both are transitions rather than initial states:
+ *
+ * - `aria-errormessage` is defined **only** while `aria-invalid="true"`. A message
+ *   that survives the control becoming valid is a dangling reference to text the
+ *   user has already satisfied.
+ * - `aria-errormessage` support is uneven, so `aria-describedby` points at the same
+ *   node. Both must therefore appear and disappear together — one without the other
+ *   is either a silent message or a stale one.
+ */
+describe('mp-checkbox error-text', () => {
+  beforeEach(() => {
+    document.body.innerHTML = '';
+  });
+
+  const feedback = (host: MpCheckbox) =>
+    host.shadowRoot!.querySelector('.invalid-feedback');
+
+  it('renders no message and no references while the control is valid', async () => {
+    const { host, input } = await mount(
+      '<mp-checkbox error-text="Please accept the terms."></mp-checkbox>',
+    );
+    expect(feedback(host)).toBeNull();
+    expect(input.hasAttribute('aria-errormessage')).toBe(false);
+    expect(input.hasAttribute('aria-describedby')).toBe(false);
+  });
+
+  it('renders no message when invalid but no text was supplied', async () => {
+    const { host, input } = await mount('<mp-checkbox invalid></mp-checkbox>');
+    expect(feedback(host)).toBeNull();
+    expect(input.hasAttribute('aria-errormessage')).toBe(false);
+  });
+
+  it('renders the message and BOTH references when invalid, resolving in this shadow root', async () => {
+    const { host, input } = await mount(
+      '<mp-checkbox invalid error-text="Please accept the terms.">Accept</mp-checkbox>',
+    );
+    const id = input.getAttribute('aria-errormessage');
+
+    expect(id).toBeTruthy();
+    expect(input.getAttribute('aria-describedby')).toBe(id);
+    // The whole point of the channel: the id resolves INSIDE the shadow root, which
+    // is the only place an IDREF held by the inner input can reach.
+    const message = host.shadowRoot!.getElementById(id!);
+    expect(message).toBe(feedback(host));
+    expect(message!.textContent).toBe('Please accept the terms.');
+  });
+
+  it('appears when the control turns invalid after render — PRD 11a', async () => {
+    // The Angular flow exactly: the message is set up front, `invalid` arrives only
+    // once the control is touched. An implementation that read `invalid` once would
+    // pass every assertion above and still never show a message in a real form.
+    const { host, input } = await mount(
+      '<mp-checkbox error-text="Please accept the terms."></mp-checkbox>',
+    );
+    expect(feedback(host)).toBeNull();
+
+    host.setAttribute('invalid', '');
+    await host.updateComplete;
+
+    expect(feedback(host)).not.toBeNull();
+    expect(input.getAttribute('aria-errormessage')).toBe(feedback(host)!.id);
+  });
+
+  it('removes the node AND both references again when validity clears', async () => {
+    const { host, input } = await mount(
+      '<mp-checkbox invalid error-text="Please accept the terms."></mp-checkbox>',
+    );
+    expect(input.hasAttribute('aria-errormessage')).toBe(true);
+
+    host.removeAttribute('invalid');
+    await host.updateComplete;
+
+    expect(feedback(host)).toBeNull();
+    expect(input.hasAttribute('aria-errormessage')).toBe(false);
+    expect(input.hasAttribute('aria-describedby')).toBe(false);
+  });
+
+  it('drops the message when the text is cleared but the control stays invalid', async () => {
+    const { host, input } = await mount(
+      '<mp-checkbox invalid error-text="Please accept the terms."></mp-checkbox>',
+    );
+
+    host.errorText = null;
+    await host.updateComplete;
+
+    expect(feedback(host)).toBeNull();
+    expect(input.hasAttribute('aria-describedby')).toBe(false);
+  });
+
+  it('wires the toggle_button branch too, which is a separate template', async () => {
+    const { host } = await mount(
+      '<mp-checkbox type="toggle_button" invalid error-text="Pick a style.">Bold</mp-checkbox>',
+    );
+    const input = host.shadowRoot!.querySelector('input') as HTMLInputElement;
+    const id = input.getAttribute('aria-errormessage');
+
+    expect(input.getAttribute('aria-describedby')).toBe(id);
+    expect(host.shadowRoot!.getElementById(id!)!.textContent).toBe('Pick a style.');
+  });
+
+  it('carries the message across a type switch, which replaces the <input>', async () => {
+    const { host } = await mount(
+      '<mp-checkbox invalid error-text="Please accept the terms."></mp-checkbox>',
+    );
+
+    host.type = 'switch';
+    await host.updateComplete;
+    const input = host.shadowRoot!.querySelector('input') as HTMLInputElement;
+
+    expect(input.getAttribute('aria-errormessage')).toBe(feedback(host)!.id);
+    expect(input.getAttribute('aria-describedby')).toBe(feedback(host)!.id);
+  });
+});
+
+/**
+ * The `error-text` node reaches the described-by channel even where the platform
+ * takes that channel over.
+ *
+ * `ariaDescribedByElements` and the `aria-describedby` attribute are not additive:
+ * assigning the property blanks the attribute, and assigning `null` removes it
+ * (measured in Chromium). Since `HostAriaController` assigns after every render,
+ * the attribute this component writes would be erased in every browser that
+ * supports element references — and preserved in jsdom, which supports none. So the
+ * node is handed to the controller as `describedByExtras`, and this block is the
+ * only place CI can see that happening: the stub makes the reference path active.
+ */
+describe('mp-checkbox error-text through the element-reference path', () => {
+  beforeEach(() => {
+    document.body.innerHTML = '';
+    stubElementReferences();
+  });
+
+  afterEach(() => {
+    restoreElementReferences();
+  });
+
+  const describedBy = (el: Element) =>
+    (el as unknown as { ariaDescribedByElements?: Element[] | null }).ariaDescribedByElements;
+
+  it('assigns the message node itself as a described-by reference', async () => {
+    const { host, input } = await mount(
+      '<mp-checkbox invalid error-text="Please accept the terms."></mp-checkbox>',
+    );
+    const message = host.shadowRoot!.querySelector('.invalid-feedback');
+
+    expect(describedBy(input)).toEqual([message]);
+  });
+
+  it('keeps the consumer own description first and appends the message after it', async () => {
+    document.body.innerHTML = `
+      <span id="hint">Required to continue</span>
+      <mp-checkbox aria-describedby="hint" invalid error-text="Please accept the terms."></mp-checkbox>`;
+    const host = document.querySelector('mp-checkbox') as MpCheckbox;
+    await host.updateComplete;
+    const input = host.shadowRoot!.querySelector('input') as HTMLInputElement;
+
+    expect(describedBy(input)).toEqual([
+      document.getElementById('hint'),
+      host.shadowRoot!.querySelector('.invalid-feedback'),
+    ]);
+  });
+
+  it('drops the reference again once the control is valid', async () => {
+    const { host, input } = await mount(
+      '<mp-checkbox invalid error-text="Please accept the terms."></mp-checkbox>',
+    );
+
+    host.removeAttribute('invalid');
+    await host.updateComplete;
+
+    expect(describedBy(input)).toBeNull();
+  });
+});
+
+/**
  * The `type` switch, which is the case that forced references to be re-synced on
  * every render rather than once.
  *

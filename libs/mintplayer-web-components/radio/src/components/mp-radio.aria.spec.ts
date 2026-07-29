@@ -75,3 +75,64 @@ describe('mp-radio naming', () => {
     expect(input.getAttribute('aria-label')).toBe('Second');
   });
 });
+
+/**
+ * The `error-text` channel. The full rationale is in `mp-checkbox`'s aria spec;
+ * here the point is that a radio has two render branches and a message that
+ * belongs to the group rather than to one option.
+ */
+describe('mp-radio error-text', () => {
+  beforeEach(() => {
+    document.body.innerHTML = '';
+  });
+
+  const feedback = (host: MpRadio) => host.shadowRoot!.querySelector('.invalid-feedback');
+
+  it('renders no message and no references while the control is valid', async () => {
+    const { host, input } = await mount('<mp-radio error-text="Pick a fruit."></mp-radio>');
+    expect(feedback(host)).toBeNull();
+    expect(input.hasAttribute('aria-errormessage')).toBe(false);
+    expect(input.hasAttribute('aria-describedby')).toBe(false);
+  });
+
+  it('renders the message and BOTH references when invalid, resolving in this shadow root', async () => {
+    const { host, input } = await mount(
+      '<mp-radio invalid error-text="Pick a fruit.">Apple</mp-radio>',
+    );
+    const id = input.getAttribute('aria-errormessage');
+
+    expect(id).toBeTruthy();
+    expect(input.getAttribute('aria-describedby')).toBe(id);
+    expect(host.shadowRoot!.getElementById(id!)).toBe(feedback(host));
+    expect(feedback(host)!.textContent).toBe('Pick a fruit.');
+  });
+
+  it('appears when the radio turns invalid after render — PRD 11a', async () => {
+    const { host, input } = await mount('<mp-radio error-text="Pick a fruit."></mp-radio>');
+    host.setAttribute('invalid', '');
+    await host.updateComplete;
+
+    expect(input.getAttribute('aria-errormessage')).toBe(feedback(host)!.id);
+  });
+
+  it('removes the node AND both references again when validity clears', async () => {
+    const { host, input } = await mount('<mp-radio invalid error-text="Pick a fruit."></mp-radio>');
+    host.removeAttribute('invalid');
+    await host.updateComplete;
+
+    expect(feedback(host)).toBeNull();
+    expect(input.hasAttribute('aria-errormessage')).toBe(false);
+    expect(input.hasAttribute('aria-describedby')).toBe(false);
+  });
+
+  it('wires the toggle_button branch too, which is a separate template', async () => {
+    const { host } = await mount(
+      '<mp-radio type="toggle_button" invalid error-text="Pick an alignment.">Left</mp-radio>',
+    );
+    const input = host.shadowRoot!.querySelector('input') as HTMLInputElement;
+    const id = input.getAttribute('aria-errormessage');
+
+    expect(input.getAttribute('aria-describedby')).toBe(id);
+    expect(host.shadowRoot!.getElementById(id!)!.textContent).toBe('Pick an alignment.');
+  });
+});

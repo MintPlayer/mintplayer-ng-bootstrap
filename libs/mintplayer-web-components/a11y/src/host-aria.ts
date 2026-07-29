@@ -96,6 +96,23 @@ export interface HostAriaOptions {
    * node identity changes; it is re-read on every `syncReferences()`.
    */
   referenceTarget?: () => Element | null | undefined;
+  /**
+   * Nodes the component itself renders that describe the control, appended to
+   * whatever the consumer's `aria-describedby` resolved to. The `error-text`
+   * message node is the only user today (`errorFeedbackElements`).
+   *
+   * This exists because the two ways of expressing a description are not
+   * additive — they are the same channel, and this one wins. Assigning
+   * `ariaDescribedByElements` a non-null array blanks the `aria-describedby`
+   * content attribute, and assigning `null` removes it (measured in Chromium);
+   * since that assignment happens after every render, an in-shadow
+   * `aria-describedby="…-error"` written in `render()` would be silently erased
+   * on every browser that supports element references — and preserved in jsdom,
+   * where nothing supports them. So an in-shadow description has to be handed
+   * over here to survive, and the rendered attribute is left in place as the
+   * fallback for engines without the API.
+   */
+  describedByExtras?: () => HTMLElement[];
 }
 
 const DEFAULT_REFERENCE_ATTRIBUTES = ['aria-labelledby', 'aria-describedby'];
@@ -228,9 +245,15 @@ export class HostAriaController {
       const property = REFERENCE_PROPERTIES[attribute];
       if (!property) continue;
 
+      // The component's own description nodes trail the consumer's, so a
+      // consumer hint is read before the validation message.
+      const extras = attribute === 'aria-describedby'
+        ? (this.options.describedByExtras?.() ?? [])
+        : [];
+
       const raw = this.host.getAttribute(attribute);
       if (raw === null) {
-        this.assignReferences(holder, property, null);
+        this.assignReferences(holder, property, extras.length > 0 ? extras : null);
         continue;
       }
 
@@ -242,7 +265,8 @@ export class HostAriaController {
         .filter((el): el is HTMLElement => el instanceof HTMLElement);
 
       if (elements.length !== ids.length) unresolved.push(attribute);
-      this.assignReferences(holder, property, elements.length > 0 ? elements : null);
+      const all = [...elements, ...extras];
+      this.assignReferences(holder, property, all.length > 0 ? all : null);
     }
     return unresolved;
   }

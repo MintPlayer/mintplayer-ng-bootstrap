@@ -6,7 +6,13 @@ import { createRef, ref, type Ref } from 'lit/directives/ref.js';
 // Lives outside the per-entry tree at libs/.../_styles/ — internal helper, not
 // a public sub-entry of @mintplayer/web-components.
 import { formSelectStyles } from '../../../_styles/form-select.styles';
-import { HostAriaController, FormAssociatedMixin } from '@mintplayer/web-components/a11y';
+import { invalidFeedbackStyles } from '../../../_styles/invalid-feedback.styles';
+import {
+  HostAriaController,
+  FormAssociatedMixin,
+  errorFeedback,
+  errorFeedbackElements,
+} from '@mintplayer/web-components/a11y';
 
 export type MpSelectSize = 'sm' | 'md' | 'lg';
 
@@ -36,6 +42,8 @@ export interface SelectChangeEventDetail {
 
 const VALID_SIZES: ReadonlySet<MpSelectSize> = new Set(['sm', 'md', 'lg']);
 
+let instanceCounter = 0;
+
 /**
  * `<mp-select>` — Bootstrap-styled native `<select>` wrapped in a Lit element.
  *
@@ -62,7 +70,7 @@ const VALID_SIZES: ReadonlySet<MpSelectSize> = new Set(['sm', 'md', 'lg']);
  * name continue to fire.
  */
 export class MpSelect extends FormAssociatedMixin(LitElement) {
-  static override styles = [formSelectStyles];
+  static override styles = [formSelectStyles, invalidFeedbackStyles];
 
   static override shadowRootOptions = {
     ...LitElement.shadowRootOptions,
@@ -76,6 +84,16 @@ export class MpSelect extends FormAssociatedMixin(LitElement) {
       'multiple',
       'number-visible',
       'disabled',
+      // Observed, not just switched on: `attributeChangedCallback` already had
+      // cases for these two, but with the attributes absent from this list the
+      // callback never fired for them, so `aria-invalid`/`aria-required` were
+      // frozen at whatever the first render saw. A form mirrors validity *after*
+      // the control is touched, i.e. always later than that.
+      'invalid',
+      'required',
+      // Validation message rendered inside the shadow root and referenced by the
+      // inner <select>; shown only while `invalid` is also set.
+      'error-text',
       'value',
       'aria-label',
       'input-label',
@@ -92,6 +110,8 @@ export class MpSelect extends FormAssociatedMixin(LitElement) {
   private _disabled = false;
   private _value: string | null = null;
   private _inputLabel: string | null = null;
+  private _errorText: string | null = null;
+  private readonly _errorId = `mp-select-${++instanceCounter}-error`;
   private _values: string[] = [];
   private _options: MpSelectItem[] | null = null;
   private _slotOptions: MpSelectItem[] = [];
@@ -106,6 +126,7 @@ export class MpSelect extends FormAssociatedMixin(LitElement) {
    */
   private readonly hostAria = new HostAriaController(this, {
     referenceTarget: () => this._selectRef.value ?? null,
+    describedByExtras: () => errorFeedbackElements(this.renderRoot),
   });
 
   get size(): MpSelectSize {
@@ -172,6 +193,25 @@ export class MpSelect extends FormAssociatedMixin(LitElement) {
     this.requestUpdate();
   }
 
+  /**
+   * Validation message, as `errorText` / `error-text`. Rendered as a
+   * `.invalid-feedback` node inside the shadow root and referenced from the inner
+   * `<select>` by `aria-errormessage` **and** `aria-describedby`, but only while
+   * `invalid` is set — `aria-errormessage` is meaningless on a control that is not
+   * `aria-invalid`. Text rather than a node, for the same reason `inputLabel`
+   * exists: a consumer's own element is outside this shadow root, where an IDREF
+   * from the `<select>` cannot reach it.
+   */
+  get errorText(): string | null {
+    return this._errorText;
+  }
+  set errorText(value: string | null) {
+    const next = value ?? null;
+    if (this._errorText === next) return;
+    this._errorText = next;
+    this.requestUpdate();
+  }
+
   get value(): string | null {
     return this._value;
   }
@@ -229,6 +269,10 @@ export class MpSelect extends FormAssociatedMixin(LitElement) {
       case 'required':
         this.requestUpdate();
         break;
+      case 'error-text':
+        this._errorText = newValue;
+        this.requestUpdate();
+        break;
       case 'value':
         this._value = newValue;
         this.requestUpdate();
@@ -265,6 +309,7 @@ export class MpSelect extends FormAssociatedMixin(LitElement) {
        it down from the Angular wrapper. `input-label` is the fallback for
        consumers who cannot express a name as an attribute on the host. */
     const ariaLabel = this.getAttribute('aria-label') ?? this._inputLabel;
+    const error = errorFeedback(this._errorId, this._errorText, this.hasAttribute('invalid'));
     return html`
       <select
         ${ref(this._selectRef)}
@@ -275,6 +320,8 @@ export class MpSelect extends FormAssociatedMixin(LitElement) {
         aria-label=${ariaLabel ?? nothing}
         aria-invalid=${this.hasAttribute('invalid') ? 'true' : nothing}
         aria-required=${this.hasAttribute('required') ? 'true' : nothing}
+        aria-errormessage=${error.id}
+        aria-describedby=${error.id}
         @change=${this.onNativeChange}
       >
         ${effective.map((item) =>
@@ -285,6 +332,7 @@ export class MpSelect extends FormAssociatedMixin(LitElement) {
             : this.renderOption(item),
         )}
       </select>
+      ${error.node}
       <slot hidden @slotchange=${this.onSlotChange}></slot>
     `;
   }

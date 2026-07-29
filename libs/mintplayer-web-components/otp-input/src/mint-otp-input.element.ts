@@ -1,9 +1,12 @@
 import { LitElement, html, type TemplateResult } from 'lit';
-import { FormAssociatedMixin } from '@mintplayer/web-components/a11y';
+import { FormAssociatedMixin, errorFeedback } from '@mintplayer/web-components/a11y';
 import { styles } from './mint-otp-input.element.template';
+import { invalidFeedbackStyles } from '../../_styles/invalid-feedback.styles';
 import { OtpInputType } from './types/otp-input-type';
 import { OtpInputCase } from './types/otp-input-case';
 import { OtpInputSize } from './types/otp-input-size';
+
+let instanceCounter = 0;
 
 /**
  * Bootstrap-flavoured OTP / segmented-code input.
@@ -26,7 +29,7 @@ import { OtpInputSize } from './types/otp-input-size';
  * Both bubble and compose so an Angular wrapper's host listeners pick them up.
  */
 export class MintOtpInputElement extends FormAssociatedMixin(LitElement) {
-  static override styles = [styles];
+  static override styles = [styles, invalidFeedbackStyles];
 
   static override get observedAttributes(): string[] {
     return [
@@ -42,6 +45,9 @@ export class MintOtpInputElement extends FormAssociatedMixin(LitElement) {
       'input-label',
       'aria-label',
       'invalid',
+      // Validation message rendered inside the shadow root and referenced by the
+      // hidden <input>; shown only while `invalid` is also set.
+      'error-text',
       'groups',
     ];
   }
@@ -71,6 +77,7 @@ export class MintOtpInputElement extends FormAssociatedMixin(LitElement) {
     // form control in the library.
     ariaLabelForRender: { attribute: 'aria-label', type: String, reflect: false },
     invalid: { attribute: 'invalid', type: Boolean, reflect: true },
+    errorText: { attribute: 'error-text', type: String, reflect: false },
   };
 
   type: OtpInputType = 'numeric';
@@ -81,6 +88,15 @@ export class MintOtpInputElement extends FormAssociatedMixin(LitElement) {
   /** Mirror of the host aria-label attribute; exists only to trigger re-renders. */
   ariaLabelForRender: string | null = null;
   invalid = false;
+  /**
+   * Validation message, as `errorText` / `error-text`. Rendered as a
+   * `.invalid-feedback` node inside the shadow root and referenced from the hidden
+   * `<input>` by `aria-errormessage` **and** `aria-describedby`, but only while
+   * `invalid` is true — `aria-errormessage` is meaningless on a control that is
+   * not `aria-invalid`. Text rather than a node, because a consumer's own element
+   * lives outside this shadow root where an IDREF from the input cannot reach it.
+   */
+  errorText: string | null = null;
 
   static readonly MAX_GROUP_SIZE = 10;
   static readonly MAX_TOTAL = 40;
@@ -99,6 +115,7 @@ export class MintOtpInputElement extends FormAssociatedMixin(LitElement) {
   private _revealTimer: ReturnType<typeof setTimeout> | null = null;
   private _inputEl: HTMLInputElement | null = null;
   private _isFocused = false;
+  private readonly _errorId = `mp-otp-input-${++instanceCounter}-error`;
 
   get value(): string {
     return this._value;
@@ -398,6 +415,7 @@ export class MintOtpInputElement extends FormAssociatedMixin(LitElement) {
     const autocomplete = isClassicOtp ? 'one-time-code' : 'off';
     const inputMode = this.type === 'numeric' ? 'numeric' : 'text';
     const labelText = this.getAttribute('aria-label') ?? this.inputLabel ?? 'One-time code';
+    const error = errorFeedback(this._errorId, this.errorText, this.invalid);
 
     return html`
       <div class="container" part="container">
@@ -414,6 +432,8 @@ export class MintOtpInputElement extends FormAssociatedMixin(LitElement) {
           ?disabled=${this.disabled}
           aria-label=${labelText}
           aria-invalid=${this.invalid ? 'true' : 'false'}
+          aria-errormessage=${error.id}
+          aria-describedby=${error.id}
           @input=${this.onInput}
           @paste=${this.onPaste}
           @focus=${this.onFocus}
@@ -425,6 +445,7 @@ export class MintOtpInputElement extends FormAssociatedMixin(LitElement) {
           this.renderBox(i, groupLen, bounds, value, activeBoxIndex),
         )}
       </div>
+      ${error.node}
     `;
   }
 

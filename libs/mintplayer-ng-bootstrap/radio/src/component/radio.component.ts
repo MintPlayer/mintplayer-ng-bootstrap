@@ -19,7 +19,10 @@ import '@mintplayer/web-components/radio';
 import { BsForwardAriaDirective, BsControlValidityDirective } from '@mintplayer/ng-bootstrap/a11y';
 
 @Component({
-  hostDirectives: [BsControlValidityDirective],
+  hostDirectives: [{
+    directive: BsControlValidityDirective,
+    inputs: ['errorMessages'],
+  }],
   selector: 'bs-radio',
   templateUrl: './radio.component.html',
   imports: [BsForwardAriaDirective],
