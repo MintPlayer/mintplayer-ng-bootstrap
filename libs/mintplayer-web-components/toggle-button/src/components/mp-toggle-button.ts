@@ -81,7 +81,7 @@ export class MpToggleButton extends FormAssociatedMixin(LitElement) {
   /**
    * Optional override for the inner <input>'s accessible name. Usually
    * unnecessary — the slotted visible text names the control through the
-   * flat-tree label association (_spike-slotted-label/). For an icon-only
+   * flat-tree label association (slotted-label spike; verdict in the plan). For an icon-only
    * toggle, or a name that must differ from the visible text, set this.
    */
   get inputLabel(): string | null {

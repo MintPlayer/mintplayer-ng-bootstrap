@@ -124,7 +124,7 @@ export class MpCheckbox extends FormAssociatedMixin(LitElement) {
    * walks the *flat* tree, so slotted light-DOM text already names the control:
    * `<mp-checkbox>Accept terms</mp-checkbox>` computes the name "Accept terms" with
    * nothing else passed. Verified against Chromium's real accessibility tree in
-   * `_spike-slotted-label/` — an earlier version of this comment claimed the
+   * the slotted-label spike (verdict in docs/prd/screen-reader-accessibility-plan.md) — an earlier version of this comment claimed the
    * opposite, on the assumption that the slot boundary broke the association. It
    * does not.
    *

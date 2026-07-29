@@ -11,7 +11,7 @@ import type { MpCheckbox } from './mp-checkbox';
  * slots, so a test can see **which node this library assigned to, and when**. It
  * does *not* simulate what a browser then does with that value — no name is
  * computed, no accessibility tree exists. Platform semantics are spike 0.2's job
- * (`_spike-host-aria/`, three real engines).
+ * (spike 0.2, three real engines; verdict in the plan).
  *
  * So the seam is: **our plumbing here, the platform there.** That is a real
  * boundary rather than a convenient one — assigning to a detached node is a bug in
@@ -100,7 +100,7 @@ describe('mp-checkbox naming', () => {
        and contains the `<slot>`, and accessible-name computation walks the flat
        tree, so `<mp-checkbox>Accept terms</mp-checkbox>` computes the name
        "Accept terms" natively — measured in Chromium's real accessibility tree by
-       `_spike-slotted-label/`. Writing an `aria-label` here would be worse than
+       the slotted-label spike (verdict in docs/prd/screen-reader-accessibility-plan.md). Writing an `aria-label` here would be worse than
        useless: `aria-label` OVERRIDES the label association, so it would replace a
        correct, automatically-translated name with a copy that silently drifts.
 

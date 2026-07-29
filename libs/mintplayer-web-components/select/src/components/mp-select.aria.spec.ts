@@ -13,7 +13,7 @@ import type { MpSelect } from './mp-select';
  * What is NOT here, and cannot be: the positive cross-root
  * `aria-labelledby` → `ariaLabelledByElements` assertion. jsdom implements neither
  * `ariaLabelledByElements` nor an accessibility tree, so that path is verified only
- * by spike 0.2 against a real one (`_spike-host-aria/`). The degraded contract IS
+ * by spike 0.2 against a real one (spike 0.2 (verdict in docs/prd/screen-reader-accessibility-plan.md)). The degraded contract IS
  * asserted below, because that is the part CI can actually see.
  */
 async function mount(html: string): Promise<{ host: MpSelect; select: HTMLSelectElement }> {

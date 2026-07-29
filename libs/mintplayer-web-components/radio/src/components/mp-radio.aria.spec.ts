@@ -10,7 +10,7 @@ import type { MpRadio } from './mp-radio';
  *
  * As everywhere: the positive cross-root reference path is not unit-testable
  * (jsdom has no `ariaLabelledByElements` and no accessibility tree); spike 0.2
- * verified it, and `_spike-slotted-label/` verified that slotted text names the
+ * verified it, and the slotted-label spike (verdict in docs/prd/screen-reader-accessibility-plan.md) verified that slotted text names the
  * control natively.
  */
 async function mount(html: string): Promise<{ host: MpRadio; input: HTMLInputElement }> {
