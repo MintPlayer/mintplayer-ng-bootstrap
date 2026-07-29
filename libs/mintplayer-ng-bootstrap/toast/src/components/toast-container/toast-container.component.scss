@@ -1,3 +1,14 @@
+// The container is a POSITIONING overlay: without this it blocks clicks and
+// wheel-scroll over everything it covers (audit 4.10-adjacent Critical).
+// The toasts themselves re-enable interaction.
+:host {
+  pointer-events: none;
+}
+
+:host ::ng-deep .toast {
+  pointer-events: auto;
+}
+
 :host ::ng-deep {
 	// Configuration
     @import "node_modules/bootstrap/scss/functions";

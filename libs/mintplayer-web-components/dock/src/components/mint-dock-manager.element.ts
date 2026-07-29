@@ -346,7 +346,14 @@ export class MintDockManagerElement extends LitElement {
   override connectedCallback(): void {
     super.connectedCallback();
     if (!this.hasAttribute('role')) {
-      this.setAttribute('role', 'application');
+      // NOT role="application": that tells AT to hand every keystroke to the
+      // page and disables the virtual cursor over the whole dock — pane
+      // CONTENT (documents, forms) must stay browsable. The dock's own keys
+      // work fine in normal browse mode.
+      this.setAttribute('role', 'region');
+    }
+    if (!this.hasAttribute('aria-label')) {
+      this.setAttribute('aria-label', 'Dock layout');
     }
   }
 
