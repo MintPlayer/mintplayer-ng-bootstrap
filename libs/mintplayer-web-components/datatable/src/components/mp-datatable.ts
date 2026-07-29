@@ -1,5 +1,5 @@
 import { LitElement, html, nothing, type TemplateResult } from 'lit';
-import { FocusRestore, FocusRestoreController, HostAriaController } from '@mintplayer/web-components/a11y';
+import { FocusRestore, FocusRestoreController, HostAriaController, LiveAnnouncerController } from '@mintplayer/web-components/a11y';
 import { DEFAULT_DATATABLE_LABELS, type DatatableLabels } from '../types/labels';
 import { repeat } from 'lit/directives/repeat.js';
 import { classMap } from 'lit/directives/class-map.js';
@@ -173,6 +173,11 @@ export class MpDatatable extends LitElement {
   private _selectedIds: Set<string> = new Set();
   private _cutIds: Set<string> = new Set();
   private _focusedRowKey: string | null = null;
+
+  /** Polite announcements for async/derived state changes (sort, page,
+   *  selection count, loaded rows) — attribute-level changes alone are
+   *  inaudible mid-table. */
+  private readonly liveAnnouncer = new LiveAnnouncerController(this);
 
   /**
    * Focus continuity across data swaps: replacing the dataset (file-manager
@@ -481,7 +486,13 @@ export class MpDatatable extends LitElement {
     return this._loading;
   }
   set loading(value: boolean) {
+    const was = this._loading;
     this._loading = !!value;
+    // The loaded row count is what a sighted user sees appear; say it once
+    // per loading->loaded transition (never on programmatic no-ops).
+    if (was && !this._loading) {
+      this.liveAnnouncer.announce(this.mergedLabels.announceLoaded(this._data.length));
+    }
     this.requestUpdate();
   }
 
@@ -797,11 +808,14 @@ export class MpDatatable extends LitElement {
     const ariaRowcount = (this._tree || this.isRootWindowed() ? this.getFlatList().length : this._data.length) + 1;
 
     return html`
+      ${this.liveAnnouncer.template()}
       <div class="datatable-shell">
         <div class="datatable-scroll ${this._virtualScroll ? 'datatable-virtual' : ''}" role="presentation">
           <table
-            role=${this._tree ? 'treegrid' : 'grid'}
+            role=${this._tree ? 'treegrid' : this._selectionMode !== 'none' ? 'grid' : nothing}
             aria-rowcount=${ariaRowcount}
+            aria-colcount=${totalColumnCount}
+            aria-busy=${this._loading ? 'true' : nothing}
             aria-label=${this.getAttribute('aria-label') ?? this._inputLabel ?? nothing}
             class=${this._hasMeasuredInitial ? 'measured' : ''}
           >
@@ -1536,6 +1550,13 @@ export class MpDatatable extends LitElement {
     const next = computeNextSort(this._sortColumns, col.name, ev.shiftKey);
     this._sortColumns = next;
     this._page = 1; // a new sort returns to the first page
+    const mine = next.find((sc) => sc.column === col.name);
+    this.liveAnnouncer.announce(
+      this.mergedLabels.announceSorted(
+        col.label ?? col.name,
+        mine ? (mine.direction === 'asc' ? 'ascending' : 'descending') : 'none',
+      ),
+    );
     this.requestUpdate();
     this.scheduleFetchReload(); // re-fetch from page 1 under the new sort (if fetching)
     this.dispatchEvent(
@@ -1675,6 +1696,7 @@ export class MpDatatable extends LitElement {
 
   private emitSelectionChange(): void {
     const ids = [...this._selectedIds];
+    this.liveAnnouncer.announce(this.mergedLabels.announceSelection(ids.length));
     this.dispatchEvent(
       new CustomEvent<SelectionChangeEventDetail>('mp-datatable-selection-change', {
         detail: { selectedIds: ids, selectedRows: this.resolveRows(ids) },
@@ -1705,6 +1727,7 @@ export class MpDatatable extends LitElement {
     const denominator = this._totalRecords ?? this._data.length;
     const totalPages = Math.max(1, Math.ceil(denominator / this._perPage));
     this._page = Math.max(1, Math.min(totalPages, page));
+    this.liveAnnouncer.announce(this.mergedLabels.announcePage(this._page, totalPages));
     this.requestUpdate();
     this.scheduleFetchReload(); // non-virtual page change → fetch that page (if fetching)
     this.dispatchEvent(

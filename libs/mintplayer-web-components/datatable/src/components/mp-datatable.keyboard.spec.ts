@@ -267,3 +267,42 @@ describe('mp-datatable — keys from interactive descendants do not run row sema
     expect(rowEl.dataset['selected']).toBe('true');
   });
 });
+
+describe('mp-datatable — role follows interactivity (decision D2)', () => {
+  beforeEach(() => {
+    document.body.innerHTML = '';
+  });
+
+  it('a non-interactive flat table claims NO role — plain table semantics', async () => {
+    const el = await mount();
+    expect(shadow(el).querySelector('table')!.hasAttribute('role')).toBe(false);
+  });
+
+  it('selectable rows make it a grid', async () => {
+    const el = await mount('selection-mode="single"');
+    expect(shadow(el).querySelector('table')!.getAttribute('role')).toBe('grid');
+  });
+
+  it('tree mode makes it a treegrid', async () => {
+    const el = await mount('tree selection-mode="multiple"');
+    expect(shadow(el).querySelector('table')!.getAttribute('role')).toBe('treegrid');
+  });
+
+  it('exposes aria-colcount and aria-busy while loading', async () => {
+    const el = await mount();
+    expect(shadow(el).querySelector('table')!.getAttribute('aria-colcount')).toBe('1');
+    (el as unknown as { loading: boolean }).loading = true;
+    await el.updateComplete;
+    expect(shadow(el).querySelector('table')!.getAttribute('aria-busy')).toBe('true');
+  });
+
+  it('announces the loaded row count on the loading→loaded transition', async () => {
+    const el = await mount();
+    (el as unknown as { loading: boolean }).loading = true;
+    await el.updateComplete;
+    (el as unknown as { loading: boolean }).loading = false;
+    await el.updateComplete;
+    const live = shadow(el).querySelector('[aria-live], [role="status"]');
+    expect(live?.textContent).toContain('Loaded 3 rows');
+  });
+});

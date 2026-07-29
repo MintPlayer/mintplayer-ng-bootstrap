@@ -21,6 +21,11 @@ export interface DatatableLabels {
   rowsPerPage: string;
   resizeColumn: (column: string) => string;
   selectRow: (rowNumber: number) => string;
+  /** Live-region announcements (Phase E). */
+  announceSorted: (column: string, direction: 'ascending' | 'descending' | 'none') => string;
+  announcePage: (page: number, totalPages: number) => string;
+  announceSelection: (count: number) => string;
+  announceLoaded: (rows: number) => string;
 }
 
 export const DEFAULT_DATATABLE_LABELS: DatatableLabels = {
@@ -33,4 +38,9 @@ export const DEFAULT_DATATABLE_LABELS: DatatableLabels = {
   rowsPerPage: 'Rows per page',
   resizeColumn: (column) => `Resize column ${column}`,
   selectRow: (rowNumber) => `Select row ${rowNumber}`,
+  announceSorted: (column, direction) =>
+    direction === 'none' ? `Sorting removed from ${column}` : `Sorted by ${column}, ${direction}`,
+  announcePage: (page, totalPages) => `Page ${page} of ${totalPages}`,
+  announceSelection: (count) => (count === 1 ? '1 row selected' : `${count} rows selected`),
+  announceLoaded: (rows) => (rows === 1 ? 'Loaded 1 row' : `Loaded ${rows} rows`),
 };
