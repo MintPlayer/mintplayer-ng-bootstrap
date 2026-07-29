@@ -215,3 +215,44 @@ test.describe('scheduler — month event chips are focusable and activatable', (
     await expectNotStranded(page);
   });
 });
+
+test.describe('composite widgets are exactly ONE tab stop', () => {
+  // "Every control reachable" alone is satisfied by a widget where EVERY item
+  // is tabbable — literally the mp-time-list 97-stop and file-manager
+  // 201-stop audit findings. The roving-focus suites assert the invariant per
+  // adopter; these pin the two historic offenders at browser level.
+
+  test('file-manager icon grid keeps a single tabbable card', async ({ page }) => {
+    await page.goto('/enterprise/file-manager');
+    // Upgrade is lazy with route-level code-splitting — wait for the shadow
+    // root, not just the tag.
+    await page.waitForFunction(() => !!document.querySelector('mp-file-manager')?.shadowRoot);
+    const counts = await page.locator('mp-file-manager').first().evaluate(async (el) => {
+      el.setAttribute('view-mode', 'icons');
+      await (el as HTMLElement & { updateComplete: Promise<unknown> }).updateComplete;
+      const cards = [...el.shadowRoot!.querySelectorAll<HTMLElement>('.icon-card')];
+      return {
+        cards: cards.length,
+        stops: cards.filter((c) => c.tabIndex === 0).length,
+      };
+    });
+    expect(counts.cards).toBeGreaterThan(1);
+    expect(counts.stops).toBe(1);
+  });
+
+  test('datetime-picker time list keeps a single tabbable option', async ({ page }) => {
+    await page.goto('/basic/forms/datetime-picker');
+    await page.waitForSelector('mp-datetime-picker');
+    const counts = await page.locator('mp-datetime-picker mp-time-list').first().evaluate(async (el) => {
+      await (el as HTMLElement & { updateComplete: Promise<unknown> }).updateComplete;
+      const options = [...el.shadowRoot!.querySelectorAll<HTMLElement>('[role="option"], button.slot')];
+      return {
+        options: options.length,
+        stops: options.filter((o) => o.tabIndex === 0).length,
+      };
+    });
+    test.skip(counts.options === 0, 'time list not rendered on this page shape');
+    expect(counts.options).toBeGreaterThan(1);
+    expect(counts.stops).toBe(1);
+  });
+});

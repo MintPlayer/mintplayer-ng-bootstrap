@@ -72,6 +72,81 @@ WCs with a no-JS SSR path ship a Declarative-Shadow-DOM "chrome" constant, rende
 - **React** (`libs/mintplayer-react-bootstrap/<name>/`): `@lit/react` `createComponent`; object/function props assigned via the element ref; controlled `value` + `onChange`.
 - **Vue** (`libs/mintplayer-vue-bootstrap/<name>/`): `.vue` SFC; `v-model` via `defineModel`; object props assigned to the element ref `onMounted`/`watch`; named scoped slots.
 
+## Accessibility
+
+Non-negotiable for new components and for edits to existing ones. WCAG 2.2 AA + the WAI-ARIA
+Authoring Practices pattern for the widget. Prefer a native element that owns its own state over
+an ARIA attribute you have to remember to update — `<details>`, a real `<button>`, a `:checked`
+input stay correct with no write path; `aria-expanded` on a `<div>` is correct only while every
+code path remembers it.
+
+- **Role and name.** Every interactive element exposes a role and a non-empty accessible name.
+  Icon-only buttons, close/clear buttons, sort toggles, paginator arrows, drag handles, resize
+  grips and chip-remove buttons are where this is always missed.
+- **State on the role.** `aria-expanded` / `-selected` / `-checked` / `-current` / `-sort` /
+  `-valuenow` belong on the element carrying the role, and must update in the same render as the
+  visual change. State written only from an event handler is stale in SSR output — see the no-JS
+  rules.
+- **IDREFs never cross a shadow boundary.** `aria-labelledby` / `-describedby` / `-controls` /
+  `-activedescendant` resolve only within their own tree. Never copy an IDREF from the host onto a
+  node in the shadow root, and never point a host attribute into the shadow root. Use
+  `ElementInternals` reflected element references (`ariaLabelledByElements`) or move the role to
+  the host.
+- **A WC whose role lives on an inner node must accept a `label`.** Expose a `label` (or
+  `aria-label`) attribute and render it onto the role-bearing node. A consumer cannot reach inside
+  a shadow root, and `aria-label` on a roleless host is ignored by browsers.
+- **Wrappers are transparent.** A consumer's `aria-*`, `role`, `id` and `tabindex` on a wrapper
+  must reach the `mp-*` element. Angular: forward host attributes, don't leave them on the `bs-*`
+  host. React: props interfaces extend `React.HTMLAttributes<I>` and spread `...rest`. Vue:
+  `inheritAttrs: false` + `v-bind="$attrs"` on the inner element.
+- **Every pointer gesture has a keyboard equivalent.** Drag to resize, drag to reorder and swipe
+  are each a keyboard-operable command too, with the keymap announced on entry via the live
+  announcer. No keyboard path is a release blocker, not a follow-up.
+- **Focus ring inside the shadow root.** Bootstrap's focus-ring utilities do not cross the
+  boundary, so `outline: none` needs a `:focus-visible` replacement declared in the component's own
+  SCSS. A background-colour change shared with `:hover` is not a focus indicator.
+- **Hidden means hidden from both trees.** Content hidden visually must be out of the tab order and
+  out of the accessibility tree (or in neither). Never `aria-hidden` a focusable element or an
+  ancestor of one; never leave an off-screen panel's controls tabbable.
+- **Accessible names are localized strings.** A name that only exists as a hard-coded English
+  literal in a template is a translation bug. Route it through the same mechanism as visible text.
+- **Focus survives a rebuild.** When a list, tree or grid is rebuilt imperatively, restore focus by
+  stable item key, not by index or DOM position. Focus falling to `<body>` loses a keyboard user's
+  place entirely.
+- **Reduced motion.** Auto-advancing or animating widgets honour
+  `@media (prefers-reduced-motion: reduce)` in their own SCSS.
+
+### No-JS: two tiers, and the rules differ
+
+Declare which tier a component targets, in the element's class comment.
+
+**Tier 1 — CSS `:checked` state machine (interactive with no JS).** The `<input>` *is* the state, so
+it MUST keep its native role — `role="button"` on a checkbox suppresses the only state AT can read.
+It MUST carry `aria-controls` naming the region it reveals, MUST be named by a `<label for>` or
+`aria-label` that reads correctly in both positions, and `checked` MUST mean *revealed* with no
+viewport- or mode-dependent inversion. Reference implementation:
+`libs/mintplayer-web-components/accordion/src/components/mp-accordion.ts` (`#renderNoJsItem`).
+
+**Tier 2 — DSD chrome via `@lit-labs/ssr` (visible but inert with no JS).** The chrome contains the
+**shadow** markup only, so: emit no role whose ARIA contract depends on attributes JS assigns to
+**light-DOM** children (`role="menu"` without `menuitem`s is invalid, not merely incomplete); gate
+any such role behind the `data-js` branch with a degradation that is valid without it; parameterise
+the chrome generator on every attribute that changes ARIA **state**, not only structure; and never
+render a control as enabled when it cannot function.
+
+Both tiers: `aria-expanded` (or any state) written only from an event handler is frozen at its
+template literal in the generated chrome. If JS is its only writer, the no-JS DOM lies.
+
+### Before you open the PR
+
+1. Tab through it, keyboard only. Every control reachable, visibly focused, no trap, Escape closes.
+2. Every pointer gesture has a keyboard equivalent, and the demo page documents the keymap.
+3. Roles/names/state asserted in a `*.aria.spec.ts` — the states too, not just the initial render.
+4. `aria-label` / `role` / `id` / `tabindex` set on the wrapper land on the `mp-*` element, in all
+   three frameworks.
+5. If it has an `ssr/` dir: view it with JS disabled and check the tier rules above.
+6. No `outline: none` without a `:focus-visible` replacement in the same stylesheet.
+
 ## Build & test
 
 **Run test suites only once ALL milestones of a task are implemented — never after each one.**

@@ -16,6 +16,12 @@
       "options": {
         "config": "apps/react-bootstrap-demo-e2e/playwright.config.ts"
       }
+    },
+    "e2e-a11y": {
+      "executor": "@nx/playwright:playwright",
+      "options": {
+        "config": "apps/react-bootstrap-demo-e2e/playwright.a11y.config.ts"
+      }
     }
   }
 }

@@ -18,6 +18,13 @@
         "skipInstall": true
       }
     },
+    "e2e-a11y": {
+      "executor": "@nx/playwright:playwright",
+      "options": {
+        "config": "apps/ng-bootstrap-demo-e2e/playwright.a11y.config.ts",
+        "skipInstall": true
+      }
+    },
     "lint": {
       "executor": "@nx/eslint:lint"
     }
