@@ -1149,6 +1149,49 @@ the form-associated element for radios, not the individual radios.
 This repairs the already-dead `name` API and makes these controls contribute to React 19 form
 Actions and to plain-`<form>` submission. Nothing WCAG-blocking waits on it.
 
+- **Phase F as-built** (2026-07-29, 3 commits): `FormAssociatedMixin`
+  (`web-components/a11y/form-associated.ts`) exactly as designed — internals shared via
+  `sharedInternals`, `formDisabledCallback` stored verbatim, `effectiveDisabled` = callback OR
+  author attribute (0.3a's mandatory shape), host protocol duck-typed
+  (`formValue`/`formReset`/`formRestore?`/`formValidityAnchor?`), no-op degradation where
+  ElementInternals is absent (jsdom). 0.3b ran as a contract spec (`form-associated.spec.ts`) since
+  jsdom has no FACE dispatch — the platform half was already 0.3a's three-engine result. Adopted by
+  `mp-checkbox` first, then `mp-select` (multi-select submits repeated entries via `FormData` under
+  its own `name`), `mp-toggle-button`, `mp-otp-input`, and `mp-radio-group`. Validity anchors on
+  each control's real shadow input.
+  **`<mp-radio-group>`** shipped as the form-associated element for radios (per D5): light-DOM
+  `mp-radio` children scoped by `closest`, `role="radiogroup"` claimed on the host (consumer
+  labels work natively), exclusivity on bubbled `change`, arrow move-and-select with wrap + RTL
+  inversion + Home/End over the shared `nextEnabledIndex`/`firstEnabledIndex`/`lastEnabledIndex`,
+  `aria-posinset`/`-setsize` stamped, `valueMissing` when `required` and empty, submission under
+  the group's `name`, `group-change {value}` for every selection INCLUDING keyboard (which
+  produces no per-radio `change` — the group checks radios programmatically). The roving stop
+  rides a new property-only `MpRadio.groupTabIndex` bound to the inner input's `tabindex` in both
+  render branches — with `delegatesFocus` a host tabindex cannot remove the input from the tab
+  order, so the input's own attribute is the only lever. The group's MutationObserver also watches
+  `checked`/`disabled` attributes so EXTERNAL writers (Angular `writeValue`, React/Vue model sync)
+  keep the roving stop and validity honest; loop-safe because `#syncRadios` never writes either.
+  **`[bsRadioGroup]` is now the CVA adapter**: on an `<mp-radio-group>` host it defers
+  role/exclusivity/keyboard to the WC and bridges `group-change` into the form (suppressing the
+  bubbled `change` it would otherwise double-emit); on structural hosts where the element cannot
+  be used (`<tbody>`, `<bs-button-group>`) it keeps its explicit coordination, CVA-only.
+  **`[bsCheckboxGroup]`** got `role="group"` + a `label` input and nothing more — the role is
+  claimed only on generic hosts (a denylist protects `tbody`-shaped consumers whose native
+  semantics a group role would destroy) and never over a consumer-set role. React
+  (`BsRadioGroup` via `@lit/react`) and Vue (`BsRadioGroup.vue`, `v-model` = selected value)
+  wrappers added; all three demo radio pages moved onto the group (the ng page keeps the tbody
+  demo on the legacy shape, documented as such). Also fixed in passing: `overlay-stack.spec.ts`
+  was silently red since the stack became a facade over the module-singleton `dismissStack` —
+  frames leaked across tests; it now calls `resetForTesting()` per test.
+  **Explicitly OUTSTANDING from F**: `aria-errormessage` stays deferred (design settled:
+  each form WC gains an `error-text` attribute rendered as an in-shadow feedback node that the
+  inner input references via `aria-errormessage` + `aria-describedby`, fed on the Angular side by
+  `BsControlValidityDirective` from `NgControl.errors`; deferred because no WC has an error-text
+  channel today and inventing one touches every form control's template — follow-up scoped in the
+  outstanding-followups memory). Group-level `disabled` on `<mp-radio-group>` disables submission
+  state only, not the individual radios — per-radio `disabled` remains the API, matching native
+  fieldset-less radio groups.
+
 ---
 
 ## Phase G — guards, CI, documentation
