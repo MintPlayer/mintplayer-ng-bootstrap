@@ -4,7 +4,11 @@
     }
 
     @if (!isServerSide) {
-        <div class="priority-nav-measure-wrapper" aria-hidden="true">
+        <!-- inert (not just aria-hidden): the clone's links/buttons must be
+             unreachable by Tab too, or focus lands on nodes the reader is
+             required not to announce. Measurement needs geometry, which inert
+             preserves (display:none would zero every measure). -->
+        <div class="priority-nav-measure-wrapper" aria-hidden="true" inert>
             <div class="priority-nav-measure">
                 @for (entry of itemsWithMeta(); track entry.item.id) {
                     <span #measureItem="bsObserveSize" bsObserveSize class="priority-nav-measure-item">

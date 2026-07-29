@@ -8,6 +8,7 @@ import {
   TransitionHandle,
   keyToIntent,
 } from '@mintplayer/web-components/swiper-core';
+import { inertRegions, type InertRegions } from '@mintplayer/web-components/a11y';
 import { carouselStyles } from '../styles';
 import {
   CarouselAnimation,
@@ -78,6 +79,16 @@ export class MpCarousel extends LitElement {
   #reducedMotion: MediaQueryList | null = null;
   /** Light-DOM element currently teleported into a wrap cell, if any. */
   #teleported: { el: HTMLElement; home: string } | null = null;
+  /**
+   * aria-hidden alone leaves off-screen slides FOCUSABLE — the audit's
+   * characteristic "present but inert" failure inverted. inert removes them
+   * from the tab order AND the accessibility tree, and propagates through the
+   * slot to the consumer's light-DOM slide content (spike 0.4). Suspended
+   * during transitions/drags so both the outgoing and incoming slide are live
+   * mid-motion.
+   */
+  #inert: InertRegions = inertRegions();
+  #dragInertSuspended = false;
   /** Guards paused-change: only the single write path emits. */
   #writingPaused = false;
 
@@ -136,6 +147,11 @@ export class MpCarousel extends LitElement {
     this.#resize?.disconnect();
     this.#arbiter?.abort();
     this.#clearAutoplay();
+    if (this.#dragInertSuspended) {
+      this.#dragInertSuspended = false;
+      this.#inert.resume();
+    }
+    this.#inert.dispose();
   }
 
   protected override firstUpdated(): void {
@@ -161,6 +177,32 @@ export class MpCarousel extends LitElement {
       track.addEventListener('touchend', this.#onTouchEnd, { passive: false });
       track.addEventListener('touchcancel', this.#onTouchCancel, { passive: true });
     }
+  }
+
+  protected override updated(): void {
+    this.#declareInert();
+  }
+
+  /**
+   * Declare the complete hidden set: every non-active slide cell plus both
+   * wrap-clone cells. Complete-set semantics (never deltas) means an
+   * interrupted transition cannot leave a stale inert behind.
+   */
+  #declareInert(): void {
+    if (!this.hasAttribute('data-js')) return;
+    const root = this.renderRoot;
+    if (!root) return;
+    const hidden: Element[] = [...root.querySelectorAll('.carousel-item.carousel-clone')];
+    root.querySelectorAll<HTMLElement>('.carousel-item[data-i]').forEach((cell) => {
+      if (Number(cell.dataset['i']) !== this.#index) hidden.push(cell);
+    });
+    this.#inert.setHidden(hidden);
+  }
+
+  /** Re-declare from the committed index, then lift the suspension. */
+  #resumeInert(): void {
+    this.#declareInert();
+    this.#inert.resume();
   }
 
   override attributeChangedCallback(name: string, oldValue: string | null, newValue: string | null): void {
@@ -461,10 +503,12 @@ export class MpCarousel extends LitElement {
 
   #runTransition(from: number, to: number, duration: number, onDone: () => void): TransitionHandle {
     if (this.#animation === 'fade') {
+      this.#inert.suspend();
       this.#setActiveCell(this.#wrapIndex(to));
       let timer: ReturnType<typeof setTimeout> | null = setTimeout(() => {
         timer = null;
         onDone();
+        this.#resumeInert();
       }, duration);
       return {
         finish: () => {
@@ -472,12 +516,14 @@ export class MpCarousel extends LitElement {
             clearTimeout(timer);
             timer = null;
             onDone();
+            this.#resumeInert();
           }
         },
         cancel: () => {
           if (timer !== null) {
             clearTimeout(timer);
             timer = null;
+            this.#resumeInert();
           }
         },
       };
@@ -493,11 +539,13 @@ export class MpCarousel extends LitElement {
       onDone();
       return { finish: () => undefined, cancel: () => undefined };
     }
+    this.#inert.suspend();
     this.#setupWrapTeleport(to);
     if (typeof track.animate !== 'function') {
       // No Web Animations API (jsdom, ancient browsers): settle instantly.
       this.#restoreTeleport();
       onDone();
+      this.#resumeInert();
       return { finish: () => undefined, cancel: () => undefined };
     }
     const animation = track.animate(
@@ -511,6 +559,7 @@ export class MpCarousel extends LitElement {
       animation.cancel();
       this.#restoreTeleport();
       if (done) onDone();
+      this.#resumeInert();
     };
     animation.onfinish = () => settle(true);
     return {
@@ -618,6 +667,12 @@ export class MpCarousel extends LitElement {
     const touch = event.touches[0];
     if (!touch) return;
     if (this.#arbiter?.pointerMove(touch.clientX, touch.clientY)) {
+      // A live drag reveals neighbouring slides: lift inert for its duration
+      // (reference-counted, so the settle transition's own suspend composes).
+      if (!this.#dragInertSuspended) {
+        this.#dragInertSuspended = true;
+        this.#inert.suspend();
+      }
       // Locked onto our axis: suppress native scroll/PTR, and stop the event
       // here so an ancestor carousel (nested composition) doesn't also react.
       event.preventDefault();
@@ -630,11 +685,19 @@ export class MpCarousel extends LitElement {
       event.preventDefault();
       event.stopPropagation();
     }
+    if (this.#dragInertSuspended) {
+      this.#dragInertSuspended = false;
+      this.#resumeInert();
+    }
   };
 
   #onTouchCancel = (): void => {
     this.#arbiter?.abort();
     this.#machine?.goto(this.#index, { animate: false });
+    if (this.#dragInertSuspended) {
+      this.#dragInertSuspended = false;
+      this.#resumeInert();
+    }
   };
 
   #onKeydown = (event: KeyboardEvent): void => {
@@ -691,8 +754,10 @@ export class MpCarousel extends LitElement {
       css += `${checked} ~ .carousel-indicators label[for="s${i}"] { opacity: 1; }`;
       // Focus lives on the visually-hidden radio; paint its ring on the indicator.
       css += `#s${i}:focus-visible ~ .carousel-indicators label[for="s${i}"] { outline: 2px solid #fff; outline-offset: 2px; }`;
-      // no-JS fade / vertical crossfade reveal.
-      css += `:host(:not([data-js])) ${checked} ~ .carousel-inner .nojs-cell slot::slotted(:nth-child(${i + 1})) { opacity: 1; position: relative; z-index: 1; }`;
+      // no-JS fade / vertical crossfade reveal. The reveal side of the
+      // visibility pair is 0s (PRD 5.6): the incoming slide must be visible
+      // for the whole cross-fade, while the base rule delays hiding.
+      css += `:host(:not([data-js])) ${checked} ~ .carousel-inner .nojs-cell slot::slotted(:nth-child(${i + 1})) { opacity: 1; position: relative; z-index: 1; visibility: visible; transition-delay: 0s; }`;
       // no-JS horizontal slide translation.
       css += `:host(:not([data-js]):not([animation="fade"]):not([orientation="vertical"])) ${checked} ~ .carousel-inner .nojs-cell { transform: translateX(${-i * 100}%); }`;
     }

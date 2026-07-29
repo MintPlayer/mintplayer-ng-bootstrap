@@ -196,14 +196,25 @@
     transition: transform 0.5s ease;
   }
 
+  // visibility (not just off-viewport position) removes a non-current
+  // slide's content from the tab order and the accessibility tree. The
+  // directional transition is the mp-navbar rule (PRD 5.6): hiding waits for
+  // the 0.5s ride so the outgoing slide stays visible in motion, while the
+  // per-index :checked rule reveals the incoming one at 0s.
   .nojs-cell slot::slotted(*) {
     flex: 0 0 100%;
     width: 100% !important;
+    visibility: hidden;
+    transition: visibility 0s 0.5s;
   }
 }
 
 :host(:not([data-js])[animation="none"]) .nojs-cell {
   transition-duration: 0s;
+}
+
+:host(:not([data-js])[animation="none"]) .nojs-cell slot::slotted(*) {
+  transition-delay: 0s;
 }
 
 // Fade — and vertical slide, which falls back to crossfade with JS off (a
@@ -220,7 +231,8 @@
     grid-row: 1;
     grid-column: 1;
     opacity: 0;
-    transition: opacity 0.4s ease-in-out;
+    visibility: hidden;
+    transition: opacity 0.4s ease-in-out, visibility 0s 0.4s;
   }
 }
 
