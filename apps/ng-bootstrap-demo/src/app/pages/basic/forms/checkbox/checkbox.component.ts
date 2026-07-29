@@ -196,7 +196,8 @@ export class CheckboxComponent {
              [(ngModel)]="selectedRows">
         @for (row of rows(); track row.id) {
           <tr>
-            <td><bs-checkbox [group]="g" [value]="row.id" /></td>
+            <td><bs-checkbox [group]="g" [value]="row.id"
+                             [attr.aria-label]="'Select ' + row.label" /></td>
             <td>{{ row.label }}</td>
           </tr>
         }

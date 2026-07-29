@@ -41,7 +41,7 @@
 }
 <bs-form (submit)="addAlertItem()">
     <bs-input-group>
-        <input type="text" [(ngModel)]="newAlertItem" name="txtNewAlert" #txtNewAlert>
+        <input type="text" aria-label="New alert text" [(ngModel)]="newAlertItem" name="txtNewAlert" #txtNewAlert>
         <button type="submit" [color]="colors.primary">Add</button>
     </bs-input-group>
 </bs-form>

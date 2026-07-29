@@ -136,7 +136,8 @@ export class RadioComponent {
              [(ngModel)]="selectedRow">
         @for (row of rows(); track row.id) {
           <tr>
-            <td><bs-radio [group]="g" [value]="row.id" /></td>
+            <td><bs-radio [group]="g" [value]="row.id"
+                          [attr.aria-label]="'Select ' + row.label" /></td>
             <td>{{ row.label }}</td>
           </tr>
         }

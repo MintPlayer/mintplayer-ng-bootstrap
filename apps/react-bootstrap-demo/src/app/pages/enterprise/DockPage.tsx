@@ -42,6 +42,20 @@ export function DockPage() {
         <code> DockLayoutSnapshot</code>.
       </p>
 
+      <details className="mb-2">
+        <summary>Keyboard shortcuts</summary>
+        <ul className="mb-0">
+          <li><kbd>Tab</kbd> / <kbd>Shift</kbd> + <kbd>Tab</kbd> — move focus through tab strips, splitter dividers, intersection handles, and floating-pane close buttons</li>
+          <li>On a tab strip: <kbd>←</kbd> / <kbd>→</kbd> move between tabs, <kbd>Home</kbd> / <kbd>End</kbd> jump to the first / last one, <kbd>Enter</kbd> / <kbd>Space</kbd> activate the focused tab</li>
+          <li>On a splitter divider: <kbd>←</kbd> / <kbd>→</kbd> (or <kbd>↑</kbd> / <kbd>↓</kbd> for a vertical split) resize by 10% — <kbd>Shift</kbd> makes it 1% — and <kbd>Home</kbd> / <kbd>End</kbd> drive it to its limits</li>
+          <li>On an intersection handle (the glyph where two splits cross): <kbd>←</kbd> / <kbd>→</kbd> drive the vertical divider and <kbd>↑</kbd> / <kbd>↓</kbd> the horizontal one; <kbd>Home</kbd> / <kbd>End</kbd> drive the vertical one; <kbd>Shift</kbd> is again the 1% fine step</li>
+          <li>Floating-pane close button — <kbd>Enter</kbd> / <kbd>Space</kbd> closes the window</li>
+          <li><kbd>M</kbd> on a focused tab — arm pane move mode. Only the bare key arms it; <kbd>Ctrl</kbd>/<kbd>Alt</kbd>/<kbd>⌘</kbd> + <kbd>M</kbd> is left to the browser or the app.</li>
+          <li>In move mode: <kbd>T</kbd> / <kbd>R</kbd> / <kbd>B</kbd> / <kbd>L</kbd> dock the pane to the top / right / bottom / left of the current stack · <kbd>F</kbd> tears it off into a floating window · <kbd>Esc</kbd> cancels</li>
+          <li>Move mode stays armed while focus moves around inside the dock and cancels once focus leaves it; the commit always applies to the pane that was focused when <kbd>M</kbd> was pressed. Letters typed into an <code>input</code>, <code>textarea</code>, <code>select</code> or <code>contenteditable</code> inside a pane stay text and commit nothing.</li>
+        </ul>
+      </details>
+
       <section style={{ height: 480 }}>
         <h2>Basic usage</h2>
         <BsDockManager

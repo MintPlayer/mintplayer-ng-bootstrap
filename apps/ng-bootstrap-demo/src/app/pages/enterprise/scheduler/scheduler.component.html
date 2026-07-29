@@ -25,6 +25,7 @@
     <li><strong>Event focus</strong>: every event is in the Tab order. <kbd>Tab</kbd> to one and the scheduler emits <code>event-selected</code>.</li>
     <li><strong>Move mode</strong>: <kbd>Enter</kbd> on a focused event enters move mode. Arrow keys nudge time (<em>or</em> resource on timeline). <kbd>Shift</kbd>+arrow resizes the end edge; <kbd>Alt+Shift</kbd>+arrow resizes the start edge. On week view, horizontal Shift+arrow pushes the end across day boundaries. <kbd>Enter</kbd> commits, <kbd>Esc</kbd> cancels.</li>
     <li><strong>Delete</strong>: <kbd>Delete</kbd> / <kbd>Backspace</kbd> on a focused event emits <code>event-delete</code>.</li>
+    <li><strong>Leaving an event</strong>: <kbd>Esc</kbd> on a focused event returns focus to the grid cell it came from.</li>
     <li><strong>View shortcuts</strong>: <kbd>Alt+T</kbd> today · <kbd>Alt+Y</kbd> year · <kbd>Alt+M</kbd> month · <kbd>Alt+W</kbd> week · <kbd>Alt+D</kbd> day. (Bare letters are no longer hot-keys.)</li>
   </ul>
 </details>
@@ -34,17 +35,17 @@
     <div [md]="8">
       <bs-form>
         <bs-input-group>
-          <bs-select [ngModel]="view()" (ngModelChange)="view.set($event)">
+          <bs-select aria-label="Scheduler view" [ngModel]="view()" (ngModelChange)="view.set($event)">
             @for (opt of viewOptions; track opt.value) {
               <option [ngValue]="opt.value">{{ opt.label }}</option>
             }
           </bs-select>
-          <bs-select [ngModel]="slotDuration()" (ngModelChange)="slotDuration.set($event)">
+          <bs-select aria-label="Slot duration" [ngModel]="slotDuration()" (ngModelChange)="slotDuration.set($event)">
             @for (opt of slotDurationOptions; track opt.value) {
               <option [ngValue]="opt.value">{{ opt.label }}</option>
             }
           </bs-select>
-          <bs-select [ngModel]="timeFormat()" (ngModelChange)="timeFormat.set($event)">
+          <bs-select aria-label="Time format" [ngModel]="timeFormat()" (ngModelChange)="timeFormat.set($event)">
             <option value="24h">24h</option>
             <option value="12h">12h</option>
           </bs-select>

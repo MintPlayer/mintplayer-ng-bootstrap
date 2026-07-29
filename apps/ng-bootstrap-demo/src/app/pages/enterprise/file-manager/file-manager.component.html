@@ -39,14 +39,14 @@
     </div>
     <div [md]="4" [lg]="3">
       <label class="form-label">View</label>
-      <bs-select [ngModel]="viewMode()" (ngModelChange)="viewMode.set($event)">
+      <bs-select aria-label="View" [ngModel]="viewMode()" (ngModelChange)="viewMode.set($event)">
         <option value="list">List</option>
         <option value="icons">Icons</option>
       </bs-select>
     </div>
     <div [md]="4" [lg]="3">
       <label class="form-label">Selection</label>
-      <bs-select [ngModel]="selectionMode()" (ngModelChange)="selectionMode.set($event)">
+      <bs-select aria-label="Selection" [ngModel]="selectionMode()" (ngModelChange)="selectionMode.set($event)">
         <option value="none">None</option>
         <option value="single">Single</option>
         <option value="multiple">Multiple</option>
@@ -54,7 +54,7 @@
     </div>
     <div [md]="4" [lg]="3">
       <label class="form-label">Language</label>
-      <bs-select [ngModel]="locale()" (ngModelChange)="locale.set($event)">
+      <bs-select aria-label="Language" [ngModel]="locale()" (ngModelChange)="locale.set($event)">
         <option value="en">English</option>
         <option value="nl">Nederlands</option>
         <option value="fr">Français</option>
@@ -115,16 +115,23 @@
 <details class="mt-4">
   <summary>Keyboard shortcuts</summary>
   <ul>
-    <li><kbd>↑</kbd> / <kbd>↓</kbd> — move row focus within the file list</li>
-    <li><kbd>Enter</kbd> on a folder — navigate into it; on a file — open</li>
-    <li><kbd>Ctrl</kbd>+click — toggle a row in the selection</li>
-    <li><kbd>Shift</kbd>+click — range-select between anchor and clicked row</li>
-    <li><kbd>F2</kbd> — rename selected item</li>
-    <li><kbd>Del</kbd> — delete selection (with confirmation)</li>
-    <li><kbd>Ctrl</kbd>+<kbd>X</kbd> / <kbd>Ctrl</kbd>+<kbd>C</kbd> / <kbd>Ctrl</kbd>+<kbd>V</kbd> — cut / copy / paste</li>
-    <li><kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>N</kbd> — new folder in current location</li>
-    <li><kbd>Shift</kbd>+<kbd>F10</kbd> / <kbd>ContextMenu</kbd> — open the context menu</li>
+    <li>
+      In <strong>icon</strong> view all four arrows plus <kbd>Home</kbd> / <kbd>End</kbd> rove between
+      the cards: the grid reflows on resize and so has no stable 2-D geometry, which means
+      <kbd>→</kbd> / <kbd>↓</kbd> both mean “next card” and <kbd>←</kbd> / <kbd>↑</kbd> both mean
+      “previous”. In <strong>details</strong> view row focus is the datatable's own
+      <kbd>↑</kbd> / <kbd>↓</kbd> handling, not the file manager's.
+    </li>
+    <li><kbd>Enter</kbd> — same as double-click: navigate into a folder, or emit <code>mp-node-open</code> for a file</li>
+    <li><kbd>Ctrl</kbd>/<kbd>⌘</kbd>+click — toggle one item, and <kbd>Shift</kbd>+click — extend from the last-selected item. Both need <strong>Selection</strong> set to <code>multiple</code>; <kbd>Shift</kbd>+click only ever adds to the selection, it never trims it.</li>
+    <li><kbd>F2</kbd> — rename, but only with <em>exactly one</em> item selected</li>
+    <li><kbd>Del</kbd> — delete the selection after a confirmation dialog; does nothing on an empty selection</li>
+    <li><kbd>Ctrl</kbd>+<kbd>X</kbd> / <kbd>Ctrl</kbd>+<kbd>C</kbd> / <kbd>Ctrl</kbd>+<kbd>V</kbd> — cut / copy / paste (<kbd>⌘</kbd> also works). Cut and copy need a selection, paste needs a filled clipboard, and each needs its operation to be enabled.</li>
+    <li><kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>N</kbd> — new folder in the current location</li>
+    <li><kbd>Shift</kbd>+<kbd>F10</kbd> / <kbd>ContextMenu</kbd> — open the context menu on the first selected item. With nothing selected, neither key does anything.</li>
     <li><strong>Long-press</strong> (600 ms) on touch — opens the context menu</li>
+    <li>In the context menu: focus moves into it on open, <kbd>↑</kbd> / <kbd>↓</kbd> / <kbd>Home</kbd> / <kbd>End</kbd> rove between the items, <kbd>Esc</kbd> closes it</li>
+    <li>While the rename editor is open it owns every key — <kbd>Enter</kbd> commits, <kbd>Esc</kbd> abandons the edit, and none of the shortcuts above fire</li>
   </ul>
 </details>
 
