@@ -768,7 +768,10 @@ The largest Critical class. Several fixes already exist elsewhere in the same fi
   registration); React wrapper is `createComponent` (exempt from the React runtime guard by
   construction); Vue SFC is `defineModel<Signature>` + `v-bind="$attrs"` (auto-covered by the
   static invariant). No SSR chrome — same visible-only-after-hydration tier as dock/scheduler.
-  Responsive trap found by live measurement at a 218px viewport: an inline-block WC host's
+  `hide-typed-input` (WC attr + `hideTypedInput` wrapper input) opts OUT of the typed alternative
+  for deliberate draw-only flows — opt-out, not opt-in, because the typed input is the canvas's
+  only possible keyboard path; same polarity as bs-color-picker's default-true
+  `showAccessibilityToggle`. Responsive trap found by live measurement at a 218px viewport: an inline-block WC host's
   shrink-to-fit floor is its content's intrinsic min width (here the controls row's text input),
   and percentage caps on inner shadow nodes cannot lower it — the HOST needs `max-width: 100%`,
   and so does any wrapper host around it (`bs-signature-pad`), because intrinsic sizing ignores

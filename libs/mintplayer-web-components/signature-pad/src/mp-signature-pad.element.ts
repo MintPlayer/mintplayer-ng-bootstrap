@@ -1,4 +1,4 @@
-import { LitElement, html, type TemplateResult } from 'lit';
+import { LitElement, html, nothing, type TemplateResult } from 'lit';
 import { query } from 'lit/decorators.js';
 import { HostAriaController } from '@mintplayer/web-components/a11y';
 import { styles } from './mp-signature-pad.element.template';
@@ -21,6 +21,8 @@ import type { Signature } from './types/signature';
  *                                 a host `aria-label` wins, as everywhere in
  *                                 the library. Defaults to 'Signature pad'.
  *  - `type-label` / `undo-label` / `clear-label`  control labels.
+ *  - `hide-typed-input`           opt OUT of the typed alternative (visible
+ *                                 by default — it is the only keyboard path).
  *
  * Events (bubbles + composed):
  *  - `signature-change`  detail = the current Signature, on every mutation
@@ -37,6 +39,7 @@ export class MpSignaturePadElement extends LitElement {
     typeLabel: { attribute: 'type-label', type: String, reflect: false },
     undoLabel: { attribute: 'undo-label', type: String, reflect: false },
     clearLabel: { attribute: 'clear-label', type: String, reflect: false },
+    hideTypedInput: { attribute: 'hide-typed-input', type: Boolean, reflect: true },
     // Not a real property; listed so a host aria-label change re-renders. The
     // consumer's aria-label wins over inputLabel, same precedence as every
     // other control in the library.
@@ -52,6 +55,13 @@ export class MpSignaturePadElement extends LitElement {
   typeLabel = 'Type your signature';
   undoLabel = 'Undo';
   clearLabel = 'Clear';
+  /**
+   * Opt-OUT of the typed alternative (deliberately not opt-in: the typed
+   * input is the only keyboard path a canvas can have, so it must be present
+   * by default — same polarity as bs-color-picker's showAccessibilityToggle).
+   * For draw-only flows that accept losing keyboard operability.
+   */
+  hideTypedInput = false;
   /** Mirror of the host aria-label attribute; exists only to trigger re-renders. */
   ariaLabelForRender: string | null = null;
   ariaLabelledByForSync: string | null = null;
@@ -243,14 +253,16 @@ export class MpSignaturePadElement extends LitElement {
         @pointermove=${this.onPointerMove}
       ></canvas>
       <div class="controls">
-        <input
-          class="form-control"
-          type="text"
-          aria-label=${this.typeLabel}
-          placeholder=${this.typeLabel}
-          .value=${this._signature.text ?? ''}
-          @input=${this.onTypedInput}
-        />
+        ${this.hideTypedInput
+          ? nothing
+          : html`<input
+              class="form-control"
+              type="text"
+              aria-label=${this.typeLabel}
+              placeholder=${this.typeLabel}
+              .value=${this._signature.text ?? ''}
+              @input=${this.onTypedInput}
+            />`}
         <button type="button" class="control-btn" @click=${() => this.undo()}>${this.undoLabel}</button>
         <button type="button" class="control-btn" @click=${() => this.clear()}>${this.clearLabel}</button>
       </div>

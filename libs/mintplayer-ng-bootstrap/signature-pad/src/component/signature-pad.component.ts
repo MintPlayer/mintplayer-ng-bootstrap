@@ -32,6 +32,7 @@ void MpSignaturePadElement;
       [attr.type-label]="typeLabel()"
       [attr.undo-label]="undoLabel()"
       [attr.clear-label]="clearLabel()"
+      [attr.hide-typed-input]="hideTypedInput() ? '' : null"
       (signature-change)="onSignatureChange($event)"
     ></mp-signature-pad>
   `,
@@ -51,6 +52,8 @@ export class BsSignaturePadComponent {
   readonly typeLabel = input<string | null>(null);
   readonly undoLabel = input<string | null>(null);
   readonly clearLabel = input<string | null>(null);
+  /** Opt-OUT of the typed alternative — it is the only keyboard path, so it shows by default. */
+  readonly hideTypedInput = input(false);
 
   // `model()` already exposes a `signatureChange` output for two-way
   // [(signature)] binding; `signature.set()` in onSignatureChange drives it.

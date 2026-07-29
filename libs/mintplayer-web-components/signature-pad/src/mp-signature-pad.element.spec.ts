@@ -146,3 +146,26 @@ describe('mp-signature-pad — CSS-scaled canvas coordinate mapping', () => {
     expect(el.signature.strokes.length).toBe(1);
   });
 });
+
+describe('mp-signature-pad — hide-typed-input (opt-OUT of the keyboard path)', () => {
+  let el: MpSignaturePadElement;
+  afterEach(() => el.remove());
+
+  it('the typed input is present by default — it is the only keyboard path', async () => {
+    el = await mount();
+    expect(shadow(el).querySelector('input.form-control')).not.toBeNull();
+  });
+
+  it('hide-typed-input removes the input but keeps Undo/Clear in the tab order', async () => {
+    el = await mount((host) => host.setAttribute('hide-typed-input', ''));
+    expect(shadow(el).querySelector('input.form-control')).toBeNull();
+    expect(shadow(el).querySelectorAll('button').length).toBe(2);
+  });
+
+  it('flipping the property live restores the input (state is live, PRD 11a)', async () => {
+    el = await mount((host) => host.setAttribute('hide-typed-input', ''));
+    el.hideTypedInput = false;
+    await el.updateComplete;
+    expect(shadow(el).querySelector('input.form-control')).not.toBeNull();
+  });
+});
