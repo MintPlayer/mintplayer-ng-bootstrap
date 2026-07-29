@@ -16,13 +16,10 @@ import { navbarItemStyles } from '../styles';
 export class MpNavbarItem extends MpNavbarElement {
   static override styles = [navbarItemStyles];
 
-  override connectedCallback(): void {
-    super.connectedCallback();
-    // The host sits inside the navbar's <ul>; a role-less custom element
-    // leaves that list with zero owned listitems. Wrappers stamp this
-    // STATICALLY (the DSD has no connectedCallback); this covers vanilla use.
-    if (!this.hasAttribute('role')) this.setAttribute('role', 'listitem');
-  }
+  // No host role. The navbar's nav groups are plain divs (not lists):
+  // arbitrary slotted content — dropdowns, forms, buttons — can never satisfy
+  // a list's required-children contract, so the navbar carries no list
+  // semantics and items claim no listitem (axe list/aria-required-parent).
 
   override render() {
     return html`<slot></slot>`;

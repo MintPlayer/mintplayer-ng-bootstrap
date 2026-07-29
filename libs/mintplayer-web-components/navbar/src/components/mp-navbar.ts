@@ -247,8 +247,12 @@ export class MpNavbar extends LitElement {
         </label>
         <div class="navbar-collapse" id="navbar-collapse" part="collapse">
           <div class="navbar-collapse-inner">
-            <ul class="navbar-nav nav-start" part="nav-start"><slot></slot></ul>
-            <ul class="navbar-nav nav-end" part="nav-end"><slot name="end"></slot></ul>
+            <!-- div, not ul: the flat-tree children are slotted item WCs, not
+                 <li>, so a native list violates the ul content model (axe
+                 "list", serious, on every page). Nav items in a nav landmark
+                 need no list semantics. -->
+            <div class="navbar-nav nav-start" part="nav-start"><slot></slot></div>
+            <div class="navbar-nav nav-end" part="nav-end"><slot name="end"></slot></div>
           </div>
         </div>
       </nav>

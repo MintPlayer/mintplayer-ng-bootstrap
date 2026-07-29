@@ -48,7 +48,6 @@ export const BsNavbarItem = React.forwardRef<MpNavbarItem, BsNavbarItemProps>(fu
       ref={ref}
       // Static so it exists in the DSD too (connectedCallback never runs
       // server-side); a consumer role in ...props wins by spreading later.
-      role="listitem"
       {...(active ? { active: '' as const } : {})}
       {...(disabled ? { disabled: '' as const } : {})}
       {...props}

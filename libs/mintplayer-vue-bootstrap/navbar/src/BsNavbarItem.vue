@@ -24,7 +24,6 @@ const el = ref<MpNavbarItem | null>(null);
 <template>
   <!-- Slot a light-DOM <a href> child; the WC styles it as a .nav-link. -->
   <mp-navbar-item
-    role="listitem"
     ref="el"
     v-bind="$attrs"
     :active="active ? '' : undefined"

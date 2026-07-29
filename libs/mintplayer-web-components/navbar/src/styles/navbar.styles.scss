@@ -176,7 +176,7 @@
         // Wide: nav inline + always visible; hamburger hidden; no grid animation.
         .navbar-toggle, .navbar-toggler { display: none; }
         .navbar-collapse { flex-basis: auto; display: flex; align-items: center; grid-template-rows: none; overflow: visible; }
-        .navbar-collapse-inner { display: contents; }  // uls become the flex children
+        .navbar-collapse-inner { display: contents; }  // nav groups become the flex children
         .navbar-nav { flex-direction: row; align-items: center; }
         .nav-end { margin-inline-start: auto; }  // push the end group right
       }
