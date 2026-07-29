@@ -177,7 +177,9 @@ export function carouselJsSuite(test: Test, expect: Expect, options: CarouselSui
       await expect(car).toHaveAttribute('aria-roledescription', 'carousel');
       const viewport = car.locator('.carousel-inner');
       await expect(viewport).toHaveAttribute('tabindex', '0');
-      await expect(viewport).toHaveAttribute('aria-orientation', 'horizontal');
+      // No aria-orientation: the viewport carries no role, and only widgets
+      // may take the attribute (axe aria-allowed-attr).
+      await expect(viewport).not.toHaveAttribute('aria-orientation', /.*/);
       await expect(viewport).toHaveAttribute('aria-keyshortcuts', 'ArrowLeft ArrowRight Home End');
       // paused ⇒ polite
       await expect(viewport).toHaveAttribute('aria-live', 'polite');
