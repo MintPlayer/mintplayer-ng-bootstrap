@@ -36,10 +36,14 @@ export class MonthView extends BaseView {
     const grid = this.createElement('div', 'scheduler-month-grid');
 
     for (const week of weeks) {
+      // display: contents (scheduler SCSS) keeps the 7-column CSS grid
+      // working while giving the ARIA grid its rows.
+      const weekRow = this.createElement('div', 'scheduler-month-week');
       for (const day of week) {
         const cell = this.createDayCell(day);
-        grid.appendChild(cell);
+        weekRow.appendChild(cell);
       }
+      grid.appendChild(weekRow);
     }
 
     this.container.appendChild(grid);
@@ -49,6 +53,14 @@ export class MonthView extends BaseView {
 
     // Apply roving tabindex now that all cells are in place.
     this.updateDayCellFocus();
+
+    this.applyGridRoles({
+      columnHeaderRow: ':scope > .scheduler-day-headers',
+      columnHeaders: '.scheduler-day-headers > .scheduler-day-header',
+      presentation: ['.scheduler-month-grid'],
+      rows: '.scheduler-month-week',
+    });
+    this.markToday();
   }
 
   /**

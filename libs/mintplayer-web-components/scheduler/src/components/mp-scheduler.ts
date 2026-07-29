@@ -507,9 +507,19 @@ export class MpScheduler extends LitElement {
   // ============================================
 
   private onStateChange(state: SchedulerState): void {
+    // Async loading is invisible to a screen reader without an announcement;
+    // say both edges so a slow fetch has a beginning and an end.
+    if (state.isLoading !== this.previousIsLoading) {
+      if (this.previousIsLoading !== null) {
+        this.liveAnnouncer.announce(state.isLoading ? 'Loading events.' : 'Events loaded.');
+      }
+      this.previousIsLoading = state.isLoading;
+    }
     this.detectAndEmitChanges(state);
     this.updateUI(state);
   }
+
+  private previousIsLoading: boolean | null = null;
 
   private detectAndEmitChanges(state: SchedulerState): void {
     const viewChanged =

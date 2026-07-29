@@ -149,6 +149,10 @@ describe('mp-scheduler — events in tab order (PRD D3)', () => {
     await new Promise<void>((r) => requestAnimationFrame(() => requestAnimationFrame(() => r())));
     const ev2 = el.shadowRoot!.querySelector('.scheduler-timeline-event')!;
     expect(ev2.getAttribute('tabindex')).toBe('0');
-    expect(ev2.getAttribute('aria-current')).toBe('true');
+    // Selection is the button's toggle state (Phase E): aria-pressed, always
+    // written — aria-current was the wrong token and aria-selected is
+    // invalid on role="button".
+    expect(ev2.getAttribute('aria-pressed')).toBe('true');
+    expect(ev2.getAttribute('aria-current')).toBeNull();
   });
 });

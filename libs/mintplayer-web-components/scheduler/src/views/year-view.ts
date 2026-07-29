@@ -29,6 +29,10 @@ export class YearView extends BaseView {
 
     this.container.appendChild(grid);
 
+    // A single-row grid of 12 month cells — the cards are the gridcells.
+    this.applyGridRoles({ rows: '.scheduler-year-grid' });
+    this.markToday();
+
     // Phase B: apply roving tabindex once cards are in place.
     this.updateMonthCardFocus();
   }

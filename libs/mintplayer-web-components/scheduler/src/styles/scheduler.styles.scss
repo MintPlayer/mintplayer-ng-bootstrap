@@ -314,6 +314,12 @@
 }
 
 /* Month View */
+// ARIA row wrapper only — display: contents hands its children straight to
+// the month grid's 7-column layout.
+.scheduler-month-week {
+  display: contents;
+}
+
 .scheduler-month-grid {
   display: grid;
   grid-template-columns: repeat(7, 1fr);

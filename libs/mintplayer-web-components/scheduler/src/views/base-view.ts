@@ -194,4 +194,41 @@ export abstract class BaseView {
   protected clearContainer(): void {
     this.container.innerHTML = '';
   }
+
+  /**
+   * Retrofit the ARIA grid chain onto a rendered view (wc-aria PRD step 5.7):
+   * the container claims `grid`, layout-only wrappers become `presentation`
+   * so they stop breaking the chain, the header strip becomes the
+   * column-header row, and the cell groups named by `rows` become rows. The
+   * cells themselves already carry role="gridcell" + ids + roving tabindex.
+   *
+   * The mapping is pragmatic, not ideal: week/day DOM is COLUMN-major (a row
+   * here is one day's column of time cells), because the layout was built
+   * for CSS first. The cells' focus announcements carry full day+time, so
+   * navigation stays understandable.
+   */
+  protected applyGridRoles(config: {
+    columnHeaderRow?: string;
+    columnHeaders?: string;
+    presentation?: string[];
+    rows?: string;
+  }): void {
+    const container = this.container;
+    if (container.getAttribute('role') !== 'grid') container.setAttribute('role', 'grid');
+    const apply = (selector: string, role: string) =>
+      container.querySelectorAll<HTMLElement>(selector).forEach((el) => {
+        if (!el.hasAttribute('role')) el.setAttribute('role', role);
+      });
+    if (config.columnHeaderRow) apply(config.columnHeaderRow, 'row');
+    if (config.columnHeaders) apply(config.columnHeaders, 'columnheader');
+    (config.presentation ?? []).forEach((selector) => apply(selector, 'presentation'));
+    if (config.rows) apply(config.rows, 'row');
+  }
+
+  /** aria-current="date" on every element the views styled `.today`. */
+  protected markToday(): void {
+    this.container
+      .querySelectorAll<HTMLElement>('.today')
+      .forEach((el) => el.setAttribute('aria-current', 'date'));
+  }
 }

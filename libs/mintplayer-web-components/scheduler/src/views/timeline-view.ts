@@ -324,11 +324,10 @@ export class TimelineView extends BaseView {
       'aria-label',
       formatEventAriaLabel(event, resourceTitle, this.state.options.timeFormat),
     );
-    if (inMoveMode) eventEl.setAttribute('aria-pressed', 'true');
-    if (isSelected) {
-      eventEl.setAttribute('aria-current', 'true');
-      eventEl.classList.add('selected');
-    }
+    // Selection state on the button token that supports it (see week-view).
+    eventEl.setAttribute('aria-pressed', isSelected ? 'true' : 'false');
+    if (isSelected) eventEl.classList.add('selected');
+    void inMoveMode;
 
     // Clamp event to view bounds
     const eventStart = Math.max(event.start.getTime(), viewStart.getTime());

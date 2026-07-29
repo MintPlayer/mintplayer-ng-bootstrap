@@ -135,6 +135,21 @@ export class WeekView extends BaseView {
 
     // Render now indicator
     this.renderNowIndicator(days, slots);
+
+    this.applyGridRoles({
+      columnHeaderRow: ':scope > .scheduler-day-headers',
+      columnHeaders: '.scheduler-day-headers > .scheduler-day-header',
+      presentation: [
+        '.scheduler-time-gutter-space',
+        '.scheduler-time-grid',
+        '.scheduler-time-gutter',
+        '.scheduler-time-slot-label',
+        '.scheduler-days-container',
+        '.scheduler-events-container',
+      ],
+      rows: '.scheduler-day-column',
+    });
+    this.markToday();
   }
 
   update(state: SchedulerState): void {
@@ -270,17 +285,19 @@ export class WeekView extends BaseView {
     const inMoveMode = this.state.keyboardMoveEventId === event.id;
     eventEl.setAttribute('role', 'button');
     // Every event is in the Tab order (PRD §6.1) — Tab cycles through events
-    // in document order. Selected event still gets aria-current for SR cue.
+    // in document order.
     eventEl.setAttribute('tabindex', '0');
     eventEl.setAttribute(
       'aria-label',
       formatEventAriaLabel(event, null, this.state.options.timeFormat),
     );
-    if (inMoveMode) eventEl.setAttribute('aria-pressed', 'true');
-    if (isSelected) {
-      eventEl.setAttribute('aria-current', 'true');
-      eventEl.classList.add('selected');
-    }
+    // aria-pressed is the button's SELECTION state, always written (a missing
+    // token reads as not-a-toggle). aria-current was the wrong token for
+    // selection, and aria-selected is invalid on role="button"; move mode is
+    // a transient mode announced by the live region, not an attribute.
+    eventEl.setAttribute('aria-pressed', isSelected ? 'true' : 'false');
+    if (isSelected) eventEl.classList.add('selected');
+    void inMoveMode;
 
     // Calculate position
     const dayStart = new Date(part.start);
