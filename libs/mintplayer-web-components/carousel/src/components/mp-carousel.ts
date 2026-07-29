@@ -825,7 +825,7 @@ export class MpCarousel extends LitElement {
             for="s${i}"
             data-bs-target
             aria-label="Slide ${i + 1}"
-            aria-current=${i === index ? 'true' : nothing}
+            aria-current=${isBrowser && i === index ? 'true' : nothing}
             @click=${(e: Event) => this.#onIndicatorClick(i, e)}
           ></label>
         `)}

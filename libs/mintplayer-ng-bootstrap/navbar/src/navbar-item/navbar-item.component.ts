@@ -29,7 +29,7 @@ import { BS_DROPDOWN_MENU_CONTEXT } from '@mintplayer/ng-bootstrap/dropdown-menu
     @if (inMenu) {
       <ng-container [ngTemplateOutlet]="content" />
     } @else {
-      <mp-navbar-item [attr.active]="activeAttr()" [attr.disabled]="disabledAttr()">
+      <mp-navbar-item role="listitem" [attr.active]="activeAttr()" [attr.disabled]="disabledAttr()">
         <ng-container [ngTemplateOutlet]="content" />
       </mp-navbar-item>
     }

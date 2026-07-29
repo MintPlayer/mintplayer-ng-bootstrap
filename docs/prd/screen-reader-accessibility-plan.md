@@ -957,6 +957,31 @@ readable or focusable; every no-JS control is keyboard-operable; no role ships w
 owned children; no ARIA attribute states something false. Asserted in the existing
 `javaScriptEnabled: false` suites.
 
+- **Phase D as-built (beyond D1)** (2026-07-29): carousel adopts `inertRegions` (non-active cells
+  + both wrap clones; suspend during transitions AND live drags, resume re-declares from the
+  committed index) and the no-JS tiers gained the §5.6 visibility pair (hide delayed past the
+  ride/fade, reveal at 0s) — the nested-carousel e2e was updated to navigate the outer first,
+  since driving a carousel inside a hidden slide is now impossible BY CONTRACT. priority-nav's
+  measurement clone is statically `inert`. Tier-1 machines went native-first: tab-control's
+  clipped radio group is the control (native arrows switch tabs; the label's fake
+  role=tab/aria-selected/tabindex deleted — static aria-selected lies after one switch; panels
+  are labelled regions), priority-nav's More is a clipped disclosure checkbox (false
+  menu/menuitem/aria-haspopup claims dropped — it is APG disclosure navigation in both tiers),
+  mp-navbar's static chrome emits a plain checkbox with firstUpdated upgrading the live tier,
+  and mp-shell gained: resolved-state aria-expanded (never the inverted raw checkbox) synced on
+  toggle/state/resize, the visibility mirror via a `shell-open` SCSS mixin at every lever write,
+  in-shadow aria-controls, hamburger focus ring, reduced-motion guard, banner/main landmarks and
+  the repo's first skip link (JS tier only — a fragment link cannot reach a shadow id without
+  script). SSR chrome: the dropdown injector got its spec FIRST then a nesting-aware traversal
+  stamping menuitem/option (per-menu `mode`) on the item's first link/button with the item made
+  presentational — authored roles never overwritten; the carousel generator gates indicator
+  `aria-current` behind isBrowser (static chrome relies on the checked radio, which cannot go
+  stale); navbar items carry `role="listitem"` statically from all three wrappers plus an
+  idempotent connectedCallback for vanilla use. **Deviations:** the planned carousel
+  `slot="s{i}"` stamping is NOT done — it would empty `.nojs-cell` and kill the interactive
+  no-JS tier (the plan text predates that design); accordion `heading-level` stamping is moot
+  (D1 deleted the headings).
+
 ---
 
 ## Phase E — state, structure, live regions, validity

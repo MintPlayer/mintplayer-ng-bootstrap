@@ -193,20 +193,25 @@ export function carouselJsSuite(test: Test, expect: Expect, options: CarouselSui
         await goto(page);
         const outer = page.locator('mp-carousel[aria-label="Outer vertical"]');
         const inner = page.locator('mp-carousel[aria-label="Inner horizontal"]');
+        // The inner carousel lives in the outer's SECOND slide, which is
+        // hidden — and since Phase D, hidden slides are inert, so nothing in
+        // them can be focused or driven. That is the contract, not a bug:
+        // navigate the outer there first, like a keyboard user must.
+        await expect(outer.locator('.carousel-item[data-i="1"]').first()).toHaveAttribute('inert', '');
         // .first(): piercing locators reach into the nested carousel's shadow
         // too, so the outer's own viewport must be disambiguated by tree order.
+        await outer.locator('.carousel-inner').first().focus();
+        await page.keyboard.press('ArrowDown');
+        await expect(radio(outer, 1)).toBeChecked();
+
         await inner.locator('.carousel-inner').first().focus();
         await page.keyboard.press('ArrowRight');
         await expect(radio(inner, 1)).toBeChecked();
-        await expect(radio(outer, 0)).toBeChecked(); // outer untouched
+        await expect(radio(outer, 1)).toBeChecked(); // outer untouched
         // ArrowDown is off-axis for the inner and must not move it either;
         // it also must NOT leak into the outer (keydown target guard).
         await page.keyboard.press('ArrowDown');
         await expect(radio(inner, 1)).toBeChecked();
-        await expect(radio(outer, 0)).toBeChecked();
-        // The outer navigates from its own viewport (.first() — see above).
-        await outer.locator('.carousel-inner').first().focus();
-        await page.keyboard.press('ArrowDown');
         await expect(radio(outer, 1)).toBeChecked();
       });
     }

@@ -16,6 +16,14 @@ import { navbarItemStyles } from '../styles';
 export class MpNavbarItem extends MpNavbarElement {
   static override styles = [navbarItemStyles];
 
+  override connectedCallback(): void {
+    super.connectedCallback();
+    // The host sits inside the navbar's <ul>; a role-less custom element
+    // leaves that list with zero owned listitems. Wrappers stamp this
+    // STATICALLY (the DSD has no connectedCallback); this covers vanilla use.
+    if (!this.hasAttribute('role')) this.setAttribute('role', 'listitem');
+  }
+
   override render() {
     return html`<slot></slot>`;
   }
