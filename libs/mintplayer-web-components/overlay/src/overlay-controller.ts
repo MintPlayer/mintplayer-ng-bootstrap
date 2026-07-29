@@ -290,7 +290,8 @@ export class OverlayController implements ReactiveController {
 
   /** Move focus into the panel per `initialFocus`. Default is to leave it alone. */
   private moveFocusIn(): void {
-    const target = this.options.initialFocus ?? 'none';
+    let target = this.options.initialFocus ?? 'none';
+    if (typeof target === 'function') target = target() ?? 'first';
     if (target === 'none') return;
 
     const panel = this.options.panel();

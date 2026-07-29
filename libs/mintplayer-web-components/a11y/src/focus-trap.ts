@@ -1,7 +1,13 @@
 import { deepActiveElement } from './focus-restore';
 
-/** Where focus goes when a trap activates. `'none'` means the caller manages it. */
-export type InitialFocusTarget = HTMLElement | 'first' | 'self' | 'none';
+/**
+ * Where focus goes when a trap activates. `'none'` means the caller manages it.
+ * The callback form exists because dialog content is usually rendered lazily —
+ * a date picker's "selected date cell" does not exist until the popup renders,
+ * so a static element reference captured at construction would always be stale.
+ * Resolved at activation time; a null return degrades to `'first'`.
+ */
+export type InitialFocusTarget = HTMLElement | (() => HTMLElement | null) | 'first' | 'self' | 'none';
 
 export interface FocusTrapOptions {
   /** Default `'first'`. */
@@ -64,7 +70,8 @@ export class FocusTrap {
     this.active = true;
     region.ownerDocument.addEventListener('keydown', this.onKeyDown, true);
 
-    const target = this.options.initialFocus ?? 'first';
+    let target = this.options.initialFocus ?? 'first';
+    if (typeof target === 'function') target = target() ?? 'first';
     if (target instanceof HTMLElement) {
       target.focus({ preventScroll: true });
     } else if (target === 'self') {
