@@ -1,10 +1,15 @@
 import { TestBed } from '@angular/core/testing';
+import { dismissStack } from '@mintplayer/web-components/a11y';
 import { BsOverlayStackService } from './overlay-stack.service';
 
 describe('BsOverlayStackService', () => {
   let stack: BsOverlayStackService;
 
   beforeEach(() => {
+    // The service is a facade over the document-scoped module singleton, so a
+    // fresh TestBed injector does NOT mean a fresh stack — frames pushed by an
+    // earlier test (or another spec file) survive into this one.
+    dismissStack.resetForTesting();
     TestBed.configureTestingModule({});
     stack = TestBed.inject(BsOverlayStackService);
   });
