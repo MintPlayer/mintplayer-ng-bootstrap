@@ -1,5 +1,12 @@
 :host {
   display: inline-block;
+  // Without this the host's shrink-to-fit floor is the controls row's
+  // intrinsic width (the text input's default size ≈ 180px + two buttons),
+  // so on narrow viewports the pad overflowed the page even though the
+  // canvas was capped. Capping the HOST lets the flex row compress the
+  // input (min-width: 0) and the canvas cap resolve against a fitting box.
+  max-width: 100%;
+  box-sizing: border-box;
   border: 1px solid var(--bs-border-color, #dee2e6);
   border-radius: var(--bs-border-radius, 0.375rem);
   background-color: var(--bs-body-bg, #fff);

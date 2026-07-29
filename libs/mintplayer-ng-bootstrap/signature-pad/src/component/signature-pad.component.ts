@@ -35,7 +35,11 @@ void MpSignaturePadElement;
       (signature-change)="onSignatureChange($event)"
     ></mp-signature-pad>
   `,
-  styles: [':host { display: inline-block; }'],
+  // max-width mirrors the WC host's own cap: an inline-block's shrink-to-fit
+  // floor is its content's intrinsic width, which percentage caps on the WC
+  // cannot influence — without this the wrapper holds the pad at ~310px on
+  // narrow viewports and the page scrolls horizontally.
+  styles: [':host { display: inline-block; max-width: 100%; }'],
   imports: [BsForwardAriaDirective],
   schemas: [CUSTOM_ELEMENTS_SCHEMA],
   changeDetection: ChangeDetectionStrategy.OnPush,

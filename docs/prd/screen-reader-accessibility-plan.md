@@ -768,6 +768,11 @@ The largest Critical class. Several fixes already exist elsewhere in the same fi
   registration); React wrapper is `createComponent` (exempt from the React runtime guard by
   construction); Vue SFC is `defineModel<Signature>` + `v-bind="$attrs"` (auto-covered by the
   static invariant). No SSR chrome — same visible-only-after-hydration tier as dock/scheduler.
+  Responsive trap found by live measurement at a 218px viewport: an inline-block WC host's
+  shrink-to-fit floor is its content's intrinsic min width (here the controls row's text input),
+  and percentage caps on inner shadow nodes cannot lower it — the HOST needs `max-width: 100%`,
+  and so does any wrapper host around it (`bs-signature-pad`), because intrinsic sizing ignores
+  the inner percentage cap at every level.
 
 **Remaining in C (the ONLY C work left):** C's acceptance — the keyboard-only Playwright
 walkthrough per affected component (no interaction leaves activeElement on <body>; every demo
