@@ -352,8 +352,11 @@ export class MpCalendarElement extends LitElement {
 
     return html`
       <table role="grid" aria-labelledby="${this.monthLabelId}">
-        <tr>
-          <td>
+        <!-- presentation: the month-nav toolbar shares the table's columns
+             for LAYOUT only — it is not grid content, and leaving it roled
+             put button rows inside the date grid's row chain. -->
+        <tr role="presentation">
+          <td role="presentation">
             <button
               type="button"
               class="chevron-btn"
@@ -362,10 +365,10 @@ export class MpCalendarElement extends LitElement {
               .innerHTML="${CHEVRON_LEFT_SVG}"
             ></button>
           </td>
-          <td colspan="6" id="${this.monthLabelId}" class="month-label" aria-live="polite">
+          <td role="presentation" colspan="6" id="${this.monthLabelId}" class="month-label" aria-live="polite">
             ${this.monthLabel(month)}
           </td>
-          <td>
+          <td role="presentation">
             <button
               type="button"
               class="chevron-btn"
@@ -376,7 +379,9 @@ export class MpCalendarElement extends LitElement {
           </td>
         </tr>
         <tr role="row">
-          <th aria-hidden="true"></th>
+          <!-- The week-number column's header: hidden it left every
+               rowheader in an unlabelled column. Visually empty, spoken. -->
+          <th scope="col" role="columnheader"><span class="visually-hidden">Week</span></th>
           ${weekdays.map(
             (d) => html`<th scope="col" role="columnheader" title="${d.long}">${d.short}</th>`,
           )}

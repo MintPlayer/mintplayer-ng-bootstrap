@@ -130,6 +130,10 @@ export class MpCarousel extends LitElement {
       this.#reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
     }
     this.#reducedMotion?.addEventListener('change', this.#onReducedMotionChange);
+    this.addEventListener('pointerenter', this.#onPointerEnter);
+    this.addEventListener('pointerleave', this.#onPointerLeave);
+    this.addEventListener('focusin', this.#onFocusIn);
+    this.addEventListener('focusout', this.#onFocusOut);
 
     // Re-arm observers on reconnect (fresh connect defers to firstUpdated,
     // where the shadow chrome exists).
@@ -143,6 +147,10 @@ export class MpCarousel extends LitElement {
   override disconnectedCallback(): void {
     super.disconnectedCallback();
     this.#reducedMotion?.removeEventListener('change', this.#onReducedMotionChange);
+    this.removeEventListener('pointerenter', this.#onPointerEnter);
+    this.removeEventListener('pointerleave', this.#onPointerLeave);
+    this.removeEventListener('focusin', this.#onFocusIn);
+    this.removeEventListener('focusout', this.#onFocusOut);
     this.#mutations?.disconnect();
     this.#resize?.disconnect();
     this.#arbiter?.abort();
@@ -631,10 +639,47 @@ export class MpCarousel extends LitElement {
   #syncAutoplay(): void {
     this.#clearAutoplay();
     const interval = this.interval;
-    if (interval > 0 && !this.paused && !(this.#reducedMotion?.matches ?? false) && this.isConnected) {
+    if (
+      interval > 0 &&
+      !this.paused &&
+      !this.#hoverSuspended &&
+      !this.#focusSuspended &&
+      !(this.#reducedMotion?.matches ?? false) &&
+      this.isConnected
+    ) {
       this.#autoplayTimer = setInterval(() => this.next(), interval);
     }
   }
+
+  /**
+   * Rotation pauses while the pointer hovers or focus is inside (WCAG 2.2.2's
+   * baseline for auto-updating content). Deliberately NOT the public `paused`
+   * state and never emitted: leaving resumes rotation exactly as configured.
+   */
+  #hoverSuspended = false;
+  #focusSuspended = false;
+
+  #onPointerEnter = (): void => {
+    this.#hoverSuspended = true;
+    this.#syncAutoplay();
+  };
+
+  #onPointerLeave = (): void => {
+    this.#hoverSuspended = false;
+    this.#syncAutoplay();
+  };
+
+  #onFocusIn = (): void => {
+    this.#focusSuspended = true;
+    this.#syncAutoplay();
+  };
+
+  #onFocusOut = (event: FocusEvent): void => {
+    const next = event.relatedTarget;
+    if (next instanceof Node && (next === this || this.contains(next) || this.renderRoot?.contains(next))) return;
+    this.#focusSuspended = false;
+    this.#syncAutoplay();
+  };
 
   #clearAutoplay(): void {
     if (this.#autoplayTimer !== null) {
@@ -776,6 +821,24 @@ export class MpCarousel extends LitElement {
 
     return html`
       ${unsafeHTML(`<style>${this.#perIndexCss(n)}</style>`)}
+      ${showPlayPause
+        ? html`
+            <div class="carousel-play-pause" part="play-pause">
+              <slot name="play-pause">
+                <button
+                  type="button"
+                  class="carousel-play-pause-btn ${this.paused ? 'carousel-play-pause-paused' : 'carousel-play-pause-playing'}"
+                  aria-pressed=${String(this.paused)}
+                  aria-label=${this.paused ? 'Start automatic slide show' : 'Stop automatic slide show'}
+                  @click=${this.togglePaused}
+                >
+                  <span class="carousel-play-pause-icon" aria-hidden="true"></span>
+                </button>
+              </slot>
+            </div>
+          `
+        : nothing}
+
       ${map(range(n), (i) => html`
         <input
           type="radio"
@@ -854,23 +917,6 @@ export class MpCarousel extends LitElement {
           </label>
         `)}
       </div>
-      ${showPlayPause
-        ? html`
-            <div class="carousel-play-pause" part="play-pause">
-              <slot name="play-pause">
-                <button
-                  type="button"
-                  class="carousel-play-pause-btn ${this.paused ? 'carousel-play-pause-paused' : 'carousel-play-pause-playing'}"
-                  aria-pressed=${String(this.paused)}
-                  aria-label=${this.paused ? 'Start automatic slide show' : 'Stop automatic slide show'}
-                  @click=${this.togglePaused}
-                >
-                  <span class="carousel-play-pause-icon" aria-hidden="true"></span>
-                </button>
-              </slot>
-            </div>
-          `
-        : nothing}
     `;
   }
 }
