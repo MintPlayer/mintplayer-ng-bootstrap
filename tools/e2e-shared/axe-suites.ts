@@ -97,17 +97,26 @@ export function axeAuditSuite(test: Test, expect: Expect, routes: AxeRoute[]) {
 }
 
 /**
- * The no-JS pass: same gate over the server-rendered tier. Caller's spec file
- * applies `test.use({ javaScriptEnabled: false })` at file level. Load state
- * only — interactivity without JS is covered by the dedicated nojs suites.
+ * The no-JS pass: same gate over the server-rendered tier. axe is a JS
+ * engine, so it cannot run in a javaScriptEnabled:false page at all
+ * ("execution context destroyed") — instead the SSR payload is fetched
+ * raw, its scripts stripped (so nothing hydrates), and the static markup
+ * is re-parsed in a JS-ENABLED page. What axe sees is byte-for-byte the
+ * no-JS user's DOM, DSD included (setContent runs the HTML parser, which
+ * attaches declarative shadow roots). Load state only — no-JS
+ * interactivity is covered by the dedicated nojs behavior suites.
  */
 export function axeNojsSuite(test: Test, expect: Expect, routes: AxeRoute[]) {
   test.describe('axe gate (no JS, SSR tier)', () => {
     test.slow();
 
     const suites = routes.map((route) => {
-      test(route.path, async ({ page }) => {
-        await page.goto(route.path);
+      test(route.path, async ({ page, request, baseURL }) => {
+        const response = await request.get(route.path);
+        const html = (await response.text())
+          .replace(/<script\b[^>]*>[\s\S]*?<\/script>/gi, '')
+          .replace(/<head([^>]*)>/i, `<head$1><base href="${baseURL}/">`);
+        await page.setContent(html, { waitUntil: 'load' });
         await audit(page, route, expect);
       });
       return route.path;

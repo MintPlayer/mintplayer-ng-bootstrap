@@ -72,6 +72,11 @@ export class MpTreeview extends LitElement {
       ...(super.observedAttributes ?? []),
       'selection-mode',
       'hide-borders',
+      // Copied onto the in-shadow role=tree node — the host is generic (the
+      // tree role CANNOT live on the host: the live-announcer region would
+      // then be an owned child of the tree, which is invalid ARIA).
+      'aria-label',
+      'input-label',
     ];
   }
 
@@ -214,40 +219,29 @@ export class MpTreeview extends LitElement {
     } else if (name === 'hide-borders') {
       this._hideBorders = newValue !== null;
       this.requestUpdate();
+    } else if (name === 'aria-label') {
+      this.requestUpdate();
+    } else if (name === 'input-label') {
+      this._inputLabel = newValue;
+      this.requestUpdate();
     }
   }
 
-  override connectedCallback(): void {
-    super.connectedCallback();
-    this.#syncTreeRole();
-  }
+  private _inputLabel: string | null = null;
 
   /**
-   * role=tree only while there are treeitems to own — a childless tree is
-   * invalid ARIA (axe aria-required-children, critical), and the empty state
-   * is real: lazy roots before first load, or a consumer-cleared tree.
-   * Never touches a consumer-set role (tracked by writing ours only when the
-   * attribute is absent or was last written by us).
+   * Accessible name for the in-shadow role=tree node (tier-2 naming: the
+   * host is generic, so a consumer cannot name the tree any other way).
+   * A host `aria-label` wins over this, per the B-phase contract.
    */
-  #wroteRole = false;
-  #syncTreeRole(): void {
-    const hasItems = this._items.length > 0;
-    if (hasItems) {
-      if (!this.hasAttribute('role')) {
-        this.setAttribute('role', 'tree');
-        this.#wroteRole = true;
-      }
-    } else if (this.#wroteRole && this.getAttribute('role') === 'tree') {
-      this.removeAttribute('role');
-      this.#wroteRole = false;
-    }
+  get inputLabel(): string | null {
+    return this._inputLabel;
   }
-
-  protected override updated(): void {
-    this.#syncTreeRole();
-    // Live (PRD 11a): selection-mode can change at runtime.
-    if (this._selectionMode === 'multiple') this.setAttribute('aria-multiselectable', 'true');
-    else this.removeAttribute('aria-multiselectable');
+  set inputLabel(value: string | null) {
+    const next = value ?? null;
+    if (this._inputLabel === next) return;
+    this._inputLabel = next;
+    this.requestUpdate();
   }
 
   override render(): TemplateResult {
@@ -257,9 +251,19 @@ export class MpTreeview extends LitElement {
       this._focusedId = this._visibleOrder[0].id;
     }
 
+    // The tree role lives on the in-shadow <ul>, NOT the host: the host owns
+    // its whole shadow through transparent wrappers, so a host role=tree
+    // would make the live-announcer region an owned child of the tree —
+    // invalid ARIA (axe aria-required-children; a live region's global
+    // aria-* keep it from ever being presentational). A childless tree is
+    // equally invalid, so the role appears only once there are treeitems.
     return html`
       <div class="treeview-root">
-        <ul role="presentation">
+        <ul
+          role=${this._items.length > 0 ? 'tree' : 'presentation'}
+          aria-label=${this.getAttribute('aria-label') ?? this._inputLabel ?? nothing}
+          aria-multiselectable=${this._selectionMode === 'multiple' ? 'true' : nothing}
+        >
           ${this.renderNodes(this._items, 1)}
         </ul>
       </div>

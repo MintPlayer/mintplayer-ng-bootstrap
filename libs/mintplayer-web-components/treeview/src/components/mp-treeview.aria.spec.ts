@@ -11,7 +11,9 @@ import type { TreeNode } from '../types';
  * directions and — where the property is public — through a programmatic write
  * rather than only a synthetic event.
  *
- * The host role is a real attribute here (set in `connectedCallback`, not via
+ * The tree role lives on the in-shadow <ul> — the generic host owns its whole
+ * shadow, so a host role=tree would make the live-announcer region an owned
+ * child of the tree (invalid ARIA). It is a real attribute (not via
  * `ElementInternals`), so unlike the HostAriaController components it IS
  * observable in jsdom.
  */
@@ -60,20 +62,25 @@ describe('mp-treeview ARIA roles and structure', () => {
     document.body.innerHTML = '';
   });
 
-  it('takes role="tree" on the host, and never clobbers a consumer role', async () => {
+  it('puts role="tree" on the in-shadow list, named from the host, and leaves a consumer host role alone', async () => {
     const el = await mount(TREE);
-    expect(el.getAttribute('role')).toBe('tree');
-
+    el.setAttribute('aria-label', 'Files');
+    await flush(el);
+    const tree = el.shadowRoot!.querySelector('.treeview-root > ul')!;
+    expect(tree.getAttribute('role')).toBe('tree');
+    expect(tree.getAttribute('aria-label')).toBe('Files');
+    // The host stays generic — a consumer-set host role is never touched.
+    expect(el.hasAttribute('role')).toBe(false);
     document.body.innerHTML = '<mp-treeview role="listbox"></mp-treeview>';
     const custom = document.querySelector('mp-treeview') as MpTreeview;
-    custom.items = TREE;
     await flush(custom);
     expect(custom.getAttribute('role')).toBe('listbox');
+    // A childless tree is invalid ARIA — the list stays presentational.
+    expect(custom.shadowRoot!.querySelector('.treeview-root > ul')!.getAttribute('role')).toBe('presentation');
   });
 
-  it('keeps the list plumbing out of the a11y tree: presentation root, role="none" items, role="group" only for an expanded parent', async () => {
+  it('keeps the list plumbing out of the a11y tree: role="none" items, role="group" only for an expanded parent', async () => {
     const el = await mount(TREE);
-    expect(el.shadowRoot!.querySelector('.treeview-root > ul')!.getAttribute('role')).toBe('presentation');
     expect(el.shadowRoot!.querySelectorAll('li[role="none"]').length).toBe(3);
     expect(el.shadowRoot!.querySelectorAll('ul[role="group"]').length).toBe(0);
 
@@ -156,18 +163,19 @@ describe('mp-treeview ARIA state transitions', () => {
     expect(rows(el).every((r) => r.hasAttribute('aria-selected'))).toBe(true);
   });
 
-  it('toggles host aria-multiselectable with the selection mode, live', async () => {
+  it('toggles aria-multiselectable on the tree node with the selection mode, live', async () => {
     const el = await mount(TREE);
-    expect(el.hasAttribute('aria-multiselectable')).toBe(false);
+    const tree = () => el.shadowRoot!.querySelector('.treeview-root > ul')!;
+    expect(tree().hasAttribute('aria-multiselectable')).toBe(false);
 
     el.selectionMode = 'multiple';
     await flush(el);
-    expect(el.getAttribute('aria-multiselectable')).toBe('true');
+    expect(tree().getAttribute('aria-multiselectable')).toBe('true');
 
     // Back down through the attribute channel the wrappers use.
     el.setAttribute('selection-mode', 'single');
     await flush(el);
-    expect(el.hasAttribute('aria-multiselectable')).toBe(false);
+    expect(tree().hasAttribute('aria-multiselectable')).toBe(false);
   });
 
   it('keeps exactly one tab stop, and moves it with ArrowDown', async () => {
