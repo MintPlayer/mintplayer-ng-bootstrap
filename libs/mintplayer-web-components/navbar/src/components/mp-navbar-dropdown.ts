@@ -46,10 +46,11 @@ export class MpNavbarDropdown extends MpNavbarElement {
 
   override attributeChangedCallback(name: string, oldValue: string | null, newValue: string | null): void {
     super.attributeChangedCallback(name, oldValue, newValue);
+    // aria-expanded is DERIVED in render() (PRD 11a: one writer, correct at
+    // every moment including the first paint and under SSR). This hook only
+    // schedules the re-render that re-evaluates it.
     if (name === 'data-open' || name === 'data-menu-open') {
-      this.renderRoot
-        ?.querySelector('.dropdown-toggle')
-        ?.setAttribute('aria-expanded', String(this.#anyOpen));
+      this.requestUpdate();
     }
   }
 
@@ -212,7 +213,7 @@ export class MpNavbarDropdown extends MpNavbarElement {
         role="button"
         tabindex="0"
         aria-haspopup="menu"
-        aria-expanded="false"
+        aria-expanded=${this.#anyOpen ? 'true' : 'false'}
         @mousedown=${this.#onTriggerPress}
         @keydown=${this.#onKeydown}
       ><slot name="label"></slot></a>
