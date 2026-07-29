@@ -186,6 +186,13 @@ export class MpCalendarElement extends LitElement {
     return `${m.charAt(0).toUpperCase()}${m.slice(1)} ${month.getFullYear()}`;
   }
 
+  /** Focus the grid = focus its roving cell (dialog initial focus calls host.focus()). */
+  override focus(options?: FocusOptions): void {
+    const cell = this.renderRoot.querySelector<HTMLElement>('[tabindex="0"]');
+    if (cell) cell.focus(options);
+    else super.focus(options);
+  }
+
   /**
    * The cell that should carry tabindex="0". One per month — focused, else
    * selected, else today, else first enabled day. Mirrors APG convention.

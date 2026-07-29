@@ -96,6 +96,13 @@ export class MpTimepickerElement extends LitElement {
     trigger: () => this.triggerEl ?? null,
     panel: () => this.popupEl ?? null,
     panelWidth: 'anchor-min',
+    // Opening moves focus onto the time list's active option (its focus()
+    // override lands there). A slotted consumer list wins over the default.
+    initialFocus: () => {
+      const slot = this.popupEl?.querySelector<HTMLSlotElement>('slot[name="time-list"]');
+      const assigned = slot?.assignedElements()[0] as HTMLElement | undefined;
+      return assigned ?? this.popupEl?.querySelector<HTMLElement>('mp-time-list') ?? null;
+    },
     onOpen: () =>
       this.dispatchEvent(new CustomEvent('opened', { bubbles: true, composed: true })),
     onClose: () =>

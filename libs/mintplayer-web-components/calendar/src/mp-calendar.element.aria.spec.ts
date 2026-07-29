@@ -259,3 +259,28 @@ describe('mp-calendar — properties + events', () => {
     expect(findCell(el, 2026, 4, 25)!.getAttribute('aria-disabled')).toBe('true');
   });
 });
+
+describe('mp-calendar — host focus() delegates to the roving cell', () => {
+  let el: MpCalendarElement;
+  beforeEach(async () => {
+    el = await mount();
+  });
+  afterEach(() => el.remove());
+
+  it('focus() lands on the tabindex="0" cell (the selected date)', () => {
+    el.focus();
+    const active = shadow(el).activeElement as HTMLElement;
+    expect(active).not.toBeNull();
+    expect(active.getAttribute('tabindex')).toBe('0');
+    expect(active.id).toContain('-cell-2026-4-15');
+  });
+
+  it('focus() with no selection lands on today/first-enabled cell, never <body>', async () => {
+    el.selectedDate = null;
+    await flush(el);
+    el.focus();
+    expect(document.activeElement).toBe(el);
+    const active = shadow(el).activeElement as HTMLElement;
+    expect(active?.getAttribute('tabindex')).toBe('0');
+  });
+});

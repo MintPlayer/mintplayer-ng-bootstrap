@@ -99,6 +99,13 @@ export class MpDatepickerElement extends LitElement {
     trigger: () => this.triggerEl ?? null,
     panel: () => this.popupEl ?? null,
     panelWidth: 'anchor-min',
+    // APG Date Picker Dialog: opening moves focus onto the calendar grid's
+    // roving cell. A slotted consumer calendar wins over the shadow default.
+    initialFocus: () => {
+      const slot = this.popupEl?.querySelector<HTMLSlotElement>('slot[name="calendar"]');
+      const assigned = slot?.assignedElements()[0] as HTMLElement | undefined;
+      return assigned ?? this.popupEl?.querySelector<HTMLElement>('mp-calendar') ?? null;
+    },
     onOpen: () => {
       this.dispatchEvent(new CustomEvent('opened', { bubbles: true, composed: true }));
     },
