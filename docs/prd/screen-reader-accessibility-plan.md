@@ -1,8 +1,8 @@
 # Plan — screen-reader accessibility across the four libraries
 
-Status: **Phases A, B and C's implementation landed (B in 10 milestones, C in C1–C8 — see the
-as-built blocks); Phase 0 gates all cleared (0.1b + 0.3b deferred as noted); C's acceptance
-walkthrough plus D–G outstanding** — 2026-07-29. Scope grew mid-C: the signature-pad remediation
+Status: **Phases A, B and C COMPLETE (C including its acceptance walkthrough — see the as-built
+blocks); Phase 0 gates all cleared (0.1b + 0.3b deferred as noted); D–G outstanding** —
+2026-07-29. Scope grew mid-C: the signature-pad remediation
 became a full WC migration (decision **D6**, PRD §11). Companion PRD:
 `docs/prd/screen-reader-accessibility.md` (findings, design rationale, decisions D1–D6 in §11, and
 the live-state principle in §11a).
@@ -777,9 +777,30 @@ The largest Critical class. Several fixes already exist elsewhere in the same fi
   and so does any wrapper host around it (`bs-signature-pad`), because intrinsic sizing ignores
   the inner percentage cap at every level.
 
-**Remaining in C (the ONLY C work left):** C's acceptance — the keyboard-only Playwright
-walkthrough per affected component (no interaction leaves activeElement on <body>; every demo
-keymap claim true).
+- **C acceptance — DONE** (`b8e9f6f3`, `5bea43d3`, datatable continuity in the walkthrough's first
+  commit): `keyboard-walkthrough.spec.ts` in the ng e2e project runs the invariant (no interaction
+  strands activeElement on `<body>`; mouse-visible controls focusable + activatable) over the
+  C-affected components that had no browser keyboard coverage; components with dedicated e2e specs
+  are deliberately not repeated. 20 pass / 2 data-dependent skips, Chromium + Firefox. The
+  walkthrough paid for itself four times over:
+  1. **mp-datatable stranded focus on data swaps** — file-manager Enter-navigation destroyed the
+     focused row; `FocusRestoreController` over the keyed rows fixes it (same key → same index →
+     table), which also covers external paging. §4.10's two contested file-manager panel claims
+     (arrow row focus, Enter activation) verified TRUE live.
+  2. **tile-manager Escape now genuinely reverts** (the §4.10 triple false promise): move mode
+     snapshots the layout at entry; Escape restores it AND emits the restore; announcement says
+     "cancelled and reverted".
+  3. **dock keyboard move announces the actual outcome** — reads handleDrop's `dropHandled`
+     instead of announcing success after a void call with silent failure paths.
+  4. **[bsContextMenu] Shift+F10 was unusable in practice** — three stacked defects: non-focusable
+     demo host; `scroll-behavior: smooth` leaving the trigger's scroll-into-view animating at open
+     so the close-on-scroll strategy dismissed the menu a frame later (fixed: instant scroll-cancel
+     at open + `close({ threshold })`); focus entry racing the roving-focus init (fixed: deferred
+     role-based entry with preventScroll, the BsDropdownToggleDirective treatment).
+  Remaining §4.10 rows are owned by later phases: the wc-aria PRD 5.7/8.3 keymap-describedby items
+  land with E's structure work; the four stale-prose rows land with G's docs pass.
+
+**Phase C is COMPLETE — implementation (C1–C8) and acceptance.**
 
 Old item list for reference: C7 FocusRestore adoption (dock, scheduler
 views via BaseView, splitter, tree-select chips, query-builder _pendingRefocusId, bs-alert,
