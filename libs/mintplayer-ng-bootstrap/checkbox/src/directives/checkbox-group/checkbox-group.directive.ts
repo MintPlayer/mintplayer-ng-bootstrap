@@ -1,4 +1,4 @@
-import { contentChildren, Directive, effect, forwardRef, input, signal } from '@angular/core';
+import { contentChildren, Directive, effect, ElementRef, forwardRef, inject, input, signal } from '@angular/core';
 import { ControlValueAccessor, NG_VALUE_ACCESSOR } from '@angular/forms';
 import { BsCheckboxComponent } from '../../component/checkbox.component';
 
@@ -32,7 +32,14 @@ import { BsCheckboxComponent } from '../../component/checkbox.component';
 })
 export class BsCheckboxGroupDirective implements ControlValueAccessor {
 
+  private readonly host = inject(ElementRef).nativeElement as HTMLElement;
+
   readonly name = input<string | null>(null);
+
+  /** Accessible name for the group (written as `aria-label`). A bare
+   *  `role="group"` is announced as nothing at all; the label is what makes
+   *  the grouping audible ("Toppings, group"). */
+  readonly label = input<string | null>(null);
   // Wrap in forwardRef: BsCheckboxComponent imports this directive (for
   // `inject(BsCheckboxGroupDirective, {...})`), so the two modules form a
   // cycle. Whichever side webpack/vite evaluates first sees `undefined` for
@@ -54,6 +61,18 @@ export class BsCheckboxGroupDirective implements ControlValueAccessor {
   protected onTouched?: () => void;
 
   constructor() {
+    // role="group" so the checkboxes announce as one named cluster — but only
+    // on hosts whose implicit role is generic. Structural hosts (the tbody
+    // row-selection shape) have load-bearing native semantics that a group
+    // role would destroy, and a consumer-set role always wins.
+    const structural = ['TABLE', 'THEAD', 'TBODY', 'TFOOT', 'TR', 'UL', 'OL', 'LI'];
+    if (!this.host.hasAttribute('role') && !structural.includes(this.host.tagName)) {
+      this.host.setAttribute('role', 'group');
+    }
+    effect(() => {
+      const label = this.label();
+      if (label !== null) this.host.setAttribute('aria-label', label);
+    });
     effect(() => {
       const arr = this.currentValue();
       this.checkboxes().forEach(cb => {

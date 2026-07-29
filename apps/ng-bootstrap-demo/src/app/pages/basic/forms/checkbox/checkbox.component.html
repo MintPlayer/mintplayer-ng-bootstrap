@@ -92,7 +92,7 @@
     </div>
     <div bsRow>
         <div [md]="6">
-            <div bsCheckboxGroup name="toppings" [(ngModel)]="toppings">
+            <div bsCheckboxGroup name="toppings" label="Toppings" [(ngModel)]="toppings">
                 <bs-checkbox value="cheese" class="me-3">Cheese</bs-checkbox>
                 <bs-checkbox value="mushroom" class="me-3">Mushroom</bs-checkbox>
                 <bs-checkbox value="olive" class="me-3">Olive</bs-checkbox>
@@ -117,7 +117,7 @@
     </div>
     <div bsRow>
         <div [md]="6">
-            <div bsCheckboxGroup name="toppings" [formControl]="toppingsReactive">
+            <div bsCheckboxGroup name="toppings" label="Toppings" [formControl]="toppingsReactive">
                 <bs-checkbox value="cheese" class="me-3">Cheese</bs-checkbox>
                 <bs-checkbox value="mushroom" class="me-3">Mushroom</bs-checkbox>
                 <bs-checkbox value="olive" class="me-3">Olive</bs-checkbox>

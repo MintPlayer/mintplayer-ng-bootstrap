@@ -48,9 +48,9 @@ let instanceCounter = 0;
  * Native one-of-N behaviour relies on multiple inputs sharing a `name` in
  * the same scope. Each `<mp-radio>` keeps its `<input>` inside its own
  * shadow root, so the browser cannot auto-uncheck a sibling for us. A
- * coordinating parent (e.g. the Angular `[bsRadioGroup]` directive or a
- * future `<mp-radio-group>` WC) must listen for `change` and update the
- * other radios' `checked` properties.
+ * coordinating parent — `<mp-radio-group>`, or the Angular `[bsRadioGroup]`
+ * directive on hosts where that element can't be used — must listen for
+ * `change` and update the other radios' `checked` properties.
  *
  * Emits `change` with `detail: { checked, value }` when this radio
  * transitions to the checked state.
@@ -180,6 +180,25 @@ export class MpRadio extends LitElement {
     this.requestUpdate();
   }
 
+  private _groupTabIndex: number | null = null;
+
+  /**
+   * Roving tab stop, written by an enclosing `<mp-radio-group>`. With
+   * delegatesFocus a tabindex on the HOST cannot take the inner input out of
+   * the tab order — the input's own tabindex is the only lever, and it lives
+   * behind the shadow boundary, hence this property. Coordination state, not
+   * author API: property-only, no attribute.
+   */
+  get groupTabIndex(): number | null {
+    return this._groupTabIndex;
+  }
+  set groupTabIndex(value: number | null) {
+    const next = value ?? null;
+    if (this._groupTabIndex === next) return;
+    this._groupTabIndex = next;
+    this.requestUpdate();
+  }
+
   override attributeChangedCallback(
     name: string,
     oldValue: string | null,
@@ -254,6 +273,7 @@ export class MpRadio extends LitElement {
           aria-required=${this.hasAttribute('required') ? 'true' : nothing}
           name=${this._name ?? nothing}
           value=${this._value ?? nothing}
+          tabindex=${this._groupTabIndex ?? nothing}
           aria-label=${this.getAttribute('aria-label') ?? this._inputLabel ?? nothing}
           @change=${this.onInputChange}
         />
@@ -275,6 +295,7 @@ export class MpRadio extends LitElement {
           aria-required=${this.hasAttribute('required') ? 'true' : nothing}
         name=${this._name ?? nothing}
         value=${this._value ?? nothing}
+        tabindex=${this._groupTabIndex ?? nothing}
         aria-label=${this.getAttribute('aria-label') ?? this._inputLabel ?? nothing}
         @change=${this.onInputChange}
       />

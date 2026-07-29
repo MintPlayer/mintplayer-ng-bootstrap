@@ -1,23 +1,28 @@
-import { contentChildren, Directive, effect, forwardRef, input, signal } from '@angular/core';
+import { contentChildren, Directive, effect, ElementRef, forwardRef, inject, input, signal } from '@angular/core';
 import { ControlValueAccessor, NG_VALUE_ACCESSOR } from '@angular/forms';
 import type { MpRadio } from '@mintplayer/web-components/radio';
+import type { RadioGroupChangeEventDetail } from '@mintplayer/web-components/radio-group';
 import { BsRadioComponent } from '../../component/radio.component';
+
+// Side-effect: registers <mp-radio-group>, the preferred host element (below).
+import '@mintplayer/web-components/radio-group';
 
 /**
  * Groups N `<bs-radio>` children into a single-select FormControl whose
  * value is the selected radio's `value()`. The group owns the shared
- * `[name]` (radios don't carry their own).
+ * `[name]` (radios don't carry their own). Acts as its own
+ * `ControlValueAccessor` — bind `[formControl]` / `[(ngModel)]` on the
+ * element carrying `[bsRadioGroup]`.
  *
- * Each `<bs-radio>` renders an `<mp-radio>` WC; each WC keeps its own
- * `<input type="radio">` inside its own shadow root, so the browser's
- * native one-of-N (auto-unchecking siblings on selection) does not fire
- * across `<mp-radio>` boundaries. This directive coordinates explicitly:
- * on every bubbled `change`, the originating WC is identified by the
- * event target, every other radio's `checked` property is set to `false`,
- * and the new FormControl value is emitted.
- *
- * Acts as its own `ControlValueAccessor` — bind `[formControl]` /
- * `[(ngModel)]` on the element carrying `[bsRadioGroup]`.
+ * Host it on `<mp-radio-group>` where the markup allows: the WC supplies
+ * `role="radiogroup"`, the roving tab stop, arrow move-and-select and
+ * exclusivity, and this directive is only the CVA bridge (it listens for
+ * the WC's `group-change`, which is the ONLY signal a keyboard-driven
+ * selection produces — the WC checks radios programmatically, so no
+ * `change` bubbles). On any other host (a `<tbody>`, a `<bs-button-group>`)
+ * the WC element cannot be used, and this directive coordinates the
+ * one-of-N itself on bubbled `change` — shadow roots keep the browser's
+ * native auto-uncheck from ever firing across `<mp-radio>` boundaries.
  */
 @Directive({
   selector: '[bsRadioGroup]',
@@ -29,6 +34,7 @@ import { BsRadioComponent } from '../../component/radio.component';
   }],
   host: {
     '(change)': 'onChildChange($event)',
+    '(group-change)': 'onGroupChange($event)',
     // focusout is composed: the shadow input's blur reaches the host. The
     // stored onTouched was never CALLED before, which kept every
     // invalid-after-touched mirror dead (audit 4.9 prerequisite).
@@ -36,6 +42,8 @@ import { BsRadioComponent } from '../../component/radio.component';
   },
 })
 export class BsRadioGroupDirective implements ControlValueAccessor {
+
+  private readonly host = inject(ElementRef).nativeElement as HTMLElement;
 
   readonly name = input<string | null>(null);
   // Wrap in forwardRef: BsRadioComponent imports this directive (for
@@ -70,7 +78,18 @@ export class BsRadioGroupDirective implements ControlValueAccessor {
     });
   }
 
+  /** Keyboard/pointer selection routed through an `<mp-radio-group>` host. */
+  onGroupChange(ev: Event) {
+    if (ev.target !== this.host) return;
+    const value = (ev as CustomEvent<RadioGroupChangeEventDetail>).detail.value;
+    this.radios().forEach(r => r.isToggled.set(r.value() === value));
+    this.onValueChange?.(value);
+  }
+
   onChildChange(ev: Event) {
+    // An <mp-radio-group> host owns exclusivity and reports via group-change;
+    // handling the bubbled change here too would double-emit into the form.
+    if (this.host.tagName === 'MP-RADIO-GROUP') return;
     if (!this.onValueChange) return;
     const target = ev.target as HTMLElement;
     let selectedValue: string | null = null;

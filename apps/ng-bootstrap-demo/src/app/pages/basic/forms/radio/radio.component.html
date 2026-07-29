@@ -3,16 +3,16 @@
     <div bsRow>
         <div [col]>
             <h2>Group, adjacent, template-driven</h2>
-            <p class="text-muted"><code>string</code> form value via <code>[bsRadioGroup]</code> + <code>[(ngModel)]</code>. <code>&lt;bs-radio&gt;</code> has no <code>[name]</code> input — the group owns it.</p>
+            <p class="text-muted"><code>string</code> form value via <code>[bsRadioGroup]</code> + <code>[(ngModel)]</code> on an <code>&lt;mp-radio-group&gt;</code> host, which supplies <code>role="radiogroup"</code>, one-of-N exclusivity and the arrow-key roving model. <code>&lt;bs-radio&gt;</code> has no <code>[name]</code> input — the group owns it.</p>
         </div>
     </div>
     <div bsRow>
         <div [md]="6">
-            <div bsRadioGroup name="fruitTemplate" [(ngModel)]="selectedFruit">
+            <mp-radio-group bsRadioGroup name="fruitTemplate" aria-label="Fruit" [(ngModel)]="selectedFruit">
                 <bs-radio value="apple" class="me-3">Apple</bs-radio>
                 <bs-radio value="banana" class="me-3">Banana</bs-radio>
                 <bs-radio value="cherry" class="me-3">Cherry</bs-radio>
-            </div>
+            </mp-radio-group>
         </div>
         <div [md]="6">
             <span>Value: {{ selectedFruit() | json }}</span>
@@ -33,11 +33,11 @@
     </div>
     <div bsRow>
         <div [md]="6">
-            <div bsRadioGroup name="fruitReactive" [formControl]="selectedFruitReactive">
+            <mp-radio-group bsRadioGroup name="fruitReactive" aria-label="Fruit" [formControl]="selectedFruitReactive">
                 <bs-radio value="apple" class="me-3">Apple</bs-radio>
                 <bs-radio value="banana" class="me-3">Banana</bs-radio>
                 <bs-radio value="cherry" class="me-3">Cherry</bs-radio>
-            </div>
+            </mp-radio-group>
         </div>
         <div [md]="6">
             <span>Value: {{ selectedFruitReactive.value | json }}</span>
@@ -58,11 +58,11 @@
     </div>
     <div bsRow>
         <div [md]="6">
-            <div bsRadioGroup name="layout" [(ngModel)]="layout">
+            <mp-radio-group bsRadioGroup name="layout" aria-label="Layout" [(ngModel)]="layout">
                 <bs-radio type="toggle_button" value="grid" class="me-2">Grid</bs-radio>
                 <bs-radio type="toggle_button" value="list" class="me-2">List</bs-radio>
                 <bs-radio type="toggle_button" value="cards" class="me-2">Cards</bs-radio>
-            </div>
+            </mp-radio-group>
         </div>
         <div [md]="6">
             <span>Value: {{ layout() | json }}</span>

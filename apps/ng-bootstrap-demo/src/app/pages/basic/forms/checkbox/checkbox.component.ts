@@ -145,7 +145,7 @@ export class CheckboxComponent {
       readonly toppings = signal<string[]>([]);
     }`;
   readonly groupTemplateHtml = dedent`
-    <div bsCheckboxGroup name="toppings" [(ngModel)]="toppings">
+    <div bsCheckboxGroup name="toppings" label="Toppings" [(ngModel)]="toppings">
       <bs-checkbox value="cheese">Cheese</bs-checkbox>
       <bs-checkbox value="mushroom">Mushroom</bs-checkbox>
       <bs-checkbox value="olive">Olive</bs-checkbox>
@@ -165,7 +165,7 @@ export class CheckboxComponent {
       readonly toppings = new FormControl<string[]>([], { nonNullable: true });
     }`;
   readonly groupReactiveHtml = dedent`
-    <div bsCheckboxGroup name="toppings" [formControl]="toppings">
+    <div bsCheckboxGroup name="toppings" label="Toppings" [formControl]="toppings">
       <bs-checkbox value="cheese">Cheese</bs-checkbox>
       <bs-checkbox value="mushroom">Mushroom</bs-checkbox>
       <bs-checkbox value="olive">Olive</bs-checkbox>
