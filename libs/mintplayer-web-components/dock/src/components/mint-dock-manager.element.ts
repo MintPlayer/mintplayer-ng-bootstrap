@@ -317,6 +317,10 @@ export class MintDockManagerElement extends LitElement {
     // Keyboard pane-move (Phase 7). Capture phase so we run before mp-tab-control's
     // shadow-internal handlers preventDefault on Arrow / Home / End / Enter.
     root.addEventListener('keydown', (ev) => this.onRootKeyDown(ev), { capture: true });
+    // Move mode is armed against a specific tab; if focus leaves the dock the
+    // armed state would otherwise silently persist and a later T/R/B/L/F
+    // keystroke inside the dock would commit a move the user forgot about.
+    root.addEventListener('focusout', (ev) => this.onRootFocusOut(ev));
 
     // Render any layout that was set before the shadow DOM existed.
     this.renderLayout();
@@ -4001,6 +4005,28 @@ export class MintDockManagerElement extends LitElement {
     this.liveAnnouncer.announce(
       `Move mode for pane ${title}. Press T, R, B, or L to dock to top, right, bottom, or left of the current stack. Press F to float. Escape to cancel.`,
     );
+  }
+
+  /**
+   * Cancel move mode when focus leaves the dock entirely. Moves WITHIN the
+   * dock (tab to tab, tab to pane content) keep it armed — the commit always
+   * applies to the pane captured at arm time, which the announcement named.
+   */
+  private onRootFocusOut(event: FocusEvent): void {
+    if (!this.paneMoveMode) return;
+    const next = event.relatedTarget instanceof Node ? event.relatedTarget : null;
+    if (next && this.isWithinDock(next)) return;
+    this.paneMoveMode = null;
+    this.liveAnnouncer.announce('Move cancelled.');
+  }
+
+  /** Composed-tree containment: true for shadow content AND slotted light DOM. */
+  private isWithinDock(node: Node): boolean {
+    for (let current: Node | null = node; current; ) {
+      if (current === this) return true;
+      current = current instanceof ShadowRoot ? current.host : current.parentNode;
+    }
+    return false;
   }
 
   private handlePaneMoveModeKey(event: KeyboardEvent): void {

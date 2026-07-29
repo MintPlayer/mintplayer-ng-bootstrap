@@ -182,4 +182,44 @@ describe('mint-dock-manager — keyboard pane move (M to enter, T/R/B/L/F to com
     expect(internals.paneMoveMode).toBeNull();
     expect(dock.shadowRoot!.querySelectorAll('.dock-floating').length).toBe(0);
   });
+
+  it('focus leaving the dock cancels move mode', () => {
+    const internals = dock as unknown as {
+      paneMoveMode: { paneName: string; sourcePath: { type: 'docked'; segments: number[] } } | null;
+      onRootFocusOut: (e: FocusEvent) => void;
+    };
+    internals.paneMoveMode = { paneName: 'Alpha', sourcePath: { type: 'docked', segments: [] } };
+    const outside = document.createElement('button');
+    document.body.appendChild(outside);
+    internals.onRootFocusOut(new FocusEvent('focusout', { relatedTarget: outside }));
+    outside.remove();
+    expect(internals.paneMoveMode).toBeNull();
+  });
+
+  it('blur to nowhere (relatedTarget null) also cancels move mode', () => {
+    const internals = dock as unknown as {
+      paneMoveMode: { paneName: string; sourcePath: { type: 'docked'; segments: number[] } } | null;
+      onRootFocusOut: (e: FocusEvent) => void;
+    };
+    internals.paneMoveMode = { paneName: 'Alpha', sourcePath: { type: 'docked', segments: [] } };
+    internals.onRootFocusOut(new FocusEvent('focusout', { relatedTarget: null }));
+    expect(internals.paneMoveMode).toBeNull();
+  });
+
+  it('focus moving WITHIN the dock (shadow or slotted light DOM) keeps move mode armed', () => {
+    const internals = dock as unknown as {
+      paneMoveMode: { paneName: string; sourcePath: { type: 'docked'; segments: number[] } } | null;
+      onRootFocusOut: (e: FocusEvent) => void;
+    };
+    internals.paneMoveMode = { paneName: 'Alpha', sourcePath: { type: 'docked', segments: [] } };
+    const shadowTarget = dock.shadowRoot!.querySelector('.dock-root') as HTMLElement;
+    internals.onRootFocusOut(new FocusEvent('focusout', { relatedTarget: shadowTarget }));
+    expect(internals.paneMoveMode).not.toBeNull();
+
+    const slotted = document.createElement('div');
+    dock.appendChild(slotted);
+    internals.onRootFocusOut(new FocusEvent('focusout', { relatedTarget: slotted }));
+    slotted.remove();
+    expect(internals.paneMoveMode).not.toBeNull();
+  });
 });
