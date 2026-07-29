@@ -15,6 +15,9 @@ import { BsAlertCloseComponent } from './alert-close.component';
 class BsAlertComponentStub {
   type = input<number>();
   isVisible = model<boolean>(true);
+  // C7 added focus rescue on dismiss; without this stub method closeAlert()
+  // throws before it can flip isVisible.
+  rescueFocus(): void {}
 }
 
 describe('BsAlertCloseComponent', () => {

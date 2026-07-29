@@ -15,6 +15,8 @@ export class BsAlertComponent {
   private hostRef = inject(ElementRef<HTMLElement>);
 
   type = input<Color>(Color.primary);
+  /** Opt-in role="alert" for genuinely dynamic alerts (defaults off — static banners must not interrupt). */
+  readonly announce = input(false);
   colors = Color;
 
   isVisible = model<boolean>(true);
