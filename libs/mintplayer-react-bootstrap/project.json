@@ -29,12 +29,10 @@
       }
     },
     "test": {
-      "executor": "@nx/vite:test",
-      "outputs": [
-        "{workspaceRoot}/coverage/libs/mintplayer-react-bootstrap"
-      ],
+      "executor": "@nx/vitest:test",
+      "outputs": ["{options.reportsDirectory}"],
       "options": {
-        "configFile": "vite.config.mts"
+        "reportsDirectory": "coverage/libs/mintplayer-react-bootstrap"
       }
     },
     "typecheck-a11y": {

@@ -55,6 +55,7 @@ export default defineConfig(() => ({
     environment: 'jsdom',
     include: ['**/*.spec.ts'],
     exclude: ['**/node_modules/**', '**/dist/**'],
+    setupFiles: ['./_conformance/vitest-setup.ts'],
   },
   build: {
     outDir: '../../dist/libs/mintplayer-vue-bootstrap',

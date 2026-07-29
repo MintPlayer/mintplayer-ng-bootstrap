@@ -29,12 +29,10 @@
       }
     },
     "test": {
-      "executor": "@nx/vite:test",
-      "outputs": [
-        "{workspaceRoot}/coverage/libs/mintplayer-vue-bootstrap"
-      ],
+      "executor": "@nx/vitest:test",
+      "outputs": ["{options.reportsDirectory}"],
       "options": {
-        "configFile": "vite.config.mts"
+        "reportsDirectory": "coverage/libs/mintplayer-vue-bootstrap"
       }
     }
   },
