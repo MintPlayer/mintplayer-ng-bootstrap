@@ -40,6 +40,13 @@ export class BsContextMenuDirective {
       ev.preventDefault();
       this.checkAndCloseExisting(ev);
 
+      // With `scroll-behavior: smooth`, the scroll that brought the trigger
+      // into view (e.g. keyboard focus moments before Shift+F10) can still be
+      // animating; its next frame would hit the close-on-scroll strategy and
+      // dismiss the menu in the same breath it opened. An instant scroll to
+      // the current position cancels any in-flight animation.
+      window.scrollTo({ top: window.scrollY, left: window.scrollX, behavior: 'instant' });
+
       const target = {
         getBoundingClientRect: () => {
           return  ({
@@ -56,7 +63,11 @@ export class BsContextMenuDirective {
 
       this.overlayRef = this.overlay.create({
         hasBackdrop: false,
-        scrollStrategy: this.overlay.scrollStrategies.close(),
+        // The threshold keeps the sub-pixel scroll event from the animation
+        // cancel above (scroll events fire a frame later, after this overlay
+        // attaches) from dismissing the menu in the tick it opened, while a
+        // real user scroll still closes it like a native context menu.
+        scrollStrategy: this.overlay.scrollStrategies.close({ threshold: 24 }),
         positionStrategy: this.overlay.position()
         .flexibleConnectedTo(element)
         .withPositions([
@@ -74,10 +85,18 @@ export class BsContextMenuDirective {
       // gets focus back on close (Escape must not strand focus on <body>).
       this.returnTarget = document.activeElement instanceof HTMLElement
         && document.activeElement !== document.body ? document.activeElement : null;
-      const first = view.rootNodes
-        .map((node: HTMLElement) => node.querySelector?.<HTMLElement>('button, a[href], [tabindex]'))
-        .find((el: HTMLElement | null | undefined) => !!el);
-      first?.focus();
+      // Entry is deferred a tick: the menu's roving focus assigns the items'
+      // tabindex after attach, so a synchronous query races it — the same
+      // treatment as BsDropdownToggleDirective.onArrowDown. preventScroll is
+      // load-bearing: the overlay closes on scroll, and a scroll-into-view
+      // from this focus would dismiss the menu in the tick it opened.
+      setTimeout(() => {
+        const first = view.rootNodes
+          .map((node: HTMLElement) =>
+            node.querySelector?.<HTMLElement>('[role="menuitem"], .dropdown-item, button, a[href], [tabindex]'))
+          .find((el: HTMLElement | null | undefined) => !!el);
+        first?.focus({ preventScroll: true });
+      });
   }
 
   private overlayRef: OverlayRef | null = null;
@@ -101,7 +120,7 @@ export class BsContextMenuDirective {
       this.overlayRef.detach();
       this.overlayRef.dispose();
       this.overlayRef = null;
-      this.returnTarget?.focus();
+      this.returnTarget?.focus({ preventScroll: true });
       this.returnTarget = null;
     }
   }
