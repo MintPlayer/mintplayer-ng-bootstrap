@@ -1,179 +1,283 @@
 # PRD: Navbar Noscript / SSR Behavior
 
+**Status:** Implemented — and since re-implemented **inside the web component**. The behavior matrix
+below is still the contract; the mechanism moved out of the Angular `bs-navbar` template into
+`<mp-navbar>`'s shadow root. Everything the original document described in terms of
+`bsNoNoscript` / `.noscript`, `[@slideUpDown]`, `showNavs()` and `navbar.component.scss` is gone —
+see [§Mechanism migration](#mechanism-migration) for the old → new mapping and
+[`navbar-dropdown-menu-wc.md`](./navbar-dropdown-menu-wc.md) for the migration itself.
+
 ## Problem
 
-When JavaScript is disabled (or before Angular hydrates the SSR HTML), `<bs-navbar>` does not behave correctly:
+When JavaScript is disabled (or before the page hydrates), `<bs-navbar>` did not behave correctly.
+Two historical Angular states, both wrong:
 
-- **Today (master, post-#280 signal migration):** The collapse area is hard-coded to `height: 0` in the SSR HTML by `[@slideUpDown]="false"`. Because the noscript CSS reveal rule (`navbar.component.scss:46-50`) only fires when the SSR-only checkbox is `:checked` **or** the navbar has `:focus-within`, neither of which is true on first paint, the menu is empty for noscript users at **every** viewport width.
-- **Historically (pre-#280):** `showNavs$` was an RxJS observable filtered through `windowWidth !== null`, which never emitted during SSR. The async pipe yielded `null`, no animation state bound, no inline `height: 0` was written, so the menu rendered visible at all widths — which is also wrong: at narrow widths the items should hide behind the hamburger.
+- **Post-#280 signal migration:** the collapse area was hard-coded to `height: 0` in the SSR HTML by
+  `[@slideUpDown]="false"`. Because the noscript CSS reveal rule only fired when the SSR-only
+  checkbox was `:checked` **or** the navbar had `:focus-within`, neither of which is true on first
+  paint, the menu was empty for noscript users at **every** viewport width.
+- **Pre-#280:** `showNavs$` was an RxJS observable filtered through `windowWidth !== null`, which
+  never emitted during SSR. The async pipe yielded `null`, no animation state bound, no inline
+  `height: 0` was written, so the menu rendered visible at all widths — which is also wrong: at
+  narrow widths the items should hide behind the hamburger.
 
-Neither state matches the intended UX. There is no existing PRD that documents the contract; the SSR-only checkbox+label toggler and the `.noscript` CSS reveal rules were introduced ad-hoc in the ARIA pass (PR #327) without a written spec.
+Neither state matched the intended UX, and the SSR-only checkbox+label toggler and the `.noscript`
+CSS reveal rules had been introduced ad-hoc in the ARIA pass (PR #327) without a written spec. This
+document is that spec.
 
 ## Goal
 
-Pin down the noscript / SSR / pre-hydration behavior of `<bs-navbar>` in a single document, and align the implementation so:
+Pin down the noscript / SSR / pre-hydration behavior of the navbar in a single document, and align
+the implementation so:
 
-1. **Wide mode (viewport ≥ navbar expand breakpoint)** — items are visible without JavaScript, no interaction required.
-2. **Small mode (viewport < breakpoint), initial paint** — items are hidden behind the hamburger toggler.
-3. **Small mode, after the user reveals the menu** — items become visible via either of two CSS-only paths:
-   - `:has(.navbar-toggler-checkbox:checked)` — mouse/touch user clicks the hamburger label, which toggles the hidden `<input type="checkbox">`.
-   - `:focus-within` — keyboard user Tabs into the toggler or any descendant.
-4. **JS-enabled** — the existing signal-driven path (`isExpanded` + `[@slideUpDown]`) takes over once `BsNoNoscriptDirective` clears the `.noscript` class on hydration.
+1. **Wide mode (viewport ≥ navbar expand breakpoint)** — items are visible without JavaScript, no
+   interaction required.
+2. **Small mode (viewport < breakpoint), initial paint** — items are hidden behind the hamburger
+   toggler.
+3. **Small mode, after the user reveals the menu** — items become visible via either of two CSS-only
+   paths:
+   - `.navbar-toggle:checked` — mouse/touch user clicks the hamburger `<label>`, which toggles the
+     hidden `<input type="checkbox">`.
+   - `.navbar-collapse:focus-within` — keyboard user Tabs into the collapse.
+4. **JS-enabled** — the checkbox stays the state holder, but only clicks/keys routed through the
+   component drive it; the no-JS `:focus-within` path disengages once `<mp-navbar>` marks itself
+   with `data-js`.
 
 ## Reference Implementations
 
-### Accordion / Tab-control noscript
+`tab-control-noscript.md` documents the same hidden-input + `<label [for]>` + `:checked` CSS pattern
+for the Angular tier, and [`shell-wc-ssr.md`](./shell-wc-ssr.md) is the precedent for running that
+pattern **inside a shadow root** served as Declarative Shadow DOM — which is what the navbar does
+now. (`accordion-multi.md` also documented the pattern, but the accordion has since moved to native
+`<details>`/`<summary>`, which needs no state machine at all.)
 
-`accordion-multi.md` and `tab-control-noscript.md` already document the hidden-input + `<label [for]>` + `:checked` CSS pattern. The navbar's hamburger uses the same idea (added in #327) but with a single `<input type="checkbox">` rather than per-tab radios, and adds a second reveal path on `:focus-within` for keyboard users.
+The navbar's hamburger uses a single `<input type="checkbox">` rather than per-item radios, and adds
+a second reveal path on `:focus-within` for keyboard users.
 
-## Class semantics (unchanged)
+## Mechanism migration
 
-`bsNoNoscript` (`libs/mintplayer-ng-bootstrap/no-noscript/src/no-noscript/no-noscript.directive.ts:6-19`) keeps its current behavior:
+The Angular `bs-navbar` is now a thin wrapper that projects content into the WC's slots
+(`libs/mintplayer-ng-bootstrap/navbar/src/navbar/navbar.component.html`) and registers the custom
+element **client-side only** so SSR emits a bare `<mp-navbar>` tag
+(`navbar.component.ts:61-67`). Old → new:
 
-- Adds `class="noscript"` to its host on the server (`isPlatformServer(PLATFORM_ID) === true`).
-- Does **not** add the class in the browser. On hydration, the host binding re-evaluates and Angular removes the SSR-baked class from the DOM.
+| Original mechanism | Today |
+|---|---|
+| `bsNoNoscript` adds `.noscript` on the server; Angular removes it on hydration | `<mp-navbar>` **adds** `data-js` in `connectedCallback` (`mp-navbar.ts:71`). No-JS selectors are therefore `:host(:not([data-js]))` — the inverse gate, with the same meaning |
+| `[@slideUpDown]` Angular animation writing inline `height` | `grid-template-rows: 0fr ↔ 1fr` on `.navbar-collapse` + `overflow: hidden` / `min-height: 0` on `.navbar-collapse-inner` (`navbar.styles.scss:111-126`) — `height: auto` is not animatable, a grid row is |
+| `showNavs()` computed from `window.innerWidth` in `BsNavbarNavComponent` | Pure CSS `media-breakpoint-up` / `-down` blocks per `:host([breakpoint])` (`navbar.styles.scss:172-192`). No width is measured in JS, so there is no SSR-vs-client divergence to reconcile |
+| SSR-only `@if (isServerSide)` template branch with a checkbox, JS branch with a `<button>` | **One** shadow template for both tiers (`mp-navbar.ts:223-256`): the checkbox+label is always the markup; `firstUpdated` upgrades it to a disclosure button (`role="button"` + live `aria-expanded`) when JS is present (`mp-navbar.ts:188-197`) |
+| `togglerCheckboxId` from `BsIdService` (ids must be unique per document) | The fixed id `mp-navbar-toggle`. Ids inside a shadow root are scoped to that root, so every navbar instance can reuse it |
+| `bs-navbar-nav` owning window-resize state | `bs-navbar-nav` is `display: contents` and only picks the `start`/`end` slot (`navbar-nav.component.ts`) |
+| Wide-mode reveal via a `.noscript` height override loop in `navbar.component.scss` | The wide-mode block sets `display: flex` + `grid-template-rows: none`, which makes the collapse animation inert at that width for **both** tiers — no `.noscript`-gated override needed (`navbar.styles.scss:176-182`) |
 
-All noscript CSS in this PRD therefore uses affirmative selectors (`.navbar.noscript { ... }`), and the JS-enabled path is "the absence of `.noscript`". No directive/API rename is in scope.
+`bsNoNoscript` itself was **not** deleted — `priority-nav` and `tab-control` still use it. It is only
+the navbar that no longer does.
 
 ## Behavior matrix
 
-`bp` below stands for the navbar's expand-breakpoint pixel threshold (e.g. 992 for `breakpoint="lg"`). "SSR" rows describe the bytes the server writes; "noscript" rows describe how the browser renders those bytes when no JS runs; "JS" rows describe the hydrated state after the JS-driven toggler takes over.
+`bp` below stands for the navbar's expand breakpoint (e.g. 992 for `breakpoint="lg"`). "SSR" rows
+describe the bytes the server writes; "noscript" rows describe how the browser renders those bytes
+when no JS runs; "JS" rows describe the state after the element upgrades.
 
-| Mode | Viewport | `.navbar` class | `.navbar-collapse` inline | What user sees |
+| Mode | Viewport | Host attributes | `.navbar-collapse` | What user sees |
 |---|---|---|---|---|
-| SSR HTML emitted | any | `... noscript` | `style="height: 0"` (from `[@slideUpDown]="false"`) | — (server output) |
-| Noscript, initial | `< bp` | `.noscript` | inline `height: 0` wins | menu hidden, hamburger label visible |
-| Noscript, `:has(:checked)` | `< bp` | `.noscript` | CSS overrides to `height: auto !important; overflow: visible` | menu visible |
-| Noscript, `:focus-within` | `< bp` | `.noscript` | same CSS override | menu visible |
-| Noscript, initial | `≥ bp` | `.noscript` | wide-mode CSS override sets `height: auto !important` | menu visible inline, hamburger hidden via `d-{bp}-none` |
-| JS-enabled, collapsed | `< bp` | (no `.noscript`) | animation engine, currently `height: 0` | menu hidden, button toggler visible |
-| JS-enabled, expanded | `< bp` | (no `.noscript`) | animation engine, currently `height: <auto>` | menu visible, slides via `@slideUpDown` |
-| JS-enabled | `≥ bp` | (no `.noscript`) | animation engine, `showNavs() === true` | menu visible, hamburger hidden |
+| SSR HTML emitted | any | `breakpoint`, `color`, … (no `data-js`) | `<template shadowrootmode>` chrome, collapsed by the narrow-mode `0fr` rule | — (server output) |
+| Noscript, initial | `< bp` | no `data-js` | `grid-template-rows: 0fr` | menu hidden, hamburger label visible |
+| Noscript, `:checked` | `< bp` | no `data-js` | `1fr !important` | menu visible; bars morph to an X |
+| Noscript, `:focus-within` | `< bp` | no `data-js` | `1fr !important` | menu visible |
+| Noscript, initial | `≥ bp` | no `data-js` | `display: flex`, `grid-template-rows: none` | menu visible inline, hamburger `display: none` |
+| JS-enabled, collapsed | `< bp` | `data-js` | `0fr` **+ `visibility: hidden`** after a 0.35s delay | menu hidden *and* out of the tab order |
+| JS-enabled, expanded | `< bp` | `data-js` | `1fr !important`, `visibility: visible` | menu visible, slides open |
+| JS-enabled | `≥ bp` | `data-js` | `display: flex`, `grid-template-rows: none` | menu visible, hamburger hidden |
+
+The per-breakpoint blocks are emitted only for breakpoints with a non-zero min-width
+(`@if $min and $min > 0` in `navbar.styles.scss:172`), i.e. `sm`…`xxl`. `breakpoint="xs"` gets
+neither block and so keeps the base always-visible collapse.
 
 ## Implementation
 
-The contract has two moving parts: the SSR HTML output (driven by `showNavs()` in TypeScript) and the noscript CSS overrides (in `navbar.component.scss`).
+Everything lives in two files: the WC's shadow template (`mp-navbar.ts`) and its shadow stylesheet
+(`navbar.styles.scss`). Both tiers read the same markup — there is no server/client template branch.
 
-### 1. `showNavs()` returns `false` on SSR
+### 1. The checkbox is the state holder, in both tiers
 
-`libs/mintplayer-ng-bootstrap/navbar/src/navbar-nav/navbar-nav.component.ts:30-32`:
+`mp-navbar.ts:232-247` renders a visually-hidden-but-focusable `<input type="checkbox"
+class="navbar-toggle" id="mp-navbar-toggle">` followed by `<label for="mp-navbar-toggle"
+class="navbar-toggler" aria-hidden="true">` whose fallback content is the three hamburger bars. The
+label is the visible hamburger; clicking it toggles the checkbox with no JavaScript. The
+visually-hidden clip rules are at `navbar.styles.scss:96-104`.
 
-```ts
-if (windowWidth === null) {
-  return false;
-}
-```
+Deliberately **no** `role="button"` / `aria-expanded` in `render()`: that same render output is the
+static DSD chrome, where no script can keep `aria-expanded` in sync, and a native checkbox's
+`checked` state is the honest self-updating channel. `firstUpdated` adds both once JS is confirmed
+present (`mp-navbar.ts:188-197`), and `#setExpanded` is the single write path that keeps
+`aria-expanded` accurate afterwards — including for programmatic closes, which never fire the
+checkbox's `change` event (`mp-navbar.ts:175-186`).
 
-This is the post-#280 behavior. **It is correct and must be kept.** Returning `false` bakes `style="height: 0"` into the SSR HTML via `state('false', style({ height: 0 }))` in `SlideUpDownAnimation`, which is the default-hidden state the noscript CSS expects to override.
+Because the checkbox presents as a button, `Enter` is handled explicitly — native checkboxes only
+toggle on `Space` (`mp-navbar.ts:204-211`).
 
-The earlier hot-fix that flipped this to `return true` (commit on this branch, currently uncommitted) must be reverted before this PRD lands.
+### 2. The collapse animates a grid row
 
-### 2. SSR-only hamburger toggler — unchanged
+`.navbar-collapse` is a one-row grid transitioning `grid-template-rows` between `0fr` and `1fr`; the
+single child `.navbar-collapse-inner` carries `min-height: 0` and the parent `overflow: hidden` so
+the content clips as the row collapses (`navbar.styles.scss:111-126`). A
+`prefers-reduced-motion: reduce` block kills both this transition and the hamburger-bar transition
+(`navbar.styles.scss:127-130`).
 
-`navbar.component.html:7-54` keeps both branches:
-
-- `@if (isServerSide)` — hidden `<input type="checkbox" class="navbar-toggler-checkbox visually-hidden">` plus a `<label [for]="togglerCheckboxId">`. The label is the visible hamburger; clicking it toggles the checkbox without any JavaScript.
-- `@else` — plain `<button (click)="toggleExpanded()">` for the JS-enabled path.
-
-The `togglerCheckboxId` is a stable, per-component id generated by `BsIdService` (`navbar.component.ts:57`). The `aria-controls` attribute on both branches points at the same `collapseId()`.
-
-### 3. Noscript CSS reveal rules
-
-`navbar.component.scss:42-50` already covers the two small-mode reveal paths:
-
-```scss
-::ng-deep .navbar.noscript {
-    bs-navbar-nav .navbar-collapse {
-        overflow: hidden;
-    }
-
-    &:has(.navbar-toggler-checkbox:checked) bs-navbar-nav .navbar-collapse,
-    &:focus-within bs-navbar-nav .navbar-collapse {
-        height: auto !important;
-        overflow: visible;
-    }
-}
-```
-
-This stays. **Both** reveal paths are part of the contract:
-
-- **`:has(.navbar-toggler-checkbox:checked)`** — mouse/touch reveal. The label-for-checkbox pattern is needed because Safari and macOS Chrome do not focus a `<button>` on mouse click, so a `:focus-within` rule alone would not fire for click users.
-- **`:focus-within`** — keyboard reveal. Tabbing into the checkbox (which is `visually-hidden` but focusable) sets `:focus-within` on the `<nav>`, which sets `overflow: visible` on the collapse and makes the menu items themselves reachable on subsequent Tabs.
-
-The `:focus-within` rule also covers a case the `:checked` rule doesn't: if the user closes the menu (unchecks) but keeps focus inside it, the menu stays revealed until focus leaves the navbar.
-
-### 4. New: wide-mode noscript override
-
-Add a rule to `navbar.component.scss` that overrides the inline `height: 0` for every `navbar-expand-{bp}` variant at and above its breakpoint:
+### 3. Two reveal paths, one of them no-JS-only
 
 ```scss
-@each $breakpoint, $min in $grid-breakpoints {
-    @if $min and $min > 0 {
-        @include media-breakpoint-up($breakpoint, $grid-breakpoints) {
-            ::ng-deep .navbar.noscript.navbar-expand-#{$breakpoint} {
-                bs-navbar-nav .navbar-collapse {
-                    height: auto !important;
-                    overflow: visible;
-                }
-            }
-        }
-    }
+.navbar-toggle:checked ~ .navbar-collapse,
+:host(:not([data-js])) .navbar-collapse:focus-within {
+  grid-template-rows: 1fr !important;
+  visibility: visible;
+  --mp-collapse-hide-delay: 0s;
 }
 ```
 
-This complements Bootstrap's built-in `@media (min-width: <bp>) { .navbar-expand-{bp} .navbar-collapse { display: flex !important; flex-basis: auto !important; } }` — Bootstrap fixes the *display*; this PRD adds the rule that fixes the *height* (which Bootstrap leaves to the JS collapse plugin).
+(`navbar.styles.scss:159-170`.) Both paths are part of the contract:
 
-The rule is gated on `.noscript` so it does not interfere with the JS-driven animation: once `BsNoNoscriptDirective` removes the class on hydration, the rule disengages and `[@slideUpDown]` is the sole authority over `height`.
+- **`:checked`** — mouse/touch reveal, active in **both** tiers. The label-for-checkbox pattern is
+  needed because Safari and macOS Chrome do not focus a `<button>` on mouse click, so a
+  `:focus-within` rule alone would not fire for click users.
+- **`:focus-within`** — keyboard reveal, **no-JS only**, gated on `:host(:not([data-js]))`. It is
+  also **scoped to `.navbar-collapse`**, not the whole host: the toggler lives in the host too, so a
+  host-level `:focus-within` would leave focus on the toggler after a click-to-close and immediately
+  re-reveal the menu.
 
-### 5. Hydration handoff
+Why the gate: once hydrated, clicking a top-level nav link leaves focus on a still-visible anchor
+*inside* the collapse, and an ungated `:focus-within` would hold the menu open against
+dismiss-on-navigate (`mp-navbar.ts:92-106`, which closes every open dropdown and calls
+`toggle(false)`). Dropdown leaves hide on close and drop focus, which is why the bug only showed on
+top-level links.
 
-When Angular hydrates:
+### 4. JS mode also removes the collapsed menu from the tab order
 
-1. The `BsNoNoscriptDirective` host binding re-evaluates with `isNoScript = false` → `.noscript` is removed from the `<nav>`.
-2. The noscript CSS in §3 and §4 stops matching. Any `height: auto !important` it was contributing falls away.
-3. `BsNavbarNavComponent` constructor calls `onWindowResize()` synchronously, which sets `isResizing = true` and `windowWidth = window.innerWidth`. `showNavs()` recomputes.
-4. `[@.disabled]="isResizing()"` keeps the slide animation suppressed for the first ~300ms — so the transition from SSR `height: 0` to the new computed state applies instantly, no slide-down flicker. After the debounce, `isResizing` flips to `false` and subsequent toggle actions slide normally.
+The `0fr` grid row only *paint*-clips the menu — its links stay focusable, so keyboard users could
+Tab into invisible content once the `:focus-within` reveal was gated off. `navbar.styles.scss:205-214`
+adds `visibility: hidden` (plus a `--mp-collapse-hide-delay: 0.35s` so it waits for the slide-shut)
+to the collapsed narrow-mode collapse, gated on `[data-js]` so the no-JS keyboard reveal keeps its
+focusable links. The reveal rule in §3 resets the delay to `0s` so opening un-hides instantly.
 
-This handoff is verified end-to-end by the JS-enabled Playwright checks below.
+### 5. Wide mode needs no noscript override
 
-## Files modified
+The per-breakpoint `media-breakpoint-up` block hides the checkbox and label outright and switches
+`.navbar-collapse` to `display: flex` with `grid-template-rows: none` and `overflow: visible`
+(`navbar.styles.scss:176-182`) — so the collapse machinery is simply not in play at that width, for
+either tier. `.navbar-collapse-inner` becomes `display: contents` so the two `<ul>`s are the flex
+children, and `.nav-end` takes `margin-inline-start: auto`. The `media-breakpoint-down` half sets
+the collapsed `0fr` default and centers the brand.
 
-1. **`libs/mintplayer-ng-bootstrap/navbar/src/navbar-nav/navbar-nav.component.ts`** — keep `return false;` for the `windowWidth === null` branch (revert the in-flight hot-fix).
-2. **`libs/mintplayer-ng-bootstrap/navbar/src/navbar/navbar.component.scss`** — add the wide-mode override loop from §4. Update the explanatory comment above the `.noscript` block to reference this PRD.
-3. **`docs/prd/navbar-noscript.md`** — this document.
+A `positioning="fixed"` bar whose open menu is taller than the viewport scrolls internally rather
+than running off-screen (`navbar.styles.scss:223-243`).
 
-No changes to `BsNoNoscriptDirective`, no changes to `navbar.component.html`, no changes to the SSR hamburger toggler markup added in #327.
+### 6. Dropdowns follow the same doctrine
+
+`mp-navbar-dropdown` mirrors the gate: `:host(:not([data-js]):focus-within)` reveals the slotted
+panel with no JS; with JS, only `data-open` (inline) or `data-menu-open` (the wide-mode submenu
+`OverlayController` overlay) do (`navbar-dropdown.styles.scss:117-124`, `mp-navbar-dropdown.ts:70`).
+The JS toggle fires on **mousedown**, not click (`mp-navbar-dropdown.ts:156-169`). With no JS there
+is no `data-expand` attribute either, so every panel renders inline and in flow — the safe baseline.
+
+### 7. SSR + hydration handoff
+
+`injectMpNavbarDsd` (`libs/mintplayer-web-components/navbar/ssr/inject-mp-navbar-dsd.ts`) inserts
+each navbar WC's static `<template shadowrootmode>` chrome into the server-rendered HTML string. It
+also walks the serialized markup to stamp `data-submenu` on nested dropdowns, because that attribute
+is normally set by `connectedCallback` and gates every submenu-specific shadow style.
+
+On upgrade:
+
+1. `createRenderRoot` clears the DSD chrome and lets Lit render fresh (`mp-navbar.ts:55-62`) — the
+   same destructive handoff as `mp-shell`.
+2. `connectedCallback` sets `data-js`, disengaging the `:focus-within` reveal, and publishes
+   `--mp-navbar-breakpoint` so descendant dropdowns (a *different* shadow tree) can resolve the
+   breakpoint without any DI — custom properties inherit through shadow boundaries
+   (`mp-navbar.ts:143-155`).
+3. `firstUpdated` upgrades the checkbox to a disclosure button.
+
+There is no resize listener and no width measurement anywhere in the path, so no first-paint
+reconciliation is needed.
+
+## Files that own this contract
+
+1. **`libs/mintplayer-web-components/navbar/src/components/mp-navbar.ts`** — the shadow template,
+   the `data-js` gate, the single `#setExpanded` write path, dismiss-on-navigate.
+2. **`libs/mintplayer-web-components/navbar/src/styles/navbar.styles.scss`** — the whole CSS state
+   machine: reveal paths, per-breakpoint blocks, tab-order hiding, reduced motion.
+3. **`libs/mintplayer-web-components/navbar/src/styles/navbar-dropdown.styles.scss`** +
+   **`mp-navbar-dropdown.ts`** — the dropdown half of the same gate.
+4. **`libs/mintplayer-web-components/navbar/ssr/inject-mp-navbar-dsd.ts`** — DSD injection.
+5. **`docs/prd/navbar-noscript.md`** — this document.
+
+The shadow stylesheet is compiled into a generated `.styles.ts`; after editing the SCSS, re-run
+`npx nx run mintplayer-web-components:codegen-wc`, and re-run
+`npx nx run mintplayer-web-components:codegen-ssr-chrome` after editing `render()` so the DSD chrome
+isn't stale.
 
 ## Testing
 
 Manual (matches the matrix above):
 
-- **SSR HTML (curl)**: `curl localhost:4200/` and confirm every `.navbar-collapse` has `class="... noscript"` on its parent `<nav>` and `style="height: 0"` inline. (Demonstrates §1.)
-- **Noscript wide-mode**: load the SSR HTML in a context with JS disabled, viewport ≥ breakpoint. Menu items visible, hamburger hidden by `d-{bp}-none`. (Demonstrates §4.)
-- **Noscript small-mode, initial**: same context, viewport < breakpoint. Hamburger label visible, menu items not. (Demonstrates §1 + §3 absence of `:checked`/`:focus-within`.)
-- **Noscript small-mode, click hamburger label**: menu reveals. Click again: menu collapses. (Demonstrates `:has(:checked)` path.)
-- **Noscript small-mode, keyboard**: Tab into the page until focus enters the navbar; menu reveals on first Tab into the hidden checkbox; subsequent Tabs walk the menu items. Shift-Tab back out: menu collapses. (Demonstrates `:focus-within` path.)
-- **JS-enabled small-mode**: hamburger button (not label) renders; clicking it slides the menu via `@slideUpDown`. No SSR-baked `height: 0` lingers after the first toggle.
+- **SSR HTML (curl)**: confirm each `<mp-navbar>` carries a `<template shadowrootmode="open">` and
+  **no** `data-js` attribute. (Demonstrates §7.)
+- **Noscript wide-mode**: load the SSR HTML with JS disabled, viewport ≥ breakpoint. Menu items
+  visible, hamburger absent. (Demonstrates §5.)
+- **Noscript small-mode, initial**: same context, viewport < breakpoint. Hamburger label visible,
+  menu items not. (Demonstrates §2 + the absence of `:checked`/`:focus-within`.)
+- **Noscript small-mode, click hamburger label**: menu reveals and the bars morph to an X. Click
+  again: menu collapses. (Demonstrates the `:checked` path.)
+- **Noscript small-mode, keyboard**: Tab until focus enters the collapse; the menu reveals and
+  subsequent Tabs walk the items. Shift-Tab back out: menu collapses. (Demonstrates the
+  `:focus-within` path.)
+- **Noscript dropdown**: Tab onto a dropdown trigger — its panel reveals inline, pushing siblings
+  down rather than overlapping. (Demonstrates §6.)
+- **JS-enabled small-mode**: clicking the hamburger slides the menu; collapsed menu items are **not**
+  reachable by Tab. (Demonstrates §4.)
 - **JS-enabled wide-mode**: menu items inline, no toggler visible.
 
 Automated:
 
-- `navbar.component.spec.ts` and `navbar.aria.spec.ts` should keep passing.
-- The Playwright e2e specs (post-#323 migration) that exercise navbar collapse / anchor-scroll must continue to pass at both desktop and mobile viewports.
+- The navbar unit specs and `mp-navbar.aria.spec.ts` should keep passing.
+- The Playwright e2e specs that exercise navbar collapse / anchor-scroll must pass at both desktop
+  and mobile viewports, and the no-JS specs (`javaScriptEnabled: false`) must pass against the
+  DSD-injected HTML.
 
 ### Testing rule: in JS-enabled tests, **click** the navbar items — never just focus them
 
-The `:focus-within` reveal path on dropdowns and on the small-mode collapse is **a `.noscript`-only mechanism** — it is gated on the `.noscript` class (see the selector in §3: `::ng-deep .navbar.noscript &:focus-within …`). Once `BsNoNoscriptDirective` strips that class on hydration, the focus-within rule stops matching. From that point on the dropdowns are visibility-toggled exclusively by the JS click handler attached in `navbar-item.component.ts:72-82` inside `ngAfterContentChecked`.
+The `:focus-within` reveal path on dropdowns and on the small-mode collapse is a **no-JS-only**
+mechanism — it is gated on `:host(:not([data-js]))`, and `connectedCallback` sets `data-js` the
+moment the element upgrades. From that point on visibility is controlled exclusively by the
+checkbox (collapse) and by `data-open` / `data-menu-open` (dropdowns), which only the component's own
+handlers write.
 
-Consequences for test authors (vitest specs, Playwright e2e, ng-mocks fixtures alike — **anything where the navbar has hydrated normally**):
+Consequences for test authors (vitest specs, Playwright e2e, ng-mocks fixtures alike — **anything
+where the navbar has upgraded normally**):
 
-- ❌ **Do NOT** call `.focus()` / `Tab` / any other focus-only gesture to reveal a dropdown. You will see the test pass against an SSR snapshot, then fail against the hydrated DOM — the focus-within CSS isn't matching anything.
-- ✅ **Do** call `.click()` on the trigger. The click handler is the only path that flips `dropdown.isVisible`.
-- ⚠️ The click handler is attached lazily in `ngAfterContentChecked` on the client — the server-side `ngAfterContentChecked` returns early before any `addEventListener` call (`navbar-item.component.ts`, behind an `isPlatformServer` guard). On cold CI runners a too-eager test can race that hook. Add `await page.waitForLoadState('networkidle')` after `page.goto('/')` so the lifecycle has fired before you click.
+- ❌ **Do NOT** call `.focus()` / `Tab` / any other focus-only gesture to reveal a dropdown. You will
+  see the test pass against an SSR snapshot, then fail against the upgraded DOM — the focus-within
+  CSS isn't matching anything.
+- ✅ **Do** call `.click()` on the trigger. `mp-navbar-dropdown` toggles on the trigger's
+  **mousedown** (`mp-navbar-dropdown.ts:167-169`), which a synthetic `.click()` produces in
+  Playwright; in unit tests dispatch a `mousedown` explicitly.
+- ⚠️ The element is registered lazily — the Angular wrapper imports
+  `@mintplayer/web-components/navbar` in `afterNextRender` (`navbar.component.ts:61-67`), so on cold
+  CI runners a too-eager test can race the upgrade. Add
+  `await page.waitForLoadState('networkidle')` after `page.goto('/')`, or await
+  `customElements.whenDefined('mp-navbar')`.
 
-Reverse case (testing the SSR/noscript path specifically): there you *do* test focus-within, but the navbar must still carry the `.noscript` class — which means either a true SSR-rendered snapshot or a test that pre-sets the class before assertion. There is no in-between state where focus alone opens a JS-hydrated dropdown.
+Reverse case (testing the SSR/noscript path specifically): there you *do* test focus-within, but the
+element must **not** have upgraded — which means a true SSR-rendered snapshot with
+`javaScriptEnabled: false`. There is no in-between state where focus alone opens an upgraded
+dropdown.
 
 ## Open questions resolved
 
-1. ~~Class semantics: `.noscript` vs `:not(.no-noscript)`?~~ — keep current `.noscript` (added on SSR), affirmative selectors. No rename.
-2. ~~Reveal mechanism: only `:focus-within`, or both `:checked` and `:focus-within`?~~ — both. The hamburger label is the mouse/touch path; `:focus-within` is the keyboard path.
+1. ~~Class semantics: `.noscript` vs `:not(.no-noscript)`?~~ — the Angular tier kept `.noscript`
+   (added on SSR, affirmative selectors). The WC inverted it to an affirmative `data-js` **added on
+   upgrade**, which is strictly better here: the attribute is set by the element that owns the CSS,
+   so there is no cross-library dependency on a directive being present.
+2. ~~Reveal mechanism: only `:focus-within`, or both `:checked` and `:focus-within`?~~ — both. The
+   hamburger label is the mouse/touch path; `:focus-within` is the keyboard path, no-JS only.

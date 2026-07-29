@@ -1,9 +1,10 @@
 # PRD: ARIA + keyboard accessibility for `@mintplayer/ng-swiper`
 
-**Status:** Draft — awaiting review
+**Status:** **Shipped 2026-05-11 (`101a985b`), then SUPERSEDED — kept as the historical record.**
+`@mintplayer/ng-swiper` no longer exists: PR [#392](https://github.com/MintPlayer/mintplayer-ng-bootstrap/pull/392) (`207d85f7`) deleted the whole library and rebuilt the carousel as the `<mp-carousel>` Lit web component. Everything below describes the three deleted Angular directives (`bsSwipe`, `bsSwipeContainer`, `bsSwipeViewport`) and the pre-WC `bs-carousel` template. **Do not treat any file:line reference, host binding or input name in this document as current.** See [§11 Where this landed](#11-where-this-landed) for the mapping onto today's code, and [`carousel-wc.md`](./carousel-wc.md) for the replacement design.
 **Author:** Pieterjan (with research input from a Claude exploration team)
 **Date:** 2026-05-11
-**Library:** `@mintplayer/ng-swiper/swiper` (primary) + `@mintplayer/ng-bootstrap/carousel` (cleanup migration)
+**Library (at the time):** `@mintplayer/ng-swiper/swiper` (primary) + `@mintplayer/ng-bootstrap/carousel` (cleanup migration)
 **Branch context:** follows the `feat/aria-accessibility` branch — same workstream, but the swiper directives were carved out as "consumer-gated" follow-up #1 in `project_aria_outstanding_followups.md`. This PRD reverses that deferral so the duplication can come out of `bs-carousel`.
 
 ---
@@ -376,3 +377,55 @@ None — both original design calls (keyboard scope, slide ARIA ownership) settl
 - ~~**Scope swiper keyboard listeners to host + focus-within.**~~ ✓ shipped on this branch. Listeners moved off `document` onto `bsSwipeViewport`'s host with an `event.target === host` guard. The viewport gained `tabindex="0"` (default; `null` to opt out). `aria-orientation` + `aria-keyshortcuts` followed the listener — now host-attrs on the viewport (forwarded from the inner container) so SRs read them when focus arrives.
 - **`slide-changed` live announcer.** A dedicated `BsLiveAnnouncerService` consumer for slide transitions (rather than relying on `aria-live` on the viewport with all slide content inside it). Could land as part of swiper or stay on carousel.
 - **Slide content roles.** APG suggests slide *content* (images, text) doesn't need any extra ARIA, but a swiper used for tab-control content would want `role="tabpanel"`. If a third consumer surfaces, expose a `role` override input on `bsSwipe` (today: hardcoded `"group"`).
+
+## 11. Where this landed
+
+PR #392 deleted `@mintplayer/ng-swiper` and rebuilt the carousel as `<mp-carousel>`
+(`libs/mintplayer-web-components/carousel/src/components/mp-carousel.ts`), with `<bs-carousel>`
+reduced to an attribute/event bridge over it. The §2 goal — "push the generic half down so a second
+consumer gets it free" — was met, but by a different split than this PRD proposed:
+
+- **The reusable layer is now framework-agnostic TypeScript with no ARIA at all**:
+  `@mintplayer/web-components/swiper-core` ships `IndexMachine` (index/wrap/transition state,
+  reduced-motion → duration `0` at `index-machine.ts:187`), `PointerArbiter` (pointer/touch
+  gestures), and the orientation-aware `keyToIntent` key table (`keymap.ts` — Arrow keys plus
+  Home/End, returning `null` for cross-axis keys so the page still scrolls). A second consumer
+  composes those primitives and writes its own ARIA, rather than inheriting slide semantics from a
+  directive.
+- **Every ARIA attribute this PRD distributed across three directives now lives in one element.** The
+  host is the labelled APG region (`mp-carousel.ts:126-127`). Per-slide `role="group"` +
+  `aria-roledescription="slide"` + `aria-label="N of M"` sit on shadow wrapper cells the element
+  stamps around each slotted slide (`:869-880`). `tabindex="0"`, `aria-live`, `aria-atomic`,
+  `aria-orientation` and `aria-keyshortcuts` sit on `.carousel-inner` (`:853-866`), and the
+  `event.target !== event.currentTarget` guard from §4.3 survives verbatim (`:748-757`).
+
+Five things changed in substance, not just location:
+
+1. **Off-screen slides are `inert`, not merely `aria-hidden`.** §4.1's `aria-hidden` on offside
+   clones left those slides **focusable** — "present but inert" inverted. `mp-carousel` declares the
+   complete hidden set (every non-active cell plus both wrap clones) through an `inertRegions`
+   controller (`:82-90`, `#declareInert` at `:199-208`), which removes them from the tab order *and*
+   the accessibility tree and propagates through the slot into the consumer's light-DOM slide
+   content. Complete-set semantics (never deltas) means an interrupted transition can't leave a stale
+   `inert` behind; it is suspended for the duration of a drag or transition so both the outgoing and
+   incoming slide are live mid-motion.
+2. **The play/pause control is FIRST in DOM order** (`:824-840`) — ahead of the radios, the viewport
+   and the indicators — so a screen-reader or keyboard user reaches the stop-rotation control before
+   the rotating content. What §13.2 of the ARIA audit called the `*bsCarouselPlayPause` structural
+   directive is now the `play-pause` slot, whose fallback is a built-in
+   `<button aria-pressed aria-label="Start/Stop automatic slide show">`.
+3. **Rotation pauses on hover and on focus-within** (`#hoverSuspended` / `#focusSuspended`,
+   `:654-682`), WCAG 2.2.2's baseline for auto-updating content. Deliberately *not* the public
+   `paused` state and never emitted — leaving resumes rotation exactly as configured.
+4. **The `aria-live` gating logic moved into the element** as `#ariaLive` (`:696-701`) with the same
+   rule §4.3 defined (`polite` when the interval is unset, paused, or motion is reduced; `off` while
+   actually rotating) — but it is only emitted in the browser tier, because the server-rendered no-JS
+   tier has no rotation to announce. Likewise `aria-current="true"` on the active indicator is
+   browser-tier-only (`:891`): the no-JS tier's active state is `:checked` CSS, so a server-rendered
+   `aria-current` would pin slide 1 forever. `aria-busy` is now written by the element's own animation
+   callbacks (`:342-348`) instead of being passed in as the `[ariaBusy]` input §4.4 added.
+5. **The per-slide consumer overrides did not survive.** `ariaRoledescription` and `ariaLabel`
+   (§4.1) have no equivalent: slide labels are always `"N of M"` and the roledescription is always
+   `slide`. The §7 risk about mislabelling non-paginated swipe UIs is now answered by the split
+   itself — a card list composes `swiper-core` and never gets carousel slide semantics in the first
+   place.
