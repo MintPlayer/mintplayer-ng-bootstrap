@@ -49,7 +49,7 @@ Thumbs.db
 .playwright-mcp/
 
 # Playwright e2e run artefacts
-/test-results
+test-results/
 /playwright-report
 /blob-report
 /playwright/.cache
