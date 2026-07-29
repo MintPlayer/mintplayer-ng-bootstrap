@@ -1,10 +1,17 @@
 # PRD — screen-reader accessibility across the four libraries
 
-Status: **audit complete; decisions resolved; Phase A (shared primitives) landed and verified;
-Phase 0's four gate spikes all cleared; B–G outstanding** — 2026-07-28. Companion plan:
-`docs/prd/screen-reader-accessibility-plan.md`. Decisions D1–D5 settled in §11; the cross-cutting
-principle the programme is judged on is §11a. Phase A's as-built notes, including three defects its
-targeted test run caught, are in the plan.
+Status: **AS BUILT — all phases (0, A–G) complete** — 2026-07-29. Every phase's as-built record
+lives in the companion plan (`docs/prd/screen-reader-accessibility-plan.md`), immediately after
+that phase's section; the programme-level acceptance checklist at the plan's end is checked off,
+with one open item: the NVDA/VoiceOver manual spot check (a human task, post-merge). Decisions
+D1–D5 settled in §11 and were implemented as resolved; the cross-cutting principle the programme
+is judged on is §11a. Standing guards: the `e2e-a11y` axe gate (3 apps × hydrated + SSR tiers,
+dedicated CI step), the roving-focus and keyboard-walkthrough suites, per-WC `*.aria.spec.ts`,
+and the `CLAUDE.md ## Accessibility` rules.
+
+One Phase-0 note below is superseded by Phase G's ground truth: §7's "assert `internals.role`
+via Chromium CDP" turned out to be moot — no shipping component carries a role on
+`ElementInternals` (all roles are attribute-borne and observable in jsdom and Playwright alike).
 
 **Phase 0 changed this document in four places — read these before quoting it.** (a) §5.3's claim
 that a name on a role-less host is "dropped under ARIA's prohibition on naming `role="generic"`" is

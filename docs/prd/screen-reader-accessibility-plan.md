@@ -1216,32 +1216,77 @@ Then the single sweep: `nx build` for all four libs, `nx test mintplayer-web-com
 `nx test mintplayer-ng-bootstrap`, the new React/Vue test targets, the React type-test, and the
 full e2e + `e2e-a11y` matrix across all three demo apps.
 
+- **Phase G as-built** (2026-07-29):
+  **Guards.** `tools/e2e-shared/roving-focus-suites.ts` shipped per the table (one refinement: the
+  Tab-exit assertion is "one Tab exits the ITEM RING", not the container — a tab widget correctly
+  sends Tab from the active tab to its tabpanel). Wired for radio-group in all three apps +
+  tab-control (ng). The axe gate (`tools/e2e-shared/axe-suites.ts`) runs per app from its own
+  `a11y/` spec dir + `playwright.a11y.config.ts` + `e2e-a11y` Nx target, and CI runs it via
+  `run-many` in a dedicated step. One design correction over the table: the
+  `javaScriptEnabled: false` pass is IMPOSSIBLE as specified — axe is a JS engine and a no-JS page
+  destroys its execution context — so the SSR tier is audited by fetching the payload raw,
+  stripping scripts, and re-parsing it in a JS-enabled page (byte-identical to the no-JS DOM, DSD
+  included). Keyboard walkthrough gained the one-tab-stop inverse for the two historic offenders
+  (time-list, file-manager icon grid) at browser level. `CLAUDE.md ## Accessibility` lifted from
+  the audit draft as-is. Aria-spec fleet: every element-bearing WC now has `*.aria.spec.ts`
+  (15 new files; `mp-card` deliberately has none — a single slot, no ARIA surface). Spikes
+  deleted, keymap parity done (all five composites ×3 apps, false claims corrected against the
+  real keydown handlers), stale docs fixed, `BsReducedMotionDirective` deleted (zero consumers).
+  Chromium-CDP aria specs resolved as NOT NEEDED: no shipping component uses `internals.role`
+  (all roles are attribute-borne and jsdom-observable) — grep before reintroducing.
+  **What the gates caught while being built** (each fixed + spec'd): navbar's shadow `<ul>` can
+  never satisfy a list with slotted children (nav groups are divs now, wrappers stopped stamping
+  listitem); EVERY React/Vue tab strip rendered empty (custom-element reactions run in tree order,
+  so the parent scanned before each `mp-tab-page` derived its `slot` — observer needed
+  `subtree: true`; Angular masked it by stamping slot statically); treeview's tree role moved onto
+  the in-shadow `<ul>` (a host role=tree owns the live-announcer region through transparent
+  generics — unfixable on the host; live regions' global aria-* keep them from being
+  presentational, hence also LiveAnnouncerController's new `omitRole`); calendar's month-nav left
+  the grid table (a presentational row does NOT un-own its buttons); scheduler's events overlay
+  became a gridcell (rows may not own buttons); dropdown-menu headers/dividers stamped
+  presentation/separator; timeline/carousel dropped aria-orientation from non-widget bearers;
+  code-snippet's `<pre>` and shell's `.content` scroll containers became focusable; datatable +
+  dock separators always carry `aria-valuenow`; FM toolbar meets the 24px target-size floor;
+  dock hardening (modifier-M, editable guard in move mode, FocusRestore selector that never
+  matched); FM rename-editor key hijack + icon-view Enter-on-stale-selection; multi-range thumb
+  names (`thumbLabels`, Minimum/Maximum default); query-builder depth in the group NAME
+  (aria-level is not allowed on role=group); radio-group posinset/setsize moved onto the
+  role-bearing inner inputs + aria-required mirror + chord guard (tab-control got the same guard).
+  **Gate results:** ng 33/33, react 39/39, vue 39/39 — zero serious/critical, hydrated AND SSR
+  tiers. Unit sweeps: WC 1367+, ng 524, react/vue passthrough + react type-test green; all four
+  lib builds green (the build caught TS4094 in the FACE mixin — fixed with an explicit return
+  type). Also repaired while sweeping: `overlay-stack.spec.ts` silently red since the
+  dismiss-stack unification (module-singleton frames leaked across tests).
+  **Known limits, stated:** the `e2e-a11y` route tables are explicit lists (extend them when a
+  page ships — the gate covers only what is listed); the per-route allow-list mechanism exists but
+  is EMPTY (nothing needed it); NVDA/VoiceOver manual spot checks remain a human task.
+
 ---
 
 ## Acceptance criteria (programme level)
 
-- [ ] All three Phase-0 spikes concluded, each with a written verdict in the PRD; spike artifacts
+- [x] All three Phase-0 spikes concluded, each with a written verdict in the PRD; spike artifacts
       and the temporary demo route deleted, and any assertion worth keeping moved into a real spec.
-- [ ] All 42 Critical findings closed; all ~110 Major closed or explicitly deferred with a reason.
-- [ ] **Every exposed state is live** (PRD §11a): for each state attribute touched, a spec asserts
+- [x] All 42 Critical findings closed; all ~110 Major closed or explicitly deferred with a reason.
+- [x] **Every exposed state is live** (PRD §11a): for each state attribute touched, a spec asserts
       it after a *transition*, not only at first render — including programmatic changes, not just
       user-driven ones. No attribute is written from an event handler as a side effect.
-- [ ] **Criteria are observable, never attribute presence.** For each closed finding: what a screen
+- [x] **Criteria are observable, never attribute presence.** For each closed finding: what a screen
       reader says, and where focus lands. "Present but inert" is this library's characteristic
       failure and it passes attribute-level assertions by construction.
-- [ ] A consumer can set an accessible name, description and `id` on **every** component from
+- [x] A consumer can set an accessible name, description and `id` on **every** component from
       **all three** frameworks, and it reaches the role-bearing node.
-- [ ] No component has a pointer-only path to any of its functions.
-- [ ] No interaction anywhere leaves focus on `<body>`.
-- [ ] With JS disabled, no component's static markup states anything false, and every no-JS control
+- [x] No component has a pointer-only path to any of its functions.
+- [x] No interaction anywhere leaves focus on `<body>`.
+- [x] With JS disabled, no component's static markup states anything false, and every no-JS control
       is keyboard-operable.
-- [ ] Every element-bearing WC has an ARIA spec asserting states, not just initial render.
-- [ ] The `e2e-a11y` gate is green (with a documented allow-list) and cannot be skipped by
+- [x] Every element-bearing WC has an ARIA spec asserting states, not just initial render.
+- [x] The `e2e-a11y` gate is green (with a documented allow-list) and cannot be skipped by
       `nx affected`.
-- [ ] `CLAUDE.md` carries the rules; every demo keymap panel claim is true.
+- [x] `CLAUDE.md` carries the rules; every demo keymap panel claim is true.
 - [ ] NVDA (Windows/Chrome) and VoiceOver (macOS/Safari) spot checks on the ten highest-traffic
       components confirm the observable criteria — axe would have caught none of the data-display
-      Criticals, so it is a floor, not the gate.
+      Criticals, so it is a floor, not the gate. **Still open: a human task, post-merge.**
 
 ## Build and test commands
 
@@ -1262,8 +1307,9 @@ npx nx run-many --target=e2e-a11y                               # NEW (Phase G)
 
 `NX_ISOLATE_PLUGINS=false NX_DAEMON=false` if the Nx plugin worker flakes.
 
-**Phase 0's spikes** are plain Playwright, outside Nx, and need no dev server — run any of the four
-directly (drop `--project` to sweep all three engines):
+**Phase 0's spikes** were plain Playwright, outside Nx, needing no dev server. The `_spike-*`
+directories were DELETED in Phase G (verdicts live in the Phase 0 RESULT blocks above); the
+commands below are kept for the record of how they ran:
 
 ```bash
 npx playwright test --config libs/mintplayer-web-components/_spike-host-aria/playwright.config.ts
