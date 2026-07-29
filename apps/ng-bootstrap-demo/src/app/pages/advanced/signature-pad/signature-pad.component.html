@@ -1,9 +1,14 @@
 <h1 class="text-center">Signature pad</h1>
 
 <p>
-    <code>bs-signature-pad</code> captures freehand strokes on a fixed-size canvas and emits
+    <code>bs-signature-pad</code> captures freehand strokes on a canvas and emits
     them as a structured <code>Signature</code> value through the
-    <code>[(signature)]</code> two-way binding.
+    <code>[(signature)]</code> two-way binding. Freehand drawing has no keyboard
+    equivalent, so the pad ships a typed-signature alternative: the text input
+    below the canvas renders its value in a script font and stores it on
+    <code>Signature.text</code>. Undo and Clear are regular buttons in the tab order,
+    and pointer coordinates stay correct when the canvas is CSS-sized
+    (e.g. <code>width:&nbsp;100%</code>).
 </p>
 
 <h2>Basic usage</h2>

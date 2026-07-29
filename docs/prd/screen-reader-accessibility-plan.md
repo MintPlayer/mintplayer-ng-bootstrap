@@ -738,13 +738,35 @@ The largest Critical class. Several fixes already exist elsewhere in the same fi
   documented, keyed by domain identity, and their sync+rAF dual covers a case the primitive's
   single retry does not. The primitive prevents new hand-rolls; it does not erase good ones.
 
-**Remaining in C (the ONLY C work left):** **C8** — `initialFocus` on the six `role="dialog"`
-popups (datepicker/timepicker/datetime-picker pickers focus the selected date cell per APG;
-popover/offcanvas/modal verify against `OverlayController.initialFocus` where applicable); dock
-move-mode scoped to the originating tab and cleared on `focusout`; signature-pad typed-signature
-alternative + Clear/Undo in the tab order (documenting honestly that freehand drawing has no
-keyboard equivalent). Then C's acceptance: the keyboard-only Playwright walkthrough per affected
-component (no interaction leaves activeElement on <body>; every demo keymap claim true).
+- **C8 part 1** (`f614c5a7` + `4fe24c5b`): `InitialFocusTarget` accepts a lazy callback (resolved
+  at activation; null degrades to `'first'`). mp-calendar gains a `focus()` override onto its
+  roving `tabindex="0"` cell (mp-time-list's C1 idiom); datepicker, timepicker and BOTH
+  datetime-picker overlays wire `initialFocus` callbacks that prefer a slotted consumer
+  calendar/time-list over the shadow default — opening any picker popup moves the user into the
+  grid/listbox per APG Date Picker Dialog. Dialog inventory verified: tree-select's panel is
+  deliberately excluded (combobox keeps focus in the input, C5) and the file-manager context menu
+  was done in C3. The timepicker popup is aria-haspopup="listbox", not dialog — consistent, left.
+- **C8 part 2** (`bf148ee2`): dock cancels pane move mode (with announcement) when focus leaves
+  the composed dock subtree via a focusout listener; intra-dock moves keep it armed and the commit
+  still applies to the pane captured at arm time.
+- **C8 part 3**: signature-pad became the workspace's newest 3-fronted WC (maintainer-directed
+  mid-C8). `mp-signature-pad` owns freehand drawing plus the typed-signature alternative — text
+  stored on `Signature.text`, rendered onto the canvas in a script font — with Undo/Clear as real
+  buttons in the tab order and `focus()` delegating to the typed input. Freehand drawing has no
+  keyboard equivalent; the typed input IS the accessible alternative (documented on all three demo
+  pages). Coordinate mapping goes through bitmap-size / rendered-rect, so a CSS-sized canvas
+  (`width: 100%`) draws correctly. Naming follows the contract (input-label → canvas, host
+  aria-label wins, default 'Signature pad') and the WC joined `_conformance/naming.spec.ts` (12th
+  component); `bs-signature-pad` is now a thin wrapper (bsForwardAria, `[(signature)]` bridged by
+  effect/no-loop-by-reference, joined the Angular passthrough matrix as its 20th wrapper — the
+  `void MpSignaturePadElement` side-effect import is load-bearing, a type-only usage elides
+  registration); React wrapper is `createComponent` (exempt from the React runtime guard by
+  construction); Vue SFC is `defineModel<Signature>` + `v-bind="$attrs"` (auto-covered by the
+  static invariant). No SSR chrome — same visible-only-after-hydration tier as dock/scheduler.
+
+**Remaining in C (the ONLY C work left):** C's acceptance — the keyboard-only Playwright
+walkthrough per affected component (no interaction leaves activeElement on <body>; every demo
+keymap claim true).
 
 Old item list for reference: C7 FocusRestore adoption (dock, scheduler
 views via BaseView, splitter, tree-select chips, query-builder _pendingRefocusId, bs-alert,

@@ -11,6 +11,7 @@ import '@mintplayer/web-components/tree-select';
 import '@mintplayer/web-components/timeline';
 import '@mintplayer/web-components/datatable';
 import '@mintplayer/web-components/otp-input';
+import '@mintplayer/web-components/signature-pad';
 
 /**
  * The one naming contract, asserted across every component that implements it —
@@ -55,6 +56,7 @@ const CASES: NamingCase[] = [
   { tag: 'mp-datatable', target: 'table' },
   // Class is MintOtpInputElement, but the registered tag is mp-otp-input.
   { tag: 'mp-otp-input', target: 'input.hidden-input', defaultName: 'One-time code' },
+  { tag: 'mp-signature-pad', target: 'canvas', defaultName: 'Signature pad' },
 ];
 
 async function mount(html: string, tag: string, target: string): Promise<HTMLElement> {

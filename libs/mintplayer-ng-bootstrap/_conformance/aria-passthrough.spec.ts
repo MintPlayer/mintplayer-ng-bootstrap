@@ -20,6 +20,7 @@ import { BsRadioComponent } from '@mintplayer/ng-bootstrap/radio';
 import { BsSchedulerComponent } from '@mintplayer/ng-bootstrap/scheduler';
 import { BsSelectComponent } from '@mintplayer/ng-bootstrap/select';
 import { BsShellComponent } from '@mintplayer/ng-bootstrap/shell';
+import { BsSignaturePadComponent } from '@mintplayer/ng-bootstrap/signature-pad';
 import { BsSplitterComponent } from '@mintplayer/ng-bootstrap/splitter';
 import { BsTimelineComponent } from '@mintplayer/ng-bootstrap/timeline';
 import { BsTreeSelectComponent } from '@mintplayer/ng-bootstrap/tree-select';
@@ -145,6 +146,7 @@ const WRAPPERS: WrapperCase[] = [
   { selector: 'bs-scheduler', tag: 'mp-scheduler', component: BsSchedulerComponent },
   { selector: 'bs-select', tag: 'mp-select', component: BsSelectComponent },
   { selector: 'bs-shell', tag: 'mp-shell', component: BsShellComponent },
+  { selector: 'bs-signature-pad', tag: 'mp-signature-pad', component: BsSignaturePadComponent },
   { selector: 'bs-splitter', tag: 'mp-splitter', component: BsSplitterComponent },
   { selector: 'bs-timeline', tag: 'mp-timeline', component: BsTimelineComponent },
   {
@@ -248,7 +250,7 @@ describe('Angular wrapper ARIA passthrough', () => {
     // Guards against a new wrapper being added without an entry above. The count
     // comes from scanning for templates whose root is an mp-*/mint-* element; if
     // this fails, add the wrapper to WRAPPERS rather than raising the number.
-    expect(WRAPPERS).toHaveLength(19);
+    expect(WRAPPERS).toHaveLength(20);
     expect(new Set(WRAPPERS.map((w) => w.selector)).size).toBe(WRAPPERS.length);
   });
 });

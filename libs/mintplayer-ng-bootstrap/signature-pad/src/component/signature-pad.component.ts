@@ -1,78 +1,81 @@
-import { AfterViewInit, ChangeDetectionStrategy, Component, ElementRef, input, model, signal, viewChild } from '@angular/core';
-import { Signature } from '../interfaces/signature';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  CUSTOM_ELEMENTS_SCHEMA,
+  ElementRef,
+  effect,
+  input,
+  model,
+  viewChild,
+} from '@angular/core';
+import { MpSignaturePadElement, Signature } from '@mintplayer/web-components/signature-pad';
+import { BsForwardAriaDirective } from '@mintplayer/ng-bootstrap/a11y';
 
+// Side-effect: ensure mp-signature-pad is registered (a type-only usage would
+// let TypeScript elide the import and the element would never be defined).
+void MpSignaturePadElement;
+
+/**
+ * `<bs-signature-pad>` — Angular wrapper around the `<mp-signature-pad>` web
+ * component. The WC owns drawing, the typed-signature alternative, Undo/Clear
+ * and ARIA; this wrapper bridges the `signature` two-way model and forwards
+ * the optional label overrides.
+ */
 @Component({
   selector: 'bs-signature-pad',
-  templateUrl: './signature-pad.component.html',
-  styleUrls: ['./signature-pad.component.scss'],
+  template: `
+    <mp-signature-pad bsForwardAria
+      #el
+      [attr.width]="width()"
+      [attr.height]="height()"
+      [attr.input-label]="inputLabel()"
+      [attr.type-label]="typeLabel()"
+      [attr.undo-label]="undoLabel()"
+      [attr.clear-label]="clearLabel()"
+      (signature-change)="onSignatureChange($event)"
+    ></mp-signature-pad>
+  `,
+  styles: [':host { display: inline-block; }'],
+  imports: [BsForwardAriaDirective],
+  schemas: [CUSTOM_ELEMENTS_SCHEMA],
   changeDetection: ChangeDetectionStrategy.OnPush,
-  host: {
-    'class': 'border d-inline-block',
-    '[style.min-height.rem]': 'minHeight',
-    '(touchmove)': 'onTouchMove($event)',
-    '(pointerdown)': 'onPointerStart($event)',
-    '(pointermove)': 'onPointerMove($event)',
-    '(window:pointerup)': 'onPointerEnd($event)',
-  },
 })
-export class BsSignaturePadComponent implements AfterViewInit {
+export class BsSignaturePadComponent {
+  readonly width = input(500);
+  readonly height = input(300);
+  readonly inputLabel = input<string | null>(null);
+  readonly typeLabel = input<string | null>(null);
+  readonly undoLabel = input<string | null>(null);
+  readonly clearLabel = input<string | null>(null);
 
-  signature = model<Signature>({ strokes: [] });
-  width = input(500);
-  height = input(300);
-  ariaLabel = input<string>('Signature pad');
+  // `model()` already exposes a `signatureChange` output for two-way
+  // [(signature)] binding; `signature.set()` in onSignatureChange drives it.
+  readonly signature = model<Signature>({ strokes: [] });
 
-  readonly minHeight = 5;
-  readonly isDrawing = signal<boolean>(false);
-  readonly canvas = viewChild.required<ElementRef<HTMLCanvasElement>>('canvas');
-  context: CanvasRenderingContext2D | null = null;
+  readonly elementRef = viewChild.required<ElementRef<MpSignaturePadElement>>('el');
 
-  ngAfterViewInit() {
-    if (typeof window !== 'undefined') {
-      this.context = this.canvas().nativeElement.getContext('2d', { willReadFrequently: true });
-    }
+  constructor() {
+    // Forward model writes to the WC property. Writing back the same object
+    // the WC just emitted is a no-op inside Lit (same reference), so the
+    // event → model → property round trip cannot loop.
+    effect(() => {
+      const ref = this.elementRef();
+      if (!ref) return;
+      ref.nativeElement.signature = this.signature();
+    });
   }
 
-  onTouchMove(ev: TouchEvent) {
-    if (this.isDrawing()) {
-      ev.preventDefault();
-      ev.stopPropagation();
-    }
+  protected onSignatureChange(event: Event): void {
+    this.signature.set((event as CustomEvent<Signature>).detail);
   }
 
-  onPointerStart(ev: PointerEvent) {
-    ev.preventDefault();
-    this.isDrawing.set(true);
-    if (this.context) {
-      const sig = this.signature();
-      sig.strokes.push({
-        points: [{ x: ev.offsetX, y: ev.offsetY }]
-      });
-      this.signature.set({ ...sig });
-
-      this.context.fillStyle = 'black';
-      this.context.beginPath();
-      this.context.moveTo(ev.offsetX, ev.offsetY);
-    }
+  /** Remove the most recent stroke. */
+  undo(): void {
+    this.elementRef()?.nativeElement.undo();
   }
 
-  onPointerMove(ev: PointerEvent) {
-    if (this.isDrawing() && this.context) {
-      ev.preventDefault();
-
-      const sig = this.signature();
-      sig.strokes.at(-1)?.points.push({ x: ev.offsetX, y: ev.offsetY });
-      this.signature.set({ ...sig });
-
-      this.context.lineTo(ev.offsetX, ev.offsetY);
-      this.context.stroke();
-    }
-  }
-
-  onPointerEnd(ev: PointerEvent) {
-    if (this.isDrawing()) {
-      ev.preventDefault();
-      this.isDrawing.set(false);
-    }
+  /** Wipe strokes and typed text. */
+  clear(): void {
+    this.elementRef()?.nativeElement.clear();
   }
 }

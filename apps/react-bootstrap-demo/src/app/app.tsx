@@ -36,6 +36,7 @@ const RadioPage        = lazyNamed(() => import('./pages/RadioPage'),        'Ra
 const TimepickerPage   = lazyNamed(() => import('./pages/forms/TimepickerPage'),     'TimepickerPage');
 const MultiRangePage   = lazyNamed(() => import('./pages/forms/MultiRangePage'),     'MultiRangePage');
 const OtpInputPage     = lazyNamed(() => import('./pages/advanced/OtpInputPage'),    'OtpInputPage');
+const SignaturePadPage = lazyNamed(() => import('./pages/advanced/SignaturePadPage'), 'SignaturePadPage');
 const DockPage         = lazyNamed(() => import('./pages/enterprise/DockPage'),        'DockPage');
 const TileManagerPage  = lazyNamed(() => import('./pages/enterprise/TileManagerPage'), 'TileManagerPage');
 const FileManagerPage  = lazyNamed(() => import('./pages/enterprise/FileManagerPage'), 'FileManagerPage');
@@ -89,6 +90,7 @@ export function App() {
           <Route path="/basic/navbar" element={<NavbarPage />} />
           {/* Advanced */}
           <Route path="/advanced/otp-input" element={<OtpInputPage />} />
+          <Route path="/advanced/signature-pad" element={<SignaturePadPage />} />
           <Route path="/advanced/splitter" element={<SplitterPage />} />
           {/* Enterprise */}
           <Route path="/enterprise/accordion" element={<AccordionPage />} />

@@ -27,6 +27,7 @@ const SECTIONS = [
   { title: 'Advanced', routes: [
     { path: '/advanced/splitter', label: 'Splitter' },
     { path: '/advanced/otp-input', label: 'OTP input' },
+    { path: '/advanced/signature-pad', label: 'Signature pad' },
   ]},
   { title: 'Enterprise', routes: [
     { path: '/enterprise/accordion', label: 'Accordion' },

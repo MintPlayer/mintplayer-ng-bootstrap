@@ -1,0 +1,66 @@
+:host {
+  display: inline-block;
+  border: 1px solid var(--bs-border-color, #dee2e6);
+  border-radius: var(--bs-border-radius, 0.375rem);
+  background-color: var(--bs-body-bg, #fff);
+  font-family: inherit;
+}
+
+canvas {
+  display: block;
+  // Never overflow a CSS-sized host; height: auto keeps the aspect ratio the
+  // width/height attributes establish. Pointer coordinates stay correct under
+  // any rendered size — toCanvasPoint() maps CSS pixels to bitmap pixels.
+  max-width: 100%;
+  height: auto;
+  // Scroll-or-draw is resolved at first touch; the pad always draws.
+  touch-action: none;
+  cursor: crosshair;
+}
+
+.controls {
+  display: flex;
+  gap: 0.25rem;
+  padding: 0.25rem;
+  border-top: 1px solid var(--bs-border-color, #dee2e6);
+}
+
+input.form-control {
+  flex: 1 1 auto;
+  min-width: 0;
+  padding: 0.25rem 0.5rem;
+  font-size: 0.875rem;
+  line-height: 1.5;
+  color: var(--bs-body-color, #212529);
+  background-color: var(--bs-body-bg, #fff);
+  background-clip: padding-box;
+  border: 1px solid var(--bs-border-color, #dee2e6);
+  border-radius: var(--bs-border-radius-sm, 0.25rem);
+  outline: 0;
+
+  &:focus {
+    border-color: var(--bs-primary, #0d6efd);
+    box-shadow: 0 0 0 0.2rem rgba(var(--bs-primary-rgb, 13, 110, 253), 0.25);
+  }
+}
+
+button.control-btn {
+  flex: 0 0 auto;
+  padding: 0.25rem 0.5rem;
+  font-size: 0.875rem;
+  line-height: 1.5;
+  color: var(--bs-secondary, #6c757d);
+  background-color: transparent;
+  border: 1px solid var(--bs-secondary, #6c757d);
+  border-radius: var(--bs-border-radius-sm, 0.25rem);
+  cursor: pointer;
+
+  &:hover {
+    color: #fff;
+    background-color: var(--bs-secondary, #6c757d);
+  }
+  &:focus-visible {
+    outline: 2px solid var(--bs-primary, #0d6efd);
+    outline-offset: 2px;
+  }
+}
