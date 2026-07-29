@@ -1472,6 +1472,14 @@ export class MpDatatable extends LitElement {
     // clearing), mirroring the pointer path's modifier semantics.
     if (ev.altKey) return;
 
+    // Keys from interactive descendants operate that control, not the row:
+    // Space on the selection checkbox toggles it (its change handler owns the
+    // selection), and without this guard the bubbled keydown would ALSO run
+    // the row's plain-select semantics and wipe the rest of a multi
+    // selection — the keyboard face of the checkbox-cell's stopPropagation on
+    // click. Same guard as mp-treeview's consumer-template inputs.
+    if (ev.composedPath()[0] !== ev.currentTarget) return;
+
     if (ev.key === 'ArrowDown' || ev.key === 'ArrowUp') {
       ev.preventDefault();
       const rows = Array.from(

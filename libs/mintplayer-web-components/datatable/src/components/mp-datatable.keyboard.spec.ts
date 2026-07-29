@@ -205,3 +205,65 @@ describe('mp-datatable focus continuity across data swaps', () => {
     outside.remove();
   });
 });
+
+describe('mp-datatable — keys from interactive descendants do not run row semantics', () => {
+  beforeEach(() => {
+    document.body.innerHTML = '';
+  });
+
+  it('Space bubbling from the selection checkbox does not wipe a multi selection', async () => {
+    const el = await mount('selection-mode="multiple"');
+    (el as unknown as { selectedIds: unknown }).selectedIds = ['1', '2'];
+    await el.updateComplete;
+
+    const checkbox = shadow(el).querySelector('tbody tr[data-row-key="3"] mp-checkbox')!;
+    key(checkbox as HTMLElement, ' ');
+    await el.updateComplete;
+
+    // The row handler must NOT have replaced the selection with row 3 only.
+    const selected = Array.from(
+      shadow(el).querySelectorAll('tbody tr[data-selected="true"]'),
+    ).map((r) => (r as HTMLElement).dataset['rowKey']);
+    expect(selected).toEqual(['1', '2']);
+  });
+
+  it('Space on the row itself still selects', async () => {
+    const el = await mount('selection-mode="multiple"');
+    const rowEl = shadow(el).querySelector<HTMLTableRowElement>('tbody tr[data-row-key="1"]')!;
+    rowEl.focus();
+    key(rowEl, ' ');
+    await el.updateComplete;
+    expect(rowEl.dataset['selected']).toBe('true');
+  });
+});
+
+describe('mp-datatable — keys from interactive descendants do not run row semantics', () => {
+  beforeEach(() => {
+    document.body.innerHTML = '';
+  });
+
+  it('Space bubbling from the selection checkbox does not wipe a multi selection', async () => {
+    const el = await mount('selection-mode="multiple"');
+    (el as unknown as { selectedIds: unknown }).selectedIds = ['1', '2'];
+    await el.updateComplete;
+
+    const checkbox = shadow(el).querySelector('tbody tr[data-row-key="3"] mp-checkbox')!;
+    key(checkbox as HTMLElement, ' ');
+    await el.updateComplete;
+
+    // The row handler must NOT have replaced the selection with row 3 only.
+    const selected = Array.from(
+      shadow(el).querySelectorAll('tbody tr[data-selected="true"]'),
+    ).map((r) => (r as HTMLElement).dataset['rowKey']);
+    expect(selected).toEqual(['1', '2']);
+  });
+
+  it('Space on the row itself still selects', async () => {
+    const el = await mount('selection-mode="multiple"');
+    const rowEl = shadow(el).querySelector<HTMLTableRowElement>('tbody tr[data-row-key="1"]')!;
+    rowEl.focus();
+    key(rowEl, ' ');
+    await el.updateComplete;
+    expect(rowEl.dataset['selected']).toBe('true');
+  });
+});
