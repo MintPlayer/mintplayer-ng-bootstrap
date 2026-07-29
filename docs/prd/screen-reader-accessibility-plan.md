@@ -910,6 +910,27 @@ NVDA + VoiceOver check specifically on whether losing heading navigation is acce
 if not, the reversal is `role="heading"` + `<button aria-expanded>` in the hydrated branch only.
 Angular/React/Vue wrappers and the three demo pages follow.
 
+- **D1 as-built** (2026-07-29): shipped exactly per the table — one template, `<details
+  name="acc">` (constant name; groups scope per shadow root, spike 0.1a), no radio machine, no
+  grid animation, no `.accordion-clip`, no `role="heading"`/`aria-expanded` (asserted absent in
+  the spec so the trade is a decision, not an accident). The four 0.1a constraints are all in:
+  capture-phase toggle delegation on the shadow root; `#onToggle` treats the event purely as a
+  notification and re-reads `open` from every row; single-open is enforced from STATE in
+  `#setActive` (not the UA — jsdom has no `name` exclusivity, and §11a wants the state machine
+  correct everywhere) so real browsers get it twice, harmlessly; disabled tabs are inert via the
+  cancellable-keydown guard + `pointer-events: none` + `tabindex="-1"`/`aria-disabled`, with a
+  no-flash safety net in `#onToggle` for programmatic writes. The stylesheet is the spike's
+  transposed SCSS verbatim (line-height pin, static `.collapsed` on summary, `[open]` bottom-radius
+  squaring, accepted page-font delta). `data-js` survives as a pure hydration MARKER (no styling
+  hangs off it) — removing it broke the e2e readiness predicate: without it the structural checks
+  pass against the DSD chrome and the element detaches mid-test at hydration. SSR: generator
+  unchanged (render() is the single source of truth — 156 `<details>` across the 26 variants);
+  injector gained `[open]` stamping from `is-active` markers (the 0.1a win the radio machine
+  couldn't express) and counts bare `<mp-accordion-tab>` by TAG (it cannot self-tag server-side).
+  e2e suites rewritten: the no-JS tier is natively interactive (click + Enter, name exclusivity,
+  closed content unrendered) — 20/20 in ng, wrappers untouched (markers are the API), demo prose
+  updated in all three apps, spike artifacts deleted. 27 unit + 16 injector specs.
+
 **Tier 1 machines** — the accordion is no longer one of these. `bs-tab-control` and
 `bs-priority-nav` SSR branches: swap `d-none` for the 1px-clip class, move
 `role`/`aria-selected`/`aria-controls`/`aria-haspopup` onto the input, strip `role`/`tabindex` from

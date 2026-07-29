@@ -7,7 +7,7 @@ export interface AccordionTabToggleDetail {
   index: number;
   /** Its new state. */
   active: boolean;
-  /** The click / keydown / change that caused it, or `null` when programmatic. */
+  /** The click / keydown / toggle that caused it, or `null` when programmatic. */
   originalEvent: Event | null;
 }
 
@@ -18,7 +18,7 @@ interface TabState {
 
 /**
  * `<mp-accordion>` — Bootstrap accordion owning its whole structure in one
- * shadow root.
+ * shadow root, built on native `<details name>`/`<summary>` (decision D1).
  *
  * Light-DOM children are markers, not chrome: each `<mp-accordion-tab>`
  * supplies one tab's body, each `[accordion-header]` element supplies one
@@ -27,20 +27,25 @@ interface TabState {
  * Children that are neither render through the default slot — an accordion
  * with zero tabs is a valid styled container (the offcanvas nav uses one).
  *
- * Two interaction tiers, one template, branched on `data-js`:
- *  - JS on: `<button aria-expanded>` headers; this element owns the
- *    click/keyboard → state loop and animates via `grid-template-rows`.
- *  - JS off (server-rendered DSD): a visually-hidden `<input>` per tab —
- *    radio when single-open, checkbox under `multi` — plus a `<label>`
- *    header. `:checked` opens the collapse, rotates the chevron and paints
- *    the active state, so the accordion is fully interactive, and keyboard
- *    operable, with no script at all. Radio exclusivity is why one shadow
- *    root owns every tab: a group only forms within a single node tree.
+ * ONE template serves both tiers. The UA owns disclosure state: a closed
+ * `<details>` removes its content from the tab order and the accessibility
+ * tree with no CSS, works with no script at all, and `name` gives single-open
+ * exclusivity natively (scoped per shadow root — spike 0.1a). Single-open is
+ * ALSO enforced here from state, because engines without `name` support (and
+ * jsdom) must behave identically and PRD §11a wants state true at every
+ * moment, not only where the UA cooperates.
+ *
+ * The `toggle` contract (spike 0.1a, all three engines): it does not bubble
+ * (delegate in the CAPTURE phase), it is asynchronous, and same-task flips
+ * are coalesced into one event carrying the final state — so toggle is
+ * treated purely as a notification and `details.open` is re-read from every
+ * row. A disabled tab is kept inert by a cancellable KEYDOWN guard;
+ * `toggle` itself cannot be cancelled.
  *
  * Active state lives on the light-DOM markers (`is-active`), which makes it
  * declarative for every framework wrapper and survives the SSR handoff — the
- * pre-upgrade `:checked` inputs are read back onto the markers before the
- * shadow is replaced.
+ * pre-upgrade `[open]` state is read back onto the markers before the shadow
+ * is replaced.
  *
  * Closing a tab closes every accordion nested inside it, at any depth, so a
  * collapsed branch never hides expanded descendants.
@@ -67,10 +72,6 @@ export class MpAccordion extends LitElement {
     return this.hasAttribute('multi') && this.getAttribute('multi') !== 'false';
   }
 
-  get #highlightActiveTab(): boolean {
-    return this.hasAttribute('highlight-active-tab');
-  }
-
   /** Tab count for chrome generation, when no light DOM is present yet. */
   get #declaredTabCount(): number {
     const raw = Number(this.getAttribute('tab-count'));
@@ -82,17 +83,19 @@ export class MpAccordion extends LitElement {
   #mutationObserver: MutationObserver | null = null;
 
   override connectedCallback(): void {
-    // Server-rendered chrome carries the user's pre-upgrade state in its
-    // <input>s. Read it back onto the markers BEFORE super.connectedCallback,
+    // Server-rendered chrome carries the user's pre-upgrade state on its
+    // <details>. Read it back onto the markers BEFORE super.connectedCallback,
     // which is where ReactiveElement calls createRenderRoot() and the shadow
     // gets wiped.
     if (this.shadowRoot) {
-      this.#adoptSsrCheckedState();
+      this.#adoptSsrOpenState();
     }
 
     super.connectedCallback();
 
-    // Disengage the no-JS CSS state machine; from here JS owns the visuals.
+    // Since D1 no styling hangs off this — both tiers share one template —
+    // but it remains the observable "hydrated" signal (e2e readiness
+    // predicates key on it; lit-ssr never runs connectedCallback).
     this.setAttribute('data-js', '');
 
     // Nesting is always light-DOM (a nested accordion is authored inside a
@@ -121,12 +124,10 @@ export class MpAccordion extends LitElement {
   }
 
   override createRenderRoot(): ShadowRoot {
-    // The DSD handoff is always destructive. The server chrome is the
-    // input-driven no-JS tier and the client render is the button-driven JS
-    // tier, so hydration would bind parts to the wrong nodes. Returning the
-    // existing (emptied) shadow root directly also bypasses
-    // lit-element-hydrate-support's `_$AG` flag, which would otherwise force
-    // the first update through `hydrate()` (carousel precedent).
+    // The DSD handoff is always destructive: returning the existing (emptied)
+    // shadow root directly bypasses lit-element-hydrate-support's `_$AG`
+    // flag, which would otherwise force the first update through `hydrate()`
+    // (carousel precedent).
     const ctor = this.constructor as typeof MpAccordion & {
       shadowRootOptions?: ShadowRootInit;
       elementStyles?: CSSStyleSheet[];
@@ -139,6 +140,9 @@ export class MpAccordion extends LitElement {
       root = this.attachShadow(ctor.shadowRootOptions ?? { mode: 'open' });
     }
     adoptStyles(root, ctor.elementStyles ?? []);
+    // toggle does not bubble; capture-phase delegation is the one listener
+    // that hears every row without per-details bookkeeping (spike 0.1a).
+    root.addEventListener('toggle', (event) => this.#onToggle(event), { capture: true });
     return root;
   }
 
@@ -186,17 +190,17 @@ export class MpAccordion extends LitElement {
   // --------------------------------------------------------------- private
 
   /**
-   * Mirror the server-rendered inputs' checked state onto the light-DOM
+   * Mirror the server-rendered rows' UA-owned open state onto the light-DOM
    * markers, so the client render opens exactly what the user left open.
    */
-  #adoptSsrCheckedState(): void {
-    const inputs = this.shadowRoot?.querySelectorAll<HTMLInputElement>('.acc-input');
-    if (!inputs?.length) return;
+  #adoptSsrOpenState(): void {
+    const rows = this.shadowRoot?.querySelectorAll<HTMLDetailsElement>('details.accordion-item');
+    if (!rows?.length) return;
     const tabs = this.#collectTabElements();
-    inputs.forEach((input, index) => {
+    rows.forEach((row, index) => {
       const marker = tabs[index];
       if (!marker) return;
-      if (input.checked) marker.setAttribute('is-active', '');
+      if (row.open) marker.setAttribute('is-active', '');
       else marker.removeAttribute('is-active');
     });
   }
@@ -275,9 +279,34 @@ export class MpAccordion extends LitElement {
   }
 
   /**
+   * The single notification channel for UA-driven state changes: user
+   * activation, `name` exclusivity closing a sibling, or anything else that
+   * flips `open`. Per spike 0.1a the event is async, coalesced and carries no
+   * usable delta — so it is treated purely as "something changed" and every
+   * row's `open` is re-read and diffed against the state.
+   */
+  #onToggle(event: Event): void {
+    const rows = this.renderRoot?.querySelectorAll<HTMLDetailsElement>('details.accordion-item');
+    if (!rows) return;
+    rows.forEach((row, index) => {
+      const tab = this.#tabs[index];
+      if (!tab || row.open === tab.active) return;
+      if (tab.disabled) {
+        // Safety net for programmatic writes around the keydown guard; the
+        // guarded user paths never reach here, so there is no visible flash.
+        row.open = tab.active;
+        return;
+      }
+      this.#setActive(index, row.open, event);
+    });
+  }
+
+  /**
    * The single write path for tab state: updates the marker (the source of
    * truth), enforces single-open, recursively collapses nested accordions on
-   * close, and announces every change that actually happened.
+   * close, and announces every change that actually happened. The render pass
+   * reconciles `?open` from the markers, which in engines with `name` support
+   * merely confirms what the UA already did.
    */
   #setActive(index: number, active: boolean, originalEvent: Event | null): void {
     const tab = this.#tabs[index];
@@ -327,12 +356,18 @@ export class MpAccordion extends LitElement {
     });
   }
 
-  #onHeaderClick(index: number, event: Event): void {
-    this.#setActive(index, !this.#tabs[index]?.active, event);
-  }
+  /**
+   * Enter/Space activation is native to `<summary>`. This handler adds the
+   * APG accordion extras (Up/Down between headers, Home/End to the ends) and
+   * the disabled guard: `toggle` is not cancellable, but keydown IS — cancel
+   * it before the UA acts and a disabled tab is inert with no flash.
+   */
+  #onSummaryKeydown(index: number, event: KeyboardEvent): void {
+    if (this.#tabs[index]?.disabled && (event.key === 'Enter' || event.key === ' ')) {
+      event.preventDefault();
+      return;
+    }
 
-  /** APG accordion keyboard: Up/Down between headers, Home/End to the ends. */
-  #onHeaderKeydown(index: number, event: KeyboardEvent): void {
     const last = this.#tabs.length - 1;
     let target: number | null = null;
     switch (event.key) {
@@ -343,13 +378,18 @@ export class MpAccordion extends LitElement {
       default: return;
     }
     event.preventDefault();
-    this.shadowRoot?.querySelector<HTMLButtonElement>(`#b${target}`)?.focus();
+    this.shadowRoot?.querySelector<HTMLElement>(`#h${target}`)?.focus();
+  }
+
+  /** A disabled summary must also ignore the pointer (pointer-events: none in CSS is the primary guard; this covers synthesized clicks). */
+  #onSummaryClick(index: number, event: Event): void {
+    if (this.#tabs[index]?.disabled) {
+      event.preventDefault();
+      event.stopPropagation();
+    }
   }
 
   override render(): TemplateResult {
-    // data-js is set by connectedCallback, which lit-ssr never calls — so the
-    // generated chrome is always the no-JS tier.
-    const isBrowser = this.hasAttribute('data-js');
     const count = this.#tabs.length || this.#declaredTabCount;
     const rows = Array.from(
       { length: count },
@@ -358,76 +398,42 @@ export class MpAccordion extends LitElement {
 
     return html`
       <div class="accordion-root" part="accordion">
-        ${rows.map((row, index) =>
-          isBrowser ? this.#renderJsItem(row, index) : this.#renderNoJsItem(row, index),
-        )}
+        ${rows.map((row, index) => this.#renderItem(row, index))}
         <slot></slot>
       </div>
     `;
   }
 
-  #renderJsItem(row: TabState, index: number): TemplateResult {
-    return html`
-      <div class="accordion-item ${row.active ? 'open' : ''}">
-        <div class="accordion-header" role="heading" aria-level="2" id="h${index}" part="header">
-          <button
-            type="button"
-            id="b${index}"
-            class="accordion-button ${row.active ? '' : 'collapsed'}"
-            aria-expanded=${row.active ? 'true' : 'false'}
-            aria-controls="c${index}"
-            ?disabled=${row.disabled}
-            part="button"
-            @click=${(event: Event) => this.#onHeaderClick(index, event)}
-            @keydown=${(event: KeyboardEvent) => this.#onHeaderKeydown(index, event)}>
-            <slot name="h${index}"></slot>
-          </button>
-        </div>
-        ${this.#renderCollapse(index)}
-      </div>
-    `;
-  }
-
-  #renderNoJsItem(row: TabState, index: number): TemplateResult {
-    // The input is the control (focusable, keyboard-operable, natively
-    // toggled by its label) and the CSS state machine's only state. It is
-    // clipped rather than `display: none` so it stays reachable by Tab.
-    return html`
-      <div class="accordion-item">
-        <input
-          class="acc-input"
-          type=${this.#multi ? 'checkbox' : 'radio'}
-          name=${this.#multi ? nothing : 'acc'}
-          id="t${index}"
-          aria-controls="c${index}"
-          ?checked=${row.active}
-          ?disabled=${row.disabled} />
-        <div class="accordion-header" role="heading" aria-level="2" id="h${index}" part="header">
-          <label class="accordion-button collapsed" for="t${index}" part="button">
-            <slot name="h${index}"></slot>
-          </label>
-        </div>
-        ${this.#renderCollapse(index)}
-      </div>
-    `;
-  }
-
   /**
-   * Three nested boxes, not two: `.accordion-collapse` is the grid that
-   * animates, `.accordion-clip` is the zero-min-height clipper, and only
-   * `.accordion-content` may carry spacing. Padding on the clipper would
-   * survive the collapse — an element's own padding is not clipped by its
-   * `overflow: hidden`, so a closed tab would keep showing a padding strip.
+   * One template for both tiers. `name` is constant: `<details name>` groups
+   * per node tree (spike 0.1a), and every accordion owns its own shadow root,
+   * so instances can never capture each other's exclusivity. The summary
+   * keeps a static `collapsed` class so Bootstrap's own
+   * `.accordion-button:not(.collapsed)` rules never fire — the open state is
+   * styled from `details[open]` (spike 0.1b).
    */
-  #renderCollapse(index: number): TemplateResult {
+  #renderItem(row: TabState, index: number): TemplateResult {
     return html`
-      <div class="accordion-collapse" id="c${index}" role="region" aria-labelledby="h${index}">
-        <div class="accordion-clip">
-          <div class="accordion-content" part="content">
-            <slot name="c${index}"></slot>
-          </div>
+      <details
+        class="accordion-item"
+        name=${this.#multi ? nothing : 'acc'}
+        ?open=${row.active}
+        part="item">
+        <summary
+          id="h${index}"
+          class="accordion-button collapsed"
+          aria-controls="c${index}"
+          aria-disabled=${row.disabled ? 'true' : nothing}
+          tabindex=${row.disabled ? '-1' : nothing}
+          part="button"
+          @click=${(event: Event) => this.#onSummaryClick(index, event)}
+          @keydown=${(event: KeyboardEvent) => this.#onSummaryKeydown(index, event)}>
+          <slot name="h${index}"></slot>
+        </summary>
+        <div class="accordion-content" id="c${index}" role="region" aria-labelledby="h${index}" part="content">
+          <slot name="c${index}"></slot>
         </div>
-      </div>
+      </details>
     `;
   }
 }
