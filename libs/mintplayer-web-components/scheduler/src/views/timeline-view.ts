@@ -195,6 +195,9 @@ export class TimelineView extends BaseView {
 
     // Slots container
     const slotsContainer = this.createElement('div', 'scheduler-timeline-slots');
+    // Transparent for the grid's owned-children walk — a bare generic between
+    // row and gridcells breaks the chain (axe aria-required-children).
+    slotsContainer.setAttribute('role', 'presentation');
 
     for (const day of days) {
       const slots = dateService.getTimeSlots(
@@ -223,6 +226,9 @@ export class TimelineView extends BaseView {
     // Events container for this row
     if (isResource(flat.item)) {
       const eventsContainer = this.createElement('div', 'scheduler-timeline-events');
+      // A CELL, not presentation: its children are role=button events, and a
+      // row may not own buttons directly (axe aria-required-children).
+      eventsContainer.setAttribute('role', 'gridcell');
       slotsContainer.appendChild(eventsContainer);
     }
 

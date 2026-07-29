@@ -212,6 +212,9 @@ export abstract class BaseView {
     columnHeaders?: string;
     presentation?: string[];
     rows?: string;
+    /** Extra gridcells (e.g. a per-row events overlay whose buttons need a
+     *  cell to live in — rows may not own buttons directly). */
+    cells?: string;
   }): void {
     const container = this.container;
     if (container.getAttribute('role') !== 'grid') container.setAttribute('role', 'grid');
@@ -223,6 +226,7 @@ export abstract class BaseView {
     if (config.columnHeaders) apply(config.columnHeaders, 'columnheader');
     (config.presentation ?? []).forEach((selector) => apply(selector, 'presentation'));
     if (config.rows) apply(config.rows, 'row');
+    if (config.cells) apply(config.cells, 'gridcell');
   }
 
   /** aria-current="date" on every element the views styled `.today`. */

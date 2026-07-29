@@ -856,7 +856,6 @@ export class MpCarousel extends LitElement {
         tabindex=${isBrowser ? '0' : nothing}
         aria-live=${isBrowser ? this.#ariaLive : nothing}
         aria-atomic=${isBrowser ? 'false' : nothing}
-        aria-orientation=${isBrowser ? this.#orientation : nothing}
         aria-keyshortcuts=${isBrowser && this.#keyboardEvents
           ? this.#orientation === 'horizontal'
             ? 'ArrowLeft ArrowRight Home End'

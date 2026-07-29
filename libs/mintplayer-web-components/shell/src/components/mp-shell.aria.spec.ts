@@ -201,7 +201,9 @@ describe('mp-shell skip link', () => {
     expect(link).not.toBeNull();
 
     const content = shadow(el).querySelector<HTMLElement>('.content')!;
-    expect(content.getAttribute('tabindex')).toBe('-1');
+    // 0, not -1: .content is the scroll container, and a scrollable region
+    // must be keyboard-reachable (axe scrollable-region-focusable).
+    expect(content.getAttribute('tabindex')).toBe('0');
 
     const click = new MouseEvent('click', { bubbles: true, cancelable: true });
     link.dispatchEvent(click);

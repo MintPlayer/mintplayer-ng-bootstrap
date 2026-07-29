@@ -291,7 +291,11 @@ export class MpTimeline extends LitElement {
         class="timeline"
         role=${role}
         aria-label=${this.getAttribute('aria-label') ?? this._inputLabel ?? nothing}
-        aria-orientation=${this._orientation}
+        aria-orientation=${
+          // Only widgets take aria-orientation — on role=list/group it is an
+          // invalid pairing (axe aria-allowed-attr, critical).
+          role === 'listbox' ? this._orientation : nothing
+        }
         aria-multiselectable=${this._selectable === 'multiple' ? 'true' : nothing}
         @click=${this.onClick}
         @keydown=${this.onKeydown}

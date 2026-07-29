@@ -64,20 +64,23 @@ describe('mp-timeline ARIA — container role follows the interaction mode', () 
     document.body.innerHTML = '';
   });
 
-  it('is an unnamed role="list" with an orientation and no multiselect by default', async () => {
+  it('is an unnamed role="list" with no orientation and no multiselect by default', async () => {
     const el = await mount((host) => {
       host.items = RELEASES;
     });
     const container = list(el);
     expect(container.getAttribute('role')).toBe('list');
-    expect(container.getAttribute('aria-orientation')).toBe('vertical');
+    // Only widgets take aria-orientation — role=list may not carry it
+    // (axe aria-allowed-attr); it appears only in listbox mode.
+    expect(container.hasAttribute('aria-orientation')).toBe(false);
     expect(container.hasAttribute('aria-multiselectable')).toBe(false);
     expect(container.hasAttribute('aria-label')).toBe(false);
   });
 
-  it('flips aria-orientation when the orientation changes, and back', async () => {
+  it('flips aria-orientation when the orientation changes — listbox mode only', async () => {
     const el = await mount((host) => {
       host.items = RELEASES;
+      host.selectable = 'single';
     });
 
     el.orientation = 'horizontal';

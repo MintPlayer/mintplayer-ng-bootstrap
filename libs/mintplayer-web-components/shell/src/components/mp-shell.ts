@@ -295,7 +295,11 @@ export class MpShell extends LitElement {
       </div>
       <div class="sidebar-root" part="sidebar-root">
         <aside id="shell-sidebar" class="sidebar" part="sidebar" aria-label="Sidebar"><slot name="sidebar"></slot></aside>
-        <div class="content" part="content" role="main" tabindex="-1"><slot></slot></div>
+        <!-- tabindex=0, not -1: .content is the scroll container, and a
+             scrollable region only a mouse can reach fails WCAG 2.1.1 (axe
+             scrollable-region-focusable). The skip link's focus() target is
+             unaffected. -->
+        <div class="content" part="content" role="main" tabindex="0"><slot></slot></div>
       </div>
       <slot name="toggle"></slot>
     `;

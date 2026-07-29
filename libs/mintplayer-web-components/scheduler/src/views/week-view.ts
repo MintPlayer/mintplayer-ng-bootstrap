@@ -145,9 +145,13 @@ export class WeekView extends BaseView {
         '.scheduler-time-gutter',
         '.scheduler-time-slot-label',
         '.scheduler-days-container',
-        '.scheduler-events-container',
       ],
       rows: '.scheduler-day-column',
+      // The events overlay is a CELL, not presentation: a presentational
+      // wrapper leaves its role=button events owned directly by the row,
+      // which is invalid (axe aria-required-children). A gridcell may
+      // contain buttons.
+      cells: '.scheduler-events-container',
     });
     this.markToday();
   }

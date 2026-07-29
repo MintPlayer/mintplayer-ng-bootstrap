@@ -173,6 +173,17 @@ export class MpDropdownMenu extends MpDropdownElement {
 
   /** Assign roles, aria, and the roving tabindex across the current items. */
   #syncItems(): void {
+    // Headers and dividers are chrome: role=menu owns its slotted children,
+    // and it allows only menuitem*/group/separator — a bare header <li> is
+    // both an invalid menu child AND an orphaned native listitem (its
+    // flat-tree list is the shadow <ul>, its DOM parent is the host).
+    const chromeOf = (selector: string) =>
+      [...this.querySelectorAll<HTMLElement>(selector)].filter(
+        (el) => el.closest('mp-dropdown-menu') === this && !el.hasAttribute('role'),
+      );
+    chromeOf('.dropdown-header').forEach((el) => el.setAttribute('role', 'presentation'));
+    chromeOf('.dropdown-divider').forEach((el) => el.setAttribute('role', 'separator'));
+
     const items = this.#items();
     if (items.length === 0) return;
 

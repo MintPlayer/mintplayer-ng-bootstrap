@@ -121,15 +121,17 @@ describe('mp-carousel ARIA contract', () => {
     });
   });
 
-  it('the viewport carries tabindex, orientation and keyshortcuts', async () => {
+  it('the viewport carries tabindex and keyshortcuts, never aria-orientation', async () => {
     const el = await make();
     expect(inner(el).getAttribute('tabindex')).toBe('0');
-    expect(inner(el).getAttribute('aria-orientation')).toBe('horizontal');
+    // No aria-orientation: the viewport div carries no role, and only
+    // widgets may take the attribute (axe aria-allowed-attr).
+    expect(inner(el).hasAttribute('aria-orientation')).toBe(false);
     expect(inner(el).getAttribute('aria-keyshortcuts')).toBe('ArrowLeft ArrowRight Home End');
 
     el.setAttribute('orientation', 'vertical');
     await flush(el);
-    expect(inner(el).getAttribute('aria-orientation')).toBe('vertical');
+    expect(inner(el).hasAttribute('aria-orientation')).toBe(false);
     expect(inner(el).getAttribute('aria-keyshortcuts')).toBe('ArrowUp ArrowDown Home End');
 
     el.setAttribute('keyboard-events', 'false');
