@@ -1,2 +1,2 @@
 export * from './component/signature-pad.component';
-export * from './interfaces';
+export type { Point, Signature, Stroke } from '@mintplayer/web-components/signature-pad';

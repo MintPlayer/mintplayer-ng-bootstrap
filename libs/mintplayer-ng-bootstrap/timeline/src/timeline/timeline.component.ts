@@ -38,6 +38,7 @@ import {
   BsTimelineTimestampDirective,
   BsTimelineTitleDirective,
 } from '../directives/timeline-template.directives';
+import { BsForwardAriaDirective } from '@mintplayer/ng-bootstrap/a11y';
 
 /**
  * `<bs-timeline>` — Angular wrapper around `<mp-timeline>`.
@@ -51,7 +52,7 @@ import {
   selector: 'bs-timeline',
   templateUrl: './timeline.component.html',
   styleUrls: ['./timeline.component.scss'],
-  imports: [NgTemplateOutlet],
+  imports: [BsForwardAriaDirective, NgTemplateOutlet],
   schemas: [CUSTOM_ELEMENTS_SCHEMA],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })

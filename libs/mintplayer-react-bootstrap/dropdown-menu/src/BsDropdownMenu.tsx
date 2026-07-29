@@ -9,13 +9,15 @@ import {
 // here so it lands in the app's static CSS bundle — present with JS disabled.
 import './dropdown-menu.css';
 
-export interface BsDropdownMenuProps {
+/* Omits React's native `onSelect` (a text-selection event) because this
+   component's `onSelect` is the menu-item selection event and collides by name.
+   Same trade as BsCarousel's animation handlers. */
+export interface BsDropdownMenuProps
+  extends Omit<React.HTMLAttributes<HTMLElement>, 'onSelect'> {
   /** `menu` (default, roving-tabindex keyboard nav) | `listbox`. */
   mode?: DropdownMode;
   /** px cap on the menu height; scrolls beyond. Maps to the `max-height` attribute. */
   maxHeight?: number;
-  /** id of an external label, set as `aria-labelledby` on the list. Maps to `label-id`. */
-  labelId?: string;
   /** Fires when an enabled item is activated; `detail.value` carries the item's value. */
   onSelect?: (event: CustomEvent<DropdownSelectEventDetail>) => void;
   className?: string;
@@ -23,15 +25,14 @@ export interface BsDropdownMenuProps {
 }
 
 /**
- * Inner `@lit/react` component. `mode`/`maxHeight`/`labelId` are surfaced to the
- * WC as attributes (`mode`, `max-height`, `label-id`) — the layout/roles read the
+ * Inner `@lit/react` component. `mode`/`maxHeight` are surfaced to the
+ * WC as attributes (`mode`, `max-height`) — the layout/roles read the
  * attributes to keep the menu SSR- and no-JS-friendly — so `createComponent`
  * forwards them as React props → attributes. We retype its props to the clean
  * public surface; the runtime forwards everything to the element unchanged.
  */
-type MpDropdownMenuInnerProps = Omit<BsDropdownMenuProps, 'maxHeight' | 'labelId'> & {
+type MpDropdownMenuInnerProps = Omit<BsDropdownMenuProps, 'maxHeight'> & {
   'max-height'?: number;
-  'label-id'?: string;
 } & React.RefAttributes<MpDropdownMenu>;
 
 const MpDropdownMenuComponent = createComponent({
@@ -61,14 +62,13 @@ const MpDropdownMenuComponent = createComponent({
  *     </BsDropdownMenu>
  */
 export const BsDropdownMenu = React.forwardRef<MpDropdownMenu, BsDropdownMenuProps>(function BsDropdownMenu(
-  { maxHeight, labelId, ...props },
+  { maxHeight, ...props },
   ref,
 ) {
   return (
     <MpDropdownMenuComponent
       ref={ref}
       {...(maxHeight != null ? { 'max-height': maxHeight } : {})}
-      {...(labelId != null ? { 'label-id': labelId } : {})}
       {...props}
     />
   );

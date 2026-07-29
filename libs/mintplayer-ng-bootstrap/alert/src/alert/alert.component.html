@@ -1,6 +1,10 @@
 @if (isVisible()) {
     <div class="mb-3 overflow-hidden" [@fadeInOut] (@fadeInOut.done)="onAfterOpenedOrClosed(isVisible())">
-        <div class="alert mb-0" [class]="'alert-' + colors[type()]" role="alert">
+        <!-- role="alert" is OPT-IN: most usages are static banners present at
+             page load, and a forced alert role re-announces them as urgent
+             interruptions on every render. Set [announce]="true" for genuine
+             dynamic alerts. -->
+        <div class="alert mb-0" [class]="'alert-' + colors[type()]" [attr.role]="announce() ? 'alert' : null">
             <ng-content></ng-content>
         </div>
     </div>

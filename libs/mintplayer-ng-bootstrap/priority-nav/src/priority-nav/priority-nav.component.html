@@ -1,10 +1,19 @@
 <nav class="priority-nav" [class.noscript]="isServerSide" [attr.aria-label]="ariaLabel()" bsNoNoscript>
     @if (isServerSide) {
-        <input type="checkbox" [id]="uid + '-more'" class="priority-nav-more-checkbox d-none" bsNoNoscript>
+        <!-- The checkbox IS the disclosure control: clipped (not display:none)
+             so Tab reaches it, Space toggles it natively, and its checked
+             state is a live, self-updating expanded signal — a static
+             aria-expanded here would lie after the first toggle (PRD 11a). -->
+        <input type="checkbox" [id]="uid + '-more'" class="priority-nav-more-checkbox" bsNoNoscript
+               [attr.aria-controls]="uid + '-overflow'">
     }
 
     @if (!isServerSide) {
-        <div class="priority-nav-measure-wrapper" aria-hidden="true">
+        <!-- inert (not just aria-hidden): the clone's links/buttons must be
+             unreachable by Tab too, or focus lands on nodes the reader is
+             required not to announce. Measurement needs geometry, which inert
+             preserves (display:none would zero every measure). -->
+        <div class="priority-nav-measure-wrapper" aria-hidden="true" inert>
             <div class="priority-nav-measure">
                 @for (entry of itemsWithMeta(); track entry.item.id) {
                     <span #measureItem="bsObserveSize" bsObserveSize class="priority-nav-measure-item">
@@ -25,18 +34,20 @@
         }
 
         @if (isServerSide) {
-            <label [for]="uid + '-more'" class="priority-nav-more-toggle priority-nav-more-toggle-noscript"
-                   role="button" tabindex="0"
-                   aria-haspopup="true"
-                   [attr.aria-controls]="uid + '-overflow'">
+            <!-- Visual skin + accessible name for the clipped checkbox; the
+                 fake role="button"/tabindex pair is gone — a label does not
+                 activate on Enter, so it claimed a keyboard it did not have. -->
+            <label [for]="uid + '-more'" class="priority-nav-more-toggle priority-nav-more-toggle-noscript">
                 <ng-container *ngTemplateOutlet="moreLabelTemplate() ?? defaultMoreLabel; context: { $implicit: false }"></ng-container>
             </label>
         } @else {
+            <!-- Disclosure pattern: aria-expanded on the button; no
+                 aria-haspopup (that token means menu/dialog, and the overflow
+                 is a plain disclosure list). -->
             <button bsObserveSize #moreSize="bsObserveSize" type="button"
                     class="priority-nav-more-toggle"
                     [class.priority-nav-hidden]="!showMoreButton()"
                     (click)="toggleMore()"
-                    aria-haspopup="true"
                     [attr.aria-controls]="uid + '-overflow'"
                     [attr.aria-expanded]="isMoreOpen()">
                 <ng-container *ngTemplateOutlet="moreLabelTemplate() ?? defaultMoreLabel; context: { $implicit: isMoreOpen() }"></ng-container>
@@ -44,14 +55,15 @@
         }
     </div>
 
+    <!-- No role="menu"/"menuitem": this is a disclosure overflow list (APG
+         disclosure navigation), and a menu role would demand a focus-managed
+         menuitem keyboard model the projected links neither need nor have. -->
     <div [id]="uid + '-overflow'"
          class="priority-nav-overflow"
-         role="menu"
          [class.priority-nav-overflow-open]="!isServerSide && isMoreOpen()"
          [class.priority-nav-overflow-align-start]="!isServerSide && fullyCollapsed()">
         @for (entry of itemsWithMeta(); track entry.item.id) {
             <span class="priority-nav-overflow-item"
-                  role="menuitem"
                   [class.priority-nav-overflow-hidden]="entry.hideInOverflow"
                   [ngClass]="entry.hideBelowClass">
                 <ng-container *ngTemplateOutlet="entry.item.templateRef"></ng-container>

@@ -2,6 +2,21 @@
 @import "bootstrap/scss/variables";
 @import "bootstrap/scss/mixins/breakpoints";
 
+// Every write of the open lever also mirrors a visibility pair (PRD 5.6):
+// CSS cannot select on a custom-property VALUE, so the state matrix sets the
+// visibility outcome alongside the number. Hide waits for the 0.3s slide
+// (the outgoing sidebar stays visible in motion); reveal is immediate.
+@mixin shell-open($open) {
+  --mp-shell-open: #{$open};
+  @if $open == 1 {
+    --mp-shell-vis: visible;
+    --mp-shell-vis-delay: 0s;
+  } @else {
+    --mp-shell-vis: hidden;
+    --mp-shell-vis-delay: 0.3s;
+  }
+}
+
 // The sidebar's open/closed state funnels through ONE numeric lever,
 // `--mp-shell-open` (1 = open, 0 = closed), computed once from `state` /
 // `breakpoint` / the toggle checkbox (see the state matrix at the bottom).
@@ -21,7 +36,7 @@
   flex-direction: column;            // top bar over the sidebar/content row
   position: relative;
   --mp-shell-size: 15rem;            // expanded sidebar width (consumer override via `size` / this var)
-  --mp-shell-open: 0;                // closed by default; the matrix below overrides
+  @include shell-open(0);            // closed by default; the matrix below overrides
   --mp-shell-wide: 0;                // overlay by default; the loop below overrides per breakpoint
 }
 
@@ -50,9 +65,13 @@
   // The sidebar slides via `transform` (its own box width) in both modes;
   // `inline-size` is transitioned so a cross-breakpoint resize (fixed width <->
   // 100%) animates smoothly instead of snapping.
+  // visibility (not just the off-screen transform) removes a closed
+  // sidebar's links from the tab order and the accessibility tree.
+  visibility: var(--mp-shell-vis, visible);
   transition:
     transform 0.3s ease-in-out,
-    inline-size 0.3s ease-in-out;
+    inline-size 0.3s ease-in-out,
+    visibility 0s var(--mp-shell-vis-delay, 0s);
 }
 
 .content {
@@ -82,6 +101,29 @@
   clip: rect(0 0 0 0);
   white-space: nowrap;
   border: 0;
+}
+
+// Focus lives on the clipped checkbox; paint its ring on the hamburger.
+.shell-toggle:focus-visible ~ .topbar .shell-hamburger {
+  outline: 2px solid var(--bs-primary, #0d6efd);
+  outline-offset: 2px;
+}
+
+// Visually hidden until focused — the first tab stop of the shell.
+.skip-link {
+  position: absolute;
+  inset-block-start: 0;
+  inset-inline-start: 0;
+  z-index: 1050;
+  padding: 0.5rem 1rem;
+  background: var(--bs-body-bg, #fff);
+  color: var(--bs-body-color, #212529);
+  transform: translateY(-200%);
+
+  &:focus-visible {
+    transform: none;
+    outline: 2px solid var(--bs-primary, #0d6efd);
+  }
 }
 
 .shell-hamburger {
@@ -158,8 +200,8 @@
 
 // --- open/closed state matrix (sets --mp-shell-open) ------------------------
 // Explicit `state` wins and is viewport-independent.
-:host([state="show"]) { --mp-shell-open: 1; }
-:host([state="hide"]) { --mp-shell-open: 0; }
+:host([state="show"]) { @include shell-open(1); }
+:host([state="hide"]) { @include shell-open(0); }
 
 // `auto`: responsive default (collapsed below the breakpoint, expanded at/above)
 // with the toggle inverting it for the current viewport.
@@ -167,17 +209,24 @@
   :host([breakpoint="#{$name}"]:not([state="show"]):not([state="hide"]):not([external-toggle])) {
     @if $min and $min > 0 {
       @include media-breakpoint-up($name, $grid-breakpoints) {       // wide: default open
-        .shell-toggle:not(:checked) ~ .sidebar-root { --mp-shell-open: 1; }
-        .shell-toggle:checked ~ .sidebar-root { --mp-shell-open: 0; }
+        .shell-toggle:not(:checked) ~ .sidebar-root { @include shell-open(1); }
+        .shell-toggle:checked ~ .sidebar-root { @include shell-open(0); }
       }
       @include media-breakpoint-down($name, $grid-breakpoints) {     // narrow: default closed
-        .shell-toggle:not(:checked) ~ .sidebar-root { --mp-shell-open: 0; }
-        .shell-toggle:checked ~ .sidebar-root { --mp-shell-open: 1; }
+        .shell-toggle:not(:checked) ~ .sidebar-root { @include shell-open(0); }
+        .shell-toggle:checked ~ .sidebar-root { @include shell-open(1); }
       }
     } @else {
       // xs (min 0): always narrow semantics (default closed).
-      .shell-toggle:not(:checked) ~ .sidebar-root { --mp-shell-open: 0; }
-      .shell-toggle:checked ~ .sidebar-root { --mp-shell-open: 1; }
+      .shell-toggle:not(:checked) ~ .sidebar-root { @include shell-open(0); }
+      .shell-toggle:checked ~ .sidebar-root { @include shell-open(1); }
     }
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .sidebar,
+  .content {
+    transition: none;
   }
 }

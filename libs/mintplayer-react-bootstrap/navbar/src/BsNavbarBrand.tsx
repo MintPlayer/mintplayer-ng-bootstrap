@@ -2,7 +2,7 @@ import * as React from 'react';
 import { createComponent } from '@lit/react';
 import { MpNavbarBrand } from '@mintplayer/web-components/navbar';
 
-export interface BsNavbarBrandProps {
+export interface BsNavbarBrandProps extends React.HTMLAttributes<HTMLElement> {
   /** Always `"brand"` to project into the navbar's brand slot. */
   slot?: string;
   className?: string;

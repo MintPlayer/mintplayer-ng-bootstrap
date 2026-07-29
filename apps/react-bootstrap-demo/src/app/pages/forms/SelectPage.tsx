@@ -17,7 +17,8 @@ const DISHES: Dish[] = [
 // selection via the option's `id` and look up the object on change. The
 // Angular wrapper does this for you via the BsSelectValueAccessor's
 // `optionMap`; React (no two-way ngModel) wires it explicitly.
-const SOURCE = `<BsSelect value={String(selected?.id ?? '')}
+const SOURCE = `<BsSelect aria-label="Dish"
+          value={String(selected?.id ?? '')}
           onValueChange={e => setSelected(DISHES.find(d => d.id === Number(e.detail.value)) ?? null)}>
   <option value="">Choose a dish</option>
   {DISHES.map(d => <option key={d.id} value={String(d.id)}>{d.name}</option>)}
@@ -40,6 +41,7 @@ export function SelectPage() {
       <section>
         <h2>Basic usage</h2>
         <BsSelect
+          aria-label="Dish"
           value={String(selected?.id ?? '')}
           onValueChange={(e) =>
             setSelected(DISHES.find((d) => d.id === Number(e.detail.value)) ?? null)

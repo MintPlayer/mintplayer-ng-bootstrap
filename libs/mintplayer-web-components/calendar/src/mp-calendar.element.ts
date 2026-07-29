@@ -186,6 +186,13 @@ export class MpCalendarElement extends LitElement {
     return `${m.charAt(0).toUpperCase()}${m.slice(1)} ${month.getFullYear()}`;
   }
 
+  /** Focus the grid = focus its roving cell (dialog initial focus calls host.focus()). */
+  override focus(options?: FocusOptions): void {
+    const cell = this.renderRoot.querySelector<HTMLElement>('[tabindex="0"]');
+    if (cell) cell.focus(options);
+    else super.focus(options);
+  }
+
   /**
    * The cell that should carry tabindex="0". One per month — focused, else
    * selected, else today, else first enabled day. Mirrors APG convention.
@@ -344,32 +351,34 @@ export class MpCalendarElement extends LitElement {
     const focusable = this.focusableDate();
 
     return html`
+      <!-- The month-nav toolbar lives OUTSIDE the table: a presentational
+           row does not remove its BUTTONS from the grid's owned children,
+           so the grid still owned two role=button nodes — invalid
+           (axe aria-required-children, critical). -->
+      <div class="calendar-nav">
+        <button
+          type="button"
+          class="chevron-btn"
+          aria-label="Previous month"
+          @click="${() => this.previousMonth()}"
+          .innerHTML="${CHEVRON_LEFT_SVG}"
+        ></button>
+        <span id="${this.monthLabelId}" class="month-label" aria-live="polite">
+          ${this.monthLabel(month)}
+        </span>
+        <button
+          type="button"
+          class="chevron-btn"
+          aria-label="Next month"
+          @click="${() => this.nextMonth()}"
+          .innerHTML="${CHEVRON_RIGHT_SVG}"
+        ></button>
+      </div>
       <table role="grid" aria-labelledby="${this.monthLabelId}">
-        <tr>
-          <td>
-            <button
-              type="button"
-              class="chevron-btn"
-              aria-label="Previous month"
-              @click="${() => this.previousMonth()}"
-              .innerHTML="${CHEVRON_LEFT_SVG}"
-            ></button>
-          </td>
-          <td colspan="6" id="${this.monthLabelId}" class="month-label" aria-live="polite">
-            ${this.monthLabel(month)}
-          </td>
-          <td>
-            <button
-              type="button"
-              class="chevron-btn"
-              aria-label="Next month"
-              @click="${() => this.nextMonth()}"
-              .innerHTML="${CHEVRON_RIGHT_SVG}"
-            ></button>
-          </td>
-        </tr>
         <tr role="row">
-          <th aria-hidden="true"></th>
+          <!-- The week-number column's header: hidden it left every
+               rowheader in an unlabelled column. Visually empty, spoken. -->
+          <th scope="col" role="columnheader"><span class="visually-hidden">Week</span></th>
           ${weekdays.map(
             (d) => html`<th scope="col" role="columnheader" title="${d.long}">${d.short}</th>`,
           )}

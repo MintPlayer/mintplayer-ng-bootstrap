@@ -8,7 +8,7 @@ import {
   type AccordionTabToggleDetail,
 } from '@mintplayer/web-components/accordion';
 
-export interface BsAccordionProps {
+export interface BsAccordionProps extends React.HTMLAttributes<HTMLElement> {
   /** Allow several tabs to stay open at once (checkbox machine with JS off). */
   multi?: boolean;
   /** Paint the open header with the Bootstrap active background. */
@@ -20,7 +20,7 @@ export interface BsAccordionProps {
   children?: React.ReactNode;
 }
 
-export interface BsAccordionItemProps {
+export interface BsAccordionItemProps extends React.HTMLAttributes<HTMLElement> {
   /** Header content — any node, not just a string. */
   header?: React.ReactNode;
   isActive?: boolean;
@@ -82,6 +82,8 @@ export function BsAccordionItem({
   disabled,
   index = 0,
   children,
+  // Forwarded to the tab, which is the element that owns the panel content.
+  ...rest
 }: BsAccordionItemProps) {
   return (
     <>
@@ -92,7 +94,8 @@ export function BsAccordionItem({
         accordion-tab=""
         slot={`c${index}`}
         {...(isActive ? { 'is-active': '' } : {})}
-        {...(disabled ? { disabled: '' } : {})}>
+        {...(disabled ? { disabled: '' } : {})}
+        {...rest}>
         {children}
       </MpAccordionTabComponent>
     </>

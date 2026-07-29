@@ -35,11 +35,32 @@ export class BsTooltipDirective implements OnDestroy {
     });
     this.portal = new ComponentPortal(BsTooltipComponent, null, this.injector);
 
-    parent.nativeElement.onmouseenter = () => {
-      this.showTooltip();
-    };
-    parent.nativeElement.onmouseleave = () => {
-      this.hideTooltip();
+    /* addEventListener rather than the on* properties the old code assigned —
+       those silently CLOBBER any handler the consumer set on their own element. */
+    parent.nativeElement.addEventListener('mouseenter', () => this.showTooltip());
+    parent.nativeElement.addEventListener('mouseleave', () => this.scheduleHide());
+    // WCAG 1.4.13: content on hover must also appear on FOCUS. A keyboard user
+    // could never see these tooltips at all.
+    parent.nativeElement.addEventListener('focusin', () => this.showTooltip());
+    parent.nativeElement.addEventListener('focusout', () => this.hideTooltip());
+  }
+
+  /**
+   * WCAG 1.4.13 "hoverable": the pointer must be able to travel INTO the
+   * tooltip (to select/zoom its text) without it vanishing. Hide on a short
+   * delay; entering the overlay cancels it, leaving the overlay hides.
+   */
+  private hideTimer: ReturnType<typeof setTimeout> | null = null;
+
+  private scheduleHide(): void {
+    this.cancelScheduledHide();
+    this.hideTimer = setTimeout(() => this.hideTooltip(), 150);
+  }
+
+  private cancelScheduledHide(): void {
+    if (this.hideTimer !== null) {
+      clearTimeout(this.hideTimer);
+      this.hideTimer = null;
     }
   }
 
@@ -60,6 +81,7 @@ export class BsTooltipDirective implements OnDestroy {
   }
 
   showTooltip() {
+    this.cancelScheduledHide();
     if (this.overlayRef) return;
 
     const positions: ConnectedPosition[] = [];
@@ -107,6 +129,10 @@ export class BsTooltipDirective implements OnDestroy {
     const component = this.overlayRef.attach<BsTooltipComponent>(this.portal);
     component.setInput('position', this.bsTooltip());
 
+    // Hoverable half of 1.4.13 — see scheduleHide().
+    this.overlayRef.overlayElement.addEventListener('mouseenter', () => this.cancelScheduledHide());
+    this.overlayRef.overlayElement.addEventListener('mouseleave', () => this.scheduleHide());
+
     this.parent.nativeElement.setAttribute('aria-describedby', this.tooltipId);
     if (this.stackToken === null) {
       this.stackToken = this.overlayStack.push();
@@ -114,6 +140,7 @@ export class BsTooltipDirective implements OnDestroy {
   }
 
   hideTooltip() {
+    this.cancelScheduledHide();
     if (this.overlayRef) {
       this.overlayRef.detach();
       this.overlayRef.dispose();

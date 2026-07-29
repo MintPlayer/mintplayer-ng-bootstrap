@@ -1,6 +1,7 @@
 import { LitElement, html, nothing, type TemplateResult } from 'lit';
 import { repeat } from 'lit/directives/repeat.js';
 import { OverlayController } from '@mintplayer/web-components/overlay';
+import { deepActiveElement, HostAriaController, LiveAnnouncerController } from '@mintplayer/web-components/a11y';
 import '@mintplayer/web-components/treeview';
 import type {
   MpTreeview,
@@ -48,6 +49,15 @@ export class MpTreeSelect extends LitElement {
       'scroll-height',
       'disabled',
       'search-debounce-ms',
+      // Naming. aria-label on the host wins over input-label; both land on the
+      // main search input, which is the control a user actually operates.
+      'aria-label',
+      'input-label',
+      'search-label',
+      'clear-label',
+      // Resolved into cross-root element references, never copied as IDREFs.
+      'aria-labelledby',
+      'aria-describedby',
     ];
   }
 
@@ -58,6 +68,33 @@ export class MpTreeSelect extends LitElement {
   private _placeholder = '';
   private _showClear = false;
   private _scrollHeight = '300px';
+  private _inputLabel: string | null = null;
+  private _searchLabel: string | null = null;
+  private _clearLabel = 'Clear';
+
+  /**
+   * Accessible name for a chip's remove button. A formatter taking the node's
+   * label, because a bare "Remove" among ten chips tells the user nothing about
+   * WHICH selection the button removes — and word order differs across
+   * languages, so prefix/suffix pairs cannot express a translated middle.
+   */
+  removeLabel: (label: string) => string = (label) => `Remove ${label}`;
+
+  /** Accessible name for the clear-all button. */
+  get clearLabel(): string {
+    return this._clearLabel;
+  }
+  set clearLabel(value: string) {
+    const next = value || 'Clear';
+    if (this._clearLabel === next) return;
+    this._clearLabel = next;
+    this.requestUpdate();
+  }
+
+  /** Tier-2 naming: references resolve in the host's tree, land on the search input. */
+  private readonly hostAria = new HostAriaController(this, {
+    referenceTarget: () => this.renderRoot?.querySelector('input.ts-search') ?? null,
+  });
   private _disabled = false;
   private _searchDebounceMs = 200;
 
@@ -74,6 +111,9 @@ export class MpTreeSelect extends LitElement {
   private _provider?: TreeSelectProvider;
   private _nodes: TreeNode[] = [];
   private _searchResults: TreeNode[] | null = null;
+
+  /** Chip add/remove, clear and result counts move no visible focus; say them. */
+  private readonly liveAnnouncer = new LiveAnnouncerController(this);
   private _query = '';
   private _loading = false;
   private _rootsLoaded = false;
@@ -232,7 +272,57 @@ export class MpTreeSelect extends LitElement {
       case 'search-debounce-ms':
         this.searchDebounceMs = Number(newValue);
         break;
+      case 'aria-label':
+        this.requestUpdate();
+        break;
+      case 'input-label':
+        this._inputLabel = newValue;
+        this.requestUpdate();
+        break;
+      case 'search-label':
+        this._searchLabel = newValue;
+        this.requestUpdate();
+        break;
+      case 'clear-label':
+        this.clearLabel = newValue ?? 'Clear';
+        break;
+      case 'aria-labelledby':
+      case 'aria-describedby':
+        this.hostAria.syncReferences();
+        break;
     }
+  }
+
+  /**
+   * Optional accessible name for the control (the main search input). Without
+   * it the name falls back to the placeholder, then 'Search' — functional, but a
+   * placeholder is a hint, not a name, so real consumers should set one of
+   * aria-label / input-label / aria-labelledby on the host.
+   */
+  get inputLabel(): string | null {
+    return this._inputLabel;
+  }
+  set inputLabel(value: string | null) {
+    const next = value ?? null;
+    if (this._inputLabel === next) return;
+    this._inputLabel = next;
+    this.requestUpdate();
+  }
+
+  /** Accessible name for the button-variant panel search box. Default 'Search'. */
+  get searchLabel(): string | null {
+    return this._searchLabel;
+  }
+  set searchLabel(value: string | null) {
+    const next = value ?? null;
+    if (this._searchLabel === next) return;
+    this._searchLabel = next;
+    this.requestUpdate();
+  }
+
+  // After every render — the search input is re-created across variant switches.
+  protected override updated(): void {
+    this.hostAria.syncReferences();
   }
 
   override disconnectedCallback(): void {
@@ -289,6 +379,10 @@ export class MpTreeSelect extends LitElement {
     const page = await this.runRequest((signal) => this._provider!.search(query, { offset, signal }));
     if (!page) return;
     this._searchResults = append ? [...(this._searchResults ?? []), ...page.nodes] : page.nodes;
+    if (!append) {
+      const n = this._searchResults.length;
+      this.liveAnnouncer.announce(n === 1 ? '1 result.' : `${n} results.`);
+    }
     this._searchHasMore = !!page.hasMore;
     this.reindexActive();
     this.requestUpdate();
@@ -408,6 +502,32 @@ export class MpTreeSelect extends LitElement {
     else void this.open();
   }
 
+  /**
+   * The BsComboboxDirective contract, inside the shadow root where the
+   * directive cannot reach: ArrowDown opens the popup (and a second ArrowDown
+   * hands focus to the tree, whose own roving model takes over); Escape closes
+   * unconditionally and keeps focus in the input. aria-expanded re-renders with
+   * the overlay state, so it is live rather than a first-render snapshot.
+   */
+  private onComboboxKeydown(e: KeyboardEvent): void {
+    if (e.key === 'ArrowDown') {
+      e.preventDefault();
+      if (!this.overlay.isOpen) {
+        void this.open();
+        return;
+      }
+      const tv = this.renderRoot?.querySelector<HTMLElement>('mp-treeview');
+      tv?.focus();
+      return;
+    }
+    if (e.key === 'Escape' && this.overlay.isOpen) {
+      e.preventDefault();
+      e.stopPropagation();
+      void this.overlay.close();
+      return;
+    }
+  }
+
   private focusSearchAndOpen(): void {
     void this.open();
     requestAnimationFrame(() => {
@@ -443,6 +563,14 @@ export class MpTreeSelect extends LitElement {
   }
 
   private removeNode(node: TreeNode): void {
+    // The remove button the user just pressed is about to be destroyed with its
+    // chip, which drops focus to <body>. Re-home it deterministically: the next
+    // chip's remove button if one exists, else the search input.
+    const removeButtons = Array.from(
+      this.renderRoot?.querySelectorAll<HTMLElement>('.ts-chip-remove') ?? [],
+    );
+    const removedIndex = removeButtons.findIndex((b) => b.closest('.ts-chip')?.contains(deepActiveElement()));
+
     if (this._mode === 'checkbox' && this._cascadeSelect) {
       this.applyDown(node, false);
       this.applyUp(node);
@@ -453,6 +581,17 @@ export class MpTreeSelect extends LitElement {
     this.emitChange(undefined, node);
     this.syncTreeviewSelection();
     this.requestUpdate();
+
+    if (removedIndex >= 0) {
+      void this.updateComplete.then(() => {
+        const remaining = Array.from(
+          this.renderRoot?.querySelectorAll<HTMLElement>('.ts-chip-remove') ?? [],
+        );
+        const next = remaining[Math.min(removedIndex, remaining.length - 1)]
+          ?? this.renderRoot?.querySelector<HTMLElement>('input.ts-search');
+        next?.focus();
+      });
+    }
   }
 
   private clearAll(ev?: Event): void {
@@ -501,6 +640,9 @@ export class MpTreeSelect extends LitElement {
   }
 
   private emitChange(added?: TreeNode, removed?: TreeNode): void {
+    if (added) this.liveAnnouncer.announce(`${added.label} selected.`);
+    else if (removed) this.liveAnnouncer.announce(`${removed.label} removed.`);
+    else this.liveAnnouncer.announce('Selection cleared.');
     this.dispatchEvent(
       new CustomEvent<TreeSelectChangeEventDetail>('value-change', {
         detail: { value: this.value, added, removed },
@@ -556,7 +698,8 @@ export class MpTreeSelect extends LitElement {
 
   // ---- render ------------------------------------------------------------
   override render(): TemplateResult {
-    return html`${this.renderTrigger()}${this.renderPanel()}`;
+    return html`
+      ${this.liveAnnouncer.template()}${this.renderTrigger()}${this.renderPanel()}`;
   }
 
   private get hasSelection(): boolean {
@@ -595,12 +738,17 @@ export class MpTreeSelect extends LitElement {
         <input
           class="ts-search"
           type="text"
+          role="combobox"
+          aria-haspopup="tree"
+          aria-expanded=${this.overlay.isOpen ? 'true' : 'false'}
+          aria-autocomplete="list"
           .value=${this._query}
           ?disabled=${this._disabled}
           placeholder=${!this.hasSelection ? this._placeholder : ''}
-          aria-label=${this._placeholder || 'Search'}
+          aria-label=${this.getAttribute('aria-label') ?? this._inputLabel ?? (this._placeholder || 'Search')}
           @input=${(e: Event) => this.onSearchInput(e)}
           @focus=${() => this.open()}
+          @keydown=${(e: KeyboardEvent) => this.onComboboxKeydown(e)}
         />
         ${this.renderClear()}
         <span class="ts-caret">${this.renderCaret()}</span>
@@ -635,7 +783,7 @@ export class MpTreeSelect extends LitElement {
           <button
             class="ts-chip-remove"
             type="button"
-            aria-label="Remove"
+            aria-label=${this.removeLabel(String(node.label ?? ''))}
             @click=${(e: Event) => {
               e.stopPropagation();
               this.removeNode(node);
@@ -653,7 +801,7 @@ export class MpTreeSelect extends LitElement {
     return html`<button
       class="ts-clear"
       type="button"
-      aria-label="Clear"
+      aria-label=${this._clearLabel}
       @click=${(e: Event) => this.clearAll(e)}
     >
       ×
@@ -671,7 +819,7 @@ export class MpTreeSelect extends LitElement {
 
   private renderPanel(): TemplateResult {
     return html`
-      <div class="ts-panel" role="dialog">
+      <div class="ts-panel" role="dialog" aria-busy=${this._loading ? 'true' : nothing}>
         ${this.headerTemplate ? html`<div class="ts-panel-header">${this.headerTemplate()}</div>` : nothing}
         ${this._variant === 'button'
           ? html`<div class="ts-panel-header">
@@ -680,7 +828,7 @@ export class MpTreeSelect extends LitElement {
                 type="text"
                 .value=${this._query}
                 placeholder=${this._placeholder || 'Search'}
-                aria-label="Search"
+                aria-label=${this._searchLabel ?? 'Search'}
                 @input=${(e: Event) => this.onSearchInput(e)}
               />
             </div>`

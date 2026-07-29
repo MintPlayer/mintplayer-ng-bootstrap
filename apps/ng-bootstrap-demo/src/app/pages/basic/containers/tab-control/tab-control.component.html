@@ -30,7 +30,7 @@
             <label class="py-2" [bsFor]="tabsPositionSelect">Tabs position</label>
         </div>
         <div [col]>
-            <bs-select [(ngModel)]="tabsPosition" #tabsPositionSelect>
+            <bs-select aria-label="Tabs position" [(ngModel)]="tabsPosition" #tabsPositionSelect>
                 <option [ngValue]="'top'">Top</option>
                 <option [ngValue]="'bottom'">Bottom</option>
             </bs-select>

@@ -2,7 +2,7 @@ import * as React from 'react';
 import { createComponent } from '@lit/react';
 import { MpNavbarItem } from '@mintplayer/web-components/navbar';
 
-export interface BsNavbarItemProps {
+export interface BsNavbarItemProps extends React.HTMLAttributes<HTMLElement> {
   /** Current page (`.active` appearance). Reflected boolean attribute. */
   active?: boolean;
   /** Non-interactive. Reflected boolean attribute. */
@@ -46,6 +46,8 @@ export const BsNavbarItem = React.forwardRef<MpNavbarItem, BsNavbarItemProps>(fu
   return (
     <MpNavbarItemComponent
       ref={ref}
+      // Static so it exists in the DSD too (connectedCallback never runs
+      // server-side); a consumer role in ...props wins by spreading later.
       {...(active ? { active: '' as const } : {})}
       {...(disabled ? { disabled: '' as const } : {})}
       {...props}

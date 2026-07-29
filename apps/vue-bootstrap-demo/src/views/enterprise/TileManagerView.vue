@@ -39,6 +39,19 @@ const SOURCE = `<BsTileManager
       <code>tilelayoutchange</code>.
     </p>
 
+    <details class="mb-2">
+      <summary>Keyboard shortcuts</summary>
+      <ul class="mb-0">
+        <li><kbd>Tab</kbd> — focus the tile board. Exactly one tile is in the tab order (roving tabindex), so <kbd>Tab</kbd> again leaves the board.</li>
+        <li><kbd>→</kbd> / <kbd>↓</kbd> — focus the next tile · <kbd>←</kbd> / <kbd>↑</kbd> — the previous one. The order is row-major (top-to-bottom, then left-to-right) and it wraps around the ends; the arrows step through that sequence rather than moving geometrically, so <kbd>↓</kbd> does not necessarily land on the tile below.</li>
+        <li><kbd>Home</kbd> / <kbd>End</kbd> — first / last tile in row-major order</li>
+        <li><kbd>M</kbd> — enter move mode on the focused tile. Ignored on a tile that has both <code>disableMove</code> and <code>disableResize</code>.</li>
+        <li>In move mode: <kbd>↑</kbd> / <kbd>↓</kbd> / <kbd>←</kbd> / <kbd>→</kbd> move the tile by one grid cell, <kbd>Shift</kbd> + arrow grows or shrinks its span by one column / row. Each step reflows the other tiles through the packer and emits <code>tilelayoutchange</code>; a step the packer can't place is announced as “Move blocked” and changes nothing.</li>
+        <li><kbd>Enter</kbd> — commit and leave move mode · <kbd>Esc</kbd> — leave move mode and restore the layout as it was when move mode was entered</li>
+        <li><kbd>Esc</kbd> during a pointer drag or resize — cancel that gesture</li>
+      </ul>
+    </details>
+
     <section style="height: 400px">
       <h2>4 tiles, 4-column grid</h2>
       <BsTileManager

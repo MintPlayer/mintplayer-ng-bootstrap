@@ -179,10 +179,15 @@ export class MpQueryConditionElement extends LitElement {
     if (!e.altKey || (e.key !== 'ArrowUp' && e.key !== 'ArrowDown')) return;
     const node = this.node;
     if (!node || this.isDisabled()) return;
-    // Only react when focus is on the row itself, not on a child input/select
-    // where the arrow keys have native semantics (cursor / option navigation).
+    // React when focus is on the row itself OR on the drag handle — the handle
+    // is the element whose aria-label ADVERTISES Alt+Up/Down, so rejecting it
+    // made the advertised keys do nothing precisely where users were told to
+    // press them. Child inputs/selects are still excluded (their arrows have
+    // native semantics).
     const row = this.shadowRoot?.querySelector('.qb-condition');
-    if (e.composedPath()[0] !== row) return;
+    const origin = e.composedPath()[0];
+    const isHandle = origin instanceof HTMLElement && origin.classList.contains('qb-drag-handle');
+    if (origin !== row && !isHandle) return;
     e.preventDefault();
     this.dispatchEvent(new CustomEvent('qb-keyboard-move', {
       detail: { id: node.id, direction: e.key === 'ArrowUp' ? 'up' : 'down' },
@@ -235,6 +240,13 @@ export class MpQueryConditionElement extends LitElement {
         class="qb-condition"
         part="condition"
         tabindex="0"
+        role="group"
+        aria-label=${
+          // The row is a tab stop (Alt+Up/Down reorder) — without a role and
+          // name a blind user lands on silence. The name tracks the row's
+          // current field + operator, re-derived every render (§11a).
+          `${field?.label ?? node.field} ${messages.operators[node.operator] ?? node.operator}`
+        }
         data-row-id=${node.id}
         @keydown=${this._onRowKeyDown}
       >
@@ -243,8 +255,8 @@ export class MpQueryConditionElement extends LitElement {
           class="qb-drag-handle"
           part="drag-handle"
           ?disabled=${disabled}
-          aria-label="Drag or use Alt+Up/Down to reorder"
-          title="Drag or use Alt+Up/Down to reorder"
+          aria-label=${messages.reorderHint}
+          title=${messages.reorderHint}
           @pointerdown=${this._onDragPointerDown}
         >⋮</button>
         <mp-select
@@ -254,7 +266,7 @@ export class MpQueryConditionElement extends LitElement {
           .value=${node.field}
           ?disabled=${disabled}
           @change=${this._onFieldChange}
-          aria-label="Field"
+          aria-label=${messages.field}
         >
           ${fields.map((f) => html`<option value=${f.name}>${f.label}</option>`)}
           ${field ? nothing : html`<option value=${node.field}>(${node.field})</option>`}
@@ -266,7 +278,7 @@ export class MpQueryConditionElement extends LitElement {
           .value=${node.operator}
           ?disabled=${disabled || !field}
           @change=${this._onOperatorChange}
-          aria-label="Operator"
+          aria-label=${messages.operator}
         >
           ${operators.map((op) => html`
             <option value=${op}>${messages.operators[op] ?? op}</option>
@@ -282,8 +294,8 @@ export class MpQueryConditionElement extends LitElement {
           part="remove"
           ?disabled=${disabled}
           @click=${this._onRemove}
-          aria-label="Remove condition"
-          title="Remove"
+          aria-label=${messages.removeRow}
+          title=${messages.removeRow}
         >×</button>
       </div>
     `;

@@ -1,40 +1,61 @@
-import { Component, signal } from '@angular/core';
+import { Component } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { BsSignaturePadComponent } from './signature-pad.component';
 
 @Component({
   selector: 'bs-signature-pad-harness',
   imports: [BsSignaturePadComponent],
-  template: `<bs-signature-pad [ariaLabel]="label()"></bs-signature-pad>`,
+  template: `<bs-signature-pad></bs-signature-pad>`,
 })
-class HarnessComponent {
-  label = signal('Signature pad');
+class HarnessComponent {}
+
+@Component({
+  selector: 'bs-signature-pad-labeled-harness',
+  imports: [BsSignaturePadComponent],
+  template: `<bs-signature-pad aria-label="Customer signature" inputLabel="ignored"></bs-signature-pad>`,
+})
+class LabeledHarnessComponent {}
+
+async function settle(fixture: ComponentFixture<unknown>): Promise<void> {
+  fixture.detectChanges();
+  await customElements.whenDefined('mp-signature-pad');
+  const wc = fixture.nativeElement.querySelector('mp-signature-pad') as HTMLElement & {
+    updateComplete: Promise<unknown>;
+  };
+  await wc.updateComplete;
+  fixture.detectChanges();
 }
 
 describe('BsSignaturePadComponent ARIA', () => {
-  let fixture: ComponentFixture<HarnessComponent>;
-
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      imports: [HarnessComponent],
+      imports: [HarnessComponent, LabeledHarnessComponent],
     }).compileComponents();
-    fixture = TestBed.createComponent(HarnessComponent);
-    fixture.detectChanges();
   });
 
-  const canvas = () => fixture.nativeElement.querySelector<HTMLCanvasElement>('canvas')!;
+  const shadowCanvas = (fixture: ComponentFixture<unknown>) =>
+    (fixture.nativeElement.querySelector('mp-signature-pad') as HTMLElement)
+      .shadowRoot!.querySelector('canvas')!;
 
-  it('canvas has role="img" so screen readers identify it as a graphic', () => {
-    expect(canvas().getAttribute('role')).toBe('img');
+  it('canvas inside the WC is role="img" with the default label', async () => {
+    const fixture = TestBed.createComponent(HarnessComponent);
+    await settle(fixture);
+    const canvas = shadowCanvas(fixture);
+    expect(canvas.getAttribute('role')).toBe('img');
+    expect(canvas.getAttribute('aria-label')).toBe('Signature pad');
   });
 
-  it('canvas has the default aria-label "Signature pad"', () => {
-    expect(canvas().getAttribute('aria-label')).toBe('Signature pad');
+  it('a consumer aria-label on the bs- host reaches the canvas and beats inputLabel', async () => {
+    const fixture = TestBed.createComponent(LabeledHarnessComponent);
+    await settle(fixture);
+    expect(shadowCanvas(fixture).getAttribute('aria-label')).toBe('Customer signature');
   });
 
-  it('aria-label is customizable per instance', () => {
-    fixture.componentInstance.label.set('Customer signature');
-    fixture.detectChanges();
-    expect(canvas().getAttribute('aria-label')).toBe('Customer signature');
+  it('typed alternative and Undo/Clear are present in the shadow root', async () => {
+    const fixture = TestBed.createComponent(HarnessComponent);
+    await settle(fixture);
+    const shadow = (fixture.nativeElement.querySelector('mp-signature-pad') as HTMLElement).shadowRoot!;
+    expect(shadow.querySelector('input.form-control')).not.toBeNull();
+    expect(shadow.querySelectorAll('button').length).toBe(2);
   });
 });

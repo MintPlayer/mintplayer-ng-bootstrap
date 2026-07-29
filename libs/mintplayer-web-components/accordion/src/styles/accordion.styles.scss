@@ -9,8 +9,8 @@
 // That class is deliberately NOT used inside this shadow root (the container
 // is `.accordion-root`): a declaration on a shadow DESCENDANT would shadow
 // consumer values for everything below it. The block lives on `:host`
-// instead. Bootstrap's other selectors (.accordion-item / -button / -header)
-// are plain class selectors and apply unchanged.
+// instead. Bootstrap's other selectors (.accordion-item / -button) are plain
+// class selectors and apply unchanged — including to <details>/<summary>.
 //
 // What that means for consumers: a rule MATCHING this element overrides these
 // (an outer tree context outranks `:host`), but a value merely INHERITED from
@@ -38,8 +38,10 @@
   --bs-accordion-btn-icon-transition: #{$accordion-icon-transition};
   --bs-accordion-btn-active-icon: #{escape-svg($accordion-button-active-icon)};
   --bs-accordion-btn-focus-box-shadow: #{$accordion-button-focus-box-shadow};
-  // Deliberately 0, not Bootstrap's #{$accordion-body-padding-y}/x — see
-  // `.accordion-content` below for why the consumer owns body spacing here.
+  // Deliberately 0, not Bootstrap's #{$accordion-body-padding-y}/x — the
+  // consumer owns body spacing here (every existing consumer passes e.g.
+  // `px-3 py-2`; adopting Bootstrap's 1rem would double every inset and
+  // compound at each nesting level).
   --bs-accordion-body-padding-x: 0;
   --bs-accordion-body-padding-y: 0;
   --bs-accordion-active-color: #{$accordion-button-active-color};
@@ -63,81 +65,44 @@
   box-sizing: border-box;
 }
 
-.accordion-item {
-  // Contains the absolutely-positioned no-JS input.
-  position: relative;
-}
-
-// The no-JS state machine's only state. Clipped rather than `display: none`
-// so it keeps its place in the tab order — this input IS the control with
-// JS off, and its <label> header is only its visual skin.
-.acc-input {
-  position: absolute;
-  width: 1px;
-  height: 1px;
-  padding: 0;
-  margin: -1px;
-  overflow: hidden;
-  clip: rect(0, 0, 0, 0);
-  white-space: nowrap;
-  border: 0;
-}
-
-// Collapse animation via grid-template-rows: a single row transitioning
-// 0fr <-> 1fr animates smoothly through content of any height, which the
-// height-in-px approach never managed for dynamic content.
-.accordion-collapse {
-  display: grid;
-  grid-template-rows: 0fr;
-  transition: grid-template-rows 0.35s ease;
-}
-
-// The clipper must carry NO padding of its own. A grid row at 0fr sizes the
-// row to zero, but an element's padding still occupies its border box — so
-// padding here would survive the collapse as a visible strip (and `overflow:
-// hidden` does not clip an element's own padding). Anything with spacing goes
-// in the child below.
-.accordion-collapse > .accordion-clip {
-  min-height: 0;
-  overflow: hidden;
-}
-
-// Open, JS tier: the element owns the class.
-.accordion-item.open > .accordion-collapse,
-// Open, no-JS tier: the checked input owns it.
-.acc-input:checked ~ .accordion-collapse {
-  grid-template-rows: 1fr;
-}
-
-// Body padding defaults to ZERO, unlike Bootstrap's own accordion. This
-// component has always let the consumer pad its own projected content (the
-// pre-WC template hard-coded `class="accordion-body p-0"`, and every existing
-// consumer passes e.g. `px-3 py-2`), so adopting Bootstrap's 1rem here would
-// double every inset and compound at each nesting level. The custom
-// properties still work for consumers who want Bootstrap's spacing.
 .accordion-content {
   padding: var(--bs-accordion-body-padding-y) var(--bs-accordion-body-padding-x);
 }
 
-// A <label> is not a button: it needs the affordances Bootstrap's rule set
-// assumes are native.
-.accordion-header > label.accordion-button {
+// <summary> is not a <button>: kill the disclosure marker (all three
+// mechanisms — engines disagree on which one works) and give it the
+// affordances Bootstrap's rule set assumes are native. The line-height pin
+// preserves the shipping 52px header: the pre-D1 <button> rendered at the
+// UA's line-height because Reboot's `button { line-height: inherit }` never
+// crossed the shadow boundary, and <summary> would inherit the page's 1.5
+// and grow 4px (spike 0.1b finding 1).
+summary.accordion-button {
   cursor: pointer;
   user-select: none;
+  list-style: none;
+  line-height: normal;
+
+  &::marker {
+    content: '';
+  }
+  &::-webkit-details-marker {
+    display: none;
+  }
 }
 
-// Bootstrap swaps in a light chevron for dark mode with
-// `[data-bs-theme="dark"] .accordion-button::after` — an ANCESTOR selector
-// that can never match from in here, because the themed <html> is outside
-// this shadow root (and `:host-context()`, the usual escape hatch, is not
-// implemented in Firefox). So the chevron stayed dark-on-dark.
-//
-// Painting it as a MASK filled with `currentColor` drops the dependency on
-// the theme being visible: the chevron simply takes the header's own text
-// colour, which is already correct in both modes and under any consumer
-// override. The `--bs-accordion-btn-icon` properties keep working as the
-// SHAPE knob; their colour is now ignored.
-.accordion-button::after {
+// A disabled tab: pointer blocked here, keyboard blocked by the cancellable
+// keydown guard in the element (toggle itself is not cancellable — 0.1a).
+summary.accordion-button[aria-disabled='true'] {
+  pointer-events: none;
+  opacity: 0.65;
+}
+
+// The chevron as a currentColor MASK: Bootstrap's own dark-mode swap is an
+// ancestor selector ([data-bs-theme="dark"] …) that can never match from
+// inside this shadow root, so the chevron takes the header's text colour
+// instead — correct in both modes and under any consumer override. The
+// --bs-accordion-btn-icon properties keep working as the SHAPE knob.
+summary.accordion-button::after {
   background-image: none;
   background-color: currentColor;
   mask-image: var(--bs-accordion-btn-icon);
@@ -148,29 +113,27 @@
   -webkit-mask-size: var(--bs-accordion-btn-icon-width);
 }
 
-.accordion-button:not(.collapsed)::after,
-.acc-input:checked + .accordion-header > .accordion-button::after {
-  background-image: none;
-  mask-image: var(--bs-accordion-btn-active-icon);
-  -webkit-mask-image: var(--bs-accordion-btn-active-icon);
-}
-
-// No-JS active state. `.collapsed` stays on the label (no script to remove
-// it), so Bootstrap's own `:not(.collapsed)` rules never fire — mirror them
-// off `:checked` instead. Reading the --bs-accordion-active-* properties
-// (not hardcoded colors) keeps consumer theming in charge.
-.acc-input:checked + .accordion-header > .accordion-button {
+// Open state: everything Bootstrap keys on `.accordion-button:not(.collapsed)`
+// lives on `details[open] > summary` instead — the summary keeps a static
+// `collapsed` class so Bootstrap's own selector never fires, and no class
+// bookkeeping is needed in either tier (spike 0.1b).
+details[open] > summary.accordion-button {
   color: var(--bs-accordion-active-color);
   background-color: var(--bs-accordion-active-bg);
+  box-shadow: inset 0 calc(-1 * var(--bs-accordion-border-width)) 0 var(--bs-accordion-border-color);
+  // Mirrors what removing .collapsed did to last-of-type's rounded bottom.
+  border-bottom-left-radius: 0;
+  border-bottom-right-radius: 0;
 
   &::after {
-    background-image: var(--bs-accordion-btn-active-icon);
+    background-image: none;
+    mask-image: var(--bs-accordion-btn-active-icon);
+    -webkit-mask-image: var(--bs-accordion-btn-active-icon);
     transform: var(--bs-accordion-btn-icon-transform);
   }
 }
 
-// Focus lives on the visually-hidden input; paint its ring on the label.
-.acc-input:focus-visible + .accordion-header > .accordion-button {
+summary.accordion-button:focus-visible {
   z-index: 3;
   outline: 0;
   box-shadow: var(--bs-accordion-btn-focus-box-shadow);
@@ -178,14 +141,63 @@
 
 // `highlightActiveTab` opt-in: without it an open header keeps the resting
 // background, matching the pre-WC component's default.
-:host(:not([highlight-active-tab])) .accordion-button:not(.collapsed),
-:host(:not([highlight-active-tab])) .acc-input:checked + .accordion-header > .accordion-button {
+:host(:not([highlight-active-tab])) details[open] > summary.accordion-button {
   background-color: unset;
   color: inherit;
 }
 
+// Slide open/close, restored as a pure-CSS progressive enhancement (D1
+// originally waived the animation when the accordion moved to native
+// <details>). `interpolate-size: allow-keywords` lets block-size animate
+// to/from `auto`; `::details-content` is the UA's wrapper around the
+// disclosed content. Engines without either feature simply snap — the UA
+// still owns the disclosure state either way.
+// On :host (it inherits): the shadow root's wrapper is .accordion-root,
+// and details/::details-content must all resolve keyword sizes.
+:host {
+  interpolate-size: allow-keywords;
+}
+
+// Engines with interpolate-size (Chromium 129+) tween block-size to auto.
+@supports (interpolate-size: allow-keywords) {
+  details.accordion-item::details-content {
+    block-size: 0;
+    overflow-y: clip;
+    transition:
+      block-size 0.35s ease,
+      content-visibility 0.35s allow-discrete;
+  }
+
+  details.accordion-item[open]::details-content {
+    block-size: auto;
+  }
+}
+
+// Engines without it but WITH details-content (Firefox 138+) get the same
+// slide via the fr-track trick: 0fr -> 1fr interpolates without keyword
+// sizing, and the sole grid item collapses with the track through
+// min-height: 0. Engines with neither feature simply snap.
+@supports (not (interpolate-size: allow-keywords)) and (selector(::details-content)) {
+  details.accordion-item::details-content {
+    display: grid;
+    grid-template-rows: 0fr;
+    transition:
+      grid-template-rows 0.35s ease,
+      content-visibility 0.35s allow-discrete;
+  }
+
+  details.accordion-item[open]::details-content {
+    grid-template-rows: 1fr;
+  }
+
+  details.accordion-item .accordion-content {
+    min-height: 0;
+    overflow-y: clip;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
-  .accordion-collapse {
+  details.accordion-item::details-content {
     transition: none;
   }
 }

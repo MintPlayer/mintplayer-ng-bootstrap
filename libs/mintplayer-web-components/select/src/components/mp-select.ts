@@ -6,6 +6,13 @@ import { createRef, ref, type Ref } from 'lit/directives/ref.js';
 // Lives outside the per-entry tree at libs/.../_styles/ — internal helper, not
 // a public sub-entry of @mintplayer/web-components.
 import { formSelectStyles } from '../../../_styles/form-select.styles';
+import { invalidFeedbackStyles } from '../../../_styles/invalid-feedback.styles';
+import {
+  HostAriaController,
+  FormAssociatedMixin,
+  errorFeedback,
+  errorFeedbackElements,
+} from '@mintplayer/web-components/a11y';
 
 export type MpSelectSize = 'sm' | 'md' | 'lg';
 
@@ -15,12 +22,27 @@ export interface MpSelectOption {
   disabled?: boolean;
 }
 
+export interface MpSelectOptgroup {
+  label: string;
+  disabled?: boolean;
+  options: MpSelectOption[];
+}
+
+/** One entry of the rendered list: a plain option, or a labelled group of them. */
+export type MpSelectItem = MpSelectOption | MpSelectOptgroup;
+
+function isOptgroup(item: MpSelectItem): item is MpSelectOptgroup {
+  return Array.isArray((item as MpSelectOptgroup).options);
+}
+
 export interface SelectChangeEventDetail {
   value: string | null;
   values: string[];
 }
 
 const VALID_SIZES: ReadonlySet<MpSelectSize> = new Set(['sm', 'md', 'lg']);
+
+let instanceCounter = 0;
 
 /**
  * `<mp-select>` — Bootstrap-styled native `<select>` wrapped in a Lit element.
@@ -47,8 +69,8 @@ const VALID_SIZES: ReadonlySet<MpSelectSize> = new Set(['sm', 'md', 'lg']);
  * a `composed: true` `change` event so consumers using the native event
  * name continue to fire.
  */
-export class MpSelect extends LitElement {
-  static override styles = [formSelectStyles];
+export class MpSelect extends FormAssociatedMixin(LitElement) {
+  static override styles = [formSelectStyles, invalidFeedbackStyles];
 
   static override shadowRootOptions = {
     ...LitElement.shadowRootOptions,
@@ -62,8 +84,23 @@ export class MpSelect extends LitElement {
       'multiple',
       'number-visible',
       'disabled',
+      // Observed, not just switched on: `attributeChangedCallback` already had
+      // cases for these two, but with the attributes absent from this list the
+      // callback never fired for them, so `aria-invalid`/`aria-required` were
+      // frozen at whatever the first render saw. A form mirrors validity *after*
+      // the control is touched, i.e. always later than that.
+      'invalid',
+      'required',
+      // Validation message rendered inside the shadow root and referenced by the
+      // inner <select>; shown only while `invalid` is also set.
+      'error-text',
       'value',
       'aria-label',
+      'input-label',
+      // Watched so a consumer's reference can be re-resolved when it changes; the
+      // ids themselves resolve in the host's tree, never inside the shadow root.
+      'aria-labelledby',
+      'aria-describedby',
     ];
   }
 
@@ -72,11 +109,25 @@ export class MpSelect extends LitElement {
   private _numberVisible: number | null = null;
   private _disabled = false;
   private _value: string | null = null;
+  private _inputLabel: string | null = null;
+  private _errorText: string | null = null;
+  private readonly _errorId = `mp-select-${++instanceCounter}-error`;
   private _values: string[] = [];
-  private _options: MpSelectOption[] | null = null;
-  private _slotOptions: MpSelectOption[] = [];
+  private _options: MpSelectItem[] | null = null;
+  private _slotOptions: MpSelectItem[] = [];
   private readonly _selectRef: Ref<HTMLSelectElement> = createRef();
   private _slotObserver: MutationObserver | null = null;
+
+  /**
+   * Tier-2 naming. No `role` is passed on purpose: the inner `<select>` already
+   * carries the real role, and adding one to the host would announce the control
+   * twice. For the same reason the references are targeted at that `<select>`
+   * rather than at the host's `ElementInternals`.
+   */
+  private readonly hostAria = new HostAriaController(this, {
+    referenceTarget: () => this._selectRef.value ?? null,
+    describedByExtras: () => errorFeedbackElements(this.renderRoot),
+  });
 
   get size(): MpSelectSize {
     return this._size;
@@ -119,6 +170,48 @@ export class MpSelect extends LitElement {
     this.requestUpdate();
   }
 
+  /**
+   * Accessible name for the inner `<select>`, as `inputLabel` / `input-label`.
+   *
+   * Named for where it lands rather than what it is: the value is written to the
+   * control *inside* the shadow root, not to the host. Plain `label` was rejected
+   * because `<option label>` and `<optgroup label>` are literally in play in this
+   * component's own markup, so `label` would read as one of those.
+   *
+   * This is the tier-1 naming path — always available, and the documented fallback
+   * where cross-root element references are not. `aria-labelledby` on the host is
+   * tier 2 and takes precedence, being a live reference rather than a copied
+   * string.
+   */
+  get inputLabel(): string | null {
+    return this._inputLabel;
+  }
+  set inputLabel(value: string | null) {
+    const next = value ?? null;
+    if (this._inputLabel === next) return;
+    this._inputLabel = next;
+    this.requestUpdate();
+  }
+
+  /**
+   * Validation message, as `errorText` / `error-text`. Rendered as a
+   * `.invalid-feedback` node inside the shadow root and referenced from the inner
+   * `<select>` by `aria-errormessage` **and** `aria-describedby`, but only while
+   * `invalid` is set — `aria-errormessage` is meaningless on a control that is not
+   * `aria-invalid`. Text rather than a node, for the same reason `inputLabel`
+   * exists: a consumer's own element is outside this shadow root, where an IDREF
+   * from the `<select>` cannot reach it.
+   */
+  get errorText(): string | null {
+    return this._errorText;
+  }
+  set errorText(value: string | null) {
+    const next = value ?? null;
+    if (this._errorText === next) return;
+    this._errorText = next;
+    this.requestUpdate();
+  }
+
   get value(): string | null {
     return this._value;
   }
@@ -139,10 +232,10 @@ export class MpSelect extends LitElement {
     this.requestUpdate();
   }
 
-  get options(): MpSelectOption[] | null {
+  get options(): MpSelectItem[] | null {
     return this._options;
   }
-  set options(value: MpSelectOption[] | null) {
+  set options(value: MpSelectItem[] | null) {
     this._options = value;
     this.requestUpdate();
   }
@@ -172,6 +265,14 @@ export class MpSelect extends LitElement {
         this._disabled = newValue !== null;
         this.requestUpdate();
         break;
+      case 'invalid':
+      case 'required':
+        this.requestUpdate();
+        break;
+      case 'error-text':
+        this._errorText = newValue;
+        this.requestUpdate();
+        break;
       case 'value':
         this._value = newValue;
         this.requestUpdate();
@@ -180,6 +281,14 @@ export class MpSelect extends LitElement {
         // Re-render so the inner <select> picks up the new value via
         // `this.getAttribute('aria-label')` in render().
         this.requestUpdate();
+        break;
+      case 'input-label':
+        this._inputLabel = newValue;
+        this.requestUpdate();
+        break;
+      case 'aria-labelledby':
+      case 'aria-describedby':
+        this.hostAria.syncReferences();
         break;
     }
   }
@@ -195,7 +304,12 @@ export class MpSelect extends LitElement {
     const sizeClass = this._size === 'sm' || this._size === 'lg'
       ? `form-select form-select-${this._size}`
       : 'form-select';
-    const ariaLabel = this.getAttribute('aria-label');
+    /* Host `aria-label` wins over `input-label`: it is the more specific, more
+       idiomatic thing for a consumer to write, and `BsForwardAriaDirective` copies
+       it down from the Angular wrapper. `input-label` is the fallback for
+       consumers who cannot express a name as an attribute on the host. */
+    const ariaLabel = this.getAttribute('aria-label') ?? this._inputLabel;
+    const error = errorFeedback(this._errorId, this._errorText, this.hasAttribute('invalid'));
     return html`
       <select
         ${ref(this._selectRef)}
@@ -204,18 +318,21 @@ export class MpSelect extends LitElement {
         ?disabled=${this._disabled}
         size=${ifDefined(this._numberVisible ?? undefined)}
         aria-label=${ariaLabel ?? nothing}
+        aria-invalid=${this.hasAttribute('invalid') ? 'true' : nothing}
+        aria-required=${this.hasAttribute('required') ? 'true' : nothing}
+        aria-errormessage=${error.id}
+        aria-describedby=${error.id}
         @change=${this.onNativeChange}
       >
-        ${effective.map(
-          (o) => html`
-            <option
-              value=${o.value}
-              ?selected=${this.isSelected(o.value)}
-              ?disabled=${!!o.disabled}
-            >${o.label}</option>
-          `,
+        ${effective.map((item) =>
+          isOptgroup(item)
+            ? html`<optgroup label=${item.label} ?disabled=${!!item.disabled}>
+                ${item.options.map((o) => this.renderOption(o))}
+              </optgroup>`
+            : this.renderOption(item),
         )}
       </select>
+      ${error.node}
       <slot hidden @slotchange=${this.onSlotChange}></slot>
     `;
   }
@@ -228,6 +345,14 @@ export class MpSelect extends LitElement {
   protected override updated(): void {
     const select = this._selectRef.value;
     if (!select) return;
+
+    // After every render, not just on attribute change: element references point at
+    // a specific node, and the `<select>` is not guaranteed to be the same node
+    // after a re-render. Assigning once in connectedCallback would leave the name
+    // silently attached to a discarded element. See `mp-checkbox`'s aria spec,
+    // where a `type` switch demonstrates the failure concretely.
+    this.hostAria.syncReferences();
+
     if (this._multiple) {
       Array.from(select.options).forEach((opt) => {
         opt.selected = this._values.includes(opt.value);
@@ -235,6 +360,22 @@ export class MpSelect extends LitElement {
     } else if (this._value != null) {
       select.value = this._value;
     }
+
+    this.syncFormValue();
+    this.setFormValidity(
+      { valueMissing: this.hasAttribute('required') && this._value == null && this._values.length === 0 },
+      'Please select an item.',
+    );
+  }
+
+  private renderOption(o: MpSelectOption): TemplateResult {
+    return html`
+      <option
+        value=${o.value}
+        ?selected=${this.isSelected(o.value)}
+        ?disabled=${!!o.disabled}
+      >${o.label}</option>
+    `;
   }
 
   private isSelected(optionValue: string): boolean {
@@ -243,16 +384,36 @@ export class MpSelect extends LitElement {
       : this._value === optionValue;
   }
 
+  /**
+   * Mirror slotted <option>/<optgroup> children. Optgroups previously
+   * vanished WITH ALL THEIR OPTIONS (audit Critical): the filter kept only
+   * top-level OPTION tags, so anything grouped never reached the shadow
+   * <select>.
+   */
+  private collectSlotItems(assigned: Element[]): MpSelectItem[] {
+    const toOption = (opt: HTMLOptionElement): MpSelectOption => ({
+      value: opt.value,
+      label: opt.textContent?.trim() ?? '',
+      disabled: opt.disabled,
+    });
+    return assigned.flatMap((el): MpSelectItem[] => {
+      if (el.tagName === 'OPTION') return [toOption(el as HTMLOptionElement)];
+      if (el.tagName === 'OPTGROUP') {
+        const group = el as HTMLOptGroupElement;
+        return [{
+          label: group.label,
+          disabled: group.disabled,
+          options: Array.from(group.querySelectorAll('option')).map(toOption),
+        }];
+      }
+      return [];
+    });
+  }
+
   private onSlotChange = (ev: Event): void => {
     const slot = ev.target as HTMLSlotElement;
     const assigned = slot.assignedElements({ flatten: true });
-    this._slotOptions = assigned
-      .filter((el): el is HTMLOptionElement => el.tagName === 'OPTION')
-      .map((opt) => ({
-        value: opt.value,
-        label: opt.textContent?.trim() ?? '',
-        disabled: opt.disabled,
-      }));
+    this._slotOptions = this.collectSlotItems(assigned);
     this.observeSlottedMutations(assigned);
     this.requestUpdate();
   };
@@ -281,14 +442,7 @@ export class MpSelect extends LitElement {
   private refreshSlotOptions(): void {
     const slot = this.shadowRoot?.querySelector('slot');
     if (!slot) return;
-    const assigned = slot.assignedElements({ flatten: true });
-    this._slotOptions = assigned
-      .filter((el): el is HTMLOptionElement => el.tagName === 'OPTION')
-      .map((opt) => ({
-        value: opt.value,
-        label: opt.textContent?.trim() ?? '',
-        disabled: opt.disabled,
-      }));
+    this._slotOptions = this.collectSlotItems(slot.assignedElements({ flatten: true }));
     this.requestUpdate();
   }
 
@@ -316,6 +470,35 @@ export class MpSelect extends LitElement {
   private reflectBoolean(attr: string, value: boolean): void {
     if (value) this.setAttribute(attr, '');
     else this.removeAttribute(attr);
+  }
+
+  // ---- form association (FormAssociatedHost, Phase F) ----
+
+  formValue(): string | FormData | null {
+    if (this._multiple) {
+      // Multi-select submits one entry PER selected option, which needs
+      // FormData (a single string cannot repeat the name).
+      const name = this.getAttribute('name');
+      if (!name || this._values.length === 0) return null;
+      const data = new FormData();
+      this._values.forEach((value) => data.append(name, value));
+      return data;
+    }
+    return this._value;
+  }
+
+  formReset(): void {
+    this._value = null;
+    this._values = [];
+    this.requestUpdate();
+  }
+
+  formRestore(state: string | FormData | File | null): void {
+    if (typeof state === 'string') this.value = state;
+  }
+
+  formValidityAnchor(): HTMLElement | null {
+    return this._selectRef.value ?? null;
   }
 }
 

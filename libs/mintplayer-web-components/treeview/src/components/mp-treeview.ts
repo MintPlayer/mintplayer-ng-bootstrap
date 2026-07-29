@@ -1,4 +1,5 @@
 import { LitElement, html, nothing, type TemplateResult } from 'lit';
+import { LiveAnnouncerController } from '@mintplayer/web-components/a11y';
 import { repeat } from 'lit/directives/repeat.js';
 import { unsafeHTML } from 'lit/directives/unsafe-html.js';
 import { treeviewStyles } from '../styles';
@@ -71,6 +72,11 @@ export class MpTreeview extends LitElement {
       ...(super.observedAttributes ?? []),
       'selection-mode',
       'hide-borders',
+      // Copied onto the in-shadow role=tree node — the host is generic (the
+      // tree role CANNOT live on the host: the live-announcer region would
+      // then be an owned child of the tree, which is invalid ARIA).
+      'aria-label',
+      'input-label',
     ];
   }
 
@@ -88,6 +94,12 @@ export class MpTreeview extends LitElement {
   private _loadingIds: Set<string> = new Set();
   /** Last load error per node id. */
   private _errorIds: Map<string, string> = new Map();
+
+  /** Lazy loads have no visible focus move; announce start, finish and ERROR. */
+  // omitRole: the host is role=tree, which owns everything in its shadow
+  // through transparent generics — an owned role=status is invalid ARIA.
+  // aria-live alone still announces.
+  private readonly liveAnnouncer = new LiveAnnouncerController(this, { omitRole: true });
 
   // Roving tabindex: which node currently has tabindex=0
   private _focusedId: string | null = null;
@@ -207,14 +219,29 @@ export class MpTreeview extends LitElement {
     } else if (name === 'hide-borders') {
       this._hideBorders = newValue !== null;
       this.requestUpdate();
+    } else if (name === 'aria-label') {
+      this.requestUpdate();
+    } else if (name === 'input-label') {
+      this._inputLabel = newValue;
+      this.requestUpdate();
     }
   }
 
-  override connectedCallback(): void {
-    super.connectedCallback();
-    if (!this.hasAttribute('role')) {
-      this.setAttribute('role', 'tree');
-    }
+  private _inputLabel: string | null = null;
+
+  /**
+   * Accessible name for the in-shadow role=tree node (tier-2 naming: the
+   * host is generic, so a consumer cannot name the tree any other way).
+   * A host `aria-label` wins over this, per the B-phase contract.
+   */
+  get inputLabel(): string | null {
+    return this._inputLabel;
+  }
+  set inputLabel(value: string | null) {
+    const next = value ?? null;
+    if (this._inputLabel === next) return;
+    this._inputLabel = next;
+    this.requestUpdate();
   }
 
   override render(): TemplateResult {
@@ -224,12 +251,23 @@ export class MpTreeview extends LitElement {
       this._focusedId = this._visibleOrder[0].id;
     }
 
+    // The tree role lives on the in-shadow <ul>, NOT the host: the host owns
+    // its whole shadow through transparent wrappers, so a host role=tree
+    // would make the live-announcer region an owned child of the tree —
+    // invalid ARIA (axe aria-required-children; a live region's global
+    // aria-* keep it from ever being presentational). A childless tree is
+    // equally invalid, so the role appears only once there are treeitems.
     return html`
       <div class="treeview-root">
-        <ul role="presentation">
+        <ul
+          role=${this._items.length > 0 ? 'tree' : 'presentation'}
+          aria-label=${this.getAttribute('aria-label') ?? this._inputLabel ?? nothing}
+          aria-multiselectable=${this._selectionMode === 'multiple' ? 'true' : nothing}
+        >
           ${this.renderNodes(this._items, 1)}
         </ul>
       </div>
+      ${this.liveAnnouncer.template()}
     `;
   }
 
@@ -295,8 +333,11 @@ export class MpTreeview extends LitElement {
           style=${`padding-left:${indentation + 12}px`}
           @click=${(ev: MouseEvent) => this.onRowClick(node, ev)}
           @keydown=${(ev: KeyboardEvent) => this.onRowKeydown(node, ev)}
-          title=${loadError ?? nothing}
+          aria-describedby=${loadError ? `${rowId}-error` : nothing}
         >
+          ${loadError
+            ? html`<span id="${rowId}-error" class="treeview-load-error">${loadError}</span>`
+            : nothing}
           <span
             class=${`treeview-chevron${isExpandable ? '' : ' invisible'}${isLoading ? ' loading' : ''}`}
             data-expanded=${expanded ? 'true' : 'false'}
@@ -374,6 +415,11 @@ export class MpTreeview extends LitElement {
   }
 
   private onRowKeydown(node: TreeNode, ev: KeyboardEvent): void {
+    // Only act when the key originated on the row itself. A consumer's node
+    // template can contain inputs/selects, and reinterpreting their arrows as
+    // tree navigation made them impossible to type into — the audit's finding,
+    // and the same guard RovingFocus carries.
+    if (ev.composedPath()[0] !== ev.currentTarget) return;
     const hasChildren = !!(node.children && node.children.length > 0);
     const expanded = this._expandedIds.has(node.id);
 
@@ -501,10 +547,14 @@ export class MpTreeview extends LitElement {
     if (!hasChildren && node.lazy && this._loadChildren && !this._loadingIds.has(node.id)) {
       this._loadingIds.add(node.id);
       this._errorIds.delete(node.id);
+      this.liveAnnouncer.announce(`Loading ${node.label}.`);
       this.requestUpdate();
       void this._loadChildren(node.id).then(
         (children) => {
           this._loadingIds.delete(node.id);
+          this.liveAnnouncer.announce(
+            `${node.label} loaded, ${children?.length ?? 0} item${(children?.length ?? 0) === 1 ? '' : 's'}.`,
+          );
           // Add to expanded only after the consumer pushes children back
           // via the `items` property. We emit the expand event so the
           // consumer can update `items` synchronously in their handler.
@@ -523,6 +573,7 @@ export class MpTreeview extends LitElement {
         (err) => {
           this._loadingIds.delete(node.id);
           this._errorIds.set(node.id, err instanceof Error ? err.message : String(err));
+          this.liveAnnouncer.announce(`Loading ${node.label} failed.`);
           this.requestUpdate();
           this.dispatchEvent(
             new CustomEvent('tree-node-load-error', {

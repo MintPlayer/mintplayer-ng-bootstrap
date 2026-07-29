@@ -59,7 +59,10 @@ type GestureState =
 
 type KeyboardMode =
   | { kind: 'idle' }
-  | { kind: 'move'; tileId: string }
+  // entryTiles: the layout at move-mode entry, so Escape can genuinely revert —
+  // every arrow step mutates this.tiles immediately, and without a snapshot the
+  // announced "Escape to cancel" was a promise the code could not keep.
+  | { kind: 'move'; tileId: string; entryTiles: MintTile[] }
   | { kind: 'resize'; tileId: string };
 
 const TOUCH_LONG_PRESS_MS = 600;
@@ -158,7 +161,6 @@ export class MintTileManagerElement extends LitElement {
         class="tile-grid"
         role="region"
         aria-label=${this.label ?? 'Tile board'}
-        aria-describedby=${this.instructionsId}
         style=${gridStyle}
       >
         ${layoutSource.map((entry) => {
@@ -209,6 +211,16 @@ export class MintTileManagerElement extends LitElement {
         class="tile"
         role="button"
         tabindex=${isFocusableStop ? '0' : '-1'}
+        aria-describedby=${
+          // On the TILE, not the region: the instructions describe what a
+          // focused tile can do, and SRs read describedby at the focus target.
+          this.instructionsId
+        }
+        aria-pressed=${
+          // Always written, both values (scheduler precedent): the pressed
+          // token IS the move-mode state, re-derived every render (§11a).
+          this.keyboardState.kind === 'move' && this.keyboardState.tileId === tile.id ? 'true' : 'false'
+        }
         data-tile-id=${tile.id}
         data-dragging=${isDragging ? 'true' : 'false'}
         data-resizing=${isResizing ? 'true' : 'false'}
@@ -873,7 +885,14 @@ export class MintTileManagerElement extends LitElement {
       if (event.key === 'm' || event.key === 'M') {
         if (tile.disableMove && tile.disableResize) return;
         event.preventDefault();
-        this.keyboardState = { kind: 'move', tileId: tile.id };
+        this.keyboardState = {
+          kind: 'move',
+          tileId: tile.id,
+          entryTiles: this.tiles.map((t) => ({ ...t, position: { ...t.position } })),
+        };
+        // keyboardState is a plain field; the aria-pressed token derives from
+        // it in render, so every transition must schedule one.
+        this.requestUpdate();
         this.liveAnnouncer.announce(
           'Move mode enabled. Use arrow keys to move, Shift with arrow keys to resize, Enter to commit, Escape to cancel.',
         );
@@ -887,8 +906,24 @@ export class MintTileManagerElement extends LitElement {
 
     if (event.key === 'Escape' || event.key === 'Enter') {
       event.preventDefault();
+      const entryTiles = km.kind === 'move' ? km.entryTiles : null;
       this.keyboardState = { kind: 'idle' };
-      this.liveAnnouncer.announce(event.key === 'Enter' ? 'Move committed.' : 'Move cancelled.');
+      this.requestUpdate();
+      if (event.key === 'Escape' && entryTiles) {
+        // Revert to the move-mode entry layout and tell consumers, so the
+        // announced cancel is real end to end (they saw every intermediate
+        // tilelayoutchange and must see the restore too).
+        this.tiles = entryTiles;
+        this.requestUpdate();
+        this.dispatchEvent(
+          new CustomEvent<TileLayoutSnapshot>('tilelayoutchange', {
+            detail: this.cloneSnapshot(entryTiles.map((t) => ({ id: t.id, position: t.position }))),
+            bubbles: false,
+            composed: true,
+          }),
+        );
+      }
+      this.liveAnnouncer.announce(event.key === 'Enter' ? 'Move committed.' : 'Move cancelled and reverted.');
       return;
     }
 

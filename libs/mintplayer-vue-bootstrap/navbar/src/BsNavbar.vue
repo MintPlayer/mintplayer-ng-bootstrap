@@ -21,8 +21,6 @@ withDefaults(
     color?: string;
     /** Reflected open state of the collapsed menu (boolean attribute). */
     expanded?: boolean;
-    /** Accessible label for the navbar landmark. */
-    ariaLabel?: string;
     /** `fixed` pins the bar to the top of the viewport, full width; omit for in-flow. */
     positioning?: 'fixed';
   }>(),
@@ -62,7 +60,6 @@ onBeforeUnmount(() => el.value?.removeEventListener('expandedchange', onExpanded
     v-bind="$attrs"
     :breakpoint="breakpoint"
     :color="color"
-    :aria-label="ariaLabel"
     :expanded="expanded ? '' : undefined"
     :positioning="positioning"
   >

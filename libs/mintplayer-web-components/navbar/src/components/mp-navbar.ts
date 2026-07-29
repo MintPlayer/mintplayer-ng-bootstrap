@@ -185,6 +185,17 @@ export class MpNavbar extends LitElement {
     this.#setExpanded(force ?? !(this.#toggleInput?.checked ?? false));
   }
 
+  protected override firstUpdated(): void {
+    // The JS tier presents the toggle as a disclosure button with a live
+    // aria-expanded — #setExpanded keeps it true from here on. lit-ssr never
+    // runs this, so the static chrome stays a plain (honest) checkbox.
+    const input = this.#toggleInput;
+    if (input) {
+      input.setAttribute('role', 'button');
+      input.setAttribute('aria-expanded', String(input.checked));
+    }
+  }
+
   #onToggleChange = (): void => {
     // Native toggle (label click / Space): the checked state already flipped.
     this.#setExpanded(this.#toggleInput?.checked ?? false);
@@ -214,13 +225,15 @@ export class MpNavbar extends LitElement {
     return html`
       <nav class="navbar" part="nav" aria-label=${label}>
         <slot name="brand"></slot>
+        <!-- No role="button"/aria-expanded HERE: this render is also the
+             static DSD chrome, where no script can keep aria-expanded true —
+             the native checkbox's checked state is the correct self-updating
+             channel with JS off. firstUpdated() upgrades the live tier. -->
         <input
           type="checkbox"
           id="mp-navbar-toggle"
           class="navbar-toggle"
-          role="button"
           aria-label="Toggle navigation"
-          aria-expanded="false"
           aria-controls="navbar-collapse"
           @change=${this.#onToggleChange}
           @keydown=${this.#onToggleKeydown}
@@ -234,8 +247,12 @@ export class MpNavbar extends LitElement {
         </label>
         <div class="navbar-collapse" id="navbar-collapse" part="collapse">
           <div class="navbar-collapse-inner">
-            <ul class="navbar-nav nav-start" part="nav-start"><slot></slot></ul>
-            <ul class="navbar-nav nav-end" part="nav-end"><slot name="end"></slot></ul>
+            <!-- div, not ul: the flat-tree children are slotted item WCs, not
+                 <li>, so a native list violates the ul content model (axe
+                 "list", serious, on every page). Nav items in a nav landmark
+                 need no list semantics. -->
+            <div class="navbar-nav nav-start" part="nav-start"><slot></slot></div>
+            <div class="navbar-nav nav-end" part="nav-end"><slot name="end"></slot></div>
           </div>
         </div>
       </nav>

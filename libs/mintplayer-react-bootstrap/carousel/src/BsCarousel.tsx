@@ -10,7 +10,13 @@ import {
   type CarouselSlideChangeEventDetail,
 } from '@mintplayer/web-components/carousel';
 
-export interface BsCarouselProps {
+/* Omits React's native CSS-animation handlers because this component's
+   `onAnimationStart`/`onAnimationEnd` are the WC's own lifecycle events and
+   collide by name. Consequence worth knowing: a consumer cannot attach the real
+   DOM animation listeners to <BsCarousel>. Renaming ours (e.g. onTransitionStart)
+   would remove the collision, but that is a public API change tracked separately. */
+export interface BsCarouselProps
+  extends Omit<React.HTMLAttributes<HTMLElement>, 'onAnimationStart' | 'onAnimationEnd'> {
   /** Slide transition: `slide` (default), `fade`, or `none`. */
   animation?: CarouselAnimation;
   orientation?: CarouselOrientation;
@@ -24,8 +30,6 @@ export interface BsCarouselProps {
   keyboardEvents?: boolean;
   /** Whether autoplay is paused (controlled via onPausedChange). */
   paused?: boolean;
-  /** Accessible label for the carousel region. Maps to `aria-label`. */
-  ariaLabel?: string;
   onSlideChange?: (event: CustomEvent<CarouselSlideChangeEventDetail>) => void;
   onPausedChange?: (event: CustomEvent<CarouselPausedChangeEventDetail>) => void;
   onAnimationStart?: (event: CustomEvent<void>) => void;
@@ -72,13 +76,12 @@ const MpCarouselComponent = createComponent({
 }) as unknown as React.ForwardRefExoticComponent<MpCarouselInnerProps>;
 
 export const BsCarousel = React.forwardRef<MpCarousel, BsCarouselProps>(function BsCarousel(
-  { ariaLabel, indicators, interval, wrap, keyboardEvents, paused, ...props },
+  { indicators, interval, wrap, keyboardEvents, paused, ...props },
   ref,
 ) {
   return (
     <MpCarouselComponent
       ref={ref}
-      {...(ariaLabel != null ? { 'aria-label': ariaLabel } : {})}
       {...(indicators ? { indicators: true } : {})}
       {...(interval && interval > 0 ? { interval } : {})}
       {...(wrap === false ? { wrap: 'false' as const } : {})}

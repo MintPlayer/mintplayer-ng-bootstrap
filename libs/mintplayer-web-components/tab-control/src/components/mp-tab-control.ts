@@ -62,9 +62,16 @@ export class MpTabControl extends LitElement {
     // role="tablist" lives on the inner <ul> that directly contains the tab
     // buttons — we deliberately don't repeat it on the host.
     this.mutationObserver = new MutationObserver(() => this.refreshTabs());
+    // subtree: true is load-bearing. When a framework inserts the whole
+    // subtree at once (React/Vue build bottom-up), custom-element reactions
+    // run in TREE ORDER: this element connects and scans BEFORE each child
+    // <mp-tab-page> derives its `slot` from `tab-id` in its own
+    // connectedCallback — so the only signal that tabs exist is that later
+    // slot attribute write on a CHILD, which subtree: false never saw
+    // (every React/Vue tab strip rendered empty).
     this.mutationObserver.observe(this, {
       childList: true,
-      subtree: false,
+      subtree: true,
       attributes: true,
       attributeFilter: ['slot', 'data-disabled', 'data-hidden'],
     });
@@ -229,6 +236,9 @@ export class MpTabControl extends LitElement {
   }
 
   private handleKeydown(tab: TabInfo, ev: KeyboardEvent): void {
+    // Modified arrows/Home/End are browser/OS chords (Alt+Left history,
+    // Ctrl+Home document start); they must pass through (RovingFocus rule).
+    if (ev.altKey || ev.ctrlKey || ev.metaKey) return;
     switch (ev.key) {
       case 'Enter':
       case ' ':

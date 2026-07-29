@@ -64,7 +64,11 @@ describe('BsCardImgComponent', () => {
     expect(host.classList.contains('card-img')).toBe(true);
   });
 
-  it('drops src/alt attributes when inputs are undefined (no empty src="")', () => {
+  it('drops src when undefined, but keeps alt="" — absent alt means DECORATIVE, not unlabelled', () => {
+    // src and alt deliberately diverge: an <img> without src is broken markup,
+    // so the attribute is removed; an <img> without ALT is announced by its
+    // filename, while alt="" silences it as decorative. A card image whose
+    // consumer supplied no text is decoration, never an unlabelled image.
     @Component({
       imports: [BsCardImgComponent],
       template: `<bs-card-img></bs-card-img>`,
@@ -75,6 +79,6 @@ describe('BsCardImgComponent', () => {
     fixture.detectChanges();
     const img = fixture.nativeElement.querySelector('bs-card-img img') as HTMLImageElement;
     expect(img.hasAttribute('src')).toBe(false);
-    expect(img.hasAttribute('alt')).toBe(false);
+    expect(img.getAttribute('alt')).toBe('');
   });
 });

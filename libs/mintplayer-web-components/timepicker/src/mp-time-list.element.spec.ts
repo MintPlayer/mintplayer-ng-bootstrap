@@ -23,9 +23,21 @@ function slotsIn(el: MpTimeListElement): HTMLButtonElement[] {
 }
 
 function dispatchKey(target: HTMLElement, key: string): KeyboardEvent {
-  const ev = new KeyboardEvent('keydown', { key, bubbles: true, cancelable: true });
+  const ev = new KeyboardEvent('keydown', { key, bubbles: true, cancelable: true, composed: true });
   target.dispatchEvent(ev);
   return ev;
+}
+
+/** The single tab stop — where a real user's keydown originates. */
+function activeSlot(el: MpTimeListElement): HTMLButtonElement {
+  const active = shadow(el).querySelector<HTMLButtonElement>('button.slot[tabindex="0"]');
+  expect(active, 'no slot carries the tab stop').not.toBeNull();
+  return active!;
+}
+
+/** Keydown from the focused option, which is where the browser dispatches it. */
+function keyOnActive(el: MpTimeListElement, key: string): KeyboardEvent {
+  return dispatchKey(activeSlot(el), key);
 }
 
 describe('mp-time-list — rendering + ARIA', () => {
@@ -83,16 +95,22 @@ describe('mp-time-list — rendering + ARIA', () => {
     expect(enabled.length).toBe(9);
   });
 
-  it('aria-activedescendant points at the focusable slot', async () => {
+  it('the selected slot is the single roving tab stop (no aria-activedescendant)', async () => {
+    /* The old model kept focus on the host and pointed aria-activedescendant at
+       option ids INSIDE the shadow root — an IDREF resolves only in the
+       holder's own tree, so it dangled forever and arrows announced nothing.
+       Real focus + roving tabindex is the replacement. */
     const today = new Date();
     today.setHours(12, 0, 0, 0);
     el.selectedTime = today;
     await flush(el);
-    const aad = el.getAttribute('aria-activedescendant');
-    expect(aad).toBeTruthy();
-    const target = shadow(el).querySelector(`#${aad}`);
-    expect(target).not.toBeNull();
-    expect(target!.getAttribute('aria-selected')).toBe('true');
+
+    expect(el.hasAttribute('aria-activedescendant')).toBe(false);
+    expect(el.hasAttribute('tabindex')).toBe(false);
+
+    const stops = slotsIn(el).filter((b) => b.getAttribute('tabindex') === '0');
+    expect(stops).toHaveLength(1);
+    expect(stops[0].getAttribute('aria-selected')).toBe('true');
   });
 });
 
@@ -155,45 +173,47 @@ describe('mp-time-list — keyboard', () => {
   });
   afterEach(() => el.remove());
 
-  it('ArrowDown advances focus by one step', async () => {
-    dispatchKey(el, 'ArrowDown');
+  it('ArrowDown moves REAL focus and the tab stop by one step', async () => {
+    keyOnActive(el, 'ArrowDown');
     await flush(el);
-    const aad = el.getAttribute('aria-activedescendant');
-    expect(aad).toContain('-slot-555'); // 09:15 = 9*60 + 15 = 555
+    const active = activeSlot(el);
+    expect(active.dataset['minutes']).toBe('555'); // 09:15
+    expect(shadow(el).activeElement).toBe(active);
   });
 
-  it('ArrowUp retreats focus by one step', async () => {
-    dispatchKey(el, 'ArrowUp');
+  it('ArrowUp retreats by one step', async () => {
+    keyOnActive(el, 'ArrowUp');
     await flush(el);
-    const aad = el.getAttribute('aria-activedescendant');
-    expect(aad).toContain('-slot-525'); // 08:45
+    expect(activeSlot(el).dataset['minutes']).toBe('525'); // 08:45
   });
 
   it('Home jumps to first slot, End jumps to last', async () => {
-    dispatchKey(el, 'Home');
+    keyOnActive(el, 'Home');
     await flush(el);
-    expect(el.getAttribute('aria-activedescendant')).toContain('-slot-0');
-    dispatchKey(el, 'End');
+    expect(activeSlot(el).dataset['minutes']).toBe('0');
+    keyOnActive(el, 'End');
     await flush(el);
-    // 23:45 = 23*60 + 45 = 1425
-    expect(el.getAttribute('aria-activedescendant')).toContain('-slot-1425');
+    expect(activeSlot(el).dataset['minutes']).toBe('1425'); // 23:45
   });
 
   it('PageDown advances by one hour', async () => {
-    dispatchKey(el, 'PageDown');
+    keyOnActive(el, 'PageDown');
     await flush(el);
-    // 09:00 + 60 = 10:00 = 600
-    expect(el.getAttribute('aria-activedescendant')).toContain('-slot-600');
+    expect(activeSlot(el).dataset['minutes']).toBe('600'); // 10:00
   });
 
-  it('Enter selects the focused slot and emits', async () => {
+  it('activating the focused option emits (via its native click)', async () => {
+    /* Enter/Space on a real <button> is native UA activation, which an
+       untrusted KeyboardEvent cannot trigger in ANY environment (the Phase 0
+       isTrusted mechanism) — so this asserts the click path the activation
+       feeds into; the keypress itself is e2e material. */
     const events: Date[] = [];
     el.addEventListener('selected-time-change', (e) =>
       events.push((e as CustomEvent<Date>).detail),
     );
-    dispatchKey(el, 'ArrowDown'); // focus moves to 09:15
+    keyOnActive(el, 'ArrowDown');
     await flush(el);
-    dispatchKey(el, 'Enter');
+    activeSlot(el).click();
     await flush(el);
     expect(events.length).toBe(1);
     expect(events[0].getHours()).toBe(9);
@@ -201,13 +221,18 @@ describe('mp-time-list — keyboard', () => {
   });
 
   it('preventDefault is called on navigation keys', () => {
-    const ev = dispatchKey(el, 'ArrowDown');
+    const ev = keyOnActive(el, 'ArrowDown');
     expect(ev.defaultPrevented).toBe(true);
   });
 
   it('does not preventDefault on unrelated keys', () => {
-    const ev = dispatchKey(el, 'a');
+    const ev = keyOnActive(el, 'a');
     expect(ev.defaultPrevented).toBe(false);
+  });
+
+  it('host.focus() lands on the active option, not the host', async () => {
+    el.focus();
+    expect(shadow(el).activeElement).toBe(activeSlot(el));
   });
 });
 

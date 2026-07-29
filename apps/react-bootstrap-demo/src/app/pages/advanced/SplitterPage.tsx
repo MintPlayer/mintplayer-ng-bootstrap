@@ -17,6 +17,18 @@ export function SplitterPage() {
         <code>resize-end</code> with the current panel sizes as CSS px.
       </p>
 
+      <details className="mb-2">
+        <summary>Keyboard shortcuts</summary>
+        <ul className="mb-0">
+          <li><kbd>Tab</kbd> — focus the next divider (each one is a <code>role="separator"</code> tab stop reporting its position as <code>aria-valuenow</code>)</li>
+          <li><kbd>←</kbd> / <kbd>→</kbd> — resize a horizontal splitter by 10% (<kbd>Shift</kbd>: 1%)</li>
+          <li><kbd>↑</kbd> / <kbd>↓</kbd> — resize a vertical splitter by 10% (<kbd>Shift</kbd>: 1%)</li>
+          <li>Arrows across the splitter's other axis are ignored</li>
+          <li><kbd>Home</kbd> — shrink the leading panel to its minimum size</li>
+          <li><kbd>End</kbd> — grow the leading panel until the trailing one hits its minimum</li>
+        </ul>
+      </details>
+
       <section>
         <h2>Horizontal split</h2>
         <BsSplitter

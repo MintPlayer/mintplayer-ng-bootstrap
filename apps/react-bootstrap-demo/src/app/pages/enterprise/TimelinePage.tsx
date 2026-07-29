@@ -133,6 +133,7 @@ export function TimelinePage() {
           <div className="control-field">
             <label className="form-label mb-1">Orientation</label>
             <BsSelect
+              aria-label="Orientation"
               value={orientation}
               options={ORIENTATION_OPTIONS}
               onValueChange={(e) => setOrientation(e.detail.value as TimelineOrientation)}
@@ -142,6 +143,7 @@ export function TimelinePage() {
           <div className="control-field">
             <label className="form-label mb-1">Alignment</label>
             <BsSelect
+              aria-label="Alignment"
               value={align}
               options={ALIGN_OPTIONS}
               onValueChange={(e) => setAlign(e.detail.value as TimelineAlign)}
@@ -151,6 +153,7 @@ export function TimelinePage() {
           <div className="control-field">
             <label className="form-label mb-1">Selectable</label>
             <BsSelect
+              aria-label="Selectable"
               value={selectable}
               options={SELECTABLE_OPTIONS}
               onValueChange={(e) => setSelectable(e.detail.value as TimelineSelectable)}
@@ -169,6 +172,24 @@ export function TimelinePage() {
             </BsCheckbox>
           </div>
         </div>
+
+        <details className="mb-2">
+          <summary>Keyboard shortcuts</summary>
+          <ul className="mb-0">
+            <li>
+              The timeline is only keyboard-interactive while <strong>Selectable</strong> is{' '}
+              <code>single</code> or <code>multiple</code>. With <code>none</code> it renders as a
+              plain list — the items carry no <code>tabindex</code> and take no focus.
+            </li>
+            <li><kbd>Tab</kbd> — enter the timeline; exactly one item holds the tab stop (roving tabindex)</li>
+            <li><kbd>↓</kbd> / <kbd>→</kbd> — next item · <kbd>↑</kbd> / <kbd>←</kbd> — previous item. Both axes do the same thing whatever the orientation; movement wraps around the ends and skips disabled items.</li>
+            <li><kbd>Home</kbd> / <kbd>End</kbd> — first / last enabled item</li>
+            <li><kbd>Enter</kbd> — select the focused item, replacing the current selection</li>
+            <li><kbd>Space</kbd> — with <code>multiple</code>, adds or removes the focused item; with <code>single</code> it behaves like <kbd>Enter</kbd></li>
+            <li><kbd>Shift</kbd> + <kbd>Enter</kbd> / <kbd>Shift</kbd> + <kbd>Space</kbd> — with <code>multiple</code>, adds every enabled item between the anchor and the focused item</li>
+            <li><kbd>Ctrl</kbd>/<kbd>⌘</kbd> + click — toggle one item · <kbd>Shift</kbd> + click — range-select from the anchor</li>
+          </ul>
+        </details>
 
         <BsTimeline
           items={MILESTONES}

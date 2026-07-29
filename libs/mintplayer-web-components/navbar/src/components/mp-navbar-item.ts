@@ -16,6 +16,11 @@ import { navbarItemStyles } from '../styles';
 export class MpNavbarItem extends MpNavbarElement {
   static override styles = [navbarItemStyles];
 
+  // No host role. The navbar's nav groups are plain divs (not lists):
+  // arbitrary slotted content — dropdowns, forms, buttons — can never satisfy
+  // a list's required-children contract, so the navbar carries no list
+  // semantics and items claim no listitem (axe list/aria-required-parent).
+
   override render() {
     return html`<slot></slot>`;
   }

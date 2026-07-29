@@ -9,7 +9,7 @@ import {
 /** Bootstrap breakpoint names accepted by `breakpoint`. */
 export type ShellBreakpoint = 'xs' | 'sm' | 'md' | 'lg' | 'xl' | 'xxl';
 
-export interface BsShellProps {
+export interface BsShellProps extends React.HTMLAttributes<HTMLElement> {
   /** `auto` (default, responsive) | `show` (force open) | `hide` (force closed). */
   state?: ShellState;
   /** Breakpoint below which the sidebar starts collapsed. Default `md`. */

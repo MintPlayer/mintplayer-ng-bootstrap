@@ -1,2 +1,18 @@
 export { LiveAnnouncerController } from './live-announcer';
 export type { LiveAnnouncerOptions } from './live-announcer';
+export { FocusRestore, FocusRestoreController, deepActiveElement } from './focus-restore';
+export type { FocusRestoreOptions, FocusRestoreOutcome } from './focus-restore';
+export { inertRegions } from './inert-regions';
+export type { InertRegions } from './inert-regions';
+export { dismissStack } from './dismiss-stack';
+export { FocusTrap, collectTabbables, containsComposed } from './focus-trap';
+export type { FocusTrapOptions, InitialFocusTarget } from './focus-trap';
+export { RovingFocus } from './roving-focus';
+export type { RovingFocusOptions, RovingFocusOrientation } from './roving-focus';
+export { HostAriaController, sharedInternals, supportsAriaElementReferences } from './host-aria';
+export type { HostAriaOptions, HostAriaState } from './host-aria';
+export { nextEnabledIndex, firstEnabledIndex, lastEnabledIndex } from './roving-focus';
+export { errorFeedback, errorFeedbackElements } from './error-text';
+export type { ErrorFeedback } from './error-text';
+export { FormAssociatedMixin } from './form-associated';
+export type { FormAssociatedHost, FormAssociatedElement } from './form-associated';

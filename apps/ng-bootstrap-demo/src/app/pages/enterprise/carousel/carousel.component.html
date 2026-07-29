@@ -16,7 +16,7 @@
         <div bsRow class="mb-3">
             <div [col]>
                 <bs-carousel [orientation]="orientation()" [animation]="mode()" [indicators]="true"
-                             [interval]="interval()" [(paused)]="paused" ariaLabel="Animal photos">
+                             [interval]="interval()" [(paused)]="paused" aria-label="Animal photos">
                     <!-- The carousel ships a default Play/Pause button whenever an
                          interval is set. Consumers wanting a custom control can
                          project one with slot="play-pause". -->
@@ -75,12 +75,12 @@
 </p>
 
 <div class="nojs-pair">
-    <bs-carousel animation="fade" [indicators]="true" ariaLabel="Fade pair" data-testid="nojs-fade">
+    <bs-carousel animation="fade" [indicators]="true" aria-label="Fade pair" data-testid="nojs-fade">
         <img src="/assets/resized/deer.png" alt="A deer">
         <img src="/assets/resized/duck.png" alt="A duck">
         <img src="/assets/resized/leopard.png" alt="A leopard">
     </bs-carousel>
-    <bs-carousel animation="slide" [indicators]="true" ariaLabel="Slide pair" data-testid="nojs-slide">
+    <bs-carousel animation="slide" [indicators]="true" aria-label="Slide pair" data-testid="nojs-slide">
         <img src="/assets/resized/lion.png" alt="A lion">
         <img src="/assets/resized/peacock.png" alt="A peacock">
         <img src="/assets/resized/tiger.png" alt="A tiger">
@@ -94,10 +94,10 @@
   vertical swipes bubble to the outer, and each viewport keeps its own arrow keys.
 </p>
 
-<bs-carousel orientation="vertical" [indicators]="true" ariaLabel="Outer vertical" data-testid="nested-outer">
+<bs-carousel orientation="vertical" [indicators]="true" aria-label="Outer vertical" data-testid="nested-outer">
     <img src="/assets/resized/deer.png" alt="A deer">
     <div>
-        <bs-carousel animation="slide" [indicators]="true" ariaLabel="Inner horizontal" data-testid="nested-inner">
+        <bs-carousel animation="slide" [indicators]="true" aria-label="Inner horizontal" data-testid="nested-inner">
             <img src="/assets/resized/duck.png" alt="A duck">
             <img src="/assets/resized/leopard.png" alt="A leopard">
         </bs-carousel>

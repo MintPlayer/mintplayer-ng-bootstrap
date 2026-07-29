@@ -9,7 +9,6 @@
                         [class.fw-bold]="activeDirective()?.element === dir.element"
                         [attr.aria-current]="activeDirective()?.element === dir.element ? 'location' : null"
                         (click)="scrollToHeader(dir)"
-                        [title]="dir.element.nativeElement.textContent"
                         #anchor>
                     {{ dir.element.nativeElement.textContent }}
                 </button>

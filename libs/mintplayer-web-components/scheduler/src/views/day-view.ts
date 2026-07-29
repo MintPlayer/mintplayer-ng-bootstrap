@@ -114,6 +114,25 @@ export class DayView extends BaseView {
     if (dateService.isToday(date) && options.nowIndicator) {
       this.renderNowIndicator(dayColumn);
     }
+
+    this.applyGridRoles({
+      columnHeaderRow: ':scope > .scheduler-day-headers',
+      columnHeaders: '.scheduler-day-headers > .scheduler-day-header',
+      presentation: [
+        '.scheduler-time-gutter-space',
+        '.scheduler-time-grid',
+        '.scheduler-time-gutter',
+        '.scheduler-time-slot-label',
+        '.scheduler-days-container',
+      ],
+      rows: '.scheduler-day-column',
+      // The events overlay is a CELL, not presentation: a presentational
+      // wrapper leaves its role=button events owned directly by the row,
+      // which is invalid (axe aria-required-children). A gridcell may
+      // contain buttons.
+      cells: '.scheduler-events-container',
+    });
+    this.markToday();
   }
 
   /**
@@ -199,11 +218,10 @@ export class DayView extends BaseView {
       'aria-label',
       formatEventAriaLabel(event, null, this.state.options.timeFormat),
     );
-    if (inMoveMode) eventEl.setAttribute('aria-pressed', 'true');
-    if (isSelected) {
-      eventEl.setAttribute('aria-current', 'true');
-      eventEl.classList.add('selected');
-    }
+    // Selection state on the button token that supports it (see week-view).
+    eventEl.setAttribute('aria-pressed', isSelected ? 'true' : 'false');
+    if (isSelected) eventEl.classList.add('selected');
+    void inMoveMode;
 
     // Calculate position
     const dayStart = new Date(part.start);

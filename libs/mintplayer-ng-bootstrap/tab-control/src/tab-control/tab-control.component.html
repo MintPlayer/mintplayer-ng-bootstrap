@@ -1,28 +1,32 @@
 @if (isServerSide) {
 	@for (tab of tabPages(); track tab) {
-		<input type="radio" class="d-none" bsNoNoscript
+		<!-- The radio IS the control: clipped (not display:none) so Tab reaches
+		     it, and the native radio group gives arrow-key switching, a live
+		     checked state and the label's text as its name — all with no script
+		     and nothing that can go stale (PRD 11a). -->
+		<input type="radio" class="tab-radio" bsNoNoscript
 			[name]="tabControlName()"
 			[id]="tab.tabName()"
 			[checked]="checkedTab() === tab"
-			[disabled]="tab.disabled()">
+			[disabled]="tab.disabled()"
+			[attr.aria-controls]="tab.tabName() + '-panel'">
 	}
 	@let activeTabValue = activeTab();
 	<ng-template #tabStrip>
-		<ul class="nav nav-tabs flex-nowrap overflow-x-auto overflow-y-hidden" role="tablist">
+		<!-- No role="tab"/aria-selected here: with no script to update them a
+		     static aria-selected would lie after the first switch. The labels
+		     are the radios' visual skin and accessible name; the radios carry
+		     the live selection state natively. -->
+		<ul class="nav nav-tabs flex-nowrap overflow-x-auto overflow-y-hidden">
 			@for (tab of tabPages(); track tab) {
 				@if (tab.headerTemplate()) {
-					<li class="nav-item" role="presentation">
+					<li class="nav-item">
 						<label
 							[for]="tab.tabName()"
 							[id]="tab.tabName() + '-header'"
 							class="nav-link text-nowrap"
 							[class.active]="activeTabValue === tab"
-							[class.disabled]="tab.disabled()"
-							role="tab"
-							[attr.tabindex]="tab.disabled() ? -1 : (activeTabValue === tab ? 0 : -1)"
-							[attr.aria-selected]="activeTabValue === tab"
-							[attr.aria-controls]="tab.tabName() + '-panel'"
-							[attr.aria-disabled]="tab.disabled() || null">
+							[class.disabled]="tab.disabled()">
 							<ng-container [ngTemplateOutlet]="tab.headerTemplate()!.template"></ng-container>
 						</label>
 					</li>

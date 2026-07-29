@@ -32,6 +32,7 @@ import type {
 
 // Side-effect import: registers <mp-file-manager> and all the nested WCs.
 import '@mintplayer/web-components/file-manager';
+import { BsForwardAriaDirective } from '@mintplayer/ng-bootstrap/a11y';
 
 export type FileManagerIconResolver = (
   iconKey: string,
@@ -46,6 +47,7 @@ export interface ChildrenLoadedEventDetail {
 @Component({
   selector: 'bs-file-manager',
   templateUrl: './file-manager.component.html',
+  imports: [BsForwardAriaDirective],
   styleUrls: ['./file-manager.component.scss'],
   schemas: [CUSTOM_ELEMENTS_SCHEMA],
   changeDetection: ChangeDetectionStrategy.OnPush,

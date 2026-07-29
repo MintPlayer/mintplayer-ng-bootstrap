@@ -1,5 +1,8 @@
 :host {
   display: inline-flex;
+  // So the `error-text` feedback node (width: 100%) drops onto its own line
+  // below the boxes instead of competing with them for the row.
+  flex-wrap: wrap;
   position: relative;
   box-sizing: border-box;
   --bs-otp-input-box-bg: var(--bs-body-bg, #fff);

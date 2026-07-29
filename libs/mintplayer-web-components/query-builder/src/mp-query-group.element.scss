@@ -94,3 +94,10 @@
   border: 2px dashed var(--bs-border-color, #dee2e6);
   background: var(--bs-tertiary-bg, #f8f9fa);
 }
+
+// The drop-slot grow/tint is the group's only motion.
+@media (prefers-reduced-motion: reduce) {
+  * {
+    transition-duration: 0.01ms !important;
+  }
+}

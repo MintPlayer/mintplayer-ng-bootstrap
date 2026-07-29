@@ -1,4 +1,6 @@
 import { LitElement, html, nothing, type TemplateResult } from 'lit';
+import { FocusRestore, FocusRestoreController, HostAriaController, LiveAnnouncerController } from '@mintplayer/web-components/a11y';
+import { DEFAULT_DATATABLE_LABELS, type DatatableLabels } from '../types/labels';
 import { repeat } from 'lit/directives/repeat.js';
 import { classMap } from 'lit/directives/class-map.js';
 import { styleMap } from 'lit/directives/style-map.js';
@@ -105,10 +107,64 @@ export class MpDatatable extends LitElement {
       'tree',
       'tree-indent',
       'selection-strategy',
+      // Naming for the inner <table> (the role-bearing node): caption renders a
+      // real <caption>, the native, visible table name; aria-label / input-label
+      // are the invisible alternative and win in the accessible-name computation
+      // when both are present.
+      'caption',
+      'aria-label',
+      'input-label',
+      'aria-labelledby',
+      'aria-describedby',
     ];
   }
 
   private readonly instanceId = `mp-datatable-${++instanceCounter}`;
+  private _caption: string | null = null;
+  private _inputLabel: string | null = null;
+
+  /** Tier-2 naming: references resolve in the host's tree, land on the <table>. */
+  private readonly hostAria = new HostAriaController(this, {
+    referenceTarget: () => this.renderRoot?.querySelector('table') ?? null,
+  });
+
+  /**
+   * Visible table caption, rendered as a real <caption> — the native way to name
+   * a table, and the only one sighted users benefit from too. For an invisible
+   * name use aria-label / input-label instead (they win over the caption in the
+   * accessible-name computation when both are set).
+   */
+  get caption(): string | null {
+    return this._caption;
+  }
+  set caption(value: string | null) {
+    const next = value ?? null;
+    if (this._caption === next) return;
+    this._caption = next;
+    this.requestUpdate();
+  }
+
+  /**
+   * User-visible strings, overridable per key for localisation
+   * (see DatatableLabels). Property-only: it holds functions.
+   */
+  labels: Partial<DatatableLabels> | undefined = undefined;
+
+  /** Merged view of labels — consumer keys over the English defaults. */
+  private get mergedLabels(): DatatableLabels {
+    return { ...DEFAULT_DATATABLE_LABELS, ...(this.labels ?? {}) };
+  }
+
+  /** Optional invisible accessible name for the <table>. Host aria-label wins. */
+  get inputLabel(): string | null {
+    return this._inputLabel;
+  }
+  set inputLabel(value: string | null) {
+    const next = value ?? null;
+    if (this._inputLabel === next) return;
+    this._inputLabel = next;
+    this.requestUpdate();
+  }
 
   private _columns: DatatableColumnDef[] = [];
   private _data: unknown[] = [];
@@ -117,6 +173,28 @@ export class MpDatatable extends LitElement {
   private _selectedIds: Set<string> = new Set();
   private _cutIds: Set<string> = new Set();
   private _focusedRowKey: string | null = null;
+
+  /** Polite announcements for async/derived state changes (sort, page,
+   *  selection count, loaded rows) — attribute-level changes alone are
+   *  inaudible mid-table. */
+  private readonly liveAnnouncer = new LiveAnnouncerController(this);
+
+  /**
+   * Focus continuity across data swaps: replacing the dataset (file-manager
+   * folder navigation, external paging) destroys the focused <tr> and would
+   * strand keyboard focus on <body>. Same-key row wins; else the row at the
+   * same index; else the table itself. Capture is scoped, so updates while
+   * focus is elsewhere never steal it.
+   */
+  private readonly rowFocusRestore = new FocusRestoreController(this, new FocusRestore(
+    () => (this.renderRoot as ShadowRoot | null) ?? null,
+    {
+      selector: 'tbody tr[data-row-key]:not([data-placeholder="true"])',
+      keyOf: (el) => el.dataset['rowKey'] ?? null,
+      container: () => this.renderRoot?.querySelector<HTMLElement>('table') ?? null,
+    },
+  ));
+
   private _rowKey: RowKey = (row, index) => {
     const r = row as { id?: unknown } | null;
     return r && r.id != null ? String(r.id) : `row-${index}`;
@@ -408,7 +486,13 @@ export class MpDatatable extends LitElement {
     return this._loading;
   }
   set loading(value: boolean) {
+    const was = this._loading;
     this._loading = !!value;
+    // The loaded row count is what a sighted user sees appear; say it once
+    // per loading->loaded transition (never on programmatic no-ops).
+    if (was && !this._loading) {
+      this.liveAnnouncer.announce(this.mergedLabels.announceLoaded(this._data.length));
+    }
     this.requestUpdate();
   }
 
@@ -490,7 +574,17 @@ export class MpDatatable extends LitElement {
   override attributeChangedCallback(name: string, oldValue: string | null, newValue: string | null): void {
     super.attributeChangedCallback(name, oldValue, newValue);
 
-    if (name === 'selection-mode') {
+    if (name === 'caption') {
+      this._caption = newValue;
+      this.requestUpdate();
+    } else if (name === 'input-label') {
+      this._inputLabel = newValue;
+      this.requestUpdate();
+    } else if (name === 'aria-label') {
+      this.requestUpdate();
+    } else if (name === 'aria-labelledby' || name === 'aria-describedby') {
+      this.hostAria.syncReferences();
+    } else if (name === 'selection-mode') {
       const v = newValue;
       if (v === 'none' || v === 'single' || v === 'multiple') {
         this.selectionMode = v;
@@ -546,6 +640,8 @@ export class MpDatatable extends LitElement {
       }
     }
     this.refreshVirtualRange();
+    // References point at a specific node; re-land them after every render.
+    this.hostAria.syncReferences();
   }
 
   protected override willUpdate(changedProperties: Map<string, unknown>): void {
@@ -574,6 +670,14 @@ export class MpDatatable extends LitElement {
     // later rows clip with ellipsis instead of growing the column. See the
     // unified datatable PRD's "Resizable columns" section for the design.
     this.maybeMeasureInitialColumnWidths();
+    // A focusable separator REQUIRES aria-valuenow (axe critical). Columns
+    // without an explicit width render none — backfill from the header's
+    // real width once layout exists.
+    const bareHandles = this.renderRoot?.querySelectorAll<HTMLElement>('.resize-handle:not([aria-valuenow])') ?? [];
+    for (const handle of bareHandles) {
+      const th = handle.closest('th');
+      if (th) handle.setAttribute('aria-valuenow', String(Math.round(th.getBoundingClientRect().width)));
+    }
   }
 
   /**
@@ -712,22 +816,27 @@ export class MpDatatable extends LitElement {
     const ariaRowcount = (this._tree || this.isRootWindowed() ? this.getFlatList().length : this._data.length) + 1;
 
     return html`
+      ${this.liveAnnouncer.template()}
       <div class="datatable-shell">
         <div class="datatable-scroll ${this._virtualScroll ? 'datatable-virtual' : ''}" role="presentation">
           <table
-            role=${this._tree ? 'treegrid' : 'grid'}
+            role=${this._tree ? 'treegrid' : this._selectionMode !== 'none' ? 'grid' : nothing}
             aria-rowcount=${ariaRowcount}
+            aria-colcount=${totalColumnCount}
+            aria-busy=${this._loading ? 'true' : nothing}
+            aria-label=${this.getAttribute('aria-label') ?? this._inputLabel ?? nothing}
             class=${this._hasMeasuredInitial ? 'measured' : ''}
           >
+            ${this._caption ? html`<caption>${this._caption}</caption>` : nothing}
             <thead>
               <tr role="row" aria-rowindex="1">
                 ${this._tree
-                  ? html`<th class="tree-chevron-cell" scope="col" aria-label="Expand or collapse"></th>`
+                  ? html`<th class="tree-chevron-cell" scope="col" aria-label=${this.mergedLabels.treeChevronColumn}></th>`
                   : nothing}
                 ${showCheckboxes
                   ? html`<th class="checkbox-cell" scope="col">
                       <mp-checkbox
-                        aria-label="Deselect all"
+                        aria-label=${this.mergedLabels.deselectAll}
                         aria-hidden=${this._selectedIds.size === 0 ? 'true' : nothing}
                         style=${styleMap({ visibility: this._selectedIds.size > 0 ? 'visible' : 'hidden' })}
                         .checked=${false}
@@ -799,21 +908,32 @@ export class MpDatatable extends LitElement {
             : 'descending'
           : 'none'}
         style=${styleMap(style)}
-        @click=${(ev: MouseEvent) => this.onHeaderClick(col, ev)}
       >
-        <span class="header-cell">
-          <span>${renderContent(headerContent)}</span>
-          ${sortIndex >= 0 && this._sortColumns.length > 1
-            ? html`<span class="sort-index">${sortIndex + 1}</span>`
-            : nothing}
-        </span>
+        ${sortable
+          ? html`<button
+              type="button"
+              class="header-cell header-sort"
+              @click=${(ev: MouseEvent) => this.onHeaderClick(col, ev)}
+            >
+              <span>${renderContent(headerContent)}</span>
+              ${sortIndex >= 0 && this._sortColumns.length > 1
+                ? html`<span class="sort-index">${sortIndex + 1}</span>`
+                : nothing}
+            </button>`
+          : html`<span class="header-cell">
+              <span>${renderContent(headerContent)}</span>
+            </span>`}
         ${this._resizableColumns
           ? html`<span
               class="resize-handle"
               role="separator"
+              tabindex="0"
               aria-orientation="vertical"
-              aria-label="Resize column ${col.label ?? col.name}"
+              aria-label=${this.mergedLabels.resizeColumn(col.label ?? col.name)}
+              aria-valuemin="40"
+              aria-valuenow=${Math.round(width ?? 0) || nothing}
               @pointerdown=${(ev: PointerEvent) => this.startColumnResize(col, ev)}
+              @keydown=${(ev: KeyboardEvent) => this.onResizeHandleKeydown(col, ev)}
             ></span>`
           : nothing}
       </th>
@@ -844,10 +964,14 @@ export class MpDatatable extends LitElement {
         data-placeholder=${isPlaceholder ? 'true' : 'false'}
         data-depth=${this._tree ? String(depth) : nothing}
         data-clickable=${!isPlaceholder && (this._selectionMode !== 'none' || this.hasRowClickListeners()) ? 'true' : 'false'}
+        tabindex=${!isPlaceholder && (this._selectionMode !== 'none' || this._tree)
+          ? (this._focusedRowKey === key || (this._focusedRowKey === null && rowIndex === 0) ? '0' : '-1')
+          : nothing}
+        @focus=${isPlaceholder ? null : () => { this._focusedRowKey = key; this.requestUpdate(); }}
         @click=${isPlaceholder ? null : (ev: MouseEvent) => this.onRowClick(row, key, rowIndex, ev)}
         @dblclick=${isPlaceholder ? null : (ev: MouseEvent) => this.onRowDblClick(row, key, rowIndex, ev)}
         @contextmenu=${isPlaceholder ? null : (ev: MouseEvent) => this.onRowContextMenu(row, key, rowIndex, ev)}
-        @keydown=${this._tree && !isPlaceholder ? (ev: KeyboardEvent) => this.onRowKeydown(row!, flat.parentId, depth, isExpanded, childCount, ev) : null}
+        @keydown=${!isPlaceholder ? (ev: KeyboardEvent) => this.onRowKeydown(row, key, rowIndex, flat.parentId, depth, isExpanded, childCount, ev) : null}
       >
         ${this._tree
           ? html`<td class="tree-chevron-cell" style=${styleMap({ paddingInlineStart: `${depth * this._treeIndent}rem` })}>
@@ -855,7 +979,7 @@ export class MpDatatable extends LitElement {
                 ? html`<button
                     type="button"
                     class="tree-chevron"
-                    aria-label=${isExpanded ? 'Collapse row' : 'Expand row'}
+                    aria-label=${isExpanded ? this.mergedLabels.collapseRow : this.mergedLabels.expandRow}
                     aria-expanded=${isExpanded ? 'true' : 'false'}
                     data-expanded=${isExpanded ? 'true' : 'false'}
                     @click=${(ev: MouseEvent) => this.toggleExpand(row!, flat.parentId, depth, ev)}
@@ -868,7 +992,7 @@ export class MpDatatable extends LitElement {
               ${isPlaceholder
                 ? nothing
                 : html`<mp-checkbox
-                    aria-label=${`Select row ${rowIndex + 1}`}
+                    aria-label=${this.mergedLabels.selectRow(rowIndex + 1)}
                     .checked=${selected}
                     .indeterminate=${indeterminate}
                     @change=${(ev: Event) => this.onRowCheckboxToggle(row, key, rowIndex, ev)}
@@ -878,7 +1002,7 @@ export class MpDatatable extends LitElement {
         ${this._rowRenderer
           ? this.renderRowFromRenderer(row, rowIndex, { depth, isExpanded, isPlaceholder })
           : isPlaceholder
-            ? html`<td colspan=${this._columns.length} class="tree-placeholder-cell" aria-label="Loading">…</td>`
+            ? html`<td colspan=${this._columns.length} class="tree-placeholder-cell" aria-label=${this.mergedLabels.loading}>…</td>`
             : this._columns.map((col) => this.renderCell(row, col, rowIndex))}
       </tr>
     `;
@@ -888,7 +1012,7 @@ export class MpDatatable extends LitElement {
     const out = this._rowRenderer!(row, rowIndex, ctx);
     if (out == null) {
       if (ctx.isPlaceholder) {
-        return html`<td colspan=${this._columns.length} class="tree-placeholder-cell" aria-label="Loading">…</td>`;
+        return html`<td colspan=${this._columns.length} class="tree-placeholder-cell" aria-label=${this.mergedLabels.loading}>…</td>`;
       }
       return this._columns.map((col) => this.renderCell(row, col, rowIndex));
     }
@@ -913,7 +1037,7 @@ export class MpDatatable extends LitElement {
       <div class="datatable-footer">
         <mp-pagination
           class="datatable-per-page"
-          aria-label="Rows per page"
+          aria-label=${this.mergedLabels.rowsPerPage}
           .pageNumbers=${this._perPageOptions}
           .selectedPageNumber=${this._perPage}
           .showArrows=${false}
@@ -1357,18 +1481,67 @@ export class MpDatatable extends LitElement {
   /** Keyboard handling on a tree-mode row. Arrow keys + Enter/Space toggle expansion. */
   private onRowKeydown(
     row: unknown,
+    key: string,
+    rowIndex: number,
     parentId: unknown | null,
     depth: number,
     isExpanded: boolean,
     childCount: number,
     ev: KeyboardEvent,
   ): void {
-    if (ev.key === 'ArrowRight' && childCount > 0 && !isExpanded) {
-      this.toggleExpand(row, parentId, depth, ev);
-    } else if (ev.key === 'ArrowLeft' && isExpanded) {
-      this.toggleExpand(row, parentId, depth, ev);
-    } else if ((ev.key === 'Enter' || ev.key === ' ') && childCount > 0) {
-      this.toggleExpand(row, parentId, depth, ev);
+    // Never intercept Alt chords (browser history navigation). Ctrl/Cmd are NOT
+    // bailed on: they compose with selection below (Ctrl+Space = toggle without
+    // clearing), mirroring the pointer path's modifier semantics.
+    if (ev.altKey) return;
+
+    // Keys from interactive descendants operate that control, not the row:
+    // Space on the selection checkbox toggles it (its change handler owns the
+    // selection), and without this guard the bubbled keydown would ALSO run
+    // the row's plain-select semantics and wipe the rest of a multi
+    // selection — the keyboard face of the checkbox-cell's stopPropagation on
+    // click. Same guard as mp-treeview's consumer-template inputs.
+    if (ev.composedPath()[0] !== ev.currentTarget) return;
+
+    if (ev.key === 'ArrowDown' || ev.key === 'ArrowUp') {
+      ev.preventDefault();
+      const rows = Array.from(
+        this.renderRoot.querySelectorAll<HTMLTableRowElement>('tbody tr[data-row-key]'),
+      );
+      const current = rows.findIndex((r) => r.dataset['rowKey'] === key);
+      const next = rows[current + (ev.key === 'ArrowDown' ? 1 : -1)];
+      if (next) next.focus();
+      return;
+    }
+
+    if (this._tree) {
+      if (ev.key === 'ArrowRight' && childCount > 0 && !isExpanded) {
+        this.toggleExpand(row, parentId, depth, ev);
+        return;
+      }
+      if (ev.key === 'ArrowLeft' && isExpanded) {
+        this.toggleExpand(row, parentId, depth, ev);
+        return;
+      }
+      if ((ev.key === 'Enter' || ev.key === ' ') && childCount > 0) {
+        this.toggleExpand(row, parentId, depth, ev);
+        return;
+      }
+    }
+
+    if ((ev.key === 'Enter' || ev.key === ' ') && this._selectionMode !== 'none') {
+      // The keyboard face of onRowClick's selection: same modifier semantics
+      // (Ctrl toggles, Shift ranges), same event, same focused-row bookkeeping.
+      ev.preventDefault();
+      this._focusedRowKey = key;
+      this.handleSelectionOnClick(key, ev as unknown as MouseEvent);
+      this.requestUpdate();
+      this.dispatchEvent(
+        new CustomEvent<RowEventDetail>('mp-datatable-row-click', {
+          detail: { row, rowIndex, rowKey: key, originalEvent: ev },
+          bubbles: true,
+          composed: true,
+        }),
+      );
     }
   }
 
@@ -1385,6 +1558,13 @@ export class MpDatatable extends LitElement {
     const next = computeNextSort(this._sortColumns, col.name, ev.shiftKey);
     this._sortColumns = next;
     this._page = 1; // a new sort returns to the first page
+    const mine = next.find((sc) => sc.property === col.name);
+    this.liveAnnouncer.announce(
+      this.mergedLabels.announceSorted(
+        col.label ?? col.name,
+        mine ? (mine.direction === 'ascending' ? 'ascending' : 'descending') : 'none',
+      ),
+    );
     this.requestUpdate();
     this.scheduleFetchReload(); // re-fetch from page 1 under the new sort (if fetching)
     this.dispatchEvent(
@@ -1477,6 +1657,16 @@ export class MpDatatable extends LitElement {
     this.requestUpdate();
   }
 
+  /**
+   * Range selections anchor here, NOT on `_focusedRowKey`. The focused-row
+   * marker is deliberately volatile — every click and keyboard focus move
+   * updates it, and both used to update it *before* this method ran, so the
+   * shift-range check compared the clicked key against itself and ranges never
+   * fired. The anchor only moves on a NON-shift selection, which is the
+   * convention every desktop file/table UI follows.
+   */
+  private _selectionAnchorKey: string | null = null;
+
   private handleSelectionOnClick(key: string, ev: MouseEvent): void {
     if (this._selectionMode === 'none') return;
     if (this._selectionMode === 'single') {
@@ -1485,10 +1675,10 @@ export class MpDatatable extends LitElement {
       return;
     }
     // multiple
-    if (ev.shiftKey && this._focusedRowKey && this._focusedRowKey !== key) {
+    if (ev.shiftKey && this._selectionAnchorKey && this._selectionAnchorKey !== key) {
       // Range select between focused row and clicked row
       const rows = this.computeVisibleRows();
-      const fromIdx = rows.findIndex((r) => r.key === this._focusedRowKey);
+      const fromIdx = rows.findIndex((r) => r.key === this._selectionAnchorKey);
       const toIdx = rows.findIndex((r) => r.key === key);
       if (fromIdx >= 0 && toIdx >= 0) {
         const [lo, hi] = fromIdx < toIdx ? [fromIdx, toIdx] : [toIdx, fromIdx];
@@ -1503,15 +1693,18 @@ export class MpDatatable extends LitElement {
       if (next.has(key)) next.delete(key);
       else next.add(key);
       this._selectedIds = next;
+      this._selectionAnchorKey = key;
       this.emitSelectionChange();
       return;
     }
     this._selectedIds = new Set([key]);
+    this._selectionAnchorKey = key;
     this.emitSelectionChange();
   }
 
   private emitSelectionChange(): void {
     const ids = [...this._selectedIds];
+    this.liveAnnouncer.announce(this.mergedLabels.announceSelection(ids.length));
     this.dispatchEvent(
       new CustomEvent<SelectionChangeEventDetail>('mp-datatable-selection-change', {
         detail: { selectedIds: ids, selectedRows: this.resolveRows(ids) },
@@ -1542,6 +1735,7 @@ export class MpDatatable extends LitElement {
     const denominator = this._totalRecords ?? this._data.length;
     const totalPages = Math.max(1, Math.ceil(denominator / this._perPage));
     this._page = Math.max(1, Math.min(totalPages, page));
+    this.liveAnnouncer.announce(this.mergedLabels.announcePage(this._page, totalPages));
     this.requestUpdate();
     this.scheduleFetchReload(); // non-virtual page change → fetch that page (if fetching)
     this.dispatchEvent(
@@ -1560,6 +1754,28 @@ export class MpDatatable extends LitElement {
     startWidth: number;
     handle: HTMLElement;
   } | null = null;
+
+  /**
+   * Keyboard column resize — the same ±px model as the pointer path, same 40px
+   * floor. The handle is a focusable role="separator"; without this it was the
+   * audit's pointer-only finding for the datatable.
+   */
+  private onResizeHandleKeydown(col: DatatableColumnDef, ev: KeyboardEvent): void {
+    if (!this._resizableColumns) return;
+    if (ev.key !== 'ArrowLeft' && ev.key !== 'ArrowRight') return;
+    ev.preventDefault();
+    ev.stopPropagation();
+
+    const handle = ev.currentTarget as HTMLElement;
+    const th = handle.closest('th');
+    const current = this._columnWidths.get(col.name)
+      ?? th?.getBoundingClientRect().width
+      ?? 100;
+    const next = Math.max(40, current + (ev.key === 'ArrowRight' ? 10 : -10));
+    this._columnWidths = new Map(this._columnWidths);
+    this._columnWidths.set(col.name, next);
+    this.requestUpdate();
+  }
 
   private startColumnResize(col: DatatableColumnDef, ev: PointerEvent): void {
     if (!this._resizableColumns) return;

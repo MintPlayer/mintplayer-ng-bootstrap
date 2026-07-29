@@ -143,3 +143,41 @@ describe('mp-datetime-picker — live region', () => {
     expect(region.textContent).toContain('Clear');
   });
 });
+
+/** Walks activeElement through nested shadow roots. */
+function deepActive(): Element | null {
+  let active: Element | null = document.activeElement;
+  while (active?.shadowRoot?.activeElement) active = active.shadowRoot.activeElement;
+  return active;
+}
+
+describe('mp-datetime-picker — dialog initial focus', () => {
+  let el: MpDatetimePickerElement;
+  beforeEach(async () => {
+    el = await mount((host) => host.setValue(new Date(2026, 4, 15, 9, 30), false));
+  });
+  afterEach(() => el.remove());
+
+  it('openDate() moves focus to the calendar grid roving cell', async () => {
+    await el.openDate();
+    await flush(el);
+    const active = deepActive() as HTMLElement;
+    expect(active?.getAttribute('role')).toBe('gridcell');
+    expect(active.getAttribute('tabindex')).toBe('0');
+  });
+
+  it('openTime() moves focus to the active time option', async () => {
+    await el.openTime();
+    await flush(el);
+    const active = deepActive() as HTMLElement;
+    expect(active?.getAttribute('role')).toBe('option');
+  });
+
+  it('closing the date popup returns focus to its trigger', async () => {
+    await el.openDate();
+    await flush(el);
+    el.closePopups();
+    await flush(el);
+    expect(shadow(el).activeElement).toBe(shadow(el).querySelector('button.date'));
+  });
+});

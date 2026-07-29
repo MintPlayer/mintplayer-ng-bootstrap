@@ -17,6 +17,7 @@ import {
 
 // Side-effect import: registers <mp-pagination>.
 import '@mintplayer/web-components/pagination';
+import { BsForwardAriaDirective } from '@mintplayer/ng-bootstrap/a11y';
 
 const SIZE_MAP: Record<Size, PaginationSize> = {
   small: 'small',
@@ -27,6 +28,7 @@ const SIZE_MAP: Record<Size, PaginationSize> = {
 @Component({
   selector: 'bs-pagination',
   templateUrl: './pagination.component.html',
+  imports: [BsForwardAriaDirective],
   styleUrls: ['./pagination.component.scss'],
   schemas: [CUSTOM_ELEMENTS_SCHEMA],
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -42,8 +44,6 @@ export class BsPaginationComponent {
   readonly showArrows = input<boolean>(true);
   /** Page number size. */
   readonly size = input<Size>('medium');
-  /** Accessible name on the surrounding `<nav>` landmark. */
-  readonly ariaLabel = input<string>('Pagination');
 
   protected readonly paginationRef = viewChild<ElementRef<MpPagination>>('pagination');
 
@@ -56,7 +56,6 @@ export class BsPaginationComponent {
       el.numberOfBoxes = this.numberOfBoxes();
       el.showArrows = this.showArrows();
       el.size = SIZE_MAP[this.size()] ?? 'medium';
-      el.setAttribute('aria-label', this.ariaLabel());
     });
   }
 

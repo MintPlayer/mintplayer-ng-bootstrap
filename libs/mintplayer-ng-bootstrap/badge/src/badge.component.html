@@ -1,3 +1,6 @@
-<span class="badge" [class]="colorClass()">
+<span class="badge" [class]="colorClass()" [attr.aria-hidden]="decorative() ? 'true' : null">
     <ng-content></ng-content>
+    @if (unit(); as u) {
+        <span class="visually-hidden-unit">&ngsp;{{ u }}</span>
+    }
 </span>

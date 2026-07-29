@@ -65,7 +65,10 @@ describe('Dropdown ARIA wiring', () => {
   const queryToggle = () =>
     fixture.nativeElement.querySelector<HTMLButtonElement>('button[bsDropdownToggle]')!;
   const queryMenu = () =>
-    overlayContainerEl.querySelector<HTMLElement>('bs-dropdown-menu');
+    // The consumer's [attr.role]/[attr.id] land on <bs-dropdown-menu>, but
+    // BsForwardAriaDirective MOVES both onto the <mp-dropdown-menu> inside
+    // (duplicated ids break IDREFs); the custom element is the ARIA popup.
+    overlayContainerEl.querySelector<HTMLElement>('mp-dropdown-menu');
   const queryItems = () =>
     Array.from(overlayContainerEl.querySelectorAll<HTMLElement>('li[bsDropdownItem]'));
 

@@ -81,14 +81,14 @@ describe('mp-ribbon-tab — reduceOrder validation (FR-6)', () => {
   });
 });
 
-describe('mp-ribbon-tab — tabpanel wiring (FR-2)', () => {
-  it('sets role + id + aria-labelledby from tabId', async () => {
+describe('mp-ribbon-tab — tabpanel wiring (Phase E)', () => {
+  it('stamps NO role/id/aria-labelledby — the pair was dead across the shadow boundary', async () => {
     const tab = await mountTab((t) => {
       t.tabId = 'design';
     });
-    expect(tab.getAttribute('role')).toBe('tabpanel');
-    expect(tab.id).toBe('ribbon-panel-design');
-    expect(tab.getAttribute('aria-labelledby')).toBe('ribbon-tab-design');
+    expect(tab.hasAttribute('role')).toBe(false);
+    expect(tab.id).toBe('');
+    expect(tab.hasAttribute('aria-labelledby')).toBe(false);
     tab.remove();
   });
 });

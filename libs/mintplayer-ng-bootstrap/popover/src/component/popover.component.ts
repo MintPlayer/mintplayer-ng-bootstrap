@@ -2,6 +2,7 @@ import { NgTemplateOutlet } from '@angular/common';
 import { ChangeDetectionStrategy, Component, computed, inject, Injector, input, TemplateRef } from '@angular/core';
 import { FadeInOutAnimation } from '@mintplayer/ng-animations';
 import { Position } from '@mintplayer/ng-bootstrap';
+import { BsOverlayFocusDirective } from '@mintplayer/ng-bootstrap/a11y';
 import { BsHasOverlayComponent } from '@mintplayer/ng-bootstrap/has-overlay';
 import { POPOVER_CONTENT } from '../providers/popover-content.provider';
 import { POPOVER_ID } from '../providers/popover-id.provider';
@@ -11,7 +12,7 @@ import { BsPopoverContextService } from '../services/popover-context.service';
   selector: 'bs-popover',
   templateUrl: './popover.component.html',
   styleUrls: ['./popover.component.scss'],
-  imports: [NgTemplateOutlet, BsHasOverlayComponent],
+  imports: [NgTemplateOutlet, BsHasOverlayComponent, BsOverlayFocusDirective],
   animations: [FadeInOutAnimation],
   changeDetection: ChangeDetectionStrategy.OnPush,
   providers: [BsPopoverContextService],

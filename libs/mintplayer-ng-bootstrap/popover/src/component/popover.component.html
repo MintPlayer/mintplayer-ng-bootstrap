@@ -1,6 +1,8 @@
 @if (isVisible()) {
     <div class="popover position-relative fade show"
         role="dialog"
+        [bsOverlayFocus]="isVisible()"
+        tabindex="-1"
         [id]="popoverId"
         [attr.aria-labelledby]="context.headerId()"
         [attr.aria-describedby]="context.bodyId()"

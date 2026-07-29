@@ -1,6 +1,7 @@
 import { LitElement, html, nothing, type TemplateResult } from 'lit';
 import { query } from 'lit/decorators.js';
 import { OverlayController } from '@mintplayer/web-components/overlay';
+import { HostAriaController } from '@mintplayer/web-components/a11y';
 import { MpCalendarElement, type FirstDayOfWeek } from '@mintplayer/web-components/calendar';
 import { styles } from './mp-datepicker.element.template';
 
@@ -41,6 +42,13 @@ export class MpDatepickerElement extends LitElement {
     disabled: { attribute: 'disabled', type: Boolean, reflect: true },
     placeholder: { attribute: 'placeholder', type: String, reflect: true },
     triggerLabel: { attribute: 'trigger-label', type: String, reflect: true },
+    inputLabel: { attribute: 'input-label', type: String, reflect: true },
+    // Phantom property: re-renders when the host aria-label changes. The
+    // consumer's aria-label wins over inputLabel, as everywhere in the library.
+    ariaLabelForRender: { attribute: 'aria-label', type: String, reflect: false },
+    // Phantom too: reference attributes are re-resolved in updated().
+    ariaLabelledByForSync: { attribute: 'aria-labelledby', type: String, reflect: false },
+    ariaDescribedByForSync: { attribute: 'aria-describedby', type: String, reflect: false },
   };
 
   selectedDate: Date | null = null;
@@ -53,12 +61,26 @@ export class MpDatepickerElement extends LitElement {
   disabled = false;
   placeholder = '';
   triggerLabel = 'Choose date';
+  /** Accessible name for the readonly display input — the one node that had none. */
+  inputLabel = 'Selected date';
+  /** Mirror of the host aria-label attribute; exists only to trigger re-renders. */
+  ariaLabelForRender: string | null = null;
+  ariaLabelledByForSync: string | null = null;
+  ariaDescribedByForSync: string | null = null;
 
   private readonly instanceId = `mp-dp-${++instanceCounter}`;
   private readonly popupId = `${this.instanceId}-popup`;
 
   @query('button.trigger')
   private triggerEl?: HTMLButtonElement;
+
+  @query('input.form-control')
+  private displayInputEl?: HTMLInputElement;
+
+  /** Tier-2 naming: host aria-labelledby/-describedby resolve to the display input. */
+  private readonly hostAria = new HostAriaController(this, {
+    referenceTarget: () => this.displayInputEl ?? null,
+  });
 
   @query('.input-group')
   private inputGroupEl?: HTMLElement;
@@ -77,6 +99,13 @@ export class MpDatepickerElement extends LitElement {
     trigger: () => this.triggerEl ?? null,
     panel: () => this.popupEl ?? null,
     panelWidth: 'anchor-min',
+    // APG Date Picker Dialog: opening moves focus onto the calendar grid's
+    // roving cell. A slotted consumer calendar wins over the shadow default.
+    initialFocus: () => {
+      const slot = this.popupEl?.querySelector<HTMLSlotElement>('slot[name="calendar"]');
+      const assigned = slot?.assignedElements()[0] as HTMLElement | undefined;
+      return assigned ?? this.popupEl?.querySelector<HTMLElement>('mp-calendar') ?? null;
+    },
     onOpen: () => {
       this.dispatchEvent(new CustomEvent('opened', { bubbles: true, composed: true }));
     },
@@ -155,6 +184,12 @@ export class MpDatepickerElement extends LitElement {
 
   /* ---- Render ---- */
 
+  // After every render: references point at a specific node, and the display
+  // input does not exist before the first render.
+  protected override updated(): void {
+    this.hostAria.syncReferences();
+  }
+
   protected override render(): TemplateResult {
     const displayValue = this.formatDisplay();
     return html`
@@ -164,6 +199,7 @@ export class MpDatepickerElement extends LitElement {
           type="text"
           readonly
           aria-readonly="true"
+          aria-label="${this.getAttribute('aria-label') ?? this.inputLabel}"
           .value="${displayValue}"
           placeholder="${this.placeholder || nothing}"
           ?disabled="${this.disabled}"

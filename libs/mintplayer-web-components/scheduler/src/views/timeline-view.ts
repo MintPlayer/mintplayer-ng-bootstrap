@@ -195,6 +195,9 @@ export class TimelineView extends BaseView {
 
     // Slots container
     const slotsContainer = this.createElement('div', 'scheduler-timeline-slots');
+    // Transparent for the grid's owned-children walk — a bare generic between
+    // row and gridcells breaks the chain (axe aria-required-children).
+    slotsContainer.setAttribute('role', 'presentation');
 
     for (const day of days) {
       const slots = dateService.getTimeSlots(
@@ -223,6 +226,9 @@ export class TimelineView extends BaseView {
     // Events container for this row
     if (isResource(flat.item)) {
       const eventsContainer = this.createElement('div', 'scheduler-timeline-events');
+      // A CELL, not presentation: its children are role=button events, and a
+      // row may not own buttons directly (axe aria-required-children).
+      eventsContainer.setAttribute('role', 'gridcell');
       slotsContainer.appendChild(eventsContainer);
     }
 
@@ -324,11 +330,10 @@ export class TimelineView extends BaseView {
       'aria-label',
       formatEventAriaLabel(event, resourceTitle, this.state.options.timeFormat),
     );
-    if (inMoveMode) eventEl.setAttribute('aria-pressed', 'true');
-    if (isSelected) {
-      eventEl.setAttribute('aria-current', 'true');
-      eventEl.classList.add('selected');
-    }
+    // Selection state on the button token that supports it (see week-view).
+    eventEl.setAttribute('aria-pressed', isSelected ? 'true' : 'false');
+    if (isSelected) eventEl.classList.add('selected');
+    void inMoveMode;
 
     // Clamp event to view bounds
     const eventStart = Math.max(event.start.getTime(), viewStart.getTime());

@@ -1,4 +1,5 @@
 import { LitElement, html, isServer, nothing, type TemplateResult } from 'lit';
+import { HostAriaController } from '@mintplayer/web-components/a11y';
 import {
   resolveSides,
   type TimelineAlign,
@@ -47,7 +48,17 @@ export class MpTimeline extends LitElement {
       'align',
       'reverse',
       'selectable',
+      // Opt-in: click-only consumers (no selection) whose items must still be
+      // keyboard-reachable. The WC cannot introspect whether anyone listens to
+      // item-click, so this cannot default on without adding dead tab stops.
+      'activatable',
       'is-server-side',
+      // Naming: copied onto the role-bearing .timeline node (list/listbox).
+      // Host aria-label wins over input-label, as everywhere.
+      'aria-label',
+      'input-label',
+      'aria-labelledby',
+      'aria-describedby',
     ];
   }
 
@@ -57,7 +68,29 @@ export class MpTimeline extends LitElement {
   private _align: TimelineAlign = 'start';
   private _reverse = false;
   private _selectable: TimelineSelectable = 'none';
+  private _activatable = false;
   private _isServerSide = false;
+  private _inputLabel: string | null = null;
+
+  /** Tier-2 naming: references resolve in the host's tree, land on the list node. */
+  private readonly hostAria = new HostAriaController(this, {
+    referenceTarget: () => this.renderRoot?.querySelector('.timeline') ?? null,
+  });
+
+  /**
+   * Optional accessible name for the timeline list. A timeline has no intrinsic
+   * text of its own, so the name is the consumer's to give (optional — degrades
+   * to an unnamed list rather than an invented name).
+   */
+  get inputLabel(): string | null {
+    return this._inputLabel;
+  }
+  set inputLabel(value: string | null) {
+    const next = value ?? null;
+    if (this._inputLabel === next) return;
+    this._inputLabel = next;
+    this.requestUpdate();
+  }
 
   /** True once a consumer assigns `selectedIds` — suppresses declarative seeding. */
   private _selectionExplicit = false;
@@ -198,6 +231,17 @@ export class MpTimeline extends LitElement {
       case 'is-server-side':
         this._isServerSide = newValue !== null && newValue !== 'false';
         break;
+      case 'activatable':
+        this._activatable = newValue !== null && newValue !== 'false';
+        break;
+      case 'input-label':
+        this._inputLabel = newValue;
+        break;
+      case 'aria-labelledby':
+      case 'aria-describedby':
+        this.hostAria.syncReferences();
+        break;
+      // aria-label falls through to the unconditional requestUpdate below.
     }
     this.requestUpdate();
   }
@@ -205,6 +249,8 @@ export class MpTimeline extends LitElement {
   protected override updated(): void {
     // Declarative mode: project state onto slotted items (client only).
     if (!isServer && this._items.length === 0) this.enhanceDeclarativeItems();
+    // References point at a specific node; re-land them after every render.
+    this.hostAria.syncReferences();
   }
 
   private reflectString(name: string, value: string): void {
@@ -236,12 +282,20 @@ export class MpTimeline extends LitElement {
   // ----- render ------------------------------------------------------------
 
   override render(): TemplateResult {
-    const role = this._selectable !== 'none' ? 'listbox' : 'list';
+    // activatable-without-selection = buttons in a group: a `listitem` may not
+    // be interactive, so the list semantics honestly give way to what the items
+    // actually are in that mode.
+    const role = this._selectable !== 'none' ? 'listbox' : this._activatable ? 'group' : 'list';
     return html`
       <div
         class="timeline"
         role=${role}
-        aria-orientation=${this._orientation}
+        aria-label=${this.getAttribute('aria-label') ?? this._inputLabel ?? nothing}
+        aria-orientation=${
+          // Only widgets take aria-orientation — on role=list/group it is an
+          // invalid pairing (axe aria-allowed-attr, critical).
+          role === 'listbox' ? this._orientation : nothing
+        }
         aria-multiselectable=${this._selectable === 'multiple' ? 'true' : nothing}
         @click=${this.onClick}
         @keydown=${this.onKeydown}
@@ -279,10 +333,10 @@ export class MpTimeline extends LitElement {
           side=${sides[i]}
           orientation=${orientation}
           ?last=${isLast}
-          role=${selectable !== 'none' ? 'option' : 'listitem'}
+          role=${selectable !== 'none' ? 'option' : this._activatable ? 'button' : 'listitem'}
           ?selected=${selected}
           aria-selected=${selectable !== 'none' ? (selected ? 'true' : 'false') : nothing}
-          tabindex=${selectable !== 'none' ? (i === activeIndex ? '0' : '-1') : nothing}
+          tabindex=${selectable !== 'none' || this._activatable ? (i === activeIndex ? '0' : '-1') : nothing}
           data-index=${i}
         ></mp-timeline-item>`;
       })}
@@ -373,8 +427,60 @@ export class MpTimeline extends LitElement {
     }
   };
 
+  /** The item-click emission shared by pointer and keyboard activation. */
+  private emitItemClick(index: number, originalEvent: Event): void {
+    const el = this.itemElements[index];
+    if (!el || el.hasAttribute('disabled')) return;
+    const model = this.modelFor(el, index);
+    this.dispatchEvent(
+      new CustomEvent<TimelineItemClickDetail>('item-click', {
+        detail: { item: model, index, originalEvent },
+        bubbles: true,
+        composed: true,
+      }),
+    );
+  }
+
+  /** Arrows rove; Enter/Space emit item-click — activation without selection. */
+  private onActivatableKeydown(ev: KeyboardEvent): void {
+    const els = this.itemElements;
+    if (!els.length) return;
+    const current = this.itemFromEvent(ev).index;
+    switch (ev.key) {
+      case 'ArrowDown':
+      case 'ArrowRight':
+        ev.preventDefault();
+        this.moveFocus(current, 1, els);
+        return;
+      case 'ArrowUp':
+      case 'ArrowLeft':
+        ev.preventDefault();
+        this.moveFocus(current, -1, els);
+        return;
+      case 'Home':
+        ev.preventDefault();
+        this.moveFocusTo(this.firstFocusable(els), els);
+        return;
+      case 'End':
+        ev.preventDefault();
+        this.moveFocusTo(this.lastFocusable(els), els);
+        return;
+      case 'Enter':
+      case ' ': {
+        if (current < 0) return;
+        ev.preventDefault();
+        this.emitItemClick(current, ev);
+        return;
+      }
+    }
+  }
+
   private onKeydown = (ev: KeyboardEvent): void => {
-    if (this._selectable === 'none') return;
+    if (this._selectable === 'none') {
+      if (!this._activatable) return;
+      this.onActivatableKeydown(ev);
+      return;
+    }
     const els = this.itemElements;
     if (!els.length) return;
     const current = this.itemFromEvent(ev).index;

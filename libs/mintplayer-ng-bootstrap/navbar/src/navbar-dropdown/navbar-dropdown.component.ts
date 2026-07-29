@@ -4,6 +4,7 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { RouterLinkActive } from '@angular/router';
 import { BS_DROPDOWN_MENU_CONTEXT, BsDropdownMenuComponent } from '@mintplayer/ng-bootstrap/dropdown-menu';
 import { BsNavbarDropdownLabelDirective } from './navbar-dropdown-label.directive';
+import { BsForwardAriaDirective } from '@mintplayer/ng-bootstrap/a11y';
 
 /**
  * `<bs-navbar-dropdown>` — Angular wrapper around `<mp-navbar-dropdown>`.
@@ -39,7 +40,7 @@ import { BsNavbarDropdownLabelDirective } from './navbar-dropdown-label.directiv
   templateUrl: './navbar-dropdown.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
   schemas: [CUSTOM_ELEMENTS_SCHEMA],
-  imports: [NgTemplateOutlet, BsDropdownMenuComponent],
+  imports: [BsForwardAriaDirective, NgTemplateOutlet, BsDropdownMenuComponent],
   providers: [{ provide: BS_DROPDOWN_MENU_CONTEXT, useValue: true }],
   hostDirectives: [RouterLinkActive],
 })

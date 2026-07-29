@@ -1,5 +1,13 @@
 import { LitElement, html, nothing, type TemplateResult } from 'lit';
+import { createRef, ref, type Ref } from 'lit/directives/ref.js';
+import {
+  HostAriaController,
+  FormAssociatedMixin,
+  errorFeedback,
+  errorFeedbackElements,
+} from '@mintplayer/web-components/a11y';
 import { toggleButtonStyles } from '../styles';
+import { invalidFeedbackStyles } from '../../../_styles/invalid-feedback.styles';
 
 /** Bootstrap button-color tokens that map to a `.btn-<color>` class. */
 export type ToggleButtonColor =
@@ -33,8 +41,8 @@ let instanceCounter = 0;
  * Emits a native-style `change` event with
  * `detail: { checked, value }` when toggled.
  */
-export class MpToggleButton extends LitElement {
-  static override styles = [toggleButtonStyles];
+export class MpToggleButton extends FormAssociatedMixin(LitElement) {
+  static override styles = [toggleButtonStyles, invalidFeedbackStyles];
 
   static override shadowRootOptions = {
     ...LitElement.shadowRootOptions,
@@ -44,11 +52,24 @@ export class MpToggleButton extends LitElement {
   static override get observedAttributes(): string[] {
     return [
       ...(super.observedAttributes ?? []),
+      'invalid',
+      'required',
+      // Validation message rendered inside the shadow root and referenced by the
+      // inner <input>; shown only while `invalid` is also set.
+      'error-text',
       'checked',
       'disabled',
       'name',
       'value',
       'color',
+      // Copied to the inner <input>; the slotted label already names the control
+      // (flat-tree label association), so these are overrides.
+      'aria-label',
+      'input-label',
+      // Resolved into element references against the host's tree — an IDREF
+      // string cannot cross the shadow boundary.
+      'aria-labelledby',
+      'aria-describedby',
     ];
   }
 
@@ -57,7 +78,51 @@ export class MpToggleButton extends LitElement {
   private _name: string | null = null;
   private _value: string | null = null;
   private _color: ToggleButtonColor = 'primary';
+  private _inputLabel: string | null = null;
+  private _errorText: string | null = null;
+
+  /** Tier-2 naming; references target the real control inside the shadow root. */
+  private readonly hostAria = new HostAriaController(this, {
+    referenceTarget: () => this._inputRef.value ?? null,
+    describedByExtras: () => errorFeedbackElements(this.renderRoot),
+  });
   private readonly _inputId = `mp-toggle-button-${++instanceCounter}`;
+  private readonly _errorId = `mp-toggle-button-${instanceCounter}-error`;
+  private readonly _inputRef: Ref<HTMLInputElement> = createRef();
+
+  /**
+   * Optional override for the inner <input>'s accessible name. Usually
+   * unnecessary — the slotted visible text names the control through the
+   * flat-tree label association (slotted-label spike; verdict in the plan). For an icon-only
+   * toggle, or a name that must differ from the visible text, set this.
+   */
+  get inputLabel(): string | null {
+    return this._inputLabel;
+  }
+  set inputLabel(value: string | null) {
+    const next = value ?? null;
+    if (this._inputLabel === next) return;
+    this._inputLabel = next;
+    this.requestUpdate();
+  }
+
+  /**
+   * Validation message, as `errorText` / `error-text`. Rendered as a
+   * `.invalid-feedback` node inside the shadow root and referenced from the inner
+   * `<input>` by `aria-errormessage` **and** `aria-describedby`, but only while
+   * `invalid` is set — `aria-errormessage` is meaningless on a control that is not
+   * `aria-invalid`. Text rather than a node, because a consumer's own element sits
+   * outside this shadow root where an IDREF from the input cannot reach it.
+   */
+  get errorText(): string | null {
+    return this._errorText;
+  }
+  set errorText(value: string | null) {
+    const next = value ?? null;
+    if (this._errorText === next) return;
+    this._errorText = next;
+    this.requestUpdate();
+  }
 
   get checked(): boolean {
     return this._checked;
@@ -117,6 +182,17 @@ export class MpToggleButton extends LitElement {
   ): void {
     super.attributeChangedCallback(name, oldValue, newValue);
     switch (name) {
+      // Read from the host in render(), so a change has to ask for one — without
+      // this, aria-invalid / aria-required froze at their first-render values and
+      // an error message could never appear on a control that started out valid.
+      case 'invalid':
+      case 'required':
+        this.requestUpdate();
+        break;
+      case 'error-text':
+        this._errorText = newValue;
+        this.requestUpdate();
+        break;
       case 'checked':
         this._checked = newValue !== null;
         this.requestUpdate();
@@ -139,24 +215,50 @@ export class MpToggleButton extends LitElement {
           this.requestUpdate();
         }
         break;
+      case 'aria-label':
+        this.requestUpdate();
+        break;
+      case 'input-label':
+        this._inputLabel = newValue;
+        this.requestUpdate();
+        break;
+      case 'aria-labelledby':
+      case 'aria-describedby':
+        this.hostAria.syncReferences();
+        break;
     }
   }
 
+  // After every render — element references point at a specific node, and Lit
+  // may replace the <input> on re-render.
+  protected override updated(): void {
+    this.syncFormValue();
+    this.hostAria.syncReferences();
+  }
+
   override render(): TemplateResult {
+    const error = errorFeedback(this._errorId, this._errorText, this.hasAttribute('invalid'));
     return html`
       <input
+        ${ref(this._inputRef)}
         type="checkbox"
         class="btn-check"
         id=${this._inputId}
         .checked=${this._checked}
         ?disabled=${this._disabled}
+          aria-invalid=${this.hasAttribute('invalid') ? 'true' : nothing}
+          aria-required=${this.hasAttribute('required') ? 'true' : nothing}
+        aria-errormessage=${error.id}
+        aria-describedby=${error.id}
         name=${this._name ?? nothing}
         value=${this._value ?? nothing}
+        aria-label=${this.getAttribute('aria-label') ?? this._inputLabel ?? nothing}
         @change=${this.onInputChange}
       />
       <label class="btn btn-${this._color}" for=${this._inputId}>
         <slot></slot>
       </label>
+      ${error.node}
     `;
   }
 
@@ -177,6 +279,27 @@ export class MpToggleButton extends LitElement {
       }),
     );
   };
+
+  // ---- form association (FormAssociatedHost, Phase F) ----
+
+  formValue(): string | null {
+    return this._checked ? (this._value ?? 'on') : null;
+  }
+
+  formReset(): void {
+    this._checked = false;
+    if (this.hasAttribute('checked')) this.removeAttribute('checked');
+    this.requestUpdate();
+  }
+
+  formRestore(state: string | FormData | File | null): void {
+    this._checked = state != null;
+    this.requestUpdate();
+  }
+
+  formValidityAnchor(): HTMLElement | null {
+    return this._inputRef.value ?? null;
+  }
 }
 
 if (typeof customElements !== 'undefined' && !customElements.get('mp-toggle-button')) {

@@ -9,11 +9,12 @@ import { ref, watch, onMounted } from 'vue';
 defineOptions({ inheritAttrs: false });
 
 // The radio WC's v-model surface is the `checked` property (`boolean`)
-// + the `change` CustomEvent<RadioChangeEventDetail>. One-of-N
-// coordination across multiple <bs-radio> instances is the consumer's
-// job (matching the Angular [bsRadioGroup] precedent and the WC's own
-// shadow-DOM limitation); the v-model on a single radio is just the
-// checked flag.
+// + the `change` CustomEvent<RadioChangeEventDetail>. For one-of-N
+// coordination across multiple <bs-radio> instances, wrap them in
+// <BsRadioGroup> (@mintplayer/vue-bootstrap/radio-group) — shadow roots
+// keep the browser's native exclusivity from firing across radios, and
+// the group WC supplies it plus the radiogroup keyboard model. The
+// v-model on a single radio is just the checked flag.
 const modelValue = defineModel<boolean>();
 const el = ref<MpRadio | null>(null);
 

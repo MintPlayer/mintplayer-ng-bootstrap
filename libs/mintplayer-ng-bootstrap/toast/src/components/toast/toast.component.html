@@ -1,3 +1,5 @@
-<div class="toast d-block fade mb-2 me-2" [class.show]="isVisible()" [attr.role]="toastRole()" [attr.aria-live]="politeness()" aria-atomic="true">
+<!-- No role/aria-live here: mounting region and text in one task is the
+     pattern SRs miss (audit 4.8). BsLiveAnnouncerService is the channel. -->
+<div class="toast d-block fade mb-2 me-2" [class.show]="isVisible()">
     <ng-content></ng-content>
 </div>

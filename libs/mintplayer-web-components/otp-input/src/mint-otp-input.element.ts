@@ -1,8 +1,12 @@
 import { LitElement, html, type TemplateResult } from 'lit';
+import { FormAssociatedMixin, errorFeedback } from '@mintplayer/web-components/a11y';
 import { styles } from './mint-otp-input.element.template';
+import { invalidFeedbackStyles } from '../../_styles/invalid-feedback.styles';
 import { OtpInputType } from './types/otp-input-type';
 import { OtpInputCase } from './types/otp-input-case';
 import { OtpInputSize } from './types/otp-input-size';
+
+let instanceCounter = 0;
 
 /**
  * Bootstrap-flavoured OTP / segmented-code input.
@@ -24,8 +28,8 @@ import { OtpInputSize } from './types/otp-input-size';
  *
  * Both bubble and compose so an Angular wrapper's host listeners pick them up.
  */
-export class MintOtpInputElement extends LitElement {
-  static override styles = [styles];
+export class MintOtpInputElement extends FormAssociatedMixin(LitElement) {
+  static override styles = [styles, invalidFeedbackStyles];
 
   static override get observedAttributes(): string[] {
     return [
@@ -34,8 +38,16 @@ export class MintOtpInputElement extends LitElement {
       'case',
       'size',
       'disabled',
-      'label',
+      // Renamed from 'label' (breaking, decision D3): the library-wide name for
+      // "accessible name of the control inside the shadow root" is input-label,
+      // and a second spelling on one component is precisely the inconsistency
+      // the rename removes. Optional — the WC defaults to 'One-time code'.
+      'input-label',
+      'aria-label',
       'invalid',
+      // Validation message rendered inside the shadow root and referenced by the
+      // hidden <input>; shown only while `invalid` is also set.
+      'error-text',
       'groups',
     ];
   }
@@ -59,16 +71,32 @@ export class MintOtpInputElement extends LitElement {
     case: { attribute: 'case', type: String, reflect: true },
     size: { attribute: 'size', type: String, reflect: true },
     disabled: { attribute: 'disabled', type: Boolean, reflect: true },
-    label: { attribute: 'label', type: String, reflect: false },
+    inputLabel: { attribute: 'input-label', type: String, reflect: false },
+    // Not a real property; listed so a host aria-label change re-renders. The
+    // consumer's aria-label wins over inputLabel, same precedence as every other
+    // form control in the library.
+    ariaLabelForRender: { attribute: 'aria-label', type: String, reflect: false },
     invalid: { attribute: 'invalid', type: Boolean, reflect: true },
+    errorText: { attribute: 'error-text', type: String, reflect: false },
   };
 
   type: OtpInputType = 'numeric';
   case: OtpInputCase = 'upper';
   size: OtpInputSize = 'md';
   disabled = false;
-  label: string | null = null;
+  inputLabel: string | null = null;
+  /** Mirror of the host aria-label attribute; exists only to trigger re-renders. */
+  ariaLabelForRender: string | null = null;
   invalid = false;
+  /**
+   * Validation message, as `errorText` / `error-text`. Rendered as a
+   * `.invalid-feedback` node inside the shadow root and referenced from the hidden
+   * `<input>` by `aria-errormessage` **and** `aria-describedby`, but only while
+   * `invalid` is true — `aria-errormessage` is meaningless on a control that is
+   * not `aria-invalid`. Text rather than a node, because a consumer's own element
+   * lives outside this shadow root where an IDREF from the input cannot reach it.
+   */
+  errorText: string | null = null;
 
   static readonly MAX_GROUP_SIZE = 10;
   static readonly MAX_TOTAL = 40;
@@ -87,6 +115,7 @@ export class MintOtpInputElement extends LitElement {
   private _revealTimer: ReturnType<typeof setTimeout> | null = null;
   private _inputEl: HTMLInputElement | null = null;
   private _isFocused = false;
+  private readonly _errorId = `mp-otp-input-${++instanceCounter}-error`;
 
   get value(): string {
     return this._value;
@@ -335,7 +364,26 @@ export class MintOtpInputElement extends LitElement {
 
   // ------- event dispatch -------
 
+  // ---- form association (FormAssociatedHost, Phase F) ----
+
+  formValue(): string | null {
+    return this._value || null;
+  }
+
+  formReset(): void {
+    this.clear();
+  }
+
+  formRestore(state: string | FormData | File | null): void {
+    if (typeof state === 'string') this.value = state;
+  }
+
+  formValidityAnchor(): HTMLElement | null {
+    return this._inputEl;
+  }
+
   private dispatchValueChange(): void {
+    this.syncFormValue();
     this.dispatchEvent(new CustomEvent<string>('value-change', {
       detail: this._value,
       bubbles: true,
@@ -366,7 +414,8 @@ export class MintOtpInputElement extends LitElement {
     const isClassicOtp = this.type === 'numeric' && groups.every(g => g === 1);
     const autocomplete = isClassicOtp ? 'one-time-code' : 'off';
     const inputMode = this.type === 'numeric' ? 'numeric' : 'text';
-    const labelText = this.label ?? 'One-time code';
+    const labelText = this.getAttribute('aria-label') ?? this.inputLabel ?? 'One-time code';
+    const error = errorFeedback(this._errorId, this.errorText, this.invalid);
 
     return html`
       <div class="container" part="container">
@@ -383,6 +432,8 @@ export class MintOtpInputElement extends LitElement {
           ?disabled=${this.disabled}
           aria-label=${labelText}
           aria-invalid=${this.invalid ? 'true' : 'false'}
+          aria-errormessage=${error.id}
+          aria-describedby=${error.id}
           @input=${this.onInput}
           @paste=${this.onPaste}
           @focus=${this.onFocus}
@@ -394,6 +445,7 @@ export class MintOtpInputElement extends LitElement {
           this.renderBox(i, groupLen, bounds, value, activeBoxIndex),
         )}
       </div>
+      ${error.node}
     `;
   }
 

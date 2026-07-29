@@ -1,4 +1,4 @@
-import { html, type ReactiveController, type ReactiveControllerHost, type TemplateResult } from 'lit';
+import { html, nothing, type ReactiveController, type ReactiveControllerHost, type TemplateResult } from 'lit';
 import { createRef, ref, type Ref } from 'lit/directives/ref.js';
 
 export interface LiveAnnouncerOptions {
@@ -6,6 +6,13 @@ export interface LiveAnnouncerOptions {
   politeness?: 'polite' | 'assertive';
   /** ms after which the live region is blanked so the same message can re-announce later. Default: 1500. */
   clearAfterMs?: number;
+  /**
+   * Emit NO role on the region — aria-live alone makes it a live region.
+   * Required when the host carries a role with a strict children contract
+   * (role=tree owns everything in its shadow through transparent generics,
+   * and an owned role=status is invalid — axe aria-required-children).
+   */
+  omitRole?: boolean;
 }
 
 const VISUALLY_HIDDEN =
@@ -32,12 +39,14 @@ export class LiveAnnouncerController implements ReactiveController {
   private pendingMessage: string | null = null;
   private readonly politeness: 'polite' | 'assertive';
   private readonly clearAfterMs: number;
+  private readonly omitRole: boolean;
   private readonly regionRef: Ref<HTMLDivElement> = createRef();
 
   constructor(host: ReactiveControllerHost, options: LiveAnnouncerOptions = {}) {
     this.host = host;
     this.politeness = options.politeness ?? 'polite';
     this.clearAfterMs = options.clearAfterMs ?? 1500;
+    this.omitRole = options.omitRole ?? false;
     host.addController(this);
   }
 
@@ -72,7 +81,7 @@ export class LiveAnnouncerController implements ReactiveController {
 
   /** Returns the live-region template fragment. Call once inside the host's render(). */
   template(): TemplateResult {
-    const role = this.politeness === 'assertive' ? 'alert' : 'status';
+    const role = this.omitRole ? nothing : this.politeness === 'assertive' ? 'alert' : 'status';
     return html`<div
       ${ref(this.regionRef)}
       role=${role}

@@ -121,15 +121,17 @@ describe('mp-carousel ARIA contract', () => {
     });
   });
 
-  it('the viewport carries tabindex, orientation and keyshortcuts', async () => {
+  it('the viewport carries tabindex and keyshortcuts, never aria-orientation', async () => {
     const el = await make();
     expect(inner(el).getAttribute('tabindex')).toBe('0');
-    expect(inner(el).getAttribute('aria-orientation')).toBe('horizontal');
+    // No aria-orientation: the viewport div carries no role, and only
+    // widgets may take the attribute (axe aria-allowed-attr).
+    expect(inner(el).hasAttribute('aria-orientation')).toBe(false);
     expect(inner(el).getAttribute('aria-keyshortcuts')).toBe('ArrowLeft ArrowRight Home End');
 
     el.setAttribute('orientation', 'vertical');
     await flush(el);
-    expect(inner(el).getAttribute('aria-orientation')).toBe('vertical');
+    expect(inner(el).hasAttribute('aria-orientation')).toBe(false);
     expect(inner(el).getAttribute('aria-keyshortcuts')).toBe('ArrowUp ArrowDown Home End');
 
     el.setAttribute('keyboard-events', 'false');
@@ -363,5 +365,39 @@ describe('mp-carousel reconnect', () => {
     el.next();
     expect(el.index).toBe(1);
     expect([...el.children].map((c) => c.getAttribute('slot'))).toEqual(['s0', 's1', 's2']);
+  });
+});
+
+describe('mp-carousel hidden slides are inert (Phase D)', () => {
+  it('non-active cells and both wrap clones carry inert; the active cell does not', async () => {
+    const el = await make();
+    cells(el).forEach((cell, i) => {
+      expect(cell.hasAttribute('inert'), `cell ${i}`).toBe(i !== 0);
+    });
+    [...shadow(el).querySelectorAll('.carousel-clone')].forEach((clone) => {
+      expect(clone.hasAttribute('inert')).toBe(true);
+    });
+  });
+
+  it('inert follows the index after navigation', async () => {
+    const el = await make();
+    el.next();
+    await flush(el);
+    await new Promise((r) => setTimeout(r, 20));
+    await flush(el);
+    cells(el).forEach((cell, i) => {
+      expect(cell.hasAttribute('inert'), `cell ${i}`).toBe(i !== 1);
+    });
+  });
+
+  it('aria-hidden and inert never disagree on a cell', async () => {
+    const el = await make();
+    el.next();
+    await flush(el);
+    await new Promise((r) => setTimeout(r, 20));
+    await flush(el);
+    cells(el).forEach((cell) => {
+      expect(cell.hasAttribute('inert')).toBe(cell.getAttribute('aria-hidden') === 'true');
+    });
   });
 });

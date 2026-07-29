@@ -26,7 +26,7 @@ const MpTimelineBase = createComponent({
   },
 });
 
-export interface BsTimelineProps {
+export interface BsTimelineProps extends React.HTMLAttributes<HTMLElement> {
   items?: TimelineItem[];
   orientation?: TimelineOrientation;
   align?: TimelineAlign;
@@ -74,6 +74,9 @@ export function BsTimeline(props: BsTimelineProps): React.ReactElement {
     renderContent,
     className,
     children,
+    // Everything else is the consumer's — role, id, tabIndex, data-*, aria-*.
+    // Without this the wrapper silently swallowed them.
+    ...rest
   } = props;
 
   const hasTemplates = !!(renderMarker || renderTitle || renderTimestamp || renderOpposite || renderContent);
@@ -104,6 +107,7 @@ export function BsTimeline(props: BsTimelineProps): React.ReactElement {
       className={className}
       onItemClick={handleItemClick}
       onSelectionChange={handleSelectionChange}
+      {...rest}
       {...(dataMode ? { items } : {})}
       {...(selectable !== 'none' ? { selectedIds: selection ? selection.map((it, i) => idOf(it, i)) : [] } : {})}
     >

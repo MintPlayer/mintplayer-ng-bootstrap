@@ -1,5 +1,6 @@
 import { afterNextRender, ChangeDetectionStrategy, Component, computed, CUSTOM_ELEMENTS_SCHEMA, ElementRef, inject, input, output } from '@angular/core';
 import type { NavbarBreakpoint, NavbarExpandedChangeEventDetail } from '@mintplayer/web-components/navbar';
+import { BsForwardAriaDirective } from '@mintplayer/ng-bootstrap/a11y';
 
 /**
  * `<bs-navbar>` — Angular wrapper around the `<mp-navbar>` web component.
@@ -19,6 +20,7 @@ import type { NavbarBreakpoint, NavbarExpandedChangeEventDetail } from '@mintpla
 @Component({
   selector: 'bs-navbar',
   templateUrl: './navbar.component.html',
+  imports: [BsForwardAriaDirective],
   changeDetection: ChangeDetectionStrategy.OnPush,
   schemas: [CUSTOM_ELEMENTS_SCHEMA],
 })
@@ -31,7 +33,6 @@ export class BsNavbarComponent {
   /** Theme color of the navbar background (e.g. `primary`, `dark`, `body-tertiary`). */
   readonly color = input<string>();
   /** Accessible label for the `<nav>` landmark. */
-  readonly ariaLabel = input<string>();
   /** Whether the collapse is (visually) expanded; reflected to the WC. */
   readonly expanded = input(false);
   /** `fixed` pins the bar to the top of the viewport, full width; omit for in-flow. */
@@ -42,7 +43,6 @@ export class BsNavbarComponent {
 
   /** String-or-absent attributes derived once via signals. */
   protected readonly colorAttr = computed(() => this.color() ?? null);
-  protected readonly ariaLabelAttr = computed(() => this.ariaLabel() ?? null);
   protected readonly positioningAttr = computed(() => this.positioning() ?? null);
   /** Presence attribute: `''` when expanded, `null` when collapsed. */
   protected readonly expandedAttr = computed(() => (this.expanded() ? '' : null));

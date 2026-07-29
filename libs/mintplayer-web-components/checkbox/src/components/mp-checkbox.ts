@@ -8,6 +8,13 @@ import { ref, createRef, type Ref } from 'lit/directives/ref.js';
 // Lives outside the per-entry tree at libs/.../_styles/ — an internal
 // directory, NOT a public sub-entry of @mintplayer/web-components.
 import { formCheckStyles } from '../../../_styles/form-check.styles';
+import { invalidFeedbackStyles } from '../../../_styles/invalid-feedback.styles';
+import {
+  HostAriaController,
+  FormAssociatedMixin,
+  errorFeedback,
+  errorFeedbackElements,
+} from '@mintplayer/web-components/a11y';
 
 // `toggleButtonStyles` covers the `toggle_button` variant (`.btn` rules).
 // Side-effect-imports `<mp-toggle-button>` too — same module.
@@ -54,8 +61,15 @@ let instanceCounter = 0;
  *
  * Emits `change` with `detail: { checked, indeterminate, value }`.
  */
-export class MpCheckbox extends LitElement {
-  static override styles = [formCheckStyles, toggleButtonStyles];
+/**
+ * Form association (Phase F, decision D5): the mixin owns the internals
+ * plumbing; this class supplies the checkbox value shape. This is what makes
+ * the previously-dead `name` attribute actually submit, and what lets a
+ * `<fieldset disabled>` disable the control without a defeatable attribute
+ * (spike 0.3a).
+ */
+export class MpCheckbox extends FormAssociatedMixin(LitElement) {
+  static override styles = [formCheckStyles, toggleButtonStyles, invalidFeedbackStyles];
 
   static override shadowRootOptions = {
     ...LitElement.shadowRootOptions,
@@ -65,6 +79,11 @@ export class MpCheckbox extends LitElement {
   static override get observedAttributes(): string[] {
     return [
       ...(super.observedAttributes ?? []),
+      'invalid',
+      'required',
+      // Validation message rendered inside the shadow root and referenced by the
+      // inner <input>; shown only while `invalid` is also set.
+      'error-text',
       'type',
       'checked',
       'indeterminate',
@@ -72,9 +91,12 @@ export class MpCheckbox extends LitElement {
       'name',
       'value',
       'color',
-      // Forwarded to the inner <input> in render() so consumers using the
-      // WC directly (without the Angular wrapper) can label the control.
+      // Copied to the inner <input> in render() so consumers using the WC
+      // directly (without the Angular wrapper) can label the control.
       'aria-label',
+      'input-label',
+      // NOT copied inward — resolved into element references against the host's
+      // tree by hostAria.syncReferences(). See renderCheckOrSwitch().
       'aria-labelledby',
       'aria-describedby',
     ];
@@ -87,8 +109,72 @@ export class MpCheckbox extends LitElement {
   private _name: string | null = null;
   private _value: string | null = null;
   private _color: ToggleButtonColor = 'primary';
+  private _inputLabel: string | null = null;
+  private _errorText: string | null = null;
+
+  /**
+   * Tier-2 naming. No `role` is passed: the inner <input> is the real control and
+   * already carries one, so a role on the host would announce the checkbox twice.
+   * References therefore target that <input> rather than the host's internals.
+   */
+  private readonly hostAria = new HostAriaController(this, {
+    referenceTarget: () => this._inputRef.value ?? null,
+    describedByExtras: () => errorFeedbackElements(this.renderRoot),
+  });
   private readonly _inputId = `mp-checkbox-${++instanceCounter}`;
+  private readonly _errorId = `mp-checkbox-${instanceCounter}-error`;
   private readonly _inputRef: Ref<HTMLInputElement> = createRef();
+
+  /**
+   * Optional override for the inner `<input>`'s accessible name, as
+   * `inputLabel` / `input-label`. Standardised on this name across the library
+   * rather than `label`, because the value lands on the control *inside* the shadow
+   * root.
+   *
+   * **Usually unnecessary — do not reach for it by default.** The shadow `<label>`
+   * wraps the `<input>` and contains the `<slot>`, and accessible-name computation
+   * walks the *flat* tree, so slotted light-DOM text already names the control:
+   * `<mp-checkbox>Accept terms</mp-checkbox>` computes the name "Accept terms" with
+   * nothing else passed. Verified against Chromium's real accessibility tree in
+   * the slotted-label spike (verdict in docs/prd/screen-reader-accessibility-plan.md) — an earlier version of this comment claimed the
+   * opposite, on the assumption that the slot boundary broke the association. It
+   * does not.
+   *
+   * So this exists for the two cases that genuinely need it: a checkbox with **no**
+   * visible text, and a name that must differ from the visible text. When both are
+   * present this wins, which is the right precedence for an override.
+   */
+  get inputLabel(): string | null {
+    return this._inputLabel;
+  }
+  set inputLabel(value: string | null) {
+    const next = value ?? null;
+    if (this._inputLabel === next) return;
+    this._inputLabel = next;
+    this.requestUpdate();
+  }
+
+  /**
+   * Validation message, as `errorText` / `error-text`. Rendered as a
+   * `.invalid-feedback` node inside the shadow root and referenced from the inner
+   * `<input>` by `aria-errormessage` **and** `aria-describedby` — but only while
+   * `invalid` is set, because `aria-errormessage` means nothing on a control that
+   * is not `aria-invalid`.
+   *
+   * Text rather than a node because the alternative does not work: a consumer's
+   * own `<small id="…">` lives outside this shadow root, and an IDREF from the
+   * inner input cannot reach it. On the Angular side `BsControlValidityDirective`
+   * fills this in from `NgControl.errors`.
+   */
+  get errorText(): string | null {
+    return this._errorText;
+  }
+  set errorText(value: string | null) {
+    const next = value ?? null;
+    if (this._errorText === next) return;
+    this._errorText = next;
+    this.requestUpdate();
+  }
 
   get type(): MpCheckboxType {
     return this._type;
@@ -168,6 +254,19 @@ export class MpCheckbox extends LitElement {
   ): void {
     super.attributeChangedCallback(name, oldValue, newValue);
     switch (name) {
+      // Both are read straight from the host in render(), so a change has to ask
+      // for one. Without this the aria-invalid / aria-required the audit added
+      // were frozen at their first-render values, and the error message could
+      // never appear on a control that started out valid — which is every
+      // control driven by a form, since validity is mirrored after touch.
+      case 'invalid':
+      case 'required':
+        this.requestUpdate();
+        break;
+      case 'error-text':
+        this._errorText = newValue;
+        this.requestUpdate();
+        break;
       case 'type':
         if (newValue && VALID_TYPES.has(newValue)) {
           this._type = newValue as MpCheckboxType;
@@ -201,11 +300,17 @@ export class MpCheckbox extends LitElement {
         }
         break;
       case 'aria-label':
-      case 'aria-labelledby':
-      case 'aria-describedby':
         // Re-render so the inner <input> picks up the new value via
         // `this.getAttribute(...)` in render().
         this.requestUpdate();
+        break;
+      case 'input-label':
+        this._inputLabel = newValue;
+        this.requestUpdate();
+        break;
+      case 'aria-labelledby':
+      case 'aria-describedby':
+        this.hostAria.syncReferences();
         break;
     }
   }
@@ -221,13 +326,32 @@ export class MpCheckbox extends LitElement {
   protected override updated(): void {
     const input = this._inputRef.value;
     if (input) input.indeterminate = this._indeterminate && this._type !== 'toggle_button';
+
+    // After every render, not once at startup. `ariaLabelledByElements` stores a
+    // real element reference, and stores it on the node it is assigned to —
+    // switching `type` between `toggle_button` and the others makes Lit build a
+    // different <input>, so assigning only in connectedCallback would leave the
+    // name on a discarded node while the host attribute still looked correct.
+    // Covered by "reference re-sync across a type change" in the aria spec.
+    this.hostAria.syncReferences();
+
+    // Submission value + validity anchor track the live nodes/state.
+    this.syncFormValue();
+    this.setFormValidity(
+      { valueMissing: this.hasAttribute('required') && !this._checked },
+      'Please check this box.',
+    );
   }
 
   private renderCheckOrSwitch(): TemplateResult {
     const isSwitch = this._type === 'switch';
-    const ariaLabel = this.getAttribute('aria-label') ?? undefined;
-    const ariaLabelledBy = this.getAttribute('aria-labelledby') ?? undefined;
-    const ariaDescribedBy = this.getAttribute('aria-describedby') ?? undefined;
+    // Only aria-label can be copied inward. The IDREF forms are handled by
+    // `hostAria.syncReferences()`, which assigns resolved ELEMENTS to this input —
+    // copying the id strings here produced an attribute that resolved against the
+    // shadow root, where the consumer's element does not exist, and was silently
+    // dead while looking correct in devtools.
+    const ariaLabel = this.getAttribute('aria-label') ?? this._inputLabel ?? undefined;
+    const error = this.errorFeedback();
     return html`
       <label class=${isSwitch ? 'form-check form-switch' : 'form-check'}>
         <input
@@ -237,24 +361,35 @@ export class MpCheckbox extends LitElement {
           id=${this._inputId}
           .checked=${this._checked}
           ?disabled=${this._disabled}
+          aria-invalid=${this.hasAttribute('invalid') ? 'true' : nothing}
+          aria-required=${this.hasAttribute('required') ? 'true' : nothing}
+          aria-errormessage=${error.id}
+          aria-describedby=${error.id}
           name=${this._name ?? nothing}
           value=${this._value ?? nothing}
           role=${isSwitch ? 'switch' : nothing}
           aria-checked=${this._indeterminate ? 'mixed' : nothing}
           aria-label=${ifDefined(ariaLabel)}
-          aria-labelledby=${ifDefined(ariaLabelledBy)}
-          aria-describedby=${ifDefined(ariaDescribedBy)}
           @change=${this.onInputChange}
         />
         <span class="form-check-label"><slot></slot></span>
       </label>
+      ${error.node}
     `;
   }
 
+  private errorFeedback() {
+    return errorFeedback(this._errorId, this._errorText, this.hasAttribute('invalid'));
+  }
+
   private renderToggleButton(): TemplateResult {
-    const ariaLabel = this.getAttribute('aria-label') ?? undefined;
-    const ariaLabelledBy = this.getAttribute('aria-labelledby') ?? undefined;
-    const ariaDescribedBy = this.getAttribute('aria-describedby') ?? undefined;
+    // Only aria-label can be copied inward. The IDREF forms are handled by
+    // `hostAria.syncReferences()`, which assigns resolved ELEMENTS to this input —
+    // copying the id strings here produced an attribute that resolved against the
+    // shadow root, where the consumer's element does not exist, and was silently
+    // dead while looking correct in devtools.
+    const ariaLabel = this.getAttribute('aria-label') ?? this._inputLabel ?? undefined;
+    const error = this.errorFeedback();
     return html`
       <input
         ${ref(this._inputRef)}
@@ -263,24 +398,53 @@ export class MpCheckbox extends LitElement {
         id=${this._inputId}
         .checked=${this._checked}
         ?disabled=${this._disabled}
+          aria-invalid=${this.hasAttribute('invalid') ? 'true' : nothing}
+          aria-required=${this.hasAttribute('required') ? 'true' : nothing}
+        aria-errormessage=${error.id}
+        aria-describedby=${error.id}
         name=${this._name ?? nothing}
         value=${this._value ?? nothing}
         role="button"
         aria-pressed=${this._checked ? 'true' : 'false'}
         aria-label=${ifDefined(ariaLabel)}
-        aria-labelledby=${ifDefined(ariaLabelledBy)}
-        aria-describedby=${ifDefined(ariaDescribedBy)}
         @change=${this.onInputChange}
       />
       <label class="btn btn-${this._color}" for=${this._inputId}>
         <slot></slot>
       </label>
+      ${error.node}
     `;
   }
 
   private reflectBoolean(attr: string, value: boolean): void {
     if (value) this.setAttribute(attr, '');
     else this.removeAttribute(attr);
+  }
+
+  // ---- form association (FormAssociatedHost) ----
+
+  formValue(): string | null {
+    // Native semantics: an unchecked checkbox submits nothing; a checked one
+    // submits its value, defaulting to "on".
+    return this._checked ? (this._value ?? 'on') : null;
+  }
+
+  formReset(): void {
+    this._checked = false;
+    this._indeterminate = false;
+    this.reflectBoolean('checked', false);
+    this.reflectBoolean('indeterminate', false);
+    this.requestUpdate();
+  }
+
+  formRestore(state: string | FormData | File | null): void {
+    this._checked = state != null;
+    this.reflectBoolean('checked', this._checked);
+    this.requestUpdate();
+  }
+
+  formValidityAnchor(): HTMLElement | null {
+    return this._inputRef.value ?? null;
   }
 
   private onInputChange = (ev: Event): void => {

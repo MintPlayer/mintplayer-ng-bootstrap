@@ -1,4 +1,4 @@
-<mp-carousel
+<mp-carousel bsForwardAria
     #element
     [attr.animation]="animation()"
     [attr.orientation]="orientation()"
@@ -7,7 +7,6 @@
     [attr.wrap]="wrapAttr()"
     [attr.keyboard-events]="keyboardEventsAttr()"
     [attr.paused]="pausedAttr()"
-    [attr.aria-label]="ariaLabel()"
     (slide-change)="onSlideChange($event)"
     (paused-change)="onPausedChange($event)"
     (animation-start)="onAnimationStart($event)"

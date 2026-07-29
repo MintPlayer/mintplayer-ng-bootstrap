@@ -27,6 +27,13 @@
       "options": {
         "packageRoot": "dist/{projectRoot}"
       }
+    },
+    "test": {
+      "executor": "@nx/vitest:test",
+      "outputs": ["{options.reportsDirectory}"],
+      "options": {
+        "reportsDirectory": "coverage/libs/mintplayer-vue-bootstrap"
+      }
     }
   },
   "release": {

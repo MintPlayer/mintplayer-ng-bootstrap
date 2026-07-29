@@ -507,9 +507,19 @@ export class MpScheduler extends LitElement {
   // ============================================
 
   private onStateChange(state: SchedulerState): void {
+    // Async loading is invisible to a screen reader without an announcement;
+    // say both edges so a slow fetch has a beginning and an end.
+    if (state.isLoading !== this.previousIsLoading) {
+      if (this.previousIsLoading !== null) {
+        this.liveAnnouncer.announce(state.isLoading ? 'Loading events.' : 'Events loaded.');
+      }
+      this.previousIsLoading = state.isLoading;
+    }
     this.detectAndEmitChanges(state);
     this.updateUI(state);
   }
+
+  private previousIsLoading: boolean | null = null;
 
   private detectAndEmitChanges(state: SchedulerState): void {
     const viewChanged =
@@ -746,7 +756,8 @@ export class MpScheduler extends LitElement {
     const eventId = target.dataset['eventId'];
     if (!eventId) return;
     if (!target.classList.contains('scheduler-event') &&
-        !target.classList.contains('scheduler-timeline-event')) {
+        !target.classList.contains('scheduler-timeline-event') &&
+        !target.classList.contains('scheduler-month-event')) {
       return;
     }
     const ev = this.getEventById(eventId);
@@ -789,12 +800,42 @@ export class MpScheduler extends LitElement {
       if (this.handleAltShortcut(e)) return;
     }
 
+    // Enter/Space on the drill-down controls (the "+N more" link and the year
+    // view's month headers) — plain rendered nodes with role="button", so
+    // activation cannot be native and is replayed from the click delegation.
+    if ((e.key === 'Enter' || e.key === ' ') && this.activateFocusedDrillControl()) {
+      e.preventDefault();
+      return;
+    }
+
     const kind = this.getFocusedKind();
     if (kind === 'cell') {
       this.handleCellKeyDown(e);
     } else if (kind === 'event') {
       this.handleEventKeyDown(e);
     }
+  }
+
+  /** Keyboard face of the more-link / year-month-header click delegation. */
+  private activateFocusedDrillControl(): boolean {
+    const active = this.shadowRoot?.activeElement as HTMLElement | null;
+    if (!active) return false;
+
+    if (active.classList.contains('scheduler-more-link')) {
+      const dateStr = active.dataset['date'];
+      if (!dateStr) return false;
+      this.stateManager.setDate(new Date(dateStr));
+      this.stateManager.setView('day');
+      return true;
+    }
+    if (active.classList.contains('scheduler-year-month-header')) {
+      const monthStr = active.dataset['month'];
+      if (!monthStr) return false;
+      this.stateManager.setDate(new Date(monthStr));
+      this.stateManager.setView('month');
+      return true;
+    }
+    return false;
   }
 
   private getFocusedKind(): 'cell' | 'event' | 'other' {
@@ -810,7 +851,8 @@ export class MpScheduler extends LitElement {
     }
     if (
       active.classList.contains('scheduler-event') ||
-      active.classList.contains('scheduler-timeline-event')
+      active.classList.contains('scheduler-timeline-event') ||
+      active.classList.contains('scheduler-month-event')
     ) {
       return 'event';
     }

@@ -17,13 +17,14 @@ import type {
   CarouselSlideChangeEventDetail,
   MpCarousel,
 } from '@mintplayer/web-components/carousel';
+import { BsForwardAriaDirective } from '@mintplayer/ng-bootstrap/a11y';
 
 /**
  * `<bs-carousel>` — Angular wrapper around the `<mp-carousel>` web component.
  *
  * Slides are plain content children (no structural directive):
  *
- *     <bs-carousel animation="fade" [indicators]="true" [interval]="4000" ariaLabel="Photos">
+ *     <bs-carousel animation="fade" [indicators]="true" [interval]="4000" aria-label="Photos">
  *       <img src="a.png" alt="…">
  *       <img src="b.png" alt="…">
  *     </bs-carousel>
@@ -42,6 +43,7 @@ import type {
 @Component({
   selector: 'bs-carousel',
   templateUrl: './carousel.component.html',
+  imports: [BsForwardAriaDirective],
   changeDetection: ChangeDetectionStrategy.OnPush,
   schemas: [CUSTOM_ELEMENTS_SCHEMA],
 })
@@ -59,7 +61,6 @@ export class BsCarouselComponent {
   /** Arrow/Home/End navigation on the focused viewport. */
   readonly keyboardEvents = input(true);
   /** Accessible label for the carousel region. */
-  readonly ariaLabel = input<string | null>(null);
   /** Two-way: whether autoplay is paused. */
   readonly paused = model(false);
 

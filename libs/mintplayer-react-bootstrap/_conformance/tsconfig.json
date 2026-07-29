@@ -1,0 +1,16 @@
+{
+  "//": [
+    "Type-check project for the compile-time half of the passthrough guard.",
+    "Separate from tsconfig.lib.json on purpose: that project's `include` covers only",
+    "src/ and */src/, so it cannot type-check this folder — and it must not, because",
+    "anything it includes is emitted into the published package. A guard that lives",
+    "inside the build would ship."
+  ],
+  "extends": "../tsconfig.json",
+  "compilerOptions": {
+    "noEmit": true,
+    "types": ["node", "vite/client"]
+  },
+  "files": [],
+  "include": ["**/*.ts", "**/*.tsx"]
+}

@@ -133,14 +133,20 @@ describe('mp-navbar-dropdown trigger ARIA + keyboard', () => {
     const trigger = dd.shadowRoot!.querySelector('.dropdown-toggle')!;
     expect(trigger.getAttribute('aria-expanded')).toBe('false');
 
+    // Derived in render() since Phase E (one writer, PRD 11a) — the value is
+    // correct at every RENDERED moment, so each step awaits the render tick.
     dd.setAttribute('data-open', ''); // inline path
+    await flush(dd);
     expect(trigger.getAttribute('aria-expanded')).toBe('true');
     dd.removeAttribute('data-open');
+    await flush(dd);
     expect(trigger.getAttribute('aria-expanded')).toBe('false');
 
     dd.setAttribute('data-menu-open', ''); // OverlayController path
+    await flush(dd);
     expect(trigger.getAttribute('aria-expanded')).toBe('true');
     dd.removeAttribute('data-menu-open');
+    await flush(dd);
     expect(trigger.getAttribute('aria-expanded')).toBe('false');
   });
 
@@ -172,5 +178,32 @@ describe('mp-navbar-dropdown trigger ARIA + keyboard', () => {
     // Focus inside a shadow tree surfaces as the host being the active element.
     expect(document.activeElement).toBe(dd);
     expect(dd.shadowRoot!.activeElement).toBe(dd.shadowRoot!.querySelector('.dropdown-toggle'));
+  });
+});
+
+describe('mp-navbar-dropdown — aria-expanded is derived, never stamped (PRD 11a)', () => {
+  it('an initially-open dropdown announces expanded from the FIRST paint', async () => {
+    // The pre-fix defect: data-open present before first render → the
+    // imperative patch hit an undefined renderRoot → render stamped a
+    // literal "false" forever.
+    const nav = document.createElement('mp-navbar');
+    const dd = document.createElement('mp-navbar-dropdown');
+    dd.setAttribute('data-open', '');
+    const label = document.createElement('span');
+    label.setAttribute('slot', 'label');
+    label.textContent = 'Menu';
+    dd.appendChild(label);
+    nav.appendChild(dd);
+    document.body.appendChild(nav);
+    await customElements.whenDefined('mp-navbar-dropdown');
+    await (dd as HTMLElement & { updateComplete: Promise<unknown> }).updateComplete;
+
+    const toggle = dd.shadowRoot!.querySelector('.dropdown-toggle')!;
+    expect(toggle.getAttribute('aria-expanded')).toBe('true');
+
+    dd.removeAttribute('data-open');
+    await (dd as HTMLElement & { updateComplete: Promise<unknown> }).updateComplete;
+    expect(toggle.getAttribute('aria-expanded')).toBe('false');
+    nav.remove();
   });
 });

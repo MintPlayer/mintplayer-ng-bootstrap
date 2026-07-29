@@ -4,7 +4,7 @@ import {
   SchedulerEvent,
   getContrastColor,
 } from '@mintplayer/web-components/scheduler-core';
-import { BaseView } from './base-view';
+import { BaseView , formatEventAriaLabel } from './base-view';
 import { SchedulerState } from '../state/scheduler-state';
 
 /**
@@ -36,10 +36,14 @@ export class MonthView extends BaseView {
     const grid = this.createElement('div', 'scheduler-month-grid');
 
     for (const week of weeks) {
+      // display: contents (scheduler SCSS) keeps the 7-column CSS grid
+      // working while giving the ARIA grid its rows.
+      const weekRow = this.createElement('div', 'scheduler-month-week');
       for (const day of week) {
         const cell = this.createDayCell(day);
-        grid.appendChild(cell);
+        weekRow.appendChild(cell);
       }
+      grid.appendChild(weekRow);
     }
 
     this.container.appendChild(grid);
@@ -49,6 +53,14 @@ export class MonthView extends BaseView {
 
     // Apply roving tabindex now that all cells are in place.
     this.updateDayCellFocus();
+
+    this.applyGridRoles({
+      columnHeaderRow: ':scope > .scheduler-day-headers',
+      columnHeaders: '.scheduler-day-headers > .scheduler-day-header',
+      presentation: ['.scheduler-month-grid'],
+      rows: '.scheduler-month-week',
+    });
+    this.markToday();
   }
 
   /**
@@ -183,6 +195,11 @@ export class MonthView extends BaseView {
         eventEl.textContent = event.title;
         eventEl.style.backgroundColor = event.color ?? '#3788d8';
         eventEl.style.color = event.textColor ?? getContrastColor(event.color ?? '#3788d8');
+        // Tab-reachable like week/day event blocks; focusing selects (the
+        // scheduler's handleFocusIn), so no separate activation key is needed.
+        eventEl.setAttribute('role', 'button');
+        eventEl.setAttribute('tabindex', '0');
+        eventEl.setAttribute('aria-label', formatEventAriaLabel(event, null, this.state.options.timeFormat));
         this.setData(eventEl, { eventId: event.id });
         eventsContainer.appendChild(eventEl);
       }
@@ -190,6 +207,11 @@ export class MonthView extends BaseView {
       if (hiddenCount > 0) {
         const moreLink = this.createElement('div', 'scheduler-more-link');
         moreLink.textContent = `+${hiddenCount} more`;
+        // A real drill-down control: named by its visible text, activated via
+        // the scheduler-level Enter/Space handler (it is not a native button
+        // because the view builder renders plain nodes).
+        moreLink.setAttribute('role', 'button');
+        moreLink.setAttribute('tabindex', '0');
         this.setData(moreLink, { date: key });
         eventsContainer.appendChild(moreLink);
       }

@@ -35,6 +35,7 @@ import {
   type OperatorOverrides,
 } from '@mintplayer/web-components/query-builder';
 import { BsQueryBuilderEditorDirective } from './query-builder-editor.directive';
+import { BsForwardAriaDirective } from '@mintplayer/ng-bootstrap/a11y';
 
 void MpQueryBuilderElement;
 
@@ -50,6 +51,7 @@ function browserTimezone(): string {
   selector: 'bs-query-builder',
   standalone: true,
   templateUrl: './query-builder.component.html',
+  imports: [BsForwardAriaDirective],
   styleUrls: ['./query-builder.component.scss'],
   schemas: [CUSTOM_ELEMENTS_SCHEMA],
   changeDetection: ChangeDetectionStrategy.OnPush,

@@ -134,12 +134,31 @@ export class BsPopoverDirective implements AfterViewInit, OnDestroy {
     this.parent.nativeElement.setAttribute('aria-controls', this.popoverId);
     this.parent.nativeElement.setAttribute('aria-expanded', 'false');
 
-    this.parent.nativeElement.onclick = () => {
+    /* addEventListener rather than the .onclick property — the property write
+       silently CLOBBERED any click handler the consumer had on their trigger. */
+    const toggle = () => {
       if (this.updatePosition()) {
         this.overlayRef?.updatePosition();
       }
       this.isVisible.set(!this.isVisible());
     };
+    this.parent.nativeElement.addEventListener('click', toggle);
+
+    // A popover trigger on a non-focusable element (span, div, icon) could not
+    // be opened by keyboard at all. Make it a real button-like control; native
+    // buttons/links are left exactly as they are.
+    const el = this.parent.nativeElement as HTMLElement;
+    const nativelyFocusable = el.matches('button, a[href], input, select, textarea, [tabindex]');
+    if (!nativelyFocusable) {
+      el.setAttribute('tabindex', '0');
+      if (!el.hasAttribute('role')) el.setAttribute('role', 'button');
+      el.addEventListener('keydown', (ev: KeyboardEvent) => {
+        if (ev.key === 'Enter' || ev.key === ' ') {
+          ev.preventDefault();
+          toggle();
+        }
+      });
+    }
   }
 
   onEscape() {

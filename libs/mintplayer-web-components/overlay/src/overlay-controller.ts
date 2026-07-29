@@ -1,4 +1,5 @@
 import type { ReactiveController, ReactiveControllerHost } from 'lit';
+import { dismissStack, deepActiveElement, collectTabbables, FocusTrap, type InitialFocusTarget } from '@mintplayer/web-components/a11y';
 
 export type OverlayOriginX = 'start' | 'center' | 'end';
 export type OverlayOriginY = 'top' | 'center' | 'bottom';
@@ -46,6 +47,31 @@ export interface OverlayControllerOptions {
    * explicitly when `anchor` is a non-focusable wrapper.
    */
   trigger?: () => HTMLElement | null;
+  /**
+   * Where focus goes when the overlay opens.
+   *
+   * Default `'none'` — the controller also backs menus and comboboxes, where
+   * APG requires focus to *stay* on the trigger while `aria-activedescendant`
+   * tracks the highlighted option. `'none'` means "the consumer manages focus",
+   * not "nobody does".
+   *
+   * Any overlay marked `role="dialog"` should pass `'first'` or a specific
+   * element (a date picker focuses the selected day cell, per APG's Date Picker
+   * Dialog). Before this option existed, `open()` never touched focus at all, so
+   * every such popup opened behind the user's focus and was announced only if
+   * they guessed to press Tab.
+   */
+  initialFocus?: InitialFocusTarget;
+  /**
+   * Contain Tab within the panel while open. Default false.
+   *
+   * Set this only for genuinely modal surfaces. It does **not** set
+   * `aria-modal` or mark background content `inert` — the controller cannot
+   * know whether its host is a dialog or a menu, and claiming `aria-modal` on a
+   * non-modal popup hides the page from assistive tech while it stays visible
+   * to everyone else. That call belongs to the consuming component.
+   */
+  modal?: boolean;
   /**
    * Ordered list of position candidates. The first one that produces a
    * panel rect fully inside the viewport (minus `viewportMargin`) is used.
@@ -104,29 +130,26 @@ const DEFAULT_POSITIONS: OverlayPosition[] = [
  * return on close. M1+ build out behaviour.
  */
 export class OverlayController implements ReactiveController {
-  private static readonly openStack: symbol[] = [];
-
   /**
-   * Allocate a frame on top of the shared overlay stack. Use this from code
-   * paths that don't own a full `OverlayController` instance. Pair every
+   * Allocate a frame on the document's dismiss stack. Use this from code paths
+   * that don't own a full `OverlayController` instance. Pair every
    * `pushFrame()` with a `releaseFrame(token)`.
+   *
+   * These delegate to the shared stack in `@mintplayer/web-components/a11y`
+   * rather than owning a private static, so web-component overlays and Angular
+   * overlays (via `BsOverlayStackService`, now a facade over the same array)
+   * cannot each believe they are top-most and both consume one Escape.
    */
   static pushFrame(): symbol {
-    const token = Symbol('overlay-frame-external');
-    OverlayController.openStack.push(token);
-    return token;
+    return dismissStack.push('overlay-frame-external');
   }
 
   static releaseFrame(token: symbol): void {
-    const idx = OverlayController.openStack.lastIndexOf(token);
-    if (idx >= 0) OverlayController.openStack.splice(idx, 1);
+    dismissStack.release(token);
   }
 
   static isFrameTop(token: symbol): boolean {
-    return (
-      OverlayController.openStack.length > 0 &&
-      OverlayController.openStack[OverlayController.openStack.length - 1] === token
-    );
+    return dismissStack.isTop(token);
   }
 
   private readonly host: ReactiveControllerHost & HTMLElement;
@@ -134,8 +157,23 @@ export class OverlayController implements ReactiveController {
   private _open = false;
   private mouseDownAttached = false;
   private stackToken: symbol | null = null;
-  /** Anchor used by the last positioning pass. Drives focus-return on close. */
+  /** Anchor used by the last positioning pass. Last-resort focus-return target. */
   private activeAnchor: HTMLElement | null = null;
+  /**
+   * Element that had focus when `open()` ran. Primary focus-return target.
+   *
+   * Captured rather than configured, because the configured `trigger` was
+   * optional, untyped for focusability, and failed silently: `focus()` on a
+   * non-focusable element is a no-op, so an overlay whose `anchor` was a plain
+   * wrapper `<div>` and whose `trigger` was unset stranded the user on `<body>`.
+   * Five of nine consumers omitted `trigger`, and four of those worked only by
+   * coincidence. Capturing removes the failure mode entirely and makes nesting
+   * correct for free — each frame restores whatever it interrupted, so
+   * unwinding nested overlays walks focus back out one level at a time, which a
+   * fixed `trigger` cannot do.
+   */
+  private restoreTo: HTMLElement | null = null;
+  private readonly focusTrap: FocusTrap;
   /** rAF id for the next scheduled position() call. 0 = none scheduled. */
   private positionFrame = 0;
   /** True while scroll-tracking listeners are attached. */
@@ -152,6 +190,13 @@ export class OverlayController implements ReactiveController {
   ) {
     this.host = host;
     this.options = options;
+    this.focusTrap = new FocusTrap(() => this.options.panel(), {
+      initialFocus: 'none', // open() handles initial focus; the trap only contains Tab
+      returnFocus: false, // close() owns focus return, so the two cannot fight
+      // Gate on being the top frame so an inner overlay's trap does not fight
+      // its parent's while both are open.
+      enabled: () => this.isTopOfStack(),
+    });
     host.addController(this);
   }
 
@@ -172,12 +217,24 @@ export class OverlayController implements ReactiveController {
   async open(): Promise<void> {
     if (this._open) return;
     this._open = true;
+    // Capture before anything can move focus, so the target is whatever the
+    // user was actually on when they opened this.
+    //
+    // `<body>` is explicitly not a target: it is what `activeElement` reports
+    // when nothing is focused, and returning focus there is the very bug this
+    // capture exists to fix. Falling through to the configured trigger is right
+    // for a programmatic open with no prior focus.
+    const active = deepActiveElement();
+    this.restoreTo =
+      active instanceof HTMLElement && active !== active.ownerDocument.body ? active : null;
     this.stackToken = OverlayController.pushFrame();
     this.host.setAttribute('data-menu-open', '');
     this.host.requestUpdate();
     await this.host.updateComplete;
     this.position();
     this.attachScrollListeners();
+    this.moveFocusIn();
+    if (this.options.modal) this.focusTrap.activate();
     setTimeout(() => this.attachMouseDown(), 0);
     this.options.onOpen?.();
   }
@@ -186,6 +243,11 @@ export class OverlayController implements ReactiveController {
     if (!this._open) return;
     this._open = false;
     this.releaseStackToken();
+    if (this.focusTrap.isActive) this.focusTrap.deactivate();
+    // Read the return target before the panel is hidden: removing
+    // `data-menu-open` applies the consumer's `display: none` rule
+    // synchronously, which blurs anything focused inside the panel to <body>.
+    const target = this.resolveReturnTarget();
     this.host.removeAttribute('data-menu-open');
     this.host.requestUpdate();
     this.detachMouseDown();
@@ -195,11 +257,64 @@ export class OverlayController implements ReactiveController {
       this.positionFrame = 0;
     }
     if (returnFocus) {
-      const target = this.options.trigger?.() ?? this.activeAnchor;
-      target?.focus();
+      // preventScroll so dismissing an overlay never yanks the page back to the
+      // trigger's scroll position.
+      target?.focus({ preventScroll: true });
     }
+    this.restoreTo = null;
     this.activeAnchor = null;
     this.options.onClose?.();
+  }
+
+  /**
+   * Focus-return target, in order of preference: whatever had focus when this
+   * overlay opened, then the explicitly configured trigger, then the
+   * positioning anchor.
+   *
+   * The captured element wins because it is right in the cases a configured
+   * trigger gets wrong (nested overlays, programmatic opens), and it degrades
+   * to the same answer in the common case — the user activated the trigger, so
+   * the trigger is what had focus. It is skipped when it has since been
+   * detached, or when it is inside the panel that is about to be hidden.
+   */
+  private resolveReturnTarget(): HTMLElement | null {
+    const captured = this.restoreTo;
+    if (captured?.isConnected && !this.isInsidePanel(captured)) return captured;
+    return this.options.trigger?.() ?? this.activeAnchor;
+  }
+
+  private isInsidePanel(el: HTMLElement): boolean {
+    const panel = this.options.panel();
+    return panel !== null && (panel === el || panel.contains(el));
+  }
+
+  /** Move focus into the panel per `initialFocus`. Default is to leave it alone. */
+  private moveFocusIn(): void {
+    let target = this.options.initialFocus ?? 'none';
+    if (typeof target === 'function') target = target() ?? 'first';
+    if (target === 'none') return;
+
+    const panel = this.options.panel();
+    if (!panel) return;
+
+    if (target instanceof HTMLElement) {
+      target.focus({ preventScroll: true });
+      return;
+    }
+    if (target === 'self') {
+      if (!panel.hasAttribute('tabindex')) panel.setAttribute('tabindex', '-1');
+      panel.focus({ preventScroll: true });
+      return;
+    }
+    const first = collectTabbables(panel)[0];
+    if (first) {
+      first.focus({ preventScroll: true });
+    } else {
+      // A panel with no tabbable content must still take focus, or the user is
+      // never told the overlay opened.
+      if (!panel.hasAttribute('tabindex')) panel.setAttribute('tabindex', '-1');
+      panel.focus({ preventScroll: true });
+    }
   }
 
   async toggle(): Promise<void> {

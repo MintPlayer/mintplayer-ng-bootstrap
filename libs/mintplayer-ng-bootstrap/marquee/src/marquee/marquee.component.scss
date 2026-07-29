@@ -28,3 +28,23 @@
 		transform: translate(-100%, 0);
 	}
 }
+
+.marquee-paused {
+    animation-play-state: paused !important;
+}
+
+.marquee-pause {
+    border: 0;
+    background: transparent;
+    padding: 0.125rem 0.375rem;
+    font-size: 0.75rem;
+    color: inherit;
+    text-decoration: underline;
+    cursor: pointer;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .marquee .d-inline-block {
+        animation: none !important;
+    }
+}

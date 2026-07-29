@@ -7,7 +7,7 @@ import '@mintplayer/web-components/tab-control';
 // Side-effect import: registers <mp-splitter>. Each DockSplitNode is rendered
 // as a nested <mp-splitter>, so this lib must load before any layout renders.
 import '@mintplayer/web-components/splitter';
-import { LiveAnnouncerController } from '@mintplayer/web-components/a11y';
+import { FocusRestore, LiveAnnouncerController } from '@mintplayer/web-components/a11y';
 import {
   DockFloatingPaneBounds,
   DockFloatingStackLayout,
@@ -34,6 +34,18 @@ type FloatingLocation = {
 type ResolvedLocation = DockedLocation | FloatingLocation;
 
 type DropZone = 'center' | 'left' | 'right' | 'top' | 'bottom';
+
+/**
+ * One enumerated keyboard drop target. `pathStr` is the `data-path` identity of
+ * the target stack — the same string the pointer drop path parses off the
+ * hovered `.dock-stack` — so a keyboard commit and the equivalent pointer drop
+ * resolve to the same layout node. The single `float` candidate carries no path.
+ */
+type PaneMoveCandidate = {
+  pathStr: string | null;
+  zone: DropZone | 'float';
+  targetTitles: string;
+};
 
 type FloatingResizeEdges = {
   horizontal: 'left' | 'right' | 'none';
@@ -66,6 +78,10 @@ export class MintDockManagerElement extends LitElement {
   private static readonly TOUCH_LONG_PRESS_SLOP_PX = 10;
   private static readonly TOUCH_PRESS_FEEDBACK_DELAY_MS = 150;
 
+  // Zone order within one enumerated target stack. Clockwise from the top so
+  // cycling forward reads as a rotation around the stack rather than a shuffle.
+  private static readonly PANE_MOVE_ZONE_ORDER: DropZone[] = ['top', 'right', 'bottom', 'left'];
+
   private documentRef!: Document;
   private windowRef!: (Window & typeof globalThis) | null;
   private rootEl!: HTMLElement;
@@ -80,10 +96,20 @@ export class MintDockManagerElement extends LitElement {
   /**
    * Active keyboard-driven pane move (Phase 7 of WC ARIA PRD). The user
    * pressed M on a focused tab; until they pick a destination key (T/R/B/L
-   * to dock to a side, F to float) or Escape, we intercept letter keys and
-   * route them to the synthetic-drop pipeline.
+   * to dock to a side of the current stack, F to float), cycle to an enumerated
+   * target with the arrows and press Enter, or cancel with Escape, we intercept
+   * those keys and route them to the synthetic-drop pipeline.
    */
   private paneMoveMode: { paneName: string; sourcePath: DockPath } | null = null;
+
+  /**
+   * Index into buildPaneMoveCandidates() of the target the arrow keys have
+   * cycled to, or null while no candidate is highlighted (move mode armed but
+   * no arrow pressed yet). Written only by cyclePaneMoveCandidate and cleared
+   * only by clearPaneMoveState, both of which update the drop indicator in the
+   * same call so the visual highlight can never disagree with the index.
+   */
+  private paneMoveCandidateIndex: number | null = null;
   private dropJoystickTarget: HTMLElement | null = null;
   private rootLayout: DockLayoutNode | null = null;
   private floatingLayouts: DockFloatingStackLayout[] = [];
@@ -317,6 +343,10 @@ export class MintDockManagerElement extends LitElement {
     // Keyboard pane-move (Phase 7). Capture phase so we run before mp-tab-control's
     // shadow-internal handlers preventDefault on Arrow / Home / End / Enter.
     root.addEventListener('keydown', (ev) => this.onRootKeyDown(ev), { capture: true });
+    // Move mode is armed against a specific tab; if focus leaves the dock the
+    // armed state would otherwise silently persist and a later T/R/B/L/F
+    // keystroke inside the dock would commit a move the user forgot about.
+    root.addEventListener('focusout', (ev) => this.onRootFocusOut(ev));
 
     // Render any layout that was set before the shadow DOM existed.
     this.renderLayout();
@@ -342,7 +372,14 @@ export class MintDockManagerElement extends LitElement {
   override connectedCallback(): void {
     super.connectedCallback();
     if (!this.hasAttribute('role')) {
-      this.setAttribute('role', 'application');
+      // NOT role="application": that tells AT to hand every keystroke to the
+      // page and disables the virtual cursor over the whole dock — pane
+      // CONTENT (documents, forms) must stay browsable. The dock's own keys
+      // work fine in normal browse mode.
+      this.setAttribute('role', 'region');
+    }
+    if (!this.hasAttribute('aria-label')) {
+      this.setAttribute('aria-label', 'Dock layout');
     }
   }
 
@@ -513,11 +550,27 @@ export class MintDockManagerElement extends LitElement {
     };
   }
 
+  /**
+   * renderLayout() clears with innerHTML = '' — the exact rebuild FocusRestore
+   * exists for: a focused intersection handle (id'd by data-key) or a pane's
+   * tab button (id tabId + '-header-button', one shadow root deeper) is
+   * destroyed on every relayout, dropping focus to <body> mid-drag or between
+   * keyboard moves.
+   */
+  private readonly layoutFocusRestore = new FocusRestore(() => this.shadowRoot, {
+    selector: '.dock-intersection-handle[data-key], mp-tab-control, .dock-tab[data-tab-id]',
+    keyOf: (el) =>
+      el.dataset['key']
+      ?? el.dataset['tabId']
+      ?? (el.id || null),
+  });
+
   private renderLayout(): void {
     // The layout setter may run before firstUpdated() has populated the
     // shadow-DOM fields (e.g. when an attribute is set on the markup).
     // Bail out; firstUpdated() will call renderLayout() once ready.
     if (!this.dockedEl) return;
+    this.layoutFocusRestore.capture();
     this.dockedEl.innerHTML = '';
     this.floatingLayerEl.innerHTML = '';
     this.hideDropIndicator();
@@ -528,6 +581,7 @@ export class MintDockManagerElement extends LitElement {
     }
 
     this.renderFloatingPanes();
+    this.layoutFocusRestore.restore();
     // Note: intersection handles are repositioned reactively via observers
     // wired up in firstUpdated (rootResizeObserver, dockedMutationObserver,
     // and delegated 'resizing' / 'resize-end' events). The MutationObserver
@@ -686,6 +740,16 @@ export class MintDockManagerElement extends LitElement {
         resizer.addEventListener('pointerdown', (event) =>
           this.beginFloatingResize(event, index, wrapper, resizer, edges),
         );
+        // Keyboard path — floating panes must not be pointer-only. A
+        // focusable separator REQUIRES aria-valuenow (axe): report the
+        // driven dimension as a percent of the host.
+        resizer.setAttribute('tabindex', '0');
+        resizer.setAttribute('aria-valuemin', '0');
+        resizer.setAttribute('aria-valuemax', '100');
+        this.syncFloatingResizerValue(resizer, index, edges);
+        resizer.addEventListener('keydown', (event) =>
+          this.onFloatingResizeKeydown(event, index, wrapper, resizer, edges),
+        );
         wrapper.appendChild(resizer);
       });
     this.floatingLayerEl.appendChild(wrapper);
@@ -809,6 +873,14 @@ export class MintDockManagerElement extends LitElement {
       handle.classList.add('dock-intersection-handle', 'glyph');
       handle.setAttribute('role', 'separator');
       handle.setAttribute('aria-label', 'Resize split intersection');
+      // A focusable separator REQUIRES aria-valuenow (axe critical). The
+      // handle drives a PAIR of dividers; report the vertical one — its
+      // position IS the handle's x as a percent of the dock. Handles rebuild
+      // on every relayout, so the value tracks each resize.
+      const percent = rootRect.width > 0 ? Math.round((group.x / rootRect.width) * 100) : 0;
+      handle.setAttribute('aria-valuemin', '0');
+      handle.setAttribute('aria-valuemax', '100');
+      handle.setAttribute('aria-valuenow', String(Math.min(100, Math.max(0, percent))));
       // tabindex=0 — make the handle keyboard-reachable. Arrow keys then
       // resize the underlying h/v dividers (handled in onIntersectionKeyDown).
       handle.setAttribute('tabindex', '0');
@@ -1230,6 +1302,82 @@ export class MintDockManagerElement extends LitElement {
     this.startPointerTracking();
   }
 
+  /** The percent-of-host size of the dimension a handle drives (width for
+   *  horizontal/corner handles, height for pure-vertical ones). */
+  private syncFloatingResizerValue(resizer: HTMLElement, index: number, edges: FloatingResizeEdges): void {
+    const floating = this.floatingLayouts[index];
+    const host = this.getHostSize();
+    if (!floating || host.width <= 0 || host.height <= 0) return;
+    const percent =
+      edges.horizontal !== 'none'
+        ? (floating.bounds.width / host.width) * 100
+        : (floating.bounds.height / host.height) * 100;
+    resizer.setAttribute('aria-valuenow', String(Math.round(Math.min(100, Math.max(0, percent)))));
+  }
+
+  /**
+   * Keyboard resize for floating panes — the same edge-anchored math as the
+   * pointer path (left/top handles move the edge outward, right/bottom grow),
+   * ±10px per arrow, Shift for 1px. Off-axis arrows and modifier chords pass
+   * through untouched.
+   */
+  private onFloatingResizeKeydown(
+    event: KeyboardEvent,
+    index: number,
+    wrapper: HTMLElement,
+    resizer: HTMLElement,
+    edges: FloatingResizeEdges,
+  ): void {
+    if (event.altKey || event.ctrlKey || event.metaKey) return;
+    const horizontalDelta = event.key === 'ArrowLeft' ? -1 : event.key === 'ArrowRight' ? 1 : 0;
+    const verticalDelta = event.key === 'ArrowUp' ? -1 : event.key === 'ArrowDown' ? 1 : 0;
+    if (horizontalDelta === 0 && verticalDelta === 0) return;
+    if (horizontalDelta !== 0 && edges.horizontal === 'none') return;
+    if (verticalDelta !== 0 && edges.vertical === 'none') return;
+    const floating = this.floatingLayouts[index];
+    if (!floating) return;
+    event.preventDefault();
+    event.stopPropagation();
+
+    const step = event.shiftKey ? 1 : 10;
+    const host = this.getHostSize();
+    const minWidth = host.width > 0 ? Math.min(192, host.width) : 192;
+    const minHeight = host.height > 0 ? Math.min(128, host.height) : 128;
+    const bounds = { ...floating.bounds };
+
+    if (horizontalDelta !== 0) {
+      // For a LEFT handle an outward arrow (ArrowLeft) grows the pane.
+      const grow = edges.horizontal === 'left' ? -horizontalDelta * step : horizontalDelta * step;
+      let newWidth = Math.max(minWidth, bounds.width + grow);
+      if (edges.horizontal === 'left') {
+        newWidth = Math.min(newWidth, bounds.left + bounds.width);
+        bounds.left = bounds.left + bounds.width - newWidth;
+      } else if (host.width > 0) {
+        newWidth = Math.min(newWidth, host.width - bounds.left);
+      }
+      bounds.width = newWidth;
+    }
+    if (verticalDelta !== 0) {
+      const grow = edges.vertical === 'top' ? -verticalDelta * step : verticalDelta * step;
+      let newHeight = Math.max(minHeight, bounds.height + grow);
+      if (edges.vertical === 'top') {
+        newHeight = Math.min(newHeight, bounds.top + bounds.height);
+        bounds.top = bounds.top + bounds.height - newHeight;
+      } else if (host.height > 0) {
+        newHeight = Math.min(newHeight, host.height - bounds.top);
+      }
+      bounds.height = newHeight;
+    }
+
+    floating.bounds = bounds;
+    wrapper.style.left = `${bounds.left}px`;
+    wrapper.style.top = `${bounds.top}px`;
+    wrapper.style.width = `${bounds.width}px`;
+    wrapper.style.height = `${bounds.height}px`;
+    this.syncFloatingResizerValue(resizer, index, edges);
+    this.dispatchLayoutChanged();
+  }
+
   private beginFloatingResize(
     event: PointerEvent,
     index: number,
@@ -1445,6 +1593,7 @@ export class MintDockManagerElement extends LitElement {
     // border dark-blue forever.
     delete state.handle.dataset['resizing'];
 
+    this.syncFloatingResizerValue(state.handle, state.index, state.edges);
     this.floatingResizeState = null;
     this.dispatchLayoutChanged();
   }
@@ -3967,33 +4116,89 @@ export class MintDockManagerElement extends LitElement {
    * Keyboard handler on the dock root, registered in capture phase so it
    * runs before mp-tab-control's shadow-internal handlers swallow Arrow /
    * Home / End / Enter. M opens move mode on a focused tab; subsequent
-   * letter keys (T/R/B/L/F) commit the move; Escape cancels.
+   * letter keys (T/R/B/L/F) commit the move, arrows cycle enumerated drop
+   * targets and Enter commits the highlighted one; Escape cancels.
    */
   private onRootKeyDown(event: KeyboardEvent): void {
     if (this.paneMoveMode) {
       this.handlePaneMoveModeKey(event);
       return;
     }
+    // Modified M is someone else's shortcut (Ctrl+M etc.); never arm on it.
+    if (event.altKey || event.ctrlKey || event.metaKey) return;
     if (event.key !== 'm' && event.key !== 'M') return;
     const focused = this.findFocusedPaneOrigin();
     if (!focused) return;
     event.preventDefault();
     event.stopPropagation();
     this.paneMoveMode = focused;
+    this.paneMoveCandidateIndex = null;
     const title = this.titles[focused.paneName] ?? focused.paneName;
     this.liveAnnouncer.announce(
-      `Move mode for pane ${title}. Press T, R, B, or L to dock to top, right, bottom, or left of the current stack. Press F to float. Escape to cancel.`,
+      `Move mode for pane ${title}. Press T, R, B, or L to dock to top, right, bottom, or left of the current stack, F to float, arrow keys to cycle drop targets, Enter to commit, Escape to cancel.`,
     );
+  }
+
+  /**
+   * Cancel move mode when focus leaves the dock entirely. Moves WITHIN the
+   * dock (tab to tab, tab to pane content) keep it armed — the commit always
+   * applies to the pane captured at arm time, which the announcement named.
+   */
+  private onRootFocusOut(event: FocusEvent): void {
+    if (!this.paneMoveMode) return;
+    const next = event.relatedTarget instanceof Node ? event.relatedTarget : null;
+    if (next && this.isWithinDock(next)) return;
+    this.clearPaneMoveState();
+    this.liveAnnouncer.announce('Move cancelled.');
+  }
+
+  /** Composed-tree containment: true for shadow content AND slotted light DOM. */
+  private isWithinDock(node: Node): boolean {
+    for (let current: Node | null = node; current; ) {
+      if (current === this) return true;
+      current = current instanceof ShadowRoot ? current.host : current.parentNode;
+    }
+    return false;
   }
 
   private handlePaneMoveModeKey(event: KeyboardEvent): void {
     if (event.key === 'Escape') {
       event.preventDefault();
       event.stopPropagation();
-      this.paneMoveMode = null;
+      this.clearPaneMoveState();
       this.liveAnnouncer.announce('Move cancelled.');
       return;
     }
+    // Move mode stays armed while focus travels within the dock — but letters
+    // typed into an editable INSIDE a pane are text, not commands. Without
+    // this, typing "left" into a pane's input commits a dock move.
+    const origin = event.composedPath()[0];
+    if (
+      origin instanceof HTMLElement &&
+      (origin.isContentEditable || ['INPUT', 'TEXTAREA', 'SELECT'].includes(origin.tagName))
+    ) {
+      return;
+    }
+    const cycleDelta: Record<string, number | undefined> = {
+      ArrowRight: 1, ArrowDown: 1, ArrowLeft: -1, ArrowUp: -1,
+    };
+    const delta = cycleDelta[event.key];
+    if (delta) {
+      event.preventDefault();
+      event.stopPropagation();
+      this.cyclePaneMoveCandidate(delta);
+      return;
+    }
+    if (event.key === 'Enter') {
+      // Enter without a cycled candidate is not a commit — there is nothing
+      // highlighted to commit to, and swallowing it would break tab activation.
+      if (this.paneMoveCandidateIndex === null) return;
+      event.preventDefault();
+      event.stopPropagation();
+      this.commitHighlightedPaneMoveCandidate();
+      return;
+    }
+
     const key = event.key.toLowerCase();
     const zoneByKey: Record<string, DropZone | 'float' | undefined> = {
       t: 'top', r: 'right', b: 'bottom', l: 'left', f: 'float',
@@ -4004,6 +4209,97 @@ export class MintDockManagerElement extends LitElement {
     event.stopPropagation();
     if (choice === 'float') this.commitPaneMoveAsFloat();
     else this.commitPaneMoveToZone(choice);
+  }
+
+  /**
+   * Enumerated keyboard drop targets, in cycle order: every docked leaf stack
+   * except the one the moving pane currently sits in (T/R/B/L already split
+   * that one), each contributing its four side zones, then a single `float`
+   * candidate last. Rebuilt on every cycle step so it can never describe a
+   * layout that has since changed.
+   *
+   * The identity carried forward is `data-path`, produced by the same
+   * formatPath() that renderStack() stamps onto each `.dock-stack` and that the
+   * pointer drop path parses back — which is what makes an enumerated commit
+   * land exactly where a pointer drop on that stack would.
+   */
+  private buildPaneMoveCandidates(): PaneMoveCandidate[] {
+    const sourcePathStr = this.paneMoveMode ? this.formatPath(this.paneMoveMode.sourcePath) : null;
+    const stacks: { pathStr: string; targetTitles: string }[] = [];
+    this.forEachStack(this.rootLayout, (stack, path) => {
+      const pathStr = this.formatPath({ type: 'docked', segments: path });
+      if (pathStr === sourcePathStr) return;
+      stacks.push({
+        pathStr,
+        targetTitles: stack.panes.map((pane) => this.titles[pane] ?? pane).join(', '),
+      });
+    });
+
+    return [
+      ...stacks.flatMap(({ pathStr, targetTitles }) =>
+        MintDockManagerElement.PANE_MOVE_ZONE_ORDER.map((zone) => ({ pathStr, zone, targetTitles })),
+      ),
+      { pathStr: null, zone: 'float' as const, targetTitles: '' },
+    ];
+  }
+
+  private cyclePaneMoveCandidate(delta: number): void {
+    const candidates = this.buildPaneMoveCandidates();
+    if (candidates.length === 0) return;
+    const current = this.paneMoveCandidateIndex;
+    const next =
+      current === null
+        ? delta > 0
+          ? 0
+          : candidates.length - 1
+        : (current + delta + candidates.length) % candidates.length;
+    this.paneMoveCandidateIndex = next;
+    const candidate = candidates[next];
+    this.highlightPaneMoveCandidate(candidate);
+    const label =
+      candidate.zone === 'float'
+        ? 'Float'
+        : `${candidate.zone[0].toUpperCase()}${candidate.zone.slice(1)} of ${candidate.targetTitles}`;
+    this.liveAnnouncer.announce(`${label}, option ${next + 1} of ${candidates.length}.`);
+  }
+
+  private highlightPaneMoveCandidate(candidate: PaneMoveCandidate): void {
+    this.hideDropIndicator();
+    if (candidate.zone === 'float' || !candidate.pathStr) return;
+    const stack = this.shadowRoot?.querySelector<HTMLElement>(
+      `.dock-stack[data-path="${candidate.pathStr}"]`,
+    );
+    if (!stack) return;
+    // A zero-size rect (jsdom, or a stack not yet laid out) would place a
+    // zero-size indicator at the host origin — worse than none. The
+    // announcement is the feedback in that case.
+    const rect = stack.getBoundingClientRect();
+    if (rect.width === 0 || rect.height === 0) return;
+    this.showDropIndicator(stack, candidate.zone);
+  }
+
+  private commitHighlightedPaneMoveCandidate(): void {
+    const index = this.paneMoveCandidateIndex;
+    if (index === null) return;
+    const candidate = this.buildPaneMoveCandidates()[index];
+    if (!candidate) {
+      this.clearPaneMoveState();
+      return;
+    }
+    if (candidate.zone === 'float') {
+      this.commitPaneMoveAsFloat();
+      return;
+    }
+    this.commitPaneMoveToZone(candidate.zone, this.parsePath(candidate.pathStr));
+  }
+
+  /** Sole exit point for move mode: drops the arming AND any highlight together. */
+  private clearPaneMoveState(): void {
+    this.paneMoveMode = null;
+    if (this.paneMoveCandidateIndex !== null) {
+      this.paneMoveCandidateIndex = null;
+      this.hideDropIndicator();
+    }
   }
 
   /**
@@ -4057,17 +4353,25 @@ export class MintDockManagerElement extends LitElement {
     } as never;
   }
 
-  private commitPaneMoveToZone(zone: DropZone): void {
+  /**
+   * `targetPath` omitted (the T/R/B/L keys) means the source stack is also the
+   * target stack, and handleDrop creates a sibling split with the moved pane on
+   * the chosen side. An enumerated candidate passes its own target instead.
+   */
+  private commitPaneMoveToZone(zone: DropZone, targetPath?: DockPath | null): void {
     if (!this.paneMoveMode) return;
     const move = this.paneMoveMode;
     this.synthesiseDragStateForKeyboardMove();
-    // Source stack is also the target stack — handleDrop creates a sibling
-    // split with the moved pane on the chosen side.
-    this.handleDrop(move.sourcePath, zone);
+    this.handleDrop(targetPath ?? move.sourcePath, zone);
+    // handleDrop marks dropHandled on every success path and returns silently
+    // on its failure paths — announce what actually happened, not the intent.
+    const succeeded = this.dragState?.dropHandled === true;
     this.dragState = null;
-    this.paneMoveMode = null;
+    this.clearPaneMoveState();
     const title = this.titles[move.paneName] ?? move.paneName;
-    this.liveAnnouncer.announce(`Pane ${title} docked to ${zone}.`);
+    this.liveAnnouncer.announce(
+      succeeded ? `Pane ${title} docked to ${zone}.` : `Move failed. Pane ${title} was not moved.`,
+    );
   }
 
   private commitPaneMoveAsFloat(): void {
@@ -4075,7 +4379,7 @@ export class MintDockManagerElement extends LitElement {
     const move = this.paneMoveMode;
     const source = this.resolveStackLocation(move.sourcePath);
     if (!source) {
-      this.paneMoveMode = null;
+      this.clearPaneMoveState();
       return;
     }
     this.removePaneFromLocation(source, move.paneName, true);
@@ -4093,7 +4397,7 @@ export class MintDockManagerElement extends LitElement {
     this.normalizeAllLayouts();
     this.renderLayout();
     this.dispatchLayoutChanged();
-    this.paneMoveMode = null;
+    this.clearPaneMoveState();
     const title = this.titles[move.paneName] ?? move.paneName;
     this.liveAnnouncer.announce(`Pane ${title} torn off into a floating window.`);
   }

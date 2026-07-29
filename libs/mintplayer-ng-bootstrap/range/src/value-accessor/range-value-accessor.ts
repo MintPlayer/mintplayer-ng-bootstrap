@@ -11,6 +11,10 @@ import { BsRangeComponent } from '../component/range.component';
   }],
   host: {
     '(input)': 'onInputEvent($event)',
+    // focusout is composed: the shadow input's blur reaches the host. The
+    // stored onTouched was never CALLED before, which kept every
+    // invalid-after-touched mirror dead (audit 4.9 prerequisite).
+    '(focusout)': 'onTouched?.()',
   },
 })
 export class BsRangeValueAccessor implements ControlValueAccessor {

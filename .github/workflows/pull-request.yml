@@ -66,6 +66,14 @@ jobs:
       timeout-minutes: 30
       run: npx nx affected --target=e2e --parallel=1 --output-style=stream --base=${{ github.event.pull_request.base.sha }} --head=${{ github.event.pull_request.head.sha }}
 
+    # Accessibility gate — deliberately `run-many`, NOT `affected`, so it runs
+    # on every PR and cannot be silenced by the affected graph. Fails on any
+    # serious/critical axe finding across the three demo apps, hydrated AND
+    # no-JS SSR tiers (see tools/e2e-shared/axe-suites.ts).
+    - name: E2E accessibility gate (axe)
+      timeout-minutes: 30
+      run: npx nx run-many -t e2e-a11y --parallel=1 --output-style=stream
+
     # Force-free :5000 in case Nx's continuous-task teardown didn't propagate
     # SIGTERM to api:serve cleanly — the leftover dotnet would otherwise
     # collide with the live-API step's webServer trying to boot a second

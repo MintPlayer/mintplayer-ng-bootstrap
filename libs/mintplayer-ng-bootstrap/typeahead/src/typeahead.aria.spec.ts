@@ -56,7 +56,13 @@ describe('BsTypeaheadComponent ARIA — primitive migration', () => {
   };
 
   const input = () => fixture.nativeElement.querySelector<HTMLInputElement>('input')!;
-  const menu = () => overlay.querySelector<HTMLElement>('bs-dropdown-menu');
+  /* The aria-controls target. The consumer's [attr.role]/[attr.id] are written on
+     <bs-dropdown-menu>, but BsForwardAriaDirective MOVES both onto the
+     <mp-dropdown-menu> inside (leaving role="presentation" on the wrapper) — a
+     duplicated id would break every IDREF pointing at it, and the wrapper is not
+     the element AT should land on. So the popup, as far as ARIA is concerned, is
+     the custom element. */
+  const menu = () => overlay.querySelector<HTMLElement>('mp-dropdown-menu');
   const items = () => Array.from(overlay.querySelectorAll<HTMLElement>('li[bsDropdownItem]'));
   const press = (key: string) => {
     input().dispatchEvent(new KeyboardEvent('keydown', { key, bubbles: true, cancelable: true }));

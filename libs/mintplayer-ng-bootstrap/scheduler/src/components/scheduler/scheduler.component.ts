@@ -27,6 +27,7 @@ import {
 
 // Import the web component to ensure it gets registered
 import '@mintplayer/web-components/scheduler';
+import { BsForwardAriaDirective } from '@mintplayer/ng-bootstrap/a11y';
 
 /**
  * Interface for the mp-scheduler web component element
@@ -140,6 +141,7 @@ export interface ViewChangeEvent {
 @Component({
   selector: 'bs-scheduler',
   templateUrl: './scheduler.component.html',
+  imports: [BsForwardAriaDirective],
   styleUrls: ['./scheduler.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush,
   schemas: [CUSTOM_ELEMENTS_SCHEMA],

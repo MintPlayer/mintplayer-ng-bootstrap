@@ -36,19 +36,26 @@ const VOID_ELEMENTS = new Set([
 ]);
 
 /**
- * Count the tab markers of the `<mp-accordion>` whose open tag ends at
- * `from` — the tab count its DSD variant needs.
+ * Measure the tab markers of the `<mp-accordion>` whose open tag ends at
+ * `from` — the tab count its DSD variant needs, plus which tabs are marked
+ * `is-active` so their `<details>` can be stamped `[open]` (the initial
+ * state the pre-D1 radio machine could never express — spike 0.1a).
  *
  * Markers are always DIRECT children (named slots accept nothing else), so
  * this only inspects depth 0 and skips whole subtrees — including a nested
  * accordion and all of its own tabs, which matters because nesting is
  * first-class here (the offcanvas demo goes four levels deep).
+ *
+ * A depth-0 `<mp-accordion-tab>` counts by TAG too: the vanilla element only
+ * tags itself with `accordion-tab` in connectedCallback, which never runs
+ * server-side, so vanilla markup must match what the wrappers stamp.
  */
-function countTabs(html: string, from: number): number {
+function measureTabs(html: string, from: number): { count: number; activeIndexes: number[] } {
   const tag = new RegExp(`<(\\/?)([a-zA-Z][a-zA-Z0-9-]*)(${ATTRS})>`, 'g');
   tag.lastIndex = from;
   let depth = 0;
   let count = 0;
+  const activeIndexes: number[] = [];
   let m: RegExpExecArray | null;
   while ((m = tag.exec(html))) {
     const [, slash, rawName, attrs] = m;
@@ -58,28 +65,50 @@ function countTabs(html: string, from: number): number {
       continue;
     }
     const isVoid = VOID_ELEMENTS.has(rawName.toLowerCase()) || /\/\s*$/.test(attrs);
-    if (depth === 0 && readAttribute(attrs, 'accordion-tab') !== null) {
+    const isTab =
+      readAttribute(attrs, 'accordion-tab') !== null ||
+      rawName.toLowerCase() === 'mp-accordion-tab';
+    if (depth === 0 && isTab) {
+      if (readAttribute(attrs, 'is-active') !== null) activeIndexes.push(count);
       count++;
     }
     if (!isVoid) depth++;
   }
-  return count;
+  return { count, activeIndexes };
+}
+
+/**
+ * Stamp `open` onto the n-th `<details>` rows of a chrome variant. The
+ * variants are generated with every row closed (the generator has no light
+ * DOM to read); the parser then opens exactly what the markers say, and
+ * `<details name>` exclusivity needs no further help.
+ */
+function stampOpen(variant: string, activeIndexes: number[]): string {
+  if (!activeIndexes.length) return variant;
+  const wanted = new Set(activeIndexes);
+  let index = -1;
+  return variant.replace(/<details(?=[\s>/])/g, (tag) => {
+    index++;
+    return wanted.has(index) ? `${tag} open` : tag;
+  });
 }
 
 /**
  * Injects `<mp-accordion>`'s Declarative Shadow DOM chrome into
  * server-rendered HTML so accordions render — and open, close and switch
- * tabs through their pure-CSS input state machine — with JavaScript
- * disabled. Call it in your SSR server on the HTML string the framework
- * produces, before sending the response.
+ * tabs natively via `<details name>`/`<summary>` — with JavaScript disabled.
+ * Call it in your SSR server on the HTML string the framework produces,
+ * before sending the response.
  *
  * The chrome depends on the tab count and on whether the accordion is
- * `multi` (checkbox machine) or single-open (radio machine), so each
+ * `multi` (no `name` group) or single-open (`name` exclusivity), so each
  * instance is measured and matched to a pre-rendered variant — all generated
- * from the element's own `render()`, the single source of truth. Instances
- * with more tabs than variants exist for fall back to the tab-less variant:
- * styled and visible, no state machine. Light-DOM children are untouched, so
- * it is safe with hydration; idempotent via the `shadowrootmode` lookahead.
+ * from the element's own `render()`, the single source of truth — and the
+ * tabs marked `is-active` get `[open]` stamped on their `<details>`.
+ * Instances with more tabs than variants exist for fall back to the tab-less
+ * variant: styled and visible through the default slot. Light-DOM children
+ * are untouched, so it is safe with hydration; idempotent via the
+ * `shadowrootmode` lookahead.
  */
 export function injectMpAccordionDsd(html: string): string {
   if (!html.includes('<mp-accordion')) {
@@ -113,12 +142,13 @@ export function injectMpAccordionDsd(html: string): string {
     const variants = multi
       ? MP_ACCORDION_MULTI_DSD_CHROME_BY_COUNT
       : MP_ACCORDION_DSD_CHROME_BY_COUNT;
-    const count = countTabs(html, end);
+    const { count, activeIndexes } = measureTabs(html, end);
     const openTag =
       depth > 0 && readAttribute(m[1], 'data-nested') === null
         ? m[0].replace(/\s*\/?>$/, (tail) => ` data-nested${tail}`)
         : m[0];
-    result += openTag + (count < variants.length ? variants[count] : variants[0]);
+    const variant = count < variants.length ? variants[count] : variants[0];
+    result += openTag + stampOpen(variant, activeIndexes);
     depth++;
   }
   return result + html.slice(last);

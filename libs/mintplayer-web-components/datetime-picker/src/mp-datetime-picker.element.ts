@@ -121,6 +121,13 @@ export class MpDatetimePickerElement extends LitElement {
     trigger: () => this.dateTriggerEl ?? null,
     panel: () => this.datePopupEl ?? null,
     panelWidth: 'anchor-min',
+    // APG Date Picker Dialog: opening moves focus onto the calendar grid's
+    // roving cell. A slotted consumer calendar wins over the shadow default.
+    initialFocus: () => {
+      const slot = this.datePopupEl?.querySelector<HTMLSlotElement>('slot[name="calendar"]');
+      const assigned = slot?.assignedElements()[0] as HTMLElement | undefined;
+      return assigned ?? this.datePopupEl?.querySelector<HTMLElement>('mp-calendar') ?? null;
+    },
     onOpen: () => {
       this.dispatchEvent(
         new CustomEvent<'date'>('opened', { detail: 'date', bubbles: true, composed: true }),
@@ -139,6 +146,13 @@ export class MpDatetimePickerElement extends LitElement {
     trigger: () => this.timeTriggerEl ?? null,
     panel: () => this.timePopupEl ?? null,
     panelWidth: 'anchor-min',
+    // Opening moves focus onto the time list's active option (its focus()
+    // override lands there). A slotted consumer list wins over the default.
+    initialFocus: () => {
+      const slot = this.timePopupEl?.querySelector<HTMLSlotElement>('slot[name="time-list"]');
+      const assigned = slot?.assignedElements()[0] as HTMLElement | undefined;
+      return assigned ?? this.timePopupEl?.querySelector<HTMLElement>('mp-time-list') ?? null;
+    },
     onOpen: () => {
       this.dispatchEvent(
         new CustomEvent<'time'>('opened', { detail: 'time', bubbles: true, composed: true }),

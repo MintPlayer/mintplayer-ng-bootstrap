@@ -29,6 +29,10 @@ export class YearView extends BaseView {
 
     this.container.appendChild(grid);
 
+    // A single-row grid of 12 month cells — the cards are the gridcells.
+    this.applyGridRoles({ rows: '.scheduler-year-grid' });
+    this.markToday();
+
     // Phase B: apply roving tabindex once cards are in place.
     this.updateMonthCardFocus();
   }
@@ -60,6 +64,10 @@ export class YearView extends BaseView {
     // Month header
     const header = this.createElement('div', 'scheduler-year-month-header');
     header.textContent = dateService.getMonthName(month, options.locale);
+    // Drill-down to the month view — click-only before; the scheduler-level
+    // Enter/Space handler activates it for keyboard users.
+    header.setAttribute('role', 'button');
+    header.setAttribute('tabindex', '0');
     this.setData(header, { month: month.toISOString() });
     card.appendChild(header);
 

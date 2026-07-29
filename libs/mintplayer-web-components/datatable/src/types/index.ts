@@ -16,3 +16,5 @@ export type {
   TreeIdKey,
   TreeSelectionStrategy,
 } from './tree';
+export { DEFAULT_DATATABLE_LABELS } from './labels';
+export type { DatatableLabels } from './labels';

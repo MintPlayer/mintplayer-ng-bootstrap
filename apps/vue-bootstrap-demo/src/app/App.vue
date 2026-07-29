@@ -39,6 +39,7 @@ const SECTIONS = [
     routes: [
       { path: '/advanced/splitter', label: 'Splitter' },
       { path: '/advanced/otp-input', label: 'OTP input' },
+      { path: '/advanced/signature-pad', label: 'Signature pad' },
     ],
   },
   {

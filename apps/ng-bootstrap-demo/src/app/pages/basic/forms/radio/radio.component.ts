@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, CUSTOM_ELEMENTS_SCHEMA, signal } from '@angular/core';
 import { JsonPipe } from '@angular/common';
 import { FormControl, FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { dedent } from 'ts-dedent';
@@ -27,6 +27,7 @@ interface Row {
     BsRadioGroupDirective,
     BsCodeSnippetComponent,
   ],
+  schemas: [CUSTOM_ELEMENTS_SCHEMA],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class RadioComponent {
@@ -64,11 +65,11 @@ export class RadioComponent {
       readonly selectedFruit = signal<string>('apple');
     }`;
   readonly groupTemplateHtml = dedent`
-    <div bsRadioGroup name="fruit" [(ngModel)]="selectedFruit">
+    <mp-radio-group bsRadioGroup name="fruit" aria-label="Fruit" [(ngModel)]="selectedFruit">
       <bs-radio value="apple">Apple</bs-radio>
       <bs-radio value="banana">Banana</bs-radio>
       <bs-radio value="cherry">Cherry</bs-radio>
-    </div>`;
+    </mp-radio-group>`;
 
   readonly groupReactiveTs = dedent`
     import { Component } from '@angular/core';
@@ -84,11 +85,11 @@ export class RadioComponent {
       readonly selectedFruit = new FormControl<string | null>(null);
     }`;
   readonly groupReactiveHtml = dedent`
-    <div bsRadioGroup name="fruit" [formControl]="selectedFruit">
+    <mp-radio-group bsRadioGroup name="fruit" aria-label="Fruit" [formControl]="selectedFruit">
       <bs-radio value="apple">Apple</bs-radio>
       <bs-radio value="banana">Banana</bs-radio>
       <bs-radio value="cherry">Cherry</bs-radio>
-    </div>`;
+    </mp-radio-group>`;
 
   readonly toggleButtonTs = dedent`
     import { Component, signal } from '@angular/core';
@@ -104,11 +105,11 @@ export class RadioComponent {
       readonly layout = signal<string>('grid');
     }`;
   readonly toggleButtonHtml = dedent`
-    <div bsRadioGroup name="layout" [(ngModel)]="layout">
+    <mp-radio-group bsRadioGroup name="layout" aria-label="Layout" [(ngModel)]="layout">
       <bs-radio type="toggle_button" value="grid">Grid</bs-radio>
       <bs-radio type="toggle_button" value="list">List</bs-radio>
       <bs-radio type="toggle_button" value="cards">Cards</bs-radio>
-    </div>`;
+    </mp-radio-group>`;
 
   readonly groupTableTs = dedent`
     import { Component, signal } from '@angular/core';
@@ -135,7 +136,8 @@ export class RadioComponent {
              [(ngModel)]="selectedRow">
         @for (row of rows(); track row.id) {
           <tr>
-            <td><bs-radio [group]="g" [value]="row.id" /></td>
+            <td><bs-radio [group]="g" [value]="row.id"
+                          [attr.aria-label]="'Select ' + row.label" /></td>
             <td>{{ row.label }}</td>
           </tr>
         }

@@ -1,4 +1,5 @@
-import { ChangeDetectionStrategy, Component, computed, input } from '@angular/core';
+import { ChangeDetectionStrategy, Component, ElementRef, computed, effect, inject, input } from '@angular/core';
+import { BsLiveAnnouncerService } from '@mintplayer/ng-bootstrap/a11y';
 
 export type BsToastPoliteness = 'polite' | 'assertive';
 
@@ -13,5 +14,21 @@ export class BsToastComponent {
   /** SR announcement urgency. 'assertive' for time-critical (errors), 'polite' for everything else. */
   politeness = input<BsToastPoliteness>('assertive');
 
-  readonly toastRole = computed(() => this.politeness() === 'assertive' ? 'alert' : 'status');
+  private readonly announcer = inject(BsLiveAnnouncerService);
+  private readonly host = inject(ElementRef) as ElementRef<HTMLElement>;
+
+  constructor() {
+    // The old channel was role/aria-live ON the toast div — but the toast and
+    // its text mount in one task (ngTemplateOutlet), which most SRs never
+    // announce. The shared announcer region pre-exists, so routing the text
+    // through it on the show transition is reliably spoken.
+    effect(() => {
+      if (!this.isVisible()) return;
+      const politeness = this.politeness();
+      queueMicrotask(() => {
+        const text = this.host.nativeElement.textContent?.trim();
+        if (text) void this.announcer.announce(text, politeness);
+      });
+    });
+  }
 }

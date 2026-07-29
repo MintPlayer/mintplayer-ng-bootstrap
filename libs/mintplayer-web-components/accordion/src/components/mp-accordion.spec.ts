@@ -5,10 +5,27 @@ import { MpAccordionTab } from './mp-accordion-tab';
 void MpAccordion; // force the side-effect registration
 void MpAccordionTab;
 
+/**
+ * D1 contract: the accordion is built on `<details name>`/`<summary>` in BOTH
+ * tiers. Spike 0.1a's rules shape every assertion here:
+ *  - `toggle` is async and coalesced — never count toggle events; poll for
+ *    presence, settle for absence, and treat `details.open` as authoritative.
+ *  - jsdom implements summary activation and toggle, but NOT `name`
+ *    exclusivity — single-open below is asserted against the element's own
+ *    enforcement, which real browsers duplicate (harmlessly) via the UA.
+ */
+
 async function flush(el: HTMLElement & { updateComplete?: Promise<unknown> }): Promise<void> {
   await el.updateComplete;
   await Promise.resolve();
   await el.updateComplete;
+}
+
+/** toggle is queued by the UA; give the task queue a beat, then re-render. */
+async function settle(el: HTMLElement & { updateComplete?: Promise<unknown> }): Promise<void> {
+  await flush(el);
+  await new Promise((resolve) => setTimeout(resolve, 20));
+  await flush(el);
 }
 
 interface MakeOptions {
@@ -49,8 +66,8 @@ async function make(options: MakeOptions = {}): Promise<MpAccordion> {
 }
 
 const shadow = (el: MpAccordion) => el.shadowRoot!;
-const buttons = (el: MpAccordion) => [...shadow(el).querySelectorAll<HTMLButtonElement>('.accordion-button')];
-const items = (el: MpAccordion) => [...shadow(el).querySelectorAll<HTMLElement>('.accordion-item')];
+const summaries = (el: MpAccordion) => [...shadow(el).querySelectorAll<HTMLElement>('summary.accordion-button')];
+const items = (el: MpAccordion) => [...shadow(el).querySelectorAll<HTMLDetailsElement>('details.accordion-item')];
 const markers = (el: MpAccordion) => [...el.querySelectorAll<HTMLElement>('[accordion-tab]')];
 
 afterEach(() => {
@@ -123,21 +140,22 @@ describe('mp-accordion projection', () => {
     expect(tab.getAttribute('slot')).toBe('c0');
   });
 
-  it('keeps the collapse clipper free of padding', async () => {
-    // Regression: `.accordion-content` was originally BOTH the clipper and
-    // the padded box. A grid row at 0fr sizes the row to zero, but an
-    // element's own padding still occupies its border box and is not clipped
-    // by its own `overflow: hidden` — so every CLOSED tab showed a padding
-    // strip and the content behind it. Spacing must live one level in.
+  it('renders the row as details > summary + content — no clip machinery, no inputs', async () => {
     const el = await make({ tabs: ['One'] });
-    const clip = shadow(el).querySelector('.accordion-collapse > .accordion-clip');
-    expect(clip).toBeTruthy();
-    expect(clip!.getAttribute('part')).toBeNull();
+    const item = items(el)[0];
+    expect(item.tagName).toBe('DETAILS');
+    expect(item.querySelector('summary.accordion-button')).toBeTruthy();
 
-    const content = clip!.querySelector('.accordion-content');
+    const content = item.querySelector('.accordion-content');
     expect(content).toBeTruthy();
     expect(content!.getAttribute('part')).toBe('content');
     expect(content!.querySelector('slot')?.getAttribute('name')).toBe('c0');
+
+    // The pre-D1 machinery must be gone entirely.
+    expect(shadow(el).querySelector('.acc-input')).toBeNull();
+    expect(shadow(el).querySelector('.accordion-collapse')).toBeNull();
+    expect(shadow(el).querySelector('.accordion-clip')).toBeNull();
+    expect(shadow(el).querySelector('button')).toBeNull();
   });
 
   it('flags a nested accordion so its doubled border can collapse', async () => {
@@ -173,48 +191,64 @@ describe('mp-accordion projection', () => {
 });
 
 describe('mp-accordion open/close', () => {
-  it('opens a tab on header click and reflects it on the marker', async () => {
+  it('opens a tab on summary activation and reflects it on the marker', async () => {
     const el = await make();
-    buttons(el)[1].click();
-    await flush(el);
+    summaries(el)[1].click();
+    await settle(el);
 
     expect(markers(el)[1].hasAttribute('is-active')).toBe(true);
-    expect(buttons(el)[1].getAttribute('aria-expanded')).toBe('true');
-    expect(items(el)[1].classList.contains('open')).toBe(true);
+    expect(items(el)[1].open).toBe(true);
   });
 
-  it('closes the previously open tab when single-open', async () => {
+  it('closes the previously open tab when single-open (element-enforced — jsdom has no name exclusivity)', async () => {
     const el = await make({ active: [0] });
-    buttons(el)[2].click();
-    await flush(el);
+    summaries(el)[2].click();
+    await settle(el);
 
     expect(el.activeIndexes).toEqual([2]);
     expect(markers(el)[0].hasAttribute('is-active')).toBe(false);
+    expect(items(el)[0].open).toBe(false);
   });
 
   it('keeps siblings open under multi', async () => {
     const el = await make({ attrs: { multi: '' }, active: [0] });
-    buttons(el)[2].click();
-    await flush(el);
+    summaries(el)[2].click();
+    await settle(el);
 
     expect(el.activeIndexes).toEqual([0, 2]);
+  });
+
+  it('single-open renders a name group; multi renders none', async () => {
+    const single = await make();
+    items(single).forEach((d) => expect(d.getAttribute('name')).toBe('acc'));
+
+    const multi = await make({ attrs: { multi: '' } });
+    items(multi).forEach((d) => expect(d.hasAttribute('name')).toBe(false));
   });
 
   it('picks up marker state written from outside (framework two-way binding)', async () => {
     const el = await make();
     markers(el)[1].setAttribute('is-active', '');
-    await flush(el);
+    await settle(el);
 
     expect(el.activeIndexes).toEqual([1]);
-    expect(items(el)[1].classList.contains('open')).toBe(true);
+    expect(items(el)[1].open).toBe(true);
   });
 
   it('ignores interaction with a disabled tab', async () => {
     const el = await make({ disabled: [1] });
-    expect(buttons(el)[1].disabled).toBe(true);
+    const summary = summaries(el)[1];
+    expect(summary.getAttribute('aria-disabled')).toBe('true');
+    expect(summary.getAttribute('tabindex')).toBe('-1');
+
+    // The cancellable keydown guard is what keeps a disabled tab inert —
+    // toggle itself is not cancellable (spike 0.1a).
+    const enter = new KeyboardEvent('keydown', { key: 'Enter', bubbles: true, cancelable: true });
+    summary.dispatchEvent(enter);
+    expect(enter.defaultPrevented).toBe(true);
 
     el.open(1);
-    await flush(el);
+    await settle(el);
     expect(el.activeIndexes).toEqual([]);
   });
 
@@ -224,18 +258,29 @@ describe('mp-accordion open/close', () => {
     el.addEventListener('mp-accordion-tab-toggle', (event) =>
       seen.push((event as CustomEvent<AccordionTabToggleDetail>).detail));
 
-    buttons(el)[1].click();
-    await flush(el);
+    summaries(el)[1].click();
+    await settle(el);
 
-    expect(seen.map((detail) => [detail.index, detail.active]))
-      .toEqual([[0, false], [1, true]]);
-    expect(seen[1].originalEvent).toBeInstanceOf(Event);
+    expect(seen.map((detail) => [detail.index, detail.active]).sort())
+      .toEqual([[0, false], [1, true]].sort());
+    expect(seen.every((detail) => detail.originalEvent instanceof Event)).toBe(true);
 
-    // A no-op open must stay silent.
+    // A no-op open must stay silent (absence: settle window, not a race).
     seen.length = 0;
     el.open(1);
-    await flush(el);
+    await settle(el);
     expect(seen).toEqual([]);
+  });
+
+  it('a UA-driven open arriving only via the toggle event still syncs state', async () => {
+    // What happens in real browsers when `name` exclusivity closes a sibling,
+    // and in any engine when something else flips `open` directly.
+    const el = await make();
+    items(el)[2].open = true;
+    await settle(el);
+
+    expect(el.activeIndexes).toEqual([2]);
+    expect(markers(el)[2].hasAttribute('is-active')).toBe(true);
   });
 });
 
@@ -270,10 +315,10 @@ describe('mp-accordion nested accordions', () => {
     expect([outer.activeIndexes, middle.activeIndexes, inner.activeIndexes])
       .toEqual([[0], [0], [0]]);
 
-    buttons(outer)[0].click();
-    await flush(outer);
-    await flush(middle);
-    await flush(inner);
+    summaries(outer)[0].click();
+    await settle(outer);
+    await settle(middle);
+    await settle(inner);
 
     expect([outer.activeIndexes, middle.activeIndexes, inner.activeIndexes])
       .toEqual([[], [], []]);
@@ -282,13 +327,13 @@ describe('mp-accordion nested accordions', () => {
   it('leaves nested accordions alone when a tab OPENS', async () => {
     const { outer, middle } = await makeNested();
     outer.close(0);
-    await flush(outer);
+    await settle(outer);
     middle.open(0);
-    await flush(middle);
+    await settle(middle);
 
     outer.open(0);
-    await flush(outer);
-    await flush(middle);
+    await settle(outer);
+    await settle(middle);
 
     expect(middle.activeIndexes).toEqual([0]);
   });
@@ -303,81 +348,75 @@ describe('mp-accordion nested accordions', () => {
 });
 
 describe('mp-accordion accessibility', () => {
-  it('exposes the APG accordion structure', async () => {
+  it('exposes native disclosure structure: summary controls a labelled region', async () => {
     const el = await make();
-    const headers = [...shadow(el).querySelectorAll('.accordion-header')];
-    headers.forEach((header, index) => {
-      expect(header.getAttribute('role')).toBe('heading');
-      expect(header.getAttribute('aria-level')).toBe('2');
-      expect(header.id).toBe(`h${index}`);
+    summaries(el).forEach((summary, index) => {
+      expect(summary.id).toBe(`h${index}`);
+      expect(summary.getAttribute('aria-controls')).toBe(`c${index}`);
     });
-
-    buttons(el).forEach((button, index) => {
-      expect(button.getAttribute('aria-controls')).toBe(`c${index}`);
-      expect(button.getAttribute('aria-expanded')).toBe('false');
-    });
-
-    [...shadow(el).querySelectorAll('.accordion-collapse')].forEach((region, index) => {
+    [...shadow(el).querySelectorAll('.accordion-content')].forEach((region, index) => {
       expect(region.getAttribute('role')).toBe('region');
       expect(region.getAttribute('aria-labelledby')).toBe(`h${index}`);
       expect(region.id).toBe(`c${index}`);
     });
+    // The D1 trade, asserted so it is a decision rather than an accident:
+    // headers are no longer headings (details/summary owns expand/collapse
+    // semantics natively; aria-expanded on a summary is redundant).
+    expect(shadow(el).querySelector('[role="heading"]')).toBeNull();
+    expect(shadow(el).querySelector('[aria-expanded]')).toBeNull();
   });
 
   it('moves focus between headers with the arrow keys, wrapping at both ends', async () => {
     const el = await make();
     const press = (index: number, key: string) =>
-      buttons(el)[index].dispatchEvent(new KeyboardEvent('keydown', { key, bubbles: true }));
+      summaries(el)[index].dispatchEvent(new KeyboardEvent('keydown', { key, bubbles: true }));
 
-    buttons(el)[0].focus();
+    summaries(el)[0].focus();
     press(0, 'ArrowDown');
-    expect(shadow(el).activeElement).toBe(buttons(el)[1]);
+    expect(shadow(el).activeElement).toBe(summaries(el)[1]);
 
     press(1, 'ArrowUp');
-    expect(shadow(el).activeElement).toBe(buttons(el)[0]);
+    expect(shadow(el).activeElement).toBe(summaries(el)[0]);
 
     press(0, 'ArrowUp');
-    expect(shadow(el).activeElement).toBe(buttons(el)[2]);
+    expect(shadow(el).activeElement).toBe(summaries(el)[2]);
 
     press(2, 'Home');
-    expect(shadow(el).activeElement).toBe(buttons(el)[0]);
+    expect(shadow(el).activeElement).toBe(summaries(el)[0]);
 
     press(0, 'End');
-    expect(shadow(el).activeElement).toBe(buttons(el)[2]);
+    expect(shadow(el).activeElement).toBe(summaries(el)[2]);
   });
 
   it('leaves other keys to the browser', async () => {
     const el = await make();
     const event = new KeyboardEvent('keydown', { key: 'Tab', bubbles: true, cancelable: true });
-    buttons(el)[0].dispatchEvent(event);
+    summaries(el)[0].dispatchEvent(event);
     expect(event.defaultPrevented).toBe(false);
   });
 });
 
 describe('mp-accordion SSR handoff', () => {
   it('renders tab-count rows when there is no light DOM to measure', async () => {
-    // Exactly what the chrome generator renders it with. Under lit-ssr there
-    // is no connectedCallback (hence no data-js) and the no-JS input machine
-    // is emitted; here the element is live, so the rows carry buttons — the
-    // count-driven row rendering the generator depends on is the same.
     const el = document.createElement('mp-accordion') as MpAccordion;
     el.setAttribute('tab-count', '3');
     document.body.appendChild(el);
     await flush(el);
 
     expect(items(el)).toHaveLength(3);
-    expect(buttons(el)).toHaveLength(3);
+    expect(summaries(el)).toHaveLength(3);
   });
 
-  it('adopts the pre-upgrade checked state from server-rendered chrome', async () => {
+  it('adopts the pre-upgrade open state from server-rendered chrome', async () => {
     const el = build({ active: [] });
-    // Stand in for the DSD the SSR injector spliced in: tab 1 was left open.
+    // Stand in for the DSD the SSR injector spliced in: tab 1 was left open
+    // by the user before hydration (details carries UA-owned state).
     const template = document.createElement('template');
     template.innerHTML = `
       <div class="accordion-root">
-        <div class="accordion-item"><input class="acc-input" type="radio" id="t0"></div>
-        <div class="accordion-item"><input class="acc-input" type="radio" id="t1" checked></div>
-        <div class="accordion-item"><input class="acc-input" type="radio" id="t2"></div>
+        <details class="accordion-item" name="acc"><summary class="accordion-button">a</summary></details>
+        <details class="accordion-item" name="acc" open><summary class="accordion-button">b</summary></details>
+        <details class="accordion-item" name="acc"><summary class="accordion-button">c</summary></details>
       </div>`;
     el.attachShadow({ mode: 'open' }).appendChild(template.content.cloneNode(true));
 
@@ -385,12 +424,14 @@ describe('mp-accordion SSR handoff', () => {
     await flush(el);
 
     expect(el.activeIndexes).toEqual([1]);
-    // …and the server chrome is gone, replaced by a clean client render.
-    expect(shadow(el).querySelectorAll('.acc-input')).toHaveLength(0);
+    // …and the server chrome is replaced by a clean client render.
     expect(items(el)).toHaveLength(3);
+    expect(items(el)[1].open).toBe(true);
   });
 
-  it('sets data-js so the no-JS stylesheet disengages', async () => {
+  it('sets data-js as the observable hydration marker', async () => {
+    // No styling hangs off it since D1; e2e readiness predicates key on it
+    // (lit-ssr never runs connectedCallback, so the DSD chrome lacks it).
     const el = await make();
     expect(el.hasAttribute('data-js')).toBe(true);
   });
@@ -411,9 +452,9 @@ describe('mp-accordion configuration', () => {
     expect(el.activeIndexes).toEqual([0, 1]);
 
     el.removeAttribute('multi');
-    await flush(el);
-    buttons(el)[2].click();
-    await flush(el);
+    await settle(el);
+    summaries(el)[2].click();
+    await settle(el);
 
     expect(el.activeIndexes).toEqual([2]);
   });
@@ -424,7 +465,7 @@ describe('mp-accordion configuration', () => {
     el.addEventListener('mp-accordion-tab-toggle', seen);
 
     el.closeAll();
-    await flush(el);
+    await settle(el);
 
     expect(el.activeIndexes).toEqual([]);
     expect(seen).toHaveBeenCalledTimes(2);

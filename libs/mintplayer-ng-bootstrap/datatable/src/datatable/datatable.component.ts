@@ -43,6 +43,7 @@ import { DatatableSettings } from '../datatable-settings';
 import { BsDatatableFetch } from '../datatable-fetch';
 import { BsDatatableColumnDirective } from '../datatable-column/datatable-column.directive';
 import { BsRowTemplateDirective, BsRowTemplateContext } from '../row-template/row-template.directive';
+import { BsForwardAriaDirective } from '@mintplayer/ng-bootstrap/a11y';
 
 export interface BsDatatableRowEvent<T> {
   row: T;
@@ -60,6 +61,7 @@ export interface BsDatatableTreeRowEvent<T> {
 @Component({
   selector: 'bs-datatable',
   templateUrl: './datatable.component.html',
+  imports: [BsForwardAriaDirective],
   styleUrls: ['./datatable.component.scss'],
   schemas: [CUSTOM_ELEMENTS_SCHEMA],
   changeDetection: ChangeDetectionStrategy.OnPush,

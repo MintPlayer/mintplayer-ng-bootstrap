@@ -34,6 +34,7 @@ export function createAppRouter(ssr: boolean) {
     { path: '/basic/forms/select',          name: 'select',          component: () => import('../views/forms/SelectView.vue') },
     // Advanced
     { path: '/advanced/otp-input',  name: 'otp-input',     component: () => import('../views/advanced/OtpInputView.vue') },
+    { path: '/advanced/signature-pad', name: 'signature-pad', component: () => import('../views/advanced/SignaturePadView.vue') },
     { path: '/advanced/splitter',   name: 'splitter',      component: () => import('../views/advanced/SplitterView.vue') },
     { path: '/basic/pagination',    name: 'pagination',    component: () => import('../views/PaginationView.vue') },
     { path: '/basic/radio',         name: 'radio',         component: () => import('../views/RadioView.vue') },

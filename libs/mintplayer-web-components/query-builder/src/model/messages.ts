@@ -13,6 +13,18 @@ export interface QueryBuilderMessages {
   deleteQuery: string;
   treeTooDeep: string;
   dropHerePlaceholder: string;
+  emptyGroup: string;
+  // Accessible names. These were hardcoded English aria-label literals in the
+  // templates — one of them next to a LOCALIZED title, which it silently
+  // overrode in the accessible-name computation.
+  savedQueryName: string;
+  entity: string;
+  columns: string;
+  sortBy: string;
+  reorderHint: string;
+  field: string;
+  operator: string;
+  groupLogic: string;
   operators: Partial<Record<Operator, string>>;
 }
 
@@ -29,6 +41,15 @@ export const DEFAULT_MESSAGES: QueryBuilderMessages = {
   deleteQuery: 'Delete',
   treeTooDeep: 'Tree too deep',
   dropHerePlaceholder: 'Drop here',
+  emptyGroup: '(empty group)',
+  savedQueryName: 'Name for saved query',
+  entity: 'Entity',
+  columns: 'Columns',
+  sortBy: 'Sort by',
+  reorderHint: 'Drag or use Alt+Up/Down to reorder',
+  field: 'Field',
+  operator: 'Operator',
+  groupLogic: 'Group logic',
   operators: {
     'equals': '=',
     'not-equals': '≠',

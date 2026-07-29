@@ -1,4 +1,5 @@
 import { computed, contentChildren, Directive, ElementRef, inject, input, signal } from '@angular/core';
+import { firstEnabledIndex, lastEnabledIndex, nextEnabledIndex } from '@mintplayer/web-components/a11y';
 import { BsRovingFocusItemDirective } from './roving-focus-item.directive';
 
 export type BsRovingFocusOrientation = 'vertical' | 'horizontal' | 'both';
@@ -101,41 +102,37 @@ export class BsRovingFocusDirective {
     if (consumed) event.preventDefault();
   }
 
-  /** Public so consumers (e.g. BsComboboxDirective's TAB handling) can detect edges without re-implementing the disabled-aware scan. */
+  /**
+   * Index math delegates to the shared pure functions in
+   * @mintplayer/web-components/a11y — this directive and the WC RovingFocus
+   * controller had independently identical copies that had ALREADY drifted
+   * (wrap-vs-clamp default). One implementation, two adapters. The directive
+   * keeps its own signals, discovery and activedescendant mode: those are
+   * Angular/light-DOM concerns the WC controller rightly lacks.
+   *
+   * Public so consumers (e.g. BsComboboxDirective's TAB handling) can detect
+   * edges without re-implementing the disabled-aware scan.
+   */
   firstEnabledIndex(): number {
     const items = this.items();
-    return items.findIndex(it => !it.disabled());
+    return firstEnabledIndex(items.length, (i) => items[i].disabled());
   }
 
   lastEnabledIndex(): number {
     const items = this.items();
-    for (let i = items.length - 1; i >= 0; i--) {
-      if (!items[i].disabled()) return i;
-    }
-    return -1;
+    return lastEnabledIndex(items.length, (i) => items[i].disabled());
   }
 
   private step(delta: 1 | -1): void {
     const items = this.items();
-    const total = items.length;
-    if (total === 0) return;
-
-    const wrap = this.wrap();
-    let cursor = this.activeIndex();
-    for (let i = 0; i < total; i++) {
-      cursor = cursor + delta;
-      if (cursor < 0) {
-        if (!wrap) return;
-        cursor = total - 1;
-      } else if (cursor >= total) {
-        if (!wrap) return;
-        cursor = 0;
-      }
-      if (!items[cursor].disabled()) {
-        this.moveTo(cursor);
-        return;
-      }
-    }
+    const next = nextEnabledIndex(
+      items.length,
+      this.activeIndex(),
+      delta,
+      this.wrap(),
+      (i) => items[i].disabled(),
+    );
+    if (next >= 0) this.moveTo(next);
   }
 
   private moveTo(index: number): void {

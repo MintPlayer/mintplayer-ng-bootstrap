@@ -33,9 +33,10 @@ function onToggle(detail: AccordionTabToggleDetail) {
       them as siblings so the element can place each one in its own slot.
     </p>
     <p>
-      With JavaScript disabled the accordion stays interactive: the server-rendered shadow DOM
-      carries a hidden radio (or checkbox, under <code>multi</code>) per tab, so opening and
-      closing are pure CSS.
+      The accordion is built on native <code>&lt;details name&gt;</code> / <code>&lt;summary&gt;</code>,
+      so it stays fully interactive with JavaScript disabled — single-open exclusivity included —
+      and a closed tab's content is removed from the tab order and the accessibility tree by
+      the browser itself.
     </p>
 
     <section data-demo="single">

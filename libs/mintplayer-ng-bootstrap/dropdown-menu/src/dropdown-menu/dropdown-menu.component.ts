@@ -1,6 +1,7 @@
 import { afterNextRender, ChangeDetectionStrategy, Component, computed, CUSTOM_ELEMENTS_SCHEMA, input, output, ViewEncapsulation } from '@angular/core';
 import type { DropdownMode, DropdownSelectEventDetail } from '@mintplayer/web-components/dropdown-menu';
 import { BS_DROPDOWN_MENU_CONTEXT } from '../tokens/menu-context.token';
+import { BsForwardAriaDirective } from '@mintplayer/ng-bootstrap/a11y';
 
 /**
  * `<bs-dropdown-menu>` — Angular wrapper around the `<mp-dropdown-menu>` web
@@ -27,6 +28,7 @@ import { BS_DROPDOWN_MENU_CONTEXT } from '../tokens/menu-context.token';
 @Component({
   selector: 'bs-dropdown-menu',
   templateUrl: './dropdown-menu.component.html',
+  imports: [BsForwardAriaDirective],
   changeDetection: ChangeDetectionStrategy.OnPush,
   schemas: [CUSTOM_ELEMENTS_SCHEMA],
   // Marks content authored between these tags as "inside a menu" so
@@ -75,7 +77,6 @@ export class BsDropdownMenuComponent {
   /** Pixel cap on the menu height; scrolls beyond. */
   readonly maxHeight = input<number>();
   /** Id of an external label, set as `aria-labelledby` on the WC's list. */
-  readonly labelId = input<string>();
 
   /** Fires when an enabled item is activated (re-emits the WC's `select`). */
   readonly select = output<DropdownSelectEventDetail>();
@@ -86,7 +87,6 @@ export class BsDropdownMenuComponent {
     return value === undefined ? null : `${value}`;
   });
 
-  protected readonly labelIdAttr = computed(() => this.labelId() ?? null);
 
   protected onSelect(event: Event) {
     // The WC's `select` is a general-purpose DOM event (bubbles + composed).

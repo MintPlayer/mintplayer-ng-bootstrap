@@ -14,18 +14,21 @@ const single = (page: Page) => page.locator('[data-demo="single"] mp-accordion')
 const multi = (page: Page) => page.locator('[data-demo="multi"] mp-accordion');
 const nested = (page: Page) => page.locator('[data-demo="nested"] mp-accordion').first();
 
-const button = (accordion: Locator, index: number) =>
-  accordion.locator(`.accordion-button >> nth=${index}`);
-const region = (accordion: Locator, index: number) =>
-  accordion.locator(`.accordion-collapse >> nth=${index}`);
-/** The no-JS state store: one visually-hidden input per tab. */
-const input = (accordion: Locator, index: number) =>
-  accordion.locator(`.acc-input >> nth=${index}`);
+const item = (accordion: Locator, index: number) =>
+  accordion.locator(`details.accordion-item >> nth=${index}`);
+const summary = (accordion: Locator, index: number) =>
+  accordion.locator(`summary.accordion-button >> nth=${index}`);
+const content = (accordion: Locator, index: number) =>
+  accordion.locator(`.accordion-content >> nth=${index}`);
 
 /**
  * JS-enabled behavior suite. Readiness is a deterministic shadow predicate
  * (not networkidle — the dev server's HMR socket hangs it on Firefox), per the
  * carousel/navbar precedent.
+ *
+ * D1: both tiers render the same `<details name>` template; the UA owns
+ * disclosure state, and `open` is the reflected source of truth these tests
+ * read (never toggle-event counting — spike 0.1a).
  */
 export function accordionJsSuite(test: Test, expect: Expect, options: AccordionSuiteOptions = {}) {
   const path = options.path ?? PATH;
@@ -34,64 +37,61 @@ export function accordionJsSuite(test: Test, expect: Expect, options: AccordionS
     await page.goto(path);
     await page.waitForFunction(() => {
       const accordion = document.querySelector('mp-accordion');
+      // data-js only exists after connectedCallback — i.e. after hydration
+      // replaced the server DOM. Without it the DSD chrome satisfies the
+      // structural checks and the element detaches mid-test.
       return !!(
         accordion &&
         accordion.hasAttribute('data-js') &&
-        accordion.shadowRoot?.querySelector('.accordion-button') &&
+        accordion.shadowRoot?.querySelector('summary.accordion-button') &&
         accordion.querySelector('[accordion-tab]')?.assignedSlot
       );
     });
   }
 
   test.describe('accordion (JS)', () => {
-    // Opening a tab pushes every header below it down over 0.35s, so a click
-    // target is in motion for a third of a second after the previous click.
-    // These tests assert the state machine, not transition smoothness, and the
-    // component honours the preference — so collapse instantly and stop
-    // racing Playwright's actionability checks.
-    test.use({ reducedMotion: 'reduce' });
-
-    test('replaces the SSR chrome with the button tier, once', async ({ page }) => {
+    test('hydrates into the details tier, once', async ({ page }) => {
       await goto(page);
       const counts = await single(page).evaluate((el: Element) => {
         const shadow = (el as HTMLElement & { shadowRoot: ShadowRoot }).shadowRoot;
         return {
-          items: shadow.querySelectorAll('.accordion-item').length,
-          buttons: shadow.querySelectorAll('button.accordion-button').length,
-          // The no-JS inputs must be gone — they were the server's tier.
+          items: shadow.querySelectorAll('details.accordion-item').length,
+          summaries: shadow.querySelectorAll('summary.accordion-button').length,
+          // Pre-D1 machinery must not resurface in either tier.
           inputs: shadow.querySelectorAll('.acc-input').length,
+          buttons: shadow.querySelectorAll('button').length,
         };
       });
-      expect(counts).toEqual({ items: 3, buttons: 3, inputs: 0 });
+      expect(counts).toEqual({ items: 3, summaries: 3, inputs: 0, buttons: 0 });
     });
 
-    test('a closed tab occupies no height at all', async ({ page }) => {
-      // Regression, and only a real browser can catch it: the collapse used
-      // to carry its padding on the element that clips it, and an element's
-      // own padding is not clipped by its own `overflow: hidden` — so every
-      // closed tab kept a visible strip of body.
+    test('a closed tab exposes no content at all', async ({ page }) => {
+      // <details> removes closed content from rendering, the tab order and
+      // the accessibility tree natively — the §4.5 Critical closed by
+      // construction. Height 0 AND hidden.
       await goto(page);
-      const heights = await single(page).evaluate((el: Element) => {
-        const shadow = (el as HTMLElement & { shadowRoot: ShadowRoot }).shadowRoot;
-        return [...shadow.querySelectorAll('.accordion-item')].map((item) => ({
-          open: item.classList.contains('open'),
-          collapse: item.querySelector('.accordion-collapse')!.getBoundingClientRect().height,
-        }));
-      });
-      expect(heights.length).toBeGreaterThan(0);
-      heights.filter((row) => !row.open).forEach((row) => expect(row.collapse).toBe(0));
+      const accordion = single(page);
+      await expect(content(accordion, 1)).toBeHidden();
+      // toBeHidden above is the load-bearing check (out of paint, the tab
+      // order and the a11y tree). The zero-height box is engine shape:
+      // WebKit keeps a residual layout box (~40px) for closed details
+      // content while still hiding it everywhere that matters.
+      if (test.info().project.name !== 'webkit') {
+        const box = await content(accordion, 1).boundingBox();
+        expect(box?.height ?? 0).toBe(0);
+      }
     });
 
     test('opens a tab on click and closes the previous one', async ({ page }) => {
       await goto(page);
       const accordion = single(page);
 
-      await button(accordion, 0).click();
-      await expect(button(accordion, 0)).toHaveAttribute('aria-expanded', 'true');
+      await summary(accordion, 0).click();
+      await expect(item(accordion, 0)).toHaveJSProperty('open', true);
 
-      await button(accordion, 1).click();
-      await expect(button(accordion, 1)).toHaveAttribute('aria-expanded', 'true');
-      await expect(button(accordion, 0)).toHaveAttribute('aria-expanded', 'false');
+      await summary(accordion, 1).click();
+      await expect(item(accordion, 1)).toHaveJSProperty('open', true);
+      await expect(item(accordion, 0)).toHaveJSProperty('open', false);
     });
 
     test('keeps several tabs open under multi', async ({ page }) => {
@@ -99,10 +99,10 @@ export function accordionJsSuite(test: Test, expect: Expect, options: AccordionS
       const accordion = multi(page);
       await accordion.scrollIntoViewIfNeeded();
 
-      await button(accordion, 0).click();
-      await button(accordion, 2).click();
-      await expect(button(accordion, 0)).toHaveAttribute('aria-expanded', 'true');
-      await expect(button(accordion, 2)).toHaveAttribute('aria-expanded', 'true');
+      await summary(accordion, 0).click();
+      await summary(accordion, 2).click();
+      await expect(item(accordion, 0)).toHaveJSProperty('open', true);
+      await expect(item(accordion, 2)).toHaveJSProperty('open', true);
     });
 
     test('closing a tab collapses the accordion nested inside it', async ({ page }) => {
@@ -110,51 +110,50 @@ export function accordionJsSuite(test: Test, expect: Expect, options: AccordionS
       const outer = nested(page);
       await outer.scrollIntoViewIfNeeded();
 
-      await button(outer, 0).click();
-      await expect(button(outer, 0)).toHaveAttribute('aria-expanded', 'true');
+      await summary(outer, 0).click();
+      await expect(item(outer, 0)).toHaveJSProperty('open', true);
 
       // The inner accordion lives in the outer tab's body.
       const inner = page.locator('[data-demo="nested"] mp-accordion mp-accordion').first();
-      await button(inner, 0).click();
-      await expect(button(inner, 0)).toHaveAttribute('aria-expanded', 'true');
+      await summary(inner, 0).click();
+      await expect(item(inner, 0)).toHaveJSProperty('open', true);
 
-      await button(outer, 0).click();
-      await expect(button(outer, 0)).toHaveAttribute('aria-expanded', 'false');
-      await expect(button(inner, 0)).toHaveAttribute('aria-expanded', 'false');
+      await summary(outer, 0).click();
+      await expect(item(outer, 0)).toHaveJSProperty('open', false);
+      await expect(item(inner, 0)).toHaveJSProperty('open', false);
     });
 
-    test('exposes the APG structure and moves focus with the arrow keys', async ({ page }) => {
+    test('exposes the disclosure structure and moves focus with the arrow keys', async ({ page }) => {
       await goto(page);
       const accordion = single(page);
 
-      await expect(region(accordion, 0)).toHaveAttribute('role', 'region');
-      await expect(button(accordion, 0)).toHaveAttribute('aria-controls', 'c0');
+      await expect(summary(accordion, 0)).toHaveAttribute('aria-controls', 'c0');
+      await summary(accordion, 0).click(); // regions of closed details are hidden
+      await expect(content(accordion, 0)).toHaveAttribute('role', 'region');
+      await expect(content(accordion, 0)).toHaveAttribute('aria-labelledby', 'h0');
 
-      await button(accordion, 0).focus();
+      await summary(accordion, 0).focus();
       await page.keyboard.press('ArrowDown');
-      await expect(button(accordion, 1)).toBeFocused();
+      await expect(summary(accordion, 1)).toBeFocused();
       await page.keyboard.press('End');
-      await expect(button(accordion, 2)).toBeFocused();
+      await expect(summary(accordion, 2)).toBeFocused();
       await page.keyboard.press('Home');
-      await expect(button(accordion, 0)).toBeFocused();
+      await expect(summary(accordion, 0)).toBeFocused();
     });
   });
 }
 
 /**
  * No-JS suite (file-level `test.use({ javaScriptEnabled: false })` is applied
- * by the caller). Locator/native-state assertions only — with JS disabled
- * page.evaluate is unavailable.
+ * by the caller). With D1 the no-JS tier is the SAME details markup, fully
+ * interactive through the UA: summaries are natively focusable and
+ * Enter/Space-activatable, and `name` gives single-open exclusivity with no
+ * script and no CSS state machine.
  */
 export function accordionNojsSuite(test: Test, expect: Expect, options: AccordionSuiteOptions = {}) {
   const path = options.path ?? PATH;
 
   test.describe('accordion (no JS, DSD)', () => {
-    // The state machine is what's under test, not transition smoothness:
-    // reduced motion collapses the CSS transitions (the component honours it),
-    // which keeps Playwright's stability checks deterministic on cold servers.
-    test.use({ reducedMotion: 'reduce' });
-
     // No `waitForLoadState('networkidle')`: the dev server holds an HMR
     // websocket open, so the network never goes idle and the wait burns its
     // full timeout on Firefox. Nothing here needs it either — everything
@@ -164,16 +163,14 @@ export function accordionNojsSuite(test: Test, expect: Expect, options: Accordio
       await page.goto(path);
     });
 
-    test('the DSD attaches server-side with the input machine in place', async ({ page }) => {
+    test('the DSD attaches server-side with native details rows in place', async ({ page }) => {
       const accordion = single(page);
-      await expect(accordion.locator('.acc-input')).toHaveCount(3);
-      await expect(accordion.locator('label.accordion-button')).toHaveCount(3);
-      // Everything starts collapsed: the pre-rendered chrome carries no state.
-      await expect(input(accordion, 0)).not.toBeChecked();
-      // ...and collapsed means zero height, with no padding strip showing
-      // through — the server chrome has to get this right too.
-      const collapsed = await accordion.locator('.accordion-collapse').first().boundingBox();
-      expect(collapsed?.height ?? 0).toBe(0);
+      await expect(accordion.locator('details.accordion-item')).toHaveCount(3);
+      await expect(accordion.locator('summary.accordion-button')).toHaveCount(3);
+      // Everything starts collapsed, and collapsed means the content is not
+      // rendered at all — no padding strip, no readable text.
+      await expect(item(accordion, 0)).not.toHaveAttribute('open', '');
+      await expect(content(accordion, 0)).toBeHidden();
     });
 
     // At most ONE click per test from here on: Chromium with JS disabled
@@ -182,41 +179,42 @@ export function accordionNojsSuite(test: Test, expect: Expect, options: Accordio
     // Everything after the first click is driven by focus + keyboard, which
     // skip that wait — and which is the no-JS keyboard story anyway.
 
-    test('single-open: activating a header checks its radio and unchecks the previous', async ({ page }) => {
+    test('single-open: activating a header opens it and name-exclusivity closes the previous', async ({ page }) => {
       const accordion = single(page);
-      await button(accordion, 0).click();
-      await expect(input(accordion, 0)).toBeChecked();
+      await summary(accordion, 0).click();
+      await expect(item(accordion, 0)).toHaveAttribute('open', '');
 
-      await input(accordion, 1).focus();
-      await page.keyboard.press('Space');
-      await expect(input(accordion, 1)).toBeChecked();
-      await expect(input(accordion, 0)).not.toBeChecked();
+      await summary(accordion, 1).focus();
+      await page.keyboard.press('Enter');
+      await expect(item(accordion, 1)).toHaveAttribute('open', '');
+      await expect(item(accordion, 0)).not.toHaveAttribute('open', '');
     });
 
-    test('multi: the hidden checkboxes are keyboard-operable and stay open together', async ({ page }) => {
+    test('multi: summaries are keyboard-operable and stay open together', async ({ page }) => {
       const accordion = multi(page);
       await accordion.scrollIntoViewIfNeeded();
 
-      await input(accordion, 0).focus();
-      await page.keyboard.press('Space');
-      // Tab reaches the next tab's input: the <label> header is not focusable,
-      // and unlike a radio group a checkbox does not swallow the sequence.
-      await page.keyboard.press('Tab');
-      await page.keyboard.press('Space');
+      await summary(accordion, 0).focus();
+      await page.keyboard.press('Enter');
+      // Tab reaches the next tab's summary natively; the open panel's content
+      // sits between them in the tab order, so tab twice past the body link
+      // count of this demo (plain text bodies — one Tab suffices).
+      await summary(accordion, 1).focus();
+      await page.keyboard.press('Enter');
 
-      await expect(input(accordion, 0)).toBeChecked();
-      await expect(input(accordion, 1)).toBeChecked();
+      await expect(item(accordion, 0)).toHaveAttribute('open', '');
+      await expect(item(accordion, 1)).toHaveAttribute('open', '');
     });
 
-    test('two accordions on one page keep independent state (shadow-scoped groups)', async ({ page }) => {
-      // Radio groups only form within one node tree, so each accordion's own
-      // shadow root scopes its group — opening a tab in one must leave every
-      // other accordion alone. A single action plus pure assertions, per the
+    test('two accordions on one page keep independent state (shadow-scoped name groups)', async ({ page }) => {
+      // <details name> groups per node tree, so each accordion's own shadow
+      // root scopes its group — opening a tab in one must leave every other
+      // accordion alone. A single action plus pure assertions, per the
       // Chromium/no-JS actionability lesson from the carousel suite.
-      await button(single(page), 1).click();
-      await expect(input(single(page), 1)).toBeChecked();
-      await expect(input(multi(page), 0)).not.toBeChecked();
-      await expect(input(multi(page), 1)).not.toBeChecked();
+      await summary(single(page), 1).click();
+      await expect(item(single(page), 1)).toHaveAttribute('open', '');
+      await expect(item(multi(page), 0)).not.toHaveAttribute('open', '');
+      await expect(item(multi(page), 1)).not.toHaveAttribute('open', '');
     });
   });
 }

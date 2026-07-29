@@ -10,7 +10,7 @@
 
 <h2>Basic usage</h2>
 
-<bs-select [ngModel]="mode()" (ngModelChange)="mode.set($event)" class="mb-3 flex-shrink-0">
+<bs-select aria-label="Datatable mode" [ngModel]="mode()" (ngModelChange)="mode.set($event)" class="mb-3 flex-shrink-0">
   <option value="pagination">Pagination</option>
   <option value="virtualScroll">Virtual scrolling</option>
 </bs-select>

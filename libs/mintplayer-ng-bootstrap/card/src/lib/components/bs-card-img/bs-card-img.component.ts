@@ -68,9 +68,11 @@ export class BsCardImgComponent {
   // `width: 100%` rule sizes the actual image element.
   readonly imgClass = computed(() => this.hostClass());
 
-  // `?? null` so an absent input removes the attribute instead of leaving an
-  // empty `src=""` / `alt=""` on the DOM. Hoisted out of the template per
-  // the workspace's "computed over inline expression" memory rule.
+  // `?? null` so an absent src removes the attribute instead of leaving an
+  // empty `src=""` on the DOM.
   readonly srcAttr = computed(() => this.src() ?? null);
-  readonly altAttr = computed(() => this.alt() ?? null);
+  // alt is the opposite case: an <img> with NO alt attribute is announced by
+  // its filename, while alt="" marks it decorative and silences it. Absent
+  // input therefore means decorative, never unlabelled.
+  readonly altAttr = computed(() => this.alt() ?? '');
 }

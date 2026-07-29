@@ -8,6 +8,9 @@ import { BsOffcanvasContextService } from '../../services/offcanvas-context.serv
 
 @Component({
   selector: 'bs-offcanvas-holder',
+  host: {
+    '(document:keydown.escape)': 'onEscape()',
+  },
   templateUrl: './offcanvas.component.html',
   styleUrls: ['./offcanvas.component.scss'],
   imports: [NgTemplateOutlet, BsOverlayFocusDirective],
@@ -107,6 +110,17 @@ export class BsOffcanvasComponent {
 
   onBackdropClick(ev: MouseEvent) {
     this.backdropClick.emit(ev);
+  }
+
+  /**
+   * Escape closes — the dialog pattern's universal exit, and the panel traps
+   * focus while open (bsOverlayFocus), so without this a keyboard user had no
+   * way out at all.
+   */
+  onEscape() {
+    if (!this.isVisible()) return;
+    this.isVisible.set(false);
+    this.isVisibleChange.emit(false);
   }
 
 }

@@ -177,11 +177,16 @@ export class MpQueryGroupElement extends LitElement {
       <div
         class="qb-group"
         role="group"
-        aria-label=${node.logic === 'and' ? 'AND group' : 'OR group'}
+        aria-label=${
+          // Depth rides in the NAME: aria-level is not an allowed attribute
+          // on role=group (axe aria-allowed-attr, serious) — it belongs to
+          // treeitem/row/heading.
+          `${node.logic === 'and' ? 'AND' : 'OR'} group${this.depth > 0 ? `, level ${this.depth + 1}` : ''}`
+        }
         part="group"
       >
         <div class="qb-group-header" part="group-header">
-          <span class="qb-logic-toggle btn-group btn-group-sm" role="group" aria-label="Group logic">
+          <span class="qb-logic-toggle btn-group btn-group-sm" role="group" aria-label=${messages.groupLogic}>
             <button
               type="button"
               class="btn ${node.logic === 'and' ? 'btn-primary' : 'btn-outline-primary'} qb-logic-btn"
@@ -229,14 +234,14 @@ export class MpQueryGroupElement extends LitElement {
                   part="remove-group"
                   ?disabled=${disabled}
                   @click=${this._onRemove}
-                  aria-label="Remove group"
+                  aria-label=${messages.removeGroup}
                   title=${messages.removeGroup}
                 >×</button>`}
           </span>
         </div>
         <div class="qb-children" part="children">
           ${node.children.length === 0
-            ? html`<div class="qb-empty">${this.isDragging ? this._dropPlaceholder() : '(empty group)'}</div>`
+            ? html`<div class="qb-empty">${this.isDragging ? this._dropPlaceholder() : messages.emptyGroup}</div>`
             : this._renderChildrenWithSlots(node.children)}
         </div>
       </div>

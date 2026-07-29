@@ -1,5 +1,6 @@
 import { LitElement, html, nothing, type TemplateResult } from 'lit';
 import { styles } from './mp-time-list.element.template';
+import { RovingFocus } from '@mintplayer/web-components/a11y';
 
 export type TimeStep = 1 | 5 | 10 | 15 | 30 | 60;
 export type Hour12Mode = boolean | 'auto';
@@ -22,7 +23,15 @@ let instanceCounter = 0;
  * `role="option"` with `aria-selected` reflecting the currently selected time.
  *
  * Keyboard model (APG Listbox): ArrowUp/Down ±1 slot, Home/End first/last,
- * PageUp/Down ±1 hour, Enter/Space selects.
+ * PageUp/Down ±1 hour, Enter/Space selects (native button activation).
+ *
+ * Navigation moves REAL focus between the option buttons via roving tabindex
+ * (the shared RovingFocus primitive). The previous model kept focus on the host
+ * and pointed aria-activedescendant at option ids — but the host holds the
+ * attribute while the ids live in its shadow root, and an IDREF resolves only
+ * in the holder's own tree, so the reference was permanently dangling and every
+ * arrow press announced NOTHING. Real focus crosses shadow boundaries; IDREFs
+ * cannot. This was the audit's canonical present-but-inert finding.
  *
  * Events:
  *  - `selected-time-change`  fires on click / Enter / Space (bubbles, composes).
@@ -48,29 +57,52 @@ export class MpTimeListElement extends LitElement {
   locale: string | undefined = undefined;
 
   private _focusedMinutes: number | null = null;
-  private pendingFocusMove = false;
   private readonly instanceId = `mp-tl-${++instanceCounter}`;
+
+  /** One tab stop for the whole list; arrows move focus AND the tab stop. */
+  private readonly roving = new RovingFocus({
+    items: () => Array.from(this.renderRoot?.querySelectorAll<HTMLButtonElement>('button.slot') ?? []),
+    orientation: 'vertical',
+    onActiveChange: (item) => {
+      const minutes = Number(item.dataset['minutes']);
+      if (!Number.isNaN(minutes)) {
+        this._focusedMinutes = minutes;
+        this.requestUpdate();
+      }
+    },
+  });
 
   override connectedCallback(): void {
     super.connectedCallback();
     if (!this.hasAttribute('role')) this.setAttribute('role', 'listbox');
     if (!this.hasAttribute('aria-label')) this.setAttribute('aria-label', 'Select time');
-    if (!this.hasAttribute('tabindex')) this.setAttribute('tabindex', '0');
+    // No host tabindex: the options are the tab stop. A focusable host would be
+    // a second, silent stop in front of the real one.
     this.addEventListener('keydown', this.onHostKeyDown);
-    this.addEventListener('focus', this.onHostFocus);
   }
 
   override disconnectedCallback(): void {
     super.disconnectedCallback();
     this.removeEventListener('keydown', this.onHostKeyDown);
-    this.removeEventListener('focus', this.onHostFocus);
   }
 
   override updated(): void {
-    if (this.pendingFocusMove) {
-      this.pendingFocusMove = false;
-      this.scrollFocusedIntoView();
-    }
+    // The tab stop tracks the focusable slot — the user's last arrow position,
+    // else the selected time's snap slot — not merely "the first enabled
+    // option" that a bare sync() would home to. setActiveItem() moves the tab
+    // stop WITHOUT stealing focus, so this is safe on every render.
+    const target = this.renderRoot?.querySelector<HTMLButtonElement>(
+      `button.slot[data-minutes="${this.focusableMinutes()}"]:not([disabled])`,
+    );
+    if (target) this.roving.setActiveItem(target);
+    else this.roving.sync();
+  }
+
+  /** Focus the list = focus its active option (the popup calls host.focus()). */
+  override focus(options?: FocusOptions): void {
+    const active = this.roving.activeItem;
+    if (active) active.focus(options);
+    else super.focus(options);
   }
 
   /** All slots between 00:00 and 24:00 - step, in step-minute increments. */
@@ -157,74 +189,29 @@ export class MpTimeListElement extends LitElement {
   /* ---- Keyboard ---- */
 
   private onHostKeyDown = (event: KeyboardEvent): void => {
+    // Enter/Space are NOT handled here: the options are real <button>s, so
+    // activation is native and fires the existing @click handler.
     const k = event.key;
-    const isNav =
-      k === 'ArrowUp' || k === 'ArrowDown' || k === 'Home' || k === 'End' ||
-      k === 'PageUp' || k === 'PageDown';
-    const isSelect = k === 'Enter' || k === ' ';
-    if (!isNav && !isSelect) return;
-    event.preventDefault();
-
-    const focused = this.focusableMinutes();
-    if (isSelect) {
-      this.selectMinutes(focused);
+    if (k === 'PageUp' || k === 'PageDown') {
+      // ±1 hour — a listbox-specific jump RovingFocus has no opinion about.
+      event.preventDefault();
+      const slots = this.slots();
+      const focused = this.focusableMinutes();
+      const target = k === 'PageUp'
+        ? Math.max(slots[0].minutes, focused - 60)
+        : Math.min(slots[slots.length - 1].minutes, focused + 60);
+      const index = slots.findIndex((slot) => slot.minutes === target);
+      if (index >= 0) this.roving.moveTo(index);
       return;
     }
-
-    const slots = this.slots();
-    const minM = slots[0].minutes;
-    const maxM = slots[slots.length - 1].minutes;
-    let target = focused;
-    switch (k) {
-      case 'ArrowUp':
-        target = Math.max(minM, focused - this.step);
-        break;
-      case 'ArrowDown':
-        target = Math.min(maxM, focused + this.step);
-        break;
-      case 'Home':
-        target = minM;
-        break;
-      case 'End':
-        target = maxM;
-        break;
-      case 'PageUp':
-        target = Math.max(minM, focused - 60);
-        break;
-      case 'PageDown':
-        target = Math.min(maxM, focused + 60);
-        break;
-    }
-    this._focusedMinutes = target;
-    this.pendingFocusMove = true;
-    this.requestUpdate();
+    if (this.roving.onKeydown(event)) event.preventDefault();
   };
-
-  private onHostFocus = (): void => {
-    // Make sure focusedMinutes is initialized so keyboard navigation has a
-    // starting position; rendered aria-activedescendant points at it.
-    if (this._focusedMinutes === null) {
-      this._focusedMinutes = this.focusableMinutes();
-      this.requestUpdate();
-    }
-  };
-
-  private scrollFocusedIntoView(): void {
-    const focused = this._focusedMinutes;
-    if (focused === null) return;
-    const el = this.renderRoot.querySelector<HTMLElement>(`[id="${this.slotId(focused)}"]`);
-    if (!el) return;
-    if (typeof el.scrollIntoView === 'function') {
-      el.scrollIntoView({ block: 'nearest' });
-    }
-  }
 
   /* ---- Render ---- */
 
   protected override render(): TemplateResult {
     const slots = this.slots();
     const focused = this.focusableMinutes();
-    this.setAttribute('aria-activedescendant', this.slotId(focused));
     return html`
       <ul role="presentation">
         ${slots.map((slot) => this.renderSlot(slot, focused))}
@@ -241,6 +228,7 @@ export class MpTimeListElement extends LitElement {
         class="slot"
         role="option"
         id="${this.slotId(slot.minutes)}"
+        data-minutes="${slot.minutes}"
         aria-selected="${selected ? 'true' : 'false'}"
         aria-disabled="${disabled ? 'true' : nothing}"
         ?disabled="${disabled}"
