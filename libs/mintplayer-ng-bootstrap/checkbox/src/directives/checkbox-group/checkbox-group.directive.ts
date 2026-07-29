@@ -49,7 +49,9 @@ export class BsCheckboxGroupDirective implements ControlValueAccessor {
   private readonly currentValue = signal<readonly string[]>([]);
 
   private onValueChange?: (value: string[]) => void;
-  private onTouched?: () => void;
+  // protected, not private: the focusout host binding compiles outside the
+  // class body under AOT and cannot reach a private member.
+  protected onTouched?: () => void;
 
   constructor() {
     effect(() => {

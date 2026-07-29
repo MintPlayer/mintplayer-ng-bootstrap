@@ -54,7 +54,9 @@ export class BsRadioGroupDirective implements ControlValueAccessor {
   private readonly currentValue = signal<string | null>(null);
 
   private onValueChange?: (value: string | null) => void;
-  private onTouched?: () => void;
+  // protected, not private: the focusout host binding compiles outside the
+  // class body under AOT and cannot reach a private member.
+  protected onTouched?: () => void;
 
   constructor() {
     effect(() => {

@@ -1550,11 +1550,11 @@ export class MpDatatable extends LitElement {
     const next = computeNextSort(this._sortColumns, col.name, ev.shiftKey);
     this._sortColumns = next;
     this._page = 1; // a new sort returns to the first page
-    const mine = next.find((sc) => sc.column === col.name);
+    const mine = next.find((sc) => sc.property === col.name);
     this.liveAnnouncer.announce(
       this.mergedLabels.announceSorted(
         col.label ?? col.name,
-        mine ? (mine.direction === 'asc' ? 'ascending' : 'descending') : 'none',
+        mine ? (mine.direction === 'ascending' ? 'ascending' : 'descending') : 'none',
       ),
     );
     this.requestUpdate();

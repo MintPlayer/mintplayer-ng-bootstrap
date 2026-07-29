@@ -26,8 +26,8 @@ import { BsForwardAriaDirective, BsControlValidityDirective } from '@mintplayer/
   schemas: [CUSTOM_ELEMENTS_SCHEMA],
   hostDirectives: [{
     directive: forwardRef(() => BsSelectValueAccessor),
-    inputs: ['compareWith', BsControlValidityDirective],
-  }],
+    inputs: ['compareWith'],
+  }, BsControlValidityDirective],
 })
 export class BsSelectComponent {
   constructor() {

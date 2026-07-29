@@ -1,5 +1,9 @@
 // Import our own utilities
 @import "bootstrap/scss/bootstrap-utilities.scss";
+// CDK a11y utility styles: BsLiveAnnouncerService wraps CDK's LiveAnnouncer,
+// whose injected live region carries .cdk-visually-hidden — without these
+// rules every announcement renders as visible text at the page edge.
+@import "@angular/cdk/a11y-prebuilt";
 @import './src/styles/utilities/cursor.scss';
 @import './src/styles/utilities/white-space.scss';
 @import './src/styles/utilities/overflow.scss';

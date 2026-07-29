@@ -393,8 +393,8 @@ export class MpFileManager extends LitElement {
     // Announce OUTCOME transitions only (progress ticks would drown the SR).
     // Failure is assertive: silence here costs the user their file.
     if (previous.status !== next.status) {
-      if (next.status === 'done') this.liveAnnouncer.announce(this._messages.announceUploadDone(next.name));
-      else if (next.status === 'error') this.alertAnnouncer.announce(this._messages.announceUploadFailed(next.name));
+      if (next.status === 'done') this.liveAnnouncer.announce(this._messages.announceUploadDone(next.file.name));
+      else if (next.status === 'error') this.alertAnnouncer.announce(this._messages.announceUploadFailed(next.file.name));
     }
     this.requestUpdate();
   }

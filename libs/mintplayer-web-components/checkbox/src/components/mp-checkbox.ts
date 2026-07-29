@@ -8,7 +8,7 @@ import { ref, createRef, type Ref } from 'lit/directives/ref.js';
 // Lives outside the per-entry tree at libs/.../_styles/ — an internal
 // directory, NOT a public sub-entry of @mintplayer/web-components.
 import { formCheckStyles } from '../../../_styles/form-check.styles';
-import { HostAriaController } from '@mintplayer/web-components/a11y';
+import { HostAriaController, FormAssociatedMixin } from '@mintplayer/web-components/a11y';
 
 // `toggleButtonStyles` covers the `toggle_button` variant (`.btn` rules).
 // Side-effect-imports `<mp-toggle-button>` too — same module.
@@ -55,7 +55,14 @@ let instanceCounter = 0;
  *
  * Emits `change` with `detail: { checked, indeterminate, value }`.
  */
-export class MpCheckbox extends LitElement {
+/**
+ * Form association (Phase F, decision D5): the mixin owns the internals
+ * plumbing; this class supplies the checkbox value shape. This is what makes
+ * the previously-dead `name` attribute actually submit, and what lets a
+ * `<fieldset disabled>` disable the control without a defeatable attribute
+ * (spike 0.3a).
+ */
+export class MpCheckbox extends FormAssociatedMixin(LitElement) {
   static override styles = [formCheckStyles, toggleButtonStyles];
 
   static override shadowRootOptions = {
@@ -280,6 +287,13 @@ export class MpCheckbox extends LitElement {
     // name on a discarded node while the host attribute still looked correct.
     // Covered by "reference re-sync across a type change" in the aria spec.
     this.hostAria.syncReferences();
+
+    // Submission value + validity anchor track the live nodes/state.
+    this.syncFormValue();
+    this.setFormValidity(
+      { valueMissing: this.hasAttribute('required') && !this._checked },
+      'Please check this box.',
+    );
   }
 
   private renderCheckOrSwitch(): TemplateResult {
@@ -346,6 +360,32 @@ export class MpCheckbox extends LitElement {
   private reflectBoolean(attr: string, value: boolean): void {
     if (value) this.setAttribute(attr, '');
     else this.removeAttribute(attr);
+  }
+
+  // ---- form association (FormAssociatedHost) ----
+
+  formValue(): string | null {
+    // Native semantics: an unchecked checkbox submits nothing; a checked one
+    // submits its value, defaulting to "on".
+    return this._checked ? (this._value ?? 'on') : null;
+  }
+
+  formReset(): void {
+    this._checked = false;
+    this._indeterminate = false;
+    this.reflectBoolean('checked', false);
+    this.reflectBoolean('indeterminate', false);
+    this.requestUpdate();
+  }
+
+  formRestore(state: string | FormData | File | null): void {
+    this._checked = state != null;
+    this.reflectBoolean('checked', this._checked);
+    this.requestUpdate();
+  }
+
+  formValidityAnchor(): HTMLElement | null {
+    return this._inputRef.value ?? null;
   }
 
   private onInputChange = (ev: Event): void => {
