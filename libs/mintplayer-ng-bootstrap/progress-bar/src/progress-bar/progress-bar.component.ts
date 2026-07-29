@@ -17,6 +17,7 @@ import { Color } from '@mintplayer/ng-bootstrap';
     '[attr.aria-valuemin]': 'minimum()',
     '[attr.aria-valuemax]': 'maximum()',
     '[attr.aria-label]': 'ariaLabel()',
+    '[attr.aria-valuetext]': 'valueText()',
   },
 })
 export class BsProgressBarComponent {
@@ -29,6 +30,8 @@ export class BsProgressBarComponent {
   animated = input(false);
   /** Accessible name for the progressbar. Override for localisation. */
   ariaLabel = input<string>('Progress');
+  /** Human reading of the value ('3 of 5 steps') when the raw number misleads. */
+  valueText = input<string | null>(null);
 
   percentage = computed(() => {
     const min = this.minimum();

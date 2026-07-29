@@ -699,7 +699,10 @@ export class MpFileManager extends LitElement {
                 ? this.renderListView(currentChildren)
                 : this.renderIconGridView(currentChildren)}
             </div>
-            <div class="drop-overlay" aria-live="polite" aria-label=${this._messages.fileDropZone}>${this._messages.dropFilesToUpload}</div>
+            <!-- No aria-live/aria-label: a static always-rendered overlay never
+                 changes text, so the live region was pure noise; drag feedback
+                 is visual, and the upload path announces its own outcomes. -->
+            <div class="drop-overlay" aria-hidden="true">${this._messages.dropFilesToUpload}</div>
           </div>
         </mp-splitter>
       </div>
