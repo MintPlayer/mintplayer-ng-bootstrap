@@ -1,4 +1,4 @@
-import { Component, ChangeDetectionStrategy, input } from '@angular/core';
+import { Component, ChangeDetectionStrategy, input, signal } from '@angular/core';
 
 @Component({
   selector: 'bs-marquee',
@@ -8,4 +8,10 @@ import { Component, ChangeDetectionStrategy, input } from '@angular/core';
 })
 export class BsMarqueeComponent {
   readonly ariaLabel = input<string | null>(null);
+  /** WCAG 2.2.2: moving content needs a pause affordance. */
+  readonly paused = signal(false);
+
+  togglePaused(): void {
+    this.paused.update((paused) => !paused);
+  }
 }

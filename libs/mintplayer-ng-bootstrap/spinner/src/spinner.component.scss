@@ -16,4 +16,15 @@
     .spinner-grow {
         animation: .75s linear infinite spinner-grow;
     }
+
+    // The manual re-declarations above (needed because the imported partial's
+    // animation did not survive the ::ng-deep scope) also discarded
+    // Bootstrap's prefers-reduced-motion override — restore it: reduce slows
+    // the spin (Bootstrap's own choice: a frozen spinner reads as hung).
+    @media (prefers-reduced-motion: reduce) {
+        .spinner-border,
+        .spinner-grow {
+            animation-duration: 1.5s;
+        }
+    }
 }

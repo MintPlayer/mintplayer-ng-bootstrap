@@ -183,7 +183,6 @@ export class MpRibbonTab extends LitElement {
 
   override connectedCallback(): void {
     super.connectedCallback();
-    this.setAttribute('role', 'tabpanel');
     if (typeof ResizeObserver !== 'undefined') {
       this.overflowResizeObserver = new ResizeObserver(() =>
         this.scheduleOverflowReflow()
@@ -200,10 +199,10 @@ export class MpRibbonTab extends LitElement {
   }
 
   override updated(changed: Map<string, unknown>): void {
-    if (changed.has('tabId') && this.tabId) {
-      this.id = `ribbon-panel-${this.tabId}`;
-      this.setAttribute('aria-labelledby', `ribbon-tab-${this.tabId}`);
-    }
+    // No id/aria-labelledby stamping here anymore: both pointed across the
+    // shadow boundary at nodes in mp-ribbon's shadow root, where IDREFs can
+    // never resolve — the tabpanel relationship is now minted entirely inside
+    // mp-ribbon's own render() (the mp-tab-control pattern).
     if (changed.has('reduceOrder') || changed.has('idealSizes')) {
       this.validateReduceOrder();
     }

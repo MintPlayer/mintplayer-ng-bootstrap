@@ -67,17 +67,22 @@ describe('mp-ribbon — ARIA contract', () => {
     expect(tabs[1].getAttribute('aria-selected')).toBe('false');
   });
 
-  it('each tab has aria-controls pointing at its panel id', () => {
+  it('tabs control the single in-shadow tabpanel wrapper (Phase E: no cross-root IDREFs)', () => {
     const tabs = ribbon.shadowRoot!.querySelectorAll<HTMLElement>('[role="tab"]');
-    expect(tabs[0].getAttribute('aria-controls')).toBe('ribbon-panel-home');
-    expect(tabs[1].getAttribute('aria-controls')).toBe('ribbon-panel-insert');
+    expect(tabs[0].getAttribute('aria-controls')).toBe('ribbon-active-panel');
+    expect(tabs[1].getAttribute('aria-controls')).toBe('ribbon-active-panel');
   });
 
-  it('tabpanel host has role="tabpanel" + aria-labelledby + matching id', () => {
-    const tab = ribbon.querySelector<HTMLElement>('mp-ribbon-tab[tab-id="home"]')!;
-    expect(tab.getAttribute('role')).toBe('tabpanel');
-    expect(tab.getAttribute('aria-labelledby')).toBe('ribbon-tab-home');
-    expect(tab.id).toBe('ribbon-panel-home');
+  it('the tabpanel wrapper lives in the SAME shadow root and follows the active tab', () => {
+    // The old pair — id on the light-DOM mp-ribbon-tab, aria-labelledby into
+    // the shadow — was dead in both directions: IDREFs never cross a shadow
+    // boundary. Both ends now mint in one render() (mp-tab-control pattern).
+    const panel = ribbon.shadowRoot!.querySelector<HTMLElement>('#ribbon-active-panel')!;
+    expect(panel.getAttribute('role')).toBe('tabpanel');
+    expect(panel.getAttribute('aria-labelledby')).toMatch(/^ribbon-tab-/);
+    const light = ribbon.querySelector<HTMLElement>('mp-ribbon-tab[tab-id="home"]')!;
+    expect(light.hasAttribute('role')).toBe(false);
+    expect(light.id).toBe('');
   });
 
   it('roving tabindex: active tab is 0, inactive tab is -1', () => {

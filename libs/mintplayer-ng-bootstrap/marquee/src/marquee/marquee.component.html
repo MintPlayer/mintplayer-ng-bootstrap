@@ -1,5 +1,10 @@
-<span class="marquee text-nowrap overflow-hidden d-block" [attr.aria-label]="ariaLabel()">
-    <span class="h1 d-inline-block">
+<!-- role=marquee names the widget honestly AND supports the aria-label
+     (a bare span with aria-label is ignored by name computation). -->
+<span class="marquee text-nowrap overflow-hidden d-block" role="marquee" [attr.aria-label]="ariaLabel()">
+    <span class="h1 d-inline-block" [class.marquee-paused]="paused()">
         <ng-content></ng-content>
     </span>
 </span>
+<button type="button" class="marquee-pause" (click)="togglePaused()" [attr.aria-pressed]="paused()">
+    {{ paused() ? 'Resume' : 'Pause' }}
+</button>

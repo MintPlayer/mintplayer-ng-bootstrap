@@ -1096,7 +1096,12 @@ export class MpRibbon extends LitElement {
         </div>
 
         ${!this.minimized
-          ? html`<div class="ribbon-content">
+          ? html`<div
+              class="ribbon-content"
+              role="tabpanel"
+              id="ribbon-active-panel"
+              aria-labelledby="ribbon-tab-${this.activeTabId}"
+            >
               <slot @slotchange="${this.onSlotChange}"></slot>
             </div>`
           : html`<div hidden><slot @slotchange="${this.onSlotChange}"></slot></div>`}
@@ -1185,7 +1190,7 @@ export class MpRibbon extends LitElement {
         id="ribbon-tab-${tab.tabId}"
         class="ribbon-tab ${isActive ? 'active' : ''} ${isContextual ? 'contextual' : ''}"
         aria-selected="${isActive}"
-        aria-controls="ribbon-panel-${tab.tabId}"
+        aria-controls="ribbon-active-panel"
         tabindex="${tabIndex}"
         data-tab-id="${tab.tabId}"
         @click="${() => this.selectTab(tab.tabId)}"
