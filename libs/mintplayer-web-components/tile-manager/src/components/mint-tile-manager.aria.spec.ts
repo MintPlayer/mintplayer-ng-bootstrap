@@ -104,17 +104,38 @@ describe('mint-tile-manager — region/button ARIA contract (post-grid retrofit)
     expect(minusOnes.length).toBe(3);
   });
 
-  it('region points aria-describedby at a hidden instructions div with the keymap', async () => {
+  it('every TILE points aria-describedby at the hidden instructions div (SRs read it at the focus target)', async () => {
     el = await mount((m) => {
       m.columnCount = 2;
       m.tiles = fourTiles;
     });
-    const region = el.shadowRoot!.querySelector('.tile-grid')!;
-    const describedBy = region.getAttribute('aria-describedby');
+    // On the tiles, not the region: the instructions describe what a focused
+    // tile can do, and describedby is read where focus lands.
+    expect(el.shadowRoot!.querySelector('.tile-grid')!.hasAttribute('aria-describedby')).toBe(false);
+    const tiles = [...el.shadowRoot!.querySelectorAll('.tile')];
+    const ids = new Set(tiles.map((t) => t.getAttribute('aria-describedby')));
+    expect(ids.size).toBe(1);
+    const [describedBy] = ids;
     expect(describedBy).toBeTruthy();
     const instructions = el.shadowRoot!.querySelector(`#${describedBy}`);
-    expect(instructions).not.toBeNull();
     expect(instructions!.textContent).toContain('Press M to enter move mode');
+  });
+
+  it('aria-pressed IS the move-mode token — flips on M, back on Enter, reactively', async () => {
+    el = await mount((m) => {
+      m.columnCount = 2;
+      m.tiles = fourTiles;
+    });
+    const tile = () => el.shadowRoot!.querySelector('.tile[data-tile-id="a"]')!;
+    expect(tile().getAttribute('aria-pressed')).toBe('false');
+
+    tile().dispatchEvent(new KeyboardEvent('keydown', { key: 'M', bubbles: true, composed: true, cancelable: true }));
+    await el.updateComplete;
+    expect(tile().getAttribute('aria-pressed')).toBe('true');
+
+    tile().dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true, composed: true, cancelable: true }));
+    await el.updateComplete;
+    expect(tile().getAttribute('aria-pressed')).toBe('false');
   });
 });
 

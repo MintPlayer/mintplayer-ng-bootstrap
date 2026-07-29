@@ -240,6 +240,13 @@ export class MpQueryConditionElement extends LitElement {
         class="qb-condition"
         part="condition"
         tabindex="0"
+        role="group"
+        aria-label=${
+          // The row is a tab stop (Alt+Up/Down reorder) — without a role and
+          // name a blind user lands on silence. The name tracks the row's
+          // current field + operator, re-derived every render (§11a).
+          `${field?.label ?? node.field} ${messages.operators[node.operator] ?? node.operator}`
+        }
         data-row-id=${node.id}
         @keydown=${this._onRowKeyDown}
       >

@@ -73,6 +73,12 @@ export class MpQuerySubqueryElement extends LitElement {
           class="qb-subquery-header"
           part="subquery-header"
           tabindex="0"
+          role="group"
+          aria-label=${
+            // Focusable reorder stop — role + a name mirroring the visible
+            // field/operator/target text, re-derived every render (§11a).
+            `${fieldLabel} ${operatorLabel}${targetEntity ? ` ${targetEntity}` : ''}`
+          }
           @keydown=${this._onHeaderKeyDown}
         >
           <span class="qb-subquery-field">${fieldLabel}</span>

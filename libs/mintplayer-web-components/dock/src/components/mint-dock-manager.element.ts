@@ -714,6 +714,16 @@ export class MintDockManagerElement extends LitElement {
         resizer.addEventListener('pointerdown', (event) =>
           this.beginFloatingResize(event, index, wrapper, resizer, edges),
         );
+        // Keyboard path — floating panes must not be pointer-only. A
+        // focusable separator REQUIRES aria-valuenow (axe): report the
+        // driven dimension as a percent of the host.
+        resizer.setAttribute('tabindex', '0');
+        resizer.setAttribute('aria-valuemin', '0');
+        resizer.setAttribute('aria-valuemax', '100');
+        this.syncFloatingResizerValue(resizer, index, edges);
+        resizer.addEventListener('keydown', (event) =>
+          this.onFloatingResizeKeydown(event, index, wrapper, resizer, edges),
+        );
         wrapper.appendChild(resizer);
       });
     this.floatingLayerEl.appendChild(wrapper);
@@ -1266,6 +1276,82 @@ export class MintDockManagerElement extends LitElement {
     this.startPointerTracking();
   }
 
+  /** The percent-of-host size of the dimension a handle drives (width for
+   *  horizontal/corner handles, height for pure-vertical ones). */
+  private syncFloatingResizerValue(resizer: HTMLElement, index: number, edges: FloatingResizeEdges): void {
+    const floating = this.floatingLayouts[index];
+    const host = this.getHostSize();
+    if (!floating || host.width <= 0 || host.height <= 0) return;
+    const percent =
+      edges.horizontal !== 'none'
+        ? (floating.bounds.width / host.width) * 100
+        : (floating.bounds.height / host.height) * 100;
+    resizer.setAttribute('aria-valuenow', String(Math.round(Math.min(100, Math.max(0, percent)))));
+  }
+
+  /**
+   * Keyboard resize for floating panes — the same edge-anchored math as the
+   * pointer path (left/top handles move the edge outward, right/bottom grow),
+   * ±10px per arrow, Shift for 1px. Off-axis arrows and modifier chords pass
+   * through untouched.
+   */
+  private onFloatingResizeKeydown(
+    event: KeyboardEvent,
+    index: number,
+    wrapper: HTMLElement,
+    resizer: HTMLElement,
+    edges: FloatingResizeEdges,
+  ): void {
+    if (event.altKey || event.ctrlKey || event.metaKey) return;
+    const horizontalDelta = event.key === 'ArrowLeft' ? -1 : event.key === 'ArrowRight' ? 1 : 0;
+    const verticalDelta = event.key === 'ArrowUp' ? -1 : event.key === 'ArrowDown' ? 1 : 0;
+    if (horizontalDelta === 0 && verticalDelta === 0) return;
+    if (horizontalDelta !== 0 && edges.horizontal === 'none') return;
+    if (verticalDelta !== 0 && edges.vertical === 'none') return;
+    const floating = this.floatingLayouts[index];
+    if (!floating) return;
+    event.preventDefault();
+    event.stopPropagation();
+
+    const step = event.shiftKey ? 1 : 10;
+    const host = this.getHostSize();
+    const minWidth = host.width > 0 ? Math.min(192, host.width) : 192;
+    const minHeight = host.height > 0 ? Math.min(128, host.height) : 128;
+    const bounds = { ...floating.bounds };
+
+    if (horizontalDelta !== 0) {
+      // For a LEFT handle an outward arrow (ArrowLeft) grows the pane.
+      const grow = edges.horizontal === 'left' ? -horizontalDelta * step : horizontalDelta * step;
+      let newWidth = Math.max(minWidth, bounds.width + grow);
+      if (edges.horizontal === 'left') {
+        newWidth = Math.min(newWidth, bounds.left + bounds.width);
+        bounds.left = bounds.left + bounds.width - newWidth;
+      } else if (host.width > 0) {
+        newWidth = Math.min(newWidth, host.width - bounds.left);
+      }
+      bounds.width = newWidth;
+    }
+    if (verticalDelta !== 0) {
+      const grow = edges.vertical === 'top' ? -verticalDelta * step : verticalDelta * step;
+      let newHeight = Math.max(minHeight, bounds.height + grow);
+      if (edges.vertical === 'top') {
+        newHeight = Math.min(newHeight, bounds.top + bounds.height);
+        bounds.top = bounds.top + bounds.height - newHeight;
+      } else if (host.height > 0) {
+        newHeight = Math.min(newHeight, host.height - bounds.top);
+      }
+      bounds.height = newHeight;
+    }
+
+    floating.bounds = bounds;
+    wrapper.style.left = `${bounds.left}px`;
+    wrapper.style.top = `${bounds.top}px`;
+    wrapper.style.width = `${bounds.width}px`;
+    wrapper.style.height = `${bounds.height}px`;
+    this.syncFloatingResizerValue(resizer, index, edges);
+    this.dispatchLayoutChanged();
+  }
+
   private beginFloatingResize(
     event: PointerEvent,
     index: number,
@@ -1481,6 +1567,7 @@ export class MintDockManagerElement extends LitElement {
     // border dark-blue forever.
     delete state.handle.dataset['resizing'];
 
+    this.syncFloatingResizerValue(state.handle, state.index, state.edges);
     this.floatingResizeState = null;
     this.dispatchLayoutChanged();
   }

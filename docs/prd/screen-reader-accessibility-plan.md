@@ -1191,6 +1191,15 @@ Actions and to plain-`<form>` submission. Nothing WCAG-blocking waits on it.
   outstanding-followups memory). Group-level `disabled` on `<mp-radio-group>` disables submission
   state only, not the individual radios — per-radio `disabled` remains the API, matching native
   fieldset-less radio groups.
+  **Post-G closeout (2026-07-29, same PR)**: three of the deferred items were closed after the
+  user set the bar at "fully usable for blind people": dock floating-pane resize handles are now
+  focusable separators with the full keyboard model (edge-anchored arrows ±10px, Shift 1px,
+  aria-valuenow as percent-of-host, synced from the pointer path too); query-builder condition
+  rows and subquery headers carry role=group + a live field/operator-derived name (they were
+  bare tab stops announcing nothing); tile-manager's instructions moved onto the TILES
+  (describedby is read at the focus target) and aria-pressed became the reactive move-mode
+  token. Still deferred: dock keyboard drop-target enumeration (an enhancement over the working
+  M + T/R/B/L/F move model), aria-errormessage, tree-select/query-builder reduced-motion.
 
 ---
 
