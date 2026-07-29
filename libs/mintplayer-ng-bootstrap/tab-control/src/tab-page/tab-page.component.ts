@@ -12,12 +12,11 @@ import { BsTabPageHeaderDirective } from '../tab-page-header/tab-page-header.dir
     '[attr.slot]': 'contentSlotName()',
     // Tells <mp-tab-control> the tab is disabled without inspecting child types.
     '[attr.data-disabled]': 'disabled() ? "" : null',
-    // ARIA wiring (client-side only — the SSR branch renders its own tabpanel
-    // div with these attributes inside the bs-tab-page template).
-    '[attr.role]': 'tabControl.isServerSide ? null : "tabpanel"',
-    '[id]': 'tabControl.isServerSide ? null : tabName() + "-panel"',
-    '[attr.aria-labelledby]': 'tabControl.isServerSide ? null : tabName() + "-header-button"',
-    '[attr.tabindex]': 'tabControl.isServerSide ? null : (tabControl.activeTab() === this ? 0 : -1)',
+    // NO client-side ARIA here: <mp-tab-control> already renders the
+    // role=tabpanel wrapper (with aria-labelledby) in its shadow root, so a
+    // second tabpanel on this host announced every page twice and its id
+    // duplicated an IDREF target. The SSR branch renders its own region
+    // inside the template instead.
   },
 })
 export class BsTabPageComponent {

@@ -256,6 +256,10 @@ export class MpSplitter extends LitElement {
       divider.setAttribute('aria-valuenow', String(valuenow));
       divider.setAttribute('aria-valuemin', String(valuemin));
       divider.setAttribute('aria-valuemax', String(valuemax));
+      // A bare percent answers "where is the divider" but not "what did I
+      // just do to BOTH panels" — the pair reading does.
+      const afterPct = Math.round((after / containerSize) * 100);
+      divider.setAttribute('aria-valuetext', valuenow + '% / ' + afterPct + '%');
     });
   }
 

@@ -177,6 +177,7 @@ export class MpQueryGroupElement extends LitElement {
       <div
         class="qb-group"
         role="group"
+        aria-level=${this.depth + 1}
         aria-label=${node.logic === 'and' ? 'AND group' : 'OR group'}
         part="group"
       >
