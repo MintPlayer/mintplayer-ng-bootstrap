@@ -153,3 +153,55 @@ describe('mp-datatable keyboard', () => {
     expect(ev.defaultPrevented).toBe(false);
   });
 });
+
+describe('mp-datatable focus continuity across data swaps', () => {
+  beforeEach(() => {
+    document.body.innerHTML = '';
+  });
+
+  const focusedRowKey = (el: MpDatatable) => {
+    const active = shadow(el).activeElement as HTMLElement | null;
+    return active?.dataset?.['rowKey'] ?? null;
+  };
+
+  it('replacing the dataset keeps focus on the row at the same index, never <body>', async () => {
+    const el = await mount('selection-mode="single"');
+    const rows = shadow(el).querySelectorAll<HTMLTableRowElement>('tbody tr[data-row-key]');
+    rows[1].focus();
+    expect(focusedRowKey(el)).toBe('2');
+
+    (el as unknown as { data: unknown }).data = [
+      { id: 10, name: 'New-A' },
+      { id: 11, name: 'New-B' },
+      { id: 12, name: 'New-C' },
+    ];
+    await el.updateComplete;
+
+    expect(document.activeElement).toBe(el);
+    expect(focusedRowKey(el)).toBe('11');
+  });
+
+  it('when the new dataset is shorter than the index, the last row gets focus', async () => {
+    const el = await mount('selection-mode="single"');
+    shadow(el).querySelectorAll<HTMLTableRowElement>('tbody tr[data-row-key]')[2].focus();
+
+    (el as unknown as { data: unknown }).data = [{ id: 10, name: 'Only' }];
+    await el.updateComplete;
+
+    expect(document.activeElement).toBe(el);
+    expect(focusedRowKey(el)).toBe('10');
+  });
+
+  it('a data swap while focus is elsewhere does NOT steal focus (scoped capture)', async () => {
+    const el = await mount('selection-mode="single"');
+    const outside = document.createElement('button');
+    document.body.appendChild(outside);
+    outside.focus();
+
+    (el as unknown as { data: unknown }).data = [{ id: 10, name: 'New' }];
+    await el.updateComplete;
+
+    expect(document.activeElement).toBe(outside);
+    outside.remove();
+  });
+});

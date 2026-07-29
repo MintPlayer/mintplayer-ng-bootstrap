@@ -1,5 +1,5 @@
 import { LitElement, html, nothing, type TemplateResult } from 'lit';
-import { HostAriaController } from '@mintplayer/web-components/a11y';
+import { FocusRestore, FocusRestoreController, HostAriaController } from '@mintplayer/web-components/a11y';
 import { DEFAULT_DATATABLE_LABELS, type DatatableLabels } from '../types/labels';
 import { repeat } from 'lit/directives/repeat.js';
 import { classMap } from 'lit/directives/class-map.js';
@@ -173,6 +173,23 @@ export class MpDatatable extends LitElement {
   private _selectedIds: Set<string> = new Set();
   private _cutIds: Set<string> = new Set();
   private _focusedRowKey: string | null = null;
+
+  /**
+   * Focus continuity across data swaps: replacing the dataset (file-manager
+   * folder navigation, external paging) destroys the focused <tr> and would
+   * strand keyboard focus on <body>. Same-key row wins; else the row at the
+   * same index; else the table itself. Capture is scoped, so updates while
+   * focus is elsewhere never steal it.
+   */
+  private readonly rowFocusRestore = new FocusRestoreController(this, new FocusRestore(
+    () => (this.renderRoot as ShadowRoot | null) ?? null,
+    {
+      selector: 'tbody tr[data-row-key]:not([data-placeholder="true"])',
+      keyOf: (el) => el.dataset['rowKey'] ?? null,
+      container: () => this.renderRoot?.querySelector<HTMLElement>('table') ?? null,
+    },
+  ));
+
   private _rowKey: RowKey = (row, index) => {
     const r = row as { id?: unknown } | null;
     return r && r.id != null ? String(r.id) : `row-${index}`;
