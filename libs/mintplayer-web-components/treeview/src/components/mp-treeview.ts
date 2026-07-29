@@ -91,7 +91,10 @@ export class MpTreeview extends LitElement {
   private _errorIds: Map<string, string> = new Map();
 
   /** Lazy loads have no visible focus move; announce start, finish and ERROR. */
-  private readonly liveAnnouncer = new LiveAnnouncerController(this);
+  // omitRole: the host is role=tree, which owns everything in its shadow
+  // through transparent generics — an owned role=status is invalid ARIA.
+  // aria-live alone still announces.
+  private readonly liveAnnouncer = new LiveAnnouncerController(this, { omitRole: true });
 
   // Roving tabindex: which node currently has tabindex=0
   private _focusedId: string | null = null;
