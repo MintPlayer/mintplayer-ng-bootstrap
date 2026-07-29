@@ -158,16 +158,42 @@ summary.accordion-button:focus-visible {
   interpolate-size: allow-keywords;
 }
 
-details.accordion-item::details-content {
-  block-size: 0;
-  overflow-y: clip;
-  transition:
-    block-size 0.35s ease,
-    content-visibility 0.35s allow-discrete;
+// Engines with interpolate-size (Chromium 129+) tween block-size to auto.
+@supports (interpolate-size: allow-keywords) {
+  details.accordion-item::details-content {
+    block-size: 0;
+    overflow-y: clip;
+    transition:
+      block-size 0.35s ease,
+      content-visibility 0.35s allow-discrete;
+  }
+
+  details.accordion-item[open]::details-content {
+    block-size: auto;
+  }
 }
 
-details.accordion-item[open]::details-content {
-  block-size: auto;
+// Engines without it but WITH details-content (Firefox 138+) get the same
+// slide via the fr-track trick: 0fr -> 1fr interpolates without keyword
+// sizing, and the sole grid item collapses with the track through
+// min-height: 0. Engines with neither feature simply snap.
+@supports (not (interpolate-size: allow-keywords)) and (selector(::details-content)) {
+  details.accordion-item::details-content {
+    display: grid;
+    grid-template-rows: 0fr;
+    transition:
+      grid-template-rows 0.35s ease,
+      content-visibility 0.35s allow-discrete;
+  }
+
+  details.accordion-item[open]::details-content {
+    grid-template-rows: 1fr;
+  }
+
+  details.accordion-item .accordion-content {
+    min-height: 0;
+    overflow-y: clip;
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {
