@@ -177,8 +177,12 @@ export class MpQueryGroupElement extends LitElement {
       <div
         class="qb-group"
         role="group"
-        aria-level=${this.depth + 1}
-        aria-label=${node.logic === 'and' ? 'AND group' : 'OR group'}
+        aria-label=${
+          // Depth rides in the NAME: aria-level is not an allowed attribute
+          // on role=group (axe aria-allowed-attr, serious) — it belongs to
+          // treeitem/row/heading.
+          `${node.logic === 'and' ? 'AND' : 'OR'} group${this.depth > 0 ? `, level ${this.depth + 1}` : ''}`
+        }
         part="group"
       >
         <div class="qb-group-header" part="group-header">

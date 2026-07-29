@@ -837,6 +837,14 @@ export class MintDockManagerElement extends LitElement {
       handle.classList.add('dock-intersection-handle', 'glyph');
       handle.setAttribute('role', 'separator');
       handle.setAttribute('aria-label', 'Resize split intersection');
+      // A focusable separator REQUIRES aria-valuenow (axe critical). The
+      // handle drives a PAIR of dividers; report the vertical one — its
+      // position IS the handle's x as a percent of the dock. Handles rebuild
+      // on every relayout, so the value tracks each resize.
+      const percent = rootRect.width > 0 ? Math.round((group.x / rootRect.width) * 100) : 0;
+      handle.setAttribute('aria-valuemin', '0');
+      handle.setAttribute('aria-valuemax', '100');
+      handle.setAttribute('aria-valuenow', String(Math.min(100, Math.max(0, percent))));
       // tabindex=0 — make the handle keyboard-reachable. Arrow keys then
       // resize the underlying h/v dividers (handled in onIntersectionKeyDown).
       handle.setAttribute('tabindex', '0');

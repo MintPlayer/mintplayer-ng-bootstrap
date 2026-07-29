@@ -296,8 +296,10 @@ describe('mp-datatable column-resize separator value', () => {
     expect(handle().getAttribute('aria-orientation')).toBe('vertical');
     expect(handle().getAttribute('aria-label')).toBe('Resize column Name');
     expect(handle().getAttribute('aria-valuemin')).toBe('40');
-    // No measured width yet (jsdom reports a 0-width box) → no value to claim.
-    expect(handle().hasAttribute('aria-valuenow')).toBe(false);
+    // A focusable separator REQUIRES aria-valuenow (axe critical), so an
+    // unmeasured column backfills from the header's real width — which in
+    // jsdom's zero-layout world is 0.
+    expect(handle().getAttribute('aria-valuenow')).toBe('0');
 
     pressKey(handle(), 'ArrowRight');
     await el.updateComplete;

@@ -670,6 +670,14 @@ export class MpDatatable extends LitElement {
     // later rows clip with ellipsis instead of growing the column. See the
     // unified datatable PRD's "Resizable columns" section for the design.
     this.maybeMeasureInitialColumnWidths();
+    // A focusable separator REQUIRES aria-valuenow (axe critical). Columns
+    // without an explicit width render none — backfill from the header's
+    // real width once layout exists.
+    const bareHandles = this.renderRoot?.querySelectorAll<HTMLElement>('.resize-handle:not([aria-valuenow])') ?? [];
+    for (const handle of bareHandles) {
+      const th = handle.closest('th');
+      if (th) handle.setAttribute('aria-valuenow', String(Math.round(th.getBoundingClientRect().width)));
+    }
   }
 
   /**

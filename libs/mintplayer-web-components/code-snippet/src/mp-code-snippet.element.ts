@@ -254,7 +254,12 @@ export class MpCodeSnippet extends LitElement {
         @click=${this.handleCopy}
         aria-label="${this.copyLabel.replace('${language}', this.detectedLanguage)}"
       >Copy ${this.detectedLanguage}</button>
-      <pre part="pre"><code part="code" class="hljs">${unsafeHTML(this.highlighted)}</code></pre>
+      <pre
+        part="pre"
+        tabindex="0"
+        role="region"
+        aria-label="${this.detectedLanguage} code sample"
+      ><code part="code" class="hljs">${unsafeHTML(this.highlighted)}</code></pre>
       <div class="toast ${this.toastVisible ? 'visible' : ''}" part="toast" aria-hidden="${!this.toastVisible}">Copied!</div>
       <div class="sr-only" role="status" aria-live="polite">${this.toastVisible ? 'Copied to clipboard' : ''}</div>
     `;

@@ -216,12 +216,32 @@ export class MpTreeview extends LitElement {
 
   override connectedCallback(): void {
     super.connectedCallback();
-    if (!this.hasAttribute('role')) {
-      this.setAttribute('role', 'tree');
+    this.#syncTreeRole();
+  }
+
+  /**
+   * role=tree only while there are treeitems to own — a childless tree is
+   * invalid ARIA (axe aria-required-children, critical), and the empty state
+   * is real: lazy roots before first load, or a consumer-cleared tree.
+   * Never touches a consumer-set role (tracked by writing ours only when the
+   * attribute is absent or was last written by us).
+   */
+  #wroteRole = false;
+  #syncTreeRole(): void {
+    const hasItems = this._items.length > 0;
+    if (hasItems) {
+      if (!this.hasAttribute('role')) {
+        this.setAttribute('role', 'tree');
+        this.#wroteRole = true;
+      }
+    } else if (this.#wroteRole && this.getAttribute('role') === 'tree') {
+      this.removeAttribute('role');
+      this.#wroteRole = false;
     }
   }
 
   protected override updated(): void {
+    this.#syncTreeRole();
     // Live (PRD 11a): selection-mode can change at runtime.
     if (this._selectionMode === 'multiple') this.setAttribute('aria-multiselectable', 'true');
     else this.removeAttribute('aria-multiselectable');

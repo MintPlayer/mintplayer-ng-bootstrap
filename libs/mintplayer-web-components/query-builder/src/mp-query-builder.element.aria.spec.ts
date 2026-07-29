@@ -96,7 +96,7 @@ describe('mp-query-builder ARIA structure', () => {
     document.body.innerHTML = '';
   });
 
-  it('gives every group role="group", a logic-derived name and a 1-based aria-level', async () => {
+  it('gives every group role="group" and a logic-derived name carrying nesting depth', async () => {
     const nested: Expression = {
       kind: 'group',
       id: 'g1',
@@ -115,9 +115,10 @@ describe('mp-query-builder ARIA structure', () => {
     const groups = deepQueryAll(el, '.qb-group');
     expect(groups.length).toBe(2);
     expect(groups.map((g) => g.getAttribute('role'))).toEqual(['group', 'group']);
-    expect(groups.map((g) => g.getAttribute('aria-label'))).toEqual(['AND group', 'OR group']);
-    // aria-level is 1-based, so the outermost group is level 1, not 0.
-    expect(groups.map((g) => g.getAttribute('aria-level'))).toEqual(['1', '2']);
+    // Depth rides in the NAME: aria-level is not allowed on role=group
+    // (axe aria-allowed-attr), so nested groups append ", level N".
+    expect(groups.map((g) => g.getAttribute('aria-label'))).toEqual(['AND group', 'OR group, level 2']);
+    expect(groups.every((g) => !g.hasAttribute('aria-level'))).toBe(true);
   });
 
   it('renames the group when its logic changes, in both directions', async () => {
