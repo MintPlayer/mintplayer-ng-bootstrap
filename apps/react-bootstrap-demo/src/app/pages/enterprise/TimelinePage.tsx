@@ -133,6 +133,7 @@ export function TimelinePage() {
           <div className="control-field">
             <label className="form-label mb-1">Orientation</label>
             <BsSelect
+              aria-label="Orientation"
               value={orientation}
               options={ORIENTATION_OPTIONS}
               onValueChange={(e) => setOrientation(e.detail.value as TimelineOrientation)}
@@ -142,6 +143,7 @@ export function TimelinePage() {
           <div className="control-field">
             <label className="form-label mb-1">Alignment</label>
             <BsSelect
+              aria-label="Alignment"
               value={align}
               options={ALIGN_OPTIONS}
               onValueChange={(e) => setAlign(e.detail.value as TimelineAlign)}
@@ -151,6 +153,7 @@ export function TimelinePage() {
           <div className="control-field">
             <label className="form-label mb-1">Selectable</label>
             <BsSelect
+              aria-label="Selectable"
               value={selectable}
               options={SELECTABLE_OPTIONS}
               onValueChange={(e) => setSelectable(e.detail.value as TimelineSelectable)}

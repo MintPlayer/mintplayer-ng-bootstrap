@@ -25,7 +25,7 @@ const selected = computed(() =>
 
 const size = ref<'sm' | 'md' | 'lg'>('md');
 
-const SOURCE = `<BsSelect v-model="selectedId">
+const SOURCE = `<BsSelect v-model="selectedId" aria-label="Dish">
   <option value="">Choose a dish</option>
   <option v-for="d in DISHES" :key="d.id" :value="String(d.id)">{{ d.name }}</option>
 </BsSelect>`;
@@ -43,7 +43,7 @@ const SOURCE = `<BsSelect v-model="selectedId">
 
     <section>
       <h2>Basic usage</h2>
-      <BsSelect v-model="selectedId">
+      <BsSelect v-model="selectedId" aria-label="Dish">
         <option value="">Choose a dish</option>
         <option v-for="d in DISHES" :key="d.id" :value="String(d.id)">{{ d.name }}</option>
       </BsSelect>
