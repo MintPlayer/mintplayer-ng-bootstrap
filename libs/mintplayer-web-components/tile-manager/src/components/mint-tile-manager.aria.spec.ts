@@ -210,3 +210,64 @@ describe('mint-tile-manager — move mode trigger (Space → M retrofit)', () =>
     expect(el.tiles[0].position.colStart).toBe(2);
   });
 });
+
+describe('mint-tile-manager — Escape genuinely reverts move mode (4.10 Critical)', () => {
+  let el: MintTileManagerElement;
+  afterEach(() => el?.remove());
+
+  const kd = (target: HTMLElement, key: string) =>
+    target.dispatchEvent(new KeyboardEvent('keydown', { key, bubbles: true, cancelable: true }));
+
+  it('Escape restores the layout captured at move-mode entry and emits the restore', async () => {
+    el = await mount((m) => {
+      m.columnCount = 2;
+      m.tiles = fourTiles.map((t) => ({ ...t, position: { ...t.position } }));
+    });
+    const layouts: unknown[] = [];
+    el.addEventListener('tilelayoutchange', (e) => layouts.push((e as CustomEvent).detail));
+
+    const a = el.shadowRoot!.querySelector<HTMLElement>('.tile[data-tile-id="a"]')!;
+    a.focus();
+    kd(a, 'm');
+    kd(a, 'ArrowRight');
+    await (el as unknown as { updateComplete: Promise<void> }).updateComplete;
+    expect(el.tiles[0].position.colStart).toBe(2); // step already mutated
+
+    kd(a, 'Escape');
+    await (el as unknown as { updateComplete: Promise<void> }).updateComplete;
+
+    expect(el.tiles[0].position.colStart).toBe(1); // reverted for real
+    // Consumers saw the intermediate change AND the restore.
+    expect(layouts.length).toBe(2);
+    const restored = layouts[1] as { id: string; position: { colStart: number } }[];
+    expect(restored.find((p) => p.id === 'a')!.position.colStart).toBe(1);
+  });
+
+  it('Enter commits — the stepped layout survives', async () => {
+    el = await mount((m) => {
+      m.columnCount = 2;
+      m.tiles = fourTiles.map((t) => ({ ...t, position: { ...t.position } }));
+    });
+    const a = el.shadowRoot!.querySelector<HTMLElement>('.tile[data-tile-id="a"]')!;
+    a.focus();
+    kd(a, 'm');
+    kd(a, 'ArrowRight');
+    kd(a, 'Enter');
+    await (el as unknown as { updateComplete: Promise<void> }).updateComplete;
+    expect(el.tiles[0].position.colStart).toBe(2);
+  });
+
+  it('the cancel announcement says reverted', async () => {
+    el = await mount((m) => {
+      m.columnCount = 2;
+      m.tiles = fourTiles.map((t) => ({ ...t, position: { ...t.position } }));
+    });
+    const a = el.shadowRoot!.querySelector<HTMLElement>('.tile[data-tile-id="a"]')!;
+    a.focus();
+    kd(a, 'm');
+    kd(a, 'Escape');
+    await (el as unknown as { updateComplete: Promise<void> }).updateComplete;
+    const live = el.shadowRoot!.querySelector('[aria-live], [role="status"]');
+    expect(live?.textContent).toContain('reverted');
+  });
+});

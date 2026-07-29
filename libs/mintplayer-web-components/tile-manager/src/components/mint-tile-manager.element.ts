@@ -59,7 +59,10 @@ type GestureState =
 
 type KeyboardMode =
   | { kind: 'idle' }
-  | { kind: 'move'; tileId: string }
+  // entryTiles: the layout at move-mode entry, so Escape can genuinely revert —
+  // every arrow step mutates this.tiles immediately, and without a snapshot the
+  // announced "Escape to cancel" was a promise the code could not keep.
+  | { kind: 'move'; tileId: string; entryTiles: MintTile[] }
   | { kind: 'resize'; tileId: string };
 
 const TOUCH_LONG_PRESS_MS = 600;
@@ -873,7 +876,11 @@ export class MintTileManagerElement extends LitElement {
       if (event.key === 'm' || event.key === 'M') {
         if (tile.disableMove && tile.disableResize) return;
         event.preventDefault();
-        this.keyboardState = { kind: 'move', tileId: tile.id };
+        this.keyboardState = {
+          kind: 'move',
+          tileId: tile.id,
+          entryTiles: this.tiles.map((t) => ({ ...t, position: { ...t.position } })),
+        };
         this.liveAnnouncer.announce(
           'Move mode enabled. Use arrow keys to move, Shift with arrow keys to resize, Enter to commit, Escape to cancel.',
         );
@@ -887,8 +894,23 @@ export class MintTileManagerElement extends LitElement {
 
     if (event.key === 'Escape' || event.key === 'Enter') {
       event.preventDefault();
+      const entryTiles = km.kind === 'move' ? km.entryTiles : null;
       this.keyboardState = { kind: 'idle' };
-      this.liveAnnouncer.announce(event.key === 'Enter' ? 'Move committed.' : 'Move cancelled.');
+      if (event.key === 'Escape' && entryTiles) {
+        // Revert to the move-mode entry layout and tell consumers, so the
+        // announced cancel is real end to end (they saw every intermediate
+        // tilelayoutchange and must see the restore too).
+        this.tiles = entryTiles;
+        this.requestUpdate();
+        this.dispatchEvent(
+          new CustomEvent<TileLayoutSnapshot>('tilelayoutchange', {
+            detail: this.cloneSnapshot(entryTiles.map((t) => ({ id: t.id, position: t.position }))),
+            bubbles: false,
+            composed: true,
+          }),
+        );
+      }
+      this.liveAnnouncer.announce(event.key === 'Enter' ? 'Move committed.' : 'Move cancelled and reverted.');
       return;
     }
 

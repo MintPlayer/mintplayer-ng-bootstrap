@@ -223,3 +223,43 @@ describe('mint-dock-manager — keyboard pane move (M to enter, T/R/B/L/F to com
     expect(internals.paneMoveMode).not.toBeNull();
   });
 });
+
+describe('mint-dock-manager — keyboard move announces the actual outcome (4.10)', () => {
+  let dock: MintDockManagerElement;
+  beforeEach(async () => {
+    dock = document.createElement('mint-dock-manager') as MintDockManagerElement;
+    document.body.appendChild(dock);
+    dock.getBoundingClientRect = () => makeRect(0, 0, HOST_WIDTH, HOST_HEIGHT);
+    dock.layout = {
+      root: { kind: 'stack', panes: ['Alpha', 'Beta'], activePane: 'Alpha' },
+      titles: { Alpha: 'Alpha', Beta: 'Beta' },
+      floating: [],
+    } as never;
+    await (dock as unknown as { updateComplete: Promise<void> }).updateComplete;
+    await nextRaf();
+  });
+  afterEach(() => dock.remove());
+
+  interface MoveInternals {
+    paneMoveMode: { paneName: string; sourcePath: unknown } | null;
+    commitPaneMoveToZone: (zone: string) => void;
+  }
+  const live = () => dock.shadowRoot!.querySelector('[role="status"]')!.textContent ?? '';
+
+  it('announces success only when handleDrop actually committed', async () => {
+    const internals = dock as unknown as MoveInternals;
+    internals.paneMoveMode = { paneName: 'Alpha', sourcePath: { type: 'docked', segments: [] } };
+    internals.commitPaneMoveToZone('right');
+    await (dock as unknown as { updateComplete: Promise<void> }).updateComplete;
+    expect(live()).toContain('docked to right');
+  });
+
+  it('announces failure when the source path no longer resolves', async () => {
+    const internals = dock as unknown as MoveInternals;
+    internals.paneMoveMode = { paneName: 'Alpha', sourcePath: { type: 'floating', index: 99, segments: [] } };
+    internals.commitPaneMoveToZone('right');
+    await (dock as unknown as { updateComplete: Promise<void> }).updateComplete;
+    expect(live()).toContain('Move failed');
+    expect(live()).not.toContain('docked to');
+  });
+});

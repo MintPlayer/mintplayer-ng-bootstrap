@@ -4107,10 +4107,15 @@ export class MintDockManagerElement extends LitElement {
     // Source stack is also the target stack — handleDrop creates a sibling
     // split with the moved pane on the chosen side.
     this.handleDrop(move.sourcePath, zone);
+    // handleDrop marks dropHandled on every success path and returns silently
+    // on its failure paths — announce what actually happened, not the intent.
+    const succeeded = this.dragState?.dropHandled === true;
     this.dragState = null;
     this.paneMoveMode = null;
     const title = this.titles[move.paneName] ?? move.paneName;
-    this.liveAnnouncer.announce(`Pane ${title} docked to ${zone}.`);
+    this.liveAnnouncer.announce(
+      succeeded ? `Pane ${title} docked to ${zone}.` : `Move failed. Pane ${title} was not moved.`,
+    );
   }
 
   private commitPaneMoveAsFloat(): void {
