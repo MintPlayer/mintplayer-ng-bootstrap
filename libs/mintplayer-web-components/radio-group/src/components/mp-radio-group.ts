@@ -95,6 +95,16 @@ export class MpRadioGroup extends FormAssociatedMixin(LitElement) {
     );
   }
 
+  /** Submission key, reflected to the attribute ElementInternals submits
+   *  under. A property accessor so typed wrappers (@lit/react) accept it. */
+  get name(): string | null {
+    return this.getAttribute('name');
+  }
+  set name(value: string | null) {
+    if (value === null) this.removeAttribute('name');
+    else this.setAttribute('name', value);
+  }
+
   get value(): string | null {
     return this.#radios().find((r) => r.checked)?.value ?? null;
   }
