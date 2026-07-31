@@ -133,6 +133,10 @@ export class MpScheduler extends LitElement {
     // Stop now indicator timer
     this.stopNowIndicatorTimer();
 
+    // Stop watching header width
+    this.headerResizeObserver?.disconnect();
+    this.headerResizeObserver = null;
+
     // Cancel any pending RAF
     if (this.pendingDragUpdate !== null) {
       cancelAnimationFrame(this.pendingDragUpdate);
@@ -371,6 +375,7 @@ export class MpScheduler extends LitElement {
     this.contentContainer = this.shadowRoot!.querySelector('.scheduler-content') as HTMLElement;
 
     this.populateHeader(headerEl);
+    this.observeHeaderWidth(headerEl);
 
     // Construct InputHandler now that shadowRoot is available, then attach.
     this.inputHandler = new InputHandler(
@@ -465,12 +470,16 @@ export class MpScheduler extends LitElement {
   }
 
   private updateTitle(titleEl?: HTMLElement): void {
-    const title = titleEl ?? this.shadowRoot!.querySelector('.scheduler-title');
+    const title = (titleEl ?? this.shadowRoot!.querySelector('.scheduler-title')) as HTMLElement | null;
     if (!title) return;
 
     const state = this.stateManager.getState();
     const { date, view, options } = state;
 
+    // The full title (year included) renders in every view at every width:
+    // the narrow layout (D9) gives the title its own full-width centered
+    // row, so no compact variant is needed — nowrap + ellipsis is the only
+    // last-resort guard.
     let titleText = '';
     switch (view) {
       case 'year':
@@ -507,6 +516,34 @@ export class MpScheduler extends LitElement {
     }
 
     title.textContent = titleText;
+  }
+
+  /** Header width below which the layout wraps and the title compacts (D9). */
+  private static readonly NARROW_HEADER_WIDTH = 560;
+
+  private headerResizeObserver: ResizeObserver | null = null;
+  private headerIsNarrow = false;
+
+  /**
+   * Component-width (not viewport) driven narrow mode — the scheduler can sit
+   * in a pane far narrower than the screen (splitter/dock). CSS keys the
+   * wrapped layout off [data-narrow]; the title text swap needs JS anyway.
+   */
+  private observeHeaderWidth(header: HTMLElement): void {
+    if (typeof ResizeObserver === 'undefined') return;
+    this.headerResizeObserver = new ResizeObserver((entries) => {
+      const width = entries[0]?.contentRect.width ?? header.clientWidth;
+      const narrow = width < MpScheduler.NARROW_HEADER_WIDTH;
+      if (narrow === this.headerIsNarrow) return;
+      this.headerIsNarrow = narrow;
+      // Mutating layout inside the RO callback (wrap changes the header's own
+      // size) trips the browser's "undelivered notifications" loop guard —
+      // apply one frame later instead.
+      requestAnimationFrame(() => {
+        header.toggleAttribute('data-narrow', narrow);
+      });
+    });
+    this.headerResizeObserver.observe(header);
   }
 
   private renderView(): void {

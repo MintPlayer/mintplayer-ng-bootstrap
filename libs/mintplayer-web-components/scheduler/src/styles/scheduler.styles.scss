@@ -47,15 +47,42 @@
   background: var(--bs-body-bg);
 }
 
-/* Header */
+/* Header — wraps as GROUPS when narrow ([data-narrow], set by a
+   ResizeObserver on component width): nav + view switcher share the first
+   row(s), the title takes a full-width row, so no control ever leaves reach
+   and the title never word-wraps (PRD D9). */
 .scheduler-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 8px;
   padding: 8px 12px;
   background: var(--scheduler-header-bg);
   border-bottom: 1px solid var(--scheduler-border-color);
   flex-shrink: 0;
+}
+
+.scheduler-header[data-narrow] {
+  justify-content: center;
+}
+
+.scheduler-header[data-narrow] .scheduler-nav {
+  order: 1;
+}
+
+.scheduler-header[data-narrow] .scheduler-view-switcher {
+  order: 2;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.scheduler-header[data-narrow] .scheduler-title {
+  order: 3;
+  flex-basis: 100%;
+  text-align: center;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .scheduler-nav {
@@ -80,6 +107,9 @@
 .scheduler-title {
   font-size: 18px;
   font-weight: 600;
+  /* Never word-wrap the period title — multi-line titles distorted the whole
+     header on phones; narrow mode compacts the text instead. */
+  white-space: nowrap;
 }
 
 .scheduler-view-switcher {
