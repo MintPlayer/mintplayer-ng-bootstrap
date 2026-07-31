@@ -9,7 +9,9 @@ import {
   isResource,
   isResourceGroup,
   FlattenedResource,
+  formatMessage,
   getContrastColor,
+  resolveMessages,
 } from '@mintplayer/web-components/scheduler-core';
 import { BaseView, formatEventAriaLabel, isSlotInSelection } from './base-view';
 import { SchedulerState } from '../state/scheduler-state';
@@ -35,7 +37,9 @@ export class TimelineView extends BaseView {
     timeline.setAttribute('role', 'grid');
     timeline.setAttribute(
       'aria-label',
-      `Resource timeline for week starting ${dateService.formatDateWithWeekday(days[0], options.locale)}`,
+      formatMessage(resolveMessages(options.messages).timelineGridLabel, {
+        date: dateService.formatDateWithWeekday(days[0], options.locale),
+      }),
     );
     timeline.setAttribute('aria-rowcount', String(visibleRowCount));
     // Keymap discoverability + Shift+Arrow range selection (FR-9).
@@ -50,7 +54,7 @@ export class TimelineView extends BaseView {
     // Resource column header (top-left corner)
     const resourceHeader = this.createElement('div', 'scheduler-resource-header');
     resourceHeader.setAttribute('role', 'columnheader');
-    resourceHeader.textContent = 'Resources';
+    resourceHeader.textContent = resolveMessages(this.state.options.messages).resourcesHeader;
     header.appendChild(resourceHeader);
 
     // Time slots header
@@ -185,7 +189,13 @@ export class TimelineView extends BaseView {
       const isCollapsed = this.state.collapsedGroups.has(flat.item.id);
       toggle.textContent = isCollapsed ? '▶' : '▼';
       toggle.setAttribute('aria-expanded', String(!isCollapsed));
-      toggle.setAttribute('aria-label', `${isCollapsed ? 'Expand' : 'Collapse'} ${flat.item.title}`);
+      toggle.setAttribute(
+        'aria-label',
+        formatMessage(
+          resolveMessages(this.state.options.messages)[isCollapsed ? 'expandGroup' : 'collapseGroup'],
+          { title: flat.item.title },
+        ),
+      );
       this.setData(toggle, { groupId: flat.item.id });
       resourceCell.appendChild(toggle);
     }
@@ -331,7 +341,7 @@ export class TimelineView extends BaseView {
     eventEl.setAttribute('tabindex', '0');
     eventEl.setAttribute(
       'aria-label',
-      formatEventAriaLabel(event, resourceTitle, this.state.options.timeFormat),
+      formatEventAriaLabel(event, resourceTitle, this.state.options),
     );
     // Selection state on the button token that supports it (see week-view).
     eventEl.setAttribute('aria-pressed', isSelected ? 'true' : 'false');

@@ -217,7 +217,7 @@ export class DayView extends BaseView {
     eventEl.setAttribute('tabindex', '0');
     eventEl.setAttribute(
       'aria-label',
-      formatEventAriaLabel(event, null, this.state.options.timeFormat),
+      formatEventAriaLabel(event, null, this.state.options),
     );
     // Selection state on the button token that supports it (see week-view).
     eventEl.setAttribute('aria-pressed', isSelected ? 'true' : 'false');

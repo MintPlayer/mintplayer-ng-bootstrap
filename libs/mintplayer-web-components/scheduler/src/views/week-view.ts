@@ -294,7 +294,7 @@ export class WeekView extends BaseView {
     eventEl.setAttribute('tabindex', '0');
     eventEl.setAttribute(
       'aria-label',
-      formatEventAriaLabel(event, null, this.state.options.timeFormat),
+      formatEventAriaLabel(event, null, this.state.options),
     );
     // aria-pressed is the button's SELECTION state, always written (a missing
     // token reads as not-a-toggle). aria-current was the wrong token for

@@ -206,6 +206,39 @@ describe('mp-scheduler — keymap instructions (FR-9)', () => {
   });
 });
 
+describe('mp-scheduler — options.messages localization (FR-12)', () => {
+  let el: MpScheduler;
+  afterEach(() => el?.remove());
+
+  it('overridden messages land in labels, instructions and grid label', async () => {
+    el = document.createElement('mp-scheduler') as MpScheduler;
+    document.body.appendChild(el);
+    (el as unknown as { options: unknown }).options = {
+      messages: {
+        previousPeriod: 'Vorige periode',
+        gridInstructions: 'Aangepaste rasterinstructies',
+        timelineGridLabel: 'Tijdlijn vanaf {date}',
+        resourcesHeader: 'Middelen',
+      },
+    };
+    (el as unknown as { resources: unknown[] }).resources = [
+      { id: 'alice', title: 'Alice', events: [] },
+    ];
+    (el as unknown as { date: Date }).date = new Date(2026, 4, 11);
+    el.setAttribute('view', 'timeline');
+    await (el as unknown as { updateComplete: Promise<void> }).updateComplete;
+    await nextRaf();
+
+    const prev = el.shadowRoot!.querySelector('.scheduler-nav button')!;
+    expect(prev.getAttribute('aria-label')).toBe('Vorige periode');
+    expect(el.shadowRoot!.getElementById('scheduler-kbd-grid')!.textContent)
+      .toContain('Aangepaste rasterinstructies');
+    const grid = el.shadowRoot!.querySelector('.scheduler-timeline')!;
+    expect(grid.getAttribute('aria-label')).toMatch(/^Tijdlijn vanaf /);
+    expect(el.shadowRoot!.querySelector('.scheduler-resource-header')!.textContent).toBe('Middelen');
+  });
+});
+
 describe('mp-scheduler — month/year focus is not selection (audit MAJOR)', () => {
   let el: MpScheduler;
   afterEach(() => el?.remove());

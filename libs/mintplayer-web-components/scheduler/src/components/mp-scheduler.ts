@@ -6,8 +6,11 @@ import {
   Resource,
   ResourceGroup,
   SchedulerOptions,
+  SchedulerMessages,
   TimeSlot,
   dateService,
+  formatMessage,
+  resolveMessages,
   resourceService,
   isResource,
 } from '@mintplayer/web-components/scheduler-core';
@@ -270,7 +273,19 @@ export class MpScheduler extends LitElement {
 
   changeView(view: ViewType): void {
     this.stateManager.setView(view);
-    this.liveAnnouncer.announce(`View changed to ${view}.`);
+    this.liveAnnouncer.announce(this.msg('viewChanged', { view: this.viewLabel(view) }));
+  }
+
+  /** Localized display name of a view (also the view-switcher button text). */
+  private viewLabel(view: ViewType): string {
+    const keys: Record<ViewType, keyof SchedulerMessages> = {
+      year: 'viewYear',
+      month: 'viewMonth',
+      week: 'viewWeek',
+      day: 'viewDay',
+      timeline: 'viewTimeline',
+    };
+    return this.msg(keys[view]);
   }
 
   /**
@@ -285,18 +300,18 @@ export class MpScheduler extends LitElement {
 
   addEvent(event: SchedulerEvent): void {
     this.stateManager.addEvent(event);
-    this.liveAnnouncer.announce(`Event ${event.title} added.`);
+    this.liveAnnouncer.announce(this.msg('eventAdded', { title: event.title }));
   }
 
   updateEvent(event: SchedulerEvent): void {
     this.stateManager.updateEvent(event);
-    this.liveAnnouncer.announce(`Event ${event.title} updated.`);
+    this.liveAnnouncer.announce(this.msg('eventUpdated', { title: event.title }));
   }
 
   removeEvent(eventId: string): void {
     const ev = this.getEventById(eventId);
     this.stateManager.removeEvent(eventId);
-    if (ev) this.liveAnnouncer.announce(`Event ${ev.title} removed.`);
+    if (ev) this.liveAnnouncer.announce(this.msg('eventRemoved', { title: ev.title }));
   }
 
   getEventById(eventId: string): SchedulerEvent | null {
@@ -317,6 +332,20 @@ export class MpScheduler extends LitElement {
     this.currentView?.update(this.stateManager.getState());
   }
 
+  /**
+   * Localized string lookup: options.messages overrides merged onto the
+   * English defaults, with {placeholder} interpolation.
+   */
+  private msg(
+    key: keyof SchedulerMessages,
+    params?: Record<string, string | number>,
+  ): string {
+    return formatMessage(
+      resolveMessages(this.stateManager.getState().options.messages)[key],
+      params,
+    );
+  }
+
   // ============================================
   // Rendering
   // ============================================
@@ -331,16 +360,8 @@ export class MpScheduler extends LitElement {
         <header class="scheduler-header"></header>
         <div class="scheduler-content"></div>
       </div>
-      <div id="scheduler-kbd-grid" class="visually-hidden">
-        Use the arrow keys to move between cells. Hold Shift with the arrow
-        keys to extend the selection, and press Enter to request a new event
-        for the selection. Page Up and Page Down change the period. Alt with
-        T, Y, M, W or D switches to today, year, month, week or day view.
-      </div>
-      <div id="scheduler-kbd-event" class="visually-hidden">
-        Press Enter or M to move or resize the event with the arrow keys.
-        Delete removes the event. Left and Right arrows move between events.
-      </div>
+      <div id="scheduler-kbd-grid" class="visually-hidden">${this.msg('gridInstructions')}</div>
+      <div id="scheduler-kbd-event" class="visually-hidden">${this.msg('eventInstructions')}</div>
       ${this.liveAnnouncer.template()}
     `;
   }
@@ -383,26 +404,26 @@ export class MpScheduler extends LitElement {
     // Navigation
     const nav = document.createElement('nav');
     nav.className = 'scheduler-nav';
-    nav.setAttribute('aria-label', 'Scheduler navigation');
+    nav.setAttribute('aria-label', this.msg('navLabel'));
 
     const prevBtn = document.createElement('button');
     prevBtn.type = 'button';
     prevBtn.textContent = '‹';
-    prevBtn.setAttribute('aria-label', 'Previous period');
-    prevBtn.title = 'Previous';
+    prevBtn.setAttribute('aria-label', this.msg('previousPeriod'));
+    prevBtn.title = this.msg('previousPeriod');
     prevBtn.addEventListener('click', () => this.prev());
 
     const nextBtn = document.createElement('button');
     nextBtn.type = 'button';
     nextBtn.textContent = '›';
-    nextBtn.setAttribute('aria-label', 'Next period');
-    nextBtn.title = 'Next';
+    nextBtn.setAttribute('aria-label', this.msg('nextPeriod'));
+    nextBtn.title = this.msg('nextPeriod');
     nextBtn.addEventListener('click', () => this.next());
 
     const todayBtn = document.createElement('button');
     todayBtn.type = 'button';
-    todayBtn.textContent = 'Today';
-    todayBtn.setAttribute('aria-label', 'Jump to today');
+    todayBtn.textContent = this.msg('today');
+    todayBtn.setAttribute('aria-label', this.msg('jumpToToday'));
     todayBtn.addEventListener('click', () => this.today());
 
     nav.appendChild(prevBtn);
@@ -420,20 +441,14 @@ export class MpScheduler extends LitElement {
     const viewSwitcher = document.createElement('div');
     viewSwitcher.className = 'scheduler-view-switcher';
     viewSwitcher.setAttribute('role', 'group');
-    viewSwitcher.setAttribute('aria-label', 'Switch view');
+    viewSwitcher.setAttribute('aria-label', this.msg('switchView'));
 
-    const views: { key: ViewType; label: string }[] = [
-      { key: 'year', label: 'Year' },
-      { key: 'month', label: 'Month' },
-      { key: 'week', label: 'Week' },
-      { key: 'day', label: 'Day' },
-      { key: 'timeline', label: 'Timeline' },
-    ];
+    const views: ViewType[] = ['year', 'month', 'week', 'day', 'timeline'];
 
-    for (const { key, label } of views) {
+    for (const key of views) {
       const btn = document.createElement('button');
       btn.type = 'button';
-      btn.textContent = label;
+      btn.textContent = this.viewLabel(key);
       btn.dataset['view'] = key;
       const isActive = key === this.view;
       btn.setAttribute('aria-pressed', String(isActive));
@@ -536,7 +551,7 @@ export class MpScheduler extends LitElement {
     // say both edges so a slow fetch has a beginning and an end.
     if (state.isLoading !== this.previousIsLoading) {
       if (this.previousIsLoading !== null) {
-        this.liveAnnouncer.announce(state.isLoading ? 'Loading events.' : 'Events loaded.');
+        this.liveAnnouncer.announce(this.msg(state.isLoading ? 'loadingEvents' : 'eventsLoaded'));
       }
       this.previousIsLoading = state.isLoading;
     }
@@ -1303,11 +1318,11 @@ export class MpScheduler extends LitElement {
       this.stateManager.extendSelection(cell, resourceId);
       this.stateManager.setFocusedCell(cell, resourceId, false);
       const newState = this.stateManager.getState();
-      this.liveAnnouncer.announce(formatSelectionAnnouncement(newState, slotDuration, state.options.timeFormat));
+      this.liveAnnouncer.announce(formatSelectionAnnouncement(newState, slotDuration));
     } else {
       this.stateManager.setFocusedCell(cell, resourceId, true);
       const resourceTitle = this.getResourceTitle(resourceId);
-      this.liveAnnouncer.announce(formatCellAnnouncement(cell, state.options.timeFormat, resourceTitle));
+      this.liveAnnouncer.announce(formatCellAnnouncement(cell, state.options, resourceTitle));
     }
     this.scrollAndFocusCell(cell, resourceId);
   }
@@ -1425,9 +1440,10 @@ export class MpScheduler extends LitElement {
       originalEvent,
       resourceId,
     );
-    this.liveAnnouncer.announce(
-      `Selection committed: ${dateService.formatTime(start, state.options.timeFormat)}–${dateService.formatTime(end, state.options.timeFormat)}.`,
-    );
+    this.liveAnnouncer.announce(this.msg('selectionCommitted', {
+      start: dateService.formatTime(start, state.options.timeFormat),
+      end: dateService.formatTime(end, state.options.timeFormat),
+    }));
   }
 
   /**
@@ -1471,7 +1487,7 @@ export class MpScheduler extends LitElement {
     });
     const minutes = this.minutesPerSlot();
     this.liveAnnouncer.announce(
-      `Move mode for ${event.title}. Arrow keys nudge by ${minutes} minutes; Shift with arrow keys resizes the end edge; Alt with Shift resizes the start edge; Enter commits, Escape cancels.`,
+      this.msg('moveModeEntered', { title: event.title, minutes }),
     );
     // setState above tore down and rebuilt the focused event element. Re-focus
     // the new node so subsequent arrow keystrokes still reach our keydown
@@ -1572,7 +1588,7 @@ export class MpScheduler extends LitElement {
     this.keyboardMove.workingStart = newStart;
     this.keyboardMove.workingEnd = newEnd;
     this.applyKeyboardMovePreview();
-    this.liveAnnouncer.announce(formatMoveAnnouncement(newStart, newEnd, this.stateManager.getState().options.timeFormat));
+    this.liveAnnouncer.announce(formatMoveAnnouncement(newStart, newEnd, this.stateManager.getState().options));
   }
 
   /** Walk to the next/previous resource (timeline only). Updates the preview's resourceId. */
@@ -1583,7 +1599,7 @@ export class MpScheduler extends LitElement {
     this.keyboardMove.workingResourceId = next;
     this.applyKeyboardMovePreview();
     const title = this.getResourceTitle(next) ?? next;
-    this.liveAnnouncer.announce(`Moved to resource ${title}.`);
+    this.liveAnnouncer.announce(this.msg('movedToResource', { resource: title }));
   }
 
   /**
@@ -1605,7 +1621,7 @@ export class MpScheduler extends LitElement {
     this.keyboardMove.workingStart = newStart;
     this.keyboardMove.workingEnd = newEnd;
     this.applyKeyboardMovePreview();
-    this.liveAnnouncer.announce(formatResizeAnnouncement(newStart, newEnd, edge, this.stateManager.getState().options.timeFormat));
+    this.liveAnnouncer.announce(formatResizeAnnouncement(newStart, newEnd, edge, this.stateManager.getState().options));
   }
 
   /** Mirror keyboardMove.working* into state.previewEvent so views render the destination,
@@ -1654,7 +1670,7 @@ export class MpScheduler extends LitElement {
       };
       this.stateManager.updateEvent(updated);
       this.eventEmitter.emitEventUpdate(updated, original, new CustomEvent('keyboard-move'));
-      this.liveAnnouncer.announce('Move committed.');
+      this.liveAnnouncer.announce(this.msg('moveCommitted'));
     }
     this.keyboardMove = null;
     this.stateManager.setState({ keyboardMoveEventId: null, previewEvent: null });
@@ -1670,7 +1686,7 @@ export class MpScheduler extends LitElement {
     const id = this.keyboardMove?.eventId ?? null;
     this.keyboardMove = null;
     this.stateManager.setState({ keyboardMoveEventId: null, previewEvent: null });
-    this.liveAnnouncer.announce('Move cancelled.');
+    this.liveAnnouncer.announce(this.msg('moveCancelled'));
     if (id) {
       requestAnimationFrame(() => {
         const sel = `[data-event-id="${this.cssEscape(id)}"]`;

@@ -1,21 +1,33 @@
-import { dateService, type SchedulerEvent, type SchedulerEventPart, type TimeSlot } from '@mintplayer/web-components/scheduler-core';
+import {
+  dateService,
+  formatMessage,
+  resolveMessages,
+  type SchedulerEvent,
+  type SchedulerEventPart,
+  type SchedulerOptions,
+  type TimeSlot,
+} from '@mintplayer/web-components/scheduler-core';
 import { SchedulerState } from '../state/scheduler-state';
 
 /**
  * Build the descriptive aria-label for an event block. Used by every view.
  * Format: "{title}, {start}–{end} on {resource}". Resource is omitted when
  * the event has no resource or the caller doesn't have it (week/day views).
+ * Strings and date formatting follow options.messages / options.locale.
  */
 export function formatEventAriaLabel(
   event: SchedulerEvent,
   resourceTitle: string | null,
-  timeFormat: '12h' | '24h' = '24h',
+  options: SchedulerOptions,
 ): string {
+  const timeFormat = options.timeFormat ?? '24h';
   const start = dateService.formatTime(event.start, timeFormat);
   const end = dateService.formatTime(event.end, timeFormat);
-  const day = event.start.toLocaleDateString(undefined, { weekday: 'long', month: 'short', day: 'numeric' });
+  const day = event.start.toLocaleDateString(options.locale, { weekday: 'long', month: 'short', day: 'numeric' });
   const parts = [`${event.title}, ${start}–${end}`, day];
-  if (resourceTitle) parts.push(`on ${resourceTitle}`);
+  if (resourceTitle) {
+    parts.push(formatMessage(resolveMessages(options.messages).eventOnResource, { resource: resourceTitle }));
+  }
   return parts.join(', ');
 }
 
@@ -62,15 +74,15 @@ export function isSlotInSelection(
  */
 export function formatCellAnnouncement(
   slot: TimeSlot,
-  timeFormat: '12h' | '24h' = '24h',
+  options: SchedulerOptions,
   resourceTitle: string | null = null,
 ): string {
-  const day = slot.start.toLocaleDateString(undefined, {
+  const day = slot.start.toLocaleDateString(options.locale, {
     weekday: 'long',
     month: 'short',
     day: 'numeric',
   });
-  const time = dateService.formatTime(slot.start, timeFormat);
+  const time = dateService.formatTime(slot.start, options.timeFormat ?? '24h');
   const parts = [`${day}, ${time}`];
   if (resourceTitle) parts.push(resourceTitle);
   return parts.join(', ');
@@ -83,15 +95,23 @@ export function formatCellAnnouncement(
 export function formatSelectionAnnouncement(
   state: SchedulerState,
   slotDuration: number,
-  timeFormat: '12h' | '24h' = '24h',
 ): string {
   const range = selectionRange(state);
   if (!range) return '';
-  const startStr = `${dateService.formatTime(range.start, timeFormat)} ${range.start.toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric' })}`;
-  const endStr = `${dateService.formatTime(range.end, timeFormat)} ${range.end.toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric' })}`;
+  const { options } = state;
+  const timeFormat = options.timeFormat ?? '24h';
+  const dayFmt = { weekday: 'short', month: 'short', day: 'numeric' } as const;
+  const startStr = `${dateService.formatTime(range.start, timeFormat)} ${range.start.toLocaleDateString(options.locale, dayFmt)}`;
+  const endStr = `${dateService.formatTime(range.end, timeFormat)} ${range.end.toLocaleDateString(options.locale, dayFmt)}`;
   const slotMs = slotDuration * 1000;
   const slotCount = Math.max(1, Math.round((range.end.getTime() - range.start.getTime()) / slotMs));
-  return `Selection: ${startStr} to ${endStr}, ${slotCount} slot${slotCount === 1 ? '' : 's'}`;
+  const messages = resolveMessages(options.messages);
+  return formatMessage(messages.selection, {
+    start: startStr,
+    end: endStr,
+    count: slotCount,
+    slots: slotCount === 1 ? messages.slotSingular : messages.slotPlural,
+  });
 }
 
 /**
@@ -100,10 +120,15 @@ export function formatSelectionAnnouncement(
 export function formatMoveAnnouncement(
   start: Date,
   end: Date,
-  timeFormat: '12h' | '24h' = '24h',
+  options: SchedulerOptions,
 ): string {
-  const day = start.toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric' });
-  return `Moved to ${dateService.formatTime(start, timeFormat)}–${dateService.formatTime(end, timeFormat)}, ${day}`;
+  const timeFormat = options.timeFormat ?? '24h';
+  const day = start.toLocaleDateString(options.locale, { weekday: 'short', month: 'short', day: 'numeric' });
+  return formatMessage(resolveMessages(options.messages).movedTo, {
+    start: dateService.formatTime(start, timeFormat),
+    end: dateService.formatTime(end, timeFormat),
+    day,
+  });
 }
 
 /**
@@ -115,9 +140,15 @@ export function formatResizeAnnouncement(
   start: Date,
   end: Date,
   edge: 'start' | 'end',
-  timeFormat: '12h' | '24h' = '24h',
+  options: SchedulerOptions,
 ): string {
-  return `Resized ${edge} edge to ${dateService.formatTime(start, timeFormat)}–${dateService.formatTime(end, timeFormat)}`;
+  const timeFormat = options.timeFormat ?? '24h';
+  const messages = resolveMessages(options.messages);
+  return formatMessage(messages.resizedEdge, {
+    edge: edge === 'start' ? messages.startEdge : messages.endEdge,
+    start: dateService.formatTime(start, timeFormat),
+    end: dateService.formatTime(end, timeFormat),
+  });
 }
 
 /**
