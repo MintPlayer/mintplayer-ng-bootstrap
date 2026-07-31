@@ -300,7 +300,17 @@ export class MpScheduler extends LitElement {
   }
 
   getEventById(eventId: string): SchedulerEvent | null {
-    return this.events.find((e) => e.id === eventId) ?? null;
+    // Timeline events live on the resources, not the flat events input —
+    // without the resource sweep, pointer hit-testing (analyzeTarget →
+    // getEventById) can't resolve them and timeline drags never start.
+    return (
+      this.events.find((e) => e.id === eventId) ??
+      resourceService
+        .getAllResources(this.stateManager.getState().resources)
+        .flatMap((r) => r.events ?? [])
+        .find((e) => e.id === eventId) ??
+      null
+    );
   }
 
   refetchEvents(): void {

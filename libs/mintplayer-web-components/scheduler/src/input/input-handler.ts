@@ -161,7 +161,9 @@ export class InputHandler {
     // Check for resize handle first
     const resizeHandle = element.closest('.resize-handle') as HTMLElement;
     if (resizeHandle) {
-      const eventEl = resizeHandle.closest('.scheduler-event') as HTMLElement;
+      const eventEl = resizeHandle.closest(
+        '.scheduler-event, .scheduler-timeline-event'
+      ) as HTMLElement;
       const eventId = eventEl?.dataset['eventId'];
       const event = eventId ? this.config.getEventById(eventId) : null;
 
@@ -175,7 +177,9 @@ export class InputHandler {
     }
 
     // Check for event
-    const eventEl = element.closest('.scheduler-event:not(.preview)') as HTMLElement;
+    const eventEl = element.closest(
+      '.scheduler-event:not(.preview), .scheduler-timeline-event:not(.preview)'
+    ) as HTMLElement;
     if (eventEl) {
       const eventId = eventEl.dataset['eventId'];
       const event = eventId ? this.config.getEventById(eventId) : null;

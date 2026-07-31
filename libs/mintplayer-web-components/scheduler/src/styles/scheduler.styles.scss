@@ -247,13 +247,21 @@
   border-left: 3px solid rgba(0, 0, 0, 0.2);
 }
 
-.scheduler-event .event-content {
+.scheduler-event .event-content,
+.scheduler-timeline-event .event-content {
   height: 100%;
   overflow: hidden;
 }
 
+.scheduler-timeline-event .event-title {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
 /* Prevent browser from handling touch gestures on events (enables drag) */
-.scheduler-event:not(.preview) {
+.scheduler-event:not(.preview),
+.scheduler-timeline-event:not(.preview) {
   touch-action: none;
   -ms-touch-action: none;
 }
@@ -339,7 +347,8 @@
 /* Decorative resize glyph, revealed by selection. Never focusable and
    aria-hidden — the keyboard resize path is move-mode on the event itself.
    Border + background only, so forced-colors mode keeps it visible. */
-.scheduler-event .resize-glyph {
+.scheduler-event .resize-glyph,
+.scheduler-timeline-event .resize-glyph {
   position: absolute;
   top: 50%;
   left: 50%;
@@ -355,7 +364,8 @@
   pointer-events: none;
 }
 
-.scheduler-event.selected .resize-glyph {
+.scheduler-event.selected .resize-glyph,
+.scheduler-timeline-event.selected .resize-glyph {
   opacity: 1;
   visibility: visible;
 }
@@ -631,13 +641,67 @@
   border-radius: var(--scheduler-event-border-radius);
   padding: 2px 6px;
   font-size: 12px;
-  overflow: hidden;
+  /* Unclipped so the selected-state handles/glyphs straddle the left/right
+     edges; title clipping lives on .event-content (same as .scheduler-event). */
+  overflow: visible;
   cursor: pointer;
   pointer-events: auto;
 }
 
 .scheduler-timeline-event.selected {
   box-shadow: 0 0 0 3px var(--bs-body-color);
+  z-index: 2;
+}
+
+.scheduler-timeline-event.preview {
+  background: var(--scheduler-preview-bg);
+  border: 2px dashed var(--bs-primary);
+  pointer-events: none;
+}
+
+/* Horizontal resize handles — timeline counterpart of the week/day strips. */
+.scheduler-timeline-event .resize-handle {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 8px;
+  cursor: ew-resize;
+  touch-action: none;
+  -ms-touch-action: none;
+}
+
+.scheduler-timeline-event .resize-handle.left {
+  left: 0;
+}
+
+.scheduler-timeline-event .resize-handle.right {
+  right: 0;
+}
+
+.scheduler-timeline-event.selected .resize-handle {
+  width: 24px;
+}
+
+.scheduler-timeline-event.selected .resize-handle.left {
+  left: -12px;
+}
+
+.scheduler-timeline-event.selected .resize-handle.right {
+  right: -12px;
+}
+
+@media (pointer: coarse) {
+  .scheduler-timeline-event.selected .resize-handle {
+    width: 44px;
+  }
+
+  .scheduler-timeline-event.selected .resize-handle.left {
+    left: -22px;
+  }
+
+  .scheduler-timeline-event.selected .resize-handle.right {
+    right: -22px;
+  }
 }
 
 /* Loading state */
@@ -738,7 +802,7 @@
 @media (prefers-reduced-motion: reduce) {
   .scheduler-event,
   .scheduler-timeline-event,
-  .scheduler-event .resize-glyph {
+  .resize-glyph {
     animation: none !important;
     transition: none !important;
   }
