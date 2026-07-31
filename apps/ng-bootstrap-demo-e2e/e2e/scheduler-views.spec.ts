@@ -176,6 +176,48 @@ test.describe('scheduler — multi-day create ghost (R1)', () => {
   });
 });
 
+test.describe('scheduler — drag reaches off-screen time', () => {
+  test('holding a drag at the bottom edge scrolls the grid', async ({ page }) => {
+    await loadSampleWeek(page);
+    // Start high in the day so there is room below to scroll into.
+    const from = await showSlot(page, 0, 6);
+    const scroller = await schedulerRoot(page).evaluate((sched) => {
+      const content = sched.shadowRoot!.querySelector('.scheduler-content')!;
+      const r = content.getBoundingClientRect();
+      return { top: r.top, bottom: r.bottom, left: r.left, scrollTop: content.scrollTop };
+    });
+
+    await page.mouse.move(from.x, from.y);
+    await page.mouse.down();
+    // Into the bottom edge zone (40px) and hold there. The pointer stops
+    // moving, so only the auto-scroll loop can change scrollTop.
+    await page.mouse.move(from.x, scroller.bottom - 8, { steps: 8 });
+
+    await expect
+      .poll(
+        () =>
+          schedulerRoot(page).evaluate(
+            (sched) => sched.shadowRoot!.querySelector('.scheduler-content')!.scrollTop,
+          ),
+        { timeout: 5_000 },
+      )
+      .toBeGreaterThan(scroller.scrollTop + 20);
+
+    await page.mouse.up();
+
+    // And it stops on release rather than running on forever.
+    const settled = await schedulerRoot(page).evaluate(
+      (sched) => sched.shadowRoot!.querySelector('.scheduler-content')!.scrollTop,
+    );
+    await page.waitForTimeout(300);
+    expect(
+      await schedulerRoot(page).evaluate(
+        (sched) => sched.shadowRoot!.querySelector('.scheduler-content')!.scrollTop,
+      ),
+    ).toBe(settled);
+  });
+});
+
 test.describe('scheduler — timeline (R3, R5, R7)', () => {
   test('scrolls on both axes with the resource column pinned', async ({ page }) => {
     await loadSampleWeek(page);

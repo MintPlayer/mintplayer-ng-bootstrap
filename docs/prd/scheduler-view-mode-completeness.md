@@ -951,10 +951,24 @@ surfaced two failures that predate it:
   of clear spacing, and month rows grew from 100px to 120px so three chips plus the link
   still fit without clipping.
 
+### 11.5 M14 — a drag can reach off-screen time
+
+Making the timeline scroll (M3) turned an awkwardness into an impossibility: with a grid
+genuinely wider than the viewport (7 days x 48 slots), "drag this event to next Thursday"
+could not be expressed at all, because a drag could only ever reach what was already
+painted. Holding a drag inside 40px of a scroller edge now scrolls the grid, on both axes,
+at a rate that ramps with depth into the zone (a constant rate is either too slow to be
+useful or too fast to aim). Each frame re-feeds the unchanged pointer position to the drag
+machine, so the preview keeps naming the slot under the cursor as the content moves beneath
+it, and the loop stops on pointer-up, when the scroller hits its end, or when the drag ends.
+
+Deliberately **not** an option. The deleted `dragScroll` flag was declared and unread; the
+behaviour is what every consumer wants and a knob for it would only let someone switch off
+the ability to reach half their own data.
+
 **Still outstanding** (deliberate follow-ups, none of them a reported defect):
 `options.requireEventResource`, a dedicated `resources: []` empty state, the per-resource
 icon/legend for WCAG 1.4.1, `resource.allowOperations` per-item overrides,
-`options.dragScroll` (still declared and unread — no auto-scroll at the viewport edge),
 month-view pointer create-drag, e2e coverage for the multi-day ghost and the timeline, and
 the device re-check of timeline touch scrolling. See the plan's §"Outstanding work,
 spelled out" for the implementation notes.

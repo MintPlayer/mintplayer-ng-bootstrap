@@ -251,6 +251,16 @@ After the affordances exist. **B13 is the highest-value item in this milestone.*
 - [x] The new e2e runs axe over both new states (resource affordances granted, popover open)
       because the shared gate only ever audits the default one.
 
+## M14 — Edge auto-scroll during a drag
+
+- [x] Holding a drag within 40px of a `.scheduler-content` edge scrolls it, both axes, at a
+      rate ramping with depth; each frame re-feeds the pointer so the preview tracks the slot
+      under the cursor. Stops on pointer-up, at the scroll end, and on disconnect.
+- [x] e2e: hold a drag at the bottom edge, assert `scrollTop` advances, then assert it stops
+      moving after release. Green on Chromium and Firefox.
+- [x] No option for it: the old `dragScroll` flag was deleted as dead in M7, and a knob here
+      would only let a consumer switch off reaching their own data.
+
 ## M11 — Batched verification sweep
 
 - [x] `nx build mintplayer-web-components` (which runs `codegen-wc`), the three wrapper
@@ -270,6 +280,7 @@ After the affordances exist. **B13 is the highest-value item in this milestone.*
       and the pre-existing scheduler e2e still passes.
 - [ ] Still uncovered by e2e: timeline drag-create carrying its `resourceId`, and read-only
       mode end to end (both are covered by the unit suite's DOM assertions).
+- [x] Edge auto-scroll during a drag, on both axes (M14).
 - [ ] axe sweep beyond CI's `e2e-a11y` step.
 - [ ] Device check: touch scrolling in timeline (M3) and week (unchanged) on Android.
 
@@ -475,9 +486,6 @@ enough context to execute without the originating conversation.
 - `resource.allowOperations` per-item override (the file-manager three-layer pattern).
 - Resource **rename** in the timeline. `resource-update`'s `changes` is typed
   `Partial<Resource & ResourceGroup>`, so adding `title` later is not a breaking change.
-- `options.dragScroll` remains declared and unread: there is still no auto-scroll when a
-  drag reaches the viewport edge. Expect this as the next complaint now that scrolling
-  works.
 - Month view still has **no pointer create-drag** (`analyzeTarget` only recognises
   `.scheduler-time-slot, .scheduler-timeline-slot`). The day popover is the cheap
   substitute; marquee-selecting across month cells is a separate, larger feature.

@@ -182,6 +182,8 @@ export class MpScheduler extends LitElement {
     this.headerResizeObserver?.disconnect();
     this.headerResizeObserver = null;
 
+    this.stopEdgeScroll();
+
     // Cancel any pending RAF
     if (this.pendingDragUpdate !== null) {
       cancelAnimationFrame(this.pendingDragUpdate);
@@ -973,14 +975,105 @@ export class MpScheduler extends LitElement {
 
   private handlePointerMove(pointer: NormalizedPointerEvent): void {
     this.dragManager.handlePointerMove(pointer);
+    this.updateEdgeScroll(pointer);
   }
 
   private handlePointerUp(pointer: NormalizedPointerEvent): void {
+    this.stopEdgeScroll();
     const result = this.dragManager.handlePointerUp(pointer);
 
     if (result) {
       this.handleDragComplete(result, pointer.originalEvent);
     }
+  }
+
+  // ============================================
+  // Edge auto-scroll during a drag
+  // ============================================
+
+  /** Distance from a scroller edge at which auto-scroll engages. */
+  private static readonly EDGE_SCROLL_ZONE_PX = 40;
+  /** Fastest scroll step, in px per frame, reached at the very edge. */
+  private static readonly EDGE_SCROLL_MAX_PX = 18;
+
+  private edgeScrollFrame: number | null = null;
+  private edgeScrollVector: { x: number; y: number } = { x: 0, y: 0 };
+  private edgeScrollPointer: NormalizedPointerEvent | null = null;
+
+  /**
+   * Scroll the grid when a drag reaches the edge of the viewport.
+   *
+   * Without this, a drag can only ever reach what is already on screen — and
+   * since the timeline is now genuinely wider than the viewport (7 days x 48
+   * slots), "drag an event to next Thursday" became impossible rather than
+   * merely awkward. Both axes, because the timeline scrolls horizontally and the
+   * time grids vertically.
+   *
+   * Speed ramps with how deep into the edge zone the pointer is, the way every
+   * drag-and-drop implementation does it: a constant rate is either too slow to
+   * be useful or too fast to aim. Each frame re-feeds the pointer to the drag
+   * machine so the preview keeps tracking the slot under the cursor while the
+   * grid moves beneath it.
+   */
+  private updateEdgeScroll(pointer: NormalizedPointerEvent): void {
+    const container = this.contentContainer;
+    if (!container || !this.dragManager.isDragging()) {
+      this.stopEdgeScroll();
+      return;
+    }
+
+    const rect = container.getBoundingClientRect();
+    const zone = MpScheduler.EDGE_SCROLL_ZONE_PX;
+    const max = MpScheduler.EDGE_SCROLL_MAX_PX;
+    // Ramp: 0 at the zone boundary, `max` at the edge (and beyond it, clamped).
+    const axis = (position: number, low: number, high: number): number => {
+      if (position < low + zone) return -Math.min(1, (low + zone - position) / zone) * max;
+      if (position > high - zone) return Math.min(1, (position - (high - zone)) / zone) * max;
+      return 0;
+    };
+
+    this.edgeScrollVector = {
+      x: axis(pointer.clientX, rect.left, rect.right),
+      y: axis(pointer.clientY, rect.top, rect.bottom),
+    };
+    this.edgeScrollPointer = pointer;
+
+    if (this.edgeScrollVector.x === 0 && this.edgeScrollVector.y === 0) {
+      this.stopEdgeScroll();
+      return;
+    }
+    if (this.edgeScrollFrame === null) this.scheduleEdgeScroll();
+  }
+
+  private scheduleEdgeScroll(): void {
+    this.edgeScrollFrame = requestAnimationFrame(() => {
+      this.edgeScrollFrame = null;
+      const container = this.contentContainer;
+      const pointer = this.edgeScrollPointer;
+      if (!container || !pointer || !this.dragManager.isDragging()) return;
+
+      const beforeX = container.scrollLeft;
+      const beforeY = container.scrollTop;
+      container.scrollLeft = beforeX + this.edgeScrollVector.x;
+      container.scrollTop = beforeY + this.edgeScrollVector.y;
+
+      // Nothing moved (already at the end) — stop rather than spin a frame loop.
+      if (container.scrollLeft === beforeX && container.scrollTop === beforeY) return;
+
+      // Re-resolve the slot under the unchanged pointer position: the content
+      // moved, so the same coordinates now name a different slot.
+      this.dragManager.handlePointerMove(pointer);
+      this.scheduleEdgeScroll();
+    });
+  }
+
+  private stopEdgeScroll(): void {
+    if (this.edgeScrollFrame !== null) {
+      cancelAnimationFrame(this.edgeScrollFrame);
+      this.edgeScrollFrame = null;
+    }
+    this.edgeScrollVector = { x: 0, y: 0 };
+    this.edgeScrollPointer = null;
   }
 
   /**
