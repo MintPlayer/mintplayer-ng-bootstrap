@@ -21,14 +21,20 @@ Goal: de-risk the one unknown before building — can a glyph straddle the event
 (half outside the box) and can the enlarged hit strip extend outside the event without
 being clipped or losing pointer events?
 
-- [ ] In the running ng demo, hand-edit devtools styles on a selected week-view event:
-      check `.scheduler-event` / `.scheduler-events-container` for `overflow` clipping
-      and the `pointer-events: none` container behavior on children extending outside.
-- [ ] Decide: `overflow: visible` on `.scheduler-event.selected` vs glyphs inset fully
-      inside the edge. Record the outcome here and in PRD D5 (update the PRD if the
-      straddle is not viable).
-- [ ] Confirm z-index raise on `.scheduler-event.selected` beats sibling events in the
-      same and adjacent `.scheduler-events-container` columns.
+- [x] Clipping verified in code: `.scheduler-event` has `overflow: hidden`
+      (scheduler.styles.scss:239) — the only clipping ancestor below the scroll
+      container. `.scheduler-events-container` and day columns don't clip;
+      `.scheduler-content` (`overflow: auto`) clips only at the first/last slot edge
+      (same as Google Calendar — accepted).
+- [x] **Outcome: straddle IS viable.** Fix = wrap title/time in a `.event-content`
+      child (`height: 100%; overflow: hidden`, padding stays on the event — everything
+      is `box-sizing: border-box`) and switch `.scheduler-event` to
+      `overflow: visible`. Preview elements are built separately (bare) — unaffected.
+      PRD D5 stands unchanged.
+- [x] Stacking verified: events are absolutely-positioned siblings inside one
+      per-column container (no z-index anywhere on events); `.selected { z-index: 2 }`
+      suffices. Strips extend vertically only, so no cross-column contention; the
+      now-indicator (z-index 5) is `pointer-events: none`.
 
 ## Milestone B — Glyphs + enlarged strips (week/day) [FR-1, FR-2, FR-3, FR-6, FR-7]
 

@@ -334,6 +334,7 @@ export class MpScheduler extends LitElement {
         getEventById: (id) => this.getEventById(id),
         isEditable: () => this.stateManager.getState().options.editable ?? true,
         isSelectable: () => this.stateManager.getState().options.selectable ?? true,
+        isEventSelected: (eventId) => this.stateManager.getState().selectedEvent?.id === eventId,
       },
       {
         onPointerDown: (pointer, target, immediate) => this.handlePointerDown(pointer, target, immediate),

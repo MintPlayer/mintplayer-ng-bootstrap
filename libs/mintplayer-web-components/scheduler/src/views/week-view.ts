@@ -330,29 +330,22 @@ export class WeekView extends BaseView {
 
     this.setData(eventEl, { eventId: event.id });
 
-    // Title
+    // Content wrapper clips text independently of the event box, which stays
+    // overflow: visible so the selected-state resize handles/glyphs can
+    // straddle the top/bottom edges.
+    const content = this.createElement('div', 'event-content');
+
     const title = this.createElement('div', 'event-title');
     title.textContent = event.title;
-    eventEl.appendChild(title);
+    content.appendChild(title);
 
-    // Time
     const timeEl = this.createElement('div', 'event-time');
     timeEl.textContent = `${dateService.formatTime(part.start, this.state.options.timeFormat)} - ${dateService.formatTime(part.end, this.state.options.timeFormat)}`;
-    eventEl.appendChild(timeEl);
+    content.appendChild(timeEl);
 
-    // Resize handles
-    if (event.resizable !== false) {
-      if (part.isStart) {
-        const topHandle = this.createElement('div', 'resize-handle', 'top');
-        this.setData(topHandle, { handle: 'start' });
-        eventEl.appendChild(topHandle);
-      }
-      if (part.isEnd) {
-        const bottomHandle = this.createElement('div', 'resize-handle', 'bottom');
-        this.setData(bottomHandle, { handle: 'end' });
-        eventEl.appendChild(bottomHandle);
-      }
-    }
+    eventEl.appendChild(content);
+
+    this.appendResizeHandles(eventEl, part);
 
     return eventEl;
   }

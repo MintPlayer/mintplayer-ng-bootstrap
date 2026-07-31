@@ -14,6 +14,9 @@
   --scheduler-greyed-slot-bg: rgba(0, 0, 0, 0.1);
   --scheduler-column-min-width: 120px;
   --scheduler-touch-hold-duration: 500ms;
+  --scheduler-resize-glyph-size: 14px;
+  --scheduler-resize-glyph-color: var(--bs-body-color, #212529);
+  --scheduler-resize-glyph-bg: var(--bs-body-bg, #fff);
 }
 
 * {
@@ -236,10 +239,17 @@
   border-radius: var(--scheduler-event-border-radius);
   padding: 2px 4px;
   font-size: 12px;
-  overflow: hidden;
+  /* The box stays unclipped so the selected-state resize handles/glyphs can
+     straddle the top/bottom edges; text clipping lives on .event-content. */
+  overflow: visible;
   cursor: pointer;
   pointer-events: auto;
   border-left: 3px solid rgba(0, 0, 0, 0.2);
+}
+
+.scheduler-event .event-content {
+  height: 100%;
+  overflow: hidden;
 }
 
 /* Prevent browser from handling touch gestures on events (enables drag) */
@@ -254,6 +264,10 @@
 
 .scheduler-event.selected {
   box-shadow: 0 0 0 3px var(--bs-body-color);
+  /* Raise above sibling events so the straddling handles win pointer hits.
+     At most one event is selected; the now-indicator (z-index 5) stays above
+     but is pointer-events: none. */
+  z-index: 2;
 }
 
 .scheduler-event .event-title {
@@ -274,13 +288,18 @@
   pointer-events: none;
 }
 
-/* Resize handles */
+/* Resize handles — invisible 8px strips on every resizable event (the
+   long-standing mouse hit zone). On the SELECTED event they grow to a
+   WCAG-2.5.8-sized strip centered on the edge (half outside the box) and
+   reveal the round glyph, which is the documented touch affordance. */
 .scheduler-event .resize-handle {
   position: absolute;
   left: 0;
   right: 0;
   height: 8px;
   cursor: ns-resize;
+  touch-action: none;
+  -ms-touch-action: none;
 }
 
 .scheduler-event .resize-handle.top {
@@ -289,6 +308,56 @@
 
 .scheduler-event .resize-handle.bottom {
   bottom: 0;
+}
+
+.scheduler-event.selected .resize-handle {
+  height: 24px;
+}
+
+.scheduler-event.selected .resize-handle.top {
+  top: -12px;
+}
+
+.scheduler-event.selected .resize-handle.bottom {
+  bottom: -12px;
+}
+
+@media (pointer: coarse) {
+  .scheduler-event.selected .resize-handle {
+    height: 44px;
+  }
+
+  .scheduler-event.selected .resize-handle.top {
+    top: -22px;
+  }
+
+  .scheduler-event.selected .resize-handle.bottom {
+    bottom: -22px;
+  }
+}
+
+/* Decorative resize glyph, revealed by selection. Never focusable and
+   aria-hidden — the keyboard resize path is move-mode on the event itself.
+   Border + background only, so forced-colors mode keeps it visible. */
+.scheduler-event .resize-glyph {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: var(--scheduler-resize-glyph-size);
+  height: var(--scheduler-resize-glyph-size);
+  transform: translate(-50%, -50%);
+  border: 2px solid var(--scheduler-resize-glyph-color);
+  border-radius: 50%;
+  background: var(--scheduler-resize-glyph-bg);
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.15s ease;
+  pointer-events: none;
+}
+
+.scheduler-event.selected .resize-glyph {
+  opacity: 1;
+  visibility: visible;
 }
 
 /* Now indicator */
@@ -668,7 +737,8 @@
 
 @media (prefers-reduced-motion: reduce) {
   .scheduler-event,
-  .scheduler-timeline-event {
+  .scheduler-timeline-event,
+  .scheduler-event .resize-glyph {
     animation: none !important;
     transition: none !important;
   }

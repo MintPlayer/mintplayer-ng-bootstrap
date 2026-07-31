@@ -41,6 +41,8 @@ export interface InputHandlerConfig {
   isEditable: () => boolean;
   /** Whether selection is enabled */
   isSelectable: () => boolean;
+  /** Whether the given event is the currently-selected one */
+  isEventSelected?: (eventId: string) => boolean;
   /** Touch hold duration in ms before drag activates (default: 500) */
   touchHoldDuration?: number;
   /** Movement threshold before touch hold is cancelled (default: 10) */
@@ -289,6 +291,20 @@ export class InputHandler {
     touchedElement.addEventListener('touchcancel', function(evt: TouchEvent) {
       self.handleTouchCancel(evt);
     });
+
+    // A touch that starts on a resize handle of the ALREADY-SELECTED event
+    // arms the resize immediately: the visible glyph is the affordance the
+    // user just tapped for, and a second 600ms hold after the selection tap
+    // reads as broken. Scroll is a non-issue — the handle carries
+    // touch-action: none. All other touches keep the hold-to-drag model.
+    if (
+      target.type === 'resize-handle' &&
+      target.event &&
+      this.config.isEventSelected?.(target.event.id)
+    ) {
+      this.activateTouchDragMode(pointer, target);
+      return;
+    }
 
     // Add visual feedback
     this.addTouchFeedback(pointer.target, 'pending');

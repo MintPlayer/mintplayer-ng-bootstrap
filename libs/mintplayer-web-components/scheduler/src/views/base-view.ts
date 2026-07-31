@@ -1,4 +1,4 @@
-import { dateService, type SchedulerEvent, type TimeSlot } from '@mintplayer/web-components/scheduler-core';
+import { dateService, type SchedulerEvent, type SchedulerEventPart, type TimeSlot } from '@mintplayer/web-components/scheduler-core';
 import { SchedulerState } from '../state/scheduler-state';
 
 /**
@@ -193,6 +193,34 @@ export abstract class BaseView {
    */
   protected clearContainer(): void {
     this.container.innerHTML = '';
+  }
+
+  /**
+   * Append the start/end resize handles for an event part. The handle strip
+   * is the pointer hit zone the drag machine targets via
+   * closest('.resize-handle'); the glyph inside it is a purely decorative
+   * affordance revealed by the .selected class — never focusable, the
+   * keyboard resize path lives on the event element (move-mode).
+   * Position classes are per-view: ['top','bottom'] for time grids,
+   * ['left','right'] for the timeline.
+   */
+  protected appendResizeHandles(
+    eventEl: HTMLElement,
+    part: SchedulerEventPart,
+    [startClass, endClass]: [string, string] = ['top', 'bottom'],
+  ): void {
+    if (part.event?.resizable === false || this.state.options.editable === false) return;
+    if (part.isStart) eventEl.appendChild(this.createResizeHandle(startClass, 'start'));
+    if (part.isEnd) eventEl.appendChild(this.createResizeHandle(endClass, 'end'));
+  }
+
+  private createResizeHandle(positionClass: string, edge: 'start' | 'end'): HTMLElement {
+    const handle = this.createElement('div', 'resize-handle', positionClass);
+    this.setData(handle, { handle: edge });
+    const glyph = this.createElement('span', 'resize-glyph');
+    glyph.setAttribute('aria-hidden', 'true');
+    handle.appendChild(glyph);
+    return handle;
   }
 
   /**
