@@ -13,6 +13,9 @@ export * from './time-slot';
 // Options
 export * from './options';
 
+// Localizable strings
+export * from './messages';
+
 // Drag state
 export * from './drag-state';
 

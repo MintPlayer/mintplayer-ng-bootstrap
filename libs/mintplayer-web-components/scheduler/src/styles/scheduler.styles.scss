@@ -14,10 +14,27 @@
   --scheduler-greyed-slot-bg: rgba(0, 0, 0, 0.1);
   --scheduler-column-min-width: 120px;
   --scheduler-touch-hold-duration: 500ms;
+  --scheduler-resize-glyph-size: 14px;
+  --scheduler-resize-glyph-color: var(--bs-body-color, #212529);
+  --scheduler-resize-glyph-bg: var(--bs-body-bg, #fff);
 }
 
 * {
   box-sizing: border-box;
+}
+
+/* Off-screen but readable by AT — carries the aria-describedby keymap
+   instructions (never applied to focusable elements). */
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+  border: 0;
 }
 
 .scheduler-container {
@@ -30,15 +47,42 @@
   background: var(--bs-body-bg);
 }
 
-/* Header */
+/* Header — wraps as GROUPS when narrow ([data-narrow], set by a
+   ResizeObserver on component width): nav + view switcher share the first
+   row(s), the title takes a full-width row, so no control ever leaves reach
+   and the title never word-wraps (PRD D9). */
 .scheduler-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 8px;
   padding: 8px 12px;
   background: var(--scheduler-header-bg);
   border-bottom: 1px solid var(--scheduler-border-color);
   flex-shrink: 0;
+}
+
+.scheduler-header[data-narrow] {
+  justify-content: center;
+}
+
+.scheduler-header[data-narrow] .scheduler-nav {
+  order: 1;
+}
+
+.scheduler-header[data-narrow] .scheduler-view-switcher {
+  order: 2;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.scheduler-header[data-narrow] .scheduler-title {
+  order: 3;
+  flex-basis: 100%;
+  text-align: center;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .scheduler-nav {
@@ -63,6 +107,9 @@
 .scheduler-title {
   font-size: 18px;
   font-weight: 600;
+  /* Never word-wrap the period title — multi-line titles distorted the whole
+     header on phones; narrow mode compacts the text instead. */
+  white-space: nowrap;
 }
 
 .scheduler-view-switcher {
@@ -236,14 +283,29 @@
   border-radius: var(--scheduler-event-border-radius);
   padding: 2px 4px;
   font-size: 12px;
-  overflow: hidden;
+  /* The box stays unclipped so the selected-state resize handles/glyphs can
+     straddle the top/bottom edges; text clipping lives on .event-content. */
+  overflow: visible;
   cursor: pointer;
   pointer-events: auto;
   border-left: 3px solid rgba(0, 0, 0, 0.2);
 }
 
+.scheduler-event .event-content,
+.scheduler-timeline-event .event-content {
+  height: 100%;
+  overflow: hidden;
+}
+
+.scheduler-timeline-event .event-title {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
 /* Prevent browser from handling touch gestures on events (enables drag) */
-.scheduler-event:not(.preview) {
+.scheduler-event:not(.preview),
+.scheduler-timeline-event:not(.preview) {
   touch-action: none;
   -ms-touch-action: none;
 }
@@ -252,8 +314,24 @@
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
 }
 
+/* Focus indicator independent of the .selected box-shadow — selection can be
+   driven externally, so focus needs its own visible signal (audit MAJOR).
+   Inset like the slot outlines so it isn't clipped by scroll containers. */
+.scheduler-event:focus-visible,
+.scheduler-timeline-event:focus-visible,
+.scheduler-month-event:focus-visible,
+.scheduler-month-day:focus-visible,
+.scheduler-year-month:focus-visible {
+  outline: 2px solid var(--bs-primary);
+  outline-offset: -2px;
+}
+
 .scheduler-event.selected {
   box-shadow: 0 0 0 3px var(--bs-body-color);
+  /* Raise above sibling events so the straddling handles win pointer hits.
+     At most one event is selected; the now-indicator (z-index 5) stays above
+     but is pointer-events: none. */
+  z-index: 2;
 }
 
 .scheduler-event .event-title {
@@ -274,13 +352,18 @@
   pointer-events: none;
 }
 
-/* Resize handles */
+/* Resize handles — invisible 8px strips on every resizable event (the
+   long-standing mouse hit zone). On the SELECTED event they grow to a
+   WCAG-2.5.8-sized strip centered on the edge (half outside the box) and
+   reveal the round glyph, which is the documented touch affordance. */
 .scheduler-event .resize-handle {
   position: absolute;
   left: 0;
   right: 0;
   height: 8px;
   cursor: ns-resize;
+  touch-action: none;
+  -ms-touch-action: none;
 }
 
 .scheduler-event .resize-handle.top {
@@ -289,6 +372,58 @@
 
 .scheduler-event .resize-handle.bottom {
   bottom: 0;
+}
+
+.scheduler-event.selected .resize-handle {
+  height: 24px;
+}
+
+.scheduler-event.selected .resize-handle.top {
+  top: -12px;
+}
+
+.scheduler-event.selected .resize-handle.bottom {
+  bottom: -12px;
+}
+
+@media (pointer: coarse) {
+  .scheduler-event.selected .resize-handle {
+    height: 44px;
+  }
+
+  .scheduler-event.selected .resize-handle.top {
+    top: -22px;
+  }
+
+  .scheduler-event.selected .resize-handle.bottom {
+    bottom: -22px;
+  }
+}
+
+/* Decorative resize glyph, revealed by selection. Never focusable and
+   aria-hidden — the keyboard resize path is move-mode on the event itself.
+   Border + background only, so forced-colors mode keeps it visible. */
+.scheduler-event .resize-glyph,
+.scheduler-timeline-event .resize-glyph {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: var(--scheduler-resize-glyph-size);
+  height: var(--scheduler-resize-glyph-size);
+  transform: translate(-50%, -50%);
+  border: 2px solid var(--scheduler-resize-glyph-color);
+  border-radius: 50%;
+  background: var(--scheduler-resize-glyph-bg);
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.15s ease;
+  pointer-events: none;
+}
+
+.scheduler-event.selected .resize-glyph,
+.scheduler-timeline-event.selected .resize-glyph {
+  opacity: 1;
+  visibility: visible;
 }
 
 /* Now indicator */
@@ -562,13 +697,67 @@
   border-radius: var(--scheduler-event-border-radius);
   padding: 2px 6px;
   font-size: 12px;
-  overflow: hidden;
+  /* Unclipped so the selected-state handles/glyphs straddle the left/right
+     edges; title clipping lives on .event-content (same as .scheduler-event). */
+  overflow: visible;
   cursor: pointer;
   pointer-events: auto;
 }
 
 .scheduler-timeline-event.selected {
   box-shadow: 0 0 0 3px var(--bs-body-color);
+  z-index: 2;
+}
+
+.scheduler-timeline-event.preview {
+  background: var(--scheduler-preview-bg);
+  border: 2px dashed var(--bs-primary);
+  pointer-events: none;
+}
+
+/* Horizontal resize handles — timeline counterpart of the week/day strips. */
+.scheduler-timeline-event .resize-handle {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 8px;
+  cursor: ew-resize;
+  touch-action: none;
+  -ms-touch-action: none;
+}
+
+.scheduler-timeline-event .resize-handle.left {
+  left: 0;
+}
+
+.scheduler-timeline-event .resize-handle.right {
+  right: 0;
+}
+
+.scheduler-timeline-event.selected .resize-handle {
+  width: 24px;
+}
+
+.scheduler-timeline-event.selected .resize-handle.left {
+  left: -12px;
+}
+
+.scheduler-timeline-event.selected .resize-handle.right {
+  right: -12px;
+}
+
+@media (pointer: coarse) {
+  .scheduler-timeline-event.selected .resize-handle {
+    width: 44px;
+  }
+
+  .scheduler-timeline-event.selected .resize-handle.left {
+    left: -22px;
+  }
+
+  .scheduler-timeline-event.selected .resize-handle.right {
+    right: -22px;
+  }
 }
 
 /* Loading state */
@@ -668,7 +857,8 @@
 
 @media (prefers-reduced-motion: reduce) {
   .scheduler-event,
-  .scheduler-timeline-event {
+  .scheduler-timeline-event,
+  .resize-glyph {
     animation: none !important;
     transition: none !important;
   }

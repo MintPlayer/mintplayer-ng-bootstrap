@@ -29,7 +29,10 @@ export const BsScheduler = createComponent({
     onEventUpdate: 'event-update' as EventName<CustomEvent<{ event: SchedulerEvent; oldEvent: SchedulerEvent; originalEvent: Event }>>,
     onEventDelete: 'event-delete' as EventName<CustomEvent<{ event: SchedulerEvent; originalEvent: Event }>>,
     onDateClick: 'date-click' as EventName<CustomEvent<{ date: Date; originalEvent: Event }>>,
-    onViewChange: 'view-change' as EventName<CustomEvent<{ view: ViewType }>>,
+    // Fires for view switches AND internal date navigation (prev/next/today)
+    // — `date` carries the newly displayed date, so a controlled `date` prop
+    // stays in sync by updating state from this callback.
+    onViewChange: 'view-change' as EventName<CustomEvent<{ view: ViewType; date: Date }>>,
     onSelectionChange: 'selection-change' as EventName<CustomEvent<{ range: TimeRange | null; view: ViewType; slots?: TimeSlot[] }>>,
   },
 });

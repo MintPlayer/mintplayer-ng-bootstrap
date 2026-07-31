@@ -6,8 +6,11 @@ import {
   Resource,
   ResourceGroup,
   SchedulerOptions,
+  SchedulerMessages,
   TimeSlot,
   dateService,
+  formatMessage,
+  resolveMessages,
   resourceService,
   isResource,
 } from '@mintplayer/web-components/scheduler-core';
@@ -129,6 +132,10 @@ export class MpScheduler extends LitElement {
 
     // Stop now indicator timer
     this.stopNowIndicatorTimer();
+
+    // Stop watching header width
+    this.headerResizeObserver?.disconnect();
+    this.headerResizeObserver = null;
 
     // Cancel any pending RAF
     if (this.pendingDragUpdate !== null) {
@@ -270,7 +277,19 @@ export class MpScheduler extends LitElement {
 
   changeView(view: ViewType): void {
     this.stateManager.setView(view);
-    this.liveAnnouncer.announce(`View changed to ${view}.`);
+    this.liveAnnouncer.announce(this.msg('viewChanged', { view: this.viewLabel(view) }));
+  }
+
+  /** Localized display name of a view (also the view-switcher button text). */
+  private viewLabel(view: ViewType): string {
+    const keys: Record<ViewType, keyof SchedulerMessages> = {
+      year: 'viewYear',
+      month: 'viewMonth',
+      week: 'viewWeek',
+      day: 'viewDay',
+      timeline: 'viewTimeline',
+    };
+    return this.msg(keys[view]);
   }
 
   /**
@@ -285,26 +304,50 @@ export class MpScheduler extends LitElement {
 
   addEvent(event: SchedulerEvent): void {
     this.stateManager.addEvent(event);
-    this.liveAnnouncer.announce(`Event ${event.title} added.`);
+    this.liveAnnouncer.announce(this.msg('eventAdded', { title: event.title }));
   }
 
   updateEvent(event: SchedulerEvent): void {
     this.stateManager.updateEvent(event);
-    this.liveAnnouncer.announce(`Event ${event.title} updated.`);
+    this.liveAnnouncer.announce(this.msg('eventUpdated', { title: event.title }));
   }
 
   removeEvent(eventId: string): void {
     const ev = this.getEventById(eventId);
     this.stateManager.removeEvent(eventId);
-    if (ev) this.liveAnnouncer.announce(`Event ${ev.title} removed.`);
+    if (ev) this.liveAnnouncer.announce(this.msg('eventRemoved', { title: ev.title }));
   }
 
   getEventById(eventId: string): SchedulerEvent | null {
-    return this.events.find((e) => e.id === eventId) ?? null;
+    // Timeline events live on the resources, not the flat events input —
+    // without the resource sweep, pointer hit-testing (analyzeTarget →
+    // getEventById) can't resolve them and timeline drags never start.
+    return (
+      this.events.find((e) => e.id === eventId) ??
+      resourceService
+        .getAllResources(this.stateManager.getState().resources)
+        .flatMap((r) => r.events ?? [])
+        .find((e) => e.id === eventId) ??
+      null
+    );
   }
 
   refetchEvents(): void {
     this.currentView?.update(this.stateManager.getState());
+  }
+
+  /**
+   * Localized string lookup: options.messages overrides merged onto the
+   * English defaults, with {placeholder} interpolation.
+   */
+  private msg(
+    key: keyof SchedulerMessages,
+    params?: Record<string, string | number>,
+  ): string {
+    return formatMessage(
+      resolveMessages(this.stateManager.getState().options.messages)[key],
+      params,
+    );
   }
 
   // ============================================
@@ -312,11 +355,17 @@ export class MpScheduler extends LitElement {
   // ============================================
 
   override render(): TemplateResult {
+    // Hidden keymap instructions, referenced via aria-describedby from the
+    // grid container (grid nav) and from every event element (move/resize
+    // discoverability) — PRD scheduler-resize-glyphs FR-9. IDREFs resolve
+    // because everything shares this shadow root.
     return html`
       <div class="scheduler-container">
         <header class="scheduler-header"></header>
         <div class="scheduler-content"></div>
       </div>
+      <div id="scheduler-kbd-grid" class="visually-hidden">${this.msg('gridInstructions')}</div>
+      <div id="scheduler-kbd-event" class="visually-hidden">${this.msg('eventInstructions')}</div>
       ${this.liveAnnouncer.template()}
     `;
   }
@@ -326,6 +375,7 @@ export class MpScheduler extends LitElement {
     this.contentContainer = this.shadowRoot!.querySelector('.scheduler-content') as HTMLElement;
 
     this.populateHeader(headerEl);
+    this.observeHeaderWidth(headerEl);
 
     // Construct InputHandler now that shadowRoot is available, then attach.
     this.inputHandler = new InputHandler(
@@ -334,6 +384,7 @@ export class MpScheduler extends LitElement {
         getEventById: (id) => this.getEventById(id),
         isEditable: () => this.stateManager.getState().options.editable ?? true,
         isSelectable: () => this.stateManager.getState().options.selectable ?? true,
+        isEventSelected: (eventId) => this.stateManager.getState().selectedEvent?.id === eventId,
       },
       {
         onPointerDown: (pointer, target, immediate) => this.handlePointerDown(pointer, target, immediate),
@@ -358,26 +409,26 @@ export class MpScheduler extends LitElement {
     // Navigation
     const nav = document.createElement('nav');
     nav.className = 'scheduler-nav';
-    nav.setAttribute('aria-label', 'Scheduler navigation');
+    nav.setAttribute('aria-label', this.msg('navLabel'));
 
     const prevBtn = document.createElement('button');
     prevBtn.type = 'button';
     prevBtn.textContent = '‹';
-    prevBtn.setAttribute('aria-label', 'Previous period');
-    prevBtn.title = 'Previous';
+    prevBtn.setAttribute('aria-label', this.msg('previousPeriod'));
+    prevBtn.title = this.msg('previousPeriod');
     prevBtn.addEventListener('click', () => this.prev());
 
     const nextBtn = document.createElement('button');
     nextBtn.type = 'button';
     nextBtn.textContent = '›';
-    nextBtn.setAttribute('aria-label', 'Next period');
-    nextBtn.title = 'Next';
+    nextBtn.setAttribute('aria-label', this.msg('nextPeriod'));
+    nextBtn.title = this.msg('nextPeriod');
     nextBtn.addEventListener('click', () => this.next());
 
     const todayBtn = document.createElement('button');
     todayBtn.type = 'button';
-    todayBtn.textContent = 'Today';
-    todayBtn.setAttribute('aria-label', 'Jump to today');
+    todayBtn.textContent = this.msg('today');
+    todayBtn.setAttribute('aria-label', this.msg('jumpToToday'));
     todayBtn.addEventListener('click', () => this.today());
 
     nav.appendChild(prevBtn);
@@ -395,20 +446,14 @@ export class MpScheduler extends LitElement {
     const viewSwitcher = document.createElement('div');
     viewSwitcher.className = 'scheduler-view-switcher';
     viewSwitcher.setAttribute('role', 'group');
-    viewSwitcher.setAttribute('aria-label', 'Switch view');
+    viewSwitcher.setAttribute('aria-label', this.msg('switchView'));
 
-    const views: { key: ViewType; label: string }[] = [
-      { key: 'year', label: 'Year' },
-      { key: 'month', label: 'Month' },
-      { key: 'week', label: 'Week' },
-      { key: 'day', label: 'Day' },
-      { key: 'timeline', label: 'Timeline' },
-    ];
+    const views: ViewType[] = ['year', 'month', 'week', 'day', 'timeline'];
 
-    for (const { key, label } of views) {
+    for (const key of views) {
       const btn = document.createElement('button');
       btn.type = 'button';
-      btn.textContent = label;
+      btn.textContent = this.viewLabel(key);
       btn.dataset['view'] = key;
       const isActive = key === this.view;
       btn.setAttribute('aria-pressed', String(isActive));
@@ -425,12 +470,16 @@ export class MpScheduler extends LitElement {
   }
 
   private updateTitle(titleEl?: HTMLElement): void {
-    const title = titleEl ?? this.shadowRoot!.querySelector('.scheduler-title');
+    const title = (titleEl ?? this.shadowRoot!.querySelector('.scheduler-title')) as HTMLElement | null;
     if (!title) return;
 
     const state = this.stateManager.getState();
     const { date, view, options } = state;
 
+    // The full title (year included) renders in every view at every width:
+    // the narrow layout (D9) gives the title its own full-width centered
+    // row, so no compact variant is needed — nowrap + ellipsis is the only
+    // last-resort guard.
     let titleText = '';
     switch (view) {
       case 'year':
@@ -467,6 +516,34 @@ export class MpScheduler extends LitElement {
     }
 
     title.textContent = titleText;
+  }
+
+  /** Header width below which the layout wraps and the title compacts (D9). */
+  private static readonly NARROW_HEADER_WIDTH = 560;
+
+  private headerResizeObserver: ResizeObserver | null = null;
+  private headerIsNarrow = false;
+
+  /**
+   * Component-width (not viewport) driven narrow mode — the scheduler can sit
+   * in a pane far narrower than the screen (splitter/dock). CSS keys the
+   * wrapped layout off [data-narrow]; the title text swap needs JS anyway.
+   */
+  private observeHeaderWidth(header: HTMLElement): void {
+    if (typeof ResizeObserver === 'undefined') return;
+    this.headerResizeObserver = new ResizeObserver((entries) => {
+      const width = entries[0]?.contentRect.width ?? header.clientWidth;
+      const narrow = width < MpScheduler.NARROW_HEADER_WIDTH;
+      if (narrow === this.headerIsNarrow) return;
+      this.headerIsNarrow = narrow;
+      // Mutating layout inside the RO callback (wrap changes the header's own
+      // size) trips the browser's "undelivered notifications" loop guard —
+      // apply one frame later instead.
+      requestAnimationFrame(() => {
+        header.toggleAttribute('data-narrow', narrow);
+      });
+    });
+    this.headerResizeObserver.observe(header);
   }
 
   private renderView(): void {
@@ -511,7 +588,7 @@ export class MpScheduler extends LitElement {
     // say both edges so a slow fetch has a beginning and an end.
     if (state.isLoading !== this.previousIsLoading) {
       if (this.previousIsLoading !== null) {
-        this.liveAnnouncer.announce(state.isLoading ? 'Loading events.' : 'Events loaded.');
+        this.liveAnnouncer.announce(this.msg(state.isLoading ? 'loadingEvents' : 'eventsLoaded'));
       }
       this.previousIsLoading = state.isLoading;
     }
@@ -625,6 +702,26 @@ export class MpScheduler extends LitElement {
     }
   }
 
+  /**
+   * Two activations of the same event within this window = a double
+   * click/tap. Native dblclick cannot be relied on here: the first click's
+   * selection re-render replaces the event node, which resets the browser's
+   * double-click tracking — so `event-dblclick` is synthesized from
+   * consecutive activations instead (and works for touch double-tap too).
+   */
+  private static readonly DBLCLICK_WINDOW_MS = 500;
+  private lastEventActivation: { eventId: string; time: number } | null = null;
+
+  private registerEventActivation(event: SchedulerEvent, originalEvent: Event): void {
+    const now = Date.now();
+    const prev = this.lastEventActivation;
+    this.lastEventActivation = { eventId: event.id, time: now };
+    if (prev && prev.eventId === event.id && now - prev.time < MpScheduler.DBLCLICK_WINDOW_MS) {
+      this.lastEventActivation = null;
+      this.eventEmitter.emitEventDblClick(event, originalEvent);
+    }
+  }
+
   private handleDragComplete(
     result: DragCompletionResult,
     originalEvent: Event
@@ -634,6 +731,7 @@ export class MpScheduler extends LitElement {
       if (result.event) {
         this.stateManager.setSelectedEvent(result.event);
         this.eventEmitter.emitEventSelected(result.event, originalEvent);
+        this.registerEventActivation(result.event, originalEvent);
       }
       return;
     }
@@ -726,8 +824,11 @@ export class MpScheduler extends LitElement {
     // Event click — also drives the keyboard-move tab stop. The drag flow
     // already calls setSelectedEvent on commit, but a plain click on an
     // event needs to select it too so the focus model can land on it.
+    // (This is the TOUCH tap path — registerEventActivation makes a quick
+    // double-tap emit event-dblclick, same as mouse double-click.)
     if (target.type === 'event' && target.event) {
       this.stateManager.setSelectedEvent(target.event);
+      this.registerEventActivation(target.event, pointer.originalEvent);
     }
   }
 
@@ -875,6 +976,14 @@ export class MpScheduler extends LitElement {
     const ev = state.selectedEvent;
     if (!ev) return;
     switch (e.key) {
+      // M is the canonical move-mode key across the workspace (tile-manager,
+      // dock); Enter is kept for back-compat (screen-reader programme D4).
+      case 'm':
+      case 'M':
+        if (e.altKey || e.ctrlKey || e.metaKey) break;
+        e.preventDefault();
+        this.enterEventMoveMode(ev);
+        return;
       case 'Enter':
         e.preventDefault();
         this.enterEventMoveMode(ev);
@@ -1270,11 +1379,11 @@ export class MpScheduler extends LitElement {
       this.stateManager.extendSelection(cell, resourceId);
       this.stateManager.setFocusedCell(cell, resourceId, false);
       const newState = this.stateManager.getState();
-      this.liveAnnouncer.announce(formatSelectionAnnouncement(newState, slotDuration, state.options.timeFormat));
+      this.liveAnnouncer.announce(formatSelectionAnnouncement(newState, slotDuration));
     } else {
       this.stateManager.setFocusedCell(cell, resourceId, true);
       const resourceTitle = this.getResourceTitle(resourceId);
-      this.liveAnnouncer.announce(formatCellAnnouncement(cell, state.options.timeFormat, resourceTitle));
+      this.liveAnnouncer.announce(formatCellAnnouncement(cell, state.options, resourceTitle));
     }
     this.scrollAndFocusCell(cell, resourceId);
   }
@@ -1392,9 +1501,10 @@ export class MpScheduler extends LitElement {
       originalEvent,
       resourceId,
     );
-    this.liveAnnouncer.announce(
-      `Selection committed: ${dateService.formatTime(start, state.options.timeFormat)}–${dateService.formatTime(end, state.options.timeFormat)}.`,
-    );
+    this.liveAnnouncer.announce(this.msg('selectionCommitted', {
+      start: dateService.formatTime(start, state.options.timeFormat),
+      end: dateService.formatTime(end, state.options.timeFormat),
+    }));
   }
 
   /**
@@ -1438,7 +1548,7 @@ export class MpScheduler extends LitElement {
     });
     const minutes = this.minutesPerSlot();
     this.liveAnnouncer.announce(
-      `Move mode for ${event.title}. Arrow keys nudge by ${minutes} minutes; Shift with arrow keys resizes the end edge; Alt with Shift resizes the start edge; Enter commits, Escape cancels.`,
+      this.msg('moveModeEntered', { title: event.title, minutes }),
     );
     // setState above tore down and rebuilt the focused event element. Re-focus
     // the new node so subsequent arrow keystrokes still reach our keydown
@@ -1539,7 +1649,7 @@ export class MpScheduler extends LitElement {
     this.keyboardMove.workingStart = newStart;
     this.keyboardMove.workingEnd = newEnd;
     this.applyKeyboardMovePreview();
-    this.liveAnnouncer.announce(formatMoveAnnouncement(newStart, newEnd, this.stateManager.getState().options.timeFormat));
+    this.liveAnnouncer.announce(formatMoveAnnouncement(newStart, newEnd, this.stateManager.getState().options));
   }
 
   /** Walk to the next/previous resource (timeline only). Updates the preview's resourceId. */
@@ -1550,7 +1660,7 @@ export class MpScheduler extends LitElement {
     this.keyboardMove.workingResourceId = next;
     this.applyKeyboardMovePreview();
     const title = this.getResourceTitle(next) ?? next;
-    this.liveAnnouncer.announce(`Moved to resource ${title}.`);
+    this.liveAnnouncer.announce(this.msg('movedToResource', { resource: title }));
   }
 
   /**
@@ -1572,7 +1682,7 @@ export class MpScheduler extends LitElement {
     this.keyboardMove.workingStart = newStart;
     this.keyboardMove.workingEnd = newEnd;
     this.applyKeyboardMovePreview();
-    this.liveAnnouncer.announce(formatResizeAnnouncement(newStart, newEnd, edge, this.stateManager.getState().options.timeFormat));
+    this.liveAnnouncer.announce(formatResizeAnnouncement(newStart, newEnd, edge, this.stateManager.getState().options));
   }
 
   /** Mirror keyboardMove.working* into state.previewEvent so views render the destination,
@@ -1621,7 +1731,7 @@ export class MpScheduler extends LitElement {
       };
       this.stateManager.updateEvent(updated);
       this.eventEmitter.emitEventUpdate(updated, original, new CustomEvent('keyboard-move'));
-      this.liveAnnouncer.announce('Move committed.');
+      this.liveAnnouncer.announce(this.msg('moveCommitted'));
     }
     this.keyboardMove = null;
     this.stateManager.setState({ keyboardMoveEventId: null, previewEvent: null });
@@ -1637,7 +1747,7 @@ export class MpScheduler extends LitElement {
     const id = this.keyboardMove?.eventId ?? null;
     this.keyboardMove = null;
     this.stateManager.setState({ keyboardMoveEventId: null, previewEvent: null });
-    this.liveAnnouncer.announce('Move cancelled.');
+    this.liveAnnouncer.announce(this.msg('moveCancelled'));
     if (id) {
       requestAnimationFrame(() => {
         const sel = `[data-event-id="${this.cssEscape(id)}"]`;

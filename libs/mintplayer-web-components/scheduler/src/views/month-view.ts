@@ -2,7 +2,9 @@ import {
   dateService,
   timelineService,
   SchedulerEvent,
+  formatMessage,
   getContrastColor,
+  resolveMessages,
 } from '@mintplayer/web-components/scheduler-core';
 import { BaseView , formatEventAriaLabel } from './base-view';
 import { SchedulerState } from '../state/scheduler-state';
@@ -91,7 +93,6 @@ export class MonthView extends BaseView {
     const key = MonthView.dayKey(day);
     cell.setAttribute('role', 'gridcell');
     cell.setAttribute('tabindex', '-1');
-    cell.setAttribute('aria-selected', 'false');
     cell.id = `scheduler-cell-m-${key}`;
 
     // Day number
@@ -121,8 +122,10 @@ export class MonthView extends BaseView {
     const focusedKey = focused ? MonthView.dayKey(focused) : null;
     for (const [key, cell] of this.dayCells) {
       const isFocused = key === focusedKey;
+      // Focus position is expressed by the roving tabindex alone —
+      // aria-selected here would misreport focus as selection (audit MAJOR).
       cell.setAttribute('tabindex', isFocused ? '0' : '-1');
-      cell.setAttribute('aria-selected', isFocused ? 'true' : 'false');
+      cell.removeAttribute('aria-selected');
       if (isFocused) promoted = true;
     }
     if (!promoted) {
@@ -199,14 +202,17 @@ export class MonthView extends BaseView {
         // scheduler's handleFocusIn), so no separate activation key is needed.
         eventEl.setAttribute('role', 'button');
         eventEl.setAttribute('tabindex', '0');
-        eventEl.setAttribute('aria-label', formatEventAriaLabel(event, null, this.state.options.timeFormat));
+        eventEl.setAttribute('aria-label', formatEventAriaLabel(event, null, this.state.options));
         this.setData(eventEl, { eventId: event.id });
         eventsContainer.appendChild(eventEl);
       }
 
       if (hiddenCount > 0) {
         const moreLink = this.createElement('div', 'scheduler-more-link');
-        moreLink.textContent = `+${hiddenCount} more`;
+        moreLink.textContent = formatMessage(
+          resolveMessages(this.state.options.messages).moreEvents,
+          { count: hiddenCount },
+        );
         // A real drill-down control: named by its visible text, activated via
         // the scheduler-level Enter/Space handler (it is not a native button
         // because the view builder renders plain nodes).

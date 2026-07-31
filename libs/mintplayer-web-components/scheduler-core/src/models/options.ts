@@ -1,3 +1,4 @@
+import { DEFAULT_MESSAGES, SchedulerMessages } from './messages';
 import { DayOfWeek, TimeFormat, ViewType } from './types';
 
 /**
@@ -92,6 +93,11 @@ export interface SchedulerOptions {
   /** Snap duration in seconds */
   snapDuration?: number;
 
+  // Localization
+  /** Override any user-facing string (labels, announcements, instructions).
+   *  Merged onto the English defaults — see SchedulerMessages. */
+  messages?: Partial<SchedulerMessages>;
+
   // Display options
   /** Whether to show current time indicator */
   nowIndicator?: boolean;
@@ -139,6 +145,7 @@ export const DEFAULT_OPTIONS: Required<SchedulerOptions> = {
   dragRevertDuration: 500,
   dragScroll: true,
   snapDuration: 1800,
+  messages: DEFAULT_MESSAGES,
   nowIndicator: true,
   weekNumbers: false,
   weekText: 'W',

@@ -128,14 +128,6 @@ export interface DateSelectEvent {
 }
 
 /**
- * View change event detail
- */
-export interface ViewChangeEvent {
-  view: ViewType;
-  date: Date;
-}
-
-/**
  * Angular wrapper for the mp-scheduler web component using signals
  */
 @Component({
@@ -152,17 +144,24 @@ export class BsSchedulerComponent implements AfterViewInit, OnDestroy {
   private readonly schedulerRef = viewChild.required<ElementRef<MpSchedulerElement>>('scheduler');
 
   // Input signals
-  readonly view = input<ViewType>('week');
-  readonly date = input<Date>(new Date());
   readonly events = input<SchedulerEvent[]>([]);
   readonly resources = input<(Resource | ResourceGroup)[]>([]);
   readonly options = input<Partial<SchedulerOptions>>({});
 
-  // Two-way binding model signals
+  // Two-way binding model signals. `view` and `date` are models (not inputs)
+  // because the web component changes both from within — prev/next/today
+  // navigation and the view switcher — and delivers the new values via its
+  // `view-change` event; a one-way input would go stale after any internal
+  // navigation (and with it currentWeekStart/visibleEvents below).
+  readonly view = model<ViewType>('week');
+  readonly date = model<Date>(new Date());
   readonly selectedEvent = model<SchedulerEvent | null>(null);
   readonly selectedRange = model<{ start: Date; end: Date } | null>(null);
 
-  // Output signals (events)
+  // Output signals (events). NOTE (breaking, PRD scheduler-resize-glyphs D8):
+  // the explicit `viewChange` output<ViewChangeEvent> is gone — `view` and
+  // `date` are model() signals now, whose implicit `viewChange`/`dateChange`
+  // outputs emit the new ViewType / Date on every internal navigation.
   readonly eventSelected = output<SchedulerEventSelectedEvent>();
   readonly eventDblClick = output<SchedulerEventSelectedEvent>();
   readonly eventCreate = output<SchedulerEventCreateEvent>();
@@ -170,7 +169,6 @@ export class BsSchedulerComponent implements AfterViewInit, OnDestroy {
   readonly eventDelete = output<SchedulerEventDeleteEvent>();
   readonly dateClick = output<DateClickEvent>();
   readonly dateSelect = output<DateSelectEvent>();
-  readonly viewChange = output<ViewChangeEvent>();
   readonly selectionChange = output<SchedulerSelectionChangeEvent>();
 
   // Computed signals
@@ -300,7 +298,12 @@ export class BsSchedulerComponent implements AfterViewInit, OnDestroy {
     });
 
     addListener('view-change', (e) => {
-      this.viewChange.emit(e.detail);
+      // The WC fires view-change for BOTH view switches and internal date
+      // navigation (prev/next/today/gotoDate) — write both back so the
+      // consumer's two-way bindings track reality. The model .set() calls
+      // emit the implicit viewChange/dateChange outputs.
+      this.view.set(e.detail.view);
+      this.date.set(e.detail.date);
     });
 
     addListener('selection-change', (e) => {

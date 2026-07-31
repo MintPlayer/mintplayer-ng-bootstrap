@@ -239,6 +239,24 @@ describe('mp-scheduler — move-mode (Enter + arrows)', () => {
     expect(eventElAfter.getAttribute('aria-pressed')).toBe('true');
   });
 
+  it('M on focused event enters move-mode too (D4: M is the canonical key, Enter kept)', async () => {
+    el = await mount('week');
+    const ev = {
+      id: 'standup',
+      title: 'Standup',
+      start: new Date(2026, 4, 12, 9, 0),
+      end: new Date(2026, 4, 12, 9, 30),
+    };
+    (el as unknown as { events: unknown[] }).events = [ev];
+    await (el as unknown as { updateComplete: Promise<void> }).updateComplete;
+    await nextRaf();
+    el.shadowRoot!.querySelector<HTMLElement>('.scheduler-event')!.focus();
+    await nextRaf();
+    dispatchKey(el, 'm');
+    await (el as unknown as { updateComplete: Promise<void> }).updateComplete;
+    expect(getState(el).keyboardMoveEventId).toBe('standup');
+  });
+
   it('ArrowDown in move-mode pushes the previewEvent forward by one slot', async () => {
     el = await mount('week');
     const ev = {
@@ -399,7 +417,9 @@ describe('mp-scheduler — Phase B: month-view arrow nav', () => {
     );
     expect(cell).not.toBeNull();
     expect(cell!.getAttribute('role')).toBe('gridcell');
-    expect(cell!.getAttribute('aria-selected')).toBe('false');
+    // Month cells carry NO aria-selected — writing it for focus position
+    // misreported focus as selection (audit MAJOR, PRD scheduler-resize-glyphs FR-11).
+    expect(cell!.getAttribute('aria-selected')).toBeNull();
     expect(cell!.classList.contains('scheduler-month-day')).toBe(true);
   });
 

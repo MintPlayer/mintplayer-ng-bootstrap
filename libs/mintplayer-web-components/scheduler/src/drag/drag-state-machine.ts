@@ -164,9 +164,13 @@ export class DragStateMachine {
 
     // For touch-initiated drags, skip pending and go directly to active
     if (immediate) {
-      // For move operations without a slot, create one from the event's times
+      // Without a slot under the pointer, synthesize one from the event's own
+      // times. Valid for move AND both resize edges: the resize preview
+      // clamps against the original event, so a whole-event slot yields an
+      // unchanged initial preview, and startSlot only feeds the move-offset
+      // math afterwards. (Create has no event, so it still needs a real slot.)
       let startSlot = slot;
-      if (!startSlot && schedulerEvent && operationType === 'move') {
+      if (!startSlot && schedulerEvent) {
         startSlot = {
           start: schedulerEvent.start,
           end: schedulerEvent.end,

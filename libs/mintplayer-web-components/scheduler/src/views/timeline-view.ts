@@ -9,7 +9,9 @@ import {
   isResource,
   isResourceGroup,
   FlattenedResource,
+  formatMessage,
   getContrastColor,
+  resolveMessages,
 } from '@mintplayer/web-components/scheduler-core';
 import { BaseView, formatEventAriaLabel, isSlotInSelection } from './base-view';
 import { SchedulerState } from '../state/scheduler-state';
@@ -35,9 +37,14 @@ export class TimelineView extends BaseView {
     timeline.setAttribute('role', 'grid');
     timeline.setAttribute(
       'aria-label',
-      `Resource timeline for week starting ${dateService.formatDateWithWeekday(days[0], options.locale)}`,
+      formatMessage(resolveMessages(options.messages).timelineGridLabel, {
+        date: dateService.formatDateWithWeekday(days[0], options.locale),
+      }),
     );
     timeline.setAttribute('aria-rowcount', String(visibleRowCount));
+    // Keymap discoverability + Shift+Arrow range selection (FR-9).
+    timeline.setAttribute('aria-describedby', 'scheduler-kbd-grid');
+    timeline.setAttribute('aria-multiselectable', 'true');
 
     // Header (row containing day labels)
     const header = this.createElement('div', 'scheduler-timeline-header');
@@ -47,7 +54,7 @@ export class TimelineView extends BaseView {
     // Resource column header (top-left corner)
     const resourceHeader = this.createElement('div', 'scheduler-resource-header');
     resourceHeader.setAttribute('role', 'columnheader');
-    resourceHeader.textContent = 'Resources';
+    resourceHeader.textContent = resolveMessages(this.state.options.messages).resourcesHeader;
     header.appendChild(resourceHeader);
 
     // Time slots header
@@ -182,7 +189,13 @@ export class TimelineView extends BaseView {
       const isCollapsed = this.state.collapsedGroups.has(flat.item.id);
       toggle.textContent = isCollapsed ? '▶' : '▼';
       toggle.setAttribute('aria-expanded', String(!isCollapsed));
-      toggle.setAttribute('aria-label', `${isCollapsed ? 'Expand' : 'Collapse'} ${flat.item.title}`);
+      toggle.setAttribute(
+        'aria-label',
+        formatMessage(
+          resolveMessages(this.state.options.messages)[isCollapsed ? 'expandGroup' : 'collapseGroup'],
+          { title: flat.item.title },
+        ),
+      );
       this.setData(toggle, { groupId: flat.item.id });
       resourceCell.appendChild(toggle);
     }
@@ -328,10 +341,12 @@ export class TimelineView extends BaseView {
     eventEl.setAttribute('tabindex', '0');
     eventEl.setAttribute(
       'aria-label',
-      formatEventAriaLabel(event, resourceTitle, this.state.options.timeFormat),
+      formatEventAriaLabel(event, resourceTitle, this.state.options),
     );
     // Selection state on the button token that supports it (see week-view).
     eventEl.setAttribute('aria-pressed', isSelected ? 'true' : 'false');
+    // Move/resize discoverability hint (FR-9) — read by SRs on focus.
+    eventEl.setAttribute('aria-describedby', 'scheduler-kbd-event');
     if (isSelected) eventEl.classList.add('selected');
     void inMoveMode;
 
@@ -362,9 +377,74 @@ export class TimelineView extends BaseView {
 
     this.setData(eventEl, { eventId: event.id });
 
-    eventEl.textContent = event.title;
+    // Content wrapper clips the title independently of the event box, which
+    // stays overflow: visible so the selected-state resize handles/glyphs can
+    // straddle the left/right edges (see week-view).
+    const content = this.createElement('div', 'event-content');
+    const title = this.createElement('div', 'event-title');
+    title.textContent = event.title;
+    content.appendChild(title);
+    eventEl.appendChild(content);
+
+    // Horizontal resize handles — only on the edges whose true start/end is
+    // inside the visible week (the rendered box is clamped to view bounds,
+    // and dragging a clamped edge would misrepresent the event's real time).
+    this.appendResizeHandles(
+      eventEl,
+      {
+        id: event.id,
+        event,
+        start: event.start,
+        end: event.end,
+        isStart: event.start.getTime() >= viewStart.getTime(),
+        isEnd: event.end.getTime() <= viewEndTime,
+        dayIndex: 0,
+        totalDays: 1,
+      },
+      ['left', 'right'],
+    );
 
     return eventEl;
+  }
+
+  /**
+   * Dashed ghost showing where the dragged event will land, rendered in the
+   * dragged event's own resource row (pointer drags don't change resource).
+   * Mirrors week-view.renderPreviewEvent for the horizontal axis.
+   */
+  private renderPreviewEvent(days: Date[]): void {
+    this.container.querySelector('.scheduler-timeline-event.preview')?.remove();
+
+    const { dragState, previewEvent, resources, options } = this.state;
+    const draggedId = dragState?.event?.id;
+    if (!draggedId || !previewEvent) return;
+
+    const resource = resourceService
+      .getAllResources(resources)
+      .find((r) => (r.events ?? []).some((e) => e.id === draggedId));
+    const row = resource ? this.rowElements.get(resource.id) : null;
+    const eventsContainer = row?.querySelector('.scheduler-timeline-events');
+    if (!eventsContainer) return;
+
+    const slotsPerDay = dateService.getTimeSlots(
+      days[0],
+      options.slotDuration,
+      options.slotMinTime,
+      options.slotMaxTime
+    ).length;
+    const totalWidth = slotsPerDay * 7 * this.slotWidth;
+
+    const viewStart = days[0];
+    const viewEndTime = viewStart.getTime() + 7 * 24 * 60 * 60 * 1000;
+    const start = Math.max(previewEvent.start.getTime(), viewStart.getTime());
+    const end = Math.min(previewEvent.end.getTime(), viewEndTime);
+    const viewDuration = viewEndTime - viewStart.getTime();
+
+    const previewEl = this.createElement('div', 'scheduler-timeline-event', 'preview');
+    previewEl.style.left = `${((start - viewStart.getTime()) / viewDuration) * totalWidth}px`;
+    previewEl.style.width = `${Math.max(((end - start) / viewDuration) * totalWidth, 20)}px`;
+
+    eventsContainer.appendChild(previewEl);
   }
 
   update(state: SchedulerState): void {
@@ -384,6 +464,9 @@ export class TimelineView extends BaseView {
     // Re-render events
     const days = dateService.getWeekDays(state.date, state.options.firstDayOfWeek);
     this.renderEvents(days);
+
+    // Render drag preview ghost (no-op outside a drag)
+    this.renderPreviewEvent(days);
 
     // Refresh cell focus + selection styling.
     this.updateCellFocusAndSelection();

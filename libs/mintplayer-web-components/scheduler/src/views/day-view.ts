@@ -116,6 +116,7 @@ export class DayView extends BaseView {
     }
 
     this.applyGridRoles({
+      multiselectable: true,
       columnHeaderRow: ':scope > .scheduler-day-headers',
       columnHeaders: '.scheduler-day-headers > .scheduler-day-header',
       presentation: [
@@ -216,10 +217,12 @@ export class DayView extends BaseView {
     eventEl.setAttribute('tabindex', '0');
     eventEl.setAttribute(
       'aria-label',
-      formatEventAriaLabel(event, null, this.state.options.timeFormat),
+      formatEventAriaLabel(event, null, this.state.options),
     );
     // Selection state on the button token that supports it (see week-view).
     eventEl.setAttribute('aria-pressed', isSelected ? 'true' : 'false');
+    // Move/resize discoverability hint (FR-9) — read by SRs on focus.
+    eventEl.setAttribute('aria-describedby', 'scheduler-kbd-event');
     if (isSelected) eventEl.classList.add('selected');
     void inMoveMode;
 
@@ -249,29 +252,22 @@ export class DayView extends BaseView {
 
     this.setData(eventEl, { eventId: event.id });
 
-    // Title
+    // Content wrapper clips text independently of the event box, which stays
+    // overflow: visible so the selected-state resize handles/glyphs can
+    // straddle the top/bottom edges (see week-view).
+    const content = this.createElement('div', 'event-content');
+
     const title = this.createElement('div', 'event-title');
     title.textContent = event.title;
-    eventEl.appendChild(title);
+    content.appendChild(title);
 
-    // Time
     const timeEl = this.createElement('div', 'event-time');
     timeEl.textContent = `${dateService.formatTime(part.start, this.state.options.timeFormat)} - ${dateService.formatTime(part.end, this.state.options.timeFormat)}`;
-    eventEl.appendChild(timeEl);
+    content.appendChild(timeEl);
 
-    // Resize handles
-    if (event.resizable !== false) {
-      if (part.isStart) {
-        const topHandle = this.createElement('div', 'resize-handle', 'top');
-        this.setData(topHandle, { handle: 'start' });
-        eventEl.appendChild(topHandle);
-      }
-      if (part.isEnd) {
-        const bottomHandle = this.createElement('div', 'resize-handle', 'bottom');
-        this.setData(bottomHandle, { handle: 'end' });
-        eventEl.appendChild(bottomHandle);
-      }
-    }
+    eventEl.appendChild(content);
+
+    this.appendResizeHandles(eventEl, part);
 
     return eventEl;
   }

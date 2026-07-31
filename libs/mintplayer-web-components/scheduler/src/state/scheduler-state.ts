@@ -8,7 +8,30 @@ import {
   PreviewEvent,
   DragState,
   TimeSlot,
+  isResourceGroup,
 } from '@mintplayer/web-components/scheduler-core';
+
+/**
+ * Immutably replace an event (matched by id) wherever it lives in a
+ * resource tree. Untouched branches are returned as-is so views relying on
+ * reference equality don't re-render needlessly.
+ */
+function updateResourceEvent(
+  item: Resource | ResourceGroup,
+  event: SchedulerEvent,
+): Resource | ResourceGroup {
+  if (isResourceGroup(item)) {
+    const children = item.children.map((c) => updateResourceEvent(c, event));
+    return children.some((c, i) => c !== item.children[i])
+      ? { ...item, children }
+      : item;
+  }
+  if (!(item.events ?? []).some((e) => e.id === event.id)) return item;
+  return {
+    ...item,
+    events: (item.events ?? []).map((e) => (e.id === event.id ? event : e)),
+  };
+}
 
 /**
  * Internal state for the scheduler web component
@@ -185,8 +208,12 @@ export class SchedulerStateManager {
    * Update an event
    */
   updateEvent(event: SchedulerEvent): void {
+    // Events can live in the flat list (week/day/month) or on a resource
+    // (timeline) — update wherever the id matches so a committed timeline
+    // drag doesn't snap back while the consumer processes event-update.
     this.setState((state) => ({
       events: state.events.map((e) => (e.id === event.id ? event : e)),
+      resources: state.resources.map((r) => updateResourceEvent(r, event)),
     }));
   }
 

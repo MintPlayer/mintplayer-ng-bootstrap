@@ -109,6 +109,47 @@ describe('DragStateMachine', () => {
       expect(machine.getPhase()).toBe('idle');
     });
 
+    describe('immediate (touch) activation without a slot under the pointer', () => {
+      const immediateDown = (target: PointerTarget): DragMachineEvent => ({
+        type: 'POINTER_DOWN',
+        target,
+        position: { x: 100, y: 100 },
+        slot: null,
+        immediate: true,
+      });
+
+      it('activates resize-end from the synthesized whole-event slot (glyph drag)', () => {
+        const event = createEvent('1', 9, 11);
+        machine.send(immediateDown({ type: 'resize-handle', event, resizeHandle: 'end' }));
+
+        expect(machine.getPhase()).toBe('active');
+        // Initial preview is the unchanged event — no jump at drag start.
+        expect(machine.getPreview()).toEqual({ start: event.start, end: event.end });
+      });
+
+      it('activates resize-start from the synthesized whole-event slot (glyph drag)', () => {
+        const event = createEvent('1', 9, 11);
+        machine.send(immediateDown({ type: 'resize-handle', event, resizeHandle: 'start' }));
+
+        expect(machine.getPhase()).toBe('active');
+        expect(machine.getPreview()).toEqual({ start: event.start, end: event.end });
+      });
+
+      it('activates move from the synthesized whole-event slot', () => {
+        const event = createEvent('1', 9, 11);
+        machine.send(immediateDown({ type: 'event', event }));
+
+        expect(machine.getPhase()).toBe('active');
+        expect(machine.getPreview()).toEqual({ start: event.start, end: event.end });
+      });
+
+      it('falls back to pending for create (no event to synthesize a slot from)', () => {
+        machine.send(immediateDown({ type: 'slot' }));
+
+        expect(machine.getPhase()).toBe('pending');
+      });
+    });
+
     it('should stay idle on pointer down on non-draggable event', () => {
       const event: SchedulerEvent = {
         ...createEvent('1', 9, 10),

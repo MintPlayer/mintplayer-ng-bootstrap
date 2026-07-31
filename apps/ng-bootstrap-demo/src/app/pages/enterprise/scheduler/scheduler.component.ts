@@ -4,7 +4,7 @@ import { CommonModule } from '@angular/common';
 import { Color } from '@mintplayer/ng-bootstrap';
 import { BsButtonTypeDirective } from '@mintplayer/ng-bootstrap/button-type';
 import { BsCardBodyComponent, BsCardComponent, BsCardHeaderComponent } from '@mintplayer/ng-bootstrap/card';
-import { BsFormComponent } from '@mintplayer/ng-bootstrap/form';
+import { BsFormComponent, BsFormControlDirective } from '@mintplayer/ng-bootstrap/form';
 import { BsGridComponent, BsGridRowDirective, BsGridColumnDirective } from '@mintplayer/ng-bootstrap/grid';
 import { BsInputGroupComponent } from '@mintplayer/ng-bootstrap/input-group';
 import { BsSelectComponent, BsSelectOption } from '@mintplayer/ng-bootstrap/select';
@@ -17,7 +17,6 @@ import {
   SchedulerEventUpdateEvent,
   SchedulerEventDeleteEvent,
   DateClickEvent,
-  ViewChangeEvent,
 } from '@mintplayer/ng-bootstrap/scheduler';
 import {
   ViewType,
@@ -42,6 +41,7 @@ import {
     BsCardHeaderComponent,
     BsCardBodyComponent,
     BsFormComponent,
+    BsFormControlDirective,
     BsGridComponent,
     BsGridRowDirective,
     BsGridColumnDirective,
@@ -62,9 +62,10 @@ export class SchedulerComponent {
   // auto-clears, so the demo (or any consumer) decides when to.
   private schedulerComponent = viewChild<BsSchedulerComponent>(BsSchedulerComponent);
 
-  // View state
-  view = signal<ViewType>('week');
-  date = signal<Date>(new Date());
+  // View state — model() (not signal()) because both are banana-in-a-box
+  // bound to the scheduler, which navigates internally.
+  view = model<ViewType>('week');
+  date = model<Date>(new Date());
 
   // Configuration
   slotDuration = signal<number>(1800); // 30 minutes
@@ -214,10 +215,8 @@ export class SchedulerComponent {
   }
 
   onEventUpdate(event: SchedulerEventUpdateEvent) {
-    // Update the event in our events array
-    this.events.update((events) =>
-      events.map((e) => (e.id === event.event.id ? event.event : e))
-    );
+    // Update the event wherever it lives (flat list or resource tree)
+    this.applyEventUpdate(event.event);
     this.log(`Event updated: ${event.event.title}`);
   }
 
@@ -231,10 +230,61 @@ export class SchedulerComponent {
     this.log(`Date clicked: ${this.formatDate(event.date)}`);
   }
 
-  onViewChange(event: ViewChangeEvent) {
-    this.view.set(event.view);
-    this.date.set(event.date);
-    this.log(`View changed to: ${event.view}`);
+  onViewChange(view: ViewType) {
+    // [(view)] / [(date)] already keep the models in sync — just log.
+    this.log(`View changed to: ${view}`);
+  }
+
+  // --- Event editor (double-click an event) -------------------------------
+  // The form is the single-pointer NON-DRAG path to change an event's times
+  // (WCAG 2.5.7 Dragging Movements): every resize possible by drag is also
+  // possible here. The WC deliberately doesn't own an editor — consumers do.
+  editingEvent = signal<SchedulerEvent | null>(null);
+  editTitle = signal('');
+  editStart = signal('');
+  editEnd = signal('');
+
+  onEventDblClick(event: SchedulerEventSelectedEvent) {
+    this.openEditor(event.event);
+  }
+
+  openEditor(event: SchedulerEvent) {
+    this.editingEvent.set(event);
+    this.editTitle.set(event.title);
+    this.editStart.set(this.toLocalInputValue(event.start));
+    this.editEnd.set(this.toLocalInputValue(event.end));
+  }
+
+  saveEditor() {
+    const editing = this.editingEvent();
+    const start = new Date(this.editStart());
+    const end = new Date(this.editEnd());
+    if (!editing || isNaN(start.getTime()) || isNaN(end.getTime()) || end <= start) return;
+    const updated: SchedulerEvent = { ...editing, title: this.editTitle(), start, end };
+    this.applyEventUpdate(updated);
+    this.log(`Event edited: ${updated.title} (${this.formatDate(start)} - ${this.formatDate(end)})`);
+    this.editingEvent.set(null);
+  }
+
+  /** Replace the event by id wherever it lives — the flat list AND the
+   *  resource tree (timeline events belong to resources, not `events`). */
+  private applyEventUpdate(updated: SchedulerEvent) {
+    this.events.update((events) => events.map((e) => (e.id === updated.id ? updated : e)));
+    const walk = (item: Resource | ResourceGroup): Resource | ResourceGroup =>
+      'children' in item
+        ? { ...item, children: item.children.map(walk) }
+        : { ...item, events: (item.events ?? []).map((e) => (e.id === updated.id ? updated : e)) };
+    this.resources.update((resources) => resources.map(walk));
+  }
+
+  closeEditor() {
+    this.editingEvent.set(null);
+  }
+
+  /** Date → value for `<input type="datetime-local">` (local time, minutes). */
+  private toLocalInputValue(date: Date): string {
+    const pad = (n: number) => String(n).padStart(2, '0');
+    return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}`;
   }
 
   // Helper methods

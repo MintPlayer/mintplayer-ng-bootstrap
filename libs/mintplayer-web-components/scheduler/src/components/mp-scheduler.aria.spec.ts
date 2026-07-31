@@ -6,7 +6,7 @@ async function nextRaf(): Promise<void> {
   return new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(() => r())));
 }
 
-async function mount(view: 'timeline' | 'week' | 'day' = 'timeline'): Promise<MpScheduler> {
+async function mount(view: 'timeline' | 'week' | 'day' | 'month' | 'year' = 'timeline'): Promise<MpScheduler> {
   const el = document.createElement('mp-scheduler') as MpScheduler;
   document.body.appendChild(el);
   // Provide a minimal, deterministic resource + event so timeline-view has
@@ -130,6 +130,138 @@ describe('mp-scheduler — live announcer', () => {
     const live = el.shadowRoot!.querySelector('[role="status"]');
     expect(live).not.toBeNull();
     expect(live!.getAttribute('aria-live')).toBe('polite');
+  });
+});
+
+describe('mp-scheduler — resize handles + glyphs (PRD scheduler-resize-glyphs)', () => {
+  let el: MpScheduler;
+  afterEach(() => el?.remove());
+
+  it('handles are decorative pointer targets: no role, no tabindex, glyph aria-hidden', async () => {
+    el = await mount('timeline');
+    const handles = el.shadowRoot!.querySelectorAll<HTMLElement>('.scheduler-timeline-event .resize-handle');
+    expect(handles.length).toBe(2);
+    for (const h of Array.from(handles)) {
+      expect(h.getAttribute('role')).toBeNull();
+      expect(h.getAttribute('tabindex')).toBeNull();
+      expect(h.dataset['handle']).toMatch(/^(start|end)$/);
+      const glyph = h.querySelector('.resize-glyph')!;
+      expect(glyph).not.toBeNull();
+      expect(glyph.getAttribute('aria-hidden')).toBe('true');
+    }
+  });
+
+  it('glyph visibility is gated on the .selected class written with aria-pressed', async () => {
+    el = await mount('timeline');
+    const before = el.shadowRoot!.querySelector('.scheduler-timeline-event')!;
+    expect(before.classList.contains('selected')).toBe(false);
+    expect(before.getAttribute('aria-pressed')).toBe('false');
+    const resources = (el as unknown as { resources: { events: { id: string }[] }[] }).resources;
+    (el as unknown as { stateManager: { setSelectedEvent: (e: unknown) => void } })
+      .stateManager.setSelectedEvent(resources[0].events[0]);
+    await (el as unknown as { updateComplete: Promise<void> }).updateComplete;
+    await nextRaf();
+    const after = el.shadowRoot!.querySelector('.scheduler-timeline-event')!;
+    // .selected and aria-pressed flip in the SAME render — the CSS keys the
+    // glyph reveal and the 24/44px strip growth off .selected.
+    expect(after.classList.contains('selected')).toBe(true);
+    expect(after.getAttribute('aria-pressed')).toBe('true');
+    expect(after.querySelectorAll('.resize-glyph').length).toBe(2);
+  });
+});
+
+describe('mp-scheduler — keymap instructions (FR-9)', () => {
+  let el: MpScheduler;
+  afterEach(() => el?.remove());
+
+  it('grid carries aria-describedby resolving to a non-empty instructions div', async () => {
+    el = await mount('timeline');
+    const grid = el.shadowRoot!.querySelector('.scheduler-timeline')!;
+    const id = grid.getAttribute('aria-describedby')!;
+    expect(id).toBe('scheduler-kbd-grid');
+    const div = el.shadowRoot!.getElementById(id)!;
+    expect(div).not.toBeNull();
+    expect((div.textContent ?? '').trim().length).toBeGreaterThan(20);
+  });
+
+  it('every event carries the move/resize hint via aria-describedby', async () => {
+    el = await mount('timeline');
+    const ev = el.shadowRoot!.querySelector('.scheduler-timeline-event')!;
+    const id = ev.getAttribute('aria-describedby')!;
+    expect(id).toBe('scheduler-kbd-event');
+    const div = el.shadowRoot!.getElementById(id)!;
+    expect(div.textContent).toContain('M');
+    expect((div.textContent ?? '').trim().length).toBeGreaterThan(20);
+  });
+
+  it('week/timeline grids are aria-multiselectable (Shift+Arrow range selection)', async () => {
+    el = await mount('timeline');
+    expect(
+      el.shadowRoot!.querySelector('.scheduler-timeline')!.getAttribute('aria-multiselectable'),
+    ).toBe('true');
+    el.remove();
+    el = await mount('week');
+    const grid = el.shadowRoot!.querySelector('[role="grid"]')!;
+    expect(grid.getAttribute('aria-multiselectable')).toBe('true');
+  });
+});
+
+describe('mp-scheduler — options.messages localization (FR-12)', () => {
+  let el: MpScheduler;
+  afterEach(() => el?.remove());
+
+  it('overridden messages land in labels, instructions and grid label', async () => {
+    el = document.createElement('mp-scheduler') as MpScheduler;
+    document.body.appendChild(el);
+    (el as unknown as { options: unknown }).options = {
+      messages: {
+        previousPeriod: 'Vorige periode',
+        gridInstructions: 'Aangepaste rasterinstructies',
+        timelineGridLabel: 'Tijdlijn vanaf {date}',
+        resourcesHeader: 'Middelen',
+      },
+    };
+    (el as unknown as { resources: unknown[] }).resources = [
+      { id: 'alice', title: 'Alice', events: [] },
+    ];
+    (el as unknown as { date: Date }).date = new Date(2026, 4, 11);
+    el.setAttribute('view', 'timeline');
+    await (el as unknown as { updateComplete: Promise<void> }).updateComplete;
+    await nextRaf();
+
+    const prev = el.shadowRoot!.querySelector('.scheduler-nav button')!;
+    expect(prev.getAttribute('aria-label')).toBe('Vorige periode');
+    expect(el.shadowRoot!.getElementById('scheduler-kbd-grid')!.textContent)
+      .toContain('Aangepaste rasterinstructies');
+    const grid = el.shadowRoot!.querySelector('.scheduler-timeline')!;
+    expect(grid.getAttribute('aria-label')).toMatch(/^Tijdlijn vanaf /);
+    expect(el.shadowRoot!.querySelector('.scheduler-resource-header')!.textContent).toBe('Middelen');
+  });
+});
+
+describe('mp-scheduler — month/year focus is not selection (audit MAJOR)', () => {
+  let el: MpScheduler;
+  afterEach(() => el?.remove());
+
+  it('month day cells never carry aria-selected', async () => {
+    el = await mount('month');
+    const cells = el.shadowRoot!.querySelectorAll('.scheduler-month-day');
+    expect(cells.length).toBeGreaterThan(27);
+    for (const c of Array.from(cells)) {
+      expect(c.getAttribute('aria-selected')).toBeNull();
+    }
+    // Roving tabindex still expresses focus: exactly one tab stop.
+    expect(el.shadowRoot!.querySelectorAll('.scheduler-month-day[tabindex="0"]').length).toBe(1);
+  });
+
+  it('year month cards never carry aria-selected', async () => {
+    el = await mount('year');
+    const cards = el.shadowRoot!.querySelectorAll('.scheduler-year-month');
+    expect(cards.length).toBe(12);
+    for (const c of Array.from(cards)) {
+      expect(c.getAttribute('aria-selected')).toBeNull();
+    }
+    expect(el.shadowRoot!.querySelectorAll('.scheduler-year-month[tabindex="0"]').length).toBe(1);
   });
 });
 
