@@ -582,3 +582,102 @@ describe('mp-scheduler — Phase B: inter-event arrow nav', () => {
     expect(active?.getAttribute('data-event-id')).toBe('a');
   });
 });
+
+/**
+ * The drag/move ghost as a DOM element. The suite already covers
+ * `state.previewEvent` (the model), which stayed correct throughout a bug
+ * where the ghost was rendered invisibly or not at all — so assert the
+ * element itself. jsdom can't judge stacking (no layout, and Lit's adopted
+ * stylesheet isn't reachable via getComputedStyle), so paint order is covered
+ * by apps/ng-bootstrap-demo-e2e/e2e/scheduler-resize.spec.ts instead; here we
+ * pin the structural invariants that make stacking meaningful.
+ */
+describe('mp-scheduler — drag preview ghost (DOM)', () => {
+  let el: MpScheduler;
+  afterEach(() => el?.remove());
+
+  it('week: move-mode renders exactly one ghost, as a sibling and last child of the source', async () => {
+    el = await mount('week');
+    const ev = {
+      id: 'standup',
+      title: 'Standup',
+      start: new Date(2026, 4, 12, 9, 0),
+      end: new Date(2026, 4, 12, 9, 30),
+    };
+    (el as unknown as { events: unknown[] }).events = [ev];
+    await (el as unknown as { updateComplete: Promise<void> }).updateComplete;
+    await nextRaf();
+    el.shadowRoot!.querySelector<HTMLElement>('.scheduler-event')!.focus();
+    await nextRaf();
+    dispatchKey(el, 'Enter');
+    await (el as unknown as { updateComplete: Promise<void> }).updateComplete;
+    await nextRaf();
+
+    const ghosts = el.shadowRoot!.querySelectorAll('.scheduler-event.preview');
+    expect(ghosts.length).toBe(1);
+    const ghost = ghosts[0] as HTMLElement;
+    const source = Array.from(
+      el.shadowRoot!.querySelectorAll<HTMLElement>('.scheduler-event:not(.preview)'),
+    ).find((e) => e.dataset['eventId'] === 'standup')!;
+    expect(source).toBeDefined();
+    // z-index can only order siblings of one stacking context.
+    expect(ghost.parentElement).toBe(source.parentElement);
+    // The unselected case relies on this DOM-order tiebreak.
+    expect(ghost.parentElement!.lastElementChild).toBe(ghost);
+  });
+
+  it('week: the ghost is removed from the DOM when move-mode is cancelled', async () => {
+    el = await mount('week');
+    (el as unknown as { events: unknown[] }).events = [
+      { id: 'standup', title: 'Standup', start: new Date(2026, 4, 12, 9, 0), end: new Date(2026, 4, 12, 9, 30) },
+    ];
+    await (el as unknown as { updateComplete: Promise<void> }).updateComplete;
+    await nextRaf();
+    el.shadowRoot!.querySelector<HTMLElement>('.scheduler-event')!.focus();
+    await nextRaf();
+    dispatchKey(el, 'Enter');
+    await (el as unknown as { updateComplete: Promise<void> }).updateComplete;
+    await nextRaf();
+    expect(el.shadowRoot!.querySelectorAll('.scheduler-event.preview').length).toBe(1);
+
+    dispatchKey(el, 'Escape');
+    await (el as unknown as { updateComplete: Promise<void> }).updateComplete;
+    await nextRaf();
+    expect(el.shadowRoot!.querySelectorAll('.scheduler-event.preview').length).toBe(0);
+  });
+
+  it('timeline: move-mode renders a ghost too (it is gated on previewEvent, not dragState)', async () => {
+    el = await mount('timeline');
+    const ev = {
+      id: 'review',
+      title: 'Review',
+      start: new Date(2026, 4, 12, 9, 0),
+      end: new Date(2026, 4, 12, 10, 0),
+      resourceId: 'alice',
+    };
+    (el as unknown as { resources: unknown[] }).resources = [
+      { id: 'alice', title: 'Alice', events: [ev] },
+      { id: 'bob', title: 'Bob', events: [] },
+    ];
+    await (el as unknown as { updateComplete: Promise<void> }).updateComplete;
+    await nextRaf();
+    el.shadowRoot!.querySelector<HTMLElement>('.scheduler-timeline-event')!.focus();
+    await nextRaf();
+    dispatchKey(el, 'Enter');
+    await (el as unknown as { updateComplete: Promise<void> }).updateComplete;
+    await nextRaf();
+
+    // Regression: this was gated on `dragState`, which only the POINTER path
+    // sets — so keyboard users got no ghost on the timeline at all.
+    const ghosts = el.shadowRoot!.querySelectorAll('.scheduler-timeline-event.preview');
+    expect(ghosts.length).toBe(1);
+    const ghost = ghosts[0] as HTMLElement;
+    const source = Array.from(
+      el.shadowRoot!.querySelectorAll<HTMLElement>('.scheduler-timeline-event:not(.preview)'),
+    ).find((e) => e.dataset['eventId'] === 'review')!;
+    expect(ghost.parentElement).toBe(source.parentElement);
+    // Track-aligned with its source, not spanning the whole resource row.
+    expect(ghost.style.top).toBe(source.style.top);
+    expect(ghost.style.height).toBe(source.style.height);
+  });
+});

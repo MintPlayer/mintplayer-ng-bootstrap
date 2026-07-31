@@ -9,11 +9,39 @@ import { test, expect, type Page } from '@playwright/test';
  *     title renders on one line (D9).
  */
 
+// Every test here pays for a fresh SSR load + hydration and then drives a
+// multi-step drag. Four parallel workers share one server, and Firefox
+// routinely takes 2x Chromium's time under that contention (~15s vs ~6s), so
+// the 30s default leaves no headroom — the assertions themselves are fast.
+test.describe.configure({ timeout: 60_000 });
+
 async function loadSampleWeek(page: Page): Promise<void> {
   await page.goto('/enterprise/scheduler');
-  await page.waitForLoadState('networkidle');
+  // Deterministic readiness rather than `waitForLoadState('networkidle')`:
+  // the demo is server-rendered and then hydrates, and network quiescence
+  // times out intermittently (Firefox especially) once several workers share
+  // one dev/prod server. Waiting for the custom element to be UPGRADED and
+  // its grid rendered proves the bundle ran and Angular handed the element
+  // its inputs — which is what the old wait was really approximating.
+  await page.waitForSelector('mp-scheduler');
+  await page.waitForFunction(
+    () =>
+      !!customElements.get('mp-scheduler') &&
+      !!document
+        .querySelector('mp-scheduler')
+        ?.shadowRoot?.querySelector('[role="grid"]'),
+  );
   await page.getByRole('button', { name: 'Load Sample Data' }).click();
-  await page.waitForTimeout(200);
+  // Confirm the click actually took effect instead of assuming a fixed delay
+  // was enough — a click that lands pre-hydration is silently dropped.
+  await expect
+    .poll(() =>
+      schedulerRoot(page).evaluate(
+        (sched) =>
+          sched.shadowRoot!.querySelectorAll('.scheduler-event:not(.preview)').length,
+      ),
+    )
+    .toBeGreaterThan(0);
 }
 
 function schedulerRoot(page: Page) {
@@ -178,12 +206,115 @@ test.describe('scheduler — mouse edge-drag still resizes an UNSELECTED event (
   });
 });
 
+/**
+ * The drag ghost must paint OVER the event it came from — in every selection
+ * state. Regression guard: `.scheduler-event.selected` carries a z-index (so
+ * its straddling resize handles win pointer hits), and the ghost originally
+ * declared none, so it silently vanished behind a selected event mid-resize.
+ * The unselected case masked it, because equal z-indexes fall back to DOM
+ * order and the ghost is appended last.
+ *
+ * Note the existing resize tests above cannot catch this: they only observe
+ * the `event-update` payload, and the touch one even selects first — it drove
+ * the broken visual state and still passed.
+ */
+test.describe('scheduler — the drag ghost stays above its source event', () => {
+  for (const selectFirst of [false, true]) {
+    test(`ghost paints over the ${selectFirst ? 'SELECTED' : 'unselected'} source event`, async ({ page }) => {
+      await loadSampleWeek(page);
+
+      const eventBtn = page.getByRole('button', { name: /Lunch & Learn/ });
+      await eventBtn.scrollIntoViewIfNeeded();
+      if (selectFirst) {
+        await eventBtn.click();
+        await expect
+          .poll(() =>
+            schedulerRoot(page).evaluate(
+              (sched) => !!sched.shadowRoot!.querySelector('.scheduler-event.selected'),
+            ),
+          )
+          .toBe(true);
+      }
+
+      const box = (await eventBtn.boundingBox())!;
+      const x = box.x + box.width / 2;
+      const y = box.y + box.height - 3;
+      await page.mouse.move(x, y);
+      await page.mouse.down();
+      // Drag DOWN so the ghost grows past the event and the two overlap.
+      for (let i = 1; i <= 4; i++) {
+        await page.mouse.move(x, y + i * 20);
+        await page.waitForTimeout(60);
+      }
+
+      // Probe WHILE dragging — the ghost only exists while previewEvent is set.
+      const probe = await schedulerRoot(page).evaluate((sched) => {
+        const root = sched.shadowRoot!;
+        const preview = root.querySelector<HTMLElement>('.scheduler-event.preview');
+        // Resolve the real source by accessible name; a bare
+        // `.scheduler-event` would match some other day's event.
+        const src = Array.from(
+          root.querySelectorAll<HTMLElement>('.scheduler-event:not(.preview)'),
+        ).find((el) => (el.getAttribute('aria-label') ?? '').includes('Lunch & Learn'));
+        if (!preview || !src) return { ok: false as const, hasPreview: !!preview, hasSrc: !!src };
+
+        const p = preview.getBoundingClientRect();
+        const s = src.getBoundingClientRect();
+        const overlapW = Math.min(p.right, s.right) - Math.max(p.left, s.left);
+        const overlapH = Math.min(p.bottom, s.bottom) - Math.max(p.top, s.top);
+        const cx = (Math.max(p.left, s.left) + Math.min(p.right, s.right)) / 2;
+        const cy = (Math.max(p.top, s.top) + Math.min(p.bottom, s.bottom)) / 2;
+
+        // The ghost is `pointer-events: none` by design, and hit-testing skips
+        // such elements — so re-enable it for the probe only. pointer-events
+        // takes no part in the stacking algorithm, so the order reported here
+        // is exactly the paint order.
+        const saved = preview.style.pointerEvents;
+        preview.style.pointerEvents = 'auto';
+        const stack = root.elementsFromPoint(cx, cy);
+        preview.style.pointerEvents = saved;
+
+        return {
+          ok: true as const,
+          siblings: preview.parentElement === src.parentElement,
+          overlapW,
+          overlapH,
+          previewIndex: stack.findIndex((el) => el === preview || preview.contains(el)),
+          sourceIndex: stack.findIndex((el) => el === src || src.contains(el)),
+        };
+      });
+      await page.mouse.up();
+
+      expect(probe.ok).toBe(true);
+      if (!probe.ok) return;
+      // z-index only orders elements within one stacking context — assert the
+      // premise, so re-parenting the ghost can't quietly void this test.
+      expect(probe.siblings).toBe(true);
+      // A real overlap must exist, or "on top" is vacuous.
+      expect(probe.overlapW).toBeGreaterThan(10);
+      expect(probe.overlapH).toBeGreaterThan(10);
+      // elementsFromPoint is topmost-first.
+      expect(probe.previewIndex).toBeGreaterThanOrEqual(0);
+      expect(probe.previewIndex).toBeLessThan(probe.sourceIndex);
+    });
+  }
+});
+
 test.describe('scheduler — narrow header keeps every control reachable (D9)', () => {
   test.use({ viewport: { width: 320, height: 700 } });
 
   test('at 320px the title is one line and all header buttons are clickable', async ({ page }) => {
     await page.goto('/enterprise/scheduler');
-    await page.waitForLoadState('networkidle');
+    // Same deterministic readiness as loadSampleWeek (see there); this test
+    // needs no sample data, only the rendered header.
+    await page.waitForSelector('mp-scheduler');
+    await page.waitForFunction(
+      () =>
+        !!customElements.get('mp-scheduler') &&
+        !!document
+          .querySelector('mp-scheduler')
+          ?.shadowRoot?.querySelector('.scheduler-header[data-narrow]'),
+    );
 
     const state = await schedulerRoot(page).evaluate((sched) => {
       const root = sched.shadowRoot!;

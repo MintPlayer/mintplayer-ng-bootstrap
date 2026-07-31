@@ -1,3 +1,20 @@
+/* Layering ladder. Nothing between :host and the events establishes a
+   stacking context, so every one of these competes in ONE shared context
+   across the whole shadow root — a selected event in one day column is
+   compared directly against the now-indicator in another, and against the
+   sticky header. Keep them here, in order, rather than scattering magic
+   numbers: the preview ghost silently disappearing behind a selected event
+   is exactly what an undocumented ladder buys you.
+   SCSS vars (not custom properties) on purpose — these compile away, so the
+   ladder stays internal instead of becoming consumer-overridable API. */
+$z-slot-focus: 6;        // focus ring must stay visible over everything below
+$z-sticky-header: 10;    // clips scrolled content
+$z-now-indicator: 5;     // decorative 2px line, pointer-events: none
+$z-preview: 4;           // drag ghost — above the source event in every state
+$z-event-dragging: 3;    // touch-held / actively dragged source event
+$z-event-selected: 2;    // selected event: its straddling handles must win
+                         // pointer hits over neighbouring events (PRD D5)
+
 :host {
   display: block;
   height: 100%;
@@ -168,7 +185,7 @@
   background: var(--scheduler-header-bg);
   position: sticky;
   top: 0;
-  z-index: 10;
+  z-index: $z-sticky-header;
   min-width: fit-content;
 }
 
@@ -265,7 +282,9 @@
 .scheduler-time-slot:focus {
   outline: 2px solid var(--bs-primary);
   outline-offset: -2px;
-  z-index: 1;
+  /* Above the events overlay — including a SELECTED event, which would
+     otherwise hide the focus ring of the slot beneath it. */
+  z-index: $z-slot-focus;
 }
 
 /* Events */
@@ -329,9 +348,8 @@
 .scheduler-event.selected {
   box-shadow: 0 0 0 3px var(--bs-body-color);
   /* Raise above sibling events so the straddling handles win pointer hits.
-     At most one event is selected; the now-indicator (z-index 5) stays above
-     but is pointer-events: none. */
-  z-index: 2;
+     At most one event is selected. See the ladder at the top of this file. */
+  z-index: $z-event-selected;
 }
 
 .scheduler-event .event-title {
@@ -350,6 +368,10 @@
   background: var(--scheduler-preview-bg);
   border: 2px dashed var(--bs-primary);
   pointer-events: none;
+  /* MUST out-rank the source event in every state (normal, selected,
+     dragging) — an equal z-index would leave it relying on the preview being
+     appended last, which breaks the moment a view reorders its update(). */
+  z-index: $z-preview;
 }
 
 /* Resize handles — invisible 8px strips on every resizable event (the
@@ -433,7 +455,7 @@
   right: 0;
   height: 2px;
   background: var(--scheduler-now-indicator-color);
-  z-index: 5;
+  z-index: $z-now-indicator;
   pointer-events: none;
 }
 
@@ -592,7 +614,7 @@
   background: var(--scheduler-header-bg);
   position: sticky;
   top: 0;
-  z-index: 10;
+  z-index: $z-sticky-header;
 }
 
 .scheduler-resource-header {
@@ -678,7 +700,7 @@
 .scheduler-timeline-slot:focus {
   outline: 2px solid var(--bs-primary);
   outline-offset: -2px;
-  z-index: 1;
+  z-index: $z-slot-focus;
 }
 
 .scheduler-timeline-events {
@@ -706,13 +728,14 @@
 
 .scheduler-timeline-event.selected {
   box-shadow: 0 0 0 3px var(--bs-body-color);
-  z-index: 2;
+  z-index: $z-event-selected;
 }
 
 .scheduler-timeline-event.preview {
   background: var(--scheduler-preview-bg);
   border: 2px dashed var(--bs-primary);
   pointer-events: none;
+  z-index: $z-preview;
 }
 
 /* Horizontal resize handles — timeline counterpart of the week/day strips. */
@@ -803,7 +826,10 @@
 .scheduler-event.touch-hold-active {
   transform: scale(1.02);
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
-  z-index: 100;
+  /* Was 100, which painted a held event over the sticky day-header row (they
+     share one scroller and one stacking context). It only needs to out-rank
+     other events; the preview still goes above it. */
+  z-index: $z-event-dragging;
   touch-action: none;
   -ms-touch-action: none;
 }

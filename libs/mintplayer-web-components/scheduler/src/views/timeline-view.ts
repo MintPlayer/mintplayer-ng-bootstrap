@@ -408,21 +408,32 @@ export class TimelineView extends BaseView {
   }
 
   /**
-   * Dashed ghost showing where the dragged event will land, rendered in the
-   * dragged event's own resource row (pointer drags don't change resource).
-   * Mirrors week-view.renderPreviewEvent for the horizontal axis.
+   * Dashed ghost showing where the event will land. Mirrors
+   * week-view.renderPreviewEvent for the horizontal axis.
+   *
+   * Gated on `previewEvent` alone — NOT on `dragState`, which only the pointer
+   * drag path writes. Keyboard move-mode sets `previewEvent` with no
+   * `dragState`, so requiring it hid the ghost from keyboard users on this
+   * view while week/day showed it.
    */
   private renderPreviewEvent(days: Date[]): void {
     this.container.querySelector('.scheduler-timeline-event.preview')?.remove();
 
     const { dragState, previewEvent, resources, options } = this.state;
-    const draggedId = dragState?.event?.id;
-    if (!draggedId || !previewEvent) return;
+    if (!previewEvent) return;
 
-    const resource = resourceService
-      .getAllResources(resources)
-      .find((r) => (r.events ?? []).some((e) => e.id === draggedId));
-    const row = resource ? this.rowElements.get(resource.id) : null;
+    // Resource nudges (move-mode Up/Down) put the target row on the preview
+    // itself; fall back to whichever row currently owns the dragged event.
+    const draggedId = dragState?.event?.id ?? this.state.keyboardMoveEventId;
+    const resourceId =
+      previewEvent.resourceId ??
+      (draggedId
+        ? resourceService
+            .getAllResources(resources)
+            .find((r) => (r.events ?? []).some((e) => e.id === draggedId))?.id
+        : undefined);
+    if (!resourceId) return;
+    const row = this.rowElements.get(resourceId);
     const eventsContainer = row?.querySelector('.scheduler-timeline-events');
     if (!eventsContainer) return;
 
@@ -443,6 +454,20 @@ export class TimelineView extends BaseView {
     const previewEl = this.createElement('div', 'scheduler-timeline-event', 'preview');
     previewEl.style.left = `${((start - viewStart.getTime()) / viewDuration) * totalWidth}px`;
     previewEl.style.width = `${Math.max(((end - start) / viewDuration) * totalWidth, 20)}px`;
+    // Sit on the source event's track. Without this the ghost inherits the
+    // full-row top/height from .scheduler-timeline-event and covers every
+    // track of a multi-track resource row.
+    if (draggedId) {
+      // dataset match rather than an attribute selector: event ids are
+      // consumer-supplied and would need CSS escaping.
+      const sourceEl = Array.from(
+        eventsContainer.querySelectorAll<HTMLElement>('.scheduler-timeline-event:not(.preview)'),
+      ).find((el) => el.dataset['eventId'] === draggedId);
+      if (sourceEl) {
+        previewEl.style.top = sourceEl.style.top;
+        previewEl.style.height = sourceEl.style.height;
+      }
+    }
 
     eventsContainer.appendChild(previewEl);
   }
