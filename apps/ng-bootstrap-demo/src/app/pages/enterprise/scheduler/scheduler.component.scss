@@ -41,5 +41,12 @@
   pre {
     font-size: 10px;
     margin: 0;
+    // Bootstrap's reboot gives <pre> its own `overflow: auto`, which makes
+    // the long JSON a second scrollable region nested inside this one —
+    // axe (scrollable-region-focusable) then wants it focusable too. Wrap
+    // instead, so the focusable .state-debug stays the single scroller.
+    overflow: visible;
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
   }
 }

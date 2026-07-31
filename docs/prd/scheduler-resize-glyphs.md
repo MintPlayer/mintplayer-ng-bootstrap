@@ -368,6 +368,15 @@ WCAG 1.4.10 reflow reference), and inside a narrow dock/splitter pane.
   making both `tabindex="0" role="region"` with a label, and moved their inline styles
   into the component stylesheet (repo's no-inline-styles rule) — pre-existing demo
   debt, not part of the WC itself.
+  **CI then caught a second node the local run missed**: the `<pre>` *inside*
+  `.state-debug` is its own scroll region, because Bootstrap's reboot sets
+  `pre { overflow: auto }` and the full sample-data JSON overflows it. It only
+  reproduces with the complete seed (a shorter local events list didn't overflow),
+  which is exactly the trap of trusting a green local run. Fixed at the source rather
+  than by adding a second tab stop: the `<pre>` now wraps (`overflow: visible;
+  white-space: pre-wrap; overflow-wrap: anywhere`) so the already-focusable
+  `.state-debug` stays the single scroller. Verified by measuring
+  `scrollWidth/clientWidth` with the real seed loaded, not just by the gate passing.
 - **Touch-resize e2e flake root cause**: not a product bug. Bootstrap's `reboot.css`
   sets `scroll-behavior: smooth` globally; the test's own `scrollIntoView` call before
   the synthetic drag was still mid-animation when the drag started, corrupting the
