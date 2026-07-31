@@ -87,6 +87,12 @@ export interface SchedulerMessages {
   eventsLoaded: string;
   /** {title} {minutes} — move-mode entry keymap announcement */
   moveModeEntered: string;
+  /**
+   * {title} {minutes} — the timeline's move-mode entry announcement. Its own
+   * key because the generic one promises "arrow keys nudge by N minutes",
+   * which is wrong there: on the timeline Up/Down changes the resource.
+   */
+  moveModeEnteredTimeline: string;
   /** {start} {end} {day} */
   movedTo: string;
   /** {resource} */
@@ -167,6 +173,8 @@ export const DEFAULT_MESSAGES: SchedulerMessages = {
   eventsLoaded: 'Events loaded.',
   moveModeEntered:
     'Move mode for {title}. Arrow keys nudge by {minutes} minutes; Shift with arrow keys resizes the end edge; Alt with Shift resizes the start edge; Enter commits, Escape cancels.',
+  moveModeEnteredTimeline:
+    'Move mode for {title}. Left and Right arrows nudge by {minutes} minutes; Up and Down arrows change the resource; Shift with arrow keys resizes the end edge; Alt with Shift resizes the start edge; Enter commits, Escape cancels.',
   movedTo: 'Moved to {start}–{end}, {day}',
   movedToResource: 'Moved to resource {resource}.',
   resizedEdge: 'Resized {edge} edge to {start}–{end}',

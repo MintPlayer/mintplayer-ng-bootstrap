@@ -1780,3 +1780,128 @@ describe('mp-scheduler — timeline drag ghost finds its row', () => {
     expect(boxes[boxes.length - 1]).toBe(ghost);
   });
 });
+
+/**
+ * M20 — keyboard move-mode reaches the bucket row (B25/B26), and the timeline
+ * entry announcement stops promising a time nudge on the resource axis (B28).
+ * `nudgeKeyboardMoveResource` had NO coverage at all before this suite.
+ */
+describe('mp-scheduler — timeline move-mode reaches the bucket (M20)', () => {
+  let el: MpScheduler;
+  afterEach(() => el?.remove());
+
+  const ASSIGNED = {
+    id: 'task',
+    title: 'Task',
+    start: new Date(2026, 4, 12, 9, 0),
+    end: new Date(2026, 4, 12, 10, 0),
+    resourceId: 'bob',
+  };
+  // A second, unassigned event so the bucket row is rendered at all — the row
+  // list only contains what the view draws.
+  const LOOSE = {
+    id: 'loose',
+    title: 'Loose',
+    start: new Date(2026, 4, 12, 11, 0),
+    end: new Date(2026, 4, 12, 12, 0),
+  };
+
+  const settle = async () => {
+    await (el as unknown as { updateComplete: Promise<void> }).updateComplete;
+    await nextRaf();
+  };
+
+  const mountTimeline = async (events: unknown[]) => {
+    el = document.createElement('mp-scheduler') as MpScheduler;
+    document.body.appendChild(el);
+    (el as unknown as { date: Date }).date = new Date(2026, 4, 12);
+    (el as unknown as { resources: unknown[] }).resources = [
+      { id: 'alice', title: 'Alice' },
+      { id: 'bob', title: 'Bob' },
+    ];
+    (el as unknown as { events: unknown[] }).events = events;
+    el.setAttribute('view', 'timeline');
+    await settle();
+    return el;
+  };
+
+  const enterMoveModeOn = async (id: string) => {
+    const eventEl = [...el.shadowRoot!.querySelectorAll<HTMLElement>('.scheduler-timeline-event')]
+      .find((n) => n.dataset['eventId'] === id)!;
+    eventEl.focus();
+    await nextRaf();
+    dispatchKey(el, 'Enter');
+    await settle();
+  };
+
+  it('ArrowUp walks the move preview to the previous resource row', async () => {
+    await mountTimeline([ASSIGNED, LOOSE]);
+    await enterMoveModeOn('task');
+    dispatchKey(el, 'ArrowUp');
+    await settle();
+    expect(getState(el).previewEvent?.resourceId).toBe('alice');
+  });
+
+  it('ArrowDown past the last resource lands in the bucket; Enter commits with resourceId ABSENT', async () => {
+    await mountTimeline([ASSIGNED, LOOSE]);
+    await enterMoveModeOn('task');
+    dispatchKey(el, 'ArrowDown');
+    await settle();
+    // Preview names the bucket explicitly (null), not "no row" (undefined).
+    expect(getState(el).previewEvent?.resourceId).toBeNull();
+    // And the ghost renders IN the bucket row, not back in bob's (B26).
+    const bucketGhost = el.shadowRoot!.querySelector(
+      '.scheduler-timeline-row.unassigned .scheduler-timeline-event.preview',
+    );
+    expect(bucketGhost).not.toBeNull();
+
+    let detail: { event: { resourceId?: string } } | null = null;
+    el.addEventListener('event-update', (e) => {
+      detail = (e as CustomEvent).detail;
+    });
+    dispatchKey(el, 'Enter');
+    await settle();
+    expect(detail).not.toBeNull();
+    // Absent — not the old resource kept by a truthiness spread (B26).
+    expect('resourceId' in detail!.event).toBe(false);
+  });
+
+  it('Escape restores the original row after a resource nudge', async () => {
+    await mountTimeline([ASSIGNED, LOOSE]);
+    await enterMoveModeOn('task');
+    dispatchKey(el, 'ArrowDown');
+    await settle();
+    dispatchKey(el, 'Escape');
+    await settle();
+    const live = getState(el).events.find((e) => e.id === 'task') as { resourceId?: string };
+    expect(live.resourceId).toBe('bob');
+  });
+
+  it('without a rendered bucket row, ArrowDown from the last resource is a no-move', async () => {
+    await mountTimeline([ASSIGNED]);
+    await enterMoveModeOn('task');
+    dispatchKey(el, 'ArrowDown');
+    await settle();
+    expect(getState(el).previewEvent?.resourceId).toBe('bob');
+  });
+
+  it('the timeline entry announcement names the resource axis (B28)', async () => {
+    await mountTimeline([ASSIGNED, LOOSE]);
+    await enterMoveModeOn('task');
+    const live = el.shadowRoot!.querySelector('[role="status"]');
+    expect(live?.textContent).toContain('Up and Down arrows change the resource');
+  });
+
+  it('plain cell navigation reaches the bucket row too (B25)', async () => {
+    await mountTimeline([ASSIGNED, LOOSE]);
+    const bobSlot = el.shadowRoot!.querySelector<HTMLElement>(
+      '.scheduler-timeline-slot[data-resource-id="bob"]',
+    )!;
+    bobSlot.focus();
+    await nextRaf();
+    dispatchKey(el, 'ArrowDown');
+    await settle();
+    const active = el.shadowRoot!.activeElement as HTMLElement | null;
+    expect(active?.dataset['unassigned']).toBe('true');
+  });
+});

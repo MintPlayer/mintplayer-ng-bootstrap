@@ -2021,8 +2021,8 @@ export class MpScheduler extends LitElement {
     if (!f) return;
     if (state.view !== 'timeline') return;
     if (extend) return;
-    const next = this.adjacentResource(state.focusedResourceId, direction, state);
-    if (!next) return;
+    const next = this.adjacentRow(state.focusedResourceId, direction, state);
+    if (next === undefined) return;
     this.commitFocusMove(f, next, false);
   }
 
@@ -2152,16 +2152,34 @@ export class MpScheduler extends LitElement {
     return d;
   }
 
-  private adjacentResource(currentId: string | null, direction: 1 | -1, state: SchedulerState): string | null {
+  /**
+   * Walk the timeline's RENDERED row order: visible leaf resources, then the
+   * bucket row when it exists — the same list the view draws, so keyboard
+   * navigation can reach everything the eye can see (B25).
+   *
+   * Tri-state result: a string is the next resource row, `null` is the bucket
+   * row, `undefined` means "no move" (already at the edge, or nothing to walk).
+   * The old version returned `null` for BOTH of the last two, which is exactly
+   * why the bucket was unreachable by keyboard.
+   */
+  private adjacentRow(
+    currentId: string | null,
+    direction: 1 | -1,
+    state: SchedulerState,
+  ): string | null | undefined {
     const flattened = resourceService.flatten(state.resources, state.collapsedGroups);
-    const visible = flattened.filter((f) => f.visible && isResource(f.item));
-    if (visible.length === 0) return null;
-    if (!currentId) return visible[0].item.id;
-    const idx = visible.findIndex((f) => f.item.id === currentId);
-    if (idx < 0) return visible[0].item.id;
+    const rows: (string | null)[] = flattened
+      .filter((f) => f.visible && isResource(f.item))
+      .map((f) => f.item.id);
+    // Same presence rule as TimelineView.hasUnassignedRow: the bucket renders
+    // (last) whenever it holds events.
+    if ((state.eventsByResource.get(null) ?? []).length > 0) rows.push(null);
+    if (rows.length === 0) return undefined;
+    const idx = rows.indexOf(currentId);
+    if (idx < 0) return rows[0];
     const next = idx + direction;
-    if (next < 0 || next >= visible.length) return null;
-    return visible[next].item.id;
+    if (next < 0 || next >= rows.length) return undefined;
+    return rows[next];
   }
 
   private getResourceTitle(id: string | null): string | null {
@@ -2178,19 +2196,33 @@ export class MpScheduler extends LitElement {
    * drag-near-edge auto-pan (PRD D6).
    */
   private scrollAndFocusCell(cell: TimeSlot, resourceId: string | null): void {
-    const startIso = cell.start.toISOString();
-    const root = this.shadowRoot;
-    if (!root) return;
-    const sel = resourceId
-      ? `.scheduler-timeline-slot[data-resource-id="${this.cssEscape(resourceId)}"][data-start="${startIso}"]`
-      : `.scheduler-time-slot[data-start="${startIso}"]`;
-    const el = root.querySelector(sel) as HTMLElement | null;
+    const el = this.timeCellElement(cell.start, resourceId);
     if (!el) return;
     el.focus({ preventScroll: true });
     // jsdom doesn't implement scrollIntoView — guard so unit tests don't crash.
     if (typeof el.scrollIntoView === 'function') {
       el.scrollIntoView({ block: 'nearest', inline: 'nearest' });
     }
+  }
+
+  /**
+   * Resolve the grid cell for a (time, row) pair. Bucket-aware: on the
+   * timeline, `null` means the unassigned row, whose slots carry
+   * `data-unassigned` instead of a resource id — the old null branch looked up
+   * `.scheduler-time-slot`, which belongs to week/day and found nothing there,
+   * so keyboard focus could never land in the bucket row (B25).
+   */
+  private timeCellElement(start: Date, resourceId: string | null): HTMLElement | null {
+    const root = this.shadowRoot;
+    if (!root) return null;
+    const startIso = start.toISOString();
+    const timeline = this.stateManager.getState().view === 'timeline';
+    const sel = timeline
+      ? resourceId
+        ? `.scheduler-timeline-slot[data-resource-id="${this.cssEscape(resourceId)}"][data-start="${startIso}"]`
+        : `.scheduler-timeline-slot[data-unassigned][data-start="${startIso}"]`
+      : `.scheduler-time-slot[data-start="${startIso}"]`;
+    return root.querySelector(sel) as HTMLElement | null;
   }
 
   /** Re-focus whatever cell the keyboard model currently considers focused. */
@@ -2302,12 +2334,21 @@ export class MpScheduler extends LitElement {
       previewEvent: {
         start: new Date(event.start),
         end: new Date(event.end),
-        ...(resourceId ? { resourceId } : {}),
+        // Explicit, not a truthiness spread: `null` (an unassigned event) IS
+        // the bucket row, and dropping it made the ghost render in the wrong
+        // row the moment the user nudged rows (B26).
+        resourceId,
       },
     });
     const minutes = this.minutesPerSlot();
+    const timeline = this.stateManager.getState().view === 'timeline';
+    // The generic keymap line promises "arrow keys nudge by N minutes", which
+    // is a lie on the timeline, where Up/Down changes the resource (B28).
     this.liveAnnouncer.announce(
-      this.msg('moveModeEntered', { title: event.title, minutes }),
+      this.msg(timeline ? 'moveModeEnteredTimeline' : 'moveModeEntered', {
+        title: event.title,
+        minutes,
+      }),
     );
     // setState above tore down and rebuilt the focused event element. Re-focus
     // the new node so subsequent arrow keystrokes still reach our keydown
@@ -2411,14 +2452,18 @@ export class MpScheduler extends LitElement {
     this.liveAnnouncer.announce(formatMoveAnnouncement(newStart, newEnd, this.stateManager.getState().options));
   }
 
-  /** Walk to the next/previous resource (timeline only). Updates the preview's resourceId. */
+  /** Walk to the next/previous row (timeline only). Updates the preview's resourceId. */
   private nudgeKeyboardMoveResource(direction: 1 | -1): void {
     if (!this.keyboardMove) return;
-    const next = this.adjacentResource(this.keyboardMove.workingResourceId, direction, this.stateManager.getState());
-    if (!next) return;
+    const next = this.adjacentRow(this.keyboardMove.workingResourceId, direction, this.stateManager.getState());
+    if (next === undefined) return;
     this.keyboardMove.workingResourceId = next;
     this.applyKeyboardMovePreview();
-    const title = this.getResourceTitle(next) ?? next;
+    // `null` is the bucket row — announce its rendered label, never "null".
+    const title =
+      next === null
+        ? this.msg('unassignedResource')
+        : this.getResourceTitle(next) ?? next;
     this.liveAnnouncer.announce(this.msg('movedToResource', { resource: title }));
   }
 
@@ -2460,7 +2505,10 @@ export class MpScheduler extends LitElement {
       previewEvent: {
         start: workingStart,
         end: workingEnd,
-        ...(workingResourceId ? { resourceId: workingResourceId } : {}),
+        // Explicit: `null` = the bucket row. A truthiness spread dropped it,
+        // so a nudge INTO the bucket rendered the ghost back in the event's
+        // original row (B26).
+        resourceId: workingResourceId,
       },
     });
     // Each move-mode update tears down + rebuilds event elements (renderEvents
@@ -2472,11 +2520,7 @@ export class MpScheduler extends LitElement {
       if (!root) return;
       const eventEl = root.querySelector(`[data-event-id="${this.cssEscape(eventId)}"]`) as HTMLElement | null;
       eventEl?.focus({ preventScroll: true });
-      const startIso = workingStart.toISOString();
-      const sel = workingResourceId
-        ? `.scheduler-timeline-slot[data-resource-id="${this.cssEscape(workingResourceId)}"][data-start="${startIso}"]`
-        : `.scheduler-time-slot[data-start="${startIso}"]`;
-      const cellEl = root.querySelector(sel) as HTMLElement | null;
+      const cellEl = this.timeCellElement(workingStart, workingResourceId);
       if (cellEl && typeof cellEl.scrollIntoView === 'function') {
         cellEl.scrollIntoView({ block: 'nearest', inline: 'nearest' });
       }
@@ -2491,10 +2535,13 @@ export class MpScheduler extends LitElement {
         ...original,
         start: this.keyboardMove.workingStart,
         end: this.keyboardMove.workingEnd,
-        ...(this.keyboardMove.workingResourceId
-          ? { resourceId: this.keyboardMove.workingResourceId }
-          : {}),
       };
+      // Explicit write, not a truthiness spread: committing a move INTO the
+      // bucket row means CLEARING the resource, which the spread silently kept
+      // at its old value (B26). Outside the timeline `workingResourceId` is
+      // just a copy of the event's own resource, so this is a no-op there.
+      if (this.keyboardMove.workingResourceId === null) delete updated.resourceId;
+      else updated.resourceId = this.keyboardMove.workingResourceId;
       this.stateManager.updateEvent(updated);
       this.eventEmitter.emitEventUpdate(updated, original, new CustomEvent('keyboard-move'));
       this.liveAnnouncer.announce(this.msg('moveCommitted'));
