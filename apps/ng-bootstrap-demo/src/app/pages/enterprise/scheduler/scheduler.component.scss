@@ -5,6 +5,18 @@
   overflow: hidden;
 }
 
+.edit-event-form {
+  label {
+    display: block;
+    font-weight: 600;
+    font-size: 0.85rem;
+  }
+
+  input {
+    margin-bottom: 0.5rem;
+  }
+}
+
 .event-log {
   max-height: 500px;
   overflow-y: auto;

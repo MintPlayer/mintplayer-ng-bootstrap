@@ -702,6 +702,26 @@ export class MpScheduler extends LitElement {
     }
   }
 
+  /**
+   * Two activations of the same event within this window = a double
+   * click/tap. Native dblclick cannot be relied on here: the first click's
+   * selection re-render replaces the event node, which resets the browser's
+   * double-click tracking — so `event-dblclick` is synthesized from
+   * consecutive activations instead (and works for touch double-tap too).
+   */
+  private static readonly DBLCLICK_WINDOW_MS = 500;
+  private lastEventActivation: { eventId: string; time: number } | null = null;
+
+  private registerEventActivation(event: SchedulerEvent, originalEvent: Event): void {
+    const now = Date.now();
+    const prev = this.lastEventActivation;
+    this.lastEventActivation = { eventId: event.id, time: now };
+    if (prev && prev.eventId === event.id && now - prev.time < MpScheduler.DBLCLICK_WINDOW_MS) {
+      this.lastEventActivation = null;
+      this.eventEmitter.emitEventDblClick(event, originalEvent);
+    }
+  }
+
   private handleDragComplete(
     result: DragCompletionResult,
     originalEvent: Event
@@ -711,6 +731,7 @@ export class MpScheduler extends LitElement {
       if (result.event) {
         this.stateManager.setSelectedEvent(result.event);
         this.eventEmitter.emitEventSelected(result.event, originalEvent);
+        this.registerEventActivation(result.event, originalEvent);
       }
       return;
     }
@@ -803,8 +824,11 @@ export class MpScheduler extends LitElement {
     // Event click — also drives the keyboard-move tab stop. The drag flow
     // already calls setSelectedEvent on commit, but a plain click on an
     // event needs to select it too so the focus model can land on it.
+    // (This is the TOUCH tap path — registerEventActivation makes a quick
+    // double-tap emit event-dblclick, same as mouse double-click.)
     if (target.type === 'event' && target.event) {
       this.stateManager.setSelectedEvent(target.event);
+      this.registerEventActivation(target.event, pointer.originalEvent);
     }
   }
 
