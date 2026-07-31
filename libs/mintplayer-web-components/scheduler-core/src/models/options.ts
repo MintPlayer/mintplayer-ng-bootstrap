@@ -133,6 +133,20 @@ export interface SchedulerOptions {
   dayClickAction?: 'none' | 'popover';
 
   /**
+   * The built-in event editor: a popover anchored to the event with title,
+   * start/end and colour fields plus Save / Delete / Cancel, opened by
+   * double-click (double-tap), right-click, or F2 on the selected event.
+   *
+   * Default `true`. It emits the SAME requests every other surface emits —
+   * Save is an `event-update`, Delete an `event-delete` — so a consumer's
+   * handlers keep working unchanged, and it doubles as the single-pointer
+   * non-drag path to change an event's times (WCAG 2.5.7). Set `false` when
+   * the app ships its own editor; `event-dblclick` keeps firing either way.
+   * Also exposed as the `event-editor` attribute / `eventEditor` property.
+   */
+  eventEditor?: boolean;
+
+  /**
    * Whether every event is expected to name a resource.
    *
    * Default `false`: an event with no `resourceId` renders in the timeline's
@@ -194,5 +208,6 @@ export const DEFAULT_OPTIONS: Required<SchedulerOptions> = {
   dayMaxEvents: true,
   moreLinkBehavior: 'popover',
   dayClickAction: 'popover',
+  eventEditor: true,
   requireEventResource: false,
 };

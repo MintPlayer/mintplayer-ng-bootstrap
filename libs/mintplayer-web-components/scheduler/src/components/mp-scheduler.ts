@@ -57,6 +57,7 @@ export class MpScheduler extends LitElement {
       'view',
       'date',
       'locale',
+      'event-editor',
       'first-day-of-week',
       'slot-duration',
       'time-format',
@@ -92,6 +93,8 @@ export class MpScheduler extends LitElement {
   private boundHandleKeyDown: (e: KeyboardEvent) => void;
   private boundHandleFocusIn: (e: FocusEvent) => void;
   private boundHandleValueChange: (e: Event) => void;
+  private boundHandleContextMenu: (e: Event) => void;
+  private boundRepositionEditor: () => void;
 
   // Now indicator update timer
   private nowIndicatorTimer: ReturnType<typeof setInterval> | null = null;
@@ -152,6 +155,36 @@ export class MpScheduler extends LitElement {
     },
   });
 
+  /** Event the built-in editor is open for, or null when it is closed. */
+  private editorEventId: string | null = null;
+  /** Inline validation message currently shown in the editor, if any. */
+  private editorError: string | null = null;
+
+  /**
+   * The built-in event editor (R20/D12.8): a non-modal dialog anchored to the
+   * event's own element, resolved lazily by event id — the views rebuild their
+   * DOM imperatively, so a captured element would detach under the panel.
+   * Same mechanics and traps as the day popover above.
+   */
+  private readonly eventEditorOverlay = new OverlayController(this, {
+    anchor: () => this.eventElementById(this.editorEventId),
+    trigger: () => this.eventElementById(this.editorEventId),
+    panel: () =>
+      this.shadowRoot?.querySelector<HTMLElement>('.scheduler-event-editor') ?? null,
+    initialFocus: () =>
+      this.shadowRoot?.querySelector<HTMLElement>(
+        '.scheduler-event-editor input:not([disabled])',
+      ) ??
+      this.shadowRoot?.querySelector<HTMLElement>('.scheduler-event-editor .editor-action') ??
+      null,
+    modal: false,
+    onClose: () => {
+      this.editorEventId = null;
+      this.editorError = null;
+      this.requestUpdate();
+    },
+  });
+
   constructor() {
     super();
 
@@ -167,7 +200,9 @@ export class MpScheduler extends LitElement {
     this.boundHandleKeyDown = this.handleKeyDown.bind(this);
     this.boundHandleFocusIn = this.handleFocusIn.bind(this);
     this.boundHandleValueChange = this.handleValueChange.bind(this);
+    this.boundHandleContextMenu = this.handleContextMenu.bind(this);
     this.boundRepositionPopover = () => this.dayPopover.position();
+    this.boundRepositionEditor = () => this.eventEditorOverlay.position();
 
     // Subscribe to state changes
     this.stateManager.subscribe((state) => this.onStateChange(state));
@@ -195,6 +230,7 @@ export class MpScheduler extends LitElement {
     this.removeEventListener('keydown', this.boundHandleKeyDown);
     this.shadowRoot?.removeEventListener('focusin', this.boundHandleFocusIn as EventListener);
     this.shadowRoot?.removeEventListener('change', this.boundHandleValueChange);
+    this.shadowRoot?.removeEventListener('contextmenu', this.boundHandleContextMenu);
     this.currentView?.destroy();
     this.dragManager.destroy();
 
@@ -265,6 +301,11 @@ export class MpScheduler extends LitElement {
         // object isn't. Presence = read-only, `readonly="false"` opts out.
         this.syncPermissions();
         break;
+      case 'event-editor':
+        // The built-in editor's on/off switch (D12.8d) — attribute form so a
+        // plain-HTML consumer and the framework wrappers can bind it directly.
+        this.requestUpdate();
+        break;
     }
   }
 
@@ -307,6 +348,22 @@ export class MpScheduler extends LitElement {
     } else {
       this.removeAttribute('readonly');
     }
+  }
+
+  /**
+   * The built-in event editor's on/off switch (default ON). Attribute and
+   * property are the same state, like `readonly`: the ATTRIBUTE (`event-editor`)
+   * outranks `options.eventEditor`, and only the literal `"false"` disables —
+   * so a wrapper can render the attribute unconditionally from a boolean.
+   */
+  get eventEditor(): boolean {
+    const attr = this.getAttribute('event-editor');
+    if (attr !== null) return attr !== 'false';
+    return this.stateManager.getState().options.eventEditor !== false;
+  }
+
+  set eventEditor(value: boolean) {
+    this.setAttribute('event-editor', value ? 'true' : 'false');
   }
 
   get events(): SchedulerEvent[] {
@@ -458,10 +515,13 @@ export class MpScheduler extends LitElement {
         ${this.msg(
           this.can('moveEvent') || this.can('resizeEventStart') ||
           this.can('resizeEventEnd') || this.can('deleteEvent')
-            ? 'eventInstructions'
+            ? this.eventEditor
+              ? 'eventInstructionsWithEditor'
+              : 'eventInstructions'
             : 'eventInstructionsReadOnly')}
       </div>
       ${this.renderDayPopover()}
+      ${this.renderEventEditor()}
       ${this.liveAnnouncer.template()}
     `;
   }
@@ -800,6 +860,256 @@ export class MpScheduler extends LitElement {
       .sort((a, b) => a.start.getTime() - b.start.getTime());
   }
 
+  // ============================================
+  // Built-in event editor (R20 / D12.8)
+  // ============================================
+
+  /** The rendered element of an event, by id — never the drag ghost. */
+  private eventElementById(id: string | null): HTMLElement | null {
+    if (!id) return null;
+    return (
+      this.shadowRoot?.querySelector<HTMLElement>(
+        `[data-event-id="${this.cssEscape(id)}"]:not(.preview)`,
+      ) ?? null
+    );
+  }
+
+  /**
+   * The editor opens when ANY of its fields is permitted for this event
+   * (D12.8c) — an all-disabled form is worse than no form. `readonly` and
+   * per-event `editable: false` zero every capability, so they kill it
+   * wholesale through the same resolver as everything else.
+   */
+  private canOpenEditor(event: SchedulerEvent): boolean {
+    return (
+      this.can('editEvent', event) ||
+      this.can('moveEvent', event) ||
+      this.can('resizeEventStart', event) ||
+      this.can('resizeEventEnd', event) ||
+      this.can('deleteEvent', event)
+    );
+  }
+
+  private tryOpenEventEditor(event: SchedulerEvent): void {
+    if (!this.eventEditor || !this.canOpenEditor(event)) return;
+    this.editorEventId = event.id;
+    this.editorError = null;
+    this.requestUpdate();
+    void this.eventEditorOverlay.open();
+    // Same reposition trap as the day popover: `scroll` does not compose.
+    this.contentContainer?.addEventListener('scroll', this.boundRepositionEditor, {
+      passive: true,
+    });
+  }
+
+  private closeEventEditor(): void {
+    this.contentContainer?.removeEventListener('scroll', this.boundRepositionEditor);
+    this.eventEditorOverlay.close();
+    this.editorEventId = null;
+    this.editorError = null;
+    this.requestUpdate();
+  }
+
+  /** Right-click on an event box opens the editor (D12.8b). */
+  private handleContextMenu(e: Event): void {
+    const target = (e.composedPath?.()[0] ?? e.target) as HTMLElement | null;
+    const eventEl = target?.closest?.(
+      '[data-event-id]:not(.preview)',
+    ) as HTMLElement | null;
+    if (!eventEl) return;
+    const event = this.getEventById(eventEl.dataset['eventId'] ?? '');
+    if (!event || !this.eventEditor || !this.canOpenEditor(event)) return;
+    // Ours now — the native menu on anything else (empty grid, header, the
+    // panel's own inputs) stays untouched.
+    e.preventDefault();
+    this.stateManager.setSelectedEvent(event);
+    this.tryOpenEventEditor(event);
+  }
+
+  /** Date → value for `<input type="datetime-local">` (local time, minutes). */
+  private toLocalInputValue(date: Date): string {
+    const pad = (n: number) => String(n).padStart(2, '0');
+    return (
+      `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}` +
+      `T${pad(date.getHours())}:${pad(date.getMinutes())}`
+    );
+  }
+
+  private renderEventEditor(): TemplateResult | typeof nothing {
+    const event = this.editorEventId ? this.getEventById(this.editorEventId) : null;
+    if (!event) return nothing;
+
+    const canFields = this.can('editEvent', event);
+    const canStart = this.can('moveEvent', event) || this.can('resizeEventStart', event);
+    const canEnd = this.can('moveEvent', event) || this.can('resizeEventEnd', event);
+    const color = resolveEventColor(
+      event,
+      this.stateManager.getState().resourceById,
+      this.stateManager.getState().options.defaultEventColor,
+    );
+
+    return html`
+      <div
+        class="scheduler-event-editor"
+        role="dialog"
+        aria-label=${this.msg('eventEditorLabel', { title: event.title })}
+      >
+        <div class="editor-head">
+          <div class="editor-title">${event.title}</div>
+          <button
+            type="button"
+            class="editor-close"
+            aria-label=${this.msg('closePopover')}
+            @click=${() => this.closeEventEditor()}
+          >
+            <span aria-hidden="true">×</span>
+          </button>
+        </div>
+        <label class="editor-field">
+          <span>${this.msg('editorTitleLabel')}</span>
+          <input
+            type="text"
+            class="editor-input editor-title-input"
+            .value=${event.title}
+            ?disabled=${!canFields}
+          />
+        </label>
+        <label class="editor-field">
+          <span>${this.msg('editorStartLabel')}</span>
+          <input
+            type="datetime-local"
+            class="editor-input editor-start-input"
+            .value=${this.toLocalInputValue(event.start)}
+            ?disabled=${!canStart}
+          />
+        </label>
+        <label class="editor-field">
+          <span>${this.msg('editorEndLabel')}</span>
+          <input
+            type="datetime-local"
+            class="editor-input editor-end-input"
+            .value=${this.toLocalInputValue(event.end)}
+            ?disabled=${!canEnd}
+          />
+        </label>
+        <label class="editor-field">
+          <span>${this.msg('editorColorLabel')}</span>
+          <input
+            type="color"
+            class="editor-input editor-color-input"
+            .value=${color}
+            ?disabled=${!canFields}
+          />
+        </label>
+        ${this.editorError
+          ? html`<p class="editor-error" role="alert">${this.editorError}</p>`
+          : nothing}
+        <div class="editor-actions">
+          <button
+            type="button"
+            class="editor-action primary"
+            @click=${() => this.saveEventEditor()}
+          >
+            ${this.msg('editorSave')}
+          </button>
+          ${this.can('deleteEvent', event)
+            ? html`<button
+                type="button"
+                class="editor-action danger"
+                @click=${() => this.deleteFromEditor()}
+              >
+                ${this.msg('editorDelete')}
+              </button>`
+            : nothing}
+          <button
+            type="button"
+            class="editor-action"
+            @click=${() => this.closeEventEditor()}
+          >
+            ${this.msg('editorCancel')}
+          </button>
+        </div>
+      </div>
+    `;
+  }
+
+  /**
+   * Save = the same `event-update` request a committed drag emits, so the
+   * consumer's existing handler applies it unchanged. Only fields whose inputs
+   * were ENABLED are read back — a disabled field keeps the event's value, so
+   * a permission can never be bypassed by a form submit. Validation stays
+   * minimal (end > start, non-empty title): the WC owns no data; anything
+   * richer belongs in the consumer's listener.
+   */
+  private saveEventEditor(): void {
+    const original = this.editorEventId ? this.getEventById(this.editorEventId) : null;
+    const panel = this.shadowRoot?.querySelector('.scheduler-event-editor');
+    if (!original || !panel) return;
+
+    const read = <T extends HTMLInputElement>(selector: string): T | null =>
+      panel.querySelector<T>(selector);
+
+    const updated: SchedulerEvent = { ...original };
+
+    const titleInput = read('.editor-title-input');
+    if (titleInput && !titleInput.disabled) {
+      const title = titleInput.value.trim();
+      if (!title) {
+        this.editorError = this.msg('editorTitleRequired');
+        this.liveAnnouncer.announce(this.editorError);
+        this.requestUpdate();
+        return;
+      }
+      updated.title = title;
+    }
+
+    const startInput = read('.editor-start-input');
+    const endInput = read('.editor-end-input');
+    if (startInput && !startInput.disabled && startInput.value) {
+      updated.start = new Date(startInput.value);
+    }
+    if (endInput && !endInput.disabled && endInput.value) {
+      updated.end = new Date(endInput.value);
+    }
+    if (
+      isNaN(updated.start.getTime()) ||
+      isNaN(updated.end.getTime()) ||
+      updated.end <= updated.start
+    ) {
+      this.editorError = this.msg('editorInvalidRange');
+      this.liveAnnouncer.announce(this.editorError);
+      this.requestUpdate();
+      return;
+    }
+
+    const colorInput = read('.editor-color-input');
+    if (colorInput && !colorInput.disabled && colorInput.value) {
+      updated.color = colorInput.value;
+    }
+
+    this.closeEventEditor();
+    // Pre-mutate internal state exactly like a committed drag, so the box
+    // doesn't snap back while the consumer applies the request.
+    this.stateManager.updateEvent(updated);
+    this.eventEmitter.emitEventUpdate(updated, original, new CustomEvent('event-editor'));
+    this.liveAnnouncer.announce(this.msg('eventUpdated', { title: updated.title }));
+  }
+
+  /** The in-grid pointer delete (D12.4b's revised home). */
+  private deleteFromEditor(): void {
+    const event = this.editorEventId ? this.getEventById(this.editorEventId) : null;
+    if (!event) return;
+    if (!this.can('deleteEvent', event)) {
+      this.announceDenied();
+      return;
+    }
+    this.closeEventEditor();
+    this.eventEmitter.emitEventDelete(event);
+    // The focus-return target (the event box) is about to disappear when the
+    // consumer applies the delete — park focus on the grid cell instead.
+    requestAnimationFrame(() => this.focusFocusedCell());
+  }
+
   /**
    * Route a "+N more" activation through `options.moreLinkBehavior`. Returns the
    * date to drill to when the caller should navigate, or null when the behaviour
@@ -856,6 +1166,9 @@ export class MpScheduler extends LitElement {
     // isn't in the typed ShadowRootEventMap but the runtime supports it.
     this.shadowRoot!.addEventListener('focusin', this.boundHandleFocusIn as EventListener);
     this.shadowRoot!.addEventListener('change', this.boundHandleValueChange);
+    // Right-click on an event opens the built-in editor (D12.8b). Delegated:
+    // the views rebuild event nodes on every state change.
+    this.shadowRoot!.addEventListener('contextmenu', this.boundHandleContextMenu);
 
     this.renderView();
   }
@@ -1288,7 +1601,10 @@ export class MpScheduler extends LitElement {
     this.lastEventActivation = { eventId: event.id, time: now };
     if (prev && prev.eventId === event.id && now - prev.time < MpScheduler.DBLCLICK_WINDOW_MS) {
       this.lastEventActivation = null;
+      // `event-dblclick` fires FIRST and unconditionally — consumers who own
+      // their editor (eventEditor="false") keep the exact contract they had.
       this.eventEmitter.emitEventDblClick(event, originalEvent);
+      this.tryOpenEventEditor(event);
     }
   }
 
@@ -1519,6 +1835,7 @@ export class MpScheduler extends LitElement {
   ): void {
     if (target.type === 'event' && target.event) {
       this.eventEmitter.emitEventDblClick(target.event, pointer.originalEvent);
+      this.tryOpenEventEditor(target.event);
     }
   }
 
@@ -1573,6 +1890,15 @@ export class MpScheduler extends LitElement {
         e.preventDefault();
         e.stopPropagation();
         this.closeDayPopover();
+      }
+      return;
+    }
+    // Same rule for the event editor.
+    if (this.eventEditorOverlay.isOpen) {
+      if (e.key === 'Escape') {
+        e.preventDefault();
+        e.stopPropagation();
+        this.closeEventEditor();
       }
       return;
     }
@@ -1755,6 +2081,12 @@ export class MpScheduler extends LitElement {
       case 'Enter':
         e.preventDefault();
         this.tryEnterEventMoveMode(ev);
+        return;
+      // The keyboard face of double-click/right-click (D12.8b) — F2, matching
+      // the resource rename key, and the editing convention everywhere else.
+      case 'F2':
+        e.preventDefault();
+        this.tryOpenEventEditor(ev);
         return;
       case 'Delete':
       case 'Backspace':

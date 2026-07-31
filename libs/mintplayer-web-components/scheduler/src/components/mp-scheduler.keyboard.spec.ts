@@ -2042,3 +2042,171 @@ describe('mp-scheduler — popover delete buttons (M22)', () => {
     expect(el.shadowRoot!.activeElement?.getAttribute('aria-label')).toContain('Retro');
   });
 });
+
+/**
+ * M23 (R20) — the built-in event editor: a popover anchored to the event,
+ * emitting the SAME requests every other surface emits (Save = event-update,
+ * Delete = event-delete). §8.4 non-goal 3 reversed by user decision.
+ */
+describe('mp-scheduler — built-in event editor (M23)', () => {
+  let el: MpScheduler;
+  afterEach(() => el?.remove());
+
+  const EV = {
+    id: 'task',
+    title: 'Task',
+    start: new Date(2026, 4, 12, 9, 0),
+    end: new Date(2026, 4, 12, 10, 0),
+  };
+
+  const settle = async () => {
+    await (el as unknown as { updateComplete: Promise<void> }).updateComplete;
+    await nextRaf();
+  };
+
+  const mountWeek = async (props: Record<string, unknown> = {}) => {
+    el = document.createElement('mp-scheduler') as MpScheduler;
+    document.body.appendChild(el);
+    (el as unknown as { date: Date }).date = new Date(2026, 4, 12);
+    (el as unknown as { events: unknown[] }).events = [EV];
+    for (const [key, value] of Object.entries(props)) {
+      (el as unknown as Record<string, unknown>)[key] = value;
+    }
+    el.setAttribute('view', 'week');
+    await settle();
+    return el;
+  };
+
+  const editor = () => el.shadowRoot!.querySelector('.scheduler-event-editor');
+
+  const openViaF2 = async () => {
+    el.shadowRoot!.querySelector<HTMLElement>('.scheduler-event')!.focus();
+    await nextRaf();
+    dispatchKey(el, 'F2');
+    await settle();
+  };
+
+  it('F2 on the selected event opens the editor; Escape closes and returns focus', async () => {
+    await mountWeek();
+    await openViaF2();
+    expect(editor()).not.toBeNull();
+    expect(editor()!.getAttribute('role')).toBe('dialog');
+    expect(editor()!.getAttribute('aria-label')).toBe('Edit Task');
+    // Focus lands on the first enabled input, not a button.
+    expect((el.shadowRoot!.activeElement as HTMLElement)?.classList.contains('editor-input')).toBe(true);
+    dispatchKey(el, 'Escape');
+    await settle();
+    expect(editor()).toBeNull();
+    expect(
+      (el.shadowRoot!.activeElement as HTMLElement)?.classList.contains('scheduler-event'),
+    ).toBe(true);
+  });
+
+  it('right-click on an event opens the editor and suppresses the native menu', async () => {
+    await mountWeek();
+    const eventEl = el.shadowRoot!.querySelector<HTMLElement>('.scheduler-event')!;
+    const ctx = new MouseEvent('contextmenu', { bubbles: true, composed: true, cancelable: true });
+    eventEl.dispatchEvent(ctx);
+    await settle();
+    expect(ctx.defaultPrevented).toBe(true);
+    expect(editor()).not.toBeNull();
+  });
+
+  it('Save emits event-update carrying the edited fields', async () => {
+    await mountWeek();
+    await openViaF2();
+    const title = editor()!.querySelector<HTMLInputElement>('.editor-title-input')!;
+    title.value = 'Renamed';
+    const end = editor()!.querySelector<HTMLInputElement>('.editor-end-input')!;
+    end.value = '2026-05-12T11:30';
+    let detail: { event: { title: string; end: Date }; oldEvent: { title: string } } | null = null;
+    el.addEventListener('event-update', (e) => {
+      detail = (e as CustomEvent).detail;
+    });
+    (editor()!.querySelector('.editor-action.primary') as HTMLElement).click();
+    await settle();
+    expect(detail).not.toBeNull();
+    expect(detail!.event.title).toBe('Renamed');
+    expect(detail!.event.end.getHours()).toBe(11);
+    expect(detail!.event.end.getMinutes()).toBe(30);
+    expect(detail!.oldEvent.title).toBe('Task');
+    expect(editor()).toBeNull();
+  });
+
+  it('an inverted range is refused with an inline error and no emit', async () => {
+    await mountWeek();
+    await openViaF2();
+    const end = editor()!.querySelector<HTMLInputElement>('.editor-end-input')!;
+    end.value = '2026-05-12T08:00'; // before the 09:00 start
+    let emitted = false;
+    el.addEventListener('event-update', () => {
+      emitted = true;
+    });
+    (editor()!.querySelector('.editor-action.primary') as HTMLElement).click();
+    await settle();
+    expect(emitted).toBe(false);
+    expect(editor()).not.toBeNull();
+    expect(editor()!.querySelector('.editor-error')?.textContent).toContain('End must be after start');
+  });
+
+  it('the Delete button emits event-delete and closes', async () => {
+    await mountWeek();
+    await openViaF2();
+    let deleted: string | null = null;
+    el.addEventListener('event-delete', (e) => {
+      deleted = (e as CustomEvent).detail.event.id;
+    });
+    (editor()!.querySelector('.editor-action.danger') as HTMLElement).click();
+    await settle();
+    expect(deleted).toBe('task');
+    expect(editor()).toBeNull();
+  });
+
+  it('fields follow the permission table; a disabled field is never read back', async () => {
+    await mountWeek({
+      options: { permissions: { moveEvent: false, resizeEventStart: false, resizeEventEnd: false } },
+    });
+    await openViaF2();
+    // Title stays editable (editEvent default true); time fields are locked.
+    expect(editor()!.querySelector<HTMLInputElement>('.editor-title-input')!.disabled).toBe(false);
+    expect(editor()!.querySelector<HTMLInputElement>('.editor-start-input')!.disabled).toBe(true);
+    expect(editor()!.querySelector<HTMLInputElement>('.editor-end-input')!.disabled).toBe(true);
+    // Even a forced value on a disabled input must not survive Save.
+    const end = editor()!.querySelector<HTMLInputElement>('.editor-end-input')!;
+    end.value = '2026-05-12T15:00';
+    let detail: { event: { end: Date } } | null = null;
+    el.addEventListener('event-update', (e) => {
+      detail = (e as CustomEvent).detail;
+    });
+    (editor()!.querySelector('.editor-action.primary') as HTMLElement).click();
+    await settle();
+    expect(detail).not.toBeNull();
+    expect(detail!.event.end.getTime()).toBe(EV.end.getTime());
+  });
+
+  it('eventEditor=false disables every opener while event-dblclick keeps firing', async () => {
+    await mountWeek({ eventEditor: false });
+    expect(el.getAttribute('event-editor')).toBe('false');
+    await openViaF2();
+    expect(editor()).toBeNull();
+    // The dblclick contract survives for app-owned editors.
+    let dbl = false;
+    el.addEventListener('event-dblclick', () => {
+      dbl = true;
+    });
+    const internals = el as unknown as {
+      registerEventActivation: (ev: unknown, oe: Event) => void;
+    };
+    internals.registerEventActivation(EV, new MouseEvent('click'));
+    internals.registerEventActivation(EV, new MouseEvent('click'));
+    await settle();
+    expect(dbl).toBe(true);
+    expect(editor()).toBeNull();
+  });
+
+  it('readonly kills the editor wholesale', async () => {
+    await mountWeek({ readonly: true });
+    await openViaF2();
+    expect(editor()).toBeNull();
+  });
+});

@@ -67,6 +67,21 @@ export interface SchedulerMessages {
   /** {title} — accessible name of a per-event delete button. */
   deleteEventLabel: string;
 
+  // Event editor (the built-in edit popover)
+  /** {title} — accessible name of the editor dialog. */
+  eventEditorLabel: string;
+  editorTitleLabel: string;
+  editorStartLabel: string;
+  editorEndLabel: string;
+  editorColorLabel: string;
+  editorSave: string;
+  editorCancel: string;
+  editorDelete: string;
+  /** Inline error + announcement when the edited range is invalid. */
+  editorInvalidRange: string;
+  /** Inline error + announcement when the title is emptied. */
+  editorTitleRequired: string;
+
   // Year chrome
   /**
    * {month} {count} {events} — accessible name of a year-view month card. The
@@ -115,6 +130,8 @@ export interface SchedulerMessages {
   // aria-describedby keymap instructions
   gridInstructions: string;
   eventInstructions: string;
+  /** The eventInstructions variant used while the built-in editor is enabled. */
+  eventInstructionsWithEditor: string;
   /** Read-only variants: no create/move/resize/delete promises. */
   gridInstructionsReadOnly: string;
   eventInstructionsReadOnly: string;
@@ -166,6 +183,17 @@ export const DEFAULT_MESSAGES: SchedulerMessages = {
   newEventResource: 'Resource',
   deleteEventLabel: 'Delete {title}',
 
+  eventEditorLabel: 'Edit {title}',
+  editorTitleLabel: 'Title',
+  editorStartLabel: 'Start',
+  editorEndLabel: 'End',
+  editorColorLabel: 'Colour',
+  editorSave: 'Save',
+  editorCancel: 'Cancel',
+  editorDelete: 'Delete',
+  editorInvalidRange: 'End must be after start.',
+  editorTitleRequired: 'Title is required.',
+
   yearMonthCardLabel: '{month}, {count} {events}',
 
   viewChanged: 'View changed to {view}.',
@@ -199,6 +227,8 @@ export const DEFAULT_MESSAGES: SchedulerMessages = {
     'Use the arrow keys to move between cells. Hold Shift with the arrow keys to extend the selection, and press Enter to request a new event for the selection. Page Up and Page Down change the period. Alt with T, Y, M, W or D switches to today, year, month, week or day view.',
   eventInstructions:
     'Press Enter or M to move or resize the event with the arrow keys. Delete removes the event. Left and Right arrows move between events.',
+  eventInstructionsWithEditor:
+    'Press Enter or M to move or resize the event with the arrow keys. F2 opens the event editor. Delete removes the event. Left and Right arrows move between events.',
 
   eventOnResource: 'on {resource}',
 };

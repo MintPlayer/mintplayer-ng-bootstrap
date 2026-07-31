@@ -26,6 +26,12 @@ export interface SchedulerPermissions {
   resizeEventEnd: boolean;
   /** Delete/Backspace on a focused event. */
   deleteEvent: boolean;
+  /**
+   * Edit an event's non-geometric fields (title, colour) through the built-in
+   * event editor. The editor's start/end fields follow `moveEvent` and the
+   * resize capabilities instead — time is time, whichever surface changes it.
+   */
+  editEvent: boolean;
   /** Extend a multi-cell time range with Shift+Arrow or a slot drag. */
   selectRange: boolean;
   /** Add a resource row (timeline). Off by default — see the PRD. */
@@ -65,6 +71,7 @@ export const DEFAULT_PERMISSIONS: Readonly<Record<SchedulerCapability, boolean>>
   resizeEventStart: true,
   resizeEventEnd: true,
   deleteEvent: true,
+  editEvent: true,
   selectRange: true,
   createResource: false,
   updateResource: false,
