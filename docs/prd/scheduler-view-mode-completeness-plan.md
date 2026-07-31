@@ -227,6 +227,30 @@ After the affordances exist. **B13 is the highest-value item in this milestone.*
 - [ ] `.has-events` text equivalent in year view — still colour/dot only (WCAG 1.4.1),
       tracked with the per-resource icon item below.
 
+## M12 — Timeline tracks stack, they do not divide the row [R8]
+
+- [x] Constant-height tracks stacked top-to-bottom, with the resource row growing via
+      `min-height` (empty rows keep the 40px baseline). Week/day keep dividing — there the
+      height IS the duration.
+- [x] Geometry through `--scheduler-timeline-event-height` / `--scheduler-timeline-track-gap`
+      / `--scheduler-timeline-row-padding`, read by `TimelineView.trackMetrics`.
+- [x] `colspan` no longer stretches an event across empty neighbouring tracks.
+- [x] Unit test: three overlapping events keep ONE px height, get distinct evenly-spaced
+      tops, and grow the row past both the 40px baseline and three bands.
+
+## M13 — a11y defects surfaced by auditing the NEW states [found in M11]
+
+- [x] `clearContainer` strips the per-view ARIA (`role`, `aria-label`, `aria-describedby`,
+      `aria-multiselectable`, `aria-rowcount`), not just the per-view classes: `role="grid"`
+      leaked onto the scroller across a view switch, making the timeline a grid inside a
+      grid (axe `aria-required-children`, critical — reachable only after switching views,
+      which is why the load-time gate never saw it).
+- [x] Month event chips and the `+N more` link are ≥24px with 24px clear spacing
+      (`target-size`, serious, WCAG 2.2 SC 2.5.8); month rows grew 100px → 120px so three
+      chips plus the link still fit unclipped.
+- [x] The new e2e runs axe over both new states (resource affordances granted, popover open)
+      because the shared gate only ever audits the default one.
+
 ## M11 — Batched verification sweep
 
 - [x] `nx build mintplayer-web-components` (which runs `codegen-wc`), the three wrapper

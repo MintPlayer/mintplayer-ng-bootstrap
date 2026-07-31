@@ -35,6 +35,7 @@ PR has a single narrative.
 | R4 | Scheduler must be able to be read-only; granular create/move permissions | **fixed** (M7), §6 |
 | R5 | Timeline cannot scroll horizontally | **fixed** (M3) — device re-check pending, §7 |
 | R6 | Should month/year gain a day-click popup? (opinion requested) | **answered + built**: month yes (popover, M10) / year no — year Enter drills into the month instead, §8 |
+| R8 | Timeline compresses overlapping event tracks into a fixed-height row | **fixed** (M12), §11.3 |
 | R7 | Decide where resources/groups are relevant; resource colour used across all views, editable in timeline, random initial | **fixed**: colour resolves in every view (M6); in-timeline colour swatch emits `resource-update` (M8); initial colour stays the consumer's (demo ships a palette helper), §4 |
 
 ## 3. Multi-day drag feedback (R1) — and four bugs found underneath it
@@ -913,6 +914,42 @@ popover is a fixed-position dialog over the whole grid.
   of its inputs; a component that invents a colour on render is not idempotent and would
   fight SSR. The Angular demo ships a deterministic palette rotation to show the intended
   shape.
+
+### 11.3 M12 — timeline tracks stack instead of dividing the row (R8)
+
+Reported after M10: two events overlapping on one resource each rendered as a thin sliver,
+because the timeline reused the time-grid rule that a track is a *fraction* of the row
+(`top: trackIndex/totalTracks%`, `height: colspan/totalTracks%`).
+
+That rule is correct for week and day, where the vertical axis IS time and the row height
+therefore means duration. It is wrong for the timeline, where time runs **horizontally** and
+the panel scrolls: vertical space is free, so an event's height carries no information at
+all. Tracks now stack at a constant height and the resource row grows to fit them —
+`min-height`, so an empty row keeps its 40px baseline.
+
+Geometry lives in three custom properties (`--scheduler-timeline-event-height: 28px`,
+`--scheduler-timeline-track-gap: 2px`, `--scheduler-timeline-row-padding: 2px`) read by
+`TimelineView.trackMetrics`, so density is tunable without forking the view.
+
+`colspan` no longer stretches an event over its neighbours' empty tracks: with growth
+semantics that stretch is decoration, and a constant height is exactly what makes a
+multi-track row readable.
+
+### 11.4 Two a11y defects found by pointing axe at the new states
+
+The shared axe gate audits page load plus one interaction, which on this page means the
+default state — week view, permissions off, popover closed. Auditing the states this PR adds
+surfaced two failures that predate it:
+
+- **`aria-required-children` (critical)** — `clearContainer` reset the per-view *classes* but
+  not the per-view *ARIA*, so `role="grid"` (set on the scroller by week/day/month/year)
+  survived a switch into the timeline, whose grid lives on an inner element. The result was a
+  grid owning a grid, only ever reachable after a view switch. `clearContainer` now strips
+  `role`, `aria-label`, `aria-describedby`, `aria-multiselectable` and `aria-rowcount` too.
+- **`target-size` (serious, WCAG 2.2 SC 2.5.8)** — month event chips were 20.5px tall with a
+  20.6px safe-click diameter, and the `+N more` link the same. Both are now ≥24px with 24px
+  of clear spacing, and month rows grew from 100px to 120px so three chips plus the link
+  still fit without clipping.
 
 **Still outstanding** (deliberate follow-ups, none of them a reported defect):
 `options.requireEventResource`, a dedicated `resources: []` empty state, the per-resource

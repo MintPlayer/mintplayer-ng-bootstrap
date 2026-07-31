@@ -1,4 +1,5 @@
 import { test, expect, type Page, type Locator } from '@playwright/test';
+import AxeBuilder from '@axe-core/playwright';
 
 /**
  * PRD scheduler-view-mode-completeness — browser-level acceptance for the parts
@@ -58,6 +59,37 @@ async function switchView(page: Page, view: string): Promise<void> {
       ),
     )
     .toBe(true);
+}
+
+/**
+ * axe over the CURRENT state.
+ *
+ * The shared axe gate (`playwright.a11y.config.ts`) audits load + one
+ * interaction, which for this page means the default state: permissions off and
+ * the popover closed — i.e. none of the UI added here. These two states have to
+ * be audited where they are reachable, which is this spec.
+ *
+ * Same rule exclusions as the gate, for the same documented reasons: contrast is
+ * covered by the visual specs, and axe cannot resolve IDREFs across a shadow
+ * boundary (the repo's `expectIdrefResolves` unit helper guards that wiring).
+ */
+async function expectNoSeriousViolations(page: Page, what: string): Promise<void> {
+  const results = await new AxeBuilder({ page })
+    .withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa', 'wcag22aa', 'best-practice'])
+    .disableRules(['color-contrast', 'aria-valid-attr-value'])
+    .analyze();
+  const blocking = results.violations.filter(
+    (v) => v.impact === 'serious' || v.impact === 'critical',
+  );
+  expect(
+    blocking.map((v) => ({
+      rule: v.id,
+      impact: v.impact,
+      nodes: v.nodes.slice(0, 5).map((n) => n.target.join(' ')),
+      why: v.nodes[0]?.failureSummary,
+    })),
+    `axe violations with ${what}`,
+  ).toEqual([]);
 }
 
 /** Pick an option in one of the demo's labelled `bs-select`s. */
@@ -230,6 +262,8 @@ test.describe('scheduler — timeline (R3, R5, R7)', () => {
     );
     expect(labels.length).toBeGreaterThan(1);
     expect(new Set(labels).size).toBe(labels.length);
+
+    await expectNoSeriousViolations(page, 'timeline resource affordances granted');
   });
 });
 
@@ -269,6 +303,8 @@ test.describe('scheduler — month day popover (R6)', () => {
         return !!active && !!active.closest('.scheduler-day-popover');
       }),
     ).toBe(true);
+
+    await expectNoSeriousViolations(page, 'the day popover open');
 
     await page.keyboard.press('Escape');
 

@@ -302,6 +302,21 @@ export abstract class BaseView {
    */
   protected clearContainer(): void {
     this.container.innerHTML = '';
+    // The container's ARIA is per-view too: week/day/month/year claim `role=grid`
+    // on it via `applyGridRoles`, the timeline puts its grid on an inner element
+    // instead. Leaving the role behind after a view switch made the timeline a
+    // grid-inside-a-grid — an axe `aria-required-children` CRITICAL that only
+    // appears once a user has switched views, which is why the page-load audit
+    // never caught it.
+    for (const attr of [
+      'role',
+      'aria-label',
+      'aria-describedby',
+      'aria-multiselectable',
+      'aria-rowcount',
+    ]) {
+      this.container.removeAttribute(attr);
+    }
     // Each view's render() adds its own `scheduler-<view>-view` class here. Without
     // removing the previous one they accumulate forever, so the classes are NOT
     // mutually exclusive and can't be used to scope CSS. Drop them all.

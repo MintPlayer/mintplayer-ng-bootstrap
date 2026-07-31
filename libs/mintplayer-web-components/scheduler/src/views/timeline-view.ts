@@ -44,6 +44,29 @@ export class TimelineView extends BaseView {
     return Number.isFinite(parsed) && parsed > 0 ? parsed : 50;
   }
 
+  /**
+   * Track geometry for the timeline, in px, from the CSS custom properties so a
+   * consumer can retune density without forking the view.
+   *
+   * The timeline is the one view where vertical space is NOT the time axis —
+   * time runs horizontally and the panel scrolls — so an event's height carries
+   * no information. Overlapping events therefore STACK at a constant height and
+   * grow their resource row, instead of dividing a fixed 40px row between them
+   * the way week/day must (there, height IS duration).
+   */
+  private get trackMetrics(): { height: number; gap: number; padding: number } {
+    const styles = getComputedStyle(this.container);
+    const read = (name: string, fallback: number): number => {
+      const parsed = Number.parseFloat(styles.getPropertyValue(name).trim());
+      return Number.isFinite(parsed) && parsed >= 0 ? parsed : fallback;
+    };
+    return {
+      height: read('--scheduler-timeline-event-height', 28),
+      gap: read('--scheduler-timeline-track-gap', 2),
+      padding: read('--scheduler-timeline-row-padding', 2),
+    };
+  }
+
   render(): void {
     this.captureActionFocus();
     this.clearContainer();
@@ -626,18 +649,22 @@ export class TimelineView extends BaseView {
         totalDays: 1,
       }));
 
-      // Get timelened parts with track info (uses colspan algorithm)
+      // Get timelined parts with track info (uses colspan algorithm)
       const timelinedParts = timelineService.getTimelinedParts(allParts);
 
+      // The row grows to fit its tracks rather than dividing a fixed height
+      // between them: `min-height` so an empty row keeps the 40px baseline.
+      const tracks = timelinedParts.reduce((max, p) => Math.max(max, p.totalTracks), 1);
+      const { height, gap, padding } = this.trackMetrics;
+      row.style.minHeight = `${tracks * height + (tracks - 1) * gap + 2 * padding}px`;
+
       // Render each event part
-      for (const { part, trackIndex, totalTracks, colspan } of timelinedParts) {
+      for (const { part, trackIndex } of timelinedParts) {
         if (!part.event) continue;
 
         const eventEl = this.createEventElement(
           part.event,
           trackIndex,
-          totalTracks,
-          colspan,
           weekStart,
           totalWidth,
           options.slotDuration ?? 1800,
@@ -651,8 +678,6 @@ export class TimelineView extends BaseView {
   private createEventElement(
     event: SchedulerEvent,
     trackIndex: number,
-    totalTracks: number,
-    colspan: number,
     viewStart: Date,
     totalWidth: number,
     slotDuration: number,
@@ -689,15 +714,16 @@ export class TimelineView extends BaseView {
     const left = (startOffset / viewDuration) * totalWidth;
     const width = Math.max((duration / viewDuration) * totalWidth, 20);
 
-    // Calculate vertical position based on track and colspan
-    // colspan allows events to span multiple tracks when there's no blocking event
-    const top = (trackIndex / totalTracks) * 100;
-    const heightPercent = (colspan / totalTracks) * 100;
+    // Stack: one constant-height band per track, top to bottom. NOT a
+    // percentage of the row — a percentage is what squeezed two overlapping
+    // events into two thin slivers of a 40px row, which is right for week/day
+    // (height is duration there) and meaningless here.
+    const { height: trackHeight, gap, padding } = this.trackMetrics;
 
     eventEl.style.left = `${left}px`;
     eventEl.style.width = `${width}px`;
-    eventEl.style.top = `${top}%`;
-    eventEl.style.height = `${heightPercent}%`;
+    eventEl.style.top = `${padding + trackIndex * (trackHeight + gap)}px`;
+    eventEl.style.height = `${trackHeight}px`;
     // Fill + contrast text, resolving the resource's colour (see BaseView).
     this.applyEventColors(eventEl, event);
 

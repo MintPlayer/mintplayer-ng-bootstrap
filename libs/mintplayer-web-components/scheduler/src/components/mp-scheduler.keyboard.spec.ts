@@ -1379,3 +1379,54 @@ describe('mp-scheduler — events are composed', () => {
     outer.remove();
   });
 });
+
+/**
+ * Timeline tracks stack at a CONSTANT height and grow their row, rather than
+ * dividing a fixed row between them.
+ *
+ * Week and day must divide: there height IS duration. The timeline's vertical
+ * axis carries no information — time runs horizontally and the panel scrolls —
+ * so two overlapping events used to render as two ~18px slivers of a 40px row.
+ */
+describe('mp-scheduler — timeline track stacking', () => {
+  let el: MpScheduler;
+  afterEach(() => el?.remove());
+
+  it('overlapping events keep one height and stack, growing the resource row', async () => {
+    el = document.createElement('mp-scheduler') as MpScheduler;
+    document.body.appendChild(el);
+    (el as unknown as { date: Date }).date = new Date(2026, 4, 12);
+    (el as unknown as { resources: unknown[] }).resources = [{ id: 'alice', title: 'Alice' }];
+    (el as unknown as { events: unknown[] }).events = [
+      { id: 'a', title: 'A', resourceId: 'alice', start: new Date(2026, 4, 12, 9, 0), end: new Date(2026, 4, 12, 12, 0) },
+      { id: 'b', title: 'B', resourceId: 'alice', start: new Date(2026, 4, 12, 10, 0), end: new Date(2026, 4, 12, 13, 0) },
+      { id: 'c', title: 'C', resourceId: 'alice', start: new Date(2026, 4, 12, 11, 0), end: new Date(2026, 4, 12, 14, 0) },
+    ];
+    el.setAttribute('view', 'timeline');
+    await (el as unknown as { updateComplete: Promise<void> }).updateComplete;
+    await nextRaf();
+
+    const boxes = Array.from(
+      el.shadowRoot!.querySelectorAll<HTMLElement>('.scheduler-timeline-event:not(.preview)'),
+    );
+    expect(boxes.length).toBe(3);
+
+    // Every box the same height, expressed in px — a percentage of the row is
+    // exactly what produced the slivers.
+    const heights = boxes.map((b) => b.style.height);
+    expect(new Set(heights).size).toBe(1);
+    expect(heights[0]).toMatch(/px$/);
+
+    // Distinct, ascending track offsets.
+    const tops = boxes.map((b) => Number.parseFloat(b.style.top)).sort((x, y) => x - y);
+    expect(new Set(tops).size).toBe(3);
+    expect(tops[1] - tops[0]).toBeCloseTo(tops[2] - tops[1], 1);
+
+    // The row grew past the 40px single-track baseline, and past three bands.
+    const trackHeight = Number.parseFloat(heights[0]);
+    const row = el.shadowRoot!.querySelector<HTMLElement>('.scheduler-timeline-row')!;
+    const rowHeight = Number.parseFloat(row.style.minHeight);
+    expect(rowHeight).toBeGreaterThanOrEqual(3 * trackHeight);
+    expect(rowHeight).toBeGreaterThan(40);
+  });
+});
