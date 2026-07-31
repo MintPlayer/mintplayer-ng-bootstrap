@@ -21,6 +21,8 @@ export interface SchedulerMessages {
 
   // Timeline chrome
   resourcesHeader: string;
+  /** Row header for the synthetic bucket holding events with no resource. */
+  unassignedResource: string;
   /** {date} — formatted first day of the visible week */
   timelineGridLabel: string;
   /** {title} — resource group title */
@@ -85,6 +87,7 @@ export const DEFAULT_MESSAGES: SchedulerMessages = {
   viewTimeline: 'Timeline',
 
   resourcesHeader: 'Resources',
+  unassignedResource: '(No resource)',
   timelineGridLabel: 'Resource timeline for week starting {date}',
   expandGroup: 'Expand {title}',
   collapseGroup: 'Collapse {title}',

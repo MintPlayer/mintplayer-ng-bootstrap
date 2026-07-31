@@ -736,3 +736,139 @@ describe('mp-scheduler — time-grid geometry', () => {
     }
   });
 });
+
+/**
+ * The event model is normalized: one store, keyed by resourceId, merged from the
+ * flat `events` input and any events authored under `resources`. Before this,
+ * week/day/month/year read the flat list while timeline read `resource.events`,
+ * so the two rendered disjoint sets from the same component.
+ */
+describe('mp-scheduler — normalized event/resource model', () => {
+  let el: MpScheduler;
+  afterEach(() => el?.remove());
+
+  const mountWith = async (props: Record<string, unknown>, view = 'timeline') => {
+    el = document.createElement('mp-scheduler') as MpScheduler;
+    document.body.appendChild(el);
+    (el as unknown as { date: Date }).date = new Date(2026, 4, 12);
+    for (const [k, v] of Object.entries(props)) {
+      (el as unknown as Record<string, unknown>)[k] = v;
+    }
+    el.setAttribute('view', view);
+    await (el as unknown as { updateComplete: Promise<void> }).updateComplete;
+    await nextRaf();
+    return el;
+  };
+
+  it('shows a resource-less event in the timeline bucket row (the R2 report)', async () => {
+    await mountWith({
+      resources: [{ id: 'alice', title: 'Alice', events: [] }],
+      // No resourceId — exactly what week view produces, since it has no
+      // resource axis to supply one.
+      events: [
+        {
+          id: 'from-week',
+          title: 'Made in week view',
+          start: new Date(2026, 4, 12, 9, 0),
+          end: new Date(2026, 4, 12, 10, 0),
+        },
+      ],
+    });
+
+    const unassignedRow = el.shadowRoot!.querySelector('.scheduler-timeline-row.unassigned');
+    expect(unassignedRow).not.toBeNull();
+    expect(unassignedRow!.querySelector('.scheduler-resource-cell')!.textContent)
+      .toContain('No resource');
+    const chip = unassignedRow!.querySelector('.scheduler-timeline-event');
+    expect(chip).not.toBeNull();
+    expect(chip!.getAttribute('aria-label')).toContain('Made in week view');
+  });
+
+  it('no bucket row when every event has a resource', async () => {
+    await mountWith({
+      resources: [{ id: 'alice', title: 'Alice', events: [] }],
+      events: [
+        {
+          id: 'assigned',
+          title: 'Assigned',
+          start: new Date(2026, 4, 12, 9, 0),
+          end: new Date(2026, 4, 12, 10, 0),
+          resourceId: 'alice',
+        },
+      ],
+    });
+    expect(el.shadowRoot!.querySelector('.scheduler-timeline-row.unassigned')).toBeNull();
+    // ...and it renders in Alice's row, from the flat input — timeline no longer
+    // requires the event to be nested under the resource.
+    const aliceRow = el.shadowRoot!.querySelector('.scheduler-timeline-row:not(.unassigned)')!;
+    expect(aliceRow.querySelector('.scheduler-timeline-event')).not.toBeNull();
+  });
+
+  it('events authored under a resource are visible in week view too', async () => {
+    await mountWith(
+      {
+        resources: [
+          {
+            id: 'alice',
+            title: 'Alice',
+            events: [
+              {
+                id: 'nested',
+                title: 'Nested under Alice',
+                start: new Date(2026, 4, 12, 9, 0),
+                end: new Date(2026, 4, 12, 10, 0),
+              },
+            ],
+          },
+        ],
+      },
+      'week',
+    );
+    const box = el.shadowRoot!.querySelector('.scheduler-event:not(.preview)');
+    expect(box).not.toBeNull();
+    expect(box!.getAttribute('aria-label')).toContain('Nested under Alice');
+  });
+
+  it('stamps resourceId onto events authored under a resource', async () => {
+    await mountWith({
+      resources: [
+        {
+          id: 'alice',
+          title: 'Alice',
+          events: [
+            {
+              id: 'nested',
+              title: 'Nested',
+              start: new Date(2026, 4, 12, 9, 0),
+              end: new Date(2026, 4, 12, 10, 0),
+            },
+          ],
+        },
+      ],
+    });
+    const state = getState(el) as unknown as {
+      eventsByResource: Map<string | null, { id: string }[]>;
+    };
+    expect(state.eventsByResource.get('alice')!.map((e) => e.id)).toEqual(['nested']);
+    expect(state.eventsByResource.get(null) ?? []).toEqual([]);
+  });
+
+  it('honours a group’s authored collapsed flag', async () => {
+    await mountWith({
+      resources: [
+        {
+          id: 'eng',
+          title: 'Engineering',
+          collapsed: true,
+          children: [{ id: 'bob', title: 'Bob', events: [] }],
+        },
+      ],
+    });
+    // Bob's row must not be rendered while his parent group is collapsed.
+    const headers = Array.from(
+      el.shadowRoot!.querySelectorAll('.scheduler-resource-cell'),
+    ).map((c) => c.textContent ?? '');
+    expect(headers.some((h) => h.includes('Engineering'))).toBe(true);
+    expect(headers.some((h) => h.includes('Bob'))).toBe(false);
+  });
+});

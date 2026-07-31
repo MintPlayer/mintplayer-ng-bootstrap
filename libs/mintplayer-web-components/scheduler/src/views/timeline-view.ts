@@ -17,6 +17,13 @@ import { BaseView, formatEventAriaLabel, isSlotInSelection } from './base-view';
 import { SchedulerState } from '../state/scheduler-state';
 
 /**
+ * DOM/row-map key for the synthetic unassigned row. Not a resource id — the
+ * index keys unassigned events under `null`, and the row's slots carry no
+ * `data-resource-id` at all.
+ */
+const UNASSIGNED_ROW_ID = '__mp-unassigned__';
+
+/**
  * Timeline view renderer
  */
 export class TimelineView extends BaseView {
@@ -121,6 +128,17 @@ export class TimelineView extends BaseView {
       if (!flat.visible) continue;
 
       const row = this.createResourceRow(flat, days);
+      row.setAttribute('aria-rowindex', String(rowIndex));
+      body.appendChild(row);
+      rowIndex++;
+    }
+
+    // Synthetic bucket for events with no resource. Timeline is resource-keyed,
+    // so without this an event created in week view (which has no resource axis
+    // to supply an id) is unrenderable here — the component would show a blank
+    // panel and read as broken. Rendered last, and only when it has content.
+    if ((this.state.eventsByResource.get(null) ?? []).length > 0) {
+      const row = this.createUnassignedRow(days);
       row.setAttribute('aria-rowindex', String(rowIndex));
       body.appendChild(row);
       rowIndex++;
@@ -251,8 +269,65 @@ export class TimelineView extends BaseView {
     return row;
   }
 
+  /**
+   * The "(No resource)" bucket row.
+   *
+   * Structurally identical to a resource row so keyboard nav, roving tabindex and
+   * the grid ARIA chain all treat it as one more row — but its slots carry NO
+   * `data-resource-id`, so a create-drag started here produces an unassigned
+   * event rather than inventing membership of a resource that doesn't exist.
+   */
+  private createUnassignedRow(days: Date[]): HTMLElement {
+    const { options } = this.state;
+    const row = this.createElement('div', 'scheduler-timeline-row', 'unassigned');
+    row.setAttribute('role', 'row');
+
+    const resourceCell = this.createElement('div', 'scheduler-resource-cell');
+    resourceCell.setAttribute('role', 'rowheader');
+    resourceCell.style.paddingLeft = '8px';
+    const title = this.createElement('span');
+    title.textContent = resolveMessages(options.messages).unassignedResource;
+    resourceCell.appendChild(title);
+    row.appendChild(resourceCell);
+
+    const slotsContainer = this.createElement('div', 'scheduler-timeline-slots');
+    slotsContainer.setAttribute('role', 'presentation');
+
+    for (const day of days) {
+      const slots = dateService.getTimeSlots(
+        day,
+        options.slotDuration,
+        options.slotMinTime,
+        options.slotMaxTime,
+      );
+      for (const slot of slots) {
+        const slotEl = this.createElement('div', 'scheduler-timeline-slot');
+        slotEl.setAttribute('role', 'gridcell');
+        slotEl.setAttribute('tabindex', '-1');
+        slotEl.setAttribute('aria-selected', 'false');
+        slotEl.id = `scheduler-cell-t-${UNASSIGNED_ROW_ID}-${slot.start.getTime()}`;
+        slotEl.style.width = `${this.slotWidth}px`;
+        // Deliberately no resourceId — see the doc comment.
+        this.setData(slotEl, {
+          start: slot.start.toISOString(),
+          end: slot.end.toISOString(),
+        });
+        slotsContainer.appendChild(slotEl);
+      }
+    }
+
+    const eventsContainer = this.createElement('div', 'scheduler-timeline-events');
+    eventsContainer.setAttribute('role', 'gridcell');
+    slotsContainer.appendChild(eventsContainer);
+
+    row.appendChild(slotsContainer);
+    this.rowElements.set(UNASSIGNED_ROW_ID, row);
+
+    return row;
+  }
+
   private renderEvents(days: Date[]): void {
-    const { events, resources, options, collapsedGroups } = this.state;
+    const { resources, options } = this.state;
 
     const weekStart = days[0];
     const weekEnd = new Date(days[6]);
@@ -269,11 +344,25 @@ export class TimelineView extends BaseView {
     const totalSlots = slotsPerDay * 7;
     const totalWidth = totalSlots * this.slotWidth;
 
-    // Get all resources
-    const allResources = resourceService.getAllResources(resources);
+    // Every row we render, including the synthetic unassigned bucket. Its id is
+    // `null` in the index; UNASSIGNED_ROW_ID is only the DOM/row-map key.
+    const rows: { resourceId: string | null; title: string }[] = [
+      ...resourceService.getAllResources(resources).map((r) => ({
+        resourceId: r.id as string | null,
+        title: r.title,
+      })),
+      ...(this.rowElements.has(UNASSIGNED_ROW_ID)
+        ? [
+            {
+              resourceId: null,
+              title: resolveMessages(options.messages).unassignedResource,
+            },
+          ]
+        : []),
+    ];
 
-    for (const resource of allResources) {
-      const row = this.rowElements.get(resource.id);
+    for (const { resourceId, title: rowTitle } of rows) {
+      const row = this.rowElements.get(resourceId ?? UNASSIGNED_ROW_ID);
       if (!row) continue;
 
       const eventsContainer = row.querySelector('.scheduler-timeline-events');
@@ -282,9 +371,11 @@ export class TimelineView extends BaseView {
       // Clear existing events
       eventsContainer.innerHTML = '';
 
-      // Get events for this resource
-      const resourceEvents = (resource.events ?? []).filter(
-        (e) => e.start < weekEnd && e.end > weekStart
+      // Events come from the normalized store, keyed by resourceId — NOT from
+      // `resource.events`, which was a second store that made this view render a
+      // disjoint set from week/day/month/year.
+      const resourceEvents = (this.state.eventsByResource.get(resourceId) ?? []).filter(
+        (e) => e.start < weekEnd && e.end > weekStart,
       );
 
       // Create event parts for layout (don't split into daily parts for timeline view)
@@ -315,7 +406,7 @@ export class TimelineView extends BaseView {
           weekStart,
           totalWidth,
           options.slotDuration ?? 1800,
-          resource.title,
+          rowTitle,
         );
         eventsContainer.appendChild(eventEl);
       }
