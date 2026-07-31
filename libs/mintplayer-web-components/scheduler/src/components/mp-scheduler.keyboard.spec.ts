@@ -1648,6 +1648,44 @@ describe('mp-scheduler — resource-less events and an empty tree', () => {
     expect(el.shadowRoot!.querySelector('.scheduler-timeline-empty')).toBeNull();
     expect(el.shadowRoot!.querySelector('.scheduler-timeline-row.unassigned')).not.toBeNull();
   });
+
+  // B29 — deleting a resource must not orphan its events invisibly: a dangling
+  // resourceId sits under an index key no row reads, so before this fix the
+  // event vanished from the timeline while week/day/month kept rendering it.
+  it('events of a deleted resource re-bucket to "(No resource)" and warn once', async () => {
+    const warnings: string[] = [];
+    const original = console.warn;
+    console.warn = (...args: unknown[]) => warnings.push(String(args[0]));
+    try {
+      await mountTimeline({
+        resources: [
+          { id: 'alice', title: 'Alice' },
+          { id: 'bob', title: 'Bob' },
+        ],
+        events: [{ ...UNASSIGNED, id: 'orphan', resourceId: 'bob' }],
+      });
+      expect(el.shadowRoot!.querySelector('.scheduler-timeline-row.unassigned')).toBeNull();
+
+      // The consumer honours resource-delete without touching the events.
+      (el as unknown as { resources: unknown[] }).resources = [
+        { id: 'alice', title: 'Alice' },
+      ];
+      await (el as unknown as { updateComplete: Promise<void> }).updateComplete;
+      await nextRaf();
+    } finally {
+      console.warn = original;
+    }
+
+    // Still visible — in the bucket row, not gone.
+    const bucket = el.shadowRoot!.querySelector('.scheduler-timeline-row.unassigned');
+    expect(bucket).not.toBeNull();
+    expect(bucket!.querySelectorAll('.scheduler-timeline-event').length).toBe(1);
+    // And reported once, naming the event and the dangling id.
+    const relevant = warnings.filter((w) => w.includes('does not exist'));
+    expect(relevant.length).toBe(1);
+    expect(relevant[0]).toContain('orphan');
+    expect(relevant[0]).toContain('bob');
+  });
 });
 
 /**

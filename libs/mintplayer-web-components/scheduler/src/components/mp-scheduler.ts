@@ -1246,7 +1246,9 @@ export class MpScheduler extends LitElement {
           { start: result.preview.start, end: result.preview.end },
           state.view,
           originalEvent,
-          result.preview.resourceId,
+          // `null` (created in the bucket row) maps to "no resource" on the
+          // wire — the emitted field stays `string | undefined`.
+          result.preview.resourceId ?? undefined,
         );
         break;
       }
@@ -1260,6 +1262,14 @@ export class MpScheduler extends LitElement {
             start: result.preview.start,
             end: result.preview.end,
           };
+          // A MOVE preview carries the row the pointer ended on (tri-state):
+          // a string reassigns, `null` (the bucket row) UN-assigns, and
+          // `undefined` — every resize, and any view without a resource axis —
+          // leaves the event's own resource untouched.
+          if (result.preview.resourceId !== undefined) {
+            if (result.preview.resourceId === null) delete updatedEvent.resourceId;
+            else updatedEvent.resourceId = result.preview.resourceId;
+          }
           this.stateManager.updateEvent(updatedEvent);
           this.eventEmitter.emitEventUpdate(
             updatedEvent,
@@ -2550,13 +2560,17 @@ export class MpScheduler extends LitElement {
 
     if (!startStr || !endStr) return null;
 
-    // Carry the row's resource so a create-drag can report where it happened.
-    const resourceId = el.dataset['resourceId'];
+    // Carry the row's resource so a drag can report where it is happening.
+    // Tri-state: a resource row names itself, the bucket row is `null` (its
+    // slots carry `data-unassigned`), and a slot with neither belongs to a
+    // view without a resource axis (`undefined`).
+    const resourceId =
+      el.dataset['resourceId'] ?? (el.dataset['unassigned'] ? null : undefined);
 
     return {
       start: new Date(startStr),
       end: new Date(endStr),
-      ...(resourceId ? { resourceId } : {}),
+      ...(resourceId !== undefined ? { resourceId } : {}),
     };
   }
 }

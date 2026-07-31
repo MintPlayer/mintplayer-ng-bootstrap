@@ -925,6 +925,14 @@ $z-event-selected: 2;    // selected event: its straddling handles must win
   font-weight: 600;
 }
 
+/* The row a drag is currently addressing — the cross-row move's answer to
+   "which resource will this land on?". A tint on the whole row, not only the
+   greyed slots, so the target reads at a glance even when the time band is
+   scrolled out of view. */
+.scheduler-timeline-row.drop-target {
+  background: var(--scheduler-drop-target-bg, rgba(13, 110, 253, 0.06));
+}
+
 .scheduler-timeline-row.group .scheduler-resource-cell {
   /* Sticky cells are transparent by default — a group row must keep its own
      tint or slots slide visibly underneath the pinned column. */

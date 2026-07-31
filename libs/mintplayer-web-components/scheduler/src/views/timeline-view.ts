@@ -540,9 +540,12 @@ export class TimelineView extends BaseView {
    * The "(No resource)" bucket row.
    *
    * Structurally identical to a resource row so keyboard nav, roving tabindex and
-   * the grid ARIA chain all treat it as one more row — but its slots carry NO
-   * `data-resource-id`, so a create-drag started here produces an unassigned
-   * event rather than inventing membership of a resource that doesn't exist.
+   * the grid ARIA chain all treat it as one more row — but its slots carry
+   * `data-unassigned` instead of a `data-resource-id`, so a drag addressing this
+   * row resolves to the tri-state `resourceId: null` ("the bucket") rather than
+   * `undefined` ("no resource axis"). An absent attribute could not carry that
+   * distinction — it would read exactly like a week-view slot, and a drop here
+   * could never mean "unassign".
    */
   private createUnassignedRow(days: Date[]): HTMLElement {
     const { options } = this.state;
@@ -574,10 +577,11 @@ export class TimelineView extends BaseView {
         slotEl.setAttribute('aria-selected', 'false');
         slotEl.id = `scheduler-cell-t-${UNASSIGNED_ROW_ID}-${slot.start.getTime()}`;
         slotEl.style.width = `${this.slotWidth}px`;
-        // Deliberately no resourceId — see the doc comment.
+        // `data-unassigned`, not a resourceId — see the doc comment.
         this.setData(slotEl, {
           start: slot.start.toISOString(),
           end: slot.end.toISOString(),
+          unassigned: 'true',
         });
         slotsContainer.appendChild(slotEl);
       }
@@ -783,29 +787,8 @@ export class TimelineView extends BaseView {
     const { dragState, previewEvent, options } = this.state;
     if (!previewEvent) return;
 
-    // Resource nudges (move-mode Up/Down) put the target row on the preview
-    // itself; otherwise the row is the one that owns the dragged event.
     const draggedId = dragState?.event?.id ?? this.state.keyboardMoveEventId;
-    // From the NORMALIZED store, not `resource.events`. That nested array stopped
-    // being a live mirror when the model was normalized, so the old lookup found
-    // nothing for any event supplied through the `events` input — which is every
-    // event a drag-create or an ordinary API call produces. A resize preview
-    // carries no `resourceId` of its own, so this was the only thing that could
-    // name the row, and the ghost silently vanished for those events.
-    const draggedEvent = draggedId
-      ? this.state.events.find((event) => event.id === draggedId)
-      : undefined;
-    const rowKey =
-      previewEvent.resourceId ??
-      // `?? UNASSIGNED_ROW_ID`, not `?? undefined`: an event in the bucket row is
-      // legitimately resource-less and still deserves a ghost.
-      (draggedEvent ? draggedEvent.resourceId ?? UNASSIGNED_ROW_ID : undefined) ??
-      // A CREATE drag has no source event and no resource on the preview either,
-      // so fall back to the row the gesture is happening in. Without this a
-      // create-drag on a timeline row showed no ghost at all.
-      this.state.selectionResourceId ??
-      this.state.focusedResourceId ??
-      undefined;
+    const rowKey = this.previewRowKey();
     if (!rowKey) return;
     const row = this.rowElements.get(rowKey);
     const eventsContainer = row?.querySelector('.scheduler-timeline-events');
@@ -831,19 +814,60 @@ export class TimelineView extends BaseView {
     // Sit on the source event's track. Without this the ghost inherits the
     // full-row top/height from .scheduler-timeline-event and covers every
     // track of a multi-track resource row.
-    if (draggedId) {
-      // dataset match rather than an attribute selector: event ids are
-      // consumer-supplied and would need CSS escaping.
-      const sourceEl = Array.from(
-        eventsContainer.querySelectorAll<HTMLElement>('.scheduler-timeline-event:not(.preview)'),
-      ).find((el) => el.dataset['eventId'] === draggedId);
-      if (sourceEl) {
-        previewEl.style.top = sourceEl.style.top;
-        previewEl.style.height = sourceEl.style.height;
-      }
+    //
+    // On a CROSS-ROW move the source element lives in another row, so there is
+    // no track to inherit — first-track geometry is the honest rendering there
+    // (the event has no track in this row until it lands).
+    const sourceEl = draggedId
+      ? // dataset match rather than an attribute selector: event ids are
+        // consumer-supplied and would need CSS escaping.
+        Array.from(
+          eventsContainer.querySelectorAll<HTMLElement>('.scheduler-timeline-event:not(.preview)'),
+        ).find((el) => el.dataset['eventId'] === draggedId)
+      : undefined;
+    if (sourceEl) {
+      previewEl.style.top = sourceEl.style.top;
+      previewEl.style.height = sourceEl.style.height;
+    } else {
+      const { height, padding } = this.trackMetrics;
+      previewEl.style.top = `${padding}px`;
+      previewEl.style.height = `${height}px`;
     }
 
     eventsContainer.appendChild(previewEl);
+  }
+
+  /**
+   * Which row a drag/preview is currently addressing.
+   *
+   * Precedence: the preview's own row (a MOVE tracks the pointer's row; a
+   * move-mode Up/Down nudge writes it too — `null` meaning the bucket row) →
+   * the dragged event's own row (a resize never changes rows, and its preview
+   * deliberately carries none) → the row the gesture is happening in (a CREATE
+   * has no source event; without this fallback a create-drag showed no
+   * feedback at all).
+   *
+   * The dragged event is resolved from the NORMALIZED store, not
+   * `resource.events` — that nested array stopped being a live mirror when the
+   * model was normalized, so the old lookup found nothing for any event
+   * supplied through the `events` input.
+   */
+  private previewRowKey(): string | undefined {
+    const { dragState, previewEvent } = this.state;
+    if (!previewEvent) return undefined;
+    if (previewEvent.resourceId !== undefined) {
+      return previewEvent.resourceId ?? UNASSIGNED_ROW_ID;
+    }
+    const draggedId = dragState?.event?.id ?? this.state.keyboardMoveEventId;
+    const draggedEvent = draggedId
+      ? this.state.events.find((event) => event.id === draggedId)
+      : undefined;
+    if (draggedEvent) {
+      // `?? UNASSIGNED_ROW_ID`, not `?? undefined`: an event in the bucket row
+      // is legitimately resource-less and still deserves feedback.
+      return draggedEvent.resourceId ?? UNASSIGNED_ROW_ID;
+    }
+    return this.state.selectionResourceId ?? this.state.focusedResourceId ?? undefined;
   }
 
   update(state: SchedulerState): void {
@@ -895,14 +919,24 @@ export class TimelineView extends BaseView {
   private updateGreyedSlots(): void {
     const { dragState, previewEvent } = this.state;
 
-    // Clear all greyed slots
+    // Clear all greyed slots and any previous drop-target highlight
     const allSlots = this.container.querySelectorAll('.scheduler-timeline-slot');
     allSlots.forEach((slot) => slot.classList.remove('greyed'));
+    this.container
+      .querySelectorAll('.scheduler-timeline-row.drop-target')
+      .forEach((row) => row.classList.remove('drop-target'));
 
     if (!dragState || !previewEvent) return;
 
-    // Grey out slots that overlap with the preview
-    allSlots.forEach((slot) => {
+    // Feedback is scoped to the row the drag is addressing: greying the time
+    // band across EVERY row read as "this affects all resources", which is
+    // wrong feedback the moment a move can change rows.
+    const rowKey = this.previewRowKey();
+    const row = rowKey ? this.rowElements.get(rowKey) : undefined;
+    if (!row) return;
+
+    row.classList.add('drop-target');
+    row.querySelectorAll('.scheduler-timeline-slot').forEach((slot) => {
       const slotStart = new Date((slot as HTMLElement).dataset['start'] ?? '');
       const slotEnd = new Date((slot as HTMLElement).dataset['end'] ?? '');
 
