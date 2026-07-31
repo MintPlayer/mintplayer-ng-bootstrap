@@ -1292,6 +1292,9 @@ describe('mp-scheduler — month day popover', () => {
     await mountMonth();
     el.shadowRoot!.querySelector<HTMLElement>('.scheduler-more-link')!.click();
     await settle();
+    // Focus lands on the first EVENT, not the close button in the header — a
+    // dialog that opens focused on "close" dismisses itself on the first Enter.
+    expect(el.shadowRoot!.activeElement?.classList.contains('popover-event')).toBe(true);
     dispatchKey(el, 'Escape');
     await settle();
     expect(popover()).toBeNull();

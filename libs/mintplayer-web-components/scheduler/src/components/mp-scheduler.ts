@@ -118,7 +118,17 @@ export class MpScheduler extends LitElement {
     // cell that some paths do not focus) instead of falling to <body>.
     trigger: () => this.popoverAnchorCell(),
     panel: () => this.shadowRoot?.querySelector<HTMLElement>('.scheduler-day-popover') ?? null,
-    initialFocus: 'first',
+    // The first EVENT, or failing that the first action — not `'first'`, which
+    // is the close button in the header: opening a dialog with focus on "close"
+    // means the user's first Enter dismisses what they just asked to see.
+    initialFocus: () => {
+      const panel = this.shadowRoot?.querySelector('.scheduler-day-popover');
+      return (
+        panel?.querySelector<HTMLElement>('.popover-event') ??
+        panel?.querySelector<HTMLElement>('.popover-action') ??
+        null
+      );
+    },
     modal: false,
     // Dismissal comes from the controller (Escape via the dismiss stack, outside
     // mousedown), so mirror it into our own state or the panel stays rendered.
