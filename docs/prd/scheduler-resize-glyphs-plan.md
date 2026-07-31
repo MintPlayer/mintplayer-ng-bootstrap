@@ -1,10 +1,12 @@
 # Plan — Scheduler resize glyphs, touch resize, and blind-user completeness
 
 PRD: [scheduler-resize-glyphs.md](./scheduler-resize-glyphs.md)
-Status: **Implemented** (2026-07-31, all milestones; deviations recorded in the PRD's
-"As-built notes" — notably: no title compaction, synthesized `event-dblclick`,
-Angular `viewChange` output replaced by model outputs, timeline resource-event
-lookup/update bug fixes)
+Status: **Shipped** — PR [#394](https://github.com/MintPlayer/mintplayer-ng-bootstrap/pull/394)
+against `master` (2026-07-31, all milestones + post-sweep fallout fixed; deviations
+recorded in the PRD's "As-built notes" — notably: no title compaction, synthesized
+`event-dblclick`, Angular `viewChange` output replaced by model outputs, timeline
+resource-event lookup/update bug fixes, React/Vue demo date-binding follow-up, ng
+demo scrollable-region-focusable fix)
 
 Conventions that apply throughout:
 
@@ -185,6 +187,10 @@ Files: `src/components/mp-scheduler.ts` (event emission),
 - [x] React: add `onDateChange` (if `date-change` ships) to the `createComponent`
       events map; nothing else needed.
 - [x] Extend `MpSchedulerElement` interface in the Angular wrapper for anything new.
+- [x] **Follow-up (caught post-sweep):** the wrapper capability landed but the React/Vue
+      *demos* still passed no `date` prop at all (left fully uncontrolled) — only the
+      Angular demo used `[(date)]`. Wired `date` state + `onViewChange` (React) and
+      `v-model:date` (Vue) into both demo pages so the capability is actually exercised.
 
 ## Milestone I — Demos, docs, axe interact [FR-15, D6]
 
@@ -202,6 +208,11 @@ Files: `apps/ng-bootstrap-demo/src/app/pages/enterprise/scheduler/scheduler.comp
       order).
 - [x] Add the `interact` step (select an event) to the scheduler route in all three axe
       specs so `wcag22aa` target-size audits the revealed glyphs.
+- [x] **Fallout from the new interact step:** it populated `.event-log`/`.state-debug`
+      on the ng demo for the first time under axe, exposing a pre-existing
+      `scrollable-region-focusable` violation (overflow:auto panels with no tabindex).
+      Fixed both (`tabindex="0" role="region"` + label) and moved their inline styles
+      into the stylesheet while there.
 
 ## Milestone J — Test sweep (single batched run)
 
@@ -217,6 +228,15 @@ Files: `apps/ng-bootstrap-demo/src/app/pages/enterprise/scheduler/scheduler.comp
       `NX_ISOLATE_PLUGINS=false NX_DAEMON=false`), then the three wrapper builds, then
       the e2e/axe suites.
 - [x] Fix fallout; re-run only what failed.
+- [x] **Touch-resize e2e flake, root-caused and fixed**: the workspace's global
+      `scroll-behavior: smooth` (Bootstrap `reboot.css`) meant the test's own
+      `scrollIntoView` before the synthetic drag was still animating when the drag
+      started, drifting the touch coordinates — not a product bug. Fixed by waiting
+      for scroll to settle and widening the drag distance to reliably cross a slot
+      boundary regardless of the handle's sub-slot starting offset. Verified stable
+      across 3 consecutive runs.
+- [x] Shipped as PR #394 against `master`; four package versions bumped (minor —
+      breaking change rides the minor per #390/#392/#393 precedent).
 
 ## Explicitly rejected (with reasons — do not resurrect casually)
 

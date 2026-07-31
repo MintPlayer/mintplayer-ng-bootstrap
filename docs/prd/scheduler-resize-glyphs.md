@@ -356,3 +356,25 @@ WCAG 1.4.10 reflow reference), and inside a narrow dock/splitter pane.
   snapped back). Both fixed; the timeline also gained the drag preview ghost.
 - **Touch-drag e2e** uses synthetic `TouchEvent`s (engine-agnostic) rather than a
   CDP-only touchscreen drag; hasTouch context asserts the no-hold immediate arm.
+- **D8 initially landed wrapper-only**: the React/Vue *libraries* gained `date` two-way
+  binding capability, but the React/Vue *demos* kept `date` fully uncontrolled (no prop
+  passed at all) — only the Angular demo exercised `[(date)]`. Fixed: both demos now
+  track `date` the same way they already tracked `view` (React: `date` state +
+  `onViewChange` writes both; Vue: `v-model:date` alongside `v-model:view`).
+- **Demo a11y gap surfaced by the new axe interact step**: `.event-log` / `.state-debug`
+  on the ng demo page are `overflow:auto` panels that become genuinely scrollable once
+  populated (they weren't, on the axe "on load" pass, which is why this was never
+  caught before). Axe's `scrollable-region-focusable` flagged `.state-debug`. Fixed by
+  making both `tabindex="0" role="region"` with a label, and moved their inline styles
+  into the component stylesheet (repo's no-inline-styles rule) — pre-existing demo
+  debt, not part of the WC itself.
+- **Touch-resize e2e flake root cause**: not a product bug. Bootstrap's `reboot.css`
+  sets `scroll-behavior: smooth` globally; the test's own `scrollIntoView` call before
+  the synthetic drag was still mid-animation when the drag started, corrupting the
+  touch coordinates. Fixed by waiting out the scroll animation first, and widening the
+  drag distance so it reliably crosses a slot boundary regardless of the handle's exact
+  sub-slot starting offset (the resize snapping itself was always correct).
+- **Shipped**: PR [#394](https://github.com/MintPlayer/mintplayer-ng-bootstrap/pull/394)
+  against `master`; versions bumped `web-components` 2.3.0→2.4.0, `ng-bootstrap`
+  22.7.0→22.8.0, `react-bootstrap` 19.9.0→19.10.0, `vue-bootstrap` 3.10.0→3.11.0 (minor,
+  breaking change rides the minor per #390/#392/#393 precedent).
