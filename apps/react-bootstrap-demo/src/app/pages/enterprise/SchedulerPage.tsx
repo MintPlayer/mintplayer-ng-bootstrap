@@ -28,16 +28,20 @@ const SEED: SchedulerEvent[] = [
   { id: '3', title: 'Lunch',         start: at(12), end: at(13),    color: '#198754' },
 ];
 
-const SOURCE = `// \`view\` is a controlled prop: @lit/react re-asserts element
-// properties on every render, so pair it with onViewChange (the
-// React equivalent of Angular's [view]/(viewChange)) — otherwise a
-// re-render would clobber a WC-driven view switch back to the literal.
+const SOURCE = `// \`view\` and \`date\` are controlled props: @lit/react re-asserts
+// element properties on every render, and the WC changes both from
+// within (view switcher, prev/next/today navigation) — pair them with
+// onViewChange (the React equivalent of Angular's [(view)]/[(date)]),
+// whose detail carries both, or a re-render would clobber a WC-driven
+// change back to the stale literal.
 const [view, setView] = useState<ViewType>('day');
+const [date, setDate] = useState(new Date());
 
 <BsScheduler
   events={events}
   view={view}
-  onViewChange={e => setView(e.detail.view)}
+  date={date}
+  onViewChange={e => { setView(e.detail.view); setDate(e.detail.date); }}
   onEventCreate={e => {
     setEvents([...events, {
       id: generateEventId(), title: 'New Event',
@@ -50,11 +54,13 @@ const [view, setView] = useState<ViewType>('day');
 
 export function SchedulerPage() {
   const [events, setEvents] = useState<SchedulerEvent[]>(SEED);
-  // Controlled view. @lit/react re-applies element properties on every
-  // render without dirty-checking, so `view` must track the WC's own
-  // view changes (via onViewChange) — otherwise a re-render after a drag
-  // would re-assert a stale literal and snap the scheduler back.
+  // Controlled view + date. @lit/react re-applies element properties on
+  // every render without dirty-checking, so both must track the WC's own
+  // changes (via onViewChange, which fires for date navigation too) —
+  // otherwise a re-render after a drag or a prev/next click would
+  // re-assert a stale literal and snap the scheduler back.
   const [view, setView] = useState<ViewType>('day');
+  const [date, setDate] = useState(new Date());
 
   // Double-click editor — the single-pointer, NON-DRAG path to change an
   // event's times (WCAG 2.5.7 Dragging Movements): every resize possible by
@@ -115,8 +121,11 @@ export function SchedulerPage() {
       <section style={{ height: 540 }}>
         <h2>Today's agenda</h2>
         <BsScheduler
-          {...{ events, view } as React.ComponentProps<typeof BsScheduler>}
-          onViewChange={(e) => setView(e.detail.view)}
+          {...{ events, view, date } as React.ComponentProps<typeof BsScheduler>}
+          onViewChange={(e) => {
+            setView(e.detail.view);
+            setDate(e.detail.date);
+          }}
           onEventDblClick={(e) => openEditor(e.detail.event)}
           onEventUpdate={(e) => {
             setEvents((current) =>

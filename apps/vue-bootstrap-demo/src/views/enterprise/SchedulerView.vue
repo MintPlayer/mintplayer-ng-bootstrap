@@ -24,10 +24,12 @@ const events = ref<SchedulerEvent[]>([
   { id: '3', title: 'Lunch',         start: at(12), end: at(13),    color: '#198754' },
 ]);
 
-// `v-model:view` keeps the bound ref in sync with the WC's own view
-// switcher — the scheduler emits `view-change`, the wrapper writes it
-// back into this ref, so it always reflects the active view.
+// `v-model:view` / `v-model:date` keep the bound refs in sync with the
+// WC's own view switcher AND its prev/next/today navigation — the
+// scheduler emits `view-change` for both, the wrapper writes it back
+// into these refs, so they always reflect the active view/period.
 const view = ref<ViewType>('day');
+const date = ref(new Date());
 
 function onEventUpdate(e: Event) {
   const detail = (e as CustomEvent<{ event: SchedulerEvent }>).detail;
@@ -99,10 +101,12 @@ function toLocalInputValue(date: Date): string {
   return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}`;
 }
 
-const SOURCE = `<!-- v-model:view tracks the WC's own view switcher both ways -->
+const SOURCE = `<!-- v-model:view / v-model:date track the WC's own view switcher and
+     prev/next/today navigation both ways -->
 <BsScheduler
   :events="events"
   v-model:view="view"
+  v-model:date="date"
   @event-create="(e) => {
     events = [...events, {
       id: generateEventId(), title: 'New Event',
@@ -148,6 +152,7 @@ const SOURCE = `<!-- v-model:view tracks the WC's own view switcher both ways --
       <BsScheduler
         :events="events"
         v-model:view="view"
+        v-model:date="date"
         style="display: block; height: 100%"
         @event-update="onEventUpdate"
         @event-create="onEventCreate"
