@@ -643,11 +643,18 @@ $z-event-selected: 2;    // selected event: its straddling handles must win
   gap: 2px;
 }
 
+.scheduler-day-popover .popover-event-row {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+}
+
 .scheduler-day-popover .popover-event {
   display: flex;
   align-items: center;
   gap: 8px;
-  width: 100%;
+  flex: 1 1 auto;
+  min-width: 0;
   min-height: 28px;
   padding: 4px 6px;
   border: 1px solid transparent;
@@ -657,6 +664,27 @@ $z-event-selected: 2;    // selected event: its straddling handles must win
   font: inherit;
   text-align: left;
   cursor: pointer;
+}
+
+/* Per-row delete — a real sibling button (the row's event entry is itself a
+   button, so nesting is not an option). 24px min target (SC 2.5.8). */
+.scheduler-day-popover .popover-event-delete {
+  flex: 0 0 auto;
+  min-width: 24px;
+  min-height: 24px;
+  padding: 0;
+  border: 1px solid transparent;
+  border-radius: 4px;
+  background: transparent;
+  color: var(--bs-secondary-color, #666);
+  font: inherit;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.scheduler-day-popover .popover-event-delete:hover {
+  background: var(--bs-secondary-bg, rgba(0, 0, 0, 0.08));
+  color: var(--bs-danger, #dc3545);
 }
 
 .scheduler-day-popover .popover-event:hover {

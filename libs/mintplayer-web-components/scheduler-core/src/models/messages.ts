@@ -64,6 +64,8 @@ export interface SchedulerMessages {
   closePopover: string;
   /** Label of the popover's resource picker on the create action. */
   newEventResource: string;
+  /** {title} — accessible name of a per-event delete button. */
+  deleteEventLabel: string;
 
   // Year chrome
   /**
@@ -162,6 +164,7 @@ export const DEFAULT_MESSAGES: SchedulerMessages = {
   showMonth: 'Show month',
   closePopover: 'Close',
   newEventResource: 'Resource',
+  deleteEventLabel: 'Delete {title}',
 
   yearMonthCardLabel: '{month}, {count} {events}',
 

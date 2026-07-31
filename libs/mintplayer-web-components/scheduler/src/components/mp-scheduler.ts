@@ -569,7 +569,7 @@ export class MpScheduler extends LitElement {
     options: SchedulerOptions,
   ): TemplateResult {
     return html`
-      <li>
+      <li class="popover-event-row">
         <button
           type="button"
           class="popover-event"
@@ -587,8 +587,55 @@ export class MpScheduler extends LitElement {
           ></span>
           <span class="popover-event-title">${event.title}</span>
         </button>
+        ${this.can('deleteEvent', event)
+          ? html`<button
+              type="button"
+              class="popover-event-delete"
+              aria-label=${this.msg('deleteEventLabel', { title: event.title })}
+              @click=${() => this.deleteFromPopover(event)}
+            >
+              <span aria-hidden="true">×</span>
+            </button>`
+          : nothing}
       </li>
     `;
+  }
+
+  /**
+   * The pointer face of the Delete key (R14): before this, `event-delete` was
+   * keyboard-only. A SIBLING of the event button — event boxes and popover
+   * entries are buttons themselves, so a delete control inside one would be a
+   * nested interactive.
+   *
+   * The popover stays open: `event-delete` is a request, and whether the row
+   * disappears is the consumer's call (their listener owns the data, and any
+   * confirm/undo). Focus is parked on the next row by INDEX before the list
+   * re-renders — the deleted row's button is about to vanish, and focus falling
+   * to <body> would dump a keyboard user out of the dialog.
+   */
+  private deleteFromPopover(event: SchedulerEvent): void {
+    if (!this.can('deleteEvent', event)) {
+      this.announceDenied();
+      return;
+    }
+    const panel = this.shadowRoot?.querySelector('.scheduler-day-popover');
+    const rows = panel ? [...panel.querySelectorAll<HTMLElement>('.popover-event')] : [];
+    const index = rows.findIndex((row) =>
+      row.getAttribute('aria-label') === formatEventAriaLabel(event, null, this.stateManager.getState().options),
+    );
+    this.eventEmitter.emitEventDelete(event);
+    void this.updateComplete.then(() =>
+      requestAnimationFrame(() => {
+        const panelNow = this.shadowRoot?.querySelector('.scheduler-day-popover');
+        if (!panelNow) return;
+        const remaining = [...panelNow.querySelectorAll<HTMLElement>('.popover-event')];
+        const target =
+          remaining[Math.min(Math.max(index, 0), remaining.length - 1)] ??
+          panelNow.querySelector<HTMLElement>('.popover-action') ??
+          panelNow.querySelector<HTMLElement>('.popover-close');
+        target?.focus();
+      }),
+    );
   }
 
   /**

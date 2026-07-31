@@ -1971,3 +1971,74 @@ describe('mp-scheduler — per-gesture pointer permission gate (M21)', () => {
     expect(pointerDown({ type: 'slot' })).toBe(true);
   });
 });
+
+/**
+ * M22 (R14) — event-delete gets its pointer face: a real delete button per
+ * popover row, sibling of the event button (nesting inside it would be a
+ * nested interactive — both are buttons).
+ */
+describe('mp-scheduler — popover delete buttons (M22)', () => {
+  let el: MpScheduler;
+  afterEach(() => el?.remove());
+
+  const EVENTS = [
+    { id: 'a', title: 'Standup', start: new Date(2026, 4, 12, 9, 0), end: new Date(2026, 4, 12, 9, 30) },
+    { id: 'b', title: 'Lunch', start: new Date(2026, 4, 12, 12, 0), end: new Date(2026, 4, 12, 13, 0) },
+    { id: 'c', title: 'Retro', start: new Date(2026, 4, 12, 15, 0), end: new Date(2026, 4, 12, 16, 0) },
+  ];
+
+  const settle = async () => {
+    await (el as unknown as { updateComplete: Promise<void> }).updateComplete;
+    await nextRaf();
+  };
+
+  const mountMonthPopover = async (options: Record<string, unknown> = {}) => {
+    el = document.createElement('mp-scheduler') as MpScheduler;
+    document.body.appendChild(el);
+    (el as unknown as { date: Date }).date = new Date(2026, 4, 12);
+    (el as unknown as { events: unknown[] }).events = EVENTS;
+    (el as unknown as { options: unknown }).options = options;
+    el.setAttribute('view', 'month');
+    await settle();
+    el.shadowRoot!.querySelector<HTMLElement>('#scheduler-cell-m-2026-05-12')!.click();
+    await settle();
+    return el;
+  };
+
+  const popover = () => el.shadowRoot!.querySelector('.scheduler-day-popover');
+
+  it('each row carries a named delete button; deleteEvent:false renders none', async () => {
+    await mountMonthPopover();
+    const buttons = popover()!.querySelectorAll('.popover-event-delete');
+    expect(buttons.length).toBe(EVENTS.length);
+    expect(buttons[1].getAttribute('aria-label')).toBe('Delete Lunch');
+    el.remove();
+
+    await mountMonthPopover({ permissions: { deleteEvent: false } });
+    expect(popover()).not.toBeNull();
+    expect(popover()!.querySelectorAll('.popover-event-delete').length).toBe(0);
+  });
+
+  it('clicking delete emits event-delete, keeps the popover open, and moves focus to the next row', async () => {
+    await mountMonthPopover();
+    let deleted: string | null = null;
+    el.addEventListener('event-delete', (e) => {
+      deleted = (e as CustomEvent).detail.event.id;
+      // The consumer applies the removal — the WC owns no data.
+      (el as unknown as { events: unknown[] }).events = EVENTS.filter(
+        (ev) => ev.id !== deleted,
+      );
+    });
+    const rows = popover()!.querySelectorAll<HTMLElement>('.popover-event-delete');
+    rows[1].click(); // delete "Lunch"
+    await settle();
+    await nextRaf();
+
+    expect(deleted).toBe('b');
+    expect(popover()).not.toBeNull();
+    // Two rows left, focus parked on the one that took the deleted row's place.
+    const remaining = popover()!.querySelectorAll('.popover-event');
+    expect(remaining.length).toBe(2);
+    expect(el.shadowRoot!.activeElement?.getAttribute('aria-label')).toContain('Retro');
+  });
+});
