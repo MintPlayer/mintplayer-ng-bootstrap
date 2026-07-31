@@ -59,7 +59,20 @@ export interface SchedulerMessages {
   newEvent: string;
   /** Secondary action: drill into the day view. */
   showDay: string;
+  /** Secondary action of the month-scoped popover (year view): drill into the month. */
+  showMonth: string;
   closePopover: string;
+  /** Label of the popover's resource picker on the create action. */
+  newEventResource: string;
+
+  // Year chrome
+  /**
+   * {month} {count} {events} — accessible name of a year-view month card. The
+   * event count is the text equivalent of the colour-only `.has-events` dots
+   * (WCAG 1.4.1): without it a screen-reader user cannot tell a busy month
+   * from an empty one.
+   */
+  yearMonthCardLabel: string;
 
   // Announcements
   /** {view} — localized view name */
@@ -140,7 +153,11 @@ export const DEFAULT_MESSAGES: SchedulerMessages = {
   dayPopoverEmpty: 'No events.',
   newEvent: 'New event',
   showDay: 'Show day',
+  showMonth: 'Show month',
   closePopover: 'Close',
+  newEventResource: 'Resource',
+
+  yearMonthCardLabel: '{month}, {count} {events}',
 
   viewChanged: 'View changed to {view}.',
   eventAdded: 'Event {title} added.',

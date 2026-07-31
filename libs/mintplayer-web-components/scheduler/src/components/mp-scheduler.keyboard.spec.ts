@@ -1261,20 +1261,26 @@ describe('mp-scheduler — month day popover', () => {
     expect(getState(el).view).toBe('day');
   });
 
-  it('a plain cell click emits date-click only, unless dayClickAction is popover', async () => {
+  // Phase 2 (D12.2c): the default flipped from 'none' to 'popover' — the click
+  // surface is what the popover exists for. `date-click` still emits FIRST in
+  // both modes, so a consumer's own handler is unaffected by the default.
+  it('a plain cell click emits date-click and opens the popover by default; dayClickAction none opts out', async () => {
     await mountMonth();
     const clicks: Date[] = [];
     el.addEventListener('date-click', (e) => clicks.push((e as CustomEvent).detail.date));
     el.shadowRoot!.querySelector<HTMLElement>('#scheduler-cell-m-2026-05-14')!.click();
     await settle();
     expect(clicks.length).toBe(1);
-    expect(popover()).toBeNull();
+    expect(popover()).not.toBeNull();
     el.remove();
 
-    await mountMonth({ dayClickAction: 'popover' });
+    await mountMonth({ dayClickAction: 'none' });
+    const optedOut: Date[] = [];
+    el.addEventListener('date-click', (e) => optedOut.push((e as CustomEvent).detail.date));
     el.shadowRoot!.querySelector<HTMLElement>('#scheduler-cell-m-2026-05-14')!.click();
     await settle();
-    expect(popover()).not.toBeNull();
+    expect(optedOut.length).toBe(1);
+    expect(popover()).toBeNull();
   });
 
   it('clicking the day number drills into the day view', async () => {
@@ -1352,6 +1358,151 @@ describe('mp-scheduler — month day popover', () => {
     dispatchKey(el, 'Enter');
     await settle();
     expect(created).toBe(true);
+  });
+});
+
+/**
+ * M18 — the date popover reaches the year view (D12.2), anchored on the month
+ * CARD: mini-days stay unfocusable by design, so the card is the only element
+ * that can position the panel and receive focus back. Before this, a year
+ * mini-day click leaked into the month-only anchor path and painted an
+ * UNPOSITIONED fixed panel (B23).
+ */
+describe('mp-scheduler — year date surface (M18)', () => {
+  let el: MpScheduler;
+  afterEach(() => el?.remove());
+
+  const EVENTS = [
+    { id: 'a', title: 'Kickoff', start: new Date(2026, 4, 12, 9, 0), end: new Date(2026, 4, 12, 10, 0) },
+    { id: 'b', title: 'Review', start: new Date(2026, 4, 20, 14, 0), end: new Date(2026, 4, 20, 15, 0) },
+  ];
+
+  const mountYear = async (options: Record<string, unknown> = {}) => {
+    el = document.createElement('mp-scheduler') as MpScheduler;
+    document.body.appendChild(el);
+    (el as unknown as { date: Date }).date = new Date(2026, 4, 12);
+    (el as unknown as { events: unknown[] }).events = EVENTS;
+    (el as unknown as { options: unknown }).options = options;
+    el.setAttribute('view', 'year');
+    await (el as unknown as { updateComplete: Promise<void> }).updateComplete;
+    await nextRaf();
+    return el;
+  };
+
+  const settle = async () => {
+    await (el as unknown as { updateComplete: Promise<void> }).updateComplete;
+    await nextRaf();
+  };
+
+  const popover = () => el.shadowRoot!.querySelector('.scheduler-day-popover');
+  const anchorEl = () => {
+    const id = (el as unknown as { popoverAnchorId: string | null }).popoverAnchorId;
+    return id ? el.shadowRoot!.getElementById(id) : null;
+  };
+  const miniDay = (cardKey: string, localDate: Date) =>
+    [...el.shadowRoot!.querySelectorAll<HTMLElement>(
+      `#scheduler-cell-y-${cardKey} .scheduler-mini-day[data-date]`,
+    )].find((d) => {
+      const parsed = new Date(d.dataset['date']!);
+      return (
+        parsed.getFullYear() === localDate.getFullYear() &&
+        parsed.getMonth() === localDate.getMonth() &&
+        parsed.getDate() === localDate.getDate()
+      );
+    }) ?? null;
+
+  it('Space on a focused month card opens a MONTH-scoped popover grouped by day', async () => {
+    await mountYear();
+    focusYearCell(el, '2026-05');
+    dispatchKey(el, ' ');
+    await settle();
+    expect(popover()).not.toBeNull();
+    expect(popover()!.getAttribute('aria-label')).toContain('May 2026');
+    // Two events on two different days → two day groups, each with one entry.
+    expect(popover()!.querySelectorAll('.popover-day-label').length).toBe(2);
+    expect(popover()!.querySelectorAll('.popover-event').length).toBe(2);
+    // The anchor is the card itself — a real element, so the panel can position
+    // and focus can return (the B23 failure mode was a null anchor).
+    expect(anchorEl()).not.toBeNull();
+    expect(anchorEl()!.id).toBe('scheduler-cell-y-2026-05');
+    // "Show month" drills into the month.
+    (popover()!.querySelector('.popover-action:not(.primary)') as HTMLElement).click();
+    await settle();
+    expect(getState(el).view).toBe('month');
+    expect(getState(el).date.getMonth()).toBe(4);
+  });
+
+  it('clicking a mini-day opens the DAY-scoped popover anchored on its card', async () => {
+    await mountYear();
+    const day = miniDay('2026-05', new Date(2026, 4, 12));
+    expect(day).not.toBeNull();
+    const clicks: Date[] = [];
+    el.addEventListener('date-click', (e) => clicks.push((e as CustomEvent).detail.date));
+    day!.click();
+    await settle();
+    expect(clicks.length).toBe(1);
+    expect(popover()).not.toBeNull();
+    expect(popover()!.querySelectorAll('.popover-event').length).toBe(1);
+    expect(anchorEl()).not.toBeNull();
+    expect(anchorEl()!.id).toBe('scheduler-cell-y-2026-05');
+  });
+
+  it('an adjacent-month mini-day anchors on the card it was clicked in', async () => {
+    await mountYear();
+    // January's grid shows trailing December-of-last-year days, whose own month
+    // key names a card that does not exist in this year's grid.
+    const outOfYear = [...el.shadowRoot!.querySelectorAll<HTMLElement>(
+      '#scheduler-cell-y-2026-01 .scheduler-mini-day.other-month[data-date]',
+    )][0];
+    expect(outOfYear).toBeDefined();
+    outOfYear.click();
+    await settle();
+    expect(popover()).not.toBeNull();
+    expect(anchorEl()).not.toBeNull();
+    expect(anchorEl()!.id).toBe('scheduler-cell-y-2026-01');
+  });
+
+  it('dayClickAction none keeps a mini-day click date-click-only', async () => {
+    await mountYear({ dayClickAction: 'none' });
+    const day = miniDay('2026-05', new Date(2026, 4, 12));
+    const clicks: Date[] = [];
+    el.addEventListener('date-click', (e) => clicks.push((e as CustomEvent).detail.date));
+    day!.click();
+    await settle();
+    expect(clicks.length).toBe(1);
+    expect(popover()).toBeNull();
+  });
+
+  it('month cards carry their event count as text (WCAG 1.4.1 for .has-events)', async () => {
+    await mountYear();
+    const may = el.shadowRoot!.querySelector('#scheduler-cell-y-2026-05')!;
+    expect(may.getAttribute('aria-label')).toContain('May 2026');
+    expect(may.getAttribute('aria-label')).toContain('2 events');
+    const june = el.shadowRoot!.querySelector('#scheduler-cell-y-2026-06')!;
+    expect(june.getAttribute('aria-label')).toContain('0 events');
+  });
+
+  it('the create action carries the picked resource on event-create (D12.2d)', async () => {
+    await mountYear();
+    (el as unknown as { resources: unknown[] }).resources = [
+      { id: 'alice', title: 'Alice' },
+      { id: 'bob', title: 'Bob' },
+    ];
+    await settle();
+    focusYearCell(el, '2026-05');
+    dispatchKey(el, ' ');
+    await settle();
+    const picker = popover()!.querySelector<HTMLSelectElement>('.popover-resource-select')!;
+    expect(picker).not.toBeNull();
+    picker.value = 'bob';
+    let detail: { resourceId?: string } | null = null;
+    el.addEventListener('event-create', (e) => {
+      detail = (e as CustomEvent).detail;
+    });
+    (popover()!.querySelector('.popover-action.primary') as HTMLElement).click();
+    await settle();
+    expect(detail).not.toBeNull();
+    expect(detail!.resourceId).toBe('bob');
   });
 });
 

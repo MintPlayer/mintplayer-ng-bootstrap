@@ -119,13 +119,16 @@ export interface SchedulerOptions {
   moreLinkBehavior?: MoreLinkBehavior;
 
   /**
-   * What clicking a month day CELL does, beyond emitting `date-click`.
+   * What clicking a day CELL does (month view, and year-view mini-days),
+   * beyond emitting `date-click`.
    *
-   * Defaults to `'none'` so the `date-click` contract is unchanged for existing
-   * consumers; set `'popover'` for the "click a date to see and add events"
-   * behaviour. Clicking the day NUMBER always drills into the day view (the
-   * navLinks idiom) and is deliberately a separate target: conflating the two
-   * would make an empty cell unable to mean "create here".
+   * Defaults to `'popover'` — click a date to see and add its events, which
+   * is what the surface exists for. `date-click` still emits FIRST,
+   * unconditionally, so a consumer's own handler keeps working; set `'none'`
+   * to keep the click purely an event for the consumer. Clicking the day
+   * NUMBER in month view always drills into the day view (the navLinks idiom)
+   * and is deliberately a separate target: conflating the two would make an
+   * empty cell unable to mean "create here".
    */
   dayClickAction?: 'none' | 'popover';
 
@@ -190,6 +193,6 @@ export const DEFAULT_OPTIONS: Required<SchedulerOptions> = {
   weekText: 'W',
   dayMaxEvents: true,
   moreLinkBehavior: 'popover',
-  dayClickAction: 'none',
+  dayClickAction: 'popover',
   requireEventResource: false,
 };

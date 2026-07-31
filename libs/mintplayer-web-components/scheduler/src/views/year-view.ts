@@ -1,5 +1,7 @@
 import {
   dateService,
+  formatMessage,
+  resolveMessages,
   timelineService,
 } from '@mintplayer/web-components/scheduler-core';
 import { BaseView } from './base-view';
@@ -40,9 +42,11 @@ export class YearView extends BaseView {
   /**
    * Build a `YYYY-MM` key from a Date, which is the unit of focus on year
    * view (PRD scheduler-controlled-selection §5.2 — year cells are months,
-   * not days).
+   * not days). Public because the month card's element id
+   * (`scheduler-cell-y-{key}`) is also the anchor the day popover hangs off
+   * in this view.
    */
-  private static monthKey(d: Date): string {
+  static monthKey(d: Date): string {
     return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
   }
 
@@ -89,6 +93,20 @@ export class YearView extends BaseView {
     const monthStart = dateService.getMonthStart(month);
     const monthEnd = dateService.getMonthEnd(month);
     const monthEvents = timelineService.filterByRange(events, monthStart, monthEnd);
+
+    // The count is the TEXT equivalent of the colour-only `.has-events` dots
+    // (WCAG 1.4.1): the mini-days are not in the accessibility tree, so the
+    // card's own name is the only place a screen-reader user can learn whether
+    // the month holds anything. The popover (Space) is the interactive detail.
+    const messages = resolveMessages(options.messages);
+    card.setAttribute(
+      'aria-label',
+      formatMessage(messages.yearMonthCardLabel, {
+        month: `${dateService.getMonthName(month, options.locale)} ${month.getFullYear()}`,
+        count: monthEvents.length,
+        events: monthEvents.length === 1 ? messages.eventSingular : messages.eventPlural,
+      }),
+    );
 
     // Create a set of dates that have events
     const datesWithEvents = new Set<string>();

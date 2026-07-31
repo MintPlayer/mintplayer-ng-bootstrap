@@ -308,7 +308,9 @@ export class SchedulerComponent {
   // resource tree"), and the WC's own knobs are already granular underneath.
   permissionMode = signal<'default' | 'readonly' | 'resource-admin'>('default');
   moreLinkBehavior = signal<'popover' | 'day'>('popover');
-  dayClickAction = signal<'none' | 'popover'>('none');
+  // 'popover' matches the WC default since phase 2 (D12.2c) — leaving this at
+  // 'none' would make the demo override the component's own default away.
+  dayClickAction = signal<'none' | 'popover'>('popover');
 
   readonly permissionOptions: { value: 'default' | 'readonly' | 'resource-admin'; label: string }[] = [
     { value: 'default', label: 'Events editable (default)' },

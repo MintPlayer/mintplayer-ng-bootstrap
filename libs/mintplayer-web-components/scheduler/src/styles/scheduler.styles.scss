@@ -678,6 +678,53 @@ $z-event-selected: 2;    // selected event: its straddling handles must win
   white-space: nowrap;
 }
 
+/* Month scope (opened from a year card): a group per day, each with its own
+   sub-list. The outer list keeps .popover-events so the scroll cap applies. */
+.scheduler-day-popover .popover-day-groups {
+  max-height: 40vh;
+  overflow-y: auto;
+}
+
+.scheduler-day-popover .popover-day-group {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.scheduler-day-popover .popover-day-label {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--bs-secondary-color, #666);
+  margin-top: 4px;
+}
+
+/* The create action's resource picker — present only when resources exist. */
+.scheduler-day-popover .popover-resource {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: 0 0 8px;
+  font-size: 12px;
+}
+
+.scheduler-day-popover .popover-resource-select {
+  flex: 1 1 auto;
+  min-width: 0;
+  min-height: 28px;
+  padding: 2px 4px;
+  border: 1px solid var(--scheduler-border-color);
+  border-radius: 4px;
+  background: var(--bs-body-bg);
+  color: inherit;
+  font: inherit;
+  font-size: 12px;
+}
+
+.scheduler-day-popover .popover-resource-select:focus-visible {
+  outline: 2px solid var(--bs-primary);
+  outline-offset: 1px;
+}
+
 .scheduler-day-popover .popover-actions {
   display: flex;
   flex-wrap: wrap;

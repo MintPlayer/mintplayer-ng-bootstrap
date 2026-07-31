@@ -98,10 +98,23 @@ export class MpScheduler extends LitElement {
 
   private readonly liveAnnouncer = new LiveAnnouncerController(this);
 
-  /** Day the month-view popover is open for, or null when it is closed. */
+  /** Day the date popover is open for, or null when it is closed. */
   private popoverDate: Date | null = null;
-  /** Date key of the anchor cell — resolved lazily, see `openDayPopover`. */
-  private popoverAnchorKey: string | null = null;
+  /**
+   * What the popover lists: one day (month view, or a year mini-day click) or
+   * a whole month grouped by day (Space on a year month card, whose focus unit
+   * IS the month).
+   */
+  private popoverScope: 'day' | 'month' = 'day';
+  /**
+   * Element id of the anchor — resolved lazily on every positioning pass, see
+   * `openDayPopover`. A full id rather than a date key because the anchor is
+   * view-specific: a month day cell (`scheduler-cell-m-…`) or a year month
+   * card (`scheduler-cell-y-…`). Year mini-days are deliberately not focusable
+   * (screen readers describe months, not days), so in year view the CARD is
+   * the anchor and the focus-return target.
+   */
+  private popoverAnchorId: string | null = null;
   private boundRepositionPopover: () => void;
 
   /**
@@ -134,7 +147,7 @@ export class MpScheduler extends LitElement {
     // mousedown), so mirror it into our own state or the panel stays rendered.
     onClose: () => {
       this.popoverDate = null;
-      this.popoverAnchorKey = null;
+      this.popoverAnchorId = null;
       this.requestUpdate();
     },
   });
@@ -472,9 +485,15 @@ export class MpScheduler extends LitElement {
     const day = this.popoverDate;
     if (!day) return nothing;
 
-    const { options } = this.stateManager.getState();
-    const events = this.eventsOnDay(day);
-    const dateText = dateService.formatDateWithWeekday(day, options.locale);
+    const state = this.stateManager.getState();
+    const { options } = state;
+    const scope = this.popoverScope;
+    const events = scope === 'month' ? this.eventsInMonth(day) : this.eventsOnDay(day);
+    const dateText =
+      scope === 'month'
+        ? `${dateService.getMonthName(day, options.locale)} ${day.getFullYear()}`
+        : dateService.formatDateWithWeekday(day, options.locale);
+    const resources = [...state.resourceById.values()];
 
     return html`
       <div
@@ -503,33 +522,26 @@ export class MpScheduler extends LitElement {
         </div>
         ${events.length === 0
           ? html`<p class="popover-empty">${this.msg('dayPopoverEmpty')}</p>`
-          : html`
-              <ul class="popover-events">
-                ${events.map(
-                  (event) => html`
-                    <li>
-                      <button
-                        type="button"
-                        class="popover-event"
-                        aria-label=${formatEventAriaLabel(event, null, options)}
-                        @click=${(e: Event) => this.selectFromPopover(event, e)}
-                      >
-                        <span
-                          class="popover-event-swatch"
-                          aria-hidden="true"
-                          style=${`background:${resolveEventColor(
-                            event,
-                            this.stateManager.getState().resourceById,
-                            options.defaultEventColor,
-                          )}`}
-                        ></span>
-                        <span class="popover-event-title">${event.title}</span>
-                      </button>
-                    </li>
-                  `,
-                )}
-              </ul>
-            `}
+          : scope === 'month'
+            ? this.renderPopoverDayGroups(events, options)
+            : html`
+                <ul class="popover-events">
+                  ${events.map((event) => this.renderPopoverEvent(event, options))}
+                </ul>
+              `}
+        ${this.can('createEvent') && resources.length > 0
+          ? html`
+              <label class="popover-resource">
+                <span class="popover-resource-label">${this.msg('newEventResource')}</span>
+                <select class="popover-resource-select">
+                  <option value="">${this.msg('unassignedResource')}</option>
+                  ${resources.map(
+                    (resource) => html`<option value=${resource.id}>${resource.title}</option>`,
+                  )}
+                </select>
+              </label>
+            `
+          : nothing}
         <div class="popover-actions">
           ${this.can('createEvent')
             ? html`<button
@@ -543,27 +555,103 @@ export class MpScheduler extends LitElement {
           <button
             type="button"
             class="popover-action"
-            @click=${() => this.showDayFromPopover()}
+            @click=${() => this.drillFromPopover()}
           >
-            ${this.msg('showDay')}
+            ${this.msg(scope === 'month' ? 'showMonth' : 'showDay')}
           </button>
         </div>
       </div>
     `;
   }
 
+  private renderPopoverEvent(
+    event: SchedulerEvent,
+    options: SchedulerOptions,
+  ): TemplateResult {
+    return html`
+      <li>
+        <button
+          type="button"
+          class="popover-event"
+          aria-label=${formatEventAriaLabel(event, null, options)}
+          @click=${(e: Event) => this.selectFromPopover(event, e)}
+        >
+          <span
+            class="popover-event-swatch"
+            aria-hidden="true"
+            style=${`background:${resolveEventColor(
+              event,
+              this.stateManager.getState().resourceById,
+              options.defaultEventColor,
+            )}`}
+          ></span>
+          <span class="popover-event-title">${event.title}</span>
+        </button>
+      </li>
+    `;
+  }
+
   /**
-   * The day cell the popover hangs off, resolved by date key on every call.
-   * The month view rebuilds its cells imperatively, so a cached element would
-   * be detached the moment anything re-renders while the popover is open.
+   * The month-scoped list: events grouped under a heading per day, each event
+   * listed once under the day it starts (clamped to the month, so an event
+   * running in from last month sits under the 1st rather than vanishing).
+   */
+  private renderPopoverDayGroups(
+    events: SchedulerEvent[],
+    options: SchedulerOptions,
+  ): TemplateResult {
+    const day = this.popoverDate!;
+    const monthStart = new Date(day.getFullYear(), day.getMonth(), 1);
+    const groups = events.reduce((map, event) => {
+      const groupDay = event.start < monthStart ? new Date(monthStart) : new Date(event.start);
+      groupDay.setHours(0, 0, 0, 0);
+      const key = groupDay.getTime();
+      const bucket = map.get(key) ?? { day: groupDay, events: [] as SchedulerEvent[] };
+      bucket.events.push(event);
+      return map.set(key, bucket);
+    }, new Map<number, { day: Date; events: SchedulerEvent[] }>());
+
+    return html`
+      <ul class="popover-events popover-day-groups">
+        ${[...groups.values()].map(
+          (group) => html`
+            <li class="popover-day-group">
+              <div class="popover-day-label">
+                ${dateService.formatDateWithWeekday(group.day, options.locale)}
+              </div>
+              <ul class="popover-events">
+                ${group.events.map((event) => this.renderPopoverEvent(event, options))}
+              </ul>
+            </li>
+          `,
+        )}
+      </ul>
+    `;
+  }
+
+  /**
+   * The cell/card the popover hangs off, resolved by element id on every call.
+   * The views rebuild their cells imperatively, so a cached element would be
+   * detached the moment anything re-renders while the popover is open.
    */
   private popoverAnchorCell(): HTMLElement | null {
-    if (!this.popoverAnchorKey) return null;
+    if (!this.popoverAnchorId) return null;
     return (
       this.shadowRoot?.querySelector<HTMLElement>(
-        `#scheduler-cell-m-${this.popoverAnchorKey}`,
+        `#${this.cssEscape(this.popoverAnchorId)}`,
       ) ?? null
     );
+  }
+
+  /**
+   * The anchor for a popover opened for `day` in the current view: the day's
+   * own cell in month view, its month CARD in year view. Every other view has
+   * no date-keyed cell — the popover is a month/year surface only.
+   */
+  private defaultPopoverAnchorId(day: Date): string {
+    return this.stateManager.getState().view === 'year'
+      ? `scheduler-cell-y-${YearView.monthKey(day)}`
+      : `scheduler-cell-m-${MonthView.dayKey(day)}`;
   }
 
   /** Every event overlapping the given local day, in start order. */
@@ -579,13 +667,22 @@ export class MpScheduler extends LitElement {
   }
 
   /**
-   * Open the day popover for `day`. Anchored on the day cell resolved LAZILY by
-   * date key: the views rebuild their DOM imperatively, so a captured element
+   * Open the date popover for `day`. Anchored on an element resolved LAZILY by
+   * id: the views rebuild their DOM imperatively, so a captured element
    * reference would be detached by the next render while the popover is open.
+   *
+   * `anchorId` overrides the default when the caller knows better — a year
+   * mini-day belonging to an ADJACENT month must anchor on the card it was
+   * clicked in, which is not the card its own month key names.
    */
-  private async openDayPopover(day: Date): Promise<void> {
+  private async openDayPopover(
+    day: Date,
+    anchorId?: string,
+    scope: 'day' | 'month' = 'day',
+  ): Promise<void> {
     this.popoverDate = new Date(day);
-    this.popoverAnchorKey = MonthView.dayKey(this.popoverDate);
+    this.popoverScope = scope;
+    this.popoverAnchorId = anchorId ?? this.defaultPopoverAnchorId(day);
     this.requestUpdate();
     await this.dayPopover.open();
     // `scroll` does not compose, so the controller's document-level capture
@@ -601,7 +698,7 @@ export class MpScheduler extends LitElement {
     this.contentContainer?.removeEventListener('scroll', this.boundRepositionPopover);
     this.dayPopover.close();
     this.popoverDate = null;
-    this.popoverAnchorKey = null;
+    this.popoverAnchorId = null;
     this.requestUpdate();
   }
 
@@ -614,12 +711,17 @@ export class MpScheduler extends LitElement {
   private createFromPopover(originalEvent: Event): void {
     const day = this.popoverDate;
     if (!day) return;
+    // Read the resource picker BEFORE closing — closing tears the panel down.
+    const picker = this.shadowRoot?.querySelector<HTMLSelectElement>(
+      '.popover-resource-select',
+    );
+    const resourceId = picker?.value || undefined;
     const start = new Date(day);
     start.setHours(0, 0, 0, 0);
     const end = new Date(start);
     end.setDate(end.getDate() + 1);
     this.closeDayPopover();
-    if (!this.can('createEvent') || !this.allowsCreateAt({ start, end })) {
+    if (!this.can('createEvent') || !this.allowsCreateAt({ start, end }, resourceId)) {
       this.announceDenied();
       return;
     }
@@ -627,15 +729,28 @@ export class MpScheduler extends LitElement {
       { start, end },
       this.stateManager.getState().view,
       originalEvent,
+      resourceId,
     );
   }
 
-  private showDayFromPopover(): void {
+  /** "Show day" / "Show month" — the drill that matches the popover's scope. */
+  private drillFromPopover(): void {
     const day = this.popoverDate;
     if (!day) return;
+    const scope = this.popoverScope;
     this.closeDayPopover();
     this.stateManager.setDate(new Date(day));
-    this.stateManager.setView('day');
+    this.stateManager.setView(scope === 'month' ? 'month' : 'day');
+  }
+
+  /** Every event overlapping `day`'s local month, in start order. */
+  private eventsInMonth(day: Date): SchedulerEvent[] {
+    const start = new Date(day.getFullYear(), day.getMonth(), 1);
+    const end = new Date(day.getFullYear(), day.getMonth() + 1, 1);
+    return this.stateManager
+      .getState()
+      .events.filter((event) => event.start < end && event.end > start)
+      .sort((a, b) => a.start.getTime() - b.start.getTime());
   }
 
   /**
@@ -1209,11 +1324,16 @@ export class MpScheduler extends LitElement {
           return;
         }
 
-        // Opt-in: `dayClickAction` defaults to 'none' so the existing
-        // `date-click` contract is untouched for consumers who handle it
-        // themselves.
+        // Default 'popover' (phase 2 — the surface this click exists for);
+        // `date-click` has already been emitted above, so a consumer's own
+        // handler keeps working either way, and 'none' opts back out.
         if (this.stateManager.getState().options.dayClickAction === 'popover') {
-          void this.openDayPopover(day);
+          // A year mini-day anchors on the CARD it was clicked in — its own
+          // month key can name a card that does not exist (an adjacent-month
+          // day in the January/December corners), which is exactly the
+          // unpositioned-panel bug this parameter closes.
+          const card = targetEl.closest('.scheduler-year-month') as HTMLElement | null;
+          void this.openDayPopover(day, card?.id);
           return;
         }
       }
@@ -1727,6 +1847,17 @@ export class MpScheduler extends LitElement {
           this.stateManager.setDate(new Date(focused));
           this.stateManager.setView('month');
         }
+        return;
+      }
+      // The keyboard face of clicking a mini-day, at the card's own
+      // granularity: a MONTH-scoped popover (events grouped by day). Mini-days
+      // stay unfocusable by design, so the panel is where a keyboard user gets
+      // day-level detail without a ~500-cell grid.
+      case ' ': {
+        e.preventDefault();
+        const state = this.stateManager.getState();
+        const focused = state.focusedDate ?? state.date;
+        void this.openDayPopover(focused, undefined, 'month');
         return;
       }
     }
