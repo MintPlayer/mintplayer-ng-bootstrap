@@ -60,6 +60,12 @@ axeAuditSuite(test, expect, [
     ready: async (page) => {
       await page.waitForSelector('mp-scheduler');
     },
+    // Select an event so the audit sees the SELECTED state — the revealed
+    // resize glyphs/strips are gated on it (wcag22aa target-size applies).
+    // This demo preloads its events (no Load Sample Data button).
+    interact: async (page) => {
+      await page.getByRole('button', { name: /Lunch/ }).click();
+    },
   },
   { path: '/enterprise/shell' },
   { path: '/enterprise/tile-manager' },
