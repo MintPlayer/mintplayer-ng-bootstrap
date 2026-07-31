@@ -5,6 +5,7 @@ import type {
   SchedulerEvent,
   SchedulerOptions,
   Resource,
+  ResourceGroup,
   ViewType,
 } from '@mintplayer/web-components/scheduler-core';
 import { ref, watch, onMounted } from 'vue';
@@ -12,11 +13,15 @@ import { ref, watch, onMounted } from 'vue';
 defineOptions({ inheritAttrs: false });
 
 // `events`, `resources` and `options` are JS-shaped — Vue can't bind them as
-// attributes, so we forward via property setters after mount.
+// attributes, so we forward via property setters after mount. `resources`
+// accepts groups as well as leaf resources: the timeline renders a nested
+// tree, and typing it as `Resource[]` made every grouped consumer cast.
 const props = defineProps<{
   events?: SchedulerEvent[];
-  resources?: Resource[];
+  resources?: (Resource | ResourceGroup)[];
   options?: Partial<SchedulerOptions>;
+  /** Coarse look-but-don't-touch switch; `options.permissions` refines it. */
+  readonly?: boolean;
 }>();
 
 // `view` and `date` flow through `defineModel` for two-way binding: the WC
@@ -33,6 +38,7 @@ const syncProps = () => {
   if (props.events) el.value.events = props.events;
   if (props.resources) el.value.resources = props.resources;
   if (props.options) el.value.options = props.options;
+  el.value.readonly = props.readonly === true;
 };
 
 const syncView = () => {
@@ -57,6 +63,7 @@ onMounted(() => {
 watch(() => props.events, syncProps);
 watch(() => props.resources, syncProps);
 watch(() => props.options, syncProps);
+watch(() => props.readonly, syncProps);
 watch(view, syncView);
 watch(date, syncDate);
 

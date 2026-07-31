@@ -1,5 +1,8 @@
 import { DEFAULT_MESSAGES, SchedulerMessages } from './messages';
+import { DEFAULT_EVENT_COLOR } from '../utils/color';
+import type { SchedulerPermissions } from './permissions';
 import { DayOfWeek, TimeFormat, ViewType } from './types';
+import type { SchedulerEvent } from './event';
 
 /**
  * Business hours configuration
@@ -73,30 +76,27 @@ export interface SchedulerOptions {
   /** Header toolbar configuration */
   headerToolbar?: HeaderToolbar;
 
-  // Interaction
-  /** Whether events can be edited */
-  editable?: boolean;
-  /** Whether date ranges can be selected */
-  selectable?: boolean;
-  /** Whether to show a mirror element during selection */
-  selectMirror?: boolean;
-  /** Whether event duration can be changed */
-  eventDurationEditable?: boolean;
-  /** Whether event start time can be changed */
-  eventStartEditable?: boolean;
-
-  // Drag settings
-  /** Duration of revert animation in ms */
-  dragRevertDuration?: number;
-  /** Whether to scroll during drag */
-  dragScroll?: boolean;
-  /** Snap duration in seconds */
-  snapDuration?: number;
-
   // Localization
   /** Override any user-facing string (labels, announcements, instructions).
    *  Merged onto the English defaults — see SchedulerMessages. */
   messages?: Partial<SchedulerMessages>;
+
+  /**
+   * What the user may do. `false` makes the scheduler read-only; an object gives
+   * per-capability control. See SchedulerPermissions — it gates AFFORDANCES and
+   * gestures, it is not a security boundary.
+   *
+   * Replaced the old `editable` / `selectable` / `eventStartEditable` /
+   * `eventDurationEditable` flags, and the never-implemented `selectMirror`,
+   * `dragRevertDuration`, `dragScroll` and `snapDuration`.
+   */
+  permissions?: boolean | Partial<SchedulerPermissions>;
+
+  /**
+   * Fill colour for events that specify none and whose resource specifies none.
+   * Previously a `'#3788d8'` literal duplicated across five files.
+   */
+  defaultEventColor?: string;
 
   // Display options
   /** Whether to show current time indicator */
@@ -107,7 +107,50 @@ export interface SchedulerOptions {
   weekText?: string;
   /** Maximum events to show per day (true = show "+X more" link) */
   dayMaxEvents?: boolean | number;
+
+  /**
+   * What the month view's "+N more" link does.
+   *
+   * - `'popover'` (default, FullCalendar's default too) — open the day popover
+   *   listing every event on that day.
+   * - `'day'` — the previous behaviour: navigate to the day view.
+   * - a function — you handle it; nothing else happens.
+   */
+  moreLinkBehavior?: MoreLinkBehavior;
+
+  /**
+   * What clicking a month day CELL does, beyond emitting `date-click`.
+   *
+   * Defaults to `'none'` so the `date-click` contract is unchanged for existing
+   * consumers; set `'popover'` for the "click a date to see and add events"
+   * behaviour. Clicking the day NUMBER always drills into the day view (the
+   * navLinks idiom) and is deliberately a separate target: conflating the two
+   * would make an empty cell unable to mean "create here".
+   */
+  dayClickAction?: 'none' | 'popover';
+
+  /**
+   * Whether every event is expected to name a resource.
+   *
+   * Default `false`: an event with no `resourceId` renders in the timeline's
+   * "(No resource)" bucket row, which is the only non-lossy behaviour — the two
+   * alternatives the industry ships are both silent data traps (hide the event,
+   * or duplicate it into every lane where editing one appears to edit all).
+   *
+   * Set `true` in an app where a resource is mandatory: resource-less events are
+   * still bucketed and still visible, but each one is reported once via a dev
+   * warning so the gap surfaces during development instead of as a support
+   * ticket. It never hides an event, and it is not a validation error — the
+   * component does not own the data.
+   */
+  requireEventResource?: boolean;
 }
+
+/** See `SchedulerOptions.moreLinkBehavior`. */
+export type MoreLinkBehavior =
+  | 'popover'
+  | 'day'
+  | ((info: { date: Date; events: SchedulerEvent[] }) => void);
 
 /**
  * Default options for the scheduler
@@ -137,17 +180,16 @@ export const DEFAULT_OPTIONS: Required<SchedulerOptions> = {
     center: 'title',
     end: 'year,month,week,day,timeline',
   },
-  editable: true,
-  selectable: true,
-  selectMirror: true,
-  eventDurationEditable: true,
-  eventStartEditable: true,
-  dragRevertDuration: 500,
-  dragScroll: true,
-  snapDuration: 1800,
   messages: DEFAULT_MESSAGES,
+  // Empty table, NOT DEFAULT_PERMISSIONS: per-capability fallback happens inside
+  // resolveCapability, so an unspecified capability keeps its documented default.
+  permissions: {},
+  defaultEventColor: DEFAULT_EVENT_COLOR,
   nowIndicator: true,
   weekNumbers: false,
   weekText: 'W',
   dayMaxEvents: true,
+  moreLinkBehavior: 'popover',
+  dayClickAction: 'none',
+  requireEventResource: false,
 };

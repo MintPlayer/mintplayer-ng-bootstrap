@@ -9,28 +9,120 @@ import {
   DragState,
   TimeSlot,
   isResourceGroup,
+  type SchedulerPermissions,
 } from '@mintplayer/web-components/scheduler-core';
 
 /**
- * Immutably replace an event (matched by id) wherever it lives in a
- * resource tree. Untouched branches are returned as-is so views relying on
- * reference equality don't re-render needlessly.
+ * Collect every event authored *inside* a resource tree, stamping each with the
+ * id of the resource that owns it.
+ *
+ * `resource.events` is authoring sugar: nesting is convenient to write, but a
+ * second store to read from is what let week/day/month/year and timeline render
+ * disjoint sets of events from the same component. Flattening here makes
+ * `resourceId` the single authoritative link.
  */
-function updateResourceEvent(
-  item: Resource | ResourceGroup,
-  event: SchedulerEvent,
-): Resource | ResourceGroup {
-  if (isResourceGroup(item)) {
-    const children = item.children.map((c) => updateResourceEvent(c, event));
-    return children.some((c, i) => c !== item.children[i])
-      ? { ...item, children }
-      : item;
+function collectNestedEvents(
+  items: (Resource | ResourceGroup)[],
+  out: SchedulerEvent[] = [],
+): SchedulerEvent[] {
+  for (const item of items) {
+    if (isResourceGroup(item)) {
+      collectNestedEvents(item.children, out);
+      continue;
+    }
+    for (const event of item.events ?? []) {
+      out.push(event.resourceId ? event : { ...event, resourceId: item.id });
+    }
   }
-  if (!(item.events ?? []).some((e) => e.id === event.id)) return item;
-  return {
-    ...item,
-    events: (item.events ?? []).map((e) => (e.id === event.id ? event : e)),
+  return out;
+}
+
+/**
+ * Merge the flat `events` input with events authored under resources.
+ *
+ * Flat entries win on id collision (they are the canonical store that drag and
+ * keyboard commits write to); a collision means the same event was authored
+ * twice, which was silently undefined before, so warn once in dev.
+ */
+function mergeEventSources(
+  flat: SchedulerEvent[],
+  resources: (Resource | ResourceGroup)[],
+): SchedulerEvent[] {
+  const nested = collectNestedEvents(resources);
+  if (nested.length === 0) return flat;
+
+  const byId = new Map<string, SchedulerEvent>();
+  for (const event of nested) byId.set(event.id, event);
+
+  const duplicates: string[] = [];
+  for (const event of flat) {
+    if (byId.has(event.id)) duplicates.push(event.id);
+    byId.set(event.id, event);
+  }
+
+  if (duplicates.length > 0) {
+    console.warn(
+      `[mp-scheduler] ${duplicates.length} event id(s) appear in both the "events" input ` +
+        `and under a resource; the "events" entry wins. Ids: ${duplicates.join(', ')}`,
+    );
+  }
+
+  return [...byId.values()];
+}
+
+/**
+ * Honour each group's authored `collapsed` flag on first sight.
+ *
+ * `ResourceGroup.collapsed` was declared on the model and read by nothing — the
+ * live source is `state.collapsedGroups` — so a consumer authoring
+ * `collapsed: true` was silently ignored. Groups already tracked keep the user's
+ * current expand/collapse state; only groups new to us are seeded, so a
+ * `resources` reassignment doesn't yank a group shut under the user.
+ */
+function seedCollapsedGroups(
+  items: (Resource | ResourceGroup)[],
+  current: Set<string>,
+  seen: Set<string>,
+): Set<string> {
+  const next = new Set(current);
+  const walk = (nodes: (Resource | ResourceGroup)[]): void => {
+    for (const node of nodes) {
+      if (!isResourceGroup(node)) continue;
+      // Seed only the first time we see a group, so re-assigning `resources`
+      // never yanks a group shut that the user has since expanded.
+      if (!seen.has(node.id)) {
+        seen.add(node.id);
+        if (node.collapsed) next.add(node.id);
+      }
+      walk(node.children);
+    }
   };
+  walk(items);
+  return next;
+}
+
+/** Flatten the resource tree into an id lookup (leaf resources only). */
+function indexResourcesById(
+  items: (Resource | ResourceGroup)[],
+  out: Map<string, Resource> = new Map(),
+): Map<string, Resource> {
+  for (const item of items) {
+    if (isResourceGroup(item)) indexResourcesById(item.children, out);
+    else out.set(item.id, item);
+  }
+  return out;
+}
+
+/** Group events by `resourceId`; the `null` key is the unassigned bucket. */
+function indexByResource(events: SchedulerEvent[]): Map<string | null, SchedulerEvent[]> {
+  const index = new Map<string | null, SchedulerEvent[]>();
+  for (const event of events) {
+    const key = event.resourceId ?? null;
+    const bucket = index.get(key);
+    if (bucket) bucket.push(event);
+    else index.set(key, [event]);
+  }
+  return index;
 }
 
 /**
@@ -41,12 +133,32 @@ export interface SchedulerState {
   view: ViewType;
   /** Current date (the date shown in the view) */
   date: Date;
-  /** All events */
+  /**
+   * All events — the single store every view reads. This is the merge of the
+   * consumer's flat `events` input and any events authored under `resources`,
+   * each stamped with its owning `resourceId`.
+   */
   events: SchedulerEvent[];
+  /**
+   * `events` grouped by `resourceId`, rebuilt whenever `events` changes. The
+   * `null` key holds events with no resource (timeline's unassigned bucket).
+   */
+  eventsByResource: Map<string | null, SchedulerEvent[]>;
+  /**
+   * Flat resource lookup by id, rebuilt with `resources`. Lets every view — not
+   * just timeline — resolve an event's resource colour in O(1).
+   */
+  resourceById: Map<string, Resource>;
   /** Resources and resource groups */
   resources: (Resource | ResourceGroup)[];
   /** Configuration options */
   options: SchedulerOptions;
+  /**
+   * Permission table with the `readonly` host attribute already folded in, so
+   * views can gate affordances without re-deriving the precedence. `false` means
+   * fully read-only.
+   */
+  resolvedPermissions: boolean | Partial<SchedulerPermissions>;
   /** Currently selected event */
   selectedEvent: SchedulerEvent | null;
   /** Currently hovered event */
@@ -101,6 +213,9 @@ export function createInitialState(
     view: mergedOptions.initialView,
     date: mergedOptions.initialDate,
     events: [],
+    eventsByResource: new Map(),
+    resourceById: new Map(),
+    resolvedPermissions: {},
     resources: [],
     options: mergedOptions,
     selectedEvent: null,
@@ -151,8 +266,41 @@ export class SchedulerStateManager {
     const partialUpdate =
       typeof update === 'function' ? update(this.state) : update;
 
-    this.state = { ...this.state, ...partialUpdate };
+    const next = { ...this.state, ...partialUpdate };
+    // Rebuild the derived indexes only when their source identity changes, so
+    // drag frames (which touch previewEvent every rAF) don't pay for it.
+    if (next.events !== this.state.events || !this.state.eventsByResource) {
+      next.eventsByResource = indexByResource(next.events);
+    }
+    if (next.resources !== this.state.resources || !this.state.resourceById) {
+      next.resourceById = indexResourcesById(next.resources);
+    }
+    this.state = next;
+    this.warnUnassignedEvents();
     this.notifyListeners();
+  }
+
+  /** Events already reported under `requireEventResource`; warn once each. */
+  private readonly warnedUnassignedIds = new Set<string>();
+
+  /**
+   * `options.requireEventResource` is a DEVELOPMENT signal, not a filter: the
+   * event still renders in the bucket row, because hiding data a consumer handed
+   * us is the trap this whole area exists to avoid. One warning per id, so a
+   * drag that re-renders sixty times a second cannot flood the console.
+   */
+  private warnUnassignedEvents(): void {
+    if (!this.state.options.requireEventResource) return;
+    const unassigned = (this.state.eventsByResource?.get(null) ?? []).filter(
+      (event) => !this.warnedUnassignedIds.has(event.id),
+    );
+    if (unassigned.length === 0) return;
+    for (const event of unassigned) this.warnedUnassignedIds.add(event.id);
+    console.warn(
+      `[mp-scheduler] requireEventResource is set, but ${unassigned.length} event(s) have ` +
+        `no resourceId. They render in the "(No resource)" row. Ids: ` +
+        unassigned.map((event) => event.id).join(', '),
+    );
   }
 
   /**
@@ -189,49 +337,76 @@ export class SchedulerStateManager {
   }
 
   /**
-   * Set events
+   * The consumer's flat `events` input, kept verbatim so re-merging on a
+   * `resources` change doesn't fold previously-nested events into it.
+   */
+  private flatEventsInput: SchedulerEvent[] = [];
+
+  /**
+   * Set events. The stored `events` is the MERGE of this input and any events
+   * authored under resources — every view reads that one list.
    */
   setEvents(events: SchedulerEvent[]): void {
-    this.setState({ events });
+    this.flatEventsInput = events;
+    this.setState((state) => ({
+      events: mergeEventSources(events, state.resources),
+    }));
   }
 
   /**
-   * Add an event
+   * Add an event. Lands in the single store regardless of whether it carries a
+   * `resourceId`, so a timeline-created event is no longer invisible.
    */
   addEvent(event: SchedulerEvent): void {
+    this.flatEventsInput = [...this.flatEventsInput, event];
     this.setState((state) => ({
       events: [...state.events, event],
     }));
   }
 
   /**
-   * Update an event
+   * Update an event. One store, so no double-write: a move across resource rows
+   * is now a `resourceId` reassignment rather than a splice between two arrays.
    */
   updateEvent(event: SchedulerEvent): void {
-    // Events can live in the flat list (week/day/month) or on a resource
-    // (timeline) — update wherever the id matches so a committed timeline
-    // drag doesn't snap back while the consumer processes event-update.
+    this.flatEventsInput = this.flatEventsInput.map((e) =>
+      e.id === event.id ? event : e,
+    );
     this.setState((state) => ({
       events: state.events.map((e) => (e.id === event.id ? event : e)),
-      resources: state.resources.map((r) => updateResourceEvent(r, event)),
     }));
   }
 
   /**
-   * Remove an event
+   * Remove an event. Previously filtered the flat list only, so a
+   * resource-nested event removed through the public API kept rendering.
    */
   removeEvent(eventId: string): void {
+    this.flatEventsInput = this.flatEventsInput.filter((e) => e.id !== eventId);
     this.setState((state) => ({
       events: state.events.filter((e) => e.id !== eventId),
     }));
   }
 
   /**
-   * Set resources
+   * Set resources. Re-merges so events authored under the new tree become
+   * visible in every view, and honours each group's authored `collapsed` flag
+   * (previously declared on the model and read by nothing).
    */
   setResources(resources: (Resource | ResourceGroup)[]): void {
-    this.setState({ resources });
+    this.setState((state) => ({
+      resources,
+      events: mergeEventSources(this.flatEventsInput, resources),
+      collapsedGroups: seedCollapsedGroups(
+        resources,
+        state.collapsedGroups,
+        this.seededGroupIds,
+      ),
+    }));
   }
+
+  /** Per-instance: group ids already seeded from their authored `collapsed`. */
+  private readonly seededGroupIds = new Set<string>();
 
   /**
    * Toggle resource group collapse

@@ -10,6 +10,26 @@ import { BaseView, formatEventAriaLabel, isSlotInSelection } from './base-view';
 import { SchedulerState } from '../state/scheduler-state';
 
 /**
+ * Move a slot template (generated for one reference day) onto `day`, preserving
+ * its offset from midnight and its duration.
+ *
+ * Deliberately arithmetic rather than `setHours(template.getHours(), …)`: the
+ * last template of a day ends at the NEXT day's 00:00, so reading its hours
+ * yields 0 and produces an `end` before its own `start`.
+ */
+function rebaseSlotOntoDay(template: TimeSlot, day: Date): { start: Date; end: Date } {
+  const templateMidnight = new Date(template.start);
+  templateMidnight.setHours(0, 0, 0, 0);
+  const offsetMs = template.start.getTime() - templateMidnight.getTime();
+  const durationMs = template.end.getTime() - template.start.getTime();
+
+  const start = new Date(day);
+  start.setHours(0, 0, 0, 0);
+  const startMs = start.getTime() + offsetMs;
+  return { start: new Date(startMs), end: new Date(startMs + durationMs) };
+}
+
+/**
  * Week view renderer
  */
 export class WeekView extends BaseView {
@@ -83,21 +103,12 @@ export class WeekView extends BaseView {
       // Create time slots
       for (let slotIndex = 0; slotIndex < slots.length; slotIndex++) {
         const slotTemplate = slots[slotIndex];
-        const slotStart = new Date(day);
-        slotStart.setHours(
-          slotTemplate.start.getHours(),
-          slotTemplate.start.getMinutes(),
-          0,
-          0
-        );
-
-        const slotEnd = new Date(day);
-        slotEnd.setHours(
-          slotTemplate.end.getHours(),
-          slotTemplate.end.getMinutes(),
-          0,
-          0
-        );
+        // Rebase by ELAPSED TIME from the template's own midnight. Using
+        // getHours() broke the day's last slot: its template end is next-day
+        // 00:00, so getHours() returned 0 and the stamped `end` landed 23.5h
+        // before its own `start`, collapsing any create-drag that reached the
+        // bottom row.
+        const { start: slotStart, end: slotEnd } = rebaseSlotOntoDay(slotTemplate, day);
 
         const slotEl = this.createElement('div', 'scheduler-time-slot');
         slotEl.setAttribute('role', 'gridcell');
@@ -306,18 +317,13 @@ export class WeekView extends BaseView {
     if (isSelected) eventEl.classList.add('selected');
     void inMoveMode;
 
-    // Calculate position
-    const dayStart = new Date(part.start);
-    dayStart.setHours(0, 0, 0, 0);
-
-    const startMinutes =
-      (part.start.getTime() - dayStart.getTime()) / (1000 * 60);
-    const endMinutes = (part.end.getTime() - dayStart.getTime()) / (1000 * 60);
-    const durationMinutes = endMinutes - startMinutes;
-
-    const slotMinutes = slotDuration / 60;
-    const top = (startMinutes / slotMinutes) * 40; // 40px per slot
-    const height = Math.max((durationMinutes / slotMinutes) * 40, 20);
+    // Vertical geometry comes from the shared helper so the box and its drag
+    // ghost can never disagree, and so slotMinTime is honoured (see BaseView).
+    const geometry = this.partGeometry(part.start, part.end, {
+      ...this.state.options,
+      slotDuration,
+    });
+    const { top, height } = geometry ?? { top: 0, height: 0 };
 
     // Calculate width based on tracks and colspan
     // colspan allows events to span multiple columns when there's no blocking event
@@ -328,8 +334,8 @@ export class WeekView extends BaseView {
     eventEl.style.height = `${height}px`;
     eventEl.style.left = `${leftPercent}%`;
     eventEl.style.width = `calc(${widthPercent}% - 2px)`;
-    eventEl.style.backgroundColor = event.color ?? '#3788d8';
-    eventEl.style.color = event.textColor ?? getContrastColor(event.color ?? '#3788d8');
+    // Fill + contrast text, resolving the resource's colour (see BaseView).
+    this.applyEventColors(eventEl, event);
 
     this.setData(eventEl, { eventId: event.id });
 
@@ -353,45 +359,51 @@ export class WeekView extends BaseView {
     return eventEl;
   }
 
+  /**
+   * Dashed ghost showing where the dragged/created range will land — ONE box per
+   * day it spans, mirroring how a committed multi-day event splits into parts.
+   * A single box measured from the start day's midnight produced a ~2900px-tall
+   * box hanging out of the first column for a 3-day range.
+   */
   private renderPreviewEvent(): void {
-    // Remove existing preview
-    const existingPreview = this.container.querySelector('.scheduler-event.preview');
-    if (existingPreview) {
-      existingPreview.remove();
-    }
+    // querySelectorAll: there are now N ghosts, one per spanned day.
+    this.container
+      .querySelectorAll('.scheduler-event.preview')
+      .forEach((el) => el.remove());
 
     const { previewEvent, options, date } = this.state;
     if (!previewEvent) return;
 
     const days = dateService.getWeekDays(date, options.firstDayOfWeek);
-    const dayIndex = days.findIndex((d) => dateService.isSameDay(d, previewEvent.start));
-    if (dayIndex === -1) return;
+    // splitInParts already accepts a PreviewEvent and flags isStart/isEnd, so the
+    // ghost reuses exactly the machinery committed events use.
+    const { parts } = timelineService.splitInParts(previewEvent);
 
-    const dayColumn = this.dayColumns[dayIndex];
-    const eventsContainer = dayColumn?.querySelector('.scheduler-events-container');
-    if (!eventsContainer) return;
+    for (const part of parts) {
+      const dayIndex = days.findIndex((d) => dateService.isSameDay(d, part.start));
+      // `continue`, never `return`: a range nudged past the week edge must still
+      // draw the parts that ARE visible instead of losing all feedback.
+      if (dayIndex === -1) continue;
 
-    const previewEl = this.createElement('div', 'scheduler-event', 'preview');
+      const eventsContainer =
+        this.dayColumns[dayIndex]?.querySelector('.scheduler-events-container');
+      if (!eventsContainer) continue;
 
-    const dayStart = new Date(previewEvent.start);
-    dayStart.setHours(0, 0, 0, 0);
+      const geometry = this.partGeometry(part.start, part.end, options);
+      if (!geometry) continue; // clipped entirely outside the visible window
 
-    const startMinutes =
-      (previewEvent.start.getTime() - dayStart.getTime()) / (1000 * 60);
-    const endMinutes =
-      (previewEvent.end.getTime() - dayStart.getTime()) / (1000 * 60);
-    const durationMinutes = endMinutes - startMinutes;
+      const previewEl = this.createElement('div', 'scheduler-event', 'preview');
+      // Seam classes let the SCSS drop the borders on midnight joins so a
+      // multi-day range reads as one range rather than N separate events.
+      if (!part.isStart) previewEl.classList.add('preview-continues-before');
+      if (!part.isEnd) previewEl.classList.add('preview-continues-after');
+      previewEl.style.top = `${geometry.top}px`;
+      previewEl.style.height = `${geometry.height}px`;
+      previewEl.style.left = '0';
+      previewEl.style.width = '100%';
 
-    const slotMinutes = (options.slotDuration ?? 1800) / 60;
-    const top = (startMinutes / slotMinutes) * 40;
-    const height = Math.max((durationMinutes / slotMinutes) * 40, 20);
-
-    previewEl.style.top = `${top}px`;
-    previewEl.style.height = `${height}px`;
-    previewEl.style.left = '0';
-    previewEl.style.width = '100%';
-
-    eventsContainer.appendChild(previewEl);
+      eventsContainer.appendChild(previewEl);
+    }
   }
 
   private updateGreyedSlots(): void {
@@ -410,32 +422,15 @@ export class WeekView extends BaseView {
       options.slotMaxTime
     );
 
-    // Find affected slots
+    // Find affected slots. No day filter: the overlap test below is already
+    // multi-day-correct, whereas filtering to "start day or end day" greyed
+    // nothing on the middle days of a 3+ day range.
     for (let dayIndex = 0; dayIndex < days.length; dayIndex++) {
       const day = days[dayIndex];
 
-      if (!dateService.isSameDay(day, previewEvent.start) &&
-          !dateService.isSameDay(day, previewEvent.end)) {
-        continue;
-      }
-
       for (let slotIndex = 0; slotIndex < slots.length; slotIndex++) {
         const slotTemplate = slots[slotIndex];
-        const slotStart = new Date(day);
-        slotStart.setHours(
-          slotTemplate.start.getHours(),
-          slotTemplate.start.getMinutes(),
-          0,
-          0
-        );
-
-        const slotEnd = new Date(day);
-        slotEnd.setHours(
-          slotTemplate.end.getHours(),
-          slotTemplate.end.getMinutes(),
-          0,
-          0
-        );
+        const { start: slotStart, end: slotEnd } = rebaseSlotOntoDay(slotTemplate, day);
 
         // Check if slot overlaps with preview event
         if (slotStart < previewEvent.end && slotEnd > previewEvent.start) {

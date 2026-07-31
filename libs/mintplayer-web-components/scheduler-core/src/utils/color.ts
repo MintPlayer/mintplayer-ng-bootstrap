@@ -96,3 +96,29 @@ export function addAlpha(color: string, alpha: number): string {
 
   return `rgba(${r}, ${g}, ${b}, ${alpha})`;
 }
+
+/** Fallback event colour when neither the event nor its resource specifies one. */
+export const DEFAULT_EVENT_COLOR = '#3788d8';
+
+/**
+ * Resolve an event's fill colour.
+ *
+ * Precedence — event → resource → component default — matches the universal
+ * convention (FullCalendar, Bryntum, Syncfusion, DevExtreme, Mobiscroll, MUI X all
+ * agree), and applying a resource's colour in NON-resource views is documented
+ * practice rather than an invention.
+ *
+ * `Resource.eventColor` is the event fill and `Resource.color` the row-header tint
+ * (mirroring `ResourceGroup.color`, whose contract is the group header), but we
+ * fall back `eventColor ?? color` so a consumer who sets only one still gets
+ * sensible behaviour. Both fields had existed in the model read by nothing.
+ */
+export function resolveEventColor(
+  event: { color?: string; resourceId?: string },
+  resourceById: Map<string, { color?: string; eventColor?: string }>,
+  defaultColor: string = DEFAULT_EVENT_COLOR,
+): string {
+  if (event.color) return event.color;
+  const resource = event.resourceId ? resourceById.get(event.resourceId) : undefined;
+  return resource?.eventColor ?? resource?.color ?? defaultColor;
+}

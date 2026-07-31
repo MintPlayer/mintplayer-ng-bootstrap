@@ -12,25 +12,74 @@ import {
   formatMessage,
   getContrastColor,
   resolveMessages,
+  resolveCapability,
+  SchedulerCapability,
 } from '@mintplayer/web-components/scheduler-core';
 import { BaseView, formatEventAriaLabel, isSlotInSelection } from './base-view';
 import { SchedulerState } from '../state/scheduler-state';
+
+/**
+ * DOM/row-map key for the synthetic unassigned row. Not a resource id — the
+ * index keys unassigned events under `null`, and the row's slots carry no
+ * `data-resource-id` at all.
+ */
+const UNASSIGNED_ROW_ID = '__mp-unassigned__';
 
 /**
  * Timeline view renderer
  */
 export class TimelineView extends BaseView {
   private rowElements: Map<string, HTMLElement> = new Map();
-  private slotWidth: number = 50;
+  /** Focus key captured just before a rebuild; see `restoreActionFocus`. */
+  private pendingFocusKey: string | null = null;
+  /**
+   * Slot width in px. Read from `--scheduler-slot-width` so consumers can shorten
+   * a default week (48 slots x 7 days x 50px = 16,800px); falls back to 50.
+   */
+  private get slotWidth(): number {
+    const raw = getComputedStyle(this.container)
+      .getPropertyValue('--scheduler-slot-width')
+      .trim();
+    const parsed = Number.parseFloat(raw);
+    return Number.isFinite(parsed) && parsed > 0 ? parsed : 50;
+  }
+
+  /**
+   * Track geometry for the timeline, in px, from the CSS custom properties so a
+   * consumer can retune density without forking the view.
+   *
+   * The timeline is the one view where vertical space is NOT the time axis —
+   * time runs horizontally and the panel scrolls — so an event's height carries
+   * no information. Overlapping events therefore STACK at a constant height and
+   * grow their resource row, instead of dividing a fixed 40px row between them
+   * the way week/day must (there, height IS duration).
+   */
+  private get trackMetrics(): { height: number; gap: number; padding: number } {
+    const styles = getComputedStyle(this.container);
+    const read = (name: string, fallback: number): number => {
+      const parsed = Number.parseFloat(styles.getPropertyValue(name).trim());
+      return Number.isFinite(parsed) && parsed >= 0 ? parsed : fallback;
+    };
+    return {
+      height: read('--scheduler-timeline-event-height', 28),
+      gap: read('--scheduler-timeline-track-gap', 2),
+      padding: read('--scheduler-timeline-row-padding', 2),
+    };
+  }
 
   render(): void {
+    this.captureActionFocus();
     this.clearContainer();
     this.container.classList.add('scheduler-timeline-view');
 
     const { date, options, resources, collapsedGroups } = this.state;
     const days = dateService.getWeekDays(date, options.firstDayOfWeek);
     const flattenedPreview = resourceService.flatten(resources, collapsedGroups);
-    const visibleRowCount = flattenedPreview.filter((f) => f.visible).length + 1; // +1 for the day-header row
+    // +2 header rows (day labels and time labels), +1 if the unassigned bucket
+    // row will render. Was +1, which under-counted by one and omitted the bucket.
+    const hasUnassigned = this.hasUnassignedRow(this.state);
+    const visibleRowCount =
+      flattenedPreview.filter((f) => f.visible).length + 2 + (hasUnassigned ? 1 : 0);
 
     // Create timeline structure with role=grid (APG Grid pattern, PRD §10 Q5)
     const timeline = this.createElement('div', 'scheduler-timeline');
@@ -79,15 +128,27 @@ export class TimelineView extends BaseView {
     }
 
     header.appendChild(slotsHeader);
-    timeline.appendChild(header);
+
+    // ONE sticky block wrapping both header rows. Previously each row carried
+    // `position: sticky; top: 0` itself, so once vertical scrolling worked they
+    // would stack on top of each other.
+    const head = this.createElement('div', 'scheduler-timeline-head');
+    head.appendChild(header);
+    timeline.appendChild(head);
 
     // Time labels row
     const timeLabelRow = this.createElement('div', 'scheduler-timeline-header');
+    // A row of columnheaders needs an owning row, or the grid's owned-children
+    // walk breaks (axe aria-required-children).
+    timeLabelRow.setAttribute('role', 'row');
     const emptyCell = this.createElement('div', 'scheduler-resource-header');
     emptyCell.style.borderBottom = '1px solid var(--scheduler-border-color)';
     timeLabelRow.appendChild(emptyCell);
 
     const timeLabelsContainer = this.createElement('div', 'scheduler-timeline-slots-header');
+    // Presentational wrapper between row and columnheaders (same reason as the
+    // body's slots container).
+    timeLabelsContainer.setAttribute('role', 'presentation');
 
     for (const day of days) {
       const slots = dateService.getTimeSlots(
@@ -108,7 +169,7 @@ export class TimelineView extends BaseView {
     }
 
     timeLabelRow.appendChild(timeLabelsContainer);
-    timeline.appendChild(timeLabelRow);
+    head.appendChild(timeLabelRow);
 
     // Body
     const body = this.createElement('div', 'scheduler-timeline-body');
@@ -126,14 +187,78 @@ export class TimelineView extends BaseView {
       rowIndex++;
     }
 
+    // Synthetic bucket for events with no resource. Timeline is resource-keyed,
+    // so without this an event created in week view (which has no resource axis
+    // to supply an id) is unrenderable here — the component would show a blank
+    // panel and read as broken. Rendered last, and only when it has content.
+    if (hasUnassigned) {
+      const row = this.createUnassignedRow(days);
+      row.setAttribute('aria-rowindex', String(rowIndex));
+      body.appendChild(row);
+      rowIndex++;
+    }
+
     timeline.appendChild(body);
     this.container.appendChild(timeline);
+
+    // Genuinely nothing to show: two header rows over a void read as "broken",
+    // not as "empty". The bucket row already covers the common case (no
+    // resources but some events), so this only fires when both are absent.
+    if (flattened.length === 0 && !hasUnassigned) {
+      const empty = this.createElement('div', 'scheduler-timeline-empty');
+      empty.textContent = resolveMessages(options.messages).noResources;
+      body.appendChild(empty);
+    }
+
+    const addBar = this.createAddBar();
+    if (addBar) this.container.appendChild(addBar);
 
     // Render events
     this.renderEvents(days);
 
     // Reflect any pre-existing focused cell / selection.
     this.updateCellFocusAndSelection();
+
+    // The view is rebuilt imperatively on every render, so a button that had
+    // focus is a different element afterwards. Restore by stable key or a
+    // keyboard user is dumped back to <body> after every add.
+    this.restoreActionFocus();
+  }
+
+  /**
+   * Focus key of an action control: what it does plus which row it belongs to.
+   * Stable across a rebuild (unlike DOM position), and unique per control.
+   */
+  private actionFocusKey(el: HTMLElement): string | null {
+    const action = el.dataset['action'];
+    if (!action) return null;
+    return [action, el.dataset['parentId'] ?? '', el.dataset['resourceId'] ?? ''].join('|');
+  }
+
+  /**
+   * Remember which action control the user was on, if any, before a rebuild.
+   * `activeElement` of the shadow root — the host's `document.activeElement` is
+   * the `<mp-scheduler>` element itself, not the button inside it.
+   */
+  private captureActionFocus(): void {
+    const root = this.container.getRootNode() as ShadowRoot | Document;
+    const active = (root as ShadowRoot).activeElement as HTMLElement | null;
+    this.pendingFocusKey =
+      active && this.container.contains(active) ? this.actionFocusKey(active) : null;
+  }
+
+  private restoreActionFocus(): void {
+    const key = this.pendingFocusKey;
+    this.pendingFocusKey = null;
+    if (!key) return;
+    const match = Array.from(
+      this.container.querySelectorAll<HTMLElement>('[data-action]'),
+    ).find((el) => this.actionFocusKey(el) === key);
+    // No match means the row the control belonged to is gone (a delete, or a
+    // group that collapsed). Falling back to the add bar keeps the user inside
+    // the widget instead of at the top of the document.
+    const fallback = this.container.querySelector<HTMLElement>('.scheduler-add-button');
+    (match ?? fallback)?.focus();
   }
 
   /**
@@ -200,9 +325,11 @@ export class TimelineView extends BaseView {
       resourceCell.appendChild(toggle);
     }
 
-    const title = this.createElement('span');
+    const title = this.createElement('span', 'resource-title');
     title.textContent = flat.item.title;
     resourceCell.appendChild(title);
+
+    this.appendResourceActions(resourceCell, flat.item);
 
     row.appendChild(resourceCell);
 
@@ -251,8 +378,223 @@ export class TimelineView extends BaseView {
     return row;
   }
 
+  /**
+   * Whether the synthetic bucket row renders: only when something is actually
+   * unassigned, so a fully-assigned timeline shows no phantom row.
+   */
+  private hasUnassignedRow(state: SchedulerState): boolean {
+    return (state.eventsByResource.get(null) ?? []).length > 0;
+  }
+
+  /** True when the capability is granted for the whole scheduler. */
+  private can(capability: SchedulerCapability): boolean {
+    return resolveCapability(capability, { permissions: this.state.resolvedPermissions });
+  }
+
+  /**
+   * Per-row resource actions, rendered into the pinned rowheader cell.
+   *
+   * A denied action is ABSENT, not disabled: `createResource`/`createGroup`/
+   * `updateResource`/`deleteResource` are all off by default, so the ordinary
+   * scheduler shows none of this and only an app that manages its own resource
+   * tree opts in. (A permanently-disabled button is noise for sighted users and
+   * a broken promise for AT — the same rule mp-file-manager follows.)
+   *
+   * Every name carries the row title. N buttons all called "Add" is the classic
+   * failure of a tree like this: a screen-reader user hears the same name on
+   * every row and cannot tell which group they are adding to. Depth stays out of
+   * it entirely — `aria-level` is invalid on these roles, so nesting is conveyed
+   * by the name and the indent, not by an attribute axe flags.
+   */
+  private appendResourceActions(cell: HTMLElement, item: Resource | ResourceGroup): void {
+    const messages = resolveMessages(this.state.options.messages);
+    const actions = this.createElement('div', 'scheduler-resource-actions');
+
+    if (isResourceGroup(item)) {
+      if (this.can('createResource')) {
+        actions.appendChild(
+          this.createResourceAction(
+            'add-resource',
+            '+',
+            formatMessage(messages.addResourceToGroup, { title: item.title }),
+            { parentId: item.id },
+          ),
+        );
+      }
+      if (this.can('createGroup')) {
+        actions.appendChild(
+          this.createResourceAction(
+            'add-group',
+            '⊞',
+            formatMessage(messages.addGroupToGroup, { title: item.title }),
+            { parentId: item.id },
+          ),
+        );
+      }
+    }
+
+    if (this.can('updateResource')) {
+      actions.appendChild(this.createColorSwatch(item, messages.resourceColor));
+    }
+
+    if (this.can('deleteResource')) {
+      actions.appendChild(
+        this.createResourceAction(
+          'delete-resource',
+          '×',
+          formatMessage(messages.removeResource, { title: item.title }),
+          { resourceId: item.id },
+        ),
+      );
+    }
+
+    if (actions.childElementCount > 0) cell.appendChild(actions);
+  }
+
+  /**
+   * One icon button. The glyph is `aria-hidden` and the name lives on the
+   * button, so the accessible name is the localized sentence rather than "+".
+   */
+  private createResourceAction(
+    action: string,
+    glyph: string,
+    label: string,
+    data: Record<string, string>,
+  ): HTMLElement {
+    const button = this.createElement('button', 'scheduler-resource-action');
+    button.type = 'button';
+    button.setAttribute('aria-label', label);
+    button.title = label;
+    this.setData(button, { action, ...data });
+    const icon = this.createElement('span', 'action-glyph');
+    icon.setAttribute('aria-hidden', 'true');
+    icon.textContent = glyph;
+    button.appendChild(icon);
+    return button;
+  }
+
+  /**
+   * Native `<input type="color">` for the resource's colour — the recolour half
+   * of R7. Native because it is keyboard-operable, localized and screen-reader
+   * labelled by the platform for free; a custom swatch grid would have to
+   * re-earn all three.
+   *
+   * It edits whichever field actually drives the rendered events: `eventColor`
+   * wins over `color` in `resolveEventColor`, so writing `color` on a resource
+   * that has an `eventColor` would look like the control did nothing.
+   */
+  private createColorSwatch(item: Resource | ResourceGroup, labelTemplate: string): HTMLElement {
+    const resource = item as Resource;
+    const field = resource.eventColor ? 'eventColor' : 'color';
+    const current = resource.eventColor ?? item.color;
+
+    const input = this.createElement('input', 'scheduler-resource-color');
+    input.type = 'color';
+    input.setAttribute('aria-label', formatMessage(labelTemplate, { title: item.title }));
+    input.title = input.getAttribute('aria-label') ?? '';
+    // `<input type="color">` accepts ONLY `#rrggbb`; anything else silently
+    // resets it to black, which reads as "this resource is black" rather than
+    // "this resource has a colour I cannot show".
+    if (current && /^#[0-9a-f]{6}$/i.test(current)) input.value = current;
+    this.setData(input, { action: 'set-resource-color', resourceId: item.id, field });
+    return input;
+  }
+
+  /**
+   * Root-level "Add resource" / "Add group" bar, pinned to the bottom of the
+   * frozen resource column (the spreadsheet/Jira idiom: creation lives at the
+   * end of the list, in the column the new row will appear in).
+   *
+   * Deliberately a sibling of the grid, not a row inside it: a row whose only
+   * content is buttons has to fake a rowheader, inflates `aria-rowcount`, and
+   * puts Tab stops inside a roving-tabindex grid. Outside, it is just a toolbar.
+   */
+  private createAddBar(): HTMLElement | null {
+    const canResource = this.can('createResource');
+    const canGroup = this.can('createGroup');
+    if (!canResource && !canGroup) return null;
+
+    const messages = resolveMessages(this.state.options.messages);
+    const bar = this.createElement('div', 'scheduler-timeline-addbar');
+    bar.setAttribute('role', 'toolbar');
+    bar.setAttribute('aria-label', messages.addResourceBarLabel);
+
+    if (canResource) {
+      const button = this.createElement('button', 'scheduler-add-button');
+      button.type = 'button';
+      button.textContent = messages.addResource;
+      this.setData(button, { action: 'add-resource' });
+      bar.appendChild(button);
+    }
+    if (canGroup) {
+      const button = this.createElement('button', 'scheduler-add-button');
+      button.type = 'button';
+      button.textContent = messages.addGroup;
+      this.setData(button, { action: 'add-group' });
+      bar.appendChild(button);
+    }
+    return bar;
+  }
+
+  /**
+   * The "(No resource)" bucket row.
+   *
+   * Structurally identical to a resource row so keyboard nav, roving tabindex and
+   * the grid ARIA chain all treat it as one more row — but its slots carry NO
+   * `data-resource-id`, so a create-drag started here produces an unassigned
+   * event rather than inventing membership of a resource that doesn't exist.
+   */
+  private createUnassignedRow(days: Date[]): HTMLElement {
+    const { options } = this.state;
+    const row = this.createElement('div', 'scheduler-timeline-row', 'unassigned');
+    row.setAttribute('role', 'row');
+
+    const resourceCell = this.createElement('div', 'scheduler-resource-cell');
+    resourceCell.setAttribute('role', 'rowheader');
+    resourceCell.style.paddingLeft = '8px';
+    const title = this.createElement('span');
+    title.textContent = resolveMessages(options.messages).unassignedResource;
+    resourceCell.appendChild(title);
+    row.appendChild(resourceCell);
+
+    const slotsContainer = this.createElement('div', 'scheduler-timeline-slots');
+    slotsContainer.setAttribute('role', 'presentation');
+
+    for (const day of days) {
+      const slots = dateService.getTimeSlots(
+        day,
+        options.slotDuration,
+        options.slotMinTime,
+        options.slotMaxTime,
+      );
+      for (const slot of slots) {
+        const slotEl = this.createElement('div', 'scheduler-timeline-slot');
+        slotEl.setAttribute('role', 'gridcell');
+        slotEl.setAttribute('tabindex', '-1');
+        slotEl.setAttribute('aria-selected', 'false');
+        slotEl.id = `scheduler-cell-t-${UNASSIGNED_ROW_ID}-${slot.start.getTime()}`;
+        slotEl.style.width = `${this.slotWidth}px`;
+        // Deliberately no resourceId — see the doc comment.
+        this.setData(slotEl, {
+          start: slot.start.toISOString(),
+          end: slot.end.toISOString(),
+        });
+        slotsContainer.appendChild(slotEl);
+      }
+    }
+
+    const eventsContainer = this.createElement('div', 'scheduler-timeline-events');
+    eventsContainer.setAttribute('role', 'gridcell');
+    slotsContainer.appendChild(eventsContainer);
+
+    row.appendChild(slotsContainer);
+    this.rowElements.set(UNASSIGNED_ROW_ID, row);
+
+    return row;
+  }
+
   private renderEvents(days: Date[]): void {
-    const { events, resources, options, collapsedGroups } = this.state;
+    const { resources, options } = this.state;
 
     const weekStart = days[0];
     const weekEnd = new Date(days[6]);
@@ -269,11 +611,25 @@ export class TimelineView extends BaseView {
     const totalSlots = slotsPerDay * 7;
     const totalWidth = totalSlots * this.slotWidth;
 
-    // Get all resources
-    const allResources = resourceService.getAllResources(resources);
+    // Every row we render, including the synthetic unassigned bucket. Its id is
+    // `null` in the index; UNASSIGNED_ROW_ID is only the DOM/row-map key.
+    const rows: { resourceId: string | null; title: string }[] = [
+      ...resourceService.getAllResources(resources).map((r) => ({
+        resourceId: r.id as string | null,
+        title: r.title,
+      })),
+      ...(this.rowElements.has(UNASSIGNED_ROW_ID)
+        ? [
+            {
+              resourceId: null,
+              title: resolveMessages(options.messages).unassignedResource,
+            },
+          ]
+        : []),
+    ];
 
-    for (const resource of allResources) {
-      const row = this.rowElements.get(resource.id);
+    for (const { resourceId, title: rowTitle } of rows) {
+      const row = this.rowElements.get(resourceId ?? UNASSIGNED_ROW_ID);
       if (!row) continue;
 
       const eventsContainer = row.querySelector('.scheduler-timeline-events');
@@ -282,9 +638,11 @@ export class TimelineView extends BaseView {
       // Clear existing events
       eventsContainer.innerHTML = '';
 
-      // Get events for this resource
-      const resourceEvents = (resource.events ?? []).filter(
-        (e) => e.start < weekEnd && e.end > weekStart
+      // Events come from the normalized store, keyed by resourceId — NOT from
+      // `resource.events`, which was a second store that made this view render a
+      // disjoint set from week/day/month/year.
+      const resourceEvents = (this.state.eventsByResource.get(resourceId) ?? []).filter(
+        (e) => e.start < weekEnd && e.end > weekStart,
       );
 
       // Create event parts for layout (don't split into daily parts for timeline view)
@@ -300,22 +658,26 @@ export class TimelineView extends BaseView {
         totalDays: 1,
       }));
 
-      // Get timelened parts with track info (uses colspan algorithm)
+      // Get timelined parts with track info (uses colspan algorithm)
       const timelinedParts = timelineService.getTimelinedParts(allParts);
 
+      // The row grows to fit its tracks rather than dividing a fixed height
+      // between them: `min-height` so an empty row keeps the 40px baseline.
+      const tracks = timelinedParts.reduce((max, p) => Math.max(max, p.totalTracks), 1);
+      const { height, gap, padding } = this.trackMetrics;
+      row.style.minHeight = `${tracks * height + (tracks - 1) * gap + 2 * padding}px`;
+
       // Render each event part
-      for (const { part, trackIndex, totalTracks, colspan } of timelinedParts) {
+      for (const { part, trackIndex } of timelinedParts) {
         if (!part.event) continue;
 
         const eventEl = this.createEventElement(
           part.event,
           trackIndex,
-          totalTracks,
-          colspan,
           weekStart,
           totalWidth,
           options.slotDuration ?? 1800,
-          resource.title,
+          rowTitle,
         );
         eventsContainer.appendChild(eventEl);
       }
@@ -325,8 +687,6 @@ export class TimelineView extends BaseView {
   private createEventElement(
     event: SchedulerEvent,
     trackIndex: number,
-    totalTracks: number,
-    colspan: number,
     viewStart: Date,
     totalWidth: number,
     slotDuration: number,
@@ -363,17 +723,18 @@ export class TimelineView extends BaseView {
     const left = (startOffset / viewDuration) * totalWidth;
     const width = Math.max((duration / viewDuration) * totalWidth, 20);
 
-    // Calculate vertical position based on track and colspan
-    // colspan allows events to span multiple tracks when there's no blocking event
-    const top = (trackIndex / totalTracks) * 100;
-    const heightPercent = (colspan / totalTracks) * 100;
+    // Stack: one constant-height band per track, top to bottom. NOT a
+    // percentage of the row — a percentage is what squeezed two overlapping
+    // events into two thin slivers of a 40px row, which is right for week/day
+    // (height is duration there) and meaningless here.
+    const { height: trackHeight, gap, padding } = this.trackMetrics;
 
     eventEl.style.left = `${left}px`;
     eventEl.style.width = `${width}px`;
-    eventEl.style.top = `${top}%`;
-    eventEl.style.height = `${heightPercent}%`;
-    eventEl.style.backgroundColor = event.color ?? '#3788d8';
-    eventEl.style.color = event.textColor ?? getContrastColor(event.color ?? '#3788d8');
+    eventEl.style.top = `${padding + trackIndex * (trackHeight + gap)}px`;
+    eventEl.style.height = `${trackHeight}px`;
+    // Fill + contrast text, resolving the resource's colour (see BaseView).
+    this.applyEventColors(eventEl, event);
 
     this.setData(eventEl, { eventId: event.id });
 
@@ -408,21 +769,45 @@ export class TimelineView extends BaseView {
   }
 
   /**
-   * Dashed ghost showing where the dragged event will land, rendered in the
-   * dragged event's own resource row (pointer drags don't change resource).
-   * Mirrors week-view.renderPreviewEvent for the horizontal axis.
+   * Dashed ghost showing where the event will land. Mirrors
+   * week-view.renderPreviewEvent for the horizontal axis.
+   *
+   * Gated on `previewEvent` alone — NOT on `dragState`, which only the pointer
+   * drag path writes. Keyboard move-mode sets `previewEvent` with no
+   * `dragState`, so requiring it hid the ghost from keyboard users on this
+   * view while week/day showed it.
    */
   private renderPreviewEvent(days: Date[]): void {
     this.container.querySelector('.scheduler-timeline-event.preview')?.remove();
 
-    const { dragState, previewEvent, resources, options } = this.state;
-    const draggedId = dragState?.event?.id;
-    if (!draggedId || !previewEvent) return;
+    const { dragState, previewEvent, options } = this.state;
+    if (!previewEvent) return;
 
-    const resource = resourceService
-      .getAllResources(resources)
-      .find((r) => (r.events ?? []).some((e) => e.id === draggedId));
-    const row = resource ? this.rowElements.get(resource.id) : null;
+    // Resource nudges (move-mode Up/Down) put the target row on the preview
+    // itself; otherwise the row is the one that owns the dragged event.
+    const draggedId = dragState?.event?.id ?? this.state.keyboardMoveEventId;
+    // From the NORMALIZED store, not `resource.events`. That nested array stopped
+    // being a live mirror when the model was normalized, so the old lookup found
+    // nothing for any event supplied through the `events` input — which is every
+    // event a drag-create or an ordinary API call produces. A resize preview
+    // carries no `resourceId` of its own, so this was the only thing that could
+    // name the row, and the ghost silently vanished for those events.
+    const draggedEvent = draggedId
+      ? this.state.events.find((event) => event.id === draggedId)
+      : undefined;
+    const rowKey =
+      previewEvent.resourceId ??
+      // `?? UNASSIGNED_ROW_ID`, not `?? undefined`: an event in the bucket row is
+      // legitimately resource-less and still deserves a ghost.
+      (draggedEvent ? draggedEvent.resourceId ?? UNASSIGNED_ROW_ID : undefined) ??
+      // A CREATE drag has no source event and no resource on the preview either,
+      // so fall back to the row the gesture is happening in. Without this a
+      // create-drag on a timeline row showed no ghost at all.
+      this.state.selectionResourceId ??
+      this.state.focusedResourceId ??
+      undefined;
+    if (!rowKey) return;
+    const row = this.rowElements.get(rowKey);
     const eventsContainer = row?.querySelector('.scheduler-timeline-events');
     if (!eventsContainer) return;
 
@@ -443,6 +828,20 @@ export class TimelineView extends BaseView {
     const previewEl = this.createElement('div', 'scheduler-timeline-event', 'preview');
     previewEl.style.left = `${((start - viewStart.getTime()) / viewDuration) * totalWidth}px`;
     previewEl.style.width = `${Math.max(((end - start) / viewDuration) * totalWidth, 20)}px`;
+    // Sit on the source event's track. Without this the ghost inherits the
+    // full-row top/height from .scheduler-timeline-event and covers every
+    // track of a multi-track resource row.
+    if (draggedId) {
+      // dataset match rather than an attribute selector: event ids are
+      // consumer-supplied and would need CSS escaping.
+      const sourceEl = Array.from(
+        eventsContainer.querySelectorAll<HTMLElement>('.scheduler-timeline-event:not(.preview)'),
+      ).find((el) => el.dataset['eventId'] === draggedId);
+      if (sourceEl) {
+        previewEl.style.top = sourceEl.style.top;
+        previewEl.style.height = sourceEl.style.height;
+      }
+    }
 
     eventsContainer.appendChild(previewEl);
   }
@@ -450,10 +849,22 @@ export class TimelineView extends BaseView {
   update(state: SchedulerState): void {
     const dateChanged = this.state.date.getTime() !== state.date.getTime();
     const optionsChanged = this.optionsRequireRerender(this.state.options, state.options);
+    // WHICH rows exist is decided in render(), so an update that changes the row
+    // set has to rebuild rather than just refresh events. Without this a resource
+    // added after first paint never appeared — the reason the timeline looked
+    // static no matter what a consumer did to `resources`.
+    //
+    // Identity comparisons: the state manager replaces these references instead
+    // of mutating them, and a per-render deep compare of the whole tree is not
+    // worth paying for on the drag path.
+    const rowsChanged =
+      this.state.resources !== state.resources ||
+      this.state.collapsedGroups !== state.collapsedGroups ||
+      this.state.resolvedPermissions !== state.resolvedPermissions ||
+      this.hasUnassignedRow(this.state) !== this.hasUnassignedRow(state);
     this.state = state;
 
-    // If date or relevant options changed, we need to re-render the entire view
-    if (dateChanged || optionsChanged) {
+    if (dateChanged || optionsChanged || rowsChanged) {
       this.render();
       return;
     }

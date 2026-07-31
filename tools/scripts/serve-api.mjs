@@ -17,6 +17,25 @@
 //   * Linux / macOS — put the child in its own process group (detached) and
 //     signal the whole group with process.kill(-pid). Unchanged, proven path.
 //
+// The job object covers the wrapper *dying*. It cannot cover the wrapper being
+// LEFT ALIVE: if the target that depends on `api:serve` fails (say the Angular
+// dev-server finds its port taken), nx exits without cancelling the continuous
+// dependency task it already started, so this wrapper keeps running and the API
+// keeps holding `bin/.../Api.dll` and port 5000. The next `npm start` then fails
+// its API build with MSB3027 "file is locked by Api.exe". Hence `killLeftoverApi`
+// below: a leftover of OUR OWN is cleaned up on the way in, rather than left for
+// the developer to hunt down with taskkill.
+//
+// The process listing, the port lookup and the tree-kill live in
+// `lib/dev-processes.mjs`, shared with the demo dev-servers (which need the
+// reclaim but NOT the job object — they have no descendants to reap; see that
+// file's header). Only the rules for recognising THIS API's processes are here.
+//
+// Those rules are pure and exported; `dev-processes.check.mjs` next door
+// exercises them, and the shared ownership rules, against captured
+// Windows/Linux/macOS process listings. Run it after touching either:
+// `node tools/scripts/dev-processes.check.mjs`.
+//
 // Locally we use `dotnet watch run` for hot-reload during dev. In CI nothing
 // changes between boot and shutdown, so we use a plain `dotnet run` instead:
 //   - skips the file-watcher overhead
@@ -28,14 +47,19 @@
 
 import { spawn, spawnSync } from 'node:child_process';
 import { platform } from 'node:os';
+import { pathToFileURL } from 'node:url';
 import { createRequire } from 'node:module';
+import { listProcesses, killProcesses } from './lib/dev-processes.mjs';
 
 const isWindows = platform() === 'win32';
 const isCI = !!process.env.CI;
 
+const API_PORT = 5000;
+const API_URL = `http://localhost:${API_PORT}`;
+
 const dotnetArgs = isCI
-  ? ['run', '--project', 'apps/api/Api.csproj', '--urls', 'http://localhost:5000']
-  : ['watch', '--project', 'apps/api/Api.csproj', 'run', '--urls', 'http://localhost:5000'];
+  ? ['run', '--project', 'apps/api/Api.csproj', '--urls', API_URL]
+  : ['watch', '--project', 'apps/api/Api.csproj', 'run', '--urls', API_URL];
 
 // Best-effort Windows Job Object. Returns { assign(pid), terminate() } or null.
 // Windows-only: the FFI module is never required on Linux/macOS.
@@ -121,6 +145,95 @@ function setupWindowsJob() {
   }
 }
 
+/**
+ * Kill a LEFTOVER instance of this repo's own API before starting a new one.
+ *
+ * All three platforms need this, for the same reason with different symptoms.
+ * If the target that depends on `api:serve` fails (say the Angular dev-server
+ * finds its port taken), nx exits without cancelling the continuous dependency
+ * task it already started, so the wrapper below keeps running and the API keeps
+ * holding port 5000. On Windows it also keeps a WRITE LOCK on
+ * `bin/.../Api.dll`, so the next `npm start` fails its build outright with
+ * MSB3027 "file is locked by Api.exe"; on macOS/Linux the binary is replaceable
+ * but Kestrel still cannot bind, so the API silently never comes up. Same
+ * leftover, same fix — hence no platform condition here, only in HOW the
+ * process list is read and how a tree is killed.
+ *
+ * Identified by two repo-scoped signals rather than by port ownership: the
+ * runners carry `--project apps/api/Api.csproj` in their command line, and the
+ * apphost's image path is under this repo's `apps/api/bin/`. That is narrower
+ * than "whatever holds 5000" — a foreign service on the port is left alone for
+ * Kestrel to complain about, because stealing a port from a process you cannot
+ * identify is how a dev tool eats someone's database. It is also broader in the
+ * one way that matters: it still finds a leftover whose listener has already
+ * died but whose DLL lock has not.
+ */
+function killLeftoverApi() {
+  const leftovers = selectLeftovers(listProcesses(), process.cwd());
+  if (leftovers.length === 0) return;
+
+  console.warn(
+    `[serve-api] found ${leftovers.length} leftover API process(es) from this repo ` +
+      `(${leftovers.map((p) => `${p.name}:${p.pid}`).join(', ')}) — killing them. This happens ` +
+      `when a previous serve was interrupted in a way that left the wrapper running.`,
+  );
+
+  // Deepest first (selectLeftovers sorts them). The runner (`dotnet watch`)
+  // RESTARTS its child, so killing the apphost alone just hands the port straight
+  // back; killing children before their runner closes the window entirely.
+  killProcesses(leftovers);
+}
+
+/**
+ * Pure: pick this repo's API processes out of a process list, deepest child
+ * first. Split out from the platform I/O so the matching rules can be reasoned
+ * about — and checked — without spawning anything.
+ */
+export function selectLeftovers(processes, cwd) {
+  const slash = (value) => (value ?? '').replace(/\\/g, '/').toLowerCase();
+  const projectRef = 'apps/api/api.csproj';
+  const binRef = `${slash(cwd)}/apps/api/bin/`;
+
+  const matches = processes.filter((proc) => {
+    if (proc.pid === process.pid) return false; // never ourselves
+    const args = slash(proc.args);
+    return args.includes(projectRef) || args.includes(binRef);
+  });
+
+  // Depth = how many of the OTHER matches are ancestors of this one, so the
+  // apphost sorts after its runner regardless of the list order we were given.
+  const byPid = new Map(processes.map((proc) => [proc.pid, proc]));
+  const matchedPids = new Set(matches.map((proc) => proc.pid));
+  const depthOf = (proc) => {
+    let depth = 0;
+    let current = byPid.get(proc.ppid);
+    const seen = new Set([proc.pid]);
+    while (current && !seen.has(current.pid)) {
+      seen.add(current.pid);
+      if (matchedPids.has(current.pid)) depth++;
+      current = byPid.get(current.ppid);
+    }
+    return depth;
+  };
+
+  return matches
+    .map((proc) => ({ ...proc, depth: depthOf(proc) }))
+    .sort((a, b) => b.depth - a.depth);
+}
+
+/**
+ * True only when this file was RUN, not imported. The matching rules above are
+ * exported for `dev-processes.check.mjs`, and an import that kills the API you
+ * are currently running is a trap — so every side effect lives behind this guard.
+ */
+const isEntryPoint =
+  !!process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href;
+
+if (isEntryPoint) main();
+
+function main() {
+killLeftoverApi();
+
 const job = isWindows ? setupWindowsJob() : null;
 
 const child = spawn('dotnet', dotnetArgs, {
@@ -190,3 +303,4 @@ child.on('error', (err) => {
 child.on('exit', (code, signal) => {
   process.exit(signal ? 1 : code ?? 0);
 });
+}

@@ -123,6 +123,12 @@
       "dependsOn": [
         {
           "projects": [
+            "ng-bootstrap-demo"
+          ],
+          "target": "free-port"
+        },
+        {
+          "projects": [
             "api"
           ],
           "target": "serve"
@@ -164,6 +170,13 @@
       ],
       "options": {
         "configFile": "vitest.config.ts"
+      }
+    },
+    "free-port": {
+      "//why": "The Angular dev-server listens from inside nx's own run-executor process, so unlike serve-api.mjs there is no wrapper to reclaim the port at startup. A one-shot dependsOn task does it instead. Only kills processes whose ancestry leads back to this workspace.",
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "node tools/scripts/free-port.mjs 4200 ng-demo"
       }
     }
   }

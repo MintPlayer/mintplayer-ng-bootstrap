@@ -4,7 +4,12 @@ import { BsScheduler } from '@mintplayer/vue-bootstrap/scheduler';
 import { BsCodeSnippet } from '@mintplayer/vue-bootstrap/code-snippet';
 import {
   generateEventId,
+  generateGroupId,
+  generateResourceId,
+  type Resource,
+  type ResourceGroup,
   type SchedulerEvent,
+  type SchedulerOptions,
   type ViewType,
 } from '@mintplayer/web-components/scheduler-core';
 import type { MpScheduler } from '@mintplayer/web-components/scheduler';
@@ -21,8 +26,96 @@ const at = (h: number, m = 0) => {
 const events = ref<SchedulerEvent[]>([
   { id: '1', title: 'Standup',       start: at(9),  end: at(9, 30), color: '#0d6efd' },
   { id: '2', title: 'Design review', start: at(11), end: at(12),    color: '#6f42c1' },
-  { id: '3', title: 'Lunch',         start: at(12), end: at(13),    color: '#198754' },
+  // Assigned to a resource, so the timeline has something on Alice's row while
+  // the two above land in its "(No resource)" bucket.
+  { id: '3', title: 'Lunch',         start: at(12), end: at(13),    resourceId: 'alice' },
 ]);
+
+// A resource tree so the timeline view is exercised at all — this page used to
+// leave `resources` unbound, which made its timeline permanently blank.
+const resources = ref<(Resource | ResourceGroup)[]>([
+  {
+    id: 'engineering',
+    title: 'Engineering',
+    children: [
+      { id: 'alice', title: 'Alice' },
+      { id: 'bob', title: 'Bob', color: '#fd7e14' },
+    ],
+  },
+]);
+
+const options: Partial<SchedulerOptions> = {
+  moreLinkBehavior: 'popover',
+  // Resource-tree editing is off in the component by default; this opts in.
+  permissions: {
+    createResource: true,
+    createGroup: true,
+    updateResource: true,
+    deleteResource: true,
+  },
+};
+
+/** Insert at root when `parentId` is absent, else into that group. */
+function insertInto(
+  items: (Resource | ResourceGroup)[],
+  parentId: string | undefined,
+  added: Resource | ResourceGroup,
+): (Resource | ResourceGroup)[] {
+  if (!parentId) return [...items, added];
+  return items.map((item) =>
+    'children' in item
+      ? item.id === parentId
+        ? { ...item, children: [...item.children, added] }
+        : { ...item, children: insertInto(item.children, parentId, added) }
+      : item,
+  );
+}
+
+// Resource-tree requests. Like `event-create` these are asks, not writes: the
+// WC never edits its own `resources`, so the id and initial colour are ours.
+// New ARRAY each time — the wrapper watches by reference, matching Lit.
+function onResourceCreate(e: Event) {
+  const { parentId } = (e as CustomEvent<{ parentId?: string }>).detail;
+  resources.value = insertInto(resources.value, parentId, {
+    id: generateResourceId(),
+    title: 'New resource',
+    color: '#20c997',
+  });
+}
+
+function onGroupCreate(e: Event) {
+  const { parentId } = (e as CustomEvent<{ parentId?: string }>).detail;
+  resources.value = insertInto(resources.value, parentId, {
+    id: generateGroupId(),
+    title: 'New group',
+    children: [],
+  });
+}
+
+function onResourceUpdate(e: Event) {
+  const { resource, changes } = (
+    e as CustomEvent<{
+      resource: Resource | ResourceGroup;
+      changes: Partial<Resource & ResourceGroup>;
+    }>
+  ).detail;
+  const apply = (item: Resource | ResourceGroup): Resource | ResourceGroup =>
+    item.id === resource.id
+      ? { ...item, ...changes }
+      : 'children' in item
+        ? { ...item, children: item.children.map(apply) }
+        : item;
+  resources.value = resources.value.map(apply);
+}
+
+function onResourceDelete(e: Event) {
+  const { resource } = (e as CustomEvent<{ resource: Resource | ResourceGroup }>).detail;
+  const prune = (items: (Resource | ResourceGroup)[]): (Resource | ResourceGroup)[] =>
+    items
+      .filter((item) => item.id !== resource.id)
+      .map((item) => ('children' in item ? { ...item, children: prune(item.children) } : item));
+  resources.value = prune(resources.value);
+}
 
 // `v-model:view` / `v-model:date` keep the bound refs in sync with the
 // WC's own view switcher AND its prev/next/today navigation — the
@@ -151,6 +244,8 @@ const SOURCE = `<!-- v-model:view / v-model:date track the WC's own view switche
       <h2>Today's agenda</h2>
       <BsScheduler
         :events="events"
+        :resources="resources"
+        :options="options"
         v-model:view="view"
         v-model:date="date"
         style="display: block; height: 100%"
@@ -158,6 +253,10 @@ const SOURCE = `<!-- v-model:view / v-model:date track the WC's own view switche
         @event-create="onEventCreate"
         @event-delete="onEventDelete"
         @event-dblclick="onEventDblClick"
+        @resource-create="onResourceCreate"
+        @group-create="onGroupCreate"
+        @resource-update="onResourceUpdate"
+        @resource-delete="onResourceDelete"
       />
     </section>
 

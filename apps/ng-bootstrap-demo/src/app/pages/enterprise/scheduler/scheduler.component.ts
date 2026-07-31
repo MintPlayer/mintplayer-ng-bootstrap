@@ -16,6 +16,9 @@ import {
   SchedulerEventCreateEvent,
   SchedulerEventUpdateEvent,
   SchedulerEventDeleteEvent,
+  SchedulerResourceCreateEvent,
+  SchedulerResourceUpdateEvent,
+  SchedulerResourceDeleteEvent,
   DateClickEvent,
 } from '@mintplayer/ng-bootstrap/scheduler';
 import {
@@ -77,9 +80,21 @@ export class SchedulerComponent {
     slotDuration: this.slotDuration(),
     timeFormat: this.timeFormat(),
     firstDayOfWeek: this.firstDayOfWeek(),
-    editable: true,
-    selectable: true,
     nowIndicator: true,
+    moreLinkBehavior: this.moreLinkBehavior(),
+    dayClickAction: this.dayClickAction(),
+    // Resource-tree capabilities are OFF by default in the component; this is
+    // what opting in looks like. Read-only rides the `[readonly]` attribute
+    // instead, which outranks everything here.
+    permissions:
+      this.permissionMode() === 'resource-admin'
+        ? {
+            createResource: true,
+            createGroup: true,
+            updateResource: true,
+            deleteResource: true,
+          }
+        : {},
   }));
 
   // Events and resources
@@ -287,6 +302,94 @@ export class SchedulerComponent {
     return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}`;
   }
 
+  // --- Permissions + popover behaviour demo ------------------------------
+  // One select rather than five checkboxes: these are the three states a
+  // consumer actually ships (read-only, the default, and "I manage my own
+  // resource tree"), and the WC's own knobs are already granular underneath.
+  permissionMode = signal<'default' | 'readonly' | 'resource-admin'>('default');
+  moreLinkBehavior = signal<'popover' | 'day'>('popover');
+  dayClickAction = signal<'none' | 'popover'>('none');
+
+  readonly permissionOptions: { value: 'default' | 'readonly' | 'resource-admin'; label: string }[] = [
+    { value: 'default', label: 'Events editable (default)' },
+    { value: 'readonly', label: 'Read-only' },
+    { value: 'resource-admin', label: 'Events + resource tree editable' },
+  ];
+
+  /** Drives the wrapper's `[readonly]`, which outranks `options.permissions`. */
+  readonly = computed(() => this.permissionMode() === 'readonly');
+
+  // --- Resource-tree requests (timeline) ---------------------------------
+  // Same contract as `eventCreate`: the WC asks, the consumer decides. It
+  // never edits its own `[resources]`, so all four handlers below write the
+  // signal themselves — including inventing the id and the initial colour,
+  // which the WC deliberately does not do (it must stay a pure function of
+  // its inputs).
+  onResourceCreate(e: SchedulerResourceCreateEvent) {
+    const resource: Resource = {
+      id: generateResourceId(),
+      title: 'New resource',
+      color: this.nextPaletteColor(),
+    };
+    this.resources.update((resources) => this.insertInto(resources, e.parentId, resource));
+    this.log(`Resource created${e.parentId ? ' in group ' + e.parentId : ''}`);
+  }
+
+  onGroupCreate(e: SchedulerResourceCreateEvent) {
+    const group: ResourceGroup = { id: generateGroupId(), title: 'New group', children: [] };
+    this.resources.update((resources) => this.insertInto(resources, e.parentId, group));
+    this.log(`Group created${e.parentId ? ' in group ' + e.parentId : ''}`);
+  }
+
+  onResourceUpdate(e: SchedulerResourceUpdateEvent) {
+    const { id } = e.resource;
+    const apply = (item: Resource | ResourceGroup): Resource | ResourceGroup =>
+      item.id === id
+        ? { ...item, ...e.changes }
+        : 'children' in item
+          ? { ...item, children: item.children.map(apply) }
+          : item;
+    this.resources.update((resources) => resources.map(apply));
+    this.log(`Resource updated: ${e.resource.title} → ${JSON.stringify(e.changes)}`);
+  }
+
+  onResourceDelete(e: SchedulerResourceDeleteEvent) {
+    const { id } = e.resource;
+    const prune = (items: (Resource | ResourceGroup)[]): (Resource | ResourceGroup)[] =>
+      items
+        .filter((item) => item.id !== id)
+        .map((item) => ('children' in item ? { ...item, children: prune(item.children) } : item));
+    this.resources.update(prune);
+    this.log(`Resource removed: ${e.resource.title}`);
+  }
+
+  /** Insert at root when `parentId` is absent, else into that group. */
+  private insertInto(
+    items: (Resource | ResourceGroup)[],
+    parentId: string | undefined,
+    added: Resource | ResourceGroup,
+  ): (Resource | ResourceGroup)[] {
+    if (!parentId) return [...items, added];
+    return items.map((item) =>
+      'children' in item
+        ? item.id === parentId
+          ? { ...item, children: [...item.children, added] }
+          : { ...item, children: this.insertInto(item.children, parentId, added) }
+        : item,
+    );
+  }
+
+  /**
+   * Deterministic colour rotation. A consumer has to supply the initial colour
+   * because the WC cannot invent one without becoming stateful — this is the
+   * "random colour on creation" half of the request, made repeatable.
+   */
+  private paletteIndex = 0;
+  private nextPaletteColor(): string {
+    const palette = ['#3788d8', '#28a745', '#ffc107', '#dc3545', '#6f42c1', '#fd7e14', '#17a2b8'];
+    return palette[this.paletteIndex++ % palette.length];
+  }
+
   // Helper methods
   private createEvent(
     title: string,
@@ -386,8 +489,6 @@ export class SchedulerComponent {
         slotDuration: 1800,        // 30 minutes
         timeFormat: '24h',
         firstDayOfWeek: 1,         // Monday
-        editable: true,
-        selectable: true,
         nowIndicator: true,
       }));
 

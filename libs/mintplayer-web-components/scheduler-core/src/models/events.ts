@@ -1,112 +1,127 @@
 import { SchedulerEvent } from './event';
-import { Resource } from './resource';
+import { Resource, ResourceGroup } from './resource';
 import { ViewType } from './types';
 
 /**
- * Base event detail interface
+ * Time range carried by `selection-change` and `event-create`. `start` is the
+ * inclusive lower edge, `end` is the exclusive upper edge of the last selected
+ * slot — matching the natural slot-pair shape produced by `selectionRange()`
+ * in `views/base-view.ts`.
  */
-export interface BaseEventDetail {
-  /** Original DOM event */
-  originalEvent?: Event;
-}
-
-/**
- * Event-selected event detail. Fires on mouse click and on keyboard Tab
- * landing on an event (PRD scheduler-keyboard-grid-nav D3 — renamed from
- * `EventClickDetail` because keyboard Tab now triggers the same event).
- */
-export interface EventSelectedDetail extends BaseEventDetail {
-  /** The selected event */
-  event: SchedulerEvent;
-}
-
-/**
- * Event create *request* detail. Per PRD scheduler-controlled-selection,
- * the scheduler does not construct or store the event itself — the consumer
- * receives the range and decides whether to add an event for it.
- */
-export interface EventCreateDetail extends BaseEventDetail {
-  /** The selected time range. */
-  range: { start: Date; end: Date };
-  /** Resource the request targets (timeline view only). */
-  resourceId?: string;
-  /** View that produced the request. */
-  view: ViewType;
-}
-
-/**
- * Selection-change detail. Fires on every transition — including the
- * transition to an empty selection. `selectedEvent` and `range` are
- * independent dimensions of the selection state.
- */
-export interface SelectionChangeDetail {
-  selectedEvent: SchedulerEvent | null;
-  range: { start: Date; end: Date } | null;
-  view: ViewType;
-  resourceId?: string;
-}
-
-/**
- * Event update event detail
- */
-export interface EventUpdateDetail extends BaseEventDetail {
-  /** The updated event */
-  event: SchedulerEvent;
-  /** The event before the update */
-  oldEvent: SchedulerEvent;
-}
-
-/**
- * Event delete event detail
- */
-export interface EventDeleteDetail extends BaseEventDetail {
-  /** The deleted event */
-  event: SchedulerEvent;
-}
-
-/**
- * Date click event detail
- */
-export interface DateClickDetail extends BaseEventDetail {
-  /** The clicked date */
-  date: Date;
-  /** Resource at the clicked location (if applicable) */
-  resource?: Resource;
-}
-
-/**
- * Date select event detail
- */
-export interface DateSelectDetail extends BaseEventDetail {
-  /** Start of the selected range */
+export interface TimeRange {
   start: Date;
-  /** End of the selected range */
   end: Date;
-  /** Resource at the selected location (if applicable) */
-  resource?: Resource;
 }
 
 /**
- * View change event detail
+ * Every custom event `mp-scheduler` can emit, as one discriminated union.
+ *
+ * This union is the SINGLE source of truth for the event surface: the emitter
+ * accepts it, `EventDetail<T>` derives each payload from it, and
+ * `SchedulerEventMap` is a mechanical mapping of it. A second hand-written
+ * table drifts — the previous one had grown a `date-select` entry nothing
+ * emitted and a `date-click` resource field nothing sent.
+ *
+ * Every event bubbles AND is composed, so a scheduler nested inside another
+ * component's shadow root still reaches the outer consumer.
  */
-export interface ViewChangeDetail {
-  /** The new view */
-  view: ViewType;
-  /** The current date in the new view */
-  date: Date;
-}
+export type SchedulerCustomEvent =
+  | {
+      // Renamed from `event-click`: keyboard Tab on an event also fires this
+      // (see PRD scheduler-keyboard-grid-nav §6.5 D3), so "click" no longer
+      // describes the trigger.
+      type: 'event-selected';
+      event: SchedulerEvent;
+      originalEvent: Event;
+    }
+  | {
+      type: 'event-dblclick';
+      event: SchedulerEvent;
+      originalEvent: Event;
+    }
+  | {
+      // Per PRD scheduler-controlled-selection: this is a *request*. The
+      // scheduler does NOT mutate its own events list; the consumer builds the
+      // actual SchedulerEvent (id, title, colour) and decides whether to add it.
+      type: 'event-create';
+      range: TimeRange;
+      view: ViewType;
+      resourceId?: string;
+      originalEvent: Event;
+    }
+  | {
+      type: 'event-update';
+      event: SchedulerEvent;
+      oldEvent: SchedulerEvent;
+      originalEvent: Event;
+    }
+  | {
+      type: 'event-delete';
+      event: SchedulerEvent;
+    }
+  | {
+      type: 'date-click';
+      date: Date;
+      originalEvent: Event;
+    }
+  | {
+      type: 'view-change';
+      view: ViewType;
+      date: Date;
+    }
+  | {
+      // Fires on every selection transition — including the transition to an
+      // empty selection (range: null), so consumers can clear derived UI
+      // without polling. `selectedEvent` carries the single-event focus,
+      // `range` the time-range selection; the two are independent.
+      type: 'selection-change';
+      selectedEvent: SchedulerEvent | null;
+      range: TimeRange | null;
+      view: ViewType;
+      resourceId?: string;
+    }
+  | {
+      // Resource/group mutation *requests*, same controlled contract as
+      // `event-create`: the scheduler never edits its own `resources` input.
+      // `parentId` is the group to insert into, absent for a root-level item.
+      type: 'resource-create';
+      parentId?: string;
+      view: ViewType;
+      originalEvent: Event;
+    }
+  | {
+      type: 'group-create';
+      parentId?: string;
+      view: ViewType;
+      originalEvent: Event;
+    }
+  | {
+      // `changes` carries only the fields the scheduler is asking to change
+      // (today: `title` on rename, `color` on recolour), so a consumer can
+      // apply them without diffing.
+      type: 'resource-update';
+      resource: Resource | ResourceGroup;
+      changes: Partial<Resource & ResourceGroup>;
+      originalEvent: Event;
+    }
+  | {
+      type: 'resource-delete';
+      resource: Resource | ResourceGroup;
+      originalEvent: Event;
+    };
 
 /**
- * Custom event map for the scheduler web component
+ * Payload of one scheduler event — the union arm minus its discriminant.
  */
-export interface SchedulerEventMap {
-  'event-selected': CustomEvent<EventSelectedDetail>;
-  'event-dblclick': CustomEvent<EventSelectedDetail>;
-  'event-create': CustomEvent<EventCreateDetail>;
-  'event-update': CustomEvent<EventUpdateDetail>;
-  'event-delete': CustomEvent<EventDeleteDetail>;
-  'date-click': CustomEvent<DateClickDetail>;
-  'date-select': CustomEvent<DateSelectDetail>;
-  'view-change': CustomEvent<ViewChangeDetail>;
-  'selection-change': CustomEvent<SelectionChangeDetail>;
-}
+export type EventDetail<T extends SchedulerCustomEvent['type']> = Omit<
+  Extract<SchedulerCustomEvent, { type: T }>,
+  'type'
+>;
+
+/**
+ * `HTMLElementEventMap`-shaped view of the union, for `addEventListener`
+ * typing in consumer code.
+ */
+export type SchedulerEventMap = {
+  [T in SchedulerCustomEvent['type']]: CustomEvent<EventDetail<T>>;
+};

@@ -383,6 +383,38 @@ WCAG 1.4.10 reflow reference), and inside a narrow dock/splitter pane.
   touch coordinates. Fixed by waiting out the scroll animation first, and widening the
   drag distance so it reliably crosses a slot boundary regardless of the handle's exact
   sub-slot starting offset (the resize snapping itself was always correct).
+- **Post-merge regression fixed (drag ghost behind selected events)**: the
+  `z-index: 2` added to `.scheduler-event.selected` (D5, so the straddling handles win
+  pointer hits) silently defeated the drag preview ghost, which declared no `z-index`.
+  Unselected events masked it — equal z-indexes fall back to DOM order and the ghost is
+  appended last. Confirmed by pixel-sampling mid-drag: the selected event's body read
+  its raw `#20c997` while the unselected one was blue-shifted by the translucent ghost
+  compositing over it. Fixed by naming the whole ladder in SCSS variables
+  (`$z-event-selected: 2` → `$z-event-dragging: 3` → `$z-preview: 4` →
+  `$z-now-indicator: 5` → `$z-slot-focus: 6` → `$z-sticky-header: 10`) rather than
+  adding one more magic number, since an undocumented ladder is what caused this. Two
+  further layering bugs fell out of the same audit: `.touch-hold-active` was
+  `z-index: 100`, painting a held event over the sticky day-header row (both share one
+  scroller and one stacking context), and the selected event's `z-index: 2` was
+  occluding the focus ring of the slot beneath it — that ring lives at what was
+  `z-index: 1` precisely to sit above event boxes, so this was an a11y regression from
+  the same commit; slot focus now tops the events at `6`.
+- **Timeline ghost defects in the same area** (all in the `renderPreviewEvent` added for
+  D7): it was gated on `dragState`, which only the pointer path sets, so keyboard
+  move-mode rendered no ghost at all on timeline while week/day showed one; it ignored
+  `previewEvent.resourceId`, so a resource nudge would draw in the wrong row; and it set
+  no `top`/`height`, inheriting the full-row geometry instead of the source event's
+  track. All three fixed.
+- **Test gap that let it through**: the resize e2e only observed `event-update`
+  payloads, and its *touch* case selects before dragging — it drove the exact broken
+  visual state and passed green. Added a Playwright stacking guard (both selection
+  states) that probes `elementsFromPoint` at the centre of the real overlap, temporarily
+  re-enabling `pointer-events` on the ghost since hit-testing skips
+  `pointer-events: none` elements while stacking is unaffected; it also asserts the
+  ghost and source are siblings, so re-parenting can't void the test. Plus jsdom specs
+  pinning ghost count, sibling-ness, last-child DOM order, removal on Escape, and the
+  timeline keyboard ghost — the last of which was verified to fail against the pre-fix
+  code (`expected +0 to be 1`), not merely to pass after it.
 - **Shipped**: PR [#394](https://github.com/MintPlayer/mintplayer-ng-bootstrap/pull/394)
   against `master`; versions bumped `web-components` 2.3.0→2.4.0, `ng-bootstrap`
   22.7.0→22.8.0, `react-bootstrap` 19.9.0→19.10.0, `vue-bootstrap` 3.10.0→3.11.0 (minor,

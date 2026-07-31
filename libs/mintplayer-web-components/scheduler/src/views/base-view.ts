@@ -1,6 +1,9 @@
 import {
   dateService,
   formatMessage,
+  getContrastColor,
+  resolveCapability,
+  resolveEventColor,
   resolveMessages,
   type SchedulerEvent,
   type SchedulerEventPart,
@@ -151,6 +154,27 @@ export function formatResizeAnnouncement(
   });
 }
 
+/** One slot row's height in px. Mirrors `--scheduler-slot-height`. */
+const SLOT_HEIGHT_PX = 40;
+
+/** Floor so a very short event stays clickable. */
+const MIN_EVENT_HEIGHT_PX = 20;
+
+/**
+ * A `HH:mm[:ss]` time on the same calendar day as `ref`.
+ *
+ * Uses `setSeconds` off local midnight rather than `setHours(h)` so that
+ * `'24:00:00'` — the `slotMaxTime` default — resolves to the NEXT day's midnight
+ * (the exclusive end of the window) instead of wrapping to 00:00 of the same day.
+ */
+function timeOnDay(ref: Date, time: string): Date {
+  const [h = 0, m = 0, s = 0] = time.split(':').map(Number);
+  const d = new Date(ref);
+  d.setHours(0, 0, 0, 0);
+  d.setSeconds(h * 3600 + m * 60 + s);
+  return d;
+}
+
 /**
  * Base class for scheduler views
  */
@@ -196,6 +220,60 @@ export abstract class BaseView {
   /**
    * Helper to create an element with classes
    */
+  /**
+   * Vertical geometry for one day-part in a time-grid column, in px.
+   *
+   * The single source of truth for BOTH committed event boxes and drag ghosts —
+   * they drifted apart before, which is how the ghost ended up measuring from a
+   * different origin than the box it was previewing.
+   *
+   * Measures from `slotMinTime`, NOT from midnight: the column's first row is
+   * the `slotMinTime` slot, so a midnight origin displaced every box by the
+   * whole hidden window (with `slotMinTime: '08:00'` a 09:00 event landed ~640px
+   * too low). The part is also clipped to `[slotMinTime, slotMaxTime]` on its own
+   * day, so a middle part of a multi-day span renders as the full visible window
+   * rather than 24h worth of pixels.
+   *
+   * Returns `null` when the part falls entirely outside the visible window —
+   * callers skip it rather than drawing a zero-height box.
+   */
+  /**
+   * Apply an event's fill + contrast text colour to its box.
+   *
+   * One place, so a resource's colour reaches EVERY view — week/day/month/year
+   * previously had no route from an event to its resource, which is why
+   * `Resource.color`/`eventColor` sat in the model unread.
+   */
+  protected applyEventColors(el: HTMLElement, event: SchedulerEvent): void {
+    const background = resolveEventColor(
+      event,
+      this.state.resourceById,
+      this.state.options.defaultEventColor,
+    );
+    el.style.backgroundColor = background;
+    el.style.color = event.textColor ?? getContrastColor(background);
+  }
+
+  protected partGeometry(
+    start: Date,
+    end: Date,
+    options: SchedulerOptions,
+  ): { top: number; height: number } | null {
+    const slotSeconds = options.slotDuration ?? 1800;
+    const windowStart = timeOnDay(start, options.slotMinTime ?? '00:00:00');
+    const windowEnd = timeOnDay(start, options.slotMaxTime ?? '24:00:00');
+
+    const clippedStart = Math.max(start.getTime(), windowStart.getTime());
+    const clippedEnd = Math.min(end.getTime(), windowEnd.getTime());
+    if (clippedEnd <= clippedStart) return null;
+
+    const pxPerMs = SLOT_HEIGHT_PX / (slotSeconds * 1000);
+    return {
+      top: (clippedStart - windowStart.getTime()) * pxPerMs,
+      height: Math.max((clippedEnd - clippedStart) * pxPerMs, MIN_EVENT_HEIGHT_PX),
+    };
+  }
+
   protected createElement<K extends keyof HTMLElementTagNameMap>(
     tag: K,
     ...classes: string[]
@@ -224,6 +302,31 @@ export abstract class BaseView {
    */
   protected clearContainer(): void {
     this.container.innerHTML = '';
+    // The container's ARIA is per-view too: week/day/month/year claim `role=grid`
+    // on it via `applyGridRoles`, the timeline puts its grid on an inner element
+    // instead. Leaving the role behind after a view switch made the timeline a
+    // grid-inside-a-grid — an axe `aria-required-children` CRITICAL that only
+    // appears once a user has switched views, which is why the page-load audit
+    // never caught it.
+    for (const attr of [
+      'role',
+      'aria-label',
+      'aria-describedby',
+      'aria-multiselectable',
+      'aria-rowcount',
+    ]) {
+      this.container.removeAttribute(attr);
+    }
+    // Each view's render() adds its own `scheduler-<view>-view` class here. Without
+    // removing the previous one they accumulate forever, so the classes are NOT
+    // mutually exclusive and can't be used to scope CSS. Drop them all.
+    this.container.classList.remove(
+      'scheduler-week-view',
+      'scheduler-day-view',
+      'scheduler-month-view',
+      'scheduler-year-view',
+      'scheduler-timeline-view',
+    );
   }
 
   /**
@@ -240,9 +343,16 @@ export abstract class BaseView {
     part: SchedulerEventPart,
     [startClass, endClass]: [string, string] = ['top', 'bottom'],
   ): void {
-    if (part.event?.resizable === false || this.state.options.editable === false) return;
-    if (part.isStart) eventEl.appendChild(this.createResizeHandle(startClass, 'start'));
-    if (part.isEnd) eventEl.appendChild(this.createResizeHandle(endClass, 'end'));
+    // Per-edge, so `resizable: { start: false, end: true }` — declared on the
+    // model but previously only checked as a boolean — now actually works, and a
+    // read-only scheduler advertises no grab handle at all.
+    const permissions = this.state.resolvedPermissions;
+    if (part.isStart && resolveCapability('resizeEventStart', { permissions, event: part.event })) {
+      eventEl.appendChild(this.createResizeHandle(startClass, 'start'));
+    }
+    if (part.isEnd && resolveCapability('resizeEventEnd', { permissions, event: part.event })) {
+      eventEl.appendChild(this.createResizeHandle(endClass, 'end'));
+    }
   }
 
   private createResizeHandle(positionClass: string, edge: 'start' | 'end'): HTMLElement {

@@ -1,4 +1,4 @@
-import { LitElement, html, type TemplateResult } from 'lit';
+import { LitElement, html, nothing, type TemplateResult } from 'lit';
 import { LiveAnnouncerController } from '@mintplayer/web-components/a11y';
 import {
   ViewType,
@@ -7,16 +7,21 @@ import {
   ResourceGroup,
   SchedulerOptions,
   SchedulerMessages,
+  SchedulerCapability,
+  SchedulerPermissions,
+  resolveCapability,
   TimeSlot,
   dateService,
   formatMessage,
   resolveMessages,
   resourceService,
   isResource,
+  resolveEventColor,
 } from '@mintplayer/web-components/scheduler-core';
 import { SchedulerStateManager, SchedulerState } from '../state/scheduler-state';
 import {
   BaseView,
+  formatEventAriaLabel,
   selectionRange,
   formatCellAnnouncement,
   formatSelectionAnnouncement,
@@ -32,6 +37,7 @@ import { schedulerStyles } from '../styles/scheduler.styles';
 import { DragManager, PointerTarget, DragCompletionResult } from '../drag';
 import { InputHandler, NormalizedPointerEvent } from '../input';
 import { SchedulerEventEmitter } from '../events';
+import { OverlayController } from '@mintplayer/web-components/overlay';
 
 /**
  * MpScheduler Web Component
@@ -54,8 +60,7 @@ export class MpScheduler extends LitElement {
       'first-day-of-week',
       'slot-duration',
       'time-format',
-      'editable',
-      'selectable',
+      'readonly',
     ];
   }
 
@@ -86,11 +91,53 @@ export class MpScheduler extends LitElement {
   // Keyboard handler
   private boundHandleKeyDown: (e: KeyboardEvent) => void;
   private boundHandleFocusIn: (e: FocusEvent) => void;
+  private boundHandleValueChange: (e: Event) => void;
 
   // Now indicator update timer
   private nowIndicatorTimer: ReturnType<typeof setInterval> | null = null;
 
   private readonly liveAnnouncer = new LiveAnnouncerController(this);
+
+  /** Day the month-view popover is open for, or null when it is closed. */
+  private popoverDate: Date | null = null;
+  /** Date key of the anchor cell — resolved lazily, see `openDayPopover`. */
+  private popoverAnchorKey: string | null = null;
+  private boundRepositionPopover: () => void;
+
+  /**
+   * The month day popover. Not modal: the grid behind stays operable, Escape and
+   * outside clicks dismiss through the shared dismiss stack, and focus lands on
+   * the first control inside so the dialog is announced instead of opening
+   * silently behind the user's focus.
+   */
+  private readonly dayPopover = new OverlayController(this, {
+    anchor: () => this.popoverAnchorCell(),
+    // Same element as the anchor: the day cell IS the trigger. Spelling it out
+    // means focus returns to the day even when the popover was opened without
+    // anything focused (a programmatic open, or a click on a `tabindex="-1"`
+    // cell that some paths do not focus) instead of falling to <body>.
+    trigger: () => this.popoverAnchorCell(),
+    panel: () => this.shadowRoot?.querySelector<HTMLElement>('.scheduler-day-popover') ?? null,
+    // The first EVENT, or failing that the first action — not `'first'`, which
+    // is the close button in the header: opening a dialog with focus on "close"
+    // means the user's first Enter dismisses what they just asked to see.
+    initialFocus: () => {
+      const panel = this.shadowRoot?.querySelector('.scheduler-day-popover');
+      return (
+        panel?.querySelector<HTMLElement>('.popover-event') ??
+        panel?.querySelector<HTMLElement>('.popover-action') ??
+        null
+      );
+    },
+    modal: false,
+    // Dismissal comes from the controller (Escape via the dismiss stack, outside
+    // mousedown), so mirror it into our own state or the panel stays rendered.
+    onClose: () => {
+      this.popoverDate = null;
+      this.popoverAnchorKey = null;
+      this.requestUpdate();
+    },
+  });
 
   constructor() {
     super();
@@ -106,6 +153,8 @@ export class MpScheduler extends LitElement {
     // Bind keyboard handler
     this.boundHandleKeyDown = this.handleKeyDown.bind(this);
     this.boundHandleFocusIn = this.handleFocusIn.bind(this);
+    this.boundHandleValueChange = this.handleValueChange.bind(this);
+    this.boundRepositionPopover = () => this.dayPopover.position();
 
     // Subscribe to state changes
     this.stateManager.subscribe((state) => this.onStateChange(state));
@@ -116,6 +165,11 @@ export class MpScheduler extends LitElement {
     if (this.inputHandler) {
       this.inputHandler.attach();
     }
+    // Seed the resolved permission table before the first render so affordances
+    // are gated on the very first paint, not one update later. Outside the
+    // inputHandler guard on purpose: on the FIRST connect there is no handler
+    // yet (it needs the shadow root), which is exactly the render this seeds.
+    this.syncPermissions();
     this.addEventListener('keydown', this.boundHandleKeyDown);
     // focusin listener is registered in firstUpdated() once the shadowRoot exists.
 
@@ -127,6 +181,7 @@ export class MpScheduler extends LitElement {
     this.inputHandler?.detach();
     this.removeEventListener('keydown', this.boundHandleKeyDown);
     this.shadowRoot?.removeEventListener('focusin', this.boundHandleFocusIn as EventListener);
+    this.shadowRoot?.removeEventListener('change', this.boundHandleValueChange);
     this.currentView?.destroy();
     this.dragManager.destroy();
 
@@ -136,6 +191,8 @@ export class MpScheduler extends LitElement {
     // Stop watching header width
     this.headerResizeObserver?.disconnect();
     this.headerResizeObserver = null;
+
+    this.stopEdgeScroll();
 
     // Cancel any pending RAF
     if (this.pendingDragUpdate !== null) {
@@ -190,11 +247,10 @@ export class MpScheduler extends LitElement {
           this.stateManager.setOptions({ timeFormat: newValue });
         }
         break;
-      case 'editable':
-        this.stateManager.setOptions({ editable: newValue !== 'false' });
-        break;
-      case 'selectable':
-        this.stateManager.setOptions({ selectable: newValue !== 'false' });
+      case 'readonly':
+        // Coarse read-only switch, reachable from plain HTML/SSR where an options
+        // object isn't. Presence = read-only, `readonly="false"` opts out.
+        this.syncPermissions();
         break;
     }
   }
@@ -219,6 +275,27 @@ export class MpScheduler extends LitElement {
     this.stateManager.setDate(value);
   }
 
+  /**
+   * Coarse read-only switch, outranking `options.permissions` entirely.
+   *
+   * Property and attribute are the same state, deliberately: a JS consumer
+   * writes `el.readonly = true`, a plain-HTML or SSR consumer writes the
+   * attribute, and a framework wrapper can bridge whichever it has. Absence is
+   * editable; `readonly="false"` opts back out so the attribute can be rendered
+   * unconditionally with a computed value.
+   */
+  get readonly(): boolean {
+    return this.hasAttribute('readonly') && this.getAttribute('readonly') !== 'false';
+  }
+
+  set readonly(value: boolean) {
+    if (value) {
+      this.setAttribute('readonly', '');
+    } else {
+      this.removeAttribute('readonly');
+    }
+  }
+
   get events(): SchedulerEvent[] {
     return this.stateManager.getState().events;
   }
@@ -241,6 +318,8 @@ export class MpScheduler extends LitElement {
 
   set options(value: Partial<SchedulerOptions>) {
     this.stateManager.setOptions(value);
+    // Keep the resolved permission table in step with the options that feed it.
+    this.syncPermissions();
   }
 
   get selectedEvent(): SchedulerEvent | null {
@@ -319,17 +398,10 @@ export class MpScheduler extends LitElement {
   }
 
   getEventById(eventId: string): SchedulerEvent | null {
-    // Timeline events live on the resources, not the flat events input —
-    // without the resource sweep, pointer hit-testing (analyzeTarget →
-    // getEventById) can't resolve them and timeline drags never start.
-    return (
-      this.events.find((e) => e.id === eventId) ??
-      resourceService
-        .getAllResources(this.stateManager.getState().resources)
-        .flatMap((r) => r.events ?? [])
-        .find((e) => e.id === eventId) ??
-      null
-    );
+    // One store since the model was normalized: `state.events` already contains
+    // events authored under resources, each stamped with its resourceId, so the
+    // old resource-tree sweep is redundant.
+    return this.stateManager.getState().events.find((e) => e.id === eventId) ?? null;
   }
 
   refetchEvents(): void {
@@ -364,10 +436,226 @@ export class MpScheduler extends LitElement {
         <header class="scheduler-header"></header>
         <div class="scheduler-content"></div>
       </div>
-      <div id="scheduler-kbd-grid" class="visually-hidden">${this.msg('gridInstructions')}</div>
-      <div id="scheduler-kbd-event" class="visually-hidden">${this.msg('eventInstructions')}</div>
+      <div id="scheduler-kbd-grid" class="visually-hidden">
+        ${this.msg(this.can('createEvent') || this.can('selectRange')
+          ? 'gridInstructions'
+          : 'gridInstructionsReadOnly')}
+      </div>
+      <div id="scheduler-kbd-event" class="visually-hidden">
+        ${this.msg(
+          this.can('moveEvent') || this.can('resizeEventStart') ||
+          this.can('resizeEventEnd') || this.can('deleteEvent')
+            ? 'eventInstructions'
+            : 'eventInstructionsReadOnly')}
+      </div>
+      ${this.renderDayPopover()}
       ${this.liveAnnouncer.template()}
     `;
+  }
+
+  /**
+   * Day popover for the month view: the day's events plus the two things a user
+   * wants from a date they just clicked — create here, or open the day.
+   *
+   * A sibling of `.scheduler-container`, NOT a child of `.scheduler-content`:
+   * the panel is `position: fixed`, so any ancestor with `transform`, `filter`
+   * or `contain` would silently become its containing block and the coordinates
+   * the OverlayController computes would be wrong. Keep it out here.
+   *
+   * `role="dialog"` with `modal: false` and no `aria-modal`: the month grid
+   * behind it stays perfectly usable, and claiming modality would hide a page
+   * that is still visible. It emits NO new event types — activating an entry
+   * is `event-selected`, "New event" is `event-create`, "Show day" is the same
+   * drill the "+N more" link used to do.
+   */
+  private renderDayPopover(): TemplateResult | typeof nothing {
+    const day = this.popoverDate;
+    if (!day) return nothing;
+
+    const { options } = this.stateManager.getState();
+    const events = this.eventsOnDay(day);
+    const dateText = dateService.formatDateWithWeekday(day, options.locale);
+
+    return html`
+      <div
+        class="scheduler-day-popover"
+        role="dialog"
+        aria-label=${this.msg('dayPopoverLabel', { date: dateText })}
+      >
+        <div class="popover-head">
+          <div>
+            <div class="popover-date">${dateText}</div>
+            <div class="popover-count">
+              ${this.msg('dayPopoverCount', {
+                count: events.length,
+                events: this.msg(events.length === 1 ? 'eventSingular' : 'eventPlural'),
+              })}
+            </div>
+          </div>
+          <button
+            type="button"
+            class="popover-close"
+            aria-label=${this.msg('closePopover')}
+            @click=${() => this.closeDayPopover()}
+          >
+            <span aria-hidden="true">×</span>
+          </button>
+        </div>
+        ${events.length === 0
+          ? html`<p class="popover-empty">${this.msg('dayPopoverEmpty')}</p>`
+          : html`
+              <ul class="popover-events">
+                ${events.map(
+                  (event) => html`
+                    <li>
+                      <button
+                        type="button"
+                        class="popover-event"
+                        aria-label=${formatEventAriaLabel(event, null, options)}
+                        @click=${(e: Event) => this.selectFromPopover(event, e)}
+                      >
+                        <span
+                          class="popover-event-swatch"
+                          aria-hidden="true"
+                          style=${`background:${resolveEventColor(
+                            event,
+                            this.stateManager.getState().resourceById,
+                            options.defaultEventColor,
+                          )}`}
+                        ></span>
+                        <span class="popover-event-title">${event.title}</span>
+                      </button>
+                    </li>
+                  `,
+                )}
+              </ul>
+            `}
+        <div class="popover-actions">
+          ${this.can('createEvent')
+            ? html`<button
+                type="button"
+                class="popover-action primary"
+                @click=${(e: Event) => this.createFromPopover(e)}
+              >
+                ${this.msg('newEvent')}
+              </button>`
+            : nothing}
+          <button
+            type="button"
+            class="popover-action"
+            @click=${() => this.showDayFromPopover()}
+          >
+            ${this.msg('showDay')}
+          </button>
+        </div>
+      </div>
+    `;
+  }
+
+  /**
+   * The day cell the popover hangs off, resolved by date key on every call.
+   * The month view rebuilds its cells imperatively, so a cached element would
+   * be detached the moment anything re-renders while the popover is open.
+   */
+  private popoverAnchorCell(): HTMLElement | null {
+    if (!this.popoverAnchorKey) return null;
+    return (
+      this.shadowRoot?.querySelector<HTMLElement>(
+        `#scheduler-cell-m-${this.popoverAnchorKey}`,
+      ) ?? null
+    );
+  }
+
+  /** Every event overlapping the given local day, in start order. */
+  private eventsOnDay(day: Date): SchedulerEvent[] {
+    const start = new Date(day);
+    start.setHours(0, 0, 0, 0);
+    const end = new Date(start);
+    end.setDate(end.getDate() + 1);
+    return this.stateManager
+      .getState()
+      .events.filter((event) => event.start < end && event.end > start)
+      .sort((a, b) => a.start.getTime() - b.start.getTime());
+  }
+
+  /**
+   * Open the day popover for `day`. Anchored on the day cell resolved LAZILY by
+   * date key: the views rebuild their DOM imperatively, so a captured element
+   * reference would be detached by the next render while the popover is open.
+   */
+  private async openDayPopover(day: Date): Promise<void> {
+    this.popoverDate = new Date(day);
+    this.popoverAnchorKey = MonthView.dayKey(this.popoverDate);
+    this.requestUpdate();
+    await this.dayPopover.open();
+    // `scroll` does not compose, so the controller's document-level capture
+    // listener never sees `.scheduler-content` scrolling inside this shadow
+    // root — its 'reposition' strategy is silently dead here. Reposition from a
+    // local listener instead.
+    this.contentContainer?.addEventListener('scroll', this.boundRepositionPopover, {
+      passive: true,
+    });
+  }
+
+  private closeDayPopover(): void {
+    this.contentContainer?.removeEventListener('scroll', this.boundRepositionPopover);
+    this.dayPopover.close();
+    this.popoverDate = null;
+    this.popoverAnchorKey = null;
+    this.requestUpdate();
+  }
+
+  private selectFromPopover(event: SchedulerEvent, originalEvent: Event): void {
+    this.closeDayPopover();
+    this.stateManager.setSelectedEvent(event);
+    this.eventEmitter.emitEventSelected(event, originalEvent);
+  }
+
+  private createFromPopover(originalEvent: Event): void {
+    const day = this.popoverDate;
+    if (!day) return;
+    const start = new Date(day);
+    start.setHours(0, 0, 0, 0);
+    const end = new Date(start);
+    end.setDate(end.getDate() + 1);
+    this.closeDayPopover();
+    if (!this.can('createEvent') || !this.allowsCreateAt({ start, end })) {
+      this.announceDenied();
+      return;
+    }
+    this.eventEmitter.emitEventCreate(
+      { start, end },
+      this.stateManager.getState().view,
+      originalEvent,
+    );
+  }
+
+  private showDayFromPopover(): void {
+    const day = this.popoverDate;
+    if (!day) return;
+    this.closeDayPopover();
+    this.stateManager.setDate(new Date(day));
+    this.stateManager.setView('day');
+  }
+
+  /**
+   * Route a "+N more" activation through `options.moreLinkBehavior`. Returns the
+   * date to drill to when the caller should navigate, or null when the behaviour
+   * has already been handled here.
+   */
+  private handleMoreLink(dateKey: string): void {
+    const day = this.parseDayKey(dateKey);
+    const behavior = this.stateManager.getState().options.moreLinkBehavior ?? 'popover';
+    if (typeof behavior === 'function') {
+      behavior({ date: day, events: this.eventsOnDay(day) });
+      return;
+    }
+    if (behavior === 'popover') {
+      void this.openDayPopover(day);
+      return;
+    }
+    this.stateManager.setDate(day);
+    this.stateManager.setView('day');
   }
 
   protected override firstUpdated(): void {
@@ -382,8 +670,12 @@ export class MpScheduler extends LitElement {
       {
         shadowRoot: this.shadowRoot!,
         getEventById: (id) => this.getEventById(id),
-        isEditable: () => this.stateManager.getState().options.editable ?? true,
-        isSelectable: () => this.stateManager.getState().options.selectable ?? true,
+        // Pointer gestures ask the same resolver the keyboard paths and the
+        // affordance rendering use, so all three can never disagree.
+        isEditable: () =>
+          this.can('createEvent') || this.can('moveEvent') ||
+          this.can('resizeEventStart') || this.can('resizeEventEnd'),
+        isSelectable: () => this.can('selectRange') || this.can('createEvent'),
         isEventSelected: (eventId) => this.stateManager.getState().selectedEvent?.id === eventId,
       },
       {
@@ -401,6 +693,7 @@ export class MpScheduler extends LitElement {
     // (avoids cross-shadow retargeting back to the host). Cast — focusin
     // isn't in the typed ShadowRootEventMap but the runtime supports it.
     this.shadowRoot!.addEventListener('focusin', this.boundHandleFocusIn as EventListener);
+    this.shadowRoot!.addEventListener('change', this.boundHandleValueChange);
 
     this.renderView();
   }
@@ -692,14 +985,105 @@ export class MpScheduler extends LitElement {
 
   private handlePointerMove(pointer: NormalizedPointerEvent): void {
     this.dragManager.handlePointerMove(pointer);
+    this.updateEdgeScroll(pointer);
   }
 
   private handlePointerUp(pointer: NormalizedPointerEvent): void {
+    this.stopEdgeScroll();
     const result = this.dragManager.handlePointerUp(pointer);
 
     if (result) {
       this.handleDragComplete(result, pointer.originalEvent);
     }
+  }
+
+  // ============================================
+  // Edge auto-scroll during a drag
+  // ============================================
+
+  /** Distance from a scroller edge at which auto-scroll engages. */
+  private static readonly EDGE_SCROLL_ZONE_PX = 40;
+  /** Fastest scroll step, in px per frame, reached at the very edge. */
+  private static readonly EDGE_SCROLL_MAX_PX = 18;
+
+  private edgeScrollFrame: number | null = null;
+  private edgeScrollVector: { x: number; y: number } = { x: 0, y: 0 };
+  private edgeScrollPointer: NormalizedPointerEvent | null = null;
+
+  /**
+   * Scroll the grid when a drag reaches the edge of the viewport.
+   *
+   * Without this, a drag can only ever reach what is already on screen — and
+   * since the timeline is now genuinely wider than the viewport (7 days x 48
+   * slots), "drag an event to next Thursday" became impossible rather than
+   * merely awkward. Both axes, because the timeline scrolls horizontally and the
+   * time grids vertically.
+   *
+   * Speed ramps with how deep into the edge zone the pointer is, the way every
+   * drag-and-drop implementation does it: a constant rate is either too slow to
+   * be useful or too fast to aim. Each frame re-feeds the pointer to the drag
+   * machine so the preview keeps tracking the slot under the cursor while the
+   * grid moves beneath it.
+   */
+  private updateEdgeScroll(pointer: NormalizedPointerEvent): void {
+    const container = this.contentContainer;
+    if (!container || !this.dragManager.isDragging()) {
+      this.stopEdgeScroll();
+      return;
+    }
+
+    const rect = container.getBoundingClientRect();
+    const zone = MpScheduler.EDGE_SCROLL_ZONE_PX;
+    const max = MpScheduler.EDGE_SCROLL_MAX_PX;
+    // Ramp: 0 at the zone boundary, `max` at the edge (and beyond it, clamped).
+    const axis = (position: number, low: number, high: number): number => {
+      if (position < low + zone) return -Math.min(1, (low + zone - position) / zone) * max;
+      if (position > high - zone) return Math.min(1, (position - (high - zone)) / zone) * max;
+      return 0;
+    };
+
+    this.edgeScrollVector = {
+      x: axis(pointer.clientX, rect.left, rect.right),
+      y: axis(pointer.clientY, rect.top, rect.bottom),
+    };
+    this.edgeScrollPointer = pointer;
+
+    if (this.edgeScrollVector.x === 0 && this.edgeScrollVector.y === 0) {
+      this.stopEdgeScroll();
+      return;
+    }
+    if (this.edgeScrollFrame === null) this.scheduleEdgeScroll();
+  }
+
+  private scheduleEdgeScroll(): void {
+    this.edgeScrollFrame = requestAnimationFrame(() => {
+      this.edgeScrollFrame = null;
+      const container = this.contentContainer;
+      const pointer = this.edgeScrollPointer;
+      if (!container || !pointer || !this.dragManager.isDragging()) return;
+
+      const beforeX = container.scrollLeft;
+      const beforeY = container.scrollTop;
+      container.scrollLeft = beforeX + this.edgeScrollVector.x;
+      container.scrollTop = beforeY + this.edgeScrollVector.y;
+
+      // Nothing moved (already at the end) — stop rather than spin a frame loop.
+      if (container.scrollLeft === beforeX && container.scrollTop === beforeY) return;
+
+      // Re-resolve the slot under the unchanged pointer position: the content
+      // moved, so the same coordinates now name a different slot.
+      this.dragManager.handlePointerMove(pointer);
+      this.scheduleEdgeScroll();
+    });
+  }
+
+  private stopEdgeScroll(): void {
+    if (this.edgeScrollFrame !== null) {
+      cancelAnimationFrame(this.edgeScrollFrame);
+      this.edgeScrollFrame = null;
+    }
+    this.edgeScrollVector = { x: 0, y: 0 };
+    this.edgeScrollPointer = null;
   }
 
   /**
@@ -779,6 +1163,11 @@ export class MpScheduler extends LitElement {
   ): void {
     const targetEl = pointer.target;
 
+    // Resource-tree actions (timeline). Handled before anything else and
+    // returning early: these buttons live inside the pinned rowheader, so a
+    // fall-through would also read the row as a date/slot click.
+    if (this.handleResourceAction(targetEl, pointer.originalEvent)) return;
+
     // Group toggle
     const toggle = targetEl.closest('.expand-toggle') as HTMLElement;
     if (toggle) {
@@ -790,12 +1179,43 @@ export class MpScheduler extends LitElement {
       }
     }
 
+    // More link — checked BEFORE the date click below, because the link sits
+    // inside a cell that also carries `data-date` and would otherwise be read
+    // as a plain day click as well as a "+N more" activation.
+    const moreLink = targetEl.closest('.scheduler-more-link') as HTMLElement;
+    if (moreLink) {
+      const dateStr = moreLink.dataset['date'];
+      if (dateStr) {
+        this.handleMoreLink(dateStr);
+        return;
+      }
+    }
+
     // Date click
     const dayEl = targetEl.closest('[data-date]') as HTMLElement;
     if (dayEl) {
       const dateStr = dayEl.dataset['date'];
       if (dateStr) {
-        this.eventEmitter.emitDateClick(new Date(dateStr), pointer.originalEvent);
+        const day = this.parseDayKey(dateStr);
+        this.eventEmitter.emitDateClick(day, pointer.originalEvent);
+
+        // The day NUMBER is its own target and always drills into the day view
+        // (the navLinks idiom). Keeping it separate from the rest of the cell is
+        // what lets a plain cell click keep meaning "do something with this day"
+        // — conflate them and an empty cell can never mean "create here".
+        if (targetEl.closest('.day-number')) {
+          this.stateManager.setDate(day);
+          this.stateManager.setView('day');
+          return;
+        }
+
+        // Opt-in: `dayClickAction` defaults to 'none' so the existing
+        // `date-click` contract is untouched for consumers who handle it
+        // themselves.
+        if (this.stateManager.getState().options.dayClickAction === 'popover') {
+          void this.openDayPopover(day);
+          return;
+        }
       }
     }
 
@@ -806,18 +1226,8 @@ export class MpScheduler extends LitElement {
     if (monthHeader) {
       const monthStr = monthHeader.dataset['month'];
       if (monthStr) {
-        this.stateManager.setDate(new Date(monthStr));
+        this.stateManager.setDate(this.parseDayKey(monthStr));
         this.stateManager.setView('month');
-      }
-    }
-
-    // More link click
-    const moreLink = targetEl.closest('.scheduler-more-link') as HTMLElement;
-    if (moreLink) {
-      const dateStr = moreLink.dataset['date'];
-      if (dateStr) {
-        this.stateManager.setDate(new Date(dateStr));
-        this.stateManager.setView('day');
       }
     }
 
@@ -830,6 +1240,76 @@ export class MpScheduler extends LitElement {
       this.stateManager.setSelectedEvent(target.event);
       this.registerEventActivation(target.event, pointer.originalEvent);
     }
+  }
+
+  /**
+   * Route a click on a resource-tree action button to its request event.
+   * Returns true when the click was one of ours and must not fall through.
+   *
+   * Every branch re-checks the capability rather than trusting that the button
+   * exists: state can change between render and click, and a request the
+   * consumer has switched off must not reach them.
+   */
+  private handleResourceAction(targetEl: HTMLElement, originalEvent: Event): boolean {
+    const button = targetEl.closest('[data-action]') as HTMLElement | null;
+    if (!button) return false;
+
+    const { action, parentId, resourceId } = button.dataset;
+    const view = this.stateManager.getState().view;
+
+    switch (action) {
+      case 'add-resource':
+        if (this.can('createResource')) {
+          this.eventEmitter.emitResourceCreate('resource', view, originalEvent, parentId);
+        }
+        return true;
+      case 'add-group':
+        if (this.can('createGroup')) {
+          this.eventEmitter.emitResourceCreate('group', view, originalEvent, parentId);
+        }
+        return true;
+      case 'delete-resource': {
+        const resource = resourceId ? this.findResourceOrGroup(resourceId) : null;
+        if (resource && this.can('deleteResource')) {
+          this.eventEmitter.emitResourceDelete(resource, originalEvent);
+        }
+        return true;
+      }
+      // The colour input reports through `change`, not `click` — a click merely
+      // opens the platform picker, so swallow it here and let handleValueChange
+      // emit once the user has actually chosen.
+      case 'set-resource-color':
+        return true;
+    }
+    return false;
+  }
+
+  /**
+   * `change` from a resource control. Delegated on the shadow root because the
+   * views build their DOM imperatively and are rebuilt on every render — a
+   * per-element listener would have to be re-attached each time. `change` does
+   * not compose, so this listener is the only one that can see it.
+   */
+  private handleValueChange(e: Event): void {
+    const input = (e.composedPath?.()[0] ?? e.target) as HTMLElement | null;
+    if (!input || input.dataset['action'] !== 'set-resource-color') return;
+    if (!this.can('updateResource')) return;
+
+    const { resourceId, field } = input.dataset;
+    const resource = resourceId ? this.findResourceOrGroup(resourceId) : null;
+    if (!resource) return;
+
+    const value = (input as HTMLInputElement).value;
+    this.eventEmitter.emitResourceUpdate(
+      resource,
+      field === 'eventColor' ? { eventColor: value } : { color: value },
+      e,
+    );
+  }
+
+  /** Resolve a resource or group by id from the current `resources` input. */
+  private findResourceOrGroup(id: string): Resource | ResourceGroup | null {
+    return resourceService.findById(this.stateManager.getState().resources, id) ?? null;
   }
 
   private handleDoubleClick(
@@ -883,6 +1363,19 @@ export class MpScheduler extends LitElement {
   }
 
   private handleKeyDown(e: KeyboardEvent): void {
+    // The popover owns the keyboard while it is open. Escape especially: this
+    // listener sits on the host and therefore runs BEFORE the controller's
+    // document-level one, so without this the selection would be cleared and the
+    // popover left open.
+    if (this.dayPopover.isOpen) {
+      if (e.key === 'Escape') {
+        e.preventDefault();
+        e.stopPropagation();
+        this.closeDayPopover();
+      }
+      return;
+    }
+
     // Move-mode owns every key while active so arrows/Enter/Esc go to it.
     if (this.keyboardMove) {
       this.handleKeyboardMove(e);
@@ -925,14 +1418,13 @@ export class MpScheduler extends LitElement {
     if (active.classList.contains('scheduler-more-link')) {
       const dateStr = active.dataset['date'];
       if (!dateStr) return false;
-      this.stateManager.setDate(new Date(dateStr));
-      this.stateManager.setView('day');
+      this.handleMoreLink(dateStr);
       return true;
     }
     if (active.classList.contains('scheduler-year-month-header')) {
       const monthStr = active.dataset['month'];
       if (!monthStr) return false;
-      this.stateManager.setDate(new Date(monthStr));
+      this.stateManager.setDate(this.parseDayKey(monthStr));
       this.stateManager.setView('month');
       return true;
     }
@@ -971,6 +1463,80 @@ export class MpScheduler extends LitElement {
     return false;
   }
 
+  /**
+   * Resolve a capability against `readonly`, `options.permissions` and any
+   * per-event override.
+   *
+   * A boolean lookup, deliberately: it runs on every pointer-down and on every
+   * render that decides whether to draw an affordance.
+   */
+  private can(capability: SchedulerCapability, event?: SchedulerEvent | null): boolean {
+    const { options } = this.stateManager.getState();
+    return resolveCapability(capability, {
+      permissions: this.effectivePermissions(options),
+      event: event ?? null,
+    });
+  }
+
+  /** Recompute the resolved table onto state so views can gate affordances. */
+  private syncPermissions(): void {
+    const { options } = this.stateManager.getState();
+    this.stateManager.setState({
+      resolvedPermissions: this.effectivePermissions(options),
+    });
+  }
+
+  /**
+   * The effective permission table: the `readonly` host attribute outranks
+   * everything, then `options.permissions`. Per-capability defaults are applied
+   * inside `resolveCapability`, so an unspecified capability keeps its documented
+   * default rather than being treated as denied.
+   */
+  private effectivePermissions(
+    options: SchedulerOptions,
+  ): boolean | Partial<SchedulerPermissions> {
+    if (this.readonly) return false;
+    const explicit = options.permissions;
+    if (explicit === false) return false;
+    return typeof explicit === 'object' && explicit !== null ? explicit : {};
+  }
+
+  /**
+   * The one optional consumer predicate, for data-dependent create rules.
+   *
+   * Evaluated ONLY at commit points (this call site, drag completion, Enter) —
+   * never per cell and never per pointer-move, so a consumer callback can't land
+   * on the render path. Slot greying is deliberately not driven by it.
+   */
+  private allowsCreateAt(
+    range: { start: Date; end: Date },
+    resourceId?: string,
+  ): boolean {
+    const { permissions } = this.stateManager.getState().options;
+    if (typeof permissions !== 'object' || permissions === null) return true;
+    return permissions.canCreateAt?.(range, resourceId) ?? true;
+  }
+
+  /** Enter move mode only if the event may actually be moved or resized. */
+  private tryEnterEventMoveMode(ev: SchedulerEvent): void {
+    const canMove = this.can('moveEvent', ev);
+    const canResize =
+      this.can('resizeEventStart', ev) || this.can('resizeEventEnd', ev);
+    if (!canMove && !canResize) {
+      this.announceDenied();
+      return;
+    }
+    this.enterEventMoveMode(ev);
+  }
+
+  /**
+   * Announce a refused command. Silence on a keypress reads as a broken widget,
+   * so denial gets its own polite message rather than nothing.
+   */
+  private announceDenied(): void {
+    this.liveAnnouncer.announce(this.msg('actionNotAllowed'));
+  }
+
   private handleEventKeyDown(e: KeyboardEvent): void {
     const state = this.stateManager.getState();
     const ev = state.selectedEvent;
@@ -979,18 +1545,25 @@ export class MpScheduler extends LitElement {
       // M is the canonical move-mode key across the workspace (tile-manager,
       // dock); Enter is kept for back-compat (screen-reader programme D4).
       case 'm':
-      case 'M':
+      case 'M': {
         if (e.altKey || e.ctrlKey || e.metaKey) break;
         e.preventDefault();
-        this.enterEventMoveMode(ev);
+        this.tryEnterEventMoveMode(ev);
         return;
+      }
       case 'Enter':
         e.preventDefault();
-        this.enterEventMoveMode(ev);
+        this.tryEnterEventMoveMode(ev);
         return;
       case 'Delete':
       case 'Backspace':
         e.preventDefault();
+        // Gated: the old `editable` flag blocked only POINTER gestures, so a
+        // read-only scheduler still deleted on a keypress.
+        if (!this.can('deleteEvent', ev)) {
+          this.announceDenied();
+          return;
+        }
         this.eventEmitter.emitEventDelete(ev);
         return;
       case 'Escape':
@@ -1120,6 +1693,14 @@ export class MpScheduler extends LitElement {
       case 'ArrowUp':    e.preventDefault(); this.moveFocusedDateByDays(-7); return;
       case 'ArrowDown':  e.preventDefault(); this.moveFocusedDateByDays(+7); return;
       case 'Enter':      e.preventDefault(); this.commitFocusedDateAsCreate(e, 'day'); return;
+      // Space, not Enter: Enter already means "create for this day" and taking
+      // it would remove the only keyboard create path in this view.
+      case ' ': {
+        e.preventDefault();
+        const focused = this.stateManager.getState().focusedDate;
+        if (focused) void this.openDayPopover(focused);
+        return;
+      }
     }
   }
 
@@ -1136,7 +1717,18 @@ export class MpScheduler extends LitElement {
       case 'ArrowRight': e.preventDefault(); this.moveFocusedDateByMonths(+1); return;
       case 'ArrowUp':    e.preventDefault(); this.moveFocusedDateByMonths(-3); return;
       case 'ArrowDown':  e.preventDefault(); this.moveFocusedDateByMonths(+3); return;
-      case 'Enter':      e.preventDefault(); this.commitFocusedDateAsCreate(e, 'month'); return;
+      // Drill into the month, matching what clicking the month header does.
+      // Enter used to emit a MONTH-SPANNING event-create here, which no consumer
+      // could reasonably want from a year overview.
+      case 'Enter': {
+        e.preventDefault();
+        const focused = this.stateManager.getState().focusedDate;
+        if (focused) {
+          this.stateManager.setDate(new Date(focused));
+          this.stateManager.setView('month');
+        }
+        return;
+      }
     }
   }
 
@@ -1150,7 +1742,7 @@ export class MpScheduler extends LitElement {
     if (!active) return;
     const dateStr = active.dataset['date'] ?? active.dataset['month'];
     if (!dateStr) return;
-    this.stateManager.setFocusedDate(new Date(dateStr));
+    this.stateManager.setFocusedDate(this.parseDayKey(dateStr));
   }
 
   private moveFocusedDateByDays(deltaDays: number): void {
@@ -1243,6 +1835,10 @@ export class MpScheduler extends LitElement {
       end.setDate(end.getDate() + 1);
     } else {
       end.setMonth(end.getMonth() + 1);
+    }
+    if (!this.can('createEvent') || !this.allowsCreateAt({ start, end })) {
+      this.announceDenied();
+      return;
     }
     this.eventEmitter.emitEventCreate(
       { start, end },
@@ -1464,6 +2060,22 @@ export class MpScheduler extends LitElement {
     }
   }
 
+  /**
+   * Parse a `YYYY-MM-DD` day key as a LOCAL date.
+   *
+   * `new Date('2026-07-31')` is parsed per spec as UTC midnight, so in every
+   * timezone west of UTC it lands on the previous local day — month view writes
+   * these keys from local components, so Enter on Jul 31 in New York emitted
+   * `event-create` for Jul 30 and focus restoration missed the cell entirely.
+   * Full ISO strings (year view's `data-month`) round-trip fine and still work
+   * through this function.
+   */
+  private parseDayKey(value: string): Date {
+    const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(value);
+    if (!match) return new Date(value);
+    return new Date(Number(match[1]), Number(match[2]) - 1, Number(match[3]));
+  }
+
   private cssEscape(value: string): string {
     // Lightweight CSS.escape polyfill — sufficient for resource ids that are
     // ULID/UUIDs or simple strings. Falls back to the native API where it exists.
@@ -1493,6 +2105,12 @@ export class MpScheduler extends LitElement {
       end = state.focusedCell.end;
       resourceId = state.focusedResourceId ?? undefined;
     } else {
+      return;
+    }
+    // Check BEFORE emitting and before announcing: the announcement used to
+    // confirm a commit that permissions may refuse.
+    if (!this.can('createEvent') || !this.allowsCreateAt({ start, end }, resourceId)) {
+      this.announceDenied();
       return;
     }
     this.eventEmitter.emitEventCreate(
@@ -1669,6 +2287,13 @@ export class MpScheduler extends LitElement {
    */
   private resizeKeyboardMoveEdge(edge: 'start' | 'end', deltaMs: number): void {
     if (!this.keyboardMove) return;
+    // Move mode ignored event.draggable/resizable and the global flags entirely,
+    // so a resizable:false event was freely keyboard-resizable.
+    const source = this.getEventById(this.keyboardMove.eventId);
+    if (!this.can(edge === 'start' ? 'resizeEventStart' : 'resizeEventEnd', source)) {
+      this.announceDenied();
+      return;
+    }
     const minDurationMs = this.minutesPerSlot() * 60 * 1000;
     let newStart = this.keyboardMove.workingStart;
     let newEnd = this.keyboardMove.workingEnd;
@@ -1794,9 +2419,13 @@ export class MpScheduler extends LitElement {
 
     if (!startStr || !endStr) return null;
 
+    // Carry the row's resource so a create-drag can report where it happened.
+    const resourceId = el.dataset['resourceId'];
+
     return {
       start: new Date(startStr),
       end: new Date(endStr),
+      ...(resourceId ? { resourceId } : {}),
     };
   }
 }

@@ -175,10 +175,15 @@ export class MonthView extends BaseView {
       }
     }
 
-    // Render events in each day cell
-    const maxEventsPerDay = typeof options.dayMaxEvents === 'number'
-      ? options.dayMaxEvents
-      : 3;
+    // Render events in each day cell.
+    // `false` means "show all" — it previously fell into the same `: 3` branch as
+    // `true`, so the documented opt-out silently capped at 3 with a "+N more".
+    const maxEventsPerDay =
+      typeof options.dayMaxEvents === 'number'
+        ? options.dayMaxEvents
+        : options.dayMaxEvents === false
+          ? Number.POSITIVE_INFINITY
+          : 3;
 
     for (const [key, dayEvents] of eventsByDay) {
       const cell = this.dayCells.get(key);
@@ -196,8 +201,8 @@ export class MonthView extends BaseView {
       for (const event of visibleEvents) {
         const eventEl = this.createElement('div', 'scheduler-month-event');
         eventEl.textContent = event.title;
-        eventEl.style.backgroundColor = event.color ?? '#3788d8';
-        eventEl.style.color = event.textColor ?? getContrastColor(event.color ?? '#3788d8');
+    // Fill + contrast text, resolving the resource's colour (see BaseView).
+    this.applyEventColors(eventEl, event);
         // Tab-reachable like week/day event blocks; focusing selects (the
         // scheduler's handleFocusIn), so no separate activation key is needed.
         eventEl.setAttribute('role', 'button');

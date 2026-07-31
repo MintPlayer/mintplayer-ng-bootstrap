@@ -16,6 +16,9 @@ export * from './options';
 // Localizable strings
 export * from './messages';
 
+// Permissions
+export * from './permissions';
+
 // Drag state
 export * from './drag-state';
 

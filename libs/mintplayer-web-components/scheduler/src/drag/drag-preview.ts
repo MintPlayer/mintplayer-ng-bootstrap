@@ -66,7 +66,14 @@ export class DragPreviewCalculator {
     const end = new Date(
       Math.max(startSlot.end.getTime(), currentSlot.end.getTime())
     );
-    return { start, end };
+    // Pin the resource to where the drag STARTED, not where the pointer
+    // currently is: dragging across rows should extend the time range in the
+    // originating row, not silently reassign the event to another resource.
+    return {
+      start,
+      end,
+      ...(startSlot.resourceId ? { resourceId: startSlot.resourceId } : {}),
+    };
   }
 
   /**

@@ -177,3 +177,18 @@ type-checking as you go, and run the suites once at the end.
 A corollary for commit messages: since they are squashed away, the durable record of *why* is the PR
 description and the docs under `docs/prd/` — put reasoning that outlives the branch there, not only in
 a commit body.
+
+### Pushing costs money — commit freely, push rarely
+
+**Every push triggers the GitHub workflow, and every workflow run is billed** (money or included
+credits). So:
+
+- **Commit** at every milestone — commits are free and keep the work reviewable and revertable.
+- **Push only when a feature is fully implemented, or a review/update flow is fully finished.**
+  Never push "so CI can have a look" mid-feature, and never push a follow-up commit two minutes
+  after the last one — batch them.
+- A push that lands while a run is in flight **cancels that run** (concurrency group), so rapid
+  pushes don't just cost extra, they also throw away the verdict you were waiting for. Several
+  cancelled runs in a row means you paid for nothing.
+- Verify locally instead: type-check, the targeted specs you are iterating on, and the batched
+  suite sweep at the end (above). Push once, then read the single run.

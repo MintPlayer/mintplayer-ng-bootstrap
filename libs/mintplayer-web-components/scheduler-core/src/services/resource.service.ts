@@ -61,12 +61,12 @@ export class ResourceService {
   }
 
   /**
-   * Get all events from all resources
+   * @deprecated Since the scheduler normalized its event model, events are keyed
+   * by `resourceId` in one store — mutating a resource tree's nested `events` no
+   * longer drives what any view renders. Set `resourceId` on the event and update
+   * the `events` input instead. Unused by the component; kept to avoid a breaking
+   * removal, and slated for deletion in the next major.
    */
-  getAllEvents(items: (Resource | ResourceGroup)[]): SchedulerEvent[] {
-    const resources = this.getAllResources(items);
-    return resources.flatMap((r) => r.events ?? []);
-  }
 
   /**
    * Find a resource by ID
@@ -115,91 +115,36 @@ export class ResourceService {
   }
 
   /**
-   * Add an event to a resource
+   * @deprecated Since the scheduler normalized its event model, events are keyed
+   * by `resourceId` in one store — mutating a resource tree's nested `events` no
+   * longer drives what any view renders. Set `resourceId` on the event and update
+   * the `events` input instead. Unused by the component; kept to avoid a breaking
+   * removal, and slated for deletion in the next major.
    */
-  addEventToResource(
-    items: (Resource | ResourceGroup)[],
-    resourceId: string,
-    event: SchedulerEvent
-  ): (Resource | ResourceGroup)[] {
-    return this.mapResources(items, (resource) => {
-      if (resource.id === resourceId) {
-        return {
-          ...resource,
-          events: [...(resource.events ?? []), event],
-        };
-      }
-      return resource;
-    });
-  }
 
   /**
-   * Update an event in a resource
+   * @deprecated Since the scheduler normalized its event model, events are keyed
+   * by `resourceId` in one store — mutating a resource tree's nested `events` no
+   * longer drives what any view renders. Set `resourceId` on the event and update
+   * the `events` input instead. Unused by the component; kept to avoid a breaking
+   * removal, and slated for deletion in the next major.
    */
-  updateEventInResource(
-    items: (Resource | ResourceGroup)[],
-    event: SchedulerEvent
-  ): (Resource | ResourceGroup)[] {
-    return this.mapResources(items, (resource) => {
-      const eventIndex = resource.events?.findIndex((e) => e.id === event.id);
-      if (eventIndex !== undefined && eventIndex >= 0 && resource.events) {
-        const newEvents = [...resource.events];
-        newEvents[eventIndex] = event;
-        return { ...resource, events: newEvents };
-      }
-      return resource;
-    });
-  }
 
   /**
-   * Remove an event from all resources
+   * @deprecated Since the scheduler normalized its event model, events are keyed
+   * by `resourceId` in one store — mutating a resource tree's nested `events` no
+   * longer drives what any view renders. Set `resourceId` on the event and update
+   * the `events` input instead. Unused by the component; kept to avoid a breaking
+   * removal, and slated for deletion in the next major.
    */
-  removeEvent(
-    items: (Resource | ResourceGroup)[],
-    eventId: string
-  ): (Resource | ResourceGroup)[] {
-    return this.mapResources(items, (resource) => {
-      if (resource.events?.some((e) => e.id === eventId)) {
-        return {
-          ...resource,
-          events: resource.events.filter((e) => e.id !== eventId),
-        };
-      }
-      return resource;
-    });
-  }
 
   /**
-   * Move an event from one resource to another
+   * @deprecated Since the scheduler normalized its event model, events are keyed
+   * by `resourceId` in one store — mutating a resource tree's nested `events` no
+   * longer drives what any view renders. Set `resourceId` on the event and update
+   * the `events` input instead. Unused by the component; kept to avoid a breaking
+   * removal, and slated for deletion in the next major.
    */
-  moveEventToResource(
-    items: (Resource | ResourceGroup)[],
-    eventId: string,
-    newResourceId: string,
-    updatedEvent?: Partial<SchedulerEvent>
-  ): (Resource | ResourceGroup)[] {
-    // Find the event first
-    let foundEvent: SchedulerEvent | undefined;
-    for (const resource of this.getAllResources(items)) {
-      foundEvent = resource.events?.find((e) => e.id === eventId);
-      if (foundEvent) break;
-    }
-
-    if (!foundEvent) return items;
-
-    // Merge with updates
-    const newEvent: SchedulerEvent = {
-      ...foundEvent,
-      ...updatedEvent,
-      resourceId: newResourceId,
-    };
-
-    // Remove from old resource and add to new
-    let result = this.removeEvent(items, eventId);
-    result = this.addEventToResource(result, newResourceId, newEvent);
-
-    return result;
-  }
 
   /**
    * Toggle collapse state of a group
