@@ -496,7 +496,16 @@ $z-event-selected: 2;    // selected event: its straddling handles must win
 
 .scheduler-month-grid {
   display: grid;
-  grid-template-columns: repeat(7, 1fr);
+  /* `minmax(min, 1fr)` + `min-width: fit-content`, NOT a bare `1fr`.
+     The day-name header row is the same `.scheduler-day-headers` week view uses,
+     whose cells are `flex: 1 0 var(--scheduler-column-min-width)` — so below
+     7 x that width the header row grows past the panel while a `1fr` grid kept
+     shrinking, and the two column sets visibly disagreed (at 900px: 120px
+     headers over 75px cells). Both now share one minimum and overflow together,
+     which is also what makes the month view horizontally scrollable instead of
+     illegibly narrow on a phone. */
+  grid-template-columns: repeat(7, minmax(var(--scheduler-column-min-width), 1fr));
+  min-width: fit-content;
   /* 120px, not 100px: a day number plus three 24px chips and the "+N more" link
      needs the room, and a chip clipped by `overflow: hidden` is a target the
      user cannot hit at all. */

@@ -309,6 +309,44 @@ test.describe('scheduler — timeline (R3, R5, R7)', () => {
   });
 });
 
+test.describe('scheduler — month columns line up with their day-name headers', () => {
+  // The header row is the same `.scheduler-day-headers` week view uses, with a
+  // per-column minimum; the month grid is a CSS grid. Two different sizing
+  // systems over one set of columns, so they have to be pinned to the same
+  // minimum or they disagree exactly when the panel gets narrow — which is the
+  // case no one looks at on a 1400px monitor.
+  for (const width of [1400, 900, 600]) {
+    test(`header and grid columns match at ${width}px`, async ({ page }) => {
+      await page.setViewportSize({ width, height: 800 });
+      await loadSampleWeek(page);
+      await switchView(page, 'month');
+
+      const geom = await schedulerRoot(page).evaluate((sched) => {
+        const root = sched.shadowRoot!;
+        const header = root.querySelector<HTMLElement>('.scheduler-day-header')!.getBoundingClientRect();
+        const cell = root.querySelector<HTMLElement>('.scheduler-month-day')!.getBoundingClientRect();
+        const content = root.querySelector<HTMLElement>('.scheduler-content')!;
+        return {
+          headerW: header.width,
+          cellW: cell.width,
+          headerX: header.x,
+          cellX: cell.x,
+          overflowX: content.scrollWidth - content.clientWidth,
+          columns: root.querySelectorAll('.scheduler-day-header').length,
+        };
+      });
+
+      expect(geom.columns).toBe(7);
+      expect(Math.abs(geom.headerW - geom.cellW)).toBeLessThan(0.5);
+      expect(Math.abs(geom.headerX - geom.cellX)).toBeLessThan(0.5);
+      // Narrow panels scroll rather than squeezing a day into illegibility; a
+      // wide one has nothing to scroll.
+      if (width <= 900) expect(geom.overflowX).toBeGreaterThan(0);
+      else expect(geom.overflowX).toBe(0);
+    });
+  }
+});
+
 test.describe('scheduler — timeline resize ghost stays on top', () => {
   // The week-view equivalent lives in scheduler-resize.spec.ts. This is the
   // timeline case, and it seeds a FLAT event with a resourceId on purpose: an

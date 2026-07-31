@@ -35,6 +35,7 @@ PR has a single narrative.
 | R4 | Scheduler must be able to be read-only; granular create/move permissions | **fixed** (M7), §6 |
 | R5 | Timeline cannot scroll horizontally | **fixed** (M3) — device re-check pending, §7 |
 | R6 | Should month/year gain a day-click popup? (opinion requested) | **answered + built**: month yes (popover, M10) / year no — year Enter drills into the month instead, §8 |
+| R10 | Month day-name headers are far wider than the calendar columns | **fixed** (M17), §11.7 |
 | R9 | No drag ghost when resizing a timeline event | **fixed** (M16), §11.6 |
 | R8 | Timeline compresses overlapping event tracks into a fixed-height row | **fixed** (M12), §11.3 |
 | R7 | Decide where resources/groups are relevant; resource colour used across all views, editable in timeline, random initial | **fixed**: colour resolves in every view (M6); in-timeline colour swatch emits `resource-update` (M8); initial colour stays the consumer's (demo ships a palette helper), §4 |
@@ -989,6 +990,24 @@ overlap, using the `pointer-events` probe (the ghost is `pointer-events: none`, 
 hit-testing skips it, while stacking is unaffected).
 
 Three unit tests were verified to fail against the pre-fix code (`expected +0 to be 1`).
+
+### 11.7 M17 — month columns and their headers share one minimum (R10)
+
+Month view renders its day-name strip with week view's `.scheduler-day-headers`, whose cells
+are `flex: 1 0 var(--scheduler-column-min-width)` (120px), while the calendar itself is a CSS
+grid that was `repeat(7, 1fr)`. Two sizing systems over one set of columns: above ~840px they
+agree, and below it the header row grows to its 840px minimum while the grid kept shrinking
+to fit the panel. Measured at a 900px viewport: 120px headers over 75px cells.
+
+The grid now carries the same per-column minimum
+(`repeat(7, minmax(var(--scheduler-column-min-width), 1fr))` plus `min-width: fit-content`),
+so both overflow together and the month view scrolls horizontally rather than squeezing a day
+into illegibility — which is also what the report asked for. The sticky header pins only
+vertically, so it travels with the columns while scrolled; verified at `scrollLeft: 250` with
+the 4th header still exactly over the 4th column.
+
+Guarded at three widths (1400 / 900 / 600) in the e2e: equal widths, equal offsets, and
+horizontal overflow present only when narrow.
 
 **Still outstanding** (deliberate follow-ups, none of them a reported defect):
 the per-resource icon/legend for WCAG 1.4.1, `resource.allowOperations` per-item overrides,

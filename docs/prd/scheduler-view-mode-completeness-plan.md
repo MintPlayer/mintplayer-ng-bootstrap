@@ -283,6 +283,15 @@ After the affordances exist. **B13 is the highest-value item in this milestone.*
 - [x] Browser guard for both selection states, over a real overlap, using the
       `pointer-events` probe: ghost is topmost against `auto` and against `$z-event-selected`.
 
+## M17 — Month columns line up with their headers [R10]
+
+- [x] The month grid takes the same per-column minimum as the day-name strip
+      (`minmax(var(--scheduler-column-min-width), 1fr)` + `min-width: fit-content`), so the two
+      sizing systems can no longer disagree and the view scrolls horizontally when narrow.
+- [x] e2e at 1400 / 900 / 600px: equal column widths, equal offsets, overflow only when
+      narrow. Chromium and Firefox.
+- [x] Header-travels-while-scrolled verified interactively (sticky pins vertically only).
+
 ## M11 — Batched verification sweep
 
 - [x] `nx build mintplayer-web-components` (which runs `codegen-wc`), the three wrapper
