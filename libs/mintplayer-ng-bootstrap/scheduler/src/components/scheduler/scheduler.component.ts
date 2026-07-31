@@ -5,6 +5,7 @@ import {
   AfterViewInit,
   OnDestroy,
   ChangeDetectionStrategy,
+  booleanAttribute,
   CUSTOM_ELEMENTS_SCHEMA,
   input,
   output,
@@ -118,12 +119,32 @@ export interface DateClickEvent {
 }
 
 /**
- * Date select event detail
+ * Resource/group creation *request*. Like `eventCreate`, the scheduler never
+ * edits its own `[resources]` — the consumer decides the id, title and where
+ * in the tree the new item goes. `parentId` names the group to insert into and
+ * is absent for a root-level item.
  */
-export interface DateSelectEvent {
-  start: Date;
-  end: Date;
-  resource?: Resource;
+export interface SchedulerResourceCreateEvent {
+  parentId?: string;
+  view: ViewType;
+  originalEvent?: Event;
+}
+
+/**
+ * Resource/group mutation request. `changes` carries only the fields the
+ * scheduler is asking to change, so a handler can apply them without diffing.
+ */
+export interface SchedulerResourceUpdateEvent {
+  resource: Resource | ResourceGroup;
+  changes: Partial<Resource & ResourceGroup>;
+  originalEvent?: Event;
+}
+
+/**
+ * Resource/group deletion request.
+ */
+export interface SchedulerResourceDeleteEvent {
+  resource: Resource | ResourceGroup;
   originalEvent?: Event;
 }
 
@@ -148,6 +169,16 @@ export class BsSchedulerComponent implements AfterViewInit, OnDestroy {
   readonly resources = input<(Resource | ResourceGroup)[]>([]);
   readonly options = input<Partial<SchedulerOptions>>({});
 
+  /**
+   * Coarse read-only switch — the one-line way to make the whole scheduler
+   * look-but-don't-touch. It maps onto the WC's `readonly` attribute rather
+   * than a property so plain-HTML and SSR consumers get the same knob;
+   * `[options].permissions` still refines individual capabilities beneath it.
+   * Aliased because `readonly` cannot name a class member here.
+   */
+  readonly isReadonly = input(false, { alias: 'readonly', transform: booleanAttribute });
+  protected readonly readonlyAttr = computed(() => (this.isReadonly() ? '' : null));
+
   // Two-way binding model signals. `view` and `date` are models (not inputs)
   // because the web component changes both from within — prev/next/today
   // navigation and the view switcher — and delivers the new values via its
@@ -168,8 +199,11 @@ export class BsSchedulerComponent implements AfterViewInit, OnDestroy {
   readonly eventUpdate = output<SchedulerEventUpdateEvent>();
   readonly eventDelete = output<SchedulerEventDeleteEvent>();
   readonly dateClick = output<DateClickEvent>();
-  readonly dateSelect = output<DateSelectEvent>();
   readonly selectionChange = output<SchedulerSelectionChangeEvent>();
+  readonly resourceCreate = output<SchedulerResourceCreateEvent>();
+  readonly groupCreate = output<SchedulerResourceCreateEvent>();
+  readonly resourceUpdate = output<SchedulerResourceUpdateEvent>();
+  readonly resourceDelete = output<SchedulerResourceDeleteEvent>();
 
   // Computed signals
   readonly currentWeekStart = computed(() => {
@@ -292,9 +326,20 @@ export class BsSchedulerComponent implements AfterViewInit, OnDestroy {
       this.dateClick.emit(e.detail);
     });
 
-    addListener('date-select', (e) => {
-      this.dateSelect.emit(e.detail);
-      this.selectedRange.set({ start: e.detail.start, end: e.detail.end });
+    addListener('resource-create', (e) => {
+      this.resourceCreate.emit(e.detail);
+    });
+
+    addListener('group-create', (e) => {
+      this.groupCreate.emit(e.detail);
+    });
+
+    addListener('resource-update', (e) => {
+      this.resourceUpdate.emit(e.detail);
+    });
+
+    addListener('resource-delete', (e) => {
+      this.resourceDelete.emit(e.detail);
     });
 
     addListener('view-change', (e) => {

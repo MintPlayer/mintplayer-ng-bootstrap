@@ -88,6 +88,7 @@ export class MpScheduler extends LitElement {
   // Keyboard handler
   private boundHandleKeyDown: (e: KeyboardEvent) => void;
   private boundHandleFocusIn: (e: FocusEvent) => void;
+  private boundHandleValueChange: (e: Event) => void;
 
   // Now indicator update timer
   private nowIndicatorTimer: ReturnType<typeof setInterval> | null = null;
@@ -108,6 +109,7 @@ export class MpScheduler extends LitElement {
     // Bind keyboard handler
     this.boundHandleKeyDown = this.handleKeyDown.bind(this);
     this.boundHandleFocusIn = this.handleFocusIn.bind(this);
+    this.boundHandleValueChange = this.handleValueChange.bind(this);
 
     // Subscribe to state changes
     this.stateManager.subscribe((state) => this.onStateChange(state));
@@ -117,10 +119,12 @@ export class MpScheduler extends LitElement {
     super.connectedCallback();
     if (this.inputHandler) {
       this.inputHandler.attach();
-    // Seed the resolved permission table before the first render so affordances
-    // are gated on the very first paint, not one update later.
-    this.syncPermissions();
     }
+    // Seed the resolved permission table before the first render so affordances
+    // are gated on the very first paint, not one update later. Outside the
+    // inputHandler guard on purpose: on the FIRST connect there is no handler
+    // yet (it needs the shadow root), which is exactly the render this seeds.
+    this.syncPermissions();
     this.addEventListener('keydown', this.boundHandleKeyDown);
     // focusin listener is registered in firstUpdated() once the shadowRoot exists.
 
@@ -132,6 +136,7 @@ export class MpScheduler extends LitElement {
     this.inputHandler?.detach();
     this.removeEventListener('keydown', this.boundHandleKeyDown);
     this.shadowRoot?.removeEventListener('focusin', this.boundHandleFocusIn as EventListener);
+    this.shadowRoot?.removeEventListener('change', this.boundHandleValueChange);
     this.currentView?.destroy();
     this.dragManager.destroy();
 
@@ -221,6 +226,27 @@ export class MpScheduler extends LitElement {
 
   set date(value: Date) {
     this.stateManager.setDate(value);
+  }
+
+  /**
+   * Coarse read-only switch, outranking `options.permissions` entirely.
+   *
+   * Property and attribute are the same state, deliberately: a JS consumer
+   * writes `el.readonly = true`, a plain-HTML or SSR consumer writes the
+   * attribute, and a framework wrapper can bridge whichever it has. Absence is
+   * editable; `readonly="false"` opts back out so the attribute can be rendered
+   * unconditionally with a computed value.
+   */
+  get readonly(): boolean {
+    return this.hasAttribute('readonly') && this.getAttribute('readonly') !== 'false';
+  }
+
+  set readonly(value: boolean) {
+    if (value) {
+      this.setAttribute('readonly', '');
+    } else {
+      this.removeAttribute('readonly');
+    }
   }
 
   get events(): SchedulerEvent[] {
@@ -414,6 +440,7 @@ export class MpScheduler extends LitElement {
     // (avoids cross-shadow retargeting back to the host). Cast — focusin
     // isn't in the typed ShadowRootEventMap but the runtime supports it.
     this.shadowRoot!.addEventListener('focusin', this.boundHandleFocusIn as EventListener);
+    this.shadowRoot!.addEventListener('change', this.boundHandleValueChange);
 
     this.renderView();
   }
@@ -792,6 +819,11 @@ export class MpScheduler extends LitElement {
   ): void {
     const targetEl = pointer.target;
 
+    // Resource-tree actions (timeline). Handled before anything else and
+    // returning early: these buttons live inside the pinned rowheader, so a
+    // fall-through would also read the row as a date/slot click.
+    if (this.handleResourceAction(targetEl, pointer.originalEvent)) return;
+
     // Group toggle
     const toggle = targetEl.closest('.expand-toggle') as HTMLElement;
     if (toggle) {
@@ -843,6 +875,76 @@ export class MpScheduler extends LitElement {
       this.stateManager.setSelectedEvent(target.event);
       this.registerEventActivation(target.event, pointer.originalEvent);
     }
+  }
+
+  /**
+   * Route a click on a resource-tree action button to its request event.
+   * Returns true when the click was one of ours and must not fall through.
+   *
+   * Every branch re-checks the capability rather than trusting that the button
+   * exists: state can change between render and click, and a request the
+   * consumer has switched off must not reach them.
+   */
+  private handleResourceAction(targetEl: HTMLElement, originalEvent: Event): boolean {
+    const button = targetEl.closest('[data-action]') as HTMLElement | null;
+    if (!button) return false;
+
+    const { action, parentId, resourceId } = button.dataset;
+    const view = this.stateManager.getState().view;
+
+    switch (action) {
+      case 'add-resource':
+        if (this.can('createResource')) {
+          this.eventEmitter.emitResourceCreate('resource', view, originalEvent, parentId);
+        }
+        return true;
+      case 'add-group':
+        if (this.can('createGroup')) {
+          this.eventEmitter.emitResourceCreate('group', view, originalEvent, parentId);
+        }
+        return true;
+      case 'delete-resource': {
+        const resource = resourceId ? this.findResourceOrGroup(resourceId) : null;
+        if (resource && this.can('deleteResource')) {
+          this.eventEmitter.emitResourceDelete(resource, originalEvent);
+        }
+        return true;
+      }
+      // The colour input reports through `change`, not `click` — a click merely
+      // opens the platform picker, so swallow it here and let handleValueChange
+      // emit once the user has actually chosen.
+      case 'set-resource-color':
+        return true;
+    }
+    return false;
+  }
+
+  /**
+   * `change` from a resource control. Delegated on the shadow root because the
+   * views build their DOM imperatively and are rebuilt on every render — a
+   * per-element listener would have to be re-attached each time. `change` does
+   * not compose, so this listener is the only one that can see it.
+   */
+  private handleValueChange(e: Event): void {
+    const input = (e.composedPath?.()[0] ?? e.target) as HTMLElement | null;
+    if (!input || input.dataset['action'] !== 'set-resource-color') return;
+    if (!this.can('updateResource')) return;
+
+    const { resourceId, field } = input.dataset;
+    const resource = resourceId ? this.findResourceOrGroup(resourceId) : null;
+    if (!resource) return;
+
+    const value = (input as HTMLInputElement).value;
+    this.eventEmitter.emitResourceUpdate(
+      resource,
+      field === 'eventColor' ? { eventColor: value } : { color: value },
+      e,
+    );
+  }
+
+  /** Resolve a resource or group by id from the current `resources` input. */
+  private findResourceOrGroup(id: string): Resource | ResourceGroup | null {
+    return resourceService.findById(this.stateManager.getState().resources, id) ?? null;
   }
 
   private handleDoubleClick(
@@ -999,11 +1101,6 @@ export class MpScheduler extends LitElement {
     });
   }
 
-  /**
-   * Fold the legacy `editable`/`selectable` flags into a permissions table.
-   * They were the only enforced flags and the demos use them, so they stay as
-   * documented aliases rather than a breaking rename.
-   */
   /** Recompute the resolved table onto state so views can gate affordances. */
   private syncPermissions(): void {
     const { options } = this.stateManager.getState();
@@ -1021,9 +1118,7 @@ export class MpScheduler extends LitElement {
   private effectivePermissions(
     options: SchedulerOptions,
   ): boolean | Partial<SchedulerPermissions> {
-    if (this.hasAttribute('readonly') && this.getAttribute('readonly') !== 'false') {
-      return false;
-    }
+    if (this.readonly) return false;
     const explicit = options.permissions;
     if (explicit === false) return false;
     return typeof explicit === 'object' && explicit !== null ? explicit : {};

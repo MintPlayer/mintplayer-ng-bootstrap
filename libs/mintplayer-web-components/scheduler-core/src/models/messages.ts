@@ -29,6 +29,18 @@ export interface SchedulerMessages {
   expandGroup: string;
   /** {title} — resource group title */
   collapseGroup: string;
+  /** Toolbar at the foot of the resource column. */
+  addResourceBarLabel: string;
+  addResource: string;
+  addGroup: string;
+  /** {title} — every per-row action names its row, so N buttons aren't all "Add". */
+  addResourceToGroup: string;
+  /** {title} */
+  addGroupToGroup: string;
+  /** {title} */
+  removeResource: string;
+  /** {title} */
+  resourceColor: string;
 
   // Month chrome
   /** {count} — number of hidden events */
@@ -96,6 +108,13 @@ export const DEFAULT_MESSAGES: SchedulerMessages = {
   timelineGridLabel: 'Resource timeline for week starting {date}',
   expandGroup: 'Expand {title}',
   collapseGroup: 'Collapse {title}',
+  addResourceBarLabel: 'Add to the resource list',
+  addResource: 'Add resource',
+  addGroup: 'Add group',
+  addResourceToGroup: 'Add resource to {title}',
+  addGroupToGroup: 'Add subgroup to {title}',
+  removeResource: 'Remove {title}',
+  resourceColor: 'Colour for {title}',
 
   moreEvents: '+{count} more',
 

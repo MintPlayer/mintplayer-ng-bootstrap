@@ -1,5 +1,11 @@
-import { SchedulerCustomEvent, EventDetail, TimeRange } from './event-types';
-import { ViewType } from '@mintplayer/web-components/scheduler-core';
+import {
+  SchedulerCustomEvent,
+  EventDetail,
+  TimeRange,
+  ViewType,
+  Resource,
+  ResourceGroup,
+} from '@mintplayer/web-components/scheduler-core';
 
 /**
  * Handles dispatching custom events from the scheduler.
@@ -9,8 +15,9 @@ export class SchedulerEventEmitter {
   constructor(private readonly host: HTMLElement) {}
 
   /**
-   * Emit a scheduler custom event.
-   * The event will bubble up through the DOM.
+   * Emit a scheduler custom event. `composed` as well as `bubbles`: without it
+   * the event stops at the shadow boundary of any component the scheduler is
+   * nested inside, so a wrapper-of-a-wrapper never sees it.
    */
   emit(event: SchedulerCustomEvent): void {
     const { type, ...detail } = event;
@@ -18,6 +25,7 @@ export class SchedulerEventEmitter {
       new CustomEvent(type, {
         detail,
         bubbles: true,
+        composed: true,
       })
     );
   }
@@ -104,5 +112,44 @@ export class SchedulerEventEmitter {
     resourceId?: string,
   ): void {
     this.emit({ type: 'selection-change', selectedEvent, range, view, resourceId });
+  }
+
+  /**
+   * Emit a `resource-create` or `group-create` *request*. Same controlled
+   * contract as `event-create`: the scheduler never edits its own `resources`
+   * input, so the consumer decides the id, title and placement. `parentId` is
+   * the group to insert into — absent means root level.
+   */
+  emitResourceCreate(
+    kind: 'resource' | 'group',
+    view: ViewType,
+    originalEvent: Event,
+    parentId?: string,
+  ): void {
+    this.emit({
+      type: kind === 'group' ? 'group-create' : 'resource-create',
+      parentId,
+      view,
+      originalEvent,
+    });
+  }
+
+  /**
+   * Emit a `resource-update` request carrying only the changed fields, so the
+   * consumer can apply them without diffing.
+   */
+  emitResourceUpdate(
+    resource: Resource | ResourceGroup,
+    changes: EventDetail<'resource-update'>['changes'],
+    originalEvent: Event,
+  ): void {
+    this.emit({ type: 'resource-update', resource, changes, originalEvent });
+  }
+
+  /**
+   * Emit a `resource-delete` request.
+   */
+  emitResourceDelete(resource: Resource | ResourceGroup, originalEvent: Event): void {
+    this.emit({ type: 'resource-delete', resource, originalEvent });
   }
 }
