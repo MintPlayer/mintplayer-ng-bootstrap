@@ -1,4 +1,5 @@
 import { DEFAULT_MESSAGES, SchedulerMessages } from './messages';
+import { DEFAULT_EVENT_COLOR } from '../utils/color';
 import { DayOfWeek, TimeFormat, ViewType } from './types';
 
 /**
@@ -98,6 +99,12 @@ export interface SchedulerOptions {
    *  Merged onto the English defaults — see SchedulerMessages. */
   messages?: Partial<SchedulerMessages>;
 
+  /**
+   * Fill colour for events that specify none and whose resource specifies none.
+   * Previously a `'#3788d8'` literal duplicated across five files.
+   */
+  defaultEventColor?: string;
+
   // Display options
   /** Whether to show current time indicator */
   nowIndicator?: boolean;
@@ -146,6 +153,7 @@ export const DEFAULT_OPTIONS: Required<SchedulerOptions> = {
   dragScroll: true,
   snapDuration: 1800,
   messages: DEFAULT_MESSAGES,
+  defaultEventColor: DEFAULT_EVENT_COLOR,
   nowIndicator: true,
   weekNumbers: false,
   weekText: 'W',

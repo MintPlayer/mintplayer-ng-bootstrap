@@ -489,8 +489,8 @@ export class TimelineView extends BaseView {
     eventEl.style.width = `${width}px`;
     eventEl.style.top = `${top}%`;
     eventEl.style.height = `${heightPercent}%`;
-    eventEl.style.backgroundColor = event.color ?? '#3788d8';
-    eventEl.style.color = event.textColor ?? getContrastColor(event.color ?? '#3788d8');
+    // Fill + contrast text, resolving the resource's colour (see BaseView).
+    this.applyEventColors(eventEl, event);
 
     this.setData(eventEl, { eventId: event.id });
 

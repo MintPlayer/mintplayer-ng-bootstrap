@@ -1,6 +1,8 @@
 import {
   dateService,
   formatMessage,
+  getContrastColor,
+  resolveEventColor,
   resolveMessages,
   type SchedulerEvent,
   type SchedulerEventPart,
@@ -234,6 +236,23 @@ export abstract class BaseView {
    * Returns `null` when the part falls entirely outside the visible window —
    * callers skip it rather than drawing a zero-height box.
    */
+  /**
+   * Apply an event's fill + contrast text colour to its box.
+   *
+   * One place, so a resource's colour reaches EVERY view — week/day/month/year
+   * previously had no route from an event to its resource, which is why
+   * `Resource.color`/`eventColor` sat in the model unread.
+   */
+  protected applyEventColors(el: HTMLElement, event: SchedulerEvent): void {
+    const background = resolveEventColor(
+      event,
+      this.state.resourceById,
+      this.state.options.defaultEventColor,
+    );
+    el.style.backgroundColor = background;
+    el.style.color = event.textColor ?? getContrastColor(background);
+  }
+
   protected partGeometry(
     start: Date,
     end: Date,

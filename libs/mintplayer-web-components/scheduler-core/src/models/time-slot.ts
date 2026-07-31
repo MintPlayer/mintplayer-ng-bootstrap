@@ -6,6 +6,16 @@ export interface TimeSlot {
   start: Date;
   /** End of the time slot */
   end: Date;
+  /**
+   * Resource the slot belongs to, for views with a resource axis (timeline).
+   *
+   * Carried so a pointer create-drag can report WHICH row it happened in:
+   * without it `event-create` always emitted `resourceId: undefined`, and the
+   * created event landed nowhere the user was pointing. `undefined` on
+   * week/day/month/year, which have no resource axis, and on the timeline's
+   * unassigned bucket row.
+   */
+  resourceId?: string;
 }
 
 /**

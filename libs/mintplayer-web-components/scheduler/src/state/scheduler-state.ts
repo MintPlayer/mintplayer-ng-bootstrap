@@ -100,6 +100,18 @@ function seedCollapsedGroups(
   return next;
 }
 
+/** Flatten the resource tree into an id lookup (leaf resources only). */
+function indexResourcesById(
+  items: (Resource | ResourceGroup)[],
+  out: Map<string, Resource> = new Map(),
+): Map<string, Resource> {
+  for (const item of items) {
+    if (isResourceGroup(item)) indexResourcesById(item.children, out);
+    else out.set(item.id, item);
+  }
+  return out;
+}
+
 /** Group events by `resourceId`; the `null` key is the unassigned bucket. */
 function indexByResource(events: SchedulerEvent[]): Map<string | null, SchedulerEvent[]> {
   const index = new Map<string | null, SchedulerEvent[]>();
@@ -131,6 +143,11 @@ export interface SchedulerState {
    * `null` key holds events with no resource (timeline's unassigned bucket).
    */
   eventsByResource: Map<string | null, SchedulerEvent[]>;
+  /**
+   * Flat resource lookup by id, rebuilt with `resources`. Lets every view — not
+   * just timeline — resolve an event's resource colour in O(1).
+   */
+  resourceById: Map<string, Resource>;
   /** Resources and resource groups */
   resources: (Resource | ResourceGroup)[];
   /** Configuration options */
@@ -190,6 +207,7 @@ export function createInitialState(
     date: mergedOptions.initialDate,
     events: [],
     eventsByResource: new Map(),
+    resourceById: new Map(),
     resources: [],
     options: mergedOptions,
     selectedEvent: null,
@@ -241,10 +259,13 @@ export class SchedulerStateManager {
       typeof update === 'function' ? update(this.state) : update;
 
     const next = { ...this.state, ...partialUpdate };
-    // Rebuild the resource index only when the event list identity changes, so
+    // Rebuild the derived indexes only when their source identity changes, so
     // drag frames (which touch previewEvent every rAF) don't pay for it.
     if (next.events !== this.state.events || !this.state.eventsByResource) {
       next.eventsByResource = indexByResource(next.events);
+    }
+    if (next.resources !== this.state.resources || !this.state.resourceById) {
+      next.resourceById = indexResourcesById(next.resources);
     }
     this.state = next;
     this.notifyListeners();

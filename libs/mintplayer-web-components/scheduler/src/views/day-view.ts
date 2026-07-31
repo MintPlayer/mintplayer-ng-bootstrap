@@ -243,8 +243,8 @@ export class DayView extends BaseView {
     eventEl.style.height = `${height}px`;
     eventEl.style.left = `${leftPercent}%`;
     eventEl.style.width = `calc(${widthPercent}% - 2px)`;
-    eventEl.style.backgroundColor = event.color ?? '#3788d8';
-    eventEl.style.color = event.textColor ?? getContrastColor(event.color ?? '#3788d8');
+    // Fill + contrast text, resolving the resource's colour (see BaseView).
+    this.applyEventColors(eventEl, event);
 
     this.setData(eventEl, { eventId: event.id });
 

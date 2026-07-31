@@ -196,8 +196,8 @@ export class MonthView extends BaseView {
       for (const event of visibleEvents) {
         const eventEl = this.createElement('div', 'scheduler-month-event');
         eventEl.textContent = event.title;
-        eventEl.style.backgroundColor = event.color ?? '#3788d8';
-        eventEl.style.color = event.textColor ?? getContrastColor(event.color ?? '#3788d8');
+    // Fill + contrast text, resolving the resource's colour (see BaseView).
+    this.applyEventColors(eventEl, event);
         // Tab-reachable like week/day event blocks; focusing selects (the
         // scheduler's handleFocusIn), so no separate activation key is needed.
         eventEl.setAttribute('role', 'button');

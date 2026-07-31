@@ -1794,9 +1794,13 @@ export class MpScheduler extends LitElement {
 
     if (!startStr || !endStr) return null;
 
+    // Carry the row's resource so a create-drag can report where it happened.
+    const resourceId = el.dataset['resourceId'];
+
     return {
       start: new Date(startStr),
       end: new Date(endStr),
+      ...(resourceId ? { resourceId } : {}),
     };
   }
 }

@@ -872,3 +872,93 @@ describe('mp-scheduler — normalized event/resource model', () => {
     expect(headers.some((h) => h.includes('Bob'))).toBe(false);
   });
 });
+
+/**
+ * Resource colour applies in EVERY view, not just timeline. Resource.color and
+ * Resource.eventColor had existed in the model read by nothing, and week/day/
+ * month/year had no route from an event to its resource at all.
+ *
+ * The dynamically-added-event case is tested deliberately: it is exactly where
+ * FullCalendar (#5743), Bryntum (#4005) and DevExpress (T864922) each regressed.
+ */
+describe('mp-scheduler — resource colour across views', () => {
+  let el: MpScheduler;
+  afterEach(() => el?.remove());
+
+  const RESOURCES = [
+    { id: 'alice', title: 'Alice', eventColor: '#112233' },
+    { id: 'bob', title: 'Bob', color: '#445566' },
+  ];
+
+  const mountColoured = async (view: string, events: unknown[]) => {
+    el = document.createElement('mp-scheduler') as MpScheduler;
+    document.body.appendChild(el);
+    (el as unknown as { date: Date }).date = new Date(2026, 4, 12);
+    (el as unknown as { resources: unknown[] }).resources = RESOURCES;
+    (el as unknown as { events: unknown[] }).events = events;
+    el.setAttribute('view', view);
+    await (el as unknown as { updateComplete: Promise<void> }).updateComplete;
+    await nextRaf();
+    return el;
+  };
+
+  const at = (h: number) => new Date(2026, 4, 12, h, 0);
+
+  it('week view inherits the resource eventColor', async () => {
+    await mountColoured('week', [
+      { id: 'a', title: 'A', start: at(9), end: at(10), resourceId: 'alice' },
+    ]);
+    const box = el.shadowRoot!.querySelector<HTMLElement>('.scheduler-event:not(.preview)')!;
+    expect(box.style.backgroundColor).toBe('rgb(17, 34, 51)'); // #112233
+  });
+
+  it('falls back to Resource.color when eventColor is absent', async () => {
+    await mountColoured('day', [
+      { id: 'b', title: 'B', start: at(9), end: at(10), resourceId: 'bob' },
+    ]);
+    const box = el.shadowRoot!.querySelector<HTMLElement>('.scheduler-event:not(.preview)')!;
+    expect(box.style.backgroundColor).toBe('rgb(68, 85, 102)'); // #445566
+  });
+
+  it('the event’s own colour still wins over its resource', async () => {
+    await mountColoured('week', [
+      {
+        id: 'c',
+        title: 'C',
+        start: at(9),
+        end: at(10),
+        resourceId: 'alice',
+        color: '#ff0000',
+      },
+    ]);
+    const box = el.shadowRoot!.querySelector<HTMLElement>('.scheduler-event:not(.preview)')!;
+    expect(box.style.backgroundColor).toBe('rgb(255, 0, 0)');
+  });
+
+  it('keeps the resource colour for an event added AFTER first render', async () => {
+    await mountColoured('week', []);
+    (el as unknown as { events: unknown[] }).events = [
+      { id: 'late', title: 'Late', start: at(11), end: at(12), resourceId: 'alice' },
+    ];
+    await (el as unknown as { updateComplete: Promise<void> }).updateComplete;
+    await nextRaf();
+    const box = el.shadowRoot!.querySelector<HTMLElement>('.scheduler-event:not(.preview)')!;
+    expect(box).toBeTruthy();
+    expect(box.style.backgroundColor).toBe('rgb(17, 34, 51)');
+  });
+
+  it('uses options.defaultEventColor when nothing else specifies one', async () => {
+    el = document.createElement('mp-scheduler') as MpScheduler;
+    document.body.appendChild(el);
+    (el as unknown as { date: Date }).date = new Date(2026, 4, 12);
+    (el as unknown as { options: unknown }).options = { defaultEventColor: '#00ff00' };
+    (el as unknown as { events: unknown[] }).events = [
+      { id: 'plain', title: 'Plain', start: at(9), end: at(10) },
+    ];
+    el.setAttribute('view', 'week');
+    await (el as unknown as { updateComplete: Promise<void> }).updateComplete;
+    await nextRaf();
+    const box = el.shadowRoot!.querySelector<HTMLElement>('.scheduler-event:not(.preview)')!;
+    expect(box.style.backgroundColor).toBe('rgb(0, 255, 0)');
+  });
+});
