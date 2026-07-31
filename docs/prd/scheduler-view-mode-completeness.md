@@ -1,6 +1,11 @@
 # PRD — Scheduler view-mode completeness
 
-Status: **Draft / in progress** (investigation landing; sections marked ⏳ pending agent reports)
+Status: **Implemented in part.** M1–M7 delivered on this branch (see the
+[plan](./scheduler-view-mode-completeness-plan.md) for the item-level state);
+M8 (timeline creation affordances), M9 (event-surface cleanup) and M10 (month
+popover) are still outstanding. Versions bumped for the breaking changes:
+web-components 2.5.0, ng-bootstrap 22.9.0, react-bootstrap 19.11.0,
+vue-bootstrap 3.12.0.
 Branch: `fix/scheduler-preview-z-order` (folds into PR
 [#395](https://github.com/MintPlayer/mintplayer-ng-bootstrap/pull/395) per the
 one-PR-per-workstream convention)
@@ -24,13 +29,13 @@ PR has a single narrative.
 
 | # | Report | Status |
 |---|---|---|
-| R1 | Creating an event across multiple days draws a dashed ghost only for the start day | confirmed, §3 |
-| R2 | Events created in week view are invisible after switching to timeline (no events/resources/groups at all) | ⏳ §4 |
-| R3 | Timeline needs affordances to add groups/nested groups, and events by dragging a resource row | ⏳ §5 |
-| R4 | Scheduler must be able to be read-only; granular create/move permissions | ⏳ §6 |
-| R5 | Timeline cannot scroll horizontally | ⏳ §7 |
-| R6 | Should month/year gain a day-click popup? (opinion requested) | ⏳ §8 |
-| R7 | Decide where resources/groups are relevant; resource colour used across all views, editable in timeline, random initial | ⏳ §4 |
+| R1 | Creating an event across multiple days draws a dashed ghost only for the start day | **fixed** (M4), §3 |
+| R2 | Events created in week view are invisible after switching to timeline (no events/resources/groups at all) | **fixed** (M2), §4 |
+| R3 | Timeline needs affordances to add groups/nested groups, and events by dragging a resource row | **part**: drag-create carries its row (M5); add-resource/group affordance outstanding (M8), §5 |
+| R4 | Scheduler must be able to be read-only; granular create/move permissions | **fixed** (M7), §6 |
+| R5 | Timeline cannot scroll horizontally | **fixed** (M3) — device re-check pending, §7 |
+| R6 | Should month/year gain a day-click popup? (opinion requested) | **answered**: month yes / year no; build outstanding (M10), §8 |
+| R7 | Decide where resources/groups are relevant; resource colour used across all views, editable in timeline, random initial | **part**: colour resolves in every view (M6); in-timeline recolour UI rides with M8, §4 |
 
 ## 3. Multi-day drag feedback (R1) — and four bugs found underneath it
 
@@ -218,6 +223,12 @@ an option for consumers who want the stricter contract:
 `resourceId` are reported via a dev warning rather than silently bucketed, mirroring MUI X.
 Never hide an event with no feedback.
 
+> **Not yet implemented:** the bucket row and its localizable `unassignedResource` label
+> ship (M2), but `requireEventResource` and the dedicated empty state for
+> `resources: []` do not. Left open in the plan rather than quietly dropped — the bucket
+> row alone already resolves the reported symptom, since a resource-less consumer now gets
+> a working single-row timeline instead of a blank panel.
+
 - Events with `resourceId == null` render in a synthetic row rendered **last**, labelled
   via a new `SchedulerMessages` key (localizable per #394), suppressed when the bucket is
   empty *and* at least one real resource exists.
@@ -334,7 +345,6 @@ row, and a permanently-dead disabled button per row under `createResource: false
   default** (`createResource`/`createGroup` default `false`), so the component's default
   behaviour stays "resources are data" like every peer library.
 
-### 5.2a Superseded draft (kept for the record): per-group buttons + toolbar
 
 There is no resource/group creation UI anywhere today; the only interactive element in the
 timeline body is `.expand-toggle` (`timeline-view.ts:185-200`) — which also has **no
@@ -457,9 +467,13 @@ Precedence through one internal `can(capability, subject?)`: host `readonly` att
   for a resource timeline "this row is locked" is far more naturally a resource field than a
   callback. Adopt that: `resource.allowOperations` covers the row-locking case with an O(1)
   lookup, leaving `canCreateAt` for genuinely dynamic rules (past dates, quotas).
-- `editable`/`selectable` become **deprecated aliases** mapping onto `permissions`
-  (`editable: false` ⇒ create/move/resize/delete off), since they're the only live flags
-  and the demos use them.
+- **`editable`/`selectable` were DELETED, not aliased.** The first draft kept them as
+  deprecated aliases; the decision changed to no back-compat, so they and their host
+  attributes are gone along with the six dead flags (`selectMirror`,
+  `eventDurationEditable`, `eventStartEditable`, `dragRevertDuration`, `dragScroll`,
+  `snapDuration`) and the five dead `resourceService` event mutators. `eventStartEditable`
+  / `eventDurationEditable` live on as `resizeEventStart` / `resizeEventEnd`. Versions
+  bumped accordingly.
 
 **Semantics (file-manager's rule verbatim):** permission denied ⇒ **do not render** the
 affordance; permitted but contextually unavailable ⇒ render `disabled`; every handler
@@ -764,3 +778,60 @@ just emitted events.
   local midnight). The new shared geometry helper should express clipping against
   `parseTimeOnDay` so it degrades sanely, without claiming DST correctness.
 - No new i18n framework: new strings extend `options.messages` (#394).
+
+## 11. As-built API surface (M1–M7)
+
+New/changed public surface, so consumers and the wrappers have one list.
+
+**Added — `SchedulerOptions`**
+- `permissions?: boolean | Partial<SchedulerPermissions>` — `false` = read-only.
+- `defaultEventColor?: string` — replaces the `'#3788d8'` literal that was duplicated
+  across five files.
+
+**Added — host attribute**
+- `readonly` — coarse read-only, reachable from plain HTML/SSR. `readonly="false"` opts out.
+
+**Added — `SchedulerPermissions`** (`createEvent`, `moveEvent`, `resizeEventStart`,
+`resizeEventEnd`, `deleteEvent`, `selectRange`, `createResource`, `updateResource`,
+`deleteResource`, `createGroup`, plus the opt-in `canCreateAt` predicate). Resource/group
+capabilities default **false**; event capabilities default **true**.
+
+**Added — `TimeSlot.resourceId?`** so a pointer create-drag can report its row.
+
+**Added — messages** (`options.messages`): `unassignedResource`, `actionNotAllowed`,
+`gridInstructionsReadOnly`, `eventInstructionsReadOnly`.
+
+**Added — CSS custom properties**: `--scheduler-slot-width` (was a hard-coded 50px, i.e.
+a 16,800px default week), `--scheduler-resource-column-width` (capped
+`min(200px, 100% - 50px)`), `--scheduler-resize-glyph-*` (from #394).
+
+**Added — SCSS z-index rung**: `$z-sticky-column: 7`, between slot-focus and sticky-header.
+
+**Added — state (internal, but views rely on it)**: `events` is now the merged store;
+`eventsByResource` and `resourceById` are derived indexes; `resolvedPermissions` carries
+the folded table.
+
+**Removed (breaking)**
+- `options.editable`, `options.selectable` and their host attributes → `permissions` /
+  `readonly`.
+- `options.selectMirror`, `eventDurationEditable`, `eventStartEditable`,
+  `dragRevertDuration`, `dragScroll`, `snapDuration` — declared and read by nothing.
+  The two editable flags live on as `resizeEventStart` / `resizeEventEnd`.
+- `resourceService.getAllEvents`, `addEventToResource`, `updateEventInResource`,
+  `removeEvent`, `moveEventToResource` — dead once the model was normalized.
+
+**Behavioural changes worth calling out**
+- Week/day/month/year now also render events authored under `resources` (the R2 fix).
+- `resource.events` is authoring sugar, no longer a live mirror: mutating it in place
+  requires reassigning the `resources` input.
+- `resourceId` is authoritative for placement; nesting only seeds it.
+- `event.editable` and `event.resizable: { start, end }` are honoured at last (both were
+  declared and ignored).
+- `dayMaxEvents: false` now really means "show all" instead of capping at 3.
+- Month view emits the correct day west of UTC.
+
+**Still outstanding**: M8 (add-resource/group affordances + `resource-*` events, which is
+also where in-timeline recolouring lands), M9 (`date-select` resolution, duplicated event
+type surfaces, React wrapper types, `composed: true`), M10 (month popover),
+`requireEventResource`, the `resources: []` empty state, the per-resource icon for
+WCAG 1.4.1, and the browser/device verification items in M11.
