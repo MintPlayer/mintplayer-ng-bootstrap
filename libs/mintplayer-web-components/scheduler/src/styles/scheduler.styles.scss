@@ -1082,6 +1082,56 @@ $z-event-selected: 2;    // selected event: its straddling handles must win
   background: var(--scheduler-drop-target-bg, rgba(13, 110, 253, 0.06));
 }
 
+/* Resource-column resize separator (R15): the WAI-ARIA window splitter on the
+   corner header's right edge. Inside the sticky corner cell, so it pins with
+   the column it resizes. */
+.scheduler-resource-header {
+  position: relative;
+}
+
+.scheduler-column-resizer {
+  position: absolute;
+  top: 0;
+  right: -4px;
+  width: 8px;
+  height: 100%;
+  cursor: col-resize;
+  /* Above the neighbouring day headers so the whole 8px strip is grabbable. */
+  z-index: 1;
+  touch-action: none;
+}
+
+.scheduler-column-resizer:hover,
+.scheduler-column-resizer:focus-visible {
+  background: var(--bs-primary);
+  opacity: 0.35;
+}
+
+.scheduler-column-resizer:focus-visible {
+  outline: 2px solid var(--bs-primary);
+  outline-offset: 1px;
+  opacity: 0.6;
+}
+
+/* Inline rename (R17): the input takes the title's place in the pinned cell. */
+.scheduler-resource-cell .rename-input {
+  flex: 1 1 auto;
+  min-width: 0;
+  width: 100%;
+  min-height: 24px;
+  padding: 1px 4px;
+  border: 1px solid var(--bs-primary);
+  border-radius: 4px;
+  background: var(--bs-body-bg);
+  color: inherit;
+  font: inherit;
+}
+
+.scheduler-resource-cell .rename-input:focus-visible {
+  outline: 2px solid var(--bs-primary);
+  outline-offset: 1px;
+}
+
 .scheduler-timeline-row.group .scheduler-resource-cell {
   /* Sticky cells are transparent by default — a group row must keep its own
      tint or slots slide visibly underneath the pinned column. */

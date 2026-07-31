@@ -94,6 +94,7 @@ export class MpScheduler extends LitElement {
   private boundHandleFocusIn: (e: FocusEvent) => void;
   private boundHandleValueChange: (e: Event) => void;
   private boundHandleContextMenu: (e: Event) => void;
+  private boundHandleDblClick: (e: Event) => void;
   private boundRepositionEditor: () => void;
 
   // Now indicator update timer
@@ -201,6 +202,7 @@ export class MpScheduler extends LitElement {
     this.boundHandleFocusIn = this.handleFocusIn.bind(this);
     this.boundHandleValueChange = this.handleValueChange.bind(this);
     this.boundHandleContextMenu = this.handleContextMenu.bind(this);
+    this.boundHandleDblClick = this.handleNativeDblClick.bind(this);
     this.boundRepositionPopover = () => this.dayPopover.position();
     this.boundRepositionEditor = () => this.eventEditorOverlay.position();
 
@@ -231,6 +233,7 @@ export class MpScheduler extends LitElement {
     this.shadowRoot?.removeEventListener('focusin', this.boundHandleFocusIn as EventListener);
     this.shadowRoot?.removeEventListener('change', this.boundHandleValueChange);
     this.shadowRoot?.removeEventListener('contextmenu', this.boundHandleContextMenu);
+    this.shadowRoot?.removeEventListener('dblclick', this.boundHandleDblClick);
     this.currentView?.destroy();
     this.dragManager.destroy();
 
@@ -1095,6 +1098,94 @@ export class MpScheduler extends LitElement {
     this.liveAnnouncer.announce(this.msg('eventUpdated', { title: updated.title }));
   }
 
+  // ============================================
+  // Inline resource rename (R17 / D12.5c)
+  // ============================================
+
+  /** Mouse face of the rename: double-click the title span. */
+  private handleNativeDblClick(e: Event): void {
+    const target = (e.composedPath?.()[0] ?? e.target) as HTMLElement | null;
+    const title = target?.closest?.(
+      '.resource-title[data-resource-id]',
+    ) as HTMLElement | null;
+    if (!title) return;
+    const resourceId = title.dataset['resourceId'];
+    if (resourceId) this.beginResourceRename(resourceId);
+  }
+
+  /**
+   * Swap a resource/group title for an inline input — file-manager's proven
+   * idiom, keys included: Enter commits, Escape cancels, blur commits. The
+   * commit is a `resource-update` request carrying `{ title }`; the consumer
+   * applies it (the same contract as the colour swatch). No re-render happens
+   * while the input is open — nothing writes state until commit — so the input
+   * cannot be torn down mid-word.
+   */
+  private beginResourceRename(resourceId: string): void {
+    if (!this.can('updateResource')) return;
+    const resource = this.findResourceOrGroup(resourceId);
+    const title = this.shadowRoot?.querySelector<HTMLElement>(
+      `.resource-title[data-resource-id="${this.cssEscape(resourceId)}"]`,
+    );
+    if (!resource || !title || title.querySelector('input')) return;
+
+    const previous = resource.title;
+    const input = document.createElement('input');
+    input.type = 'text';
+    input.className = 'rename-input';
+    input.value = previous;
+    input.setAttribute(
+      'aria-label',
+      this.msg('renameResourceLabel', { title: previous }),
+    );
+
+    let finished = false;
+    const finish = (commit: boolean) => {
+      if (finished) return;
+      finished = true;
+      const next = input.value.trim();
+      // Restore the span FIRST — the emit may re-render synchronously.
+      // Optimistically show the committed name; the consumer's applied
+      // `resources` write is the authoritative rebuild.
+      title.textContent = commit && next ? next : previous;
+      if (commit && next && next !== previous) {
+        this.eventEmitter.emitResourceUpdate(resource, { title: next }, new CustomEvent('rename'));
+        this.liveAnnouncer.announce(
+          this.msg('resourceRenamed', { from: previous, to: next }),
+        );
+      }
+      // The rebuild replaced the row; land focus back on something of the same
+      // row rather than <body>.
+      requestAnimationFrame(() => {
+        const cell = this.shadowRoot?.querySelector<HTMLElement>(
+          `.scheduler-timeline-slot[data-resource-id="${this.cssEscape(resourceId)}"]`,
+        );
+        cell?.focus({ preventScroll: true });
+      });
+    };
+
+    input.addEventListener('keydown', (e) => {
+      // The host-level keydown listener must not see these: Escape would clear
+      // the selection and Enter would try to create an event.
+      e.stopPropagation();
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        finish(true);
+      } else if (e.key === 'Escape') {
+        e.preventDefault();
+        finish(false);
+      }
+    });
+    input.addEventListener('blur', () => finish(true));
+    // A click inside the input must not bubble into the grid's click handling.
+    input.addEventListener('pointerdown', (e) => e.stopPropagation());
+
+    title.textContent = '';
+    title.appendChild(input);
+    input.focus();
+    input.select();
+  }
+
   /** The in-grid pointer delete (D12.4b's revised home). */
   private deleteFromEditor(): void {
     const event = this.editorEventId ? this.getEventById(this.editorEventId) : null;
@@ -1169,6 +1260,8 @@ export class MpScheduler extends LitElement {
     // Right-click on an event opens the built-in editor (D12.8b). Delegated:
     // the views rebuild event nodes on every state change.
     this.shadowRoot!.addEventListener('contextmenu', this.boundHandleContextMenu);
+    // Double-click on a resource title begins the inline rename (R17).
+    this.shadowRoot!.addEventListener('dblclick', this.boundHandleDblClick);
 
     this.renderView();
   }
@@ -2151,6 +2244,19 @@ export class MpScheduler extends LitElement {
       return;
     }
     if (!state.focusedCell) this.initFocusedCellFromActive();
+    // F2 on a timeline cell renames its ROW — the keyboard face of
+    // double-clicking the title (R17). Rowheader cells are not focusable (the
+    // grid's focus unit is the slot), so the slot IS the addressable handle
+    // for its row. The bucket row (focusedResourceId null) is synthetic and
+    // has no name to change.
+    if (e.key === 'F2' && state.view === 'timeline') {
+      const rowId = this.stateManager.getState().focusedResourceId;
+      if (rowId) {
+        e.preventDefault();
+        this.beginResourceRename(rowId);
+      }
+      return;
+    }
     const shift = e.shiftKey;
     const ctrl = e.ctrlKey || e.metaKey;
     // Arrow mapping is physical-direction-aware:

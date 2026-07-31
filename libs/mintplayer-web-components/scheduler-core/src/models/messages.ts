@@ -43,6 +43,12 @@ export interface SchedulerMessages {
   removeResource: string;
   /** {title} */
   resourceColor: string;
+  /** Accessible name of the resource-column resize separator. */
+  resizeResourceColumn: string;
+  /** {title} — accessible name of the inline rename input. */
+  renameResourceLabel: string;
+  /** {from} {to} — announced after a rename commits. */
+  resourceRenamed: string;
 
   // Month chrome
   /** {count} — number of hidden events */
@@ -169,6 +175,9 @@ export const DEFAULT_MESSAGES: SchedulerMessages = {
   addGroupToGroup: 'Add subgroup to {title}',
   removeResource: 'Remove {title}',
   resourceColor: 'Colour for {title}',
+  resizeResourceColumn: 'Resize the resource column',
+  renameResourceLabel: 'New name for {title}',
+  resourceRenamed: '{from} renamed to {to}.',
 
   moreEvents: '+{count} more',
   dayPopoverLabel: 'Events on {date}',

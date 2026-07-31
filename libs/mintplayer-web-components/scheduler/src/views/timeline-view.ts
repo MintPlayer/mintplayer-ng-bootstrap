@@ -104,6 +104,7 @@ export class TimelineView extends BaseView {
     const resourceHeader = this.createElement('div', 'scheduler-resource-header');
     resourceHeader.setAttribute('role', 'columnheader');
     resourceHeader.textContent = resolveMessages(this.state.options.messages).resourcesHeader;
+    resourceHeader.appendChild(this.createColumnResizer());
     header.appendChild(resourceHeader);
 
     // Time slots header
@@ -327,6 +328,17 @@ export class TimelineView extends BaseView {
 
     const title = this.createElement('span', 'resource-title');
     title.textContent = flat.item.title;
+    // The full text, always (R16): the label is capped by ellipsis, and a
+    // tooltip matching a non-truncated label is harmless — measuring overflow
+    // per row per render would buy nothing. The accessible name already
+    // carries the full title; this is pointer-hover parity.
+    title.title = flat.item.title;
+    // Rename handle (R17): the scheduler-level dblclick/F2 delegation finds
+    // its row through this. Only stamped when renaming is permitted, so a
+    // denied capability leaves no affordance at all.
+    if (this.can('updateResource')) {
+      this.setData(title, { resourceId: flat.item.id });
+    }
     resourceCell.appendChild(title);
 
     this.appendResourceActions(resourceCell, flat.item);
@@ -384,6 +396,123 @@ export class TimelineView extends BaseView {
    */
   private hasUnassignedRow(state: SchedulerState): boolean {
     return (state.eventsByResource.get(null) ?? []).length > 0;
+  }
+
+  // --- Resource column resize (R15 / D12.5a) --------------------------------
+
+  /** Narrowest useful column; below this the titles are gone anyway. */
+  private static readonly MIN_COLUMN_PX = 80;
+  /** The AG-Grid guard: the frozen column may never leave less than this. */
+  private static readonly MIN_GRID_PX = 50;
+
+  private columnDrag: { startX: number; startWidth: number } | null = null;
+  private boundColumnDragMove = (e: PointerEvent) => this.onColumnDragMove(e);
+  private boundColumnDragEnd = () => this.onColumnDragEnd();
+
+  /**
+   * The WAI-ARIA window-splitter on the resource column's right edge — the
+   * same pattern as the repo's splitter. It writes
+   * `--scheduler-resource-column-width` on the scroll container, which is the
+   * exact channel the consumer configures, so their own value stays the
+   * initial and every rule reading the custom property follows for free. The
+   * inline style survives view rebuilds AND view switches (clearContainer
+   * strips classes and ARIA, not inline style), which is what makes the
+   * user's chosen width sticky.
+   *
+   * Lives inside the corner columnheader, OUTSIDE the `role="grid"` focus
+   * model (same reasoning as the add bar, §11.2): a separator is not a grid
+   * cell, and a Tab stop inside a roving-tabindex grid is a trap.
+   */
+  private createColumnResizer(): HTMLElement {
+    const messages = resolveMessages(this.state.options.messages);
+    const resizer = this.createElement('div', 'scheduler-column-resizer');
+    resizer.setAttribute('role', 'separator');
+    resizer.setAttribute('tabindex', '0');
+    resizer.setAttribute('aria-orientation', 'vertical');
+    resizer.setAttribute('aria-label', messages.resizeResourceColumn);
+    this.updateResizerValue(resizer);
+
+    resizer.addEventListener('pointerdown', (e) => {
+      // Ours alone: without this the input handler reads the press as a grid
+      // gesture, and the browser starts a text selection mid-drag.
+      e.preventDefault();
+      e.stopPropagation();
+      this.columnDrag = { startX: e.clientX, startWidth: this.currentColumnWidth() };
+      document.addEventListener('pointermove', this.boundColumnDragMove);
+      document.addEventListener('pointerup', this.boundColumnDragEnd);
+    });
+
+    resizer.addEventListener('keydown', (e) => {
+      const step = 16;
+      const width = this.currentColumnWidth();
+      switch (e.key) {
+        case 'ArrowLeft':
+          e.preventDefault();
+          this.applyColumnWidth(width - step);
+          break;
+        case 'ArrowRight':
+          e.preventDefault();
+          this.applyColumnWidth(width + step);
+          break;
+        case 'Home':
+          e.preventDefault();
+          this.applyColumnWidth(TimelineView.MIN_COLUMN_PX);
+          break;
+        case 'End':
+          e.preventDefault();
+          this.applyColumnWidth(Number.MAX_SAFE_INTEGER);
+          break;
+      }
+    });
+
+    return resizer;
+  }
+
+  private currentColumnWidth(): number {
+    const cell = this.container.querySelector<HTMLElement>('.scheduler-resource-header');
+    return cell?.getBoundingClientRect().width || 200;
+  }
+
+  private maxColumnWidth(): number {
+    return Math.max(
+      TimelineView.MIN_COLUMN_PX,
+      this.container.clientWidth - TimelineView.MIN_GRID_PX,
+    );
+  }
+
+  private applyColumnWidth(px: number): void {
+    const clamped = Math.round(
+      Math.min(Math.max(px, TimelineView.MIN_COLUMN_PX), this.maxColumnWidth()),
+    );
+    // Keep the declaration's own `calc(100% - 50px)` cap in the written value:
+    // the JS clamp above measured NOW, the CSS min() keeps holding when the
+    // component is resized later without another drag.
+    this.container.style.setProperty(
+      '--scheduler-resource-column-width',
+      `min(${clamped}px, calc(100% - ${TimelineView.MIN_GRID_PX}px))`,
+    );
+    const resizer = this.container.querySelector<HTMLElement>('.scheduler-column-resizer');
+    if (resizer) this.updateResizerValue(resizer, clamped);
+  }
+
+  /** aria-valuenow as a percentage of the scroller, per the splitter pattern. */
+  private updateResizerValue(resizer: HTMLElement, widthPx?: number): void {
+    const total = this.container.clientWidth || 1;
+    const width = widthPx ?? this.currentColumnWidth();
+    resizer.setAttribute('aria-valuemin', '0');
+    resizer.setAttribute('aria-valuemax', '100');
+    resizer.setAttribute('aria-valuenow', String(Math.round((width / total) * 100)));
+  }
+
+  private onColumnDragMove(e: PointerEvent): void {
+    if (!this.columnDrag) return;
+    this.applyColumnWidth(this.columnDrag.startWidth + (e.clientX - this.columnDrag.startX));
+  }
+
+  private onColumnDragEnd(): void {
+    this.columnDrag = null;
+    document.removeEventListener('pointermove', this.boundColumnDragMove);
+    document.removeEventListener('pointerup', this.boundColumnDragEnd);
   }
 
   /** True when the capability is granted for the whole scheduler. */
@@ -555,8 +684,10 @@ export class TimelineView extends BaseView {
     const resourceCell = this.createElement('div', 'scheduler-resource-cell');
     resourceCell.setAttribute('role', 'rowheader');
     resourceCell.style.paddingLeft = '8px';
-    const title = this.createElement('span');
+    const title = this.createElement('span', 'resource-title');
     title.textContent = resolveMessages(options.messages).unassignedResource;
+    title.title = title.textContent;
+    // No data-resource-id: the bucket is synthetic and cannot be renamed.
     resourceCell.appendChild(title);
     row.appendChild(resourceCell);
 
@@ -947,6 +1078,7 @@ export class TimelineView extends BaseView {
   }
 
   destroy(): void {
+    this.onColumnDragEnd();
     this.rowElements.clear();
     this.clearContainer();
   }

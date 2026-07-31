@@ -2210,3 +2210,114 @@ describe('mp-scheduler — built-in event editor (M23)', () => {
     expect(editor()).toBeNull();
   });
 });
+
+/**
+ * M24 (R15–R17) — the resource column: resize separator, full-text tooltips,
+ * inline rename. Real geometry belongs to the browser tests; these pin the
+ * structure, gating and the request contract.
+ */
+describe('mp-scheduler — resource column resize + rename (M24)', () => {
+  let el: MpScheduler;
+  afterEach(() => el?.remove());
+
+  const settle = async () => {
+    await (el as unknown as { updateComplete: Promise<void> }).updateComplete;
+    await nextRaf();
+  };
+
+  const mountTimeline = async (props: Record<string, unknown> = {}) => {
+    el = document.createElement('mp-scheduler') as MpScheduler;
+    document.body.appendChild(el);
+    (el as unknown as { date: Date }).date = new Date(2026, 4, 12);
+    (el as unknown as { resources: unknown[] }).resources = [
+      { id: 'team', title: 'A very long team name that ellipsises', children: [
+        { id: 'alice', title: 'Alice' },
+      ] },
+    ];
+    for (const [key, value] of Object.entries(props)) {
+      (el as unknown as Record<string, unknown>)[key] = value;
+    }
+    el.setAttribute('view', 'timeline');
+    await settle();
+    return el;
+  };
+
+  it('renders a window-splitter separator that writes the column width variable', async () => {
+    await mountTimeline();
+    const resizer = el.shadowRoot!.querySelector<HTMLElement>('.scheduler-column-resizer')!;
+    expect(resizer).not.toBeNull();
+    expect(resizer.getAttribute('role')).toBe('separator');
+    expect(resizer.getAttribute('aria-orientation')).toBe('vertical');
+    expect(resizer.getAttribute('aria-label')).toBe('Resize the resource column');
+    expect(resizer.getAttribute('aria-valuenow')).not.toBeNull();
+
+    resizer.focus();
+    resizer.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowRight', bubbles: true }));
+    await settle();
+    const container = el.shadowRoot!.querySelector<HTMLElement>('.scheduler-content')!;
+    const written = container.style.getPropertyValue('--scheduler-resource-column-width');
+    // Clamped and guarded: a px value wrapped in the calc(100% - 50px) cap.
+    expect(written).toContain('px');
+    expect(written).toContain('calc(100% - 50px)');
+  });
+
+  it('every resource/group title carries its full text as a tooltip (R16)', async () => {
+    await mountTimeline();
+    const titles = [...el.shadowRoot!.querySelectorAll<HTMLElement>('.resource-title')];
+    expect(titles.length).toBeGreaterThanOrEqual(2);
+    expect(titles.every((t) => t.title === t.textContent)).toBe(true);
+  });
+
+  it('double-click renames via a resource-update request; Escape cancels (R17)', async () => {
+    await mountTimeline({ options: { permissions: { updateResource: true } } });
+    const title = el.shadowRoot!.querySelector<HTMLElement>(
+      '.resource-title[data-resource-id="alice"]',
+    )!;
+    expect(title).not.toBeNull();
+
+    // Escape path first: no emit, original text restored.
+    title.dispatchEvent(new MouseEvent('dblclick', { bubbles: true, composed: true }));
+    let input = title.querySelector('input')!;
+    expect(input).not.toBeNull();
+    input.value = 'Bob';
+    input.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
+    expect(title.textContent).toBe('Alice');
+
+    // Enter path: the request carries only the changed field.
+    let detail: { resource: { id: string }; changes: { title?: string } } | null = null;
+    el.addEventListener('resource-update', (e) => {
+      detail = (e as CustomEvent).detail;
+    });
+    title.dispatchEvent(new MouseEvent('dblclick', { bubbles: true, composed: true }));
+    input = title.querySelector('input')!;
+    input.value = 'Alicia';
+    input.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true }));
+    expect(detail).not.toBeNull();
+    expect(detail!.resource.id).toBe('alice');
+    expect(detail!.changes).toEqual({ title: 'Alicia' });
+    expect(title.textContent).toBe('Alicia');
+  });
+
+  it('rename is absent without updateResource, and F2 on a timeline cell starts it with', async () => {
+    await mountTimeline();
+    // Default permissions: no data-resource-id handle at all.
+    expect(
+      el.shadowRoot!.querySelector('.resource-title[data-resource-id]'),
+    ).toBeNull();
+    el.remove();
+
+    await mountTimeline({ options: { permissions: { updateResource: true } } });
+    const slot = el.shadowRoot!.querySelector<HTMLElement>(
+      '.scheduler-timeline-slot[data-resource-id="alice"]',
+    )!;
+    slot.focus();
+    await nextRaf();
+    dispatchKey(el, 'F2');
+    await settle();
+    const title = el.shadowRoot!.querySelector<HTMLElement>(
+      '.resource-title[data-resource-id="alice"]',
+    )!;
+    expect(title.querySelector('input')).not.toBeNull();
+    expect(el.shadowRoot!.activeElement?.classList.contains('rename-input')).toBe(true);
+  });
+});
