@@ -282,6 +282,16 @@ export abstract class BaseView {
    */
   protected clearContainer(): void {
     this.container.innerHTML = '';
+    // Each view's render() adds its own `scheduler-<view>-view` class here. Without
+    // removing the previous one they accumulate forever, so the classes are NOT
+    // mutually exclusive and can't be used to scope CSS. Drop them all.
+    this.container.classList.remove(
+      'scheduler-week-view',
+      'scheduler-day-view',
+      'scheduler-month-view',
+      'scheduler-year-view',
+      'scheduler-timeline-view',
+    );
   }
 
   /**

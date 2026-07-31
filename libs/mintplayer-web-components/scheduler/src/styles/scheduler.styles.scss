@@ -8,6 +8,8 @@
    SCSS vars (not custom properties) on purpose — these compile away, so the
    ladder stays internal instead of becoming consumer-overridable API. */
 $z-slot-focus: 6;        // focus ring must stay visible over everything below
+$z-sticky-column: 7;     // pinned resource column: above a focused slot's outline
+                         // (which passes under it) but below the sticky header
 $z-sticky-header: 10;    // clips scrolled content
 $z-now-indicator: 5;     // decorative 2px line, pointer-events: none
 $z-preview: 4;           // drag ghost — above the source event in every state
@@ -31,6 +33,12 @@ $z-event-selected: 2;    // selected event: its straddling handles must win
   --scheduler-greyed-slot-bg: rgba(0, 0, 0, 0.1);
   --scheduler-column-min-width: 120px;
   --scheduler-touch-hold-duration: 500ms;
+  /* Timeline slot width. Was hard-coded at 50px in TS, which made a default week
+     16,800px wide; consumers can now shorten it. */
+  --scheduler-slot-width: 50px;
+  /* Pinned resource column. Capped so it can never swallow the grid on a narrow
+     viewport (AG Grid applies the same guard by auto-unpinning). */
+  --scheduler-resource-column-width: min(200px, calc(100% - 50px));
   --scheduler-resize-glyph-size: 14px;
   --scheduler-resize-glyph-color: var(--bs-body-color, #212529);
   --scheduler-resize-glyph-bg: var(--bs-body-bg, #fff);
@@ -153,20 +161,9 @@ $z-event-selected: 2;    // selected event: its straddling handles must win
   border-color: var(--bs-primary);
 }
 
-/* Main content area */
-.scheduler-body {
-  display: flex;
-  flex: 1;
-  overflow: hidden;
-}
-
-.scheduler-sidebar {
-  width: var(--scheduler-time-gutter-width);
-  flex-shrink: 0;
-  border-right: 1px solid var(--scheduler-border-color);
-  background: var(--scheduler-header-bg);
-}
-
+/* Main content area — the single scroller for every view.
+   (`.scheduler-body` / `.scheduler-sidebar` / `.scheduler-grid` rules lived here
+   with no producer in any view; removed rather than left to mislead.) */
 .scheduler-content {
   flex: 1;
   overflow: auto;
@@ -174,11 +171,6 @@ $z-event-selected: 2;    // selected event: its straddling handles must win
 }
 
 /* Week/Day View Grid */
-.scheduler-grid {
-  display: grid;
-  min-width: 100%;
-}
-
 .scheduler-day-headers {
   display: flex;
   border-bottom: 1px solid var(--scheduler-border-color);
@@ -229,6 +221,11 @@ $z-event-selected: 2;    // selected event: its straddling handles must win
   flex-shrink: 0;
   border-right: 1px solid var(--scheduler-border-color);
   background: var(--scheduler-header-bg);
+  /* Pin the time labels while the week scrolls horizontally — same defect the
+     timeline's resource column had. Background is already opaque. */
+  position: sticky;
+  left: 0;
+  z-index: $z-sticky-column;
 }
 
 .scheduler-time-slot-label {
@@ -613,34 +610,57 @@ $z-event-selected: 2;    // selected event: its straddling handles must win
   color: var(--bs-secondary-color);
 }
 
-/* Timeline View */
+/* Timeline View
+   ONE scroller: `.scheduler-content` (same as week view). The timeline grows to
+   its content width via `min-width: fit-content` and the header/column pin with
+   `position: sticky`, so horizontal and vertical scrolling both happen on the
+   element the component already treats as its scroller — which is what makes
+   touch-pan, `.scroll-blocked` and the styled scrollbars work here at all.
+   Previously `.scheduler-timeline-body` had its own `overflow: auto`, trapping
+   the overflow in a nested scroller nothing knew about, while the header strip
+   clipped ~16,800px of labels with no scroll sync. */
 .scheduler-timeline {
   display: flex;
   flex-direction: column;
-  height: 100%;
+  min-height: 100%;
+  min-width: fit-content;
+}
+
+.scheduler-timeline-head {
+  position: sticky;
+  top: 0;
+  z-index: $z-sticky-header;
+  min-width: fit-content;
+  background: var(--scheduler-header-bg);
 }
 
 .scheduler-timeline-header {
   display: flex;
   border-bottom: 1px solid var(--scheduler-border-color);
   background: var(--scheduler-header-bg);
-  position: sticky;
-  top: 0;
-  z-index: $z-sticky-header;
+  min-width: fit-content;
 }
 
 .scheduler-resource-header {
-  width: 200px;
+  width: var(--scheduler-resource-column-width);
+  max-width: var(--scheduler-resource-column-width);
   flex-shrink: 0;
   padding: 8px;
   border-right: 1px solid var(--scheduler-border-color);
   font-weight: 600;
+  /* Pinned on BOTH axes: inside the sticky header block, so it stays put
+     horizontally as the grid scrolls and vertically with the header. */
+  position: sticky;
+  left: 0;
+  z-index: $z-sticky-column;
+  background: var(--scheduler-header-bg);
 }
 
 .scheduler-timeline-slots-header {
   display: flex;
-  flex: 1;
-  overflow: hidden;
+  /* NOT flex: 1 — it must size to its content so the header travels with the
+     grid instead of shrinking and clipping it. */
+  flex: 0 0 auto;
 }
 
 .scheduler-timeline-slot-header {
@@ -654,14 +674,20 @@ $z-event-selected: 2;    // selected event: its straddling handles must win
 .scheduler-timeline-body {
   display: flex;
   flex-direction: column;
-  flex: 1;
-  overflow: auto;
+  /* No `overflow: auto` and no `flex: 1`: this must NOT be a scroller, or the
+     horizontal overflow is trapped here instead of reaching .scheduler-content. */
+  flex: 0 0 auto;
+  min-width: fit-content;
 }
 
 .scheduler-timeline-row {
   display: flex;
   border-bottom: 1px solid var(--scheduler-border-color);
   min-height: 40px;
+  /* Required: this is the sticky resource cell's containing block, so without it
+     the pinned column only travels one viewport-width. Also stops row borders,
+     .group backgrounds and .selected highlights ending at the viewport edge. */
+  min-width: fit-content;
 }
 
 .scheduler-timeline-row.group {
@@ -669,14 +695,27 @@ $z-event-selected: 2;    // selected event: its straddling handles must win
   font-weight: 600;
 }
 
+.scheduler-timeline-row.group .scheduler-resource-cell {
+  /* Sticky cells are transparent by default — a group row must keep its own
+     tint or slots slide visibly underneath the pinned column. */
+  background: var(--scheduler-header-bg);
+}
+
 .scheduler-resource-cell {
-  width: 200px;
+  width: var(--scheduler-resource-column-width);
+  max-width: var(--scheduler-resource-column-width);
   flex-shrink: 0;
   padding: 8px;
   border-right: 1px solid var(--scheduler-border-color);
   display: flex;
   align-items: center;
   gap: 8px;
+  /* Pinned left while the grid scrolls horizontally. Needs an opaque background
+     for the same reason as above. */
+  position: sticky;
+  left: 0;
+  z-index: $z-sticky-column;
+  background: var(--bs-body-bg);
 }
 
 .scheduler-resource-cell .expand-toggle {
@@ -690,7 +729,8 @@ $z-event-selected: 2;    // selected event: its straddling handles must win
 
 .scheduler-timeline-slots {
   display: flex;
-  flex: 1;
+  /* Explicit rather than relying on `min-width: auto` to push past the row box. */
+  flex: 0 0 auto;
   position: relative;
 }
 

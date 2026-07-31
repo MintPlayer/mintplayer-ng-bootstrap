@@ -28,7 +28,17 @@ const UNASSIGNED_ROW_ID = '__mp-unassigned__';
  */
 export class TimelineView extends BaseView {
   private rowElements: Map<string, HTMLElement> = new Map();
-  private slotWidth: number = 50;
+  /**
+   * Slot width in px. Read from `--scheduler-slot-width` so consumers can shorten
+   * a default week (48 slots x 7 days x 50px = 16,800px); falls back to 50.
+   */
+  private get slotWidth(): number {
+    const raw = getComputedStyle(this.container)
+      .getPropertyValue('--scheduler-slot-width')
+      .trim();
+    const parsed = Number.parseFloat(raw);
+    return Number.isFinite(parsed) && parsed > 0 ? parsed : 50;
+  }
 
   render(): void {
     this.clearContainer();
@@ -37,7 +47,11 @@ export class TimelineView extends BaseView {
     const { date, options, resources, collapsedGroups } = this.state;
     const days = dateService.getWeekDays(date, options.firstDayOfWeek);
     const flattenedPreview = resourceService.flatten(resources, collapsedGroups);
-    const visibleRowCount = flattenedPreview.filter((f) => f.visible).length + 1; // +1 for the day-header row
+    // +2 header rows (day labels and time labels), +1 if the unassigned bucket
+    // row will render. Was +1, which under-counted by one and omitted the bucket.
+    const hasUnassigned = (this.state.eventsByResource.get(null) ?? []).length > 0;
+    const visibleRowCount =
+      flattenedPreview.filter((f) => f.visible).length + 2 + (hasUnassigned ? 1 : 0);
 
     // Create timeline structure with role=grid (APG Grid pattern, PRD §10 Q5)
     const timeline = this.createElement('div', 'scheduler-timeline');
@@ -86,15 +100,27 @@ export class TimelineView extends BaseView {
     }
 
     header.appendChild(slotsHeader);
-    timeline.appendChild(header);
+
+    // ONE sticky block wrapping both header rows. Previously each row carried
+    // `position: sticky; top: 0` itself, so once vertical scrolling worked they
+    // would stack on top of each other.
+    const head = this.createElement('div', 'scheduler-timeline-head');
+    head.appendChild(header);
+    timeline.appendChild(head);
 
     // Time labels row
     const timeLabelRow = this.createElement('div', 'scheduler-timeline-header');
+    // A row of columnheaders needs an owning row, or the grid's owned-children
+    // walk breaks (axe aria-required-children).
+    timeLabelRow.setAttribute('role', 'row');
     const emptyCell = this.createElement('div', 'scheduler-resource-header');
     emptyCell.style.borderBottom = '1px solid var(--scheduler-border-color)';
     timeLabelRow.appendChild(emptyCell);
 
     const timeLabelsContainer = this.createElement('div', 'scheduler-timeline-slots-header');
+    // Presentational wrapper between row and columnheaders (same reason as the
+    // body's slots container).
+    timeLabelsContainer.setAttribute('role', 'presentation');
 
     for (const day of days) {
       const slots = dateService.getTimeSlots(
@@ -115,7 +141,7 @@ export class TimelineView extends BaseView {
     }
 
     timeLabelRow.appendChild(timeLabelsContainer);
-    timeline.appendChild(timeLabelRow);
+    head.appendChild(timeLabelRow);
 
     // Body
     const body = this.createElement('div', 'scheduler-timeline-body');
