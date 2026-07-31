@@ -7,6 +7,9 @@ import {
   ResourceGroup,
   SchedulerOptions,
   SchedulerMessages,
+  SchedulerCapability,
+  SchedulerPermissions,
+  resolveCapability,
   TimeSlot,
   dateService,
   formatMessage,
@@ -56,6 +59,7 @@ export class MpScheduler extends LitElement {
       'time-format',
       'editable',
       'selectable',
+      'readonly',
     ];
   }
 
@@ -115,6 +119,9 @@ export class MpScheduler extends LitElement {
     super.connectedCallback();
     if (this.inputHandler) {
       this.inputHandler.attach();
+    // Seed the resolved permission table before the first render so affordances
+    // are gated on the very first paint, not one update later.
+    this.syncPermissions();
     }
     this.addEventListener('keydown', this.boundHandleKeyDown);
     // focusin listener is registered in firstUpdated() once the shadowRoot exists.
@@ -192,9 +199,16 @@ export class MpScheduler extends LitElement {
         break;
       case 'editable':
         this.stateManager.setOptions({ editable: newValue !== 'false' });
+        this.syncPermissions();
+        break;
+      case 'readonly':
+        // Coarse read-only switch, reachable from plain HTML/SSR where an options
+        // object isn't. Presence = read-only, `readonly="false"` opts out.
+        this.syncPermissions();
         break;
       case 'selectable':
         this.stateManager.setOptions({ selectable: newValue !== 'false' });
+        this.syncPermissions();
         break;
     }
   }
@@ -241,6 +255,8 @@ export class MpScheduler extends LitElement {
 
   set options(value: Partial<SchedulerOptions>) {
     this.stateManager.setOptions(value);
+    // Keep the resolved permission table in step with the options that feed it.
+    this.syncPermissions();
   }
 
   get selectedEvent(): SchedulerEvent | null {
@@ -364,8 +380,18 @@ export class MpScheduler extends LitElement {
         <header class="scheduler-header"></header>
         <div class="scheduler-content"></div>
       </div>
-      <div id="scheduler-kbd-grid" class="visually-hidden">${this.msg('gridInstructions')}</div>
-      <div id="scheduler-kbd-event" class="visually-hidden">${this.msg('eventInstructions')}</div>
+      <div id="scheduler-kbd-grid" class="visually-hidden">
+        ${this.msg(this.can('createEvent') || this.can('selectRange')
+          ? 'gridInstructions'
+          : 'gridInstructionsReadOnly')}
+      </div>
+      <div id="scheduler-kbd-event" class="visually-hidden">
+        ${this.msg(
+          this.can('moveEvent') || this.can('resizeEventStart') ||
+          this.can('resizeEventEnd') || this.can('deleteEvent')
+            ? 'eventInstructions'
+            : 'eventInstructionsReadOnly')}
+      </div>
       ${this.liveAnnouncer.template()}
     `;
   }
@@ -382,8 +408,12 @@ export class MpScheduler extends LitElement {
       {
         shadowRoot: this.shadowRoot!,
         getEventById: (id) => this.getEventById(id),
-        isEditable: () => this.stateManager.getState().options.editable ?? true,
-        isSelectable: () => this.stateManager.getState().options.selectable ?? true,
+        // Pointer gestures ask the same resolver the keyboard paths and the
+        // affordance rendering use, so all three can never disagree.
+        isEditable: () =>
+          this.can('createEvent') || this.can('moveEvent') ||
+          this.can('resizeEventStart') || this.can('resizeEventEnd'),
+        isSelectable: () => this.can('selectRange') || this.can('createEvent'),
         isEventSelected: (eventId) => this.stateManager.getState().selectedEvent?.id === eventId,
       },
       {
@@ -971,6 +1001,96 @@ export class MpScheduler extends LitElement {
     return false;
   }
 
+  /**
+   * Resolve a capability against `readonly`, `options.permissions`, the
+   * deprecated `editable`/`selectable` aliases, and any per-event override.
+   *
+   * A boolean lookup, deliberately: it runs on every pointer-down and on every
+   * render that decides whether to draw an affordance.
+   */
+  private can(capability: SchedulerCapability, event?: SchedulerEvent | null): boolean {
+    const { options } = this.stateManager.getState();
+    return resolveCapability(capability, {
+      permissions: this.effectivePermissions(options),
+      event: event ?? null,
+    });
+  }
+
+  /**
+   * Fold the legacy `editable`/`selectable` flags into a permissions table.
+   * They were the only enforced flags and the demos use them, so they stay as
+   * documented aliases rather than a breaking rename.
+   */
+  /** Recompute the resolved table onto state so views can gate affordances. */
+  private syncPermissions(): void {
+    const { options } = this.stateManager.getState();
+    this.stateManager.setState({
+      resolvedPermissions: this.effectivePermissions(options),
+    });
+  }
+
+  private effectivePermissions(
+    options: SchedulerOptions,
+  ): boolean | Partial<SchedulerPermissions> {
+    // `readonly` on the host outranks everything.
+    if (this.hasAttribute('readonly') && this.getAttribute('readonly') !== 'false') {
+      return false;
+    }
+    const explicit = options.permissions;
+    if (explicit === false) return false;
+
+    const legacy: Partial<SchedulerPermissions> = {};
+    if (options.editable === false) {
+      legacy.createEvent = false;
+      legacy.moveEvent = false;
+      legacy.resizeEventStart = false;
+      legacy.resizeEventEnd = false;
+      legacy.deleteEvent = false;
+    }
+    if (options.selectable === false) legacy.selectRange = false;
+
+    // Aliases first, explicit table second, so an explicit setting wins ONLY for
+    // the capabilities it actually names. (An empty table names none.)
+    if (explicit === true || explicit === undefined) return legacy;
+    return { ...legacy, ...explicit };
+  }
+
+  /**
+   * The one optional consumer predicate, for data-dependent create rules.
+   *
+   * Evaluated ONLY at commit points (this call site, drag completion, Enter) —
+   * never per cell and never per pointer-move, so a consumer callback can't land
+   * on the render path. Slot greying is deliberately not driven by it.
+   */
+  private allowsCreateAt(
+    range: { start: Date; end: Date },
+    resourceId?: string,
+  ): boolean {
+    const { permissions } = this.stateManager.getState().options;
+    if (typeof permissions !== 'object' || permissions === null) return true;
+    return permissions.canCreateAt?.(range, resourceId) ?? true;
+  }
+
+  /** Enter move mode only if the event may actually be moved or resized. */
+  private tryEnterEventMoveMode(ev: SchedulerEvent): void {
+    const canMove = this.can('moveEvent', ev);
+    const canResize =
+      this.can('resizeEventStart', ev) || this.can('resizeEventEnd', ev);
+    if (!canMove && !canResize) {
+      this.announceDenied();
+      return;
+    }
+    this.enterEventMoveMode(ev);
+  }
+
+  /**
+   * Announce a refused command. Silence on a keypress reads as a broken widget,
+   * so denial gets its own polite message rather than nothing.
+   */
+  private announceDenied(): void {
+    this.liveAnnouncer.announce(this.msg('actionNotAllowed'));
+  }
+
   private handleEventKeyDown(e: KeyboardEvent): void {
     const state = this.stateManager.getState();
     const ev = state.selectedEvent;
@@ -979,18 +1099,25 @@ export class MpScheduler extends LitElement {
       // M is the canonical move-mode key across the workspace (tile-manager,
       // dock); Enter is kept for back-compat (screen-reader programme D4).
       case 'm':
-      case 'M':
+      case 'M': {
         if (e.altKey || e.ctrlKey || e.metaKey) break;
         e.preventDefault();
-        this.enterEventMoveMode(ev);
+        this.tryEnterEventMoveMode(ev);
         return;
+      }
       case 'Enter':
         e.preventDefault();
-        this.enterEventMoveMode(ev);
+        this.tryEnterEventMoveMode(ev);
         return;
       case 'Delete':
       case 'Backspace':
         e.preventDefault();
+        // Gated: `editable: false` used to block only POINTER gestures, so a
+        // read-only scheduler still deleted on a keypress.
+        if (!this.can('deleteEvent', ev)) {
+          this.announceDenied();
+          return;
+        }
         this.eventEmitter.emitEventDelete(ev);
         return;
       case 'Escape':
@@ -1244,6 +1371,10 @@ export class MpScheduler extends LitElement {
     } else {
       end.setMonth(end.getMonth() + 1);
     }
+    if (!this.can('createEvent') || !this.allowsCreateAt({ start, end })) {
+      this.announceDenied();
+      return;
+    }
     this.eventEmitter.emitEventCreate(
       { start, end },
       state.view,
@@ -1495,6 +1626,12 @@ export class MpScheduler extends LitElement {
     } else {
       return;
     }
+    // Check BEFORE emitting and before announcing: the announcement used to
+    // confirm a commit that permissions may refuse.
+    if (!this.can('createEvent') || !this.allowsCreateAt({ start, end }, resourceId)) {
+      this.announceDenied();
+      return;
+    }
     this.eventEmitter.emitEventCreate(
       { start, end },
       state.view,
@@ -1669,6 +1806,13 @@ export class MpScheduler extends LitElement {
    */
   private resizeKeyboardMoveEdge(edge: 'start' | 'end', deltaMs: number): void {
     if (!this.keyboardMove) return;
+    // Move mode ignored event.draggable/resizable and the global flags entirely,
+    // so a resizable:false event was freely keyboard-resizable.
+    const source = this.getEventById(this.keyboardMove.eventId);
+    if (!this.can(edge === 'start' ? 'resizeEventStart' : 'resizeEventEnd', source)) {
+      this.announceDenied();
+      return;
+    }
     const minDurationMs = this.minutesPerSlot() * 60 * 1000;
     let newStart = this.keyboardMove.workingStart;
     let newEnd = this.keyboardMove.workingEnd;

@@ -962,3 +962,135 @@ describe('mp-scheduler — resource colour across views', () => {
     expect(box.style.backgroundColor).toBe('rgb(0, 255, 0)');
   });
 });
+
+/**
+ * Read-only / permissions. `editable: false` used to gate POINTER gestures only,
+ * so every keyboard path (Enter=create, Delete=delete, M=move-mode with
+ * Shift+Arrow resize) walked straight past it — the scheduler could not be made
+ * read-only at all.
+ */
+describe('mp-scheduler — permissions', () => {
+  let el: MpScheduler;
+  afterEach(() => el?.remove());
+
+  const EVENT = {
+    id: 'ev',
+    title: 'Event',
+    start: new Date(2026, 4, 12, 9, 0),
+    end: new Date(2026, 4, 12, 10, 0),
+  };
+
+  const mountWithPerms = async (perms: unknown, attrs: Record<string, string> = {}) => {
+    el = document.createElement('mp-scheduler') as MpScheduler;
+    document.body.appendChild(el);
+    (el as unknown as { date: Date }).date = new Date(2026, 4, 12);
+    if (perms !== undefined) {
+      (el as unknown as { options: unknown }).options = { permissions: perms };
+    }
+    (el as unknown as { events: unknown[] }).events = [EVENT];
+    for (const [k, v] of Object.entries(attrs)) el.setAttribute(k, v);
+    el.setAttribute('view', 'week');
+    await (el as unknown as { updateComplete: Promise<void> }).updateComplete;
+    await nextRaf();
+    return el;
+  };
+
+  const focusEvent = async () => {
+    el.shadowRoot!.querySelector<HTMLElement>('.scheduler-event:not(.preview)')!.focus();
+    await nextRaf();
+  };
+
+  it('permissions:false blocks Delete', async () => {
+    await mountWithPerms(false);
+    const deletions: unknown[] = [];
+    el.addEventListener('event-delete', (e) => deletions.push(e));
+    await focusEvent();
+    dispatchKey(el, 'Delete');
+    await (el as unknown as { updateComplete: Promise<void> }).updateComplete;
+    expect(deletions.length).toBe(0);
+  });
+
+  it('permissions:false blocks entering move mode', async () => {
+    await mountWithPerms(false);
+    await focusEvent();
+    dispatchKey(el, 'M');
+    await (el as unknown as { updateComplete: Promise<void> }).updateComplete;
+    expect(getState(el).keyboardMoveEventId).toBeNull();
+  });
+
+  it('readonly attribute blocks Delete too (reachable from plain HTML)', async () => {
+    await mountWithPerms(undefined, { readonly: '' });
+    const deletions: unknown[] = [];
+    el.addEventListener('event-delete', (e) => deletions.push(e));
+    await focusEvent();
+    dispatchKey(el, 'Delete');
+    await (el as unknown as { updateComplete: Promise<void> }).updateComplete;
+    expect(deletions.length).toBe(0);
+  });
+
+  it('read-only still allows grid NAVIGATION — commands are gated, not movement', async () => {
+    await mountWithPerms(false);
+    // Exactly one tab stop, and arrows still move the focused cell: reading a
+    // schedule by keyboard is a legitimate task.
+    const tabbable = el.shadowRoot!.querySelectorAll('.scheduler-time-slot[tabindex="0"]');
+    expect(tabbable.length).toBe(1);
+    (tabbable[0] as HTMLElement).focus();
+    await nextRaf();
+    const before = getState(el).focusedCell?.start.getTime();
+    dispatchKey(el, 'ArrowDown');
+    await (el as unknown as { updateComplete: Promise<void> }).updateComplete;
+    expect(getState(el).focusedCell?.start.getTime()).not.toBe(before);
+  });
+
+  it('read-only shortens the keymap description instead of promising blocked gestures', async () => {
+    await mountWithPerms(false);
+    const eventDesc = el.shadowRoot!.getElementById('scheduler-kbd-event')!.textContent ?? '';
+    expect(eventDesc).not.toContain('Delete removes');
+    expect(eventDesc).toContain('move between events');
+    const gridDesc = el.shadowRoot!.getElementById('scheduler-kbd-grid')!.textContent ?? '';
+    expect(gridDesc).not.toContain('new event');
+  });
+
+  it('read-only renders no resize handles', async () => {
+    await mountWithPerms(false);
+    expect(el.shadowRoot!.querySelectorAll('.resize-handle').length).toBe(0);
+  });
+
+  it('granular: moveEvent false still permits resize handles', async () => {
+    await mountWithPerms({ moveEvent: false });
+    expect(el.shadowRoot!.querySelectorAll('.resize-handle').length).toBeGreaterThan(0);
+  });
+
+  it('honours event.resizable per-edge object form', async () => {
+    el = document.createElement('mp-scheduler') as MpScheduler;
+    document.body.appendChild(el);
+    (el as unknown as { date: Date }).date = new Date(2026, 4, 12);
+    (el as unknown as { events: unknown[] }).events = [
+      { ...EVENT, resizable: { start: false, end: true } },
+    ];
+    el.setAttribute('view', 'week');
+    await (el as unknown as { updateComplete: Promise<void> }).updateComplete;
+    await nextRaf();
+    // Previously only the `=== false` boolean branch was checked, so per-edge
+    // locking silently did nothing.
+    expect(el.shadowRoot!.querySelectorAll('.resize-handle.top').length).toBe(0);
+    expect(el.shadowRoot!.querySelectorAll('.resize-handle.bottom').length).toBe(1);
+  });
+
+  it('legacy editable:false still works as an alias', async () => {
+    el = document.createElement('mp-scheduler') as MpScheduler;
+    document.body.appendChild(el);
+    (el as unknown as { date: Date }).date = new Date(2026, 4, 12);
+    (el as unknown as { options: unknown }).options = { editable: false };
+    (el as unknown as { events: unknown[] }).events = [EVENT];
+    el.setAttribute('view', 'week');
+    await (el as unknown as { updateComplete: Promise<void> }).updateComplete;
+    await nextRaf();
+    const deletions: unknown[] = [];
+    el.addEventListener('event-delete', (e) => deletions.push(e));
+    await focusEvent();
+    dispatchKey(el, 'Delete');
+    await (el as unknown as { updateComplete: Promise<void> }).updateComplete;
+    expect(deletions.length).toBe(0);
+  });
+});

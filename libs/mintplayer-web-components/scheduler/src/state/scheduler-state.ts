@@ -9,6 +9,7 @@ import {
   DragState,
   TimeSlot,
   isResourceGroup,
+  type SchedulerPermissions,
 } from '@mintplayer/web-components/scheduler-core';
 
 /**
@@ -152,6 +153,12 @@ export interface SchedulerState {
   resources: (Resource | ResourceGroup)[];
   /** Configuration options */
   options: SchedulerOptions;
+  /**
+   * Permission table with `readonly` and the deprecated `editable`/`selectable`
+   * aliases already folded in, so views can gate affordances without re-deriving
+   * the precedence. `false` means fully read-only.
+   */
+  resolvedPermissions: boolean | Partial<SchedulerPermissions>;
   /** Currently selected event */
   selectedEvent: SchedulerEvent | null;
   /** Currently hovered event */
@@ -208,6 +215,7 @@ export function createInitialState(
     events: [],
     eventsByResource: new Map(),
     resourceById: new Map(),
+    resolvedPermissions: {},
     resources: [],
     options: mergedOptions,
     selectedEvent: null,

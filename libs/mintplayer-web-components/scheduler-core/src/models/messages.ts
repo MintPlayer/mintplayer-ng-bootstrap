@@ -67,6 +67,11 @@ export interface SchedulerMessages {
   // aria-describedby keymap instructions
   gridInstructions: string;
   eventInstructions: string;
+  /** Read-only variants: no create/move/resize/delete promises. */
+  gridInstructionsReadOnly: string;
+  eventInstructionsReadOnly: string;
+  /** Announced when a command is refused by permissions. */
+  actionNotAllowed: string;
 
   // Event accessible-name suffix: "{title}, {start}–{end}, {day}, on {resource}"
   /** {resource} */
@@ -114,6 +119,11 @@ export const DEFAULT_MESSAGES: SchedulerMessages = {
   slotPlural: 'slots',
   selectionCommitted: 'Selection committed: {start}–{end}.',
 
+  gridInstructionsReadOnly:
+    'Use the arrow keys to move between cells. Page Up and Page Down change the period. Alt with T, Y, M, W or D switches to today, year, month, week or day view.',
+  eventInstructionsReadOnly:
+    'Left and Right arrows move between events.',
+  actionNotAllowed: 'That action is not allowed here.',
   gridInstructions:
     'Use the arrow keys to move between cells. Hold Shift with the arrow keys to extend the selection, and press Enter to request a new event for the selection. Page Up and Page Down change the period. Alt with T, Y, M, W or D switches to today, year, month, week or day view.',
   eventInstructions:

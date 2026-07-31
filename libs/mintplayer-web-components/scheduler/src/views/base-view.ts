@@ -2,6 +2,7 @@ import {
   dateService,
   formatMessage,
   getContrastColor,
+  resolveCapability,
   resolveEventColor,
   resolveMessages,
   type SchedulerEvent,
@@ -327,9 +328,16 @@ export abstract class BaseView {
     part: SchedulerEventPart,
     [startClass, endClass]: [string, string] = ['top', 'bottom'],
   ): void {
-    if (part.event?.resizable === false || this.state.options.editable === false) return;
-    if (part.isStart) eventEl.appendChild(this.createResizeHandle(startClass, 'start'));
-    if (part.isEnd) eventEl.appendChild(this.createResizeHandle(endClass, 'end'));
+    // Per-edge, so `resizable: { start: false, end: true }` — declared on the
+    // model but previously only checked as a boolean — now actually works, and a
+    // read-only scheduler advertises no grab handle at all.
+    const permissions = this.state.resolvedPermissions;
+    if (part.isStart && resolveCapability('resizeEventStart', { permissions, event: part.event })) {
+      eventEl.appendChild(this.createResizeHandle(startClass, 'start'));
+    }
+    if (part.isEnd && resolveCapability('resizeEventEnd', { permissions, event: part.event })) {
+      eventEl.appendChild(this.createResizeHandle(endClass, 'end'));
+    }
   }
 
   private createResizeHandle(positionClass: string, edge: 'start' | 'end'): HTMLElement {

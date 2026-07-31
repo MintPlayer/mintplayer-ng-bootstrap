@@ -1,5 +1,6 @@
 import { DEFAULT_MESSAGES, SchedulerMessages } from './messages';
 import { DEFAULT_EVENT_COLOR } from '../utils/color';
+import type { SchedulerPermissions } from './permissions';
 import { DayOfWeek, TimeFormat, ViewType } from './types';
 
 /**
@@ -100,6 +101,15 @@ export interface SchedulerOptions {
   messages?: Partial<SchedulerMessages>;
 
   /**
+   * What the user may do. `false` makes the scheduler read-only; an object gives
+   * per-capability control. See SchedulerPermissions — it gates AFFORDANCES and
+   * gestures, it is not a security boundary.
+   *
+   * Supersedes `editable` / `selectable`, which remain as deprecated aliases.
+   */
+  permissions?: boolean | Partial<SchedulerPermissions>;
+
+  /**
    * Fill colour for events that specify none and whose resource specifies none.
    * Previously a `'#3788d8'` literal duplicated across five files.
    */
@@ -153,6 +163,10 @@ export const DEFAULT_OPTIONS: Required<SchedulerOptions> = {
   dragScroll: true,
   snapDuration: 1800,
   messages: DEFAULT_MESSAGES,
+  // Empty table, NOT DEFAULT_PERMISSIONS: per-capability fallback happens inside
+  // resolveCapability. A populated default here would count as an "explicit"
+  // table and silently override the deprecated editable/selectable aliases.
+  permissions: {},
   defaultEventColor: DEFAULT_EVENT_COLOR,
   nowIndicator: true,
   weekNumbers: false,
