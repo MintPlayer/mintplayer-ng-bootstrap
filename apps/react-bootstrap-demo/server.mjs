@@ -82,6 +82,25 @@ async function createServer() {
   return app;
 }
 
+// Dev only: take the port back from a leftover of this workspace before binding.
+// nx cannot be relied on to have killed the previous one — on Windows killing a
+// parent does not kill its children, and nx leaves a continuous task running when
+// a target that depends on it fails.
+//
+// The import is DYNAMIC and inside the guard on purpose. The runtime image copies
+// only this file plus `dist/` (see Dockerfile), so a static import of anything
+// under `tools/` would throw ERR_MODULE_NOT_FOUND at container start — and there
+// is nothing to reclaim in production anyway: the container owns its port,
+// `ps`/`lsof` may not even be installed, and killing processes there would be
+// actively wrong.
+//
+// Awaited because the socket must be RELEASED before we bind, not merely its
+// holder killed — the OS frees a listening socket asynchronously.
+if (!isProd) {
+  const { reclaimPortAndWait } = await import('../../tools/scripts/lib/dev-processes.mjs');
+  await reclaimPortAndWait(port, { label: 'react-demo' });
+}
+
 createServer().then((app) => {
   app.listen(port, host, () => {
     console.log(

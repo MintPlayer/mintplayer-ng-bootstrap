@@ -22,13 +22,19 @@
 // dev-server finds its port taken), nx exits without cancelling the continuous
 // dependency task it already started, so this wrapper keeps running and the API
 // keeps holding `bin/.../Api.dll` and port 5000. The next `npm start` then fails
-// its API build with MSB3027 "file is locked by Api.exe". Hence `reclaimPort`
+// its API build with MSB3027 "file is locked by Api.exe". Hence `killLeftoverApi`
 // below: a leftover of OUR OWN is cleaned up on the way in, rather than left for
 // the developer to hunt down with taskkill.
 //
-// The leftover-matching rules are pure and exported; `serve-api.leftovers.check.mjs`
-// next door exercises them against captured Windows/Linux/macOS process listings.
-// Run it after touching them: `node tools/scripts/serve-api.leftovers.check.mjs`.
+// The process listing, the port lookup and the tree-kill live in
+// `lib/dev-processes.mjs`, shared with the demo dev-servers (which need the
+// reclaim but NOT the job object — they have no descendants to reap; see that
+// file's header). Only the rules for recognising THIS API's processes are here.
+//
+// Those rules are pure and exported; `dev-processes.check.mjs` next door
+// exercises them, and the shared ownership rules, against captured
+// Windows/Linux/macOS process listings. Run it after touching either:
+// `node tools/scripts/dev-processes.check.mjs`.
 //
 // Locally we use `dotnet watch run` for hot-reload during dev. In CI nothing
 // changes between boot and shutdown, so we use a plain `dotnet run` instead:
@@ -43,6 +49,7 @@ import { spawn, spawnSync } from 'node:child_process';
 import { platform } from 'node:os';
 import { pathToFileURL } from 'node:url';
 import { createRequire } from 'node:module';
+import { listProcesses, killProcesses } from './lib/dev-processes.mjs';
 
 const isWindows = platform() === 'win32';
 const isCI = !!process.env.CI;
@@ -171,20 +178,10 @@ function killLeftoverApi() {
       `when a previous serve was interrupted in a way that left the wrapper running.`,
   );
 
-  // Deepest first. The runner (`dotnet watch`) RESTARTS its child, so killing
-  // the apphost alone just hands the port straight back; killing children before
-  // their runner closes the window entirely.
-  for (const proc of leftovers) {
-    if (isWindows) {
-      spawnSync('taskkill', ['/pid', String(proc.pid), '/T', '/F'], { stdio: 'ignore' });
-    } else {
-      try {
-        process.kill(proc.pid, 'SIGKILL');
-      } catch {
-        /* already gone, or not ours to kill */
-      }
-    }
-  }
+  // Deepest first (selectLeftovers sorts them). The runner (`dotnet watch`)
+  // RESTARTS its child, so killing the apphost alone just hands the port straight
+  // back; killing children before their runner closes the window entirely.
+  killProcesses(leftovers);
 }
 
 /**
@@ -224,75 +221,15 @@ export function selectLeftovers(processes, cwd) {
     .sort((a, b) => b.depth - a.depth);
 }
 
-/** `[{ pid, ppid, name, args }]` for every process we can see. Best effort. */
-function listProcesses() {
-  try {
-    if (isWindows) {
-      // One PowerShell call. `|~|` as the delimiter: a command line can contain
-      // commas, semicolons, tabs and quotes, but not this.
-      const script =
-        `Get-CimInstance Win32_Process | ForEach-Object { ` +
-        `"$($_.ProcessId)|~|$($_.ParentProcessId)|~|$($_.Name)|~|$($_.CommandLine)" }`;
-      const out = spawnSync('powershell', ['-NoProfile', '-NonInteractive', '-Command', script], {
-        encoding: 'utf8',
-        maxBuffer: 8 * 1024 * 1024,
-      });
-      return parseWindowsProcesses(out.stdout);
-    }
-    // `ps -A -o pid=,ppid=,args=` is POSIX-portable (Linux procps and macOS both
-    // accept it) and gives the full argv, which is what the match rules need.
-    const out = spawnSync('ps', ['-A', '-o', 'pid=,ppid=,args='], {
-      encoding: 'utf8',
-      maxBuffer: 8 * 1024 * 1024,
-    });
-    return parsePosixProcesses(out.stdout);
-  } catch {
-    // A missing ps/powershell must never stop the server from starting.
-    return [];
-  }
-}
-
-export function parseWindowsProcesses(stdout) {
-  return (stdout ?? '')
-    .split(/\r?\n/)
-    .map((line) => line.split('|~|'))
-    .filter((parts) => parts.length >= 4)
-    .map(([pid, ppid, name, ...rest]) => ({
-      pid: Number.parseInt(pid, 10),
-      ppid: Number.parseInt(ppid, 10),
-      name: (name ?? '').trim(),
-      args: rest.join('|~|').trim(),
-    }))
-    .filter((proc) => Number.isInteger(proc.pid));
-}
-
-export function parsePosixProcesses(stdout) {
-  return (stdout ?? '')
-    .split(/\r?\n/)
-    .map((line) => line.trim().match(/^(\d+)\s+(\d+)\s+(.*)$/))
-    .filter(Boolean)
-    .map(([, pid, ppid, args]) => ({
-      pid: Number.parseInt(pid, 10),
-      ppid: Number.parseInt(ppid, 10),
-      // No exe path on POSIX ps, and none is needed: `args[0]` IS the path.
-      name: (args.split(/\s+/)[0] ?? '').split('/').pop() ?? '',
-      args,
-    }));
-}
-
 /**
- * True only when this file was RUN, not imported. The matcher above is exported
- * for `serve-api.leftovers.check.mjs`, and an import that kills the API you are
- * currently running is a trap — so every side effect lives behind this guard.
+ * True only when this file was RUN, not imported. The matching rules above are
+ * exported for `dev-processes.check.mjs`, and an import that kills the API you
+ * are currently running is a trap — so every side effect lives behind this guard.
  */
 const isEntryPoint =
   !!process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href;
 
-if (!isEntryPoint) {
-  // Imported for its exports; nothing to do.
-} else {
-  main();
-}
+if (isEntryPoint) main();
 
 function main() {
 killLeftoverApi();
