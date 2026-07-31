@@ -1,10 +1,10 @@
 # PRD — Scheduler view-mode completeness
 
-Status: **Implemented in part.** M1–M7 delivered on this branch (see the
-[plan](./scheduler-view-mode-completeness-plan.md) for the item-level state);
-M8 (timeline creation affordances), M9 (event-surface cleanup) and M10 (month
-popover) are still outstanding. Versions bumped for the breaking changes:
-web-components 2.5.0, ng-bootstrap 22.9.0, react-bootstrap 19.11.0,
+Status: **Implemented.** M1–M10 delivered on this branch — every reported item is
+now either fixed or answered-and-built (see the
+[plan](./scheduler-view-mode-completeness-plan.md) for the item-level state and
+the short list of deliberate follow-ups). Versions bumped for the breaking
+changes: web-components 2.5.0, ng-bootstrap 22.9.0, react-bootstrap 19.11.0,
 vue-bootstrap 3.12.0.
 Branch: `fix/scheduler-preview-z-order` (folds into PR
 [#395](https://github.com/MintPlayer/mintplayer-ng-bootstrap/pull/395) per the
@@ -31,11 +31,11 @@ PR has a single narrative.
 |---|---|---|
 | R1 | Creating an event across multiple days draws a dashed ghost only for the start day | **fixed** (M4), §3 |
 | R2 | Events created in week view are invisible after switching to timeline (no events/resources/groups at all) | **fixed** (M2), §4 |
-| R3 | Timeline needs affordances to add groups/nested groups, and events by dragging a resource row | **part**: drag-create carries its row (M5); add-resource/group affordance outstanding (M8), §5 |
+| R3 | Timeline needs affordances to add groups/nested groups, and events by dragging a resource row | **fixed**: drag-create carries its row (M5); add-resource/group bar + per-group add buttons (M8), §5 |
 | R4 | Scheduler must be able to be read-only; granular create/move permissions | **fixed** (M7), §6 |
 | R5 | Timeline cannot scroll horizontally | **fixed** (M3) — device re-check pending, §7 |
-| R6 | Should month/year gain a day-click popup? (opinion requested) | **answered**: month yes / year no; build outstanding (M10), §8 |
-| R7 | Decide where resources/groups are relevant; resource colour used across all views, editable in timeline, random initial | **part**: colour resolves in every view (M6); in-timeline recolour UI rides with M8, §4 |
+| R6 | Should month/year gain a day-click popup? (opinion requested) | **answered + built**: month yes (popover, M10) / year no — year Enter drills into the month instead, §8 |
+| R7 | Decide where resources/groups are relevant; resource colour used across all views, editable in timeline, random initial | **fixed**: colour resolves in every view (M6); in-timeline colour swatch emits `resource-update` (M8); initial colour stays the consumer's (demo ships a palette helper), §4 |
 
 ## 3. Multi-day drag feedback (R1) — and four bugs found underneath it
 
@@ -779,7 +779,7 @@ just emitted events.
   `parseTimeOnDay` so it degrades sanely, without claiming DST correctness.
 - No new i18n framework: new strings extend `options.messages` (#394).
 
-## 11. As-built API surface (M1–M7)
+## 11. As-built API surface
 
 New/changed public surface, so consumers and the wrappers have one list.
 
@@ -830,8 +830,94 @@ the folded table.
 - `dayMaxEvents: false` now really means "show all" instead of capping at 3.
 - Month view emits the correct day west of UTC.
 
-**Still outstanding**: M8 (add-resource/group affordances + `resource-*` events, which is
-also where in-timeline recolouring lands), M9 (`date-select` resolution, duplicated event
-type surfaces, React wrapper types, `composed: true`), M10 (month popover),
-`requireEventResource`, the `resources: []` empty state, the per-resource icon for
-WCAG 1.4.1, and the browser/device verification items in M11.
+### 11.1 Added in M8–M10
+
+**Added — `SchedulerOptions`**
+- `moreLinkBehavior?: 'popover' | 'day' | ((info: { date, events }) => void)` — default
+  `'popover'` (FullCalendar's default too). `'day'` is the previous drill-to-day.
+- `dayClickAction?: 'none' | 'popover'` — default **`'none'`**, so the existing
+  `date-click` contract is untouched. This is how "click a date to open a popup" ships
+  without changing behaviour for consumers who already handle `date-click`.
+
+**Added — element property**
+- `readonly` (property, mirroring the attribute) so React/Vue can bind a boolean rather
+  than fake an attribute. Attribute and property are the same state.
+
+**Added — request events** (all `bubbles` **and** `composed`)
+- `resource-create` / `group-create` — `{ parentId?, view, originalEvent }`
+- `resource-update` — `{ resource, changes, originalEvent }`, `changes` carrying only the
+  fields the scheduler asks to change
+- `resource-delete` — `{ resource, originalEvent }`
+
+Angular exposes them as `(resourceCreate)`, `(groupCreate)`, `(resourceUpdate)`,
+`(resourceDelete)`; React as `onResourceCreate`/`onGroupCreate`/`onResourceUpdate`/
+`onResourceDelete`; Vue through the ordinary `@resource-create` … listeners.
+
+**Added — messages**: `addResourceBarLabel`, `addResource`, `addGroup`,
+`addResourceToGroup`, `addGroupToGroup`, `removeResource`, `resourceColor`,
+`dayPopoverLabel`, `dayPopoverCount`, `eventSingular`, `eventPlural`,
+`dayPopoverEmpty`, `newEvent`, `showDay`, `closePopover`.
+
+**Added — SCSS z-index rung**: `$z-day-popover: 20`, above the sticky header, because the
+popover is a fixed-position dialog over the whole grid.
+
+**Removed (breaking, M9)**
+- `date-select` (WC) and the Angular `dateSelect` output — declared, typed and wired, and
+  emitted by nothing. A dead output is worse than a missing one.
+- `SchedulerEventMap`'s hand-written detail interfaces (`EventSelectedDetail`,
+  `EventCreateDetail`, `EventUpdateDetail`, `EventDeleteDetail`, `DateClickDetail`,
+  `DateSelectDetail`, `ViewChangeDetail`, `SelectionChangeDetail`, `BaseEventDetail`) and
+  the scheduler lib's parallel `event-types.ts`. There is now ONE discriminated union,
+  `SchedulerCustomEvent`, in `scheduler-core`; `EventDetail<T>` and `SchedulerEventMap`
+  are derived from it. The two tables had already drifted — that is how the dead
+  `date-select` entry and a `date-click` `resource` field nothing sends survived.
+- Angular's `DateSelectEvent` interface.
+
+**Changed**
+- Vue's `resources` prop widens from `Resource[]` to `(Resource | ResourceGroup)[]`.
+- React's event payload types now come from `SchedulerEventMap` instead of hand-copied
+  shapes (`onSelectionChange` had invented a `slots` field and omitted `selectedEvent`;
+  `event-delete` declared a required `originalEvent` the emitter never sends).
+- Year view: `Enter` on a month drills into that month. It used to emit a
+  **month-spanning** `event-create`, which no consumer could sensibly act on. The
+  existing test was rewritten to assert the new contract.
+- Month view: the `+N more` link opens the popover by default; clicking the day **number**
+  drills into the day view; `Space` on a focused day cell opens the popover (`Enter` stays
+  "create for this day", the only keyboard create path in that view).
+
+**Two bugs found while building M8**
+- `syncPermissions()` sat inside the `if (this.inputHandler)` guard in
+  `connectedCallback`, so on the FIRST connect — the render it exists to seed — it never
+  ran.
+- `TimelineView.update()` only rebuilt on a date/options change, so a resource added
+  after first paint never appeared. It now rebuilds whenever the row set can change: the
+  tree identity, collapse state, bucket-row presence, or the permission table.
+
+### 11.2 Deliberate deviations from the plan's decisions
+
+- **D5.1's per-group overflow menu** ships as up-to-two permission-gated buttons per group
+  row instead of an overflow menu. Both capabilities are off by default, so a row shows at
+  most what the consumer explicitly granted; an overflow menu would add a second popup
+  surface (and a nested-interactive risk inside a `rowheader`) to save a button that is
+  usually not rendered at all. Revisit if a consumer grants all four capabilities and finds
+  the column crowded.
+- **Resource rename** is not in the timeline. The colour swatch is (R7 asked for colour);
+  rename needs an inline text field with its own commit/cancel semantics, and the consumer
+  already has the resource in hand from `resource-update`. `changes` is deliberately typed
+  wide enough (`Partial<Resource & ResourceGroup>`) that adding `title` later is not a
+  breaking change.
+- **The add bar sits outside the `role="grid"`**, as a sticky footer of the resource
+  column rather than a grid row. A row whose only content is buttons has to fake a
+  rowheader, inflates `aria-rowcount`, and puts Tab stops inside a roving-tabindex grid.
+- **Initial resource colour stays the consumer's job.** The WC must remain a pure function
+  of its inputs; a component that invents a colour on render is not idempotent and would
+  fight SSR. The Angular demo ships a deterministic palette rotation to show the intended
+  shape.
+
+**Still outstanding** (deliberate follow-ups, none of them a reported defect):
+`options.requireEventResource`, a dedicated `resources: []` empty state, the per-resource
+icon/legend for WCAG 1.4.1, `resource.allowOperations` per-item overrides,
+`options.dragScroll` (still declared and unread — no auto-scroll at the viewport edge),
+month-view pointer create-drag, e2e coverage for the multi-day ghost and the timeline, and
+the device re-check of timeline touch scrolling. See the plan's §"Outstanding work,
+spelled out" for the implementation notes.
