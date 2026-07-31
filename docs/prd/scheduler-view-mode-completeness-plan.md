@@ -5,8 +5,8 @@ Branch (phase 1): `fix/scheduler-preview-z-order` → PR
 [#395](https://github.com/MintPlayer/mintplayer-ng-bootstrap/pull/395), **merged to
 `master` 2026-07-31** (on top of #394, the resize-glyphs PR). The final unit sweep on the
 branch was 1593 tests green, plus the 10-test `scheduler-views` e2e on Chromium+Firefox.
-Status: **Phase 1 delivered and merged; phase 2 (M18–M23, from the post-merge review
-R11–R14 — PRD §12) scoped and not started.** Phase 2 branch: `feat/scheduler-phase2`
+Status: **Phase 1 delivered and merged; phase 2 (M18–M26, from the post-merge reviews
+R11–R20 — PRD §12) scoped and not started.** Phase 2 branch: `feat/scheduler-phase2`
 (approved by the user 2026-07-31). Still open from phase 1: the browser/device verification items
 and deliberate polish items under "Outstanding work, spelled out". None of them is a
 reported defect. Verification runs in CI on each push rather than as a long local sweep.
@@ -323,9 +323,11 @@ After the affordances exist. **B13 is the highest-value item in this milestone.*
 # Phase 2 — post-merge review (PRD §12). Not started.
 
 Ordering: M19 before M20 (the tri-state `resourceId` decision shapes the keyboard fixes);
-M18 and M22 are independent (M22's popover half touches the same file as M18 — do M18
-first to avoid churn); M21 is small and can ride either; M23 is the single batched sweep
-at the end, per the standing rule.
+M18 and M22 are independent (M22 touches the same file as M18 — do M18 first to avoid
+churn); M21 is small and can ride either; M23 (the event editor) before M22's spec pass
+would let the delete specs cover both surfaces in one sitting, but is not a hard
+dependency; M24 is independent; M25 (demos) after everything it demonstrates; M26 is the
+single batched sweep at the end, per the standing rule.
 
 ## M18 — Month/year date surface [R12, D12.2, B23]
 
@@ -364,6 +366,11 @@ at the end, per the standing rule.
 - [ ] Feedback [D12.3c]: `updateGreyedSlots` scoped to the target row; `.drop-target`
       highlight on the target row (new SCSS rule → **run codegen-wc**); verify the M16
       ghost relocates (its `rowKey` chain already starts at `previewEvent.resourceId`).
+- [ ] **B29 — dangling `resourceId` resolves to the bucket row** [D12.7]: an event whose
+      `resourceId` matches no known resource renders in `(No resource)` instead of
+      vanishing from the timeline; dev-warn once per event id (reuse the
+      `requireEventResource` warn-once machinery). Spec: delete a resource from the
+      `resources` input → its events appear in the bucket, week view unchanged.
 - [ ] Specs in `drag-state-machine.spec.ts` (pure, no DOM — where the coverage belongs):
       cross-row move carries the target; `null` target survives; resize never rewrites the
       row; a week-view slot (`undefined`) leaves the original resource intact.
@@ -398,33 +405,89 @@ at the end, per the standing rule.
       is a nested interactive). Named `"Delete {event}"` via a new `messages` key, rendered
       only when `can('deleteEvent', event)`, emits the existing `event-delete`, ≥24px
       target. Focus moves to the next row's button after the emit — never to `<body>`.
-- [ ] Week/day/timeline: an × on the **selected** event, resize-handle idiom — pointer-only,
-      non-focusable, `aria-hidden`, gated on `can('deleteEvent', ev)`; keyboard equivalent
-      is the existing Delete key. ≥24px hit area, clear of the resize glyphs. Month
-      excluded (chips are 24px; the popover is month's delete surface). New SCSS →
-      **run codegen-wc**.
+- [ ] ~~An aria-hidden × on the selected event~~ — **dropped** [D12.4b revised]: the
+      in-grid pointer delete is the event editor's delete button (M23), a real focusable
+      control in a dialog instead of a pointer-only target.
 - [ ] Document that confirmation/undo is the consumer's job in the `event-delete` listener
       — the WC owns no data and no "are you sure" dialog.
 - [ ] Specs: button absent under `deleteEvent: false`; popover row delete emits and moves
-      focus; the × never appears on an unselected event; axe over the popover with delete
-      buttons present (nested-interactive + target-size).
+      focus; axe over the popover with delete buttons present (nested-interactive +
+      target-size).
 
-## M23 — Demos, e2e, sweep
+## M23 — Built-in event editor [R20, D12.8]
+
+- [ ] `OverlayController` popover anchored to the event element by stable event id — same
+      mechanics, traps and `$z-day-popover` rung as the day popover (lazy anchor,
+      `role="dialog"`, non-modal, host-level Escape gate, focus back to the event box on
+      close, local scroll listener).
+- [ ] Fields: title, start/end (`datetime-local`), optional colour input. Buttons: Save →
+      existing `event-update` (with `oldEvent`), Delete → existing `event-delete` (the
+      revised D12.4b home), Cancel. WC-side validation only `end > start` + non-empty
+      title; everything richer belongs to the consumer's listener.
+- [ ] Openers: double-click / double-tap on the event; `contextmenu` (`preventDefault()`
+      on event boxes only); F2 on the selected event. Enter stays move-mode. Keymap text
+      gains the editor line, permission-gated (§6.4 rules).
+- [ ] Gating [D12.8c]: new `SchedulerPermissions.editEvent` (default `true`) for
+      title/colour; start/end respect `moveEvent`/`resizeEventStart`/`resizeEventEnd`;
+      delete button under `deleteEvent`; `readonly` and per-event `editable: false` kill
+      it wholesale; the editor doesn't open when nothing is permitted.
+- [ ] `options.eventEditor?: boolean` default **`true`** [D12.8d], plus a first-class
+      input on all three wrappers (Angular `[eventEditor]`, React `eventEditor`, Vue
+      `:event-editor`).
+- [ ] New `messages` keys (field labels, Save/Cancel/Delete, dialog label); new SCSS →
+      **run codegen-wc**.
+- [ ] Specs: open via all three openers; Save emits `event-update` with the edited
+      fields; Delete emits and closes with focus handled (the event box is gone —
+      restore by grid cell key); `eventEditor: false` restores the old double-click
+      behaviour; field-level gating per capability; axe over the open editor.
+
+## M24 — Resource column UX: resize, tooltips, rename [R15–R17, D12.5]
+
+- [ ] Column resize separator: `role="separator"`, focusable, vertical orientation,
+      `aria-valuenow` percent, arrow-key steps (WAI-ARIA window-splitter, same pattern as
+      the repo's splitter); pointer drag writes `--scheduler-resource-column-width` on the
+      host; the AG-Grid `min(…, 100% - 50px)` guard keeps binding both channels. Lives
+      outside the `role="grid"` (add-bar reasoning, §11.2). Retires D12.1c's
+      capability-gated width tweak.
+- [ ] `title` attribute on every resource/group title span, unconditionally [D12.5b].
+- [ ] Rename [D12.5c], file-manager idiom: double-click the title (double-tap touch) or F2
+      on the focused rowheader cell → inline `<input class="rename-input">`; Enter
+      commits → `resource-update` `changes: { title }`; Escape cancels; blur commits;
+      live-announced. Gated on `can('updateResource')` — denied means the triggers do
+      nothing. Focus returns to the rowheader cell by stable key after the rebuild.
+- [ ] New `messages` keys + keymap docs; new SCSS → **run codegen-wc**.
+- [ ] Specs: separator keyboard resize clamps at both bounds; rename commit/cancel/blur;
+      rename refused under `updateResource: false`; tooltip attribute present; F2
+      disambiguation — event selected → editor (M23), rowheader focused → rename.
+
+## M25 — Demos as the reference consumer
 
 - [ ] Demo `applyEventUpdate` re-parents on a cross-row move instead of rewriting in place
       [B27] — the demo is the reference consumer, it must model the honest mutation.
 - [ ] Demos start in `'resource-admin'` permission mode [D12.1b] so R11's surface is
-      discoverable; capability-gated resource-column width adjustment if crowding shows
-      [D12.1c].
+      discoverable.
+- [ ] Colour data fixed in all three demos [D12.6]: sample resources get palette colours,
+      sample events drop explicit colours (keep one or two to demonstrate the
+      `event.color` override), `onEventCreate` stops stamping `'#3788d8'`. The WC is
+      untouched.
+- [ ] `onResourceDelete` strips `resourceId` from events under the deleted subtree
+      [D12.7] — the recommended consumer behaviour, documented as such.
+- [ ] The demo's own editor card is retired for the built-in one [D12.8e]; one toggle
+      demonstrates `eventEditor: false` + a consumer-owned editor as the escape hatch.
+
+## M26 — e2e + the one batched sweep
+
 - [ ] e2e (`scheduler-views.spec.ts`): drag row A → row B asserting the emitted
       `resourceId` and the re-parent; ghost sits in the target row mid-drag and only that
       row greys; drag into and out of the bucket row; a cross-row drag reaching an
       off-screen row via edge auto-scroll; year panel open → Escape → focus on the card;
-      popover row delete click → event gone from the demo's data.
+      popover row delete click → event gone from the demo's data; event editor open →
+      edit title → Save → chip text updates; column resize by drag persists across a view
+      switch.
 - [ ] **One batched suite sweep at the end** (build + unit + e2e), then push once.
 - [ ] Device check rides along: vertical cross-row touch drag (600ms hold path — no
-      `touch-action` on `.scheduler-timeline-event`), same Android pass as the open M3
-      item.
+      `touch-action` on `.scheduler-timeline-event`) and the editor's double-tap opener,
+      same Android pass as the open M3 item.
 
 ---
 

@@ -6,7 +6,7 @@ Status: **Phase 1 merged** as PR
 released with the breaking changes: web-components 2.5.0, ng-bootstrap 22.9.0,
 react-bootstrap 19.11.0, vue-bootstrap 3.12.0. §1–§11 describe what shipped.
 **Phase 2 is scoped but not started** — §12 records the post-merge review
-findings (R11–R14) and their decisions; the plan carries them as M18–M23.
+findings (R11–R20) and their decisions; the plan carries them as M18–M26.
 Branch (phase 1): `fix/scheduler-preview-z-order`; phase 2: `feat/scheduler-phase2`.
 Plan: [scheduler-view-mode-completeness-plan.md](./scheduler-view-mode-completeness-plan.md)
 Predecessors: [scheduler-resize-glyphs.md](./scheduler-resize-glyphs.md) (#394),
@@ -42,6 +42,12 @@ PR has a single narrative.
 | R12 | Month/year date-click surface re-opened: "Doesn't necessarily need to be a popup, but the functionality should be provided by the scheduler" | **scoped** (M18) — year gains the panel, month's click opener becomes the default; one leak bug found (B23), §12.2 |
 | R13 | Drag-move events between resources (timeline) | **scoped** (M19–M21) — the plumbing exists and drops the row in one function; four adjacent bugs found (B24–B27), §12.3 |
 | R14 | No visible way for a user to remove an event when the developer allows it | **scoped** (M22) — `event-delete` shipped keyboard-only; pointer users have no delete path, §12.4 |
+| R15 | The timeline's left (resource) column should be user-resizable | **scoped** (M24), §12.5 |
+| R16 | Ellipsised resource labels need tooltips with the full text | **scoped** (M24), §12.5 |
+| R17 | No way to change the text of a resource or group | **scoped** (M24) — was a deliberate §11.2 deferral, now due, §12.5 |
+| R18 | Events don't get the colour of their resource, in any view | **answered + demo fix** (M25) — the WC resolution works; the demo's sample data defeats it, §12.6 |
+| R19 | What happens when a resource/group is removed? Events should move to "(no resource)" | **scoped** (M19 + M25) — today they silently vanish from the timeline (B29), §12.7 |
+| R20 | Ship a built-in event-edit popup (right-click / next to the event), on by default, with an input to disable | **scoped** (M23) — does not exist today; reverses §8.4 non-goal 3, §12.8 |
 
 ## 3. Multi-day drag feedback (R1) — and four bugs found underneath it
 
@@ -729,7 +735,9 @@ equivalent.
    popup couldn't say where in the tree it goes. That belongs in the timeline resource
    column (§5).
 3. No inline edit form in the popover — the WC owns no event data; it emits requests. An
-   in-WC form would need a save contract it cannot honour.
+   in-WC form would need a save contract it cannot honour. *(Reversed in phase 2 by user
+   decision — §12.8: `event-update` is that save contract; every drag commit already uses
+   it.)*
 4. No modal dialog / focus trap / `aria-modal`.
 5. Plain `click` on a day cell keeps emitting `date-click` and must **not** open the
    popover — two meanings for one click would break existing consumers.
@@ -1021,13 +1029,13 @@ month-view pointer create-drag, e2e coverage for the multi-day ghost and the tim
 the device re-check of timeline touch scrolling. See the plan's §"Outstanding work,
 spelled out" for the implementation notes.
 
-## 12. Phase 2 — post-merge review (R11–R14)
+## 12. Phase 2 — post-merge review (R11–R20)
 
-After #395 merged, the user reviewed against their original asks and reported four items.
-A three-probe investigation (each independent, all findings cited to code on `master`)
-established one non-defect, one re-opened decision plus a leak bug, and one feature whose
-plumbing already exists; R14 (the missing delete affordance) arrived during the review and
-was verified directly. Executed as M18–M23 in the plan.
+After #395 merged, the user reviewed against their original asks and reported four items
+(R11–R14); a second review of the timeline added six more (R15–R20). A three-probe
+investigation (each independent, all findings cited to code on `master`) established one
+non-defect, one re-opened decision plus a leak bug, and one feature whose plumbing already
+exists; the rest were verified directly. Executed as M18–M26 in the plan.
 
 ### 12.1 R11 — the add-resource/group buttons exist and are off by default (answered)
 
@@ -1219,16 +1227,132 @@ interactive — invalid ARIA, and axe flags it.
   `can('deleteEvent', event)`, emitting the existing `event-delete`. ≥24px target
   (SC 2.5.8). Focus after the emit moves to the next row's event button (the row is gone;
   focus must not fall to `<body>`), and the panel's count line re-renders.
-- **D12.4b — the in-grid selected event gains an × affordance in week/day/timeline**,
-  built the same way as the #394 resize handles: a **pointer-only, non-focusable,
-  `aria-hidden`** target rendered on the selected event when `can('deleteEvent', ev)`,
-  whose keyboard equivalent is the *existing* Delete key (already announced in the event
-  keymap). This sidesteps the nested-interactive constraint the same way resize does —
-  the a11y contract lives on the keyboard path and the accessible name of the event
-  button, not on the glyph. ≥24px hit area, positioned clear of the resize glyphs.
-  Month view is excluded — chips are 24px tall and the popover (D12.4a) is month's
-  delete surface.
+- **D12.4b — REVISED by R20: the in-grid pointer delete lives in the built-in event
+  editor** (§12.8), which carries a delete button gated on `can('deleteEvent', ev)`. The
+  first draft of this decision was a pointer-only, `aria-hidden` × on the selected event
+  (resize-handle idiom, to dodge the nested-interactive constraint); once the editor
+  exists it is a strictly better surface — a real focusable `<button>` in a dialog, no
+  aria-hidden pointer target, and it covers month chips too. The × is dropped.
 - **Confirmation stays the consumer's job.** `event-delete` is a request like every other
   scheduler event; the WC does not own the data and must not own an "are you sure" dialog.
   Document this next to the permission table — a consumer who wants undo/confirm handles
   it in their `event-delete` listener.
+
+### 12.5 R15–R17 — resource column UX: resize, tooltips, rename
+
+Three reports about the same 200px column, solved together.
+
+- **D12.5a — R15, the column becomes user-resizable.** A drag separator on the column's
+  right edge, following the WAI-ARIA window-splitter pattern the repo's own splitter
+  already implements: `role="separator"`, focusable, `aria-orientation="vertical"`,
+  `aria-valuenow` as a percentage, arrow keys resize in steps. The separator writes
+  `--scheduler-resource-column-width` on the host, so the consumer's own value stays the
+  initial and the existing AG-Grid guard (`min(…, 100% - 50px)`) keeps binding both input
+  channels. The separator lives outside the `role="grid"` (same reasoning as the add bar,
+  §11.2 — no fake rowheader, no Tab stop inside a roving grid). This also retires D12.1c's
+  capability-gated width tweak: when the granted-everything control set crowds a group
+  title, the user can now just widen the column.
+- **D12.5b — R16, full text on hover.** Every `.scheduler-resource-cell` /
+  `.scheduler-resource-header` title span gets `title="{full text}"` — unconditionally,
+  not "only when ellipsised" (measuring overflow per row per render buys nothing; a
+  tooltip matching the visible text is harmless). The accessible name already carries the
+  full title, so this is pointer-hover parity, not an a11y fix.
+- **D12.5c — R17, rename ships, copying file-manager's proven idiom** (the §11.2 deferral
+  is now due — a consumer asked). Trigger: **double-click the title** (double-tap on
+  touch) or **F2** while the rowheader cell is focused — no new per-row button, the
+  crowding budget is spent. The title swaps for an inline `<input class="rename-input">`
+  seeded with the current title; Enter commits → `resource-update` with
+  `changes: { title }` (typed wide for exactly this, §11.2); Escape cancels; blur commits
+  (file-manager's semantics); result announced via the live announcer
+  (`announceRenamed` idiom). Gated on `can('updateResource')`; under denial double-click
+  and F2 do nothing (no dead affordance is rendered, consistent with the rest of the
+  permission model). Focus returns to the rowheader cell by stable key after the rebuild.
+
+### 12.6 R18 — resource colour: the resolution works; the demo defeats it (answered)
+
+Verified on `master`: `resolveEventColor` (`event.color ?? resource.eventColor ??
+resource.color ?? options.defaultEventColor ?? '#3788d8'`) is wired through
+`base-view.ts:248` — the shared path **all** views' event boxes go through — plus the drag
+ghost. The M6 feature is real and covered by specs, including the dynamically-added-event
+path.
+
+The demo never lets it fire: **every sample event carries an explicit `color`**
+(`fillData`, e.g. `'#e83e8c'`), **the sample resources have no `color`/`eventColor` at
+all**, and `onEventCreate` stamps `'#3788d8'` onto every created event. `event.color`
+deliberately outranks the resource (the universal convention, §4.5) — so the resource
+colour never has anything to do, and worse, recolouring a resource via the swatch changes
+nothing visible, which reads exactly like the reported bug.
+
+**D12.6 — fix the demo, not the WC**: sample resources get palette colours
+(`nextPaletteColor` already exists for created resources); sample events drop their
+explicit colours except one or two kept deliberately to demonstrate the override;
+`onEventCreate` stops stamping a colour so created events inherit their row's. All three
+demos. The WC changes not at all.
+
+### 12.7 R19 — deleting a resource must not orphan its events invisibly
+
+**B29 — events of a deleted resource silently vanish from the timeline.**
+`indexByResource` keys strictly by `event.resourceId ?? null`
+(`scheduler-state.ts:117-126`); timeline rows iterate the live resource tree plus the
+`null` bucket. An event whose `resourceId` points at a resource that no longer exists sits
+under a key no row reads: invisible in timeline, while week/day/month/year (flat store)
+still render it. That is the D4.2 silent-data-trap in a new costume — the bucket-row
+decision explicitly promised "never hide an event with no feedback".
+
+**D12.7 — two layers, matching the request/consumer split:**
+
+- **WC (render-time, M19)**: a `resourceId` that matches no known resource resolves to the
+  bucket row — dangling ⇒ unassigned, the error defined out of existence. Dev-warn once
+  per event id (the `requireEventResource` warn-once machinery already exists). This folds
+  into M19 because it is the same file cluster and the same tri-state bucket semantics.
+- **Demo (consumer behaviour, M25)**: `onResourceDelete` strips `resourceId` from all
+  events under the deleted resource/group subtree — the user's proposal, and the
+  behaviour the docs recommend to consumers. It stays the consumer's call (they may
+  instead delete the events, or reassign them); the WC layer above guarantees the
+  *default* outcome is visible-in-the-bucket rather than gone.
+
+### 12.8 R20 — a built-in event editor, on by default
+
+**As-is, stated plainly:** no built-in edit surface exists. The demo's double-click card
+is app code (`scheduler.component.ts` — `onEventDblClick`/`openEditor`); the month day
+popover lists and selects events but edits nothing. §8.4 non-goal 3 rejected an in-WC
+editor on the argument "the WC owns no event data … a form would need a save contract it
+cannot honour". **That argument was too strong and is hereby reversed by user decision:**
+`event-update` *is* the save contract — every drag commit already uses it, the WC
+pre-mutates internal state and the consumer applies the change. A form that emits the same
+event honours the same contract.
+
+There is also a compliance upside the demo comment already names: the editor is the
+single-pointer, non-drag path to change an event's times (WCAG 2.5.7 Dragging Movements).
+Built-in and on by default, the WC satisfies that itself instead of delegating it to every
+consumer.
+
+**Decision D12.8:**
+
+- **D12.8a — surface**: an `OverlayController` popover anchored to the event's element
+  (same mechanics, traps and z-rung as the day popover — anchor lazily by event id,
+  `role="dialog"`, non-modal, Escape via the same host-level gate, focus back to the
+  event box on close). Fields: title (text), start/end (`datetime-local`), colour
+  (optional `<input type="color">`, same control as the resource swatch). Buttons: Save →
+  the existing `event-update` (with `oldEvent`); Delete → the existing `event-delete`
+  (this is D12.4b's revised home); Cancel.
+- **D12.8b — openers**: **double-click** the event (double-tap on touch — the 600ms hold
+  is drag on touch, so long-press is not available), **right-click** (`contextmenu`,
+  `preventDefault()`d on event boxes only — the user's suggestion), and **F2** on the
+  selected event (mirrors the resource rename key, M24). Enter stays move-mode; the
+  keymap text gains the editor line, permission-gated like the rest (§6.4).
+- **D12.8c — gating**: the editor opens when *any* of its fields is permitted, and each
+  field individually respects the existing table — title/colour under a new
+  `SchedulerPermissions.editEvent` (default `true`; the event caps were deliberately
+  additive), start/end under `moveEvent`/`resizeEventStart`/`resizeEventEnd`, the delete
+  button under `deleteEvent`. `readonly` kills it wholesale. Per-event `editable: false`
+  is honoured.
+- **D12.8d — the on/off input, as requested**: `options.eventEditor?: boolean`, default
+  **`true`**, exposed as a first-class input on all three wrappers (Angular
+  `[eventEditor]`, React `eventEditor`, Vue `:event-editor`) as well as through
+  `options`. Consumers who own their editor (like the demo used to) set `false` and keep
+  receiving `event-selected` double-click semantics unchanged.
+- **D12.8e — the demo's own card is retired** in favour of the built-in editor, with one
+  demo toggle showing `eventEditor: false` + a consumer-owned editor as the escape-hatch
+  recipe. Validation stays minimal in the WC (end > start, required title trimmed
+  non-empty) — anything richer is the consumer's `event-update` listener.
