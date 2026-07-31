@@ -1905,3 +1905,69 @@ describe('mp-scheduler — timeline move-mode reaches the bucket (M20)', () => {
     expect(active?.dataset['unassigned']).toBe('true');
   });
 });
+
+/**
+ * M21 (B24) — the pointer path is gated per GESTURE. isEditable() is an OR of
+ * four capabilities, so before this gate `moveEvent: false, createEvent: true`
+ * still allowed a mouse move-drag that keyboard move-mode correctly refused.
+ */
+describe('mp-scheduler — per-gesture pointer permission gate (M21)', () => {
+  let el: MpScheduler;
+  afterEach(() => el?.remove());
+
+  const EV = {
+    id: 'task',
+    title: 'Task',
+    start: new Date(2026, 4, 12, 9, 0),
+    end: new Date(2026, 4, 12, 10, 0),
+  };
+
+  const mountWeek = async (permissions: Record<string, unknown>) => {
+    el = document.createElement('mp-scheduler') as MpScheduler;
+    document.body.appendChild(el);
+    (el as unknown as { date: Date }).date = new Date(2026, 4, 12);
+    (el as unknown as { events: unknown[] }).events = [EV];
+    (el as unknown as { options: unknown }).options = { permissions };
+    el.setAttribute('view', 'week');
+    await (el as unknown as { updateComplete: Promise<void> }).updateComplete;
+    await nextRaf();
+    return el;
+  };
+
+  type Internals = {
+    handlePointerDown: (
+      pointer: { x: number; y: number; target: HTMLElement; originalEvent: Event },
+      target: Record<string, unknown>,
+    ) => void;
+    dragManager: { isPending: () => boolean; cancel: () => void };
+  };
+
+  const pointerDown = (target: Record<string, unknown>) => {
+    const internals = el as unknown as Internals;
+    const host = el.shadowRoot!.querySelector<HTMLElement>('.scheduler-content')!;
+    internals.handlePointerDown(
+      { x: 100, y: 100, target: host, originalEvent: new MouseEvent('mousedown') },
+      target,
+    );
+    const pending = internals.dragManager.isPending();
+    internals.dragManager.cancel();
+    return pending;
+  };
+
+  it('moveEvent:false refuses a move-drag but createEvent still allows drag-create', async () => {
+    await mountWeek({ moveEvent: false, createEvent: true });
+    expect(pointerDown({ type: 'event', event: EV })).toBe(false);
+    expect(pointerDown({ type: 'slot' })).toBe(true);
+  });
+
+  it('each resize edge is gated by ITS capability', async () => {
+    await mountWeek({ resizeEventStart: false, resizeEventEnd: true });
+    expect(pointerDown({ type: 'resize-handle', event: EV, resizeHandle: 'start' })).toBe(false);
+    expect(pointerDown({ type: 'resize-handle', event: EV, resizeHandle: 'end' })).toBe(true);
+  });
+
+  it('selectRange alone keeps slot drags possible when createEvent is off', async () => {
+    await mountWeek({ createEvent: false, selectRange: true });
+    expect(pointerDown({ type: 'slot' })).toBe(true);
+  });
+});

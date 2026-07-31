@@ -1095,7 +1095,31 @@ export class MpScheduler extends LitElement {
     target: PointerTarget,
     immediate?: boolean
   ): void {
+    // Per-GESTURE gate (B24). The input handler's isEditable() is an OR of
+    // four capabilities — it can only say "some editing exists somewhere", so
+    // `{ moveEvent: false, createEvent: true }` still allowed a mouse
+    // move-drag. Refusing here stops the gesture before it starts (D6.2:
+    // refuse, don't emit-then-hope); clicks flow through their own pipeline
+    // and stay unaffected, so selection keeps working. The keyboard paths
+    // check the same capabilities via the one resolver.
+    if (!this.allowsGesture(target)) return;
     this.dragManager.handlePointerDown(pointer, target, immediate);
+  }
+
+  private allowsGesture(target: PointerTarget): boolean {
+    switch (target.type) {
+      case 'event':
+        return this.can('moveEvent', target.event);
+      case 'resize-handle':
+        return this.can(
+          target.resizeHandle === 'start' ? 'resizeEventStart' : 'resizeEventEnd',
+          target.event,
+        );
+      case 'slot':
+        return this.can('createEvent') || this.can('selectRange');
+      default:
+        return true;
+    }
   }
 
   private handlePointerMove(pointer: NormalizedPointerEvent): void {
