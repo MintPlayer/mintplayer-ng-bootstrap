@@ -35,6 +35,7 @@ PR has a single narrative.
 | R4 | Scheduler must be able to be read-only; granular create/move permissions | **fixed** (M7), §6 |
 | R5 | Timeline cannot scroll horizontally | **fixed** (M3) — device re-check pending, §7 |
 | R6 | Should month/year gain a day-click popup? (opinion requested) | **answered + built**: month yes (popover, M10) / year no — year Enter drills into the month instead, §8 |
+| R9 | No drag ghost when resizing a timeline event | **fixed** (M16), §11.6 |
 | R8 | Timeline compresses overlapping event tracks into a fixed-height row | **fixed** (M12), §11.3 |
 | R7 | Decide where resources/groups are relevant; resource colour used across all views, editable in timeline, random initial | **fixed**: colour resolves in every view (M6); in-timeline colour swatch emits `resource-update` (M8); initial colour stays the consumer's (demo ships a palette helper), §4 |
 
@@ -966,6 +967,28 @@ it, and the loop stops on pointer-up, when the scroller hits its end, or when th
 Deliberately **not** an option. The deleted `dragScroll` flag was declared and unread; the
 behaviour is what every consumer wants and a knob for it would only let someone switch off
 the ability to reach half their own data.
+
+### 11.6 M16 — the timeline ghost could not find its row (R9)
+
+A resize preview carries no `resourceId` of its own — only a create-drag and a move-mode
+resource nudge do — so the ghost's row had to come from the dragged event. That lookup read
+`resource.events`, which **stopped being a live mirror when the model was normalized** in M2.
+The consequence was sharply split and easy to miss: an event authored *nested* under its
+resource still resolved (the demo's sample data is authored that way, so a casual check
+passes), while every event supplied through the `events` input — i.e. everything a
+drag-create, an `addEvent` call or a normal API response produces — resolved to `undefined`
+and the ghost was dropped entirely.
+
+The row now comes from the normalized store, and a resource-*less* event maps to the bucket
+row instead of bailing out: it is legitimately in `(No resource)` and still deserves feedback.
+
+On top in both selection states, which was the other half of the report: the ghost is
+`$z-preview` (4) against a selected source's `$z-event-selected` (2) and an unselected
+source's `auto`. Both states are now asserted in the browser at the centre of a real
+overlap, using the `pointer-events` probe (the ghost is `pointer-events: none`, so
+hit-testing skips it, while stacking is unaffected).
+
+Three unit tests were verified to fail against the pre-fix code (`expected +0 to be 1`).
 
 **Still outstanding** (deliberate follow-ups, none of them a reported defect):
 the per-resource icon/legend for WCAG 1.4.1, `resource.allowOperations` per-item overrides,

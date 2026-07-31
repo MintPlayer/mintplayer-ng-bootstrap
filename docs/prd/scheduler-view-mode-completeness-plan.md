@@ -271,6 +271,18 @@ After the affordances exist. **B13 is the highest-value item in this milestone.*
 - [x] Three specs: warn-once-and-still-rendered, the empty state, and the bucket row winning
       over the empty state.
 
+## M16 — The timeline drag ghost finds its row [R9]
+
+- [x] Resolve the ghost's row from the NORMALIZED event store, not the dead
+      `resource.events` mirror. Nested-authored events resolved fine, which is exactly why
+      this hid: the demo seeds events nested, so a casual check passes while every event
+      from the `events` input lost its ghost.
+- [x] A resource-less event maps to the bucket row rather than bailing out.
+- [x] Three unit tests (flat event, bucket event, ghost on the source's track and last in
+      DOM order), all verified to FAIL pre-fix.
+- [x] Browser guard for both selection states, over a real overlap, using the
+      `pointer-events` probe: ghost is topmost against `auto` and against `$z-event-selected`.
+
 ## M11 — Batched verification sweep
 
 - [x] `nx build mintplayer-web-components` (which runs `codegen-wc`), the three wrapper

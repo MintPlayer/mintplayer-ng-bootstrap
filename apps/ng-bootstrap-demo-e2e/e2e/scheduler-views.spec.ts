@@ -309,6 +309,125 @@ test.describe('scheduler — timeline (R3, R5, R7)', () => {
   });
 });
 
+test.describe('scheduler — timeline resize ghost stays on top', () => {
+  // The week-view equivalent lives in scheduler-resize.spec.ts. This is the
+  // timeline case, and it seeds a FLAT event with a resourceId on purpose: an
+  // event authored nested under its resource took a different (working) code
+  // path, which is why the regression hid for so long.
+  for (const selectFirst of [false, true]) {
+    test(`ghost paints over the ${selectFirst ? 'SELECTED' : 'unselected'} source event`, async ({
+      page,
+    }) => {
+      await loadSampleWeek(page);
+      await switchView(page, 'timeline');
+
+      await page.evaluate(() => {
+        const sched = document.querySelector('mp-scheduler') as HTMLElement & {
+          events: unknown[];
+          resources: { id: string; children?: unknown[] }[];
+        };
+        const firstLeaf = (items: { id: string; children?: unknown[] }[]): string => {
+          for (const item of items) {
+            if (item.children) {
+              const found = firstLeaf(item.children as { id: string; children?: unknown[] }[]);
+              if (found) return found;
+            } else return item.id;
+          }
+          return '';
+        };
+        const day = new Date();
+        day.setHours(0, 0, 0, 0);
+        const at = (h: number) => {
+          const d = new Date(day);
+          d.setHours(h, 0, 0, 0);
+          return d;
+        };
+        sched.events = [
+          {
+            id: 'flat-1',
+            title: 'Flat',
+            resourceId: firstLeaf(sched.resources),
+            start: at(9),
+            end: at(11),
+            color: '#e83e8c',
+          },
+        ];
+      });
+
+      const box = async () =>
+        schedulerRoot(page).evaluate((sched) => {
+          const ev = Array.from(
+            sched.shadowRoot!.querySelectorAll<HTMLElement>(
+              '.scheduler-timeline-event:not(.preview)',
+            ),
+          ).find((e) => e.dataset['eventId'] === 'flat-1');
+          if (!ev) return null;
+          const content = sched.shadowRoot!.querySelector('.scheduler-content')!;
+          content.scrollLeft = ev.offsetLeft - 120;
+          const r = ev.getBoundingClientRect();
+          return { x: r.x, y: r.y, w: r.width, h: r.height };
+        });
+
+      await expect.poll(box).not.toBeNull();
+      let rect = (await box())!;
+
+      if (selectFirst) {
+        await page.mouse.click(rect.x + rect.w / 2, rect.y + rect.h / 2);
+        rect = (await box())!;
+      }
+
+      // Grab the trailing edge and drag right.
+      await page.mouse.move(rect.x + rect.w - 2, rect.y + rect.h / 2);
+      await page.mouse.down();
+      await page.mouse.move(rect.x + rect.w + 60, rect.y + rect.h / 2, { steps: 6 });
+      await page.mouse.move(rect.x + rect.w + 140, rect.y + rect.h / 2, { steps: 6 });
+
+      const probe = await schedulerRoot(page).evaluate((sched) => {
+        const ghost = sched.shadowRoot!.querySelector<HTMLElement>(
+          '.scheduler-timeline-event.preview',
+        );
+        const source = Array.from(
+          sched.shadowRoot!.querySelectorAll<HTMLElement>(
+            '.scheduler-timeline-event:not(.preview)',
+          ),
+        ).find((e) => e.dataset['eventId'] === 'flat-1');
+        if (!ghost || !source) return { ghost: !!ghost, source: !!source, top: null, overlap: 0 };
+        const g = ghost.getBoundingClientRect();
+        const s = source.getBoundingClientRect();
+        const overlap = Math.min(g.right, s.right) - Math.max(g.left, s.left);
+        // The ghost is pointer-events:none, so hit-testing skips it — re-enable
+        // it for the probe only. `pointer-events` plays no part in stacking, so
+        // the reported order is still true paint order.
+        const restore = ghost.style.pointerEvents;
+        ghost.style.pointerEvents = 'auto';
+        const stack = (
+          sched.shadowRoot as unknown as {
+            elementsFromPoint: (x: number, y: number) => Element[];
+          }
+        ).elementsFromPoint(
+          Math.max(g.left, s.left) + overlap / 2,
+          g.top + g.height / 2,
+        );
+        ghost.style.pointerEvents = restore;
+        return {
+          ghost: true,
+          source: true,
+          selected: source.classList.contains('selected'),
+          top: stack[0]?.className ?? null,
+          overlap,
+        };
+      });
+      await page.mouse.up();
+
+      expect(probe.ghost).toBe(true);
+      // A non-trivial overlap, so "on top" is not vacuous.
+      expect(probe.overlap).toBeGreaterThan(20);
+      expect(probe.top).toContain('preview');
+      if (selectFirst) expect(probe.selected).toBe(true);
+    });
+  }
+});
+
 test.describe('scheduler — month day popover (R6)', () => {
   test('opens on a day click when configured, and Escape returns focus to the cell', async ({
     page,

@@ -780,28 +780,34 @@ export class TimelineView extends BaseView {
   private renderPreviewEvent(days: Date[]): void {
     this.container.querySelector('.scheduler-timeline-event.preview')?.remove();
 
-    const { dragState, previewEvent, resources, options } = this.state;
+    const { dragState, previewEvent, options } = this.state;
     if (!previewEvent) return;
 
     // Resource nudges (move-mode Up/Down) put the target row on the preview
-    // itself; fall back to whichever row currently owns the dragged event.
+    // itself; otherwise the row is the one that owns the dragged event.
     const draggedId = dragState?.event?.id ?? this.state.keyboardMoveEventId;
-    const resourceId =
+    // From the NORMALIZED store, not `resource.events`. That nested array stopped
+    // being a live mirror when the model was normalized, so the old lookup found
+    // nothing for any event supplied through the `events` input — which is every
+    // event a drag-create or an ordinary API call produces. A resize preview
+    // carries no `resourceId` of its own, so this was the only thing that could
+    // name the row, and the ghost silently vanished for those events.
+    const draggedEvent = draggedId
+      ? this.state.events.find((event) => event.id === draggedId)
+      : undefined;
+    const rowKey =
       previewEvent.resourceId ??
-      (draggedId
-        ? resourceService
-            .getAllResources(resources)
-            .find((r) => (r.events ?? []).some((e) => e.id === draggedId))?.id
-        : undefined) ??
-      // A CREATE drag has no source event and (until PreviewEvent.resourceId is
-      // populated for pointer drags) no resource on the preview either, so fall
-      // back to the row the gesture is happening in. Without this a create-drag
-      // on a timeline row showed no ghost at all.
+      // `?? UNASSIGNED_ROW_ID`, not `?? undefined`: an event in the bucket row is
+      // legitimately resource-less and still deserves a ghost.
+      (draggedEvent ? draggedEvent.resourceId ?? UNASSIGNED_ROW_ID : undefined) ??
+      // A CREATE drag has no source event and no resource on the preview either,
+      // so fall back to the row the gesture is happening in. Without this a
+      // create-drag on a timeline row showed no ghost at all.
       this.state.selectionResourceId ??
       this.state.focusedResourceId ??
       undefined;
-    if (!resourceId) return;
-    const row = this.rowElements.get(resourceId);
+    if (!rowKey) return;
+    const row = this.rowElements.get(rowKey);
     const eventsContainer = row?.querySelector('.scheduler-timeline-events');
     if (!eventsContainer) return;
 

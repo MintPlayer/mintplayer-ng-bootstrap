@@ -1498,3 +1498,96 @@ describe('mp-scheduler — resource-less events and an empty tree', () => {
     expect(el.shadowRoot!.querySelector('.scheduler-timeline-row.unassigned')).not.toBeNull();
   });
 });
+
+/**
+ * The timeline resize/move ghost has to find its ROW, and a resize preview
+ * carries no `resourceId` of its own — so the row can only come from the dragged
+ * event. That lookup used to read `resource.events`, which stopped being a live
+ * mirror when the model was normalized, so the ghost silently vanished for every
+ * event supplied through the `events` input (i.e. every event a drag-create or
+ * an ordinary API call produces).
+ */
+describe('mp-scheduler — timeline drag ghost finds its row', () => {
+  let el: MpScheduler;
+  afterEach(() => el?.remove());
+
+  const START = new Date(2026, 4, 12, 9, 0);
+  const END = new Date(2026, 4, 12, 10, 0);
+  const LONGER_END = new Date(2026, 4, 12, 12, 0);
+
+  const mountTimeline = async (events: unknown[]) => {
+    el = document.createElement('mp-scheduler') as MpScheduler;
+    document.body.appendChild(el);
+    (el as unknown as { date: Date }).date = new Date(2026, 4, 12);
+    (el as unknown as { resources: unknown[] }).resources = [
+      { id: 'group', title: 'Team', children: [{ id: 'alice', title: 'Alice' }] },
+    ];
+    (el as unknown as { events: unknown[] }).events = events;
+    el.setAttribute('view', 'timeline');
+    await (el as unknown as { updateComplete: Promise<void> }).updateComplete;
+    await nextRaf();
+    return el;
+  };
+
+  /** Drive the state a pointer resize produces: a dragState + a preview. */
+  const startResize = async (event: { id: string; start: Date; end: Date }) => {
+    const manager = (
+      el as unknown as { stateManager: { setState: (u: Record<string, unknown>) => void } }
+    ).stateManager;
+    manager.setState({
+      dragState: {
+        type: 'resize-end',
+        event,
+        startSlot: { start: event.start, end: event.end },
+        currentSlot: { start: event.start, end: LONGER_END },
+        // NOTE: no resourceId anywhere in here — that is the whole point.
+        preview: { start: event.start, end: LONGER_END },
+      },
+      previewEvent: { start: event.start, end: LONGER_END },
+    });
+    await (el as unknown as { updateComplete: Promise<void> }).updateComplete;
+    await nextRaf();
+  };
+
+  it('renders the ghost in the resource row for an event from the flat events input', async () => {
+    const event = { id: 'flat', title: 'Flat', resourceId: 'alice', start: START, end: END };
+    await mountTimeline([event]);
+    await startResize(event);
+
+    const ghosts = el.shadowRoot!.querySelectorAll('.scheduler-timeline-event.preview');
+    expect(ghosts.length).toBe(1);
+    // In Alice's row, not just anywhere in the grid.
+    const row = ghosts[0].closest('.scheduler-timeline-row')!;
+    expect(row.querySelector('.scheduler-resource-cell')!.textContent).toContain('Alice');
+  });
+
+  it('renders the ghost in the bucket row for a resource-less event', async () => {
+    const event = { id: 'loose', title: 'Loose', start: START, end: END };
+    await mountTimeline([event]);
+    await startResize(event);
+
+    const ghost = el.shadowRoot!.querySelector('.scheduler-timeline-event.preview');
+    expect(ghost).not.toBeNull();
+    // A resource-less event is legitimately in the bucket row and still gets a
+    // ghost — the old code bailed out on the missing resource id.
+    expect(ghost!.closest('.scheduler-timeline-row')!.classList.contains('unassigned')).toBe(true);
+  });
+
+  it('puts the ghost on the source event track, and last in DOM order', async () => {
+    const event = { id: 'flat', title: 'Flat', resourceId: 'alice', start: START, end: END };
+    await mountTimeline([event]);
+    await startResize(event);
+
+    const container = el.shadowRoot!.querySelector('.scheduler-timeline-events')!;
+    const boxes = Array.from(container.children) as HTMLElement[];
+    const ghost = boxes.find((b) => b.classList.contains('preview'))!;
+    const source = boxes.find((b) => b.dataset['eventId'] === 'flat')!;
+    // Same band as its source — a ghost spanning every track of a multi-track
+    // row is what the top/height copy exists to prevent.
+    expect(ghost.style.top).toBe(source.style.top);
+    expect(ghost.style.height).toBe(source.style.height);
+    // Siblings, ghost last: jsdom cannot judge paint order, so the browser test
+    // owns "on top" and this pins the structure that makes it meaningful.
+    expect(boxes[boxes.length - 1]).toBe(ghost);
+  });
+});
