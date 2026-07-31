@@ -3,7 +3,12 @@ import { BsScheduler } from '@mintplayer/react-bootstrap/scheduler';
 import { BsCodeSnippet } from '@mintplayer/react-bootstrap/code-snippet';
 import {
   generateEventId,
+  generateGroupId,
+  generateResourceId,
+  type Resource,
+  type ResourceGroup,
   type SchedulerEvent,
+  type SchedulerOptions,
   type ViewType,
 } from '@mintplayer/web-components/scheduler-core';
 import type { MpScheduler } from '@mintplayer/web-components/scheduler';
@@ -25,8 +30,55 @@ const toLocalInputValue = (date: Date): string => {
 const SEED: SchedulerEvent[] = [
   { id: '1', title: 'Standup',       start: at(9),  end: at(9, 30), color: '#0d6efd' },
   { id: '2', title: 'Design review', start: at(11), end: at(12),    color: '#6f42c1' },
-  { id: '3', title: 'Lunch',         start: at(12), end: at(13),    color: '#198754' },
+  // Assigned to a resource, so the timeline view has something on Alice's row
+  // while the two above land in its "(No resource)" bucket.
+  { id: '3', title: 'Lunch',         start: at(12), end: at(13),    resourceId: 'alice' },
 ];
+
+// A resource tree so the timeline view is actually exercised — this page used
+// to leave `resources` unbound, which made its timeline permanently blank.
+// Alice has no colour of her own, so her events inherit the group-less default;
+// Bob's colour flows through to every view via `Resource.color`.
+const RESOURCE_SEED: (Resource | ResourceGroup)[] = [
+  {
+    id: 'engineering',
+    title: 'Engineering',
+    children: [
+      { id: 'alice', title: 'Alice' },
+      { id: 'bob', title: 'Bob', color: '#fd7e14' },
+    ],
+  },
+];
+
+// Module constant, NOT an inline literal: @lit/react re-asserts element
+// properties on every render, so a fresh object here would re-set `options` on
+// the WC (and re-resolve its permission table) on every keystroke elsewhere.
+const OPTIONS: Partial<SchedulerOptions> = {
+  moreLinkBehavior: 'popover',
+  // Resource-tree editing is off in the component by default; this is opting in.
+  permissions: {
+    createResource: true,
+    createGroup: true,
+    updateResource: true,
+    deleteResource: true,
+  },
+};
+
+/** Insert at root when `parentId` is absent, else into that group. */
+const insertInto = (
+  items: (Resource | ResourceGroup)[],
+  parentId: string | undefined,
+  added: Resource | ResourceGroup,
+): (Resource | ResourceGroup)[] => {
+  if (!parentId) return [...items, added];
+  return items.map((item) =>
+    'children' in item
+      ? item.id === parentId
+        ? { ...item, children: [...item.children, added] }
+        : { ...item, children: insertInto(item.children, parentId, added) }
+      : item,
+  );
+};
 
 const SOURCE = `// \`view\` and \`date\` are controlled props: @lit/react re-asserts
 // element properties on every render, and the WC changes both from
@@ -61,6 +113,7 @@ export function SchedulerPage() {
   // re-assert a stale literal and snap the scheduler back.
   const [view, setView] = useState<ViewType>('day');
   const [date, setDate] = useState(new Date());
+  const [resources, setResources] = useState<(Resource | ResourceGroup)[]>(RESOURCE_SEED);
 
   // Double-click editor — the single-pointer, NON-DRAG path to change an
   // event's times (WCAG 2.5.7 Dragging Movements): every resize possible by
@@ -121,7 +174,9 @@ export function SchedulerPage() {
       <section style={{ height: 540 }}>
         <h2>Today's agenda</h2>
         <BsScheduler
-          {...{ events, view, date } as React.ComponentProps<typeof BsScheduler>}
+          {...{ events, view, date, resources, options: OPTIONS } as React.ComponentProps<
+            typeof BsScheduler
+          >}
           onViewChange={(e) => {
             setView(e.detail.view);
             setDate(e.detail.date);
@@ -150,6 +205,45 @@ export function SchedulerPage() {
           onEventDelete={(e) =>
             setEvents((current) => current.filter((ev) => ev.id !== e.detail.event.id))
           }
+          // Resource-tree requests: like event-create these are asks, not
+          // writes. The WC never edits its own `resources`, so the id and the
+          // initial colour are the consumer's to choose.
+          onResourceCreate={(e) =>
+            setResources((current) =>
+              insertInto(current, e.detail.parentId, {
+                id: generateResourceId(),
+                title: 'New resource',
+                color: '#20c997',
+              }),
+            )
+          }
+          onGroupCreate={(e) =>
+            setResources((current) =>
+              insertInto(current, e.detail.parentId, {
+                id: generateGroupId(),
+                title: 'New group',
+                children: [],
+              }),
+            )
+          }
+          onResourceUpdate={(e) => {
+            const apply = (item: Resource | ResourceGroup): Resource | ResourceGroup =>
+              item.id === e.detail.resource.id
+                ? { ...item, ...e.detail.changes }
+                : 'children' in item
+                  ? { ...item, children: item.children.map(apply) }
+                  : item;
+            setResources((current) => current.map(apply));
+          }}
+          onResourceDelete={(e) => {
+            const prune = (items: (Resource | ResourceGroup)[]): (Resource | ResourceGroup)[] =>
+              items
+                .filter((item) => item.id !== e.detail.resource.id)
+                .map((item) =>
+                  'children' in item ? { ...item, children: prune(item.children) } : item,
+                );
+            setResources((current) => prune(current));
+          }}
           style={{ display: 'block', height: '100%' }}
         />
       </section>

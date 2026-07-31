@@ -2,6 +2,7 @@ import { DEFAULT_MESSAGES, SchedulerMessages } from './messages';
 import { DEFAULT_EVENT_COLOR } from '../utils/color';
 import type { SchedulerPermissions } from './permissions';
 import { DayOfWeek, TimeFormat, ViewType } from './types';
+import type { SchedulerEvent } from './event';
 
 /**
  * Business hours configuration
@@ -106,7 +107,34 @@ export interface SchedulerOptions {
   weekText?: string;
   /** Maximum events to show per day (true = show "+X more" link) */
   dayMaxEvents?: boolean | number;
+
+  /**
+   * What the month view's "+N more" link does.
+   *
+   * - `'popover'` (default, FullCalendar's default too) — open the day popover
+   *   listing every event on that day.
+   * - `'day'` — the previous behaviour: navigate to the day view.
+   * - a function — you handle it; nothing else happens.
+   */
+  moreLinkBehavior?: MoreLinkBehavior;
+
+  /**
+   * What clicking a month day CELL does, beyond emitting `date-click`.
+   *
+   * Defaults to `'none'` so the `date-click` contract is unchanged for existing
+   * consumers; set `'popover'` for the "click a date to see and add events"
+   * behaviour. Clicking the day NUMBER always drills into the day view (the
+   * navLinks idiom) and is deliberately a separate target: conflating the two
+   * would make an empty cell unable to mean "create here".
+   */
+  dayClickAction?: 'none' | 'popover';
 }
+
+/** See `SchedulerOptions.moreLinkBehavior`. */
+export type MoreLinkBehavior =
+  | 'popover'
+  | 'day'
+  | ((info: { date: Date; events: SchedulerEvent[] }) => void);
 
 /**
  * Default options for the scheduler
@@ -145,4 +173,6 @@ export const DEFAULT_OPTIONS: Required<SchedulerOptions> = {
   weekNumbers: false,
   weekText: 'W',
   dayMaxEvents: true,
+  moreLinkBehavior: 'popover',
+  dayClickAction: 'none',
 };

@@ -1,4 +1,4 @@
-import { LitElement, html, type TemplateResult } from 'lit';
+import { LitElement, html, nothing, type TemplateResult } from 'lit';
 import { LiveAnnouncerController } from '@mintplayer/web-components/a11y';
 import {
   ViewType,
@@ -16,10 +16,12 @@ import {
   resolveMessages,
   resourceService,
   isResource,
+  resolveEventColor,
 } from '@mintplayer/web-components/scheduler-core';
 import { SchedulerStateManager, SchedulerState } from '../state/scheduler-state';
 import {
   BaseView,
+  formatEventAriaLabel,
   selectionRange,
   formatCellAnnouncement,
   formatSelectionAnnouncement,
@@ -35,6 +37,7 @@ import { schedulerStyles } from '../styles/scheduler.styles';
 import { DragManager, PointerTarget, DragCompletionResult } from '../drag';
 import { InputHandler, NormalizedPointerEvent } from '../input';
 import { SchedulerEventEmitter } from '../events';
+import { OverlayController } from '@mintplayer/web-components/overlay';
 
 /**
  * MpScheduler Web Component
@@ -95,6 +98,37 @@ export class MpScheduler extends LitElement {
 
   private readonly liveAnnouncer = new LiveAnnouncerController(this);
 
+  /** Day the month-view popover is open for, or null when it is closed. */
+  private popoverDate: Date | null = null;
+  /** Date key of the anchor cell — resolved lazily, see `openDayPopover`. */
+  private popoverAnchorKey: string | null = null;
+  private boundRepositionPopover: () => void;
+
+  /**
+   * The month day popover. Not modal: the grid behind stays operable, Escape and
+   * outside clicks dismiss through the shared dismiss stack, and focus lands on
+   * the first control inside so the dialog is announced instead of opening
+   * silently behind the user's focus.
+   */
+  private readonly dayPopover = new OverlayController(this, {
+    anchor: () =>
+      this.popoverAnchorKey
+        ? this.shadowRoot?.querySelector<HTMLElement>(
+            `#scheduler-cell-m-${this.popoverAnchorKey}`,
+          ) ?? null
+        : null,
+    panel: () => this.shadowRoot?.querySelector<HTMLElement>('.scheduler-day-popover') ?? null,
+    initialFocus: 'first',
+    modal: false,
+    // Dismissal comes from the controller (Escape via the dismiss stack, outside
+    // mousedown), so mirror it into our own state or the panel stays rendered.
+    onClose: () => {
+      this.popoverDate = null;
+      this.popoverAnchorKey = null;
+      this.requestUpdate();
+    },
+  });
+
   constructor() {
     super();
 
@@ -110,6 +144,7 @@ export class MpScheduler extends LitElement {
     this.boundHandleKeyDown = this.handleKeyDown.bind(this);
     this.boundHandleFocusIn = this.handleFocusIn.bind(this);
     this.boundHandleValueChange = this.handleValueChange.bind(this);
+    this.boundRepositionPopover = () => this.dayPopover.position();
 
     // Subscribe to state changes
     this.stateManager.subscribe((state) => this.onStateChange(state));
@@ -401,8 +436,200 @@ export class MpScheduler extends LitElement {
             ? 'eventInstructions'
             : 'eventInstructionsReadOnly')}
       </div>
+      ${this.renderDayPopover()}
       ${this.liveAnnouncer.template()}
     `;
+  }
+
+  /**
+   * Day popover for the month view: the day's events plus the two things a user
+   * wants from a date they just clicked — create here, or open the day.
+   *
+   * A sibling of `.scheduler-container`, NOT a child of `.scheduler-content`:
+   * the panel is `position: fixed`, so any ancestor with `transform`, `filter`
+   * or `contain` would silently become its containing block and the coordinates
+   * the OverlayController computes would be wrong. Keep it out here.
+   *
+   * `role="dialog"` with `modal: false` and no `aria-modal`: the month grid
+   * behind it stays perfectly usable, and claiming modality would hide a page
+   * that is still visible. It emits NO new event types — activating an entry
+   * is `event-selected`, "New event" is `event-create`, "Show day" is the same
+   * drill the "+N more" link used to do.
+   */
+  private renderDayPopover(): TemplateResult | typeof nothing {
+    const day = this.popoverDate;
+    if (!day) return nothing;
+
+    const { options } = this.stateManager.getState();
+    const events = this.eventsOnDay(day);
+    const dateText = dateService.formatDateWithWeekday(day, options.locale);
+
+    return html`
+      <div
+        class="scheduler-day-popover"
+        role="dialog"
+        aria-label=${this.msg('dayPopoverLabel', { date: dateText })}
+      >
+        <div class="popover-head">
+          <div>
+            <div class="popover-date">${dateText}</div>
+            <div class="popover-count">
+              ${this.msg('dayPopoverCount', {
+                count: events.length,
+                events: this.msg(events.length === 1 ? 'eventSingular' : 'eventPlural'),
+              })}
+            </div>
+          </div>
+          <button
+            type="button"
+            class="popover-close"
+            aria-label=${this.msg('closePopover')}
+            @click=${() => this.closeDayPopover()}
+          >
+            <span aria-hidden="true">×</span>
+          </button>
+        </div>
+        ${events.length === 0
+          ? html`<p class="popover-empty">${this.msg('dayPopoverEmpty')}</p>`
+          : html`
+              <ul class="popover-events">
+                ${events.map(
+                  (event) => html`
+                    <li>
+                      <button
+                        type="button"
+                        class="popover-event"
+                        aria-label=${formatEventAriaLabel(event, null, options)}
+                        @click=${(e: Event) => this.selectFromPopover(event, e)}
+                      >
+                        <span
+                          class="popover-event-swatch"
+                          aria-hidden="true"
+                          style=${`background:${resolveEventColor(
+                            event,
+                            this.stateManager.getState().resourceById,
+                            options.defaultEventColor,
+                          )}`}
+                        ></span>
+                        <span class="popover-event-title">${event.title}</span>
+                      </button>
+                    </li>
+                  `,
+                )}
+              </ul>
+            `}
+        <div class="popover-actions">
+          ${this.can('createEvent')
+            ? html`<button
+                type="button"
+                class="popover-action primary"
+                @click=${(e: Event) => this.createFromPopover(e)}
+              >
+                ${this.msg('newEvent')}
+              </button>`
+            : nothing}
+          <button
+            type="button"
+            class="popover-action"
+            @click=${() => this.showDayFromPopover()}
+          >
+            ${this.msg('showDay')}
+          </button>
+        </div>
+      </div>
+    `;
+  }
+
+  /** Every event overlapping the given local day, in start order. */
+  private eventsOnDay(day: Date): SchedulerEvent[] {
+    const start = new Date(day);
+    start.setHours(0, 0, 0, 0);
+    const end = new Date(start);
+    end.setDate(end.getDate() + 1);
+    return this.stateManager
+      .getState()
+      .events.filter((event) => event.start < end && event.end > start)
+      .sort((a, b) => a.start.getTime() - b.start.getTime());
+  }
+
+  /**
+   * Open the day popover for `day`. Anchored on the day cell resolved LAZILY by
+   * date key: the views rebuild their DOM imperatively, so a captured element
+   * reference would be detached by the next render while the popover is open.
+   */
+  private async openDayPopover(day: Date): Promise<void> {
+    this.popoverDate = new Date(day);
+    this.popoverAnchorKey = MonthView.dayKey(this.popoverDate);
+    this.requestUpdate();
+    await this.dayPopover.open();
+    // `scroll` does not compose, so the controller's document-level capture
+    // listener never sees `.scheduler-content` scrolling inside this shadow
+    // root — its 'reposition' strategy is silently dead here. Reposition from a
+    // local listener instead.
+    this.contentContainer?.addEventListener('scroll', this.boundRepositionPopover, {
+      passive: true,
+    });
+  }
+
+  private closeDayPopover(): void {
+    this.contentContainer?.removeEventListener('scroll', this.boundRepositionPopover);
+    this.dayPopover.close();
+    this.popoverDate = null;
+    this.popoverAnchorKey = null;
+    this.requestUpdate();
+  }
+
+  private selectFromPopover(event: SchedulerEvent, originalEvent: Event): void {
+    this.closeDayPopover();
+    this.stateManager.setSelectedEvent(event);
+    this.eventEmitter.emitEventSelected(event, originalEvent);
+  }
+
+  private createFromPopover(originalEvent: Event): void {
+    const day = this.popoverDate;
+    if (!day) return;
+    const start = new Date(day);
+    start.setHours(0, 0, 0, 0);
+    const end = new Date(start);
+    end.setDate(end.getDate() + 1);
+    this.closeDayPopover();
+    if (!this.can('createEvent') || !this.allowsCreateAt({ start, end })) {
+      this.announceDenied();
+      return;
+    }
+    this.eventEmitter.emitEventCreate(
+      { start, end },
+      this.stateManager.getState().view,
+      originalEvent,
+    );
+  }
+
+  private showDayFromPopover(): void {
+    const day = this.popoverDate;
+    if (!day) return;
+    this.closeDayPopover();
+    this.stateManager.setDate(new Date(day));
+    this.stateManager.setView('day');
+  }
+
+  /**
+   * Route a "+N more" activation through `options.moreLinkBehavior`. Returns the
+   * date to drill to when the caller should navigate, or null when the behaviour
+   * has already been handled here.
+   */
+  private handleMoreLink(dateKey: string): void {
+    const day = this.parseDayKey(dateKey);
+    const behavior = this.stateManager.getState().options.moreLinkBehavior ?? 'popover';
+    if (typeof behavior === 'function') {
+      behavior({ date: day, events: this.eventsOnDay(day) });
+      return;
+    }
+    if (behavior === 'popover') {
+      void this.openDayPopover(day);
+      return;
+    }
+    this.stateManager.setDate(day);
+    this.stateManager.setView('day');
   }
 
   protected override firstUpdated(): void {
@@ -835,12 +1062,43 @@ export class MpScheduler extends LitElement {
       }
     }
 
+    // More link — checked BEFORE the date click below, because the link sits
+    // inside a cell that also carries `data-date` and would otherwise be read
+    // as a plain day click as well as a "+N more" activation.
+    const moreLink = targetEl.closest('.scheduler-more-link') as HTMLElement;
+    if (moreLink) {
+      const dateStr = moreLink.dataset['date'];
+      if (dateStr) {
+        this.handleMoreLink(dateStr);
+        return;
+      }
+    }
+
     // Date click
     const dayEl = targetEl.closest('[data-date]') as HTMLElement;
     if (dayEl) {
       const dateStr = dayEl.dataset['date'];
       if (dateStr) {
-        this.eventEmitter.emitDateClick(this.parseDayKey(dateStr), pointer.originalEvent);
+        const day = this.parseDayKey(dateStr);
+        this.eventEmitter.emitDateClick(day, pointer.originalEvent);
+
+        // The day NUMBER is its own target and always drills into the day view
+        // (the navLinks idiom). Keeping it separate from the rest of the cell is
+        // what lets a plain cell click keep meaning "do something with this day"
+        // — conflate them and an empty cell can never mean "create here".
+        if (targetEl.closest('.day-number')) {
+          this.stateManager.setDate(day);
+          this.stateManager.setView('day');
+          return;
+        }
+
+        // Opt-in: `dayClickAction` defaults to 'none' so the existing
+        // `date-click` contract is untouched for consumers who handle it
+        // themselves.
+        if (this.stateManager.getState().options.dayClickAction === 'popover') {
+          void this.openDayPopover(day);
+          return;
+        }
       }
     }
 
@@ -853,16 +1111,6 @@ export class MpScheduler extends LitElement {
       if (monthStr) {
         this.stateManager.setDate(this.parseDayKey(monthStr));
         this.stateManager.setView('month');
-      }
-    }
-
-    // More link click
-    const moreLink = targetEl.closest('.scheduler-more-link') as HTMLElement;
-    if (moreLink) {
-      const dateStr = moreLink.dataset['date'];
-      if (dateStr) {
-        this.stateManager.setDate(this.parseDayKey(dateStr));
-        this.stateManager.setView('day');
       }
     }
 
@@ -998,6 +1246,19 @@ export class MpScheduler extends LitElement {
   }
 
   private handleKeyDown(e: KeyboardEvent): void {
+    // The popover owns the keyboard while it is open. Escape especially: this
+    // listener sits on the host and therefore runs BEFORE the controller's
+    // document-level one, so without this the selection would be cleared and the
+    // popover left open.
+    if (this.dayPopover.isOpen) {
+      if (e.key === 'Escape') {
+        e.preventDefault();
+        e.stopPropagation();
+        this.closeDayPopover();
+      }
+      return;
+    }
+
     // Move-mode owns every key while active so arrows/Enter/Esc go to it.
     if (this.keyboardMove) {
       this.handleKeyboardMove(e);
@@ -1040,8 +1301,7 @@ export class MpScheduler extends LitElement {
     if (active.classList.contains('scheduler-more-link')) {
       const dateStr = active.dataset['date'];
       if (!dateStr) return false;
-      this.stateManager.setDate(this.parseDayKey(dateStr));
-      this.stateManager.setView('day');
+      this.handleMoreLink(dateStr);
       return true;
     }
     if (active.classList.contains('scheduler-year-month-header')) {
@@ -1316,6 +1576,14 @@ export class MpScheduler extends LitElement {
       case 'ArrowUp':    e.preventDefault(); this.moveFocusedDateByDays(-7); return;
       case 'ArrowDown':  e.preventDefault(); this.moveFocusedDateByDays(+7); return;
       case 'Enter':      e.preventDefault(); this.commitFocusedDateAsCreate(e, 'day'); return;
+      // Space, not Enter: Enter already means "create for this day" and taking
+      // it would remove the only keyboard create path in this view.
+      case ' ': {
+        e.preventDefault();
+        const focused = this.stateManager.getState().focusedDate;
+        if (focused) void this.openDayPopover(focused);
+        return;
+      }
     }
   }
 
@@ -1332,7 +1600,18 @@ export class MpScheduler extends LitElement {
       case 'ArrowRight': e.preventDefault(); this.moveFocusedDateByMonths(+1); return;
       case 'ArrowUp':    e.preventDefault(); this.moveFocusedDateByMonths(-3); return;
       case 'ArrowDown':  e.preventDefault(); this.moveFocusedDateByMonths(+3); return;
-      case 'Enter':      e.preventDefault(); this.commitFocusedDateAsCreate(e, 'month'); return;
+      // Drill into the month, matching what clicking the month header does.
+      // Enter used to emit a MONTH-SPANNING event-create here, which no consumer
+      // could reasonably want from a year overview.
+      case 'Enter': {
+        e.preventDefault();
+        const focused = this.stateManager.getState().focusedDate;
+        if (focused) {
+          this.stateManager.setDate(new Date(focused));
+          this.stateManager.setView('month');
+        }
+        return;
+      }
     }
   }
 

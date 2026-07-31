@@ -45,6 +45,19 @@ export interface SchedulerMessages {
   // Month chrome
   /** {count} — number of hidden events */
   moreEvents: string;
+  /** {date} — accessible name of the day popover dialog */
+  dayPopoverLabel: string;
+  /** {count} {events} — events is eventSingular/eventPlural */
+  dayPopoverCount: string;
+  eventSingular: string;
+  eventPlural: string;
+  /** Empty-day text inside the popover. */
+  dayPopoverEmpty: string;
+  /** Primary action in the popover: request an event for this day. */
+  newEvent: string;
+  /** Secondary action: drill into the day view. */
+  showDay: string;
+  closePopover: string;
 
   // Announcements
   /** {view} — localized view name */
@@ -117,6 +130,14 @@ export const DEFAULT_MESSAGES: SchedulerMessages = {
   resourceColor: 'Colour for {title}',
 
   moreEvents: '+{count} more',
+  dayPopoverLabel: 'Events on {date}',
+  dayPopoverCount: '{count} {events}',
+  eventSingular: 'event',
+  eventPlural: 'events',
+  dayPopoverEmpty: 'No events.',
+  newEvent: 'New event',
+  showDay: 'Show day',
+  closePopover: 'Close',
 
   viewChanged: 'View changed to {view}.',
   eventAdded: 'Event {title} added.',

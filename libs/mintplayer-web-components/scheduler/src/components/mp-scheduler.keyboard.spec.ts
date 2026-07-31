@@ -516,23 +516,23 @@ describe('mp-scheduler — Phase B: year-view arrow nav', () => {
     expect(state.date.getFullYear()).toBe(2027);
   });
 
-  it('Enter on a focused month fires event-create with the month-long range', async () => {
+  // Changed deliberately (PRD scheduler-view-mode-completeness D8.8): Enter used
+  // to emit a MONTH-SPANNING event-create from a year overview, which no consumer
+  // could sensibly act on. It now drills into the month, matching what clicking
+  // the month header already did.
+  it('Enter on a focused month drills into that month instead of creating an event', async () => {
     el = await mount('year');
     focusYearCell(el, '2026-05');
     dispatchKey(el, 'ArrowRight'); // seed → June
     await (el as unknown as { updateComplete: Promise<void> }).updateComplete;
-    let emitted: { range: { start: Date; end: Date }; view: string } | null = null;
-    el.addEventListener('event-create', (ev) => {
-      const d = (ev as CustomEvent).detail;
-      emitted = { range: d.range, view: d.view };
-    });
+    let created = false;
+    el.addEventListener('event-create', () => { created = true; });
     dispatchKey(el, 'Enter');
     await (el as unknown as { updateComplete: Promise<void> }).updateComplete;
-    expect(emitted).not.toBeNull();
-    expect(emitted!.view).toBe('year');
-    expect(emitted!.range.start.getMonth()).toBe(5); // June
-    expect(emitted!.range.start.getDate()).toBe(1);
-    expect(emitted!.range.end.getMonth()).toBe(6); // July
+    expect(created).toBe(false);
+    const state = getState(el);
+    expect(state.view).toBe('month');
+    expect(state.date.getMonth()).toBe(5); // June
   });
 });
 
@@ -1092,5 +1092,290 @@ describe('mp-scheduler — permissions', () => {
     dispatchKey(el, 'Delete');
     await (el as unknown as { updateComplete: Promise<void> }).updateComplete;
     expect(deletions.length).toBe(0);
+  });
+});
+
+/**
+ * M8 — timeline resource affordances. The whole point of these is that they are
+ * OFF by default, so the first test is the one that matters most: an ordinary
+ * scheduler must not sprout resource-editing UI.
+ */
+describe('mp-scheduler — timeline resource affordances', () => {
+  let el: MpScheduler;
+  afterEach(() => el?.remove());
+
+  const RESOURCES = [
+    {
+      id: 'team',
+      title: 'Team',
+      children: [{ id: 'alice', title: 'Alice', color: '#ff0000', events: [] }],
+    },
+  ];
+
+  const mountTimeline = async (options: Record<string, unknown> = {}) => {
+    el = document.createElement('mp-scheduler') as MpScheduler;
+    document.body.appendChild(el);
+    (el as unknown as { date: Date }).date = new Date(2026, 4, 12);
+    (el as unknown as { resources: unknown[] }).resources = RESOURCES;
+    (el as unknown as { options: unknown }).options = options;
+    el.setAttribute('view', 'timeline');
+    await (el as unknown as { updateComplete: Promise<void> }).updateComplete;
+    await nextRaf();
+    return el;
+  };
+
+  it('renders no creation UI by default', async () => {
+    await mountTimeline();
+    expect(el.shadowRoot!.querySelector('.scheduler-timeline-addbar')).toBeNull();
+    expect(el.shadowRoot!.querySelectorAll('.scheduler-resource-action').length).toBe(0);
+    expect(el.shadowRoot!.querySelectorAll('.scheduler-resource-color').length).toBe(0);
+  });
+
+  it('createResource adds the add-bar and a per-group add button, named by its group', async () => {
+    await mountTimeline({ permissions: { createResource: true } });
+    const bar = el.shadowRoot!.querySelector('.scheduler-timeline-addbar');
+    expect(bar).not.toBeNull();
+    expect(bar!.getAttribute('role')).toBe('toolbar');
+    const perGroup = el.shadowRoot!.querySelectorAll<HTMLElement>(
+      '.scheduler-resource-action[data-action="add-resource"]',
+    );
+    expect(perGroup.length).toBe(1);
+    // Disambiguated: N buttons all called "Add" is the failure mode this guards.
+    expect(perGroup[0].getAttribute('aria-label')).toBe('Add resource to Team');
+    // The glyph must not be part of the accessible name.
+    expect(perGroup[0].querySelector('.action-glyph')!.getAttribute('aria-hidden')).toBe('true');
+    // createGroup is a separate capability and stays off.
+    expect(el.shadowRoot!.querySelectorAll('[data-action="add-group"]').length).toBe(0);
+  });
+
+  it('add-bar buttons emit resource-create / group-create with the parent id', async () => {
+    await mountTimeline({ permissions: { createResource: true, createGroup: true } });
+    const requests: { type: string; parentId?: string }[] = [];
+    for (const type of ['resource-create', 'group-create']) {
+      el.addEventListener(type, (e) =>
+        requests.push({ type, parentId: (e as CustomEvent).detail.parentId }),
+      );
+    }
+    el.shadowRoot!
+      .querySelector<HTMLElement>('.scheduler-timeline-addbar [data-action="add-resource"]')!
+      .click();
+    el.shadowRoot!
+      .querySelector<HTMLElement>('.scheduler-resource-action[data-action="add-group"]')!
+      .click();
+    await (el as unknown as { updateComplete: Promise<void> }).updateComplete;
+    expect(requests).toEqual([
+      { type: 'resource-create', parentId: undefined },
+      { type: 'group-create', parentId: 'team' },
+    ]);
+  });
+
+  it('the colour swatch edits the field that actually drives the events', async () => {
+    await mountTimeline({ permissions: { updateResource: true } });
+    const swatch = el.shadowRoot!.querySelector<HTMLInputElement>(
+      '.scheduler-resource-color[data-resource-id="alice"]',
+    )!;
+    // Seeded from the resource, and `color` because no eventColor is set.
+    expect(swatch.value).toBe('#ff0000');
+    expect(swatch.dataset['field']).toBe('color');
+    let detail: { changes: Record<string, string> } | null = null;
+    el.addEventListener('resource-update', (e) => {
+      detail = (e as CustomEvent).detail;
+    });
+    swatch.value = '#00ff00';
+    swatch.dispatchEvent(new Event('change', { bubbles: true }));
+    expect(detail).not.toBeNull();
+    expect(detail!.changes).toEqual({ color: '#00ff00' });
+  });
+
+  it('a resource added after first paint appears without a date or view change', async () => {
+    await mountTimeline();
+    const before = el.shadowRoot!.querySelectorAll('.scheduler-timeline-row').length;
+    (el as unknown as { resources: unknown[] }).resources = [
+      ...RESOURCES,
+      { id: 'bob', title: 'Bob', events: [] },
+    ];
+    await (el as unknown as { updateComplete: Promise<void> }).updateComplete;
+    await nextRaf();
+    expect(el.shadowRoot!.querySelectorAll('.scheduler-timeline-row').length).toBe(before + 1);
+  });
+
+  it('read-only removes every resource affordance even when granted', async () => {
+    await mountTimeline({ permissions: { createResource: true, deleteResource: true } });
+    expect(el.shadowRoot!.querySelector('.scheduler-timeline-addbar')).not.toBeNull();
+    el.setAttribute('readonly', '');
+    await (el as unknown as { updateComplete: Promise<void> }).updateComplete;
+    await nextRaf();
+    expect(el.shadowRoot!.querySelector('.scheduler-timeline-addbar')).toBeNull();
+    expect(el.shadowRoot!.querySelectorAll('.scheduler-resource-action').length).toBe(0);
+  });
+});
+
+/** M10 — the month day popover. */
+describe('mp-scheduler — month day popover', () => {
+  let el: MpScheduler;
+  afterEach(() => el?.remove());
+
+  const EVENTS = [
+    { id: 'a', title: 'Standup', start: new Date(2026, 4, 12, 9, 0), end: new Date(2026, 4, 12, 9, 30) },
+    { id: 'b', title: 'Lunch', start: new Date(2026, 4, 12, 12, 0), end: new Date(2026, 4, 12, 13, 0) },
+    { id: 'c', title: 'Retro', start: new Date(2026, 4, 12, 15, 0), end: new Date(2026, 4, 12, 16, 0) },
+    { id: 'd', title: 'Review', start: new Date(2026, 4, 12, 17, 0), end: new Date(2026, 4, 12, 18, 0) },
+  ];
+
+  const mountMonth = async (options: Record<string, unknown> = {}) => {
+    el = document.createElement('mp-scheduler') as MpScheduler;
+    document.body.appendChild(el);
+    (el as unknown as { date: Date }).date = new Date(2026, 4, 12);
+    (el as unknown as { events: unknown[] }).events = EVENTS;
+    (el as unknown as { options: unknown }).options = options;
+    el.setAttribute('view', 'month');
+    await (el as unknown as { updateComplete: Promise<void> }).updateComplete;
+    await nextRaf();
+    return el;
+  };
+
+  const popover = () => el.shadowRoot!.querySelector('.scheduler-day-popover');
+
+  const settle = async () => {
+    await (el as unknown as { updateComplete: Promise<void> }).updateComplete;
+    await nextRaf();
+  };
+
+  it('the "+N more" link opens the popover instead of drilling into the day view', async () => {
+    await mountMonth();
+    el.shadowRoot!.querySelector<HTMLElement>('.scheduler-more-link')!.click();
+    await settle();
+    expect(popover()).not.toBeNull();
+    expect(popover()!.getAttribute('role')).toBe('dialog');
+    // Named by date, and listing every event on the day — not just the hidden ones.
+    expect(popover()!.getAttribute('aria-label')).toContain('Events on');
+    expect(popover()!.querySelectorAll('.popover-event').length).toBe(EVENTS.length);
+    expect(getState(el).view).toBe('month');
+  });
+
+  it('moreLinkBehavior day keeps the old drill-down', async () => {
+    await mountMonth({ moreLinkBehavior: 'day' });
+    el.shadowRoot!.querySelector<HTMLElement>('.scheduler-more-link')!.click();
+    await settle();
+    expect(popover()).toBeNull();
+    expect(getState(el).view).toBe('day');
+  });
+
+  it('a plain cell click emits date-click only, unless dayClickAction is popover', async () => {
+    await mountMonth();
+    const clicks: Date[] = [];
+    el.addEventListener('date-click', (e) => clicks.push((e as CustomEvent).detail.date));
+    el.shadowRoot!.querySelector<HTMLElement>('#scheduler-cell-m-2026-05-14')!.click();
+    await settle();
+    expect(clicks.length).toBe(1);
+    expect(popover()).toBeNull();
+    el.remove();
+
+    await mountMonth({ dayClickAction: 'popover' });
+    el.shadowRoot!.querySelector<HTMLElement>('#scheduler-cell-m-2026-05-14')!.click();
+    await settle();
+    expect(popover()).not.toBeNull();
+  });
+
+  it('clicking the day number drills into the day view', async () => {
+    await mountMonth({ dayClickAction: 'popover' });
+    el.shadowRoot!
+      .querySelector<HTMLElement>('#scheduler-cell-m-2026-05-14 .day-number')!
+      .click();
+    await settle();
+    expect(popover()).toBeNull();
+    expect(getState(el).view).toBe('day');
+    expect(getState(el).date.getDate()).toBe(14);
+  });
+
+  it('Escape closes it; activating an entry emits event-selected and closes', async () => {
+    await mountMonth();
+    el.shadowRoot!.querySelector<HTMLElement>('.scheduler-more-link')!.click();
+    await settle();
+    dispatchKey(el, 'Escape');
+    await settle();
+    expect(popover()).toBeNull();
+
+    el.shadowRoot!.querySelector<HTMLElement>('.scheduler-more-link')!.click();
+    await settle();
+    let selected: string | null = null;
+    el.addEventListener('event-selected', (e) => {
+      selected = (e as CustomEvent).detail.event.id;
+    });
+    el.shadowRoot!.querySelectorAll<HTMLElement>('.popover-event')[1].click();
+    await settle();
+    expect(selected).toBe('b');
+    expect(popover()).toBeNull();
+  });
+
+  it('New event requests the whole day, and is absent when creation is denied', async () => {
+    await mountMonth();
+    el.shadowRoot!.querySelector<HTMLElement>('.scheduler-more-link')!.click();
+    await settle();
+    let range: { start: Date; end: Date } | null = null;
+    el.addEventListener('event-create', (e) => {
+      range = (e as CustomEvent).detail.range;
+    });
+    el.shadowRoot!.querySelector<HTMLElement>('.popover-action.primary')!.click();
+    await settle();
+    expect(range).not.toBeNull();
+    expect(range!.start.getHours()).toBe(0);
+    expect(range!.end.getDate()).toBe(range!.start.getDate() + 1);
+    el.remove();
+
+    await mountMonth({ permissions: false });
+    el.shadowRoot!.querySelector<HTMLElement>('.scheduler-more-link')!.click();
+    await settle();
+    expect(popover()).not.toBeNull();
+    expect(popover()!.querySelector('.popover-action.primary')).toBeNull();
+  });
+
+  it('Space on a focused day cell opens the popover; Enter still requests an event', async () => {
+    await mountMonth();
+    el.shadowRoot!.querySelector<HTMLElement>('#scheduler-cell-m-2026-05-14')!.focus();
+    await settle();
+    dispatchKey(el, ' ');
+    await settle();
+    expect(popover()).not.toBeNull();
+    el.remove();
+
+    await mountMonth();
+    el.shadowRoot!.querySelector<HTMLElement>('#scheduler-cell-m-2026-05-14')!.focus();
+    await settle();
+    let created = false;
+    el.addEventListener('event-create', () => {
+      created = true;
+    });
+    dispatchKey(el, 'Enter');
+    await settle();
+    expect(created).toBe(true);
+  });
+});
+
+/**
+ * M9 — every scheduler event must escape a nesting shadow root. Without
+ * `composed`, a scheduler inside another component's shadow DOM is silent to the
+ * outer consumer, which reads as "the wrapper dropped my handler".
+ */
+describe('mp-scheduler — events are composed', () => {
+  it('a custom event crosses an enclosing shadow boundary', async () => {
+    const outer = document.createElement('div');
+    document.body.appendChild(outer);
+    const root = outer.attachShadow({ mode: 'open' });
+    const el = document.createElement('mp-scheduler') as MpScheduler;
+    root.appendChild(el);
+    (el as unknown as { date: Date }).date = new Date(2026, 4, 12);
+    el.setAttribute('view', 'month');
+    await (el as unknown as { updateComplete: Promise<void> }).updateComplete;
+    await nextRaf();
+
+    let heard = false;
+    document.addEventListener('date-click', () => {
+      heard = true;
+    }, { once: true });
+    el.shadowRoot!.querySelector<HTMLElement>('#scheduler-cell-m-2026-05-14')!.click();
+    await (el as unknown as { updateComplete: Promise<void> }).updateComplete;
+    expect(heard).toBe(true);
+    outer.remove();
   });
 });
