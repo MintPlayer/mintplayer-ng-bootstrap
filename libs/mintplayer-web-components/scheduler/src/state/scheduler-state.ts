@@ -276,7 +276,31 @@ export class SchedulerStateManager {
       next.resourceById = indexResourcesById(next.resources);
     }
     this.state = next;
+    this.warnUnassignedEvents();
     this.notifyListeners();
+  }
+
+  /** Events already reported under `requireEventResource`; warn once each. */
+  private readonly warnedUnassignedIds = new Set<string>();
+
+  /**
+   * `options.requireEventResource` is a DEVELOPMENT signal, not a filter: the
+   * event still renders in the bucket row, because hiding data a consumer handed
+   * us is the trap this whole area exists to avoid. One warning per id, so a
+   * drag that re-renders sixty times a second cannot flood the console.
+   */
+  private warnUnassignedEvents(): void {
+    if (!this.state.options.requireEventResource) return;
+    const unassigned = (this.state.eventsByResource?.get(null) ?? []).filter(
+      (event) => !this.warnedUnassignedIds.has(event.id),
+    );
+    if (unassigned.length === 0) return;
+    for (const event of unassigned) this.warnedUnassignedIds.add(event.id);
+    console.warn(
+      `[mp-scheduler] requireEventResource is set, but ${unassigned.length} event(s) have ` +
+        `no resourceId. They render in the "(No resource)" row. Ids: ` +
+        unassigned.map((event) => event.id).join(', '),
+    );
   }
 
   /**

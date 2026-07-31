@@ -1433,3 +1433,68 @@ describe('mp-scheduler — timeline track stacking', () => {
     expect(rowHeight).toBeGreaterThan(40);
   });
 });
+
+/** D4.2's two remaining pieces: the strict-mode signal and the empty state. */
+describe('mp-scheduler — resource-less events and an empty tree', () => {
+  let el: MpScheduler;
+  afterEach(() => el?.remove());
+
+  const mountTimeline = async (props: Record<string, unknown>) => {
+    el = document.createElement('mp-scheduler') as MpScheduler;
+    document.body.appendChild(el);
+    (el as unknown as { date: Date }).date = new Date(2026, 4, 12);
+    for (const [key, value] of Object.entries(props)) {
+      (el as unknown as Record<string, unknown>)[key] = value;
+    }
+    el.setAttribute('view', 'timeline');
+    await (el as unknown as { updateComplete: Promise<void> }).updateComplete;
+    await nextRaf();
+    return el;
+  };
+
+  const UNASSIGNED = {
+    id: 'loose',
+    title: 'Loose',
+    start: new Date(2026, 4, 12, 9, 0),
+    end: new Date(2026, 4, 12, 10, 0),
+  };
+
+  it('requireEventResource warns once per event but never hides it', async () => {
+    const warnings: string[] = [];
+    const original = console.warn;
+    console.warn = (...args: unknown[]) => warnings.push(String(args[0]));
+    try {
+      await mountTimeline({
+        resources: [{ id: 'alice', title: 'Alice' }],
+        events: [UNASSIGNED],
+        options: { requireEventResource: true },
+      });
+      // Re-render a few times: the warning must not repeat per frame.
+      (el as unknown as { date: Date }).date = new Date(2026, 4, 12, 1);
+      await (el as unknown as { updateComplete: Promise<void> }).updateComplete;
+      await nextRaf();
+    } finally {
+      console.warn = original;
+    }
+
+    const relevant = warnings.filter((w) => w.includes('requireEventResource'));
+    expect(relevant.length).toBe(1);
+    expect(relevant[0]).toContain('loose');
+    // Still rendered: the option is a signal, not a filter.
+    expect(el.shadowRoot!.querySelectorAll('.scheduler-timeline-event').length).toBe(1);
+    expect(el.shadowRoot!.querySelector('.scheduler-timeline-row.unassigned')).not.toBeNull();
+  });
+
+  it('says so when there are no resources AND no events', async () => {
+    await mountTimeline({ resources: [], events: [] });
+    expect(el.shadowRoot!.querySelector('.scheduler-timeline-empty')?.textContent).toBe(
+      'No resources to show.',
+    );
+  });
+
+  it('shows the bucket row instead of the empty state when events exist', async () => {
+    await mountTimeline({ resources: [], events: [UNASSIGNED] });
+    expect(el.shadowRoot!.querySelector('.scheduler-timeline-empty')).toBeNull();
+    expect(el.shadowRoot!.querySelector('.scheduler-timeline-row.unassigned')).not.toBeNull();
+  });
+});

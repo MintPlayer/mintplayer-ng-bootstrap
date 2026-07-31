@@ -261,6 +261,16 @@ After the affordances exist. **B13 is the highest-value item in this milestone.*
 - [x] No option for it: the old `dragScroll` flag was deleted as dead in M7, and a knob here
       would only let a consumer switch off reaching their own data.
 
+## M15 — The rest of D4.2: strict mode + empty state
+
+- [x] `options.requireEventResource` (default `false`): warns once per event id and never
+      hides the event — a signal for development, not a filter.
+- [x] `resources: []` **and** no events now renders a `noResources` message row instead of
+      two header rows over a void. With events it still shows the bucket row, which is what
+      resolves the original report.
+- [x] Three specs: warn-once-and-still-rendered, the empty state, and the bucket row winning
+      over the empty state.
+
 ## M11 — Batched verification sweep
 
 - [x] `nx build mintplayer-web-components` (which runs `codegen-wc`), the three wrapper
@@ -477,8 +487,6 @@ enough context to execute without the originating conversation.
 
 ## Deliberate polish items, none of them a reported defect
 
-- `options.requireEventResource` (PRD D4.2) and a dedicated empty state for
-  `resources: []`. The bucket row alone already resolves the reported symptom.
 - Per-resource **icon/glyph** plus a legend, for WCAG 1.4.1 — resource identity must not be
   colour-only. The same gap covers year view's `.has-events` dot, which still has no text
   equivalent. No surveyed component library ships this (Outlook "charms" are the only

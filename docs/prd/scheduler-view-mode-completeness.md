@@ -224,11 +224,12 @@ an option for consumers who want the stricter contract:
 `resourceId` are reported via a dev warning rather than silently bucketed, mirroring MUI X.
 Never hide an event with no feedback.
 
-> **Not yet implemented:** the bucket row and its localizable `unassignedResource` label
-> ship (M2), but `requireEventResource` and the dedicated empty state for
-> `resources: []` do not. Left open in the plan rather than quietly dropped — the bucket
-> row alone already resolves the reported symptom, since a resource-less consumer now gets
-> a working single-row timeline instead of a blank panel.
+> **Implemented in full.** The bucket row and its localizable `unassignedResource` label
+> shipped in M2; `options.requireEventResource` and the `resources: []` empty state (a
+> `noResources` message row) followed in M15. The option warns **once per event id** — a
+> drag re-renders every frame, and a per-frame console flood is its own defect — and it
+> never hides the event: hiding data a consumer handed us is precisely the trap this whole
+> decision exists to avoid.
 
 - Events with `resourceId == null` render in a synthetic row rendered **last**, labelled
   via a new `SchedulerMessages` key (localizable per #394), suppressed when the bucket is
@@ -967,8 +968,7 @@ behaviour is what every consumer wants and a knob for it would only let someone 
 the ability to reach half their own data.
 
 **Still outstanding** (deliberate follow-ups, none of them a reported defect):
-`options.requireEventResource`, a dedicated `resources: []` empty state, the per-resource
-icon/legend for WCAG 1.4.1, `resource.allowOperations` per-item overrides,
+the per-resource icon/legend for WCAG 1.4.1, `resource.allowOperations` per-item overrides,
 month-view pointer create-drag, e2e coverage for the multi-day ghost and the timeline, and
 the device re-check of timeline touch scrolling. See the plan's §"Outstanding work,
 spelled out" for the implementation notes.

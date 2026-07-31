@@ -201,6 +201,15 @@ export class TimelineView extends BaseView {
     timeline.appendChild(body);
     this.container.appendChild(timeline);
 
+    // Genuinely nothing to show: two header rows over a void read as "broken",
+    // not as "empty". The bucket row already covers the common case (no
+    // resources but some events), so this only fires when both are absent.
+    if (flattened.length === 0 && !hasUnassigned) {
+      const empty = this.createElement('div', 'scheduler-timeline-empty');
+      empty.textContent = resolveMessages(options.messages).noResources;
+      body.appendChild(empty);
+    }
+
     const addBar = this.createAddBar();
     if (addBar) this.container.appendChild(addBar);
 

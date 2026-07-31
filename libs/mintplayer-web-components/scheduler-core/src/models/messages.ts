@@ -23,6 +23,8 @@ export interface SchedulerMessages {
   resourcesHeader: string;
   /** Row header for the synthetic bucket holding events with no resource. */
   unassignedResource: string;
+  /** Shown in the timeline when there are no resources AND no events at all. */
+  noResources: string;
   /** {date} — formatted first day of the visible week */
   timelineGridLabel: string;
   /** {title} — resource group title */
@@ -118,6 +120,7 @@ export const DEFAULT_MESSAGES: SchedulerMessages = {
 
   resourcesHeader: 'Resources',
   unassignedResource: '(No resource)',
+  noResources: 'No resources to show.',
   timelineGridLabel: 'Resource timeline for week starting {date}',
   expandGroup: 'Expand {title}',
   collapseGroup: 'Collapse {title}',

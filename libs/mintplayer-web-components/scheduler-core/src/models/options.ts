@@ -128,6 +128,22 @@ export interface SchedulerOptions {
    * would make an empty cell unable to mean "create here".
    */
   dayClickAction?: 'none' | 'popover';
+
+  /**
+   * Whether every event is expected to name a resource.
+   *
+   * Default `false`: an event with no `resourceId` renders in the timeline's
+   * "(No resource)" bucket row, which is the only non-lossy behaviour — the two
+   * alternatives the industry ships are both silent data traps (hide the event,
+   * or duplicate it into every lane where editing one appears to edit all).
+   *
+   * Set `true` in an app where a resource is mandatory: resource-less events are
+   * still bucketed and still visible, but each one is reported once via a dev
+   * warning so the gap surfaces during development instead of as a support
+   * ticket. It never hides an event, and it is not a validation error — the
+   * component does not own the data.
+   */
+  requireEventResource?: boolean;
 }
 
 /** See `SchedulerOptions.moreLinkBehavior`. */
@@ -175,4 +191,5 @@ export const DEFAULT_OPTIONS: Required<SchedulerOptions> = {
   dayMaxEvents: true,
   moreLinkBehavior: 'popover',
   dayClickAction: 'none',
+  requireEventResource: false,
 };

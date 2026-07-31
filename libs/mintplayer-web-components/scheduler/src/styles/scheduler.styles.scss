@@ -844,6 +844,16 @@ $z-event-selected: 2;    // selected event: its straddling handles must win
   min-width: fit-content;
 }
 
+.scheduler-timeline-empty {
+  padding: 16px;
+  color: var(--bs-secondary-color, #6c757d);
+  /* Sticky-left so the message stays readable while the grid scrolls, and
+     narrow enough not to stretch the (already very wide) timeline. */
+  position: sticky;
+  left: 0;
+  width: var(--scheduler-resource-column-width);
+}
+
 .scheduler-timeline-row {
   display: flex;
   border-bottom: 1px solid var(--scheduler-border-color);
