@@ -237,11 +237,15 @@ After the affordances exist. **B13 is the highest-value item in this milestone.*
       resource-tree handlers.
 - [x] All three demo pages' keymap docs updated for the popover, the year-view Enter change
       and the resource-column affordances.
-- [ ] New e2e: multi-day ghost (one box per column), timeline drag-create with resourceId,
-      timeline two-axis scroll with pinned column, read-only mode, month popover
-      open/escape/focus-return. **Nothing timeline-related has e2e coverage in any
-      framework yet** — the unit suite covers the DOM contracts, CI runs the existing
-      browser specs.
+- [x] New e2e in `apps/ng-bootstrap-demo-e2e/e2e/scheduler-views.spec.ts` — the FIRST
+      browser coverage of the timeline in any framework: multi-day ghost (one box per
+      column, plus the spanned-day count so a failure says which half broke), timeline
+      two-axis scroll with the column staying pinned, the opt-in resource affordances
+      appearing and actually appending a row, and the month popover's
+      open -> focus-in -> Escape -> focus-return cycle. 4/4 green on Chromium AND Firefox,
+      and the pre-existing scheduler e2e still passes.
+- [ ] Still uncovered by e2e: timeline drag-create carrying its `resourceId`, and read-only
+      mode end to end (both are covered by the unit suite's DOM assertions).
 - [ ] axe sweep beyond CI's `e2e-a11y` step.
 - [ ] Device check: touch scrolling in timeline (M3) and week (unchanged) on Android.
 

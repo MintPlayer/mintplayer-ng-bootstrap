@@ -111,12 +111,12 @@ export class MpScheduler extends LitElement {
    * silently behind the user's focus.
    */
   private readonly dayPopover = new OverlayController(this, {
-    anchor: () =>
-      this.popoverAnchorKey
-        ? this.shadowRoot?.querySelector<HTMLElement>(
-            `#scheduler-cell-m-${this.popoverAnchorKey}`,
-          ) ?? null
-        : null,
+    anchor: () => this.popoverAnchorCell(),
+    // Same element as the anchor: the day cell IS the trigger. Spelling it out
+    // means focus returns to the day even when the popover was opened without
+    // anything focused (a programmatic open, or a click on a `tabindex="-1"`
+    // cell that some paths do not focus) instead of falling to <body>.
+    trigger: () => this.popoverAnchorCell(),
     panel: () => this.shadowRoot?.querySelector<HTMLElement>('.scheduler-day-popover') ?? null,
     initialFocus: 'first',
     modal: false,
@@ -538,6 +538,20 @@ export class MpScheduler extends LitElement {
         </div>
       </div>
     `;
+  }
+
+  /**
+   * The day cell the popover hangs off, resolved by date key on every call.
+   * The month view rebuilds its cells imperatively, so a cached element would
+   * be detached the moment anything re-renders while the popover is open.
+   */
+  private popoverAnchorCell(): HTMLElement | null {
+    if (!this.popoverAnchorKey) return null;
+    return (
+      this.shadowRoot?.querySelector<HTMLElement>(
+        `#scheduler-cell-m-${this.popoverAnchorKey}`,
+      ) ?? null
+    );
   }
 
   /** Every event overlapping the given local day, in start order. */
