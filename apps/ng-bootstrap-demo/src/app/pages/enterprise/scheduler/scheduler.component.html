@@ -75,12 +75,16 @@
             <option value="none">Day click &rarr; date-click only</option>
             <option value="popover">Day click &rarr; popover</option>
           </bs-select>
+          <bs-select aria-label="Event editor" [ngModel]="builtInEditor()" (ngModelChange)="builtInEditor.set($event)">
+            <option [ngValue]="true">Built-in event editor</option>
+            <option [ngValue]="false">App-owned editor card</option>
+          </bs-select>
         </bs-input-group>
       </bs-form>
     </div>
     <div [md]="4">
       <small class="text-muted">
-        <strong>Keyboard:</strong> arrow nav cells · Shift+arrow extend selection · Enter create · M/Enter move+resize · Alt+T/Y/M/W/D switch views · double-click edits
+        <strong>Keyboard:</strong> arrow nav cells · Shift+arrow extend selection · Enter create · M/Enter move+resize · F2 edit · Alt+T/Y/M/W/D switch views · double-click edits
       </small>
     </div>
   </div>
@@ -106,7 +110,8 @@
           (groupCreate)="onGroupCreate($event)"
           (resourceUpdate)="onResourceUpdate($event)"
           (resourceDelete)="onResourceDelete($event)"
-          [readonly]="readonly()">
+          [readonly]="readonly()"
+          [eventEditor]="builtInEditor()">
         </bs-scheduler>
       </div>
     </div>

@@ -115,10 +115,12 @@ export function SchedulerPage() {
   const [date, setDate] = useState(new Date());
   const [resources, setResources] = useState<(Resource | ResourceGroup)[]>(RESOURCE_SEED);
 
-  // Double-click editor — the single-pointer, NON-DRAG path to change an
-  // event's times (WCAG 2.5.7 Dragging Movements): every resize possible by
-  // drag is also possible here. The WC deliberately doesn't own an editor —
-  // consumers do.
+  // App-owned double-click editor. Since phase 2 the WC ships its OWN editor
+  // (on by default); this page passes `eventEditor={false}` and keeps its form
+  // as the ESCAPE-HATCH recipe — `event-dblclick` keeps firing either way, so
+  // this wiring is everything a consumer needs to replace the built-in one.
+  // (The Angular demo shows the built-in editor; between them both paths stay
+  // exercised.)
   const [editingEvent, setEditingEvent] = useState<SchedulerEvent | null>(null);
   const [editTitle, setEditTitle] = useState('');
   const [editStart, setEditStart] = useState('');
@@ -166,7 +168,7 @@ export function SchedulerPage() {
           <li><strong>Move mode</strong>: <kbd>M</kbd> or <kbd>Enter</kbd> on a focused event enters move mode. Arrow keys nudge the event in time (or across resources on the timeline), <kbd>Shift</kbd> + arrow resizes the end edge, <kbd>Alt</kbd> + <kbd>Shift</kbd> + arrow resizes the start edge. <kbd>Enter</kbd> commits, <kbd>Esc</kbd> cancels.</li>
           <li><strong>Touch resize</strong>: tap an event to select it, then drag the round handle at its top or bottom edge (left / right on the timeline) — the resize starts immediately, no hold needed. Moving an event by touch stays hold-then-drag (600&nbsp;ms).</li>
           <li><strong>Mouse resize</strong>: drag the top or bottom edge of any resizable event (selected or not); the selected event shows the round handles as the visual affordance.</li>
-          <li><strong>Edit without dragging</strong>: double-click / double-tap an event to edit its title and start / end times in a form — the single-pointer, non-drag alternative (WCAG 2.5.7).</li>
+          <li><strong>Edit without dragging</strong>: double-click / double-tap an event to edit its title and start / end times in a form — the single-pointer, non-drag alternative (WCAG 2.5.7). This page passes <code>eventEditor=&#123;false&#125;</code> and brings its own form (the escape hatch); with the default, the scheduler's built-in editor opens instead (also via right-click or <kbd>F2</kbd>).</li>
           <li><strong>Views</strong>: <kbd>Alt</kbd> + <kbd>T</kbd> today · <kbd>Alt</kbd> + <kbd>Y</kbd> year · <kbd>Alt</kbd> + <kbd>M</kbd> month · <kbd>Alt</kbd> + <kbd>W</kbd> week · <kbd>Alt</kbd> + <kbd>D</kbd> day. These work from anywhere in the scheduler; bare letters are deliberately not hot-keys.</li>
         </ul>
       </details>
@@ -174,7 +176,7 @@ export function SchedulerPage() {
       <section style={{ height: 540 }}>
         <h2>Today's agenda</h2>
         <BsScheduler
-          {...{ events, view, date, resources, options: OPTIONS } as React.ComponentProps<
+          {...{ events, view, date, resources, options: OPTIONS, eventEditor: false } as React.ComponentProps<
             typeof BsScheduler
           >}
           onViewChange={(e) => {
@@ -193,7 +195,9 @@ export function SchedulerPage() {
               title: 'New Event',
               start: e.detail.range.start,
               end: e.detail.range.end,
-              color: '#0d6efd',
+              // No colour: the event inherits its resource's colour (or the
+              // default) via resolveEventColor — stamping one here would
+              // defeat resource colouring for every created event.
               ...(e.detail.resourceId ? { resourceId: e.detail.resourceId } : {}),
             };
             setEvents((current) => [...current, newEvent]);
@@ -243,6 +247,23 @@ export function SchedulerPage() {
                   'children' in item ? { ...item, children: prune(item.children) } : item,
                 );
             setResources((current) => prune(current));
+            // Move the deleted subtree's events to "(No resource)" instead of
+            // leaving them dangling (the WC buckets dangling ids defensively,
+            // with a console warning — this keeps the data honest).
+            const removed = new Set<string>();
+            const collect = (item: Resource | ResourceGroup): void => {
+              removed.add(item.id);
+              if ('children' in item) item.children.map(collect);
+            };
+            collect(e.detail.resource);
+            setEvents((current) =>
+              current.map((ev) => {
+                if (!ev.resourceId || !removed.has(ev.resourceId)) return ev;
+                const copy = { ...ev };
+                delete copy.resourceId;
+                return copy;
+              }),
+            );
           }}
           style={{ display: 'block', height: '100%' }}
         />
