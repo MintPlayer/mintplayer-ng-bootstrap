@@ -681,3 +681,58 @@ describe('mp-scheduler — drag preview ghost (DOM)', () => {
     expect(ghost.style.height).toBe(source.style.height);
   });
 });
+
+/**
+ * Geometry regressions. These pin the two defects that silently mislocated or
+ * mis-ranged real (committed) events, not just drag ghosts:
+ *  - slotMinTime was ignored, so every box was offset by the hidden window;
+ *  - the day's last slot was stamped with an `end` before its own `start`.
+ */
+describe('mp-scheduler — time-grid geometry', () => {
+  let el: MpScheduler;
+  afterEach(() => el?.remove());
+
+  it('positions events relative to slotMinTime, not midnight', async () => {
+    el = document.createElement('mp-scheduler') as MpScheduler;
+    document.body.appendChild(el);
+    (el as unknown as { options: unknown }).options = {
+      slotMinTime: '08:00:00',
+      slotMaxTime: '18:00:00',
+      slotDuration: 1800,
+    };
+    (el as unknown as { date: Date }).date = new Date(2026, 4, 12);
+    (el as unknown as { events: unknown[] }).events = [
+      {
+        id: 'nine',
+        title: 'Nine AM',
+        start: new Date(2026, 4, 12, 9, 0),
+        end: new Date(2026, 4, 12, 10, 0),
+      },
+    ];
+    el.setAttribute('view', 'day');
+    await (el as unknown as { updateComplete: Promise<void> }).updateComplete;
+    await nextRaf();
+
+    const box = el.shadowRoot!.querySelector<HTMLElement>('.scheduler-event:not(.preview)')!;
+    expect(box).toBeTruthy();
+    // 09:00 is the 3rd row of an 08:00-start grid: 2 slots x 40px.
+    // Measuring from midnight gave 720px (18 slots) — off by 640.
+    expect(box.style.top).toBe('80px');
+    expect(box.style.height).toBe('80px'); // one hour = 2 slots
+  });
+
+  it('stamps the last slot of the day with an end AFTER its start', async () => {
+    el = await mount('week');
+    const slots = Array.from(
+      el.shadowRoot!.querySelectorAll<HTMLElement>('.scheduler-time-slot'),
+    );
+    expect(slots.length).toBeGreaterThan(0);
+    // Every slot must be a forward-going interval. The 23:30 row used to stamp
+    // end = that day's 00:00, i.e. 23.5h before its own start.
+    for (const slot of slots) {
+      const start = new Date(slot.dataset['start']!).getTime();
+      const end = new Date(slot.dataset['end']!).getTime();
+      expect(end).toBeGreaterThan(start);
+    }
+  });
+});

@@ -151,6 +151,27 @@ export function formatResizeAnnouncement(
   });
 }
 
+/** One slot row's height in px. Mirrors `--scheduler-slot-height`. */
+const SLOT_HEIGHT_PX = 40;
+
+/** Floor so a very short event stays clickable. */
+const MIN_EVENT_HEIGHT_PX = 20;
+
+/**
+ * A `HH:mm[:ss]` time on the same calendar day as `ref`.
+ *
+ * Uses `setSeconds` off local midnight rather than `setHours(h)` so that
+ * `'24:00:00'` — the `slotMaxTime` default — resolves to the NEXT day's midnight
+ * (the exclusive end of the window) instead of wrapping to 00:00 of the same day.
+ */
+function timeOnDay(ref: Date, time: string): Date {
+  const [h = 0, m = 0, s = 0] = time.split(':').map(Number);
+  const d = new Date(ref);
+  d.setHours(0, 0, 0, 0);
+  d.setSeconds(h * 3600 + m * 60 + s);
+  return d;
+}
+
 /**
  * Base class for scheduler views
  */
@@ -196,6 +217,43 @@ export abstract class BaseView {
   /**
    * Helper to create an element with classes
    */
+  /**
+   * Vertical geometry for one day-part in a time-grid column, in px.
+   *
+   * The single source of truth for BOTH committed event boxes and drag ghosts —
+   * they drifted apart before, which is how the ghost ended up measuring from a
+   * different origin than the box it was previewing.
+   *
+   * Measures from `slotMinTime`, NOT from midnight: the column's first row is
+   * the `slotMinTime` slot, so a midnight origin displaced every box by the
+   * whole hidden window (with `slotMinTime: '08:00'` a 09:00 event landed ~640px
+   * too low). The part is also clipped to `[slotMinTime, slotMaxTime]` on its own
+   * day, so a middle part of a multi-day span renders as the full visible window
+   * rather than 24h worth of pixels.
+   *
+   * Returns `null` when the part falls entirely outside the visible window —
+   * callers skip it rather than drawing a zero-height box.
+   */
+  protected partGeometry(
+    start: Date,
+    end: Date,
+    options: SchedulerOptions,
+  ): { top: number; height: number } | null {
+    const slotSeconds = options.slotDuration ?? 1800;
+    const windowStart = timeOnDay(start, options.slotMinTime ?? '00:00:00');
+    const windowEnd = timeOnDay(start, options.slotMaxTime ?? '24:00:00');
+
+    const clippedStart = Math.max(start.getTime(), windowStart.getTime());
+    const clippedEnd = Math.min(end.getTime(), windowEnd.getTime());
+    if (clippedEnd <= clippedStart) return null;
+
+    const pxPerMs = SLOT_HEIGHT_PX / (slotSeconds * 1000);
+    return {
+      top: (clippedStart - windowStart.getTime()) * pxPerMs,
+      height: Math.max((clippedEnd - clippedStart) * pxPerMs, MIN_EVENT_HEIGHT_PX),
+    };
+  }
+
   protected createElement<K extends keyof HTMLElementTagNameMap>(
     tag: K,
     ...classes: string[]

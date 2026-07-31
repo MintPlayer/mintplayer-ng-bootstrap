@@ -431,7 +431,14 @@ export class TimelineView extends BaseView {
         ? resourceService
             .getAllResources(resources)
             .find((r) => (r.events ?? []).some((e) => e.id === draggedId))?.id
-        : undefined);
+        : undefined) ??
+      // A CREATE drag has no source event and (until PreviewEvent.resourceId is
+      // populated for pointer drags) no resource on the preview either, so fall
+      // back to the row the gesture is happening in. Without this a create-drag
+      // on a timeline row showed no ghost at all.
+      this.state.selectionResourceId ??
+      this.state.focusedResourceId ??
+      undefined;
     if (!resourceId) return;
     const row = this.rowElements.get(resourceId);
     const eventsContainer = row?.querySelector('.scheduler-timeline-events');

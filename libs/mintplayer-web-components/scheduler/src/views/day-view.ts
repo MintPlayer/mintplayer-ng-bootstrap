@@ -226,17 +226,13 @@ export class DayView extends BaseView {
     if (isSelected) eventEl.classList.add('selected');
     void inMoveMode;
 
-    // Calculate position
-    const dayStart = new Date(part.start);
-    dayStart.setHours(0, 0, 0, 0);
-
-    const startMinutes = (part.start.getTime() - dayStart.getTime()) / (1000 * 60);
-    const endMinutes = (part.end.getTime() - dayStart.getTime()) / (1000 * 60);
-    const durationMinutes = endMinutes - startMinutes;
-
-    const slotMinutes = slotDuration / 60;
-    const top = (startMinutes / slotMinutes) * 40;
-    const height = Math.max((durationMinutes / slotMinutes) * 40, 20);
+    // Shared geometry: honours slotMinTime and keeps the box and its drag ghost
+    // measuring from the same origin (see BaseView.partGeometry).
+    const geometry = this.partGeometry(part.start, part.end, {
+      ...this.state.options,
+      slotDuration,
+    });
+    const { top, height } = geometry ?? { top: 0, height: 0 };
 
     // Calculate width based on tracks and colspan
     // colspan allows events to span multiple columns when there's no blocking event
@@ -351,7 +347,8 @@ export class DayView extends BaseView {
     this.slotElements.forEach((el) => el.classList.remove('greyed'));
 
     if (!dragState || !previewEvent) return;
-    if (!dateService.isSameDay(date, previewEvent.start)) return;
+    // No same-day bail: the overlap test below clips correctly, whereas bailing
+    // greyed nothing when a range ran in from the previous day.
 
     const slots = dateService.getTimeSlots(
       date,
@@ -373,34 +370,34 @@ export class DayView extends BaseView {
     }
   }
 
+  /**
+   * Dashed ghost for the day currently shown. A multi-day range contributes at
+   * most one part here, but it must still be CLIPPED to this day rather than
+   * skipped: bailing unless the range *started* today meant dragging in from
+   * yesterday drew no feedback at all.
+   */
   private renderPreviewEvent(): void {
     if (!this.eventsContainer) return;
 
-    // Remove existing preview
-    const existingPreview = this.eventsContainer.querySelector('.scheduler-event.preview');
-    if (existingPreview) {
-      existingPreview.remove();
-    }
+    this.eventsContainer
+      .querySelectorAll('.scheduler-event.preview')
+      .forEach((el) => el.remove());
 
     const { previewEvent, options, date } = this.state;
     if (!previewEvent) return;
-    if (!dateService.isSameDay(date, previewEvent.start)) return;
+
+    const { parts } = timelineService.splitInParts(previewEvent);
+    const part = parts.find((p) => dateService.isSameDay(date, p.start));
+    if (!part) return;
+
+    const geometry = this.partGeometry(part.start, part.end, options);
+    if (!geometry) return;
 
     const previewEl = this.createElement('div', 'scheduler-event', 'preview');
-
-    const dayStart = new Date(previewEvent.start);
-    dayStart.setHours(0, 0, 0, 0);
-
-    const startMinutes = (previewEvent.start.getTime() - dayStart.getTime()) / (1000 * 60);
-    const endMinutes = (previewEvent.end.getTime() - dayStart.getTime()) / (1000 * 60);
-    const durationMinutes = endMinutes - startMinutes;
-
-    const slotMinutes = (options.slotDuration ?? 1800) / 60;
-    const top = (startMinutes / slotMinutes) * 40;
-    const height = Math.max((durationMinutes / slotMinutes) * 40, 20);
-
-    previewEl.style.top = `${top}px`;
-    previewEl.style.height = `${height}px`;
+    if (!part.isStart) previewEl.classList.add('preview-continues-before');
+    if (!part.isEnd) previewEl.classList.add('preview-continues-after');
+    previewEl.style.top = `${geometry.top}px`;
+    previewEl.style.height = `${geometry.height}px`;
     previewEl.style.left = '0';
     previewEl.style.width = '100%';
 

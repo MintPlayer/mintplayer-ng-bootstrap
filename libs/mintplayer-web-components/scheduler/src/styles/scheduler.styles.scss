@@ -364,6 +364,18 @@ $z-event-selected: 2;    // selected event: its straddling handles must win
   opacity: 0.8;
 }
 
+/* A range spanning several days renders one ghost per day. Drop the border on
+   the midnight seams so the set reads as ONE range instead of N events. */
+.scheduler-event.preview.preview-continues-before,
+.scheduler-timeline-event.preview.preview-continues-before {
+  border-top-color: transparent;
+}
+
+.scheduler-event.preview.preview-continues-after,
+.scheduler-timeline-event.preview.preview-continues-after {
+  border-bottom-color: transparent;
+}
+
 .scheduler-event.preview {
   background: var(--scheduler-preview-bg);
   border: 2px dashed var(--bs-primary);
