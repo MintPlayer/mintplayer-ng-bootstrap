@@ -3,7 +3,10 @@
 PRD: [scheduler-view-mode-completeness.md](./scheduler-view-mode-completeness.md)
 Branch: `fix/scheduler-preview-z-order` → PR
 [#395](https://github.com/MintPlayer/mintplayer-ng-bootstrap/pull/395)
-Status: **Not started** (investigation complete, 22 defects catalogued, all decisions made)
+Status: **In progress.** Delivered: M1, M2, M3, M4, M5, M6, M7 (+ the dead-API deletions
+and version bumps). Outstanding: M8 (timeline creation affordances), M9 (event-surface
+cleanup), M10 (month popover), and the M11 items that need a browser/device.
+Verification runs in CI on each push rather than as a long local sweep.
 
 ## Conventions
 
@@ -34,85 +37,85 @@ after the affordances they gate exist.
 
 Small, high value, no API change. **Do these first.**
 
-- [ ] **B2 — `slotMinTime` offset.** Extract the top/height geometry from
+- [x] **B2 — `slotMinTime` offset.** Extract the top/height geometry from
       `week-view.createEventElement` / `day-view.createEventElement` /
       `renderPreviewEvent` into ONE `BaseView.partGeometry(part, options)` helper, and make
       it offset by `slotMinTime` and clip to `[slotMinTime, slotMaxTime]` per day. Reuse
       `parseTimeOnDay`'s `setSeconds` trick (`slotMaxTime` defaults to `'24:00:00'`, which
       `setHours` would wrap). Verify with the PRD's worked example: 09:00 event under
       `slotMinTime: '08:00'` must render at `top: 80px`, not `720px`.
-- [ ] **B1 — week-view last-slot end mis-stamp.** Stop rebuilding `slotEnd` from
+- [x] **B1 — week-view last-slot end mis-stamp.** Stop rebuilding `slotEnd` from
       `slotTemplate.end.getHours()` (`week-view.ts:94-100`); use the raw slot object as
       day-view does (`day-view.ts:90-93`), or derive `end = start + slotDuration`.
-- [ ] **B22 — month-view UTC parse skew.** `dayKey` writes local components but readers do
+- [x] **B22 — month-view UTC parse skew.** `dayKey` writes local components but readers do
       `new Date('YYYY-MM-DD')` (UTC). Either parse the key as local or carry a full ISO
       string like year view. Add a unit test that pins the round-trip **at a negative UTC
       offset** (the bug is invisible at UTC+0 and east — see the PRD table).
-- [ ] **B21 — `dayMaxEvents: false` silently means 3** (`month-view.ts:179-181`). Honour
+- [x] **B21 — `dayMaxEvents: false` silently means 3** (`month-view.ts:179-181`). Honour
       `false` as "show all", `true` as "auto", number as the cap.
-- [ ] Unit tests for each; B2 and B22 get explicit regression cases.
+- [x] Unit tests for each; B2 and B22 get explicit regression cases.
 
 ## M2 — Normalize the event/resource model [D4.1, D4.2, B5–B12]
 
 The keystone. Nothing in M4–M6 works until this lands.
 
-- [ ] Internal store: `state.events` + derived `Map<string | null, SchedulerEvent[]>` index
+- [x] Internal store: `state.events` + derived `Map<string | null, SchedulerEvent[]>` index
       by `resourceId`, recomputed when `events` **or** `resources` is set. Flatten nested
       `resource.events` at set time, stamping `resourceId ??= owner.id`. Dev-warn on
       duplicate ids across both inputs.
-- [ ] Timeline reads `index.get(resource.id)` instead of `resource.events`
+- [x] Timeline reads `index.get(resource.id)` instead of `resource.events`
       (`timeline-view.ts:286`) — and stops destructuring `events` unused (`:255`).
-- [ ] **Delete the bridges**: `updateEvent`'s double-write + `updateResourceEvent` helper
+- [x] **Delete the bridges**: `updateEvent`'s double-write + `updateResourceEvent` helper
       (`scheduler-state.ts`), the resource sweep in `getEventById` (`mp-scheduler.ts`).
       Fix `addEvent`/`removeEvent` to be correct for both worlds via the store.
-- [ ] Delete the five dead `resourceService` event mutators [B8].
-- [ ] Tighten `isResource` to `!('children' in item)` [B9]; add a unit test for the
+- [x] Delete the five dead `resourceService` event mutators [B8].
+- [x] Tighten `isResource` to `!('children' in item)` [B9]; add a unit test for the
       both-fields object that currently satisfies both guards.
-- [ ] Honour `ResourceGroup.collapsed` as the initial value of `state.collapsedGroups`
+- [x] Honour `ResourceGroup.collapsed` as the initial value of `state.collapsedGroups`
       [B10], or delete the field — decide and document; silently ignoring it is the one
       unacceptable outcome.
-- [ ] `resourceId` becomes authoritative [B12]; move-mode seeds from the index, not from a
+- [x] `resourceId` becomes authoritative [B12]; move-mode seeds from the index, not from a
       possibly-contradicting field.
 - [ ] **"(No resource)" bucket row** + `requireEventResource` option + a real empty state
       when `resources` is empty [D4.2]. New `messages` keys.
-- [ ] Verify: an event created in week view now appears in timeline's bucket row (the
+- [x] Verify: an event created in week view now appears in timeline's bucket row (the
       user's R2, end to end).
 
 ## M3 — Timeline two-axis scrolling [D7.1, B16, B17, B19, B20]
 
 Independent of everything else; pure CSS plus one markup wrap.
 
-- [ ] The nine SCSS changes in PRD §7.2 (single scroller, `min-width: fit-content` chain,
+- [x] The nine SCSS changes in PRD §7.2 (single scroller, `min-width: fit-content` chain,
       sticky resource column with opaque background, `$z-sticky-column: 7`).
-- [ ] Wrap both timeline header rows in one sticky `.scheduler-timeline-head`; make the
+- [x] Wrap both timeline header rows in one sticky `.scheduler-timeline-head`; make the
       rows static (fixes the two-stickies-stacking latent bug).
-- [ ] AG-Grid-style guard: frozen column width capped at `container − 50px`.
-- [ ] Promote `slotWidth` (`timeline-view.ts:24`) to a `--scheduler-*` custom property.
-- [ ] Week/day: make `.scheduler-time-gutter` sticky-left too (same defect, same fix).
-- [ ] Delete the dead `.scheduler-body`/`.scheduler-sidebar`/`.scheduler-grid` rules.
-- [ ] Fix `clearContainer` so per-view classes don't accumulate on `.scheduler-content`.
-- [ ] ARIA drive-bys in the header being touched: the time-label row needs `role="row"`,
+- [x] AG-Grid-style guard: frozen column width capped at `container − 50px`.
+- [x] Promote `slotWidth` (`timeline-view.ts:24`) to a `--scheduler-*` custom property.
+- [x] Week/day: make `.scheduler-time-gutter` sticky-left too (same defect, same fix).
+- [x] Delete the dead `.scheduler-body`/`.scheduler-sidebar`/`.scheduler-grid` rules.
+- [x] Fix `clearContainer` so per-view classes don't accumulate on `.scheduler-content`.
+- [x] ARIA drive-bys in the header being touched: the time-label row needs `role="row"`,
       its slots container `role="presentation"`, and `aria-rowcount` must count both
       header rows.
-- [ ] Verify on a real touch device — `scroll-blocked` and pan-mode now target the element
-      that actually scrolls. **Do not** raise `touchMoveThreshold` (see the retracted B18
+- [ ] **Still to verify on a real touch device** — `scroll-blocked` and pan-mode now target
+      the element that actually scrolls. **Do not** raise `touchMoveThreshold` (see the retracted B18
       note: it's coupled to the browser's touch slop).
 
 ## M4 — Multi-day ghosts [D3.1–D3.8, B3, B4]
 
 Depends on M1's shared geometry helper.
 
-- [ ] `renderPreviewEvent` (week + day) splits via
+- [x] `renderPreviewEvent` (week + day) splits via
       `timelineService.splitInParts(previewEvent)` → one ghost per in-week part, appended
       last in each part's own container; out-of-week parts `continue`, never abort [B4].
-- [ ] `querySelectorAll(...).forEach(remove)` in all three views [D3.2].
-- [ ] Seam borders: suppress `border-bottom` on non-`isEnd`, `border-top` on non-`isStart`.
-- [ ] `updateGreyedSlots`: drop the start-or-end-day filter; the existing overlap test is
+- [x] `querySelectorAll(...).forEach(remove)` in all three views [D3.2].
+- [x] Seam borders: suppress `border-bottom` on non-`isEnd`, `border-top` on non-`isStart`.
+- [x] `updateGreyedSlots`: drop the start-or-end-day filter; the existing overlap test is
       already multi-day-correct [B3]. Day view: clamp instead of bailing.
-- [ ] Timeline: fix the create-drag ghost gap **introduced by my own z-order commit** —
+- [x] Timeline: fix the create-drag ghost gap **introduced by my own z-order commit** —
       `if (!resourceId) return` can never pass for a create (`dragState.event` is null); and
       make `updateGreyedSlots` filter by resource so a create-drag stops greying every row.
-- [ ] Existing specs pin ghost count === 1, sibling-ness and last-child; they use a
+- [ ] **Outstanding**: existing specs pin ghost count === 1, sibling-ness and last-child; they use a
       single-day fixture so they stay valid — add a multi-day case asserting one ghost per
       expected column.
 
@@ -120,49 +123,51 @@ Depends on M1's shared geometry helper.
 
 Depends on M2.
 
-- [ ] Add `resourceId` to `TimeSlot`; have `getSlotFromElement` read `data-resource-id`.
-- [ ] Forward `slotElement`/`resourceId` through `activateDrag` into the `active` state and
+- [x] Add `resourceId` to `TimeSlot`; have `getSlotFromElement` read `data-resource-id`.
+- [x] Forward `slotElement`/`resourceId` through `activateDrag` into the `active` state and
       `DragCompletionResult`, so `preview.resourceId` is populated for pointer drags.
 - [ ] Verify `event-create` from a timeline row drag carries the right `resourceId`, and the
       created event lands in that row (needs M2).
-- [ ] First timeline e2e coverage — there is currently **none**.
+- [ ] **Outstanding**: first timeline e2e coverage — there is currently **none**.
 
 ## M6 — Resource colour across all views [D4.4, B11]
 
 Depends on M2.
 
-- [ ] `resolveEventColor(event, resourceById, options)` in `scheduler-core/utils/color.ts`;
+- [x] `resolveEventColor(event, resourceById, options)` in `scheduler-core/utils/color.ts`;
       replace the four duplicated hardcodes and promote `'#3788d8'` to
       `options.defaultEventColor`.
-- [ ] Settle `eventColor` = event fill, `color` = row-header tint; fall back
+- [x] Settle `eventColor` = event fill, `color` = row-header tint; fall back
       `eventColor ?? color`.
-- [ ] **Test the dynamically-added-event path** — the exact case where FullCalendar,
+- [x] **Test the dynamically-added-event path** — the exact case where FullCalendar,
       Bryntum and DevExpress each regressed.
-- [ ] Optional per-resource `icon` (Outlook-"charm" idiom) + legend for WCAG 1.4.1, so
+- [ ] **Outstanding** (WCAG 1.4.1): optional per-resource `icon` (Outlook-"charm" idiom) + legend for WCAG 1.4.1, so
       resource identity isn't colour-only.
-- [ ] Colour edits in timeline emit `resource-update`; the WC never invents a colour
+- [x] Colour edits in timeline emit `resource-update`; the WC never invents a colour
       (deterministic palette helper for consumers instead).
 
 ## M7 — Permission model [D6.1, D6.2, B13, B14]
 
 After the affordances exist. **B13 is the highest-value item in this milestone.**
 
-- [ ] `options.permissions: boolean | Partial<SchedulerPermissions>` + `readonly` host
+- [x] `options.permissions: boolean | Partial<SchedulerPermissions>` + `readonly` host
       attribute + one internal `can(cap, subject?)` resolver.
-- [ ] **Gate every keyboard mutation path** [B13]: `Enter`→create, `Delete`→delete,
+- [x] **Gate every keyboard mutation path** [B13]: `Enter`→create, `Delete`→delete,
       `M`/`Enter`→move-mode and its `Shift+Arrow` resize, `Shift+Arrow` range selection.
       Move-mode must also honour `event.draggable`/`resizable`, which it ignores entirely
       today.
-- [ ] Per-item flags become **tri-state** (`boolean | null`, `null` = inherit); fix the dead
+- [x] Per-item flags become **tri-state** (`boolean | null`, `null` = inherit); fix the dead
       `event.editable`; honour `event.resizable`'s `{start, end}` form; add
       `resource.allowOperations`.
-- [ ] `editable`/`selectable` become documented aliases onto `permissions`.
-- [ ] Delete the six dead option flags (folding `eventStartEditable`/`eventDurationEditable`
+- [x] ~~`editable`/`selectable` become documented aliases~~ — **deleted outright**
+      instead (user: no back-compat needed), together with the six dead flags and the
+      five dead `resourceService` mutators. Versions bumped for the breaks.
+- [x] Delete the six dead option flags (folding `eventStartEditable`/`eventDurationEditable`
       into `resizeEventStart`/`resizeEventEnd`) [B14].
-- [ ] One opt-in `permissions.canCreateAt?(range, resourceId)`, evaluated **only** at
+- [x] One opt-in `permissions.canCreateAt?(range, resourceId)`, evaluated **only** at
       pointer-down, drag completion and Enter-commit. Documented as costly; greying is not
       driven by it.
-- [ ] **A11y**: compose the `aria-describedby` keymap text from per-capability fragments and
+- [x] **A11y**: compose the `aria-describedby` keymap text from per-capability fragments and
       drop the attribute when empty; check permission *before* announcing; keep grid cells
       focusable in read-only (gate commands, not navigation); gate the demo keymap prose.
 
