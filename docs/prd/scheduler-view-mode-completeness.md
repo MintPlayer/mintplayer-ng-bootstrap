@@ -1,14 +1,13 @@
 # PRD — Scheduler view-mode completeness
 
-Status: **Implemented.** M1–M10 delivered on this branch — every reported item is
-now either fixed or answered-and-built (see the
-[plan](./scheduler-view-mode-completeness-plan.md) for the item-level state and
-the short list of deliberate follow-ups). Versions bumped for the breaking
-changes: web-components 2.5.0, ng-bootstrap 22.9.0, react-bootstrap 19.11.0,
-vue-bootstrap 3.12.0.
-Branch: `fix/scheduler-preview-z-order` (folds into PR
-[#395](https://github.com/MintPlayer/mintplayer-ng-bootstrap/pull/395) per the
-one-PR-per-workstream convention)
+Status: **Phase 1 merged** as PR
+[#395](https://github.com/MintPlayer/mintplayer-ng-bootstrap/pull/395)
+(squashed to `master` 2026-07-31, on top of #394's resize-glyph work). Versions
+released with the breaking changes: web-components 2.5.0, ng-bootstrap 22.9.0,
+react-bootstrap 19.11.0, vue-bootstrap 3.12.0. §1–§11 describe what shipped.
+**Phase 2 is scoped but not started** — §12 records the post-merge review
+findings (R11–R14) and their decisions; the plan carries them as M18–M23.
+Branch (phase 1): `fix/scheduler-preview-z-order`; phase 2: `feat/scheduler-phase2`.
 Plan: [scheduler-view-mode-completeness-plan.md](./scheduler-view-mode-completeness-plan.md)
 Predecessors: [scheduler-resize-glyphs.md](./scheduler-resize-glyphs.md) (#394),
 [scheduler-keyboard-grid-nav.md](./scheduler-keyboard-grid-nav.md),
@@ -39,6 +38,10 @@ PR has a single narrative.
 | R9 | No drag ghost when resizing a timeline event | **fixed** (M16), §11.6 |
 | R8 | Timeline compresses overlapping event tracks into a fixed-height row | **fixed** (M12), §11.3 |
 | R7 | Decide where resources/groups are relevant; resource colour used across all views, editable in timeline, random initial | **fixed**: colour resolves in every view (M6); in-timeline colour swatch emits `resource-update` (M8); initial colour stays the consumer's (demo ships a palette helper), §4 |
+| R11 | "I cannot see buttons in the table to add resource-groups or resources" (post-merge) | **answered, not a defect** — the affordances shipped off by default by design (D5.1); §12.1 |
+| R12 | Month/year date-click surface re-opened: "Doesn't necessarily need to be a popup, but the functionality should be provided by the scheduler" | **scoped** (M18) — year gains the panel, month's click opener becomes the default; one leak bug found (B23), §12.2 |
+| R13 | Drag-move events between resources (timeline) | **scoped** (M19–M21) — the plumbing exists and drops the row in one function; four adjacent bugs found (B24–B27), §12.3 |
+| R14 | No visible way for a user to remove an event when the developer allows it | **scoped** (M22) — `event-delete` shipped keyboard-only; pointer users have no delete path, §12.4 |
 
 ## 3. Multi-day drag feedback (R1) — and four bugs found underneath it
 
@@ -659,7 +662,10 @@ this day", because **month view has no drag-to-create at all** (`analyzeTarget` 
 machine about day cells — a much larger feature. Not redundant with the drill-down,
 provided the drill survives *inside* the popover as a secondary "Show day →" action.
 
-**Year — do not build it.** Clicking a month already drills to month view. A day-level
+**Year — do not build it.** *(Superseded in phase 2 — see §12.2. The user re-opened the
+question after using the shipped month popover, and the costing below turned out to rest on
+a false premise: a year surface does not require focusable mini-day cells if the panel
+anchors on the month card.)* Clicking a month already drills to month view. A day-level
 popup there would require making 12 × 42 mini-day cells focusable, reversing a deliberate
 a11y decision documented in the code (`year-view.ts:52-55`: screen readers should describe
 months, not days) and adding a ~500-cell roving grid, to serve a case already covered in
@@ -1014,3 +1020,215 @@ the per-resource icon/legend for WCAG 1.4.1, `resource.allowOperations` per-item
 month-view pointer create-drag, e2e coverage for the multi-day ghost and the timeline, and
 the device re-check of timeline touch scrolling. See the plan's §"Outstanding work,
 spelled out" for the implementation notes.
+
+## 12. Phase 2 — post-merge review (R11–R14)
+
+After #395 merged, the user reviewed against their original asks and reported four items.
+A three-probe investigation (each independent, all findings cited to code on `master`)
+established one non-defect, one re-opened decision plus a leak bug, and one feature whose
+plumbing already exists; R14 (the missing delete affordance) arrived during the review and
+was verified directly. Executed as M18–M23 in the plan.
+
+### 12.1 R11 — the add-resource/group buttons exist and are off by default (answered)
+
+Not a defect: it is D5.1 working as designed. `createResource` / `createGroup` /
+`updateResource` / `deleteResource` all default **false**
+(`scheduler-core/src/models/permissions.ts:62-73`), `createAddBar()` returns `null` unless
+one of the create capabilities is granted (`timeline-view.ts:512-515`), and a denied
+capability renders *nothing*, not a disabled control. The demo starts at
+`permissionMode: 'default'` with an **empty** resource list — so there are no rows, no
+per-row buttons, and no add bar. Selecting **"Events + resource tree editable"** in the
+demo's Permissions select (plus "Load Sample Data") reveals the full surface. The default
+was deliberate: no surveyed peer library ships resource-creation UI at all (§5.2), so the
+component's default behaviour stays "resources are data". The spec suite pins the default
+(`mp-scheduler.keyboard.spec.ts` — "renders no creation UI by default").
+
+Every other candidate cause was checked and ruled out: wrapper forwarding is correct,
+permission toggles repaint (`rowsChanged` compares `resolvedPermissions` identity), all
+message strings have defaults, nothing is CSS-clipped (the add bar is sticky
+`bottom: 0` at `$z-sticky-column` with an opaque background), and codegen was not stale.
+
+**Decisions:**
+
+- **D12.1a — the WC defaults stay off.** D5.1's rationale is unchanged.
+- **D12.1b — the demos become discoverable**: the Angular demo starts in
+  `'resource-admin'` mode so the affordances are visible on first visit (the select still
+  lets you switch back). The React/Vue demos get the same starting mode.
+- **D12.1c — the crowding escape hatch is now due.** §11.2 said "revisit if a consumer
+  grants all four capabilities and finds the column crowded" — the user is that consumer.
+  With expand toggle + four 24px controls, a group title gets ≈50px of the 200px column.
+  Rather than an overflow menu (a second popup surface inside a `rowheader`), widen the
+  resource column when a row carries the full control set — the column is already
+  `min(var(--scheduler-resource-column-width), 100% - 50px)`, so this is a CSS-only
+  adjustment gated on the granted capabilities.
+- **Noted, not built**: leaf rows in a *flat* resource list have no per-row add affordance
+  (`timeline-view.ts:413` gates both add buttons on `isResourceGroup`); the root-level add
+  bar covers that case, so nothing changes until a consumer reports otherwise.
+
+### 12.2 R12 — the date-click surface: month by default, year by extension
+
+#### As-built truth (month)
+
+The M10 popover has three openers, all keyed by date: the `+N more` link (via
+`moreLinkBehavior`, default `'popover'`), **Space** on a focused month cell (always on),
+and a plain cell click — but only under `dayClickAction: 'popover'`, which defaults to
+`'none'`. So the user's literal original ask — *"a popup that opens when a date is
+clicked"* — shipped **opt-in and off**, and the demo ships it off too. A keyboard user
+could reach the popover; a mouse user could not. That asymmetry is the real R12 complaint.
+
+#### B23 — year mini-day clicks leak into the month-only popover path
+
+Year mini-days carry `data-date` (`year-view.ts:108`), and the click handler's date branch
+has **no view check** (`mp-scheduler.ts:1215`). Under `dayClickAction: 'popover'`, clicking
+a year mini-day emits `date-click` (undocumented) and opens the popover — whose anchor
+resolver only knows month cell ids (`#scheduler-cell-m-…`), so `OverlayController` finds
+zero anchors, `position()` early-returns, and a `position: fixed` panel paints
+**unpositioned** at its static position; focus-return dies the same way
+(`resolveReturnTarget` → `trigger()` → `activeAnchor`, all null). Half-wired, not guarded.
+
+#### Decision D12.2 — complete the leak instead of sealing it
+
+- **D12.2a — year view gains the same panel, anchored on the month card.** A mini-day
+  click opens the **day-scoped** panel anchored on its month card
+  (`#scheduler-cell-y-YYYY-MM` — the card is a real focusable element, so positioning and
+  focus-return both work). **Space on a focused month card** opens the **month-scoped**
+  panel (that month's events grouped by day, "New event" for the first/focused day, "Show
+  month" as the drill). Enter keeps drilling into the month, unchanged. This gives keyboard
+  parity at panel granularity with zero new tab stops and no change to the year grid's
+  roles.
+- **D12.2b — REJECTED: `aria-activedescendant` mini-day sub-grid.** It looked like the
+  cheap route to day-granular keyboard access, but activedescendant targets need real
+  roles, and mini-days live *inside* a `role="gridcell"` — a grid-inside-a-gridcell is
+  exactly the `aria-required-children` critical this component already hit (§11.4). Doing
+  it properly means restructuring the year grid's roles (card → `row`, mini-days →
+  `gridcell`), re-opening the roles the aria spec pins. Not worth it for day-vs-month
+  panel granularity.
+- **D12.2c — `dayClickAction` default flips to `'popover'`** (breaking behaviour change,
+  documented): the user's original ask, verbatim, and it removes the mouse/keyboard
+  asymmetry. `date-click` still emits first, unconditionally, so consumers keep their
+  event; `'none'` remains for consumers who want the old behaviour. §8.4 non-goal 5 is
+  hereby reversed — the concern it encoded (two meanings for one click) is answered by
+  the emit-first ordering.
+- **D12.2d — the panel's "New event" gains an optional resource picker** when resources
+  exist: a `<select>` whose value rides on the existing `event-create.resourceId`. This is
+  the honest serving of the "…or create a group" half of the ask — **group creation from a
+  date surface stays rejected** (§8.4 non-goal 2 stands: a `ResourceGroup` is a node in the
+  resource tree with no date dimension; a date-keyed surface cannot say where in the tree
+  it goes; month/year views render no resources — confirmed, both views contain zero
+  references to `Resource`/`ResourceGroup`).
+- **D12.2e — the year `.has-events` text equivalent lands in the same change** (WCAG
+  1.4.1, open since M10): the month card's accessible name gains its event count, and the
+  panel is the interactive path to the detail. Any year surface without this announces as
+  empty cells.
+
+### 12.3 R13 — drag-move events between resources
+
+#### The headline: ~15 lines of plumbing that were never connected
+
+The row's resource id already reaches the drag machine on every pointer move:
+`getSlotAtPosition` hit-tests through `shadowRoot.elementsFromPoint` and
+`getSlotFromElement` reads `data-resource-id` (`mp-scheduler.ts:2407-2430`). Then
+**`calculateMovePreview` throws it away** — it computes a time offset and returns
+`{ start, end }` only (`drag-preview.ts:83-99`), and the commit path copies just those two
+fields onto the event. Y influences nothing. (Contrast: `calculateCreatePreview` *pins* the
+originating row **deliberately**, so a create-drag across rows extends time in its own row
+— the asymmetry between the two is intentional and must survive the fix.)
+
+**The keyboard half already ships**: on the timeline, move-mode's bare Up/Down steps
+through resources, the preview mirrors it, the commit emits the new `resourceId`, and
+`movedToResource` announces it. R13 is the pointer half plus the gaps below. Note
+`event-update` carries `{ event, oldEvent, originalEvent }` — no `changes` field (that's
+`resource-update`), so **no payload or wrapper changes** are needed: the new `resourceId`
+rides on `event`, the old one on `oldEvent`.
+
+#### Bugs found alongside (all on `master`)
+
+- **B24 — pointer move-drag is not permission-gated.** `can('moveEvent', ev)` is consulted
+  only by keyboard paths and inside `isEditable`'s OR-of-four; the pointer gesture checks
+  nothing but `event.draggable === false`. So `permissions: { moveEvent: false,
+  createEvent: true }` still allows a mouse move-drag today. Fix: per-gesture gate at
+  pointer-down (`'event'` → `moveEvent`, `'resize-handle'` → the matching edge, `'slot'` →
+  `createEvent || selectRange`) — also the natural future hook for
+  `resource.allowOperations`.
+- **B25 — the bucket row is unreachable by keyboard.** `adjacentResource`
+  (`mp-scheduler.ts:2014-2024`) filters to real resources and overloads `null` as "no
+  current resource", so neither plain cell navigation nor move-mode can reach
+  `(No resource)`.
+- **B26 — "move to unassigned" is dropped by truthiness.** `commitEventMoveMode` and
+  `applyKeyboardMovePreview` both spread `...(workingResourceId ? { resourceId } : {})`,
+  so a move *to* the bucket silently keeps the old `resourceId` and renders no ghost.
+- **B27 — the demo doesn't re-parent.** `applyEventUpdate` rewrites the event in place
+  inside its current resource's array; a cross-row move leaves an event carrying
+  `resourceId: 'B'` stored under resource A. Renders correctly (resourceId wins), data is
+  inconsistent.
+- **B28 — the move-mode announcement lies on the timeline.** `moveModeEntered` says arrow
+  keys nudge by N minutes; on the timeline Up/Down changes the resource. Needs a
+  view-specific variant.
+
+#### Decision D12.3 — the target row rides the preview, tri-state
+
+- **D12.3a — `TimeSlot.resourceId` and `PreviewEvent.resourceId` widen to
+  `string | null | undefined`**: `undefined` = this view has no resource axis (week/day),
+  `null` = the unassigned bucket row. The bucket's slots get a distinguishable marker
+  (`dataset` can't hold `null`, and an absent attribute is indistinguishable from week
+  view's absent attribute — that ambiguity *is* the current bug). This matches the idiom
+  already used by `eventsByResource: Map<string | null, …>`. **Every `??` on a resource id
+  becomes suspect once `null` is meaningful — grep `resourceId ??` before finishing.**
+- **D12.3b — `calculateMovePreview` carries the row**: target slot's `resourceId` when
+  defined, else the original event's. Commit applies it (mapping `null` →
+  `resourceId: undefined` on the emitted event, whose field stays `string | undefined`);
+  resize commits never rewrite the row.
+- **D12.3c — feedback**: the M16 ghost already relocates once the preview carries a row
+  (its `rowKey` chain starts at `previewEvent.resourceId`); `updateGreyedSlots` gets scoped
+  to the target row (today it greys the time band across every row — wrong feedback for a
+  cross-row drag); the target row gains a `.drop-target` highlight (new rule, needs
+  codegen). Vertical edge auto-scroll (M14) already reaches off-screen rows.
+- **D12.3d — the row must come from hit-testing, never `y / rowHeight` arithmetic** — rows
+  have unequal heights since M12 (track stacking). And **no pointer capture**: tracking is
+  document-level with `elementsFromPoint`; `setPointerCapture` would retarget events to the
+  dragged element and break row resolution.
+- **D12.3e — known limitation, documented not fixed**: unassigning is not durable for
+  events authored nested under `resource.events` — `collectNestedEvents` re-stamps
+  `resourceId ??= owner.id` on the next `setResources`. Consumers who allow drops into the
+  bucket should author events flat (the `events` input), which is already the recommended
+  form post-D4.1.
+
+Touch verification rides the existing open device check: `.scheduler-timeline-event` has
+no `touch-action`, so a vertical cross-row touch drag depends on the 600ms-hold path — to
+be verified on the same Android pass as M3's timeline scrolling.
+
+### 12.4 R14 — a visible delete affordance for events
+
+`event-delete` shipped **keyboard-only**: Delete/Backspace on the selected event, gated by
+`can('deleteEvent', ev)` (`mp-scheduler.ts:1563-1567`, default `true`). There is no pointer
+path anywhere — not in the day popover, not on a selected event. A mouse/touch user whose
+developer granted `deleteEvent` still cannot remove an event. That inverts the usual state
+of this component (M7 fixed keyboard paths *bypassing* gates that pointer paths enforced;
+here the pointer path simply doesn't exist).
+
+The placement constraint is structural: event boxes are `role="button"` in **all four**
+event-rendering views (`week-view.ts:302`, `day-view.ts:215`, `month-view.ts:208`,
+`timeline-view.ts:698`), so a focusable delete control *inside* an event box is a nested
+interactive — invalid ARIA, and axe flags it.
+
+**Decision D12.4:**
+
+- **D12.4a — the day popover's event rows each gain a real delete `<button>`** as a
+  *sibling* of the event button inside the row's `<li>` (no nesting problem), named
+  `"Delete {event}"` via a new `messages` key, rendered only when
+  `can('deleteEvent', event)`, emitting the existing `event-delete`. ≥24px target
+  (SC 2.5.8). Focus after the emit moves to the next row's event button (the row is gone;
+  focus must not fall to `<body>`), and the panel's count line re-renders.
+- **D12.4b — the in-grid selected event gains an × affordance in week/day/timeline**,
+  built the same way as the #394 resize handles: a **pointer-only, non-focusable,
+  `aria-hidden`** target rendered on the selected event when `can('deleteEvent', ev)`,
+  whose keyboard equivalent is the *existing* Delete key (already announced in the event
+  keymap). This sidesteps the nested-interactive constraint the same way resize does —
+  the a11y contract lives on the keyboard path and the accessible name of the event
+  button, not on the glyph. ≥24px hit area, positioned clear of the resize glyphs.
+  Month view is excluded — chips are 24px tall and the popover (D12.4a) is month's
+  delete surface.
+- **Confirmation stays the consumer's job.** `event-delete` is a request like every other
+  scheduler event; the WC does not own the data and must not own an "are you sure" dialog.
+  Document this next to the permission table — a consumer who wants undo/confirm handles
+  it in their `event-delete` listener.

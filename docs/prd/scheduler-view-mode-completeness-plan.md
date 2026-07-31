@@ -1,13 +1,14 @@
 # Plan — Scheduler view-mode completeness
 
 PRD: [scheduler-view-mode-completeness.md](./scheduler-view-mode-completeness.md)
-Branch: `fix/scheduler-preview-z-order` → PR
-[#395](https://github.com/MintPlayer/mintplayer-ng-bootstrap/pull/395)
-Status: **Delivered.** M1–M10 are all in, plus the dead-API deletions and the version
-bumps; the full unit sweep is green (1463 tests). What remains open is listed per milestone
-below and in "Outstanding work, spelled out" — the browser/device verification items, the
-missing e2e coverage, and four deliberate polish items (`requireEventResource`, the empty
-state, the per-resource icon for WCAG 1.4.1, `resource.allowOperations`). None of them is a
+Branch (phase 1): `fix/scheduler-preview-z-order` → PR
+[#395](https://github.com/MintPlayer/mintplayer-ng-bootstrap/pull/395), **merged to
+`master` 2026-07-31** (on top of #394, the resize-glyphs PR). The final unit sweep on the
+branch was 1593 tests green, plus the 10-test `scheduler-views` e2e on Chromium+Firefox.
+Status: **Phase 1 delivered and merged; phase 2 (M18–M23, from the post-merge review
+R11–R14 — PRD §12) scoped and not started.** Phase 2 branch: `feat/scheduler-phase2`
+(approved by the user 2026-07-31). Still open from phase 1: the browser/device verification items
+and deliberate polish items under "Outstanding work, spelled out". None of them is a
 reported defect. Verification runs in CI on each push rather than as a long local sweep.
 
 ## Conventions
@@ -212,7 +213,9 @@ After the affordances exist. **B13 is the highest-value item in this milestone.*
 - [x] `moreLinkBehavior: 'popover' | 'day' | fn` (default `'popover'`) and
       `dayClickAction: 'none' | 'popover'` (default `'none'`, preserving `date-click`).
 - [x] `OverlayController` panel, `role="dialog"`, `modal: false`, `dismissStack` Escape,
-      `initialFocus: 'first'`, anchor resolved lazily by date key.
+      anchor resolved lazily by date key. (`initialFocus` is a function — first
+      `.popover-event`, else first `.popover-action` — not the `'first'` the plan
+      originally said; `'first'` would land on the close button.)
 - [x] All four traps handled and documented at the call sites: a local scroll listener on
       `.scheduler-content`; the `position: fixed` containing-block constraint noted in both
       the SCSS and the render comment; anchor by stable key; the host `keydown` yields while
@@ -317,6 +320,114 @@ After the affordances exist. **B13 is the highest-value item in this milestone.*
 
 ---
 
+# Phase 2 — post-merge review (PRD §12). Not started.
+
+Ordering: M19 before M20 (the tri-state `resourceId` decision shapes the keyboard fixes);
+M18 and M22 are independent (M22's popover half touches the same file as M18 — do M18
+first to avoid churn); M21 is small and can ride either; M23 is the single batched sweep
+at the end, per the standing rule.
+
+## M18 — Month/year date surface [R12, D12.2, B23]
+
+- [ ] Year: mini-day click opens the **day-scoped** panel anchored on its month card —
+      `popoverAnchorCell()` becomes view-aware (`#scheduler-cell-m-…` in month,
+      `#scheduler-cell-y-YYYY-MM` in year). This *completes* the B23 leak instead of
+      sealing it; the unpositioned-panel and dead-focus-return failure modes both go away
+      because the card is a real focusable anchor.
+- [ ] Year: **Space** on a focused month card opens the **month-scoped** panel (events
+      grouped by day, "New event" for the focused/first day, "Show month" drill). Enter
+      keeps drilling. Announce the keymap change.
+- [ ] `dayClickAction` default flips `'none'` → `'popover'` [D12.2c] — breaking behaviour
+      change, document it; `date-click` still emits first. Update the demo selects'
+      defaults and the §11.1 as-built table.
+- [ ] "New event" gains an optional resource `<select>` when resources exist, riding
+      `event-create.resourceId` [D12.2d]. No group creation — §8.4 non-goal 2 stands.
+- [ ] Year `.has-events` text equivalent: the month card's accessible name carries its
+      event count [D12.2e]. Closes the WCAG 1.4.1 item open since M10.
+- [ ] New/changed `messages` keys for the month-scoped panel labels and the resource
+      picker; keymap docs in all three demo pages.
+- [ ] Specs: view-aware anchoring (both views), Space-on-card, the completed click path
+      under both `dayClickAction` values, focus return to the card, resource picker
+      payload. Rewrite the "year view: no popover" spec rather than deleting it.
+
+## M19 — Cross-resource pointer move [R13, D12.3]
+
+- [ ] `TimeSlot.resourceId` / `PreviewEvent.resourceId` → `string | null | undefined`
+      tri-state [D12.3a]; bucket-row slots get a distinguishable marker;
+      `getSlotFromElement` maps it to `null` (bucket) vs `undefined` (no axis).
+      **Grep `resourceId ??` across the scheduler libs** — every one is suspect once
+      `null` is meaningful.
+- [ ] `calculateMovePreview` carries the target row [D12.3b], with a comment marking the
+      deliberate asymmetry against `calculateCreatePreview`'s row-pinning.
+- [ ] `handleDragComplete` `case 'move'`: apply `preview.resourceId` (mapping `null` →
+      `resourceId: undefined` on the emitted event). Resize cases untouched.
+- [ ] Feedback [D12.3c]: `updateGreyedSlots` scoped to the target row; `.drop-target`
+      highlight on the target row (new SCSS rule → **run codegen-wc**); verify the M16
+      ghost relocates (its `rowKey` chain already starts at `previewEvent.resourceId`).
+- [ ] Specs in `drag-state-machine.spec.ts` (pure, no DOM — where the coverage belongs):
+      cross-row move carries the target; `null` target survives; resize never rewrites the
+      row; a week-view slot (`undefined`) leaves the original resource intact.
+
+## M20 — Keyboard + bucket parity [B25, B26, B28]
+
+- [ ] Rewrite `adjacentResource` to walk the same row list the view renders — visible leaf
+      resources plus the bucket when present — returning a value that can distinguish "the
+      bucket row" from "no move" [B25]. Fixes plain cell navigation too, not just
+      move-mode.
+- [ ] `commitEventMoveMode` / `applyKeyboardMovePreview`: write `resourceId` explicitly
+      instead of by truthiness, so a move **to** the bucket commits and previews [B26].
+- [ ] Timeline-specific `moveModeEntered` message (Up/Down = resource, Left/Right = time)
+      [B28]; demo keymap bullets updated.
+- [ ] Specs: `nudgeKeyboardMoveResource` (currently untested at all), Down past the last
+      resource lands in the bucket, commit emits with `resourceId` absent for a bucket
+      drop, Escape restores the original row.
+
+## M21 — Per-gesture pointer permission gate [B24]
+
+- [ ] Gate at pointer-down by target type: `'event'` → `can('moveEvent', ev)`,
+      `'resize-handle'` → the matching edge capability, `'slot'` →
+      `createEvent || selectRange`. Replaces the OR-of-four `isEditable` as the only
+      pointer gate; keeps `resolveCapability` as the ONE resolver (see Landmarks).
+- [ ] Spec: `permissions: { moveEvent: false, createEvent: true }` refuses a pointer
+      move-drag (the case that passes today) but still allows drag-create.
+
+## M22 — Pointer delete affordance [R14, D12.4]
+
+- [ ] Day popover: a real delete `<button>` per event row, **sibling** of the event button
+      (event boxes are `role="button"` in all four views — anything focusable inside one
+      is a nested interactive). Named `"Delete {event}"` via a new `messages` key, rendered
+      only when `can('deleteEvent', event)`, emits the existing `event-delete`, ≥24px
+      target. Focus moves to the next row's button after the emit — never to `<body>`.
+- [ ] Week/day/timeline: an × on the **selected** event, resize-handle idiom — pointer-only,
+      non-focusable, `aria-hidden`, gated on `can('deleteEvent', ev)`; keyboard equivalent
+      is the existing Delete key. ≥24px hit area, clear of the resize glyphs. Month
+      excluded (chips are 24px; the popover is month's delete surface). New SCSS →
+      **run codegen-wc**.
+- [ ] Document that confirmation/undo is the consumer's job in the `event-delete` listener
+      — the WC owns no data and no "are you sure" dialog.
+- [ ] Specs: button absent under `deleteEvent: false`; popover row delete emits and moves
+      focus; the × never appears on an unselected event; axe over the popover with delete
+      buttons present (nested-interactive + target-size).
+
+## M23 — Demos, e2e, sweep
+
+- [ ] Demo `applyEventUpdate` re-parents on a cross-row move instead of rewriting in place
+      [B27] — the demo is the reference consumer, it must model the honest mutation.
+- [ ] Demos start in `'resource-admin'` permission mode [D12.1b] so R11's surface is
+      discoverable; capability-gated resource-column width adjustment if crowding shows
+      [D12.1c].
+- [ ] e2e (`scheduler-views.spec.ts`): drag row A → row B asserting the emitted
+      `resourceId` and the re-parent; ghost sits in the target row mid-drag and only that
+      row greys; drag into and out of the bucket row; a cross-row drag reaching an
+      off-screen row via edge auto-scroll; year panel open → Escape → focus on the card;
+      popover row delete click → event gone from the demo's data.
+- [ ] **One batched suite sweep at the end** (build + unit + e2e), then push once.
+- [ ] Device check rides along: vertical cross-row touch drag (600ms hold path — no
+      `touch-action` on `.scheduler-timeline-event`), same Android pass as the open M3
+      item.
+
+---
+
 ## Explicitly rejected (do not resurrect without new evidence)
 
 - **Per-group always-visible add buttons** — no peer library ships resource creation at all;
@@ -328,11 +439,19 @@ After the affordances exist. **B13 is the highest-value item in this milestone.*
   consumer, demo and spec fixture now for no user-visible gain over normalizing internally.
 - **Predicates as the primary permission API** — honest greying calls a consumer callback per
   cell (hundreds to thousands) and per pointer-move; unserializable, undiffable.
-- **Year-view popover** — would require making ~500 mini-day cells focusable, reversing a
-  deliberate documented a11y decision, for a case already covered in two activations.
+- ~~**Year-view popover**~~ — **superseded by M18** (new evidence: the premise was wrong —
+  anchoring on the month card needs no focusable mini-day cells; PRD §12.2). What stays
+  rejected is the *mini-day-granular focus* version, in both forms: roving tabindex (~500
+  cells) AND `aria-activedescendant` (needs real roles on the mini-days → grid inside a
+  `gridcell`, the §11.4 `aria-required-children` critical) [D12.2b].
 - **Group creation from a month/year popup** — category error: `ResourceGroup` has no date
   dimension and those views don't render resources, so the popup can't say where in the tree
-  it goes.
+  it goes. **Re-confirmed in phase 2** (both views contain zero `Resource`/`ResourceGroup`
+  references); the panel's optional resource picker [D12.2d] is the honest substitute.
+- **Row-from-arithmetic in cross-row drags** (`y / rowHeight`) — rows have unequal heights
+  since M12's track stacking; the row comes from hit-testing only [D12.3d]. Likewise
+  **`setPointerCapture` for the move drag** — it would retarget events to the dragged
+  element and break `elementsFromPoint` row resolution.
 - **Split scroll panes for the timeline** — the industry norm, but week view already proves
   single-scroller + sticky works in this shadow root; revisit only if virtualization lands.
 - **Raising `touchMoveThreshold`** — coupled to the browser's touch slop; see the retracted
