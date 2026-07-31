@@ -241,3 +241,268 @@ After the affordances exist. **B13 is the highest-value item in this milestone.*
   single-scroller + sticky works in this shadow root; revisit only if virtualization lands.
 - **Raising `touchMoveThreshold`** — coupled to the browser's touch slop; see the retracted
   B18 note.
+
+---
+
+# Session handover — read this first if you are resuming
+
+Everything needed to continue without the originating conversation, which was compacted.
+
+## Where things stand
+
+Branch `fix/scheduler-preview-z-order`, folding into PR
+[#395](https://github.com/MintPlayer/mintplayer-ng-bootstrap/pull/395) (base `master`).
+Commits, oldest first:
+
+```
+22d956f5 fix(scheduler): keep the drag ghost above its source event; name the z-index ladder
+213f8392 docs(scheduler): PRD + plan for view-mode completeness (22 defects, all decisions made)
+3691390b fix(scheduler): honour slotMinTime, fix last-slot stamping, split multi-day ghosts (M1+M4)
+ba3fcf78 feat(scheduler)!: normalize the event/resource model into one store (M2, fixes R2)
+d4792213 fix(scheduler): timeline scrolls on both axes with a pinned resource column (M3, fixes R5)
+de98e097 feat(scheduler): timeline drag-create carries its resource; resource colour in every view (M5, M6)
+5f9b8c50 feat(scheduler): real read-only support via a permissions model (M7, fixes R4)
+0a4b45ce feat(scheduler)!: delete dead API, fix month UTC skew and dayMaxEvents:false; bump libs
+22ff1f34 docs(scheduler): mark the plan against what is actually delivered
+4fcfb775 docs(scheduler): bring the PRD in line with what shipped
+```
+
+Versions were already bumped in `0a4b45ce` — do **not** bump again for M8-M10 unless
+another break lands: web-components **2.5.0**, ng-bootstrap **22.9.0**, react-bootstrap
+**19.11.0**, vue-bootstrap **3.12.0**. Repo convention: majors track framework majors, so
+breaking changes ride the minor (precedent #390/#392/#393/#394).
+
+## Working agreements established with the user
+
+1. **Push and let CI run the suites.** Do not make the user sit through a full local sweep;
+   they interrupted one to say exactly this. Keep locally: targeted specs while iterating
+   (`-t "<name>"`), a build for type-checking, and the pre-fix check that a new test really
+   fails without its fix. Everything else goes to CI on push.
+2. **No back-compat shims.** Dead or superseded API gets deleted plus a version bump, not
+   deprecated. This reversed an in-flight decision to keep `editable`/`selectable` as
+   aliases.
+3. **Keep the PRD and plan current** — the conversation is compacted, so these files are
+   the durable record. Never tick a checklist item you did not do; an inaccurate plan is
+   worse than no plan.
+4. **Work stays on this branch and this PR.** No new branch or PR without explicit
+   permission (standing repo rule).
+5. The user reviews as they go and pushes back with device evidence — see the retracted
+   B18 in the PRD. Prefer verified claims over plausible ones.
+
+## Environment gotchas (these will otherwise waste time)
+
+- Always `NX_ISOLATE_PLUGINS=false NX_DAEMON=false`; the Nx plugin worker dies
+  intermittently on this machine. Vitest additionally needs `--pool=threads`.
+- Nx sometimes reports a **false build failure** and even prints "Nx detected a flaky task".
+  If the run printed bundle sizes and `built in …`, re-run before believing it.
+- **Every push cancels the previous CI run** (concurrency group), so a `cancelled`
+  conclusion on an older SHA is normal rather than a failure. Batch pushes when you want a
+  run to survive to completion.
+- `TZ=… node` does **not** take effect in Git Bash here. To exercise timezone behaviour, do
+  the UTC-offset arithmetic explicitly instead of relying on `process.env.TZ`.
+- `git add` prints CRLF→LF warnings constantly on Windows. Harmless.
+
+## How to verify scheduler behaviour by hand
+
+- Serve the demo with `npx nx serve ng-bootstrap-demo` (dev, fast) or
+  `--configuration=production --port=4200` (what the e2e config uses). The production build
+  takes 2-3 minutes and Playwright's own `webServer` gives up at 180s, so start it yourself
+  and let `reuseExistingServer` adopt it.
+- The demo scheduler page is **empty until you click "Load Sample Data"**. Several
+  "nothing renders" observations trace back to this, including part of R2.
+- Sample data the tests and e2e rely on: `Lunch & Learn` (12:00-13:00 Wednesday),
+  `All Hands Meeting`, five `Team Standup`s; timeline resources Alice / Bob / Diana under
+  nested groups.
+- Playwright MCP is available for interactive checks. **The drag ghost is
+  `pointer-events: none`, so `elementsFromPoint` can never return it** — set
+  `preview.style.pointerEvents = 'auto'` for the probe only. `pointer-events` plays no part
+  in the stacking algorithm, so the reported order is still true paint order.
+- To prove a regression test is meaningful: copy the fixed file aside,
+  `git checkout -- <file>`, run the test, confirm it fails with the expected value, restore.
+  Done for the geometry and timeline-ghost tests.
+
+## Test inventory
+
+`libs/mintplayer-web-components/scheduler/src/components/mp-scheduler.keyboard.spec.ts`
+carries the new suites, appended in this order:
+
+- **`drag preview ghost (DOM)`** — ghost count, sibling-ness, last-child DOM order, removal
+  on Escape, and the timeline keyboard ghost. Verified to fail pre-fix (`expected +0 to be 1`).
+- **`time-grid geometry`** — the `slotMinTime` offset (pre-fix `720px` where `80px` is
+  correct) and that every slot's `end > start`.
+- **`normalized event/resource model`** — the R2 acceptance test, the bucket row, nested →
+  flat visibility, `resourceId` stamping, and an authored `collapsed` group.
+- **`resource colour across views`** — resource inheritance, event-colour-wins,
+  `defaultEventColor`, and the **dynamically-added-event** path, which is exactly where
+  FullCalendar #5743, Bryntum #4005 and DevExpress T864922 each regressed.
+- **`permissions`** — 9 cases, including that read-only still allows grid navigation, the
+  conditional keymap text, per-edge `resizable`, and granular tables.
+
+`apps/ng-bootstrap-demo-e2e/e2e/scheduler-resize.spec.ts` holds the browser-level checks
+from #394 plus the ghost-above-source stacking guard. Its `loadSampleWeek` helper uses
+**deterministic readiness** (custom element upgraded + grid rendered, then confirm the seed
+click took effect) instead of `waitForLoadState('networkidle')`, which flaked in Firefox
+under four parallel workers; the file also carries a 60s timeout for the same reason.
+
+## Landmarks in the code (post-change)
+
+- `views/base-view.ts` — `partGeometry` (the single geometry source; fixes B2),
+  `applyEventColors`, `appendResizeHandles` (per-edge and permission-gated),
+  `clearContainer` (also strips the per-view class).
+- `state/scheduler-state.ts` — `mergeEventSources` / `collectNestedEvents` (the one store),
+  `indexByResource`, `indexResourcesById`, `seedCollapsedGroups`. `setState` rebuilds the
+  derived indexes only when their source identity changes, so drag frames stay cheap.
+- `components/mp-scheduler.ts` — `can()` / `effectivePermissions()` / `syncPermissions()`,
+  `allowsCreateAt()`, `parseDayKey()` (the UTC fix), `tryEnterEventMoveMode()`,
+  `announceDenied()`.
+- `scheduler-core/src/models/permissions.ts` — `resolveCapability` is the ONE resolver used
+  by pointer gating, keyboard gating and affordance rendering. Keep it that way; three
+  copies of this logic is how the original `editable` flag ended up mouse-only.
+- `styles/scheduler.styles.scss` — the `$z-*` ladder is at the top of the file. Add rungs
+  there, never a bare number; a bare number is what caused the ghost z-order regression.
+- `views/timeline-view.ts` — `UNASSIGNED_ROW_ID`, `createUnassignedRow`, and the `slotWidth`
+  getter reading `--scheduler-slot-width`.
+
+## Traps already hit — do not rediscover them
+
+- Putting a populated `DEFAULT_PERMISSIONS` into `DEFAULT_OPTIONS` made every capability
+  count as "explicitly specified", silently defeating the alias folding.
+  `DEFAULT_OPTIONS.permissions` must stay `{}` and let `resolveCapability` apply
+  per-capability defaults.
+- A module-level `Set` for "groups already seeded from `collapsed`" leaked across component
+  instances. It is now a per-instance field.
+- `this.state` inside a view is the plain state object, not the manager, so derived data has
+  to live *on* the state — that is why `eventsByResource`, `resourceById` and
+  `resolvedPermissions` are state fields.
+- `timeline-view.renderEvents` iterates row keys (`string | null`) now, so `resource` is no
+  longer in scope; anything needing the row title must carry it alongside the id.
+- `splitInParts` deliberately emits no trailing part when a range ends exactly at midnight.
+  Do not "fix" that by adding a zero-height ghost.
+
+---
+
+# Outstanding work, spelled out
+
+M1-M7 are delivered. What follows is everything still open, with enough context to execute
+without the originating conversation. Decisions are already made in the PRD — these are
+implementation notes, not open questions.
+
+## M8 — Timeline creation affordances (PRD D5.1) — the largest remaining piece
+
+Decision recap: a persistent **"Add resource" row pinned at the bottom of the frozen
+resource column** (the Jira/spreadsheet idiom), with **nested-group creation behind a
+per-group overflow action** rather than two always-visible buttons per row, and events
+created only by **dragging a resource row** (already working, M5). All of it **default-off**
+via permissions, because no surveyed calendar component ships resource-creation UI.
+
+To build:
+1. New request events in `scheduler/src/events/` + `scheduler-core/src/models/events.ts`:
+   `resource-create {parentId?, view}`, `group-create {parentId?, view}`,
+   `resource-update {resource, changes}`, `resource-delete {resource}`. All `bubbles: true`
+   **and `composed: true`** (see M9 — the emitter currently omits `composed`, so events
+   cannot escape a nesting shadow root).
+2. Gate every affordance on `can('createResource' | 'createGroup' | 'updateResource' |
+   'deleteResource')`. **Not rendered** when denied, not rendered-and-disabled — the
+   file-manager rule (`mp-file-manager.ts:813-862`). Contextually-unavailable-but-permitted
+   uses a native `disabled` button.
+3. Accessible names must disambiguate: `"Add resource to {group}"`, never N buttons all
+   named "Add". Route through `options.messages` (new keys). Depth goes in the accessible
+   **name**, never `aria-level` — that is an axe `aria-allowed-attr` serious violation on
+   these roles; `mp-query-group.element.ts:176-187` is the in-repo precedent.
+4. Add a `:focus-visible` rule for the new buttons **and** for the existing
+   `.expand-toggle`, which has none.
+5. Restore focus **by stable key** after an add — the views tear down and rebuild
+   imperatively, and there are already four rAF re-focus call sites to copy. Decide where
+   focus lands when the pressed button is itself removed by the re-render.
+6. In-timeline **resource recolouring** rides here (the rest of R7): a colour control on the
+   resource row emitting `resource-update`. The WC must not invent colours — it stays a pure
+   function of its inputs, so consumers assign the initial colour (ship a deterministic
+   palette helper for them). `resolveEventColor` already consumes `Resource.eventColor ??
+   Resource.color`.
+
+Structural note: `mp-scheduler.render()` is a fixed two-slot template (header + content), so
+a footer add-bar needs a new node there.
+
+## M9 — Event-surface cleanup
+
+1. **`date-select` is declared, typed, and wired as a live Angular output
+   (`scheduler.component.ts` `dateSelect`) that NOTHING ever emits.** Either emit it on
+   range-selection commit or delete it plus the wrapper output. A dead output is worse than
+   a missing one.
+2. **Two duplicated, drifting type surfaces**: `scheduler-core/src/models/events.ts`
+   (`SchedulerEventMap`, 9 entries) versus `scheduler/src/events/event-types.ts`
+   (`SchedulerCustomEvent`, 8 arms). Collapse to one.
+3. **React wrapper types are wrong** (`libs/mintplayer-react-bootstrap/scheduler/src/BsScheduler.tsx`):
+   `onSelectionChange` omits `selectedEvent` and `resourceId` and invents a `slots` field;
+   `event-delete` declares a required `originalEvent` the emitter never sends.
+4. Add `composed: true` in `scheduler-event-emitter.ts` so events escape a nesting shadow
+   root (file-manager already does this).
+5. Wrappers need the M1-M7 surface reflected: `permissions` and `defaultEventColor` ride
+   inside the existing `options` object (no wrapper change strictly needed), but the
+   `readonly` **attribute** must not be swallowed by any wrapper host, and Vue's
+   `resources?: Resource[]` should become `(Resource | ResourceGroup)[]` (pre-existing type
+   gap).
+
+## M10 — Month day popover (PRD D8.1-D8.4)
+
+Decision recap: **month yes, year no.** Configurable strategy, not a hardcoded popover.
+
+1. `options.moreLinkBehavior?: 'popover' | 'day' | fn`, default `'popover'` (FullCalendar's
+   default); `'day'` preserves today's exact drill-to-day behaviour.
+2. `options.dayClickAction?: 'none' | 'popover'`, default **`'none'`** so the existing
+   `date-click` contract is untouched. This is how the user's "click a date to open a popup"
+   ask ships without breaking consumers.
+3. Keep day-**number** click (drill to day view, `navLinks` idiom) separate from
+   day-**cell** click. Conflating them makes empty-cell create impossible.
+4. Openers for the popover: the existing `+N more`, and **Space** on the focused month cell
+   (currently unbound, so `Enter` keeps meaning "create for this day").
+5. Contents: date + count header; the day's full event list as `role="button"` items reusing
+   `formatEventAriaLabel`, activation emitting the existing `event-selected`; a primary
+   "New event" emitting the existing `event-create`; a secondary "Show day" performing
+   today's drill. **No new event types.**
+6. Build on `OverlayController` (`libs/mintplayer-web-components/overlay`) with a
+   Lit-rendered `role="dialog"` panel, `modal: false`, `initialFocus: 'first'`,
+   `dismissStack` for Escape, focus return to the opener by date key.
+7. **Four traps, all real:**
+   - `scroll` is not a composed event, so the controller's `document` capture listener never
+     sees `.scheduler-content` scrolling inside the shadow root — both `'reposition'` and
+     `'close'` are silently dead. Register a local listener on `.scheduler-content`.
+   - `position: fixed` containing block: document that nothing may add
+     `transform`/`filter`/`contain` to `.scheduler-content` or `.scheduler-month-grid`.
+   - The anchor is imperative DOM destroyed on every render — hold popover identity by date
+     key and resolve the anchor lazily.
+   - Escape collides: the host `keydown` (which clears the selection) fires before the
+     controller's document listener. Gate `handleKeyDown` on "popover open".
+8. Year view instead gets two fixes, no popover: `Enter` on a month card currently emits a
+   **month-spanning** `event-create`, which should drill into the month like the header
+   button does; and the `.has-events` dot needs a text equivalent.
+
+Non-goals, explicitly: no year popover; no focusable mini-day cells; no group/resource
+creation in a date popup (a `ResourceGroup` has no date dimension, so the popup could not
+say where in the tree it goes); no inline edit form in the popover (the WC owns no event
+data); no modal/focus-trap/`aria-modal`; plain cell click keeps emitting `date-click`.
+
+## Smaller items still open
+
+- `options.requireEventResource` (PRD D4.2) and a dedicated empty state for
+  `resources: []`. The bucket row alone already resolves the reported symptom, so these are
+  polish.
+- Per-resource **icon/glyph** plus a legend, for WCAG 1.4.1 — resource identity must not be
+  colour-only. No surveyed component library has this (Outlook "charms" are the only
+  precedent anywhere), so it is a cheap differentiator as well as a compliance item.
+- `resource.allowOperations` per-item override (the file-manager three-layer pattern).
+- Multi-day ghost e2e: assert one ghost box **per expected column** for a 3-day create.
+- **First timeline e2e coverage of any kind** — there is currently none, in any framework.
+- React/Vue demos must bind `resources` so their timeline is exercised at all; it has been
+  permanently blank since it shipped (B7).
+- Device re-check of timeline touch scrolling after M3 (`scroll-blocked` and pan-mode now
+  target the element that actually scrolls). **Do not raise `touchMoveThreshold`** — see the
+  retracted B18 note in the PRD; it is coupled to the browser's touch slop.
+- Demo keymap `<details>` blocks in all three apps need the new/changed keys, and the keymap
+  prose must be gated the same way the `aria-describedby` text now is (read-only must not
+  document blocked gestures).
+- `options.dragScroll` remains declared and unread: there is no auto-scroll when a drag
+  reaches the viewport edge. Expect this as the next complaint now that scrolling works.
+- Month view still has **no pointer create-drag at all** (`analyzeTarget` only recognises
+  `.scheduler-time-slot, .scheduler-timeline-slot`). The popover is the cheap substitute;
+  marquee-selecting across month cells is a separate, larger feature.
