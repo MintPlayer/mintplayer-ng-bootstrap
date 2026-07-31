@@ -417,7 +417,9 @@ describe('mp-scheduler — Phase B: month-view arrow nav', () => {
     );
     expect(cell).not.toBeNull();
     expect(cell!.getAttribute('role')).toBe('gridcell');
-    expect(cell!.getAttribute('aria-selected')).toBe('false');
+    // Month cells carry NO aria-selected — writing it for focus position
+    // misreported focus as selection (audit MAJOR, PRD scheduler-resize-glyphs FR-11).
+    expect(cell!.getAttribute('aria-selected')).toBeNull();
     expect(cell!.classList.contains('scheduler-month-day')).toBe(true);
   });
 

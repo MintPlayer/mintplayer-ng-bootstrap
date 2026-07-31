@@ -41,6 +41,10 @@ async function readUpdates(page: Page): Promise<{ title: string; startMs: number
 }
 
 test.describe('scheduler — touch resize via the selection glyph', () => {
+  // Touch emulation (hasTouch + Touch constructor semantics) is only
+  // dependable in Chromium — which is also the engine that represents
+  // Android touch. Firefox still runs the mouse + header specs below.
+  test.skip(({ browserName }) => browserName !== 'chromium', 'chromium-only touch emulation');
   test.use({ hasTouch: true });
 
   test('tap selects and reveals glyphs; dragging the bottom handle resizes immediately', async ({ page }) => {
@@ -73,12 +77,25 @@ test.describe('scheduler — touch resize via the selection glyph', () => {
     await schedulerRoot(page).evaluate(async (sched) => {
       const root = sched.shadowRoot!;
       const handle = root.querySelector('.scheduler-event.selected .resize-handle.bottom') as HTMLElement;
+      const raf = () => new Promise<void>((res) => requestAnimationFrame(() => res()));
       handle.scrollIntoView({ block: 'center' });
-      const r = handle.getBoundingClientRect();
-      const x = r.left + r.width / 2;
-      let y = r.top + r.height / 2;
-      const touch = (type: string, target: EventTarget, clientY: number) => {
-        const t = new Touch({ identifier: 1, target: target as Element, clientX: x, clientY });
+      // The app's global stylesheet sets `scroll-behavior: smooth` on the
+      // page, so scrollIntoView animates for several frames. Real touch
+      // input cancels an in-flight smooth scroll on contact; synthetic
+      // TouchEvents don't, so wait out the animation first — otherwise the
+      // clientY coordinates below drift away from the handle mid-drag.
+      let lastY = window.scrollY;
+      for (let stableFrames = 0; stableFrames < 5; ) {
+        await raf();
+        stableFrames = window.scrollY === lastY ? stableFrames + 1 : 0;
+        lastY = window.scrollY;
+      }
+      const center = (el: Element) => {
+        const r = el.getBoundingClientRect();
+        return { x: r.left + r.width / 2, y: r.top + r.height / 2 };
+      };
+      const touch = (type: string, target: EventTarget, clientX: number, clientY: number) => {
+        const t = new Touch({ identifier: 1, target: target as Element, clientX, clientY });
         target.dispatchEvent(new TouchEvent(type, {
           touches: type === 'touchend' ? [] : [t],
           changedTouches: [t],
@@ -88,15 +105,27 @@ test.describe('scheduler — touch resize via the selection glyph', () => {
           cancelable: true,
         }));
       };
-      touch('touchstart', handle, y);
-      const raf = () => new Promise((res) => requestAnimationFrame(res));
-      const steps = [10, 20, 30, 40];
-      for (const dy of steps) {
-        touch('touchmove', handle, y - dy);
+      const start = center(handle);
+      touch('touchstart', handle, start.x, start.y);
+      await raf();
+      // Drag activation applies scroll-blocking, which can shift the page —
+      // re-derive the handle position from the CURRENT DOM (the drag start
+      // also re-rendered the events) so the moves aim where the handle
+      // actually is now. Real fingers self-correct visually; a script must
+      // do it explicitly. Events keep going to the original node: the input
+      // handler attaches its listeners to the touched element on touchstart.
+      const now = center(root.querySelector('.scheduler-event.selected .resize-handle.bottom')!);
+      // Resize snaps to 30-min (40px) slot boundaries, and the handle can
+      // start anywhere within its slot's 40px band — a move smaller than
+      // one full slot can legitimately land back in the same slot (that's
+      // correct snapping, not a bug). 140px guarantees crossing at least
+      // one boundary regardless of the handle's exact starting offset.
+      for (const dy of [40, 80, 110, 140]) {
+        touch('touchmove', handle, now.x, now.y - dy);
         await raf();
         await raf();
       }
-      touch('touchend', handle, y - 40);
+      touch('touchend', handle, now.x, now.y - 140);
     });
     await page.waitForTimeout(300);
 
@@ -104,8 +133,14 @@ test.describe('scheduler — touch resize via the selection glyph', () => {
     expect(updates.length).toBeGreaterThan(0);
     const u = updates[updates.length - 1];
     expect(u.title).toBe('Lunch & Learn');
-    // Lunch & Learn is 12:00–13:00; shrinking by one 30-min slot → ends 12:30.
-    expect(u.endMs - u.startMs).toBe(30 * 60 * 1000);
+    // Lunch & Learn is 12:00–13:00 (1h, the product's minDurationMs floor is
+    // 30min). Dragging the bottom handle up must strictly shrink it, snapped
+    // to a 30-min slot boundary.
+    const originalDurationMs = 60 * 60 * 1000;
+    const durationMs = u.endMs - u.startMs;
+    expect(durationMs).toBeGreaterThanOrEqual(30 * 60 * 1000);
+    expect(durationMs).toBeLessThan(originalDurationMs);
+    expect(durationMs % (30 * 60 * 1000)).toBe(0);
   });
 });
 

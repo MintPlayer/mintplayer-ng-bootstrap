@@ -110,7 +110,7 @@
       <bs-card class="d-block mb-3">
         <bs-card-header>Event Log</bs-card-header>
         <bs-card-body>
-          <div class="event-log">
+          <div class="event-log" tabindex="0" role="region" aria-label="Event log">
             @if (eventLog().length === 0) {
               <p class="text-muted">No events yet. Try clicking on the scheduler or loading sample data.</p>
             }
@@ -123,13 +123,13 @@
       <bs-card class="d-block">
         <bs-card-header>State ({{ events().length }} events)</bs-card-header>
         <bs-card-body>
-          <div class="state-debug" style="font-size: 11px; max-height: 300px; overflow: auto;">
+          <div class="state-debug" tabindex="0" role="region" aria-label="Scheduler state debug output">
             <div><strong>View:</strong> {{ view() }}</div>
             <div><strong>Date:</strong> {{ date() | date:'medium' }}</div>
             <div><strong>Selected:</strong> {{ selectedEvent()?.title ?? 'None' }}</div>
             <hr>
             <div><strong>Events:</strong></div>
-            <pre style="font-size: 10px; margin: 0;">{{ events() | json }}</pre>
+            <pre>{{ events() | json }}</pre>
           </div>
         </bs-card-body>
       </bs-card>

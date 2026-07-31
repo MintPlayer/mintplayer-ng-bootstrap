@@ -1,6 +1,7 @@
 # PRD — Scheduler resize glyphs, touch resize, and blind-user completeness
 
-Status: **Proposed** (investigation complete, not started)
+Status: **Implemented** on `feat/scheduler-resize-glyphs` (2026-07-31) — see
+"As-built notes" at the bottom for deviations decided during implementation.
 Plan: [scheduler-resize-glyphs-plan.md](./scheduler-resize-glyphs-plan.md)
 
 ## 1. Problem
@@ -329,3 +330,29 @@ WCAG 1.4.10 reflow reference), and inside a narrow dock/splitter pane.
    `date-change` if absent.
 3. Exact glyph diameter (14px proposed) — tune visually in the demo against 30-min
    (20px-tall) events.
+
+## 9. As-built notes (deviations & discoveries, 2026-07-31)
+
+- **BREAKING (Angular wrapper):** the explicit `viewChange = output<ViewChangeEvent>()`
+  is removed. `view` and `date` are `model()` signals; their implicit
+  `viewChange: OutputEmitterRef<ViewType>` / `dateChange: OutputEmitterRef<Date>`
+  outputs replace it (keeping both was impossible — NG1054 name collision).
+  Consumers migrate from `(viewChange)="onViewChange($event.view)"` to
+  `[(view)]` / `[(date)]` (+ the implicit change outputs if they need the hook).
+- **`view-change` already fires on pure date navigation** (`viewChanged || dateChanged`),
+  so no new `date-change` WC event was needed (open question 2 resolved).
+- **`event-dblclick` was dead on arrival and is now synthesized**: the first click's
+  selection re-render replaces the event node, which resets the browser's native
+  double-click tracking — so the WC now emits `event-dblclick` from two activations of
+  the same event within 500 ms. This also gives touch users a double-tap path to the
+  demo edit form (the SC 2.5.7 non-drag alternative).
+- **D9 title compaction dropped**: with the narrow header giving the title its own
+  full-width centered row (rows centered per review), the full title incl. year fits in
+  every view at 320px — FR-18's compact format is unnecessary and not implemented; the
+  title is `white-space: nowrap` + ellipsis-guarded instead. Narrow rows are centered.
+- **Two bug fixes surfaced by D7 (timeline pointer resize)**: `getEventById` never
+  resolved resource-owned events (hit-testing could not start any timeline drag), and
+  `stateManager.updateEvent` didn't update events nested in the resource tree (commits
+  snapped back). Both fixed; the timeline also gained the drag preview ghost.
+- **Touch-drag e2e** uses synthetic `TouchEvent`s (engine-agnostic) rather than a
+  CDP-only touchscreen drag; hasTouch context asserts the no-hold immediate arm.

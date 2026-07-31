@@ -32,3 +32,14 @@
     border-bottom: none;
   }
 }
+
+.state-debug {
+  font-size: 11px;
+  max-height: 300px;
+  overflow: auto;
+
+  pre {
+    font-size: 10px;
+    margin: 0;
+  }
+}
