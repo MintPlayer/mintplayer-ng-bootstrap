@@ -964,7 +964,7 @@ describe('mp-scheduler — resource colour across views', () => {
 });
 
 /**
- * Read-only / permissions. `editable: false` used to gate POINTER gestures only,
+ * Read-only / permissions. The old `editable: false` gated POINTER gestures only,
  * so every keyboard path (Enter=create, Delete=delete, M=move-mode with
  * Shift+Arrow resize) walked straight past it — the scheduler could not be made
  * read-only at all.
@@ -1077,11 +1077,11 @@ describe('mp-scheduler — permissions', () => {
     expect(el.shadowRoot!.querySelectorAll('.resize-handle.bottom').length).toBe(1);
   });
 
-  it('legacy editable:false still works as an alias', async () => {
+  it('a granular deleteEvent:false blocks only deletion', async () => {
     el = document.createElement('mp-scheduler') as MpScheduler;
     document.body.appendChild(el);
     (el as unknown as { date: Date }).date = new Date(2026, 4, 12);
-    (el as unknown as { options: unknown }).options = { editable: false };
+    (el as unknown as { options: unknown }).options = { permissions: { deleteEvent: false } };
     (el as unknown as { events: unknown[] }).events = [EVENT];
     el.setAttribute('view', 'week');
     await (el as unknown as { updateComplete: Promise<void> }).updateComplete;

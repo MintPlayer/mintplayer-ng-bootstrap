@@ -57,8 +57,6 @@ export class MpScheduler extends LitElement {
       'first-day-of-week',
       'slot-duration',
       'time-format',
-      'editable',
-      'selectable',
       'readonly',
     ];
   }
@@ -197,17 +195,9 @@ export class MpScheduler extends LitElement {
           this.stateManager.setOptions({ timeFormat: newValue });
         }
         break;
-      case 'editable':
-        this.stateManager.setOptions({ editable: newValue !== 'false' });
-        this.syncPermissions();
-        break;
       case 'readonly':
         // Coarse read-only switch, reachable from plain HTML/SSR where an options
         // object isn't. Presence = read-only, `readonly="false"` opts out.
-        this.syncPermissions();
-        break;
-      case 'selectable':
-        this.stateManager.setOptions({ selectable: newValue !== 'false' });
         this.syncPermissions();
         break;
     }
@@ -335,17 +325,10 @@ export class MpScheduler extends LitElement {
   }
 
   getEventById(eventId: string): SchedulerEvent | null {
-    // Timeline events live on the resources, not the flat events input —
-    // without the resource sweep, pointer hit-testing (analyzeTarget →
-    // getEventById) can't resolve them and timeline drags never start.
-    return (
-      this.events.find((e) => e.id === eventId) ??
-      resourceService
-        .getAllResources(this.stateManager.getState().resources)
-        .flatMap((r) => r.events ?? [])
-        .find((e) => e.id === eventId) ??
-      null
-    );
+    // One store since the model was normalized: `state.events` already contains
+    // events authored under resources, each stamped with its resourceId, so the
+    // old resource-tree sweep is redundant.
+    return this.stateManager.getState().events.find((e) => e.id === eventId) ?? null;
   }
 
   refetchEvents(): void {
@@ -825,7 +808,7 @@ export class MpScheduler extends LitElement {
     if (dayEl) {
       const dateStr = dayEl.dataset['date'];
       if (dateStr) {
-        this.eventEmitter.emitDateClick(new Date(dateStr), pointer.originalEvent);
+        this.eventEmitter.emitDateClick(this.parseDayKey(dateStr), pointer.originalEvent);
       }
     }
 
@@ -836,7 +819,7 @@ export class MpScheduler extends LitElement {
     if (monthHeader) {
       const monthStr = monthHeader.dataset['month'];
       if (monthStr) {
-        this.stateManager.setDate(new Date(monthStr));
+        this.stateManager.setDate(this.parseDayKey(monthStr));
         this.stateManager.setView('month');
       }
     }
@@ -846,7 +829,7 @@ export class MpScheduler extends LitElement {
     if (moreLink) {
       const dateStr = moreLink.dataset['date'];
       if (dateStr) {
-        this.stateManager.setDate(new Date(dateStr));
+        this.stateManager.setDate(this.parseDayKey(dateStr));
         this.stateManager.setView('day');
       }
     }
@@ -955,14 +938,14 @@ export class MpScheduler extends LitElement {
     if (active.classList.contains('scheduler-more-link')) {
       const dateStr = active.dataset['date'];
       if (!dateStr) return false;
-      this.stateManager.setDate(new Date(dateStr));
+      this.stateManager.setDate(this.parseDayKey(dateStr));
       this.stateManager.setView('day');
       return true;
     }
     if (active.classList.contains('scheduler-year-month-header')) {
       const monthStr = active.dataset['month'];
       if (!monthStr) return false;
-      this.stateManager.setDate(new Date(monthStr));
+      this.stateManager.setDate(this.parseDayKey(monthStr));
       this.stateManager.setView('month');
       return true;
     }
@@ -1002,8 +985,8 @@ export class MpScheduler extends LitElement {
   }
 
   /**
-   * Resolve a capability against `readonly`, `options.permissions`, the
-   * deprecated `editable`/`selectable` aliases, and any per-event override.
+   * Resolve a capability against `readonly`, `options.permissions` and any
+   * per-event override.
    *
    * A boolean lookup, deliberately: it runs on every pointer-down and on every
    * render that decides whether to draw an affordance.
@@ -1029,30 +1012,21 @@ export class MpScheduler extends LitElement {
     });
   }
 
+  /**
+   * The effective permission table: the `readonly` host attribute outranks
+   * everything, then `options.permissions`. Per-capability defaults are applied
+   * inside `resolveCapability`, so an unspecified capability keeps its documented
+   * default rather than being treated as denied.
+   */
   private effectivePermissions(
     options: SchedulerOptions,
   ): boolean | Partial<SchedulerPermissions> {
-    // `readonly` on the host outranks everything.
     if (this.hasAttribute('readonly') && this.getAttribute('readonly') !== 'false') {
       return false;
     }
     const explicit = options.permissions;
     if (explicit === false) return false;
-
-    const legacy: Partial<SchedulerPermissions> = {};
-    if (options.editable === false) {
-      legacy.createEvent = false;
-      legacy.moveEvent = false;
-      legacy.resizeEventStart = false;
-      legacy.resizeEventEnd = false;
-      legacy.deleteEvent = false;
-    }
-    if (options.selectable === false) legacy.selectRange = false;
-
-    // Aliases first, explicit table second, so an explicit setting wins ONLY for
-    // the capabilities it actually names. (An empty table names none.)
-    if (explicit === true || explicit === undefined) return legacy;
-    return { ...legacy, ...explicit };
+    return typeof explicit === 'object' && explicit !== null ? explicit : {};
   }
 
   /**
@@ -1112,7 +1086,7 @@ export class MpScheduler extends LitElement {
       case 'Delete':
       case 'Backspace':
         e.preventDefault();
-        // Gated: `editable: false` used to block only POINTER gestures, so a
+        // Gated: the old `editable` flag blocked only POINTER gestures, so a
         // read-only scheduler still deleted on a keypress.
         if (!this.can('deleteEvent', ev)) {
           this.announceDenied();
@@ -1277,7 +1251,7 @@ export class MpScheduler extends LitElement {
     if (!active) return;
     const dateStr = active.dataset['date'] ?? active.dataset['month'];
     if (!dateStr) return;
-    this.stateManager.setFocusedDate(new Date(dateStr));
+    this.stateManager.setFocusedDate(this.parseDayKey(dateStr));
   }
 
   private moveFocusedDateByDays(deltaDays: number): void {
@@ -1593,6 +1567,22 @@ export class MpScheduler extends LitElement {
     if (state.focusedCell) {
       this.scrollAndFocusCell(state.focusedCell, state.focusedResourceId);
     }
+  }
+
+  /**
+   * Parse a `YYYY-MM-DD` day key as a LOCAL date.
+   *
+   * `new Date('2026-07-31')` is parsed per spec as UTC midnight, so in every
+   * timezone west of UTC it lands on the previous local day — month view writes
+   * these keys from local components, so Enter on Jul 31 in New York emitted
+   * `event-create` for Jul 30 and focus restoration missed the cell entirely.
+   * Full ISO strings (year view's `data-month`) round-trip fine and still work
+   * through this function.
+   */
+  private parseDayKey(value: string): Date {
+    const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(value);
+    if (!match) return new Date(value);
+    return new Date(Number(match[1]), Number(match[2]) - 1, Number(match[3]));
   }
 
   private cssEscape(value: string): string {

@@ -42,7 +42,11 @@ export interface ResourceGroup {
  * Type guard to check if an item is a Resource
  */
 export function isResource(item: Resource | ResourceGroup): item is Resource {
-  return 'events' in item || !('children' in item);
+  // NOT `'events' in item || …`: an object carrying BOTH `children` and `events`
+  // satisfied this AND isResourceGroup, so `flatten` treated it as a group while
+  // `getAllResources` treated it as a leaf — silently dropping every descendant's
+  // events. A Resource never has `children`, so absence of `children` is the test.
+  return !('children' in item);
 }
 
 /**

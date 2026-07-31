@@ -154,9 +154,9 @@ export interface SchedulerState {
   /** Configuration options */
   options: SchedulerOptions;
   /**
-   * Permission table with `readonly` and the deprecated `editable`/`selectable`
-   * aliases already folded in, so views can gate affordances without re-deriving
-   * the precedence. `false` means fully read-only.
+   * Permission table with the `readonly` host attribute already folded in, so
+   * views can gate affordances without re-deriving the precedence. `false` means
+   * fully read-only.
    */
   resolvedPermissions: boolean | Partial<SchedulerPermissions>;
   /** Currently selected event */

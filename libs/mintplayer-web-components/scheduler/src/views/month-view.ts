@@ -175,10 +175,15 @@ export class MonthView extends BaseView {
       }
     }
 
-    // Render events in each day cell
-    const maxEventsPerDay = typeof options.dayMaxEvents === 'number'
-      ? options.dayMaxEvents
-      : 3;
+    // Render events in each day cell.
+    // `false` means "show all" — it previously fell into the same `: 3` branch as
+    // `true`, so the documented opt-out silently capped at 3 with a "+N more".
+    const maxEventsPerDay =
+      typeof options.dayMaxEvents === 'number'
+        ? options.dayMaxEvents
+        : options.dayMaxEvents === false
+          ? Number.POSITIVE_INFINITY
+          : 3;
 
     for (const [key, dayEvents] of eventsByDay) {
       const cell = this.dayCells.get(key);

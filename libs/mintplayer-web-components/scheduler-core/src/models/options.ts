@@ -75,26 +75,6 @@ export interface SchedulerOptions {
   /** Header toolbar configuration */
   headerToolbar?: HeaderToolbar;
 
-  // Interaction
-  /** Whether events can be edited */
-  editable?: boolean;
-  /** Whether date ranges can be selected */
-  selectable?: boolean;
-  /** Whether to show a mirror element during selection */
-  selectMirror?: boolean;
-  /** Whether event duration can be changed */
-  eventDurationEditable?: boolean;
-  /** Whether event start time can be changed */
-  eventStartEditable?: boolean;
-
-  // Drag settings
-  /** Duration of revert animation in ms */
-  dragRevertDuration?: number;
-  /** Whether to scroll during drag */
-  dragScroll?: boolean;
-  /** Snap duration in seconds */
-  snapDuration?: number;
-
   // Localization
   /** Override any user-facing string (labels, announcements, instructions).
    *  Merged onto the English defaults — see SchedulerMessages. */
@@ -105,7 +85,9 @@ export interface SchedulerOptions {
    * per-capability control. See SchedulerPermissions — it gates AFFORDANCES and
    * gestures, it is not a security boundary.
    *
-   * Supersedes `editable` / `selectable`, which remain as deprecated aliases.
+   * Replaced the old `editable` / `selectable` / `eventStartEditable` /
+   * `eventDurationEditable` flags, and the never-implemented `selectMirror`,
+   * `dragRevertDuration`, `dragScroll` and `snapDuration`.
    */
   permissions?: boolean | Partial<SchedulerPermissions>;
 
@@ -154,18 +136,9 @@ export const DEFAULT_OPTIONS: Required<SchedulerOptions> = {
     center: 'title',
     end: 'year,month,week,day,timeline',
   },
-  editable: true,
-  selectable: true,
-  selectMirror: true,
-  eventDurationEditable: true,
-  eventStartEditable: true,
-  dragRevertDuration: 500,
-  dragScroll: true,
-  snapDuration: 1800,
   messages: DEFAULT_MESSAGES,
   // Empty table, NOT DEFAULT_PERMISSIONS: per-capability fallback happens inside
-  // resolveCapability. A populated default here would count as an "explicit"
-  // table and silently override the deprecated editable/selectable aliases.
+  // resolveCapability, so an unspecified capability keeps its documented default.
   permissions: {},
   defaultEventColor: DEFAULT_EVENT_COLOR,
   nowIndicator: true,

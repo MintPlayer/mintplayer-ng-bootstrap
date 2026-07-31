@@ -135,15 +135,6 @@ describe('ResourceService', () => {
     });
   });
 
-  describe('getAllEvents', () => {
-    it('should return all events from all resources', () => {
-      const items = createSampleHierarchy();
-      const events = service.getAllEvents(items);
-
-      expect(events.length).toBe(4);
-    });
-  });
-
   describe('findResourceById', () => {
     it('should find resource at any depth', () => {
       const items = createSampleHierarchy();
@@ -198,114 +189,6 @@ describe('ResourceService', () => {
 
       expect(res1?.id).toBe('res-1');
       expect(dept1?.id).toBe('dept-1');
-    });
-  });
-
-  describe('addEventToResource', () => {
-    it('should add event to correct resource', () => {
-      const items = createSampleHierarchy();
-      const newEvent = createEvent('new-evt');
-
-      const result = service.addEventToResource(items, 'res-1', newEvent);
-
-      const res1 = service.findResourceById(result, 'res-1');
-      expect(res1?.events?.length).toBe(2);
-      expect(res1?.events?.map((e) => e.id)).toContain('new-evt');
-    });
-
-    it('should return new object (immutability)', () => {
-      const items = createSampleHierarchy();
-      const newEvent = createEvent('new-evt');
-
-      const result = service.addEventToResource(items, 'res-1', newEvent);
-
-      expect(result).not.toBe(items);
-    });
-
-    it('should not modify original resource', () => {
-      const items = createSampleHierarchy();
-      const originalRes1 = service.findResourceById(items, 'res-1');
-      const originalLength = originalRes1?.events?.length;
-
-      const newEvent = createEvent('new-evt');
-      service.addEventToResource(items, 'res-1', newEvent);
-
-      expect(originalRes1?.events?.length).toBe(originalLength);
-    });
-  });
-
-  describe('updateEventInResource', () => {
-    it('should update existing event', () => {
-      const items = createSampleHierarchy();
-      const updatedEvent: SchedulerEvent = {
-        ...createEvent('evt-1'),
-        title: 'Updated Event',
-      };
-
-      const result = service.updateEventInResource(items, updatedEvent);
-
-      const res1 = service.findResourceById(result, 'res-1');
-      const event = res1?.events?.find((e) => e.id === 'evt-1');
-      expect(event?.title).toBe('Updated Event');
-    });
-
-    it('should return new object (immutability)', () => {
-      const items = createSampleHierarchy();
-      const updatedEvent: SchedulerEvent = {
-        ...createEvent('evt-1'),
-        title: 'Updated Event',
-      };
-
-      const result = service.updateEventInResource(items, updatedEvent);
-
-      expect(result).not.toBe(items);
-    });
-  });
-
-  describe('removeEvent', () => {
-    it('should remove event from resource', () => {
-      const items = createSampleHierarchy();
-
-      const result = service.removeEvent(items, 'evt-1');
-
-      const res1 = service.findResourceById(result, 'res-1');
-      expect(res1?.events?.length).toBe(0);
-    });
-
-    it('should not affect other resources', () => {
-      const items = createSampleHierarchy();
-
-      const result = service.removeEvent(items, 'evt-1');
-
-      const res2 = service.findResourceById(result, 'res-2');
-      expect(res2?.events?.length).toBe(1);
-    });
-  });
-
-  describe('moveEventToResource', () => {
-    it('should move event from one resource to another', () => {
-      const items = createSampleHierarchy();
-
-      const result = service.moveEventToResource(items, 'evt-1', 'res-2');
-
-      const res1 = service.findResourceById(result, 'res-1');
-      const res2 = service.findResourceById(result, 'res-2');
-
-      expect(res1?.events?.length).toBe(0);
-      expect(res2?.events?.length).toBe(2);
-      expect(res2?.events?.map((e) => e.id)).toContain('evt-1');
-    });
-
-    it('should apply event updates during move', () => {
-      const items = createSampleHierarchy();
-
-      const result = service.moveEventToResource(items, 'evt-1', 'res-2', {
-        title: 'Moved Event',
-      });
-
-      const res2 = service.findResourceById(result, 'res-2');
-      const movedEvent = res2?.events?.find((e) => e.id === 'evt-1');
-      expect(movedEvent?.title).toBe('Moved Event');
     });
   });
 

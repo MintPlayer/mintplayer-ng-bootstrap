@@ -77,8 +77,6 @@ export class SchedulerComponent {
     slotDuration: this.slotDuration(),
     timeFormat: this.timeFormat(),
     firstDayOfWeek: this.firstDayOfWeek(),
-    editable: true,
-    selectable: true,
     nowIndicator: true,
   }));
 
@@ -386,8 +384,6 @@ export class SchedulerComponent {
         slotDuration: 1800,        // 30 minutes
         timeFormat: '24h',
         firstDayOfWeek: 1,         // Monday
-        editable: true,
-        selectable: true,
         nowIndicator: true,
       }));
 
