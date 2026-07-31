@@ -243,9 +243,15 @@ export abstract class BaseView {
     /** Extra gridcells (e.g. a per-row events overlay whose buttons need a
      *  cell to live in — rows may not own buttons directly). */
     cells?: string;
+    /** Grids where Shift+Arrow extends a multi-cell range (week/day). */
+    multiselectable?: boolean;
   }): void {
     const container = this.container;
     if (container.getAttribute('role') !== 'grid') container.setAttribute('role', 'grid');
+    // Keymap discoverability (FR-9): the hidden instructions div rendered by
+    // mp-scheduler shares this shadow root, so the IDREF resolves.
+    container.setAttribute('aria-describedby', 'scheduler-kbd-grid');
+    if (config.multiselectable) container.setAttribute('aria-multiselectable', 'true');
     const apply = (selector: string, role: string) =>
       container.querySelectorAll<HTMLElement>(selector).forEach((el) => {
         if (!el.hasAttribute('role')) el.setAttribute('role', role);

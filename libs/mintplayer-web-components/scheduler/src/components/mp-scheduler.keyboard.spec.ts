@@ -239,6 +239,24 @@ describe('mp-scheduler — move-mode (Enter + arrows)', () => {
     expect(eventElAfter.getAttribute('aria-pressed')).toBe('true');
   });
 
+  it('M on focused event enters move-mode too (D4: M is the canonical key, Enter kept)', async () => {
+    el = await mount('week');
+    const ev = {
+      id: 'standup',
+      title: 'Standup',
+      start: new Date(2026, 4, 12, 9, 0),
+      end: new Date(2026, 4, 12, 9, 30),
+    };
+    (el as unknown as { events: unknown[] }).events = [ev];
+    await (el as unknown as { updateComplete: Promise<void> }).updateComplete;
+    await nextRaf();
+    el.shadowRoot!.querySelector<HTMLElement>('.scheduler-event')!.focus();
+    await nextRaf();
+    dispatchKey(el, 'm');
+    await (el as unknown as { updateComplete: Promise<void> }).updateComplete;
+    expect(getState(el).keyboardMoveEventId).toBe('standup');
+  });
+
   it('ArrowDown in move-mode pushes the previewEvent forward by one slot', async () => {
     el = await mount('week');
     const ev = {

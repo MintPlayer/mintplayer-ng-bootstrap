@@ -137,6 +137,7 @@ export class WeekView extends BaseView {
     this.renderNowIndicator(days, slots);
 
     this.applyGridRoles({
+      multiselectable: true,
       columnHeaderRow: ':scope > .scheduler-day-headers',
       columnHeaders: '.scheduler-day-headers > .scheduler-day-header',
       presentation: [
@@ -300,6 +301,8 @@ export class WeekView extends BaseView {
     // selection, and aria-selected is invalid on role="button"; move mode is
     // a transient mode announced by the live region, not an attribute.
     eventEl.setAttribute('aria-pressed', isSelected ? 'true' : 'false');
+    // Move/resize discoverability hint (FR-9) — read by SRs on focus.
+    eventEl.setAttribute('aria-describedby', 'scheduler-kbd-event');
     if (isSelected) eventEl.classList.add('selected');
     void inMoveMode;
 

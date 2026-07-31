@@ -322,10 +322,24 @@ export class MpScheduler extends LitElement {
   // ============================================
 
   override render(): TemplateResult {
+    // Hidden keymap instructions, referenced via aria-describedby from the
+    // grid container (grid nav) and from every event element (move/resize
+    // discoverability) — PRD scheduler-resize-glyphs FR-9. IDREFs resolve
+    // because everything shares this shadow root.
     return html`
       <div class="scheduler-container">
         <header class="scheduler-header"></header>
         <div class="scheduler-content"></div>
+      </div>
+      <div id="scheduler-kbd-grid" class="visually-hidden">
+        Use the arrow keys to move between cells. Hold Shift with the arrow
+        keys to extend the selection, and press Enter to request a new event
+        for the selection. Page Up and Page Down change the period. Alt with
+        T, Y, M, W or D switches to today, year, month, week or day view.
+      </div>
+      <div id="scheduler-kbd-event" class="visually-hidden">
+        Press Enter or M to move or resize the event with the arrow keys.
+        Delete removes the event. Left and Right arrows move between events.
       </div>
       ${this.liveAnnouncer.template()}
     `;
@@ -886,6 +900,14 @@ export class MpScheduler extends LitElement {
     const ev = state.selectedEvent;
     if (!ev) return;
     switch (e.key) {
+      // M is the canonical move-mode key across the workspace (tile-manager,
+      // dock); Enter is kept for back-compat (screen-reader programme D4).
+      case 'm':
+      case 'M':
+        if (e.altKey || e.ctrlKey || e.metaKey) break;
+        e.preventDefault();
+        this.enterEventMoveMode(ev);
+        return;
       case 'Enter':
         e.preventDefault();
         this.enterEventMoveMode(ev);

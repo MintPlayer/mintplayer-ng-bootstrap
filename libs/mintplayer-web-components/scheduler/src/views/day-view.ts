@@ -116,6 +116,7 @@ export class DayView extends BaseView {
     }
 
     this.applyGridRoles({
+      multiselectable: true,
       columnHeaderRow: ':scope > .scheduler-day-headers',
       columnHeaders: '.scheduler-day-headers > .scheduler-day-header',
       presentation: [
@@ -220,6 +221,8 @@ export class DayView extends BaseView {
     );
     // Selection state on the button token that supports it (see week-view).
     eventEl.setAttribute('aria-pressed', isSelected ? 'true' : 'false');
+    // Move/resize discoverability hint (FR-9) — read by SRs on focus.
+    eventEl.setAttribute('aria-describedby', 'scheduler-kbd-event');
     if (isSelected) eventEl.classList.add('selected');
     void inMoveMode;
 

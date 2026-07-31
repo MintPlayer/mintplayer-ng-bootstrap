@@ -38,6 +38,9 @@ export class TimelineView extends BaseView {
       `Resource timeline for week starting ${dateService.formatDateWithWeekday(days[0], options.locale)}`,
     );
     timeline.setAttribute('aria-rowcount', String(visibleRowCount));
+    // Keymap discoverability + Shift+Arrow range selection (FR-9).
+    timeline.setAttribute('aria-describedby', 'scheduler-kbd-grid');
+    timeline.setAttribute('aria-multiselectable', 'true');
 
     // Header (row containing day labels)
     const header = this.createElement('div', 'scheduler-timeline-header');
@@ -332,6 +335,8 @@ export class TimelineView extends BaseView {
     );
     // Selection state on the button token that supports it (see week-view).
     eventEl.setAttribute('aria-pressed', isSelected ? 'true' : 'false');
+    // Move/resize discoverability hint (FR-9) — read by SRs on focus.
+    eventEl.setAttribute('aria-describedby', 'scheduler-kbd-event');
     if (isSelected) eventEl.classList.add('selected');
     void inMoveMode;
 

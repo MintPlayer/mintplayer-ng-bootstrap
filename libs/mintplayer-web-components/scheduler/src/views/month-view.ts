@@ -91,7 +91,6 @@ export class MonthView extends BaseView {
     const key = MonthView.dayKey(day);
     cell.setAttribute('role', 'gridcell');
     cell.setAttribute('tabindex', '-1');
-    cell.setAttribute('aria-selected', 'false');
     cell.id = `scheduler-cell-m-${key}`;
 
     // Day number
@@ -121,8 +120,10 @@ export class MonthView extends BaseView {
     const focusedKey = focused ? MonthView.dayKey(focused) : null;
     for (const [key, cell] of this.dayCells) {
       const isFocused = key === focusedKey;
+      // Focus position is expressed by the roving tabindex alone —
+      // aria-selected here would misreport focus as selection (audit MAJOR).
       cell.setAttribute('tabindex', isFocused ? '0' : '-1');
-      cell.setAttribute('aria-selected', isFocused ? 'true' : 'false');
+      cell.removeAttribute('aria-selected');
       if (isFocused) promoted = true;
     }
     if (!promoted) {

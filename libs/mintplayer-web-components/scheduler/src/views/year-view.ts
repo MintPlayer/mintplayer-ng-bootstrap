@@ -56,7 +56,6 @@ export class YearView extends BaseView {
     const monthKey = YearView.monthKey(month);
     card.setAttribute('role', 'gridcell');
     card.setAttribute('tabindex', '-1');
-    card.setAttribute('aria-selected', 'false');
     card.id = `scheduler-cell-y-${monthKey}`;
     this.setData(card, { month: month.toISOString() });
     this.monthCards.set(monthKey, card);
@@ -140,8 +139,10 @@ export class YearView extends BaseView {
     const focusedKey = focused ? YearView.monthKey(focused) : null;
     for (const [key, card] of this.monthCards) {
       const isFocused = key === focusedKey;
+      // Roving tabindex alone expresses focus — aria-selected here would
+      // misreport focus as selection (audit MAJOR).
       card.setAttribute('tabindex', isFocused ? '0' : '-1');
-      card.setAttribute('aria-selected', isFocused ? 'true' : 'false');
+      card.removeAttribute('aria-selected');
       if (isFocused) promoted = true;
     }
     if (!promoted) {
