@@ -1379,6 +1379,15 @@ consumer.
   change colours). Where colour is per-event decoration, the checkbox is the honest
   control. The field is not currently gated by its own option — say so if you want one.
 
+  The control is an **`<mp-checkbox>`**, not a bare `<input type="checkbox">`: Bootstrap's
+  `.form-check` styles do not cross a shadow boundary, so a native input in this panel
+  renders unstyled, while the WC carries its own styling inside its own shadow root. Same
+  reasoning as `mp-datatable`'s selection column, and the first cross-WC dependency the
+  scheduler takes (a plain side-effect import, per that precedent). It is the reason the
+  editor's remaining native controls — the text/`datetime-local` inputs, the colour swatch
+  and the resource `<select>` in the day popover — are the obvious next candidates for
+  `mp-*` equivalents; they are unstyled today for exactly this reason.
+
 ### 12.9 Phase-2 as-built API surface
 
 One list, so consumers and the wrappers do not have to read nine commits.

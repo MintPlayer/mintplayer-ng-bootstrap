@@ -2210,7 +2210,11 @@ describe('mp-scheduler — built-in event editor (M23)', () => {
 
     // Inheriting: checked, and the swatch is disabled so there is no gesture
     // that can silently commit the inherited value.
-    const inherit = () => editor()!.querySelector<HTMLInputElement>('.editor-inherit-input')!;
+    // An <mp-checkbox>, not a native input — Bootstrap's form styles do not
+    // cross a shadow boundary, so the WC brings its own. `checked` is a host
+    // property, so it reads and writes like the native one.
+    const inherit = () =>
+      editor()!.querySelector<HTMLElement & { checked: boolean }>('mp-checkbox.editor-inherit-input')!;
     const swatch = () => editor()!.querySelector<HTMLInputElement>('.editor-color-input')!;
     expect(inherit().checked).toBe(true);
     expect(swatch().disabled).toBe(true);

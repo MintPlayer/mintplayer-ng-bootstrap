@@ -826,9 +826,36 @@ test.describe('scheduler — popover delete + built-in editor (R14, R20)', () =>
 
     await expectNoSeriousViolations(page, 'the event editor open');
 
+    // The colour is two-state and an <mp-checkbox> owns which one applies. This
+    // sample event carries no colour, so it opens INHERITING: checked, swatch
+    // disabled — the state in which Save must not pin a colour. Only a real
+    // click proves the WC's own input → change → swatch wiring, which a unit
+    // test setting the host property cannot.
+    const inheritState = await schedulerRoot(page).evaluate((sched) => {
+      const cb = sched.shadowRoot!.querySelector<HTMLElement & { checked: boolean }>(
+        'mp-checkbox.editor-inherit-input',
+      );
+      const swatch = sched.shadowRoot!.querySelector<HTMLInputElement>('.editor-color-input');
+      return { checked: cb?.checked ?? null, swatchDisabled: swatch?.disabled ?? null };
+    });
+    expect(inheritState).toEqual({ checked: true, swatchDisabled: true });
+
+    // Playwright's CSS engine pierces open shadow roots, so this is a genuine
+    // pointer click on the checkbox nested two shadow roots deep.
+    await page.locator('mp-checkbox.editor-inherit-input').click();
+    await expect
+      .poll(() =>
+        schedulerRoot(page).evaluate(
+          (sched) =>
+            sched.shadowRoot!.querySelector<HTMLInputElement>('.editor-color-input')!.disabled,
+        ),
+      )
+      .toBe(false);
+
     await schedulerRoot(page).evaluate((sched) => {
       const input = sched.shadowRoot!.querySelector<HTMLInputElement>('.editor-title-input')!;
       input.value = 'Lunch & Learn (renamed)';
+      sched.shadowRoot!.querySelector<HTMLInputElement>('.editor-color-input')!.value = '#123456';
       sched.shadowRoot!.querySelector<HTMLElement>('.editor-action.primary')!.click();
     });
 
@@ -847,6 +874,15 @@ test.describe('scheduler — popover delete + built-in editor (R14, R20)', () =>
         (sched) => !!sched.shadowRoot!.querySelector('.scheduler-event-editor'),
       ),
     ).toBe(false);
+    // And the un-inherited colour actually landed on the chip.
+    expect(
+      await schedulerRoot(page).evaluate((sched) => {
+        const ev = Array.from(
+          sched.shadowRoot!.querySelectorAll<HTMLElement>('.scheduler-event:not(.preview)'),
+        ).find((e) => e.textContent!.includes('(renamed)'))!;
+        return getComputedStyle(ev).backgroundColor;
+      }),
+    ).toBe('rgb(18, 52, 86)'); // #123456
   });
 });
 

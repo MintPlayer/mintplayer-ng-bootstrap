@@ -38,6 +38,11 @@ import { DragManager, PointerTarget, DragCompletionResult } from '../drag';
 import { InputHandler, NormalizedPointerEvent } from '../input';
 import { SchedulerEventEmitter } from '../events';
 import { OverlayController } from '@mintplayer/web-components/overlay';
+// Side-effect import: registers <mp-checkbox> for the event editor. Worth it
+// over a raw `<input type="checkbox">` because Bootstrap's .form-check styles
+// do not cross a shadow boundary — the WC carries its own, so it looks right
+// nested in here, where a bare input would render unstyled.
+import '@mintplayer/web-components/checkbox';
 
 /**
  * MpScheduler Web Component
@@ -1004,16 +1009,14 @@ export class MpScheduler extends LitElement {
             ?disabled=${!canFields || !event.color}
           />
         </label>
-        <label class="editor-field editor-inherit">
-          <input
-            type="checkbox"
+        <div class="editor-field editor-inherit">
+          <mp-checkbox
             class="editor-inherit-input"
             .checked=${!event.color}
             ?disabled=${!canFields}
-            @change=${(e: Event) => this.toggleEditorColorInherit(e)}
-          />
-          <span>${this.msg('editorInheritColor')}</span>
-        </label>
+            @change=${() => this.toggleEditorColorInherit()}
+          >${this.msg('editorInheritColor')}</mp-checkbox>
+        </div>
         ${this.editorError
           ? html`<p class="editor-error" role="alert">${this.editorError}</p>`
           : nothing}
@@ -1053,10 +1056,24 @@ export class MpScheduler extends LitElement {
    * re-render on purpose — a re-render would re-run the sibling fields' value
    * bindings and could discard a title the user has typed but not saved.
    */
-  private toggleEditorColorInherit(e: Event): void {
-    const inherit = (e.target as HTMLInputElement).checked;
+  private toggleEditorColorInherit(): void {
+    const inherit = this.editorInheritCheckbox()?.checked ?? true;
     const swatch = this.shadowRoot?.querySelector<HTMLInputElement>('.editor-color-input');
     if (swatch) swatch.disabled = inherit;
+  }
+
+  /**
+   * The editor's inherit checkbox. `<mp-checkbox>` rather than a bare input so
+   * it carries Bootstrap's `.form-check` styling into this shadow root; its
+   * `checked`/`disabled` are host properties, so it is read like a native one —
+   * but it is NOT an `HTMLInputElement`, hence its own accessor.
+   */
+  private editorInheritCheckbox(): (HTMLElement & { checked: boolean; disabled: boolean }) | null {
+    return (
+      this.shadowRoot?.querySelector<HTMLElement & { checked: boolean; disabled: boolean }>(
+        'mp-checkbox.editor-inherit-input',
+      ) ?? null
+    );
   }
 
   /**
@@ -1115,10 +1132,10 @@ export class MpScheduler extends LitElement {
     // colour, i.e. its resource's). Such an event then stops following its
     // resource forever — including after a cross-row move, where it would keep
     // the old resource's colour while sitting in the new one's row.
-    const inheritInput = read('.editor-inherit-input');
+    const inherit = this.editorInheritCheckbox();
     const colorInput = read('.editor-color-input');
-    if (inheritInput && !inheritInput.disabled) {
-      if (inheritInput.checked) delete updated.color;
+    if (inherit && !inherit.disabled) {
+      if (inherit.checked) delete updated.color;
       else if (colorInput?.value) updated.color = colorInput.value;
     }
 
