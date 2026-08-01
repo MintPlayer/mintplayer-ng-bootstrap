@@ -439,6 +439,12 @@ single batched sweep at the end, per the standing rule.
 
 ## M23 — Built-in event editor [R20, D12.8]
 
+Post-review additions, all on this branch: the colour field became two-state behind an
+`<mp-checkbox>` (D12.8f), the start/end fields became `<mp-datetime-picker>`s once the
+Escape arbitration was designed (D12.9b), and **B30** — moving the start refused to
+commit instead of moving the event (D12.10).
+
+
 - [x] `OverlayController` popover anchored to the event element by stable event id — same
       mechanics, traps and `$z-day-popover` rung as the day popover (lazy anchor,
       `role="dialog"`, non-modal, host-level Escape gate, focus back to the event box on
@@ -459,6 +465,12 @@ single batched sweep at the end, per the standing rule.
       `:event-editor`).
 - [x] New `messages` keys (field labels, Save/Cancel/Delete, dialog label); new SCSS →
       **run codegen-wc**.
+- [x] **B30/D12.10**: changing the START shifts the END by the same delta, live, so the
+      editor moves an event the way every other path does (pointer move-drag and keyboard
+      move-mode both preserve duration). Changing the end alone is still a resize, and an
+      end explicitly before the start is still refused. Reproduced in a browser first —
+      the picker was innocent, the `end <= start` guard was firing on the one gesture that
+      should never have reached it.
 - [x] Specs: open via all three openers; Save emits `event-update` with the edited
       fields; Delete emits and closes with focus handled (the event box is gone —
       restore by grid cell key); `eventEditor: false` restores the old double-click

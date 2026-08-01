@@ -66,6 +66,13 @@ import '@mintplayer/web-components/datetime-picker';
  * - InputHandler: Normalizes mouse/touch input
  * - SchedulerEventEmitter: Dispatches custom events
  */
+/** The subset of `<mp-datetime-picker>`'s API the editor drives. */
+type EditorPicker = HTMLElement & {
+  value: Date | null;
+  disabled: boolean;
+  setValue: (next: Date | null, emit?: boolean) => void;
+};
+
 export class MpScheduler extends LitElement {
   static override styles = [formControlStyles, schedulerStyles];
 
@@ -917,6 +924,8 @@ export class MpScheduler extends LitElement {
     if (!this.eventEditor || !this.canOpenEditor(event)) return;
     this.editorEventId = event.id;
     this.editorError = null;
+    // What the end is measured against while this editor is open (D12.10).
+    this.editorStartAnchor = new Date(event.start);
     this.requestUpdate();
     void this.eventEditorOverlay.open();
     // Same reposition trap as the day popover: `scroll` does not compose.
@@ -926,6 +935,7 @@ export class MpScheduler extends LitElement {
   }
 
   private closeEventEditor(): void {
+    this.editorStartAnchor = null;
     this.contentContainer?.removeEventListener('scroll', this.boundRepositionEditor);
     this.eventEditorOverlay.close();
     this.editorEventId = null;
@@ -1006,6 +1016,7 @@ export class MpScheduler extends LitElement {
             class="editor-input editor-start-input"
             .value=${event.start}
             ?disabled=${!canStart}
+            @value-change=${(e: Event) => this.onEditorStartChange(e)}
             input-label=${this.msg('editorStartLabel')}
             locale=${options.locale ?? nothing}
             first-day-of-week=${options.firstDayOfWeek ?? 1}
@@ -1089,14 +1100,50 @@ export class MpScheduler extends LitElement {
   }
 
   /** One of the editor's two `<mp-datetime-picker>`s, by class. */
-  private editorPicker(
-    selector: string,
-  ): (HTMLElement & { value: Date | null; disabled: boolean }) | null {
+  private editorPicker(selector: string): EditorPicker | null {
     return (
-      this.shadowRoot?.querySelector<HTMLElement & { value: Date | null; disabled: boolean }>(
-        `mp-datetime-picker${selector}`,
-      ) ?? null
+      this.shadowRoot?.querySelector<EditorPicker>(`mp-datetime-picker${selector}`) ?? null
     );
+  }
+
+  /**
+   * The start the end is currently measured against. Seeded when the editor
+   * opens and advanced on every start change, so consecutive edits each shift
+   * by their own delta rather than compounding against the original.
+   */
+  private editorStartAnchor: Date | null = null;
+
+  /**
+   * Changing the START moves the event: the end shifts by the same delta, so
+   * the duration is preserved (B30/D12.10). This is the contract every other
+   * path already implements — a pointer move-drag applies one offset to both
+   * edges, and so does keyboard move-mode. Without it, moving an event later
+   * in the editor hit "End must be after start" and refused to do anything,
+   * which is a dead end on the field a user edits first.
+   *
+   * Changing the END is left alone: that is a resize, and the only way to
+   * express one here.
+   */
+  private onEditorStartChange(e: Event): void {
+    const next = (e as CustomEvent<Date | null>).detail;
+    const anchor = this.editorStartAnchor;
+    this.editorStartAnchor = next ?? null;
+    if (!next || !anchor) return;
+
+    const delta = next.getTime() - anchor.getTime();
+    if (delta === 0) return;
+
+    const endPicker = this.editorPicker('.editor-end-input');
+    if (!endPicker?.value) return;
+    // `emit: false` — this is our own bookkeeping, not a user edit, and
+    // emitting would have the end's own handler treat it as a resize.
+    endPicker.setValue(new Date(endPicker.value.getTime() + delta), false);
+
+    // The range is valid again by construction, so a stale error must go.
+    if (this.editorError) {
+      this.editorError = null;
+      this.requestUpdate();
+    }
   }
 
   /**

@@ -1015,3 +1015,107 @@ test.describe('scheduler — nested datetime picker in the editor (R20)', () => 
       .toBe(false);
   });
 });
+
+test.describe('scheduler — editing an event moves it (B30)', () => {
+  test('right-click, pick a later start, Save — the event moves and keeps its duration', async ({
+    page,
+  }) => {
+    await loadSampleWeek(page);
+    await scrollSchedulerIntoView(page);
+
+    const box = await schedulerRoot(page).evaluate((sched) => {
+      const ev = Array.from(
+        sched.shadowRoot!.querySelectorAll<HTMLElement>('.scheduler-event:not(.preview)'),
+      ).find((e) => e.textContent!.includes('Lunch'));
+      if (!ev) throw new Error('no Lunch event');
+      ev.scrollIntoView({ block: 'center', behavior: 'instant' });
+      const r = ev.getBoundingClientRect();
+      return { x: r.x + r.width / 2, y: r.y + Math.min(r.height / 2, 20) };
+    });
+
+    const before = await schedulerRoot(page).evaluate((sched) => {
+      const e = (
+        sched as unknown as { events: { title: string; start: Date; end: Date }[] }
+      ).events.find((x) => x.title.includes('Lunch'))!;
+      return { start: e.start.getTime(), end: e.end.getTime() };
+    });
+
+    // Right-click — the opener the report used.
+    await page.mouse.click(box.x, box.y, { button: 'right' });
+    await expect
+      .poll(() =>
+        schedulerRoot(page).evaluate(
+          (sched) => !!sched.shadowRoot!.querySelector('.scheduler-event-editor'),
+        ),
+      )
+      .toBe(true);
+
+    await page.locator('mp-datetime-picker.editor-start-input button.date').click();
+    await expect
+      .poll(() =>
+        schedulerRoot(page).evaluate((sched) =>
+          sched
+            .shadowRoot!.querySelector('mp-datetime-picker.editor-start-input')!
+            .getAttribute('data-open'),
+        ),
+      )
+      .toBe('date');
+
+    // A real click on a real day cell, three shadow roots deep
+    // (scheduler → picker → calendar).
+    const cell = await page.evaluate(() => {
+      const sched = document.querySelector('mp-scheduler')!;
+      const picker = sched.shadowRoot!.querySelector('mp-datetime-picker.editor-start-input')!;
+      const cal = picker.shadowRoot!.querySelector('mp-calendar')!;
+      const cells = Array.from(
+        cal.shadowRoot!.querySelectorAll<HTMLElement>('td[role="gridcell"]'),
+      ).filter(
+        (td) =>
+          /^\d+$/.test(td.textContent?.trim() ?? '') &&
+          td.getAttribute('aria-disabled') !== 'true' &&
+          !td.classList.contains('selected'),
+      );
+      const target = cells[cells.length - 1];
+      if (!target) return null;
+      const r = target.getBoundingClientRect();
+      return { x: r.x + r.width / 2, y: r.y + r.height / 2 };
+    });
+    expect(cell).not.toBeNull();
+    await page.mouse.click(cell!.x, cell!.y);
+
+    // The end follows the start LIVE, before any Save — the user has to be able
+    // to see what they are about to commit.
+    const shifted = await schedulerRoot(page).evaluate((sched) => {
+      const read = (cls: string) =>
+        (
+          sched.shadowRoot!.querySelector(`mp-datetime-picker.${cls}`) as HTMLElement & {
+            value: Date | null;
+          }
+        ).value!.getTime();
+      return { start: read('editor-start-input'), end: read('editor-end-input') };
+    });
+    expect(shifted.end - shifted.start).toBe(before.end - before.start);
+    expect(shifted.start).toBeGreaterThan(before.start);
+
+    await schedulerRoot(page).evaluate((sched) =>
+      sched.shadowRoot!.querySelector<HTMLElement>('.editor-action.primary')!.click(),
+    );
+
+    // Committed: no "End must be after start" dead end, and the demo applied it.
+    await expect
+      .poll(() =>
+        schedulerRoot(page).evaluate(
+          (sched) => !!sched.shadowRoot!.querySelector('.scheduler-event-editor'),
+        ),
+      )
+      .toBe(false);
+    const after = await schedulerRoot(page).evaluate((sched) => {
+      const e = (
+        sched as unknown as { events: { title: string; start: Date; end: Date }[] }
+      ).events.find((x) => x.title.includes('Lunch'))!;
+      return { start: e.start.getTime(), end: e.end.getTime() };
+    });
+    expect(after.start).toBe(shifted.start);
+    expect(after.end - after.start).toBe(before.end - before.start);
+  });
+});

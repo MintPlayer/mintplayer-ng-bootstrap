@@ -1386,6 +1386,32 @@ consumer.
   scheduler takes (a plain side-effect import, per that precedent). See §12.10 for how the
   panel's other controls were settled.
 
+### 12.9a B30 — the editor refuses a start-only change instead of moving the event
+
+Reported as "I pick another start/end date-time, but the event's timestamps aren't
+updated". Reproduced in a real browser: the picker is innocent — it updates correctly
+(`2026-07-29T10:00` → `2026-07-31T10:00`). **Save then refuses**, showing
+*"End must be after start."*, because moving the start past the untouched end trips the
+`end <= start` guard. Nothing is emitted, so the event does not move.
+
+The bug is the *contract*, not the validation. **Every other path in this component that
+changes an event's start preserves its duration** — a pointer move-drag
+(`calculateMovePreview` applies one offset to both edges) and keyboard move-mode both do.
+Only the editor demands that the user fix the end *first*, and hard-stops otherwise; and
+since "start" is the field a user naturally edits first, it is a dead end on the most
+obvious path. It also punishes the common intent ("same meeting, two days later") to
+protect against one that is genuinely rare.
+
+**Decision D12.10 — the editor moves the event, like every other surface.** Changing the
+**start** shifts the **end** by the same delta, live, so the end field visibly follows and
+the duration is preserved. Changing the **end** sets the end alone (that is a resize, and
+the only way to express one here). An end explicitly placed before the start is still a
+real error and still refused — the guard stays, it just stops firing on a gesture that
+should never have reached it.
+
+Live rather than at Save on purpose: the user must SEE the end follow, or the editor is
+silently deciding something they cannot check before committing.
+
 ### 12.10 Styling the in-shadow form controls (D12.9)
 
 The editor and the day popover render form controls inside the scheduler's shadow root,

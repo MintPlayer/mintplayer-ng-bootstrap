@@ -2296,6 +2296,77 @@ describe('mp-scheduler — built-in event editor (M23)', () => {
     expect(editor()).toBeNull();
   });
 
+  /**
+   * B30 — reported as "I pick another start/end, but the timestamps aren't
+   * updated". Moving the START past the untouched end tripped the
+   * `end <= start` guard, so Save refused and nothing moved. Every other path
+   * that changes a start preserves duration (pointer move-drag, keyboard
+   * move-mode); the editor now does too.
+   */
+  it('moving the start shifts the end with it, preserving duration (D12.10)', async () => {
+    await mountWeek();
+    await openViaF2();
+    const picker = (cls: string) =>
+      editor()!.querySelector<HTMLElement & {
+        value: Date | null;
+        setValue: (n: Date | null, emit?: boolean) => void;
+      }>(`mp-datetime-picker.${cls}`)!;
+
+    // The user picks a start two days later — through setValue(), which is what
+    // the calendar itself calls, so the `value-change` this relies on fires.
+    picker('editor-start-input').setValue(new Date(2026, 4, 14, 9, 0));
+    await settle();
+
+    // The end followed, LIVE and visibly, keeping the original 1h duration.
+    expect(picker('editor-end-input').value!.getTime()).toBe(
+      new Date(2026, 4, 14, 10, 0).getTime(),
+    );
+
+    let detail: { event: { start: Date; end: Date } } | null = null;
+    el.addEventListener('event-update', (e) => {
+      detail = (e as CustomEvent).detail;
+    });
+    (editor()!.querySelector('.editor-action.primary') as HTMLElement).click();
+    await settle();
+
+    // And Save commits it instead of refusing.
+    expect(detail).not.toBeNull();
+    expect(detail!.event.start.getTime()).toBe(new Date(2026, 4, 14, 9, 0).getTime());
+    expect(detail!.event.end.getTime()).toBe(new Date(2026, 4, 14, 10, 0).getTime());
+    expect(editor()).toBeNull();
+  });
+
+  it('changing only the END is still a resize, and an inverted one is still refused', async () => {
+    await mountWeek();
+    await openViaF2();
+    const picker = (cls: string) =>
+      editor()!.querySelector<HTMLElement & {
+        value: Date | null;
+        setValue: (n: Date | null, emit?: boolean) => void;
+      }>(`mp-datetime-picker.${cls}`)!;
+
+    // Extending the end must NOT drag the start along.
+    picker('editor-end-input').setValue(new Date(2026, 4, 12, 12, 0));
+    await settle();
+    expect(picker('editor-start-input').value!.getTime()).toBe(
+      new Date(2026, 4, 12, 9, 0).getTime(),
+    );
+
+    // An end before the start is a genuine error and still refused.
+    picker('editor-end-input').setValue(new Date(2026, 4, 12, 8, 0));
+    await settle();
+    let emitted = false;
+    el.addEventListener('event-update', () => {
+      emitted = true;
+    });
+    (editor()!.querySelector('.editor-action.primary') as HTMLElement).click();
+    await settle();
+    expect(emitted).toBe(false);
+    expect(editor()!.querySelector('.editor-error')?.textContent).toContain(
+      'End must be after start',
+    );
+  });
+
   it('eventEditor=false disables every opener while event-dblclick keeps firing', async () => {
     await mountWeek({ eventEditor: false });
     expect(el.getAttribute('event-editor')).toBe('false');
