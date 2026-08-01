@@ -2,11 +2,13 @@
 
 Status: **Phase 1 merged** as PR
 [#395](https://github.com/MintPlayer/mintplayer-ng-bootstrap/pull/395)
-(squashed to `master` 2026-07-31, on top of #394's resize-glyph work). Versions
-released with the breaking changes: web-components 2.5.0, ng-bootstrap 22.9.0,
-react-bootstrap 19.11.0, vue-bootstrap 3.12.0. §1–§11 describe what shipped.
-**Phase 2 is scoped but not started** — §12 records the post-merge review
-findings (R11–R20) and their decisions; the plan carries them as M18–M26.
+(squashed to `master` 2026-07-31, on top of #394's resize-glyph work; released
+as web-components 2.5.0 / ng 22.9.0 / react 19.11.0 / vue 3.12.0). §1–§11
+describe what phase 1 shipped. **Phase 2 (R11–R20, §12) is implemented** on
+`feat/scheduler-phase2` (M18–M26, delivered 2026-08-01, single batched sweep
+green — see the plan's phase-2 header for numbers). Phase 2 versions:
+web-components 2.6.0, ng-bootstrap 22.10.0, react-bootstrap 19.12.0,
+vue-bootstrap 3.13.0.
 Branch (phase 1): `fix/scheduler-preview-z-order`; phase 2: `feat/scheduler-phase2`.
 Plan: [scheduler-view-mode-completeness-plan.md](./scheduler-view-mode-completeness-plan.md)
 Predecessors: [scheduler-resize-glyphs.md](./scheduler-resize-glyphs.md) (#394),
@@ -1356,3 +1358,59 @@ consumer.
   demo toggle showing `eventEditor: false` + a consumer-owned editor as the escape-hatch
   recipe. Validation stays minimal in the WC (end > start, required title trimmed
   non-empty) — anything richer is the consumer's `event-update` listener.
+
+### 12.9 Phase-2 as-built API surface
+
+One list, so consumers and the wrappers do not have to read nine commits.
+
+**Added — `SchedulerOptions`**
+- `eventEditor?: boolean` — default **`true`**. The built-in event editor (§12.8).
+
+**Added — host attribute / property**
+- `event-editor` attribute + `eventEditor` property, same dual-state shape as `readonly`.
+  The ATTRIBUTE outranks `options.eventEditor`, and only the literal `"false"` disables, so
+  a wrapper can render it unconditionally from a boolean.
+
+**Added — `SchedulerPermissions`**
+- `editEvent` (default **`true`**) — the editor's title/colour fields. Time fields follow
+  `moveEvent` / `resizeEventStart` / `resizeEventEnd`; the delete button follows
+  `deleteEvent`.
+
+**Added — messages** (`options.messages`): `showMonth`, `newEventResource`,
+`yearMonthCardLabel`, `deleteEventLabel`, `moveModeEnteredTimeline`,
+`eventInstructionsWithEditor`, `resizeResourceColumn`, `renameResourceLabel`,
+`resourceRenamed`, `eventEditorLabel`, `editorTitleLabel`, `editorStartLabel`,
+`editorEndLabel`, `editorColorLabel`, `editorSave`, `editorCancel`, `editorDelete`,
+`editorInvalidRange`, `editorTitleRequired`.
+
+**Added — CSS**: `--scheduler-drop-target-bg` (the cross-row drag's target-row tint);
+`.scheduler-timeline-row.drop-target`, `.scheduler-column-resizer`, `.rename-input`,
+`.popover-event-delete`, `.popover-resource`, `.popover-day-groups`,
+`.scheduler-event-editor` and its children.
+
+**Changed (breaking)**
+- **`options.dayClickAction` now defaults to `'popover'`** (was `'none'`). A day-cell click
+  emits `date-click` first, exactly as before, and then opens the popover. Set `'none'` to
+  keep the click purely an event for the consumer.
+- **`TimeSlot.resourceId` and `PreviewEvent.resourceId` widen to `string | null | undefined`**
+  (`undefined` = no resource axis, `null` = the unassigned bucket row). Consumers do not see
+  these types; anything reading them internally must test `=== undefined`, not truthiness.
+- **A pointer move-drag is now refused when `moveEvent` is denied** (it was allowed —
+  B24). Same for each resize edge and for slot drags without `createEvent`/`selectRange`.
+- **Timeline drag feedback is scoped to one row**: greying no longer spans every resource.
+
+**Behavioural additions**
+- Dragging an event vertically in the timeline **re-assigns its resource**; dropping it on
+  `(No resource)` clears `resourceId`. `event-update` carries the new row on `event` and the
+  old one on `oldEvent` — no payload change, so no wrapper change.
+- Keyboard move-mode and plain cell navigation reach the bucket row (B25/B26).
+- An event whose `resourceId` names no known resource renders in the bucket row with a
+  once-per-event dev warning instead of vanishing from the timeline (B29).
+- Year view: `Space` on a month card opens a month-scoped popover; a mini-day click opens a
+  day-scoped one, both anchored on the card. Month cards announce their event count.
+- The date popover's rows carry delete buttons; its create action carries a resource picker.
+- The timeline resource column is resizable (drag or arrow keys), its titles carry
+  full-text tooltips, and rows rename inline via double-click or `F2`.
+
+**Wrappers**: Angular gains `[eventEditor]`; React `eventEditor`; Vue `:event-editor`.
+Nothing else changed — every new surface reuses the existing event contracts.

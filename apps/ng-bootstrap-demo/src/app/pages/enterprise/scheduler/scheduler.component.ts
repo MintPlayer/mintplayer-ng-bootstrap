@@ -252,8 +252,16 @@ export class SchedulerComponent {
   }
 
   onEventDelete(event: SchedulerEventDeleteEvent) {
-    // Remove the event from our events array
-    this.events.update((events) => events.filter((e) => e.id !== event.event.id));
+    // Both stores: the flat array AND the resource tree — sample events are
+    // authored nested, and sweeping only the flat list silently ignored a
+    // delete of any of them (the popover's delete button found this).
+    const { id } = event.event;
+    this.events.update((events) => events.filter((e) => e.id !== id));
+    const walk = (item: Resource | ResourceGroup): Resource | ResourceGroup =>
+      'children' in item
+        ? { ...item, children: item.children.map(walk) }
+        : { ...item, events: (item.events ?? []).filter((e) => e.id !== id) };
+    this.resources.update((resources) => resources.map(walk));
     this.log(`Event deleted: ${event.event.title}`);
   }
 

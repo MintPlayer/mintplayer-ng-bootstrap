@@ -1455,6 +1455,13 @@ export class MpScheduler extends LitElement {
     }
     this.detectAndEmitChanges(state);
     this.updateUI(state);
+    // The imperative views re-render from updateUI, but the popover and the
+    // event editor live in the LIT template, which only re-renders on
+    // requestUpdate. While one of them is open its content comes from state —
+    // an event list, an event's fields — and a consumer applying a request
+    // (deleting a popover row, say) must be reflected there, not frozen at
+    // open time.
+    if (this.popoverDate || this.editorEventId) this.requestUpdate();
   }
 
   private previousIsLoading: boolean | null = null;

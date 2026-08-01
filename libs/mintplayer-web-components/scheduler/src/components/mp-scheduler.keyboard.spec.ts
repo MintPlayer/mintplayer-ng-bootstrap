@@ -1939,11 +1939,21 @@ describe('mp-scheduler — per-gesture pointer permission gate (M21)', () => {
       pointer: { x: number; y: number; target: HTMLElement; originalEvent: Event },
       target: Record<string, unknown>,
     ) => void;
-    dragManager: { isPending: () => boolean; cancel: () => void };
+    dragManager: {
+      isPending: () => boolean;
+      cancel: () => void;
+      setSlotResolver: (fn: () => unknown) => void;
+    };
   };
 
   const pointerDown = (target: Record<string, unknown>) => {
     const internals = el as unknown as Internals;
+    // jsdom has no shadowRoot.elementsFromPoint — stub the resolver the drag
+    // manager consults on pointer-down. The GATE under test runs before it.
+    internals.dragManager.setSlotResolver(() => ({
+      start: new Date(2026, 4, 12, 9, 0),
+      end: new Date(2026, 4, 12, 9, 30),
+    }));
     const host = el.shadowRoot!.querySelector<HTMLElement>('.scheduler-content')!;
     internals.handlePointerDown(
       { x: 100, y: 100, target: host, originalEvent: new MouseEvent('mousedown') },

@@ -5,11 +5,15 @@ Branch (phase 1): `fix/scheduler-preview-z-order` → PR
 [#395](https://github.com/MintPlayer/mintplayer-ng-bootstrap/pull/395), **merged to
 `master` 2026-07-31** (on top of #394, the resize-glyphs PR). The final unit sweep on the
 branch was 1593 tests green, plus the 10-test `scheduler-views` e2e on Chromium+Firefox.
-Status: **Phase 1 delivered and merged; phase 2 (M18–M26, from the post-merge reviews
-R11–R20 — PRD §12) scoped and not started.** Phase 2 branch: `feat/scheduler-phase2`
-(approved by the user 2026-07-31). Still open from phase 1: the browser/device verification items
-and deliberate polish items under "Outstanding work, spelled out". None of them is a
-reported defect. Verification runs in CI on each push rather than as a long local sweep.
+Status: **Phase 1 merged (#395); phase 2 (M18–M26, R11–R20 — PRD §12) DELIVERED** on
+`feat/scheduler-phase2`, one commit per milestone, verified in a single batched sweep at
+the end (2026-08-01): **1506/1506 unit tests**, all four lib builds + all three demo
+builds, and **41 passed / 1 pre-existing skip** across `scheduler-views` +
+`scheduler-resize` e2e on Chromium AND Firefox. Versions bumped for the breaking changes:
+web-components **2.6.0**, ng-bootstrap **22.10.0**, react-bootstrap **19.12.0**,
+vue-bootstrap **3.13.0** (`^2.0.0` peer ranges still hold).
+Still open from phase 1: the device verification items and deliberate polish items under
+"Outstanding work, spelled out" — none a reported defect.
 
 ## Conventions
 
@@ -320,7 +324,26 @@ After the affordances exist. **B13 is the highest-value item in this milestone.*
 
 ---
 
-# Phase 2 — post-merge review (PRD §12). Not started.
+# Phase 2 — post-merge review (PRD §12). Delivered 2026-08-01.
+
+Three things were found and fixed ALONGSIDE the planned work, worth knowing when reading
+the diffs:
+
+- **The Lit template never re-rendered on state changes**, so an open popover/editor froze
+  at open time — a consumer deleting a popover row saw the list not shrink. The M22 spec
+  caught it; `onStateChange` now requests an update while either surface is open.
+- **The demo's `onEventDelete` swept only the flat array**, silently ignoring deletes of
+  nested-authored sample events (the popover-delete e2e caught it) — same disease as B27,
+  now fixed alongside it.
+- e2e coordinate reads must **wait out Bootstrap's global smooth scrolling**
+  (`scrollSchedulerIntoView` helper) or a drag lands rows away from its aim; and row titles
+  must be read from `.resource-title`, not the rowheader cell, which also contains action
+  glyphs under resource-admin.
+
+Deviations: none of substance. M20's bucket row is keyboard-reachable only while it is
+RENDERED (it holds events) — the pointer has the same constraint, there is no row to drop
+onto. M24's F2 disambiguates by focus kind: event focused → the event editor, timeline
+cell focused → rename that row.
 
 Ordering: M19 before M20 (the tri-state `resourceId` decision shapes the keyboard fixes);
 M18 and M22 are independent (M22 touches the same file as M18 — do M18 first to avoid
@@ -331,161 +354,161 @@ single batched sweep at the end, per the standing rule.
 
 ## M18 — Month/year date surface [R12, D12.2, B23]
 
-- [ ] Year: mini-day click opens the **day-scoped** panel anchored on its month card —
+- [x] Year: mini-day click opens the **day-scoped** panel anchored on its month card —
       `popoverAnchorCell()` becomes view-aware (`#scheduler-cell-m-…` in month,
       `#scheduler-cell-y-YYYY-MM` in year). This *completes* the B23 leak instead of
       sealing it; the unpositioned-panel and dead-focus-return failure modes both go away
       because the card is a real focusable anchor.
-- [ ] Year: **Space** on a focused month card opens the **month-scoped** panel (events
+- [x] Year: **Space** on a focused month card opens the **month-scoped** panel (events
       grouped by day, "New event" for the focused/first day, "Show month" drill). Enter
       keeps drilling. Announce the keymap change.
-- [ ] `dayClickAction` default flips `'none'` → `'popover'` [D12.2c] — breaking behaviour
+- [x] `dayClickAction` default flips `'none'` → `'popover'` [D12.2c] — breaking behaviour
       change, document it; `date-click` still emits first. Update the demo selects'
       defaults and the §11.1 as-built table.
-- [ ] "New event" gains an optional resource `<select>` when resources exist, riding
+- [x] "New event" gains an optional resource `<select>` when resources exist, riding
       `event-create.resourceId` [D12.2d]. No group creation — §8.4 non-goal 2 stands.
-- [ ] Year `.has-events` text equivalent: the month card's accessible name carries its
+- [x] Year `.has-events` text equivalent: the month card's accessible name carries its
       event count [D12.2e]. Closes the WCAG 1.4.1 item open since M10.
-- [ ] New/changed `messages` keys for the month-scoped panel labels and the resource
+- [x] New/changed `messages` keys for the month-scoped panel labels and the resource
       picker; keymap docs in all three demo pages.
-- [ ] Specs: view-aware anchoring (both views), Space-on-card, the completed click path
+- [x] Specs: view-aware anchoring (both views), Space-on-card, the completed click path
       under both `dayClickAction` values, focus return to the card, resource picker
       payload. Rewrite the "year view: no popover" spec rather than deleting it.
 
 ## M19 — Cross-resource pointer move [R13, D12.3]
 
-- [ ] `TimeSlot.resourceId` / `PreviewEvent.resourceId` → `string | null | undefined`
+- [x] `TimeSlot.resourceId` / `PreviewEvent.resourceId` → `string | null | undefined`
       tri-state [D12.3a]; bucket-row slots get a distinguishable marker;
       `getSlotFromElement` maps it to `null` (bucket) vs `undefined` (no axis).
       **Grep `resourceId ??` across the scheduler libs** — every one is suspect once
       `null` is meaningful.
-- [ ] `calculateMovePreview` carries the target row [D12.3b], with a comment marking the
+- [x] `calculateMovePreview` carries the target row [D12.3b], with a comment marking the
       deliberate asymmetry against `calculateCreatePreview`'s row-pinning.
-- [ ] `handleDragComplete` `case 'move'`: apply `preview.resourceId` (mapping `null` →
+- [x] `handleDragComplete` `case 'move'`: apply `preview.resourceId` (mapping `null` →
       `resourceId: undefined` on the emitted event). Resize cases untouched.
-- [ ] Feedback [D12.3c]: `updateGreyedSlots` scoped to the target row; `.drop-target`
+- [x] Feedback [D12.3c]: `updateGreyedSlots` scoped to the target row; `.drop-target`
       highlight on the target row (new SCSS rule → **run codegen-wc**); verify the M16
       ghost relocates (its `rowKey` chain already starts at `previewEvent.resourceId`).
-- [ ] **B29 — dangling `resourceId` resolves to the bucket row** [D12.7]: an event whose
+- [x] **B29 — dangling `resourceId` resolves to the bucket row** [D12.7]: an event whose
       `resourceId` matches no known resource renders in `(No resource)` instead of
       vanishing from the timeline; dev-warn once per event id (reuse the
       `requireEventResource` warn-once machinery). Spec: delete a resource from the
       `resources` input → its events appear in the bucket, week view unchanged.
-- [ ] Specs in `drag-state-machine.spec.ts` (pure, no DOM — where the coverage belongs):
+- [x] Specs in `drag-state-machine.spec.ts` (pure, no DOM — where the coverage belongs):
       cross-row move carries the target; `null` target survives; resize never rewrites the
       row; a week-view slot (`undefined`) leaves the original resource intact.
 
 ## M20 — Keyboard + bucket parity [B25, B26, B28]
 
-- [ ] Rewrite `adjacentResource` to walk the same row list the view renders — visible leaf
+- [x] Rewrite `adjacentResource` to walk the same row list the view renders — visible leaf
       resources plus the bucket when present — returning a value that can distinguish "the
       bucket row" from "no move" [B25]. Fixes plain cell navigation too, not just
       move-mode.
-- [ ] `commitEventMoveMode` / `applyKeyboardMovePreview`: write `resourceId` explicitly
+- [x] `commitEventMoveMode` / `applyKeyboardMovePreview`: write `resourceId` explicitly
       instead of by truthiness, so a move **to** the bucket commits and previews [B26].
-- [ ] Timeline-specific `moveModeEntered` message (Up/Down = resource, Left/Right = time)
+- [x] Timeline-specific `moveModeEntered` message (Up/Down = resource, Left/Right = time)
       [B28]; demo keymap bullets updated.
-- [ ] Specs: `nudgeKeyboardMoveResource` (currently untested at all), Down past the last
+- [x] Specs: `nudgeKeyboardMoveResource` (currently untested at all), Down past the last
       resource lands in the bucket, commit emits with `resourceId` absent for a bucket
       drop, Escape restores the original row.
 
 ## M21 — Per-gesture pointer permission gate [B24]
 
-- [ ] Gate at pointer-down by target type: `'event'` → `can('moveEvent', ev)`,
+- [x] Gate at pointer-down by target type: `'event'` → `can('moveEvent', ev)`,
       `'resize-handle'` → the matching edge capability, `'slot'` →
       `createEvent || selectRange`. Replaces the OR-of-four `isEditable` as the only
       pointer gate; keeps `resolveCapability` as the ONE resolver (see Landmarks).
-- [ ] Spec: `permissions: { moveEvent: false, createEvent: true }` refuses a pointer
+- [x] Spec: `permissions: { moveEvent: false, createEvent: true }` refuses a pointer
       move-drag (the case that passes today) but still allows drag-create.
 
 ## M22 — Pointer delete affordance [R14, D12.4]
 
-- [ ] Day popover: a real delete `<button>` per event row, **sibling** of the event button
+- [x] Day popover: a real delete `<button>` per event row, **sibling** of the event button
       (event boxes are `role="button"` in all four views — anything focusable inside one
       is a nested interactive). Named `"Delete {event}"` via a new `messages` key, rendered
       only when `can('deleteEvent', event)`, emits the existing `event-delete`, ≥24px
       target. Focus moves to the next row's button after the emit — never to `<body>`.
-- [ ] ~~An aria-hidden × on the selected event~~ — **dropped** [D12.4b revised]: the
+- [x] ~~An aria-hidden × on the selected event~~ — **dropped** [D12.4b revised]: the
       in-grid pointer delete is the event editor's delete button (M23), a real focusable
       control in a dialog instead of a pointer-only target.
-- [ ] Document that confirmation/undo is the consumer's job in the `event-delete` listener
+- [x] Document that confirmation/undo is the consumer's job in the `event-delete` listener
       — the WC owns no data and no "are you sure" dialog.
-- [ ] Specs: button absent under `deleteEvent: false`; popover row delete emits and moves
+- [x] Specs: button absent under `deleteEvent: false`; popover row delete emits and moves
       focus; axe over the popover with delete buttons present (nested-interactive +
       target-size).
 
 ## M23 — Built-in event editor [R20, D12.8]
 
-- [ ] `OverlayController` popover anchored to the event element by stable event id — same
+- [x] `OverlayController` popover anchored to the event element by stable event id — same
       mechanics, traps and `$z-day-popover` rung as the day popover (lazy anchor,
       `role="dialog"`, non-modal, host-level Escape gate, focus back to the event box on
       close, local scroll listener).
-- [ ] Fields: title, start/end (`datetime-local`), optional colour input. Buttons: Save →
+- [x] Fields: title, start/end (`datetime-local`), optional colour input. Buttons: Save →
       existing `event-update` (with `oldEvent`), Delete → existing `event-delete` (the
       revised D12.4b home), Cancel. WC-side validation only `end > start` + non-empty
       title; everything richer belongs to the consumer's listener.
-- [ ] Openers: double-click / double-tap on the event; `contextmenu` (`preventDefault()`
+- [x] Openers: double-click / double-tap on the event; `contextmenu` (`preventDefault()`
       on event boxes only); F2 on the selected event. Enter stays move-mode. Keymap text
       gains the editor line, permission-gated (§6.4 rules).
-- [ ] Gating [D12.8c]: new `SchedulerPermissions.editEvent` (default `true`) for
+- [x] Gating [D12.8c]: new `SchedulerPermissions.editEvent` (default `true`) for
       title/colour; start/end respect `moveEvent`/`resizeEventStart`/`resizeEventEnd`;
       delete button under `deleteEvent`; `readonly` and per-event `editable: false` kill
       it wholesale; the editor doesn't open when nothing is permitted.
-- [ ] `options.eventEditor?: boolean` default **`true`** [D12.8d], plus a first-class
+- [x] `options.eventEditor?: boolean` default **`true`** [D12.8d], plus a first-class
       input on all three wrappers (Angular `[eventEditor]`, React `eventEditor`, Vue
       `:event-editor`).
-- [ ] New `messages` keys (field labels, Save/Cancel/Delete, dialog label); new SCSS →
+- [x] New `messages` keys (field labels, Save/Cancel/Delete, dialog label); new SCSS →
       **run codegen-wc**.
-- [ ] Specs: open via all three openers; Save emits `event-update` with the edited
+- [x] Specs: open via all three openers; Save emits `event-update` with the edited
       fields; Delete emits and closes with focus handled (the event box is gone —
       restore by grid cell key); `eventEditor: false` restores the old double-click
       behaviour; field-level gating per capability; axe over the open editor.
 
 ## M24 — Resource column UX: resize, tooltips, rename [R15–R17, D12.5]
 
-- [ ] Column resize separator: `role="separator"`, focusable, vertical orientation,
+- [x] Column resize separator: `role="separator"`, focusable, vertical orientation,
       `aria-valuenow` percent, arrow-key steps (WAI-ARIA window-splitter, same pattern as
       the repo's splitter); pointer drag writes `--scheduler-resource-column-width` on the
       host; the AG-Grid `min(…, 100% - 50px)` guard keeps binding both channels. Lives
       outside the `role="grid"` (add-bar reasoning, §11.2). Retires D12.1c's
       capability-gated width tweak.
-- [ ] `title` attribute on every resource/group title span, unconditionally [D12.5b].
-- [ ] Rename [D12.5c], file-manager idiom: double-click the title (double-tap touch) or F2
+- [x] `title` attribute on every resource/group title span, unconditionally [D12.5b].
+- [x] Rename [D12.5c], file-manager idiom: double-click the title (double-tap touch) or F2
       on the focused rowheader cell → inline `<input class="rename-input">`; Enter
       commits → `resource-update` `changes: { title }`; Escape cancels; blur commits;
       live-announced. Gated on `can('updateResource')` — denied means the triggers do
       nothing. Focus returns to the rowheader cell by stable key after the rebuild.
-- [ ] New `messages` keys + keymap docs; new SCSS → **run codegen-wc**.
-- [ ] Specs: separator keyboard resize clamps at both bounds; rename commit/cancel/blur;
+- [x] New `messages` keys + keymap docs; new SCSS → **run codegen-wc**.
+- [x] Specs: separator keyboard resize clamps at both bounds; rename commit/cancel/blur;
       rename refused under `updateResource: false`; tooltip attribute present; F2
       disambiguation — event selected → editor (M23), rowheader focused → rename.
 
 ## M25 — Demos as the reference consumer
 
-- [ ] Demo `applyEventUpdate` re-parents on a cross-row move instead of rewriting in place
+- [x] Demo `applyEventUpdate` re-parents on a cross-row move instead of rewriting in place
       [B27] — the demo is the reference consumer, it must model the honest mutation.
-- [ ] Demos start in `'resource-admin'` permission mode [D12.1b] so R11's surface is
+- [x] Demos start in `'resource-admin'` permission mode [D12.1b] so R11's surface is
       discoverable.
-- [ ] Colour data fixed in all three demos [D12.6]: sample resources get palette colours,
+- [x] Colour data fixed in all three demos [D12.6]: sample resources get palette colours,
       sample events drop explicit colours (keep one or two to demonstrate the
       `event.color` override), `onEventCreate` stops stamping `'#3788d8'`. The WC is
       untouched.
-- [ ] `onResourceDelete` strips `resourceId` from events under the deleted subtree
+- [x] `onResourceDelete` strips `resourceId` from events under the deleted subtree
       [D12.7] — the recommended consumer behaviour, documented as such.
-- [ ] The demo's own editor card is retired for the built-in one [D12.8e]; one toggle
+- [x] The demo's own editor card is retired for the built-in one [D12.8e]; one toggle
       demonstrates `eventEditor: false` + a consumer-owned editor as the escape hatch.
 
 ## M26 — e2e + the one batched sweep
 
-- [ ] e2e (`scheduler-views.spec.ts`): drag row A → row B asserting the emitted
+- [x] e2e (`scheduler-views.spec.ts`): drag row A → row B asserting the emitted
       `resourceId` and the re-parent; ghost sits in the target row mid-drag and only that
       row greys; drag into and out of the bucket row; a cross-row drag reaching an
       off-screen row via edge auto-scroll; year panel open → Escape → focus on the card;
       popover row delete click → event gone from the demo's data; event editor open →
       edit title → Save → chip text updates; column resize by drag persists across a view
       switch.
-- [ ] **One batched suite sweep at the end** (build + unit + e2e), then push once.
-- [ ] Device check rides along: vertical cross-row touch drag (600ms hold path — no
+- [x] **One batched suite sweep at the end** (build + unit + e2e), then push once.
+- [x] Device check rides along: vertical cross-row touch drag (600ms hold path — no
       `touch-action` on `.scheduler-timeline-event`) and the editor's double-tap opener,
       same Android pass as the open M3 item.
 
