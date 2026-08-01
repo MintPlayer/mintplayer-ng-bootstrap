@@ -739,7 +739,85 @@ each item has its own blast radius across every picker consumer.
 
 Everything needed to continue without the originating conversation, which was compacted.
 
-## Where things stand
+## Where things stand — PHASE 2 (read this before the phase-1 notes below)
+
+Branch `feat/scheduler-phase2` → PR
+[#396](https://github.com/MintPlayer/mintplayer-ng-bootstrap/pull/396), base `master`.
+**CI green** on the last code commit (`22ec323a`, the B31/B32 draft refactor); the commits
+after it are docs only.
+
+Delivered: M18–M26 (the milestone sweep), then six review-driven fixes — D12.8f (two-state
+colour), `<mp-checkbox>`, in-shadow form styling + `<mp-select>` (D12.9),
+`<mp-datetime-picker>` + the Escape arbitration (D12.9b), B30, and B31/B32.
+
+**Decided but NOT started**, in priority order: **M27** (R21 end-clamp, small), **M29**
+(one message one channel — B33/B34, small but needs `error-text` on the shared picker),
+**M28** (collapse the resize capabilities — BREAKING, another version bump), and **M30**
+(picker bounds — explicitly a SEPARATE PR).
+
+Versions already bumped on this branch: WC 2.6.0, ng 22.10.0, react 19.12.0, vue 3.13.0.
+M28 would need another.
+
+## Reproducing a reported bug in a browser — the technique that found B31
+
+The user reported "the event doesn't move" twice. The first report was B30 (a real but
+different bug); after fixing it the report repeated, and scripted tests kept passing. What
+found the real defect was tracing ONE value across the gesture's phases:
+
+```js
+el.shadowRoot.addEventListener('mousedown', () => log(picker.value), true);
+el.shadowRoot.addEventListener('click',     () => log(picker.value), true);
+```
+
+which produced `PRE-SAVE Jul 30 → MOUSEDOWN Jul 30 → CLICK Jul 28` — the value being reset
+*between* the two phases. Lessons, both general:
+
+- **A programmatic `.click()` fires no `mousedown`**, so it never triggers the re-render
+  that a real press does. Any test that clicks that way is testing a different code path
+  from the user's.
+- **Assigning `input.value` fires no `input` event.** With a component that holds a draft,
+  that means the model never sees the edit.
+- When a user insists something is broken after you have "verified" it, **replay their
+  exact gesture with real events** before doubting them. Both times, they were right.
+
+## e2e authoring gotchas (all cost real time this session)
+
+- **Bootstrap sets a global `scroll-behavior: smooth`**, so any rect read straight after a
+  programmatic scroll is stale and a drag lands rows away from its aim. Use
+  `scrollSchedulerIntoView(page)` (waits for `scrollY` to settle) and pass
+  `behavior: 'instant'` to in-shadow `scrollIntoView` calls.
+- **Read row titles from `.resource-title`**, never the rowheader cell's `textContent` —
+  under `resource-admin` the cell also contains the action-button glyphs, so Bob reads
+  `"Bob×"`.
+- **Click Save with a real mouse** (`page.mouse.click` at its rect), not
+  `evaluate(el => el.click())` — see above.
+- **Playwright's CSS selectors pierce open shadow roots**, so
+  `page.locator('mp-datetime-picker.editor-start-input button.date')` reaches two shadow
+  roots deep with no special syntax.
+- **The time list is 96 rows and overflows the viewport**: clicking a naive rect lands
+  outside the editor and correctly dismisses it. `scrollIntoView` the option first.
+- One Firefox test needs `test.slow()` — its closing axe scan alone takes ~45 s, which
+  overruns the 60 s budget under four shared workers.
+- The multi-day-ghost test (phase 1) is **timing-sensitive under parallel workers**; it has
+  failed once and passed alone and on a full re-run. Not a regression — check before
+  chasing it.
+
+## Demo behaviours that exist for a reason (do not "simplify" them away)
+
+- `applyEventUpdate` **re-parents**: a nested event whose `resourceId` changed moves to the
+  flat store. Without it a cross-row move leaves the event in resource A's array claiming
+  to be B's (B27).
+- `onEventDelete` sweeps **both** stores. Sample events are authored nested, so a flat-only
+  filter silently ignores deleting one.
+- `onResourceDelete` strips `resourceId` from the deleted subtree's events (D12.7).
+- Sample **resources carry the palette colours; most sample events carry none**, so
+  resource colour is actually exercised (D12.6). Two events keep an explicit colour on
+  purpose, to demonstrate that `event.color` outranks the resource.
+- The demo starts in `resource-admin` permission mode so the resource affordances are
+  visible on first visit (D12.1b) — an e2e drops it back to `default` to prove
+  "off means absent".
+
+## Where things stand — PHASE 1 (HISTORICAL; superseded by the phase-2 section above)
 
 Branch `fix/scheduler-preview-z-order`, folding into PR
 [#395](https://github.com/MintPlayer/mintplayer-ng-bootstrap/pull/395) (base `master`).
