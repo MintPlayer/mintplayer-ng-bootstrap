@@ -179,6 +179,16 @@ export class BsSchedulerComponent implements AfterViewInit, OnDestroy {
   readonly isReadonly = input(false, { alias: 'readonly', transform: booleanAttribute });
   protected readonly readonlyAttr = computed(() => (this.isReadonly() ? '' : null));
 
+  /**
+   * The WC's built-in event editor (double-click / right-click / F2 on an
+   * event), ON by default. Set false when the app ships its own editor —
+   * `(eventDblClick)` keeps firing either way. Rendered as the `event-editor`
+   * attribute, whose literal "false" is the off switch, so the binding can be
+   * unconditional.
+   */
+  readonly eventEditor = input(true, { transform: booleanAttribute });
+  protected readonly eventEditorAttr = computed(() => (this.eventEditor() ? 'true' : 'false'));
+
   // Two-way binding model signals. `view` and `date` are models (not inputs)
   // because the web component changes both from within — prev/next/today
   // navigation and the view switcher — and delivers the new values via its

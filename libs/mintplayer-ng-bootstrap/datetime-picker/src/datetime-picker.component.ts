@@ -65,6 +65,15 @@ export class BsDatetimePickerComponent implements AfterViewInit, ControlValueAcc
   todayLabel = input<string>('Today');
   nowLabel = input<string>('Now');
 
+  /**
+   * The `error-text` channel. A validation message for this control cannot be
+   * supplied from outside — its role lives on an input inside the WC's shadow
+   * root, and an IDREF does not cross that boundary — so it travels in as
+   * text and is wired up in there.
+   */
+  invalid = input<boolean>(false);
+  errorText = input<string | null>(null);
+
   disabled = input<boolean>(false);
   protected readonly formDisabled = signal(false);
   protected readonly effectiveDisabled = signal(false);
@@ -99,6 +108,8 @@ export class BsDatetimePickerComponent implements AfterViewInit, ControlValueAcc
       wc.todayLabel = this.todayLabel();
       wc.nowLabel = this.nowLabel();
       wc.disabled = this.effectiveDisabled();
+      wc.invalid = this.invalid();
+      wc.errorText = this.errorText();
       wc.requestUpdate?.();
     });
 

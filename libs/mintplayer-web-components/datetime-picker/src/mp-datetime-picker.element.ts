@@ -1,10 +1,16 @@
 import { LitElement, html, nothing, type TemplateResult } from 'lit';
 import { query } from 'lit/decorators.js';
-import { LiveAnnouncerController } from '@mintplayer/web-components/a11y';
+import { LiveAnnouncerController, errorFeedback } from '@mintplayer/web-components/a11y';
 import { OverlayController } from '@mintplayer/web-components/overlay';
 import { MpCalendarElement, type FirstDayOfWeek } from '@mintplayer/web-components/calendar';
-import { MpTimeListElement, type Hour12Mode, type TimeStep } from '@mintplayer/web-components/timepicker';
+import {
+  MpTimeListElement,
+  minutesOfDay,
+  type Hour12Mode,
+  type TimeStep,
+} from '@mintplayer/web-components/timepicker';
 import { styles } from './mp-datetime-picker.element.template';
+import { invalidFeedbackStyles } from '../../_styles/invalid-feedback.styles';
 
 void MpCalendarElement;
 void MpTimeListElement;
@@ -16,6 +22,15 @@ const CLOCK_ICON_SVG = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 
 const CLEAR_ICON_SVG = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M4.646 4.646a.5.5 0 0 1 .708 0L8 7.293l2.646-2.647a.5.5 0 0 1 .708.708L8.707 8l2.647 2.646a.5.5 0 0 1-.708.708L8 8.707l-2.646 2.647a.5.5 0 0 1-.708-.708L7.293 8 4.646 5.354a.5.5 0 0 1 0-.708z"/></svg>`;
 
 let instanceCounter = 0;
+
+/** Midnight of `d`, for date-granular comparisons — the calendar's semantic. */
+function dateOnly(d: Date): number {
+  return new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime();
+}
+
+function sameDay(a: Date, b: Date): boolean {
+  return dateOnly(a) === dateOnly(b);
+}
 
 interface TimePart {
   hour: number;
@@ -39,7 +54,7 @@ interface TimePart {
  *  - `closed`               detail = 'date' | 'time' on popup close.
  */
 export class MpDatetimePickerElement extends LitElement {
-  static override styles = [styles];
+  static override styles = [styles, invalidFeedbackStyles];
 
   static override properties = {
     value: { attribute: false },
@@ -54,6 +69,8 @@ export class MpDatetimePickerElement extends LitElement {
     placeholder: { attribute: 'placeholder', type: String, reflect: true },
     showClear: { attribute: 'show-clear', type: Boolean, reflect: true },
     disabled: { attribute: 'disabled', type: Boolean, reflect: true },
+    invalid: { attribute: 'invalid', type: Boolean, reflect: true },
+    errorText: { attribute: 'error-text', type: String, reflect: false },
     inputLabel: { attribute: 'input-label', type: String, reflect: true },
     dateButtonLabel: { attribute: 'date-button-label', type: String, reflect: true },
     timeButtonLabel: { attribute: 'time-button-label', type: String, reflect: true },
@@ -76,6 +93,20 @@ export class MpDatetimePickerElement extends LitElement {
   placeholder = '';
   showClear = false;
   disabled = false;
+  invalid = false;
+  /**
+   * Validation message, as `errorText` / `error-text`. Rendered as a
+   * `.invalid-feedback` node in this shadow root and referenced from the
+   * display input, which is the role-bearing control — only while `invalid`
+   * is also set, since `aria-errormessage` is defined only on an
+   * `aria-invalid` control.
+   *
+   * Text rather than an IDREF because an IDREF cannot cross a shadow
+   * boundary: a consumer's `aria-describedby` on this host would point at a
+   * node this element's input cannot see, and the host itself carries no
+   * role for it to land on. So the message has to travel in as text.
+   */
+  errorText: string | null = null;
   inputLabel = 'Selected date and time';
   dateButtonLabel = 'Choose date';
   timeButtonLabel = 'Choose time';
@@ -90,6 +121,25 @@ export class MpDatetimePickerElement extends LitElement {
   protected readonly instanceId = `mp-dtp-${++instanceCounter}`;
   protected readonly datePopupId = `${this.instanceId}-popup-date`;
   protected readonly timePopupId = `${this.instanceId}-popup-time`;
+  protected readonly errorId = `${this.instanceId}-error`;
+
+  @query('input.form-control')
+  protected displayInputEl?: HTMLInputElement;
+
+  /**
+   * Focusing the picker means focusing its display input — the node that
+   * carries the accessible name, the invalid state and the error message's
+   * description, so it is also the node that must receive focus for a
+   * validation message to be spoken.
+   *
+   * An override rather than `delegatesFocus: true`, which would change what a
+   * click anywhere in the input-group focuses for every consumer.
+   */
+  override focus(options?: FocusOptions): void {
+    const input = this.displayInputEl;
+    if (input) input.focus(options);
+    else super.focus(options);
+  }
 
   @query('button.date')
   protected dateTriggerEl?: HTMLButtonElement;
@@ -390,15 +440,70 @@ export class MpDatetimePickerElement extends LitElement {
   };
 
   protected onTodayClick = (): void => {
+    if (this.todayOutOfRange()) return;
     this.updateDatePart(new Date());
   };
 
   protected onNowClick = (): void => {
-    const now = new Date();
-    const minutes = Math.floor(now.getMinutes() / this.step) * this.step;
-    const rounded = new Date(now.getFullYear(), now.getMonth(), now.getDate(), now.getHours(), minutes, 0, 0);
+    const rounded = this.roundedNow();
+    if (this.nowOutOfRange()) return;
     this.updateTimePart(rounded);
   };
+
+  /** `Now`, snapped down to the nearest step — the value that button writes. */
+  private roundedNow(): Date {
+    const now = new Date();
+    const minutes = Math.floor(now.getMinutes() / this.step) * this.step;
+    return new Date(now.getFullYear(), now.getMonth(), now.getDate(), now.getHours(), minutes, 0, 0);
+  }
+
+  /**
+   * `Today` and `Now` used to write their value with no bound check at all, so
+   * a footer button escaped a constraint the grid one layer below enforced.
+   * They are DISABLED rather than silently ignored — a control that does
+   * nothing when pressed is the worse of the two failures.
+   */
+  private todayOutOfRange(): boolean {
+    const today = new Date();
+    if (this.min && dateOnly(today) < dateOnly(this.min)) return true;
+    if (this.max && dateOnly(today) > dateOnly(this.max)) return true;
+    return !!this.disableDateFn?.(today);
+  }
+
+  /**
+   * `Now` writes only the TIME half, onto whichever day is currently selected,
+   * so it is bounded by that day's derived range — not by "is now within
+   * min..max", which would be a different question entirely.
+   */
+  private nowOutOfRange(): boolean {
+    const minutes = minutesOfDay(this.roundedNow())!;
+    const { minMinutes, maxMinutes } = this.timeBounds();
+    if (minMinutes !== null && minutes < minMinutes) return true;
+    if (maxMinutes !== null && minutes > maxMinutes) return true;
+    return false;
+  }
+
+  /**
+   * The time list's bounds for the day being edited (D12.15 #1/#2).
+   *
+   * A bound only constrains the CLOCK on its own day: an end on a later day
+   * gets the full 24 hours, which is what Google Calendar and Outlook both do.
+   * Forwarding `min`/`max` verbatim — as this element failed to do at all,
+   * while both its siblings did — would instead grey out the same clock range
+   * on every day.
+   *
+   * The day in question is `value ?? today` — not a guess, but exactly what
+   * `updateTimePart` will compose the picked time with when no date has been
+   * chosen yet. Deriving it from anything else would bound a day the pick is
+   * not going to land on.
+   */
+  private timeBounds(): { minMinutes: number | null; maxMinutes: number | null } {
+    const day = this.value ?? new Date();
+    return {
+      minMinutes: this.min && sameDay(day, this.min) ? minutesOfDay(this.min) : null,
+      maxMinutes: this.max && sameDay(day, this.max) ? minutesOfDay(this.max) : null,
+    };
+  }
 
   /* ---- Render ---- */
 
@@ -409,15 +514,20 @@ export class MpDatetimePickerElement extends LitElement {
     const calendarMonth = this._calendarMonth ?? (this.value ? new Date(this.value.getFullYear(), this.value.getMonth(), 1) : new Date());
     const selectedDate = this.value ?? null;
     const selectedTime = this.value ?? null;
+    const error = errorFeedback(this.errorId, this.errorText, this.invalid);
+    const timeBounds = this.timeBounds();
 
     return html`
       <div class="input-group">
         <input
-          class="form-control"
+          class="form-control ${this.invalid ? 'is-invalid' : ''}"
           type="text"
           readonly
           aria-readonly="true"
           aria-label="${this.inputLabel}"
+          aria-invalid="${this.invalid ? 'true' : 'false'}"
+          aria-errormessage="${error.id}"
+          aria-describedby="${error.id}"
           .value="${displayValue}"
           placeholder="${this.placeholder || nothing}"
           ?disabled="${this.disabled}"
@@ -457,6 +567,7 @@ export class MpDatetimePickerElement extends LitElement {
           .innerHTML="${CLOCK_ICON_SVG}"
         ></button>
       </div>
+      ${error.node}
       ${this.liveAnnouncer.template()}
 
       <div class="popup popup-date" id="${this.datePopupId}" role="dialog" aria-label="${this.dateButtonLabel}">
@@ -477,7 +588,11 @@ export class MpDatetimePickerElement extends LitElement {
           ></mp-calendar>
         </slot>
         <div class="popup-footer">
-          <button type="button" @click="${this.onTodayClick}">${this.todayLabel}</button>
+          <button
+            type="button"
+            ?disabled="${this.todayOutOfRange()}"
+            @click="${this.onTodayClick}"
+          >${this.todayLabel}</button>
         </div>
       </div>
 
@@ -488,13 +603,19 @@ export class MpDatetimePickerElement extends LitElement {
           <mp-time-list
             .selectedTime="${selectedTime}"
             .step="${this.step}"
+            .minMinutes="${timeBounds.minMinutes}"
+            .maxMinutes="${timeBounds.maxMinutes}"
             .hour12="${this.hour12}"
             .locale="${this.locale}"
             @selected-time-change="${this.onTimeListSelectedTimeChange}"
           ></mp-time-list>
         </slot>
         <div class="popup-footer">
-          <button type="button" @click="${this.onNowClick}">${this.nowLabel}</button>
+          <button
+            type="button"
+            ?disabled="${this.nowOutOfRange()}"
+            @click="${this.onNowClick}"
+          >${this.nowLabel}</button>
         </div>
       </div>
     `;

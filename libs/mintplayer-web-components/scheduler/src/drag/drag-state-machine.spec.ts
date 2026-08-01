@@ -341,6 +341,70 @@ describe('DragStateMachine', () => {
     });
   });
 
+  /**
+   * M19 (R13) — a move TRACKS the pointer's row while a create PINS its
+   * starting row; the tri-state resourceId (`undefined` = no resource axis,
+   * `null` = the bucket row) is what lets a drop mean "unassign".
+   */
+  describe('cross-resource move preview (M19)', () => {
+    const slotIn = (resourceId: string | null | undefined, startHour: number): TimeSlot => ({
+      start: new Date(2024, 0, 1, startHour, 0, 0),
+      end: new Date(2024, 0, 1, startHour + 1, 0, 0),
+      ...(resourceId !== undefined ? { resourceId } : {}),
+    });
+
+    it('a move over another row carries that row on the preview', () => {
+      const event = { ...createEvent('1', 9, 11), resourceId: 'alice' };
+      machine.send(createPointerDown({ type: 'event', event }, 100, 100, slotIn('alice', 9)));
+      machine.send(createPointerMove(110, 130, slotIn('bob', 9)));
+
+      expect(machine.getPreview()?.resourceId).toBe('bob');
+    });
+
+    it('a move over the bucket row carries null — the drop means unassign', () => {
+      const event = { ...createEvent('1', 9, 11), resourceId: 'alice' };
+      machine.send(createPointerDown({ type: 'event', event }, 100, 100, slotIn('alice', 9)));
+      machine.send(createPointerMove(110, 130, slotIn(null, 9)));
+
+      expect(machine.getPreview()?.resourceId).toBeNull();
+    });
+
+    it('a move over a slot without a resource axis keeps the event\'s own row', () => {
+      const event = { ...createEvent('1', 9, 11), resourceId: 'alice' };
+      machine.send(createPointerDown({ type: 'event', event }, 100, 100, slotIn(undefined, 9)));
+      machine.send(createPointerMove(110, 100, slotIn(undefined, 12)));
+
+      expect(machine.getPreview()?.resourceId).toBe('alice');
+    });
+
+    it('a resize never rewrites the row, whatever slot the pointer crosses', () => {
+      const event = { ...createEvent('1', 9, 12), resourceId: 'alice' };
+      machine.send(
+        createPointerDown(
+          { type: 'resize-handle', event, resizeHandle: 'end' },
+          100, 100, slotIn('alice', 11),
+        ),
+      );
+      machine.send(createPointerMove(110, 130, slotIn('bob', 13)));
+
+      expect(machine.getPreview()?.resourceId).toBeUndefined();
+    });
+
+    it('a create PINS its starting row even when the pointer crosses rows', () => {
+      machine.send(createPointerDown({ type: 'slot' }, 100, 100, slotIn('alice', 9)));
+      machine.send(createPointerMove(110, 130, slotIn('bob', 11)));
+
+      expect(machine.getPreview()?.resourceId).toBe('alice');
+    });
+
+    it('a create started in the bucket row keeps null — an unassigned event', () => {
+      machine.send(createPointerDown({ type: 'slot' }, 100, 100, slotIn(null, 9)));
+      machine.send(createPointerMove(110, 100, slotIn(null, 11)));
+
+      expect(machine.getPreview()?.resourceId).toBeNull();
+    });
+  });
+
   describe('resize-start operation preview', () => {
     it('should keep end fixed while moving start', () => {
       const event = createEvent('1', 9, 12);

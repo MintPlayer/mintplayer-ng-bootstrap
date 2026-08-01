@@ -108,15 +108,14 @@ async function chooseOption(page: Page, ariaLabel: string, label: string): Promi
  * entirely, which reads as "the drag produced no ghost" rather than "the test
  * never touched the grid".
  */
-async function showSlot(
-  page: Page,
-  dayIndex: number,
-  slotIndex: number,
-): Promise<{ x: number; y: number }> {
-  const selector = `.scheduler-time-slot[data-day-index="${dayIndex}"][data-slot-index="${slotIndex}"]`;
+/**
+ * Scroll the scheduler into view and WAIT for the scroll to stop moving.
+ * Bootstrap sets a global `scroll-behavior: smooth`, so any coordinates read
+ * right after scrollIntoView are stale by the time the mouse reaches them —
+ * a drag then lands rows away from where it was aimed.
+ */
+async function scrollSchedulerIntoView(page: Page): Promise<void> {
   await schedulerRoot(page).evaluate((sched) => sched.scrollIntoView({ block: 'center' }));
-  // Bootstrap sets a global `scroll-behavior: smooth`, so scrollIntoView is
-  // still animating on the next line unless we wait for it to settle.
   await page.waitForFunction(() => {
     const w = window as unknown as { __y?: number; __n?: number };
     const y = window.scrollY;
@@ -127,6 +126,15 @@ async function showSlot(
     }
     return (w.__n ?? 0) > 3;
   });
+}
+
+async function showSlot(
+  page: Page,
+  dayIndex: number,
+  slotIndex: number,
+): Promise<{ x: number; y: number }> {
+  const selector = `.scheduler-time-slot[data-day-index="${dayIndex}"][data-slot-index="${slotIndex}"]`;
+  await scrollSchedulerIntoView(page);
   return schedulerRoot(page).evaluate((sched, sel) => {
     const slot = sched.shadowRoot!.querySelector<HTMLElement>(sel);
     if (!slot) throw new Error(`no slot for ${sel}`);
@@ -254,16 +262,23 @@ test.describe('scheduler — timeline (R3, R5, R7)', () => {
   test('granting resource permissions reveals the add bar, and adding appends a row', async ({
     page,
   }) => {
+    // Firefox spends ~45s here even alone (the closing axe scan dominates);
+    // under four shared workers that overruns the file's 60s budget.
+    test.slow();
     await loadSampleWeek(page);
     await switchView(page, 'timeline');
 
-    // Off by default: nothing to see.
+    // The DEMO starts in resource-admin since M25 (discoverability, R11) —
+    // drop to the component's own default first to prove "off means absent".
+    await chooseOption(page, 'Permissions', 'Events editable (default)');
     await expect(schedulerRoot(page)).toBeVisible();
-    expect(
-      await schedulerRoot(page).evaluate(
-        (sched) => !!sched.shadowRoot!.querySelector('.scheduler-timeline-addbar'),
-      ),
-    ).toBe(false);
+    await expect
+      .poll(() =>
+        schedulerRoot(page).evaluate(
+          (sched) => !!sched.shadowRoot!.querySelector('.scheduler-timeline-addbar'),
+        ),
+      )
+      .toBe(false);
 
     await chooseOption(page, 'Permissions', 'Events + resource tree editable');
     await expect
@@ -520,5 +535,652 @@ test.describe('scheduler — month day popover (R6)', () => {
         (sched) => (sched.shadowRoot!.activeElement as HTMLElement | null)?.id ?? null,
       ),
     ).toBe(cellId);
+  });
+});
+
+/**
+ * Phase 2 (PRD §12). Seed one flat event with a resourceId — the same fixture
+ * shape as the resize-ghost suite, for the same reason: flat + resourceId is
+ * the shape every API response produces.
+ */
+async function seedTimelineEvent(page: Page): Promise<{ first: string; second: string }> {
+  return page.evaluate(() => {
+    const sched = document.querySelector('mp-scheduler') as HTMLElement & {
+      events: unknown[];
+      resources: { id: string; children?: unknown[] }[];
+    };
+    const leaves: string[] = [];
+    const walk = (items: { id: string; children?: unknown[] }[]): void => {
+      for (const item of items) {
+        if (item.children) walk(item.children as { id: string; children?: unknown[] }[]);
+        else leaves.push(item.id);
+      }
+    };
+    walk(sched.resources);
+    const day = new Date();
+    day.setHours(0, 0, 0, 0);
+    const at = (h: number) => {
+      const d = new Date(day);
+      d.setHours(h, 0, 0, 0);
+      return d;
+    };
+    sched.events = [
+      { id: 'movable', title: 'Movable', resourceId: leaves[0], start: at(9), end: at(11) },
+      // Keeps the bucket row rendered, so there is somewhere to drop into.
+      { id: 'loose', title: 'Loose', start: at(13), end: at(14) },
+    ];
+    return { first: leaves[0], second: leaves[1] };
+  });
+}
+
+async function timelineEventRect(
+  page: Page,
+  id: string,
+): Promise<{ x: number; y: number; w: number; h: number }> {
+  return schedulerRoot(page).evaluate((sched, eventId) => {
+    const ev = Array.from(
+      sched.shadowRoot!.querySelectorAll<HTMLElement>('.scheduler-timeline-event:not(.preview)'),
+    ).find((e) => e.dataset['eventId'] === eventId);
+    if (!ev) throw new Error(`no event ${eventId}`);
+    const content = sched.shadowRoot!.querySelector('.scheduler-content')!;
+    content.scrollLeft = Math.max(0, ev.offsetLeft - 160);
+    const r = ev.getBoundingClientRect();
+    return { x: r.x, y: r.y, w: r.width, h: r.height };
+  }, id);
+}
+
+/** Which row (by rowheader text) an event currently renders in. */
+async function rowOfEvent(page: Page, id: string): Promise<string | null> {
+  return schedulerRoot(page).evaluate((sched, eventId) => {
+    const ev = Array.from(
+      sched.shadowRoot!.querySelectorAll<HTMLElement>('.scheduler-timeline-event:not(.preview)'),
+    ).find((e) => e.dataset['eventId'] === eventId);
+    const row = ev?.closest('.scheduler-timeline-row');
+    return row?.querySelector('.resource-title')?.textContent?.trim() ?? null;
+  }, id);
+}
+
+test.describe('scheduler — drag-move between resources (R13)', () => {
+  test('dragging an event onto another row re-assigns it, with row-scoped feedback', async ({
+    page,
+  }) => {
+    await loadSampleWeek(page);
+    await switchView(page, 'timeline');
+    await seedTimelineEvent(page);
+
+    await scrollSchedulerIntoView(page);
+    const from = await timelineEventRect(page, 'movable');
+    // The second resource row's centre, at the SAME x (a pure vertical drag —
+    // the time must not change).
+    const target = await schedulerRoot(page).evaluate((sched, fromX) => {
+      const rows = Array.from(
+        sched.shadowRoot!.querySelectorAll<HTMLElement>(
+          '.scheduler-timeline-row:not(.group):not(.unassigned)',
+        ),
+      );
+      const r = rows[1].getBoundingClientRect();
+      return {
+        x: fromX,
+        y: r.y + r.height / 2,
+        title: rows[1].querySelector('.resource-title')!.textContent!.trim(),
+      };
+    }, from.x + from.w / 2);
+
+    await page.mouse.move(from.x + from.w / 2, from.y + from.h / 2);
+    await page.mouse.down();
+    // The press has to be observed before the moves arrive: on a warm run the
+    // whole gesture is delivered inside one frame, the drag never arms, and no
+    // ghost is ever rendered. This test failed about one run in four for that
+    // reason, and every run after the first in a repeated pass.
+    await page.waitForTimeout(50);
+    await page.mouse.move(target.x, (from.y + target.y) / 2, { steps: 5 });
+    await page.waitForTimeout(50);
+    // Re-read the target row's position INSIDE the drag. A drag near a
+    // container edge auto-scrolls the grid, so a rect measured before
+    // `mouse.down()` can name a row that has since moved out from under the
+    // pointer — which is how this landed back on the source row.
+    const targetY = await schedulerRoot(page).evaluate((sched, title) => {
+      const row = Array.from(
+        sched.shadowRoot!.querySelectorAll<HTMLElement>(
+          '.scheduler-timeline-row:not(.group):not(.unassigned)',
+        ),
+      ).find((r) => r.querySelector('.resource-title')?.textContent?.trim() === title)!;
+      const rect = row.getBoundingClientRect();
+      return rect.y + rect.height / 2;
+    }, target.title);
+    await page.mouse.move(target.x, targetY, { steps: 5 });
+
+    // Mid-drag: the ghost sits in the TARGET row, and only that row is marked.
+    //
+    // Read on a settle rather than immediately. The ghost is rendered a frame
+    // behind the pointer and moves row by row as the gesture crosses them, so
+    // a bare read caught it either absent or still in the SOURCE row — the
+    // cause of this test's flakiness, not anything about the scheduler. The
+    // poll gives up after 2s and returns whatever it last saw, so a genuine
+    // regression still fails on the assertion below with a real row name.
+    const mid = await schedulerRoot(page).evaluate(
+      (sched, expected) =>
+        new Promise<{
+          ghostRowTitle: string | null;
+          dropTargets: number;
+          greyedOutsideTarget: boolean;
+        }>((resolve) => {
+          const deadline = performance.now() + 2000;
+          const read = () => {
+            const ghost = sched.shadowRoot!.querySelector('.scheduler-timeline-event.preview');
+            const ghostRow = ghost?.closest('.scheduler-timeline-row');
+            return {
+              ghostRowTitle:
+                ghostRow?.querySelector('.resource-title')?.textContent?.trim() ?? null,
+              dropTargets: sched.shadowRoot!.querySelectorAll(
+                '.scheduler-timeline-row.drop-target',
+              ).length,
+              greyedOutsideTarget: Array.from(
+                sched.shadowRoot!.querySelectorAll('.scheduler-timeline-slot.greyed'),
+              ).some((slot) => !slot.closest('.drop-target')),
+            };
+          };
+          const poll = () => {
+            const state = read();
+            if (state.ghostRowTitle === expected || performance.now() > deadline) resolve(state);
+            else requestAnimationFrame(poll);
+          };
+          poll();
+        }),
+      target.title,
+    );
+    await page.mouse.up();
+
+    expect(mid.ghostRowTitle).toBe(target.title);
+    expect(mid.dropTargets).toBe(1);
+    expect(mid.greyedOutsideTarget).toBe(false);
+
+    // Committed: the demo applied event-update, the event re-parented.
+    await expect.poll(() => rowOfEvent(page, 'movable')).toBe(target.title);
+  });
+
+  test('dragging into the bucket row un-assigns the event', async ({ page }) => {
+    await loadSampleWeek(page);
+    await switchView(page, 'timeline');
+    await seedTimelineEvent(page);
+
+    await scrollSchedulerIntoView(page);
+    const from = await timelineEventRect(page, 'movable');
+    const bucket = await schedulerRoot(page).evaluate((sched, fromX) => {
+      const row = sched.shadowRoot!.querySelector<HTMLElement>(
+        '.scheduler-timeline-row.unassigned',
+      )!;
+      row.scrollIntoView({ block: 'nearest', behavior: 'instant' });
+      const r = row.getBoundingClientRect();
+      return { x: fromX, y: r.y + r.height / 2 };
+    }, from.x + from.w / 2);
+
+    await page.mouse.move(from.x + from.w / 2, from.y + from.h / 2);
+    await page.mouse.down();
+    await page.mouse.move(bucket.x, (from.y + bucket.y) / 2, { steps: 5 });
+    await page.mouse.move(bucket.x, bucket.y, { steps: 5 });
+    await page.mouse.up();
+
+    // The event now renders in the "(No resource)" row — the wire carried the
+    // un-assignment and the demo applied it.
+    await expect
+      .poll(() =>
+        schedulerRoot(page).evaluate((sched) => {
+          const ev = Array.from(
+            sched.shadowRoot!.querySelectorAll<HTMLElement>(
+              '.scheduler-timeline-event:not(.preview)',
+            ),
+          ).find((e) => e.dataset['eventId'] === 'movable');
+          return !!ev?.closest('.scheduler-timeline-row.unassigned');
+        }),
+      )
+      .toBe(true);
+  });
+});
+
+test.describe('scheduler — year date surface (R12)', () => {
+  test('Space on a month card opens the month popover; Escape returns to the card', async ({
+    page,
+  }) => {
+    await loadSampleWeek(page);
+    await switchView(page, 'year');
+
+    const cardId = await schedulerRoot(page).evaluate((sched) => {
+      const card = sched.shadowRoot!.querySelector<HTMLElement>(
+        '.scheduler-year-month[tabindex="0"]',
+      )!;
+      card.focus();
+      return card.id;
+    });
+    await page.keyboard.press(' ');
+
+    await expect
+      .poll(() =>
+        schedulerRoot(page).evaluate(
+          (sched) =>
+            sched.shadowRoot!.querySelector('.scheduler-day-popover')?.getAttribute('role') ??
+            null,
+        ),
+      )
+      .toBe('dialog');
+
+    // Anchored: the fixed panel sits near its card, not at the layout origin —
+    // the B23 failure mode was an unpositioned panel.
+    const anchored = await schedulerRoot(page).evaluate((sched, id) => {
+      const panel = sched.shadowRoot!.querySelector<HTMLElement>('.scheduler-day-popover')!;
+      const card = sched.shadowRoot!.getElementById(id)!;
+      const p = panel.getBoundingClientRect();
+      const c = card.getBoundingClientRect();
+      return {
+        dx: Math.abs(p.x - c.x),
+        dy: Math.abs(p.y - c.y),
+        positioned: panel.style.top !== '' || panel.style.left !== '',
+      };
+    }, cardId);
+    expect(anchored.positioned).toBe(true);
+    expect(anchored.dx + anchored.dy).toBeLessThan(900);
+
+    await expectNoSeriousViolations(page, 'the year month popover open');
+
+    await page.keyboard.press('Escape');
+    await expect
+      .poll(() =>
+        schedulerRoot(page).evaluate(
+          (sched) => (sched.shadowRoot!.activeElement as HTMLElement | null)?.id ?? null,
+        ),
+      )
+      .toBe(cardId);
+  });
+});
+
+test.describe('scheduler — popover delete + built-in editor (R14, R20)', () => {
+  test('the popover row delete removes the event from the demo data', async ({ page }) => {
+    await loadSampleWeek(page);
+    await switchView(page, 'month');
+
+    // Open via a day-cell click (dayClickAction now defaults to popover).
+    await schedulerRoot(page).evaluate((sched) => {
+      const chip = sched.shadowRoot!.querySelector<HTMLElement>('.scheduler-month-event')!;
+      const cell = chip.closest<HTMLElement>('.scheduler-month-day')!;
+      cell.focus();
+      cell.click();
+    });
+    await expect
+      .poll(() =>
+        schedulerRoot(page).evaluate(
+          (sched) => sched.shadowRoot!.querySelectorAll('.popover-event').length,
+        ),
+      )
+      .toBeGreaterThan(0);
+
+    const before = await schedulerRoot(page).evaluate((sched) => ({
+      rows: sched.shadowRoot!.querySelectorAll('.popover-event').length,
+      events: (sched as unknown as { events: unknown[] }).events.length,
+    }));
+
+    await schedulerRoot(page).evaluate((sched) => {
+      sched.shadowRoot!.querySelector<HTMLElement>('.popover-event-delete')!.click();
+    });
+
+    // The demo's event-delete handler applied it; the popover stays open and
+    // its list shrank with the data.
+    await expect
+      .poll(() =>
+        schedulerRoot(page).evaluate(
+          (sched) => (sched as unknown as { events: unknown[] }).events.length,
+        ),
+      )
+      .toBe(before.events - 1);
+    expect(
+      await schedulerRoot(page).evaluate(
+        (sched) => sched.shadowRoot!.querySelectorAll('.popover-event').length,
+      ),
+    ).toBe(before.rows - 1);
+    expect(
+      await schedulerRoot(page).evaluate(
+        (sched) => !!sched.shadowRoot!.querySelector('.scheduler-day-popover'),
+      ),
+    ).toBe(true);
+  });
+
+  test('double-click opens the built-in editor; Save renames the chip', async ({ page }) => {
+    await loadSampleWeek(page);
+    await showSlot(page, 2, 24); // brings midday Wednesday into view
+    const box = await schedulerRoot(page).evaluate((sched) => {
+      const ev = Array.from(
+        sched.shadowRoot!.querySelectorAll<HTMLElement>('.scheduler-event:not(.preview)'),
+      ).find((e) => e.textContent!.includes('Lunch'));
+      if (!ev) throw new Error('no Lunch event');
+      ev.scrollIntoView({ block: 'center', behavior: 'instant' });
+      const r = ev.getBoundingClientRect();
+      return { x: r.x + r.width / 2, y: r.y + Math.min(r.height / 2, 20) };
+    });
+
+    await page.mouse.dblclick(box.x, box.y);
+
+    await expect
+      .poll(() =>
+        schedulerRoot(page).evaluate(
+          (sched) =>
+            sched.shadowRoot!.querySelector('.scheduler-event-editor')?.getAttribute('role') ??
+            null,
+        ),
+      )
+      .toBe('dialog');
+
+    await expectNoSeriousViolations(page, 'the event editor open');
+
+    // The colour is two-state and an <mp-checkbox> owns which one applies. This
+    // sample event carries no colour, so it opens INHERITING: checked, swatch
+    // disabled — the state in which Save must not pin a colour. Only a real
+    // click proves the WC's own input → change → swatch wiring, which a unit
+    // test setting the host property cannot.
+    const inheritState = await schedulerRoot(page).evaluate((sched) => {
+      const cb = sched.shadowRoot!.querySelector<HTMLElement & { checked: boolean }>(
+        'mp-checkbox.editor-inherit-input',
+      );
+      const swatch = sched.shadowRoot!.querySelector<HTMLInputElement>('.editor-color-input');
+      return { checked: cb?.checked ?? null, swatchDisabled: swatch?.disabled ?? null };
+    });
+    expect(inheritState).toEqual({ checked: true, swatchDisabled: true });
+
+    // Playwright's CSS engine pierces open shadow roots, so this is a genuine
+    // pointer click on the checkbox nested two shadow roots deep.
+    await page.locator('mp-checkbox.editor-inherit-input').click();
+    await expect
+      .poll(() =>
+        schedulerRoot(page).evaluate(
+          (sched) =>
+            sched.shadowRoot!.querySelector<HTMLInputElement>('.editor-color-input')!.disabled,
+        ),
+      )
+      .toBe(false);
+
+    // Dispatch REAL input events: the editor commits its own draft, which is
+    // fed by these events — assigning `.value` alone is not user input, and
+    // pretending otherwise is precisely what let B31 hide.
+    await schedulerRoot(page).evaluate((sched) => {
+      const set = (sel: string, value: string) => {
+        const input = sched.shadowRoot!.querySelector<HTMLInputElement>(sel)!;
+        input.value = value;
+        input.dispatchEvent(new Event('input', { bubbles: true }));
+      };
+      set('.editor-title-input', 'Lunch & Learn (renamed)');
+      set('.editor-color-input', '#123456');
+    });
+    // And click Save with a REAL mouse press, so the mousedown-driven re-render
+    // that broke this path actually happens.
+    const saveAt = await schedulerRoot(page).evaluate((sched) => {
+      const r = sched
+        .shadowRoot!.querySelector<HTMLElement>('.editor-action.primary')!
+        .getBoundingClientRect();
+      return { x: r.x + r.width / 2, y: r.y + r.height / 2 };
+    });
+    await page.mouse.click(saveAt.x, saveAt.y);
+
+    await expect
+      .poll(() =>
+        schedulerRoot(page).evaluate((sched) =>
+          Array.from(sched.shadowRoot!.querySelectorAll('.scheduler-event:not(.preview)')).some(
+            (e) => e.textContent!.includes('(renamed)'),
+          ),
+        ),
+      )
+      .toBe(true);
+    // Closed after Save.
+    expect(
+      await schedulerRoot(page).evaluate(
+        (sched) => !!sched.shadowRoot!.querySelector('.scheduler-event-editor'),
+      ),
+    ).toBe(false);
+    // And the un-inherited colour actually landed on the chip.
+    expect(
+      await schedulerRoot(page).evaluate((sched) => {
+        const ev = Array.from(
+          sched.shadowRoot!.querySelectorAll<HTMLElement>('.scheduler-event:not(.preview)'),
+        ).find((e) => e.textContent!.includes('(renamed)'))!;
+        return getComputedStyle(ev).backgroundColor;
+      }),
+    ).toBe('rgb(18, 52, 86)'); // #123456
+  });
+});
+
+test.describe('scheduler — resource column resize (R15)', () => {
+  test('dragging the separator widens the column, and the width survives a view switch', async ({
+    page,
+  }) => {
+    await loadSampleWeek(page);
+    await switchView(page, 'timeline');
+    await scrollSchedulerIntoView(page);
+
+    const grip = await schedulerRoot(page).evaluate((sched) => {
+      const resizer = sched.shadowRoot!.querySelector<HTMLElement>('.scheduler-column-resizer')!;
+      const r = resizer.getBoundingClientRect();
+      const header = sched
+        .shadowRoot!.querySelector<HTMLElement>('.scheduler-resource-header')!
+        .getBoundingClientRect();
+      return { x: r.x + r.width / 2, y: r.y + r.height / 2, width: header.width };
+    });
+
+    await page.mouse.move(grip.x, grip.y);
+    await page.mouse.down();
+    await page.mouse.move(grip.x + 80, grip.y, { steps: 5 });
+    await page.mouse.up();
+
+    const widened = await schedulerRoot(page).evaluate(
+      (sched) =>
+        sched
+          .shadowRoot!.querySelector<HTMLElement>('.scheduler-resource-header')!
+          .getBoundingClientRect().width,
+    );
+    expect(widened).toBeGreaterThan(grip.width + 60);
+
+    // Sticky across a rebuild: the width rides an inline custom property on the
+    // scroller, which view switches do not touch.
+    await switchView(page, 'week');
+    await switchView(page, 'timeline');
+    const persisted = await schedulerRoot(page).evaluate(
+      (sched) =>
+        sched
+          .shadowRoot!.querySelector<HTMLElement>('.scheduler-resource-header')!
+          .getBoundingClientRect().width,
+    );
+    expect(Math.abs(persisted - widened)).toBeLessThan(2);
+  });
+});
+
+test.describe('scheduler — nested datetime picker in the editor (R20)', () => {
+  test('Escape dismisses the calendar it was aimed at, not the editor around it', async ({
+    page,
+  }) => {
+    await loadSampleWeek(page);
+    await showSlot(page, 2, 24);
+    const box = await schedulerRoot(page).evaluate((sched) => {
+      const ev = Array.from(
+        sched.shadowRoot!.querySelectorAll<HTMLElement>('.scheduler-event:not(.preview)'),
+      ).find((e) => e.textContent!.includes('Lunch'));
+      if (!ev) throw new Error('no Lunch event');
+      ev.scrollIntoView({ block: 'center', behavior: 'instant' });
+      const r = ev.getBoundingClientRect();
+      return { x: r.x + r.width / 2, y: r.y + Math.min(r.height / 2, 20) };
+    });
+    await page.mouse.dblclick(box.x, box.y);
+
+    await expect
+      .poll(() =>
+        schedulerRoot(page).evaluate(
+          (sched) => !!sched.shadowRoot!.querySelector('.scheduler-event-editor'),
+        ),
+      )
+      .toBe(true);
+
+    // The start field is an <mp-datetime-picker>, and its value came across as
+    // a real Date — the editor no longer round-trips times through strings.
+    expect(
+      await schedulerRoot(page).evaluate(
+        (sched) =>
+          (
+            sched.shadowRoot!.querySelector(
+              'mp-datetime-picker.editor-start-input',
+            ) as HTMLElement & { value: Date | null }
+          ).value instanceof Date,
+      ),
+    ).toBe(true);
+
+    // Open its calendar through the picker's own trigger button, two shadow
+    // roots deep. Playwright's CSS engine pierces open shadow roots.
+    await page.locator('mp-datetime-picker.editor-start-input button.date').click();
+    await expect
+      .poll(() =>
+        schedulerRoot(page).evaluate(
+          (sched) =>
+            sched
+              .shadowRoot!.querySelector('mp-datetime-picker.editor-start-input')!
+              .getAttribute('data-open'),
+        ),
+      )
+      .toBe('date');
+
+    // THE POINT: the calendar pushed a dismiss frame on top of the editor's, so
+    // this Escape belongs to the calendar. The editor — and the user's unsaved
+    // edits — must survive it.
+    await page.keyboard.press('Escape');
+    await expect
+      .poll(() =>
+        schedulerRoot(page).evaluate(
+          (sched) =>
+            sched
+              .shadowRoot!.querySelector('mp-datetime-picker.editor-start-input')!
+              .getAttribute('data-open'),
+        ),
+      )
+      .toBeNull();
+    expect(
+      await schedulerRoot(page).evaluate(
+        (sched) => !!sched.shadowRoot!.querySelector('.scheduler-event-editor'),
+      ),
+    ).toBe(true);
+
+    await expectNoSeriousViolations(page, 'the event editor with a datetime picker');
+
+    // With nothing on top of it any more, the next Escape closes the editor.
+    await page.keyboard.press('Escape');
+    await expect
+      .poll(() =>
+        schedulerRoot(page).evaluate(
+          (sched) => !!sched.shadowRoot!.querySelector('.scheduler-event-editor'),
+        ),
+      )
+      .toBe(false);
+  });
+});
+
+test.describe('scheduler — editing an event moves it (B30)', () => {
+  test('right-click, pick a later start, Save — the event moves and keeps its duration', async ({
+    page,
+  }) => {
+    await loadSampleWeek(page);
+    await scrollSchedulerIntoView(page);
+
+    const box = await schedulerRoot(page).evaluate((sched) => {
+      const ev = Array.from(
+        sched.shadowRoot!.querySelectorAll<HTMLElement>('.scheduler-event:not(.preview)'),
+      ).find((e) => e.textContent!.includes('Lunch'));
+      if (!ev) throw new Error('no Lunch event');
+      ev.scrollIntoView({ block: 'center', behavior: 'instant' });
+      const r = ev.getBoundingClientRect();
+      return { x: r.x + r.width / 2, y: r.y + Math.min(r.height / 2, 20) };
+    });
+
+    const before = await schedulerRoot(page).evaluate((sched) => {
+      const e = (
+        sched as unknown as { events: { title: string; start: Date; end: Date }[] }
+      ).events.find((x) => x.title.includes('Lunch'))!;
+      return { start: e.start.getTime(), end: e.end.getTime() };
+    });
+
+    // Right-click — the opener the report used.
+    await page.mouse.click(box.x, box.y, { button: 'right' });
+    await expect
+      .poll(() =>
+        schedulerRoot(page).evaluate(
+          (sched) => !!sched.shadowRoot!.querySelector('.scheduler-event-editor'),
+        ),
+      )
+      .toBe(true);
+
+    await page.locator('mp-datetime-picker.editor-start-input button.date').click();
+    await expect
+      .poll(() =>
+        schedulerRoot(page).evaluate((sched) =>
+          sched
+            .shadowRoot!.querySelector('mp-datetime-picker.editor-start-input')!
+            .getAttribute('data-open'),
+        ),
+      )
+      .toBe('date');
+
+    // A real click on a real day cell, three shadow roots deep
+    // (scheduler → picker → calendar).
+    const cell = await page.evaluate(() => {
+      const sched = document.querySelector('mp-scheduler')!;
+      const picker = sched.shadowRoot!.querySelector('mp-datetime-picker.editor-start-input')!;
+      const cal = picker.shadowRoot!.querySelector('mp-calendar')!;
+      const cells = Array.from(
+        cal.shadowRoot!.querySelectorAll<HTMLElement>('td[role="gridcell"]'),
+      ).filter(
+        (td) =>
+          /^\d+$/.test(td.textContent?.trim() ?? '') &&
+          td.getAttribute('aria-disabled') !== 'true' &&
+          !td.classList.contains('selected'),
+      );
+      const target = cells[cells.length - 1];
+      if (!target) return null;
+      const r = target.getBoundingClientRect();
+      return { x: r.x + r.width / 2, y: r.y + r.height / 2 };
+    });
+    expect(cell).not.toBeNull();
+    await page.mouse.click(cell!.x, cell!.y);
+
+    // The end follows the start LIVE, before any Save — the user has to be able
+    // to see what they are about to commit.
+    const shifted = await schedulerRoot(page).evaluate((sched) => {
+      const read = (cls: string) =>
+        (
+          sched.shadowRoot!.querySelector(`mp-datetime-picker.${cls}`) as HTMLElement & {
+            value: Date | null;
+          }
+        ).value!.getTime();
+      return { start: read('editor-start-input'), end: read('editor-end-input') };
+    });
+    expect(shifted.end - shifted.start).toBe(before.end - before.start);
+    expect(shifted.start).toBeGreaterThan(before.start);
+
+    // A REAL mouse click: a programmatic .click() fires no mousedown, and the
+    // mousedown-driven re-render is exactly what used to discard the edit (B31).
+    const saveAt = await schedulerRoot(page).evaluate((sched) => {
+      const r = sched
+        .shadowRoot!.querySelector<HTMLElement>('.editor-action.primary')!
+        .getBoundingClientRect();
+      return { x: r.x + r.width / 2, y: r.y + r.height / 2 };
+    });
+    await page.mouse.click(saveAt.x, saveAt.y);
+
+    // Committed: no "End must be after start" dead end, and the demo applied it.
+    await expect
+      .poll(() =>
+        schedulerRoot(page).evaluate(
+          (sched) => !!sched.shadowRoot!.querySelector('.scheduler-event-editor'),
+        ),
+      )
+      .toBe(false);
+    const after = await schedulerRoot(page).evaluate((sched) => {
+      const e = (
+        sched as unknown as { events: { title: string; start: Date; end: Date }[] }
+      ).events.find((x) => x.title.includes('Lunch'))!;
+      return { start: e.start.getTime(), end: e.end.getTime() };
+    });
+    expect(after.start).toBe(shifted.start);
+    expect(after.end - after.start).toBe(before.end - before.start);
   });
 });

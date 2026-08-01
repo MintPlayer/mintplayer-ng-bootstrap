@@ -16,6 +16,20 @@ interface TimeSlot {
 let instanceCounter = 0;
 
 /**
+ * A `Date`'s time-of-day as minutes from midnight, for feeding
+ * `mp-time-list`'s `minMinutes` / `maxMinutes`.
+ *
+ * Exported because every composite that owns a time list has to make this
+ * conversion, and each one has to decide FIRST whether its bound is a
+ * time-of-day (`mp-timepicker`: convert unconditionally) or a datetime
+ * (`mp-datetime-picker`: convert only on the bound's own day, `null`
+ * otherwise). Naming the step makes that decision visible at the call site.
+ */
+export function minutesOfDay(d: Date | null | undefined): number | null {
+  return d ? d.getHours() * 60 + d.getMinutes() : null;
+}
+
+/**
  * mp-time-list — Bootstrap-styled time-slot listbox primitive.
  *
  * Standalone Lit element. Renders a list of equally-spaced time slots
@@ -42,8 +56,8 @@ export class MpTimeListElement extends LitElement {
   static override properties = {
     selectedTime: { attribute: false },
     step: { attribute: 'step', type: Number, reflect: true },
-    min: { attribute: false },
-    max: { attribute: false },
+    minMinutes: { attribute: 'min-minutes', type: Number },
+    maxMinutes: { attribute: 'max-minutes', type: Number },
     hour12: { attribute: 'hour12' },
     locale: { attribute: 'locale', type: String, reflect: true },
     _focusedMinutes: { state: true },
@@ -51,18 +65,43 @@ export class MpTimeListElement extends LitElement {
 
   selectedTime: Date | null = null;
   step: TimeStep = 15;
-  min: Date | null = null;
-  max: Date | null = null;
+  /**
+   * Earliest / latest selectable slot, as **minutes from midnight** — this
+   * element is a pure time-of-day primitive and now says so in its types.
+   *
+   * They were `min`/`max: Date`, which read like datetime bounds but were
+   * compared time-of-day only. That ambiguity is not theoretical: a composite
+   * editing a range across two days would grey out the same clock range on
+   * *every* day, and `mp-timepicker`'s consumers legitimately pass
+   * `new Date(2020, 0, 1, 18, 0)` meaning simply "18:00", which any date-aware
+   * reading would disable outright. A `Date` can be mistaken for a datetime
+   * bound; `minMinutes: 480` cannot. Deriving the per-day value is the
+   * COMPOSITE's job — see `mp-datetime-picker`.
+   */
+  minMinutes: number | null = null;
+  maxMinutes: number | null = null;
   hour12: Hour12Mode = 'auto';
   locale: string | undefined = undefined;
 
   private _focusedMinutes: number | null = null;
   private readonly instanceId = `mp-tl-${++instanceCounter}`;
 
-  /** One tab stop for the whole list; arrows move focus AND the tab stop. */
+  /**
+   * One tab stop for the whole list; arrows move focus AND the tab stop.
+   *
+   * `isDisabled: () => false` keeps out-of-range slots IN the traversal —
+   * APG-correct (a disabled option should be discoverable, so the user learns
+   * the bound exists rather than watching keys do nothing) and consistent with
+   * `mp-calendar`, which one popup away was already doing it this way. It is
+   * also load-bearing: `moveTo` refuses a disabled target, so with the default
+   * predicate PageUp/PageDown became a swallowed keypress the moment bounds
+   * were passed — it `preventDefault()`s, then bails. Selection is still
+   * refused, in `selectMinutes`, which is where the rule belongs.
+   */
   private readonly roving = new RovingFocus({
     items: () => Array.from(this.renderRoot?.querySelectorAll<HTMLButtonElement>('button.slot') ?? []),
     orientation: 'vertical',
+    isDisabled: () => false,
     onActiveChange: (item) => {
       const minutes = Number(item.dataset['minutes']);
       if (!Number.isNaN(minutes)) {
@@ -92,7 +131,7 @@ export class MpTimeListElement extends LitElement {
     // option" that a bare sync() would home to. setActiveItem() moves the tab
     // stop WITHOUT stealing focus, so this is safe on every render.
     const target = this.renderRoot?.querySelector<HTMLButtonElement>(
-      `button.slot[data-minutes="${this.focusableMinutes()}"]:not([disabled])`,
+      `button.slot[data-minutes="${this.focusableMinutes()}"]`,
     );
     if (target) this.roving.setActiveItem(target);
     else this.roving.sync();
@@ -142,8 +181,8 @@ export class MpTimeListElement extends LitElement {
   }
 
   private isDisabledMinutes(minutes: number): boolean {
-    if (this.min && minutes < this.timeMinutes(this.min)) return true;
-    if (this.max && minutes > this.timeMinutes(this.max)) return true;
+    if (this.minMinutes !== null && minutes < this.minMinutes) return true;
+    if (this.maxMinutes !== null && minutes > this.maxMinutes) return true;
     return false;
   }
 
@@ -231,7 +270,6 @@ export class MpTimeListElement extends LitElement {
         data-minutes="${slot.minutes}"
         aria-selected="${selected ? 'true' : 'false'}"
         aria-disabled="${disabled ? 'true' : nothing}"
-        ?disabled="${disabled}"
         data-focused="${slot.minutes === focused ? 'true' : nothing}"
         @click="${() => this.selectMinutes(slot.minutes)}"
       >${slot.label}</button>

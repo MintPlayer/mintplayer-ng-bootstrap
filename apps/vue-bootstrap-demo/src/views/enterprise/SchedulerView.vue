@@ -115,6 +115,21 @@ function onResourceDelete(e: Event) {
       .filter((item) => item.id !== resource.id)
       .map((item) => ('children' in item ? { ...item, children: prune(item.children) } : item));
   resources.value = prune(resources.value);
+  // Move the deleted subtree's events to "(No resource)" instead of leaving
+  // them dangling — the WC buckets dangling ids defensively (with a console
+  // warning); this keeps the data honest.
+  const removed = new Set<string>();
+  const collect = (item: Resource | ResourceGroup): void => {
+    removed.add(item.id);
+    if ('children' in item) item.children.map(collect);
+  };
+  collect(resource);
+  events.value = events.value.map((ev) => {
+    if (!ev.resourceId || !removed.has(ev.resourceId)) return ev;
+    const copy = { ...ev };
+    delete copy.resourceId;
+    return copy;
+  });
 }
 
 // `v-model:view` / `v-model:date` keep the bound refs in sync with the
@@ -136,7 +151,9 @@ function onEventCreate(e: Event) {
     title: 'New Event',
     start: detail.range.start,
     end: detail.range.end,
-    color: '#0d6efd',
+    // No colour: the event inherits its resource's colour (or the default)
+    // via resolveEventColor — stamping one here would defeat resource
+    // colouring for every created event.
     ...(detail.resourceId ? { resourceId: detail.resourceId } : {}),
   };
   events.value = [...events.value, newEvent];
@@ -151,47 +168,16 @@ function onEventDelete(e: Event) {
   events.value = events.value.filter((ev) => ev.id !== detail.event.id);
 }
 
-// --- Event editor (double-click an event) --------------------------------
-// The form is the single-pointer NON-DRAG path to change an event's times
-// (WCAG 2.5.7 Dragging Movements): every resize possible by drag is also
-// possible here. The WC deliberately doesn't own an editor — consumers do.
-const editingEvent = ref<SchedulerEvent | null>(null);
-const editTitle = ref('');
-const editStart = ref('');
-const editEnd = ref('');
-
-function onEventDblClick(e: Event) {
-  const detail = (e as CustomEvent<{ event: SchedulerEvent }>).detail;
-  editingEvent.value = detail.event;
-  editTitle.value = detail.event.title;
-  editStart.value = toLocalInputValue(detail.event.start);
-  editEnd.value = toLocalInputValue(detail.event.end);
-}
-
-function saveEditor() {
-  const editing = editingEvent.value;
-  const start = new Date(editStart.value);
-  const end = new Date(editEnd.value);
-  if (!editing || isNaN(start.getTime()) || isNaN(end.getTime()) || end <= start) return;
-  applyEventUpdate({ ...editing, title: editTitle.value, start, end });
-  editingEvent.value = null;
-}
-
-function closeEditor() {
-  editingEvent.value = null;
-}
+// No app-owned editor here: the WC's BUILT-IN event editor (phase 2, on by
+// default) handles double-click / right-click / F2 — Save arrives as the same
+// `event-update` this page already applies, Delete as `event-delete`. The
+// React demo shows the `eventEditor: false` escape hatch with its own form.
 
 // Replace the event by id, assigning a NEW array so the wrapper re-syncs.
 // This page binds only the flat `events` list (no resource tree), so one
 // map covers every event the WC can show.
 function applyEventUpdate(updated: SchedulerEvent) {
   events.value = events.value.map((ev) => (ev.id === updated.id ? updated : ev));
-}
-
-/** Date → value for `<input type="datetime-local">` (local time, minutes). */
-function toLocalInputValue(date: Date): string {
-  const pad = (n: number) => String(n).padStart(2, '0');
-  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}`;
 }
 
 const SOURCE = `<!-- v-model:view / v-model:date track the WC's own view switcher and
@@ -204,7 +190,6 @@ const SOURCE = `<!-- v-model:view / v-model:date track the WC's own view switche
     events = [...events, {
       id: generateEventId(), title: 'New Event',
       start: e.detail.range.start, end: e.detail.range.end,
-      color: '#0d6efd',
     }];
     (e.target as MpScheduler).clearSelection();
   }"
@@ -235,7 +220,7 @@ const SOURCE = `<!-- v-model:view / v-model:date track the WC's own view switche
         <li><strong>Move mode</strong>: <kbd>M</kbd> or <kbd>Enter</kbd> on a focused event enters move mode. Arrow keys nudge the event in time (or across resources on the timeline), <kbd>Shift</kbd> + arrow resizes the end edge, <kbd>Alt</kbd> + <kbd>Shift</kbd> + arrow resizes the start edge. <kbd>Enter</kbd> commits, <kbd>Esc</kbd> cancels.</li>
         <li><strong>Touch resize</strong>: tap an event to select it, then drag the round handle at its top or bottom edge (left/right on timeline) — the resize starts immediately, no hold needed. Moving an event by touch stays hold-then-drag (600&nbsp;ms).</li>
         <li><strong>Mouse resize</strong>: drag the top or bottom edge of any resizable event (selected or not); the selected event shows the round handles as the visual affordance.</li>
-        <li><strong>Edit without dragging</strong>: double-click / double-tap an event to edit its title and start/end times in a form — the single-pointer, non-drag alternative (WCAG 2.5.7).</li>
+        <li><strong>Edit without dragging</strong>: double-click / double-tap, right-click, or <kbd>F2</kbd> on an event opens the scheduler's <em>built-in editor</em> (title, start/end, colour, delete) — the single-pointer, non-drag alternative (WCAG 2.5.7). Disable it with <code>:event-editor="false"</code> to bring your own form.</li>
         <li><strong>Views</strong>: <kbd>Alt</kbd> + <kbd>T</kbd> today · <kbd>Alt</kbd> + <kbd>Y</kbd> year · <kbd>Alt</kbd> + <kbd>M</kbd> month · <kbd>Alt</kbd> + <kbd>W</kbd> week · <kbd>Alt</kbd> + <kbd>D</kbd> day. These work from anywhere in the scheduler; bare letters are deliberately not hot-keys.</li>
       </ul>
     </details>
@@ -252,28 +237,11 @@ const SOURCE = `<!-- v-model:view / v-model:date track the WC's own view switche
         @event-update="onEventUpdate"
         @event-create="onEventCreate"
         @event-delete="onEventDelete"
-        @event-dblclick="onEventDblClick"
         @resource-create="onResourceCreate"
         @group-create="onGroupCreate"
         @resource-update="onResourceUpdate"
         @resource-delete="onResourceDelete"
       />
-    </section>
-
-    <section v-if="editingEvent" class="edit-event-panel">
-      <h2>Edit event</h2>
-      <form class="edit-event-form" @submit.prevent="saveEditor">
-        <label for="edit-event-title">Title</label>
-        <input id="edit-event-title" v-model="editTitle" type="text" />
-        <label for="edit-event-start">Start</label>
-        <input id="edit-event-start" v-model="editStart" type="datetime-local" />
-        <label for="edit-event-end">End</label>
-        <input id="edit-event-end" v-model="editEnd" type="datetime-local" />
-        <div class="edit-event-actions">
-          <button type="submit" class="btn btn-primary">Save</button>
-          <button type="button" class="btn btn-secondary" @click="closeEditor">Cancel</button>
-        </div>
-      </form>
     </section>
 
     <section>
@@ -283,30 +251,3 @@ const SOURCE = `<!-- v-model:view / v-model:date track the WC's own view switche
   </div>
 </template>
 
-<style scoped>
-.edit-event-form {
-  max-width: 24rem;
-}
-
-.edit-event-form label {
-  display: block;
-  font-weight: 600;
-  font-size: 0.85rem;
-}
-
-.edit-event-form input {
-  display: block;
-  width: 100%;
-  margin-bottom: 0.5rem;
-  padding: 0.375rem 0.5rem;
-  border: 1px solid var(--bs-border-color, #dee2e6);
-  border-radius: 4px;
-  background: var(--bs-body-bg);
-  color: var(--bs-body-color);
-}
-
-.edit-event-actions {
-  display: flex;
-  gap: 0.5rem;
-}
-</style>

@@ -70,8 +70,12 @@ export interface PreviewEvent {
   start: Date;
   /** End of the preview */
   end: Date;
-  /** Optional resource ID for resource-based views */
-  resourceId?: string;
+  /**
+   * Row the preview belongs to. Same tri-state as `TimeSlot.resourceId`:
+   * `undefined` = no row information (no resource axis, or a resize, which
+   * never changes rows), `null` = the unassigned bucket row.
+   */
+  resourceId?: string | null;
 }
 
 /**

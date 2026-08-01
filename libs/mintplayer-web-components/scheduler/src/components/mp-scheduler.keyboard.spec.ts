@@ -1261,20 +1261,26 @@ describe('mp-scheduler — month day popover', () => {
     expect(getState(el).view).toBe('day');
   });
 
-  it('a plain cell click emits date-click only, unless dayClickAction is popover', async () => {
+  // Phase 2 (D12.2c): the default flipped from 'none' to 'popover' — the click
+  // surface is what the popover exists for. `date-click` still emits FIRST in
+  // both modes, so a consumer's own handler is unaffected by the default.
+  it('a plain cell click emits date-click and opens the popover by default; dayClickAction none opts out', async () => {
     await mountMonth();
     const clicks: Date[] = [];
     el.addEventListener('date-click', (e) => clicks.push((e as CustomEvent).detail.date));
     el.shadowRoot!.querySelector<HTMLElement>('#scheduler-cell-m-2026-05-14')!.click();
     await settle();
     expect(clicks.length).toBe(1);
-    expect(popover()).toBeNull();
+    expect(popover()).not.toBeNull();
     el.remove();
 
-    await mountMonth({ dayClickAction: 'popover' });
+    await mountMonth({ dayClickAction: 'none' });
+    const optedOut: Date[] = [];
+    el.addEventListener('date-click', (e) => optedOut.push((e as CustomEvent).detail.date));
     el.shadowRoot!.querySelector<HTMLElement>('#scheduler-cell-m-2026-05-14')!.click();
     await settle();
-    expect(popover()).not.toBeNull();
+    expect(optedOut.length).toBe(1);
+    expect(popover()).toBeNull();
   });
 
   it('clicking the day number drills into the day view', async () => {
@@ -1352,6 +1358,155 @@ describe('mp-scheduler — month day popover', () => {
     dispatchKey(el, 'Enter');
     await settle();
     expect(created).toBe(true);
+  });
+});
+
+/**
+ * M18 — the date popover reaches the year view (D12.2), anchored on the month
+ * CARD: mini-days stay unfocusable by design, so the card is the only element
+ * that can position the panel and receive focus back. Before this, a year
+ * mini-day click leaked into the month-only anchor path and painted an
+ * UNPOSITIONED fixed panel (B23).
+ */
+describe('mp-scheduler — year date surface (M18)', () => {
+  let el: MpScheduler;
+  afterEach(() => el?.remove());
+
+  const EVENTS = [
+    { id: 'a', title: 'Kickoff', start: new Date(2026, 4, 12, 9, 0), end: new Date(2026, 4, 12, 10, 0) },
+    { id: 'b', title: 'Review', start: new Date(2026, 4, 20, 14, 0), end: new Date(2026, 4, 20, 15, 0) },
+  ];
+
+  const mountYear = async (options: Record<string, unknown> = {}) => {
+    el = document.createElement('mp-scheduler') as MpScheduler;
+    document.body.appendChild(el);
+    (el as unknown as { date: Date }).date = new Date(2026, 4, 12);
+    (el as unknown as { events: unknown[] }).events = EVENTS;
+    (el as unknown as { options: unknown }).options = options;
+    el.setAttribute('view', 'year');
+    await (el as unknown as { updateComplete: Promise<void> }).updateComplete;
+    await nextRaf();
+    return el;
+  };
+
+  const settle = async () => {
+    await (el as unknown as { updateComplete: Promise<void> }).updateComplete;
+    await nextRaf();
+  };
+
+  const popover = () => el.shadowRoot!.querySelector('.scheduler-day-popover');
+  const anchorEl = () => {
+    const id = (el as unknown as { popoverAnchorId: string | null }).popoverAnchorId;
+    return id ? el.shadowRoot!.getElementById(id) : null;
+  };
+  const miniDay = (cardKey: string, localDate: Date) =>
+    [...el.shadowRoot!.querySelectorAll<HTMLElement>(
+      `#scheduler-cell-y-${cardKey} .scheduler-mini-day[data-date]`,
+    )].find((d) => {
+      const parsed = new Date(d.dataset['date']!);
+      return (
+        parsed.getFullYear() === localDate.getFullYear() &&
+        parsed.getMonth() === localDate.getMonth() &&
+        parsed.getDate() === localDate.getDate()
+      );
+    }) ?? null;
+
+  it('Space on a focused month card opens a MONTH-scoped popover grouped by day', async () => {
+    await mountYear();
+    focusYearCell(el, '2026-05');
+    dispatchKey(el, ' ');
+    await settle();
+    expect(popover()).not.toBeNull();
+    expect(popover()!.getAttribute('aria-label')).toContain('May 2026');
+    // Two events on two different days → two day groups, each with one entry.
+    expect(popover()!.querySelectorAll('.popover-day-label').length).toBe(2);
+    expect(popover()!.querySelectorAll('.popover-event').length).toBe(2);
+    // The anchor is the card itself — a real element, so the panel can position
+    // and focus can return (the B23 failure mode was a null anchor).
+    expect(anchorEl()).not.toBeNull();
+    expect(anchorEl()!.id).toBe('scheduler-cell-y-2026-05');
+    // "Show month" drills into the month.
+    (popover()!.querySelector('.popover-action:not(.primary)') as HTMLElement).click();
+    await settle();
+    expect(getState(el).view).toBe('month');
+    expect(getState(el).date.getMonth()).toBe(4);
+  });
+
+  it('clicking a mini-day opens the DAY-scoped popover anchored on its card', async () => {
+    await mountYear();
+    const day = miniDay('2026-05', new Date(2026, 4, 12));
+    expect(day).not.toBeNull();
+    const clicks: Date[] = [];
+    el.addEventListener('date-click', (e) => clicks.push((e as CustomEvent).detail.date));
+    day!.click();
+    await settle();
+    expect(clicks.length).toBe(1);
+    expect(popover()).not.toBeNull();
+    expect(popover()!.querySelectorAll('.popover-event').length).toBe(1);
+    expect(anchorEl()).not.toBeNull();
+    expect(anchorEl()!.id).toBe('scheduler-cell-y-2026-05');
+  });
+
+  it('an adjacent-month mini-day anchors on the card it was clicked in', async () => {
+    await mountYear();
+    // January's grid shows trailing December-of-last-year days, whose own month
+    // key names a card that does not exist in this year's grid.
+    const outOfYear = [...el.shadowRoot!.querySelectorAll<HTMLElement>(
+      '#scheduler-cell-y-2026-01 .scheduler-mini-day.other-month[data-date]',
+    )][0];
+    expect(outOfYear).toBeDefined();
+    outOfYear.click();
+    await settle();
+    expect(popover()).not.toBeNull();
+    expect(anchorEl()).not.toBeNull();
+    expect(anchorEl()!.id).toBe('scheduler-cell-y-2026-01');
+  });
+
+  it('dayClickAction none keeps a mini-day click date-click-only', async () => {
+    await mountYear({ dayClickAction: 'none' });
+    const day = miniDay('2026-05', new Date(2026, 4, 12));
+    const clicks: Date[] = [];
+    el.addEventListener('date-click', (e) => clicks.push((e as CustomEvent).detail.date));
+    day!.click();
+    await settle();
+    expect(clicks.length).toBe(1);
+    expect(popover()).toBeNull();
+  });
+
+  it('month cards carry their event count as text (WCAG 1.4.1 for .has-events)', async () => {
+    await mountYear();
+    const may = el.shadowRoot!.querySelector('#scheduler-cell-y-2026-05')!;
+    expect(may.getAttribute('aria-label')).toContain('May 2026');
+    expect(may.getAttribute('aria-label')).toContain('2 events');
+    const june = el.shadowRoot!.querySelector('#scheduler-cell-y-2026-06')!;
+    expect(june.getAttribute('aria-label')).toContain('0 events');
+  });
+
+  it('the create action carries the picked resource on event-create (D12.2d)', async () => {
+    await mountYear();
+    (el as unknown as { resources: unknown[] }).resources = [
+      { id: 'alice', title: 'Alice' },
+      { id: 'bob', title: 'Bob' },
+    ];
+    await settle();
+    focusYearCell(el, '2026-05');
+    dispatchKey(el, ' ');
+    await settle();
+    // An <mp-select> (Bootstrap styling does not cross the shadow boundary), so
+    // `value` is a host property — settable exactly like the native one.
+    const picker = popover()!.querySelector<HTMLElement & { value: string | null }>(
+      'mp-select.popover-resource-select',
+    )!;
+    expect(picker).not.toBeNull();
+    picker.value = 'bob';
+    let detail: { resourceId?: string } | null = null;
+    el.addEventListener('event-create', (e) => {
+      detail = (e as CustomEvent).detail;
+    });
+    (popover()!.querySelector('.popover-action.primary') as HTMLElement).click();
+    await settle();
+    expect(detail).not.toBeNull();
+    expect(detail!.resourceId).toBe('bob');
   });
 });
 
@@ -1497,6 +1652,44 @@ describe('mp-scheduler — resource-less events and an empty tree', () => {
     expect(el.shadowRoot!.querySelector('.scheduler-timeline-empty')).toBeNull();
     expect(el.shadowRoot!.querySelector('.scheduler-timeline-row.unassigned')).not.toBeNull();
   });
+
+  // B29 — deleting a resource must not orphan its events invisibly: a dangling
+  // resourceId sits under an index key no row reads, so before this fix the
+  // event vanished from the timeline while week/day/month kept rendering it.
+  it('events of a deleted resource re-bucket to "(No resource)" and warn once', async () => {
+    const warnings: string[] = [];
+    const original = console.warn;
+    console.warn = (...args: unknown[]) => warnings.push(String(args[0]));
+    try {
+      await mountTimeline({
+        resources: [
+          { id: 'alice', title: 'Alice' },
+          { id: 'bob', title: 'Bob' },
+        ],
+        events: [{ ...UNASSIGNED, id: 'orphan', resourceId: 'bob' }],
+      });
+      expect(el.shadowRoot!.querySelector('.scheduler-timeline-row.unassigned')).toBeNull();
+
+      // The consumer honours resource-delete without touching the events.
+      (el as unknown as { resources: unknown[] }).resources = [
+        { id: 'alice', title: 'Alice' },
+      ];
+      await (el as unknown as { updateComplete: Promise<void> }).updateComplete;
+      await nextRaf();
+    } finally {
+      console.warn = original;
+    }
+
+    // Still visible — in the bucket row, not gone.
+    const bucket = el.shadowRoot!.querySelector('.scheduler-timeline-row.unassigned');
+    expect(bucket).not.toBeNull();
+    expect(bucket!.querySelectorAll('.scheduler-timeline-event').length).toBe(1);
+    // And reported once, naming the event and the dangling id.
+    const relevant = warnings.filter((w) => w.includes('does not exist'));
+    expect(relevant.length).toBe(1);
+    expect(relevant[0]).toContain('orphan');
+    expect(relevant[0]).toContain('bob');
+  });
 });
 
 /**
@@ -1589,5 +1782,1116 @@ describe('mp-scheduler — timeline drag ghost finds its row', () => {
     // Siblings, ghost last: jsdom cannot judge paint order, so the browser test
     // owns "on top" and this pins the structure that makes it meaningful.
     expect(boxes[boxes.length - 1]).toBe(ghost);
+  });
+});
+
+/**
+ * M20 — keyboard move-mode reaches the bucket row (B25/B26), and the timeline
+ * entry announcement stops promising a time nudge on the resource axis (B28).
+ * `nudgeKeyboardMoveResource` had NO coverage at all before this suite.
+ */
+describe('mp-scheduler — timeline move-mode reaches the bucket (M20)', () => {
+  let el: MpScheduler;
+  afterEach(() => el?.remove());
+
+  const ASSIGNED = {
+    id: 'task',
+    title: 'Task',
+    start: new Date(2026, 4, 12, 9, 0),
+    end: new Date(2026, 4, 12, 10, 0),
+    resourceId: 'bob',
+  };
+  // A second, unassigned event so the bucket row is rendered at all — the row
+  // list only contains what the view draws.
+  const LOOSE = {
+    id: 'loose',
+    title: 'Loose',
+    start: new Date(2026, 4, 12, 11, 0),
+    end: new Date(2026, 4, 12, 12, 0),
+  };
+
+  const settle = async () => {
+    await (el as unknown as { updateComplete: Promise<void> }).updateComplete;
+    await nextRaf();
+  };
+
+  const mountTimeline = async (events: unknown[]) => {
+    el = document.createElement('mp-scheduler') as MpScheduler;
+    document.body.appendChild(el);
+    (el as unknown as { date: Date }).date = new Date(2026, 4, 12);
+    (el as unknown as { resources: unknown[] }).resources = [
+      { id: 'alice', title: 'Alice' },
+      { id: 'bob', title: 'Bob' },
+    ];
+    (el as unknown as { events: unknown[] }).events = events;
+    el.setAttribute('view', 'timeline');
+    await settle();
+    return el;
+  };
+
+  const enterMoveModeOn = async (id: string) => {
+    const eventEl = [...el.shadowRoot!.querySelectorAll<HTMLElement>('.scheduler-timeline-event')]
+      .find((n) => n.dataset['eventId'] === id)!;
+    eventEl.focus();
+    await nextRaf();
+    dispatchKey(el, 'Enter');
+    await settle();
+  };
+
+  it('ArrowUp walks the move preview to the previous resource row', async () => {
+    await mountTimeline([ASSIGNED, LOOSE]);
+    await enterMoveModeOn('task');
+    dispatchKey(el, 'ArrowUp');
+    await settle();
+    expect(getState(el).previewEvent?.resourceId).toBe('alice');
+  });
+
+  it('ArrowDown past the last resource lands in the bucket; Enter commits with resourceId ABSENT', async () => {
+    await mountTimeline([ASSIGNED, LOOSE]);
+    await enterMoveModeOn('task');
+    dispatchKey(el, 'ArrowDown');
+    await settle();
+    // Preview names the bucket explicitly (null), not "no row" (undefined).
+    expect(getState(el).previewEvent?.resourceId).toBeNull();
+    // And the ghost renders IN the bucket row, not back in bob's (B26).
+    const bucketGhost = el.shadowRoot!.querySelector(
+      '.scheduler-timeline-row.unassigned .scheduler-timeline-event.preview',
+    );
+    expect(bucketGhost).not.toBeNull();
+
+    let detail: { event: { resourceId?: string } } | null = null;
+    el.addEventListener('event-update', (e) => {
+      detail = (e as CustomEvent).detail;
+    });
+    dispatchKey(el, 'Enter');
+    await settle();
+    expect(detail).not.toBeNull();
+    // Absent — not the old resource kept by a truthiness spread (B26).
+    expect('resourceId' in detail!.event).toBe(false);
+  });
+
+  it('Escape restores the original row after a resource nudge', async () => {
+    await mountTimeline([ASSIGNED, LOOSE]);
+    await enterMoveModeOn('task');
+    dispatchKey(el, 'ArrowDown');
+    await settle();
+    dispatchKey(el, 'Escape');
+    await settle();
+    const live = getState(el).events.find((e) => e.id === 'task') as { resourceId?: string };
+    expect(live.resourceId).toBe('bob');
+  });
+
+  it('without a rendered bucket row, ArrowDown from the last resource is a no-move', async () => {
+    await mountTimeline([ASSIGNED]);
+    await enterMoveModeOn('task');
+    dispatchKey(el, 'ArrowDown');
+    await settle();
+    expect(getState(el).previewEvent?.resourceId).toBe('bob');
+  });
+
+  it('the timeline entry announcement names the resource axis (B28)', async () => {
+    await mountTimeline([ASSIGNED, LOOSE]);
+    await enterMoveModeOn('task');
+    const live = el.shadowRoot!.querySelector('[role="status"]');
+    expect(live?.textContent).toContain('Up and Down arrows change the resource');
+  });
+
+  it('plain cell navigation reaches the bucket row too (B25)', async () => {
+    await mountTimeline([ASSIGNED, LOOSE]);
+    const bobSlot = el.shadowRoot!.querySelector<HTMLElement>(
+      '.scheduler-timeline-slot[data-resource-id="bob"]',
+    )!;
+    bobSlot.focus();
+    await nextRaf();
+    dispatchKey(el, 'ArrowDown');
+    await settle();
+    const active = el.shadowRoot!.activeElement as HTMLElement | null;
+    expect(active?.dataset['unassigned']).toBe('true');
+  });
+});
+
+/**
+ * M21 (B24) — the pointer path is gated per GESTURE. isEditable() is an OR of
+ * four capabilities, so before this gate `moveEvent: false, createEvent: true`
+ * still allowed a mouse move-drag that keyboard move-mode correctly refused.
+ */
+describe('mp-scheduler — per-gesture pointer permission gate (M21)', () => {
+  let el: MpScheduler;
+  afterEach(() => el?.remove());
+
+  const EV = {
+    id: 'task',
+    title: 'Task',
+    start: new Date(2026, 4, 12, 9, 0),
+    end: new Date(2026, 4, 12, 10, 0),
+  };
+
+  const mountWeek = async (permissions: Record<string, unknown>) => {
+    el = document.createElement('mp-scheduler') as MpScheduler;
+    document.body.appendChild(el);
+    (el as unknown as { date: Date }).date = new Date(2026, 4, 12);
+    (el as unknown as { events: unknown[] }).events = [EV];
+    (el as unknown as { options: unknown }).options = { permissions };
+    el.setAttribute('view', 'week');
+    await (el as unknown as { updateComplete: Promise<void> }).updateComplete;
+    await nextRaf();
+    return el;
+  };
+
+  type Internals = {
+    handlePointerDown: (
+      pointer: { x: number; y: number; target: HTMLElement; originalEvent: Event },
+      target: Record<string, unknown>,
+    ) => void;
+    dragManager: {
+      isPending: () => boolean;
+      cancel: () => void;
+      setSlotResolver: (fn: () => unknown) => void;
+    };
+  };
+
+  const pointerDown = (target: Record<string, unknown>) => {
+    const internals = el as unknown as Internals;
+    // jsdom has no shadowRoot.elementsFromPoint — stub the resolver the drag
+    // manager consults on pointer-down. The GATE under test runs before it.
+    internals.dragManager.setSlotResolver(() => ({
+      start: new Date(2026, 4, 12, 9, 0),
+      end: new Date(2026, 4, 12, 9, 30),
+    }));
+    const host = el.shadowRoot!.querySelector<HTMLElement>('.scheduler-content')!;
+    internals.handlePointerDown(
+      { x: 100, y: 100, target: host, originalEvent: new MouseEvent('mousedown') },
+      target,
+    );
+    const pending = internals.dragManager.isPending();
+    internals.dragManager.cancel();
+    return pending;
+  };
+
+  it('moveEvent:false refuses a move-drag but createEvent still allows drag-create', async () => {
+    await mountWeek({ moveEvent: false, createEvent: true });
+    expect(pointerDown({ type: 'event', event: EV })).toBe(false);
+    expect(pointerDown({ type: 'slot' })).toBe(true);
+  });
+
+  /**
+   * D12.13 — per-edge control lives on the ITEM, not on the permission table.
+   * A global "no user may ever resize any start edge" answers a question
+   * nobody asks; "this shift already clocked in, its start is pinned" is
+   * data-dependent, which is what a per-item flag is for.
+   */
+  it('each resize edge is gated by the ITEM, at the gesture', async () => {
+    await mountWeek({});
+    const pinnedStart = { ...EV, resizable: { start: false, end: true } };
+    expect(
+      pointerDown({ type: 'resize-handle', event: pinnedStart, resizeHandle: 'start' }),
+    ).toBe(false);
+    expect(
+      pointerDown({ type: 'resize-handle', event: pinnedStart, resizeHandle: 'end' }),
+    ).toBe(true);
+  });
+
+  it('resizeEvent:false denies both edges, whatever the item says', async () => {
+    await mountWeek({ resizeEvent: false });
+    const bothOk = { ...EV, resizable: { start: true, end: true } };
+    expect(pointerDown({ type: 'resize-handle', event: bothOk, resizeHandle: 'start' })).toBe(
+      false,
+    );
+    expect(pointerDown({ type: 'resize-handle', event: bothOk, resizeHandle: 'end' })).toBe(false);
+    // …and it does not leak into moving.
+    expect(pointerDown({ type: 'event', event: bothOk })).toBe(true);
+  });
+
+  it('selectRange alone keeps slot drags possible when createEvent is off', async () => {
+    await mountWeek({ createEvent: false, selectRange: true });
+    expect(pointerDown({ type: 'slot' })).toBe(true);
+  });
+});
+
+/**
+ * M22 (R14) — event-delete gets its pointer face: a real delete button per
+ * popover row, sibling of the event button (nesting inside it would be a
+ * nested interactive — both are buttons).
+ */
+describe('mp-scheduler — popover delete buttons (M22)', () => {
+  let el: MpScheduler;
+  afterEach(() => el?.remove());
+
+  const EVENTS = [
+    { id: 'a', title: 'Standup', start: new Date(2026, 4, 12, 9, 0), end: new Date(2026, 4, 12, 9, 30) },
+    { id: 'b', title: 'Lunch', start: new Date(2026, 4, 12, 12, 0), end: new Date(2026, 4, 12, 13, 0) },
+    { id: 'c', title: 'Retro', start: new Date(2026, 4, 12, 15, 0), end: new Date(2026, 4, 12, 16, 0) },
+  ];
+
+  const settle = async () => {
+    await (el as unknown as { updateComplete: Promise<void> }).updateComplete;
+    await nextRaf();
+  };
+
+  const mountMonthPopover = async (options: Record<string, unknown> = {}) => {
+    el = document.createElement('mp-scheduler') as MpScheduler;
+    document.body.appendChild(el);
+    (el as unknown as { date: Date }).date = new Date(2026, 4, 12);
+    (el as unknown as { events: unknown[] }).events = EVENTS;
+    (el as unknown as { options: unknown }).options = options;
+    el.setAttribute('view', 'month');
+    await settle();
+    el.shadowRoot!.querySelector<HTMLElement>('#scheduler-cell-m-2026-05-12')!.click();
+    await settle();
+    return el;
+  };
+
+  const popover = () => el.shadowRoot!.querySelector('.scheduler-day-popover');
+
+  it('each row carries a named delete button; deleteEvent:false renders none', async () => {
+    await mountMonthPopover();
+    const buttons = popover()!.querySelectorAll('.popover-event-delete');
+    expect(buttons.length).toBe(EVENTS.length);
+    expect(buttons[1].getAttribute('aria-label')).toBe('Delete Lunch');
+    el.remove();
+
+    await mountMonthPopover({ permissions: { deleteEvent: false } });
+    expect(popover()).not.toBeNull();
+    expect(popover()!.querySelectorAll('.popover-event-delete').length).toBe(0);
+  });
+
+  it('clicking delete emits event-delete, keeps the popover open, and moves focus to the next row', async () => {
+    await mountMonthPopover();
+    let deleted: string | null = null;
+    el.addEventListener('event-delete', (e) => {
+      deleted = (e as CustomEvent).detail.event.id;
+      // The consumer applies the removal — the WC owns no data.
+      (el as unknown as { events: unknown[] }).events = EVENTS.filter(
+        (ev) => ev.id !== deleted,
+      );
+    });
+    const rows = popover()!.querySelectorAll<HTMLElement>('.popover-event-delete');
+    rows[1].click(); // delete "Lunch"
+    await settle();
+    await nextRaf();
+
+    expect(deleted).toBe('b');
+    expect(popover()).not.toBeNull();
+    // Two rows left, focus parked on the one that took the deleted row's place.
+    const remaining = popover()!.querySelectorAll('.popover-event');
+    expect(remaining.length).toBe(2);
+    expect(el.shadowRoot!.activeElement?.getAttribute('aria-label')).toContain('Retro');
+  });
+});
+
+/**
+ * M23 (R20) — the built-in event editor: a popover anchored to the event,
+ * emitting the SAME requests every other surface emits (Save = event-update,
+ * Delete = event-delete). §8.4 non-goal 3 reversed by user decision.
+ */
+describe('mp-scheduler — built-in event editor (M23)', () => {
+  let el: MpScheduler;
+  afterEach(() => el?.remove());
+
+  const EV = {
+    id: 'task',
+    title: 'Task',
+    start: new Date(2026, 4, 12, 9, 0),
+    end: new Date(2026, 4, 12, 10, 0),
+  };
+
+  const settle = async () => {
+    await (el as unknown as { updateComplete: Promise<void> }).updateComplete;
+    await nextRaf();
+  };
+
+  const mountWeek = async (props: Record<string, unknown> = {}) => {
+    el = document.createElement('mp-scheduler') as MpScheduler;
+    document.body.appendChild(el);
+    (el as unknown as { date: Date }).date = new Date(2026, 4, 12);
+    (el as unknown as { events: unknown[] }).events = [EV];
+    for (const [key, value] of Object.entries(props)) {
+      (el as unknown as Record<string, unknown>)[key] = value;
+    }
+    el.setAttribute('view', 'week');
+    await settle();
+    return el;
+  };
+
+  const editor = () => el.shadowRoot!.querySelector('.scheduler-event-editor');
+
+  const openViaF2 = async () => {
+    el.shadowRoot!.querySelector<HTMLElement>('.scheduler-event')!.focus();
+    await nextRaf();
+    dispatchKey(el, 'F2');
+    await settle();
+  };
+
+  it('F2 on the selected event opens the editor; Escape closes and returns focus', async () => {
+    await mountWeek();
+    await openViaF2();
+    expect(editor()).not.toBeNull();
+    expect(editor()!.getAttribute('role')).toBe('dialog');
+    expect(editor()!.getAttribute('aria-label')).toBe('Edit Task');
+    // Focus lands on the first enabled input, not a button.
+    expect((el.shadowRoot!.activeElement as HTMLElement)?.classList.contains('editor-input')).toBe(true);
+    dispatchKey(el, 'Escape');
+    await settle();
+    expect(editor()).toBeNull();
+    expect(
+      (el.shadowRoot!.activeElement as HTMLElement)?.classList.contains('scheduler-event'),
+    ).toBe(true);
+  });
+
+  it('right-click on an event opens the editor and suppresses the native menu', async () => {
+    await mountWeek();
+    const eventEl = el.shadowRoot!.querySelector<HTMLElement>('.scheduler-event')!;
+    const ctx = new MouseEvent('contextmenu', { bubbles: true, composed: true, cancelable: true });
+    eventEl.dispatchEvent(ctx);
+    await settle();
+    expect(ctx.defaultPrevented).toBe(true);
+    expect(editor()).not.toBeNull();
+  });
+
+  it('Save emits event-update carrying the edited fields', async () => {
+    await mountWeek();
+    await openViaF2();
+    const title = editor()!.querySelector<HTMLInputElement>('.editor-title-input')!;
+    title.value = 'Renamed';
+    title.dispatchEvent(new Event('input', { bubbles: true }));
+    await settle();
+    // <mp-datetime-picker>: `value` is a Date, so no string round-trip.
+    const end = editor()!.querySelector<HTMLElement & {
+      value: Date | null;
+      setValue: (n: Date | null, emit?: boolean) => void;
+    }>('mp-datetime-picker.editor-end-input')!;
+    end.setValue(new Date(2026, 4, 12, 11, 30));
+    await settle();
+    let detail: { event: { title: string; end: Date }; oldEvent: { title: string } } | null = null;
+    el.addEventListener('event-update', (e) => {
+      detail = (e as CustomEvent).detail;
+    });
+    (editor()!.querySelector('.editor-action.primary') as HTMLElement).click();
+    await settle();
+    expect(detail).not.toBeNull();
+    expect(detail!.event.title).toBe('Renamed');
+    expect(detail!.event.end.getHours()).toBe(11);
+    expect(detail!.event.end.getMinutes()).toBe(30);
+    expect(detail!.oldEvent.title).toBe('Task');
+    expect(editor()).toBeNull();
+  });
+
+  /**
+   * D12.12 — the guard that used to catch this now cannot be reached from the
+   * pickers, because the end CLAMPS instead of inverting. It survives as the
+   * backstop for a range the UI cannot construct, so it is driven through the
+   * draft directly: consumer-supplied data is the only remaining way in.
+   */
+  it('Save refuses a range the pickers cannot produce, with an inline error and no emit', async () => {
+    await mountWeek();
+    await openViaF2();
+    (el as unknown as { editorDraft: { end: Date } }).editorDraft.end = new Date(2026, 4, 12, 8, 0);
+    let emitted = false;
+    el.addEventListener('event-update', () => {
+      emitted = true;
+    });
+    (editor()!.querySelector('.editor-action.primary') as HTMLElement).click();
+    await settle();
+    expect(emitted).toBe(false);
+    expect(editor()).not.toBeNull();
+    // The message lives on the END picker, as its `error-text` — an IDREF
+    // cannot cross into that shadow root (D12.14).
+    const endPicker = editor()!.querySelector<HTMLElement & {
+      invalid: boolean;
+      errorText: string | null;
+    }>('mp-datetime-picker.editor-end-input')!;
+    expect(endPicker.invalid).toBe(true);
+    expect(endPicker.errorText).toContain('End must be after start');
+  });
+
+  /**
+   * D12.14 — a refused Save says why exactly once: through the offending
+   * control's own description, delivered by moving focus there. Not through a
+   * live region as well, which would speak it twice, and which self-clears so
+   * it cannot hold something the user may want to re-read.
+   */
+  describe('a refused Save speaks once, on the offending field (D12.14)', () => {
+    const save = () =>
+      (editor()!.querySelector('.editor-action.primary') as HTMLElement).click();
+
+    it('an emptied title marks the title input and moves focus to it', async () => {
+      await mountWeek();
+      await openViaF2();
+      const title = editor()!.querySelector<HTMLInputElement>('.editor-title-input')!;
+      title.value = '   ';
+      title.dispatchEvent(new Event('input', { bubbles: true }));
+      await settle();
+
+      save();
+      await settle();
+
+      expect(title.getAttribute('aria-invalid')).toBe('true');
+      const message = editor()!.querySelector('.editor-title-input + .invalid-feedback')!;
+      expect(message.textContent).toContain('Title is required');
+      // Described by the very node that carries the message, so focus speaks it.
+      expect(title.getAttribute('aria-errormessage')).toBe(message.id);
+      expect(title.getAttribute('aria-describedby')).toBe(message.id);
+      expect(el.shadowRoot!.activeElement).toBe(title);
+    });
+
+    it('the message goes to ONE channel — the live region never repeats it', async () => {
+      await mountWeek();
+      await openViaF2();
+      const title = editor()!.querySelector<HTMLInputElement>('.editor-title-input')!;
+      title.value = '';
+      title.dispatchEvent(new Event('input', { bubbles: true }));
+      await settle();
+
+      save();
+      await settle();
+
+      expect(el.shadowRoot!.querySelector('[role="status"]')?.textContent).not.toContain(
+        'Title is required',
+      );
+      // And exactly one message node exists, not one per field.
+      expect(editor()!.querySelectorAll('.invalid-feedback').length).toBe(1);
+    });
+
+    it('editing the offending field clears its message; editing another does not', async () => {
+      await mountWeek();
+      await openViaF2();
+      const title = editor()!.querySelector<HTMLInputElement>('.editor-title-input')!;
+      title.value = '';
+      title.dispatchEvent(new Event('input', { bubbles: true }));
+      await settle();
+      save();
+      await settle();
+      expect(editor()!.querySelectorAll('.invalid-feedback').length).toBe(1);
+
+      // Touching the END leaves the still-empty title marked.
+      editor()!
+        .querySelector<HTMLElement & { setValue: (n: Date | null, emit?: boolean) => void }>(
+          'mp-datetime-picker.editor-end-input',
+        )!
+        .setValue(new Date(2026, 4, 12, 11, 0));
+      await settle();
+      expect(editor()!.querySelectorAll('.invalid-feedback').length).toBe(1);
+
+      // Fixing the title itself clears it.
+      title.value = 'Named';
+      title.dispatchEvent(new Event('input', { bubbles: true }));
+      await settle();
+      expect(editor()!.querySelectorAll('.invalid-feedback').length).toBe(0);
+      expect(title.getAttribute('aria-invalid')).toBe('false');
+    });
+
+    it('a refused range moves focus into the END picker, not onto Save', async () => {
+      await mountWeek();
+      await openViaF2();
+      (el as unknown as { editorDraft: { end: Date } }).editorDraft.end = new Date(2026, 4, 12, 8, 0);
+
+      save();
+      await settle();
+
+      const endPicker = editor()!.querySelector<HTMLElement>('mp-datetime-picker.editor-end-input')!;
+      expect(el.shadowRoot!.activeElement).toBe(endPicker);
+      // focus() delegates to the display input — the node carrying the name,
+      // the invalid state and the description.
+      expect(endPicker.shadowRoot!.activeElement).toBe(
+        endPicker.shadowRoot!.querySelector('input.form-control'),
+      );
+    });
+  });
+
+  it('the Delete button emits event-delete and closes', async () => {
+    await mountWeek();
+    await openViaF2();
+    let deleted: string | null = null;
+    el.addEventListener('event-delete', (e) => {
+      deleted = (e as CustomEvent).detail.event.id;
+    });
+    (editor()!.querySelector('.editor-action.danger') as HTMLElement).click();
+    await settle();
+    expect(deleted).toBe('task');
+    expect(editor()).toBeNull();
+  });
+
+  it('fields follow the permission table; a disabled field is never read back', async () => {
+    await mountWeek({
+      options: { permissions: { moveEvent: false, resizeEvent: false } },
+    });
+    await openViaF2();
+    // Title stays editable (editEvent default true); time fields are locked.
+    expect(editor()!.querySelector<HTMLInputElement>('.editor-title-input')!.disabled).toBe(false);
+    const picker = (cls: string) =>
+      editor()!.querySelector<HTMLElement & { value: Date | null; disabled: boolean }>(
+        `mp-datetime-picker.${cls}`,
+      )!;
+    expect(picker('editor-start-input').disabled).toBe(true);
+    expect(picker('editor-end-input').disabled).toBe(true);
+    // Even a forced value on a disabled input must not survive Save.
+    picker('editor-end-input').value = new Date(2026, 4, 12, 15, 0);
+    let detail: { event: { end: Date } } | null = null;
+    el.addEventListener('event-update', (e) => {
+      detail = (e as CustomEvent).detail;
+    });
+    (editor()!.querySelector('.editor-action.primary') as HTMLElement).click();
+    await settle();
+    expect(detail).not.toBeNull();
+    expect(detail!.event.end.getTime()).toBe(EV.end.getTime());
+  });
+
+  /**
+   * D12.13's matrix — which time fields are live, and what a START change
+   * means, for each combination of the two remaining capabilities. The row
+   * that matters most is `moveEvent: true, resizeEvent: false`: the editor
+   * used to commit a pure duration change there, which `resizable: false`
+   * forbids everywhere else.
+   */
+  describe('the editor time fields follow move vs resize (D12.13)', () => {
+    const picker = (cls: string) =>
+      editor()!.querySelector<HTMLElement & {
+        value: Date | null;
+        disabled: boolean;
+        setValue: (n: Date | null, emit?: boolean) => void;
+      }>(`mp-datetime-picker.${cls}`)!;
+
+    const openWith = async (permissions: Record<string, unknown>) => {
+      await mountWeek({ options: { permissions } });
+      await openViaF2();
+    };
+
+    it('move + resize: both fields live, a start change moves', async () => {
+      await openWith({ moveEvent: true, resizeEvent: true });
+      expect(picker('editor-start-input').disabled).toBe(false);
+      expect(picker('editor-end-input').disabled).toBe(false);
+
+      picker('editor-start-input').setValue(new Date(2026, 4, 12, 11, 0));
+      await settle();
+      // Duration preserved — the end followed.
+      expect(picker('editor-end-input').value!.getTime()).toBe(
+        new Date(2026, 4, 12, 12, 0).getTime(),
+      );
+    });
+
+    it('move only: the END field is locked, but a start change still moves both', async () => {
+      await openWith({ moveEvent: true, resizeEvent: false });
+      expect(picker('editor-start-input').disabled).toBe(false);
+      // Editing the end ALONE is a resize, which is denied.
+      expect(picker('editor-end-input').disabled).toBe(true);
+
+      picker('editor-start-input').setValue(new Date(2026, 4, 12, 11, 0));
+      await settle();
+
+      let detail: { event: { start: Date; end: Date } } | null = null;
+      el.addEventListener('event-update', (e) => {
+        detail = (e as CustomEvent).detail;
+      });
+      (editor()!.querySelector('.editor-action.primary') as HTMLElement).click();
+      await settle();
+
+      // Both edges commit — it is a move, and the duration is unchanged.
+      expect(detail!.event.start.getTime()).toBe(new Date(2026, 4, 12, 11, 0).getTime());
+      expect(detail!.event.end.getTime()).toBe(new Date(2026, 4, 12, 12, 0).getTime());
+    });
+
+    it('resize only: a start change resizes the start alone, clamped and announced', async () => {
+      await openWith({ moveEvent: false, resizeEvent: true });
+      expect(picker('editor-start-input').disabled).toBe(false);
+      expect(picker('editor-end-input').disabled).toBe(false);
+
+      // Well inside the range: the end holds still.
+      picker('editor-start-input').setValue(new Date(2026, 4, 12, 9, 15));
+      await settle();
+      expect(picker('editor-end-input').value!.getTime()).toBe(
+        new Date(2026, 4, 12, 10, 0).getTime(),
+      );
+
+      // Past the end: clamped to one slot before it, and said out loud.
+      picker('editor-start-input').setValue(new Date(2026, 4, 12, 12, 0));
+      await settle();
+      expect(picker('editor-start-input').value!.getTime()).toBe(
+        new Date(2026, 4, 12, 9, 30).getTime(),
+      );
+      expect(el.shadowRoot!.querySelector('[role="status"]')?.textContent).toContain(
+        'Start adjusted to',
+      );
+    });
+
+    it('a per-item edge lock disables BOTH editor fields, and the handle still works', async () => {
+      await mountWeek({ events: [{ ...EV, resizable: { start: false, end: true } }] });
+      await openViaF2();
+      // The editor commits a RANGE, so it cannot offer half of one (B35).
+      expect(picker('editor-start-input').disabled).toBe(false); // moveEvent still on
+      expect(picker('editor-end-input').disabled).toBe(true);
+      // The end handle is a different question, and still answered yes.
+      expect(
+        el.shadowRoot!.querySelector('.scheduler-event .resize-handle.bottom'),
+      ).not.toBeNull();
+      expect(el.shadowRoot!.querySelector('.scheduler-event .resize-handle.top')).toBeNull();
+    });
+  });
+
+  /**
+   * Colour is two-state (`color` absent = inherit from the resource) and the
+   * CHECKBOX owns which state, not the swatch's value. Reading the swatch
+   * unconditionally used to convert every inheriting event into an explicitly
+   * coloured one on the first Save — it is seeded with the RESOLVED colour, so
+   * the conversion was invisible until the resource was recoloured or the event
+   * was dragged to another row, where it kept the old colour.
+   */
+  it('Save on an inheriting event does not pin a colour; unchecking inherit does', async () => {
+    await mountWeek({ resources: [{ id: 'alice', title: 'Alice', color: '#fd7e14' }] });
+    (el as unknown as { events: unknown[] }).events = [{ ...EV, resourceId: 'alice' }];
+    await settle();
+    await openViaF2();
+
+    // Inheriting: checked, and the swatch is disabled so there is no gesture
+    // that can silently commit the inherited value.
+    // An <mp-checkbox>, not a native input — Bootstrap's form styles do not
+    // cross a shadow boundary, so the WC brings its own. `checked` is a host
+    // property, so it reads and writes like the native one.
+    const inherit = () =>
+      editor()!.querySelector<HTMLElement & { checked: boolean }>('mp-checkbox.editor-inherit-input')!;
+    const swatch = () => editor()!.querySelector<HTMLInputElement>('.editor-color-input')!;
+    expect(inherit().checked).toBe(true);
+    expect(swatch().disabled).toBe(true);
+    // It still SHOWS what it inherits.
+    expect(swatch().value).toBe('#fd7e14');
+
+    let detail: { event: { color?: string } } | null = null;
+    el.addEventListener('event-update', (e) => {
+      detail = (e as CustomEvent).detail;
+    });
+    (editor()!.querySelector('.editor-action.primary') as HTMLElement).click();
+    await settle();
+    expect(detail).not.toBeNull();
+    expect('color' in detail!.event).toBe(false);
+
+    // Unchecking enables the swatch and pins whatever it holds.
+    await openViaF2();
+    inherit().checked = false;
+    inherit().dispatchEvent(new Event('change', { bubbles: true }));
+    await settle();
+    expect(swatch().disabled).toBe(false);
+    swatch().value = '#123456';
+    swatch().dispatchEvent(new Event('input', { bubbles: true }));
+    await settle();
+    detail = null;
+    (editor()!.querySelector('.editor-action.primary') as HTMLElement).click();
+    await settle();
+    expect(detail!.event.color).toBe('#123456');
+
+    // And re-checking it on an explicitly-coloured event CLEARS the override —
+    // the checkbox is the reset, which a colour input alone cannot express.
+    await openViaF2();
+    expect(inherit().checked).toBe(false);
+    inherit().checked = true;
+    inherit().dispatchEvent(new Event('change', { bubbles: true }));
+    await settle();
+    detail = null;
+    (editor()!.querySelector('.editor-action.primary') as HTMLElement).click();
+    await settle();
+    expect('color' in detail!.event).toBe(false);
+  });
+
+  /**
+   * The editor CONTAINS overlays (each <mp-datetime-picker> opens its own). The
+   * scheduler's Escape handler sits on the host, so it runs BEFORE any
+   * document-level one — without deferring to the dismiss stack it would close
+   * the whole editor, and the user's unsaved edits with it, when they meant to
+   * dismiss a calendar.
+   */
+  it('Escape closes a nested picker popup, not the editor', async () => {
+    await mountWeek();
+    await openViaF2();
+    const picker = editor()!.querySelector<HTMLElement & { openDate?: () => Promise<void> }>(
+      'mp-datetime-picker.editor-start-input',
+    )!;
+    // Open the date popup through the picker's own trigger, as a user would.
+    const trigger = picker.shadowRoot!.querySelector<HTMLElement>('button.date')!;
+    trigger.click();
+    await settle();
+    expect(picker.getAttribute('data-open')).toBe('date');
+
+    // First Escape: the calendar owns it — the editor must survive.
+    dispatchKey(el, 'Escape');
+    await settle();
+    expect(editor()).not.toBeNull();
+    expect(picker.getAttribute('data-open')).toBeNull();
+
+    // Second Escape: nothing is on top of the editor now, so it closes.
+    dispatchKey(el, 'Escape');
+    await settle();
+    expect(editor()).toBeNull();
+  });
+
+  /**
+   * B30 — reported as "I pick another start/end, but the timestamps aren't
+   * updated". Moving the START past the untouched end tripped the
+   * `end <= start` guard, so Save refused and nothing moved. Every other path
+   * that changes a start preserves duration (pointer move-drag, keyboard
+   * move-mode); the editor now does too.
+   */
+  it('moving the start shifts the end with it, preserving duration (D12.10)', async () => {
+    await mountWeek();
+    await openViaF2();
+    const picker = (cls: string) =>
+      editor()!.querySelector<HTMLElement & {
+        value: Date | null;
+        setValue: (n: Date | null, emit?: boolean) => void;
+      }>(`mp-datetime-picker.${cls}`)!;
+
+    // The user picks a start two days later — through setValue(), which is what
+    // the calendar itself calls, so the `value-change` this relies on fires.
+    picker('editor-start-input').setValue(new Date(2026, 4, 14, 9, 0));
+    await settle();
+
+    // The end followed, LIVE and visibly, keeping the original 1h duration.
+    expect(picker('editor-end-input').value!.getTime()).toBe(
+      new Date(2026, 4, 14, 10, 0).getTime(),
+    );
+
+    let detail: { event: { start: Date; end: Date } } | null = null;
+    el.addEventListener('event-update', (e) => {
+      detail = (e as CustomEvent).detail;
+    });
+    (editor()!.querySelector('.editor-action.primary') as HTMLElement).click();
+    await settle();
+
+    // And Save commits it instead of refusing.
+    expect(detail).not.toBeNull();
+    expect(detail!.event.start.getTime()).toBe(new Date(2026, 4, 14, 9, 0).getTime());
+    expect(detail!.event.end.getTime()).toBe(new Date(2026, 4, 14, 10, 0).getTime());
+    expect(editor()).toBeNull();
+  });
+
+  it('changing only the END is a resize — the start never follows', async () => {
+    await mountWeek();
+    await openViaF2();
+    const picker = (cls: string) =>
+      editor()!.querySelector<HTMLElement & {
+        value: Date | null;
+        setValue: (n: Date | null, emit?: boolean) => void;
+      }>(`mp-datetime-picker.${cls}`)!;
+
+    picker('editor-end-input').setValue(new Date(2026, 4, 12, 12, 0));
+    await settle();
+    expect(picker('editor-start-input').value!.getTime()).toBe(
+      new Date(2026, 4, 12, 9, 0).getTime(),
+    );
+    expect(picker('editor-end-input').value!.getTime()).toBe(
+      new Date(2026, 4, 12, 12, 0).getTime(),
+    );
+  });
+
+  /**
+   * R21 / D12.12 — the end is the only edge that can invert a draft (a start
+   * change preserves duration, so it cannot). Same DAY is the case no picker
+   * bound can express, since the start's own day must stay fully selectable.
+   */
+  describe('the end cannot be pulled before the start (D12.12)', () => {
+    const picker = (cls: string) =>
+      editor()!.querySelector<HTMLElement & {
+        value: Date | null;
+        min: Date | null;
+        max: Date | null;
+        setValue: (n: Date | null, emit?: boolean) => void;
+      }>(`mp-datetime-picker.${cls}`)!;
+
+    it('an earlier time on the same day clamps to one slot, and says so', async () => {
+      await mountWeek();
+      await openViaF2();
+
+      picker('editor-end-input').setValue(new Date(2026, 4, 12, 8, 0));
+      await settle();
+
+      // One 30-minute slot after the 09:00 start — the floor keyboard resize
+      // uses, not the 1-minute event a raw pick would have committed.
+      expect(picker('editor-end-input').value!.getTime()).toBe(
+        new Date(2026, 4, 12, 9, 30).getTime(),
+      );
+      expect(picker('editor-start-input').value!.getTime()).toBe(
+        new Date(2026, 4, 12, 9, 0).getTime(),
+      );
+      expect(el.shadowRoot!.querySelector('[role="status"]')?.textContent).toContain(
+        'End adjusted to',
+      );
+    });
+
+    it('a valid pick is left exactly where the user put it, and announces nothing', async () => {
+      await mountWeek();
+      await openViaF2();
+
+      picker('editor-end-input').setValue(new Date(2026, 4, 14, 8, 0)); // a LATER day
+      await settle();
+
+      expect(picker('editor-end-input').value!.getTime()).toBe(
+        new Date(2026, 4, 14, 8, 0).getTime(),
+      );
+      expect(el.shadowRoot!.querySelector('[role="status"]')?.textContent).not.toContain(
+        'End adjusted to',
+      );
+    });
+
+    it('the end picker is bounded by the start; the start picker is bounded by nothing', async () => {
+      await mountWeek();
+      await openViaF2();
+
+      // Date-granular in the calendar, so an earlier DAY is unpickable while
+      // the start's own day stays open — the clamp above covers the rest.
+      expect(picker('editor-end-input').min!.getTime()).toBe(
+        new Date(2026, 4, 12, 9, 0).getTime(),
+      );
+      // F1: a start change shifts the end with it, so it can never invert.
+      expect(picker('editor-start-input').max).toBeNull();
+    });
+
+    it('the bound follows the start as it moves', async () => {
+      await mountWeek();
+      await openViaF2();
+
+      picker('editor-start-input').setValue(new Date(2026, 4, 14, 9, 0));
+      await settle();
+
+      expect(picker('editor-end-input').min!.getTime()).toBe(
+        new Date(2026, 4, 14, 9, 0).getTime(),
+      );
+    });
+  });
+
+  it('eventEditor=false disables every opener while event-dblclick keeps firing', async () => {
+    await mountWeek({ eventEditor: false });
+    expect(el.getAttribute('event-editor')).toBe('false');
+    await openViaF2();
+    expect(editor()).toBeNull();
+    // The dblclick contract survives for app-owned editors.
+    let dbl = false;
+    el.addEventListener('event-dblclick', () => {
+      dbl = true;
+    });
+    const internals = el as unknown as {
+      registerEventActivation: (ev: unknown, oe: Event) => void;
+    };
+    internals.registerEventActivation(EV, new MouseEvent('click'));
+    internals.registerEventActivation(EV, new MouseEvent('click'));
+    await settle();
+    expect(dbl).toBe(true);
+    expect(editor()).toBeNull();
+  });
+
+  it('readonly kills the editor wholesale', async () => {
+    await mountWeek({ readonly: true });
+    await openViaF2();
+    expect(editor()).toBeNull();
+  });
+});
+
+/**
+ * M24 (R15–R17) — the resource column: resize separator, full-text tooltips,
+ * inline rename. Real geometry belongs to the browser tests; these pin the
+ * structure, gating and the request contract.
+ */
+describe('mp-scheduler — resource column resize + rename (M24)', () => {
+  let el: MpScheduler;
+  afterEach(() => el?.remove());
+
+  const settle = async () => {
+    await (el as unknown as { updateComplete: Promise<void> }).updateComplete;
+    await nextRaf();
+  };
+
+  const mountTimeline = async (props: Record<string, unknown> = {}) => {
+    el = document.createElement('mp-scheduler') as MpScheduler;
+    document.body.appendChild(el);
+    (el as unknown as { date: Date }).date = new Date(2026, 4, 12);
+    (el as unknown as { resources: unknown[] }).resources = [
+      { id: 'team', title: 'A very long team name that ellipsises', children: [
+        { id: 'alice', title: 'Alice' },
+      ] },
+    ];
+    for (const [key, value] of Object.entries(props)) {
+      (el as unknown as Record<string, unknown>)[key] = value;
+    }
+    el.setAttribute('view', 'timeline');
+    await settle();
+    return el;
+  };
+
+  it('renders a window-splitter separator that writes the column width variable', async () => {
+    await mountTimeline();
+    const resizer = el.shadowRoot!.querySelector<HTMLElement>('.scheduler-column-resizer')!;
+    expect(resizer).not.toBeNull();
+    expect(resizer.getAttribute('role')).toBe('separator');
+    expect(resizer.getAttribute('aria-orientation')).toBe('vertical');
+    expect(resizer.getAttribute('aria-label')).toBe('Resize the resource column');
+    expect(resizer.getAttribute('aria-valuenow')).not.toBeNull();
+
+    resizer.focus();
+    resizer.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowRight', bubbles: true }));
+    await settle();
+    const container = el.shadowRoot!.querySelector<HTMLElement>('.scheduler-content')!;
+    const written = container.style.getPropertyValue('--scheduler-resource-column-width');
+    // Clamped and guarded: a px value wrapped in the calc(100% - 50px) cap.
+    expect(written).toContain('px');
+    expect(written).toContain('calc(100% - 50px)');
+  });
+
+  it('every resource/group title carries its full text as a tooltip (R16)', async () => {
+    await mountTimeline();
+    const titles = [...el.shadowRoot!.querySelectorAll<HTMLElement>('.resource-title')];
+    expect(titles.length).toBeGreaterThanOrEqual(2);
+    expect(titles.every((t) => t.title === t.textContent)).toBe(true);
+  });
+
+  it('double-click renames via a resource-update request; Escape cancels (R17)', async () => {
+    await mountTimeline({ options: { permissions: { updateResource: true } } });
+    const title = el.shadowRoot!.querySelector<HTMLElement>(
+      '.resource-title[data-resource-id="alice"]',
+    )!;
+    expect(title).not.toBeNull();
+
+    // Escape path first: no emit, original text restored.
+    title.dispatchEvent(new MouseEvent('dblclick', { bubbles: true, composed: true }));
+    let input = title.querySelector('input')!;
+    expect(input).not.toBeNull();
+    input.value = 'Bob';
+    input.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
+    expect(title.textContent).toBe('Alice');
+
+    // Enter path: the request carries only the changed field.
+    let detail: { resource: { id: string }; changes: { title?: string } } | null = null;
+    el.addEventListener('resource-update', (e) => {
+      detail = (e as CustomEvent).detail;
+    });
+    title.dispatchEvent(new MouseEvent('dblclick', { bubbles: true, composed: true }));
+    input = title.querySelector('input')!;
+    input.value = 'Alicia';
+    input.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true }));
+    expect(detail).not.toBeNull();
+    expect(detail!.resource.id).toBe('alice');
+    expect(detail!.changes).toEqual({ title: 'Alicia' });
+    expect(title.textContent).toBe('Alicia');
+  });
+
+  it('rename is absent without updateResource, and F2 on a timeline cell starts it with', async () => {
+    await mountTimeline();
+    // Default permissions: no data-resource-id handle at all.
+    expect(
+      el.shadowRoot!.querySelector('.resource-title[data-resource-id]'),
+    ).toBeNull();
+    el.remove();
+
+    await mountTimeline({ options: { permissions: { updateResource: true } } });
+    const slot = el.shadowRoot!.querySelector<HTMLElement>(
+      '.scheduler-timeline-slot[data-resource-id="alice"]',
+    )!;
+    slot.focus();
+    await nextRaf();
+    dispatchKey(el, 'F2');
+    await settle();
+    const title = el.shadowRoot!.querySelector<HTMLElement>(
+      '.resource-title[data-resource-id="alice"]',
+    )!;
+    expect(title.querySelector('input')).not.toBeNull();
+    expect(el.shadowRoot!.activeElement?.classList.contains('rename-input')).toBe(true);
+  });
+});
+
+/**
+ * B31 — the editor lost the user's edit when the panel re-rendered.
+ *
+ * The controls are Lit bindings; the scheduler re-renders on ANY state change,
+ * including the one a mousedown on Save provokes. With the bindings fed from
+ * the stored event and Save scraping the DOM, the controls were reset to the
+ * stored values between mousedown and click, and Save committed those. Found
+ * in a browser — a programmatic `.click()` never fires the mousedown, which is
+ * why the earlier DOM-poking specs all passed.
+ */
+describe('mp-scheduler — the editor survives a re-render (B31)', () => {
+  let el: MpScheduler;
+  afterEach(() => el?.remove());
+
+  const EV = {
+    id: 'task',
+    title: 'Task',
+    start: new Date(2026, 4, 12, 9, 0),
+    end: new Date(2026, 4, 12, 10, 0),
+  };
+
+  const settle = async () => {
+    await (el as unknown as { updateComplete: Promise<void> }).updateComplete;
+    await nextRaf();
+  };
+
+  it('an edit survives an unrelated state change, and Save commits the EDIT', async () => {
+    el = document.createElement('mp-scheduler') as MpScheduler;
+    document.body.appendChild(el);
+    (el as unknown as { date: Date }).date = new Date(2026, 4, 12);
+    (el as unknown as { events: unknown[] }).events = [EV];
+    el.setAttribute('view', 'week');
+    await settle();
+
+    el.shadowRoot!.querySelector<HTMLElement>('.scheduler-event')!.focus();
+    await nextRaf();
+    dispatchKey(el, 'F2');
+    await settle();
+
+    const startPicker = () =>
+      el.shadowRoot!.querySelector<HTMLElement & {
+        value: Date | null;
+        setValue: (n: Date | null, emit?: boolean) => void;
+      }>('mp-datetime-picker.editor-start-input')!;
+
+    // The user moves the event two days later.
+    startPicker().setValue(new Date(2026, 4, 14, 9, 0));
+    await settle();
+    expect(startPicker().value!.getTime()).toBe(new Date(2026, 4, 14, 9, 0).getTime());
+
+    // Now force the kind of state change a mousedown provokes. Before the fix
+    // this re-render reset the control to the STORED start (May 12).
+    (el as unknown as { stateManager: { setState: (u: Record<string, unknown>) => void } })
+      .stateManager.setState({ selectedEvent: null });
+    await settle();
+    expect(startPicker().value!.getTime()).toBe(new Date(2026, 4, 14, 9, 0).getTime());
+
+    let detail: { event: { start: Date; end: Date } } | null = null;
+    el.addEventListener('event-update', (e) => {
+      detail = (e as CustomEvent).detail;
+    });
+    (el.shadowRoot!.querySelector('.editor-action.primary') as HTMLElement).click();
+    await settle();
+
+    // And the COMMIT carries the edit, not the pre-render value.
+    expect(detail).not.toBeNull();
+    expect(detail!.event.start.getTime()).toBe(new Date(2026, 4, 14, 9, 0).getTime());
+    expect(detail!.event.end.getTime()).toBe(new Date(2026, 4, 14, 10, 0).getTime());
+  });
+
+  // B32 — the selection held an event OBJECT, so it kept a pre-edit copy after
+  // any commit; F2 then reopened the editor on stale values.
+  it('the selection tracks the committed record, so reopening shows the edit', async () => {
+    el = document.createElement('mp-scheduler') as MpScheduler;
+    document.body.appendChild(el);
+    (el as unknown as { date: Date }).date = new Date(2026, 4, 12);
+    (el as unknown as { events: unknown[] }).events = [EV];
+    el.setAttribute('view', 'week');
+    await settle();
+
+    el.shadowRoot!.querySelector<HTMLElement>('.scheduler-event')!.focus();
+    await nextRaf();
+    dispatchKey(el, 'F2');
+    await settle();
+
+    const title = el.shadowRoot!.querySelector<HTMLInputElement>('.editor-title-input')!;
+    title.value = 'Renamed';
+    title.dispatchEvent(new Event('input', { bubbles: true }));
+    await settle();
+    (el.shadowRoot!.querySelector('.editor-action.primary') as HTMLElement).click();
+    await settle();
+
+    // Reopen: the editor must show what was just saved.
+    el.shadowRoot!.querySelector<HTMLElement>('.scheduler-event')!.focus();
+    await nextRaf();
+    dispatchKey(el, 'F2');
+    await settle();
+    expect(
+      el.shadowRoot!.querySelector<HTMLInputElement>('.editor-title-input')!.value,
+    ).toBe('Renamed');
   });
 });

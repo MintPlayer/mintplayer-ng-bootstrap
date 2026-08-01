@@ -643,11 +643,18 @@ $z-event-selected: 2;    // selected event: its straddling handles must win
   gap: 2px;
 }
 
+.scheduler-day-popover .popover-event-row {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+}
+
 .scheduler-day-popover .popover-event {
   display: flex;
   align-items: center;
   gap: 8px;
-  width: 100%;
+  flex: 1 1 auto;
+  min-width: 0;
   min-height: 28px;
   padding: 4px 6px;
   border: 1px solid transparent;
@@ -657,6 +664,27 @@ $z-event-selected: 2;    // selected event: its straddling handles must win
   font: inherit;
   text-align: left;
   cursor: pointer;
+}
+
+/* Per-row delete — a real sibling button (the row's event entry is itself a
+   button, so nesting is not an option). 24px min target (SC 2.5.8). */
+.scheduler-day-popover .popover-event-delete {
+  flex: 0 0 auto;
+  min-width: 24px;
+  min-height: 24px;
+  padding: 0;
+  border: 1px solid transparent;
+  border-radius: 4px;
+  background: transparent;
+  color: var(--bs-secondary-color, #666);
+  font: inherit;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.scheduler-day-popover .popover-event-delete:hover {
+  background: var(--bs-secondary-bg, rgba(0, 0, 0, 0.08));
+  color: var(--bs-danger, #dc3545);
 }
 
 .scheduler-day-popover .popover-event:hover {
@@ -676,6 +704,45 @@ $z-event-selected: 2;    // selected event: its straddling handles must win
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+/* Month scope (opened from a year card): a group per day, each with its own
+   sub-list. The outer list keeps .popover-events so the scroll cap applies. */
+.scheduler-day-popover .popover-day-groups {
+  max-height: 40vh;
+  overflow-y: auto;
+}
+
+.scheduler-day-popover .popover-day-group {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.scheduler-day-popover .popover-day-label {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--bs-secondary-color, #666);
+  margin-top: 4px;
+}
+
+/* The create action's resource picker — present only when resources exist. */
+.scheduler-day-popover .popover-resource {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: 0 0 8px;
+  font-size: 12px;
+}
+
+/* `<mp-select>` renders the native `<select>` and Bootstrap's `.form-select`
+   styling inside its OWN shadow root, so all that is left out here is how much
+   room the host takes in the row. Nothing inside it is reachable from this
+   stylesheet — and nothing needs to be. */
+.scheduler-day-popover .popover-resource-select {
+  flex: 1 1 auto;
+  min-width: 0;
+  font-size: 12px;
 }
 
 .scheduler-day-popover .popover-actions {
@@ -703,6 +770,142 @@ $z-event-selected: 2;    // selected event: its straddling handles must win
 }
 
 .scheduler-day-popover button:focus-visible {
+  outline: 2px solid var(--bs-primary);
+  outline-offset: 1px;
+}
+
+/* Built-in event editor (R20/D12.8). Same containing-block rule as the day
+   popover: a top-level shadow child, position written by the OverlayController. */
+.scheduler-event-editor {
+  position: fixed;
+  z-index: $z-day-popover;
+  min-width: 240px;
+  max-width: min(320px, 90vw);
+  max-height: 70vh;
+  overflow-y: auto;
+  padding: 8px;
+  border: 1px solid var(--scheduler-border-color);
+  border-radius: 6px;
+  background: var(--bs-body-bg, #fff);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.18);
+}
+
+.scheduler-event-editor .editor-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 6px;
+}
+
+.scheduler-event-editor .editor-title {
+  font-weight: 600;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.scheduler-event-editor .editor-close {
+  flex: 0 0 auto;
+  min-width: 24px;
+  min-height: 24px;
+  padding: 0;
+  border: 1px solid transparent;
+  border-radius: 4px;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.scheduler-event-editor .editor-field {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: 0 0 6px;
+  font-size: 12px;
+}
+
+.scheduler-event-editor .editor-field > span {
+  flex: 0 0 40px;
+}
+
+/* The inputs carry Bootstrap's `.form-control` (+ `-sm`, and `-color` on the
+   swatch), whose rules reach them through `formControlStyles` in this shadow
+   root's `adoptedStyleSheets` — Bootstrap's page stylesheet cannot. So border,
+   background, focus ring and disabled appearance are Bootstrap's; only the
+   layout inside this panel is ours. `.form-control` already sets
+   `width: 100%`, hence no `flex: 1 1 auto` here. */
+.scheduler-event-editor .editor-input {
+  min-width: 0;
+}
+
+.scheduler-event-editor .editor-color-input {
+  flex: 0 0 auto;
+  width: 40px;
+}
+
+/* The start/end fields are `<mp-datetime-picker>`s: input-group, popups and
+   Bootstrap styling all live in their own shadow roots, so only the width they
+   take in the row is ours to set. Their popups are `position: fixed` and
+   escape this panel's bounds by design — do not add overflow/transform to the
+   editor, which would clip them or become their containing block. */
+.scheduler-event-editor mp-datetime-picker.editor-input {
+  flex: 1 1 auto;
+  display: block;
+}
+
+/* "Inherit from resource": the checkbox owns the colour's two states, so the
+   swatch above is disabled while it is checked. Indented under the swatch it
+   governs — past the 40px reserved for the other fields' names.
+
+   `<mp-checkbox>` brings its own `.form-check` markup, indicator and label
+   inside its shadow root, which is the point of using it here: Bootstrap's
+   form styles do not cross a shadow boundary, so a bare `<input>` in this
+   panel would render unstyled. Nothing to size from out here. */
+.scheduler-event-editor .editor-inherit {
+  margin-left: 46px;
+}
+
+/* Validation messages render inside their own field via `errorFeedback()`, so
+   `invalidFeedbackStyles` draws them; the panel only needs them to sit tight
+   under the control rather than inherit the field's own row gap. */
+.scheduler-event-editor .invalid-feedback {
+  margin-top: 2px;
+  font-size: 12px;
+}
+
+.scheduler-event-editor .editor-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.scheduler-event-editor .editor-action {
+  min-height: 28px;
+  padding: 4px 10px;
+  border: 1px solid var(--scheduler-border-color);
+  border-radius: 4px;
+  background: var(--bs-body-bg);
+  color: inherit;
+  font: inherit;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.scheduler-event-editor .editor-action.primary {
+  background: var(--bs-primary);
+  border-color: var(--bs-primary);
+  color: #fff;
+}
+
+.scheduler-event-editor .editor-action.danger {
+  border-color: var(--bs-danger, #dc3545);
+  color: var(--bs-danger, #dc3545);
+}
+
+.scheduler-event-editor :is(button, input, select):focus-visible {
   outline: 2px solid var(--bs-primary);
   outline-offset: 1px;
 }
@@ -876,6 +1079,60 @@ $z-event-selected: 2;    // selected event: its straddling handles must win
 .scheduler-timeline-row.group {
   background: var(--scheduler-header-bg);
   font-weight: 600;
+}
+
+/* The row a drag is currently addressing — the cross-row move's answer to
+   "which resource will this land on?". A tint on the whole row, not only the
+   greyed slots, so the target reads at a glance even when the time band is
+   scrolled out of view. */
+.scheduler-timeline-row.drop-target {
+  background: var(--scheduler-drop-target-bg, rgba(13, 110, 253, 0.06));
+}
+
+/* Resource-column resize separator (R15): the WAI-ARIA window splitter on the
+   corner header's right edge. Inside the sticky corner cell, so it pins with
+   the column it resizes. */
+.scheduler-resource-header {
+  position: relative;
+}
+
+.scheduler-column-resizer {
+  position: absolute;
+  top: 0;
+  right: -4px;
+  width: 8px;
+  height: 100%;
+  cursor: col-resize;
+  /* Above the neighbouring day headers so the whole 8px strip is grabbable. */
+  z-index: 1;
+  touch-action: none;
+}
+
+.scheduler-column-resizer:hover,
+.scheduler-column-resizer:focus-visible {
+  background: var(--bs-primary);
+  opacity: 0.35;
+}
+
+.scheduler-column-resizer:focus-visible {
+  outline: 2px solid var(--bs-primary);
+  outline-offset: 1px;
+  opacity: 0.6;
+}
+
+/* Inline rename (R17): the input takes the title's place in the pinned cell.
+   Bootstrap's `.form-control.form-control-sm` supplies the chrome (via this
+   shadow root's adopted sheets); these rules only shrink it to fit a 40px row
+   inside a 200px column, and keep the accent border that marks it as the
+   active edit. Higher specificity than `.form-control`, so they win. */
+.scheduler-resource-cell .rename-input {
+  flex: 1 1 auto;
+  min-width: 0;
+  min-height: 24px;
+  height: 24px;
+  padding: 1px 4px;
+  border-color: var(--bs-primary);
+  font-size: inherit;
 }
 
 .scheduler-timeline-row.group .scheduler-resource-cell {

@@ -1,14 +1,15 @@
 # PRD — Scheduler view-mode completeness
 
-Status: **Implemented.** M1–M10 delivered on this branch — every reported item is
-now either fixed or answered-and-built (see the
-[plan](./scheduler-view-mode-completeness-plan.md) for the item-level state and
-the short list of deliberate follow-ups). Versions bumped for the breaking
-changes: web-components 2.5.0, ng-bootstrap 22.9.0, react-bootstrap 19.11.0,
-vue-bootstrap 3.12.0.
-Branch: `fix/scheduler-preview-z-order` (folds into PR
-[#395](https://github.com/MintPlayer/mintplayer-ng-bootstrap/pull/395) per the
-one-PR-per-workstream convention)
+Status: **Phase 1 merged** as PR
+[#395](https://github.com/MintPlayer/mintplayer-ng-bootstrap/pull/395)
+(squashed to `master` 2026-07-31, on top of #394's resize-glyph work; released
+as web-components 2.5.0 / ng 22.9.0 / react 19.11.0 / vue 3.12.0). §1–§11
+describe what phase 1 shipped. **Phase 2 (R11–R20, §12) is implemented** on
+`feat/scheduler-phase2` (M18–M26, delivered 2026-08-01, single batched sweep
+green — see the plan's phase-2 header for numbers). Phase 2 versions:
+web-components 2.6.0, ng-bootstrap 22.10.0, react-bootstrap 19.12.0,
+vue-bootstrap 3.13.0.
+Branch (phase 1): `fix/scheduler-preview-z-order`; phase 2: `feat/scheduler-phase2`.
 Plan: [scheduler-view-mode-completeness-plan.md](./scheduler-view-mode-completeness-plan.md)
 Predecessors: [scheduler-resize-glyphs.md](./scheduler-resize-glyphs.md) (#394),
 [scheduler-keyboard-grid-nav.md](./scheduler-keyboard-grid-nav.md),
@@ -39,6 +40,17 @@ PR has a single narrative.
 | R9 | No drag ghost when resizing a timeline event | **fixed** (M16), §11.6 |
 | R8 | Timeline compresses overlapping event tracks into a fixed-height row | **fixed** (M12), §11.3 |
 | R7 | Decide where resources/groups are relevant; resource colour used across all views, editable in timeline, random initial | **fixed**: colour resolves in every view (M6); in-timeline colour swatch emits `resource-update` (M8); initial colour stays the consumer's (demo ships a palette helper), §4 |
+| R11 | "I cannot see buttons in the table to add resource-groups or resources" (post-merge) | **answered, not a defect** — the affordances shipped off by default by design (D5.1); §12.1 |
+| R12 | Month/year date-click surface re-opened: "Doesn't necessarily need to be a popup, but the functionality should be provided by the scheduler" | **scoped** (M18) — year gains the panel, month's click opener becomes the default; one leak bug found (B23), §12.2 |
+| R13 | Drag-move events between resources (timeline) | **scoped** (M19–M21) — the plumbing exists and drops the row in one function; four adjacent bugs found (B24–B27), §12.3 |
+| R14 | No visible way for a user to remove an event when the developer allows it | **scoped** (M22) — `event-delete` shipped keyboard-only; pointer users have no delete path, §12.4 |
+| R15 | The timeline's left (resource) column should be user-resizable | **scoped** (M24), §12.5 |
+| R16 | Ellipsised resource labels need tooltips with the full text | **scoped** (M24), §12.5 |
+| R17 | No way to change the text of a resource or group | **scoped** (M24) — was a deliberate §11.2 deferral, now due, §12.5 |
+| R18 | Events don't get the colour of their resource, in any view | **answered + demo fix** (M25) — the WC resolution works; the demo's sample data defeats it, §12.6 |
+| R19 | What happens when a resource/group is removed? Events should move to "(no resource)" | **scoped** (M19 + M25) — today they silently vanish from the timeline (B29), §12.7 |
+| R20 | Ship a built-in event-edit popup (right-click / next to the event), on by default, with an input to disable | **scoped** (M23) — does not exist today; reverses §8.4 non-goal 3, §12.8 |
+| R21 | Prevent picking a start after the end / an end before the start (only binding when the dates match) | **analysed, not built** — the start direction is already impossible (D12.10); the rest is D12.12, §12.11 |
 
 ## 3. Multi-day drag feedback (R1) — and four bugs found underneath it
 
@@ -426,10 +438,15 @@ Also dead and to be removed or folded in: `eventDurationEditable`, `eventStartEd
 ```
 SchedulerOptions.permissions?: boolean | Partial<SchedulerPermissions>
 SchedulerPermissions = {
-  createEvent, moveEvent, resizeEventStart, resizeEventEnd, deleteEvent,
+  createEvent, moveEvent, resizeEvent, deleteEvent,
   createResource, updateResource, deleteResource, createGroup, reorderResources,
 }
 ```
+
+> As built after M28: one `resizeEvent`, not the `resizeEventStart` /
+> `resizeEventEnd` pair this section originally specified. See the callout below and
+> D12.13 (§12.12) for why. Per-edge locking lives on the item, as
+> `SchedulerEvent.resizable: { start, end }`.
 
 Precedence through one internal `can(capability, subject?)`: host `readonly` attribute →
 `permissions === false` → `permissions[cap]` → per-item flag → default `true`.
@@ -478,6 +495,13 @@ Precedence through one internal `can(capability, subject?)`: host `readonly` att
   `snapDuration`) and the five dead `resourceService` event mutators. `eventStartEditable`
   / `eventDurationEditable` live on as `resizeEventStart` / `resizeEventEnd`. Versions
   bumped accordingly.
+
+  > **This mapping is WRONG, and D12.13 (§12.12) reverses it.** FullCalendar's
+  > `eventStartEditable` means "start times editable **through dragging**" — that is
+  > `moveEvent`, not a resize edge — while `eventDurationEditable` is one flag covering
+  > both edges. The correct fold was `moveEvent` + a single `resizeEvent`; the per-edge
+  > split was an artefact of this misreading, and it is what made B35 constructible.
+  > **Corrected in M28** — the shipped fold is `moveEvent` + `resizeEvent`.
 
 **Semantics (file-manager's rule verbatim):** permission denied ⇒ **do not render** the
 affordance; permitted but contextually unavailable ⇒ render `disabled`; every handler
@@ -659,7 +683,10 @@ this day", because **month view has no drag-to-create at all** (`analyzeTarget` 
 machine about day cells — a much larger feature. Not redundant with the drill-down,
 provided the drill survives *inside* the popover as a secondary "Show day →" action.
 
-**Year — do not build it.** Clicking a month already drills to month view. A day-level
+**Year — do not build it.** *(Superseded in phase 2 — see §12.2. The user re-opened the
+question after using the shipped month popover, and the costing below turned out to rest on
+a false premise: a year surface does not require focusable mini-day cells if the panel
+anchors on the month card.)* Clicking a month already drills to month view. A day-level
 popup there would require making 12 × 42 mini-day cells focusable, reversing a deliberate
 a11y decision documented in the code (`year-view.ts:52-55`: screen readers should describe
 months, not days) and adding a ~500-cell roving grid, to serve a case already covered in
@@ -723,7 +750,9 @@ equivalent.
    popup couldn't say where in the tree it goes. That belongs in the timeline resource
    column (§5).
 3. No inline edit form in the popover — the WC owns no event data; it emits requests. An
-   in-WC form would need a save contract it cannot honour.
+   in-WC form would need a save contract it cannot honour. *(Reversed in phase 2 by user
+   decision — §12.8: `event-update` is that save contract; every drag commit already uses
+   it.)*
 4. No modal dialog / focus trap / `aria-modal`.
 5. Plain `click` on a day cell keeps emitting `date-click` and must **not** open the
    popover — two meanings for one click would break existing consumers.
@@ -795,8 +824,8 @@ New/changed public surface, so consumers and the wrappers have one list.
 **Added — host attribute**
 - `readonly` — coarse read-only, reachable from plain HTML/SSR. `readonly="false"` opts out.
 
-**Added — `SchedulerPermissions`** (`createEvent`, `moveEvent`, `resizeEventStart`,
-`resizeEventEnd`, `deleteEvent`, `selectRange`, `createResource`, `updateResource`,
+**Added — `SchedulerPermissions`** (`createEvent`, `moveEvent`, `resizeEvent`
+[collapsed from a per-edge pair in M28], `deleteEvent`, `selectRange`, `createResource`, `updateResource`,
 `deleteResource`, `createGroup`, plus the opt-in `canCreateAt` predicate). Resource/group
 capabilities default **false**; event capabilities default **true**.
 
@@ -820,7 +849,8 @@ the folded table.
   `readonly`.
 - `options.selectMirror`, `eventDurationEditable`, `eventStartEditable`,
   `dragRevertDuration`, `dragScroll`, `snapDuration` — declared and read by nothing.
-  The two editable flags live on as `resizeEventStart` / `resizeEventEnd`.
+  The two editable flags live on as `moveEvent` + `resizeEvent` (corrected in M28; the
+  first fold, to a per-edge pair, misread what `eventStartEditable` meant).
 - `resourceService.getAllEvents`, `addEventToResource`, `updateEventInResource`,
   `removeEvent`, `moveEventToResource` — dead once the model was normalized.
 
@@ -1014,3 +1044,983 @@ the per-resource icon/legend for WCAG 1.4.1, `resource.allowOperations` per-item
 month-view pointer create-drag, e2e coverage for the multi-day ghost and the timeline, and
 the device re-check of timeline touch scrolling. See the plan's §"Outstanding work,
 spelled out" for the implementation notes.
+
+## 12. Phase 2 — post-merge review (R11–R20)
+
+After #395 merged, the user reviewed against their original asks and reported four items
+(R11–R14); a second review of the timeline added six more (R15–R20). A three-probe
+investigation (each independent, all findings cited to code on `master`) established one
+non-defect, one re-opened decision plus a leak bug, and one feature whose plumbing already
+exists; the rest were verified directly. Executed as M18–M26 in the plan.
+
+### 12.1 R11 — the add-resource/group buttons exist and are off by default (answered)
+
+Not a defect: it is D5.1 working as designed. `createResource` / `createGroup` /
+`updateResource` / `deleteResource` all default **false**
+(`scheduler-core/src/models/permissions.ts:62-73`), `createAddBar()` returns `null` unless
+one of the create capabilities is granted (`timeline-view.ts:512-515`), and a denied
+capability renders *nothing*, not a disabled control. The demo starts at
+`permissionMode: 'default'` with an **empty** resource list — so there are no rows, no
+per-row buttons, and no add bar. Selecting **"Events + resource tree editable"** in the
+demo's Permissions select (plus "Load Sample Data") reveals the full surface. The default
+was deliberate: no surveyed peer library ships resource-creation UI at all (§5.2), so the
+component's default behaviour stays "resources are data". The spec suite pins the default
+(`mp-scheduler.keyboard.spec.ts` — "renders no creation UI by default").
+
+Every other candidate cause was checked and ruled out: wrapper forwarding is correct,
+permission toggles repaint (`rowsChanged` compares `resolvedPermissions` identity), all
+message strings have defaults, nothing is CSS-clipped (the add bar is sticky
+`bottom: 0` at `$z-sticky-column` with an opaque background), and codegen was not stale.
+
+**Decisions:**
+
+- **D12.1a — the WC defaults stay off.** D5.1's rationale is unchanged.
+- **D12.1b — the demos become discoverable**: the Angular demo starts in
+  `'resource-admin'` mode so the affordances are visible on first visit (the select still
+  lets you switch back). The React/Vue demos get the same starting mode.
+- **D12.1c — the crowding escape hatch is now due.** §11.2 said "revisit if a consumer
+  grants all four capabilities and finds the column crowded" — the user is that consumer.
+  With expand toggle + four 24px controls, a group title gets ≈50px of the 200px column.
+  Rather than an overflow menu (a second popup surface inside a `rowheader`), widen the
+  resource column when a row carries the full control set — the column is already
+  `min(var(--scheduler-resource-column-width), 100% - 50px)`, so this is a CSS-only
+  adjustment gated on the granted capabilities.
+- **Noted, not built**: leaf rows in a *flat* resource list have no per-row add affordance
+  (`timeline-view.ts:413` gates both add buttons on `isResourceGroup`); the root-level add
+  bar covers that case, so nothing changes until a consumer reports otherwise.
+
+### 12.2 R12 — the date-click surface: month by default, year by extension
+
+#### As-built truth (month)
+
+The M10 popover has three openers, all keyed by date: the `+N more` link (via
+`moreLinkBehavior`, default `'popover'`), **Space** on a focused month cell (always on),
+and a plain cell click — but only under `dayClickAction: 'popover'`, which defaults to
+`'none'`. So the user's literal original ask — *"a popup that opens when a date is
+clicked"* — shipped **opt-in and off**, and the demo ships it off too. A keyboard user
+could reach the popover; a mouse user could not. That asymmetry is the real R12 complaint.
+
+#### B23 — year mini-day clicks leak into the month-only popover path
+
+Year mini-days carry `data-date` (`year-view.ts:108`), and the click handler's date branch
+has **no view check** (`mp-scheduler.ts:1215`). Under `dayClickAction: 'popover'`, clicking
+a year mini-day emits `date-click` (undocumented) and opens the popover — whose anchor
+resolver only knows month cell ids (`#scheduler-cell-m-…`), so `OverlayController` finds
+zero anchors, `position()` early-returns, and a `position: fixed` panel paints
+**unpositioned** at its static position; focus-return dies the same way
+(`resolveReturnTarget` → `trigger()` → `activeAnchor`, all null). Half-wired, not guarded.
+
+#### Decision D12.2 — complete the leak instead of sealing it
+
+- **D12.2a — year view gains the same panel, anchored on the month card.** A mini-day
+  click opens the **day-scoped** panel anchored on its month card
+  (`#scheduler-cell-y-YYYY-MM` — the card is a real focusable element, so positioning and
+  focus-return both work). **Space on a focused month card** opens the **month-scoped**
+  panel (that month's events grouped by day, "New event" for the first/focused day, "Show
+  month" as the drill). Enter keeps drilling into the month, unchanged. This gives keyboard
+  parity at panel granularity with zero new tab stops and no change to the year grid's
+  roles.
+- **D12.2b — REJECTED: `aria-activedescendant` mini-day sub-grid.** It looked like the
+  cheap route to day-granular keyboard access, but activedescendant targets need real
+  roles, and mini-days live *inside* a `role="gridcell"` — a grid-inside-a-gridcell is
+  exactly the `aria-required-children` critical this component already hit (§11.4). Doing
+  it properly means restructuring the year grid's roles (card → `row`, mini-days →
+  `gridcell`), re-opening the roles the aria spec pins. Not worth it for day-vs-month
+  panel granularity.
+- **D12.2c — `dayClickAction` default flips to `'popover'`** (breaking behaviour change,
+  documented): the user's original ask, verbatim, and it removes the mouse/keyboard
+  asymmetry. `date-click` still emits first, unconditionally, so consumers keep their
+  event; `'none'` remains for consumers who want the old behaviour. §8.4 non-goal 5 is
+  hereby reversed — the concern it encoded (two meanings for one click) is answered by
+  the emit-first ordering.
+- **D12.2d — the panel's "New event" gains an optional resource picker** when resources
+  exist: a `<select>` whose value rides on the existing `event-create.resourceId`. This is
+  the honest serving of the "…or create a group" half of the ask — **group creation from a
+  date surface stays rejected** (§8.4 non-goal 2 stands: a `ResourceGroup` is a node in the
+  resource tree with no date dimension; a date-keyed surface cannot say where in the tree
+  it goes; month/year views render no resources — confirmed, both views contain zero
+  references to `Resource`/`ResourceGroup`).
+- **D12.2e — the year `.has-events` text equivalent lands in the same change** (WCAG
+  1.4.1, open since M10): the month card's accessible name gains its event count, and the
+  panel is the interactive path to the detail. Any year surface without this announces as
+  empty cells.
+
+### 12.3 R13 — drag-move events between resources
+
+#### The headline: ~15 lines of plumbing that were never connected
+
+The row's resource id already reaches the drag machine on every pointer move:
+`getSlotAtPosition` hit-tests through `shadowRoot.elementsFromPoint` and
+`getSlotFromElement` reads `data-resource-id` (`mp-scheduler.ts:2407-2430`). Then
+**`calculateMovePreview` throws it away** — it computes a time offset and returns
+`{ start, end }` only (`drag-preview.ts:83-99`), and the commit path copies just those two
+fields onto the event. Y influences nothing. (Contrast: `calculateCreatePreview` *pins* the
+originating row **deliberately**, so a create-drag across rows extends time in its own row
+— the asymmetry between the two is intentional and must survive the fix.)
+
+**The keyboard half already ships**: on the timeline, move-mode's bare Up/Down steps
+through resources, the preview mirrors it, the commit emits the new `resourceId`, and
+`movedToResource` announces it. R13 is the pointer half plus the gaps below. Note
+`event-update` carries `{ event, oldEvent, originalEvent }` — no `changes` field (that's
+`resource-update`), so **no payload or wrapper changes** are needed: the new `resourceId`
+rides on `event`, the old one on `oldEvent`.
+
+#### Bugs found alongside (all on `master`)
+
+- **B24 — pointer move-drag is not permission-gated.** `can('moveEvent', ev)` is consulted
+  only by keyboard paths and inside `isEditable`'s OR-of-four; the pointer gesture checks
+  nothing but `event.draggable === false`. So `permissions: { moveEvent: false,
+  createEvent: true }` still allows a mouse move-drag today. Fix: per-gesture gate at
+  pointer-down (`'event'` → `moveEvent`, `'resize-handle'` → the matching edge, `'slot'` →
+  `createEvent || selectRange`) — also the natural future hook for
+  `resource.allowOperations`.
+- **B25 — the bucket row is unreachable by keyboard.** `adjacentResource`
+  (`mp-scheduler.ts:2014-2024`) filters to real resources and overloads `null` as "no
+  current resource", so neither plain cell navigation nor move-mode can reach
+  `(No resource)`.
+- **B26 — "move to unassigned" is dropped by truthiness.** `commitEventMoveMode` and
+  `applyKeyboardMovePreview` both spread `...(workingResourceId ? { resourceId } : {})`,
+  so a move *to* the bucket silently keeps the old `resourceId` and renders no ghost.
+- **B27 — the demo doesn't re-parent.** `applyEventUpdate` rewrites the event in place
+  inside its current resource's array; a cross-row move leaves an event carrying
+  `resourceId: 'B'` stored under resource A. Renders correctly (resourceId wins), data is
+  inconsistent.
+- **B28 — the move-mode announcement lies on the timeline.** `moveModeEntered` says arrow
+  keys nudge by N minutes; on the timeline Up/Down changes the resource. Needs a
+  view-specific variant.
+
+#### Decision D12.3 — the target row rides the preview, tri-state
+
+- **D12.3a — `TimeSlot.resourceId` and `PreviewEvent.resourceId` widen to
+  `string | null | undefined`**: `undefined` = this view has no resource axis (week/day),
+  `null` = the unassigned bucket row. The bucket's slots get a distinguishable marker
+  (`dataset` can't hold `null`, and an absent attribute is indistinguishable from week
+  view's absent attribute — that ambiguity *is* the current bug). This matches the idiom
+  already used by `eventsByResource: Map<string | null, …>`. **Every `??` on a resource id
+  becomes suspect once `null` is meaningful — grep `resourceId ??` before finishing.**
+- **D12.3b — `calculateMovePreview` carries the row**: target slot's `resourceId` when
+  defined, else the original event's. Commit applies it (mapping `null` →
+  `resourceId: undefined` on the emitted event, whose field stays `string | undefined`);
+  resize commits never rewrite the row.
+- **D12.3c — feedback**: the M16 ghost already relocates once the preview carries a row
+  (its `rowKey` chain starts at `previewEvent.resourceId`); `updateGreyedSlots` gets scoped
+  to the target row (today it greys the time band across every row — wrong feedback for a
+  cross-row drag); the target row gains a `.drop-target` highlight (new rule, needs
+  codegen). Vertical edge auto-scroll (M14) already reaches off-screen rows.
+- **D12.3d — the row must come from hit-testing, never `y / rowHeight` arithmetic** — rows
+  have unequal heights since M12 (track stacking). And **no pointer capture**: tracking is
+  document-level with `elementsFromPoint`; `setPointerCapture` would retarget events to the
+  dragged element and break row resolution.
+- **D12.3e — known limitation, documented not fixed**: unassigning is not durable for
+  events authored nested under `resource.events` — `collectNestedEvents` re-stamps
+  `resourceId ??= owner.id` on the next `setResources`. Consumers who allow drops into the
+  bucket should author events flat (the `events` input), which is already the recommended
+  form post-D4.1.
+
+Touch verification rides the existing open device check: `.scheduler-timeline-event` has
+no `touch-action`, so a vertical cross-row touch drag depends on the 600ms-hold path — to
+be verified on the same Android pass as M3's timeline scrolling.
+
+### 12.4 R14 — a visible delete affordance for events
+
+`event-delete` shipped **keyboard-only**: Delete/Backspace on the selected event, gated by
+`can('deleteEvent', ev)` (`mp-scheduler.ts:1563-1567`, default `true`). There is no pointer
+path anywhere — not in the day popover, not on a selected event. A mouse/touch user whose
+developer granted `deleteEvent` still cannot remove an event. That inverts the usual state
+of this component (M7 fixed keyboard paths *bypassing* gates that pointer paths enforced;
+here the pointer path simply doesn't exist).
+
+The placement constraint is structural: event boxes are `role="button"` in **all four**
+event-rendering views (`week-view.ts:302`, `day-view.ts:215`, `month-view.ts:208`,
+`timeline-view.ts:698`), so a focusable delete control *inside* an event box is a nested
+interactive — invalid ARIA, and axe flags it.
+
+**Decision D12.4:**
+
+- **D12.4a — the day popover's event rows each gain a real delete `<button>`** as a
+  *sibling* of the event button inside the row's `<li>` (no nesting problem), named
+  `"Delete {event}"` via a new `messages` key, rendered only when
+  `can('deleteEvent', event)`, emitting the existing `event-delete`. ≥24px target
+  (SC 2.5.8). Focus after the emit moves to the next row's event button (the row is gone;
+  focus must not fall to `<body>`), and the panel's count line re-renders.
+- **D12.4b — REVISED by R20: the in-grid pointer delete lives in the built-in event
+  editor** (§12.8), which carries a delete button gated on `can('deleteEvent', ev)`. The
+  first draft of this decision was a pointer-only, `aria-hidden` × on the selected event
+  (resize-handle idiom, to dodge the nested-interactive constraint); once the editor
+  exists it is a strictly better surface — a real focusable `<button>` in a dialog, no
+  aria-hidden pointer target, and it covers month chips too. The × is dropped.
+- **Confirmation stays the consumer's job.** `event-delete` is a request like every other
+  scheduler event; the WC does not own the data and must not own an "are you sure" dialog.
+  Document this next to the permission table — a consumer who wants undo/confirm handles
+  it in their `event-delete` listener.
+
+### 12.5 R15–R17 — resource column UX: resize, tooltips, rename
+
+Three reports about the same 200px column, solved together.
+
+- **D12.5a — R15, the column becomes user-resizable.** A drag separator on the column's
+  right edge, following the WAI-ARIA window-splitter pattern the repo's own splitter
+  already implements: `role="separator"`, focusable, `aria-orientation="vertical"`,
+  `aria-valuenow` as a percentage, arrow keys resize in steps. The separator writes
+  `--scheduler-resource-column-width` on the host, so the consumer's own value stays the
+  initial and the existing AG-Grid guard (`min(…, 100% - 50px)`) keeps binding both input
+  channels. The separator lives outside the `role="grid"` (same reasoning as the add bar,
+  §11.2 — no fake rowheader, no Tab stop inside a roving grid). This also retires D12.1c's
+  capability-gated width tweak: when the granted-everything control set crowds a group
+  title, the user can now just widen the column.
+- **D12.5b — R16, full text on hover.** Every `.scheduler-resource-cell` /
+  `.scheduler-resource-header` title span gets `title="{full text}"` — unconditionally,
+  not "only when ellipsised" (measuring overflow per row per render buys nothing; a
+  tooltip matching the visible text is harmless). The accessible name already carries the
+  full title, so this is pointer-hover parity, not an a11y fix.
+- **D12.5c — R17, rename ships, copying file-manager's proven idiom** (the §11.2 deferral
+  is now due — a consumer asked). Trigger: **double-click the title** (double-tap on
+  touch) or **F2** while the rowheader cell is focused — no new per-row button, the
+  crowding budget is spent. The title swaps for an inline `<input class="rename-input">`
+  seeded with the current title; Enter commits → `resource-update` with
+  `changes: { title }` (typed wide for exactly this, §11.2); Escape cancels; blur commits
+  (file-manager's semantics); result announced via the live announcer
+  (`announceRenamed` idiom). Gated on `can('updateResource')`; under denial double-click
+  and F2 do nothing (no dead affordance is rendered, consistent with the rest of the
+  permission model). Focus returns to the rowheader cell by stable key after the rebuild.
+
+### 12.6 R18 — resource colour: the resolution works; the demo defeats it (answered)
+
+Verified on `master`: `resolveEventColor` (`event.color ?? resource.eventColor ??
+resource.color ?? options.defaultEventColor ?? '#3788d8'`) is wired through
+`base-view.ts:248` — the shared path **all** views' event boxes go through — plus the drag
+ghost. The M6 feature is real and covered by specs, including the dynamically-added-event
+path.
+
+The demo never lets it fire: **every sample event carries an explicit `color`**
+(`fillData`, e.g. `'#e83e8c'`), **the sample resources have no `color`/`eventColor` at
+all**, and `onEventCreate` stamps `'#3788d8'` onto every created event. `event.color`
+deliberately outranks the resource (the universal convention, §4.5) — so the resource
+colour never has anything to do, and worse, recolouring a resource via the swatch changes
+nothing visible, which reads exactly like the reported bug.
+
+**D12.6 — fix the demo, not the WC**: sample resources get palette colours
+(`nextPaletteColor` already exists for created resources); sample events drop their
+explicit colours except one or two kept deliberately to demonstrate the override;
+`onEventCreate` stops stamping a colour so created events inherit their row's. All three
+demos. The WC changes not at all.
+
+### 12.7 R19 — deleting a resource must not orphan its events invisibly
+
+**B29 — events of a deleted resource silently vanish from the timeline.**
+`indexByResource` keys strictly by `event.resourceId ?? null`
+(`scheduler-state.ts:117-126`); timeline rows iterate the live resource tree plus the
+`null` bucket. An event whose `resourceId` points at a resource that no longer exists sits
+under a key no row reads: invisible in timeline, while week/day/month/year (flat store)
+still render it. That is the D4.2 silent-data-trap in a new costume — the bucket-row
+decision explicitly promised "never hide an event with no feedback".
+
+**D12.7 — two layers, matching the request/consumer split:**
+
+- **WC (render-time, M19)**: a `resourceId` that matches no known resource resolves to the
+  bucket row — dangling ⇒ unassigned, the error defined out of existence. Dev-warn once
+  per event id (the `requireEventResource` warn-once machinery already exists). This folds
+  into M19 because it is the same file cluster and the same tri-state bucket semantics.
+- **Demo (consumer behaviour, M25)**: `onResourceDelete` strips `resourceId` from all
+  events under the deleted resource/group subtree — the user's proposal, and the
+  behaviour the docs recommend to consumers. It stays the consumer's call (they may
+  instead delete the events, or reassign them); the WC layer above guarantees the
+  *default* outcome is visible-in-the-bucket rather than gone.
+
+### 12.8 R20 — a built-in event editor, on by default
+
+**As-is, stated plainly:** no built-in edit surface exists. The demo's double-click card
+is app code (`scheduler.component.ts` — `onEventDblClick`/`openEditor`); the month day
+popover lists and selects events but edits nothing. §8.4 non-goal 3 rejected an in-WC
+editor on the argument "the WC owns no event data … a form would need a save contract it
+cannot honour". **That argument was too strong and is hereby reversed by user decision:**
+`event-update` *is* the save contract — every drag commit already uses it, the WC
+pre-mutates internal state and the consumer applies the change. A form that emits the same
+event honours the same contract.
+
+There is also a compliance upside the demo comment already names: the editor is the
+single-pointer, non-drag path to change an event's times (WCAG 2.5.7 Dragging Movements).
+Built-in and on by default, the WC satisfies that itself instead of delegating it to every
+consumer.
+
+**Decision D12.8:**
+
+- **D12.8a — surface**: an `OverlayController` popover anchored to the event's element
+  (same mechanics, traps and z-rung as the day popover — anchor lazily by event id,
+  `role="dialog"`, non-modal, Escape via the same host-level gate, focus back to the
+  event box on close). Fields: title (text), start/end (`datetime-local`), colour
+  (optional `<input type="color">`, same control as the resource swatch). Buttons: Save →
+  the existing `event-update` (with `oldEvent`); Delete → the existing `event-delete`
+  (this is D12.4b's revised home); Cancel.
+- **D12.8b — openers**: **double-click** the event (double-tap on touch — the 600ms hold
+  is drag on touch, so long-press is not available), **right-click** (`contextmenu`,
+  `preventDefault()`d on event boxes only — the user's suggestion), and **F2** on the
+  selected event (mirrors the resource rename key, M24). Enter stays move-mode; the
+  keymap text gains the editor line, permission-gated like the rest (§6.4).
+- **D12.8c — gating**: the editor opens when *any* of its fields is permitted, and each
+  field individually respects the existing table — title/colour under a new
+  `SchedulerPermissions.editEvent` (default `true`; the event caps were deliberately
+  additive), start/end under `moveEvent`/`resizeEvent` (see D12.13's matrix — which of the
+  two is granted also decides what a START change *means*), the delete
+  button under `deleteEvent`. `readonly` kills it wholesale. Per-event `editable: false`
+  is honoured.
+- **D12.8d — the on/off input, as requested**: `options.eventEditor?: boolean`, default
+  **`true`**, exposed as a first-class input on all three wrappers (Angular
+  `[eventEditor]`, React `eventEditor`, Vue `:event-editor`) as well as through
+  `options`. Consumers who own their editor (like the demo used to) set `false` and keep
+  receiving `event-selected` double-click semantics unchanged.
+- **D12.8e — the demo's own card is retired** in favour of the built-in editor, with one
+  demo toggle showing `eventEditor: false` + a consumer-owned editor as the escape-hatch
+  recipe. Validation stays minimal in the WC (end > start, required title trimmed
+  non-empty) — anything richer is the consumer's `event-update` listener.
+- **D12.8f — the colour field is TWO-STATE, owned by an "Inherit from resource"
+  checkbox** (added after review, and it fixed a defect the first cut shipped with).
+  `event.color` is either absent (inherit) or a string (override), but
+  `<input type="color">` has no empty state and the field is seeded with the *resolved*
+  colour — so reading the swatch unconditionally converted every inheriting event into an
+  explicitly-coloured one on the **first Save, without the user touching anything**. Such
+  an event then stops following its resource forever, most visibly after a cross-row move
+  (§12.3): it keeps the old resource's colour while sitting in the new one's row. The
+  checkbox reflects `!event.color`, disables the swatch while checked (so the inherited
+  value is visible but not committable), and re-checking it CLEARS an existing override —
+  the reset a colour input cannot express on its own.
+
+  Rejected: inferring intent by dirty-checking the swatch against the resolved colour. It
+  cannot distinguish "left alone" from "deliberately pinned to the resource's current
+  colour so it stops following future changes", which is a legitimate thing to want.
+
+  Note for consumers weighing this: where colour means resource IDENTITY, consider not
+  offering the override at all (the timeline's per-resource swatch is the right place to
+  change colours). Where colour is per-event decoration, the checkbox is the honest
+  control. The field is not currently gated by its own option — say so if you want one.
+
+  The control is an **`<mp-checkbox>`**, not a bare `<input type="checkbox">`: Bootstrap's
+  `.form-check` styles do not cross a shadow boundary, so a native input in this panel
+  renders unstyled, while the WC carries its own styling inside its own shadow root. Same
+  reasoning as `mp-datatable`'s selection column, and the first cross-WC dependency the
+  scheduler takes (a plain side-effect import, per that precedent). See §12.10 for how the
+  panel's other controls were settled.
+
+### 12.9a B30 — the editor refuses a start-only change instead of moving the event
+
+Reported as "I pick another start/end date-time, but the event's timestamps aren't
+updated". Reproduced in a real browser: the picker is innocent — it updates correctly
+(`2026-07-29T10:00` → `2026-07-31T10:00`). **Save then refuses**, showing
+*"End must be after start."*, because moving the start past the untouched end trips the
+`end <= start` guard. Nothing is emitted, so the event does not move.
+
+The bug is the *contract*, not the validation. **Every other path in this component that
+changes an event's start preserves its duration** — a pointer move-drag
+(`calculateMovePreview` applies one offset to both edges) and keyboard move-mode both do.
+Only the editor demands that the user fix the end *first*, and hard-stops otherwise; and
+since "start" is the field a user naturally edits first, it is a dead end on the most
+obvious path. It also punishes the common intent ("same meeting, two days later") to
+protect against one that is genuinely rare.
+
+**Decision D12.10 — the editor moves the event, like every other surface.** Changing the
+**start** shifts the **end** by the same delta, live, so the end field visibly follows and
+the duration is preserved. Changing the **end** sets the end alone (that is a resize, and
+the only way to express one here). An end explicitly placed before the start is still a
+real error and still refused — the guard stays, it just stops firing on a gesture that
+should never have reached it.
+
+Live rather than at Save on purpose: the user must SEE the end follow, or the editor is
+silently deciding something they cannot check before committing.
+
+### 12.9b B31/B32 — the editor lost the edit when the panel re-rendered
+
+Reported again after B30 shipped: "change the start-date, the event remains at the same
+spot". B30 was real and fixed, but it was not the whole story — and the second half is the
+more interesting bug, because **the tests that should have caught it all passed**.
+
+Found by driving a real browser and tracing the picker's value at each stage:
+
+```
+PRE-SAVE        startPicker = Jul 30   ← the pick landed
+MOUSEDOWN       startPicker = Jul 30   ← still right when the button goes down
+CLICK(capture)  startPicker = Jul 28   ← RESET between mousedown and click
+EMIT            start       = Jul 28   ← Save commits the stale value
+```
+
+**B31 — a re-render reset the controls, and Save read the DOM.** The editor's fields were
+Lit bindings fed from the STORED event (`.value=${event.start}`), while the scheduler
+re-renders on any state change — including the one a mousedown on Save itself provokes.
+So the controls were reset to the stored values *between mousedown and click*, and
+`saveEventEditor`, which scraped the DOM, committed those. The edit was discarded with no
+error, which is exactly "nothing happened".
+
+Why every existing test missed it: they all drove Save with a programmatic `.click()`,
+which fires **no mousedown**, so the clobbering re-render never happened. They also set
+`input.value = …` directly, which fires no `input` event. Both are DOM-poking rather than
+user simulation, and both hid the defect. The specs now dispatch real events, and one
+regression test forces a state change mid-edit deliberately.
+
+**Decision D12.11 — the editor holds a working DRAFT.** `editorDraft` (title, start, end,
+colour, inherit) is seeded when the editor opens, updated by each field's own handler, and
+is the single authority for BOTH the render and the commit. A re-render therefore restores
+what the user edited instead of overwriting it, and Save never touches the DOM. This is
+the shape keyboard move-mode has always used (`keyboardMove`), and the same reasoning as
+D12.8f: the component's state, not a control's DOM value, is what a commit reads.
+
+**B32 — the selection kept a stale copy.** Surfaced by the same spec run.
+`SchedulerStateManager.updateEvent` refreshed `events` and `flatEventsInput` but not
+`state.selectedEvent`, which holds an event OBJECT rather than an id. After any commit —
+editor Save, drag, keyboard move — the selection still pointed at the pre-edit record, so
+`F2` (which opens the editor from `selectedEvent`) showed the OLD values, and a consumer
+bound to `[(selectedEvent)]` was handed data it had just replaced. `updateEvent` now
+re-points the selection when the ids match.
+
+*Adjacent and NOT fixed here:* `removeEvent` leaves a deleted event in `selectedEvent`
+the same way. It is the same class of bug, but changing it also changes when
+`selection-change` fires, so it is a decision rather than a slip — flagged, not smuggled in.
+
+### 12.10 Styling the in-shadow form controls (D12.9)
+
+The editor and the day popover render form controls inside the scheduler's shadow root,
+where **Bootstrap's page stylesheet cannot reach them** — the repo's most frequently
+re-learned trap. Every one of them was rendering as an unstyled browser default. Two
+different remedies apply, and which one is right turns on whether the control owns a popup:
+
+- **D12.9a — swap for the `mp-*` WC when it is a plain control.** The day popover's
+  resource picker is now an **`<mp-select>`**, which wraps a *native* `<select>` and owns
+  **no OverlayController**, so nesting it inside a popover cannot interfere with that
+  popover's dismissal, focus return or Escape handling. `value` becomes a host property;
+  nothing else changes.
+- **D12.9b — the time fields are `<mp-datetime-picker>`, once the arbitration was
+  designed.** Initially deferred (see D12.9d): it runs **two** `OverlayController`s of its
+  own, the editor is *itself* an overlay, and the scheduler's host-level `keydown` closed
+  the whole editor on Escape whenever it was open — so an Escape meant for a nested
+  calendar destroyed the editor and the user's unsaved edits. That is a real defect, not a
+  reason to avoid the component, and the mechanism to fix it already existed.
+
+  **The rule: a host that handles Escape itself must ask the dismiss stack whether the
+  Escape is actually its own.** `OverlayController` already gates its *own* document-level
+  handler on `isTopOfStack()`; the scheduler's handler bypassed the stack entirely. The
+  private check is now exposed as **`OverlayController.isTopmost`**, and both scheduler
+  gates consult it. When it is false the handler declines *silently* — no `preventDefault`,
+  no `stopPropagation` — which is what lets the event continue to the document-level
+  listener belonging to the layer that owns it. A host handler runs first precisely because
+  it is on the element rather than the document, so this ordering is the whole problem.
+
+  The outside-click half needed nothing: `OverlayController`'s dismissal tests
+  `composedPath().includes(this.host)`, and the host is the *scheduler*, so no click
+  anywhere inside it (popups included) can close the editor. The picker's own overlays use
+  the same rule against *their* host, so clicking the editor around them closes them
+  correctly.
+
+  Wiring: `value` is a real `Date`, so the editor no longer round-trips times through
+  strings — `toLocalInputValue` is deleted. `locale`, `first-day-of-week`, `hour12` (from
+  `timeFormat`) and `step` (derived from `slotDuration`, clamped to the picker's supported
+  steps) are passed through so the picker agrees with the grid it is editing. The popups
+  are `position: fixed`, so the editor's `overflow-y: auto` cannot clip them — but that
+  also means **nothing above them may gain `transform`/`filter`/`contain`**, the same
+  constraint §8.3 records for the day popover.
+- **D12.9d — sequencing note, kept deliberately.** D12.9b shipped as a *rejection* first,
+  on the grounds that overlay-in-overlay arbitration is a design change and does not belong
+  in a styling pass. That was the right call for a styling pass and the wrong end state:
+  asked for directly, the arbitration turned out to be ~15 lines plus one public getter,
+  because the dismiss stack was built for exactly this. Recorded rather than rewritten,
+  because "the component is fine, the host's Escape handling was wrong" is the part worth
+  remembering — and any future nested overlay in this component now works for free.
+
+- **D12.9c — the remaining native inputs get the styles instead, not a new component.**
+  New shared `_styles/form-control.styles.scss`, a pass-through to Bootstrap's
+  `forms/form-control` module in the exact shape of the existing `form-check` and
+  `form-select` sheets, added to the scheduler's `static styles` (FIRST, so the
+  component's own rules win any specificity tie). The title field, the colour swatch
+  (`.form-control-color`, whose `::-webkit-color-swatch` rules are otherwise unreachable)
+  and the timeline's inline rename input now carry `.form-control`
+  and get Bootstrap's border, focus ring and disabled appearance for free — with no new
+  runtime dependency and no interaction risk. Every selector in the generated sheet is
+  class-scoped, so it cannot affect anything in the grid that does not opt in.
+
+  The sheet deliberately carries **no `:host` rule**, unlike its two siblings: its
+  consumers are components that render inputs *among other content*, not components that
+  *are* one control, so sizing the host would be wrong.
+
+### 12.11 R21 — preventing an inverted range in the editor (analysis; SHIPPED as M27)
+
+Asked for: stop a user picking a start AFTER the end, or an end BEFORE the start — noting
+that the constraint "is only the case when the date matches". A three-probe investigation
+(picker capabilities, reachability/UX, a11y) returned five findings that reshape the
+request, plus a pile of adjacent defects. **D12.12 shipped as M27**; the defects it lists
+shipped as M28 (B35/B36) and M29 (B33/B34). The findings below are kept as written — they
+are the reasoning the fix rests on, not a to-do list.
+
+#### F1 — the start direction is already impossible, and half the request dissolves
+
+`onEditorStartChange` writes `{ start: next, end: draft.end + delta }`. Duration is an
+*invariant* of that transform — `end' - start' = (end + delta) - (start + delta)` — so a
+valid draft stays valid after any number of start changes, in either direction, at any
+magnitude. **D12.10 already prevents start-after-end**, for free, as a side effect of
+preserving duration. No bound on the start picker is needed or useful.
+
+Manual entry is likewise a non-issue: the picker's display input is hard `readonly`
+(`aria-readonly="true"`, no input handlers), so there is no typing path to guard.
+
+#### F2 — but the COMMIT can still invert, under asymmetric permissions (B35)
+
+`saveEventEditor` applies each edge only if its own capability allows it. With
+`moveEvent: false, resizeEventStart: true, resizeEventEnd: false` — expressible globally
+*and* per-event via `resizable: { start: true, end: false }` — the start picker is live,
+the end picker disabled, and pushing the start past the original end commits
+`updated.start` while `updated.end` keeps `original.end`. **The draft stays valid; the
+commit inverts.** Two aggravations: the disabled end field visibly moves (it renders
+`draft.end`) although its value can never be committed, and the error then names a
+condition the visible form does not show. A genuine bug, *caused* by D12.10, and no
+picker bound can reach it.
+
+#### F3 — the same-day nuance: one `min: Date` is the wrong shape
+
+The two halves of `mp-datetime-picker` compare bounds at different granularities:
+
+- **`mp-calendar` compares date-only** (`dateOnly(a) < dateOnly(b)`). So `min = draft.start`
+  disables every day *before* the start's day and leaves the start's own day fully
+  selectable — **exactly the wanted semantic, already correct, for free**.
+- **`mp-time-list` compares time-of-day only**, explicitly discarding the date. Forwarding
+  the same `min` would grey out every slot before the start's *clock* time on **every**
+  day: a 22:00 Mon → 06:00 Tue event would have all of Tuesday morning refused.
+
+The correct constraint is *date-dependent* and not expressible as a single `Date`:
+
+```
+timeMin(end) = isSameDay(end, start) ? startTimeOfDay + minDuration : none
+```
+
+recomputed whenever the end's date half changes. And today it is moot anyway:
+**`mp-datetime-picker` forwards `min`/`max` to the calendar but not to the time list** —
+its siblings `mp-datepicker` and `mp-timepicker` both forward correctly, so the composite
+is the outlier.
+
+#### F4 — prevention can never be complete here, so something must correct after the fact
+
+The picker edits date and time *independently*, each preserving the other half. A user on
+7 Aug 09:00 who picks the date 5 Aug keeps 09:00, which may now precede a 14:00 start —
+the bound can only be re-evaluated *after* that change. Two further escape hatches ignore
+bounds entirely: the **Today** and **Now** footer buttons write the value with no min/max
+check, in a shared component used well beyond the scheduler.
+
+#### F5 — the component already has a convention for this, and it is split
+
+The pointer resize path **clamps**: `calculateResizeEndPreview` is
+`max(currentSlot.end, start + minDurationMs)`, and the start edge mirrors it. Keyboard
+resize instead **refuses silently** — a bare `return`, no announcement — and against a
+different number (`minutesPerSlot()` versus the pointer's hard-coded 30 minutes). So "do
+what the component already does" is a choice, not a lookup. (That silent keyboard refusal
+is its own small a11y gap.)
+
+Worth noting alongside: **the editor enforces no minimum duration at all** — it will
+commit a 1-minute event on a 30-minute grid, which neither drag nor keyboard resize can
+produce.
+
+#### Decision D12.12 — clamp the end, plus the one free bound
+
+1. **`min = draft.start` on the END picker.** Date-granular, already plumbed, already
+   APG-correct in the calendar, zero new API, no same-day complication. Stops the *coarse*
+   mistake (an earlier day) before it can be made.
+2. **Clamp in `onEditorEndChange`**: `end = max(picked, draft.start + minDuration)` with
+   `minDuration = minutesPerSlot()` — the keyboard's number, because it is the one that
+   agrees with the grid and with `pickerStep()`. Announce the correction through the live
+   announcer. This handles the *fine* case (same day, earlier time), backstops Today/Now,
+   and makes the `end <= start` guard unreachable from the pickers — what §12.9a was
+   reaching for on the other edge.
+3. **Keep the Save-time guard** as the backstop for everything the pickers cannot reach
+   (F2, and consumer-supplied invalid events).
+
+Rejected: **forwarding bounds into the time list** (F3) — it needs a new date-aware bound
+semantic on two shared WCs plus a Today/Now fix, to buy what the clamp gets in ~10 lines
+in one file. Worth doing *for the picker's own sake* (below), not as the way to solve
+this. Also rejected: **auto-adjusting the OTHER edge**, which changes a control the user
+is not focused on — a WCAG 3.2.2 hazard. The recommended clamp is materially different:
+it adjusts the *same* field the user just edited, and announces it.
+
+**Prior art**, with confidence marked: *confident* that Google Calendar and Outlook both
+preserve duration when the start changes (matching D12.10), and that both bias the end
+field's offered times to valid ones on the same day while reverting to a full 24-hour
+range when the end is on a later day — precisely F3's nuance, solved by both.
+*Assuming, not asserting:* what each does when a *date* pick inverts the range. The
+reliable common denominator is that neither lets an inverted range sit quietly in the
+form, and neither relies on a save-time error as its primary mechanism.
+
+**What D12.12 explicitly does NOT fix:** F2/B35 (asymmetric-permission commit inversion);
+a consumer-supplied invalid or zero-length event, which is born invalid and — when
+`resizeEventEnd` is denied — cannot be repaired at all; a degenerate stored event blocking
+even a *rename*, because the range guard runs unconditionally (B36); and DST wall-clock
+drift, since "duration preserved" means absolute milliseconds.
+
+#### Defects found during this analysis (independent of whether D12.12 ships)
+
+- **B33 — the editor's validation message double-announces.** The same string enters two
+  live regions in one update: a `role="alert"` node *and* the polite LiveAnnouncer. Screen
+  readers speak it twice. Both the range and title-required paths. Pick one channel — the
+  announcer, since a newly-inserted `role="alert"` is announced inconsistently across
+  engines.
+- **B34 — the message is orphaned, and focus does not move.** The `<p>` has no `id`,
+  neither picker gets `aria-invalid` / `aria-errormessage` / `aria-describedby`, and it
+  renders *after* the colour field rather than beside Start/End. Once the announcement
+  decays, a screen-reader user who tabs back to End is told nothing. The repo already has
+  `errorFeedback()` in `a11y/src/error-text.ts` for exactly this — used by five WCs, but
+  `mp-datetime-picker` supports no error text at all. Save also leaves focus on the Save
+  button rather than moving it to the offending field.
+- **B35 / B36** — as described in F2 and in "does NOT fix" above.
+- **The two halves of the picker disagree on disabled semantics.** `mp-calendar` uses
+  `aria-disabled` and keeps the cell in the roving order (APG-correct, discoverable);
+  `mp-time-list` uses native `disabled`, so slots vanish from keyboard traversal entirely.
+  One popover, two behaviours.
+- **A latent dead key**: `mp-time-list`'s PageUp/PageDown computes ±60 minutes and calls
+  `moveTo`, which bails on a disabled target *after* `preventDefault()` — no move, no
+  announcement. Unreachable today because nobody passes bounds; adding them makes it live.
+- **Shared-picker gaps**, each worth its own decision because they affect every consumer:
+  `mp-datetime-picker` never forwards `min`/`max` to the time list; Today/Now bypass all
+  bounds; nothing clamps, so an out-of-range value set programmatically renders as a
+  selected-but-disabled cell; and the React/Vue wrappers appear to expose no `min`/`max`.
+  **CORRECTED in §12.12 (D12.15): the React half of that last claim is false** — `@lit/react`
+  routes such props onto the element automatically. Vue reaches the element for camelCase
+  props only, which is a repo-wide wrapper-idiom issue rather than a picker one.
+
+### 12.12 Resolving the three concerns raised by §12.11
+
+§12.11 ended with three open items: the commit-time inversion (B35), the error/announcement
+defects (B33/B34), and six shared-picker gaps. A second three-probe investigation decided
+each. **All three shipped**: D12.13 as M28, D12.14 as M29, and D12.15 as M30 — the last
+folded into this PR by user decision, having been triaged as a separate one.
+
+#### D12.13 — collapse `resizeEventStart` + `resizeEventEnd` into one `resizeEvent`
+
+Proposed by the user to remove B35's root cause, and it survives scrutiny for a better
+reason than the bug: **the split was manufactured by a misreading.** §6.2 states that
+FullCalendar's `eventStartEditable` / `eventDurationEditable` "live on as
+`resizeEventStart` / `resizeEventEnd`". That mapping is wrong — `eventStartEditable` is
+*"allow events' start times to be editable **through dragging**"*, i.e. our `moveEvent`,
+while `eventDurationEditable` covers resize as **one** flag for both edges. The correct
+fold of the two dead flags was `moveEvent` + a single `resizeEvent`. Re-reading all of
+§6.2 confirms it: every bullet defends the `boolean | Object` shape, the `readonly` layer,
+tri-state per-item flags and the rejection of predicates — **not one defends per-edge
+granularity**. Telling detail: the exact configuration that produces B35 (start resizable,
+end not) is one FullCalendar deliberately cannot express.
+
+Of the nine sites consulting the two flags, five are literally `a || b`. The three that
+genuinely discriminate — the per-edge resize handles, the pointer gesture, and
+Shift+Arrow versus Alt+Shift+Arrow — are all **direct manipulation**, where the edge is a
+property of the *gesture*, not of the permission, and all are served by the per-item flag.
+
+- **Per-edge control stays, on the ITEM.** `SchedulerEvent.resizable`'s `{ start, end }`
+  form becomes the only place it lives, which is where it belongs: per-edge locking is
+  data-dependent ("this shift already clocked in; its start is pinned, you may still
+  extend it"). A *global* "no user may ever resize any start edge" answers a question
+  nobody asks. The resolver splits into `resolveCapability('resizeEvent', …)` (any edge)
+  and `resolveResizeEdge('start' | 'end', …)` (handles, gestures, keyboard).
+- **The collapse alone is not the fix.** It closes B35 only because the editor's two
+  guards become *textually equal expressions*, not because the code states the invariant —
+  one future edit reintroduces it. It must ship with `canTime` computed **once** and a
+  **single** `if` in `saveEventEditor` writing both edges together.
+- **And the start-change semantic must follow the permission actually granted**, which
+  closes the whole class rather than the instance:
+
+  | `moveEvent` | `resizeEvent` | start field | end field | a start change… |
+  |---|---|---|---|---|
+  | ✓ | ✓ | on | on | shifts both (a move) |
+  | ✓ | ✗ | on | **off** | shifts both (a move) |
+  | ✗ | ✓ | on | on | resizes the start alone, clamped to `end − minDuration` |
+  | ✗ | ✗ | off | off | — |
+
+  Row 2 closes **a leak that exists today**: with `moveEvent: true, resizable: false` the
+  editor commits a pure duration change that `resizable: false` forbids. Row 3's clamp is
+  the mirror of D12.12's end clamp. This matrix is only tractable *because* of the
+  collapse — with three flags it is eight rows and the start-change semantic branches
+  further. For the editor, `canResize` folds the per-item object form as **both** edges,
+  so `resizable: { start: false, end: true }` disables the editor's time fields while the
+  end *handle* keeps working: honest, no leak, no inversion.
+
+Blast radius: `scheduler-core` (interface, defaults, resolver + one new export) and two
+scheduler files, nine edits. **Zero wrapper changes and zero demo changes** — all three
+wrappers pass `options` through opaquely, and all three demos set only *resource*
+capabilities. Two specs change; no e2e touches it. Breaking, so the versions bump again.
+
+*Alternative if the break is unwanted:* make `onEditorStartChange` permission-aware and
+shift the end only when the end is committable (~3 lines, non-breaking). It does close
+B35, but "start editable, end locked" then hits the very dead end D12.10 was introduced to
+remove, and the eight-row matrix survives. Prefer the collapse: it deletes the axis
+instead of guarding it.
+
+#### D12.14 — one message, one channel (B33 / B34)
+
+**Not systemic** — the scheduler is the only component that double-announces. But the repo
+has answered this question three different ways: the toast **deleted** its live node in
+favour of the announcer (with the reason in a comment), the five form WCs use a
+described-by node and never announce, and the scheduler does both. That divergence, not
+the single bug, is what deserves a written rule.
+
+- **B33:** keep the persistent message, **delete the `liveAnnouncer.announce(...)` calls on
+  both failure paths, and drop `role="alert"`**. The message is then spoken once — by the
+  invalid field's own accessible description, when focus lands on it. That is the APG
+  form-validation pattern and what the other five WCs already do. The announcer stays on
+  the *success* path, which is transient by nature. `LiveAnnouncerController` self-clears
+  after 1500 ms, so it cannot carry a message the user may want to re-read — which is
+  exactly what a validation error is.
+- **B34, and a constraint that forces shared work:** the scheduler **cannot** render its
+  own message node for Start/End. An IDREF does not cross a shadow boundary, and
+  `aria-describedby` on the roleless `<mp-datetime-picker>` host reaches nothing — it
+  would swap one orphaned message for another. So the fix splits by field: the **title**
+  error is scheduler-local (that input is in the scheduler's own shadow root), while the
+  **range** error requires adding `invalid` + `error-text` to `mp-datetime-picker`,
+  rendered through the shared `errorFeedback()` onto its inner input (~15 lines, copying
+  `mint-otp-input`'s plain-attribute form). That closes the last gap in the form-control
+  family, and Angular consumers get reactive-forms validation for free through the existing
+  `[bsControlValidity]` directive. Mark **End only** as invalid — Start is not wrong, and
+  the message should name the actionable field.
+- **Focus must move**, and B33 depends on it: with the announcer gone, a non-live
+  described-by node is silent unless focus reaches it. The scheduler already re-focuses
+  after every other outcome, including refused ones, so this follows house style. It needs
+  a small `focus()` override on `mp-datetime-picker` delegating to its inner input — **not**
+  `delegatesFocus: true` (which would change click-focus for the whole picker) and not the
+  scheduler reaching into another component's shadow root.
+- **Validate on Save, clear on change** (today's behaviour) is right and stays: an inverted
+  range is a legitimate *intermediate* state, and live validation would flag it the instant
+  End is touched. `editorError` widens to `{ field: 'title' | 'end'; message: string }` so
+  the mark lands on the right control.
+- Side benefit: each message renders next to its own field, so the stray `<p>` after the
+  colour field — and its SCSS rule — disappear.
+
+**Rule for CLAUDE.md, since it generalises beyond this component:**
+
+> **One message, one channel.** A string goes to *either* a live region *or* a
+> described-by node — never both, or screen readers speak it twice, often at two
+> urgencies. A live region is for transient events the user need not revisit; it
+> self-clears, so it cannot hold anything re-readable. A validation message must persist,
+> so it belongs in an `errorFeedback()` node referenced by `aria-errormessage` +
+> `aria-describedby` from the **role-bearing** control, and is spoken by *moving focus
+> there*. Never announce by INSERTING a node that already carries `role="alert"` — a region
+> mounted in the same task as its text is unreliably announced. And a validation message
+> for a control whose role lives inside a WC's shadow root **must** travel in as
+> `error-text`; `aria-describedby` on the roleless host reaches nothing.
+
+#### D12.15 — the six shared-picker gaps: one follow-up PR, one correction here
+
+**Correction to §12.11, which was wrong.** It claimed React and Vue expose no
+`min`/`max`. **The React half is false**: `@lit/react`'s `createComponent` routes any prop
+matching a prototype accessor onto the element as a *property*, and Lit defines those for
+everything in `static properties` — so `<BsDatetimePicker min={d} max={d}
+disableDateFn={fn} />` type-checks and works today. Vue is a grey area rather than a gap:
+`v-bind="$attrs"` reaches the element for camelCase props, but kebab-case
+(`:disable-date-fn`) silently fails, which is a **repo-wide Vue wrapper idiom** question,
+not a picker one. What genuinely is missing is a bounds **demo section** in the React and
+Vue pages, where Angular has one.
+
+Also downgraded: **#4, "nothing clamps", is defensible — leave it.** A cell that is both
+`aria-selected` and `aria-disabled` is legal ARIA and arguably the honest answer ("this is
+your value, and it is not permitted"); clamping would emit `value-change` during init and
+fight Angular's CVA and Vue's `v-model`. Validation, which Angular already has, is the
+right channel for out-of-range. Its one real half — the *time list* losing the tab stop on
+a disabled selection — folds into #5.
+
+The remaining four are **one follow-up PR**, because they are one change:
+
+- **#1** (forward bounds to the time list) is blocked on **#2**'s API, and a naive forward
+  would visibly break a **shipped demo**: the ng page's `boundsMax = new Date(2026, 11, 31)`
+  is midnight, so a verbatim forward disables every slot except 00:00 on every day of 2026
+  — and no spec or e2e would catch it. It would also make the widget stricter than its own
+  Angular validator.
+- **#2 is not a defect**; it is the API design #1 needs. Recommended shape: keep
+  `mp-time-list` a pure time-of-day primitive and make that explicit —
+  `minMinutes`/`maxMinutes: number | null` — and have `mp-datetime-picker` derive them for
+  the day it is editing (`sameDay(day, bound) ? minutesOf(bound) : null`). **This is the
+  only option that cannot break `mp-timepicker`**, which already forwards date-carrying
+  bounds to the same element and whose consumers legitimately pass
+  `new Date(2020, 0, 1, 18, 0)` meaning "18:00"; the alternative (teach the list about
+  dates) would silently disable that element's entire list. The `number` type also makes
+  the confusion *structurally impossible* — a `Date` can be mistaken for a datetime bound,
+  `minMinutes: 480` cannot. It naturally yields "an end on a later day gets the full 24-hour
+  range", the behaviour §12.11 attributes to Google Calendar and Outlook.
+- **#3** (Today/Now bypass every bound) is a real bug — the footer button escapes a
+  constraint the grid one layer below enforces — but the scheduler passes no bounds, so
+  this PR gains nothing, and the guard would be written twice if done before #1.
+- **#5 is MANDATORY with #1, not optional.** `mp-time-list` uses native `disabled` where
+  `mp-calendar` uses `aria-disabled` + roving; the moment bounds reach the list, its
+  `PageUp`/`PageDown` becomes a **swallowed keypress** (it `preventDefault()`s, then the
+  move bails on a disabled target). Fixing it needs three coordinated edits, because
+  `RovingFocus` skips `aria-disabled` *and* `:disabled` by default.
+
+Schedule with that PR: the ng demo's `boundsMax` should become `new Date(2026, 11, 31, 23, 59)`
+if it means "all of 2026".
+
+### 12.13 Phase-2 as-built API surface
+
+One list, so consumers and the wrappers do not have to read the whole branch.
+
+**Added — `SchedulerOptions`**
+- `eventEditor?: boolean` — default **`true`**. The built-in event editor (§12.8).
+
+**Added — host attribute / property**
+- `event-editor` attribute + `eventEditor` property, same dual-state shape as `readonly`.
+  The ATTRIBUTE outranks `options.eventEditor`, and only the literal `"false"` disables, so
+  a wrapper can render it unconditionally from a boolean.
+
+**Added — `OverlayController` (shared, `@mintplayer/web-components/overlay`)**
+- `get isTopmost(): boolean` — whether this overlay is the top-most dismissible layer.
+  Public because a host that handles Escape ITSELF must ask the same question the
+  controller asks internally: such a handler sits on the element, so it runs before any
+  document-level one, and would otherwise dismiss itself out from under a nested overlay
+  it contains. Decline when false, and do NOT stop propagation. See §12.9b.
+
+**Added — shared styles (`_styles/form-control.styles.scss`)**
+- A pass-through to Bootstrap's `forms/form-control`, in the shape of the existing
+  `form-check` / `form-select` sheets, for any WC rendering text-like inputs inside its
+  own shadow root. Carries no `:host` rule — its consumers render inputs *among* other
+  content rather than being one control.
+
+**New internal WC dependencies (no consumer impact)**
+- The scheduler composes `<mp-checkbox>`, `<mp-select>` and `<mp-datetime-picker>` inside
+  its shadow root, because Bootstrap's form styling does not cross a shadow boundary.
+  Plain side-effect imports, per `mp-datatable`'s precedent.
+
+**Added — `SchedulerPermissions`**
+- `editEvent` (default **`true`**) — the editor's title/colour fields. Time fields follow
+  `moveEvent` / `resizeEvent`; the delete button follows `deleteEvent`.
+
+**Added — messages** (`options.messages`): `showMonth`, `newEventResource`,
+`yearMonthCardLabel`, `deleteEventLabel`, `moveModeEnteredTimeline`,
+`eventInstructionsWithEditor`, `resizeResourceColumn`, `renameResourceLabel`,
+`resourceRenamed`, `eventEditorLabel`, `editorTitleLabel`, `editorStartLabel`,
+`editorEndLabel`, `editorColorLabel`, `editorSave`, `editorCancel`, `editorDelete`,
+`editorInvalidRange`, `editorTitleRequired`, `editorInheritColor`.
+
+**Added — CSS**: `--scheduler-drop-target-bg` (the cross-row drag's target-row tint);
+`.scheduler-timeline-row.drop-target`, `.scheduler-column-resizer`, `.rename-input`,
+`.popover-event-delete`, `.popover-resource`, `.popover-day-groups`,
+`.scheduler-event-editor` and its children.
+
+**Changed (breaking)**
+- **`options.dayClickAction` now defaults to `'popover'`** (was `'none'`). A day-cell click
+  emits `date-click` first, exactly as before, and then opens the popover. Set `'none'` to
+  keep the click purely an event for the consumer.
+- **`TimeSlot.resourceId` and `PreviewEvent.resourceId` widen to `string | null | undefined`**
+  (`undefined` = no resource axis, `null` = the unassigned bucket row). Consumers do not see
+  these types; anything reading them internally must test `=== undefined`, not truthiness.
+- **A pointer move-drag is now refused when `moveEvent` is denied** (it was allowed —
+  B24). Same for each resize edge and for slot drags without `createEvent`/`selectRange`.
+- **Timeline drag feedback is scoped to one row**: greying no longer spans every resource.
+
+**Behavioural additions**
+- Dragging an event vertically in the timeline **re-assigns its resource**; dropping it on
+  `(No resource)` clears `resourceId`. `event-update` carries the new row on `event` and the
+  old one on `oldEvent` — no payload change, so no wrapper change.
+- Keyboard move-mode and plain cell navigation reach the bucket row (B25/B26).
+- An event whose `resourceId` names no known resource renders in the bucket row with a
+  once-per-event dev warning instead of vanishing from the timeline (B29).
+- Year view: `Space` on a month card opens a month-scoped popover; a mini-day click opens a
+  day-scoped one, both anchored on the card. Month cards announce their event count.
+- The date popover's rows carry delete buttons; its create action carries a resource picker.
+- The timeline resource column is resizable (drag or arrow keys), its titles carry
+  full-text tooltips, and rows rename inline via double-click or `F2`.
+
+**Wrappers**: Angular gains `[eventEditor]`; React `eventEditor`; Vue `:event-editor`.
+Nothing else changed — every new surface reuses the existing event contracts.
+
+### 12.13 As built — M27, M28, M29
+
+The three decisions of §12.11/§12.12 that belong to the scheduler, as shipped. Two are
+breaking; the third adds a capability to a shared component.
+
+**M27 — the end cannot precede the start (D12.12).** The END picker carries
+`min = draft.start`, honoured date-only by the calendar so the start's own day stays fully
+selectable, and `onEditorEndChange` clamps to `draft.start + minutesPerSlot()` for what a
+bound cannot express — the same-day-earlier-time case and the picker's bound-ignoring
+Today/Now buttons. The correction lands on the field the user just edited and is announced
+(`editorEndClamped`); adjusting the *other* edge instead would move a control the user is
+not focused on, a WCAG 3.2.2 hazard. This also gives the editor the minimum duration it
+never had — it would otherwise commit a 1-minute event on a 30-minute grid.
+
+The START picker deliberately carries no `max` while a start change is a move: duration is
+an invariant of that transform, so inversion is unreachable and a bound would only refuse
+legitimate picks (F1).
+
+*Found while writing the specs, and sharper than B36's original statement:* a degenerate
+event **cannot be constructed through the UI at all** — `partGeometry` returns `null` for
+`end <= start`, so it never renders and the editor can never be opened on it. The
+`end <= start` guard at Save survives as the backstop for consumer-supplied data only.
+
+**M28 — one `resizeEvent` (BREAKING, D12.13).** `resizeEventStart`/`resizeEventEnd` are
+gone. `resolveCapability('resizeEvent', …)` answers "resizable at all"; the new
+`resolveResizeEdge(edge, …)` serves the three direct-manipulation sites where the edge
+belongs to the *gesture*. Per-edge control now lives on the item, as
+`SchedulerEvent.resizable: { start, end }`.
+
+The collapse alone would have closed B35 only by making two guards textually equal, so it
+ships with the structure that states the invariant: one `editorTimeFields(event)` answers
+`canStart` / `canEnd` / `canTime` / `startIsMove` together and carries D12.13's matrix as
+its docblock, and `saveEventEditor` has a single `if` writing both edges. The range is one
+value, so it commits whole or not at all. A start change follows the permission actually
+granted — a move where `moveEvent` is allowed, otherwise a start-resize clamped to
+`end − minutesPerSlot()` and announced (`editorStartClamped`), with `max = draft.end` on the
+start picker in that mode only. Row 2 of the matrix closes a leak that predates all of
+this: `moveEvent: true, resizable: false` used to commit a pure duration change.
+
+*Migration:* swap the two flags for `resizeEvent`; a consumer wanting one edge locked puts
+it on the data instead, where it now actually works on handles, pointer and keyboard alike
+— previously only the boolean `=== false` branch was ever checked.
+
+**M29 — one message, one channel (D12.14).** The refusal message no longer enters two live
+regions at once. It goes to the offending control's own accessible description and is
+spoken by moving focus there; the announcer keeps only the success path, where a
+self-clearing region is the right shape. Because an IDREF cannot cross a shadow boundary,
+the range message required `invalid` + `error-text` on `mp-datetime-picker` — the last gap
+in the form-control family — plus a `focus()` override delegating to its display input
+(an override, not `delegatesFocus: true`, which would change click-focus for every
+consumer). `editorError` is now field-scoped, and clears per field. The rule is written up
+in CLAUDE.md, since the repo previously answered this question three different ways.
+
+Angular needed explicit `invalid`/`errorText` inputs; **React and Vue needed none** —
+`@lit/react` routes prototype-accessor props as properties and Vue's `v-bind="$attrs"`
+reaches both. That is D12.15's correction holding in practice.
+
+### 12.14 As built — M30 (the shared picker), folded in on request
+
+D12.15 was triaged as a follow-up PR because the scheduler passes no bounds and every item
+touches components other consumers use. The user chose to fold it into #396 anyway, so it
+ships here. The four items really were one change, in this order:
+
+**The API had to move first (BREAKING).** `mp-time-list`'s `min`/`max: Date` are now
+`minMinutes`/`maxMinutes: number | null`. The old pair *read* like datetime bounds but were
+compared time-of-day only, and that ambiguity is what blocked the forward: teaching the list
+about dates would have silently disabled `mp-timepicker`'s entire list, since its consumers
+legitimately pass `new Date(2020, 0, 1, 18, 0)` to mean "18:00". A `Date` can be mistaken
+for a datetime bound; `minMinutes: 480` cannot. Conversion goes through a new exported
+`minutesOfDay()`, which exists so each composite decides *at the call site* whether its
+bound is a time-of-day (`mp-timepicker`: always convert) or a datetime
+(`mp-datetime-picker`: convert only on the bound's own day).
+
+**Then the forward.** `timeBounds()` narrows the clock only on a bound's own day, so an end
+on a later day keeps all 24 hours — what both Google Calendar and Outlook do, and the
+nuance §12.11/F3 identified. The day is `value ?? today`, which is precisely what
+`updateTimePart` composes a picked time with when no date is set, so it is not a guess.
+
+**The keyboard fix was mandatory, not optional.** `mp-time-list` used native `disabled`
+where `mp-calendar` — one popup away — uses `aria-disabled` and keeps the cell traversable.
+The moment bounds reached the list, `RovingFocus.moveTo` refused the disabled target *after*
+`preventDefault()`, so PageUp/PageDown became a swallowed keypress. Out-of-range slots now
+stay in the roving order (`isDisabled: () => false`) and selection stays refused in
+`selectMinutes`, which is where that rule belongs.
+
+**And the escape hatches.** `Today` / `Now` wrote their value with no bound check at all.
+They are now `disabled` rather than silently ignored — a control that does nothing when
+pressed is the worse failure. `Now` is gated on the *day's derived range*, since it writes
+only the time half.
+
+*The regression guard matters more than the feature here.* A naive verbatim forward breaks
+the shipped ng demo invisibly: `boundsMax = new Date(2026, 11, 31)` is midnight, so every
+slot but 00:00 would be disabled on every day of 2026. No existing spec or e2e would have
+caught it. There is now one that asserts a date-only `max` does not collapse other days,
+and the demo's bounds carry real times so the section demonstrates the per-day narrowing.
+
+**#4 was left alone, as decided** — a cell that is both `aria-selected` and `aria-disabled`
+is legal ARIA and the honest answer, and clamping would fight Angular's CVA and Vue's
+`v-model`. Its one real half, the time list losing its tab stop on a disabled selection,
+is fixed by the roving change above.
+
+**Migration:** only direct consumers of `mp-time-list` are affected (`BsTimeList` in
+React/Vue; there is no Angular wrapper). `min={date}` becomes `minMinutes={480}`. React's
+typed props turn this into a compile error; **Vue's `$attrs` does not**, so a `:min` there
+quietly stops applying — the single place this break is silent, and a consequence of the
+repo-wide Vue wrapper idiom rather than of this change. `mp-timepicker` and `mp-datepicker`
+consumers are untouched: both still take `Date` bounds and convert internally.

@@ -119,15 +119,32 @@ export interface SchedulerOptions {
   moreLinkBehavior?: MoreLinkBehavior;
 
   /**
-   * What clicking a month day CELL does, beyond emitting `date-click`.
+   * What clicking a day CELL does (month view, and year-view mini-days),
+   * beyond emitting `date-click`.
    *
-   * Defaults to `'none'` so the `date-click` contract is unchanged for existing
-   * consumers; set `'popover'` for the "click a date to see and add events"
-   * behaviour. Clicking the day NUMBER always drills into the day view (the
-   * navLinks idiom) and is deliberately a separate target: conflating the two
-   * would make an empty cell unable to mean "create here".
+   * Defaults to `'popover'` — click a date to see and add its events, which
+   * is what the surface exists for. `date-click` still emits FIRST,
+   * unconditionally, so a consumer's own handler keeps working; set `'none'`
+   * to keep the click purely an event for the consumer. Clicking the day
+   * NUMBER in month view always drills into the day view (the navLinks idiom)
+   * and is deliberately a separate target: conflating the two would make an
+   * empty cell unable to mean "create here".
    */
   dayClickAction?: 'none' | 'popover';
+
+  /**
+   * The built-in event editor: a popover anchored to the event with title,
+   * start/end and colour fields plus Save / Delete / Cancel, opened by
+   * double-click (double-tap), right-click, or F2 on the selected event.
+   *
+   * Default `true`. It emits the SAME requests every other surface emits —
+   * Save is an `event-update`, Delete an `event-delete` — so a consumer's
+   * handlers keep working unchanged, and it doubles as the single-pointer
+   * non-drag path to change an event's times (WCAG 2.5.7). Set `false` when
+   * the app ships its own editor; `event-dblclick` keeps firing either way.
+   * Also exposed as the `event-editor` attribute / `eventEditor` property.
+   */
+  eventEditor?: boolean;
 
   /**
    * Whether every event is expected to name a resource.
@@ -190,6 +207,7 @@ export const DEFAULT_OPTIONS: Required<SchedulerOptions> = {
   weekText: 'W',
   dayMaxEvents: true,
   moreLinkBehavior: 'popover',
-  dayClickAction: 'none',
+  dayClickAction: 'popover',
+  eventEditor: true,
   requireEventResource: false,
 };

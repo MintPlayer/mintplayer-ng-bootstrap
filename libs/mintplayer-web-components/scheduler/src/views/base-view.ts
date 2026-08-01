@@ -3,6 +3,7 @@ import {
   formatMessage,
   getContrastColor,
   resolveCapability,
+  resolveResizeEdge,
   resolveEventColor,
   resolveMessages,
   type SchedulerEvent,
@@ -347,10 +348,10 @@ export abstract class BaseView {
     // model but previously only checked as a boolean — now actually works, and a
     // read-only scheduler advertises no grab handle at all.
     const permissions = this.state.resolvedPermissions;
-    if (part.isStart && resolveCapability('resizeEventStart', { permissions, event: part.event })) {
+    if (part.isStart && resolveResizeEdge('start', { permissions, event: part.event })) {
       eventEl.appendChild(this.createResizeHandle(startClass, 'start'));
     }
-    if (part.isEnd && resolveCapability('resizeEventEnd', { permissions, event: part.event })) {
+    if (part.isEnd && resolveResizeEdge('end', { permissions, event: part.event })) {
       eventEl.appendChild(this.createResizeHandle(endClass, 'end'));
     }
   }

@@ -43,6 +43,12 @@ export interface SchedulerMessages {
   removeResource: string;
   /** {title} */
   resourceColor: string;
+  /** Accessible name of the resource-column resize separator. */
+  resizeResourceColumn: string;
+  /** {title} — accessible name of the inline rename input. */
+  renameResourceLabel: string;
+  /** {from} {to} — announced after a rename commits. */
+  resourceRenamed: string;
 
   // Month chrome
   /** {count} — number of hidden events */
@@ -59,7 +65,57 @@ export interface SchedulerMessages {
   newEvent: string;
   /** Secondary action: drill into the day view. */
   showDay: string;
+  /** Secondary action of the month-scoped popover (year view): drill into the month. */
+  showMonth: string;
   closePopover: string;
+  /** Label of the popover's resource picker on the create action. */
+  newEventResource: string;
+  /** {title} — accessible name of a per-event delete button. */
+  deleteEventLabel: string;
+
+  // Event editor (the built-in edit popover)
+  /** {title} — accessible name of the editor dialog. */
+  eventEditorLabel: string;
+  editorTitleLabel: string;
+  editorStartLabel: string;
+  editorEndLabel: string;
+  editorColorLabel: string;
+  /**
+   * Checkbox: keep the event's colour derived from its resource instead of
+   * pinning one on the event. Checked whenever the event carries no `color`,
+   * which is the state the whole precedence chain assumes.
+   */
+  editorInheritColor: string;
+  editorSave: string;
+  editorCancel: string;
+  editorDelete: string;
+  /** Inline error + announcement when the edited range is invalid. */
+  editorInvalidRange: string;
+  /** Inline error + announcement when the title is emptied. */
+  editorTitleRequired: string;
+  /**
+   * {end} — announced when a picked end time was pulled forward to the
+   * earliest the grid allows. The correction happens on the field the user
+   * just edited, so it must be spoken: silently changing a value the user
+   * chose, without saying so, is the failure mode this message exists to
+   * avoid (D12.12).
+   */
+  editorEndClamped: string;
+  /**
+   * {start} — the mirror of `editorEndClamped`, announced when a start change
+   * is a RESIZE rather than a move (the user may resize but not move, D12.13)
+   * and the picked start was pushed back to the latest the grid allows.
+   */
+  editorStartClamped: string;
+
+  // Year chrome
+  /**
+   * {month} {count} {events} — accessible name of a year-view month card. The
+   * event count is the text equivalent of the colour-only `.has-events` dots
+   * (WCAG 1.4.1): without it a screen-reader user cannot tell a busy month
+   * from an empty one.
+   */
+  yearMonthCardLabel: string;
 
   // Announcements
   /** {view} — localized view name */
@@ -74,6 +130,12 @@ export interface SchedulerMessages {
   eventsLoaded: string;
   /** {title} {minutes} — move-mode entry keymap announcement */
   moveModeEntered: string;
+  /**
+   * {title} {minutes} — the timeline's move-mode entry announcement. Its own
+   * key because the generic one promises "arrow keys nudge by N minutes",
+   * which is wrong there: on the timeline Up/Down changes the resource.
+   */
+  moveModeEnteredTimeline: string;
   /** {start} {end} {day} */
   movedTo: string;
   /** {resource} */
@@ -94,6 +156,8 @@ export interface SchedulerMessages {
   // aria-describedby keymap instructions
   gridInstructions: string;
   eventInstructions: string;
+  /** The eventInstructions variant used while the built-in editor is enabled. */
+  eventInstructionsWithEditor: string;
   /** Read-only variants: no create/move/resize/delete promises. */
   gridInstructionsReadOnly: string;
   eventInstructionsReadOnly: string;
@@ -131,6 +195,9 @@ export const DEFAULT_MESSAGES: SchedulerMessages = {
   addGroupToGroup: 'Add subgroup to {title}',
   removeResource: 'Remove {title}',
   resourceColor: 'Colour for {title}',
+  resizeResourceColumn: 'Resize the resource column',
+  renameResourceLabel: 'New name for {title}',
+  resourceRenamed: '{from} renamed to {to}.',
 
   moreEvents: '+{count} more',
   dayPopoverLabel: 'Events on {date}',
@@ -140,7 +207,26 @@ export const DEFAULT_MESSAGES: SchedulerMessages = {
   dayPopoverEmpty: 'No events.',
   newEvent: 'New event',
   showDay: 'Show day',
+  showMonth: 'Show month',
   closePopover: 'Close',
+  newEventResource: 'Resource',
+  deleteEventLabel: 'Delete {title}',
+
+  eventEditorLabel: 'Edit {title}',
+  editorTitleLabel: 'Title',
+  editorStartLabel: 'Start',
+  editorEndLabel: 'End',
+  editorColorLabel: 'Colour',
+  editorInheritColor: 'Inherit from resource',
+  editorSave: 'Save',
+  editorCancel: 'Cancel',
+  editorDelete: 'Delete',
+  editorInvalidRange: 'End must be after start.',
+  editorTitleRequired: 'Title is required.',
+  editorEndClamped: 'End adjusted to {end}, the earliest allowed.',
+  editorStartClamped: 'Start adjusted to {start}, the latest allowed.',
+
+  yearMonthCardLabel: '{month}, {count} {events}',
 
   viewChanged: 'View changed to {view}.',
   eventAdded: 'Event {title} added.',
@@ -150,6 +236,8 @@ export const DEFAULT_MESSAGES: SchedulerMessages = {
   eventsLoaded: 'Events loaded.',
   moveModeEntered:
     'Move mode for {title}. Arrow keys nudge by {minutes} minutes; Shift with arrow keys resizes the end edge; Alt with Shift resizes the start edge; Enter commits, Escape cancels.',
+  moveModeEnteredTimeline:
+    'Move mode for {title}. Left and Right arrows nudge by {minutes} minutes; Up and Down arrows change the resource; Shift with arrow keys resizes the end edge; Alt with Shift resizes the start edge; Enter commits, Escape cancels.',
   movedTo: 'Moved to {start}–{end}, {day}',
   movedToResource: 'Moved to resource {resource}.',
   resizedEdge: 'Resized {edge} edge to {start}–{end}',
@@ -171,6 +259,8 @@ export const DEFAULT_MESSAGES: SchedulerMessages = {
     'Use the arrow keys to move between cells. Hold Shift with the arrow keys to extend the selection, and press Enter to request a new event for the selection. Page Up and Page Down change the period. Alt with T, Y, M, W or D switches to today, year, month, week or day view.',
   eventInstructions:
     'Press Enter or M to move or resize the event with the arrow keys. Delete removes the event. Left and Right arrows move between events.',
+  eventInstructionsWithEditor:
+    'Press Enter or M to move or resize the event with the arrow keys. F2 opens the event editor. Delete removes the event. Left and Right arrows move between events.',
 
   eventOnResource: 'on {resource}',
 };

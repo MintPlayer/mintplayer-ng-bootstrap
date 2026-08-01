@@ -115,6 +115,16 @@ code path remembers it.
   place entirely.
 - **Reduced motion.** Auto-advancing or animating widgets honour
   `@media (prefers-reduced-motion: reduce)` in their own SCSS.
+- **One message, one channel.** A string goes to *either* a live region *or* a described-by node
+  — never both, or screen readers speak it twice, often at two urgencies. A live region is for
+  transient events the user need not revisit; it self-clears, so it cannot hold anything
+  re-readable. A **validation message must persist**, so it belongs in an `errorFeedback()` node
+  referenced by `aria-errormessage` + `aria-describedby` from the **role-bearing** control, and is
+  spoken by *moving focus there* — which means a refused submit must move focus, or the message is
+  silent. Never announce by INSERTING a node that already carries `role="alert"`: a region mounted
+  in the same task as its text is unreliably announced. And a validation message for a control
+  whose role lives inside a WC's shadow root **must** travel in as `error-text` —
+  `aria-describedby` on the roleless host reaches nothing.
 
 ### No-JS: two tiers, and the rules differ
 

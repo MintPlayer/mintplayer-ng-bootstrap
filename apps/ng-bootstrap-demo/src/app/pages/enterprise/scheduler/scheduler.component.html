@@ -17,7 +17,7 @@
     <li><strong>Navigation</strong>: <kbd>Tab</kbd> walks header → grid → events. Inside the grid, arrow keys walk cells.</li>
     <li><strong>Cell nav</strong> (week/day): <kbd>↑</kbd>/<kbd>↓</kbd> ± one slot in time, <kbd>←</kbd>/<kbd>→</kbd> ± one day (week only). On <em>timeline</em>: <kbd>←</kbd>/<kbd>→</kbd> ± slot in time, <kbd>↑</kbd>/<kbd>↓</kbd> ± resource.</li>
     <li><strong>Month nav</strong>: <kbd>←</kbd>/<kbd>→</kbd> walk days, <kbd>↑</kbd>/<kbd>↓</kbd> ± one week. Crossing a month boundary auto-advances the displayed month. <kbd>Enter</kbd> on a day fires <code>event-create</code> for that whole day; <kbd>Space</kbd> opens the day popover (its event list, plus <em>New event</em> and <em>Show day</em>).</li>
-    <li><strong>Year nav</strong>: <kbd>←</kbd>/<kbd>→</kbd> walk months, <kbd>↑</kbd>/<kbd>↓</kbd> ± three months (matching the visual grid). Crossing a year boundary auto-advances. <kbd>Enter</kbd> on a month drills into that month.</li>
+    <li><strong>Year nav</strong>: <kbd>←</kbd>/<kbd>→</kbd> walk months, <kbd>↑</kbd>/<kbd>↓</kbd> ± three months (matching the visual grid). Crossing a year boundary auto-advances. <kbd>Enter</kbd> on a month drills into that month; <kbd>Space</kbd> opens the month's popover (events grouped by day, plus <em>New event</em> and <em>Show month</em>). Clicking a mini-day opens that day's popover, anchored on its month card.</li>
     <li><strong>Inter-event nav</strong>: with focus on an event, <kbd>←</kbd>/<kbd>→</kbd> walks to the previous / next event (sorted by start time). No wrap at the ends.</li>
     <li><strong>Cell nav extras</strong>: <kbd>Home</kbd>/<kbd>End</kbd> first/last slot of column · <kbd>Ctrl+Home</kbd>/<kbd>Ctrl+End</kbd> first/last cell of view · <kbd>PageUp</kbd>/<kbd>PageDown</kbd> previous/next period.</li>
     <li><strong>Selection</strong>: <kbd>Shift</kbd>+arrow extends a linear time-range. On week view, <kbd>Shift+→</kbd> at the end of Friday extends into Saturday (the range crosses the day boundary, all slots in between light up).</li>
@@ -27,10 +27,12 @@
     <li><strong>Touch resize</strong>: tap an event to select it, then drag the round handle at its top or bottom edge (left/right on timeline) — the resize starts immediately, no hold needed. Moving an event by touch stays hold-then-drag (600&nbsp;ms).</li>
     <li><strong>Mouse resize</strong>: drag the top or bottom edge of any resizable event (selected or not); the selected event shows the round handles as the visual affordance.</li>
     <li><strong>Edit without dragging</strong>: double-click / double-tap an event to edit its title and start/end times in a form — the single-pointer, non-drag alternative (WCAG 2.5.7).</li>
-    <li><strong>Delete</strong>: <kbd>Delete</kbd> / <kbd>Backspace</kbd> on a focused event emits <code>event-delete</code>.</li>
+    <li><strong>Delete</strong>: <kbd>Delete</kbd> / <kbd>Backspace</kbd> on a focused event emits <code>event-delete</code>; the date popover and the event editor carry delete buttons for pointer users.</li>
+    <li><strong>Event editor</strong> (built-in, default on): double-click / double-tap, right-click, or <kbd>F2</kbd> on an event opens a popover with title, start/end and colour. Save emits <code>event-update</code>, Delete emits <code>event-delete</code>, <kbd>Esc</kbd> cancels. Fields follow the permission table; disable the whole editor with <code>[eventEditor]="false"</code>. <em>Colour</em> is two-state: <strong>Inherit from resource</strong> (checked whenever the event carries no <code>color</code>) keeps it tracking its resource — including after a move to another resource — while unchecking pins the swatch onto the event.</li>
     <li><strong>Leaving an event</strong>: <kbd>Esc</kbd> on a focused event returns focus to the grid cell it came from.</li>
-    <li><strong>Day popover</strong> (month view): the <code>+N more</code> link opens it by default (<code>moreLinkBehavior</code>), clicking the day <em>number</em> always drills into the day view, and a plain cell click can open the popover too (<code>dayClickAction</code>). <kbd>Esc</kbd> closes it.</li>
-    <li><strong>Resource editing</strong> (timeline, opt-in): with the matching permission granted, <kbd>Tab</kbd> reaches the per-group add buttons, the colour swatch and the remove button in the pinned resource column, plus the <em>Add resource</em>/<em>Add group</em> bar at its foot. Denied capabilities render nothing at all.</li>
+    <li><strong>Day popover</strong> (month + year views): the <code>+N more</code> link opens it, and so does a plain day-cell click by default (<code>dayClickAction: 'popover'</code> — <code>date-click</code> still emits first; set <code>'none'</code> to opt out). Clicking the day <em>number</em> in month view always drills into the day view instead. When resources exist, the <em>New event</em> action carries the picked resource. <kbd>Esc</kbd> closes it.</li>
+    <li><strong>Resource editing</strong> (timeline, opt-in): with the matching permission granted, <kbd>Tab</kbd> reaches the per-group add buttons, the colour swatch and the remove button in the pinned resource column, plus the <em>Add resource</em>/<em>Add group</em> bar at its foot. Denied capabilities render nothing at all. <strong>Rename</strong>: double-click a resource/group title, or <kbd>F2</kbd> on one of the row's cells — <kbd>Enter</kbd> commits (<code>resource-update</code>), <kbd>Esc</kbd> cancels.</li>
+    <li><strong>Resource column</strong> (timeline): drag the separator on the column's right edge to resize it, or focus it and use <kbd>←</kbd>/<kbd>→</kbd> (<kbd>Home</kbd>/<kbd>End</kbd> for min/max). Hover an ellipsised title for the full text.</li>
     <li><strong>View shortcuts</strong>: <kbd>Alt+T</kbd> today · <kbd>Alt+Y</kbd> year · <kbd>Alt+M</kbd> month · <kbd>Alt+W</kbd> week · <kbd>Alt+D</kbd> day. (Bare letters are no longer hot-keys.)</li>
   </ul>
 </details>
@@ -73,12 +75,16 @@
             <option value="none">Day click &rarr; date-click only</option>
             <option value="popover">Day click &rarr; popover</option>
           </bs-select>
+          <bs-select aria-label="Event editor" [ngModel]="builtInEditor()" (ngModelChange)="builtInEditor.set($event)">
+            <option [ngValue]="true">Built-in event editor</option>
+            <option [ngValue]="false">App-owned editor card</option>
+          </bs-select>
         </bs-input-group>
       </bs-form>
     </div>
     <div [md]="4">
       <small class="text-muted">
-        <strong>Keyboard:</strong> arrow nav cells · Shift+arrow extend selection · Enter create · M/Enter move+resize · Alt+T/Y/M/W/D switch views · double-click edits
+        <strong>Keyboard:</strong> arrow nav cells · Shift+arrow extend selection · Enter create · M/Enter move+resize · F2 edit · Alt+T/Y/M/W/D switch views · double-click edits
       </small>
     </div>
   </div>
@@ -104,7 +110,8 @@
           (groupCreate)="onGroupCreate($event)"
           (resourceUpdate)="onResourceUpdate($event)"
           (resourceDelete)="onResourceDelete($event)"
-          [readonly]="readonly()">
+          [readonly]="readonly()"
+          [eventEditor]="builtInEditor()">
         </bs-scheduler>
       </div>
     </div>

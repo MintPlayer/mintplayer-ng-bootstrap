@@ -69,10 +69,14 @@ export class DragPreviewCalculator {
     // Pin the resource to where the drag STARTED, not where the pointer
     // currently is: dragging across rows should extend the time range in the
     // originating row, not silently reassign the event to another resource.
+    // (`!== undefined`, not truthiness: `null` is the bucket row, and a
+    // create-drag started there is legitimately creating an unassigned event.)
     return {
       start,
       end,
-      ...(startSlot.resourceId ? { resourceId: startSlot.resourceId } : {}),
+      ...(startSlot.resourceId !== undefined
+        ? { resourceId: startSlot.resourceId }
+        : {}),
     };
   }
 
@@ -95,7 +99,21 @@ export class DragPreviewCalculator {
     const newStart = new Date(originalEvent.start.getTime() + offsetMs);
     const newEnd = new Date(newStart.getTime() + duration);
 
-    return { start: newStart, end: newEnd };
+    // A move TRACKS the pointer's row — the deliberate mirror image of the
+    // create preview above, which PINS its originating row. Creating extends a
+    // range inside one resource; moving is how an event changes resource. The
+    // slot under the pointer already knows its row (`null` = the bucket row),
+    // and on views with no resource axis (`undefined`) the event keeps its own.
+    const resourceId =
+      currentSlot.resourceId !== undefined
+        ? currentSlot.resourceId
+        : originalEvent.resourceId;
+
+    return {
+      start: newStart,
+      end: newEnd,
+      ...(resourceId !== undefined ? { resourceId } : {}),
+    };
   }
 
   /**

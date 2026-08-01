@@ -22,6 +22,12 @@ const props = defineProps<{
   options?: Partial<SchedulerOptions>;
   /** Coarse look-but-don't-touch switch; `options.permissions` refines it. */
   readonly?: boolean;
+  /**
+   * The WC's built-in event editor (double-click / right-click / F2), ON by
+   * default. Set false when the app ships its own editor — `event-dblclick`
+   * keeps firing either way.
+   */
+  eventEditor?: boolean;
 }>();
 
 // `view` and `date` flow through `defineModel` for two-way binding: the WC
@@ -39,6 +45,8 @@ const syncProps = () => {
   if (props.resources) el.value.resources = props.resources;
   if (props.options) el.value.options = props.options;
   el.value.readonly = props.readonly === true;
+  // Undefined = leave the WC's default (on) / whatever `options` says.
+  if (props.eventEditor !== undefined) el.value.eventEditor = props.eventEditor;
 };
 
 const syncView = () => {
@@ -64,6 +72,7 @@ watch(() => props.events, syncProps);
 watch(() => props.resources, syncProps);
 watch(() => props.options, syncProps);
 watch(() => props.readonly, syncProps);
+watch(() => props.eventEditor, syncProps);
 watch(view, syncView);
 watch(date, syncDate);
 

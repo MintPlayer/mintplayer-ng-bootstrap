@@ -113,11 +113,26 @@ function indexResourcesById(
   return out;
 }
 
-/** Group events by `resourceId`; the `null` key is the unassigned bucket. */
-function indexByResource(events: SchedulerEvent[]): Map<string | null, SchedulerEvent[]> {
+/**
+ * Group events by `resourceId`; the `null` key is the unassigned bucket.
+ *
+ * A `resourceId` that names no KNOWN resource also lands in the bucket (B29):
+ * the timeline renders one row per live resource plus the bucket, so a
+ * dangling id — typically the aftermath of a `resource-delete` the consumer
+ * honoured without touching the events — would otherwise sit under a key no
+ * row reads and silently vanish from the view. Visible-in-the-bucket is the
+ * non-lossy default this whole index exists to guarantee (D4.2).
+ */
+function indexByResource(
+  events: SchedulerEvent[],
+  resourceById: Map<string, Resource>,
+): Map<string | null, SchedulerEvent[]> {
   const index = new Map<string | null, SchedulerEvent[]>();
   for (const event of events) {
-    const key = event.resourceId ?? null;
+    const key =
+      event.resourceId != null && resourceById.has(event.resourceId)
+        ? event.resourceId
+        : null;
     const bucket = index.get(key);
     if (bucket) bucket.push(event);
     else index.set(key, [event]);
@@ -269,14 +284,24 @@ export class SchedulerStateManager {
     const next = { ...this.state, ...partialUpdate };
     // Rebuild the derived indexes only when their source identity changes, so
     // drag frames (which touch previewEvent every rAF) don't pay for it.
-    if (next.events !== this.state.events || !this.state.eventsByResource) {
-      next.eventsByResource = indexByResource(next.events);
-    }
-    if (next.resources !== this.state.resources || !this.state.resourceById) {
+    // resourceById first: the event index buckets dangling resource ids, so it
+    // depends on the resource index and must also rebuild when RESOURCES
+    // change — deleting a resource re-buckets its events with no event write.
+    const resourcesChanged =
+      next.resources !== this.state.resources || !this.state.resourceById;
+    if (resourcesChanged) {
       next.resourceById = indexResourcesById(next.resources);
+    }
+    if (
+      next.events !== this.state.events ||
+      resourcesChanged ||
+      !this.state.eventsByResource
+    ) {
+      next.eventsByResource = indexByResource(next.events, next.resourceById);
     }
     this.state = next;
     this.warnUnassignedEvents();
+    this.warnDanglingEvents();
     this.notifyListeners();
   }
 
@@ -300,6 +325,34 @@ export class SchedulerStateManager {
       `[mp-scheduler] requireEventResource is set, but ${unassigned.length} event(s) have ` +
         `no resourceId. They render in the "(No resource)" row. Ids: ` +
         unassigned.map((event) => event.id).join(', '),
+    );
+  }
+
+  /** Dangling resource ids already reported; warn once per event id. */
+  private readonly warnedDanglingIds = new Set<string>();
+
+  /**
+   * B29's development signal: an event whose `resourceId` names no known
+   * resource renders in the bucket row rather than vanishing, and says so once.
+   * Gated on a non-empty resource tree — during input wiring the events
+   * routinely arrive before the resources, and warning about that ordering
+   * would train consumers to ignore the warning that matters.
+   */
+  private warnDanglingEvents(): void {
+    if (this.state.resources.length === 0) return;
+    const dangling = this.state.events.filter(
+      (event) =>
+        event.resourceId != null &&
+        !this.state.resourceById.has(event.resourceId) &&
+        !this.warnedDanglingIds.has(event.id),
+    );
+    if (dangling.length === 0) return;
+    for (const event of dangling) this.warnedDanglingIds.add(event.id);
+    console.warn(
+      `[mp-scheduler] ${dangling.length} event(s) reference a resource that does not ` +
+        `exist. They render in the "(No resource)" row. If a resource was deleted, ` +
+        `clear or reassign its events' resourceId. Ids: ` +
+        dangling.map((event) => `${event.id} (resourceId: ${event.resourceId})`).join(', '),
     );
   }
 
@@ -374,6 +427,13 @@ export class SchedulerStateManager {
     );
     this.setState((state) => ({
       events: state.events.map((e) => (e.id === event.id ? event : e)),
+      // The SELECTION has to track the record too (B32). It holds an event
+      // object, not an id, so leaving it behind left every reader of
+      // `selectedEvent` on a stale copy after any commit — the editor reopened
+      // by F2 showed the pre-edit values, and a consumer bound to
+      // `[(selectedEvent)]` was handed data it had just replaced.
+      selectedEvent:
+        state.selectedEvent?.id === event.id ? event : state.selectedEvent,
     }));
   }
 

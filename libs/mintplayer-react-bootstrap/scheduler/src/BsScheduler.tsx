@@ -16,8 +16,10 @@ import type { SchedulerEventMap } from '@mintplayer/web-components/scheduler-cor
  *
  * Note: `events` and `resources` props are JS-shaped (arrays of
  * SchedulerEvent / Resource); @lit/react forwards them as element
- * properties. `readonly` is a real property on the element, so it forwards
- * the same way.
+ * properties. `readonly` and `eventEditor` (the built-in editor's on/off
+ * switch, default on) are real properties on the element, so they forward
+ * the same way — `eventEditor={false}` disables the editor while
+ * `onEventDblClick` keeps firing for an app-owned one.
  */
 export const BsScheduler = createComponent({
   react: React,
