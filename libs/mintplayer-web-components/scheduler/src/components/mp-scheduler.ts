@@ -52,6 +52,10 @@ import '@mintplayer/web-components/checkbox';
 // NATIVE `<select>` and owns no overlay of its own, so nesting it inside the
 // popover cannot interfere with the popover's own dismissal or focus handling.
 import '@mintplayer/web-components/select';
+// The editor's start/end fields. It owns TWO overlays of its own, which is why
+// the host's Escape handling has to defer to the dismiss stack — see
+// handleKeyDown. Its `value` is a real Date, so no string parsing on save.
+import '@mintplayer/web-components/datetime-picker';
 
 /**
  * MpScheduler Web Component
@@ -945,19 +949,22 @@ export class MpScheduler extends LitElement {
     this.tryOpenEventEditor(event);
   }
 
-  /** Date → value for `<input type="datetime-local">` (local time, minutes). */
-  private toLocalInputValue(date: Date): string {
-    const pad = (n: number) => String(n).padStart(2, '0');
-    return (
-      `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}` +
-      `T${pad(date.getHours())}:${pad(date.getMinutes())}`
-    );
+  /**
+   * Minute granularity for the editor's time lists, derived from the grid's own
+   * `slotDuration` so the two agree — picking a time the grid cannot represent
+   * would be its own small lie. Clamped to the picker's supported steps.
+   */
+  private pickerStep(): 1 | 5 | 10 | 15 | 30 | 60 {
+    const minutes = Math.round((this.stateManager.getState().options.slotDuration ?? 1800) / 60);
+    const supported = [1, 5, 10, 15, 30, 60] as const;
+    return supported.find((step) => step >= minutes) ?? 60;
   }
 
   private renderEventEditor(): TemplateResult | typeof nothing {
     const event = this.editorEventId ? this.getEventById(this.editorEventId) : null;
     if (!event) return nothing;
 
+    const { options } = this.stateManager.getState();
     const canFields = this.can('editEvent', event);
     const canStart = this.can('moveEvent', event) || this.can('resizeEventStart', event);
     const canEnd = this.can('moveEvent', event) || this.can('resizeEventEnd', event);
@@ -995,21 +1002,29 @@ export class MpScheduler extends LitElement {
         </label>
         <label class="editor-field">
           <span>${this.msg('editorStartLabel')}</span>
-          <input
-            type="datetime-local"
-            class="form-control form-control-sm editor-input editor-start-input"
-            .value=${this.toLocalInputValue(event.start)}
+          <mp-datetime-picker
+            class="editor-input editor-start-input"
+            .value=${event.start}
             ?disabled=${!canStart}
-          />
+            input-label=${this.msg('editorStartLabel')}
+            locale=${options.locale ?? nothing}
+            first-day-of-week=${options.firstDayOfWeek ?? 1}
+            .hour12=${options.timeFormat === '12h'}
+            .step=${this.pickerStep()}
+          ></mp-datetime-picker>
         </label>
         <label class="editor-field">
           <span>${this.msg('editorEndLabel')}</span>
-          <input
-            type="datetime-local"
-            class="form-control form-control-sm editor-input editor-end-input"
-            .value=${this.toLocalInputValue(event.end)}
+          <mp-datetime-picker
+            class="editor-input editor-end-input"
+            .value=${event.end}
             ?disabled=${!canEnd}
-          />
+            input-label=${this.msg('editorEndLabel')}
+            locale=${options.locale ?? nothing}
+            first-day-of-week=${options.firstDayOfWeek ?? 1}
+            .hour12=${options.timeFormat === '12h'}
+            .step=${this.pickerStep()}
+          ></mp-datetime-picker>
         </label>
         <label class="editor-field">
           <span>${this.msg('editorColorLabel')}</span>
@@ -1073,6 +1088,17 @@ export class MpScheduler extends LitElement {
     if (swatch) swatch.disabled = inherit;
   }
 
+  /** One of the editor's two `<mp-datetime-picker>`s, by class. */
+  private editorPicker(
+    selector: string,
+  ): (HTMLElement & { value: Date | null; disabled: boolean }) | null {
+    return (
+      this.shadowRoot?.querySelector<HTMLElement & { value: Date | null; disabled: boolean }>(
+        `mp-datetime-picker${selector}`,
+      ) ?? null
+    );
+  }
+
   /**
    * The editor's inherit checkbox. `<mp-checkbox>` rather than a bare input so
    * it carries Bootstrap's `.form-check` styling into this shadow root; its
@@ -1117,13 +1143,15 @@ export class MpScheduler extends LitElement {
       updated.title = title;
     }
 
-    const startInput = read('.editor-start-input');
-    const endInput = read('.editor-end-input');
-    if (startInput && !startInput.disabled && startInput.value) {
-      updated.start = new Date(startInput.value);
+    // `<mp-datetime-picker>`: `value` is a real `Date | null`, so there is no
+    // string parsing (and no timezone guesswork) on this path at all.
+    const startPicker = this.editorPicker('.editor-start-input');
+    const endPicker = this.editorPicker('.editor-end-input');
+    if (startPicker && !startPicker.disabled && startPicker.value) {
+      updated.start = startPicker.value;
     }
-    if (endInput && !endInput.disabled && endInput.value) {
-      updated.end = new Date(endInput.value);
+    if (endPicker && !endPicker.disabled && endPicker.value) {
+      updated.end = endPicker.value;
     }
     if (
       isNaN(updated.start.getTime()) ||
@@ -2048,16 +2076,24 @@ export class MpScheduler extends LitElement {
     // document-level one, so without this the selection would be cleared and the
     // popover left open.
     if (this.dayPopover.isOpen) {
-      if (e.key === 'Escape') {
+      if (e.key === 'Escape' && this.dayPopover.isTopmost) {
         e.preventDefault();
         e.stopPropagation();
         this.closeDayPopover();
       }
       return;
     }
-    // Same rule for the event editor.
+    // Same rule for the event editor — and it is the one that needs the
+    // `isTopmost` guard: the editor CONTAINS `<mp-datetime-picker>`s, each of
+    // which opens its own overlay. Those push a dismiss frame on top of ours,
+    // so an Escape aimed at an open calendar belongs to the calendar. Without
+    // the guard this handler — which runs first, being on the element rather
+    // than the document — would close the whole editor under it and throw away
+    // the user's unsaved edits. Declining silently (no preventDefault, no
+    // stopPropagation) is what lets the event reach the document-level handler
+    // that arbitrates the stack.
     if (this.eventEditorOverlay.isOpen) {
-      if (e.key === 'Escape') {
+      if (e.key === 'Escape' && this.eventEditorOverlay.isTopmost) {
         e.preventDefault();
         e.stopPropagation();
         this.closeEventEditor();

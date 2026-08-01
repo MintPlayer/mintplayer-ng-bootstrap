@@ -1398,20 +1398,50 @@ different remedies apply, and which one is right turns on whether the control ow
   **no OverlayController**, so nesting it inside a popover cannot interfere with that
   popover's dismissal, focus return or Escape handling. `value` becomes a host property;
   nothing else changes.
-- **D12.9b — REJECTED for the time fields: `mp-datetime-picker`.** It runs **two**
-  `OverlayController`s of its own (date and time popups). The editor is *itself* an
-  overlay, and the scheduler's host-level `keydown` closes the whole editor on Escape
-  whenever it is open — so Escape meant to dismiss a nested calendar would destroy the
-  editor and the user's unsaved edits, and an outside-click on that calendar could do the
-  same. Nesting an overlay-owning control inside an overlay needs a deliberate arbitration
-  design; it is not a styling change and does not belong in a styling pass.
-- **D12.9c — so the remaining native inputs get the styles instead, not a new component.**
+- **D12.9b — the time fields are `<mp-datetime-picker>`, once the arbitration was
+  designed.** Initially deferred (see D12.9d): it runs **two** `OverlayController`s of its
+  own, the editor is *itself* an overlay, and the scheduler's host-level `keydown` closed
+  the whole editor on Escape whenever it was open — so an Escape meant for a nested
+  calendar destroyed the editor and the user's unsaved edits. That is a real defect, not a
+  reason to avoid the component, and the mechanism to fix it already existed.
+
+  **The rule: a host that handles Escape itself must ask the dismiss stack whether the
+  Escape is actually its own.** `OverlayController` already gates its *own* document-level
+  handler on `isTopOfStack()`; the scheduler's handler bypassed the stack entirely. The
+  private check is now exposed as **`OverlayController.isTopmost`**, and both scheduler
+  gates consult it. When it is false the handler declines *silently* — no `preventDefault`,
+  no `stopPropagation` — which is what lets the event continue to the document-level
+  listener belonging to the layer that owns it. A host handler runs first precisely because
+  it is on the element rather than the document, so this ordering is the whole problem.
+
+  The outside-click half needed nothing: `OverlayController`'s dismissal tests
+  `composedPath().includes(this.host)`, and the host is the *scheduler*, so no click
+  anywhere inside it (popups included) can close the editor. The picker's own overlays use
+  the same rule against *their* host, so clicking the editor around them closes them
+  correctly.
+
+  Wiring: `value` is a real `Date`, so the editor no longer round-trips times through
+  strings — `toLocalInputValue` is deleted. `locale`, `first-day-of-week`, `hour12` (from
+  `timeFormat`) and `step` (derived from `slotDuration`, clamped to the picker's supported
+  steps) are passed through so the picker agrees with the grid it is editing. The popups
+  are `position: fixed`, so the editor's `overflow-y: auto` cannot clip them — but that
+  also means **nothing above them may gain `transform`/`filter`/`contain`**, the same
+  constraint §8.3 records for the day popover.
+- **D12.9d — sequencing note, kept deliberately.** D12.9b shipped as a *rejection* first,
+  on the grounds that overlay-in-overlay arbitration is a design change and does not belong
+  in a styling pass. That was the right call for a styling pass and the wrong end state:
+  asked for directly, the arbitration turned out to be ~15 lines plus one public getter,
+  because the dismiss stack was built for exactly this. Recorded rather than rewritten,
+  because "the component is fine, the host's Escape handling was wrong" is the part worth
+  remembering — and any future nested overlay in this component now works for free.
+
+- **D12.9c — the remaining native inputs get the styles instead, not a new component.**
   New shared `_styles/form-control.styles.scss`, a pass-through to Bootstrap's
   `forms/form-control` module in the exact shape of the existing `form-check` and
   `form-select` sheets, added to the scheduler's `static styles` (FIRST, so the
-  component's own rules win any specificity tie). The title, both `datetime-local` fields,
-  the colour swatch (`.form-control-color`, whose `::-webkit-color-swatch` rules are
-  otherwise unreachable) and the timeline's inline rename input now carry `.form-control`
+  component's own rules win any specificity tie). The title field, the colour swatch
+  (`.form-control-color`, whose `::-webkit-color-swatch` rules are otherwise unreachable)
+  and the timeline's inline rename input now carry `.form-control`
   and get Bootstrap's border, focus ring and disabled appearance for free — with no new
   runtime dependency and no interaction risk. Every selector in the generated sheet is
   class-scoped, so it cannot affect anything in the grid that does not opt in.

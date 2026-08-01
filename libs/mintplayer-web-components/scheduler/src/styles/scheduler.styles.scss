@@ -846,6 +846,16 @@ $z-event-selected: 2;    // selected event: its straddling handles must win
   width: 40px;
 }
 
+/* The start/end fields are `<mp-datetime-picker>`s: input-group, popups and
+   Bootstrap styling all live in their own shadow roots, so only the width they
+   take in the row is ours to set. Their popups are `position: fixed` and
+   escape this panel's bounds by design — do not add overflow/transform to the
+   editor, which would clip them or become their containing block. */
+.scheduler-event-editor mp-datetime-picker.editor-input {
+  flex: 1 1 auto;
+  display: block;
+}
+
 /* "Inherit from resource": the checkbox owns the colour's two states, so the
    swatch above is disabled while it is checked. Indented under the swatch it
    governs — past the 40px reserved for the other fields' names.

@@ -2131,8 +2131,11 @@ describe('mp-scheduler — built-in event editor (M23)', () => {
     await openViaF2();
     const title = editor()!.querySelector<HTMLInputElement>('.editor-title-input')!;
     title.value = 'Renamed';
-    const end = editor()!.querySelector<HTMLInputElement>('.editor-end-input')!;
-    end.value = '2026-05-12T11:30';
+    // <mp-datetime-picker>: `value` is a Date, so no string round-trip.
+    const end = editor()!.querySelector<HTMLElement & { value: Date | null }>(
+      'mp-datetime-picker.editor-end-input',
+    )!;
+    end.value = new Date(2026, 4, 12, 11, 30);
     let detail: { event: { title: string; end: Date }; oldEvent: { title: string } } | null = null;
     el.addEventListener('event-update', (e) => {
       detail = (e as CustomEvent).detail;
@@ -2150,8 +2153,10 @@ describe('mp-scheduler — built-in event editor (M23)', () => {
   it('an inverted range is refused with an inline error and no emit', async () => {
     await mountWeek();
     await openViaF2();
-    const end = editor()!.querySelector<HTMLInputElement>('.editor-end-input')!;
-    end.value = '2026-05-12T08:00'; // before the 09:00 start
+    const end = editor()!.querySelector<HTMLElement & { value: Date | null }>(
+      'mp-datetime-picker.editor-end-input',
+    )!;
+    end.value = new Date(2026, 4, 12, 8, 0); // before the 09:00 start
     let emitted = false;
     el.addEventListener('event-update', () => {
       emitted = true;
@@ -2183,11 +2188,14 @@ describe('mp-scheduler — built-in event editor (M23)', () => {
     await openViaF2();
     // Title stays editable (editEvent default true); time fields are locked.
     expect(editor()!.querySelector<HTMLInputElement>('.editor-title-input')!.disabled).toBe(false);
-    expect(editor()!.querySelector<HTMLInputElement>('.editor-start-input')!.disabled).toBe(true);
-    expect(editor()!.querySelector<HTMLInputElement>('.editor-end-input')!.disabled).toBe(true);
+    const picker = (cls: string) =>
+      editor()!.querySelector<HTMLElement & { value: Date | null; disabled: boolean }>(
+        `mp-datetime-picker.${cls}`,
+      )!;
+    expect(picker('editor-start-input').disabled).toBe(true);
+    expect(picker('editor-end-input').disabled).toBe(true);
     // Even a forced value on a disabled input must not survive Save.
-    const end = editor()!.querySelector<HTMLInputElement>('.editor-end-input')!;
-    end.value = '2026-05-12T15:00';
+    picker('editor-end-input').value = new Date(2026, 4, 12, 15, 0);
     let detail: { event: { end: Date } } | null = null;
     el.addEventListener('event-update', (e) => {
       detail = (e as CustomEvent).detail;
@@ -2255,6 +2263,37 @@ describe('mp-scheduler — built-in event editor (M23)', () => {
     (editor()!.querySelector('.editor-action.primary') as HTMLElement).click();
     await settle();
     expect('color' in detail!.event).toBe(false);
+  });
+
+  /**
+   * The editor CONTAINS overlays (each <mp-datetime-picker> opens its own). The
+   * scheduler's Escape handler sits on the host, so it runs BEFORE any
+   * document-level one — without deferring to the dismiss stack it would close
+   * the whole editor, and the user's unsaved edits with it, when they meant to
+   * dismiss a calendar.
+   */
+  it('Escape closes a nested picker popup, not the editor', async () => {
+    await mountWeek();
+    await openViaF2();
+    const picker = editor()!.querySelector<HTMLElement & { openDate?: () => Promise<void> }>(
+      'mp-datetime-picker.editor-start-input',
+    )!;
+    // Open the date popup through the picker's own trigger, as a user would.
+    const trigger = picker.shadowRoot!.querySelector<HTMLElement>('button.date')!;
+    trigger.click();
+    await settle();
+    expect(picker.getAttribute('data-open')).toBe('date');
+
+    // First Escape: the calendar owns it — the editor must survive.
+    dispatchKey(el, 'Escape');
+    await settle();
+    expect(editor()).not.toBeNull();
+    expect(picker.getAttribute('data-open')).toBeNull();
+
+    // Second Escape: nothing is on top of the editor now, so it closes.
+    dispatchKey(el, 'Escape');
+    await settle();
+    expect(editor()).toBeNull();
   });
 
   it('eventEditor=false disables every opener while event-dblclick keeps firing', async () => {

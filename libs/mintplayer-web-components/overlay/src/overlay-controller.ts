@@ -214,6 +214,22 @@ export class OverlayController implements ReactiveController {
     return this._open;
   }
 
+  /**
+   * Whether this overlay is the top-most dismissible layer — i.e. whether an
+   * Escape belongs to IT rather than to something opened on top of it.
+   *
+   * The controller already applies this to its own document-level Escape
+   * handler. It is public because a host that ALSO handles Escape itself must
+   * ask the same question: such a handler sits on the element, so it runs
+   * before any document-level one, and would otherwise dismiss itself out from
+   * under a nested overlay it contains (an editor closing when the user meant
+   * to close the date picker inside it). Decline when this is false, and do not
+   * stop propagation, so the event still reaches the layer that owns it.
+   */
+  get isTopmost(): boolean {
+    return this.isTopOfStack();
+  }
+
   async open(): Promise<void> {
     if (this._open) return;
     this._open = true;

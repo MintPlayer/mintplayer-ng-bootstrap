@@ -929,3 +929,89 @@ test.describe('scheduler — resource column resize (R15)', () => {
     expect(Math.abs(persisted - widened)).toBeLessThan(2);
   });
 });
+
+test.describe('scheduler — nested datetime picker in the editor (R20)', () => {
+  test('Escape dismisses the calendar it was aimed at, not the editor around it', async ({
+    page,
+  }) => {
+    await loadSampleWeek(page);
+    await showSlot(page, 2, 24);
+    const box = await schedulerRoot(page).evaluate((sched) => {
+      const ev = Array.from(
+        sched.shadowRoot!.querySelectorAll<HTMLElement>('.scheduler-event:not(.preview)'),
+      ).find((e) => e.textContent!.includes('Lunch'));
+      if (!ev) throw new Error('no Lunch event');
+      ev.scrollIntoView({ block: 'center', behavior: 'instant' });
+      const r = ev.getBoundingClientRect();
+      return { x: r.x + r.width / 2, y: r.y + Math.min(r.height / 2, 20) };
+    });
+    await page.mouse.dblclick(box.x, box.y);
+
+    await expect
+      .poll(() =>
+        schedulerRoot(page).evaluate(
+          (sched) => !!sched.shadowRoot!.querySelector('.scheduler-event-editor'),
+        ),
+      )
+      .toBe(true);
+
+    // The start field is an <mp-datetime-picker>, and its value came across as
+    // a real Date — the editor no longer round-trips times through strings.
+    expect(
+      await schedulerRoot(page).evaluate(
+        (sched) =>
+          (
+            sched.shadowRoot!.querySelector(
+              'mp-datetime-picker.editor-start-input',
+            ) as HTMLElement & { value: Date | null }
+          ).value instanceof Date,
+      ),
+    ).toBe(true);
+
+    // Open its calendar through the picker's own trigger button, two shadow
+    // roots deep. Playwright's CSS engine pierces open shadow roots.
+    await page.locator('mp-datetime-picker.editor-start-input button.date').click();
+    await expect
+      .poll(() =>
+        schedulerRoot(page).evaluate(
+          (sched) =>
+            sched
+              .shadowRoot!.querySelector('mp-datetime-picker.editor-start-input')!
+              .getAttribute('data-open'),
+        ),
+      )
+      .toBe('date');
+
+    // THE POINT: the calendar pushed a dismiss frame on top of the editor's, so
+    // this Escape belongs to the calendar. The editor — and the user's unsaved
+    // edits — must survive it.
+    await page.keyboard.press('Escape');
+    await expect
+      .poll(() =>
+        schedulerRoot(page).evaluate(
+          (sched) =>
+            sched
+              .shadowRoot!.querySelector('mp-datetime-picker.editor-start-input')!
+              .getAttribute('data-open'),
+        ),
+      )
+      .toBeNull();
+    expect(
+      await schedulerRoot(page).evaluate(
+        (sched) => !!sched.shadowRoot!.querySelector('.scheduler-event-editor'),
+      ),
+    ).toBe(true);
+
+    await expectNoSeriousViolations(page, 'the event editor with a datetime picker');
+
+    // With nothing on top of it any more, the next Escape closes the editor.
+    await page.keyboard.press('Escape');
+    await expect
+      .poll(() =>
+        schedulerRoot(page).evaluate(
+          (sched) => !!sched.shadowRoot!.querySelector('.scheduler-event-editor'),
+        ),
+      )
+      .toBe(false);
+  });
+});
