@@ -18,8 +18,12 @@ export class DatetimePickerComponent {
   readonly reactive = new FormControl<Date | null>(null);
 
   readonly boundsValue = model<Date | null>(null);
-  readonly boundsMin = new Date(2026, 0, 1);
-  readonly boundsMax = new Date(2026, 11, 31);
+  // These are DATETIME bounds, so the time half matters: now that the picker
+  // forwards them to its time list for the day being edited, a bare
+  // `new Date(2026, 11, 31)` would be midnight and leave 00:00 as the only
+  // selectable slot on 31 December.
+  readonly boundsMin = new Date(2026, 0, 1, 0, 0);
+  readonly boundsMax = new Date(2026, 11, 31, 23, 59);
 
   readonly weekendsValue = model<Date | null>(null);
   readonly weekendsDisabled = (d: Date) => {

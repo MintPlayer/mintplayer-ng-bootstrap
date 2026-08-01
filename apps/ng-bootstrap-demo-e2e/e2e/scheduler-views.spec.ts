@@ -628,23 +628,67 @@ test.describe('scheduler — drag-move between resources (R13)', () => {
 
     await page.mouse.move(from.x + from.w / 2, from.y + from.h / 2);
     await page.mouse.down();
+    // The press has to be observed before the moves arrive: on a warm run the
+    // whole gesture is delivered inside one frame, the drag never arms, and no
+    // ghost is ever rendered. This test failed about one run in four for that
+    // reason, and every run after the first in a repeated pass.
+    await page.waitForTimeout(50);
     await page.mouse.move(target.x, (from.y + target.y) / 2, { steps: 5 });
-    await page.mouse.move(target.x, target.y, { steps: 5 });
+    await page.waitForTimeout(50);
+    // Re-read the target row's position INSIDE the drag. A drag near a
+    // container edge auto-scrolls the grid, so a rect measured before
+    // `mouse.down()` can name a row that has since moved out from under the
+    // pointer — which is how this landed back on the source row.
+    const targetY = await schedulerRoot(page).evaluate((sched, title) => {
+      const row = Array.from(
+        sched.shadowRoot!.querySelectorAll<HTMLElement>(
+          '.scheduler-timeline-row:not(.group):not(.unassigned)',
+        ),
+      ).find((r) => r.querySelector('.resource-title')?.textContent?.trim() === title)!;
+      const rect = row.getBoundingClientRect();
+      return rect.y + rect.height / 2;
+    }, target.title);
+    await page.mouse.move(target.x, targetY, { steps: 5 });
 
     // Mid-drag: the ghost sits in the TARGET row, and only that row is marked.
-    const mid = await schedulerRoot(page).evaluate((sched) => {
-      const ghost = sched.shadowRoot!.querySelector('.scheduler-timeline-event.preview');
-      const ghostRow = ghost?.closest('.scheduler-timeline-row');
-      return {
-        ghostRowTitle:
-          ghostRow?.querySelector('.resource-title')?.textContent?.trim() ?? null,
-        dropTargets: sched.shadowRoot!.querySelectorAll('.scheduler-timeline-row.drop-target')
-          .length,
-        greyedOutsideTarget: Array.from(
-          sched.shadowRoot!.querySelectorAll('.scheduler-timeline-slot.greyed'),
-        ).some((slot) => !slot.closest('.drop-target')),
-      };
-    });
+    //
+    // Read on a settle rather than immediately. The ghost is rendered a frame
+    // behind the pointer and moves row by row as the gesture crosses them, so
+    // a bare read caught it either absent or still in the SOURCE row — the
+    // cause of this test's flakiness, not anything about the scheduler. The
+    // poll gives up after 2s and returns whatever it last saw, so a genuine
+    // regression still fails on the assertion below with a real row name.
+    const mid = await schedulerRoot(page).evaluate(
+      (sched, expected) =>
+        new Promise<{
+          ghostRowTitle: string | null;
+          dropTargets: number;
+          greyedOutsideTarget: boolean;
+        }>((resolve) => {
+          const deadline = performance.now() + 2000;
+          const read = () => {
+            const ghost = sched.shadowRoot!.querySelector('.scheduler-timeline-event.preview');
+            const ghostRow = ghost?.closest('.scheduler-timeline-row');
+            return {
+              ghostRowTitle:
+                ghostRow?.querySelector('.resource-title')?.textContent?.trim() ?? null,
+              dropTargets: sched.shadowRoot!.querySelectorAll(
+                '.scheduler-timeline-row.drop-target',
+              ).length,
+              greyedOutsideTarget: Array.from(
+                sched.shadowRoot!.querySelectorAll('.scheduler-timeline-slot.greyed'),
+              ).some((slot) => !slot.closest('.drop-target')),
+            };
+          };
+          const poll = () => {
+            const state = read();
+            if (state.ghostRowTitle === expected || performance.now() > deadline) resolve(state);
+            else requestAnimationFrame(poll);
+          };
+          poll();
+        }),
+      target.title,
+    );
     await page.mouse.up();
 
     expect(mid.ghostRowTitle).toBe(target.title);

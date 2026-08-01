@@ -1682,8 +1682,8 @@ drift, since "duration preserved" means absolute milliseconds.
 
 §12.11 ended with three open items: the commit-time inversion (B35), the error/announcement
 defects (B33/B34), and six shared-picker gaps. A second three-probe investigation decided
-each. **D12.13 and D12.14 shipped as M28 and M29**; D12.15 remains deliberately unbuilt as
-M30, a separate PR (it changes shared components every picker consumer uses).
+each. **All three shipped**: D12.13 as M28, D12.14 as M29, and D12.15 as M30 — the last
+folded into this PR by user decision, having been triaged as a separate one.
 
 #### D12.13 — collapse `resizeEventStart` + `resizeEventEnd` into one `resizeEvent`
 
@@ -1973,3 +1973,54 @@ in CLAUDE.md, since the repo previously answered this question three different w
 Angular needed explicit `invalid`/`errorText` inputs; **React and Vue needed none** —
 `@lit/react` routes prototype-accessor props as properties and Vue's `v-bind="$attrs"`
 reaches both. That is D12.15's correction holding in practice.
+
+### 12.14 As built — M30 (the shared picker), folded in on request
+
+D12.15 was triaged as a follow-up PR because the scheduler passes no bounds and every item
+touches components other consumers use. The user chose to fold it into #396 anyway, so it
+ships here. The four items really were one change, in this order:
+
+**The API had to move first (BREAKING).** `mp-time-list`'s `min`/`max: Date` are now
+`minMinutes`/`maxMinutes: number | null`. The old pair *read* like datetime bounds but were
+compared time-of-day only, and that ambiguity is what blocked the forward: teaching the list
+about dates would have silently disabled `mp-timepicker`'s entire list, since its consumers
+legitimately pass `new Date(2020, 0, 1, 18, 0)` to mean "18:00". A `Date` can be mistaken
+for a datetime bound; `minMinutes: 480` cannot. Conversion goes through a new exported
+`minutesOfDay()`, which exists so each composite decides *at the call site* whether its
+bound is a time-of-day (`mp-timepicker`: always convert) or a datetime
+(`mp-datetime-picker`: convert only on the bound's own day).
+
+**Then the forward.** `timeBounds()` narrows the clock only on a bound's own day, so an end
+on a later day keeps all 24 hours — what both Google Calendar and Outlook do, and the
+nuance §12.11/F3 identified. The day is `value ?? today`, which is precisely what
+`updateTimePart` composes a picked time with when no date is set, so it is not a guess.
+
+**The keyboard fix was mandatory, not optional.** `mp-time-list` used native `disabled`
+where `mp-calendar` — one popup away — uses `aria-disabled` and keeps the cell traversable.
+The moment bounds reached the list, `RovingFocus.moveTo` refused the disabled target *after*
+`preventDefault()`, so PageUp/PageDown became a swallowed keypress. Out-of-range slots now
+stay in the roving order (`isDisabled: () => false`) and selection stays refused in
+`selectMinutes`, which is where that rule belongs.
+
+**And the escape hatches.** `Today` / `Now` wrote their value with no bound check at all.
+They are now `disabled` rather than silently ignored — a control that does nothing when
+pressed is the worse failure. `Now` is gated on the *day's derived range*, since it writes
+only the time half.
+
+*The regression guard matters more than the feature here.* A naive verbatim forward breaks
+the shipped ng demo invisibly: `boundsMax = new Date(2026, 11, 31)` is midnight, so every
+slot but 00:00 would be disabled on every day of 2026. No existing spec or e2e would have
+caught it. There is now one that asserts a date-only `max` does not collapse other days,
+and the demo's bounds carry real times so the section demonstrates the per-day narrowing.
+
+**#4 was left alone, as decided** — a cell that is both `aria-selected` and `aria-disabled`
+is legal ARIA and the honest answer, and clamping would fight Angular's CVA and Vue's
+`v-model`. Its one real half, the time list losing its tab stop on a disabled selection,
+is fixed by the roving change above.
+
+**Migration:** only direct consumers of `mp-time-list` are affected (`BsTimeList` in
+React/Vue; there is no Angular wrapper). `min={date}` becomes `minMinutes={480}`. React's
+typed props turn this into a compile error; **Vue's `$attrs` does not**, so a `:min` there
+quietly stops applying — the single place this break is silent, and a consequence of the
+repo-wide Vue wrapper idiom rather than of this change. `mp-timepicker` and `mp-datepicker`
+consumers are untouched: both still take `Date` bounds and convert internally.

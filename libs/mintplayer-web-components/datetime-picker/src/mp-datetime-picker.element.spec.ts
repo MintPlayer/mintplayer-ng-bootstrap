@@ -220,3 +220,101 @@ describe('mp-datetime-picker — popups (Phase 6)', () => {
     expect(el.value!.getDate()).toBe(14);
   });
 });
+
+/**
+ * D12.15 #1/#2 — this element forwards `min`/`max` to its calendar but used to
+ * forward NOTHING to its time list, alone among the three pickers. The fix is
+ * not a verbatim forward: `mp-time-list` compares time-of-day only, so the
+ * bound has to be derived per day.
+ */
+describe('mp-datetime-picker — time-list bounds are derived per day', () => {
+  let el: MpDatetimePickerElement;
+  afterEach(() => el?.remove());
+
+  const timeList = () =>
+    shadow(el).querySelector<HTMLElement & {
+      minMinutes: number | null;
+      maxMinutes: number | null;
+    }>('mp-time-list')!;
+
+  it('a bound constrains the clock on its OWN day', async () => {
+    el = await mount((host) => {
+      host.min = new Date(2026, 0, 10, 8, 30);
+      host.setValue(new Date(2026, 0, 10, 12, 0), false);
+    });
+    expect(timeList().minMinutes).toBe(8 * 60 + 30);
+  });
+
+  it('…and not on any other day', async () => {
+    el = await mount((host) => {
+      host.min = new Date(2026, 0, 10, 8, 30);
+      // Editing a LATER day: the whole 24 hours are legal there.
+      host.setValue(new Date(2026, 0, 11, 12, 0), false);
+    });
+    expect(timeList().minMinutes).toBeNull();
+  });
+
+  /**
+   * The regression guard for the naive fix. A date-only `max` is MIDNIGHT, so
+   * forwarding it verbatim disables every slot but 00:00 — on every day of the
+   * year, including days nowhere near the bound. The shipped ng demo used
+   * exactly this shape, and no spec or e2e would have caught it.
+   */
+  it('a date-only max does not collapse every other day to 00:00', async () => {
+    el = await mount((host) => {
+      host.max = new Date(2026, 11, 31); // midnight
+      host.setValue(new Date(2026, 5, 15, 14, 0), false);
+    });
+    expect(timeList().maxMinutes).toBeNull();
+  });
+
+  it('with no value yet, the bound follows TODAY — the day a pick would land on', async () => {
+    const today = new Date();
+    el = await mount((host) => {
+      host.min = new Date(today.getFullYear(), today.getMonth(), today.getDate(), 9, 0);
+    });
+    expect(timeList().minMinutes).toBe(9 * 60);
+  });
+});
+
+/** D12.15 #3 — the footer buttons escaped every bound the grid below enforced. */
+describe('mp-datetime-picker — Today / Now respect the bounds', () => {
+  let el: MpDatetimePickerElement;
+  afterEach(() => el?.remove());
+
+  const footerButton = (popup: 'date' | 'time') =>
+    shadow(el).querySelector<HTMLButtonElement>(`.popup-${popup} .popup-footer button`)!;
+
+  it('Today is disabled when today falls outside min/max', async () => {
+    el = await mount((host) => {
+      host.min = new Date(2099, 0, 1);
+    });
+    expect(footerButton('date').disabled).toBe(true);
+  });
+
+  it('Today is enabled when today is in range', async () => {
+    el = await mount((host) => {
+      host.min = new Date(2000, 0, 1);
+      host.max = new Date(2099, 0, 1);
+    });
+    expect(footerButton('date').disabled).toBe(false);
+  });
+
+  it('Now is disabled when the current time is outside the day’s derived range', async () => {
+    const today = new Date();
+    el = await mount((host) => {
+      // A min later today than "now" can possibly be.
+      host.min = new Date(today.getFullYear(), today.getMonth(), today.getDate(), 23, 59);
+    });
+    expect(footerButton('time').disabled).toBe(true);
+  });
+
+  it('a disabled Today writes nothing when clicked anyway', async () => {
+    el = await mount((host) => {
+      host.min = new Date(2099, 0, 1);
+    });
+    footerButton('date').click();
+    await flush(el);
+    expect(el.value).toBeNull();
+  });
+});

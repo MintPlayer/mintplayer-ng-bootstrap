@@ -2,7 +2,12 @@ import { LitElement, html, nothing, type TemplateResult } from 'lit';
 import { query } from 'lit/decorators.js';
 import { OverlayController } from '@mintplayer/web-components/overlay';
 import { HostAriaController } from '@mintplayer/web-components/a11y';
-import { MpTimeListElement, type TimeStep, type Hour12Mode } from './mp-time-list.element';
+import {
+  MpTimeListElement,
+  minutesOfDay,
+  type TimeStep,
+  type Hour12Mode,
+} from './mp-time-list.element';
 import { styles } from './mp-timepicker.element.template';
 
 void MpTimeListElement;
@@ -49,6 +54,11 @@ export class MpTimepickerElement extends LitElement {
 
   selectedTime: Date | null = null;
   step: TimeStep = 15;
+  /**
+   * Earliest / latest selectable time. **Time-of-day only** — the date half is
+   * ignored, so `new Date(2020, 0, 1, 18, 0)` simply means "18:00", which is
+   * how this component's consumers have always used it.
+   */
   min: Date | null = null;
   max: Date | null = null;
   hour12: Hour12Mode = 'auto';
@@ -199,8 +209,8 @@ export class MpTimepickerElement extends LitElement {
           <mp-time-list
             .selectedTime="${this.selectedTime}"
             .step="${this.step}"
-            .min="${this.min}"
-            .max="${this.max}"
+            .minMinutes="${minutesOfDay(this.min)}"
+            .maxMinutes="${minutesOfDay(this.max)}"
             .hour12="${this.hour12}"
             .locale="${this.locale}"
             @selected-time-change="${this.onSelectedTimeChange}"

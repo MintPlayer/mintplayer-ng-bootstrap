@@ -707,37 +707,51 @@ lands on the display input) and four on the scheduler (title marked + focused; t
 region does NOT repeat the message; per-field clearing; a refused range focuses into the
 END picker's display input rather than leaving focus on Save).
 
-## M30 — Datetime-picker bounds reach the time list. SEPARATE PR — do NOT do it here.
+## M30 — Datetime-picker bounds reach the time list. DONE (folded into this PR by request).
 
 PRD §12.12/D12.15. Four of the six shared-picker gaps are one change: the API, its two
 consumers, the escape hatch it closes and the keyboard defect it would otherwise create.
-Kept out of this PR because the scheduler passes no bounds, so it gains nothing here, and
-each item has its own blast radius across every picker consumer.
+Originally triaged as a separate PR — the scheduler passes no bounds, so it gains nothing
+here, and each item has its own blast radius across every picker consumer. **The user chose
+to fold it in anyway**, so it ships in #396.
 
-- [ ] **#2 API first**: `mp-time-list` bounds become `minMinutes`/`maxMinutes:
-      number | null` (time-of-day, explicit). `mp-datetime-picker` derives them per render
-      for the day it is editing. The ONLY option that cannot break `mp-timepicker`, whose
-      consumers legitimately pass `new Date(2020,0,1,18,0)` meaning "18:00" — teaching the
-      list about dates would silently disable its entire list. The `number` type makes the
-      confusion structurally impossible.
-- [ ] **#1**: forward the derived bounds. A NAIVE forward visibly breaks the shipped ng
-      demo (`boundsMax = new Date(2026,11,31)` is midnight → every slot but 00:00 disabled
-      all year) and no spec or e2e would catch it — add one that would.
-- [ ] **#5, mandatory with #1**: `mp-time-list` moves from native `disabled` to
-      `aria-disabled` + roving (matching `mp-calendar` and the APG). Three coordinated
-      edits, because `RovingFocus` skips both by default. Without it, bounds turn
-      PageUp/PageDown into a swallowed keypress.
-- [ ] **#3**: `Today` / `Now` must respect bounds — disable the buttons rather than
-      silently no-op.
-- [ ] Fix the demo's `boundsMax` to `new Date(2026, 11, 31, 23, 59)` if it means "all of
-      2026".
-- [ ] **#4 — LEAVE, deliberately.** A cell that is both `aria-selected` and
-      `aria-disabled` is legal ARIA and the honest answer; clamping would fight Angular's
-      CVA and Vue's `v-model`. Its one real half (the time list losing its tab stop on a
-      disabled selection) is fixed by #5.
-- [ ] **#6 — text only, already done in this PR.** The React claim was FALSE (`@lit/react`
-      routes those props automatically); Vue's kebab-case gap is a repo-wide wrapper idiom
-      question. Remaining code items: a bounds demo section for the React and Vue pages.
+- [x] **#2 API first** (BREAKING): `mp-time-list`'s `min`/`max: Date` are now
+      `minMinutes`/`maxMinutes: number | null`, with `min-minutes`/`max-minutes`
+      attributes. `mp-datetime-picker` derives them per render. This is the only option
+      that cannot break `mp-timepicker`, whose consumers legitimately pass
+      `new Date(2020,0,1,18,0)` meaning "18:00"; it converts through the new exported
+      `minutesOfDay()` helper, which exists so each composite has to *decide* whether its
+      bound is a time-of-day or a datetime at the call site.
+- [x] **#1**: `timeBounds()` applies a bound only on its own day, so an end on a later day
+      keeps all 24 hours — Google Calendar's and Outlook's behaviour. The day is
+      `value ?? today`, which is exactly what `updateTimePart` composes a picked time with,
+      not a guess.
+- [x] **#5, mandatory with #1**: native `disabled` → `aria-disabled` plus
+      `isDisabled: () => false` on the RovingFocus, so out-of-range slots stay traversable
+      (APG, and consistent with `mp-calendar` one popup away). Selection stays refused in
+      `selectMinutes`. The `:not([disabled])` in `updated()` went with it.
+- [x] **#3**: `Today` / `Now` are now `disabled` when out of range, rather than writing
+      the value regardless — a footer button was escaping a constraint the grid one layer
+      below enforced. `Now` is checked against the *day's derived range*, since it writes
+      only the time half.
+- [x] The demo's bounds now carry times (`09:00` … `17:00`), which also makes the section
+      demonstrate the new per-day narrowing instead of only the calendar bound.
+- [x] **#4 — LEFT, deliberately**, as decided. Its one real half (the time list losing its
+      tab stop on a disabled selection) is fixed by #5.
+- [x] **#6**: bounds demo sections added to the React and Vue pages.
+
+**Specs added.** Three on `mp-time-list` (an out-of-range slot is `aria-disabled` but not
+natively disabled; **PageDown across a bound moves instead of being swallowed** — the
+latent dead key, now covered; arrowing onto a disabled slot is allowed while selecting it
+is not) and eight on `mp-datetime-picker` (per-day derivation both ways, Today/Now gating,
+and the **regression guard**: a date-only `max` must NOT collapse every other day to 00:00
+— the exact shape the shipped demo used, which no existing spec or e2e would have caught).
+
+**Migration for consumers of `mp-time-list` directly** (`BsTimeList` in React/Vue; there is
+no Angular wrapper): `min={date}` → `minMinutes={480}`. React's typed props make this a
+compile error; **Vue's `$attrs` will not**, so a `:min` there silently stops applying —
+the one place this break is quiet. `mp-timepicker` and `mp-datepicker` consumers are
+unaffected: both still take `Date` bounds and convert internally.
 
 ---
 
@@ -838,6 +852,21 @@ which produced `PRE-SAVE Jul 30 → MOUSEDOWN Jul 30 → CLICK Jul 28` — the v
 - The multi-day-ghost test (phase 1) is **timing-sensitive under parallel workers**; it has
   failed once and passed alone and on a full re-run. Not a regression — check before
   chasing it.
+- **A cross-row drag must re-read the target row's rect INSIDE the gesture.** The R13
+  drag-move test flaked at roughly one run in four (worse warm — `--repeat-each` made it
+  near-deterministic), and it cost real time because it looks exactly like a regression in
+  whatever you just changed. It is not: it reproduces at HEAD, and a single-run bisect
+  measures noise, so **always characterise a scheduler drag failure with
+  `--repeat-each=6 --workers=1` on the BASELINE before blaming your diff.** Three separate
+  races, all fixed in the test:
+  1. the press must be observed before the moves arrive (`waitForTimeout(50)` after
+     `mouse.down()`), or on a warm run the whole gesture lands in one frame and the drag
+     never arms — no ghost at all;
+  2. the ghost is rendered a frame behind the pointer and moves row by row, so the
+     assertion must poll for it to settle in the target row, not read immediately;
+  3. a drag near a container edge **auto-scrolls the grid**, so a rect measured before
+     `mouse.down()` can name a row that has moved out from under the pointer — re-read it
+     mid-drag. This last one is what actually fixed it (8/8 from 5/8).
 
 ## Demo behaviours that exist for a reason (do not "simplify" them away)
 
