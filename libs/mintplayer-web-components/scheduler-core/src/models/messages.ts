@@ -80,6 +80,12 @@ export interface SchedulerMessages {
   editorStartLabel: string;
   editorEndLabel: string;
   editorColorLabel: string;
+  /**
+   * Checkbox: keep the event's colour derived from its resource instead of
+   * pinning one on the event. Checked whenever the event carries no `color`,
+   * which is the state the whole precedence chain assumes.
+   */
+  editorInheritColor: string;
   editorSave: string;
   editorCancel: string;
   editorDelete: string;
@@ -197,6 +203,7 @@ export const DEFAULT_MESSAGES: SchedulerMessages = {
   editorStartLabel: 'Start',
   editorEndLabel: 'End',
   editorColorLabel: 'Colour',
+  editorInheritColor: 'Inherit from resource',
   editorSave: 'Save',
   editorCancel: 'Cancel',
   editorDelete: 'Delete',

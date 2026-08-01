@@ -2194,6 +2194,61 @@ describe('mp-scheduler — built-in event editor (M23)', () => {
     expect(detail!.event.end.getTime()).toBe(EV.end.getTime());
   });
 
+  /**
+   * Colour is two-state (`color` absent = inherit from the resource) and the
+   * CHECKBOX owns which state, not the swatch's value. Reading the swatch
+   * unconditionally used to convert every inheriting event into an explicitly
+   * coloured one on the first Save — it is seeded with the RESOLVED colour, so
+   * the conversion was invisible until the resource was recoloured or the event
+   * was dragged to another row, where it kept the old colour.
+   */
+  it('Save on an inheriting event does not pin a colour; unchecking inherit does', async () => {
+    await mountWeek({ resources: [{ id: 'alice', title: 'Alice', color: '#fd7e14' }] });
+    (el as unknown as { events: unknown[] }).events = [{ ...EV, resourceId: 'alice' }];
+    await settle();
+    await openViaF2();
+
+    // Inheriting: checked, and the swatch is disabled so there is no gesture
+    // that can silently commit the inherited value.
+    const inherit = () => editor()!.querySelector<HTMLInputElement>('.editor-inherit-input')!;
+    const swatch = () => editor()!.querySelector<HTMLInputElement>('.editor-color-input')!;
+    expect(inherit().checked).toBe(true);
+    expect(swatch().disabled).toBe(true);
+    // It still SHOWS what it inherits.
+    expect(swatch().value).toBe('#fd7e14');
+
+    let detail: { event: { color?: string } } | null = null;
+    el.addEventListener('event-update', (e) => {
+      detail = (e as CustomEvent).detail;
+    });
+    (editor()!.querySelector('.editor-action.primary') as HTMLElement).click();
+    await settle();
+    expect(detail).not.toBeNull();
+    expect('color' in detail!.event).toBe(false);
+
+    // Unchecking enables the swatch and pins whatever it holds.
+    await openViaF2();
+    inherit().checked = false;
+    inherit().dispatchEvent(new Event('change', { bubbles: true }));
+    expect(swatch().disabled).toBe(false);
+    swatch().value = '#123456';
+    detail = null;
+    (editor()!.querySelector('.editor-action.primary') as HTMLElement).click();
+    await settle();
+    expect(detail!.event.color).toBe('#123456');
+
+    // And re-checking it on an explicitly-coloured event CLEARS the override —
+    // the checkbox is the reset, which a colour input alone cannot express.
+    await openViaF2();
+    expect(inherit().checked).toBe(false);
+    inherit().checked = true;
+    inherit().dispatchEvent(new Event('change', { bubbles: true }));
+    detail = null;
+    (editor()!.querySelector('.editor-action.primary') as HTMLElement).click();
+    await settle();
+    expect('color' in detail!.event).toBe(false);
+  });
+
   it('eventEditor=false disables every opener while event-dblclick keeps firing', async () => {
     await mountWeek({ eventEditor: false });
     expect(el.getAttribute('event-editor')).toBe('false');

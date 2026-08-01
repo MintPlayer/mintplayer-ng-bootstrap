@@ -1358,6 +1358,26 @@ consumer.
   demo toggle showing `eventEditor: false` + a consumer-owned editor as the escape-hatch
   recipe. Validation stays minimal in the WC (end > start, required title trimmed
   non-empty) — anything richer is the consumer's `event-update` listener.
+- **D12.8f — the colour field is TWO-STATE, owned by an "Inherit from resource"
+  checkbox** (added after review, and it fixed a defect the first cut shipped with).
+  `event.color` is either absent (inherit) or a string (override), but
+  `<input type="color">` has no empty state and the field is seeded with the *resolved*
+  colour — so reading the swatch unconditionally converted every inheriting event into an
+  explicitly-coloured one on the **first Save, without the user touching anything**. Such
+  an event then stops following its resource forever, most visibly after a cross-row move
+  (§12.3): it keeps the old resource's colour while sitting in the new one's row. The
+  checkbox reflects `!event.color`, disables the swatch while checked (so the inherited
+  value is visible but not committable), and re-checking it CLEARS an existing override —
+  the reset a colour input cannot express on its own.
+
+  Rejected: inferring intent by dirty-checking the swatch against the resolved colour. It
+  cannot distinguish "left alone" from "deliberately pinned to the resource's current
+  colour so it stops following future changes", which is a legitimate thing to want.
+
+  Note for consumers weighing this: where colour means resource IDENTITY, consider not
+  offering the override at all (the timeline's per-resource swatch is the right place to
+  change colours). Where colour is per-event decoration, the checkbox is the honest
+  control. The field is not currently gated by its own option — say so if you want one.
 
 ### 12.9 Phase-2 as-built API surface
 
@@ -1381,7 +1401,7 @@ One list, so consumers and the wrappers do not have to read nine commits.
 `eventInstructionsWithEditor`, `resizeResourceColumn`, `renameResourceLabel`,
 `resourceRenamed`, `eventEditorLabel`, `editorTitleLabel`, `editorStartLabel`,
 `editorEndLabel`, `editorColorLabel`, `editorSave`, `editorCancel`, `editorDelete`,
-`editorInvalidRange`, `editorTitleRequired`.
+`editorInvalidRange`, `editorTitleRequired`, `editorInheritColor`.
 
 **Added — CSS**: `--scheduler-drop-target-bg` (the cross-row drag's target-row tint);
 `.scheduler-timeline-row.drop-target`, `.scheduler-column-resizer`, `.rename-input`,

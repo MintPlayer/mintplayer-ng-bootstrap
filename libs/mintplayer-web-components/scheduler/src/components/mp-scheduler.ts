@@ -1001,8 +1001,18 @@ export class MpScheduler extends LitElement {
             type="color"
             class="editor-input editor-color-input"
             .value=${color}
-            ?disabled=${!canFields}
+            ?disabled=${!canFields || !event.color}
           />
+        </label>
+        <label class="editor-field editor-inherit">
+          <input
+            type="checkbox"
+            class="editor-inherit-input"
+            .checked=${!event.color}
+            ?disabled=${!canFields}
+            @change=${(e: Event) => this.toggleEditorColorInherit(e)}
+          />
+          <span>${this.msg('editorInheritColor')}</span>
         </label>
         ${this.editorError
           ? html`<p class="editor-error" role="alert">${this.editorError}</p>`
@@ -1034,6 +1044,19 @@ export class MpScheduler extends LitElement {
         </div>
       </div>
     `;
+  }
+
+  /**
+   * "Inherit from resource" drives the swatch's enabled state: while inheriting,
+   * the swatch shows WHAT is inherited but cannot be committed, so there is no
+   * gesture that silently overrides. Toggled in the DOM rather than through a
+   * re-render on purpose — a re-render would re-run the sibling fields' value
+   * bindings and could discard a title the user has typed but not saved.
+   */
+  private toggleEditorColorInherit(e: Event): void {
+    const inherit = (e.target as HTMLInputElement).checked;
+    const swatch = this.shadowRoot?.querySelector<HTMLInputElement>('.editor-color-input');
+    if (swatch) swatch.disabled = inherit;
   }
 
   /**
@@ -1085,9 +1108,18 @@ export class MpScheduler extends LitElement {
       return;
     }
 
+    // Colour is two-state, and the CHECKBOX is what says which state — not the
+    // swatch's value. An `<input type="color">` has no empty state, so reading
+    // it unconditionally silently converted every INHERITING event into an
+    // explicitly-coloured one on the first Save (it is seeded with the resolved
+    // colour, i.e. its resource's). Such an event then stops following its
+    // resource forever — including after a cross-row move, where it would keep
+    // the old resource's colour while sitting in the new one's row.
+    const inheritInput = read('.editor-inherit-input');
     const colorInput = read('.editor-color-input');
-    if (colorInput && !colorInput.disabled && colorInput.value) {
-      updated.color = colorInput.value;
+    if (inheritInput && !inheritInput.disabled) {
+      if (inheritInput.checked) delete updated.color;
+      else if (colorInput?.value) updated.color = colorInput.value;
     }
 
     this.closeEventEditor();

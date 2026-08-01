@@ -863,6 +863,26 @@ $z-event-selected: 2;    // selected event: its straddling handles must win
   padding: 1px;
 }
 
+/* "Inherit from resource": the checkbox owns the colour's two states, so the
+   swatch above is disabled while it is checked. Indented under the swatch it
+   governs, and its label takes the remaining width rather than the 40px
+   reserved for the other fields' names. */
+.scheduler-event-editor .editor-inherit {
+  gap: 6px;
+  margin-left: 46px;
+}
+
+.scheduler-event-editor .editor-inherit > span {
+  flex: 1 1 auto;
+}
+
+.scheduler-event-editor .editor-inherit-input {
+  flex: 0 0 auto;
+  width: 16px;
+  height: 16px;
+  margin: 0;
+}
+
 .scheduler-event-editor .editor-error {
   margin: 0 0 6px;
   font-size: 12px;
