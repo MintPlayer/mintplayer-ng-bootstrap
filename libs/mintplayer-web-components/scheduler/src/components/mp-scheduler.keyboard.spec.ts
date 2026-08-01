@@ -1974,10 +1974,32 @@ describe('mp-scheduler — per-gesture pointer permission gate (M21)', () => {
     expect(pointerDown({ type: 'slot' })).toBe(true);
   });
 
-  it('each resize edge is gated by ITS capability', async () => {
-    await mountWeek({ resizeEventStart: false, resizeEventEnd: true });
-    expect(pointerDown({ type: 'resize-handle', event: EV, resizeHandle: 'start' })).toBe(false);
-    expect(pointerDown({ type: 'resize-handle', event: EV, resizeHandle: 'end' })).toBe(true);
+  /**
+   * D12.13 — per-edge control lives on the ITEM, not on the permission table.
+   * A global "no user may ever resize any start edge" answers a question
+   * nobody asks; "this shift already clocked in, its start is pinned" is
+   * data-dependent, which is what a per-item flag is for.
+   */
+  it('each resize edge is gated by the ITEM, at the gesture', async () => {
+    await mountWeek({});
+    const pinnedStart = { ...EV, resizable: { start: false, end: true } };
+    expect(
+      pointerDown({ type: 'resize-handle', event: pinnedStart, resizeHandle: 'start' }),
+    ).toBe(false);
+    expect(
+      pointerDown({ type: 'resize-handle', event: pinnedStart, resizeHandle: 'end' }),
+    ).toBe(true);
+  });
+
+  it('resizeEvent:false denies both edges, whatever the item says', async () => {
+    await mountWeek({ resizeEvent: false });
+    const bothOk = { ...EV, resizable: { start: true, end: true } };
+    expect(pointerDown({ type: 'resize-handle', event: bothOk, resizeHandle: 'start' })).toBe(
+      false,
+    );
+    expect(pointerDown({ type: 'resize-handle', event: bothOk, resizeHandle: 'end' })).toBe(false);
+    // …and it does not leak into moving.
+    expect(pointerDown({ type: 'event', event: bothOk })).toBe(true);
   });
 
   it('selectRange alone keeps slot drags possible when createEvent is off', async () => {
@@ -2291,7 +2313,7 @@ describe('mp-scheduler — built-in event editor (M23)', () => {
 
   it('fields follow the permission table; a disabled field is never read back', async () => {
     await mountWeek({
-      options: { permissions: { moveEvent: false, resizeEventStart: false, resizeEventEnd: false } },
+      options: { permissions: { moveEvent: false, resizeEvent: false } },
     });
     await openViaF2();
     // Title stays editable (editEvent default true); time fields are locked.
@@ -2312,6 +2334,97 @@ describe('mp-scheduler — built-in event editor (M23)', () => {
     await settle();
     expect(detail).not.toBeNull();
     expect(detail!.event.end.getTime()).toBe(EV.end.getTime());
+  });
+
+  /**
+   * D12.13's matrix — which time fields are live, and what a START change
+   * means, for each combination of the two remaining capabilities. The row
+   * that matters most is `moveEvent: true, resizeEvent: false`: the editor
+   * used to commit a pure duration change there, which `resizable: false`
+   * forbids everywhere else.
+   */
+  describe('the editor time fields follow move vs resize (D12.13)', () => {
+    const picker = (cls: string) =>
+      editor()!.querySelector<HTMLElement & {
+        value: Date | null;
+        disabled: boolean;
+        setValue: (n: Date | null, emit?: boolean) => void;
+      }>(`mp-datetime-picker.${cls}`)!;
+
+    const openWith = async (permissions: Record<string, unknown>) => {
+      await mountWeek({ options: { permissions } });
+      await openViaF2();
+    };
+
+    it('move + resize: both fields live, a start change moves', async () => {
+      await openWith({ moveEvent: true, resizeEvent: true });
+      expect(picker('editor-start-input').disabled).toBe(false);
+      expect(picker('editor-end-input').disabled).toBe(false);
+
+      picker('editor-start-input').setValue(new Date(2026, 4, 12, 11, 0));
+      await settle();
+      // Duration preserved — the end followed.
+      expect(picker('editor-end-input').value!.getTime()).toBe(
+        new Date(2026, 4, 12, 12, 0).getTime(),
+      );
+    });
+
+    it('move only: the END field is locked, but a start change still moves both', async () => {
+      await openWith({ moveEvent: true, resizeEvent: false });
+      expect(picker('editor-start-input').disabled).toBe(false);
+      // Editing the end ALONE is a resize, which is denied.
+      expect(picker('editor-end-input').disabled).toBe(true);
+
+      picker('editor-start-input').setValue(new Date(2026, 4, 12, 11, 0));
+      await settle();
+
+      let detail: { event: { start: Date; end: Date } } | null = null;
+      el.addEventListener('event-update', (e) => {
+        detail = (e as CustomEvent).detail;
+      });
+      (editor()!.querySelector('.editor-action.primary') as HTMLElement).click();
+      await settle();
+
+      // Both edges commit — it is a move, and the duration is unchanged.
+      expect(detail!.event.start.getTime()).toBe(new Date(2026, 4, 12, 11, 0).getTime());
+      expect(detail!.event.end.getTime()).toBe(new Date(2026, 4, 12, 12, 0).getTime());
+    });
+
+    it('resize only: a start change resizes the start alone, clamped and announced', async () => {
+      await openWith({ moveEvent: false, resizeEvent: true });
+      expect(picker('editor-start-input').disabled).toBe(false);
+      expect(picker('editor-end-input').disabled).toBe(false);
+
+      // Well inside the range: the end holds still.
+      picker('editor-start-input').setValue(new Date(2026, 4, 12, 9, 15));
+      await settle();
+      expect(picker('editor-end-input').value!.getTime()).toBe(
+        new Date(2026, 4, 12, 10, 0).getTime(),
+      );
+
+      // Past the end: clamped to one slot before it, and said out loud.
+      picker('editor-start-input').setValue(new Date(2026, 4, 12, 12, 0));
+      await settle();
+      expect(picker('editor-start-input').value!.getTime()).toBe(
+        new Date(2026, 4, 12, 9, 30).getTime(),
+      );
+      expect(el.shadowRoot!.querySelector('[role="status"]')?.textContent).toContain(
+        'Start adjusted to',
+      );
+    });
+
+    it('a per-item edge lock disables BOTH editor fields, and the handle still works', async () => {
+      await mountWeek({ events: [{ ...EV, resizable: { start: false, end: true } }] });
+      await openViaF2();
+      // The editor commits a RANGE, so it cannot offer half of one (B35).
+      expect(picker('editor-start-input').disabled).toBe(false); // moveEvent still on
+      expect(picker('editor-end-input').disabled).toBe(true);
+      // The end handle is a different question, and still answered yes.
+      expect(
+        el.shadowRoot!.querySelector('.scheduler-event .resize-handle.bottom'),
+      ).not.toBeNull();
+      expect(el.shadowRoot!.querySelector('.scheduler-event .resize-handle.top')).toBeNull();
+    });
   });
 
   /**

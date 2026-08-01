@@ -101,6 +101,12 @@ export interface SchedulerMessages {
    * avoid (D12.12).
    */
   editorEndClamped: string;
+  /**
+   * {start} — the mirror of `editorEndClamped`, announced when a start change
+   * is a RESIZE rather than a move (the user may resize but not move, D12.13)
+   * and the picked start was pushed back to the latest the grid allows.
+   */
+  editorStartClamped: string;
 
   // Year chrome
   /**
@@ -218,6 +224,7 @@ export const DEFAULT_MESSAGES: SchedulerMessages = {
   editorInvalidRange: 'End must be after start.',
   editorTitleRequired: 'Title is required.',
   editorEndClamped: 'End adjusted to {end}, the earliest allowed.',
+  editorStartClamped: 'Start adjusted to {start}, the latest allowed.',
 
   yearMonthCardLabel: '{month}, {count} {events}',
 

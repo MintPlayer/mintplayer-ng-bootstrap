@@ -626,37 +626,45 @@ Each of these affects every consumer of the picker, so none belongs in this PR:
 - [ ] React and Vue `BsDatetimePicker` expose no `min`/`max` at all, where Angular's does.
 
 
-## M28 — Collapse the resize capabilities [D12.13, B35]. DECIDED, NOT STARTED. BREAKING.
+## M28 — Collapse the resize capabilities [D12.13, B35]. DONE. BREAKING.
 
 PRD §12.12/D12.13. The per-edge split came from a misreading of FullCalendar and is what
 made B35 constructible; deleting the axis beats guarding it.
 
-- [ ] `SchedulerPermissions`: `resizeEventStart` + `resizeEventEnd` → one `resizeEvent`
-      (default `true`). Update `DEFAULT_PERMISSIONS` and the resolver switch.
-- [ ] Split the resolver: `resolveCapability('resizeEvent', …)` answers "resizable at
-      all"; a new `resolveResizeEdge('start' | 'end', …)` serves the three
-      direct-manipulation sites (resize handles in `base-view.appendResizeHandles`, the
-      pointer gesture in `allowsGesture`, keyboard `resizeKeyboardMoveEdge`). Per-edge
-      control now lives ONLY on `SchedulerEvent.resizable`'s `{ start, end }` form, which
-      stays — it is data-dependent, which is exactly what a per-item flag is for.
-- [ ] **The collapse alone is not the fix.** Compute `canTime` ONCE and use it for both
-      pickers' `disabled`, for `onEditorStartChange`, and for a SINGLE `if` in
-      `saveEventEditor` that writes both edges together. Otherwise B35 is closed only
-      because two expressions happen to be textually equal, and one edit reopens it.
-- [ ] Make the start-change semantic follow the granted permission (D12.13's 4-row table):
-      with `moveEvent` it is a move (shift both); with only `resizeEvent` it resizes the
-      start alone, clamped to `end − minDuration` and announced, mirroring D12.12's end
-      clamp. This also closes a leak that exists TODAY — `moveEvent: true, resizable:
-      false` currently commits a pure duration change that `resizable: false` forbids.
-- [ ] For the editor, fold the per-item object form as BOTH edges, so
-      `resizable: { start: false, end: true }` disables the editor's time fields while the
-      end handle keeps working.
-- [ ] Specs: rewrite "each resize edge is gated by ITS capability" to drive edges from
-      `event.resizable`; add one per row of the 4-row matrix.
-- [ ] Docs: PRD §6.2 (the corrected mapping is already noted in place), §11 as-built,
-      §12.13, and this plan. Version bumps on the WC + all three wrappers.
-- Wrappers and demos need NO code change — they pass `options` through opaquely and set
-  only resource capabilities.
+- [x] `SchedulerPermissions`: `resizeEventStart` + `resizeEventEnd` → one `resizeEvent`
+      (default `true`). `DEFAULT_PERMISSIONS` and the resolver switch updated.
+- [x] Split the resolver: `resolveCapability('resizeEvent', …)` answers "resizable at
+      all" (either edge); the new **`resolveResizeEdge('start' | 'end', …)`** serves the
+      three direct-manipulation sites (`base-view.appendResizeHandles`, `allowsGesture`,
+      `resizeKeyboardMoveEdge`), reached from the component through a matching private
+      `canResizeEdge()`. Per-edge control now lives ONLY on `SchedulerEvent.resizable`'s
+      `{ start, end }` form.
+- [x] **The collapse alone is not the fix.** One private `editorTimeFields(event)` now
+      answers every editor question at once — `canStart`, `canEnd`, `canTime`,
+      `startIsMove` — and carries D12.13's matrix as its docblock. `saveEventEditor` has a
+      SINGLE `if (…canTime)` writing both edges together, so the range commits whole or
+      not at all rather than relying on two expressions staying textually equal.
+- [x] Start-change semantic follows the permission granted: a move where `moveEvent` is
+      allowed, otherwise a start-resize clamped to `end − minutesPerSlot()` and announced
+      through a new `editorStartClamped` message — the mirror of D12.12's end clamp. The
+      start picker also gains `max = draft.end` in that mode only (there is nothing to
+      bound while it is a move).
+- [x] The editor folds the per-item object form as BOTH edges, so
+      `resizable: { start: false, end: true }` locks its time fields while the end handle
+      keeps working.
+- [x] Specs: "each resize edge is gated by ITS capability" now drives edges from
+      `event.resizable`; a new one proves `resizeEvent: false` denies both edges without
+      leaking into moving; and a four-test describe covers one row of the matrix each.
+- [x] Version bumps: WC **2.7.0**, ng **22.11.0**, react **19.13.0**, vue **3.14.0**. The
+      wrappers' `^2.0.0` peer range on the WC needed no change.
+- Wrappers and demos needed NO code change, as predicted — they pass `options` through
+  opaquely and set only resource capabilities.
+
+**Migration for consumers:** replace `resizeEventStart` / `resizeEventEnd` in a
+`permissions` object with the single `resizeEvent`. A consumer that genuinely wants one
+edge locked moves that to the data, as `event.resizable: { start: false, end: true }` —
+which now actually works on the handles, the pointer gesture and the keyboard, where
+before only the boolean `=== false` branch was ever checked.
 
 ## M29 — One message, one channel [D12.14, B33, B34]. DONE.
 

@@ -20,10 +20,22 @@ export interface SchedulerPermissions {
   createEvent: boolean;
   /** Move an existing event in time (or across resources on the timeline). */
   moveEvent: boolean;
-  /** Drag/keyboard the START edge. Supersedes the never-implemented `eventStartEditable`. */
-  resizeEventStart: boolean;
-  /** Drag/keyboard the END edge. Supersedes the never-implemented `eventDurationEditable`. */
-  resizeEventEnd: boolean;
+  /**
+   * Drag/keyboard either edge — one flag, not two.
+   *
+   * Supersedes `resizeEventStart` / `resizeEventEnd`, which were a misreading
+   * of FullCalendar: its `eventStartEditable` means "start editable **through
+   * dragging**" (our `moveEvent`), and `eventDurationEditable` covers resize
+   * as ONE flag for both edges. Splitting it globally answered a question
+   * nobody asks — "no user may ever resize any start edge" — while making an
+   * asymmetric commit constructible (B35).
+   *
+   * Per-edge locking still exists where it belongs: on the ITEM, as
+   * `SchedulerEvent.resizable`'s `{ start, end }` form. That is data-dependent
+   * ("this shift already clocked in; its start is pinned, you may still extend
+   * it"), which is exactly what a per-item flag is for. See `resolveResizeEdge`.
+   */
+  resizeEvent: boolean;
   /** Delete/Backspace on a focused event. */
   deleteEvent: boolean;
   /**
@@ -68,8 +80,7 @@ export type SchedulerCapability = Exclude<keyof SchedulerPermissions, 'canCreate
 export const DEFAULT_PERMISSIONS: Readonly<Record<SchedulerCapability, boolean>> = {
   createEvent: true,
   moveEvent: true,
-  resizeEventStart: true,
-  resizeEventEnd: true,
+  resizeEvent: true,
   deleteEvent: true,
   editEvent: true,
   selectRange: true,
@@ -120,13 +131,33 @@ export function resolveCapability(
   switch (capability) {
     case 'moveEvent':
       return event.draggable !== false;
-    case 'resizeEventStart':
-      return resizableEdge(event.resizable, 'start');
-    case 'resizeEventEnd':
-      return resizableEdge(event.resizable, 'end');
+    case 'resizeEvent':
+      // "Resizable at ALL" — either edge is enough. Which edge is a question
+      // for `resolveResizeEdge`, and only direct manipulation gets to ask it.
+      return resizableEdge(event.resizable, 'start') || resizableEdge(event.resizable, 'end');
     default:
       return true;
   }
+}
+
+/**
+ * May this event be resized *from this edge*?
+ *
+ * Only the three direct-manipulation surfaces ask — the resize handles, the
+ * pointer gesture, and Shift+Arrow vs Alt+Shift+Arrow — because there the edge
+ * is a property of the **gesture**, not of the permission. Everything else
+ * asks `resolveCapability('resizeEvent', …)`.
+ */
+export function resolveResizeEdge(
+  edge: 'start' | 'end',
+  opts: {
+    readonly?: boolean;
+    permissions?: boolean | Partial<SchedulerPermissions>;
+    event?: SchedulerEvent | null;
+  },
+): boolean {
+  if (!resolveCapability('resizeEvent', opts)) return false;
+  return resizableEdge(opts.event?.resizable, edge);
 }
 
 /**

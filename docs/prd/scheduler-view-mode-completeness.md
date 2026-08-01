@@ -438,10 +438,15 @@ Also dead and to be removed or folded in: `eventDurationEditable`, `eventStartEd
 ```
 SchedulerOptions.permissions?: boolean | Partial<SchedulerPermissions>
 SchedulerPermissions = {
-  createEvent, moveEvent, resizeEventStart, resizeEventEnd, deleteEvent,
+  createEvent, moveEvent, resizeEvent, deleteEvent,
   createResource, updateResource, deleteResource, createGroup, reorderResources,
 }
 ```
+
+> As built after M28: one `resizeEvent`, not the `resizeEventStart` /
+> `resizeEventEnd` pair this section originally specified. See the callout below and
+> D12.13 (§12.12) for why. Per-edge locking lives on the item, as
+> `SchedulerEvent.resizable: { start, end }`.
 
 Precedence through one internal `can(capability, subject?)`: host `readonly` attribute →
 `permissions === false` → `permissions[cap]` → per-item flag → default `true`.
@@ -496,6 +501,7 @@ Precedence through one internal `can(capability, subject?)`: host `readonly` att
   > `moveEvent`, not a resize edge — while `eventDurationEditable` is one flag covering
   > both edges. The correct fold was `moveEvent` + a single `resizeEvent`; the per-edge
   > split was an artefact of this misreading, and it is what made B35 constructible.
+  > **Corrected in M28** — the shipped fold is `moveEvent` + `resizeEvent`.
 
 **Semantics (file-manager's rule verbatim):** permission denied ⇒ **do not render** the
 affordance; permitted but contextually unavailable ⇒ render `disabled`; every handler
@@ -818,8 +824,8 @@ New/changed public surface, so consumers and the wrappers have one list.
 **Added — host attribute**
 - `readonly` — coarse read-only, reachable from plain HTML/SSR. `readonly="false"` opts out.
 
-**Added — `SchedulerPermissions`** (`createEvent`, `moveEvent`, `resizeEventStart`,
-`resizeEventEnd`, `deleteEvent`, `selectRange`, `createResource`, `updateResource`,
+**Added — `SchedulerPermissions`** (`createEvent`, `moveEvent`, `resizeEvent`
+[collapsed from a per-edge pair in M28], `deleteEvent`, `selectRange`, `createResource`, `updateResource`,
 `deleteResource`, `createGroup`, plus the opt-in `canCreateAt` predicate). Resource/group
 capabilities default **false**; event capabilities default **true**.
 
@@ -843,7 +849,8 @@ the folded table.
   `readonly`.
 - `options.selectMirror`, `eventDurationEditable`, `eventStartEditable`,
   `dragRevertDuration`, `dragScroll`, `snapDuration` — declared and read by nothing.
-  The two editable flags live on as `resizeEventStart` / `resizeEventEnd`.
+  The two editable flags live on as `moveEvent` + `resizeEvent` (corrected in M28; the
+  first fold, to a per-edge pair, misread what `eventStartEditable` meant).
 - `resourceService.getAllEvents`, `addEventToResource`, `updateEventInResource`,
   `removeEvent`, `moveEventToResource` — dead once the model was normalized.
 
@@ -1353,7 +1360,8 @@ consumer.
 - **D12.8c — gating**: the editor opens when *any* of its fields is permitted, and each
   field individually respects the existing table — title/colour under a new
   `SchedulerPermissions.editEvent` (default `true`; the event caps were deliberately
-  additive), start/end under `moveEvent`/`resizeEventStart`/`resizeEventEnd`, the delete
+  additive), start/end under `moveEvent`/`resizeEvent` (see D12.13's matrix — which of the
+  two is granted also decides what a START change *means*), the delete
   button under `deleteEvent`. `readonly` kills it wholesale. Per-event `editable: false`
   is honoured.
 - **D12.8d — the on/off input, as requested**: `options.eventEditor?: boolean`, default
@@ -1530,12 +1538,14 @@ different remedies apply, and which one is right turns on whether the control ow
   consumers are components that render inputs *among other content*, not components that
   *are* one control, so sizing the host would be wrong.
 
-### 12.11 R21 — preventing an inverted range in the editor (ANALYSIS, not built)
+### 12.11 R21 — preventing an inverted range in the editor (analysis; SHIPPED as M27)
 
 Asked for: stop a user picking a start AFTER the end, or an end BEFORE the start — noting
 that the constraint "is only the case when the date matches". A three-probe investigation
 (picker capabilities, reachability/UX, a11y) returned five findings that reshape the
-request, plus a pile of adjacent defects. **Nothing in this section is implemented yet.**
+request, plus a pile of adjacent defects. **D12.12 shipped as M27**; the defects it lists
+shipped as M28 (B35/B36) and M29 (B33/B34). The findings below are kept as written — they
+are the reasoning the fix rests on, not a to-do list.
 
 #### F1 — the start direction is already impossible, and half the request dissolves
 
@@ -1672,7 +1682,8 @@ drift, since "duration preserved" means absolute milliseconds.
 
 §12.11 ended with three open items: the commit-time inversion (B35), the error/announcement
 defects (B33/B34), and six shared-picker gaps. A second three-probe investigation decided
-each. **None of this is implemented yet** — it is M28–M30 in the plan.
+each. **D12.13 and D12.14 shipped as M28 and M29**; D12.15 remains deliberately unbuilt as
+M30, a separate PR (it changes shared components every picker consumer uses).
 
 #### D12.13 — collapse `resizeEventStart` + `resizeEventEnd` into one `resizeEvent`
 
@@ -1865,8 +1876,7 @@ One list, so consumers and the wrappers do not have to read the whole branch.
 
 **Added — `SchedulerPermissions`**
 - `editEvent` (default **`true`**) — the editor's title/colour fields. Time fields follow
-  `moveEvent` / `resizeEventStart` / `resizeEventEnd`; the delete button follows
-  `deleteEvent`.
+  `moveEvent` / `resizeEvent`; the delete button follows `deleteEvent`.
 
 **Added — messages** (`options.messages`): `showMonth`, `newEventResource`,
 `yearMonthCardLabel`, `deleteEventLabel`, `moveModeEnteredTimeline`,
@@ -1906,3 +1916,60 @@ One list, so consumers and the wrappers do not have to read the whole branch.
 
 **Wrappers**: Angular gains `[eventEditor]`; React `eventEditor`; Vue `:event-editor`.
 Nothing else changed — every new surface reuses the existing event contracts.
+
+### 12.13 As built — M27, M28, M29
+
+The three decisions of §12.11/§12.12 that belong to the scheduler, as shipped. Two are
+breaking; the third adds a capability to a shared component.
+
+**M27 — the end cannot precede the start (D12.12).** The END picker carries
+`min = draft.start`, honoured date-only by the calendar so the start's own day stays fully
+selectable, and `onEditorEndChange` clamps to `draft.start + minutesPerSlot()` for what a
+bound cannot express — the same-day-earlier-time case and the picker's bound-ignoring
+Today/Now buttons. The correction lands on the field the user just edited and is announced
+(`editorEndClamped`); adjusting the *other* edge instead would move a control the user is
+not focused on, a WCAG 3.2.2 hazard. This also gives the editor the minimum duration it
+never had — it would otherwise commit a 1-minute event on a 30-minute grid.
+
+The START picker deliberately carries no `max` while a start change is a move: duration is
+an invariant of that transform, so inversion is unreachable and a bound would only refuse
+legitimate picks (F1).
+
+*Found while writing the specs, and sharper than B36's original statement:* a degenerate
+event **cannot be constructed through the UI at all** — `partGeometry` returns `null` for
+`end <= start`, so it never renders and the editor can never be opened on it. The
+`end <= start` guard at Save survives as the backstop for consumer-supplied data only.
+
+**M28 — one `resizeEvent` (BREAKING, D12.13).** `resizeEventStart`/`resizeEventEnd` are
+gone. `resolveCapability('resizeEvent', …)` answers "resizable at all"; the new
+`resolveResizeEdge(edge, …)` serves the three direct-manipulation sites where the edge
+belongs to the *gesture*. Per-edge control now lives on the item, as
+`SchedulerEvent.resizable: { start, end }`.
+
+The collapse alone would have closed B35 only by making two guards textually equal, so it
+ships with the structure that states the invariant: one `editorTimeFields(event)` answers
+`canStart` / `canEnd` / `canTime` / `startIsMove` together and carries D12.13's matrix as
+its docblock, and `saveEventEditor` has a single `if` writing both edges. The range is one
+value, so it commits whole or not at all. A start change follows the permission actually
+granted — a move where `moveEvent` is allowed, otherwise a start-resize clamped to
+`end − minutesPerSlot()` and announced (`editorStartClamped`), with `max = draft.end` on the
+start picker in that mode only. Row 2 of the matrix closes a leak that predates all of
+this: `moveEvent: true, resizable: false` used to commit a pure duration change.
+
+*Migration:* swap the two flags for `resizeEvent`; a consumer wanting one edge locked puts
+it on the data instead, where it now actually works on handles, pointer and keyboard alike
+— previously only the boolean `=== false` branch was ever checked.
+
+**M29 — one message, one channel (D12.14).** The refusal message no longer enters two live
+regions at once. It goes to the offending control's own accessible description and is
+spoken by moving focus there; the announcer keeps only the success path, where a
+self-clearing region is the right shape. Because an IDREF cannot cross a shadow boundary,
+the range message required `invalid` + `error-text` on `mp-datetime-picker` — the last gap
+in the form-control family — plus a `focus()` override delegating to its display input
+(an override, not `delegatesFocus: true`, which would change click-focus for every
+consumer). `editorError` is now field-scoped, and clears per field. The rule is written up
+in CLAUDE.md, since the repo previously answered this question three different ways.
+
+Angular needed explicit `invalid`/`errorText` inputs; **React and Vue needed none** —
+`@lit/react` routes prototype-accessor props as properties and Vue's `v-bind="$attrs"`
+reaches both. That is D12.15's correction holding in practice.

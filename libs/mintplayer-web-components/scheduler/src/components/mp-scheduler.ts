@@ -10,6 +10,7 @@ import {
   SchedulerCapability,
   SchedulerPermissions,
   resolveCapability,
+  resolveResizeEdge,
   TimeSlot,
   dateService,
   formatMessage,
@@ -545,8 +546,7 @@ export class MpScheduler extends LitElement {
       </div>
       <div id="scheduler-kbd-event" class="visually-hidden">
         ${this.msg(
-          this.can('moveEvent') || this.can('resizeEventStart') ||
-          this.can('resizeEventEnd') || this.can('deleteEvent')
+          this.can('moveEvent') || this.can('resizeEvent') || this.can('deleteEvent')
             ? this.eventEditor
               ? 'eventInstructionsWithEditor'
               : 'eventInstructions'
@@ -918,10 +918,50 @@ export class MpScheduler extends LitElement {
     return (
       this.can('editEvent', event) ||
       this.can('moveEvent', event) ||
-      this.can('resizeEventStart', event) ||
-      this.can('resizeEventEnd', event) ||
+      this.can('resizeEvent', event) ||
       this.can('deleteEvent', event)
     );
+  }
+
+  /**
+   * Which of the editor's time fields are live, and what a start change MEANS
+   * — the single place that answers both (D12.13).
+   *
+   * | `moveEvent` | `resizeEvent` | start | end  | a start change… |
+   * |---|---|---|---|---|
+   * | ✓ | ✓ | on  | on  | shifts both (a move) |
+   * | ✓ | ✗ | on  | off | shifts both (a move) |
+   * | ✗ | ✓ | on  | on  | resizes the start alone, clamped |
+   * | ✗ | ✗ | off | off | — |
+   *
+   * Editing the END alone is *by definition* a resize, so that field follows
+   * `resizeEvent`. Editing the START is a move where one is permitted and a
+   * start-resize otherwise. Row 2 closes a leak that predates this: with
+   * `moveEvent: true, resizable: false` the editor used to commit a pure
+   * duration change that `resizable: false` forbids.
+   *
+   * `canResize` folds the per-item `{ start, end }` form as **both** edges, so
+   * `resizable: { start: false, end: true }` locks the editor's time fields
+   * while the end *handle* keeps working — honest, and with no way to commit a
+   * half-applied range (B35). Both edges are therefore always writable
+   * together or not at all, which is what makes the single `if` at save
+   * correct rather than coincidental.
+   */
+  private editorTimeFields(event: SchedulerEvent): {
+    canStart: boolean;
+    canEnd: boolean;
+    canTime: boolean;
+    startIsMove: boolean;
+  } {
+    const canMove = this.can('moveEvent', event);
+    const canResize =
+      this.canResizeEdge('start', event) && this.canResizeEdge('end', event);
+    return {
+      canStart: canMove || canResize,
+      canEnd: canResize,
+      canTime: canMove || canResize,
+      startIsMove: canMove,
+    };
   }
 
   private tryOpenEventEditor(event: SchedulerEvent): void {
@@ -999,8 +1039,7 @@ export class MpScheduler extends LitElement {
       this.editorError?.message ?? null,
       titleInvalid,
     );
-    const canStart = this.can('moveEvent', event) || this.can('resizeEventStart', event);
-    const canEnd = this.can('moveEvent', event) || this.can('resizeEventEnd', event);
+    const { canStart, canEnd, startIsMove } = this.editorTimeFields(event);
     // Every binding below reads the DRAFT, so a re-render restores what the
     // user has edited rather than resetting the controls to the stored event.
     const color =
@@ -1050,6 +1089,7 @@ export class MpScheduler extends LitElement {
           <mp-datetime-picker
             class="editor-input editor-start-input"
             .value=${draft.start}
+            .max=${startIsMove ? null : draft.end}
             ?disabled=${!canStart}
             @value-change=${(e: Event) => this.onEditorStartChange(e)}
             input-label=${this.msg('editorStartLabel')}
@@ -1180,7 +1220,9 @@ export class MpScheduler extends LitElement {
   private editorErrorFieldTouched(
     patch: Partial<NonNullable<MpScheduler['editorDraft']>>,
   ): boolean {
-    // A start change moves the end with it, so it counts as touching the end.
+    // A start change that MOVES the event carries the end in the same patch,
+    // so it counts as touching the end; a start-resize does not, and should
+    // not clear a message about the end it did not change.
     return this.editorError?.field === 'title' ? 'title' in patch : 'end' in patch;
   }
 
@@ -1196,10 +1238,15 @@ export class MpScheduler extends LitElement {
    * express one here.
    *
    * A corollary worth stating, because the opposite looks like an oversight:
-   * the START picker carries NO `max`. Duration is an invariant of this
-   * transform, so a valid draft stays valid after any start change in either
-   * direction — start-after-end is unreachable, and a bound there would only
-   * refuse legitimate picks (D12.12/F1).
+   * while it is a move, the START picker carries NO `max`. Duration is an
+   * invariant of that transform, so a valid draft stays valid after any start
+   * change in either direction — start-after-end is unreachable, and a bound
+   * there would only refuse legitimate picks (D12.12/F1).
+   *
+   * When the user may resize but NOT move (D12.13's row 3), a start change is
+   * a start-RESIZE instead: the end holds still and the start is clamped to
+   * one slot before it, mirroring the end field's clamp. The draft cannot
+   * invert either way, so the two semantics differ only in what they mean.
    */
   private onEditorStartChange(e: Event): void {
     const next = (e as CustomEvent<Date | null>).detail;
@@ -1207,7 +1254,26 @@ export class MpScheduler extends LitElement {
     if (!next || !draft) return;
     const delta = next.getTime() - draft.start.getTime();
     if (delta === 0) return;
-    this.updateEditorDraft({ start: next, end: new Date(draft.end.getTime() + delta) });
+
+    const event = this.editorEventId ? this.getEventById(this.editorEventId) : null;
+    if (!event || this.editorTimeFields(event).startIsMove) {
+      this.updateEditorDraft({ start: next, end: new Date(draft.end.getTime() + delta) });
+      return;
+    }
+
+    const latest = new Date(draft.end.getTime() - this.minutesPerSlot() * 60 * 1000);
+    if (next.getTime() <= latest.getTime()) {
+      this.updateEditorDraft({ start: next });
+      return;
+    }
+
+    this.updateEditorDraft({ start: latest });
+    const { options } = this.stateManager.getState();
+    this.liveAnnouncer.announce(
+      this.msg('editorStartClamped', {
+        start: dateService.formatTime(latest, options.timeFormat),
+      }),
+    );
   }
 
   /**
@@ -1295,12 +1361,12 @@ export class MpScheduler extends LitElement {
       else if (draft.color) updated.color = draft.color;
     }
 
-    // Each edge moves only if its own capability allows it, so a denied field
-    // is simply not applied and permissions cannot be bypassed from here.
-    if (this.can('moveEvent', original) || this.can('resizeEventStart', original)) {
+    // ONE decision, writing BOTH edges (D12.13). Two independent guards is how
+    // B35 happened: a permission set that wrote `start` but kept the original
+    // `end` inverted the stored event even though the draft was valid. The
+    // range is a single value here, so it commits whole or not at all.
+    if (this.editorTimeFields(original).canTime) {
       updated.start = draft.start;
-    }
-    if (this.can('moveEvent', original) || this.can('resizeEventEnd', original)) {
       updated.end = draft.end;
     }
 
@@ -1497,8 +1563,7 @@ export class MpScheduler extends LitElement {
         // Pointer gestures ask the same resolver the keyboard paths and the
         // affordance rendering use, so all three can never disagree.
         isEditable: () =>
-          this.can('createEvent') || this.can('moveEvent') ||
-          this.can('resizeEventStart') || this.can('resizeEventEnd'),
+          this.can('createEvent') || this.can('moveEvent') || this.can('resizeEvent'),
         isSelectable: () => this.can('selectRange') || this.can('createEvent'),
         isEventSelected: (eventId) => this.stateManager.getState().selectedEvent?.id === eventId,
       },
@@ -1832,10 +1897,7 @@ export class MpScheduler extends LitElement {
       case 'event':
         return this.can('moveEvent', target.event);
       case 'resize-handle':
-        return this.can(
-          target.resizeHandle === 'start' ? 'resizeEventStart' : 'resizeEventEnd',
-          target.event,
-        );
+        return this.canResizeEdge(target.resizeHandle === 'start' ? 'start' : 'end', target.event);
       case 'slot':
         return this.can('createEvent') || this.can('selectRange');
       default:
@@ -2374,6 +2436,19 @@ export class MpScheduler extends LitElement {
     });
   }
 
+  /**
+   * "May this edge be dragged?" — for the three DIRECT-MANIPULATION surfaces
+   * only (resize handles, the pointer gesture, Shift/Alt+Shift+Arrow), where
+   * the edge belongs to the gesture. Everything else asks `can('resizeEvent')`.
+   */
+  private canResizeEdge(edge: 'start' | 'end', event?: SchedulerEvent | null): boolean {
+    const { options } = this.stateManager.getState();
+    return resolveResizeEdge(edge, {
+      permissions: this.effectivePermissions(options),
+      event: event ?? null,
+    });
+  }
+
   /** Recompute the resolved table onto state so views can gate affordances. */
   private syncPermissions(): void {
     const { options } = this.stateManager.getState();
@@ -2416,8 +2491,7 @@ export class MpScheduler extends LitElement {
   /** Enter move mode only if the event may actually be moved or resized. */
   private tryEnterEventMoveMode(ev: SchedulerEvent): void {
     const canMove = this.can('moveEvent', ev);
-    const canResize =
-      this.can('resizeEventStart', ev) || this.can('resizeEventEnd', ev);
+    const canResize = this.can('resizeEvent', ev);
     if (!canMove && !canResize) {
       this.announceDenied();
       return;
@@ -3261,7 +3335,7 @@ export class MpScheduler extends LitElement {
     // Move mode ignored event.draggable/resizable and the global flags entirely,
     // so a resizable:false event was freely keyboard-resizable.
     const source = this.getEventById(this.keyboardMove.eventId);
-    if (!this.can(edge === 'start' ? 'resizeEventStart' : 'resizeEventEnd', source)) {
+    if (!this.canResizeEdge(edge, source)) {
       this.announceDenied();
       return;
     }
