@@ -2154,15 +2154,16 @@ describe('mp-scheduler — built-in event editor (M23)', () => {
     expect(editor()).toBeNull();
   });
 
-  it('an inverted range is refused with an inline error and no emit', async () => {
+  /**
+   * D12.12 — the guard that used to catch this now cannot be reached from the
+   * pickers, because the end CLAMPS instead of inverting. It survives as the
+   * backstop for a range the UI cannot construct, so it is driven through the
+   * draft directly: consumer-supplied data is the only remaining way in.
+   */
+  it('Save refuses a range the pickers cannot produce, with an inline error and no emit', async () => {
     await mountWeek();
     await openViaF2();
-    const end = editor()!.querySelector<HTMLElement & {
-      value: Date | null;
-      setValue: (n: Date | null, emit?: boolean) => void;
-    }>('mp-datetime-picker.editor-end-input')!;
-    end.setValue(new Date(2026, 4, 12, 8, 0)); // before the 09:00 start
-    await settle();
+    (el as unknown as { editorDraft: { end: Date } }).editorDraft.end = new Date(2026, 4, 12, 8, 0);
     let emitted = false;
     el.addEventListener('event-update', () => {
       emitted = true;
@@ -2346,7 +2347,7 @@ describe('mp-scheduler — built-in event editor (M23)', () => {
     expect(editor()).toBeNull();
   });
 
-  it('changing only the END is still a resize, and an inverted one is still refused', async () => {
+  it('changing only the END is a resize — the start never follows', async () => {
     await mountWeek();
     await openViaF2();
     const picker = (cls: string) =>
@@ -2355,26 +2356,89 @@ describe('mp-scheduler — built-in event editor (M23)', () => {
         setValue: (n: Date | null, emit?: boolean) => void;
       }>(`mp-datetime-picker.${cls}`)!;
 
-    // Extending the end must NOT drag the start along.
     picker('editor-end-input').setValue(new Date(2026, 4, 12, 12, 0));
     await settle();
     expect(picker('editor-start-input').value!.getTime()).toBe(
       new Date(2026, 4, 12, 9, 0).getTime(),
     );
-
-    // An end before the start is a genuine error and still refused.
-    picker('editor-end-input').setValue(new Date(2026, 4, 12, 8, 0));
-    await settle();
-    let emitted = false;
-    el.addEventListener('event-update', () => {
-      emitted = true;
-    });
-    (editor()!.querySelector('.editor-action.primary') as HTMLElement).click();
-    await settle();
-    expect(emitted).toBe(false);
-    expect(editor()!.querySelector('.editor-error')?.textContent).toContain(
-      'End must be after start',
+    expect(picker('editor-end-input').value!.getTime()).toBe(
+      new Date(2026, 4, 12, 12, 0).getTime(),
     );
+  });
+
+  /**
+   * R21 / D12.12 — the end is the only edge that can invert a draft (a start
+   * change preserves duration, so it cannot). Same DAY is the case no picker
+   * bound can express, since the start's own day must stay fully selectable.
+   */
+  describe('the end cannot be pulled before the start (D12.12)', () => {
+    const picker = (cls: string) =>
+      editor()!.querySelector<HTMLElement & {
+        value: Date | null;
+        min: Date | null;
+        max: Date | null;
+        setValue: (n: Date | null, emit?: boolean) => void;
+      }>(`mp-datetime-picker.${cls}`)!;
+
+    it('an earlier time on the same day clamps to one slot, and says so', async () => {
+      await mountWeek();
+      await openViaF2();
+
+      picker('editor-end-input').setValue(new Date(2026, 4, 12, 8, 0));
+      await settle();
+
+      // One 30-minute slot after the 09:00 start — the floor keyboard resize
+      // uses, not the 1-minute event a raw pick would have committed.
+      expect(picker('editor-end-input').value!.getTime()).toBe(
+        new Date(2026, 4, 12, 9, 30).getTime(),
+      );
+      expect(picker('editor-start-input').value!.getTime()).toBe(
+        new Date(2026, 4, 12, 9, 0).getTime(),
+      );
+      expect(el.shadowRoot!.querySelector('[role="status"]')?.textContent).toContain(
+        'End adjusted to',
+      );
+    });
+
+    it('a valid pick is left exactly where the user put it, and announces nothing', async () => {
+      await mountWeek();
+      await openViaF2();
+
+      picker('editor-end-input').setValue(new Date(2026, 4, 14, 8, 0)); // a LATER day
+      await settle();
+
+      expect(picker('editor-end-input').value!.getTime()).toBe(
+        new Date(2026, 4, 14, 8, 0).getTime(),
+      );
+      expect(el.shadowRoot!.querySelector('[role="status"]')?.textContent).not.toContain(
+        'End adjusted to',
+      );
+    });
+
+    it('the end picker is bounded by the start; the start picker is bounded by nothing', async () => {
+      await mountWeek();
+      await openViaF2();
+
+      // Date-granular in the calendar, so an earlier DAY is unpickable while
+      // the start's own day stays open — the clamp above covers the rest.
+      expect(picker('editor-end-input').min!.getTime()).toBe(
+        new Date(2026, 4, 12, 9, 0).getTime(),
+      );
+      // F1: a start change shifts the end with it, so it can never invert.
+      expect(picker('editor-start-input').max).toBeNull();
+    });
+
+    it('the bound follows the start as it moves', async () => {
+      await mountWeek();
+      await openViaF2();
+
+      picker('editor-start-input').setValue(new Date(2026, 4, 14, 9, 0));
+      await settle();
+
+      expect(picker('editor-end-input').min!.getTime()).toBe(
+        new Date(2026, 4, 14, 9, 0).getTime(),
+      );
+    });
   });
 
   it('eventEditor=false disables every opener while event-dblclick keeps firing', async () => {

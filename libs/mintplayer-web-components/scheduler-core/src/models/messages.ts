@@ -93,6 +93,14 @@ export interface SchedulerMessages {
   editorInvalidRange: string;
   /** Inline error + announcement when the title is emptied. */
   editorTitleRequired: string;
+  /**
+   * {end} — announced when a picked end time was pulled forward to the
+   * earliest the grid allows. The correction happens on the field the user
+   * just edited, so it must be spoken: silently changing a value the user
+   * chose, without saying so, is the failure mode this message exists to
+   * avoid (D12.12).
+   */
+  editorEndClamped: string;
 
   // Year chrome
   /**
@@ -209,6 +217,7 @@ export const DEFAULT_MESSAGES: SchedulerMessages = {
   editorDelete: 'Delete',
   editorInvalidRange: 'End must be after start.',
   editorTitleRequired: 'Title is required.',
+  editorEndClamped: 'End adjusted to {end}, the earliest allowed.',
 
   yearMonthCardLabel: '{month}, {count} {events}',
 

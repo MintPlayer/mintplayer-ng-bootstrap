@@ -1036,6 +1036,7 @@ export class MpScheduler extends LitElement {
           <mp-datetime-picker
             class="editor-input editor-end-input"
             .value=${draft.end}
+            .min=${draft.start}
             ?disabled=${!canEnd}
             @value-change=${(e: Event) => this.onEditorEndChange(e)}
             input-label=${this.msg('editorEndLabel')}
@@ -1156,6 +1157,12 @@ export class MpScheduler extends LitElement {
    *
    * Changing the END is left alone: that is a resize, and the only way to
    * express one here.
+   *
+   * A corollary worth stating, because the opposite looks like an oversight:
+   * the START picker carries NO `max`. Duration is an invariant of this
+   * transform, so a valid draft stays valid after any start change in either
+   * direction — start-after-end is unreachable, and a bound there would only
+   * refuse legitimate picks (D12.12/F1).
    */
   private onEditorStartChange(e: Event): void {
     const next = (e as CustomEvent<Date | null>).detail;
@@ -1166,10 +1173,43 @@ export class MpScheduler extends LitElement {
     this.updateEditorDraft({ start: next, end: new Date(draft.end.getTime() + delta) });
   }
 
-  /** The end alone is a RESIZE — it never drags the start with it. */
+  /**
+   * The end alone is a RESIZE — it never drags the start with it.
+   *
+   * It is also the only edge that can invert the range (D12.12): a start
+   * change preserves duration, so it keeps a valid draft valid, but an end
+   * can be picked before the start. The END picker therefore carries
+   * `min = draft.start`, which the CALENDAR half honours date-only — exactly
+   * the wanted semantic, since "the same day" must stay fully selectable —
+   * and this clamp covers what a bound cannot: the same-day-earlier-time
+   * case, and the picker's Today/Now buttons, which ignore bounds entirely.
+   *
+   * Clamping the field the user just edited is deliberate. Adjusting the
+   * OTHER edge instead would change a control they are not focused on
+   * (a WCAG 3.2.2 hazard); this corrects their own field and says so.
+   *
+   * The floor is one grid slot, matching keyboard resize — the editor could
+   * otherwise commit a 1-minute event on a 30-minute grid, which no direct
+   * gesture can produce.
+   */
   private onEditorEndChange(e: Event): void {
     const next = (e as CustomEvent<Date | null>).detail;
-    if (next) this.updateEditorDraft({ end: next });
+    const draft = this.editorDraft;
+    if (!next || !draft) return;
+
+    const earliest = new Date(draft.start.getTime() + this.minutesPerSlot() * 60 * 1000);
+    if (next.getTime() >= earliest.getTime()) {
+      this.updateEditorDraft({ end: next });
+      return;
+    }
+
+    this.updateEditorDraft({ end: earliest });
+    const { options } = this.stateManager.getState();
+    this.liveAnnouncer.announce(
+      this.msg('editorEndClamped', {
+        end: dateService.formatTime(earliest, options.timeFormat),
+      }),
+    );
   }
 
   /**

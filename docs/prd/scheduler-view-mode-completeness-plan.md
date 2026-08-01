@@ -552,9 +552,9 @@ commit instead of moving the event (D12.10).
       same Android pass as the open M3 item.
 
 
-## M27 — Range validity in the editor [R21, D12.12]. ANALYSED, NOT STARTED. (PRD §12.11)
+## M27 — Range validity in the editor [R21, D12.12]. DONE. (PRD §12.12)
 
-Investigation in PRD §12.11. The request half-dissolved on contact: **the start direction
+Investigation in PRD §12.12. The request half-dissolved on contact: **the start direction
 is already impossible**, because D12.10's duration-preserving shift makes validity an
 invariant of any start change. What remains is the end field, one commit-time hole that no
 picker bound can reach, and a set of adjacent defects.
@@ -563,17 +563,28 @@ Ordering: the two D12.12 items are independent and small; B33/B34 are worth doin
 same pass since they touch the same six lines; B35/B36 are separate decisions.
 
 **D12.12 — the fix proper**
-- [ ] `min = draft.start` on the END picker only. Date-granular, already plumbed, already
+- [x] `min = draft.start` on the END picker only. Date-granular, already plumbed, already
       APG-correct — it stops "an earlier day" without touching a shared component. Do NOT
-      also bound the start picker: F1 proves it cannot invert.
-- [ ] Clamp in `onEditorEndChange`: `end = max(picked, draft.start + minutesPerSlot())`,
+      also bound the start picker: F1 proves it cannot invert. The START picker's *absence*
+      of a `max` is now commented in place, so it does not read as an oversight.
+- [x] Clamp in `onEditorEndChange`: `end = max(picked, draft.start + minutesPerSlot())`,
       announced via the live announcer. Handles the same-day case, backstops the picker's
       Today/Now escape hatches, and makes the Save-time guard unreachable from the pickers.
-- [ ] Keep the Save-time `end <= start` guard as the backstop for what the pickers cannot
+      New message key `editorEndClamped` (`'End adjusted to {end}, the earliest allowed.'`).
+- [x] Keep the Save-time `end <= start` guard as the backstop for what the pickers cannot
       reach.
-- [ ] Specs: same-day earlier time clamps and announces; a later day is untouched; an
-      earlier DAY is unpickable (calendar bound); the guard still fires for a
-      consumer-supplied invalid event.
+- [x] Specs: same-day earlier time clamps and announces; a later day is untouched and
+      announces nothing; the end picker's `min` tracks the start as it moves; the start
+      picker has no `max`.
+
+**As-built note the specs had to absorb.** Two existing specs asserted that an inverted
+range is *refused*; with the clamp, that path can no longer produce one, so both were
+rewritten. The backstop's own spec now drives `editorDraft.end` directly — consumer data is
+the only remaining way to reach it, and a degenerate event **cannot be constructed through
+the UI at all**: `partGeometry` returns `null` for `end <= start`, so such an event never
+renders and the editor can never be opened on it. That is a sharper statement of B36 than
+the analysis had — the "cannot even be renamed" case needs the event to become degenerate
+*while* the editor is open, or to arrive that way from a consumer's own update.
 
 **Defects found on the way — worth fixing regardless**
 - [ ] **B33**: the validation message double-announces (a `role="alert"` node AND the
