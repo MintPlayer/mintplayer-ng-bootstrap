@@ -50,7 +50,7 @@ PR has a single narrative.
 | R18 | Events don't get the colour of their resource, in any view | **answered + demo fix** (M25) — the WC resolution works; the demo's sample data defeats it, §12.6 |
 | R19 | What happens when a resource/group is removed? Events should move to "(no resource)" | **scoped** (M19 + M25) — today they silently vanish from the timeline (B29), §12.7 |
 | R20 | Ship a built-in event-edit popup (right-click / next to the event), on by default, with an input to disable | **scoped** (M23) — does not exist today; reverses §8.4 non-goal 3, §12.8 |
-| R21 | Prevent picking a start after the end / an end before the start (only binding when the dates match) | **analysed, not built** — the start direction is already impossible (D12.10); the rest is D12.12, §12.12 |
+| R21 | Prevent picking a start after the end / an end before the start (only binding when the dates match) | **analysed, not built** — the start direction is already impossible (D12.10); the rest is D12.12, §12.11 |
 
 ## 3. Multi-day drag feedback (R1) — and four bugs found underneath it
 
@@ -490,6 +490,12 @@ Precedence through one internal `can(capability, subject?)`: host `readonly` att
   `snapDuration`) and the five dead `resourceService` event mutators. `eventStartEditable`
   / `eventDurationEditable` live on as `resizeEventStart` / `resizeEventEnd`. Versions
   bumped accordingly.
+
+  > **This mapping is WRONG, and D12.13 (§12.12) reverses it.** FullCalendar's
+  > `eventStartEditable` means "start times editable **through dragging**" — that is
+  > `moveEvent`, not a resize edge — while `eventDurationEditable` is one flag covering
+  > both edges. The correct fold was `moveEvent` + a single `resizeEvent`; the per-edge
+  > split was an artefact of this misreading, and it is what made B35 constructible.
 
 **Semantics (file-manager's rule verbatim):** permission denied ⇒ **do not render** the
 affordance; permitted but contextually unavailable ⇒ render `disabled`; every handler
@@ -1524,7 +1530,7 @@ different remedies apply, and which one is right turns on whether the control ow
   consumers are components that render inputs *among other content*, not components that
   *are* one control, so sizing the host would be wrong.
 
-### 12.12 R21 — preventing an inverted range in the editor (ANALYSIS, not built)
+### 12.11 R21 — preventing an inverted range in the editor (ANALYSIS, not built)
 
 Asked for: stop a user picking a start AFTER the end, or an end BEFORE the start — noting
 that the constraint "is only the case when the date matches". A three-probe investigation
@@ -1657,8 +1663,175 @@ drift, since "duration preserved" means absolute milliseconds.
 - **Shared-picker gaps**, each worth its own decision because they affect every consumer:
   `mp-datetime-picker` never forwards `min`/`max` to the time list; Today/Now bypass all
   bounds; nothing clamps, so an out-of-range value set programmatically renders as a
-  selected-but-disabled cell; and the **React and Vue wrappers expose no `min`/`max` at
-  all**, where Angular's does.
+  selected-but-disabled cell; and the React/Vue wrappers appear to expose no `min`/`max`.
+  **CORRECTED in §12.12 (D12.15): the React half of that last claim is false** — `@lit/react`
+  routes such props onto the element automatically. Vue reaches the element for camelCase
+  props only, which is a repo-wide wrapper-idiom issue rather than a picker one.
+
+### 12.12 Resolving the three concerns raised by §12.11
+
+§12.11 ended with three open items: the commit-time inversion (B35), the error/announcement
+defects (B33/B34), and six shared-picker gaps. A second three-probe investigation decided
+each. **None of this is implemented yet** — it is M28–M30 in the plan.
+
+#### D12.13 — collapse `resizeEventStart` + `resizeEventEnd` into one `resizeEvent`
+
+Proposed by the user to remove B35's root cause, and it survives scrutiny for a better
+reason than the bug: **the split was manufactured by a misreading.** §6.2 states that
+FullCalendar's `eventStartEditable` / `eventDurationEditable` "live on as
+`resizeEventStart` / `resizeEventEnd`". That mapping is wrong — `eventStartEditable` is
+*"allow events' start times to be editable **through dragging**"*, i.e. our `moveEvent`,
+while `eventDurationEditable` covers resize as **one** flag for both edges. The correct
+fold of the two dead flags was `moveEvent` + a single `resizeEvent`. Re-reading all of
+§6.2 confirms it: every bullet defends the `boolean | Object` shape, the `readonly` layer,
+tri-state per-item flags and the rejection of predicates — **not one defends per-edge
+granularity**. Telling detail: the exact configuration that produces B35 (start resizable,
+end not) is one FullCalendar deliberately cannot express.
+
+Of the nine sites consulting the two flags, five are literally `a || b`. The three that
+genuinely discriminate — the per-edge resize handles, the pointer gesture, and
+Shift+Arrow versus Alt+Shift+Arrow — are all **direct manipulation**, where the edge is a
+property of the *gesture*, not of the permission, and all are served by the per-item flag.
+
+- **Per-edge control stays, on the ITEM.** `SchedulerEvent.resizable`'s `{ start, end }`
+  form becomes the only place it lives, which is where it belongs: per-edge locking is
+  data-dependent ("this shift already clocked in; its start is pinned, you may still
+  extend it"). A *global* "no user may ever resize any start edge" answers a question
+  nobody asks. The resolver splits into `resolveCapability('resizeEvent', …)` (any edge)
+  and `resolveResizeEdge('start' | 'end', …)` (handles, gestures, keyboard).
+- **The collapse alone is not the fix.** It closes B35 only because the editor's two
+  guards become *textually equal expressions*, not because the code states the invariant —
+  one future edit reintroduces it. It must ship with `canTime` computed **once** and a
+  **single** `if` in `saveEventEditor` writing both edges together.
+- **And the start-change semantic must follow the permission actually granted**, which
+  closes the whole class rather than the instance:
+
+  | `moveEvent` | `resizeEvent` | start field | end field | a start change… |
+  |---|---|---|---|---|
+  | ✓ | ✓ | on | on | shifts both (a move) |
+  | ✓ | ✗ | on | **off** | shifts both (a move) |
+  | ✗ | ✓ | on | on | resizes the start alone, clamped to `end − minDuration` |
+  | ✗ | ✗ | off | off | — |
+
+  Row 2 closes **a leak that exists today**: with `moveEvent: true, resizable: false` the
+  editor commits a pure duration change that `resizable: false` forbids. Row 3's clamp is
+  the mirror of D12.12's end clamp. This matrix is only tractable *because* of the
+  collapse — with three flags it is eight rows and the start-change semantic branches
+  further. For the editor, `canResize` folds the per-item object form as **both** edges,
+  so `resizable: { start: false, end: true }` disables the editor's time fields while the
+  end *handle* keeps working: honest, no leak, no inversion.
+
+Blast radius: `scheduler-core` (interface, defaults, resolver + one new export) and two
+scheduler files, nine edits. **Zero wrapper changes and zero demo changes** — all three
+wrappers pass `options` through opaquely, and all three demos set only *resource*
+capabilities. Two specs change; no e2e touches it. Breaking, so the versions bump again.
+
+*Alternative if the break is unwanted:* make `onEditorStartChange` permission-aware and
+shift the end only when the end is committable (~3 lines, non-breaking). It does close
+B35, but "start editable, end locked" then hits the very dead end D12.10 was introduced to
+remove, and the eight-row matrix survives. Prefer the collapse: it deletes the axis
+instead of guarding it.
+
+#### D12.14 — one message, one channel (B33 / B34)
+
+**Not systemic** — the scheduler is the only component that double-announces. But the repo
+has answered this question three different ways: the toast **deleted** its live node in
+favour of the announcer (with the reason in a comment), the five form WCs use a
+described-by node and never announce, and the scheduler does both. That divergence, not
+the single bug, is what deserves a written rule.
+
+- **B33:** keep the persistent message, **delete the `liveAnnouncer.announce(...)` calls on
+  both failure paths, and drop `role="alert"`**. The message is then spoken once — by the
+  invalid field's own accessible description, when focus lands on it. That is the APG
+  form-validation pattern and what the other five WCs already do. The announcer stays on
+  the *success* path, which is transient by nature. `LiveAnnouncerController` self-clears
+  after 1500 ms, so it cannot carry a message the user may want to re-read — which is
+  exactly what a validation error is.
+- **B34, and a constraint that forces shared work:** the scheduler **cannot** render its
+  own message node for Start/End. An IDREF does not cross a shadow boundary, and
+  `aria-describedby` on the roleless `<mp-datetime-picker>` host reaches nothing — it
+  would swap one orphaned message for another. So the fix splits by field: the **title**
+  error is scheduler-local (that input is in the scheduler's own shadow root), while the
+  **range** error requires adding `invalid` + `error-text` to `mp-datetime-picker`,
+  rendered through the shared `errorFeedback()` onto its inner input (~15 lines, copying
+  `mint-otp-input`'s plain-attribute form). That closes the last gap in the form-control
+  family, and Angular consumers get reactive-forms validation for free through the existing
+  `[bsControlValidity]` directive. Mark **End only** as invalid — Start is not wrong, and
+  the message should name the actionable field.
+- **Focus must move**, and B33 depends on it: with the announcer gone, a non-live
+  described-by node is silent unless focus reaches it. The scheduler already re-focuses
+  after every other outcome, including refused ones, so this follows house style. It needs
+  a small `focus()` override on `mp-datetime-picker` delegating to its inner input — **not**
+  `delegatesFocus: true` (which would change click-focus for the whole picker) and not the
+  scheduler reaching into another component's shadow root.
+- **Validate on Save, clear on change** (today's behaviour) is right and stays: an inverted
+  range is a legitimate *intermediate* state, and live validation would flag it the instant
+  End is touched. `editorError` widens to `{ field: 'title' | 'end'; message: string }` so
+  the mark lands on the right control.
+- Side benefit: each message renders next to its own field, so the stray `<p>` after the
+  colour field — and its SCSS rule — disappear.
+
+**Rule for CLAUDE.md, since it generalises beyond this component:**
+
+> **One message, one channel.** A string goes to *either* a live region *or* a
+> described-by node — never both, or screen readers speak it twice, often at two
+> urgencies. A live region is for transient events the user need not revisit; it
+> self-clears, so it cannot hold anything re-readable. A validation message must persist,
+> so it belongs in an `errorFeedback()` node referenced by `aria-errormessage` +
+> `aria-describedby` from the **role-bearing** control, and is spoken by *moving focus
+> there*. Never announce by INSERTING a node that already carries `role="alert"` — a region
+> mounted in the same task as its text is unreliably announced. And a validation message
+> for a control whose role lives inside a WC's shadow root **must** travel in as
+> `error-text`; `aria-describedby` on the roleless host reaches nothing.
+
+#### D12.15 — the six shared-picker gaps: one follow-up PR, one correction here
+
+**Correction to §12.11, which was wrong.** It claimed React and Vue expose no
+`min`/`max`. **The React half is false**: `@lit/react`'s `createComponent` routes any prop
+matching a prototype accessor onto the element as a *property*, and Lit defines those for
+everything in `static properties` — so `<BsDatetimePicker min={d} max={d}
+disableDateFn={fn} />` type-checks and works today. Vue is a grey area rather than a gap:
+`v-bind="$attrs"` reaches the element for camelCase props, but kebab-case
+(`:disable-date-fn`) silently fails, which is a **repo-wide Vue wrapper idiom** question,
+not a picker one. What genuinely is missing is a bounds **demo section** in the React and
+Vue pages, where Angular has one.
+
+Also downgraded: **#4, "nothing clamps", is defensible — leave it.** A cell that is both
+`aria-selected` and `aria-disabled` is legal ARIA and arguably the honest answer ("this is
+your value, and it is not permitted"); clamping would emit `value-change` during init and
+fight Angular's CVA and Vue's `v-model`. Validation, which Angular already has, is the
+right channel for out-of-range. Its one real half — the *time list* losing the tab stop on
+a disabled selection — folds into #5.
+
+The remaining four are **one follow-up PR**, because they are one change:
+
+- **#1** (forward bounds to the time list) is blocked on **#2**'s API, and a naive forward
+  would visibly break a **shipped demo**: the ng page's `boundsMax = new Date(2026, 11, 31)`
+  is midnight, so a verbatim forward disables every slot except 00:00 on every day of 2026
+  — and no spec or e2e would catch it. It would also make the widget stricter than its own
+  Angular validator.
+- **#2 is not a defect**; it is the API design #1 needs. Recommended shape: keep
+  `mp-time-list` a pure time-of-day primitive and make that explicit —
+  `minMinutes`/`maxMinutes: number | null` — and have `mp-datetime-picker` derive them for
+  the day it is editing (`sameDay(day, bound) ? minutesOf(bound) : null`). **This is the
+  only option that cannot break `mp-timepicker`**, which already forwards date-carrying
+  bounds to the same element and whose consumers legitimately pass
+  `new Date(2020, 0, 1, 18, 0)` meaning "18:00"; the alternative (teach the list about
+  dates) would silently disable that element's entire list. The `number` type also makes
+  the confusion *structurally impossible* — a `Date` can be mistaken for a datetime bound,
+  `minMinutes: 480` cannot. It naturally yields "an end on a later day gets the full 24-hour
+  range", the behaviour §12.11 attributes to Google Calendar and Outlook.
+- **#3** (Today/Now bypass every bound) is a real bug — the footer button escapes a
+  constraint the grid one layer below enforces — but the scheduler passes no bounds, so
+  this PR gains nothing, and the guard would be written twice if done before #1.
+- **#5 is MANDATORY with #1, not optional.** `mp-time-list` uses native `disabled` where
+  `mp-calendar` uses `aria-disabled` + roving; the moment bounds reach the list, its
+  `PageUp`/`PageDown` becomes a **swallowed keypress** (it `preventDefault()`s, then the
+  move bails on a disabled target). Fixing it needs three coordinated edits, because
+  `RovingFocus` skips `aria-disabled` *and* `:disabled` by default.
+
+Schedule with that PR: the ng demo's `boundsMax` should become `new Date(2026, 11, 31, 23, 59)`
+if it means "all of 2026".
 
 ### 12.13 Phase-2 as-built API surface
 

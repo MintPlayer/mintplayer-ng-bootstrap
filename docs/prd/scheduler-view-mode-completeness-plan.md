@@ -25,9 +25,11 @@ ng-bootstrap **22.10.0**, react-bootstrap **19.12.0**, vue-bootstrap **3.13.0**
 they fire no `input` and no `mousedown`, and both omissions hid a defect that made the
 feature unusable. Dispatch real events; click real buttons with a real mouse.
 Still open from phase 1: the device verification items and deliberate polish items under
-"Outstanding work, spelled out" — none a reported defect. **Open on top of phase 2:** M27
-(R21, range validity in the editor) is analysed and decided but NOT started, and it
-carries five adjacent defects plus six shared-picker gaps that need their own decision.
+"Outstanding work, spelled out" — none a reported defect. **Open on top of phase 2**, all analysed and
+decided but NOT started: **M27** (R21, range validity in the editor), **M28** (collapse the
+resize capabilities — breaking, and the structural fix for B35), **M29** (one message, one
+channel — B33/B34), and **M30** (datetime-picker bounds reaching the time list), which is
+explicitly a SEPARATE PR because it changes shared components every picker consumer uses.
 
 ## Conventions
 
@@ -550,9 +552,9 @@ commit instead of moving the event (D12.10).
       same Android pass as the open M3 item.
 
 
-## M27 — Range validity in the editor [R21, D12.12]. ANALYSED, NOT STARTED.
+## M27 — Range validity in the editor [R21, D12.12]. ANALYSED, NOT STARTED. (PRD §12.11)
 
-Investigation in PRD §12.12. The request half-dissolved on contact: **the start direction
+Investigation in PRD §12.11. The request half-dissolved on contact: **the start direction
 is already impossible**, because D12.10's duration-preserving shift makes validity an
 invariant of any start change. What remains is the end field, one commit-time hole that no
 picker bound can reach, and a set of adjacent defects.
@@ -611,6 +613,94 @@ Each of these affects every consumer of the picker, so none belongs in this PR:
       then `moveTo` bails on the disabled target. Latent today, live the moment bounds are
       passed.
 - [ ] React and Vue `BsDatetimePicker` expose no `min`/`max` at all, where Angular's does.
+
+
+## M28 — Collapse the resize capabilities [D12.13, B35]. DECIDED, NOT STARTED. BREAKING.
+
+PRD §12.12/D12.13. The per-edge split came from a misreading of FullCalendar and is what
+made B35 constructible; deleting the axis beats guarding it.
+
+- [ ] `SchedulerPermissions`: `resizeEventStart` + `resizeEventEnd` → one `resizeEvent`
+      (default `true`). Update `DEFAULT_PERMISSIONS` and the resolver switch.
+- [ ] Split the resolver: `resolveCapability('resizeEvent', …)` answers "resizable at
+      all"; a new `resolveResizeEdge('start' | 'end', …)` serves the three
+      direct-manipulation sites (resize handles in `base-view.appendResizeHandles`, the
+      pointer gesture in `allowsGesture`, keyboard `resizeKeyboardMoveEdge`). Per-edge
+      control now lives ONLY on `SchedulerEvent.resizable`'s `{ start, end }` form, which
+      stays — it is data-dependent, which is exactly what a per-item flag is for.
+- [ ] **The collapse alone is not the fix.** Compute `canTime` ONCE and use it for both
+      pickers' `disabled`, for `onEditorStartChange`, and for a SINGLE `if` in
+      `saveEventEditor` that writes both edges together. Otherwise B35 is closed only
+      because two expressions happen to be textually equal, and one edit reopens it.
+- [ ] Make the start-change semantic follow the granted permission (D12.13's 4-row table):
+      with `moveEvent` it is a move (shift both); with only `resizeEvent` it resizes the
+      start alone, clamped to `end − minDuration` and announced, mirroring D12.12's end
+      clamp. This also closes a leak that exists TODAY — `moveEvent: true, resizable:
+      false` currently commits a pure duration change that `resizable: false` forbids.
+- [ ] For the editor, fold the per-item object form as BOTH edges, so
+      `resizable: { start: false, end: true }` disables the editor's time fields while the
+      end handle keeps working.
+- [ ] Specs: rewrite "each resize edge is gated by ITS capability" to drive edges from
+      `event.resizable`; add one per row of the 4-row matrix.
+- [ ] Docs: PRD §6.2 (the corrected mapping is already noted in place), §11 as-built,
+      §12.13, and this plan. Version bumps on the WC + all three wrappers.
+- Wrappers and demos need NO code change — they pass `options` through opaquely and set
+  only resource capabilities.
+
+## M29 — One message, one channel [D12.14, B33, B34]. DECIDED, NOT STARTED.
+
+PRD §12.12/D12.14. Ship B33 and B34 together: once the announcer is gone, focus movement
+is the only thing that speaks the error.
+
+- [ ] **B33**: delete `liveAnnouncer.announce(...)` on both editor failure paths and drop
+      `role="alert"` from the message node. Keep the announcer on the SUCCESS path.
+- [ ] **B34, title**: scheduler-local — `aria-invalid` on the title input plus an
+      `errorFeedback()` node beside it. No shared-code change.
+- [ ] **B34, range**: add `invalid` + `error-text` to `mp-datetime-picker`, rendered
+      through the shared `errorFeedback()` onto its inner input (copy `mint-otp-input`'s
+      plain-attribute form, ~15 lines + `invalidFeedbackStyles`). Required, not optional:
+      an IDREF cannot cross the shadow boundary, so the scheduler physically cannot
+      describe that field from outside. Mark END only.
+- [ ] `editorError` becomes `{ field: 'title' | 'end'; message: string } | null`.
+- [ ] Move focus to the offending control on a refused Save (`await this.updateComplete`
+      first). Needs a small `focus()` override on `mp-datetime-picker` delegating to its
+      inner input — NOT `delegatesFocus: true`.
+- [ ] Keep validate-on-Save + clear-on-change; make the clear per-field.
+- [ ] Delete the now-dead `.editor-error` SCSS rule; update the two specs asserting on it.
+- [ ] Add the "one message, one channel" rule to CLAUDE.md — the repo currently answers
+      this question three different ways (toast, form controls, scheduler).
+
+## M30 — Datetime-picker bounds reach the time list. SEPARATE PR — do NOT do it here.
+
+PRD §12.12/D12.15. Four of the six shared-picker gaps are one change: the API, its two
+consumers, the escape hatch it closes and the keyboard defect it would otherwise create.
+Kept out of this PR because the scheduler passes no bounds, so it gains nothing here, and
+each item has its own blast radius across every picker consumer.
+
+- [ ] **#2 API first**: `mp-time-list` bounds become `minMinutes`/`maxMinutes:
+      number | null` (time-of-day, explicit). `mp-datetime-picker` derives them per render
+      for the day it is editing. The ONLY option that cannot break `mp-timepicker`, whose
+      consumers legitimately pass `new Date(2020,0,1,18,0)` meaning "18:00" — teaching the
+      list about dates would silently disable its entire list. The `number` type makes the
+      confusion structurally impossible.
+- [ ] **#1**: forward the derived bounds. A NAIVE forward visibly breaks the shipped ng
+      demo (`boundsMax = new Date(2026,11,31)` is midnight → every slot but 00:00 disabled
+      all year) and no spec or e2e would catch it — add one that would.
+- [ ] **#5, mandatory with #1**: `mp-time-list` moves from native `disabled` to
+      `aria-disabled` + roving (matching `mp-calendar` and the APG). Three coordinated
+      edits, because `RovingFocus` skips both by default. Without it, bounds turn
+      PageUp/PageDown into a swallowed keypress.
+- [ ] **#3**: `Today` / `Now` must respect bounds — disable the buttons rather than
+      silently no-op.
+- [ ] Fix the demo's `boundsMax` to `new Date(2026, 11, 31, 23, 59)` if it means "all of
+      2026".
+- [ ] **#4 — LEAVE, deliberately.** A cell that is both `aria-selected` and
+      `aria-disabled` is legal ARIA and the honest answer; clamping would fight Angular's
+      CVA and Vue's `v-model`. Its one real half (the time list losing its tab stop on a
+      disabled selection) is fixed by #5.
+- [ ] **#6 — text only, already done in this PR.** The React claim was FALSE (`@lit/react`
+      routes those props automatically); Vue's kebab-case gap is a repo-wide wrapper idiom
+      question. Remaining code items: a bounds demo section for the React and Vue pages.
 
 ---
 
