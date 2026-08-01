@@ -25,7 +25,9 @@ ng-bootstrap **22.10.0**, react-bootstrap **19.12.0**, vue-bootstrap **3.13.0**
 they fire no `input` and no `mousedown`, and both omissions hid a defect that made the
 feature unusable. Dispatch real events; click real buttons with a real mouse.
 Still open from phase 1: the device verification items and deliberate polish items under
-"Outstanding work, spelled out" — none a reported defect.
+"Outstanding work, spelled out" — none a reported defect. **Open on top of phase 2:** M27
+(R21, range validity in the editor) is analysed and decided but NOT started, and it
+carries five adjacent defects plus six shared-picker gaps that need their own decision.
 
 ## Conventions
 
@@ -546,6 +548,69 @@ commit instead of moving the event (D12.10).
 - [x] Device check rides along: vertical cross-row touch drag (600ms hold path — no
       `touch-action` on `.scheduler-timeline-event`) and the editor's double-tap opener,
       same Android pass as the open M3 item.
+
+
+## M27 — Range validity in the editor [R21, D12.12]. ANALYSED, NOT STARTED.
+
+Investigation in PRD §12.12. The request half-dissolved on contact: **the start direction
+is already impossible**, because D12.10's duration-preserving shift makes validity an
+invariant of any start change. What remains is the end field, one commit-time hole that no
+picker bound can reach, and a set of adjacent defects.
+
+Ordering: the two D12.12 items are independent and small; B33/B34 are worth doing in the
+same pass since they touch the same six lines; B35/B36 are separate decisions.
+
+**D12.12 — the fix proper**
+- [ ] `min = draft.start` on the END picker only. Date-granular, already plumbed, already
+      APG-correct — it stops "an earlier day" without touching a shared component. Do NOT
+      also bound the start picker: F1 proves it cannot invert.
+- [ ] Clamp in `onEditorEndChange`: `end = max(picked, draft.start + minutesPerSlot())`,
+      announced via the live announcer. Handles the same-day case, backstops the picker's
+      Today/Now escape hatches, and makes the Save-time guard unreachable from the pickers.
+- [ ] Keep the Save-time `end <= start` guard as the backstop for what the pickers cannot
+      reach.
+- [ ] Specs: same-day earlier time clamps and announces; a later day is untouched; an
+      earlier DAY is unpickable (calendar bound); the guard still fires for a
+      consumer-supplied invalid event.
+
+**Defects found on the way — worth fixing regardless**
+- [ ] **B33**: the validation message double-announces (a `role="alert"` node AND the
+      polite LiveAnnouncer receive the same string in one update). Keep the announcer; drop
+      the alert role, or vice versa — but only one. Affects the range and title paths.
+- [ ] **B34**: the message is orphaned (no `id`, no `aria-invalid` /
+      `aria-errormessage` / `aria-describedby` on either picker, rendered after the colour
+      field rather than beside Start/End) and a failed Save leaves focus on the Save
+      button. `a11y/src/error-text.ts` `errorFeedback()` exists for this and is used by
+      five WCs; `mp-datetime-picker` supports no error text at all, so this needs a small
+      addition there.
+- [ ] **B35**: asymmetric permissions can invert the COMMIT — `resizeEventStart` without
+      `resizeEventEnd` applies `updated.start` while `updated.end` keeps the original.
+      Decide: refuse to shift a draft edge that cannot be committed, or clamp
+      `updated.start` against `original.end` at save. Also stop rendering movement in a
+      disabled field.
+- [ ] **B36**: the range guard runs unconditionally, so a degenerate stored event cannot
+      even be RENAMED. Scope the check to edges the user can actually edit.
+- [ ] The editor enforces no minimum duration at all — it will commit a 1-minute event on
+      a 30-minute grid, which neither drag nor keyboard resize can produce. The clamp above
+      fixes this for the end field; decide whether it should also hold at Save.
+
+**Shared-component work — NOT scheduler scope, needs its own decision**
+
+Each of these affects every consumer of the picker, so none belongs in this PR:
+- [ ] `mp-datetime-picker` never forwards `min`/`max` to `mp-time-list` (its siblings
+      `mp-datepicker` and `mp-timepicker` both do). Fixing it properly needs a
+      **date-aware** bound semantic — `mp-time-list` compares time-of-day only and would
+      otherwise grey out the same clock range on every day.
+- [ ] The Today and Now footer buttons bypass min/max entirely.
+- [ ] Nothing clamps: an out-of-range value set programmatically renders as a
+      selected-but-disabled cell.
+- [ ] `mp-calendar` and `mp-time-list` disagree on disabled semantics — `aria-disabled`
+      and focusable (APG-correct) versus native `disabled` and skipped. One popover, two
+      behaviours.
+- [ ] `mp-time-list`'s PageUp/PageDown is a dead key at a bound: it `preventDefault()`s,
+      then `moveTo` bails on the disabled target. Latent today, live the moment bounds are
+      passed.
+- [ ] React and Vue `BsDatetimePicker` expose no `min`/`max` at all, where Angular's does.
 
 ---
 

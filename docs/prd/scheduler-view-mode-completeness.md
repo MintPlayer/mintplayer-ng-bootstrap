@@ -50,6 +50,7 @@ PR has a single narrative.
 | R18 | Events don't get the colour of their resource, in any view | **answered + demo fix** (M25) — the WC resolution works; the demo's sample data defeats it, §12.6 |
 | R19 | What happens when a resource/group is removed? Events should move to "(no resource)" | **scoped** (M19 + M25) — today they silently vanish from the timeline (B29), §12.7 |
 | R20 | Ship a built-in event-edit popup (right-click / next to the event), on by default, with an input to disable | **scoped** (M23) — does not exist today; reverses §8.4 non-goal 3, §12.8 |
+| R21 | Prevent picking a start after the end / an end before the start (only binding when the dates match) | **analysed, not built** — the start direction is already impossible (D12.10); the rest is D12.12, §12.12 |
 
 ## 3. Multi-day drag feedback (R1) — and four bugs found underneath it
 
@@ -1523,7 +1524,143 @@ different remedies apply, and which one is right turns on whether the control ow
   consumers are components that render inputs *among other content*, not components that
   *are* one control, so sizing the host would be wrong.
 
-### 12.11 Phase-2 as-built API surface
+### 12.12 R21 — preventing an inverted range in the editor (ANALYSIS, not built)
+
+Asked for: stop a user picking a start AFTER the end, or an end BEFORE the start — noting
+that the constraint "is only the case when the date matches". A three-probe investigation
+(picker capabilities, reachability/UX, a11y) returned five findings that reshape the
+request, plus a pile of adjacent defects. **Nothing in this section is implemented yet.**
+
+#### F1 — the start direction is already impossible, and half the request dissolves
+
+`onEditorStartChange` writes `{ start: next, end: draft.end + delta }`. Duration is an
+*invariant* of that transform — `end' - start' = (end + delta) - (start + delta)` — so a
+valid draft stays valid after any number of start changes, in either direction, at any
+magnitude. **D12.10 already prevents start-after-end**, for free, as a side effect of
+preserving duration. No bound on the start picker is needed or useful.
+
+Manual entry is likewise a non-issue: the picker's display input is hard `readonly`
+(`aria-readonly="true"`, no input handlers), so there is no typing path to guard.
+
+#### F2 — but the COMMIT can still invert, under asymmetric permissions (B35)
+
+`saveEventEditor` applies each edge only if its own capability allows it. With
+`moveEvent: false, resizeEventStart: true, resizeEventEnd: false` — expressible globally
+*and* per-event via `resizable: { start: true, end: false }` — the start picker is live,
+the end picker disabled, and pushing the start past the original end commits
+`updated.start` while `updated.end` keeps `original.end`. **The draft stays valid; the
+commit inverts.** Two aggravations: the disabled end field visibly moves (it renders
+`draft.end`) although its value can never be committed, and the error then names a
+condition the visible form does not show. A genuine bug, *caused* by D12.10, and no
+picker bound can reach it.
+
+#### F3 — the same-day nuance: one `min: Date` is the wrong shape
+
+The two halves of `mp-datetime-picker` compare bounds at different granularities:
+
+- **`mp-calendar` compares date-only** (`dateOnly(a) < dateOnly(b)`). So `min = draft.start`
+  disables every day *before* the start's day and leaves the start's own day fully
+  selectable — **exactly the wanted semantic, already correct, for free**.
+- **`mp-time-list` compares time-of-day only**, explicitly discarding the date. Forwarding
+  the same `min` would grey out every slot before the start's *clock* time on **every**
+  day: a 22:00 Mon → 06:00 Tue event would have all of Tuesday morning refused.
+
+The correct constraint is *date-dependent* and not expressible as a single `Date`:
+
+```
+timeMin(end) = isSameDay(end, start) ? startTimeOfDay + minDuration : none
+```
+
+recomputed whenever the end's date half changes. And today it is moot anyway:
+**`mp-datetime-picker` forwards `min`/`max` to the calendar but not to the time list** —
+its siblings `mp-datepicker` and `mp-timepicker` both forward correctly, so the composite
+is the outlier.
+
+#### F4 — prevention can never be complete here, so something must correct after the fact
+
+The picker edits date and time *independently*, each preserving the other half. A user on
+7 Aug 09:00 who picks the date 5 Aug keeps 09:00, which may now precede a 14:00 start —
+the bound can only be re-evaluated *after* that change. Two further escape hatches ignore
+bounds entirely: the **Today** and **Now** footer buttons write the value with no min/max
+check, in a shared component used well beyond the scheduler.
+
+#### F5 — the component already has a convention for this, and it is split
+
+The pointer resize path **clamps**: `calculateResizeEndPreview` is
+`max(currentSlot.end, start + minDurationMs)`, and the start edge mirrors it. Keyboard
+resize instead **refuses silently** — a bare `return`, no announcement — and against a
+different number (`minutesPerSlot()` versus the pointer's hard-coded 30 minutes). So "do
+what the component already does" is a choice, not a lookup. (That silent keyboard refusal
+is its own small a11y gap.)
+
+Worth noting alongside: **the editor enforces no minimum duration at all** — it will
+commit a 1-minute event on a 30-minute grid, which neither drag nor keyboard resize can
+produce.
+
+#### Decision D12.12 — clamp the end, plus the one free bound
+
+1. **`min = draft.start` on the END picker.** Date-granular, already plumbed, already
+   APG-correct in the calendar, zero new API, no same-day complication. Stops the *coarse*
+   mistake (an earlier day) before it can be made.
+2. **Clamp in `onEditorEndChange`**: `end = max(picked, draft.start + minDuration)` with
+   `minDuration = minutesPerSlot()` — the keyboard's number, because it is the one that
+   agrees with the grid and with `pickerStep()`. Announce the correction through the live
+   announcer. This handles the *fine* case (same day, earlier time), backstops Today/Now,
+   and makes the `end <= start` guard unreachable from the pickers — what §12.9a was
+   reaching for on the other edge.
+3. **Keep the Save-time guard** as the backstop for everything the pickers cannot reach
+   (F2, and consumer-supplied invalid events).
+
+Rejected: **forwarding bounds into the time list** (F3) — it needs a new date-aware bound
+semantic on two shared WCs plus a Today/Now fix, to buy what the clamp gets in ~10 lines
+in one file. Worth doing *for the picker's own sake* (below), not as the way to solve
+this. Also rejected: **auto-adjusting the OTHER edge**, which changes a control the user
+is not focused on — a WCAG 3.2.2 hazard. The recommended clamp is materially different:
+it adjusts the *same* field the user just edited, and announces it.
+
+**Prior art**, with confidence marked: *confident* that Google Calendar and Outlook both
+preserve duration when the start changes (matching D12.10), and that both bias the end
+field's offered times to valid ones on the same day while reverting to a full 24-hour
+range when the end is on a later day — precisely F3's nuance, solved by both.
+*Assuming, not asserting:* what each does when a *date* pick inverts the range. The
+reliable common denominator is that neither lets an inverted range sit quietly in the
+form, and neither relies on a save-time error as its primary mechanism.
+
+**What D12.12 explicitly does NOT fix:** F2/B35 (asymmetric-permission commit inversion);
+a consumer-supplied invalid or zero-length event, which is born invalid and — when
+`resizeEventEnd` is denied — cannot be repaired at all; a degenerate stored event blocking
+even a *rename*, because the range guard runs unconditionally (B36); and DST wall-clock
+drift, since "duration preserved" means absolute milliseconds.
+
+#### Defects found during this analysis (independent of whether D12.12 ships)
+
+- **B33 — the editor's validation message double-announces.** The same string enters two
+  live regions in one update: a `role="alert"` node *and* the polite LiveAnnouncer. Screen
+  readers speak it twice. Both the range and title-required paths. Pick one channel — the
+  announcer, since a newly-inserted `role="alert"` is announced inconsistently across
+  engines.
+- **B34 — the message is orphaned, and focus does not move.** The `<p>` has no `id`,
+  neither picker gets `aria-invalid` / `aria-errormessage` / `aria-describedby`, and it
+  renders *after* the colour field rather than beside Start/End. Once the announcement
+  decays, a screen-reader user who tabs back to End is told nothing. The repo already has
+  `errorFeedback()` in `a11y/src/error-text.ts` for exactly this — used by five WCs, but
+  `mp-datetime-picker` supports no error text at all. Save also leaves focus on the Save
+  button rather than moving it to the offending field.
+- **B35 / B36** — as described in F2 and in "does NOT fix" above.
+- **The two halves of the picker disagree on disabled semantics.** `mp-calendar` uses
+  `aria-disabled` and keeps the cell in the roving order (APG-correct, discoverable);
+  `mp-time-list` uses native `disabled`, so slots vanish from keyboard traversal entirely.
+  One popover, two behaviours.
+- **A latent dead key**: `mp-time-list`'s PageUp/PageDown computes ±60 minutes and calls
+  `moveTo`, which bails on a disabled target *after* `preventDefault()` — no move, no
+  announcement. Unreachable today because nobody passes bounds; adding them makes it live.
+- **Shared-picker gaps**, each worth its own decision because they affect every consumer:
+  `mp-datetime-picker` never forwards `min`/`max` to the time list; Today/Now bypass all
+  bounds; nothing clamps, so an out-of-range value set programmatically renders as a
+  selected-but-disabled cell; and the **React and Vue wrappers expose no `min`/`max` at
+  all**, where Angular's does.
+
+### 12.13 Phase-2 as-built API surface
 
 One list, so consumers and the wrappers do not have to read the whole branch.
 
