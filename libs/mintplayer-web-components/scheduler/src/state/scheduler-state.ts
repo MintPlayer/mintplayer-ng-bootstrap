@@ -427,6 +427,13 @@ export class SchedulerStateManager {
     );
     this.setState((state) => ({
       events: state.events.map((e) => (e.id === event.id ? event : e)),
+      // The SELECTION has to track the record too (B32). It holds an event
+      // object, not an id, so leaving it behind left every reader of
+      // `selectedEvent` on a stale copy after any commit — the editor reopened
+      // by F2 showed the pre-edit values, and a consumer bound to
+      // `[(selectedEvent)]` was handed data it had just replaced.
+      selectedEvent:
+        state.selectedEvent?.id === event.id ? event : state.selectedEvent,
     }));
   }
 

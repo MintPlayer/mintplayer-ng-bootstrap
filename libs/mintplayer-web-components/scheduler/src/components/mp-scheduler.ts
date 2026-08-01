@@ -66,13 +66,6 @@ import '@mintplayer/web-components/datetime-picker';
  * - InputHandler: Normalizes mouse/touch input
  * - SchedulerEventEmitter: Dispatches custom events
  */
-/** The subset of `<mp-datetime-picker>`'s API the editor drives. */
-type EditorPicker = HTMLElement & {
-  value: Date | null;
-  disabled: boolean;
-  setValue: (next: Date | null, emit?: boolean) => void;
-};
-
 export class MpScheduler extends LitElement {
   static override styles = [formControlStyles, schedulerStyles];
 
@@ -207,6 +200,7 @@ export class MpScheduler extends LitElement {
     onClose: () => {
       this.editorEventId = null;
       this.editorError = null;
+      this.editorDraft = null;
       this.requestUpdate();
     },
   });
@@ -924,8 +918,13 @@ export class MpScheduler extends LitElement {
     if (!this.eventEditor || !this.canOpenEditor(event)) return;
     this.editorEventId = event.id;
     this.editorError = null;
-    // What the end is measured against while this editor is open (D12.10).
-    this.editorStartAnchor = new Date(event.start);
+    this.editorDraft = {
+      title: event.title,
+      start: new Date(event.start),
+      end: new Date(event.end),
+      color: event.color ?? null,
+      inheritColor: !event.color,
+    };
     this.requestUpdate();
     void this.eventEditorOverlay.open();
     // Same reposition trap as the day popover: `scroll` does not compose.
@@ -935,11 +934,12 @@ export class MpScheduler extends LitElement {
   }
 
   private closeEventEditor(): void {
-    this.editorStartAnchor = null;
+    this.editorDraft = null;
     this.contentContainer?.removeEventListener('scroll', this.boundRepositionEditor);
     this.eventEditorOverlay.close();
     this.editorEventId = null;
     this.editorError = null;
+    this.editorDraft = null;
     this.requestUpdate();
   }
 
@@ -972,17 +972,22 @@ export class MpScheduler extends LitElement {
 
   private renderEventEditor(): TemplateResult | typeof nothing {
     const event = this.editorEventId ? this.getEventById(this.editorEventId) : null;
-    if (!event) return nothing;
+    const draft = this.editorDraft;
+    if (!event || !draft) return nothing;
 
     const { options } = this.stateManager.getState();
     const canFields = this.can('editEvent', event);
     const canStart = this.can('moveEvent', event) || this.can('resizeEventStart', event);
     const canEnd = this.can('moveEvent', event) || this.can('resizeEventEnd', event);
-    const color = resolveEventColor(
-      event,
-      this.stateManager.getState().resourceById,
-      this.stateManager.getState().options.defaultEventColor,
-    );
+    // Every binding below reads the DRAFT, so a re-render restores what the
+    // user has edited rather than resetting the controls to the stored event.
+    const color =
+      draft.color ??
+      resolveEventColor(
+        event,
+        this.stateManager.getState().resourceById,
+        this.stateManager.getState().options.defaultEventColor,
+      );
 
     return html`
       <div
@@ -991,7 +996,7 @@ export class MpScheduler extends LitElement {
         aria-label=${this.msg('eventEditorLabel', { title: event.title })}
       >
         <div class="editor-head">
-          <div class="editor-title">${event.title}</div>
+          <div class="editor-title">${draft.title}</div>
           <button
             type="button"
             class="editor-close"
@@ -1006,15 +1011,17 @@ export class MpScheduler extends LitElement {
           <input
             type="text"
             class="form-control form-control-sm editor-input editor-title-input"
-            .value=${event.title}
+            .value=${draft.title}
             ?disabled=${!canFields}
+            @input=${(e: Event) =>
+              this.updateEditorDraft({ title: (e.target as HTMLInputElement).value })}
           />
         </label>
         <label class="editor-field">
           <span>${this.msg('editorStartLabel')}</span>
           <mp-datetime-picker
             class="editor-input editor-start-input"
-            .value=${event.start}
+            .value=${draft.start}
             ?disabled=${!canStart}
             @value-change=${(e: Event) => this.onEditorStartChange(e)}
             input-label=${this.msg('editorStartLabel')}
@@ -1028,8 +1035,9 @@ export class MpScheduler extends LitElement {
           <span>${this.msg('editorEndLabel')}</span>
           <mp-datetime-picker
             class="editor-input editor-end-input"
-            .value=${event.end}
+            .value=${draft.end}
             ?disabled=${!canEnd}
+            @value-change=${(e: Event) => this.onEditorEndChange(e)}
             input-label=${this.msg('editorEndLabel')}
             locale=${options.locale ?? nothing}
             first-day-of-week=${options.firstDayOfWeek ?? 1}
@@ -1043,13 +1051,15 @@ export class MpScheduler extends LitElement {
             type="color"
             class="form-control form-control-color editor-input editor-color-input"
             .value=${color}
-            ?disabled=${!canFields || !event.color}
+            ?disabled=${!canFields || draft.inheritColor}
+            @input=${(e: Event) =>
+              this.updateEditorDraft({ color: (e.target as HTMLInputElement).value })}
           />
         </label>
         <div class="editor-field editor-inherit">
           <mp-checkbox
             class="editor-inherit-input"
-            .checked=${!event.color}
+            .checked=${draft.inheritColor}
             ?disabled=${!canFields}
             @change=${() => this.toggleEditorColorInherit()}
           >${this.msg('editorInheritColor')}</mp-checkbox>
@@ -1095,23 +1105,46 @@ export class MpScheduler extends LitElement {
    */
   private toggleEditorColorInherit(): void {
     const inherit = this.editorInheritCheckbox()?.checked ?? true;
+    // Re-pinning after inheriting starts from whatever the swatch is showing,
+    // which is the inherited colour — the value the user can actually see.
     const swatch = this.shadowRoot?.querySelector<HTMLInputElement>('.editor-color-input');
-    if (swatch) swatch.disabled = inherit;
-  }
-
-  /** One of the editor's two `<mp-datetime-picker>`s, by class. */
-  private editorPicker(selector: string): EditorPicker | null {
-    return (
-      this.shadowRoot?.querySelector<EditorPicker>(`mp-datetime-picker${selector}`) ?? null
-    );
+    this.updateEditorDraft({
+      inheritColor: inherit,
+      color: inherit ? null : swatch?.value ?? this.editorDraft?.color ?? null,
+    });
   }
 
   /**
-   * The start the end is currently measured against. Seeded when the editor
-   * opens and advanced on every start change, so consecutive edits each shift
-   * by their own delta rather than compounding against the original.
+   * The editor's WORKING COPY — what the user has typed and picked so far,
+   * held in component state instead of being read back out of the DOM when
+   * Save runs.
+   *
+   * This is the fix for B31, not a tidiness exercise. The panel's controls are
+   * Lit bindings fed from the STORED event, and the scheduler re-renders on any
+   * state change — including the one that a mousedown on Save itself provokes.
+   * The controls were therefore reset to the stored values *between mousedown
+   * and click*, and Save, which scraped the DOM, committed those stale values
+   * and silently discarded the edit. With the draft as the single authority for
+   * both the render and the commit, a re-render can no longer lose an edit.
+   * Keyboard move-mode has always worked this way (`keyboardMove`).
    */
-  private editorStartAnchor: Date | null = null;
+  private editorDraft: {
+    title: string;
+    start: Date;
+    end: Date;
+    /** `null` = inherit from the resource; a string pins that colour. */
+    color: string | null;
+    inheritColor: boolean;
+  } | null = null;
+
+  /** Merge a change into the draft and re-render the panel from it. */
+  private updateEditorDraft(patch: Partial<NonNullable<MpScheduler['editorDraft']>>): void {
+    if (!this.editorDraft) return;
+    this.editorDraft = { ...this.editorDraft, ...patch };
+    // A stale validation message must not outlive the edit that resolves it.
+    if (this.editorError) this.editorError = null;
+    this.requestUpdate();
+  }
 
   /**
    * Changing the START moves the event: the end shifts by the same delta, so
@@ -1126,24 +1159,17 @@ export class MpScheduler extends LitElement {
    */
   private onEditorStartChange(e: Event): void {
     const next = (e as CustomEvent<Date | null>).detail;
-    const anchor = this.editorStartAnchor;
-    this.editorStartAnchor = next ?? null;
-    if (!next || !anchor) return;
-
-    const delta = next.getTime() - anchor.getTime();
+    const draft = this.editorDraft;
+    if (!next || !draft) return;
+    const delta = next.getTime() - draft.start.getTime();
     if (delta === 0) return;
+    this.updateEditorDraft({ start: next, end: new Date(draft.end.getTime() + delta) });
+  }
 
-    const endPicker = this.editorPicker('.editor-end-input');
-    if (!endPicker?.value) return;
-    // `emit: false` — this is our own bookkeeping, not a user edit, and
-    // emitting would have the end's own handler treat it as a resize.
-    endPicker.setValue(new Date(endPicker.value.getTime() + delta), false);
-
-    // The range is valid again by construction, so a stale error must go.
-    if (this.editorError) {
-      this.editorError = null;
-      this.requestUpdate();
-    }
+  /** The end alone is a RESIZE — it never drags the start with it. */
+  private onEditorEndChange(e: Event): void {
+    const next = (e as CustomEvent<Date | null>).detail;
+    if (next) this.updateEditorDraft({ end: next });
   }
 
   /**
@@ -1170,17 +1196,17 @@ export class MpScheduler extends LitElement {
    */
   private saveEventEditor(): void {
     const original = this.editorEventId ? this.getEventById(this.editorEventId) : null;
-    const panel = this.shadowRoot?.querySelector('.scheduler-event-editor');
-    if (!original || !panel) return;
+    const draft = this.editorDraft;
+    if (!original || !draft) return;
 
-    const read = <T extends HTMLInputElement>(selector: string): T | null =>
-      panel.querySelector<T>(selector);
-
+    // Read the DRAFT, never the DOM (B31). The controls are Lit-bound and this
+    // panel re-renders on any state change — including the one the mousedown on
+    // this very button provokes — so a DOM read commits whatever the last
+    // render put there instead of what the user chose.
     const updated: SchedulerEvent = { ...original };
 
-    const titleInput = read('.editor-title-input');
-    if (titleInput && !titleInput.disabled) {
-      const title = titleInput.value.trim();
+    if (this.can('editEvent', original)) {
+      const title = draft.title.trim();
       if (!title) {
         this.editorError = this.msg('editorTitleRequired');
         this.liveAnnouncer.announce(this.editorError);
@@ -1188,18 +1214,21 @@ export class MpScheduler extends LitElement {
         return;
       }
       updated.title = title;
+      // Colour is two-state and the checkbox owns which state applies (D12.8f):
+      // inheriting means the event carries no colour of its own.
+      if (draft.inheritColor) delete updated.color;
+      else if (draft.color) updated.color = draft.color;
     }
 
-    // `<mp-datetime-picker>`: `value` is a real `Date | null`, so there is no
-    // string parsing (and no timezone guesswork) on this path at all.
-    const startPicker = this.editorPicker('.editor-start-input');
-    const endPicker = this.editorPicker('.editor-end-input');
-    if (startPicker && !startPicker.disabled && startPicker.value) {
-      updated.start = startPicker.value;
+    // Each edge moves only if its own capability allows it, so a denied field
+    // is simply not applied and permissions cannot be bypassed from here.
+    if (this.can('moveEvent', original) || this.can('resizeEventStart', original)) {
+      updated.start = draft.start;
     }
-    if (endPicker && !endPicker.disabled && endPicker.value) {
-      updated.end = endPicker.value;
+    if (this.can('moveEvent', original) || this.can('resizeEventEnd', original)) {
+      updated.end = draft.end;
     }
+
     if (
       isNaN(updated.start.getTime()) ||
       isNaN(updated.end.getTime()) ||
@@ -1211,23 +1240,9 @@ export class MpScheduler extends LitElement {
       return;
     }
 
-    // Colour is two-state, and the CHECKBOX is what says which state — not the
-    // swatch's value. An `<input type="color">` has no empty state, so reading
-    // it unconditionally silently converted every INHERITING event into an
-    // explicitly-coloured one on the first Save (it is seeded with the resolved
-    // colour, i.e. its resource's). Such an event then stops following its
-    // resource forever — including after a cross-row move, where it would keep
-    // the old resource's colour while sitting in the new one's row.
-    const inherit = this.editorInheritCheckbox();
-    const colorInput = read('.editor-color-input');
-    if (inherit && !inherit.disabled) {
-      if (inherit.checked) delete updated.color;
-      else if (colorInput?.value) updated.color = colorInput.value;
-    }
-
     this.closeEventEditor();
-    // Pre-mutate internal state exactly like a committed drag, so the box
-    // doesn't snap back while the consumer applies the request.
+    // Pre-mutate internal state exactly like a committed drag, so the box does
+    // not snap back while the consumer applies the request.
     this.stateManager.updateEvent(updated);
     this.eventEmitter.emitEventUpdate(updated, original, new CustomEvent('event-editor'));
     this.liveAnnouncer.announce(this.msg('eventUpdated', { title: updated.title }));
@@ -1249,11 +1264,11 @@ export class MpScheduler extends LitElement {
   }
 
   /**
-   * Swap a resource/group title for an inline input — file-manager's proven
+   * Swap a resource/group title for an inline input â€” file-manager's proven
    * idiom, keys included: Enter commits, Escape cancels, blur commits. The
    * commit is a `resource-update` request carrying `{ title }`; the consumer
    * applies it (the same contract as the colour swatch). No re-render happens
-   * while the input is open — nothing writes state until commit — so the input
+   * while the input is open â€” nothing writes state until commit â€” so the input
    * cannot be torn down mid-word.
    */
   private beginResourceRename(resourceId: string): void {
@@ -1281,7 +1296,7 @@ export class MpScheduler extends LitElement {
       if (finished) return;
       finished = true;
       const next = input.value.trim();
-      // Restore the span FIRST — the emit may re-render synchronously.
+      // Restore the span FIRST â€” the emit may re-render synchronously.
       // Optimistically show the committed name; the consumer's applied
       // `resources` write is the authoritative rebuild.
       title.textContent = commit && next ? next : previous;

@@ -2131,11 +2131,15 @@ describe('mp-scheduler — built-in event editor (M23)', () => {
     await openViaF2();
     const title = editor()!.querySelector<HTMLInputElement>('.editor-title-input')!;
     title.value = 'Renamed';
+    title.dispatchEvent(new Event('input', { bubbles: true }));
+    await settle();
     // <mp-datetime-picker>: `value` is a Date, so no string round-trip.
-    const end = editor()!.querySelector<HTMLElement & { value: Date | null }>(
-      'mp-datetime-picker.editor-end-input',
-    )!;
-    end.value = new Date(2026, 4, 12, 11, 30);
+    const end = editor()!.querySelector<HTMLElement & {
+      value: Date | null;
+      setValue: (n: Date | null, emit?: boolean) => void;
+    }>('mp-datetime-picker.editor-end-input')!;
+    end.setValue(new Date(2026, 4, 12, 11, 30));
+    await settle();
     let detail: { event: { title: string; end: Date }; oldEvent: { title: string } } | null = null;
     el.addEventListener('event-update', (e) => {
       detail = (e as CustomEvent).detail;
@@ -2153,10 +2157,12 @@ describe('mp-scheduler — built-in event editor (M23)', () => {
   it('an inverted range is refused with an inline error and no emit', async () => {
     await mountWeek();
     await openViaF2();
-    const end = editor()!.querySelector<HTMLElement & { value: Date | null }>(
-      'mp-datetime-picker.editor-end-input',
-    )!;
-    end.value = new Date(2026, 4, 12, 8, 0); // before the 09:00 start
+    const end = editor()!.querySelector<HTMLElement & {
+      value: Date | null;
+      setValue: (n: Date | null, emit?: boolean) => void;
+    }>('mp-datetime-picker.editor-end-input')!;
+    end.setValue(new Date(2026, 4, 12, 8, 0)); // before the 09:00 start
+    await settle();
     let emitted = false;
     el.addEventListener('event-update', () => {
       emitted = true;
@@ -2246,8 +2252,11 @@ describe('mp-scheduler — built-in event editor (M23)', () => {
     await openViaF2();
     inherit().checked = false;
     inherit().dispatchEvent(new Event('change', { bubbles: true }));
+    await settle();
     expect(swatch().disabled).toBe(false);
     swatch().value = '#123456';
+    swatch().dispatchEvent(new Event('input', { bubbles: true }));
+    await settle();
     detail = null;
     (editor()!.querySelector('.editor-action.primary') as HTMLElement).click();
     await settle();
@@ -2259,6 +2268,7 @@ describe('mp-scheduler — built-in event editor (M23)', () => {
     expect(inherit().checked).toBe(false);
     inherit().checked = true;
     inherit().dispatchEvent(new Event('change', { bubbles: true }));
+    await settle();
     detail = null;
     (editor()!.querySelector('.editor-action.primary') as HTMLElement).click();
     await settle();
@@ -2502,5 +2512,108 @@ describe('mp-scheduler — resource column resize + rename (M24)', () => {
     )!;
     expect(title.querySelector('input')).not.toBeNull();
     expect(el.shadowRoot!.activeElement?.classList.contains('rename-input')).toBe(true);
+  });
+});
+
+/**
+ * B31 — the editor lost the user's edit when the panel re-rendered.
+ *
+ * The controls are Lit bindings; the scheduler re-renders on ANY state change,
+ * including the one a mousedown on Save provokes. With the bindings fed from
+ * the stored event and Save scraping the DOM, the controls were reset to the
+ * stored values between mousedown and click, and Save committed those. Found
+ * in a browser — a programmatic `.click()` never fires the mousedown, which is
+ * why the earlier DOM-poking specs all passed.
+ */
+describe('mp-scheduler — the editor survives a re-render (B31)', () => {
+  let el: MpScheduler;
+  afterEach(() => el?.remove());
+
+  const EV = {
+    id: 'task',
+    title: 'Task',
+    start: new Date(2026, 4, 12, 9, 0),
+    end: new Date(2026, 4, 12, 10, 0),
+  };
+
+  const settle = async () => {
+    await (el as unknown as { updateComplete: Promise<void> }).updateComplete;
+    await nextRaf();
+  };
+
+  it('an edit survives an unrelated state change, and Save commits the EDIT', async () => {
+    el = document.createElement('mp-scheduler') as MpScheduler;
+    document.body.appendChild(el);
+    (el as unknown as { date: Date }).date = new Date(2026, 4, 12);
+    (el as unknown as { events: unknown[] }).events = [EV];
+    el.setAttribute('view', 'week');
+    await settle();
+
+    el.shadowRoot!.querySelector<HTMLElement>('.scheduler-event')!.focus();
+    await nextRaf();
+    dispatchKey(el, 'F2');
+    await settle();
+
+    const startPicker = () =>
+      el.shadowRoot!.querySelector<HTMLElement & {
+        value: Date | null;
+        setValue: (n: Date | null, emit?: boolean) => void;
+      }>('mp-datetime-picker.editor-start-input')!;
+
+    // The user moves the event two days later.
+    startPicker().setValue(new Date(2026, 4, 14, 9, 0));
+    await settle();
+    expect(startPicker().value!.getTime()).toBe(new Date(2026, 4, 14, 9, 0).getTime());
+
+    // Now force the kind of state change a mousedown provokes. Before the fix
+    // this re-render reset the control to the STORED start (May 12).
+    (el as unknown as { stateManager: { setState: (u: Record<string, unknown>) => void } })
+      .stateManager.setState({ selectedEvent: null });
+    await settle();
+    expect(startPicker().value!.getTime()).toBe(new Date(2026, 4, 14, 9, 0).getTime());
+
+    let detail: { event: { start: Date; end: Date } } | null = null;
+    el.addEventListener('event-update', (e) => {
+      detail = (e as CustomEvent).detail;
+    });
+    (el.shadowRoot!.querySelector('.editor-action.primary') as HTMLElement).click();
+    await settle();
+
+    // And the COMMIT carries the edit, not the pre-render value.
+    expect(detail).not.toBeNull();
+    expect(detail!.event.start.getTime()).toBe(new Date(2026, 4, 14, 9, 0).getTime());
+    expect(detail!.event.end.getTime()).toBe(new Date(2026, 4, 14, 10, 0).getTime());
+  });
+
+  // B32 — the selection held an event OBJECT, so it kept a pre-edit copy after
+  // any commit; F2 then reopened the editor on stale values.
+  it('the selection tracks the committed record, so reopening shows the edit', async () => {
+    el = document.createElement('mp-scheduler') as MpScheduler;
+    document.body.appendChild(el);
+    (el as unknown as { date: Date }).date = new Date(2026, 4, 12);
+    (el as unknown as { events: unknown[] }).events = [EV];
+    el.setAttribute('view', 'week');
+    await settle();
+
+    el.shadowRoot!.querySelector<HTMLElement>('.scheduler-event')!.focus();
+    await nextRaf();
+    dispatchKey(el, 'F2');
+    await settle();
+
+    const title = el.shadowRoot!.querySelector<HTMLInputElement>('.editor-title-input')!;
+    title.value = 'Renamed';
+    title.dispatchEvent(new Event('input', { bubbles: true }));
+    await settle();
+    (el.shadowRoot!.querySelector('.editor-action.primary') as HTMLElement).click();
+    await settle();
+
+    // Reopen: the editor must show what was just saved.
+    el.shadowRoot!.querySelector<HTMLElement>('.scheduler-event')!.focus();
+    await nextRaf();
+    dispatchKey(el, 'F2');
+    await settle();
+    expect(
+      el.shadowRoot!.querySelector<HTMLInputElement>('.editor-title-input')!.value,
+    ).toBe('Renamed');
   });
 });

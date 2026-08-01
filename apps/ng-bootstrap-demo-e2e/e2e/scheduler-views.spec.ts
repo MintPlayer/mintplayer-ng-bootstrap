@@ -852,12 +852,27 @@ test.describe('scheduler — popover delete + built-in editor (R14, R20)', () =>
       )
       .toBe(false);
 
+    // Dispatch REAL input events: the editor commits its own draft, which is
+    // fed by these events — assigning `.value` alone is not user input, and
+    // pretending otherwise is precisely what let B31 hide.
     await schedulerRoot(page).evaluate((sched) => {
-      const input = sched.shadowRoot!.querySelector<HTMLInputElement>('.editor-title-input')!;
-      input.value = 'Lunch & Learn (renamed)';
-      sched.shadowRoot!.querySelector<HTMLInputElement>('.editor-color-input')!.value = '#123456';
-      sched.shadowRoot!.querySelector<HTMLElement>('.editor-action.primary')!.click();
+      const set = (sel: string, value: string) => {
+        const input = sched.shadowRoot!.querySelector<HTMLInputElement>(sel)!;
+        input.value = value;
+        input.dispatchEvent(new Event('input', { bubbles: true }));
+      };
+      set('.editor-title-input', 'Lunch & Learn (renamed)');
+      set('.editor-color-input', '#123456');
     });
+    // And click Save with a REAL mouse press, so the mousedown-driven re-render
+    // that broke this path actually happens.
+    const saveAt = await schedulerRoot(page).evaluate((sched) => {
+      const r = sched
+        .shadowRoot!.querySelector<HTMLElement>('.editor-action.primary')!
+        .getBoundingClientRect();
+      return { x: r.x + r.width / 2, y: r.y + r.height / 2 };
+    });
+    await page.mouse.click(saveAt.x, saveAt.y);
 
     await expect
       .poll(() =>
@@ -1097,9 +1112,15 @@ test.describe('scheduler — editing an event moves it (B30)', () => {
     expect(shifted.end - shifted.start).toBe(before.end - before.start);
     expect(shifted.start).toBeGreaterThan(before.start);
 
-    await schedulerRoot(page).evaluate((sched) =>
-      sched.shadowRoot!.querySelector<HTMLElement>('.editor-action.primary')!.click(),
-    );
+    // A REAL mouse click: a programmatic .click() fires no mousedown, and the
+    // mousedown-driven re-render is exactly what used to discard the edit (B31).
+    const saveAt = await schedulerRoot(page).evaluate((sched) => {
+      const r = sched
+        .shadowRoot!.querySelector<HTMLElement>('.editor-action.primary')!
+        .getBoundingClientRect();
+      return { x: r.x + r.width / 2, y: r.y + r.height / 2 };
+    });
+    await page.mouse.click(saveAt.x, saveAt.y);
 
     // Committed: no "End must be after start" dead end, and the demo applied it.
     await expect

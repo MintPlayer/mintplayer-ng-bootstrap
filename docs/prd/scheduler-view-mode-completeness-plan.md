@@ -465,6 +465,17 @@ commit instead of moving the event (D12.10).
       `:event-editor`).
 - [x] New `messages` keys (field labels, Save/Cancel/Delete, dialog label); new SCSS →
       **run codegen-wc**.
+- [x] **B31/D12.11**: the editor holds a working DRAFT (`editorDraft`) that is the single
+      authority for both the render and the commit — a re-render can no longer reset a
+      control, and Save never reads the DOM. Found in a browser: a mousedown on Save
+      provokes a re-render that reset the pickers BETWEEN mousedown and click, and Save
+      committed the stale values. Every existing spec missed it by clicking Save
+      programmatically (no mousedown) and by assigning `input.value` (no `input` event);
+      the specs now simulate real input.
+- [x] **B32**: `updateEvent` re-points `state.selectedEvent` when ids match — the selection
+      holds an object, so it kept a pre-edit copy and F2 reopened the editor on stale
+      values. (`removeEvent` has the same gap; flagged in PRD §12.9b, deliberately not
+      changed here.)
 - [x] **B30/D12.10**: changing the START shifts the END by the same delta, live, so the
       editor moves an event the way every other path does (pointer move-drag and keyboard
       move-mode both preserve duration). Changing the end alone is still a resize, and an

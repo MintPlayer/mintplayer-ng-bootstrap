@@ -1412,6 +1412,53 @@ should never have reached it.
 Live rather than at Save on purpose: the user must SEE the end follow, or the editor is
 silently deciding something they cannot check before committing.
 
+### 12.9b B31/B32 — the editor lost the edit when the panel re-rendered
+
+Reported again after B30 shipped: "change the start-date, the event remains at the same
+spot". B30 was real and fixed, but it was not the whole story — and the second half is the
+more interesting bug, because **the tests that should have caught it all passed**.
+
+Found by driving a real browser and tracing the picker's value at each stage:
+
+```
+PRE-SAVE        startPicker = Jul 30   ← the pick landed
+MOUSEDOWN       startPicker = Jul 30   ← still right when the button goes down
+CLICK(capture)  startPicker = Jul 28   ← RESET between mousedown and click
+EMIT            start       = Jul 28   ← Save commits the stale value
+```
+
+**B31 — a re-render reset the controls, and Save read the DOM.** The editor's fields were
+Lit bindings fed from the STORED event (`.value=${event.start}`), while the scheduler
+re-renders on any state change — including the one a mousedown on Save itself provokes.
+So the controls were reset to the stored values *between mousedown and click*, and
+`saveEventEditor`, which scraped the DOM, committed those. The edit was discarded with no
+error, which is exactly "nothing happened".
+
+Why every existing test missed it: they all drove Save with a programmatic `.click()`,
+which fires **no mousedown**, so the clobbering re-render never happened. They also set
+`input.value = …` directly, which fires no `input` event. Both are DOM-poking rather than
+user simulation, and both hid the defect. The specs now dispatch real events, and one
+regression test forces a state change mid-edit deliberately.
+
+**Decision D12.11 — the editor holds a working DRAFT.** `editorDraft` (title, start, end,
+colour, inherit) is seeded when the editor opens, updated by each field's own handler, and
+is the single authority for BOTH the render and the commit. A re-render therefore restores
+what the user edited instead of overwriting it, and Save never touches the DOM. This is
+the shape keyboard move-mode has always used (`keyboardMove`), and the same reasoning as
+D12.8f: the component's state, not a control's DOM value, is what a commit reads.
+
+**B32 — the selection kept a stale copy.** Surfaced by the same spec run.
+`SchedulerStateManager.updateEvent` refreshed `events` and `flatEventsInput` but not
+`state.selectedEvent`, which holds an event OBJECT rather than an id. After any commit —
+editor Save, drag, keyboard move — the selection still pointed at the pre-edit record, so
+`F2` (which opens the editor from `selectedEvent`) showed the OLD values, and a consumer
+bound to `[(selectedEvent)]` was handed data it had just replaced. `updateEvent` now
+re-points the selection when the ids match.
+
+*Adjacent and NOT fixed here:* `removeEvent` leaves a deleted event in `selectedEvent`
+the same way. It is the same class of bug, but changing it also changes when
+`selection-change` fires, so it is a decision rather than a slip — flagged, not smuggled in.
+
 ### 12.10 Styling the in-shadow form controls (D12.9)
 
 The editor and the day popover render form controls inside the scheduler's shadow root,
