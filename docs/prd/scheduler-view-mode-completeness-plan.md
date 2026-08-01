@@ -6,12 +6,24 @@ Branch (phase 1): `fix/scheduler-preview-z-order` → PR
 `master` 2026-07-31** (on top of #394, the resize-glyphs PR). The final unit sweep on the
 branch was 1593 tests green, plus the 10-test `scheduler-views` e2e on Chromium+Firefox.
 Status: **Phase 1 merged (#395); phase 2 (M18–M26, R11–R20 — PRD §12) DELIVERED** on
-`feat/scheduler-phase2`, one commit per milestone, verified in a single batched sweep at
-the end (2026-08-01): **1506/1506 unit tests**, all four lib builds + all three demo
-builds, and **41 passed / 1 pre-existing skip** across `scheduler-views` +
-`scheduler-resize` e2e on Chromium AND Firefox. Versions bumped for the breaking changes:
-web-components **2.6.0**, ng-bootstrap **22.10.0**, react-bootstrap **19.12.0**,
-vue-bootstrap **3.13.0** (`^2.0.0` peer ranges still hold).
+`feat/scheduler-phase2` → PR
+[#396](https://github.com/MintPlayer/mintplayer-ng-bootstrap/pull/396). M18–M26 landed one
+commit per milestone with a single batched sweep at the end (**1506 unit / 41 e2e**), and
+were then followed by SIX review-driven fixes, each swept again: the two-state colour
+checkbox (D12.8f), `<mp-checkbox>`, the in-shadow form styling and `<mp-select>` (D12.9),
+`<mp-datetime-picker>` plus the Escape arbitration (D12.9b), B30, and B31/B32.
+
+Latest local sweep (2026-08-01): **1512/1512 unit tests**, all four lib builds + all three
+demo builds, and **45 passed / 1 pre-existing skip** across `scheduler-views` +
+`scheduler-resize` e2e on Chromium AND Firefox. The final commit's e2e was deliberately
+left to CI. Versions bumped for the breaking changes: web-components **2.6.0**,
+ng-bootstrap **22.10.0**, react-bootstrap **19.12.0**, vue-bootstrap **3.13.0**
+(`^2.0.0` peer ranges still hold).
+
+**Testing lesson from B31, worth carrying into any WC with a form:** specs that assign
+`input.value` or call `.click()` programmatically are DOM-poking, not user simulation —
+they fire no `input` and no `mousedown`, and both omissions hid a defect that made the
+feature unusable. Dispatch real events; click real buttons with a real mouse.
 Still open from phase 1: the device verification items and deliberate polish items under
 "Outstanding work, spelled out" — none a reported defect.
 

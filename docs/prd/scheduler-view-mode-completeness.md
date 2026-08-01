@@ -1523,9 +1523,9 @@ different remedies apply, and which one is right turns on whether the control ow
   consumers are components that render inputs *among other content*, not components that
   *are* one control, so sizing the host would be wrong.
 
-### 12.9 Phase-2 as-built API surface
+### 12.11 Phase-2 as-built API surface
 
-One list, so consumers and the wrappers do not have to read nine commits.
+One list, so consumers and the wrappers do not have to read the whole branch.
 
 **Added — `SchedulerOptions`**
 - `eventEditor?: boolean` — default **`true`**. The built-in event editor (§12.8).
@@ -1534,6 +1534,24 @@ One list, so consumers and the wrappers do not have to read nine commits.
 - `event-editor` attribute + `eventEditor` property, same dual-state shape as `readonly`.
   The ATTRIBUTE outranks `options.eventEditor`, and only the literal `"false"` disables, so
   a wrapper can render it unconditionally from a boolean.
+
+**Added — `OverlayController` (shared, `@mintplayer/web-components/overlay`)**
+- `get isTopmost(): boolean` — whether this overlay is the top-most dismissible layer.
+  Public because a host that handles Escape ITSELF must ask the same question the
+  controller asks internally: such a handler sits on the element, so it runs before any
+  document-level one, and would otherwise dismiss itself out from under a nested overlay
+  it contains. Decline when false, and do NOT stop propagation. See §12.9b.
+
+**Added — shared styles (`_styles/form-control.styles.scss`)**
+- A pass-through to Bootstrap's `forms/form-control`, in the shape of the existing
+  `form-check` / `form-select` sheets, for any WC rendering text-like inputs inside its
+  own shadow root. Carries no `:host` rule — its consumers render inputs *among* other
+  content rather than being one control.
+
+**New internal WC dependencies (no consumer impact)**
+- The scheduler composes `<mp-checkbox>`, `<mp-select>` and `<mp-datetime-picker>` inside
+  its shadow root, because Bootstrap's form styling does not cross a shadow boundary.
+  Plain side-effect imports, per `mp-datatable`'s precedent.
 
 **Added — `SchedulerPermissions`**
 - `editEvent` (default **`true`**) — the editor's title/colour fields. Time fields follow
