@@ -39,6 +39,26 @@ input.form-control {
   outline: 0;
 }
 
+// Bootstrap's own `.is-invalid` lives in forms/form-validation, which does not
+// cross this shadow boundary — and the whole input-group is hand-drawn here
+// anyway, so the border has to be re-stated on both the input and the triggers
+// that continue its outline.
+.input-group:has(input.form-control.is-invalid) {
+  input.form-control,
+  button.trigger {
+    border-color: var(--bs-form-invalid-border-color, var(--bs-danger));
+  }
+
+  &:focus-within {
+    box-shadow: 0 0 0 0.2rem rgba(var(--bs-danger-rgb), 0.25);
+
+    input.form-control,
+    button.trigger {
+      border-color: var(--bs-form-invalid-border-color, var(--bs-danger));
+    }
+  }
+}
+
 input.form-control:disabled {
   background-color: var(--bs-secondary-bg);
   opacity: 1;

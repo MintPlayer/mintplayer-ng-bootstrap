@@ -1,5 +1,5 @@
 import { LitElement, html, nothing, type TemplateResult } from 'lit';
-import { LiveAnnouncerController } from '@mintplayer/web-components/a11y';
+import { LiveAnnouncerController, errorFeedback } from '@mintplayer/web-components/a11y';
 import {
   ViewType,
   SchedulerEvent,
@@ -39,6 +39,7 @@ import { schedulerStyles } from '../styles/scheduler.styles';
 // without this. `formControlStyles` FIRST so the scheduler's own rules win any
 // tie on specificity.
 import { formControlStyles } from '../../../_styles/form-control.styles';
+import { invalidFeedbackStyles } from '../../../_styles/invalid-feedback.styles';
 import { DragManager, PointerTarget, DragCompletionResult } from '../drag';
 import { InputHandler, NormalizedPointerEvent } from '../input';
 import { SchedulerEventEmitter } from '../events';
@@ -57,6 +58,9 @@ import '@mintplayer/web-components/select';
 // handleKeyDown. Its `value` is a real Date, so no string parsing on save.
 import '@mintplayer/web-components/datetime-picker';
 
+/** Makes in-shadow IDREFs unique per instance, as several may share a page. */
+let schedulerInstanceCounter = 0;
+
 /**
  * MpScheduler Web Component
  *
@@ -67,7 +71,7 @@ import '@mintplayer/web-components/datetime-picker';
  * - SchedulerEventEmitter: Dispatches custom events
  */
 export class MpScheduler extends LitElement {
-  static override styles = [formControlStyles, schedulerStyles];
+  static override styles = [formControlStyles, invalidFeedbackStyles, schedulerStyles];
 
   static override get observedAttributes(): string[] {
     return [
@@ -176,8 +180,14 @@ export class MpScheduler extends LitElement {
 
   /** Event the built-in editor is open for, or null when it is closed. */
   private editorEventId: string | null = null;
-  /** Inline validation message currently shown in the editor, if any. */
-  private editorError: string | null = null;
+  /**
+   * Inline validation message currently shown in the editor, and WHICH field
+   * it is about (D12.14). The field matters: the message is spoken by moving
+   * focus to the offending control, whose own description carries it — there
+   * is no live region involved, so an unattributed message would be silent.
+   */
+  private editorError: { field: 'title' | 'end'; message: string } | null = null;
+  private readonly editorTitleErrorId = `mp-scheduler-${++schedulerInstanceCounter}-editor-title-error`;
 
   /**
    * The built-in event editor (R20/D12.8): a non-modal dialog anchored to the
@@ -977,6 +987,18 @@ export class MpScheduler extends LitElement {
 
     const { options } = this.stateManager.getState();
     const canFields = this.can('editEvent', event);
+    // Each message renders beside its OWN field and is described by it, so the
+    // one channel that speaks it is the control the failed Save moves focus to
+    // (D12.14). The END picker gets its message as `error-text` because an
+    // IDREF cannot cross into its shadow root; the title input is in this one,
+    // so it is wired locally through the same helper.
+    const titleInvalid = this.editorError?.field === 'title';
+    const endInvalid = this.editorError?.field === 'end';
+    const titleError = errorFeedback(
+      this.editorTitleErrorId,
+      this.editorError?.message ?? null,
+      titleInvalid,
+    );
     const canStart = this.can('moveEvent', event) || this.can('resizeEventStart', event);
     const canEnd = this.can('moveEvent', event) || this.can('resizeEventEnd', event);
     // Every binding below reads the DRAFT, so a re-render restores what the
@@ -1010,12 +1032,18 @@ export class MpScheduler extends LitElement {
           <span>${this.msg('editorTitleLabel')}</span>
           <input
             type="text"
-            class="form-control form-control-sm editor-input editor-title-input"
+            class="form-control form-control-sm editor-input editor-title-input ${titleInvalid
+              ? 'is-invalid'
+              : ''}"
             .value=${draft.title}
             ?disabled=${!canFields}
+            aria-invalid=${titleInvalid ? 'true' : 'false'}
+            aria-errormessage=${titleError.id}
+            aria-describedby=${titleError.id}
             @input=${(e: Event) =>
               this.updateEditorDraft({ title: (e.target as HTMLInputElement).value })}
           />
+          ${titleError.node}
         </label>
         <label class="editor-field">
           <span>${this.msg('editorStartLabel')}</span>
@@ -1038,6 +1066,8 @@ export class MpScheduler extends LitElement {
             .value=${draft.end}
             .min=${draft.start}
             ?disabled=${!canEnd}
+            ?invalid=${endInvalid}
+            error-text=${endInvalid ? this.editorError!.message : nothing}
             @value-change=${(e: Event) => this.onEditorEndChange(e)}
             input-label=${this.msg('editorEndLabel')}
             locale=${options.locale ?? nothing}
@@ -1065,9 +1095,6 @@ export class MpScheduler extends LitElement {
             @change=${() => this.toggleEditorColorInherit()}
           >${this.msg('editorInheritColor')}</mp-checkbox>
         </div>
-        ${this.editorError
-          ? html`<p class="editor-error" role="alert">${this.editorError}</p>`
-          : nothing}
         <div class="editor-actions">
           <button
             type="button"
@@ -1142,9 +1169,19 @@ export class MpScheduler extends LitElement {
   private updateEditorDraft(patch: Partial<NonNullable<MpScheduler['editorDraft']>>): void {
     if (!this.editorDraft) return;
     this.editorDraft = { ...this.editorDraft, ...patch };
-    // A stale validation message must not outlive the edit that resolves it.
-    if (this.editorError) this.editorError = null;
+    // A stale validation message must not outlive the edit that resolves it —
+    // but only the message about THIS field. Now that each message marks its
+    // own control invalid, clearing them all would leave a still-empty title
+    // looking valid because the user touched the end (D12.14).
+    if (this.editorError && this.editorErrorFieldTouched(patch)) this.editorError = null;
     this.requestUpdate();
+  }
+
+  private editorErrorFieldTouched(
+    patch: Partial<NonNullable<MpScheduler['editorDraft']>>,
+  ): boolean {
+    // A start change moves the end with it, so it counts as touching the end.
+    return this.editorError?.field === 'title' ? 'title' in patch : 'end' in patch;
   }
 
   /**
@@ -1248,9 +1285,7 @@ export class MpScheduler extends LitElement {
     if (this.can('editEvent', original)) {
       const title = draft.title.trim();
       if (!title) {
-        this.editorError = this.msg('editorTitleRequired');
-        this.liveAnnouncer.announce(this.editorError);
-        this.requestUpdate();
+        void this.refuseSave('title', this.msg('editorTitleRequired'));
         return;
       }
       updated.title = title;
@@ -1274,9 +1309,9 @@ export class MpScheduler extends LitElement {
       isNaN(updated.end.getTime()) ||
       updated.end <= updated.start
     ) {
-      this.editorError = this.msg('editorInvalidRange');
-      this.liveAnnouncer.announce(this.editorError);
-      this.requestUpdate();
+      // The END is marked, not the start: the start is not wrong, and the
+      // message must name the field the user can act on.
+      void this.refuseSave('end', this.msg('editorInvalidRange'));
       return;
     }
 
@@ -1286,6 +1321,40 @@ export class MpScheduler extends LitElement {
     this.stateManager.updateEvent(updated);
     this.eventEmitter.emitEventUpdate(updated, original, new CustomEvent('event-editor'));
     this.liveAnnouncer.announce(this.msg('eventUpdated', { title: updated.title }));
+  }
+
+  /**
+   * Refuse a Save, and make sure the reason is spoken EXACTLY once (D12.14).
+   *
+   * The message goes to one channel only — the offending control's own
+   * accessible description — and is delivered by moving focus there. It used
+   * to go to two (a `role="alert"` node AND the polite live announcer), which
+   * screen readers speak twice, often at two different urgencies. The
+   * announcer is the wrong channel here for a second reason: it self-clears
+   * after 1.5 s, so it cannot hold a message the user may want to re-read,
+   * which is exactly what a validation error is. It stays on the SUCCESS
+   * path, where the message is transient by nature.
+   *
+   * Focus has to move for the same reason: with no live region, a description
+   * is silent until something lands on the control it describes.
+   */
+  private async refuseSave(field: 'title' | 'end', message: string): Promise<void> {
+    this.editorError = { field, message };
+    this.requestUpdate();
+    await this.updateComplete;
+    // Bail if the user resolved it in the meantime — focus must not jump to a
+    // field that is no longer wrong.
+    if (this.editorError?.field !== field) return;
+
+    const control =
+      field === 'title'
+        ? this.shadowRoot?.querySelector<HTMLElement>('.editor-title-input')
+        : this.shadowRoot?.querySelector<HTMLElement>('mp-datetime-picker.editor-end-input');
+    // The picker renders the message in ITS own update, one microtask behind
+    // this one. Focusing first would land on a control that is not yet
+    // described by the reason it was refused.
+    await (control as { updateComplete?: Promise<unknown> } | null | undefined)?.updateComplete;
+    control?.focus();
   }
 
   // ============================================

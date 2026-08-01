@@ -181,3 +181,50 @@ describe('mp-datetime-picker — dialog initial focus', () => {
     expect(shadow(el).activeElement).toBe(shadow(el).querySelector('button.date'));
   });
 });
+
+/**
+ * The `error-text` channel (D12.14). A consumer cannot describe this control
+ * from outside — the role lives on an input in this shadow root and an IDREF
+ * does not cross the boundary — so the message comes in as text and is wired
+ * up in here.
+ */
+describe('mp-datetime-picker — error-text', () => {
+  let el: MpDatetimePickerElement;
+  afterEach(() => el?.remove());
+
+  const input = () => shadow(el).querySelector<HTMLInputElement>('input.form-control')!;
+
+  it('describes the display input from a message node it renders itself', async () => {
+    el = await mount((host) => {
+      host.invalid = true;
+      host.errorText = 'End must be after start.';
+    });
+
+    const message = shadow(el).querySelector('.invalid-feedback')!;
+    expect(message.textContent).toContain('End must be after start.');
+    expect(input().getAttribute('aria-invalid')).toBe('true');
+    expect(input().getAttribute('aria-errormessage')).toBe(message.id);
+    expect(input().getAttribute('aria-describedby')).toBe(message.id);
+  });
+
+  it('renders nothing while valid — aria-errormessage is defined only on an invalid control', async () => {
+    el = await mount((host) => {
+      host.errorText = 'End must be after start.';
+    });
+
+    expect(shadow(el).querySelector('.invalid-feedback')).toBeNull();
+    expect(input().getAttribute('aria-invalid')).toBe('false');
+    expect(input().hasAttribute('aria-errormessage')).toBe(false);
+    expect(input().hasAttribute('aria-describedby')).toBe(false);
+  });
+
+  it('focus() lands on the display input, which carries the name and the description', async () => {
+    el = await mount((host) => {
+      host.invalid = true;
+      host.errorText = 'End must be after start.';
+    });
+
+    el.focus();
+    expect(shadow(el).activeElement).toBe(input());
+  });
+});

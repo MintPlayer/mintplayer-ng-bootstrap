@@ -1,10 +1,11 @@
 import { LitElement, html, nothing, type TemplateResult } from 'lit';
 import { query } from 'lit/decorators.js';
-import { LiveAnnouncerController } from '@mintplayer/web-components/a11y';
+import { LiveAnnouncerController, errorFeedback } from '@mintplayer/web-components/a11y';
 import { OverlayController } from '@mintplayer/web-components/overlay';
 import { MpCalendarElement, type FirstDayOfWeek } from '@mintplayer/web-components/calendar';
 import { MpTimeListElement, type Hour12Mode, type TimeStep } from '@mintplayer/web-components/timepicker';
 import { styles } from './mp-datetime-picker.element.template';
+import { invalidFeedbackStyles } from '../../_styles/invalid-feedback.styles';
 
 void MpCalendarElement;
 void MpTimeListElement;
@@ -39,7 +40,7 @@ interface TimePart {
  *  - `closed`               detail = 'date' | 'time' on popup close.
  */
 export class MpDatetimePickerElement extends LitElement {
-  static override styles = [styles];
+  static override styles = [styles, invalidFeedbackStyles];
 
   static override properties = {
     value: { attribute: false },
@@ -54,6 +55,8 @@ export class MpDatetimePickerElement extends LitElement {
     placeholder: { attribute: 'placeholder', type: String, reflect: true },
     showClear: { attribute: 'show-clear', type: Boolean, reflect: true },
     disabled: { attribute: 'disabled', type: Boolean, reflect: true },
+    invalid: { attribute: 'invalid', type: Boolean, reflect: true },
+    errorText: { attribute: 'error-text', type: String, reflect: false },
     inputLabel: { attribute: 'input-label', type: String, reflect: true },
     dateButtonLabel: { attribute: 'date-button-label', type: String, reflect: true },
     timeButtonLabel: { attribute: 'time-button-label', type: String, reflect: true },
@@ -76,6 +79,20 @@ export class MpDatetimePickerElement extends LitElement {
   placeholder = '';
   showClear = false;
   disabled = false;
+  invalid = false;
+  /**
+   * Validation message, as `errorText` / `error-text`. Rendered as a
+   * `.invalid-feedback` node in this shadow root and referenced from the
+   * display input, which is the role-bearing control — only while `invalid`
+   * is also set, since `aria-errormessage` is defined only on an
+   * `aria-invalid` control.
+   *
+   * Text rather than an IDREF because an IDREF cannot cross a shadow
+   * boundary: a consumer's `aria-describedby` on this host would point at a
+   * node this element's input cannot see, and the host itself carries no
+   * role for it to land on. So the message has to travel in as text.
+   */
+  errorText: string | null = null;
   inputLabel = 'Selected date and time';
   dateButtonLabel = 'Choose date';
   timeButtonLabel = 'Choose time';
@@ -90,6 +107,25 @@ export class MpDatetimePickerElement extends LitElement {
   protected readonly instanceId = `mp-dtp-${++instanceCounter}`;
   protected readonly datePopupId = `${this.instanceId}-popup-date`;
   protected readonly timePopupId = `${this.instanceId}-popup-time`;
+  protected readonly errorId = `${this.instanceId}-error`;
+
+  @query('input.form-control')
+  protected displayInputEl?: HTMLInputElement;
+
+  /**
+   * Focusing the picker means focusing its display input — the node that
+   * carries the accessible name, the invalid state and the error message's
+   * description, so it is also the node that must receive focus for a
+   * validation message to be spoken.
+   *
+   * An override rather than `delegatesFocus: true`, which would change what a
+   * click anywhere in the input-group focuses for every consumer.
+   */
+  override focus(options?: FocusOptions): void {
+    const input = this.displayInputEl;
+    if (input) input.focus(options);
+    else super.focus(options);
+  }
 
   @query('button.date')
   protected dateTriggerEl?: HTMLButtonElement;
@@ -409,15 +445,19 @@ export class MpDatetimePickerElement extends LitElement {
     const calendarMonth = this._calendarMonth ?? (this.value ? new Date(this.value.getFullYear(), this.value.getMonth(), 1) : new Date());
     const selectedDate = this.value ?? null;
     const selectedTime = this.value ?? null;
+    const error = errorFeedback(this.errorId, this.errorText, this.invalid);
 
     return html`
       <div class="input-group">
         <input
-          class="form-control"
+          class="form-control ${this.invalid ? 'is-invalid' : ''}"
           type="text"
           readonly
           aria-readonly="true"
           aria-label="${this.inputLabel}"
+          aria-invalid="${this.invalid ? 'true' : 'false'}"
+          aria-errormessage="${error.id}"
+          aria-describedby="${error.id}"
           .value="${displayValue}"
           placeholder="${this.placeholder || nothing}"
           ?disabled="${this.disabled}"
@@ -457,6 +497,7 @@ export class MpDatetimePickerElement extends LitElement {
           .innerHTML="${CLOCK_ICON_SVG}"
         ></button>
       </div>
+      ${error.node}
       ${this.liveAnnouncer.template()}
 
       <div class="popup popup-date" id="${this.datePopupId}" role="dialog" aria-label="${this.dateButtonLabel}">

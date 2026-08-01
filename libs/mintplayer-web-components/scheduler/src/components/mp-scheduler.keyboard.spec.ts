@@ -2172,7 +2172,108 @@ describe('mp-scheduler — built-in event editor (M23)', () => {
     await settle();
     expect(emitted).toBe(false);
     expect(editor()).not.toBeNull();
-    expect(editor()!.querySelector('.editor-error')?.textContent).toContain('End must be after start');
+    // The message lives on the END picker, as its `error-text` — an IDREF
+    // cannot cross into that shadow root (D12.14).
+    const endPicker = editor()!.querySelector<HTMLElement & {
+      invalid: boolean;
+      errorText: string | null;
+    }>('mp-datetime-picker.editor-end-input')!;
+    expect(endPicker.invalid).toBe(true);
+    expect(endPicker.errorText).toContain('End must be after start');
+  });
+
+  /**
+   * D12.14 — a refused Save says why exactly once: through the offending
+   * control's own description, delivered by moving focus there. Not through a
+   * live region as well, which would speak it twice, and which self-clears so
+   * it cannot hold something the user may want to re-read.
+   */
+  describe('a refused Save speaks once, on the offending field (D12.14)', () => {
+    const save = () =>
+      (editor()!.querySelector('.editor-action.primary') as HTMLElement).click();
+
+    it('an emptied title marks the title input and moves focus to it', async () => {
+      await mountWeek();
+      await openViaF2();
+      const title = editor()!.querySelector<HTMLInputElement>('.editor-title-input')!;
+      title.value = '   ';
+      title.dispatchEvent(new Event('input', { bubbles: true }));
+      await settle();
+
+      save();
+      await settle();
+
+      expect(title.getAttribute('aria-invalid')).toBe('true');
+      const message = editor()!.querySelector('.editor-title-input + .invalid-feedback')!;
+      expect(message.textContent).toContain('Title is required');
+      // Described by the very node that carries the message, so focus speaks it.
+      expect(title.getAttribute('aria-errormessage')).toBe(message.id);
+      expect(title.getAttribute('aria-describedby')).toBe(message.id);
+      expect(el.shadowRoot!.activeElement).toBe(title);
+    });
+
+    it('the message goes to ONE channel — the live region never repeats it', async () => {
+      await mountWeek();
+      await openViaF2();
+      const title = editor()!.querySelector<HTMLInputElement>('.editor-title-input')!;
+      title.value = '';
+      title.dispatchEvent(new Event('input', { bubbles: true }));
+      await settle();
+
+      save();
+      await settle();
+
+      expect(el.shadowRoot!.querySelector('[role="status"]')?.textContent).not.toContain(
+        'Title is required',
+      );
+      // And exactly one message node exists, not one per field.
+      expect(editor()!.querySelectorAll('.invalid-feedback').length).toBe(1);
+    });
+
+    it('editing the offending field clears its message; editing another does not', async () => {
+      await mountWeek();
+      await openViaF2();
+      const title = editor()!.querySelector<HTMLInputElement>('.editor-title-input')!;
+      title.value = '';
+      title.dispatchEvent(new Event('input', { bubbles: true }));
+      await settle();
+      save();
+      await settle();
+      expect(editor()!.querySelectorAll('.invalid-feedback').length).toBe(1);
+
+      // Touching the END leaves the still-empty title marked.
+      editor()!
+        .querySelector<HTMLElement & { setValue: (n: Date | null, emit?: boolean) => void }>(
+          'mp-datetime-picker.editor-end-input',
+        )!
+        .setValue(new Date(2026, 4, 12, 11, 0));
+      await settle();
+      expect(editor()!.querySelectorAll('.invalid-feedback').length).toBe(1);
+
+      // Fixing the title itself clears it.
+      title.value = 'Named';
+      title.dispatchEvent(new Event('input', { bubbles: true }));
+      await settle();
+      expect(editor()!.querySelectorAll('.invalid-feedback').length).toBe(0);
+      expect(title.getAttribute('aria-invalid')).toBe('false');
+    });
+
+    it('a refused range moves focus into the END picker, not onto Save', async () => {
+      await mountWeek();
+      await openViaF2();
+      (el as unknown as { editorDraft: { end: Date } }).editorDraft.end = new Date(2026, 4, 12, 8, 0);
+
+      save();
+      await settle();
+
+      const endPicker = editor()!.querySelector<HTMLElement>('mp-datetime-picker.editor-end-input')!;
+      expect(el.shadowRoot!.activeElement).toBe(endPicker);
+      // focus() delegates to the display input — the node carrying the name,
+      // the invalid state and the description.
+      expect(endPicker.shadowRoot!.activeElement).toBe(
+        endPicker.shadowRoot!.querySelector('input.form-control'),
+      );
+    });
   });
 
   it('the Delete button emits event-delete and closes', async () => {

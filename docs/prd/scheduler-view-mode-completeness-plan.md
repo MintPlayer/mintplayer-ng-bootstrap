@@ -658,28 +658,46 @@ made B35 constructible; deleting the axis beats guarding it.
 - Wrappers and demos need NO code change — they pass `options` through opaquely and set
   only resource capabilities.
 
-## M29 — One message, one channel [D12.14, B33, B34]. DECIDED, NOT STARTED.
+## M29 — One message, one channel [D12.14, B33, B34]. DONE.
 
 PRD §12.12/D12.14. Ship B33 and B34 together: once the announcer is gone, focus movement
 is the only thing that speaks the error.
 
-- [ ] **B33**: delete `liveAnnouncer.announce(...)` on both editor failure paths and drop
-      `role="alert"` from the message node. Keep the announcer on the SUCCESS path.
-- [ ] **B34, title**: scheduler-local — `aria-invalid` on the title input plus an
-      `errorFeedback()` node beside it. No shared-code change.
-- [ ] **B34, range**: add `invalid` + `error-text` to `mp-datetime-picker`, rendered
-      through the shared `errorFeedback()` onto its inner input (copy `mint-otp-input`'s
-      plain-attribute form, ~15 lines + `invalidFeedbackStyles`). Required, not optional:
-      an IDREF cannot cross the shadow boundary, so the scheduler physically cannot
-      describe that field from outside. Mark END only.
-- [ ] `editorError` becomes `{ field: 'title' | 'end'; message: string } | null`.
-- [ ] Move focus to the offending control on a refused Save (`await this.updateComplete`
-      first). Needs a small `focus()` override on `mp-datetime-picker` delegating to its
-      inner input — NOT `delegatesFocus: true`.
-- [ ] Keep validate-on-Save + clear-on-change; make the clear per-field.
-- [ ] Delete the now-dead `.editor-error` SCSS rule; update the two specs asserting on it.
-- [ ] Add the "one message, one channel" rule to CLAUDE.md — the repo currently answers
-      this question three different ways (toast, form controls, scheduler).
+- [x] **B33**: deleted `liveAnnouncer.announce(...)` on both editor failure paths and
+      dropped the `role="alert"` node entirely. The announcer stays on the SUCCESS path.
+- [x] **B34, title**: scheduler-local — `aria-invalid` + `is-invalid` on the title input
+      plus an `errorFeedback()` node beside it, inside its own `<label>`.
+- [x] **B34, range**: `invalid` + `errorText` (`error-text`) added to
+      `mp-datetime-picker`, rendered through the shared `errorFeedback()` onto its display
+      input, with `invalidFeedbackStyles` and an in-shadow `.is-invalid` border rule —
+      Bootstrap's `forms/form-validation` does not cross the boundary, and the whole
+      input-group is hand-drawn there anyway. Marks END only.
+- [x] `editorError` is now `{ field: 'title' | 'end'; message: string } | null`, with a
+      per-instance IDREF for the title message.
+- [x] Focus moves to the offending control on a refused Save, via a new private
+      `refuseSave(field, message)` that owns both halves — the state and the focus move —
+      so a future failure path cannot add one without the other. It awaits the picker's
+      OWN `updateComplete` as well as the scheduler's: `error-text` lands one microtask
+      later, and focusing first would announce the control's name without the reason.
+      `focus()` on `mp-datetime-picker` delegates to its display input (an override, NOT
+      `delegatesFocus: true`, which would change click-focus for every consumer).
+- [x] Validate-on-Save + clear-on-change kept; the clear is now per-field, so touching the
+      end no longer makes a still-empty title look valid.
+- [x] Replaced the `.editor-error` SCSS rule with an `.invalid-feedback` spacing rule;
+      rewrote the spec that asserted on it.
+- [x] "One message, one channel" added to CLAUDE.md's a11y list.
+
+**Wrapper surface.** Angular needed explicit `invalid` / `errorText` inputs (it forwards
+property-by-property through an `effect`). **React and Vue needed nothing** — `@lit/react`
+routes any prop matching a prototype accessor as a property, and Vue's `v-bind="$attrs"`
+reaches both, since each has an attribute. This is the D12.15 correction holding in
+practice.
+
+New specs: three on the picker (describes its input while invalid; renders nothing while
+valid, because `aria-errormessage` is defined only on an `aria-invalid` control; `focus()`
+lands on the display input) and four on the scheduler (title marked + focused; the live
+region does NOT repeat the message; per-field clearing; a refused range focuses into the
+END picker's display input rather than leaving focus on Save).
 
 ## M30 — Datetime-picker bounds reach the time list. SEPARATE PR — do NOT do it here.
 

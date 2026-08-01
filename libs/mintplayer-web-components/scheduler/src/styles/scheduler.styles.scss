@@ -868,10 +868,12 @@ $z-event-selected: 2;    // selected event: its straddling handles must win
   margin-left: 46px;
 }
 
-.scheduler-event-editor .editor-error {
-  margin: 0 0 6px;
+/* Validation messages render inside their own field via `errorFeedback()`, so
+   `invalidFeedbackStyles` draws them; the panel only needs them to sit tight
+   under the control rather than inherit the field's own row gap. */
+.scheduler-event-editor .invalid-feedback {
+  margin-top: 2px;
   font-size: 12px;
-  color: var(--bs-danger, #dc3545);
 }
 
 .scheduler-event-editor .editor-actions {
