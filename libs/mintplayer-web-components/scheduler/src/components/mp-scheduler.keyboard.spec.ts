@@ -1492,7 +1492,11 @@ describe('mp-scheduler — year date surface (M18)', () => {
     focusYearCell(el, '2026-05');
     dispatchKey(el, ' ');
     await settle();
-    const picker = popover()!.querySelector<HTMLSelectElement>('.popover-resource-select')!;
+    // An <mp-select> (Bootstrap styling does not cross the shadow boundary), so
+    // `value` is a host property — settable exactly like the native one.
+    const picker = popover()!.querySelector<HTMLElement & { value: string | null }>(
+      'mp-select.popover-resource-select',
+    )!;
     expect(picker).not.toBeNull();
     picker.value = 'bob';
     let detail: { resourceId?: string } | null = null;

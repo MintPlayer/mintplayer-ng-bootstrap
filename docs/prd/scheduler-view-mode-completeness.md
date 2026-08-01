@@ -1383,10 +1383,42 @@ consumer.
   `.form-check` styles do not cross a shadow boundary, so a native input in this panel
   renders unstyled, while the WC carries its own styling inside its own shadow root. Same
   reasoning as `mp-datatable`'s selection column, and the first cross-WC dependency the
-  scheduler takes (a plain side-effect import, per that precedent). It is the reason the
-  editor's remaining native controls — the text/`datetime-local` inputs, the colour swatch
-  and the resource `<select>` in the day popover — are the obvious next candidates for
-  `mp-*` equivalents; they are unstyled today for exactly this reason.
+  scheduler takes (a plain side-effect import, per that precedent). See §12.10 for how the
+  panel's other controls were settled.
+
+### 12.10 Styling the in-shadow form controls (D12.9)
+
+The editor and the day popover render form controls inside the scheduler's shadow root,
+where **Bootstrap's page stylesheet cannot reach them** — the repo's most frequently
+re-learned trap. Every one of them was rendering as an unstyled browser default. Two
+different remedies apply, and which one is right turns on whether the control owns a popup:
+
+- **D12.9a — swap for the `mp-*` WC when it is a plain control.** The day popover's
+  resource picker is now an **`<mp-select>`**, which wraps a *native* `<select>` and owns
+  **no OverlayController**, so nesting it inside a popover cannot interfere with that
+  popover's dismissal, focus return or Escape handling. `value` becomes a host property;
+  nothing else changes.
+- **D12.9b — REJECTED for the time fields: `mp-datetime-picker`.** It runs **two**
+  `OverlayController`s of its own (date and time popups). The editor is *itself* an
+  overlay, and the scheduler's host-level `keydown` closes the whole editor on Escape
+  whenever it is open — so Escape meant to dismiss a nested calendar would destroy the
+  editor and the user's unsaved edits, and an outside-click on that calendar could do the
+  same. Nesting an overlay-owning control inside an overlay needs a deliberate arbitration
+  design; it is not a styling change and does not belong in a styling pass.
+- **D12.9c — so the remaining native inputs get the styles instead, not a new component.**
+  New shared `_styles/form-control.styles.scss`, a pass-through to Bootstrap's
+  `forms/form-control` module in the exact shape of the existing `form-check` and
+  `form-select` sheets, added to the scheduler's `static styles` (FIRST, so the
+  component's own rules win any specificity tie). The title, both `datetime-local` fields,
+  the colour swatch (`.form-control-color`, whose `::-webkit-color-swatch` rules are
+  otherwise unreachable) and the timeline's inline rename input now carry `.form-control`
+  and get Bootstrap's border, focus ring and disabled appearance for free — with no new
+  runtime dependency and no interaction risk. Every selector in the generated sheet is
+  class-scoped, so it cannot affect anything in the grid that does not opt in.
+
+  The sheet deliberately carries **no `:host` rule**, unlike its two siblings: its
+  consumers are components that render inputs *among other content*, not components that
+  *are* one control, so sizing the host would be wrong.
 
 ### 12.9 Phase-2 as-built API surface
 

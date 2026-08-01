@@ -34,6 +34,11 @@ import { WeekView } from '../views/week-view';
 import { DayView } from '../views/day-view';
 import { TimelineView } from '../views/timeline-view';
 import { schedulerStyles } from '../styles/scheduler.styles';
+// Bootstrap's form styling does not cross a shadow boundary, so the editor's
+// own text/date/colour inputs would render as unstyled browser defaults
+// without this. `formControlStyles` FIRST so the scheduler's own rules win any
+// tie on specificity.
+import { formControlStyles } from '../../../_styles/form-control.styles';
 import { DragManager, PointerTarget, DragCompletionResult } from '../drag';
 import { InputHandler, NormalizedPointerEvent } from '../input';
 import { SchedulerEventEmitter } from '../events';
@@ -43,6 +48,10 @@ import { OverlayController } from '@mintplayer/web-components/overlay';
 // do not cross a shadow boundary — the WC carries its own, so it looks right
 // nested in here, where a bare input would render unstyled.
 import '@mintplayer/web-components/checkbox';
+// Same reasoning for the day popover's resource picker. `mp-select` wraps a
+// NATIVE `<select>` and owns no overlay of its own, so nesting it inside the
+// popover cannot interfere with the popover's own dismissal or focus handling.
+import '@mintplayer/web-components/select';
 
 /**
  * MpScheduler Web Component
@@ -54,7 +63,7 @@ import '@mintplayer/web-components/checkbox';
  * - SchedulerEventEmitter: Dispatches custom events
  */
 export class MpScheduler extends LitElement {
-  static override styles = [schedulerStyles];
+  static override styles = [formControlStyles, schedulerStyles];
 
   static override get observedAttributes(): string[] {
     return [
@@ -601,12 +610,12 @@ export class MpScheduler extends LitElement {
           ? html`
               <label class="popover-resource">
                 <span class="popover-resource-label">${this.msg('newEventResource')}</span>
-                <select class="popover-resource-select">
+                <mp-select class="popover-resource-select">
                   <option value="">${this.msg('unassignedResource')}</option>
                   ${resources.map(
                     (resource) => html`<option value=${resource.id}>${resource.title}</option>`,
                   )}
-                </select>
+                </mp-select>
               </label>
             `
           : nothing}
@@ -827,8 +836,10 @@ export class MpScheduler extends LitElement {
     const day = this.popoverDate;
     if (!day) return;
     // Read the resource picker BEFORE closing — closing tears the panel down.
-    const picker = this.shadowRoot?.querySelector<HTMLSelectElement>(
-      '.popover-resource-select',
+    // `<mp-select>`, so `value` is a host property rather than a native one; it
+    // is `string | null` there, and an empty value means the bucket row.
+    const picker = this.shadowRoot?.querySelector<HTMLElement & { value: string | null }>(
+      'mp-select.popover-resource-select',
     );
     const resourceId = picker?.value || undefined;
     const start = new Date(day);
@@ -977,7 +988,7 @@ export class MpScheduler extends LitElement {
           <span>${this.msg('editorTitleLabel')}</span>
           <input
             type="text"
-            class="editor-input editor-title-input"
+            class="form-control form-control-sm editor-input editor-title-input"
             .value=${event.title}
             ?disabled=${!canFields}
           />
@@ -986,7 +997,7 @@ export class MpScheduler extends LitElement {
           <span>${this.msg('editorStartLabel')}</span>
           <input
             type="datetime-local"
-            class="editor-input editor-start-input"
+            class="form-control form-control-sm editor-input editor-start-input"
             .value=${this.toLocalInputValue(event.start)}
             ?disabled=${!canStart}
           />
@@ -995,7 +1006,7 @@ export class MpScheduler extends LitElement {
           <span>${this.msg('editorEndLabel')}</span>
           <input
             type="datetime-local"
-            class="editor-input editor-end-input"
+            class="form-control form-control-sm editor-input editor-end-input"
             .value=${this.toLocalInputValue(event.end)}
             ?disabled=${!canEnd}
           />
@@ -1004,7 +1015,7 @@ export class MpScheduler extends LitElement {
           <span>${this.msg('editorColorLabel')}</span>
           <input
             type="color"
-            class="editor-input editor-color-input"
+            class="form-control form-control-color editor-input editor-color-input"
             .value=${color}
             ?disabled=${!canFields || !event.color}
           />
@@ -1181,7 +1192,9 @@ export class MpScheduler extends LitElement {
     const previous = resource.title;
     const input = document.createElement('input');
     input.type = 'text';
-    input.className = 'rename-input';
+    // `form-control-sm` for Bootstrap's chrome; the rules below then tighten it
+    // to fit a 40px row in a 200px column, which the default sizing would not.
+    input.className = 'form-control form-control-sm rename-input';
     input.value = previous;
     input.setAttribute(
       'aria-label',

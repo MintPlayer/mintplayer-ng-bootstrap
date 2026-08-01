@@ -735,22 +735,14 @@ $z-event-selected: 2;    // selected event: its straddling handles must win
   font-size: 12px;
 }
 
+/* `<mp-select>` renders the native `<select>` and Bootstrap's `.form-select`
+   styling inside its OWN shadow root, so all that is left out here is how much
+   room the host takes in the row. Nothing inside it is reachable from this
+   stylesheet — and nothing needs to be. */
 .scheduler-day-popover .popover-resource-select {
   flex: 1 1 auto;
   min-width: 0;
-  min-height: 28px;
-  padding: 2px 4px;
-  border: 1px solid var(--scheduler-border-color);
-  border-radius: 4px;
-  background: var(--bs-body-bg);
-  color: inherit;
-  font: inherit;
   font-size: 12px;
-}
-
-.scheduler-day-popover .popover-resource-select:focus-visible {
-  outline: 2px solid var(--bs-primary);
-  outline-offset: 1px;
 }
 
 .scheduler-day-popover .popover-actions {
@@ -839,28 +831,19 @@ $z-event-selected: 2;    // selected event: its straddling handles must win
   flex: 0 0 40px;
 }
 
+/* The inputs carry Bootstrap's `.form-control` (+ `-sm`, and `-color` on the
+   swatch), whose rules reach them through `formControlStyles` in this shadow
+   root's `adoptedStyleSheets` — Bootstrap's page stylesheet cannot. So border,
+   background, focus ring and disabled appearance are Bootstrap's; only the
+   layout inside this panel is ours. `.form-control` already sets
+   `width: 100%`, hence no `flex: 1 1 auto` here. */
 .scheduler-event-editor .editor-input {
-  flex: 1 1 auto;
   min-width: 0;
-  min-height: 28px;
-  padding: 2px 4px;
-  border: 1px solid var(--scheduler-border-color);
-  border-radius: 4px;
-  background: var(--bs-body-bg);
-  color: inherit;
-  font: inherit;
-  font-size: 12px;
-}
-
-.scheduler-event-editor .editor-input:disabled {
-  opacity: 0.55;
-  cursor: not-allowed;
 }
 
 .scheduler-event-editor .editor-color-input {
   flex: 0 0 auto;
   width: 40px;
-  padding: 1px;
 }
 
 /* "Inherit from resource": the checkbox owns the colour's two states, so the
@@ -1125,23 +1108,19 @@ $z-event-selected: 2;    // selected event: its straddling handles must win
   opacity: 0.6;
 }
 
-/* Inline rename (R17): the input takes the title's place in the pinned cell. */
+/* Inline rename (R17): the input takes the title's place in the pinned cell.
+   Bootstrap's `.form-control.form-control-sm` supplies the chrome (via this
+   shadow root's adopted sheets); these rules only shrink it to fit a 40px row
+   inside a 200px column, and keep the accent border that marks it as the
+   active edit. Higher specificity than `.form-control`, so they win. */
 .scheduler-resource-cell .rename-input {
   flex: 1 1 auto;
   min-width: 0;
-  width: 100%;
   min-height: 24px;
+  height: 24px;
   padding: 1px 4px;
-  border: 1px solid var(--bs-primary);
-  border-radius: 4px;
-  background: var(--bs-body-bg);
-  color: inherit;
-  font: inherit;
-}
-
-.scheduler-resource-cell .rename-input:focus-visible {
-  outline: 2px solid var(--bs-primary);
-  outline-offset: 1px;
+  border-color: var(--bs-primary);
+  font-size: inherit;
 }
 
 .scheduler-timeline-row.group .scheduler-resource-cell {
