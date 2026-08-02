@@ -3,12 +3,16 @@
 Status: **Implemented** on `feat/scheduler-compact-timeline-i18n` (2026-08-02), branched
 from `master` at `a66f4439` (PR
 [#396](https://github.com/MintPlayer/mintplayer-ng-bootstrap/pull/396), phase 2).
-Twelve commits, one per milestone; **1599 unit tests green**, all four library builds and the
-Angular demo build clean. Not pushed, no PR opened.
-See §15 for what shipped, what changed during implementation, and what is deliberately left.
-Versions: web-components **2.8.0**, ng **22.12.0**, react **19.14.0**, vue **3.15.0** — a
-minor above `master`, which was already at 2.7.0 rather than the 2.6.0 the phase-2 PRD
-recorded.
+Nineteen commits; **1610 web-components tests + 533 ng-bootstrap tests green**, all library
+builds and the Angular demo build clean, both real tsconfigs clean.
+See §15 for what shipped and what is deliberately left; §16–§20 cover the five defects found
+by review after the first sweep.
+
+Versions bumped only where source changed: web-components **2.7.0 → 2.8.0** and ng-bootstrap
+**22.11.0 → 22.12.0**. React (19.13.0) and Vue (3.14.0) are **deliberately unchanged** — zero
+source changes, and their `@mintplayer/web-components: ^2.0.0` peer range already admits
+2.8.0, so a bump would publish byte-identical artifacts. (#396 bumped them because they *did*
+change there.)
 Plan: [scheduler-compact-timeline-localization-plan.md](./scheduler-compact-timeline-localization-plan.md)
 Predecessors — this PRD **re-opens a decision deliberately deferred by** the last two:
 [scheduler-view-mode-completeness.md](./scheduler-view-mode-completeness.md) (#395/#396),
@@ -888,8 +892,9 @@ should be treated as an optimisation over the tracked value, never as the sole s
 
 ## 15. As built
 
-Twelve commits on `feat/scheduler-compact-timeline-i18n`, one per milestone. Everything in
-§2 shipped except where noted below.
+Nineteen commits on `feat/scheduler-compact-timeline-i18n`. Everything in §2 shipped except
+where noted below. R10–R14 were reported during review, after the first full sweep, and are
+written up in §16–§20.
 
 ### Deviations from the plan, and why
 
@@ -929,6 +934,23 @@ Twelve commits on `feat/scheduler-compact-timeline-i18n`, one per milestone. Eve
   Re-running against `tsconfig.lib.json` immediately surfaced two missing imports. Use
   `tsconfig.lib.json` and `tsconfig.spec.json` directly.
 
+### Found by review, after the first sweep
+
+Five defects, each reproduced in a real browser before being touched — see §16–§20:
+
+| | |
+|---|---|
+| R10 | Scroll position reset on any `resources` change. Narrower than reported: event edits were already fine. Made routine by M5, since every row-panel action is a `resources` change. |
+| R11 | Both corner header cells were never sticky — a duplicate rule overrode `position: sticky` with `relative`, while its own comment claimed otherwise. |
+| R12 | A placeholder `<option value="">` crashed `BsSelectValueAccessor`. **Outside the scheduler**, and it affects any consumer with a placeholder option. |
+| R13 | The row panel opened under whichever trigger was clicked first — `open()` is a no-op while open, and the dismissal ignores anything inside the host. |
+| R14 | Rename had no route from the panel, and none at all on a phone. |
+
+Two more surfaced while verifying those and are fixed in the same commits: a runtime
+`messages` change only reached the title, not the header buttons (they are built once in
+`firstUpdated`); and the demo's own Language/Time-format selects rendered blank from mixing
+`[ngValue]` with plain `value` attributes.
+
 ### Still open
 
 - **The device verification M0 requires** (Android Chrome + iOS Safari). Spike S3 proved the
@@ -944,6 +966,12 @@ Twelve commits on `feat/scheduler-compact-timeline-i18n`, one per milestone. Eve
   text), M9 (day-number drill-down has no keyboard equivalent in week/day), M10 (`adjacentRow`
   filters `isResource`, so group rows are skipped by vertical arrow nav), M11 (the column
   resizer is a `separator` inside the grid).
+- **Overlay positioning and sticky offsets have no automated coverage.** jsdom does not lay
+  out, so `getBoundingClientRect` is all zeroes and any such assertion would pass against
+  broken CSS — including the exact bugs R11 and R13 turned out to be. The specs assert the
+  state that drives position (panel ownership, which trigger claims `aria-expanded`); the
+  geometry is browser-verified only. `scheduler-views.spec.ts` (Playwright) is the right home
+  if this should be guarded.
 - The `year-view` UTC date-key bug found incidentally by the Sunday-start audit
   (`toISOString()` where month-view deliberately uses local components) — a pre-existing
   timezone defect, unrelated to anything here.

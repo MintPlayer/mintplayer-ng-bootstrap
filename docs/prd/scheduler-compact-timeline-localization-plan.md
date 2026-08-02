@@ -2,9 +2,13 @@
 
 PRD: [scheduler-compact-timeline-localization.md](./scheduler-compact-timeline-localization.md)
 Status: **Implemented** on `feat/scheduler-compact-timeline-i18n`, base `master` @ `a66f4439`.
-Twelve commits, one per milestone. Final sweep: **1599 unit tests**, all four library builds
-and the Angular demo build clean, `tsconfig.lib.json` + `tsconfig.spec.json` both clean.
-Not pushed, no PR opened. Milestone status below; deviations and open items in PRD §15.
+Nineteen commits. Final sweep: **1610 web-components + 533 ng-bootstrap tests**, all library
+builds and the Angular demo build clean, `tsconfig.lib.json` + `tsconfig.spec.json` both clean.
+Milestone status below; deviations and open items in PRD §15.
+
+Versions bumped only where source changed — web-components 2.8.0, ng-bootstrap 22.12.0. React
+and Vue are left alone: no source changes, and their `^2.0.0` peer range on web-components
+already admits 2.8.0.
 
 | Milestone | State |
 |---|---|
