@@ -163,7 +163,7 @@ export class TimelineView extends BaseView {
         const slotHeader = this.createElement('div', 'scheduler-timeline-slot-header');
         slotHeader.setAttribute('role', 'columnheader');
         slotHeader.style.width = `${this.slotWidth}px`;
-        slotHeader.textContent = dateService.formatTime(slot.start, options.timeFormat);
+        slotHeader.textContent = dateService.formatTime(slot.start, options.timeFormat, options.locale);
         slotHeader.style.fontSize = '10px';
         timeLabelsContainer.appendChild(slotHeader);
       }

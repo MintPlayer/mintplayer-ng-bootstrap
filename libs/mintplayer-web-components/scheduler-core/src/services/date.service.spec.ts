@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { DateService, dateService } from './date.service';
 
 describe('DateService', () => {
@@ -155,33 +155,84 @@ describe('DateService', () => {
     });
   });
 
+  // Every assertion here pins an explicit locale. formatTime now delegates to
+  // Intl, so an unpinned expectation asserts the MACHINE's locale: 'PM' on a US
+  // box, 'p.m.' on a Dutch one. That is a test that passes or fails by geography.
   describe('formatTime', () => {
     it('should format correctly in 24h mode', () => {
       const date = new Date(2025, 0, 15, 14, 30);
-      const formatted = service.formatTime(date, '24h');
 
-      expect(formatted).toBe('14:30');
+      expect(service.formatTime(date, '24h', 'en-US')).toBe('14:30');
+      expect(service.formatTime(date, '24h', 'nl-BE')).toBe('14:30');
     });
 
     it('should format correctly in 12h mode', () => {
       const date = new Date(2025, 0, 15, 14, 30);
-      const formatted = service.formatTime(date, '12h');
 
-      expect(formatted).toBe('2:30 PM');
+      expect(service.formatTime(date, '12h', 'en-US')).toBe('2:30 PM');
     });
 
     it('should handle midnight in 12h mode', () => {
       const date = new Date(2025, 0, 15, 0, 0);
-      const formatted = service.formatTime(date, '12h');
 
-      expect(formatted).toBe('12:00 AM');
+      expect(service.formatTime(date, '12h', 'en-US')).toBe('12:00 AM');
     });
 
     it('should handle noon in 12h mode', () => {
       const date = new Date(2025, 0, 15, 12, 0);
-      const formatted = service.formatTime(date, '12h');
 
-      expect(formatted).toBe('12:00 PM');
+      expect(service.formatTime(date, '12h', 'en-US')).toBe('12:00 PM');
+    });
+
+    it('localizes the meridiem rather than hardcoding AM/PM', () => {
+      const date = new Date(2025, 0, 15, 14, 30);
+
+      // The old implementation returned the literal 'PM' for every locale on
+      // earth. Dutch writes it with periods; the point is only that it differs.
+      expect(service.formatTime(date, '12h', 'nl-BE')).not.toBe(
+        service.formatTime(date, '12h', 'en-US'),
+      );
+      expect(service.formatTime(date, '12h', 'nl-BE')).toContain('2:30');
+    });
+
+    it('follows the locale when no format is given', () => {
+      const date = new Date(2025, 0, 15, 14, 30);
+
+      // undefined means "let the locale decide" — US clocks are 12-hour,
+      // Belgian ones 24-hour. Previously this was pinned to 24h for everyone.
+      expect(service.formatTime(date, undefined, 'en-US')).toContain('2:30');
+      expect(service.formatTime(date, undefined, 'nl-BE')).toContain('14:30');
+    });
+
+    it('reuses one Intl formatter per locale+format pair', () => {
+      const date = new Date(2025, 0, 15, 14, 30);
+      // Called once per slot per day in a real render — hundreds of times.
+      // Constructing a formatter each call is the classic Intl performance trap.
+      service.formatTime(date, '24h', 'en-US'); // warm the cache
+
+      // The spy must construct a REAL formatter, or formatTime has nothing to
+      // call .format on — vi.spyOn alone replaces the native constructor.
+      const RealDateTimeFormat = Intl.DateTimeFormat;
+      const spy = vi.spyOn(Intl, 'DateTimeFormat').mockImplementation(
+        // A `function`, not an arrow: arrows are not constructible, and
+        // formatTime calls this with `new`.
+        function (this: unknown, ...args: unknown[]) {
+          return new (RealDateTimeFormat as unknown as new (
+            ...a: unknown[]
+          ) => Intl.DateTimeFormat)(...args);
+        } as unknown as typeof Intl.DateTimeFormat,
+      );
+      try {
+        for (let i = 0; i < 50; i++) service.formatTime(date, '24h', 'en-US');
+        expect(spy).not.toHaveBeenCalled();
+
+        // A different pair is a different formatter, and is built exactly once.
+        service.formatTime(date, '12h', 'en-US');
+        service.formatTime(date, '12h', 'en-US');
+        expect(spy).toHaveBeenCalledTimes(1);
+      } finally {
+        spy.mockRestore();
+      }
     });
   });
 

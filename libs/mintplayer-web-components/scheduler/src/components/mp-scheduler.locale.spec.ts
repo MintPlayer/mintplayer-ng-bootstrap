@@ -1,0 +1,103 @@
+import { afterEach, describe, expect, it } from 'vitest';
+import './mp-scheduler';
+import type { MpScheduler } from './mp-scheduler';
+
+/**
+ * R7 — the scheduler follows the browser's locale unless told otherwise.
+ *
+ * `DEFAULT_OPTIONS.locale` used to be the literal `'en-US'`, which is not a
+ * neutral fallback but an instruction to `Intl` to render US English. A Dutch
+ * browser showed "Mon, Oct 27" where the platform would have produced
+ * "ma 27 okt" for free.
+ *
+ * These specs pin locales explicitly on both sides, so they assert the component's
+ * behaviour rather than the machine's regional settings.
+ */
+
+async function nextRaf(): Promise<void> {
+  return new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(() => r())));
+}
+
+async function mount(locale?: string, view = 'timeline'): Promise<MpScheduler> {
+  const el = document.createElement('mp-scheduler') as MpScheduler;
+  document.body.appendChild(el);
+  (el as unknown as { resources: unknown[] }).resources = [
+    { id: 'alice', title: 'Alice', events: [] },
+  ];
+  (el as unknown as { date: Date }).date = new Date(2026, 6, 27); // Mon 27 Jul 2026
+  if (locale) el.setAttribute('locale', locale);
+  el.setAttribute('view', view);
+  await (el as unknown as { updateComplete: Promise<void> }).updateComplete;
+  await nextRaf();
+  return el;
+}
+
+function dayHeaders(el: MpScheduler): string[] {
+  return [...el.shadowRoot!.querySelectorAll('.scheduler-timeline-slot-header')]
+    .map((n) => n.textContent?.trim() ?? '')
+    .filter((t) => t.length > 3); // slot-time headers are short; day headers are not
+}
+
+afterEach(() => {
+  document.querySelectorAll('mp-scheduler').forEach((n) => n.remove());
+});
+
+describe('mp-scheduler — dates follow the locale (R7)', () => {
+  it('renders Dutch day headers under nl-BE', async () => {
+    const el = await mount('nl-BE');
+    const headers = dayHeaders(el);
+
+    expect(headers.length).toBeGreaterThan(0);
+    // "ma 27 jul" — the user's own example. Day-before-month, lowercase, no comma.
+    expect(headers[0].toLowerCase()).toContain('ma');
+    expect(headers[0].toLowerCase()).toContain('jul');
+    expect(headers[0]).toContain('27');
+  });
+
+  it('renders English day headers under en-US, in the American field order', async () => {
+    const el = await mount('en-US');
+    const headers = dayHeaders(el);
+
+    expect(headers[0]).toContain('Mon');
+    expect(headers[0]).toContain('Jul');
+    // en-US puts the month first; nl-BE puts the day first. Asserting the ORDER
+    // is what proves Intl is doing the work rather than a template.
+    expect(headers[0].indexOf('Jul')).toBeLessThan(headers[0].indexOf('27'));
+  });
+
+  it('puts the day before the month under nl-BE — the inverse order', async () => {
+    const el = await mount('nl-BE');
+    const header = dayHeaders(el)[0].toLowerCase();
+
+    expect(header.indexOf('27')).toBeLessThan(header.indexOf('jul'));
+  });
+
+  it('produces different output for two locales with no other change', async () => {
+    const nl = dayHeaders(await mount('nl-BE'))[0];
+    document.querySelectorAll('mp-scheduler').forEach((n) => n.remove());
+    const us = dayHeaders(await mount('en-US'))[0];
+
+    expect(nl).not.toBe(us);
+  });
+});
+
+describe('mp-scheduler — attributes before connection (robustness)', () => {
+  it('does not throw when an attribute is set between createElement and append', async () => {
+    // Completely idiomatic, and what a framework does when building an element
+    // imperatively. attributeChangedCallback fires while shadowRoot is still
+    // null, and every state listener runs — updateUI used to dereference it.
+    const el = document.createElement('mp-scheduler') as MpScheduler;
+
+    expect(() => {
+      el.setAttribute('locale', 'nl-BE');
+      el.setAttribute('view', 'timeline');
+    }).not.toThrow();
+
+    document.body.appendChild(el);
+    await (el as unknown as { updateComplete: Promise<void> }).updateComplete;
+    await nextRaf();
+
+    // and the attributes set before connection are honoured once it renders
+    expect(dayHeaders(el)[0].toLowerCase()).toContain('jul');
+  });
+});

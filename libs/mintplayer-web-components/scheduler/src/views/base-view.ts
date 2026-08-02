@@ -24,9 +24,9 @@ export function formatEventAriaLabel(
   resourceTitle: string | null,
   options: SchedulerOptions,
 ): string {
-  const timeFormat = options.timeFormat ?? '24h';
-  const start = dateService.formatTime(event.start, timeFormat);
-  const end = dateService.formatTime(event.end, timeFormat);
+  const timeFormat = options.timeFormat;
+  const start = dateService.formatTime(event.start, timeFormat, options.locale);
+  const end = dateService.formatTime(event.end, timeFormat, options.locale);
   const day = event.start.toLocaleDateString(options.locale, { weekday: 'long', month: 'short', day: 'numeric' });
   const parts = [`${event.title}, ${start}–${end}`, day];
   if (resourceTitle) {
@@ -86,7 +86,7 @@ export function formatCellAnnouncement(
     month: 'short',
     day: 'numeric',
   });
-  const time = dateService.formatTime(slot.start, options.timeFormat ?? '24h');
+  const time = dateService.formatTime(slot.start, options.timeFormat, options.locale);
   const parts = [`${day}, ${time}`];
   if (resourceTitle) parts.push(resourceTitle);
   return parts.join(', ');
@@ -103,10 +103,10 @@ export function formatSelectionAnnouncement(
   const range = selectionRange(state);
   if (!range) return '';
   const { options } = state;
-  const timeFormat = options.timeFormat ?? '24h';
+  const timeFormat = options.timeFormat;
   const dayFmt = { weekday: 'short', month: 'short', day: 'numeric' } as const;
-  const startStr = `${dateService.formatTime(range.start, timeFormat)} ${range.start.toLocaleDateString(options.locale, dayFmt)}`;
-  const endStr = `${dateService.formatTime(range.end, timeFormat)} ${range.end.toLocaleDateString(options.locale, dayFmt)}`;
+  const startStr = `${dateService.formatTime(range.start, timeFormat, options.locale)} ${range.start.toLocaleDateString(options.locale, dayFmt)}`;
+  const endStr = `${dateService.formatTime(range.end, timeFormat, options.locale)} ${range.end.toLocaleDateString(options.locale, dayFmt)}`;
   const slotMs = slotDuration * 1000;
   const slotCount = Math.max(1, Math.round((range.end.getTime() - range.start.getTime()) / slotMs));
   const messages = resolveMessages(options.messages);
@@ -126,11 +126,11 @@ export function formatMoveAnnouncement(
   end: Date,
   options: SchedulerOptions,
 ): string {
-  const timeFormat = options.timeFormat ?? '24h';
+  const timeFormat = options.timeFormat;
   const day = start.toLocaleDateString(options.locale, { weekday: 'short', month: 'short', day: 'numeric' });
   return formatMessage(resolveMessages(options.messages).movedTo, {
-    start: dateService.formatTime(start, timeFormat),
-    end: dateService.formatTime(end, timeFormat),
+    start: dateService.formatTime(start, timeFormat, options.locale),
+    end: dateService.formatTime(end, timeFormat, options.locale),
     day,
   });
 }
@@ -146,12 +146,12 @@ export function formatResizeAnnouncement(
   edge: 'start' | 'end',
   options: SchedulerOptions,
 ): string {
-  const timeFormat = options.timeFormat ?? '24h';
+  const timeFormat = options.timeFormat;
   const messages = resolveMessages(options.messages);
   return formatMessage(messages.resizedEdge, {
     edge: edge === 'start' ? messages.startEdge : messages.endEdge,
-    start: dateService.formatTime(start, timeFormat),
-    end: dateService.formatTime(end, timeFormat),
+    start: dateService.formatTime(start, timeFormat, options.locale),
+    end: dateService.formatTime(end, timeFormat, options.locale),
   });
 }
 

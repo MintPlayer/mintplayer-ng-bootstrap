@@ -39,9 +39,20 @@ export interface SchedulerOptions {
   initialDate?: Date;
 
   // Locale settings
-  /** Locale for date formatting (e.g., 'en-US') */
+  /**
+   * Locale for date and time formatting (e.g. 'nl-BE').
+   *
+   * Leave it unset and the browser's own locale is used — every formatter here
+   * passes the value straight to `Intl`, which resolves `undefined` to the
+   * runtime default. Set it only to override the user's browser.
+   */
   locale?: string;
-  /** First day of the week (0 = Sunday, 1 = Monday) */
+  /**
+   * First day of the week (0 = Sunday, 1 = Monday).
+   *
+   * Unset means "derive from the locale" — Sunday for en-US and ja-JP, Monday
+   * for most of Europe. Set it to pin the week start regardless of locale.
+   */
   firstDayOfWeek?: DayOfWeek;
   /** Timezone identifier (e.g., 'America/New_York') */
   timeZone?: string;
@@ -101,10 +112,6 @@ export interface SchedulerOptions {
   // Display options
   /** Whether to show current time indicator */
   nowIndicator?: boolean;
-  /** Whether to show week numbers */
-  weekNumbers?: boolean;
-  /** Text to display before week number */
-  weekText?: string;
   /** Maximum events to show per day (true = show "+X more" link) */
   dayMaxEvents?: boolean | number;
 
@@ -172,17 +179,28 @@ export type MoreLinkBehavior =
 /**
  * Default options for the scheduler
  */
-export const DEFAULT_OPTIONS: Required<SchedulerOptions> = {
+/**
+ * The defaults table.
+ *
+ * `locale`, `timeFormat` and `firstDayOfWeek` are deliberately ABSENT rather than
+ * guessed. A default of `'en-US'` is not a neutral fallback — it is an
+ * instruction to `Intl` to render US English, which is why a Dutch browser used
+ * to show "Mon, Oct 27" instead of "ma 27 okt". Undefined means "ask the
+ * platform", and every consumer of these three resolves it that way.
+ */
+export type SchedulerDefaultOptions = Required<
+  Omit<SchedulerOptions, 'locale' | 'timeFormat' | 'firstDayOfWeek'>
+> &
+  Pick<SchedulerOptions, 'locale' | 'timeFormat' | 'firstDayOfWeek'>;
+
+export const DEFAULT_OPTIONS: SchedulerDefaultOptions = {
   initialView: 'week',
   initialDate: new Date(),
-  locale: 'en-US',
-  firstDayOfWeek: 1,
   timeZone: 'local',
   slotDuration: 1800,
   slotLabelInterval: 3600,
   slotMinTime: '00:00:00',
   slotMaxTime: '24:00:00',
-  timeFormat: '24h',
   businessHours: {
     daysOfWeek: [1, 2, 3, 4, 5],
     startTime: '09:00',
@@ -203,8 +221,6 @@ export const DEFAULT_OPTIONS: Required<SchedulerOptions> = {
   permissions: {},
   defaultEventColor: DEFAULT_EVENT_COLOR,
   nowIndicator: true,
-  weekNumbers: false,
-  weekText: 'W',
   dayMaxEvents: true,
   moreLinkBehavior: 'popover',
   dayClickAction: 'popover',

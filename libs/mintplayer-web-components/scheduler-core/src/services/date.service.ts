@@ -226,46 +226,111 @@ export class DateService {
   }
 
   /**
-   * Format time according to format preference
+   * Format a time of day.
+   *
+   * Was hand-rolled — `${hours}:${minutes}` with hardcoded 'AM'/'PM' literals —
+   * which no locale could reach: nl wants "a.m.", ja "午前", and several locales
+   * separate with something other than a colon.
+   *
+   * `format` is an explicit override. Leave it undefined and `hour12` is not
+   * passed at all, so `Intl` applies whatever the locale itself does — which is
+   * the behaviour the scheduler wants by default and the reason
+   * `detectTimeFormat` is not needed on this path.
    */
-  formatTime(date: Date, format: TimeFormat = '24h'): string {
-    const hours = date.getHours();
-    const minutes = date.getMinutes();
-
-    if (format === '12h') {
-      const period = hours >= 12 ? 'PM' : 'AM';
-      const hour12 = hours % 12 || 12;
-      return `${hour12}:${minutes.toString().padStart(2, '0')} ${period}`;
-    }
-
-    return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}`;
+  formatTime(date: Date, format?: TimeFormat, locale?: string): string {
+    return this.timeFormatter(format, locale).format(date);
   }
 
   /**
-   * Format date for display
+   * `Intl.DateTimeFormat` instances are expensive to construct and this runs once
+   * per slot per day — hundreds of times per render. Memoized on the only two
+   * inputs that vary.
    */
-  formatDate(date: Date, locale: string = 'en-US', options?: Intl.DateTimeFormatOptions): string {
+  private readonly timeFormatters = new Map<string, Intl.DateTimeFormat>();
+
+  private timeFormatter(format?: TimeFormat, locale?: string): Intl.DateTimeFormat {
+    const key = `${locale ?? ''}|${format ?? ''}`;
+    const cached = this.timeFormatters.get(key);
+    if (cached) return cached;
+
+    const options: Intl.DateTimeFormatOptions =
+      format === '12h'
+        ? // 'numeric', not '2-digit': a 12-hour clock reads "9:05 AM", never
+          // "09:05 AM". The distinction is what makes it look native.
+          { hour: 'numeric', minute: '2-digit', hour12: true }
+        : format === '24h'
+          ? { hour: '2-digit', minute: '2-digit', hour12: false }
+          : { hour: 'numeric', minute: '2-digit' };
+
+    const formatter = new Intl.DateTimeFormat(locale, options);
+    this.timeFormatters.set(key, formatter);
+    return formatter;
+  }
+
+  /**
+   * Format date for display.
+   *
+   * `locale` is optional and stays optional all the way down: `undefined` tells
+   * `Intl` to use the runtime's own locale. It used to default to `'en-US'`,
+   * which is not a neutral fallback but an instruction to render US English.
+   */
+  formatDate(date: Date, locale?: string, options?: Intl.DateTimeFormatOptions): string {
     return date.toLocaleDateString(locale, options);
   }
 
   /**
-   * Format date with weekday
+   * Format date with weekday — "Mon, Jul 27" in en-US, "ma 27 jul" in nl-BE,
+   * "7月27日(月)" in ja-JP. The field order is the locale's business, not ours.
    */
-  formatDateWithWeekday(date: Date, locale: string = 'en-US'): string {
+  formatDateWithWeekday(date: Date, locale?: string): string {
     return this.formatDate(date, locale, { weekday: 'short', month: 'short', day: 'numeric' });
+  }
+
+  /**
+   * Format a date RANGE, letting the locale place the separator and elide the
+   * shared parts ("Jul 27 – Aug 2, 2026"). Falls back to a plain join where
+   * `formatRange` is unavailable.
+   */
+  formatDateRange(
+    start: Date,
+    end: Date,
+    locale?: string,
+    options?: Intl.DateTimeFormatOptions,
+  ): string {
+    const formatter = new Intl.DateTimeFormat(locale, options);
+    if (typeof formatter.formatRange === 'function') {
+      return formatter.formatRange(start, end);
+    }
+    return `${formatter.format(start)} – ${formatter.format(end)}`;
+  }
+
+  /**
+   * Format a start–end time pair as one range.
+   *
+   * Beats joining two `formatTime` results with a literal separator: the locale
+   * chooses the dash AND elides what the ends share, so en-US reads
+   * "9:00 – 10:00 AM" rather than "9:00 AM - 10:00 AM". The event chips used a
+   * hyphen while the announcements used an en-dash; now neither hardcodes one.
+   */
+  formatTimeRange(start: Date, end: Date, format?: TimeFormat, locale?: string): string {
+    const formatter = this.timeFormatter(format, locale);
+    if (typeof formatter.formatRange === 'function') {
+      return formatter.formatRange(start, end);
+    }
+    return `${formatter.format(start)} – ${formatter.format(end)}`;
   }
 
   /**
    * Get month name
    */
-  getMonthName(date: Date, locale: string = 'en-US', format: 'long' | 'short' = 'long'): string {
+  getMonthName(date: Date, locale?: string, format: 'long' | 'short' = 'long'): string {
     return date.toLocaleDateString(locale, { month: format });
   }
 
   /**
    * Get day name
    */
-  getDayName(date: Date, locale: string = 'en-US', format: 'long' | 'short' | 'narrow' = 'short'): string {
+  getDayName(date: Date, locale?: string, format: 'long' | 'short' | 'narrow' = 'short'): string {
     return date.toLocaleDateString(locale, { weekday: format });
   }
 

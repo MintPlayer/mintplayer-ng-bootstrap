@@ -1054,6 +1054,20 @@ export class MpScheduler extends LitElement {
   }
 
   /**
+   * Does the editor's time list use a 12-hour clock?
+   *
+   * `mp-datetime-picker.hour12` is a boolean, so an unset `timeFormat` has to be
+   * resolved rather than read as false — otherwise a US user gets a 24-hour
+   * picker inside a scheduler that renders 12-hour times everywhere else.
+   * `detectTimeFormat` is the `Intl` probe written for this and, until now,
+   * never called from the component.
+   */
+  private resolvedHour12(): boolean {
+    const { timeFormat, locale } = this.stateManager.getState().options;
+    return (timeFormat ?? dateService.detectTimeFormat(locale)) === '12h';
+  }
+
+  /**
    * Minute granularity for the editor's time lists, derived from the grid's own
    * `slotDuration` so the two agree — picking a time the grid cannot represent
    * would be its own small lie. Clamped to the picker's supported steps.
@@ -1139,7 +1153,7 @@ export class MpScheduler extends LitElement {
             input-label=${this.msg('editorStartLabel')}
             locale=${options.locale ?? nothing}
             first-day-of-week=${options.firstDayOfWeek ?? 1}
-            .hour12=${options.timeFormat === '12h'}
+            .hour12=${this.resolvedHour12()}
             .step=${this.pickerStep()}
           ></mp-datetime-picker>
         </label>
@@ -1156,7 +1170,7 @@ export class MpScheduler extends LitElement {
             input-label=${this.msg('editorEndLabel')}
             locale=${options.locale ?? nothing}
             first-day-of-week=${options.firstDayOfWeek ?? 1}
-            .hour12=${options.timeFormat === '12h'}
+            .hour12=${this.resolvedHour12()}
             .step=${this.pickerStep()}
           ></mp-datetime-picker>
         </label>
@@ -1315,7 +1329,7 @@ export class MpScheduler extends LitElement {
     const { options } = this.stateManager.getState();
     this.liveAnnouncer.announce(
       this.msg('editorStartClamped', {
-        start: dateService.formatTime(latest, options.timeFormat),
+        start: dateService.formatTime(latest, options.timeFormat, options.locale),
       }),
     );
   }
@@ -1354,7 +1368,7 @@ export class MpScheduler extends LitElement {
     const { options } = this.stateManager.getState();
     this.liveAnnouncer.announce(
       this.msg('editorEndClamped', {
-        end: dateService.formatTime(earliest, options.timeFormat),
+        end: dateService.formatTime(earliest, options.timeFormat, options.locale),
       }),
     );
   }
@@ -1726,14 +1740,14 @@ export class MpScheduler extends LitElement {
       case 'timeline': {
         const weekStart = dateService.getWeekStart(date, options.firstDayOfWeek);
         const weekEnd = dateService.addDays(weekStart, 6);
-        titleText = `${dateService.formatDate(weekStart, options.locale, {
-          month: 'short',
-          day: 'numeric',
-        })} - ${dateService.formatDate(weekEnd, options.locale, {
+        // formatRange, not a hardcoded " - ": the locale owns the separator AND
+        // elides what the two ends share, so this reads "Jul 27 – Aug 2, 2026"
+        // rather than repeating the month or the year.
+        titleText = dateService.formatDateRange(weekStart, weekEnd, options.locale, {
           month: 'short',
           day: 'numeric',
           year: 'numeric',
-        })}`;
+        });
         break;
       }
       case 'day':
@@ -1874,6 +1888,15 @@ export class MpScheduler extends LitElement {
   }
 
   private updateUI(state: SchedulerState): void {
+    // Nothing to update before the shadow root exists, and this runs then: an
+    // attribute set between `createElement` and `append` — completely idiomatic,
+    // and what every framework does when it builds an element imperatively —
+    // fires `attributeChangedCallback`, which reaches here through `setOptions`.
+    // `firstUpdated` performs the full render once the DOM is there, so skipping
+    // is not a lost update. Without this the component threw on
+    // `document.createElement('mp-scheduler').setAttribute('locale', 'nl-BE')`.
+    if (!this.shadowRoot) return;
+
     this.updateTitle();
 
     // Update view switcher active state — visual class + aria-pressed in lockstep.
@@ -3196,8 +3219,8 @@ export class MpScheduler extends LitElement {
       resourceId,
     );
     this.liveAnnouncer.announce(this.msg('selectionCommitted', {
-      start: dateService.formatTime(start, state.options.timeFormat),
-      end: dateService.formatTime(end, state.options.timeFormat),
+      start: dateService.formatTime(start, state.options.timeFormat, state.options.locale),
+      end: dateService.formatTime(end, state.options.timeFormat, state.options.locale),
     }));
   }
 

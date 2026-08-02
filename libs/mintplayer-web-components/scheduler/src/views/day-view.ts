@@ -68,7 +68,7 @@ export class DayView extends BaseView {
 
     for (const slot of slots) {
       const label = this.createElement('div', 'scheduler-time-slot-label');
-      label.textContent = dateService.formatTime(slot.start, options.timeFormat);
+      label.textContent = dateService.formatTime(slot.start, options.timeFormat, options.locale);
       timeGutter.appendChild(label);
     }
 
@@ -258,7 +258,12 @@ export class DayView extends BaseView {
     content.appendChild(title);
 
     const timeEl = this.createElement('div', 'event-time');
-    timeEl.textContent = `${dateService.formatTime(part.start, this.state.options.timeFormat)} - ${dateService.formatTime(part.end, this.state.options.timeFormat)}`;
+    timeEl.textContent = dateService.formatTimeRange(
+      part.start,
+      part.end,
+      this.state.options.timeFormat,
+      this.state.options.locale,
+    );
     content.appendChild(timeEl);
 
     eventEl.appendChild(content);

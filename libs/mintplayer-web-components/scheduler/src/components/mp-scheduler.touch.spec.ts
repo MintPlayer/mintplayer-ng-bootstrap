@@ -42,6 +42,12 @@ async function mount(): Promise<MpScheduler> {
     },
   ];
   (el as unknown as { date: Date }).date = new Date(2026, 4, 11);
+  // Pin the locale. DEFAULT_OPTIONS.locale used to be the literal 'en-US', which
+  // silently made every spec deterministic; it is now undefined so the component
+  // follows the browser, and an unpinned spec would assert the MACHINE's locale
+  // ("mei 2026" on this dev box, "May 2026" in a US CI). Tests that care about
+  // localization set their own locale explicitly.
+  el.setAttribute('locale', 'en-US');
   el.setAttribute('view', 'timeline');
   await (el as unknown as { updateComplete: Promise<void> }).updateComplete;
   await nextRaf();

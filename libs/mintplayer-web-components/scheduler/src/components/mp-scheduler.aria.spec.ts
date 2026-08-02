@@ -8,6 +8,7 @@ async function nextRaf(): Promise<void> {
 
 async function mount(view: 'timeline' | 'week' | 'day' | 'month' | 'year' = 'timeline'): Promise<MpScheduler> {
   const el = document.createElement('mp-scheduler') as MpScheduler;
+  el.setAttribute('locale', 'en-US'); // deterministic dates; see mount()
   document.body.appendChild(el);
   // Provide a minimal, deterministic resource + event so timeline-view has
   // structure to assert against. Set after append so the shadow root is ready.
@@ -23,6 +24,12 @@ async function mount(view: 'timeline' | 'week' | 'day' | 'month' | 'year' = 'tim
     ] },
   ];
   (el as unknown as { date: Date }).date = new Date(2026, 4, 11);
+  // Pin the locale. DEFAULT_OPTIONS.locale used to be the literal 'en-US', which
+  // silently made every spec deterministic; it is now undefined so the component
+  // follows the browser, and an unpinned spec would assert the MACHINE's locale
+  // ("mei 2026" on this dev box, "May 2026" in a US CI). Tests that care about
+  // localization set their own locale explicitly.
+  el.setAttribute('locale', 'en-US');
   el.setAttribute('view', view);
   await (el as unknown as { updateComplete: Promise<void> }).updateComplete;
   await nextRaf();
@@ -212,6 +219,7 @@ describe('mp-scheduler — options.messages localization (FR-12)', () => {
 
   it('overridden messages land in labels, instructions and grid label', async () => {
     el = document.createElement('mp-scheduler') as MpScheduler;
+    el.setAttribute('locale', 'en-US'); // deterministic dates; see mount()
     document.body.appendChild(el);
     (el as unknown as { options: unknown }).options = {
       messages: {
