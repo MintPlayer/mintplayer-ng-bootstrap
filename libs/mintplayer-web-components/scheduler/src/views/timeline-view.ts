@@ -73,7 +73,7 @@ export class TimelineView extends BaseView {
     this.container.classList.add('scheduler-timeline-view');
 
     const { date, options, resources, collapsedGroups } = this.state;
-    const days = dateService.getWeekDays(date, options.firstDayOfWeek);
+    const days = dateService.getWeekDays(date, this.firstDayOfWeek);
     const flattenedPreview = resourceService.flatten(resources, collapsedGroups);
     // +2 header rows (day labels and time labels), +1 if the unassigned bucket
     // row will render. Was +1, which under-counted by one and omitted the bucket.
@@ -1028,7 +1028,7 @@ export class TimelineView extends BaseView {
     this.updateGreyedSlots();
 
     // Re-render events
-    const days = dateService.getWeekDays(state.date, state.options.firstDayOfWeek);
+    const days = dateService.getWeekDays(state.date, this.firstDayOfWeek);
     this.renderEvents(days);
 
     // Render drag preview ghost (no-op outside a drag)

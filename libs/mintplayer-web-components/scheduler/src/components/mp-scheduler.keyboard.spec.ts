@@ -9,7 +9,8 @@ async function nextRaf(): Promise<void> {
 async function mount(view: 'week' | 'day' | 'timeline' | 'month' | 'year' = 'week'): Promise<MpScheduler> {
   const el = document.createElement('mp-scheduler') as MpScheduler;
   document.body.appendChild(el);
-  // Tuesday, May 12, 2026 — picked so the week ranges over a Mon-start week.
+  // Tuesday, May 12, 2026. The spec pins locale='en-US' below, which now also
+  // pins the week start (Sunday) — the week no longer depends on a default.
   (el as unknown as { date: Date }).date = new Date(2026, 4, 12);
   if (view === 'timeline') {
     (el as unknown as { resources: unknown[] }).resources = [
@@ -81,7 +82,7 @@ describe('mp-scheduler — arrow nav (week)', () => {
 
   it('ArrowDown advances focus by one slot in time', async () => {
     el = await mount('week');
-    const before = focusCell(el, 1, 18); // Tue, slot 18 = 09:00 with 30-min slots
+    const before = focusCell(el, 1, 18); // dayIndex 1, slot 18 = 09:00 with 30-min slots
     expect(before).not.toBeNull();
     const beforeStart = new Date(before!.dataset['start']!);
     dispatchKey(el, 'ArrowDown');

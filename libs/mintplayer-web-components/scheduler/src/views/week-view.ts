@@ -42,7 +42,7 @@ export class WeekView extends BaseView {
     this.container.classList.add('scheduler-week-view');
 
     const { date, options } = this.state;
-    const days = dateService.getWeekDays(date, options.firstDayOfWeek);
+    const days = dateService.getWeekDays(date, this.firstDayOfWeek);
 
     // Create day headers
     const headers = this.createElement('div', 'scheduler-day-headers');
@@ -239,7 +239,7 @@ export class WeekView extends BaseView {
 
   private renderEvents(): void {
     const { date, events, options } = this.state;
-    const days = dateService.getWeekDays(date, options.firstDayOfWeek);
+    const days = dateService.getWeekDays(date, this.firstDayOfWeek);
     const weekStart = days[0];
     const weekEnd = new Date(days[6]);
     weekEnd.setHours(23, 59, 59, 999);
@@ -379,7 +379,7 @@ export class WeekView extends BaseView {
     const { previewEvent, options, date } = this.state;
     if (!previewEvent) return;
 
-    const days = dateService.getWeekDays(date, options.firstDayOfWeek);
+    const days = dateService.getWeekDays(date, this.firstDayOfWeek);
     // splitInParts already accepts a PreviewEvent and flags isStart/isEnd, so the
     // ghost reuses exactly the machinery committed events use.
     const { parts } = timelineService.splitInParts(previewEvent);
@@ -419,7 +419,7 @@ export class WeekView extends BaseView {
 
     if (!dragState || !previewEvent) return;
 
-    const days = dateService.getWeekDays(date, options.firstDayOfWeek);
+    const days = dateService.getWeekDays(date, this.firstDayOfWeek);
     const slots = dateService.getTimeSlots(
       days[0],
       options.slotDuration,
@@ -475,7 +475,7 @@ export class WeekView extends BaseView {
     if (!this.state.options.nowIndicator) return;
 
     const { date, options } = this.state;
-    const days = dateService.getWeekDays(date, options.firstDayOfWeek);
+    const days = dateService.getWeekDays(date, this.firstDayOfWeek);
 
     const now = new Date();
     const todayIndex = days.findIndex((d) => dateService.isSameDay(d, now));

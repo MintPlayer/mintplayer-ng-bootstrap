@@ -225,6 +225,54 @@ export class DateService {
     }
   }
 
+  /** Memoized `getWeekInfo().firstDay` per locale — see resolveFirstDayOfWeek. */
+  private readonly weekStarts = new Map<string, DayOfWeek>();
+
+  /**
+   * Which day the week starts on: the caller's explicit choice, else the
+   * locale's own convention, else Monday.
+   *
+   * Two numbering systems meet here and they disagree about Sunday.
+   * `Date.prototype.getDay()` — which every calculation in this file speaks — is
+   * 0-6 with **Sunday = 0**. `Intl.Locale…getWeekInfo().firstDay` is 1-7 with
+   * **Sunday = 7**. The `% 7` is that conversion, and it is the only place the
+   * 1-7 domain is allowed to exist: `DayOfWeek` stays 0-6 because it is also the
+   * type of `BusinessHours.daysOfWeek`, which is `getDay()`-based and would
+   * silently accept a meaningless 7 if the type were widened.
+   *
+   * Resolved from the locale the CALLER passes, never from a stored default. A
+   * derivation reading `DEFAULT_OPTIONS.locale` would have read the old 'en-US'
+   * literal and handed every user on earth a Sunday start, Europe included.
+   *
+   * `getWeekInfo` is absent in Firefox, and is a getter on some engines and a
+   * method on others; both shapes and neither are handled.
+   */
+  resolveFirstDayOfWeek(explicit?: DayOfWeek, locale?: string): DayOfWeek {
+    if (explicit !== undefined) return explicit;
+
+    const key = locale ?? '';
+    const cached = this.weekStarts.get(key);
+    if (cached !== undefined) return cached;
+
+    let resolved: DayOfWeek = 1;
+    try {
+      const resolvedLocale =
+        locale || (typeof navigator !== 'undefined' ? navigator.language : undefined);
+      const info = new Intl.Locale(resolvedLocale ?? 'en-US') as Intl.Locale & {
+        weekInfo?: { firstDay?: number };
+        getWeekInfo?: () => { firstDay?: number };
+      };
+      const firstDay =
+        typeof info.getWeekInfo === 'function' ? info.getWeekInfo()?.firstDay : info.weekInfo?.firstDay;
+      if (typeof firstDay === 'number') resolved = (firstDay % 7) as DayOfWeek;
+    } catch {
+      // No Intl.Locale, no getWeekInfo, or an unparseable tag. Monday stands.
+    }
+
+    this.weekStarts.set(key, resolved);
+    return resolved;
+  }
+
   /**
    * Format a time of day.
    *
@@ -423,17 +471,6 @@ export class DateService {
     const result = new Date(date);
     result.setFullYear(result.getFullYear() + years);
     return result;
-  }
-
-  /**
-   * Get week number of the year
-   */
-  getWeekNumber(date: Date): number {
-    const d = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()));
-    const dayNum = d.getUTCDay() || 7;
-    d.setUTCDate(d.getUTCDate() + 4 - dayNum);
-    const yearStart = new Date(Date.UTC(d.getUTCFullYear(), 0, 1));
-    return Math.ceil(((d.getTime() - yearStart.getTime()) / 86400000 + 1) / 7);
   }
 
   /**

@@ -20,7 +20,7 @@ export class MonthView extends BaseView {
     this.container.classList.add('scheduler-month-view');
 
     const { date, options } = this.state;
-    const weeks = dateService.getMonthWeeks(date, options.firstDayOfWeek);
+    const weeks = dateService.getMonthWeeks(date, this.firstDayOfWeek);
 
     // Create day-of-week headers
     const headers = this.createElement('div', 'scheduler-day-headers');
@@ -146,7 +146,7 @@ export class MonthView extends BaseView {
     const monthEnd = dateService.getMonthEnd(date);
 
     // Get weeks for full view range
-    const weeks = dateService.getMonthWeeks(date, options.firstDayOfWeek);
+    const weeks = dateService.getMonthWeeks(date, this.firstDayOfWeek);
     const viewStart = weeks[0][0];
     const viewEnd = weeks[weeks.length - 1][6];
     viewEnd.setHours(23, 59, 59, 999);

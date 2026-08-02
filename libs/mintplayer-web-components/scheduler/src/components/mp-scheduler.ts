@@ -312,10 +312,12 @@ export class MpScheduler extends LitElement {
       case 'first-day-of-week':
         if (newValue) {
           const day = parseInt(newValue, 10);
-          if (day >= 0 && day <= 6) {
-            this.stateManager.setOptions({
-              firstDayOfWeek: day as 0 | 1 | 2 | 3 | 4 | 5 | 6,
-            });
+          // Accept 0-7 and normalise, rather than silently discarding. Callers
+          // reasonably pass what Intl reports, and Intl says Sunday = 7 while
+          // Date.getDay() — and DayOfWeek — say 0. Dropping it left the week
+          // start frozen at whatever it was, with no error to explain why.
+          if (Number.isInteger(day) && day >= 0 && day <= 7) {
+            this.stateManager.setOptions({ firstDayOfWeek: (day % 7) as DayOfWeek });
           }
         }
         break;
@@ -1062,6 +1064,16 @@ export class MpScheduler extends LitElement {
    * `detectTimeFormat` is the `Intl` probe written for this and, until now,
    * never called from the component.
    */
+  /**
+   * The week's first day: the consumer's choice, else the locale's convention.
+   * Mirrors `BaseView.firstDayOfWeek` — resolved at the point of use so a later
+   * locale change is picked up, never written back into `options`.
+   */
+  private firstDayOfWeek(): DayOfWeek {
+    const { firstDayOfWeek, locale } = this.stateManager.getState().options;
+    return dateService.resolveFirstDayOfWeek(firstDayOfWeek, locale);
+  }
+
   private resolvedHour12(): boolean {
     const { timeFormat, locale } = this.stateManager.getState().options;
     return (timeFormat ?? dateService.detectTimeFormat(locale)) === '12h';
@@ -1152,7 +1164,7 @@ export class MpScheduler extends LitElement {
             @value-change=${(e: Event) => this.onEditorStartChange(e)}
             input-label=${this.msg('editorStartLabel')}
             locale=${options.locale ?? nothing}
-            first-day-of-week=${options.firstDayOfWeek ?? 1}
+            first-day-of-week=${this.firstDayOfWeek()}
             .hour12=${this.resolvedHour12()}
             .step=${this.pickerStep()}
           ></mp-datetime-picker>
@@ -1169,7 +1181,7 @@ export class MpScheduler extends LitElement {
             @value-change=${(e: Event) => this.onEditorEndChange(e)}
             input-label=${this.msg('editorEndLabel')}
             locale=${options.locale ?? nothing}
-            first-day-of-week=${options.firstDayOfWeek ?? 1}
+            first-day-of-week=${this.firstDayOfWeek()}
             .hour12=${this.resolvedHour12()}
             .step=${this.pickerStep()}
           ></mp-datetime-picker>
@@ -1738,7 +1750,7 @@ export class MpScheduler extends LitElement {
         break;
       case 'week':
       case 'timeline': {
-        const weekStart = dateService.getWeekStart(date, options.firstDayOfWeek);
+        const weekStart = dateService.getWeekStart(date, this.firstDayOfWeek());
         const weekEnd = dateService.addDays(weekStart, 6);
         // formatRange, not a hardcoded " - ": the locale owns the separator AND
         // elides what the two ends share, so this reads "Jul 27 – Aug 2, 2026"
@@ -2979,7 +2991,7 @@ export class MpScheduler extends LitElement {
         break;
       }
       case 'week': {
-        const days = dateService.getWeekDays(state.date, state.options.firstDayOfWeek);
+        const days = dateService.getWeekDays(state.date, this.firstDayOfWeek());
         const day = end === 'start' ? days[0] : days[6];
         const slots = dateService.getTimeSlots(day, state.options.slotDuration, state.options.slotMinTime, state.options.slotMaxTime);
         target = end === 'start' ? slots[0] : slots[slots.length - 1];
@@ -2990,7 +3002,7 @@ export class MpScheduler extends LitElement {
         const visible = flattened.filter((f) => f.visible && isResource(f.item));
         if (visible.length === 0) return;
         resourceId = end === 'start' ? visible[0].item.id : visible[visible.length - 1].item.id;
-        const days = dateService.getWeekDays(state.date, state.options.firstDayOfWeek);
+        const days = dateService.getWeekDays(state.date, this.firstDayOfWeek());
         const day = end === 'start' ? days[0] : days[6];
         const slots = dateService.getTimeSlots(day, state.options.slotDuration, state.options.slotMinTime, state.options.slotMaxTime);
         target = end === 'start' ? slots[0] : slots[slots.length - 1];
@@ -3018,8 +3030,8 @@ export class MpScheduler extends LitElement {
       newStart.setHours(f.start.getHours(), f.start.getMinutes(), f.start.getSeconds(), 0);
     } else {
       // week / timeline — preserve day-of-week index.
-      const oldDays = dateService.getWeekDays(oldDate, state.options.firstDayOfWeek);
-      const newDays = dateService.getWeekDays(newState.date, newState.options.firstDayOfWeek);
+      const oldDays = dateService.getWeekDays(oldDate, this.firstDayOfWeek());
+      const newDays = dateService.getWeekDays(newState.date, this.firstDayOfWeek());
       const oldIdx = oldDays.findIndex((d) => dateService.isSameDay(d, f.start));
       const targetDay = newDays[Math.max(0, oldIdx)] ?? newDays[0];
       newStart = new Date(targetDay);
@@ -3060,7 +3072,7 @@ export class MpScheduler extends LitElement {
       }
       case 'week':
       case 'timeline': {
-        const days = dateService.getWeekDays(state.date, state.options.firstDayOfWeek);
+        const days = dateService.getWeekDays(state.date, this.firstDayOfWeek());
         const viewStart = this.parseTimeOnDay(days[0], state.options.slotMinTime);
         const viewEnd = this.parseTimeOnDay(days[6], state.options.slotMaxTime);
         return start.getTime() >= viewStart.getTime() && start.getTime() < viewEnd.getTime();

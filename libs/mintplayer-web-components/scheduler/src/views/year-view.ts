@@ -78,7 +78,7 @@ export class YearView extends BaseView {
     const miniMonth = this.createElement('div', 'scheduler-mini-month');
 
     // Day headers
-    const weeks = dateService.getMonthWeeks(month, options.firstDayOfWeek);
+    const weeks = dateService.getMonthWeeks(month, this.firstDayOfWeek);
     const firstWeek = weeks[0];
 
     for (const day of firstWeek) {
@@ -170,14 +170,30 @@ export class YearView extends BaseView {
 
   update(state: SchedulerState): void {
     const yearChanged = this.state.date.getFullYear() !== state.date.getFullYear();
+    const optionsChanged = this.optionsRequireRerender(this.state.options, state.options);
     this.state = state;
-    if (yearChanged) {
+    if (yearChanged || optionsChanged) {
       this.render();
       return;
     }
     // Same year displayed — pick up focused-date changes without re-rendering
     // the whole grid (avoids losing focus mid-keypress).
     this.updateMonthCardFocus();
+  }
+
+  /**
+   * The check the other three views already had, and this one did not: without it
+   * a runtime `locale` or `firstDayOfWeek` change left all twelve mini-calendars
+   * frozen at the previous locale, so a language switch appeared to do nothing
+   * while the year view was showing.
+   */
+  private optionsRequireRerender(
+    oldOpts: SchedulerState['options'],
+    newOpts: SchedulerState['options'],
+  ): boolean {
+    return (
+      oldOpts.firstDayOfWeek !== newOpts.firstDayOfWeek || oldOpts.locale !== newOpts.locale
+    );
   }
 
   destroy(): void {

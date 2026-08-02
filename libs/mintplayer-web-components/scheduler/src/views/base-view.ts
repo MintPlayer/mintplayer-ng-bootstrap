@@ -8,6 +8,7 @@ import {
   resolveMessages,
   type SchedulerEvent,
   type SchedulerEventPart,
+  type DayOfWeek,
   type SchedulerOptions,
   type TimeSlot,
 } from '@mintplayer/web-components/scheduler-core';
@@ -186,6 +187,22 @@ export abstract class BaseView {
   constructor(container: HTMLElement, state: SchedulerState) {
     this.container = container;
     this.state = state;
+  }
+
+  /**
+   * The week's first day for the current options — the consumer's choice if they
+   * made one, otherwise the locale's own convention (Sunday for en-US and ja-JP,
+   * Monday across most of Europe).
+   *
+   * Resolved at the point of use rather than written back into `options`:
+   * `setOptions` merges cumulatively, so a stored derivation would freeze at the
+   * locale that produced it and quietly ignore a later locale change.
+   */
+  protected get firstDayOfWeek(): DayOfWeek {
+    return dateService.resolveFirstDayOfWeek(
+      this.state.options.firstDayOfWeek,
+      this.state.options.locale,
+    );
   }
 
   /**

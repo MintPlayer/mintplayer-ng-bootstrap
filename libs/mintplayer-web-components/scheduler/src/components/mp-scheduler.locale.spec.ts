@@ -58,11 +58,62 @@ describe('mp-scheduler — dates follow the locale (R7)', () => {
     const el = await mount('en-US');
     const headers = dayHeaders(el);
 
-    expect(headers[0]).toContain('Mon');
+    // Sunday-first, because en-US starts its week on Sunday — see the week-start
+    // assertions below. The reference date is Mon 27 Jul, so the week opens on
+    // Sun 26 Jul rather than on the reference day itself.
+    expect(headers[0]).toContain('Sun');
     expect(headers[0]).toContain('Jul');
     // en-US puts the month first; nl-BE puts the day first. Asserting the ORDER
     // is what proves Intl is doing the work rather than a template.
-    expect(headers[0].indexOf('Jul')).toBeLessThan(headers[0].indexOf('27'));
+    expect(headers[0].indexOf('Jul')).toBeLessThan(headers[0].indexOf('26'));
+  });
+
+  it('starts the week on Sunday for en-US and Monday for nl-BE', async () => {
+    // The week start is derived from the locale, not defaulted to Monday.
+    // This is the visible half of that: the SAME reference date opens on a
+    // different day depending only on the locale.
+    const us = dayHeaders(await mount('en-US'));
+    document.querySelectorAll('mp-scheduler').forEach((n) => n.remove());
+    const be = dayHeaders(await mount('nl-BE'));
+
+    expect(us[0]).toContain('Sun');
+    expect(be[0].toLowerCase()).toContain('ma'); // maandag
+    expect(us).toHaveLength(be.length);
+  });
+
+  it('honours an explicit firstDayOfWeek over the locale', async () => {
+    const el = document.createElement('mp-scheduler') as MpScheduler;
+    document.body.appendChild(el);
+    (el as unknown as { resources: unknown[] }).resources = [
+      { id: 'alice', title: 'Alice', events: [] },
+    ];
+    (el as unknown as { date: Date }).date = new Date(2026, 6, 27);
+    el.setAttribute('locale', 'en-US'); // would derive Sunday
+    el.setAttribute('first-day-of-week', '1'); // but the consumer says Monday
+    el.setAttribute('view', 'timeline');
+    await (el as unknown as { updateComplete: Promise<void> }).updateComplete;
+    await nextRaf();
+
+    expect(dayHeaders(el)[0]).toContain('Mon');
+  });
+
+  it('accepts 7 for Sunday — the value Intl reports — instead of dropping it', async () => {
+    // DayOfWeek is 0-6 and getWeekInfo says Sunday = 7. The attribute handler
+    // used to discard anything outside 0-6 silently, leaving the week start
+    // frozen with no error to explain why.
+    const el = document.createElement('mp-scheduler') as MpScheduler;
+    document.body.appendChild(el);
+    (el as unknown as { resources: unknown[] }).resources = [
+      { id: 'alice', title: 'Alice', events: [] },
+    ];
+    (el as unknown as { date: Date }).date = new Date(2026, 6, 27);
+    el.setAttribute('locale', 'nl-BE'); // would derive Monday
+    el.setAttribute('first-day-of-week', '7'); // Intl's spelling of Sunday
+    el.setAttribute('view', 'timeline');
+    await (el as unknown as { updateComplete: Promise<void> }).updateComplete;
+    await nextRaf();
+
+    expect(dayHeaders(el)[0].toLowerCase()).toContain('zo'); // zondag
   });
 
   it('puts the day before the month under nl-BE — the inverse order', async () => {

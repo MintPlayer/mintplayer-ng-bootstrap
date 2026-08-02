@@ -158,12 +158,69 @@ export class MpCalendarElement extends LitElement {
     return Math.floor((this.dateOnly(b) - this.dateOnly(a)) / msPerDay);
   }
 
-  /** ISO-8601 week-of-year. */
+  /**
+   * How many days of a year a week must contain to count as that year's week 1.
+   * ISO says 4 (the Thursday rule); the US convention says 1 (week 1 is simply
+   * the week containing Jan 1). `Intl` reports it per locale, and it is the ONLY
+   * thing that distinguishes the two systems once the week start is known.
+   */
+  private minimalDaysInFirstWeek(): number {
+    try {
+      const info = new Intl.Locale(this.locale ?? navigator.language) as Intl.Locale & {
+        weekInfo?: { minimalDays?: number };
+        getWeekInfo?: () => { minimalDays?: number };
+      };
+      const minimalDays =
+        typeof info.getWeekInfo === 'function'
+          ? info.getWeekInfo()?.minimalDays
+          : info.weekInfo?.minimalDays;
+      if (typeof minimalDays === 'number') return minimalDays;
+    } catch {
+      // Absent in Firefox, and shaped differently across engines.
+    }
+    // MEASURED: V8 reports only `firstDay` and `weekend` — `minimalDays` is
+    // simply not there, so this fallback is the normal path, not the edge case.
+    // Infer it from the week start, which the same locale data does give us: the
+    // Sunday-start world (US, CA, JP) counts the week containing Jan 1 as week 1,
+    // and the Monday-start world follows ISO's four-day rule. Deriving the two
+    // halves from one signal also keeps them consistent — an ISO count on a
+    // Sunday-start grid is what produced the duplicate "week 1" in the first place.
+    return this.firstDayOfWeek === 1 ? 4 : 1;
+  }
+
+  /** The start of the week that owns week 1 of `year`. */
+  private firstWeekStart(year: number): Date {
+    // A week is year Y's first iff it holds at least `minimalDays` days of Y —
+    // equivalently, iff it contains January `minimalDays`. ISO's Jan 4 and the
+    // US convention's Jan 1 are the same rule with a different constant.
+    return this.startOfWeek(new Date(year, 0, this.minimalDaysInFirstWeek()));
+  }
+
+  /**
+   * Week-of-year honouring BOTH the week start and the locale's minimal-days
+   * rule.
+   *
+   * Was hardcoded ISO-8601, which is only correct for a Monday-start week. Under
+   * a Sunday start — what en-US and ja-JP resolve to — it labelled two
+   * consecutive rows of January 2026 "week 1" and ran one short from then on.
+   * That column is a real `<th scope="row">`, so a screen reader read the wrong
+   * number, and the scheduler's own editor renders this calendar.
+   */
   private weekOfYear(date: Date): number {
-    const d = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()));
-    d.setUTCDate(d.getUTCDate() + 4 - (d.getUTCDay() || 7));
-    const yearStart = new Date(Date.UTC(d.getUTCFullYear(), 0, 1));
-    return Math.ceil(((d.getTime() - yearStart.getTime()) / 86400000 + 1) / 7);
+    const weekStart = this.startOfWeek(date);
+    let year = weekStart.getFullYear();
+    let first = this.firstWeekStart(year);
+
+    if (weekStart.getTime() < first.getTime()) {
+      // Falls in the last week of the previous year.
+      first = this.firstWeekStart(--year);
+    } else {
+      const nextFirst = this.firstWeekStart(year + 1);
+      // Late December can already belong to next year's week 1.
+      if (weekStart.getTime() >= nextFirst.getTime()) first = nextFirst;
+    }
+
+    return Math.round(this.daysBetween(first, weekStart) / 7) + 1;
   }
 
   /** Localized weekday short + long names, in the order driven by firstDayOfWeek. */
