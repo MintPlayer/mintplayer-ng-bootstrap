@@ -11,6 +11,7 @@ import {
   FlattenedResource,
   formatMessage,
   getContrastColor,
+  getReadableTextColor,
   resolveMessages,
   resolveCapability,
   SchedulerCapability,
@@ -24,6 +25,17 @@ import { SchedulerState } from '../state/scheduler-state';
  * `data-resource-id` at all.
  */
 const UNASSIGNED_ROW_ID = '__mp-unassigned__';
+
+/**
+ * The actions a resource row can offer, in the order they are presented.
+ * Mirrors the `data-action` values the component's handler already switches on,
+ * so moving them into a panel changed no behaviour.
+ */
+export type RowAction =
+  | 'add-resource'
+  | 'add-group'
+  | 'set-resource-color'
+  | 'delete-resource';
 
 /**
  * Timeline view renderer
@@ -543,98 +555,74 @@ export class TimelineView extends BaseView {
    * it entirely — `aria-level` is invalid on these roles, so nesting is conveyed
    * by the name and the indent, not by an attribute axe flags.
    */
-  private appendResourceActions(cell: HTMLElement, item: Resource | ResourceGroup): void {
-    const messages = resolveMessages(this.state.options.messages);
-    const actions = this.createElement('div', 'scheduler-resource-actions');
-
+  /**
+   * Which actions this row offers. One list, consulted twice: here to decide
+   * whether the row deserves a trigger at all, and by the component to build the
+   * panel's contents. Keeping it in one place is what stops the button from
+   * promising a menu that turns out to be empty.
+   */
+  rowActions(item: Resource | ResourceGroup): RowAction[] {
+    const actions: RowAction[] = [];
     if (isResourceGroup(item)) {
-      if (this.can('createResource')) {
-        actions.appendChild(
-          this.createResourceAction(
-            'add-resource',
-            '+',
-            formatMessage(messages.addResourceToGroup, { title: item.title }),
-            { parentId: item.id },
-          ),
-        );
-      }
-      if (this.can('createGroup')) {
-        actions.appendChild(
-          this.createResourceAction(
-            'add-group',
-            '⊞',
-            formatMessage(messages.addGroupToGroup, { title: item.title }),
-            { parentId: item.id },
-          ),
-        );
-      }
+      if (this.can('createResource')) actions.push('add-resource');
+      if (this.can('createGroup')) actions.push('add-group');
     }
-
-    if (this.can('updateResource')) {
-      actions.appendChild(this.createColorSwatch(item, messages.resourceColor));
-    }
-
-    if (this.can('deleteResource')) {
-      actions.appendChild(
-        this.createResourceAction(
-          'delete-resource',
-          '×',
-          formatMessage(messages.removeResource, { title: item.title }),
-          { resourceId: item.id },
-        ),
-      );
-    }
-
-    if (actions.childElementCount > 0) cell.appendChild(actions);
+    if (this.can('updateResource')) actions.push('set-resource-color');
+    if (this.can('deleteResource')) actions.push('delete-resource');
+    return actions;
   }
 
   /**
-   * One icon button. The glyph is `aria-hidden` and the name lives on the
-   * button, so the accessible name is the localized sentence rather than "+".
+   * The row's actions trigger — one 24px button where four controls used to sit.
+   *
+   * Those four (add resource, add subgroup, a colour input, delete) took 102px of
+   * a 200px column, leaving roughly 50px for the resource title: five characters,
+   * silently ellipsised. #395 shipped them inline and #396's D12.1c predicted
+   * this exact complaint; §11.2 named the trigger for revisiting it. The
+   * behaviour is unchanged — every action keeps its `data-action`, its permission
+   * gate and its emitted event — only the layout is reverted.
+   *
+   * The button doubles as the row's colour chip. A group's `color` is stored and
+   * editable but was painted nowhere in this column, so this is the first place
+   * it becomes visible where it is set.
+   *
+   * `data-action` + `data-resource-id` are load-bearing, not decoration: the
+   * timeline rebuilds its DOM on every state change, and
+   * captureActionFocus/restoreActionFocus restores focus by exactly that key.
+   * Omitting it reproduces the expand toggle's bug, where focus falls to <body>.
    */
-  private createResourceAction(
-    action: string,
-    glyph: string,
-    label: string,
-    data: Record<string, string>,
-  ): HTMLElement {
-    const button = this.createElement('button', 'scheduler-resource-action');
+  private appendResourceActions(cell: HTMLElement, item: Resource | ResourceGroup): void {
+    if (this.rowActions(item).length === 0) return;
+
+    const messages = resolveMessages(this.state.options.messages);
+    const label = formatMessage(messages.rowMenuLabel, { title: item.title });
+
+    const button = this.createElement('button', 'scheduler-row-menu-button');
     button.type = 'button';
     button.setAttribute('aria-label', label);
     button.title = label;
-    this.setData(button, { action, ...data });
-    const icon = this.createElement('span', 'action-glyph');
-    icon.setAttribute('aria-hidden', 'true');
-    icon.textContent = glyph;
-    button.appendChild(icon);
-    return button;
-  }
+    button.setAttribute('aria-haspopup', 'dialog');
+    button.setAttribute('aria-expanded', 'false');
+    // Not a Tab stop: the grid keeps exactly one, and this is reached by
+    // ArrowLeft from the row's first slot or by the contextmenu gesture (M7).
+    button.tabIndex = -1;
+    this.setData(button, { action: 'row-menu', resourceId: item.id });
 
-  /**
-   * Native `<input type="color">` for the resource's colour — the recolour half
-   * of R7. Native because it is keyboard-operable, localized and screen-reader
-   * labelled by the platform for free; a custom swatch grid would have to
-   * re-earn all three.
-   *
-   * It edits whichever field actually drives the rendered events: `eventColor`
-   * wins over `color` in `resolveEventColor`, so writing `color` on a resource
-   * that has an `eventColor` would look like the control did nothing.
-   */
-  private createColorSwatch(item: Resource | ResourceGroup, labelTemplate: string): HTMLElement {
     const resource = item as Resource;
-    const field = resource.eventColor ? 'eventColor' : 'color';
-    const current = resource.eventColor ?? item.color;
+    const swatch = resource.eventColor ?? item.color;
+    const readable = swatch ? getReadableTextColor(swatch) : null;
+    if (swatch && readable) {
+      button.style.background = swatch;
+      button.style.color = readable;
+      button.style.borderColor = swatch;
+    }
 
-    const input = this.createElement('input', 'scheduler-resource-color');
-    input.type = 'color';
-    input.setAttribute('aria-label', formatMessage(labelTemplate, { title: item.title }));
-    input.title = input.getAttribute('aria-label') ?? '';
-    // `<input type="color">` accepts ONLY `#rrggbb`; anything else silently
-    // resets it to black, which reads as "this resource is black" rather than
-    // "this resource has a colour I cannot show".
-    if (current && /^#[0-9a-f]{6}$/i.test(current)) input.value = current;
-    this.setData(input, { action: 'set-resource-color', resourceId: item.id, field });
-    return input;
+    const glyph = this.createElement('span', 'action-glyph');
+    glyph.setAttribute('aria-hidden', 'true');
+    glyph.textContent = '⋯';
+    button.appendChild(glyph);
+
+    cell.insertBefore(button, cell.firstChild);
   }
 
   /**

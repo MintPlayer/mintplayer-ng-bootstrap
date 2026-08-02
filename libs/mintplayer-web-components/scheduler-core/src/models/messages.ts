@@ -35,6 +35,10 @@ export interface SchedulerMessages {
   addResourceBarLabel: string;
   addResource: string;
   addGroup: string;
+  /** {title} — accessible name of the row's actions button. */
+  rowMenuLabel: string;
+  /** Accessible name of the row-actions dialog itself. {title} — the row. */
+  rowMenuDialogLabel: string;
   /** {title} — every per-row action names its row, so N buttons aren't all "Add". */
   addResourceToGroup: string;
   /** {title} */
@@ -191,6 +195,8 @@ export const DEFAULT_MESSAGES: SchedulerMessages = {
   addResourceBarLabel: 'Add to the resource list',
   addResource: 'Add resource',
   addGroup: 'Add group',
+  rowMenuLabel: 'Actions for {title}',
+  rowMenuDialogLabel: 'Actions for {title}',
   addResourceToGroup: 'Add resource to {title}',
   addGroupToGroup: 'Add subgroup to {title}',
   removeResource: 'Remove {title}',

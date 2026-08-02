@@ -1139,28 +1139,57 @@ describe('mp-scheduler — timeline resource affordances', () => {
     return el;
   };
 
+  /** Open a row's actions panel the way a user does — by clicking its trigger. */
+  const openRowMenu = async (resourceId: string): Promise<void> => {
+    el.shadowRoot!
+      .querySelector<HTMLElement>(
+        `.scheduler-row-menu-button[data-resource-id="${resourceId}"]`,
+      )!
+      .click();
+    await (el as unknown as { updateComplete: Promise<void> }).updateComplete;
+    await nextRaf();
+  };
+
   it('renders no creation UI by default', async () => {
     await mountTimeline();
     expect(el.shadowRoot!.querySelector('.scheduler-timeline-addbar')).toBeNull();
-    expect(el.shadowRoot!.querySelectorAll('.scheduler-resource-action').length).toBe(0);
-    expect(el.shadowRoot!.querySelectorAll('.scheduler-resource-color').length).toBe(0);
+    // No permitted action means no trigger at all — an empty panel behind a
+    // button is a broken promise for AT, so the button must not exist either.
+    expect(el.shadowRoot!.querySelectorAll('.scheduler-row-menu-button').length).toBe(0);
+    expect(el.shadowRoot!.querySelector('.scheduler-row-panel')).toBeNull();
   });
 
-  it('createResource adds the add-bar and a per-group add button, named by its group', async () => {
+  it('createResource adds the add-bar and a per-group action, named by its group', async () => {
     await mountTimeline({ permissions: { createResource: true } });
     const bar = el.shadowRoot!.querySelector('.scheduler-timeline-addbar');
     expect(bar).not.toBeNull();
     expect(bar!.getAttribute('role')).toBe('toolbar');
-    const perGroup = el.shadowRoot!.querySelectorAll<HTMLElement>(
-      '.scheduler-resource-action[data-action="add-resource"]',
-    );
-    expect(perGroup.length).toBe(1);
-    // Disambiguated: N buttons all called "Add" is the failure mode this guards.
-    expect(perGroup[0].getAttribute('aria-label')).toBe('Add resource to Team');
+
+    // The per-row actions moved behind one trigger (M5). The GROUP row gets it —
+    // only groups can be added to — and it announces itself as a dialog opener.
+    const trigger = el.shadowRoot!.querySelector<HTMLElement>(
+      '.scheduler-row-menu-button[data-resource-id="team"]',
+    )!;
+    expect(trigger).not.toBeNull();
+    expect(trigger.getAttribute('aria-haspopup')).toBe('dialog');
+    expect(trigger.getAttribute('aria-expanded')).toBe('false');
+    expect(trigger.getAttribute('aria-label')).toBe('Actions for Team');
     // The glyph must not be part of the accessible name.
-    expect(perGroup[0].querySelector('.action-glyph')!.getAttribute('aria-hidden')).toBe('true');
+    expect(trigger.querySelector('.action-glyph')!.getAttribute('aria-hidden')).toBe('true');
+    // Not a Tab stop: the grid keeps exactly one.
+    expect(trigger.tabIndex).toBe(-1);
+
+    await openRowMenu('team');
+    const panel = el.shadowRoot!.querySelector('.scheduler-row-panel')!;
+    expect(panel.getAttribute('role')).toBe('dialog');
+    expect(panel.getAttribute('aria-label')).toBe('Actions for Team');
+    expect(trigger.getAttribute('aria-expanded')).toBe('true');
+
+    const add = panel.querySelector<HTMLElement>('[data-action="add-resource"]')!;
+    // Disambiguated: N actions all called "Add" is the failure mode this guards.
+    expect(add.textContent!.trim()).toBe('Add resource to Team');
     // createGroup is a separate capability and stays off.
-    expect(el.shadowRoot!.querySelectorAll('[data-action="add-group"]').length).toBe(0);
+    expect(panel.querySelectorAll('[data-action="add-group"]').length).toBe(0);
   });
 
   it('add-bar buttons emit resource-create / group-create with the parent id', async () => {
@@ -1174,8 +1203,9 @@ describe('mp-scheduler — timeline resource affordances', () => {
     el.shadowRoot!
       .querySelector<HTMLElement>('.scheduler-timeline-addbar [data-action="add-resource"]')!
       .click();
+    await openRowMenu('team');
     el.shadowRoot!
-      .querySelector<HTMLElement>('.scheduler-resource-action[data-action="add-group"]')!
+      .querySelector<HTMLElement>('.scheduler-row-panel [data-action="add-group"]')!
       .click();
     await (el as unknown as { updateComplete: Promise<void> }).updateComplete;
     expect(requests).toEqual([
@@ -1186,8 +1216,9 @@ describe('mp-scheduler — timeline resource affordances', () => {
 
   it('the colour swatch edits the field that actually drives the events', async () => {
     await mountTimeline({ permissions: { updateResource: true } });
+    await openRowMenu('alice');
     const swatch = el.shadowRoot!.querySelector<HTMLInputElement>(
-      '.scheduler-resource-color[data-resource-id="alice"]',
+      '.scheduler-row-panel .row-color-input[data-resource-id="alice"]',
     )!;
     // Seeded from the resource, and `color` because no eventColor is set.
     expect(swatch.value).toBe('#ff0000');

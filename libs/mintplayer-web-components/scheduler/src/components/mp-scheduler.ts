@@ -179,6 +179,41 @@ export class MpScheduler extends LitElement {
     },
   });
 
+  /** Resource/group whose actions panel is open, or null when it is closed. */
+  private rowMenuResourceId: string | null = null;
+
+  /**
+   * The row-actions panel (R1/R3/R4): the four controls that used to sit inline
+   * in the pinned resource column, moved behind one 24px trigger so the column
+   * can be narrow enough to use on a phone.
+   *
+   * A `role="dialog"`, deliberately NOT a `role="menu"`. A menu owns only
+   * `menuitem`-family children, and this panel contains a native
+   * `<input type="color">` — a form control inside a menu is an invalid owned
+   * child, and "a menu that is really a dialog" is the shape to avoid. Keeping
+   * the native input is worth the distinction: it is keyboard-operable,
+   * localized and screen-reader labelled by the platform for free.
+   *
+   * Same mechanics as the two overlays above, including the two traps: the
+   * anchor resolves LAZILY by id (the timeline rebuilds its DOM on every state
+   * change, so a captured element detaches under the open panel), and `onClose`
+   * mirrors dismissal back into state or the panel stays rendered after an
+   * outside-click.
+   */
+  private readonly rowMenuOverlay = new OverlayController(this, {
+    anchor: () => this.rowMenuTriggerById(this.rowMenuResourceId),
+    trigger: () => this.rowMenuTriggerById(this.rowMenuResourceId),
+    panel: () => this.shadowRoot?.querySelector<HTMLElement>('.scheduler-row-panel') ?? null,
+    initialFocus: () =>
+      this.shadowRoot?.querySelector<HTMLElement>('.scheduler-row-panel .row-action') ?? null,
+    modal: false,
+    onClose: () => {
+      this.rowMenuResourceId = null;
+      this.requestUpdate();
+      this.syncRowMenuTriggerState();
+    },
+  });
+
   /** Event the built-in editor is open for, or null when it is closed. */
   private editorEventId: string | null = null;
   /**
@@ -555,6 +590,7 @@ export class MpScheduler extends LitElement {
             : 'eventInstructionsReadOnly')}
       </div>
       ${this.renderDayPopover()}
+      ${this.renderRowMenu()}
       ${this.renderEventEditor()}
       ${this.liveAnnouncer.template()}
     `;
@@ -575,6 +611,124 @@ export class MpScheduler extends LitElement {
    * is `event-selected`, "New event" is `event-create`, "Show day" is the same
    * drill the "+N more" link used to do.
    */
+  /**
+   * The open panel's trigger, resolved by id because the timeline rebuilds its
+   * DOM on every state change.
+   *
+   * Matched by reading `dataset` rather than by building an attribute selector:
+   * a resource id is consumer data and may contain quotes or brackets, and
+   * `CSS.escape` is not available everywhere (jsdom has no `CSS` global at all,
+   * which threw here). Scanning a handful of buttons costs nothing.
+   */
+  private rowMenuTriggerById(id: string | null): HTMLElement | null {
+    if (!id) return null;
+    const triggers = this.shadowRoot?.querySelectorAll<HTMLElement>('.scheduler-row-menu-button');
+    if (!triggers) return null;
+    for (const trigger of triggers) {
+      if (trigger.dataset['resourceId'] === id) return trigger;
+    }
+    return null;
+  }
+
+  /**
+   * `aria-expanded` belongs on the trigger and must change in the same beat as
+   * the visual state. The trigger is imperative DOM (the timeline builds it), so
+   * it cannot ride Lit's render — it is written here and re-asserted after every
+   * rebuild.
+   */
+  private syncRowMenuTriggerState(): void {
+    this.shadowRoot
+      ?.querySelectorAll<HTMLElement>('.scheduler-row-menu-button')
+      .forEach((btn) => {
+        const open = btn.dataset['resourceId'] === this.rowMenuResourceId;
+        btn.setAttribute('aria-expanded', String(open));
+      });
+  }
+
+  private openRowMenu(resourceId: string): void {
+    this.rowMenuResourceId = resourceId;
+    this.requestUpdate();
+    void this.updateComplete.then(() => {
+      this.syncRowMenuTriggerState();
+      void this.rowMenuOverlay.open();
+    });
+  }
+
+  private closeRowMenu(): void {
+    this.rowMenuOverlay.close();
+  }
+
+  /**
+   * The row-actions panel. Built from the SAME permission list the trigger
+   * consults, so a button never promises a panel that turns out to be empty.
+   */
+  private renderRowMenu(): TemplateResult | typeof nothing {
+    const id = this.rowMenuResourceId;
+    if (!id) return nothing;
+
+    const item = this.findResourceOrGroup(id);
+    const view = this.currentView;
+    if (!item || !(view instanceof TimelineView)) return nothing;
+
+    const actions = view.rowActions(item);
+    if (actions.length === 0) return nothing;
+
+    const messages = resolveMessages(this.stateManager.getState().options.messages);
+    const resource = item as Resource;
+    const colorField = resource.eventColor ? 'eventColor' : 'color';
+    const currentColor = resource.eventColor ?? item.color;
+
+    return html`
+      <div
+        class="scheduler-row-panel"
+        role="dialog"
+        aria-label=${formatMessage(messages.rowMenuDialogLabel, { title: item.title })}
+      >
+        ${actions.map((action) => {
+          if (action === 'set-resource-color') {
+            const label = formatMessage(messages.resourceColor, { title: item.title });
+            return html`
+              <label class="row-action row-action-color">
+                <span>${label}</span>
+                <input
+                  type="color"
+                  class="row-color-input"
+                  aria-label=${label}
+                  .value=${currentColor && /^#[0-9a-f]{6}$/i.test(currentColor)
+                    ? currentColor
+                    : '#000000'}
+                  data-action="set-resource-color"
+                  data-resource-id=${item.id}
+                  data-field=${colorField}
+                />
+              </label>
+            `;
+          }
+
+          const label =
+            action === 'add-resource'
+              ? formatMessage(messages.addResourceToGroup, { title: item.title })
+              : action === 'add-group'
+                ? formatMessage(messages.addGroupToGroup, { title: item.title })
+                : formatMessage(messages.removeResource, { title: item.title });
+
+          return html`
+            <button
+              type="button"
+              class="row-action ${action === 'delete-resource' ? 'is-destructive' : ''}"
+              data-action=${action}
+              data-parent-id=${action === 'delete-resource' ? nothing : item.id}
+              data-resource-id=${action === 'delete-resource' ? item.id : nothing}
+              @click=${() => this.closeRowMenu()}
+            >
+              ${label}
+            </button>
+          `;
+        })}
+      </div>
+    `;
+  }
+
   private renderDayPopover(): TemplateResult | typeof nothing {
     const day = this.popoverDate;
     if (!day) return nothing;
@@ -2288,6 +2442,11 @@ export class MpScheduler extends LitElement {
     const view = this.stateManager.getState().view;
 
     switch (action) {
+      // The trigger itself is not a request — it opens the panel that carries
+      // them. Handled here so the click never falls through to the grid.
+      case 'row-menu':
+        if (resourceId) this.openRowMenu(resourceId);
+        return true;
       case 'add-resource':
         if (this.can('createResource')) {
           this.eventEmitter.emitResourceCreate('resource', view, originalEvent, parentId);

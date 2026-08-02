@@ -13,6 +13,8 @@ $z-sticky-column: 7;     // pinned resource column: above a focused slot's outli
 $z-sticky-header: 10;    // clips scrolled content
 $z-day-popover: 20;      // day popover: a fixed-position dialog over the grid,
                          // so it must beat even the sticky header
+$z-row-panel: 21;        // row-actions dialog: same reasoning, and may open over
+                         // the popover's own anchor row
 $z-now-indicator: 5;     // decorative 2px line, pointer-events: none
 $z-preview: 4;           // drag ghost — above the source event in every state
 $z-event-dragging: 3;    // touch-held / actively dragged source event
@@ -45,8 +47,11 @@ $z-event-selected: 2;    // selected event: its straddling handles must win
   --scheduler-timeline-track-gap: 2px;
   --scheduler-timeline-row-padding: 2px;
   /* Pinned resource column. Capped so it can never swallow the grid on a narrow
-     viewport (AG Grid applies the same guard by auto-unpinning). */
-  --scheduler-resource-column-width: min(200px, calc(100% - 50px));
+     viewport (AG Grid applies the same guard by auto-unpinning).
+     140px, down from 200px: the four inline action controls that used to need
+     102px of it are now behind one 24px trigger, so the title gets MORE room in
+     a narrower column than it had in the wide one. */
+  --scheduler-resource-column-width: min(140px, calc(100% - 50px));
   --scheduler-resize-glyph-size: 14px;
   --scheduler-resize-glyph-color: var(--bs-body-color, #212529);
   --scheduler-resize-glyph-bg: var(--bs-body-bg, #fff);
@@ -1215,27 +1220,22 @@ $z-event-selected: 2;    // selected event: its straddling handles must win
   flex: 0 0 auto;
 }
 
-/* Row actions. Hidden affordances were rejected: revealing these on hover only
-   would leave them undiscoverable on touch, where there is no hover. */
-.scheduler-resource-actions {
-  display: flex;
-  align-items: center;
-  gap: 2px;
-  flex: 0 0 auto;
-  margin-left: auto;
-}
-
-.scheduler-resource-action {
+/* The row's actions trigger. One button where four controls used to sit: they
+   took 102px of a 200px column and left the title about 50px — five characters.
+   Doubles as the row's colour chip, which is the first time a group's stored
+   colour is painted anywhere in this column. */
+.scheduler-row-menu-button {
   /* 24x24 = WCAG 2.2 SC 2.5.8 minimum target size. The glyph is smaller; the
      button is not. */
   width: 24px;
   height: 24px;
+  flex: 0 0 auto;
   display: flex;
   align-items: center;
   justify-content: center;
   padding: 0;
   cursor: pointer;
-  border: 1px solid transparent;
+  border: 1px solid var(--scheduler-border-color);
   border-radius: 4px;
   background: transparent;
   color: inherit;
@@ -1243,18 +1243,68 @@ $z-event-selected: 2;    // selected event: its straddling handles must win
   line-height: 1;
 }
 
-.scheduler-resource-action:hover {
-  background: var(--bs-secondary-bg, rgba(0, 0, 0, 0.08));
+.scheduler-row-menu-button:hover {
+  filter: brightness(0.92);
 }
 
-.scheduler-resource-action .action-glyph {
+.scheduler-row-menu-button .action-glyph {
   font-size: 14px;
   pointer-events: none;
 }
 
-.scheduler-resource-color {
-  /* A native colour input is ~44px wide by default and would eat the column. */
-  width: 24px;
+/* Row-actions dialog. Like .scheduler-day-popover, the OverlayController writes
+   `position: fixed` coordinates, so this must stay a top-level child of the
+   shadow root — nothing above it may introduce transform/filter/contain, which
+   would become its containing block and shift the panel. It is also OUTSIDE the
+   grid on purpose: a dialog owned by a rowheader breaks the grid's
+   owned-children contract. */
+.scheduler-row-panel {
+  position: fixed;
+  z-index: $z-row-panel;
+  min-width: 200px;
+  max-width: min(280px, 90vw);
+  padding: 4px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  border: 1px solid var(--scheduler-border-color);
+  border-radius: 6px;
+  background: var(--bs-body-bg, #fff);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.18);
+}
+
+.scheduler-row-panel .row-action {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  /* 32px, comfortably over the 24px minimum: these are the primary targets on a
+     phone now, not a secondary affordance. */
+  min-height: 32px;
+  padding: 4px 8px;
+  border: 1px solid transparent;
+  border-radius: 4px;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  font-size: 13px;
+  text-align: start;
+  cursor: pointer;
+}
+
+.scheduler-row-panel .row-action:hover {
+  background: var(--bs-secondary-bg, rgba(0, 0, 0, 0.08));
+}
+
+.scheduler-row-panel .row-action.is-destructive {
+  color: var(--bs-danger, #dc3545);
+}
+
+.scheduler-row-panel .row-color-input {
+  /* A native colour input is ~44px wide by default. It stays native: the
+     platform gives it keyboard operation, localization and an accessible name
+     for free, and a dialog (unlike a menu) may legally own a form control. */
+  width: 40px;
   height: 24px;
   padding: 0;
   border: 1px solid var(--scheduler-border-color);
@@ -1313,8 +1363,9 @@ $z-event-selected: 2;    // selected event: its straddling handles must win
    none at all — Bootstrap's focus-ring utilities do not cross the shadow
    boundary, so a keyboard user tabbing onto it saw nothing. */
 .scheduler-resource-cell .expand-toggle:focus-visible,
-.scheduler-resource-action:focus-visible,
-.scheduler-resource-color:focus-visible,
+.scheduler-row-menu-button:focus-visible,
+.scheduler-row-panel .row-action:focus-visible,
+.scheduler-row-panel .row-color-input:focus-visible,
 .scheduler-add-button:focus-visible {
   outline: 2px solid var(--bs-primary);
   outline-offset: 1px;
