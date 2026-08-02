@@ -22,6 +22,7 @@ Not pushed, no PR opened. Milestone status below; deviations and open items in P
 | M9 — audit majors | the cheap ones done (M5, M7, M8-audit); M2/M3/M4/M6/M9/M10/M11 open |
 | M10 — spec coverage | done for everything shipped |
 | M11 — batched sweep | done |
+| M12 — scroll survives a rebuild (R10) | done — reproduced and re-verified in Chromium (PRD §16) |
 
 **A note for whoever picks this up:** `tsc -p libs/mintplayer-web-components/tsconfig.json`
 checks NOTHING — it is a solution-style config with empty `files`/`include`. Use
@@ -522,3 +523,22 @@ npx nx test mintplayer-web-components --pool=threads
 | M7 regresses grid navigation | Comes after M5, so the panel works by Tab/click before the navigation rework starts; read the keyboard spec first. |
 | The `contextmenu` branch steals right-click from the event editor | An event can overlap a resource row, so the existing event branch must be evaluated first. Assert both orders in a spec. |
 | A-B2's index rework breaks specs asserting today's indices | Expected; those assertions encode the bug. Update them deliberately, not by loosening. |
+
+## M12 — Scroll position survives a rebuild [R10, PRD §16]
+
+Reported as "the scheduler scrolls back to (0,0) when data changes". Measured in Chromium
+first: it is **resource** changes only — event edits already take `update()`, which leaves the
+scroller alone. See PRD §16 for the table.
+
+- [x] `BaseView.clearContainer()` captures `scrollLeft`/`scrollTop` before `innerHTML = ''` and
+      restores them in a `requestAnimationFrame`. The container IS `.scheduler-content`, so
+      emptying it collapses `scrollWidth` and the browser clamps the offset to 0.
+- [x] Capture only when no restore is pending — two rebuilds in one frame would otherwise have
+      the second capture the 0 the first caused.
+- [x] `renderView` zeroes the scroller when the view TYPE changed, so a genuine view switch
+      still lands at the top-left. One rule, in one place.
+- [x] Specs assert capture/restore, the view-switch reset, and the same-frame double rebuild.
+      **jsdom does not lay out**, so it never clamps `scrollLeft` on its own — the specs pin the
+      contract, and the clamp itself was verified in a real browser.
+- [ ] **Not covered anywhere automated:** that the restore is invisible to the eye (no flash of
+      offset-0 content before the rAF lands). Worth a look during the device pass.

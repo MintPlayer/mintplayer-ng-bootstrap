@@ -2022,6 +2022,15 @@ export class MpScheduler extends LitElement {
     const active = this.shadowRoot?.activeElement as HTMLElement | null;
     const hadFocus = !!active && this.contentContainer.contains(active);
 
+    // A view SWITCH should land at the top-left; only a rebuild of the same view
+    // preserves the scroll (BaseView.clearContainer). Zeroing here rather than
+    // adding a flag keeps the rule in one place: the view captures whatever it
+    // finds, and what it finds after a switch is 0.
+    if (this.currentViewType !== this.stateManager.getState().view) {
+      this.contentContainer.scrollLeft = 0;
+      this.contentContainer.scrollTop = 0;
+    }
+
     this.currentView?.destroy();
 
     const state = this.stateManager.getState();

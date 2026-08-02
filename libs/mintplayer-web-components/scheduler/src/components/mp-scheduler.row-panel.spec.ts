@@ -307,3 +307,61 @@ describe('mp-scheduler — a non-modal panel does not swallow the grid (audit M1
     expect(movedAgain).toBeGreaterThan(moved!);
   });
 });
+
+describe('mp-scheduler — a rebuild keeps the user where they were (R10)', () => {
+  /**
+   * Emptying `.scheduler-content` collapses its scrollWidth, so the browser
+   * clamps scrollLeft to 0. Any change to `resources` triggers a full render —
+   * which is every request the row panel emits — so applying a rename used to
+   * throw the user ~17,000px back to Monday 00:00.
+   *
+   * jsdom does not lay out, so scrollLeft is not clamped for us here; these
+   * assert the capture/restore contract instead. The clamp itself was verified
+   * in Chromium against the built demo.
+   */
+  function scroller(el: MpScheduler): HTMLElement {
+    return el.shadowRoot!.querySelector<HTMLElement>('.scheduler-content')!;
+  }
+
+  it('restores the scroll offset after a resource change rebuilds the view', async () => {
+    const el = await mount(ALL);
+    const content = scroller(el);
+    content.scrollLeft = 2400;
+    content.scrollTop = 120;
+
+    (el as unknown as { resources: unknown[] }).resources = [...RESOURCES];
+    await (el as unknown as { updateComplete: Promise<void> }).updateComplete;
+    await nextRaf();
+
+    expect(content.scrollLeft).toBe(2400);
+    expect(content.scrollTop).toBe(120);
+  });
+
+  it('lands at the top-left on a real view switch', async () => {
+    const el = await mount(ALL);
+    const content = scroller(el);
+    content.scrollLeft = 2400;
+
+    el.setAttribute('view', 'week');
+    await (el as unknown as { updateComplete: Promise<void> }).updateComplete;
+    await nextRaf();
+
+    // Carrying a timeline offset into another view would be its own bug.
+    expect(content.scrollLeft).toBe(0);
+  });
+
+  it('does not fight a scroll the user makes while a rebuild is pending', async () => {
+    const el = await mount(ALL);
+    const content = scroller(el);
+    content.scrollLeft = 2400;
+
+    // Two rebuilds in one frame: the second must not capture the 0 the first
+    // caused, and the restore must still target the user's real position.
+    (el as unknown as { resources: unknown[] }).resources = [...RESOURCES];
+    (el as unknown as { resources: unknown[] }).resources = [...RESOURCES];
+    await (el as unknown as { updateComplete: Promise<void> }).updateComplete;
+    await nextRaf();
+
+    expect(content.scrollLeft).toBe(2400);
+  });
+});

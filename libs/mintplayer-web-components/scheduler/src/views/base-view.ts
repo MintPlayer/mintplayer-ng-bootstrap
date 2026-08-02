@@ -318,7 +318,39 @@ export abstract class BaseView {
   /**
    * Helper to clear container
    */
+  /**
+   * Scroll offsets captured by `clearContainer`, awaiting the rAF that puts them
+   * back. Null when no restore is in flight.
+   */
+  private pendingScroll: { left: number; top: number } | null = null;
+
   protected clearContainer(): void {
+    // `this.container` IS `.scheduler-content`, the scroller. Emptying it
+    // collapses scrollWidth to nothing, so the browser clamps scrollLeft to 0
+    // and the user is thrown back to Monday 00:00 — on a default week that is
+    // ~17,000px away from where they were. Any change to `resources` triggers a
+    // full render, which means every request the row panel emits (rename,
+    // recolour, add, delete) used to lose the user's place the moment the
+    // consumer applied it.
+    //
+    // Captured only when no restore is already pending: two renders in one frame
+    // would otherwise have the second one capture the 0 the first just caused.
+    if (!this.pendingScroll) {
+      const { scrollLeft, scrollTop } = this.container;
+      if (scrollLeft || scrollTop) {
+        this.pendingScroll = { left: scrollLeft, top: scrollTop };
+        requestAnimationFrame(() => {
+          const target = this.pendingScroll;
+          this.pendingScroll = null;
+          if (!target) return;
+          // Assigning past the new content's extent is harmless — the browser
+          // clamps — so a view that got shorter simply lands at its own end.
+          this.container.scrollLeft = target.left;
+          this.container.scrollTop = target.top;
+        });
+      }
+    }
+
     this.container.innerHTML = '';
     // The container's ARIA is per-view too: week/day/month/year claim `role=grid`
     // on it via `applyGridRoles`, the timeline puts its grid on an inner element

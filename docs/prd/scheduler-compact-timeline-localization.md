@@ -42,6 +42,7 @@ strand: it found **three blockers**, none of which this feature would otherwise 
 | R6 | The date is readable only when the centre of the day cell is on screen — anchor it to the edge | **confirmed** — `text-align: center` in a 2400px box (§3.3) |
 | R7 | Localize as much as possible — the browser does this natively. Dutch should read "ma 27 okt" | **~95% already built**; the dates are pinned by one default (§3.4) |
 | R8 | Re-audit blind-user accessibility | **3 blockers, 12 majors** (§8) |
+| R10 | The scheduler scrolls back to (0,0) whenever its data/state changes | **confirmed and narrower than reported** — *resource* changes reset it, event changes do not; measured in Chromium (§16) |
 | R9 | **Regression from #396**: on a smartphone, press-and-hold on an event used to drag it. Since the `contextmenu` handler shipped, the long-press opens the editor instead and touch users cannot drag at all | **confirmed, root cause found, small fix** — the browser's ~500ms long-press beats the scheduler's 600ms hold by ~100ms (§13) |
 
 R1–R5 are one feature and ship together (repo rule: one user request, one release).
@@ -942,3 +943,51 @@ Twelve commits on `feat/scheduler-compact-timeline-i18n`, one per milestone. Eve
 - The `year-view` UTC date-key bug found incidentally by the Sunday-start audit
   (`toISOString()` where month-view deliberately uses local components) — a pre-existing
   timezone defect, unrelated to anything here.
+
+## 16. Scroll position survives a rebuild (R10)
+
+### 16.1 Measured, not assumed
+
+Reproduced in Chromium against the built Angular demo, timeline view, scrolled to
+`scrollLeft: 2400`:
+
+| State change | Before | After |
+|---|---|---|
+| `events` reassigned | 2400 | 2400 |
+| an event mutated — what a **resize** commits | 2400 | 2400 |
+| `options` replaced | 2400 | 2400 |
+| **`resources` reassigned** | 2400 | **0** |
+| **a resource renamed** | 2400 | **0** |
+
+So the report's "when data changes" is really **resource** changes only: event edits already
+went through `TimelineView.update()`, which rebuilds event nodes and leaves the scroller
+alone. A `resources` change takes the full `render()` path instead.
+
+### 16.2 Cause
+
+`this.container` in a view **is** `.scheduler-content`, the scroller itself. `clearContainer()`
+starts with `innerHTML = ''`, which collapses `scrollWidth` from ~17,000px to nothing — so the
+browser clamps `scrollLeft` to 0, and re-appending the content afterwards does not restore it.
+
+### 16.3 Why it matters more after M5
+
+Every request the row panel emits — rename, recolour, add resource, add group, delete — is a
+`resources` change once the consumer applies it. On a default week the user is thrown ~17,000px
+back to Monday 00:00 for having renamed a row. The feature that made those actions reachable
+also made this defect routine.
+
+### 16.4 Fix
+
+`BaseView.clearContainer()` captures `scrollLeft`/`scrollTop` before emptying and restores them
+in a `requestAnimationFrame`, by which point the synchronous render has repopulated the
+container. Two details:
+
+- **Captured only when no restore is already pending.** Two rebuilds in one frame would
+  otherwise have the second capture the `0` the first just caused, and restore that.
+- **A view SWITCH still lands at the top-left.** `renderView` zeroes the scroller before
+  constructing the new view when the view type actually changed, so the view captures `0` and
+  restores `0`. Keeping the rule in one place beats threading a flag through: the view restores
+  whatever it finds, and after a switch it finds nothing.
+
+Over-restoring is safe — assigning past the new content's extent is clamped by the browser, so
+a view that got shorter simply lands at its own end.
