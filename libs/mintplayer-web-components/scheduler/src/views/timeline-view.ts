@@ -37,6 +37,7 @@ const UNASSIGNED_ROW_ID = '__mp-unassigned__';
  * so moving them into a panel changed no behaviour.
  */
 export type RowAction =
+  | 'rename-resource'
   | 'add-resource'
   | 'add-group'
   | 'set-resource-color'
@@ -590,6 +591,10 @@ export class TimelineView extends BaseView {
    */
   rowActions(item: Resource | ResourceGroup): RowAction[] {
     const actions: RowAction[] = [];
+    // Rename first: it is the most-reached-for action, and until now its only
+    // routes were double-clicking the title or F2 on a cell — neither
+    // discoverable, and neither available at all on a phone.
+    if (this.can('updateResource')) actions.push('rename-resource');
     if (isResourceGroup(item)) {
       if (this.can('createResource')) actions.push('add-resource');
       if (this.can('createGroup')) actions.push('add-group');

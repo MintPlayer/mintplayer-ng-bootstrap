@@ -422,3 +422,63 @@ describe('mp-scheduler — the panel re-targets to the row you clicked (R13)', (
     }
   });
 });
+
+describe('mp-scheduler — Rename lives in the panel (R14)', () => {
+  it('offers Rename on both a group and a resource', async () => {
+    const el = await mount(ALL);
+
+    const group = await open(el, 'team');
+    expect(group.querySelector('[data-action="rename-resource"]')!.textContent!.trim()).toBe(
+      'Rename Team',
+    );
+
+    const resource = await open(el, 'alice');
+    expect(resource.querySelector('[data-action="rename-resource"]')!.textContent!.trim()).toBe(
+      'Rename Alice',
+    );
+  });
+
+  it('starts the inline edit and puts the caret in it', async () => {
+    const el = await mount(ALL);
+    const panel = await open(el, 'alice');
+
+    panel.querySelector<HTMLElement>('[data-action="rename-resource"]')!.click();
+    await (el as unknown as { updateComplete: Promise<void> }).updateComplete;
+    await nextRaf();
+
+    const input = el.shadowRoot!.querySelector<HTMLInputElement>('.rename-input');
+    expect(input).not.toBeNull();
+    // The panel gets out of the way, and focus goes to the input rather than
+    // back to the trigger — no detour on the way to typing.
+    expect(el.shadowRoot!.querySelector('.scheduler-row-panel')).toBeNull();
+    expect(el.shadowRoot!.activeElement).toBe(input);
+  });
+
+  it('emits resource-update with the new title on Enter', async () => {
+    const el = await mount(ALL);
+    const seen: Record<string, string>[] = [];
+    el.addEventListener('resource-update', (e) =>
+      seen.push((e as CustomEvent).detail.changes as Record<string, string>),
+    );
+
+    const panel = await open(el, 'alice');
+    panel.querySelector<HTMLElement>('[data-action="rename-resource"]')!.click();
+    await (el as unknown as { updateComplete: Promise<void> }).updateComplete;
+    await nextRaf();
+
+    const input = el.shadowRoot!.querySelector<HTMLInputElement>('.rename-input')!;
+    input.value = 'Alice Cooper';
+    input.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true, composed: true }));
+    await (el as unknown as { updateComplete: Promise<void> }).updateComplete;
+
+    expect(seen).toEqual([{ title: 'Alice Cooper' }]);
+  });
+
+  it('is absent without updateResource, like every other entry', async () => {
+    const el = await mount({ deleteResource: true });
+    const panel = await open(el, 'alice');
+
+    expect(panel.querySelector('[data-action="rename-resource"]')).toBeNull();
+    expect(panel.querySelector('[data-action="delete-resource"]')).not.toBeNull();
+  });
+});

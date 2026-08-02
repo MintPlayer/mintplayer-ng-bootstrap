@@ -57,6 +57,8 @@ export interface SchedulerMessages {
   resourceColor: string;
   /** Accessible name of the resource-column resize separator. */
   resizeResourceColumn: string;
+  /** {title} — the row-panel entry that starts a rename. */
+  renameResource: string;
   /** {title} — accessible name of the inline rename input. */
   renameResourceLabel: string;
   /** {from} {to} — announced after a rename commits. */
@@ -214,6 +216,7 @@ export const DEFAULT_MESSAGES: SchedulerMessages = {
   removeResource: 'Remove {title}',
   resourceColor: 'Colour for {title}',
   resizeResourceColumn: 'Resize the resource column',
+  renameResource: 'Rename {title}',
   renameResourceLabel: 'New name for {title}',
   resourceRenamed: '{from} renamed to {to}.',
 

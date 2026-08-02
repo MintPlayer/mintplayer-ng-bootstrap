@@ -26,6 +26,7 @@ Not pushed, no PR opened. Milestone status below; deviations and open items in P
 | M13 — corner cells stick (R11) | done — a duplicate rule was overriding `sticky` with `relative` (PRD §17) |
 | M14 — placeholder option crash (R12) | done — `BsSelectValueAccessor` null guard, a shared-library fix (PRD §18) |
 | M15 — panel re-targets to the clicked row (R13) | done — close-then-open, not a position nudge (PRD §19) |
+| M16 — Rename in the row panel (R14) | done — the third entry point to the existing inline edit (PRD §20) |
 
 **A note for whoever picks this up:** `tsc -p libs/mintplayer-web-components/tsconfig.json`
 checks NOTHING — it is a solution-style config with empty `files`/`include`. Use
@@ -604,3 +605,20 @@ Rejected: calling `position()` while open (skips `moveFocusIn`, so a keyboard us
 the trigger while a differently-owned dialog appears elsewhere), and making `open()` reposition
 when already open (changes shared overlay behaviour for the day popover and the editor to fix
 a scheduler bug).
+
+
+## M16 — Rename in the row panel [R14, PRD §20]
+
+- [x] `rename-resource` is the panel's first entry on groups and resources, gated on the same
+      `updateResource` capability as the inline edit it starts. Rename previously had only two
+      routes — double-click the title and F2 on a cell — neither discoverable, and neither
+      available on a phone.
+- [x] It starts the SAME inline edit, so the emitted `resource-update` is unchanged: one
+      implementation, three entry points.
+- [x] The panel closes with `close(false)` and the click handler skips its usual close for this
+      action, so focus lands in the rename input rather than detouring via the trigger.
+- [x] `data-parent-id` / `data-resource-id` re-split: the add actions address a parent,
+      everything else addresses the row itself. The old ternary special-cased only delete and
+      would have handed rename the wrong id.
+- [x] Four specs: present on both row types, starts the edit and takes focus, emits the new
+      title on Enter, absent without `updateResource`.

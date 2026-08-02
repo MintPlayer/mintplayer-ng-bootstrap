@@ -42,6 +42,7 @@ strand: it found **three blockers**, none of which this feature would otherwise 
 | R6 | The date is readable only when the centre of the day cell is on screen — anchor it to the edge | **confirmed** — `text-align: center` in a 2400px box (§3.3) |
 | R7 | Localize as much as possible — the browser does this natively. Dutch should read "ma 27 okt" | **~95% already built**; the dates are pinned by one default (§3.4) |
 | R8 | Re-audit blind-user accessibility | **3 blockers, 12 majors** (§8) |
+| R14 | The ellipsis panel has no "Rename" entry, for either a resource or a group | **added** — rename existed but had no discoverable route (§20) |
 | R13 | With a group and a resource, the row panel opens under the FIRST trigger clicked, not the one just clicked | **reproduced — an overlay-contract mismatch in my own M5 code** (§19) |
 | R12 | Switching from a specific locale back to "browser locale" does nothing, with a console TypeError | **a crash in `BsSelectValueAccessor`** — not scheduler code (§18) |
 | R11 | The "Resources" corner cell and the one below it should stick to the left like the add bar | **confirmed — a CSS override bug** (§17) |
@@ -1141,3 +1142,31 @@ where before all three rendered at the first trigger's position. Exactly one tri
 
 Position cannot be spec'd — jsdom does not lay out — so the specs assert the state that drives
 it: which row owns the panel, and which single trigger claims expansion.
+
+## 20. Rename belongs in the row panel (R14)
+
+Rename already worked — double-click the title, or F2 on a cell in the row (#396's R17). Both
+routes are invisible, and **neither exists on a phone**: there is no double-click and no F2.
+When M5 made the panel the home for row actions, rename was the one that did not move, so the
+column lost the only affordance it had for it.
+
+`rename-resource` is now the panel's first entry, on groups and resources alike, gated on the
+same `updateResource` capability that already gated the inline edit. It starts the *same*
+inline edit the other two routes start — one implementation, three entry points — so the
+emitted `resource-update` is unchanged and consumers need no work.
+
+Two details:
+
+- **The panel closes without returning focus.** `beginResourceRename` focuses the input it
+  creates; handing focus back to the trigger first would be a visible detour on the way to
+  typing. `close(false)` skips it, and the click handler skips its usual `closeRowMenu()` for
+  this one action so the two do not fight.
+- **`data-parent-id` / `data-resource-id` were re-split.** The add actions address a *parent*,
+  everything else addresses the *row itself*; the previous ternary only special-cased delete,
+  which would have sent rename the wrong id.
+
+Panel contents now read: **group** — Rename, Add resource, Add subgroup, colour, Remove;
+**resource** — Rename, colour, Remove.
+
+Verified in the browser: clicking Rename closes the panel, the input appears and takes focus,
+and Enter emits `resource-update` with `{ title: 'Alice Cooper' }`.

@@ -759,20 +759,30 @@ export class MpScheduler extends LitElement {
           }
 
           const label =
-            action === 'add-resource'
-              ? formatMessage(messages.addResourceToGroup, { title: item.title })
-              : action === 'add-group'
-                ? formatMessage(messages.addGroupToGroup, { title: item.title })
-                : formatMessage(messages.removeResource, { title: item.title });
+            action === 'rename-resource'
+              ? formatMessage(messages.renameResource, { title: item.title })
+              : action === 'add-resource'
+                ? formatMessage(messages.addResourceToGroup, { title: item.title })
+                : action === 'add-group'
+                  ? formatMessage(messages.addGroupToGroup, { title: item.title })
+                  : formatMessage(messages.removeResource, { title: item.title });
 
           return html`
             <button
               type="button"
               class="row-action ${action === 'delete-resource' ? 'is-destructive' : ''}"
               data-action=${action}
-              data-parent-id=${action === 'delete-resource' ? nothing : item.id}
-              data-resource-id=${action === 'delete-resource' ? item.id : nothing}
-              @click=${() => this.closeRowMenu()}
+              data-parent-id=${action === 'add-resource' || action === 'add-group'
+                ? item.id
+                : nothing}
+              data-resource-id=${action === 'add-resource' || action === 'add-group'
+                ? nothing
+                : item.id}
+              @click=${() => {
+                // Rename closes itself in the handler, without returning focus,
+                // so the caret lands straight in the input it opens.
+                if (action !== 'rename-resource') this.closeRowMenu();
+              }}
             >
               ${label}
             </button>
@@ -2585,6 +2595,16 @@ export class MpScheduler extends LitElement {
       // them. Handled here so the click never falls through to the grid.
       case 'row-menu':
         if (resourceId) this.openRowMenu(resourceId);
+        return true;
+      // Starts the same inline edit double-click and F2 already start. The panel
+      // closes WITHOUT returning focus first: `beginResourceRename` focuses the
+      // input it creates, and handing focus back to the trigger on the way there
+      // would be a visible detour.
+      case 'rename-resource':
+        if (resourceId && this.can('updateResource')) {
+          this.rowMenuOverlay.close(false);
+          this.beginResourceRename(resourceId);
+        }
         return true;
       case 'add-resource':
         if (this.can('createResource')) {
