@@ -1,7 +1,32 @@
 # Plan — Scheduler: compact timeline column, sticky day labels, real localization, a11y
 
 PRD: [scheduler-compact-timeline-localization.md](./scheduler-compact-timeline-localization.md)
-Status: **Not started.** No branch, no PR. Base: `master` at `a66f4439`.
+Status: **Implemented** on `feat/scheduler-compact-timeline-i18n`, base `master` @ `a66f4439`.
+Twelve commits, one per milestone. Final sweep: **1599 unit tests**, all four library builds
+and the Angular demo build clean, `tsconfig.lib.json` + `tsconfig.spec.json` both clean.
+Not pushed, no PR opened. Milestone status below; deviations and open items in PRD §15.
+
+| Milestone | State |
+|---|---|
+| S — spikes | done (PRD §14); throwaway files kept under `docs/prd/_spike-scheduler-*` |
+| M0 — touch drag regression | done — **device verification still required**, CI cannot see the gesture |
+| M1 — locale defaults | done |
+| M1b — Sunday-start | done, incl. `mp-calendar`'s week-number defect |
+| M2 — WCAG contrast helper | done |
+| M3 — narrow add bar | done |
+| M4 — sticky day label | done |
+| M5 — row panel | done |
+| M6 — demo language switch | done (Angular only; React/Vue open) |
+| M7 — both keyboard paths | done, plus audit M12 |
+| M8 — a11y blockers | A-B1 and A-B3 done; **A-B2 mitigated, not structurally fixed** (PRD §15) |
+| M9 — audit majors | the cheap ones done (M5, M7, M8-audit); M2/M3/M4/M6/M9/M10/M11 open |
+| M10 — spec coverage | done for everything shipped |
+| M11 — batched sweep | done |
+
+**A note for whoever picks this up:** `tsc -p libs/mintplayer-web-components/tsconfig.json`
+checks NOTHING — it is a solution-style config with empty `files`/`include`. Use
+`tsconfig.lib.json` and `tsconfig.spec.json` directly. Several errors on this branch reached
+the test run because of that.
 
 **All four PRD §11 questions are decided** (2026-08-02): both keyboard paths, all three
 locale defaults browser-derived, all three a11y blockers in this PR, panel unconditional.

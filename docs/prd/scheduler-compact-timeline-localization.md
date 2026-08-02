@@ -1,8 +1,14 @@
 # PRD — Scheduler: compact timeline column, sticky day labels, real localization, a11y re-audit
 
-Status: **Not started.** Investigated 2026-08-02 against `master` at `a66f4439`
-(PR [#396](https://github.com/MintPlayer/mintplayer-ng-bootstrap/pull/396), phase 2).
-No branch, no PR yet.
+Status: **Implemented** on `feat/scheduler-compact-timeline-i18n` (2026-08-02), branched
+from `master` at `a66f4439` (PR
+[#396](https://github.com/MintPlayer/mintplayer-ng-bootstrap/pull/396), phase 2).
+Twelve commits, one per milestone; **1599 unit tests green**, all four library builds and the
+Angular demo build clean. Not pushed, no PR opened.
+See §15 for what shipped, what changed during implementation, and what is deliberately left.
+Versions: web-components **2.8.0**, ng **22.12.0**, react **19.14.0**, vue **3.15.0** — a
+minor above `master`, which was already at 2.7.0 rather than the 2.6.0 the phase-2 PRD
+recorded.
 Plan: [scheduler-compact-timeline-localization-plan.md](./scheduler-compact-timeline-localization-plan.md)
 Predecessors — this PRD **re-opens a decision deliberately deferred by** the last two:
 [scheduler-view-mode-completeness.md](./scheduler-view-mode-completeness.md) (#395/#396),
@@ -874,3 +880,65 @@ built and verified:
 Firefox and WebKit were not measured (one browser was available). The tracked-pointer-type
 design is engine-independent, so this does not block M0 — but the `pointerType` fast path
 should be treated as an optimisation over the tracked value, never as the sole signal.
+
+## 15. As built
+
+Twelve commits on `feat/scheduler-compact-timeline-i18n`, one per milestone. Everything in
+§2 shipped except where noted below.
+
+### Deviations from the plan, and why
+
+- **D7 dropped "pen counts as touch".** A stylus drives the mouse path — `mousedown` with
+  its 5px threshold — and never the 600ms hold, so suppressing its `contextmenu` would have
+  robbed pen users of the editor for no benefit. Only `pointerType === 'touch'` suppresses.
+- **A-B2 is fixed by naming cells, not by re-indexing the grid.** Week and day view are
+  day-major in the DOM, so a cell's positional column maps onto the wrong weekday. Making
+  the ARIA honest would mean moving the day labels inside their rows to serve as rowheaders
+  — a rewrite of week/day rendering, with the event positioning and drag systems attached.
+  Instead every gridcell now states its own day, time and resource, using the string the
+  live-region announcement already built. A cell that names itself does not depend on header
+  association at all, which removes the *harm* (a user being told the wrong weekday) without
+  the rewrite. Week cells additionally carry explicit `aria-colindex`, and their row carries
+  the day name and `aria-rowindex`. **The structural rework remains open** and is the one
+  substantive item this PR does not close.
+- **`getWeekNumber` deleted rather than made locale-aware** (D14/M1b): no production caller,
+  and its only spec asserted `1 ≤ n ≤ 53`, which is vacuous under any convention.
+- **`minimalDays` is not available from `Intl`.** Measured: V8 reports only `firstDay` and
+  `weekend`, so `mp-calendar` infers the rule from the week start (Sunday-start counts the
+  week containing Jan 1, Monday-start follows ISO's four-day rule). Deriving both halves
+  from one signal also keeps them consistent, which is what the duplicate "week 1" was.
+
+### Found while building, fixed here, not in the original scope
+
+- **Setting any attribute between `createElement` and `append` threw.** `updateUI`
+  dereferenced `this.shadowRoot` unconditionally, and `attributeChangedCallback` fires while
+  it is still null. That is idiomatic usage and what frameworks do when building elements
+  imperatively.
+- **The suites were silently relying on the `'en-US'` default for determinism.** With it
+  gone they assert the *machine's* locale — passing in Belgium, failing in a US CI. Every
+  scheduler spec mount now pins one explicitly.
+- **`CSS.escape` is absent in jsdom**, so the row panel's anchor lookup threw on every open.
+  It reads `dataset` instead, which is also correct for resource ids containing quotes.
+- **My own type-checking was worthless for most of this branch.** `tsc -p tsconfig.json`
+  targets a solution-style config with empty `files`/`include`, so it checked nothing.
+  Re-running against `tsconfig.lib.json` immediately surfaced two missing imports. Use
+  `tsconfig.lib.json` and `tsconfig.spec.json` directly.
+
+### Still open
+
+- **The device verification M0 requires** (Android Chrome + iOS Safari). Spike S3 proved the
+  browser's long-press gesture is unreachable from CDP, so CI cannot see it at all — the
+  specs cover the handler's decision, never the gesture. This is the one item that cannot be
+  closed from a keyboard.
+- **A-B2's structural rework** (above).
+- **React and Vue demos** have no language switch; the Angular one does. No wrapper change
+  was needed — all three pass `options` as an object property — but the other two demos
+  would exercise a derived week start more visibly, since only the Angular demo used to pin
+  Monday.
+- The remaining audit majors: M2/M3/M4 (rowindex/colcount bookkeeping), M6 (per-view keymap
+  text), M9 (day-number drill-down has no keyboard equivalent in week/day), M10 (`adjacentRow`
+  filters `isResource`, so group rows are skipped by vertical arrow nav), M11 (the column
+  resizer is a `separator` inside the grid).
+- The `year-view` UTC date-key bug found incidentally by the Sunday-start audit
+  (`toISOString()` where month-view deliberately uses local components) — a pre-existing
+  timezone defect, unrelated to anything here.
