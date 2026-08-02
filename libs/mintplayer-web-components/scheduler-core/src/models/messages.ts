@@ -27,6 +27,14 @@ export interface SchedulerMessages {
   noResources: string;
   /** {date} — formatted first day of the visible week */
   timelineGridLabel: string;
+  /** {date} — the visible period. Accessible name of the week grid. */
+  weekGridLabel: string;
+  /** {date} — the visible day. */
+  dayGridLabel: string;
+  /** {date} — the visible month. */
+  monthGridLabel: string;
+  /** {date} — the visible year. */
+  yearGridLabel: string;
   /** {title} — resource group title */
   expandGroup: string;
   /** {title} — resource group title */
@@ -190,6 +198,10 @@ export const DEFAULT_MESSAGES: SchedulerMessages = {
   unassignedResource: '(No resource)',
   noResources: 'No resources to show.',
   timelineGridLabel: 'Resource timeline for week starting {date}',
+  weekGridLabel: 'Week of {date}',
+  dayGridLabel: 'Schedule for {date}',
+  monthGridLabel: 'Month of {date}',
+  yearGridLabel: 'Year {date}',
   expandGroup: 'Expand {title}',
   collapseGroup: 'Collapse {title}',
   addResourceBarLabel: 'Add to the resource list',

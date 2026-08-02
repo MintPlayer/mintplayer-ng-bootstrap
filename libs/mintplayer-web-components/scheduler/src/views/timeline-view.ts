@@ -16,7 +16,12 @@ import {
   resolveCapability,
   SchedulerCapability,
 } from '@mintplayer/web-components/scheduler-core';
-import { BaseView, formatEventAriaLabel, isSlotInSelection } from './base-view';
+import {
+  BaseView,
+  formatCellAnnouncement,
+  formatEventAriaLabel,
+  isSlotInSelection,
+} from './base-view';
 import { SchedulerState } from '../state/scheduler-state';
 
 /**
@@ -253,7 +258,15 @@ export class TimelineView extends BaseView {
   private actionFocusKey(el: HTMLElement): string | null {
     const action = el.dataset['action'];
     if (!action) return null;
-    return [action, el.dataset['parentId'] ?? '', el.dataset['resourceId'] ?? ''].join('|');
+    return [
+      action,
+      el.dataset['parentId'] ?? '',
+      el.dataset['resourceId'] ?? '',
+      // The expand toggle identifies its row this way, and it is the control
+      // most likely to be focused across a rebuild — activating it IS what
+      // triggers the rebuild.
+      el.dataset['groupId'] ?? '',
+    ].join('|');
   }
 
   /**
@@ -342,7 +355,13 @@ export class TimelineView extends BaseView {
           { title: flat.item.title },
         ),
       );
-      this.setData(toggle, { groupId: flat.item.id });
+      // `action` as well as `groupId`: captureActionFocus/restoreActionFocus key
+      // off `data-action`, so without it the toggle was invisible to the restore
+      // and Enter on it dropped focus to <body> — the rebuild it triggers
+      // destroys the very button the user is standing on. `toggle-group` has no
+      // case in handleResourceAction, so the click still falls through to the
+      // existing group handler unchanged.
+      this.setData(toggle, { action: 'toggle-group', groupId: flat.item.id });
       resourceCell.appendChild(toggle);
     }
 
@@ -384,6 +403,14 @@ export class TimelineView extends BaseView {
         slotEl.setAttribute('role', 'gridcell');
         slotEl.setAttribute('tabindex', '-1');
         slotEl.setAttribute('aria-selected', 'false');
+        // Resource AND time, on the cell itself. That context previously existed
+        // only as a live-region announcement fired on arrow keys, so landing here
+        // any other way — Tab, a click, focus restored after a rebuild — said
+        // nothing at all about which row or which hour the user was in.
+        slotEl.setAttribute(
+          'aria-label',
+          formatCellAnnouncement(slot, this.state.options, flat.item.title),
+        );
         slotEl.id = `scheduler-cell-t-${flat.item.id}-${slot.start.getTime()}`;
         slotEl.style.width = `${this.slotWidth}px`;
         this.setData(slotEl, {
@@ -702,6 +729,14 @@ export class TimelineView extends BaseView {
         slotEl.setAttribute('role', 'gridcell');
         slotEl.setAttribute('tabindex', '-1');
         slotEl.setAttribute('aria-selected', 'false');
+        slotEl.setAttribute(
+          'aria-label',
+          formatCellAnnouncement(
+            slot,
+            this.state.options,
+            resolveMessages(this.state.options.messages).unassignedResource,
+          ),
+        );
         slotEl.id = `scheduler-cell-t-${UNASSIGNED_ROW_ID}-${slot.start.getTime()}`;
         slotEl.style.width = `${this.slotWidth}px`;
         // `data-unassigned`, not a resourceId — see the doc comment.

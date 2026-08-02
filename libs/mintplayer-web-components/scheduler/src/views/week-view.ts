@@ -4,9 +4,16 @@ import {
   SchedulerEvent,
   SchedulerEventPart,
   TimeSlot,
+  formatMessage,
   getContrastColor,
+  resolveMessages,
 } from '@mintplayer/web-components/scheduler-core';
-import { BaseView, formatEventAriaLabel, isSlotInSelection } from './base-view';
+import {
+  BaseView,
+  formatCellAnnouncement,
+  formatEventAriaLabel,
+  isSlotInSelection,
+} from './base-view';
 import { SchedulerState } from '../state/scheduler-state';
 
 /**
@@ -99,6 +106,14 @@ export class WeekView extends BaseView {
       const day = days[dayIndex];
       const dayColumn = this.createElement('div', 'scheduler-day-column');
       this.setData(dayColumn, { dayIndex });
+      // The row carries the day, so a screen reader can place the user even
+      // though the day labels sit in a separate strip and cannot be this row's
+      // rowheader without restructuring the DOM.
+      dayColumn.setAttribute(
+        'aria-label',
+        dateService.formatDateWithWeekday(day, options.locale),
+      );
+      dayColumn.setAttribute('aria-rowindex', String(dayIndex + 2));
 
       // Create time slots
       for (let slotIndex = 0; slotIndex < slots.length; slotIndex++) {
@@ -114,6 +129,19 @@ export class WeekView extends BaseView {
         slotEl.setAttribute('role', 'gridcell');
         slotEl.setAttribute('tabindex', '-1');
         slotEl.setAttribute('aria-selected', 'false');
+        // The cell states its own day and time. Previously that context existed
+        // ONLY as a live-region announcement fired on arrow keys, so every other
+        // way in — Tab, a click, focus restored after a rebuild, a view switch —
+        // announced an empty cell. It also makes the cell independent of column-
+        // header association, which cannot be right in a day-major DOM.
+        slotEl.setAttribute(
+          'aria-label',
+          formatCellAnnouncement({ start: slotStart, end: slotEnd }, options),
+        );
+        // Explicit, because DOM order here is day-major while the grid reads
+        // time-major; without these the cell inherits a position that maps onto
+        // the wrong weekday.
+        slotEl.setAttribute('aria-colindex', String(slotIndex + 2));
         slotEl.id = `scheduler-cell-w-${dayIndex}-${slotIndex}`;
         this.setData(slotEl, {
           dayIndex,
@@ -148,6 +176,12 @@ export class WeekView extends BaseView {
     this.renderNowIndicator(days, slots);
 
     this.applyGridRoles({
+      label: formatMessage(resolveMessages(this.state.options.messages).weekGridLabel, {
+        date: dateService.formatDateWithWeekday(
+          dateService.getWeekStart(this.state.date, this.firstDayOfWeek),
+          this.state.options.locale,
+        ),
+      }),
       multiselectable: true,
       columnHeaderRow: ':scope > .scheduler-day-headers',
       columnHeaders: '.scheduler-day-headers > .scheduler-day-header',

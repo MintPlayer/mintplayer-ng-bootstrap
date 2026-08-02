@@ -57,6 +57,12 @@ export class MonthView extends BaseView {
     this.updateDayCellFocus();
 
     this.applyGridRoles({
+      label: formatMessage(resolveMessages(this.state.options.messages).monthGridLabel, {
+        date: dateService.formatDate(this.state.date, this.state.options.locale, {
+          month: 'long',
+          year: 'numeric',
+        }),
+      }),
       columnHeaderRow: ':scope > .scheduler-day-headers',
       columnHeaders: '.scheduler-day-headers > .scheduler-day-header',
       presentation: ['.scheduler-month-grid'],

@@ -404,9 +404,22 @@ export abstract class BaseView {
     cells?: string;
     /** Grids where Shift+Arrow extends a multi-cell range (week/day). */
     multiselectable?: boolean;
+    /**
+     * Accessible name for the grid. REQUIRED in practice: without it a screen
+     * reader announces "grid" over hundreds of unnamed cells with no indication
+     * of what it is, and two schedulers on a page are indistinguishable.
+     * A consumer's own `aria-label` on the host wins — the host has no role, so
+     * that attribute reaches nothing on its own.
+     */
+    label?: string;
   }): void {
     const container = this.container;
     if (container.getAttribute('role') !== 'grid') container.setAttribute('role', 'grid');
+    const hostLabel = (this.container.getRootNode() as ShadowRoot).host?.getAttribute(
+      'aria-label',
+    );
+    const label = hostLabel || config.label;
+    if (label) container.setAttribute('aria-label', label);
     // Keymap discoverability (FR-9): the hidden instructions div rendered by
     // mp-scheduler shares this shadow root, so the IDREF resolves.
     container.setAttribute('aria-describedby', 'scheduler-kbd-grid');

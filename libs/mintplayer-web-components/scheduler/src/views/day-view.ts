@@ -2,9 +2,16 @@ import {
   dateService,
   timelineService,
   SchedulerEventPart,
+  formatMessage,
   getContrastColor,
+  resolveMessages,
 } from '@mintplayer/web-components/scheduler-core';
-import { BaseView, formatEventAriaLabel, isSlotInSelection } from './base-view';
+import {
+  BaseView,
+  formatCellAnnouncement,
+  formatEventAriaLabel,
+  isSlotInSelection,
+} from './base-view';
 import { SchedulerState } from '../state/scheduler-state';
 
 /**
@@ -86,6 +93,9 @@ export class DayView extends BaseView {
       slotEl.setAttribute('role', 'gridcell');
       slotEl.setAttribute('tabindex', '-1');
       slotEl.setAttribute('aria-selected', 'false');
+      // See week-view: the cell names itself, so every entry point announces its
+      // day and time rather than only an arrow keypress.
+      slotEl.setAttribute('aria-label', formatCellAnnouncement(slot, options));
       slotEl.id = `scheduler-cell-d-${slotIndex}`;
       this.setData(slotEl, {
         slotIndex,
@@ -116,6 +126,9 @@ export class DayView extends BaseView {
     }
 
     this.applyGridRoles({
+      label: formatMessage(resolveMessages(this.state.options.messages).dayGridLabel, {
+        date: dateService.formatDateWithWeekday(this.state.date, this.state.options.locale),
+      }),
       multiselectable: true,
       columnHeaderRow: ':scope > .scheduler-day-headers',
       columnHeaders: '.scheduler-day-headers > .scheduler-day-header',

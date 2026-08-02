@@ -17,6 +17,7 @@ import {
   resolveMessages,
   resourceService,
   isResource,
+  type DayOfWeek,
   resolveEventColor,
 } from '@mintplayer/web-components/scheduler-core';
 import { SchedulerStateManager, SchedulerState } from '../state/scheduler-state';
@@ -2014,6 +2015,10 @@ export class MpScheduler extends LitElement {
   private renderView(): void {
     if (!this.contentContainer) return;
 
+    // Captured before the teardown, because after it there is nothing to ask.
+    const active = this.shadowRoot?.activeElement as HTMLElement | null;
+    const hadFocus = !!active && this.contentContainer.contains(active);
+
     this.currentView?.destroy();
 
     const state = this.stateManager.getState();
@@ -2042,6 +2047,21 @@ export class MpScheduler extends LitElement {
     }
 
     this.currentView?.render();
+
+    // A view switch destroys the node the user was standing on — `render()`
+    // clears the container outright — and nothing put focus anywhere afterwards,
+    // so Alt+M from a focused cell dropped focus onto <body>. Since the keydown
+    // listener lives on the host, every later keystroke then landed outside the
+    // widget and the user had to Tab in from the top of the document.
+    //
+    // Only when focus was ours to begin with: stealing it from elsewhere on the
+    // page because a consumer changed `view` would be its own bug.
+    if (hadFocus) {
+      requestAnimationFrame(() => {
+        const active = this.shadowRoot?.activeElement;
+        if (!active || active === this.shadowRoot?.host) this.focusFocusedCell();
+      });
+    }
   }
 
   // ============================================
