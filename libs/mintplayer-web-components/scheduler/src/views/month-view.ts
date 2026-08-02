@@ -214,6 +214,15 @@ export class MonthView extends BaseView {
         eventEl.setAttribute('role', 'button');
         eventEl.setAttribute('tabindex', '0');
         eventEl.setAttribute('aria-label', formatEventAriaLabel(event, null, this.state.options));
+        // Month view is the one people open first, and it was the only view whose
+        // events announced neither their selection state nor the keymap — so the
+        // commands (M/Enter to move, F2 to edit, Delete to remove) all worked and
+        // none were discoverable.
+        eventEl.setAttribute(
+          'aria-pressed',
+          String(this.state.selectedEvent?.id === event.id),
+        );
+        eventEl.setAttribute('aria-describedby', 'scheduler-kbd-event');
         this.setData(eventEl, { eventId: event.id });
         eventsContainer.appendChild(eventEl);
       }

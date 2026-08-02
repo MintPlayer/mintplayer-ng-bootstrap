@@ -810,7 +810,10 @@ export class MpScheduler extends LitElement {
           ? html`
               <label class="popover-resource">
                 <span class="popover-resource-label">${this.msg('newEventResource')}</span>
-                <mp-select class="popover-resource-select">
+                <mp-select
+                  class="popover-resource-select"
+                  input-label=${this.msg('newEventResource')}
+                >
                   <option value="">${this.msg('unassignedResource')}</option>
                   ${resources.map(
                     (resource) => html`<option value=${resource.id}>${resource.title}</option>`,
@@ -3046,6 +3049,10 @@ export class MpScheduler extends LitElement {
       case 'ArrowRight': e.preventDefault(); this.moveFocusedDateByDays(+1); return;
       case 'ArrowUp':    e.preventDefault(); this.moveFocusedDateByDays(-7); return;
       case 'ArrowDown':  e.preventDefault(); this.moveFocusedDateByDays(+7); return;
+      // Promised by the announced keymap, previously dead — and worse, not
+      // prevented, so the page scrolled the widget out of view instead.
+      case 'PageUp':     e.preventDefault(); this.moveFocusedDateByMonths(-1); return;
+      case 'PageDown':   e.preventDefault(); this.moveFocusedDateByMonths(+1); return;
       case 'Enter':      e.preventDefault(); this.commitFocusedDateAsCreate(e, 'day'); return;
       // Space, not Enter: Enter already means "create for this day" and taking
       // it would remove the only keyboard create path in this view.
@@ -3071,6 +3078,9 @@ export class MpScheduler extends LitElement {
       case 'ArrowRight': e.preventDefault(); this.moveFocusedDateByMonths(+1); return;
       case 'ArrowUp':    e.preventDefault(); this.moveFocusedDateByMonths(-3); return;
       case 'ArrowDown':  e.preventDefault(); this.moveFocusedDateByMonths(+3); return;
+      // A year is the period here, so Page Up/Down move by twelve months.
+      case 'PageUp':     e.preventDefault(); this.moveFocusedDateByMonths(-12); return;
+      case 'PageDown':   e.preventDefault(); this.moveFocusedDateByMonths(+12); return;
       // Drill into the month, matching what clicking the month header does.
       // Enter used to emit a MONTH-SPANNING event-create here, which no consumer
       // could reasonably want from a year overview.
