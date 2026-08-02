@@ -1,0 +1,70 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Spike B — contextmenu shape + touch long-press ordering</title>
+<style>
+  body { margin: 0; font: 14px system-ui, sans-serif; }
+  /* Mirrors .scheduler-event:not(.preview) — scheduler.styles.scss:331-335 */
+  #event {
+    width: 240px; height: 90px; margin: 40px;
+    background: #3788d8; color: #fff; padding: 8px; border-radius: 4px;
+    touch-action: none;
+    -ms-touch-action: none;
+    /* M0 adds these three (the .dock-tab recipe). Toggled by the runner. */
+  }
+  #event.suppressed { user-select: none; -webkit-user-select: none; -webkit-touch-callout: none; }
+  #log { font: 12px ui-monospace, monospace; white-space: pre; padding: 8px; }
+</style>
+</head>
+<body>
+<div id="event">scheduler event<br>(touch-action: none)</div>
+<div id="log"></div>
+<script>
+window.EVENTS = [];
+window.T0 = null;
+
+const el = document.getElementById('event');
+const names = ['pointerdown','touchstart','pointermove','touchmove','contextmenu',
+               'pointerup','touchend','pointercancel','touchcancel','click','dblclick'];
+
+function record(e) {
+  if (window.T0 === null) window.T0 = performance.now();
+  const rec = {
+    type: e.type,
+    dt: Math.round(performance.now() - window.T0),
+    ctor: e.constructor.name,
+    // the discriminator question:
+    pointerType: ('pointerType' in e) ? e.pointerType : '(absent)',
+    isPointerEvent: (typeof PointerEvent !== 'undefined') && (e instanceof PointerEvent),
+    isMouseEvent: e instanceof MouseEvent,
+    button: ('button' in e) ? e.button : null,
+    // Chrome reports 0/0 for keyboard-invoked contextmenu; useful signal
+    coords: ('clientX' in e) ? (Math.round(e.clientX) + ',' + Math.round(e.clientY)) : null,
+    cancelable: e.cancelable
+  };
+  window.EVENTS.push(rec);
+  document.getElementById('log').textContent =
+    window.EVENTS.map(r => `${String(r.dt).padStart(5)}ms  ${r.type.padEnd(14)} ${r.ctor.padEnd(14)} pointerType=${r.pointerType} cancelable=${r.cancelable}`).join('\n');
+}
+
+names.forEach(n => el.addEventListener(n, record, { passive: false }));
+
+window.SPIKE_B = {
+  reset() { window.EVENTS = []; window.T0 = null; document.getElementById('log').textContent = ''; },
+  results() { return window.EVENTS; },
+  setSuppressed(on) { el.classList.toggle('suppressed', !!on); },
+  // Does the element have the dock's full suppression recipe applied?
+  computed() {
+    const cs = getComputedStyle(el);
+    return {
+      touchAction: cs.touchAction,
+      userSelect: cs.userSelect || cs.webkitUserSelect,
+      touchCallout: cs.webkitTouchCallout || '(unsupported in this engine)'
+    };
+  }
+};
+</script>
+</body>
+</html>
