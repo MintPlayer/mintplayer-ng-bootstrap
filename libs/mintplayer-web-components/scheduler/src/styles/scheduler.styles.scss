@@ -327,11 +327,20 @@ $z-event-selected: 2;    // selected event: its straddling handles must win
   text-overflow: ellipsis;
 }
 
-/* Prevent browser from handling touch gestures on events (enables drag) */
+/* Prevent browser from handling touch gestures on events (enables drag).
+   The three suppression properties beneath touch-action are the same recipe
+   .dock-tab uses to run an identical 600ms long-press drag: without them iOS
+   raises the selection magnifier over the event partway through the hold. They
+   do NOT stop the contextmenu event itself — that is arbitrated in JS, see
+   MpScheduler.handleContextMenu — they stop the selection UI that would appear
+   alongside it. */
 .scheduler-event:not(.preview),
 .scheduler-timeline-event:not(.preview) {
   touch-action: none;
   -ms-touch-action: none;
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-touch-callout: none;
 }
 
 .scheduler-event:hover {

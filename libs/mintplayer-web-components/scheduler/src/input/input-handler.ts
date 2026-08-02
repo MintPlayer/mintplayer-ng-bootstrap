@@ -60,6 +60,21 @@ export class InputHandler {
   private readonly config: InputHandlerConfig;
   private readonly callbacks: InputHandlerCallbacks;
 
+  /**
+   * Which device produced the gesture in progress.
+   *
+   * `contextmenu` cannot be trusted to say so itself: Chromium delivers it as a
+   * `PointerEvent` carrying `pointerType`, but Firefox and WebKit send a bare
+   * `MouseEvent` with no such field. Recording it where the gesture actually
+   * starts is the only engine-independent answer, and the scheduler needs one —
+   * a touch `contextmenu` must yield to hold-to-drag rather than open the editor.
+   *
+   * Pen is deliberately NOT tracked as touch: a stylus drives the mouse path
+   * (`mousedown`/`mousemove` with its 5px threshold), never the hold, so it wants
+   * the desktop context menu.
+   */
+  private lastPointerType: 'mouse' | 'touch' = 'mouse';
+
   // Touch-specific state
   private touchHoldTimer: ReturnType<typeof setTimeout> | null = null;
   private touchStartPosition: { x: number; y: number } | null = null;
@@ -101,6 +116,17 @@ export class InputHandler {
     this.boundHandleTouchMove = this.handleTouchMove.bind(this);
     this.boundHandleTouchEnd = this.handleTouchEnd.bind(this);
     this.boundHandleTouchCancel = this.handleTouchCancel.bind(this);
+  }
+
+  /**
+   * True when the gesture in progress came from a finger.
+   *
+   * The caller is `contextmenu` arbitration: on touch the browser fires that
+   * event ~100ms before our 600ms hold arms, so acting on it would make
+   * hold-to-drag unreachable.
+   */
+  isTouchGesture(): boolean {
+    return this.lastPointerType === 'touch';
   }
 
   /**
@@ -203,6 +229,10 @@ export class InputHandler {
   // Mouse event handlers
 
   private handleMouseDown(e: MouseEvent): void {
+    // Recorded before the editable guard: the gesture's device is a fact about
+    // the input, not about whether we chose to act on it, and `contextmenu`
+    // arbitration needs it even on a read-only scheduler.
+    this.lastPointerType = 'mouse';
     if (!this.config.isEditable()) return;
 
     const pointer = normalizeMouseEvent(e);
@@ -250,6 +280,9 @@ export class InputHandler {
   // Touch event handlers
 
   private handleTouchStart(e: TouchEvent): void {
+    // See handleMouseDown: recorded before any guard, because a read-only
+    // scheduler must still suppress the long-press context menu.
+    this.lastPointerType = 'touch';
     if (!this.config.isEditable()) return;
 
     // Only handle single touch
@@ -462,6 +495,19 @@ export class InputHandler {
 
     // Apply scroll blocking to document body and scheduler-content
     this.applyScrollBlock();
+
+    // A short buzz the moment the hold pays off. The user has just waited 600ms
+    // with no cursor to tell them anything is happening — the dock makes the same
+    // argument for its visual cue and fires the same 10ms pulse
+    // (mint-dock-manager.element.ts). No-op on desktop and where the API is absent.
+    if (typeof navigator !== 'undefined' && typeof navigator.vibrate === 'function') {
+      try {
+        navigator.vibrate(10);
+      } catch {
+        // Some engines throw when the document has never been interacted with,
+        // or when the user has disabled vibration. Never worth failing a drag for.
+      }
+    }
 
     // Notify callback
     this.callbacks.onTouchDragActivated?.();

@@ -993,9 +993,35 @@ export class MpScheduler extends LitElement {
     this.requestUpdate();
   }
 
-  /** Right-click on an event box opens the editor (D12.8b). */
+  /**
+   * Right-click on an event box opens the editor (D12.8b) — on a POINTING device
+   * only.
+   *
+   * On touch the browser synthesizes `contextmenu` from a long-press at roughly
+   * 500ms, which lands ~100ms before our own 600ms hold-to-drag arms. Acting on
+   * it made dragging unreachable on a phone (R9): the editor opened every time
+   * and the drag never started. So a touch-originated `contextmenu` is consumed
+   * and discarded here, leaving the gesture to the hold timer.
+   *
+   * `preventDefault` on the touch path is what stops the *platform* menu from
+   * appearing over an arming drag. It is called for every touch target, not just
+   * events, because the hold timer arms on every target — a long-press on empty
+   * grid arms drag-to-create, and used to do so underneath Android's own menu.
+   */
   private handleContextMenu(e: Event): void {
     const target = (e.composedPath?.()[0] ?? e.target) as HTMLElement | null;
+
+    // Text entry keeps the platform menu on every input device: long-press- (or
+    // right-click-) to-paste in the editor's title field is the user's gesture,
+    // not ours. The mouse path already promised this by falling through; touch
+    // has to be told explicitly, before the suppression below.
+    if (target?.closest?.('input, textarea, [contenteditable]')) return;
+
+    if (this.isTouchContextMenu(e)) {
+      e.preventDefault();
+      return;
+    }
+
     const eventEl = target?.closest?.(
       '[data-event-id]:not(.preview)',
     ) as HTMLElement | null;
@@ -1007,6 +1033,24 @@ export class MpScheduler extends LitElement {
     e.preventDefault();
     this.stateManager.setSelectedEvent(event);
     this.tryOpenEventEditor(event);
+  }
+
+  /**
+   * Did this `contextmenu` come from a finger?
+   *
+   * Two signals, because no single one is portable. Chromium delivers
+   * `contextmenu` as a `PointerEvent` and its `pointerType` is authoritative when
+   * present; Firefox and WebKit deliver a bare `MouseEvent` with no such field,
+   * so those fall back to the device recorded at `touchstart`/`mousedown`.
+   *
+   * Measured, not assumed — see the spike in the PRD (§14.3). The browser's
+   * long-press gesture cannot be synthesized through CDP, so this decision is the
+   * only part of the touch story an automated test can reach.
+   */
+  private isTouchContextMenu(e: Event): boolean {
+    const pointerType = (e as PointerEvent).pointerType;
+    if (pointerType) return pointerType === 'touch';
+    return this.inputHandler?.isTouchGesture() ?? false;
   }
 
   /**
