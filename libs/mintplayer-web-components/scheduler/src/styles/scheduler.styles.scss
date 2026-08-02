@@ -1056,6 +1056,34 @@ $z-event-selected: 2;    // selected event: its straddling handles must win
   font-size: 12px;
 }
 
+/* The DAY header row only — this class is shared with the 336 per-slot time
+   labels, which must keep their centred, non-sticky behaviour. */
+.scheduler-timeline-slot-header.day {
+  text-align: start;
+}
+
+/* Pin the date to the left edge of the scrollport so it stays readable for the
+   whole day, instead of only while the middle of a 2400px column is on screen.
+
+   The offset is the resource column, NOT 0: the corner cell is `sticky; left: 0`
+   at $z-sticky-column, so a label stuck at 0 would slide underneath it and be
+   invisible for the last stretch of each day. Reading the same custom property
+   the column resizer writes means a user-dragged column keeps this in sync for
+   free. Logical property so RTL pins to the right edge.
+
+   Sticky INSIDE the sticky header block is fine — that one sticks on `top`,
+   this on the inline axis, so they do not compete. Verified in Chromium: the
+   label pins at the column edge, hands off cleanly to the next day at the
+   boundary, never leaves its own cell, and passes UNDER the corner column. */
+.scheduler-timeline-slot-header.day .day-label {
+  position: sticky;
+  inset-inline-start: var(--scheduler-resource-column-width);
+  display: inline-block;
+  /* Opaque so the outgoing label cannot show through the incoming one during
+     the hand-off at a day boundary. */
+  background: var(--scheduler-header-bg);
+}
+
 .scheduler-timeline-body {
   display: flex;
   flex-direction: column;
@@ -1267,6 +1295,18 @@ $z-event-selected: 2;    // selected event: its straddling handles must win
 
 .scheduler-add-button:hover {
   background: var(--bs-secondary-bg, rgba(0, 0, 0, 0.08));
+}
+
+/* Narrow mode stacks the two creation buttons instead of leaving them to wrap.
+   `flex-wrap: wrap` only broke the row when the strings happened not to fit —
+   an accident of font metrics that stopped working the moment the column
+   narrowed or the labels were translated shorter. The signal is the same
+   ResizeObserver that drives the header ([data-narrow] on .scheduler-container),
+   keyed off COMPONENT width because the scheduler can sit in a dock pane far
+   narrower than the viewport. */
+.scheduler-container[data-narrow] .scheduler-timeline-addbar {
+  flex-direction: column;
+  align-items: stretch;
 }
 
 /* One focus ring for every control in the resource column. `.expand-toggle` had

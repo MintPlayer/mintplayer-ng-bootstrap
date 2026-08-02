@@ -120,10 +120,18 @@ export class TimelineView extends BaseView {
 
       // Day header spanning multiple slots
       const daySlots = slots.length;
-      const dayHeader = this.createElement('div', 'scheduler-timeline-slot-header');
+      const dayHeader = this.createElement('div', 'scheduler-timeline-slot-header', 'day');
       dayHeader.setAttribute('role', 'columnheader');
       dayHeader.style.width = `${daySlots * this.slotWidth}px`;
-      dayHeader.textContent = dateService.formatDateWithWeekday(day, options.locale);
+      // The label is its own element so it can stick to the left edge of the
+      // scrollport. At the defaults a day is 48 slots x 50px = 2400px wide, so a
+      // centred label sat ~1200px in and was off-screen almost always: the user
+      // could only read the date when the MIDDLE of the day happened to be in
+      // view. The `.day` class matters — `.scheduler-timeline-slot-header` is
+      // shared with the 336 per-slot time labels below, which must NOT stick.
+      const label = this.createElement('span', 'day-label');
+      label.textContent = dateService.formatDateWithWeekday(day, options.locale);
+      dayHeader.appendChild(label);
       dayHeader.style.borderBottom = '1px solid var(--scheduler-border-color)';
       slotsHeader.appendChild(dayHeader);
     }

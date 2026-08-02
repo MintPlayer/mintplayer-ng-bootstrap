@@ -1788,6 +1788,16 @@ export class MpScheduler extends LitElement {
    */
   private observeHeaderWidth(header: HTMLElement): void {
     if (typeof ResizeObserver === 'undefined') return;
+    // The container, not just the header: narrow mode now also drives the
+    // timeline's add bar, which lives nowhere near the header. One observer, one
+    // threshold, one source of truth.
+    //
+    // NOT a CSS container query, tempting as that is for a purely visual switch:
+    // `container-type: inline-size` computes to `contain: layout style
+    // inline-size`, which would make the element a containing block for the
+    // `position: fixed` overlays (day popover, event editor, row panel) and
+    // silently shift every one of them.
+    const container = this.shadowRoot?.querySelector<HTMLElement>('.scheduler-container');
     this.headerResizeObserver = new ResizeObserver((entries) => {
       const width = entries[0]?.contentRect.width ?? header.clientWidth;
       const narrow = width < MpScheduler.NARROW_HEADER_WIDTH;
@@ -1798,6 +1808,7 @@ export class MpScheduler extends LitElement {
       // apply one frame later instead.
       requestAnimationFrame(() => {
         header.toggleAttribute('data-narrow', narrow);
+        container?.toggleAttribute('data-narrow', narrow);
       });
     });
     this.headerResizeObserver.observe(header);
