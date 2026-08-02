@@ -24,6 +24,8 @@ Not pushed, no PR opened. Milestone status below; deviations and open items in P
 | M11 — batched sweep | done |
 | M12 — scroll survives a rebuild (R10) | done — reproduced and re-verified in Chromium (PRD §16) |
 | M13 — corner cells stick (R11) | done — a duplicate rule was overriding `sticky` with `relative` (PRD §17) |
+| M14 — placeholder option crash (R12) | done — `BsSelectValueAccessor` null guard, a shared-library fix (PRD §18) |
+| M15 — panel re-targets to the clicked row (R13) | done — close-then-open, not a position nudge (PRD §19) |
 
 **A note for whoever picks this up:** `tsc -p libs/mintplayer-web-components/tsconfig.json`
 checks NOTHING — it is a solution-style config with empty `files`/`include`. Use
@@ -565,3 +567,40 @@ scroller alone. See PRD §16 for the table.
 **Not covered by a spec:** the sticky offsets themselves. jsdom does not lay out, so
 `getBoundingClientRect` is all zeroes there and a sticky assertion would pass against any
 CSS. This one is browser-verified only, like the spike results in PRD §14.
+
+
+## M14 — A placeholder `<option>` no longer crashes the select accessor [R12, PRD §18]
+
+Outside the scheduler: `BsSelectValueAccessor` in `@mintplayer/ng-bootstrap/select`.
+
+- [x] `extractId` returns null for null/undefined instead of calling `.split(':')` on it.
+      `mp-select` normalizes an empty selection to `null` and re-dispatches a composed
+      `change` targeting the host, so the accessor genuinely receives null whenever a
+      `<option value="">` placeholder is picked.
+- [x] `getOptionValue` consults `optionMap` only for a real id, so the placeholder reaches the
+      model as null and `[ngValue]` / plain-`value` options are unaffected.
+- [x] Demo handlers accept `string | null`; both null and `''` mean "unset".
+- [x] Five specs on the id/value mapping, including that a registered `[ngValue]` option still
+      resolves and an unregistered id still falls through.
+- [x] Browser-verified: ja-JP → nl-BE → browser → ja-JP → browser, zero runtime errors.
+
+**Flag in the PR description:** this touches a shared library every `bs-select` consumer uses.
+
+
+## M15 — The row panel re-targets to the row you clicked [R13, PRD §19]
+
+- [x] `openRowMenu` closes an open panel before opening for a DIFFERENT row.
+      `OverlayController.open()` is a no-op while open, so the lazily-resolved anchor was never
+      re-read: the contents changed and the position did not. The outside-mousedown dismissal
+      could not help either — it ignores anything inside the host, and every trigger is inside
+      the host.
+- [x] `close(false)`, so focus does not return to the old trigger: the user is already on the
+      new one, and the following `open()` captures `deepActiveElement()` as its Escape target.
+- [x] Clicking the open row's own trigger toggles it closed.
+- [x] Specs assert panel ownership and that exactly one trigger claims `aria-expanded`.
+      **Position is browser-verified only** — jsdom does not lay out.
+
+Rejected: calling `position()` while open (skips `moveFocusIn`, so a keyboard user is left on
+the trigger while a differently-owned dialog appears elsewhere), and making `open()` reposition
+when already open (changes shared overlay behaviour for the day popover and the editor to fix
+a scheduler bug).

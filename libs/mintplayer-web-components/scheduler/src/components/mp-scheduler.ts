@@ -674,7 +674,31 @@ export class MpScheduler extends LitElement {
     }
   }
 
+  /**
+   * Open the actions panel for a row, or re-target it if another row's is open.
+   *
+   * `OverlayController.open()` is a no-op while already open, and the anchor is
+   * resolved lazily by id — so simply changing the id repainted the panel's
+   * CONTENTS for the new row while leaving it positioned under the previous
+   * row's trigger. The outside-mousedown dismissal cannot break the tie either:
+   * it ignores any press whose composed path includes the host, and every
+   * trigger is inside the host. Nothing was going to close it.
+   *
+   * So a different row is treated as what it is — a different dialog: close,
+   * then open. `close(false)` deliberately does NOT return focus, because the
+   * user's focus is already on the new trigger; handing it back to the old one
+   * would flicker, and would make the following `open()` capture the wrong
+   * element as its Escape target.
+   */
   private openRowMenu(resourceId: string): void {
+    // The open row's own trigger toggles, which is what a disclosure control
+    // should do and what `aria-expanded` on it promises.
+    if (this.rowMenuOverlay.isOpen && this.rowMenuResourceId === resourceId) {
+      this.closeRowMenu();
+      return;
+    }
+    if (this.rowMenuOverlay.isOpen) this.rowMenuOverlay.close(false);
+
     this.rowMenuResourceId = resourceId;
     this.requestUpdate();
     void this.updateComplete.then(() => {

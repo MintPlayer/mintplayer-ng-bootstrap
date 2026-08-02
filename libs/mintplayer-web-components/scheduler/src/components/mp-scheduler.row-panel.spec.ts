@@ -365,3 +365,60 @@ describe('mp-scheduler — a rebuild keeps the user where they were (R10)', () =
     expect(content.scrollLeft).toBe(2400);
   });
 });
+
+describe('mp-scheduler — the panel re-targets to the row you clicked (R13)', () => {
+  /**
+   * OverlayController.open() is a no-op while already open, and the anchor is
+   * resolved lazily by id — so changing the id repainted the panel's CONTENTS
+   * for the new row while leaving it positioned under the previous row's
+   * trigger. The outside-mousedown dismissal could not break the tie either: it
+   * ignores any press whose composed path includes the host, and every trigger
+   * is inside the host.
+   *
+   * Position itself is browser-only (jsdom does not lay out), so these assert
+   * the state that drives it: which row the panel belongs to, and which single
+   * trigger claims aria-expanded.
+   */
+  function expanded(el: MpScheduler): (string | undefined)[] {
+    return [...el.shadowRoot!.querySelectorAll<HTMLElement>('.scheduler-row-menu-button')]
+      .filter((b) => b.getAttribute('aria-expanded') === 'true')
+      .map((b) => b.dataset['resourceId']);
+  }
+
+  it('re-anchors to the second row rather than staying on the first', async () => {
+    const el = await mount(ALL);
+
+    await open(el, 'team');
+    expect(expanded(el)).toEqual(['team']);
+
+    await open(el, 'alice');
+    const panel = el.shadowRoot!.querySelector('.scheduler-row-panel')!;
+    expect(panel.getAttribute('aria-label')).toBe('Actions for Alice');
+    // Exactly one trigger may claim the panel, and it must be the new one.
+    expect(expanded(el)).toEqual(['alice']);
+  });
+
+  it('closes when the open row is clicked again', async () => {
+    const el = await mount(ALL);
+
+    await open(el, 'alice');
+    expect(el.shadowRoot!.querySelector('.scheduler-row-panel')).not.toBeNull();
+
+    trigger(el, 'alice')!.click();
+    await (el as unknown as { updateComplete: Promise<void> }).updateComplete;
+    await nextRaf();
+
+    // A disclosure control toggles — which is what aria-expanded on it promises.
+    expect(el.shadowRoot!.querySelector('.scheduler-row-panel')).toBeNull();
+    expect(expanded(el)).toEqual([]);
+  });
+
+  it('never leaves two triggers claiming to be expanded', async () => {
+    const el = await mount(ALL);
+
+    for (const id of ['team', 'alice', 'team', 'alice']) {
+      await open(el, id);
+      expect(expanded(el).length, `after opening ${id}`).toBe(1);
+    }
+  });
+});

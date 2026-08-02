@@ -110,12 +110,16 @@ export class SchedulerComponent {
     editorEndLabel: 'Einde',
   };
 
-  /** '' from the select means "unset" — i.e. follow the browser. */
-  setLocale(value: string): void {
+  /**
+   * The placeholder option means "unset" — follow the browser. It arrives as
+   * null (mp-select normalizes an empty value) or '' (the write-back path), so
+   * both collapse to undefined.
+   */
+  setLocale(value: string | null): void {
     this.locale.set(value || undefined);
   }
 
-  setTimeFormat(value: string): void {
+  setTimeFormat(value: string | null): void {
     this.timeFormat.set((value || undefined) as '12h' | '24h' | undefined);
   }
 

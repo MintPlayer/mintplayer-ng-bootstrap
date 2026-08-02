@@ -42,6 +42,8 @@ strand: it found **three blockers**, none of which this feature would otherwise 
 | R6 | The date is readable only when the centre of the day cell is on screen — anchor it to the edge | **confirmed** — `text-align: center` in a 2400px box (§3.3) |
 | R7 | Localize as much as possible — the browser does this natively. Dutch should read "ma 27 okt" | **~95% already built**; the dates are pinned by one default (§3.4) |
 | R8 | Re-audit blind-user accessibility | **3 blockers, 12 majors** (§8) |
+| R13 | With a group and a resource, the row panel opens under the FIRST trigger clicked, not the one just clicked | **reproduced — an overlay-contract mismatch in my own M5 code** (§19) |
+| R12 | Switching from a specific locale back to "browser locale" does nothing, with a console TypeError | **a crash in `BsSelectValueAccessor`** — not scheduler code (§18) |
 | R11 | The "Resources" corner cell and the one below it should stick to the left like the add bar | **confirmed — a CSS override bug** (§17) |
 | R10 | The scheduler scrolls back to (0,0) whenever its data/state changes | **confirmed and narrower than reported** — *resource* changes reset it, event changes do not; measured in Chromium (§16) |
 | R9 | **Regression from #396**: on a smartphone, press-and-hold on an event used to drag it. Since the `contextmenu` handler shipped, the long-press opens the editor instead and touch users cannot drag at all | **confirmed, root cause found, small fix** — the browser's ~500ms long-press beats the scheduler's 600ms hold by ~100ms (§13) |
@@ -1039,3 +1041,103 @@ Verified live: switching to `nl-BE` turns the buttons into Vandaag / Jaar / Maan
 Tijdlijn. Switching to `ja-JP` renders the title as `2026/08/02～2026/08/08` — a *different
 week*, because `ja-JP` starts on Sunday — while the buttons fall back to English, since the
 demo ships only a Dutch table. That fallback is the contract working, not a gap.
+
+## 18. A placeholder `<option>` crashed the select accessor (R12)
+
+Reported against the new language switch: picking a specific locale worked, picking "Browser
+locale" did nothing, and the console showed
+
+```
+TypeError: can't access property "split", valueString is null
+    extractId  select-value-accessor.ts:85
+```
+
+Not scheduler code — `BsSelectValueAccessor` in `@mintplayer/ng-bootstrap/select`, and it
+affects **any** consumer, not just this demo.
+
+### 18.1 Chain
+
+1. `<option value="">Browser locale</option>` is the idiomatic placeholder — "none", "auto",
+   "follow the browser".
+2. `mp-select` normalizes an empty selection to **`null`** on its host, and re-dispatches a
+   *composed* `change` whose `target` is the element, not the inner `<select>` (native `change`
+   does not cross a shadow boundary).
+3. `hostOnChange` therefore reads `null` from the host and hands it to
+   `extractId(valueString)`, which called `valueString.split(':')` with no guard.
+4. The throw aborted the handler, so `ngModelChange` never fired and the model kept its
+   previous value — the control looked frozen on the option the user had just left.
+
+Measured: host value is `"ja-JP"` for a real option and `null` for the empty one, every time.
+
+### 18.2 Fix
+
+`extractId` returns `null` for a null/undefined input, and `getOptionValue` only consults
+`optionMap` when it has a real id — so a placeholder selection reaches the model as `null`,
+which is what "nothing chosen" should mean. Registered `[ngValue]` options and plain
+`value="…"` options both behave exactly as before.
+
+The demo's handlers accept `string | null` and collapse both `null` and `''` to `undefined`,
+since the write-back path (`[ngModel]="locale() ?? ''"`) uses the empty string.
+
+Verified in the browser: ja-JP → nl-BE → browser locale → ja-JP → browser locale round-trips
+with zero runtime errors, the title following each locale and the buttons falling back to
+English when the Dutch table is dropped.
+
+**Worth noting for the PR description:** this is a fix to a shared library outside the
+scheduler. Any app with a placeholder option in a `bs-select` was hitting it.
+
+## 19. The row panel opened under the wrong trigger (R13)
+
+Steps: add a resource, add a group, open the group's ⋯, then click the resource's ⋯. The
+panel's *contents* changed to the resource's actions while its *position* stayed under the
+group's button.
+
+Measured before the fix — the panel sat at `top: 344` for both, which is the group trigger's
+bottom edge (320 + 24), while the resource's trigger was at 361.
+
+### 19.1 Two mechanisms had to coincide
+
+1. **`OverlayController.open()` returns early when already open.** The anchor is resolved
+   lazily by id — deliberately, because the timeline rebuilds its DOM — but nothing re-reads
+   it, so `position()` never runs again. Changing `rowMenuResourceId` therefore re-rendered
+   the panel's contents (Lit) without moving it (the controller).
+2. **The outside-mousedown dismissal could not break the tie.** `onMouseDown` returns early
+   when the event's composed path includes **the host**, and every trigger is inside the host.
+   Correct for the day popover, whose anchor is a grid cell — but it means one trigger can
+   never dismiss another's panel. Nothing was ever going to close it.
+
+Either alone would have been survivable. Together, the panel was pinned to whichever row
+opened it first.
+
+### 19.2 Fix — a different row is a different dialog
+
+`openRowMenu` now closes before opening when the requested row differs, rather than nudging
+the position of a panel that is already open. That keeps the controller's own semantics —
+`open()` means open, and everything it does on open (positioning, focus, the dismiss-stack
+frame, the Escape return target) happens exactly once per row.
+
+`close(false)` is deliberate: focus must **not** return to the old trigger. The user's focus
+is already on the new one, so returning it would flicker, and the following `open()` captures
+`deepActiveElement()` as its Escape target — it would have captured the wrong control.
+
+Rejected alternatives, and why:
+
+- **Call `position()` while open.** Cheapest, and it would have moved the panel. But it skips
+  `moveFocusIn()`, so a keyboard user activating a different row would keep focus on the
+  trigger while a differently-owned dialog appeared elsewhere. Half a re-open is worse than
+  none.
+- **Make `open()` reposition when already open.** Changes shared overlay behaviour for the day
+  popover and the event editor to fix a scheduler bug, and muddies what `open()` means.
+
+Clicking the open row's own trigger now toggles it closed — what a disclosure control should
+do, and what `aria-expanded` on it already promised.
+
+### 19.3 Verified
+
+In Chromium, with a group, its child and a sibling resource, each panel opens **directly below
+its own trigger** (gap 0–6px) and left-aligned to it, including the child's 16px indent —
+where before all three rendered at the first trigger's position. Exactly one trigger reports
+`aria-expanded="true"` at any time, and a second click on the open row closes it.
+
+Position cannot be spec'd — jsdom does not lay out — so the specs assert the state that drives
+it: which row owns the panel, and which single trigger claims expansion.

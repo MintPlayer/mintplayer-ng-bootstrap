@@ -81,8 +81,20 @@ export class BsSelectValueAccessor implements ControlValueAccessor {
     return `${id}: ${value}`.slice(0, 50);
   }
 
-  extractId(valueString: string) {
-    return valueString.split(':')[0];
+  /**
+   * The id half of a `"<id>: <value>"` string, or null when there is no string
+   * to read.
+   *
+   * Null is a real case, not defensive padding: `<option value="">` is the
+   * idiomatic way to write a placeholder ("— none —", "Browser locale"), and
+   * `mp-select` normalizes an empty selection to `null` on its host. The host is
+   * what `hostOnChange` reads, because `mp-select` re-dispatches a composed
+   * `change` whose target is the element rather than the inner `<select>`. So
+   * selecting a placeholder threw `can't access property "split", valueString is
+   * null` and the model never updated — the control looked frozen on that option.
+   */
+  extractId(valueString: string | null | undefined): string | null {
+    return valueString == null ? null : valueString.split(':')[0];
   }
 
   writeValue(value: any) {
@@ -110,9 +122,13 @@ export class BsSelectValueAccessor implements ControlValueAccessor {
     return null;
   }
 
-  getOptionValue(valueString: string) {
+  getOptionValue(valueString: string | null | undefined) {
     const id = this.extractId(valueString);
-    return this.optionMap.has(id) ? this.optionMap.get(id) : valueString;
+    // Options declared with a plain `value` attribute are never registered in
+    // optionMap — only `[ngValue]` registers — so falling through to the raw
+    // string is the normal path for them, and passing null through is how a
+    // placeholder selection reaches the model as "nothing chosen".
+    return id !== null && this.optionMap.has(id) ? this.optionMap.get(id) : valueString;
   }
 }
 
