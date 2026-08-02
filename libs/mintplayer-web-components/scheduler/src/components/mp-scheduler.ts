@@ -645,6 +645,34 @@ export class MpScheduler extends LitElement {
       });
   }
 
+  /** Move focus from the focused cell onto its row's actions trigger. */
+  private focusRowTrigger(): void {
+    const rowId = this.stateManager.getState().focusedResourceId;
+    this.rowMenuTriggerById(rowId ?? null)?.focus();
+  }
+
+  /**
+   * Keys while the row's trigger has focus. It sits outside the roving cell
+   * model, so it needs its own small map: open, or hand focus back to the grid.
+   */
+  private handleRowTriggerKeyDown(e: KeyboardEvent, trigger: HTMLElement): boolean {
+    const resourceId = trigger.dataset['resourceId'];
+    switch (e.key) {
+      case 'Enter':
+      case ' ':
+        e.preventDefault();
+        if (resourceId) this.openRowMenu(resourceId);
+        return true;
+      case 'ArrowRight':
+      case 'Escape':
+        e.preventDefault();
+        this.focusFocusedCell();
+        return true;
+      default:
+        return false;
+    }
+  }
+
   private openRowMenu(resourceId: string): void {
     this.rowMenuResourceId = resourceId;
     this.requestUpdate();
@@ -1181,7 +1209,22 @@ export class MpScheduler extends LitElement {
     const eventEl = target?.closest?.(
       '[data-event-id]:not(.preview)',
     ) as HTMLElement | null;
-    if (!eventEl) return;
+
+    // Right-click (or the Menu key, or VoiceOver's VO+Shift+M) on a resource row
+    // opens its actions — the desktop half of the same affordance the ⋯ button
+    // gives touch. Checked AFTER the event branch above, because an event can
+    // sit over a resource row and the editor must keep winning there.
+    if (!eventEl) {
+      const rowTrigger = target?.closest?.('.scheduler-resource-cell')?.querySelector?.(
+        '.scheduler-row-menu-button',
+      ) as HTMLElement | null;
+      const rowId = rowTrigger?.dataset['resourceId'];
+      if (rowId) {
+        e.preventDefault();
+        this.openRowMenu(rowId);
+      }
+      return;
+    }
     const event = this.getEventById(eventEl.dataset['eventId'] ?? '');
     if (!event || !this.eventEditor || !this.canOpenEditor(event)) return;
     // Ours now — the native menu on anything else (empty grid, header, the
@@ -2552,7 +2595,35 @@ export class MpScheduler extends LitElement {
     });
   }
 
+  /**
+   * Is this key event coming from inside one of the open panels?
+   *
+   * The dialogs are deliberately NON-modal, which invites the user to Shift+Tab
+   * back to the grid while one is open. The guards below used to return
+   * unconditionally on `isOpen`, so every arrow, Enter and Escape in the grid
+   * was swallowed and the widget read as broken (audit M12). Claiming keys only
+   * when focus is actually inside the panel fixes that without weakening the
+   * Escape arbitration, which is the reason the guards exist.
+   */
+  private eventInsidePanel(e: Event, selector: string): boolean {
+    const path = e.composedPath?.() ?? [];
+    const panel = this.shadowRoot?.querySelector(selector);
+    if (!panel) return false;
+    return path.includes(panel);
+  }
+
   private handleKeyDown(e: KeyboardEvent): void {
+    // The row-actions panel owns the keyboard while it is open, on the same
+    // terms as the two dialogs below.
+    if (this.rowMenuOverlay.isOpen) {
+      if (e.key === 'Escape' && this.rowMenuOverlay.isTopmost) {
+        e.preventDefault();
+        e.stopPropagation();
+        this.closeRowMenu();
+        return;
+      }
+      if (this.eventInsidePanel(e, '.scheduler-row-panel')) return;
+    }
     // The popover owns the keyboard while it is open. Escape especially: this
     // listener sits on the host and therefore runs BEFORE the controller's
     // document-level one, so without this the selection would be cleared and the
@@ -2562,8 +2633,10 @@ export class MpScheduler extends LitElement {
         e.preventDefault();
         e.stopPropagation();
         this.closeDayPopover();
+        return;
       }
-      return;
+      // Only while focus is inside it — see eventInsidePanel (audit M12).
+      if (this.eventInsidePanel(e, '.scheduler-day-popover')) return;
     }
     // Same rule for the event editor — and it is the one that needs the
     // `isTopmost` guard: the editor CONTAINS `<mp-datetime-picker>`s, each of
@@ -2579,8 +2652,12 @@ export class MpScheduler extends LitElement {
         e.preventDefault();
         e.stopPropagation();
         this.closeEventEditor();
+        return;
       }
-      return;
+      // Only while focus is inside it — see eventInsidePanel (audit M12). The
+      // editor's own inputs are covered, including the pickers in its shadow
+      // roots, because composedPath crosses the boundary.
+      if (this.eventInsidePanel(e, '.scheduler-event-editor')) return;
     }
 
     // Move-mode owns every key while active so arrows/Enter/Esc go to it.
@@ -2594,6 +2671,12 @@ export class MpScheduler extends LitElement {
       this.dragManager.cancel();
       return;
     }
+
+    // The row's actions trigger owns its own keys while focused.
+    const trigger = (e.composedPath?.()[0] as HTMLElement | undefined)?.closest?.(
+      '.scheduler-row-menu-button',
+    ) as HTMLElement | null;
+    if (trigger && this.handleRowTriggerKeyDown(e, trigger)) return;
 
     // Alt+letter view shortcuts work from any focus (PRD D2). Bare letters
     // are no longer hot-keys — that frees them for future input surfaces.
@@ -2873,10 +2956,23 @@ export class MpScheduler extends LitElement {
         e.preventDefault();
         timelineLayout ? this.moveCellByResource(+1, shift) : this.moveCellByTime(+1, shift);
         break;
-      case 'ArrowLeft':
+      case 'ArrowLeft': {
         e.preventDefault();
-        timelineLayout ? this.moveCellByTime(-1, shift) : this.moveCellByDay(-1, shift);
+        if (!timelineLayout) {
+          this.moveCellByDay(-1, shift);
+          break;
+        }
+        // At the row's first slot, ArrowLeft leaves the time axis and enters the
+        // row header — the only way a keyboard user can reach the row's actions,
+        // since the trigger is deliberately not a Tab stop. Detected by moving
+        // and seeing whether the clamp held, rather than by recomputing the
+        // window's bounds here.
+        const before = this.stateManager.getState().focusedCell?.start.getTime();
+        this.moveCellByTime(-1, shift);
+        const after = this.stateManager.getState().focusedCell?.start.getTime();
+        if (before !== undefined && before === after && !shift) this.focusRowTrigger();
         break;
+      }
       case 'ArrowRight':
         e.preventDefault();
         timelineLayout ? this.moveCellByTime(+1, shift) : this.moveCellByDay(+1, shift);

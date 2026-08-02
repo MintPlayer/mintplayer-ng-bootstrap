@@ -197,3 +197,113 @@ describe('mp-scheduler — the trigger states what it does', () => {
     expect(['rgb(0, 0, 0)', 'rgb(255, 255, 255)']).toContain(btn.style.color);
   });
 });
+
+describe('mp-scheduler — reaching the panel without a mouse (M7)', () => {
+  function firstSlot(el: MpScheduler, resourceId: string): HTMLElement {
+    return el.shadowRoot!.querySelector<HTMLElement>(
+      `.scheduler-timeline-slot[data-resource-id="${resourceId}"]`,
+    )!;
+  }
+
+  function key(el: MpScheduler, k: string, target?: HTMLElement): void {
+    (target ?? el).dispatchEvent(
+      new KeyboardEvent('keydown', { key: k, bubbles: true, composed: true }),
+    );
+  }
+
+  it('ArrowLeft from the first slot in a row moves focus onto the trigger', async () => {
+    const el = await mount(ALL);
+    const slot = firstSlot(el, 'alice');
+    slot.focus();
+    // Land on the first slot of the visible window, then try to go further.
+    key(el, 'Home');
+    await (el as unknown as { updateComplete: Promise<void> }).updateComplete;
+    key(el, 'ArrowLeft');
+    await (el as unknown as { updateComplete: Promise<void> }).updateComplete;
+
+    expect(el.shadowRoot!.activeElement).toBe(trigger(el, 'alice'));
+  });
+
+  it('Enter on the trigger opens the panel', async () => {
+    const el = await mount(ALL);
+    const btn = trigger(el, 'alice')!;
+    btn.focus();
+    key(el, 'Enter', btn);
+    await (el as unknown as { updateComplete: Promise<void> }).updateComplete;
+    await nextRaf();
+
+    expect(el.shadowRoot!.querySelector('.scheduler-row-panel')).not.toBeNull();
+  });
+
+  it('ArrowRight hands focus back to the grid', async () => {
+    const el = await mount(ALL);
+    const slot = firstSlot(el, 'alice');
+    slot.focus();
+    key(el, 'Home');
+    await (el as unknown as { updateComplete: Promise<void> }).updateComplete;
+    key(el, 'ArrowLeft');
+    await (el as unknown as { updateComplete: Promise<void> }).updateComplete;
+
+    const btn = trigger(el, 'alice')!;
+    key(el, 'ArrowRight', btn);
+    await (el as unknown as { updateComplete: Promise<void> }).updateComplete;
+
+    expect(el.shadowRoot!.activeElement).not.toBe(btn);
+  });
+
+  it('Escape closes the panel and returns focus to the trigger', async () => {
+    const el = await mount(ALL);
+    await open(el, 'alice');
+    key(el, 'Escape');
+    await (el as unknown as { updateComplete: Promise<void> }).updateComplete;
+    await nextRaf();
+
+    expect(el.shadowRoot!.querySelector('.scheduler-row-panel')).toBeNull();
+    expect(trigger(el, 'alice')!.getAttribute('aria-expanded')).toBe('false');
+  });
+
+  it('a contextmenu on the resource cell opens the panel for that row', async () => {
+    const el = await mount(ALL);
+    const cell = el.shadowRoot!.querySelectorAll('.scheduler-resource-cell')[1] as HTMLElement;
+
+    const ev = new PointerEvent('contextmenu', {
+      bubbles: true,
+      composed: true,
+      cancelable: true,
+      pointerType: 'mouse',
+      button: 2,
+    });
+    cell.dispatchEvent(ev);
+    await (el as unknown as { updateComplete: Promise<void> }).updateComplete;
+    await nextRaf();
+
+    // Right-click a row for its actions: what a desktop user tries first.
+    expect(el.shadowRoot!.querySelector('.scheduler-row-panel')).not.toBeNull();
+    expect(ev.defaultPrevented).toBe(true);
+  });
+});
+
+describe('mp-scheduler — a non-modal panel does not swallow the grid (audit M12)', () => {
+  it('leaves grid arrow keys working while the panel is open', async () => {
+    const el = await mount(ALL);
+    const slot = el.shadowRoot!.querySelector<HTMLElement>(
+      '.scheduler-timeline-slot[data-resource-id="alice"]',
+    )!;
+    slot.focus();
+    el.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowRight', bubbles: true }));
+    await (el as unknown as { updateComplete: Promise<void> }).updateComplete;
+    const moved = (el as unknown as { stateManager: { getState(): { focusedCell: { start: Date } | null } } })
+      .stateManager.getState().focusedCell?.start.getTime();
+
+    await open(el, 'alice');
+    // Focus is back in the grid while the panel stays open — exactly what a
+    // NON-modal dialog invites. Every key used to be swallowed here.
+    slot.focus();
+    el.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowRight', bubbles: true }));
+    await (el as unknown as { updateComplete: Promise<void> }).updateComplete;
+    const movedAgain = (el as unknown as { stateManager: { getState(): { focusedCell: { start: Date } | null } } })
+      .stateManager.getState().focusedCell?.start.getTime();
+
+    expect(movedAgain).toBeGreaterThan(moved!);
+  });
+});
