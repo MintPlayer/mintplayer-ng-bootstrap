@@ -42,6 +42,7 @@ strand: it found **three blockers**, none of which this feature would otherwise 
 | R6 | The date is readable only when the centre of the day cell is on screen — anchor it to the edge | **confirmed** — `text-align: center` in a 2400px box (§3.3) |
 | R7 | Localize as much as possible — the browser does this natively. Dutch should read "ma 27 okt" | **~95% already built**; the dates are pinned by one default (§3.4) |
 | R8 | Re-audit blind-user accessibility | **3 blockers, 12 majors** (§8) |
+| R11 | The "Resources" corner cell and the one below it should stick to the left like the add bar | **confirmed — a CSS override bug** (§17) |
 | R10 | The scheduler scrolls back to (0,0) whenever its data/state changes | **confirmed and narrower than reported** — *resource* changes reset it, event changes do not; measured in Chromium (§16) |
 | R9 | **Regression from #396**: on a smartphone, press-and-hold on an event used to drag it. Since the `contextmenu` handler shipped, the long-press opens the editor instead and touch users cannot drag at all | **confirmed, root cause found, small fix** — the browser's ~500ms long-press beats the scheduler's 600ms hold by ~100ms (§13) |
 
@@ -991,3 +992,50 @@ container. Two details:
 
 Over-restoring is safe — assigning past the new content's extent is clamped by the browser, so
 a view that got shorter simply lands at its own end.
+
+## 17. The two corner header cells were never sticky (R11)
+
+Both `.scheduler-resource-header` cells — "Resources" and the empty one below it in the
+time-label row — already declared `position: sticky; left: 0; z-index: $z-sticky-column`. They
+still scrolled away, and measurement said why: they computed to **`position: relative`**.
+
+A second rule 100 lines further down re-declared the same class:
+
+```scss
+/* Resource-column resize separator (R15) … Inside the sticky corner cell, so it
+   pins with the column it resizes. */
+.scheduler-resource-header { position: relative; }
+```
+
+Same specificity, later in the file, so `relative` won and silently un-stuck both cells. The
+comment above it asserts the opposite — the author believed the cell was sticky and was
+declaring `relative` only so the absolutely-positioned resizer had a containing block.
+
+**It was never needed.** `position: sticky` is itself a positioned value and already
+establishes the containing block an absolutely-positioned child wants. Deleting the override
+restores the stickiness with no effect on the resizer.
+
+Measured in Chromium, scrolled to `scrollLeft: 3000`, scrollport edge at 30px:
+
+| Element | Before | After |
+|---|---|---|
+| "Resources" corner cell | −2370 | **30** |
+| time-label row's empty cell | −2370 | **30** |
+| first resource row cell | 30 | 30 |
+| add bar | 30 | 30 |
+
+The two header cells now hold the same 30px as the body rows and the add bar, which is what
+R11 asked for.
+
+### 17.1 Found alongside it: a runtime language change only half-reached the header
+
+Exercising the new language switch showed the title translating while the buttons did not.
+The header chrome is built imperatively once, in `firstUpdated`, so its text froze at whatever
+`options.messages` held then — `updateTitle` ran on every state change and nothing re-applied
+the button labels. `applyHeaderLabels()` now runs beside it. Eight string assignments; cheap
+enough to redo unconditionally.
+
+Verified live: switching to `nl-BE` turns the buttons into Vandaag / Jaar / Maand / Dag /
+Tijdlijn. Switching to `ja-JP` renders the title as `2026/08/02～2026/08/08` — a *different
+week*, because `ja-JP` starts on Sunday — while the buttons fall back to English, since the
+demo ships only a Dutch table. That fallback is the contract working, not a gap.

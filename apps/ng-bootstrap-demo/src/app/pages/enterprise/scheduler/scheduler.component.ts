@@ -110,6 +110,15 @@ export class SchedulerComponent {
     editorEndLabel: 'Einde',
   };
 
+  /** '' from the select means "unset" — i.e. follow the browser. */
+  setLocale(value: string): void {
+    this.locale.set(value || undefined);
+  }
+
+  setTimeFormat(value: string): void {
+    this.timeFormat.set((value || undefined) as '12h' | '24h' | undefined);
+  }
+
   // Options computed from signals
   options = computed<Partial<SchedulerOptions>>(() => ({
     slotDuration: this.slotDuration(),

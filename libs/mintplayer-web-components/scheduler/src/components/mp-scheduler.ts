@@ -2139,6 +2139,45 @@ export class MpScheduler extends LitElement {
     this.previousRangeKey = rangeKey;
   }
 
+  /**
+   * Re-apply the header's localized labels.
+   *
+   * The chrome is built imperatively once, in `firstUpdated`, so its button text
+   * froze at whatever `options.messages` held at that moment. The TITLE updated
+   * on every state change and the buttons did not, so switching language at
+   * runtime produced a half-translated header — Dutch dates over English
+   * buttons. Cheap enough to redo unconditionally: eight string assignments.
+   */
+  private applyHeaderLabels(): void {
+    const root = this.shadowRoot;
+    if (!root) return;
+
+    const nav = root.querySelector('.scheduler-nav');
+    nav?.setAttribute('aria-label', this.msg('navLabel'));
+
+    const navButtons = nav?.querySelectorAll('button');
+    const [prevBtn, nextBtn, todayBtn] = navButtons ? [...navButtons] : [];
+    if (prevBtn) {
+      prevBtn.setAttribute('aria-label', this.msg('previousPeriod'));
+      prevBtn.title = this.msg('previousPeriod');
+    }
+    if (nextBtn) {
+      nextBtn.setAttribute('aria-label', this.msg('nextPeriod'));
+      nextBtn.title = this.msg('nextPeriod');
+    }
+    if (todayBtn) {
+      todayBtn.textContent = this.msg('today');
+      todayBtn.setAttribute('aria-label', this.msg('jumpToToday'));
+    }
+
+    const switcher = root.querySelector('.scheduler-view-switcher');
+    switcher?.setAttribute('aria-label', this.msg('switchView'));
+    switcher?.querySelectorAll<HTMLElement>('button[data-view]').forEach((btn) => {
+      const key = btn.dataset['view'] as ViewType | undefined;
+      if (key) btn.textContent = this.viewLabel(key);
+    });
+  }
+
   private updateUI(state: SchedulerState): void {
     // Nothing to update before the shadow root exists, and this runs then: an
     // attribute set between `createElement` and `append` — completely idiomatic,
@@ -2150,6 +2189,7 @@ export class MpScheduler extends LitElement {
     if (!this.shadowRoot) return;
 
     this.updateTitle();
+    this.applyHeaderLabels();
 
     // Update view switcher active state — visual class + aria-pressed in lockstep.
     const buttons = this.shadowRoot!.querySelectorAll('.scheduler-view-switcher button');

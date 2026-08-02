@@ -1133,10 +1133,15 @@ $z-event-selected: 2;    // selected event: its straddling handles must win
 
 /* Resource-column resize separator (R15): the WAI-ARIA window splitter on the
    corner header's right edge. Inside the sticky corner cell, so it pins with
-   the column it resizes. */
-.scheduler-resource-header {
-  position: relative;
-}
+   the column it resizes.
+
+   NOTE: this block used to re-declare `.scheduler-resource-header { position:
+   relative }` so the absolutely-positioned resizer below had a containing block.
+   That silently un-stuck BOTH corner cells — same specificity as the sticky
+   declaration above, later in the file, so `relative` won — and the two header
+   cells scrolled away with the grid while every body row stayed pinned. It was
+   never needed: `position: sticky` is itself a positioned value and already
+   establishes the containing block the resizer wants. */
 
 .scheduler-column-resizer {
   position: absolute;

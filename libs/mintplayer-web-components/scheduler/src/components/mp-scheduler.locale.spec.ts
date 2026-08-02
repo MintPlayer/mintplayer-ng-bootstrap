@@ -152,3 +152,28 @@ describe('mp-scheduler — attributes before connection (robustness)', () => {
     expect(dayHeaders(el)[0].toLowerCase()).toContain('jul');
   });
 });
+
+describe('mp-scheduler — a runtime language change reaches the header (R7)', () => {
+  it('re-labels the header buttons when options.messages changes', async () => {
+    const el = await mount('en-US');
+    const labels = () =>
+      [...el.shadowRoot!.querySelectorAll('.scheduler-nav button, .scheduler-view-switcher button')]
+        .map((b) => b.textContent!.trim())
+        .filter(Boolean);
+
+    expect(labels()).toContain('Today');
+
+    // The header chrome is built once in firstUpdated, so its text used to freeze
+    // at whatever messages held then: the title translated on every state change
+    // and the buttons did not, giving a half-translated header.
+    (el as unknown as { options: unknown }).options = {
+      messages: { today: 'Vandaag', viewMonth: 'Maand' },
+    };
+    await (el as unknown as { updateComplete: Promise<void> }).updateComplete;
+    await nextRaf();
+
+    expect(labels()).toContain('Vandaag');
+    expect(labels()).toContain('Maand');
+    expect(labels()).not.toContain('Today');
+  });
+});

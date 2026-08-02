@@ -23,6 +23,7 @@ Not pushed, no PR opened. Milestone status below; deviations and open items in P
 | M10 — spec coverage | done for everything shipped |
 | M11 — batched sweep | done |
 | M12 — scroll survives a rebuild (R10) | done — reproduced and re-verified in Chromium (PRD §16) |
+| M13 — corner cells stick (R11) | done — a duplicate rule was overriding `sticky` with `relative` (PRD §17) |
 
 **A note for whoever picks this up:** `tsc -p libs/mintplayer-web-components/tsconfig.json`
 checks NOTHING — it is a solution-style config with empty `files`/`include`. Use
@@ -542,3 +543,25 @@ scroller alone. See PRD §16 for the table.
       contract, and the clamp itself was verified in a real browser.
 - [ ] **Not covered anywhere automated:** that the restore is invisible to the eye (no flash of
       offset-0 content before the rAF lands). Worth a look during the device pass.
+
+
+## M13 — The corner header cells stick to the left [R11, PRD §17]
+
+- [x] Delete the duplicate `.scheduler-resource-header { position: relative }` in the resizer
+      block. Same specificity as the sticky declaration above it and later in the file, so it
+      won and un-stuck both corner cells — while its own comment claimed they were sticky. It
+      was never needed: `position: sticky` already establishes the containing block the
+      absolutely-positioned resizer wants.
+- [x] Verified in Chromium at `scrollLeft: 3000`: both header cells hold 30px, matching the
+      body rows and the add bar. Previously −2370.
+- [x] **Also fixed here:** the header's button labels froze at first render, so a runtime
+      `messages` change produced a half-translated header (Dutch title, English buttons).
+      `applyHeaderLabels()` runs alongside `updateTitle`.
+- [x] Demo: the Language and Time-format selects rendered blank, because mixing `[ngValue]`
+      on one option with plain `value` attributes on the rest leaves Angular's select CVA
+      unable to map the model. Plain string values throughout, with `''` as the "unset"
+      sentinel — the pattern every other select on the page already used.
+
+**Not covered by a spec:** the sticky offsets themselves. jsdom does not lay out, so
+`getBoundingClientRect` is all zeroes there and a sticky assertion would pass against any
+CSS. This one is browser-verified only, like the spike results in PRD §14.
