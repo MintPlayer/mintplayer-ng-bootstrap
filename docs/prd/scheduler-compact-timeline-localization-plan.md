@@ -651,3 +651,16 @@ reading, because the failures were positional:
   pre-existing flakiness, not touched.
 
 Chromium: **200 passed, 1 skipped.** Firefox and the axe gate are left to CI.
+
+
+## M18 — The axe gate now covers what this PR added
+
+The gate passed while scanning nothing this PR introduced: its scheduler interaction loaded
+sample data and selected an event in **week** view, so the row trigger
+(`aria-haspopup`/`aria-expanded` inside a `rowheader`) and the panel (`role="dialog"` owning a
+native colour input) were never audited — the surfaces R8 exists for.
+
+- [x] The interaction switches to the timeline, grants the resource capabilities (the trigger
+      is absent without them, by design) and opens a row's panel before scanning.
+- [x] 34 axe tests pass with the panel open, so the new ARIA is clean AND guarded rather than
+      merely unexamined.

@@ -57,9 +57,50 @@ axeAuditSuite(test, expect, [
     },
     // Select an event so the audit sees the SELECTED state — the revealed
     // resize glyphs/strips are gated on it (wcag22aa target-size applies).
+    // Then move to the TIMELINE and open a row's actions panel: the trigger
+    // (aria-haspopup/-expanded inside a rowheader) and the panel itself
+    // (role=dialog owning a native colour input) are the surfaces this gate
+    // previously never reached, because it only ever scanned week view.
     interact: async (page) => {
       await page.getByRole('button', { name: 'Load Sample Data' }).click();
       await page.getByRole('button', { name: /Lunch & Learn/ }).click();
+
+      await page.evaluate(() => {
+        const sched = document.querySelector('mp-scheduler') as HTMLElement & {
+          options?: unknown;
+        };
+        sched.shadowRoot!
+          .querySelector<HTMLElement>('.scheduler-view-switcher button[data-view="timeline"]')
+          ?.click();
+        // The resource-tree capabilities are off by default, and the trigger is
+        // absent without them — grant them so there is a panel to audit.
+        sched.options = {
+          permissions: {
+            createResource: true,
+            createGroup: true,
+            updateResource: true,
+            deleteResource: true,
+          },
+        };
+      });
+      await page.waitForFunction(
+        () =>
+          !!document
+            .querySelector('mp-scheduler')!
+            .shadowRoot!.querySelector('.scheduler-row-menu-button'),
+      );
+      await page.evaluate(() => {
+        document
+          .querySelector('mp-scheduler')!
+          .shadowRoot!.querySelector<HTMLElement>('.scheduler-row-menu-button')!
+          .click();
+      });
+      await page.waitForFunction(
+        () =>
+          !!document
+            .querySelector('mp-scheduler')!
+            .shadowRoot!.querySelector('.scheduler-row-panel'),
+      );
     },
   },
   {
