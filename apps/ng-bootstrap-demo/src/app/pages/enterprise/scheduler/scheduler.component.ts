@@ -108,6 +108,17 @@ export class SchedulerComponent {
     editorTitleLabel: 'Titel',
     editorStartLabel: 'Begin',
     editorEndLabel: 'Einde',
+    openDayView: '{date} openen',
+    // The keymap a screen reader reads out. Per-view, because the keys really
+    // do differ: in year view Enter opens the focused month rather than
+    // creating anything, and Space is the only route to the popover in both
+    // month and year.
+    gridInstructionsMonth:
+      'Gebruik de pijltjestoetsen om tussen dagen te bewegen. Druk op Enter om een nieuw item op de gefocuste dag aan te vragen, en op de spatiebalk om de items van die dag te tonen. Page Up en Page Down wijzigen de maand. Alt met T, Y, M, W of D schakelt naar vandaag, jaar, maand, week of dag.',
+    gridInstructionsMonthReadOnly:
+      'Gebruik de pijltjestoetsen om tussen dagen te bewegen. Druk op de spatiebalk om de items van de gefocuste dag te tonen. Page Up en Page Down wijzigen de maand. Alt met T, Y, M, W of D schakelt naar vandaag, jaar, maand, week of dag.',
+    gridInstructionsYear:
+      'Gebruik de pijltjestoetsen om tussen maanden te bewegen. Druk op Enter om de gefocuste maand te openen, en op de spatiebalk om de items ervan te tonen. Page Up en Page Down wijzigen het jaar. Alt met T, Y, M, W of D schakelt naar vandaag, jaar, maand, week of dag.',
   };
 
   /**
