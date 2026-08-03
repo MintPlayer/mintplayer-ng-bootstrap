@@ -650,7 +650,51 @@ reading, because the failures were positional:
 - One editor spec fails only under parallel load and passes repeatedly in isolation;
   pre-existing flakiness, not touched.
 
-Chromium: **200 passed, 1 skipped.** Firefox and the axe gate are left to CI.
+Chromium: **200 passed, 1 skipped.** That was not the end of it — see M17b.
+
+## M17b — The second CI round: a time bomb, a locale, and a viewport [CI]
+
+The next run failed at **Unit tests**, so e2e never ran and the first round's fixes were
+still unproven in CI. Four more things, in the order they surfaced:
+
+- **A date-dependent spec of mine.** `expected 'ma 3 aug' to contain 'jul'`. The
+  pre-connection robustness test built its own element and never pinned `date`, so it
+  rendered the CURRENT week: it passed in the week of 27 July and broke the moment the month
+  rolled over. Nothing to do with CI's environment — it would have failed here a day later.
+  It now pins `date` before connection, which also strengthens the claim it makes (a
+  PROPERTY set between `createElement` and `append` is honoured, not just attributes).
+  The other `new Date()` uses in these specs — Alt+T jumps to today, `isToday` — are
+  legitimately about the current date and were left alone.
+- **The e2e suite now pins `locale: 'en-US'`.** The scheduler derives its formatting AND its
+  week start from the locale, so an unpinned run behaves differently per machine: a Belgian
+  dev gets a Monday-start week, CI's `en-US` gets Sunday, and a failure reproduces on exactly
+  one of them. This is the e2e counterpart of the locale pinning the unit specs already do,
+  and it is what finally made the CI failure reproducible locally.
+- **Drags are driven from the element now, not from computed coordinates.** The demo grew a
+  Language select, the grid moved down, and the slots measured BELOW the fold — `y=751` in a
+  720px viewport. `page.mouse` only lands on points that are on screen, so the press reached
+  nothing and the drag silently did not happen. There was no scroll offset to subtract:
+  `boundingBox()` is already viewport-relative (`offsetTop` is the document-relative one, and
+  *that* would have needed it). `slotPoint` does the only two things required —
+  `scrollIntoViewIfNeeded()` then `boundingBox()` — and `showSlot` delegates to it, so every
+  drag in the file inherits the fix. Stepped `mouse.move` is kept on purpose: `hover()` jumps
+  in one go, which crosses the drag threshold but does not read as travel, so the extent
+  stops a day short.
+- **One drag no longer depends on the sample data.** Its slots were chosen for being empty,
+  which only held while the week started on Monday; the sample events are seeded relative to
+  the current week, so a Sunday-start locale slid them underneath and turned a create-drag
+  into a move. It clears via the demo's own Clear button first — `events = []` is not enough,
+  because the demo also nests events under `resources` and the component merges both sources.
+
+**Unrelated fix carried along:** `tools/e2e-shared/carousel-suites.ts` had a pre-existing type
+error. Those suites are generic over `Test = typeof testBase`, and through that alias TS
+resolves `use()` to a `Fixtures<{}, {}, …>` that does not admit built-in options like
+`reducedMotion`, even though Playwright accepts it at runtime. Cast at the call site;
+narrowing the alias would ripple through every suite in the file.
+
+Verified locally under `en-US`: **23 scheduler e2e**, **34 axe** (now opening the row panel),
+**22 firefox scheduler e2e**, 1610 + 533 unit, and all three tsconfigs — lib, spec and e2e.
+The full chromium sweep at that locale and the production build are left to CI.
 
 
 ## M18 — The axe gate now covers what this PR added

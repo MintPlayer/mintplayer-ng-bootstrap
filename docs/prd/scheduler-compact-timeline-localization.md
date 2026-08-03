@@ -3,8 +3,8 @@
 Status: **Implemented** on `feat/scheduler-compact-timeline-i18n` (2026-08-02), branched
 from `master` at `a66f4439` (PR
 [#396](https://github.com/MintPlayer/mintplayer-ng-bootstrap/pull/396), phase 2).
-Twenty-one commits; **1610 web-components tests + 533 ng-bootstrap tests green**, plus
-**200 chromium e2e, 22 firefox scheduler e2e and 34 axe** green locally; all library
+Twenty-four commits; **1610 web-components + 533 ng-bootstrap tests**, plus **23 scheduler
+e2e and 34 axe under `en-US`** and **22 firefox scheduler e2e** green locally; all library
 builds and the Angular demo build clean, both real tsconfigs clean.
 See §15 for what shipped and what is deliberately left; §16–§20 cover the five defects found
 by review after the first sweep.
@@ -893,7 +893,7 @@ should be treated as an optimisation over the tracked value, never as the sole s
 
 ## 15. As built
 
-Twenty-one commits on `feat/scheduler-compact-timeline-i18n`. Everything in §2 shipped except
+Twenty-four commits on `feat/scheduler-compact-timeline-i18n`. Everything in §2 shipped except
 where noted below. R10–R14 were reported during review, after the first full sweep, and are
 written up in §16–§20.
 
@@ -967,6 +967,12 @@ Two more surfaced while verifying those and are fixed in the same commits: a run
   text), M9 (day-number drill-down has no keyboard equivalent in week/day), M10 (`adjacentRow`
   filters `isResource`, so group rows are skipped by vertical arrow nav), M11 (the column
   resizer is a `separator` inside the grid).
+- **Locale-derived behaviour makes tests machine-dependent, and that had to be pinned in two
+  places.** Deriving formatting and the week start from the locale (D9–D12) means an
+  unpinned test asserts whatever regional settings the machine happens to have: these specs
+  passed in Belgium and failed in CI purely because one starts weeks on Monday and the other
+  on Sunday. Every scheduler unit spec pins a locale, and so does the Playwright config.
+  Anyone adding a spec here should assume the same.
 - **The axe gate now opens the row panel** (M18). It was green while scanning none of this
   PR's ARIA, because its scheduler interaction only ever visited week view — a gate that does
   not look at the new surface is worse than no gate.
