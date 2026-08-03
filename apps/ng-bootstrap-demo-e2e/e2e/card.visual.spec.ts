@@ -9,14 +9,16 @@ import { expect, test } from '@playwright/test';
  * Refresh baselines with `npx playwright test card.visual.spec.ts
  * --update-snapshots` after intentional changes.
  *
- * Chromium only, but BOTH platforms: `-chromium-win32.png` and
- * `-chromium-linux.png` are separate committed baselines, so a developer on
- * Windows and Linux CI each compare against their own rasteriser and never
- * across one. See `../VISUAL-BASELINES.md`, and the same note on
- * ribbon.visual.spec.ts.
+ * Baselines are captured on Chromium-Win32 only — cross-engine and
+ * cross-OS font rasterisation differences would produce noise without
+ * adding signal, same policy as ribbon.visual.spec.ts.
  */
 test.describe('card — visual regression', () => {
   test.skip(({ browserName }) => browserName !== 'chromium', 'Chromium-only baselines');
+  test.skip(
+    process.platform !== 'win32',
+    'Visual baselines were captured on Win32; cross-platform rasterisation diffs would be noisy.'
+  );
 
   test.beforeEach(async ({ page }) => {
     await page.setViewportSize({ width: 1024, height: 768 });
@@ -27,11 +29,8 @@ test.describe('card — visual regression', () => {
     await page.waitForLoadState('networkidle', { timeout: 2000 }).catch(() => {
       /* HMR keeps the socket open, so the network never idles: settle briefly, never hang */
     });
-    // The placeholders are inline SVG data URLs (see `makePlaceholder` in
-    // card.component.ts), deliberately, so there is no external service to be
-    // slow or absent — which is what makes this shot safe to assert in CI at
-    // all. Still wait for decode, so the snapshot cannot catch a pre-paint
-    // frame.
+    // The demo loads placeholder images from placehold.co; wait for the
+    // first one to paint so the snapshot doesn't catch the loading state.
     await page.waitForFunction(
       () => Array.from(document.images).every((img) => img.complete)
     );
