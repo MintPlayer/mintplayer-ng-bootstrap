@@ -3,7 +3,8 @@
 Status: **Implemented** on `feat/scheduler-compact-timeline-i18n` (2026-08-02), branched
 from `master` at `a66f4439` (PR
 [#396](https://github.com/MintPlayer/mintplayer-ng-bootstrap/pull/396), phase 2).
-Nineteen commits; **1610 web-components tests + 533 ng-bootstrap tests green**, all library
+Twenty-one commits; **1610 web-components tests + 533 ng-bootstrap tests green**, plus
+**200 chromium e2e, 22 firefox scheduler e2e and 34 axe** green locally; all library
 builds and the Angular demo build clean, both real tsconfigs clean.
 See §15 for what shipped and what is deliberately left; §16–§20 cover the five defects found
 by review after the first sweep.
@@ -892,7 +893,7 @@ should be treated as an optimisation over the tracked value, never as the sole s
 
 ## 15. As built
 
-Nineteen commits on `feat/scheduler-compact-timeline-i18n`. Everything in §2 shipped except
+Twenty-one commits on `feat/scheduler-compact-timeline-i18n`. Everything in §2 shipped except
 where noted below. R10–R14 were reported during review, after the first full sweep, and are
 written up in §16–§20.
 
@@ -966,6 +967,9 @@ Two more surfaced while verifying those and are fixed in the same commits: a run
   text), M9 (day-number drill-down has no keyboard equivalent in week/day), M10 (`adjacentRow`
   filters `isResource`, so group rows are skipped by vertical arrow nav), M11 (the column
   resizer is a `separator` inside the grid).
+- **The axe gate now opens the row panel** (M18). It was green while scanning none of this
+  PR's ARIA, because its scheduler interaction only ever visited week view — a gate that does
+  not look at the new surface is worse than no gate.
 - **Overlay positioning and sticky offsets have no automated coverage.** jsdom does not lay
   out, so `getBoundingClientRect` is all zeroes and any such assertion would pass against
   broken CSS — including the exact bugs R11 and R13 turned out to be. The specs assert the
@@ -1011,11 +1015,20 @@ also made this defect routine.
 ### 16.4 Fix
 
 `BaseView.clearContainer()` captures `scrollLeft`/`scrollTop` before emptying and restores them
-in a `requestAnimationFrame`, by which point the synchronous render has repopulated the
-container. Two details:
+in a **`queueMicrotask`**. Three details, the first of which cost a CI run:
 
-- **Captured only when no restore is already pending.** Two rebuilds in one frame would
-  otherwise have the second capture the `0` the first just caused, and restore that.
+- **A microtask, NOT a frame.** `render()` finishes synchronously after `clearContainer`, so a
+  queued restore lands once the container is repopulated but still before the browser paints,
+  and the offset never visibly passes through 0. The first implementation used
+  `requestAnimationFrame`, which left exactly that window open — and it was observable: a
+  caller that scrolls an element into view and then measures it (every drag gesture in the e2e
+  suite does this) could have the grid slide back underneath the coordinates it had just
+  recorded, so the press landed on the wrong element and the drag never armed. Three e2e specs
+  failed on that, and the component looked innocent in every manual reproduction because a
+  human never measures and clicks inside one frame.
+- **A deliberate scroll always wins.** The restore is skipped if the offset has moved since the
+  wipe — compared against what the browser clamped to when the content vanished. Restoring
+  unconditionally would yank a user back who had scrolled during a refresh.
 - **A view SWITCH still lands at the top-left.** `renderView` zeroes the scroller before
   constructing the new view when the view type actually changed, so the view captures `0` and
   restores `0`. Keeping the rule in one place beats threading a flag through: the view restores
