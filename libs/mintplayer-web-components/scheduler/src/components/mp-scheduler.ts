@@ -2862,18 +2862,33 @@ export class MpScheduler extends LitElement {
     if (active.classList.contains('day-number')) {
       const dateStr = active.dataset['date'];
       if (!dateStr) return false;
-      this.stateManager.setDate(this.parseDayKey(dateStr));
-      this.stateManager.setView('day');
+      this.drillTo(this.parseDayKey(dateStr), 'day');
       return true;
     }
     if (active.classList.contains('scheduler-year-month-header')) {
       const monthStr = active.dataset['month'];
       if (!monthStr) return false;
-      this.stateManager.setDate(this.parseDayKey(monthStr));
-      this.stateManager.setView('month');
+      this.drillTo(this.parseDayKey(monthStr), 'month');
       return true;
     }
     return false;
+  }
+
+  /**
+   * Drill into `view` at `date` from a control that the resulting rebuild will
+   * destroy — which is every drill-down control, by definition.
+   *
+   * The focus restore has to happen HERE rather than being left to the view
+   * switch. `setDate` rebuilds the current view first, and that rebuild already
+   * drops focus to `<body>`; by the time the switch looks for something worth
+   * restoring, there is nothing focused inside the widget and it correctly
+   * declines to steal focus from wherever it went. So the switch's own
+   * restoration can never cover this path.
+   */
+  private drillTo(date: Date, view: ViewType): void {
+    this.stateManager.setDate(date);
+    this.stateManager.setView(view);
+    this.focusFocusedCell();
   }
 
   private getFocusedKind(): 'cell' | 'event' | 'other' {
@@ -3617,11 +3632,29 @@ export class MpScheduler extends LitElement {
   }
 
   /** Re-focus whatever cell the keyboard model currently considers focused. */
+  /**
+   * Put focus back inside the grid after a rebuild or a view switch.
+   *
+   * The fallback is the point. `focusedCell` is null whenever the user never
+   * entered the grid, and after a view switch it can name a cell the new view
+   * does not render — in both cases this used to do nothing at all and focus
+   * stayed on `<body>`. That is reachable from every drill-down control (the
+   * week day-number, the more-link, the year month-header): activating one
+   * destroys the element the user is standing on by definition, since it
+   * rebuilds the view underneath them.
+   *
+   * Every view promotes exactly one cell to `tabindex="0"` as its roving tab
+   * stop, so that cell is the correct "wherever this view considers current".
+   */
   private focusFocusedCell(): void {
     const state = this.stateManager.getState();
     if (state.focusedCell) {
       this.scrollAndFocusCell(state.focusedCell, state.focusedResourceId);
     }
+    if (this.shadowRoot?.activeElement) return;
+    this.contentContainer
+      ?.querySelector<HTMLElement>('[role="gridcell"][tabindex="0"]')
+      ?.focus();
   }
 
   /**
