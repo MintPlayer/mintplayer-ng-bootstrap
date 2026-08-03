@@ -3348,7 +3348,8 @@ export class MpScheduler extends LitElement {
     if (!f) return;
     if (state.view !== 'timeline') return;
     if (extend) return;
-    const next = this.adjacentRow(state.focusedResourceId, direction, state);
+    // Groups included: they are rows the user can see and click into.
+    const next = this.adjacentRow(state.focusedResourceId, direction, state, true);
     if (next === undefined) return;
     this.commitFocusMove(f, next, false);
   }
@@ -3387,10 +3388,11 @@ export class MpScheduler extends LitElement {
         break;
       }
       case 'timeline': {
-        const flattened = resourceService.flatten(state.resources, state.collapsedGroups);
-        const visible = flattened.filter((f) => f.visible && isResource(f.item));
-        if (visible.length === 0) return;
-        resourceId = end === 'start' ? visible[0].item.id : visible[visible.length - 1].item.id;
+        // The same row list the arrows walk, so Home/End cannot land somewhere
+        // ArrowUp/ArrowDown would never reach.
+        const rows = this.navigableRows(state, true);
+        if (rows.length === 0) return;
+        resourceId = end === 'start' ? rows[0] : rows[rows.length - 1];
         const days = dateService.getWeekDays(state.date, this.firstDayOfWeek());
         const day = end === 'start' ? days[0] : days[6];
         const slots = dateService.getTimeSlots(day, state.options.slotDuration, state.options.slotMinTime, state.options.slotMaxTime);
@@ -3493,14 +3495,9 @@ export class MpScheduler extends LitElement {
     currentId: string | null,
     direction: 1 | -1,
     state: SchedulerState,
+    includeGroups: boolean,
   ): string | null | undefined {
-    const flattened = resourceService.flatten(state.resources, state.collapsedGroups);
-    const rows: (string | null)[] = flattened
-      .filter((f) => f.visible && isResource(f.item))
-      .map((f) => f.item.id);
-    // Same presence rule as TimelineView.hasUnassignedRow: the bucket renders
-    // (last) whenever it holds events.
-    if ((state.eventsByResource.get(null) ?? []).length > 0) rows.push(null);
+    const rows = this.navigableRows(state, includeGroups);
     if (rows.length === 0) return undefined;
     const idx = rows.indexOf(currentId);
     if (idx < 0) return rows[0];
@@ -3509,12 +3506,40 @@ export class MpScheduler extends LitElement {
     return rows[next];
   }
 
+  /**
+   * The rows a keyboard user can land on, in the order the timeline draws them.
+   *
+   * `includeGroups` is the whole difference between navigating and moving.
+   * Arrow keys navigate, and a group row is a real row with real gridcells that
+   * can even hold the grid's only tab stop — skipping it is what made the first
+   * arrow press teleport the user to an unrelated row (audit M10). Move-mode
+   * carries an event with it, and a group row renders no events container, so a
+   * group must never be offered as a destination there.
+   */
+  private navigableRows(state: SchedulerState, includeGroups: boolean): (string | null)[] {
+    const rows: (string | null)[] = resourceService
+      .flatten(state.resources, state.collapsedGroups)
+      .filter((f) => f.visible && (includeGroups || isResource(f.item)))
+      .map((f) => f.item.id);
+    // Same presence rule as TimelineView.hasUnassignedRow: the bucket renders
+    // (last) whenever it holds events.
+    if ((state.eventsByResource.get(null) ?? []).length > 0) rows.push(null);
+    return rows;
+  }
+
+  /**
+   * Title of any row, group rows included. `getAllResources` returns leaves
+   * only by design, so while that was the lookup, arrowing onto a group row
+   * announced the time with no row name at all — swapping M10's teleport for a
+   * silent row rather than fixing it.
+   */
   private getResourceTitle(id: string | null): string | null {
     if (!id) return null;
-    for (const r of resourceService.getAllResources(this.stateManager.getState().resources)) {
-      if (r.id === id) return r.title;
-    }
-    return null;
+    const state = this.stateManager.getState();
+    const match = resourceService
+      .flatten(state.resources, state.collapsedGroups)
+      .find((f) => f.item.id === id);
+    return match?.item.title ?? null;
   }
 
   /**
@@ -3782,7 +3807,13 @@ export class MpScheduler extends LitElement {
   /** Walk to the next/previous row (timeline only). Updates the preview's resourceId. */
   private nudgeKeyboardMoveResource(direction: 1 | -1): void {
     if (!this.keyboardMove) return;
-    const next = this.adjacentRow(this.keyboardMove.workingResourceId, direction, this.stateManager.getState());
+    // Groups excluded: there is no events container on a group row to drop into.
+    const next = this.adjacentRow(
+      this.keyboardMove.workingResourceId,
+      direction,
+      this.stateManager.getState(),
+      false,
+    );
     if (next === undefined) return;
     this.keyboardMove.workingResourceId = next;
     this.applyKeyboardMovePreview();
