@@ -626,3 +626,28 @@ a scheduler bug).
       would have handed rename the wrong id.
 - [x] Four specs: present on both row types, starts the edit and takes focus, emits the new
       title on Enter, absent without `updateResource`.
+
+
+## M17 — E2E fallout, and one real defect it exposed [CI]
+
+The first CI run failed four e2e specs. Diagnosed against the running demo rather than by
+reading, because the failures were positional:
+
+- **`.scheduler-resource-color` no longer exists** — the recolour input moved into the panel
+  (M5). The spec now asserts the same contract at the new location: one trigger per row, each
+  named for its row, and the colour input named per row inside the panel it opens.
+- **A REAL defect in M12.** Restoring the scroll offset in a `requestAnimationFrame` left a
+  frame where the offset visibly passed through 0. Any caller that scrolls an element into
+  view and then measures it — every drag gesture in the suite does exactly this — could have
+  the grid slide back under the coordinates it had just recorded. Now a `queueMicrotask`, so
+  the restore lands after the synchronous render repopulates the container but before paint,
+  and the offset is never observable at 0. The restore is also skipped entirely if the offset
+  has changed since the wipe, which means a deliberate scroll always wins.
+- **The demo grew a control and pushed the timeline below the fold.** The ghost specs measured
+  an event at y=723 in a 720px viewport, so `mouse.move` landed outside the viewport and the
+  drag never armed. They now call `scrollSchedulerIntoView` before measuring, as `showSlot`
+  already did — the layout dependency was incidental, not intended.
+- One editor spec fails only under parallel load and passes repeatedly in isolation;
+  pre-existing flakiness, not touched.
+
+Chromium: **200 passed, 1 skipped.** Firefox and the axe gate are left to CI.

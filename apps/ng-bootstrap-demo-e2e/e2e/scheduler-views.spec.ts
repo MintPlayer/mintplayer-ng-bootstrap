@@ -311,14 +311,32 @@ test.describe('scheduler — timeline (R3, R5, R7)', () => {
       )
       .toBe(rowsBefore + 1);
 
-    // And the recolour control exists for every row, with a per-row name.
+    // Every row has ONE actions trigger, named for its row. The four inline
+    // controls (including the recolour input) moved behind it, so the per-row
+    // naming contract is now asserted on the trigger.
     const labels = await schedulerRoot(page).evaluate((sched) =>
-      Array.from(sched.shadowRoot!.querySelectorAll('.scheduler-resource-color')).map((el) =>
+      Array.from(sched.shadowRoot!.querySelectorAll('.scheduler-row-menu-button')).map((el) =>
         el.getAttribute('aria-label'),
       ),
     );
     expect(labels.length).toBeGreaterThan(1);
     expect(new Set(labels).size).toBe(labels.length);
+
+    // ...and the recolour control still exists, inside the panel that trigger
+    // opens, still named for its own row.
+    await schedulerRoot(page).evaluate((sched) => {
+      sched.shadowRoot!.querySelector<HTMLElement>('.scheduler-row-menu-button')!.click();
+    });
+    await expect
+      .poll(() =>
+        schedulerRoot(page).evaluate(
+          (sched) =>
+            sched.shadowRoot!
+              .querySelector('.scheduler-row-panel .row-color-input')
+              ?.getAttribute('aria-label') ?? null,
+        ),
+      )
+      .toBeTruthy();
 
     await expectNoSeriousViolations(page, 'timeline resource affordances granted');
   });
@@ -407,8 +425,15 @@ test.describe('scheduler — timeline resize ghost stays on top', () => {
         ];
       });
 
-      const box = async () =>
-        schedulerRoot(page).evaluate((sched) => {
+      const box = async () => {
+        // Bring the scheduler into the viewport BEFORE measuring. Without this
+        // the test depended on the demo page happening to be short enough for
+        // the timeline to sit above the 720px fold — adding one control to the
+        // demo pushed the event to y=723 and `mouse.move` then landed outside
+        // the viewport entirely, so the drag never armed and the ghost never
+        // appeared. `showSlot` already does this for the same reason.
+        await scrollSchedulerIntoView(page);
+        return schedulerRoot(page).evaluate((sched) => {
           const ev = Array.from(
             sched.shadowRoot!.querySelectorAll<HTMLElement>(
               '.scheduler-timeline-event:not(.preview)',
@@ -420,6 +445,7 @@ test.describe('scheduler — timeline resize ghost stays on top', () => {
           const r = ev.getBoundingClientRect();
           return { x: r.x, y: r.y, w: r.width, h: r.height };
         });
+      };
 
       await expect.poll(box).not.toBeNull();
       let rect = (await box())!;

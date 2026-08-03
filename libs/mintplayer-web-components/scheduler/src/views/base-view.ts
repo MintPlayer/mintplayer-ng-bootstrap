@@ -335,23 +335,49 @@ export abstract class BaseView {
     //
     // Captured only when no restore is already pending: two renders in one frame
     // would otherwise have the second one capture the 0 the first just caused.
-    if (!this.pendingScroll) {
-      const { scrollLeft, scrollTop } = this.container;
-      if (scrollLeft || scrollTop) {
-        this.pendingScroll = { left: scrollLeft, top: scrollTop };
-        requestAnimationFrame(() => {
-          const target = this.pendingScroll;
-          this.pendingScroll = null;
-          if (!target) return;
-          // Assigning past the new content's extent is harmless — the browser
-          // clamps — so a view that got shorter simply lands at its own end.
-          this.container.scrollLeft = target.left;
-          this.container.scrollTop = target.top;
-        });
-      }
+    const restoring = !this.pendingScroll && (this.container.scrollLeft || this.container.scrollTop);
+    if (restoring) {
+      this.pendingScroll = { left: this.container.scrollLeft, top: this.container.scrollTop };
     }
 
     this.container.innerHTML = '';
+
+    if (restoring) {
+      // What the browser clamped us to once the content vanished — normally 0,
+      // and the value that proves NOBODY has scrolled since. Read after the wipe,
+      // not before.
+      const clamped = { left: this.container.scrollLeft, top: this.container.scrollTop };
+      // A MICROTASK, not a frame. `render()` finishes synchronously after this,
+      // so the queued restore runs once the container is repopulated but still
+      // before the browser paints — the offset never visibly passes through 0.
+      //
+      // With `requestAnimationFrame` it did, and that window was observable: a
+      // caller that scrolls an element into view and then measures it (every
+      // drag gesture in the e2e suite does exactly this) could have the grid
+      // slide back underneath the coordinates it had just recorded, so the
+      // press landed on the wrong element and the drag never armed.
+      queueMicrotask(() => {
+        const target = this.pendingScroll;
+        this.pendingScroll = null;
+        if (!target) return;
+        // Only restore if the offset is still where the wipe left it. Anything
+        // else means someone scrolled deliberately in between — a user reaching
+        // for a different hour, or a caller scrolling a cell into view — and
+        // yanking them back to a pre-render position would be its own bug.
+        // Restoring unconditionally did exactly that, and it broke the drag
+        // gestures that scroll a slot into view before pressing on it.
+        if (
+          this.container.scrollLeft !== clamped.left ||
+          this.container.scrollTop !== clamped.top
+        ) {
+          return;
+        }
+        // Assigning past the new content's extent is harmless — the browser
+        // clamps — so a view that got shorter simply lands at its own end.
+        this.container.scrollLeft = target.left;
+        this.container.scrollTop = target.top;
+      });
+    }
     // The container's ARIA is per-view too: week/day/month/year claim `role=grid`
     // on it via `applyGridRoles`, the timeline puts its grid on an inner element
     // instead. Leaving the role behind after a view switch made the timeline a
