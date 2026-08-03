@@ -6,7 +6,7 @@ import {
   getContrastColor,
   resolveMessages,
 } from '@mintplayer/web-components/scheduler-core';
-import { BaseView , formatEventAriaLabel } from './base-view';
+import { BaseView, formatEventAriaLabel, toDayKey } from './base-view';
 import { SchedulerState } from '../state/scheduler-state';
 
 /**
@@ -78,7 +78,7 @@ export class MonthView extends BaseView {
    * cell IDs would not match the visible day numbers.
    */
   static dayKey(d: Date): string {
-    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+    return toDayKey(d);
   }
 
   private createDayCell(day: Date): HTMLElement {
@@ -101,7 +101,12 @@ export class MonthView extends BaseView {
     cell.setAttribute('tabindex', '-1');
     cell.id = `scheduler-cell-m-${key}`;
 
-    // Day number
+    // Day number. Clicking it drills into the day, but it is deliberately NOT
+    // a focusable control here the way week view's is (audit M9): month renders
+    // 35-42 of these, and making each one a tab stop would put that many stops
+    // in front of the grid — a worse regression than the gap it closes. The
+    // keyboard equivalent for this view is still open; it needs a key on the
+    // focused cell, not a tab stop per cell.
     const dayNumber = this.createElement('div', 'day-number');
     dayNumber.textContent = String(day.getDate());
     cell.appendChild(dayNumber);

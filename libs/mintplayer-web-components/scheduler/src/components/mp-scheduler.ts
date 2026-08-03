@@ -553,6 +553,25 @@ export class MpScheduler extends LitElement {
    * Localized string lookup: options.messages overrides merged onto the
    * English defaults, with {placeholder} interpolation.
    */
+  /**
+   * Which keymap the grid advertises (audit M6). The keys genuinely differ per
+   * view, so the single global string was not merely vague — it was false: it
+   * promised that Enter creates an event, which in year view opens the month
+   * instead, and it never mentioned Space, the only way to reach the popover
+   * in month or year.
+   */
+  private gridInstructionsKey(): keyof SchedulerMessages {
+    const canCreate = this.can('createEvent') || this.can('selectRange');
+    switch (this.stateManager.getState().view) {
+      case 'year':
+        return 'gridInstructionsYear';
+      case 'month':
+        return canCreate ? 'gridInstructionsMonth' : 'gridInstructionsMonthReadOnly';
+      default:
+        return canCreate ? 'gridInstructions' : 'gridInstructionsReadOnly';
+    }
+  }
+
   private msg(
     key: keyof SchedulerMessages,
     params?: Record<string, string | number>,
@@ -578,9 +597,7 @@ export class MpScheduler extends LitElement {
         <div class="scheduler-content"></div>
       </div>
       <div id="scheduler-kbd-grid" class="visually-hidden">
-        ${this.msg(this.can('createEvent') || this.can('selectRange')
-          ? 'gridInstructions'
-          : 'gridInstructionsReadOnly')}
+        ${this.msg(this.gridInstructionsKey())}
       </div>
       <div id="scheduler-kbd-event" class="visually-hidden">
         ${this.msg(
@@ -2131,8 +2148,19 @@ export class MpScheduler extends LitElement {
     // an event list, an event's fields — and a consumer applying a request
     // (deleting a popover row, say) must be reflected there, not frozen at
     // open time.
+    // The keymap text is per-view (audit M6), and the template re-renders only
+    // when asked. Without this the description would freeze at whichever view
+    // was showing on first render — the same defect the header buttons had when
+    // they were built once in firstUpdated.
+    if (this.keymapView !== state.view) {
+      this.keymapView = state.view;
+      this.requestUpdate();
+    }
     if (this.popoverDate || this.editorEventId) this.requestUpdate();
   }
+
+  /** The view the `scheduler-kbd-grid` description was last rendered for. */
+  private keymapView: ViewType | null = null;
 
   private previousIsLoading: boolean | null = null;
 
@@ -2825,6 +2853,17 @@ export class MpScheduler extends LitElement {
       const dateStr = active.dataset['date'];
       if (!dateStr) return false;
       this.handleMoreLink(dateStr);
+      return true;
+    }
+    // The day-number drill-down in week view (audit M9). Mirrors the click
+    // branch in the pointer delegation, which is the only place this behaviour
+    // existed before. Month view's day numbers are not focusable — see the
+    // comment on why in `MonthView.createDayCell`.
+    if (active.classList.contains('day-number')) {
+      const dateStr = active.dataset['date'];
+      if (!dateStr) return false;
+      this.stateManager.setDate(this.parseDayKey(dateStr));
+      this.stateManager.setView('day');
       return true;
     }
     if (active.classList.contains('scheduler-year-month-header')) {

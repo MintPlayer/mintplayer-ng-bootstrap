@@ -167,13 +167,29 @@ export interface SchedulerMessages {
   /** {start} {end} */
   selectionCommitted: string;
 
+  /**
+   * {date} — accessible name of the day-number drill-down. The visible text is
+   * a bare number, which says nothing about what activating it does.
+   */
+  openDayView: string;
+
   // aria-describedby keymap instructions
+  /** Week, day and timeline — the views whose focus unit is a time slot. */
   gridInstructions: string;
+  /**
+   * Month and year keymaps differ enough that the general string was wrong
+   * rather than merely vague: in year, Enter drills into the month instead of
+   * creating anything, and in both views Space is the only route to the
+   * popover — the one place a keyboard user gets day-level detail.
+   */
+  gridInstructionsMonth: string;
+  gridInstructionsYear: string;
   eventInstructions: string;
   /** The eventInstructions variant used while the built-in editor is enabled. */
   eventInstructionsWithEditor: string;
   /** Read-only variants: no create/move/resize/delete promises. */
   gridInstructionsReadOnly: string;
+  gridInstructionsMonthReadOnly: string;
   eventInstructionsReadOnly: string;
   /** Announced when a command is refused by permissions. */
   actionNotAllowed: string;
@@ -276,8 +292,18 @@ export const DEFAULT_MESSAGES: SchedulerMessages = {
   eventInstructionsReadOnly:
     'Left and Right arrows move between events.',
   actionNotAllowed: 'That action is not allowed here.',
+  openDayView: 'Open {date}',
   gridInstructions:
     'Use the arrow keys to move between cells. Hold Shift with the arrow keys to extend the selection, and press Enter to request a new event for the selection. Page Up and Page Down change the period. Alt with T, Y, M, W or D switches to today, year, month, week or day view.',
+  gridInstructionsMonth:
+    'Use the arrow keys to move between days. Press Enter to request a new event on the focused day, and Space to list that day’s events. Page Up and Page Down change the month. Alt with T, Y, M, W or D switches to today, year, month, week or day view.',
+  gridInstructionsMonthReadOnly:
+    'Use the arrow keys to move between days. Press Space to list the focused day’s events. Page Up and Page Down change the month. Alt with T, Y, M, W or D switches to today, year, month, week or day view.',
+  // No read-only variant: neither of this view’s commands creates anything.
+  // Enter drills into the focused month and Space lists its events, so the
+  // text is already true under every capability set.
+  gridInstructionsYear:
+    'Use the arrow keys to move between months. Press Enter to open the focused month, and Space to list its events. Page Up and Page Down change the year. Alt with T, Y, M, W or D switches to today, year, month, week or day view.',
   eventInstructions:
     'Press Enter or M to move or resize the event with the arrow keys. Delete removes the event. Left and Right arrows move between events.',
   eventInstructionsWithEditor:

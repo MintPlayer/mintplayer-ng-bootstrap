@@ -13,6 +13,7 @@ import {
   formatCellAnnouncement,
   formatEventAriaLabel,
   isSlotInSelection,
+  toDayKey,
 } from './base-view';
 import { SchedulerState } from '../state/scheduler-state';
 
@@ -68,8 +69,20 @@ export class WeekView extends BaseView {
       const dayName = this.createElement('div', 'day-name');
       dayName.textContent = dateService.getDayName(day, options.locale);
 
+      // Drill into this day, the same navLinks idiom month view offers (audit
+      // M9). Week view had it in neither modality: the header carried no
+      // `data-date`, so the click delegation never matched here either.
       const dayNumber = this.createElement('div', 'day-number');
       dayNumber.textContent = String(day.getDate());
+      dayNumber.setAttribute('role', 'button');
+      dayNumber.setAttribute('tabindex', '0');
+      dayNumber.setAttribute(
+        'aria-label',
+        formatMessage(resolveMessages(options.messages).openDayView, {
+          date: dateService.formatDateWithWeekday(day, options.locale),
+        }),
+      );
+      this.setData(dayNumber, { date: toDayKey(day) });
 
       header.appendChild(dayName);
       header.appendChild(dayNumber);

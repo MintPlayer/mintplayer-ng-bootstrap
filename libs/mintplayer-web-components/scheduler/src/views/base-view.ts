@@ -20,6 +20,17 @@ import { SchedulerState } from '../state/scheduler-state';
  * the event has no resource or the caller doesn't have it (week/day views).
  * Strings and date formatting follow options.messages / options.locale.
  */
+/**
+ * `YYYY-MM-DD` in LOCAL components — the wire format `parseDayKey` round-trips
+ * without a timezone shift. Deliberately not `toISOString()`, which is UTC and
+ * names the wrong day either side of midnight for most of the world.
+ */
+export function toDayKey(d: Date): string {
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(
+    d.getDate(),
+  ).padStart(2, '0')}`;
+}
+
 export function formatEventAriaLabel(
   event: SchedulerEvent,
   resourceTitle: string | null,
