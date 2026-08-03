@@ -142,14 +142,20 @@ describe('mp-scheduler — attributes before connection (robustness)', () => {
     expect(() => {
       el.setAttribute('locale', 'nl-BE');
       el.setAttribute('view', 'timeline');
+      // A PROPERTY set before connection, on the same claim as the attributes.
+      // Pinning it also keeps the assertion below from depending on today's
+      // date: without it the view showed the current week, so this passed in
+      // the week of 27 July and failed the moment the month rolled over.
+      (el as unknown as { date: Date }).date = new Date(2026, 6, 27);
     }).not.toThrow();
 
     document.body.appendChild(el);
     await (el as unknown as { updateComplete: Promise<void> }).updateComplete;
     await nextRaf();
 
-    // and the attributes set before connection are honoured once it renders
+    // and everything set before connection is honoured once it renders
     expect(dayHeaders(el)[0].toLowerCase()).toContain('jul');
+    expect(dayHeaders(el)[0]).toContain('27');
   });
 });
 
