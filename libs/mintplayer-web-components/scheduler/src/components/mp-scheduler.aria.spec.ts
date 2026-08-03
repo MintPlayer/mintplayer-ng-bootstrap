@@ -8,6 +8,7 @@ async function nextRaf(): Promise<void> {
 
 async function mount(view: 'timeline' | 'week' | 'day' | 'month' | 'year' = 'timeline'): Promise<MpScheduler> {
   const el = document.createElement('mp-scheduler') as MpScheduler;
+  el.setAttribute('locale', 'en-US'); // deterministic dates; see mount()
   document.body.appendChild(el);
   // Provide a minimal, deterministic resource + event so timeline-view has
   // structure to assert against. Set after append so the shadow root is ready.
@@ -23,6 +24,12 @@ async function mount(view: 'timeline' | 'week' | 'day' | 'month' | 'year' = 'tim
     ] },
   ];
   (el as unknown as { date: Date }).date = new Date(2026, 4, 11);
+  // Pin the locale. DEFAULT_OPTIONS.locale used to be the literal 'en-US', which
+  // silently made every spec deterministic; it is now undefined so the component
+  // follows the browser, and an unpinned spec would assert the MACHINE's locale
+  // ("mei 2026" on this dev box, "May 2026" in a US CI). Tests that care about
+  // localization set their own locale explicitly.
+  el.setAttribute('locale', 'en-US');
   el.setAttribute('view', view);
   await (el as unknown as { updateComplete: Promise<void> }).updateComplete;
   await nextRaf();
@@ -212,6 +219,7 @@ describe('mp-scheduler — options.messages localization (FR-12)', () => {
 
   it('overridden messages land in labels, instructions and grid label', async () => {
     el = document.createElement('mp-scheduler') as MpScheduler;
+    el.setAttribute('locale', 'en-US'); // deterministic dates; see mount()
     document.body.appendChild(el);
     (el as unknown as { options: unknown }).options = {
       messages: {
@@ -286,5 +294,57 @@ describe('mp-scheduler — events in tab order (PRD D3)', () => {
     // invalid on role="button".
     expect(ev2.getAttribute('aria-pressed')).toBe('true');
     expect(ev2.getAttribute('aria-current')).toBeNull();
+  });
+});
+
+describe('mp-scheduler — every grid is named (audit BLOCKER A-B1)', () => {
+  it('names the grid in all five views, not just the timeline', async () => {
+    for (const view of ['week', 'day', 'month', 'year', 'timeline'] as const) {
+      const el = await mount(view);
+      const grid = el.shadowRoot!.querySelector('[role="grid"]')!;
+
+      // Before this, four of five views announced "grid" over hundreds of
+      // unnamed cells, with nothing to say what the grid was.
+      expect(grid, view).not.toBeNull();
+      expect(grid.getAttribute('aria-label'), view).toBeTruthy();
+      el.remove();
+    }
+  });
+
+  it("lets a consumer's own aria-label win", async () => {
+    const el = document.createElement('mp-scheduler') as MpScheduler;
+    el.setAttribute('aria-label', 'Room bookings');
+    el.setAttribute('locale', 'en-US');
+    document.body.appendChild(el);
+    (el as unknown as { date: Date }).date = new Date(2026, 4, 11);
+    el.setAttribute('view', 'week');
+    await (el as unknown as { updateComplete: Promise<void> }).updateComplete;
+    await nextRaf();
+
+    // The host has no role, so aria-label on it reaches nothing by itself —
+    // the wrappers forward it faithfully and it used to be discarded here.
+    expect(el.shadowRoot!.querySelector('[role="grid"]')!.getAttribute('aria-label')).toBe(
+      'Room bookings',
+    );
+  });
+});
+
+describe('mp-scheduler — cells name themselves (audit MAJOR M1)', () => {
+  it('gives every timeline cell its resource and time', async () => {
+    const el = await mount('timeline');
+    const cell = el.shadowRoot!.querySelector('.scheduler-timeline-slot')!;
+
+    const label = cell.getAttribute('aria-label');
+    expect(label).toBeTruthy();
+    expect(label).toContain('Alice');
+  });
+
+  it('gives every week cell its day and time', async () => {
+    const el = await mount('week');
+    const cell = el.shadowRoot!.querySelector('.scheduler-time-slot')!;
+
+    // Context used to exist ONLY as a live-region announcement on arrow keys, so
+    // Tab, a click or a restored focus all announced a blank cell.
+    expect(cell.getAttribute('aria-label')).toBeTruthy();
   });
 });

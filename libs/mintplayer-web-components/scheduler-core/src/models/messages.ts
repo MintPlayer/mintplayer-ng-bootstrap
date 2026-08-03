@@ -27,6 +27,14 @@ export interface SchedulerMessages {
   noResources: string;
   /** {date} — formatted first day of the visible week */
   timelineGridLabel: string;
+  /** {date} — the visible period. Accessible name of the week grid. */
+  weekGridLabel: string;
+  /** {date} — the visible day. */
+  dayGridLabel: string;
+  /** {date} — the visible month. */
+  monthGridLabel: string;
+  /** {date} — the visible year. */
+  yearGridLabel: string;
   /** {title} — resource group title */
   expandGroup: string;
   /** {title} — resource group title */
@@ -35,6 +43,10 @@ export interface SchedulerMessages {
   addResourceBarLabel: string;
   addResource: string;
   addGroup: string;
+  /** {title} — accessible name of the row's actions button. */
+  rowMenuLabel: string;
+  /** Accessible name of the row-actions dialog itself. {title} — the row. */
+  rowMenuDialogLabel: string;
   /** {title} — every per-row action names its row, so N buttons aren't all "Add". */
   addResourceToGroup: string;
   /** {title} */
@@ -45,6 +57,8 @@ export interface SchedulerMessages {
   resourceColor: string;
   /** Accessible name of the resource-column resize separator. */
   resizeResourceColumn: string;
+  /** {title} — the row-panel entry that starts a rename. */
+  renameResource: string;
   /** {title} — accessible name of the inline rename input. */
   renameResourceLabel: string;
   /** {from} {to} — announced after a rename commits. */
@@ -153,13 +167,29 @@ export interface SchedulerMessages {
   /** {start} {end} */
   selectionCommitted: string;
 
+  /**
+   * {date} — accessible name of the day-number drill-down. The visible text is
+   * a bare number, which says nothing about what activating it does.
+   */
+  openDayView: string;
+
   // aria-describedby keymap instructions
+  /** Week, day and timeline — the views whose focus unit is a time slot. */
   gridInstructions: string;
+  /**
+   * Month and year keymaps differ enough that the general string was wrong
+   * rather than merely vague: in year, Enter drills into the month instead of
+   * creating anything, and in both views Space is the only route to the
+   * popover — the one place a keyboard user gets day-level detail.
+   */
+  gridInstructionsMonth: string;
+  gridInstructionsYear: string;
   eventInstructions: string;
   /** The eventInstructions variant used while the built-in editor is enabled. */
   eventInstructionsWithEditor: string;
   /** Read-only variants: no create/move/resize/delete promises. */
   gridInstructionsReadOnly: string;
+  gridInstructionsMonthReadOnly: string;
   eventInstructionsReadOnly: string;
   /** Announced when a command is refused by permissions. */
   actionNotAllowed: string;
@@ -186,16 +216,23 @@ export const DEFAULT_MESSAGES: SchedulerMessages = {
   unassignedResource: '(No resource)',
   noResources: 'No resources to show.',
   timelineGridLabel: 'Resource timeline for week starting {date}',
+  weekGridLabel: 'Week of {date}',
+  dayGridLabel: 'Schedule for {date}',
+  monthGridLabel: 'Month of {date}',
+  yearGridLabel: 'Year {date}',
   expandGroup: 'Expand {title}',
   collapseGroup: 'Collapse {title}',
   addResourceBarLabel: 'Add to the resource list',
   addResource: 'Add resource',
   addGroup: 'Add group',
+  rowMenuLabel: 'Actions for {title}',
+  rowMenuDialogLabel: 'Actions for {title}',
   addResourceToGroup: 'Add resource to {title}',
   addGroupToGroup: 'Add subgroup to {title}',
   removeResource: 'Remove {title}',
   resourceColor: 'Colour for {title}',
   resizeResourceColumn: 'Resize the resource column',
+  renameResource: 'Rename {title}',
   renameResourceLabel: 'New name for {title}',
   resourceRenamed: '{from} renamed to {to}.',
 
@@ -255,8 +292,18 @@ export const DEFAULT_MESSAGES: SchedulerMessages = {
   eventInstructionsReadOnly:
     'Left and Right arrows move between events.',
   actionNotAllowed: 'That action is not allowed here.',
+  openDayView: 'Open {date}',
   gridInstructions:
     'Use the arrow keys to move between cells. Hold Shift with the arrow keys to extend the selection, and press Enter to request a new event for the selection. Page Up and Page Down change the period. Alt with T, Y, M, W or D switches to today, year, month, week or day view.',
+  gridInstructionsMonth:
+    'Use the arrow keys to move between days. Press Enter to request a new event on the focused day, and Space to list that day’s events. Page Up and Page Down change the month. Alt with T, Y, M, W or D switches to today, year, month, week or day view.',
+  gridInstructionsMonthReadOnly:
+    'Use the arrow keys to move between days. Press Space to list the focused day’s events. Page Up and Page Down change the month. Alt with T, Y, M, W or D switches to today, year, month, week or day view.',
+  // No read-only variant: neither of this view’s commands creates anything.
+  // Enter drills into the focused month and Space lists its events, so the
+  // text is already true under every capability set.
+  gridInstructionsYear:
+    'Use the arrow keys to move between months. Press Enter to open the focused month, and Space to list its events. Page Up and Page Down change the year. Alt with T, Y, M, W or D switches to today, year, month, week or day view.',
   eventInstructions:
     'Press Enter or M to move or resize the event with the arrow keys. Delete removes the event. Left and Right arrows move between events.',
   eventInstructionsWithEditor:

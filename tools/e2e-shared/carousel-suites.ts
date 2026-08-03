@@ -232,7 +232,11 @@ export function carouselNojsSuite(test: Test, expect: Expect, options: CarouselS
     // The state machine is what's under test, not transition smoothness:
     // reduced motion collapses the CSS transitions (the component honours it),
     // which keeps Playwright's stability checks deterministic on cold servers.
-    test.use({ reducedMotion: 'reduce' });
+    // Cast: these suites are generic over `Test = typeof testBase`, and through
+    // that alias TS resolves `use()` to `Fixtures<{}, {}, …>`, which does not
+    // admit built-in options like `reducedMotion` even though Playwright accepts
+    // it at runtime. Narrowing the alias would ripple through every suite here.
+    test.use({ reducedMotion: 'reduce' } as Parameters<Test['use']>[0]);
 
     // No `waitForLoadState('networkidle')`: the dev server holds an HMR
     // websocket open, so the network never goes idle and the wait burns its

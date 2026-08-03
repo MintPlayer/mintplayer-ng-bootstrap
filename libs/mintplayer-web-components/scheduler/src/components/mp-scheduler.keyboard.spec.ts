@@ -9,7 +9,8 @@ async function nextRaf(): Promise<void> {
 async function mount(view: 'week' | 'day' | 'timeline' | 'month' | 'year' = 'week'): Promise<MpScheduler> {
   const el = document.createElement('mp-scheduler') as MpScheduler;
   document.body.appendChild(el);
-  // Tuesday, May 12, 2026 — picked so the week ranges over a Mon-start week.
+  // Tuesday, May 12, 2026. The spec pins locale='en-US' below, which now also
+  // pins the week start (Sunday) — the week no longer depends on a default.
   (el as unknown as { date: Date }).date = new Date(2026, 4, 12);
   if (view === 'timeline') {
     (el as unknown as { resources: unknown[] }).resources = [
@@ -17,6 +18,12 @@ async function mount(view: 'week' | 'day' | 'timeline' | 'month' | 'year' = 'wee
       { id: 'bob',   title: 'Bob',   events: [] },
     ];
   }
+  // Pin the locale. DEFAULT_OPTIONS.locale used to be the literal 'en-US', which
+  // silently made every spec deterministic; it is now undefined so the component
+  // follows the browser, and an unpinned spec would assert the MACHINE's locale
+  // ("mei 2026" on this dev box, "May 2026" in a US CI). Tests that care about
+  // localization set their own locale explicitly.
+  el.setAttribute('locale', 'en-US');
   el.setAttribute('view', view);
   await (el as unknown as { updateComplete: Promise<void> }).updateComplete;
   await nextRaf();
@@ -75,7 +82,7 @@ describe('mp-scheduler — arrow nav (week)', () => {
 
   it('ArrowDown advances focus by one slot in time', async () => {
     el = await mount('week');
-    const before = focusCell(el, 1, 18); // Tue, slot 18 = 09:00 with 30-min slots
+    const before = focusCell(el, 1, 18); // dayIndex 1, slot 18 = 09:00 with 30-min slots
     expect(before).not.toBeNull();
     const beforeStart = new Date(before!.dataset['start']!);
     dispatchKey(el, 'ArrowDown');
@@ -694,6 +701,7 @@ describe('mp-scheduler — time-grid geometry', () => {
 
   it('positions events relative to slotMinTime, not midnight', async () => {
     el = document.createElement('mp-scheduler') as MpScheduler;
+    el.setAttribute('locale', 'en-US'); // deterministic dates; see mount()
     document.body.appendChild(el);
     (el as unknown as { options: unknown }).options = {
       slotMinTime: '08:00:00',
@@ -749,6 +757,7 @@ describe('mp-scheduler — normalized event/resource model', () => {
 
   const mountWith = async (props: Record<string, unknown>, view = 'timeline') => {
     el = document.createElement('mp-scheduler') as MpScheduler;
+    el.setAttribute('locale', 'en-US'); // deterministic dates; see mount()
     document.body.appendChild(el);
     (el as unknown as { date: Date }).date = new Date(2026, 4, 12);
     for (const [k, v] of Object.entries(props)) {
@@ -892,6 +901,7 @@ describe('mp-scheduler — resource colour across views', () => {
 
   const mountColoured = async (view: string, events: unknown[]) => {
     el = document.createElement('mp-scheduler') as MpScheduler;
+    el.setAttribute('locale', 'en-US'); // deterministic dates; see mount()
     document.body.appendChild(el);
     (el as unknown as { date: Date }).date = new Date(2026, 4, 12);
     (el as unknown as { resources: unknown[] }).resources = RESOURCES;
@@ -949,6 +959,7 @@ describe('mp-scheduler — resource colour across views', () => {
 
   it('uses options.defaultEventColor when nothing else specifies one', async () => {
     el = document.createElement('mp-scheduler') as MpScheduler;
+    el.setAttribute('locale', 'en-US'); // deterministic dates; see mount()
     document.body.appendChild(el);
     (el as unknown as { date: Date }).date = new Date(2026, 4, 12);
     (el as unknown as { options: unknown }).options = { defaultEventColor: '#00ff00' };
@@ -982,6 +993,7 @@ describe('mp-scheduler — permissions', () => {
 
   const mountWithPerms = async (perms: unknown, attrs: Record<string, string> = {}) => {
     el = document.createElement('mp-scheduler') as MpScheduler;
+    el.setAttribute('locale', 'en-US'); // deterministic dates; see mount()
     document.body.appendChild(el);
     (el as unknown as { date: Date }).date = new Date(2026, 4, 12);
     if (perms !== undefined) {
@@ -1063,6 +1075,7 @@ describe('mp-scheduler — permissions', () => {
 
   it('honours event.resizable per-edge object form', async () => {
     el = document.createElement('mp-scheduler') as MpScheduler;
+    el.setAttribute('locale', 'en-US'); // deterministic dates; see mount()
     document.body.appendChild(el);
     (el as unknown as { date: Date }).date = new Date(2026, 4, 12);
     (el as unknown as { events: unknown[] }).events = [
@@ -1079,6 +1092,7 @@ describe('mp-scheduler — permissions', () => {
 
   it('a granular deleteEvent:false blocks only deletion', async () => {
     el = document.createElement('mp-scheduler') as MpScheduler;
+    el.setAttribute('locale', 'en-US'); // deterministic dates; see mount()
     document.body.appendChild(el);
     (el as unknown as { date: Date }).date = new Date(2026, 4, 12);
     (el as unknown as { options: unknown }).options = { permissions: { deleteEvent: false } };
@@ -1114,6 +1128,7 @@ describe('mp-scheduler — timeline resource affordances', () => {
 
   const mountTimeline = async (options: Record<string, unknown> = {}) => {
     el = document.createElement('mp-scheduler') as MpScheduler;
+    el.setAttribute('locale', 'en-US'); // deterministic dates; see mount()
     document.body.appendChild(el);
     (el as unknown as { date: Date }).date = new Date(2026, 4, 12);
     (el as unknown as { resources: unknown[] }).resources = RESOURCES;
@@ -1124,28 +1139,57 @@ describe('mp-scheduler — timeline resource affordances', () => {
     return el;
   };
 
+  /** Open a row's actions panel the way a user does — by clicking its trigger. */
+  const openRowMenu = async (resourceId: string): Promise<void> => {
+    el.shadowRoot!
+      .querySelector<HTMLElement>(
+        `.scheduler-row-menu-button[data-resource-id="${resourceId}"]`,
+      )!
+      .click();
+    await (el as unknown as { updateComplete: Promise<void> }).updateComplete;
+    await nextRaf();
+  };
+
   it('renders no creation UI by default', async () => {
     await mountTimeline();
     expect(el.shadowRoot!.querySelector('.scheduler-timeline-addbar')).toBeNull();
-    expect(el.shadowRoot!.querySelectorAll('.scheduler-resource-action').length).toBe(0);
-    expect(el.shadowRoot!.querySelectorAll('.scheduler-resource-color').length).toBe(0);
+    // No permitted action means no trigger at all — an empty panel behind a
+    // button is a broken promise for AT, so the button must not exist either.
+    expect(el.shadowRoot!.querySelectorAll('.scheduler-row-menu-button').length).toBe(0);
+    expect(el.shadowRoot!.querySelector('.scheduler-row-panel')).toBeNull();
   });
 
-  it('createResource adds the add-bar and a per-group add button, named by its group', async () => {
+  it('createResource adds the add-bar and a per-group action, named by its group', async () => {
     await mountTimeline({ permissions: { createResource: true } });
     const bar = el.shadowRoot!.querySelector('.scheduler-timeline-addbar');
     expect(bar).not.toBeNull();
     expect(bar!.getAttribute('role')).toBe('toolbar');
-    const perGroup = el.shadowRoot!.querySelectorAll<HTMLElement>(
-      '.scheduler-resource-action[data-action="add-resource"]',
-    );
-    expect(perGroup.length).toBe(1);
-    // Disambiguated: N buttons all called "Add" is the failure mode this guards.
-    expect(perGroup[0].getAttribute('aria-label')).toBe('Add resource to Team');
+
+    // The per-row actions moved behind one trigger (M5). The GROUP row gets it —
+    // only groups can be added to — and it announces itself as a dialog opener.
+    const trigger = el.shadowRoot!.querySelector<HTMLElement>(
+      '.scheduler-row-menu-button[data-resource-id="team"]',
+    )!;
+    expect(trigger).not.toBeNull();
+    expect(trigger.getAttribute('aria-haspopup')).toBe('dialog');
+    expect(trigger.getAttribute('aria-expanded')).toBe('false');
+    expect(trigger.getAttribute('aria-label')).toBe('Actions for Team');
     // The glyph must not be part of the accessible name.
-    expect(perGroup[0].querySelector('.action-glyph')!.getAttribute('aria-hidden')).toBe('true');
+    expect(trigger.querySelector('.action-glyph')!.getAttribute('aria-hidden')).toBe('true');
+    // Not a Tab stop: the grid keeps exactly one.
+    expect(trigger.tabIndex).toBe(-1);
+
+    await openRowMenu('team');
+    const panel = el.shadowRoot!.querySelector('.scheduler-row-panel')!;
+    expect(panel.getAttribute('role')).toBe('dialog');
+    expect(panel.getAttribute('aria-label')).toBe('Actions for Team');
+    expect(trigger.getAttribute('aria-expanded')).toBe('true');
+
+    const add = panel.querySelector<HTMLElement>('[data-action="add-resource"]')!;
+    // Disambiguated: N actions all called "Add" is the failure mode this guards.
+    expect(add.textContent!.trim()).toBe('Add resource to Team');
     // createGroup is a separate capability and stays off.
-    expect(el.shadowRoot!.querySelectorAll('[data-action="add-group"]').length).toBe(0);
+    expect(panel.querySelectorAll('[data-action="add-group"]').length).toBe(0);
   });
 
   it('add-bar buttons emit resource-create / group-create with the parent id', async () => {
@@ -1159,8 +1203,9 @@ describe('mp-scheduler — timeline resource affordances', () => {
     el.shadowRoot!
       .querySelector<HTMLElement>('.scheduler-timeline-addbar [data-action="add-resource"]')!
       .click();
+    await openRowMenu('team');
     el.shadowRoot!
-      .querySelector<HTMLElement>('.scheduler-resource-action[data-action="add-group"]')!
+      .querySelector<HTMLElement>('.scheduler-row-panel [data-action="add-group"]')!
       .click();
     await (el as unknown as { updateComplete: Promise<void> }).updateComplete;
     expect(requests).toEqual([
@@ -1171,8 +1216,9 @@ describe('mp-scheduler — timeline resource affordances', () => {
 
   it('the colour swatch edits the field that actually drives the events', async () => {
     await mountTimeline({ permissions: { updateResource: true } });
+    await openRowMenu('alice');
     const swatch = el.shadowRoot!.querySelector<HTMLInputElement>(
-      '.scheduler-resource-color[data-resource-id="alice"]',
+      '.scheduler-row-panel .row-color-input[data-resource-id="alice"]',
     )!;
     // Seeded from the resource, and `color` because no eventColor is set.
     expect(swatch.value).toBe('#ff0000');
@@ -1224,6 +1270,7 @@ describe('mp-scheduler — month day popover', () => {
 
   const mountMonth = async (options: Record<string, unknown> = {}) => {
     el = document.createElement('mp-scheduler') as MpScheduler;
+    el.setAttribute('locale', 'en-US'); // deterministic dates; see mount()
     document.body.appendChild(el);
     (el as unknown as { date: Date }).date = new Date(2026, 4, 12);
     (el as unknown as { events: unknown[] }).events = EVENTS;
@@ -1379,6 +1426,7 @@ describe('mp-scheduler — year date surface (M18)', () => {
 
   const mountYear = async (options: Record<string, unknown> = {}) => {
     el = document.createElement('mp-scheduler') as MpScheduler;
+    el.setAttribute('locale', 'en-US'); // deterministic dates; see mount()
     document.body.appendChild(el);
     (el as unknown as { date: Date }).date = new Date(2026, 4, 12);
     (el as unknown as { events: unknown[] }).events = EVENTS;
@@ -1521,6 +1569,7 @@ describe('mp-scheduler — events are composed', () => {
     document.body.appendChild(outer);
     const root = outer.attachShadow({ mode: 'open' });
     const el = document.createElement('mp-scheduler') as MpScheduler;
+    el.setAttribute('locale', 'en-US'); // deterministic dates; see mount()
     root.appendChild(el);
     (el as unknown as { date: Date }).date = new Date(2026, 4, 12);
     el.setAttribute('view', 'month');
@@ -1552,6 +1601,7 @@ describe('mp-scheduler — timeline track stacking', () => {
 
   it('overlapping events keep one height and stack, growing the resource row', async () => {
     el = document.createElement('mp-scheduler') as MpScheduler;
+    el.setAttribute('locale', 'en-US'); // deterministic dates; see mount()
     document.body.appendChild(el);
     (el as unknown as { date: Date }).date = new Date(2026, 4, 12);
     (el as unknown as { resources: unknown[] }).resources = [{ id: 'alice', title: 'Alice' }];
@@ -1596,6 +1646,7 @@ describe('mp-scheduler — resource-less events and an empty tree', () => {
 
   const mountTimeline = async (props: Record<string, unknown>) => {
     el = document.createElement('mp-scheduler') as MpScheduler;
+    el.setAttribute('locale', 'en-US'); // deterministic dates; see mount()
     document.body.appendChild(el);
     (el as unknown as { date: Date }).date = new Date(2026, 4, 12);
     for (const [key, value] of Object.entries(props)) {
@@ -1710,6 +1761,7 @@ describe('mp-scheduler — timeline drag ghost finds its row', () => {
 
   const mountTimeline = async (events: unknown[]) => {
     el = document.createElement('mp-scheduler') as MpScheduler;
+    el.setAttribute('locale', 'en-US'); // deterministic dates; see mount()
     document.body.appendChild(el);
     (el as unknown as { date: Date }).date = new Date(2026, 4, 12);
     (el as unknown as { resources: unknown[] }).resources = [
@@ -1817,6 +1869,7 @@ describe('mp-scheduler — timeline move-mode reaches the bucket (M20)', () => {
 
   const mountTimeline = async (events: unknown[]) => {
     el = document.createElement('mp-scheduler') as MpScheduler;
+    el.setAttribute('locale', 'en-US'); // deterministic dates; see mount()
     document.body.appendChild(el);
     (el as unknown as { date: Date }).date = new Date(2026, 4, 12);
     (el as unknown as { resources: unknown[] }).resources = [
@@ -1928,6 +1981,7 @@ describe('mp-scheduler — per-gesture pointer permission gate (M21)', () => {
 
   const mountWeek = async (permissions: Record<string, unknown>) => {
     el = document.createElement('mp-scheduler') as MpScheduler;
+    el.setAttribute('locale', 'en-US'); // deterministic dates; see mount()
     document.body.appendChild(el);
     (el as unknown as { date: Date }).date = new Date(2026, 4, 12);
     (el as unknown as { events: unknown[] }).events = [EV];
@@ -2030,6 +2084,7 @@ describe('mp-scheduler — popover delete buttons (M22)', () => {
 
   const mountMonthPopover = async (options: Record<string, unknown> = {}) => {
     el = document.createElement('mp-scheduler') as MpScheduler;
+    el.setAttribute('locale', 'en-US'); // deterministic dates; see mount()
     document.body.appendChild(el);
     (el as unknown as { date: Date }).date = new Date(2026, 4, 12);
     (el as unknown as { events: unknown[] }).events = EVENTS;
@@ -2102,6 +2157,7 @@ describe('mp-scheduler — built-in event editor (M23)', () => {
 
   const mountWeek = async (props: Record<string, unknown> = {}) => {
     el = document.createElement('mp-scheduler') as MpScheduler;
+    el.setAttribute('locale', 'en-US'); // deterministic dates; see mount()
     document.body.appendChild(el);
     (el as unknown as { date: Date }).date = new Date(2026, 4, 12);
     (el as unknown as { events: unknown[] }).events = [EV];
@@ -2698,6 +2754,7 @@ describe('mp-scheduler — resource column resize + rename (M24)', () => {
 
   const mountTimeline = async (props: Record<string, unknown> = {}) => {
     el = document.createElement('mp-scheduler') as MpScheduler;
+    el.setAttribute('locale', 'en-US'); // deterministic dates; see mount()
     document.body.appendChild(el);
     (el as unknown as { date: Date }).date = new Date(2026, 4, 12);
     (el as unknown as { resources: unknown[] }).resources = [
@@ -2821,6 +2878,7 @@ describe('mp-scheduler — the editor survives a re-render (B31)', () => {
 
   it('an edit survives an unrelated state change, and Save commits the EDIT', async () => {
     el = document.createElement('mp-scheduler') as MpScheduler;
+    el.setAttribute('locale', 'en-US'); // deterministic dates; see mount()
     document.body.appendChild(el);
     (el as unknown as { date: Date }).date = new Date(2026, 4, 12);
     (el as unknown as { events: unknown[] }).events = [EV];
@@ -2867,6 +2925,7 @@ describe('mp-scheduler — the editor survives a re-render (B31)', () => {
   // any commit; F2 then reopened the editor on stale values.
   it('the selection tracks the committed record, so reopening shows the edit', async () => {
     el = document.createElement('mp-scheduler') as MpScheduler;
+    el.setAttribute('locale', 'en-US'); // deterministic dates; see mount()
     document.body.appendChild(el);
     (el as unknown as { date: Date }).date = new Date(2026, 4, 12);
     (el as unknown as { events: unknown[] }).events = [EV];

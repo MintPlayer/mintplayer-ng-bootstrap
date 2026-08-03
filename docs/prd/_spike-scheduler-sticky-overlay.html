@@ -1,0 +1,204 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>Spike A — sticky day label + fixed overlay anchored to a sticky cell</title>
+<style>
+  /* Mirrors the real nesting and the real custom property.
+     scheduler.styles.scss:49, :175-179, :1005-1011, :1020-1033, :1042-1048, :1144-1160 */
+  :root { --scheduler-resource-column-width: min(200px, calc(100% - 50px)); }
+  * { box-sizing: border-box; }
+  body { margin: 0; font: 13px system-ui, sans-serif; }
+
+  /* THE scroller — overflow:auto on both axes (scheduler.styles.scss:175-179) */
+  .scheduler-content { overflow: auto; height: 320px; border: 2px solid #333; position: relative; }
+
+  .scheduler-timeline { display: flex; flex-direction: column; min-height: 100%; min-width: fit-content; }
+
+  /* ONE sticky block wrapping the header rows (scheduler.styles.scss:1005-1011) */
+  .scheduler-timeline-head { position: sticky; top: 0; z-index: 10; min-width: fit-content; background: #eef; }
+  .scheduler-timeline-header { display: flex; min-width: fit-content; border-bottom: 1px solid #999; }
+
+  /* Corner cell: pinned on BOTH axes (scheduler.styles.scss:1020-1033) */
+  .scheduler-resource-header {
+    width: var(--scheduler-resource-column-width);
+    max-width: var(--scheduler-resource-column-width);
+    flex-shrink: 0; padding: 8px; font-weight: 600;
+    position: sticky; left: 0; z-index: 7; background: #dde;
+    border-right: 1px solid #999;
+  }
+
+  .scheduler-timeline-slots-header { display: flex; flex: 0 0 auto; }
+
+  /* Day header: 2400px wide, as in production (48 slots x 50px) */
+  .scheduler-timeline-slot-header {
+    flex-shrink: 0; padding: 8px; border-right: 1px solid #999; font-size: 12px;
+    /* text-align:center REMOVED per PRD §5.2 — replaced by the sticky label below */
+  }
+
+  /* S1 UNDER TEST: the label pins to the left edge of the scrollport, offset by the
+     resource column so it never slides under the pinned corner cell. */
+  .day-label {
+    position: sticky;
+    inset-inline-start: var(--scheduler-resource-column-width);
+    display: inline-block;
+    background: #ffd; /* visible so we can see where it sits */
+  }
+
+  .scheduler-timeline-body { display: flex; flex-direction: column; flex: 0 0 auto; min-width: fit-content; }
+  .scheduler-timeline-row { display: flex; min-width: fit-content; height: 44px; }
+
+  /* Row header: pinned left (scheduler.styles.scss:1144-1160) */
+  .scheduler-resource-cell {
+    width: var(--scheduler-resource-column-width);
+    max-width: var(--scheduler-resource-column-width);
+    flex-shrink: 0; padding: 8px; display: flex; align-items: center; gap: 8px;
+    position: sticky; left: 0; z-index: 7; background: #fff;
+    border-right: 1px solid #999; border-bottom: 1px solid #ccc;
+  }
+  .row-menu-button { width: 24px; height: 24px; flex: 0 0 auto; cursor: pointer; }
+  .scheduler-timeline-slots { display: flex; }
+  .slot { width: 50px; flex-shrink: 0; border-right: 1px solid #eee; border-bottom: 1px solid #ccc; }
+
+  /* S2 UNDER TEST: fixed panel, top-level child, positioned from the trigger's rect. */
+  .scheduler-row-panel {
+    position: fixed; z-index: 50; width: 180px; padding: 8px;
+    background: #fff; border: 2px solid #06c; border-radius: 6px;
+    box-shadow: 0 8px 24px rgba(0,0,0,.25); display: none;
+  }
+  .scheduler-row-panel.open { display: block; }
+</style>
+</head>
+<body>
+
+<div class="scheduler-content" id="scroller">
+  <div class="scheduler-timeline">
+    <div class="scheduler-timeline-head">
+      <div class="scheduler-timeline-header">
+        <div class="scheduler-resource-header">Resources</div>
+        <div class="scheduler-timeline-slots-header" id="dayHeaders"></div>
+      </div>
+    </div>
+    <div class="scheduler-timeline-body" id="body"></div>
+  </div>
+</div>
+
+<!-- top-level child of the root, as D3 requires -->
+<div class="scheduler-row-panel" id="panel">Row actions<br>(fixed, anchored)</div>
+
+<script>
+const DAYS = ['Mon 27 Jul','Tue 28 Jul','Wed 29 Jul','Thu 30 Jul','Fri 31 Jul','Sat 1 Aug','Sun 2 Aug'];
+const SLOTS_PER_DAY = 48, SLOT_W = 50;
+
+const dayHeaders = document.getElementById('dayHeaders');
+DAYS.forEach((d, i) => {
+  const el = document.createElement('div');
+  el.className = 'scheduler-timeline-slot-header';
+  el.style.width = (SLOTS_PER_DAY * SLOT_W) + 'px';
+  el.dataset.day = String(i);
+  const label = document.createElement('span');
+  label.className = 'day-label';
+  label.textContent = d;
+  label.dataset.label = String(i);
+  el.appendChild(label);
+  dayHeaders.appendChild(el);
+});
+
+const body = document.getElementById('body');
+for (let r = 0; r < 12; r++) {
+  const row = document.createElement('div');
+  row.className = 'scheduler-timeline-row';
+  const cell = document.createElement('div');
+  cell.className = 'scheduler-resource-cell';
+  const btn = document.createElement('button');
+  btn.className = 'row-menu-button';
+  btn.textContent = '⋯';
+  btn.dataset.row = String(r);
+  cell.appendChild(btn);
+  const title = document.createElement('span');
+  title.textContent = 'Resource ' + (r + 1);
+  cell.appendChild(title);
+  row.appendChild(cell);
+  const slots = document.createElement('div');
+  slots.className = 'scheduler-timeline-slots';
+  for (let s = 0; s < SLOTS_PER_DAY * DAYS.length; s++) {
+    const sl = document.createElement('div');
+    sl.className = 'slot';
+    slots.appendChild(sl);
+  }
+  row.appendChild(slots);
+  body.appendChild(row);
+}
+
+// --- S2: minimal OverlayController stand-in (fixed panel positioned from the anchor rect,
+// repositioned on scroll — mirrors scrollStrategy:'reposition') ---
+const panel = document.getElementById('panel');
+let anchorEl = null;
+
+function position() {
+  if (!anchorEl) return;
+  const r = anchorEl.getBoundingClientRect();
+  const ph = panel.offsetHeight, pw = panel.offsetWidth;
+  // drop below, flip above when it would overflow the viewport bottom
+  let top = r.bottom + 4, flipped = false;
+  if (top + ph > window.innerHeight) { top = r.top - ph - 4; flipped = true; }
+  let left = r.left;
+  if (left + pw > window.innerWidth) left = window.innerWidth - pw - 4;
+  panel.style.top = top + 'px';
+  panel.style.left = left + 'px';
+  panel.dataset.flipped = String(flipped);
+}
+
+document.addEventListener('click', (e) => {
+  const b = e.target.closest && e.target.closest('.row-menu-button');
+  if (!b) return;
+  anchorEl = b;
+  panel.classList.add('open');
+  position();
+});
+
+document.getElementById('scroller').addEventListener('scroll', position, { passive: true });
+window.addEventListener('resize', position);
+
+// --- measurement helpers used by the spike runner ---
+window.SPIKE = {
+  // S1: is the label visible within the scrollport, and does it stay inside its own day cell?
+  labelState(i) {
+    const label = document.querySelector('[data-label="' + i + '"]');
+    const cell = label.parentElement;
+    const sc = document.getElementById('scroller').getBoundingClientRect();
+    const corner = document.querySelector('.scheduler-resource-header').getBoundingClientRect();
+    const l = label.getBoundingClientRect(), c = cell.getBoundingClientRect();
+    return {
+      labelLeft: Math.round(l.left), labelRight: Math.round(l.right),
+      cellLeft: Math.round(c.left), cellRight: Math.round(c.right),
+      cornerRight: Math.round(corner.right),
+      scrollportLeft: Math.round(sc.left), scrollportRight: Math.round(sc.right),
+      // visible inside the scrollport at all?
+      visible: l.right > sc.left && l.left < sc.right,
+      // clear of the pinned corner column (not hidden underneath it)?
+      clearOfCorner: Math.round(l.left) >= Math.round(corner.right) - 1,
+      // still within its own day cell (didn't bleed into the next day)?
+      withinCell: Math.round(l.left) >= Math.round(c.left) - 1 && Math.round(l.right) <= Math.round(c.right) + 1
+    };
+  },
+  // S2: does the fixed panel stay glued to its sticky anchor?
+  panelState() {
+    const p = document.getElementById('panel').getBoundingClientRect();
+    const a = anchorEl ? anchorEl.getBoundingClientRect() : null;
+    return {
+      open: panel.classList.contains('open'),
+      flipped: panel.dataset.flipped,
+      panelLeft: Math.round(p.left), panelTop: Math.round(p.top),
+      anchorLeft: a ? Math.round(a.left) : null, anchorBottom: a ? Math.round(a.bottom) : null,
+      // horizontal alignment with the anchor (the thing sticky could break)
+      deltaX: a ? Math.round(p.left - a.left) : null,
+      // vertical offset below the anchor
+      deltaY: a ? Math.round(p.top - a.bottom) : null
+    };
+  },
+  scrollTo(x, y) { const s = document.getElementById('scroller'); s.scrollLeft = x; s.scrollTop = y; }
+};
+</script>
+</body>
+</html>

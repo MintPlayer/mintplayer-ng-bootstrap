@@ -6,7 +6,7 @@ import {
   getContrastColor,
   resolveMessages,
 } from '@mintplayer/web-components/scheduler-core';
-import { BaseView , formatEventAriaLabel } from './base-view';
+import { BaseView, formatEventAriaLabel, toDayKey } from './base-view';
 import { SchedulerState } from '../state/scheduler-state';
 
 /**
@@ -20,7 +20,7 @@ export class MonthView extends BaseView {
     this.container.classList.add('scheduler-month-view');
 
     const { date, options } = this.state;
-    const weeks = dateService.getMonthWeeks(date, options.firstDayOfWeek);
+    const weeks = dateService.getMonthWeeks(date, this.firstDayOfWeek);
 
     // Create day-of-week headers
     const headers = this.createElement('div', 'scheduler-day-headers');
@@ -57,6 +57,12 @@ export class MonthView extends BaseView {
     this.updateDayCellFocus();
 
     this.applyGridRoles({
+      label: formatMessage(resolveMessages(this.state.options.messages).monthGridLabel, {
+        date: dateService.formatDate(this.state.date, this.state.options.locale, {
+          month: 'long',
+          year: 'numeric',
+        }),
+      }),
       columnHeaderRow: ':scope > .scheduler-day-headers',
       columnHeaders: '.scheduler-day-headers > .scheduler-day-header',
       presentation: ['.scheduler-month-grid'],
@@ -72,7 +78,7 @@ export class MonthView extends BaseView {
    * cell IDs would not match the visible day numbers.
    */
   static dayKey(d: Date): string {
-    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+    return toDayKey(d);
   }
 
   private createDayCell(day: Date): HTMLElement {
@@ -95,7 +101,12 @@ export class MonthView extends BaseView {
     cell.setAttribute('tabindex', '-1');
     cell.id = `scheduler-cell-m-${key}`;
 
-    // Day number
+    // Day number. Clicking it drills into the day, but it is deliberately NOT
+    // a focusable control here the way week view's is (audit M9): month renders
+    // 35-42 of these, and making each one a tab stop would put that many stops
+    // in front of the grid — a worse regression than the gap it closes. The
+    // keyboard equivalent for this view is still open; it needs a key on the
+    // focused cell, not a tab stop per cell.
     const dayNumber = this.createElement('div', 'day-number');
     dayNumber.textContent = String(day.getDate());
     cell.appendChild(dayNumber);
@@ -146,7 +157,7 @@ export class MonthView extends BaseView {
     const monthEnd = dateService.getMonthEnd(date);
 
     // Get weeks for full view range
-    const weeks = dateService.getMonthWeeks(date, options.firstDayOfWeek);
+    const weeks = dateService.getMonthWeeks(date, this.firstDayOfWeek);
     const viewStart = weeks[0][0];
     const viewEnd = weeks[weeks.length - 1][6];
     viewEnd.setHours(23, 59, 59, 999);
@@ -208,6 +219,15 @@ export class MonthView extends BaseView {
         eventEl.setAttribute('role', 'button');
         eventEl.setAttribute('tabindex', '0');
         eventEl.setAttribute('aria-label', formatEventAriaLabel(event, null, this.state.options));
+        // Month view is the one people open first, and it was the only view whose
+        // events announced neither their selection state nor the keymap — so the
+        // commands (M/Enter to move, F2 to edit, Delete to remove) all worked and
+        // none were discoverable.
+        eventEl.setAttribute(
+          'aria-pressed',
+          String(this.state.selectedEvent?.id === event.id),
+        );
+        eventEl.setAttribute('aria-describedby', 'scheduler-kbd-event');
         this.setData(eventEl, { eventId: event.id });
         eventsContainer.appendChild(eventEl);
       }

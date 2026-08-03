@@ -42,6 +42,73 @@ export function getContrastColor(backgroundColor: string): string {
 }
 
 /**
+ * Parse `#rgb` / `#rrggbb` into channels, or `null` when it is anything else.
+ *
+ * Returning null rather than black matters: a caller handed `rgb(…)`, a named
+ * colour or a CSS variable should fall back to its own neutral surface, not
+ * render a chip that silently claims the colour is black.
+ */
+function parseHex(color: string): { r: number; g: number; b: number } | null {
+  const raw = color.trim().replace('#', '');
+  const hex = raw.length === 3 ? raw.split('').map((c) => c + c).join('') : raw;
+  if (!/^[0-9a-f]{6}$/i.test(hex)) return null;
+  return {
+    r: parseInt(hex.substring(0, 2), 16),
+    g: parseInt(hex.substring(2, 4), 16),
+    b: parseInt(hex.substring(4, 6), 16),
+  };
+}
+
+/** WCAG 2.x relative luminance — sRGB channels linearized, then weighted. */
+function relativeLuminance({ r, g, b }: { r: number; g: number; b: number }): number {
+  const channel = (v: number): number => {
+    const s = v / 255;
+    return s <= 0.03928 ? s / 12.92 : Math.pow((s + 0.055) / 1.055, 2.4);
+  };
+  return 0.2126 * channel(r) + 0.7152 * channel(g) + 0.0722 * channel(b);
+}
+
+/** WCAG contrast ratio between two relative luminances, 1:1 to 21:1. */
+function contrastRatio(a: number, b: number): number {
+  const [hi, lo] = a >= b ? [a, b] : [b, a];
+  return (hi + 0.05) / (lo + 0.05);
+}
+
+/**
+ * Black or white — whichever actually scores the higher WCAG contrast ratio
+ * against `background`. `null` when the colour cannot be parsed.
+ *
+ * Distinct from {@link getContrastColor}, which computes YIQ *perceived
+ * brightness* against a 0.5 threshold. YIQ is a reasonable approximation for
+ * decorative text and is what every event label in the scheduler already uses,
+ * but it is not the WCAG formula and can pick the losing foreground on mid-tone
+ * backgrounds. Use this one wherever the result carries meaning a user must be
+ * able to read — an interactive control's glyph, say — and leave the existing
+ * callers alone: switching them would recolour every event label in all five
+ * views, which deserves its own visual review rather than a drive-by.
+ */
+export function getReadableTextColor(background: string): string | null {
+  const rgb = parseHex(background);
+  if (!rgb) return null;
+
+  const luminance = relativeLuminance(rgb);
+  const onWhite = contrastRatio(luminance, 1);
+  const onBlack = contrastRatio(luminance, 0);
+  return onBlack >= onWhite ? '#000000' : '#ffffff';
+}
+
+/**
+ * The WCAG contrast ratio between a hex colour and black or white, so callers
+ * (and tests) can assert a threshold rather than trust a branch.
+ */
+export function contrastRatioWith(background: string, foreground: string): number | null {
+  const bg = parseHex(background);
+  const fg = parseHex(foreground);
+  if (!bg || !fg) return null;
+  return contrastRatio(relativeLuminance(bg), relativeLuminance(fg));
+}
+
+/**
  * Lighten a color by a percentage
  */
 export function lightenColor(color: string, percent: number): string {

@@ -27,10 +27,10 @@ import {
   Resource,
   ResourceGroup,
   SchedulerOptions,
+  SchedulerMessages,
   generateEventId,
   generateResourceId,
   generateGroupId,
-  dateService,
 } from '@mintplayer/web-components/scheduler-core';
 
 @Component({
@@ -72,14 +72,75 @@ export class SchedulerComponent {
 
   // Configuration
   slotDuration = signal<number>(1800); // 30 minutes
-  timeFormat = signal<'12h' | '24h'>(dateService.detectTimeFormat());
-  firstDayOfWeek = signal<0 | 1>(1); // Monday
+  timeFormat = signal<'12h' | '24h' | undefined>(undefined); // undefined = follow the locale
+  firstDayOfWeek = signal<0 | 1 | undefined>(undefined); // undefined = follow the locale
+
+  /**
+   * Language switch. `undefined` means "use the browser's own locale", which is
+   * the component's default and what most apps should ship. The other two pin a
+   * locale explicitly, which is how you override a user's browser.
+   */
+  locale = signal<string | undefined>(undefined);
+
+  /**
+   * A partial translation table. Only the keys an app cares about need
+   * overriding; everything else falls back to the English defaults. Dates and
+   * times are NOT in here — those follow `locale` through Intl for free.
+   */
+  private readonly dutchMessages: Partial<SchedulerMessages> = {
+    today: 'Vandaag',
+    viewYear: 'Jaar',
+    viewMonth: 'Maand',
+    viewWeek: 'Week',
+    viewDay: 'Dag',
+    viewTimeline: 'Tijdlijn',
+    resourcesHeader: 'Resources',
+    unassignedResource: '(Geen resource)',
+    addResource: 'Resource toevoegen',
+    addGroup: 'Groep toevoegen',
+    rowMenuLabel: 'Acties voor {title}',
+    rowMenuDialogLabel: 'Acties voor {title}',
+    removeResource: '{title} verwijderen',
+    resourceColor: 'Kleur voor {title}',
+    editorSave: 'Opslaan',
+    editorCancel: 'Annuleren',
+    editorDelete: 'Verwijderen',
+    editorTitleLabel: 'Titel',
+    editorStartLabel: 'Begin',
+    editorEndLabel: 'Einde',
+    openDayView: '{date} openen',
+    // The keymap a screen reader reads out. Per-view, because the keys really
+    // do differ: in year view Enter opens the focused month rather than
+    // creating anything, and Space is the only route to the popover in both
+    // month and year.
+    gridInstructionsMonth:
+      'Gebruik de pijltjestoetsen om tussen dagen te bewegen. Druk op Enter om een nieuw item op de gefocuste dag aan te vragen, en op de spatiebalk om de items van die dag te tonen. Page Up en Page Down wijzigen de maand. Alt met T, Y, M, W of D schakelt naar vandaag, jaar, maand, week of dag.',
+    gridInstructionsMonthReadOnly:
+      'Gebruik de pijltjestoetsen om tussen dagen te bewegen. Druk op de spatiebalk om de items van de gefocuste dag te tonen. Page Up en Page Down wijzigen de maand. Alt met T, Y, M, W of D schakelt naar vandaag, jaar, maand, week of dag.',
+    gridInstructionsYear:
+      'Gebruik de pijltjestoetsen om tussen maanden te bewegen. Druk op Enter om de gefocuste maand te openen, en op de spatiebalk om de items ervan te tonen. Page Up en Page Down wijzigen het jaar. Alt met T, Y, M, W of D schakelt naar vandaag, jaar, maand, week of dag.',
+  };
+
+  /**
+   * The placeholder option means "unset" — follow the browser. It arrives as
+   * null (mp-select normalizes an empty value) or '' (the write-back path), so
+   * both collapse to undefined.
+   */
+  setLocale(value: string | null): void {
+    this.locale.set(value || undefined);
+  }
+
+  setTimeFormat(value: string | null): void {
+    this.timeFormat.set((value || undefined) as '12h' | '24h' | undefined);
+  }
 
   // Options computed from signals
   options = computed<Partial<SchedulerOptions>>(() => ({
     slotDuration: this.slotDuration(),
     timeFormat: this.timeFormat(),
     firstDayOfWeek: this.firstDayOfWeek(),
+    locale: this.locale(),
+    messages: this.locale()?.startsWith('nl') ? this.dutchMessages : undefined,
     nowIndicator: true,
     moreLinkBehavior: this.moreLinkBehavior(),
     dayClickAction: this.dayClickAction(),
@@ -525,7 +586,8 @@ export class SchedulerComponent {
   }
 
   private formatDate(date: Date): string {
-    return date.toLocaleString('en-US', {
+    // Follows the demo's own locale switch, so the log agrees with the grid.
+    return date.toLocaleString(this.locale(), {
       weekday: 'short',
       month: 'short',
       day: 'numeric',

@@ -52,9 +52,22 @@
               <option [ngValue]="opt.value">{{ opt.label }}</option>
             }
           </bs-select>
-          <bs-select aria-label="Time format" [ngModel]="timeFormat()" (ngModelChange)="timeFormat.set($event)">
+          <!-- Plain string values, like every other select here: mixing [ngValue]
+               with value="" attributes leaves Angular's select CVA unable to map
+               the model, and the control renders blank. '' is the sentinel for
+               "unset", translated back to undefined in the handler. -->
+          <bs-select aria-label="Time format" [ngModel]="timeFormat() ?? ''" (ngModelChange)="setTimeFormat($event)">
+            <option value="">Follow locale</option>
             <option value="24h">24h</option>
             <option value="12h">12h</option>
+          </bs-select>
+          <!-- Dates, times and the week start all follow this; only the fixed
+               strings need a translation table. -->
+          <bs-select aria-label="Language" [ngModel]="locale() ?? ''" (ngModelChange)="setLocale($event)">
+            <option value="">Browser locale</option>
+            <option value="en-US">English (US)</option>
+            <option value="nl-BE">Nederlands (BE)</option>
+            <option value="ja-JP">日本語</option>
           </bs-select>
           <button (click)="fillData()" [color]="colors.primary">Load Sample Data</button>
           <button (click)="clearData()" [color]="colors.secondary">Clear</button>

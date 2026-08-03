@@ -225,47 +225,160 @@ export class DateService {
     }
   }
 
-  /**
-   * Format time according to format preference
-   */
-  formatTime(date: Date, format: TimeFormat = '24h'): string {
-    const hours = date.getHours();
-    const minutes = date.getMinutes();
+  /** Memoized `getWeekInfo().firstDay` per locale — see resolveFirstDayOfWeek. */
+  private readonly weekStarts = new Map<string, DayOfWeek>();
 
-    if (format === '12h') {
-      const period = hours >= 12 ? 'PM' : 'AM';
-      const hour12 = hours % 12 || 12;
-      return `${hour12}:${minutes.toString().padStart(2, '0')} ${period}`;
+  /**
+   * Which day the week starts on: the caller's explicit choice, else the
+   * locale's own convention, else Monday.
+   *
+   * Two numbering systems meet here and they disagree about Sunday.
+   * `Date.prototype.getDay()` — which every calculation in this file speaks — is
+   * 0-6 with **Sunday = 0**. `Intl.Locale…getWeekInfo().firstDay` is 1-7 with
+   * **Sunday = 7**. The `% 7` is that conversion, and it is the only place the
+   * 1-7 domain is allowed to exist: `DayOfWeek` stays 0-6 because it is also the
+   * type of `BusinessHours.daysOfWeek`, which is `getDay()`-based and would
+   * silently accept a meaningless 7 if the type were widened.
+   *
+   * Resolved from the locale the CALLER passes, never from a stored default. A
+   * derivation reading `DEFAULT_OPTIONS.locale` would have read the old 'en-US'
+   * literal and handed every user on earth a Sunday start, Europe included.
+   *
+   * `getWeekInfo` is absent in Firefox, and is a getter on some engines and a
+   * method on others; both shapes and neither are handled.
+   */
+  resolveFirstDayOfWeek(explicit?: DayOfWeek, locale?: string): DayOfWeek {
+    if (explicit !== undefined) return explicit;
+
+    const key = locale ?? '';
+    const cached = this.weekStarts.get(key);
+    if (cached !== undefined) return cached;
+
+    let resolved: DayOfWeek = 1;
+    try {
+      const resolvedLocale =
+        locale || (typeof navigator !== 'undefined' ? navigator.language : undefined);
+      const info = new Intl.Locale(resolvedLocale ?? 'en-US') as Intl.Locale & {
+        weekInfo?: { firstDay?: number };
+        getWeekInfo?: () => { firstDay?: number };
+      };
+      const firstDay =
+        typeof info.getWeekInfo === 'function' ? info.getWeekInfo()?.firstDay : info.weekInfo?.firstDay;
+      if (typeof firstDay === 'number') resolved = (firstDay % 7) as DayOfWeek;
+    } catch {
+      // No Intl.Locale, no getWeekInfo, or an unparseable tag. Monday stands.
     }
 
-    return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}`;
+    this.weekStarts.set(key, resolved);
+    return resolved;
   }
 
   /**
-   * Format date for display
+   * Format a time of day.
+   *
+   * Was hand-rolled — `${hours}:${minutes}` with hardcoded 'AM'/'PM' literals —
+   * which no locale could reach: nl wants "a.m.", ja "午前", and several locales
+   * separate with something other than a colon.
+   *
+   * `format` is an explicit override. Leave it undefined and `hour12` is not
+   * passed at all, so `Intl` applies whatever the locale itself does — which is
+   * the behaviour the scheduler wants by default and the reason
+   * `detectTimeFormat` is not needed on this path.
    */
-  formatDate(date: Date, locale: string = 'en-US', options?: Intl.DateTimeFormatOptions): string {
+  formatTime(date: Date, format?: TimeFormat, locale?: string): string {
+    return this.timeFormatter(format, locale).format(date);
+  }
+
+  /**
+   * `Intl.DateTimeFormat` instances are expensive to construct and this runs once
+   * per slot per day — hundreds of times per render. Memoized on the only two
+   * inputs that vary.
+   */
+  private readonly timeFormatters = new Map<string, Intl.DateTimeFormat>();
+
+  private timeFormatter(format?: TimeFormat, locale?: string): Intl.DateTimeFormat {
+    const key = `${locale ?? ''}|${format ?? ''}`;
+    const cached = this.timeFormatters.get(key);
+    if (cached) return cached;
+
+    const options: Intl.DateTimeFormatOptions =
+      format === '12h'
+        ? // 'numeric', not '2-digit': a 12-hour clock reads "9:05 AM", never
+          // "09:05 AM". The distinction is what makes it look native.
+          { hour: 'numeric', minute: '2-digit', hour12: true }
+        : format === '24h'
+          ? { hour: '2-digit', minute: '2-digit', hour12: false }
+          : { hour: 'numeric', minute: '2-digit' };
+
+    const formatter = new Intl.DateTimeFormat(locale, options);
+    this.timeFormatters.set(key, formatter);
+    return formatter;
+  }
+
+  /**
+   * Format date for display.
+   *
+   * `locale` is optional and stays optional all the way down: `undefined` tells
+   * `Intl` to use the runtime's own locale. It used to default to `'en-US'`,
+   * which is not a neutral fallback but an instruction to render US English.
+   */
+  formatDate(date: Date, locale?: string, options?: Intl.DateTimeFormatOptions): string {
     return date.toLocaleDateString(locale, options);
   }
 
   /**
-   * Format date with weekday
+   * Format date with weekday — "Mon, Jul 27" in en-US, "ma 27 jul" in nl-BE,
+   * "7月27日(月)" in ja-JP. The field order is the locale's business, not ours.
    */
-  formatDateWithWeekday(date: Date, locale: string = 'en-US'): string {
+  formatDateWithWeekday(date: Date, locale?: string): string {
     return this.formatDate(date, locale, { weekday: 'short', month: 'short', day: 'numeric' });
+  }
+
+  /**
+   * Format a date RANGE, letting the locale place the separator and elide the
+   * shared parts ("Jul 27 – Aug 2, 2026"). Falls back to a plain join where
+   * `formatRange` is unavailable.
+   */
+  formatDateRange(
+    start: Date,
+    end: Date,
+    locale?: string,
+    options?: Intl.DateTimeFormatOptions,
+  ): string {
+    const formatter = new Intl.DateTimeFormat(locale, options);
+    if (typeof formatter.formatRange === 'function') {
+      return formatter.formatRange(start, end);
+    }
+    return `${formatter.format(start)} – ${formatter.format(end)}`;
+  }
+
+  /**
+   * Format a start–end time pair as one range.
+   *
+   * Beats joining two `formatTime` results with a literal separator: the locale
+   * chooses the dash AND elides what the ends share, so en-US reads
+   * "9:00 – 10:00 AM" rather than "9:00 AM - 10:00 AM". The event chips used a
+   * hyphen while the announcements used an en-dash; now neither hardcodes one.
+   */
+  formatTimeRange(start: Date, end: Date, format?: TimeFormat, locale?: string): string {
+    const formatter = this.timeFormatter(format, locale);
+    if (typeof formatter.formatRange === 'function') {
+      return formatter.formatRange(start, end);
+    }
+    return `${formatter.format(start)} – ${formatter.format(end)}`;
   }
 
   /**
    * Get month name
    */
-  getMonthName(date: Date, locale: string = 'en-US', format: 'long' | 'short' = 'long'): string {
+  getMonthName(date: Date, locale?: string, format: 'long' | 'short' = 'long'): string {
     return date.toLocaleDateString(locale, { month: format });
   }
 
   /**
    * Get day name
    */
-  getDayName(date: Date, locale: string = 'en-US', format: 'long' | 'short' | 'narrow' = 'short'): string {
+  getDayName(date: Date, locale?: string, format: 'long' | 'short' | 'narrow' = 'short'): string {
     return date.toLocaleDateString(locale, { weekday: format });
   }
 
@@ -358,17 +471,6 @@ export class DateService {
     const result = new Date(date);
     result.setFullYear(result.getFullYear() + years);
     return result;
-  }
-
-  /**
-   * Get week number of the year
-   */
-  getWeekNumber(date: Date): number {
-    const d = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()));
-    const dayNum = d.getUTCDay() || 7;
-    d.setUTCDate(d.getUTCDate() + 4 - dayNum);
-    const yearStart = new Date(Date.UTC(d.getUTCFullYear(), 0, 1));
-    return Math.ceil(((d.getTime() - yearStart.getTime()) / 86400000 + 1) / 7);
   }
 
   /**

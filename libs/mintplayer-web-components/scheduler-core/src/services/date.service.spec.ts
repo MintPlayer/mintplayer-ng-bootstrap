@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { DateService, dateService } from './date.service';
 
 describe('DateService', () => {
@@ -103,6 +103,80 @@ describe('DateService', () => {
     });
   });
 
+  describe('week start (Sunday vs Monday)', () => {
+    // These ran Monday-only until firstDayOfWeek became locale-derived. A grid
+    // that silently assumes Monday is exactly what breaks for en-US and ja-JP.
+    it('getWeekDays starts on the requested day and spans seven', () => {
+      const wednesday = new Date(2026, 6, 29);
+
+      const monday = service.getWeekDays(wednesday, 1);
+      expect(monday).toHaveLength(7);
+      expect(monday[0].getDay()).toBe(1);
+      expect(monday[6].getDay()).toBe(0);
+
+      const sunday = service.getWeekDays(wednesday, 0);
+      expect(sunday).toHaveLength(7);
+      expect(sunday[0].getDay()).toBe(0);
+      expect(sunday[6].getDay()).toBe(6);
+
+      // The two weeks are genuinely different windows, not the same array.
+      expect(sunday[0].getTime()).not.toBe(monday[0].getTime());
+    });
+
+    it('getMonthWeeks covers every day of the month under either start', () => {
+      for (const firstDay of [0, 1] as const) {
+        for (let month = 0; month < 12; month++) {
+          const weeks = service.getMonthWeeks(new Date(2026, month, 15), firstDay);
+          const flat = weeks.flat();
+
+          expect(weeks.every((w) => w.length === 7)).toBe(true);
+          expect(flat[0].getDay()).toBe(firstDay);
+
+          const last = service.getMonthEnd(new Date(2026, month, 15)).getDate();
+          for (let d = 1; d <= last; d++) {
+            const present = flat.some(
+              (x) => x.getMonth() === month && x.getDate() === d,
+            );
+            expect(present, `${2026}-${month + 1}-${d} missing (firstDay ${firstDay})`).toBe(true);
+          }
+        }
+      }
+    });
+
+    it('row count follows the week start — the month grid is not fixed height', () => {
+      // May 2026 needs 5 rows Monday-first and 6 Sunday-first. Nothing in the
+      // CSS assumes a count (grid-auto-rows), but the arithmetic must be honest.
+      expect(service.getMonthWeeks(new Date(2026, 4, 15), 1)).toHaveLength(5);
+      expect(service.getMonthWeeks(new Date(2026, 4, 15), 0)).toHaveLength(6);
+    });
+  });
+
+  describe('resolveFirstDayOfWeek', () => {
+    it('prefers an explicit value over the locale', () => {
+      expect(service.resolveFirstDayOfWeek(3, 'en-US')).toBe(3);
+      expect(service.resolveFirstDayOfWeek(0, 'nl-BE')).toBe(0);
+    });
+
+    it('derives Sunday for en-US and Monday for nl-BE', () => {
+      // getWeekInfo reports Sunday as 7; DayOfWeek and Date.getDay() call it 0.
+      // The %7 conversion is the whole point of this function.
+      expect(service.resolveFirstDayOfWeek(undefined, 'en-US')).toBe(0);
+      expect(service.resolveFirstDayOfWeek(undefined, 'nl-BE')).toBe(1);
+    });
+
+    it('never returns 7 — that value is invalid for DayOfWeek', () => {
+      for (const locale of ['en-US', 'nl-BE', 'ja-JP', 'fr-BE', 'de-DE', 'ar-EG']) {
+        const resolved = service.resolveFirstDayOfWeek(undefined, locale);
+        expect(resolved).toBeGreaterThanOrEqual(0);
+        expect(resolved).toBeLessThanOrEqual(6);
+      }
+    });
+
+    it('falls back to Monday when the locale is unusable', () => {
+      expect(service.resolveFirstDayOfWeek(undefined, '!!not-a-locale!!')).toBe(1);
+    });
+  });
+
   describe('getMonthWeeks', () => {
     it('should return correct number of weeks', () => {
       const date = new Date(2025, 0, 15); // January 2025
@@ -155,33 +229,84 @@ describe('DateService', () => {
     });
   });
 
+  // Every assertion here pins an explicit locale. formatTime now delegates to
+  // Intl, so an unpinned expectation asserts the MACHINE's locale: 'PM' on a US
+  // box, 'p.m.' on a Dutch one. That is a test that passes or fails by geography.
   describe('formatTime', () => {
     it('should format correctly in 24h mode', () => {
       const date = new Date(2025, 0, 15, 14, 30);
-      const formatted = service.formatTime(date, '24h');
 
-      expect(formatted).toBe('14:30');
+      expect(service.formatTime(date, '24h', 'en-US')).toBe('14:30');
+      expect(service.formatTime(date, '24h', 'nl-BE')).toBe('14:30');
     });
 
     it('should format correctly in 12h mode', () => {
       const date = new Date(2025, 0, 15, 14, 30);
-      const formatted = service.formatTime(date, '12h');
 
-      expect(formatted).toBe('2:30 PM');
+      expect(service.formatTime(date, '12h', 'en-US')).toBe('2:30 PM');
     });
 
     it('should handle midnight in 12h mode', () => {
       const date = new Date(2025, 0, 15, 0, 0);
-      const formatted = service.formatTime(date, '12h');
 
-      expect(formatted).toBe('12:00 AM');
+      expect(service.formatTime(date, '12h', 'en-US')).toBe('12:00 AM');
     });
 
     it('should handle noon in 12h mode', () => {
       const date = new Date(2025, 0, 15, 12, 0);
-      const formatted = service.formatTime(date, '12h');
 
-      expect(formatted).toBe('12:00 PM');
+      expect(service.formatTime(date, '12h', 'en-US')).toBe('12:00 PM');
+    });
+
+    it('localizes the meridiem rather than hardcoding AM/PM', () => {
+      const date = new Date(2025, 0, 15, 14, 30);
+
+      // The old implementation returned the literal 'PM' for every locale on
+      // earth. Dutch writes it with periods; the point is only that it differs.
+      expect(service.formatTime(date, '12h', 'nl-BE')).not.toBe(
+        service.formatTime(date, '12h', 'en-US'),
+      );
+      expect(service.formatTime(date, '12h', 'nl-BE')).toContain('2:30');
+    });
+
+    it('follows the locale when no format is given', () => {
+      const date = new Date(2025, 0, 15, 14, 30);
+
+      // undefined means "let the locale decide" — US clocks are 12-hour,
+      // Belgian ones 24-hour. Previously this was pinned to 24h for everyone.
+      expect(service.formatTime(date, undefined, 'en-US')).toContain('2:30');
+      expect(service.formatTime(date, undefined, 'nl-BE')).toContain('14:30');
+    });
+
+    it('reuses one Intl formatter per locale+format pair', () => {
+      const date = new Date(2025, 0, 15, 14, 30);
+      // Called once per slot per day in a real render — hundreds of times.
+      // Constructing a formatter each call is the classic Intl performance trap.
+      service.formatTime(date, '24h', 'en-US'); // warm the cache
+
+      // The spy must construct a REAL formatter, or formatTime has nothing to
+      // call .format on — vi.spyOn alone replaces the native constructor.
+      const RealDateTimeFormat = Intl.DateTimeFormat;
+      const spy = vi.spyOn(Intl, 'DateTimeFormat').mockImplementation(
+        // A `function`, not an arrow: arrows are not constructible, and
+        // formatTime calls this with `new`.
+        function (this: unknown, ...args: unknown[]) {
+          return new (RealDateTimeFormat as unknown as new (
+            ...a: unknown[]
+          ) => Intl.DateTimeFormat)(...args);
+        } as unknown as typeof Intl.DateTimeFormat,
+      );
+      try {
+        for (let i = 0; i < 50; i++) service.formatTime(date, '24h', 'en-US');
+        expect(spy).not.toHaveBeenCalled();
+
+        // A different pair is a different formatter, and is built exactly once.
+        service.formatTime(date, '12h', 'en-US');
+        service.formatTime(date, '12h', 'en-US');
+        expect(spy).toHaveBeenCalledTimes(1);
+      } finally {
+        spy.mockRestore();
+      }
     });
   });
 
@@ -277,16 +402,6 @@ describe('DateService', () => {
 
       expect(result.getFullYear()).toBe(2026);
       expect(result.getMonth()).toBe(1); // February
-    });
-  });
-
-  describe('getWeekNumber', () => {
-    it('should return correct week number', () => {
-      const date = new Date(2025, 0, 15);
-      const weekNum = service.getWeekNumber(date);
-
-      expect(weekNum).toBeGreaterThanOrEqual(1);
-      expect(weekNum).toBeLessThanOrEqual(53);
     });
   });
 

@@ -4,9 +4,17 @@ import {
   SchedulerEvent,
   SchedulerEventPart,
   TimeSlot,
+  formatMessage,
   getContrastColor,
+  resolveMessages,
 } from '@mintplayer/web-components/scheduler-core';
-import { BaseView, formatEventAriaLabel, isSlotInSelection } from './base-view';
+import {
+  BaseView,
+  formatCellAnnouncement,
+  formatEventAriaLabel,
+  isSlotInSelection,
+  toDayKey,
+} from './base-view';
 import { SchedulerState } from '../state/scheduler-state';
 
 /**
@@ -42,7 +50,7 @@ export class WeekView extends BaseView {
     this.container.classList.add('scheduler-week-view');
 
     const { date, options } = this.state;
-    const days = dateService.getWeekDays(date, options.firstDayOfWeek);
+    const days = dateService.getWeekDays(date, this.firstDayOfWeek);
 
     // Create day headers
     const headers = this.createElement('div', 'scheduler-day-headers');
@@ -61,8 +69,20 @@ export class WeekView extends BaseView {
       const dayName = this.createElement('div', 'day-name');
       dayName.textContent = dateService.getDayName(day, options.locale);
 
+      // Drill into this day, the same navLinks idiom month view offers (audit
+      // M9). Week view had it in neither modality: the header carried no
+      // `data-date`, so the click delegation never matched here either.
       const dayNumber = this.createElement('div', 'day-number');
       dayNumber.textContent = String(day.getDate());
+      dayNumber.setAttribute('role', 'button');
+      dayNumber.setAttribute('tabindex', '0');
+      dayNumber.setAttribute(
+        'aria-label',
+        formatMessage(resolveMessages(options.messages).openDayView, {
+          date: dateService.formatDateWithWeekday(day, options.locale),
+        }),
+      );
+      this.setData(dayNumber, { date: toDayKey(day) });
 
       header.appendChild(dayName);
       header.appendChild(dayNumber);
@@ -85,7 +105,7 @@ export class WeekView extends BaseView {
 
     for (const slot of slots) {
       const label = this.createElement('div', 'scheduler-time-slot-label');
-      label.textContent = dateService.formatTime(slot.start, options.timeFormat);
+      label.textContent = dateService.formatTime(slot.start, options.timeFormat, options.locale);
       timeGutter.appendChild(label);
     }
 
@@ -99,6 +119,14 @@ export class WeekView extends BaseView {
       const day = days[dayIndex];
       const dayColumn = this.createElement('div', 'scheduler-day-column');
       this.setData(dayColumn, { dayIndex });
+      // The row carries the day, so a screen reader can place the user even
+      // though the day labels sit in a separate strip and cannot be this row's
+      // rowheader without restructuring the DOM.
+      dayColumn.setAttribute(
+        'aria-label',
+        dateService.formatDateWithWeekday(day, options.locale),
+      );
+      dayColumn.setAttribute('aria-rowindex', String(dayIndex + 2));
 
       // Create time slots
       for (let slotIndex = 0; slotIndex < slots.length; slotIndex++) {
@@ -114,6 +142,19 @@ export class WeekView extends BaseView {
         slotEl.setAttribute('role', 'gridcell');
         slotEl.setAttribute('tabindex', '-1');
         slotEl.setAttribute('aria-selected', 'false');
+        // The cell states its own day and time. Previously that context existed
+        // ONLY as a live-region announcement fired on arrow keys, so every other
+        // way in — Tab, a click, focus restored after a rebuild, a view switch —
+        // announced an empty cell. It also makes the cell independent of column-
+        // header association, which cannot be right in a day-major DOM.
+        slotEl.setAttribute(
+          'aria-label',
+          formatCellAnnouncement({ start: slotStart, end: slotEnd }, options),
+        );
+        // Explicit, because DOM order here is day-major while the grid reads
+        // time-major; without these the cell inherits a position that maps onto
+        // the wrong weekday.
+        slotEl.setAttribute('aria-colindex', String(slotIndex + 2));
         slotEl.id = `scheduler-cell-w-${dayIndex}-${slotIndex}`;
         this.setData(slotEl, {
           dayIndex,
@@ -148,6 +189,12 @@ export class WeekView extends BaseView {
     this.renderNowIndicator(days, slots);
 
     this.applyGridRoles({
+      label: formatMessage(resolveMessages(this.state.options.messages).weekGridLabel, {
+        date: dateService.formatDateWithWeekday(
+          dateService.getWeekStart(this.state.date, this.firstDayOfWeek),
+          this.state.options.locale,
+        ),
+      }),
       multiselectable: true,
       columnHeaderRow: ':scope > .scheduler-day-headers',
       columnHeaders: '.scheduler-day-headers > .scheduler-day-header',
@@ -239,7 +286,7 @@ export class WeekView extends BaseView {
 
   private renderEvents(): void {
     const { date, events, options } = this.state;
-    const days = dateService.getWeekDays(date, options.firstDayOfWeek);
+    const days = dateService.getWeekDays(date, this.firstDayOfWeek);
     const weekStart = days[0];
     const weekEnd = new Date(days[6]);
     weekEnd.setHours(23, 59, 59, 999);
@@ -349,7 +396,12 @@ export class WeekView extends BaseView {
     content.appendChild(title);
 
     const timeEl = this.createElement('div', 'event-time');
-    timeEl.textContent = `${dateService.formatTime(part.start, this.state.options.timeFormat)} - ${dateService.formatTime(part.end, this.state.options.timeFormat)}`;
+    timeEl.textContent = dateService.formatTimeRange(
+      part.start,
+      part.end,
+      this.state.options.timeFormat,
+      this.state.options.locale,
+    );
     content.appendChild(timeEl);
 
     eventEl.appendChild(content);
@@ -374,7 +426,7 @@ export class WeekView extends BaseView {
     const { previewEvent, options, date } = this.state;
     if (!previewEvent) return;
 
-    const days = dateService.getWeekDays(date, options.firstDayOfWeek);
+    const days = dateService.getWeekDays(date, this.firstDayOfWeek);
     // splitInParts already accepts a PreviewEvent and flags isStart/isEnd, so the
     // ghost reuses exactly the machinery committed events use.
     const { parts } = timelineService.splitInParts(previewEvent);
@@ -414,7 +466,7 @@ export class WeekView extends BaseView {
 
     if (!dragState || !previewEvent) return;
 
-    const days = dateService.getWeekDays(date, options.firstDayOfWeek);
+    const days = dateService.getWeekDays(date, this.firstDayOfWeek);
     const slots = dateService.getTimeSlots(
       days[0],
       options.slotDuration,
@@ -470,7 +522,7 @@ export class WeekView extends BaseView {
     if (!this.state.options.nowIndicator) return;
 
     const { date, options } = this.state;
-    const days = dateService.getWeekDays(date, options.firstDayOfWeek);
+    const days = dateService.getWeekDays(date, this.firstDayOfWeek);
 
     const now = new Date();
     const todayIndex = days.findIndex((d) => dateService.isSameDay(d, now));

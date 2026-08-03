@@ -8,6 +8,7 @@ import {
   resolveMessages,
   type SchedulerEvent,
   type SchedulerEventPart,
+  type DayOfWeek,
   type SchedulerOptions,
   type TimeSlot,
 } from '@mintplayer/web-components/scheduler-core';
@@ -19,14 +20,25 @@ import { SchedulerState } from '../state/scheduler-state';
  * the event has no resource or the caller doesn't have it (week/day views).
  * Strings and date formatting follow options.messages / options.locale.
  */
+/**
+ * `YYYY-MM-DD` in LOCAL components — the wire format `parseDayKey` round-trips
+ * without a timezone shift. Deliberately not `toISOString()`, which is UTC and
+ * names the wrong day either side of midnight for most of the world.
+ */
+export function toDayKey(d: Date): string {
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(
+    d.getDate(),
+  ).padStart(2, '0')}`;
+}
+
 export function formatEventAriaLabel(
   event: SchedulerEvent,
   resourceTitle: string | null,
   options: SchedulerOptions,
 ): string {
-  const timeFormat = options.timeFormat ?? '24h';
-  const start = dateService.formatTime(event.start, timeFormat);
-  const end = dateService.formatTime(event.end, timeFormat);
+  const timeFormat = options.timeFormat;
+  const start = dateService.formatTime(event.start, timeFormat, options.locale);
+  const end = dateService.formatTime(event.end, timeFormat, options.locale);
   const day = event.start.toLocaleDateString(options.locale, { weekday: 'long', month: 'short', day: 'numeric' });
   const parts = [`${event.title}, ${start}–${end}`, day];
   if (resourceTitle) {
@@ -86,7 +98,7 @@ export function formatCellAnnouncement(
     month: 'short',
     day: 'numeric',
   });
-  const time = dateService.formatTime(slot.start, options.timeFormat ?? '24h');
+  const time = dateService.formatTime(slot.start, options.timeFormat, options.locale);
   const parts = [`${day}, ${time}`];
   if (resourceTitle) parts.push(resourceTitle);
   return parts.join(', ');
@@ -103,10 +115,10 @@ export function formatSelectionAnnouncement(
   const range = selectionRange(state);
   if (!range) return '';
   const { options } = state;
-  const timeFormat = options.timeFormat ?? '24h';
+  const timeFormat = options.timeFormat;
   const dayFmt = { weekday: 'short', month: 'short', day: 'numeric' } as const;
-  const startStr = `${dateService.formatTime(range.start, timeFormat)} ${range.start.toLocaleDateString(options.locale, dayFmt)}`;
-  const endStr = `${dateService.formatTime(range.end, timeFormat)} ${range.end.toLocaleDateString(options.locale, dayFmt)}`;
+  const startStr = `${dateService.formatTime(range.start, timeFormat, options.locale)} ${range.start.toLocaleDateString(options.locale, dayFmt)}`;
+  const endStr = `${dateService.formatTime(range.end, timeFormat, options.locale)} ${range.end.toLocaleDateString(options.locale, dayFmt)}`;
   const slotMs = slotDuration * 1000;
   const slotCount = Math.max(1, Math.round((range.end.getTime() - range.start.getTime()) / slotMs));
   const messages = resolveMessages(options.messages);
@@ -126,11 +138,11 @@ export function formatMoveAnnouncement(
   end: Date,
   options: SchedulerOptions,
 ): string {
-  const timeFormat = options.timeFormat ?? '24h';
+  const timeFormat = options.timeFormat;
   const day = start.toLocaleDateString(options.locale, { weekday: 'short', month: 'short', day: 'numeric' });
   return formatMessage(resolveMessages(options.messages).movedTo, {
-    start: dateService.formatTime(start, timeFormat),
-    end: dateService.formatTime(end, timeFormat),
+    start: dateService.formatTime(start, timeFormat, options.locale),
+    end: dateService.formatTime(end, timeFormat, options.locale),
     day,
   });
 }
@@ -146,12 +158,12 @@ export function formatResizeAnnouncement(
   edge: 'start' | 'end',
   options: SchedulerOptions,
 ): string {
-  const timeFormat = options.timeFormat ?? '24h';
+  const timeFormat = options.timeFormat;
   const messages = resolveMessages(options.messages);
   return formatMessage(messages.resizedEdge, {
     edge: edge === 'start' ? messages.startEdge : messages.endEdge,
-    start: dateService.formatTime(start, timeFormat),
-    end: dateService.formatTime(end, timeFormat),
+    start: dateService.formatTime(start, timeFormat, options.locale),
+    end: dateService.formatTime(end, timeFormat, options.locale),
   });
 }
 
@@ -186,6 +198,22 @@ export abstract class BaseView {
   constructor(container: HTMLElement, state: SchedulerState) {
     this.container = container;
     this.state = state;
+  }
+
+  /**
+   * The week's first day for the current options — the consumer's choice if they
+   * made one, otherwise the locale's own convention (Sunday for en-US and ja-JP,
+   * Monday across most of Europe).
+   *
+   * Resolved at the point of use rather than written back into `options`:
+   * `setOptions` merges cumulatively, so a stored derivation would freeze at the
+   * locale that produced it and quietly ignore a later locale change.
+   */
+  protected get firstDayOfWeek(): DayOfWeek {
+    return dateService.resolveFirstDayOfWeek(
+      this.state.options.firstDayOfWeek,
+      this.state.options.locale,
+    );
   }
 
   /**
@@ -301,8 +329,66 @@ export abstract class BaseView {
   /**
    * Helper to clear container
    */
+  /**
+   * Scroll offsets captured by `clearContainer`, awaiting the rAF that puts them
+   * back. Null when no restore is in flight.
+   */
+  private pendingScroll: { left: number; top: number } | null = null;
+
   protected clearContainer(): void {
+    // `this.container` IS `.scheduler-content`, the scroller. Emptying it
+    // collapses scrollWidth to nothing, so the browser clamps scrollLeft to 0
+    // and the user is thrown back to Monday 00:00 — on a default week that is
+    // ~17,000px away from where they were. Any change to `resources` triggers a
+    // full render, which means every request the row panel emits (rename,
+    // recolour, add, delete) used to lose the user's place the moment the
+    // consumer applied it.
+    //
+    // Captured only when no restore is already pending: two renders in one frame
+    // would otherwise have the second one capture the 0 the first just caused.
+    const restoring = !this.pendingScroll && (this.container.scrollLeft || this.container.scrollTop);
+    if (restoring) {
+      this.pendingScroll = { left: this.container.scrollLeft, top: this.container.scrollTop };
+    }
+
     this.container.innerHTML = '';
+
+    if (restoring) {
+      // What the browser clamped us to once the content vanished — normally 0,
+      // and the value that proves NOBODY has scrolled since. Read after the wipe,
+      // not before.
+      const clamped = { left: this.container.scrollLeft, top: this.container.scrollTop };
+      // A MICROTASK, not a frame. `render()` finishes synchronously after this,
+      // so the queued restore runs once the container is repopulated but still
+      // before the browser paints — the offset never visibly passes through 0.
+      //
+      // With `requestAnimationFrame` it did, and that window was observable: a
+      // caller that scrolls an element into view and then measures it (every
+      // drag gesture in the e2e suite does exactly this) could have the grid
+      // slide back underneath the coordinates it had just recorded, so the
+      // press landed on the wrong element and the drag never armed.
+      queueMicrotask(() => {
+        const target = this.pendingScroll;
+        this.pendingScroll = null;
+        if (!target) return;
+        // Only restore if the offset is still where the wipe left it. Anything
+        // else means someone scrolled deliberately in between — a user reaching
+        // for a different hour, or a caller scrolling a cell into view — and
+        // yanking them back to a pre-render position would be its own bug.
+        // Restoring unconditionally did exactly that, and it broke the drag
+        // gestures that scroll a slot into view before pressing on it.
+        if (
+          this.container.scrollLeft !== clamped.left ||
+          this.container.scrollTop !== clamped.top
+        ) {
+          return;
+        }
+        // Assigning past the new content's extent is harmless — the browser
+        // clamps — so a view that got shorter simply lands at its own end.
+        this.container.scrollLeft = target.left;
+        this.container.scrollTop = target.top;
+      });
+    }
     // The container's ARIA is per-view too: week/day/month/year claim `role=grid`
     // on it via `applyGridRoles`, the timeline puts its grid on an inner element
     // instead. Leaving the role behind after a view switch made the timeline a
@@ -387,9 +473,22 @@ export abstract class BaseView {
     cells?: string;
     /** Grids where Shift+Arrow extends a multi-cell range (week/day). */
     multiselectable?: boolean;
+    /**
+     * Accessible name for the grid. REQUIRED in practice: without it a screen
+     * reader announces "grid" over hundreds of unnamed cells with no indication
+     * of what it is, and two schedulers on a page are indistinguishable.
+     * A consumer's own `aria-label` on the host wins — the host has no role, so
+     * that attribute reaches nothing on its own.
+     */
+    label?: string;
   }): void {
     const container = this.container;
     if (container.getAttribute('role') !== 'grid') container.setAttribute('role', 'grid');
+    const hostLabel = (this.container.getRootNode() as ShadowRoot).host?.getAttribute(
+      'aria-label',
+    );
+    const label = hostLabel || config.label;
+    if (label) container.setAttribute('aria-label', label);
     // Keymap discoverability (FR-9): the hidden instructions div rendered by
     // mp-scheduler shares this shadow root, so the IDREF resolves.
     container.setAttribute('aria-describedby', 'scheduler-kbd-grid');

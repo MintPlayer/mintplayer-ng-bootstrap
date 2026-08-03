@@ -27,12 +27,15 @@ jobs:
     - name: Checkout
       uses: actions/checkout@v6
       with:
+        # Full history: `nx affected` below diffs against the PR base SHA.
         fetch-depth: 0
-        # Required so the Playwright visual-regression baselines (stored in
-        # Git LFS via `.gitattributes`) come down as real PNGs instead of
-        # pointer files. Without this the snapshot comparison receives a
-        # ~130-byte text file and either crashes or fails noisily.
-        lfs: true
+        # NOTE: `lfs: true` was here to fetch the Playwright visual-regression
+        # baselines. It was pure cost — the only LFS objects in the repo are
+        # those baselines, and the visual specs skip themselves on Linux, so CI
+        # paid LFS bandwidth every run for PNGs nothing then read. Visual
+        # regression is deliberately a local-only check; see
+        # apps/ng-bootstrap-demo-e2e/VISUAL-BASELINES.md for why, and put this
+        # back if that ever changes.
     
     - name: Setup node
       uses: actions/setup-node@v6

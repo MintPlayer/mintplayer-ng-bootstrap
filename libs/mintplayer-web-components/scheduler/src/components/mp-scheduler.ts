@@ -17,6 +17,7 @@ import {
   resolveMessages,
   resourceService,
   isResource,
+  type DayOfWeek,
   resolveEventColor,
 } from '@mintplayer/web-components/scheduler-core';
 import { SchedulerStateManager, SchedulerState } from '../state/scheduler-state';
@@ -179,6 +180,41 @@ export class MpScheduler extends LitElement {
     },
   });
 
+  /** Resource/group whose actions panel is open, or null when it is closed. */
+  private rowMenuResourceId: string | null = null;
+
+  /**
+   * The row-actions panel (R1/R3/R4): the four controls that used to sit inline
+   * in the pinned resource column, moved behind one 24px trigger so the column
+   * can be narrow enough to use on a phone.
+   *
+   * A `role="dialog"`, deliberately NOT a `role="menu"`. A menu owns only
+   * `menuitem`-family children, and this panel contains a native
+   * `<input type="color">` — a form control inside a menu is an invalid owned
+   * child, and "a menu that is really a dialog" is the shape to avoid. Keeping
+   * the native input is worth the distinction: it is keyboard-operable,
+   * localized and screen-reader labelled by the platform for free.
+   *
+   * Same mechanics as the two overlays above, including the two traps: the
+   * anchor resolves LAZILY by id (the timeline rebuilds its DOM on every state
+   * change, so a captured element detaches under the open panel), and `onClose`
+   * mirrors dismissal back into state or the panel stays rendered after an
+   * outside-click.
+   */
+  private readonly rowMenuOverlay = new OverlayController(this, {
+    anchor: () => this.rowMenuTriggerById(this.rowMenuResourceId),
+    trigger: () => this.rowMenuTriggerById(this.rowMenuResourceId),
+    panel: () => this.shadowRoot?.querySelector<HTMLElement>('.scheduler-row-panel') ?? null,
+    initialFocus: () =>
+      this.shadowRoot?.querySelector<HTMLElement>('.scheduler-row-panel .row-action') ?? null,
+    modal: false,
+    onClose: () => {
+      this.rowMenuResourceId = null;
+      this.requestUpdate();
+      this.syncRowMenuTriggerState();
+    },
+  });
+
   /** Event the built-in editor is open for, or null when it is closed. */
   private editorEventId: string | null = null;
   /**
@@ -312,10 +348,12 @@ export class MpScheduler extends LitElement {
       case 'first-day-of-week':
         if (newValue) {
           const day = parseInt(newValue, 10);
-          if (day >= 0 && day <= 6) {
-            this.stateManager.setOptions({
-              firstDayOfWeek: day as 0 | 1 | 2 | 3 | 4 | 5 | 6,
-            });
+          // Accept 0-7 and normalise, rather than silently discarding. Callers
+          // reasonably pass what Intl reports, and Intl says Sunday = 7 while
+          // Date.getDay() — and DayOfWeek — say 0. Dropping it left the week
+          // start frozen at whatever it was, with no error to explain why.
+          if (Number.isInteger(day) && day >= 0 && day <= 7) {
+            this.stateManager.setOptions({ firstDayOfWeek: (day % 7) as DayOfWeek });
           }
         }
         break;
@@ -515,6 +553,25 @@ export class MpScheduler extends LitElement {
    * Localized string lookup: options.messages overrides merged onto the
    * English defaults, with {placeholder} interpolation.
    */
+  /**
+   * Which keymap the grid advertises (audit M6). The keys genuinely differ per
+   * view, so the single global string was not merely vague — it was false: it
+   * promised that Enter creates an event, which in year view opens the month
+   * instead, and it never mentioned Space, the only way to reach the popover
+   * in month or year.
+   */
+  private gridInstructionsKey(): keyof SchedulerMessages {
+    const canCreate = this.can('createEvent') || this.can('selectRange');
+    switch (this.stateManager.getState().view) {
+      case 'year':
+        return 'gridInstructionsYear';
+      case 'month':
+        return canCreate ? 'gridInstructionsMonth' : 'gridInstructionsMonthReadOnly';
+      default:
+        return canCreate ? 'gridInstructions' : 'gridInstructionsReadOnly';
+    }
+  }
+
   private msg(
     key: keyof SchedulerMessages,
     params?: Record<string, string | number>,
@@ -540,9 +597,7 @@ export class MpScheduler extends LitElement {
         <div class="scheduler-content"></div>
       </div>
       <div id="scheduler-kbd-grid" class="visually-hidden">
-        ${this.msg(this.can('createEvent') || this.can('selectRange')
-          ? 'gridInstructions'
-          : 'gridInstructionsReadOnly')}
+        ${this.msg(this.gridInstructionsKey())}
       </div>
       <div id="scheduler-kbd-event" class="visually-hidden">
         ${this.msg(
@@ -553,6 +608,7 @@ export class MpScheduler extends LitElement {
             : 'eventInstructionsReadOnly')}
       </div>
       ${this.renderDayPopover()}
+      ${this.renderRowMenu()}
       ${this.renderEventEditor()}
       ${this.liveAnnouncer.template()}
     `;
@@ -573,6 +629,186 @@ export class MpScheduler extends LitElement {
    * is `event-selected`, "New event" is `event-create`, "Show day" is the same
    * drill the "+N more" link used to do.
    */
+  /**
+   * The open panel's trigger, resolved by id because the timeline rebuilds its
+   * DOM on every state change.
+   *
+   * Matched by reading `dataset` rather than by building an attribute selector:
+   * a resource id is consumer data and may contain quotes or brackets, and
+   * `CSS.escape` is not available everywhere (jsdom has no `CSS` global at all,
+   * which threw here). Scanning a handful of buttons costs nothing.
+   */
+  private rowMenuTriggerById(id: string | null): HTMLElement | null {
+    if (!id) return null;
+    const triggers = this.shadowRoot?.querySelectorAll<HTMLElement>('.scheduler-row-menu-button');
+    if (!triggers) return null;
+    for (const trigger of triggers) {
+      if (trigger.dataset['resourceId'] === id) return trigger;
+    }
+    return null;
+  }
+
+  /**
+   * `aria-expanded` belongs on the trigger and must change in the same beat as
+   * the visual state. The trigger is imperative DOM (the timeline builds it), so
+   * it cannot ride Lit's render — it is written here and re-asserted after every
+   * rebuild.
+   */
+  private syncRowMenuTriggerState(): void {
+    this.shadowRoot
+      ?.querySelectorAll<HTMLElement>('.scheduler-row-menu-button')
+      .forEach((btn) => {
+        const open = btn.dataset['resourceId'] === this.rowMenuResourceId;
+        btn.setAttribute('aria-expanded', String(open));
+      });
+  }
+
+  /** Move focus from the focused cell onto its row's actions trigger. */
+  private focusRowTrigger(): void {
+    const rowId = this.stateManager.getState().focusedResourceId;
+    this.rowMenuTriggerById(rowId ?? null)?.focus();
+  }
+
+  /**
+   * Keys while the row's trigger has focus. It sits outside the roving cell
+   * model, so it needs its own small map: open, or hand focus back to the grid.
+   */
+  private handleRowTriggerKeyDown(e: KeyboardEvent, trigger: HTMLElement): boolean {
+    const resourceId = trigger.dataset['resourceId'];
+    switch (e.key) {
+      case 'Enter':
+      case ' ':
+        e.preventDefault();
+        if (resourceId) this.openRowMenu(resourceId);
+        return true;
+      case 'ArrowRight':
+      case 'Escape':
+        e.preventDefault();
+        this.focusFocusedCell();
+        return true;
+      default:
+        return false;
+    }
+  }
+
+  /**
+   * Open the actions panel for a row, or re-target it if another row's is open.
+   *
+   * `OverlayController.open()` is a no-op while already open, and the anchor is
+   * resolved lazily by id — so simply changing the id repainted the panel's
+   * CONTENTS for the new row while leaving it positioned under the previous
+   * row's trigger. The outside-mousedown dismissal cannot break the tie either:
+   * it ignores any press whose composed path includes the host, and every
+   * trigger is inside the host. Nothing was going to close it.
+   *
+   * So a different row is treated as what it is — a different dialog: close,
+   * then open. `close(false)` deliberately does NOT return focus, because the
+   * user's focus is already on the new trigger; handing it back to the old one
+   * would flicker, and would make the following `open()` capture the wrong
+   * element as its Escape target.
+   */
+  private openRowMenu(resourceId: string): void {
+    // The open row's own trigger toggles, which is what a disclosure control
+    // should do and what `aria-expanded` on it promises.
+    if (this.rowMenuOverlay.isOpen && this.rowMenuResourceId === resourceId) {
+      this.closeRowMenu();
+      return;
+    }
+    if (this.rowMenuOverlay.isOpen) this.rowMenuOverlay.close(false);
+
+    this.rowMenuResourceId = resourceId;
+    this.requestUpdate();
+    void this.updateComplete.then(() => {
+      this.syncRowMenuTriggerState();
+      void this.rowMenuOverlay.open();
+    });
+  }
+
+  private closeRowMenu(): void {
+    this.rowMenuOverlay.close();
+  }
+
+  /**
+   * The row-actions panel. Built from the SAME permission list the trigger
+   * consults, so a button never promises a panel that turns out to be empty.
+   */
+  private renderRowMenu(): TemplateResult | typeof nothing {
+    const id = this.rowMenuResourceId;
+    if (!id) return nothing;
+
+    const item = this.findResourceOrGroup(id);
+    const view = this.currentView;
+    if (!item || !(view instanceof TimelineView)) return nothing;
+
+    const actions = view.rowActions(item);
+    if (actions.length === 0) return nothing;
+
+    const messages = resolveMessages(this.stateManager.getState().options.messages);
+    const resource = item as Resource;
+    const colorField = resource.eventColor ? 'eventColor' : 'color';
+    const currentColor = resource.eventColor ?? item.color;
+
+    return html`
+      <div
+        class="scheduler-row-panel"
+        role="dialog"
+        aria-label=${formatMessage(messages.rowMenuDialogLabel, { title: item.title })}
+      >
+        ${actions.map((action) => {
+          if (action === 'set-resource-color') {
+            const label = formatMessage(messages.resourceColor, { title: item.title });
+            return html`
+              <label class="row-action row-action-color">
+                <span>${label}</span>
+                <input
+                  type="color"
+                  class="row-color-input"
+                  aria-label=${label}
+                  .value=${currentColor && /^#[0-9a-f]{6}$/i.test(currentColor)
+                    ? currentColor
+                    : '#000000'}
+                  data-action="set-resource-color"
+                  data-resource-id=${item.id}
+                  data-field=${colorField}
+                />
+              </label>
+            `;
+          }
+
+          const label =
+            action === 'rename-resource'
+              ? formatMessage(messages.renameResource, { title: item.title })
+              : action === 'add-resource'
+                ? formatMessage(messages.addResourceToGroup, { title: item.title })
+                : action === 'add-group'
+                  ? formatMessage(messages.addGroupToGroup, { title: item.title })
+                  : formatMessage(messages.removeResource, { title: item.title });
+
+          return html`
+            <button
+              type="button"
+              class="row-action ${action === 'delete-resource' ? 'is-destructive' : ''}"
+              data-action=${action}
+              data-parent-id=${action === 'add-resource' || action === 'add-group'
+                ? item.id
+                : nothing}
+              data-resource-id=${action === 'add-resource' || action === 'add-group'
+                ? nothing
+                : item.id}
+              @click=${() => {
+                // Rename closes itself in the handler, without returning focus,
+                // so the caret lands straight in the input it opens.
+                if (action !== 'rename-resource') this.closeRowMenu();
+              }}
+            >
+              ${label}
+            </button>
+          `;
+        })}
+      </div>
+    `;
+  }
+
   private renderDayPopover(): TemplateResult | typeof nothing {
     const day = this.popoverDate;
     if (!day) return nothing;
@@ -625,7 +861,10 @@ export class MpScheduler extends LitElement {
           ? html`
               <label class="popover-resource">
                 <span class="popover-resource-label">${this.msg('newEventResource')}</span>
-                <mp-select class="popover-resource-select">
+                <mp-select
+                  class="popover-resource-select"
+                  input-label=${this.msg('newEventResource')}
+                >
                   <option value="">${this.msg('unassignedResource')}</option>
                   ${resources.map(
                     (resource) => html`<option value=${resource.id}>${resource.title}</option>`,
@@ -993,13 +1232,54 @@ export class MpScheduler extends LitElement {
     this.requestUpdate();
   }
 
-  /** Right-click on an event box opens the editor (D12.8b). */
+  /**
+   * Right-click on an event box opens the editor (D12.8b) — on a POINTING device
+   * only.
+   *
+   * On touch the browser synthesizes `contextmenu` from a long-press at roughly
+   * 500ms, which lands ~100ms before our own 600ms hold-to-drag arms. Acting on
+   * it made dragging unreachable on a phone (R9): the editor opened every time
+   * and the drag never started. So a touch-originated `contextmenu` is consumed
+   * and discarded here, leaving the gesture to the hold timer.
+   *
+   * `preventDefault` on the touch path is what stops the *platform* menu from
+   * appearing over an arming drag. It is called for every touch target, not just
+   * events, because the hold timer arms on every target — a long-press on empty
+   * grid arms drag-to-create, and used to do so underneath Android's own menu.
+   */
   private handleContextMenu(e: Event): void {
     const target = (e.composedPath?.()[0] ?? e.target) as HTMLElement | null;
+
+    // Text entry keeps the platform menu on every input device: long-press- (or
+    // right-click-) to-paste in the editor's title field is the user's gesture,
+    // not ours. The mouse path already promised this by falling through; touch
+    // has to be told explicitly, before the suppression below.
+    if (target?.closest?.('input, textarea, [contenteditable]')) return;
+
+    if (this.isTouchContextMenu(e)) {
+      e.preventDefault();
+      return;
+    }
+
     const eventEl = target?.closest?.(
       '[data-event-id]:not(.preview)',
     ) as HTMLElement | null;
-    if (!eventEl) return;
+
+    // Right-click (or the Menu key, or VoiceOver's VO+Shift+M) on a resource row
+    // opens its actions — the desktop half of the same affordance the ⋯ button
+    // gives touch. Checked AFTER the event branch above, because an event can
+    // sit over a resource row and the editor must keep winning there.
+    if (!eventEl) {
+      const rowTrigger = target?.closest?.('.scheduler-resource-cell')?.querySelector?.(
+        '.scheduler-row-menu-button',
+      ) as HTMLElement | null;
+      const rowId = rowTrigger?.dataset['resourceId'];
+      if (rowId) {
+        e.preventDefault();
+        this.openRowMenu(rowId);
+      }
+      return;
+    }
     const event = this.getEventById(eventEl.dataset['eventId'] ?? '');
     if (!event || !this.eventEditor || !this.canOpenEditor(event)) return;
     // Ours now — the native menu on anything else (empty grid, header, the
@@ -1007,6 +1287,48 @@ export class MpScheduler extends LitElement {
     e.preventDefault();
     this.stateManager.setSelectedEvent(event);
     this.tryOpenEventEditor(event);
+  }
+
+  /**
+   * Did this `contextmenu` come from a finger?
+   *
+   * Two signals, because no single one is portable. Chromium delivers
+   * `contextmenu` as a `PointerEvent` and its `pointerType` is authoritative when
+   * present; Firefox and WebKit deliver a bare `MouseEvent` with no such field,
+   * so those fall back to the device recorded at `touchstart`/`mousedown`.
+   *
+   * Measured, not assumed — see the spike in the PRD (§14.3). The browser's
+   * long-press gesture cannot be synthesized through CDP, so this decision is the
+   * only part of the touch story an automated test can reach.
+   */
+  private isTouchContextMenu(e: Event): boolean {
+    const pointerType = (e as PointerEvent).pointerType;
+    if (pointerType) return pointerType === 'touch';
+    return this.inputHandler?.isTouchGesture() ?? false;
+  }
+
+  /**
+   * Does the editor's time list use a 12-hour clock?
+   *
+   * `mp-datetime-picker.hour12` is a boolean, so an unset `timeFormat` has to be
+   * resolved rather than read as false — otherwise a US user gets a 24-hour
+   * picker inside a scheduler that renders 12-hour times everywhere else.
+   * `detectTimeFormat` is the `Intl` probe written for this and, until now,
+   * never called from the component.
+   */
+  /**
+   * The week's first day: the consumer's choice, else the locale's convention.
+   * Mirrors `BaseView.firstDayOfWeek` — resolved at the point of use so a later
+   * locale change is picked up, never written back into `options`.
+   */
+  private firstDayOfWeek(): DayOfWeek {
+    const { firstDayOfWeek, locale } = this.stateManager.getState().options;
+    return dateService.resolveFirstDayOfWeek(firstDayOfWeek, locale);
+  }
+
+  private resolvedHour12(): boolean {
+    const { timeFormat, locale } = this.stateManager.getState().options;
+    return (timeFormat ?? dateService.detectTimeFormat(locale)) === '12h';
   }
 
   /**
@@ -1094,8 +1416,8 @@ export class MpScheduler extends LitElement {
             @value-change=${(e: Event) => this.onEditorStartChange(e)}
             input-label=${this.msg('editorStartLabel')}
             locale=${options.locale ?? nothing}
-            first-day-of-week=${options.firstDayOfWeek ?? 1}
-            .hour12=${options.timeFormat === '12h'}
+            first-day-of-week=${this.firstDayOfWeek()}
+            .hour12=${this.resolvedHour12()}
             .step=${this.pickerStep()}
           ></mp-datetime-picker>
         </label>
@@ -1111,8 +1433,8 @@ export class MpScheduler extends LitElement {
             @value-change=${(e: Event) => this.onEditorEndChange(e)}
             input-label=${this.msg('editorEndLabel')}
             locale=${options.locale ?? nothing}
-            first-day-of-week=${options.firstDayOfWeek ?? 1}
-            .hour12=${options.timeFormat === '12h'}
+            first-day-of-week=${this.firstDayOfWeek()}
+            .hour12=${this.resolvedHour12()}
             .step=${this.pickerStep()}
           ></mp-datetime-picker>
         </label>
@@ -1271,7 +1593,7 @@ export class MpScheduler extends LitElement {
     const { options } = this.stateManager.getState();
     this.liveAnnouncer.announce(
       this.msg('editorStartClamped', {
-        start: dateService.formatTime(latest, options.timeFormat),
+        start: dateService.formatTime(latest, options.timeFormat, options.locale),
       }),
     );
   }
@@ -1310,7 +1632,7 @@ export class MpScheduler extends LitElement {
     const { options } = this.stateManager.getState();
     this.liveAnnouncer.announce(
       this.msg('editorEndClamped', {
-        end: dateService.formatTime(earliest, options.timeFormat),
+        end: dateService.formatTime(earliest, options.timeFormat, options.locale),
       }),
     );
   }
@@ -1680,16 +2002,16 @@ export class MpScheduler extends LitElement {
         break;
       case 'week':
       case 'timeline': {
-        const weekStart = dateService.getWeekStart(date, options.firstDayOfWeek);
+        const weekStart = dateService.getWeekStart(date, this.firstDayOfWeek());
         const weekEnd = dateService.addDays(weekStart, 6);
-        titleText = `${dateService.formatDate(weekStart, options.locale, {
-          month: 'short',
-          day: 'numeric',
-        })} - ${dateService.formatDate(weekEnd, options.locale, {
+        // formatRange, not a hardcoded " - ": the locale owns the separator AND
+        // elides what the two ends share, so this reads "Jul 27 – Aug 2, 2026"
+        // rather than repeating the month or the year.
+        titleText = dateService.formatDateRange(weekStart, weekEnd, options.locale, {
           month: 'short',
           day: 'numeric',
           year: 'numeric',
-        })}`;
+        });
         break;
       }
       case 'day':
@@ -1718,6 +2040,16 @@ export class MpScheduler extends LitElement {
    */
   private observeHeaderWidth(header: HTMLElement): void {
     if (typeof ResizeObserver === 'undefined') return;
+    // The container, not just the header: narrow mode now also drives the
+    // timeline's add bar, which lives nowhere near the header. One observer, one
+    // threshold, one source of truth.
+    //
+    // NOT a CSS container query, tempting as that is for a purely visual switch:
+    // `container-type: inline-size` computes to `contain: layout style
+    // inline-size`, which would make the element a containing block for the
+    // `position: fixed` overlays (day popover, event editor, row panel) and
+    // silently shift every one of them.
+    const container = this.shadowRoot?.querySelector<HTMLElement>('.scheduler-container');
     this.headerResizeObserver = new ResizeObserver((entries) => {
       const width = entries[0]?.contentRect.width ?? header.clientWidth;
       const narrow = width < MpScheduler.NARROW_HEADER_WIDTH;
@@ -1728,6 +2060,7 @@ export class MpScheduler extends LitElement {
       // apply one frame later instead.
       requestAnimationFrame(() => {
         header.toggleAttribute('data-narrow', narrow);
+        container?.toggleAttribute('data-narrow', narrow);
       });
     });
     this.headerResizeObserver.observe(header);
@@ -1735,6 +2068,19 @@ export class MpScheduler extends LitElement {
 
   private renderView(): void {
     if (!this.contentContainer) return;
+
+    // Captured before the teardown, because after it there is nothing to ask.
+    const active = this.shadowRoot?.activeElement as HTMLElement | null;
+    const hadFocus = !!active && this.contentContainer.contains(active);
+
+    // A view SWITCH should land at the top-left; only a rebuild of the same view
+    // preserves the scroll (BaseView.clearContainer). Zeroing here rather than
+    // adding a flag keeps the rule in one place: the view captures whatever it
+    // finds, and what it finds after a switch is 0.
+    if (this.currentViewType !== this.stateManager.getState().view) {
+      this.contentContainer.scrollLeft = 0;
+      this.contentContainer.scrollTop = 0;
+    }
 
     this.currentView?.destroy();
 
@@ -1764,6 +2110,21 @@ export class MpScheduler extends LitElement {
     }
 
     this.currentView?.render();
+
+    // A view switch destroys the node the user was standing on — `render()`
+    // clears the container outright — and nothing put focus anywhere afterwards,
+    // so Alt+M from a focused cell dropped focus onto <body>. Since the keydown
+    // listener lives on the host, every later keystroke then landed outside the
+    // widget and the user had to Tab in from the top of the document.
+    //
+    // Only when focus was ours to begin with: stealing it from elsewhere on the
+    // page because a consumer changed `view` would be its own bug.
+    if (hadFocus) {
+      requestAnimationFrame(() => {
+        const active = this.shadowRoot?.activeElement;
+        if (!active || active === this.shadowRoot?.host) this.focusFocusedCell();
+      });
+    }
   }
 
   // ============================================
@@ -1787,8 +2148,19 @@ export class MpScheduler extends LitElement {
     // an event list, an event's fields — and a consumer applying a request
     // (deleting a popover row, say) must be reflected there, not frozen at
     // open time.
+    // The keymap text is per-view (audit M6), and the template re-renders only
+    // when asked. Without this the description would freeze at whichever view
+    // was showing on first render — the same defect the header buttons had when
+    // they were built once in firstUpdated.
+    if (this.keymapView !== state.view) {
+      this.keymapView = state.view;
+      this.requestUpdate();
+    }
     if (this.popoverDate || this.editorEventId) this.requestUpdate();
   }
+
+  /** The view the `scheduler-kbd-grid` description was last rendered for. */
+  private keymapView: ViewType | null = null;
 
   private previousIsLoading: boolean | null = null;
 
@@ -1829,8 +2201,57 @@ export class MpScheduler extends LitElement {
     this.previousRangeKey = rangeKey;
   }
 
+  /**
+   * Re-apply the header's localized labels.
+   *
+   * The chrome is built imperatively once, in `firstUpdated`, so its button text
+   * froze at whatever `options.messages` held at that moment. The TITLE updated
+   * on every state change and the buttons did not, so switching language at
+   * runtime produced a half-translated header — Dutch dates over English
+   * buttons. Cheap enough to redo unconditionally: eight string assignments.
+   */
+  private applyHeaderLabels(): void {
+    const root = this.shadowRoot;
+    if (!root) return;
+
+    const nav = root.querySelector('.scheduler-nav');
+    nav?.setAttribute('aria-label', this.msg('navLabel'));
+
+    const navButtons = nav?.querySelectorAll('button');
+    const [prevBtn, nextBtn, todayBtn] = navButtons ? [...navButtons] : [];
+    if (prevBtn) {
+      prevBtn.setAttribute('aria-label', this.msg('previousPeriod'));
+      prevBtn.title = this.msg('previousPeriod');
+    }
+    if (nextBtn) {
+      nextBtn.setAttribute('aria-label', this.msg('nextPeriod'));
+      nextBtn.title = this.msg('nextPeriod');
+    }
+    if (todayBtn) {
+      todayBtn.textContent = this.msg('today');
+      todayBtn.setAttribute('aria-label', this.msg('jumpToToday'));
+    }
+
+    const switcher = root.querySelector('.scheduler-view-switcher');
+    switcher?.setAttribute('aria-label', this.msg('switchView'));
+    switcher?.querySelectorAll<HTMLElement>('button[data-view]').forEach((btn) => {
+      const key = btn.dataset['view'] as ViewType | undefined;
+      if (key) btn.textContent = this.viewLabel(key);
+    });
+  }
+
   private updateUI(state: SchedulerState): void {
+    // Nothing to update before the shadow root exists, and this runs then: an
+    // attribute set between `createElement` and `append` — completely idiomatic,
+    // and what every framework does when it builds an element imperatively —
+    // fires `attributeChangedCallback`, which reaches here through `setOptions`.
+    // `firstUpdated` performs the full render once the DOM is there, so skipping
+    // is not a lost update. Without this the component threw on
+    // `document.createElement('mp-scheduler').setAttribute('locale', 'nl-BE')`.
+    if (!this.shadowRoot) return;
+
     this.updateTitle();
+    this.applyHeaderLabels();
 
     // Update view switcher active state — visual class + aria-pressed in lockstep.
     const buttons = this.shadowRoot!.querySelectorAll('.scheduler-view-switcher button');
@@ -2198,6 +2619,21 @@ export class MpScheduler extends LitElement {
     const view = this.stateManager.getState().view;
 
     switch (action) {
+      // The trigger itself is not a request — it opens the panel that carries
+      // them. Handled here so the click never falls through to the grid.
+      case 'row-menu':
+        if (resourceId) this.openRowMenu(resourceId);
+        return true;
+      // Starts the same inline edit double-click and F2 already start. The panel
+      // closes WITHOUT returning focus first: `beginResourceRename` focuses the
+      // input it creates, and handing focus back to the trigger on the way there
+      // would be a visible detour.
+      case 'rename-resource':
+        if (resourceId && this.can('updateResource')) {
+          this.rowMenuOverlay.close(false);
+          this.beginResourceRename(resourceId);
+        }
+        return true;
       case 'add-resource':
         if (this.can('createResource')) {
           this.eventEmitter.emitResourceCreate('resource', view, originalEvent, parentId);
@@ -2303,7 +2739,35 @@ export class MpScheduler extends LitElement {
     });
   }
 
+  /**
+   * Is this key event coming from inside one of the open panels?
+   *
+   * The dialogs are deliberately NON-modal, which invites the user to Shift+Tab
+   * back to the grid while one is open. The guards below used to return
+   * unconditionally on `isOpen`, so every arrow, Enter and Escape in the grid
+   * was swallowed and the widget read as broken (audit M12). Claiming keys only
+   * when focus is actually inside the panel fixes that without weakening the
+   * Escape arbitration, which is the reason the guards exist.
+   */
+  private eventInsidePanel(e: Event, selector: string): boolean {
+    const path = e.composedPath?.() ?? [];
+    const panel = this.shadowRoot?.querySelector(selector);
+    if (!panel) return false;
+    return path.includes(panel);
+  }
+
   private handleKeyDown(e: KeyboardEvent): void {
+    // The row-actions panel owns the keyboard while it is open, on the same
+    // terms as the two dialogs below.
+    if (this.rowMenuOverlay.isOpen) {
+      if (e.key === 'Escape' && this.rowMenuOverlay.isTopmost) {
+        e.preventDefault();
+        e.stopPropagation();
+        this.closeRowMenu();
+        return;
+      }
+      if (this.eventInsidePanel(e, '.scheduler-row-panel')) return;
+    }
     // The popover owns the keyboard while it is open. Escape especially: this
     // listener sits on the host and therefore runs BEFORE the controller's
     // document-level one, so without this the selection would be cleared and the
@@ -2313,8 +2777,10 @@ export class MpScheduler extends LitElement {
         e.preventDefault();
         e.stopPropagation();
         this.closeDayPopover();
+        return;
       }
-      return;
+      // Only while focus is inside it — see eventInsidePanel (audit M12).
+      if (this.eventInsidePanel(e, '.scheduler-day-popover')) return;
     }
     // Same rule for the event editor — and it is the one that needs the
     // `isTopmost` guard: the editor CONTAINS `<mp-datetime-picker>`s, each of
@@ -2330,8 +2796,12 @@ export class MpScheduler extends LitElement {
         e.preventDefault();
         e.stopPropagation();
         this.closeEventEditor();
+        return;
       }
-      return;
+      // Only while focus is inside it — see eventInsidePanel (audit M12). The
+      // editor's own inputs are covered, including the pickers in its shadow
+      // roots, because composedPath crosses the boundary.
+      if (this.eventInsidePanel(e, '.scheduler-event-editor')) return;
     }
 
     // Move-mode owns every key while active so arrows/Enter/Esc go to it.
@@ -2345,6 +2815,12 @@ export class MpScheduler extends LitElement {
       this.dragManager.cancel();
       return;
     }
+
+    // The row's actions trigger owns its own keys while focused.
+    const trigger = (e.composedPath?.()[0] as HTMLElement | undefined)?.closest?.(
+      '.scheduler-row-menu-button',
+    ) as HTMLElement | null;
+    if (trigger && this.handleRowTriggerKeyDown(e, trigger)) return;
 
     // Alt+letter view shortcuts work from any focus (PRD D2). Bare letters
     // are no longer hot-keys — that frees them for future input surfaces.
@@ -2379,14 +2855,40 @@ export class MpScheduler extends LitElement {
       this.handleMoreLink(dateStr);
       return true;
     }
+    // The day-number drill-down in week view (audit M9). Mirrors the click
+    // branch in the pointer delegation, which is the only place this behaviour
+    // existed before. Month view's day numbers are not focusable — see the
+    // comment on why in `MonthView.createDayCell`.
+    if (active.classList.contains('day-number')) {
+      const dateStr = active.dataset['date'];
+      if (!dateStr) return false;
+      this.drillTo(this.parseDayKey(dateStr), 'day');
+      return true;
+    }
     if (active.classList.contains('scheduler-year-month-header')) {
       const monthStr = active.dataset['month'];
       if (!monthStr) return false;
-      this.stateManager.setDate(this.parseDayKey(monthStr));
-      this.stateManager.setView('month');
+      this.drillTo(this.parseDayKey(monthStr), 'month');
       return true;
     }
     return false;
+  }
+
+  /**
+   * Drill into `view` at `date` from a control that the resulting rebuild will
+   * destroy — which is every drill-down control, by definition.
+   *
+   * The focus restore has to happen HERE rather than being left to the view
+   * switch. `setDate` rebuilds the current view first, and that rebuild already
+   * drops focus to `<body>`; by the time the switch looks for something worth
+   * restoring, there is nothing focused inside the widget and it correctly
+   * declines to steal focus from wherever it went. So the switch's own
+   * restoration can never cover this path.
+   */
+  private drillTo(date: Date, view: ViewType): void {
+    this.stateManager.setDate(date);
+    this.stateManager.setView(view);
+    this.focusFocusedCell();
   }
 
   private getFocusedKind(): 'cell' | 'event' | 'other' {
@@ -2624,10 +3126,23 @@ export class MpScheduler extends LitElement {
         e.preventDefault();
         timelineLayout ? this.moveCellByResource(+1, shift) : this.moveCellByTime(+1, shift);
         break;
-      case 'ArrowLeft':
+      case 'ArrowLeft': {
         e.preventDefault();
-        timelineLayout ? this.moveCellByTime(-1, shift) : this.moveCellByDay(-1, shift);
+        if (!timelineLayout) {
+          this.moveCellByDay(-1, shift);
+          break;
+        }
+        // At the row's first slot, ArrowLeft leaves the time axis and enters the
+        // row header — the only way a keyboard user can reach the row's actions,
+        // since the trigger is deliberately not a Tab stop. Detected by moving
+        // and seeing whether the clamp held, rather than by recomputing the
+        // window's bounds here.
+        const before = this.stateManager.getState().focusedCell?.start.getTime();
+        this.moveCellByTime(-1, shift);
+        const after = this.stateManager.getState().focusedCell?.start.getTime();
+        if (before !== undefined && before === after && !shift) this.focusRowTrigger();
         break;
+      }
       case 'ArrowRight':
         e.preventDefault();
         timelineLayout ? this.moveCellByTime(+1, shift) : this.moveCellByDay(+1, shift);
@@ -2681,6 +3196,10 @@ export class MpScheduler extends LitElement {
       case 'ArrowRight': e.preventDefault(); this.moveFocusedDateByDays(+1); return;
       case 'ArrowUp':    e.preventDefault(); this.moveFocusedDateByDays(-7); return;
       case 'ArrowDown':  e.preventDefault(); this.moveFocusedDateByDays(+7); return;
+      // Promised by the announced keymap, previously dead — and worse, not
+      // prevented, so the page scrolled the widget out of view instead.
+      case 'PageUp':     e.preventDefault(); this.moveFocusedDateByMonths(-1); return;
+      case 'PageDown':   e.preventDefault(); this.moveFocusedDateByMonths(+1); return;
       case 'Enter':      e.preventDefault(); this.commitFocusedDateAsCreate(e, 'day'); return;
       // Space, not Enter: Enter already means "create for this day" and taking
       // it would remove the only keyboard create path in this view.
@@ -2706,6 +3225,9 @@ export class MpScheduler extends LitElement {
       case 'ArrowRight': e.preventDefault(); this.moveFocusedDateByMonths(+1); return;
       case 'ArrowUp':    e.preventDefault(); this.moveFocusedDateByMonths(-3); return;
       case 'ArrowDown':  e.preventDefault(); this.moveFocusedDateByMonths(+3); return;
+      // A year is the period here, so Page Up/Down move by twelve months.
+      case 'PageUp':     e.preventDefault(); this.moveFocusedDateByMonths(-12); return;
+      case 'PageDown':   e.preventDefault(); this.moveFocusedDateByMonths(+12); return;
       // Drill into the month, matching what clicking the month header does.
       // Enter used to emit a MONTH-SPANNING event-create here, which no consumer
       // could reasonably want from a year overview.
@@ -2880,7 +3402,8 @@ export class MpScheduler extends LitElement {
     if (!f) return;
     if (state.view !== 'timeline') return;
     if (extend) return;
-    const next = this.adjacentRow(state.focusedResourceId, direction, state);
+    // Groups included: they are rows the user can see and click into.
+    const next = this.adjacentRow(state.focusedResourceId, direction, state, true);
     if (next === undefined) return;
     this.commitFocusMove(f, next, false);
   }
@@ -2912,18 +3435,19 @@ export class MpScheduler extends LitElement {
         break;
       }
       case 'week': {
-        const days = dateService.getWeekDays(state.date, state.options.firstDayOfWeek);
+        const days = dateService.getWeekDays(state.date, this.firstDayOfWeek());
         const day = end === 'start' ? days[0] : days[6];
         const slots = dateService.getTimeSlots(day, state.options.slotDuration, state.options.slotMinTime, state.options.slotMaxTime);
         target = end === 'start' ? slots[0] : slots[slots.length - 1];
         break;
       }
       case 'timeline': {
-        const flattened = resourceService.flatten(state.resources, state.collapsedGroups);
-        const visible = flattened.filter((f) => f.visible && isResource(f.item));
-        if (visible.length === 0) return;
-        resourceId = end === 'start' ? visible[0].item.id : visible[visible.length - 1].item.id;
-        const days = dateService.getWeekDays(state.date, state.options.firstDayOfWeek);
+        // The same row list the arrows walk, so Home/End cannot land somewhere
+        // ArrowUp/ArrowDown would never reach.
+        const rows = this.navigableRows(state, true);
+        if (rows.length === 0) return;
+        resourceId = end === 'start' ? rows[0] : rows[rows.length - 1];
+        const days = dateService.getWeekDays(state.date, this.firstDayOfWeek());
         const day = end === 'start' ? days[0] : days[6];
         const slots = dateService.getTimeSlots(day, state.options.slotDuration, state.options.slotMinTime, state.options.slotMaxTime);
         target = end === 'start' ? slots[0] : slots[slots.length - 1];
@@ -2951,8 +3475,8 @@ export class MpScheduler extends LitElement {
       newStart.setHours(f.start.getHours(), f.start.getMinutes(), f.start.getSeconds(), 0);
     } else {
       // week / timeline — preserve day-of-week index.
-      const oldDays = dateService.getWeekDays(oldDate, state.options.firstDayOfWeek);
-      const newDays = dateService.getWeekDays(newState.date, newState.options.firstDayOfWeek);
+      const oldDays = dateService.getWeekDays(oldDate, this.firstDayOfWeek());
+      const newDays = dateService.getWeekDays(newState.date, this.firstDayOfWeek());
       const oldIdx = oldDays.findIndex((d) => dateService.isSameDay(d, f.start));
       const targetDay = newDays[Math.max(0, oldIdx)] ?? newDays[0];
       newStart = new Date(targetDay);
@@ -2993,7 +3517,7 @@ export class MpScheduler extends LitElement {
       }
       case 'week':
       case 'timeline': {
-        const days = dateService.getWeekDays(state.date, state.options.firstDayOfWeek);
+        const days = dateService.getWeekDays(state.date, this.firstDayOfWeek());
         const viewStart = this.parseTimeOnDay(days[0], state.options.slotMinTime);
         const viewEnd = this.parseTimeOnDay(days[6], state.options.slotMaxTime);
         return start.getTime() >= viewStart.getTime() && start.getTime() < viewEnd.getTime();
@@ -3025,14 +3549,9 @@ export class MpScheduler extends LitElement {
     currentId: string | null,
     direction: 1 | -1,
     state: SchedulerState,
+    includeGroups: boolean,
   ): string | null | undefined {
-    const flattened = resourceService.flatten(state.resources, state.collapsedGroups);
-    const rows: (string | null)[] = flattened
-      .filter((f) => f.visible && isResource(f.item))
-      .map((f) => f.item.id);
-    // Same presence rule as TimelineView.hasUnassignedRow: the bucket renders
-    // (last) whenever it holds events.
-    if ((state.eventsByResource.get(null) ?? []).length > 0) rows.push(null);
+    const rows = this.navigableRows(state, includeGroups);
     if (rows.length === 0) return undefined;
     const idx = rows.indexOf(currentId);
     if (idx < 0) return rows[0];
@@ -3041,12 +3560,40 @@ export class MpScheduler extends LitElement {
     return rows[next];
   }
 
+  /**
+   * The rows a keyboard user can land on, in the order the timeline draws them.
+   *
+   * `includeGroups` is the whole difference between navigating and moving.
+   * Arrow keys navigate, and a group row is a real row with real gridcells that
+   * can even hold the grid's only tab stop — skipping it is what made the first
+   * arrow press teleport the user to an unrelated row (audit M10). Move-mode
+   * carries an event with it, and a group row renders no events container, so a
+   * group must never be offered as a destination there.
+   */
+  private navigableRows(state: SchedulerState, includeGroups: boolean): (string | null)[] {
+    const rows: (string | null)[] = resourceService
+      .flatten(state.resources, state.collapsedGroups)
+      .filter((f) => f.visible && (includeGroups || isResource(f.item)))
+      .map((f) => f.item.id);
+    // Same presence rule as TimelineView.hasUnassignedRow: the bucket renders
+    // (last) whenever it holds events.
+    if ((state.eventsByResource.get(null) ?? []).length > 0) rows.push(null);
+    return rows;
+  }
+
+  /**
+   * Title of any row, group rows included. `getAllResources` returns leaves
+   * only by design, so while that was the lookup, arrowing onto a group row
+   * announced the time with no row name at all — swapping M10's teleport for a
+   * silent row rather than fixing it.
+   */
   private getResourceTitle(id: string | null): string | null {
     if (!id) return null;
-    for (const r of resourceService.getAllResources(this.stateManager.getState().resources)) {
-      if (r.id === id) return r.title;
-    }
-    return null;
+    const state = this.stateManager.getState();
+    const match = resourceService
+      .flatten(state.resources, state.collapsedGroups)
+      .find((f) => f.item.id === id);
+    return match?.item.title ?? null;
   }
 
   /**
@@ -3085,11 +3632,29 @@ export class MpScheduler extends LitElement {
   }
 
   /** Re-focus whatever cell the keyboard model currently considers focused. */
+  /**
+   * Put focus back inside the grid after a rebuild or a view switch.
+   *
+   * The fallback is the point. `focusedCell` is null whenever the user never
+   * entered the grid, and after a view switch it can name a cell the new view
+   * does not render — in both cases this used to do nothing at all and focus
+   * stayed on `<body>`. That is reachable from every drill-down control (the
+   * week day-number, the more-link, the year month-header): activating one
+   * destroys the element the user is standing on by definition, since it
+   * rebuilds the view underneath them.
+   *
+   * Every view promotes exactly one cell to `tabindex="0"` as its roving tab
+   * stop, so that cell is the correct "wherever this view considers current".
+   */
   private focusFocusedCell(): void {
     const state = this.stateManager.getState();
     if (state.focusedCell) {
       this.scrollAndFocusCell(state.focusedCell, state.focusedResourceId);
     }
+    if (this.shadowRoot?.activeElement) return;
+    this.contentContainer
+      ?.querySelector<HTMLElement>('[role="gridcell"][tabindex="0"]')
+      ?.focus();
   }
 
   /**
@@ -3152,8 +3717,8 @@ export class MpScheduler extends LitElement {
       resourceId,
     );
     this.liveAnnouncer.announce(this.msg('selectionCommitted', {
-      start: dateService.formatTime(start, state.options.timeFormat),
-      end: dateService.formatTime(end, state.options.timeFormat),
+      start: dateService.formatTime(start, state.options.timeFormat, state.options.locale),
+      end: dateService.formatTime(end, state.options.timeFormat, state.options.locale),
     }));
   }
 
@@ -3314,7 +3879,13 @@ export class MpScheduler extends LitElement {
   /** Walk to the next/previous row (timeline only). Updates the preview's resourceId. */
   private nudgeKeyboardMoveResource(direction: 1 | -1): void {
     if (!this.keyboardMove) return;
-    const next = this.adjacentRow(this.keyboardMove.workingResourceId, direction, this.stateManager.getState());
+    // Groups excluded: there is no events container on a group row to drop into.
+    const next = this.adjacentRow(
+      this.keyboardMove.workingResourceId,
+      direction,
+      this.stateManager.getState(),
+      false,
+    );
     if (next === undefined) return;
     this.keyboardMove.workingResourceId = next;
     this.applyKeyboardMovePreview();
