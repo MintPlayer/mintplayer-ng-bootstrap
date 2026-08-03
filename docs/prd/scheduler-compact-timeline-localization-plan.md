@@ -708,3 +708,73 @@ native colour input) were never audited — the surfaces R8 exists for.
       is absent without them, by design) and opens a row's panel before scanning.
 - [x] 34 axe tests pass with the panel open, so the new ARIA is clean AND guarded rather than
       merely unexamined.
+
+## M19 — The deferred audit majors, closed [PRD §8 majors]
+
+M9 above took only the majors adjacent to code this PR already touched and deferred the rest.
+This closes six of the seven that remained. Grouped by what they actually were, because they
+are not all the same kind of problem.
+
+**The grid was publishing coordinates that did not describe what it renders.**
+
+- [x] **M2** — the time-label header row carried no `aria-rowindex` at all, and the body
+      started numbering at 2, so the first resource row claimed that row's index and every
+      row below was off by one against a rowcount that counted both headers. Headers are rows
+      1 and 2; the body starts at 3.
+- [x] **M3** — the day-label row's slot container was the only one of three left roleless, so
+      the day headers hung off a bare generic inside a `row`. Its twin one row down was
+      already `presentation`. The second corner cell had the same shape of bug: no role, while
+      its twin was a `columnheader`.
+- [x] **M4** — no column model whatsoever. A day header spans ~48 slot columns and claimed
+      one, so the header/cell alignment a reader computes put every column under the wrong
+      weekday; the grid announced as two columns wide, that being what one row's cell count
+      suggests. Adds `aria-colcount`, `aria-colindex` throughout, `aria-colspan` on the day
+      headers and on the events overlay.
+
+Slot computation is hoisted to a single `slotsByDay` threaded through the headers and both row
+builders — it was recomputed per day per row, and a column model needs one authoritative
+answer: a header index disagreeing with the cells under it is worse than publishing none.
+
+**A keyboard dead zone.**
+
+- [x] **M10** — group rows render real gridcells and can hold the grid's only tab stop, yet
+      the row walk filtered to leaf resources, so the first arrow teleported the user
+      elsewhere. The walk now takes an explicit `includeGroups`: navigation includes them,
+      move-mode does not, because a group row has no events container to drop into.
+      `getResourceTitle` had to follow — it read through `getAllResources`, which returns
+      leaves by design, so without that a group row would have announced its time with no row
+      name, trading the teleport for a silent row rather than fixing it.
+
+**A keymap that lied.**
+
+- [x] **M6** — one global string for five views. In year it was false, not vague: it promised
+      Enter creates an event, where Enter opens the focused month. Space was unmentioned
+      everywhere despite being the only route to the popover in month and year. Month and year
+      get their own strings; year needs no read-only variant, since neither of its commands
+      creates anything.
+- [x] The template re-renders only on an explicit `requestUpdate`, so per-view text would have
+      frozen at whichever view rendered first — the same defect the header buttons had when
+      they were built once in `firstUpdated`. A view change now requests an update.
+
+**A drill-down that existed in neither modality.**
+
+- [x] **M9-audit** — week view could not open a day by keyboard. Nor by mouse: its headers
+      carried no `data-date`, so the click delegation never matched there either. The day
+      number is now a named drill-down control in both, following the more-link precedent.
+- [x] `toDayKey` moves to `base-view` as the one local-date wire format, replacing MonthView's
+      private copy. Local components, not `toISOString()` — UTC names the wrong day either
+      side of midnight for most of the world.
+
+**Two that are deliberately not closed, and why.**
+
+- [x] **M11 is not a defect — the comment was.** It claimed the resizer lives outside the
+      grid's focus model; it does not. It is nonetheless safe, for a reason that comment never
+      gave: `columnheader` constrains no descendants, so no owned-children rule is broken, and
+      `getFocusedKind()` returns `'other'` there, so the grid declines the arrow keys and only
+      the resizer's own listener runs. Moving it out would mean rebuilding the sticky
+      containing block it positions against, for no accessibility gain. Comment corrected to
+      say what actually protects it.
+- [ ] **Month view's day-number drill-down stays mouse-only.** The same treatment week view
+      got would add a tab stop to each of 35-42 cells, putting that many stops in front of the
+      grid — a worse regression than the gap it closes. It needs a key on the focused cell
+      instead, which is a keymap addition and belongs with the A-B2 follow-up.

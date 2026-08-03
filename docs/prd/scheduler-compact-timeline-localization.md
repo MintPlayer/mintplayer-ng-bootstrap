@@ -963,10 +963,15 @@ Two more surfaced while verifying those and are fixed in the same commits: a run
   was needed — all three pass `options` as an object property — but the other two demos
   would exercise a derived week start more visibly, since only the Angular demo used to pin
   Monday.
-- The remaining audit majors: M2/M3/M4 (rowindex/colcount bookkeeping), M6 (per-view keymap
-  text), M9 (day-number drill-down has no keyboard equivalent in week/day), M10 (`adjacentRow`
-  filters `isResource`, so group rows are skipped by vertical arrow nav), M11 (the column
-  resizer is a `separator` inside the grid).
+- **The remaining audit majors are now closed** — M2/M3/M4 (the grid's row and column
+  bookkeeping), M6 (per-view keymap text), M9 (the week-view drill-down), M10 (group rows in
+  the arrow walk). See §21. Two qualifications:
+  - **M11 turned out not to be a defect, only a false comment.** The resizer is inside the
+    grid, as the audit said, but that is harmless here and the comment claiming otherwise was
+    the actual error. §21 records what really protects it.
+  - **Month view's day-number drill-down remains mouse-only.** Giving it week view's
+    treatment would add a tab stop to each of 35-42 cells. That belongs with the A-B2
+    follow-up, as a key on the focused cell.
 - **Locale-derived behaviour makes tests machine-dependent, and that had to be pinned in two
   places.** Deriving formatting and the week start from the locale (D9–D12) means an
   unpinned test asserts whatever regional settings the machine happens to have: these specs
@@ -1217,3 +1222,119 @@ Panel contents now read: **group** — Rename, Add resource, Add subgroup, colou
 
 Verified in the browser: clicking Rename closes the panel, the input appears and takes focus,
 and Enter emits `resource-update` with `{ title: 'Alice Cooper' }`.
+
+## 21. The deferred audit majors, closed
+
+§15 listed five majors this PR did not close. Four are now closed, one turned out to be a
+false comment rather than a defect, and one is deliberately left for the A-B2 follow-up. The
+grouping matters because they are not all the same kind of problem.
+
+### 21.1 The grid published coordinates that did not describe what it renders (M2, M3, M4)
+
+Taken together these three meant the timeline's ARIA geometry was fiction. A screen reader
+that tries to say "column 14 of 337, Tuesday 09:00" needs three things to agree: the grid's
+declared size, each cell's own coordinates, and which header spans which columns. None of the
+three was right.
+
+**M2 — the rows were off by one against their own count.** `aria-rowcount` counted both
+header rows, but only the first one carried an `aria-rowindex`, and the body started numbering
+at 2 — so the first resource row claimed the time-label row's index and everything below was
+shifted. Headers are now rows 1 and 2 and the body starts at 3, which is what the count always
+assumed.
+
+**M3 — one of three sibling containers was left roleless.** The day-label row's slot container
+had no role while its twin one row down was explicitly `presentation`, so the day headers hung
+off a bare generic inside a `row`. The second corner cell had the same shape of bug from the
+other direction: no role at all, while its twin was a `columnheader`.
+
+**M4 — there was no column model.** A day header spans ~48 slot columns and claimed exactly
+one. The consequence is not a missing nicety: header/cell association is computed from these
+numbers, so every column was associated with the wrong weekday. And with no `aria-colcount`,
+the count is inferred from a single row's cell count — here 2, the rowheader plus the
+presentational slots wrapper — so the whole timeline announced as a two-column grid.
+
+The events overlay needed a decision. It is a `gridcell` stretched across the entire slot
+strip rather than a column of its own, so it takes `aria-colindex="2"` with a colspan covering
+every slot. Leaving it unindexed among indexed siblings would let a reader infer it sits one
+column past the last slot — outside the declared `colcount`.
+
+**One structural change came with it.** Slot computation is hoisted into a single `slotsByDay`
+threaded through the headers and both row builders. It was previously recomputed per day per
+row, but the reason to change it is correctness rather than cost: a column model needs one
+authoritative answer, and a header index that disagreed with the cells beneath it would be
+worse than publishing none at all.
+
+### 21.2 Group rows were a keyboard dead zone (M10)
+
+A group row renders real gridcells and can hold the grid's only tab stop — so a user can
+easily be standing on one — yet the row walk filtered to leaf resources. `indexOf` then
+returned -1 and the fallback sent them to the first resource: the first arrow press teleported
+them somewhere unrelated.
+
+The walk now takes `includeGroups` explicitly, because the two callers genuinely disagree.
+Navigation includes group rows; move-mode must not, since a group row renders no events
+container and could not accept the event being carried.
+
+**The obvious fix alone would have been a different bug.** `getResourceTitle` looked rows up
+through `getAllResources`, which returns leaves by design, so a group row would have announced
+its time with no row name at all. That trades a teleport for a silent row. It now resolves
+against the flattened tree, groups included.
+
+### 21.3 The announced keymap was false, not merely vague (M6)
+
+One global string described five views. In year view it promised that Enter creates an event,
+where Enter opens the focused month — a user following the instructions gets a different
+result. And Space went unmentioned in every view despite being the only route to the popover
+in month and year, which is the one place a keyboard user reaches day-level detail.
+
+Month and year now have their own strings. Year needs no read-only variant: Enter drills and
+Space lists, so neither command is gated by a create capability and the text stays true under
+any.
+
+**Per-view text needed a re-render that was not happening.** The Lit template re-renders only
+on an explicit `requestUpdate`, which the state handler issued only while a popover or the
+editor was open. Per-view text would therefore have frozen at whichever view rendered first —
+precisely the defect the header buttons had when they were built once in `firstUpdated`
+(§17.1). A view change now requests an update.
+
+### 21.4 Week view's drill-down existed in neither modality (M9)
+
+The audit reported that "click the day number to open that day" had no keyboard equivalent in
+week view. Measured, it was worse: week view's headers carry no `data-date`, so the click
+delegation never matched there either. The feature was simply absent, not merely
+keyboard-inaccessible.
+
+The day number is now a named drill-down control in both modalities, following the existing
+more-link precedent (role, tab stop, activation replayed through the scheduler-level
+Enter/Space handler). Its accessible name is a localized "Open {date}" — the visible text is a
+bare number, which says nothing about what activating it does.
+
+Day view is untouched: there is nothing to drill into from it.
+
+`toDayKey` moved to `base-view` as the single local-date wire format, replacing MonthView's
+private copy. Local components rather than `toISOString()`, which is UTC and names the wrong
+day either side of midnight for most of the world — the same latent defect §15 already noted
+in year view.
+
+### 21.5 M11 was a false comment, not a defect
+
+The resizer does live inside the `role="grid"` subtree, as the audit said. But that is not a
+problem here, and the real error was the comment claiming the opposite — a reader trusting it
+would look for a protection that does not exist.
+
+What actually makes it safe: `columnheader` places no restriction on its own descendants, so
+no owned-children rule is broken; and `getFocusedKind()` matches on the cell and event classes
+and returns `'other'` for the resizer, so the grid declines its arrow keys and only the
+resizer's own listener runs. It is a deliberate second tab stop, not a trap.
+
+Moving it out of the grid would mean rebuilding the containing block it positions against —
+the sticky corner cell — for no accessibility gain. The comment now states the real reason.
+
+### 21.6 Still open: month view's day-number drill-down
+
+Month view has the same gap week view had, and it is not closed. Giving it the same treatment
+would add a tab stop to each of 35-42 day cells, putting that many stops in front of the grid.
+That is a worse regression than the gap it closes.
+
+It needs a key on the focused cell rather than a tab stop per cell — a keymap addition, which
+makes it a natural fit for the A-B2 follow-up rather than something to bolt on here.
