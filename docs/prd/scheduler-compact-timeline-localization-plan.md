@@ -778,3 +778,27 @@ answer: a header index disagreeing with the cells under it is worse than publish
       got would add a tab stop to each of 35-42 cells, putting that many stops in front of the
       grid — a worse regression than the gap it closes. It needs a key on the focused cell
       instead, which is a keymap addition and belongs with the A-B2 follow-up.
+
+## M20 — Visual regression: attempted in CI, reverted, documented [PRD §22]
+
+Not scheduler work. Found by checking whether Firefox actually runs in CI (it does — 201 tests),
+which surfaced that 14 tests were being skipped and that 10 of them were the whole visual suite.
+
+- [x] **Diagnosed:** both visual specs skip unless Chromium-on-Win32, so they have **never run in
+      CI**. And `lfs: true` on checkout existed solely to fetch their baselines — the only LFS
+      objects in the repo — so every run paid bandwidth for files it then skipped.
+- [x] **Attempted the obvious fix** (commit a `-chromium-linux` baseline set beside the Win32 one,
+      generated in the version-matched Playwright container) and **reverted it** after CI measured
+      the container ≠ runner: card came back 72px taller (ratio 0.25), ribbon 3–4× over its 0.01
+      threshold at identical dimensions. Numbers and reasoning in PRD §22.2.
+- [x] **Decision: local-only.** `lfs: true` removed; `fetch-depth: 0` kept, since `nx affected`
+      needs it.
+- [x] `apps/ng-bootstrap-demo-e2e/VISUAL-BASELINES.md` records the policy, the measurements, what
+      pinning the rasteriser would take, and the host-binding gotchas that cost three server
+      restarts to find (`--host 0.0.0.0`; Vite 403s an unlisted `Host`; `allowedHosts` *replaces*
+      the default allowlist so dropping `localhost` makes local runs 400; `--network host` on
+      Linux avoids all of it; run `docker run` from PowerShell, not Git Bash).
+
+**Lesson worth carrying:** a skipped test is invisible in a green pipeline. Both of these reported
+success for as long as they have existed, while asserting nothing. Worth a periodic look at the
+skip count rather than only the pass count.

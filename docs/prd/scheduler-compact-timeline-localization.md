@@ -1338,3 +1338,68 @@ That is a worse regression than the gap it closes.
 
 It needs a key on the focused cell rather than a tab stop per cell — a keymap addition, which
 makes it a natural fit for the A-B2 follow-up rather than something to bolt on here.
+
+## 22. Visual regression stays a local-only check (found while verifying this PR)
+
+Unrelated to the scheduler, but found by reading this PR's CI logs closely enough to answer "did
+Firefox actually run?", and settled here rather than left as a loose end.
+
+### 22.1 The finding
+
+`card.visual.spec.ts` and `ribbon.visual.spec.ts` are the only pixel-comparison tests in the repo,
+and both carried `test.skip(process.platform !== 'win32', …)`. CI is `ubuntu-latest`, so **the
+entire visual suite has never run in CI** — the one regression class it exists to catch was caught
+only if a developer happened to run it locally on Windows.
+
+It also cost something. `pull-request.yml` set `lfs: true` on checkout *specifically* to fetch
+those baselines, and they are the only LFS objects in the repo, so every run paid LFS bandwidth
+for PNGs it then skipped reading.
+
+### 22.2 Why the obvious fix does not work
+
+Committing a second `-chromium-linux` baseline set alongside the Win32 one — Playwright keys
+snapshot filenames by platform, so both can coexist — was implemented, pushed, and **reverted**
+after CI measured it:
+
+| shot | baseline | received on `ubuntu-latest` |
+|---|---|---|
+| card | 864 × 10932 | **864 × 11004** — 72px taller, ratio 0.25 |
+| ribbon × 4 | 1120 × 134/136 | same size, 4,492–5,102 px differ, **ratio 0.03–0.04** |
+
+Two things that together rule the approach out:
+
+1. **The Playwright container is not the runner.** Baselines generated in
+   `mcr.microsoft.com/playwright:v1.60.0-noble` came out dimension-identical to the Win32 set, so
+   that image rasterises like a Windows box; `ubuntu-latest` matched neither. A 72px height delta
+   is text *wrapping* differently — a font-availability difference, not antialiasing — so
+   regenerating in the same container cannot close it.
+2. **Runner-generated baselines would be fragile anyway.** The ribbon diffs are 3–4× over the
+   `maxDiffPixelRatio: 0.01` threshold on *fixed-size* images, i.e. pure rasterisation variance.
+   GitHub refreshes runner images roughly fortnightly, so a font-package change would clear that
+   threshold again and turn the suite red for reasons unrelated to the code.
+
+Point 2 is what settles it: "generate them in CI and commit" is not a stable answer either.
+
+### 22.3 The decision
+
+**Visual regression remains local-only, and `lfs: true` is removed** so CI stops paying for
+baselines it never reads. `fetch-depth: 0` stays — `nx affected` needs it.
+
+The alternative was to *pin* the rasteriser rather than chase it: run the visual specs inside a
+fixed container image in CI, giving one baseline set, immunity to runner drift, and
+reproducibility on any machine with Docker. Costed at roughly **1.5 minutes on every PR run** for
+pixel coverage of two surfaces, and judged not worth it — chrome drift on a component library is
+what a human notices first, and these specs have never caught anything in CI because they have
+never run there.
+
+The full write-up, including the container recipe and the several non-obvious host-binding
+gotchas, is in `apps/ng-bootstrap-demo-e2e/VISUAL-BASELINES.md` so the next person does not repeat
+the attempt.
+
+### 22.4 Why no other test has this problem
+
+Everything else asserts structure and behaviour rather than pixels, which is font-agnostic by
+construction. `dock.spec.ts` is the instructive case: named "captures a layout snapshot", it
+actually clicks a button and asserts a heading appears, with a comment explaining the preference
+for a stable behavioural boundary. Only a pixel comparison cares which fonts are installed, and
+only two tests do that.
