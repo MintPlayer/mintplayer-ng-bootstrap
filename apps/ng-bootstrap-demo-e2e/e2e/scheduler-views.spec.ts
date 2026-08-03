@@ -133,33 +133,87 @@ async function showSlot(
   dayIndex: number,
   slotIndex: number,
 ): Promise<{ x: number; y: number }> {
-  const selector = `.scheduler-time-slot[data-day-index="${dayIndex}"][data-slot-index="${slotIndex}"]`;
+  // Delegates to slotPoint: hand-scrolling the inner scroller and measuring in
+  // one evaluate looks equivalent, but it only guarantees the slot is inside the
+  // SCROLLER — not inside the viewport. Once the demo page grew, that produced
+  // points below the fold, which `page.mouse` cannot reach at all.
   await scrollSchedulerIntoView(page);
-  return schedulerRoot(page).evaluate((sched, sel) => {
-    const slot = sched.shadowRoot!.querySelector<HTMLElement>(sel);
-    if (!slot) throw new Error(`no slot for ${sel}`);
-    const content = sched.shadowRoot!.querySelector('.scheduler-content')!;
-    content.scrollTop = slot.offsetTop - 60;
-    const r = slot.getBoundingClientRect();
-    return { x: r.x + r.width / 2, y: r.y + r.height / 2 };
-  }, selector);
+  return slotPoint(page, dayIndex, slotIndex);
+}
+
+/**
+ * A slot as a Playwright locator.
+ *
+ * Locators pierce open shadow roots, so the scheduler's internals address
+ * directly — and `hover()`/`click()` scroll the element into view and compute
+ * its centre themselves. That is the whole reason to prefer them here: the
+ * earlier version measured a rect by hand and fed the numbers to
+ * `page.mouse.move`, which takes VIEWPORT coordinates, so an element sitting
+ * below the fold produced a point no input could ever reach. The gesture then
+ * did nothing and the failure looked like a bug in the ghost logic.
+ */
+function slot(page: Page, day: number, index: number) {
+  return page.locator(
+    `.scheduler-time-slot[data-day-index="${day}"][data-slot-index="${index}"]`,
+  );
+}
+
+/**
+ * The viewport centre of a slot, guaranteed reachable.
+ *
+ * Two steps, neither of which computes a coordinate:
+ * `scrollIntoViewIfNeeded` makes the element actually visible, and
+ * `boundingBox()` is already viewport-relative — the scroll offset is baked in,
+ * so nothing is subtracted (doing so would break it; `offsetTop` is the
+ * document-relative one).
+ *
+ * The distinction matters because `page.mouse.move` only lands on points that
+ * are on screen. The measurement was never wrong — the element was simply below
+ * the fold at y=751 in a 720px viewport, so the press reached nothing and the
+ * drag silently did not happen.
+ */
+async function slotPoint(
+  page: Page,
+  day: number,
+  index: number,
+): Promise<{ x: number; y: number }> {
+  const target = slot(page, day, index);
+  await target.scrollIntoViewIfNeeded();
+  const box = await target.boundingBox();
+  if (!box) throw new Error(`slot ${day}/${index} has no box`);
+  return { x: box.x + box.width / 2, y: box.y + box.height / 2 };
 }
 
 test.describe('scheduler — multi-day create ghost (R1)', () => {
   test('a drag across three day columns draws one ghost box per column', async ({ page }) => {
     await loadSampleWeek(page);
 
-    // Slot 12 = 06:00 with 30-minute slots: deliberately an EMPTY slot. Starting
-    // on 09:00 lands on the sample data's Sprint Planning and turns the gesture
-    // into a move-drag, which previews one box legitimately.
-    const from = await showSlot(page, 0, 12);
-    const to = await showSlot(page, 2, 14);
-
+    // Clear the events first. This gesture is about the create-drag GHOST, not
+    // about the sample data, and "pick a slot that happens to be empty" only
+    // held while the week started on Monday: the sample events are seeded
+    // relative to the current week, so a Sunday-start locale slid them under
+    // the very slots this drag uses and turned it into a move.
+    // The demo's own Clear, not `events = []`: sample events are nested under
+    // `resources` as well, and the component merges both sources.
+    await page.getByRole('button', { name: 'Clear', exact: true }).click();
+    await expect
+      .poll(() =>
+        schedulerRoot(page).evaluate(
+          (sched) => sched.shadowRoot!.querySelectorAll('.scheduler-event').length,
+        ),
+      )
+      .toBe(0);
+    // Slot 12 = 06:00, slot 14 = 07:00 with 30-minute slots. Playwright scrolls
+    // each into view and aims at its centre; no coordinates are computed here.
+    const from = await slotPoint(page, 0, 12);
     await page.mouse.move(from.x, from.y);
     await page.mouse.down();
-    // Two moves: the first crosses the drag threshold, the second lands the
-    // extent. A single move can be swallowed as a click on some engines.
-    await page.mouse.move((from.x + to.x) / 2, (from.y + to.y) / 2, { steps: 6 });
+    // Stepped moves, not `hover()`: a single jump crosses the drag threshold but
+    // does not read as travel, so the extent stops where the previous move left
+    // it — that is a 2-day span instead of 3.
+    const via = await slotPoint(page, 1, 13);
+    await page.mouse.move(via.x, via.y, { steps: 6 });
+    const to = await slotPoint(page, 2, 14);
     await page.mouse.move(to.x, to.y, { steps: 6 });
 
     // Measured WHILE the button is down — the ghost is removed on commit. Read

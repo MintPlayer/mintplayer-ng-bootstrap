@@ -16,6 +16,12 @@ export default defineConfig({
   workers: process.env['CI'] ? 2 : undefined,
   reporter: 'list',
   use: {
+    // Pin the locale. The scheduler now derives its date/time formatting AND its
+    // week start from it, so an unpinned run behaves differently per machine —
+    // a Belgian dev gets a Monday-start week, CI's en-US gets Sunday, and a
+    // failure reproduces on only one of them. This is the e2e counterpart of the
+    // locale pinning the unit specs already do.
+    locale: 'en-US',
     baseURL,
     trace: 'on-first-retry',
   },
