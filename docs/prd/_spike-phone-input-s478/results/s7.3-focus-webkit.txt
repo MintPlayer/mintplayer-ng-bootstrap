@@ -1,0 +1,3 @@
+### webkit
+document.activeElement=SPAN#host  shadowRoot.activeElement=INPUT#shadow
+shadow input: value="470" selectionStart=3

@@ -1,0 +1,22 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>S5.4 — formDisabledCallback fan-out</title>
+  <script type="module" src="./bundle.js"></script>
+</head>
+<body>
+  <h1>S5.4 disabled fan-out</h1>
+
+  <form id="f1">
+    <fieldset id="fs">
+      <mp-spike-phone-input id="phone" name="phone" country="be"></mp-spike-phone-input>
+      <!-- Counter-example: identical, minus the explicit disabled push-down. -->
+      <mp-spike-phone-input-naive id="naive" name="naive" country="be"></mp-spike-phone-input-naive>
+    </fieldset>
+  </form>
+
+  <!-- A loose composite outside any form, for the own-attribute path. -->
+  <mp-spike-phone-input id="loose" name="loose"></mp-spike-phone-input>
+</body>
+</html>

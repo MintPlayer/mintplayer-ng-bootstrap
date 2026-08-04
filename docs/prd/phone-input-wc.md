@@ -119,20 +119,47 @@ this component's primary use: `mp-input-group` sits **inside `mp-phone-input`'s 
 where a document-level stylesheet cannot reach. A shadow host behaves identically at the
 document level and nested, so it wins on the "same thing everywhere" test.
 
-**D2 — two channels, one per child kind:**
+**D2 — two channels, one per child kind** (amended after spike S1 — the naive version of channel 1
+was refuted; see §9.1 for the measurements):
 
 1. **Light-DOM children** (native `<input>`, `<button>`, `<span>`, addon text) are styled with
-   `::slotted()` rules re-declaring Bootstrap's input-group contract — `::slotted()` takes a
-   compound selector, and `:first-child`/`:last-child` inside it evaluate against the light-DOM
-   position, which is exactly the information corner pairing needs:
+   `::slotted()` rules re-declaring Bootstrap's input-group contract. Two corrections that S1
+   forced, both non-obvious:
+
+   - **The positional declarations must be `!important`.** A *normal* declaration inside
+     `::slotted()` loses to any rule in the tree the child actually lives in — including the
+     page's own `.form-control { border-radius: var(--bs-border-radius) }`. Measured: the
+     selector matched (the `-1px` margin landed, the custom properties resolved) while every
+     corner stayed at 6px. Importance inverts the tree-order rule — important declarations from
+     the *inner* tree win — which is the only mechanism that squares a child the page already
+     styled. `width` needs it too: Bootstrap's `width: 100%` otherwise beats `width: 1%` and
+     forces each control onto its own flex line.
+   - **Physical properties under `:dir()` guards, not logical ones.** A logical property on a
+     slotted child resolves against *that child's* direction, and the UA stylesheet forces
+     `input[type=tel|url|email]` to `ltr` even inside an `rtl` context (measured:
+     `direction: ltr` on the tel input while its sibling `<select>` reported `rtl`). So
+     `border-start-start-radius` squared the wrong corner and `margin-inline-start` put the
+     overlap on the wrong side — for the tel input specifically, i.e. exactly this component.
+     Keying physical properties off the *group's* own direction is immune, and the two blocks are
+     mutually exclusive so nothing has to be restored:
+
    ```scss
-   ::slotted(:not(:first-child)) { border-start-start-radius: 0; border-end-start-radius: 0; margin-inline-start: -1px; }
-   ::slotted(:not(:last-child))  { border-start-end-radius: 0;  border-end-end-radius: 0; }
-   ::slotted(input), ::slotted(select) { flex: 1 1 auto; width: 1%; min-width: 0; }
+   :host(:dir(ltr)) ::slotted(:not(:first-child)) { margin-left: -1px !important; border-top-left-radius: 0 !important; border-bottom-left-radius: 0 !important; }
+   :host(:dir(ltr)) ::slotted(:not(:last-child))  { border-top-right-radius: 0 !important; border-bottom-right-radius: 0 !important; }
+   :host(:dir(rtl)) ::slotted(:not(:first-child)) { margin-right: -1px !important; border-top-right-radius: 0 !important; border-bottom-right-radius: 0 !important; }
+   :host(:dir(rtl)) ::slotted(:not(:last-child))  { border-top-left-radius: 0 !important; border-bottom-left-radius: 0 !important; }
+   ::slotted(input), ::slotted(select) { flex: 1 1 auto !important; width: 1% !important; min-width: 0 !important; }
    ```
-   Because slotted elements stay in the light DOM, the *page's* Bootstrap `.form-control` rules
-   still style a slotted input's typography and borders; only the group-positional rules (which
-   need the `.input-group >` ancestor Bootstrap can't match through a slot) are re-declared.
+
+   What does *not* need re-declaring: because slotted elements stay in their own tree, the page's
+   `.form-control` typography, colours and borders still reach them (measured). Only the
+   positional geometry — the part Bootstrap keys on `.input-group >`, which cannot match through a
+   slot even when the shadow container really does carry `class="input-group"` (measured) — is
+   re-declared.
+
+   > Consequence for the API, also measured (§9.1 c9): since important-inner beats
+   > important-outer, the group is **authoritative** — a consumer cannot keep a rounded middle
+   > child by force. Document it: to opt out, reorder the children or don't use the group.
 2. **Shadow-DOM children** (`mp-select`, later any `mp-*` control) are reached through **custom
    properties, the only channel that inherits across the boundary**. `mp-input-group` *sets*
    them positionally on the slotted element; the control *consumes* them with Bootstrap-default
@@ -156,12 +183,22 @@ document level and nested, so it wins on the "same thing everywhere" test.
    feature. The `--mp-<component>-<prop>` custom-property convention is established
    (`--mp-card-border-radius`, `--mp-datatable-border-color`, `--mp-pagination-active-bg`).
 
-> **Trap (from the shadow-migration notes):** a `:host` declaration of the same custom property
-> defeats the inherited value. `mp-select` must consume `--mp-group-*` with `var()` fallbacks and
-> never declare them on `:host`.
+> **Correction to an earlier draft of this PRD:** it warned, from the shadow-migration notes, that
+> a `:host` declaration of the same custom property would defeat the group's value, so `mp-select`
+> must never declare `--mp-group-*` on `:host`. **Measured: the opposite.** The group sets the
+> property *on the host element* from the outer tree, and an outer-tree declaration beats the
+> inner tree's `:host` rule — the corner squared correctly even with a deliberately conflicting
+> `:host` declaration, in all three engines. The contract is therefore robust against a control
+> that gets this wrong. (The original note still holds for its actual case: a `:host` declaration
+> defeating a value *inherited from a document ancestor*, which is a weaker source than any
+> declaration on the element itself.)
 
-This is spike S1's subject: prove both channels in Chromium + Firefox before building anything on
-them. Fixing the scheduler demo's broken group (§1.2) is the acceptance demo for D2.
+Channel 2 needed no amendment — it worked exactly as designed on first measurement, including one
+shadow level deeper, and logical properties are safe there because the control's role-bearing node
+is a `<select>`, which inherits `direction` normally.
+
+Spike S1 proved both channels in Chromium + Firefox + WebKit (§9.1). Fixing the scheduler demo's
+broken group (§1.2) is the acceptance demo for D2.
 
 Also in scope for `mp-input-group`: `size` (`sm`/`md`/`lg`) mapped to Bootstrap's
 `input-group-sm`/`-lg` paddings (declared in-shadow — the classes are unused in the workspace
@@ -426,7 +463,7 @@ no public API of either element.
 
 | Risk | Mitigation |
 |---|---|
-| S1 contract fails in an engine | Gate + pre-agreed fallback above |
+| ~~S1 contract fails in an engine~~ | **RETIRED** — S1 passed 36/36 in three engines (§9.1); the fallback below is not needed |
 | `appearance: base-select` unusable in shadow root / Playwright browsers | D3 already defines the text-only fallback as the *baseline*; rich options are enhancement only (S2) |
 | libphonenumber chunk 404s in a consumer bundler | S3 repeats the asset-prototype's consumer matrix (esbuild/Vite/Node) with the real `libphonenumber-js/min` import before any UI work |
 | `Intl.DisplayNames` server/client locale mismatch → hydration noise | S4: same-locale handshake in all three SSR demos; component renders names client-side only if S4 finds mismatches |
@@ -484,15 +521,42 @@ element in all three (conformance-registry enforced).
 
 ## 9. Spikes (gate — throwaway, Chromium + Firefox, verdicts recorded here)
 
-| # | Question | Pass criterion |
-|---|---|---|
-| S1 | Does the §5.2 two-channel group contract work? `::slotted(:not(:first-child))` positional matching + `--mp-group-*` inheritance into a *generated* `unsafeCSS` stylesheet, incl. the `-1px` border overlap + `:focus-within` lift | Corner pairing + flex visually correct for `input+span+mp-select` in both engines, nested inside another shadow root |
-| S2 | `appearance: base-select` with SVG-bearing options inside a shadow root; graceful text-only fallback | Rich options in Chromium; identical layout metrics in the Firefox fallback |
-| S3 | `import('libphonenumber-js/min')` from the published lib: chunking in our Vite build, esbuild + Vite consumers re-splitting from node_modules, plain-Node resolution | One lazy chunk; all three consumers resolve; Node imports without `document` |
-| S4 | `Intl.DisplayNames` SSR/hydration parity in the three demo SSR pipelines | No hydration mismatch on country names with an explicit locale; documented behaviour with browser-locale default |
-| S5 | FACE-in-FACE isolation + two-tab-stop focus model | Inner `mp-select` contributes nothing to the outer form's `FormData`; `formDisabledCallback` fans out to both controls; Tab order select → input |
-| S6 | Flag pipeline dress rehearsal: vendor 3 real flags, codegen the loader map, build, consume | Mirrors the asset prototype's verdicts on the real repo files (expected to pass — the prototype already did this with fabricated SVGs) |
+| # | Question | Pass criterion | Verdict |
+|---|---|---|---|
+| S1 | Does the §5.2 two-channel group contract work? `::slotted(:not(:first-child))` positional matching + `--mp-group-*` inheritance into a *generated* `unsafeCSS` stylesheet, incl. the `-1px` border overlap + `:focus-within` lift | Corner pairing + flex visually correct for `input+span+mp-select` in both engines, nested inside another shadow root | **PASS, with two amendments to D2** — 36/36 in Chromium + Firefox + WebKit (§9.1) |
+| S2 | `appearance: base-select` with SVG-bearing options inside a shadow root; graceful text-only fallback | Rich options in Chromium; identical layout metrics in the Firefox fallback | |
+| S3 | `import('libphonenumber-js/min')` from the published lib: chunking in our Vite build, esbuild + Vite consumers re-splitting from node_modules, plain-Node resolution | One lazy chunk; all three consumers resolve; Node imports without `document` | |
+| S4 | `Intl.DisplayNames` SSR/hydration parity in the three demo SSR pipelines | No hydration mismatch on country names with an explicit locale; documented behaviour with browser-locale default | |
+| S5 | FACE-in-FACE isolation + two-tab-stop focus model | Inner `mp-select` contributes nothing to the outer form's `FormData`; `formDisabledCallback` fans out to both controls; Tab order select → input | |
+| S6 | Flag pipeline dress rehearsal: vendor 3 real flags, codegen the loader map, build, consume | Mirrors the asset prototype's verdicts on the real repo files (expected to pass — the prototype already did this with fabricated SVGs) | |
 
+### 9.1 S1 — the group contract: **PASS**, after two refutations
+
+Harness: `docs/prd/_spike-phone-input-s1/` (throwaway; deleted once these verdicts are recorded).
+Fidelity: the probe control adopts the **real** compiled `_styles/form-select.styles.scss` (sass,
+same invocation as `codegen-wc`) through Lit's `static styles` → `adoptedStyleSheets`, i.e. the
+production path. 36 assertions × Chromium 1228 / Firefox 1522 / WebKit 2287, all green. Radii below
+are computed physical corners in px at `--bs-border-radius: 0.375rem` (= 6px); identical in all
+three engines unless noted.
+
+| Case | Measurement | Verdict |
+|---|---|---|
+| c1b — light children, **normal** `::slotted()` radius | selector matched (`margin-left: -1px` landed) but every corner stayed `6,6,6,6` | **REFUTES** the naive channel 1 |
+| c1 — same, radius marked `!important` | `input {6,0,0,6}` · `addon {0,0,0,0}` · `button {0,6,6,0}`; margins `0/-1/-1px`; `flex-grow` 1/0/0 | PASS |
+| c2 — `input` + `mp-select` (select last) | host resolves `--mp-group-radius-start: 0`, `-end` unset; inner `.form-select` `{0,6,6,0}`; host box == inner box | PASS — channel 2 as designed |
+| c3 — `mp-select` + `input` (select first) | inner `.form-select` `{6,0,0,6}` | PASS |
+| c4 — `mp-select` + dial code + tel input | one row, 38px equal heights, each item overlapping the previous by exactly 1px | PASS |
+| c5 — c4 **one shadow level deeper** | identical to c4. Note the outer host declares its own `.form-control` (page CSS cannot reach in), so the same outer-tree contest occurs — `!important` is required even for our own composition | PASS |
+| c6 — RTL | `direction: ltr` on the tel input while its sibling `<select>` reported `rtl` → the UA forces `input[type=tel]` LTR; visual order reversed, overlaps on the right, corners mirrored | **REFUTES** logical properties; physical + `:dir()` passes |
+| c7 — control declares `--mp-group-*` on `:host` | corner still squared (`{0,6,6,0}`) — outer-tree declaration beats the inner `:host` rule | PASS (inverts an earlier assumption) |
+| c8 — `group[size=sm]` sizing a shadow child | `--mp-group-font-size: 0.875rem` → inner `.form-select` `font-size: 14px` | PASS |
+| c9 — page rule with `!important` on a middle child | all corners `0` — important-inner beats important-outer | PASS; group is authoritative (§5.2) |
+| focus lift | light child `z-index: 5` via `::slotted(:focus)`; **shadow** child `z-index: 5` via `::slotted(:focus-within)` (focus inside the slotted host's own shadow root) | PASS |
+| page CSS reach | slotted input keeps the page's `border-color: rgb(222,226,230)` + `padding-left: 12px`; a page rule keyed `.input-group > .form-control` never applied (`outline-style: none`) even though the shadow container carries `class="input-group"` | PASS — confirms what must and must not be re-declared |
+
+Consequences already folded into §5.2: channel 1 is `!important` + physical properties under
+`:dir()` guards; channel 2 is unchanged; the `:host` warning is corrected; the group is documented
+as authoritative. **The §7 fallback is not needed** — the composition architecture stands.
 ## 10. Testing
 
 - `phone-core`: pure vitest — NANP disambiguation table, dial-string detection, E.164 round-trip,

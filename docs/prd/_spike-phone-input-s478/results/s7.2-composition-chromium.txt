@@ -1,0 +1,3 @@
+### chromium
+during composition: "470123456" (untouched)
+after compositionend: "470 12 34 56" caret=12

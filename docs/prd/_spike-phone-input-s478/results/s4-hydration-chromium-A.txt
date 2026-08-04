@@ -1,0 +1,16 @@
+### chromium — A parity (server=client=en-US)
+url: /s4-ssr?serverLocale=en-US&clientLocale=en-US
+DSD attached before upgrade: true
+SSR #resolved:  resolved: en-US
+live #resolved: resolved: en-US
+SSR text  (first 6): be=Belgium | nl=Netherlands | fr=France | de=Germany | gb=United Kingdom | us=United States
+live text (first 6): be=Belgium | nl=Netherlands | fr=France | de=Germany | gb=United Kingdom | us=United States
+entries whose text CHANGED during hydration: 0
+text changed by a forced re-render afterwards: 0
+element .locale property after hydration: en-US
+after el.locale='ja-JP'      (first 3): be=ベルギー | nl=オランダ | fr=フランス
+after el.locale restored     (first 3): be=Belgium | nl=Netherlands | fr=France
+repairable by a locale round-trip: false
+console.warn captured in page: []
+console.error captured in page: []
+playwright console (warn/error/pageerror): []

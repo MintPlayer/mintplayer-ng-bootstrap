@@ -1,0 +1,5 @@
+test-results/
+node_modules/
+# Regenerable: `node build.mjs` and `node s4-icu-parity.mjs`.
+*.bundle.js
+s4-node-names.json

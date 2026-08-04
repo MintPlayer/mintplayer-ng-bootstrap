@@ -1,0 +1,123 @@
+{
+ "browserName": "chromium",
+ "browserDefaultLocale": "en-US",
+ "summary": {
+  "en-US": 4,
+  "nl-BE": 4,
+  "fr-FR": 4,
+  "de-DE": 4,
+  "ar-EG": 4,
+  "ja-JP": 4
+ },
+ "allDiffs": {
+  "en-US": {
+   "fk": [
+    "Falkland Islands",
+    "Falkland Islands (Islas Malvinas)"
+   ],
+   "hk": [
+    "Hong Kong SAR China",
+    "Hong Kong"
+   ],
+   "mo": [
+    "Macao SAR China",
+    "Macao"
+   ],
+   "ps": [
+    "Palestinian Territories",
+    "Palestine"
+   ]
+  },
+  "nl-BE": {
+   "fk": [
+    "Falklandeilanden",
+    "Falklandeilanden (Islas Malvinas)"
+   ],
+   "hk": [
+    "Hongkong SAR van China",
+    "Hongkong"
+   ],
+   "mo": [
+    "Macau SAR van China",
+    "Macau"
+   ],
+   "ps": [
+    "Palestijnse gebieden",
+    "Palestina"
+   ]
+  },
+  "fr-FR": {
+   "fk": [
+    "Îles Malouines",
+    "Îles Malouines (Îles Falkland)"
+   ],
+   "hk": [
+    "R.A.S. chinoise de Hong Kong",
+    "Hong Kong"
+   ],
+   "mo": [
+    "R.A.S. chinoise de Macao",
+    "Macao"
+   ],
+   "ps": [
+    "Territoires palestiniens",
+    "Palestine"
+   ]
+  },
+  "de-DE": {
+   "fk": [
+    "Falklandinseln",
+    "Falklandinseln (Malwinen)"
+   ],
+   "hk": [
+    "Sonderverwaltungsregion Hongkong",
+    "Hongkong"
+   ],
+   "mo": [
+    "Sonderverwaltungsregion Macau",
+    "Macau"
+   ],
+   "ps": [
+    "Palästinensische Autonomiegebiete",
+    "Palästina"
+   ]
+  },
+  "ar-EG": {
+   "fk": [
+    "جزر فوكلاند",
+    "جزر فوكلاند - جزر مالفيناس"
+   ],
+   "hk": [
+    "هونغ كونغ الصينية (منطقة إدارية خاصة)",
+    "هونغ كونغ"
+   ],
+   "mo": [
+    "منطقة ماكاو الإدارية الخاصة",
+    "مكاو"
+   ],
+   "ps": [
+    "الأراضي الفلسطينية",
+    "فلسطين"
+   ]
+  },
+  "ja-JP": {
+   "fk": [
+    "フォークランド諸島",
+    "フォークランド諸島 (マルビーナス諸島)"
+   ],
+   "hk": [
+    "中華人民共和国香港特別行政区",
+    "香港"
+   ],
+   "mo": [
+    "中華人民共和国マカオ特別行政区",
+    "マカオ"
+   ],
+   "ps": [
+    "パレスチナ自治区",
+    "パレスチナ"
+   ]
+  }
+ },
+ "defaultLocaleDiffCount": 139
+}

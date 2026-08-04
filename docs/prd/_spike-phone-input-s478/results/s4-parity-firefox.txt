@@ -1,0 +1,76 @@
+engine: firefox
+node: node v24.15.0 ICU 78.2
+node default region locale: nl-BE
+browser default region locale: en-US
+navigator.language: en-US  languages: en-US
+
+en-US: 0 / 244 differ
+nl-BE: 0 / 244 differ
+fr-FR: 0 / 244 differ
+de-DE: 0 / 244 differ
+ar-EG: 0 / 244 differ
+ja-JP: 0 / 244 differ
+
+S4.2 default-locale (no explicit locale): node="nl-BE" browser="en-US" → 139 / 244 names differ
+   ax: node="Åland"  firefox="Åland Islands"
+   al: node="Albanië"  firefox="Albania"
+   dz: node="Algerije"  firefox="Algeria"
+   as: node="Amerikaans-Samoa"  firefox="American Samoa"
+   ag: node="Antigua en Barbuda"  firefox="Antigua & Barbuda"
+   ar: node="Argentinië"  firefox="Argentina"
+   am: node="Armenië"  firefox="Armenia"
+   ac: node="Ascension"  firefox="Ascension Island"
+   au: node="Australië"  firefox="Australia"
+   at: node="Oostenrijk"  firefox="Austria"
+   az: node="Azerbeidzjan"  firefox="Azerbaijan"
+   bs: node="Bahama’s"  firefox="Bahamas"
+
+awkward codes:
+   en-US xk: node="Kosovo" firefox="Kosovo"
+   en-US ac: node="Ascension Island" firefox="Ascension Island"
+   en-US ta: node="Tristan da Cunha" firefox="Tristan da Cunha"
+   en-US dg: node="Diego Garcia" firefox="Diego Garcia"
+   en-US bq: node="Caribbean Netherlands" firefox="Caribbean Netherlands"
+   en-US sx: node="Sint Maarten" firefox="Sint Maarten"
+   en-US eh: node="Western Sahara" firefox="Western Sahara"
+   en-US io: node="British Indian Ocean Territory" firefox="British Indian Ocean Territory"
+   nl-BE xk: node="Kosovo" firefox="Kosovo"
+   nl-BE ac: node="Ascension" firefox="Ascension"
+   nl-BE ta: node="Tristan da Cunha" firefox="Tristan da Cunha"
+   nl-BE dg: node="Diego Garcia" firefox="Diego Garcia"
+   nl-BE bq: node="Caribisch Nederland" firefox="Caribisch Nederland"
+   nl-BE sx: node="Sint-Maarten" firefox="Sint-Maarten"
+   nl-BE eh: node="Westelijke Sahara" firefox="Westelijke Sahara"
+   nl-BE io: node="Brits Indische Oceaanterritorium" firefox="Brits Indische Oceaanterritorium"
+   fr-FR xk: node="Kosovo" firefox="Kosovo"
+   fr-FR ac: node="Île de l’Ascension" firefox="Île de l’Ascension"
+   fr-FR ta: node="Tristan da Cunha" firefox="Tristan da Cunha"
+   fr-FR dg: node="Diego Garcia" firefox="Diego Garcia"
+   fr-FR bq: node="Pays-Bas caribéens" firefox="Pays-Bas caribéens"
+   fr-FR sx: node="Saint-Martin (partie néerlandaise)" firefox="Saint-Martin (partie néerlandaise)"
+   fr-FR eh: node="Sahara occidental" firefox="Sahara occidental"
+   fr-FR io: node="Territoire britannique de l’océan Indien" firefox="Territoire britannique de l’océan Indien"
+   de-DE xk: node="Kosovo" firefox="Kosovo"
+   de-DE ac: node="Ascension" firefox="Ascension"
+   de-DE ta: node="Tristan da Cunha" firefox="Tristan da Cunha"
+   de-DE dg: node="Diego Garcia" firefox="Diego Garcia"
+   de-DE bq: node="Karibische Niederlande" firefox="Karibische Niederlande"
+   de-DE sx: node="Sint Maarten" firefox="Sint Maarten"
+   de-DE eh: node="Westsahara" firefox="Westsahara"
+   de-DE io: node="Britisches Territorium im Indischen Ozean" firefox="Britisches Territorium im Indischen Ozean"
+   ar-EG xk: node="كوسوفو" firefox="كوسوفو"
+   ar-EG ac: node="جزيرة أسينشيون" firefox="جزيرة أسينشيون"
+   ar-EG ta: node="تريستان دا كونا" firefox="تريستان دا كونا"
+   ar-EG dg: node="دييغو غارسيا" firefox="دييغو غارسيا"
+   ar-EG bq: node="هولندا الكاريبية" firefox="هولندا الكاريبية"
+   ar-EG sx: node="سانت مارتن" firefox="سانت مارتن"
+   ar-EG eh: node="الصحراء الغربية" firefox="الصحراء الغربية"
+   ar-EG io: node="الإقليم البريطاني في المحيط الهندي" firefox="الإقليم البريطاني في المحيط الهندي"
+   ja-JP xk: node="コソボ" firefox="コソボ"
+   ja-JP ac: node="アセンション島" firefox="アセンション島"
+   ja-JP ta: node="トリスタン・ダ・クーニャ" firefox="トリスタン・ダ・クーニャ"
+   ja-JP dg: node="ディエゴガルシア島" firefox="ディエゴガルシア島"
+   ja-JP bq: node="オランダ領カリブ" firefox="オランダ領カリブ"
+   ja-JP sx: node="シント・マールテン" firefox="シント・マールテン"
+   ja-JP eh: node="西サハラ" firefox="西サハラ"
+   ja-JP io: node="英領インド洋地域" firefox="英領インド洋地域"

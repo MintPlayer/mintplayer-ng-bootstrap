@@ -1,0 +1,25 @@
+// Throwaway static server for spike S1. Deleted before merge.
+import { createServer } from 'node:http';
+import { readFile } from 'node:fs/promises';
+import { dirname, extname, join, normalize } from 'node:path';
+import { fileURLToPath } from 'node:url';
+
+const root = dirname(fileURLToPath(import.meta.url));
+const types = { '.html': 'text/html; charset=utf-8', '.js': 'text/javascript', '.mjs': 'text/javascript', '.css': 'text/css' };
+
+createServer(async (req, res) => {
+  const pathname = new URL(req.url, 'http://localhost').pathname;
+  const file = normalize(join(root, pathname === '/' ? 's1.html' : pathname));
+  if (!file.startsWith(root)) {
+    res.writeHead(403);
+    return res.end();
+  }
+  try {
+    const body = await readFile(file);
+    res.writeHead(200, { 'content-type': types[extname(file)] ?? 'application/octet-stream' });
+    res.end(body);
+  } catch {
+    res.writeHead(404);
+    res.end('not found');
+  }
+}).listen(4601, () => console.log('S1 spike server on http://localhost:4601'));

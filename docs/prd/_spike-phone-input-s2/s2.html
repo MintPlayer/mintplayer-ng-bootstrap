@@ -1,0 +1,32 @@
+<!doctype html>
+<html lang="nl">
+<head>
+<meta charset="utf-8">
+<title>S2 — base-select rich options in nested shadow roots</title>
+<style>
+  /* The Bootstrap root custom properties `.form-select` depends on. In the real
+     app these come from bootstrap/reboot on :root and inherit into shadow roots. */
+  :root {
+    --bs-body-color: #212529;
+    --bs-body-bg: #fff;
+    --bs-border-width: 1px;
+    --bs-border-color: #dee2e6;
+    --bs-border-radius: .375rem;
+    --bs-border-radius-sm: .25rem;
+    --bs-border-radius-lg: .5rem;
+    --bs-secondary-bg: #e9ecef;
+    font: 400 16px/1.5 system-ui, sans-serif;
+  }
+  body { margin: 0; padding: 24px; background: #fff; }
+  #host { width: 320px; }
+  #probe { display: block; margin-bottom: 8px; }
+  #go { margin-top: 300px; }
+</style>
+</head>
+<body>
+<input id="probe" aria-label="probe before">
+<div id="host"></div>
+<button id="go" type="button">open picker (user activation)</button>
+<script type="module" src="./harness.js"></script>
+</body>
+</html>

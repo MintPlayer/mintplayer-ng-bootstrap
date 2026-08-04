@@ -1,0 +1,6 @@
+metadata set   minified     gzip       brotli-ish (gzip -9)
+min            159265       36331      35984
+mobile         174624       40786      40399
+max            233017       56810      56262
+
+intl-tel-input/data (EAGER): 5517 minified / 1844 gzip

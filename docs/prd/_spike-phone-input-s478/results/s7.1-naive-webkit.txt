@@ -1,0 +1,6 @@
+### webkit
+typed 470123456 → value="470 12 34 56" caret=12 (len 12)
+caret set to 4 ("470 |12 34 56")
+typed "9" → value="4709123456" caret=10  (expected 5, len 10)
+VERDICT: caret JUMPED TO END — off by 5
+ArrowRight from 2 → caret=3 (arrow keys are unaffected: no input event)

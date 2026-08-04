@@ -1,0 +1,44 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>S5 — FACE-in-FACE, focus, tab order</title>
+  <script type="module" src="./bundle.js"></script>
+</head>
+<body>
+  <h1>S5 basic</h1>
+
+  <!-- f1: the composite between two plain inputs. Tab-order + FormData subject. -->
+  <form id="f1" action="/sink" method="get">
+    <label id="lbl" for="phone">Phone</label>
+    <input id="before" name="before" value="B" />
+    <mp-spike-phone-input id="phone" name="phone" country="be"></mp-spike-phone-input>
+    <input id="after" name="after" value="A" />
+    <button id="submit1" type="submit">Submit</button>
+  </form>
+
+  <!-- f2: same, but the MIDDLE shadow root (the group) has delegatesFocus. -->
+  <form id="f2" action="/sink" method="get">
+    <input id="before2" name="before" value="B" />
+    <mp-spike-phone-input-dfgroup id="phone-df" name="phone" country="us"></mp-spike-phone-input-dfgroup>
+    <input id="after2" name="after" value="A" />
+  </form>
+
+  <!-- f3: CONTROL — the very same FACE select, this time in the form's LIGHT DOM.
+       If it shows up here but not inside f1's phone input, association really is
+       tree-scoped rather than the element simply being broken. -->
+  <form id="f3" action="/sink" method="get">
+    <mp-spike-select id="light-select" name="light-country"></mp-spike-select>
+  </form>
+
+  <script>
+    window.submitLog = [];
+    for (const id of ['f1', 'f2', 'f3']) {
+      document.getElementById(id).addEventListener('submit', (e) => {
+        e.preventDefault();
+        window.submitLog.push(id);
+      });
+    }
+  </script>
+</body>
+</html>
