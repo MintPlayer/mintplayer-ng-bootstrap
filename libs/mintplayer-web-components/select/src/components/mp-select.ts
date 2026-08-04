@@ -1,12 +1,14 @@
 import { LitElement, html, nothing, type TemplateResult } from 'lit';
 import { ifDefined } from 'lit/directives/if-defined.js';
 import { createRef, ref, type Ref } from 'lit/directives/ref.js';
+import { unsafeHTML } from 'lit/directives/unsafe-html.js';
 
 // `formSelectStyles` is the codegen-wc output of `_styles/form-select.styles.scss`.
 // Lives outside the per-entry tree at libs/.../_styles/ — internal helper, not
 // a public sub-entry of @mintplayer/web-components.
 import { formSelectStyles } from '../../../_styles/form-select.styles';
 import { invalidFeedbackStyles } from '../../../_styles/invalid-feedback.styles';
+import { selectStyles } from '../styles';
 import {
   HostAriaController,
   FormAssociatedMixin,
@@ -40,6 +42,17 @@ export interface SelectChangeEventDetail {
   values: string[];
 }
 
+/**
+ * Produces an option's rich content as an HTML string (rendered via
+ * `unsafeHTML`, the treeview `iconSvg` precedent), or `undefined` to fall back
+ * to the plain text label for that option. Trusted-producer contract like every
+ * render callback in this workspace: the string comes from the consuming
+ * developer, never from end-user input. Mark decorative markup (a flag SVG)
+ * `aria-hidden="true"` yourself — the accessible name of the option is its
+ * text content.
+ */
+export type MpSelectOptionRenderer = (option: MpSelectOption) => string | undefined;
+
 const VALID_SIZES: ReadonlySet<MpSelectSize> = new Set(['sm', 'md', 'lg']);
 
 let instanceCounter = 0;
@@ -70,7 +83,7 @@ let instanceCounter = 0;
  * name continue to fire.
  */
 export class MpSelect extends FormAssociatedMixin(LitElement) {
-  static override styles = [formSelectStyles, invalidFeedbackStyles];
+  static override styles = [formSelectStyles, invalidFeedbackStyles, selectStyles];
 
   static override shadowRootOptions = {
     ...LitElement.shadowRootOptions,
@@ -114,6 +127,7 @@ export class MpSelect extends FormAssociatedMixin(LitElement) {
   private readonly _errorId = `mp-select-${++instanceCounter}-error`;
   private _values: string[] = [];
   private _options: MpSelectItem[] | null = null;
+  private _optionRenderer: MpSelectOptionRenderer | null = null;
   private _slotOptions: MpSelectItem[] = [];
   private readonly _selectRef: Ref<HTMLSelectElement> = createRef();
   private _slotObserver: MutationObserver | null = null;
@@ -240,6 +254,29 @@ export class MpSelect extends FormAssociatedMixin(LitElement) {
     this.requestUpdate();
   }
 
+  /**
+   * Rich option content — progressive enhancement over customizable select
+   * (`appearance: base-select`), spike S2. Where the engine supports it AND this
+   * callback is set AND the select is a plain dropdown, each option renders the
+   * callback's HTML and the closed face mirrors the selected option through an
+   * authored `<selectedcontent>`. Everywhere else the option is its plain text
+   * label and nothing about the native select changes — the fallback IS the
+   * baseline, not a degraded mode.
+   *
+   * `.options` mode only. Slotted `<option>` children stay text-only by design:
+   * their label is read from `textContent`, where adjacent inline fragments
+   * run together (`"Ascension+1"` — the S2 latent bug), so rich slotted content
+   * would corrupt the very label it decorates.
+   */
+  get optionRenderer(): MpSelectOptionRenderer | null {
+    return this._optionRenderer;
+  }
+  set optionRenderer(value: MpSelectOptionRenderer | null) {
+    if (this._optionRenderer === value) return;
+    this._optionRenderer = value;
+    this.requestUpdate();
+  }
+
   override attributeChangedCallback(
     name: string,
     oldValue: string | null,
@@ -299,8 +336,36 @@ export class MpSelect extends FormAssociatedMixin(LitElement) {
     this._slotObserver = null;
   }
 
+  /**
+   * Rich rendering is on only when everything holds at once: an engine that
+   * supports customizable select (feature-detected, never a browser list — today
+   * that excludes Firefox, and the check flips itself when it ships), a renderer
+   * to produce the content, `.options` mode, and a plain dropdown — base-select
+   * does not apply to `multiple` or `size>1` selects. Everywhere else the
+   * fallback IS the unchanged native rendering.
+   */
+  private get richActive(): boolean {
+    return (
+      !!this._optionRenderer &&
+      !!this._options &&
+      !this._multiple &&
+      this._numberVisible == null &&
+      MpSelect.supportsBaseSelect()
+    );
+  }
+
+  /** Overridable seam for specs; jsdom supports nothing and reports so. */
+  protected static supportsBaseSelect(): boolean {
+    try {
+      return typeof CSS !== 'undefined' && CSS.supports('appearance', 'base-select');
+    } catch {
+      return false;
+    }
+  }
+
   override render(): TemplateResult {
     const effective = this._options ?? this._slotOptions;
+    const rich = this.richActive;
     const sizeClass = this._size === 'sm' || this._size === 'lg'
       ? `form-select form-select-${this._size}`
       : 'form-select';
@@ -324,12 +389,15 @@ export class MpSelect extends FormAssociatedMixin(LitElement) {
         aria-describedby=${error.id}
         @change=${this.onNativeChange}
       >
+        ${rich
+          ? html`<button type="button"><selectedcontent></selectedcontent></button>`
+          : nothing}
         ${effective.map((item) =>
           isOptgroup(item)
             ? html`<optgroup label=${item.label} ?disabled=${!!item.disabled}>
-                ${item.options.map((o) => this.renderOption(o))}
+                ${item.options.map((o) => this.renderOption(o, rich))}
               </optgroup>`
-            : this.renderOption(item),
+            : this.renderOption(item, rich),
         )}
       </select>
       ${error.node}
@@ -343,6 +411,12 @@ export class MpSelect extends FormAssociatedMixin(LitElement) {
   // exists (initial render) — render() already marks the matching option
   // with `?selected`.
   protected override updated(): void {
+    // Reflected state, not consumer input: the shared stylesheet's
+    // `:host([rich])` rules key off it, and the shared CSSResult cannot know
+    // per-instance eligibility any other way. Reflected in `updated()` so it can
+    // never disagree with what render() just drew.
+    this.toggleAttribute('rich', this.richActive);
+
     const select = this._selectRef.value;
     if (!select) return;
 
@@ -368,13 +442,16 @@ export class MpSelect extends FormAssociatedMixin(LitElement) {
     );
   }
 
-  private renderOption(o: MpSelectOption): TemplateResult {
+  private renderOption(o: MpSelectOption, rich = false): TemplateResult {
+    // Per-option fallback inside rich mode: a renderer returning undefined for
+    // one option keeps that option plain text, not blank.
+    const content = rich ? this._optionRenderer?.(o) : undefined;
     return html`
       <option
         value=${o.value}
         ?selected=${this.isSelected(o.value)}
         ?disabled=${!!o.disabled}
-      >${o.label}</option>
+      >${content != null ? unsafeHTML(content) : o.label}</option>
     `;
   }
 

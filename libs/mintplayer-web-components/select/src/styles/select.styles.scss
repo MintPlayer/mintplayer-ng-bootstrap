@@ -1,0 +1,109 @@
+// `mp-select`'s rich-options tier: customizable select (`appearance: base-select`)
+// so an option can carry markup — a flag SVG next to a country name — while the
+// element keeps native `<select>` semantics.
+//
+// Every rule is DOUBLY gated, and both gates are load-bearing (spike S2, measured
+// in Chromium 148 / Firefox 150 / WebKit 26.4 — docs/prd/phone-input-wc.md §9.4):
+//
+//  1. `@supports (appearance: base-select)` — feature detection, never a browser
+//     list. Ungated, the reconciliation below DELETES the dropdown arrow in the
+//     engine that has no `::picker-icon`: the closed face's right 44px collapsed
+//     to a 2px ink run, the border alone. Today that engine is Firefox; the gate
+//     flips itself when it ships.
+//  2. `:host([rich])` — per-instance opt-in, reflected by the element only when an
+//     `optionRenderer` is set and the select is a dropdown (not `multiple`, no
+//     `number-visible`, which base-select does not apply to). Without this, every
+//     existing mp-select in a supporting engine would silently change rendering
+//     mode — and measurably change width: a native select sizes to its widest
+//     option, a base-select button to the SELECTED content (320px → 152px).
+//
+// Two more measured requirements: the selector must be `select.form-select`
+// (Chrome's own documented bare-`select` snippet loses the cascade to Bootstrap's
+// class selector), and `appearance: base-select` must hit BOTH the select and
+// `::picker(select)` — the select alone flips the closed face while the picker
+// stays native (optionsLaidOut: 0).
+
+@import "node_modules/bootstrap/scss/functions";
+@import "node_modules/bootstrap/scss/variables";
+@import "node_modules/bootstrap/scss/variables-dark";
+@import "node_modules/bootstrap/scss/mixins";
+
+@supports (appearance: base-select) {
+  :host([rich]) select.form-select {
+    appearance: base-select;
+
+    // Reconciliation with Bootstrap's .form-select, all of it conditional on the
+    // UA picker existing (gate 1):
+    //  - Bootstrap's background-image caret would sit NEXT TO the UA's
+    //    ::picker-icon — two carets (measured: 3 ink runs / 21px vs 2 / 14).
+    //  - The 2.25rem right gutter existed only for that caret. `padding-inline`
+    //    rather than `padding-right`: symmetric on purpose, so RTL cannot drift
+    //    if one side is ever edited (S2.9).
+    background-image: none;
+    padding-inline: $form-select-padding-x;
+
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    text-align: start;
+    // Without nowrap the flex closed face WRAPS the localized name and the
+    // control grows 38px -> 62px — a native select never wraps.
+    white-space: nowrap;
+    overflow: hidden;
+  }
+
+  :host([rich]) select.form-select::picker(select) {
+    appearance: base-select;
+    border: var(--bs-border-width) solid var(--bs-border-color);
+    border-radius: var(--bs-border-radius);
+    background: var(--bs-body-bg);
+    padding: 0.25rem 0;
+    max-height: 20rem;
+    overflow-y: auto;
+  }
+
+  // Authored explicitly in the template (button > selectedcontent): WebKit's
+  // UA-generated button mirrors nothing into the closed face, Chromium's does.
+  :host([rich]) selectedcontent {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    min-width: 0;
+  }
+
+  :host([rich]) selectedcontent .rich-label {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  // Trailing in both directions and both engines (S2.9, pixel-measured).
+  :host([rich]) select.form-select::picker-icon {
+    margin-inline-start: auto;
+  }
+
+  :host([rich]) select.form-select:open::picker-icon {
+    rotate: 180deg;
+  }
+
+  :host([rich]) option {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.25rem 0.75rem;
+  }
+
+  :host([rich]) option:checked {
+    background-color: var(--bs-secondary-bg);
+  }
+
+  // The rendered fragment may carry an inline flag SVG; give it a stable box so
+  // 244 of them lay out without per-consumer CSS. Decorative by contract
+  // (aria-hidden comes from the renderer).
+  :host([rich]) option svg,
+  :host([rich]) selectedcontent svg {
+    width: 1.25rem;
+    height: auto;
+    flex: 0 0 auto;
+  }
+}

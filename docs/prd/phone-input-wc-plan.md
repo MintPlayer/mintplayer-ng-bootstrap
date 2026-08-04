@@ -11,7 +11,7 @@ draft PR #399. Commit per milestone (commits are free); push only when the whole
 | M1 — flags sub-entry | ✅ **done** — 244 flags vendored, 244 lazy chunks verified in dist |
 | M2 — phone-core sub-entry | ✅ **done** — countries/list/name, dial-code detection, `PhoneRules` facade, 62 specs green (incl. exhaustive `/max` parity) |
 | M3 — mp-input-group + the group contract in mp-select | ✅ **done** (WC side; the scheduler-demo acceptance check moves to M6, where bs-input-group starts rendering it) |
-| M4 — mp-select rich options (base-select PE) | ⬜ |
+| M4 — mp-select rich options (base-select PE) | ✅ **done** — doubly-gated (`@supports` + per-instance `rich`), 7 new specs |
 | M5 — mp-phone-input | ⬜ |
 | M6 — Angular wrappers (bs-input-group migration + bs-phone-input) | ⬜ |
 | M7 — React + Vue wrappers | ⬜ |
@@ -176,26 +176,33 @@ Throwaway files under `docs/prd/_spike-phone-input-*`, deleted after verdicts ar
 
 ## M4 — `mp-select` rich options [PRD §5.3, D3; S2 passed 9/9 × 3 engines]
 
-- [ ] The `@supports (appearance: base-select)` recipe lives in **`mp-select`'s own stylesheet**
+- [x] The `@supports (appearance: base-select)` recipe lives in **`mp-select`'s own stylesheet**
       (D3 amendment 4 — a rule pushed from `mp-phone-input` cannot reach the inner `<select>` at
       all). Use `select.form-select` specificity, **not** bare `select` (Bootstrap's class wins),
       and apply it to **both** the select and `::picker(select)` (the select alone leaves the picker
       native). Copy the measured recipe from PRD §5.3.
-- [ ] **Gate every reconciliation rule behind the same `@supports` — release blocker.** Ungated,
+- [x] **Gate every reconciliation rule behind the same `@supports` — release blocker.** Done, plus a
+      second gate the plan missed: `:host([rich])` per-instance opt-in, because the recipe otherwise
+      flips EVERY existing mp-select in a supporting engine into base-select rendering — a measured
+      320→152px closed-face change for consumers who never asked for it. `rich` is reflected state
+      (renderer set + `.options` mode + plain dropdown + engine support), not consumer input.
+      Original item: Ungated,
       the caret-suppression rules delete Firefox's dropdown arrow entirely (pixel-measured). Also
       needs `white-space: nowrap` on the flex closed face, or the localized name wraps and the
       control grows 38 → 62 px.
-- [ ] Author `<button><selectedcontent></selectedcontent></button>` explicitly — WebKit's
+- [x] Author `<button><selectedcontent></selectedcontent></button>` explicitly — WebKit's
       UA-generated button mirrors nothing.
-- [ ] Per-option render callback for `.options` mode (repo render-callback convention);
+- [x] Per-option render callback for `.options` mode (repo render-callback convention);
       feature-detect, text-only fallback otherwise. Fallback label order **`Name +dial (ISO)`** —
       ISO-first makes native country-name typeahead unreachable (measured in all 3 engines).
-- [ ] Keep the native `<select>` semantics untouched in the fallback; no custom listbox.
-- [ ] Check the S2 latent bug: rich options make the AX name space-separated but
+- [x] Keep the native `<select>` semantics untouched in the fallback; no custom listbox.
+- [x] Resolved the S2 latent bug by construction: rich mode is `.options`-only; slotted mode stays
+      text-only because its label is read from `textContent`, where inline fragments run together.
+      Documented on `optionRenderer` and pinned by a spec. Original item:
       `option.textContent` run-together (`"Ascension+1"`), and `collectSlotItems` uses
       `opt.textContent?.trim()`.
-- [ ] Export `MpSelectOptgroup` + `MpSelectItem` from `select/src/index.ts` (barrel gap).
-- [ ] Spec: rich content renders where supported (guarded), fallback emits plain text labels,
+- [x] Export `MpSelectOptgroup` + `MpSelectItem` (done in M3) + `MpSelectOptionRenderer`.
+- [x] Spec: rich content renders where supported (guarded), fallback emits plain text labels,
       typeahead reaches a country by name, exactly one `change` on commit.
 - [ ] **Commit.**
 
