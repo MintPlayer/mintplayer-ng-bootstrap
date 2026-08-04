@@ -29,6 +29,7 @@ const CheckboxPage     = lazyNamed(() => import('./pages/CheckboxPage'),     'Ch
 const DatatablePage    = lazyNamed(() => import('./pages/DatatablePage'),    'DatatablePage');
 const DatepickerPage   = lazyNamed(() => import('./pages/forms/DatepickerPage'),     'DatepickerPage');
 const DatetimePickerPage = lazyNamed(() => import('./pages/forms/DatetimePickerPage'), 'DatetimePickerPage');
+const PhoneInputPage   = lazyNamed(() => import('./pages/forms/PhoneInputPage'),      'PhoneInputPage');
 const SelectPage       = lazyNamed(() => import('./pages/forms/SelectPage'),         'SelectPage');
 const CodeSnippetPage  = lazyNamed(() => import('./pages/CodeSnippetPage'),  'CodeSnippetPage');
 const PaginationPage   = lazyNamed(() => import('./pages/PaginationPage'),   'PaginationPage');
@@ -77,6 +78,7 @@ export function App() {
           <Route path="/basic/code-snippet" element={<CodeSnippetPage />} />
           <Route path="/basic/forms/datepicker" element={<DatepickerPage />} />
           <Route path="/basic/forms/datetime-picker" element={<DatetimePickerPage />} />
+          <Route path="/basic/forms/phone-input" element={<PhoneInputPage />} />
           <Route path="/basic/forms/select" element={<SelectPage />} />
           <Route path="/basic/forms/timepicker" element={<TimepickerPage />} />
           <Route path="/basic/forms/multi-range" element={<MultiRangePage />} />

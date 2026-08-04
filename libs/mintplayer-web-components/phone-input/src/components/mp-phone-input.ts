@@ -178,6 +178,95 @@ export class MpPhoneInput extends FormAssociatedMixin(LitElement) {
     return this._rules && this._rules.country === this.country ? this._rules.isValid(this._digits) : undefined;
   }
 
+  /**
+   * Property mirrors for the attribute-only options.
+   *
+   * Not decoration: `@lit/react` derives a React component's prop types from the
+   * element's PROPERTIES, so an option with no accessor is unreachable from JSX
+   * except as an untyped attribute — and array-valued options (`preferred`,
+   * `allowed`) cannot be expressed as attributes from JS at all without the
+   * caller joining them by hand. Setters take an array or a comma-separated
+   * string; attributes stay the source of truth for HTML/SSR consumers.
+   */
+  get defaultCountry(): string | null {
+    return this.getAttribute('default-country');
+  }
+  set defaultCountry(value: string | null) {
+    if (value == null) this.removeAttribute('default-country');
+    else this.setAttribute('default-country', value.trim().toLowerCase());
+  }
+
+  get locale(): string | null {
+    return this._locale;
+  }
+  set locale(value: string | null) {
+    if (this._locale === (value ?? null)) return;
+    this._locale = value ?? null;
+    this.requestUpdate();
+  }
+
+  get preferredCountries(): string[] {
+    return [...this._preferred];
+  }
+  set preferredCountries(value: readonly string[] | string | null) {
+    this._preferred = MpPhoneInput.#codes(value);
+    this.requestUpdate();
+  }
+
+  get allowedCountries(): string[] | null {
+    return this._only ? [...this._only] : null;
+  }
+  set allowedCountries(value: readonly string[] | string | null) {
+    const codes = MpPhoneInput.#codes(value);
+    this._only = codes.length ? codes : null;
+    this.requestUpdate();
+  }
+
+  get placeholder(): string | null {
+    return this._placeholder;
+  }
+  set placeholder(value: string | null) {
+    this._placeholder = value ?? null;
+    this.requestUpdate();
+  }
+
+  get autocomplete(): string {
+    return this._autocomplete;
+  }
+  set autocomplete(value: string | null) {
+    this._autocomplete = value ?? 'tel-national';
+    this.requestUpdate();
+  }
+
+  get inputLabel(): string | null {
+    return this._inputLabel;
+  }
+  set inputLabel(value: string | null) {
+    this._inputLabel = value ?? null;
+    this.requestUpdate();
+  }
+
+  get countryLabel(): string | null {
+    return this._countryLabel;
+  }
+  set countryLabel(value: string | null) {
+    this._countryLabel = value ?? null;
+    this.requestUpdate();
+  }
+
+  get errorText(): string | null {
+    return this._errorText;
+  }
+  set errorText(value: string | null) {
+    this._errorText = value ?? null;
+    this.requestUpdate();
+  }
+
+  static #codes(value: readonly string[] | string | null): string[] {
+    const list = typeof value === 'string' ? value.split(',') : (value ?? []);
+    return list.map((code) => code.trim().toLowerCase()).filter(Boolean);
+  }
+
   get disabled(): boolean {
     return this.effectiveDisabled;
   }

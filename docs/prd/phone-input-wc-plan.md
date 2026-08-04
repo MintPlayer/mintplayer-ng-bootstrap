@@ -15,7 +15,7 @@ draft PR #399. Commit per milestone (commits are free); push only when the whole
 | M5 — mp-phone-input | ✅ **done** — 27 specs (all seven D10 caret rules, D11/D5a/D12/D15/D17), entry 4.4 KB gzip with zero eager flag/metadata bytes |
 | M6 — Angular wrappers (bs-input-group migration + bs-phone-input) | ✅ **done** — Bootstrap's input-group module now bundled in exactly ONE place |
 | M7 — React + Vue wrappers | ✅ **done** — plus a pre-existing packaging gap found (see below) |
-| M8 — demo pages ×3 | ⬜ |
+| M8 — demo pages ×3 | ✅ **done** — all three demos build; keymap documented |
 | M9 — conformance + a11y registries | ⬜ |
 | M10 — batched verification sweep | ⬜ |
 
@@ -286,13 +286,13 @@ Throwaway files under `docs/prd/_spike-phone-input-*`, deleted after verdicts ar
 
 ## M8 — demo pages ×3 [demo-conventions report]
 
-- [ ] Angular: `pages/basic/forms/phone-input/` (component/html/scss/spec), route in
+- [x] Angular: `pages/basic/forms/phone-input/` (component/html/scss/spec), route in
       `forms.routes.ts`, nav item in `app.component.html` Forms dropdown; live-demo-then-snippet
       order, `ts-dedent` snippets; document the keymap; include locale + preferred-countries +
       validation demos. Refresh the existing input-group demo page with an `mp-*`-child example.
-- [ ] React: `pages/forms/PhoneInputPage.tsx`, `lazyNamed` + `<Route path="/basic/forms/phone-input">`,
+- [x] React: `pages/forms/PhoneInputPage.tsx`, `lazyNamed` + `<Route path="/basic/forms/phone-input">`,
       `SECTIONS` entry in `AppShell.tsx`.
-- [ ] Vue: `views/forms/PhoneInputView.vue`, router entry, `SECTIONS` entry in `App.vue`.
+- [x] Vue: `views/forms/PhoneInputView.vue`, router entry, `SECTIONS` entry in `App.vue`.
 - [ ] **Commit.**
 
 ## M9 — conformance + a11y registries [repo rules; all mandatory]

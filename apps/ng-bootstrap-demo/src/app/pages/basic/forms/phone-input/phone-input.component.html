@@ -1,0 +1,141 @@
+<h1 class="text-center">Phone input</h1>
+
+<p>
+    <code>bs-phone-input</code> is a phone-number field: a country picker with
+    flags, a dial code that cannot be edited away, and as-you-type formatting.
+    The bound value is <strong>E.164</strong> — <code>+32470123456</code> — or
+    <code>null</code> while empty, so a form posts one canonical string.
+</p>
+
+<p>
+    Validation rules are loaded <em>per calling code</em> on first interaction, so
+    a field costs about 20&nbsp;kB gzip when the user reaches it and nothing before
+    that. <code>(phoneChange)</code> reports <code>valid</code> as
+    <code>undefined</code> until those rules arrive — deliberately, rather than
+    claiming a number is valid before anything has checked it.
+</p>
+
+<h2>Basic usage</h2>
+
+<bs-grid>
+    <div bsRow class="mb-3">
+        <div [sm]="6">
+            <bs-form>
+                <bs-phone-input
+                    [(ngModel)]="phone"
+                    name="phone"
+                    defaultCountry="be"
+                    [locale]="locale() || null"
+                    [disabled]="disabled()"
+                    [required]="required()"
+                    [errorMessages]="errorMessages"
+                    (phoneChange)="onPhoneChange($event)"></bs-phone-input>
+            </bs-form>
+        </div>
+        <div [sm]="6">
+            <bs-checkbox [(ngModel)]="disabled" [type]="'checkbox'">Disabled</bs-checkbox>
+            <bs-checkbox [(ngModel)]="required" [type]="'checkbox'">Required</bs-checkbox>
+        </div>
+    </div>
+    <div bsRow class="mb-3">
+        <div [col]>
+            <p class="mb-1">Bound value (E.164):</p>
+            <pre class="text-start"><code>{{ phone() ?? 'null' }}</code></pre>
+            <p class="mb-1">Last <code>(phoneChange)</code> detail:</p>
+            <pre class="text-start"><code>{{ lastDetail() | json }}</code></pre>
+        </div>
+    </div>
+</bs-grid>
+
+<bs-code-snippet [codeToCopy]="snippetBasicHtml" [language]="'html'"></bs-code-snippet>
+<bs-code-snippet [codeToCopy]="snippetBasicTs" [language]="'ts'"></bs-code-snippet>
+
+<h2 class="mt-4">Localized country names</h2>
+
+<p>
+    Country names come from <code>Intl.DisplayNames</code>, so they are localized
+    and collated in the viewer's language at no download cost. Leave
+    <code>locale</code> unset to follow the browser — the default, and what most
+    apps should ship.
+</p>
+
+<bs-grid>
+    <div bsRow class="mb-3">
+        <div [sm]="4">
+            <bs-select [(ngModel)]="locale">
+                <option value="">Browser locale</option>
+                <option value="en-US">en-US</option>
+                <option value="nl-BE">nl-BE</option>
+                <option value="fr-FR">fr-FR</option>
+                <option value="ja-JP">ja-JP</option>
+            </bs-select>
+        </div>
+        <div [sm]="8">
+            <p class="mb-0">
+                Open the picker above after switching: the list re-sorts, because an
+                alphabetical list of English names is not alphabetical to a Dutch
+                reader.
+            </p>
+        </div>
+    </div>
+</bs-grid>
+
+<h2 class="mt-4">Restricting and pinning countries</h2>
+
+<bs-grid>
+    <div bsRow class="mb-3">
+        <div [sm]="6">
+            <bs-phone-input
+                [(ngModel)]="restricted"
+                [allowedCountries]="benelux"
+                [preferredCountries]="['nl']"
+                defaultCountry="nl"></bs-phone-input>
+        </div>
+        <div [sm]="6">
+            <pre class="text-start mb-0"><code>{{ restricted() ?? 'null' }}</code></pre>
+        </div>
+    </div>
+</bs-grid>
+
+<bs-code-snippet [codeToCopy]="snippetRestrictedHtml" [language]="'html'"></bs-code-snippet>
+
+<h2 class="mt-4">Inside an input group</h2>
+
+<p>
+    <code>bs-input-group</code> joins any mix of controls into one continuous
+    field — including components that keep their own shadow root, which Bootstrap's
+    own CSS cannot reach. The corners pair and the borders collapse either way.
+</p>
+
+<bs-grid>
+    <div bsRow class="mb-3">
+        <div [sm]="8">
+            <bs-input-group>
+                <span class="addon">Tel</span>
+                <bs-phone-input [(ngModel)]="grouped" defaultCountry="be"></bs-phone-input>
+            </bs-input-group>
+        </div>
+    </div>
+</bs-grid>
+
+<bs-code-snippet [codeToCopy]="snippetGroupHtml" [language]="'html'"></bs-code-snippet>
+
+<h2 class="mt-4">Validation</h2>
+
+<p>
+    Tick <em>Required</em> above and blur the empty field. The message is rendered
+    <em>inside</em> the component's shadow root and referenced by
+    <code>aria-errormessage</code> from the real input — a message in your own
+    template could not be, because an IDREF does not cross a shadow boundary.
+</p>
+
+<bs-code-snippet [codeToCopy]="snippetValidationTs" [language]="'html'"></bs-code-snippet>
+
+<h2 class="mt-4">Keyboard</h2>
+
+<ul>
+    <li><kbd>Tab</kbd> — two stops: the country picker, then the number field.</li>
+    <li>In the picker: <kbd>↑</kbd>/<kbd>↓</kbd> to move, type a country <em>name</em> to jump to it, <kbd>Enter</kbd> to choose, <kbd>Esc</kbd> to close. Choosing a country moves focus to the number field.</li>
+    <li>In the number field: <kbd>Backspace</kbd>/<kbd>Delete</kbd> always remove a <em>digit</em>, never a space or bracket, so one keypress is never swallowed by the formatter.</li>
+    <li>Pasting or typing <code>+44&nbsp;…</code> switches the country and strips the dial code.</li>
+</ul>

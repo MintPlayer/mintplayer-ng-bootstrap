@@ -8,6 +8,7 @@ export const ROUTES: Routes = [
   { path: 'floating-labels', loadComponent: () => import('./floating-labels/floating-labels.component').then(m => m.FloatingLabelsComponent) },
   { path: 'input-group', loadComponent: () => import('./input-group/input-group.component').then(m => m.InputGroupComponent) },
   { path: 'multi-range', loadComponent: () => import('./multi-range/multi-range.component').then(m => m.MultiRangeComponent) },
+  { path: 'phone-input', loadComponent: () => import('./phone-input/phone-input.component').then(m => m.PhoneInputComponent) },
   { path: 'radio', loadComponent: () => import('./radio/radio.component').then(m => m.RadioComponent) },
   { path: 'range', loadComponent: () => import('./range/range.component').then(m => m.RangeComponent) },
   { path: 'select', loadComponent: () => import('./select/select.component').then(m => m.SelectComponent) },
