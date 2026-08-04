@@ -67,13 +67,14 @@ writeFileSync(coreEntry, [
 ].join('\n'));
 const coreOut = join(tmp, 'core-used.bundle.mjs');
 execFileSync(process.execPath, [
-  esbuild, coreEntry, '--bundle', '--format=esm', '--minify', '--platform=browser', `--outfile=${coreOut}`,
+  esbuild, coreEntry, '--bundle', '--format=esm', '--minify', '--platform=browser',
+  '--log-level=silent', `--outfile=${coreOut}`,
 ], { cwd: repoRoot });
 const coreBytes = readFileSync(coreOut);
 row(`libphonenumber-js/core (the 4 functions we use): ${coreBytes.length} B min / ${gzipSync(coreBytes).length} B gzip`);
 
 // The whole-set entry bundles the same code, so the metadata's own share is the difference.
-const maxBundle = readFileSync(join(tmp, 'whole-max.bundle.mjs'));
+const maxBundle = readFileSync(join(tmp, 'whole-max-4usedfns.bundle.mjs'));
 row(`whole-max bundle minus /core code:               ${maxBundle.length - coreBytes.length} B min (metadata's share)`);
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -107,7 +108,7 @@ function chunkFor(iso, strategy) {
   const file = join(tmp, `md-${iso}-${strategy}.mjs`);
   writeFileSync(file, src);
   const out = join(tmp, `md-${iso}-${strategy}.min.mjs`);
-  execFileSync(process.execPath, [esbuild, file, '--minify', '--format=esm', `--outfile=${out}`], { cwd: repoRoot });
+  execFileSync(process.execPath, [esbuild, file, '--minify', '--format=esm', '--log-level=silent', `--outfile=${out}`], { cwd: repoRoot });
   return readFileSync(out);
 }
 row('iso2'.padEnd(6), ...strategies.map((s) => `${s} min/gzip`.padEnd(22)));
@@ -181,7 +182,7 @@ writeFileSync(mapFile, mapSrc);
 // Measured unbundled (esbuild would follow the imports); this is the shape the
 // eager entry keeps, exactly like flags/src/flag-loaders.generated.ts.
 row(`loader map source: ${mapSrc.length} B raw / ${gz(mapSrc)} B gzip`);
-const minMap = execFileSync(process.execPath, [esbuild, mapFile, '--minify', '--format=esm'], { cwd: repoRoot });
+const minMap = execFileSync(process.execPath, [esbuild, mapFile, '--minify', '--format=esm', '--log-level=silent'], { cwd: repoRoot });
 row(`loader map minified: ${minMap.length} B min / ${gzipSync(minMap).length} B gzip`);
 
 console.log(`\ntmp artifacts at ${tmp}`);

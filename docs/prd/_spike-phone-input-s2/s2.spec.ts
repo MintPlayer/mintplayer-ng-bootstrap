@@ -567,6 +567,10 @@ test('S2.9 RTL: direction inheritance, overlay side, reserved padding, picker-ic
       const c = (window as any).buildCase({
         depth: 2, recipe: rec, rich: r, count: 244, locale: 'nl', labelOrder: 'name-first',
         tel: true, dir: d, overlay: 'plain', overlayIndex: 20,
+        // The real shape per S2.4: the country picker gets a pinned basis, the tel
+        // input takes the rest. `:host` from the inner tree beats x-group's
+        // `::slotted(*)` normal declaration — S1's specificity finding, confirmed here.
+        extraCss: ':host { width: 7.5rem; flex: 0 0 auto; }',
       });
       c.select.value = 'BE';
     }, { d: dir, rec: recipe, r: rich });
@@ -593,12 +597,29 @@ test('S2.9 RTL: direction inheritance, overlay side, reserved padding, picker-ic
         hostX: +c.phone.getBoundingClientRect().x.toFixed(1),
         hostW: +c.phone.getBoundingClientRect().width.toFixed(1),
         geom: { select: box(c.select), tel: box(c.tel), overlay: box(c.overlay) },
+        // Which control is visually first, and do they overlap?
+        rowOrder: (() => {
+          const s = c.select.getBoundingClientRect(), t = c.tel.getBoundingClientRect();
+          return {
+            first: s.x < t.x ? 'select' : 'tel',
+            overlapPx: +Math.max(0, Math.min(s.right, t.right) - Math.max(s.x, t.x)).toFixed(1),
+          };
+        })(),
         selectPadding: (() => {
           const cs = getComputedStyle(c.select);
           return { left: cs.paddingLeft, right: cs.paddingRight, inlineStart: cs.paddingInlineStart, inlineEnd: cs.paddingInlineEnd };
         })(),
         selectTextAlign: getComputedStyle(c.select).textAlign,
         bgPosition: getComputedStyle(c.select).backgroundPosition,
+        // Bootstrap's reboot sets `* { box-sizing: border-box }` on the DOCUMENT, and
+        // a `*` selector in a page stylesheet cannot match inside a shadow root — so
+        // the inner <select> may be content-box, which makes `width` + reserved
+        // padding compose wrongly. Measured, not assumed.
+        boxSizing: {
+          innerSelect: getComputedStyle(c.select).boxSizing,
+          selectHost: getComputedStyle(c.xsel).boxSizing,
+          telInput: getComputedStyle(c.tel).boxSizing,
+        },
       };
     });
   };
@@ -608,21 +629,26 @@ test('S2.9 RTL: direction inheritance, overlay side, reserved padding, picker-ic
   const enhancedRtl = e.supportsBaseSelect ? await directions('rtl', 'pairGated', true) : null;
 
   // ---- 2. reserved padding under RTL: does the text clear the overlay? ----
-  const reserved = async (mode: 'logical' | 'physical' | 'physical-guarded') => {
+  const reserved = async (mode: 'logical' | 'physical' | 'physical-guarded' | 'logical-content-box') => {
     await page.evaluate((m) => {
+      const borderBox = 'select.form-select { box-sizing: border-box; }';
       const css = {
         // What the S2 report recommended: logical padding, logical overlay inset.
-        logical: 'select.form-select { padding-inline-start: 6rem; }',
+        logical: borderBox + 'select.form-select { padding-inline-start: 6rem; }',
         // Naive physical: correct in LTR, wrong side in RTL.
-        physical: 'select.form-select { padding-left: 6rem; }',
+        physical: borderBox + 'select.form-select { padding-left: 6rem; }',
         // S1's conclusion applied here: physical, guarded by direction.
-        'physical-guarded':
+        'physical-guarded': borderBox +
           'select.form-select { padding-left: 6rem; }' +
           ':host(:dir(rtl)) select.form-select { padding-left: .75rem; padding-right: 6rem; }',
+        // Same as `logical`, but WITHOUT restoring border-box — i.e. what the real
+        // mp-select does today, since reboot's `*` rule can't reach the shadow root.
+        'logical-content-box': 'select.form-select { padding-inline-start: 6rem; }',
       }[m];
       const c = (window as any).buildCase({
         depth: 2, recipe: 'none', rich: false, count: 244, locale: 'nl', labelOrder: 'name-first',
-        tel: true, dir: 'rtl', overlay: 'plain', overlayIndex: 20, extraCss: css,
+        tel: true, dir: 'rtl', overlay: 'plain', overlayIndex: 20,
+        extraCss: ':host { width: 7.5rem; flex: 0 0 auto; }' + css,
       });
       c.select.value = 'BE';
     }, mode);
@@ -630,13 +656,17 @@ test('S2.9 RTL: direction inheritance, overlay side, reserved padding, picker-ic
     const geo = await page.evaluate(() => {
       const c = (window as any).__case;
       const s = c.select.getBoundingClientRect(), o = c.overlay.getBoundingClientRect();
+      const t = c.tel.getBoundingClientRect();
       const cs = getComputedStyle(c.select);
       return {
         padding: { left: cs.paddingLeft, right: cs.paddingRight },
+        boxSizing: cs.boxSizing,
+        selectW: +s.width.toFixed(1),
         // overlay position expressed as an offset from BOTH edges of the select
         overlayFromSelectLeft: +(o.x - s.x).toFixed(1),
         overlayFromSelectRight: +(s.right - o.right).toFixed(1),
         overlayW: +o.width.toFixed(1),
+        selectTelOverlapPx: +Math.max(0, Math.min(s.right, t.right) - Math.max(s.x, t.x)).toFixed(1),
       };
     });
     const { img, scale } = await clipShot(page, await cssBox(page, 'select'));
@@ -645,6 +675,7 @@ test('S2.9 RTL: direction inheritance, overlay side, reserved padding, picker-ic
   const reservedLogical = await reserved('logical');
   const reservedPhysical = await reserved('physical');
   const reservedGuarded = await reserved('physical-guarded');
+  const reservedContentBox = await reserved('logical-content-box');
 
   // ---- 3. ::picker-icon side in RTL (pseudo-element: pixel-measured) ----
   let pickerIcon: any = { skipped: 'no base-select' };
@@ -654,16 +685,19 @@ test('S2.9 RTL: direction inheritance, overlay side, reserved padding, picker-ic
         const c = (window as any).buildCase({
           depth: 2, recipe: 'pairGated', rich: true, count: 244, locale: 'nl',
           tel: true, dir: d,
-          // A pseudo-element has no DOM node, so paint it a colour nothing else uses.
-          extraCss: '@supports (appearance: base-select) { select.form-select::picker-icon { color: #ff0000; } }',
+          // A pseudo-element has no DOM node, so paint it MAGENTA — no flag in the
+          // palette uses it. (#ff0000 was a false positive: the synthetic flags
+          // contain #F31830, which any "red-dominant" test also matches.)
+          extraCss: ':host { width: 7.5rem; flex: 0 0 auto; box-sizing: border-box; }'
+            + '@supports (appearance: base-select) { select.form-select::picker-icon { color: #ff00ff; } }',
         });
         c.select.value = 'BE';
       }, dir);
       await rAF2(page);
       const { img, scale } = await clipShot(page, await cssBox(page, 'select'));
-      const red = inkColumns(img, scale, { pick: (r, g, b) => r > 150 && g < 90 && b < 90 });
+      const icon = inkColumns(img, scale, { pick: (r, g, b) => r > 200 && g < 80 && b > 200 });
       const selW = await page.evaluate(() => +(window as any).__case.select.getBoundingClientRect().width.toFixed(1));
-      return { dir, selectW: selW, redIcon: red, side: red.min < 0 ? 'not-found' : red.min < selW / 2 ? 'left' : 'right' };
+      return { dir, selectW: selW, icon, side: icon.min < 0 ? 'not-found' : icon.min < selW / 2 ? 'leading-in-ltr(left)' : 'trailing-in-ltr(right)' };
     };
     pickerIcon = { ltr: await iconProbe('ltr'), rtl: await iconProbe('rtl') };
   }
@@ -671,7 +705,7 @@ test('S2.9 RTL: direction inheritance, overlay side, reserved padding, picker-ic
   log('S2.9', browserName, {
     supportsBaseSelect: e.supportsBaseSelect, dirSupport,
     fallbackLtr, fallbackRtl, enhancedRtl,
-    reserved: [reservedLogical, reservedPhysical, reservedGuarded],
+    reserved: [reservedLogical, reservedPhysical, reservedGuarded, reservedContentBox],
     pickerIcon,
   });
 
@@ -687,6 +721,22 @@ test('S2.9 RTL: direction inheritance, overlay side, reserved padding, picker-ic
   expect.soft(reservedLogical.padding.right, 'padding-inline-start resolves to the right in rtl').toBe('96px');
   expect.soft(reservedPhysical.padding.right, 'naive padding-left reserves the WRONG side in rtl').not.toBe('96px');
   expect.soft(reservedGuarded.padding.right, ':dir(rtl)-guarded physical reserves the right side').toBe('96px');
+  // Reboot's `* { box-sizing: border-box }` cannot reach into a shadow root — but it
+  // does not need to: the UA stylesheet already makes form controls border-box, so
+  // adding it changes nothing (`logical` and `logical-content-box` are identical).
+  expect.soft(fallbackLtr.boxSizing.innerSelect, 'UA gives <select> border-box inside the shadow root').toBe('border-box');
+  expect.soft(reservedContentBox.selectW, 'declaring box-sizing is a no-op here').toBe(reservedLogical.selectW);
+  expect.soft(reservedLogical.selectW, 'the pinned width holds with logical padding').toBe(120);
+  // Reserving on the WRONG side does not merely look wrong: padding-left 96 +
+  // Bootstrap's padding-right 36 exceeds the 120px basis, so the border-box floor
+  // inflates the control and it overflows into the tel input.
+  expect.soft(reservedPhysical.selectW, 'wrong-side padding inflates the control').toBeGreaterThan(120);
+  expect.soft(reservedPhysical.selectTelOverlapPx, 'wrong-side padding overlaps the tel input').toBeGreaterThan(0);
+  expect.soft(reservedLogical.selectTelOverlapPx, 'logical padding keeps the row intact').toBe(0);
+  if (e.supportsBaseSelect) {
+    expect.soft(pickerIcon.ltr.side, 'ltr: picker-icon at the trailing (right) edge').toBe('trailing-in-ltr(right)');
+    expect.soft(pickerIcon.rtl.side, 'rtl: margin-inline-start:auto moves it to the left').toBe('leading-in-ltr(left)');
+  }
 });
 
 // ---------------------------------------------------------------------------

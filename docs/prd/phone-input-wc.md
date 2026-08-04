@@ -211,6 +211,19 @@ is a `<select>`, which inherits `direction` normally.
 Spike S1 proved both channels in Chromium + Firefox + WebKit (§9.1). Fixing the scheduler demo's
 broken group (§1.2) is the acceptance demo for D2.
 
+**D2a — the cascade order between the three trees, measured end to end.** S1 established that a
+*normal* `::slotted()` declaration loses to the tree the child lives in; S2's RTL pass measured the
+third case, and the practical ordering for one slotted control is:
+
+> `::slotted()` normal (from the group) **<** `:host` normal (from the control) **<** outer-tree
+> normal (from the page or the composing element) **<** `::slotted()` `!important` (from the group)
+
+Two actionable consequences. **The pinned width of the country picker is expressible precisely
+because of this**: `:host { flex: 0 0 auto; width: 7.5rem }` declared inside `mp-select` beats the
+group's `::slotted(*) { flex: 1 1 auto }` (measured), so a control can size itself without the group
+conspiring. And conversely, **anything the group must win it has to mark `!important`** — which is
+exactly what §5.2's geometry rules already do.
+
 **D1a — `mp-input-group` must NOT set `delegatesFocus` (S5).** Measured both ways: `focus()`
 result, `document.activeElement` and the full tab order are byte-identical in all three engines, so
 it buys nothing while imposing focus behaviour on every other consumer of the generic group.
@@ -274,6 +287,32 @@ nothing, Chromium's does.
   prefix-matches the option's text, so ISO-first makes typing a country name unreachable — measured
   in all three engines: `germ` reaches Germany with name-first and never with ISO-first. This does
   not affect the user-requested closed-face shape (flag + ISO code), which stays.
+
+**RTL: the overlay keeps logical properties — this is the one place S1's conclusion must NOT be
+copied.** The group's corner radii had to become physical under `:dir()` guards because a logical
+property on the slotted `input[type=tel]` resolves against that input's UA-forced `ltr`. The overlay
+is different, and measured so: the entire chain it belongs to inherits `rtl` correctly
+(phone host → group → `mp-select` host → the inner `<select>`, verified two boundaries deep in all
+three engines), and the overlay sits over the *select*, never touching the tel input. So
+`inset-inline-start` and `padding-inline-start` are correct as written — measured at a stable **+1 px
+from the select's inline-start edge in both directions, in all three engines**.
+
+Using physical `padding-left` instead is a **measured defect, and not a cosmetic one**: the reserved
+gutter lands on the wrong side *and* combines with Bootstrap's own `padding-right` to exceed the
+pinned flex basis, so the border-box floor inflates the control from 120 px to 134 px and it
+**overflows into the tel input by 14 px** in all three engines. Two related confirmations:
+`margin-inline-start: auto` puts `::picker-icon` on the trailing edge in both directions and both
+base-select engines (pixel-measured), and nothing else in the recipe needs a `:dir()` variant —
+though `padding-right: 0.75rem` in the reconciliation is symmetric only *by accident* (Bootstrap's
+left padding happens to match), so it should be written `padding-inline: 0.75rem` to make the safety
+intentional.
+
+> **Pre-existing, and worth fixing while we are in that stylesheet:** Bootstrap's `.form-select` is
+> authored physically and does not flip in the default (non-RTL) build, so in RTL the caret gutter
+> and the caret itself both stay on the physical right — which is the *leading* edge. It is
+> collision-free, so nothing is broken today and it equally affects `bs-select` standalone, but it
+> reads wrong. Since M3 already edits `form-select.styles.scss` for the group contract, normalize it
+> there (`padding-inline`, logical `background-position`). Under base-select it disappears anyway.
 
 Everything else came back clean: keyboard open/arrows/Escape and exactly **one** `change` event on
 commit; typeahead reaching Germany *through* the inline SVG; the overlay's pierced hit path landing
@@ -824,7 +863,7 @@ element in all three (conformance-registry enforced).
 | # | Question | Pass criterion | Verdict |
 |---|---|---|---|
 | S1 | Does the §5.2 two-channel group contract work? `::slotted(:not(:first-child))` positional matching + `--mp-group-*` inheritance into a *generated* `unsafeCSS` stylesheet, incl. the `-1px` border overlap + `:focus-within` lift | Corner pairing + flex visually correct for `input+span+mp-select` in both engines, nested inside another shadow root | **PASS, with two amendments to D2** — 36/36 in Chromium + Firefox + WebKit (§9.1) |
-| S2 | `appearance: base-select` with SVG-bearing options inside a shadow root; graceful text-only fallback | Rich options in Chromium; identical layout metrics in the Firefox fallback | **PASS 9/9 × 3 engines, D3 amended four ways** — incl. one release blocker, §9.4 (RTL case pending) |
+| S2 | `appearance: base-select` with SVG-bearing options inside a shadow root; graceful text-only fallback | Rich options in Chromium; identical layout metrics in the Firefox fallback | **PASS 10/10 × 3 engines, D3 amended four ways** — incl. one release blocker; RTL clean with logical properties, §9.4 |
 | S3 | `import('libphonenumber-js/max')` from the published lib: chunking in our Vite build, esbuild + Vite consumers re-splitting from node_modules, plain-Node resolution | One lazy chunk; all three consumers resolve; Node imports without `document` | **PASS 6/6** — but bundling rejected in favour of `external` (D5b), §9.3 |
 | S4 | `Intl.DisplayNames` SSR/hydration parity in the three demo SSR pipelines | No hydration mismatch on country names with an explicit locale; documented behaviour with browser-locale default | **PASS only because the names are never SSR'd** — criterion reworded, see §9.2 |
 | S5 | FACE-in-FACE isolation + two-tab-stop focus model | Inner `mp-select` contributes nothing to the outer form's `FormData`; `formDisabledCallback` fans out to both controls; Tab order select → input | **PASS 111/111** in three engines — five new obligations D12–D16, §9.3 |
@@ -957,10 +996,17 @@ WebKit takes the rich path); the overlay's own width is engine-dependent (68.4 p
 70.2 px WebKit — ISO glyph advance), so reserve generous padding rather than a tight hard-coded
 value; and the overlay aligns only while the select is the group's first child.
 
-**Open sub-case:** RTL was not covered. Given S1's finding that the UA forces `input[type=tel]` to
-`ltr` inside `dir="rtl"` — and the overlay sits right next to that input — the overlay side,
-`padding-inline` and `::picker-icon` side are being measured now. If they need physical properties
-under `:dir()` guards like the group's radii did, consistency with §5.2 wins over elegance.
+**RTL sub-case: closed, and it went the other way.** The overlay keeps logical properties and needs
+no `:dir()` guard — the details and the measured 14 px overflow that the physical alternative causes
+are in §5.3. Also settled there: the cascade ordering across all three trees (D2a), which is what
+makes the pinned picker width expressible from inside `mp-select`.
+
+Two corrections the spike made to its own reasoning, recorded so the wrong version does not survive:
+the inner `<select>` **is** `border-box` in all three engines (the UA stylesheet gives form controls
+`border-box`, so reboot's `*` rule not crossing the shadow boundary is a non-issue here, and
+declaring `box-sizing` in the WC's SCSS would be a no-op); and a red-channel pixel probe for
+`::picker-icon` was invalid because the synthetic flag palette contains `#F31830` — magenta is the
+only safe probe colour against flag artwork.
 
 ## 10. Testing
 

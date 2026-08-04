@@ -7,7 +7,7 @@ feature is finished (pushes are billed and cancel in-flight runs).
 
 | Milestone | State |
 |---|---|
-| S — spikes (gate) | **S1 ✅ S3 ✅ S4 ✅ S5 ✅ S6 ✅ S7 ✅ S8 ✅ S2 ✅** (RTL sub-case running) · **S9 ⏳** (per-country metadata) |
+| S — spikes (gate) | **S1–S8 all ✅** (incl. S2's RTL sub-case) · **S9 ⏳** (per-country metadata) |
 | M1 — flags sub-entry | 🟡 pipeline built + verified by S6; **only 5 sample flags vendored — M1 = vendor the remaining ~239** |
 | M2 — phone-core sub-entry | 🟡 `countries.ts` + lazy validator facade built by S3; dial-code / e164 / format modules + specs outstanding |
 | M3 — mp-input-group + the group contract in mp-select | ⬜ |
@@ -67,7 +67,8 @@ Throwaway files under `docs/prd/_spike-phone-input-*`, deleted after verdicts ar
       generated `unsafeCSS` stylesheet; `-1px` overlap + `:focus-within` lift; nested inside a
       second shadow root. **Gate: on failure, adopt the PRD §7 fallback before starting M3/M5.**
 - [x] S2 — `appearance: base-select` with SVG options in a shadow root; Firefox text-only
-      fallback layout parity. **PASS**; D3 amended four ways (PRD §9.4). RTL sub-case running.
+      fallback layout parity. **PASS 10/10 × 3 engines**; D3 amended four ways, RTL clean with
+      logical properties (PRD §9.4).
 - [ ] S9 — per-country metadata chunks vs one 57 KB `/max` chunk, incl. the country-switch reformat
       path [PRD D6a provisional, D17].
 - [x] S3 — `import('libphonenumber-js/min')` chunking from the published lib; esbuild + Vite +
@@ -134,7 +135,10 @@ Throwaway files under `docs/prd/_spike-phone-input-*`, deleted after verdicts ar
       rules for light children; `--mp-group-*` setting rules for `mp-*` children (S1's proven
       form); `sm`/`lg` paddings; focus-visible handling.
 - [ ] `mp-select`: consume `--mp-group-radius-start/-end` with `var(…, var(--bs-border-radius))`
-      fallbacks in `_styles/form-select.styles.scss` (NOT on `:host`).
+      fallbacks in `_styles/form-select.styles.scss`.
+- [ ] While in that stylesheet: **normalize Bootstrap's physical RTL authoring** — `padding-inline`
+      + logical `background-position`, so the caret gutter stops sitting on the leading edge in RTL
+      (pre-existing, also affects `bs-select` standalone; PRD §5.3).
 - [ ] `mp-select` barrel fix: export `MpSelectOptgroup` + `MpSelectItem` from `select/src/index.ts`.
 - [ ] `mp-input-group.spec.ts` + `mp-input-group.aria.spec.ts` (group named ⇒ role, unnamed ⇒
       none; slotted passthrough untouched).

@@ -162,7 +162,11 @@ class XGroup extends HTMLElement {
     super();
     this.attachShadow({ mode: 'open' });
     this.shadowRoot.innerHTML = `<style>
-      :host { display: flex; align-items: stretch; }
+      :host { display: inline-block; }
+      /* The row itself must be the flex container — with a block .input-group the
+         slotted select and tel input stack instead of pairing, which made the S2.9
+         row geometry meaningless until it was fixed. */
+      .input-group { display: flex; align-items: stretch; width: 100%; }
       ::slotted(*) { flex: 1 1 auto; }
     </style><div class="input-group"><slot></slot></div>`;
   }
