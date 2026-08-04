@@ -8,7 +8,7 @@ draft PR #399. Commit per milestone (commits are free); push only when the whole
 | Milestone | State |
 |---|---|
 | S — spikes (gate) | **CLOSED. S1–S8 all ✅** (incl. S2's RTL sub-case) · **S9 deferred** (per-country metadata: 39/40 parity, `gb` rejects a valid number — PRD §5.5 D6a-alt) |
-| M1 — flags sub-entry | 🟡 pipeline built + verified by S6; **only 5 sample flags vendored — M1 = vendor the remaining ~239** |
+| M1 — flags sub-entry | ✅ **done** — 244 flags vendored, 244 lazy chunks verified in dist |
 | M2 — phone-core sub-entry | 🟡 `countries.ts` + lazy validator facade built by S3; dial-code / e164 / format modules + specs outstanding |
 | M3 — mp-input-group + the group contract in mp-select | ⬜ |
 | M4 — mp-select rich options (base-select PE) | ⬜ |
@@ -87,9 +87,10 @@ Throwaway files under `docs/prd/_spike-phone-input-*`, deleted after verdicts ar
       `country-flag-icons` devDependency into `libs/mintplayer-web-components/flags/src/assets/`,
       preserving the MIT notice (`flags/README.md`); idempotent, diffable.
 - [x] Add `country-flag-icons` to root `package.json` devDependencies.
-- [ ] **Run the refresh script for all ~244 countries** and commit the vendored SVGs — only
-      `be fr rs sa us` are in the tree (S6 kept the spike set small). `--only=` does NOT prune, so
-      clear `src/assets/` first if the set ever shrinks.
+- [x] **Run the refresh script for all 244 countries** and commit the vendored SVGs — 244 vendored
+      from `country-flag-icons` v1.6.20 (239 written over S6's 5 samples), derived from
+      `intl-tel-input/data` so the flag set and the picker list cannot drift. `--only=` does NOT
+      prune, so clear `src/assets/` first if the set ever shrinks.
 - [x] `tools/scripts/build-flag-loaders.mjs` (or a third pattern inside
       `build-web-components.mjs`, wired into the `codegen-wc` target) — scan `flags/src/assets/*.svg`,
       emit `flags/src/flag-loaders.generated.ts`: `CountryCode` union from filenames + static
@@ -97,9 +98,11 @@ Throwaway files under `docs/prd/_spike-phone-input-*`, deleted after verdicts ar
 - [x] `flags/index.ts` + `flags/src/index.ts` — `loadFlag(code)` (cached
       `Map<string, Promise<string>>`, lowercases, unknown → `undefined`), re-export types.
 - [x] `flags/src/flags.spec.ts` — loader resolves a known flag string, caches, unknown code path.
-- [ ] CLAUDE.md WC gotchas: add the static-string-literal dynamic-import rule.
-- [ ] Verify by `nx build mintplayer-web-components` + inspecting `dist` chunk-per-flag once
-      (this is the S6 rehearsal if S ran first). **Commit.**
+- [x] CLAUDE.md WC gotchas: added **both** dynamic-import failure modes, plus the three-tree
+      cascade order, the UA-forced-LTR tel input, and the backtick-in-css-comment trap.
+- [x] Verified on a real build: **244 lone-SVG chunks**, 0 `.svg` files shipped, `exports["./flags"]`
+      written, MIT notice published at `flags/README.md`. Loader map 17.9 kB (3.44 kB gzip). Per-flag
+      gzip: `be` 196 B, `gb` 460 B, `io` 1223 B — median ~313 B, matching S6. **Commit.**
 
 ## M2 — `phone-core` sub-entrypoint [PRD §5.5, D5, D6]
 

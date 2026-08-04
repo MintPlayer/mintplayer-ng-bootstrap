@@ -1,16 +1,16 @@
 #!/usr/bin/env node
 /**
- * S3/S6 consumer matrix — throwaway. Delete with this directory once the PRD
- * verdicts are recorded.
+ * S9 consumer matrix — throwaway. Adapted from `_spike-phone-input-s3s6/run.mjs`
+ * for the per-calling-code metadata chunks.
  *
- * Simulates an npm install of the built library into a temp dir, then consumes
- * it three ways: plain Node (SSR), esbuild `--splitting --format=esm` (what
- * @angular/build uses), and a Vite build (React/Vue demos). Also type-checks a
- * TS consumer, and proves the computed-dynamic-import guard rail by patching a
- * throwaway copy of the published flags entry.
+ * Simulates an npm install of the built library into a temp dir, then consumes it
+ * three ways: plain Node (SSR), esbuild `--splitting --format=esm` (what
+ * @angular/build uses), and a Vite build (React/Vue demos). Also type-checks a TS
+ * consumer, proves tree-shaking, and exercises the computed-dynamic-import guard
+ * rail on both the flag and the metadata side.
  *
  * Prereq: npx nx build mintplayer-web-components
- * Usage:  node docs/prd/_spike-phone-input-s3s6/run.mjs
+ * Usage:  node docs/prd/_spike-phone-input-s9/run.mjs
  */
 
 import { execFileSync } from 'node:child_process';
@@ -29,7 +29,7 @@ if (!existsSync(dist)) {
   process.exit(1);
 }
 
-const root = join(tmpdir(), 'mp-s3s6');
+const root = join(tmpdir(), 'mp-s9');
 rmSync(root, { recursive: true, force: true });
 
 function makeConsumer(name, { withDeps }) {
@@ -58,6 +58,8 @@ function step(label, fn) {
   }
 }
 
+const METADATA_CHUNK = /^cc-[0-9]+\.generated-/;
+
 // The library externalises libphonenumber-js / intl-tel-input, so a real consumer
 // has them in its own node_modules — that is the configuration under test.
 const c = makeConsumer('consumer', { withDeps: true });
@@ -65,8 +67,8 @@ const c = makeConsumer('consumer', { withDeps: true });
 step('published phone-core names /core, not /max, and only static specifiers', () => {
   const dir = join(c, 'node_modules/@mintplayer/web-components');
   const entry = readFileSync(join(dir, 'phone-core/index.mjs'), 'utf8');
-  const map = readdirSync(join(dir, 'chunks')).find((f) => f.startsWith('metadata-loaders.generated-'));
-  const mapSrc = readFileSync(join(dir, 'chunks', map), 'utf8');
+  const mapFile = readdirSync(join(dir, 'chunks')).find((f) => f.startsWith('metadata-loaders.generated-'));
+  const mapSrc = readFileSync(join(dir, 'chunks', mapFile), 'utf8');
   const specifiers = [...`${entry}\n${mapSrc}`.matchAll(/import\(([^)]*)\)/g)].map((m) => m[1].trim());
   const computed = specifiers.filter((s) => !/^["'][^"'`]+["']$/.test(s));
   if (computed.length > 0) throw new Error(`computed import specifier(s): ${computed.join(' | ')}`);
@@ -75,7 +77,7 @@ step('published phone-core names /core, not /max, and only static specifiers', (
     `${specifiers.length} dynamic imports, all static string literals`,
     `entry externals: ${[...new Set([...entry.matchAll(/from\s*"([^"]+)"/g)].map((m) => m[1]))].join(', ')}`,
     `core import present: ${entry.includes('libphonenumber-js/core')}`,
-    `metadata chunks in the package: ${readdirSync(join(dir, 'chunks')).filter((f) => /^[a-z]{2}\.generated-/.test(f)).length}`,
+    `metadata chunks in the package: ${readdirSync(join(dir, 'chunks')).filter((f) => METADATA_CHUNK.test(f)).length}`,
   ].join('\n');
 });
 
@@ -89,16 +91,16 @@ step('esbuild --bundle --splitting --format=esm', () => {
   const files = readdirSync(join(c, 'out-esbuild'));
   const entry = readFileSync(join(c, 'out-esbuild/app.js'), 'utf8');
   return [
-    String(out).trim(),
-    `${files.length} output files; entry ${readFileSync(join(c, 'out-esbuild/app.js')).length} B`,
-    `entry still contains no metadata: ${!entry.includes('country_calling_codes')}`,
+    String(out).trim().split('\n').slice(-1).join(''),
+    `${files.length} output files; entry ${entry.length} B`,
+    `entry carries no metadata: ${!entry.includes('country_calling_codes')}`,
   ].join('\n');
 });
 
 step('vite build', () => {
   const out = execFileSync(process.execPath, [bin('vite/bin/vite.js'), 'build', '--config', 'vite.config.mjs'], { cwd: c });
   const assets = readdirSync(join(c, 'out-vite/assets'));
-  return `${String(out).trim()}\n${assets.length} assets emitted`;
+  return `${String(out).trim().split('\n').slice(-1).join('')}\n${assets.length} assets emitted`;
 });
 
 step('tsc on a TS consumer (published .d.ts must resolve)', () =>
@@ -110,16 +112,16 @@ step('tree-shaking: a consumer of another entry pays zero flag/metadata bytes', 
     '--outdir=out-other', '--minify', '--platform=browser',
     '--external:lit', '--external:lit/*', '--external:@lit/context',
   ], { cwd: c });
-  const bundle = execFileSync(process.execPath, ['-e', "process.stdout.write(require('node:fs').readFileSync('out-other/other.js','utf8'))"], { cwd: c }).toString();
+  const bundle = readFileSync(join(c, 'out-other/other.js'), 'utf8');
   const leaks = ['513 342', 'country_calling_codes', 'Åland', 'metadata-loaders'].filter((s) => bundle.includes(s));
   if (leaks.length > 0) throw new Error(`leaked into the eager bundle: ${leaks.join(', ')}`);
   return `no flag SVG / no phone metadata / no loader map / no country table in out-other (${bundle.length} bytes)`;
 });
 
 // Guard rail: the published .mjs must contain only static import specifiers.
-const bad = makeConsumer('bad-computed-import', { withDeps: true });
+const badFlags = makeConsumer('bad-computed-flag', { withDeps: true });
 writeFileSync(
-  join(bad, 'node_modules/@mintplayer/web-components/flags/index.mjs'),
+  join(badFlags, 'node_modules/@mintplayer/web-components/flags/index.mjs'),
   [
     'const cache = new Map();',
     'export function loadFlag(code) {',
@@ -132,19 +134,19 @@ writeFileSync(
     '',
   ].join('\n'),
 );
-step('GUARD RAIL — computed specifier must break the esbuild consumer (FAIL above = rail holds)', () =>
+step('GUARD RAIL (flags) — computed specifier must break the esbuild consumer (FAIL = rail holds)', () =>
   execFileSync(process.execPath, [
     bin('esbuild/bin/esbuild'), 'app.mjs', '--bundle', '--splitting', '--format=esm',
     '--outdir=out-esbuild', '--platform=browser',
-  ], { cwd: bad }));
+  ], { cwd: badFlags }));
 
-// The same guard rail on the metadata side: a computed country specifier.
+// The same guard rail on the metadata side.
 const badMetadata = makeConsumer('bad-computed-metadata', { withDeps: true });
 {
   const dir = join(badMetadata, 'node_modules/@mintplayer/web-components');
-  const map = readdirSync(join(dir, 'chunks')).find((f) => f.startsWith('metadata-loaders.generated-'));
+  const mapFile = readdirSync(join(dir, 'chunks')).find((f) => f.startsWith('metadata-loaders.generated-'));
   writeFileSync(
-    join(dir, 'chunks', map),
+    join(dir, 'chunks', mapFile),
     [
       'const metadataLoaders = new Proxy({}, {',
       // The plausible mistake: resolve the chunk by name at runtime. esbuild has
@@ -157,22 +159,10 @@ const badMetadata = makeConsumer('bad-computed-metadata', { withDeps: true });
     ].join('\n'),
   );
 }
-step('GUARD RAIL (metadata) — computed specifier globs the chunks dir (SILENT mode)', () => {
+step('GUARD RAIL (metadata) — computed specifier globs the chunks dir (FAIL = rail holds)', () =>
   execFileSync(process.execPath, [
     bin('esbuild/bin/esbuild'), 'app.mjs', '--bundle', '--splitting', '--format=esm',
     '--outdir=out-glob', '--platform=browser',
-  ], { cwd: badMetadata });
-  const good = readdirSync(join(c, 'out-esbuild')).length;
-  const bad = readdirSync(join(badMetadata, 'out-glob')).length;
-  const total = (dir, base) =>
-    readdirSync(join(base, dir)).reduce((n, f) => n + readFileSync(join(base, dir, f)).length, 0);
-  return [
-    `static map:   ${good} output files, ${total('out-esbuild', c)} B total`,
-    `computed map: ${bad} output files, ${total('out-glob', badMetadata)} B total`,
-    bad > good
-      ? `=> the computed specifier BUILT SUCCESSFULLY and dragged in ${bad - good} extra files`
-      : '=> no multiplication in this layout (still broken at runtime: the glob resolved nothing)',
-  ].join('\n');
-});
+  ], { cwd: badMetadata }));
 
 console.log(`consumers left at ${root} for inspection.`);

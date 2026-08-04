@@ -66,10 +66,13 @@ export function hasOwnFormats(full, iso2) {
 }
 
 /**
- * Per-CALLING-CODE slice: every country sharing the calling code, in the full
- * table's order. Fixes the divergence a main-country-only slice has in the other
- * direction — with `/max`, `isValidPhoneNumber('7911123456', 'GB')` is true
- * because +44 7911 is a Guernsey mobile, and a GB-only slice rejects it.
+ * Per-CALLING-CODE slice — the unit S9 settled on. Every country sharing the
+ * calling code, in the full table's order.
+ *
+ * Fixes the divergence a per-country slice has in BOTH directions: a non-main
+ * country loses the block's formats entirely (they are stored only in the main
+ * country), and a main country rejects its siblings' numbers, which `/max`
+ * accepts — measured at 586 of 640 sibling cases.
  */
 export function sliceBlock(full, iso2) {
   const entry = full.countries[iso2];

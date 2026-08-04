@@ -6,14 +6,14 @@ export async function run() {
   const sa = await loadFlag('SA');
   const zz = await loadFlag('zz');
 
-  // Every country the S9 spread covers, plus the two that exercise format
-  // inheritance (CA/KZ/VA) — a broken slice shows up as an unformatted number.
+  // The S9 spread plus the countries that exercise the shared-calling-code path.
   const spread = ['be', 'nl', 'de', 'fr', 'gb', 'us', 'ca', 'it', 'ru', 'cn', 'in', 'br', 'au', 'jp', 'sa', 'kz', 'va'];
   const loaded = await Promise.all(spread.map((iso) => loadPhoneRules(iso)));
 
   const beRules = await loadPhoneRules('be');
   const ca = await loadPhoneRules('CA');
   const ru = await loadPhoneRules('ru');
+  const us = await loadPhoneRules('us');
 
   return {
     beLen: be?.length,
@@ -22,7 +22,6 @@ export async function run() {
     countries: phoneCountries.length,
     countriesWithRules: loaded.filter(Boolean).length,
     unknownCountry: await loadPhoneRules('zz'),
-    // The four capabilities, on the cases that would expose a broken slice.
     beFormat: beRules.format('470123456'),
     beValid: beRules.isValid('470123456'),
     beShortValid: beRules.isValid('47012345'),
@@ -33,7 +32,10 @@ export async function run() {
     caE164: ca.toE164('4165551234'),
     ruTollFreeE164: ru.toE164('8001234567'),
     ruTollFreeType: ru.type('8001234567'),
-    // A second call must be served from cache, not a second fetch.
+    // The cross-sibling case: a Canadian number on a US-selected field.
+    usAcceptsCanadian: us.isValid('5062345678'),
+    // US and CA share one chunk, so the second load is already resolved.
+    sharesChunk: (await loadPhoneRules('ca')) === ca,
     cached: (await loadPhoneRules('be')) === beRules,
   };
 }

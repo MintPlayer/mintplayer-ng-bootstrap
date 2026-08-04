@@ -22,7 +22,9 @@
       "outputs": [
         "{projectRoot}/**/*.element.template.ts",
         "{projectRoot}/**/*.styles.ts",
-        "{projectRoot}/flags/src/flag-loaders.generated.ts"
+        "{projectRoot}/flags/src/flag-loaders.generated.ts",
+        "{projectRoot}/phone-core/src/metadata-loaders.generated.ts",
+        "{projectRoot}/phone-core/src/metadata/*.generated.ts"
       ],
       "inputs": [
         "{projectRoot}/**/*.element.html",
@@ -30,14 +32,17 @@
         "{projectRoot}/**/*.styles.scss",
         "{projectRoot}/flags/src/assets/*.svg",
         "{workspaceRoot}/tools/scripts/build-web-components.mjs",
-        "{workspaceRoot}/tools/scripts/build-flag-loaders.mjs"
+        "{workspaceRoot}/tools/scripts/build-flag-loaders.mjs",
+        "{workspaceRoot}/tools/scripts/build-phone-metadata.mjs",
+        { "externalDependencies": ["libphonenumber-js"] }
       ],
       "cache": true,
       "options": {
         "parallel": false,
         "commands": [
           "node tools/scripts/build-web-components.mjs libs/mintplayer-web-components",
-          "node tools/scripts/build-flag-loaders.mjs"
+          "node tools/scripts/build-flag-loaders.mjs",
+          "node tools/scripts/build-phone-metadata.mjs"
         ]
       }
     },

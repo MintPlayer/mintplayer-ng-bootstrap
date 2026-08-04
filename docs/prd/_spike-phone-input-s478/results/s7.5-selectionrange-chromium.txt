@@ -1,3 +1,0 @@
-### chromium
-fixed type=tel setSelectionRange: set 0 → 0, set 1 → 1, set 4 → 4, set 7 → 7, set 12 → 12
-shadow type=tel setSelectionRange: set 0 → 0, set 1 → 1, set 4 → 4, set 7 → 7, set 12 → 12
