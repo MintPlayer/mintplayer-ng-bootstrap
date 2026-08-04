@@ -61,7 +61,10 @@ Two structural gaps block the clean version of this component:
 - **No no-JS interactive tier and no DSD SSR chrome.** No form control in the repo ships one
   (the `codegen-*-chrome` targets cover only shell/navbar/dropdown/carousel/accordion); a phone
   input without JS is a plain `<input type="tel">`, which is what consumers should render
-  server-side if they need that.
+  server-side if they need that. Consequently the demo page is registered in `axe.spec.ts` only,
+  **not** in `axe-nojs.spec.ts` — verified convention: that registry lists only the five routes
+  with a real no-JS tier, and `tree-select` (the closest JS-only precedent) appears in none of
+  the three apps' no-JS lists.
 - **No number storage/formatting opinions beyond E.164 out.** No MSISDN normalization services,
   no server-side validation, no SMS verification flows.
 - **No extension (`x123`) support** in v1 — libphonenumber-js can parse them; the UI does not
@@ -107,6 +110,14 @@ package.json; **zero config changes needed**, verified by prototype):
   E.164 assembly/parsing, the lazy libphonenumber facade. Pure `.spec.ts`-testable, shared by
   nothing framework-specific.
 - `libs/mintplayer-web-components/flags/` — SVG flag strings + lazy loader (§5.4).
+
+Cross-entrypoint composition needs no new mechanism: the established idiom is a package specifier
+plus a bare side-effect import for registration, exactly as `mp-datatable` composes two other WCs
+(`datatable/src/components/mp-datatable.ts:24-28`: `import '@mintplayer/web-components/pagination';`
++ `import type { PageChangeEventDetail } …`, and the same for `checkbox`) and `mp-tree-select`
+composes `mp-treeview` (`tree-select/src/components/mp-tree-select.ts:5,11`). So `mp-phone-input`
+imports `@mintplayer/web-components/select` and `…/input-group` the same way — the tsconfig
+wildcard resolves it in dev and the generated `exports` map resolves it in the published package.
 
 ### 5.2 `mp-input-group` — the group contract (D1, D2)
 
@@ -299,14 +310,37 @@ render via `unsafeHTML` into an `aria-hidden` span, matching the `CHEVRON_SVG` p
 ### 5.5 `phone-core` — data + lazy validation (D5, D6)
 
 **Country table: `intl-tel-input/data`** (official typed `./data` export subpath, MIT, published
-2026-07; **17.7 KB raw / 4.4 KB gzip**) as a regular dependency, imported eagerly by
+2026-07; **5.5 KB minified / 1.8 KB gzip once bundled** — the 17.7 KB / 4.4 KB in the first draft
+was the unminified dist file, corrected by S8) as a regular dependency, imported eagerly by
 `phone-core`. Its `rawCountryData` tuples are `[iso2, dialCode, priority, areaCodes,
 nationalPrefix]` — the `areaCodes`/`priority` fields are what disambiguate the +1 NANP block
 (US vs CA vs ~20 Caribbean territories), which every hand-rolled list gets wrong on day one.
 Rejected: hand-maintained JSON (same bytes, we own dial-code churn forever),
 `country-telephone-data` (more bytes, bundles English-only names that `Intl.DisplayNames` makes
-dead weight), `libphonenumber-js` metadata as the *selection* source (82–154 KB solves a problem
-selection doesn't have — but see D6, it *is* the validation source).
+dead weight).
+
+**D5a — the table stays even though libphonenumber ships country data (settled by S8.1).** The
+obvious simplification — drop the table, let the lazily-loaded validator name the country — does
+not work: `parsePhoneNumber().country` returns `null` for any number that is not yet *valid*, so
+it cannot name a country while the user is still typing or has fat-fingered a digit
+(`+19995551234` → `null`; `+441481123456` → `null` while the table still says `gg`). Measured on
+the hard cases: table **19/19**, libphonenumber **17/19**. Over a 244-country sweep they agree on
+235, the table alone is right once (`im`), libphonenumber alone is never right, and 8 are
+irreducible. So the division of labour is:
+
+| Concern | Owner |
+|---|---|
+| Picker list, dial codes, mid-typing country resolution | the eager table (1.8 KB gzip) |
+| Validity, number type, as-you-type formatting, authoritative country once the number parses | the lazy validator |
+
+Two correctness rules that fell out of S8.1 and belong in `phone-core`:
+
+- **Area-code tie-break:** a country *with* `areaCodes` that did not match must never beat a plain
+  dial-code match of the same length — otherwise `ca` (priority 1) is reported for every unlisted
+  `+1` area code.
+- **Detection is irreducibly lossy** for 8 territories that share numbering ranges (`ax cx cc bl
+  mf sj va eh`); no mechanism can separate them. Therefore **a detected country must never
+  overwrite an explicit user selection.**
 
 **Country names: `Intl.DisplayNames`** — zero bytes, localized by the component's `locale`
 attribute (default: browser locale, the scheduler's convention — no `'en-US'` default; that bug
@@ -320,15 +354,15 @@ files are ~0.6 KB of UI strings only.
 
 ```ts
 // phone-core/src/validation.ts — the ONLY module that names libphonenumber-js
-let mod: Promise<typeof import('libphonenumber-js/min')> | undefined;
+let mod: Promise<typeof import('libphonenumber-js/max')> | undefined;
 export function loadPhoneValidator() {
-  return (mod ??= import('libphonenumber-js/min'));
+  return (mod ??= import('libphonenumber-js/max'));
 }
 ```
 
 The dynamic import is a **static string literal** (guard rail, §5.4), so the metadata becomes one
-lazy chunk (~82 KB min-metadata) that Rollup emits under `chunks/` and downstream bundlers
-re-split — a consumer pays for it only when a phone input actually loads it. Load points:
+lazy chunk that Rollup emits under `chunks/` and downstream bundlers re-split — a consumer pays for
+it only when a phone input actually loads it. Load points:
 `mp-phone-input` triggers `loadPhoneValidator()` on first focus/input (and immediately when it
 mounts with a non-empty initial value, so an SSR'd form validates without interaction). Until the
 chunk resolves, the component performs structural checks only (digits/`inputmode`, `required` →
@@ -337,12 +371,56 @@ chunk resolves, the component performs structural checks only (digits/`inputmode
 `updated()` (never only from event handlers), the `mp-select` precedent
 (`select/src/components/mp-select.ts`).
 
-The `/min` metadata set is the default; the PRD notes but does not build a knob for `/mobile` or
-`/max`. The alternative shape — a consumer-supplied loader callback property instead of an
-internal import — was considered and rejected: it pushes complexity upward for zero gain, since
-the internal import is already lazy and tree-shaken away from consumers who never render a phone
-input. (If a consumer needs a different metadata set later, a loader property can be added
-non-breakingly.)
+**D6a — the metadata set is `/max`, not `/min` (reversed by S8.4).** The first draft chose `/min`
+on size alone. Measured over all 244 countries' example numbers, that choice is a user-visible
+defect:
+
+| set | bundled+min | **gzip** | falsely accepts 1 digit SHORT | rejects a valid number | `getType()` |
+|---|---|---|---|---|---|
+| `/min` | 159 KB | **36 KB** | **22 (9.0%)** | 0 | mostly unavailable |
+| `/mobile` | 175 KB | 41 KB | 7 (2.9%) | **rejects landlines entirely** | works |
+| `/max` | 233 KB | **57 KB** | 7 (2.9%) | 0 | works |
+
+Three decisive facts: (1) `validatePhoneNumberLength` does **not** rescue `/min` — of the 22
+one-digit-short numbers it wrongly accepts, that function catches **0**, because those lengths are
+legal for the country, just not for that number *type*; (2) `/min` and `/max` format **identically**
+— as-you-type output is byte-identical for 244/244 countries, so `/max` buys precision only;
+(3) `/mobile` is disqualified outright (Milan, London and Munich landlines all reported invalid).
+Paying +21 KB gzip **in a chunk that is lazy by design** to stop green-lighting numbers that are a
+digit short is the right trade. (The "~82 KB" in the first draft was the raw JSON byte count, not
+what a consumer downloads.)
+
+The alternative shape — a consumer-supplied loader callback property instead of an internal import
+— was considered and rejected: it pushes complexity upward for zero gain, since the internal
+import is already lazy and tree-shaken away from consumers who never render a phone input. (If a
+consumer needs a leaner set later, a loader property can be added non-breakingly.)
+
+**D6b — formatting must go through the international form (F1, discovered by S7).** Because D9
+keeps the dial code out of the editable value, the input holds the national significant number
+*without* its trunk prefix — and in that mode `new AsYouType(country).input(nationalDigits)`
+**formats nothing at all** for the countries this component will actually be used with, because
+libphonenumber's national patterns are written against the number *with* its national prefix:
+
+| country | national digits | `AsYouType(country)` | via international, calling code stripped |
+|---|---|---|---|
+| BE | 470123456 | `470123456` — unformatted | `470 12 34 56` |
+| NL | 612345678 | `612345678` — unformatted | `6 12345678` |
+| DE | 15112345678 | `15112345678` — unformatted | `1511 2345678` |
+| FR | 612345678 | `612345678` — unformatted | `6 12 34 56 78` |
+| GB | 7911123456 | `7911123456` — unformatted | `7911 123456` |
+| US | 2125551234 | `(212) 555-1234` | `212 555 1234` |
+
+Identical across `/min`, `/mobile` and `/max`, so it is not a metadata-set artefact. The formatter
+must therefore be `AsYouType().input('+' + dialCode + nationalDigits)` with the calling code cut
+back off — which also yields Italy's significant leading zero for free.
+
+**D6c — `toE164` delegates to the parser; never strip `nationalPrefix` by string comparison.**
+Russia's `nationalPrefix` is `8` *and* its toll-free significant numbers begin with `8`, so the
+naive rule turns `8001234567` into `+7001234567` instead of `+78001234567`. A string cannot tell a
+trunk prefix from a significant digit — only metadata can. `parsePhoneNumberFromString(digits,
+COUNTRY)` scored 20/21 on the tricky table and round-tripped 244/244 on the full sweep. (Italy
+passes the naive test only by luck: `intl-tel-input`'s `it` tuple carries no `nationalPrefix` at
+all, so the table itself encodes "nothing to strip".)
 
 **Also in `phone-core` (pure, unit-tested):** dial-code lookup with priority/area-code NANP
 resolution; "typed/pasted `+32…` into the national input" detection → country switch + prefix
@@ -380,6 +458,48 @@ Surface:
 - Display: closed select face shows flag + uppercase ISO code (the user's requested shape);
   dropdown options show flag (where D3 supports it) + localized name + `+NN`.
 
+**D10 — caret management while reformatting (normative; measured in S7).** As-you-type formatting
+rewrites the input's value on every keystroke, and the naive `input.value = formatted` moves the
+caret to the end. Measured identically in all three engines: value `470 12 34 56`, caret at 4,
+type `9` → caret lands at 10 (end) instead of 5. M5 must implement exactly these seven rules; a
+DOM-free reference implementation exists in the spike harness:
+
+1. **Anchor the caret to a digit COUNT, never a string index.** On input: `n` = number of digits
+   before the caret; reformat; place the caret immediately after the n-th digit of the new string.
+   `n === 0` → index 0, *before* any leading separator, so Backspace there is a no-op instead of
+   eating a `(`.
+2. **Record the pre-edit caret in `beforeinput`** — the only moment `selectionStart` still reflects
+   where the user was.
+3. **A rejected non-digit RESTORES, it does not recompute.** `<input type="tel">` accepts letters;
+   if the digit sequence is unchanged, restore both the previous value and the pre-edit caret.
+   Without this, typing `a` at index 4 drifts the caret to 3 (measured).
+4. **Backspace/Delete must always remove a DIGIT.** Intercept on `keydown`: if the selection is
+   collapsed and the character in the direction of travel is not a digit, `preventDefault()`, walk
+   past the separators to the nearest digit, delete *that*, reformat, re-place the caret by rule 1.
+   Leave range deletions to the browser (a range always contains digits). *Why it is not optional:*
+   otherwise the browser deletes the space, the reformat immediately puts it back, and the control
+   is visibly **stuck** — one keypress, nothing happens.
+5. **Never rewrite the value during composition.** Guard on `compositionstart`/`compositionend` +
+   `event.isComposing`; reformat exactly once at `compositionend`.
+6. **Dispatch a synthetic `input` event when a key was intercepted**, so the FACE value/validity
+   path still runs.
+7. **Reject a keystroke that would make the number too long.** Otherwise, past the last valid
+   length, `AsYouType` matches no pattern and the display *de-formats* mid-typing
+   (`470 12 34 56` → `4709123456`, measured). `validatePhoneNumberLength` is the guard rail.
+
+No shadow-DOM or `type="tel"` surprises: `selectionStart`/`setSelectionRange` behave identically
+inside a shadow root in all three engines.
+
+**D11 — when `+XX` detection runs.** S8.2 measured a UX wrinkle: driving detection from the
+*validator* leaves the country at `us` for every prefix of `+14165551234` and flips to `ca` only on
+the final digit, because libphonenumber will not resolve until the number is valid. The fix is not
+to detect less often but to use the right source per phase, which is exactly D5a's division of
+labour: **the eager table drives detection while typing** (it resolves as soon as the dial code —
+and then the area code — is unambiguous), and **the validator becomes authoritative on parse**
+(paste, blur, or once the number is valid). Combined with D5a's "never overwrite an explicit user
+selection", that keeps the flag stable. The precise keystroke at which the flag flips for shared
+dial codes is a unit-test matter in M2, not a design unknown.
+
 ### 5.7 i18n (D8)
 
 Follows the house two-axis model exactly (no central i18n mechanism exists; the convention is
@@ -387,7 +507,27 @@ per-component):
 
 - **Locale axis:** the `locale` attribute drives `Intl.DisplayNames` (country names),
   `Intl.Collator` (list order) — deliberately no default, browser locale wins, per the
-  scheduler's locale rule.
+  scheduler's locale rule. **This rule is correct for the client and unimplementable on a
+  server**, which has no browser; S4 measured what that costs and why the component is
+  nevertheless safe (§9.2). Four facts to keep in view:
+  1. Node resolves the runtime default from the **OS regional setting, not `LANG`** — measured
+     `nl-BE` on a host with `LANG=en_US.UTF-8`, while all three browsers resolved `en-US`. That
+     is **139 of 244 names different** ("Oostenrijk" vs "Austria"), not a rounding error.
+  2. A server/client mismatch is **silent and permanent**: the server's strings survive
+     hydration, zero console warnings in lit's dev *and* production builds, and a forced
+     `requestUpdate()` provably repairs nothing (hydration records the client value without
+     writing it, so an unchanged value diffs to nothing). Only a real value *change* repairs it.
+  3. `mp-phone-input` is safe **only because it ships no DSD chrome and no wrapper renders the
+     list** — verified: the demos splice DSD for exactly five components
+     (`apps/react-bootstrap-demo/src/entry-server.tsx:18-31,55`), so a WC with no `ssr/` injector
+     server-renders no shadow content at all and the names never exist in the SSR HTML. This makes
+     §3's "no DSD chrome" non-goal **load-bearing, not incidental**, and it means the country list
+     must be rendered by the WC, never by a wrapper template (`provideClientHydration` is active
+     in the Angular demo).
+  4. Even with an explicit locale, **Chromium disagrees with Node/Firefox/WebKit on 4 of 244
+     codes in every locale** — FK, HK, MO, PS (e.g. "Hong Kong" vs "Hong Kong SAR China") — and
+     it is a CLDR-data divergence, not a `style` option that can be tuned. Cosmetic for us; it
+     would break a byte-exact SSR assertion.
 - **Strings axis:** the handful of chrome strings (`input-label` default `'Phone number'`,
   `country-label` default `'Country'`, `error-text` from the consumer, placeholder) ride the
   Tier-2 `*-label` attribute pattern with English defaults — attributes, not a property
@@ -526,9 +666,11 @@ element in all three (conformance-registry enforced).
 | S1 | Does the §5.2 two-channel group contract work? `::slotted(:not(:first-child))` positional matching + `--mp-group-*` inheritance into a *generated* `unsafeCSS` stylesheet, incl. the `-1px` border overlap + `:focus-within` lift | Corner pairing + flex visually correct for `input+span+mp-select` in both engines, nested inside another shadow root | **PASS, with two amendments to D2** — 36/36 in Chromium + Firefox + WebKit (§9.1) |
 | S2 | `appearance: base-select` with SVG-bearing options inside a shadow root; graceful text-only fallback | Rich options in Chromium; identical layout metrics in the Firefox fallback | |
 | S3 | `import('libphonenumber-js/min')` from the published lib: chunking in our Vite build, esbuild + Vite consumers re-splitting from node_modules, plain-Node resolution | One lazy chunk; all three consumers resolve; Node imports without `document` | |
-| S4 | `Intl.DisplayNames` SSR/hydration parity in the three demo SSR pipelines | No hydration mismatch on country names with an explicit locale; documented behaviour with browser-locale default | |
+| S4 | `Intl.DisplayNames` SSR/hydration parity in the three demo SSR pipelines | No hydration mismatch on country names with an explicit locale; documented behaviour with browser-locale default | **PASS only because the names are never SSR'd** — criterion reworded, see §9.2 |
 | S5 | FACE-in-FACE isolation + two-tab-stop focus model | Inner `mp-select` contributes nothing to the outer form's `FormData`; `formDisabledCallback` fans out to both controls; Tab order select → input | |
 | S6 | Flag pipeline dress rehearsal: vendor 3 real flags, codegen the loader map, build, consume | Mirrors the asset prototype's verdicts on the real repo files (expected to pass — the prototype already did this with fabricated SVGs) | |
+| S7 | `AsYouType` caret preservation while reformatting (added mid-gate) | Caret never jumps; Backspace over a separator still deletes a digit; works in a shadow root | **PASS** — bug reproduced and fixed; rule normative in D10 |
+| S8 | Dial-string detection, NANP disambiguation, E.164 round-trip, metadata-set choice (added mid-gate) | Correct country for the hard cases; round-trip stable; evidence-based metadata set | **PASS, and it reversed two PRD choices** (D5a, D6a) |
 
 ### 9.1 S1 — the group contract: **PASS**, after two refutations
 
@@ -557,6 +699,49 @@ three engines unless noted.
 Consequences already folded into §5.2: channel 1 is `!important` + physical properties under
 `:dir()` guards; channel 2 is unchanged; the `:host` warning is corrected; the group is documented
 as authoritative. **The §7 fallback is not needed** — the composition architecture stands.
+
+### 9.2 S4 / S7 / S8 — locale parity, caret behaviour, phone logic
+
+Harness: `docs/prd/_spike-phone-input-s478/` (throwaway; evidence under `results/`). 33 Playwright
+assertions × Chromium 148 / Firefox 150 / WebKit 26.4, plus Node logic sweeps over all 244
+countries. `libphonenumber-js` and `intl-tel-input` were installed in a scratchpad, so the repo's
+dependency tree was untouched during the gate.
+
+**S4 — `Intl.DisplayNames`.** All 244 codes resolve in all 6 locales on every engine with zero
+fallbacks-to-code, including the awkward set (XK, AC, TA, DG, BQ, SX, EH, IO) — that part of the
+research holds in browsers too. With an **explicit** locale, Firefox and WebKit are byte-identical
+to Node; Chromium differs on 4 codes in every locale. With **no** locale, Node and the browsers
+disagree on **139 of 244**. A hydration mismatch was measured as silent and permanent (0 console
+warnings, `requestUpdate()` a no-op). Verdict: **PASS, but the pass criterion as first written was
+the wrong test** — an explicit-locale DSD render in Chromium would have failed it. What actually
+protects us is that the names are never server-rendered; §5.7 now records the four facts and the
+three rules that keep it that way.
+
+**S7 — caret.** The naive bug reproduces byte-identically in all three engines (caret off by 5),
+and the seven-rule fix passes in all three, including inside a shadow root, on paste, select-all,
+range delete, rejected non-digits and a guarded composition session. The rules are normative in
+D10. It also surfaced **F1** (§5.5 D6b), a prerequisite finding that changes the formatter itself:
+`AsYouType(country)` formats *nothing* for BE/NL/DE/FR/GB when fed a national number without its
+trunk prefix — which is exactly what D9's design puts in the input.
+
+**S8 — phone logic.** Reversed two PRD choices on evidence: keep the country table (D5a) and switch
+to `/max` metadata (D6a). Also found the RU `8001234567` counter-example that kills string-based
+national-prefix stripping (D6c), the area-code tie-break bug, and the 8 territories that no
+detection mechanism can separate.
+
+**Left to a human** (recorded so it is not mistaken for covered): a real IME composition session
+and a mobile soft keyboard; whether the caret *feels* right (the assertions are index arithmetic);
+whether the late country flip for shared dial codes is acceptable; whether the 4 Chromium name
+differences matter editorially; and how a screen reader announces a value that reformats under the
+caret. The last one is the most likely to need a design response — it goes on the M10 manual pass.
+
+**Scope gap, honestly noted:** S4's literal wording asked for the three demo SSR pipelines, which
+needed the build workspace another agent held. Substitute: a from-scratch `@lit-labs/ssr` +
+`ssr-client` harness using the same two packages and the same `lit-element-hydrate-support.js`
+import as the demos, plus reading the demos' actual entry points. The conclusion rests on *which*
+components `entry-server.tsx` splices DSD for — which I verified independently and a build run
+would not change. One demo SSR build with a temporary `mp-phone-input` on a page would close it
+literally; it is not on the critical path.
 ## 10. Testing
 
 - `phone-core`: pure vitest — NANP disambiguation table, dial-string detection, E.164 round-trip,

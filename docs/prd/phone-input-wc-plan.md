@@ -95,11 +95,24 @@ Throwaway files under `docs/prd/_spike-phone-input-*`, deleted after verdicts ar
 - [ ] `phone-core/src/countries.ts` — typed view over `intl-tel-input/data` tuples; localized
       name via `Intl.DisplayNames`; `Intl.Collator` ordering; `preferred/only` filtering.
 - [ ] `phone-core/src/dial-code.ts` — `countryForDialString()` with priority + areaCodes NANP
-      resolution; longest-prefix match; `toE164()` / `splitE164()`.
+      resolution; longest-prefix match. **Include the S8.1 tie-break:** a country *with*
+      `areaCodes` that did not match must not beat an equal-length plain dial-code match, or `ca`
+      is reported for every unlisted `+1` area code.
+- [ ] `phone-core/src/e164.ts` — `toE164()` / `splitE164()` **delegating to
+      `parsePhoneNumberFromString(digits, COUNTRY)`** [PRD D6c]. Do NOT strip `nationalPrefix` by
+      string comparison — RU `8001234567` becomes `+7001234567` instead of `+78001234567`. Note
+      this makes E.164 assembly need the lazy validator, so `toE164` is async or the component
+      keeps a digits+country value internally until the chunk resolves — decide in M5 and record it.
 - [ ] `phone-core/src/validation.ts` — `loadPhoneValidator()` lazy facade (the ONLY module that
-      names libphonenumber-js; static import string).
-- [ ] Specs: NANP disambiguation table (US/CA/Caribbean), `+44` paste detection, E.164
-      round-trips, facade caching, tuple-shape guard against `intl-tel-input` updates.
+      names libphonenumber-js; static import string, **`libphonenumber-js/max`** per PRD D6a).
+- [ ] `phone-core/src/format.ts` — formatter going through the international form and stripping the
+      calling code [PRD D6b/F1]. A plain `AsYouType(country).input(nationalDigits)` formats
+      **nothing** for BE/NL/DE/FR/GB; assert that in the spec so nobody "simplifies" it back.
+- [ ] Specs: NANP disambiguation table (US/CA/Caribbean + the 19 hard cases), `+44` paste
+      detection, `+7`/`+39`/`+590` shared dial codes, `+1` vs `+1242`, garbage `+999` → no switch,
+      bare national digits → **no switch**, E.164 round-trips (incl. RU `8001234567`, IT leading
+      zero), facade caching, tuple-shape guard against `intl-tel-input` updates, and the F1
+      formatter assertion.
 - [ ] **Commit.**
 
 ## M3 — `mp-input-group` + group contract in `mp-select` [PRD §5.2, D1, D2; fixes §1.2]
@@ -136,10 +149,17 @@ Throwaway files under `docs/prd/_spike-phone-input-*`, deleted after verdicts ar
       callback from M4); closed-face overlay (flag + ISO, `aria-hidden`, `pointer-events: none`).
 - [ ] Flags: placeholder box first, `loadFlag()` swap; warm visible set on first open.
 - [ ] Validator: `loadPhoneValidator()` on first focus/input or non-empty initial value;
-      structural checks until resolved; `AsYouType` formatting + `setFormValidity` from
+      structural checks until resolved; formatting via `phone-core/format` + `setFormValidity` from
       `updated()`; `valid: undefined` in `value-change` until loaded.
-- [ ] Paste/typed `+XX…` in the tel input → country switch + prefix strip; dial code static
-      adjacent text (D9); focus input after country selection (D9).
+- [ ] **Caret management per PRD D10 — all seven rules** (digit-count anchor, `beforeinput` capture,
+      restore-on-rejected-non-digit, Backspace/Delete always removes a digit, composition guard,
+      synthetic `input` after an intercepted key, reject-when-too-long). A DOM-free reference
+      implementation is in the S7 spike harness; port it with its own unit spec. Skipping rule 4
+      leaves the control visibly **stuck** when Backspace lands on a separator.
+- [ ] Paste/typed `+XX…` in the tel input → country switch + prefix strip, sourced from the
+      **table** while typing and the validator on parse/blur [PRD D11]; never overwrite an explicit
+      user selection [PRD D5a]; dial code static adjacent text (D9); focus input after country
+      selection (D9).
 - [ ] i18n: `locale` attr (no default), `input-label`/`country-label`/`error-text`/`placeholder`
       attrs; `preferred-countries`/`only-countries`.
 - [ ] A11y per PRD §6: error channel via `errorFeedback()` + `aria-errormessage`; dial-code span
@@ -193,7 +213,11 @@ Throwaway files under `docs/prd/_spike-phone-input-*`, deleted after verdicts ar
       (bare/camelCase names only).
 - [ ] Vue: automatic invariant sweep covers the SFCs; verify the floor check still passes.
 - [ ] Axe registries: `{ path: '/basic/forms/phone-input' }` (+ an `interact` hook opening the
-      select) in `a11y/axe.spec.ts` + `axe-nojs.spec.ts` in **all three** e2e projects.
+      select) in `a11y/axe.spec.ts` in **all three** e2e projects — and deliberately **NOT** in
+      `axe-nojs.spec.ts`: that registry lists only the components with a real no-JS tier
+      (`/`, accordion, carousel, navbar, shell). Verified: `tree-select`, the closest JS-only
+      precedent, appears in no `axe-nojs` list. A phone input has no no-JS tier (PRD §3), so
+      listing it would audit a control that legitimately renders nothing without JS.
 - [ ] Functional e2e per app: country switch updates dial code + flag; paste `+44…` switches
       country; invalid → message → valid clears; validator chunk loads lazily (request-count
       assertion); tree-select-style backend gating not needed (no API).
@@ -213,7 +237,14 @@ NX_ISOLATE_PLUGINS=false NX_DAEMON=false npx nx build ng-bootstrap-demo
 ```
 
 - [ ] Manual keyboard pass on the Angular demo page (tab order, Escape, typeahead in the select,
-      focus ring visible), Firefox smoke (flex-shrink trap).
+      focus ring visible), Firefox smoke (flex-shrink trap), RTL smoke (`dir="rtl"` — the tel input
+      is forced LTR by the UA, PRD §9.1 c6).
+- [ ] The five human-only checks S7/S8 could not automate (PRD §9.2): a real IME composition
+      session **and a mobile soft keyboard**; whether the caret *feels* right when typing,
+      backspacing and pasting mid-number; whether the late country flip on shared dial codes is
+      acceptable; the 4 Chromium country-name differences (editorial call); and **how a screen
+      reader announces a value that reformats under the caret** — the most likely to need a design
+      response, so do it early in the pass, not last.
 - [ ] Inspect `dist/libs/mintplayer-web-components`: per-flag chunks present, libphonenumber in
       one lazy chunk, no eager flag/validator bytes in the phone-input entry.
 - [ ] Version bumps: web-components 2.9.0, ng 22.13.0, react 19.14.0, vue 3.15.0.
