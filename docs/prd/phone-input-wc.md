@@ -4,8 +4,9 @@ Status: **Spike gate passed; implementation not started** (2026-08-04) on `feat/
 branched from `master` at `62642ddd`, draft **PR [#399](https://github.com/MintPlayer/mintplayer-ng-bootstrap/pull/399)**.
 Design investigation was five parallel agents (repo patterns, reference repo, flag/data research, an
 asset-bundling prototype in an isolated worktree, i18n/demo conventions); the gate was **S1–S8, all
-PASS** across Chromium 148 / Firefox 150 / WebKit 26.4 — verdicts and evidence in §9.1–§9.4. **S9 is
-still open** (per-country metadata, §5.5 D6a), the only decision not yet settled.
+PASS** across Chromium 148 / Firefox 150 / WebKit 26.4 — verdicts and evidence in §9.1–§9.4. S9 (per-country
+metadata) was prototyped and **deferred on measured correctness grounds** — see §5.5 D6a-alt; the
+shipping design is the verified single `/max` chunk.
 
 The gate paid for itself: it amended or reversed the design in six places — the metadata set (D6a),
 the country table's role (D5a), the formatter (D6b/F1), E.164 assembly (D6c), the `::slotted()`
@@ -508,22 +509,44 @@ chunk resolves, the component performs structural checks only (digits/`inputmode
 `updated()` (never only from event handlers), the `mp-select` precedent
 (`select/src/components/mp-select.ts`).
 
-> **D6a is provisional pending spike S9.** The user pointed out that by the time a number is being
-> typed **the country is already chosen**, so only that one country's formats and rules are ever
-> needed — and country *detection* from a `+XX` prefix is already the eager table's job (D5a/D11),
-> not libphonenumber's. There is therefore no moment at which all 244 countries' validation rules
-> are needed at once. S9 tests generating **one small metadata chunk per country** at build time
-> (the same static-loader-map pattern the flags already use) against `libphonenumber-js/core`,
-> which accepts metadata as an argument. If it holds, first-use drops from 57 KB gzip to a few KB
-> **and** the `/min`-vs-`/max` trade-off below dissolves, because full-precision rules for one
-> country are cheap. The counter-argument S9 must also weigh: per-country generation couples our
-> build to libphonenumber's internal metadata shape.
+> ### D6a-alt — per-country metadata: **prototyped, 243/244 correct, DEFERRED** (S9)
 >
-> (The cheaper-looking alternative — deriving a simple per-country *mask* table — was considered
-> and rejected without a spike: S8 already measured what naive per-country rules get wrong, from
-> Italy's significant leading zero to Russia's `8`-prefixed toll-free numbers to type-dependent
-> lengths. Chunked real metadata gives libphonenumber's correctness at mask-like cost, so it
-> dominates.)
+> The user pointed out that by the time a number is typed **the country is already chosen**, so only
+> that country's rules are ever needed — and resolving a `+XX` prefix is the eager table's job
+> (D5a/D11), not libphonenumber's. There is therefore no moment at which all 244 countries'
+> validation rules are needed at once. S9 built it: `tools/scripts/build-phone-metadata.mjs` slices
+> `libphonenumber-js`'s own `metadata.max.json` into one gitignored module per country, loaded through
+> a static map exactly like the flags, and fed to `libphonenumber-js/core` (which takes metadata as an
+> argument) behind a `PhoneRules` facade.
+>
+> **It very nearly worked, and the numbers were compelling:** `core` ≈ 16 KB gzip once per page plus
+> **≈0.3–0.4 KB gzip per country** (slices measured 1.0 KB raw for BE, 1.5 KB US, 3.1 KB GB) against
+> the **57 KB gzip** `/max` baseline — so break-even sits past a hundred country switches, and
+> full-precision rules become affordable, dissolving the `/min`-vs-`/max` trade-off entirely.
+>
+> **Why it is deferred anyway:** the 244-country parity sweep against full `/max` came back
+> **39/40 test cases green with `gb` failing — the slice reports a valid UK number as invalid**
+> (`isValid` false where `/max` says true). A validator that silently rejects a legitimate number in a
+> major market is a worse defect than 40 KB of download, and the cause was not diagnosed. That is the
+> whole argument; nothing else about the approach was found wanting.
+>
+> **For whoever picks this up** (start by reproducing `gb`, then re-run the sweep):
+> - Every slice carries exactly **one** country's entry, which is the likely cause: for shared calling
+>   codes Google stores the data in one "donor" country only. S9 already hit and handled this for
+>   *formatting* — NANP formats live only in `US`, +7's only in `RU`, +39's only in `IT`, so a slice
+>   carrying `CA`/`KZ`/`VA` alone formats nothing — and `gb` looks like the same problem reaching
+>   validation, GB being the donor for +44's dependent territories (IM, JE, GG).
+> - Keep the **dial-code pin** S9 added (`be` → 32, `ca` → 1). The facade reads the calling code out of
+>   the metadata **positionally** (`metadata.countries[iso2][0]`), which would otherwise fail silently
+>   on a libphonenumber layout change; that spec is what makes it fail loudly instead.
+> - The slices redistribute Google's metadata (Apache-2.0, from `PhoneNumberMetadata.xml`), so the
+>   Apache notice must ship with them — S9 drafted `phone-core/README.md` for exactly this. The
+>   `libphonenumber-js` code that reads them stays an ordinary MIT dependency and is not
+>   redistributed.
+>
+> (A cheaper-looking alternative — deriving a simple per-country *mask* table — was rejected without a
+> spike: S8 already measured what naive per-country rules get wrong, from Italy's significant leading
+> zero to Russia's `8`-prefixed toll-free numbers to type-dependent lengths.)
 
 **D6a — the metadata set is `/max`, not `/min` (reversed by S8.4).** The first draft chose `/min`
 on size alone. Measured over all 244 countries' example numbers, that choice is a user-visible
@@ -884,7 +907,7 @@ element in all three (conformance-registry enforced).
 | S6 | Flag pipeline dress rehearsal: vendor 3 real flags, codegen the loader map, build, consume | Mirrors the asset prototype's verdicts on the real repo files (expected to pass — the prototype already did this with fabricated SVGs) | **PASS 8/8** — plus a licensing gap and a worse guard-rail mode found, §9.3 |
 | S7 | `AsYouType` caret preservation while reformatting (added mid-gate) | Caret never jumps; Backspace over a separator still deletes a digit; works in a shadow root | **PASS** — bug reproduced and fixed; rule normative in D10 |
 | S8 | Dial-string detection, NANP disambiguation, E.164 round-trip, metadata-set choice (added mid-gate) | Correct country for the hard cases; round-trip stable; evidence-based metadata set | **PASS, and it reversed two PRD choices** (D5a, D6a) |
-| S9 | Per-country metadata chunks vs one 57 KB `/max` chunk — the country is always known before a number is typed (added mid-gate, user's observation) | Single-country metadata is functionally identical to full `/max` for formatting, validity, `getType()` and the E.164 round-trip; per-country chunk + `/core` beats 57 KB gzip; maintenance risk acceptable | *running* |
+| S9 | Per-country metadata chunks vs one 57 KB `/max` chunk — the country is always known before a number is typed (added mid-gate, user's observation) | Single-country metadata is functionally identical to full `/max` for formatting, validity, `getType()` and the E.164 round-trip; per-country chunk + `/core` beats 57 KB gzip; maintenance risk acceptable | **DEFERRED — 39/40 parity, `gb` rejects a valid number.** Sizes and break-even were compelling; correctness was not. Full record + resume notes in §5.5 D6a-alt |
 
 ### 9.1 S1 — the group contract: **PASS**, after two refutations
 

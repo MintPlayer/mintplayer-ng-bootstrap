@@ -64,3 +64,22 @@ export function hasOwnFormats(full, iso2) {
   const f = full.countries[iso2][I_FORMATS];
   return Array.isArray(f) && f.length > 0;
 }
+
+/**
+ * Per-CALLING-CODE slice: every country sharing the calling code, in the full
+ * table's order. Fixes the divergence a main-country-only slice has in the other
+ * direction — with `/max`, `isValidPhoneNumber('7911123456', 'GB')` is true
+ * because +44 7911 is a Guernsey mobile, and a GB-only slice rejects it.
+ */
+export function sliceBlock(full, iso2) {
+  const entry = full.countries[iso2];
+  if (!entry) throw new Error(`unknown country ${iso2}`);
+  const cc = entry[0];
+  const members = full.country_calling_codes[cc];
+  return {
+    version: full.version,
+    country_calling_codes: { [cc]: [...members] },
+    countries: Object.fromEntries(members.map((c) => [c, full.countries[c]])),
+    nonGeographic: {},
+  };
+}

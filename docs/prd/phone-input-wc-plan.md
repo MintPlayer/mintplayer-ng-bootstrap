@@ -1,13 +1,13 @@
 # Plan — `mp-input-group` + `mp-phone-input` web components + wrappers
 
 PRD: [phone-input-wc.md](./phone-input-wc.md)
-Status: **Not started.** No branch/PR exists — create only on explicit go-ahead, targeting
-`master`, one squash PR. Commit per milestone (commits are free); push only when the whole
-feature is finished (pushes are billed and cancel in-flight runs).
+Status: **Spike gate CLOSED (2026-08-04); implementation starting at M1.** On `feat/phone-input-wc`,
+draft PR #399. Commit per milestone (commits are free); push only when the whole feature is finished
+(pushes are billed and cancel in-flight runs).
 
 | Milestone | State |
 |---|---|
-| S — spikes (gate) | **S1–S8 all ✅** (incl. S2's RTL sub-case) · **S9 ⏳** (per-country metadata) |
+| S — spikes (gate) | **CLOSED. S1–S8 all ✅** (incl. S2's RTL sub-case) · **S9 deferred** (per-country metadata: 39/40 parity, `gb` rejects a valid number — PRD §5.5 D6a-alt) |
 | M1 — flags sub-entry | 🟡 pipeline built + verified by S6; **only 5 sample flags vendored — M1 = vendor the remaining ~239** |
 | M2 — phone-core sub-entry | 🟡 `countries.ts` + lazy validator facade built by S3; dial-code / e164 / format modules + specs outstanding |
 | M3 — mp-input-group + the group contract in mp-select | ⬜ |
@@ -69,8 +69,10 @@ Throwaway files under `docs/prd/_spike-phone-input-*`, deleted after verdicts ar
 - [x] S2 — `appearance: base-select` with SVG options in a shadow root; Firefox text-only
       fallback layout parity. **PASS 10/10 × 3 engines**; D3 amended four ways, RTL clean with
       logical properties (PRD §9.4).
-- [ ] S9 — per-country metadata chunks vs one 57 KB `/max` chunk, incl. the country-switch reformat
-      path [PRD D6a provisional, D17].
+- [x] S9 — per-country metadata chunks vs one 57 KB `/max` chunk. **DEFERRED, not failed:** ~16 KB
+      `core` + ~0.35 KB/country vs 57 KB, break-even past 100 switches — but the 244-country parity
+      sweep left `gb` reporting a valid UK number invalid. Shipping `/max`; resume notes and the
+      salvaged assertions are in PRD §5.5 D6a-alt and M2 below.
 - [x] S3 — `import('libphonenumber-js/min')` chunking from the published lib; esbuild + Vite +
       plain-Node consumption (repeat the asset-prototype matrix with the real package).
 - [x] S4 — `Intl.DisplayNames` SSR/hydration parity in the three demo SSR pipelines.
@@ -122,9 +124,21 @@ Throwaway files under `docs/prd/_spike-phone-input-*`, deleted after verdicts ar
       **nothing** for BE/NL/DE/FR/GB; assert that in the spec so nobody "simplifies" it back.
 - [ ] Specs: NANP disambiguation table (US/CA/Caribbean + the 19 hard cases), `+44` paste
       detection, `+7`/`+39`/`+590` shared dial codes, `+1` vs `+1242`, garbage `+999` → no switch,
-      bare national digits → **no switch**, E.164 round-trips (incl. RU `8001234567`, IT leading
-      zero), facade caching, tuple-shape guard against `intl-tel-input` updates, and the F1
-      formatter assertion.
+      bare national digits → **no switch**, facade caching, and a tuple-shape guard against
+      `intl-tel-input` updates.
+- [ ] Adopt these concrete assertions — salvaged verbatim from the S9 prototype's spec, which
+      measured them all green under `/max`, so they are known-achievable rather than aspirational:
+
+      | Behaviour | Assertion |
+      |---|---|
+      | F1 formatter (the whole reason `format.ts` exists) | `be.format('470123456') === '470 12 34 56'`, `format('') === ''` |
+      | Formats for shared calling codes | `ca.format('5062345678') === '506 234 5678'`, `kz.format('7710009998') === '771 000 9998'`, `va.format('3123456789') === '312 345 6789'` — these come from the US/RU/IT donor entries, so they catch a metadata regression |
+      | Full-precision validity | `be.isValid('470123456')` true; `'47012345'` (one short) and `'4701234567'` (one long) both **false** — this is what `/min` got wrong |
+      | Number type ("home or mobile") | `be` `470123456` → `MOBILE`, `23456789` → `FIXED_LINE`; `ru` `8001234567` → `TOLL_FREE`; `ax` `412345678` → `MOBILE` |
+      | Length reason, for D10 rule 7 | `us` `'212555'` → `TOO_SHORT`, `'2125551234'` → undefined, `'21255512345'` → `TOO_LONG` |
+      | E.164 via the parser, never string-stripping | `ru` `8001234567` → `+78001234567`, `89011234567` → `+79011234567`; `it` `0212345678` → `+390212345678` (leading zero survives); `be` `0470123456` → `+32470123456`; `''` → `null` |
+      | Dial-code pin (guards positional metadata access) | `be` → `32`, `ca` → `1` |
+      | Loader hygiene | case-insensitive + trimmed (`'  BE '` ≡ `'be'`), one cached promise per country, unknown/`''` → resolves `undefined` rather than rejecting |
 - [ ] **Commit.**
 
 ## M3 — `mp-input-group` + group contract in `mp-select` [PRD §5.2, D1, D2; fixes §1.2]
