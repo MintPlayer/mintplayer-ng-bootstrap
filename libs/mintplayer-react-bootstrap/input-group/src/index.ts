@@ -1,0 +1,1 @@
+export { BsInputGroup } from './BsInputGroup';

@@ -14,7 +14,7 @@ draft PR #399. Commit per milestone (commits are free); push only when the whole
 | M4 — mp-select rich options (base-select PE) | ✅ **done** — doubly-gated (`@supports` + per-instance `rich`), 7 new specs |
 | M5 — mp-phone-input | ✅ **done** — 27 specs (all seven D10 caret rules, D11/D5a/D12/D15/D17), entry 4.4 KB gzip with zero eager flag/metadata bytes |
 | M6 — Angular wrappers (bs-input-group migration + bs-phone-input) | ✅ **done** — Bootstrap's input-group module now bundled in exactly ONE place |
-| M7 — React + Vue wrappers | ⬜ |
+| M7 — React + Vue wrappers | ✅ **done** — plus a pre-existing packaging gap found (see below) |
 | M8 — demo pages ×3 | ⬜ |
 | M9 — conformance + a11y registries | ⬜ |
 | M10 — batched verification sweep | ⬜ |
@@ -269,11 +269,20 @@ Throwaway files under `docs/prd/_spike-phone-input-*`, deleted after verdicts ar
 
 ## M7 — React + Vue wrappers [PRD §5.8]
 
-- [ ] React: `BsInputGroup` + `BsPhoneInput` via `createComponent`
+- [x] React: `BsInputGroup` + `BsPhoneInput` via `createComponent`
       (`onValueChange`/`onCountryChange`).
-- [ ] Vue: `BsInputGroup.vue` + `BsPhoneInput.vue` — `defineModel<string | null>()`,
+- [x] Vue: `BsInputGroup.vue` + `BsPhoneInput.vue` — `defineModel<string | null>()`,
       `inheritAttrs: false` + `v-bind="$attrs"`, object props via ref, composed-`change` guard.
 - [ ] **Commit.**
+
+> **Found in M7, pre-existing and out of this PR's scope — worth its own issue.** The React and Vue
+> libraries build every sub-entrypoint into `dist/<name>/index.mjs` but their published `exports` maps
+> contain only `"."` and `"./package.json"`. So `@mintplayer/react-bootstrap/select` — and every other
+> subpath, not just the two added here — is unreachable for an npm consumer, while the demos work
+> because tsconfig path mappings bypass the exports map entirely. The WC library already solved this
+> with a `generateSubpathExports` Vite plugin (`libs/mintplayer-web-components/vite.config.mts`) that
+> writes the map at `closeBundle`; porting it to both wrapper libs is the fix. Not done here: it
+> changes the published surface of ~40 unrelated components and deserves its own review.
 
 ## M8 — demo pages ×3 [demo-conventions report]
 
