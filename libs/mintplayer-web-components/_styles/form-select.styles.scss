@@ -18,3 +18,58 @@
 :host {
   display: inline-block;
 }
+
+// ── RTL ─────────────────────────────────────────────────────────────────────────
+//
+// Bootstrap's default build authors .form-select physically: the caret gutter and
+// the caret sit on the physical right, which in RTL is the LEADING edge — legal
+// but reading backwards (measured in spike S2.9; pre-existing, also visible in a
+// standalone bs-select). Flip both. Under base-select (M4) this rule is moot:
+// that recipe removes the background-image and evens the padding.
+.form-select:dir(rtl) {
+  padding-right: $form-select-padding-x;
+  padding-left: $form-select-indicator-padding;
+  background-position: left $form-select-padding-x center;
+}
+
+// ── `mp-input-group` corner contract ────────────────────────────────────────────
+//
+// Inert on its own: every declaration falls back to the radius Bootstrap already
+// applies, so a standalone control is byte-identical. When this box is slotted into
+// an `<mp-input-group>`, the group sets `--mp-group-radius-start`/`-end` on the host
+// and these longhands pair the corners.
+//
+// It lives HERE, in the shared box sheet, rather than in a sheet each control opts
+// into: no control can then forget to participate, and there is nothing to keep in
+// sync. Nothing else can do the job — a rule from the group cannot reach a box
+// inside a control's shadow root at any specificity or importance, so an inherited
+// custom property is the only channel.
+//
+// `--mp-box-radius` indirection is not decoration: the size variants set their own
+// radius, and applying the longhands directly would silently flatten `-sm`/`-lg`
+// back to the default whenever no group is present.
+//
+// Logical properties are correct here and measured so (spike S1, RTL case): the box
+// is a native form control, which inherits `direction` normally. Do NOT copy this
+// shape into a container styling slotted children — there, a logical property
+// resolves against the CHILD's direction and the UA forces
+// `input[type=tel|url|email]` to ltr even inside `dir=rtl`.
+
+.form-select {
+  --mp-box-radius: var(--bs-border-radius);
+}
+
+.form-select-sm {
+  --mp-box-radius: var(--bs-border-radius-sm);
+}
+
+.form-select-lg {
+  --mp-box-radius: var(--bs-border-radius-lg);
+}
+
+.form-select {
+  border-start-start-radius: var(--mp-group-radius-start, var(--mp-box-radius));
+  border-end-start-radius: var(--mp-group-radius-start, var(--mp-box-radius));
+  border-start-end-radius: var(--mp-group-radius-end, var(--mp-box-radius));
+  border-end-end-radius: var(--mp-group-radius-end, var(--mp-box-radius));
+}

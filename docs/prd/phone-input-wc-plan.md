@@ -10,7 +10,7 @@ draft PR #399. Commit per milestone (commits are free); push only when the whole
 | S — spikes (gate) | **CLOSED. S1–S9 all ✅** (incl. S2's RTL sub-case). S9 adopted per-*calling-code* metadata slices — PRD §5.5 D6a-alt |
 | M1 — flags sub-entry | ✅ **done** — 244 flags vendored, 244 lazy chunks verified in dist |
 | M2 — phone-core sub-entry | ✅ **done** — countries/list/name, dial-code detection, `PhoneRules` facade, 62 specs green (incl. exhaustive `/max` parity) |
-| M3 — mp-input-group + the group contract in mp-select | ⬜ |
+| M3 — mp-input-group + the group contract in mp-select | ✅ **done** (WC side; the scheduler-demo acceptance check moves to M6, where bs-input-group starts rendering it) |
 | M4 — mp-select rich options (base-select PE) | ⬜ |
 | M5 — mp-phone-input | ⬜ |
 | M6 — Angular wrappers (bs-input-group migration + bs-phone-input) | ⬜ |
@@ -158,20 +158,20 @@ Throwaway files under `docs/prd/_spike-phone-input-*`, deleted after verdicts ar
 
 ## M3 — `mp-input-group` + group contract in `mp-select` [PRD §5.2, D1, D2; fixes §1.2]
 
-- [ ] `input-group/src/components/mp-input-group.ts` — shadow host, `.group` flex container,
+- [x] `input-group/src/components/mp-input-group.ts` — shadow host, `.group` flex container,
       default slot, `size` attr, `role="group"` only when `aria-label`d, `:focus-within` lift.
-- [ ] `input-group/src/styles/input-group.styles.scss` — `::slotted()` positional corner/flex
+- [x] `input-group/src/styles/input-group.styles.scss` — `::slotted()` positional corner/flex
       rules for light children; `--mp-group-*` setting rules for `mp-*` children (S1's proven
       form); `sm`/`lg` paddings; focus-visible handling.
-- [ ] `mp-select`: consume `--mp-group-radius-start/-end` with `var(…, var(--bs-border-radius))`
+- [x] `mp-select`: consume `--mp-group-radius-start/-end` with `var(…, var(--bs-border-radius))`
       fallbacks in `_styles/form-select.styles.scss`.
-- [ ] While in that stylesheet: **normalize Bootstrap's physical RTL authoring** — `padding-inline`
+- [x] While in that stylesheet: **normalize Bootstrap's physical RTL authoring** — `padding-inline`
       + logical `background-position`, so the caret gutter stops sitting on the leading edge in RTL
       (pre-existing, also affects `bs-select` standalone; PRD §5.3).
-- [ ] `mp-select` barrel fix: export `MpSelectOptgroup` + `MpSelectItem` from `select/src/index.ts`.
-- [ ] `mp-input-group.spec.ts` + `mp-input-group.aria.spec.ts` (group named ⇒ role, unnamed ⇒
+- [x] `mp-select` barrel fix: export `MpSelectOptgroup` + `MpSelectItem` from `select/src/index.ts`.
+- [x] `mp-input-group.spec.ts` + `mp-input-group.aria.spec.ts` (group named ⇒ role, unnamed ⇒
       none; slotted passthrough untouched).
-- [ ] Verify against the scheduler demo's four-select group (§1.2) — corners + flex now correct.
+- [ ] Verify against the scheduler demo's four-select group (§1.2) — **moved to M6**: it needs bs-input-group to render mp-input-group first.
 - [ ] **Commit.**
 
 ## M4 — `mp-select` rich options [PRD §5.3, D3; S2 passed 9/9 × 3 engines]
