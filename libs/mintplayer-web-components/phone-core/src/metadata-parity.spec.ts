@@ -153,6 +153,9 @@ describe('per-calling-code metadata parity with the full /max set', () => {
    * One assertion per country would hide how many failed behind the first
    * failure, so the whole sweep is collected and compared as a list.
    */
+  // Explicit timeout: this loads all 206 metadata slices sequentially, which sits
+  // comfortably under a second idle but exceeded the 5s default once on a busy
+  // machine. A coverage guard that flakes under load gets deleted, not fixed.
   it('every selectable country formats, validates and types identically to /max', async () => {
     const divergences: string[] = [];
     const skipped: string[] = [];
@@ -192,5 +195,5 @@ describe('per-calling-code metadata parity with the full /max set', () => {
     expect(divergences, `${divergences.length} divergence(s) across ${phoneCountries.length} countries`).toEqual([]);
     // Guard the guard: if upstream examples vanished, the sweep would pass vacuously.
     expect(skipped.length, `skipped for want of an upstream example: ${skipped.join(', ')}`).toBeLessThan(15);
-  });
+  }, 30_000);
 });

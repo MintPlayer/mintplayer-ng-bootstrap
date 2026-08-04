@@ -531,14 +531,17 @@ chunks resolve, the component performs structural checks only (digits/`inputmode
 >
 > **Measured cost** (real build; `/core` and `/max` bundled+minified by esbuild):
 >
-> | | gzip |
-> |---|---|
-> | eager `phone-core` entry (country table + `loadPhoneRules`) | **852 B** |
-> | `libphonenumber-js/core`, lazy, once per page | **16.1 KB** |
-> | the loader map, lazy, once per page | **3.1 KB** |
-> | one calling-code slice | **404 B** (+32 BE) · median **341 B** · max **3.02 KB** (+1, the whole NANP block) |
-> | **first use, total** | **≈19.6 KB** (BE) — **22.3 KB** worst case (NANP) |
-> | *the single-`/max` alternative it replaces* | *56.8 KB* |
+> | | gzip | when |
+> |---|---|---|
+> | `phone-core` entry — country table, picker list, `Intl` helpers | **1.67 KB** | page load |
+> | `libphonenumber-js/core` | **16.1 KB** | first interaction, once |
+> | the loader map | **3.1 KB** | first interaction, once |
+> | one calling-code slice | **404 B** (+32 BE) · median **341 B** · max **3.02 KB** (+1 NANP) | per country used |
+> | **lazy total, first interaction** | **≈19.6 KB** (BE) — **22.3 KB** worst case (NANP) | |
+> | *the single-`/max` chunk it replaces* | *56.8 KB* | *first interaction* |
+>
+> The eager entry is the same either way (a picker cannot render without the country
+> table), so the comparison that matters is the lazy column: **19.6 KB vs 56.8 KB**.
 >
 > **Saves 37 KB / 65% on first use** while keeping **full `/max` precision** — `getType()` included,
 > which is what makes "home or mobile" answerable — and each country switch adds only its own slice

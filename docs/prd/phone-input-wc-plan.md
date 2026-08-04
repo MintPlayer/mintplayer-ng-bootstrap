@@ -9,7 +9,7 @@ draft PR #399. Commit per milestone (commits are free); push only when the whole
 |---|---|
 | S — spikes (gate) | **CLOSED. S1–S9 all ✅** (incl. S2's RTL sub-case). S9 adopted per-*calling-code* metadata slices — PRD §5.5 D6a-alt |
 | M1 — flags sub-entry | ✅ **done** — 244 flags vendored, 244 lazy chunks verified in dist |
-| M2 — phone-core sub-entry | 🟡 countries + metadata generator + `PhoneRules` facade built and parity-verified; **dial-code detection + its specs outstanding** |
+| M2 — phone-core sub-entry | ✅ **done** — countries/list/name, dial-code detection, `PhoneRules` facade, 62 specs green (incl. exhaustive `/max` parity) |
 | M3 — mp-input-group + the group contract in mp-select | ⬜ |
 | M4 — mp-select rich options (base-select PE) | ⬜ |
 | M5 — mp-phone-input | ⬜ |
@@ -109,16 +109,25 @@ Throwaway files under `docs/prd/_spike-phone-input-*`, deleted after verdicts ar
 - [x] Add `libphonenumber-js` + `intl-tel-input` to `@mintplayer/web-components`
       `package.json` dependencies (root package.json too) — **and `external` in `vite.config.mts`**
       per PRD D5b (bundling them makes a consumer without them hit TS2307 anyway).
-- [x] `phone-core/src/countries.ts` — typed view over `intl-tel-input/data` tuples; localized
-      name via `Intl.DisplayNames`; `Intl.Collator` ordering; `preferred/only` filtering.
+- [x] `phone-core/src/countries.ts` — typed view over `intl-tel-input/data` tuples, plus
+      `countryName()` (`Intl.DisplayNames`, falls back to the ISO code so an option is never
+      unnamed) and `phoneCountryList()` (collated by localized name via `Intl.Collator`, `preferred`
+      pinned in the caller's order, `only` filtering). Both Intl objects memoized per locale, as
+      the scheduler's date service does. *(Was checked off prematurely from an agent summary; the
+      file only had the tuple mapping.)*
 - [ ] **Close the two S9 gaps** (measured-adjacent, not yet asserted): a dedicated A→B test that
       reformats the *same digit string* across a country switch [PRD D17], and a source check of
       `libphonenumber-js/core` for module-level metadata caches (evidence says there are none —
       `new Metadata(json)` is per-call — but that is inference, not a test).
-- [ ] `phone-core/src/dial-code.ts` — `countryForDialString()` with priority + areaCodes NANP
-      resolution; longest-prefix match. **Include the S8.1 tie-break:** a country *with*
-      `areaCodes` that did not match must not beat an equal-length plain dial-code match, or `ca`
-      is reported for every unlisted `+1` area code.
+- [x] `phone-core/src/dial-code.ts` — `countryForDialString()`: longest identifying prefix
+      (dial code + matched area code), then the **S8.1 area-miss penalty** (a country listing area
+      codes that matched none must not beat one listing none at all, or `ca` wins every unlisted
+      `+1`), then priority. Keeps the area code IN the national number. Returns `undefined` rather
+      than guessing for bare national numbers, unassigned codes and too-short prefixes.
+- [x] `phone-core/src/dial-code.spec.ts` — 11 cases, one per way the naive version breaks:
+      no-fire on a bare national number, `00` prefix, NANP by area code, unlisted `+1` → `us`,
+      area code retained, shared `+7`/`+39`, `+1242` → `bs`, `+999` → undefined, `+3` → undefined,
+      `only` restriction.
 - [x] E.164 assembly and formatting live on the `PhoneRules` facade (`toE164`, `format`) rather than
       in separate modules — both delegate to the parser per D6c/D6b. Consequence for M5, unchanged:
       they are only available once the country's rules have loaded, so the component keeps
