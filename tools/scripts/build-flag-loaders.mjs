@@ -32,6 +32,11 @@ function buildModule(codes) {
     '// Source: flags/src/assets/*.svg',
     '// Regenerate with the codegen-wc Nx target.',
     '',
+    // Carries the `*.svg?raw` module declaration into any program that includes
+    // this file. The WC lib gets it from `vite/client`; the framework wrapper
+    // libs type-check through the path mapping into here and do not.
+    '/// <reference path="./raw-svg.d.ts" />',
+    '',
     '/** ISO 3166-1 alpha-2 code (lowercase) of every flag this package ships. */',
     `export type CountryCode =\n${codes.map((c) => `  | '${c}'`).join('\n')};`,
     '',

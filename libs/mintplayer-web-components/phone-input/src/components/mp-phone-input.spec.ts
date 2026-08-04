@@ -217,8 +217,8 @@ describe('mp-phone-input', () => {
     expect(be?.label).toBe('Belgium +32 (BE)');
   });
 
-  it('honours only-countries and preferred-countries', async () => {
-    const el = await mount('only-countries="be,nl,fr" preferred-countries="nl" locale="en-US"');
+  it('honours allowed-countries and preferred-countries', async () => {
+    const el = await mount('allowed-countries="be,nl,fr" preferred-countries="nl" locale="en-US"');
     const select = el.shadowRoot!.querySelector('mp-select') as HTMLElement & { options: { value: string }[] | null };
     expect(select.options?.map((o) => o.value)).toEqual(['nl', 'be', 'fr']);
   });

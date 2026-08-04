@@ -1,0 +1,15 @@
+<mp-phone-input
+    bsForwardAria
+    #phoneInput
+    [attr.country]="country()"
+    [attr.default-country]="defaultCountry()"
+    [attr.locale]="locale()"
+    [attr.preferred-countries]="preferredAttr()"
+    [attr.allowed-countries]="allowedAttr()"
+    [attr.placeholder]="placeholder()"
+    [attr.autocomplete]="autocomplete()"
+    [attr.input-label]="inputLabel()"
+    [attr.country-label]="countryLabel()"
+    (value-change)="onValueChange($event)"
+    (country-change)="onCountryChange($event)">
+</mp-phone-input>

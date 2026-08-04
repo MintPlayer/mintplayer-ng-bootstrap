@@ -13,7 +13,7 @@ draft PR #399. Commit per milestone (commits are free); push only when the whole
 | M3 — mp-input-group + the group contract in mp-select | ✅ **done** (WC side; the scheduler-demo acceptance check moves to M6, where bs-input-group starts rendering it) |
 | M4 — mp-select rich options (base-select PE) | ✅ **done** — doubly-gated (`@supports` + per-instance `rich`), 7 new specs |
 | M5 — mp-phone-input | ✅ **done** — 27 specs (all seven D10 caret rules, D11/D5a/D12/D15/D17), entry 4.4 KB gzip with zero eager flag/metadata bytes |
-| M6 — Angular wrappers (bs-input-group migration + bs-phone-input) | ⬜ |
+| M6 — Angular wrappers (bs-input-group migration + bs-phone-input) | ✅ **done** — Bootstrap's input-group module now bundled in exactly ONE place |
 | M7 — React + Vue wrappers | ⬜ |
 | M8 — demo pages ×3 | ⬜ |
 | M9 — conformance + a11y registries | ⬜ |
@@ -243,7 +243,8 @@ Throwaway files under `docs/prd/_spike-phone-input-*`, deleted after verdicts ar
       user selection [PRD D5a]; dial code static adjacent text (D9); focus input after country
       selection (D9).
 - [x] i18n: `locale` attr (no default), `input-label`/`country-label`/`error-text`/`placeholder`
-      attrs; `preferred-countries`/`only-countries`.
+      attrs; `preferred-countries`/`allowed-countries` (NOT `only-countries` — Angular cannot bind an
+      attribute starting with `on`).
 - [x] A11y per PRD §6: error channel via `errorFeedback()` + `aria-errormessage`; dial-code span
       `aria-describedby`; `HostAriaController` + `syncReferences()` in `updated()`; own
       `:focus-visible` ring in SCSS.
@@ -253,15 +254,17 @@ Throwaway files under `docs/prd/_spike-phone-input-*`, deleted after verdicts ar
 
 ## M6 — Angular wrappers [PRD §5.8]
 
-- [ ] `bs-input-group`: replace the shell template with
+- [x] `bs-input-group`: replace the shell template with
       `<mp-input-group bsForwardAria><ng-content></ng-content></mp-input-group>`, add
       `CUSTOM_ELEMENTS_SCHEMA`, side-effect import, `size` input; delete the `::ng-deep`
       Bootstrap import SCSS.
-- [ ] Migrate the 4 demo usages (input-group page, alert, scheduler ×2, toast) — behaviour
-      identical, scheduler group visually fixed.
-- [ ] `bs-phone-input`: CVA via `hostDirectives` (+ `BsControlValidityDirective` with
+- [ ] Migrate the 4 demo usages (input-group page, alert, scheduler ×2, toast) — **M8**, with the
+      demo pages; the selector and content model are unchanged so they keep working as-is.
+- [x] `bs-phone-input`: CVA (NG_VALUE_ACCESSOR + forwardRef — the value is a plain E.164 string, so
+      no object-mapping accessor is needed) + `BsControlValidityDirective` via `hostDirectives` (+ `BsControlValidityDirective` with
       `[errorMessages]`), scalar pushing in one `effect()`, `writeValue` derives `country`.
-- [ ] Wrapper unit specs (ng-mocks smoke + CVA round-trip).
+- [x] Wrapper unit specs: host-component round-trips (writeValue decomposes E.164, value-change
+      updates the model, array inputs join to attributes, size written only for sm/lg).
 - [ ] **Commit.**
 
 ## M7 — React + Vue wrappers [PRD §5.8]

@@ -83,7 +83,7 @@ export class MpPhoneInput extends FormAssociatedMixin(LitElement) {
       'default-country',
       'locale',
       'preferred-countries',
-      'only-countries',
+      'allowed-countries',
       'disabled',
       'required',
       'invalid',
@@ -202,7 +202,11 @@ export class MpPhoneInput extends FormAssociatedMixin(LitElement) {
         this._preferred = (newValue ?? '').split(',').map((c) => c.trim().toLowerCase()).filter(Boolean);
         this.requestUpdate();
         break;
-      case 'only-countries':
+      // Named `allowed-countries`, not intl-tel-input's `onlyCountries`: Angular
+      // refuses to bind ANY attribute whose name starts with `on` (it parses as an
+      // event attribute — `on` + `ly-countries`), so `[attr.only-countries]` is a
+      // hard template error for every Angular consumer of this element.
+      case 'allowed-countries':
         this._only = newValue ? newValue.split(',').map((c) => c.trim().toLowerCase()).filter(Boolean) : null;
         this.requestUpdate();
         break;

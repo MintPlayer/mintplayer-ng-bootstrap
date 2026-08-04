@@ -733,7 +733,7 @@ composite, select then tel input, forward and reverse. `reportValidity()` also b
 Surface:
 
 - Attributes: `country` (ISO 3166-1 alpha-2, lowercase), `value` (E.164), `default-country`,
-  `locale`, `preferred-countries` / `only-countries` (comma-separated ISO lists; preferred pin to
+  `locale`, `preferred-countries` / `allowed-countries` (comma-separated ISO lists; preferred pin to
   the top under an `<optgroup>`-style separator), `disabled`, `required`, `invalid`, `name`,
   `input-label`, `country-label`, `error-text`, `placeholder`.
 - Events: `value-change` with
@@ -940,7 +940,7 @@ loses. D2a records the measured cascade order that explains why.
 | attr/prop | `country` | ISO alpha-2, lowercase |
 | attr | `default-country` | initial country when `value` is empty |
 | attr | `locale` | drives `Intl.DisplayNames`/`Intl.Collator`; no default (browser locale) |
-| attr | `preferred-countries`, `only-countries` | comma-separated ISO lists |
+| attr | `preferred-countries`, `allowed-countries` | comma-separated ISO lists. **Not** `only-countries` (intl-tel-input's name): Angular refuses to bind any attribute starting with `on`, parsing it as an event attribute, so `[attr.only-countries]` is a hard template error for every Angular consumer |
 | attr | `name`, `disabled`, `required`, `invalid`, `placeholder` | standard form surface |
 | attr | `input-label`, `country-label`, `error-text` | localized strings, Tier-2 pattern |
 | events | `value-change` | `{ value, country, dialCode, nationalNumber, valid }`; `valid` undefined until validator loaded |
