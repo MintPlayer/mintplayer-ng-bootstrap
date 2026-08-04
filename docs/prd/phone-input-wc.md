@@ -434,7 +434,7 @@ Shoelace's own tracker as hostile to wrapping libraries, which is exactly what o
 render via `unsafeHTML` into an `aria-hidden` span, matching the `CHEVRON_SVG` precedent
 (`treeview/src/components/mp-treeview.ts:48`).
 
-### 5.5 `phone-core` — data + lazy validation (D5, D6)
+### 5.5 `phone-core` — data + lazy validation (D5a, D5b, D6, D6a–D6c)
 
 **D5b — both runtime packages are `external`, not bundled (S3).** Bundling `libphonenumber-js` and
 `intl-tel-input` into our chunks was measured and rejected: the emitted `.d.ts` still names them, so
