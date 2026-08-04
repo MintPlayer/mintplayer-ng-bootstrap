@@ -13,6 +13,14 @@ axeAuditSuite(test, expect, [
   { path: '/basic/forms/datepicker' },
   { path: '/basic/forms/datetime-picker' },
   { path: '/basic/forms/multi-range' },
+  {
+    path: '/basic/forms/phone-input',
+    // Open the picker: the closed control and the 244-option listbox are
+    // different DOM, and only the second exercises the rich-option markup.
+    interact: async (page) => {
+      await page.locator('mp-phone-input').first().click();
+    },
+  },
   { path: '/basic/forms/select' },
   { path: '/basic/forms/timepicker' },
   { path: '/basic/navbar' },

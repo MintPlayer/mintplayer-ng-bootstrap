@@ -7,6 +7,8 @@ import { BsAccordion, BsAccordionItem } from '@mintplayer/react-bootstrap/accord
 import { BsCarousel } from '@mintplayer/react-bootstrap/carousel';
 import { BsDropdownMenu } from '@mintplayer/react-bootstrap/dropdown-menu';
 import { BsNavbar, BsNavbarBrand, BsNavbarDropdown, BsNavbarItem } from '@mintplayer/react-bootstrap/navbar';
+import { BsInputGroup } from '@mintplayer/react-bootstrap/input-group';
+import { BsPhoneInput } from '@mintplayer/react-bootstrap/phone-input';
 import { BsShell } from '@mintplayer/react-bootstrap/shell';
 import { BsTimeline } from '@mintplayer/react-bootstrap/timeline';
 
@@ -86,6 +88,8 @@ const CASES: Case[] = [
     tag: 'mp-navbar-item',
     render: (p) => <BsNavbar><BsNavbarItem {...p} /></BsNavbar>,
   },
+  { name: 'BsInputGroup', tag: 'mp-input-group', render: (p) => <BsInputGroup {...p} /> },
+  { name: 'BsPhoneInput', tag: 'mp-phone-input', render: (p) => <BsPhoneInput {...p} /> },
   { name: 'BsShell', tag: 'mp-shell', render: (p) => <BsShell {...p} /> },
   { name: 'BsTimeline', tag: 'mp-timeline', render: (p) => <BsTimeline {...p} /> },
 ];
@@ -126,7 +130,7 @@ describe('React wrapper attribute passthrough', () => {
   it('covers every React wrapper with a custom-element root', () => {
     // Mirrors the Angular guard's completeness check. If a new wrapper appears, add
     // a case rather than raising the number.
-    expect(CASES).toHaveLength(10);
+    expect(CASES).toHaveLength(12);
     expect(new Set(CASES.map((c) => c.name)).size).toBe(CASES.length);
   });
 });

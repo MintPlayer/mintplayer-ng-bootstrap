@@ -16,7 +16,7 @@ draft PR #399. Commit per milestone (commits are free); push only when the whole
 | M6 — Angular wrappers (bs-input-group migration + bs-phone-input) | ✅ **done** — Bootstrap's input-group module now bundled in exactly ONE place |
 | M7 — React + Vue wrappers | ✅ **done** — plus a pre-existing packaging gap found (see below) |
 | M8 — demo pages ×3 | ✅ **done** — all three demos build; keymap documented |
-| M9 — conformance + a11y registries | ⬜ |
+| M9 — conformance + a11y registries | ✅ **done** — WC naming 72, ng 22, react 12+probes, vue automatic, axe ×3 |
 | M10 — batched verification sweep | ⬜ |
 
 ## Conventions (these still bite)
@@ -297,16 +297,16 @@ Throwaway files under `docs/prd/_spike-phone-input-*`, deleted after verdicts ar
 
 ## M9 — conformance + a11y registries [repo rules; all mandatory]
 
-- [ ] `libs/mintplayer-web-components/_conformance/naming.spec.ts` — import + `CASES` entries for
+- [x] `libs/mintplayer-web-components/_conformance/naming.spec.ts` — import + `CASES` entries for
       `mp-phone-input` (target: tel input) and `mp-input-group` if it takes `input-label`
       (it doesn't — host `aria-label` only, so CASES entry for phone-input only) +
       `ERROR_TEXT_CASES` addition.
-- [ ] `libs/mintplayer-ng-bootstrap/_conformance/aria-passthrough.spec.ts` — `WRAPPERS` entries
+- [x] `libs/mintplayer-ng-bootstrap/_conformance/aria-passthrough.spec.ts` — `WRAPPERS` entries
       for `bs-input-group` + `bs-phone-input`; bump the completeness count 20 → 22.
-- [ ] React `_conformance/attribute-passthrough.spec.tsx` CASES + count, `.types.tsx` probes
+- [x] React `_conformance/attribute-passthrough.spec.tsx` CASES + count (10 → 12), `.types.tsx` probes
       (bare/camelCase names only).
-- [ ] Vue: automatic invariant sweep covers the SFCs; verify the floor check still passes.
-- [ ] Axe registries: `{ path: '/basic/forms/phone-input' }` (+ an `interact` hook opening the
+- [x] Vue: automatic invariant sweep covers the SFCs; floor check still passes (6 green).
+- [x] Axe registries: `{ path: '/basic/forms/phone-input' }` (+ an `interact` hook opening the
       select) in `a11y/axe.spec.ts` in **all three** e2e projects — and deliberately **NOT** in
       `axe-nojs.spec.ts`: that registry lists only the components with a real no-JS tier
       (`/`, accordion, carousel, navbar, shell). Verified: `tree-select`, the closest JS-only
