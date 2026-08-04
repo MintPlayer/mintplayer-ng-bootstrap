@@ -1,4 +1,5 @@
 import type { MetadataJson, NumberType, ValidatePhoneNumberLengthResult } from 'libphonenumber-js/core';
+import { phoneCountries } from './countries';
 import type { PhoneMetadataCountry } from './metadata-loaders.generated';
 
 /**
@@ -64,6 +65,11 @@ let mapPending: Promise<typeof import('./metadata-loaders.generated')> | undefin
 
 const rulesCache = new Map<PhoneMetadataCountry, Promise<PhoneRules | undefined>>();
 
+/** Dial code from our own country table — see the note in `makeRules`. */
+function dialCodeOf(country: PhoneMetadataCountry): string {
+  return phoneCountries.find((c) => c.iso2 === country)?.dialCode ?? '';
+}
+
 /** Drop the leading `ccDigits` digits of a formatted number, plus the separators after them. */
 function stripCallingCode(formatted: string, ccDigits: number): string {
   let seen = 0;
@@ -81,7 +87,13 @@ function makeRules(
   country: PhoneMetadataCountry,
 ): PhoneRules {
   const iso2 = country.toUpperCase() as Uppercase<PhoneMetadataCountry>;
-  const dialCode = String(metadata.countries[iso2]?.[0] ?? '');
+  // From our own table, NOT `metadata.countries[iso2][0]`. Reading it positionally
+  // out of libphonenumber's metadata is the one coupling that would fail SILENTLY
+  // on an upstream layout change — and unfalsifiably, because a wrong dial code
+  // feeds both the formatter and any oracle compared against it, cancelling out.
+  // `phoneCountries` is the same table the picker selects from, so a mismatch
+  // between the two is impossible by construction.
+  const dialCode = dialCodeOf(country);
   const digitsOf = (value: string) => value.replace(/\D/g, '');
 
   return {

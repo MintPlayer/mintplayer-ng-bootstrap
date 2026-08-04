@@ -81,7 +81,15 @@ const EXAMPLES: Record<string, string> = {
   mf: '690001234',
 };
 
-/** The PRD's F1 formatter, run against the full `/max` set — the oracle for `PhoneRules.format`. */
+/**
+ * The PRD's F1 formatter, run against the full `/max` set — the oracle for
+ * `PhoneRules.format`.
+ *
+ * `dialCode` MUST come from `/max` (`PhoneNumber.countryCallingCode`), never from
+ * the `PhoneRules` under test: feeding our own value into the oracle makes a wrong
+ * dial code cancel out on both sides, which is exactly how this spec used to pass
+ * while leaving the only silently-failing coupling in the design unguarded.
+ */
 function formatViaMax(dialCode: string, nationalDigits: string): string {
   const formatted = new AsYouType().input(`+${dialCode}${nationalDigits}`);
   let seen = 0;
@@ -110,9 +118,13 @@ describe('per-calling-code metadata parity with the full /max set', () => {
 
     // Formatting must match at EVERY keystroke, not only on the finished number:
     // an inherited-formats regression shows up as unformatted mid-typing output.
+    // Independent of anything under test — see formatViaMax's note.
+    const maxDialCode = parsed!.countryCallingCode;
+    expect(rules!.dialCode, `${iso2} dial code`).toBe(maxDialCode);
+
     for (let n = 1; n <= national.length; n++) {
       const part = national.slice(0, n);
-      expect(rules!.format(part), `${iso2} after ${n} digits`).toBe(formatViaMax(rules!.dialCode, part));
+      expect(rules!.format(part), `${iso2} after ${n} digits`).toBe(formatViaMax(maxDialCode, part));
       expect(rules!.lengthProblem(part) ?? 'OK').toBe(validatePhoneNumberLength(part, country) ?? 'OK');
     }
 
@@ -145,7 +157,7 @@ describe('per-calling-code metadata parity with the full /max set', () => {
     const divergences: string[] = [];
     const skipped: string[] = [];
 
-    for (const { iso2, dialCode } of phoneCountries) {
+    for (const { iso2 } of phoneCountries) {
       const country = iso2.toUpperCase() as CountryCode;
       const example = getExampleNumber(country, examples);
       if (!example) {
@@ -161,7 +173,10 @@ describe('per-calling-code metadata parity with the full /max set', () => {
       }
 
       const checks: [label: string, ours: unknown, max: unknown][] = [
-        ['format', rules.format(national), formatViaMax(dialCode, national)],
+        // `example.countryCallingCode` is /max's own answer, so this catches a wrong
+        // dial code instead of cancelling it out of the format comparison below.
+        ['dialCode', rules.dialCode, example.countryCallingCode],
+        ['format', rules.format(national), formatViaMax(example.countryCallingCode, national)],
         ['isValid', rules.isValid(national), isValidPhoneNumber(national, country)],
         ['isValid(-1)', rules.isValid(national.slice(0, -1)), isValidPhoneNumber(national.slice(0, -1), country)],
         ['isValid(+1)', rules.isValid(`${national}7`), isValidPhoneNumber(`${national}7`, country)],

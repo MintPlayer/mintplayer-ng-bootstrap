@@ -111,6 +111,10 @@ Throwaway files under `docs/prd/_spike-phone-input-*`, deleted after verdicts ar
       per PRD D5b (bundling them makes a consumer without them hit TS2307 anyway).
 - [x] `phone-core/src/countries.ts` — typed view over `intl-tel-input/data` tuples; localized
       name via `Intl.DisplayNames`; `Intl.Collator` ordering; `preferred/only` filtering.
+- [ ] **Close the two S9 gaps** (measured-adjacent, not yet asserted): a dedicated A→B test that
+      reformats the *same digit string* across a country switch [PRD D17], and a source check of
+      `libphonenumber-js/core` for module-level metadata caches (evidence says there are none —
+      `new Metadata(json)` is per-call — but that is inference, not a test).
 - [ ] `phone-core/src/dial-code.ts` — `countryForDialString()` with priority + areaCodes NANP
       resolution; longest-prefix match. **Include the S8.1 tie-break:** a country *with*
       `areaCodes` that did not match must not beat an equal-length plain dial-code match, or `ca`

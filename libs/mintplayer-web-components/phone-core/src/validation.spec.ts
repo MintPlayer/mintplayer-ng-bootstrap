@@ -59,7 +59,9 @@ describe('loadPhoneRules', () => {
     expect((await loadPhoneRules('be'))?.toE164('')).toBeNull();
   });
 
-  it('reads the dial code out of the metadata it loaded', async () => {
+  // Pinned deliberately: the dial code comes from our own country table, not from
+  // libphonenumber's metadata, precisely so no positional access exists at runtime.
+  it('exposes the dial code from the country table, not from metadata internals', async () => {
     expect((await loadPhoneRules('be'))?.dialCode).toBe('32');
     expect((await loadPhoneRules('ca'))?.dialCode).toBe('1');
   });

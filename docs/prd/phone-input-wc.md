@@ -533,21 +533,43 @@ chunks resolve, the component performs structural checks only (digits/`inputmode
 >
 > | | gzip |
 > |---|---|
-> | eager `phone-core` entry (country table + loader map) | **832 B** |
-> | `libphonenumber-js/core`, once per page | **16.1 KB** |
-> | one calling-code slice | **422 B** (+32 BE) · 1.58 KB (+44) · **3.07 KB** (+1, the whole NANP block) |
-> | **first use, total** | **≈16.6–19.2 KB** |
+> | eager `phone-core` entry (country table + `loadPhoneRules`) | **852 B** |
+> | `libphonenumber-js/core`, lazy, once per page | **16.1 KB** |
+> | the loader map, lazy, once per page | **3.1 KB** |
+> | one calling-code slice | **404 B** (+32 BE) · median **341 B** · max **3.02 KB** (+1, the whole NANP block) |
+> | **first use, total** | **≈19.6 KB** (BE) — **22.3 KB** worst case (NANP) |
 > | *the single-`/max` alternative it replaces* | *56.8 KB* |
 >
-> So ~3× less on first use, with **full `/max` precision** — `getType()` included, which is what makes
-> "home or mobile" answerable — and each country switch adds only its own slice. Break-even against
-> one `/max` chunk is far past any realistic session.
+> **Saves 37 KB / 65% on first use** while keeping **full `/max` precision** — `getType()` included,
+> which is what makes "home or mobile" answerable — and each country switch adds only its own slice
+> (median 341 B). Break-even is **110 calling codes** in one session, i.e. unreachable. Per-country
+> slicing was also *bigger* in total, not smaller (245 chunks / 96 KB vs 206 / 86 KB), so the
+> correctness fix cost nothing in size. The published tarball grows 187 KB raw.
+>
+> *(An earlier version of this table said 16.6–19.2 KB. It omitted the lazy loader-map chunk.)*
 >
 > **The spec is the upgrade guard, and that is not decoration.** Neither fact about Google's storage is
 > guaranteed by the metadata format version, so a libphonenumber bump could silently stop a country
 > formatting or validating. The parity sweep turns that into a CI failure instead of a support ticket.
-> Keep it, and keep the dial-code pin: the facade reads the calling code out of the metadata
-> **positionally** (`metadata.countries[iso2][0]`), which would otherwise fail silently.
+>
+> **The one silently-failing coupling is now closed, in both directions.** The facade used to read the
+> calling code positionally out of the metadata (`metadata.countries[iso2][0]`) — and worse, the parity
+> spec could not catch a wrong value, because it fed *our* dial code into the oracle, so the error
+> cancelled on both sides. Fixed twice over: the runtime takes the dial code from `phoneCountries`
+> (the same table the picker selects from, so a mismatch is impossible by construction), leaving
+> **zero positional metadata access at runtime**; and the oracle now uses `/max`'s own
+> `countryCallingCode`, with the dial code asserted for **all 244** countries. Verified by mutation:
+> injecting a wrong dial code for one country fails 4 assertions across both specs.
+>
+> Two codegen-side positional accesses remain (`country_calling_codes[cc][0]` for the main country,
+> `countries[iso2][0]` for grouping) — both **loud**: the parity sweep fails if either moves.
+>
+> **Honest gaps, not closed** (behavioural evidence is strong but indirect, so they are M2 items rather
+> than claims): no dedicated A→B test that reformats the *same digit string* after a country switch —
+> though 17 countries loaded sequentially in one process and 7,296 sequential cross-country assertions
+> all matched `/max`, which cross-talk would have broken; and no source audit of `/core` for
+> module-level metadata caches, though `new Metadata(json)` is constructed per call in
+> `source/metadata.js`.
 >
 > **Licensing:** the slices redistribute Google's metadata (Apache-2.0, from `PhoneNumberMetadata.xml`),
 > so `phone-core/README.md` carries the Apache notice. The `libphonenumber-js` code that reads them
