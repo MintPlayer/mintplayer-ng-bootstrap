@@ -12,7 +12,7 @@ draft PR #399. Commit per milestone (commits are free); push only when the whole
 | M2 — phone-core sub-entry | ✅ **done** — countries/list/name, dial-code detection, `PhoneRules` facade, 62 specs green (incl. exhaustive `/max` parity) |
 | M3 — mp-input-group + the group contract in mp-select | ✅ **done** (WC side; the scheduler-demo acceptance check moves to M6, where bs-input-group starts rendering it) |
 | M4 — mp-select rich options (base-select PE) | ✅ **done** — doubly-gated (`@supports` + per-instance `rich`), 7 new specs |
-| M5 — mp-phone-input | ⬜ |
+| M5 — mp-phone-input | ✅ **done** — 27 specs (all seven D10 caret rules, D11/D5a/D12/D15/D17), entry 4.4 KB gzip with zero eager flag/metadata bytes |
 | M6 — Angular wrappers (bs-input-group migration + bs-phone-input) | ⬜ |
 | M7 — React + Vue wrappers | ⬜ |
 | M8 — demo pages ×3 | ⬜ |
@@ -208,41 +208,46 @@ Throwaway files under `docs/prd/_spike-phone-input-*`, deleted after verdicts ar
 
 ## M5 — `mp-phone-input` [PRD §5.6, §5.7, §6, D7, D8, D9]
 
-- [ ] `phone-input/src/components/mp-phone-input.ts` — `FormAssociatedMixin(LitElement)`,
+- [x] `phone-input/src/components/mp-phone-input.ts` — `FormAssociatedMixin(LitElement)`,
       `delegatesFocus`, composes `mp-input-group` + `mp-select` + dial-code span + tel input in
       shadow; registration guard at the bottom.
-- [ ] Value model: E.164 `value` ⇄ (`country`, national digits); empty input ⇒ `null` form
+- [x] Value model: E.164 `value` ⇄ (`country`, national digits); empty input ⇒ `null` form
       value; `formValue/formReset/formRestore/formValidityAnchor` per the `mp-select` shape.
-- [ ] Country picker feed: `phone-core` countries → `mp-select` `.options` (+ rich render
+- [x] Country picker feed: `phone-core` countries → `mp-select` `.options` (+ rich render
       callback from M4); closed-face overlay (flag + ISO, `aria-hidden`, `pointer-events: none`)
       in **`mp-phone-input`'s own** shadow root with `:host { position: relative }`, **gated off**
       under `@supports (appearance: base-select)` or supporting engines draw two flags. Reserve
       generous padding for it (its width is engine-dependent: 68.4 px vs 70.2 px WebKit), and
       remember it only aligns while the select is the group's first child.
-- [ ] **Pin the country picker's width** via `mp-input-group` [PRD §5.3]: native `<select>` sizes to
+- [x] **Pin the country picker's width** via `mp-input-group` [PRD §5.3]: native `<select>` sizes to
       its widest option, base-select to the selected content (320 → 152/157 px). Pinned, the jump
       is 0 px.
-- [ ] Country change: keep the digits, reload rules, reformat, re-validate — never clear or
+- [x] Country change: keep the digits, reload rules, reformat, re-validate — never clear or
       truncate [PRD D17].
-- [ ] Flags: placeholder box first, `loadFlag()` swap; warm visible set on first open.
-- [ ] Validator: `loadPhoneValidator()` on first focus/input or non-empty initial value;
+- [x] Flags: placeholder box first, `loadFlag()` swap; warm the whole set on first interaction
+      (one re-render for the set, not 244). **Deviation from S2's overlay, recorded:** the fallback
+      flag lives in the dial-code ADDON (this element's own light-DOM child), not overlaid on the
+      select — the overlay needed reserved in-shadow padding this element cannot set on mp-select,
+      only aligned while the select was the group's first child, and had an engine-dependent width.
+      Same `@supports` gating so rich engines don't show two flags.
+- [x] Validator: `loadPhoneRules()` on first focus/input or non-empty initial value;
       structural checks until resolved; formatting via `phone-core/format` + `setFormValidity` from
       `updated()`; `valid: undefined` in `value-change` until loaded.
-- [ ] **Caret management per PRD D10 — all seven rules** (digit-count anchor, `beforeinput` capture,
+- [x] **Caret management per PRD D10 — all seven rules** (digit-count anchor, `beforeinput` capture,
       restore-on-rejected-non-digit, Backspace/Delete always removes a digit, composition guard,
       synthetic `input` after an intercepted key, reject-when-too-long). A DOM-free reference
       implementation is in the S7 spike harness; port it with its own unit spec. Skipping rule 4
       leaves the control visibly **stuck** when Backspace lands on a separator.
-- [ ] Paste/typed `+XX…` in the tel input → country switch + prefix strip, sourced from the
+- [x] Paste/typed `+XX…` in the tel input → country switch + prefix strip, sourced from the
       **table** while typing and the validator on parse/blur [PRD D11]; never overwrite an explicit
       user selection [PRD D5a]; dial code static adjacent text (D9); focus input after country
       selection (D9).
-- [ ] i18n: `locale` attr (no default), `input-label`/`country-label`/`error-text`/`placeholder`
+- [x] i18n: `locale` attr (no default), `input-label`/`country-label`/`error-text`/`placeholder`
       attrs; `preferred-countries`/`only-countries`.
-- [ ] A11y per PRD §6: error channel via `errorFeedback()` + `aria-errormessage`; dial-code span
+- [x] A11y per PRD §6: error channel via `errorFeedback()` + `aria-errormessage`; dial-code span
       `aria-describedby`; `HostAriaController` + `syncReferences()` in `updated()`; own
       `:focus-visible` ring in SCSS.
-- [ ] `mp-phone-input.spec.ts` + `mp-phone-input.aria.spec.ts` (the `mp-select.aria.spec.ts`
+- [x] `mp-phone-input.spec.ts` + `mp-phone-input.aria.spec.ts` (the `mp-select.aria.spec.ts`
       template: naming trio + five error-text transitions + describedby wiring).
 - [ ] **Commit.**
 

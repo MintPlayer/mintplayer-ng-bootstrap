@@ -106,4 +106,21 @@
     height: auto;
     flex: 0 0 auto;
   }
+
+  // A renderer can differentiate the closed face from the list: selectedcontent
+  // CLONES the selected option's fragment, so the same markup serves both and
+  // these hooks decide which parts show where. display:none content is excluded
+  // from the option's accessible name, so a closed-only ISO code does not leak
+  // into what the list option announces.
+  :host([rich]) option [data-closed-only] {
+    display: none;
+  }
+
+  :host([rich]) selectedcontent [data-closed-only] {
+    display: inline;
+  }
+
+  :host([rich]) selectedcontent [data-list-only] {
+    display: none;
+  }
 }

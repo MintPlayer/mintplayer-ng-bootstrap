@@ -1,0 +1,61 @@
+// `mp-phone-input` chrome. The heavy lifting — corner pairing, overlap, sizing —
+// belongs to the composed `mp-input-group`; this sheet only styles what the phone
+// input itself owns: its tel input (page CSS cannot reach in here), the dial-code
+// addon, and the flag that lives in that addon.
+
+@import "node_modules/bootstrap/scss/functions";
+@import "node_modules/bootstrap/scss/variables";
+@import "node_modules/bootstrap/scss/variables-dark";
+@import "node_modules/bootstrap/scss/mixins";
+
+:host {
+  display: block;
+}
+
+:host([hidden]) {
+  display: none;
+}
+
+// The country picker sizes itself instead of flexing (its own :host rule beats
+// the group's ::slotted() normal declaration — the measured cascade order); the
+// tel input takes the remaining width via the group's channel-1 rules.
+mp-select {
+  flex: 0 0 auto !important;
+  width: auto !important;
+}
+
+// The flag is decorative chrome in the dial-code addon, in EVERY engine — not the
+// S2 overlay. The overlay needed reserved in-shadow padding this element cannot
+// set on mp-select, aligned only while the select was the group's first child,
+// and had an engine-dependent width. The addon is this element's own light-DOM
+// child inside the group: fully styleable, position-independent, and the flag
+// never has to chase the select's closed face. Where base-select renders rich
+// options, the closed face already shows the flag, so the addon's copy is
+// gated OFF or supporting engines would show two.
+.flag {
+  display: inline-flex;
+  align-items: center;
+  margin-inline-end: 0.375rem;
+}
+
+.flag svg {
+  width: 1.25rem;
+  height: auto;
+  display: block;
+}
+
+// Reserve the flag's box before its chunk resolves — no layout shift on load.
+.flag:empty {
+  min-width: 1.25rem;
+  min-height: 0.833rem;
+}
+
+@supports (appearance: base-select) {
+  .flag {
+    display: none;
+  }
+}
+
+.dial-code {
+  user-select: none;
+}
