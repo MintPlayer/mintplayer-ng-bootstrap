@@ -211,6 +211,10 @@ is a `<select>`, which inherits `direction` normally.
 Spike S1 proved both channels in Chromium + Firefox + WebKit (§9.1). Fixing the scheduler demo's
 broken group (§1.2) is the acceptance demo for D2.
 
+**D1a — `mp-input-group` must NOT set `delegatesFocus` (S5).** Measured both ways: `focus()`
+result, `document.activeElement` and the full tab order are byte-identical in all three engines, so
+it buys nothing while imposing focus behaviour on every other consumer of the generic group.
+
 Also in scope for `mp-input-group`: `size` (`sm`/`md`/`lg`) mapped to Bootstrap's
 `input-group-sm`/`-lg` paddings (declared in-shadow — the classes are unused in the workspace
 today but belong to the component's contract), and `:focus-within` z-index lift so a focused
@@ -247,8 +251,12 @@ Changes to `mp-select` proper stay minimal and are all additive:
 maintained set whose SVGs contain **zero `id=` attributes, zero `url(#…)` references, zero
 `<style>` tags** — decisive, because ~250 flags inlined into one shadow root is exactly where
 internal SVG IDs collide (`circle-flags` declares `<mask id="a">` in *all 265 files* and renders
-correctly today only because the masks are byte-identical). The full 244 dial-code countries cost
-**161 KB raw / 43 KB gzip**; Belgium is 183 bytes. `flag-icons` (lipis) was rejected at 515 KB
+correctly today only because the masks are byte-identical). The 244 dial-code countries cost
+**161,718 B raw**. Corrected by S6: the **43 KB gzip figure is the concatenated corpus** — as 244
+separately-compressed lazy chunks the total is **87.8 KB gzip**, and the number that actually
+matters is per-flag: **median 313 B, min 163 B, max 1,657 B gzip**. Belgium is 183 raw bytes; the
+largest is `io` at 5,363 raw (not `rs`, which is 903 B in this set — the 177 KB `rs.svg` belongs to
+the rejected lipis set). `flag-icons` (lipis) was rejected at 515 KB
 gzip (crest-heavy outliers: `rs.svg` 177 KB, `sh-ac.svg` 140 KB); sprite+`<use>` was rejected
 because `<use href="#id">` cannot cross a shadow boundary; emoji was rejected per D4.
 
@@ -279,10 +287,17 @@ export function loadFlag(code: string): Promise<string | undefined>; // cached, 
 Measured behaviour: each `?raw` dynamic import becomes its own **~0.8 KB lazy chunk** (dynamic
 imports force chunk boundaries even with `preserveModules: false`); the SVG string is inlined
 into the chunk so **the `.svg` files are build-time-only — nothing to copy, nothing published but
-`.mjs`**; the Angular consumer's esbuild re-splits the 244 chunks from node_modules into its own
-lazy chunks; the eager cost to a consumer is only the loader map (~8 KB min / ~2 KB gzip); plain
-Node resolves the imports (SSR-safe, no `document`/`fetch`/`import.meta.url`); vitest needs zero
-config. The `.d.ts` emits cleanly (`tsconfig.lib.json` already has `vite/client` types).
+`.mjs`** (verified on the real build: 0 `.svg` in `dist`); the Angular consumer's esbuild re-splits
+the chunks from node_modules into its own lazy chunks; the eager cost to a consumer is only the
+loader map — **15.0 KB min / 3.3 KB gzip** for 244 entries (S6 correction; the first draft guessed
+~8 KB / ~2 KB); plain Node resolves the imports (SSR-safe, no `document`/`fetch`/`import.meta.url`);
+vitest needs zero config. The `.d.ts` emits cleanly (`tsconfig.lib.json` already has `vite/client`
+types).
+
+The vendored artwork ships **inside** those chunks, which is a licensing obligation:
+`nxCopyAssetsPlugin(['*.md'])` is **not recursive**, so `flags/README.md` — the MIT notice — was
+silently not published. Fixed by adding `'*/README.md'` to the glob (S6; verified present in
+`dist/libs/mintplayer-web-components/flags/README.md`).
 
 The vendoring is refreshed by `tools/scripts/refresh-flags.mjs` copying from the
 `country-flag-icons` **devDependency** (with its MIT notice preserved in `flags/README.md` /
@@ -296,11 +311,19 @@ up-front); `exports`-map `./assets/*` passthrough (pushes a copy step onto every
 anti-"pull complexity downwards"; the Shoelace `setBasePath` idiom it resembles is documented in
 Shoelace's own tracker as hostile to wrapping libraries, which is exactly what our wrappers are).
 
-> **Guard rail (release-blocking, measured):** dynamic imports in lib source must be **static
-> string literals**. A `` import(/* @vite-ignore */ `./flags/${code}`) `` survives verbatim into
-> the published `.mjs` and hard-fails every esbuild consumer's build
-> (`ERROR: Could not resolve import("./flags/**/*")`). The generated map exists precisely to
-> keep every import static. Add this to CLAUDE.md's WC gotchas when the feature lands.
+> **Guard rail (release-blocking, measured — and it has two failure modes, not one):** dynamic
+> imports in lib source must be **static string literals**. A
+> `` import(/* @vite-ignore */ `./flags/${code}`) `` survives verbatim into the published `.mjs`
+> and then, depending on where the computed prefix points:
+> 1. **Hard build failure** if the directory does not exist in the published layout —
+>    `ERROR: Could not resolve import("./assets/**/*.svg?raw")`. Loud, therefore harmless.
+> 2. **Silent bundle multiplication** if it *does* exist — S6 measured
+>    `` import(`../chunks/${code}.mjs`) `` making esbuild glob **the entire chunks directory** into
+>    the consumer's bundle (47 chunks: every component plus libphonenumber), or hard-fail on a
+>    surprising `Could not resolve "lit"`. This one ships.
+>
+> The generated map exists precisely to keep every import static. Both modes belong in CLAUDE.md's
+> WC gotchas when the feature lands.
 
 **In `mp-phone-input`:** render a fixed-size placeholder box first (no layout shift), resolve
 `loadFlag(country)` and swap it in; when the dropdown first opens, warm the visible set. Flags
@@ -308,6 +331,16 @@ render via `unsafeHTML` into an `aria-hidden` span, matching the `CHEVRON_SVG` p
 (`treeview/src/components/mp-treeview.ts:48`).
 
 ### 5.5 `phone-core` — data + lazy validation (D5, D6)
+
+**D5b — both runtime packages are `external`, not bundled (S3).** Bundling `libphonenumber-js` and
+`intl-tel-input` into our chunks was measured and rejected: the emitted `.d.ts` still names them, so
+a TypeScript consumer without them installed gets `TS2307` regardless — bundling bought nothing
+while adding 231 KB to our tarball. They are declared in the WC package's `dependencies` (not
+`peerDependencies` — consumers never import them, so there is no version to align) and marked
+`external` in `vite.config.mts`. Verified on the real build: `phone-core/index.mjs` is **351 B**
+(down from 17,764 B bundled) and the bare `libphonenumber-js/max` specifier survives into the
+published output, so the consumer's own bundler emits the lazy chunk and an app that already uses
+libphonenumber ships one copy instead of two.
 
 **Country table: `intl-tel-input/data`** (official typed `./data` export subpath, MIT, published
 2026-07; **5.5 KB minified / 1.8 KB gzip once bundled** — the 17.7 KB / 4.4 KB in the first draft
@@ -437,10 +470,47 @@ is defined out of existence by deriving the form value from one source of truth 
 `FormAssociatedMixin` (`a11y/src/form-associated.ts`) exactly as `mp-select` does; the validity
 anchor is the tel `<input>`.
 
-> **Nested-FACE note:** `mp-select` inside `mp-phone-input`'s shadow root is itself
-> form-associated, but form association is tree-scoped — a FACE element inside a shadow root
-> never finds the outer light-DOM form, so the inner select cannot double-submit. Spike S5
-> asserts this and the two-focusable-controls focus model.
+**Nested-FACE and focus behaviour — measured (S5, 111/111 in three engines; §9.3).** The inner
+`mp-select` cannot double-submit: form association is tree-scoped, so its `internals.form` is
+`null` while the host's is the real form, and the outer `FormData` never contains the inner control.
+A light-DOM control case confirms tree-scoping is the cause. Five obligations follow, four of them
+new:
+
+- **D12 — `disabled` must be pushed down as an ATTRIBUTE, from two callbacks.** This is the one that
+  would otherwise ship as a genuine a11y defect. Because the inner controls have no form owner,
+  a `<fieldset disabled>` around the host disables *the host only*: measured on a naive composite,
+  `hostEffectiveDisabled: true` while `nativeSelectDisabled: false`, `telDisabled: false`, and
+  **both inner controls stayed in the tab order**. So `mp-phone-input` must propagate disabled to
+  both children, driven from **both** `formDisabledCallback` and
+  `attributeChangedCallback('disabled')` — their relative order is engine-dependent (WebKit fires
+  the callback *before* the attribute; Chromium and Firefox after) — and it must write the
+  **attribute**, not the property, so `FormAssociatedMixin`'s `#formDisabled || hasAttribute` OR
+  still holds. Verified: `phone.disabled = false` inside a disabled fieldset leaves everything
+  disabled in all three engines.
+- **D13 — a host-directed `<label for>` focuses the COUNTRY SELECT, not the tel input.**
+  `delegatesFocus` targets the first focusable descendant, so `<label for="phone">Phone number
+  </label>` activates the country picker in all three engines (WebKit stops on the `mp-select` host
+  without even reaching the native `<select>`). Therefore host `<label for>` is **not** the naming
+  path: the tel input is named by `input-label` and the select by `country-label`. The demos and
+  wrapper specs must assert that, not a `<label for>`.
+- **D14 — `autocomplete` is an attribute on this element, forwarded to the inner input.** Setting
+  it on the host is inert: the host has no `autocomplete` IDL property and the UA does no plumbing
+  into a shadow root. Root cause of a Firefox divergence pinned: the inner tel input's **form owner
+  is `null`** in all three engines, and the autofill mantle is defined against the form owner, so
+  Firefox sanitizes the IDL to `""` (Chromium/WebKit reflect `tel-national`). Default
+  `tel-national`; real autofill is human-verifiable only (§9.3).
+- **D15 — `formRestore` must genuinely parse E.164.** Not hypothetical: a real back-navigation
+  fired `formStateRestoreCallback` with `+32470123456` on the host in all three engines. It must
+  decompose into country + national number and drive both children.
+- **D16 — never style validity on `:user-invalid`.** Firefox matches it **pristine**, before any
+  interaction (pink background on first paint); Chromium and WebKit never match it at all — not
+  after a refused submit, not after type-then-clear-then-blur. `:invalid` matches the host
+  correctly everywhere, but the `invalid` attribute + `error-text` channel already specified in §6
+  is the only safe hook.
+
+Tab order needed no amendment and showed **zero** engine divergence: exactly two stops inside the
+composite, select then tel input, forward and reverse. `reportValidity()` also behaves: it returns
+`false`, focus lands on the in-shadow anchor, and submit is refused in all three engines.
 
 Surface:
 
@@ -665,10 +735,10 @@ element in all three (conformance-registry enforced).
 |---|---|---|---|
 | S1 | Does the §5.2 two-channel group contract work? `::slotted(:not(:first-child))` positional matching + `--mp-group-*` inheritance into a *generated* `unsafeCSS` stylesheet, incl. the `-1px` border overlap + `:focus-within` lift | Corner pairing + flex visually correct for `input+span+mp-select` in both engines, nested inside another shadow root | **PASS, with two amendments to D2** — 36/36 in Chromium + Firefox + WebKit (§9.1) |
 | S2 | `appearance: base-select` with SVG-bearing options inside a shadow root; graceful text-only fallback | Rich options in Chromium; identical layout metrics in the Firefox fallback | |
-| S3 | `import('libphonenumber-js/min')` from the published lib: chunking in our Vite build, esbuild + Vite consumers re-splitting from node_modules, plain-Node resolution | One lazy chunk; all three consumers resolve; Node imports without `document` | |
+| S3 | `import('libphonenumber-js/max')` from the published lib: chunking in our Vite build, esbuild + Vite consumers re-splitting from node_modules, plain-Node resolution | One lazy chunk; all three consumers resolve; Node imports without `document` | **PASS 6/6** — but bundling rejected in favour of `external` (D5b), §9.3 |
 | S4 | `Intl.DisplayNames` SSR/hydration parity in the three demo SSR pipelines | No hydration mismatch on country names with an explicit locale; documented behaviour with browser-locale default | **PASS only because the names are never SSR'd** — criterion reworded, see §9.2 |
-| S5 | FACE-in-FACE isolation + two-tab-stop focus model | Inner `mp-select` contributes nothing to the outer form's `FormData`; `formDisabledCallback` fans out to both controls; Tab order select → input | |
-| S6 | Flag pipeline dress rehearsal: vendor 3 real flags, codegen the loader map, build, consume | Mirrors the asset prototype's verdicts on the real repo files (expected to pass — the prototype already did this with fabricated SVGs) | |
+| S5 | FACE-in-FACE isolation + two-tab-stop focus model | Inner `mp-select` contributes nothing to the outer form's `FormData`; `formDisabledCallback` fans out to both controls; Tab order select → input | **PASS 111/111** in three engines — five new obligations D12–D16, §9.3 |
+| S6 | Flag pipeline dress rehearsal: vendor 3 real flags, codegen the loader map, build, consume | Mirrors the asset prototype's verdicts on the real repo files (expected to pass — the prototype already did this with fabricated SVGs) | **PASS 8/8** — plus a licensing gap and a worse guard-rail mode found, §9.3 |
 | S7 | `AsYouType` caret preservation while reformatting (added mid-gate) | Caret never jumps; Backspace over a separator still deletes a digit; works in a shadow root | **PASS** — bug reproduced and fixed; rule normative in D10 |
 | S8 | Dial-string detection, NANP disambiguation, E.164 round-trip, metadata-set choice (added mid-gate) | Correct country for the hard cases; round-trip stable; evidence-based metadata set | **PASS, and it reversed two PRD choices** (D5a, D6a) |
 
@@ -734,6 +804,38 @@ and a mobile soft keyboard; whether the caret *feels* right (the assertions are 
 whether the late country flip for shared dial codes is acceptable; whether the 4 Chromium name
 differences matter editorially; and how a screen reader announces a value that reformats under the
 caret. The last one is the most likely to need a design response — it goes on the M10 manual pass.
+
+### 9.3 S3 / S5 / S6 — build pipeline and form semantics
+
+**S5 — FACE nesting and focus.** Harness `docs/prd/_spike-phone-input-s5/`, importing the **real**
+`FormAssociatedMixin`. **111/111** (37 assertions × three engines). The isolation question is
+decisively answered — no duplicate-submission path in any engine — and five obligations came out of
+it (D12–D16 in §5.6), of which **D12 is the one that would otherwise have shipped as a real a11y
+defect**: inside `<fieldset disabled>` a naive composite left both inner controls keyboard-operable.
+Two engine divergences worth remembering beyond this component: WebKit fires `formDisabledCallback`
+*before* `attributeChangedCallback` (Chromium/Firefox after), and Firefox matches `:user-invalid` on
+a **pristine** field. One non-obvious negative: `internals.willValidate` is `true` even on the
+orphaned inner control, so **only `internals.form` is a usable "am I attached to a form" signal**.
+Harness note: a combined three-engine run reports "2 errors were not a part of any test" and exits 1
+from a WebKit worker taking the full 300 s teardown grace on Windows — not a failure; run
+per-`--project`.
+
+**S3 + S6 — the build pipeline.** All 6 S3 and all 8 S6 sub-steps PASS, on the real
+`nx build mintplayer-web-components`, with the real vendored artwork, verified independently by me
+after the fact: per-flag lazy chunks (one per flag, none merged), **0 `.svg` in `dist`**,
+`exports["./flags"]` and `["./phone-core"]` auto-written, `flags/README.md` published, `tsc` clean,
+vitest green with zero config, and all three consumer paths (esbuild `--splitting`, Vite, plain
+Node) resolving. Tree-shaking confirmed: a consumer importing something else pays 0 bytes.
+Three PRD numbers were wrong and are corrected in §5.4/§5.5 (gzip total, loader-map size,
+metadata-set size); one design decision changed (D5b — `external`, not bundled); one licensing gap
+was found and fixed; and the guard rail turned out to have a **silent** failure mode, not just the
+loud one.
+
+Two judgement calls recorded rather than silently taken: three upstream SVGs (`BV`, `LV`, `NC`)
+carry dangling `class="st1"`/`"st4"` attributes with no stylesheet — inert, since each element
+carries its own `fill` or inherits a `<g fill>` — and were copied **verbatim** for diffability
+against upstream rather than cleaned; and `refresh-flags.mjs --only=…` deliberately does not prune,
+so shrinking the vendored set means clearing `src/assets/` first.
 
 **Scope gap, honestly noted:** S4's literal wording asked for the three demo SSR pipelines, which
 needed the build workspace another agent held. Substitute: a from-scratch `@lit-labs/ssr` +

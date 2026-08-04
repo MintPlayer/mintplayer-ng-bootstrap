@@ -21,17 +21,24 @@
       "executor": "nx:run-commands",
       "outputs": [
         "{projectRoot}/**/*.element.template.ts",
-        "{projectRoot}/**/*.styles.ts"
+        "{projectRoot}/**/*.styles.ts",
+        "{projectRoot}/flags/src/flag-loaders.generated.ts"
       ],
       "inputs": [
         "{projectRoot}/**/*.element.html",
         "{projectRoot}/**/*.element.scss",
         "{projectRoot}/**/*.styles.scss",
-        "{workspaceRoot}/tools/scripts/build-web-components.mjs"
+        "{projectRoot}/flags/src/assets/*.svg",
+        "{workspaceRoot}/tools/scripts/build-web-components.mjs",
+        "{workspaceRoot}/tools/scripts/build-flag-loaders.mjs"
       ],
       "cache": true,
       "options": {
-        "command": "node tools/scripts/build-web-components.mjs libs/mintplayer-web-components"
+        "parallel": false,
+        "commands": [
+          "node tools/scripts/build-web-components.mjs libs/mintplayer-web-components",
+          "node tools/scripts/build-flag-loaders.mjs"
+        ]
       }
     },
     "codegen-wc-watch": {

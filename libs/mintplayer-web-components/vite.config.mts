@@ -79,7 +79,9 @@ export default defineConfig(() => {
     cacheDir: '../../node_modules/.vite/libs/mintplayer-web-components',
     plugins: [
       nxViteTsPaths(),
-      nxCopyAssetsPlugin(['*.md', 'custom-elements.json']),
+      // `*/README.md` is not cosmetic: flags/README.md carries the MIT notice for
+      // the vendored artwork that ships inside the published flag chunks.
+      nxCopyAssetsPlugin(['*.md', '*/README.md', 'custom-elements.json']),
       dts({
         entryRoot: '.',
         tsconfigPath: resolve(import.meta.dirname, 'tsconfig.lib.json'),
@@ -107,6 +109,14 @@ export default defineConfig(() => {
           '@lit/context',
           'tslib',
           /^highlight\.js(\/.*)?$/,
+          // Declared `dependencies`, so consumers resolve them from their own
+          // node_modules: an app that also uses libphonenumber-js ships one copy
+          // instead of two, and `import('libphonenumber-js/max')` stays a bare
+          // specifier its bundler splits into a lazy chunk of its own. Bundling
+          // them instead was measured and rejected: the emitted .d.ts still
+          // names them, so a consumer without them installed gets TS2307.
+          /^libphonenumber-js(\/.*)?$/,
+          /^intl-tel-input(\/.*)?$/,
         ],
         output: {
           preserveModules: false,
