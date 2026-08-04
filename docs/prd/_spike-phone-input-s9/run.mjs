@@ -21,7 +21,9 @@ import { fileURLToPath } from 'node:url';
 
 const here = resolve(fileURLToPath(import.meta.url), '..');
 const repoRoot = resolve(here, '..', '..', '..');
-const dist = join(repoRoot, 'dist/libs/mintplayer-web-components');
+// A concurrent `nx build` rewrites the chunk hashes mid-run, which makes later
+// consumer copies internally inconsistent. Point MP_DIST at a snapshot to pin it.
+const dist = process.env.MP_DIST || join(repoRoot, 'dist/libs/mintplayer-web-components');
 const bin = (p) => join(repoRoot, 'node_modules', p);
 
 if (!existsSync(dist)) {

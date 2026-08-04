@@ -3,10 +3,10 @@
 Status: **Spike gate passed; implementation not started** (2026-08-04) on `feat/phone-input-wc`,
 branched from `master` at `62642ddd`, draft **PR [#399](https://github.com/MintPlayer/mintplayer-ng-bootstrap/pull/399)**.
 Design investigation was five parallel agents (repo patterns, reference repo, flag/data research, an
-asset-bundling prototype in an isolated worktree, i18n/demo conventions); the gate was **S1–S8, all
-PASS** across Chromium 148 / Firefox 150 / WebKit 26.4 — verdicts and evidence in §9.1–§9.4. S9 (per-country
-metadata) was prototyped and **deferred on measured correctness grounds** — see §5.5 D6a-alt; the
-shipping design is the verified single `/max` chunk.
+asset-bundling prototype in an isolated worktree, i18n/demo conventions); the gate was **S1–S9, all
+PASS** across Chromium 148 / Firefox 150 / WebKit 26.4 — verdicts and evidence in §9.1–§9.4. **S9 passed too, after a
+correction**: per-*calling-code* metadata slices ship (§5.5 D6a-alt), cutting first use from 56.8 KB
+gzip to ~16.6 KB while keeping full `/max` precision.
 
 The gate paid for itself: it amended or reversed the design in six places — the metadata set (D6a),
 the country table's role (D5a), the formatter (D6b/F1), E.164 assembly (D6c), the `::slotted()`
@@ -491,25 +491,71 @@ files are ~0.6 KB of UI strings only.
 **D6 — validation: `libphonenumber-js`, lazy.** `phone-core` exposes an async facade:
 
 ```ts
-// phone-core/src/validation.ts — the ONLY module that names libphonenumber-js
-let mod: Promise<typeof import('libphonenumber-js/max')> | undefined;
-export function loadPhoneValidator() {
-  return (mod ??= import('libphonenumber-js/max'));
-}
+// phone-core/src/validation.ts — the ONLY module that names libphonenumber-js.
+// Returns a PhoneRules facade so callers cannot reinvent the two traps it hides
+// (D6b's international-route formatting, D6c's parse-based toE164).
+export function loadPhoneRules(country: string): Promise<PhoneRules | undefined>;
+// internally: import('libphonenumber-js/core') once, plus that country's
+// calling-code metadata slice — both static literals, both lazy.
 ```
 
-The dynamic import is a **static string literal** (guard rail, §5.4), so the metadata becomes one
-lazy chunk that Rollup emits under `chunks/` and downstream bundlers re-split — a consumer pays for
-it only when a phone input actually loads it. Load points:
-`mp-phone-input` triggers `loadPhoneValidator()` on first focus/input (and immediately when it
+Both dynamic imports are **static string literals** (guard rail, §5.4), so `core` and each metadata
+slice become their own lazy chunks that Rollup emits under `chunks/` and downstream bundlers re-split
+— a consumer pays for them only when a phone input actually loads them. Load points:
+`mp-phone-input` triggers `loadPhoneRules(country)` on first focus/input (and immediately when it
 mounts with a non-empty initial value, so an SSR'd form validates without interaction). Until the
-chunk resolves, the component performs structural checks only (digits/`inputmode`, `required` →
-`valueMissing`); once resolved, `AsYouType` formats keystrokes and `validatePhoneNumberLength` /
-`isValidPhoneNumber` drive `setFormValidity` + `error-text` display. Validity is pushed from
+chunks resolve, the component performs structural checks only (digits/`inputmode`, `required` →
+`valueMissing`); once resolved, `PhoneRules.format` formats keystrokes and `lengthProblem` / `isValid` drive
+`setFormValidity` + `error-text` display. Validity is pushed from
 `updated()` (never only from event handlers), the `mp-select` precedent
 (`select/src/components/mp-select.ts`).
 
-> ### D6a-alt — per-country metadata: **prototyped, 243/244 correct, DEFERRED** (S9)
+> ### D6a-alt — per-**calling-code** metadata: **ADOPTED** (S9). This is what ships.
+>
+> **Slice by calling code, not by country.** That one word is the whole finding. The first cut sliced
+> per country and failed: `gb` reported a valid UK number invalid, and the diagnosis showed it was
+> systematic rather than a one-off — a per-country slice was measured **rejecting 586 of 640**
+> numbers belonging to a *sibling* of the selected country. Two facts about how Google stores a
+> shared calling code explain it: a block's formats live only in its "main" country (NANP formats in
+> `US`, +7's in `RU`, +39's in `IT`), and a number typed under one member is validated against **all**
+> members. A user on a US form typing a Toronto number is mainstream, not an edge case. Slicing per
+> calling code keeps each block whole and both facts hold: **206 slices** for 244 selectable
+> countries.
+>
+> **Verified exhaustively, not by sample.** `metadata-parity.spec.ts` sweeps **every** selectable
+> country against full `/max` — taking each number from libphonenumber's own example table rather than
+> a curated list, so the check is self-maintaining — and compares `format`, `isValid`, `isValid(±1
+> digit)`, `type`, `toE164` and `lengthProblem`. **Zero divergences across all 244.** On top of that:
+> per-keystroke format parity on a 30-country spread (an inherited-formats regression shows up
+> mid-typing, not on the finished number), sibling-number acceptance, and a dial-code pin.
+>
+> **Measured cost** (real build; `/core` and `/max` bundled+minified by esbuild):
+>
+> | | gzip |
+> |---|---|
+> | eager `phone-core` entry (country table + loader map) | **832 B** |
+> | `libphonenumber-js/core`, once per page | **16.1 KB** |
+> | one calling-code slice | **422 B** (+32 BE) · 1.58 KB (+44) · **3.07 KB** (+1, the whole NANP block) |
+> | **first use, total** | **≈16.6–19.2 KB** |
+> | *the single-`/max` alternative it replaces* | *56.8 KB* |
+>
+> So ~3× less on first use, with **full `/max` precision** — `getType()` included, which is what makes
+> "home or mobile" answerable — and each country switch adds only its own slice. Break-even against
+> one `/max` chunk is far past any realistic session.
+>
+> **The spec is the upgrade guard, and that is not decoration.** Neither fact about Google's storage is
+> guaranteed by the metadata format version, so a libphonenumber bump could silently stop a country
+> formatting or validating. The parity sweep turns that into a CI failure instead of a support ticket.
+> Keep it, and keep the dial-code pin: the facade reads the calling code out of the metadata
+> **positionally** (`metadata.countries[iso2][0]`), which would otherwise fail silently.
+>
+> **Licensing:** the slices redistribute Google's metadata (Apache-2.0, from `PhoneNumberMetadata.xml`),
+> so `phone-core/README.md` carries the Apache notice. The `libphonenumber-js` code that reads them
+> stays an ordinary MIT dependency and is not redistributed.
+>
+> <details><summary>Superseded: the deferral this section carried for ~30 minutes</summary>
+>
+> ### D6a-alt — per-country metadata: prototyped, 243/244 correct, DEFERRED (S9)
 >
 > The user pointed out that by the time a number is typed **the country is already chosen**, so only
 > that country's rules are ever needed — and resolving a `+XX` prefix is the eager table's job
@@ -544,12 +590,14 @@ chunk resolves, the component performs structural checks only (digits/`inputmode
 >   `libphonenumber-js` code that reads them stays an ordinary MIT dependency and is not
 >   redistributed.
 >
+> </details>
+>
 > (A cheaper-looking alternative — deriving a simple per-country *mask* table — was rejected without a
 > spike: S8 already measured what naive per-country rules get wrong, from Italy's significant leading
 > zero to Russia's `8`-prefixed toll-free numbers to type-dependent lengths.)
 
-**D6a — the metadata set is `/max`, not `/min` (reversed by S8.4).** The first draft chose `/min`
-on size alone. Measured over all 244 countries' example numbers, that choice is a user-visible
+**D6a — `/max` is the precision bar, and now the test oracle rather than the shipped loader
+(S8.4, then superseded by D6a-alt above).** The first draft chose `/min` on size alone. Measured over all 244 countries' example numbers, that choice is a user-visible
 defect:
 
 | set | bundled+min | **gzip** | falsely accepts 1 digit SHORT | rejects a valid number | `getType()` |
@@ -563,9 +611,10 @@ one-digit-short numbers it wrongly accepts, that function catches **0**, because
 legal for the country, just not for that number *type*; (2) `/min` and `/max` format **identically**
 — as-you-type output is byte-identical for 244/244 countries, so `/max` buys precision only;
 (3) `/mobile` is disqualified outright (Milan, London and Munich landlines all reported invalid).
-Paying +21 KB gzip **in a chunk that is lazy by design** to stop green-lighting numbers that are a
-digit short is the right trade. (The "~82 KB" in the first draft was the raw JSON byte count, not
-what a consumer downloads.)
+Paying for `/max`-grade precision to stop green-lighting numbers that are a digit short is the right
+trade — and D6a-alt then made it nearly free, by shipping `/max`-quality rules for one calling code
+instead of the whole world. `/max` remains the **oracle** the parity spec measures against. (The
+"~82 KB" in the first draft was the raw JSON byte count, not what a consumer downloads.)
 
 The alternative shape — a consumer-supplied loader callback property instead of an internal import
 — was considered and rejected: it pushes complexity upward for zero gain, since the internal
@@ -886,7 +935,7 @@ loses. D2a records the measured cascade order that explains why.
 | Surface | Name | Notes |
 |---|---|---|
 | const/fn | `countries`, `countryForDialString()`, `toE164()`, `splitE164()` | pure, eager, 4.4 KB gzip data |
-| fn | `loadPhoneValidator()` | the lazy libphonenumber facade (D6) |
+| fn | `loadPhoneRules(country)` | the lazy per-calling-code facade: `format`, `toE164`, `isValid`, `lengthProblem`, `type`, `dialCode`. Cached; unknown country → `undefined`, never rejects (D6, D6a-alt) |
 
 ### Wrappers
 
@@ -907,7 +956,7 @@ element in all three (conformance-registry enforced).
 | S6 | Flag pipeline dress rehearsal: vendor 3 real flags, codegen the loader map, build, consume | Mirrors the asset prototype's verdicts on the real repo files (expected to pass — the prototype already did this with fabricated SVGs) | **PASS 8/8** — plus a licensing gap and a worse guard-rail mode found, §9.3 |
 | S7 | `AsYouType` caret preservation while reformatting (added mid-gate) | Caret never jumps; Backspace over a separator still deletes a digit; works in a shadow root | **PASS** — bug reproduced and fixed; rule normative in D10 |
 | S8 | Dial-string detection, NANP disambiguation, E.164 round-trip, metadata-set choice (added mid-gate) | Correct country for the hard cases; round-trip stable; evidence-based metadata set | **PASS, and it reversed two PRD choices** (D5a, D6a) |
-| S9 | Per-country metadata chunks vs one 57 KB `/max` chunk — the country is always known before a number is typed (added mid-gate, user's observation) | Single-country metadata is functionally identical to full `/max` for formatting, validity, `getType()` and the E.164 round-trip; per-country chunk + `/core` beats 57 KB gzip; maintenance risk acceptable | **DEFERRED — 39/40 parity, `gb` rejects a valid number.** Sizes and break-even were compelling; correctness was not. Full record + resume notes in §5.5 D6a-alt |
+| S9 | Per-country metadata chunks vs one 57 KB `/max` chunk — the country is always known before a number is typed (added mid-gate, user's observation) | Single-country metadata is functionally identical to full `/max` for formatting, validity, `getType()` and the E.164 round-trip; per-country chunk + `/core` beats 57 KB gzip; maintenance risk acceptable | **PASS, ADOPTED** — slice per *calling code*, not per country. Exhaustive parity vs `/max` across all 244 countries, 0 divergences; first use 16.6–19.2 KB gzip vs 56.8 KB. §5.5 D6a-alt |
 
 ### 9.1 S1 — the group contract: **PASS**, after two refutations
 

@@ -7,9 +7,9 @@ draft PR #399. Commit per milestone (commits are free); push only when the whole
 
 | Milestone | State |
 |---|---|
-| S — spikes (gate) | **CLOSED. S1–S8 all ✅** (incl. S2's RTL sub-case) · **S9 deferred** (per-country metadata: 39/40 parity, `gb` rejects a valid number — PRD §5.5 D6a-alt) |
+| S — spikes (gate) | **CLOSED. S1–S9 all ✅** (incl. S2's RTL sub-case). S9 adopted per-*calling-code* metadata slices — PRD §5.5 D6a-alt |
 | M1 — flags sub-entry | ✅ **done** — 244 flags vendored, 244 lazy chunks verified in dist |
-| M2 — phone-core sub-entry | 🟡 `countries.ts` + lazy validator facade built by S3; dial-code / e164 / format modules + specs outstanding |
+| M2 — phone-core sub-entry | 🟡 countries + metadata generator + `PhoneRules` facade built and parity-verified; **dial-code detection + its specs outstanding** |
 | M3 — mp-input-group + the group contract in mp-select | ⬜ |
 | M4 — mp-select rich options (base-select PE) | ⬜ |
 | M5 — mp-phone-input | ⬜ |
@@ -69,10 +69,10 @@ Throwaway files under `docs/prd/_spike-phone-input-*`, deleted after verdicts ar
 - [x] S2 — `appearance: base-select` with SVG options in a shadow root; Firefox text-only
       fallback layout parity. **PASS 10/10 × 3 engines**; D3 amended four ways, RTL clean with
       logical properties (PRD §9.4).
-- [x] S9 — per-country metadata chunks vs one 57 KB `/max` chunk. **DEFERRED, not failed:** ~16 KB
-      `core` + ~0.35 KB/country vs 57 KB, break-even past 100 switches — but the 244-country parity
-      sweep left `gb` reporting a valid UK number invalid. Shipping `/max`; resume notes and the
-      salvaged assertions are in PRD §5.5 D6a-alt and M2 below.
+- [x] S9 — per-country metadata chunks vs one 57 KB `/max` chunk. **PASS, ADOPTED** — but only after
+      the slice unit changed from *country* to *calling code*: per-country was rejecting 586 of 640
+      sibling numbers (a US form typing a Toronto number). Exhaustive parity vs `/max` over all 244
+      selectable countries, 0 divergences. First use 16.6–19.2 KB gzip vs 56.8 KB (PRD §5.5 D6a-alt).
 - [x] S3 — `import('libphonenumber-js/min')` chunking from the published lib; esbuild + Vite +
       plain-Node consumption (repeat the asset-prototype matrix with the real package).
 - [x] S4 — `Intl.DisplayNames` SSR/hydration parity in the three demo SSR pipelines.
@@ -115,16 +115,15 @@ Throwaway files under `docs/prd/_spike-phone-input-*`, deleted after verdicts ar
       resolution; longest-prefix match. **Include the S8.1 tie-break:** a country *with*
       `areaCodes` that did not match must not beat an equal-length plain dial-code match, or `ca`
       is reported for every unlisted `+1` area code.
-- [ ] `phone-core/src/e164.ts` — `toE164()` / `splitE164()` **delegating to
-      `parsePhoneNumberFromString(digits, COUNTRY)`** [PRD D6c]. Do NOT strip `nationalPrefix` by
-      string comparison — RU `8001234567` becomes `+7001234567` instead of `+78001234567`. Note
-      this makes E.164 assembly need the lazy validator, so `toE164` is async or the component
-      keeps a digits+country value internally until the chunk resolves — decide in M5 and record it.
+- [x] E.164 assembly and formatting live on the `PhoneRules` facade (`toE164`, `format`) rather than
+      in separate modules — both delegate to the parser per D6c/D6b. Consequence for M5, unchanged:
+      they are only available once the country's rules have loaded, so the component keeps
+      digits+country internally and reports `valid: undefined` until then.
 - [x] `phone-core/src/validation.ts` — `loadPhoneValidator()` lazy facade (the ONLY module that
       names libphonenumber-js; static import string, **`libphonenumber-js/max`** per PRD D6a).
-- [ ] `phone-core/src/format.ts` — formatter going through the international form and stripping the
-      calling code [PRD D6b/F1]. A plain `AsYouType(country).input(nationalDigits)` formats
-      **nothing** for BE/NL/DE/FR/GB; assert that in the spec so nobody "simplifies" it back.
+- [x] Formatter goes through the international form and strips the calling code, on
+      `PhoneRules.format` [PRD D6b/F1] — asserted in `validation.spec.ts` so nobody "simplifies" it
+      back to `AsYouType(country)`, which formats **nothing** for BE/NL/DE/FR/GB.
 - [ ] Specs: NANP disambiguation table (US/CA/Caribbean + the 19 hard cases), `+44` paste
       detection, `+7`/`+39`/`+590` shared dial codes, `+1` vs `+1242`, garbage `+999` → no switch,
       bare national digits → **no switch**, facade caching, and a tuple-shape guard against

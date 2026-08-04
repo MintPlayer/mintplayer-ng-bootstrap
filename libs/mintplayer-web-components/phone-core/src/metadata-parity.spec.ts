@@ -1,11 +1,13 @@
 import { describe, expect, it } from 'vitest';
 import {
   AsYouType,
+  getExampleNumber,
   isValidPhoneNumber,
   parsePhoneNumberFromString,
   validatePhoneNumberLength,
   type CountryCode,
 } from 'libphonenumber-js/max';
+import examples from 'libphonenumber-js/examples.mobile.json' with { type: 'json' };
 import { phoneCountries } from './countries';
 import { metadataLoaders } from './metadata-loaders.generated';
 import { loadPhoneRules } from './validation';
@@ -127,5 +129,53 @@ describe('per-calling-code metadata parity with the full /max set', () => {
     expect(rules!.isValid(national)).toBe(isValidPhoneNumber(national, country));
     expect(rules!.type(national)).toBe(parsePhoneNumberFromString(national, country)?.getType());
     expect(rules!.toE164(national)).toBe(parsePhoneNumberFromString(national, country)?.number);
+  });
+
+  /**
+   * The spreads above are hand-picked, so they prove the mechanism but cannot
+   * prove coverage. This closes that gap by sweeping EVERY selectable country
+   * against `/max`, taking the number from libphonenumber's own example table
+   * instead of a curated list — which is what makes the check exhaustive and
+   * self-maintaining as countries are added upstream.
+   *
+   * One assertion per country would hide how many failed behind the first
+   * failure, so the whole sweep is collected and compared as a list.
+   */
+  it('every selectable country formats, validates and types identically to /max', async () => {
+    const divergences: string[] = [];
+    const skipped: string[] = [];
+
+    for (const { iso2, dialCode } of phoneCountries) {
+      const country = iso2.toUpperCase() as CountryCode;
+      const example = getExampleNumber(country, examples);
+      if (!example) {
+        // No upstream example (a few territories have none) — nothing to compare.
+        skipped.push(iso2);
+        continue;
+      }
+      const national = example.nationalNumber;
+      const rules = await loadPhoneRules(iso2);
+      if (!rules) {
+        divergences.push(`${iso2}: no rules loaded`);
+        continue;
+      }
+
+      const checks: [label: string, ours: unknown, max: unknown][] = [
+        ['format', rules.format(national), formatViaMax(dialCode, national)],
+        ['isValid', rules.isValid(national), isValidPhoneNumber(national, country)],
+        ['isValid(-1)', rules.isValid(national.slice(0, -1)), isValidPhoneNumber(national.slice(0, -1), country)],
+        ['isValid(+1)', rules.isValid(`${national}7`), isValidPhoneNumber(`${national}7`, country)],
+        ['type', rules.type(national), example.getType()],
+        ['toE164', rules.toE164(national), example.number],
+        ['lengthProblem', rules.lengthProblem(national) ?? 'OK', validatePhoneNumberLength(national, country) ?? 'OK'],
+      ];
+      checks
+        .filter(([, ours, max]) => ours !== max)
+        .forEach(([label, ours, max]) => divergences.push(`${iso2} ${label}: ours=${String(ours)} /max=${String(max)}`));
+    }
+
+    expect(divergences, `${divergences.length} divergence(s) across ${phoneCountries.length} countries`).toEqual([]);
+    // Guard the guard: if upstream examples vanished, the sweep would pass vacuously.
+    expect(skipped.length, `skipped for want of an upstream example: ${skipped.join(', ')}`).toBeLessThan(15);
   });
 });
