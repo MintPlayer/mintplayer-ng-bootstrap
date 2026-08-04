@@ -528,6 +528,168 @@ test('S2.5 overlay: click-through, coverage, focus ring', async ({ page, browser
 });
 
 // ---------------------------------------------------------------------------
+// S2.9 — RTL. Follow-up to S1's finding that the UA forces input[type=tel] to
+//        `direction: ltr` even inside dir="rtl", so a logical property on the
+//        overlay and one on the tel input can disagree about which side is start.
+// ---------------------------------------------------------------------------
+
+/** Inked columns in CSS px: min/max tell which SIDE something is drawn on. */
+function inkColumns(img: ReturnType<typeof decodePng>, scale: number, opts: { y0?: number; y1?: number; pick?: (r: number, g: number, b: number) => boolean } = {}) {
+  const { y0 = 3, y1 = img.height - 3, pick } = opts;
+  const cols: number[] = [];
+  for (let x = 0; x < img.width; x++) {
+    for (let y = y0; y < y1; y++) {
+      const i = (y * img.width + x) * img.channels;
+      const [r, g, b] = [img.data[i], img.data[i + 1], img.data[i + 2]];
+      const hit = pick ? pick(r, g, b) : (255 - r > 8 || 255 - g > 8 || 255 - b > 8);
+      if (hit) { cols.push(x); break; }
+    }
+  }
+  if (cols.length === 0) return { min: -1, max: -1, count: 0 };
+  return {
+    min: +(cols[0] / scale).toFixed(1),
+    max: +(cols[cols.length - 1] / scale).toFixed(1),
+    count: +(cols.length / scale).toFixed(1),
+  };
+}
+
+test('S2.9 RTL: direction inheritance, overlay side, reserved padding, picker-icon side', async ({ page, browserName }) => {
+  await boot(page);
+  const e = await env(page);
+  const dirSupport = await page.evaluate(() => ({
+    dirSelector: CSS.supports('selector(:dir(rtl))'),
+    hostDirSelector: CSS.supports('selector(:host(:dir(rtl)))'),
+  }));
+
+  // ---- 1. computed `direction` of every element in the composed tree ----
+  const directions = async (dir: 'ltr' | 'rtl', recipe: string, rich: boolean) => {
+    await page.evaluate(({ d, rec, r }) => {
+      const c = (window as any).buildCase({
+        depth: 2, recipe: rec, rich: r, count: 244, locale: 'nl', labelOrder: 'name-first',
+        tel: true, dir: d, overlay: 'plain', overlayIndex: 20,
+      });
+      c.select.value = 'BE';
+    }, { d: dir, rec: recipe, r: rich });
+    await rAF2(page);
+    return page.evaluate(() => {
+      const c = (window as any).__case;
+      const dirOf = (el: Element | null) => (el ? getComputedStyle(el).direction : null);
+      const box = (el: Element | null) => {
+        if (!el) return null;
+        const r = el.getBoundingClientRect();
+        return { x: +r.x.toFixed(1), right: +r.right.toFixed(1), w: +r.width.toFixed(1) };
+      };
+      return {
+        hostAncestorDir: document.getElementById('host')!.getAttribute('dir'),
+        direction: {
+          phoneHost: dirOf(c.phone),
+          group: dirOf(c.phone.shadowRoot.querySelector('x-group')),
+          selectHost: dirOf(c.xsel),
+          innerSelect: dirOf(c.select),
+          telInput: dirOf(c.tel),
+          overlay: dirOf(c.overlay),
+        },
+        // geometry, relative to the phone host, so "which side" is unambiguous
+        hostX: +c.phone.getBoundingClientRect().x.toFixed(1),
+        hostW: +c.phone.getBoundingClientRect().width.toFixed(1),
+        geom: { select: box(c.select), tel: box(c.tel), overlay: box(c.overlay) },
+        selectPadding: (() => {
+          const cs = getComputedStyle(c.select);
+          return { left: cs.paddingLeft, right: cs.paddingRight, inlineStart: cs.paddingInlineStart, inlineEnd: cs.paddingInlineEnd };
+        })(),
+        selectTextAlign: getComputedStyle(c.select).textAlign,
+        bgPosition: getComputedStyle(c.select).backgroundPosition,
+      };
+    });
+  };
+
+  const fallbackLtr = await directions('ltr', 'none', false);
+  const fallbackRtl = await directions('rtl', 'none', false);
+  const enhancedRtl = e.supportsBaseSelect ? await directions('rtl', 'pairGated', true) : null;
+
+  // ---- 2. reserved padding under RTL: does the text clear the overlay? ----
+  const reserved = async (mode: 'logical' | 'physical' | 'physical-guarded') => {
+    await page.evaluate((m) => {
+      const css = {
+        // What the S2 report recommended: logical padding, logical overlay inset.
+        logical: 'select.form-select { padding-inline-start: 6rem; }',
+        // Naive physical: correct in LTR, wrong side in RTL.
+        physical: 'select.form-select { padding-left: 6rem; }',
+        // S1's conclusion applied here: physical, guarded by direction.
+        'physical-guarded':
+          'select.form-select { padding-left: 6rem; }' +
+          ':host(:dir(rtl)) select.form-select { padding-left: .75rem; padding-right: 6rem; }',
+      }[m];
+      const c = (window as any).buildCase({
+        depth: 2, recipe: 'none', rich: false, count: 244, locale: 'nl', labelOrder: 'name-first',
+        tel: true, dir: 'rtl', overlay: 'plain', overlayIndex: 20, extraCss: css,
+      });
+      c.select.value = 'BE';
+    }, mode);
+    await rAF2(page);
+    const geo = await page.evaluate(() => {
+      const c = (window as any).__case;
+      const s = c.select.getBoundingClientRect(), o = c.overlay.getBoundingClientRect();
+      const cs = getComputedStyle(c.select);
+      return {
+        padding: { left: cs.paddingLeft, right: cs.paddingRight },
+        // overlay position expressed as an offset from BOTH edges of the select
+        overlayFromSelectLeft: +(o.x - s.x).toFixed(1),
+        overlayFromSelectRight: +(s.right - o.right).toFixed(1),
+        overlayW: +o.width.toFixed(1),
+      };
+    });
+    const { img, scale } = await clipShot(page, await cssBox(page, 'select'));
+    return { mode, ...geo, ink: inkColumns(img, scale) };
+  };
+  const reservedLogical = await reserved('logical');
+  const reservedPhysical = await reserved('physical');
+  const reservedGuarded = await reserved('physical-guarded');
+
+  // ---- 3. ::picker-icon side in RTL (pseudo-element: pixel-measured) ----
+  let pickerIcon: any = { skipped: 'no base-select' };
+  if (e.supportsBaseSelect) {
+    const iconProbe = async (dir: 'ltr' | 'rtl') => {
+      await page.evaluate((d) => {
+        const c = (window as any).buildCase({
+          depth: 2, recipe: 'pairGated', rich: true, count: 244, locale: 'nl',
+          tel: true, dir: d,
+          // A pseudo-element has no DOM node, so paint it a colour nothing else uses.
+          extraCss: '@supports (appearance: base-select) { select.form-select::picker-icon { color: #ff0000; } }',
+        });
+        c.select.value = 'BE';
+      }, dir);
+      await rAF2(page);
+      const { img, scale } = await clipShot(page, await cssBox(page, 'select'));
+      const red = inkColumns(img, scale, { pick: (r, g, b) => r > 150 && g < 90 && b < 90 });
+      const selW = await page.evaluate(() => +(window as any).__case.select.getBoundingClientRect().width.toFixed(1));
+      return { dir, selectW: selW, redIcon: red, side: red.min < 0 ? 'not-found' : red.min < selW / 2 ? 'left' : 'right' };
+    };
+    pickerIcon = { ltr: await iconProbe('ltr'), rtl: await iconProbe('rtl') };
+  }
+
+  log('S2.9', browserName, {
+    supportsBaseSelect: e.supportsBaseSelect, dirSupport,
+    fallbackLtr, fallbackRtl, enhancedRtl,
+    reserved: [reservedLogical, reservedPhysical, reservedGuarded],
+    pickerIcon,
+  });
+
+  // The premise from S1, re-measured here.
+  expect.soft(fallbackRtl.direction.selectHost, 'mp-select host inherits rtl across two boundaries').toBe('rtl');
+  expect.soft(fallbackRtl.direction.innerSelect, 'the inner <select> inherits rtl').toBe('rtl');
+  expect.soft(fallbackRtl.direction.telInput, 'the UA forces input[type=tel] to ltr').toBe('ltr');
+  // The overlay follows the host, i.e. the same side as the select's own text.
+  expect.soft(fallbackRtl.geom.overlay!.x > fallbackRtl.geom.select!.x, 'rtl overlay sits on the right').toBe(true);
+  expect.soft(fallbackLtr.geom.overlay!.x - fallbackLtr.geom.select!.x, 'ltr overlay sits on the left').toBeLessThan(4);
+  // Reserved padding: logical and direction-guarded physical must agree; naive
+  // physical must NOT reserve on the side the overlay occupies.
+  expect.soft(reservedLogical.padding.right, 'padding-inline-start resolves to the right in rtl').toBe('96px');
+  expect.soft(reservedPhysical.padding.right, 'naive padding-left reserves the WRONG side in rtl').not.toBe('96px');
+  expect.soft(reservedGuarded.padding.right, ':dir(rtl)-guarded physical reserves the right side').toBe('96px');
+});
+
+// ---------------------------------------------------------------------------
 // S2.6 — accessible names from Chromium's real accessibility tree (CDP)
 // ---------------------------------------------------------------------------
 

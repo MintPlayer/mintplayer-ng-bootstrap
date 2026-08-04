@@ -185,10 +185,30 @@ class XPhone extends HTMLElement {
       .flag-overlay svg { width: 1.25rem; height: .833rem; flex: 0 0 auto; }
       .flag-overlay.cover { background: #fff; border-radius: .375rem 0 0 .375rem; }
       @supports (appearance: base-select) { .flag-overlay.enhanced-off { display: none; } }
+      /* Physical variant, guarded per S1's conclusion about the group's radii. */
+      .flag-overlay.physical { inset-inline-start: auto; left: 1px; right: auto; }
+      :host(:dir(rtl)) .flag-overlay.physical { left: auto; right: 1px; }
+      input[type="tel"] {
+        flex: 1 1 auto; min-width: 0; font: 400 1rem/1.5 system-ui;
+        padding: .375rem .75rem; border: 1px solid #dee2e6; border-radius: .375rem;
+      }
     </style><x-group><x-select></x-select></x-group>`;
     this._select = this.shadowRoot.querySelector('x-select');
+    this._group = this.shadowRoot.querySelector('x-group');
   }
   get xselect() { return this._select; }
+  get tel() { return this._tel ?? null; }
+
+  /** The sibling the group joins the select to — and the element the UA forces to ltr. */
+  addTelInput() {
+    const input = document.createElement('input');
+    input.type = 'tel';
+    input.setAttribute('aria-label', 'Telefoonnummer');
+    input.value = '470 12 34 56';
+    this._group.appendChild(input);
+    this._tel = input;
+    return input;
+  }
 
   addOverlay(mode, index) {
     const span = document.createElement('span');
@@ -209,19 +229,23 @@ customElements.define('x-phone', XPhone);
  *  depth?: 0|1|2, rich?: boolean, recipe?: keyof typeof RECIPES, count?: number,
  *  authorButton?: boolean, overlay?: 'plain'|'cover'|'enhanced-off'|null,
  *  overlayIndex?: number, extraCss?: string, autoRich?: boolean, locale?: string,
- *  labelOrder?: 'iso-first'|'name-first'
+ *  labelOrder?: 'iso-first'|'name-first', tel?: boolean, dir?: 'ltr'|'rtl'|null
  * }} o
  */
 export function buildCase(o = {}) {
   const {
     depth = 2, recipe = 'pairFixed', count = 244, authorButton = true,
     overlay = null, overlayIndex = 0, extraCss = '', autoRich = false, locale = 'nl',
-    labelOrder = 'iso-first',
+    labelOrder = 'iso-first', tel = false, dir = null,
   } = o;
   const rich = autoRich ? supportsBaseSelect() : (o.rich ?? true);
   const items = countries(locale).slice(0, count);
   const host = document.getElementById('host');
   host.innerHTML = '';
+  // `dir` on an ANCESTOR of the host element, not on the component: the direction
+  // has to cross both shadow boundaries the way it will in a real page.
+  if (dir) host.setAttribute('dir', dir);
+  else host.removeAttribute('dir');
 
   let xsel;
   if (depth === 0) {
@@ -252,8 +276,11 @@ export function buildCase(o = {}) {
   host.appendChild(phone);
   xsel = phone.xselect;
   xsel.configure({ items, rich, recipe, authorButton, extraCss, labelOrder });
+  const telInput = tel ? phone.addTelInput() : null;
   const ov = overlay ? phone.addOverlay(overlay, overlayIndex) : null;
-  window.__case = { phone, xsel, select: xsel.select, overlay: ov, root: phone, items, rich };
+  window.__case = {
+    phone, xsel, select: xsel.select, overlay: ov, tel: telInput, root: phone, items, rich,
+  };
   return window.__case;
 }
 

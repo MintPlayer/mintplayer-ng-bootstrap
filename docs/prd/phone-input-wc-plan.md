@@ -7,9 +7,9 @@ feature is finished (pushes are billed and cancel in-flight runs).
 
 | Milestone | State |
 |---|---|
-| S — spikes (gate) | ⬜ |
-| M1 — flags sub-entry | ⬜ |
-| M2 — phone-core sub-entry | ⬜ |
+| S — spikes (gate) | **S1 ✅ S3 ✅ S4 ✅ S5 ✅ S6 ✅ S7 ✅ S8 ✅ S2 ✅** (RTL sub-case running) · **S9 ⏳** (per-country metadata) |
+| M1 — flags sub-entry | 🟡 pipeline built + verified by S6; **only 5 sample flags vendored — M1 = vendor the remaining ~239** |
+| M2 — phone-core sub-entry | 🟡 `countries.ts` + lazy validator facade built by S3; dial-code / e164 / format modules + specs outstanding |
 | M3 — mp-input-group + the group contract in mp-select | ⬜ |
 | M4 — mp-select rich options (base-select PE) | ⬜ |
 | M5 — mp-phone-input | ⬜ |
@@ -28,13 +28,19 @@ feature is finished (pushes are billed and cancel in-flight runs).
   `libs/mintplayer-web-components/**/*.generated.ts` ignore rule; the vendored
   `flags/src/assets/*.svg` are **committed sources** (like `.scss`), not artifacts.
 - **Dynamic imports in lib source must be static string literals.** A `@vite-ignore`
-  template-literal import survives into the published `.mjs` and hard-fails esbuild consumers
-  (measured). The generated loader map exists to enforce this. Add the rule to CLAUDE.md's WC
-  gotchas in M1.
+  template-literal import survives into the published `.mjs` and then either hard-fails esbuild
+  consumers **or — worse — silently globs a whole directory into their bundle** (S6 measured 47
+  chunks pulled in). The generated loader maps exist to enforce this. Add **both** modes to
+  CLAUDE.md's WC gotchas in M1.
 - **Nx flakes on Windows:** `NX_ISOLATE_PLUGINS=false NX_DAEMON=false`; vitest wants
-  `--pool=threads`.
-- **No `:host` declaration of `--mp-group-*` in mp-select** — it would defeat the inherited
-  value (shadow-migration trap).
+  `--pool=threads`. A three-engine Playwright run can also report "2 errors were not a part of any
+  test" and exit 1 purely from a WebKit worker taking the full teardown grace — not a failure.
+- ~~**No `:host` declaration of `--mp-group-*` in mp-select**~~ — **corrected by S1**: an outer
+  `::slotted()` declaration beats the inner `:host` rule, so the contract survives a control that
+  declares the property. Consuming with `var()` fallbacks is still the right style, just not for
+  the reason first written.
+- **No backticks inside a Lit `css` template's CSS comments** — they terminate the JS template
+  literal. Hit twice while building the S1 spike.
 - **jsdom:** `sharedInternals()` degrades to null; lit `isServer` is TRUE under vitest — never
   gate light-DOM enhancement on it.
 - **New sub-entrypoints need zero build config:** `<dir>/index.ts` + `<dir>/src/index.ts` is the
@@ -57,42 +63,47 @@ files created in M8; the sweep (M10) is last, once.
 
 Throwaway files under `docs/prd/_spike-phone-input-*`, deleted after verdicts are recorded.
 
-- [ ] S1 — group contract: `::slotted()` positional rules + `--mp-group-*` inheritance into a
+- [x] S1 — group contract: `::slotted()` positional rules + `--mp-group-*` inheritance into a
       generated `unsafeCSS` stylesheet; `-1px` overlap + `:focus-within` lift; nested inside a
       second shadow root. **Gate: on failure, adopt the PRD §7 fallback before starting M3/M5.**
-- [ ] S2 — `appearance: base-select` with SVG options in a shadow root; Firefox text-only
-      fallback layout parity.
-- [ ] S3 — `import('libphonenumber-js/min')` chunking from the published lib; esbuild + Vite +
+- [x] S2 — `appearance: base-select` with SVG options in a shadow root; Firefox text-only
+      fallback layout parity. **PASS**; D3 amended four ways (PRD §9.4). RTL sub-case running.
+- [ ] S9 — per-country metadata chunks vs one 57 KB `/max` chunk, incl. the country-switch reformat
+      path [PRD D6a provisional, D17].
+- [x] S3 — `import('libphonenumber-js/min')` chunking from the published lib; esbuild + Vite +
       plain-Node consumption (repeat the asset-prototype matrix with the real package).
-- [ ] S4 — `Intl.DisplayNames` SSR/hydration parity in the three demo SSR pipelines.
-- [ ] S5 — FACE-in-FACE isolation (inner mp-select contributes nothing to the outer form) +
+- [x] S4 — `Intl.DisplayNames` SSR/hydration parity in the three demo SSR pipelines.
+- [x] S5 — FACE-in-FACE isolation (inner mp-select contributes nothing to the outer form) +
       two-tab-stop focus model + `formDisabledCallback` fan-out.
-- [ ] S6 — flag pipeline dress rehearsal with 3 real vendored SVGs end-to-end.
+- [x] S6 — flag pipeline dress rehearsal with 3 real vendored SVGs end-to-end.
 - [ ] Record all verdicts in PRD §9; delete spike files. **Commit.**
 
 ## M1 — `flags` sub-entrypoint [PRD §5.4, D4]
 
-- [ ] `tools/scripts/refresh-flags.mjs` — copy 3×2 SVGs for the 244 dial-code countries from the
+- [x] `tools/scripts/refresh-flags.mjs` — copy 3×2 SVGs for the 244 dial-code countries from the
       `country-flag-icons` devDependency into `libs/mintplayer-web-components/flags/src/assets/`,
       preserving the MIT notice (`flags/README.md`); idempotent, diffable.
-- [ ] Add `country-flag-icons` to root `package.json` devDependencies; run the refresh script;
-      commit the vendored SVGs.
-- [ ] `tools/scripts/build-flag-loaders.mjs` (or a third pattern inside
+- [x] Add `country-flag-icons` to root `package.json` devDependencies.
+- [ ] **Run the refresh script for all ~244 countries** and commit the vendored SVGs — only
+      `be fr rs sa us` are in the tree (S6 kept the spike set small). `--only=` does NOT prune, so
+      clear `src/assets/` first if the set ever shrinks.
+- [x] `tools/scripts/build-flag-loaders.mjs` (or a third pattern inside
       `build-web-components.mjs`, wired into the `codegen-wc` target) — scan `flags/src/assets/*.svg`,
       emit `flags/src/flag-loaders.generated.ts`: `CountryCode` union from filenames + static
       `flagLoaders` map of `?raw` dynamic imports; reuse `writeIfChanged`.
-- [ ] `flags/index.ts` + `flags/src/index.ts` — `loadFlag(code)` (cached
+- [x] `flags/index.ts` + `flags/src/index.ts` — `loadFlag(code)` (cached
       `Map<string, Promise<string>>`, lowercases, unknown → `undefined`), re-export types.
-- [ ] `flags/src/flags.spec.ts` — loader resolves a known flag string, caches, unknown code path.
+- [x] `flags/src/flags.spec.ts` — loader resolves a known flag string, caches, unknown code path.
 - [ ] CLAUDE.md WC gotchas: add the static-string-literal dynamic-import rule.
 - [ ] Verify by `nx build mintplayer-web-components` + inspecting `dist` chunk-per-flag once
       (this is the S6 rehearsal if S ran first). **Commit.**
 
 ## M2 — `phone-core` sub-entrypoint [PRD §5.5, D5, D6]
 
-- [ ] Add `libphonenumber-js` + `intl-tel-input` to `@mintplayer/web-components`
-      `package.json` dependencies (root package.json too).
-- [ ] `phone-core/src/countries.ts` — typed view over `intl-tel-input/data` tuples; localized
+- [x] Add `libphonenumber-js` + `intl-tel-input` to `@mintplayer/web-components`
+      `package.json` dependencies (root package.json too) — **and `external` in `vite.config.mts`**
+      per PRD D5b (bundling them makes a consumer without them hit TS2307 anyway).
+- [x] `phone-core/src/countries.ts` — typed view over `intl-tel-input/data` tuples; localized
       name via `Intl.DisplayNames`; `Intl.Collator` ordering; `preferred/only` filtering.
 - [ ] `phone-core/src/dial-code.ts` — `countryForDialString()` with priority + areaCodes NANP
       resolution; longest-prefix match. **Include the S8.1 tie-break:** a country *with*
@@ -103,7 +114,7 @@ Throwaway files under `docs/prd/_spike-phone-input-*`, deleted after verdicts ar
       string comparison — RU `8001234567` becomes `+7001234567` instead of `+78001234567`. Note
       this makes E.164 assembly need the lazy validator, so `toE164` is async or the component
       keeps a digits+country value internally until the chunk resolves — decide in M5 and record it.
-- [ ] `phone-core/src/validation.ts` — `loadPhoneValidator()` lazy facade (the ONLY module that
+- [x] `phone-core/src/validation.ts` — `loadPhoneValidator()` lazy facade (the ONLY module that
       names libphonenumber-js; static import string, **`libphonenumber-js/max`** per PRD D6a).
 - [ ] `phone-core/src/format.ts` — formatter going through the international form and stripping the
       calling code [PRD D6b/F1]. A plain `AsYouType(country).input(nationalDigits)` formats
@@ -130,12 +141,29 @@ Throwaway files under `docs/prd/_spike-phone-input-*`, deleted after verdicts ar
 - [ ] Verify against the scheduler demo's four-select group (§1.2) — corners + flex now correct.
 - [ ] **Commit.**
 
-## M4 — `mp-select` rich options [PRD §5.3, D3; gated by S2]
+## M4 — `mp-select` rich options [PRD §5.3, D3; S2 passed 9/9 × 3 engines]
 
-- [ ] `appearance: base-select` opt-in path with per-option render callback (repo render-callback
-      convention) for `.options` mode; feature-detect, text-only fallback otherwise.
+- [ ] The `@supports (appearance: base-select)` recipe lives in **`mp-select`'s own stylesheet**
+      (D3 amendment 4 — a rule pushed from `mp-phone-input` cannot reach the inner `<select>` at
+      all). Use `select.form-select` specificity, **not** bare `select` (Bootstrap's class wins),
+      and apply it to **both** the select and `::picker(select)` (the select alone leaves the picker
+      native). Copy the measured recipe from PRD §5.3.
+- [ ] **Gate every reconciliation rule behind the same `@supports` — release blocker.** Ungated,
+      the caret-suppression rules delete Firefox's dropdown arrow entirely (pixel-measured). Also
+      needs `white-space: nowrap` on the flex closed face, or the localized name wraps and the
+      control grows 38 → 62 px.
+- [ ] Author `<button><selectedcontent></selectedcontent></button>` explicitly — WebKit's
+      UA-generated button mirrors nothing.
+- [ ] Per-option render callback for `.options` mode (repo render-callback convention);
+      feature-detect, text-only fallback otherwise. Fallback label order **`Name +dial (ISO)`** —
+      ISO-first makes native country-name typeahead unreachable (measured in all 3 engines).
 - [ ] Keep the native `<select>` semantics untouched in the fallback; no custom listbox.
-- [ ] Spec: rich content renders where supported (guarded), fallback emits plain text labels.
+- [ ] Check the S2 latent bug: rich options make the AX name space-separated but
+      `option.textContent` run-together (`"Ascension+1"`), and `collectSlotItems` uses
+      `opt.textContent?.trim()`.
+- [ ] Export `MpSelectOptgroup` + `MpSelectItem` from `select/src/index.ts` (barrel gap).
+- [ ] Spec: rich content renders where supported (guarded), fallback emits plain text labels,
+      typeahead reaches a country by name, exactly one `change` on commit.
 - [ ] **Commit.**
 
 ## M5 — `mp-phone-input` [PRD §5.6, §5.7, §6, D7, D8, D9]
@@ -146,7 +174,16 @@ Throwaway files under `docs/prd/_spike-phone-input-*`, deleted after verdicts ar
 - [ ] Value model: E.164 `value` ⇄ (`country`, national digits); empty input ⇒ `null` form
       value; `formValue/formReset/formRestore/formValidityAnchor` per the `mp-select` shape.
 - [ ] Country picker feed: `phone-core` countries → `mp-select` `.options` (+ rich render
-      callback from M4); closed-face overlay (flag + ISO, `aria-hidden`, `pointer-events: none`).
+      callback from M4); closed-face overlay (flag + ISO, `aria-hidden`, `pointer-events: none`)
+      in **`mp-phone-input`'s own** shadow root with `:host { position: relative }`, **gated off**
+      under `@supports (appearance: base-select)` or supporting engines draw two flags. Reserve
+      generous padding for it (its width is engine-dependent: 68.4 px vs 70.2 px WebKit), and
+      remember it only aligns while the select is the group's first child.
+- [ ] **Pin the country picker's width** via `mp-input-group` [PRD §5.3]: native `<select>` sizes to
+      its widest option, base-select to the selected content (320 → 152/157 px). Pinned, the jump
+      is 0 px.
+- [ ] Country change: keep the digits, reload rules, reformat, re-validate — never clear or
+      truncate [PRD D17].
 - [ ] Flags: placeholder box first, `loadFlag()` swap; warm visible set on first open.
 - [ ] Validator: `loadPhoneValidator()` on first focus/input or non-empty initial value;
       structural checks until resolved; formatting via `phone-core/format` + `setFormValidity` from

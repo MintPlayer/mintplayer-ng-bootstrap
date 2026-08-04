@@ -224,26 +224,81 @@ control's ring isn't clipped by the `-1px` margin overlap.
 
 Native `<option>` renders text only, so "the flag inside the select" needs one of:
 
-**D3 — progressive enhancement via customizable select (`appearance: base-select`),** the
-Chromium-shipped customizable-`<select>` mechanism that allows arbitrary markup in options and a
-`<selectedcontent>` mirror in the closed state. Where supported, options render
-`flag SVG + localized name (+dial code)`; where not (Firefox, per current support), options fall
-back to plain text — `BE +32 België` — and the **closed** state still shows the flag everywhere,
-because `mp-phone-input` overlays the selected flag + ISO code over the select's collapsed face
-(the proven intl-tel-input pattern: the native select stays fully functional and accessible; the
-overlay is `aria-hidden` and `pointer-events: none`). No custom listbox is built — `mp-select`
-keeps its native `<select>` semantics, roving/typeahead and screen-reader behaviour for free.
+**D3 — progressive enhancement via customizable select (`appearance: base-select`),** which allows
+arbitrary markup in options and a `<selectedcontent>` mirror in the closed state. Where supported,
+options render `flag SVG + localized name + dial code`; where not, options fall back to plain text
+and `mp-phone-input` overlays the selected flag + ISO code on the collapsed face (the intl-tel-input
+pattern: the native select stays fully functional and accessible; the overlay is `aria-hidden` and
+`pointer-events: none`). No custom listbox is built — `mp-select` keeps its native `<select>`
+semantics, so typeahead and screen-reader behaviour come free.
 
-Spike S2 verifies: base-select inside a shadow root, in the repo's Playwright browsers, and that
-the text-only fallback degrades without layout jumps.
+**S2 confirms D3 and amends it in four ways (§9.4; Chromium 148, Firefox 150, WebKit 26.4):**
+
+1. **It is 2 engines of 3, and the fallback is Firefox-only.** WebKit 26.4 supports
+   `appearance: base-select`, `::picker(select)` **and** `<selectedcontent>` — the first draft's
+   "Firefox and WebKit" was already out of date. Therefore **feature-detect, never a browser list**
+   (`CSS.supports('appearance','base-select')` / `@supports`), so the gate flips itself when Firefox
+   ships. Verified working at shadow depth 0, 1 **and 2** — the nesting this component needs.
+2. **The overlay must be gated OFF where base-select works**, or Chromium and WebKit draw a second
+   flag beside the `<selectedcontent>` one. Measured: overlay `display` = `none`/`flex`/`none`.
+3. **Every Bootstrap-reconciliation rule must be `@supports`-gated, and this is a release blocker,
+   not tidiness.** Ungated, the recipe *deletes Firefox's dropdown arrow*: pixel-measured, the right
+   44 px of the closed face fell to 1 ink run of 2 px — the border alone — because the rules that
+   suppress Bootstrap's `background-image` caret (correct when the UA supplies `::picker-icon`) also
+   run in the engine that has no `::picker-icon`. Two more conflicts with pixel evidence: ungated in
+   a supporting engine gives **two carets** (3 runs / 21 px vs 2 / 14), and `display: flex` without
+   `white-space: nowrap` **wraps the localized name and grows the control 38 px → 62 px**, which a
+   native `<select>` never does.
+4. **The CSS must live inside `mp-select`'s own shadow root** — which follows from S1 and is now
+   load-bearing rather than incidental. A `::slotted(mp-select) { appearance: base-select }` pushed
+   from `mp-phone-input` would lose to `.form-select` in the inner tree, and no outer `!important`
+   reaches the inner `<select>` at all. `mp-phone-input` legitimately owns only the overlay, in its
+   own shadow root, needing just `:host { position: relative }`.
+
+Two specificity/completeness requirements, both measured: Chrome's own documented snippet
+`select, ::picker(select) { appearance: base-select }` **loses the cascade** to Bootstrap's
+`.form-select { appearance: none }` (a class beats a type selector), so it must be
+`select.form-select`; and applying it to the select *alone* flips the closed face while leaving the
+picker native (`optionsLaidOut: 0`). Both parts are required. Also **always author
+`<button><selectedcontent></selectedcontent></button>`** — WebKit's UA-generated button mirrors
+nothing, Chromium's does.
+
+**Two API consequences that are not CSS:**
+
+- **The picker needs an explicit width from `mp-input-group`.** A native `<select>` sizes to its
+  *widest* option; a base-select button sizes to the *selected* content — measured 320 px native vs
+  152 px (Chromium) / 157 px (WebKit) rich, i.e. a **width jump, not a height jump**. With a pinned
+  width the jump is exactly **0 px** and the text baseline is stable (first ink at x = 13–14 px in
+  every engine and mode). So pin it.
+- **The fallback option text must read `Name +dial (ISO)`, not `BE +32 België`.** Native typeahead
+  prefix-matches the option's text, so ISO-first makes typing a country name unreachable — measured
+  in all three engines: `germ` reaches Germany with name-first and never with ISO-first. This does
+  not affect the user-requested closed-face shape (flag + ISO code), which stays.
+
+Everything else came back clean: keyboard open/arrows/Escape and exactly **one** `change` event on
+commit; typeahead reaching Germany *through* the inline SVG; the overlay's pierced hit path landing
+`pointerdown` **and** `mousedown` on the `<select>` with the focus ring intact in all three engines;
+and Chromium CDP reporting `role=combobox` + `role=option` with correct `nameFrom=contents` names,
+so rich options need no extra `aria-label`s.
+
+**Perf: no virtualization and no lazy flag rendering needed.** 244 options with real-shaped flag
+SVGs build in **20 ms** (Chromium; 13 ms Firefox, 18 ms WebKit) versus 8 ms for text-only, and open
+costs one extra 16.7 ms frame. Well inside budget.
 
 Changes to `mp-select` proper stay minimal and are all additive:
 - consume `--mp-group-*` (§5.2);
 - accept rich option content in `.options` mode (an optional `html`-producing render callback per
   option, following the repo's render-callback convention — slots can't be per-option);
+- carry the `@supports`-gated base-select recipe in its own stylesheet (D3, amendment 4);
 - fix the barrel gap found in review: `select/src/index.ts` exports `MpSelectSize`,
   `MpSelectOption`, `SelectChangeEventDetail` but not `MpSelectOptgroup`/`MpSelectItem`, so
   consumers can't type a grouped list today.
+
+> **Latent bug to check while in there (found by S2):** with rich option content the accessibility
+> name is space-separated (`"Ascension Island +1"`) but `option.textContent` is **not**
+> (`"Ascension+1"`), and `mp-select`'s `collectSlotItems` derives its label from
+> `opt.textContent?.trim()`. So a slotted rich option would feed a run-together label into
+> `.options` mode. Verify when the render callback lands.
 
 ### 5.4 Flags — vendored `country-flag-icons`, lazy loader map (D4)
 
@@ -577,6 +632,24 @@ DOM-free reference implementation exists in the spike harness:
 No shadow-DOM or `type="tel"` surprises: `selectionStart`/`setSelectionRange` behave identically
 inside a shadow root in all three engines.
 
+**D17 — changing the country reformats what is already typed; it never clears it.** The digits the
+user entered are the durable state; the formatting and the rules are per-country and therefore
+disposable. So on country change: keep the digit string exactly as-is, load that country's rules
+(one small chunk under S9, already-loaded metadata otherwise), reformat, and re-run validation.
+Three consequences worth stating because each is a bug if missed:
+
+- **Validity legitimately flips.** A number valid for BE can be invalid for NL. The `error-text`
+  channel updates and the FACE validity follows; this is correct behaviour, not a glitch to
+  suppress.
+- **The digits survive even when the new formatting is shorter or longer.** Never truncate to the
+  new country's max length on switch — that silently destroys user input. Let it read as invalid
+  (D6a/S9 rules) and let the user fix it.
+- **An in-flight rules chunk must not blank the field.** Keep displaying the current text while the
+  chunk loads and reformat when it lands; formatting is cosmetic, so the async gap is harmless.
+  Validity stays `undefined` until the rules resolve, exactly as §5.5 already specifies for the
+  first load. The caret rule (D10) anchors on digit *count*, so a reformat arriving mid-edit does
+  not move the user's caret.
+
 **D11 — when `+XX` detection runs.** S8.2 measured a UX wrinkle: driving detection from the
 *validator* leaves the country at `us` for every prefix of `+14165551234` and flips to `ca` only on
 the final digit, because libphonenumber will not resolve until the number is valid. The fix is not
@@ -751,7 +824,7 @@ element in all three (conformance-registry enforced).
 | # | Question | Pass criterion | Verdict |
 |---|---|---|---|
 | S1 | Does the §5.2 two-channel group contract work? `::slotted(:not(:first-child))` positional matching + `--mp-group-*` inheritance into a *generated* `unsafeCSS` stylesheet, incl. the `-1px` border overlap + `:focus-within` lift | Corner pairing + flex visually correct for `input+span+mp-select` in both engines, nested inside another shadow root | **PASS, with two amendments to D2** — 36/36 in Chromium + Firefox + WebKit (§9.1) |
-| S2 | `appearance: base-select` with SVG-bearing options inside a shadow root; graceful text-only fallback | Rich options in Chromium; identical layout metrics in the Firefox fallback | |
+| S2 | `appearance: base-select` with SVG-bearing options inside a shadow root; graceful text-only fallback | Rich options in Chromium; identical layout metrics in the Firefox fallback | **PASS 9/9 × 3 engines, D3 amended four ways** — incl. one release blocker, §9.4 (RTL case pending) |
 | S3 | `import('libphonenumber-js/max')` from the published lib: chunking in our Vite build, esbuild + Vite consumers re-splitting from node_modules, plain-Node resolution | One lazy chunk; all three consumers resolve; Node imports without `document` | **PASS 6/6** — but bundling rejected in favour of `external` (D5b), §9.3 |
 | S4 | `Intl.DisplayNames` SSR/hydration parity in the three demo SSR pipelines | No hydration mismatch on country names with an explicit locale; documented behaviour with browser-locale default | **PASS only because the names are never SSR'd** — criterion reworded, see §9.2 |
 | S5 | FACE-in-FACE isolation + two-tab-stop focus model | Inner `mp-select` contributes nothing to the outer form's `FormData`; `formDisabledCallback` fans out to both controls; Tab order select → input | **PASS 111/111** in three engines — five new obligations D12–D16, §9.3 |
@@ -862,6 +935,33 @@ import as the demos, plus reading the demos' actual entry points. The conclusion
 components `entry-server.tsx` splices DSD for — which I verified independently and a build run
 would not change. One demo SSR build with a temporary `mp-phone-input` on a page would close it
 literally; it is not on the critical path.
+### 9.4 S2 — flags inside the country picker: **PASS**, D3 amended four ways
+
+Harness: `docs/prd/_spike-phone-input-s2/` (real Bootstrap `.form-select` compiled from
+`_styles/form-select.styles.scss`, custom elements + `adoptedStyleSheets`, 2-deep shadow nesting,
+plus a hand-rolled PNG decoder for pixel evidence). 9 assertions × **Chromium 148.0.7778.96 /
+Firefox 150.0.2 / WebKit 26.4**.
+
+The headline is that the support matrix moved: **WebKit 26.4 supports base-select, `::picker(select)`
+and `<selectedcontent)`**, so rich options work in 2 of 3 engines and the overlay is a Firefox-only
+fallback. All four amendments are in §5.3; the release blocker is amendment 3 — an ungated recipe
+silently deletes the dropdown arrow for every Firefox user, measured as the right 44 px of the closed
+face collapsing to a single 2 px ink run (the border).
+
+Measurement notes worth keeping, because each one would otherwise cost an afternoon: the closed-face
+change is a **width** jump (320 → 152/157 px) that pinning removes entirely (0 px); Bootstrap
+transitions `box-shadow` over 150 ms, so a screenshot two frames after focus reads as "no focus
+ring" when the ring is fine; headless Firefox never opens the popup by keyboard (a measurement limit,
+not a defect); headless WebKit paints no text at all for a *native* `<select>` (irrelevant, since
+WebKit takes the rich path); the overlay's own width is engine-dependent (68.4 px Chromium/Firefox vs
+70.2 px WebKit — ISO glyph advance), so reserve generous padding rather than a tight hard-coded
+value; and the overlay aligns only while the select is the group's first child.
+
+**Open sub-case:** RTL was not covered. Given S1's finding that the UA forces `input[type=tel]` to
+`ltr` inside `dir="rtl"` — and the overlay sits right next to that input — the overlay side,
+`padding-inline` and `::picker-icon` side are being measured now. If they need physical properties
+under `:dir()` guards like the group's radii did, consistency with §5.2 wins over elegance.
+
 ## 10. Testing
 
 - `phone-core`: pure vitest — NANP disambiguation table, dial-string detection, E.164 round-trip,
