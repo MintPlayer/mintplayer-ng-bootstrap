@@ -404,6 +404,23 @@ chunk resolves, the component performs structural checks only (digits/`inputmode
 `updated()` (never only from event handlers), the `mp-select` precedent
 (`select/src/components/mp-select.ts`).
 
+> **D6a is provisional pending spike S9.** The user pointed out that by the time a number is being
+> typed **the country is already chosen**, so only that one country's formats and rules are ever
+> needed — and country *detection* from a `+XX` prefix is already the eager table's job (D5a/D11),
+> not libphonenumber's. There is therefore no moment at which all 244 countries' validation rules
+> are needed at once. S9 tests generating **one small metadata chunk per country** at build time
+> (the same static-loader-map pattern the flags already use) against `libphonenumber-js/core`,
+> which accepts metadata as an argument. If it holds, first-use drops from 57 KB gzip to a few KB
+> **and** the `/min`-vs-`/max` trade-off below dissolves, because full-precision rules for one
+> country are cheap. The counter-argument S9 must also weigh: per-country generation couples our
+> build to libphonenumber's internal metadata shape.
+>
+> (The cheaper-looking alternative — deriving a simple per-country *mask* table — was considered
+> and rejected without a spike: S8 already measured what naive per-country rules get wrong, from
+> Italy's significant leading zero to Russia's `8`-prefixed toll-free numbers to type-dependent
+> lengths. Chunked real metadata gives libphonenumber's correctness at mask-like cost, so it
+> dominates.)
+
 **D6a — the metadata set is `/max`, not `/min` (reversed by S8.4).** The first draft chose `/min`
 on size alone. Measured over all 244 countries' example numbers, that choice is a user-visible
 defect:
@@ -741,6 +758,7 @@ element in all three (conformance-registry enforced).
 | S6 | Flag pipeline dress rehearsal: vendor 3 real flags, codegen the loader map, build, consume | Mirrors the asset prototype's verdicts on the real repo files (expected to pass — the prototype already did this with fabricated SVGs) | **PASS 8/8** — plus a licensing gap and a worse guard-rail mode found, §9.3 |
 | S7 | `AsYouType` caret preservation while reformatting (added mid-gate) | Caret never jumps; Backspace over a separator still deletes a digit; works in a shadow root | **PASS** — bug reproduced and fixed; rule normative in D10 |
 | S8 | Dial-string detection, NANP disambiguation, E.164 round-trip, metadata-set choice (added mid-gate) | Correct country for the hard cases; round-trip stable; evidence-based metadata set | **PASS, and it reversed two PRD choices** (D5a, D6a) |
+| S9 | Per-country metadata chunks vs one 57 KB `/max` chunk — the country is always known before a number is typed (added mid-gate, user's observation) | Single-country metadata is functionally identical to full `/max` for formatting, validity, `getType()` and the E.164 round-trip; per-country chunk + `/core` beats 57 KB gzip; maintenance risk acceptable | *running* |
 
 ### 9.1 S1 — the group contract: **PASS**, after two refutations
 
