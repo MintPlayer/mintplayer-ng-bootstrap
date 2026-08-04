@@ -1,8 +1,18 @@
 # PRD — `mp-input-group` + `mp-phone-input` web components + cross-framework wrappers
 
-Status: **Planned** (2026-08-03) — investigation complete (five parallel agents: repo patterns,
-reference repo, flag/data research, asset-bundling prototype in an isolated worktree, i18n/demo
-conventions). Spikes not yet run; no branch or PR exists yet.
+Status: **Spike gate passed; implementation not started** (2026-08-04) on `feat/phone-input-wc`,
+branched from `master` at `62642ddd`, draft **PR [#399](https://github.com/MintPlayer/mintplayer-ng-bootstrap/pull/399)**.
+Design investigation was five parallel agents (repo patterns, reference repo, flag/data research, an
+asset-bundling prototype in an isolated worktree, i18n/demo conventions); the gate was **S1–S8, all
+PASS** across Chromium 148 / Firefox 150 / WebKit 26.4 — verdicts and evidence in §9.1–§9.4. **S9 is
+still open** (per-country metadata, §5.5 D6a), the only decision not yet settled.
+
+The gate paid for itself: it amended or reversed the design in six places — the metadata set (D6a),
+the country table's role (D5a), the formatter (D6b/F1), E.164 assembly (D6c), the `::slotted()`
+mechanism (§5.2 D2), and the RTL property choice (§5.3) — and two of those would have shipped as
+user-visible defects rather than being caught in review: Firefox losing its dropdown caret entirely
+(§9.4), and a `<fieldset disabled>` leaving both inner controls keyboard-operable (§9.3, D12). The
+locked composition architecture came through unchanged and the §7 fallback is retired.
 Plan: [phone-input-wc-plan.md](./phone-input-wc-plan.md)
 Reference: the user-linked repo `priyashpatil/phone-input-by-country` (cloned at
 `C:\Repos\phone-input-by-country`) was analysed and turned out to be a ~4.5 KB UX sketch — no
@@ -788,17 +798,21 @@ in this PRD's status block.
 - `mp-input-group` itself is presentational — `role="group"` only when the consumer names it
   (`aria-label`), else no role.
 
-## 7. #1 risk — read before implementing
+## 7. #1 risk — **cleared by S1**, but read this before implementing
 
-**The locked composition (D-lock 1) builds the component on cross-shadow-boundary styling.** The
-repo has been burned by this class twice (the navbar item-styling problem; the pickers ended up
-hand-drawing their input-group in-shadow). The mitigation is the two-channel contract of §5.2
-plus spike S1 as a **gate**: if S1 fails in either engine — e.g. `::slotted()` positional
-matching or custom-property inheritance into `mp-select`'s generated stylesheet behaves
-differently than specified — the fallback (pre-agreed here so the branch doesn't stall) is that
-`mp-phone-input` renders the group chrome itself in its own shadow root (the declined
-alternative) while `mp-input-group` still ships for light-DOM consumers. That fallback changes
-no public API of either element.
+**The locked composition (D-lock 1) builds the component on cross-shadow-boundary styling**, a class
+this repo has been burned by twice (the navbar item-styling problem; the pickers ended up hand-drawing
+their input-group in-shadow). S1 was the gate for it and **passed 36/36 in three engines** (§9.1), so
+the pre-agreed fallback — `mp-phone-input` drawing the group chrome itself, the declined
+single-shadow-root alternative — is **retired and must not be implemented**.
+
+What replaces the risk is a hard constraint, because S1 also showed the naive form of the contract
+silently does nothing: the group's geometry only reaches a slotted child through **`!important`
+physical declarations under `:dir()` guards** (§5.2 D2), the inner control is reachable only through
+**inherited custom properties** (never a rule from the outer tree), and the base-select recipe must
+live **inside `mp-select`** (§5.3 amendment 4). Deviating from any of the three reintroduces the
+original problem in a form that *looks* like it works — the selector matches while the declaration
+loses. D2a records the measured cascade order that explains why.
 
 | Risk | Mitigation |
 |---|---|
