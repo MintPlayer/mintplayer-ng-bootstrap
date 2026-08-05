@@ -1,11 +1,11 @@
 # PRD — `mp-input-group` + `mp-phone-input` web components + cross-framework wrappers
 
-Status: **Spike gate passed; implementation not started** (2026-08-04) on `feat/phone-input-wc`,
+Status: **Implemented** (2026-08-05) on `feat/phone-input-wc`,
 branched from `master` at `62642ddd`, draft **PR [#399](https://github.com/MintPlayer/mintplayer-ng-bootstrap/pull/399)**.
 Design investigation was five parallel agents (repo patterns, reference repo, flag/data research, an
 asset-bundling prototype in an isolated worktree, i18n/demo conventions); the gate was **S1–S9, all
-PASS** across Chromium 148 / Firefox 150 / WebKit 26.4 — verdicts and evidence in §9.1–§9.4. **S9 passed too, after a
-correction**: per-*calling-code* metadata slices ship (§5.5 D6a-alt), cutting first use from 56.8 KB
+PASS** across Chromium 148 / Firefox 150 / WebKit 26.4 — verdicts and evidence in §9.1–§9.4. All ten milestones are
+done and the as-built record is §13. **S9 passed too, after a correction**: per-*calling-code* metadata slices ship (§5.5 D6a-alt), cutting first use from 56.8 KB
 gzip to ~16.6 KB while keeping full `/max` precision.
 
 The gate paid for itself: it amended or reversed the design in six places — the metadata set (D6a),

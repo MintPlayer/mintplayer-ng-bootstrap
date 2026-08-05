@@ -1,9 +1,15 @@
 # Plan — `mp-input-group` + `mp-phone-input` web components + wrappers
 
 PRD: [phone-input-wc.md](./phone-input-wc.md)
-Status: **Spike gate CLOSED (2026-08-04); implementation starting at M1.** On `feat/phone-input-wc`,
-draft PR #399. Commit per milestone (commits are free); push only when the whole feature is finished
-(pushes are billed and cancel in-flight runs).
+Status: **Implemented (2026-08-05).** Spike gate S1–S9 closed, M1–M10 done, plus M9b for the two
+defects the user found by running it. On `feat/phone-input-wc`, draft PR #399, pushed. Local sweep:
+all 14 test projects green (1763 web-components, 543 ng-bootstrap, 97 demo, 50 api) and the a11y
+gate green for the phone-input routes.
+
+Outstanding, none of it blocking a review: `D-open-1` (suppress the rich picker on coarse pointers)
+and its device pass **S10**; the human-only checks in M10; and one pre-existing defect this branch
+did not cause — `/enterprise/query-builder` trips `aria-required-children` on `mp-datatable`
+(`tr[role="row"]` with no cells) **locally but not in CI**, which wants its own issue.
 
 | Milestone | State |
 |---|---|
@@ -18,7 +24,9 @@ draft PR #399. Commit per milestone (commits are free); push only when the whole
 | M8 — demo pages ×3 | ✅ **done** — all three demos build; keymap documented |
 | M9 — conformance + a11y registries | ✅ **done** — WC naming 72, ng 22, react 12+probes, vue automatic, axe ×3 |
 | M9b — responsive + flag-loading defects [PRD §12] | ✅ **done** — flags 3.4s→0.27s, wrap fixed by capping the trigger (NOT nowrap), picker clamped, flag gate + RTL dial code fixed |
-| M10 — batched verification sweep | ✅ **automated part done** (1763 WC + 543 ng specs, 4 lib builds, demo build); the human-only checks below are outstanding |
+| M10 — batched verification sweep | ✅ **done** — 14/14 test projects, 4 lib builds, demo build, a11y gate; human-only checks below outstanding |
+| CI round 1 | ✅ fixed — `mintplayer-react-bootstrap:test` threw on an unguarded `ResizeObserver` (jsdom has none); guarded per the mp-carousel/mp-datatable pattern |
+| CI round 2 | ✅ fixed — axe `select-name` on the demo's locale `bs-select`, which my React and Vue pages labelled and the Angular one did not |
 
 ## Conventions (these still bite)
 
