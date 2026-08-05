@@ -1431,7 +1431,47 @@ character reorders to the trailing position, so `+32` displays as `32+`. The dia
 left-to-right technical token regardless of the surrounding script, so it needs an explicit
 `dir="ltr"` (or a bidi isolate) on the `.dial-code` node in `mp-phone-input`'s template.
 
-## 13. References
+## 13. As built
+
+Shipped on `feat/phone-input-wc` (PR #399). Everything below is what the branch
+actually contains, including the four places where measurement overruled the design.
+
+| | |
+|---|---|
+| New WCs | `mp-input-group`, `mp-phone-input` |
+| New sub-entrypoints | `flags` (244 vendored SVGs), `phone-core` (countries, dial-code detection, `PhoneRules`) |
+| Changed WCs | `mp-select` — rich options, the group corner contract, RTL caret normalization, barrel gaps |
+| Wrappers | `bs-input-group` (migrated onto the WC), `bs-phone-input` (CVA); `BsInputGroup`/`BsPhoneInput` for React and Vue |
+| Demos | a page per app, plus every conformance and axe registry |
+| Tests | **1763** web-components (114 files), **543** ng-bootstrap (161 files) |
+| Versions | web-components 2.9.0 · ng 22.13.0 · react 19.14.0 · vue 3.15.0 |
+
+**Where measurement overruled the design** — the four worth remembering:
+
+1. **`::slotted()` cannot carry the group contract on its own** (S1). A normal declaration loses to
+   the tree the child lives in, so the geometry is `!important`; and logical properties resolve
+   against the *child's* direction, which the UA forces to `ltr` for a tel input, so the corner
+   rules are physical under `:dir()` guards.
+2. **Per-country metadata was wrong; per-*calling-code* is right** (S9). Slicing by country rejected
+   586 of 640 sibling numbers — a US form typing a Toronto number. First use fell from 56.8 KB gzip
+   to ~19.6 KB with zero parity divergence across all 244 countries.
+3. **`libphonenumber-js/min` is not good enough** (S8). It accepts 22 of 244 one-digit-short numbers
+   as valid, and `validatePhoneNumberLength` rescues none of them.
+4. **The flag asset strategy optimised the wrong axis** (D4a). 244 lazy chunks cost double the bytes
+   of one — 90 KB gzip against 43 KB, because separate chunks cannot share a compression dictionary
+   — and the picker needs all of them at once anyway. One chunk took the picker from 3.4 s to 0.27 s.
+
+**Deliberately left open**, neither decided nor forgotten: `D-open-1` (suppress the rich picker on
+coarse pointers, since base-select forfeits the OS picker — §12.4) and its device pass (S10), plus
+the human-only checks in the plan's M10 — a keyboard pass, an RTL smoke test, a real IME session, and
+how a screen reader announces a value that reformats under the caret. That last one is the most
+likely to need a design response.
+
+**Known and not ours:** the demo app's "initial exceeded budget" warning predates this work — the
+phone input is lazy per route (`main-*.js` carries none of it) and the flag corpus and all 207
+metadata slices are lazy chunks.
+
+## 14. References
 
 - Plan: [phone-input-wc-plan.md](./phone-input-wc-plan.md)
 - Precedents: `mp-select` + `bs-select` (FACE + CVA), `mp-otp-input` (hidden-input value carrier),

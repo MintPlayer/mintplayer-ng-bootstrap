@@ -165,6 +165,12 @@ template literal in the generated chrome. If JS is its only writer, the no-JS DO
 
 ## Build & test
 
+**In a wrapper spec, drive inputs from a `signal()`, never a mutable field.** Change detection is
+signal-driven: a plain-field write on the test host notifies nothing, so `fixture.detectChanges()`
+does not re-evaluate the binding and the child's `input()` silently keeps its old value. A literal
+binding and a signal host both propagate correctly — a mutated field does not, and the spec fails
+looking like a component bug.
+
 **Run test suites only once ALL milestones of a task are implemented — never after each one.**
 The suites here are slow (`nx test mintplayer-ng-bootstrap` alone is ~2.5 min, a full
 cross-app e2e sweep far longer), so a per-milestone run costs more time than it saves.

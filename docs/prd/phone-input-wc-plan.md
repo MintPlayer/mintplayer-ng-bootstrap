@@ -18,7 +18,7 @@ draft PR #399. Commit per milestone (commits are free); push only when the whole
 | M8 — demo pages ×3 | ✅ **done** — all three demos build; keymap documented |
 | M9 — conformance + a11y registries | ✅ **done** — WC naming 72, ng 22, react 12+probes, vue automatic, axe ×3 |
 | M9b — responsive + flag-loading defects [PRD §12] | ✅ **done** — flags 3.4s→0.27s, wrap fixed by capping the trigger (NOT nowrap), picker clamped, flag gate + RTL dial code fixed |
-| M10 — batched verification sweep | ⬜ |
+| M10 — batched verification sweep | ✅ **automated part done** (1763 WC + 543 ng specs, 4 lib builds, demo build); the human-only checks below are outstanding |
 
 ## Conventions (these still bite)
 
@@ -388,19 +388,27 @@ NX_ISOLATE_PLUGINS=false NX_DAEMON=false npx nx test mintplayer-ng-bootstrap
 NX_ISOLATE_PLUGINS=false NX_DAEMON=false npx nx build ng-bootstrap-demo
 ```
 
-- [ ] Manual keyboard pass on the Angular demo page (tab order, Escape, typeahead in the select,
-      focus ring visible), Firefox smoke (flex-shrink trap), RTL smoke (`dir="rtl"` — the tel input
-      is forced LTR by the UA, PRD §9.1 c6).
+- [x] All four library builds green; `nx test mintplayer-web-components` **1763/1763** (114 files);
+      `nx test mintplayer-ng-bootstrap` **543/543** (161 files); `nx build ng-bootstrap-demo` green.
+      The demo's "initial exceeded budget" warning is **not** from this work — verified that
+      `main-*.js` (84.5 kB) contains no phone-input code and that the flag corpus and all 207
+      metadata slices are lazy chunks.
+- [ ] **HUMAN:** keyboard pass on the demo page (tab order, Escape, typeahead in the select, focus
+      ring visible), Firefox smoke (flex-shrink trap), RTL smoke (`dir="rtl"` — the tel input is
+      forced LTR by the UA, PRD §9.1 c6, and the dial code is now explicitly `dir="ltr"`, §12.6).
 - [ ] The five human-only checks S7/S8 could not automate (PRD §9.2): a real IME composition
       session **and a mobile soft keyboard**; whether the caret *feels* right when typing,
       backspacing and pasting mid-number; whether the late country flip on shared dial codes is
       acceptable; the 4 Chromium country-name differences (editorial call); and **how a screen
       reader announces a value that reformats under the caret** — the most likely to need a design
       response, so do it early in the pass, not last.
-- [ ] Inspect `dist/libs/mintplayer-web-components`: per-flag chunks present, libphonenumber in
-      one lazy chunk, no eager flag/validator bytes in the phone-input entry.
-- [ ] Version bumps: web-components 2.9.0, ng 22.13.0, react 19.14.0, vue 3.15.0.
-- [ ] Update PRD §9 verdicts + "As built" section; note demo before/after of the scheduler group.
+- [x] Inspected `dist`: the flag corpus is ONE lazy chunk (44 KB gzip) per D4a, `/core` +
+      per-calling-code slices are lazy, and the phone-input entry carries no eager flag or metadata
+      bytes (196 B shared flag chunk).
+- [x] Version bumps: web-components 2.9.0, ng 22.13.0, react 19.14.0, vue 3.15.0 — already at those
+      values in the tree.
+- [x] PRD §9 verdicts recorded per spike; §12 records the two reported defects and their fixes;
+      §13 is the as-built summary.
 - [ ] Push **once**, then read the single CI run.
 
 ## Risks
