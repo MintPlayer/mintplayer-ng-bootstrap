@@ -1,0 +1,36 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>phone-input narrow-viewport spike</title>
+    <!-- Bootstrap is loaded exactly as the demo apps load it: the WC shadow sheets
+         carry the .form-control/.form-select rules themselves, but they resolve
+         --bs-* custom properties that only the page defines. -->
+    <link rel="stylesheet" href="./vendor/bootstrap.min.css" />
+    <style>
+      body {
+        margin: 0;
+      }
+      .page {
+        /* Bootstrap's .container gutter — a realistic mobile page, not a bare edge. */
+        padding: 1rem 0.75rem;
+      }
+      #probe {
+        /* Off-screen but LAID OUT: an intrinsic width measurement needs real layout,
+           and display:none would report 0. */
+        position: absolute;
+        top: -10000px;
+        left: 0;
+        width: 4000px;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="page">
+      <div id="host"></div>
+    </div>
+    <div id="probe"></div>
+    <script type="module" src="./bundle/entry.js"></script>
+  </body>
+</html>

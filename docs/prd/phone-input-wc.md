@@ -1151,7 +1151,119 @@ New dependencies of `@mintplayer/web-components`: `libphonenumber-js` (lazy-chun
 `intl-tel-input` (data subpath only, 4.4 KB gzip in-bundle). New devDependency: `country-flag-icons`
 (vendoring source only — never shipped).
 
-## 12. References
+## 12. Reported defects after first use (2026-08-05)
+
+The user ran the component and reported two defects. Both are real, both are mine, and neither was
+reachable by the gate: the spikes measured mechanisms in isolation, on a desktop viewport, with a
+handful of flags.
+
+### 12.1 The composite wraps on narrow viewports, and a wrapped group is never valid
+
+**Mechanism, traced rather than guessed.** Three rules interact:
+
+| Where | Rule |
+|---|---|
+| `input-group/src/styles/input-group.styles.scss:29` | `.input-group { flex-wrap: wrap }` — inherited from Bootstrap |
+| `input-group.styles.scss:108-112` | `::slotted(mp-select) { flex: 1 1 auto; min-width: 0 }` |
+| `phone-input/src/styles/phone-input.styles.scss:22-25` | `mp-select { flex: 0 0 auto !important; width: auto !important }` |
+
+The third wins — outer-tree normal beats `::slotted()` normal, the ordering D2a records — so the
+picker is a **content-sized, non-shrinking** flex item. In the *fallback* path content-sized means
+**the widest option**, which §5.3 already measured at **320 px**; plus a ~78 px dial addon that is
+~398 px of first-line demand before the number field gets anything. Every phone viewport wraps, and
+a wrapped group renders *wrongly*: the corner pairing and the `-1px` overlap in §5.2 are only
+correct for a single row. `flex-wrap: wrap` was never a feature here — it is a latent bug with a
+viewport-dependent trigger.
+
+Two facts that change the fix, both of which I would otherwise have got wrong:
+
+- **`min-width: 0` cannot prevent wrapping.** Flex line-breaking uses each item's *hypothetical main
+  size*; shrinking happens only after the line is formed. Only `flex-wrap: nowrap` or a smaller
+  `flex-basis` prevents the break.
+- **This is a fallback-path defect**, which is why no desktop we test on showed it: `::picker` is
+  Chromium 135+ / Safari 27+, and in the rich path the closed face is flag + ISO (~88 px) and fits.
+  The wrapping population is iOS < 27, Firefox, Samsung Internet, older WebViews.
+
+**Also found, unreported:** `select.styles.scss` caps the picker's `max-height` but **not its
+`max-width`**, and the ellipsis rule is scoped to `selectedcontent`, never to `option` — so 244
+localized names set the picker's max-content width. That is the second half of what the user saw.
+
+### 12.2 A latent bug the survey found by reading: the flag can vanish entirely
+
+`phone-input.styles.scss:53-57` hides the addon flag under `@supports (appearance: base-select)`,
+but the closed-face flag only exists when `mp-select` actually reflects `[rich]` — and `[rich]`
+requires four conditions (§5.3), of which engine support is only one. **Different conditions.** They
+coincide today; the moment `rich` is suppressed for any other reason — a `multiple` select, a
+consumer clearing `optionRenderer`, or D-open-1 below — a supporting engine shows **no flag at
+all**. The gate must key off the real reflected state, not off `@supports`.
+
+### 12.3 What the field does, and what we take from it
+
+Surveyed by reading source where installed (`intl-tel-input@29.1.2`) or shipped CSS otherwise:
+
+| Library | Trigger at narrow width | Dropdown strategy | Breakpoint mechanism |
+|---|---|---|---|
+| intl-tel-input 29 | flag + caret + dial, **constant** | `DROPDOWN` (anchor-positioned, width matched to the input) or `FULLSCREEN` (`position: fixed; inset: 0`, scrim, sized to `visualViewport` so the keyboard cannot cover it) | `countrySelectorMode: AUTO` = pure `matchMedia`: `(max-width: 500px)` OR (`(pointer: coarse)` AND `(max-height: 600px)`). v28's UA regex is **gone** |
+| react-phone-number-input | flag + caret only | a real native `<select>`, transparent over the flag, so the **OS picker** opens | none at all |
+| react-international-phone | flag + caret | custom list, **hard-coded `width: 300px`** | none |
+| vue-tel-input | flag + caret | custom list, **hard-coded `width: 390px`** | none |
+| Base Web | flag + full name | virtualized listbox, `maxDropdownWidth` prop | consumer's job |
+| PrimeNG / PrimeVue / Angular Material | — | **no such component exists** | — |
+
+Two findings worth more than the table. **Not one surveyed library varies its trigger *content* by
+width** — intl-tel-input's AUTO switches the *dropdown*, never the trigger — so the lever is a width
+constraint, not a breakpoint. And **the native platform picker already handles 244 long localized
+names gracefully**: iOS wheels and Android dialogs wrap long option text rather than truncating, with
+no CSS of ours involved. Our *open* list is only a problem in the path where we replaced that
+platform picker.
+
+**Mistakes not to copy:** hard-coded dropdown widths (two of six libraries, and the exact shape of
+our own missing `max-width`); flag-as-only-indicator (excluded by §6 anyway — 20 px flags are
+indistinguishable for BE/DE/RO/TD, AU/NZ, ID/MC and unreadable for colour-blind users); UA sniffing
+for the breakpoint; forcing `dir="ltr"` on the row to dodge RTL, which would undo S1/S2.9's work.
+
+### 12.4 The fix, and the one open decision
+
+The CSS recipe is being measured in three engines at 320/360/390/430 px before it lands (S11); the
+shape is: pin the picker's flex basis (`flex: 0 1 7rem; min-width: 0`), make the group
+`flex-wrap: nowrap` and let children shrink, clamp `::picker(select)` with
+`min-width: anchor-size(self-inline)` + `max-width: min(100vw - 2rem, 22rem)`, and let option labels
+**wrap** rather than ellipsize — matching what both OS pickers do natively, and because ellipsizing a
+name in a list you search *by name* is user-hostile. Pinning the basis is not a new idea: §5.3
+already said "So pin it", and the implementation skipped it.
+
+No breakpoint is needed once the basis is pinned. If one ever is, it is `@container` on `:host`, not
+`@media` — a phone input is often narrow inside a wide viewport. The `container-type` hazard in this
+repo's notes appears to be **obsolete**: the containing-block behaviour was an acknowledged spec
+mistake, removed in Chromium 129 and since matched by Firefox and WebKit, and it is doubly irrelevant
+to a top-layer `::picker()`. Re-measure before relying on it.
+
+> **D-open-1 — should the rich path be suppressed on coarse pointers?** On touch, base-select is
+> arguably a *downgrade*: it trades a viewport-sized OS sheet (large targets, momentum scroll,
+> graceful label wrapping, keyboard-aware) for an in-page popover of 244 rows we must size, scroll and
+> keyboard-guard ourselves. Chrome's own announcement confirms base-select "doesn't trigger built-in
+> mobile operating system components" and stops sizing to the longest option. The mechanism is one
+> clause on the existing gate (`&& !matchMedia('(pointer: coarse)').matches`), and it must ship
+> together with §12.2's fix or a coarse-pointer Chromium phone gets no flag at all. **Whether the OS
+> picker is actually nicer for our users is a product call needing a real-device pass** (Android
+> Chrome, iOS 26 *and* 27, Firefox Android) — recorded here rather than decided.
+
+### 12.5 Flag loading is slow
+
+Reported as a visible delay before flags render. Two distinct causes, one of them an outright bug:
+
+1. **The access pattern is wrong for the consumer.** D4 optimised for "pay only for the flags you
+   show" — but a country picker shows all 244 at once, so the design buys nothing and costs 244
+   module requests.
+2. **The warm-up is all-or-nothing.** `warmFlags()` does `Promise.all` over 244 chunks and calls
+   `requestUpdate()` **once, after the last one resolves**, so perceived latency is the *slowest*
+   chunk and the selected flag can wait behind 243 others. That is a defect independent of the asset
+   strategy.
+
+Both are being measured (single bundled chunk vs per-flag vs hybrid vs sprite) together with the
+progressive-render fix, before D4 is amended.
+
+## 13. References
 
 - Plan: [phone-input-wc-plan.md](./phone-input-wc-plan.md)
 - Precedents: `mp-select` + `bs-select` (FACE + CVA), `mp-otp-input` (hidden-input value carrier),

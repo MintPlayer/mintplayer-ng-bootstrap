@@ -1,0 +1,5 @@
+vendor/
+bundle/
+node_modules/
+test-results/
+shots/

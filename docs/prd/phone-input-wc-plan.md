@@ -17,6 +17,7 @@ draft PR #399. Commit per milestone (commits are free); push only when the whole
 | M7 — React + Vue wrappers | ✅ **done** — plus a pre-existing packaging gap found (see below) |
 | M8 — demo pages ×3 | ✅ **done** — all three demos build; keymap documented |
 | M9 — conformance + a11y registries | ✅ **done** — WC naming 72, ng 22, react 12+probes, vue automatic, axe ×3 |
+| M9b — responsive + flag-loading defects [PRD §12] | 🔬 investigating (S10/S11 running) — **must land before M10** |
 | M10 — batched verification sweep | ⬜ |
 
 ## Conventions (these still bite)
@@ -79,6 +80,13 @@ Throwaway files under `docs/prd/_spike-phone-input-*`, deleted after verdicts ar
 - [x] S5 — FACE-in-FACE isolation (inner mp-select contributes nothing to the outer form) +
       two-tab-stop focus model + `formDisabledCallback` fan-out.
 - [x] S6 — flag pipeline dress rehearsal with 3 real vendored SVGs end-to-end.
+- [ ] S10 — device pass for D-open-1: is the OS picker actually better than base-select's popover on
+      touch? (Android Chrome, iOS 26 **and** 27, Firefox Android.) Blocks only D-open-1, not M9b.
+- [ ] S11 — three-engine narrow-viewport measurements at 320/360/390/430 px: where the wrap starts,
+      whether `flex-wrap: nowrap` + a pinned basis holds at 320 px and what the tel input's usable
+      width becomes, native-vs-base-select trigger width, `::picker()` overflow and whether a
+      `max-width` cap + label wrapping works, and whether `container-type` still breaks a picker
+      popup (repo memory says yes; the platform may have moved).
 - [ ] Record all verdicts in PRD §9; delete spike files. **Commit.**
 
 ## M1 — `flags` sub-entrypoint [PRD §5.4, D4]
@@ -315,6 +323,37 @@ Throwaway files under `docs/prd/_spike-phone-input-*`, deleted after verdicts ar
 - [ ] Functional e2e per app: country switch updates dial code + flag; paste `+44…` switches
       country; invalid → message → valid clears; validator chunk loads lazily (request-count
       assertion); tree-select-style backend gating not needed (no API).
+- [ ] **Commit.**
+
+## M9b — Responsive layout + flag loading [PRD §12] — **before M10**
+
+Two defects the user found by running it; the gate could not have caught either (mechanisms measured
+in isolation, desktop viewport, five flags). Fix them before the sweep, not after.
+
+- [ ] **Pin the picker's flex basis** — `mp-select { flex: 0 1 var(--mp-phone-picker-width, 7rem);
+      min-width: 0 }` in `phone-input.styles.scss`, replacing `flex: 0 0 auto; width: auto`. This is
+      the actual fix: in the fallback path the picker content-sizes to its widest option (320 px),
+      which is what forces the wrap. Executes what PRD §5.3 already decided and M5 skipped.
+- [ ] **`flex-wrap: nowrap`** on `.input-group` + `min-width: 0` on `::slotted(*)`, so a too-wide
+      child overflows recoverably instead of breaking the corner contract. Note in the stylesheet
+      that validation feedback belongs OUTSIDE the group (the reason the comment gave for `wrap` is
+      void — `mp-phone-input` already renders `error.node` as a sibling).
+      **`min-width: 0` alone is not a fix** — line-breaking uses hypothetical main size.
+- [ ] **Clamp `::picker(select)`** in `select.styles.scss`: `min-width: anchor-size(self-inline)`
+      (needed *because* of the pinned basis, or a 7 rem trigger yields a 7 rem picker),
+      `max-width: min(100vw - 2rem, 22rem)`, and let option labels **wrap** (`white-space: normal;
+      overflow-wrap: anywhere`) rather than ellipsize — both OS pickers wrap, and ellipsizing a name
+      in a list you search by name is user-hostile.
+- [ ] **Fix the flag gate** [PRD §12.2]: the addon flag is hidden by `@supports`, but the closed-face
+      flag depends on `mp-select` reflecting `[rich]` — different conditions, so a suppressed `rich`
+      means no flag anywhere. Key it off the real state (reflect it outward from `mp-select`, or
+      mirror it as a custom property).
+- [ ] **Flag loading** [PRD §12.5]: adopt the measured winner (single bundled chunk / per-flag /
+      hybrid) **and** fix the all-or-nothing warm-up — render the selected flag immediately and the
+      rest progressively or in batches, never one `requestUpdate()` after `Promise.all` over 244.
+      Amend PRD §5.4 D4 with the new numbers.
+- [ ] Specs: a narrow-viewport e2e at 320 px asserting one row and no picker overflow (per app, in
+      M8's e2e); a unit spec that the flag survives with `rich` suppressed.
 - [ ] **Commit.**
 
 ## M10 — Batched verification sweep (only now; one pass)
