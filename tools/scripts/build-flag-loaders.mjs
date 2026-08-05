@@ -1,13 +1,26 @@
 #!/usr/bin/env node
 /**
- * Codegen for `flags/src/flag-loaders.generated.ts`.
+ * Codegen for the two flag delivery shapes, from the same vendored SVGs.
  *
- * Emits one `() => import('./assets/<iso2>.svg?raw')` per vendored flag. The
- * map exists so every dynamic import is a **static string literal**: a computed
- * import (`` import(`./assets/${code}.svg?raw`) ``) survives verbatim into the
- * published `.mjs` and hard-fails every esbuild consumer's build. Rollup turns
- * each literal import into its own lazy chunk with the SVG text inlined, which
- * is also why the `.svg` files never have to be published.
+ * `flags/src/all-flags.generated.ts` — the whole corpus inlined into ONE module
+ * (`Record<CountryCode, string>`), fetched as a single lazy chunk. This is what
+ * a country picker uses, and the measured reason it exists: 244 separate chunk
+ * requests take 3.2 s to land over HTTP/1.1 at 50 ms RTT (1.9 s at 20 ms, 0.44 s
+ * over HTTP/2) versus 0.2 s for the one bundle, and cost 90 KB gzip + ~50 KB of
+ * response headers against 43 KB. Per-flag compression is also far worse: 244
+ * chunks gzip to 90 KB in total, the concatenated corpus to 43 KB.
+ *
+ * `flags/src/flag-loaders.generated.ts` — one `() => import('./assets/<iso2>.svg?raw')`
+ * per flag, for a consumer that needs a handful of flags and not the corpus
+ * (~350 B gzip each instead of 43 KB). Kept in its own module so a bundler drops
+ * it, and its 244 dynamic imports with it, for anyone who only calls
+ * `loadAllFlags()`.
+ *
+ * Both maps exist so every dynamic import is a **static string literal**: a
+ * computed import (`` import(`./assets/${code}.svg?raw`) ``) survives verbatim
+ * into the published `.mjs` and hard-fails every esbuild consumer's build.
+ * Rollup inlines each SVG's text into the chunk, which is why the `.svg` files
+ * never have to be published.
  *
  * Idempotent: skips the write when byte-identical, so the Nx cache stays warm
  * and git stays clean.
@@ -24,9 +37,10 @@ import { fileURLToPath } from 'node:url';
 const repoRoot = resolve(fileURLToPath(import.meta.url), '..', '..', '..');
 const flagsSrc = join(repoRoot, 'libs/mintplayer-web-components/flags/src');
 const assetsDir = join(flagsSrc, 'assets');
-const outPath = join(flagsSrc, 'flag-loaders.generated.ts');
+const loadersPath = join(flagsSrc, 'flag-loaders.generated.ts');
+const bundlePath = join(flagsSrc, 'all-flags.generated.ts');
 
-function buildModule(codes) {
+function buildLoadersModule(codes) {
   return [
     '// AUTO-GENERATED — do not edit by hand.',
     '// Source: flags/src/assets/*.svg',
@@ -51,6 +65,33 @@ function buildModule(codes) {
   ].join('\n');
 }
 
+function buildBundleModule(entries) {
+  return [
+    '// AUTO-GENERATED — do not edit by hand.',
+    '// Source: flags/src/assets/*.svg',
+    '// Regenerate with the codegen-wc Nx target.',
+    '',
+    // Type-only, so this module carries no runtime dependency on the loader map
+    // and a bundler can keep the two delivery shapes independent.
+    "import type { CountryCode } from './flag-loaders.generated';",
+    '',
+    '/**',
+    ' * Every flag, inlined. Reached only through `loadAllFlags()`, so this whole',
+    ' * module is one lazy chunk — see tools/scripts/build-flag-loaders.mjs.',
+    ' */',
+    'export const allFlags: Readonly<Record<CountryCode, string>> = {',
+    ...entries.map(([c, svg]) => `  '${c}': ${JSON.stringify(svg)},`),
+    '};',
+    '',
+  ].join('\n');
+}
+
+async function writeIfChanged(path, next) {
+  const prev = existsSync(path) ? await readFile(path, 'utf8') : null;
+  if (prev !== next) await writeFile(path, next, 'utf8');
+  return prev !== next;
+}
+
 async function main() {
   if (!existsSync(assetsDir)) {
     console.error(
@@ -69,13 +110,21 @@ async function main() {
     process.exit(1);
   }
 
-  const next = buildModule(codes);
-  const prev = existsSync(outPath) ? await readFile(outPath, 'utf8') : null;
-  if (prev !== next) await writeFile(outPath, next, 'utf8');
+  // Verbatim, NOT trimmed: `?raw` hands the per-flag chunk the file's exact
+  // bytes, so trimming here would make the two delivery shapes return different
+  // strings for the same flag. `all-flags.spec.ts` asserts they agree.
+  const entries = await Promise.all(
+    codes.map(async (c) => [c, await readFile(join(assetsDir, `${c}.svg`), 'utf8')]),
+  );
 
+  const wroteLoaders = await writeIfChanged(loadersPath, buildLoadersModule(codes));
+  const wroteBundle = await writeIfChanged(bundlePath, buildBundleModule(entries));
+
+  const report = (wrote, path) =>
+    `${wrote ? 'wrote  ' : 'skipped'} ${relative(repoRoot, path).replace(/\\/g, '/')}`;
   console.log(
     `build-flag-loaders: ${codes.length} flag(s) — ` +
-      `${prev === next ? 'skipped ' : 'wrote   '} ${relative(repoRoot, outPath).replace(/\\/g, '/')}`,
+      `${report(wroteLoaders, loadersPath)}, ${report(wroteBundle, bundlePath)}`,
   );
 }
 

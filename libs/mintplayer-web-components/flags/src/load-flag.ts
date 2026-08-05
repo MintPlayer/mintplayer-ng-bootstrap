@@ -14,7 +14,12 @@ function isKnown(code: string): code is CountryCode {
 }
 
 /**
- * Load the 3x2 SVG markup for an ISO 3166-1 alpha-2 country code.
+ * Load the 3x2 SVG markup for ONE ISO 3166-1 alpha-2 country code, as its own
+ * ~350 B gzip chunk.
+ *
+ * For more than a handful of flags use {@link loadAllFlags} instead: 244 of
+ * these chunks measured 3.2 s to land over HTTP/1.1 at 50 ms RTT and 90 KB gzip,
+ * against 0.2 s and 43 KB for the single bundle.
  *
  * Case-insensitive. Never rejects: an unknown code — and a chunk that fails to
  * load — resolve to `undefined`, so callers render their placeholder and move

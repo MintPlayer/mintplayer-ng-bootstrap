@@ -43,6 +43,16 @@ async function withRules(el: MpPhoneInput): Promise<void> {
   await el.updateComplete;
 }
 
+/** Wait for the one flag chunk requested at mount to land and re-render. */
+async function flagsRendered(el: MpPhoneInput): Promise<void> {
+  for (let i = 0; i < 200; i++) {
+    await el.updateComplete;
+    if (el.shadowRoot!.querySelector('.flag svg')) return;
+    await new Promise((r) => setTimeout(r, 25));
+  }
+  throw new Error('flags never rendered');
+}
+
 describe('mp-phone-input', () => {
   beforeEach(() => {
     document.body.innerHTML = '';
@@ -221,5 +231,43 @@ describe('mp-phone-input', () => {
     const el = await mount('allowed-countries="be,nl,fr" preferred-countries="nl" locale="en-US"');
     const select = el.shadowRoot!.querySelector('mp-select') as HTMLElement & { options: { value: string }[] | null };
     expect(select.options?.map((o) => o.value)).toEqual(['nl', 'be', 'fr']);
+  });
+
+  /**
+   * D4a — the flags arrive as ONE chunk, requested at mount because the addon
+   * shows a flag before any interaction. The regression these guard is the
+   * measured defect they replaced: per-flag chunks warmed with a single
+   * `requestUpdate()` after `Promise.all(...244)` left every flag blank until the
+   * slowest of 244 requests landed (3.2 s over HTTP/1.1 at 50 ms RTT).
+   */
+  it('renders the selected flag without waiting for an interaction', async () => {
+    const el = await mount('country="be"');
+    await flagsRendered(el);
+    expect(el.shadowRoot!.querySelector('.flag svg')).not.toBeNull();
+  });
+
+  it('has every option flag in hand in the same render as the selected one', async () => {
+    const el = await mount('country="be" locale="en-US"');
+    await flagsRendered(el);
+    const select = el.shadowRoot!.querySelector('mp-select') as HTMLElement & {
+      options: { value: string }[] | null;
+      optionRenderer: ((o: { value: string }) => string | undefined) | null;
+    };
+    const rendered = (select.options ?? []).map((o) => select.optionRenderer?.(o) ?? '');
+    expect(rendered).toHaveLength(244);
+    // No option renders an empty flag box: one resolution fills the whole list.
+    expect(rendered.filter((html) => !/<span class="flag-box" aria-hidden="true"><svg /.test(html))).toEqual([]);
+  });
+
+  it('renders a newly picked country flag from the loaded corpus, no second fetch', async () => {
+    const el = await mount('country="be"');
+    await flagsRendered(el);
+    const before = el.shadowRoot!.querySelector('.flag svg')!.outerHTML;
+
+    el.country = 'fr';
+    await el.updateComplete;
+    const after = el.shadowRoot!.querySelector('.flag svg')?.outerHTML;
+    expect(after).toBeDefined();
+    expect(after).not.toBe(before);
   });
 });

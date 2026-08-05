@@ -23,6 +23,7 @@
         "{projectRoot}/**/*.element.template.ts",
         "{projectRoot}/**/*.styles.ts",
         "{projectRoot}/flags/src/flag-loaders.generated.ts",
+        "{projectRoot}/flags/src/all-flags.generated.ts",
         "{projectRoot}/phone-core/src/metadata-loaders.generated.ts",
         "{projectRoot}/phone-core/src/metadata/*.generated.ts"
       ],

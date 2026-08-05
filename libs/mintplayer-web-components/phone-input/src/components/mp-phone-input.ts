@@ -14,7 +14,7 @@ import {
   type PhoneCountryOption,
   type PhoneRules,
 } from '@mintplayer/web-components/phone-core';
-import { loadFlag } from '@mintplayer/web-components/flags';
+import { loadAllFlags, type FlagMap } from '@mintplayer/web-components/flags';
 import {
   HostAriaController,
   FormAssociatedMixin,
@@ -116,8 +116,9 @@ export class MpPhoneInput extends FormAssociatedMixin(LitElement) {
   private readonly _dialId = `mp-phone-input-${instanceCounter}-dial`;
   private _list: readonly PhoneCountryOption[] = [];
   private _listKey = '';
-  private readonly _flags = new Map<string, string>();
-  private _flagsWarmed = false;
+  /** Resolved corpus, or `undefined` until the one flag chunk lands (D4a). */
+  private _flags: FlagMap | undefined;
+  private _flagsRequested = false;
   private _composing = false;
   private _preEdit: { value: string; start: number } | null = null;
   private readonly _inputRef: Ref<HTMLInputElement> = createRef();
@@ -337,6 +338,7 @@ export class MpPhoneInput extends FormAssociatedMixin(LitElement) {
 
   override connectedCallback(): void {
     super.connectedCallback();
+    this.#wantFlags();
     if (this._digits) this.#wantRules();
   }
 
@@ -354,7 +356,7 @@ export class MpPhoneInput extends FormAssociatedMixin(LitElement) {
     // description exactly when the control was healthy.
     const describedBy = typeof error.id === 'string' ? `${this._dialId} ${error.id}` : this._dialId;
     const ariaLabel = this.getAttribute('aria-label') ?? this._inputLabel ?? 'Phone number';
-    const flag = this._flags.get(country);
+    const flag = this._flags?.[country];
 
     return html`
       <mp-input-group>
@@ -366,8 +368,6 @@ export class MpPhoneInput extends FormAssociatedMixin(LitElement) {
           .optionRenderer=${this.renderCountryOption}
           .value=${country}
           @value-change=${this.onCountryPicked}
-          @focusin=${this.warmFlags}
-          @pointerdown=${this.warmFlags}
         ></mp-select>
         <span class="addon" id=${this._dialId}>
           <span class="flag" aria-hidden="true">${flag ? unsafeHTML(flag) : nothing}</span>
@@ -435,7 +435,7 @@ export class MpPhoneInput extends FormAssociatedMixin(LitElement) {
   private renderCountryOption = (option: MpSelectOption): string | undefined => {
     const country = this.countryList().find((c) => c.iso2 === option.value);
     if (!country) return undefined;
-    const flag = this._flags.get(country.iso2);
+    const flag = this._flags?.[country.iso2];
     return (
       `<span class="flag-box" aria-hidden="true">${flag ?? ''}</span>` +
       `<span class="rich-label" data-list-only>${escapeHtml(country.name)}</span>` +
@@ -470,12 +470,7 @@ export class MpPhoneInput extends FormAssociatedMixin(LitElement) {
     if (this.getAttribute('country') !== iso2) this.setAttribute('country', iso2);
     this._rules = this._rules?.country === iso2 ? this._rules : undefined;
     if (this._rulesWanted) this.#loadRules(iso2);
-    void loadFlag(iso2).then((svg) => {
-      if (svg && this.country === iso2) {
-        this._flags.set(iso2, svg);
-        this.requestUpdate();
-      }
-    });
+    this.#wantFlags();
     if (fromUser) {
       this.dispatchEvent(
         new CustomEvent<CountryChangeEventDetail>('country-change', {
@@ -518,24 +513,30 @@ export class MpPhoneInput extends FormAssociatedMixin(LitElement) {
     this.#emitChange();
   };
 
-  private warmFlags = (): void => {
-    if (this._flagsWarmed) return;
-    this._flagsWarmed = true;
-    void Promise.all(
-      this.countryList().map((c) =>
-        loadFlag(c.iso2).then((svg) => {
-          if (svg) this._flags.set(c.iso2, svg);
-        }),
-      ),
-      // One re-render for the whole set, not 244.
-    ).then(() => this.requestUpdate());
-  };
+  /**
+   * Fetch the flag corpus, once per element, as early as the element knows it
+   * will draw a flag — which is at mount, since the addon shows the selected
+   * country's flag before any interaction.
+   *
+   * One chunk for all 244 (D4a): the picker needs every flag the moment it opens,
+   * so warming per-flag chunks made the selected flag queue behind up to 243
+   * siblings and the list fill in over 3.2 s on HTTP/1.1. Everything arrives in
+   * one resolution, so a single `requestUpdate()` renders the addon flag and all
+   * 244 options together — no partial-fill pass, and no re-render per flag.
+   */
+  #wantFlags(): void {
+    if (this._flagsRequested) return;
+    this._flagsRequested = true;
+    void loadAllFlags().then((flags) => {
+      this._flags = flags;
+      this.requestUpdate();
+    });
+  }
 
   // ---- typing (PRD D10 — every rule is a measured S7 verdict) ----------------
 
   private onFocus = (): void => {
     this.#wantRules();
-    this.warmFlags();
   };
 
   private onCompositionStart = (): void => {
