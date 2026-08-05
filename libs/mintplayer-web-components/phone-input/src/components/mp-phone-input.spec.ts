@@ -227,6 +227,34 @@ describe('mp-phone-input', () => {
     expect(be?.label).toBe('Belgium +32 (BE)');
   });
 
+  it('keeps the dial code left-to-right so RTL does not render it as "32+"', async () => {
+    const el = await mount('country="be"');
+    const dial = el.shadowRoot!.querySelector('.dial-code') as HTMLElement;
+    // The plus is bidi-neutral: without an explicit direction it reorders to the
+    // trailing position in an RTL paragraph (PRD 12.6).
+    expect(dial.getAttribute('dir')).toBe('ltr');
+    expect(dial.textContent).toBe('+32');
+  });
+
+  it('keeps the addon flag whenever the picker is not showing one (PRD 12.2)', async () => {
+    const el = await mount('country="be"');
+    const flagBox = el.shadowRoot!.querySelector('.flag') as HTMLElement;
+    const select = el.shadowRoot!.querySelector('mp-select')!;
+
+    // jsdom supports no base-select, so the picker never goes rich and the addon
+    // must carry the flag — the case the old @supports gate got wrong whenever
+    // rich was suppressed for a reason other than engine support.
+    expect(select.hasAttribute('rich')).toBe(false);
+    expect(flagBox.hasAttribute('hidden')).toBe(false);
+
+    // And it yields as soon as the picker really does show one.
+    select.setAttribute('rich', '');
+    el.requestUpdate();
+    await el.updateComplete;
+    await el.updateComplete;
+    expect(flagBox.hasAttribute('hidden')).toBe(true);
+  });
+
   it('honours allowed-countries and preferred-countries', async () => {
     const el = await mount('allowed-countries="be,nl,fr" preferred-countries="nl" locale="en-US"');
     const select = el.shadowRoot!.querySelector('mp-select') as HTMLElement & { options: { value: string }[] | null };

@@ -119,6 +119,8 @@ export class MpPhoneInput extends FormAssociatedMixin(LitElement) {
   /** Resolved corpus, or `undefined` until the one flag chunk lands (D4a). */
   private _flags: FlagMap | undefined;
   private _flagsRequested = false;
+  /** Whether the picker's own closed face already shows the flag (PRD §12.2). */
+  private _pickerShowsFlag = false;
   private _composing = false;
   private _preEdit: { value: string; start: number } | null = null;
   private readonly _inputRef: Ref<HTMLInputElement> = createRef();
@@ -370,8 +372,18 @@ export class MpPhoneInput extends FormAssociatedMixin(LitElement) {
           @value-change=${this.onCountryPicked}
         ></mp-select>
         <span class="addon" id=${this._dialId}>
-          <span class="flag" aria-hidden="true">${flag ? unsafeHTML(flag) : nothing}</span>
-          <span class="dial-code">+${dial}</span>
+          <!-- Hidden when the picker's own closed face already shows a flag, which
+               is NOT the same condition as the base-select @supports query: rich
+               mode additionally needs a renderer, options mode and a plain
+               dropdown, so keying the CSS off @supports left a supporting engine
+               with NO flag anywhere the moment rich was suppressed for any other
+               reason (PRD 12.2). Reflected here from the select's real state. -->
+          <span class="flag" aria-hidden="true" ?hidden=${this._pickerShowsFlag}>${flag ? unsafeHTML(flag) : nothing}</span>
+          <!-- dir=ltr is required, not cosmetic: the plus sign is bidi-neutral, so
+               in an RTL paragraph direction it reorders to the trailing position and
+               the dial code renders as 32+ (measured at any width, PRD 12.6). A
+               calling code is a left-to-right technical token in every script. -->
+          <span class="dial-code" dir="ltr">+${dial}</span>
         </span>
         <input
           ${ref(this._inputRef)}
@@ -402,6 +414,15 @@ export class MpPhoneInput extends FormAssociatedMixin(LitElement) {
     // Element references bind to a node; the input is not guaranteed to be the
     // same node after a re-render (the mp-select lesson).
     this.hostAria.syncReferences();
+
+    // Read the picker's actual rendering mode rather than assuming it from engine
+    // support (PRD §12.2). One re-render at most: the flag box reserves its space
+    // either way, so this cannot loop or shift layout.
+    const pickerShowsFlag = this._selectRef.value?.hasAttribute('rich') ?? false;
+    if (pickerShowsFlag !== this._pickerShowsFlag) {
+      this._pickerShowsFlag = pickerShowsFlag;
+      this.requestUpdate();
+    }
 
     const input = this._inputRef.value;
     if (input && !this._composing) {

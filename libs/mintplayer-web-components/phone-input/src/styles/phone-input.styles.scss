@@ -24,6 +24,24 @@ mp-select {
   width: auto !important;
 }
 
+// Cap the FALLBACK closed face. Measured (S11, PRD §12.4): where base-select is
+// unavailable the face is a bare native select sized to the WIDEST of 244
+// options — 334.58px — which overflows a 320px phone and wraps the group at any
+// width below 468px. base-select sizes the face to the SELECTED content (~70px)
+// and never wraps, so this is gated to the engines that need it and is inert
+// elsewhere; it flips itself when Firefox ships customizable select.
+//
+// NOT accompanied by flex-wrap: nowrap on the group. That was the obvious
+// companion fix and it is measurably worse: with a non-shrinking trigger it
+// collapses the tel input to 26px of border and padding and moves the overflow
+// onto the page (131px of sideways scroll at 320px). Capping the trigger is the
+// whole fix — nothing wraps down to 280px.
+@supports not (appearance: base-select) {
+  mp-select {
+    width: 5.5rem !important;
+  }
+}
+
 // The flag is decorative chrome in the dial-code addon, in EVERY engine — not the
 // S2 overlay. The overlay needed reserved in-shadow padding this element cannot
 // set on mp-select, aligned only while the select was the group's first child,
@@ -50,10 +68,13 @@ mp-select {
   min-height: 0.833rem;
 }
 
-@supports (appearance: base-select) {
-  .flag {
-    display: none;
-  }
+// No `@supports` gate here any more. It disagreed with `mp-select`'s real `rich`
+// state — which also needs a renderer, `.options` mode and a plain dropdown — so a
+// supporting engine showed no flag at all whenever `rich` was suppressed for any
+// other reason (PRD §12.2). The element now reflects the picker's actual mode and
+// hides this copy with `[hidden]`.
+.flag[hidden] {
+  display: none;
 }
 
 .dial-code {

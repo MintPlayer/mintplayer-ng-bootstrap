@@ -60,6 +60,20 @@
     padding: 0.25rem 0;
     max-height: 20rem;
     overflow-y: auto;
+
+    // Nothing constrained the inline size, so 244 localized option labels set the
+    // picker's max-content width and it overflowed a 320px viewport by 18.4px in
+    // Chromium and 1.8px in WebKit (measured, S11 / PRD §12.4). Three
+    // load-bearing details:
+    //  - box-sizing, or the border escapes the cap;
+    //  - min-width, because the trigger above is capped at 5.5rem in the fallback
+    //    and a narrow trigger would otherwise yield a narrow picker.
+    //    anchor-size() is supported in all three engines, Firefox included;
+    //  - 2rem rather than 1rem of slack: whether 100vw includes a classic
+    //    scrollbar cannot be measured headless, and 21px of headroom absorbs it.
+    box-sizing: border-box;
+    min-width: anchor-size(self-inline);
+    max-width: min(100vw - 2rem, 22rem);
   }
 
   // Authored explicitly in the template (button > selectedcontent): WebKit's
@@ -72,6 +86,20 @@
   }
 
   :host([rich]) selectedcontent .rich-label {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  // The same treatment for a list row, now that the picker has a max-width.
+  // It must sit on .rich-label and carry min-width: 0 — `option` is a flex
+  // container here, so text-overflow on it is inert and the shrinking flex item
+  // needs its own minimum lifted (measured, S11). Ellipsis rather than wrapping
+  // keeps all 244 rows a uniform height, which scrolls better in a list this
+  // long; wrapping is the alternative if full names matter more, and then
+  // `option` also needs `overflow` unset and `align-items: start`.
+  :host([rich]) option .rich-label {
+    min-width: 0;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
@@ -122,5 +150,15 @@
 
   :host([rich]) selectedcontent [data-list-only] {
     display: none;
+  }
+}
+
+// The fallback face has no ::picker and no selectedcontent: it is the option's own
+// text, sized to the widest option and capped by mp-phone-input to 5.5rem. Without
+// this the label clips mid-word ("Belgi"); with it, it reads "Bel…". Ellipsis on a
+// native <select> face is honoured in Firefox (measured, S11).
+@supports not (appearance: base-select) {
+  select.form-select {
+    text-overflow: ellipsis;
   }
 }
