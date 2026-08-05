@@ -348,13 +348,20 @@ export class MpPhoneInput extends FormAssociatedMixin(LitElement) {
     // The group pairs corners vertically only when told to, and CSS cannot set an
     // attribute — so the one thing the container query cannot do itself is done
     // here. Threshold matches the @container rule in this element's stylesheet.
-    this.#stackObserver ??= new ResizeObserver((entries) => {
-      const width = entries[entries.length - 1]?.contentRect.width ?? 0;
-      const stacked = width > 0 && width <= STACK_THRESHOLD_PX;
-      const group = this.renderRoot?.querySelector('mp-input-group');
-      group?.toggleAttribute('stacked', stacked);
-    });
-    this.#stackObserver.observe(this);
+    //
+    // Feature-detected, following mp-carousel/mp-datatable/mp-ribbon-tab: without
+    // ResizeObserver (jsdom, an old engine, a Node SSR pass) the element must lose
+    // only the stacked layout, not throw on connect. It threw in the React
+    // wrapper library's test environment, which does not polyfill it.
+    if (typeof ResizeObserver !== 'undefined') {
+      this.#stackObserver ??= new ResizeObserver((entries) => {
+        const width = entries[entries.length - 1]?.contentRect.width ?? 0;
+        const stacked = width > 0 && width <= STACK_THRESHOLD_PX;
+        const group = this.renderRoot?.querySelector('mp-input-group');
+        group?.toggleAttribute('stacked', stacked);
+      });
+      this.#stackObserver.observe(this);
+    }
   }
 
 
