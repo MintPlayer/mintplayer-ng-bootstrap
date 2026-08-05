@@ -101,6 +101,20 @@ const VARIANTS = {
     ['phone', `@container (max-width: 22rem) { mp-select { width: 5.5rem !important; } }`],
   ],
 
+  // ── The minimal candidate: cap the trigger ONLY in the engine that needs it.
+  //    base-select sizes the face to the SELECTED content (~70px), so the 334px
+  //    widest-option face — and therefore the wrap — exists only on the native path.
+  //    Gated the same way select.styles.scss gates its rich rules, so it flips itself
+  //    when Firefox ships customizable select.
+  fallbackCap: [
+    [
+      'phone',
+      `@supports not (appearance: base-select) {
+         mp-select { width: 5.5rem !important; }
+       }`,
+    ],
+  ],
+
   // Firefox's closed face is a native <select>: once width-capped it can only clip
   // the selected option's text, since no CSS reaches inside a UA-rendered face.
   faceEllipsis: [['select', `select.form-select { text-overflow: ellipsis; }`]],
@@ -174,6 +188,163 @@ const VARIANTS = {
     ],
   ],
 
+  // The whole narrow recipe delivered the way it would actually ship: the group's own
+  // host as the container, everything else gated on `@container`. `@container` adds no
+  // specificity, so the selectors inside still have to out-specify (0,3,1).
+  stackViaContainer: [
+    [
+      'phone',
+      `:host { container-type: inline-size; }`,
+    ],
+    [
+      'group',
+      `@container (max-width: 22rem) {
+         .input-group { flex-wrap: wrap; }
+
+         :host(:dir(ltr)) ::slotted(.addon:not(:last-child)) {
+           border-top-right-radius: var(--bs-border-radius) !important;
+           border-bottom-right-radius: 0 !important;
+         }
+
+         :host(:dir(ltr)) ::slotted(input:not(:first-child)) {
+           flex: 1 1 100% !important;
+           width: 100% !important;
+           margin-left: 0 !important;
+           margin-top: -1px !important;
+           border-top-left-radius: 0 !important;
+           border-top-right-radius: 0 !important;
+           border-bottom-left-radius: var(--bs-border-radius) !important;
+           border-bottom-right-radius: var(--bs-border-radius) !important;
+         }
+
+         ::slotted(mp-select) {
+           --mp-group-radius-top-start: var(--bs-border-radius);
+           --mp-group-radius-top-end: 0;
+           --mp-group-radius-bottom-start: 0;
+           --mp-group-radius-bottom-end: 0;
+         }
+       }`,
+    ],
+  ],
+
+  // `100vw` INCLUDES a classic vertical scrollbar, so a cap written against it is
+  // narrower than the space actually available by ~15px on desktop. Both margins
+  // measured with a scrollbar forced, to pick the one with real headroom.
+  pickerCap1rem: [
+    ['select', `:host([rich]) select.form-select::picker(select) { box-sizing: border-box; max-width: min(100vw - 1rem, 20rem); }`],
+  ],
+  pickerCap2rem: [
+    ['select', `:host([rich]) select.form-select::picker(select) { box-sizing: border-box; max-width: min(100vw - 2rem, 20rem); }`],
+  ],
+
+  // The cap exactly as the lead proposed it, including the anchor-size() floor that
+  // stops the picker from becoming narrower than the trigger it hangs off.
+  pickerCapProposed: [
+    [
+      'select',
+      `:host([rich]) select.form-select::picker(select) {
+         box-sizing: border-box;
+         max-width: min(100vw - 2rem, 22rem);
+         min-width: anchor-size(self-inline);
+       }
+       :host([rich]) option { max-width: 100%; overflow: hidden; }
+       :host([rich]) option .rich-label {
+         min-width: 0;
+         overflow: hidden;
+         text-overflow: ellipsis;
+         white-space: nowrap;
+       }`,
+    ],
+  ],
+
+  // Same cap, but let a long country name WRAP inside the option instead of
+  // ellipsizing. `select.styles.scss` sets `white-space: nowrap` on the closed face
+  // only, so the option's normal value is what has to be re-asserted here.
+  pickerCapWrap: [
+    [
+      'select',
+      `:host([rich]) select.form-select::picker(select) {
+         box-sizing: border-box;
+         max-width: min(100vw - 2rem, 22rem);
+         min-width: anchor-size(self-inline);
+       }
+       :host([rich]) option { max-width: 100%; align-items: start; }
+       :host([rich]) option .rich-label {
+         min-width: 0;
+         white-space: normal;
+         overflow-wrap: anywhere;
+       }`,
+    ],
+  ],
+
+  // In a deliberate two-row layout the number input owns its own row, so row 1 has
+  // room for a trigger far wider than the 5.5rem a single row can spare — which is
+  // what makes the native closed face readable again.
+  //    `flex-basis: auto` is WRONG here and measurably so: the native fallback face's
+  //    hypothetical size is still its 334px widest-option width, so flex line-breaking
+  //    gives it a whole line of its own and the dial addon is pushed to a THIRD row.
+  //    `flex-basis: 0` takes the intrinsic width out of the line-breaking decision, so
+  //    the addon stays on row 1 and the trigger then grows into whatever is left.
+  stackWideTrigger: [
+    [
+      'phone',
+      `@container (max-width: 22rem) {
+         mp-select {
+           flex: 1 1 auto !important;
+           width: auto !important;
+           max-width: 100% !important;
+           min-width: 0 !important;
+         }
+       }`,
+    ],
+  ],
+  stackWideTriggerZeroBasis: [
+    [
+      'phone',
+      `@container (max-width: 22rem) {
+         mp-select {
+           flex: 1 1 0 !important;
+           width: auto !important;
+           min-width: 0 !important;
+         }
+       }`,
+    ],
+  ],
+
+  // RTL mirror of the stacked block. Physical properties under a :dir() guard keyed
+  // off the GROUP's direction, never logical ones on the child: the UA forces
+  // `input[type=tel]` to ltr even inside dir=rtl, so a logical property on it resolves
+  // against the wrong direction (the trap already documented for the base rules).
+  stackRtl: [
+    [
+      'group',
+      `.input-group { flex-wrap: wrap; }
+
+       :host(:dir(rtl)) ::slotted(.addon:not(:last-child)) {
+         border-top-left-radius: var(--bs-border-radius) !important;
+         border-bottom-left-radius: 0 !important;
+       }
+
+       :host(:dir(rtl)) ::slotted(input:not(:first-child)) {
+         flex: 1 1 100% !important;
+         width: 100% !important;
+         margin-right: 0 !important;
+         margin-top: -1px !important;
+         border-top-right-radius: 0 !important;
+         border-top-left-radius: 0 !important;
+         border-bottom-right-radius: var(--bs-border-radius) !important;
+         border-bottom-left-radius: var(--bs-border-radius) !important;
+       }
+
+       ::slotted(mp-select) {
+         --mp-group-radius-top-start: var(--bs-border-radius);
+         --mp-group-radius-top-end: 0;
+         --mp-group-radius-bottom-start: 0;
+         --mp-group-radius-bottom-end: 0;
+       }`,
+    ],
+  ],
+
   // What `_styles/form-select.styles.scss` would have to say for the four-property
   // contract above to reach the box inside mp-select's shadow root.
   stackSelect: [
@@ -201,6 +372,23 @@ const spike = {
   /** Country labels exactly as `mp-phone-input` builds them for `mp-select`. */
   labels(locale = 'en-US') {
     return phoneCountryList({ locale }).map((c) => `${c.name} +${c.dialCode} (${c.iso2.toUpperCase()})`);
+  },
+
+  /** Force a classic vertical scrollbar, so `100vw` and the client width diverge. */
+  forceScrollbar() {
+    document.documentElement.style.scrollbarWidth = 'auto';
+    let filler = $('#filler');
+    if (!filler) {
+      filler = document.createElement('div');
+      filler.id = 'filler';
+      filler.style.height = '4000px';
+      document.body.appendChild(filler);
+    }
+    return {
+      innerWidth: window.innerWidth,
+      clientWidth: document.documentElement.clientWidth,
+      scrollbar: window.innerWidth - document.documentElement.clientWidth,
+    };
   },
 
   async mount({ hostWidth = null, dir = 'ltr', allowed = null } = {}) {
@@ -452,6 +640,37 @@ const spike = {
 
   supportsBaseSelect() {
     return CSS.supports('appearance', 'base-select');
+  },
+
+  supports() {
+    return {
+      baseSelect: CSS.supports('appearance', 'base-select'),
+      anchorSizeMinWidth: CSS.supports('min-width', 'anchor-size(self-inline)'),
+      anchorSizeWidth: CSS.supports('width', 'anchor-size(self-inline)'),
+      containerType: CSS.supports('container-type', 'inline-size'),
+      overflowWrapAnywhere: CSS.supports('overflow-wrap', 'anywhere'),
+    };
+  },
+
+  /** Row geometry inside the open picker — the question wrapping actually changes. */
+  optionRows() {
+    const t = trees($('#host mp-phone-input'));
+    const opts = [...t.innerSelect.querySelectorAll('option')];
+    const rects = opts.map((o) => ({ o, r: o.getBoundingClientRect() })).filter((x) => x.r.height > 0);
+    if (!rects.length) return { measurable: false };
+    const heights = [...new Set(rects.map((x) => round(x.r.height)))].sort((a, b) => a - b);
+    const tallest = rects.reduce((a, b) => (b.r.height > a.r.height ? b : a));
+    const label = tallest.o.querySelector('.rich-label');
+    return {
+      measurable: true,
+      distinctOptionHeights: heights,
+      tallestOption: round(tallest.r.height),
+      tallestLabel: tallest.o.textContent?.trim() ?? null,
+      // Two lines inside one option is exactly what wrapping is supposed to produce.
+      tallestLabelLines: label ? Math.round(label.getBoundingClientRect().height / parseFloat(getComputedStyle(label).lineHeight || '0')) : null,
+      labelClipped: label ? label.scrollWidth > label.clientWidth + 0.5 : null,
+      labelWhiteSpace: label ? getComputedStyle(label).whiteSpace : null,
+    };
   },
 };
 

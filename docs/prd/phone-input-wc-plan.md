@@ -82,7 +82,10 @@ Throwaway files under `docs/prd/_spike-phone-input-*`, deleted after verdicts ar
 - [x] S6 — flag pipeline dress rehearsal with 3 real vendored SVGs end-to-end.
 - [ ] S10 — device pass for D-open-1: is the OS picker actually better than base-select's popover on
       touch? (Android Chrome, iOS 26 **and** 27, Firefox Android.) Blocks only D-open-1, not M9b.
-- [ ] S11 — three-engine narrow-viewport measurements at 320/360/390/430 px: where the wrap starts,
+- [x] S11 — **PASS, 141 assertions × 3 engines** (PRD §12.4). Verdicts: Firefox-only defect (wrap
+      below 468 px there vs 200 px in Chromium/WebKit); capping the fallback trigger alone fixes it;
+      `flex-wrap: nowrap` is REJECTED as measurably worse; the picker cap works; `container-type` is
+      safe and the repo note does not reproduce. Original brief: three-engine measurements at 320/360/390/430 px: where the wrap starts,
       whether `flex-wrap: nowrap` + a pinned basis holds at 320 px and what the tel input's usable
       width becomes, native-vs-base-select trigger width, `::picker()` overflow and whether a
       `max-width` cap + label wrapping works, and whether `container-type` still breaks a picker
@@ -330,20 +333,34 @@ Throwaway files under `docs/prd/_spike-phone-input-*`, deleted after verdicts ar
 Two defects the user found by running it; the gate could not have caught either (mechanisms measured
 in isolation, desktop viewport, five flags). Fix them before the sweep, not after.
 
-- [ ] **Pin the picker's flex basis** — `mp-select { flex: 0 1 var(--mp-phone-picker-width, 7rem);
-      min-width: 0 }` in `phone-input.styles.scss`, replacing `flex: 0 0 auto; width: auto`. This is
-      the actual fix: in the fallback path the picker content-sizes to its widest option (320 px),
-      which is what forces the wrap. Executes what PRD §5.3 already decided and M5 skipped.
-- [ ] **`flex-wrap: nowrap`** on `.input-group` + `min-width: 0` on `::slotted(*)`, so a too-wide
-      child overflows recoverably instead of breaking the corner contract. Note in the stylesheet
-      that validation feedback belongs OUTSIDE the group (the reason the comment gave for `wrap` is
-      void — `mp-phone-input` already renders `error.node` as a sibling).
-      **`min-width: 0` alone is not a fix** — line-breaking uses hypothetical main size.
-- [ ] **Clamp `::picker(select)`** in `select.styles.scss`: `min-width: anchor-size(self-inline)`
-      (needed *because* of the pinned basis, or a 7 rem trigger yields a 7 rem picker),
-      `max-width: min(100vw - 2rem, 22rem)`, and let option labels **wrap** (`white-space: normal;
-      overflow-wrap: anywhere`) rather than ellipsize — both OS pickers wrap, and ellipsizing a name
-      in a list you search by name is user-hostile.
+- [ ] **(a) Cap the fallback trigger** — `@supports not (appearance: base-select) { mp-select {
+      width: 5.5rem !important } }` in `phone-input.styles.scss`, plus
+      `@supports not (…) { select.form-select { text-overflow: ellipsis } }` in `select.styles.scss`
+      (outside the rich block). **This alone fixes the reported defect**: measured Firefox single-row
+      from 280 px up, zero page overflow, tel input 129.8 px at 320; Chromium/WebKit byte-identical
+      because the gate never matches there. Executes what §5.3 decided and M5 skipped.
+- [ ] ~~`flex-wrap: nowrap`~~ — **REJECTED by measurement, do not add.** With the trigger unable to
+      shrink it collapses Firefox's tel input to 26 px (zero content) and scrolls the *page*
+      sideways by 131 px at 320 — worse than the bug. After (a) nothing wraps down to 280 px.
+      (`min-width: 0` alone was also confirmed useless: line-breaking uses hypothetical main size.)
+- [ ] **(b) Clamp `::picker(select)`** in `select.styles.scss`, inside the existing
+      `@supports` + `:host([rich])` block: `box-sizing: border-box` (or the border escapes the cap),
+      `max-width: min(100vw - 2rem, 22rem)` (`-2rem` because whether `100vw` includes a classic
+      scrollbar is unmeasurable headless), `min-width: anchor-size(self-inline)` (supported in all
+      three engines; required or a 5.5 rem trigger yields a 5.5 rem picker). Ellipsis on
+      **`.rich-label`** with `min-width: 0` — `option` is `display: flex`, so `text-overflow` on it
+      is inert. Uncapped overflow measured: 18.4 px Chromium, 1.8 px WebKit at 320.
+- [ ] **(d) Optional, recommended: the deliberate two-row stack below 22 rem** via
+      `container-type: inline-size` on `:host` (measured safe — `::picker` box byte-identical under
+      containment, and the repo's containing-block note does not reproduce). It is the only thing that
+      makes Firefox's face readable: 216.8 px showing the full `Belgium +32 (BE)` instead of `Bel…`.
+      Needs two prerequisites: **four** corner custom properties (the current two map to both start
+      corners, and a stacked row needs top-round/bottom-square), and overrides that out-specify the
+      base `(0,3,1)` rules — `::slotted(input:not(:first-child))` (0,3,2),
+      `::slotted(.addon:not(:last-child))` (0,4,1). Naive `::slotted(input)` (0,0,2) loses **silently
+      and half-applied**, `!important` notwithstanding.
+- [ ] **Fix the RTL dial code** [PRD §12.6]: `+32` renders as `32+` at any width, because the
+      bidi-neutral `+` reorders in an RTL paragraph. `dir="ltr"` (or a bidi isolate) on `.dial-code`.
 - [ ] **Fix the flag gate** [PRD §12.2]: the addon flag is hidden by `@supports`, but the closed-face
       flag depends on `mp-select` reflecting `[rich]` — different conditions, so a suppressed `rich`
       means no flag anywhere. Key it off the real state (reflect it outward from `mp-select`, or

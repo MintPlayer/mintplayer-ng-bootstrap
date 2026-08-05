@@ -191,10 +191,41 @@ test.describe('3. trigger width', () => {
   });
 });
 
+test.describe('3b. the minimal candidate: @supports-gated trigger cap', () => {
+  // 280 is in the sweep on purpose: below the 320 floor the task asked about, to find
+  // where the tel input actually stops being usable rather than assuming it.
+  for (const width of [280, 320, 360, 390, 430] as const) {
+    test(`fallbackCap @${width}`, async ({ page }, info) => {
+      await open(page, width);
+      const before = await measure(page);
+      await variant(page, ['fallbackCap']);
+      const after = await measure(page);
+      log(`3b/${info.project.name}/${width} fallbackCap`, {
+        rowsBefore: before.rows,
+        rowsAfter: after.rows,
+        selectBefore: before.items.select.w,
+        selectAfter: after.items.select.w,
+        inputAfter: after.items.input.w,
+        inputUsable: after.items.input.w >= 120,
+        pageOverflowX: after.pageOverflowX,
+        rich: after.rich,
+      });
+      await page.screenshot({ path: `${__dirname}/shots/fallback-cap-${info.project.name}-${width}.png` });
+    });
+  }
+
+  test('fallbackCap + nowrap belt-and-braces @280', async ({ page }, info) => {
+    await open(page, 280);
+    await variant(page, ['fallbackCap', 'nowrap']);
+    log(`3b/${info.project.name}/280 fallbackCap+nowrap`, summarise(await measure(page)));
+  });
+});
+
 test.describe('4. picker overflow', () => {
   for (const width of [320, 430] as const) {
     test(`picker box @${width}`, async ({ page }, info) => {
       await open(page, width);
+      log(`4/${info.project.name}/${width} warm`, await warm(page));
       const opened = await openPicker(page);
       const box = await page.evaluate(() => (window as any).spike.pickerBox());
       log(`4/${info.project.name}/${width} picker`, { opened, box });
@@ -205,11 +236,64 @@ test.describe('4. picker overflow', () => {
 
     test(`picker box @${width} with cap`, async ({ page }, info) => {
       await open(page, width);
+      await warm(page);
       await variant(page, ['pickerCap']);
       const opened = await openPicker(page);
       const box = await page.evaluate(() => (window as any).spike.pickerBox());
       log(`4/${info.project.name}/${width} picker+cap`, { opened, box });
       await page.screenshot({ path: `${__dirname}/shots/picker-cap-${info.project.name}-${width}.png` });
+    });
+  }
+});
+
+test.describe('4c. the proposed cap: 22rem + anchor-size floor, ellipsis vs wrap', () => {
+  test('feature support', async ({ page }, info) => {
+    await open(page, 320);
+    log(`4c/${info.project.name} supports`, await page.evaluate(() => (window as any).spike.supports()));
+  });
+
+  for (const cap of ['pickerCapProposed', 'pickerCapWrap'] as const) {
+    for (const width of [320, 430] as const) {
+      test(`${cap} @${width}`, async ({ page }, info) => {
+        await open(page, width);
+        await warm(page);
+        await variant(page, [cap]);
+        const opened = await openPicker(page);
+        const box = await page.evaluate(() => (window as any).spike.pickerBox());
+        const rows = await page.evaluate(() => (window as any).spike.optionRows());
+        log(`4c/${info.project.name}/${width} ${cap}`, {
+          opened,
+          union: box.union ?? null,
+          overflowsRight: box.overflowsRight ?? null,
+          longestLabel: box.longestLabel ?? null,
+          richLabelClipped: box.richLabelClipped ?? null,
+          rows,
+        });
+        await page.screenshot({ path: `${__dirname}/shots/${cap}-${info.project.name}-${width}.png` });
+      });
+    }
+  }
+});
+
+test.describe('4b. picker cap margin vs the scrollbar', () => {
+  for (const cap of ['pickerCap1rem', 'pickerCap2rem'] as const) {
+    test(`${cap} with a classic scrollbar forced @320`, async ({ page }, info) => {
+      await open(page, 320);
+      const metrics = await page.evaluate(() => (window as any).spike.forceScrollbar());
+      await warm(page);
+      await variant(page, [cap]);
+      const opened = await openPicker(page);
+      const box = await page.evaluate(() => (window as any).spike.pickerBox());
+      log(`4b/${info.project.name}/320 ${cap}`, {
+        metrics,
+        opened,
+        measurable: box.measurable,
+        union: box.union ?? null,
+        // The honest test is against the CLIENT width, not innerWidth: content that
+        // reaches past clientWidth sits under the scrollbar or forces a second one.
+        overflowsClient: box.measurable ? box.union.right > metrics.clientWidth + 0.5 : null,
+        headroom: box.measurable ? Math.round((metrics.clientWidth - box.union.right) * 100) / 100 : null,
+      });
     });
   }
 });
@@ -248,6 +332,7 @@ test.describe('5. container queries', () => {
 
   test('THE TRAP: does container-type reposition ::picker(select)?', async ({ page }, info) => {
     await open(page, 320);
+    log(`5/${info.project.name} warm`, await warm(page));
     const openedBefore = await openPicker(page);
     const before = await page.evaluate(() => (window as any).spike.pickerBox());
     await closePicker(page);
@@ -291,5 +376,64 @@ test.describe('6. deliberate two-row stack', () => {
       log(`6/${info.project.name}/${width} stacked-strays`, m.strays);
       await page.screenshot({ path: `${__dirname}/shots/stacked-${info.project.name}-${width}.png` });
     });
+
+    test(`stacked + narrow trigger @${width}`, async ({ page }, info) => {
+      await open(page, width);
+      await variant(page, ['narrowHost', 'stack', 'stackSelect']);
+      const m = await measure(page);
+      log(`6/${info.project.name}/${width} stacked+narrow`, summarise(m));
+      log(`6/${info.project.name}/${width} stacked+narrow-corners`, m.corners);
+      log(`6/${info.project.name}/${width} stacked+narrow-innerSelectCorners`, m.innerSelectCorners);
+      log(`6/${info.project.name}/${width} stacked+narrow-strays`, m.strays);
+      await page.screenshot({ path: `${__dirname}/shots/stacked-narrow-${info.project.name}-${width}.png` });
+    });
   }
+
+  test('stacked with a full-width row-1 trigger @320', async ({ page }, info) => {
+    // The payoff the stack buys: with the number input on its own row, the picker can
+    // be wide enough for the native closed face to read as a country name again.
+    await open(page, 320);
+    await variant(page, ['stackViaContainer', 'stackSelect', 'stackWideTrigger']);
+    const m = await measure(page);
+    log(`6/${info.project.name}/320 stackWideTrigger`, summarise(m));
+    log(`6/${info.project.name}/320 stackWideTrigger-corners`, m.corners);
+    await page.screenshot({ path: `${__dirname}/shots/stack-wide-${info.project.name}-320.png` });
+  });
+
+  test('stacked with a full-width row-1 trigger, zero flex-basis @320', async ({ page }, info) => {
+    await open(page, 320);
+    await variant(page, ['stackViaContainer', 'stackSelect', 'stackWideTriggerZeroBasis']);
+    const m = await measure(page);
+    log(`6/${info.project.name}/320 stackWideTriggerZeroBasis`, summarise(m));
+    log(`6/${info.project.name}/320 stackWideTriggerZeroBasis-corners`, m.corners);
+    log(`6/${info.project.name}/320 stackWideTriggerZeroBasis-innerSelectCorners`, m.innerSelectCorners);
+    await page.screenshot({ path: `${__dirname}/shots/stack-wide-zero-${info.project.name}-320.png` });
+  });
+
+  test('RTL: the stacked mirror @320', async ({ page }, info) => {
+    await page.setViewportSize({ width: 320, height: 720 });
+    await page.goto('/harness.html');
+    await page.waitForFunction(() => (window as any).__spikeReady === true);
+    await page.evaluate(() => (window as any).spike.mount({ dir: 'rtl' }));
+    await variant(page, ['fallbackCap', 'stackRtl', 'stackSelect']);
+    const m = await measure(page);
+    log(`6/${info.project.name}/320 rtlStacked`, summarise(m));
+    log(`6/${info.project.name}/320 rtlStacked-corners`, m.corners);
+    log(`6/${info.project.name}/320 rtlStacked-innerSelectCorners`, m.innerSelectCorners);
+    log(`6/${info.project.name}/320 rtlStacked-strays`, m.strays);
+    await page.screenshot({ path: `${__dirname}/shots/rtl-stacked-${info.project.name}-320.png` });
+  });
+
+  test('the whole recipe as it would ship: container query + narrow trigger', async ({ page }, info) => {
+    for (const width of [320, 430, 1280] as const) {
+      await open(page, width);
+      await variant(page, ['narrowHost', 'stackViaContainer', 'stackSelect']);
+      const m = await measure(page);
+      log(`6/${info.project.name}/${width} shipRecipe`, summarise(m));
+      log(`6/${info.project.name}/${width} shipRecipe-corners`, m.corners);
+      log(`6/${info.project.name}/${width} shipRecipe-innerSelectCorners`, m.innerSelectCorners);
+      log(`6/${info.project.name}/${width} shipRecipe-strays`, m.strays);
+      await page.screenshot({ path: `${__dirname}/shots/ship-${info.project.name}-${width}.png` });
+    }
+  });
 });

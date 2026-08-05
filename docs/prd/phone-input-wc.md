@@ -1170,8 +1170,9 @@ handful of flags.
 The third wins — outer-tree normal beats `::slotted()` normal, the ordering D2a records — so the
 picker is a **content-sized, non-shrinking** flex item. In the *fallback* path content-sized means
 **the widest option**, which §5.3 already measured at **320 px**; plus a ~78 px dial addon that is
-~398 px of first-line demand before the number field gets anything. Every phone viewport wraps, and
-a wrapped group renders *wrongly*: the corner pairing and the `-1px` overlap in §5.2 are only
+~398 px of first-line demand before the number field gets anything. **Measured (§12.4): Firefox wraps
+below 468 px — so at every phone width — while Chromium and WebKit only wrap below 200 px**, because
+their base-select closed face is ~70 px. A wrapped group also renders *wrongly*: the corner pairing and the `-1px` overlap in §5.2 are only
 correct for a single row. `flex-wrap: wrap` was never a feature here — it is a latent bug with a
 viewport-dependent trigger.
 
@@ -1222,21 +1223,141 @@ our own missing `max-width`); flag-as-only-indicator (excluded by §6 anyway —
 indistinguishable for BE/DE/RO/TD, AU/NZ, ID/MC and unreadable for colour-blind users); UA sniffing
 for the breakpoint; forcing `dir="ltr"` on the row to dodge RTL, which would undo S1/S2.9's work.
 
-### 12.4 The fix, and the one open decision
+### 12.4 The measured fix (S11: 141 assertions × Chromium 148 / Firefox 150 / WebKit 26.4)
 
-The CSS recipe is being measured in three engines at 320/360/390/430 px before it lands (S11); the
-shape is: pin the picker's flex basis (`flex: 0 1 7rem; min-width: 0`), make the group
-`flex-wrap: nowrap` and let children shrink, clamp `::picker(select)` with
-`min-width: anchor-size(self-inline)` + `max-width: min(100vw - 2rem, 22rem)`, and let option labels
-**wrap** rather than ellipsize — matching what both OS pickers do natively, and because ellipsizing a
-name in a list you search *by name* is user-hostile. Pinning the basis is not a new idea: §5.3
-already said "So pin it", and the implementation skipped it.
+**It is a Firefox-only defect, and not a narrow-viewport one.** Binary-searched wrap breakpoints:
+**Chromium 200 px, WebKit 200 px, Firefox 468 px** — so Firefox wraps at 320, 360, 390 *and* 430,
+and the other two never do in any realistic layout. Cause confirmed: `mp-select` reflects `rich`
+only where `CSS.supports('appearance','base-select')`, which Firefox does not, so its closed face is
+a bare native `<select>` sized to the widest of 244 options — **334.58 px**. Trigger width by label
+shape, measured:
 
-No breakpoint is needed once the basis is pinned. If one ever is, it is `@container` on `:host`, not
-`@media` — a phone input is often narrow inside a wide viewport. The `container-type` hazard in this
-repo's notes appears to be **obsolete**: the containing-block behaviour was an acknowledged spec
-mistake, removed in Chromium 129 and since matched by Firefox and WebKit, and it is doubly irrelevant
-to a top-layer `::picker()`. Re-measure before relying on it.
+| labels | Chromium | Firefox | WebKit |
+|---|---|---|---|
+| `Name +dial (ISO)` (ours) | 343 | 325.6 | 326 |
+| name only | 271 | 254 | 255 |
+| `ISO +dial` | 121 | 120.6 | 121 |
+| base-select face (selected content) | **69.8** | n/a | **73.1** |
+
+**The "hideous" part, quantified:** in Firefox the group renders two rows, and *four corners are
+wrong plus one stray overlap*. The select leads **and** trails row 1 yet keeps `tr/br = 0`
+(a flat right edge that just stops, off-screen at 320); the addon *leads* row 2 but still carries
+`margin-left: -1px` and has all four corners squared; only the tel input is right, by accident. At
+320 px the page also scrolls sideways by 27 px.
+
+**My `min-width: 0` claim is confirmed, twice.** The base rules already set
+`min-width: 0 !important` on the slotted input and Firefox still wrapped at every width; and a
+trigger with `flex: 1 1 auto; min-width: 0` took a whole flex line *and pushed the addon to a third
+row*, while `flex: 1 1 0` — same `min-width` — gave two. Line-breaking consumes the hypothetical
+main size; shrinking happens only after the line is chosen.
+
+#### (a) Cap the fallback trigger — this alone fixes the reported defect
+
+Engine-gated, so it is inert in the engines that already fit and flips itself when Firefox ships
+customizable select:
+
+```scss
+/* phone-input.styles.scss */
+@supports not (appearance: base-select) {
+  mp-select { width: 5.5rem !important; }
+}
+/* select.styles.scss, OUTSIDE the rich @supports block */
+@supports not (appearance: base-select) {
+  select.form-select { text-overflow: ellipsis; }
+}
+```
+
+Measured: Firefox single-row from **280 px** upward with zero page overflow, tel input 129.8 px at
+320 (above the ~120 px floor); Chromium and WebKit **byte-identical at every width** — the
+`@supports not` gate never matches there. `text-overflow: ellipsis` does work on a native
+`<select>` face in Firefox, turning a mid-word clip (`Belgi⌄`) into `Bel…`. That ~3-character face
+is the one real cost, and the argument for (d).
+
+#### (b) Cap the picker — the second symptom, confirmed and fixed
+
+Uncapped at 320 px the option union overflows by **18.4 px (Chromium)** and **1.8 px (WebKit)**;
+both engines already shift it left trying to fit and cannot shrink it. The proposed cap works, with
+three load-bearing mechanics:
+
+```scss
+/* select.styles.scss, inside the existing @supports + :host([rich]) block */
+:host([rich]) select.form-select::picker(select) {
+  box-sizing: border-box;               /* or the border escapes the cap */
+  max-width: min(100vw - 2rem, 22rem);
+  min-width: anchor-size(self-inline);  /* supported in ALL THREE engines, incl. Firefox 150 */
+}
+:host([rich]) option .rich-label {
+  min-width: 0;                         /* `option` is display:flex — text-overflow on it is inert */
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+```
+
+`min-width: anchor-size(self-inline)` is required *because of* (a): a 5.5 rem trigger would
+otherwise yield a 5.5 rem picker. `- 2rem` rather than `- 1rem` is deliberate: no headless engine
+can be made to show a classic scrollbar, so whether `100vw` includes one is **unmeasured**, and
+21 px of headroom absorbs it. Label **wrapping** was also measured working (longest label → 2 lines,
+uniform 32 px elsewhere) and is the alternative if full names matter more than a uniform row height;
+it additionally needs `overflow: hidden` dropped from `option` and `align-items: start`. We take the
+ellipsis: 244 rows at one height scroll better, and typeahead — not reading — is how this list is
+searched.
+
+#### (c) Do **NOT** add `flex-wrap: nowrap` — reversal of the earlier plan
+
+Measured: with `nowrap` and the trigger unable to shrink (`flex: 0 0 auto`), Firefox's tel input
+collapses to **26 px — border and padding, zero content** — and the *page* scrolls sideways by
+131 px at 320, 91 at 360, 61 at 390, 21 at 430. That is worse than the bug it was meant to fix.
+Once (a) is in, nothing wraps down to 280 px, and `nowrap` would remain a live hazard: any future
+item that resists shrinking overflows the page silently instead of wrapping visibly. The earlier
+reasoning ("a wrapped group is never valid") was sound about *corners* and wrong about the remedy.
+
+#### (d) Optional: a deliberate two-row stack below 22 rem
+
+The only thing that makes Firefox's face readable — at `flex: 1 1 0` the trigger becomes **216.8 px
+and shows the full `Belgium +32 (BE)`**, the best-looking result of the spike — reverting cleanly to
+one row at 430 and above. Container queries are the right instrument and are now measured safe
+(§12.4a). Two prerequisites, both real:
+
+1. **The corner contract is too coarse.** `--mp-group-radius-start` maps to *both* start corners, and
+   a stacked row needs top-round/bottom-square. It must grow to four properties, keeping the
+   two-property form as the fallback so nothing else changes:
+   `border-start-start-radius: var(--mp-group-radius-top-start, var(--mp-group-radius-start, var(--mp-box-radius)))`
+   and so on for the other three.
+2. **A specificity trap that fails half-applied.** The group's pairing rules are
+   `:host(:dir(ltr)) ::slotted(:not(:first-child))` — specificity **(0,3,1)**, `!important`. The
+   obvious overrides `::slotted(input)` **(0,0,2)** and `::slotted(.addon)` **(0,1,1)** lose
+   *silently*, and `!important` vs `!important` does not save them; later source order does not
+   either. But declarations with no competing base rule *do* apply, so the result is a
+   **half-applied layout** — the worst failure mode. Winners:
+   `::slotted(input:not(:first-child))` (0,3,2) and `::slotted(.addon:not(:last-child))` (0,4,1).
+   `@container` contributes no specificity.
+
+RTL was verified for the stack in all three engines (addon `tl: 6px` + `margin-right: -1px`, inner
+select `tr: 6px`, input `bl/br: 6px` + `margin-top: -1px`).
+
+#### 12.4a `container-type` is safe here — the repo note does not reproduce
+
+Measured directly: with `container-type: inline-size` on `mp-phone-input`'s `:host`, the
+`::picker(select)` box is **byte-identical** — `dx 0, dy 0, dw 0` — in both Chromium 148 and
+WebKit 26.4. No reposition, no resize. Two further facts worth keeping:
+
+- **`@container` rules authored inside `mp-input-group`'s shadow root respond to a container on the
+  `mp-phone-input` host** — container-query ancestor lookup crosses the shadow boundary. At a 1280 px
+  viewport with a 300 px host, Firefox went from two rows to one; a media query could never see that.
+- The container must be the **host**, not the flex container being styled — an element cannot be its
+  own container.
+- Likely source of the original note: an **un-warmed** first picker open measures a flagless list
+  20 px narrower, which produced a false `dx: -12, dw: +20` until all flags were forced in. Also
+  `getComputedStyle().contain` reports `none` while `containerType` reports `inline-size`, so
+  asserting on `contain` misleads.
+
+Firefox is unmeasured for both the picker and containment-vs-native-popup, because its native popup
+is **not scriptable even headed** — options report 0×0 and `:open` stays false. No CSS in this repo
+can reach that popup; the UA clamps it. The residual risk there is not overflow but a popup as narrow
+as the capped trigger, which is the second argument for (d).
+
+#### D-open-1 (unchanged — still a product call)
 
 > **D-open-1 — should the rich path be suppressed on coarse pointers?** On touch, base-select is
 > arguably a *downgrade*: it trades a viewport-sized OS sheet (large targets, momentum scroll,
@@ -1262,6 +1383,14 @@ Reported as a visible delay before flags render. Two distinct causes, one of the
 
 Both are being measured (single bundled chunk vs per-flag vs hybrid vs sprite) together with the
 progressive-render fix, before D4 is amended.
+
+### 12.6 Incidental: the dial code renders as "32+" in RTL
+
+Found by S11 while measuring something else, and it reproduces at **any** width, not just narrow.
+`+${dial}` puts a bidi-neutral `+` next to digits; in an RTL paragraph direction the neutral
+character reorders to the trailing position, so `+32` displays as `32+`. The dial code is a
+left-to-right technical token regardless of the surrounding script, so it needs an explicit
+`dir="ltr"` (or a bidi isolate) on the `.dial-code` node in `mp-phone-input`'s template.
 
 ## 13. References
 
