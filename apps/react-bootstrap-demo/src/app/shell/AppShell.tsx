@@ -12,6 +12,7 @@ const SECTIONS = [
     { path: '/basic/forms/datetime-picker', label: 'Datetime picker' },
     { path: '/basic/forms/timepicker', label: 'Timepicker' },
     { path: '/basic/forms/multi-range', label: 'Multi-range' },
+    { path: '/basic/forms/phone-input', label: 'Phone input' },
     { path: '/basic/forms/select', label: 'Select' },
     { path: '/basic/checkbox', label: 'Checkbox' },
     { path: '/basic/radio', label: 'Radio' },

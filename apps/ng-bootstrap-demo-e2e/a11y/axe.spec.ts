@@ -12,6 +12,14 @@ axeAuditSuite(test, expect, [
       await page.locator('mp-radio-group[name="fruitTemplate"] input[type="radio"]').first().click();
     },
   },
+  {
+    path: '/basic/forms/phone-input',
+    // Open the picker: the closed control and the 244-option listbox are
+    // different DOM, and only the second exercises the rich-option markup.
+    interact: async (page) => {
+      await page.locator('mp-phone-input').first().click();
+    },
+  },
   { path: '/basic/forms/checkbox' },
   { path: '/basic/forms/datepicker' },
   { path: '/basic/forms/datetime-picker' },

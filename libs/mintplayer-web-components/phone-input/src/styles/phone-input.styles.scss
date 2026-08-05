@@ -1,0 +1,119 @@
+// `mp-phone-input` chrome. The heavy lifting — corner pairing, overlap, sizing —
+// belongs to the composed `mp-input-group`; this sheet only styles what the phone
+// input itself owns: its tel input (page CSS cannot reach in here), the dial-code
+// addon, and the flag that lives in that addon.
+
+@import "node_modules/bootstrap/scss/functions";
+@import "node_modules/bootstrap/scss/variables";
+@import "node_modules/bootstrap/scss/variables-dark";
+@import "node_modules/bootstrap/scss/mixins";
+
+:host {
+  display: block;
+  // A container query, not a media query: a phone input is often narrow inside a
+  // wide viewport (a sidebar, a modal, a grid cell) and a media query cannot see
+  // that. Measured safe — `container-type` no longer establishes a containing
+  // block, and the top-layer picker's geometry is byte-identical under
+  // containment in both supporting engines (PRD §12.4a).
+  container-type: inline-size;
+}
+
+:host([hidden]) {
+  display: none;
+}
+
+// The country picker sizes itself instead of flexing (its own :host rule beats
+// the group's ::slotted() normal declaration — the measured cascade order); the
+// tel input takes the remaining width via the group's channel-1 rules.
+mp-select {
+  flex: 0 0 auto !important;
+  width: auto !important;
+}
+
+// Cap the FALLBACK closed face. Measured (S11, PRD §12.4): where base-select is
+// unavailable the face is a bare native select sized to the WIDEST of 244
+// options — 334.58px — which overflows a 320px phone and wraps the group at any
+// width below 468px. base-select sizes the face to the SELECTED content (~70px)
+// and never wraps, so this is gated to the engines that need it and is inert
+// elsewhere; it flips itself when Firefox ships customizable select.
+//
+// NOT accompanied by flex-wrap: nowrap on the group. That was the obvious
+// companion fix and it is measurably worse: with a non-shrinking trigger it
+// collapses the tel input to 26px of border and padding and moves the overflow
+// onto the page (131px of sideways scroll at 320px). Capping the trigger is the
+// whole fix — nothing wraps down to 280px.
+@supports not (appearance: base-select) {
+  mp-select {
+    width: 5.5rem !important;
+  }
+}
+
+// The flag is decorative chrome in the dial-code addon, in EVERY engine — not the
+// S2 overlay. The overlay needed reserved in-shadow padding this element cannot
+// set on mp-select, aligned only while the select was the group's first child,
+// and had an engine-dependent width. The addon is this element's own light-DOM
+// child inside the group: fully styleable, position-independent, and the flag
+// never has to chase the select's closed face. Where base-select renders rich
+// options, the closed face already shows the flag, so the addon's copy is
+// gated OFF or supporting engines would show two.
+.flag {
+  display: inline-flex;
+  align-items: center;
+  margin-inline-end: 0.375rem;
+}
+
+.flag svg {
+  width: 1.25rem;
+  height: auto;
+  display: block;
+}
+
+// Reserve the flag's box before its chunk resolves — no layout shift on load.
+.flag:empty {
+  min-width: 1.25rem;
+  min-height: 0.833rem;
+}
+
+// Keyed off the picker's REAL reflected state, not an `@supports` query. Those are
+// different conditions — rich mode also needs a renderer, `.options` mode and a
+// plain dropdown — so the old `@supports` gate left a supporting engine with no
+// flag anywhere whenever `rich` was suppressed for another reason (PRD §12.2).
+//
+// A sibling selector rather than JS: `mp-select` and the addon are children of the
+// same shadow root here, so the real state is directly selectable and can never
+// drift out of sync with what the picker is actually doing.
+mp-select[rich] ~ .addon .flag {
+  display: none;
+}
+
+.dial-code {
+  user-select: none;
+}
+
+// ── Below 22rem: stack deliberately, instead of tolerating a bad single row ────
+//
+// Capping the fallback trigger keeps everything on one row down to 280px, but at
+// 5.5rem its face reads about three characters ("Bel…"). Giving the trigger its own
+// row instead makes it 216.8px and it shows the full "Belgium +32 (BE)" — measured
+// the best-looking result of the responsive spike, in all three engines, reverting
+// cleanly to one row above the threshold.
+@container (max-width: 22rem) {
+  // flex-basis 0, NOT auto: with `auto` the native face's intrinsic width takes a
+  // whole flex line of its own and pushes the dial addon onto a THIRD row
+  // (measured). The cap above is overridden here by equal specificity + later
+  // source order, which is why this block must stay after it.
+  mp-select {
+    flex: 1 1 0 !important;
+    width: auto !important;
+    min-width: 0 !important;
+  }
+
+  // Row 1 keeps its top corners and squares the bottom; row 2 mirrors it. This is
+  // what the four-property corner contract in `_styles` exists for.
+  mp-select {
+    --mp-group-radius-top-start: var(--bs-border-radius);
+    --mp-group-radius-top-end: 0;
+    --mp-group-radius-bottom-start: 0;
+    --mp-group-radius-bottom-end: 0;
+  }
+}

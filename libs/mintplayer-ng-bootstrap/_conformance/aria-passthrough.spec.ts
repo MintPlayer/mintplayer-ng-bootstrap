@@ -18,6 +18,8 @@ import { BsPaginationComponent } from '@mintplayer/ng-bootstrap/pagination';
 import { BsQueryBuilderComponent } from '@mintplayer/ng-bootstrap/query-builder';
 import { BsRadioComponent } from '@mintplayer/ng-bootstrap/radio';
 import { BsSchedulerComponent } from '@mintplayer/ng-bootstrap/scheduler';
+import { BsInputGroupComponent } from '@mintplayer/ng-bootstrap/input-group';
+import { BsPhoneInputComponent } from '@mintplayer/ng-bootstrap/phone-input';
 import { BsSelectComponent } from '@mintplayer/ng-bootstrap/select';
 import { BsShellComponent } from '@mintplayer/ng-bootstrap/shell';
 import { BsSignaturePadComponent } from '@mintplayer/ng-bootstrap/signature-pad';
@@ -140,10 +142,12 @@ const WRAPPERS: WrapperCase[] = [
     content: '<ng-template bsNavbarDropdownLabel>label</ng-template>',
     needs: [BsNavbarDropdownLabelDirective],
   },
+  { selector: 'bs-input-group', tag: 'mp-input-group', component: BsInputGroupComponent },
   { selector: 'bs-pagination', tag: 'mp-pagination', component: BsPaginationComponent },
   { selector: 'bs-query-builder', tag: 'mp-query-builder', component: BsQueryBuilderComponent },
   { selector: 'bs-radio', tag: 'mp-radio', component: BsRadioComponent },
   { selector: 'bs-scheduler', tag: 'mp-scheduler', component: BsSchedulerComponent },
+  { selector: 'bs-phone-input', tag: 'mp-phone-input', component: BsPhoneInputComponent },
   { selector: 'bs-select', tag: 'mp-select', component: BsSelectComponent },
   { selector: 'bs-shell', tag: 'mp-shell', component: BsShellComponent },
   { selector: 'bs-signature-pad', tag: 'mp-signature-pad', component: BsSignaturePadComponent },
@@ -250,7 +254,7 @@ describe('Angular wrapper ARIA passthrough', () => {
     // Guards against a new wrapper being added without an entry above. The count
     // comes from scanning for templates whose root is an mp-*/mint-* element; if
     // this fails, add the wrapper to WRAPPERS rather than raising the number.
-    expect(WRAPPERS).toHaveLength(20);
+    expect(WRAPPERS).toHaveLength(22);
     expect(new Set(WRAPPERS.map((w) => w.selector)).size).toBe(WRAPPERS.length);
   });
 });

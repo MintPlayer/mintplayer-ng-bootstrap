@@ -1,0 +1,205 @@
+// `mp-input-group` — Bootstrap's `.input-group`, re-authored so it also works for
+// children that live in their own shadow root.
+//
+// Bootstrap's own contract is a set of direct-child selectors
+// (`.input-group > .form-control`), which cannot match a slotted element and
+// cannot see inside an `mp-*` control at all. Everything below therefore splits
+// into two channels, both measured in spike S1 across Chromium, Firefox and
+// WebKit — see docs/prd/phone-input-wc.md §5.2 and §9.1.
+
+@import "node_modules/bootstrap/scss/functions";
+@import "node_modules/bootstrap/scss/variables";
+@import "node_modules/bootstrap/scss/variables-dark";
+@import "node_modules/bootstrap/scss/mixins";
+
+:host {
+  display: block;
+}
+
+:host([hidden]) {
+  display: none;
+}
+
+// The flex container must be this element, not :host — a block wrapper around the
+// slot makes the children stack instead of pairing, which is subtle enough that it
+// cost a re-measure during the spike.
+.input-group {
+  position: relative;
+  display: flex;
+  flex-wrap: wrap; // matches Bootstrap; lets a validation message wrap to its own line
+  align-items: stretch;
+  width: 100%;
+}
+
+slot {
+  display: contents;
+}
+
+// Every item needs a stacking context so the focus lift below has something to
+// raise.
+::slotted(*) {
+  position: relative;
+}
+
+// ── Channel 1: light-DOM children (native input/button/span, and the controls a
+//    composing element renders into its own shadow tree alongside this group).
+//
+//    `!important` is load-bearing, not a shortcut. A NORMAL declaration in a
+//    `::slotted()` rule loses to any rule in the tree the child actually lives in
+//    — including the page's own `.form-control { border-radius }` — so the
+//    selector matches while the declaration silently does nothing. Importance
+//    inverts that tree-order rule, and overriding a child's standalone corners is
+//    precisely this component's job.
+//
+//    PHYSICAL properties under :dir() guards, not logical ones: a logical property
+//    on a slotted child resolves against THAT child's direction, and the UA forces
+//    input[type=tel|url|email] to ltr even inside dir=rtl — which would square the
+//    wrong corner of the very control a phone field is built around. Keying
+//    physical properties off this element's own direction is immune. The two
+//    blocks are mutually exclusive, so nothing has to be restored.
+:host(:dir(ltr)) ::slotted(:not(:first-child)) {
+  margin-left: -1px !important;
+  border-top-left-radius: 0 !important;
+  border-bottom-left-radius: 0 !important;
+}
+
+:host(:dir(ltr)) ::slotted(:not(:last-child)) {
+  border-top-right-radius: 0 !important;
+  border-bottom-right-radius: 0 !important;
+}
+
+:host(:dir(rtl)) ::slotted(:not(:first-child)) {
+  margin-right: -1px !important;
+  border-top-right-radius: 0 !important;
+  border-bottom-right-radius: 0 !important;
+}
+
+:host(:dir(rtl)) ::slotted(:not(:last-child)) {
+  border-top-left-radius: 0 !important;
+  border-bottom-left-radius: 0 !important;
+}
+
+// Bootstrap declares width:100% on .form-control, which otherwise wins and forces
+// each control onto its own flex line.
+::slotted(input),
+::slotted(textarea),
+::slotted(select) {
+  flex: 1 1 auto !important;
+  width: 1% !important;
+  min-width: 0 !important;
+}
+
+// ── Channel 2: shadow-DOM children. Only inherited custom properties cross the
+//    boundary, so the group resolves the pairing and hands it in; the shared
+//    `_styles` box sheets (form-select, form-control) consume it, so any control
+//    built on them participates with no opt-in.
+::slotted(:not(:first-child)) {
+  --mp-group-radius-start: 0;
+}
+
+::slotted(:not(:last-child)) {
+  --mp-group-radius-end: 0;
+}
+
+// A slotted `mp-*` control is a flex item like any other, but sizes itself: its
+// own `:host` rules outrank a normal ::slotted() declaration (the measured
+// cascade order), which is how a country picker pins its width. There is no
+// selector for "any custom element", so the participating controls are listed.
+::slotted(mp-select),
+::slotted(mp-phone-input) {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+// The focused control's ring must not be clipped by the next sibling's -1px
+// overlap. `:focus-within` is what catches focus landing inside a slotted control's
+// own shadow root.
+::slotted(:focus),
+::slotted(:focus-within) {
+  z-index: 5;
+}
+
+// ── Sizing. Bootstrap's `.input-group-sm > .form-control` shape cannot reach a
+//    slotted child either, so light children are sized here; `mp-*` children get
+//    the `size` attribute mirrored onto them instead, so each control applies its
+//    own sizing through the API it already has.
+:host([size="sm"]) ::slotted(input),
+:host([size="sm"]) ::slotted(button),
+:host([size="sm"]) ::slotted(select),
+:host([size="sm"]) ::slotted(span) {
+  padding: $input-padding-y-sm $input-padding-x-sm !important;
+  font-size: $input-font-size-sm !important;
+}
+
+:host([size="lg"]) ::slotted(input),
+:host([size="lg"]) ::slotted(button),
+:host([size="lg"]) ::slotted(select),
+:host([size="lg"]) ::slotted(span) {
+  padding: $input-padding-y-lg $input-padding-x-lg !important;
+  font-size: $input-font-size-lg !important;
+}
+
+// Addon text, for consumers that slot a plain element rather than bringing their
+// own class. Bootstrap's `.input-group-text` never reaches through the slot.
+::slotted(.addon),
+::slotted([data-addon]) {
+  display: flex;
+  align-items: center;
+  padding: $input-group-addon-padding-y $input-group-addon-padding-x;
+  font-size: $input-font-size;
+  font-weight: $input-group-addon-font-weight;
+  line-height: $input-line-height;
+  color: $input-group-addon-color;
+  text-align: center;
+  white-space: nowrap;
+  background-color: $input-group-addon-bg;
+  border: $input-border-width solid $input-group-addon-border-color;
+}
+
+// ── Stacked mode, opt-in via `[stacked]` ───────────────────────────────────────
+//
+// A composing element that stacks its children (mp-phone-input below 22rem) sets
+// this attribute; the group then pairs corners vertically instead of horizontally.
+//
+// EVERY selector here must out-specify the single-row rules above, which are
+// `:host(:dir(ltr)) ::slotted(:not(:first-child))` = (0,3,1) AND `!important`.
+// The obvious `::slotted(input)` is (0,0,2) and loses SILENTLY — `!important` does
+// not save it and later source order does not either. Worse, declarations with no
+// competing rule above still apply, so an under-specified override yields a
+// HALF-APPLIED layout, which is the hardest kind to diagnose. Adding the host
+// attribute plus a compound inside `::slotted()` clears the bar; `@container`
+// contributes nothing to specificity, so it cannot be relied on here (measured,
+// PRD §12.4).
+:host([stacked]:dir(ltr)) ::slotted(.addon:not(:last-child)) {
+  border-top-right-radius: var(--bs-border-radius) !important;
+  border-bottom-right-radius: 0 !important;
+}
+
+:host([stacked]:dir(ltr)) ::slotted(input:not(:first-child)) {
+  flex: 1 1 100% !important;
+  width: 100% !important;
+  margin-left: 0 !important;
+  margin-top: -1px !important;
+  border-top-left-radius: 0 !important;
+  border-top-right-radius: 0 !important;
+  border-bottom-left-radius: var(--bs-border-radius) !important;
+  border-bottom-right-radius: var(--bs-border-radius) !important;
+}
+
+// RTL mirror, verified in all three engines: the addon keeps its LEFT top corner
+// and the overlap moves to the other side.
+:host([stacked]:dir(rtl)) ::slotted(.addon:not(:last-child)) {
+  border-top-left-radius: var(--bs-border-radius) !important;
+  border-bottom-left-radius: 0 !important;
+}
+
+:host([stacked]:dir(rtl)) ::slotted(input:not(:first-child)) {
+  flex: 1 1 100% !important;
+  width: 100% !important;
+  margin-right: 0 !important;
+  margin-top: -1px !important;
+  border-top-left-radius: 0 !important;
+  border-top-right-radius: 0 !important;
+  border-bottom-left-radius: var(--bs-border-radius) !important;
+  border-bottom-right-radius: var(--bs-border-radius) !important;
+}

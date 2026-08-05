@@ -1,0 +1,164 @@
+// `mp-select`'s rich-options tier: customizable select (`appearance: base-select`)
+// so an option can carry markup — a flag SVG next to a country name — while the
+// element keeps native `<select>` semantics.
+//
+// Every rule is DOUBLY gated, and both gates are load-bearing (spike S2, measured
+// in Chromium 148 / Firefox 150 / WebKit 26.4 — docs/prd/phone-input-wc.md §9.4):
+//
+//  1. `@supports (appearance: base-select)` — feature detection, never a browser
+//     list. Ungated, the reconciliation below DELETES the dropdown arrow in the
+//     engine that has no `::picker-icon`: the closed face's right 44px collapsed
+//     to a 2px ink run, the border alone. Today that engine is Firefox; the gate
+//     flips itself when it ships.
+//  2. `:host([rich])` — per-instance opt-in, reflected by the element only when an
+//     `optionRenderer` is set and the select is a dropdown (not `multiple`, no
+//     `number-visible`, which base-select does not apply to). Without this, every
+//     existing mp-select in a supporting engine would silently change rendering
+//     mode — and measurably change width: a native select sizes to its widest
+//     option, a base-select button to the SELECTED content (320px → 152px).
+//
+// Two more measured requirements: the selector must be `select.form-select`
+// (Chrome's own documented bare-`select` snippet loses the cascade to Bootstrap's
+// class selector), and `appearance: base-select` must hit BOTH the select and
+// `::picker(select)` — the select alone flips the closed face while the picker
+// stays native (optionsLaidOut: 0).
+
+@import "node_modules/bootstrap/scss/functions";
+@import "node_modules/bootstrap/scss/variables";
+@import "node_modules/bootstrap/scss/variables-dark";
+@import "node_modules/bootstrap/scss/mixins";
+
+@supports (appearance: base-select) {
+  :host([rich]) select.form-select {
+    appearance: base-select;
+
+    // Reconciliation with Bootstrap's .form-select, all of it conditional on the
+    // UA picker existing (gate 1):
+    //  - Bootstrap's background-image caret would sit NEXT TO the UA's
+    //    ::picker-icon — two carets (measured: 3 ink runs / 21px vs 2 / 14).
+    //  - The 2.25rem right gutter existed only for that caret. `padding-inline`
+    //    rather than `padding-right`: symmetric on purpose, so RTL cannot drift
+    //    if one side is ever edited (S2.9).
+    background-image: none;
+    padding-inline: $form-select-padding-x;
+
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    text-align: start;
+    // Without nowrap the flex closed face WRAPS the localized name and the
+    // control grows 38px -> 62px — a native select never wraps.
+    white-space: nowrap;
+    overflow: hidden;
+  }
+
+  :host([rich]) select.form-select::picker(select) {
+    appearance: base-select;
+    border: var(--bs-border-width) solid var(--bs-border-color);
+    border-radius: var(--bs-border-radius);
+    background: var(--bs-body-bg);
+    padding: 0.25rem 0;
+    max-height: 20rem;
+    overflow-y: auto;
+
+    // Nothing constrained the inline size, so 244 localized option labels set the
+    // picker's max-content width and it overflowed a 320px viewport by 18.4px in
+    // Chromium and 1.8px in WebKit (measured, S11 / PRD §12.4). Three
+    // load-bearing details:
+    //  - box-sizing, or the border escapes the cap;
+    //  - min-width, because the trigger above is capped at 5.5rem in the fallback
+    //    and a narrow trigger would otherwise yield a narrow picker.
+    //    anchor-size() is supported in all three engines, Firefox included;
+    //  - 2rem rather than 1rem of slack: whether 100vw includes a classic
+    //    scrollbar cannot be measured headless, and 21px of headroom absorbs it.
+    box-sizing: border-box;
+    min-width: anchor-size(self-inline);
+    max-width: min(100vw - 2rem, 22rem);
+  }
+
+  // Authored explicitly in the template (button > selectedcontent): WebKit's
+  // UA-generated button mirrors nothing into the closed face, Chromium's does.
+  :host([rich]) selectedcontent {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    min-width: 0;
+  }
+
+  :host([rich]) selectedcontent .rich-label {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  // The same treatment for a list row, now that the picker has a max-width.
+  // It must sit on .rich-label and carry min-width: 0 — `option` is a flex
+  // container here, so text-overflow on it is inert and the shrinking flex item
+  // needs its own minimum lifted (measured, S11). Ellipsis rather than wrapping
+  // keeps all 244 rows a uniform height, which scrolls better in a list this
+  // long; wrapping is the alternative if full names matter more, and then
+  // `option` also needs `overflow` unset and `align-items: start`.
+  :host([rich]) option .rich-label {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  // Trailing in both directions and both engines (S2.9, pixel-measured).
+  :host([rich]) select.form-select::picker-icon {
+    margin-inline-start: auto;
+  }
+
+  :host([rich]) select.form-select:open::picker-icon {
+    rotate: 180deg;
+  }
+
+  :host([rich]) option {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.25rem 0.75rem;
+  }
+
+  :host([rich]) option:checked {
+    background-color: var(--bs-secondary-bg);
+  }
+
+  // The rendered fragment may carry an inline flag SVG; give it a stable box so
+  // 244 of them lay out without per-consumer CSS. Decorative by contract
+  // (aria-hidden comes from the renderer).
+  :host([rich]) option svg,
+  :host([rich]) selectedcontent svg {
+    width: 1.25rem;
+    height: auto;
+    flex: 0 0 auto;
+  }
+
+  // A renderer can differentiate the closed face from the list: selectedcontent
+  // CLONES the selected option's fragment, so the same markup serves both and
+  // these hooks decide which parts show where. display:none content is excluded
+  // from the option's accessible name, so a closed-only ISO code does not leak
+  // into what the list option announces.
+  :host([rich]) option [data-closed-only] {
+    display: none;
+  }
+
+  :host([rich]) selectedcontent [data-closed-only] {
+    display: inline;
+  }
+
+  :host([rich]) selectedcontent [data-list-only] {
+    display: none;
+  }
+}
+
+// The fallback face has no ::picker and no selectedcontent: it is the option's own
+// text, sized to the widest option and capped by mp-phone-input to 5.5rem. Without
+// this the label clips mid-word ("Belgi"); with it, it reads "Bel…". Ellipsis on a
+// native <select> face is honoured in Firefox (measured, S11).
+@supports not (appearance: base-select) {
+  select.form-select {
+    text-overflow: ellipsis;
+  }
+}

@@ -1,3 +1,5 @@
+import { BsInputGroup } from '@mintplayer/react-bootstrap/input-group';
+import { BsPhoneInput } from '@mintplayer/react-bootstrap/phone-input';
 import * as React from 'react';
 
 import { BsAccordion, BsAccordionItem } from '@mintplayer/react-bootstrap/accordion';
@@ -25,6 +27,8 @@ import { BsTimeline } from '@mintplayer/react-bootstrap/timeline';
  */
 
 export const probes = [
+  <BsInputGroup role="none" id="ig" tabIndex={-1} />,
+  <BsPhoneInput role="none" id="pi" tabIndex={-1} />,
   <BsAccordion role="none" id="a" tabIndex={-1} />,
   <BsAccordion>
     <BsAccordionItem header="H" role="none" id="ai" tabIndex={-1} />

@@ -31,6 +31,7 @@ export function createAppRouter(ssr: boolean) {
     { path: '/basic/forms/datetime-picker', name: 'datetime-picker', component: () => import('../views/forms/DatetimePickerView.vue') },
     { path: '/basic/forms/timepicker',      name: 'timepicker',      component: () => import('../views/forms/TimepickerView.vue') },
     { path: '/basic/forms/multi-range',     name: 'multi-range',     component: () => import('../views/forms/MultiRangeView.vue') },
+    { path: '/basic/forms/phone-input',     name: 'phone-input',     component: () => import('../views/forms/PhoneInputView.vue') },
     { path: '/basic/forms/select',          name: 'select',          component: () => import('../views/forms/SelectView.vue') },
     // Advanced
     { path: '/advanced/otp-input',  name: 'otp-input',     component: () => import('../views/advanced/OtpInputView.vue') },

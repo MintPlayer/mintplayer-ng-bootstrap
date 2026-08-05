@@ -61,6 +61,12 @@ WCs with a no-JS SSR path ship a Declarative-Shadow-DOM "chrome" constant, rende
 - **Bootstrap utility classes do not cross the shadow boundary.** `p-0`, `d-flex`, reboot defaults — none reach inside a WC's shadow root. Re-declare every rule you need in the component's own SCSS.
 - Per-component templates that vary per row must be **render-callback functions** (see `mp-treeview.nodeRenderer`), not slots — slots can't be per-node in a dynamic tree.
 - Composition over reinvention: reuse `OverlayController` (`libs/.../overlay`) for popups and `mp-treeview` for trees.
+- **No backticks inside a comment inside ANY tagged template** — `css\`\`` *and* `html\`\`` (an HTML comment is still inside the JS template literal, so a backtick there terminates it and the build fails somewhere confusing). Use bare names in both.
+- **Every dynamic `import()` specifier in lib source must be a static string literal.** A computed one (`` import(`./x/${k}.js`) ``, even with `/* @vite-ignore */`) survives into the published `.mjs` and then either hard-fails an esbuild consumer's build **or — worse, silently — globs the whole target directory into their bundle**. Generate a static loader map instead (`flags/src/flag-loaders.generated.ts` is the pattern).
+- **Styling a slotted `mp-*` control from an outer WC: `::slotted()` is the weakest link in the cascade.** Measured order for one slotted element: `::slotted()` normal **<** the control's `:host` normal **<** the tree the element lives in (page CSS / the composing element) **<** `::slotted()` `!important`. So a container cannot restyle a slotted control's geometry with a plain rule when the page already sets that property (Bootstrap's `.form-control { border-radius }`, `width: 100%`) — the selector matches while the declaration silently loses. Mark container geometry `!important`, let a control size itself from `:host`, and reach *inside* a control only through inherited custom properties.
+- **A container query can reach into a shadow root; a media query cannot see a narrow host.** `container-type: inline-size` on a WC's `:host` is matched by `@container` rules authored **inside a nested WC's own shadow root** — container-query ancestor lookup crosses shadow boundaries (measured, 3 engines). Use it instead of `@media` whenever a component can be narrow inside a wide viewport (sidebar, modal, grid cell). The container must be the host, never the flex container you are styling — an element cannot be its own container. **`container-type` no longer establishes a containing block** (that was an acknowledged spec mistake, removed in Chromium 129 and matched since): measured byte-identical geometry for a top-layer `::picker(select)` under containment. Note `getComputedStyle().contain` reports `none` while `containerType` reports `inline-size`, so assert on the latter.
+- **In flex, `min-width: 0` cannot prevent wrapping** — line-breaking uses each item's *hypothetical main size* and shrinking happens only after the line is chosen. An intrinsically wide item (a native `<select>` sizes to its **widest option**) takes a whole line no matter what its `min-width` says; only `flex-wrap: nowrap` or a real `flex-basis` (`flex: 1 1 0`, not `1 1 auto`) changes that. And `nowrap` alone can be *worse* than the wrap it fixes: if a sibling cannot shrink, the overflow moves to the page (measured: a 26px-wide input and 131px of horizontal page scroll). Constrain the wide item's basis first.
+- **`input[type=tel|url|email]` is UA-forced to `direction: ltr`, even inside `dir="rtl"`.** A logical property on such an input resolves against *its* direction, not its container's, so `border-start-*` / `margin-inline-*` land on the wrong side. Use physical properties under `:host(:dir())` guards when styling one from a container. (Elements whose whole chain inherits `rtl` — a slotted `<select>`, an overlay in your own shadow root — keep logical properties.)
 
 ### Module resolution
 
@@ -158,6 +164,12 @@ template literal in the generated chrome. If JS is its only writer, the no-JS DO
 6. No `outline: none` without a `:focus-visible` replacement in the same stylesheet.
 
 ## Build & test
+
+**In a wrapper spec, drive inputs from a `signal()`, never a mutable field.** Change detection is
+signal-driven: a plain-field write on the test host notifies nothing, so `fixture.detectChanges()`
+does not re-evaluate the binding and the child's `input()` silently keeps its old value. A literal
+binding and a signal host both propagate correctly — a mutated field does not, and the spec fails
+looking like a component bug.
 
 **Run test suites only once ALL milestones of a task are implemented — never after each one.**
 The suites here are slow (`nx test mintplayer-ng-bootstrap` alone is ~2.5 min, a full

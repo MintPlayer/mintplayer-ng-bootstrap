@@ -12,6 +12,7 @@ import '@mintplayer/web-components/timeline';
 import '@mintplayer/web-components/datatable';
 import '@mintplayer/web-components/otp-input';
 import '@mintplayer/web-components/signature-pad';
+import '@mintplayer/web-components/phone-input';
 
 /**
  * The one naming contract, asserted across every component that implements it —
@@ -40,6 +41,15 @@ interface NamingCase {
   extra?: string;
   /** Category-2 default applied when the consumer names nothing. */
   defaultName?: string;
+  /**
+   * The component describes its own role-bearing node from inside its shadow root
+   * (mp-phone-input points its tel input at the static dial code). The contract is
+   * that a HOST IDREF is never copied inward — not that `aria-describedby` is
+   * absent — so for these the assertions check what the attribute must NOT contain,
+   * and the error-text references are matched within it rather than as its whole
+   * value.
+   */
+  ownDescribedBy?: boolean;
 }
 
 const CASES: NamingCase[] = [
@@ -57,6 +67,9 @@ const CASES: NamingCase[] = [
   // Class is MintOtpInputElement, but the registered tag is mp-otp-input.
   { tag: 'mp-otp-input', target: 'input.hidden-input', defaultName: 'One-time code' },
   { tag: 'mp-signature-pad', target: 'canvas', defaultName: 'Signature pad' },
+  // The role-bearing control is the tel input; its picker is named separately by
+  // `country-label`, which is why a host `aria-label` must not land on both.
+  { tag: 'mp-phone-input', target: 'input[type="tel"]', defaultName: 'Phone number', ownDescribedBy: true },
 ];
 
 async function mount(html: string, tag: string, target: string): Promise<HTMLElement> {
@@ -68,7 +81,7 @@ async function mount(html: string, tag: string, target: string): Promise<HTMLEle
   return node as HTMLElement;
 }
 
-describe.each(CASES)('$tag naming contract', ({ tag, target, extra, defaultName }) => {
+describe.each(CASES)('$tag naming contract', ({ tag, target, extra, defaultName, ownDescribedBy }) => {
   beforeEach(() => {
     document.body.innerHTML = '';
   });
@@ -102,7 +115,11 @@ describe.each(CASES)('$tag naming contract', ({ tag, target, extra, defaultName 
       target,
     );
     expect(node.getAttribute('aria-labelledby')).toBeNull();
-    expect(node.getAttribute('aria-describedby')).toBeNull();
+    // The host's IDREF must not appear inward. A component that describes its own
+    // control from inside its shadow root still has an attribute — it just must
+    // never contain the consumer's id, which would resolve to nothing in here.
+    if (ownDescribedBy) expect(node.getAttribute('aria-describedby')).not.toContain('outer');
+    else expect(node.getAttribute('aria-describedby')).toBeNull();
   });
 });
 
@@ -117,10 +134,10 @@ describe.each(CASES)('$tag naming contract', ({ tag, target, extra, defaultName 
  * at the same in-shadow node, and disappear together.
  */
 const ERROR_TEXT_CASES = CASES.filter(({ tag }) =>
-  ['mp-select', 'mp-checkbox', 'mp-radio', 'mp-toggle-button', 'mp-otp-input'].includes(tag),
+  ['mp-select', 'mp-checkbox', 'mp-radio', 'mp-toggle-button', 'mp-otp-input', 'mp-phone-input'].includes(tag),
 );
 
-describe.each(ERROR_TEXT_CASES)('$tag error-text contract', ({ tag, target, extra }) => {
+describe.each(ERROR_TEXT_CASES)('$tag error-text contract', ({ tag, target, extra, ownDescribedBy }) => {
   beforeEach(() => {
     document.body.innerHTML = '';
   });
@@ -131,7 +148,8 @@ describe.each(ERROR_TEXT_CASES)('$tag error-text contract', ({ tag, target, extr
   it('references nothing and renders nothing while the control is valid', async () => {
     const node = await mount(`<${tag} ${attrs} error-text="Probe message."></${tag}>`, tag, target);
     expect(node.hasAttribute('aria-errormessage')).toBe(false);
-    expect(node.hasAttribute('aria-describedby')).toBe(false);
+    if (ownDescribedBy) expect(node.getAttribute('aria-describedby') ?? '').not.toMatch(/-error$/);
+    else expect(node.hasAttribute('aria-describedby')).toBe(false);
     expect(host().shadowRoot!.querySelector('.invalid-feedback')).toBeNull();
   });
 
@@ -144,7 +162,8 @@ describe.each(ERROR_TEXT_CASES)('$tag error-text contract', ({ tag, target, extr
     const id = node.getAttribute('aria-errormessage');
 
     expect(id, `${tag}: no aria-errormessage`).toBeTruthy();
-    expect(node.getAttribute('aria-describedby')).toBe(id);
+    if (ownDescribedBy) expect(node.getAttribute('aria-describedby')).toContain(id!);
+    else expect(node.getAttribute('aria-describedby')).toBe(id);
     const message = host().shadowRoot!.getElementById(id!);
     expect(message, `${tag}: aria-errormessage does not resolve in its own shadow root`).not.toBeNull();
     expect(message!.textContent).toBe('Probe message.');
@@ -161,7 +180,8 @@ describe.each(ERROR_TEXT_CASES)('$tag error-text contract', ({ tag, target, extr
     await host().updateComplete;
 
     expect(node.hasAttribute('aria-errormessage')).toBe(false);
-    expect(node.hasAttribute('aria-describedby')).toBe(false);
+    if (ownDescribedBy) expect(node.getAttribute('aria-describedby') ?? '').not.toMatch(/-error$/);
+    else expect(node.hasAttribute('aria-describedby')).toBe(false);
     expect(host().shadowRoot!.querySelector('.invalid-feedback')).toBeNull();
   });
 });
