@@ -1679,10 +1679,30 @@ design, §12.4a) and adding a defensive `min-width` floor to `mp-phone-input` (s
 now-understood mechanism). 14.2's generalisation and 14.4's container-query hazard are the durable
 mitigations, and belong in `CLAUDE.md`.
 
-### Constraint
+### 14.8 As built
 
-`master` is merged and deployed; this needs a **new branch and PR**, which requires explicit
-permission before creation.
+| | |
+|---|---|
+| Branch / PR | `fix/input-group-slotted-wrapper-sizing` — **draft PR #400**, off `master` |
+| Changed | `input-group.styles.scss`, `mp-input-group.ts`, `phone-input.styles.scss` |
+| New guard | `apps/ng-bootstrap-demo-e2e/e2e/input-group.spec.ts` (6 tests × chromium + firefox) |
+| Versions | **web-components 2.9.0 → 2.10.0.** No wrapper bump: the Angular diff is spec-only and React/Vue are untouched, so none of the three has a shipped change. Their `^2.0.0` peer ranges already admit 2.10.0. |
+| Tests | **1765** web-components (114 files), **544** ng-bootstrap (161 files); e2e 12 passed, and 29 with the scheduler specs alongside |
+
+**Minor, not patch, against this repo's `fix:` → patch convention.** The change is a bug fix, but it
+also adds public API — `--mp-group-min-item-width` is documented and consumer-settable — and additive
+API is a minor under semver. The corner-contract custom properties are already treated as API here,
+so the property is not an implementation detail.
+
+**The guard was verified to fail on the broken code**, which is the only thing that makes it a guard:
+reverting the sizing rule fails 5 of the 6 new e2e tests, the scheduler one with exactly the reported
+symptom (`lines: 2`). The sixth (the mobile floor) passes either way by design — it guards the
+`min-width: 0` regression, not the tag-name one.
+
+Left for review rather than decided here: the scheduler's toolbars now occupy one line where they
+previously wrapped, so equal-share growth truncates the longer select labels at desktop width. That
+is Bootstrap's behaviour and single-row occupancy is what an input group means, but it is a visible
+change to a shipped page. `--mp-group-min-item-width` is the knob if another balance is wanted.
 
 ## 15. References
 
