@@ -91,12 +91,11 @@ export class PhoneInputComponent {
 
   protected readonly snippetGroupHtml = dedent`
     <!-- bs-input-group joins any mix of controls, including ones that keep
-         their own shadow root: the corners pair and the borders collapse. -->
+         their own shadow root: the corners pair and the borders collapse.
+         Below ~6rem per control the row wraps instead of crushing them;
+         override --mp-group-min-item-width for a denser toolbar. -->
     <bs-input-group>
-      <bs-select aria-label="Number type" [(ngModel)]="type">
-        <option value="mobile">Mobile</option>
-        <option value="home">Home</option>
-      </bs-select>
+      <span class="addon">Tel</span>
       <bs-phone-input [(ngModel)]="phone" defaultCountry="be" />
     </bs-input-group>
   `;

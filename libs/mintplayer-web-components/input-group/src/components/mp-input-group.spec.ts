@@ -66,6 +66,34 @@ describe('mp-input-group', () => {
     expect(el.querySelector('mp-select')?.getAttribute('size')).toBe('7');
   });
 
+  it('mirrors through a framework wrapper host onto the control inside it', async () => {
+    // A wrapper host is a custom element too, so the old `tagName.includes('-')`
+    // filter accepted it and wrote the attribute where nothing could read it: an
+    // Angular signal input does not observe a runtime setAttribute. `bs-select` here
+    // stands for any wrapper that renders its control one level in (PRD §14.5).
+    const el = await mount(`
+      <mp-input-group size="sm">
+        <bs-select><mp-select></mp-select></bs-select>
+      </mp-input-group>
+    `);
+    expect(el.querySelector('bs-select mp-select')?.getAttribute('size')).toBe('sm');
+    expect(el.querySelector('bs-select')?.hasAttribute('size')).toBe(false);
+
+    el.size = 'md';
+    await el.updateComplete;
+    expect(el.querySelector('bs-select mp-select')?.hasAttribute('size')).toBe(false);
+  });
+
+  it('leaves a wrapper alone when it holds no control to size', async () => {
+    const el = await mount(`
+      <mp-input-group size="lg">
+        <bs-mystery></bs-mystery>
+      </mp-input-group>
+    `);
+    // Nothing to descend to, so nothing is written — the group does not guess.
+    expect(el.querySelector('bs-mystery')?.hasAttribute('size')).toBe(false);
+  });
+
   it('mirrors onto children slotted in later', async () => {
     const el = await mount(`<mp-input-group size="lg"></mp-input-group>`);
     const child = document.createElement('mp-select');

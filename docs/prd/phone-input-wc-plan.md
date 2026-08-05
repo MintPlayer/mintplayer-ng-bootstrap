@@ -24,6 +24,7 @@ did not cause — `/enterprise/query-builder` trips `aria-required-children` on 
 | M8 — demo pages ×3 | ✅ **done** — all three demos build; keymap documented |
 | M9 — conformance + a11y registries | ✅ **done** — WC naming 72, ng 22, react 12+probes, vue automatic, axe ×3 |
 | M9b — responsive + flag-loading defects [PRD §12] | ✅ **done** — flags 3.4s→0.27s, wrap fixed by capping the trigger (NOT nowrap), picker clamped, flag gate + RTL dial code fixed |
+| **M11 — phone input inside an input group does not pair** [PRD §14] | 🟡 **diagnosed + fix verified live, not yet applied** — 3-engine measurement done; needs a new branch/PR (permission required) |
 | M10 — batched verification sweep | ✅ **done** — 14/14 test projects, 4 lib builds, demo build, a11y gate; human-only checks below outstanding |
 | CI round 1 | ✅ fixed — `mintplayer-react-bootstrap:test` threw on an unguarded `ResizeObserver` (jsdom has none); guarded per the mp-carousel/mp-datatable pattern |
 | CI round 2 | ✅ fixed — axe `select-name` on the demo's locale `bs-select`, which my React and Vue pages labelled and the Angular one did not |
@@ -429,3 +430,39 @@ NX_ISOLATE_PLUGINS=false NX_DAEMON=false npx nx build ng-bootstrap-demo
 | Hydration mismatch on country names | S4; worst case names render client-side post-hydration |
 | `intl-tel-input` tuple shape drift | pinned minor + shape-guard spec (M2) |
 | Angular 100 KB `anyComponentStyle` budget | flags never enter CSS; group styles are small; no risk if the rule "no flag data URIs in SCSS" holds |
+
+## M11 — A phone input inside an input group does not pair [PRD §14]
+
+Reported on the deployed demo after #399 merged. **Read PRD §14 first** — it now carries the measured
+diagnosis, not hypotheses.
+
+**Investigation complete.** H1 held, H2 and H4 were refuted, H3 was not the cause, and the decisive
+mechanism (D18: a `container-type: inline-size` host contributes zero intrinsic inline size) was named
+by none of them. A second, independent radius defect (D19) and a second bug sharing H1's root cause
+(`size` mirroring) were found alongside. The fix is verified live against the deployed page.
+
+- [x] Investigate in Chromium + Firefox + WebKit, both viewports, plus a one-variable A/B. [PRD §14.1–14.4]
+- [x] `bs-select` inside `bs-input-group` is broken the same way — measured, two lines instead of one
+      on the scheduler. **M6's claim to have fixed the §1.2 defect holds only for corners, not for
+      flex sizing**; §14.6 records the correction.
+- [ ] Fix, per §14.7 — four parts:
+  - [ ] `input-group.styles.scss`: element-agnostic sizing (`flex: 1 1 auto; width: 1%; min-width: 0`
+        via a `:not()` exclusion). Must stay **normal**, not `!important`, or it outranks the phone
+        input's own picker pinning.
+  - [ ] `input-group.styles.scss`: restore the `border-radius` the `.input-group-text` port dropped.
+  - [ ] `mp-input-group.ts`: mirror `size` onto the real control, not onto whatever element is
+        slotted (§14.5 — same root cause, currently latent).
+  - [ ] No corner-forwarding step: H2 refuted, the inherited channel already works. Do not add one.
+- [ ] **Add the missing guard** — new `apps/ng-bootstrap-demo-e2e/e2e/input-group.spec.ts` on the
+      existing shared Playwright config (already serves the real demo, chromium + firefox). Assert
+      single-line occupancy + non-zero widths for the scheduler's four `bs-select`s and the grouped
+      phone input, no `[stacked]` at desktop width, seam corners square and outer corners not. Plus
+      two lines of jsdom in `input-group.component.spec.ts`, which today slots a bare `<input>`.
+- [ ] Fix the demo's own `snippetGroupHtml`, which publishes the broken combination as recommended
+      usage.
+- [ ] Record the two durable platform findings in `CLAUDE.md`: D18 (a `container-type` host cannot
+      size itself from content) and §14.4's hazard (an inner component's container query silently
+      outranks an enclosing group's pairing, because the four-property corner form resolves before
+      the two-property one).
+- [ ] Decide the scheduler label-truncation trade-off (§14.7) — visible change to a shipped page.
+- [ ] New branch + PR — **ask first**; `master` is merged and deployed.

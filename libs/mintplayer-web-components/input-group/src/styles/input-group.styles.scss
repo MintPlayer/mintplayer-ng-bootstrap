@@ -101,14 +101,41 @@ slot {
   --mp-group-radius-end: 0;
 }
 
-// A slotted `mp-*` control is a flex item like any other, but sizes itself: its
-// own `:host` rules outrank a normal ::slotted() declaration (the measured
-// cascade order), which is how a country picker pins its width. There is no
-// selector for "any custom element", so the participating controls are listed.
-::slotted(mp-select),
-::slotted(mp-phone-input) {
+// Every growable child, named by what it is NOT. This rule used to list
+// `mp-select, mp-phone-input` by tag, which silently matched nothing for an
+// Angular consumer: `bs-input-group` slots `<ng-content>`, so the assigned node is
+// the WRAPPER HOST (`bs-select`, `bs-phone-input`) and the `mp-*` element sits one
+// level deeper. React and Vue were unaffected — they root at the `mp-*` tag — so
+// the gap was invisible in two of three frameworks (PRD §14.2).
+//
+// A tag-name allow-list cannot express "the control", only "the element I happened
+// to think of". Excluding the fixed-size affordances instead makes the rule
+// framework- and element-agnostic, which is the same reason the corner channel
+// below survives an interposed host: it does not care what anything is called.
+//
+// All three properties are load-bearing, measured on the deployed demo:
+//   `width: 1%`  — flex line-breaking uses each item's HYPOTHETICAL main size, so
+//                  `min-width` alone cannot stop a wrap while `flex-basis: auto`
+//                  keeps the base size at max-content. This is Bootstrap's own
+//                  trick and matches the light-DOM rule above.
+//   `min-width`  — clamps that hypothetical size, so items shrink to a readable
+//                  floor and only THEN wrap. Bootstrap's literal `0` crushed the
+//                  scheduler's 6-item toolbar to 27px controls on a 390px viewport
+//                  rather than wrapping it; 6rem holds one row at 1280px and wraps
+//                  to 107px controls at 390px. Tunable for denser toolbars.
+//   normal, NOT `!important` — a `::slotted()` !important is the STRONGEST link in
+//                  this cascade (see the channel-1 note), so it would outrank
+//                  `mp-phone-input`'s deliberate `mp-select { width: auto
+//                  !important }` and collapse the country picker to 1%.
+// The exclusions also keep every light-DOM child behaving exactly as before this
+// rule existed: `button`/`span`/`label` hugged their content then and still do, and
+// `input`/`textarea`/`select` are governed by their own `!important` rule above. So
+// what actually changes is only what was broken — custom elements, whether that is
+// an `mp-*` control or a framework wrapper around one.
+::slotted(:not(.addon):not([data-addon]):not(button):not(span):not(label)) {
   flex: 1 1 auto;
-  min-width: 0;
+  width: 1%;
+  min-width: var(--mp-group-min-item-width, 6rem);
 }
 
 // The focused control's ring must not be clipped by the next sibling's -1px
@@ -141,6 +168,11 @@ slot {
 
 // Addon text, for consumers that slot a plain element rather than bringing their
 // own class. Bootstrap's `.input-group-text` never reaches through the slot.
+// The `border-radius` is not decoration: this port of `.input-group-text` carried
+// the border, padding and background but dropped the radius, so a leading or
+// trailing addon resolved to fully square corners (measured `0|0|0|0` where
+// `6|0|0|6` was intended — PRD §14.3) and nothing else in the cascade supplied one.
+// The positional rules above then square only the SEAM corners, as intended.
 ::slotted(.addon),
 ::slotted([data-addon]) {
   display: flex;
@@ -154,6 +186,7 @@ slot {
   white-space: nowrap;
   background-color: $input-group-addon-bg;
   border: $input-border-width solid $input-group-addon-border-color;
+  border-radius: var(--bs-border-radius);
 }
 
 // ── Stacked mode, opt-in via `[stacked]` ───────────────────────────────────────
