@@ -61,9 +61,14 @@
   --mp-box-radius: var(--bs-border-radius-lg);
 }
 
+// Four properties, not two. The start/end pair cannot express a STACKED row, which
+// needs a rounded top and a square bottom on the same side; a group that stacks its
+// children below a threshold sets the per-corner properties instead. The pair
+// remains the fallback, so a group that only ever lays out in one row — and any
+// consumer already relying on it — is unaffected.
 .form-control {
-  border-start-start-radius: var(--mp-group-radius-start, var(--mp-box-radius));
-  border-end-start-radius: var(--mp-group-radius-start, var(--mp-box-radius));
-  border-start-end-radius: var(--mp-group-radius-end, var(--mp-box-radius));
-  border-end-end-radius: var(--mp-group-radius-end, var(--mp-box-radius));
+  border-start-start-radius: var(--mp-group-radius-top-start, var(--mp-group-radius-start, var(--mp-box-radius)));
+  border-start-end-radius: var(--mp-group-radius-top-end, var(--mp-group-radius-end, var(--mp-box-radius)));
+  border-end-start-radius: var(--mp-group-radius-bottom-start, var(--mp-group-radius-start, var(--mp-box-radius)));
+  border-end-end-radius: var(--mp-group-radius-bottom-end, var(--mp-group-radius-end, var(--mp-box-radius)));
 }

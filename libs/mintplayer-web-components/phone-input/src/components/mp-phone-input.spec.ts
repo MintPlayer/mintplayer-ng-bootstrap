@@ -236,23 +236,27 @@ describe('mp-phone-input', () => {
     expect(dial.textContent).toBe('+32');
   });
 
-  it('keeps the addon flag whenever the picker is not showing one (PRD 12.2)', async () => {
+  it('always renders the addon flag; the picker mode decides visibility (PRD 12.2)', async () => {
     const el = await mount('country="be"');
     const flagBox = el.shadowRoot!.querySelector('.flag') as HTMLElement;
     const select = el.shadowRoot!.querySelector('mp-select')!;
 
-    // jsdom supports no base-select, so the picker never goes rich and the addon
-    // must carry the flag — the case the old @supports gate got wrong whenever
-    // rich was suppressed for a reason other than engine support.
+    // The element no longer decides this — the stylesheet does, via a sibling
+    // selector on the select's reflected `rich` state, so the two can never
+    // disagree. What is assertable here is that the markup is always present and
+    // that the state it keys off is reflected honestly (jsdom implements no
+    // base-select, so `rich` stays off and the addon is the only flag).
+    expect(flagBox).toBeTruthy();
     expect(select.hasAttribute('rich')).toBe(false);
-    expect(flagBox.hasAttribute('hidden')).toBe(false);
+  });
 
-    // And it yields as soon as the picker really does show one.
-    select.setAttribute('rich', '');
-    el.requestUpdate();
-    await el.updateComplete;
-    await el.updateComplete;
-    expect(flagBox.hasAttribute('hidden')).toBe(true);
+  it('tells the group to stack only when it is actually narrow (PRD 12.4 (d))', async () => {
+    const el = await mount('country="be"');
+    const group = el.shadowRoot!.querySelector('mp-input-group')!;
+    // jsdom reports a 0-width contentRect and never fires ResizeObserver, so the
+    // attribute must stay off rather than defaulting to stacked — a 0 width is
+    // "unknown", not "narrow".
+    expect(group.hasAttribute('stacked')).toBe(false);
   });
 
   it('honours allowed-countries and preferred-countries', async () => {

@@ -155,3 +155,51 @@ slot {
   background-color: $input-group-addon-bg;
   border: $input-border-width solid $input-group-addon-border-color;
 }
+
+// ── Stacked mode, opt-in via `[stacked]` ───────────────────────────────────────
+//
+// A composing element that stacks its children (mp-phone-input below 22rem) sets
+// this attribute; the group then pairs corners vertically instead of horizontally.
+//
+// EVERY selector here must out-specify the single-row rules above, which are
+// `:host(:dir(ltr)) ::slotted(:not(:first-child))` = (0,3,1) AND `!important`.
+// The obvious `::slotted(input)` is (0,0,2) and loses SILENTLY — `!important` does
+// not save it and later source order does not either. Worse, declarations with no
+// competing rule above still apply, so an under-specified override yields a
+// HALF-APPLIED layout, which is the hardest kind to diagnose. Adding the host
+// attribute plus a compound inside `::slotted()` clears the bar; `@container`
+// contributes nothing to specificity, so it cannot be relied on here (measured,
+// PRD §12.4).
+:host([stacked]:dir(ltr)) ::slotted(.addon:not(:last-child)) {
+  border-top-right-radius: var(--bs-border-radius) !important;
+  border-bottom-right-radius: 0 !important;
+}
+
+:host([stacked]:dir(ltr)) ::slotted(input:not(:first-child)) {
+  flex: 1 1 100% !important;
+  width: 100% !important;
+  margin-left: 0 !important;
+  margin-top: -1px !important;
+  border-top-left-radius: 0 !important;
+  border-top-right-radius: 0 !important;
+  border-bottom-left-radius: var(--bs-border-radius) !important;
+  border-bottom-right-radius: var(--bs-border-radius) !important;
+}
+
+// RTL mirror, verified in all three engines: the addon keeps its LEFT top corner
+// and the overlap moves to the other side.
+:host([stacked]:dir(rtl)) ::slotted(.addon:not(:last-child)) {
+  border-top-left-radius: var(--bs-border-radius) !important;
+  border-bottom-left-radius: 0 !important;
+}
+
+:host([stacked]:dir(rtl)) ::slotted(input:not(:first-child)) {
+  flex: 1 1 100% !important;
+  width: 100% !important;
+  margin-right: 0 !important;
+  margin-top: -1px !important;
+  border-top-left-radius: 0 !important;
+  border-top-right-radius: 0 !important;
+  border-bottom-left-radius: var(--bs-border-radius) !important;
+  border-bottom-right-radius: var(--bs-border-radius) !important;
+}

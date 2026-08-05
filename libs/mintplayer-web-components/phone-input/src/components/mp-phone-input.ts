@@ -43,6 +43,9 @@ export interface CountryChangeEventDetail {
 
 let instanceCounter = 0;
 
+/** Matches the `@container (max-width: 22rem)` threshold in the stylesheet. */
+const STACK_THRESHOLD_PX = 352;
+
 const escapeHtml = (text: string) =>
   text.replace(/[&<>"']/g, (c) => `&#${c.charCodeAt(0)};`);
 
@@ -119,8 +122,7 @@ export class MpPhoneInput extends FormAssociatedMixin(LitElement) {
   /** Resolved corpus, or `undefined` until the one flag chunk lands (D4a). */
   private _flags: FlagMap | undefined;
   private _flagsRequested = false;
-  /** Whether the picker's own closed face already shows the flag (PRD §12.2). */
-  private _pickerShowsFlag = false;
+  #stackObserver: ResizeObserver | undefined;
   private _composing = false;
   private _preEdit: { value: string; start: number } | null = null;
   private readonly _inputRef: Ref<HTMLInputElement> = createRef();
@@ -342,6 +344,25 @@ export class MpPhoneInput extends FormAssociatedMixin(LitElement) {
     super.connectedCallback();
     this.#wantFlags();
     if (this._digits) this.#wantRules();
+
+    // The group pairs corners vertically only when told to, and CSS cannot set an
+    // attribute — so the one thing the container query cannot do itself is done
+    // here. Threshold matches the @container rule in this element's stylesheet.
+    this.#stackObserver ??= new ResizeObserver((entries) => {
+      const width = entries[entries.length - 1]?.contentRect.width ?? 0;
+      const stacked = width > 0 && width <= STACK_THRESHOLD_PX;
+      const group = this.renderRoot?.querySelector('mp-input-group');
+      group?.toggleAttribute('stacked', stacked);
+    });
+    this.#stackObserver.observe(this);
+  }
+
+
+
+  override disconnectedCallback(): void {
+    super.disconnectedCallback();
+    this.#stackObserver?.disconnect();
+    this.#stackObserver = undefined;
   }
 
   // ---- rendering ------------------------------------------------------------
@@ -372,13 +393,14 @@ export class MpPhoneInput extends FormAssociatedMixin(LitElement) {
           @value-change=${this.onCountryPicked}
         ></mp-select>
         <span class="addon" id=${this._dialId}>
-          <!-- Hidden when the picker's own closed face already shows a flag, which
-               is NOT the same condition as the base-select @supports query: rich
-               mode additionally needs a renderer, options mode and a plain
-               dropdown, so keying the CSS off @supports left a supporting engine
-               with NO flag anywhere the moment rich was suppressed for any other
-               reason (PRD 12.2). Reflected here from the select's real state. -->
-          <span class="flag" aria-hidden="true" ?hidden=${this._pickerShowsFlag}>${flag ? unsafeHTML(flag) : nothing}</span>
+          <!-- Always rendered; the stylesheet hides it when the picker's own closed
+               face already shows a flag, using a sibling selector on the select's
+               reflected rich state. That state is NOT the same condition as the
+               base-select @supports query — rich mode also needs a renderer,
+               options mode and a plain dropdown — which is why keying the CSS off
+               @supports left a supporting engine with no flag anywhere whenever
+               rich was suppressed for another reason (PRD 12.2). -->
+          <span class="flag" aria-hidden="true">${flag ? unsafeHTML(flag) : nothing}</span>
           <!-- dir=ltr is required, not cosmetic: the plus sign is bidi-neutral, so
                in an RTL paragraph direction it reorders to the trailing position and
                the dial code renders as 32+ (measured at any width, PRD 12.6). A
@@ -415,14 +437,6 @@ export class MpPhoneInput extends FormAssociatedMixin(LitElement) {
     // same node after a re-render (the mp-select lesson).
     this.hostAria.syncReferences();
 
-    // Read the picker's actual rendering mode rather than assuming it from engine
-    // support (PRD §12.2). One re-render at most: the flag box reserves its space
-    // either way, so this cannot loop or shift layout.
-    const pickerShowsFlag = this._selectRef.value?.hasAttribute('rich') ?? false;
-    if (pickerShowsFlag !== this._pickerShowsFlag) {
-      this._pickerShowsFlag = pickerShowsFlag;
-      this.requestUpdate();
-    }
 
     const input = this._inputRef.value;
     if (input && !this._composing) {

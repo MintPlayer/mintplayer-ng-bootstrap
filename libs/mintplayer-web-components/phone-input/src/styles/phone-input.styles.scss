@@ -10,6 +10,12 @@
 
 :host {
   display: block;
+  // A container query, not a media query: a phone input is often narrow inside a
+  // wide viewport (a sidebar, a modal, a grid cell) and a media query cannot see
+  // that. Measured safe — `container-type` no longer establishes a containing
+  // block, and the top-layer picker's geometry is byte-identical under
+  // containment in both supporting engines (PRD §12.4a).
+  container-type: inline-size;
 }
 
 :host([hidden]) {
@@ -68,15 +74,46 @@ mp-select {
   min-height: 0.833rem;
 }
 
-// No `@supports` gate here any more. It disagreed with `mp-select`'s real `rich`
-// state — which also needs a renderer, `.options` mode and a plain dropdown — so a
-// supporting engine showed no flag at all whenever `rich` was suppressed for any
-// other reason (PRD §12.2). The element now reflects the picker's actual mode and
-// hides this copy with `[hidden]`.
-.flag[hidden] {
+// Keyed off the picker's REAL reflected state, not an `@supports` query. Those are
+// different conditions — rich mode also needs a renderer, `.options` mode and a
+// plain dropdown — so the old `@supports` gate left a supporting engine with no
+// flag anywhere whenever `rich` was suppressed for another reason (PRD §12.2).
+//
+// A sibling selector rather than JS: `mp-select` and the addon are children of the
+// same shadow root here, so the real state is directly selectable and can never
+// drift out of sync with what the picker is actually doing.
+mp-select[rich] ~ .addon .flag {
   display: none;
 }
 
 .dial-code {
   user-select: none;
+}
+
+// ── Below 22rem: stack deliberately, instead of tolerating a bad single row ────
+//
+// Capping the fallback trigger keeps everything on one row down to 280px, but at
+// 5.5rem its face reads about three characters ("Bel…"). Giving the trigger its own
+// row instead makes it 216.8px and it shows the full "Belgium +32 (BE)" — measured
+// the best-looking result of the responsive spike, in all three engines, reverting
+// cleanly to one row above the threshold.
+@container (max-width: 22rem) {
+  // flex-basis 0, NOT auto: with `auto` the native face's intrinsic width takes a
+  // whole flex line of its own and pushes the dial addon onto a THIRD row
+  // (measured). The cap above is overridden here by equal specificity + later
+  // source order, which is why this block must stay after it.
+  mp-select {
+    flex: 1 1 0 !important;
+    width: auto !important;
+    min-width: 0 !important;
+  }
+
+  // Row 1 keeps its top corners and squares the bottom; row 2 mirrors it. This is
+  // what the four-property corner contract in `_styles` exists for.
+  mp-select {
+    --mp-group-radius-top-start: var(--bs-border-radius);
+    --mp-group-radius-top-end: 0;
+    --mp-group-radius-bottom-start: 0;
+    --mp-group-radius-bottom-end: 0;
+  }
 }
