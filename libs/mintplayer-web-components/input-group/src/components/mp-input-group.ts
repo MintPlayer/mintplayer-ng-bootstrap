@@ -97,18 +97,35 @@ export class MpInputGroup extends LitElement {
     this.#mirrorSize();
   }
 
+  /**
+   * The control to size for a given slotted child.
+   *
+   * A framework wrapper is not the control: Angular slots `<bs-select>`, whose
+   * `mp-select` lives one level in, and writing the attribute on the wrapper reaches
+   * nothing — a signal input does not observe a runtime `setAttribute`, and the
+   * wrapper forwards only `aria-*`. React and Vue root at the `mp-*` tag, so there
+   * the child already IS the control. Descending covers both without the group
+   * knowing which framework it is in (PRD §14.5).
+   */
+  static #controlFor(el: Element): Element | undefined {
+    if (el.tagName.startsWith('MP-')) return el;
+    return [...el.children].find((child) => child.tagName.startsWith('MP-'));
+  }
+
   #mirrorSize(): void {
     const size = this.size;
-    [...this.children]
-      .filter((el) => el.tagName.includes('-'))
-      .forEach((el) => {
-        // `md` is the absence of a size in Bootstrap, so remove rather than write
-        // it — a control could not otherwise tell "unset" from "explicitly medium".
-        // Only sm/lg are ever cleared, so a control's own unrelated `size` value
-        // (an mp-select `numberVisible`-style API) is never clobbered.
-        if (size !== 'md') el.setAttribute('size', size);
-        else if (MP_SIZED.has(el.getAttribute('size') ?? '')) el.removeAttribute('size');
-      });
+    const controls = [...this.children]
+      .map((el) => MpInputGroup.#controlFor(el))
+      .filter((el): el is Element => el !== undefined);
+
+    for (const el of controls) {
+      // `md` is the absence of a size in Bootstrap, so remove rather than write
+      // it — a control could not otherwise tell "unset" from "explicitly medium".
+      // Only sm/lg are ever cleared, so a control's own unrelated `size` value
+      // (an mp-select `numberVisible`-style API) is never clobbered.
+      if (size !== 'md') el.setAttribute('size', size);
+      else if (MP_SIZED.has(el.getAttribute('size') ?? '')) el.removeAttribute('size');
+    }
   }
 }
 

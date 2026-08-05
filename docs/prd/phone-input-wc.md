@@ -1,6 +1,6 @@
 # PRD — `mp-input-group` + `mp-phone-input` web components + cross-framework wrappers
 
-Status: **Implemented** (2026-08-05) on `feat/phone-input-wc`,
+Status: **Merged** (#399, 2026-08-05) and deployed — with **one open defect found in production**: a phone input inside an input group does not pair (§14, not yet investigated). Originally implemented on `feat/phone-input-wc`,
 branched from `master` at `62642ddd`, draft **PR [#399](https://github.com/MintPlayer/mintplayer-ng-bootstrap/pull/399)**.
 Design investigation was five parallel agents (repo patterns, reference repo, flag/data research, an
 asset-bundling prototype in an isolated worktree, i18n/demo conventions); the gate was **S1–S9, all
@@ -1471,7 +1471,240 @@ likely to need a design response.
 phone input is lazy per route (`main-*.js` carries none of it) and the flag corpus and all 207
 metadata slices are lazy chunks.
 
-## 14. References
+## 14. Defect: a phone input inside an input group does not pair (2026-08-05, post-merge)
+
+Reported after #399 merged and deployed: on
+<https://bootstrap.mintplayer.com/basic/forms/phone-input>, the **"Inside an input group"**
+section renders wrong — the controls do not line up and the border radii are incorrect. The
+demo markup is:
+
+```html
+<bs-input-group>
+  <span class="addon">Tel</span>
+  <bs-phone-input [(ngModel)]="grouped" defaultCountry="be"></bs-phone-input>
+</bs-input-group>
+```
+
+**Investigated and measured** on the deployed page in Chromium, Firefox and WebKit at 1280×900 and
+390×844, including a one-variable-at-a-time runtime A/B. Numbers below are measured unless marked
+otherwise. Four hypotheses were raised from reading the CSS; **one held, two were refuted, and the
+decisive mechanism was named by none of them** — recorded in full because the refutations are the
+useful part.
+
+### 14.1 What is actually on screen
+
+The grouped instance collapses. The slotted `bs-phone-input` measures **0 × 114 px** against the
+standalone instance's 536 × 38 — identical in all three engines, both viewports. At zero width the
+inner group's three children each take their own flex line (`y` = 1709.6 / 1747.6 / 1785.6, 38 px
+apart) while the "Tel" addon stretches to 114 px beside them. That three-line stack, not a radius
+bug, is what "the inputs don't line up" is.
+
+Two further visible symptoms fall out of the same collapse:
+
+- **The leading addon has no rounded corners at all** — `0|0|0|0` where it should be `6|0|0|6`.
+  Independent defect; see 14.3.
+- **The flag and the picker face overflow their 26 px box**, since the addon's own copy is hidden by
+  `mp-select[rich] ~ .addon .flag { display: none }` in the rich engines. (An earlier report that the
+  flag "disappears entirely" in Chromium/WebKit is wrong — a screenshot shows flag + "BE" painted,
+  spilling out of the collapsed face. Corrected here so the record is not carrying a false symptom.)
+
+The stacked, mobile-facing layout is also unreachable in a group while the collapse persists: the
+`width > 0` guard declines at zero width (14.4). With sizing fixed, the grouped instance at a 390 px
+viewport measures 275.5 px, sets `[stacked]`, lays out in two rows and produces no page scroll — so
+the fix restores the responsive path as well as the desktop row.
+
+### 14.2 D18 — a `container-type` host contributes zero intrinsic inline size (the real mechanism)
+
+**H1 held**: `::slotted(mp-select), ::slotted(mp-phone-input)` cannot match the Angular wrapper host
+`bs-phone-input`, so the intended `flex: 1 1 auto; min-width: 0` never applies and the item computes
+`flex: 0 1 auto; min-width: auto`. React and Vue are unaffected — `@lit/react` roots at `mp-*` and a
+Vue SFC has no host element. The repo already recorded the two-element truth it overlooked, at
+`_conformance/aria-passthrough.spec.ts` (`selector: 'bs-input-group'` beside `tag: 'mp-input-group'`).
+
+**But H1 alone does not produce this failure.** The A/B settles it:
+
+| variant | Chromium | Firefox | WebKit |
+| --- | --- | --- | --- |
+| A as-shipped | 0 × 114 | 0 × 114 | 0 × 114 |
+| B `container-type: normal` only (flex left broken) | 363.0 × 38 | 381.2 × 38 | 339.3 × 75, stacked |
+| C `flex: 1 1 auto; min-width: 0` only | 678.6 × 38 | 678.6 × 38 | 678.6 × 38 |
+| D both | 678.6 × 38 | 678.6 × 38 | 678.6 × 38 |
+| E `display: contents` on the wrapper | 0 | 0 | 0 |
+
+Variant B is the finding: with containment off, the un-flexed wrapper still sizes to 363–381 px and
+looks essentially fine. **`container-type: inline-size` on `mp-phone-input`'s `:host` is what turns
+"does not flex" into "collapses to zero"** — inline-axis size containment means the element
+contributes *no* max-content inline size, so a shrink-to-fit parent resolves its flex base size off
+zero. The missed selector is the trigger; the containment is the amplifier.
+
+Generalised, this is a platform property worth carrying beyond this component: **a WC that declares
+`container-type: inline-size` can never size itself from its own content, so it must be given an
+inline size by its context.** Every such component is one shrink-to-fit ancestor away from
+collapsing to zero. Variant E is the corollary trap — `display: contents` on the wrapper does not
+rescue it, because then `::slotted()` matches nothing at all.
+
+### 14.3 D19 — the addon never had a border radius
+
+`::slotted(.addon)` (`input-group.styles.scss:144`) ports Bootstrap's `.input-group-text` border,
+padding and background but **omits its `border-radius`**. A scan of every accessible rule in
+`document.styleSheets` for a `.addon` selector carrying a radius declaration returned zero matches,
+so nothing supplies one. The group's `!important` rules then square the *inner* corners correctly and
+the outer corners are left square too, giving `0|0|0|0`.
+
+This is independent of the collapse, is **not fixed by the sizing fix**, and affects any leading or
+trailing addon in any `mp-input-group` — the plain light-DOM demos included.
+
+### 14.4 Refuted, and why that matters
+
+**H2 (nested groups break corner forwarding) — REFUTED.** The custom-property channel *does* survive
+the extra Angular wrapper level: `--mp-group-radius-start` resolves to `0` on `bs-phone-input`, on
+`mp-phone-input`, on the inner `mp-input-group` and on all three of its children, in every engine.
+With sizing fixed, the select face, dial addon and tel input all resolve to the correct corners. The
+channel works *because* inheritance does not care what an element is called — the same property that
+makes it immune to an interposed host. **Do not add a forwarding step; it would be solving a
+non-problem.** (The pre-fix reading in this section's first draft — that the pairing never reaches
+the visible boxes — was wrong on both counts.)
+
+One real hazard surfaced underneath it: at zero width the `@container (max-width: 22rem)` block in
+`phone-input.styles.scss` matches and sets `--mp-group-radius-top-start: .375rem` on `mp-select`,
+which **silently defeats** the outer group's inherited `start: 0`, because `form-select.styles.scss`
+resolves the four-property `top-start` *before* the two-property `start`. It clears once sizing is
+fixed, but the general rule stands: **an inner component's own container query outranks the enclosing
+group's pairing, with no diagnostic.**
+
+**H3 (the `5.5rem` fallback cap) — NOT THE CAUSE.** Firefox is the only engine without `base-select`
+and its grouped geometry is identical (0 × 114). The cap is not even in effect inside the group: the
+later `@container` block overrides it with `width: auto !important; flex: 1 1 0`, measured as
+`1 1 0px` on `mp-select` in all six runs.
+
+**H4 (the stacking observer fires in the narrow column) — REFUTED.** The inner group carries no
+`[stacked]` attribute in any engine at either viewport. The `width > 0` guard
+(`mp-phone-input.ts:359`) sees zero and declines. So stacking is not the symptom and not even a
+consequence — it is actively suppressed.
+
+That suppression exposes the last finding: at zero width the two responsive paths **disagree**. The
+container query applies its two-row corner contract and `flex: 1 1 0` while `[stacked]` is never set
+— a half-applied layout, exactly the failure mode `input-group.styles.scss` warns about, arriving
+through the other door. The two thresholds (22 rem in CSS, 352 px in the observer) agree numerically
+but are two sources of truth with no shared guard.
+
+### 14.5 The second bug with the same root cause: `size` mirroring
+
+`mp-input-group.ts` mirrors `size` onto children filtered by `el.tagName.includes('-')` — true for
+`'BS-SELECT'` — so the attribute lands on the Angular wrapper host. A signal input does not observe
+a runtime `setAttribute`, and `BsForwardAriaDirective` forwards only `aria-*` plus its MOVED set, so
+nothing carries it inward. Currently **latent**: no Angular call site passes `size`.
+
+Same root cause as 14.2 — the group addressing its children by element name — and it should be fixed
+with it rather than left as a dead path beside a repaired one.
+
+### 14.6 Blast radius and the structural test gap
+
+`bs-select` inside `bs-input-group` is broken the same way, so **M6's claim to have fixed the
+pre-existing §1.2 defect does not hold for the flex-sizing half** (the corner half does work, per
+14.4). Worst affected is the scheduler demo — two groups of four `bs-select`s
+(`scheduler.component.html:44-74` and `:77-95`). The phone-input demo additionally *publishes the
+broken combination as recommended usage* in its own code snippet.
+
+The gap that let all of this through is structural: **the two conditions needed to observe the bug
+never co-occur.** Every test that can see geometry slots raw `mp-*` elements; every test that slots a
+framework wrapper is jsdom asserting attributes. No Playwright spec for input-group or phone-input
+exists at all — the WC spec explicitly delegates the visual contract to "the demo e2e", which was
+never written. A repo-wide sweep for `::slotted()` selectors naming a specific `mp-*` element found
+only two other sites, both safe and one (`mp-quick-access-toolbar`) documenting this exact hazard in
+a comment — so this is a local oversight, not a missing policy.
+
+### 14.7 The fix
+
+1. **Sizing** — replace the element-name allow-list with an exclusion of the fixed-size affordances,
+   so the rule is framework- and element-agnostic:
+
+   ```scss
+   ::slotted(:not(.addon):not([data-addon]):not(button)) {
+     flex: 1 1 auto;
+     width: 1%;
+     min-width: var(--mp-group-min-item-width, 6rem);
+   }
+   ```
+
+   Three properties, each load-bearing, all verified live against the deployed page:
+
+   - `flex: 1 1 auto; min-width: 0` alone fixes the *reported* defect (0 → 668.9 px, 114 → 37.6 px,
+     one row, correct 1 px overlaps) but **does not fix the scheduler**, whose group still wrapped to
+     two lines. `flex-basis: auto` makes the base size max-content, and flex line-breaking uses each
+     item's *hypothetical* main size — so `min-width: 0` cannot prevent a wrap. This is the trap
+     already recorded in `CLAUDE.md`; it applies to the group's own rule, not just to consumers.
+   - `width: 1%` is what resolves it, and is not an invention: it is exactly what the sibling
+     light-DOM rule (`::slotted(input)`) and Bootstrap's own `.input-group > .form-select` already
+     do. With it, both scheduler groups collapse to a single 37.6 px row, contiguous, no page scroll.
+   - **`min-width` is a non-zero floor, and this is where Bootstrap's own value is wrong for us.**
+     Because `min-width` *clamps* the hypothetical main size, it is the knob that decides *when* a
+     line breaks — so a floor buys "shrink to readable, then wrap" instead of "shrink forever":
+
+     | floor | 1280 px | 390 px |
+     | --- | --- | --- |
+     | `0` (Bootstrap's literal value) | 1 row, 125.6 px selects | 1 row, **27.2 px selects** |
+     | **`6rem`** | **1 row, 125.6 px** | **2 rows, 106.9 px** |
+     | `8rem` | 2 rows (breaks desktop) | 3 rows, 160 px |
+
+     Bootstrap's `0` would have shipped a mobile regression: six controls crushed to 27 px on one
+     line rather than wrapping. 6 rem is the largest floor that still holds one row at 1280 px, and
+     it is exposed as `--mp-group-min-item-width` because the right value depends on how many items a
+     consumer's toolbar has.
+   - **Normal declarations, NOT `!important`.** A `::slotted()` `!important` is the strongest link in
+     this cascade (D2a) and would outrank `mp-phone-input`'s deliberate
+     `mp-select { flex: 0 0 auto !important; width: auto !important }`, collapsing the country picker
+     to 1%. Verified: with the rule normal, the picker keeps its 89.4 px auto width.
+
+   Deliberately *not* giving buttons `flex: 0 0 auto`: that removes their ability to shrink and risks
+   pushing overflow onto the page — the trap `flex-wrap: nowrap` fell into in §12.4.
+
+   **Consequence for a control that opts out of growing.** The floor reaches every child the group
+   sizes, including `mp-phone-input`'s deliberately pinned country picker, which it silently widened
+   from 89.4 px to 96 px. A control that pins its flex and width must pin its floor in the same place
+   — `min-width: 0 !important` alongside the other two in `phone-input.styles.scss`. Verified back to
+   89.4 px on both the grouped and standalone instances.
+2. **Addon radius** — restore the `border-radius` that the `.input-group-text` port dropped (14.3).
+3. **`size` mirroring** — mirror onto the real control rather than whatever element is slotted (14.5).
+4. **Regression guard** — a new `apps/ng-bootstrap-demo-e2e/e2e/input-group.spec.ts` on the existing
+   shared Playwright config (which already serves the real demo in chromium + firefox): assert
+   single-line occupancy and non-zero widths for the scheduler's four `bs-select`s and for the
+   grouped phone input, that the inner group is not `[stacked]` at desktop width, and that seam
+   corners are square while outer corners are not. Plus two lines of jsdom in
+   `input-group.component.spec.ts`, which today slots a bare `<input>`: slot a real `<bs-select>` and
+   assert the mirrored `size` reaches `bs-select mp-select`.
+
+Not adopted: removing `container-type` (it is the deliberate, measured basis of the responsive
+design, §12.4a) and adding a defensive `min-width` floor to `mp-phone-input` (scope creep against a
+now-understood mechanism). 14.2's generalisation and 14.4's container-query hazard are the durable
+mitigations, and belong in `CLAUDE.md`.
+
+### 14.8 As built
+
+| | |
+|---|---|
+| Branch / PR | `fix/input-group-slotted-wrapper-sizing` — **draft PR #400**, off `master` |
+| Changed | `input-group.styles.scss`, `mp-input-group.ts`, `phone-input.styles.scss` |
+| New guard | `apps/ng-bootstrap-demo-e2e/e2e/input-group.spec.ts` (6 tests × chromium + firefox) |
+| Versions | **web-components 2.9.0 → 2.10.0.** No wrapper bump: the Angular diff is spec-only and React/Vue are untouched, so none of the three has a shipped change. Their `^2.0.0` peer ranges already admit 2.10.0. |
+| Tests | **1765** web-components (114 files), **544** ng-bootstrap (161 files); e2e 12 passed, and 29 with the scheduler specs alongside |
+
+**Minor, not patch, against this repo's `fix:` → patch convention.** The change is a bug fix, but it
+also adds public API — `--mp-group-min-item-width` is documented and consumer-settable — and additive
+API is a minor under semver. The corner-contract custom properties are already treated as API here,
+so the property is not an implementation detail.
+
+**The guard was verified to fail on the broken code**, which is the only thing that makes it a guard:
+reverting the sizing rule fails 5 of the 6 new e2e tests, the scheduler one with exactly the reported
+symptom (`lines: 2`). The sixth (the mobile floor) passes either way by design — it guards the
+`min-width: 0` regression, not the tag-name one.
+
+Left for review rather than decided here: the scheduler's toolbars now occupy one line where they
+previously wrapped, so equal-share growth truncates the longer select labels at desktop width. That
+is Bootstrap's behaviour and single-row occupancy is what an input group means, but it is a visible
+change to a shipped page. `--mp-group-min-item-width` is the knob if another balance is wanted.
+
+## 15. References
 
 - Plan: [phone-input-wc-plan.md](./phone-input-wc-plan.md)
 - Precedents: `mp-select` + `bs-select` (FACE + CVA), `mp-otp-input` (hidden-input value carrier),

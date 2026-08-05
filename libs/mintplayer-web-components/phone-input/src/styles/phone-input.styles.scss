@@ -25,9 +25,15 @@
 // The country picker sizes itself instead of flexing (its own :host rule beats
 // the group's ::slotted() normal declaration — the measured cascade order); the
 // tel input takes the remaining width via the group's channel-1 rules.
+// `min-width` belongs here with the other two: the group hands every growable child
+// a shrink floor, and a control that opts out of growing must opt out of the floor
+// too or it is silently widened to it (measured 89.4px -> 96px). Pinning all three
+// in one place is also why this survives the group's rule — a declaration in the
+// tree the element lives in outranks a `::slotted()` normal one (D2a).
 mp-select {
   flex: 0 0 auto !important;
   width: auto !important;
+  min-width: 0 !important;
 }
 
 // Cap the FALLBACK closed face. Measured (S11, PRD §12.4): where base-select is

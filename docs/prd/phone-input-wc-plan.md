@@ -24,6 +24,7 @@ did not cause — `/enterprise/query-builder` trips `aria-required-children` on 
 | M8 — demo pages ×3 | ✅ **done** — all three demos build; keymap documented |
 | M9 — conformance + a11y registries | ✅ **done** — WC naming 72, ng 22, react 12+probes, vue automatic, axe ×3 |
 | M9b — responsive + flag-loading defects [PRD §12] | ✅ **done** — flags 3.4s→0.27s, wrap fixed by capping the trigger (NOT nowrap), picker clamped, flag gate + RTL dial code fixed |
+| **M11 — phone input inside an input group does not pair** [PRD §14] | 🟢 **fixed, draft PR #400** — 3-engine diagnosis, fix + regression guard verified (guard confirmed failing on the broken code); WC 2.10.0 |
 | M10 — batched verification sweep | ✅ **done** — 14/14 test projects, 4 lib builds, demo build, a11y gate; human-only checks below outstanding |
 | CI round 1 | ✅ fixed — `mintplayer-react-bootstrap:test` threw on an unguarded `ResizeObserver` (jsdom has none); guarded per the mp-carousel/mp-datatable pattern |
 | CI round 2 | ✅ fixed — axe `select-name` on the demo's locale `bs-select`, which my React and Vue pages labelled and the Angular one did not |
@@ -429,3 +430,48 @@ NX_ISOLATE_PLUGINS=false NX_DAEMON=false npx nx build ng-bootstrap-demo
 | Hydration mismatch on country names | S4; worst case names render client-side post-hydration |
 | `intl-tel-input` tuple shape drift | pinned minor + shape-guard spec (M2) |
 | Angular 100 KB `anyComponentStyle` budget | flags never enter CSS; group styles are small; no risk if the rule "no flag data URIs in SCSS" holds |
+
+## M11 — A phone input inside an input group does not pair [PRD §14]
+
+Reported on the deployed demo after #399 merged. **Read PRD §14 first** — it now carries the measured
+diagnosis, not hypotheses.
+
+**Investigation complete.** H1 held, H2 and H4 were refuted, H3 was not the cause, and the decisive
+mechanism (D18: a `container-type: inline-size` host contributes zero intrinsic inline size) was named
+by none of them. A second, independent radius defect (D19) and a second bug sharing H1's root cause
+(`size` mirroring) were found alongside. The fix is verified live against the deployed page.
+
+- [x] Investigate in Chromium + Firefox + WebKit, both viewports, plus a one-variable A/B. [PRD §14.1–14.4]
+- [x] `bs-select` inside `bs-input-group` is broken the same way — measured, two lines instead of one
+      on the scheduler. **M6's claim to have fixed the §1.2 defect holds only for corners, not for
+      flex sizing**; §14.6 records the correction.
+- [x] Fix, per §14.7 — four parts:
+  - [x] `input-group.styles.scss`: element-agnostic sizing via a `:not()` exclusion. Landed as
+        `flex: 1 1 auto; width: 1%; min-width: var(--mp-group-min-item-width, 6rem)` — `width: 1%`
+        and a **non-zero** floor both proved necessary (see the checked item below). Stays **normal**,
+        not `!important`, or it outranks the phone input's own picker pinning.
+  - [x] `input-group.styles.scss`: restore the `border-radius` the `.input-group-text` port dropped.
+  - [x] `mp-input-group.ts`: mirror `size` onto the real control, not onto whatever element is
+        slotted (§14.5 — same root cause, was latent).
+  - [x] No corner-forwarding step: H2 refuted, the inherited channel already works. None added.
+- [x] `phone-input.styles.scss`: pin `min-width: 0 !important` beside the picker's existing flex and
+      width pinning, or the group's new floor silently widens it 89.4 px → 96 px. *(Not foreseen when
+      this list was written — it is the cost of the floor.)*
+- [x] **Add the missing guard** — new `apps/ng-bootstrap-demo-e2e/e2e/input-group.spec.ts` on the
+      existing shared Playwright config (chromium + firefox), 6 tests. Plus a wrapper-slotting case in
+      `input-group.component.spec.ts` (which slotted a bare `<input>`) and two WC specs for mirroring
+      through a wrapper host. **Verified to fail on the broken code**: reverting the sizing rule fails
+      5 of the 6, the scheduler one with the reported symptom.
+- [x] Fix the demo's own `snippetGroupHtml` — it advertised a different markup than the page renders.
+- [x] Record the two durable platform findings in `CLAUDE.md`, plus a third the fix itself produced:
+      never address slotted children by `mp-*` tag name; a `container-type` host cannot size itself
+      from content; and `min-width` clamps the hypothetical main size, which is what makes
+      "shrink to readable, then wrap" possible.
+- [x] Scheduler label truncation — **resolved rather than traded off.** `width: 1%` alone would have
+      shipped a mobile regression (six controls crushed to 27 px on one line at 390 px). A 6 rem floor
+      gives one row at 1280 px *and* two readable rows at 390 px, so neither option originally put to
+      the maintainer was the right answer. Residual: labels truncate at desktop width, flagged in the
+      PR for review.
+- [x] Version bump: web-components 2.9.0 → **2.10.0** (minor — additive public API, see §14.8). No
+      wrapper bump; their `^2.0.0` peers already admit it.
+- [x] New branch + PR — permission given; `fix/input-group-slotted-wrapper-sizing`, **draft PR #400**.
