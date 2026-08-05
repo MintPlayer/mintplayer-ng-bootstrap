@@ -365,6 +365,44 @@ the rejected lipis set). `flag-icons` (lipis) was rejected at 515 KB
 gzip (crest-heavy outliers: `rs.svg` 177 KB, `sh-ac.svg` 140 KB); sprite+`<use>` was rejected
 because `<use href="#id">` cannot cross a shadow boundary; emoji was rejected per D4.
 
+> **D4a — superseded by measurement (2026-08-05): the corpus ships as ONE lazy chunk.** Everything
+> below about per-flag chunks is still how `loadFlag()` works and is still correct for a consumer
+> showing a handful of flags — but the actual consumer here is a picker that shows all 244 at once,
+> for which the design bought nothing and cost 244 requests. The decisive number is one I had not
+> considered at all: **per-chunk compression roughly doubles the corpus — 43 KB gzip together, 90 KB
+> apart** — because separate chunks cannot share a compression dictionary. HTTP/1.1 added ~49 KB of
+> response headers on top, invisible until h1 and h2 encoded bytes are diffed.
+>
+> Measured, Chromium at 10 Mbps, from "picker opens" to "flags painted":
+>
+> | | h1/20 ms | h1/50 ms | h2/50 ms |
+> |---|---|---|---|
+> | 244 chunks (as designed) | 2012 ms | **3351 ms** | 551 ms |
+> | 244 chunks + progressive render — *first* flag | 172 ms | 249 ms | 262 ms |
+> | 244 chunks + progressive render — *all* flags | 2085 ms | 3333 ms | 561 ms |
+> | **one bundled chunk (shipped)** — first = all | 181 ms | **269 ms** | 278 ms |
+>
+> So the all-or-nothing warm-up was a real second bug (progressive rendering takes the first flag
+> from 3351 ms to 249 ms) but it does **not** fix the picker, which still fills in over 3.3 s across
+> 42 renders. Only the single chunk makes "all visible" equal "first visible", which is why rendering
+> stays one-shot: with no long tail there is nothing to hide. Vite dev goes from 250 requests / 689 ms
+> to 5 / 33 ms.
+>
+> Cost, stated plainly: the mount case (selected flag only) is **16–59 ms slower**, 43 KB against
+> 3.8 KB. It buys 3.1 s on the picker, and the corpus now arrives at mount so the addon shows a flag
+> before any interaction. Secondary win: an esbuild consumer importing only `phone-input` emits **0**
+> of the 244 flag chunks instead of 244, and the eager flag cost is a **196 B** shared chunk instead
+> of the 17.9 KB loader map.
+>
+> API: `loadAllFlags(): Promise<FlagMap>` is added and `loadFlag()` retained, in separate modules so a
+> bundler drops whichever is unused. They deliberately do **not** share a cache — sharing one would
+> make both undroppable — so using both for the same flag fetches it twice (~350 B), documented in
+> both JSDoc and `flags/README.md`. Rejected with numbers: grouped chunks (more bytes *and* more
+> requests), a CSS data-URI sheet (more bytes, needs a class per flag, cannot be inlined as markup),
+> and SVGO (42.7 → 41.2 KB safely; the 37 KB version needs `floatPrecision: 1`, i.e. modifying
+> vendored artwork and losing the verbatim-from-upstream property that makes `refresh-flags.mjs` a
+> reviewable diff).
+
 **Delivery: committed source SVGs + a codegen'd lazy loader map**, the mechanism measured
 end-to-end by the asset-bundling prototype (built through the real
 `nx build mintplayer-web-components`, consumed from a simulated npm install via the workspace's
@@ -952,7 +990,8 @@ loses. D2a records the measured cascade order that explains why.
 | Surface | Name | Notes |
 |---|---|---|
 | fn | `loadFlag(code)` | `Promise<string \| undefined>`, cached, case-insensitive |
-| const | `flagLoaders` | generated static map, one lazy chunk per flag |
+| fn | `loadAllFlags()` | `Promise<FlagMap>` — the whole corpus in ONE lazy chunk (~43 KB gzip, one request). The loader for anything showing many flags at once; see D4a |
+| const | `flagLoaders` | generated static map, one lazy chunk per flag — for `loadFlag()`'s few-flag path |
 | type | `CountryCode` | union derived from the vendored set |
 
 ### `@mintplayer/web-components/phone-core`

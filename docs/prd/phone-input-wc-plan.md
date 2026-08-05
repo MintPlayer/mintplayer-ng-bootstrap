@@ -17,7 +17,7 @@ draft PR #399. Commit per milestone (commits are free); push only when the whole
 | M7 — React + Vue wrappers | ✅ **done** — plus a pre-existing packaging gap found (see below) |
 | M8 — demo pages ×3 | ✅ **done** — all three demos build; keymap documented |
 | M9 — conformance + a11y registries | ✅ **done** — WC naming 72, ng 22, react 12+probes, vue automatic, axe ×3 |
-| M9b — responsive + flag-loading defects [PRD §12] | 🔬 investigating (S10/S11 running) — **must land before M10** |
+| M9b — responsive + flag-loading defects [PRD §12] | ✅ **done** — flags 3.4s→0.27s, wrap fixed by capping the trigger (NOT nowrap), picker clamped, flag gate + RTL dial code fixed |
 | M10 — batched verification sweep | ⬜ |
 
 ## Conventions (these still bite)
@@ -333,17 +333,17 @@ Throwaway files under `docs/prd/_spike-phone-input-*`, deleted after verdicts ar
 Two defects the user found by running it; the gate could not have caught either (mechanisms measured
 in isolation, desktop viewport, five flags). Fix them before the sweep, not after.
 
-- [ ] **(a) Cap the fallback trigger** — `@supports not (appearance: base-select) { mp-select {
+- [x] **(a) Cap the fallback trigger** — `@supports not (appearance: base-select) { mp-select {
       width: 5.5rem !important } }` in `phone-input.styles.scss`, plus
       `@supports not (…) { select.form-select { text-overflow: ellipsis } }` in `select.styles.scss`
       (outside the rich block). **This alone fixes the reported defect**: measured Firefox single-row
       from 280 px up, zero page overflow, tel input 129.8 px at 320; Chromium/WebKit byte-identical
       because the gate never matches there. Executes what §5.3 decided and M5 skipped.
-- [ ] ~~`flex-wrap: nowrap`~~ — **REJECTED by measurement, do not add.** With the trigger unable to
+- [x] ~~`flex-wrap: nowrap`~~ — **REJECTED by measurement, do not add.** With the trigger unable to
       shrink it collapses Firefox's tel input to 26 px (zero content) and scrolls the *page*
       sideways by 131 px at 320 — worse than the bug. After (a) nothing wraps down to 280 px.
       (`min-width: 0` alone was also confirmed useless: line-breaking uses hypothetical main size.)
-- [ ] **(b) Clamp `::picker(select)`** in `select.styles.scss`, inside the existing
+- [x] **(b) Clamp `::picker(select)`** in `select.styles.scss`, inside the existing
       `@supports` + `:host([rich])` block: `box-sizing: border-box` (or the border escapes the cap),
       `max-width: min(100vw - 2rem, 22rem)` (`-2rem` because whether `100vw` includes a classic
       scrollbar is unmeasurable headless), `min-width: anchor-size(self-inline)` (supported in all
@@ -359,13 +359,15 @@ in isolation, desktop viewport, five flags). Fix them before the sweep, not afte
       base `(0,3,1)` rules — `::slotted(input:not(:first-child))` (0,3,2),
       `::slotted(.addon:not(:last-child))` (0,4,1). Naive `::slotted(input)` (0,0,2) loses **silently
       and half-applied**, `!important` notwithstanding.
-- [ ] **Fix the RTL dial code** [PRD §12.6]: `+32` renders as `32+` at any width, because the
+- [x] **Fix the RTL dial code** [PRD §12.6]: `+32` renders as `32+` at any width, because the
       bidi-neutral `+` reorders in an RTL paragraph. `dir="ltr"` (or a bidi isolate) on `.dial-code`.
-- [ ] **Fix the flag gate** [PRD §12.2]: the addon flag is hidden by `@supports`, but the closed-face
+- [x] **Fix the flag gate** [PRD §12.2]: the addon flag is hidden by `@supports`, but the closed-face
       flag depends on `mp-select` reflecting `[rich]` — different conditions, so a suppressed `rich`
       means no flag anywhere. Key it off the real state (reflect it outward from `mp-select`, or
       mirror it as a custom property).
-- [ ] **Flag loading** [PRD §12.5]: adopt the measured winner (single bundled chunk / per-flag /
+- [x] **Flag loading** [PRD §12.5] — adopted ONE bundled corpus chunk (not the hybrid): per-chunk
+      compression doubles the corpus, 43 KB together vs 90 KB apart, so progressive rendering alone
+      would have left the picker 3.3 s slow. Rendering stays one-shot by design. Original item:: adopt the measured winner (single bundled chunk / per-flag /
       hybrid) **and** fix the all-or-nothing warm-up — render the selected flag immediately and the
       rest progressively or in batches, never one `requestUpdate()` after `Promise.all` over 244.
       Amend PRD §5.4 D4 with the new numbers.
