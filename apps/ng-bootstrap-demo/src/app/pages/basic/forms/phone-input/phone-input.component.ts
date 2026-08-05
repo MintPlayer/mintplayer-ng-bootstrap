@@ -93,7 +93,7 @@ export class PhoneInputComponent {
     <!-- bs-input-group joins any mix of controls, including ones that keep
          their own shadow root: the corners pair and the borders collapse. -->
     <bs-input-group>
-      <bs-select [(ngModel)]="type">
+      <bs-select aria-label="Number type" [(ngModel)]="type">
         <option value="mobile">Mobile</option>
         <option value="home">Home</option>
       </bs-select>
