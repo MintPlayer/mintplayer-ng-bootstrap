@@ -101,12 +101,18 @@ Files: `charts/hierarchy/src/components/mp-hierarchy-chart.ts`,
 
 ## M3 — Hierarchy interaction [PRD §5.3, D6, D10]
 
-- [ ] Delegated hover → shadow tooltip (aria-hidden) + `hierarchy-node-hover`.
-- [ ] Click: re-root with tween (rAF for SVG / CSS transition for divs; `transition-duration`,
-      reduced-motion → 0), zoom-out controls, leaf → `hierarchy-node-select`; `root-id`
-      controlled + `hierarchy-zoom`; `zoomTo(id)`; state preserved across `layout` switches.
-- [ ] Verify: manual pass in ng demo across all 3 layouts; type-check.
-- [ ] **Commit.**
+- [x] Delegated click/pointermove/pointerleave on `.chart`; tooltip (aria-hidden, cursor-
+      following, Intl-formatted "name — metric% — value" or `tooltipFormatter`) +
+      `hierarchy-node-hover`; `labelFormatter` wired into arc/cell/center/breadcrumb labels.
+- [x] Folder click → `zoomTo` (root-id reflected with loop guard) + `hierarchy-zoom`; leaf →
+      `hierarchy-node-select`; zoom-out via center circle / icicle focus cell / treemap
+      breadcrumb header (shows the focus path). Sunburst tween: rAF ease-out interpolating
+      spans keyed by id (`_prevSpans` = drawn state, so mid-tween retargets restart cleanly);
+      div layouts tween via CSS transitions on geometry (`--mp-hierarchy-chart-transition-
+      duration`); reduced-motion → instant in both paths. `transition-duration` + `locale`
+      attrs added.
+- [x] Verified live via playwright MCP: all five paths (zoom in/out ×3 layouts, select,
+      hover incl. weighted-metric tooltip 63.4% hand-checked); tsc clean. **Committed.**
 
 ## M4 — Hierarchy ARIA + keyboard [PRD §6; shaped by S1 verdict]
 
