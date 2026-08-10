@@ -147,4 +147,5 @@ Then run following commands
 - Uses per-component styles. Only non-generic bootstrap styles are bundled in the main bundle
 - Framework-agnostic web components (`@mintplayer/web-components`) with Angular, React and Vue wrappers
 - Carousel: touch-events, keyboard navigation, full APG carousel ARIA
+- Charts with **zero runtime dependencies**, under a nested `charts/*` subpath per framework (e.g. `@mintplayer/ng-bootstrap/charts/hierarchy`): a hierarchy chart with three interchangeable layouts (`sunburst` / `icicle` / `treemap`, drill-down and unbounded `max-depth="auto"`), a trend chart and a sparkline. Keyboard-operable and screen-reader navigable via the ARIA *tree* pattern
 - Interactive no-JS support for **Navbar**, **Shell**, **Dropdown menu** and **Carousel** on server-rendered pages (Declarative Shadow DOM + pure-CSS state machines) — works in all three framework demos
