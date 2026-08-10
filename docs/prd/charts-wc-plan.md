@@ -1,9 +1,13 @@
 # Plan — `charts/` family (`mp-hierarchy-chart`, `mp-trend-chart`, `mp-sparkline`) + wrappers
 
 PRD: [charts-wc.md](./charts-wc.md)
-Status: **Implemented (2026-08-10)** — 16 commits on `feat/charts-wc`, PR #401. Every milestone
-below is done; the two open boxes in M12 are the axe gate (running in CI) and the human
-keyboard/screen-reader pass. Supersedes `sunburst-wc-plan.md` (never committed).
+Status: **Implemented (2026-08-10)** — `feat/charts-wc`, PR #401, **CI green** (run 31383221321:
+build, units, API tests, e2e, axe gate, live-API e2e, dry-run publish). Every milestone below is
+done; the single remaining open item is the human keyboard/screen-reader pass.
+Supersedes `sunburst-wc-plan.md` (never committed).
+
+Dependency work rides the same PR at the user's request and is documented separately in
+[nx23-dependency-upgrade.md](./nx23-dependency-upgrade.md).
 
 | Milestone | State |
 |---|---|
@@ -15,7 +19,7 @@ keyboard/screen-reader pass. Supersedes `sunburst-wc-plan.md` (never committed).
 | M9 sparkline | ✅ `role="img"`, generated summary name |
 | M10 wrappers + demos | ✅ ng/react/vue ×3 elements, 3 demo pages routed |
 | M11 registries + e2e | ✅ 4 registries; shared suite; axe routes ×3 apps |
-| M12 sweep | 🟡 builds/units/e2e green; axe gate in CI; human pass outstanding |
+| M12 sweep | ✅ all CI steps green incl. the axe gate; only the human a11y pass outstanding |
 
 ## Conventions (these still bite)
 
@@ -279,16 +283,19 @@ NX_ISOLATE_PLUGINS=false NX_DAEMON=false npx nx run-many -t e2e-a11y --parallel=
       main bundle**, so the pre-existing initial-budget warning is untouched by this work.
 - [x] e2e: ng 8/8, React 12/12, Vue 12/12 (4 specs × engines). Three real defects surfaced here
       that jsdom structurally could not catch — recorded in PRD §13.
-- [ ] Axe gate (`run-many -t e2e-a11y`). Locally the charts route passed **"on load" in all three
-      apps**; the only failures were the "after interaction" hook hitting the
-      bbox-centre-in-the-donut-hole problem (PRD §13), now fixed. The rerun was stopped partway
-      to free port 4200 at the user's request, so **the verdict comes from CI on PR #401**.
+- [x] Axe gate (`run-many -t e2e-a11y`) — **PASSED in CI** (run 31383221321). Locally the charts
+      route passed "on load" in all three apps; the "after interaction" failures were the hook
+      hitting the bbox-centre-in-the-donut-hole problem (PRD §13), fixed before the run.
 - [ ] **HUMAN:** keyboard-only pass (all 3 elements), Firefox smoke, RTL smoke,
       NVDA/VoiceOver spot check of node names + zoom announcements.
 - [x] Version bumps: web-components 2.10.0 → 2.11.0, ng-bootstrap 22.13.0 → 22.14.0,
       react-bootstrap 19.14.0 → 19.15.0, vue-bootstrap 3.15.0 → 3.16.0. (Cross-package peer
       ranges are `^2.0.0` / major-wide, so none needed touching.)
-- [x] Pushed **once** (16 commits, 108 files, +6281/−134) → PR #401; reading that single run.
+- [x] Pushed → PR #401. **CI run 3 (31383221321) fully green**: Build, Unit tests, API tests,
+      E2E, axe gate, live-API E2E, and `dry-run-publish-libs` (which is the real check on the
+      new `charts/*` subpath exports). Run 1 failed on the too-broad tsconfig glob (PRD §13);
+      run 2 was superseded. The carousel e2e failure seen mid-run was a **flake** — it passed on
+      Playwright's retry and the step ended green.
       Two post-sweep commits followed from user review of the running demo — the trend hover fix
       and the ng demo defaulting to `max-depth="auto"` — so the branch is 16, not 14.
 

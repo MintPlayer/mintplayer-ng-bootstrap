@@ -1,8 +1,8 @@
 # PRD — `charts/` family: `mp-hierarchy-chart`, `mp-trend-chart`, `mp-sparkline` + wrappers
 
-Status: **Implemented on `feat/charts-wc` — PR #401** (opened 2026-08-10, base `master`).
-All milestones complete; the batched sweep is green apart from the axe gate, which is being
-verified in CI, and the human keyboard/screen-reader pass (§13, still open).
+Status: **Implemented on `feat/charts-wc` — PR #401** (opened 2026-08-10, base `master`),
+**CI green** (run 31383221321 — build, unit, API, e2e, axe gate, live-API e2e, dry-run publish).
+All milestones complete; the only open item is the human keyboard/screen-reader pass (§13).
 Supersedes `sunburst-wc.md` (2026-08-09, deleted before ever being committed) after the user
 widened scope to the full chart roster on 2026-08-10.
 Grounded in two 3-agent investigations: (1) codecov's open-source frontend
@@ -10,6 +10,7 @@ Grounded in two 3-agent investigations: (1) codecov's open-source frontend
 survey + doc conventions; (2) packaging in-tree vs separate family, chart-library licensing, and
 the chart inventory of codecov/Coveralls/SonarQube/Codacy/coverage.py/JaCoCo/Istanbul.
 Plan: [charts-wc-plan.md](./charts-wc-plan.md)
+Dependency work riding the same PR: [nx23-dependency-upgrade.md](./nx23-dependency-upgrade.md)
 
 ## 1. Problem
 
