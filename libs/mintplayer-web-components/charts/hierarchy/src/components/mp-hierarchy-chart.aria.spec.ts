@@ -238,6 +238,71 @@ describe('mp-hierarchy-chart zoom controls + announcements', () => {
     expect(el.shadowRoot!.querySelector<HTMLButtonElement>('.treemap-header')!.disabled).toBe(true);
   });
 
+  it('lazy loading: aria-busy while in flight, children render on resolve', async () => {
+    let resolve!: (kids: HierarchyNode[]) => void;
+    const data: HierarchyNode = {
+      id: 'r', name: 'r',
+      children: [
+        { id: 'lazy', name: 'lazy', value: 10, hasChildren: true },
+        { id: 'leaf', name: 'leaf', value: 10, colorValue: 50 },
+      ],
+    };
+    document.body.innerHTML = '<mp-hierarchy-chart layout="sunburst" transition-duration="0"></mp-hierarchy-chart>';
+    const el = document.querySelector('mp-hierarchy-chart') as MpHierarchyChart;
+    el.loadChildren = () => new Promise((res) => (resolve = res));
+    el.data = data;
+    await flush(el);
+    expect(item(el, 'lazy').getAttribute('aria-busy')).toBe('true');
+    expect(item(el, 'lazy').hasAttribute('data-loading')).toBe(true);
+    resolve([{ id: 'kid', name: 'kid', value: 10, colorValue: 90 }]);
+    await flush(el);
+    await flush(el);
+    expect(item(el, 'lazy').hasAttribute('aria-busy')).toBe(false);
+    expect(item(el, 'lazy').getAttribute('aria-expanded')).toBe('true');
+    expect(item(el, 'kid')).toBeTruthy();
+  });
+
+  it('lazy loading: rejection emits hierarchy-node-load-error once; activation retries', async () => {
+    const data: HierarchyNode = {
+      id: 'r', name: 'r',
+      children: [{ id: 'lazy', name: 'lazy', value: 10, hasChildren: true }],
+    };
+    document.body.innerHTML = '<mp-hierarchy-chart layout="icicle" transition-duration="0"></mp-hierarchy-chart>';
+    const el = document.querySelector('mp-hierarchy-chart') as MpHierarchyChart;
+    let calls = 0;
+    const errors: string[] = [];
+    el.addEventListener('hierarchy-node-load-error', (e) => errors.push((e as CustomEvent).detail.node.id));
+    el.loadChildren = () => { calls += 1; return Promise.reject(new Error('boom')); };
+    el.data = data;
+    await flush(el);
+    await flush(el);
+    expect(errors).toEqual(['lazy']);
+    expect(calls).toBe(1); // failed nodes are not re-requested on every render
+    expect(item(el, 'lazy').hasAttribute('data-load-error')).toBe(true);
+    press(item(el, 'lazy'), 'Enter'); // retry path
+    await flush(el);
+    await flush(el);
+    expect(calls).toBe(2);
+  });
+
+  it('without a loader, a hasChildren node acts as a leaf (no zoom, no busy)', async () => {
+    const data: HierarchyNode = {
+      id: 'r', name: 'r',
+      children: [{ id: 'lazy', name: 'lazy', value: 10, hasChildren: true }],
+    };
+    document.body.innerHTML = '<mp-hierarchy-chart layout="sunburst" transition-duration="0"></mp-hierarchy-chart>';
+    const el = document.querySelector('mp-hierarchy-chart') as MpHierarchyChart;
+    el.data = data;
+    await flush(el);
+    const selects: string[] = [];
+    el.addEventListener('hierarchy-node-select', (e) => selects.push((e as CustomEvent).detail.node.id));
+    expect(item(el, 'lazy').hasAttribute('aria-busy')).toBe(false);
+    press(item(el, 'lazy'), 'Enter');
+    await flush(el);
+    expect(el.hasAttribute('root-id')).toBe(false);
+    expect(selects).toEqual(['lazy']);
+  });
+
   it('zoom announces the new focus via the live region (one message, one channel)', async () => {
     const el = await mount('layout="sunburst"');
     el.zoomTo('src');

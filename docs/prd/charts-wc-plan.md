@@ -137,9 +137,15 @@ Files: `charts/hierarchy/src/components/mp-hierarchy-chart.ts`,
 
 ## M5 — Hierarchy lazy children [PRD §5.3]
 
-- [ ] `loadChildren` property; trigger on entering the rendered window; `aria-busy` +
-      `data-loading`; `hierarchy-node-load-error`; specs for success/error/no-callback.
-- [ ] **Commit.**
+- [x] `loadChildren` property (typed `HierarchyChildrenLoader`); candidates = lazy nodes whose
+      child ring is inside the rendered window (or the focus itself), kicked from `updated()`;
+      `aria-busy` + `data-loading` pulse while in flight (reduced-motion kills the pulse);
+      resolve merges children + re-rolls the index; reject → `hierarchy-node-load-error` once
+      (failed set stops re-request loops), activation retries; without a loader a
+      `hasChildren` node behaves as a leaf (never a dead zoom). Focus-node loads announce via
+      `loading-label`.
+- [x] 3 new specs (busy/resolve, reject-once/retry, no-loader-leaf); charts suite **63/63**;
+      tsc clean. **Committed.**
 
 ## M6 — `mp-trend-chart` render + axes [PRD §5.4]
 

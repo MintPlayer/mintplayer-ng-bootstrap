@@ -15,6 +15,7 @@ import {
   pathTo,
   type HierarchyHoverEventDetail,
   type HierarchyIndex,
+  type HierarchyLoadErrorEventDetail,
   type HierarchyNode,
   type HierarchyNodeEventDetail,
   type PartitionNode,
@@ -26,6 +27,15 @@ export type HierarchyChartLayout = 'sunburst' | 'icicle' | 'treemap';
 
 /** String-returning formatters; return `undefined` to fall back to the built-in text. */
 export type HierarchyNodeFormatter = (node: HierarchyNode) => string | undefined;
+
+/**
+ * Async loader for a lazy node's children (a node with `hasChildren: true`
+ * and no `children`). Invoked once per node when its child ring would enter
+ * the rendered window; resolve with the children, or reject to surface a
+ * `hierarchy-node-load-error` (activating the node again retries).
+ * Matches codecov's report/tree API shape (depth + path).
+ */
+export type HierarchyChildrenLoader = (node: HierarchyNode) => Promise<HierarchyNode[]>;
 
 const VIEW = 1000; // logical viewBox size; all geometry is in these units
 const TAU = 2 * Math.PI;
@@ -78,6 +88,7 @@ export class MpHierarchyChart extends LitElement {
       'zoom-out-label',
       'metric-unit-label',
       'value-unit-label',
+      'loading-label',
       // Copied onto the in-shadow role=tree node — the host stays generic.
       'aria-label',
       'input-label',
@@ -102,6 +113,10 @@ export class MpHierarchyChart extends LitElement {
   private _locale: string | undefined;
   private _tooltipFormatter: HierarchyNodeFormatter | undefined;
   private _labelFormatter: HierarchyNodeFormatter | undefined;
+  private _loadChildren: HierarchyChildrenLoader | undefined;
+  private _loadingIds = new Set<string>();
+  private _failedIds = new Set<string>();
+  private _loadingLabel = 'Loading';
 
   private _fill = colorScale(this._colorMin, this._colorMax, this._colorStart, this._colorEnd);
 
@@ -114,7 +129,7 @@ export class MpHierarchyChart extends LitElement {
   // Roving tabindex over the rendered treeitems (one tab stop for the tree).
   private _focusedId: string | null = null;
   private _restoreFocus = false;
-  private _rendered: Array<{ id: string; parentId: string | null }> = [];
+  private _rendered: Array<{ id: string; parentId: string | null; depth: number }> = [];
   private _typeahead = '';
   private _typeaheadTimer = 0;
   private _zoomOutLabel = 'Zoom out one level';
@@ -271,6 +286,21 @@ export class MpHierarchyChart extends LitElement {
     this.requestUpdate();
   }
 
+  get loadChildren(): HierarchyChildrenLoader | undefined {
+    return this._loadChildren;
+  }
+  set loadChildren(value: HierarchyChildrenLoader | undefined) {
+    this._loadChildren = value;
+    this.requestUpdate();
+  }
+
+  get loadingLabel(): string {
+    return this._loadingLabel;
+  }
+  set loadingLabel(value: string) {
+    this._loadingLabel = value ?? 'Loading';
+  }
+
   private rebuildScale(): void {
     this._fill = colorScale(this._colorMin, this._colorMax, this._colorStart, this._colorEnd);
     this.requestUpdate();
@@ -293,6 +323,7 @@ export class MpHierarchyChart extends LitElement {
       case 'transition-duration': this.transitionDuration = Number(newValue ?? 300); break;
       case 'locale': this.locale = newValue ?? undefined; break;
       case 'zoom-out-label': this._zoomOutLabel = newValue ?? 'Zoom out one level'; this.requestUpdate(); break;
+      case 'loading-label': this._loadingLabel = newValue ?? 'Loading'; break;
       case 'metric-unit-label': this._metricUnitLabel = newValue ?? '%'; this.requestUpdate(); break;
       case 'value-unit-label': this._valueUnitLabel = newValue ?? ''; this.requestUpdate(); break;
       case 'aria-label': this.requestUpdate(); break;
@@ -404,7 +435,8 @@ export class MpHierarchyChart extends LitElement {
       this.zoomOut();
       return;
     }
-    if (node.children?.length) {
+    this._failedIds.delete(node.id); // activating a failed lazy node retries
+    if (node.children?.length || (node.hasChildren && this._loadChildren)) {
       this.zoomTo(node.id);
       return;
     }
@@ -520,8 +552,9 @@ export class MpHierarchyChart extends LitElement {
       case 'Enter': {
         const node = index.byId.get(id);
         if (!node) return;
+        this._failedIds.delete(node.id); // activating a failed lazy node retries
         if (node === this.focusedRoot) this.zoomOut();
-        else if (node.children?.length) this.zoomTo(node.id);
+        else if (node.children?.length || (node.hasChildren && this._loadChildren)) this.zoomTo(node.id);
         else this.emit<HierarchyNodeEventDetail>('hierarchy-node-select', { node, path: pathTo(index, node) });
         break;
       }
@@ -584,6 +617,50 @@ export class MpHierarchyChart extends LitElement {
         ?.querySelector<SVGElement | HTMLElement>(`[role="treeitem"][data-id="${cssEscape(this._focusedId)}"]`)
         ?.focus({ preventScroll: true });
     }
+    this.loadLazyCandidates();
+  }
+
+  /* ---------- lazy children ---------- */
+
+  private isLazy(node: HierarchyNode | undefined): node is HierarchyNode {
+    return !!node && !!node.hasChildren && !node.children?.length;
+  }
+
+  /** Kick a load for every lazy node whose CHILD ring is inside the rendered window. */
+  private loadLazyCandidates(): void {
+    const loader = this._loadChildren;
+    const index = this._index;
+    if (!loader || !index) return;
+    const focus = this.focusedRoot;
+    const candidates = [
+      ...(this.isLazy(focus) ? [focus] : []),
+      ...this._rendered
+        .filter((r) => r.depth < this._maxDepth)
+        .map((r) => index.byId.get(r.id))
+        .filter((node): node is HierarchyNode => this.isLazy(node)),
+    ].filter((node) => !this._loadingIds.has(node.id) && !this._failedIds.has(node.id));
+
+    candidates.map((node) => {
+      this._loadingIds.add(node.id);
+      if (node === focus) this.liveAnnouncer.announce(`${this._loadingLabel} ${this.labelText(node)}`);
+      loader(node).then(
+        (children) => {
+          node.children = children;
+          this._loadingIds.delete(node.id);
+          // Re-rolls values and colorValues so the new ring sizes correctly.
+          if (this._data) this._index = buildIndex(this._data);
+          this.requestUpdate();
+        },
+        (error) => {
+          this._loadingIds.delete(node.id);
+          this._failedIds.add(node.id);
+          this.emit<HierarchyLoadErrorEventDetail>('hierarchy-node-load-error', { node, error });
+          this.requestUpdate();
+        },
+      );
+      return node;
+    });
+    if (candidates.length) this.requestUpdate();
   }
 
   private fillOf(node: HierarchyNode): string | undefined {
@@ -624,6 +701,7 @@ export class MpHierarchyChart extends LitElement {
     this._rendered = nodes.map((n) => ({
       id: n.node.id,
       parentId: this._index?.parents.get(n.node.id)?.id ?? focusId,
+      depth: n.depth,
     }));
     this._tabFocusId = this.resolveTabFocus();
   }
@@ -677,6 +755,8 @@ export class MpHierarchyChart extends LitElement {
       class="ring"
       data-id=${n.node.id}
       ?data-leaf=${!n.hasChildren}
+      ?data-loading=${this._loadingIds.has(n.node.id)}
+      ?data-load-error=${this._failedIds.has(n.node.id)}
       d=${d}
       fill=${fill ?? 'var(--mp-hierarchy-chart-node-fill)'}
       role="treeitem"
@@ -686,6 +766,7 @@ export class MpHierarchyChart extends LitElement {
       aria-setsize=${n.setsize}
       aria-posinset=${n.posinset}
       aria-expanded=${n.hasChildren ? String(n.depth < this._maxDepth && !!n.node.children?.length) : nothing}
+      aria-busy=${this._loadingIds.has(n.node.id) ? 'true' : nothing}
     ></path>`;
   }
 
@@ -771,6 +852,8 @@ export class MpHierarchyChart extends LitElement {
       data-id=${n.node.id}
       ?data-leaf=${!n.hasChildren}
       ?data-branch=${branch}
+      ?data-loading=${this._loadingIds.has(n.node.id)}
+      ?data-load-error=${this._failedIds.has(n.node.id)}
       role="treeitem"
       tabindex=${n.node.id === this._tabFocusId ? '0' : '-1'}
       aria-label=${this.accessibleName(n.node)}
@@ -778,6 +861,7 @@ export class MpHierarchyChart extends LitElement {
       aria-setsize=${n.setsize}
       aria-posinset=${n.posinset}
       aria-expanded=${n.hasChildren ? String(expanded) : nothing}
+      aria-busy=${this._loadingIds.has(n.node.id) ? 'true' : nothing}
       style=${styleMap({ ...geometry, ...(fill ? { background: fill } : {}) })}
     ><span class="cell-label">${this.labelText(n.node)}</span></div>`;
   }

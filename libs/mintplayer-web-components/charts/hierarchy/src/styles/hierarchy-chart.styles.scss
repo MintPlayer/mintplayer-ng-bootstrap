@@ -188,9 +188,26 @@ svg {
   outline-offset: 2px;
 }
 
+.ring[data-loading],
+.cell[data-loading] {
+  animation: mp-hierarchy-chart-pulse 1.2s ease-in-out infinite;
+}
+
+.ring[data-load-error],
+.cell[data-load-error] {
+  opacity: 0.5;
+}
+
+@keyframes mp-hierarchy-chart-pulse {
+  50% {
+    opacity: 0.4;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .ring,
   .cell {
     transition: none !important;
+    animation: none !important;
   }
 }
