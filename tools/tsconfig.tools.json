@@ -6,7 +6,8 @@
     "module": "commonjs",
     "target": "es2020",
     "types": ["node"],
-    "importHelpers": false
+    "importHelpers": false,
+    "ignoreDeprecations": "6.0"
   },
   "include": ["./**/*.ts"]
 }
