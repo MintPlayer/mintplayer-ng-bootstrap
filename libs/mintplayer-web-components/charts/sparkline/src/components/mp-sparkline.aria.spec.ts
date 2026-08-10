@@ -5,8 +5,8 @@ import type { MpSparkline } from './mp-sparkline';
 /**
  * `<mp-sparkline>` is a non-interactive graphic: role="img" with a generated
  * "first, last, lowest, highest" summary name (locale-formatted), overridable
- * via `label` or `summaryFormatter`. No tab stop, ever — the numbers belong
- * in the table cell next to it.
+ * via host `aria-label` > `input-label` > `summaryFormatter`. No tab stop, ever
+ * — the numbers belong in the table cell next to it.
  */
 async function mount(points: (number | null)[], attrs = ''): Promise<MpSparkline> {
   document.body.innerHTML = `<mp-sparkline locale="en-US" ${attrs}></mp-sparkline>`;
@@ -29,10 +29,14 @@ describe('mp-sparkline', () => {
     expect(el.shadowRoot!.querySelector('[tabindex]')).toBeNull();
   });
 
-  it('label attribute and summaryFormatter override the generated name', async () => {
-    const el = await mount([1, 2, 3], 'label="Coverage trend"');
+  it('input-label, a host aria-label and summaryFormatter override the generated name', async () => {
+    const el = await mount([1, 2, 3], 'input-label="Coverage trend"');
     expect(el.shadowRoot!.querySelector('svg')!.getAttribute('aria-label')).toBe('Coverage trend');
-    el.label = undefined;
+    el.setAttribute('aria-label', 'From host');
+    await el.updateComplete;
+    expect(el.shadowRoot!.querySelector('svg')!.getAttribute('aria-label')).toBe('From host');
+    el.removeAttribute('aria-label');
+    el.inputLabel = null;
     el.summaryFormatter = (points) => `${points.length} samples`;
     await el.updateComplete;
     expect(el.shadowRoot!.querySelector('svg')!.getAttribute('aria-label')).toBe('3 samples');

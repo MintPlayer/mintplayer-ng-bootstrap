@@ -4,6 +4,9 @@ import * as React from 'react';
 
 import { BsAccordion, BsAccordionItem } from '@mintplayer/react-bootstrap/accordion';
 import { BsCarousel } from '@mintplayer/react-bootstrap/carousel';
+import { BsHierarchyChart } from '@mintplayer/react-bootstrap/charts/hierarchy';
+import { BsSparkline } from '@mintplayer/react-bootstrap/charts/sparkline';
+import { BsTrendChart } from '@mintplayer/react-bootstrap/charts/trend';
 import { BsDropdownMenu } from '@mintplayer/react-bootstrap/dropdown-menu';
 import { BsNavbar, BsNavbarBrand, BsNavbarDropdown, BsNavbarItem } from '@mintplayer/react-bootstrap/navbar';
 import { BsShell } from '@mintplayer/react-bootstrap/shell';
@@ -35,6 +38,9 @@ export const probes = [
   </BsAccordion>,
   <BsCarousel role="none" id="c" tabIndex={-1} />,
   <BsDropdownMenu role="none" id="dm" tabIndex={-1} />,
+  <BsHierarchyChart role="none" id="hc" tabIndex={-1} />,
+  <BsSparkline role="none" id="sl" tabIndex={-1} />,
+  <BsTrendChart role="none" id="tc" tabIndex={-1} />,
   <BsNavbar role="none" id="n" tabIndex={-1} />,
   <BsNavbar>
     <BsNavbarBrand role="none" id="nb" tabIndex={-1} />

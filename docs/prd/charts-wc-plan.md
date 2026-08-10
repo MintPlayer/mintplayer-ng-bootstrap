@@ -201,12 +201,27 @@ Files: `charts/trend/src/components/mp-trend-chart.ts` (+aria.spec), `src/styles
 
 ## M11 — Conformance registries + e2e [PRD §10]
 
-- [ ] WC `_conformance/naming.spec.ts`: three new CASES entries.
-- [ ] ng `aria-passthrough.spec.ts` WRAPPERS + count bump; React
-      `attribute-passthrough.spec.tsx` + `.types.tsx` probes; Vue `attribute-passthrough.spec.ts`.
-- [ ] Per-app e2e smoke (render, zoom, layout switch, keyboard zoom-out; trend hover) —
-      `networkidle` after goto; `axe.spec.ts` registry entries ×3 apps (NOT `axe-nojs.spec.ts`).
-- [ ] **Commit.**
+- [x] WC `_conformance/naming.spec.ts`: 3 CASES entries + a new `setup` hook, because a chart has
+      no role-bearing node until it has data. Two follow-ons this forced, both right:
+      **`mp-sparkline`'s `label` became `input-label`** (host `aria-label` > `input-label` >
+      `summaryFormatter` > generated summary) so it obeys the one house naming contract, and its
+      data-derived default is registerable as a literal by using single-digit values
+      (locale-invariant).
+- [x] ng `aria-passthrough.spec.ts` +3 WRAPPERS (22 → 25); React
+      `attribute-passthrough.spec.tsx` +3 CASES (12 → 15) and 3 `.types.tsx` bare-name probes;
+      Vue registry +1 runtime representative — and its **static sweep glob was one level deep, so
+      the whole `charts/` namespace would have opted out of the `inheritAttrs`/`$attrs` invariant
+      invisibly**; now globs both depths.
+- [x] Shared `tools/e2e-shared/charts-suites.ts` (accordion/carousel precedent) + 3 thin per-app
+      specs: re-root by click, keyboard into the shadow SVG arc with Enter/Escape zoom (the S1
+      risk, in a real browser), layout switch swapping SVG for HTML cells, trend point walking,
+      sparkline named image. Waits on the rendered `[role="tree"]` rather than `networkidle`,
+      since data arrives by property.
+- [x] `axe.spec.ts` entries in all three apps (NOT `axe-nojs.spec.ts` — no no-JS tier), each
+      walking all three layouts + the zoomed-in state. Pre-emptive fix while writing them: the
+      sunburst's centring `<g>` now carries `role="none"`, so no unroled node sits between
+      `role="tree"` and its treeitems.
+- [x] **Commit.**
 
 ## M12 — Batched verification sweep (only now; one pass)
 

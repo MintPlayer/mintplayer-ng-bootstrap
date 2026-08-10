@@ -120,6 +120,22 @@ axeAuditSuite(test, expect, [
   { path: '/enterprise/tile-manager' },
   { path: '/enterprise/otp-input' },
   { path: '/enterprise/query-builder' },
+  {
+    path: '/enterprise/charts',
+    ready: async (page) => {
+      await page.waitForSelector('mp-hierarchy-chart [role="tree"]');
+    },
+    // The three hierarchy layouts are different DOM (svg paths vs positioned
+    // divs) and the zoomed-in state adds the enabled zoom-out control, so the
+    // audit walks all of it rather than only the default sunburst at root.
+    interact: async (page) => {
+      await page.locator('mp-hierarchy-chart [role="treeitem"]').first().click();
+      await page.getByRole('button', { name: 'icicle' }).click();
+      await page.waitForSelector('mp-hierarchy-chart .icicle');
+      await page.getByRole('button', { name: 'treemap' }).click();
+      await page.waitForSelector('mp-hierarchy-chart .treemap');
+    },
+  },
   { path: '/overlays/shell' },
   { path: '/overlays/modals' },
   { path: '/advanced/signature-pad' },

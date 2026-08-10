@@ -10,9 +10,12 @@ const PAD = 3;
  * `<mp-sparkline>` — axis-less inline trend for table cells (the codecov
  * flags/components-table shape). Deliberately NOT keyboard-interactive: it is
  * a non-interactive graphic (`role="img"`) whose accessible name summarizes
- * the series ("first, last, lowest, highest", locale-formatted) or comes from
- * `label`/`summaryFormatter`. The real numbers belong in the table cell next
- * to it — which is where sparklines live anyway.
+ * the series ("first, last, lowest, highest", locale-formatted). The real
+ * numbers belong in the table cell next to it — which is where sparklines live
+ * anyway.
+ *
+ * Naming follows the library contract: host `aria-label` > `input-label` >
+ * `summaryFormatter` > the generated summary (a data-derived default).
  *
  * `points: (number | null)[]` is property-only; `null` renders a gap.
  * No-JS tier: none; registers in axe.spec.ts only.
@@ -28,7 +31,9 @@ export class MpSparkline extends LitElement {
       'y-min',
       'y-max',
       'locale',
-      'label',
+      // Copied onto the in-shadow role=img node — the host is generic.
+      'aria-label',
+      'input-label',
     ];
   }
 
@@ -38,7 +43,7 @@ export class MpSparkline extends LitElement {
   private _yMin: number | undefined;
   private _yMax: number | undefined;
   private _locale: string | undefined;
-  private _label: string | undefined;
+  private _inputLabel: string | null = null;
   private _summaryFormatter: ((points: (number | null)[]) => string | undefined) | undefined;
 
   get points(): (number | null)[] {
@@ -89,11 +94,11 @@ export class MpSparkline extends LitElement {
     this.requestUpdate();
   }
 
-  get label(): string | undefined {
-    return this._label;
+  get inputLabel(): string | null {
+    return this._inputLabel;
   }
-  set label(value: string | undefined) {
-    this._label = value || undefined;
+  set inputLabel(value: string | null) {
+    this._inputLabel = value ?? null;
     this.requestUpdate();
   }
 
@@ -113,12 +118,14 @@ export class MpSparkline extends LitElement {
       case 'y-min': this.yMin = newValue === null ? undefined : Number(newValue); break;
       case 'y-max': this.yMax = newValue === null ? undefined : Number(newValue); break;
       case 'locale': this.locale = newValue ?? undefined; break;
-      case 'label': this.label = newValue ?? undefined; break;
+      case 'aria-label': this.requestUpdate(); break;
+      case 'input-label': this.inputLabel = newValue; break;
     }
   }
 
   private accessibleName(): string {
-    if (this._label) return this._label;
+    const named = this.getAttribute('aria-label') ?? this._inputLabel;
+    if (named) return named;
     const custom = this._summaryFormatter?.(this._points);
     if (custom !== undefined) return custom;
     const values = this._points.filter((p): p is number => p !== null);

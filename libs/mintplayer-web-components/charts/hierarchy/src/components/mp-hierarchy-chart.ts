@@ -728,7 +728,9 @@ export class MpHierarchyChart extends LitElement {
     // The zoom-out control is a real HTML button OVERLAY, not a node inside
     // the svg: role=tree only allows treeitem/group children.
     return html`<svg viewBox="0 0 ${VIEW} ${VIEW}" role="tree" aria-label=${label ?? nothing}>
-      <g transform="translate(${VIEW / 2},${VIEW / 2})">
+      <!-- role=none: this group only centres the geometry, and an unroled node
+           between role=tree and its treeitems is an aria-required-parent risk. -->
+      <g role="none" transform="translate(${VIEW / 2},${VIEW / 2})">
         ${repeat(nodes, (n) => n.node.id, (n) => this.renderArc(n, spans.get(n.node.id) ?? n, unit))}
         ${this._showLabels && this._tween >= 1
           ? repeat(nodes.filter((n) => this.arcLabelFits(n)), (n) => `label-${n.node.id}`,

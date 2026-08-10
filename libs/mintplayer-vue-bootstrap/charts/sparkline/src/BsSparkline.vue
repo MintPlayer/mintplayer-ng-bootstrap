@@ -5,7 +5,7 @@ import { onMounted, ref, watch } from 'vue';
 
 defineOptions({ inheritAttrs: false });
 
-// Scalars (area, show-last-dot, y-min, y-max, locale, label) flow through as
+// Scalars (area, show-last-dot, y-min, y-max, locale, input-label) flow through as
 // attributes via v-bind="$attrs"; the points array is forwarded as a property.
 const props = defineProps<{
   points?: (number | null)[];

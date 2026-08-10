@@ -5,6 +5,9 @@ import { act } from 'react';
 
 import { BsAccordion, BsAccordionItem } from '@mintplayer/react-bootstrap/accordion';
 import { BsCarousel } from '@mintplayer/react-bootstrap/carousel';
+import { BsHierarchyChart } from '@mintplayer/react-bootstrap/charts/hierarchy';
+import { BsSparkline } from '@mintplayer/react-bootstrap/charts/sparkline';
+import { BsTrendChart } from '@mintplayer/react-bootstrap/charts/trend';
 import { BsDropdownMenu } from '@mintplayer/react-bootstrap/dropdown-menu';
 import { BsNavbar, BsNavbarBrand, BsNavbarDropdown, BsNavbarItem } from '@mintplayer/react-bootstrap/navbar';
 import { BsInputGroup } from '@mintplayer/react-bootstrap/input-group';
@@ -72,6 +75,9 @@ const CASES: Case[] = [
   },
   { name: 'BsCarousel', tag: 'mp-carousel', render: (p) => <BsCarousel {...p} /> },
   { name: 'BsDropdownMenu', tag: 'mp-dropdown-menu', render: (p) => <BsDropdownMenu {...p} /> },
+  { name: 'BsHierarchyChart', tag: 'mp-hierarchy-chart', render: (p) => <BsHierarchyChart {...p} /> },
+  { name: 'BsSparkline', tag: 'mp-sparkline', render: (p) => <BsSparkline {...p} /> },
+  { name: 'BsTrendChart', tag: 'mp-trend-chart', render: (p) => <BsTrendChart {...p} /> },
   { name: 'BsNavbar', tag: 'mp-navbar', render: (p) => <BsNavbar {...p} /> },
   {
     name: 'BsNavbarBrand',
@@ -130,7 +136,7 @@ describe('React wrapper attribute passthrough', () => {
   it('covers every React wrapper with a custom-element root', () => {
     // Mirrors the Angular guard's completeness check. If a new wrapper appears, add
     // a case rather than raising the number.
-    expect(CASES).toHaveLength(12);
+    expect(CASES).toHaveLength(15);
     expect(new Set(CASES.map((c) => c.name)).size).toBe(CASES.length);
   });
 });

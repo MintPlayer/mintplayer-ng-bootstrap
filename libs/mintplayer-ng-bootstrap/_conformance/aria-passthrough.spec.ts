@@ -3,6 +3,9 @@ import { TestBed } from '@angular/core/testing';
 
 import { BsAccordionComponent } from '@mintplayer/ng-bootstrap/accordion';
 import { BsCarouselComponent } from '@mintplayer/ng-bootstrap/carousel';
+import { BsHierarchyChartComponent } from '@mintplayer/ng-bootstrap/charts/hierarchy';
+import { BsSparklineComponent } from '@mintplayer/ng-bootstrap/charts/sparkline';
+import { BsTrendChartComponent } from '@mintplayer/ng-bootstrap/charts/trend';
 import { BsCheckboxComponent } from '@mintplayer/ng-bootstrap/checkbox';
 import { BsDatatableComponent } from '@mintplayer/ng-bootstrap/datatable';
 import { BsDockManagerComponent } from '@mintplayer/ng-bootstrap/dock';
@@ -127,6 +130,9 @@ const WRAPPERS: WrapperCase[] = [
   { selector: 'bs-accordion', tag: 'mp-accordion', component: BsAccordionComponent },
   { selector: 'bs-carousel', tag: 'mp-carousel', component: BsCarouselComponent },
   { selector: 'bs-checkbox', tag: 'mp-checkbox', component: BsCheckboxComponent },
+  { selector: 'bs-hierarchy-chart', tag: 'mp-hierarchy-chart', component: BsHierarchyChartComponent },
+  { selector: 'bs-sparkline', tag: 'mp-sparkline', component: BsSparklineComponent },
+  { selector: 'bs-trend-chart', tag: 'mp-trend-chart', component: BsTrendChartComponent },
   { selector: 'bs-datatable', tag: 'mp-datatable', component: BsDatatableComponent },
   { selector: 'bs-dock-manager', tag: 'mint-dock-manager', component: BsDockManagerComponent },
   { selector: 'bs-dropdown-menu', tag: 'mp-dropdown-menu', component: BsDropdownMenuComponent },
@@ -254,7 +260,7 @@ describe('Angular wrapper ARIA passthrough', () => {
     // Guards against a new wrapper being added without an entry above. The count
     // comes from scanning for templates whose root is an mp-*/mint-* element; if
     // this fails, add the wrapper to WRAPPERS rather than raising the number.
-    expect(WRAPPERS).toHaveLength(22);
+    expect(WRAPPERS).toHaveLength(25);
     expect(new Set(WRAPPERS.map((w) => w.selector)).size).toBe(WRAPPERS.length);
   });
 });

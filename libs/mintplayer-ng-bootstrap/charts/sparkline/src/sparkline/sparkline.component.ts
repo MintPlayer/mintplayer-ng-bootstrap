@@ -29,7 +29,7 @@ export class BsSparklineComponent {
   readonly yMin = input<number | undefined>(undefined);
   readonly yMax = input<number | undefined>(undefined);
   readonly locale = input<string | undefined>(undefined);
-  readonly label = input<string | undefined>(undefined);
+  readonly inputLabel = input<string | undefined>(undefined);
   readonly summaryFormatter = input<((points: (number | null)[]) => string | undefined) | undefined>(undefined);
 
   readonly sparklineRef = viewChild<ElementRef<MpSparkline>>('sparkline');
@@ -41,7 +41,10 @@ export class BsSparklineComponent {
     effect(() => { const el = this.sparklineRef()?.nativeElement; if (el) el.yMin = this.yMin(); });
     effect(() => { const el = this.sparklineRef()?.nativeElement; if (el) el.yMax = this.yMax(); });
     effect(() => { const el = this.sparklineRef()?.nativeElement; if (el) el.locale = this.locale(); });
-    effect(() => { const el = this.sparklineRef()?.nativeElement; if (el) el.label = this.label(); });
+    effect(() => {
+      const el = this.sparklineRef()?.nativeElement;
+      if (el) el.inputLabel = this.inputLabel() ?? null;
+    });
     effect(() => { const el = this.sparklineRef()?.nativeElement; if (el) el.summaryFormatter = this.summaryFormatter(); });
   }
 }
