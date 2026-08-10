@@ -12,10 +12,11 @@
     "src/**/*.ts",
     "*/src/**/*.ts",
     "*/index.ts",
-    "charts/*/src/**/*.ts",
-    "charts/*/index.ts"
+    "*/*/src/**/*.ts",
+    "*/*/index.ts"
   ],
   "exclude": [
+    "*/ssr/**",
     "vite.config.ts",
     "vite.config.mts",
     "vitest.config.ts",

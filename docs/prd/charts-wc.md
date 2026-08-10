@@ -488,6 +488,10 @@ Minor bumps: `@mintplayer/web-components` 2.10.0 → 2.11.0, `@mintplayer/ng-boo
   cache hit) hid it. Now scoped to `charts/*`. Verified by diffing `tsc --listFilesOnly`
   against master's config: **0 files lost, +25 gained, all under `charts/`**; SSR appears in
   neither set, which is the pre-existing intent.
+  The final form keeps the generic `*/*/…` globs (so a second namespace needs no tsconfig
+  edit) and adds `"*/ssr/**"` to `exclude`, which states the actual invariant: SSR barrels
+  import build outputs and are therefore never part of the lib type-check. Both spellings
+  were measured to resolve a byte-identical 598-file set.
 - **Two registry gaps this work exposed and fixed**, neither about charts: the Vue conformance
   sweep globbed only `../*/src/*.vue`, so an entire namespace directory could have opted out of
   the `inheritAttrs`/`$attrs` invariant unseen; and the React and Vue vite configs never wrote
