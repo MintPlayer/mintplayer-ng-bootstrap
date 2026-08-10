@@ -39,16 +39,13 @@ Files: `libs/mintplayer-web-components/vite.config.mts`,
 `libs/mintplayer-react-bootstrap/vite.config.mts`, `libs/mintplayer-vue-bootstrap/vite.config.mts`,
 CEM config.
 
-- [ ] Extend `discoverEntries()` in all three vite configs to recurse one level into namespace
-      dirs (a dir without `index.ts`+`src/index.ts` whose children have them) → entry names like
-      `charts/hierarchy/index`.
-- [ ] Port `generateSubpathExports` to the React and Vue configs (fixes the latent bug: their
-      built package.json has only `"."` — deep imports fail for npm consumers today; #383 fixed
-      only the WC lib).
-- [ ] CEM/analyzer globs: add `charts/*/src/**`.
-- [ ] Verify: scratch `charts/_probe/` entry appears in built WC package.json `exports`, and the
-      React/Vue exports maps materialize with all existing entries; remove the probe. Type-check.
-- [ ] **Commit.**
+- [x] Extracted discovery + exports into shared `tools/vite/multi-entry.mts` (barrel mode for
+      WC); all three configs import it; namespace dirs scanned one level deep.
+- [x] `generateSubpathExports` now runs in React and Vue too — their dist package.json went
+      from 1 export key (`.`) to 37 each; WC 45.
+- [x] CEM glob + tsconfig.lib includes widened with `*/*/src/**` variants.
+- [x] Verified with a throwaway `charts/probe/` in all three libs: `./charts/probe` export key
+      with correct nested types/import paths in every dist; probe removed. **Committed.**
 
 ## S — Spikes (gate; throwaway; Chromium + Firefox + WebKit; verdicts go into PRD §9)
 
@@ -67,17 +64,17 @@ CEM config.
 
 Files: `libs/mintplayer-web-components/charts/core/src/*.ts` + specs.
 
-- [ ] `types.ts`: `HierarchyNode`, `TrendSeries`/`TrendPoint`, all event detail interfaces.
-- [ ] `hierarchy-layout.ts`: `buildIndex` (id index, parent map, leaf-sum rollup — internal
-      `value` counts only when childless), `partitionLayout` (Observable re-root math, value-desc
-      sort, min-angle/min-size cull, level/setsize/posinset), `squarifyLayout` (Bruls).
-- [ ] `arc.ts`: 12-o'clock convention, full-circle two-π-arc split, root wedge,
-      `padAngle = min(sweep/2, 0.005)`, per-radius pad conversion, `max(r0, r1−1)` outer clamp.
-- [ ] `scale.ts`: `linearScale`, `niceTicks` (1-2-5), `timeTicks` (boundary choice +
-      `Intl.DateTimeFormat`); `color.ts`: clamped long-way HSL two-stop.
-- [ ] Vitest: exhaustive, incl. **table-driven tick specs across ranges (day→decade) and
-      locales**, squarify vs published reference rects. No DOM anywhere.
-- [ ] **Commit.**
+- [x] `types.ts`, `hierarchy-layout.ts` (buildIndex leaf-sum rollup, partitionLayout with
+      subtree re-root — equivalent to Observable's clamp/remap for descendants — value-desc
+      sort, minFraction cull, level/setsize/posinset, pathTo/levelOf; squarifyLayout per Bruls),
+      `arc.ts` (full-circle two-π-arc split, root wedge, pad clamp + per-radius conversion,
+      ring-gap clamp that yields '' for a zero-height ring, arcLabelTransform/Visible),
+      `scale.ts` (linearScale, 1-2-5 niceTicks/niceDomain, calendar-boundary timeTicks with
+      Intl labels), `color.ts` (clamped long-way HSL, hex + rgb() stops).
+- [x] **42/42 vitest green** (arc 9, layout 12, scale 16, color 5) incl. table-driven ticks
+      across day→decade ranges + en/nl locales; `tsc --noEmit` clean. Notable: squarify worst
+      aspect in a unit square is 4.17 for Bruls' data (2.5 was for 6×4 — hand-verified).
+- [x] **Committed.**
 
 ## M2 — `mp-hierarchy-chart` static render, 3 layouts [PRD §5.3, D4, D9, D14, D16]
 
