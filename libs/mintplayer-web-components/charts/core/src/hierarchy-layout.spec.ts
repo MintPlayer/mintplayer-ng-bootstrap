@@ -26,6 +26,17 @@ describe('buildIndex', () => {
     expect(index.values.get('root')).toBe(2000);
   });
 
+  it('rolls up a value-weighted color metric for branches without their own', () => {
+    const index = buildIndex(tree);
+    // src: (600*80 + 300*40 + 100*0) / 1000 = 60
+    expect(index.colorValues.get('src')).toBeCloseTo(60, 9);
+    // Explicit colorValue wins; nodes without any colored descendants stay undefined.
+    expect(index.colorValues.get('a')).toBe(80);
+    expect(index.colorValues.get('tools')).toBeUndefined();
+    // root: only src carries a metric -> weighted over colored children only.
+    expect(index.colorValues.get('root')).toBeCloseTo(60, 9);
+  });
+
   it('tracks parents and paths', () => {
     const index = buildIndex(tree);
     expect(pathTo(index, index.byId.get('a')!).map((n) => n.id)).toEqual(['root', 'src', 'a']);
@@ -141,5 +152,22 @@ describe('squarifyLayout', () => {
   it('culls below minArea including the subtree', () => {
     const rects = squarifyLayout(flat, undefined, { maxDepth: 1, minArea: 0.1 });
     expect(rects.map((r) => r.node.id)).toEqual(['n0', 'n1', 'n2', 'n3']); // 2/24 and 1/24 culled
+  });
+
+  it('insets children below a header strip when childPadding/childHeaderSpace are set', () => {
+    const index = buildIndex(tree);
+    const rects = squarifyLayout(index, undefined, { maxDepth: 2, childPadding: 0.01, childHeaderSpace: 0.04 });
+    const src = rects.find((r) => r.node.id === 'src')!;
+    const kids = rects.filter((r) => r.depth === 2 && ['a', 'b', 'c'].includes(r.node.id));
+    kids.map((k) => {
+      expect(k.y0).toBeGreaterThanOrEqual(src.y0 + 0.05 - 1e-9); // padding + header
+      expect(k.x0).toBeGreaterThanOrEqual(src.x0 + 0.01 - 1e-9);
+      expect(k.x1).toBeLessThanOrEqual(src.x1 - 0.01 + 1e-9);
+      expect(k.y1).toBeLessThanOrEqual(src.y1 - 0.01 + 1e-9);
+      return k;
+    });
+    // A parent too small for the inset simply renders no children.
+    const cramped = squarifyLayout(index, undefined, { maxDepth: 2, childPadding: 0.4, childHeaderSpace: 0.4 });
+    expect(cramped.filter((r) => r.depth === 2)).toHaveLength(0);
   });
 });

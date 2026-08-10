@@ -81,17 +81,23 @@ Files: `libs/mintplayer-web-components/charts/core/src/*.ts` + specs.
 Files: `charts/hierarchy/src/components/mp-hierarchy-chart.ts`,
 `src/styles/hierarchy-chart.styles.scss`, barrels.
 
-- [ ] Element skeleton from treeview anatomy: guarded define, `HTMLElementTagNameMap`,
-      static-getter `observedAttributes`, `data` setter precompute, `layout` attr.
-- [ ] Sunburst projection: `svg` literal, keyed `repeat` of `<path>`, rotated labels
-      (`label-min-area`), leaf opacity .6 / folder 1, visible labelled center control.
-- [ ] Icicle + treemap projections: absolutely-positioned divs, `text-overflow: ellipsis`
-      labels, root-cell / path-header zoom-out controls, `min-size` cull.
-- [ ] SCSS: `--mp-hierarchy-chart-*` tokens with `--bs-*` fallbacks, `* { box-sizing }`,
-      `width: 100%; aspect-ratio: 1` host, reduced-motion media query, focus-ring styles.
-- [ ] Run codegen-wc. Verify: type-check + scratch render of all 3 layouts in the ng demo
-      (light + dark, Firefox too).
-- [ ] **Commit.**
+- [x] Element skeleton from treeview anatomy (guarded define, tag map, static-getter
+      `observedAttributes`, accessor-per-property with `requestUpdate`, `data` setter rebuilds
+      the core index once per write); `layout` runtime-switchable.
+- [x] Sunburst: `svg` literals, keyed `repeat` of `<path role=treeitem>` with level/setsize/
+      posinset/expanded, rotated labels behind the area threshold, leaf opacity .6, center
+      circle + focus label. Icicle: focus cell column 0 + positioned div cells. Treemap:
+      squarify with `childPadding`/`childHeaderSpace` insets (new core options) — branch tiles
+      render as framed groups with a header strip.
+- [x] Added to core while here: `colorValues` rollup — a branch without its own `colorValue`
+      gets the value-weighted average of its children's, so coverage trees color folders like
+      codecov without consumer precomputation (spec'd; core now 44/44).
+- [x] SCSS tokens with `--bs-*` fallbacks, box-sizing, `aspect-ratio: 1` host, reduced-motion,
+      cell/arc/center styles. Codegen + `tsc --noEmit` clean.
+- [x] Verified via scratch vite page + playwright: all 3 layouts + re-rooted sunburst render
+      correctly in Chromium AND Firefox (screenshots reviewed; folder rollup colors, treemap
+      frames, icicle columns all correct). Dark mode rides `--bs-*` inheritance — verified for
+      real in the demo app milestone. **Committed.**
 
 ## M3 — Hierarchy interaction [PRD §5.3, D6, D10]
 

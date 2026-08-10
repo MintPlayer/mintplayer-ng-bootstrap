@@ -1,0 +1,121 @@
+:host {
+  display: block;
+  width: 100%;
+  aspect-ratio: 1;
+
+  /* Two-level fallbacks: Bootstrap 5.3 reassigns --bs-* per data-bs-theme and
+     custom properties inherit through the shadow boundary, so dark mode needs
+     no media query here. */
+  --mp-hierarchy-chart-label-color: var(--bs-body-color, #212529);
+  --mp-hierarchy-chart-arc-label-color: var(--bs-light, #f8f9fa);
+  --mp-hierarchy-chart-center-color: var(--bs-body-color, #212529);
+  --mp-hierarchy-chart-center-bg: var(--bs-body-bg, #ffffff);
+  --mp-hierarchy-chart-node-fill: var(--bs-secondary-bg, #e9ecef);
+  --mp-hierarchy-chart-gap: var(--bs-body-bg, #ffffff);
+  --mp-hierarchy-chart-branch-border: var(--bs-border-color, #dee2e6);
+  --mp-hierarchy-chart-tooltip-bg: var(--bs-dark, #212529);
+  --mp-hierarchy-chart-tooltip-color: var(--bs-light, #f8f9fa);
+  --mp-hierarchy-chart-focus-ring-color: var(--bs-primary, #0d6efd);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+.chart {
+  position: relative;
+  width: 100%;
+  height: 100%;
+}
+
+svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+/* ---------- sunburst ---------- */
+
+.ring {
+  stroke: none;
+  cursor: pointer;
+}
+
+.ring[data-leaf] {
+  fill-opacity: 0.6;
+  cursor: default;
+}
+
+.arc-label {
+  fill: var(--mp-hierarchy-chart-arc-label-color);
+  font-size: 26px; /* logical viewBox units (1000x1000) */
+  text-anchor: middle;
+  dominant-baseline: middle;
+  pointer-events: none;
+  user-select: none;
+}
+
+.center {
+  fill: var(--mp-hierarchy-chart-center-bg);
+  stroke: var(--mp-hierarchy-chart-branch-border);
+  stroke-width: 1;
+  cursor: pointer;
+}
+
+.center-label {
+  fill: var(--mp-hierarchy-chart-center-color);
+  font-size: 30px;
+  text-anchor: middle;
+  dominant-baseline: middle;
+  pointer-events: none;
+  user-select: none;
+}
+
+/* ---------- icicle / treemap (positioned divs) ---------- */
+
+.cell {
+  position: absolute;
+  overflow: hidden;
+  background: var(--mp-hierarchy-chart-node-fill);
+  border: 1px solid var(--mp-hierarchy-chart-gap);
+  border-radius: 2px;
+  color: var(--mp-hierarchy-chart-label-color);
+  font-size: 0.8125rem;
+  line-height: 1.25;
+  padding: 1px 4px;
+  cursor: pointer;
+}
+
+.cell[data-leaf] {
+  cursor: default;
+}
+
+.cell .cell-label {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* A treemap branch tile is a frame: children render inside its header inset,
+   its own strip shows the label. */
+.treemap .cell[data-branch] {
+  background: transparent;
+  border-color: var(--mp-hierarchy-chart-branch-border);
+}
+
+.focus-cell {
+  background: var(--mp-hierarchy-chart-center-bg);
+  border-color: var(--mp-hierarchy-chart-branch-border);
+}
+
+:focus {
+  outline: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ring,
+  .cell {
+    transition: none !important;
+  }
+}

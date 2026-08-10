@@ -17,12 +17,20 @@ export interface HierarchyIndex {
   parents: Map<string, HierarchyNode | null>;
   /** Rolled-up weight per node id. */
   values: Map<string, number>;
+  /**
+   * Effective color metric per node id: the node's own `colorValue`, or for a
+   * branch without one, the value-weighted average of its children's — so a
+   * coverage tree colors its folders like codecov does without the consumer
+   * precomputing folder metrics.
+   */
+  colorValues: Map<string, number | undefined>;
 }
 
 export function buildIndex(root: HierarchyNode): HierarchyIndex {
   const byId = new Map<string, HierarchyNode>();
   const parents = new Map<string, HierarchyNode | null>();
   const values = new Map<string, number>();
+  const colorValues = new Map<string, number | undefined>();
 
   const roll = (node: HierarchyNode, parent: HierarchyNode | null): number => {
     byId.set(node.id, node);
@@ -31,11 +39,23 @@ export function buildIndex(root: HierarchyNode): HierarchyIndex {
       ? node.children.map((child) => roll(child, node)).reduce((sum, v) => sum + v, 0)
       : node.value ?? 0;
     values.set(node.id, value);
+    const colored = (node.children ?? []).filter((c) => colorValues.get(c.id) !== undefined);
+    const weight = colored.map((c) => values.get(c.id) ?? 0).reduce((s, v) => s + v, 0);
+    colorValues.set(
+      node.id,
+      node.colorValue !== undefined
+        ? node.colorValue
+        : weight > 0
+          ? colored
+              .map((c) => (colorValues.get(c.id) ?? 0) * (values.get(c.id) ?? 0))
+              .reduce((s, v) => s + v, 0) / weight
+          : undefined,
+    );
     return value;
   };
   roll(root, null);
 
-  return { root, byId, parents, values };
+  return { root, byId, parents, values, colorValues };
 }
 
 /** Ancestors from the data root down to (and including) the node. */
@@ -131,6 +151,10 @@ export interface SquarifyOptions {
   maxDepth?: number;
   /** Rects with normalized area below this are culled (with their subtree). */
   minArea?: number;
+  /** Normalized inset applied on all sides of a parent rect before laying out its children. */
+  childPadding?: number;
+  /** Extra normalized inset at the TOP of a parent rect, reserving a label strip. */
+  childHeaderSpace?: number;
 }
 
 interface Rect { x0: number; y0: number; x1: number; y1: number }
@@ -203,12 +227,24 @@ export function squarifyLayout(
   focusId: string | undefined,
   options: SquarifyOptions = {},
 ): RectNode[] {
-  const { maxDepth = 2, minArea = 0 } = options;
+  const { maxDepth = 2, minArea = 0, childPadding = 0, childHeaderSpace = 0 } = options;
   const focus = resolveFocus(index, focusId);
   const out: RectNode[] = [];
 
-  const walk = (parent: HierarchyNode, rect: Rect, depth: number, level: number): void => {
+  const insetOf = (rect: Rect): Rect | null => {
+    const inset = {
+      x0: rect.x0 + childPadding,
+      y0: rect.y0 + childPadding + childHeaderSpace,
+      x1: rect.x1 - childPadding,
+      y1: rect.y1 - childPadding,
+    };
+    return inset.x1 - inset.x0 > 0 && inset.y1 - inset.y0 > 0 ? inset : null;
+  };
+
+  const walk = (parent: HierarchyNode, outerRect: Rect, depth: number, level: number): void => {
     if (depth > maxDepth) return;
+    const rect = depth === 1 ? outerRect : insetOf(outerRect);
+    if (!rect) return;
     const kids = sortedChildren(index, parent);
     if (!kids.length) return;
     const rectArea = (rect.x1 - rect.x0) * (rect.y1 - rect.y0);
