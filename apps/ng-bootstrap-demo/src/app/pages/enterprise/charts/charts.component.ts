@@ -34,14 +34,18 @@ export class ChartsComponent {
   readonly layouts: HierarchyChartLayout[] = ['sunburst', 'icicle', 'treemap'];
   readonly layout = signal<HierarchyChartLayout>('sunburst');
   readonly rootId = signal<string | undefined>(undefined);
-  /** 2 is codecov's window; 'auto' draws every level the data has. */
-  readonly maxDepth = signal<number | 'auto'>(2);
+  /**
+   * The element defaults to 2 (codecov's window, small DOM on a big tree); the
+   * demo opts into 'auto' so the whole sample tree is visible without clicking
+   * in, and the switcher shows what the capped modes look like.
+   */
+  readonly maxDepth = signal<number | 'auto'>('auto');
   readonly depthColors = computed<Record<string, Color>>(() => ({
     '2': this.maxDepth() === 2 ? Color.primary : Color.secondary,
     '3': this.maxDepth() === 3 ? Color.primary : Color.secondary,
     auto: this.maxDepth() === 'auto' ? Color.primary : Color.secondary,
   }));
-  readonly depthOptions: (number | 'auto')[] = [2, 3, 'auto'];
+  readonly depthOptions: (number | 'auto')[] = ['auto', 2, 3];
   readonly layoutColors = computed<Record<HierarchyChartLayout, Color>>(() => ({
     sunburst: this.layout() === 'sunburst' ? Color.primary : Color.secondary,
     icicle: this.layout() === 'icicle' ? Color.primary : Color.secondary,
@@ -144,6 +148,8 @@ export class ChartsComponent {
   protected readonly snippetHierarchyTs = dedent`
     readonly layout = signal<HierarchyChartLayout>('sunburst');
     readonly rootId = signal<string | undefined>(undefined);
+    // The element caps at 2 levels by default; 'auto' draws every loaded level.
+    readonly maxDepth = signal<number | 'auto'>('auto');
     readonly coverageTree: HierarchyNode = {
       id: 'repo', name: 'repo',
       children: [
