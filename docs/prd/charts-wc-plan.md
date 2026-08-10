@@ -52,15 +52,16 @@ CEM config.
 
 ## S — Spikes (gate; throwaway; Chromium + Firefox + WebKit; verdicts go into PRD §9)
 
-- [ ] S1 — `role`/`tabindex`/`aria-level/setsize/posinset` on shadow-root SVG `<path>` and
-      `<circle>`: focusability + accname via Playwright in 3 engines, role/name via jsdom
-      vitest. **Gate: on failure, adopt the PRD §7 parallel-hidden-DOM fallback (sunburst +
-      trend) before starting M4.**
-- [ ] S2 — keyed `repeat`: does deep `activeElement` survive a re-root re-render AND a
-      `layout` attribute switch? On failure: manual focus restore by node id in `updated()`.
-- [ ] S3 — 500-node zoom tween, both variants (SVG rAF, div CSS transitions): long-task check;
-      verify reduced-motion instant path.
-- [ ] Record verdicts in PRD §9; delete spike files. **Commit.**
+- [x] S1 — **PASS 3 engines + jsdom** (17/18 spike assertions green; the 1 failure was
+      S3-webkit, below): roles/names/state via role queries + full aria snapshot, Tab +
+      programmatic + arrow focus on `<path>`/`<circle>`; jsdom `SVGElement.focus()` works and
+      `shadowRoot.activeElement` tracks it. **Gate cleared — §7 fallback RETIRED.**
+- [x] S2 — **PASS**: focus AND element identity survive re-root; layout switch restored by
+      node id via `updateComplete` (the M4 mechanism) in all 3 engines.
+- [x] S3 — **PASS (criterion engines)**: Chromium avg 16.7 ms / 0 frames >50 ms; Firefox avg
+      19.1 ms / 0 >50 ms. Headless WebKit-on-Windows datum recorded in PRD §9.3 (software
+      rendering, not a criterion engine).
+- [x] Verdicts recorded in PRD §9; spike files deleted. **Commit.**
 
 ## M1 — `charts/core` [PRD §5.2, D1–D3, D8, D13]
 

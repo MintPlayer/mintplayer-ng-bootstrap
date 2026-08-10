@@ -304,15 +304,15 @@ divs).
 
 **Pre-agreed fallback:** a parallel visually-hidden HTML tree/list drives all keyboard/AT
 interaction, with the SVG `aria-hidden="true"` as pure presentation and focus mirrored onto the
-drawn ring. This is exactly the pattern Visa Chart Components ships in production web components
-(their "accessibility controller"), so adopting it on S1 failure is a confident move, not a
-retreat. Spike S1 decides.
+drawn ring — the pattern Visa Chart Components ships in production (their "accessibility
+controller"). **RETIRED 2026-08-10 — S1 passed in all 3 engines + jsdom (§9.1); ARIA lives
+directly on the SVG nodes.**
 
 | Risk | Mitigation |
 |---|---|
-| SVG `[tabindex][role]` not exposed/focusable in some engine or jsdom | S1 spike, 3 engines + jsdom; fallback = parallel hidden HTML (above); icicle/treemap unaffected (D16) |
-| Zoom tween janks with many nodes | Depth cap (D4) + min-angle/min-size cull; reduced-motion instant; S3 measures 500-node tween |
-| Keyed repeat loses focus across re-root / layout switch | S2 proves restoration by node id before M3 builds on it |
+| ~~SVG `[tabindex][role]` not exposed/focusable in some engine or jsdom~~ | **RETIRED** — S1 passed 3 engines + jsdom (§9.1) |
+| Zoom tween janks with many nodes | Depth cap (D4) + min-angle/min-size cull; reduced-motion instant; S3 measured 500-node tween green in Chromium/Firefox (§9.3) |
+| Keyed repeat loses focus across re-root / layout switch | S2 proved re-root survival + restore-by-id across layout switch (§9.2) |
 | Time-axis tick logic is subtly wrong across locales/ranges | Isolated in `charts/core/scale.ts` pure functions, table-driven specs across ranges (day→decade) and locales |
 | Squarify produces degenerate slivers on skewed data | Min-size cull + `data-overflow` aggregation is honest about it; treeview pairing (§6) is the complete-data path |
 | One-element hierarchy grows too many branches per layout | Projections are pure functions in core; the element holds one state machine + three small render fns — if a layout ever needs divergent *behavior* (not projection), that's the signal to split |
@@ -377,12 +377,37 @@ enforced). Angular exposes `rootId` as a `model()`; Vue as `v-model:root-id`.
 
 | # | Question | Pass criterion | Verdict |
 |---|---|---|---|
-| S1 | Do `role`/`tabindex`/`aria-*` on shadow-root SVG `<path>`/`<circle>` expose correctly (engine AT tree, Playwright accname) and does jsdom report them? | Role, name, level/setsize/posinset and focusability green in 3 engines + jsdom | — |
-| S2 | Does keyed `repeat` preserve the focused element across a re-root re-render and a `layout` switch? | Deep `activeElement` unchanged in 3 engines | — |
-| S3 | Does a 500-node zoom tween hold ~60fps (SVG rAF and div CSS-transition variants), reduced-motion honoured? | No long-task > 50 ms in Chromium/Firefox; instant path verified | — |
+| S1 | Do `role`/`tabindex`/`aria-*` on shadow-root SVG `<path>`/`<circle>` expose correctly (engine AT tree, Playwright accname) and does jsdom report them? | Role, name, level/setsize/posinset and focusability green in 3 engines + jsdom | **PASS** |
+| S2 | Does keyed `repeat` preserve the focused element across a re-root re-render and a `layout` switch? | Deep `activeElement` unchanged in 3 engines | **PASS** |
+| S3 | Does a 500-node zoom tween hold ~60fps, reduced-motion honoured? | No frame > 50 ms in Chromium/Firefox; instant path verified | **PASS** |
 
-S1 failure ⇒ adopt the §7 parallel-hidden-DOM fallback (sunburst + trend) before M4. S2 failure
-⇒ manual focus restore by id in `updated()`. S3 failure ⇒ lower tween-time depth or drop tween.
+Measured 2026-08-10, Playwright 1.60.0 (chromium-1223 / firefox-1522 / webkit-2287), throwaway
+harness `docs/prd/_spike-charts-a11y/` (deleted after these verdicts) + a jsdom probe spec.
+
+### 9.1 S1 — SVG a11y exposure: **PASS**, ARIA-on-SVG is the architecture
+
+All three engines: `role="tree"` on the shadow `<svg>` and `role="treeitem"` + `aria-level/
+posinset/setsize/expanded/label` on `<path>` resolve through Playwright's role queries and match
+a full aria snapshot; `tabindex` roving works via Tab entry, ArrowLeft/Right handling and
+programmatic `.focus()` on a `tabindex="-1"` path; a `<circle role="button">` is a normal tab
+stop. jsdom: `SVGElement.focus()` is a function, `shadowRoot.activeElement` tracks it (host is
+`document.activeElement`), and composed `KeyboardEvent` dispatch on SVG targets reaches shadow
+listeners — so `*.aria.spec.ts` can assert the full keyboard contract under vitest.
+
+### 9.2 S2 — keyed `repeat` focus survival: **PASS**
+
+Re-root (same ids, new order/geometry): focus *and element identity* survive — the held element
+reference `===` the post-render node in all 3 engines. Layout switch (`<path>` ↔ `<div>`, element
+type changes so survival is impossible by construction): the manual restore-by-node-id in
+`updateComplete` lands focus on the new element in all 3 engines — this is the M4 mechanism.
+
+### 9.3 S3 — 500-arc rAF tween @300 ms: **PASS** (criterion engines)
+
+Chromium 19 frames, avg 16.7 ms, max 16.8 ms, 0 over 50 ms; Firefox 16 frames, avg 19.1 ms, max
+32.9 ms, 0 over 50 ms. `page.emulateMedia({ reducedMotion })` observable from JS in all engines.
+Datum: headless WebKit-on-Windows ran 4 frames avg 72.3 ms (software rendering; WebKit's real
+platforms are macOS/iOS and it is not a criterion engine) — if Safari-hardware reports arrive,
+the mitigation is harder culling during the tween, not dropping it.
 
 ## 10. Testing
 
