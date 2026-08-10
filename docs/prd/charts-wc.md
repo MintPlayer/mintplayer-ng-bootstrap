@@ -1,12 +1,14 @@
 # PRD — `charts/` family: `mp-hierarchy-chart`, `mp-trend-chart`, `mp-sparkline` + wrappers
 
-Status: **Not started**. Supersedes `sunburst-wc.md` (2026-08-09, deleted before ever being
-committed) after the user widened scope to the full chart roster on 2026-08-10.
+Status: **Implemented on `feat/charts-wc` — PR #401** (opened 2026-08-10, base `master`).
+All milestones complete; the batched sweep is green apart from the axe gate, which is being
+verified in CI, and the human keyboard/screen-reader pass (§13, still open).
+Supersedes `sunburst-wc.md` (2026-08-09, deleted before ever being committed) after the user
+widened scope to the full chart roster on 2026-08-10.
 Grounded in two 3-agent investigations: (1) codecov's open-source frontend
 ([codecov/gazebo](https://github.com/codecov/gazebo)) read at source level + repo precedent
 survey + doc conventions; (2) packaging in-tree vs separate family, chart-library licensing, and
 the chart inventory of codecov/Coveralls/SonarQube/Codacy/coverage.py/JaCoCo/Istanbul.
-No branch or PR yet.
 Plan: [charts-wc-plan.md](./charts-wc-plan.md)
 
 ## 1. Problem
@@ -486,6 +488,30 @@ Minor bumps: `@mintplayer/web-components` 2.10.0 → 2.11.0, `@mintplayer/ng-boo
 - **The squarify worst-aspect number in the literature is layout-dependent.** Bruls et al.
   report 2.5 for their example data; in a unit *square* the same data lands at 4.17 because the
   final leftover cell fills the remainder exactly. Hand-verified before relaxing the spec bound.
+- **Trend hover compared x only, so the bottom line captured every hover.** Among the points
+  sharing a column the winner was whichever series was placed first. The column is still chosen
+  on x — the crosshair and tooltip describe one moment across all series — but the highlighted
+  point within it is now chosen on y. Deliberately *not* a Euclidean nearest-point search: that
+  would let purely vertical mouse movement land in a neighbouring column, changing the
+  crosshair's date while the pointer never moved sideways. Time is the independent axis, so x
+  owns the column and y only breaks the tie inside it.
+- **Three defects that only a real browser could have caught**, all found in the M12 e2e run and
+  none reachable from jsdom:
+  1. The trend chart's focus-restore selector was built from a key containing a **NUL byte**,
+     which CSS attribute selectors cannot match — the roving tabindex moved but DOM focus never
+     followed. Found because the spec asserts `tabindex`, while the browser asserts focus.
+     Now resolved by comparing `dataset` values instead of querying by selector.
+  2. The sunburst's centre button **swallowed clicks while disabled** — a disabled button still
+     takes pointer events, making the donut hole a dead zone. Now `pointer-events: none` when
+     disabled.
+  3. The **production tsconfig is stricter than the lib one** (`noPropertyAccessFromIndexSignature`),
+     so `tsc -p tsconfig.lib.json --noEmit` can pass while `nx build --configuration=production`
+     fails. Worth remembering: the lib type-check is not the gate CI runs.
+- **A ring arc's bounding box is centred on the donut hole**, so Playwright's default click point
+  lands on the `<svg>`, not the arc. This is a harness artifact rather than a user-facing bug
+  (a person clicks visible ink), but it broke both the e2e suite and the axe interact hook until
+  both were rewritten to drive re-rooting from the icicle layout, whose cells have no such gap
+  between box and ink.
 - **`role="none"` on the sunburst's centring `<g>`.** An unroled node between `role="tree"` and
   its `treeitem`s is an `aria-required-parent` risk; the group only translates geometry, so
   removing it from the accessibility tree is both the fix and the truth.
