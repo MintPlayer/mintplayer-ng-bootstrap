@@ -1,0 +1,113 @@
+<bs-grid>
+  <div bsRow>
+    <div [xs]="12">
+      <h1>Charts</h1>
+      <p>
+        The charts family visualizes code-coverage-style data: one hierarchy chart with three
+        interchangeable layouts (sunburst, icicle, treemap), a trend chart for a metric over
+        time, and an inline sparkline. Arc/tile size follows the amount of code (lines);
+        color follows the coverage metric through a red→green scale over the 60–80% range.
+      </p>
+    </div>
+  </div>
+
+  <div bsRow>
+    <div [xs]="12">
+      <h2>Hierarchy chart</h2>
+      <p class="layout-switcher">
+        @for (option of layouts; track option) {
+          <button type="button" [color]="layoutColors()[option]"
+            (click)="layout.set(option)">{{ option }}</button>
+        }
+      </p>
+    </div>
+  </div>
+  <div bsRow>
+    <div [xs]="12" [md]="7">
+      <bs-hierarchy-chart
+        [data]="coverageTree"
+        [layout]="layout()"
+        [(rootId)]="rootId"
+        [colorMin]="60"
+        [colorMax]="80"
+        inputLabel="Coverage by folder"
+        valueUnitLabel="lines" />
+    </div>
+    <div [xs]="12" [md]="5">
+      <p>
+        The treeview below is the same data as an equivalent control (WCAG 2.2 target size):
+        selecting a folder re-roots the chart.
+      </p>
+      <bs-treeview
+        [items]="treeItems()"
+        [selectedIds]="selectedIds()"
+        (nodeSelect)="onTreeSelect($event)" />
+    </div>
+  </div>
+  <div bsRow>
+    <div [xs]="12">
+      <details class="mt-3">
+        <summary>Keyboard shortcuts</summary>
+        <ul>
+          <li><kbd>Tab</kbd> — one tab stop for the whole chart (plus the zoom-out button)</li>
+          <li><kbd>←</kbd> / <kbd>→</kbd> — previous / next sibling in the ring (wraps)</li>
+          <li><kbd>↓</kbd> — into the first child (one ring outward)</li>
+          <li><kbd>↑</kbd> — to the parent (one ring inward)</li>
+          <li><kbd>Enter</kbd> — zoom in on a folder / select a file</li>
+          <li><kbd>Esc</kbd> or <kbd>Backspace</kbd> — zoom out one level</li>
+          <li><kbd>Home</kbd> / <kbd>End</kbd> — first / last sibling</li>
+          <li>Type letters — jump to the next node starting with them</li>
+        </ul>
+      </details>
+      <bs-code-snippet [codeToCopy]="snippetHierarchyHtml" [language]="'html'" />
+      <bs-code-snippet [codeToCopy]="snippetHierarchyTs" [language]="'typescript'" />
+    </div>
+  </div>
+
+  <div bsRow>
+    <div [xs]="12">
+      <h2>Trend chart</h2>
+      <bs-trend-chart
+        [series]="trendSeries"
+        [yMin]="0"
+        [yMax]="100"
+        [goal]="80"
+        goalLabel="Goal 80%"
+        inputLabel="Coverage over time"
+        summary="Coverage rose from 62% to 85% between January and March 2026; new-code coverage rose from 80% to 95%." />
+      <details class="mt-3">
+        <summary>Keyboard shortcuts</summary>
+        <ul>
+          <li><kbd>Tab</kbd> — one tab stop for the data points</li>
+          <li><kbd>←</kbd> / <kbd>→</kbd> — previous / next point in the series</li>
+          <li><kbd>↑</kbd> / <kbd>↓</kbd> — same moment in the previous / next series</li>
+          <li><kbd>Home</kbd> / <kbd>End</kbd> — first / last point</li>
+          <li><kbd>Enter</kbd> or <kbd>Space</kbd> — select the point</li>
+        </ul>
+      </details>
+      <bs-code-snippet [codeToCopy]="snippetTrendHtml" [language]="'html'" />
+    </div>
+  </div>
+
+  <div bsRow>
+    <div [xs]="12">
+      <h2>Sparklines</h2>
+      <p>Inline, non-interactive trends for table cells — the numbers live in the row.</p>
+      <table class="flags-table">
+        <thead>
+          <tr><th scope="col">Flag</th><th scope="col">Coverage</th><th scope="col">Trend</th></tr>
+        </thead>
+        <tbody>
+          @for (row of flagRows; track row.flag) {
+            <tr>
+              <td>{{ row.flag }}</td>
+              <td>{{ row.coverage }}%</td>
+              <td><bs-sparkline [points]="row.trend" [area]="true" [yMin]="0" [yMax]="100" /></td>
+            </tr>
+          }
+        </tbody>
+      </table>
+      <bs-code-snippet [codeToCopy]="snippetSparklineHtml" [language]="'html'" />
+    </div>
+  </div>
+</bs-grid>

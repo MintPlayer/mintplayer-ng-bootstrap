@@ -180,19 +180,24 @@ Files: `charts/trend/src/components/mp-trend-chart.ts` (+aria.spec), `src/styles
 
 ## M10 — Wrappers + demo pages [PRD §5.7, §8]
 
-- [ ] Angular `libs/mintplayer-ng-bootstrap/charts/{hierarchy,trend,sparkline}/`: components with
-      `bsForwardAria`, per-input `effect()`s writing element properties, `model('rootId')` on
-      hierarchy, typed outputs, boilerplate `ng-package.json` per entry + barrels; wrapper specs
-      (`setInput`, assert onto the `mp-*` element).
-- [ ] React `libs/mintplayer-react-bootstrap/charts/*`: `createComponent` per element + event
-      maps + barrels.
-- [ ] Vue `libs/mintplayer-vue-bootstrap/charts/*`: SFCs, `inheritAttrs: false` +
-      `v-bind="$attrs"`, `defineModel('rootId')`, onMounted/watch prop sync.
-- [ ] Demo pages: ng under `pages/enterprise/charts/` (hierarchy with layout switcher +
-      coverage-style dataset `color-min="60" color-max="80"` + paired `bs-treeview` as the
-      SC 2.5.8 equivalent + keymap `<details>`; trend with goal line; sparklines inside a
-      `bs-datatable`; live demos first, snippets last); React page + route; Vue view + route.
-- [ ] Verify: all three demos by hand (keyboard pass included). **Commit.**
+- [x] Angular `libs/mintplayer-ng-bootstrap/charts/{hierarchy,trend,sparkline}/`: components with
+      `bsForwardAria`, one `effect()` per input writing element **properties**,
+      `model('rootId')` on hierarchy re-synced from `hierarchy-zoom`, typed outputs,
+      depth-adjusted boilerplate `ng-package.json` per entry + barrels; 3 wrapper specs
+      (`setInput`, assert onto the `mp-*` element, incl. zoom → model round-trip and function
+      props).
+- [x] React `libs/mintplayer-react-bootstrap/charts/*`: `createComponent` per element with the
+      event maps (`onHierarchyZoom`, `onTrendPointSelect`, …) + barrels.
+- [x] Vue `libs/mintplayer-vue-bootstrap/charts/*`: SFCs, `inheritAttrs: false` +
+      `v-bind="$attrs"`, `defineModel('rootId')` fed by `hierarchy-zoom`, per-prop
+      onMounted/watch sync for objects and functions.
+- [x] Demo pages: ng `pages/enterprise/charts/` (layout switcher, coverage dataset with
+      `colorMin=60`/`colorMax=80`, paired `bs-treeview` as the SC 2.5.8 equivalent control that
+      re-roots the chart, two keymap `<details>` blocks, trend with goal line, sparklines in a
+      flags table, demos before snippets) + route + navbar item; React `ChartsPage` + lazy route
+      + AppShell nav; Vue `ChartsView` + route + nav.
+- [x] `tsc --noEmit` clean for ng + react libs (charts wrappers included). Visual/keyboard pass
+      deferred to the M12 sweep with the demo apps running. **Commit.**
 
 ## M11 — Conformance registries + e2e [PRD §10]
 

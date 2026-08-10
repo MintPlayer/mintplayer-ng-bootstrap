@@ -56,6 +56,7 @@ const SECTIONS = [
       { path: '/enterprise/file-manager', label: 'File manager' },
       { path: '/enterprise/shell', label: 'Shell' },
       { path: '/enterprise/accordion', label: 'Accordion' },
+      { path: '/enterprise/charts', label: 'Charts' },
     ],
   },
 ];
