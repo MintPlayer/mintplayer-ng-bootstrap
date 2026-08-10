@@ -5,6 +5,18 @@ Status: **Not started**. Supersedes `sunburst-wc-plan.md` (never committed).
 
 ## Conventions (these still bite)
 
+- **Run e2e through Nx, never `npx playwright test`.** The dev server (and the API) are
+  `webServer`/continuous tasks the `@nx/playwright` executor owns; invoking Playwright directly
+  either starts nothing (root config → `page.goto` fails with "invalid URL") or races the
+  180 s `webServer` timeout while a cold production build runs. The canonical commands are the
+  ones `.github/workflows/pull-request.yml` uses:
+  ```bash
+  npx nx e2e <app>-bootstrap-demo-e2e            # add --grep=<name> to narrow; options pass through
+  npx nx run-many -t e2e --parallel=1            # what CI runs (via `affected`)
+  npx nx run-many -t e2e-a11y --parallel=1       # the axe gate, run-many by design
+  ```
+  `--args="--grep=x"` is NOT how the executor takes options — pass `--grep=x` directly.
+
 - After any `.styles.scss` edit: `npx nx run mintplayer-web-components:codegen-wc` or the change
   is invisible. Generated `*.styles.ts` is gitignored — never stage it.
 - SVG *fragments* in lit templates need the `svg` tagged literal, not `html` (wrong namespace

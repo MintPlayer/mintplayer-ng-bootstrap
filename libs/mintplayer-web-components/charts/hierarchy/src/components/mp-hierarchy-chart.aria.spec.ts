@@ -72,9 +72,12 @@ describe('mp-hierarchy-chart ARIA structure (all layouts)', () => {
       el.setAttribute('aria-label', 'Chart');
       await flush(el);
       expect(el.shadowRoot!.querySelector('[role="tree"]')!.getAttribute('aria-label')).toBe('Chart');
-      // Every treeitem inside the tree, nothing else inside it but treeitems.
+      // A tree may only own treeitems (and groups). Anything else inside it must
+      // be removed from the accessibility tree with role=none/presentation —
+      // which is what the sunburst's centring <g> does.
       const owned = Array.from(tree.querySelectorAll('*')).filter((n) => n.hasAttribute('role'));
-      owned.map((n) => expect(n.getAttribute('role')).toBe('treeitem'));
+      owned.map((n) => expect(['treeitem', 'group', 'none', 'presentation']).toContain(n.getAttribute('role')));
+      expect(owned.some((n) => n.getAttribute('role') === 'treeitem')).toBe(true);
     }));
 
   (['sunburst', 'icicle', 'treemap'] as Layout[]).map((layout) =>
@@ -92,6 +95,57 @@ describe('mp-hierarchy-chart ARIA structure (all layouts)', () => {
       expect(leaf.hasAttribute('aria-expanded')).toBe(false);
       expect(leaf.getAttribute('aria-label')).toBe('alpha.ts, 80%, 600 lines');
     }));
+
+  it('max-depth="auto" renders every loaded level, in all three layouts', async () => {
+    // 4 levels below the root: repo > deep1 > deep2 > deep3 > leaf.
+    const deep: HierarchyNode = {
+      id: 'r', name: 'r',
+      children: [{
+        id: 'd1', name: 'd1',
+        children: [{
+          id: 'd2', name: 'd2',
+          children: [{ id: 'd3', name: 'd3', children: [{ id: 'leaf', name: 'leaf', value: 1 }] }],
+        }],
+      }],
+    };
+    const capped = await mount('layout="sunburst"', deep);
+    expect(items(capped).map((n) => n.getAttribute('data-id'))).toEqual(['d1', 'd2']);
+
+    const layoutsToCheck: Layout[] = ['sunburst', 'icicle', 'treemap'];
+    for (const layout of layoutsToCheck) {
+      const el = await mount(`layout="${layout}" max-depth="auto"`, deep);
+      expect(items(el).map((n) => n.getAttribute('data-id')), layout)
+        .toEqual(expect.arrayContaining(['d1', 'd2', 'd3', 'leaf']));
+      // The deepest node is a leaf, so it never claims to be expandable.
+      expect(item(el, 'leaf').hasAttribute('aria-expanded'), layout).toBe(false);
+      expect(item(el, 'd3').getAttribute('aria-expanded'), layout).toBe('true');
+    }
+  });
+
+  it('max-depth="auto" follows the data as lazily-loaded levels arrive', async () => {
+    const lazy: HierarchyNode = {
+      id: 'r', name: 'r',
+      children: [{ id: 'a', name: 'a', value: 1, hasChildren: true }],
+    };
+    document.body.innerHTML = '<mp-hierarchy-chart layout="sunburst" max-depth="auto" transition-duration="0"></mp-hierarchy-chart>';
+    const el = document.querySelector('mp-hierarchy-chart') as MpHierarchyChart;
+    let releaseA!: (kids: HierarchyNode[]) => void;
+    el.loadChildren = (node) =>
+      node.id === 'a'
+        ? new Promise<HierarchyNode[]>((resolve) => (releaseA = resolve))
+        : Promise.resolve([]);
+    el.data = lazy;
+    await flush(el);
+    // Nothing below 'a' yet: unbounded depth follows the data, it does not
+    // speculate about levels that have not arrived.
+    expect(items(el).map((n) => n.getAttribute('data-id'))).toEqual(['a']);
+
+    releaseA([{ id: 'b', name: 'b', value: 1, hasChildren: true }]);
+    await vi.waitFor(async () => {
+      await flush(el);
+      expect(items(el).map((n) => n.getAttribute('data-id'))).toContain('b');
+    });
+  });
 
   it('aria-expanded moves in both directions with the rendered window', async () => {
     const el = await mount('layout="sunburst" max-depth="1"');
@@ -260,6 +314,24 @@ describe('mp-hierarchy-chart zoom controls + announcements', () => {
     expect(item(el, 'lazy').hasAttribute('aria-busy')).toBe(false);
     expect(item(el, 'lazy').getAttribute('aria-expanded')).toBe('true');
     expect(item(el, 'kid')).toBeTruthy();
+  });
+
+  it('lazy loading: a folder that resolves EMPTY is requested once, not every render', async () => {
+    // hasChildren stays true and children stays empty — the same shape as
+    // "not loaded yet", so without a loaded marker this re-requests forever.
+    const data: HierarchyNode = {
+      id: 'r', name: 'r',
+      children: [{ id: 'empty', name: 'empty', value: 10, hasChildren: true }],
+    };
+    document.body.innerHTML = '<mp-hierarchy-chart layout="sunburst" max-depth="auto" transition-duration="0"></mp-hierarchy-chart>';
+    const el = document.querySelector('mp-hierarchy-chart') as MpHierarchyChart;
+    let calls = 0;
+    el.loadChildren = () => { calls += 1; return Promise.resolve([]); };
+    el.data = data;
+    await flush(el);
+    await flush(el);
+    await flush(el);
+    expect(calls).toBe(1);
   });
 
   it('lazy loading: rejection emits hierarchy-node-load-error once; activation retries', async () => {

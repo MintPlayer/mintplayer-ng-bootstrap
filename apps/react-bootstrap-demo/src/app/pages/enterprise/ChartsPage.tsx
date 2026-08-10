@@ -39,21 +39,23 @@ const SERIES: TrendSeries[] = [
   },
 ];
 
+// @lit/react types props from the element's own accessors, so the numeric ones
+// are numbers here, not attribute strings.
 const SOURCE = `<BsHierarchyChart
   data={tree}
   layout={layout}
-  root-id={rootId}
-  color-min="60"
-  color-max="80"
-  input-label="Coverage by folder"
-  value-unit-label="lines"
+  rootId={rootId}
+  colorMin={60}
+  colorMax={80}
+  inputLabel="Coverage by folder"
+  valueUnitLabel="lines"
   onHierarchyZoom={e => setRootId(e.detail.node.id)}
 />
 
-<BsTrendChart series={series} y-min="0" y-max="100" goal="80"
-  goal-label="Goal 80%" input-label="Coverage over time" />
+<BsTrendChart series={series} yMin={0} yMax={100} goal={80}
+  goalLabel="Goal 80%" inputLabel="Coverage over time" />
 
-<BsSparkline points={[62, 65, 71, 74, 82]} area y-min="0" y-max="100" />`;
+<BsSparkline points={[62, 65, 71, 74, 82]} area yMin={0} yMax={100} />`;
 
 const LAYOUTS: HierarchyChartLayout[] = ['sunburst', 'icicle', 'treemap'];
 
@@ -83,10 +85,10 @@ export function ChartsPage() {
         <BsHierarchyChart
           data={TREE}
           layout={layout}
-          color-min="60"
-          color-max="80"
-          input-label="Coverage by folder"
-          value-unit-label="lines"
+          colorMin={60}
+          colorMax={80}
+          inputLabel="Coverage by folder"
+          valueUnitLabel="lines"
         />
       </div>
 
@@ -94,18 +96,18 @@ export function ChartsPage() {
       <div style={{ maxWidth: '720px' }}>
         <BsTrendChart
           series={SERIES}
-          y-min="0"
-          y-max="100"
-          goal="80"
-          goal-label="Goal 80%"
-          input-label="Coverage over time"
+          yMin={0}
+          yMax={100}
+          goal={80}
+          goalLabel="Goal 80%"
+          inputLabel="Coverage over time"
           locale="en-US"
         />
       </div>
 
       <h2 className="mt-4">Sparkline</h2>
       <p>
-        unit coverage <BsSparkline points={[78, 80, 79, 82, 83, 84]} area y-min="0" y-max="100" /> 84%
+        unit coverage <BsSparkline points={[78, 80, 79, 82, 83, 84]} area yMin={0} yMax={100} /> 84%
       </p>
 
       <h2 className="mt-4">Source</h2>

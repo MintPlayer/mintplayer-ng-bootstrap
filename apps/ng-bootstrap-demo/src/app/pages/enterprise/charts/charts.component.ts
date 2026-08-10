@@ -34,6 +34,14 @@ export class ChartsComponent {
   readonly layouts: HierarchyChartLayout[] = ['sunburst', 'icicle', 'treemap'];
   readonly layout = signal<HierarchyChartLayout>('sunburst');
   readonly rootId = signal<string | undefined>(undefined);
+  /** 2 is codecov's window; 'auto' draws every level the data has. */
+  readonly maxDepth = signal<number | 'auto'>(2);
+  readonly depthColors = computed<Record<string, Color>>(() => ({
+    '2': this.maxDepth() === 2 ? Color.primary : Color.secondary,
+    '3': this.maxDepth() === 3 ? Color.primary : Color.secondary,
+    auto: this.maxDepth() === 'auto' ? Color.primary : Color.secondary,
+  }));
+  readonly depthOptions: (number | 'auto')[] = [2, 3, 'auto'];
   readonly layoutColors = computed<Record<HierarchyChartLayout, Color>>(() => ({
     sunburst: this.layout() === 'sunburst' ? Color.primary : Color.secondary,
     icicle: this.layout() === 'icicle' ? Color.primary : Color.secondary,
@@ -126,6 +134,7 @@ export class ChartsComponent {
       [data]="coverageTree"
       [layout]="layout()"
       [(rootId)]="rootId"
+      [maxDepth]="maxDepth()"
       [colorMin]="60"
       [colorMax]="80"
       inputLabel="Coverage by folder"

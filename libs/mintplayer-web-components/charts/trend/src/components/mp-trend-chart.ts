@@ -395,10 +395,13 @@ export class MpTrendChart extends LitElement {
     super.updated(changed);
     if (this._restoreFocus && this._focusedKey) {
       this._restoreFocus = false;
-      const escaped = this._focusedKey.replace(/["\\]/g, '\\$&');
-      this.shadowRoot
-        ?.querySelector<SVGElement>(`[data-key="${escaped}"]`)
-        ?.focus({ preventScroll: true });
+      // Found by iteration, not by an attribute selector: the key joins two
+      // consumer-supplied strings, and any separator safe enough to survive CSS
+      // escaping is one a series id could contain. Comparing dataset values
+      // sidesteps the escaping question entirely.
+      const target = Array.from(this.shadowRoot?.querySelectorAll<SVGElement>('.point') ?? [])
+        .find((node) => node.dataset['key'] === this._focusedKey);
+      target?.focus({ preventScroll: true });
     }
   }
 

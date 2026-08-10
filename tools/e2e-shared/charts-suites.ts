@@ -50,10 +50,24 @@ export function chartsSuite(test: Test, expect: Expect, options: ChartsSuiteOpti
       const zoomOut = chart.locator('.center-control');
       await expect(zoomOut).toBeDisabled();
 
-      // First ring is value-sorted, so index 0 is the largest folder.
-      await chart.locator('[role="treeitem"]').first().click();
-      await expect(zoomOut).toBeEnabled();
+      // Clicked in the ICICLE layout on purpose. A ring arc's bounding box is
+      // centred on the chart's hole, so Playwright's default click point (the
+      // box centre) lands in the middle of the donut rather than on the arc —
+      // a harness artifact, not a user-facing one. A rectangular cell has no
+      // such gap between its box and its ink. The sunburst's own click path is
+      // covered by the keyboard test below and by the axe walk.
+      await page.getByRole('button', { name: 'icicle' }).click();
+      // `:not(.focus-cell)` matters: the focus column is itself a treeitem, and
+      // clicking it at the root is a deliberate no-op (it is the zoom-out target).
+      await chart.locator('div[role="treeitem"][aria-expanded="true"]:not(.focus-cell)').first().click();
       await expect.poll(() => chart.getAttribute('root-id')).not.toBeNull();
+
+      // Each layout owns its own zoom-out affordance (centre circle, focus
+      // column, breadcrumb header), so `.center-control` exists only in the
+      // sunburst — switching back also proves the zoom state survives the
+      // projection change.
+      await page.getByRole('button', { name: 'sunburst' }).click();
+      await expect(zoomOut).toBeEnabled();
 
       await zoomOut.click();
       await expect(zoomOut).toBeDisabled();

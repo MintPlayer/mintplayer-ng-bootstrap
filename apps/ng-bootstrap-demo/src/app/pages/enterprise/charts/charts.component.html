@@ -20,6 +20,13 @@
             (click)="layout.set(option)">{{ option }}</button>
         }
       </p>
+      <p class="layout-switcher">
+        <span class="align-self-center me-1">Depth:</span>
+        @for (option of depthOptions; track option) {
+          <button type="button" [color]="depthColors()[option]"
+            (click)="maxDepth.set(option)">{{ option }}</button>
+        }
+      </p>
     </div>
   </div>
   <div bsRow>
@@ -28,6 +35,7 @@
         [data]="coverageTree"
         [layout]="layout()"
         [(rootId)]="rootId"
+        [maxDepth]="maxDepth()"
         [colorMin]="60"
         [colorMax]="80"
         inputLabel="Coverage by folder"

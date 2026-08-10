@@ -74,8 +74,11 @@ svg {
   cursor: pointer;
 }
 
+/* At the root there is nothing to zoom out to, and a disabled button still
+   swallows clicks — which would make the hole a dead zone over the chart. */
 .center-control:disabled {
   cursor: default;
+  pointer-events: none;
 }
 
 /* ---------- icicle / treemap (positioned divs) ---------- */

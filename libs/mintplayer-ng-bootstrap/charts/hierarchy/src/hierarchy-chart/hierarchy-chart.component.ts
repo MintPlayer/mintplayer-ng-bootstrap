@@ -37,7 +37,8 @@ export class BsHierarchyChartComponent {
   readonly data = input<HierarchyNode | undefined>(undefined);
   readonly layout = input<HierarchyChartLayout>('sunburst');
   readonly rootId = model<string | undefined>(undefined);
-  readonly maxDepth = input<number>(2);
+  /** Levels rendered outward from the focus, or `'auto'` for every loaded level. */
+  readonly maxDepth = input<number | 'auto'>(2);
   readonly minAngle = input<number>(0.2);
   readonly minSize = input<number>(4);
   readonly showLabels = input<boolean>(true);

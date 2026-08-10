@@ -11,6 +11,7 @@ import {
   partitionLayout,
   squarifyLayout,
   resolveFocus,
+  subtreeDepth,
   levelOf,
   pathTo,
   type HierarchyHoverEventDetail,
@@ -99,7 +100,7 @@ export class MpHierarchyChart extends LitElement {
   private _index: HierarchyIndex | undefined;
   private _layout: HierarchyChartLayout = 'sunburst';
   private _rootId: string | undefined;
-  private _maxDepth = 2;
+  private _maxDepth: number | 'auto' = 2;
   private _minAngle = 0.2; // degrees
   private _minSize = 4; // logical px (of the 1000-unit square), cartesian cull
   private _showLabels = true;
@@ -116,6 +117,13 @@ export class MpHierarchyChart extends LitElement {
   private _loadChildren: HierarchyChildrenLoader | undefined;
   private _loadingIds = new Set<string>();
   private _failedIds = new Set<string>();
+  /**
+   * Nodes whose loader has already resolved. A folder can legitimately come
+   * back EMPTY, which leaves `hasChildren` true and `children` empty — the
+   * same shape as 'not loaded yet'. Without this, such a node is re-requested
+   * on every render forever.
+   */
+  private _loadedIds = new Set<string>();
   private _loadingLabel = 'Loading';
 
   private _fill = colorScale(this._colorMin, this._colorMax, this._colorStart, this._colorEnd);
@@ -173,12 +181,28 @@ export class MpHierarchyChart extends LitElement {
     this.requestUpdate();
   }
 
-  get maxDepth(): number {
+  /**
+   * Levels rendered outward from the focus node, or `'auto'` for every loaded
+   * level. Default 2 (codecov's window), which keeps the DOM small on a big
+   * tree; any positive number is valid, and `'auto'` follows the data — with
+   * lazy loading that means each arriving level reveals the next.
+   */
+  get maxDepth(): number | 'auto' {
     return this._maxDepth;
   }
-  set maxDepth(value: number) {
-    this._maxDepth = Math.max(1, Math.floor(Number(value) || 2));
+  set maxDepth(value: number | 'auto') {
+    this._maxDepth = value === 'auto' ? 'auto' : Math.max(1, Math.floor(Number(value) || 2));
     this.requestUpdate();
+  }
+
+  /**
+   * `maxDepth` resolved against the current data. Never 0: a chart showing no
+   * ring at all is not a rendering anyone asked for, so a leaf focus still
+   * draws its (empty) first ring.
+   */
+  private get renderedDepth(): number {
+    if (this._maxDepth !== 'auto') return this._maxDepth;
+    return this._index ? Math.max(1, subtreeDepth(this._index, this._rootId)) : 1;
   }
 
   get minAngle(): number {
@@ -311,7 +335,7 @@ export class MpHierarchyChart extends LitElement {
     switch (name) {
       case 'layout': this.layout = (newValue ?? 'sunburst') as HierarchyChartLayout; break;
       case 'root-id': this.rootId = newValue ?? undefined; break;
-      case 'max-depth': this.maxDepth = Number(newValue ?? 2); break;
+      case 'max-depth': this.maxDepth = newValue === 'auto' ? 'auto' : Number(newValue ?? 2); break;
       case 'min-angle': this.minAngle = Number(newValue ?? 0.2); break;
       case 'min-size': this.minSize = Number(newValue ?? 4); break;
       case 'show-labels': this.showLabels = newValue !== 'false' && newValue !== null; break;
@@ -435,7 +459,9 @@ export class MpHierarchyChart extends LitElement {
       this.zoomOut();
       return;
     }
-    this._failedIds.delete(node.id); // activating a failed lazy node retries
+    // Activating a node retries a failed OR empty load.
+    this._failedIds.delete(node.id);
+    this._loadedIds.delete(node.id);
     if (node.children?.length || (node.hasChildren && this._loadChildren)) {
       this.zoomTo(node.id);
       return;
@@ -552,7 +578,9 @@ export class MpHierarchyChart extends LitElement {
       case 'Enter': {
         const node = index.byId.get(id);
         if (!node) return;
-        this._failedIds.delete(node.id); // activating a failed lazy node retries
+        // Activating a node retries a failed OR empty load.
+    this._failedIds.delete(node.id);
+    this._loadedIds.delete(node.id);
         if (node === this.focusedRoot) this.zoomOut();
         else if (node.children?.length || (node.hasChildren && this._loadChildren)) this.zoomTo(node.id);
         else this.emit<HierarchyNodeEventDetail>('hierarchy-node-select', { node, path: pathTo(index, node) });
@@ -623,7 +651,7 @@ export class MpHierarchyChart extends LitElement {
   /* ---------- lazy children ---------- */
 
   private isLazy(node: HierarchyNode | undefined): node is HierarchyNode {
-    return !!node && !!node.hasChildren && !node.children?.length;
+    return !!node && !!node.hasChildren && !node.children?.length && !this._loadedIds.has(node.id);
   }
 
   /** Kick a load for every lazy node whose CHILD ring is inside the rendered window. */
@@ -632,10 +660,16 @@ export class MpHierarchyChart extends LitElement {
     const index = this._index;
     if (!loader || !index) return;
     const focus = this.focusedRoot;
+    // Under `auto` the deepest rendered level is also a candidate — otherwise
+    // the window can never grow past it and lazy loading deadlocks at level 1.
+    // The consequence is deliberate and worth knowing: `max-depth="auto"` plus
+    // `loadChildren` walks the entire tree, one level per render.
+    const unbounded = this._maxDepth === 'auto';
+    const depth = this.renderedDepth;
     const candidates = [
       ...(this.isLazy(focus) ? [focus] : []),
       ...this._rendered
-        .filter((r) => r.depth < this._maxDepth)
+        .filter((r) => unbounded || r.depth < depth)
         .map((r) => index.byId.get(r.id))
         .filter((node): node is HierarchyNode => this.isLazy(node)),
     ].filter((node) => !this._loadingIds.has(node.id) && !this._failedIds.has(node.id));
@@ -647,6 +681,7 @@ export class MpHierarchyChart extends LitElement {
         (children) => {
           node.children = children;
           this._loadingIds.delete(node.id);
+          this._loadedIds.add(node.id);
           // Re-rolls values and colorValues so the new ring sizes correctly.
           if (this._data) this._index = buildIndex(this._data);
           this.requestUpdate();
@@ -710,12 +745,13 @@ export class MpHierarchyChart extends LitElement {
 
   private renderSunburst(index: HierarchyIndex): TemplateResult {
     const focus = this.focusedRoot;
+    const depth = this.renderedDepth;
     const nodes = partitionLayout(index, this._rootId, {
-      maxDepth: this._maxDepth,
+      maxDepth: depth,
       minFraction: this._minAngle / 360,
     });
     // Rings fill the half-size: hole is 1 unit, ring d spans [d, d+1] units.
-    const unit = VIEW / 2 / (this._maxDepth + 1);
+    const unit = VIEW / 2 / (depth + 1);
     const label = this.treeLabel();
     const spans = new Map(nodes.map((n) => [n.node.id, this.tweenedSpan(n)]));
     this._prevSpans = new Map(
@@ -723,7 +759,7 @@ export class MpHierarchyChart extends LitElement {
     );
     this.captureRendered(nodes, focus?.id ?? '');
     const atRoot = focus === index.root;
-    const holePct = (100 / (this._maxDepth + 1)) * 0.9;
+    const holePct = (100 / (depth + 1)) * 0.9;
 
     // The zoom-out control is a real HTML button OVERLAY, not a node inside
     // the svg: role=tree only allows treeitem/group children.
@@ -767,7 +803,7 @@ export class MpHierarchyChart extends LitElement {
       aria-level=${n.level}
       aria-setsize=${n.setsize}
       aria-posinset=${n.posinset}
-      aria-expanded=${n.hasChildren ? String(n.depth < this._maxDepth && !!n.node.children?.length) : nothing}
+      aria-expanded=${n.hasChildren ? String(n.depth < this.renderedDepth && !!n.node.children?.length) : nothing}
       aria-busy=${this._loadingIds.has(n.node.id) ? 'true' : nothing}
     ></path>`;
   }
@@ -779,11 +815,12 @@ export class MpHierarchyChart extends LitElement {
   /* ---------- icicle ---------- */
 
   private renderIcicle(index: HierarchyIndex, focus: HierarchyNode): TemplateResult {
+    const depth = this.renderedDepth;
     const nodes = partitionLayout(index, this._rootId, {
-      maxDepth: this._maxDepth,
+      maxDepth: depth,
       minFraction: this._minSize / VIEW,
     });
-    const columns = this._maxDepth + 1; // column 0 is the focus cell
+    const columns = depth + 1; // column 0 is the focus cell
     const label = this.treeLabel();
     this.captureRendered(nodes, focus.id);
 
@@ -806,15 +843,16 @@ export class MpHierarchyChart extends LitElement {
         top: `${n.x0 * 100}%`,
         width: `${(1 / columns) * 100}%`,
         height: `${(n.x1 - n.x0) * 100}%`,
-      }, n.hasChildren && n.depth < this._maxDepth && !!n.node.children?.length))}
+      }, n.hasChildren && n.depth < this.renderedDepth && !!n.node.children?.length))}
     </div>`;
   }
 
   /* ---------- treemap ---------- */
 
   private renderTreemap(index: HierarchyIndex, focus: HierarchyNode): TemplateResult {
+    const depth = this.renderedDepth;
     const nodes = squarifyLayout(index, this._rootId, {
-      maxDepth: this._maxDepth,
+      maxDepth: depth,
       minArea: (this._minSize / VIEW) ** 2,
       childPadding: 0.004,
       childHeaderSpace: 0.028,
@@ -837,7 +875,7 @@ export class MpHierarchyChart extends LitElement {
           top: `${n.y0 * 100}%`,
           width: `${(n.x1 - n.x0) * 100}%`,
           height: `${(n.y1 - n.y0) * 100}%`,
-        }, n.hasChildren && n.depth < this._maxDepth && !!n.node.children?.length))}
+        }, n.hasChildren && n.depth < this.renderedDepth && !!n.node.children?.length))}
       </div>
     </div>`;
   }

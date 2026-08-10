@@ -91,7 +91,7 @@ The reference hierarchy implementation (codecov) is not copyable:
 | 1 | Size hierarchy nodes by summed **leaf `value`** (e.g. line count), never by the color metric | Avoids codecov's inverted-salience bug (§1.1); folders with many uncovered lines stay big and red |
 | 2 | Color is a separate per-node/series `colorValue` through a clamped two-stop scale | Continuous gradient like codecov (red→green over a configurable domain), plus explicit `color` override |
 | 3 | No new runtime dependency; local `charts/core` | Pure functions, vitest-friendly; no `rollupOptions.external` changes |
-| 4 | Depth-capped hierarchy rendering: `max-depth` levels from the focused node (default 2) | Matches codecov; keeps DOM small; requires `aria-level`/`aria-setsize`/`aria-posinset` since the full set is never in the DOM |
+| 4 | Depth-capped hierarchy rendering: `max-depth` levels from the focused node (default 2), or `'auto'` for the full loaded depth | Default matches codecov and keeps the DOM small; the cap is a consumer choice, not a ceiling. `aria-level`/`-setsize`/`-posinset` are required either way, since a capped window never holds the full set |
 | 5 | ARIA tree on the rendered nodes themselves; parallel-DOM fallback only if spike S1 fails | One source of truth for state; spike-gated (§7, §9) — S1 gates only the sunburst's SVG path nodes; icicle/treemap render HTML (D14) |
 | 6 | Tooltips are self-positioned in the shadow root, **not** OverlayController and **not** `<title>` | OverlayController is built for dismissible focus-managing popups — wrong tool for a cursor-follower; `<title>` doubles node count and double-announces against `aria-label` |
 | 7 | Sunburst labels are rotated `<text>`, not `<textPath>` | No hidden-path/ID plumbing, no `href="#id"`-across-shadow-root risk |
@@ -334,7 +334,8 @@ directly on the SVG nodes.**
 | attr,prop | `layout` | `sunburst \| icicle \| treemap`; default `sunburst`; runtime-switchable, state preserved |
 | prop | `data: HierarchyNode` | Property-only; setter precomputes index/rollups |
 | attr,prop | `root-id` / `rootId` | Controlled focus node; undefined = tree root |
-| attr,prop | `max-depth` (default `2`), `min-angle` (deg, `0.2`), `min-size` (logical px for cartesian culling), `show-labels` (`true`), `label-min-area` (`0.03`) | Rendering knobs |
+| attr,prop | `max-depth`: `number \| 'auto'` (default `2`) | Levels outward from the focus; `'auto'` renders every loaded level and, with `loadChildren`, walks the whole tree one level per render |
+| attr,prop | `min-angle` (deg, `0.2`), `min-size` (logical px for cartesian culling), `show-labels` (`true`), `label-min-area` (`0.03`) | Rendering knobs |
 | attr,prop | `color-min`/`color-max` (defaults `0`/`100`), `color-start`/`color-end` (`#fe0000`/`#21b577`) | Color scale |
 | attr,prop | `transition-duration` (ms, `300`) | Forced 0 under reduced motion |
 | attr,prop | `locale` | Defaults to inherited `lang` |
@@ -462,6 +463,14 @@ Minor bumps: `@mintplayer/web-components` 2.10.0 → 2.11.0, `@mintplayer/ng-boo
 - **`mp-sparkline` names itself with `input-label`, not `label`** — forced by the naming
   conformance registry (§10), and correctly so: one contract, every component. Precedence is
   host `aria-label` > `input-label` > `summaryFormatter` > the generated summary.
+- **Unbounded depth (`max-depth="auto"`) was added after first use.** The cap was always a
+  number the consumer could raise, but nothing let them say "draw all of it" without knowing
+  the tree's depth first. `subtreeDepth()` in `charts/core` resolves it against loaded data.
+  Two bugs surfaced while wiring it, both pre-existing in the lazy path and both now fixed:
+  the deepest rendered level was never a load candidate (so unbounded + lazy deadlocked at
+  level 1), and **a folder whose loader resolved EMPTY was re-requested on every render
+  forever** — `hasChildren: true` with `children: []` is indistinguishable from "not loaded"
+  without a loaded-marker set.
 - **`charts/core` grew two things the design did not anticipate**, both because the first render
   needed them: a `colorValues` rollup (a branch with no `colorValue` of its own inherits the
   value-weighted mean of its children, so a coverage tree colours its folders without the

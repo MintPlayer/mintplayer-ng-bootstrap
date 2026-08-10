@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { HierarchyNode } from './types';
-import { buildIndex, levelOf, partitionLayout, pathTo, squarifyLayout } from './hierarchy-layout';
+import { buildIndex, levelOf, partitionLayout, pathTo, squarifyLayout, subtreeDepth } from './hierarchy-layout';
 
 const tree: HierarchyNode = {
   id: 'root', name: 'repo',
@@ -35,6 +35,16 @@ describe('buildIndex', () => {
     expect(index.colorValues.get('tools')).toBeUndefined();
     // root: only src carries a metric -> weighted over colored children only.
     expect(index.colorValues.get('root')).toBeCloseTo(60, 9);
+  });
+
+  it('measures the loaded depth below a focus (what an unbounded chart renders)', () => {
+    const index = buildIndex(tree);
+    expect(subtreeDepth(index, undefined)).toBe(2); // root -> src -> files
+    expect(subtreeDepth(index, 'src')).toBe(1);
+    expect(subtreeDepth(index, 'a')).toBe(0); // a leaf has nothing below it
+    // A lazy node counts as 0 until its children actually arrive.
+    expect(subtreeDepth(index, 'libs')).toBe(0);
+    expect(subtreeDepth(index, 'nope')).toBe(2); // unknown id falls back to the root
   });
 
   it('tracks parents and paths', () => {

@@ -106,6 +106,18 @@ export function resolveFocus(index: HierarchyIndex, focusId: string | undefined)
   return (focusId !== undefined && index.byId.get(focusId)) || index.root;
 }
 
+/**
+ * Levels of loaded descendants below the focus node — 0 for a leaf, 1 when its
+ * children are leaves, and so on. This is what an unbounded (`auto`) depth
+ * resolves to: with lazy loading it grows as children arrive, so the rendered
+ * window follows the data rather than guessing ahead of it.
+ */
+export function subtreeDepth(index: HierarchyIndex, focusId: string | undefined): number {
+  const measure = (node: HierarchyNode): number =>
+    node.children?.length ? 1 + Math.max(...node.children.map(measure)) : 0;
+  return measure(resolveFocus(index, focusId));
+}
+
 export function partitionLayout(
   index: HierarchyIndex,
   focusId: string | undefined,
