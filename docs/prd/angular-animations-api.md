@@ -1,7 +1,8 @@
 # `@angular/animations` deprecation — analysis before deciding
 
-Status: **Analysis only, nothing implemented.** Written 2026-08-10 while upgrading to Angular
-22.0.8 (see [nx23-dependency-upgrade.md](./nx23-dependency-upgrade.md)), where `npm ci` began
+Status: **Decided 2026-08-10 — option A, stay on `@angular/animations` for now.** Nothing
+implemented, deliberately. Written while upgrading to Angular 22.0.8
+(see [nx23-dependency-upgrade.md](./nx23-dependency-upgrade.md)), where `npm ci` began
 warning:
 
 > `@angular/animations@22.0.8`: @angular/animations is deprecated. Use `animate.enter` and
@@ -57,23 +58,39 @@ The differences that matter:
    their own classes.
 3. Every downstream consumer of `@mintplayer/ng-animations` breaks, not just this repo.
 
-## The real question to decide
+## The real question, and the answer
 
-Not "how do we migrate the animations" but **"does `@mintplayer/ng-animations` still have a
-reason to exist?"** If `animate.enter`/`animate.leave` are CSS classes the consumer writes, a
-library of animation triggers may be redundant rather than portable — in which case the honest
-move is deprecating the package (as was done for `ng-swiper`) rather than rewriting it.
+The question was not "how do we migrate the animations" but **"does `@mintplayer/ng-animations`
+still have a reason to exist?"**
 
-Three options, sketched:
+**It does.** `@mintplayer/ng-animations` is a set of reusable animations for *anywhere* — the
+`@mintplayer/ng-bootstrap` components are one consumer among others, not the reason the package
+exists. That reframes the trade-off: the new API cannot express a *portable, parameterised*
+animation at all (no exportable object, no `{{ duration }}`), so migrating would not modernise the
+package, it would **remove its product** and push every consumer back to hand-written CSS. The
+synthetic-animations API is the only one that currently delivers what this package is for, so we
+keep it.
+
+Three options were considered:
 
 | Option | Shape | Cost |
 |---|---|---|
-| **A. Do nothing yet** | `@angular/animations` is deprecated, **not removed**; it works in v22 with no announced removal date | zero; revisit when a removal version is announced |
+| **A. Do nothing yet** ✅ **chosen** | `@angular/animations` is deprecated, **not removed**; it works in v22 with no announced removal date | zero; revisit when a removal version is announced |
 | **B. Deprecate `@mintplayer/ng-animations`** | ship the animations as a documented CSS snippet/stylesheet; the five bootstrap components use `animate.enter`/`animate.leave` internally | breaking for the package's consumers; needs a migration note per animation |
 | **C. Rewrite as a stylesheet package** | publish `.css`/`.scss` classes (`.mp-fade-in-out` …) that pair with `animate.enter` | keeps a shipping artifact and a migration path, but it is a different product with a different API |
 
-My reading is that **B or C, decided deliberately, beats a mechanical rewrite** — and that A is
-defensible until Angular announces removal. Nothing here is urgent.
+**A was chosen.** The deprecation warning is upstream noise, not a deadline: nothing breaks, the
+package keeps its API, and consumers keep parameterised triggers. Revisit only when Angular
+announces a removal version — and revisit as **C**, not B, since the package has an audience
+beyond this workspace and would need a successor rather than a tombstone.
+
+### What to watch for
+
+- A named removal version in the Angular release notes (currently none).
+- `@angular/animations` failing to install against a future `@angular/core` — the practical
+  tripwire, since the peer range is what will break first.
+- Any future `animate.enter` enhancement that adds parameterisation or an exportable descriptor;
+  that would make C cheap and turn this from a downgrade into an actual migration.
 
 ## Precedent in this repo
 
@@ -85,7 +102,8 @@ defensible until Angular announces removal. Nothing here is urgent.
 - Which means: whichever option wins needs its own PRD, branch and release note, **not** a
   paragraph inside an unrelated PR.
 
-## Also newly deprecated in Angular 22 (same upgrade, separate work)
+## Also newly deprecated in Angular 22 — this one WAS done
 
-`@angular/platform-browser-dynamic` → use `@angular/platform-browser`. Small, mechanical, and
-genuinely a codemod — unlike the above.
+`@angular/platform-browser-dynamic` → `@angular/platform-browser`. Small, mechanical, and
+genuinely a codemod — unlike the above — so it landed in the same PR. See
+[nx23-dependency-upgrade.md](./nx23-dependency-upgrade.md#angularplatform-browser-dynamic-removed).

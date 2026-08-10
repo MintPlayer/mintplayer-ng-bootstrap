@@ -32,6 +32,7 @@ declares `>= 20.0.0 < 23.0.0` — the constraint disappears, and with it the ove
 | `angular-eslint` 21.4.0 → **22.1.0** | bundled by the Nx migration, not optional |
 | `@angular/*` 22.0.0 → **22.0.8** | clears **GHSA-58w9-8g37-x9v5** (compiler XSS: two-way binding sanitization bypass) |
 | `@angular-devkit/build-angular` **removed** | the deprecated package is gone from the tree entirely |
+| `@angular/platform-browser-dynamic` **removed** | deprecated in v22; see below |
 | `overrides["@nx/angular"]` (6 entries) and `overrides["@analogjs/vite-plugin-angular"]` **removed** | existed only to paper over Nx 22 |
 | demo `build`/`extract-i18n` → `@angular/build:*` | `serve` was already migrated |
 | `@playwright/test` → 1.62.1, `@axe-core/playwright` → 4.12.1, `@analogjs/vitest-angular` → 2.6.4, `@eslint/eslintrc` → 3.3.6 | routine |
@@ -60,6 +61,40 @@ Audit after: **31 vulnerabilities, 0 critical** (from 80 / 4 critical).
   `nx.json` came through byte-identical. The trap fires on the non-interactive path — this run
   prompted and the prompt was skipped. Still worth checking after every migrate.
 
+## `@angular/platform-browser-dynamic` removed
+
+Deprecated in Angular 22 in favour of `@angular/platform-browser`. Every use in this workspace was
+the same three lines in a `test-setup.ts` — six files (`apps/ng-bootstrap-demo` and the five
+Angular libs), no application code:
+
+```diff
+-import { BrowserDynamicTestingModule, platformBrowserDynamicTesting }
+-  from '@angular/platform-browser-dynamic/testing';
++import { BrowserTestingModule, platformBrowserTesting }
++  from '@angular/platform-browser/testing';
+```
+
+The root dependency is gone, and the lockfile holds **zero** references to it.
+
+**Why it is safe, verified rather than assumed.** The old symbols are not aliases: 
+`platformBrowserDynamicTesting` is `createPlatformFactory(platformBrowserDynamic, …)` and pulls in
+`@angular/compiler` for JIT, while `BrowserDynamicTestingModule` merely re-exports
+`BrowserTestingModule`. So the swap genuinely drops the JIT platform, and the question is whether
+any spec relies on runtime template compilation. Three checks:
+
+1. The lockfile had **no other dependent** — nothing transitive would break.
+2. `@analogjs/vitest-angular` ships its *own* `test-setup.js` that imports the dynamic testing
+   module, but every `vitest.config.ts` here sets `setupFiles: ['src/test-setup.ts']`, so that
+   file is never loaded. (Worth remembering: the package does not declare the peer dep, so anyone
+   who *does* use Analog's setup file after removing this root dep gets an unresolved import.)
+3. The package was pruned from `node_modules` **before** testing, then
+   `nx test mintplayer-ng-bootstrap` ran green — **164 test files, 557 tests**. A JIT dependency
+   could not have survived that.
+
+Two small suites (`click-outside`, `focus-on-load`) failed inside a parallel `run-many` and both
+passed when run individually; Nx itself flagged them as flaky. That is the known Windows
+plugin-worker flakiness, not a fallout of this change.
+
 ## One codemod deliberately reverted
 
 The Angular v22 `trust-proxy-headers` migration wrote into `apps/ng-bootstrap-demo/server.ts`:
@@ -78,15 +113,14 @@ var remains the single source of truth.
 ## Deliberately not done
 
 - **`@angular/animations` → `animate.enter`/`animate.leave`.** Not a codemod — it would delete
-  the entire public API of the published `@mintplayer/ng-animations` package. See
-  [angular-animations-api.md](./angular-animations-api.md).
+  the entire public API of the published `@mintplayer/ng-animations` package, which exists to serve
+  *any* consumer, not just `@mintplayer/ng-bootstrap`. **Decided: keep the synthetic-animations
+  API** (deprecated ≠ removed). See [angular-animations-api.md](./angular-animations-api.md).
 - **React 19 migration** — no-op; the workspace is already on `react@19.2.6`. Nx's
   `ai-instructions-for-react-19.md` is a prompt-only migration aimed at workspaces still on 18.
 - **ESLint flat-config conversion** — offered by `nx migrate` as a hybrid prompt migration;
   a self-contained follow-up.
 - **`@babel/core` 7 → 8** — major, with its own ripple through the React demo.
-- **`@angular/platform-browser-dynamic` → `@angular/platform-browser`** — newly deprecated in
-  Angular 22; a small API migration, but a source change rather than a dependency bump.
 
 ## Remaining deprecation warnings (all upstream, none actionable)
 

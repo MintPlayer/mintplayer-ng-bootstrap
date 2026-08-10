@@ -6,10 +6,7 @@
 
 import { getTestBed, TestBed } from '@angular/core/testing';
 import { provideZonelessChangeDetection } from '@angular/core';
-import {
-  BrowserDynamicTestingModule,
-  platformBrowserDynamicTesting,
-} from '@angular/platform-browser-dynamic/testing';
+import { BrowserTestingModule, platformBrowserTesting } from '@angular/platform-browser/testing';
 import { vi } from 'vitest';
 
 // Mock ResizeObserver for components that need it
@@ -33,8 +30,8 @@ global.ResizeObserver = class MockedResizeObserver {
 };
 
 getTestBed().initTestEnvironment(
-  BrowserDynamicTestingModule,
-  platformBrowserDynamicTesting(),
+  BrowserTestingModule,
+  platformBrowserTesting(),
   { teardown: { destroyAfterEach: true } }
 );
 
