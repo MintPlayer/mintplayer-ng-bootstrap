@@ -55,20 +55,27 @@ svg {
   user-select: none;
 }
 
-.center {
-  fill: var(--mp-hierarchy-chart-center-bg);
-  stroke: var(--mp-hierarchy-chart-branch-border);
-  stroke-width: 1;
+/* HTML overlay button in the sunburst hole (a role=tree svg cannot own a button). */
+.center-control {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  border-radius: 50%;
+  min-width: 24px;
+  min-height: 24px;
+  overflow: hidden;
+  padding: 0.25rem;
+  background: var(--mp-hierarchy-chart-center-bg);
+  color: var(--mp-hierarchy-chart-center-color);
+  border: 1px solid var(--mp-hierarchy-chart-branch-border);
+  font: inherit;
+  font-size: 0.875rem;
   cursor: pointer;
 }
 
-.center-label {
-  fill: var(--mp-hierarchy-chart-center-color);
-  font-size: 30px;
-  text-anchor: middle;
-  dominant-baseline: middle;
-  pointer-events: none;
-  user-select: none;
+.center-control:disabled {
+  cursor: default;
 }
 
 /* ---------- icicle / treemap (positioned divs) ---------- */
@@ -118,7 +125,7 @@ svg {
   margin-top: 2px;
 }
 
-.tooltip {
+.chart-tooltip {
   position: absolute;
   display: none;
   max-width: 60%;
@@ -131,7 +138,7 @@ svg {
   z-index: 1;
 }
 
-.tooltip[data-visible] {
+.chart-tooltip[data-visible] {
   display: block;
 }
 
@@ -158,8 +165,27 @@ svg {
   border-color: var(--mp-hierarchy-chart-branch-border);
 }
 
-:focus {
+/* Focus indication: a drawn stroke on SVG arcs (outline on SVG is historically
+   unreliable), a normal inset outline on HTML cells/buttons. */
+.ring:focus {
   outline: none;
+}
+
+.ring:focus-visible {
+  stroke: var(--mp-hierarchy-chart-focus-ring-color);
+  stroke-width: 6px;
+  stroke-linejoin: round;
+}
+
+.cell:focus-visible {
+  outline: 3px solid var(--mp-hierarchy-chart-focus-ring-color);
+  outline-offset: -3px;
+}
+
+.center-control:focus-visible,
+.treemap-header:focus-visible {
+  outline: 3px solid var(--mp-hierarchy-chart-focus-ring-color);
+  outline-offset: 2px;
 }
 
 @media (prefers-reduced-motion: reduce) {

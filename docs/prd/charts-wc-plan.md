@@ -116,15 +116,24 @@ Files: `charts/hierarchy/src/components/mp-hierarchy-chart.ts`,
 
 ## M4 — Hierarchy ARIA + keyboard [PRD §6; shaped by S1 verdict]
 
-- [ ] `role="tree"` + `input-label` on the container; per-node `treeitem` with
-      level/setsize/posinset/expanded/busy; localized name template.
-- [ ] Roving tabindex + keymap (identical across layouts: siblings wrap, Down/Up child/parent,
-      Enter re-root, Escape/Backspace out, Home/End, type-ahead); drawn focus ring (SVG) /
-      `:focus-visible` (divs); focus restore by id across re-root and layout switch.
-- [ ] `LiveAnnouncerController` (`omitRole: true`) announcing zoom in/out.
-- [ ] `mp-hierarchy-chart.aria.spec.ts` — states both directions ×3 layouts, keymap, focus
-      restore (treeview's `mount`/`flush`/`press` helpers).
-- [ ] **Commit.**
+- [x] `role="tree"` on the in-shadow container (never the host), named via `input-label` with
+      host `aria-label` winning; per-node `treeitem` with level/setsize/posinset/expanded and
+      localized names ("src, 60%, 1,000 lines" — `metric-unit-label`/`value-unit-label` attrs,
+      Intl via `locale`/inherited lang). **Zoom-out controls became real HTML `<button>`s
+      OUTSIDE the tree container** (a role=tree may only own treeitems/groups — resolves PRD
+      §12.1 as "button"): sunburst center overlay (disabled at root), treemap breadcrumb
+      header; icicle keeps its focus cell as a tabindex=-1 treeitem.
+- [x] Roving tabindex (one stop) + full keymap: sibling wrap, Down/Up rings, Enter (re-root /
+      leaf select), Escape/Backspace (bubbles at root instead of swallowing), Home/End,
+      500 ms type-ahead across rendered nodes. Focus ring: stroke on `.ring:focus-visible`
+      (drawn indicator, not outline), inset outline on cells/buttons. Focus restored by node
+      id across re-root AND layout switch; window-leaving focus falls to the first rendered
+      node (rides the zoom announcement).
+- [x] `LiveAnnouncerController` (`omitRole: true`) announces the new focus label on zoom;
+      tooltip stays `aria-hidden` (one message, one channel).
+- [x] `mp-hierarchy-chart.aria.spec.ts`: 16 specs ×3 layouts (structure, expanded both
+      directions, keymap, focus survival, controls, announcement). **charts total 60/60
+      green**; tsc clean. **Committed.**
 
 ## M5 — Hierarchy lazy children [PRD §5.3]
 
