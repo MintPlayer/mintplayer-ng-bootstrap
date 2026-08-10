@@ -141,6 +141,39 @@ describe('mp-trend-chart keyboard', () => {
     expect(selected).toEqual(['cov:70', 'cov:70']);
   });
 
+  it('hover picks the point nearest the cursor in BOTH axes, not just the column', async () => {
+    const el = await mount();
+    const hovered: string[] = [];
+    el.addEventListener('trend-point-hover', (e) => {
+      const d = (e as CustomEvent).detail;
+      if (d.seriesId) hovered.push(`${d.seriesId}:${d.point.y}`);
+    });
+
+    // jsdom gives every element a zero-size rect, so the pointer maths needs a
+    // real one. 1000x562 makes logical units and client px line up 1:1.
+    const chart = el.shadowRoot!.querySelector('.chart') as HTMLElement;
+    chart.getBoundingClientRect = () => ({ left: 0, top: 0, width: 1000, height: 562 } as DOMRect);
+
+    const points = (key: string) =>
+      Array.from(el.shadowRoot!.querySelectorAll<SVGCircleElement>('.point'))
+        .filter((p) => p.getAttribute('aria-label')!.startsWith(key));
+    const cov = points('Coverage')[0];
+    const target = points('Target')[0];
+    const x = Number(cov.getAttribute('cx'));
+
+    // Same column, cursor parked on each series' own y in turn.
+    const move = (clientY: number) =>
+      chart.dispatchEvent(new PointerEvent('pointermove', {
+        bubbles: true, composed: true, clientX: x, clientY,
+      }));
+    move(Number(cov.getAttribute('cy')));
+    move(Number(target.getAttribute('cy')));
+
+    // Coverage is 70 and Target is 75 at Jan 1 — different heights, so a
+    // y-aware search must report each in turn rather than the same one twice.
+    expect(hovered).toEqual(['cov:70', 'target:75']);
+  });
+
   it('the roving stop survives a series data refresh by key', async () => {
     const el = await mount();
     press(focusedPoint(el)!, 'ArrowRight');

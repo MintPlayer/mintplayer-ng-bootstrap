@@ -245,16 +245,32 @@ NX_ISOLATE_PLUGINS=false NX_DAEMON=false npx nx build mintplayer-react-bootstrap
 NX_ISOLATE_PLUGINS=false NX_DAEMON=false npx nx build mintplayer-vue-bootstrap
 NX_ISOLATE_PLUGINS=false NX_DAEMON=false npx nx test mintplayer-web-components -- --pool=threads
 NX_ISOLATE_PLUGINS=false NX_DAEMON=false npx nx test mintplayer-ng-bootstrap
+NX_ISOLATE_PLUGINS=false NX_DAEMON=false npx nx test mintplayer-react-bootstrap
+NX_ISOLATE_PLUGINS=false NX_DAEMON=false npx nx test mintplayer-vue-bootstrap
+NX_ISOLATE_PLUGINS=false NX_DAEMON=false npx nx run mintplayer-react-bootstrap:typecheck-a11y
 NX_ISOLATE_PLUGINS=false NX_DAEMON=false npx nx build ng-bootstrap-demo
+# e2e — through Nx, never `npx playwright test` (see Conventions):
+NX_ISOLATE_PLUGINS=false NX_DAEMON=false npx nx e2e ng-bootstrap-demo-e2e --grep=charts
+NX_ISOLATE_PLUGINS=false NX_DAEMON=false npx nx e2e react-bootstrap-demo-e2e --grep=charts
+NX_ISOLATE_PLUGINS=false NX_DAEMON=false npx nx e2e vue-bootstrap-demo-e2e --grep=charts
+NX_ISOLATE_PLUGINS=false NX_DAEMON=false npx nx run-many -t e2e-a11y --parallel=1
 ```
 
-- [ ] All builds + suites green (record real counts here).
-- [ ] Built package.json `exports` re-verified for all three libs (M0 regression check).
-- [ ] e2e a11y configs for the three demo apps.
-- [ ] **HUMAN:** keyboard-only pass (all 3 elements), Firefox smoke (flex shrink!), RTL smoke,
+- [x] Builds: all four libs green. **Exports verified in dist** (the M0 regression check):
+      WC 48 keys incl. `./charts/{core,hierarchy,sparkline,trend}`, ng 101 incl. the three
+      nested `./charts/*` ng-packagr entries, React 39 and Vue 39 (both were **1** before M0).
+- [x] Unit suites: web-components **1853** (121 files), ng-bootstrap **557** (164 files),
+      React 16, Vue 7, React `typecheck-a11y` green. Charts alone: 80.
+- [x] `nx build ng-bootstrap-demo` green; charts land in **one lazy chunk and appear 0× in the
+      main bundle**, so the pre-existing initial-budget warning is untouched by this work.
+- [x] e2e: ng 8/8, React 12/12, Vue 12/12 (4 specs × engines). Three real defects surfaced here
+      that jsdom structurally could not catch — recorded in PRD §13.
+- [ ] Axe gate (`run-many -t e2e-a11y`) — running.
+- [ ] **HUMAN:** keyboard-only pass (all 3 elements), Firefox smoke, RTL smoke,
       NVDA/VoiceOver spot check of node names + zoom announcements.
-- [ ] Version bumps: web-components 2.10.0 → 2.11.0, ng-bootstrap 22.13.0 → 22.14.0,
-      react-bootstrap 19.14.0 → 19.15.0, vue-bootstrap 3.15.0 → 3.16.0.
+- [x] Version bumps: web-components 2.10.0 → 2.11.0, ng-bootstrap 22.13.0 → 22.14.0,
+      react-bootstrap 19.14.0 → 19.15.0, vue-bootstrap 3.15.0 → 3.16.0. (Cross-package peer
+      ranges are `^2.0.0` / major-wide, so none needed touching.)
 - [ ] Push **once**, then read the single CI run.
 
 ## Risks

@@ -306,9 +306,24 @@ export class MpTrendChart extends LitElement {
     const rect = chart?.getBoundingClientRect();
     if (!rect || rect.width === 0) return;
     const logicalX = ((event.clientX - rect.left) / rect.width) * W;
-    const nearest = this._placed.reduce((best, p) =>
+    const logicalY = ((event.clientY - rect.top) / rect.height) * H;
+    // Two steps, because they answer different questions. The COLUMN is chosen
+    // on x alone — the crosshair and the tooltip describe one moment in time
+    // across every series. The highlighted POINT is then the one nearest the
+    // cursor within that column: comparing x only would always resolve ties to
+    // whichever series was placed first, so the lowest line captured every
+    // hover no matter where the pointer actually was.
+    //
+    // Deliberately NOT a Euclidean nearest-point search over all points. That
+    // would let purely vertical mouse movement land in a neighbouring column,
+    // changing the crosshair's date while the pointer never moved sideways.
+    // Time is the independent axis here, so x owns the column and y only
+    // breaks the tie inside it.
+    const column = this._placed.reduce((best, p) =>
       Math.abs(p.px - logicalX) < Math.abs(best.px - logicalX) ? p : best);
-    const atX = this._placed.filter((p) => p.xMs === nearest.xMs);
+    const atX = this._placed.filter((p) => p.xMs === column.xMs);
+    const nearest = atX.reduce((best, p) =>
+      Math.abs(p.py - logicalY) < Math.abs(best.py - logicalY) ? p : best);
 
     const tooltip = this.shadowRoot?.querySelector<HTMLElement>('.chart-tooltip');
     if (tooltip) {
