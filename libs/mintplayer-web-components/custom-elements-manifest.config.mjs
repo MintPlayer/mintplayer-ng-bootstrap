@@ -12,7 +12,7 @@
  * package always get the manifest matching the version they install.
  */
 export default {
-  globs: ['**/*.element.ts', '*/src/**/*.ts'],
+  globs: ['**/*.element.ts', '*/src/**/*.ts', '*/*/src/**/*.ts'],
   exclude: [
     '**/*.spec.ts',
     '**/*.test.ts',

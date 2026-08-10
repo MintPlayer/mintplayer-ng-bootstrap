@@ -24,7 +24,8 @@
     "allowSyntheticDefaultImports": true,
     "moduleResolution": "bundler",
     "target": "es2020",
-    "module": "preserve"
+    "module": "preserve",
+    "ignoreDeprecations": "6.0"
   },
   "angularCompilerOptions": {
     "strictInjectionParameters": true,

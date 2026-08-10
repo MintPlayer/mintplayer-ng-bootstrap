@@ -7,9 +7,7 @@
   "targets": {
     "build": {
       "executor": "@nx/vite:build",
-      "outputs": [
-        "{options.outputPath}"
-      ],
+      "outputs": ["{options.outputPath}"],
       "defaultConfiguration": "production",
       "options": {
         "outputPath": "dist/libs/mintplayer-vue-bootstrap"
@@ -38,9 +36,7 @@
   },
   "release": {
     "version": {
-      "manifestRootsToUpdate": [
-        "dist/{projectRoot}"
-      ],
+      "manifestRootsToUpdate": ["dist/{projectRoot}"],
       "currentVersionResolver": "git-tag",
       "fallbackCurrentVersionResolver": "disk"
     }

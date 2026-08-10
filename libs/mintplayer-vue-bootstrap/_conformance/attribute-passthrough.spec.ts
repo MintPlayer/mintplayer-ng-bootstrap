@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { mount } from '@vue/test-utils';
 
 import BsCheckbox from '../checkbox/src/BsCheckbox.vue';
+import BsHierarchyChart from '../charts/hierarchy/src/BsHierarchyChart.vue';
 import BsDropdownMenu from '../dropdown-menu/src/BsDropdownMenu.vue';
 import BsNavbar from '../navbar/src/BsNavbar.vue';
 import BsTimeline from '../timeline/src/BsTimeline.vue';
@@ -25,17 +26,20 @@ import BsTimeline from '../timeline/src/BsTimeline.vue';
  *  1. Statically: every SFC that declares `inheritAttrs: false` must contain
  *     `v-bind="$attrs"`. Forgetting either half is the only way a Vue wrapper
  *     can silently stop forwarding, and a new wrapper that forgets fails here.
- *  2. At runtime: four representative wrappers (form control, list composite,
- *     landmark, data composite) prove the pattern end-to-end in jsdom, using
- *     `aria-label` — hyphenated, so it can never be captured by a declared prop.
+ *  2. At runtime: five representative wrappers (form control, list composite,
+ *     landmark, data composite, namespaced chart) prove the pattern end-to-end in
+ *     jsdom, using `aria-label` — hyphenated, so it can never be captured by a
+ *     declared prop.
  */
 
-// Vite resolves the glob at transform time; `query: '?raw'` keeps the SFC as text.
-const SFC_SOURCES = import.meta.glob('../*/src/*.vue', {
-  query: '?raw',
-  import: 'default',
-  eager: true,
-}) as Record<string, string>;
+// Vite resolves the globs at transform time; `query: '?raw'` keeps the SFC as text.
+// Both depths are swept: `<entry>/src/*.vue` and the namespaced
+// `<namespace>/<entry>/src/*.vue` (charts/), or a whole namespace would opt out
+// of the invariant below by being invisible to it.
+const SFC_SOURCES = {
+  ...(import.meta.glob('../*/src/*.vue', { query: '?raw', import: 'default', eager: true }) as Record<string, string>),
+  ...(import.meta.glob('../*/*/src/*.vue', { query: '?raw', import: 'default', eager: true }) as Record<string, string>),
+};
 
 describe('Vue wrapper attribute passthrough — the invariant, statically', () => {
   it('found the wrapper sources at all', () => {
@@ -60,6 +64,8 @@ describe('Vue wrapper attribute passthrough — representatives, at runtime', ()
     { name: 'BsDropdownMenu', component: BsDropdownMenu, tag: 'mp-dropdown-menu' },
     { name: 'BsNavbar', component: BsNavbar, tag: 'mp-navbar' },
     { name: 'BsTimeline', component: BsTimeline, tag: 'mp-timeline' },
+    // Namespaced entry (charts/) — also proves the two-level glob above finds them.
+    { name: 'BsHierarchyChart', component: BsHierarchyChart, tag: 'mp-hierarchy-chart' },
   ];
 
   it.each(CASES)('$name forwards a consumer attribute to its $tag root', ({ component, tag }) => {

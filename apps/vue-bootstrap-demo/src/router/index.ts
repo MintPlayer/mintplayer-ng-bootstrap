@@ -56,6 +56,7 @@ export function createAppRouter(ssr: boolean) {
     { path: '/enterprise/timeline', name: 'timeline', component: () => import('../views/enterprise/TimelineView.vue') },
     { path: '/enterprise/shell', name: 'shell', component: () => import('../views/enterprise/ShellView.vue') },
     { path: '/enterprise/accordion', name: 'accordion', component: () => import('../views/enterprise/AccordionView.vue') },
+    { path: '/enterprise/charts', name: 'charts', component: () => import('../views/enterprise/ChartsView.vue') },
     { path: '/:pathMatch(.*)*', name: 'coming-soon', component: () => import('../views/ComingSoonView.vue') },
     ],
   });

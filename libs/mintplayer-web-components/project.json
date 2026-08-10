@@ -35,7 +35,9 @@
         "{workspaceRoot}/tools/scripts/build-web-components.mjs",
         "{workspaceRoot}/tools/scripts/build-flag-loaders.mjs",
         "{workspaceRoot}/tools/scripts/build-phone-metadata.mjs",
-        { "externalDependencies": ["libphonenumber-js"] }
+        {
+          "externalDependencies": ["libphonenumber-js"]
+        }
       ],
       "cache": true,
       "options": {
@@ -87,7 +89,9 @@
     },
     "codegen-dropdown-chrome": {
       "executor": "nx:run-commands",
-      "outputs": ["{projectRoot}/dropdown-menu/ssr/mp-dropdown-chrome.generated.ts"],
+      "outputs": [
+        "{projectRoot}/dropdown-menu/ssr/mp-dropdown-chrome.generated.ts"
+      ],
       "inputs": [
         "{projectRoot}/dropdown-menu/src/components/*.ts",
         "{projectRoot}/dropdown-menu/src/styles/*.styles.scss",
@@ -129,7 +133,9 @@
     },
     "codegen-accordion-chrome": {
       "executor": "nx:run-commands",
-      "outputs": ["{projectRoot}/accordion/ssr/mp-accordion-chrome.generated.ts"],
+      "outputs": [
+        "{projectRoot}/accordion/ssr/mp-accordion-chrome.generated.ts"
+      ],
       "inputs": [
         "{projectRoot}/accordion/src/components/*.ts",
         "{projectRoot}/accordion/src/styles/*.styles.scss",

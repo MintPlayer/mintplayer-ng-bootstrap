@@ -1,0 +1,387 @@
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+import './mp-hierarchy-chart';
+import type { MpHierarchyChart } from './mp-hierarchy-chart';
+import type { HierarchyNode } from '@mintplayer/web-components/charts/core';
+
+/**
+ * The tree/treeitem contract of `<mp-hierarchy-chart>` across all three
+ * layouts. The tree role lives on the in-shadow container (svg for sunburst,
+ * div for icicle/treemap) — never the host — and every treeitem carries the
+ * full aria-level/posinset/setsize triple because the rendered window never
+ * holds the whole tree (depth cap). Zoom-out controls are real <button>s
+ * OUTSIDE the role=tree container (a tree may only own treeitems/groups).
+ * All attributes are real DOM attributes, so jsdom can assert everything;
+ * S1 measured that SVGElement.focus() works here too.
+ */
+const DATA: HierarchyNode = {
+  id: 'repo', name: 'repo',
+  children: [
+    {
+      id: 'src', name: 'src',
+      children: [
+        { id: 'a', name: 'alpha.ts', value: 600, colorValue: 80 },
+        { id: 'b', name: 'beta.ts', value: 300, colorValue: 40 },
+        { id: 'c', name: 'core.ts', value: 100, colorValue: 0 },
+      ],
+    },
+    { id: 'libs', name: 'libs', children: [{ id: 'd', name: 'dock.ts', value: 500, colorValue: 100 }] },
+    { id: 'tools', name: 'tools', value: 500, colorValue: 50 },
+  ],
+};
+
+type Layout = 'sunburst' | 'icicle' | 'treemap';
+
+async function flush(el: MpHierarchyChart): Promise<void> {
+  await el.updateComplete;
+  await new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve)));
+  await el.updateComplete;
+}
+
+async function mount(attrs = '', data: HierarchyNode = DATA): Promise<MpHierarchyChart> {
+  document.body.innerHTML = `<mp-hierarchy-chart transition-duration="0" ${attrs}></mp-hierarchy-chart>`;
+  const el = document.querySelector('mp-hierarchy-chart') as MpHierarchyChart;
+  el.data = data;
+  await flush(el);
+  return el;
+}
+
+function items(el: MpHierarchyChart): Element[] {
+  return Array.from(el.shadowRoot!.querySelectorAll('[role="treeitem"]'));
+}
+
+function item(el: MpHierarchyChart, id: string): Element {
+  return el.shadowRoot!.querySelector(`[role="treeitem"][data-id="${id}"]`) as Element;
+}
+
+function press(target: Element, key: string): void {
+  target.dispatchEvent(new KeyboardEvent('keydown', { key, bubbles: true, composed: true, cancelable: true }));
+}
+
+describe('mp-hierarchy-chart ARIA structure (all layouts)', () => {
+  beforeEach(() => {
+    document.body.innerHTML = '';
+  });
+
+  (['sunburst', 'icicle', 'treemap'] as Layout[]).map((layout) =>
+    it(`${layout}: role=tree on the container, named via input-label, host stays generic`, async () => {
+      const el = await mount(`layout="${layout}" input-label="Coverage"`);
+      const tree = el.shadowRoot!.querySelector('[role="tree"]')!;
+      expect(tree.getAttribute('aria-label')).toBe('Coverage');
+      expect(el.hasAttribute('role')).toBe(false);
+      // Host aria-label wins over input-label.
+      el.setAttribute('aria-label', 'Chart');
+      await flush(el);
+      expect(el.shadowRoot!.querySelector('[role="tree"]')!.getAttribute('aria-label')).toBe('Chart');
+      // A tree may only own treeitems (and groups). Anything else inside it must
+      // be removed from the accessibility tree with role=none/presentation —
+      // which is what the sunburst's centring <g> does.
+      const owned = Array.from(tree.querySelectorAll('*')).filter((n) => n.hasAttribute('role'));
+      owned.map((n) => expect(['treeitem', 'group', 'none', 'presentation']).toContain(n.getAttribute('role')));
+      expect(owned.some((n) => n.getAttribute('role') === 'treeitem')).toBe(true);
+    }));
+
+  (['sunburst', 'icicle', 'treemap'] as Layout[]).map((layout) =>
+    it(`${layout}: treeitems carry level/posinset/setsize and localized names`, async () => {
+      const el = await mount(`layout="${layout}" value-unit-label="lines" locale="en-US"`);
+      const src = item(el, 'src');
+      expect(src.getAttribute('aria-level')).toBe('2');
+      expect(src.getAttribute('aria-setsize')).toBe('3');
+      expect(src.getAttribute('aria-posinset')).toBe('1'); // 1000 lines = biggest
+      expect(src.getAttribute('aria-expanded')).toBe('true');
+      // Weighted rollup metric: (600*80 + 300*40 + 100*0) / 1000 = 60.
+      expect(src.getAttribute('aria-label')).toBe('src, 60%, 1,000 lines');
+      const leaf = item(el, 'a');
+      expect(leaf.getAttribute('aria-level')).toBe('3');
+      expect(leaf.hasAttribute('aria-expanded')).toBe(false);
+      expect(leaf.getAttribute('aria-label')).toBe('alpha.ts, 80%, 600 lines');
+    }));
+
+  it('max-depth="auto" renders every loaded level, in all three layouts', async () => {
+    // 4 levels below the root: repo > deep1 > deep2 > deep3 > leaf.
+    const deep: HierarchyNode = {
+      id: 'r', name: 'r',
+      children: [{
+        id: 'd1', name: 'd1',
+        children: [{
+          id: 'd2', name: 'd2',
+          children: [{ id: 'd3', name: 'd3', children: [{ id: 'leaf', name: 'leaf', value: 1 }] }],
+        }],
+      }],
+    };
+    const capped = await mount('layout="sunburst"', deep);
+    expect(items(capped).map((n) => n.getAttribute('data-id'))).toEqual(['d1', 'd2']);
+
+    const layoutsToCheck: Layout[] = ['sunburst', 'icicle', 'treemap'];
+    for (const layout of layoutsToCheck) {
+      const el = await mount(`layout="${layout}" max-depth="auto"`, deep);
+      expect(items(el).map((n) => n.getAttribute('data-id')), layout)
+        .toEqual(expect.arrayContaining(['d1', 'd2', 'd3', 'leaf']));
+      // The deepest node is a leaf, so it never claims to be expandable.
+      expect(item(el, 'leaf').hasAttribute('aria-expanded'), layout).toBe(false);
+      expect(item(el, 'd3').getAttribute('aria-expanded'), layout).toBe('true');
+    }
+  });
+
+  it('max-depth="auto" follows the data as lazily-loaded levels arrive', async () => {
+    const lazy: HierarchyNode = {
+      id: 'r', name: 'r',
+      children: [{ id: 'a', name: 'a', value: 1, hasChildren: true }],
+    };
+    document.body.innerHTML = '<mp-hierarchy-chart layout="sunburst" max-depth="auto" transition-duration="0"></mp-hierarchy-chart>';
+    const el = document.querySelector('mp-hierarchy-chart') as MpHierarchyChart;
+    let releaseA!: (kids: HierarchyNode[]) => void;
+    el.loadChildren = (node) =>
+      node.id === 'a'
+        ? new Promise<HierarchyNode[]>((resolve) => (releaseA = resolve))
+        : Promise.resolve([]);
+    el.data = lazy;
+    await flush(el);
+    // Nothing below 'a' yet: unbounded depth follows the data, it does not
+    // speculate about levels that have not arrived.
+    expect(items(el).map((n) => n.getAttribute('data-id'))).toEqual(['a']);
+
+    releaseA([{ id: 'b', name: 'b', value: 1, hasChildren: true }]);
+    await vi.waitFor(async () => {
+      await flush(el);
+      expect(items(el).map((n) => n.getAttribute('data-id'))).toContain('b');
+    });
+  });
+
+  it('aria-expanded moves in both directions with the rendered window', async () => {
+    const el = await mount('layout="sunburst" max-depth="1"');
+    // With one ring, src's children are NOT rendered -> collapsed.
+    expect(item(el, 'src').getAttribute('aria-expanded')).toBe('false');
+    el.maxDepth = 2;
+    await flush(el);
+    expect(item(el, 'src').getAttribute('aria-expanded')).toBe('true');
+    el.maxDepth = 1;
+    await flush(el);
+    expect(item(el, 'src').getAttribute('aria-expanded')).toBe('false');
+  });
+});
+
+describe('mp-hierarchy-chart roving tabindex + keymap', () => {
+  beforeEach(() => {
+    document.body.innerHTML = '';
+  });
+
+  it('exactly one treeitem is the tab stop; arrows move it between siblings with wrap', async () => {
+    const el = await mount('layout="sunburst"');
+    expect(items(el).filter((n) => n.getAttribute('tabindex') === '0')).toHaveLength(1);
+    expect(item(el, 'src').getAttribute('tabindex')).toBe('0');
+
+    press(item(el, 'src'), 'ArrowRight');
+    await flush(el);
+    // Value-desc, stable on ties: src(1000), libs(500), tools(500).
+    expect(item(el, 'libs').getAttribute('tabindex')).toBe('0');
+    const focusedAfterRight = items(el).find((n) => n.getAttribute('tabindex') === '0')!;
+    press(focusedAfterRight, 'ArrowLeft');
+    await flush(el);
+    expect(item(el, 'src').getAttribute('tabindex')).toBe('0');
+    // Wrap: Left from the first sibling lands on the last.
+    press(item(el, 'src'), 'ArrowLeft');
+    await flush(el);
+    const last = items(el).find((n) => n.getAttribute('tabindex') === '0')!;
+    press(last, 'ArrowRight');
+    await flush(el);
+    expect(item(el, 'src').getAttribute('tabindex')).toBe('0');
+  });
+
+  it('Down enters the child ring, Up returns to the parent, Home/End jump within siblings', async () => {
+    const el = await mount('layout="icicle"');
+    press(item(el, 'src'), 'ArrowDown');
+    await flush(el);
+    expect(item(el, 'a').getAttribute('tabindex')).toBe('0');
+    press(item(el, 'a'), 'End');
+    await flush(el);
+    expect(item(el, 'c').getAttribute('tabindex')).toBe('0');
+    press(item(el, 'c'), 'Home');
+    await flush(el);
+    expect(item(el, 'a').getAttribute('tabindex')).toBe('0');
+    press(item(el, 'a'), 'ArrowUp');
+    await flush(el);
+    expect(item(el, 'src').getAttribute('tabindex')).toBe('0');
+  });
+
+  it('Enter re-roots on a folder and selects a leaf; Escape zooms out', async () => {
+    const el = await mount('layout="sunburst"');
+    const zooms: string[] = [];
+    const selects: string[] = [];
+    el.addEventListener('hierarchy-zoom', (e) => zooms.push((e as CustomEvent).detail.node.id));
+    el.addEventListener('hierarchy-node-select', (e) => selects.push((e as CustomEvent).detail.node.id));
+
+    press(item(el, 'src'), 'Enter');
+    await flush(el);
+    expect(zooms).toEqual(['src']);
+    expect(el.getAttribute('root-id')).toBe('src');
+    // Focus fell into the new first ring (old focus target left the window).
+    expect(items(el).filter((n) => n.getAttribute('tabindex') === '0')).toHaveLength(1);
+
+    press(item(el, 'a'), 'Enter');
+    expect(selects).toEqual(['a']);
+    expect(el.getAttribute('root-id')).toBe('src'); // leaf select does not re-root
+
+    press(item(el, 'a'), 'Escape');
+    await flush(el);
+    expect(zooms).toEqual(['src', 'repo']);
+    expect(el.hasAttribute('root-id')).toBe(false);
+  });
+
+  it('type-ahead jumps to the next rendered node by name prefix', async () => {
+    const el = await mount('layout="treemap"');
+    press(item(el, 'src'), 't');
+    await flush(el);
+    expect(item(el, 'tools').getAttribute('tabindex')).toBe('0');
+  });
+
+  it('focus (roving stop) survives a re-root and a layout switch by node id', async () => {
+    const el = await mount('layout="sunburst"');
+    press(item(el, 'src'), 'ArrowDown'); // -> 'a'
+    await flush(el);
+    expect(item(el, 'a').getAttribute('tabindex')).toBe('0');
+    el.layout = 'icicle';
+    await flush(el);
+    expect(item(el, 'a').getAttribute('tabindex')).toBe('0');
+    expect(item(el, 'a').tagName).toBe('DIV');
+    el.layout = 'sunburst';
+    await flush(el);
+    expect(item(el, 'a').getAttribute('tabindex')).toBe('0');
+    expect(item(el, 'a').tagName.toLowerCase()).toBe('path');
+  });
+
+  it('focusNode() moves the roving stop programmatically', async () => {
+    const el = await mount('layout="sunburst"');
+    el.focusNode('libs');
+    await flush(el);
+    expect(item(el, 'libs').getAttribute('tabindex')).toBe('0');
+  });
+});
+
+describe('mp-hierarchy-chart zoom controls + announcements', () => {
+  beforeEach(() => {
+    document.body.innerHTML = '';
+    vi.useRealTimers();
+  });
+
+  it('sunburst center button: named, disabled at root, zooms out one level', async () => {
+    const el = await mount('layout="sunburst" zoom-out-label="Naar boven"');
+    const button = el.shadowRoot!.querySelector<HTMLButtonElement>('.center-control')!;
+    expect(button.getAttribute('aria-label')).toBe('Naar boven');
+    expect(button.disabled).toBe(true);
+    // The button lives OUTSIDE the role=tree container.
+    expect(button.closest('[role="tree"]')).toBeNull();
+
+    el.zoomTo('src');
+    await flush(el);
+    const after = el.shadowRoot!.querySelector<HTMLButtonElement>('.center-control')!;
+    expect(after.disabled).toBe(false);
+    after.click();
+    await flush(el);
+    expect(el.hasAttribute('root-id')).toBe(false);
+  });
+
+  it('treemap header button carries the breadcrumb and zooms out', async () => {
+    const el = await mount('layout="treemap"');
+    el.zoomTo('src');
+    await flush(el);
+    const header = el.shadowRoot!.querySelector<HTMLButtonElement>('.treemap-header')!;
+    expect(header.textContent).toContain('repo / src');
+    expect(header.disabled).toBe(false);
+    header.click();
+    await flush(el);
+    expect(el.shadowRoot!.querySelector<HTMLButtonElement>('.treemap-header')!.disabled).toBe(true);
+  });
+
+  it('lazy loading: aria-busy while in flight, children render on resolve', async () => {
+    let resolve!: (kids: HierarchyNode[]) => void;
+    const data: HierarchyNode = {
+      id: 'r', name: 'r',
+      children: [
+        { id: 'lazy', name: 'lazy', value: 10, hasChildren: true },
+        { id: 'leaf', name: 'leaf', value: 10, colorValue: 50 },
+      ],
+    };
+    document.body.innerHTML = '<mp-hierarchy-chart layout="sunburst" transition-duration="0"></mp-hierarchy-chart>';
+    const el = document.querySelector('mp-hierarchy-chart') as MpHierarchyChart;
+    el.loadChildren = () => new Promise((res) => (resolve = res));
+    el.data = data;
+    await flush(el);
+    expect(item(el, 'lazy').getAttribute('aria-busy')).toBe('true');
+    expect(item(el, 'lazy').hasAttribute('data-loading')).toBe(true);
+    resolve([{ id: 'kid', name: 'kid', value: 10, colorValue: 90 }]);
+    await flush(el);
+    await flush(el);
+    expect(item(el, 'lazy').hasAttribute('aria-busy')).toBe(false);
+    expect(item(el, 'lazy').getAttribute('aria-expanded')).toBe('true');
+    expect(item(el, 'kid')).toBeTruthy();
+  });
+
+  it('lazy loading: a folder that resolves EMPTY is requested once, not every render', async () => {
+    // hasChildren stays true and children stays empty — the same shape as
+    // "not loaded yet", so without a loaded marker this re-requests forever.
+    const data: HierarchyNode = {
+      id: 'r', name: 'r',
+      children: [{ id: 'empty', name: 'empty', value: 10, hasChildren: true }],
+    };
+    document.body.innerHTML = '<mp-hierarchy-chart layout="sunburst" max-depth="auto" transition-duration="0"></mp-hierarchy-chart>';
+    const el = document.querySelector('mp-hierarchy-chart') as MpHierarchyChart;
+    let calls = 0;
+    el.loadChildren = () => { calls += 1; return Promise.resolve([]); };
+    el.data = data;
+    await flush(el);
+    await flush(el);
+    await flush(el);
+    expect(calls).toBe(1);
+  });
+
+  it('lazy loading: rejection emits hierarchy-node-load-error once; activation retries', async () => {
+    const data: HierarchyNode = {
+      id: 'r', name: 'r',
+      children: [{ id: 'lazy', name: 'lazy', value: 10, hasChildren: true }],
+    };
+    document.body.innerHTML = '<mp-hierarchy-chart layout="icicle" transition-duration="0"></mp-hierarchy-chart>';
+    const el = document.querySelector('mp-hierarchy-chart') as MpHierarchyChart;
+    let calls = 0;
+    const errors: string[] = [];
+    el.addEventListener('hierarchy-node-load-error', (e) => errors.push((e as CustomEvent).detail.node.id));
+    el.loadChildren = () => { calls += 1; return Promise.reject(new Error('boom')); };
+    el.data = data;
+    await flush(el);
+    await flush(el);
+    expect(errors).toEqual(['lazy']);
+    expect(calls).toBe(1); // failed nodes are not re-requested on every render
+    expect(item(el, 'lazy').hasAttribute('data-load-error')).toBe(true);
+    press(item(el, 'lazy'), 'Enter'); // retry path
+    await flush(el);
+    await flush(el);
+    expect(calls).toBe(2);
+  });
+
+  it('without a loader, a hasChildren node acts as a leaf (no zoom, no busy)', async () => {
+    const data: HierarchyNode = {
+      id: 'r', name: 'r',
+      children: [{ id: 'lazy', name: 'lazy', value: 10, hasChildren: true }],
+    };
+    document.body.innerHTML = '<mp-hierarchy-chart layout="sunburst" transition-duration="0"></mp-hierarchy-chart>';
+    const el = document.querySelector('mp-hierarchy-chart') as MpHierarchyChart;
+    el.data = data;
+    await flush(el);
+    const selects: string[] = [];
+    el.addEventListener('hierarchy-node-select', (e) => selects.push((e as CustomEvent).detail.node.id));
+    expect(item(el, 'lazy').hasAttribute('aria-busy')).toBe(false);
+    press(item(el, 'lazy'), 'Enter');
+    await flush(el);
+    expect(el.hasAttribute('root-id')).toBe(false);
+    expect(selects).toEqual(['lazy']);
+  });
+
+  it('zoom announces the new focus via the live region (one message, one channel)', async () => {
+    const el = await mount('layout="sunburst"');
+    el.zoomTo('src');
+    await flush(el);
+    const region = el.shadowRoot!.querySelector('[aria-live]')!;
+    expect(region.textContent).toContain('src');
+    // The tooltip never enters the accessibility tree.
+    expect(el.shadowRoot!.querySelector('.chart-tooltip')!.getAttribute('aria-hidden')).toBe('true');
+  });
+});

@@ -1,0 +1,8 @@
+<mp-hierarchy-chart bsForwardAria
+  #chart
+  class="bs-hierarchy-chart"
+  (hierarchy-zoom)="onZoom($event)"
+  (hierarchy-node-select)="onNodeSelect($event)"
+  (hierarchy-node-hover)="onNodeHover($event)"
+  (hierarchy-node-load-error)="onNodeLoadError($event)"
+></mp-hierarchy-chart>

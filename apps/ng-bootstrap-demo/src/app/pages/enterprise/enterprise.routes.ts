@@ -15,4 +15,5 @@ export const ROUTES: Routes = [
   { path: 'navbar', loadComponent: () => import('./navbar/navbar.component').then(m => m.NavbarComponent) },
   { path: 'splitter', loadComponent: () => import('./splitter/splitter.component').then(m => m.SplitterComponent) },
   { path: 'accordion', loadComponent: () => import('./accordion/accordion.component').then(m => m.AccordionComponent) },
+  { path: 'charts', loadComponent: () => import('./charts/charts.component').then(m => m.ChartsComponent) },
 ];

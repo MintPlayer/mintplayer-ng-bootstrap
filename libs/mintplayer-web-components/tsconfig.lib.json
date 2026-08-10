@@ -11,9 +11,12 @@
   "include": [
     "src/**/*.ts",
     "*/src/**/*.ts",
-    "*/index.ts"
+    "*/index.ts",
+    "*/*/src/**/*.ts",
+    "*/*/index.ts"
   ],
   "exclude": [
+    "*/ssr/**",
     "vite.config.ts",
     "vite.config.mts",
     "vitest.config.ts",

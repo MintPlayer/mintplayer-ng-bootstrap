@@ -64,6 +64,32 @@ axeAuditSuite(test, expect, [
   },
   { path: '/enterprise/query-builder' },
   {
+    path: '/enterprise/charts',
+    ready: async (page) => {
+      await page.waitForSelector('mp-hierarchy-chart [role="tree"]');
+    },
+    // The three hierarchy layouts are different DOM (svg paths vs positioned
+    // divs) and the zoomed-in state adds the enabled zoom-out control, so the
+    // audit walks all of it rather than only the default sunburst at root.
+    // Re-rooting is driven from the ICICLE layout on purpose: a ring arc's
+    // bounding box is centred on the donut hole, so a default-position click
+    // lands on the <svg> rather than the arc.
+    interact: async (page) => {
+      await page.getByRole('button', { name: 'icicle' }).click();
+      await page.waitForSelector('mp-hierarchy-chart .icicle');
+      await page
+        .locator('mp-hierarchy-chart div[role="treeitem"][aria-expanded="true"]:not(.focus-cell)')
+        .first()
+        .click();
+      await page.getByRole('button', { name: 'treemap' }).click();
+      await page.waitForSelector('mp-hierarchy-chart .treemap');
+      // Back to the sunburst, now zoomed in: this is the state with an enabled
+      // zoom-out control, which the root state never shows.
+      await page.getByRole('button', { name: 'sunburst' }).click();
+      await page.waitForSelector('mp-hierarchy-chart .center-control:not([disabled])');
+    },
+  },
+  {
     path: '/enterprise/scheduler',
     ready: async (page) => {
       await page.waitForSelector('mp-scheduler');

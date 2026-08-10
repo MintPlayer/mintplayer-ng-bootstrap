@@ -13,6 +13,9 @@ import '@mintplayer/web-components/datatable';
 import '@mintplayer/web-components/otp-input';
 import '@mintplayer/web-components/signature-pad';
 import '@mintplayer/web-components/phone-input';
+import '@mintplayer/web-components/charts/hierarchy';
+import '@mintplayer/web-components/charts/trend';
+import '@mintplayer/web-components/charts/sparkline';
 
 /**
  * The one naming contract, asserted across every component that implements it —
@@ -50,6 +53,13 @@ interface NamingCase {
    * value.
    */
   ownDescribedBy?: boolean;
+  /**
+   * Property assignments a data-driven component needs before its role-bearing
+   * node exists at all (a chart with no data renders no chart). Charts also make
+   * `defaultName` data-derived rather than literal — single-digit values keep the
+   * expected string locale-invariant.
+   */
+  setup?: (host: HTMLElement) => void;
 }
 
 const CASES: NamingCase[] = [
@@ -70,18 +80,53 @@ const CASES: NamingCase[] = [
   // The role-bearing control is the tel input; its picker is named separately by
   // `country-label`, which is why a host `aria-label` must not land on both.
   { tag: 'mp-phone-input', target: 'input[type="tel"]', defaultName: 'Phone number', ownDescribedBy: true },
+  // Charts: the role-bearing node is the in-shadow tree/group/img container, and
+  // it only exists once there is data to draw.
+  {
+    tag: 'mp-hierarchy-chart',
+    target: '[role="tree"]',
+    setup: (host) => {
+      (host as HTMLElement & { data: unknown }).data = {
+        id: 'r', name: 'r', children: [{ id: 'a', name: 'a', value: 1 }],
+      };
+    },
+  },
+  {
+    tag: 'mp-trend-chart',
+    target: 'svg[role="group"]',
+    setup: (host) => {
+      (host as HTMLElement & { series: unknown }).series = [
+        { id: 's', label: 's', points: [{ x: 1, y: 1 }, { x: 2, y: 2 }] },
+      ];
+    },
+  },
+  {
+    tag: 'mp-sparkline',
+    target: 'svg[role="img"]',
+    // Data-derived default: "first, last, lowest, highest" of [1, 2, 3].
+    defaultName: '1, 3, 1, 3',
+    setup: (host) => {
+      (host as HTMLElement & { points: unknown }).points = [1, 2, 3];
+    },
+  },
 ];
 
-async function mount(html: string, tag: string, target: string): Promise<HTMLElement> {
+async function mount(
+  html: string,
+  tag: string,
+  target: string,
+  setup?: (host: HTMLElement) => void,
+): Promise<HTMLElement> {
   document.body.innerHTML = html;
   const host = document.querySelector(tag) as HTMLElement & { updateComplete?: Promise<unknown> };
+  setup?.(host);
   await host.updateComplete;
   const node = host.shadowRoot!.querySelector(target);
   expect(node, `${tag}: no ${target} in shadow root`).not.toBeNull();
   return node as HTMLElement;
 }
 
-describe.each(CASES)('$tag naming contract', ({ tag, target, extra, defaultName, ownDescribedBy }) => {
+describe.each(CASES)('$tag naming contract', ({ tag, target, extra, defaultName, ownDescribedBy, setup }) => {
   beforeEach(() => {
     document.body.innerHTML = '';
   });
@@ -89,7 +134,7 @@ describe.each(CASES)('$tag naming contract', ({ tag, target, extra, defaultName,
   const attrs = extra ?? '';
 
   it('applies input-label to the role-bearing node', async () => {
-    const node = await mount(`<${tag} ${attrs} input-label="Probe name"></${tag}>`, tag, target);
+    const node = await mount(`<${tag} ${attrs} input-label="Probe name"></${tag}>`, tag, target, setup);
     expect(node.getAttribute('aria-label')).toBe('Probe name');
   });
 
@@ -98,12 +143,13 @@ describe.each(CASES)('$tag naming contract', ({ tag, target, extra, defaultName,
       `<${tag} ${attrs} aria-label="From host" input-label="From property"></${tag}>`,
       tag,
       target,
+      setup,
     );
     expect(node.getAttribute('aria-label')).toBe('From host');
   });
 
   it(defaultName ? `defaults to "${defaultName}"` : 'invents no name', async () => {
-    const node = await mount(`<${tag} ${attrs}></${tag}>`, tag, target);
+    const node = await mount(`<${tag} ${attrs}></${tag}>`, tag, target, setup);
     if (defaultName) expect(node.getAttribute('aria-label')).toBe(defaultName);
     else expect(node.hasAttribute('aria-label')).toBe(false);
   });
@@ -113,6 +159,7 @@ describe.each(CASES)('$tag naming contract', ({ tag, target, extra, defaultName,
       `<span id="outer">Name</span><${tag} ${attrs} aria-labelledby="outer" aria-describedby="outer"></${tag}>`,
       tag,
       target,
+      setup,
     );
     expect(node.getAttribute('aria-labelledby')).toBeNull();
     // The host's IDREF must not appear inward. A component that describes its own
