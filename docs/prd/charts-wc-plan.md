@@ -171,10 +171,12 @@ Files: `charts/trend/src/components/mp-trend-chart.ts` (+aria.spec), `src/styles
 
 ## M9 — `mp-sparkline` [PRD §5.5]
 
-- [ ] Polyline + optional area + last dot; `role="img"` with generated
-      first/last/min/max summary (locale-formatted) or `label` override; css tokens; no tab stop.
-- [ ] `mp-sparkline.aria.spec.ts` (role + name only). Codegen-wc.
-- [ ] **Commit.**
+- [x] Polyline + optional area + last-value dot; null → gap (run split); `role="img"` with
+      generated locale-formatted "first, last, lowest, highest" name, `label`/
+      `summaryFormatter` overrides; no tab stop ever; `vector-effect: non-scaling-stroke` so
+      the stretched viewBox keeps a crisp line; flat-series and empty-series safe.
+- [x] 5 specs (role/name, overrides, gap+dot, area/empty, flat-no-NaN). Charts suite now
+      **76/76**; tsc clean. **Committed.**
 
 ## M10 — Wrappers + demo pages [PRD §5.7, §8]
 

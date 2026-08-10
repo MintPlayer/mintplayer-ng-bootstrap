@@ -1,0 +1,34 @@
+:host {
+  display: inline-block;
+  width: 8rem;
+  height: 2rem;
+  vertical-align: middle;
+
+  --mp-sparkline-stroke: var(--bs-primary, #0d6efd);
+  --mp-sparkline-fill: var(--bs-primary-bg-subtle, rgba(13, 110, 253, 0.15));
+  --mp-sparkline-dot-color: var(--bs-primary, #0d6efd);
+}
+
+svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.line {
+  fill: none;
+  stroke: var(--mp-sparkline-stroke);
+  stroke-width: 2;
+  stroke-linejoin: round;
+  stroke-linecap: round;
+  vector-effect: non-scaling-stroke;
+}
+
+.fill {
+  fill: var(--mp-sparkline-fill);
+  stroke: none;
+}
+
+.dot {
+  fill: var(--mp-sparkline-dot-color);
+}
