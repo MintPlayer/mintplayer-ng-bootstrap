@@ -147,28 +147,27 @@ Files: `charts/hierarchy/src/components/mp-hierarchy-chart.ts`,
 - [x] 3 new specs (busy/resolve, reject-once/retry, no-loader-leaf); charts suite **63/63**;
       tsc clean. **Committed.**
 
-## M6 — `mp-trend-chart` render + axes [PRD §5.4]
+## M6–M8 — `mp-trend-chart` (render + interaction + ARIA, one pass — single new file set)
 
-Files: `charts/trend/src/components/mp-trend-chart.ts`, `src/styles/trend-chart.styles.scss`.
+Files: `charts/trend/src/components/mp-trend-chart.ts` (+aria.spec), `src/styles/*.scss`.
 
-- [ ] SVG line/area generator over `series` (gaps at `y: null`), `stacked`, y domain
-      (pinned or auto+nice), grid + axis ticks from core scales, goal line + label.
-- [ ] SCSS tokens, `aspect-ratio: 16/9` host, reduced-motion. Codegen-wc. Verify in ng demo.
-- [ ] **Commit.**
-
-## M7 — Trend interaction [PRD §5.4]
-
-- [ ] Delegated pointermove → nearest-point crosshair + tooltip (all series at that x) +
-      `trend-point-hover`; click → `trend-point-select`.
-- [ ] **Commit.**
-
-## M8 — Trend ARIA + keyboard [PRD §6; S1-shaped]
-
-- [ ] `role="group"` + name + `summary`/`summaryFormatter`; focusable point markers with
-      per-point labels; roving tabindex (Left/Right point, Up/Down series, Home/End); drawn
-      focus marker; legend buttons with `aria-pressed` (if built-in — PRD §12.2).
-- [ ] `mp-trend-chart.aria.spec.ts`.
-- [ ] **Commit.**
+- [x] M6: line/area paths over `series` with gaps split by pointIndex continuity (nulls are
+      dropped before placement), `stacked` running-sum plotting (aligned-x assumption
+      documented), y domain pinned (`y-min`/`y-max`) or auto+nice incl. goal, grid + Intl y
+      ticks + calendar x ticks from core scales, dashed goal line + label, default 8-color
+      palette with per-series override. SCSS tokens, 16:9 host. NOTE: `transition-duration`
+      dropped from the trend API (codecov ships no trend animation; record in PRD as-built).
+- [x] M7: delegated pointermove → nearest-x crosshair + tooltip listing ALL series at that x
+      (`tooltipFormatter` override) + `trend-point-hover`; click/Enter/Space →
+      `trend-point-select`.
+- [x] M8: svg `role="group"` named via `input-label` (host aria-label wins) +
+      `summary`/`summaryFormatter` via same-tree `aria-describedby`; every decorative layer
+      aria-hidden; points are focusable `role="button"` circles ("Coverage, Jan 8, 2026, 72")
+      behind one roving tab stop — Left/Right walk the series, Up/Down jump to the nearest-x
+      point of the prev/next series, Home/End; drawn focus dot (fill + stroke, no outline);
+      roving stop survives data refresh by key. Built-in legend NOT shipped (PRD §12.2 →
+      demo-side; revisit on demand). **8/8 aria specs green; verified visually (gap, goal
+      line, two series, ticks) in the preview page. Committed.**
 
 ## M9 — `mp-sparkline` [PRD §5.5]
 
