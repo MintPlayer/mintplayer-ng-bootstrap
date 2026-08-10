@@ -479,6 +479,15 @@ Minor bumps: `@mintplayer/web-components` 2.10.0 → 2.11.0, `@mintplayer/ng-boo
   consumer precomputing folder metrics — codecov's visual result, honestly derived), and
   `squarifyLayout`'s `childPadding`/`childHeaderSpace` insets, which are what make a treemap
   branch readable as a labelled frame rather than an unlabelled pile of children.
+- **The M0 tsconfig glob was too broad and broke CI (caught only on a clean checkout).**
+  `*/*/index.ts`, added to reach `charts/<entry>/index.ts`, also matched the five SSR barrels
+  (`accordion/ssr/index.ts` and friends), pulling their `*-chrome.generated` imports into the
+  lib type-check for the first time. Those files are produced by `codegen-*-chrome`, which
+  `dependsOn` the WC build and therefore cannot exist during it — so the build failed with 8
+  TS2307s on a fresh checkout while passing locally, where stale generated files (or an Nx
+  cache hit) hid it. Now scoped to `charts/*`. Verified by diffing `tsc --listFilesOnly`
+  against master's config: **0 files lost, +25 gained, all under `charts/`**; SSR appears in
+  neither set, which is the pre-existing intent.
 - **Two registry gaps this work exposed and fixed**, neither about charts: the Vue conformance
   sweep globbed only `../*/src/*.vue`, so an entire namespace directory could have opted out of
   the `inheritAttrs`/`$attrs` invariant unseen; and the React and Vue vite configs never wrote

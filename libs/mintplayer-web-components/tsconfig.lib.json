@@ -12,8 +12,8 @@
     "src/**/*.ts",
     "*/src/**/*.ts",
     "*/index.ts",
-    "*/*/src/**/*.ts",
-    "*/*/index.ts"
+    "charts/*/src/**/*.ts",
+    "charts/*/index.ts"
   ],
   "exclude": [
     "vite.config.ts",
