@@ -350,7 +350,7 @@ directly on the SVG nodes.**
 | Surface | Name | Notes |
 |---|---|---|
 | prop | `series: TrendSeries[]` | Property-only |
-| attr,prop | `area` (`true`), `stacked` (`false`), `y-min`/`y-max` (auto+nice when unset), `goal`, `goal-label`, `transition-duration`, `locale` | |
+| attr,prop | `area` (`true`), `stacked` (`false`), `y-min`/`y-max` (auto+nice when unset), `goal`, `goal-label`, `locale` | No `transition-duration`: nothing animates (§13) |
 | attr | `input-label`, `summary` | `summary` = whole-chart description |
 | prop | `tooltipFormatter?`, `summaryFormatter?` | Strings |
 | events | `trend-point-hover` `{ seriesId, point } \| { point: null }`, `trend-point-select` `{ seriesId, point }` | |
@@ -362,7 +362,7 @@ directly on the SVG nodes.**
 |---|---|---|
 | prop | `points: (number \| null)[]` | Property-only; `null` = gap |
 | attr,prop | `area` (`false`), `show-last-dot` (`true`), `y-min`/`y-max`, `locale` | |
-| attr | `label` | Overrides the generated summary name |
+| attr | `input-label` | Overrides the generated summary name; a host `aria-label` wins over it |
 | prop | `summaryFormatter?: (points) => string` | |
 | css | `--mp-sparkline-stroke`, `-fill`, `-dot-color` | |
 
@@ -438,17 +438,50 @@ Minor bumps: `@mintplayer/web-components` 2.10.0 → 2.11.0, `@mintplayer/ng-boo
 22.13.0 → 22.14.0, `@mintplayer/react-bootstrap` 19.14.0 → 19.15.0, `@mintplayer/vue-bootstrap`
 3.15.0 → 3.16.0. New dependencies: **none** (D13).
 
-## 12. Open questions (non-blocking, verify during implementation)
+## 12. Open questions (resolved during implementation)
 
-1. Whether the hierarchy zoom-out control should be a `treeitem` for the parent or a labelled
-   `role="button"` outside the tree — decide in M4 against the S1 harness; both are valid ARIA
-   and Escape is unaffected either way.
-2. Trend legend: render one when `series.length > 1` or leave it to the page? Lean built-in
-   (buttons with `aria-pressed` toggling series visibility) — confirm when the demo takes shape.
-3. Whether `charts/core` should also export the sunburst label-transform helper publicly or keep
-   it hierarchy-internal.
+1. ~~Zoom-out control: `treeitem` for the parent, or a labelled `role="button"` outside the
+   tree?~~ **RESOLVED — button, outside the tree.** A `role="tree"` may only own
+   `treeitem`/`group` children, so a control inside it is invalid however it is labelled. All
+   three layouts now expose a real HTML `<button>` outside the tree container (sunburst: the
+   centre overlay; treemap: the breadcrumb header), `disabled` at the root. The icicle's focus
+   column stays a `tabindex="-1"` treeitem, which is the honest description of what it is.
+2. ~~Trend legend built-in or page-side?~~ **RESOLVED — page-side for now.** Nothing in the
+   demos needed series toggling, and a built-in legend would add a second focus model to a
+   component whose keyboard story is already the point. Revisit on request; the `series[].label`
+   and `color` are already public, so a page-side legend needs no new API.
+3. ~~Export the sunburst label-transform helper from `charts/core`?~~ **RESOLVED — yes**
+   (`arcLabelTransform` / `arcLabelVisible`), for the same reason the rest of `charts/core` is
+   public: a consumer hand-rolling a radial chart needs exactly these two.
 
-## 13. References
+## 13. As built (deviations and discoveries)
+
+- **`mp-trend-chart` has no `transition-duration`.** Nothing in it animates: codecov's trend
+  charts don't either, and a moving line under a crosshair is harder to read, not easier. The
+  hierarchy keeps its tween (rAF for the sunburst, CSS transitions for the div layouts).
+- **`mp-sparkline` names itself with `input-label`, not `label`** — forced by the naming
+  conformance registry (§10), and correctly so: one contract, every component. Precedence is
+  host `aria-label` > `input-label` > `summaryFormatter` > the generated summary.
+- **`charts/core` grew two things the design did not anticipate**, both because the first render
+  needed them: a `colorValues` rollup (a branch with no `colorValue` of its own inherits the
+  value-weighted mean of its children, so a coverage tree colours its folders without the
+  consumer precomputing folder metrics — codecov's visual result, honestly derived), and
+  `squarifyLayout`'s `childPadding`/`childHeaderSpace` insets, which are what make a treemap
+  branch readable as a labelled frame rather than an unlabelled pile of children.
+- **Two registry gaps this work exposed and fixed**, neither about charts: the Vue conformance
+  sweep globbed only `../*/src/*.vue`, so an entire namespace directory could have opted out of
+  the `inheritAttrs`/`$attrs` invariant unseen; and the React and Vue vite configs never wrote
+  subpath `exports` at all, so deep imports (`@mintplayer/react-bootstrap/accordion`) were
+  broken for published consumers and worked in-monorepo only through tsconfig wildcards (#383
+  fixed the WC lib and missed these two).
+- **The squarify worst-aspect number in the literature is layout-dependent.** Bruls et al.
+  report 2.5 for their example data; in a unit *square* the same data lands at 4.17 because the
+  final leftover cell fills the remainder exactly. Hand-verified before relaxing the spec bound.
+- **`role="none"` on the sunburst's centring `<g>`.** An unroled node between `role="tree"` and
+  its `treeitem`s is an `aria-required-parent` risk; the group only translates geometry, so
+  removing it from the accessibility tree is both the fix and the truth.
+
+## 14. References
 
 [gazebo SunburstChart.jsx](https://github.com/codecov/gazebo/blob/main/src/ui/SunburstChart/SunburstChart.jsx) ·
 [gazebo utils.js](https://github.com/codecov/gazebo/blob/main/src/ui/SunburstChart/utils.js) ·
