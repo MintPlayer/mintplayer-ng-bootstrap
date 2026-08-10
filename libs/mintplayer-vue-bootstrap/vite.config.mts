@@ -2,30 +2,13 @@
 import { defineConfig } from 'vite';
 import vue from '@vitejs/plugin-vue';
 import dts from 'vite-plugin-dts';
-import { readdirSync, existsSync, statSync } from 'node:fs';
-import { join, resolve } from 'node:path';
+import { resolve } from 'node:path';
 import { nxViteTsPaths } from '@nx/vite/plugins/nx-tsconfig-paths.plugin';
 import { nxCopyAssetsPlugin } from '@nx/vite/plugins/nx-copy-assets.plugin';
-/**
- * Discover every sub-entrypoint by scanning for `<entry>/src/index.ts`.
- * Mirrors @mintplayer/web-components + @mintplayer/react-bootstrap.
- */
-function discoverEntries(libRoot: string): Record<string, string> {
-  const entries: Record<string, string> = {};
+import { discoverEntries, generateSubpathExports } from '../../tools/vite/multi-entry.mts';
 
-  const primary = resolve(libRoot, 'src/index.ts');
-  if (existsSync(primary)) entries['index'] = primary;
-
-  for (const name of readdirSync(libRoot)) {
-    if (name.startsWith('.') || name === 'node_modules' || name === 'src' || name === 'dist') continue;
-    const subRoot = join(libRoot, name);
-    if (!statSync(subRoot).isDirectory()) continue;
-    const subIndex = join(subRoot, 'src', 'index.ts');
-    if (existsSync(subIndex)) entries[`${name}/index`] = subIndex;
-  }
-
-  return entries;
-}
+const entries = discoverEntries(import.meta.dirname);
+const outDir = resolve(import.meta.dirname, '../../dist/libs/mintplayer-vue-bootstrap');
 
 export default defineConfig(() => ({
   root: import.meta.dirname,
@@ -48,6 +31,7 @@ export default defineConfig(() => ({
       tsconfigPath: resolve(import.meta.dirname, 'tsconfig.lib.json'),
       pathsToAliases: false,
     }),
+    generateSubpathExports(outDir, import.meta.dirname, entries),
   ],
   /* Runtime half of the ARIA passthrough guard. _conformance/ has no
      src/index.ts, so entry discovery ignores it and it can never be published. */
@@ -66,7 +50,7 @@ export default defineConfig(() => ({
       transformMixedEsModules: true,
     },
     lib: {
-      entry: discoverEntries(import.meta.dirname),
+      entry: entries,
       formats: ['es' as const],
       fileName: (_format, entryName) => `${entryName}.mjs`,
     },
