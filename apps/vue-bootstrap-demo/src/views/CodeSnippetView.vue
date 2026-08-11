@@ -91,10 +91,10 @@ function onLineActivate(event: CustomEvent<{ line: number }>): void {
         Pass <code>theme</code> to pin it instead.
       </p>
       <div class="d-flex gap-3 flex-wrap">
-        <div class="flex-grow-1" data-bs-theme="light">
+        <div class="flex-grow-1 theme-pane" data-bs-theme="light">
           <BsCodeSnippet :code="SAMPLE_TS" language="ts" label="Light theme example" />
         </div>
-        <div class="flex-grow-1" data-bs-theme="dark">
+        <div class="flex-grow-1 theme-pane" data-bs-theme="dark">
           <BsCodeSnippet :code="SAMPLE_TS" language="ts" label="Dark theme example" />
         </div>
       </div>
@@ -127,6 +127,15 @@ function onLineActivate(event: CustomEvent<{ line: number }>): void {
 </template>
 
 <style scoped>
+/*
+  A snippet's min-content width is its longest line, and that propagates out of
+  the component. Without `min-width: 0` these flex items refuse to shrink below
+  it and push the whole page into horizontal scroll on a phone.
+*/
+.theme-pane {
+  min-width: 0;
+}
+
 /*
   Annotation colours belong to the consumer: `kind` is opaque, so the component
   ships no rule for it and `::part(annotation-<kind>)` is the channel.

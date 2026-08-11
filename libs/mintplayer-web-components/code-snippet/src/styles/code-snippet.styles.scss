@@ -24,7 +24,14 @@
 
 pre {
   margin: 0;
-  padding: 1rem 0;
+  // Asymmetric on purpose: the copy button is absolutely positioned over the
+  // top-right corner, so anything rendered there is underneath it. Measured at
+  // a 320px viewport it covered 29% of the visible code width — sitting
+  // directly on line 1. The extra block-start keeps the listing out from under
+  // it. Reserving the space is the only robust fix: the button is anchored to
+  // the HOST, so it stays over the same corner no matter how far the content is
+  // scrolled, and no amount of inline padding on a row can clear it.
+  padding: 2.25rem 0 1rem;
   overflow-x: auto;
   tab-size: 2;
   // Source code is LTR content — line numbers precede the line and indentation
@@ -43,14 +50,31 @@ pre {
 // cells, so the code text started at a different x depending on whether that
 // line happened to carry a label — measured at 60px / 94.2px / 104px on the
 // same snippet. One shared definition is the whole fix.
-// The mark floors live on the TRACKS, not on the marks. `ch` on an item
-// resolves against that item's own font-size, and the two marks are sized
-// differently — so an item-level `min-width: 3ch` silently gives them unequal
-// floors that move again whenever a font-size is retuned. On the track, `ch`
-// resolves against `code`'s font-size once, for both.
+//
+// Every track is `auto`: it collapses to 0px when nothing occupies it and sizes
+// to its content when something does. That is the whole requirement, and it is
+// why there are no `minmax()` floors here.
+//
+// There were, briefly. A floor is the obvious way to stop a one-character
+// label ("0") and a three-character one ("123x") giving different gutter
+// widths — but `minmax()` applies its floor to an EMPTY track too, so a
+// snippet using neither line numbers nor annotations reserved 46px it could
+// never use (13.5% of the component at a 390px viewport). Measured, the floor
+// was also barely doing its job: the secondary one never once applied
+// (`1/2` is 39.63px against a 23.09px floor), the primary bought 2.00px on
+// real labels, and it only steadied the 1->2 character band — beyond two
+// characters the column still shifts ~6.5px per character.
+//
+// Do NOT "fix" this with `fit-content(3ch)`, `min-content` or `minmax(0, auto)`
+// — all three measure byte-identical to plain `auto`, and `fit-content()` is a
+// ceiling, not a floor. Do not move a floor onto `.line-mark` either: `ch`
+// there resolves against the mark's own font-size and stacks on its padding
+// (27.61px where 23.09px was intended). If a floor is ever genuinely wanted,
+// it has to be gated per-track behind `:has()` — worked out in full in
+// code-snippet-viewer.md §15c.
 code {
   display: grid;
-  grid-template-columns: auto minmax(3ch, auto) minmax(3ch, auto) 1fr;
+  grid-template-columns: auto auto auto 1fr;
   font-family: inherit;
   font-size: 0.875rem;
   line-height: 1.5;
@@ -59,6 +83,15 @@ code {
   // As wide as the longest line, so a row's full-width background (annotation
   // or active line) paints across the whole scrollable width rather than
   // stopping at the viewport edge.
+  //
+  // CONSUMER TRAP: this makes the component's min-content contribution the
+  // width of its longest line, and that propagates OUTWARD. Put a snippet in a
+  // flex item that has not been given `min-width: 0` and the item refuses to
+  // shrink below the longest line — measured, that pushed the whole demo PAGE
+  // to 450px of horizontal scroll at a 320px viewport. The host's own
+  // `overflow: hidden` does not help: it is the flex ITEM's automatic minimum
+  // size that resolves against this, not the host's. Consumers wrapping a
+  // snippet in a flex row need `min-width: 0` on the wrapper.
   min-width: max-content;
 }
 
@@ -87,14 +120,18 @@ code {
 .line-text {
   grid-column: 4;
   white-space: pre;
-  padding-inline: 1rem;
+  // Leading only. A trailing inline padding buys nothing (no cell follows) and
+  // is a pure scrollWidth tax on a horizontally scrolling listing.
+  padding-inline: 1rem 0;
 }
 
 .line-number {
   grid-column: 1;
   box-sizing: content-box;
   min-width: 2.5ch;
-  padding-inline: 0.75rem;
+  // 0.375rem, not 0.75rem: at a 320px viewport the wider value was 24px, i.e.
+  // 55% of the line-number track itself, for whitespace around three digits.
+  padding-inline: 0.375rem;
   text-align: right;
   // Not selectable, so dragging across the code copies the source and not the
   // line numbers with it.
@@ -137,7 +174,7 @@ code {
 // would silently start interleaving "4×" and "1/2" into copied source, a
 // regression invisible in the layout and only observable in the copy string.
 .line-mark {
-  padding-inline-start: 0.5rem;
+  padding-inline-start: 0.375rem;
   text-align: right;
   user-select: none;
   font-size: 0.85em;
@@ -161,7 +198,7 @@ code {
 // background: ~1.1:1, and the label was simply invisible.
 .line-mark.secondary {
   grid-column: 3;
-  padding-inline-end: 0.75rem;
+  padding-inline-end: 0.375rem;
   color: var(--mp-code-mark-secondary, var(--mp-code-yellow));
   opacity: 0.9;
 }

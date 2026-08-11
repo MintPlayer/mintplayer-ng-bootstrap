@@ -87,10 +87,10 @@ export function CodeSnippetPage() {
           Pass <code>theme</code> to pin it instead.
         </p>
         <div className="d-flex gap-3 flex-wrap">
-          <div className="flex-grow-1" data-bs-theme="light">
+          <div className="flex-grow-1 theme-pane" data-bs-theme="light">
             <BsCodeSnippet code={SAMPLE_TS} language="ts" label="Light theme example" />
           </div>
-          <div className="flex-grow-1" data-bs-theme="dark">
+          <div className="flex-grow-1 theme-pane" data-bs-theme="dark">
             <BsCodeSnippet code={SAMPLE_TS} language="ts" label="Dark theme example" />
           </div>
         </div>

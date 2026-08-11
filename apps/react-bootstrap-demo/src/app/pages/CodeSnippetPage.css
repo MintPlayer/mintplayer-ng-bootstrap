@@ -18,3 +18,12 @@
 .coverage::part(annotation-uncovered) {
   background: rgb(220 53 69 / 16%);
 }
+
+/*
+  A snippet's min-content width is its longest line, and that propagates out of
+  the component. Without `min-width: 0` these flex items refuse to shrink below
+  it and push the whole page into horizontal scroll on a phone.
+*/
+.theme-pane {
+  min-width: 0;
+}

@@ -24,3 +24,12 @@
     background: rgb(220 53 69 / 16%);
   }
 }
+
+// A snippet's min-content width is its longest line, and that propagates out of
+// the component. Without `min-width: 0` these flex items refuse to shrink below
+// it and push the whole PAGE into horizontal scroll on a phone (measured: 450px
+// of body scroll at a 320px viewport). Any consumer putting a snippet in a flex
+// row needs this.
+.theme-pane {
+  min-width: 0;
+}
