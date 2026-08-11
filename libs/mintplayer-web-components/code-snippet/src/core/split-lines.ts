@@ -25,6 +25,22 @@ export function normalizeSource(source: string): string {
 }
 
 /**
+ * Escape source for rendering as-is.
+ *
+ * The element paints escaped plain text before the grammar has loaded (and if
+ * it never loads), and that text goes through the same `unsafeHTML` path as
+ * highlighted output — so it has to be escaped here rather than trusted.
+ */
+export function escapeHtml(source: string): string {
+  return source
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#x27;');
+}
+
+/**
  * Split highlight.js output into one well-formed HTML fragment per source
  * line. Concatenating the rows' text content reproduces the input text
  * exactly; every row is independently balanced.

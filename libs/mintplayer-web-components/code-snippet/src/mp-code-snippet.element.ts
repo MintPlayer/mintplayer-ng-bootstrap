@@ -1,10 +1,10 @@
 import { LitElement, html, nothing, type TemplateResult, type PropertyValues } from 'lit';
 import { property, state } from 'lit/decorators.js';
 import { unsafeHTML } from 'lit/directives/unsafe-html.js';
-import hljs from 'highlight.js/lib/common';
 import { hljsThemeStyles } from '../../_styles/hljs-theme.styles';
 import { codeSnippetStyles } from './styles';
-import { normalizeSource, splitHighlightedLines } from './core/split-lines';
+import { escapeHtml, normalizeSource, splitHighlightedLines } from './core/split-lines';
+import { highlight } from './core/highlighter';
 import type { CodeLineAnnotation } from './types';
 
 const TAG_NAME = 'mp-code-snippet';
@@ -111,6 +111,26 @@ export class MpCodeSnippet extends LitElement {
    *  quadratic on a file with an annotation per line. */
   private annotationsByLine = new Map<number, CodeLineAnnotation>();
 
+  /** Guards against an out-of-order highlight resolving over a newer one. */
+  private highlightToken = 0;
+
+  /** Settles when the in-flight highlight has been applied. */
+  private highlightPending: Promise<void> = Promise.resolve();
+
+  /**
+   * Keeps `await el.updateComplete` meaning what it has always meant: the
+   * rendered output is on screen. Highlighting now resolves a chunk load AFTER
+   * the first paint, so without this every consumer and every spec would have
+   * to know to await something extra.
+   */
+  protected override async getUpdateComplete(): Promise<boolean> {
+    await super.getUpdateComplete();
+    await this.highlightPending;
+    // Applying the highlight sets `lines`, scheduling one more update; await
+    // that one too so the highlighted DOM is what the caller observes.
+    return super.getUpdateComplete();
+  }
+
   override connectedCallback(): void {
     super.connectedCallback();
     // Initial slot content (when the element is parsed declaratively from
@@ -137,38 +157,55 @@ export class MpCodeSnippet extends LitElement {
     }
   }
 
+  /**
+   * Highlighting is asynchronous because the grammar is fetched on demand, so
+   * this paints escaped plain text FIRST and upgrades in place when the
+   * grammar lands. A block that flashes empty is worse than one that flashes
+   * unstyled, and if the grammar never arrives the plain text is the final,
+   * still-readable state rather than a blank box.
+   */
   private runHighlight(): void {
     const source = normalizeSource(this.code ?? '');
     if (!source) {
       this.lines = [];
-      this.detectedLanguage = 'code';
+      this.setDetectedLanguage('code');
       return;
     }
 
-    let result: { value: string; language?: string };
-    if (this.language) {
-      try {
-        result = hljs.highlight(source, { language: this.language, ignoreIllegals: true });
-      } catch {
-        // Unknown language id — fall back to auto-detect.
-        result = hljs.highlightAuto(source);
-      }
-    } else {
-      result = hljs.highlightAuto(source);
-    }
+    this.lines = splitHighlightedLines(escapeHtml(source));
 
-    this.lines = splitHighlightedLines(result.value);
-    const next = result.language ?? 'code';
-    if (next !== this.detectedLanguage) {
-      this.detectedLanguage = next;
-      this.dispatchEvent(
-        new CustomEvent<{ language: string }>('language-detected', {
-          detail: { language: next },
-          bubbles: true,
-          composed: true,
-        }),
-      );
-    }
+    // Only the newest request may write. Without this, a fast grammar
+    // resolving after a slow one would repaint with the previous source.
+    const token = ++this.highlightToken;
+    const language = this.language;
+
+    void highlight(source, language).then(({ value, language: resolved, load }) => {
+      if (token !== this.highlightToken) return;
+
+      if (load === 'unknown-language') {
+        console.warn(
+          `[mp-code-snippet] unknown language "${language}" — rendering as plain text. ` +
+            'Register it with registerLanguage() if it is outside the bundled set.',
+        );
+      } else if (load === 'load-failed') {
+        console.warn(`[mp-code-snippet] failed to load the grammar for "${language || 'auto'}".`);
+      }
+
+      if (value) this.lines = splitHighlightedLines(value);
+      this.setDetectedLanguage(resolved ?? 'code');
+    });
+  }
+
+  private setDetectedLanguage(next: string): void {
+    if (next === this.detectedLanguage) return;
+    this.detectedLanguage = next;
+    this.dispatchEvent(
+      new CustomEvent<{ language: string }>('language-detected', {
+        detail: { language: next },
+        bubbles: true,
+        composed: true,
+      }),
+    );
   }
 
   private async handleCopy(): Promise<void> {

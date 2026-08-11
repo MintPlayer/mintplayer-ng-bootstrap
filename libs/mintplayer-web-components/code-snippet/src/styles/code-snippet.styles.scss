@@ -43,6 +43,13 @@ code {
 }
 
 // One row per source line.
+//
+// Rows are flex, NOT a <table>. highlightjs-line-numbers.js (which
+// ngx-highlightjs wraps) builds a table, and its own source documents the
+// consequence: `getSelection().toString()` returns no line breaks, so it has
+// to install a global document `copy` listener and reconstruct the text by
+// hand. Block-level rows give correct copy output from the platform, with no
+// listener and nothing to reconstruct.
 .line {
   display: flex;
   width: 100%;
