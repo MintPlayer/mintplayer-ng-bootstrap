@@ -107,6 +107,8 @@ export class MpPhoneInput extends FormAssociatedMixin(LitElement) {
   /** Rules are fetched lazily; nothing loads until the field is interacted with
    *  or receives a non-empty initial value. */
   private _rulesWanted = false;
+  /** Settles when the in-flight rules chunk has been applied. */
+  private _rulesPending: Promise<void> = Promise.resolve();
   private _locale: string | null = null;
   private _preferred: string[] = [];
   private _only: string[] | null = null;
@@ -531,8 +533,26 @@ export class MpPhoneInput extends FormAssociatedMixin(LitElement) {
     this.#loadRules(this.country);
   }
 
+  /**
+   * `valid` is `undefined` until the selected country's rules have loaded, and
+   * loading is a lazy chunk — so without this, "the rules have landed" is not
+   * observable and callers (and tests) can only guess a timeout. Awaiting the
+   * in-flight load here makes `await el.updateComplete` mean what it says.
+   */
+  protected override async getUpdateComplete(): Promise<boolean> {
+    await super.getUpdateComplete();
+    await this._rulesPending;
+    // Applying the rules calls requestUpdate(), so wait for that render too.
+    return super.getUpdateComplete();
+  }
+
+  /**
+   * Assigned rather than fire-and-forget so `updateComplete` can await it —
+   * see `getUpdateComplete`. Without an observable settle, the only way to
+   * wait for rules is to guess a timeout, which is what made D17 flaky.
+   */
   #loadRules(iso2: string): void {
-    void loadPhoneRules(iso2).then((rules) => {
+    this._rulesPending = loadPhoneRules(iso2).then((rules) => {
       // A stale resolution (country changed while the chunk was in flight) must
       // not install the wrong country's rules.
       if (!rules || this.country !== iso2) return;

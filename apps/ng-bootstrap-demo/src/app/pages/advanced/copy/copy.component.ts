@@ -2,14 +2,13 @@ import { Component, ChangeDetectionStrategy} from '@angular/core';
 import { BsCodeSnippetComponent } from '@mintplayer/ng-bootstrap/code-snippet';
 import { BsCopyDirective } from '@mintplayer/ng-bootstrap/copy';
 import { BsOffcanvasHostComponent, BsOffcanvasContentDirective } from '@mintplayer/ng-bootstrap/offcanvas';
-import { HighlightModule } from 'ngx-highlightjs';
 import { dedent } from 'ts-dedent';
 
 @Component({
   selector: 'demo-copy',
   templateUrl: './copy.component.html',
   styleUrls: ['./copy.component.scss'],
-  imports: [BsCodeSnippetComponent, BsCopyDirective, BsOffcanvasHostComponent, BsOffcanvasContentDirective, HighlightModule],
+  imports: [BsCodeSnippetComponent, BsCopyDirective, BsOffcanvasHostComponent, BsOffcanvasContentDirective],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class CopyComponent {

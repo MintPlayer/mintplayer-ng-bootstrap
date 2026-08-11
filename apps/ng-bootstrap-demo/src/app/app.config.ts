@@ -3,7 +3,6 @@ import { ApplicationConfig, provideBrowserGlobalErrorListeners, provideZonelessC
 import { provideClientHydration, withEventReplay } from "@angular/platform-browser";
 import { provideAnimations } from "@angular/platform-browser/animations";
 import { PreloadAllModules, withPreloading, withInMemoryScrolling } from "@angular/router";
-import { provideHighlightOptions } from 'ngx-highlightjs';
 import ngBootstrapJson from '@mintplayer/ng-bootstrap/package.json';
 import { provideNavigationLock, provideNavigationLockRouter } from '@mintplayer/ng-bootstrap/navigation-lock';
 import { GIT_REPO } from "./providers/git-repo.provider";
@@ -35,10 +34,6 @@ export const config: ApplicationConfig = {
             }),
         ),
         provideNavigationLock(),
-        provideHighlightOptions({
-            fullLibraryLoader: () => import('highlight.js'),
-            themePath: 'a11y-dark.css'
-        }),
         { provide: GIT_REPO, useValue: 'https://github.com/MintPlayer/mintplayer-ng-bootstrap/tree/master/apps/ng-bootstrap-demo/src/app/' },
         { provide: BOOTSTRAP_VERSION, useValue: ngBootstrapJson.version },
     ]

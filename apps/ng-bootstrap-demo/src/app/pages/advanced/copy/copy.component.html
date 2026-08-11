@@ -9,14 +9,12 @@
 
 <div class="position-relative">
     <button [bsCopy]="codeToCopy" (bsCopied)="copiedHtml()" class="btn btn-link rounded-0 text-light position-absolute copy-btn">Copy html</button>
-    <pre class="white-space-normal">
-        <code class="d-block white-space-pre" [highlight]="codeToCopy" [language]="'html'"></code>
-    </pre>
+    <bs-code-snippet [code]="codeToCopy" [language]="'html'" [lineNumbers]="true"></bs-code-snippet>
     <p>You might also use the <a href="https://material.angular.io/cdk/clipboard/overview" target="_blank">&#64;angular/cdk</a> for this.</p>
     <bs-offcanvas [(isVisible)]="offcanvasVisible" [position]="'bottom'">
         <div *bsOffcanvasContent class="p-3 bg-dark text-light">Copied!</div>
     </bs-offcanvas>
 </div>
 
-<bs-code-snippet [codeToCopy]="snippetBasicHtml" [language]="'html'"></bs-code-snippet>
-<bs-code-snippet [codeToCopy]="snippetBasicTs" [language]="'ts'"></bs-code-snippet>
+<bs-code-snippet [code]="snippetBasicHtml" [language]="'html'"></bs-code-snippet>
+<bs-code-snippet [code]="snippetBasicTs" [language]="'ts'"></bs-code-snippet>

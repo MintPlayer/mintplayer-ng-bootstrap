@@ -5,6 +5,48 @@ package version aligns its major with the supported Angular major.
 
 ## [Unreleased]
 
+### Breaking
+
+- **`@mintplayer/ng-bootstrap/code-snippet`**: `[codeToCopy]` is renamed **`[code]`**, matching the
+  property it forwards to. **Migration**: rename the binding; nothing else about it changed.
+- **`@mintplayer/ng-bootstrap/code-snippet`**: `(lineActivate)` now emits the
+  `CustomEvent<{ line: number }>` rather than the bare line number, because the event is
+  `cancelable` and a consumer routing the activation themselves needs `preventDefault()` on it.
+  **Migration**: `$event.detail.line` for the number, and call `$event.preventDefault()` if you
+  handle the navigation. Vue's `@line-activate` changed the same way; React was already correct.
+- **`@mintplayer/web-components/code-snippet`**: the code block now follows the page's
+  `data-bs-theme` instead of being permanently dark. **Migration**: pass `theme="dark"` to keep the
+  old fixed-dark appearance; `theme="auto"` (the default) follows the page, `theme="light"` pins
+  light.
+- **`@mintplayer/web-components/code-snippet`**: highlighting is now **asynchronous** — only
+  highlight.js's core is loaded up front and the grammar is fetched on demand (53.7 KB gzip →
+  ~9–15 KB). The element paints escaped plain text immediately and upgrades in place.
+  `updateComplete` is overridden to await the highlight, so `await el.updateComplete` still means
+  "the output is on screen"; only code that reached inside the shadow root synchronously after a
+  property write needs to change.
+
+### Added
+
+- `@mintplayer/web-components/code-snippet`: `<mp-code-snippet>` becomes the workspace's code
+  **viewer** rather than only a snippet. Adds `line-numbers`, `start-line`, `wrap`, `theme`,
+  `annotations` (sparse per-line markers with an opaque `kind`, up to two gutter labels and a
+  screen-reader description), `active-line`, `lineHref`, `scrollToLine()`, a cancelable
+  `line-activate` event, and localisable `label` / `region-label` / `line-label` / `copied-label` /
+  `copied-announcement` / `keymap-hint`. Line links carry a roving tabindex, so a 2 000-line
+  listing is one tab stop rather than 2 000. Annotation colours are the consumer's:
+  each row is exposed as `::part(annotation-<kind>)` and the component ships no colour for any
+  kind. A fragment-only `lineHref` is resolved against the current URL, so the obvious `#L7`
+  cannot navigate away from an Angular route via `<base href>`. Wrapped for all three frameworks.
+- `@mintplayer/ng-bootstrap/code-snippet`: the Angular wrapper now forwards host `aria-*`, `role`,
+  `id` and `tabindex` onto the `mp-*` element, where they reach the accessibility tree.
+
+### Removed
+
+- **`ngx-highlightjs`** is gone from the workspace. The Angular demo had been loading the full
+  highlight.js library through it *in addition to* the copy the web component already carried,
+  plus a third copy of the a11y-dark theme as its own style bundle. `highlight.js` is now an
+  explicit dependency rather than a transitive one.
+
 ### Added
 
 - `@mintplayer/ng-bootstrap/file-manager`: new package. `<bs-file-manager>` + `<mp-file-manager>` provide a Syncfusion-style file-browser composing `mp-splitter` + `mp-treeview` (with `hide-borders`) + `mp-datatable`. v1 ships: tree + grid + breadcrumb navigation, single/multi selection (Ctrl/Shift modifiers), file operations (rename via F2, delete via Del, new folder via Ctrl+Shift+N, cut/copy/paste via Ctrl+X/C/V), search, sort, list/icons view-mode toggle, and an OS file-drop overlay (`[allowUpload]`) that emits an `(uploadRequest)` event with `File[]` + target folder. Consumer mutates `[nodes]` in response to `(operation)` events — the component never self-mutates. See issue #329.

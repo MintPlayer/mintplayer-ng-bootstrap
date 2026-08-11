@@ -20,6 +20,15 @@ axeAuditSuite(test, expect, [
       await page.locator('mp-phone-input').first().click();
     },
   },
+  {
+    // The React and Vue suites already audit their code-snippet pages; the ng
+    // one did not. Its page now carries the annotated/linked variant, which is
+    // the part with roles and names worth auditing.
+    path: '/advanced/code-snippet',
+    interact: async (page) => {
+      await page.locator('mp-code-snippet .line-number').first().waitFor();
+    },
+  },
   { path: '/basic/forms/checkbox' },
   { path: '/basic/forms/datepicker' },
   { path: '/basic/forms/datetime-picker' },

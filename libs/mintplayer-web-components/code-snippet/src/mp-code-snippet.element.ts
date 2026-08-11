@@ -1,7 +1,11 @@
-import { LitElement, html, css, type TemplateResult, unsafeCSS, type PropertyValues } from 'lit';
+import { LitElement, html, nothing, type TemplateResult, type PropertyValues } from 'lit';
 import { property, state } from 'lit/decorators.js';
 import { unsafeHTML } from 'lit/directives/unsafe-html.js';
-import hljs from 'highlight.js/lib/common';
+import { hljsThemeStyles } from '../../_styles/hljs-theme.styles';
+import { codeSnippetStyles } from './styles';
+import { escapeHtml, normalizeSource, splitHighlightedLines } from './core/split-lines';
+import { highlight } from './core/highlighter';
+import type { CodeLineAnnotation } from './types';
 
 const TAG_NAME = 'mp-code-snippet';
 
@@ -22,137 +26,34 @@ const TAG_NAME = 'mp-code-snippet';
  * - `language-detected` — fires after each highlight pass with
  *   `detail.language` containing the resolved language id (e.g. `"typescript"`).
  *
+ * - `theme` (optional): `auto` (default) follows the page's Bootstrap theme,
+ *   `light` / `dark` pin the palette regardless of the page.
+ *
  * a11y: the copy button announces success via an `aria-live="polite"`
  * region inside the shadow root.
  *
  * Source content can ALSO be projected via the default slot — useful for
  * static HTML pages where attribute serialization of newlines is awkward.
  * Slot content is read once on first render and on `slotchange`.
+ *
+ * No-JS tier: NONE. With scripting disabled this element renders an empty
+ * `<pre>` — the slot is hidden and only JS hoists its text into `code`. It
+ * ships no Declarative-Shadow-DOM chrome and is not part of the
+ * `codegen-ssr-chrome` aggregate.
  */
 export class MpCodeSnippet extends LitElement {
-  static override styles = css`
-    /* Verbatim port of highlight.js's a11y-dark.css — the same theme
-       the master branch's ngx-highlightjs setup loads for the Angular
-       demo. That theme has only a dark variant; the code-snippet
-       intentionally renders dark-on-light-page like in an IDE, so the
-       host's own background is fixed (no Bootstrap data-bs-theme
-       branch). Tokens not explicitly mapped (e.g. .hljs-attr inside
-       .hljs-tag) inherit from their parent, matching production. */
-    :host {
-      display: block;
-      position: relative;
-      font-family: var(--bs-font-monospace);
-      background: #2b2b2b;
-      color: #f8f8f2;
-      border: 1px solid var(--bs-border-color);
-      border-radius: var(--bs-border-radius);
-      overflow: hidden;
-    }
-
-    pre {
-      margin: 0;
-      padding: 1rem 1rem 1rem 1rem;
-      overflow-x: auto;
-      white-space: pre;
-      tab-size: 2;
-    }
-
-    code {
-      display: block;
-      font-family: inherit;
-      font-size: 0.875rem;
-      line-height: 1.5;
-      color: inherit;
-    }
-
-    .copy {
-      position: absolute;
-      top: 0.5rem;
-      right: 0.5rem;
-      padding: 0.25rem 0.75rem;
-      font-size: 0.75rem;
-      color: var(--bs-body-color);
-      background: var(--bs-body-bg);
-      border: 1px solid var(--bs-border-color);
-      border-radius: var(--bs-border-radius-sm);
-      cursor: pointer;
-      opacity: 0.85;
-      transition: opacity 120ms ease;
-    }
-
-    .copy:hover,
-    .copy:focus-visible {
-      opacity: 1;
-    }
-
-    .toast {
-      position: absolute;
-      bottom: 0.5rem;
-      right: 0.5rem;
-      padding: 0.25rem 0.75rem;
-      font-size: 0.75rem;
-      color: var(--bs-body-bg);
-      background: var(--bs-success);
-      border-radius: var(--bs-border-radius-sm);
-      opacity: 0;
-      transform: translateY(0.5rem);
-      transition: opacity 150ms ease, transform 150ms ease;
-      pointer-events: none;
-    }
-
-    .toast.visible {
-      opacity: 1;
-      transform: translateY(0);
-    }
-
-    .sr-only {
-      position: absolute;
-      width: 1px;
-      height: 1px;
-      padding: 0;
-      margin: -1px;
-      overflow: hidden;
-      clip: rect(0, 0, 0, 0);
-      white-space: nowrap;
-      border: 0;
-    }
-
-    /* Default slot is hidden; content is hoisted into the <code> on each render. */
-    slot { display: none; }
-
-    /* a11y-dark token to colour mapping. Selectors + colours are a 1:1
-       port of highlight.js's a11y-dark.css. Token classes the JSON
-       grammar emits (hljs-attr for keys, hljs-punctuation for braces /
-       colons) are added explicitly — without them, JSON would render as
-       mostly white text since attr / punctuation have no mapped ancestor
-       in JSON's parse tree to inherit from. */
-    /* Comment */
-    .hljs-comment, .hljs-quote { color: #d4d0ab; }
-    /* Red */
-    .hljs-variable, .hljs-template-variable, .hljs-tag, .hljs-name,
-    .hljs-selector-id, .hljs-selector-class, .hljs-regexp,
-    .hljs-deletion { color: #ffa07a; }
-    /* Orange */
-    .hljs-number, .hljs-built_in, .hljs-literal, .hljs-type,
-    .hljs-params, .hljs-meta, .hljs-link { color: #f5ab35; }
-    /* Yellow */
-    .hljs-attribute, .hljs-attr { color: #ffd700; }
-    /* Green */
-    .hljs-string, .hljs-symbol, .hljs-bullet,
-    .hljs-addition { color: #abe338; }
-    /* Muted (JSON punctuation — braces, brackets, commas, colons) */
-    .hljs-punctuation { color: #c8c8c2; }
-    /* Blue */
-    .hljs-title, .hljs-section { color: #00e0e0; }
-    /* Purple */
-    .hljs-keyword, .hljs-selector-tag { color: #dcc6e0; }
-    .hljs-emphasis { font-style: italic; }
-    .hljs-strong { font-weight: bold; }
-  `;
+  static override styles = [hljsThemeStyles, codeSnippetStyles];
 
   // No manual observedAttributes override needed: Lit's @property decorator
   // (with the default attribute: true) auto-registers 'language' and 'code'.
   @property({ type: String }) language = '';
+  /**
+   * Palette selection. `auto` inherits the page's `color-scheme` — which
+   * Bootstrap sets from `data-bs-theme` and which crosses the shadow boundary
+   * — so the default needs no wiring from the consumer. `light` / `dark`
+   * constrain `color-scheme` on the host instead of redeclaring any colour.
+   */
+  @property({ type: String, reflect: true }) theme: 'auto' | 'light' | 'dark' = 'auto';
   /**
    * Accessible name for the copy button. Category-2 default derived from the
    * detected language; override for localisation. The ${language} placeholder
@@ -161,11 +62,120 @@ export class MpCodeSnippet extends LitElement {
   @property({ type: String, attribute: 'copy-label' }) copyLabel = 'Copy ${language} code to clipboard';
   @property({ type: String }) code = '';
 
+  /** Show a line-number gutter. Off by default — a one-line install command
+   *  gains nothing from a `1` beside it. */
+  @property({ type: Boolean, attribute: 'line-numbers', reflect: true }) lineNumbers = false;
+  /** Number of the first rendered line, for excerpts lifted out of a file. */
+  @property({ type: Number, attribute: 'start-line' }) startLine = 1;
+  /** Wrap long lines instead of scrolling them horizontally. */
+  @property({ type: Boolean, reflect: true }) wrap = false;
+
+  /**
+   * Per-line markers. Sparse — most lines carry none. Property only: an array
+   * of objects has no sensible attribute form.
+   */
+  @property({ attribute: false }) annotations: CodeLineAnnotation[] = [];
+
+  /**
+   * The line drawn as current. Composes OVER an annotation rather than
+   * replacing it (an outline, not a background swap), because "which line am I
+   * looking at" and "what is the coverage of this line" are independent facts.
+   */
+  @property({ type: Number, attribute: 'active-line' }) activeLine: number | null = null;
+
+  /**
+   * Turns each line number into a real `<a href>`. Given as a function because
+   * only the consumer knows what a link to a line means in their app.
+   *
+   * The href buys the browser affordances a click handler cannot fake:
+   * middle-click, open-in-new-tab, copy-link-address, and a native link for the
+   * roving-focus layer to move between.
+   *
+   * It does NOT scroll to the line. A fragment cannot reach a row inside a
+   * shadow root — `document.getElementById('L7')` is null — so deep-linking
+   * means reading the fragment yourself on navigation and calling
+   * `scrollToLine()`.
+   *
+   * Returning a bare fragment (`#L7`) is safe: it is resolved against the
+   * current URL, not against `document.baseURI`. See `resolveLineHref`.
+   */
+  @property({ attribute: false }) lineHref: ((line: number) => string) | null = null;
+
+  /**
+   * Accessible name pattern for a line anchor; `${line}` is substituted.
+   * Localisable, because an accessible name that only exists as an English
+   * literal is a translation bug.
+   */
+  @property({ type: String, attribute: 'line-label' }) lineLabel = 'Line ${line}';
+
+  /**
+   * Accessible name for the code region. Defaults to a pattern derived from
+   * the detected language; set it when the page has several snippets and
+   * "typescript code sample" three times over is not navigable.
+   */
+  @property({ type: String }) label = '';
+
+  /** Region name pattern used when `label` is empty. `${language}` is substituted. */
+  @property({ type: String, attribute: 'region-label' }) regionLabel = '${language} code sample';
+
+  /** Visible confirmation in the toast after a successful copy. */
+  @property({ type: String, attribute: 'copied-label' }) copiedLabel = 'Copied!';
+
+  /** What a screen reader hears after a successful copy. */
+  @property({ type: String, attribute: 'copied-announcement' })
+  copiedAnnouncement = 'Copied to clipboard';
+
+  /**
+   * Keyboard help for the line-anchor list, exposed as the region's
+   * description so entering it reads the keymap once. Only rendered when
+   * `lineHref` makes the anchors exist.
+   */
+  @property({ type: String, attribute: 'keymap-hint' })
+  keymapHint =
+    'Use the up and down arrow keys to move between line links, Home and End for the first and last line.';
+
   @state() private detectedLanguage = 'code';
-  @state() private highlighted = '';
+  /** One highlighted HTML fragment per source line. */
+  @state() private lines: string[] = [];
   @state() private toastVisible = false;
+  /** Line whose anchor currently holds the roving tabindex. */
+  @state() private rovingLine: number | null = null;
 
   private toastTimer: ReturnType<typeof setTimeout> | null = null;
+
+  /** Rebuilt only when `annotations` changes — a per-row `.find()` would be
+   *  quadratic on a file with an annotation per line. */
+  private annotationsByLine = new Map<number, CodeLineAnnotation>();
+
+  /** Guards against an out-of-order highlight resolving over a newer one. */
+  private highlightToken = 0;
+
+  /**
+   * Explicit `label` wins; otherwise the pattern, so the region is never
+   * nameless. The keymap is NOT folded in here — it belongs to the
+   * description, and a name that grows a paragraph of help is unusable in a
+   * landmark list.
+   */
+  private get regionName(): string {
+    return this.label || this.regionLabel.replace('${language}', this.detectedLanguage);
+  }
+
+  /** Settles when the in-flight highlight has been applied. */
+  private highlightPending: Promise<void> = Promise.resolve();
+
+  /**
+   * Keeps `await el.updateComplete` meaning what it has always meant: the
+   * rendered output is on screen. Highlighting now resolves a chunk load AFTER
+   * the first paint, so without this every consumer and every spec would have
+   * to know to await something extra.
+   */
+  protected override async getUpdateComplete(): Promise<boolean> {
+    await super.getUpdateComplete();
+    await this.highlightPending;
+    // Applying the highlight sets `lines`, scheduling one more update; await
+    // that one too so the highlighted DOM is what the caller observes.
+    return super.getUpdateComplete();
+  }
 
   override connectedCallback(): void {
     super.connectedCallback();
@@ -188,40 +198,63 @@ export class MpCodeSnippet extends LitElement {
     if (changed.has('code') || changed.has('language')) {
       this.runHighlight();
     }
+    if (changed.has('annotations')) {
+      this.annotationsByLine = new Map((this.annotations ?? []).map((a) => [a.line, a]));
+    }
   }
 
+  /**
+   * Highlighting is asynchronous because the grammar is fetched on demand, so
+   * this paints escaped plain text FIRST and upgrades in place when the
+   * grammar lands. A block that flashes empty is worse than one that flashes
+   * unstyled, and if the grammar never arrives the plain text is the final,
+   * still-readable state rather than a blank box.
+   */
   private runHighlight(): void {
-    const source = this.code ?? '';
+    const source = normalizeSource(this.code ?? '');
     if (!source) {
-      this.highlighted = '';
-      this.detectedLanguage = 'code';
+      this.lines = [];
+      this.setDetectedLanguage('code');
       return;
     }
 
-    let result: { value: string; language?: string };
-    if (this.language) {
-      try {
-        result = hljs.highlight(source, { language: this.language, ignoreIllegals: true });
-      } catch {
-        // Unknown language id — fall back to auto-detect.
-        result = hljs.highlightAuto(source);
-      }
-    } else {
-      result = hljs.highlightAuto(source);
-    }
+    this.lines = splitHighlightedLines(escapeHtml(source));
 
-    this.highlighted = result.value;
-    const next = result.language ?? 'code';
-    if (next !== this.detectedLanguage) {
-      this.detectedLanguage = next;
-      this.dispatchEvent(
-        new CustomEvent<{ language: string }>('language-detected', {
-          detail: { language: next },
-          bubbles: true,
-          composed: true,
-        }),
-      );
-    }
+    // Only the newest request may write. Without this, a fast grammar
+    // resolving after a slow one would repaint with the previous source.
+    const token = ++this.highlightToken;
+    const language = this.language;
+
+    // Assigned, not fire-and-forget: `getUpdateComplete` awaits this, which is
+    // what keeps `await el.updateComplete` meaning "the highlighted output is
+    // on screen".
+    this.highlightPending = highlight(source, language).then(({ value, language: resolved, load }) => {
+      if (token !== this.highlightToken) return;
+
+      if (load === 'unknown-language') {
+        console.warn(
+          `[mp-code-snippet] unknown language "${language}" — rendering as plain text. ` +
+            'Register it with registerLanguage() if it is outside the bundled set.',
+        );
+      } else if (load === 'load-failed') {
+        console.warn(`[mp-code-snippet] failed to load the grammar for "${language || 'auto'}".`);
+      }
+
+      if (value) this.lines = splitHighlightedLines(value);
+      this.setDetectedLanguage(resolved ?? 'code');
+    });
+  }
+
+  private setDetectedLanguage(next: string): void {
+    if (next === this.detectedLanguage) return;
+    this.detectedLanguage = next;
+    this.dispatchEvent(
+      new CustomEvent<{ language: string }>('language-detected', {
+        detail: { language: next },
+        bubbles: true,
+        composed: true,
+      }),
+    );
   }
 
   private async handleCopy(): Promise<void> {
@@ -258,11 +291,199 @@ export class MpCodeSnippet extends LitElement {
         part="pre"
         tabindex="0"
         role="region"
-        aria-label="${this.detectedLanguage} code sample"
-      ><code part="code" class="hljs">${unsafeHTML(this.highlighted)}</code></pre>
-      <div class="toast ${this.toastVisible ? 'visible' : ''}" part="toast" aria-hidden="${!this.toastVisible}">Copied!</div>
-      <div class="sr-only" role="status" aria-live="polite">${this.toastVisible ? 'Copied to clipboard' : ''}</div>
+        aria-label="${this.regionName}"
+        aria-describedby="${this.lineHref ? 'keymap' : nothing}"
+      ><code part="code" class="hljs">${Array.from({ length: this.rowCount }, (_, i) =>
+          this.renderLine(i),
+        )}</code></pre>
+      ${this.lineHref
+        ? html`<div id="keymap" class="sr-only">${this.keymapHint}</div>`
+        : nothing}
+      <div class="toast ${this.toastVisible ? 'visible' : ''}" part="toast" aria-hidden="${!this.toastVisible}">${this.copiedLabel}</div>
+      <div class="sr-only" role="status" aria-live="polite">${this.toastVisible ? this.copiedAnnouncement : ''}</div>
     `;
+  }
+
+  /**
+   * Rows to render. Normally one per source line, but annotations may name
+   * lines beyond the source's extent — a coverage report for a file whose
+   * source could not be fetched still renders its full gutter — so the count
+   * is the larger of the two.
+   */
+  private get rowCount(): number {
+    const lastAnnotated = this.annotations.reduce((max, a) => Math.max(max, a.line), 0);
+    const fromAnnotations = lastAnnotated === 0 ? 0 : lastAnnotated - this.startLine + 1;
+    return Math.max(this.lines.length, fromAnnotations);
+  }
+
+  /** Scroll a line into view. A method, not a side effect of `activeLine`, so
+   *  re-requesting the line the user is already on still scrolls. */
+  scrollToLine(line: number): void {
+    this.renderRoot
+      ?.querySelector(`#L${line}`)
+      ?.scrollIntoView({ block: 'center', behavior: 'auto' });
+  }
+
+  /**
+   * A bare fragment resolves against `document.baseURI`, and every Angular app
+   * sets that to `/` with `<base href="/">` — so the obvious `#L7` means "the
+   * ROOT document, anchor L7" and navigates away from the current route
+   * entirely. Resolving it against the current URL here means the obvious thing
+   * is also the correct thing, instead of a trap each consumer has to be warned
+   * about.
+   *
+   * Absolute and path-relative hrefs are left exactly as given.
+   */
+  private resolveLineHref(href: string): string {
+    if (!href.startsWith('#') || typeof location === 'undefined') return href;
+    return `${location.pathname}${location.search}${href}`;
+  }
+
+  private onLineActivate(line: number, event: MouseEvent): void {
+    // A modified or non-primary click means "open this link somewhere else" and
+    // never "activate this line in this view", so it belongs entirely to the
+    // browser — same rule Angular's own RouterLink applies. Handling it here is
+    // what removes the need for a "prevent navigation" knob on the public API:
+    // no consumer, in any framework, can get this wrong.
+    if (event.button !== 0 || event.ctrlKey || event.metaKey || event.shiftKey || event.altKey) {
+      return;
+    }
+
+    const proceed = this.dispatchEvent(
+      new CustomEvent<{ line: number }>('line-activate', {
+        detail: { line },
+        bubbles: true,
+        composed: true,
+        cancelable: true,
+      }),
+    );
+    // A consumer that handles navigation itself cancels the event; the real
+    // href stays in the DOM either way so middle-click keeps working.
+    if (!proceed) event.preventDefault();
+  }
+
+  /**
+   * One row per line.
+   *
+   * Each cell is a DIRECT child of the row and is placed on a named column by
+   * the stylesheet, because the row is a `subgrid` of column tracks defined
+   * once on `code`. That is what keeps the code text in one vertical line
+   * whether or not a given row happens to carry a gutter label: a row missing a
+   * cell leaves that track empty instead of shifting everything left. Wrapping
+   * the two marks in a container would defeat it — the container would be one
+   * content-sized cell, and every row would size it differently.
+   *
+   * Written with no whitespace between the cells: under `white-space: pre` a
+   * whitespace-only text node between grid items does NOT collapse away and
+   * would become an anonymous item in its own track.
+   */
+  private renderLine(index: number): TemplateResult {
+    const number = this.startLine + index;
+    const annotation = this.annotationFor(number);
+    const active = this.activeLine === number;
+    const name = this.lineLabel.replace('${line}', String(number));
+
+    // `part` is the styling channel for annotations: `kind` is an opaque
+    // consumer string, so there is no rule this component could ship for it.
+    const parts = ['line', annotation?.kind ? `annotation-${annotation.kind}` : '', active ? 'active-line' : '']
+      .filter(Boolean)
+      .join(' ');
+
+    return html`<span
+      class="line${active ? ' active' : ''}${annotation ? ' annotated' : ''}"
+      part="${parts}"
+      id="L${number}"
+      title="${annotation?.description ?? nothing}"
+      >${this.lineNumbers ? this.renderGutter(number, name) : nothing}${annotation?.label !== undefined
+        ? html`<span class="line-mark" part="line-mark" aria-hidden="true">${annotation.label}</span>`
+        : nothing}${annotation?.secondaryLabel !== undefined
+        ? html`<span class="line-mark secondary" part="line-mark-secondary" aria-hidden="true"
+            >${annotation.secondaryLabel}</span
+          >`
+        : nothing}<span class="line-text" part="line-text">${unsafeHTML(this.lines[index] ?? '')}</span
+      >${annotation?.description
+        ? html`<span class="sr-only">${annotation.description}</span>`
+        : nothing}</span
+    >`;
+  }
+
+  /**
+   * The gutter is a real link when `lineHref` is set and inert text otherwise.
+   * Inert text is `aria-hidden`: an unlinked line number is decoration, and
+   * announcing "42" before every line would drown the code.
+   *
+   * The links carry a ROVING tabindex — exactly one is tabbable and the arrow
+   * keys move between them. A file view puts one anchor per line in the DOM,
+   * so without this a 2 000-line file would be 2 000 tab stops between the
+   * reader and the rest of the page.
+   */
+  private renderGutter(number: number, name: string): TemplateResult {
+    if (!this.lineHref) {
+      return html`<span class="line-number" part="line-number" aria-hidden="true">${number}</span>`;
+    }
+    return html`<a
+      class="line-number"
+      part="line-number"
+      href="${this.resolveLineHref(this.lineHref(number))}"
+      aria-label="${name}"
+      tabindex="${number === this.tabbableLine ? 0 : -1}"
+      @click=${(e: MouseEvent) => this.onLineActivate(number, e)}
+      @keydown=${(e: KeyboardEvent) => this.onGutterKeydown(number, e)}
+      >${number}</a
+    >`;
+  }
+
+  /**
+   * The single tabbable line link: wherever the user last was, else the active
+   * line, else the first. Landing on the active line means Tab reaches the
+   * line the consumer considers current rather than the top of a long file.
+   */
+  private get tabbableLine(): number {
+    return this.rovingLine ?? this.activeLine ?? this.startLine;
+  }
+
+  private onGutterKeydown(number: number, event: KeyboardEvent): void {
+    const first = this.startLine;
+    const last = this.startLine + this.rowCount - 1;
+
+    let next: number | null = null;
+    switch (event.key) {
+      case 'ArrowDown':
+        next = Math.min(number + 1, last);
+        break;
+      case 'ArrowUp':
+        next = Math.max(number - 1, first);
+        break;
+      case 'Home':
+        next = first;
+        break;
+      case 'End':
+        next = last;
+        break;
+      default:
+        return;
+    }
+
+    // Arrow keys would otherwise scroll the region out from under the focus
+    // we are about to move.
+    event.preventDefault();
+    if (next === number) return;
+    this.rovingLine = next;
+    void this.moveFocusToLine(next);
+  }
+
+  /**
+   * Focus follows the roving index by stable LINE NUMBER, never by DOM index:
+   * the rows are rebuilt on every highlight, and an index would land on
+   * whatever now occupies that position.
+   */
+  private async moveFocusToLine(line: number): Promise<void> {
+    await this.updateComplete;
+    this.renderRoot?.querySelector<HTMLElement>(`#L${line} a.line-number`)?.focus();
+  }
+
+  private annotationFor(line: number): CodeLineAnnotation | undefined {
+    return this.annotationsByLine.get(line);
   }
 
   private onSlotChange(e: Event): void {

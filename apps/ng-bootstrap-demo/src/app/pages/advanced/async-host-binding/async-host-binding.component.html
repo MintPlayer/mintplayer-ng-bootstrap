@@ -16,10 +16,10 @@
 
 <h2>How to do it</h2>
 <p>Declare a signal and call it from the <code>host</code> metadata:</p>
-<bs-code-snippet [codeToCopy]="signalHostExample" [language]="'ts'"></bs-code-snippet>
+<bs-code-snippet [code]="signalHostExample" [language]="'ts'"></bs-code-snippet>
 
 <p>For a value that arrives from an Observable, use <code>toSignal()</code> from <code>&#64;angular/core/rxjs-interop</code>:</p>
-<bs-code-snippet [codeToCopy]="toSignalExample" [language]="'ts'"></bs-code-snippet>
+<bs-code-snippet [code]="toSignalExample" [language]="'ts'"></bs-code-snippet>
 
 <bs-alert [type]="colors.success">
   No special provider is needed. Signals integrate natively with Angular's change detector, in both zone-based and

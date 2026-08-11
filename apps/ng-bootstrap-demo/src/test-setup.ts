@@ -16,18 +16,10 @@ global.ResizeObserver = class MockedResizeObserver {
   disconnect = vi.fn();
 };
 
-// Mock highlight.js at the window level to prevent "not imported" errors
-// This provides a minimal implementation that ngx-highlightjs can use
-(global as any).hljs = {
-  highlight: (code: string) => ({ value: code, language: 'plaintext' }),
-  highlightAuto: (code: string) => ({ value: code, language: 'plaintext' }),
-  highlightElement: () => {},
-  configure: () => {},
-  listLanguages: () => [],
-  getLanguage: () => undefined,
-  registerLanguage: () => {},
-  registerAliases: () => {},
-};
+// No global `hljs` stub any more: ngx-highlightjs is gone, and
+// <mp-code-snippet> imports highlight.js/lib/core as a module and fetches
+// grammars through its own generated loader map. Nothing reads window.hljs, so
+// a stub here would only mask a real regression.
 
 getTestBed().initTestEnvironment(
   BrowserTestingModule,

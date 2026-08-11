@@ -5,7 +5,6 @@ import { firstValueFrom } from 'rxjs';
 import { PaginationRequest, PaginationResponse } from '@mintplayer/pagination';
 import {
   BsDatatableComponent,
-  BsDatatableColumnDirective,
   BsRowTemplateDirective,
   BsDatatableFetch,
   DatatableSettings,
@@ -45,7 +44,7 @@ const SAVED_QUERIES_KEY = 'mp-qb-demo:savedQueries';
   styleUrls: ['./query-builder.component.scss'],
   imports: [
     BsQueryBuilderComponent, BsQueryBuilderEditorDirective,
-    BsDatatableComponent, BsDatatableColumnDirective, BsRowTemplateDirective,
+    BsDatatableComponent, BsRowTemplateDirective,
     FormsModule,
     BsCodeSnippetComponent,
   ],

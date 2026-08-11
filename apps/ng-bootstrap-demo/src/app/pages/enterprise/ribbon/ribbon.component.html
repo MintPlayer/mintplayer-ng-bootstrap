@@ -398,7 +398,7 @@
 
     <article class="snippet-card">
       <h4>1. Minimal ribbon — one tab, one group, three buttons</h4>
-      <bs-code-snippet [codeToCopy]="snippetMinimal" [language]="'html'"></bs-code-snippet>
+      <bs-code-snippet [code]="snippetMinimal" [language]="'html'"></bs-code-snippet>
       <p class="snippet-note">
         <code>[(minimized)]</code> two-way binds the minimize state — Ctrl+F1
         and double-clicking a tab will update your signal.
@@ -407,7 +407,7 @@
 
     <article class="snippet-card">
       <h4>2. Split-button with a "last-used" menu</h4>
-      <bs-code-snippet [codeToCopy]="snippetSplitButton" [language]="'html'"></bs-code-snippet>
+      <bs-code-snippet [code]="snippetSplitButton" [language]="'html'"></bs-code-snippet>
       <p class="snippet-note">
         The split-button never mutates its own label / icon. Implement the
         "last-used" pattern in your component by updating
@@ -417,7 +417,7 @@
 
     <article class="snippet-card">
       <h4>3. Value-bearing items with <code>[(ngModel)]</code></h4>
-      <bs-code-snippet [codeToCopy]="snippetValueItems" [language]="'html'"></bs-code-snippet>
+      <bs-code-snippet [code]="snippetValueItems" [language]="'html'"></bs-code-snippet>
       <p class="snippet-note">
         Every value-bearing wrapper (toggle-button, check-box, combo-box,
         color-picker, group-button) implements <code>ControlValueAccessor</code>
@@ -428,7 +428,7 @@
 
     <article class="snippet-card">
       <h4>4. Contextual tab set</h4>
-      <bs-code-snippet [codeToCopy]="snippetContextual" [language]="'html'"></bs-code-snippet>
+      <bs-code-snippet [code]="snippetContextual" [language]="'html'"></bs-code-snippet>
       <p class="snippet-note">
         Toggling <code>[hidden]</code> on the set fires
         <code>contextual-visibility-change</code>; the ribbon re-processes its
@@ -439,7 +439,7 @@
 
     <article class="snippet-card">
       <h4>5. Quick Access Toolbar (sibling, not nested)</h4>
-      <bs-code-snippet [codeToCopy]="snippetQat" [language]="'html'"></bs-code-snippet>
+      <bs-code-snippet [code]="snippetQat" [language]="'html'"></bs-code-snippet>
       <p class="snippet-note">
         The QAT is deliberately rendered as a sibling — two top-level
         <code>role="toolbar"</code> regions keep the a11y tree flat.
@@ -449,7 +449,7 @@
 
     <article class="snippet-card">
       <h4>6. Per-app appearance + dark mode</h4>
-      <bs-code-snippet [codeToCopy]="snippetTheming" [language]="'html'"></bs-code-snippet>
+      <bs-code-snippet [code]="snippetTheming" [language]="'html'"></bs-code-snippet>
       <p class="snippet-note">
         <code>version</code> picks one of <code>office-2007</code> /
         <code>2010</code> / <code>2013</code> / <code>2016</code>.
@@ -463,7 +463,7 @@
 
     <article class="snippet-card">
       <h4>7. Slot-based icons (FR-16)</h4>
-      <bs-code-snippet [codeToCopy]="snippetSlotIcons" [language]="'html'"></bs-code-snippet>
+      <bs-code-snippet [code]="snippetSlotIcons" [language]="'html'"></bs-code-snippet>
       <p class="snippet-note">
         Every item exposes a <code>&lt;slot name="icon"&gt;</code> alongside
         the existing <code>icon</code> string attribute. The host's

@@ -93,9 +93,20 @@ test.describe('tooltip — keyboard focus shows it (C6 focusin parity)', () => {
     await page.goto('/overlays/tooltip');
     await page.waitForLoadState('networkidle');
     const trigger = page.getByRole('button', { name: /left/i }).first();
-    await trigger.focus();
-    await page.waitForTimeout(300);
-    await expect(page.locator('.tooltip, [role="tooltip"]').first()).toBeVisible();
+    const tooltip = page.locator('.tooltip, [role="tooltip"]').first();
+    // `networkidle` is not "Angular has finished bootstrapping". This demo
+    // bootstraps DESTRUCTIVELY (no provideClientHydration), so the SSR'd button
+    // is thrown away and rebuilt; a focus taken a moment too early lands on the
+    // doomed node, and because the tooltip opens on `focusin` — a one-shot
+    // event, unlike a click or a keypress the test could repeat — nothing ever
+    // re-fires and the wait can only time out. Every other spec here survives
+    // the same window because it acts again after focusing.
+    // Re-focus until it takes. The invariant under test is unchanged: focus,
+    // and only focus, must reveal the tooltip.
+    await expect(async () => {
+      await trigger.focus();
+      await expect(tooltip).toBeVisible({ timeout: 1_000 });
+    }).toPass({ timeout: 15_000 });
   });
 });
 
