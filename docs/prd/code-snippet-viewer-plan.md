@@ -1,22 +1,31 @@
 # Plan — `mp-code-snippet` becomes the code viewer
 
 PRD: [code-snippet-viewer.md](./code-snippet-viewer.md)
-Status: **Not started** (2026-08-11). No branch, no PR — neither will be created without explicit
-permission.
+Status: **Implemented** (2026-08-11) on `feat/code-snippet-viewer`. All milestones done and the
+M9 sweep is green locally.
 
-| Milestone | Scope | Gate |
+| Milestone | Scope | State |
 |---|---|---|
-| S | Five spikes (S1–S5) | S1 + S2 must pass before M3 / M2 respectively |
-| M0 | Styles → `.styles.scss` + `_styles/` share, no behaviour change | `tsc --noEmit` |
-| M1 | `split-lines.ts` pure core + specs | specs green (targeted, one run) |
-| M2 | Row-based renderer, line numbers, `theme` | reading + type-check |
-| M3 | Theming palettes (light + dark) via S1's mechanism | visual check in demos |
-| M4 | Annotations, active line, `lineHref`, `line-activate` | reading + type-check |
-| M5 | Lazy hljs: generated alias-aware loader map + async pipeline | budget guard passes |
-| M6 | a11y: roving tabindex, naming, localisation + aria specs | specs green |
-| M7 | Wrappers ×3 + `codeToCopy`→`code` rename (332 sites) | build ×4 |
-| M8 | Demo pages ×3, axe routes, ngx-highlightjs purge | e2e |
-| M9 | Single verification sweep + handoff reply to CodeCoverage | full CI |
+| S | Spikes S1–S3 | ✅ all pass — S1 Chromium-only (§14.1), S4/S5 folded into the sweep |
+| M0+M3 | Styles → `.styles.scss` + shared `_styles/hljs-theme`, light/dark palette | ✅ merged: the palette *is* the theming, so splitting them would have written the dark-only version twice |
+| M1 | `split-lines.ts` pure core + specs | ✅ |
+| M2 | Row-based renderer, line numbers, `wrap`, `start-line` | ✅ |
+| M4 | Annotations, active line, `lineHref`, `line-activate`, `scrollToLine` | ✅ |
+| M5 | Lazy hljs: 104-key alias-aware loader map + async pipeline + guard | ✅ 53.7 → ~9–15 KB gzip |
+| M6 | Roving tabindex, naming, localisation; aria spec 12 → 40 tests | ✅ |
+| M7 | Wrappers ×3 + `codeToCopy`→`code` (332 sites) | ✅ |
+| M8 | Demo pages ×3, ng axe route, ngx-highlightjs purge | ✅ |
+| M9 | Sweep | ✅ 4 builds, 1898 WC tests, 164+93 Angular suites, 3 axe gates (40+44+44), dock e2e |
+
+Two fixes the sweep caught, both committed:
+- `highlightPending` was created fire-and-forget, so the `getUpdateComplete` override awaited
+  nothing and six aria assertions read a stale `detectedLanguage`.
+- `mp-phone-input`'s D17 flake (pre-existing on master, confirmed on a clean checkout) — same
+  defect class, fixed the same way. Picked up at the user's request.
+
+**Not verified locally:** Firefox and WebKit. The installed engine builds predate the Playwright
+driver and downloading matching browsers was declined, so those projects fail to launch here.
+CI covers them.
 
 ## Conventions that bite here
 

@@ -1,6 +1,9 @@
 # PRD — `mp-code-snippet` becomes the code **viewer**: line rendering, theming, lazy highlighting
 
-Status: **Proposal** (2026-08-11)
+Status: **Implemented** (2026-08-11) on `feat/code-snippet-viewer`; M9 sweep green locally
+(4 builds, 1898 web-component tests, 164+93 Angular suites, 3 axe gates, dock e2e). Firefox and
+WebKit are unverified locally — the installed engine builds predate the Playwright driver — so CI
+is the first run that covers them.
 Author: Pieterjan — investigation by a 5-agent team (code-snippet surface + consumers, WC
 codegen infrastructure, the CodeCoverage consumer, highlight.js packaging/theming, and the
 reported `bs-progress-bar` bug).
