@@ -100,10 +100,38 @@ export class MpCodeSnippet extends LitElement {
    */
   @property({ type: String, attribute: 'line-label' }) lineLabel = 'Line ${line}';
 
+  /**
+   * Accessible name for the code region. Defaults to a pattern derived from
+   * the detected language; set it when the page has several snippets and
+   * "typescript code sample" three times over is not navigable.
+   */
+  @property({ type: String }) label = '';
+
+  /** Region name pattern used when `label` is empty. `${language}` is substituted. */
+  @property({ type: String, attribute: 'region-label' }) regionLabel = '${language} code sample';
+
+  /** Visible confirmation in the toast after a successful copy. */
+  @property({ type: String, attribute: 'copied-label' }) copiedLabel = 'Copied!';
+
+  /** What a screen reader hears after a successful copy. */
+  @property({ type: String, attribute: 'copied-announcement' })
+  copiedAnnouncement = 'Copied to clipboard';
+
+  /**
+   * Keyboard help for the line-anchor list, exposed as the region's
+   * description so entering it reads the keymap once. Only rendered when
+   * `lineHref` makes the anchors exist.
+   */
+  @property({ type: String, attribute: 'keymap-hint' })
+  keymapHint =
+    'Use the up and down arrow keys to move between line links, Home and End for the first and last line.';
+
   @state() private detectedLanguage = 'code';
   /** One highlighted HTML fragment per source line. */
   @state() private lines: string[] = [];
   @state() private toastVisible = false;
+  /** Line whose anchor currently holds the roving tabindex. */
+  @state() private rovingLine: number | null = null;
 
   private toastTimer: ReturnType<typeof setTimeout> | null = null;
 
@@ -113,6 +141,16 @@ export class MpCodeSnippet extends LitElement {
 
   /** Guards against an out-of-order highlight resolving over a newer one. */
   private highlightToken = 0;
+
+  /**
+   * Explicit `label` wins; otherwise the pattern, so the region is never
+   * nameless. The keymap is NOT folded in here — it belongs to the
+   * description, and a name that grows a paragraph of help is unusable in a
+   * landmark list.
+   */
+  private get regionName(): string {
+    return this.label || this.regionLabel.replace('${language}', this.detectedLanguage);
+  }
 
   /** Settles when the in-flight highlight has been applied. */
   private highlightPending: Promise<void> = Promise.resolve();
@@ -242,12 +280,16 @@ export class MpCodeSnippet extends LitElement {
         part="pre"
         tabindex="0"
         role="region"
-        aria-label="${this.detectedLanguage} code sample"
+        aria-label="${this.regionName}"
+        aria-describedby="${this.lineHref ? 'keymap' : nothing}"
       ><code part="code" class="hljs">${Array.from({ length: this.rowCount }, (_, i) =>
           this.renderLine(i),
         )}</code></pre>
-      <div class="toast ${this.toastVisible ? 'visible' : ''}" part="toast" aria-hidden="${!this.toastVisible}">Copied!</div>
-      <div class="sr-only" role="status" aria-live="polite">${this.toastVisible ? 'Copied to clipboard' : ''}</div>
+      ${this.lineHref
+        ? html`<div id="keymap" class="sr-only">${this.keymapHint}</div>`
+        : nothing}
+      <div class="toast ${this.toastVisible ? 'visible' : ''}" part="toast" aria-hidden="${!this.toastVisible}">${this.copiedLabel}</div>
+      <div class="sr-only" role="status" aria-live="polite">${this.toastVisible ? this.copiedAnnouncement : ''}</div>
     `;
   }
 
@@ -331,6 +373,11 @@ export class MpCodeSnippet extends LitElement {
    * The gutter is a real link when `lineHref` is set and inert text otherwise.
    * Inert text is `aria-hidden`: an unlinked line number is decoration, and
    * announcing "42" before every line would drown the code.
+   *
+   * The links carry a ROVING tabindex — exactly one is tabbable and the arrow
+   * keys move between them. A file view puts one anchor per line in the DOM,
+   * so without this a 2 000-line file would be 2 000 tab stops between the
+   * reader and the rest of the page.
    */
   private renderGutter(number: number, name: string): TemplateResult {
     if (!this.lineHref) {
@@ -341,9 +388,60 @@ export class MpCodeSnippet extends LitElement {
       part="line-number"
       href="${this.lineHref(number)}"
       aria-label="${name}"
+      tabindex="${number === this.tabbableLine ? 0 : -1}"
       @click=${(e: Event) => this.onLineActivate(number, e)}
+      @keydown=${(e: KeyboardEvent) => this.onGutterKeydown(number, e)}
       >${number}</a
     >`;
+  }
+
+  /**
+   * The single tabbable line link: wherever the user last was, else the active
+   * line, else the first. Landing on the active line means Tab reaches the
+   * line the consumer considers current rather than the top of a long file.
+   */
+  private get tabbableLine(): number {
+    return this.rovingLine ?? this.activeLine ?? this.startLine;
+  }
+
+  private onGutterKeydown(number: number, event: KeyboardEvent): void {
+    const first = this.startLine;
+    const last = this.startLine + this.rowCount - 1;
+
+    let next: number | null = null;
+    switch (event.key) {
+      case 'ArrowDown':
+        next = Math.min(number + 1, last);
+        break;
+      case 'ArrowUp':
+        next = Math.max(number - 1, first);
+        break;
+      case 'Home':
+        next = first;
+        break;
+      case 'End':
+        next = last;
+        break;
+      default:
+        return;
+    }
+
+    // Arrow keys would otherwise scroll the region out from under the focus
+    // we are about to move.
+    event.preventDefault();
+    if (next === number) return;
+    this.rovingLine = next;
+    void this.moveFocusToLine(next);
+  }
+
+  /**
+   * Focus follows the roving index by stable LINE NUMBER, never by DOM index:
+   * the rows are rebuilt on every highlight, and an index would land on
+   * whatever now occupies that position.
+   */
+  private async moveFocusToLine(line: number): Promise<void> {
+    await this.updateComplete;
+    this.renderRoot?.querySelector<HTMLElement>(`#L${line} a.line-number`)?.focus();
   }
 
   private annotationFor(line: number): CodeLineAnnotation | undefined {
