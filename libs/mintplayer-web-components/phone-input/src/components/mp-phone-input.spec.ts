@@ -30,15 +30,11 @@ function type(el: MpPhoneInput, nextValue: string, caret?: number): void {
 }
 
 async function withRules(el: MpPhoneInput): Promise<void> {
-  // First interaction wants the rules; poll rather than sleep — the first
-  // dynamic import of libphonenumber's core is slow under a loaded runner.
+  // The first interaction is what asks for the rules. `updateComplete` awaits
+  // the lazy chunk (the element assigns it to `_rulesPending`), so this needs
+  // neither a sleep nor a poll — however slow the runner is.
   telInput(el).dispatchEvent(new Event('focus'));
-  for (let i = 0; i < 200 && el.valid === undefined; i++) {
-    type(el, '1');
-    type(el, '');
-    if (el.valid !== undefined) break;
-    await new Promise((r) => setTimeout(r, 25));
-  }
+  type(el, '1');
   type(el, '');
   await el.updateComplete;
 }
@@ -150,7 +146,8 @@ describe('mp-phone-input', () => {
     expect(el.valid).toBe(true);
 
     el.country = 'nl';
-    await new Promise((r) => setTimeout(r, 50));
+    // No sleep: updateComplete awaits NL's rules chunk, so this is
+    // deterministic however slow the runner is.
     await el.updateComplete;
     // Digits survived the switch; validity legitimately flipped; E.164 is NL's.
     expect(el.nationalNumber).toBe('470123456');
@@ -166,7 +163,7 @@ describe('mp-phone-input', () => {
     // 7400 sits in no +44 area-code list; 7911 would legitimately resolve to
     // Guernsey (gg enumerates it), which a first draft of this spec got wrong.
     type(el, '+44 7400 123456');
-    await new Promise((r) => setTimeout(r, 50));
+    await el.updateComplete;
     expect(el.country).toBe('gb');
     expect(el.nationalNumber).toBe('7400123456');
     expect(detail?.country).toBe('gb');
