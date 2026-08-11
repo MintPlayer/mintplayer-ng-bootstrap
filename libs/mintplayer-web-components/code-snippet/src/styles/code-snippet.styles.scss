@@ -5,14 +5,28 @@
 // Bootstrap utility classes and reboot defaults do not cross the shadow
 // boundary, so every rule needed here is declared here.
 
+// A flex COLUMN, not a plain block, so the listing can be given a height.
+//
+// `pre` is the only in-flow child (the copy button, toast and sr-only nodes are
+// absolutely positioned), and as a flex item with `min-height: 0` it shrinks to
+// whatever height the host is given and scrolls the overflow. As a plain block
+// it kept its content height instead, so a consumer writing
+// `height: 160px` got 283px of code clipped by the `overflow: hidden` below —
+// silently unreachable, with `scrollTop` pinned at 0.
+//
+// Unconstrained the behaviour is unchanged: the single flex item takes its
+// natural height and the host grows with it.
 :host {
-  display: block;
+  display: flex;
+  flex-direction: column;
   position: relative;
   font-family: var(--bs-font-monospace);
   background: var(--mp-code-bg);
   color: var(--mp-code-fg);
   border: 1px solid var(--bs-border-color);
   border-radius: var(--bs-border-radius);
+  // Keeps the rounded corners clipping the listing. The scrolling happens on
+  // `pre`, so this no longer hides anything the user cannot reach.
   overflow: hidden;
 }
 
@@ -32,7 +46,14 @@ pre {
   // the HOST, so it stays over the same corner no matter how far the content is
   // scrolled, and no amount of inline padding on a row can clear it.
   padding: 2.25rem 0 1rem;
-  overflow-x: auto;
+  // Both axes: x for long lines, y for a host that has been given a height or
+  // a max-height. `min-height: 0` is what actually lets it shrink — a flex
+  // item's automatic minimum size is its CONTENT height, so without it the
+  // listing would refuse to get shorter than the code and there would be
+  // nothing to scroll.
+  overflow: auto;
+  flex: 1 1 auto;
+  min-height: 0;
   tab-size: 2;
   // Source code is LTR content — line numbers precede the line and indentation
   // is on the left — so the listing stays LTR even inside dir="rtl". Without

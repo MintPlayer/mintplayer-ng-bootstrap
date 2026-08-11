@@ -27,3 +27,8 @@
 .theme-pane {
   min-width: 0;
 }
+
+/* @lit/react roots at the custom element, so this reaches the part that scrolls. */
+.sized-snippet {
+  max-height: 220px;
+}

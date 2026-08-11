@@ -54,3 +54,20 @@
 ></bs-code-snippet>
 <bs-code-snippet [code]="snippetAnnotations" [language]="'html'"></bs-code-snippet>
 <bs-code-snippet [code]="snippetAnnotationsTs" [language]="'ts'"></bs-code-snippet>
+
+<h2>Constrained size</h2>
+<p>
+    Give the component a <code>height</code> or <code>max-height</code> and the listing
+    scrolls vertically inside it; constrain the width and long lines scroll horizontally.
+    Both scrollbars belong to the code area, so the copy button and the line-number gutter
+    stay put while you scroll.
+</p>
+<bs-code-snippet
+    class="sized-snippet"
+    [code]="html"
+    [language]="'html'"
+    [lineNumbers]="true"
+    [label]="'Height-constrained example'"
+></bs-code-snippet>
+<bs-code-snippet [code]="snippetSized" [language]="'html'"></bs-code-snippet>
+<bs-code-snippet [code]="snippetSizedCss" [language]="'css'"></bs-code-snippet>

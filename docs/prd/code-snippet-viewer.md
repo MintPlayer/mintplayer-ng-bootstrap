@@ -1,8 +1,8 @@
 # PRD — `mp-code-snippet` becomes the code **viewer**: line rendering, theming, lazy highlighting
 
 Status: **Implemented** (2026-08-11) on `feat/code-snippet-viewer`, PR #402, through three rounds:
-the original M0–M9 build, the M10 review fixes (§15b, R1–R5) and the M11 narrow-viewport fixes
-(§15c, R6–R9). Suites green locally: 4 builds, 1908 web-component tests, 164 + 93 Angular suites,
+the original M0–M9 build, the M10 review fixes (§15b, R1–R5), the M11 narrow-viewport fixes
+(§15c, R6–R9) and the M12 constrained-size fix (§15d, R10). Suites green locally: 4 builds, 1908 web-component tests, 164 + 93 Angular suites,
 3 axe gates, dock e2e. Package versions bumped one minor each — web-components 2.12.0,
 ng-bootstrap 22.15.0, react-bootstrap 19.16.0, vue-bootstrap 3.17.0.
 
@@ -923,6 +923,41 @@ description — width-gating would split the visual and AT channels by viewport.
 use, 20px of its 39.63px is padding, so R7's tightening is the right lever. Note also that
 `:has()` gates on presence, so a snippet where a single row carries a ratio still reserves the
 full track for all rows; that is correct (the column is genuinely in use) but worth knowing.
+
+## 15d. Constrained size (R10) — applied
+
+Asked after R6–R9: can a consumer cap the component's height or width, and does it scroll?
+
+**It did not, and it lost code.** Measured with `height: 160px` on the element: `pre` kept its
+283px content height, `scrollTop` stayed pinned at **0**, and the host's `overflow: hidden` clipped
+the remaining 123px away with no scrollbar — silently unreachable, not merely ugly. Width was
+already fine (long lines scrolled horizontally).
+
+Cause: `pre` was a plain block in a plain block host, so nothing made it shrink to a constrained
+host. Fix, in two places:
+
+- **The element** becomes a flex column and `pre` a flex item with `overflow: auto` (both axes),
+  `flex: 1 1 auto` and — the load-bearing part — `min-height: 0`. A flex item's automatic minimum
+  size is its *content* height, so without that it refuses to get shorter than the code and there
+  is nothing to scroll. `pre` is the only in-flow child (button, toast and sr-only nodes are
+  absolutely positioned), so unconstrained behaviour is unchanged: the single item takes its
+  natural height and the host grows.
+- **The Angular wrapper** becomes a flex column too, with the `mp-*` element filling it. Otherwise
+  a `height`/`max-height` set on `<bs-code-snippet>` stopped at that host and the element kept its
+  content height — the same wrapper-transparency problem as `::part()` and host `aria-*`. React and
+  Vue need nothing: both put the consumer's class straight on the custom element. This replaces the
+  wrapper's `class="d-block"` with an equivalent `:host { display: flex }`.
+
+Measured after, on the element: `height: 160px` → `pre` 158px tall over 283px of content, scrolls
+to a bottom where the last line is fully visible; `max-height: 200px` behaves the same;
+`width: 300px` still scrolls horizontally and leaves the height alone. On the Angular wrapper:
+`max-height: 220px` reaches the element (both 220px) and scrolls.
+
+The gutter stays put horizontally (it is `position: sticky; left: 0`) and scrolls with the rows
+vertically, which is correct — a line number belongs to its line. The copy button is anchored to
+the host, so it floats above the scrolling listing rather than scrolling with it.
+
+Demo sections added to all three apps.
 
 ## 15. Decisions (resolved 2026-08-11)
 

@@ -58,6 +58,10 @@ const ANNOTATED_SOURCE = `const COVERAGE: CodeLineAnnotation[] = [
 /* kind is opaque — colour it yourself:
    .coverage::part(annotation-uncovered) { background: rgb(220 53 69 / 16%); } */`;
 
+const SIZED_SOURCE = `<BsCodeSnippet className="sized-snippet" code={source} language="ts" lineNumbers />
+
+/* .sized-snippet { max-height: 220px; } — the code area scrolls inside it. */`;
+
 export function CodeSnippetPage() {
   const [activeLine, setActiveLine] = useState<number | null>(6);
 
@@ -114,6 +118,21 @@ export function CodeSnippetPage() {
           onLineActivate={(e) => { e.preventDefault(); setActiveLine(e.detail.line); }}
         />
         <BsCodeSnippet code={ANNOTATED_SOURCE} language="tsx" />
+      </section>
+      <section>
+        <h2>Constrained size</h2>
+        <p className="text-body-secondary">
+          Give the component a <code>height</code> or <code>max-height</code> and the listing
+          scrolls vertically inside it; constrain the width and long lines scroll horizontally.
+        </p>
+        <BsCodeSnippet
+          className="sized-snippet"
+          code={SAMPLE_TS}
+          language="ts"
+          lineNumbers
+          label="Height-constrained example"
+        />
+        <BsCodeSnippet code={SIZED_SOURCE} language="tsx" />
       </section>
       <section>
         <h2>Usage</h2>

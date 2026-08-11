@@ -117,6 +117,19 @@ export class CodeSnippetComponent {
     // navigation and drive it explicitly instead:
     //   viewChild(BsCodeSnippetComponent).scrollToLine(n)`;
 
+  snippetSized = dedent`
+    <bs-code-snippet
+      class="sized-snippet"
+      [code]="source"
+      [language]="'html'"
+      [lineNumbers]="true" />`;
+
+  snippetSizedCss = dedent`
+    /* Any height constraint works — the code area scrolls inside it. */
+    .sized-snippet {
+      max-height: 220px;
+    }`;
+
   /**
    * A real href, so middle-click / open-in-new-tab / copy-link-address work.
    * A bare fragment is safe — the element resolves it against the current URL

@@ -54,6 +54,10 @@ const ANNOTATED_SOURCE = `<BsCodeSnippet
 <!-- kind is opaque — colour it yourself:
      .coverage::part(annotation-uncovered) { background: rgb(220 53 69 / 16%); } -->`;
 
+const SIZED_SOURCE = `<BsCodeSnippet class="sized-snippet" :code="source" language="ts" line-numbers />
+
+<!-- .sized-snippet { max-height: 220px; } — the code area scrolls inside it. -->`;
+
 const activeLine = ref<number | null>(6);
 const lineHref = (line: number) => `#L${line}`;
 
@@ -120,6 +124,21 @@ function onLineActivate(event: CustomEvent<{ line: number }>): void {
       <BsCodeSnippet :code="ANNOTATED_SOURCE" language="html" />
     </section>
     <section>
+      <h2>Constrained size</h2>
+      <p class="text-body-secondary">
+        Give the component a <code>height</code> or <code>max-height</code> and the listing
+        scrolls vertically inside it; constrain the width and long lines scroll horizontally.
+      </p>
+      <BsCodeSnippet
+        class="sized-snippet"
+        :code="SAMPLE_TS"
+        language="ts"
+        line-numbers
+        label="Height-constrained example"
+      />
+      <BsCodeSnippet :code="SIZED_SOURCE" language="html" />
+    </section>
+    <section>
       <h2>Usage</h2>
       <BsCodeSnippet :code="META_SOURCE" language="html" />
     </section>
@@ -144,6 +163,10 @@ function onLineActivate(event: CustomEvent<{ line: number }>): void {
   class straight onto `<mp-code-snippet>` — so `::part()` matches with no
   descendant step, as in React. (Angular needs `::ng-deep mp-code-snippet`.)
 */
+.sized-snippet {
+  max-height: 220px;
+}
+
 .coverage::part(annotation-covered) {
   background: rgb(25 135 84 / 14%);
 }

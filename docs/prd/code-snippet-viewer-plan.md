@@ -1,8 +1,9 @@
 # Plan — `mp-code-snippet` becomes the code viewer
 
 PRD: [code-snippet-viewer.md](./code-snippet-viewer.md)
-Status: **Implemented** (2026-08-11) on `feat/code-snippet-viewer`. All milestones done and the
-M9 sweep is green locally.
+Status: **Implemented** (2026-08-11) on `feat/code-snippet-viewer`, PR #402. M0–M9 built it; M10
+(review fixes R1–R5), M11 (narrow viewport R6–R9) and M12 (constrained size R10) followed from
+using the running demo. Suites green locally.
 
 | Milestone | Scope | State |
 |---|---|---|
@@ -107,6 +108,27 @@ that reason alone.
 
 Verified in Chromium against the running demo before writing the fix: subgrid supported, row box
 survives, sticky gutter survives, annotated background still spans the full 3277px scroll width.
+
+## M12 — constrained size (R10) — ✅ APPLIED
+
+PRD §15d. A consumer capping the height got clipped, unreachable code (`scrollTop` stuck at 0),
+because `pre` never shrank to a constrained host. The element is now a flex column with
+`pre` as an `overflow: auto` / `min-height: 0` item, and the Angular wrapper is a flex column so
+the constraint reaches the element at all.
+
+| case | result |
+|---|---|
+| element `height: 160px` | `pre` 158px over 283px content, scrolls, last line reachable |
+| element `max-height: 200px` | same |
+| element `width: 300px` | horizontal scroll only, height untouched |
+| wrapper `max-height: 220px` | reaches the element (220 = 220), scrolls |
+| unconstrained | unchanged |
+
+Demo sections in all three apps. **The demo sections themselves are unverified in the browser** —
+the dev server stopped picking up demo-template changes mid-session (it served the version bump but
+not the later edits, and `main.js` never contained the new class), which is the wedged-watcher
+symptom; recovery is restarting the host, which is the user's process. The component and wrapper
+behaviour above IS verified live.
 
 Two fixes the earlier sweep caught, both committed:
 - `highlightPending` was created fire-and-forget, so the `getUpdateComplete` override awaited

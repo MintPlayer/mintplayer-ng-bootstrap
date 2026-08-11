@@ -37,7 +37,19 @@ const FORWARDED_ATTRIBUTES = ['role', 'tabindex', 'id'];
   templateUrl: './code-snippet.component.html',
   schemas: [CUSTOM_ELEMENTS_SCHEMA],
   changeDetection: ChangeDetectionStrategy.OnPush,
-  host: { class: 'd-block' },
+  /**
+   * A flex column that the `<mp-code-snippet>` fills, so a `height` or
+   * `max-height` set on `<bs-code-snippet>` reaches the element that actually
+   * scrolls. As a plain block the constraint stopped at this host and the
+   * element kept its content height, overflowing it.
+   *
+   * React and Vue need no equivalent: both put the consumer's class straight
+   * onto the custom element.
+   */
+  styles: `
+    :host { display: flex; flex-direction: column; }
+    mp-code-snippet { flex: 1 1 auto; min-height: 0; }
+  `,
 })
 export class BsCodeSnippetComponent implements AfterViewInit {
   readonly code = input<string>('');

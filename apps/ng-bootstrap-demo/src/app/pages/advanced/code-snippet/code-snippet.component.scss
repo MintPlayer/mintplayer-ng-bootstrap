@@ -33,3 +33,9 @@
 .theme-pane {
   min-width: 0;
 }
+
+// The wrapper is a flex column and the element fills it, so a max-height set
+// here reaches the part that scrolls.
+.sized-snippet {
+  max-height: 220px;
+}
