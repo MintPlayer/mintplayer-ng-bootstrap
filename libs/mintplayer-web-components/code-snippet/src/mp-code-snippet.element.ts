@@ -1,9 +1,10 @@
-import { LitElement, html, type TemplateResult, type PropertyValues } from 'lit';
+import { LitElement, html, nothing, type TemplateResult, type PropertyValues } from 'lit';
 import { property, state } from 'lit/decorators.js';
 import { unsafeHTML } from 'lit/directives/unsafe-html.js';
 import hljs from 'highlight.js/lib/common';
 import { hljsThemeStyles } from '../../_styles/hljs-theme.styles';
 import { codeSnippetStyles } from './styles';
+import { normalizeSource, splitHighlightedLines } from './core/split-lines';
 
 const TAG_NAME = 'mp-code-snippet';
 
@@ -60,8 +61,17 @@ export class MpCodeSnippet extends LitElement {
   @property({ type: String, attribute: 'copy-label' }) copyLabel = 'Copy ${language} code to clipboard';
   @property({ type: String }) code = '';
 
+  /** Show a line-number gutter. Off by default — a one-line install command
+   *  gains nothing from a `1` beside it. */
+  @property({ type: Boolean, attribute: 'line-numbers', reflect: true }) lineNumbers = false;
+  /** Number of the first rendered line, for excerpts lifted out of a file. */
+  @property({ type: Number, attribute: 'start-line' }) startLine = 1;
+  /** Wrap long lines instead of scrolling them horizontally. */
+  @property({ type: Boolean, reflect: true }) wrap = false;
+
   @state() private detectedLanguage = 'code';
-  @state() private highlighted = '';
+  /** One highlighted HTML fragment per source line. */
+  @state() private lines: string[] = [];
   @state() private toastVisible = false;
 
   private toastTimer: ReturnType<typeof setTimeout> | null = null;
@@ -90,9 +100,9 @@ export class MpCodeSnippet extends LitElement {
   }
 
   private runHighlight(): void {
-    const source = this.code ?? '';
+    const source = normalizeSource(this.code ?? '');
     if (!source) {
-      this.highlighted = '';
+      this.lines = [];
       this.detectedLanguage = 'code';
       return;
     }
@@ -109,7 +119,7 @@ export class MpCodeSnippet extends LitElement {
       result = hljs.highlightAuto(source);
     }
 
-    this.highlighted = result.value;
+    this.lines = splitHighlightedLines(result.value);
     const next = result.language ?? 'code';
     if (next !== this.detectedLanguage) {
       this.detectedLanguage = next;
@@ -158,10 +168,26 @@ export class MpCodeSnippet extends LitElement {
         tabindex="0"
         role="region"
         aria-label="${this.detectedLanguage} code sample"
-      ><code part="code" class="hljs">${unsafeHTML(this.highlighted)}</code></pre>
+      ><code part="code" class="hljs">${this.lines.map((line, i) => this.renderLine(line, i))}</code></pre>
       <div class="toast ${this.toastVisible ? 'visible' : ''}" part="toast" aria-hidden="${!this.toastVisible}">Copied!</div>
       <div class="sr-only" role="status" aria-live="polite">${this.toastVisible ? 'Copied to clipboard' : ''}</div>
     `;
+  }
+
+  /**
+   * One row per source line. Written with no whitespace between the gutter and
+   * the text: `.line` is a flex container, and under `white-space: pre` a
+   * whitespace-only text node between flex items would NOT collapse away — it
+   * would become an anonymous flex item and indent every line. (`.line` itself
+   * therefore also resets `white-space`; only `.line-text` keeps `pre`.)
+   */
+  private renderLine(lineHtml: string, index: number): TemplateResult {
+    const number = this.startLine + index;
+    return html`<span class="line" part="line" id="L${number}"
+      >${this.lineNumbers
+        ? html`<span class="line-number" part="line-number" aria-hidden="true">${number}</span>`
+        : nothing}<span class="line-text" part="line-text">${unsafeHTML(lineHtml)}</span></span
+    >`;
   }
 
   private onSlotChange(e: Event): void {

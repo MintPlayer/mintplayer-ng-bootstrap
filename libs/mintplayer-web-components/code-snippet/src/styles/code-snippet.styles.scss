@@ -24,9 +24,8 @@
 
 pre {
   margin: 0;
-  padding: 1rem;
+  padding: 1rem 0;
   overflow-x: auto;
-  white-space: pre;
   tab-size: 2;
 }
 
@@ -36,6 +35,56 @@ code {
   font-size: 0.875rem;
   line-height: 1.5;
   color: inherit;
+
+  // As wide as the longest line, so a row's full-width background (annotation
+  // or active line) paints across the whole scrollable width rather than
+  // stopping at the viewport edge.
+  min-width: max-content;
+}
+
+// One row per source line.
+.line {
+  display: flex;
+  width: 100%;
+  // `pre` on the ROW would turn the whitespace between the gutter and the
+  // text into an anonymous flex item. Only `.line-text` keeps pre.
+  white-space: normal;
+  // An empty line still occupies a row.
+  min-height: 1.5em;
+}
+
+.line-text {
+  white-space: pre;
+  flex: 1 1 auto;
+  padding-inline: 1rem;
+}
+
+.line-number {
+  flex: 0 0 auto;
+  box-sizing: content-box;
+  min-width: 2.5ch;
+  padding-inline: 0.75rem;
+  text-align: right;
+  // Not selectable, so dragging across the code copies the source and not the
+  // line numbers with it.
+  user-select: none;
+  opacity: 0.55;
+  // Stays put while a long line scrolls horizontally underneath it; needs its
+  // own background so the text cannot show through.
+  position: sticky;
+  left: 0;
+  background: var(--mp-code-bg);
+}
+
+:host([wrap]) {
+  code {
+    min-width: 0;
+  }
+
+  .line-text {
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+  }
 }
 
 .copy {
