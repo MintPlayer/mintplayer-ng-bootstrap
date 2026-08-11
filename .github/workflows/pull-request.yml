@@ -41,6 +41,9 @@ jobs:
       uses: actions/setup-node@v6
       with:
         node-version: 24
+        # Caches ~/.npm keyed on the lockfile, so `npm ci` resolves from disk
+        # instead of re-downloading every package on every run.
+        cache: 'npm'
 
     - name: Setup .NET 10
       uses: actions/setup-dotnet@v5
@@ -50,8 +53,27 @@ jobs:
     - name: Install dependencies
       run: npm ci
 
+    # The three engines are ~400 MB and were re-downloaded on every run. The
+    # key is the lockfile hash because the required browser build is pinned by
+    # the Playwright version in it — a Playwright bump invalidates the cache,
+    # which is exactly when new builds are needed.
+    - name: Cache Playwright browsers
+      id: playwright-cache
+      uses: actions/cache@v4
+      with:
+        path: ~/.cache/ms-playwright
+        key: playwright-${{ runner.os }}-${{ hashFiles('package-lock.json') }}
+
     - name: Install Playwright browsers
+      if: steps.playwright-cache.outputs.cache-hit != 'true'
       run: npx playwright install --with-deps chromium firefox webkit
+
+    # On a cache hit the binaries are already there, but the OS-level libraries
+    # they link against are not — those live outside the cached directory and
+    # have to be installed every run regardless.
+    - name: Install Playwright system dependencies
+      if: steps.playwright-cache.outputs.cache-hit == 'true'
+      run: npx playwright install-deps chromium firefox webkit
 
     - name: Build
       timeout-minutes: 15
