@@ -332,9 +332,21 @@ problems must be decided, not converted:
    grey that will fail contrast on `#fefefe`, so the light value must be **chosen and
    contrast-checked**, not derived.
 
-Contrast ratios for the proposed light values are **not yet computed** — that is a task in the
-plan, not an assumption here. Annotation colours are exposed as `--mp-code-annotation-<kind>-bg`
-custom properties so `kind` stays coverage-agnostic.
+Contrast ratios were computed during M0/M3 and all 18 token/background pairs measure **≥ 4.5:1**
+(WCAG AA for body text), lowest 4.51:1 (light blue). Chosen light values: yellow `#7c4a03` (kept
+distinct from orange `#aa5d00`) and punctuation `#6a6a66` at 5.39:1.
+
+**Annotation colours ship as CSS parts, not custom properties.** The PRD originally proposed
+`--mp-code-annotation-<kind>-bg`, which does not work: `kind` is an opaque consumer string, so
+neither the component's stylesheet nor the consumer's can name the property without the component
+writing an inline style per row — banned by house convention, and unnecessary. Each row is
+exposed as `part="annotation-<kind>"` instead, which is exactly the shadow-DOM styling channel:
+
+```css
+bs-code-snippet::part(annotation-uncovered) { background: rgba(220, 53, 69, 0.14); }
+```
+
+The component therefore ships **no** colour for any kind, keeping it genuinely coverage-agnostic.
 
 ## 9. highlight.js packaging
 

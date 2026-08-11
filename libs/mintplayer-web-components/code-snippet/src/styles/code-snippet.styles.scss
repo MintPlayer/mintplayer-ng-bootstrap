@@ -76,6 +76,59 @@ code {
   background: var(--mp-code-bg);
 }
 
+// An annotated line carries NO colour from this component: `kind` is an opaque
+// consumer string, so there is no rule we could ship for it. The row is
+// exposed as the CSS part `annotation-<kind>` and the consumer paints it from
+// their own stylesheet:
+//
+//   bs-code-snippet::part(annotation-uncovered) { background: rgba(220,53,69,.14); }
+//
+// The active line composes OVER whatever that is — an outline, not a
+// background — because "which line am I on" and "what is this line's coverage"
+// are independent facts that must both stay visible.
+.line.active {
+  outline: 2px solid var(--bs-primary);
+  outline-offset: -2px;
+}
+
+.line-marks {
+  flex: 0 0 auto;
+  display: flex;
+  gap: 0.5ch;
+  justify-content: flex-end;
+  min-width: 4ch;
+  padding-inline-end: 0.5rem;
+  user-select: none;
+  font-size: 0.85em;
+  opacity: 0.75;
+}
+
+.line-mark.secondary {
+  color: var(--bs-warning-text-emphasis, inherit);
+}
+
+// A linked line number. Colour and underline are the anchor's only visual
+// difference from the inert form, so the gutter reads the same in both.
+a.line-number {
+  color: inherit;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+a.line-number:hover {
+  text-decoration: underline;
+  opacity: 1;
+}
+
+// Bootstrap's focus-ring utilities do not cross the shadow boundary, so the
+// indicator is declared here. `outline-offset` is negative because the gutter
+// is `position: sticky` and an outward ring would be clipped by the scroller.
+a.line-number:focus-visible {
+  outline: 2px solid var(--bs-primary);
+  outline-offset: -2px;
+  opacity: 1;
+}
+
 :host([wrap]) {
   code {
     min-width: 0;

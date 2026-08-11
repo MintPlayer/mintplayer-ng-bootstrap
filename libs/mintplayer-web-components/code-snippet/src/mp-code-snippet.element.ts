@@ -5,6 +5,7 @@ import hljs from 'highlight.js/lib/common';
 import { hljsThemeStyles } from '../../_styles/hljs-theme.styles';
 import { codeSnippetStyles } from './styles';
 import { normalizeSource, splitHighlightedLines } from './core/split-lines';
+import type { CodeLineAnnotation } from './types';
 
 const TAG_NAME = 'mp-code-snippet';
 
@@ -69,12 +70,46 @@ export class MpCodeSnippet extends LitElement {
   /** Wrap long lines instead of scrolling them horizontally. */
   @property({ type: Boolean, reflect: true }) wrap = false;
 
+  /**
+   * Per-line markers. Sparse — most lines carry none. Property only: an array
+   * of objects has no sensible attribute form.
+   */
+  @property({ attribute: false }) annotations: CodeLineAnnotation[] = [];
+
+  /**
+   * The line drawn as current. Composes OVER an annotation rather than
+   * replacing it (an outline, not a background swap), because "which line am I
+   * looking at" and "what is the coverage of this line" are independent facts.
+   */
+  @property({ type: Number, attribute: 'active-line' }) activeLine: number | null = null;
+
+  /**
+   * Turns each line number into a real `<a href>`. Given as a function because
+   * only the consumer knows what a link to a line means in their app.
+   *
+   * A real href — not a click handler — so middle-click, open-in-new-tab and
+   * "copy link address" all work. A router-driven consumer listens for
+   * `line-activate` and calls `preventDefault()` on it.
+   */
+  @property({ attribute: false }) lineHref: ((line: number) => string) | null = null;
+
+  /**
+   * Accessible name pattern for a line anchor; `${line}` is substituted.
+   * Localisable, because an accessible name that only exists as an English
+   * literal is a translation bug.
+   */
+  @property({ type: String, attribute: 'line-label' }) lineLabel = 'Line ${line}';
+
   @state() private detectedLanguage = 'code';
   /** One highlighted HTML fragment per source line. */
   @state() private lines: string[] = [];
   @state() private toastVisible = false;
 
   private toastTimer: ReturnType<typeof setTimeout> | null = null;
+
+  /** Rebuilt only when `annotations` changes — a per-row `.find()` would be
+   *  quadratic on a file with an annotation per line. */
+  private annotationsByLine = new Map<number, CodeLineAnnotation>();
 
   override connectedCallback(): void {
     super.connectedCallback();
@@ -96,6 +131,9 @@ export class MpCodeSnippet extends LitElement {
   override willUpdate(changed: PropertyValues<this>): void {
     if (changed.has('code') || changed.has('language')) {
       this.runHighlight();
+    }
+    if (changed.has('annotations')) {
+      this.annotationsByLine = new Map((this.annotations ?? []).map((a) => [a.line, a]));
     }
   }
 
@@ -168,26 +206,111 @@ export class MpCodeSnippet extends LitElement {
         tabindex="0"
         role="region"
         aria-label="${this.detectedLanguage} code sample"
-      ><code part="code" class="hljs">${this.lines.map((line, i) => this.renderLine(line, i))}</code></pre>
+      ><code part="code" class="hljs">${Array.from({ length: this.rowCount }, (_, i) =>
+          this.renderLine(i),
+        )}</code></pre>
       <div class="toast ${this.toastVisible ? 'visible' : ''}" part="toast" aria-hidden="${!this.toastVisible}">Copied!</div>
       <div class="sr-only" role="status" aria-live="polite">${this.toastVisible ? 'Copied to clipboard' : ''}</div>
     `;
   }
 
   /**
-   * One row per source line. Written with no whitespace between the gutter and
-   * the text: `.line` is a flex container, and under `white-space: pre` a
+   * Rows to render. Normally one per source line, but annotations may name
+   * lines beyond the source's extent — a coverage report for a file whose
+   * source could not be fetched still renders its full gutter — so the count
+   * is the larger of the two.
+   */
+  private get rowCount(): number {
+    const lastAnnotated = this.annotations.reduce((max, a) => Math.max(max, a.line), 0);
+    const fromAnnotations = lastAnnotated === 0 ? 0 : lastAnnotated - this.startLine + 1;
+    return Math.max(this.lines.length, fromAnnotations);
+  }
+
+  /** Scroll a line into view. A method, not a side effect of `activeLine`, so
+   *  re-requesting the line the user is already on still scrolls. */
+  scrollToLine(line: number): void {
+    this.renderRoot
+      ?.querySelector(`#L${line}`)
+      ?.scrollIntoView({ block: 'center', behavior: 'auto' });
+  }
+
+  private onLineActivate(line: number, event: Event): void {
+    const proceed = this.dispatchEvent(
+      new CustomEvent<{ line: number }>('line-activate', {
+        detail: { line },
+        bubbles: true,
+        composed: true,
+        cancelable: true,
+      }),
+    );
+    // A consumer that handles navigation itself cancels the event; the real
+    // href stays in the DOM either way so middle-click keeps working.
+    if (!proceed) event.preventDefault();
+  }
+
+  /**
+   * One row per line. Written with no whitespace between the gutter and the
+   * text: `.line` is a flex container, and under `white-space: pre` a
    * whitespace-only text node between flex items would NOT collapse away — it
    * would become an anonymous flex item and indent every line. (`.line` itself
    * therefore also resets `white-space`; only `.line-text` keeps `pre`.)
    */
-  private renderLine(lineHtml: string, index: number): TemplateResult {
+  private renderLine(index: number): TemplateResult {
     const number = this.startLine + index;
-    return html`<span class="line" part="line" id="L${number}"
-      >${this.lineNumbers
-        ? html`<span class="line-number" part="line-number" aria-hidden="true">${number}</span>`
-        : nothing}<span class="line-text" part="line-text">${unsafeHTML(lineHtml)}</span></span
+    const annotation = this.annotationFor(number);
+    const active = this.activeLine === number;
+    const name = this.lineLabel.replace('${line}', String(number));
+
+    // `part` is the styling channel for annotations: `kind` is an opaque
+    // consumer string, so there is no rule this component could ship for it.
+    const parts = ['line', annotation?.kind ? `annotation-${annotation.kind}` : '', active ? 'active-line' : '']
+      .filter(Boolean)
+      .join(' ');
+
+    return html`<span
+      class="line${active ? ' active' : ''}${annotation ? ' annotated' : ''}"
+      part="${parts}"
+      id="L${number}"
+      title="${annotation?.description ?? nothing}"
+      >${this.lineNumbers ? this.renderGutter(number, name) : nothing}${annotation &&
+      (annotation.label !== undefined || annotation.secondaryLabel !== undefined)
+        ? html`<span class="line-marks" part="line-marks" aria-hidden="true"
+            >${annotation.label !== undefined
+              ? html`<span class="line-mark" part="line-mark">${annotation.label}</span>`
+              : nothing}${annotation.secondaryLabel !== undefined
+              ? html`<span class="line-mark secondary" part="line-mark-secondary"
+                  >${annotation.secondaryLabel}</span
+                >`
+              : nothing}</span
+          >`
+        : nothing}<span class="line-text" part="line-text">${unsafeHTML(this.lines[index] ?? '')}</span
+      >${annotation?.description
+        ? html`<span class="sr-only">${annotation.description}</span>`
+        : nothing}</span
     >`;
+  }
+
+  /**
+   * The gutter is a real link when `lineHref` is set and inert text otherwise.
+   * Inert text is `aria-hidden`: an unlinked line number is decoration, and
+   * announcing "42" before every line would drown the code.
+   */
+  private renderGutter(number: number, name: string): TemplateResult {
+    if (!this.lineHref) {
+      return html`<span class="line-number" part="line-number" aria-hidden="true">${number}</span>`;
+    }
+    return html`<a
+      class="line-number"
+      part="line-number"
+      href="${this.lineHref(number)}"
+      aria-label="${name}"
+      @click=${(e: Event) => this.onLineActivate(number, e)}
+      >${number}</a
+    >`;
+  }
+
+  private annotationFor(line: number): CodeLineAnnotation | undefined {
+    return this.annotationsByLine.get(line);
   }
 
   private onSlotChange(e: Event): void {
