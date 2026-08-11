@@ -283,7 +283,9 @@ describe('mp-code-snippet line anchors', () => {
 
     expect(links).toHaveLength(5);
     expect(links[2].getAttribute('aria-label')).toBe('Line 3');
-    expect(links[2].getAttribute('href')).toBe('#L3');
+    // Resolved against the current URL — a bare fragment would resolve
+    // against `<base>` and navigate away from the route.
+    expect(links[2].getAttribute('href')).toBe(`${location.pathname}${location.search}#L3`);
   });
 
   it('takes a localised line-label pattern', async () => {
@@ -372,7 +374,7 @@ describe('mp-code-snippet line anchors', () => {
     expect(seen).toEqual([3]);
     // The consumer navigates itself; the href stays in the DOM for middle-click.
     expect(click.defaultPrevented).toBe(true);
-    expect(anchors(el)[2].getAttribute('href')).toBe('#L3');
+    expect(anchors(el)[2].getAttribute('href')).toBe(`${location.pathname}${location.search}#L3`);
   });
 
   it('leaves the real navigation alone when nobody cancels', async () => {
@@ -381,5 +383,92 @@ describe('mp-code-snippet line anchors', () => {
     anchors(el)[0].dispatchEvent(click);
 
     expect(click.defaultPrevented).toBe(false);
+  });
+
+  it('resolves a bare fragment against the current URL, not the document base', async () => {
+    // `<base href="/">` is present in every Angular app, and a bare `#L3`
+    // resolves against it — so the obvious lineHref would navigate away from
+    // the current route entirely. The element resolves it instead.
+    const el = await mountLinked();
+    const href = anchors(el)[2].getAttribute('href')!;
+
+    expect(href).toBe(`${location.pathname}${location.search}#L3`);
+    expect(href.startsWith('#')).toBe(false);
+  });
+
+  it('leaves a path-qualified or absolute href exactly as given', async () => {
+    const el = await mount({ language: 'plaintext', 'line-numbers': '' }, FIVE);
+    el.lineHref = (line) => `/files/app.ts?x=1#L${line}`;
+    await el.updateComplete;
+
+    expect(anchors(el)[0].getAttribute('href')).toBe('/files/app.ts?x=1#L1');
+  });
+
+  for (const [name, init] of [
+    ['ctrl', { ctrlKey: true }],
+    ['meta', { metaKey: true }],
+    ['shift', { shiftKey: true }],
+    ['alt', { altKey: true }],
+    ['middle', { button: 1 }],
+  ] as const) {
+    it(`ignores a ${name} click so the browser can open the link itself`, async () => {
+      const el = await mountLinked();
+      const seen: number[] = [];
+      el.addEventListener('line-activate', (e) => {
+        seen.push((e as CustomEvent<{ line: number }>).detail.line);
+        e.preventDefault();
+      });
+
+      const click = new MouseEvent('click', { bubbles: true, cancelable: true, ...init });
+      anchors(el)[1].dispatchEvent(click);
+
+      // No event, and crucially the default is NOT suppressed — otherwise
+      // open-in-new-tab would silently do nothing.
+      expect(seen).toEqual([]);
+      expect(click.defaultPrevented).toBe(false);
+    });
+  }
+});
+
+describe('mp-code-snippet gutter cells', () => {
+  const THREE = 'const a = 1;\nconst b = 2;\nconst c = 3;';
+
+  it('renders each mark as a DIRECT child of the row, with no wrapper', async () => {
+    // The cells are placed on shared column tracks by the stylesheet, so they
+    // must be row children. A wrapper would be one content-sized cell and every
+    // row would size it differently — which is what made the code text start at
+    // three different x positions.
+    const el = await mount({ language: 'typescript', 'line-numbers': '' }, THREE);
+    el.annotations = [{ line: 2, label: '4×', secondaryLabel: '1/2' }];
+    await el.updateComplete;
+
+    expect(el.shadowRoot!.querySelector('.line-marks')).toBeNull();
+
+    const row = el.shadowRoot!.querySelector('#L2')!;
+    const cells = [...row.children].map((c) => c.className);
+    expect(cells).toEqual(['line-number', 'line-mark', 'line-mark secondary', 'line-text']);
+  });
+
+  it('omits the cells a line does not have, rather than emitting empty ones', async () => {
+    const el = await mount({ language: 'typescript', 'line-numbers': '' }, THREE);
+    el.annotations = [{ line: 2, label: '4×' }];
+    await el.updateComplete;
+
+    const unannotated = [...el.shadowRoot!.querySelector('#L1')!.children].map((c) => c.className);
+    expect(unannotated).toEqual(['line-number', 'line-text']);
+  });
+
+  it('hides both marks from the accessibility tree', async () => {
+    // They sit between the line anchor and the code in DOM order, so unhidden a
+    // screen reader would read "4x 1/2 const b = 2;" as the line. The same
+    // information stays reachable through the row's description.
+    const el = await mount({ language: 'typescript', 'line-numbers': '' }, THREE);
+    el.annotations = [{ line: 2, label: '4×', secondaryLabel: '1/2', description: 'Branches: 1 of 2' }];
+    await el.updateComplete;
+
+    const marks = [...el.shadowRoot!.querySelectorAll('.line-mark')];
+    expect(marks).toHaveLength(2);
+    expect(marks.every((m) => m.getAttribute('aria-hidden') === 'true')).toBe(true);
+    expect(el.shadowRoot!.querySelector('#L2 .sr-only')!.textContent).toBe('Branches: 1 of 2');
   });
 });

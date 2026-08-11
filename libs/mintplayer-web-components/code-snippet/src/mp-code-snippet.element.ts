@@ -87,9 +87,17 @@ export class MpCodeSnippet extends LitElement {
    * Turns each line number into a real `<a href>`. Given as a function because
    * only the consumer knows what a link to a line means in their app.
    *
-   * A real href — not a click handler — so middle-click, open-in-new-tab and
-   * "copy link address" all work. A router-driven consumer listens for
-   * `line-activate` and calls `preventDefault()` on it.
+   * The href buys the browser affordances a click handler cannot fake:
+   * middle-click, open-in-new-tab, copy-link-address, and a native link for the
+   * roving-focus layer to move between.
+   *
+   * It does NOT scroll to the line. A fragment cannot reach a row inside a
+   * shadow root — `document.getElementById('L7')` is null — so deep-linking
+   * means reading the fragment yourself on navigation and calling
+   * `scrollToLine()`.
+   *
+   * Returning a bare fragment (`#L7`) is safe: it is resolved against the
+   * current URL, not against `document.baseURI`. See `resolveLineHref`.
    */
   @property({ attribute: false }) lineHref: ((line: number) => string) | null = null;
 
@@ -316,7 +324,31 @@ export class MpCodeSnippet extends LitElement {
       ?.scrollIntoView({ block: 'center', behavior: 'auto' });
   }
 
-  private onLineActivate(line: number, event: Event): void {
+  /**
+   * A bare fragment resolves against `document.baseURI`, and every Angular app
+   * sets that to `/` with `<base href="/">` — so the obvious `#L7` means "the
+   * ROOT document, anchor L7" and navigates away from the current route
+   * entirely. Resolving it against the current URL here means the obvious thing
+   * is also the correct thing, instead of a trap each consumer has to be warned
+   * about.
+   *
+   * Absolute and path-relative hrefs are left exactly as given.
+   */
+  private resolveLineHref(href: string): string {
+    if (!href.startsWith('#') || typeof location === 'undefined') return href;
+    return `${location.pathname}${location.search}${href}`;
+  }
+
+  private onLineActivate(line: number, event: MouseEvent): void {
+    // A modified or non-primary click means "open this link somewhere else" and
+    // never "activate this line in this view", so it belongs entirely to the
+    // browser — same rule Angular's own RouterLink applies. Handling it here is
+    // what removes the need for a "prevent navigation" knob on the public API:
+    // no consumer, in any framework, can get this wrong.
+    if (event.button !== 0 || event.ctrlKey || event.metaKey || event.shiftKey || event.altKey) {
+      return;
+    }
+
     const proceed = this.dispatchEvent(
       new CustomEvent<{ line: number }>('line-activate', {
         detail: { line },
@@ -331,11 +363,19 @@ export class MpCodeSnippet extends LitElement {
   }
 
   /**
-   * One row per line. Written with no whitespace between the gutter and the
-   * text: `.line` is a flex container, and under `white-space: pre` a
-   * whitespace-only text node between flex items would NOT collapse away — it
-   * would become an anonymous flex item and indent every line. (`.line` itself
-   * therefore also resets `white-space`; only `.line-text` keeps `pre`.)
+   * One row per line.
+   *
+   * Each cell is a DIRECT child of the row and is placed on a named column by
+   * the stylesheet, because the row is a `subgrid` of column tracks defined
+   * once on `code`. That is what keeps the code text in one vertical line
+   * whether or not a given row happens to carry a gutter label: a row missing a
+   * cell leaves that track empty instead of shifting everything left. Wrapping
+   * the two marks in a container would defeat it — the container would be one
+   * content-sized cell, and every row would size it differently.
+   *
+   * Written with no whitespace between the cells: under `white-space: pre` a
+   * whitespace-only text node between grid items does NOT collapse away and
+   * would become an anonymous item in its own track.
    */
   private renderLine(index: number): TemplateResult {
     const number = this.startLine + index;
@@ -354,16 +394,11 @@ export class MpCodeSnippet extends LitElement {
       part="${parts}"
       id="L${number}"
       title="${annotation?.description ?? nothing}"
-      >${this.lineNumbers ? this.renderGutter(number, name) : nothing}${annotation &&
-      (annotation.label !== undefined || annotation.secondaryLabel !== undefined)
-        ? html`<span class="line-marks" part="line-marks" aria-hidden="true"
-            >${annotation.label !== undefined
-              ? html`<span class="line-mark" part="line-mark">${annotation.label}</span>`
-              : nothing}${annotation.secondaryLabel !== undefined
-              ? html`<span class="line-mark secondary" part="line-mark-secondary"
-                  >${annotation.secondaryLabel}</span
-                >`
-              : nothing}</span
+      >${this.lineNumbers ? this.renderGutter(number, name) : nothing}${annotation?.label !== undefined
+        ? html`<span class="line-mark" part="line-mark" aria-hidden="true">${annotation.label}</span>`
+        : nothing}${annotation?.secondaryLabel !== undefined
+        ? html`<span class="line-mark secondary" part="line-mark-secondary" aria-hidden="true"
+            >${annotation.secondaryLabel}</span
           >`
         : nothing}<span class="line-text" part="line-text">${unsafeHTML(this.lines[index] ?? '')}</span
       >${annotation?.description
@@ -389,10 +424,10 @@ export class MpCodeSnippet extends LitElement {
     return html`<a
       class="line-number"
       part="line-number"
-      href="${this.lineHref(number)}"
+      href="${this.resolveLineHref(this.lineHref(number))}"
       aria-label="${name}"
       tabindex="${number === this.tabbableLine ? 0 : -1}"
-      @click=${(e: Event) => this.onLineActivate(number, e)}
+      @click=${(e: MouseEvent) => this.onLineActivate(number, e)}
       @keydown=${(e: KeyboardEvent) => this.onGutterKeydown(number, e)}
       >${number}</a
     >`;

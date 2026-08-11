@@ -52,7 +52,7 @@ const ANNOTATED_SOURCE = `const COVERAGE: CodeLineAnnotation[] = [
   annotations={COVERAGE}
   activeLine={active}
   lineHref={(line) => \`#L\${line}\`}
-  onLineActivate={(e) => setActive(e.detail.line)}
+  onLineActivate={(e) => { e.preventDefault(); setActive(e.detail.line); }}
 />
 
 /* kind is opaque — colour it yourself:
@@ -111,7 +111,7 @@ export function CodeSnippetPage() {
           activeLine={activeLine}
           lineHref={(line: number) => `#L${line}`}
           label="Coverage report for greet()"
-          onLineActivate={(e) => setActiveLine(e.detail.line)}
+          onLineActivate={(e) => { e.preventDefault(); setActiveLine(e.detail.line); }}
         />
         <BsCodeSnippet code={ANNOTATED_SOURCE} language="tsx" />
       </section>

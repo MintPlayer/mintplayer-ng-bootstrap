@@ -59,7 +59,18 @@ export class BsCodeSnippetComponent implements AfterViewInit {
   readonly lineLabel = input<string>('');
 
   readonly detectedLanguage = output<string>();
-  readonly lineActivate = output<number>();
+
+  /**
+   * Emits the DOM event, not just the line number, so a consumer can call
+   * `preventDefault()` on it and navigate itself. Emitting the bare number
+   * dropped the only channel the element offers for that, and the anchor's
+   * default navigation always won.
+   *
+   * Angular's `output()` emits synchronously inside the DOM listener, so a
+   * `preventDefault()` in the handler lands before `dispatchEvent` returns.
+   * Same shape as `BsComboboxDirective`'s `activate`/`cancel`.
+   */
+  readonly lineActivate = output<CustomEvent<{ line: number }>>();
 
   private readonly element = viewChild.required<ElementRef<MpCodeSnippet>>('element');
   private readonly host = inject<ElementRef<HTMLElement>>(ElementRef);
@@ -105,6 +116,6 @@ export class BsCodeSnippetComponent implements AfterViewInit {
   }
 
   protected onLineActivate(event: Event): void {
-    this.lineActivate.emit((event as CustomEvent<{ line: number }>).detail.line);
+    this.lineActivate.emit(event as CustomEvent<{ line: number }>);
   }
 }

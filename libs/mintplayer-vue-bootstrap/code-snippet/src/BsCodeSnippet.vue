@@ -13,7 +13,12 @@ const props = defineProps<{
 
 const emit = defineEmits<{
   (e: 'language-detected', language: string): void;
-  (e: 'line-activate', line: number): void;
+  /**
+   * The DOM event, not just the line number — it is `cancelable`, and a
+   * consumer routing the navigation themselves needs `preventDefault()`.
+   * Re-emitting only `detail.line` silently dropped that channel.
+   */
+  (e: 'line-activate', event: CustomEvent<{ line: number }>): void;
 }>();
 
 defineOptions({ inheritAttrs: false });
@@ -48,7 +53,7 @@ defineExpose({ scrollToLine, element });
     ref="element"
     v-bind="$attrs"
     @language-detected="emit('language-detected', ($event as CustomEvent).detail.language)"
-    @line-activate="emit('line-activate', ($event as CustomEvent).detail.line)"
+    @line-activate="emit('line-activate', $event as CustomEvent<{ line: number }>)"
   >
     <slot />
   </mp-code-snippet>

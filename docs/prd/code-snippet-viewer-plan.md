@@ -17,7 +17,27 @@ M9 sweep is green locally.
 | M8 | Demo pages ×3, ng axe route, ngx-highlightjs purge | ✅ |
 | M9 | Sweep | ✅ 4 builds, 1898 WC tests, 164+93 Angular suites, 3 axe gates (40+44+44), dock e2e |
 
-Two fixes the sweep caught, both committed:
+## M10 — review fixes (PR #402)
+
+Five defects found by using the running demo; four reported by the user, the fifth measured while
+taking a selection baseline. PRD §15b has the analysis and the measurements.
+
+| # | Defect | Fix |
+|---|---|---|
+| R1 | Clicking a line number reloads the page (route destroyed) | Resolve a fragment-only `lineHref` against `location.href` in the element; drop the modified/non-primary click from `line-activate` entirely; Angular + Vue emit the `CustomEvent` so `preventDefault()` is reachable; demo uses a path-qualified href and shows `scrollToLine()` for the deep-link half |
+| R2 | Rows misalign once any line is annotated (60 / 94.2 / 104px) | CSS **subgrid**: `code` owns the tracks, each `.line` is a subgrid spanning them, cells explicitly placed by `grid-column`; `.line-marks` wrapper deleted → single 98.5px offset |
+| R3 | Primary vs secondary label indistinguishable and unaligned | Each owns a column, right-aligned; distinct default treatment; still separately addressable as parts |
+| R4 | Selection must keep excluding the gutter | Already correct — preserved and now pinned by a spec |
+| R5 | The sr-only annotation description leaked into copied code | `.sr-only { user-select: none }` |
+
+Rejected along the way: a `preventNavigation` boolean (redundant once the modifier guard exists,
+and static); `display: contents` rows (removes the row box that carries the annotation background,
+active outline and `part(line)`).
+
+Verified in Chromium against the running demo before writing the fix: subgrid supported, row box
+survives, sticky gutter survives, annotated background still spans the full 3277px scroll width.
+
+Two fixes the earlier sweep caught, both committed:
 - `highlightPending` was created fire-and-forget, so the `getUpdateComplete` override awaited
   nothing and six aria assertions read a stale `detectedLanguage`.
 - `mp-phone-input`'s D17 flake (pre-existing on master, confirmed on a clean checkout) — same

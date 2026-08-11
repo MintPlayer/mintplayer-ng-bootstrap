@@ -619,6 +619,112 @@ alone* is registered. `javascript` is itself one of the 36 common grammars, so w
 `js` resolves correctly. The alias handling is still required — `tsx`→typescript and `html`→xml
 are real and load-bearing (51 usages each).
 
+## 15b. Review findings — five defects and their fixes
+
+Found on PR #402 by using the running demo. Four were reported by the user; the fifth was
+measured while establishing a selection baseline. All are fixed in the same PR.
+
+### R1 — clicking a line number reloads the page
+
+Measured: clicking `#L7` left the URL at `http://localhost:4200/#L7` — the route
+`/advanced/code-snippet` was **destroyed**, `pagehide` fired, and a fresh
+`PerformanceNavigationTiming type="navigate"` appeared. It is a cross-document load, not a
+fragment change.
+
+Two independent causes, both fixed:
+
+1. **A bare fragment resolves against `document.baseURI`**, which every Angular app sets to `/`
+   via `<base href="/">`. So `href="#L7"` means "the root document, anchor L7", not "this page".
+   The demo wrote the obvious thing and got a full reload. **Fix in the library, not the docs:** a
+   fragment-only `lineHref` result is resolved against `location.href` in `renderGutter`, so the
+   obvious thing is also the correct thing. Guarded for a `location`-less (server) environment.
+2. **The Angular wrapper dropped the event's cancelability** — `lineActivate` emitted
+   `detail.line`, a bare number, so a consumer had no object on which to call `preventDefault()`
+   even though the WC dispatches the event `cancelable: true` and honours cancellation. Measured:
+   `defaultPrevented` was `false` at document level. **Fix:** Angular and Vue now emit the
+   `CustomEvent` itself, matching React (which already did, via `@lit/react`'s `events` map).
+   Precedent for forwarding a raw event so the consumer can cancel it already exists in
+   `dropdown/src/combobox/combobox.directive.ts:58-59` (`output<KeyboardEvent>()`).
+
+**Rejected: a `preventNavigation` boolean.** It was the first instinct, and it is redundant once
+the modifier guard below exists. It is also static (it cannot say "cancel this line, not that
+one") and silently dead-ends the link if set with nothing listening — two ways to say what the
+cancelable event already says.
+
+**Adopted instead: a modifier guard, unconditionally.** `line-activate` is no longer dispatched
+for a non-primary or modified click (ctrl/meta/shift/alt, middle-click). Ctrl-click never means
+"activate this line in this view", so this is correct for every consumer in every framework and
+cannot be got wrong — the same rule Angular's own `RouterLink` applies. It also keeps the
+component's public surface free of a "…but only for unmodified primary clicks" clause.
+
+**An href is not a deep link.** Newly measured: even with a same-document href, the fragment can
+never reach the row, because `document.getElementById('L7')` returns `null` — the row lives in the
+shadow root. Scrolling to a line requires the consumer to read the fragment and call
+`scrollToLine()`. The `lineHref` doc comment previously implied otherwise and is corrected; the
+demo now shows the real pattern.
+
+What the href genuinely buys, and why it stays: middle-click, open-in-new-tab, copy-link-address,
+and a native `<a>` role for the roving-focus layer to move between.
+
+Note this component is the first in the workspace to render its own anchors. The house rule
+(`mp-navbar-item.ts:6-10`) is that a WC **slots** a real `<a href>` and lets the wrapper attach
+routing — which is precisely why the navbar never had this bug. One anchor per line cannot be
+slotted, so code-snippet has to render them and therefore has to own the resolution and modifier
+rules itself.
+
+### R2 — rows misalign as soon as any line is annotated
+
+Measured `.line-text` left offsets on the demo: **60px** (no annotation), **94.2px** (label only),
+**104px** (label + secondary label). Three different offsets, so the code zig-zags. Worse, the
+mark column was content-sized *per row*, so even two annotated rows disagreed.
+
+Cause: `.line-marks` was rendered **only** when an annotation with a label existed, and each row's
+flex layout sized its own cells.
+
+**Fix: one shared set of column tracks, via CSS subgrid.** `code` becomes the grid and defines the
+tracks; every `.line` is `grid-template-columns: subgrid` spanning them, with each cell explicitly
+placed by `grid-column`. A row missing a cell leaves that track empty instead of shifting
+everything left. The `.line-marks` wrapper is deleted so each mark is a direct row child able to
+own a track.
+
+Measured after the change: a single `.line-text` left of **98.5px** for every row.
+
+Subgrid was chosen over `display: contents` on the row because `contents` removes the row box —
+and the row box is what carries the annotation background, the active-line outline and
+`part(line)`. Verified under subgrid, all still true: row box survives, gutter stays
+`position: sticky` when scrolled fully right, `user-select: none` intact, and an annotated row's
+background still spans the **entire** horizontal scroll width (3277px against a 655px viewport),
+which is what `min-width: max-content` on `code` is for.
+
+### R3 — the two gutter labels are indistinguishable and unaligned
+
+`label` (a hit count) and `secondaryLabel` (a branch ratio) rendered side by side inside one
+content-sized wrapper, so they were neither individually aligned nor visually distinct. R2's
+tracks fix the alignment — each label now owns a column and is right-aligned within it, so digits
+line up under digits. They are also given distinct default treatments and remain separately
+addressable as `::part(line-mark)` and `::part(line-mark-secondary)`.
+
+### R4 — selection must keep excluding the gutter (constraint, was already correct)
+
+Baseline measured before any change: `user-select` is `none` on `.line-number` and the marks,
+`auto` on `.line-text`; a range across rows 4–8 yields the source text with neither line numbers
+nor labels. Preserved by the fix, and now covered by a spec so it cannot regress silently.
+
+### R5 — the screen-reader description leaked into copied text (not reported; found by measuring)
+
+The same baseline showed the selection was **not** clean:
+
+```
+    if (item.taxable) {
+Branches: 1 of 2 taken          <-- the sr-only annotation description
+      sum += item.price * 1.21;
+```
+
+An annotation's `description` is rendered into an `.sr-only` node inside the row so assistive
+technology can reach it, and `.sr-only` had no `user-select` rule — so copying a region of code
+interleaved prose into the source. **Fix:** `.sr-only` is `user-select: none`. It is
+screen-reader-only content by definition; it should never be part of a text selection.
+
 ## 15. Decisions (resolved 2026-08-11)
 
 1. **Line numbers on the demo site: ON for multi-line snippets, OFF for one-liners.** Applied as

@@ -49,13 +49,20 @@ const ANNOTATED_SOURCE = `<BsCodeSnippet
   :annotations="COVERAGE"
   :active-line="activeLine"
   :line-href="(line: number) => \`#L\${line}\`"
-  @line-activate="activeLine = $event" />
+  @line-activate="onLineActivate" />
 
 <!-- kind is opaque — colour it yourself:
      .coverage::part(annotation-uncovered) { background: rgb(220 53 69 / 16%); } -->`;
 
 const activeLine = ref<number | null>(6);
 const lineHref = (line: number) => `#L${line}`;
+
+// The event is cancelable; cancel it when you handle activation yourself,
+// or the anchor navigates as well.
+function onLineActivate(event: CustomEvent<{ line: number }>): void {
+  event.preventDefault();
+  activeLine.value = event.detail.line;
+}
 </script>
 
 <template>
@@ -108,7 +115,7 @@ const lineHref = (line: number) => `#L${line}`;
         :active-line="activeLine"
         :line-href="lineHref"
         label="Coverage report for greet()"
-        @line-activate="activeLine = $event"
+        @line-activate="onLineActivate"
       />
       <BsCodeSnippet :code="ANNOTATED_SOURCE" language="html" />
     </section>

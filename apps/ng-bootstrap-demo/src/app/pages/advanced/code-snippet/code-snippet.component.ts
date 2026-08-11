@@ -59,8 +59,17 @@ export class CodeSnippetComponent {
 
   readonly activeLine = signal<number | null>(4);
 
-  onLineActivate(line: number): void {
-    this.activeLine.set(line);
+  /**
+   * The event is cancelable, and this page handles the "navigation" itself by
+   * moving the active line — so it cancels. Without the cancel the anchor's own
+   * navigation runs as well.
+   *
+   * A modified or middle click never reaches here: the element leaves those to
+   * the browser so open-in-new-tab still works.
+   */
+  onLineActivate(event: CustomEvent<{ line: number }>): void {
+    event.preventDefault();
+    this.activeLine.set(event.detail.line);
   }
 
   snippetLineNumbers = dedent`
@@ -81,7 +90,7 @@ export class CodeSnippetComponent {
       [annotations]="coverage"
       [activeLine]="activeLine()"
       [lineHref]="lineHref"
-      (lineActivate)="activeLine.set($event)" />`;
+      (lineActivate)="onLineActivate($event)" />`;
 
   snippetAnnotationsTs = dedent`
     readonly coverage: CodeLineAnnotation[] = [
@@ -90,11 +99,28 @@ export class CodeSnippetComponent {
       { line: 6, kind: 'uncovered', label: '0' },
     ];
 
-    // \`kind\` is opaque — style it from your own stylesheet:
-    //   bs-code-snippet::part(annotation-uncovered) { background: rgba(220,53,69,.14); }
-    lineHref = (line: number) => \`#L\${line}\`;`;
+    // \`kind\` is opaque — style it from your own stylesheet. Through the
+    // Angular wrapper the part lives on the inner element:
+    //   .coverage ::ng-deep mp-code-snippet::part(annotation-uncovered) { … }
+    lineHref = (line: number) => \`#L\${line}\`;
 
-  /** A real href, so middle-click and open-in-new-tab work; the cancelable
-   *  `lineActivate` is what a router-driven app would intercept. */
+    // The event is CANCELABLE. Cancel it when you handle the activation
+    // yourself, or the anchor navigates as well. Modified and middle clicks
+    // never reach here, so open-in-new-tab keeps working.
+    onLineActivate(event: CustomEvent<{ line: number }>) {
+      event.preventDefault();
+      this.activeLine.set(event.detail.line);
+    }
+
+    // A fragment does NOT scroll to the line: the row lives in a shadow root,
+    // so document.getElementById('L7') is null. Read the fragment on
+    // navigation and drive it explicitly instead:
+    //   viewChild(BsCodeSnippetComponent).scrollToLine(n)`;
+
+  /**
+   * A real href, so middle-click / open-in-new-tab / copy-link-address work.
+   * A bare fragment is safe — the element resolves it against the current URL
+   * rather than letting `<base href="/">` send it to the site root.
+   */
   lineHref = (line: number) => `#L${line}`;
 }
