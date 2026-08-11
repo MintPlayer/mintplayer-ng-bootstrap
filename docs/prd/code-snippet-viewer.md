@@ -539,12 +539,13 @@ house convention).
 ## 14. Risks & spikes
 
 Spikes are cheap and the user has explicitly authorised as many as are useful. Five are gating.
+**S1–S3 have been run; results below.**
 
-| # | Spike / risk | Assertion |
-|---|---|---|
-| **S1** | `light-dark()` over an inherited `color-scheme`, 3 engines | (a) dark page → dark block; (b) **light page while the OS prefers dark → light block** (the `color-scheme: normal` case Bootstrap leaves unset — primary assertion, §8); (c) `theme="light\|dark"` overrides both; (d) it works from *inside* a shadow root at all. Fallback if it fails: `--mp-code-scheme` custom property set by `_bootstrap.scss` — more wiring, same API |
-| **S2** | Line-splitting against **real** hljs output | Pure function, spec-first, over TS/JSON/XML/C#/markdown: spans crossing many lines, nesting across a break, entities never split, no phantom trailing row, `\r\n`, empty lines. §7 |
-| **S3** | Alias extraction across **all 36** grammars | Register each against real `lib/core` and read `aliases`; assert `tsx`→typescript, `html`→xml, `js`**≠**typescript. The research loaded only 2 of 384 — a full pass may hit grammars with unusual API needs. §9.1 |
+| # | Spike / risk | Assertion | Result |
+|---|---|---|---|
+| **S1** | `light-dark()` over an inherited `color-scheme` | (a) dark page → dark block; (b) **light page while the OS prefers dark → light block** (the `color-scheme: normal` case Bootstrap leaves unset — primary assertion, §8); (c) `theme="light\|dark"` overrides both; (d) runtime ancestor flip repaints with no component JS | **PASS (Chromium)** — see §14.1 |
+| **S2** | Line-splitting against **real** hljs output | Spans crossing many lines, nesting across a break, entities never double-escaped, empty lines, text round-trip | **PASS** — see §14.2 |
+| **S3** | Alias extraction across **all 36** common grammars | Register each against real `lib/core`; `tsx`→typescript, `html`→xml, `js`→javascript | **PASS** — 36/36, 0 failures, 68 aliases → **104 map keys** |
 | **S4** | Bundler resolution matrix, extended to **webpack** | The esbuild/rollup/vite matrix in §9.3 is measured; webpack is not. Decides whether the README's install note is sufficient |
 | **S5** | Row-based rendering vs today's `<pre>` on real demo pages | Line-height, wrapping, horizontal scroll and drag-select-copy output must match or beat the current blob across the three demo apps |
 | R6 | Async highlighting flashes on 332 demo snippets | Paint escaped plain text immediately, upgrade in place. §9.2 |
@@ -553,6 +554,55 @@ Spikes are cheap and the user has explicitly authorised as many as are useful. F
 | R9 | 2 000 focusable line anchors destroy keyboard navigation | Roving tabindex, one tab stop. §11 |
 | R10 | Lazy loading breaks the ng demo's global `hljs` stub (`test-setup.ts:19-31`) | Stub the loader map instead; update in the same milestone |
 | R11 | Light palette loses the attr/number distinction and may fail contrast | Choose values and compute ratios; do not transcribe. §8 |
+
+### 14.1 S1 result — PASS in Chromium; Firefox/WebKit deferred to CI
+
+Spike page: `docs/prd/_spike-code-theme.html` (six probes, run under both
+`prefers-color-scheme: dark` and `light`). Measured in Chromium via the Playwright MCP:
+
+| probe | case | computed `color-scheme` | resolved | expected |
+|---|---|---|---|---|
+| p1 | `data-bs-theme=dark` ancestor | `dark` | dark | dark ✅ |
+| **p2** | `data-bs-theme=light` (Bootstrap sets nothing) | **`normal`** | **light** | light ✅ |
+| **p3** | no theme attribute at all | **`normal`** | **light** | light ✅ |
+| p4 | `theme="light"` inside a dark page | `light only` | light | light ✅ |
+| p5 | `theme="dark"` inside a light page | `dark only` | dark | dark ✅ |
+| p6 | ancestor flipped to dark at runtime | `dark` | dark | dark ✅ |
+
+**Identical results under `prefers-color-scheme: dark` and `light`** — which is the whole point:
+p2/p3 stay light while the OS asks for dark, confirming `light-dark()` treats the initial
+`normal` as light rather than consulting the media query. The mechanism is adopted as specified;
+the `--mp-code-scheme` fallback is **not** needed.
+
+**Not verified in Firefox or WebKit.** The locally installed engine builds predate the installed
+Playwright driver (protocol mismatch on `newPage`), and downloading matching browsers was
+declined. Residual risk is low — `light-dark()` is Baseline (Chrome 123+, Firefox 120+, Safari
+17.5+), `color-scheme` inheritance is long-standing, and `normal`→light is spec-defined — but it
+is **unmeasured in two of three engines**. Mitigation: M8 adds a theming assertion to the shared
+e2e suite, which CI runs across all three engines, so the gap closes on the first CI run rather
+than being carried as an assumption.
+
+### 14.2 S2 result — PASS
+
+The scanner in §7, run against real hljs 11.11.1 output. Every sample produced exactly one row
+per source line, every row balanced, and `rows.map(stripTags).join('\n')` reproduced the source
+byte-for-byte:
+
+| sample | rows | balanced | text round-trip | had a span crossing a newline |
+|---|---|---|---|---|
+| typescript (multi-line block comment) | 7/7 | ✅ | ✅ | **yes** |
+| json | 4/4 | ✅ | ✅ | no |
+| xml (with `&amp;`) | 3/3 | ✅ | ✅ | no |
+| csharp | 4/4 | ✅ | ✅ | no |
+| markdown (embedded ts fence) | 7/7 | ✅ | ✅ | **yes** |
+
+Plus: a 4-line block comment → 5 balanced rows, each carrying `hljs-comment`; entities escaped
+exactly once (`&amp;`, never `&amp;amp;`); empty lines preserved as empty rows.
+
+**Correction to the earlier research note:** `getLanguage('js')` misses only when *typescript
+alone* is registered. `javascript` is itself one of the 36 common grammars, so with the full map
+`js` resolves correctly. The alias handling is still required — `tsx`→typescript and `html`→xml
+are real and load-bearing (51 usages each).
 
 ## 15. Decisions (resolved 2026-08-11)
 
