@@ -18,60 +18,64 @@ using the running demo. Suites green locally.
 | M8 | Demo pages ×3, ng axe route, ngx-highlightjs purge | ✅ |
 | M9 | Sweep | ✅ 4 builds, 1898 WC tests, 164+93 Angular suites, 3 axe gates (40+44+44), dock e2e |
 
-## CI status — ONE OPEN FAILURE, not yet diagnosed
+## CI status — diagnosed and fixed
 
-**State at hand-off: PR #402 is RED.** Reproducible in CI across two runs of the same commit
-(run `31486552471` and its `--failed` rerun). Everything else is green: React e2e 129 passed, Vue
-e2e 120 passed, all unit suites, build, API tests.
+**PR #402 went RED on `keyboard-walkthrough.spec.ts:92`** (*tooltip — focusing the trigger reveals
+the tooltip*), Chromium only, CI only. Diagnosed as **branch-introduced test flakiness, not a
+functional regression**, and fixed on the test side. Everything else was green throughout: React
+e2e 129, Vue e2e 120, all unit suites, build, API tests.
 
-`ng-bootstrap-demo-e2e` — **1 failed, 2 flaky, ~408 passed**:
+### The evidence that settled it
 
-| test | outcome |
-|---|---|
-| `keyboard-walkthrough.spec.ts:92` — *tooltip — focusing the trigger reveals the tooltip* | **FAILED twice (initial + retry #1) in BOTH runs** |
-| `dock-keyboard.spec.ts:116` — *M → T docks the focused pane* | flaky (fails, passes on retry) |
-| `tools/e2e-shared/carousel-suites.ts:66` — *carousel (JS) indicators navigate* | flaky (appeared in the rerun only) |
+Retry history of that one test across the four completed runs on this branch, versus four sampled
+runs on other branches:
 
-### What is known
+| run | branch | tooltip test |
+|---|---|---|
+| `31474699947` | this branch | flaky — failed, passed on retry |
+| `31477957668` | this branch | **failed twice** → run RED |
+| `31483923424` | this branch | passed first try |
+| `31486552471` | this branch | **failed twice** → run RED |
+| `31393075259` | feat/charts-wc | never retried |
+| `31049337392` | fix/input-group | never retried |
+| `30997171505`, `30849452779` | feat/phone-input | never retried |
 
-- **All three pass locally**, Chromium *and* Firefox, run individually.
-- The failure is `expect(page.locator('.tooltip, [role="tooltip"]').first()).toBeVisible()` →
-  `element(s) not found`. The tooltip is never created at all; it is not a positioning or
-  visibility problem. The test focuses a button and waits 300 ms after
-  `waitForLoadState('networkidle')`, so networkidle DID resolve — the page believed itself settled.
-- The dock failure is `expect(after).not.toBe(before)` with both sides `""`, i.e. the Live-layout
-  pane never populated. It reads the `.code` property off the inner `mp-code-snippet`.
-- The carousel failure is a radio not `checked` after clicking indicator 3.
-- **The previous run on this same branch passed** (`31483923424`, 36 minutes earlier). The only
-  commits in between are `89311e04` (R10: element + wrapper become flex columns, `pre` gains
-  block-start padding, demo sections added) and `d1a7e6b3` (removing an unused import from the
-  query-builder demo — a different page).
+So it needs a retry in **3 of 4 runs here and never elsewhere** — the flake is ours. Three further
+facts pin the mechanism:
 
-### Leading hypothesis (UNCONFIRMED)
+- **Firefox passes the same test, in the same run, on the same page.** A real breakage in the
+  snippet or the tooltip directive could not be engine-specific; a 5-second timing window can be.
+- The tooltip directive is **untouched** by this branch, and the tooltip page changed by exactly one
+  binding rename (`[codeToCopy]` → `[code]`).
+- The error is `element(s) not found`, i.e. the overlay was **never created**: `focusin` never
+  reached the directive. Not a positioning or visibility problem.
 
-All three failing/flaky tests are timing-sensitive, all are in the **ng** demo, and all three of
-those pages carry `bs-code-snippet` instances. This branch made every snippet do asynchronous work
-after first paint — a dynamic grammar chunk import per snippet — which extends how long a demo page
-keeps doing work and fetching after `networkidle` resolves. Combined with the demo's **destructive
-SSR bootstrap** (the app re-creates its component tree after hydration; see
-`project_e2e_destructive_bootstrap`), a focus taken before that re-bootstrap lands on a node that
-is then replaced, and the tooltip never opens.
+### Mechanism
 
-Against the hypothesis: async highlighting was already present in the run that PASSED, so R10
-alone would have to be what tipped an already-marginal timing window.
+The demo bootstraps **destructively** (no `provideClientHydration`; see
+`project_e2e_destructive_bootstrap`), so the SSR'd button is discarded and rebuilt. The spec's only
+gate was `waitForLoadState('networkidle')`, which reports on the *network*, not on whether Angular
+has finished re-creating the tree — the two have never been the same thing, the race was simply
+never lost before. This branch made the page heavier (two snippets, each fetching a grammar chunk
+after first paint), which pushed the re-bootstrap later relative to networkidle and started losing
+it on a 2-core runner.
 
-### Next diagnostic steps
+The reason **this** spec is the one that broke, out of ten in the same file that use the same gate,
+is that it is the only one whose trigger is `focus()` **alone**. Every other spec acts again after
+focusing — a keypress, a click — and that second action re-targets the live DOM. `focusin` is
+one-shot: focus a doomed node and nothing ever re-fires, so the wait can only time out.
 
-1. Download the trace from the failed run — the tooltip failure attaches
-   `test-results/keyboard-walkthrough-toolt-843d2-*/trace.zip`; `npx playwright show-trace` will
-   show whether the button was still attached when focused and whether a re-bootstrap intervened.
-2. Check whether these tests fail on `master` (they do not fail locally) to separate "mine" from
-   "pre-existing CI flake".
-3. If the hypothesis holds, the fix is on the TEST side, not the component: waiting for the app to
-   settle rather than for `networkidle`, which no longer means "settled" once any component fetches
-   lazily. Do not weaken the component's lazy loading to satisfy a test.
+### The fix
 
-**Do not merge until this is resolved or explicitly accepted.**
+Re-focus until the tooltip appears, bounded by `expect.toPass({ timeout: 15_000 })`. The invariant
+under test is unchanged — focus, and only focus, must reveal the tooltip — and the component's lazy
+loading is not weakened to satisfy a test.
+
+### Pre-existing flakes, deliberately left alone
+
+`dock-keyboard.spec.ts:116` and `tools/e2e-shared/carousel-suites.ts:66` also retried in these runs.
+Both retry on **other branches too** (`31393075259`, `31049337392`), so they predate this work and
+are out of scope here. They pass on retry and do not turn CI red.
 
 ## CI performance work (Nx recommendations)
 

@@ -1,15 +1,16 @@
 # PRD — `mp-code-snippet` becomes the code **viewer**: line rendering, theming, lazy highlighting
 
-Status: **Implemented but CI IS RED** (2026-08-11) on `feat/code-snippet-viewer`, PR #402, through
-four rounds: the original M0–M9 build, the M10 review fixes (§15b, R1–R5), the M11 narrow-viewport
-fixes (§15c, R6–R9) and the M12 constrained-size fix (§15d, R10).
+Status: **Implemented** (2026-08-11) on `feat/code-snippet-viewer`, PR #402, through
+five rounds: the original M0–M9 build, the M10 review fixes (§15b, R1–R5), the M11 narrow-viewport
+fixes (§15c, R6–R9), the M12 constrained-size fix (§15d, R10) and the M13 e2e de-flake.
 
-> **One e2e failure is open and undiagnosed** — `keyboard-walkthrough.spec.ts:92` (tooltip) fails
-> twice, reproducibly, in two CI runs of the same commit, while passing locally in two engines; the
-> dock and carousel specs are flaky alongside it. The leading (unconfirmed) hypothesis is that
-> this branch's per-snippet lazy grammar fetch extends page activity past `networkidle`, which the
-> demo's destructive SSR bootstrap then races. **Do not merge until resolved.** The plan's
-> "CI status" section has the evidence and the next diagnostic steps. Suites green locally: 4 builds, 1908 web-component tests, 164 + 93 Angular suites,
+> **The one CI failure is diagnosed and fixed.** `keyboard-walkthrough.spec.ts:92` (tooltip) turned
+> CI red twice. It is branch-introduced *flakiness*, not a functional regression: the test needed a
+> retry in 3 of 4 runs here and in none on other branches, Firefox passes the same test in the same
+> run, and the tooltip directive is untouched. The page simply got heavier, and the spec's only gate
+> — `networkidle` — never meant "Angular has finished its destructive re-bootstrap". It is the one
+> spec in that file triggered by `focus()` alone, so a focus on the doomed node can never re-fire.
+> Fixed by re-focusing under `expect.toPass`. Plan → "CI status" has the full table. Suites green locally: 4 builds, 1908 web-component tests, 164 + 93 Angular suites,
 3 axe gates, dock e2e. Package versions bumped one minor each — web-components 2.12.0,
 ng-bootstrap 22.15.0, react-bootstrap 19.16.0, vue-bootstrap 3.17.0.
 
