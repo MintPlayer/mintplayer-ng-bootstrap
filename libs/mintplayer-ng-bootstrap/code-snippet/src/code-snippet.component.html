@@ -1,5 +1,26 @@
+<!--
+  Strings and booleans go in as ATTRIBUTES, not properties, so that an unset
+  input removes the attribute (`null`) and the element keeps its own default.
+  A property binding would write `''` over defaults like
+  "Copy ${language} code to clipboard" and blank them.
+
+  `code`, `annotations` and `lineHref` stay property bindings: multi-line text,
+  an object and a function have no sensible attribute form.
+-->
 <mp-code-snippet
-  [code]="codeToCopy()"
-  [language]="language()"
+  #element
+  [code]="code()"
+  [attr.language]="language() || null"
+  [attr.line-numbers]="lineNumbers() ? '' : null"
+  [attr.start-line]="startLine()"
+  [attr.wrap]="wrap() ? '' : null"
+  [attr.theme]="theme()"
+  [attr.active-line]="activeLine()"
+  [attr.label]="label() || null"
+  [attr.copy-label]="copyLabel() || null"
+  [attr.line-label]="lineLabel() || null"
+  [annotations]="annotations()"
+  [lineHref]="lineHref()"
   (language-detected)="onLanguageDetected($event)"
+  (line-activate)="onLineActivate($event)"
 ></mp-code-snippet>

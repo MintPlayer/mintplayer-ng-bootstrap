@@ -156,7 +156,7 @@
   and reports failures through <code>reportError()</code> (which re-fires
   <code>(errorReported)</code> for your toast bus).
 </p>
-<bs-code-snippet [language]="'ts'" [codeToCopy]="snippetOperationHandler"></bs-code-snippet>
+<bs-code-snippet [language]="'ts'" [code]="snippetOperationHandler"></bs-code-snippet>
 
 <h3 class="h5 mt-4">2. Upload pipeline with progress</h3>
 <p>
@@ -168,7 +168,7 @@
   so you can render a progress UI wherever you like (the live demo above
   renders it directly below the file-manager).
 </p>
-<bs-code-snippet [language]="'ts'" [codeToCopy]="snippetUploadPipeline"></bs-code-snippet>
+<bs-code-snippet [language]="'ts'" [code]="snippetUploadPipeline"></bs-code-snippet>
 
 <h3 class="h5 mt-4">3. Custom dialogs (replacing window.confirm / window.prompt)</h3>
 <p>
@@ -178,7 +178,7 @@
   unset, the component falls back to the native dialogs so basic usage
   still works.
 </p>
-<bs-code-snippet [language]="'ts'" [codeToCopy]="snippetDialogResolver"></bs-code-snippet>
+<bs-code-snippet [language]="'ts'" [code]="snippetDialogResolver"></bs-code-snippet>
 
 <h3 class="h5 mt-4">4. Conflict resolution on paste / upload</h3>
 <p>
@@ -190,7 +190,7 @@
   <code>(uploadRequest)</code> payload. Unset = silent replace
   (preserves the v1 behaviour).
 </p>
-<bs-code-snippet [language]="'ts'" [codeToCopy]="snippetConflictResolver"></bs-code-snippet>
+<bs-code-snippet [language]="'ts'" [code]="snippetConflictResolver"></bs-code-snippet>
 
 <h3 class="h5 mt-4">5. Lazy-loaded tree</h3>
 <p>
@@ -201,7 +201,7 @@
   the fetch, and merges the returned children back into its store —
   no consumer-side coordination beyond returning the right data.
 </p>
-<bs-code-snippet [language]="'ts'" [codeToCopy]="snippetLazyTree"></bs-code-snippet>
+<bs-code-snippet [language]="'ts'" [code]="snippetLazyTree"></bs-code-snippet>
 
 <h3 class="h5 mt-4">6. Internationalisation</h3>
 <p>
@@ -210,7 +210,7 @@
   fall back to <code>DEFAULT_FILE_MANAGER_MESSAGES</code> (English). Locale
   switching works at runtime — the demo above uses three locales.
 </p>
-<bs-code-snippet [language]="'ts'" [codeToCopy]="snippetI18n"></bs-code-snippet>
+<bs-code-snippet [language]="'ts'" [code]="snippetI18n"></bs-code-snippet>
 
 <h3 class="h5 mt-4">7. Per-node permissions</h3>
 <p>
@@ -220,7 +220,7 @@
   buttons gate against the worst case across the current selection
   (a multi-row delete is disabled if any selected row is locked).
 </p>
-<bs-code-snippet [language]="'ts'" [codeToCopy]="snippetPerNodePermissions"></bs-code-snippet>
+<bs-code-snippet [language]="'ts'" [code]="snippetPerNodePermissions"></bs-code-snippet>
 
 <h3 class="h5 mt-4">8. Error reporting → toast bus</h3>
 <p>
@@ -229,7 +229,7 @@
   your handler and listen on <code>(errorReported)</code> at the
   template level — that's where you wire the toast / snackbar.
 </p>
-<bs-code-snippet [language]="'ts'" [codeToCopy]="snippetErrorBridge"></bs-code-snippet>
+<bs-code-snippet [language]="'ts'" [code]="snippetErrorBridge"></bs-code-snippet>
 
 <h3 class="h5 mt-4">Checklist for production</h3>
 <ul>

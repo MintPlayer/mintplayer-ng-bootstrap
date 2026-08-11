@@ -76,7 +76,7 @@
       <div class="dock-demo__snapshot">
         <h4 class="dock-demo__snapshot-title">Live layout</h4>
         @if (liveLayout()) {
-          <bs-code-snippet [codeToCopy]="(liveLayout() | json) ?? ''" [language]="'json'"></bs-code-snippet>
+          <bs-code-snippet [code]="(liveLayout() | json) ?? ''" [language]="'json'"></bs-code-snippet>
         } @else {
           <p class="text-body-secondary">Drag a pane to capture a layout.</p>
         }
@@ -84,20 +84,20 @@
       @if (savedLayout(); as snapshot) {
         <div class="dock-demo__snapshot">
           <h4 class="dock-demo__snapshot-title">Captured snapshot</h4>
-          <bs-code-snippet [codeToCopy]="(snapshot | json) ?? ''" [language]="'json'"></bs-code-snippet>
+          <bs-code-snippet [code]="(snapshot | json) ?? ''" [language]="'json'"></bs-code-snippet>
         </div>
       }
     </div>
   </div>
 
-  <bs-code-snippet [codeToCopy]="snippetBasicHtml" [language]="'html'"></bs-code-snippet>
-  <bs-code-snippet [codeToCopy]="snippetBasicTs" [language]="'ts'"></bs-code-snippet>
+  <bs-code-snippet [code]="snippetBasicHtml" [language]="'html'"></bs-code-snippet>
+  <bs-code-snippet [code]="snippetBasicTs" [language]="'ts'"></bs-code-snippet>
 
   <h2>Floating panes</h2>
 
-  <bs-code-snippet [codeToCopy]="snippetFloatingTs" [language]="'ts'"></bs-code-snippet>
+  <bs-code-snippet [code]="snippetFloatingTs" [language]="'ts'"></bs-code-snippet>
 
   <h2>Capture &amp; restore layout</h2>
 
-  <bs-code-snippet [codeToCopy]="snippetCaptureTs" [language]="'ts'"></bs-code-snippet>
+  <bs-code-snippet [code]="snippetCaptureTs" [language]="'ts'"></bs-code-snippet>
 </div>

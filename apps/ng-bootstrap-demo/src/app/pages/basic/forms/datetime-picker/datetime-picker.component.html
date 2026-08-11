@@ -11,8 +11,8 @@
 
 <h2>Basic usage</h2>
 
-<bs-code-snippet [codeToCopy]="snippetBasicHtml" [language]="'html'"></bs-code-snippet>
-<bs-code-snippet [codeToCopy]="snippetBasicTs" [language]="'ts'"></bs-code-snippet>
+<bs-code-snippet [code]="snippetBasicHtml" [language]="'html'"></bs-code-snippet>
+<bs-code-snippet [code]="snippetBasicTs" [language]="'ts'"></bs-code-snippet>
 
 <details class="mb-3">
   <summary>Keyboard shortcuts</summary>
@@ -31,7 +31,7 @@
   <bs-datetime-picker [(value)]="minimal" [showClear]="true"></bs-datetime-picker>
   <div class="mt-2">Selected: <code>{{ minimal() | date: 'medium' }}</code></div>
 
-  <bs-code-snippet [codeToCopy]="snippetMinimalHtml" [language]="'html'"></bs-code-snippet>
+  <bs-code-snippet [code]="snippetMinimalHtml" [language]="'html'"></bs-code-snippet>
 </section>
 
 <section class="mb-4">
@@ -44,8 +44,8 @@
     <code>FormControl.dirty</code>: {{ reactive.dirty }}
   </div>
 
-  <bs-code-snippet [codeToCopy]="snippetReactiveHtml" [language]="'html'"></bs-code-snippet>
-  <bs-code-snippet [codeToCopy]="snippetReactiveTs" [language]="'ts'"></bs-code-snippet>
+  <bs-code-snippet [code]="snippetReactiveHtml" [language]="'html'"></bs-code-snippet>
+  <bs-code-snippet [code]="snippetReactiveTs" [language]="'ts'"></bs-code-snippet>
 </section>
 
 <section class="mb-4">
@@ -60,7 +60,7 @@
   </bs-datetime-picker>
   <div class="mt-2">Selected: <code>{{ boundsValue() | date: 'medium' }}</code></div>
 
-  <bs-code-snippet [codeToCopy]="snippetBoundsHtml" [language]="'html'"></bs-code-snippet>
+  <bs-code-snippet [code]="snippetBoundsHtml" [language]="'html'"></bs-code-snippet>
 </section>
 
 <section class="mb-4">
@@ -73,8 +73,8 @@
   </bs-datetime-picker>
   <div class="mt-2">Selected: <code>{{ weekendsValue() | date: 'medium' }}</code></div>
 
-  <bs-code-snippet [codeToCopy]="snippetDisableFnHtml" [language]="'html'"></bs-code-snippet>
-  <bs-code-snippet [codeToCopy]="snippetDisableFnTs" [language]="'ts'"></bs-code-snippet>
+  <bs-code-snippet [code]="snippetDisableFnHtml" [language]="'html'"></bs-code-snippet>
+  <bs-code-snippet [code]="snippetDisableFnTs" [language]="'ts'"></bs-code-snippet>
 </section>
 
 <section class="mb-4">
@@ -87,7 +87,7 @@
   </bs-datetime-picker>
   <div class="mt-2">Selected: <code>{{ stepValue() | date: 'medium' }}</code></div>
 
-  <bs-code-snippet [codeToCopy]="snippetStepHtml" [language]="'html'"></bs-code-snippet>
+  <bs-code-snippet [code]="snippetStepHtml" [language]="'html'"></bs-code-snippet>
 </section>
 
 <section class="mb-4">
@@ -106,5 +106,5 @@
   </bs-datetime-picker>
   <div class="mt-2">Current mode: <code>{{ hour12Mode() | json }}</code></div>
 
-  <bs-code-snippet [codeToCopy]="snippetHour12Html" [language]="'html'"></bs-code-snippet>
+  <bs-code-snippet [code]="snippetHour12Html" [language]="'html'"></bs-code-snippet>
 </section>

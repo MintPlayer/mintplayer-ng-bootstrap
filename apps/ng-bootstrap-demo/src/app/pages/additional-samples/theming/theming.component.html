@@ -30,7 +30,7 @@
   runtime cost. This is the right approach when your brand colors are fixed.
 </p>
 
-<bs-code-snippet [codeToCopy]="scssOverridesSnippet" [language]="'scss'"></bs-code-snippet>
+<bs-code-snippet [code]="scssOverridesSnippet" [language]="'scss'"></bs-code-snippet>
 
 <p class="text-muted">
   All standard Bootstrap variables (<code>$primary</code>, <code>$body-bg</code>,
@@ -89,7 +89,7 @@
   </div>
 </div>
 
-<bs-code-snippet [codeToCopy]="runtimeCssVarSnippet" [language]="'ts'"></bs-code-snippet>
+<bs-code-snippet [code]="runtimeCssVarSnippet" [language]="'ts'"></bs-code-snippet>
 
 <h3>Per-component variables</h3>
 <p>
@@ -158,7 +158,7 @@
   </span>
 </div>
 
-<bs-code-snippet [codeToCopy]="serviceUsageSnippet" [language]="'ts'"></bs-code-snippet>
+<bs-code-snippet [code]="serviceUsageSnippet" [language]="'ts'"></bs-code-snippet>
 
 
 <h2 id="adaptive-navbar">Adaptive navbar</h2>
@@ -171,7 +171,7 @@
   theme — giving a slightly tinted, theme-aware navbar in both light and dark.
 </p>
 
-<bs-code-snippet [codeToCopy]="adaptiveNavbarSnippet" [language]="'html'"></bs-code-snippet>
+<bs-code-snippet [code]="adaptiveNavbarSnippet" [language]="'html'"></bs-code-snippet>
 
 <p class="text-muted">
   <code>[color]</code> accepts either a <code>Color</code> enum value
@@ -194,7 +194,7 @@
   also compile.
 </p>
 
-<bs-code-snippet [codeToCopy]="customVariantSnippet" [language]="'scss'"></bs-code-snippet>
+<bs-code-snippet [code]="customVariantSnippet" [language]="'scss'"></bs-code-snippet>
 
 <bs-alert [type]="colors.warning" class="d-block mb-4">
   <strong>auto only resolves to light or dark.</strong>
@@ -216,7 +216,7 @@
   before the browser has resolved any CSS.
 </p>
 
-<bs-code-snippet [codeToCopy]="preBootScriptSnippet" [language]="'html'"></bs-code-snippet>
+<bs-code-snippet [code]="preBootScriptSnippet" [language]="'html'"></bs-code-snippet>
 
 <bs-alert [type]="colors.info" class="d-block mb-4">
   The storage key (<code>'bs-theme-mode'</code>) must match the

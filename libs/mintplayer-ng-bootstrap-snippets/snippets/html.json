@@ -19,7 +19,7 @@
         "prefix": "bs-code-snippet",
         "description": "Code Snippet using highlight.js",
         "body": [
-            "<bs-code-snippet [codeToCopy]=\"${1:code}\"></bs-code-snippet>"
+            "<bs-code-snippet [code]=\"${1:code}\"></bs-code-snippet>"
         ]
     },
     "Datatable": {
