@@ -88,7 +88,13 @@ code {
 // exposed as the CSS part `annotation-<kind>` and the consumer paints it from
 // their own stylesheet:
 //
-//   bs-code-snippet::part(annotation-uncovered) { background: rgba(220,53,69,.14); }
+//   mp-code-snippet::part(annotation-uncovered) { background: rgb(220 53 69 / 16%); }
+//
+// The selector must name `mp-code-snippet` — `::part()` only matches the
+// element that OWNS the shadow root. Through the Angular wrapper that element
+// is a descendant of `bs-code-snippet`, so an Angular consumer needs
+// `.x ::ng-deep mp-code-snippet::part(...)`; React and Vue put the class
+// straight on the element.
 //
 // The active line composes OVER whatever that is — an outline, not a
 // background — because "which line am I on" and "what is this line's coverage"

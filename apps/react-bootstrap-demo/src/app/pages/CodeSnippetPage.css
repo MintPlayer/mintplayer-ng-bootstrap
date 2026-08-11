@@ -1,0 +1,20 @@
+/*
+  Annotation colours belong to the consumer: `kind` is an opaque string, so the
+  component ships no rule for it and `::part(annotation-<kind>)` is the channel.
+
+  @lit/react roots the component AT the custom element, so the className lands
+  straight on `<mp-code-snippet>` and `::part()` matches without any descendant
+  step. (Angular needs `::ng-deep mp-code-snippet::part(...)`, because there the
+  element sits inside the wrapper's template.)
+*/
+.coverage::part(annotation-covered) {
+  background: rgb(25 135 84 / 14%);
+}
+
+.coverage::part(annotation-partial) {
+  background: rgb(255 193 7 / 20%);
+}
+
+.coverage::part(annotation-uncovered) {
+  background: rgb(220 53 69 / 16%);
+}

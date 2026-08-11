@@ -1,0 +1,26 @@
+// Annotation colours live HERE, in the consumer, not in the component: `kind`
+// is an opaque string, so `::part(annotation-<kind>)` is the channel and this
+// page decides what "covered" looks like.
+//
+// The selector must name `mp-code-snippet`, NOT the `bs-code-snippet` wrapper
+// the class sits on: `::part()` only applies to the element that owns the
+// shadow root, and `bs-code-snippet` is a plain Angular component with no
+// shadow root at all. `::ng-deep` is needed with it because `<mp-code-snippet>`
+// is emitted by the WRAPPER's template and so carries the wrapper's
+// emulated-encapsulation attribute, not this page's. React and Vue put the
+// consumer's class straight onto the element, so only Angular needs this step.
+// (Same reasoning as the accordion demo.)
+.demo-coverage ::ng-deep mp-code-snippet {
+  // Translucent, so each reads correctly over either theme's code background.
+  &::part(annotation-covered) {
+    background: rgb(25 135 84 / 14%);
+  }
+
+  &::part(annotation-partial) {
+    background: rgb(255 193 7 / 20%);
+  }
+
+  &::part(annotation-uncovered) {
+    background: rgb(220 53 69 / 16%);
+  }
+}

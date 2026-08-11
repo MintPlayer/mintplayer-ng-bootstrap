@@ -34,14 +34,7 @@
           "apps/ng-bootstrap-demo/src/web.config",
           "apps/ng-bootstrap-demo/src/nginx.conf"
         ],
-        "styles": [
-          "apps/ng-bootstrap-demo/src/styles.scss",
-          {
-            "input": "libs/mintplayer-ng-bootstrap/src/styles/ngx-highlight-themes/a11y-dark.scss",
-            "inject": false,
-            "bundleName": "a11y-dark"
-          }
-        ],
+        "styles": ["apps/ng-bootstrap-demo/src/styles.scss"],
         "scripts": [],
         "stylePreprocessorOptions": {
           "includePaths": [

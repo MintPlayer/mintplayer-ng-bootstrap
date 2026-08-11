@@ -1,9 +1,56 @@
 <h1 class="text-center">Code snippet</h1>
 <bs-code-snippet [code]="html" [language]="'html'"></bs-code-snippet>
 <p>
-    This component uses
-    <a href="https://github.com/MurhafSousli/ngx-highlightjs" target="_blank">ngx-highlightjs</a>
-    and
-    <a href="https://github.com/highlightjs/highlight.js" target="_blank">highlight.js</a>
-    for markup highlighting.
+    Highlighting comes from
+    <a href="https://github.com/highlightjs/highlight.js" target="_blank">highlight.js</a>.
+    Only its core is loaded up front; the grammar for the language you ask for is
+    fetched on demand, so a page with one <code>ts</code> snippet pays for one
+    grammar rather than all 36.
 </p>
+
+<h2>Line numbers</h2>
+<p>Off by default — a one-line install command gains nothing from a <code>1</code> beside it.</p>
+<bs-code-snippet [code]="sample" [language]="'ts'" [lineNumbers]="true"></bs-code-snippet>
+<bs-code-snippet [code]="snippetLineNumbers" [language]="'html'"></bs-code-snippet>
+
+<h2>Theming</h2>
+<p>
+    The block follows the page's <code>data-bs-theme</code> with no wiring — flip the
+    theme switch in the topbar and this snippet follows it. Pass
+    <code>[theme]="'light'"</code> or <code>'dark'</code> to pin it instead.
+</p>
+<div class="d-flex gap-3 flex-wrap">
+    <div class="flex-grow-1" data-bs-theme="light">
+        <bs-code-snippet [code]="sample" [language]="'ts'" [label]="'Light theme example'"></bs-code-snippet>
+    </div>
+    <div class="flex-grow-1" data-bs-theme="dark">
+        <bs-code-snippet [code]="sample" [language]="'ts'" [label]="'Dark theme example'"></bs-code-snippet>
+    </div>
+</div>
+<bs-code-snippet [code]="snippetTheme" [language]="'html'"></bs-code-snippet>
+
+<h2>Per-line annotations</h2>
+<p>
+    Each line can carry a <code>kind</code>, up to two gutter labels and a description.
+    <code>kind</code> is an opaque string — the component ships no colours for it, so you
+    style <code>::part(annotation-&lt;kind&gt;)</code> from your own stylesheet and the
+    component stays coverage-agnostic.
+</p>
+<p class="text-body-secondary">
+    Keyboard: Tab reaches the active line, then the arrow keys move between line links and
+    Home / End jump to the first and last. Clicking a line number sets the active line here;
+    the underlying link is a real <code>href</code>, so middle-click still opens it.
+</p>
+<bs-code-snippet
+    class="demo-coverage"
+    [code]="sample"
+    [language]="'ts'"
+    [lineNumbers]="true"
+    [annotations]="coverage"
+    [activeLine]="activeLine()"
+    [lineHref]="lineHref"
+    [label]="'Coverage report for total()'"
+    (lineActivate)="onLineActivate($event)"
+></bs-code-snippet>
+<bs-code-snippet [code]="snippetAnnotations" [language]="'html'"></bs-code-snippet>
+<bs-code-snippet [code]="snippetAnnotationsTs" [language]="'ts'"></bs-code-snippet>
