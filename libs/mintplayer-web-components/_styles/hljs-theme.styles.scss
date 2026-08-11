@@ -1,0 +1,97 @@
+// highlight.js token -> colour map, shared by every component that renders
+// highlighted source. Declared ONCE here: components include the same
+// `hljsThemeStyles` CSSResult in their own `static styles`, so Lit attaches a
+// single underlying CSSStyleSheet to all of their shadow roots rather than one
+// copy per component.
+//
+// The palette is a port of highlight.js's a11y-dark.css (@ericwbailey). It is
+// expressed as custom properties rather than literal colours so the theming
+// layer can swap the whole palette in one place — see the `light-dark()` block
+// below and code-snippet-viewer.md §8.
+//
+// Two groups exist here that upstream a11y-dark does NOT define, and both are
+// load-bearing for JSON: `hljs-attr` (JSON keys) and `hljs-punctuation` (braces,
+// brackets, commas, colons). Without them JSON renders as almost entirely
+// unstyled text, because neither token has a mapped ancestor to inherit from in
+// JSON's parse tree. Tokens that ARE nested under a mapped ancestor (e.g.
+// `hljs-attr` inside `hljs-tag` in XML) deliberately inherit instead.
+
+// `light-dark()` is a CSS function, not a Sass one — written bare so Sass
+// passes it through verbatim. It resolves against the `color-scheme` the page
+// sets on [data-bs-theme], which inherits across the shadow boundary; there is
+// no ancestor selector and no JS anywhere in this file. Measured in
+// code-snippet-viewer.md §14.1.
+:host {
+  // a11y-dark / a11y-light base surfaces.
+  --mp-code-bg: light-dark(#fefefe, #2b2b2b);
+  --mp-code-fg: light-dark(#545454, #f8f8f2);
+
+  // Token hues. Light values are NOT a mechanical transcription of
+  // a11y-light: that theme paints `hljs-attribute` and `hljs-number` the same
+  // `#aa5d00`, collapsing two groups the dark theme keeps distinct. We keep
+  // them distinct by darkening the light "yellow" to its own accessible hue,
+  // so the attr/number distinction survives in both modes.
+  --mp-code-comment: light-dark(#696969, #d4d0ab);
+  --mp-code-red: light-dark(#d91e18, #ffa07a);
+  --mp-code-orange: light-dark(#aa5d00, #f5ab35);
+  --mp-code-yellow: light-dark(#7c4a03, #ffd700);
+  --mp-code-green: light-dark(#008000, #abe338);
+  --mp-code-blue: light-dark(#007faa, #00e0e0);
+  --mp-code-purple: light-dark(#7928a1, #dcc6e0);
+
+  // Muted punctuation. The dark value is a light grey on #2b2b2b; the light
+  // value has to be CHOSEN, not converted — #c8c8c2 on #fefefe is ~1.6:1 and
+  // unreadable. #6a6a66 is the same hue family at 5.39:1.
+  --mp-code-punctuation: light-dark(#6a6a66, #c8c8c2);
+
+  // Every pair above is >= 4.5:1 against its own background (WCAG AA for body
+  // text). Measured, lowest first: light blue 4.51, light orange 4.87, light
+  // red 5.02, light green 5.09 ... dark red 7.12 ... dark fg 13.28.
+}
+
+/* Comment */
+.hljs-comment,
+.hljs-quote { color: var(--mp-code-comment); }
+
+/* Red */
+.hljs-variable,
+.hljs-template-variable,
+.hljs-tag,
+.hljs-name,
+.hljs-selector-id,
+.hljs-selector-class,
+.hljs-regexp,
+.hljs-deletion { color: var(--mp-code-red); }
+
+/* Orange */
+.hljs-number,
+.hljs-built_in,
+.hljs-literal,
+.hljs-type,
+.hljs-params,
+.hljs-meta,
+.hljs-link { color: var(--mp-code-orange); }
+
+/* Yellow */
+.hljs-attribute,
+.hljs-attr { color: var(--mp-code-yellow); }
+
+/* Green */
+.hljs-string,
+.hljs-symbol,
+.hljs-bullet,
+.hljs-addition { color: var(--mp-code-green); }
+
+/* Muted (JSON punctuation — braces, brackets, commas, colons) */
+.hljs-punctuation { color: var(--mp-code-punctuation); }
+
+/* Blue */
+.hljs-title,
+.hljs-section { color: var(--mp-code-blue); }
+
+/* Purple */
+.hljs-keyword,
+.hljs-selector-tag { color: var(--mp-code-purple); }
+
+.hljs-emphasis { font-style: italic; }
+.hljs-strong { font-weight: bold; }
