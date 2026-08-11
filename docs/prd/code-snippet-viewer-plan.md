@@ -18,6 +18,87 @@ using the running demo. Suites green locally.
 | M8 | Demo pages ×3, ng axe route, ngx-highlightjs purge | ✅ |
 | M9 | Sweep | ✅ 4 builds, 1898 WC tests, 164+93 Angular suites, 3 axe gates (40+44+44), dock e2e |
 
+## CI status — ONE OPEN FAILURE, not yet diagnosed
+
+**State at hand-off: PR #402 is RED.** Reproducible in CI across two runs of the same commit
+(run `31486552471` and its `--failed` rerun). Everything else is green: React e2e 129 passed, Vue
+e2e 120 passed, all unit suites, build, API tests.
+
+`ng-bootstrap-demo-e2e` — **1 failed, 2 flaky, ~408 passed**:
+
+| test | outcome |
+|---|---|
+| `keyboard-walkthrough.spec.ts:92` — *tooltip — focusing the trigger reveals the tooltip* | **FAILED twice (initial + retry #1) in BOTH runs** |
+| `dock-keyboard.spec.ts:116` — *M → T docks the focused pane* | flaky (fails, passes on retry) |
+| `tools/e2e-shared/carousel-suites.ts:66` — *carousel (JS) indicators navigate* | flaky (appeared in the rerun only) |
+
+### What is known
+
+- **All three pass locally**, Chromium *and* Firefox, run individually.
+- The failure is `expect(page.locator('.tooltip, [role="tooltip"]').first()).toBeVisible()` →
+  `element(s) not found`. The tooltip is never created at all; it is not a positioning or
+  visibility problem. The test focuses a button and waits 300 ms after
+  `waitForLoadState('networkidle')`, so networkidle DID resolve — the page believed itself settled.
+- The dock failure is `expect(after).not.toBe(before)` with both sides `""`, i.e. the Live-layout
+  pane never populated. It reads the `.code` property off the inner `mp-code-snippet`.
+- The carousel failure is a radio not `checked` after clicking indicator 3.
+- **The previous run on this same branch passed** (`31483923424`, 36 minutes earlier). The only
+  commits in between are `89311e04` (R10: element + wrapper become flex columns, `pre` gains
+  block-start padding, demo sections added) and `d1a7e6b3` (removing an unused import from the
+  query-builder demo — a different page).
+
+### Leading hypothesis (UNCONFIRMED)
+
+All three failing/flaky tests are timing-sensitive, all are in the **ng** demo, and all three of
+those pages carry `bs-code-snippet` instances. This branch made every snippet do asynchronous work
+after first paint — a dynamic grammar chunk import per snippet — which extends how long a demo page
+keeps doing work and fetching after `networkidle` resolves. Combined with the demo's **destructive
+SSR bootstrap** (the app re-creates its component tree after hydration; see
+`project_e2e_destructive_bootstrap`), a focus taken before that re-bootstrap lands on a node that
+is then replaced, and the tooltip never opens.
+
+Against the hypothesis: async highlighting was already present in the run that PASSED, so R10
+alone would have to be what tipped an already-marginal timing window.
+
+### Next diagnostic steps
+
+1. Download the trace from the failed run — the tooltip failure attaches
+   `test-results/keyboard-walkthrough-toolt-843d2-*/trace.zip`; `npx playwright show-trace` will
+   show whether the button was still attached when focused and whether a re-bootstrap intervened.
+2. Check whether these tests fail on `master` (they do not fail locally) to separate "mine" from
+   "pre-existing CI flake".
+3. If the hypothesis holds, the fix is on the TEST side, not the component: waiting for the app to
+   settle rather than for `networkidle`, which no longer means "settled" once any component fetches
+   lazily. Do not weaken the component's lazy loading to satisfy a test.
+
+**Do not merge until this is resolved or explicitly accepted.**
+
+## CI performance work (Nx recommendations)
+
+**Remote cache: already working — nothing to apply.** Measured: `nx.json` has no `nxCloudId` (the
+trap that hijacks self-hosted caching is absent), the env vars are set locally, and
+`.github/workflows/pull-request.yml:14-15` passes them with a read-write token only on
+default-branch pushes and read-only elsewhere. Probing the server directly returned **403 without
+auth and 404 with auth** — live, token valid, hash genuinely absent. Nx prints its remote-cache
+recommendation whenever Nx Cloud is not connected; a self-hosted cache does not silence it. The
+recommendation is an upsell, not a finding.
+
+**Parallelization: the free half applied, the expensive half declined.** Commit `70611a23` adds an
+npm cache to `setup-node` and caches the ~400 MB of Playwright browsers on the lockfile hash
+(`install-deps` still runs on a hit, because the OS libraries live outside the cached directory).
+Both make CI faster *and* cheaper.
+
+Splitting the pipeline into parallel GitHub jobs was deliberately NOT done: it shortens wall-clock
+but **increases billed minutes**, since every extra job repeats checkout, `npm ci` and browser
+setup — the wrong trade for a repo that pays per run. Nx's "distribution" recommendation means Nx
+Agents, which requires Nx Cloud and is not available with a self-hosted cache.
+
+**`70611a23` is committed but NOT pushed** — pushing cancels in-flight runs via the concurrency
+group, and a rerun was being used as a diagnostic. Push it when the CI investigation above is done.
+
+**Security: the self-hosted cache access token was printed in plaintext during this session and
+should be rotated.**
+
 ## M10 — review fixes (PR #402)
 
 Five defects found by using the running demo; four reported by the user, the fifth measured while

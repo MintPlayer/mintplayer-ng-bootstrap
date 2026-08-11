@@ -1,8 +1,15 @@
 # PRD — `mp-code-snippet` becomes the code **viewer**: line rendering, theming, lazy highlighting
 
-Status: **Implemented** (2026-08-11) on `feat/code-snippet-viewer`, PR #402, through three rounds:
-the original M0–M9 build, the M10 review fixes (§15b, R1–R5), the M11 narrow-viewport fixes
-(§15c, R6–R9) and the M12 constrained-size fix (§15d, R10). Suites green locally: 4 builds, 1908 web-component tests, 164 + 93 Angular suites,
+Status: **Implemented but CI IS RED** (2026-08-11) on `feat/code-snippet-viewer`, PR #402, through
+four rounds: the original M0–M9 build, the M10 review fixes (§15b, R1–R5), the M11 narrow-viewport
+fixes (§15c, R6–R9) and the M12 constrained-size fix (§15d, R10).
+
+> **One e2e failure is open and undiagnosed** — `keyboard-walkthrough.spec.ts:92` (tooltip) fails
+> twice, reproducibly, in two CI runs of the same commit, while passing locally in two engines; the
+> dock and carousel specs are flaky alongside it. The leading (unconfirmed) hypothesis is that
+> this branch's per-snippet lazy grammar fetch extends page activity past `networkidle`, which the
+> demo's destructive SSR bootstrap then races. **Do not merge until resolved.** The plan's
+> "CI status" section has the evidence and the next diagnostic steps. Suites green locally: 4 builds, 1908 web-component tests, 164 + 93 Angular suites,
 3 axe gates, dock e2e. Package versions bumped one minor each — web-components 2.12.0,
 ng-bootstrap 22.15.0, react-bootstrap 19.16.0, vue-bootstrap 3.17.0.
 
