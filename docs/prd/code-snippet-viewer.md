@@ -749,43 +749,99 @@ So every plain snippet reserves **46.2px** for two columns that will never have 
 390px viewport the host is 343px wide, making that **13.5% of the component** — and 7 of 9
 snippets on the page pay it.
 
-### Decision: gate each floor behind `:has()`, per track
+### First: the floor does not do what it looks like it does
+
+Everything below hangs on this, so it is measured first. Relabelling the demo's own marks (the
+mark font gives 6.54px per character):
+
+| label | plain `auto` | `minmax(3ch, auto)` | what the floor adds |
+|---|---|---|---|
+| `0` | 14.55px | 23.09px | **+8.54px** |
+| `1×` / `4×` | 21.09px | 23.09px | **+2.00px** |
+| `12×` | 27.63px | 27.63px | 0 |
+| `123×` | 34.16px | 34.16px | 0 |
+
+Three conclusions:
+
+1. **The secondary floor is dead code.** `1/2` measures 39.63px and never comes near the 23.09px
+   floor. It has never once applied.
+2. **The primary floor buys 2.00px** on the demo's actual labels (`0`, `1×`, `3×`, `4×`).
+3. **It only stabilises the 1→2 character band.** From 2→3→4 characters the code column still
+   shifts 6.54px per character, floor or no floor. So it is not "the gutter is stable", it is "the
+   gutter is stable for short labels only" — a partial fix to a problem it does not solve. And
+   because the track is shared across the snippet, it moves only when the *widest* label changes
+   width: a static page never jitters at all, with or without it.
+
+Within a single snippet there was never any jitter to prevent — `auto` is max-content across all
+rows, so every row already agrees (all-`0` → 23.09px, all-`12×` → 27.63px, mixed → 27.63px).
+
+### Decision: delete both floors
+
+```scss
+code { grid-template-columns: auto auto auto 1fr; }
+```
+
+One line. `auto` collapses an empty track to 0px and sizes a populated one to its content, which
+is the whole requirement. Measured: plain `0 · 0 · 0` (text offset 47px → **0.8px**, i.e. only
+`.line-text`'s own padding remains); line-numbers-only `43.24 · 0 · 0`; annotated `43.24 · 21.09 ·
+39.63` — 2.00px tighter than before, and on a phone that is an improvement rather than a
+regression.
+
+The floor was introduced in R2 to fix a real bug — `ch` on the mark *item* resolved against each
+mark's own font-size, giving the two marks unequal floors (measured: 27.61px vs 23.09px). Moving
+it to the track fixed that. But the correct conclusion, now that it has been measured, is that the
+floor should not have existed on either. Removing it removes the empty-gutter defect *and* the
+machinery, with no new CSS feature, no browser-support question and no new failure mode.
+
+### The alternative, if a floor is ever wanted back
+
+Keeping a floor requires gating it, and gating it requires `:has()`:
 
 ```scss
 code {
-  grid-template-columns: auto var(--mark-track, auto) var(--mark2-track, auto) 1fr;
+  --_mark-track: auto;
+  --_mark-track-secondary: auto;
+  grid-template-columns: auto var(--_mark-track) var(--_mark-track-secondary) 1fr;
 }
-code:has(.line-mark:not(.secondary)) { --mark-track:  minmax(3ch, auto); }
-code:has(.line-mark.secondary)       { --mark2-track: minmax(3ch, auto); }
+code:has(.line-mark:not(.secondary)) { --_mark-track: minmax(3ch, auto); }
+code:has(.line-mark.secondary)       { --_mark-track-secondary: minmax(3ch, auto); }
 ```
 
-Measured with this applied: plain `0 · 0 · 0` (text offset 47px → **0.8px**, i.e. only
-`.line-text`'s own 1rem padding remains); line-numbers-only `43.24 · 0 · 0`; annotated unchanged.
+This was verified end to end and works — including through `adoptedStyleSheets` at real cascade
+position, so it needs no `!important`. It is recorded because the reasoning is worth keeping, not
+because it is needed:
 
-Why this shape:
+- **`:has()` needs no host state**; the stylesheet asks the DOM what it contains, and it is
+  reactive — inserting a `.line-mark` grew its track, removing it collapsed it back to 0px.
+- **Keep the two rules standalone — never comma-join them with another selector.** On an engine
+  without `:has()` an invalid selector invalidates the *entire* selector list. Standalone, the two
+  rules are simply dropped and `auto` survives, degrading to "collapses, no floor". Joined to
+  anything else, that other selector dies with them.
+- **One rule per track.** A single rule would floor the primary track for a snippet carrying only
+  secondary labels; measured with the split, a secondary-only snippet resolves to `0 · 0 · 39.63`.
+- **The base custom property must be declared on `code` itself**, not left to a `var(…, auto)`
+  fallback: custom properties inherit *through* the shadow boundary, so a page-level
+  `--mark-track` would win and the fallback would never run. Underscore-prefix them, or an
+  undecorated name is de-facto public API.
+- **Blast radius:** a `var()` that resolves to a non-track value makes the whole
+  `grid-template-columns` invalid-at-computed-value-time → `none`, collapsing all four columns
+  rather than one. Private names plus a base declaration make that reachable only deliberately.
+- **Performance is not a blocker.** At 2 000 rows, a row class toggle (`activeLine`) costs nothing
+  measurable — Chromium keys `:has()` invalidation on the features named in the argument, and
+  `.active` is not one. Inserting/removing a mark costs ~+2.5ms against the 98–160ms layout that
+  same mutation forces anyway (~2%), and Lit batches an annotation change into one recalc.
+- Support is Baseline since Dec 2023 (Chrome 105+, Safari 15.4+, Firefox 121+), comparable to
+  `light-dark()` which this component already requires.
 
-- **`:has()` needs no host state.** No new reflected attribute, no element change at all — the
-  stylesheet asks the DOM what it contains. Verified reactive: inserting a `.line-mark` at runtime
-  grew its track to 23.09px and removing it collapsed it back to 0px, which is exactly what a Lit
-  re-render does.
-- **One rule per track, each setting only its own custom property.** A single rule covering both
-  would floor the primary track for a snippet that only has secondary labels. Measured with the
-  split: a secondary-only row resolves to `0 · 0 · 39.63` — the primary track stays collapsed.
-  Setting and consuming a custom property on the same element is fine.
+### Two traps that must not be "simplified" back in
 
-### The floor stays, but it was never doing what it looked like
-
-Measured: **within a single snippet there is no jitter to prevent.** `auto` is max-content across
-all rows, so every row already agrees — all-`0` labels give a 23.09px track, all-`12×` give
-27.63px, and a mix gives 27.63px (the wider). The floor only makes *different snippets on one
-page* agree, and only when their labels are narrow.
-
-That is a weak benefit, but once gated it costs nothing at all when the column is unused, so it
-stays — with the value exposed rather than magic. Reading a floor inline with a fallback is
-established here: `min-width: var(--mp-group-min-item-width, 6rem)` in `input-group.styles.scss:138`
-and `max-height: var(--mp-datatable-virtual-max-height, 480px)` in `datatable.styles.scss:33` are
-the same pattern, and this component already uses it for
-`var(--mp-code-mark-secondary, var(--mp-code-yellow))`.
+- **`fit-content(3ch)`, `min-content` and `minmax(0, auto)` are all byte-identical to plain
+  `auto`** — measured. None of them floors anything. `fit-content()` in particular reads like the
+  fix and is a *ceiling*, not a floor.
+- **A floor on the mark ITEM is measurably wrong**: `min-width: 3ch` on `.line-mark` produced
+  27.61px rather than 23.09px, because `3ch` resolved against the mark's own 11.9px font and then
+  stacked on its 8px `padding-inline-start` under `content-box`. This is why the existing comment
+  insists the sizing basis is `code`'s font-size.
 
 ### Rejected
 
@@ -805,6 +861,60 @@ External corroboration (not repo evidence): no mainstream viewer reserves an emp
 GitHub, GitLab and codecov always show theirs; VS Code's `editor.lineNumbers: "off"` removes the
 column outright rather than blanking it, and its neighbouring gutters (glyph margin, folding)
 toggle independently — one column per concern, each collapsing with its feature.
+
+### What `:has()` does NOT fix — the narrow-viewport picture, measured
+
+Track widths are identical at 390 / 360 / 320px: the gutter is a fixed pixel cost, so its share
+grows purely because the budget shrinks.
+
+| viewport | plain chrome / code | annotated chrome / code | annotated visible chars (of a 46-char line) |
+|---|---|---|---|
+| 390 | 18.1% / 81.9% | 35.6% / 64.4% | 28.5 |
+| 360 | 19.9% / 80.1% | 39.1% / 60.9% | 24.6 |
+| 320 | 22.9% / 77.1% | **44.9% / 55.1%** | **19.4** |
+
+Gating recovers the plain snippet's 46.18px — chrome 22.9% → 5.9% at 320px, visible characters
+27.2 → 33.2 (+22%). It does **not** touch the annotated case, which is the worse one: still 44.9%
+chrome and ~2.4 horizontal screens to read one line. Three further items follow from that, and are
+deliberately recorded rather than folded into R6:
+
+**R7 — padding is now the dominant cost, and should shrink unconditionally.** At 320px, 68px —
+**25.1% of the budget** — is padding, more than the ink it separates. `.line-number`'s
+`padding-inline: 0.75rem` alone is 24px, i.e. **55% of its own 43.24px track**, when the digits
+need only the 2.5ch floor. Recommendation: halve the gutter paddings (0.75 → 0.375rem, marks 0.5 →
+0.375rem) and drop `.line-text`'s trailing `padding-inline-end` to 0 — it buys nothing and is a
+pure `scrollWidth` tax. That recovers ~18px at *every* width, and nobody misses it on a desktop.
+Unconditional, not viewport-gated: a snippet in a narrow sidebar on a wide screen has the same
+problem, and this component has no width-awareness (see the container-query rejection above).
+
+**R8 — `min-width: max-content` escapes the component and pans the whole page.** Measured at 390,
+360 and 320px: `document.documentElement.scrollWidth` is 450px, i.e. 60–130px of *body* sideways
+scroll with a visible page scrollbar. The cause is the demo's Theming section putting snippets in
+`flex-grow-1` items with no `min-width: 0`, so `code { min-width: max-content }` propagates outward
+as a 433.9px min-content contribution. The demo fix is one `min-width: 0`, but the propagation is a
+**component-level trap any consumer hits** by placing a snippet in a flex row, and it belongs in
+the component's documentation next to the sizing notes.
+
+**R9 — the copy button occludes the first line.** `position: absolute; top/right: 0.5rem` overlays
+66–80px, i.e. 8.6–10.3 characters, **29% of the visible code width at 320px**, sitting directly on
+line 1's text.
+
+**Container queries are ruled out on measured evidence, not preference.** The host's
+`containerType` is `normal` and nothing in the chain declares one. Adding `container-type:
+inline-size` to `:host` would zero the component's intrinsic inline size — and this very demo page
+puts snippets inside `flex-grow-1` shrink-to-fit items currently sized by that intrinsic width
+(433.9px measured), which is exactly CLAUDE.md's documented 0px-collapse trap. Pushing it down to
+`pre` or `code` is worse: on `code` it defeats `min-width: max-content`, the rule that makes row
+backgrounds paint the full scroll width. The decisive point is that the big win here is
+**content-conditional, not width-conditional** — `:has()` is the right tool and no query is needed.
+
+**The secondary column stays visible at every width** (confirmed against the alternative): it is
+data the consumer asked to render, at 320px a `partial` row is otherwise indistinguishable from a
+`covered` one unless they styled the part, and it is the visible counterpart of the sr-only
+description — width-gating would split the visual and AT channels by viewport. Where it *is* in
+use, 20px of its 39.63px is padding, so R7's tightening is the right lever. Note also that
+`:has()` gates on presence, so a snippet where a single row carries a ratio still reserves the
+full track for all rows; that is correct (the column is genuinely in use) but worth knowing.
 
 ## 15. Decisions (resolved 2026-08-11)
 

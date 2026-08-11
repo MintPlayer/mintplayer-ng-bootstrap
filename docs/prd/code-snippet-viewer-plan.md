@@ -34,37 +34,58 @@ Rejected along the way: a `preventNavigation` boolean (redundant once the modifi
 and static); `display: contents` rows (removes the row box that carries the annotation background,
 active outline and `part(line)`).
 
-## M11 — collapse unused gutter tracks (R6) — investigated, NOT YET APPLIED
+## M11 — narrow-viewport work (R6–R9) — investigated, NOT YET APPLIED
 
-PRD §15c has the analysis. R2's `minmax(3ch, auto)` floors apply even to an EMPTY track, so a
-snippet with neither line numbers nor annotations still reserves 46.2px of gutter — 13.5% of the
-component at a 390px viewport, and 7 of the 9 snippets on the demo page pay it.
+PRD §15c has the analysis and every measurement. Four separate items came out of it; R6 is the
+one the user reported.
 
-Fix, measured in Chromium against the running demo:
+### R6 — unused gutter tracks (the reported defect). One line.
 
 ```scss
-code {
-  grid-template-columns: auto var(--mark-track, auto) var(--mark2-track, auto) 1fr;
-}
-code:has(.line-mark:not(.secondary)) { --mark-track:  minmax(var(--mp-code-mark-min-width, 3ch), auto); }
-code:has(.line-mark.secondary)       { --mark2-track: minmax(var(--mp-code-mark-min-width, 3ch), auto); }
+code { grid-template-columns: auto auto auto 1fr; }   // was: auto minmax(3ch,auto) minmax(3ch,auto) 1fr
 ```
+
+`minmax()`'s floor applies to an EMPTY track, so a snippet using neither feature reserved 46.2px —
+13.5% of the component at 390px, paid by 7 of the 9 snippets on the demo page.
 
 | snippet | before | after |
 |---|---|---|
 | plain | `0 · 23.09 · 23.09`, text at 47px | `0 · 0 · 0`, text at **0.8px** |
 | line numbers only | `43.24 · 23.09 · 23.09`, 90.2px | `43.24 · 0 · 0`, **44px** |
-| annotated | `43.24 · 23.09 · 39.63`, 106.8px | unchanged |
-| secondary labels only | would floor track 2 | `0 · 0 · 39.63` — per-track split works |
+| annotated | `43.24 · 23.09 · 39.63` | `43.24 · 21.09 · 39.63` — 2px tighter |
 
-Verified: `:has()` re-evaluates on DOM change (inserting a mark grew its track, removing it
-collapsed it), so it survives Lit re-renders; no host state or new attribute needed; the floor is
-harmless once gated, and within a snippet `auto` already prevents all jitter (all-`0` 23.09px,
-all-`12×` 27.63px, mixed 27.63px), so the floor only aligns *separate* snippets.
+**Deleting the floors, not gating them**, because measurement showed they were never earning their
+keep: the secondary floor has never once applied (`1/2` is 39.63px, the floor 23.09px), the primary
+floor buys 2.00px on real labels, and it only stabilises the 1→2 character band — beyond two
+characters the column shifts 6.54px/char regardless. `auto` already collapses when empty, which is
+the entire requirement. The `:has()` form is fully worked out in the PRD if a floor is ever wanted
+back; it is correct and performant (≈2% overhead on the layout it triggers, at 2 000 rows) but it
+is machinery in service of something not worth keeping.
 
-Remaining work when this is applied: run the WC suite, add a spec asserting the empty tracks
-collapse (assert `grid-template-columns` on `code`, since jsdom has no layout), re-check the
-`wrap` and horizontal-scroll cases, and re-screenshot at 390px.
+### R7 — padding is the bigger remaining cost. Unconditional, not viewport-gated.
+
+At 320px, **68px (25.1% of the budget) is padding** — more than the ink it separates.
+`.line-number`'s `padding-inline: 0.75rem` is 55% of its own track. Proposed: gutter paddings
+0.75 → 0.375rem and marks 0.5 → 0.375rem, `.line-text` `padding-inline-end` → 0 (a pure
+`scrollWidth` tax). ≈18px back at every width.
+
+### R8 — `min-width: max-content` escapes the component and pans the whole PAGE.
+
+Measured `document.documentElement.scrollWidth` = 450px at 390/360/320. The demo's Theming section
+puts snippets in `flex-grow-1` items with no `min-width: 0`, so the grid's min-content contribution
+(433.9px) propagates outward. One `min-width: 0` fixes the demo — but any consumer placing a
+snippet in a flex row hits this, so it needs a line in the component's docs.
+
+### R9 — the copy button occludes line 1 at narrow widths.
+
+66–80px of overlay, **29% of the visible code width at 320px**, sitting on line 1's text.
+
+### When applied
+
+Run the WC suite; add a spec asserting the empty tracks collapse (assert `grid-template-columns`
+on `code` — jsdom has no layout); re-check `wrap` and horizontal scroll; re-screenshot plain and
+annotated at 390px; **smoke-test Firefox** (only Chromium was measured, and this repo has a
+Firefox flex regression on record).
 
 **Methodology note for anyone probing this component live:** Lit's ADOPTED stylesheet outranks a
 `<style>` appended to the shadow root at equal specificity, so a probe silently does nothing
