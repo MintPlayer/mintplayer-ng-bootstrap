@@ -1,9 +1,15 @@
 # PRD — `mp-code-snippet` becomes the code **viewer**: line rendering, theming, lazy highlighting
 
-Status: **Implemented** (2026-08-11) on `feat/code-snippet-viewer`; M9 sweep green locally
-(4 builds, 1898 web-component tests, 164+93 Angular suites, 3 axe gates, dock e2e). Firefox and
-WebKit are unverified locally — the installed engine builds predate the Playwright driver — so CI
-is the first run that covers them.
+Status: **Implemented** (2026-08-11) on `feat/code-snippet-viewer`, PR #402, through three rounds:
+the original M0–M9 build, the M10 review fixes (§15b, R1–R5) and the M11 narrow-viewport fixes
+(§15c, R6–R9). Suites green locally: 4 builds, 1908 web-component tests, 164 + 93 Angular suites,
+3 axe gates, dock e2e. Package versions bumped one minor each — web-components 2.12.0,
+ng-bootstrap 22.15.0, react-bootstrap 19.16.0, vue-bootstrap 3.17.0.
+
+Firefox and WebKit are unverified locally — the installed engine builds predate the Playwright
+driver and a browser download was declined — so CI is the first run that exercises them. Every
+visual claim here (`light-dark()`, subgrid, selection serialization, sticky-under-RTL) was
+measured in Chromium only.
 Author: Pieterjan — investigation by a 5-agent team (code-snippet surface + consumers, WC
 codegen infrastructure, the CodeCoverage consumer, highlight.js packaging/theming, and the
 reported `bs-progress-bar` bug).
@@ -725,10 +731,12 @@ technology can reach it, and `.sr-only` had no `user-select` rule — so copying
 interleaved prose into the source. **Fix:** `.sr-only` is `user-select: none`. It is
 screen-reader-only content by definition; it should never be part of a text selection.
 
-## 15c. Gutter tracks must collapse when unused (R6)
+## 15c. Gutter tracks must collapse when unused (R6–R9) — applied
 
 Reported after R1–R5 landed: a snippet using neither line numbers nor annotations still shows a
-wide empty gutter — tolerable on a desktop, wasteful on a phone.
+wide empty gutter — tolerable on a desktop, wasteful on a phone. Investigating it surfaced three
+further narrow-viewport defects (R7–R9). All four are implemented and verified; the plan's M11 has
+the before/after table.
 
 ### The defect
 

@@ -34,7 +34,7 @@ Rejected along the way: a `preventNavigation` boolean (redundant once the modifi
 and static); `display: contents` rows (removes the row box that carries the annotation background,
 active outline and `part(line)`).
 
-## M11 — narrow-viewport work (R6–R9) — investigated, NOT YET APPLIED
+## M11 — narrow-viewport work (R6–R9) — ✅ APPLIED and verified
 
 PRD §15c has the analysis and every measurement. Four separate items came out of it; R6 is the
 one the user reported.
@@ -80,12 +80,25 @@ snippet in a flex row hits this, so it needs a line in the component's docs.
 
 66–80px of overlay, **29% of the visible code width at 320px**, sitting on line 1's text.
 
-### When applied
+### Verified after applying (Chromium, 1280px and 390px)
 
-Run the WC suite; add a spec asserting the empty tracks collapse (assert `grid-template-columns`
-on `code` — jsdom has no layout); re-check `wrap` and horizontal scroll; re-screenshot plain and
-annotated at 390px; **smoke-test Firefox** (only Chromium was measured, and this repo has a
-Firefox flex regression on record).
+| | before | after |
+|---|---|---|
+| R6 plain tracks | `0 · 23.09 · 23.09`, text 47px | `0 · 0 · 0`, text **0.8px** |
+| R7 annotated tracks | `43.24 · 23.09 · 39.63`, text 106.8px | `31.24 · 19.09 · 31.63`, text **82.8px** |
+| R8 page scrollWidth @390 | 450px (client 375) | **375 = 375** |
+| R9 copy button over row 1 | true | **false** at both widths |
+
+Suites green: 1908 web-component, 164 + 93 Angular. Screenshots at 390px confirm the plain
+snippet has no gutter at all and the annotated one stays aligned.
+
+**No unit spec pins the track collapse.** jsdom cannot observe styles from Lit's adopted
+stylesheets, so such a spec would pass vacuously whatever the CSS said. R6–R9 are verified by
+browser measurement only — a deliberate gap, recorded so nobody assumes CI covers it.
+
+**Firefox and WebKit remain unmeasured** for every visual claim in M10 and M11 (`light-dark()`,
+subgrid, `user-select` in selection serialization, sticky-under-RTL). CI is the first run that
+exercises them.
 
 **Methodology note for anyone probing this component live:** Lit's ADOPTED stylesheet outranks a
 `<style>` appended to the shadow root at equal specificity, so a probe silently does nothing
