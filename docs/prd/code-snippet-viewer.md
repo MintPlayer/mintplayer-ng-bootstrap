@@ -725,6 +725,87 @@ technology can reach it, and `.sr-only` had no `user-select` rule — so copying
 interleaved prose into the source. **Fix:** `.sr-only` is `user-select: none`. It is
 screen-reader-only content by definition; it should never be part of a text selection.
 
+## 15c. Gutter tracks must collapse when unused (R6)
+
+Reported after R1–R5 landed: a snippet using neither line numbers nor annotations still shows a
+wide empty gutter — tolerable on a desktop, wasteful on a phone.
+
+### The defect
+
+R2's fix introduced it. `grid-template-columns: auto minmax(3ch, auto) minmax(3ch, auto) 1fr`
+applies its floors **whether or not the track has content**, and `minmax()` has no notion of "only
+if populated". The `auto` gutter track collapses correctly to 0px when line numbers are off; only
+the two `minmax` mark tracks misbehave.
+
+Measured on the demo page:
+
+| snippet | tracks (px) | code text starts at |
+|---|---|---|
+| plain — no line numbers, no annotations (**7 of the 9 on the page**) | `0 · 23.09 · 23.09` | 47px from the host edge |
+| line numbers only | `43.24 · 23.09 · 23.09` | 90.2px |
+| annotated (both labels) | `43.24 · 23.09 · 39.63` | 106.8px |
+
+So every plain snippet reserves **46.2px** for two columns that will never have content. At a
+390px viewport the host is 343px wide, making that **13.5% of the component** — and 7 of 9
+snippets on the page pay it.
+
+### Decision: gate each floor behind `:has()`, per track
+
+```scss
+code {
+  grid-template-columns: auto var(--mark-track, auto) var(--mark2-track, auto) 1fr;
+}
+code:has(.line-mark:not(.secondary)) { --mark-track:  minmax(3ch, auto); }
+code:has(.line-mark.secondary)       { --mark2-track: minmax(3ch, auto); }
+```
+
+Measured with this applied: plain `0 · 0 · 0` (text offset 47px → **0.8px**, i.e. only
+`.line-text`'s own 1rem padding remains); line-numbers-only `43.24 · 0 · 0`; annotated unchanged.
+
+Why this shape:
+
+- **`:has()` needs no host state.** No new reflected attribute, no element change at all — the
+  stylesheet asks the DOM what it contains. Verified reactive: inserting a `.line-mark` at runtime
+  grew its track to 23.09px and removing it collapsed it back to 0px, which is exactly what a Lit
+  re-render does.
+- **One rule per track, each setting only its own custom property.** A single rule covering both
+  would floor the primary track for a snippet that only has secondary labels. Measured with the
+  split: a secondary-only row resolves to `0 · 0 · 39.63` — the primary track stays collapsed.
+  Setting and consuming a custom property on the same element is fine.
+
+### The floor stays, but it was never doing what it looked like
+
+Measured: **within a single snippet there is no jitter to prevent.** `auto` is max-content across
+all rows, so every row already agrees — all-`0` labels give a 23.09px track, all-`12×` give
+27.63px, and a mix gives 27.63px (the wider). The floor only makes *different snippets on one
+page* agree, and only when their labels are narrow.
+
+That is a weak benefit, but once gated it costs nothing at all when the column is unused, so it
+stays — with the value exposed rather than magic. Reading a floor inline with a fallback is
+established here: `min-width: var(--mp-group-min-item-width, 6rem)` in `input-group.styles.scss:138`
+and `max-height: var(--mp-datatable-virtual-max-height, 480px)` in `datatable.styles.scss:33` are
+the same pattern, and this component already uses it for
+`var(--mp-code-mark-secondary, var(--mp-code-yellow))`.
+
+### Rejected
+
+- **A container query.** There is precedent (`phone-input.styles.scss:18`, with a measured
+  rationale) and an explicit in-tree rejection (`mp-scheduler.ts:2047-2051`, on containing-block
+  grounds that are probably stale since Chromium 129). Neither matters here: `:has()` removes the
+  waste unconditionally, at every viewport, so there is nothing left for a width query to decide.
+  Adding `container-type` would also make the host contribute zero intrinsic inline size —
+  CLAUDE.md's documented 0px-collapse trap — for no gain.
+- **A viewport `@media` breakpoint.** No content component in the WC library keys off viewport
+  width; the only breakpoints are page chrome (shell, navbar). A snippet in a narrow sidebar on a
+  wide screen has the same problem a phone does, and a media query cannot see it.
+- **Dropping the secondary column on narrow viewports.** It is data the consumer asked to display;
+  hiding it silently is worse than a horizontal scroll.
+
+External corroboration (not repo evidence): no mainstream viewer reserves an empty gutter column.
+GitHub, GitLab and codecov always show theirs; VS Code's `editor.lineNumbers: "off"` removes the
+column outright rather than blanking it, and its neighbouring gutters (glyph margin, folding)
+toggle independently — one column per concern, each collapsing with its feature.
+
 ## 15. Decisions (resolved 2026-08-11)
 
 1. **Line numbers on the demo site: ON for multi-line snippets, OFF for one-liners.** Applied as

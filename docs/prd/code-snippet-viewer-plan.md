@@ -34,6 +34,43 @@ Rejected along the way: a `preventNavigation` boolean (redundant once the modifi
 and static); `display: contents` rows (removes the row box that carries the annotation background,
 active outline and `part(line)`).
 
+## M11 — collapse unused gutter tracks (R6) — investigated, NOT YET APPLIED
+
+PRD §15c has the analysis. R2's `minmax(3ch, auto)` floors apply even to an EMPTY track, so a
+snippet with neither line numbers nor annotations still reserves 46.2px of gutter — 13.5% of the
+component at a 390px viewport, and 7 of the 9 snippets on the demo page pay it.
+
+Fix, measured in Chromium against the running demo:
+
+```scss
+code {
+  grid-template-columns: auto var(--mark-track, auto) var(--mark2-track, auto) 1fr;
+}
+code:has(.line-mark:not(.secondary)) { --mark-track:  minmax(var(--mp-code-mark-min-width, 3ch), auto); }
+code:has(.line-mark.secondary)       { --mark2-track: minmax(var(--mp-code-mark-min-width, 3ch), auto); }
+```
+
+| snippet | before | after |
+|---|---|---|
+| plain | `0 · 23.09 · 23.09`, text at 47px | `0 · 0 · 0`, text at **0.8px** |
+| line numbers only | `43.24 · 23.09 · 23.09`, 90.2px | `43.24 · 0 · 0`, **44px** |
+| annotated | `43.24 · 23.09 · 39.63`, 106.8px | unchanged |
+| secondary labels only | would floor track 2 | `0 · 0 · 39.63` — per-track split works |
+
+Verified: `:has()` re-evaluates on DOM change (inserting a mark grew its track, removing it
+collapsed it), so it survives Lit re-renders; no host state or new attribute needed; the floor is
+harmless once gated, and within a snippet `auto` already prevents all jitter (all-`0` 23.09px,
+all-`12×` 27.63px, mixed 27.63px), so the floor only aligns *separate* snippets.
+
+Remaining work when this is applied: run the WC suite, add a spec asserting the empty tracks
+collapse (assert `grid-template-columns` on `code`, since jsdom has no layout), re-check the
+`wrap` and horizontal-scroll cases, and re-screenshot at 390px.
+
+**Methodology note for anyone probing this component live:** Lit's ADOPTED stylesheet outranks a
+`<style>` appended to the shadow root at equal specificity, so a probe silently does nothing
+unless it uses `!important` or higher specificity. Two prototypes here looked like failures for
+that reason alone.
+
 Verified in Chromium against the running demo before writing the fix: subgrid supported, row box
 survives, sticky gutter survives, annotated background still spans the full 3277px scroll width.
 
