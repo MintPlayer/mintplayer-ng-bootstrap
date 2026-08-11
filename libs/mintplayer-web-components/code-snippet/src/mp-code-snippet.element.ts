@@ -217,7 +217,10 @@ export class MpCodeSnippet extends LitElement {
     const token = ++this.highlightToken;
     const language = this.language;
 
-    void highlight(source, language).then(({ value, language: resolved, load }) => {
+    // Assigned, not fire-and-forget: `getUpdateComplete` awaits this, which is
+    // what keeps `await el.updateComplete` meaning "the highlighted output is
+    // on screen".
+    this.highlightPending = highlight(source, language).then(({ value, language: resolved, load }) => {
       if (token !== this.highlightToken) return;
 
       if (load === 'unknown-language') {
