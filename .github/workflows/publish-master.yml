@@ -24,12 +24,16 @@ jobs:
     name: publish-master
     runs-on: ubuntu-latest
     
-    permissions: 
+    permissions:
       contents: read
       id-token: write
       packages: write
       attestations: write
-    
+      # attest-build-provenance also files an artifact-metadata storage record
+      # alongside the attestation itself; without this it warns and skips that
+      # half. The attestation is still created either way.
+      artifact-metadata: write
+
     steps:
     - name: Checkout
       uses: actions/checkout@v6
