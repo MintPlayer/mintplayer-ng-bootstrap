@@ -6,7 +6,7 @@ A complete demo application with all components is showcased [here](https://boot
 
 | License      | Build status | Code coverage |
 |--------------|--------------|---------------|
-| [![License](https://img.shields.io/badge/License-Apache%202.0-green.svg)](https://opensource.org/licenses/Apache-2.0) | [![master](https://github.com/MintPlayer/mintplayer-ng-bootstrap/actions/workflows/publish-master.yml/badge.svg)](https://github.com/MintPlayer/mintplayer-ng-bootstrap/actions/workflows/publish-master.yml) | [![codecov](https://codecov.io/gh/MintPlayer/mintplayer-ng-bootstrap/graph/badge.svg?token=0U77U7YVHY)](https://codecov.io/gh/MintPlayer/mintplayer-ng-bootstrap) |
+| [![License](https://img.shields.io/badge/License-Apache%202.0-green.svg)](https://opensource.org/licenses/Apache-2.0) | [![master](https://github.com/MintPlayer/mintplayer-ng-bootstrap/actions/workflows/publish-master.yml/badge.svg)](https://github.com/MintPlayer/mintplayer-ng-bootstrap/actions/workflows/publish-master.yml) | [![Coverage](https://coverage.mintplayer.com/badge/MintPlayer/mintplayer-ng-bootstrap.svg)](https://coverage.mintplayer.com/r/MintPlayer/mintplayer-ng-bootstrap) |
 
 
 

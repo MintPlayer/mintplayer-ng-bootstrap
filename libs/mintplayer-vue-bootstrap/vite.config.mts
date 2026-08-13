@@ -40,6 +40,11 @@ export default defineConfig(() => ({
     include: ['**/*.spec.ts'],
     exclude: ['**/node_modules/**', '**/dist/**'],
     setupFiles: ['./_conformance/vitest-setup.ts'],
+    coverage: {
+      provider: 'v8' as const,
+      reporter: ['lcov'],
+      reportsDirectory: '../../coverage/libs/mintplayer-vue-bootstrap',
+    },
   },
   build: {
     outDir: '../../dist/libs/mintplayer-vue-bootstrap',

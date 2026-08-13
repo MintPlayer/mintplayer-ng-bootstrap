@@ -76,6 +76,9 @@ export default defineConfig(() => {
       coverage: {
         reportsDirectory: '../../coverage/libs/mintplayer-web-components',
         provider: 'v8' as const,
+        // Without this, Vitest's default reporters apply and no lcov.info is
+        // written — clover/json aren't parsed server-side.
+        reporter: ['lcov'],
       },
     },
   };

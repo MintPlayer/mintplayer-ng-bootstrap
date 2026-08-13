@@ -51,8 +51,29 @@ jobs:
       # silently absent from the publish plan on the first PR-4 deploy.
       run: npx nx run-many --target=build --configuration=production
 
-    - name: Test
-      run: npx nx affected --target=test --watch=false --parallel=true
+    - name: Test (with coverage)
+      timeout-minutes: 15
+      # run-many, not affected: a partial set reads as a coverage collapse.
+      # --exclude=api: nx:run-commands forwards --coverage verbatim to
+      # `dotnet test` (VSTest), which rejects it; the API has its own step.
+      run: npx nx run-many --target=test --exclude=api --coverage --parallel=2 --output-style=stream
+
+    - name: Upload coverage
+      uses: MintPlayer/CodeCoverage/action@master
+      with:
+        url: https://coverage.mintplayer.com
+        token: ${{ secrets.COVERAGE_TOKEN }}
+        files: |
+          coverage/apps/*/lcov.info
+          coverage/libs/*/lcov.info
+        # With search on, a glob that matches nothing silently falls back to
+        # auto-detection and would upload stray unparsable reports.
+        disable-search: true
+        flags: unit
+        finish: true
+        # Strict while wiring this up; relax once stable so a coverage-service
+        # outage can't block `deploy` (which needs: build).
+        fail-ci-if-error: true
 
     # Hand dist/ off to the publish-libs / publish-snippets jobs. The
     # snippets package publishes from libs/ (source, not dist/) so the

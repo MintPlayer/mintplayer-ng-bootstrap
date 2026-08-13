@@ -31,6 +31,11 @@ export default defineConfig(() => ({
     include: ['**/*.spec.{ts,tsx}'],
     exclude: ['**/node_modules/**', '**/dist/**'],
     setupFiles: ['./_conformance/vitest-setup.ts'],
+    coverage: {
+      provider: 'v8' as const,
+      reporter: ['lcov'],
+      reportsDirectory: '../../coverage/libs/mintplayer-react-bootstrap',
+    },
   },
   build: {
     outDir: '../../dist/libs/mintplayer-react-bootstrap',
