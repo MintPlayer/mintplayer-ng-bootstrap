@@ -166,6 +166,7 @@ export class ChartsComponent {
       [maxDepth]="maxDepth()"
       [colorMin]="60"
       [colorMax]="80"
+      [showBreadcrumb]="true"
       inputLabel="Coverage by folder"
       valueUnitLabel="lines"
       (nodeSelect)="openFile($event.node)" />

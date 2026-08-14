@@ -49,6 +49,7 @@
         [maxDepth]="maxDepth()"
         [colorMin]="60"
         [colorMax]="80"
+        [showBreadcrumb]="true"
         inputLabel="Coverage by folder"
         valueUnitLabel="lines" />
     </div>
@@ -66,17 +67,24 @@
   <div bsRow>
     <div [xs]="12">
       <details class="mt-3">
-        <summary>Keyboard shortcuts</summary>
+        <summary>Keyboard shortcuts &amp; zoom gestures</summary>
         <ul>
-          <li><kbd>Tab</kbd> — one tab stop for the whole chart (plus the zoom-out button)</li>
+          <li><kbd>Tab</kbd> — one tab stop for the whole chart (plus the zoom-out button and breadcrumb)</li>
           <li><kbd>←</kbd> / <kbd>→</kbd> — previous / next sibling in the ring (wraps)</li>
           <li><kbd>↓</kbd> — into the first child (one ring outward)</li>
           <li><kbd>↑</kbd> — to the parent (one ring inward)</li>
-          <li><kbd>Enter</kbd> — zoom in on a folder / select a file</li>
-          <li><kbd>Esc</kbd> or <kbd>Backspace</kbd> — zoom out one level</li>
+          <li><kbd>Enter</kbd> — drill into a folder / select a file</li>
+          <li><kbd>Esc</kbd> — dismiss the tooltip, then reset the magnification, then drill out (<kbd>Backspace</kbd> always drills out)</li>
+          <li><kbd>+</kbd> / <kbd>−</kbd> / <kbd>0</kbd> — magnify / shrink around the focused node / reset</li>
           <li><kbd>Home</kbd> / <kbd>End</kbd> — first / last sibling</li>
           <li>Type letters — jump to the next node starting with them</li>
         </ul>
+        <p>
+          Pointer zoom: <kbd>Ctrl</kbd> + scroll (trackpad pinch works too) magnifies around the
+          cursor — labels keep their size, so small sections become readable as you zoom in.
+          Drag to pan while magnified. On touch, pinch with two fingers and pan with two fingers;
+          one finger keeps scrolling the page. Clicking a section still drills into it.
+        </p>
       </details>
       <bs-code-snippet [code]="snippetHierarchyHtml" [language]="'html'" />
       <bs-code-snippet [code]="snippetHierarchyTs" [language]="'typescript'" />
