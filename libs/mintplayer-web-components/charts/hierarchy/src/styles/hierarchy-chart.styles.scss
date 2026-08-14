@@ -6,8 +6,12 @@
   /* Two-level fallbacks: Bootstrap 5.3 reassigns --bs-* per data-bs-theme and
      custom properties inherit through the shadow boundary, so dark mode needs
      no media query here. */
-  --mp-hierarchy-chart-label-color: var(--bs-body-color, #212529);
-  --mp-hierarchy-chart-arc-label-color: var(--bs-light, #f8f9fa);
+
+  /* Node labels contrast against the DATA-COLORED surface under them, not the
+     page theme — the element picks one of this pair per node from the fill
+     composited over the resolved backdrop. Deliberately NOT --bs-* driven. */
+  --mp-hierarchy-chart-label-on-light: #1c1f23;
+  --mp-hierarchy-chart-label-on-dark: #f8f9fa;
   --mp-hierarchy-chart-center-color: var(--bs-body-color, #212529);
   --mp-hierarchy-chart-center-bg: var(--bs-body-bg, #ffffff);
   --mp-hierarchy-chart-node-fill: var(--bs-secondary-bg, #e9ecef);
@@ -46,13 +50,22 @@ svg {
   cursor: default;
 }
 
+/* font-size comes per-element from the component (device px converted to
+   viewBox units against the measured host scale — labels never scale with
+   host size or zoom). */
 .arc-label {
-  fill: var(--mp-hierarchy-chart-arc-label-color);
-  font-size: 26px; /* logical viewBox units (1000x1000) */
   text-anchor: middle;
   dominant-baseline: middle;
   pointer-events: none;
   user-select: none;
+}
+
+.arc-label[data-surface='light'] {
+  fill: var(--mp-hierarchy-chart-label-on-light);
+}
+
+.arc-label[data-surface='dark'] {
+  fill: var(--mp-hierarchy-chart-label-on-dark);
 }
 
 /* HTML overlay button in the sunburst hole (a role=tree svg cannot own a button). */
@@ -89,8 +102,7 @@ svg {
   background: var(--mp-hierarchy-chart-node-fill);
   border: 1px solid var(--mp-hierarchy-chart-gap);
   border-radius: 2px;
-  color: var(--mp-hierarchy-chart-label-color);
-  font-size: 0.8125rem;
+  /* font-size is set inline by the component (constant device px). */
   line-height: 1.25;
   padding: 1px 4px;
   cursor: pointer;
@@ -154,6 +166,14 @@ svg {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+.cell[data-surface='light'] {
+  color: var(--mp-hierarchy-chart-label-on-light);
+}
+
+.cell[data-surface='dark'] {
+  color: var(--mp-hierarchy-chart-label-on-dark);
 }
 
 /* A treemap branch tile is a frame: children render inside its header inset,

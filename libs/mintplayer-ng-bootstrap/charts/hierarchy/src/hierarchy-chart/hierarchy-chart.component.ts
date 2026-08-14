@@ -42,7 +42,10 @@ export class BsHierarchyChartComponent {
   readonly minAngle = input<number>(0.2);
   readonly minSize = input<number>(4);
   readonly showLabels = input<boolean>(true);
-  readonly labelMinArea = input<number>(0.03);
+  /** Label font size in device px, constant across host size and zoom. */
+  readonly labelFontSize = input<number>(12);
+  /** Opaque color behind the chart for label contrast; unset = auto-detected. */
+  readonly backdrop = input<string | undefined>(undefined);
   readonly colorMin = input<number>(0);
   readonly colorMax = input<number>(100);
   readonly colorStart = input<string>('#fe0000');
@@ -75,7 +78,8 @@ export class BsHierarchyChartComponent {
     effect(() => { const el = this.chartRef()?.nativeElement; if (el) el.minAngle = this.minAngle(); });
     effect(() => { const el = this.chartRef()?.nativeElement; if (el) el.minSize = this.minSize(); });
     effect(() => { const el = this.chartRef()?.nativeElement; if (el) el.showLabels = this.showLabels(); });
-    effect(() => { const el = this.chartRef()?.nativeElement; if (el) el.labelMinArea = this.labelMinArea(); });
+    effect(() => { const el = this.chartRef()?.nativeElement; if (el) el.labelFontSize = this.labelFontSize(); });
+    effect(() => { const el = this.chartRef()?.nativeElement; if (el) el.backdrop = this.backdrop(); });
     effect(() => { const el = this.chartRef()?.nativeElement; if (el) el.colorMin = this.colorMin(); });
     effect(() => { const el = this.chartRef()?.nativeElement; if (el) el.colorMax = this.colorMax(); });
     effect(() => { const el = this.chartRef()?.nativeElement; if (el) el.colorStart = this.colorStart(); });

@@ -5,9 +5,12 @@ import { LiveAnnouncerController } from '@mintplayer/web-components/a11y';
 import {
   buildIndex,
   colorScale,
+  composite,
+  contrastText,
   arcPath,
   arcLabelTransform,
-  arcLabelVisible,
+  fitArcLabel,
+  fitCellLabel,
   partitionLayout,
   squarifyLayout,
   resolveFocus,
@@ -19,6 +22,7 @@ import {
   type HierarchyLoadErrorEventDetail,
   type HierarchyNode,
   type HierarchyNodeEventDetail,
+  type ArcLabelFit,
   type PartitionNode,
   type RectNode,
 } from '@mintplayer/web-components/charts/core';
@@ -61,7 +65,9 @@ function reducedMotion(): boolean {
  * - `data: HierarchyNode` (property only)
  * - `root-id` / `rootId` — controlled focus node (two-way via `hierarchy-zoom`)
  * - `max-depth`, `min-angle` (deg), `min-size` (logical px), `show-labels`,
- *   `label-min-area`, `color-min`, `color-max`, `color-start`, `color-end`
+ *   `label-font-size` (device px — constant across host size and zoom),
+ *   `backdrop` (overrides backdrop auto-detection for label contrast),
+ *   `color-min`, `color-max`, `color-start`, `color-end`
  * - `input-label` / `aria-label` — accessible name for the in-shadow tree
  *
  * Events: `hierarchy-zoom`, `hierarchy-node-select`, `hierarchy-node-hover`,
@@ -79,7 +85,8 @@ export class MpHierarchyChart extends LitElement {
       'min-angle',
       'min-size',
       'show-labels',
-      'label-min-area',
+      'label-font-size',
+      'backdrop',
       'color-min',
       'color-max',
       'color-start',
@@ -104,7 +111,17 @@ export class MpHierarchyChart extends LitElement {
   private _minAngle = 0.2; // degrees
   private _minSize = 4; // logical px (of the 1000-unit square), cartesian cull
   private _showLabels = true;
-  private _labelMinArea = 0.03; // Observable's rings x radians threshold
+  private _labelFontSize = 12; // device px — constant across host size and zoom (labels never scale)
+  private _backdropOverride: string | undefined;
+  /** The opaque surface behind the chart; labels contrast against fill composited over this. */
+  private _backdrop = '#ffffff';
+  /**
+   * Device px per viewBox unit, measured by a ResizeObserver. The fallback is
+   * a representative 420px host so environments without ResizeObserver (jsdom)
+   * stay deterministic for the fit specs.
+   */
+  private _hostScale = 0.42;
+  private _resizeObserver: ResizeObserver | undefined;
   private _colorMin = 0;
   private _colorMax = 100;
   private _colorStart = '#fe0000';
@@ -229,11 +246,26 @@ export class MpHierarchyChart extends LitElement {
     this.requestUpdate();
   }
 
-  get labelMinArea(): number {
-    return this._labelMinArea;
+  /** Label font size in DEVICE px — held constant across host size and zoom state. */
+  get labelFontSize(): number {
+    return this._labelFontSize;
   }
-  set labelMinArea(value: number) {
-    this._labelMinArea = Math.max(0, Number(value) || 0);
+  set labelFontSize(value: number) {
+    this._labelFontSize = Math.max(1, Number(value) || 12);
+    this.requestUpdate();
+  }
+
+  /**
+   * Opaque CSS color behind the chart, used to composite translucent fills
+   * before picking a contrasting label color. Unset = auto-detected from the
+   * nearest opaque ancestor background (set it when the walk cannot see the
+   * real backdrop: images, gradients, cross-document embedding).
+   */
+  get backdrop(): string | undefined {
+    return this._backdropOverride;
+  }
+  set backdrop(value: string | undefined) {
+    this._backdropOverride = value || undefined;
     this.requestUpdate();
   }
 
@@ -339,7 +371,8 @@ export class MpHierarchyChart extends LitElement {
       case 'min-angle': this.minAngle = Number(newValue ?? 0.2); break;
       case 'min-size': this.minSize = Number(newValue ?? 4); break;
       case 'show-labels': this.showLabels = newValue !== 'false' && newValue !== null; break;
-      case 'label-min-area': this.labelMinArea = Number(newValue ?? 0.03); break;
+      case 'label-font-size': this.labelFontSize = Number(newValue ?? 12); break;
+      case 'backdrop': this.backdrop = newValue ?? undefined; break;
       case 'color-min': this.colorMin = Number(newValue ?? 0); break;
       case 'color-max': this.colorMax = Number(newValue ?? 100); break;
       case 'color-start': this.colorStart = newValue ?? '#fe0000'; break;
@@ -382,6 +415,75 @@ export class MpHierarchyChart extends LitElement {
   /** The node the chart is rooted on right now (tree root when root-id is unset). */
   private get focusedRoot(): HierarchyNode | undefined {
     return this._index ? resolveFocus(this._index, this._rootId) : undefined;
+  }
+
+  /* ---------- rendered size + backdrop (label contrast inputs) ---------- */
+
+  override connectedCallback(): void {
+    super.connectedCallback();
+    if (typeof ResizeObserver !== 'undefined') {
+      this._resizeObserver = new ResizeObserver((entries) => {
+        const width = entries[entries.length - 1]?.contentRect.width;
+        if (!width) return;
+        const scale = width / VIEW;
+        if (Math.abs(scale - this._hostScale) > 0.001) {
+          this._hostScale = scale;
+          this.requestUpdate();
+        }
+      });
+      this._resizeObserver.observe(this);
+    }
+  }
+
+  override disconnectedCallback(): void {
+    this._resizeObserver?.disconnect();
+    this._resizeObserver = undefined;
+    super.disconnectedCallback();
+  }
+
+  protected override willUpdate(changed: PropertyValues): void {
+    super.willUpdate(changed);
+    // Skip mid-tween frames: labels are hidden then, and the walk is not free.
+    if (this._tween >= 1) this.resolveBackdrop();
+  }
+
+  /**
+   * The first opaque computed background-color above the host (shadow roots
+   * crossed via .host). A live theme flip is picked up on the next render —
+   * one frame of suboptimal-but-legible contrast, self-correcting.
+   */
+  private resolveBackdrop(): void {
+    if (this._backdropOverride) {
+      this._backdrop = this._backdropOverride;
+      return;
+    }
+    if (typeof getComputedStyle !== 'function') return;
+    let el: Element | null = this;
+    while (el) {
+      const bg = getComputedStyle(el).backgroundColor;
+      if (isOpaqueColor(bg)) {
+        this._backdrop = bg;
+        return;
+      }
+      const root = el.getRootNode();
+      el = el.parentElement ?? (root instanceof ShadowRoot ? root.host : null);
+    }
+    // Nothing opaque anywhere (jsdom, detached trees): keep the white default.
+  }
+
+  /** Which token bucket a label over this node should use: the surface's tone. */
+  private surfaceToneOf(node: HierarchyNode, opacity: number): 'light' | 'dark' {
+    const fill = this.fillOf(node);
+    const surface = fill ? composite(fill, this._backdrop, opacity) : undefined;
+    return this.toneOfSurface(surface);
+  }
+
+  private toneOfSurface(surface: string | undefined): 'light' | 'dark' {
+    const text = (surface !== undefined ? contrastText(surface) : undefined)
+      ?? contrastText(this._backdrop)
+      ?? 'dark';
+    // 'dark' TEXT reads best on a 'light' SURFACE and vice versa.
+    return text === 'dark' ? 'light' : 'dark';
   }
 
   /* ---------- zoom ---------- */
@@ -769,8 +871,18 @@ export class MpHierarchyChart extends LitElement {
       <g role="none" transform="translate(${VIEW / 2},${VIEW / 2})">
         ${repeat(nodes, (n) => n.node.id, (n) => this.renderArc(n, spans.get(n.node.id) ?? n, unit))}
         ${this._showLabels && this._tween >= 1
-          ? repeat(nodes.filter((n) => this.arcLabelFits(n)), (n) => `label-${n.node.id}`,
-              (n) => svg`<text class="arc-label" transform=${arcLabelTransform(n.x0, n.x1, (n.depth + 0.5) * unit)}>${this.labelText(n.node)}</text>`)
+          ? repeat(
+              nodes
+                .map((n) => ({ n, fit: this.arcLabelFit(n, unit) }))
+                .filter(({ fit }) => fit.visible),
+              ({ n }) => `label-${n.node.id}`,
+              ({ n, fit }) => svg`<text
+                class="arc-label"
+                aria-hidden="true"
+                font-size=${Math.round((this._labelFontSize / this._hostScale) * 100) / 100}
+                data-surface=${this.surfaceToneOf(n.node, n.hasChildren ? 1 : 0.6)}
+                transform=${arcLabelTransform(n.x0, n.x1, (n.depth + 0.5) * unit, fit.orientation)}
+              >${fit.text}</text>`)
           : nothing}
       </g>
     </svg>
@@ -808,8 +920,19 @@ export class MpHierarchyChart extends LitElement {
     ></path>`;
   }
 
-  private arcLabelFits(n: PartitionNode): boolean {
-    return arcLabelVisible(n.x0 * TAU, n.x1 * TAU, 1, this._labelMinArea);
+  /**
+   * Fit the (formatted) name into the arc IN DEVICE PX — the same 12px label
+   * needs a bigger arc on a small host, and re-rooting is what makes arcs big
+   * enough, so labels appear as you zoom in.
+   */
+  private arcLabelFit(n: PartitionNode, unit: number): ArcLabelFit {
+    return fitArcLabel(
+      this.labelText(n.node),
+      (n.x1 - n.x0) * TAU,
+      n.depth * unit * this._hostScale,
+      (n.depth + 1) * unit * this._hostScale,
+      this._labelFontSize,
+    );
   }
 
   /* ---------- icicle ---------- */
@@ -828,6 +951,7 @@ export class MpHierarchyChart extends LitElement {
       <div
         class="cell focus-cell"
         data-id=${focus.id}
+        data-surface=${this.toneOfSurface(undefined)}
         role="treeitem"
         tabindex="-1"
         aria-label=${this.accessibleName(focus)}
@@ -836,14 +960,20 @@ export class MpHierarchyChart extends LitElement {
         aria-posinset="1"
         aria-expanded="true"
         title=${focus === index.root ? nothing : this._zoomOutLabel}
-        style=${styleMap({ left: '0%', top: '0%', width: `${100 / columns}%`, height: '100%' })}
-      ><span class="cell-label">${this.labelText(focus)}</span></div>
+        style=${styleMap({
+          left: '0%', top: '0%', width: `${100 / columns}%`, height: '100%',
+          fontSize: `${this._labelFontSize}px`,
+        })}
+      >${this._showLabels && fitCellLabel((1 / columns) * VIEW * this._hostScale, VIEW * this._hostScale, this._labelFontSize)
+        ? html`<span class="cell-label">${this.labelText(focus)}</span>`
+        : nothing}</div>
       ${repeat(nodes, (n) => n.node.id, (n) => this.renderCell(n, {
         left: `${(n.depth / columns) * 100}%`,
         top: `${n.x0 * 100}%`,
         width: `${(1 / columns) * 100}%`,
         height: `${(n.x1 - n.x0) * 100}%`,
-      }, n.hasChildren && n.depth < this.renderedDepth && !!n.node.children?.length))}
+      }, n.hasChildren && n.depth < this.renderedDepth && !!n.node.children?.length,
+        1 / columns, n.x1 - n.x0))}
     </div>`;
   }
 
@@ -875,7 +1005,8 @@ export class MpHierarchyChart extends LitElement {
           top: `${n.y0 * 100}%`,
           width: `${(n.x1 - n.x0) * 100}%`,
           height: `${(n.y1 - n.y0) * 100}%`,
-        }, n.hasChildren && n.depth < this.renderedDepth && !!n.node.children?.length))}
+        }, n.hasChildren && n.depth < this.renderedDepth && !!n.node.children?.length,
+          n.x1 - n.x0, n.y1 - n.y0))}
       </div>
     </div>`;
   }
@@ -884,9 +1015,14 @@ export class MpHierarchyChart extends LitElement {
     n: PartitionNode | RectNode,
     geometry: Readonly<Record<string, string>>,
     expanded: boolean,
+    widthFraction: number,
+    heightFraction: number,
   ): TemplateResult {
     const branch = this._layout === 'treemap' && expanded;
     const fill = branch ? undefined : this.fillOf(n.node);
+    const side = VIEW * this._hostScale; // host px (aspect-ratio 1)
+    const labeled = this._showLabels
+      && fitCellLabel(widthFraction * side, heightFraction * side, this._labelFontSize);
     return html`<div
       class="cell"
       data-id=${n.node.id}
@@ -894,6 +1030,7 @@ export class MpHierarchyChart extends LitElement {
       ?data-branch=${branch}
       ?data-loading=${this._loadingIds.has(n.node.id)}
       ?data-load-error=${this._failedIds.has(n.node.id)}
+      data-surface=${fill ? this.surfaceToneOf(n.node, 1) : this.toneOfSurface(undefined)}
       role="treeitem"
       tabindex=${n.node.id === this._tabFocusId ? '0' : '-1'}
       aria-label=${this.accessibleName(n.node)}
@@ -902,9 +1039,21 @@ export class MpHierarchyChart extends LitElement {
       aria-posinset=${n.posinset}
       aria-expanded=${n.hasChildren ? String(expanded) : nothing}
       aria-busy=${this._loadingIds.has(n.node.id) ? 'true' : nothing}
-      style=${styleMap({ ...geometry, ...(fill ? { background: fill } : {}) })}
-    ><span class="cell-label">${this.labelText(n.node)}</span></div>`;
+      style=${styleMap({
+        ...geometry,
+        fontSize: `${this._labelFontSize}px`,
+        ...(fill ? { background: fill } : {}),
+      })}
+    >${labeled ? html`<span class="cell-label">${this.labelText(n.node)}</span>` : nothing}</div>`;
   }
+}
+
+/** Computed backgrounds are rgb()/rgba(); 'transparent' computes to rgba(0, 0, 0, 0). */
+function isOpaqueColor(color: string): boolean {
+  if (!color || color === 'transparent') return false;
+  const alpha = color.match(/^rgba\([^)]+,\s*([\d.]+)\s*\)$/i)?.[1];
+  if (alpha !== undefined) return Number(alpha) >= 1;
+  return /^(rgb\(|#|hsl\()/i.test(color);
 }
 
 function cssEscape(value: string): string {

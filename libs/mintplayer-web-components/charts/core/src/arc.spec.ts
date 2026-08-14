@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { arcLabelTransform, arcLabelVisible, arcPath } from './arc';
+import { arcLabelTransform, arcPath } from './arc';
 
 const TAU = 2 * Math.PI;
 
@@ -81,16 +81,16 @@ describe('arcPath', () => {
 });
 
 describe('arc labels', () => {
-  it('rotates to the radial midpoint and flips on the lower half', () => {
+  it('radial: rotates to the radial midpoint and flips on the lower half', () => {
     expect(arcLabelTransform(0, 0.25, 90)).toBe('rotate(-45) translate(90,0) rotate(0)');
     // Midpoint at 270deg (0.75 of the sweep) is on the lower/left half -> flipped.
     expect(arcLabelTransform(0.7, 0.8, 90)).toBe('rotate(180) translate(90,0) rotate(180)');
   });
 
-  it('applies the normalized-area threshold', () => {
-    expect(arcLabelVisible(0, 0.05, 1)).toBe(true);   // 0.05 > 0.03
-    expect(arcLabelVisible(0, 0.02, 1)).toBe(false);
-    expect(arcLabelVisible(0, 0.02, 2)).toBe(true);   // thick span rescues a thin angle
-    expect(arcLabelVisible(0, 0.05, 1, 0.06)).toBe(false);
+  it('tangential: reads along the chord, upright on both halves', () => {
+    // Midpoint at 12 o'clock: text axis turns 90deg from radial (outward) to rightward.
+    expect(arcLabelTransform(-0.125, 0.125, 90, 'tangential')).toBe('rotate(-90) translate(90,0) rotate(90)');
+    // Midpoint at 6 o'clock (180deg) would be upside-down at rotate(90) -> flipped to 270.
+    expect(arcLabelTransform(0.45, 0.55, 90, 'tangential')).toBe('rotate(90) translate(90,0) rotate(270)');
   });
 });
