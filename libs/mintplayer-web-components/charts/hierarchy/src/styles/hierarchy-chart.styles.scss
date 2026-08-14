@@ -32,6 +32,14 @@
   height: 100%;
 }
 
+/* Only when pinch is enabled: removing pinch-zoom from touch-action is what
+   hands two-finger gestures to JS (S4-measured) while one-finger pan stays
+   native. Never applied with zoom-gestures="none"/"wheel", so browser page
+   pinch-zoom over the chart keeps working there. */
+.chart.pinch {
+  touch-action: pan-x pan-y;
+}
+
 svg {
   display: block;
   width: 100%;
@@ -157,6 +165,33 @@ svg {
   display: block;
 }
 
+/* Transient "how to zoom" overlay shown on an uncaptured plain wheel — the
+   embedded-maps convention. Purely visual: aria-hidden, no pointer events. */
+.zoom-hint {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  max-width: 90%;
+  padding: 0.375rem 0.75rem;
+  background: var(--mp-hierarchy-chart-tooltip-bg);
+  color: var(--mp-hierarchy-chart-tooltip-color);
+  border-radius: 0.25rem;
+  font-size: 0.875rem;
+  text-align: center;
+  pointer-events: none;
+  user-select: none;
+  z-index: 2;
+  animation: mp-hierarchy-chart-hint 1.5s ease-out forwards;
+}
+
+@keyframes mp-hierarchy-chart-hint {
+  0% { opacity: 0; }
+  15% { opacity: 1; }
+  80% { opacity: 1; }
+  100% { opacity: 0; }
+}
+
 .cell[data-leaf] {
   cursor: default;
 }
@@ -229,7 +264,8 @@ svg {
 
 @media (prefers-reduced-motion: reduce) {
   .ring,
-  .cell {
+  .cell,
+  .zoom-hint {
     transition: none !important;
     animation: none !important;
   }

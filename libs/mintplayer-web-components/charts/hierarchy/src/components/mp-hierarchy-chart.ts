@@ -93,6 +93,8 @@ export class MpHierarchyChart extends LitElement {
       'color-end',
       'transition-duration',
       'locale',
+      'zoom-gestures',
+      'zoom-hint-label',
       'zoom-out-label',
       'metric-unit-label',
       'value-unit-label',
@@ -379,6 +381,8 @@ export class MpHierarchyChart extends LitElement {
       case 'color-end': this.colorEnd = newValue ?? '#21b577'; break;
       case 'transition-duration': this.transitionDuration = Number(newValue ?? 300); break;
       case 'locale': this.locale = newValue ?? undefined; break;
+      case 'zoom-gestures': this.zoomGestures = newValue ?? 'wheel pinch'; break;
+      case 'zoom-hint-label': this._zoomHintLabel = newValue ?? undefined; break;
       case 'zoom-out-label': this._zoomOutLabel = newValue ?? 'Zoom out one level'; this.requestUpdate(); break;
       case 'loading-label': this._loadingLabel = newValue ?? 'Loading'; break;
       case 'metric-unit-label': this._metricUnitLabel = newValue ?? '%'; this.requestUpdate(); break;
@@ -421,6 +425,7 @@ export class MpHierarchyChart extends LitElement {
 
   override connectedCallback(): void {
     super.connectedCallback();
+    this.addEventListener('wheel', this._wheelListener, { passive: false });
     if (typeof ResizeObserver !== 'undefined') {
       this._resizeObserver = new ResizeObserver((entries) => {
         const width = entries[entries.length - 1]?.contentRect.width;
@@ -436,6 +441,9 @@ export class MpHierarchyChart extends LitElement {
   }
 
   override disconnectedCallback(): void {
+    this.removeEventListener('wheel', this._wheelListener);
+    clearTimeout(this._wheelIdleTimer);
+    clearTimeout(this._hintTimer);
     this._resizeObserver?.disconnect();
     this._resizeObserver = undefined;
     super.disconnectedCallback();
@@ -484,6 +492,130 @@ export class MpHierarchyChart extends LitElement {
       ?? 'dark';
     // 'dark' TEXT reads best on a 'light' SURFACE and vice versa.
     return text === 'dark' ? 'light' : 'dark';
+  }
+
+  /* ---------- gesture zoom (the semantic ladder — PRD hierarchy-chart-zoom-labels Z1–Z5) ---------- */
+
+  private _gestures = new Set<'wheel' | 'pinch'>(['wheel', 'pinch']);
+  private _zoomHintLabel: string | undefined;
+  private _wheelAccum = 0;
+  private _wheelIdleTimer = 0;
+  private _hintVisible = false;
+  private _hintTimer = 0;
+  // Non-passive by intent: a consumed ctrl/cmd+wheel must not also page-zoom.
+  private readonly _wheelListener = (event: WheelEvent): void => this.onWheel(event);
+
+  /** Space-separated gesture allowlist: 'wheel pinch' (default) | 'wheel' | 'pinch' | 'none'. */
+  get zoomGestures(): string {
+    return this._gestures.size ? [...this._gestures].join(' ') : 'none';
+  }
+  set zoomGestures(value: string) {
+    const parts = (value ?? '').toLowerCase().split(/\s+/);
+    this._gestures = new Set(
+      parts.filter((p): p is 'wheel' | 'pinch' => p === 'wheel' || p === 'pinch'),
+    );
+  }
+
+  get zoomHintLabel(): string {
+    if (this._zoomHintLabel !== undefined) return this._zoomHintLabel;
+    const apple = typeof navigator !== 'undefined' && /Mac|iPhone|iPad/.test(navigator.platform ?? '');
+    return apple ? 'Use ⌘ + scroll to zoom the chart' : 'Use Ctrl + scroll to zoom the chart';
+  }
+  set zoomHintLabel(value: string | undefined) {
+    this._zoomHintLabel = value || undefined;
+  }
+
+  /**
+   * Ctrl/Cmd+wheel steps the RE-ROOT ladder toward/away from the pointer —
+   * never a scale transform (labels keep their size; nothing needs panning).
+   * Trackpad pinch arrives as ctrl+wheel in all four engines. A plain wheel
+   * is never captured (page scroll survives — FoamTree's documented mistake);
+   * it only shows a transient hint, the embedded-maps convention.
+   */
+  private onWheel(event: WheelEvent): void {
+    if (!this._gestures.has('wheel') || !this._index) return;
+    if (!event.ctrlKey && !event.metaKey) {
+      this.showZoomHint();
+      return;
+    }
+    event.preventDefault(); // claimed: chart zoom instead of page zoom, over the chart only
+    // deltaMode normalization + clamp: engines report ±1 line to ±100 px per notch.
+    const unit = event.deltaMode === 1 ? 16 : event.deltaMode === 2 ? (this.clientHeight || 400) : 1;
+    const delta = Math.max(-100, Math.min(100, event.deltaY * unit));
+    if (Math.sign(delta) !== Math.sign(this._wheelAccum)) this._wheelAccum = 0;
+    this._wheelAccum += delta;
+    clearTimeout(this._wheelIdleTimer);
+    this._wheelIdleTimer = setTimeout(() => (this._wheelAccum = 0), 250) as unknown as number;
+    const STEP = 100;
+    if (this._wheelAccum <= -STEP) {
+      this._wheelAccum = 0;
+      this.stepInToward(event); // wheel/pinch up = in
+    } else if (this._wheelAccum >= STEP) {
+      this._wheelAccum = 0;
+      this.zoomOut();
+    }
+  }
+
+  /** One semantic step toward the pointer: re-root into the focus's child on the hovered path. */
+  private stepInToward(event: Event): void {
+    const index = this._index;
+    const hovered = this.nodeFromEvent(event);
+    const focus = this.focusedRoot;
+    if (!index || !hovered || !focus || hovered === focus) return;
+    const path = pathTo(index, hovered);
+    const at = path.findIndex((n) => n === focus);
+    const next = at >= 0 ? path[at + 1] : undefined;
+    if (next?.children?.length || (next?.hasChildren && this._loadChildren)) this.zoomTo(next.id);
+  }
+
+  /* ----- touch pinch (S4-gated: pan-x pan-y delivers two pointers, Chromium-measured) ----- */
+
+  private readonly _pinchPointers = new Map<number, { x: number; y: number }>();
+  private _pinchBaseDistance = 0;
+
+  private pinchDistance(): number {
+    const [p1, p2] = [...this._pinchPointers.values()];
+    return Math.hypot(p2.x - p1.x, p2.y - p1.y);
+  }
+
+  private onPointerDown(event: PointerEvent): void {
+    if (!this._gestures.has('pinch') || event.pointerType !== 'touch') return;
+    // No preventDefault on a touch pointerdown: it suppresses the synthesized
+    // click that drives tap-to-re-root (repo rule).
+    this._pinchPointers.set(event.pointerId, { x: event.clientX, y: event.clientY });
+    if (this._pinchPointers.size === 2) this._pinchBaseDistance = this.pinchDistance();
+  }
+
+  /** @returns true when the move was part of an active pinch (skip hover handling). */
+  private trackPinch(event: PointerEvent): boolean {
+    if (event.pointerType === 'touch' && this._pinchPointers.has(event.pointerId)) {
+      this._pinchPointers.set(event.pointerId, { x: event.clientX, y: event.clientY });
+      if (this._pinchPointers.size === 2 && this._pinchBaseDistance > 0) {
+        const step = pinchStepOf(this.pinchDistance() / this._pinchBaseDistance);
+        if (step === 'in') this.stepInToward(event);
+        else if (step === 'out') this.zoomOut();
+        if (step) this._pinchBaseDistance = this.pinchDistance(); // re-base per step (hysteresis)
+        return true;
+      }
+      return this._pinchPointers.size >= 2;
+    }
+    return false;
+  }
+
+  /** pointerup ends the gesture; pointercancel abandons it (divergent engines degrade to tap). */
+  private endPinch(event: PointerEvent): void {
+    this._pinchPointers.delete(event.pointerId);
+    if (this._pinchPointers.size < 2) this._pinchBaseDistance = 0;
+  }
+
+  private showZoomHint(): void {
+    this._hintVisible = true;
+    clearTimeout(this._hintTimer);
+    this._hintTimer = setTimeout(() => {
+      this._hintVisible = false;
+      this.requestUpdate();
+    }, 1500) as unknown as number;
+    this.requestUpdate();
   }
 
   /* ---------- zoom ---------- */
@@ -608,6 +740,7 @@ export class MpHierarchyChart extends LitElement {
   private onPointerMove(event: PointerEvent): void {
     const index = this._index;
     if (!index) return;
+    if (this.trackPinch(event)) return; // two fingers zoom; they don't hover
     const node = this.nodeFromEvent(event);
     if (!node || node === this.focusedRoot) {
       this.clearHover();
@@ -876,10 +1009,13 @@ export class MpHierarchyChart extends LitElement {
     if (!index || !focus) return html`<div class="chart"></div>`;
 
     return html`<div
-      class="chart"
+      class="chart ${this._gestures.has('pinch') ? 'pinch' : ''}"
       @click=${this.onClick}
       @keydown=${this.onKeyDown}
+      @pointerdown=${this.onPointerDown}
       @pointermove=${this.onPointerMove}
+      @pointerup=${this.endPinch}
+      @pointercancel=${this.endPinch}
       @pointerleave=${this.clearHover}
       @focusin=${this.onFocusIn}
       @focusout=${this.onFocusOut}
@@ -890,6 +1026,9 @@ export class MpHierarchyChart extends LitElement {
           ? this.renderIcicle(index, focus)
           : this.renderTreemap(index, focus)}
       <div class="chart-tooltip" aria-hidden="true"></div>
+      ${this._hintVisible && this._gestures.has('wheel')
+        ? html`<div class="zoom-hint" aria-hidden="true">${this.zoomHintLabel}</div>`
+        : nothing}
       ${this.liveAnnouncer.template()}
     </div>`;
   }
@@ -1108,6 +1247,17 @@ export class MpHierarchyChart extends LitElement {
       })}
     >${labeled ? html`<span class="cell-label">${this.labelText(n.node)}</span>` : nothing}</div>`;
   }
+}
+
+/**
+ * Pinch hysteresis: one semantic step per 30% spread (in) or its inverse
+ * (out), re-based after each step so a continuous pinch walks the ladder.
+ * Pure — exported for unit tests; the pointer plumbing is e2e territory.
+ */
+export function pinchStepOf(ratio: number): 'in' | 'out' | undefined {
+  if (ratio >= 1.3) return 'in';
+  if (ratio <= 1 / 1.3) return 'out';
+  return undefined;
 }
 
 /** Computed backgrounds are rgb()/rgba(); 'transparent' computes to rgba(0, 0, 0, 0). */
