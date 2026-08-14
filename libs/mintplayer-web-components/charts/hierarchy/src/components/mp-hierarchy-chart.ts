@@ -95,6 +95,8 @@ export class MpHierarchyChart extends LitElement {
       'locale',
       'zoom-gestures',
       'zoom-hint-label',
+      'show-breadcrumb',
+      'breadcrumb-label',
       'zoom-out-label',
       'metric-unit-label',
       'value-unit-label',
@@ -383,6 +385,8 @@ export class MpHierarchyChart extends LitElement {
       case 'locale': this.locale = newValue ?? undefined; break;
       case 'zoom-gestures': this.zoomGestures = newValue ?? 'wheel pinch'; break;
       case 'zoom-hint-label': this._zoomHintLabel = newValue ?? undefined; break;
+      case 'show-breadcrumb': this.showBreadcrumb = newValue !== 'false' && newValue !== null; break;
+      case 'breadcrumb-label': this._breadcrumbLabel = newValue ?? 'Chart path'; this.requestUpdate(); break;
       case 'zoom-out-label': this._zoomOutLabel = newValue ?? 'Zoom out one level'; this.requestUpdate(); break;
       case 'loading-label': this._loadingLabel = newValue ?? 'Loading'; break;
       case 'metric-unit-label': this._metricUnitLabel = newValue ?? '%'; this.requestUpdate(); break;
@@ -390,6 +394,30 @@ export class MpHierarchyChart extends LitElement {
       case 'aria-label': this.requestUpdate(); break;
       case 'input-label': this.inputLabel = newValue; break;
     }
+  }
+
+  private _showBreadcrumb = false;
+  private _breadcrumbLabel = 'Chart path';
+
+  /**
+   * Renders the focus path as real buttons above the chart: a single-pointer,
+   * keyboard-operable way back up, and the visible statement of zoom state
+   * (PRD hierarchy-chart-zoom-labels B1). Off by default.
+   */
+  get showBreadcrumb(): boolean {
+    return this._showBreadcrumb;
+  }
+  set showBreadcrumb(value: boolean) {
+    this._showBreadcrumb = !!value;
+    this.requestUpdate();
+  }
+
+  get breadcrumbLabel(): string {
+    return this._breadcrumbLabel;
+  }
+  set breadcrumbLabel(value: string) {
+    this._breadcrumbLabel = value || 'Chart path';
+    this.requestUpdate();
   }
 
   get zoomOutLabel(): string {
@@ -1003,12 +1031,27 @@ export class MpHierarchyChart extends LitElement {
     return this.getAttribute('aria-label') ?? this._inputLabel;
   }
 
+  /** The focus path as buttons, OUTSIDE any role=tree container (trees own only treeitems). */
+  private renderBreadcrumb(index: HierarchyIndex, focus: HierarchyNode): TemplateResult {
+    const path = pathTo(index, focus);
+    return html`<nav class="breadcrumb" aria-label=${this._breadcrumbLabel}>
+      ${path.map((node, i) =>
+        i === path.length - 1
+          ? html`<span class="crumb-current" aria-current="location">${this.labelText(node)}</span>`
+          : html`<button
+              type="button"
+              class="crumb"
+              @click=${() => this.zoomTo(node === index.root ? undefined : node.id)}
+            >${this.labelText(node)}</button><span class="crumb-sep" aria-hidden="true">/</span>`)}
+    </nav>`;
+  }
+
   override render(): TemplateResult {
     const index = this._index;
     const focus = this.focusedRoot;
     if (!index || !focus) return html`<div class="chart"></div>`;
 
-    return html`<div
+    return html`${this._showBreadcrumb ? this.renderBreadcrumb(index, focus) : nothing}<div
       class="chart ${this._gestures.has('pinch') ? 'pinch' : ''}"
       @click=${this.onClick}
       @keydown=${this.onKeyDown}
