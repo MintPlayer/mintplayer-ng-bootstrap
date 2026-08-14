@@ -10,6 +10,9 @@ Grounded in two 3-agent investigations: (1) codecov's open-source frontend
 survey + doc conventions; (2) packaging in-tree vs separate family, chart-library licensing, and
 the chart inventory of codecov/Coveralls/SonarQube/Codacy/coverage.py/JaCoCo/Istanbul.
 Plan: [charts-wc-plan.md](./charts-wc-plan.md)
+Follow-up (2026-08-14): [hierarchy-chart-zoom-labels.md](./hierarchy-chart-zoom-labels.md) —
+wheel/pinch zoom gestures + the label-speckling fix (incl. the `arcLabelFits` TAU unit bug that
+made §5.2's documented threshold ~6× more permissive in practice).
 Dependency work riding the same PR: [nx23-dependency-upgrade.md](./nx23-dependency-upgrade.md)
 
 ## 1. Problem

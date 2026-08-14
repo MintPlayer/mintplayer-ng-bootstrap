@@ -52,6 +52,31 @@ export class ChartsComponent {
     treemap: this.layout() === 'treemap' ? Color.primary : Color.secondary,
   }));
 
+  /**
+   * Second dataset: this workspace's own coverage tree (1,603 nodes / 803 files,
+   * depth 11), captured from coverage.mintplayer.com. At this density the chart
+   * exhibits the label-speckling documented in
+   * docs/prd/hierarchy-chart-zoom-labels.md — the fixture for verifying that work.
+   * Fetched lazily on first selection so the page's initial load stays small.
+   */
+  readonly dataset = signal<'sample' | 'workspace'>('sample');
+  private readonly workspaceTree = signal<HierarchyNode | undefined>(undefined);
+  readonly datasetColors = computed<Record<'sample' | 'workspace', Color>>(() => ({
+    sample: this.dataset() === 'sample' ? Color.primary : Color.secondary,
+    workspace: this.dataset() === 'workspace' ? Color.primary : Color.secondary,
+  }));
+  readonly activeTree = computed<HierarchyNode>(() =>
+    (this.dataset() === 'workspace' ? this.workspaceTree() : undefined) ?? this.coverageTree);
+
+  async selectDataset(dataset: 'sample' | 'workspace'): Promise<void> {
+    if (dataset === 'workspace' && !this.workspaceTree()) {
+      const response = await fetch('assets/coverage-tree.json');
+      this.workspaceTree.set(await response.json() as HierarchyNode);
+    }
+    this.dataset.set(dataset);
+    this.rootId.set(undefined);
+  }
+
   readonly coverageTree: HierarchyNode = {
     id: 'repo', name: 'repo',
     children: [
@@ -100,7 +125,7 @@ export class ChartsComponent {
       label: node.name,
       children: node.children?.map(map),
     });
-    return this.coverageTree.children?.map(map) ?? [];
+    return this.activeTree().children?.map(map) ?? [];
   });
   readonly selectedIds = computed<string[]>(() => (this.rootId() ? [this.rootId() as string] : []));
 
@@ -110,7 +135,7 @@ export class ChartsComponent {
         (hit, n) => hit ?? (n.id === id ? n : findNode(n.children, id)),
         undefined,
       );
-    const node = findNode(this.coverageTree.children, detail.node.id);
+    const node = findNode(this.activeTree().children, detail.node.id);
     this.rootId.set(node?.children?.length ? node.id : this.rootId());
   }
 

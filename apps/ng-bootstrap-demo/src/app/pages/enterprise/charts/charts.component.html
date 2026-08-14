@@ -27,12 +27,23 @@
             (click)="maxDepth.set(option)">{{ option }}</button>
         }
       </p>
+      <p class="layout-switcher">
+        <span class="align-self-center me-1">Dataset:</span>
+        <button type="button" [color]="datasetColors()['sample']"
+          (click)="selectDataset('sample')">sample</button>
+        <button type="button" [color]="datasetColors()['workspace']"
+          (click)="selectDataset('workspace')">this workspace (1,603 nodes)</button>
+      </p>
+      <p>
+        The workspace dataset is this repository's own coverage tree (803 files, 11 levels
+        deep) — dense enough to show how the chart behaves when sections get very small.
+      </p>
     </div>
   </div>
   <div bsRow>
     <div [xs]="12" [md]="7">
       <bs-hierarchy-chart
-        [data]="coverageTree"
+        [data]="activeTree()"
         [layout]="layout()"
         [(rootId)]="rootId"
         [maxDepth]="maxDepth()"
