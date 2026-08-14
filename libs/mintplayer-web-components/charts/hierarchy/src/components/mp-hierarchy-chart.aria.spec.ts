@@ -108,8 +108,14 @@ describe('mp-hierarchy-chart ARIA structure (all layouts)', () => {
         }],
       }],
     };
-    const capped = await mount('layout="sunburst"', deep);
+    // An eager chart defaults to 'auto' — it draws the tree it was given — so
+    // the bounded window has to be asked for to contrast against.
+    const capped = await mount('layout="sunburst" max-depth="2"', deep);
     expect(items(capped).map((n) => n.getAttribute('data-id'))).toEqual(['d1', 'd2']);
+
+    const defaulted = await mount('layout="sunburst"', deep);
+    expect(items(defaulted).map((n) => n.getAttribute('data-id')))
+      .toEqual(expect.arrayContaining(['d1', 'd2', 'd3', 'leaf']));
 
     const layoutsToCheck: Layout[] = ['sunburst', 'icicle', 'treemap'];
     for (const layout of layoutsToCheck) {
@@ -145,6 +151,26 @@ describe('mp-hierarchy-chart ARIA structure (all layouts)', () => {
       await flush(el);
       expect(items(el).map((n) => n.getAttribute('data-id'))).toContain('b');
     });
+  });
+
+  it('a lazy chart keeps the bounded window by default (auto would walk the whole remote tree)', async () => {
+    const lazy: HierarchyNode = {
+      id: 'r', name: 'r',
+      children: [{ id: 'a', name: 'a', value: 1, hasChildren: true }],
+    };
+    document.body.innerHTML = '<mp-hierarchy-chart layout="sunburst" transition-duration="0"></mp-hierarchy-chart>';
+    const el = document.querySelector('mp-hierarchy-chart') as MpHierarchyChart;
+    el.loadChildren = () => Promise.resolve([]);
+    el.data = lazy;
+    await flush(el);
+    expect(el.maxDepth).toBe(2);
+
+    // The same chart without a loader draws everything it was handed.
+    document.body.innerHTML = '<mp-hierarchy-chart layout="sunburst" transition-duration="0"></mp-hierarchy-chart>';
+    const eager = document.querySelector('mp-hierarchy-chart') as MpHierarchyChart;
+    eager.data = lazy;
+    await flush(eager);
+    expect(eager.maxDepth).toBe('auto');
   });
 
   it('aria-expanded moves in both directions with the rendered window', async () => {

@@ -37,8 +37,12 @@ export class BsHierarchyChartComponent {
   readonly data = input<HierarchyNode | undefined>(undefined);
   readonly layout = input<HierarchyChartLayout>('sunburst');
   readonly rootId = model<string | undefined>(undefined);
-  /** Levels rendered outward from the focus, or `'auto'` for every loaded level. */
-  readonly maxDepth = input<number | 'auto'>(2);
+  /**
+   * Levels rendered outward from the focus, or `'auto'` for every loaded level.
+   * Unset leaves the element's own default: `'auto'`, or a 2-level window when
+   * a `loadChildren` loader is bound.
+   */
+  readonly maxDepth = input<number | 'auto' | undefined>(undefined);
   readonly minAngle = input<number>(0.2);
   readonly minSize = input<number>(4);
   readonly showLabels = input<boolean>(true);
@@ -80,7 +84,11 @@ export class BsHierarchyChartComponent {
     effect(() => { const el = this.chartRef()?.nativeElement; if (el) el.data = this.data(); });
     effect(() => { const el = this.chartRef()?.nativeElement; if (el) el.layout = this.layout(); });
     effect(() => { const el = this.chartRef()?.nativeElement; if (el) el.rootId = this.rootId(); });
-    effect(() => { const el = this.chartRef()?.nativeElement; if (el) el.maxDepth = this.maxDepth(); });
+    effect(() => {
+      const el = this.chartRef()?.nativeElement;
+      const depth = this.maxDepth();
+      if (el && depth !== undefined) el.maxDepth = depth;
+    });
     effect(() => { const el = this.chartRef()?.nativeElement; if (el) el.minAngle = this.minAngle(); });
     effect(() => { const el = this.chartRef()?.nativeElement; if (el) el.minSize = this.minSize(); });
     effect(() => { const el = this.chartRef()?.nativeElement; if (el) el.showLabels = this.showLabels(); });

@@ -145,10 +145,17 @@ export function chartsSuite(test: Test, expect: Expect, options: ChartsSuiteOpti
       // 656+ arcs arrive; the label engine must NOT paint one per arc (the
       // speckling this feature exists to fix rendered 197 labels here).
       await expect.poll(() => chart.locator('path.ring').count()).toBeGreaterThan(300);
-      const labels = await chart.locator('text.arc-label').count();
       const arcs = await chart.locator('path.ring').count();
-      expect(labels).toBeGreaterThan(0);
-      expect(labels).toBeLessThan(arcs / 5);
+      expect(await chart.locator('text.arc-label').count()).toBeLessThan(arcs / 5);
+
+      // How many labels fit at 1x is host-geometry dependent, and zero is a
+      // legitimate answer: an 11-deep tree in the react/vue demo's 480px box
+      // gives ~20px rings, which hold no readable caption in any orientation.
+      // What must hold in every host: magnifying makes captions fit, at the
+      // same font size — the whole point of geometric zoom.
+      await page.evaluate(() =>
+        (document.querySelector('mp-hierarchy-chart') as unknown as { setZoomLevel(zoom: number): void }).setZoomLevel(8));
+      await expect.poll(() => chart.locator('text.arc-label').count()).toBeGreaterThan(0);
     });
 
     test('hierarchy: switching layout swaps SVG arcs for HTML cells, tree intact', async ({ page }) => {

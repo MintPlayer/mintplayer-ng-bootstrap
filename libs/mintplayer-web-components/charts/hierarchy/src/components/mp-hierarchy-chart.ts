@@ -120,7 +120,7 @@ export class MpHierarchyChart extends LitElement {
   private _index: HierarchyIndex | undefined;
   private _layout: HierarchyChartLayout = 'sunburst';
   private _rootId: string | undefined;
-  private _maxDepth: number | 'auto' = 2;
+  private _maxDepth: number | 'auto' | undefined = undefined;
   private _minAngle = 0.2; // degrees
   private _minSize = 4; // logical px (of the 1000-unit square), cartesian cull
   private _showLabels = true;
@@ -213,12 +213,18 @@ export class MpHierarchyChart extends LitElement {
 
   /**
    * Levels rendered outward from the focus node, or `'auto'` for every loaded
-   * level. Default 2 (codecov's window), which keeps the DOM small on a big
-   * tree; any positive number is valid, and `'auto'` follows the data — with
-   * lazy loading that means each arriving level reveals the next.
+   * level. Any positive number is valid.
+   *
+   * Left unset it resolves to `'auto'` — a chart given a whole tree should draw
+   * the tree it was given — EXCEPT when a `loadChildren` loader is present:
+   * `'auto'` treats the deepest rendered ring as a load candidate, so an
+   * unbounded lazy chart walks the entire remote tree one level per render (see
+   * `loadLazyCandidates`). Lazy charts therefore keep the bounded 2-level
+   * window (codecov's) unless the consumer asks for `'auto'` explicitly and
+   * means it.
    */
   get maxDepth(): number | 'auto' {
-    return this._maxDepth;
+    return this._maxDepth ?? (this._loadChildren ? 2 : 'auto');
   }
   set maxDepth(value: number | 'auto') {
     this._maxDepth = value === 'auto' ? 'auto' : Math.max(1, Math.floor(Number(value) || 2));
@@ -231,7 +237,8 @@ export class MpHierarchyChart extends LitElement {
    * draws its (empty) first ring.
    */
   private get renderedDepth(): number {
-    if (this._maxDepth !== 'auto') return this._maxDepth;
+    const configured = this.maxDepth;
+    if (configured !== 'auto') return configured;
     return this._index ? Math.max(1, subtreeDepth(this._index, this._rootId)) : 1;
   }
 
@@ -380,7 +387,11 @@ export class MpHierarchyChart extends LitElement {
     switch (name) {
       case 'layout': this.layout = (newValue ?? 'sunburst') as HierarchyChartLayout; break;
       case 'root-id': this.rootId = newValue ?? undefined; break;
-      case 'max-depth': this.maxDepth = newValue === 'auto' ? 'auto' : Number(newValue ?? 2); break;
+      case 'max-depth':
+        // Removing the attribute returns to the resolved default, not to 2.
+        if (newValue === null) { this._maxDepth = undefined; this.requestUpdate(); }
+        else this.maxDepth = newValue === 'auto' ? 'auto' : Number(newValue);
+        break;
       case 'min-angle': this.minAngle = Number(newValue ?? 0.2); break;
       case 'min-size': this.minSize = Number(newValue ?? 4); break;
       case 'show-labels': this.showLabels = newValue !== 'false' && newValue !== null; break;
@@ -1109,7 +1120,7 @@ export class MpHierarchyChart extends LitElement {
     // the window can never grow past it and lazy loading deadlocks at level 1.
     // The consequence is deliberate and worth knowing: `max-depth="auto"` plus
     // `loadChildren` walks the entire tree, one level per render.
-    const unbounded = this._maxDepth === 'auto';
+    const unbounded = this.maxDepth === 'auto';
     const depth = this.renderedDepth;
     const candidates = [
       ...(this.isLazy(focus) ? [focus] : []),
