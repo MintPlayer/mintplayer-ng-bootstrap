@@ -19,12 +19,21 @@ describe('fitArcLabel', () => {
   });
 
   it('a wide outer arc fits tangentially even though its ring is thin', () => {
-    // 60deg at rings 2..3 of the same geometry: chord ~44px, ring 17.5px >= 14.4px line.
+    // A thin (20px) ring far out: the chord is 110px, so the name fits ACROSS
+    // the arc even though nothing like it would fit along the 20px radius.
     const sweep = (60 / 360) * TAU;
-    const fit = fitArcLabel('scheduler', sweep, 2 * RING, 3 * RING, FONT);
+    const fit = fitArcLabel('scheduler', sweep, 100, 120, FONT);
     expect(fit.visible).toBe(true);
     expect(fit.orientation).toBe('tangential');
     expect(fit.text).toBe('scheduler');
+  });
+
+  it('the same arc close to the centre only fits a few characters', () => {
+    // Identical 60deg sweep at the speckling geometry (ring 2..3 of 12): the
+    // chord collapses to ~44px, so an honest fit is 4 characters, truncated.
+    const fit = fitArcLabel('scheduler', (60 / 360) * TAU, 2 * RING, 3 * RING, FONT);
+    expect(fit.visible).toBe(true);
+    expect(fit.text).toBe('sch…');
   });
 
   it('a thick ring with a narrow sweep fits radially', () => {
@@ -36,14 +45,16 @@ describe('fitArcLabel', () => {
   });
 
   it('truncates with an ellipsis when only part of the name fits', () => {
-    const fit = fitArcLabel('mp-hierarchy-chart.ts', (40 / 360) * TAU, 2 * RING, 3 * RING, FONT);
+    const fit = fitArcLabel('mp-hierarchy-chart.ts', (40 / 360) * TAU, 100, 120, FONT);
     expect(fit.visible).toBe(true);
     expect(fit.text.endsWith('…')).toBe(true);
     expect(fit.text.length).toBeLessThan('mp-hierarchy-chart.ts'.length);
   });
 
   it('suppresses rather than truncating below the 4-char floor', () => {
-    const fit = fitArcLabel('anything', (8 / 360) * TAU, 2 * RING, 3 * RING, FONT);
+    // 40deg at the inner speckling rings leaves room for 3 characters — under
+    // the floor, so nothing is drawn rather than a meaningless "mp…".
+    const fit = fitArcLabel('mp-hierarchy-chart.ts', (40 / 360) * TAU, 2 * RING, 3 * RING, FONT);
     expect(fit.visible).toBe(false);
     expect(fit.text).toBe('');
   });

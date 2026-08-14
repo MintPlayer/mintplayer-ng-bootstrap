@@ -92,9 +92,11 @@ describe('ctrl+wheel geometric zoom', () => {
   });
 
   it('zooming in reveals labels that did not fit at 1x, at the same font size', async () => {
+    // 3.6deg each: no orientation fits at 1x (see the labels spec), but 8x
+    // magnification gives each arc 8x the on-screen room at the same font size.
     const slivers: HierarchyNode = {
       id: 'root', name: 'root',
-      children: Array.from({ length: 30 }, (_, i) => ({
+      children: Array.from({ length: 100 }, (_, i) => ({
         id: `f${i}`, name: `file-${i}.ts`, value: 1, colorValue: 50,
       })),
     };

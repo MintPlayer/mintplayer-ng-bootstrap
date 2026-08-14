@@ -29,10 +29,16 @@ const arcLabels = (el: MpHierarchyChart): Element[] =>
 const cellLabels = (el: MpHierarchyChart): Element[] =>
   Array.from(el.shadowRoot!.querySelectorAll('.cell .cell-label'));
 
-/** 30 sliver files under the root: each 12deg of sweep — arcs, never labels. */
+/**
+ * 100 sliver files under the root: 3.6deg each, so the arc length at the label
+ * radius (~6.6px) is under one line of 12px text — no orientation fits, and
+ * the arcs still render. (A handful of FAT slivers would legitimately fit a
+ * radial label: a 2-ring chart has 70px-thick rings. Thin rings are what the
+ * real coverage tree has, and what speckled.)
+ */
 const SLIVERS: HierarchyNode = {
   id: 'root', name: 'root',
-  children: Array.from({ length: 30 }, (_, i) => ({
+  children: Array.from({ length: 100 }, (_, i) => ({
     id: `f${i}`, name: `file-${i}.ts`, value: 1, colorValue: (i * 7) % 100,
   })),
 };
@@ -81,7 +87,7 @@ describe('sunburst label fitting', () => {
 
   it('suppresses labels on slivers but never the arcs themselves', async () => {
     const el = await mount('', SLIVERS);
-    expect(el.shadowRoot!.querySelectorAll('path.ring').length).toBe(30);
+    expect(el.shadowRoot!.querySelectorAll('path.ring').length).toBe(100);
     expect(arcLabels(el).length).toBe(0);
   });
 

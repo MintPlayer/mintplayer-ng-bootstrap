@@ -1,7 +1,35 @@
 # Plan — `mp-hierarchy-chart` zoom gestures + label decluttering
 
 PRD: [hierarchy-chart-zoom-labels.md](./hierarchy-chart-zoom-labels.md)
-Status: **Not started** (2026-08-14).
+Status: **Implemented on `feat/hierarchy-zoom-labels`** (2026-08-14) — S4 + M1–M7 done and
+committed; M8 sweep green locally except the e2e/axe legs, which were handed to CI (below).
+
+| Milestone | State |
+|---|---|
+| S4 spike | ✅ PASS (Chromium, CDP multi-touch); Firefox/WebKit deferred to the real-device check |
+| M1 `charts/core` | ✅ `fitArcLabel`/`fitCellLabel` + WCAG `relativeLuminance`/`composite`/`contrastText`; `arcLabelVisible` deleted |
+| M2 element labels | ✅ constant device-px labels, orientation choice, truncation, per-node contrast, backdrop walk, cartesian gate |
+| M3 tooltip | ✅ focus channel, host clamping, Escape ordering |
+| M4+M5 gestures | ✅ shipped first as the semantic ladder, then **replaced by geometric magnification** on the user's call (see below) |
+| M6 breadcrumb | ✅ opt-in `show-breadcrumb` |
+| M7 wrappers/demos/e2e | ✅ ng inputs, 3 demo pages + the 1,603-node dataset, shared e2e additions, axe magnified state |
+| M8 sweep | ⏳ units/builds green locally; **e2e + axe run in CI** |
+
+**Mid-flight design change (2026-08-14).** M4/M5 originally made ctrl+wheel and pinch step the
+*semantic* re-root ladder (the industry consensus in PRD §2). Seeing it live, the user judged it
+"clicking through to a segment", not zoom, and asked for real magnification — which the
+constant-size labels make legible. It is now a geometric view window (PRD Z1'–Z7'); semantic
+re-root stays on click/Enter/tap/breadcrumb. Measured on the workspace tree: **16 labels at 1×,
+409 at 8×**, same font size.
+
+**M8 results (local, 2026-08-14).** WC units **1967/1967** in 128 files (an earlier run's
+scheduler + phone-input failures were load flakes — green on re-run); ng-bootstrap **560/560**;
+React and Vue suites exit 0; React `typecheck-a11y` green; all four lib builds green;
+`nx build ng-bootstrap-demo` green (its initial-bundle budget warning is pre-existing). Two
+spec-authoring bugs of mine surfaced and were fixed rather than papered over: a "sliver" fixture
+that was really a 70px-thick 2-ring chart (where a radial label legitimately *does* fit), and
+hand-computed core expectations that ignored how little fits in a 17.5px ring. **Not yet run
+locally: the three `--grep=charts` e2e suites and the axe gate** — left to CI on this push.
 
 ## Conventions (these still bite — inherited from charts-wc-plan.md)
 
