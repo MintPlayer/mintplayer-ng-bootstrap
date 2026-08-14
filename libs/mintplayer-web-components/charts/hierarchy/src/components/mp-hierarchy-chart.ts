@@ -58,6 +58,15 @@ function reducedMotion(): boolean {
  * color metric — sizing by a percentage inverts salience, PRD charts-wc §1.1),
  * color follows `colorValue` through a clamped two-stop scale.
  *
+ * Two kinds of zoom, deliberately distinct:
+ * - SEMANTIC re-root (click/Enter/tap/breadcrumb): the subtree takes the full
+ *   chart; controlled via `root-id` + `hierarchy-zoom`.
+ * - GEOMETRIC magnification (ctrl/cmd+wheel, touch pinch, `+`/`-`/`0` keys,
+ *   drag or two-finger pan): a view window mapped through the sunburst's
+ *   viewBox / the div layouts' percentages — never a CSS transform. Labels
+ *   hold their device-px size, so magnifying is what reveals small segments'
+ *   captions. Resets on re-root, layout switch and data writes.
+ *
  * No-JS tier: none (a proportional chart is meaningless without computed
  * geometry); the demo registers in axe.spec.ts only.
  *
@@ -176,7 +185,7 @@ export class MpHierarchyChart extends LitElement {
   set data(value: HierarchyNode | undefined) {
     this._data = value;
     this._index = value ? buildIndex(value) : undefined;
-    this.requestUpdate();
+    this.resetZoom();
   }
 
   get layout(): HierarchyChartLayout {
@@ -184,7 +193,7 @@ export class MpHierarchyChart extends LitElement {
   }
   set layout(value: HierarchyChartLayout) {
     this._layout = value === 'icicle' || value === 'treemap' ? value : 'sunburst';
-    this.requestUpdate();
+    this.resetZoom(); // projections don't share a view window
   }
 
   get rootId(): string | undefined {
@@ -470,7 +479,6 @@ export class MpHierarchyChart extends LitElement {
 
   override disconnectedCallback(): void {
     this.removeEventListener('wheel', this._wheelListener);
-    clearTimeout(this._wheelIdleTimer);
     clearTimeout(this._hintTimer);
     this._resizeObserver?.disconnect();
     this._resizeObserver = undefined;
@@ -526,8 +534,6 @@ export class MpHierarchyChart extends LitElement {
 
   private _gestures = new Set<'wheel' | 'pinch'>(['wheel', 'pinch']);
   private _zoomHintLabel: string | undefined;
-  private _wheelAccum = 0;
-  private _wheelIdleTimer = 0;
   private _hintVisible = false;
   private _hintTimer = 0;
   // Non-passive by intent: a consumed ctrl/cmd+wheel must not also page-zoom.
@@ -554,86 +560,168 @@ export class MpHierarchyChart extends LitElement {
   }
 
   /**
-   * Ctrl/Cmd+wheel steps the RE-ROOT ladder toward/away from the pointer —
-   * never a scale transform (labels keep their size; nothing needs panning).
-   * Trackpad pinch arrives as ctrl+wheel in all four engines. A plain wheel
-   * is never captured (page scroll survives — FoamTree's documented mistake);
-   * it only shows a transient hint, the embedded-maps convention.
+   * GEOMETRIC view state (user decision 2026-08-14): ctrl/cmd+wheel and pinch
+   * magnify the chart itself — labels hold their device-px size, so zooming
+   * in is what makes small segments' captions fit (the fit test re-runs per
+   * zoom state). Implemented as a view window over normalized content
+   * coordinates — the sunburst maps it to its viewBox, the div layouts map
+   * their percentage geometry through it — never a CSS transform, so text
+   * stays crisp and nothing re-rasterizes. Click/Enter/breadcrumb keep the
+   * SEMANTIC re-root, which resets the view (the subtree fills the chart).
    */
+  private _viewZoom = 1;
+  private _viewX = 0;
+  private _viewY = 0;
+  private static readonly MAX_ZOOM = 32;
+
+  /** Current geometric magnification (1 = fitted). Read-only state for consumers/tests. */
+  get zoomLevel(): number {
+    return this._viewZoom;
+  }
+
+  /** Programmatic geometric zoom, anchored at chart fractions (default: center). */
+  setZoomLevel(zoom: number, anchorX = 0.5, anchorY = 0.5): void {
+    const next = Math.min(MpHierarchyChart.MAX_ZOOM, Math.max(1, Number(zoom) || 1));
+    // The content point under the anchor stays under the anchor.
+    const contentX = this._viewX + anchorX / this._viewZoom;
+    const contentY = this._viewY + anchorY / this._viewZoom;
+    this._viewZoom = next;
+    this._viewX = clampView(contentX - anchorX / next, next);
+    this._viewY = clampView(contentY - anchorY / next, next);
+    this.requestUpdate();
+  }
+
+  resetZoom(): void {
+    this._viewZoom = 1;
+    this._viewX = 0;
+    this._viewY = 0;
+    this.requestUpdate();
+  }
+
+  /** Pan by chart-screen fractions (drag / two-finger move). */
+  private panBy(dxFraction: number, dyFraction: number): void {
+    if (this._viewZoom <= 1) return;
+    this._viewX = clampView(this._viewX - dxFraction / this._viewZoom, this._viewZoom);
+    this._viewY = clampView(this._viewY - dyFraction / this._viewZoom, this._viewZoom);
+    this.requestUpdate();
+  }
+
+  /** Map a normalized content rect through the view window to chart fractions. */
+  private viewRect(x0: number, y0: number, x1: number, y1: number): { x0: number; y0: number; x1: number; y1: number } {
+    const z = this._viewZoom;
+    return {
+      x0: (x0 - this._viewX) * z,
+      y0: (y0 - this._viewY) * z,
+      x1: (x1 - this._viewX) * z,
+      y1: (y1 - this._viewY) * z,
+    };
+  }
+
+  /** Pointer position as chart fractions, for anchor-at-cursor zooming. */
+  private chartAnchor(event: { clientX: number; clientY: number }): { x: number; y: number } {
+    const rect = this.shadowRoot?.querySelector<HTMLElement>('.chart')?.getBoundingClientRect();
+    if (!rect || !rect.width || !rect.height) return { x: 0.5, y: 0.5 };
+    return {
+      x: Math.min(1, Math.max(0, (event.clientX - rect.left) / rect.width)),
+      y: Math.min(1, Math.max(0, (event.clientY - rect.top) / rect.height)),
+    };
+  }
+
+  /** Device px per normalized content unit — the label fit tests' scale. */
+  private get effectiveScale(): number {
+    return this._hostScale * this._viewZoom;
+  }
+
   private onWheel(event: WheelEvent): void {
     if (!this._gestures.has('wheel') || !this._index) return;
     if (!event.ctrlKey && !event.metaKey) {
       this.showZoomHint();
-      return;
+      return; // never captured: page scroll survives (FoamTree's documented mistake)
     }
     event.preventDefault(); // claimed: chart zoom instead of page zoom, over the chart only
     // deltaMode normalization + clamp: engines report ±1 line to ±100 px per notch.
     const unit = event.deltaMode === 1 ? 16 : event.deltaMode === 2 ? (this.clientHeight || 400) : 1;
     const delta = Math.max(-100, Math.min(100, event.deltaY * unit));
-    if (Math.sign(delta) !== Math.sign(this._wheelAccum)) this._wheelAccum = 0;
-    this._wheelAccum += delta;
-    clearTimeout(this._wheelIdleTimer);
-    this._wheelIdleTimer = setTimeout(() => (this._wheelAccum = 0), 250) as unknown as number;
-    const STEP = 100;
-    if (this._wheelAccum <= -STEP) {
-      this._wheelAccum = 0;
-      this.stepInToward(event); // wheel/pinch up = in
-    } else if (this._wheelAccum >= STEP) {
-      this._wheelAccum = 0;
-      this.zoomOut();
-    }
-  }
-
-  /** One semantic step toward the pointer: re-root into the focus's child on the hovered path. */
-  private stepInToward(event: Event): void {
-    const index = this._index;
-    const hovered = this.nodeFromEvent(event);
-    const focus = this.focusedRoot;
-    if (!index || !hovered || !focus || hovered === focus) return;
-    const path = pathTo(index, hovered);
-    const at = path.findIndex((n) => n === focus);
-    const next = at >= 0 ? path[at + 1] : undefined;
-    if (next?.children?.length || (next?.hasChildren && this._loadChildren)) this.zoomTo(next.id);
+    const anchor = this.chartAnchor(event);
+    this.setZoomLevel(this._viewZoom * Math.exp(-delta * 0.005), anchor.x, anchor.y);
   }
 
   /* ----- touch pinch (S4-gated: pan-x pan-y delivers two pointers, Chromium-measured) ----- */
 
   private readonly _pinchPointers = new Map<number, { x: number; y: number }>();
-  private _pinchBaseDistance = 0;
+  /* ----- mouse/pen drag pan (only meaningful while zoomed in) ----- */
+  private _dragPointer: number | null = null;
+  private _dragLast: { x: number; y: number } = { x: 0, y: 0 };
+  private _dragTotal = 0;
+  private _dragMoved = false;
 
   private pinchDistance(): number {
     const [p1, p2] = [...this._pinchPointers.values()];
     return Math.hypot(p2.x - p1.x, p2.y - p1.y);
   }
 
-  private onPointerDown(event: PointerEvent): void {
-    if (!this._gestures.has('pinch') || event.pointerType !== 'touch') return;
-    // No preventDefault on a touch pointerdown: it suppresses the synthesized
-    // click that drives tap-to-re-root (repo rule).
-    this._pinchPointers.set(event.pointerId, { x: event.clientX, y: event.clientY });
-    if (this._pinchPointers.size === 2) this._pinchBaseDistance = this.pinchDistance();
+  private pinchMidpoint(): { x: number; y: number } {
+    const [p1, p2] = [...this._pinchPointers.values()];
+    return { x: (p1.x + p2.x) / 2, y: (p1.y + p2.y) / 2 };
   }
 
-  /** @returns true when the move was part of an active pinch (skip hover handling). */
-  private trackPinch(event: PointerEvent): boolean {
-    if (event.pointerType === 'touch' && this._pinchPointers.has(event.pointerId)) {
+  private onPointerDown(event: PointerEvent): void {
+    if (event.pointerType === 'touch') {
+      if (!this._gestures.has('pinch')) return;
+      // No preventDefault on a touch pointerdown: it suppresses the synthesized
+      // click that drives tap-to-re-root (repo rule).
       this._pinchPointers.set(event.pointerId, { x: event.clientX, y: event.clientY });
-      if (this._pinchPointers.size === 2 && this._pinchBaseDistance > 0) {
-        const step = pinchStepOf(this.pinchDistance() / this._pinchBaseDistance);
-        if (step === 'in') this.stepInToward(event);
-        else if (step === 'out') this.zoomOut();
-        if (step) this._pinchBaseDistance = this.pinchDistance(); // re-base per step (hysteresis)
-        return true;
+      return;
+    }
+    // Mouse/pen: primary-button drag pans the zoomed view. At 1x there is
+    // nothing to pan, so plain clicking is untouched.
+    if (this._viewZoom > 1 && event.button === 0) {
+      this._dragPointer = event.pointerId;
+      this._dragLast = { x: event.clientX, y: event.clientY };
+      this._dragTotal = 0;
+      this._dragMoved = false;
+    }
+  }
+
+  /** @returns true when the move belonged to a pinch or drag (skip hover handling). */
+  private trackViewGesture(event: PointerEvent): boolean {
+    if (event.pointerType === 'touch' && this._pinchPointers.has(event.pointerId)) {
+      if (this._pinchPointers.size !== 2) {
+        this._pinchPointers.set(event.pointerId, { x: event.clientX, y: event.clientY });
+        return false;
       }
-      return this._pinchPointers.size >= 2;
+      const beforeDistance = this.pinchDistance();
+      const beforeMid = this.pinchMidpoint();
+      this._pinchPointers.set(event.pointerId, { x: event.clientX, y: event.clientY });
+      if (beforeDistance > 0) {
+        const mid = this.pinchMidpoint();
+        const anchor = this.chartAnchor({ clientX: mid.x, clientY: mid.y });
+        // Continuous: spread magnifies, squeeze shrinks, midpoint movement pans.
+        this.setZoomLevel(this._viewZoom * (this.pinchDistance() / beforeDistance), anchor.x, anchor.y);
+        const rect = this.shadowRoot?.querySelector<HTMLElement>('.chart')?.getBoundingClientRect();
+        if (rect?.width && rect.height) {
+          this.panBy((mid.x - beforeMid.x) / rect.width, (mid.y - beforeMid.y) / rect.height);
+        }
+      }
+      return true;
+    }
+    if (this._dragPointer === event.pointerId) {
+      const dx = event.clientX - this._dragLast.x;
+      const dy = event.clientY - this._dragLast.y;
+      this._dragLast = { x: event.clientX, y: event.clientY };
+      this._dragTotal += Math.abs(dx) + Math.abs(dy);
+      if (this._dragTotal > 3) this._dragMoved = true; // a jiggly click still activates
+      const rect = this.shadowRoot?.querySelector<HTMLElement>('.chart')?.getBoundingClientRect();
+      if (rect?.width && rect.height) this.panBy(dx / rect.width, dy / rect.height);
+      return true;
     }
     return false;
   }
 
   /** pointerup ends the gesture; pointercancel abandons it (divergent engines degrade to tap). */
-  private endPinch(event: PointerEvent): void {
+  private endViewGesture(event: PointerEvent): void {
     this._pinchPointers.delete(event.pointerId);
-    if (this._pinchPointers.size < 2) this._pinchBaseDistance = 0;
+    if (this._dragPointer === event.pointerId) this._dragPointer = null;
   }
 
   private showZoomHint(): void {
@@ -654,6 +742,7 @@ export class MpHierarchyChart extends LitElement {
     if (!index) return;
     const target = resolveFocus(index, id);
     if (target === this.focusedRoot) return;
+    this.resetZoom(); // re-rooting refits the subtree; a stale magnification would disorient
     this.rootId = target === index.root ? undefined : target.id;
     this.liveAnnouncer.announce(this.labelText(target));
     this.emit<HierarchyNodeEventDetail>('hierarchy-zoom', { node: target, path: pathTo(index, target) });
@@ -714,6 +803,11 @@ export class MpHierarchyChart extends LitElement {
   }
 
   private onClick(event: MouseEvent): void {
+    // A drag-pan release is not an activation.
+    if (this._dragMoved) {
+      this._dragMoved = false;
+      return;
+    }
     const index = this._index;
     const node = this.nodeFromEvent(event);
     if (!index || !node) return;
@@ -768,7 +862,7 @@ export class MpHierarchyChart extends LitElement {
   private onPointerMove(event: PointerEvent): void {
     const index = this._index;
     if (!index) return;
-    if (this.trackPinch(event)) return; // two fingers zoom; they don't hover
+    if (this.trackViewGesture(event)) return; // pinch/drag steer the view; they don't hover
     const node = this.nodeFromEvent(event);
     if (!node || node === this.focusedRoot) {
       this.clearHover();
@@ -900,11 +994,15 @@ export class MpHierarchyChart extends LitElement {
         break;
       }
       case 'Escape':
-        // Ordering (1.4.13 vs zoom-out): a visible tooltip consumes the first
-        // Escape; only the next one zooms out.
+        // Ordering: tooltip (1.4.13 dismissable) -> geometric view reset ->
+        // semantic zoom-out; at the tree root with a fitted view, bubble.
         if (this.isTooltipVisible()) {
           this.hideTooltip();
           this._dismissedForId = id;
+          break;
+        }
+        if (this._viewZoom > 1) {
+          this.resetZoom();
           break;
         }
         if (this.focusedRoot === this._index?.root) return; // nothing to close: let Escape bubble
@@ -914,12 +1012,36 @@ export class MpHierarchyChart extends LitElement {
         if (this.focusedRoot === this._index?.root) return;
         this.zoomOut();
         break;
+      // Keyboard equivalent of the wheel/pinch magnification (2.1.1),
+      // anchored on the focused node so it stays in view.
+      case '+':
+      case '=':
+        this.zoomKeyboard(id, this._viewZoom * 1.5);
+        break;
+      case '-':
+      case '_':
+        this.zoomKeyboard(id, this._viewZoom / 1.5);
+        break;
+      case '0':
+        this.resetZoom();
+        break;
       default:
         this.handleTypeahead(event, id);
         return;
     }
     event.preventDefault();
     event.stopPropagation();
+  }
+
+  /** Zoom anchored on a node's on-screen center (falls back to the chart center). */
+  private zoomKeyboard(id: string, zoom: number): void {
+    const target = this.shadowRoot?.querySelector(`[role="treeitem"][data-id="${cssEscape(id)}"]`);
+    const chart = this.shadowRoot?.querySelector<HTMLElement>('.chart')?.getBoundingClientRect();
+    const rect = target?.getBoundingClientRect();
+    const anchor = chart?.width && rect?.width
+      ? this.chartAnchor({ clientX: rect.left + rect.width / 2, clientY: rect.top + rect.height / 2 })
+      : { x: 0.5, y: 0.5 };
+    this.setZoomLevel(zoom, anchor.x, anchor.y);
   }
 
   private handleTypeahead(event: KeyboardEvent, currentId: string): void {
@@ -1057,8 +1179,8 @@ export class MpHierarchyChart extends LitElement {
       @keydown=${this.onKeyDown}
       @pointerdown=${this.onPointerDown}
       @pointermove=${this.onPointerMove}
-      @pointerup=${this.endPinch}
-      @pointercancel=${this.endPinch}
+      @pointerup=${this.endViewGesture}
+      @pointercancel=${this.endViewGesture}
       @pointerleave=${this.clearHover}
       @focusin=${this.onFocusIn}
       @focusout=${this.onFocusOut}
@@ -1094,7 +1216,9 @@ export class MpHierarchyChart extends LitElement {
     const depth = this.renderedDepth;
     const nodes = partitionLayout(index, this._rootId, {
       maxDepth: depth,
-      minFraction: this._minAngle / 360,
+      // The cull relaxes with magnification: a sliver you zoomed into is no
+      // longer a sliver on screen.
+      minFraction: this._minAngle / 360 / this._viewZoom,
     });
     // Rings fill the half-size: hole is 1 unit, ring d spans [d, d+1] units.
     const unit = VIEW / 2 / (depth + 1);
@@ -1107,9 +1231,18 @@ export class MpHierarchyChart extends LitElement {
     const atRoot = focus === index.root;
     const holePct = (100 / (depth + 1)) * 0.9;
 
+    // The geometric view window IS the viewBox — no transform, no
+    // re-rasterization, and label font-size (in viewBox units) divides by the
+    // zoom so rendered text never scales.
+    const z = this._viewZoom;
+    const holeCenter = this.viewRect(0.5, 0.5, 0.5, 0.5);
     // The zoom-out control is a real HTML button OVERLAY, not a node inside
     // the svg: role=tree only allows treeitem/group children.
-    return html`<svg viewBox="0 0 ${VIEW} ${VIEW}" role="tree" aria-label=${label ?? nothing}>
+    return html`<svg
+      viewBox="${this._viewX * VIEW} ${this._viewY * VIEW} ${VIEW / z} ${VIEW / z}"
+      role="tree"
+      aria-label=${label ?? nothing}
+    >
       <!-- role=none: this group only centres the geometry, and an unroled node
            between role=tree and its treeitems is an aria-required-parent risk. -->
       <g role="none" transform="translate(${VIEW / 2},${VIEW / 2})">
@@ -1123,7 +1256,7 @@ export class MpHierarchyChart extends LitElement {
               ({ n, fit }) => svg`<text
                 class="arc-label"
                 aria-hidden="true"
-                font-size=${Math.round((this._labelFontSize / this._hostScale) * 100) / 100}
+                font-size=${Math.round((this._labelFontSize / this.effectiveScale) * 100) / 100}
                 data-surface=${this.surfaceToneOf(n.node, n.hasChildren ? 1 : 0.6)}
                 transform=${arcLabelTransform(n.x0, n.x1, (n.depth + 0.5) * unit, fit.orientation)}
               >${fit.text}</text>`)
@@ -1135,7 +1268,12 @@ export class MpHierarchyChart extends LitElement {
       aria-label=${this._zoomOutLabel}
       title=${atRoot ? nothing : this._zoomOutLabel}
       ?disabled=${atRoot}
-      style=${styleMap({ width: `${holePct}%`, height: `${holePct}%` })}
+      style=${styleMap({
+        left: `${holeCenter.x0 * 100}%`,
+        top: `${holeCenter.y0 * 100}%`,
+        width: `${holePct * z}%`,
+        height: `${holePct * z}%`,
+      })}
       @click=${this.zoomOut}
     >${focus ? this.labelText(focus) : ''}</button>`;
   }
@@ -1170,11 +1308,13 @@ export class MpHierarchyChart extends LitElement {
    * enough, so labels appear as you zoom in.
    */
   private arcLabelFit(n: PartitionNode, unit: number): ArcLabelFit {
+    // effectiveScale folds in the geometric zoom: magnifying the chart is
+    // what makes small segments' captions fit, at a constant font size.
     return fitArcLabel(
       this.labelText(n.node),
       (n.x1 - n.x0) * TAU,
-      n.depth * unit * this._hostScale,
-      (n.depth + 1) * unit * this._hostScale,
+      n.depth * unit * this.effectiveScale,
+      (n.depth + 1) * unit * this.effectiveScale,
       this._labelFontSize,
     );
   }
@@ -1185,11 +1325,12 @@ export class MpHierarchyChart extends LitElement {
     const depth = this.renderedDepth;
     const nodes = partitionLayout(index, this._rootId, {
       maxDepth: depth,
-      minFraction: this._minSize / VIEW,
+      minFraction: this._minSize / VIEW / this._viewZoom,
     });
     const columns = depth + 1; // column 0 is the focus cell
     const label = this.treeLabel();
     this.captureRendered(nodes, focus.id);
+    const focusRect = this.viewRect(0, 0, 1 / columns, 1);
 
     return html`<div class="icicle" role="tree" aria-label=${label ?? nothing}>
       <div
@@ -1204,20 +1345,15 @@ export class MpHierarchyChart extends LitElement {
         aria-posinset="1"
         aria-expanded="true"
         title=${focus === index.root ? nothing : this._zoomOutLabel}
-        style=${styleMap({
-          left: '0%', top: '0%', width: `${100 / columns}%`, height: '100%',
-          fontSize: `${this._labelFontSize}px`,
-        })}
-      >${this._showLabels && fitCellLabel((1 / columns) * VIEW * this._hostScale, VIEW * this._hostScale, this._labelFontSize)
+        style=${styleMap({ ...this.cellGeometry(focusRect), fontSize: `${this._labelFontSize}px` })}
+      >${this._showLabels && this.cellLabelFits(focusRect)
         ? html`<span class="cell-label">${this.labelText(focus)}</span>`
         : nothing}</div>
-      ${repeat(nodes, (n) => n.node.id, (n) => this.renderCell(n, {
-        left: `${(n.depth / columns) * 100}%`,
-        top: `${n.x0 * 100}%`,
-        width: `${(1 / columns) * 100}%`,
-        height: `${(n.x1 - n.x0) * 100}%`,
-      }, n.hasChildren && n.depth < this.renderedDepth && !!n.node.children?.length,
-        1 / columns, n.x1 - n.x0))}
+      ${repeat(
+        nodes,
+        (n) => n.node.id,
+        (n) => this.renderCell(n, this.viewRect(n.depth / columns, n.x0, (n.depth + 1) / columns, n.x1),
+          n.hasChildren && n.depth < this.renderedDepth && !!n.node.children?.length))}
     </div>`;
   }
 
@@ -1227,7 +1363,7 @@ export class MpHierarchyChart extends LitElement {
     const depth = this.renderedDepth;
     const nodes = squarifyLayout(index, this._rootId, {
       maxDepth: depth,
-      minArea: (this._minSize / VIEW) ** 2,
+      minArea: (this._minSize / VIEW) ** 2 / (this._viewZoom * this._viewZoom),
       childPadding: 0.004,
       childHeaderSpace: 0.028,
     });
@@ -1244,29 +1380,37 @@ export class MpHierarchyChart extends LitElement {
         @click=${this.zoomOut}
       >${crumbs}</button>
       <div class="treemap-body" role="tree" aria-label=${label ?? nothing}>
-        ${repeat(nodes, (n) => n.node.id, (n) => this.renderCell(n, {
-          left: `${n.x0 * 100}%`,
-          top: `${n.y0 * 100}%`,
-          width: `${(n.x1 - n.x0) * 100}%`,
-          height: `${(n.y1 - n.y0) * 100}%`,
-        }, n.hasChildren && n.depth < this.renderedDepth && !!n.node.children?.length,
-          n.x1 - n.x0, n.y1 - n.y0))}
+        ${repeat(
+          nodes,
+          (n) => n.node.id,
+          (n) => this.renderCell(n, this.viewRect(n.x0, n.y0, n.x1, n.y1),
+            n.hasChildren && n.depth < this.renderedDepth && !!n.node.children?.length))}
       </div>
     </div>`;
   }
 
+  private cellGeometry(rect: { x0: number; y0: number; x1: number; y1: number }): Record<string, string> {
+    return {
+      left: `${rect.x0 * 100}%`,
+      top: `${rect.y0 * 100}%`,
+      width: `${(rect.x1 - rect.x0) * 100}%`,
+      height: `${(rect.y1 - rect.y0) * 100}%`,
+    };
+  }
+
+  private cellLabelFits(rect: { x0: number; y0: number; x1: number; y1: number }): boolean {
+    const side = VIEW * this._hostScale; // chart px (aspect-ratio 1); rect already includes the zoom
+    return fitCellLabel((rect.x1 - rect.x0) * side, (rect.y1 - rect.y0) * side, this._labelFontSize);
+  }
+
   private renderCell(
     n: PartitionNode | RectNode,
-    geometry: Readonly<Record<string, string>>,
+    rect: { x0: number; y0: number; x1: number; y1: number },
     expanded: boolean,
-    widthFraction: number,
-    heightFraction: number,
   ): TemplateResult {
     const branch = this._layout === 'treemap' && expanded;
     const fill = branch ? undefined : this.fillOf(n.node);
-    const side = VIEW * this._hostScale; // host px (aspect-ratio 1)
-    const labeled = this._showLabels
-      && fitCellLabel(widthFraction * side, heightFraction * side, this._labelFontSize);
+    const labeled = this._showLabels && this.cellLabelFits(rect);
     return html`<div
       class="cell"
       data-id=${n.node.id}
@@ -1284,7 +1428,7 @@ export class MpHierarchyChart extends LitElement {
       aria-expanded=${n.hasChildren ? String(expanded) : nothing}
       aria-busy=${this._loadingIds.has(n.node.id) ? 'true' : nothing}
       style=${styleMap({
-        ...geometry,
+        ...this.cellGeometry(rect),
         fontSize: `${this._labelFontSize}px`,
         ...(fill ? { background: fill } : {}),
       })}
@@ -1292,15 +1436,9 @@ export class MpHierarchyChart extends LitElement {
   }
 }
 
-/**
- * Pinch hysteresis: one semantic step per 30% spread (in) or its inverse
- * (out), re-based after each step so a continuous pinch walks the ladder.
- * Pure — exported for unit tests; the pointer plumbing is e2e territory.
- */
-export function pinchStepOf(ratio: number): 'in' | 'out' | undefined {
-  if (ratio >= 1.3) return 'in';
-  if (ratio <= 1 / 1.3) return 'out';
-  return undefined;
+/** Keep the view window inside the content: x in [0, 1 - 1/zoom]. */
+function clampView(value: number, zoom: number): number {
+  return Math.min(1 - 1 / zoom, Math.max(0, value));
 }
 
 /** Computed backgrounds are rgb()/rgba(); 'transparent' computes to rgba(0, 0, 0, 0). */

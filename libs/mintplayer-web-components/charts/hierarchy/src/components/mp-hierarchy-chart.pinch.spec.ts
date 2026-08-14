@@ -1,13 +1,15 @@
 import { beforeEach, describe, expect, it } from 'vitest';
 import './mp-hierarchy-chart';
-import { pinchStepOf, type MpHierarchyChart } from './mp-hierarchy-chart';
+import type { MpHierarchyChart } from './mp-hierarchy-chart';
 import type { HierarchyNode } from '@mintplayer/web-components/charts/core';
 
 /**
- * Pinch = the same semantic ladder as wheel (PRD Z6). The ratio math is pure
- * and tested exhaustively; the pointer plumbing is exercised with synthesized
- * pointer-shaped events (jsdom accepts any event type; pointerId/pointerType
- * are attached via defineProperty). Real two-finger streams are e2e territory.
+ * Touch pinch = continuous GEOMETRIC magnification, like the wheel (PRD Z6 as
+ * amended 2026-08-14): spread magnifies, squeeze shrinks, the midpoint pans.
+ * Synthesized pointer-shaped events drive the plumbing here (jsdom accepts
+ * any event type; pointerId/pointerType via defineProperty); real two-finger
+ * streams are e2e territory. A pointercancel abandons the gesture so engines
+ * that consume the second finger degrade to tap, never break.
  */
 const DATA: HierarchyNode = {
   id: 'repo', name: 'repo',
@@ -40,55 +42,40 @@ async function mount(attrs = ''): Promise<MpHierarchyChart> {
 const item = (el: MpHierarchyChart, id: string): Element =>
   el.shadowRoot!.querySelector(`[role="treeitem"][data-id="${id}"]`) as Element;
 
-function pointerEvent(
-  type: string,
-  pointerId: number,
-  x: number,
-  y: number,
-): Event {
+function pointerEvent(type: string, pointerId: number, x: number, y: number, pointerType = 'touch'): Event {
   const event = new MouseEvent(type, {
     bubbles: true, composed: true, cancelable: true, clientX: x, clientY: y,
   });
   Object.defineProperty(event, 'pointerId', { value: pointerId });
-  Object.defineProperty(event, 'pointerType', { value: 'touch' });
+  Object.defineProperty(event, 'pointerType', { value: pointerType });
   return event;
 }
 
-describe('pinchStepOf (pure hysteresis math)', () => {
-  it('steps in at >= 1.3, out at <= 1/1.3, holds in between', () => {
-    expect(pinchStepOf(1.3)).toBe('in');
-    expect(pinchStepOf(2)).toBe('in');
-    expect(pinchStepOf(1 / 1.3)).toBe('out');
-    expect(pinchStepOf(0.5)).toBe('out');
-    expect(pinchStepOf(1)).toBeUndefined();
-    expect(pinchStepOf(1.29)).toBeUndefined();
-    expect(pinchStepOf(0.78)).toBeUndefined();
-  });
-});
-
-describe('pinch plumbing', () => {
+describe('touch pinch magnification', () => {
   beforeEach(() => {
     document.body.innerHTML = '';
   });
 
-  it('a two-finger spread over a node re-roots toward it', async () => {
+  it('a two-finger spread magnifies by the distance ratio', async () => {
     const el = await mount();
     const target = item(el, 'a');
     target.dispatchEvent(pointerEvent('pointerdown', 1, 100, 100));
     target.dispatchEvent(pointerEvent('pointerdown', 2, 140, 100));
-    target.dispatchEvent(pointerEvent('pointermove', 2, 160, 100)); // ratio 1.5
+    target.dispatchEvent(pointerEvent('pointermove', 2, 180, 100)); // 40 -> 80
     await flush(el);
-    expect(el.getAttribute('root-id')).toBe('src');
+    expect(el.zoomLevel).toBeCloseTo(2, 5);
+    expect(el.hasAttribute('root-id')).toBe(false); // geometric, not semantic
   });
 
-  it('a two-finger squeeze zooms out', async () => {
-    const el = await mount('root-id="src"');
+  it('a squeeze shrinks and clamps at 1x', async () => {
+    const el = await mount();
+    el.setZoomLevel(2);
     const target = item(el, 'a');
     target.dispatchEvent(pointerEvent('pointerdown', 1, 100, 100));
     target.dispatchEvent(pointerEvent('pointerdown', 2, 200, 100));
-    target.dispatchEvent(pointerEvent('pointermove', 2, 170, 100)); // ratio 0.7
+    target.dispatchEvent(pointerEvent('pointermove', 2, 120, 100)); // 100 -> 20
     await flush(el);
-    expect(el.hasAttribute('root-id')).toBe(false);
+    expect(el.zoomLevel).toBe(1);
   });
 
   it('pointercancel abandons the gesture (divergent engines degrade to tap)', async () => {
@@ -99,10 +86,10 @@ describe('pinch plumbing', () => {
     target.dispatchEvent(pointerEvent('pointercancel', 2, 140, 100));
     target.dispatchEvent(pointerEvent('pointermove', 1, 400, 100));
     await flush(el);
-    expect(el.hasAttribute('root-id')).toBe(false);
+    expect(el.zoomLevel).toBe(1);
   });
 
-  it('zoom-gestures="wheel" ignores touch pinch and keeps the un-suffixed touch-action', async () => {
+  it('zoom-gestures="wheel" ignores touch pinch and drops the pinch touch-action class', async () => {
     const el = await mount('zoom-gestures="wheel"');
     const chart = el.shadowRoot!.querySelector('.chart')!;
     expect(chart.classList.contains('pinch')).toBe(false);
@@ -111,7 +98,7 @@ describe('pinch plumbing', () => {
     target.dispatchEvent(pointerEvent('pointerdown', 2, 140, 100));
     target.dispatchEvent(pointerEvent('pointermove', 2, 300, 100));
     await flush(el);
-    expect(el.hasAttribute('root-id')).toBe(false);
+    expect(el.zoomLevel).toBe(1);
   });
 
   it('tap-to-re-root still works: a click after touch pointerdown is not suppressed', async () => {
@@ -121,6 +108,36 @@ describe('pinch plumbing', () => {
     target.dispatchEvent(down);
     expect(down.defaultPrevented).toBe(false); // the synthesized click survives
     target.dispatchEvent(pointerEvent('pointerup', 1, 100, 100));
+    target.dispatchEvent(new MouseEvent('click', { bubbles: true, composed: true }));
+    await flush(el);
+    expect(el.getAttribute('root-id')).toBe('src');
+  });
+});
+
+describe('mouse drag pan', () => {
+  beforeEach(() => {
+    document.body.innerHTML = '';
+  });
+
+  it('a mouse drag while zoomed pans and its release is not a click activation', async () => {
+    const el = await mount();
+    el.setZoomLevel(4);
+    await flush(el);
+    const target = item(el, 'src');
+    target.dispatchEvent(pointerEvent('pointerdown', 5, 100, 100, 'mouse'));
+    target.dispatchEvent(pointerEvent('pointermove', 5, 60, 80, 'mouse'));
+    target.dispatchEvent(pointerEvent('pointerup', 5, 60, 80, 'mouse'));
+    target.dispatchEvent(new MouseEvent('click', { bubbles: true, composed: true }));
+    await flush(el);
+    expect(el.hasAttribute('root-id')).toBe(false); // the drag did not re-root
+    expect(el.zoomLevel).toBeCloseTo(4, 5);
+  });
+
+  it('at 1x a mouse click is a plain activation (no drag machinery)', async () => {
+    const el = await mount();
+    const target = item(el, 'src');
+    target.dispatchEvent(pointerEvent('pointerdown', 5, 100, 100, 'mouse'));
+    target.dispatchEvent(pointerEvent('pointerup', 5, 100, 100, 'mouse'));
     target.dispatchEvent(new MouseEvent('click', { bubbles: true, composed: true }));
     await flush(el);
     expect(el.getAttribute('root-id')).toBe('src');

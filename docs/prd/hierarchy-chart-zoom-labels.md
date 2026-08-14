@@ -125,9 +125,22 @@ threshold, never a layout break.
 
 ## 5. Locked decisions
 
+> **AMENDED 2026-08-14 (user decision, after seeing the semantic ladder live):** ctrl/⌘+wheel and
+> pinch are **geometric magnification** — the chart zooms like a map while labels hold their
+> device-px size, which is precisely what makes small segments' captions readable in place.
+> Z1/Z4/Z6/Z7 below are superseded as recorded in Z1'–Z7'; the §2 industry survey stands as
+> context, not as the decision. Semantic re-root remains on click/Enter/tap/breadcrumb.
+
 | # | Decision | Consequence |
 |---|---|---|
-| Z1 | Wheel/pinch **step the semantic re-root ladder**; no scale transform ever | Constant-size text natively (user requirement 2026-08-14); no pan, no 2.5.7 controls, no off-canvas content; the existing tween supplies the continuous feel |
+| Z1' | Ctrl/⌘+wheel and pinch drive a **geometric view window** (zoom factor + pan origin over normalized content coords): the sunburst maps it to its `viewBox`, the div layouts map their percentage geometry through it — **never a CSS transform** | Text stays crisp (no re-rasterization risk) and never scales; the label fit test re-runs against `hostScale × zoom`, so magnifying IS the label-reveal mechanism |
+| Z2' | Zoom anchors at the pointer / pinch midpoint; keyboard `+`/`-` anchor on the focused node, `0` resets; clamp 1×–32×; the view resets on re-root, layout switch and data writes | Anchor-at-cursor is itself a single-pointer navigation path; a stale magnification across a re-root would disorient |
+| Z3' | Pan: mouse/pen **drag** while zoomed (release after >3px never counts as a click) and **two-finger drag** on touch (the pinch tracker's midpoint); one-finger touch stays native page scroll | WCAG 2.5.7: the non-drag alternatives are anchor-at-cursor zoom, `+`/`-`/`0`, the breadcrumb, and Escape-to-reset — all click/keyboard operable |
+| Z4' | Escape ordering grows a third rung: tooltip dismiss → **geometric view reset** → semantic zoom-out | One key, innermost state first |
+| Z5' | Semantic re-root is **unchanged** (click/tap/Enter/breadcrumb/center) and still the only writer of `root-id`/`hierarchy-zoom`; geometric state is element-local (`zoomLevel` getter, `setZoomLevel()`/`resetZoom()` methods), no event | Two zooms, two meanings: re-root changes *what* is shown, magnification changes *how big* |
+| Z6' | The DOM cull thresholds (`min-angle`/`min-size`) divide by the zoom factor | A sliver you zoomed into is no longer a sliver on screen — it materializes (and can be labeled) as you magnify |
+| Z7' | Superseded-but-kept from the original set: **Z2** (Ctrl/⌘ gating — plain wheel never captured), **Z3** (plain-wheel hint overlay), **Z5** (non-passive host listener consuming only modifier-held events), and the S4-verified `touch-action: pan-x pan-y` applied only while pinch is enabled | The capture rules and page-scroll guarantees carry over unchanged |
+| ~~Z1~~ | ~~Wheel/pinch step the semantic re-root ladder; no scale transform ever~~ | Superseded by Z1' — the user explicitly wants magnification; the ladder shipped briefly and read as "clicking through", not zoom |
 | Z2 | Wheel zoom requires **Ctrl/⌘** (`ctrlKey \|\| metaKey`); plain wheel is never captured | Page scroll always survives (FoamTree's documented mistake avoided); trackpad pinch arrives as ctrl+wheel for free in all 4 engines |
 | Z3 | Plain wheel over the chart shows a transient **hint overlay** ("Use Ctrl + scroll to zoom", localizable, ⌘ on Apple platforms), `aria-hidden` | The embedded-Google-Maps convention; solves discoverability without capture |
 | Z4 | Wheel-in re-roots **one level toward the node under the pointer** (the focus child on its path); wheel-out = `zoomOut()`; deltas normalized per `deltaMode` and accumulated to discrete steps | Repeated notches walk down the path under the cursor — semantic zoom-at-cursor; mid-tween retargets already restart cleanly (charts-wc plan M3) |
@@ -223,6 +236,7 @@ container (aria spec `:66-81` enforces this).
 | Surface | Name | Notes |
 |---|---|---|
 | attr,prop | `zoom-gestures` | `'wheel pinch'` (default) \| `'wheel'` \| `'pinch'` \| `'none'` |
+| prop | `zoomLevel` (get), `setZoomLevel(z, anchorX?, anchorY?)`, `resetZoom()` | Geometric view state, element-local (Z5'); clamped 1–32 |
 | attr,prop | `label-font-size` | Device px, default `12` |
 | attr,prop | `show-breadcrumb` | Default `false` |
 | attr | `zoom-hint-label` | Default `"Use Ctrl + scroll to zoom"` / ⌘ variant on Apple platforms; localizable |

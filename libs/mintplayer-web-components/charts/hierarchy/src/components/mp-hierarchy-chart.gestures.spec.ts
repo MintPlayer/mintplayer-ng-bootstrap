@@ -4,10 +4,11 @@ import type { MpHierarchyChart } from './mp-hierarchy-chart';
 import type { HierarchyNode } from '@mintplayer/web-components/charts/core';
 
 /**
- * Wheel gestures step the SEMANTIC re-root ladder (PRD Z1–Z5): ctrl/cmd+wheel
- * only (trackpad pinch arrives as ctrl+wheel), one step per ~100 normalized px
- * toward the node under the pointer; a plain wheel is never captured and only
- * shows the aria-hidden hint overlay.
+ * Ctrl/⌘+wheel is GEOMETRIC magnification (user decision 2026-08-14): the
+ * chart zooms like a map while labels hold their device-px size — magnifying
+ * is what makes small segments' captions fit. Click/Enter stay semantic
+ * re-root. A plain wheel is never captured (page scroll survives) and only
+ * shows the aria-hidden hint overlay. Keyboard equivalents: + / - / 0.
  */
 const DATA: HierarchyNode = {
   id: 'repo', name: 'repo',
@@ -29,10 +30,10 @@ async function flush(el: MpHierarchyChart): Promise<void> {
   await el.updateComplete;
 }
 
-async function mount(attrs = ''): Promise<MpHierarchyChart> {
+async function mount(attrs = '', data: HierarchyNode = DATA): Promise<MpHierarchyChart> {
   document.body.innerHTML = `<mp-hierarchy-chart transition-duration="0" ${attrs}></mp-hierarchy-chart>`;
   const el = document.querySelector('mp-hierarchy-chart') as MpHierarchyChart;
-  el.data = DATA;
+  el.data = data;
   await flush(el);
   return el;
 }
@@ -46,52 +47,66 @@ function wheel(target: Element, init: WheelEventInit): WheelEvent {
   return event;
 }
 
-describe('ctrl+wheel semantic ladder', () => {
+function press(target: Element, key: string): void {
+  target.dispatchEvent(new KeyboardEvent('keydown', { key, bubbles: true, composed: true, cancelable: true }));
+}
+
+describe('ctrl+wheel geometric zoom', () => {
   beforeEach(() => {
     document.body.innerHTML = '';
   });
 
-  it('ctrl+wheel-up over a leaf re-roots into ITS ancestor under the focus, and is consumed', async () => {
+  it('ctrl+wheel-up magnifies (no re-root!) and the event is consumed', async () => {
     const el = await mount();
-    const zooms: string[] = [];
-    el.addEventListener('hierarchy-zoom', (e) =>
-      zooms.push((e as CustomEvent<{ node: HierarchyNode }>).detail.node.id));
     const event = wheel(item(el, 'a'), { deltaY: -100, ctrlKey: true });
     await flush(el);
     expect(event.defaultPrevented).toBe(true);
-    expect(zooms).toEqual(['src']); // one level toward the pointer, not straight to the leaf
-    expect(el.getAttribute('root-id')).toBe('src');
+    expect(el.zoomLevel).toBeCloseTo(Math.exp(0.5), 3); // ~1.65x per full notch
+    expect(el.hasAttribute('root-id')).toBe(false); // semantic state untouched
+    // The sunburst zooms via its viewBox — never a transform.
+    const viewBox = el.shadowRoot!.querySelector('svg')!.getAttribute('viewBox')!;
+    expect(Number(viewBox.split(' ')[2])).toBeCloseTo(1000 / Math.exp(0.5), 0);
   });
 
   it('metaKey works like ctrlKey (⌘ on Apple platforms)', async () => {
     const el = await mount();
     wheel(item(el, 'a'), { deltaY: -100, metaKey: true });
-    await flush(el);
-    expect(el.getAttribute('root-id')).toBe('src');
+    expect(el.zoomLevel).toBeGreaterThan(1);
   });
 
-  it('ctrl+wheel-down zooms out one level', async () => {
-    const el = await mount('root-id="src"');
+  it('ctrl+wheel-down shrinks back and clamps at 1x', async () => {
+    const el = await mount();
+    wheel(item(el, 'a'), { deltaY: -100, ctrlKey: true });
+    const zoomed = el.zoomLevel;
     wheel(item(el, 'a'), { deltaY: 100, ctrlKey: true });
-    await flush(el);
-    expect(el.hasAttribute('root-id')).toBe(false);
+    expect(el.zoomLevel).toBeLessThan(zoomed);
+    wheel(item(el, 'a'), { deltaY: 100, ctrlKey: true });
+    wheel(item(el, 'a'), { deltaY: 100, ctrlKey: true });
+    expect(el.zoomLevel).toBe(1);
   });
 
-  it('small deltas accumulate to one step at ~100px', async () => {
+  it('deltaMode LINE is normalized and per-event delta is clamped', async () => {
     const el = await mount();
-    wheel(item(el, 'a'), { deltaY: -50, ctrlKey: true });
-    await flush(el);
-    expect(el.hasAttribute('root-id')).toBe(false); // not yet
-    wheel(item(el, 'a'), { deltaY: -50, ctrlKey: true });
-    await flush(el);
-    expect(el.getAttribute('root-id')).toBe('src');
+    wheel(item(el, 'a'), { deltaY: -7, deltaMode: 1, ctrlKey: true }); // 112px -> clamped to 100
+    expect(el.zoomLevel).toBeCloseTo(Math.exp(0.5), 3);
   });
 
-  it('deltaMode LINE is normalized (~16px per line)', async () => {
-    const el = await mount();
-    wheel(item(el, 'a'), { deltaY: -7, deltaMode: 1, ctrlKey: true }); // 112px equivalent
+  it('zooming in reveals labels that did not fit at 1x, at the same font size', async () => {
+    const slivers: HierarchyNode = {
+      id: 'root', name: 'root',
+      children: Array.from({ length: 30 }, (_, i) => ({
+        id: `f${i}`, name: `file-${i}.ts`, value: 1, colorValue: 50,
+      })),
+    };
+    const el = await mount('', slivers);
+    expect(el.shadowRoot!.querySelectorAll('text.arc-label').length).toBe(0);
+    el.setZoomLevel(8);
     await flush(el);
-    expect(el.getAttribute('root-id')).toBe('src');
+    const labels = el.shadowRoot!.querySelectorAll('text.arc-label');
+    expect(labels.length).toBeGreaterThan(0);
+    // Constant device px: viewBox font-size shrinks by exactly the zoom factor.
+    const fontVb = Number(labels[0].getAttribute('font-size'));
+    expect(fontVb).toBeCloseTo(12 / (0.42 * 8), 1);
   });
 
   it('a plain wheel is NOT captured and only shows the aria-hidden hint', async () => {
@@ -99,7 +114,7 @@ describe('ctrl+wheel semantic ladder', () => {
     const event = wheel(item(el, 'a'), { deltaY: -120 });
     await flush(el);
     expect(event.defaultPrevented).toBe(false); // page scroll survives
-    expect(el.hasAttribute('root-id')).toBe(false);
+    expect(el.zoomLevel).toBe(1);
     const hint = el.shadowRoot!.querySelector('.zoom-hint')!;
     expect(hint.getAttribute('aria-hidden')).toBe('true');
     expect(hint.textContent).toContain('scroll to zoom');
@@ -110,16 +125,47 @@ describe('ctrl+wheel semantic ladder', () => {
     const event = wheel(item(el, 'a'), { deltaY: -200, ctrlKey: true });
     await flush(el);
     expect(event.defaultPrevented).toBe(false);
-    expect(el.hasAttribute('root-id')).toBe(false);
+    expect(el.zoomLevel).toBe(1);
     expect(el.shadowRoot!.querySelector('.zoom-hint')).toBeNull();
   });
+});
 
-  it('wheel-in over the current focus or whitespace is a no-op (but still consumed)', async () => {
+describe('keyboard zoom equivalents (+ / - / 0) and Escape ordering', () => {
+  beforeEach(() => {
+    document.body.innerHTML = '';
+  });
+
+  it('+ and - zoom around the focused node; 0 resets', async () => {
+    const el = await mount();
+    press(item(el, 'a'), '+');
+    expect(el.zoomLevel).toBeCloseTo(1.5, 5);
+    press(item(el, 'a'), '+');
+    expect(el.zoomLevel).toBeCloseTo(2.25, 5);
+    press(item(el, 'a'), '-');
+    expect(el.zoomLevel).toBeCloseTo(1.5, 5);
+    press(item(el, 'a'), '0');
+    expect(el.zoomLevel).toBe(1);
+  });
+
+  it('Escape resets the magnified view BEFORE it re-roots out', async () => {
     const el = await mount('root-id="src"');
-    const svg = el.shadowRoot!.querySelector('svg')!;
-    const event = wheel(svg, { deltaY: -150, ctrlKey: true });
+    el.setZoomLevel(4);
     await flush(el);
-    expect(event.defaultPrevented).toBe(true);
+    press(item(el, 'a'), 'Escape');
+    await flush(el);
+    expect(el.zoomLevel).toBe(1); // first Escape: view reset
+    expect(el.getAttribute('root-id')).toBe('src');
+    press(item(el, 'a'), 'Escape');
+    await flush(el);
+    expect(el.hasAttribute('root-id')).toBe(false); // second Escape: semantic out
+  });
+
+  it('a semantic re-root resets the magnification (the subtree refits anyway)', async () => {
+    const el = await mount();
+    el.setZoomLevel(4);
+    el.zoomTo('src');
+    await flush(el);
+    expect(el.zoomLevel).toBe(1);
     expect(el.getAttribute('root-id')).toBe('src');
   });
 });

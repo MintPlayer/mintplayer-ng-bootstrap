@@ -34,6 +34,8 @@
   width: 100%;
   flex: 1 1 auto;
   min-height: 0;
+  /* The geometric zoom window: content outside it must clip, not spill. */
+  overflow: hidden;
 }
 
 .breadcrumb {
