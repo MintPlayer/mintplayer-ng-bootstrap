@@ -571,24 +571,52 @@ export class MpHierarchyChart extends LitElement {
     this.emit<HierarchyNodeEventDetail>('hierarchy-node-select', { node, path: pathTo(index, node) });
   }
 
+  /**
+   * Escape hides the tooltip (WCAG 1.4.13 dismissable) BEFORE zooming out;
+   * it stays hidden for that node until the pointer/focus moves elsewhere.
+   */
+  private _dismissedForId: string | null = null;
+
+  private get tooltipEl(): HTMLElement | null {
+    return this.shadowRoot?.querySelector<HTMLElement>('.chart-tooltip') ?? null;
+  }
+
+  private isTooltipVisible(): boolean {
+    return this.tooltipEl?.hasAttribute('data-visible') ?? false;
+  }
+
+  /** Show the tooltip for a node at chart-relative coordinates, clamped inside the chart. */
+  private showTooltip(node: HierarchyNode, x: number, y: number): void {
+    const tooltip = this.tooltipEl;
+    const chart = this.shadowRoot?.querySelector<HTMLElement>('.chart');
+    if (!tooltip || !chart) return;
+    tooltip.textContent = this.tooltipText(node);
+    tooltip.setAttribute('data-visible', '');
+    // Measure after it is visible, then keep it fully inside the chart. The
+    // +12px offset keeps it out of the pointer-to-node line (it takes no
+    // pointer events, so hovering "onto" it keeps the node hovered — 1.4.13).
+    const width = tooltip.offsetWidth;
+    const height = tooltip.offsetHeight;
+    tooltip.style.left = `${Math.max(0, Math.min(x + 12, chart.clientWidth - width))}px`;
+    tooltip.style.top = `${Math.max(0, Math.min(y + 12, chart.clientHeight - height))}px`;
+  }
+
+  private hideTooltip(): void {
+    this.tooltipEl?.removeAttribute('data-visible');
+  }
+
   private onPointerMove(event: PointerEvent): void {
     const index = this._index;
     if (!index) return;
     const node = this.nodeFromEvent(event);
-    const tooltip = this.shadowRoot?.querySelector<HTMLElement>('.chart-tooltip');
     if (!node || node === this.focusedRoot) {
       this.clearHover();
       return;
     }
-    if (tooltip) {
-      const chart = this.shadowRoot?.querySelector<HTMLElement>('.chart');
-      const rect = chart?.getBoundingClientRect();
-      if (rect) {
-        tooltip.style.left = `${event.clientX - rect.left + 12}px`;
-        tooltip.style.top = `${event.clientY - rect.top + 12}px`;
-      }
-      tooltip.textContent = this.tooltipText(node);
-      tooltip.setAttribute('data-visible', '');
+    if (node.id !== this._dismissedForId) {
+      this._dismissedForId = null;
+      const rect = this.shadowRoot?.querySelector<HTMLElement>('.chart')?.getBoundingClientRect();
+      if (rect) this.showTooltip(node, event.clientX - rect.left, event.clientY - rect.top);
     }
     if (this._hoveredId !== node.id) {
       this._hoveredId = node.id;
@@ -597,11 +625,33 @@ export class MpHierarchyChart extends LitElement {
   }
 
   private clearHover(): void {
-    this.shadowRoot?.querySelector('.chart-tooltip')?.removeAttribute('data-visible');
+    this.hideTooltip();
+    this._dismissedForId = null;
     if (this._hoveredId !== null) {
       this._hoveredId = null;
       this.emit<HierarchyHoverEventDetail>('hierarchy-node-hover', { node: null, path: [] });
     }
+  }
+
+  /** Keyboard parity for the hover tooltip (1.4.13): show on focus, hide on blur. */
+  private onFocusIn(event: FocusEvent): void {
+    const target = (event.composedPath()[0] as Element | undefined)?.closest?.('[role="treeitem"][data-id]');
+    const id = target?.getAttribute('data-id');
+    const node = id ? this._index?.byId.get(id) : undefined;
+    if (!node || node === this.focusedRoot || node.id === this._dismissedForId) return;
+    this._dismissedForId = null;
+    const chartRect = this.shadowRoot?.querySelector<HTMLElement>('.chart')?.getBoundingClientRect();
+    const rect = target?.getBoundingClientRect();
+    if (!chartRect || !rect) return;
+    this.showTooltip(
+      node,
+      rect.left - chartRect.left + rect.width / 2,
+      rect.top - chartRect.top + rect.height / 2,
+    );
+  }
+
+  private onFocusOut(): void {
+    this.hideTooltip();
   }
 
   private tooltipText(node: HierarchyNode): string {
@@ -689,8 +739,18 @@ export class MpHierarchyChart extends LitElement {
         break;
       }
       case 'Escape':
-      case 'Backspace':
+        // Ordering (1.4.13 vs zoom-out): a visible tooltip consumes the first
+        // Escape; only the next one zooms out.
+        if (this.isTooltipVisible()) {
+          this.hideTooltip();
+          this._dismissedForId = id;
+          break;
+        }
         if (this.focusedRoot === this._index?.root) return; // nothing to close: let Escape bubble
+        this.zoomOut();
+        break;
+      case 'Backspace':
+        if (this.focusedRoot === this._index?.root) return;
         this.zoomOut();
         break;
       default:
@@ -821,6 +881,8 @@ export class MpHierarchyChart extends LitElement {
       @keydown=${this.onKeyDown}
       @pointermove=${this.onPointerMove}
       @pointerleave=${this.clearHover}
+      @focusin=${this.onFocusIn}
+      @focusout=${this.onFocusOut}
     >
       ${this._layout === 'sunburst'
         ? this.renderSunburst(index)
