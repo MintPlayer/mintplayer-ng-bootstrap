@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref } from 'vue';
+import { computed, ref } from 'vue';
 import { BsHierarchyChart } from '@mintplayer/vue-bootstrap/charts/hierarchy';
 import { BsTrendChart } from '@mintplayer/vue-bootstrap/charts/trend';
 import { BsSparkline } from '@mintplayer/vue-bootstrap/charts/sparkline';
@@ -45,6 +45,22 @@ const layout = ref<HierarchyChartLayout>('sunburst');
 const rootId = ref<string | undefined>(undefined);
 const sparkPoints = [78, 80, 79, 82, 83, 84];
 
+// The workspace's own coverage tree (1,603 nodes) — dense enough to exercise
+// label fitting and the geometric zoom; fetched lazily on first selection.
+const dataset = ref<'sample' | 'workspace'>('sample');
+const workspaceTree = ref<HierarchyNode | undefined>(undefined);
+const activeTree = computed<HierarchyNode>(() =>
+  (dataset.value === 'workspace' ? workspaceTree.value : undefined) ?? tree);
+
+async function selectDataset(next: 'sample' | 'workspace'): Promise<void> {
+  if (next === 'workspace' && !workspaceTree.value) {
+    const response = await fetch('/assets/coverage-tree.json');
+    workspaceTree.value = await response.json() as HierarchyNode;
+  }
+  dataset.value = next;
+  rootId.value = undefined;
+}
+
 const SOURCE = `<BsHierarchyChart
   :data="tree"
   :layout="layout"
@@ -80,13 +96,28 @@ const SOURCE = `<BsHierarchyChart
         @click="layout = option"
       >{{ option }}</button>
     </p>
+    <p>
+      <button
+        type="button"
+        class="btn me-2"
+        :class="dataset === 'sample' ? 'btn-primary' : 'btn-secondary'"
+        @click="selectDataset('sample')"
+      >sample</button>
+      <button
+        type="button"
+        class="btn me-2"
+        :class="dataset === 'workspace' ? 'btn-primary' : 'btn-secondary'"
+        @click="selectDataset('workspace')"
+      >this workspace (1,603 nodes)</button>
+    </p>
     <div class="chart-box">
       <BsHierarchyChart
-        :data="tree"
+        :data="activeTree"
         :layout="layout"
         v-model:rootId="rootId"
         color-min="60"
         color-max="80"
+        show-breadcrumb
         input-label="Coverage by folder"
         value-unit-label="lines"
       />

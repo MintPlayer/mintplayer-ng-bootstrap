@@ -153,6 +153,11 @@ axeAuditSuite(test, expect, [
       // zoom-out control, which the root state never shows.
       await page.getByRole('button', { name: 'sunburst' }).click();
       await page.waitForSelector('mp-hierarchy-chart .center-control:not([disabled])');
+      // Magnified: geometric zoom reveals many more labels and moves the
+      // centre control, so audit that state too (roles must be unchanged).
+      await page.evaluate(() =>
+        (document.querySelector('mp-hierarchy-chart') as unknown as { setZoomLevel(z: number): void })
+          .setZoomLevel(4));
     },
   },
   { path: '/overlays/shell' },

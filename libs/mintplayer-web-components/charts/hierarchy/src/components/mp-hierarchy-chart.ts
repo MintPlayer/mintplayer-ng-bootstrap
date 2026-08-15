@@ -5,9 +5,12 @@ import { LiveAnnouncerController } from '@mintplayer/web-components/a11y';
 import {
   buildIndex,
   colorScale,
+  composite,
+  contrastText,
   arcPath,
   arcLabelTransform,
-  arcLabelVisible,
+  fitArcLabel,
+  fitCellLabel,
   partitionLayout,
   squarifyLayout,
   resolveFocus,
@@ -19,6 +22,7 @@ import {
   type HierarchyLoadErrorEventDetail,
   type HierarchyNode,
   type HierarchyNodeEventDetail,
+  type ArcLabelFit,
   type PartitionNode,
   type RectNode,
 } from '@mintplayer/web-components/charts/core';
@@ -54,6 +58,15 @@ function reducedMotion(): boolean {
  * color metric — sizing by a percentage inverts salience, PRD charts-wc §1.1),
  * color follows `colorValue` through a clamped two-stop scale.
  *
+ * Two kinds of zoom, deliberately distinct:
+ * - SEMANTIC re-root (click/Enter/tap/breadcrumb): the subtree takes the full
+ *   chart; controlled via `root-id` + `hierarchy-zoom`.
+ * - GEOMETRIC magnification (ctrl/cmd+wheel, touch pinch, `+`/`-`/`0` keys,
+ *   drag or two-finger pan): a view window mapped through the sunburst's
+ *   viewBox / the div layouts' percentages — never a CSS transform. Labels
+ *   hold their device-px size, so magnifying is what reveals small segments'
+ *   captions. Resets on re-root, layout switch and data writes.
+ *
  * No-JS tier: none (a proportional chart is meaningless without computed
  * geometry); the demo registers in axe.spec.ts only.
  *
@@ -61,7 +74,9 @@ function reducedMotion(): boolean {
  * - `data: HierarchyNode` (property only)
  * - `root-id` / `rootId` — controlled focus node (two-way via `hierarchy-zoom`)
  * - `max-depth`, `min-angle` (deg), `min-size` (logical px), `show-labels`,
- *   `label-min-area`, `color-min`, `color-max`, `color-start`, `color-end`
+ *   `label-font-size` (device px — constant across host size and zoom),
+ *   `backdrop` (overrides backdrop auto-detection for label contrast),
+ *   `color-min`, `color-max`, `color-start`, `color-end`
  * - `input-label` / `aria-label` — accessible name for the in-shadow tree
  *
  * Events: `hierarchy-zoom`, `hierarchy-node-select`, `hierarchy-node-hover`,
@@ -79,13 +94,18 @@ export class MpHierarchyChart extends LitElement {
       'min-angle',
       'min-size',
       'show-labels',
-      'label-min-area',
+      'label-font-size',
+      'backdrop',
       'color-min',
       'color-max',
       'color-start',
       'color-end',
       'transition-duration',
       'locale',
+      'zoom-gestures',
+      'zoom-hint-label',
+      'show-breadcrumb',
+      'breadcrumb-label',
       'zoom-out-label',
       'metric-unit-label',
       'value-unit-label',
@@ -100,11 +120,21 @@ export class MpHierarchyChart extends LitElement {
   private _index: HierarchyIndex | undefined;
   private _layout: HierarchyChartLayout = 'sunburst';
   private _rootId: string | undefined;
-  private _maxDepth: number | 'auto' = 2;
+  private _maxDepth: number | 'auto' | undefined = undefined;
   private _minAngle = 0.2; // degrees
   private _minSize = 4; // logical px (of the 1000-unit square), cartesian cull
   private _showLabels = true;
-  private _labelMinArea = 0.03; // Observable's rings x radians threshold
+  private _labelFontSize = 12; // device px — constant across host size and zoom (labels never scale)
+  private _backdropOverride: string | undefined;
+  /** The opaque surface behind the chart; labels contrast against fill composited over this. */
+  private _backdrop = '#ffffff';
+  /**
+   * Device px per viewBox unit, measured by a ResizeObserver. The fallback is
+   * a representative 420px host so environments without ResizeObserver (jsdom)
+   * stay deterministic for the fit specs.
+   */
+  private _hostScale = 0.42;
+  private _resizeObserver: ResizeObserver | undefined;
   private _colorMin = 0;
   private _colorMax = 100;
   private _colorStart = '#fe0000';
@@ -155,7 +185,7 @@ export class MpHierarchyChart extends LitElement {
   set data(value: HierarchyNode | undefined) {
     this._data = value;
     this._index = value ? buildIndex(value) : undefined;
-    this.requestUpdate();
+    this.resetZoom();
   }
 
   get layout(): HierarchyChartLayout {
@@ -163,7 +193,7 @@ export class MpHierarchyChart extends LitElement {
   }
   set layout(value: HierarchyChartLayout) {
     this._layout = value === 'icicle' || value === 'treemap' ? value : 'sunburst';
-    this.requestUpdate();
+    this.resetZoom(); // projections don't share a view window
   }
 
   get rootId(): string | undefined {
@@ -183,12 +213,18 @@ export class MpHierarchyChart extends LitElement {
 
   /**
    * Levels rendered outward from the focus node, or `'auto'` for every loaded
-   * level. Default 2 (codecov's window), which keeps the DOM small on a big
-   * tree; any positive number is valid, and `'auto'` follows the data — with
-   * lazy loading that means each arriving level reveals the next.
+   * level. Any positive number is valid.
+   *
+   * Left unset it resolves to `'auto'` — a chart given a whole tree should draw
+   * the tree it was given — EXCEPT when a `loadChildren` loader is present:
+   * `'auto'` treats the deepest rendered ring as a load candidate, so an
+   * unbounded lazy chart walks the entire remote tree one level per render (see
+   * `loadLazyCandidates`). Lazy charts therefore keep the bounded 2-level
+   * window (codecov's) unless the consumer asks for `'auto'` explicitly and
+   * means it.
    */
   get maxDepth(): number | 'auto' {
-    return this._maxDepth;
+    return this._maxDepth ?? (this._loadChildren ? 2 : 'auto');
   }
   set maxDepth(value: number | 'auto') {
     this._maxDepth = value === 'auto' ? 'auto' : Math.max(1, Math.floor(Number(value) || 2));
@@ -201,7 +237,8 @@ export class MpHierarchyChart extends LitElement {
    * draws its (empty) first ring.
    */
   private get renderedDepth(): number {
-    if (this._maxDepth !== 'auto') return this._maxDepth;
+    const configured = this.maxDepth;
+    if (configured !== 'auto') return configured;
     return this._index ? Math.max(1, subtreeDepth(this._index, this._rootId)) : 1;
   }
 
@@ -229,11 +266,26 @@ export class MpHierarchyChart extends LitElement {
     this.requestUpdate();
   }
 
-  get labelMinArea(): number {
-    return this._labelMinArea;
+  /** Label font size in DEVICE px — held constant across host size and zoom state. */
+  get labelFontSize(): number {
+    return this._labelFontSize;
   }
-  set labelMinArea(value: number) {
-    this._labelMinArea = Math.max(0, Number(value) || 0);
+  set labelFontSize(value: number) {
+    this._labelFontSize = Math.max(1, Number(value) || 12);
+    this.requestUpdate();
+  }
+
+  /**
+   * Opaque CSS color behind the chart, used to composite translucent fills
+   * before picking a contrasting label color. Unset = auto-detected from the
+   * nearest opaque ancestor background (set it when the walk cannot see the
+   * real backdrop: images, gradients, cross-document embedding).
+   */
+  get backdrop(): string | undefined {
+    return this._backdropOverride;
+  }
+  set backdrop(value: string | undefined) {
+    this._backdropOverride = value || undefined;
     this.requestUpdate();
   }
 
@@ -335,17 +387,26 @@ export class MpHierarchyChart extends LitElement {
     switch (name) {
       case 'layout': this.layout = (newValue ?? 'sunburst') as HierarchyChartLayout; break;
       case 'root-id': this.rootId = newValue ?? undefined; break;
-      case 'max-depth': this.maxDepth = newValue === 'auto' ? 'auto' : Number(newValue ?? 2); break;
+      case 'max-depth':
+        // Removing the attribute returns to the resolved default, not to 2.
+        if (newValue === null) { this._maxDepth = undefined; this.requestUpdate(); }
+        else this.maxDepth = newValue === 'auto' ? 'auto' : Number(newValue);
+        break;
       case 'min-angle': this.minAngle = Number(newValue ?? 0.2); break;
       case 'min-size': this.minSize = Number(newValue ?? 4); break;
       case 'show-labels': this.showLabels = newValue !== 'false' && newValue !== null; break;
-      case 'label-min-area': this.labelMinArea = Number(newValue ?? 0.03); break;
+      case 'label-font-size': this.labelFontSize = Number(newValue ?? 12); break;
+      case 'backdrop': this.backdrop = newValue ?? undefined; break;
       case 'color-min': this.colorMin = Number(newValue ?? 0); break;
       case 'color-max': this.colorMax = Number(newValue ?? 100); break;
       case 'color-start': this.colorStart = newValue ?? '#fe0000'; break;
       case 'color-end': this.colorEnd = newValue ?? '#21b577'; break;
       case 'transition-duration': this.transitionDuration = Number(newValue ?? 300); break;
       case 'locale': this.locale = newValue ?? undefined; break;
+      case 'zoom-gestures': this.zoomGestures = newValue ?? 'wheel pinch'; break;
+      case 'zoom-hint-label': this._zoomHintLabel = newValue ?? undefined; break;
+      case 'show-breadcrumb': this.showBreadcrumb = newValue !== 'false' && newValue !== null; break;
+      case 'breadcrumb-label': this._breadcrumbLabel = newValue ?? 'Chart path'; this.requestUpdate(); break;
       case 'zoom-out-label': this._zoomOutLabel = newValue ?? 'Zoom out one level'; this.requestUpdate(); break;
       case 'loading-label': this._loadingLabel = newValue ?? 'Loading'; break;
       case 'metric-unit-label': this._metricUnitLabel = newValue ?? '%'; this.requestUpdate(); break;
@@ -353,6 +414,30 @@ export class MpHierarchyChart extends LitElement {
       case 'aria-label': this.requestUpdate(); break;
       case 'input-label': this.inputLabel = newValue; break;
     }
+  }
+
+  private _showBreadcrumb = false;
+  private _breadcrumbLabel = 'Chart path';
+
+  /**
+   * Renders the focus path as real buttons above the chart: a single-pointer,
+   * keyboard-operable way back up, and the visible statement of zoom state
+   * (PRD hierarchy-chart-zoom-labels B1). Off by default.
+   */
+  get showBreadcrumb(): boolean {
+    return this._showBreadcrumb;
+  }
+  set showBreadcrumb(value: boolean) {
+    this._showBreadcrumb = !!value;
+    this.requestUpdate();
+  }
+
+  get breadcrumbLabel(): string {
+    return this._breadcrumbLabel;
+  }
+  set breadcrumbLabel(value: string) {
+    this._breadcrumbLabel = value || 'Chart path';
+    this.requestUpdate();
   }
 
   get zoomOutLabel(): string {
@@ -384,6 +469,282 @@ export class MpHierarchyChart extends LitElement {
     return this._index ? resolveFocus(this._index, this._rootId) : undefined;
   }
 
+  /* ---------- rendered size + backdrop (label contrast inputs) ---------- */
+
+  override connectedCallback(): void {
+    super.connectedCallback();
+    this.addEventListener('wheel', this._wheelListener, { passive: false });
+    if (typeof ResizeObserver !== 'undefined') {
+      this._resizeObserver = new ResizeObserver((entries) => {
+        const width = entries[entries.length - 1]?.contentRect.width;
+        if (!width) return;
+        const scale = width / VIEW;
+        if (Math.abs(scale - this._hostScale) > 0.001) {
+          this._hostScale = scale;
+          this.requestUpdate();
+        }
+      });
+      this._resizeObserver.observe(this);
+    }
+  }
+
+  override disconnectedCallback(): void {
+    this.removeEventListener('wheel', this._wheelListener);
+    clearTimeout(this._hintTimer);
+    this._resizeObserver?.disconnect();
+    this._resizeObserver = undefined;
+    super.disconnectedCallback();
+  }
+
+  protected override willUpdate(changed: PropertyValues): void {
+    super.willUpdate(changed);
+    // Skip mid-tween frames: labels are hidden then, and the walk is not free.
+    if (this._tween >= 1) this.resolveBackdrop();
+  }
+
+  /**
+   * The first opaque computed background-color above the host (shadow roots
+   * crossed via .host). A live theme flip is picked up on the next render —
+   * one frame of suboptimal-but-legible contrast, self-correcting.
+   */
+  private resolveBackdrop(): void {
+    if (this._backdropOverride) {
+      this._backdrop = this._backdropOverride;
+      return;
+    }
+    if (typeof getComputedStyle !== 'function') return;
+    let el: Element | null = this;
+    while (el) {
+      const bg = getComputedStyle(el).backgroundColor;
+      if (isOpaqueColor(bg)) {
+        this._backdrop = bg;
+        return;
+      }
+      const root = el.getRootNode();
+      el = el.parentElement ?? (root instanceof ShadowRoot ? root.host : null);
+    }
+    // Nothing opaque anywhere (jsdom, detached trees): keep the white default.
+  }
+
+  /** Which token bucket a label over this node should use: the surface's tone. */
+  private surfaceToneOf(node: HierarchyNode, opacity: number): 'light' | 'dark' {
+    const fill = this.fillOf(node);
+    const surface = fill ? composite(fill, this._backdrop, opacity) : undefined;
+    return this.toneOfSurface(surface);
+  }
+
+  private toneOfSurface(surface: string | undefined): 'light' | 'dark' {
+    const text = (surface !== undefined ? contrastText(surface) : undefined)
+      ?? contrastText(this._backdrop)
+      ?? 'dark';
+    // 'dark' TEXT reads best on a 'light' SURFACE and vice versa.
+    return text === 'dark' ? 'light' : 'dark';
+  }
+
+  /* ---------- gesture zoom (the semantic ladder — PRD hierarchy-chart-zoom-labels Z1–Z5) ---------- */
+
+  private _gestures = new Set<'wheel' | 'pinch'>(['wheel', 'pinch']);
+  private _zoomHintLabel: string | undefined;
+  private _hintVisible = false;
+  private _hintTimer = 0;
+  // Non-passive by intent: a consumed ctrl/cmd+wheel must not also page-zoom.
+  private readonly _wheelListener = (event: WheelEvent): void => this.onWheel(event);
+
+  /** Space-separated gesture allowlist: 'wheel pinch' (default) | 'wheel' | 'pinch' | 'none'. */
+  get zoomGestures(): string {
+    return this._gestures.size ? [...this._gestures].join(' ') : 'none';
+  }
+  set zoomGestures(value: string) {
+    const parts = (value ?? '').toLowerCase().split(/\s+/);
+    this._gestures = new Set(
+      parts.filter((p): p is 'wheel' | 'pinch' => p === 'wheel' || p === 'pinch'),
+    );
+  }
+
+  get zoomHintLabel(): string {
+    if (this._zoomHintLabel !== undefined) return this._zoomHintLabel;
+    const apple = typeof navigator !== 'undefined' && /Mac|iPhone|iPad/.test(navigator.platform ?? '');
+    return apple ? 'Use ⌘ + scroll to zoom the chart' : 'Use Ctrl + scroll to zoom the chart';
+  }
+  set zoomHintLabel(value: string | undefined) {
+    this._zoomHintLabel = value || undefined;
+  }
+
+  /**
+   * GEOMETRIC view state (user decision 2026-08-14): ctrl/cmd+wheel and pinch
+   * magnify the chart itself — labels hold their device-px size, so zooming
+   * in is what makes small segments' captions fit (the fit test re-runs per
+   * zoom state). Implemented as a view window over normalized content
+   * coordinates — the sunburst maps it to its viewBox, the div layouts map
+   * their percentage geometry through it — never a CSS transform, so text
+   * stays crisp and nothing re-rasterizes. Click/Enter/breadcrumb keep the
+   * SEMANTIC re-root, which resets the view (the subtree fills the chart).
+   */
+  private _viewZoom = 1;
+  private _viewX = 0;
+  private _viewY = 0;
+  private static readonly MAX_ZOOM = 32;
+
+  /** Current geometric magnification (1 = fitted). Read-only state for consumers/tests. */
+  get zoomLevel(): number {
+    return this._viewZoom;
+  }
+
+  /** Programmatic geometric zoom, anchored at chart fractions (default: center). */
+  setZoomLevel(zoom: number, anchorX = 0.5, anchorY = 0.5): void {
+    const next = Math.min(MpHierarchyChart.MAX_ZOOM, Math.max(1, Number(zoom) || 1));
+    // The content point under the anchor stays under the anchor.
+    const contentX = this._viewX + anchorX / this._viewZoom;
+    const contentY = this._viewY + anchorY / this._viewZoom;
+    this._viewZoom = next;
+    this._viewX = clampView(contentX - anchorX / next, next);
+    this._viewY = clampView(contentY - anchorY / next, next);
+    this.requestUpdate();
+  }
+
+  resetZoom(): void {
+    this._viewZoom = 1;
+    this._viewX = 0;
+    this._viewY = 0;
+    this.requestUpdate();
+  }
+
+  /** Pan by chart-screen fractions (drag / two-finger move). */
+  private panBy(dxFraction: number, dyFraction: number): void {
+    if (this._viewZoom <= 1) return;
+    this._viewX = clampView(this._viewX - dxFraction / this._viewZoom, this._viewZoom);
+    this._viewY = clampView(this._viewY - dyFraction / this._viewZoom, this._viewZoom);
+    this.requestUpdate();
+  }
+
+  /** Map a normalized content rect through the view window to chart fractions. */
+  private viewRect(x0: number, y0: number, x1: number, y1: number): { x0: number; y0: number; x1: number; y1: number } {
+    const z = this._viewZoom;
+    return {
+      x0: (x0 - this._viewX) * z,
+      y0: (y0 - this._viewY) * z,
+      x1: (x1 - this._viewX) * z,
+      y1: (y1 - this._viewY) * z,
+    };
+  }
+
+  /** Pointer position as chart fractions, for anchor-at-cursor zooming. */
+  private chartAnchor(event: { clientX: number; clientY: number }): { x: number; y: number } {
+    const rect = this.shadowRoot?.querySelector<HTMLElement>('.chart')?.getBoundingClientRect();
+    if (!rect || !rect.width || !rect.height) return { x: 0.5, y: 0.5 };
+    return {
+      x: Math.min(1, Math.max(0, (event.clientX - rect.left) / rect.width)),
+      y: Math.min(1, Math.max(0, (event.clientY - rect.top) / rect.height)),
+    };
+  }
+
+  /** Device px per normalized content unit — the label fit tests' scale. */
+  private get effectiveScale(): number {
+    return this._hostScale * this._viewZoom;
+  }
+
+  private onWheel(event: WheelEvent): void {
+    if (!this._gestures.has('wheel') || !this._index) return;
+    if (!event.ctrlKey && !event.metaKey) {
+      this.showZoomHint();
+      return; // never captured: page scroll survives (FoamTree's documented mistake)
+    }
+    event.preventDefault(); // claimed: chart zoom instead of page zoom, over the chart only
+    // deltaMode normalization + clamp: engines report ±1 line to ±100 px per notch.
+    const unit = event.deltaMode === 1 ? 16 : event.deltaMode === 2 ? (this.clientHeight || 400) : 1;
+    const delta = Math.max(-100, Math.min(100, event.deltaY * unit));
+    const anchor = this.chartAnchor(event);
+    this.setZoomLevel(this._viewZoom * Math.exp(-delta * 0.005), anchor.x, anchor.y);
+  }
+
+  /* ----- touch pinch (S4-gated: pan-x pan-y delivers two pointers, Chromium-measured) ----- */
+
+  private readonly _pinchPointers = new Map<number, { x: number; y: number }>();
+  /* ----- mouse/pen drag pan (only meaningful while zoomed in) ----- */
+  private _dragPointer: number | null = null;
+  private _dragLast: { x: number; y: number } = { x: 0, y: 0 };
+  private _dragTotal = 0;
+  private _dragMoved = false;
+
+  private pinchDistance(): number {
+    const [p1, p2] = [...this._pinchPointers.values()];
+    return Math.hypot(p2.x - p1.x, p2.y - p1.y);
+  }
+
+  private pinchMidpoint(): { x: number; y: number } {
+    const [p1, p2] = [...this._pinchPointers.values()];
+    return { x: (p1.x + p2.x) / 2, y: (p1.y + p2.y) / 2 };
+  }
+
+  private onPointerDown(event: PointerEvent): void {
+    if (event.pointerType === 'touch') {
+      if (!this._gestures.has('pinch')) return;
+      // No preventDefault on a touch pointerdown: it suppresses the synthesized
+      // click that drives tap-to-re-root (repo rule).
+      this._pinchPointers.set(event.pointerId, { x: event.clientX, y: event.clientY });
+      return;
+    }
+    // Mouse/pen: primary-button drag pans the zoomed view. At 1x there is
+    // nothing to pan, so plain clicking is untouched.
+    if (this._viewZoom > 1 && event.button === 0) {
+      this._dragPointer = event.pointerId;
+      this._dragLast = { x: event.clientX, y: event.clientY };
+      this._dragTotal = 0;
+      this._dragMoved = false;
+    }
+  }
+
+  /** @returns true when the move belonged to a pinch or drag (skip hover handling). */
+  private trackViewGesture(event: PointerEvent): boolean {
+    if (event.pointerType === 'touch' && this._pinchPointers.has(event.pointerId)) {
+      if (this._pinchPointers.size !== 2) {
+        this._pinchPointers.set(event.pointerId, { x: event.clientX, y: event.clientY });
+        return false;
+      }
+      const beforeDistance = this.pinchDistance();
+      const beforeMid = this.pinchMidpoint();
+      this._pinchPointers.set(event.pointerId, { x: event.clientX, y: event.clientY });
+      if (beforeDistance > 0) {
+        const mid = this.pinchMidpoint();
+        const anchor = this.chartAnchor({ clientX: mid.x, clientY: mid.y });
+        // Continuous: spread magnifies, squeeze shrinks, midpoint movement pans.
+        this.setZoomLevel(this._viewZoom * (this.pinchDistance() / beforeDistance), anchor.x, anchor.y);
+        const rect = this.shadowRoot?.querySelector<HTMLElement>('.chart')?.getBoundingClientRect();
+        if (rect?.width && rect.height) {
+          this.panBy((mid.x - beforeMid.x) / rect.width, (mid.y - beforeMid.y) / rect.height);
+        }
+      }
+      return true;
+    }
+    if (this._dragPointer === event.pointerId) {
+      const dx = event.clientX - this._dragLast.x;
+      const dy = event.clientY - this._dragLast.y;
+      this._dragLast = { x: event.clientX, y: event.clientY };
+      this._dragTotal += Math.abs(dx) + Math.abs(dy);
+      if (this._dragTotal > 3) this._dragMoved = true; // a jiggly click still activates
+      const rect = this.shadowRoot?.querySelector<HTMLElement>('.chart')?.getBoundingClientRect();
+      if (rect?.width && rect.height) this.panBy(dx / rect.width, dy / rect.height);
+      return true;
+    }
+    return false;
+  }
+
+  /** pointerup ends the gesture; pointercancel abandons it (divergent engines degrade to tap). */
+  private endViewGesture(event: PointerEvent): void {
+    this._pinchPointers.delete(event.pointerId);
+    if (this._dragPointer === event.pointerId) this._dragPointer = null;
+  }
+
+  private showZoomHint(): void {
+    this._hintVisible = true;
+    clearTimeout(this._hintTimer);
+    this._hintTimer = setTimeout(() => {
+      this._hintVisible = false;
+      this.requestUpdate();
+    }, 1500) as unknown as number;
+    this.requestUpdate();
+  }
+
   /* ---------- zoom ---------- */
 
   /** Re-root on a node id (undefined = tree root) and emit `hierarchy-zoom`. */
@@ -392,6 +753,7 @@ export class MpHierarchyChart extends LitElement {
     if (!index) return;
     const target = resolveFocus(index, id);
     if (target === this.focusedRoot) return;
+    this.resetZoom(); // re-rooting refits the subtree; a stale magnification would disorient
     this.rootId = target === index.root ? undefined : target.id;
     this.liveAnnouncer.announce(this.labelText(target));
     this.emit<HierarchyNodeEventDetail>('hierarchy-zoom', { node: target, path: pathTo(index, target) });
@@ -452,6 +814,11 @@ export class MpHierarchyChart extends LitElement {
   }
 
   private onClick(event: MouseEvent): void {
+    // A drag-pan release is not an activation.
+    if (this._dragMoved) {
+      this._dragMoved = false;
+      return;
+    }
     const index = this._index;
     const node = this.nodeFromEvent(event);
     if (!index || !node) return;
@@ -469,24 +836,53 @@ export class MpHierarchyChart extends LitElement {
     this.emit<HierarchyNodeEventDetail>('hierarchy-node-select', { node, path: pathTo(index, node) });
   }
 
+  /**
+   * Escape hides the tooltip (WCAG 1.4.13 dismissable) BEFORE zooming out;
+   * it stays hidden for that node until the pointer/focus moves elsewhere.
+   */
+  private _dismissedForId: string | null = null;
+
+  private get tooltipEl(): HTMLElement | null {
+    return this.shadowRoot?.querySelector<HTMLElement>('.chart-tooltip') ?? null;
+  }
+
+  private isTooltipVisible(): boolean {
+    return this.tooltipEl?.hasAttribute('data-visible') ?? false;
+  }
+
+  /** Show the tooltip for a node at chart-relative coordinates, clamped inside the chart. */
+  private showTooltip(node: HierarchyNode, x: number, y: number): void {
+    const tooltip = this.tooltipEl;
+    const chart = this.shadowRoot?.querySelector<HTMLElement>('.chart');
+    if (!tooltip || !chart) return;
+    tooltip.textContent = this.tooltipText(node);
+    tooltip.setAttribute('data-visible', '');
+    // Measure after it is visible, then keep it fully inside the chart. The
+    // +12px offset keeps it out of the pointer-to-node line (it takes no
+    // pointer events, so hovering "onto" it keeps the node hovered — 1.4.13).
+    const width = tooltip.offsetWidth;
+    const height = tooltip.offsetHeight;
+    tooltip.style.left = `${Math.max(0, Math.min(x + 12, chart.clientWidth - width))}px`;
+    tooltip.style.top = `${Math.max(0, Math.min(y + 12, chart.clientHeight - height))}px`;
+  }
+
+  private hideTooltip(): void {
+    this.tooltipEl?.removeAttribute('data-visible');
+  }
+
   private onPointerMove(event: PointerEvent): void {
     const index = this._index;
     if (!index) return;
+    if (this.trackViewGesture(event)) return; // pinch/drag steer the view; they don't hover
     const node = this.nodeFromEvent(event);
-    const tooltip = this.shadowRoot?.querySelector<HTMLElement>('.chart-tooltip');
     if (!node || node === this.focusedRoot) {
       this.clearHover();
       return;
     }
-    if (tooltip) {
-      const chart = this.shadowRoot?.querySelector<HTMLElement>('.chart');
-      const rect = chart?.getBoundingClientRect();
-      if (rect) {
-        tooltip.style.left = `${event.clientX - rect.left + 12}px`;
-        tooltip.style.top = `${event.clientY - rect.top + 12}px`;
-      }
-      tooltip.textContent = this.tooltipText(node);
-      tooltip.setAttribute('data-visible', '');
+    if (node.id !== this._dismissedForId) {
+      this._dismissedForId = null;
+      const rect = this.shadowRoot?.querySelector<HTMLElement>('.chart')?.getBoundingClientRect();
+      if (rect) this.showTooltip(node, event.clientX - rect.left, event.clientY - rect.top);
     }
     if (this._hoveredId !== node.id) {
       this._hoveredId = node.id;
@@ -495,11 +891,33 @@ export class MpHierarchyChart extends LitElement {
   }
 
   private clearHover(): void {
-    this.shadowRoot?.querySelector('.chart-tooltip')?.removeAttribute('data-visible');
+    this.hideTooltip();
+    this._dismissedForId = null;
     if (this._hoveredId !== null) {
       this._hoveredId = null;
       this.emit<HierarchyHoverEventDetail>('hierarchy-node-hover', { node: null, path: [] });
     }
+  }
+
+  /** Keyboard parity for the hover tooltip (1.4.13): show on focus, hide on blur. */
+  private onFocusIn(event: FocusEvent): void {
+    const target = (event.composedPath()[0] as Element | undefined)?.closest?.('[role="treeitem"][data-id]');
+    const id = target?.getAttribute('data-id');
+    const node = id ? this._index?.byId.get(id) : undefined;
+    if (!node || node === this.focusedRoot || node.id === this._dismissedForId) return;
+    this._dismissedForId = null;
+    const chartRect = this.shadowRoot?.querySelector<HTMLElement>('.chart')?.getBoundingClientRect();
+    const rect = target?.getBoundingClientRect();
+    if (!chartRect || !rect) return;
+    this.showTooltip(
+      node,
+      rect.left - chartRect.left + rect.width / 2,
+      rect.top - chartRect.top + rect.height / 2,
+    );
+  }
+
+  private onFocusOut(): void {
+    this.hideTooltip();
   }
 
   private tooltipText(node: HierarchyNode): string {
@@ -587,9 +1005,36 @@ export class MpHierarchyChart extends LitElement {
         break;
       }
       case 'Escape':
-      case 'Backspace':
+        // Ordering: tooltip (1.4.13 dismissable) -> geometric view reset ->
+        // semantic zoom-out; at the tree root with a fitted view, bubble.
+        if (this.isTooltipVisible()) {
+          this.hideTooltip();
+          this._dismissedForId = id;
+          break;
+        }
+        if (this._viewZoom > 1) {
+          this.resetZoom();
+          break;
+        }
         if (this.focusedRoot === this._index?.root) return; // nothing to close: let Escape bubble
         this.zoomOut();
+        break;
+      case 'Backspace':
+        if (this.focusedRoot === this._index?.root) return;
+        this.zoomOut();
+        break;
+      // Keyboard equivalent of the wheel/pinch magnification (2.1.1),
+      // anchored on the focused node so it stays in view.
+      case '+':
+      case '=':
+        this.zoomKeyboard(id, this._viewZoom * 1.5);
+        break;
+      case '-':
+      case '_':
+        this.zoomKeyboard(id, this._viewZoom / 1.5);
+        break;
+      case '0':
+        this.resetZoom();
         break;
       default:
         this.handleTypeahead(event, id);
@@ -597,6 +1042,17 @@ export class MpHierarchyChart extends LitElement {
     }
     event.preventDefault();
     event.stopPropagation();
+  }
+
+  /** Zoom anchored on a node's on-screen center (falls back to the chart center). */
+  private zoomKeyboard(id: string, zoom: number): void {
+    const target = this.shadowRoot?.querySelector(`[role="treeitem"][data-id="${cssEscape(id)}"]`);
+    const chart = this.shadowRoot?.querySelector<HTMLElement>('.chart')?.getBoundingClientRect();
+    const rect = target?.getBoundingClientRect();
+    const anchor = chart?.width && rect?.width
+      ? this.chartAnchor({ clientX: rect.left + rect.width / 2, clientY: rect.top + rect.height / 2 })
+      : { x: 0.5, y: 0.5 };
+    this.setZoomLevel(zoom, anchor.x, anchor.y);
   }
 
   private handleTypeahead(event: KeyboardEvent, currentId: string): void {
@@ -664,7 +1120,7 @@ export class MpHierarchyChart extends LitElement {
     // the window can never grow past it and lazy loading deadlocks at level 1.
     // The consequence is deliberate and worth knowing: `max-depth="auto"` plus
     // `loadChildren` walks the entire tree, one level per render.
-    const unbounded = this._maxDepth === 'auto';
+    const unbounded = this.maxDepth === 'auto';
     const depth = this.renderedDepth;
     const candidates = [
       ...(this.isLazy(focus) ? [focus] : []),
@@ -708,17 +1164,37 @@ export class MpHierarchyChart extends LitElement {
     return this.getAttribute('aria-label') ?? this._inputLabel;
   }
 
+  /** The focus path as buttons, OUTSIDE any role=tree container (trees own only treeitems). */
+  private renderBreadcrumb(index: HierarchyIndex, focus: HierarchyNode): TemplateResult {
+    const path = pathTo(index, focus);
+    return html`<nav class="breadcrumb" aria-label=${this._breadcrumbLabel}>
+      ${path.map((node, i) =>
+        i === path.length - 1
+          ? html`<span class="crumb-current" aria-current="location">${this.labelText(node)}</span>`
+          : html`<button
+              type="button"
+              class="crumb"
+              @click=${() => this.zoomTo(node === index.root ? undefined : node.id)}
+            >${this.labelText(node)}</button><span class="crumb-sep" aria-hidden="true">/</span>`)}
+    </nav>`;
+  }
+
   override render(): TemplateResult {
     const index = this._index;
     const focus = this.focusedRoot;
     if (!index || !focus) return html`<div class="chart"></div>`;
 
-    return html`<div
-      class="chart"
+    return html`${this._showBreadcrumb ? this.renderBreadcrumb(index, focus) : nothing}<div
+      class="chart ${this._gestures.has('pinch') ? 'pinch' : ''}"
       @click=${this.onClick}
       @keydown=${this.onKeyDown}
+      @pointerdown=${this.onPointerDown}
       @pointermove=${this.onPointerMove}
+      @pointerup=${this.endViewGesture}
+      @pointercancel=${this.endViewGesture}
       @pointerleave=${this.clearHover}
+      @focusin=${this.onFocusIn}
+      @focusout=${this.onFocusOut}
     >
       ${this._layout === 'sunburst'
         ? this.renderSunburst(index)
@@ -726,6 +1202,9 @@ export class MpHierarchyChart extends LitElement {
           ? this.renderIcicle(index, focus)
           : this.renderTreemap(index, focus)}
       <div class="chart-tooltip" aria-hidden="true"></div>
+      ${this._hintVisible && this._gestures.has('wheel')
+        ? html`<div class="zoom-hint" aria-hidden="true">${this.zoomHintLabel}</div>`
+        : nothing}
       ${this.liveAnnouncer.template()}
     </div>`;
   }
@@ -748,7 +1227,9 @@ export class MpHierarchyChart extends LitElement {
     const depth = this.renderedDepth;
     const nodes = partitionLayout(index, this._rootId, {
       maxDepth: depth,
-      minFraction: this._minAngle / 360,
+      // The cull relaxes with magnification: a sliver you zoomed into is no
+      // longer a sliver on screen.
+      minFraction: this._minAngle / 360 / this._viewZoom,
     });
     // Rings fill the half-size: hole is 1 unit, ring d spans [d, d+1] units.
     const unit = VIEW / 2 / (depth + 1);
@@ -761,16 +1242,35 @@ export class MpHierarchyChart extends LitElement {
     const atRoot = focus === index.root;
     const holePct = (100 / (depth + 1)) * 0.9;
 
+    // The geometric view window IS the viewBox — no transform, no
+    // re-rasterization, and label font-size (in viewBox units) divides by the
+    // zoom so rendered text never scales.
+    const z = this._viewZoom;
+    const holeCenter = this.viewRect(0.5, 0.5, 0.5, 0.5);
     // The zoom-out control is a real HTML button OVERLAY, not a node inside
     // the svg: role=tree only allows treeitem/group children.
-    return html`<svg viewBox="0 0 ${VIEW} ${VIEW}" role="tree" aria-label=${label ?? nothing}>
+    return html`<svg
+      viewBox="${this._viewX * VIEW} ${this._viewY * VIEW} ${VIEW / z} ${VIEW / z}"
+      role="tree"
+      aria-label=${label ?? nothing}
+    >
       <!-- role=none: this group only centres the geometry, and an unroled node
            between role=tree and its treeitems is an aria-required-parent risk. -->
       <g role="none" transform="translate(${VIEW / 2},${VIEW / 2})">
         ${repeat(nodes, (n) => n.node.id, (n) => this.renderArc(n, spans.get(n.node.id) ?? n, unit))}
         ${this._showLabels && this._tween >= 1
-          ? repeat(nodes.filter((n) => this.arcLabelFits(n)), (n) => `label-${n.node.id}`,
-              (n) => svg`<text class="arc-label" transform=${arcLabelTransform(n.x0, n.x1, (n.depth + 0.5) * unit)}>${this.labelText(n.node)}</text>`)
+          ? repeat(
+              nodes
+                .map((n) => ({ n, fit: this.arcLabelFit(n, unit) }))
+                .filter(({ fit }) => fit.visible),
+              ({ n }) => `label-${n.node.id}`,
+              ({ n, fit }) => svg`<text
+                class="arc-label"
+                aria-hidden="true"
+                font-size=${Math.round((this._labelFontSize / this.effectiveScale) * 100) / 100}
+                data-surface=${this.surfaceToneOf(n.node, n.hasChildren ? 1 : 0.6)}
+                transform=${arcLabelTransform(n.x0, n.x1, (n.depth + 0.5) * unit, fit.orientation)}
+              >${fit.text}</text>`)
           : nothing}
       </g>
     </svg>
@@ -779,7 +1279,12 @@ export class MpHierarchyChart extends LitElement {
       aria-label=${this._zoomOutLabel}
       title=${atRoot ? nothing : this._zoomOutLabel}
       ?disabled=${atRoot}
-      style=${styleMap({ width: `${holePct}%`, height: `${holePct}%` })}
+      style=${styleMap({
+        left: `${holeCenter.x0 * 100}%`,
+        top: `${holeCenter.y0 * 100}%`,
+        width: `${holePct * z}%`,
+        height: `${holePct * z}%`,
+      })}
       @click=${this.zoomOut}
     >${focus ? this.labelText(focus) : ''}</button>`;
   }
@@ -808,8 +1313,21 @@ export class MpHierarchyChart extends LitElement {
     ></path>`;
   }
 
-  private arcLabelFits(n: PartitionNode): boolean {
-    return arcLabelVisible(n.x0 * TAU, n.x1 * TAU, 1, this._labelMinArea);
+  /**
+   * Fit the (formatted) name into the arc IN DEVICE PX — the same 12px label
+   * needs a bigger arc on a small host, and re-rooting is what makes arcs big
+   * enough, so labels appear as you zoom in.
+   */
+  private arcLabelFit(n: PartitionNode, unit: number): ArcLabelFit {
+    // effectiveScale folds in the geometric zoom: magnifying the chart is
+    // what makes small segments' captions fit, at a constant font size.
+    return fitArcLabel(
+      this.labelText(n.node),
+      (n.x1 - n.x0) * TAU,
+      n.depth * unit * this.effectiveScale,
+      (n.depth + 1) * unit * this.effectiveScale,
+      this._labelFontSize,
+    );
   }
 
   /* ---------- icicle ---------- */
@@ -818,16 +1336,18 @@ export class MpHierarchyChart extends LitElement {
     const depth = this.renderedDepth;
     const nodes = partitionLayout(index, this._rootId, {
       maxDepth: depth,
-      minFraction: this._minSize / VIEW,
+      minFraction: this._minSize / VIEW / this._viewZoom,
     });
     const columns = depth + 1; // column 0 is the focus cell
     const label = this.treeLabel();
     this.captureRendered(nodes, focus.id);
+    const focusRect = this.viewRect(0, 0, 1 / columns, 1);
 
     return html`<div class="icicle" role="tree" aria-label=${label ?? nothing}>
       <div
         class="cell focus-cell"
         data-id=${focus.id}
+        data-surface=${this.toneOfSurface(undefined)}
         role="treeitem"
         tabindex="-1"
         aria-label=${this.accessibleName(focus)}
@@ -836,14 +1356,15 @@ export class MpHierarchyChart extends LitElement {
         aria-posinset="1"
         aria-expanded="true"
         title=${focus === index.root ? nothing : this._zoomOutLabel}
-        style=${styleMap({ left: '0%', top: '0%', width: `${100 / columns}%`, height: '100%' })}
-      ><span class="cell-label">${this.labelText(focus)}</span></div>
-      ${repeat(nodes, (n) => n.node.id, (n) => this.renderCell(n, {
-        left: `${(n.depth / columns) * 100}%`,
-        top: `${n.x0 * 100}%`,
-        width: `${(1 / columns) * 100}%`,
-        height: `${(n.x1 - n.x0) * 100}%`,
-      }, n.hasChildren && n.depth < this.renderedDepth && !!n.node.children?.length))}
+        style=${styleMap({ ...this.cellGeometry(focusRect), fontSize: `${this._labelFontSize}px` })}
+      >${this._showLabels && this.cellLabelFits(focusRect)
+        ? html`<span class="cell-label">${this.labelText(focus)}</span>`
+        : nothing}</div>
+      ${repeat(
+        nodes,
+        (n) => n.node.id,
+        (n) => this.renderCell(n, this.viewRect(n.depth / columns, n.x0, (n.depth + 1) / columns, n.x1),
+          n.hasChildren && n.depth < this.renderedDepth && !!n.node.children?.length))}
     </div>`;
   }
 
@@ -853,7 +1374,7 @@ export class MpHierarchyChart extends LitElement {
     const depth = this.renderedDepth;
     const nodes = squarifyLayout(index, this._rootId, {
       maxDepth: depth,
-      minArea: (this._minSize / VIEW) ** 2,
+      minArea: (this._minSize / VIEW) ** 2 / (this._viewZoom * this._viewZoom),
       childPadding: 0.004,
       childHeaderSpace: 0.028,
     });
@@ -870,23 +1391,37 @@ export class MpHierarchyChart extends LitElement {
         @click=${this.zoomOut}
       >${crumbs}</button>
       <div class="treemap-body" role="tree" aria-label=${label ?? nothing}>
-        ${repeat(nodes, (n) => n.node.id, (n) => this.renderCell(n, {
-          left: `${n.x0 * 100}%`,
-          top: `${n.y0 * 100}%`,
-          width: `${(n.x1 - n.x0) * 100}%`,
-          height: `${(n.y1 - n.y0) * 100}%`,
-        }, n.hasChildren && n.depth < this.renderedDepth && !!n.node.children?.length))}
+        ${repeat(
+          nodes,
+          (n) => n.node.id,
+          (n) => this.renderCell(n, this.viewRect(n.x0, n.y0, n.x1, n.y1),
+            n.hasChildren && n.depth < this.renderedDepth && !!n.node.children?.length))}
       </div>
     </div>`;
   }
 
+  private cellGeometry(rect: { x0: number; y0: number; x1: number; y1: number }): Record<string, string> {
+    return {
+      left: `${rect.x0 * 100}%`,
+      top: `${rect.y0 * 100}%`,
+      width: `${(rect.x1 - rect.x0) * 100}%`,
+      height: `${(rect.y1 - rect.y0) * 100}%`,
+    };
+  }
+
+  private cellLabelFits(rect: { x0: number; y0: number; x1: number; y1: number }): boolean {
+    const side = VIEW * this._hostScale; // chart px (aspect-ratio 1); rect already includes the zoom
+    return fitCellLabel((rect.x1 - rect.x0) * side, (rect.y1 - rect.y0) * side, this._labelFontSize);
+  }
+
   private renderCell(
     n: PartitionNode | RectNode,
-    geometry: Readonly<Record<string, string>>,
+    rect: { x0: number; y0: number; x1: number; y1: number },
     expanded: boolean,
   ): TemplateResult {
     const branch = this._layout === 'treemap' && expanded;
     const fill = branch ? undefined : this.fillOf(n.node);
+    const labeled = this._showLabels && this.cellLabelFits(rect);
     return html`<div
       class="cell"
       data-id=${n.node.id}
@@ -894,6 +1429,7 @@ export class MpHierarchyChart extends LitElement {
       ?data-branch=${branch}
       ?data-loading=${this._loadingIds.has(n.node.id)}
       ?data-load-error=${this._failedIds.has(n.node.id)}
+      data-surface=${fill ? this.surfaceToneOf(n.node, 1) : this.toneOfSurface(undefined)}
       role="treeitem"
       tabindex=${n.node.id === this._tabFocusId ? '0' : '-1'}
       aria-label=${this.accessibleName(n.node)}
@@ -902,9 +1438,26 @@ export class MpHierarchyChart extends LitElement {
       aria-posinset=${n.posinset}
       aria-expanded=${n.hasChildren ? String(expanded) : nothing}
       aria-busy=${this._loadingIds.has(n.node.id) ? 'true' : nothing}
-      style=${styleMap({ ...geometry, ...(fill ? { background: fill } : {}) })}
-    ><span class="cell-label">${this.labelText(n.node)}</span></div>`;
+      style=${styleMap({
+        ...this.cellGeometry(rect),
+        fontSize: `${this._labelFontSize}px`,
+        ...(fill ? { background: fill } : {}),
+      })}
+    >${labeled ? html`<span class="cell-label">${this.labelText(n.node)}</span>` : nothing}</div>`;
   }
+}
+
+/** Keep the view window inside the content: x in [0, 1 - 1/zoom]. */
+function clampView(value: number, zoom: number): number {
+  return Math.min(1 - 1 / zoom, Math.max(0, value));
+}
+
+/** Computed backgrounds are rgb()/rgba(); 'transparent' computes to rgba(0, 0, 0, 0). */
+function isOpaqueColor(color: string): boolean {
+  if (!color || color === 'transparent') return false;
+  const alpha = color.match(/^rgba\([^)]+,\s*([\d.]+)\s*\)$/i)?.[1];
+  if (alpha !== undefined) return Number(alpha) >= 1;
+  return /^(rgb\(|#|hsl\()/i.test(color);
 }
 
 function cssEscape(value: string): string {

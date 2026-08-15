@@ -85,16 +85,21 @@ export function arcPath(
 }
 
 /**
- * Sunburst label placement: translate to the arc's radial midpoint and rotate
- * to read along the radius, flipping on the lower half so text is never
- * upside-down (Observable's transform).
+ * Sunburst label placement: translate to the arc's radial midpoint, then
+ * rotate to read along the radius (radial, Observable's transform) or along
+ * the chord (tangential), flipping on the half where the text would otherwise
+ * be upside-down. Orientation is chosen by fitArcLabel (label-fit.ts).
  */
-export function arcLabelTransform(x0: number, x1: number, rMid: number): string {
+export function arcLabelTransform(
+  x0: number,
+  x1: number,
+  rMid: number,
+  orientation: 'radial' | 'tangential' = 'radial',
+): string {
   const degrees = (((x0 + x1) / 2) * 360) % 360;
-  return `rotate(${round(degrees - 90)}) translate(${round(rMid)},0) rotate(${degrees < 180 ? 0 : 180})`;
-}
-
-/** Observable's area threshold: label only arcs whose (rings × sweep-fraction) area clears it. */
-export function arcLabelVisible(x0: number, x1: number, rings: number, minArea = 0.03): boolean {
-  return rings * (x1 - x0) > minArea;
+  const flip =
+    orientation === 'radial'
+      ? degrees < 180 ? 0 : 180
+      : degrees > 90 && degrees < 270 ? 270 : 90;
+  return `rotate(${round(degrees - 90)}) translate(${round(rMid)},0) rotate(${flip})`;
 }

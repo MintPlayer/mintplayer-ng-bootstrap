@@ -10,6 +10,9 @@ Grounded in two 3-agent investigations: (1) codecov's open-source frontend
 survey + doc conventions; (2) packaging in-tree vs separate family, chart-library licensing, and
 the chart inventory of codecov/Coveralls/SonarQube/Codacy/coverage.py/JaCoCo/Istanbul.
 Plan: [charts-wc-plan.md](./charts-wc-plan.md)
+Follow-up (2026-08-14): [hierarchy-chart-zoom-labels.md](./hierarchy-chart-zoom-labels.md) —
+wheel/pinch zoom gestures + the label-speckling fix (incl. the `arcLabelFits` TAU unit bug that
+made §5.2's documented threshold ~6× more permissive in practice).
 Dependency work riding the same PR: [nx23-dependency-upgrade.md](./nx23-dependency-upgrade.md)
 
 ## 1. Problem
@@ -94,7 +97,7 @@ The reference hierarchy implementation (codecov) is not copyable:
 | 1 | Size hierarchy nodes by summed **leaf `value`** (e.g. line count), never by the color metric | Avoids codecov's inverted-salience bug (§1.1); folders with many uncovered lines stay big and red |
 | 2 | Color is a separate per-node/series `colorValue` through a clamped two-stop scale | Continuous gradient like codecov (red→green over a configurable domain), plus explicit `color` override |
 | 3 | No new runtime dependency; local `charts/core` | Pure functions, vitest-friendly; no `rollupOptions.external` changes |
-| 4 | Depth-capped hierarchy rendering: `max-depth` levels from the focused node (default 2), or `'auto'` for the full loaded depth | Default matches codecov and keeps the DOM small; the cap is a consumer choice, not a ceiling. `aria-level`/`-setsize`/`-posinset` are required either way, since a capped window never holds the full set |
+| 4 | Depth-capped hierarchy rendering: `max-depth` levels from the focused node, or `'auto'` for the full loaded depth. **Unset resolves to `'auto'`, except with a `loadChildren` loader bound, where it stays at a 2-level window** (amended 2026-08-14) | A chart handed a whole tree should draw the tree it was handed; the codecov-style cap is a consumer choice, not a ceiling. The lazy carve-out is not taste: `'auto'` makes the deepest rendered ring a load candidate, so an unbounded lazy chart walks the entire remote tree one level per render. `aria-level`/`-setsize`/`-posinset` are required either way, since a capped window never holds the full set |
 | 5 | ARIA tree on the rendered nodes themselves; parallel-DOM fallback only if spike S1 fails | One source of truth for state; spike-gated (§7, §9) — S1 gates only the sunburst's SVG path nodes; icicle/treemap render HTML (D14) |
 | 6 | Tooltips are self-positioned in the shadow root, **not** OverlayController and **not** `<title>` | OverlayController is built for dismissible focus-managing popups — wrong tool for a cursor-follower; `<title>` doubles node count and double-announces against `aria-label` |
 | 7 | Sunburst labels are rotated `<text>`, not `<textPath>` | No hidden-path/ID plumbing, no `href="#id"`-across-shadow-root risk |
@@ -337,7 +340,7 @@ directly on the SVG nodes.**
 | attr,prop | `layout` | `sunburst \| icicle \| treemap`; default `sunburst`; runtime-switchable, state preserved |
 | prop | `data: HierarchyNode` | Property-only; setter precomputes index/rollups |
 | attr,prop | `root-id` / `rootId` | Controlled focus node; undefined = tree root |
-| attr,prop | `max-depth`: `number \| 'auto'` (default `2`) | Levels outward from the focus; `'auto'` renders every loaded level and, with `loadChildren`, walks the whole tree one level per render |
+| attr,prop | `max-depth`: `number \| 'auto'` (default `'auto'`; `2` when `loadChildren` is set) | Levels outward from the focus; `'auto'` renders every loaded level and, with `loadChildren`, walks the whole tree one level per render — which is why a lazy chart does not default to it |
 | attr,prop | `min-angle` (deg, `0.2`), `min-size` (logical px for cartesian culling), `show-labels` (`true`), `label-min-area` (`0.03`) | Rendering knobs |
 | attr,prop | `color-min`/`color-max` (defaults `0`/`100`), `color-start`/`color-end` (`#fe0000`/`#21b577`) | Color scale |
 | attr,prop | `transition-duration` (ms, `300`) | Forced 0 under reduced motion |

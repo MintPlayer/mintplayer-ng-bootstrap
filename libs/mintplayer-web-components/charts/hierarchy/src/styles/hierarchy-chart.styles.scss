@@ -1,13 +1,20 @@
 :host {
-  display: block;
+  /* Flex column so the optional breadcrumb takes its own row; without it the
+     chart is the only child and fills the host exactly as before. */
+  display: flex;
+  flex-direction: column;
   width: 100%;
   aspect-ratio: 1;
 
   /* Two-level fallbacks: Bootstrap 5.3 reassigns --bs-* per data-bs-theme and
      custom properties inherit through the shadow boundary, so dark mode needs
      no media query here. */
-  --mp-hierarchy-chart-label-color: var(--bs-body-color, #212529);
-  --mp-hierarchy-chart-arc-label-color: var(--bs-light, #f8f9fa);
+
+  /* Node labels contrast against the DATA-COLORED surface under them, not the
+     page theme — the element picks one of this pair per node from the fill
+     composited over the resolved backdrop. Deliberately NOT --bs-* driven. */
+  --mp-hierarchy-chart-label-on-light: #1c1f23;
+  --mp-hierarchy-chart-label-on-dark: #f8f9fa;
   --mp-hierarchy-chart-center-color: var(--bs-body-color, #212529);
   --mp-hierarchy-chart-center-bg: var(--bs-body-bg, #ffffff);
   --mp-hierarchy-chart-node-fill: var(--bs-secondary-bg, #e9ecef);
@@ -25,7 +32,53 @@
 .chart {
   position: relative;
   width: 100%;
-  height: 100%;
+  flex: 1 1 auto;
+  min-height: 0;
+  /* The geometric zoom window: content outside it must clip, not spill. */
+  overflow: hidden;
+}
+
+.breadcrumb {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  flex: 0 0 auto;
+  gap: 0.125rem;
+  margin: 0;
+  padding: 0 0 0.25rem;
+  font-size: 0.875rem;
+}
+
+.crumb {
+  min-width: 24px;
+  min-height: 24px;
+  padding: 0.125rem 0.375rem;
+  background: transparent;
+  border: 0;
+  border-radius: 0.25rem;
+  color: var(--mp-hierarchy-chart-center-color);
+  font: inherit;
+  cursor: pointer;
+  text-decoration: underline;
+}
+
+.crumb-current {
+  padding: 0.125rem 0.375rem;
+  color: var(--mp-hierarchy-chart-center-color);
+  font-weight: 600;
+}
+
+.crumb-sep {
+  opacity: 0.5;
+  user-select: none;
+}
+
+/* Only when pinch is enabled: removing pinch-zoom from touch-action is what
+   hands two-finger gestures to JS (S4-measured) while one-finger pan stays
+   native. Never applied with zoom-gestures="none"/"wheel", so browser page
+   pinch-zoom over the chart keeps working there. */
+.chart.pinch {
+  touch-action: pan-x pan-y;
 }
 
 svg {
@@ -46,13 +99,22 @@ svg {
   cursor: default;
 }
 
+/* font-size comes per-element from the component (device px converted to
+   viewBox units against the measured host scale — labels never scale with
+   host size or zoom). */
 .arc-label {
-  fill: var(--mp-hierarchy-chart-arc-label-color);
-  font-size: 26px; /* logical viewBox units (1000x1000) */
   text-anchor: middle;
   dominant-baseline: middle;
   pointer-events: none;
   user-select: none;
+}
+
+.arc-label[data-surface='light'] {
+  fill: var(--mp-hierarchy-chart-label-on-light);
+}
+
+.arc-label[data-surface='dark'] {
+  fill: var(--mp-hierarchy-chart-label-on-dark);
 }
 
 /* HTML overlay button in the sunburst hole (a role=tree svg cannot own a button). */
@@ -89,8 +151,7 @@ svg {
   background: var(--mp-hierarchy-chart-node-fill);
   border: 1px solid var(--mp-hierarchy-chart-gap);
   border-radius: 2px;
-  color: var(--mp-hierarchy-chart-label-color);
-  font-size: 0.8125rem;
+  /* font-size is set inline by the component (constant device px). */
   line-height: 1.25;
   padding: 1px 4px;
   cursor: pointer;
@@ -145,6 +206,33 @@ svg {
   display: block;
 }
 
+/* Transient "how to zoom" overlay shown on an uncaptured plain wheel — the
+   embedded-maps convention. Purely visual: aria-hidden, no pointer events. */
+.zoom-hint {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  max-width: 90%;
+  padding: 0.375rem 0.75rem;
+  background: var(--mp-hierarchy-chart-tooltip-bg);
+  color: var(--mp-hierarchy-chart-tooltip-color);
+  border-radius: 0.25rem;
+  font-size: 0.875rem;
+  text-align: center;
+  pointer-events: none;
+  user-select: none;
+  z-index: 2;
+  animation: mp-hierarchy-chart-hint 1.5s ease-out forwards;
+}
+
+@keyframes mp-hierarchy-chart-hint {
+  0% { opacity: 0; }
+  15% { opacity: 1; }
+  80% { opacity: 1; }
+  100% { opacity: 0; }
+}
+
 .cell[data-leaf] {
   cursor: default;
 }
@@ -154,6 +242,14 @@ svg {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+.cell[data-surface='light'] {
+  color: var(--mp-hierarchy-chart-label-on-light);
+}
+
+.cell[data-surface='dark'] {
+  color: var(--mp-hierarchy-chart-label-on-dark);
 }
 
 /* A treemap branch tile is a frame: children render inside its header inset,
@@ -186,7 +282,8 @@ svg {
 }
 
 .center-control:focus-visible,
-.treemap-header:focus-visible {
+.treemap-header:focus-visible,
+.crumb:focus-visible {
   outline: 3px solid var(--mp-hierarchy-chart-focus-ring-color);
   outline-offset: 2px;
 }
@@ -209,7 +306,8 @@ svg {
 
 @media (prefers-reduced-motion: reduce) {
   .ring,
-  .cell {
+  .cell,
+  .zoom-hint {
     transition: none !important;
     animation: none !important;
   }

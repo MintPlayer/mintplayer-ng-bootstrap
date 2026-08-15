@@ -74,10 +74,15 @@ export function chartsSuite(test: Test, expect: Expect, options: ChartsSuiteOpti
       expect(await chart.getAttribute('root-id')).toBeNull();
     });
 
-    test('hierarchy: keyboard reaches the shadow SVG arcs and Escape zooms out', async ({ page }) => {
+    test('hierarchy: keyboard reaches the shadow SVG arcs; Escape dismisses the tooltip, then zooms out', async ({ page }) => {
       const chart = page.locator('mp-hierarchy-chart').first();
+      const tooltip = chart.locator('.chart-tooltip');
       await chart.locator('[role="treeitem"]').first().focus();
       expect(await deepActive(page)).toMatchObject({ tag: 'path', role: 'treeitem' });
+      // 1.4.13: keyboard focus shows the tooltip too (and it stays aria-hidden —
+      // the treeitem's own aria-label speaks the same content).
+      await expect(tooltip).toHaveAttribute('data-visible', '');
+      await expect(tooltip).toHaveAttribute('aria-hidden', 'true');
 
       const first = (await deepActive(page))!.id;
       await page.keyboard.press('ArrowRight');
@@ -87,8 +92,70 @@ export function chartsSuite(test: Test, expect: Expect, options: ChartsSuiteOpti
       await expect(chart.locator('.center-control')).toBeEnabled();
       // Focus survived into the new window, so Escape is delivered to the chart.
       expect(await deepActive(page)).toMatchObject({ role: 'treeitem' });
+      // Ordering: a visible tooltip consumes the first Escape; the next one zooms out.
+      if (await tooltip.getAttribute('data-visible') !== null) {
+        await page.keyboard.press('Escape');
+        await expect(tooltip).not.toHaveAttribute('data-visible', '');
+        await expect(chart.locator('.center-control')).toBeEnabled();
+      }
       await page.keyboard.press('Escape');
       await expect(chart.locator('.center-control')).toBeDisabled();
+    });
+
+    test('hierarchy: ctrl+wheel magnifies geometrically; plain wheel only hints', async ({ page }) => {
+      const chart = page.locator('mp-hierarchy-chart').first();
+      const zoomLevel = () =>
+        page.evaluate(() => (document.querySelector('mp-hierarchy-chart') as unknown as { zoomLevel: number }).zoomLevel);
+      expect(await zoomLevel()).toBe(1);
+
+      // Real modifier+wheel input is engine-dependent in Playwright (mouse.wheel
+      // carries no keyboard modifiers), so dispatch the event the browser would.
+      const container = chart.locator('[role="tree"]');
+      await container.dispatchEvent('wheel', { deltaY: -100, ctrlKey: true, bubbles: true, composed: true, cancelable: true });
+      await expect.poll(zoomLevel).toBeGreaterThan(1);
+      // The sunburst zooms via its viewBox — no transform anywhere.
+      const viewBox = await chart.locator('svg').getAttribute('viewBox');
+      expect(Number(viewBox!.split(' ')[2])).toBeLessThan(1000);
+
+      // Semantic state is untouched by geometric zoom.
+      expect(await chart.getAttribute('root-id')).toBeNull();
+
+      // A plain wheel is never captured: no zoom change, only the hint overlay.
+      const before = await zoomLevel();
+      await container.dispatchEvent('wheel', { deltaY: -100, bubbles: true, composed: true, cancelable: true });
+      await expect(chart.locator('.zoom-hint')).toHaveAttribute('aria-hidden', 'true');
+      expect(await zoomLevel()).toBe(before);
+    });
+
+    test('hierarchy: the breadcrumb walks back up after a re-root', async ({ page }) => {
+      const chart = page.locator('mp-hierarchy-chart').first();
+      await page.getByRole('button', { name: 'icicle' }).click();
+      await chart.locator('div[role="treeitem"][aria-expanded="true"]:not(.focus-cell)').first().click();
+      await expect.poll(() => chart.getAttribute('root-id')).not.toBeNull();
+
+      const crumbs = chart.locator('nav.breadcrumb button.crumb');
+      await expect(crumbs).not.toHaveCount(0);
+      await crumbs.first().click(); // the tree root
+      await expect.poll(() => chart.getAttribute('root-id')).toBeNull();
+    });
+
+    test('hierarchy: the workspace dataset stays readable — labels only where they fit', async ({ page }) => {
+      const chart = page.locator('mp-hierarchy-chart').first();
+      await page.getByRole('button', { name: /this workspace/ }).click();
+      // 656+ arcs arrive; the label engine must NOT paint one per arc (the
+      // speckling this feature exists to fix rendered 197 labels here).
+      await expect.poll(() => chart.locator('path.ring').count()).toBeGreaterThan(300);
+      const arcs = await chart.locator('path.ring').count();
+      expect(await chart.locator('text.arc-label').count()).toBeLessThan(arcs / 5);
+
+      // How many labels fit at 1x is host-geometry dependent, and zero is a
+      // legitimate answer: an 11-deep tree in the react/vue demo's 480px box
+      // gives ~20px rings, which hold no readable caption in any orientation.
+      // What must hold in every host: magnifying makes captions fit, at the
+      // same font size — the whole point of geometric zoom.
+      await page.evaluate(() =>
+        (document.querySelector('mp-hierarchy-chart') as unknown as { setZoomLevel(zoom: number): void }).setZoomLevel(8));
+      await expect.poll(() => chart.locator('text.arc-label').count()).toBeGreaterThan(0);
     });
 
     test('hierarchy: switching layout swaps SVG arcs for HTML cells, tree intact', async ({ page }) => {

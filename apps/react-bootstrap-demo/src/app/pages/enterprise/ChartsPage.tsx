@@ -61,6 +61,19 @@ const LAYOUTS: HierarchyChartLayout[] = ['sunburst', 'icicle', 'treemap'];
 
 export function ChartsPage() {
   const [layout, setLayout] = useState<HierarchyChartLayout>('sunburst');
+  const [dataset, setDataset] = useState<'sample' | 'workspace'>('sample');
+  const [workspaceTree, setWorkspaceTree] = useState<HierarchyNode | undefined>(undefined);
+
+  // The workspace's own coverage tree (1,603 nodes) — dense enough to exercise
+  // label fitting and the geometric zoom; fetched lazily on first selection.
+  const selectDataset = async (next: 'sample' | 'workspace') => {
+    if (next === 'workspace' && !workspaceTree) {
+      const response = await fetch('/assets/coverage-tree.json');
+      setWorkspaceTree(await response.json() as HierarchyNode);
+    }
+    setDataset(next);
+  };
+  const activeTree = (dataset === 'workspace' ? workspaceTree : undefined) ?? TREE;
 
   return (
     <div className="demo-page">
@@ -68,7 +81,8 @@ export function ChartsPage() {
       <p className="text-body-secondary">
         Coverage-style visualizations: a hierarchy chart with three interchangeable layouts,
         a trend chart, and inline sparklines. Size encodes lines of code; color encodes the
-        coverage metric over the 60–80% range.
+        coverage metric over the 60–80% range. Ctrl + scroll (or pinch) magnifies the chart;
+        labels keep their size, so small sections become readable as you zoom in.
       </p>
 
       <p>
@@ -81,12 +95,25 @@ export function ChartsPage() {
           >{option}</button>
         ))}
       </p>
+      <p>
+        <button
+          type="button"
+          className={`btn me-2 ${dataset === 'sample' ? 'btn-primary' : 'btn-secondary'}`}
+          onClick={() => selectDataset('sample')}
+        >sample</button>
+        <button
+          type="button"
+          className={`btn me-2 ${dataset === 'workspace' ? 'btn-primary' : 'btn-secondary'}`}
+          onClick={() => selectDataset('workspace')}
+        >this workspace (1,603 nodes)</button>
+      </p>
       <div style={{ maxWidth: '480px' }}>
         <BsHierarchyChart
-          data={TREE}
+          data={activeTree}
           layout={layout}
           colorMin={60}
           colorMax={80}
+          showBreadcrumb
           inputLabel="Coverage by folder"
           valueUnitLabel="lines"
         />
