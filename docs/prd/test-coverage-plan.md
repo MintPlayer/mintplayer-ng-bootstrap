@@ -1,7 +1,8 @@
 # Plan — raising and defending test coverage
 
 PRD: [test-coverage.md](./test-coverage.md)
-Status: **M1–M10 and M12 done** (2026-08-18) on `feat/coverage-honest-denominator`, not pushed.
+Status: **M1–M10, M12 and M13 done** (2026-08-18) on `feat/coverage-honest-denominator`, not pushed.
+M14 in progress.
 M11 lives in [coverage-pr-gate-plan.md](./coverage-pr-gate-plan.md). Seven defects found and fixed
 (table below). The M12 sweep is green and its measured figures are recorded at the bottom — the
 headline number **misses the PRD's 80% target at 71.0%**, and what remains is enumerated there
@@ -21,6 +22,8 @@ rather than rounded away.
 | M10 ✅ | scheduler + scheduler-core + datatable branch coverage | ~988 |
 | M11 | Turn on the ratchet gate | defends everything above |
 | M12 ✅ | Single verification sweep | — |
+| M13 ✅ | `mintplayer-qr-code` — the largest untested library | 725 lines at 0% |
+| M14 | Deepen the dock and file-manager elements | the two biggest partial files |
 
 ## Ordering rationale
 
@@ -665,3 +668,76 @@ scheduled. It is the content of a follow-up: **M13 would be qr-code + the micro-
 import sweep**, which on these numbers reaches ~78–80% without touching anything hard.
 
 Then push, once, and read the single run.
+
+## M13 — `mintplayer-qr-code`, the largest untested library ✅
+
+Not in the original plan. It surfaced from M12's measurement as the biggest single hole left in the
+workspace: **725 lines at 0%**, worth about 3 points of the total on its own, and never scheduled
+because M1 put it in the denominator without anything following up.
+
+**421 tests; 0% → 97.4% lines, 90.9% branches, 100% functions.**
+
+### Why this library was worth doing properly rather than quickly
+
+It is a QR encoder, so ISO/IEC 18004 fixes nearly every value in it. That turns the usual problem
+of testing untested code — *what should this return?* — into a lookup, and it means the tests assert
+the **standard** rather than whatever the implementation currently produces. A test that merely
+pinned current behaviour would have preserved the two defects below rather than finding them.
+
+What that bought, concretely:
+
+- **Capacity against Table 7.** 41/25/17/10 characters at version 1-L, 7089/4296/2953/1817 at 40-L.
+  Those four numbers exercise both large lookup tables end to end; a single mistyped entry changes
+  them.
+- **The eight mask formulas against Table 10**, mode and EC-level indicators against Tables 2 and
+  12, alignment coordinates against Annex E — *including* the version-32 exception, which is the one
+  row the general interval formula cannot express and which the code carries a special case for.
+- **The BCH codes proved as codes.** Format information is asserted to have minimum Hamming distance
+  7 across all 32 values (BCH(15,5)) and version information ≥ 8 (BCH(18,6)) — the properties that
+  make them correctable — plus the canonical anchor version 7 = `0x07C94`.
+- **Reed–Solomon proved by its defining property**: the codeword formed by appending the EC bytes to
+  the data is exactly divisible by the generator polynomial. That needs no fixture at all and
+  catches any error in the field tables, the generator, the division, or the left-padding. It is the
+  strongest single test in the library.
+- **`create` asserted on the structural invariants a scanner looks for** before it reads any data:
+  three finder patterns in the right corners and none in the fourth, alternating timing patterns
+  along row and column 6, the fixed dark module at `(4v + 9, 8)`, a version block only from version
+  7.
+
+### Two defects, both silent
+
+| # | Where | Was | Now |
+|---|---|---|---|
+| 8 | `hex2rgba` (`renderer/utils.ts`) | A CSS colour NAME passed the length checks, parsed as `NaN`, and became fully transparent black | Characters validated as well as length; unparseable returns `null` |
+| 9 | `BitMatrix` constructor | `Array(n).map(() => false)` left both arrays SPARSE, so `xor` on an unwritten module turned it ON | `new Array(n).fill(false)` |
+
+Defect 8 is the more interesting one. `red` is three characters, so it sailed past the
+short-form length test, expanded to `rreeddFF`, and `parseInt(…, 16)` returned `NaN` — after which
+every shift produced 0. A consumer who wrote `color: { dark: 'red' }` got a **fully transparent**
+dark colour and rendered an invisible QR code, with nothing logged anywhere. The function already
+returned `null` for wrong *lengths*, so the intent was never in doubt; it simply never checked the
+characters.
+
+Defect 9 was latent — the encoder writes every module before masking runs — but `BitMatrix` is
+exported, and `undefined !== false` is `true`.
+
+### Two of my own expectations were wrong, and that is worth recording
+
+Both are now comments in the specs rather than silent corrections, because both are easy traps when
+reading the standard:
+
+- **EC block counts are totals across both groups.** Table 9 lists version 40-L as "19 blocks of 118
+  plus 6 blocks of 119"; the number the code returns is **25**, not 19. Taking the first group's
+  count as the total gives blocks that are too large and the interleaving runs off the end.
+- **Penalty rule N1 cannot be tested by comparing two partially-filled grids.** The light area
+  *around* a short run scores too, and at 7×7 a five-run and a six-run both come to exactly 63. The
+  rule is asserted on solid squares instead, where the whole score is computable by hand.
+
+### What is left
+
+Two barrel files (`index.ts`, `server.ts` — one re-export line each) and a handful of branches. The
+canvas renderer is covered through a canvas API **double**: this package's vitest environment is
+`node`, and what is under test is what the renderer asks the canvas to do — how big to be, what to
+clear, what pixel data to write. No geometry is faked, so R3 is respected. The most valuable case
+there is the one asserting the renderer does **nothing** without a `window`, which is what keeps the
+package importable during SSR.

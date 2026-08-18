@@ -465,6 +465,20 @@ and four micro-libs at zero (112 lines). A follow-up covering exactly those reac
 touching anything hard — which is a better description of the remaining work than "the target was
 missed".
 
+**The first of those four is now done (M13).** `mintplayer-qr-code` went **0% → 97.4% lines / 90.9%
+branches** on 421 tests, and turned up two more silent defects — a CSS colour name parsing to fully
+transparent black (an invisible QR code, logged nowhere), and a sparse-array `BitMatrix` whose `xor`
+switched unwritten modules ON.
+
+It also demonstrated something worth generalising from, because it is the opposite of the dock's
+situation: **where a specification exists, testing untested code stops being guesswork.** Asserting
+ISO/IEC 18004's own numbers — capacity Table 7, the mask formulas, the BCH minimum distances, and
+Reed–Solomon's defining divisibility property — meant the tests could *disagree* with the
+implementation, which is how the two defects surfaced. A suite that pinned current behaviour would
+have frozen both of them in place. Where no such external truth exists, D8's "read the branch delta,
+not the line delta" is doing much weaker work, and that difference should inform how much a coverage
+number is worth per area.
+
 **Two limits are structural rather than pending.** The dock element keeps ~970 uncovered lines that
 are pointer and hit-testing paths against a jsdom tree where every rect is zero; per R3 they are not
 faked, and they are covered by the four dock e2e specs instead. And e2e still contributes nothing to
