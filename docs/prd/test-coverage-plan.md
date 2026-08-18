@@ -2,7 +2,7 @@
 
 PRD: [test-coverage.md](./test-coverage.md)
 Status: **M1–M10 and M12–M14 done** (2026-08-18) on `feat/coverage-honest-denominator`, not pushed.
-Workspace total **74.59% lines** (was 71.02% at M12).
+Workspace total **74.98% lines** (was 71.02% at M12).
 M11 lives in [coverage-pr-gate-plan.md](./coverage-pr-gate-plan.md). Seven defects found and fixed
 (table below). The M12 sweep is green and its measured figures are recorded at the bottom — the
 headline number **misses the PRD's 80% target at 71.0%**, and what remains is enumerated there
@@ -810,10 +810,36 @@ the exact failure mode D8 warns about.
   nothing in it never survives to be rendered. Testing it would mean constructing a state the
   component does not allow.
 
+### M14b — what two investigation agents found that the above had missed
+
+Two agents mapped every uncovered region of both files and classified each as pure, DOM-drivable or
+geometry-bound. Most of what they listed was already done; the remainder was real, and took
+**file-manager 76.3% → 84.05% lines** (attribute configuration, the lazy-tree bridge, the size/date
+formatters, shift-range selection) and **the dock element 49.2% → 51.8%** (the splitter's
+resize-end → flex-weight conversion with its bubbling guard, dropping back into an empty main area,
+moving a pane out of a floating window).
+
+**Both reports contained a claim that did not survive checking, and both are worth recording as a
+caution about delegated measurement:**
+
+- The dock agent reported `dock/src/core/resize.ts` at **15%** line coverage and made it its
+  top recommendation on coverage-per-effort grounds. It is at **99.55%** — the reading came from a
+  filtered vitest run that loaded only some of the core spec files. Acting on it would have meant
+  rewriting tests that already existed.
+- Both agents classified the dock's `tab-activate` handler as DOM-drivable. It is not. The handler
+  resolves a tab with `:scope > [data-tab-id=…]`, and **jsdom does not implement `:scope`**:
+  measured, `querySelector(':scope > *')` returns null on an element with six children while the
+  same selector without `:scope` finds them. The child combinator is load-bearing — without it a
+  nested stack's tabs would match and activate the wrong pane — so the selector stays, the spec
+  asserts the precondition instead, and activation remains covered by the dock e2e specs.
+
+The general point: a delegated coverage map is a lead, not a result. Both errors were cheap to
+catch by re-measuring, and expensive to act on.
+
 ### Where the workspace stands
 
-**74.59% lines (17,860 / 23,944)**, up from 71.02% at M12. web-components 78.5%, qr-code 97.4%,
-vue 89.2%, api 92.5%.
+**74.98% lines (17,953 / 23,944)**, up from 71.02% at M12. web-components 79.0%, qr-code 97.4%,
+file-manager 84.1%, vue 89.2%, api 92.5%.
 
 The remaining distance to the 80% target is now two blocks, not four:
 

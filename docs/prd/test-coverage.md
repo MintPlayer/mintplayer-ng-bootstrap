@@ -2,7 +2,7 @@
 
 Status: **M1–M10 and M12–M14 implemented** (2026-08-18) on `feat/coverage-honest-denominator`; M11
 (the gate) lives in [coverage-pr-gate.md](./coverage-pr-gate.md). The verified sweep lands at
-**74.59% lines**, short of §6's 80% target — §7c records what remains and why it is concentrated
+**74.98% lines**, short of §6's 80% target — §7c records what remains and why it is concentrated
 rather than diffuse.
 Plan: [test-coverage-plan.md](./test-coverage-plan.md)
 
@@ -486,9 +486,10 @@ the metric (F7), so ~6,500 lines of proven behaviour remain invisible to it.
 
 ## 7d. M14, and what the dock's ceiling actually is
 
-M13 and M14 took the workspace to **74.59% lines** (17,860 / 23,944). The file-manager went
-56.7% → 76.3% on its operations surface — new folder, rename, delete, clipboard, the context menu
-and the icon-grid keyboard — none of which needed geometry; it had simply never been driven.
+M13 and M14 took the workspace to **74.98% lines** (17,953 / 23,944). The file-manager went
+56.7% → **84.05%** across its operations surface (new folder, rename, delete, clipboard, context
+menu, icon-grid keyboard) and its declarative surface (attributes, the lazy-tree bridge, the cell
+formatters) — none of which needed geometry; it had simply never been driven.
 
 **The dock is the case worth generalising from, because its number barely moved.** 54 new tests over
 what a drop DOES — which node moves where, the four split zones, tearing off to float, and that the
