@@ -1,8 +1,8 @@
 # Plan — raising and defending test coverage
 
 PRD: [test-coverage.md](./test-coverage.md)
-Status: **M1–M10, M12 and M13 done** (2026-08-18) on `feat/coverage-honest-denominator`, not pushed.
-M14 in progress.
+Status: **M1–M10 and M12–M14 done** (2026-08-18) on `feat/coverage-honest-denominator`, not pushed.
+Workspace total **74.59% lines** (was 71.02% at M12).
 M11 lives in [coverage-pr-gate-plan.md](./coverage-pr-gate-plan.md). Seven defects found and fixed
 (table below). The M12 sweep is green and its measured figures are recorded at the bottom — the
 headline number **misses the PRD's 80% target at 71.0%**, and what remains is enumerated there
@@ -23,7 +23,7 @@ rather than rounded away.
 | M11 | Turn on the ratchet gate | defends everything above |
 | M12 ✅ | Single verification sweep | — |
 | M13 ✅ | `mintplayer-qr-code` — the largest untested library | 725 lines at 0% |
-| M14 | Deepen the dock and file-manager elements | the two biggest partial files |
+| M14 ✅ | Deepen the dock and file-manager elements | the two biggest partial files |
 
 ## Ordering rationale
 
@@ -741,3 +741,88 @@ canvas renderer is covered through a canvas API **double**: this package's vites
 clear, what pixel data to write. No geometry is faked, so R3 is respected. The most valuable case
 there is the one asserting the renderer does **nothing** without a `window`, which is what keeps the
 package importable during SSR.
+
+## M14 — deepening the dock and file-manager elements ✅
+
+The two largest *partially* covered files in the workspace, and the two whose remaining uncovered
+mass had been written off as "geometry" without anyone checking how much of it really was.
+
+### file-manager: 56.7% → 76.3% lines, 53.4% → 71.7% branches
+
+61 tests over the operations surface — new folder, rename, delete, cut/copy/paste, the context menu,
+and the icon-grid keyboard. None of it needed geometry; it had simply never been driven.
+
+The component **never mutates the consumer's data**: every operation is a request carried on
+`mp-operation` that the application acts on, or does not. So the specs assert events rather than
+state — there is no state to assert. Two consequences shape every case:
+
+- **The negative cases are the important ones.** A cancelled dialog must emit *nothing*; an
+  application that trusted the event would create the folder, or delete the files, that the user
+  explicitly declined.
+- **The two resolver hooks are load-bearing, not decorative.** `dialogResolver` replaces
+  `window.prompt` / `window.confirm` — which an application needs for styling and a headless
+  environment does not have at all — and `conflictResolver` is the only thing that can decide what
+  a name clash means, because replace, skip and rename are all reasonable and it depends on the app.
+
+One structural finding worth carrying forward: **the rename editor is a datatable cell renderer.**
+It therefore exists only in the LIST view and renders one shadow boundary deeper than everything
+else in the component. The icon view has no rename affordance of its own — `F2` there sets the
+target and nothing appears until the user switches views.
+
+### dock: `parsePath` and `pathsEqual` into core, and drop semantics tested
+
+`parsePath` moved to `dock/src/core/types.ts` beside `formatPath`, which is the function it has to
+agree with: the pointer drop path formats a path onto `data-path` and reads it back, so a round-trip
+that loses anything sends a drop to the wrong node. That agreement is now a property test rather
+than an assumption. `pathsEqual` went with it.
+
+54 tests over what a drop *does*: which node moves where, the four split zones, tearing a pane off
+to float, and — the one that would catch a regression in any of the tree functions — that the layout
+stays **canonical** after every move and every sequence of moves (no empty stacks, no single-child
+splits, no same-direction nesting, weights summing to 1).
+
+They are driven through the keyboard move flow, which is deliberate. The dock has two ways to move a
+pane and they converge on the same `handleDrop`; only the keyboard one is reachable here, because
+the pointer one ends in hit-testing against rects jsdom reports as zero. **Arming move mode is
+itself unreachable** — the dock reads the focused tab through `shadowRoot.activeElement` and jsdom
+does not surface a button focused inside `mp-tab-control`'s nested shadow root, the same limitation
+`mint-dock-manager.aria.spec.ts` already documents. So arming is set directly and everything after
+it runs exactly as it does for a user.
+
+**Element line coverage moved from 48.5% to 49.2%, and that is the honest result.** What remains is
+`beginCornerResize`, `handleCornerResizeMove`, `preparePaneDragSource`, `showDropIndicator`,
+`onIntersectionDoubleClick`, `renderSnapMarkersForCorner`, `updatePaneDragDropTargetFromPoint`,
+`finalizeDropFromPoint`, `renderIntersectionHandles`, the three `findDropZone*` / `findStack*`
+hit-testers, `beginFloatingResize`, `handleFloatingResizeMove`, `updateFloatingPanePositions` and
+`ensureHeaderDragPlaceholder` — about 480 lines in the largest runs alone, every one of them reading
+`getBoundingClientRect`, `elementsFromPoint`, or pointer capture. Per R3 they are not faked. **The
+value of this milestone in the dock is behavioural, not numeric**, and pretending otherwise would be
+the exact failure mode D8 warns about.
+
+### Two behaviours recorded rather than "fixed"
+
+- **Floating the LAST pane is allowed**, leaving the main area empty. That is deliberate:
+  `handleDrop` carries an explicit branch for dropping onto a dock with no root, which is the path
+  that brings the pane back. An empty main area is a state the dock recovers from, not one it
+  prevents.
+- **The empty-window placeholder in `renderFloatingPanes` is unreachable.** Normalization runs at
+  the end of every mutation and drops any floating window whose root is null, so a window with
+  nothing in it never survives to be rendered. Testing it would mean constructing a state the
+  component does not allow.
+
+### Where the workspace stands
+
+**74.59% lines (17,860 / 23,944)**, up from 71.02% at M12. web-components 78.5%, qr-code 97.4%,
+vue 89.2%, api 92.5%.
+
+The remaining distance to the 80% target is now two blocks, not four:
+
+| | Uncovered | Note |
+|---|---:|---|
+| `mintplayer-ng-bootstrap` | 1,611 | Angular wrappers; the largest block left |
+| `tools` | 538 | script shells — process orchestration, not logic |
+| `mintplayer-react-bootstrap` | 106 | wrappers no test imports; cheap, one import each |
+| micro-libs | 142 | `dijkstra`, `pagination`, `ng-animations`, `encode-utf8`, `ng-qr-code` |
+
+The last two rows are ~250 lines and about a point between them. The first is where the next real
+milestone is.

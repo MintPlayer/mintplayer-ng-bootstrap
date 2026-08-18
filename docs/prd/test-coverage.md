@@ -1,8 +1,8 @@
 # PRD — raising and defending test coverage
 
-Status: **M1–M10 and M12 implemented** (2026-08-18) on `feat/coverage-honest-denominator`; M11
+Status: **M1–M10 and M12–M14 implemented** (2026-08-18) on `feat/coverage-honest-denominator`; M11
 (the gate) lives in [coverage-pr-gate.md](./coverage-pr-gate.md). The verified sweep lands at
-**71.02% lines**, short of §6's 80% target — §7c records what remains and why it is concentrated
+**74.59% lines**, short of §6's 80% target — §7c records what remains and why it is concentrated
 rather than diffuse.
 Plan: [test-coverage-plan.md](./test-coverage-plan.md)
 
@@ -479,10 +479,41 @@ have frozen both of them in place. Where no such external truth exists, D8's "re
 not the line delta" is doing much weaker work, and that difference should inform how much a coverage
 number is worth per area.
 
-**Two limits are structural rather than pending.** The dock element keeps ~970 uncovered lines that
+**Two limits are structural rather than pending.** The dock element keeps ~950 uncovered lines that
 are pointer and hit-testing paths against a jsdom tree where every rect is zero; per R3 they are not
 faked, and they are covered by the four dock e2e specs instead. And e2e still contributes nothing to
 the metric (F7), so ~6,500 lines of proven behaviour remain invisible to it.
+
+## 7d. M14, and what the dock's ceiling actually is
+
+M13 and M14 took the workspace to **74.59% lines** (17,860 / 23,944). The file-manager went
+56.7% → 76.3% on its operations surface — new folder, rename, delete, clipboard, the context menu
+and the icon-grid keyboard — none of which needed geometry; it had simply never been driven.
+
+**The dock is the case worth generalising from, because its number barely moved.** 54 new tests over
+what a drop DOES — which node moves where, the four split zones, tearing off to float, and that the
+tree stays canonical after any sequence of moves — lifted the element from 48.5% to 49.2%. That is
+not a failure of the tests. What remains uncovered is ~480 lines across `beginCornerResize`,
+`handleCornerResizeMove`, `preparePaneDragSource`, `showDropIndicator`, `onIntersectionDoubleClick`,
+`renderSnapMarkersForCorner`, the three hit-testers and the floating-resize handlers — every one of
+them reading `getBoundingClientRect`, `elementsFromPoint` or pointer capture, all of which jsdom
+reports as zero.
+
+So the dock has a **real ceiling in the mid-fifties**, and a coverage target applied uniformly across
+the workspace would push someone into faking rects to clear it. That is precisely R3's failure mode,
+and it argues for something this PRD did not anticipate: **per-area expectations, not one number.**
+A library with an external specification (qr-code: 97%) and a library that is mostly pointer
+geometry (the dock: ~50%) are not measuring the same thing, and holding them to the same figure
+rewards the wrong work in one of them.
+
+Two dock behaviours were recorded rather than "fixed", both discovered by writing the tests:
+floating the LAST pane is allowed and leaves an empty main area, which `handleDrop` has an explicit
+branch to recover from; and the empty-window placeholder in `renderFloatingPanes` is unreachable,
+because normalization drops any floating window whose root is null before it can render.
+
+The distance to 80% is now two blocks rather than four: `mintplayer-ng-bootstrap` (1,611 uncovered,
+the Angular wrappers) and `tools` (538, script shells). React wrappers (106) and the micro-libs
+(142) are together about a point and cost an import each.
 
 ## 8. Risks
 
