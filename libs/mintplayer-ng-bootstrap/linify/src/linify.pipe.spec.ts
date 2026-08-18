@@ -31,12 +31,10 @@ describe('BsLinifyPipe', () => {
     expect(pipe.transform('  a  \n  b  ')).toEqual(['  a  ', '  b  ']);
   });
 
-  // `.replace('\r\n', '\n')` without the /g flag rewrites only the FIRST CRLF,
-  // so every later line keeps a trailing \r. Asserted as-is rather than as the
-  // behaviour one would expect: consumers splitting Windows-authored text get
-  // this today, and changing it is a behaviour change, not a test fix.
-  it('normalizes only the first CRLF, leaving later ones with a trailing CR', () => {
-    expect(pipe.transform('a\r\nb\r\nc')).toEqual(['a', 'b\r', 'c']);
+  // Regression guard: without the /g flag only the FIRST CRLF was rewritten, so
+  // every later line of Windows-authored text kept a trailing \r.
+  it('normalizes every CRLF, not just the first', () => {
+    expect(pipe.transform('a\r\nb\r\nc')).toEqual(['a', 'b', 'c']);
   });
 
   it('handles a lone CRLF-separated pair correctly', () => {

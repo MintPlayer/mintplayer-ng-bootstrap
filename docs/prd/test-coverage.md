@@ -1,6 +1,6 @@
 # PRD — raising and defending test coverage
 
-Status: **Proposed** (2026-08-17).
+Status: **In progress** (2026-08-18) — M1–M6 implemented on `feat/coverage-honest-denominator`.
 Plan: [test-coverage-plan.md](./test-coverage-plan.md)
 
 Grounded in a measured investigation of the workspace at `master@e01681ec`, using the live
@@ -386,6 +386,36 @@ percentage (F6).
   both (§6), but reviewers should read the branch delta. F4 is the finding that says line coverage
   can be raised without testing anything new.
 
+## 7b. What the first six milestones actually changed
+
+Recorded here because the plan's per-milestone notes are long, and because two of these outcomes
+were not predicted by this document.
+
+**Measured effect.** M1 corrects the denominator: web-components 357 files, ng-bootstrap 507,
+react 129, vue 130 (55 of them `.vue` SFCs), tools 20, dijkstra 8 — the last from a suite with no
+spec files at all, which is F1 in miniature. `apps/api` enters the report for the first time at
+**92.1% lines / 53.7% branches** over 1,503 lines. Test counts: tools 0 → 124, api 50 → 164,
+ng pipes 0 → 66, ribbon 0 → 218.
+
+**Two mechanisms this PRD did not know about:**
+
+- **Vitest 4's `coverageConfigDefaults.exclude` no longer carries `**/*.d.ts`.** With
+  `coverage.all` gone, `include` is the only file selector, so ambient declaration files land in
+  the denominator as 0%-covered "source". Two leaked into the first web-components run and were
+  caught only by diffing the emitted `SF:` list against disk. Every `exclude` now names it.
+- **The coverage upload is what finalizes the build, and it ran *before* the API test step in both
+  workflows.** A Cobertura report globbed there could never have existed. F5 identified the missing
+  collection but not the ordering; the .NET steps now run ahead of the upload.
+
+**Testing found bugs, which is the point.** Four defects, all in code no test had ever loaded, all
+now fixed with regression guards: `bsWordCount` counted a newline-separated pair as one word;
+`bsLinify` normalized only the first CRLF; `bsSlugify` emitted an empty slug for any non-Latin
+title; `mp-quick-access-toolbar` overwrote a consumer's `aria-label` before first paint. A fifth,
+in `check-ribbon-bundle-size.mjs`, silently disabled the bundle budget on a malformed `--max`
+(`size > NaN` is `false`). Three of the four were invisible because a nearby input shape worked —
+two spaces, the first line, the first update — which is the argument for edge-case assertions over
+`should create`, i.e. NG1 and D8, arrived at empirically. Full table in the plan.
+
 ## 8. Risks
 
 - **R1 — The number drops when D1/D3 land, and looks like a regression.** It is a denominator
@@ -397,7 +427,10 @@ percentage (F6).
 - **R3 — jsdom cannot exercise the layout code that holds the most uncovered lines.** Mitigated by
   D5 (extract pure logic); where extraction is not viable the lines stay uncovered and the target
   in §6 absorbs it. Do not fake `getBoundingClientRect` to manufacture coverage — a spec asserting
-  against invented geometry tests nothing.
+  against invented geometry tests nothing. **Applied in M6** beyond `getBoundingClientRect`: the
+  ribbon's overflow algorithm reads `offsetWidth`/`clientWidth`, which jsdom reports as 0, so only
+  its guard clauses are unit-tested and the measuring path stays with Playwright, against a real
+  engine (see F7 — that path is already proven there, it simply moves no number).
 - **R4 — Coverage targets incentivise assertion-free tests.** NG1 and D8 are the guard: review reads
   the branch delta, and `should create` specs move line coverage without moving branch coverage.
 - **R5 — The upload's `fail-ci-if-error: true` makes a coverage-service outage block `deploy`.**
@@ -410,8 +443,11 @@ percentage (F6).
   the user: yes — all valid files are included.** Folded into D1. They are ~200 uncovered lines of
   mass, so they change the workspace percentage very little, but each needs its own
   `coverage.include` and several need a coverage block added from scratch (M1).
-- **Q2** Is the ribbon family (F2) worth a dedicated PR of its own? At 32 files it is larger than
-  any other milestone in the plan and could reasonably ship separately.
+- ~~**Q2** Is the ribbon family (F2) worth a dedicated PR of its own?~~ **Resolved 2026-08-18: no.**
+  Splitting would put the denominator correction (M1, which makes the number *drop*) and the largest
+  single fill in separate PRs whose numbers only make sense read together, and the reviewability a
+  split buys is discarded by the squash-merge anyway. Per-milestone commits carry the review
+  structure instead.
 - ~~**Q3** Does the coverage service support a patch/status-check API that GitHub can gate on?~~
   **Resolved 2026-08-17 by reading the service's source: no, and none is close.** There is no
   checks/status code anywhere in it, `/status`, `/pulls` and `/compare` all 404, and the only delta

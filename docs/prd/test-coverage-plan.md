@@ -1,7 +1,8 @@
 # Plan — raising and defending test coverage
 
 PRD: [test-coverage.md](./test-coverage.md)
-Status: **In progress** (2026-08-18) on `feat/coverage-honest-denominator`. M1–M6 done.
+Status: **In progress** (2026-08-18) on `feat/coverage-honest-denominator`, not pushed.
+M1–M6 done, plus the four defect fixes below. **M7 is next.**
 
 | Milestone | Scope | Uncovered lines addressed |
 |---|---|---|
@@ -251,9 +252,8 @@ Pure pipes and directives — call the transform, assert the output, including t
 with no executable line, so there is nothing to test and nothing to cover — it is correctly absent
 from the report rather than a gap in it.
 
-Three behaviours were not what the name promises. All three are **pinned as-is** rather than fixed:
-each is a behaviour change that belongs in its own PR, and this milestone must not move the number
-by editing source.
+Three behaviours were not what the name promises. All three were pinned as defects first and then
+**fixed on request** — see [Defects found and fixed](#defects-found-and-fixed) below.
 
 - **`bsWordCount` counts a single newline or tab between two words as ONE word.** It collapses
   `s{2,}` to a space and then splits on a literal `' '`, so `'hello
@@ -313,20 +313,81 @@ coverage over an algorithm whose entire subject is real geometry, and the green 
 and are covered here; the measuring path stays with the Playwright suites, where it is already
 exercised against a real engine.
 
-**A second a11y defect found, pinned not fixed** (same rule as M5 — a behaviour change belongs in
-its own PR): `mp-quick-access-toolbar` **overwrites a consumer-supplied `aria-label`.**
+**A second a11y defect found, and fixed** (see [Defects found and fixed](#defects-found-and-fixed)):
+`mp-quick-access-toolbar` **overwrote a consumer-supplied `aria-label`.**
 `connectedCallback` guards it with `if (!this.hasAttribute('aria-label'))`, but `updated()` then
 writes it unconditionally whenever `label` is in the changed set — and a Lit property with a
 class-field default IS in that set on the very first update. So the guard is dead code and a
 consumer's own, typically localized, label is replaced with "Quick Access Toolbar" before the first
-paint. `mp-ribbon` gets this right via `applyRegionLabel` + `lastAppliedRegionLabel`, and that
-asymmetry is asserted in both directions.
+paint. `mp-ribbon` already got this right via `applyRegionLabel` + `lastAppliedRegionLabel`; the
+toolbar now uses the same shape.
 
 **One jsdom limit worth knowing:** it does not forward focus through a shadow root's
 `delegatesFocus`, and the QAT sets no tabindex of its own (the roving index is `mp-ribbon-group`'s
 job). `document.activeElement` therefore stays on `<body>` however correct the component is. The
 toolbar specs assert **which item was asked to take focus** instead, which is the actual behaviour
 under test and holds in every engine.
+
+## Defects found and fixed
+
+Writing a test for code nobody had tested found four real bugs. Each was first pinned as a test
+asserting the wrong-but-actual behaviour; all four were then **fixed on request (2026-08-18)** and
+the tests turned into regression guards. Breaking changes are acceptable here per the workspace's
+standing rule — the cleanest behaviour wins and the break is documented.
+
+| # | Where | Was | Now |
+|---|---|---|---|
+| 1 | `bsWordCount` (M5) | A single newline or tab between two words counted as **one** word | Splits on `/s+/`; any whitespace run separates words |
+| 2 | `bsLinify` (M5) | Only the **first** CRLF normalized — later lines kept a trailing `` | `/
+/g` |
+| 3 | `bsSlugify` (M5) | A non-Latin title slugified to the **empty string** | Keeps `p{L}p{N}`; Latin diacritics still stripped |
+| 4 | `mp-quick-access-toolbar` (M6) | Overwrote a consumer-supplied `aria-label` before first paint | `applyLabel()` + `lastAppliedLabel`, mirroring `mp-ribbon` |
+
+Notes on each:
+
+1. **`bsWordCount`** collapsed only runs of *two or more* whitespace characters and then split on a
+   literal `' '`, so `'hello
+big	world'` was 1 and `'hello 
+ world'` was 2. Two or more
+   whitespace characters happened to work, which is exactly what made it hard to notice.
+2. **`bsLinify`**'s `.replace('
+', '
+')` had no `/g` flag. Windows-authored text came back
+   with a stray `` on every line after the first, riding along into whatever the consumer
+   rendered or compared.
+3. **`bsSlugify`**'s `[^w-]+` is ASCII, so every character of a script with no Latin
+   decomposition was removed. A Japanese or Cyrillic title produced `''` — a route segment that
+   cannot work, not merely one that looks unfamiliar. **This changes emitted slugs for non-Latin
+   input** (from empty to the script itself); Latin slugs, including accented ones, are unchanged.
+4. **`mp-quick-access-toolbar`** guarded the consumer's label in `connectedCallback`, but
+   `updated()` then wrote it unconditionally whenever `label` was in the changed set — and a Lit
+   property with a class-field default **is** in that set on the very first update. The guard was
+   dead code and a localized label was replaced with the English default before first paint.
+
+The general lesson, worth keeping: **three of the four were invisible because a nearby input shape
+worked.** Whitespace counting worked at two spaces, CRLF worked on line one, the label guard worked
+until the first update. Tests that only exercise the happy shape would have passed on all of them.
+
+## Does Playwright contribute to coverage? No.
+
+Asked during M6, and the answer is [PRD F7](./test-coverage.md#f7--e2e-contributes-nothing-to-the-metric-and-is-wildly-asymmetric-across-frameworks)
+— recorded here because it shapes several decisions in this plan:
+
+- Coverage comes from the `test` target (vitest → lcov). E2E lives on a separate `e2e` target,
+  emits no lcov, and Playwright coverage instrumentation is configured nowhere.
+- So `ng-bootstrap-demo-e2e`'s 47 specs / ~5,900 lines prove behaviour but move **no number** —
+  and the React and Vue suites (11 specs each, mostly 4–10 line re-exports of
+  `tools/e2e-shared/*-suites.ts`) leave those frameworks unproven *and* unmeasured.
+- Two consequences already applied: **NG2** (don't rewrite e2e as unit tests) and M6's decision to
+  cover `mp-ribbon`'s overflow *guards* but not its measuring path — that path is already exercised
+  by Playwright against a real engine, and faking `offsetWidth` in jsdom would add a number without
+  adding a guarantee.
+
+Wiring V8 coverage through Playwright (collect per browser, merge, convert to lcov) is a real
+option and would fold that ~6,500 lines of proven behaviour into the metric. It is **not in this
+plan**: it is a new subsystem with its own flakiness surface, and it would change what the headline
+number means mid-programme — the same reason M1 ships alone. Worth its own PRD once the ratchet is
+running.
 
 ## M7 — React and Vue behavioural specs [PRD F6, G5, D10]
 

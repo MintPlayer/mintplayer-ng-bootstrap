@@ -49,11 +49,19 @@ describe('BsSlugifyPipe', () => {
     expect(pipe.transform('!!! ???')).toBe('');
   });
 
-  // The regexes are ASCII \w, so scripts without a Latin decomposition are
-  // removed entirely. Pinning this down because it is surprising and load-
-  // bearing for any consumer slugifying non-Latin titles.
-  it('drops characters outside the ASCII word class', () => {
-    expect(pipe.transform('日本語 title')).toBe('title');
+  // Regression guard. The character class used to be ASCII \w, which removed
+  // every character of a script with no Latin decomposition — so a non-Latin
+  // title slugified to the empty string, i.e. a route segment that cannot work.
+  it('keeps letters from any script', () => {
+    expect(pipe.transform('日本語 title')).toBe('日本語-title');
+  });
+
+  it('keeps a non-Latin title that has no Latin part at all', () => {
+    expect(pipe.transform('日本語')).toBe('日本語');
+  });
+
+  it('keeps Cyrillic', () => {
+    expect(pipe.transform('Привет мир')).toBe('привет-мир');
   });
 
   it('is idempotent — slugifying a slug changes nothing', () => {

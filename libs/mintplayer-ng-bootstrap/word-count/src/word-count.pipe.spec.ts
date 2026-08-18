@@ -34,16 +34,15 @@ describe('BsWordCountPipe', () => {
     expect(pipe.transform('   ')).toBe(0);
   });
 
-  // KNOWN DEFECT, pinned rather than endorsed. The implementation collapses
-  // `\s{2,}` to a single space and then splits on a literal ' ', so a SINGLE
-  // newline or tab between two words is neither collapsed nor split on — the
-  // pair counts as one word. Two or more whitespace characters happen to work,
-  // which is what makes it hard to notice.
-  it('counts words separated by a single newline or tab as one', () => {
-    expect(pipe.transform('hello\nbig\tworld')).toBe(1);
+  // Regression guard. The earlier implementation collapsed only runs of TWO or
+  // more whitespace characters and then split on a literal ' ', so a SINGLE
+  // newline or tab between two words counted as one word — while two or more
+  // whitespace characters happened to work, which is what made it hard to notice.
+  it('counts words separated by a single newline or tab', () => {
+    expect(pipe.transform('hello\nbig\tworld')).toBe(3);
   });
 
-  it('counts correctly when the separator is two or more whitespace characters', () => {
+  it('counts words separated by two or more whitespace characters', () => {
     expect(pipe.transform('hello \n world')).toBe(2);
   });
 

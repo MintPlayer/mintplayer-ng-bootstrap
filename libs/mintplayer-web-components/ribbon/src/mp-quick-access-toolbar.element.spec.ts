@@ -87,22 +87,28 @@ describe('mp-quick-access-toolbar — role and name', () => {
     expect(toolbar.getAttribute('aria-label')).toBe('Favourites');
   });
 
-  // KNOWN DEFECT, pinned rather than endorsed. `connectedCallback` guards a
-  // consumer-supplied aria-label with `if (!this.hasAttribute('aria-label'))`,
-  // but `updated()` then writes it unconditionally whenever `label` is in the
-  // changed set — and a Lit property with a class-field default IS in that set on
-  // the very first update. So the guard is dead code and a consumer's own label,
-  // typically the localized one, is overwritten before the first paint.
-  it('overwrites a consumer-supplied aria-label on first render', async () => {
+  // A consumer's own aria-label is the more specific one, and typically the
+  // localized one. Regression guard: `connectedCallback`'s "don't clobber" check
+  // used to be dead code, because `updated()` then wrote the attribute
+  // unconditionally whenever `label` was in the changed set — and a Lit property
+  // with a class-field default IS in that set on the very first update.
+  it('never clobbers a consumer-supplied aria-label', async () => {
     const toolbar = await mount(
       '<mp-quick-access-toolbar aria-label="Mine"></mp-quick-access-toolbar>',
     );
-    expect(toolbar.getAttribute('aria-label')).toBe('Quick Access Toolbar');
+    expect(toolbar.getAttribute('aria-label')).toBe('Mine');
   });
 
-  // The guard itself does work before the first update — which is what makes
-  // the defect above easy to miss when reading connectedCallback alone.
-  it('respects a consumer-supplied aria-label until the first update lands', () => {
+  it('leaves a consumer-supplied aria-label alone when label changes later', async () => {
+    const toolbar = await mount(
+      '<mp-quick-access-toolbar aria-label="Mine"></mp-quick-access-toolbar>',
+    );
+    toolbar.label = 'Renamed';
+    await toolbar.updateComplete;
+    expect(toolbar.getAttribute('aria-label')).toBe('Mine');
+  });
+
+  it('respects a consumer-supplied aria-label before the first update lands', () => {
     const toolbar = document.createElement('mp-quick-access-toolbar');
     toolbar.setAttribute('aria-label', 'Mine');
     document.body.appendChild(toolbar);
