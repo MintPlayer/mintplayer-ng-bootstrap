@@ -8,8 +8,8 @@ M11 lives in [coverage-pr-gate-plan.md](./coverage-pr-gate-plan.md). Nine defect
 the headline number **still misses the PRD's 80% target, at 74.98%**, and what remains is enumerated
 in M14 and M15 rather than rounded away.
 
-**Resuming on the dock? Start at M15**, which carries the current measurement and the only three
-items left that are not geometry-bound.
+M15 closed the dock's last non-geometry regions; what is left there is enumerated as **permanently
+uncovered**, not as future work.
 
 | Milestone | Scope | Uncovered lines addressed |
 |---|---|---|
@@ -27,7 +27,7 @@ items left that are not geometry-bound.
 | M12 ✅ | Single verification sweep | — |
 | M13 ✅ | `mintplayer-qr-code` — the largest untested library | 725 lines at 0% |
 | M14 ✅ | Deepen the dock and file-manager elements | the two biggest partial files |
-| M15 | Dock — the last non-geometry regions | ~70 of 1,311 uncovered |
+| M15 ✅ | Dock — the last non-geometry regions | 116 of 1,311 uncovered |
 
 ## Ordering rationale
 
@@ -857,31 +857,39 @@ The remaining distance to the 80% target is now two blocks, not four:
 The last two rows are ~250 lines and about a point between them. The first is where the next real
 milestone is.
 
-## M15 — the dock's last non-geometry regions
+## M15 — the dock's last non-geometry regions ✅
 
-**Measured 2026-08-18, after M14b.** `mint-dock-manager.element.ts` is at **51.79% lines / 38.57%
-branches**, with **1,311 uncovered lines** across 40 runs of 10+. `dock/src/core` is at **99.55%**
-and needs nothing.
+**Measured before: 51.79% lines / 38.57% branches, 1,311 uncovered.**
+**Measured after: 54.12% lines / 41.90% branches, 1,195 uncovered.** 116 lines, 9 spec cases short
+of doubling the estimate — and no geometry was faked to get them. `dock/src/core` was already at
+99.55% and needed nothing.
 
-This section exists so the next session does not have to re-derive the map. Re-measure with:
+Re-measure with:
 
 ```bash
 cd libs/mintplayer-web-components
-npx vitest run --pool=threads --coverage --coverage.reporter=json \
-  --coverage.include='dock/src/components/mint-dock-manager.element.ts' dock
+npx vitest run --pool=threads --coverage --coverage.reporter=json   --coverage.include='dock/src/components/mint-dock-manager.element.ts' dock
 # then parse coverage/libs/mintplayer-web-components/coverage-final.json —
 # the text reporter TRUNCATES the "Uncovered Line #s" column and is useless here
 ```
 
-### The three items that are actually reachable
+### What was covered, and why each was reachable
 
-| Lines | Method | Why it is reachable | Approach |
-|---|---:|---|---|
-| 3747-3760 (14) | `reorderPaneInLocation` | **PURE** — array splice + activePane, no DOM at all | `handleDrop(samePath, 'center')`, i.e. dropping a pane back onto its own stack, which reorders it to the end. Same technique as the "dropping into an empty main area" tests already in `mint-dock-manager.drops.spec.ts`. Zero stubs. **Do this one first.** |
-| 3202-3226 + 3228-3241 (39) | `handleFloatingStackDrop` | takes `(sourceIndex, targetPath, zone)` — callable with data, like `handleDrop` | Drop a WHOLE floating window onto a docked stack. Reachable by calling it directly; verify first that it does not read rects before committing to it. |
-| 2984-3001 + 3023-3042 (38) | `reorderPaneInLocationAtIndex`, `finalizeDropFromPoint` | needs `elementsFromPoint` + tab-button rects | **Judgement call.** `mint-dock-manager.element.spec.ts` already stubs exactly those two for `computeHeaderInsertIndex`, so there is precedent — but it is stubbing geometry, and R3 exists to stop that becoming routine. Decide deliberately; do not drift into it. |
+| Method | Lines | Why it was reachable |
+|---|---:|---|
+| `reorderPaneInLocation` | 14 | **Pure.** A centre drop whose source and target paths are the same stack. `handleDrop` guards this case ahead of the general remove-then-add path, because that path would remove the pane and let normalization collapse a stack that briefly held one fewer. |
+| `handleFloatingStackDrop` | 39 | Takes `(sourceIndex, targetPath, zone)` and **reads no geometry** — verified before writing the specs, not assumed. The unit of the move is a whole subtree, so an edge zone splits the target against the window's own tree. |
+| `reorderPaneInLocationAtIndex` | 18 | **Pure**, and the half of the third item that turned out not to need rects at all. |
 
-Realistic ceiling from all three: **~90 lines, taking the element to roughly 56%.**
+That last row is the useful correction to the map this section originally carried. It listed
+`reorderPaneInLocationAtIndex` and `finalizeDropFromPoint` together as one geometry-bound item and
+called it a judgement call. Reading the code split them cleanly: working out *which* index a drop
+lands on needs tab-button rects, but what that index *means* is array work with no DOM in it. The
+pure half cost nothing and needed no stubs; only `finalizeDropFromPoint` stays uncovered.
+
+**The judgement call was therefore never taken, and should stay untaken.** Precedent for stubbing
+`elementsFromPoint` and button rects exists in `mint-dock-manager.element.spec.ts`, but R3 exists to
+stop that becoming routine, and splitting the method was the better answer than reaching for it.
 
 ### What is permanently uncovered, and why
 
@@ -892,7 +900,8 @@ an `elementsFromPoint()` or a pointer capture, all of which jsdom reports as zer
 `handleCornerResizeMove` (41) · `preparePaneDragSource` (39) · `renderSnapMarkersForCorner` (33) ·
 `updatePaneDragDropTargetFromPoint` (24) · `renderIntersectionHandles` (19) ·
 `findDropZoneByPoint` (18) · `findStackInTargets` (14) · `beginFloatingResize` (13) ·
-`findDropZoneInTargets` (12) · `handleFloatingResizeMove` (11) · `ensureHeaderDragPlaceholder` (11)
+`findDropZoneInTargets` (12) · `handleFloatingResizeMove` (11) · `ensureHeaderDragPlaceholder` (11) ·
+`computeHeaderInsertIndex` + `finalizeDropFromPoint` (20)
 
 These are covered by the four dock e2e specs against a real engine. **Report them as permanently
 uncovered, not as future work** — and per R3 do not fake rects to reach them.
@@ -904,7 +913,8 @@ Three more are unreachable for reasons that are NOT geometry, and each would be 
   `querySelector(':scope > *')` returns null on an element with six children while the same
   selector without `:scope` finds them. The child combinator is load-bearing — without it a nested
   stack's tabs would match and activate the wrong pane. **Do not rewrite the selector to suit the
-  test runner.**
+  test runner.** The spec asserts the precondition (every tab carries the id and pane name the
+  handler looks up, as a direct child of its stack) instead.
 - **`onRootKeyDown`'s arm branch (3783-3794, 12 lines)** — reads the focused tab through
   `shadowRoot.activeElement`, which jsdom does not surface through `mp-tab-control`'s nested shadow
   root. Already documented in `mint-dock-manager.aria.spec.ts`; the specs set `paneMoveMode`
@@ -919,8 +929,9 @@ already covered in `core/geometry.spec.ts`.
 
 ### The honest framing to keep
 
-M14 added 54 behavioural tests to the dock and moved its line coverage 48.5% → 49.2%; M14b added
-more and reached 51.8%. **That ratio is the point, not a disappointment.** The dock's testable
-surface is nearly exhausted while more than a third of the file remains uncovered, which is why
+The dock element ends at **54.12%**, and that is the number to report. M14 added 54 behavioural
+tests and moved it 48.5% → 49.2%; M14b reached 51.8%; M15 reached 54.1% and exhausted everything
+that does not require a layout engine. **That curve is the finding, not a shortfall.** More than a
+third of the file is geometry whose correctness a jsdom assertion cannot establish, which is why
 §7d of the PRD argues for per-area expectations rather than one workspace number. A uniform 80%
 target applied here would push someone into faking rects — precisely R3's failure mode.

@@ -869,3 +869,395 @@ describe('moving a pane out of a floating window', () => {
     expect(dockedPanes().sort()).toEqual(['a', 'b']);
   });
 });
+
+describe('dropping a pane back onto its own stack', () => {
+  /*
+   * The one drop that changes tab ORDER rather than layout: a centre drop whose
+   * source and target paths are the same stack moves the pane to the end of the
+   * header and activates it. It is the reason `handleDrop` checks path equality
+   * before the general remove-then-add path — running that path here would
+   * remove the pane, then normalization would collapse a stack that briefly had
+   * one fewer pane, and a same-stack reorder would destroy the layout.
+   *
+   * Driven through `handleDrop` directly because the enumerated keyboard
+   * candidates skip the pane's own stack: there is no keyboard route to a
+   * no-op-looking target, so this branch is pointer-only in the product and
+   * pure data here.
+   */
+  const dropOnSelf = async (pane: string, path: unknown): Promise<void> => {
+    (dock as unknown as { dragState: unknown }).dragState = { pane, sourcePath: path };
+    (dock as unknown as { handleDrop: (p: unknown, z: string) => void }).handleDrop(path, 'center');
+    await settle();
+  };
+
+  const floatingPath = (index: number) => ({ type: 'floating', index, segments: [] });
+
+  it('moves the pane to the end of its own header', async () => {
+    dock.layout = stack('a', 'b', 'c') as never;
+    await settle();
+
+    await dropOnSelf('a', pathOf('a'));
+
+    expect((dock.layout.root as DockStackNode).panes).toEqual(['b', 'c', 'a']);
+  });
+
+  it('activates the pane that was dropped', async () => {
+    dock.layout = stack('a', 'b', 'c') as never;
+    await settle();
+
+    await dropOnSelf('a', pathOf('a'));
+
+    expect((dock.layout.root as DockStackNode).activePane).toBe('a');
+  });
+
+  it('is a no-op for a pane that is already last', async () => {
+    dock.layout = stack('a', 'b', 'c') as never;
+    await settle();
+
+    await dropOnSelf('c', pathOf('c'));
+
+    expect((dock.layout.root as DockStackNode).panes).toEqual(['a', 'b', 'c']);
+    expect((dock.layout.root as DockStackNode).activePane).toBe('c');
+  });
+
+  it('leaves the other stacks of a split alone', async () => {
+    dock.layout = split('horizontal', [stack('a', 'b'), stack('c', 'd')]) as never;
+    await settle();
+
+    await dropOnSelf('a', pathOf('a'));
+
+    const root = dock.layout.root as DockSplitNode;
+    expect((root.children[0] as DockStackNode).panes).toEqual(['b', 'a']);
+    expect((root.children[1] as DockStackNode).panes).toEqual(['c', 'd']);
+  });
+
+  it('announces the layout change so a host can persist the new tab order', async () => {
+    dock.layout = stack('a', 'b') as never;
+    await settle();
+    const changes: Event[] = [];
+    dock.addEventListener('dock-layout-changed', (e) => changes.push(e));
+
+    await dropOnSelf('a', pathOf('a'));
+
+    expect(changes.length).toBeGreaterThan(0);
+  });
+
+  it('marks the drop handled, so the drag does not fall through to a cancel', async () => {
+    dock.layout = stack('a', 'b') as never;
+    await settle();
+
+    await dropOnSelf('a', pathOf('a'));
+
+    expect((dock as unknown as { dragState: { dropHandled?: boolean } }).dragState.dropHandled).toBe(
+      true,
+    );
+  });
+
+  it('ignores a pane that is not in the stack it claims to come from', async () => {
+    dock.layout = stack('a', 'b') as never;
+    await settle();
+
+    await dropOnSelf('ghost', pathOf('a'));
+
+    expect((dock.layout.root as DockStackNode).panes).toEqual(['a', 'b']);
+  });
+
+  /*
+   * A floating window keeps its own `activePane` alongside the stack node's,
+   * because the window chrome reads the former to title itself. Reordering
+   * inside a floating stack has to write both, or the title stops matching the
+   * tab that is actually showing.
+   */
+  it('reorders inside a floating window too', async () => {
+    dock.layout = {
+      root: stack('a'),
+      floating: [{ bounds: { left: 10, top: 10, width: 300, height: 200 }, root: stack('x', 'y', 'z') }],
+    } as never;
+    await settle();
+
+    await dropOnSelf('x', floatingPath(0));
+
+    const root = dock.layout.floating[0].root as DockStackNode;
+    expect(root.panes).toEqual(['y', 'z', 'x']);
+  });
+
+  it('keeps the floating window title in step with the reordered tab', async () => {
+    dock.layout = {
+      root: stack('a'),
+      floating: [{ bounds: { left: 10, top: 10, width: 300, height: 200 }, root: stack('x', 'y') }],
+    } as never;
+    await settle();
+
+    await dropOnSelf('x', floatingPath(0));
+
+    const window0 = dock.layout.floating[0];
+    expect((window0.root as DockStackNode).activePane).toBe('x');
+    expect(window0.activePane).toBe('x');
+  });
+});
+
+describe('dropping a whole floating window', () => {
+  /*
+   * Dragging a floating window by its title bar moves the WHOLE window, not one
+   * pane: every pane it holds lands in the target, the window closes, and the
+   * pane that was showing stays showing. `handleFloatingStackDrop` is a
+   * separate path from `handleDrop` for exactly that reason — the unit of the
+   * move is a subtree, so an edge zone splits the target against the window's
+   * own tree rather than against a single stack.
+   *
+   * It takes `(sourceIndex, targetPath, zone)` and reads no geometry, so the
+   * semantics are drivable here; which window the pointer was over when it was
+   * released is the e2e specs' job.
+   */
+  const drop = async (sourceIndex: number, targetPath: unknown, zone: string): Promise<boolean> => {
+    const handled = (
+      dock as unknown as {
+        handleFloatingStackDrop: (i: number, p: unknown, z: string) => boolean;
+      }
+    ).handleFloatingStackDrop(sourceIndex, targetPath, zone);
+    await settle();
+    return handled;
+  };
+
+  const win = (root: DockLayoutNode, activePane?: string) => ({
+    bounds: { left: 10, top: 10, width: 300, height: 200 },
+    root,
+    activePane,
+  });
+
+  const docked = (...segments: number[]) => ({ type: 'docked', segments });
+  const floatingPath = (index: number) => ({ type: 'floating', index, segments: [] });
+
+  it('merges every pane of the window into the target stack', async () => {
+    dock.layout = { root: stack('a'), floating: [win(stack('x', 'y'))] } as never;
+    await settle();
+
+    expect(await drop(0, docked(), 'center')).toBe(true);
+
+    expect((dock.layout.root as DockStackNode).panes).toEqual(['a', 'x', 'y']);
+  });
+
+  it('closes the window it emptied', async () => {
+    dock.layout = { root: stack('a'), floating: [win(stack('x', 'y'))] } as never;
+    await settle();
+
+    await drop(0, docked(), 'center');
+
+    expect(dock.layout.floating).toHaveLength(0);
+  });
+
+  it("keeps the window's showing pane showing", async () => {
+    dock.layout = { root: stack('a'), floating: [win(stack('x', 'y'), 'y')] } as never;
+    await settle();
+
+    await drop(0, docked(), 'center');
+
+    expect((dock.layout.root as DockStackNode).activePane).toBe('y');
+  });
+
+  it('falls back to the first pane when the window names one it does not hold', async () => {
+    dock.layout = { root: stack('a'), floating: [win(stack('x', 'y'), 'ghost')] } as never;
+    await settle();
+
+    await drop(0, docked(), 'center');
+
+    expect((dock.layout.root as DockStackNode).activePane).toBe('x');
+  });
+
+  it('splits the target against the window subtree on an edge zone', async () => {
+    dock.layout = { root: stack('a'), floating: [win(split('vertical', [stack('x'), stack('y')]))] } as never;
+    await settle();
+
+    expect(await drop(0, docked(), 'right')).toBe(true);
+
+    const root = dock.layout.root as DockSplitNode;
+    expect(root.kind).toBe('split');
+    expect(root.direction).toBe('horizontal');
+    expect(dockedPanes()).toEqual(['a', 'x', 'y']);
+  });
+
+  it('adopts the window as the root when nothing is docked', async () => {
+    dock.layout = { root: null, floating: [win(stack('x', 'y'))] } as never;
+    await settle();
+
+    expect(await drop(0, docked(), 'center')).toBe(true);
+
+    expect(dockedPanes()).toEqual(['x', 'y']);
+    expect(dock.layout.floating).toHaveLength(0);
+  });
+
+  it('merges one floating window into another', async () => {
+    dock.layout = {
+      root: stack('a'),
+      floating: [win(stack('x')), win(stack('y'))],
+    } as never;
+    await settle();
+
+    expect(await drop(0, floatingPath(1), 'center')).toBe(true);
+
+    expect(floatingPanes()).toEqual([['y', 'x']]);
+  });
+
+  it('splits one floating window against another on an edge zone', async () => {
+    dock.layout = {
+      root: stack('a'),
+      floating: [win(stack('x')), win(stack('y'))],
+    } as never;
+    await settle();
+
+    expect(await drop(0, floatingPath(1), 'bottom')).toBe(true);
+
+    expect(dock.layout.floating).toHaveLength(1);
+    expect((dock.layout.floating[0].root as DockSplitNode).kind).toBe('split');
+    expect(floatingPanes()).toEqual([['y', 'x']]);
+  });
+
+  it('refuses to drop a window onto itself', async () => {
+    dock.layout = { root: stack('a'), floating: [win(stack('x'))] } as never;
+    await settle();
+
+    expect(await drop(0, floatingPath(0), 'center')).toBe(false);
+
+    expect(floatingPanes()).toEqual([['x']]);
+  });
+
+  it.each([
+    ['a source index that is not a window', 3, () => docked()],
+    ['a target path that resolves to nothing', 0, () => docked(9, 9)],
+  ])('refuses %s', async (_label, index, path) => {
+    dock.layout = { root: stack('a'), floating: [win(stack('x'))] } as never;
+    await settle();
+
+    expect(await drop(index as number, (path as () => unknown)(), 'center')).toBe(false);
+
+    expect(dockedPanes()).toEqual(['a']);
+  });
+
+  it('refuses a window whose root is empty', async () => {
+    dock.layout = { root: stack('a'), floating: [win(stack('x'))] } as never;
+    await settle();
+    (dock as unknown as { floatingLayouts: { root: unknown }[] }).floatingLayouts[0].root = null;
+
+    expect(await drop(0, docked(), 'center')).toBe(false);
+  });
+
+  it('announces the layout change', async () => {
+    dock.layout = { root: stack('a'), floating: [win(stack('x'))] } as never;
+    await settle();
+    const changes: Event[] = [];
+    dock.addEventListener('dock-layout-changed', (e) => changes.push(e));
+
+    await drop(0, docked(), 'center');
+
+    expect(changes.length).toBeGreaterThan(0);
+  });
+});
+
+describe('reordering a pane to a chosen position in its header', () => {
+  /*
+   * Dropping a tab between two other tabs, rather than onto the stack body,
+   * moves it to that exact index instead of to the end. Working out WHICH index
+   * needs tab-button rects and is geometry-bound — that half lives in
+   * `computeHeaderInsertIndex` / `finalizeDropFromPoint` and is covered by the
+   * dock e2e specs. What the index MEANS is pure array work, and is asserted
+   * here by calling the reorder with an index directly, the same way the drop
+   * tests above call `handleDrop` with a path.
+   *
+   * The clamp is the part worth pinning: `headerInsertIndex` can return
+   * `panes.length` for a drop past the last tab, which is one beyond a valid
+   * splice target once the pane itself has been removed.
+   */
+  const reorder = async (pane: string, index: number, path?: unknown): Promise<void> => {
+    const location = (
+      dock as unknown as { resolveStackLocation: (p: unknown) => unknown }
+    ).resolveStackLocation(path ?? pathOf(pane));
+    (
+      dock as unknown as {
+        reorderPaneInLocationAtIndex: (l: unknown, p: string, i: number) => void;
+      }
+    ).reorderPaneInLocationAtIndex(location, pane, index);
+    (dock as unknown as { renderLayout: () => void }).renderLayout();
+    await settle();
+  };
+
+  const panesNow = () => (dock.layout.root as DockStackNode).panes;
+
+  it.each([
+    [0, ['c', 'a', 'b', 'd']],
+    [1, ['a', 'c', 'b', 'd']],
+    [3, ['a', 'b', 'd', 'c']],
+  ])('moves the pane to index %i', async (index, expected) => {
+    dock.layout = stack('a', 'b', 'c', 'd') as never;
+    await settle();
+
+    await reorder('c', index as number);
+
+    expect(panesNow()).toEqual(expected);
+  });
+
+  it('clamps an index past the last tab to the end', async () => {
+    dock.layout = stack('a', 'b', 'c') as never;
+    await settle();
+
+    await reorder('a', 99);
+
+    expect(panesNow()).toEqual(['b', 'c', 'a']);
+  });
+
+  it('clamps a negative index to the front', async () => {
+    dock.layout = stack('a', 'b', 'c') as never;
+    await settle();
+
+    await reorder('c', -5);
+
+    expect(panesNow()).toEqual(['c', 'a', 'b']);
+  });
+
+  it('activates the pane it moved', async () => {
+    dock.layout = stack('a', 'b', 'c') as never;
+    await settle();
+
+    await reorder('c', 0);
+
+    expect((dock.layout.root as DockStackNode).activePane).toBe('c');
+  });
+
+  it('leaves the stack alone when the pane is already at that index', async () => {
+    dock.layout = { root: { kind: 'stack', panes: ['a', 'b', 'c'], activePane: 'b' } } as never;
+    await settle();
+
+    await reorder('a', 0);
+
+    expect(panesNow()).toEqual(['a', 'b', 'c']);
+    expect((dock.layout.root as DockStackNode).activePane).toBe('b');
+  });
+
+  it('ignores a pane the stack does not hold', async () => {
+    dock.layout = stack('a', 'b') as never;
+    await settle();
+
+    await reorder('ghost', 0, pathOf('a'));
+
+    expect(panesNow()).toEqual(['a', 'b']);
+  });
+
+  it('keeps a floating window title in step with the reordered tab', async () => {
+    dock.layout = {
+      root: stack('a'),
+      floating: [
+        {
+          bounds: { left: 10, top: 10, width: 300, height: 200 },
+          root: stack('x', 'y', 'z'),
+          activePane: 'x',
+        },
+      ],
+    } as never;
+    await settle();
+
+    await reorder('z', 0, { type: 'floating', index: 0, segments: [] });
+
+    const window0 = dock.layout.floating[0];
+    expect((window0.root as DockStackNode).panes).toEqual(['z', 'x', 'y']);
+    expect(window0.activePane).toBe('z');
+  });
+});
