@@ -62,6 +62,25 @@ jobs:
       # `dotnet test` (VSTest), which rejects it; the API has its own step.
       run: npx nx run-many --target=test --exclude=api --coverage --parallel=2 --output-style=stream
 
+    # ---- ASP.NET Core API ----
+    #
+    # Ahead of the coverage upload on purpose: the upload below finalizes the
+    # build, so every report has to exist before it runs. The API image steps
+    # further down consume the same `dotnet build` output.
+
+    - name: Setup .NET 10
+      uses: actions/setup-dotnet@v5
+      with:
+        dotnet-version: '10.0.x'
+
+    - name: Build API
+      run: dotnet build apps/api/Api.csproj -c Release
+
+    - name: Test API (with coverage)
+      # --collect writes coverage.cobertura.xml into a GUID-named subdirectory
+      # of --results-directory, hence the ** in the upload glob below.
+      run: dotnet test apps/api/Tests/Api.Tests.csproj -c Release --collect:"XPlat Code Coverage" --results-directory coverage/api
+
     - name: Upload coverage
       uses: MintPlayer/CodeCoverage/action@master
       with:
@@ -73,6 +92,7 @@ jobs:
         files: |
           coverage/libs/*/lcov.info
           coverage/tools/lcov.info
+          coverage/api/**/coverage.cobertura.xml
         # With search on, a glob that matches nothing silently falls back to
         # auto-detection and would upload stray unparsable reports.
         disable-search: true
@@ -185,19 +205,6 @@ jobs:
         subject-name: ghcr.io/${{ github.repository }}-vue-demo
         subject-digest: ${{ steps.push-vue-demo.outputs.digest }}
         push-to-registry: true
-
-    # ---- ASP.NET Core API ----
-
-    - name: Setup .NET 10
-      uses: actions/setup-dotnet@v5
-      with:
-        dotnet-version: '10.0.x'
-
-    - name: Build API
-      run: dotnet build apps/api/Api.csproj -c Release
-
-    - name: Test API
-      run: dotnet test apps/api/Tests/Api.Tests.csproj -c Release
 
     - name: Extract API image tags/labels
       id: meta-api

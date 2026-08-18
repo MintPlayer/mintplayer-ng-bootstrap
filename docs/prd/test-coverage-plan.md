@@ -1,14 +1,14 @@
 # Plan — raising and defending test coverage
 
 PRD: [test-coverage.md](./test-coverage.md)
-Status: **In progress** (2026-08-18) on `feat/coverage-honest-denominator`. M1, M2, M3 done.
+Status: **In progress** (2026-08-18) on `feat/coverage-honest-denominator`. M1–M4 done.
 
 | Milestone | Scope | Uncovered lines addressed |
 |---|---|---|
 | M1 ✅ | `coverage.include` everywhere + demo apps out of the metric | denominator correction (~0 new coverage) |
 | M2 ✅ | PR-side coverage measurement (no gate yet) | — |
 | M3 ✅ | `tools/` project + test target; codegen helper specs | 3,438 currently untargeted lines |
-| M4 | `apps/api` coverage collection + `TzDateMath` + controllers | ~2,183 untracked today |
+| M4 ✅ | `apps/api` coverage collection + `TzDateMath` + controllers | ~2,183 untracked today |
 | M5 | Free wins: ng pipes/directives with zero specs | ~120 |
 | M6 | Ribbon family — wc elements + ng wrappers | ~286 + 32 invisible files |
 | M7 | React/Vue behavioural specs | ~4,725 lines, currently 20 mounted components |
@@ -201,6 +201,40 @@ Files: `.github/workflows/publish-master.yml:197`, `apps/api/Tests/`.
 4. Then `EntitySchema.cs` (103) and `OperatorCatalog.cs` (89) — the latter is never named by a test.
 
 Target ≥60%. `Program.cs`, `DemoSeed.cs` and the `Models/` POCOs are explicitly not worth chasing.
+
+### What M4 achieved (2026-08-18)
+
+**50 tests → 164, and the API's 1,503 measurable lines went from absent to 92.1% lines / 53.7%
+branches** (Cobertura, local Debug run). Target was ≥60%; the integration tests overshoot it because
+booting the app covers `Program.cs`, the migrations and `DemoSeed` as a side effect of testing the
+controllers.
+
+- **`TzDateMathTests`** — 81 tests. Table-driven over `(now, tz)` across six zones, including
+  `Pacific/Kiritimati` (UTC+14) and `Pacific/Niue` (UTC-11) so "the local date is not the UTC date"
+  is exercised in both directions, plus Brussels DST days asserted at 23h and 25h. Invariants run
+  per zone: every range ordered and non-empty, today inside this week, and adjacent
+  weeks/months/years abutting exactly (a gap loses rows, an overlap double-counts them).
+- **`ControllerTests`** — 33 tests through `WebApplicationFactory` over all four controllers.
+
+**The plan's step 3 named the wrong tool.** `Microsoft.EntityFrameworkCore.InMemory` was referenced
+by nothing, and using it would have defeated the purpose: InMemory evaluates LINQ in process, so it
+passes every expression the walker can build — including ones no relational provider can translate,
+which is the exact failure these tests exist to catch. `ApiFactory` overrides the connection string
+to a throwaway **SQLite file** instead (a file, not `:memory:`, because the app opens and closes
+several connections and an in-memory SQLite database dies with the connection that created it). The
+InMemory package reference is replaced by `coverlet.collector`.
+
+**Two things the API's own rules forced, both found by a red test:**
+
+- `Validator` requires every node `id` to be a **UUID v4**; `"root"`/`"c1"` are rejected with
+  `INVALID_NODE_ID` before field validation runs. One test was passing for the wrong reason until
+  the ids were made real.
+- Enum fields take `equals`, not `eq` (`OperatorCatalog.cs:59`).
+
+**Workflow ordering had to change.** The coverage upload is what finalizes the build, and it ran
+*before* the API test step in both workflows — so a Cobertura report globbed there would never have
+existed. The .NET steps now run ahead of the upload in `publish-master.yml`, and the upload moved
+after the API test in `pull-request.yml`. `--exclude=api` stays on the Nx sweep as the plan says.
 
 ## M5 — the free wins [PRD F10]
 
