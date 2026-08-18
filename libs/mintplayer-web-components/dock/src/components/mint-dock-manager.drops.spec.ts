@@ -597,3 +597,275 @@ describe('floating window chrome', () => {
     expect([...resizers].every((r) => r.getAttribute('role') === 'separator')).toBe(true);
   });
 });
+
+describe('the splitter reports a drag back as weights', () => {
+  /*
+   * `mp-splitter` finishes a divider drag by announcing the resulting PIXEL
+   * sizes. The dock converts them back to flex weights, because the layout is
+   * resolution-independent — a snapshot saved at one window size has to restore
+   * correctly at another.
+   */
+  const resizeEnd = (splitter: Element, sizes: number[]) =>
+    splitter.dispatchEvent(
+      new CustomEvent('resize-end', { detail: { sizes }, bubbles: true, composed: true }),
+    );
+
+  it('converts pixel sizes into proportional weights', async () => {
+    dock.layout = split('horizontal', [stack('a'), stack('b')], [0.5, 0.5]) as never;
+    await settle();
+
+    resizeEnd(dock.shadowRoot!.querySelector('.dock-split')!, [300, 100]);
+    await settle();
+
+    const sizes = (dock.layout.root as DockSplitNode).sizes!;
+    expect(sizes[0] / sizes[1]).toBeCloseTo(3, 6);
+  });
+
+  it('keeps the weights summing to what they summed to before', async () => {
+    dock.layout = split('horizontal', [stack('a'), stack('b')], [0.5, 0.5]) as never;
+    await settle();
+
+    resizeEnd(dock.shadowRoot!.querySelector('.dock-split')!, [300, 100]);
+    await settle();
+
+    const sizes = (dock.layout.root as DockSplitNode).sizes!;
+    expect(sizes.reduce((a, b) => a + b, 0)).toBeCloseTo(1, 6);
+  });
+
+  it('announces the layout change so a host can persist it', async () => {
+    const changes: Event[] = [];
+    dock.layout = split('horizontal', [stack('a'), stack('b')]) as never;
+    await settle();
+    dock.addEventListener('dock-layout-changed', (e) => changes.push(e));
+
+    resizeEnd(dock.shadowRoot!.querySelector('.dock-split')!, [300, 100]);
+    await settle();
+
+    expect(changes.length).toBeGreaterThan(0);
+  });
+
+  /*
+   * `resize-end` bubbles, so a nested splitter's drag reaches the outer one's
+   * listener too. Applying the INNER sizes to the OUTER node would mangle the
+   * outer weights on every inner drag — hence the target check.
+   */
+  it('ignores a drag that finished in a nested splitter', async () => {
+    dock.layout = split(
+      'horizontal',
+      [stack('a'), split('vertical', [stack('b'), stack('c')], [0.5, 0.5])],
+      [0.5, 0.5],
+    ) as never;
+    await settle();
+
+    const [outer, inner] = [...dock.shadowRoot!.querySelectorAll('.dock-split')];
+    resizeEnd(inner, [300, 100]);
+    await settle();
+
+    const root = dock.layout.root as DockSplitNode;
+    expect(root.sizes![0] / root.sizes![1]).toBeCloseTo(1, 6);
+    expect(outer).not.toBe(inner);
+  });
+
+  it('applies a nested drag to the nested node', async () => {
+    dock.layout = split('horizontal', [
+      stack('a'),
+      split('vertical', [stack('b'), stack('c')], [0.5, 0.5]),
+    ]) as never;
+    await settle();
+
+    const inner = [...dock.shadowRoot!.querySelectorAll('.dock-split')][1];
+    resizeEnd(inner, [300, 100]);
+    await settle();
+
+    const nested = (dock.layout.root as DockSplitNode).children[1] as DockSplitNode;
+    expect(nested.sizes![0] / nested.sizes![1]).toBeCloseTo(3, 6);
+  });
+
+  it.each([[[]], [[0, 0]]])('ignores unusable sizes %j', async (sizes) => {
+    dock.layout = split('horizontal', [stack('a'), stack('b')], [0.5, 0.5]) as never;
+    await settle();
+
+    resizeEnd(dock.shadowRoot!.querySelector('.dock-split')!, sizes as number[]);
+    await settle();
+
+    expect((dock.layout.root as DockSplitNode).sizes).toEqual([0.5, 0.5]);
+  });
+});
+
+describe('activating a tab', () => {
+  /*
+   * **Not reachable under jsdom, and the product code is right.**
+   *
+   * `renderStack`'s `tab-activate` listener maps the tab id back to a pane with
+   * `stack.querySelector(':scope > [data-tab-id=…]')`. The `:scope >` is
+   * load-bearing — without the child combinator a nested stack's tabs would
+   * match and activate the wrong pane — but **jsdom does not implement
+   * `:scope`**: measured here, `stack.querySelector(':scope > *')` returns null
+   * on an element with six children, while the same selector without `:scope`
+   * finds them. So the lookup always fails and the handler always returns early,
+   * whatever the test dispatches.
+   *
+   * Rewriting the selector to suit the test runner would trade a correct
+   * scoping rule for a coverage line. The activation path is covered by the
+   * dock e2e specs against a real engine instead; what IS asserted here is the
+   * precondition the handler depends on — that every tab carries the id and
+   * pane name it will be looked up by, as a direct child of its stack.
+   */
+  it('gives every tab the id and pane name the activation handler looks up', async () => {
+    dock.layout = split('horizontal', [stack('a', 'b'), stack('c')]) as never;
+    await settle();
+
+    const tabs = [...dock.shadowRoot!.querySelectorAll<HTMLElement>('.dock-tab')];
+    expect(tabs).toHaveLength(3);
+    for (const tab of tabs) {
+      expect(tab.dataset['tabId'], tab.outerHTML).toBeTruthy();
+      expect(tab.dataset['pane'], tab.outerHTML).toBeTruthy();
+      expect(tab.parentElement!.classList.contains('dock-stack')).toBe(true);
+    }
+  });
+
+  it('gives every tab a distinct id', async () => {
+    dock.layout = split('horizontal', [stack('a', 'b'), stack('c')]) as never;
+    await settle();
+
+    const ids = [...dock.shadowRoot!.querySelectorAll<HTMLElement>('.dock-tab')].map(
+      (t) => t.dataset['tabId'],
+    );
+    expect(new Set(ids).size).toBe(3);
+  });
+
+  it('marks the active tab on its own stack', async () => {
+    dock.layout = split('horizontal', [
+      { kind: 'stack', panes: ['a', 'b'], activePane: 'b' },
+      stack('c'),
+    ]) as never;
+    await settle();
+
+    const [first, second] = [...dock.shadowRoot!.querySelectorAll<HTMLElement>('.dock-stack')];
+    const tabB = dock.shadowRoot!.querySelector<HTMLElement>('.dock-tab[data-pane="b"]')!;
+
+    expect(first.getAttribute('active-tab')).toBe(tabB.dataset['tabId']);
+    expect(second.dataset['activePane']).toBe('c');
+  });
+});
+
+describe('dropping into an empty main area', () => {
+  /*
+   * A dock whose panes have all been floated has no root at all, and
+   * `handleDrop` carries a dedicated branch for it: there is no target stack to
+   * merge into, so the pane becomes the new root. Without it a user who floated
+   * everything could never dock anything again.
+   *
+   * Driven through `handleDrop` directly because the enumerated keyboard
+   * candidates deliberately list only DOCKED stacks — and there are none — so
+   * this branch has no keyboard route to it.
+   */
+  const dropIntoEmptyRoot = async (pane: string): Promise<void> => {
+    (dock as unknown as { dragState: unknown }).dragState = {
+      pane,
+      sourcePath: { type: 'floating', index: 0, segments: [] },
+    };
+    (dock as unknown as { handleDrop: (p: unknown, z: string) => void }).handleDrop(
+      { type: 'docked', segments: [] },
+      'center',
+    );
+    await settle();
+  };
+
+  async function floatEverything(): Promise<void> {
+    dock.layout = stack('a') as never;
+    await settle();
+    await moveToZone('a', 'f');
+    await settle();
+  }
+
+  it('starts from a dock with no root at all', async () => {
+    await floatEverything();
+    expect(dock.layout.root).toBeNull();
+    expect(floatingPanes()).toEqual([['a']]);
+  });
+
+  it('accepts a pane back when nothing is docked', async () => {
+    await floatEverything();
+
+    await dropIntoEmptyRoot('a');
+
+    expect(dockedPanes()).toEqual(['a']);
+  });
+
+  it('empties the floating window, so normalization drops it', async () => {
+    await floatEverything();
+
+    await dropIntoEmptyRoot('a');
+
+    expect(dock.layout.floating).toHaveLength(0);
+  });
+
+  it('renders the pane back in the main area', async () => {
+    await floatEverything();
+
+    await dropIntoEmptyRoot('a');
+
+    expect(dock.shadowRoot!.querySelectorAll('.dock-stack[data-path^="d:"]')).toHaveLength(1);
+  });
+
+  it('announces the layout change', async () => {
+    await floatEverything();
+    const changes: Event[] = [];
+    dock.addEventListener('dock-layout-changed', (e) => changes.push(e));
+
+    await dropIntoEmptyRoot('a');
+
+    expect(changes.length).toBeGreaterThan(0);
+  });
+});
+
+describe('moving a pane out of a floating window', () => {
+  async function withFloatedPane(): Promise<void> {
+    dock.layout = split('horizontal', [stack('a'), stack('b')]) as never;
+    await settle();
+    await moveToZone('b', 'f');
+    await settle();
+  }
+
+  async function armFromFloating(pane: string): Promise<void> {
+    (dock as unknown as { paneMoveMode: unknown }).paneMoveMode = {
+      paneName: pane,
+      sourcePath: { type: 'floating', index: 0, segments: [] },
+    };
+    (dock as unknown as { paneMoveCandidateIndex: number | null }).paneMoveCandidateIndex = null;
+    await settle();
+  }
+
+  it('merges it back into a docked stack', async () => {
+    await withFloatedPane();
+    expect(floatingPanes()).toEqual([['b']]);
+
+    await armFromFloating('b');
+    await press({ key: 'ArrowRight' });
+    await press({ key: 'Enter' });
+
+    expect(dockedPanes().sort()).toEqual(['a', 'b']);
+  });
+
+  it('closes the window it emptied', async () => {
+    await withFloatedPane();
+
+    await armFromFloating('b');
+    await press({ key: 'ArrowRight' });
+    await press({ key: 'Enter' });
+
+    expect(dock.layout.floating).toHaveLength(0);
+  });
+
+  it('leaves the docked tree canonical afterwards', async () => {
+    await withFloatedPane();
+
+    await armFromFloating('b');
+    await press({ key: 'ArrowRight' });
+    await press({ key: 'Enter' });
+
+    expect(dock.layout.root).not.toBeNull();
+    expect(dockedPanes().sort()).toEqual(['a', 'b']);
+  });
+});
