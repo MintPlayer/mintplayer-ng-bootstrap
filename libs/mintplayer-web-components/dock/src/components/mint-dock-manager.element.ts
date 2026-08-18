@@ -38,6 +38,8 @@ import {
   normalizeLayoutNode,
   normalizeSizesArray,
   normalizeSplitNode,
+  parsePath,
+  pathsEqual,
   removePaneFromStack,
   replaceNodeInTree,
   resizeFloatingBounds,
@@ -912,8 +914,8 @@ export class MintDockManagerElement extends LitElement {
       // reconstruct the (h, v) pair list, so the (h, v) args we pass here
       // are only used as a fallback when data-pairs is empty — safe to use
       // the first pair's structure as the seed.
-      const seedH = { path: this.parsePath(firstPair.h.pathStr), index: firstPair.h.index, container: this.findSplitterByPath(this.parsePath(firstPair.h.pathStr)?.segments ?? []) ?? this.rootEl, rect: new DOMRect() };
-      const seedV = { path: this.parsePath(firstPair.v.pathStr), index: firstPair.v.index, container: this.findSplitterByPath(this.parsePath(firstPair.v.pathStr)?.segments ?? []) ?? this.rootEl, rect: new DOMRect() };
+      const seedH = { path: parsePath(firstPair.h.pathStr), index: firstPair.h.index, container: this.findSplitterByPath(parsePath(firstPair.h.pathStr)?.segments ?? []) ?? this.rootEl, rect: new DOMRect() };
+      const seedV = { path: parsePath(firstPair.v.pathStr), index: firstPair.v.index, container: this.findSplitterByPath(parsePath(firstPair.v.pathStr)?.segments ?? []) ?? this.rootEl, rect: new DOMRect() };
       handle.addEventListener('pointerdown', (ev) => this.beginCornerResize(ev, seedH, seedV, handle));
       handle.addEventListener('dblclick', (ev) => this.onIntersectionDoubleClick(ev, handle));
       handle.addEventListener('keydown', (ev) => this.onIntersectionKeyDown(ev, handle));
@@ -959,7 +961,7 @@ export class MintDockManagerElement extends LitElement {
     // the splitter to its limit" convention on a horizontal layout).
     const drivesVerticalDivider = isVerticalAxis || isHomeEnd;
     const target = drivesVerticalDivider ? pairs[0].v : pairs[0].h;
-    const path = this.parsePath(target.pathStr);
+    const path = parsePath(target.pathStr);
     const splitter = this.findSplitterByPath(path?.segments ?? []) as unknown as
       | { resizeDividerBy?: (i: number, k: string, fine?: boolean) => void }
       | null;
@@ -982,7 +984,7 @@ export class MintDockManagerElement extends LitElement {
     const vs: Array<{ path: DockPath; index: number; container: HTMLElement; initialSizes: number[]; before: number; after: number }>=[];
 
     const ensureHV = (pathStr: string, index: number, axis: 'h'|'v') => {
-      const path = this.parsePath(pathStr);
+      const path = parsePath(pathStr);
       if (!path) return;
       const splitter = this.findSplitterByPath(path.segments);
       if (!splitter) return;
@@ -1208,7 +1210,7 @@ export class MintDockManagerElement extends LitElement {
     };
 
     const applySizes = (pathStr: string, dividerIndex: number, mutate: (sizes: number[], index: number) => number[]) => {
-      const path = this.parsePath(pathStr);
+      const path = parsePath(pathStr);
       if (!path) return;
       const node = this.resolveSplitNode(path);
       if (!node) return;
@@ -1221,7 +1223,7 @@ export class MintDockManagerElement extends LitElement {
     if (hasStored) {
       // Restore stored sizes
       this.previousSplitSizes.forEach((sizes, pathStr) => {
-        const path = this.parsePath(pathStr);
+        const path = parsePath(pathStr);
         const node = path ? this.resolveSplitNode(path) : null;
         if (!node || !path) return;
         const norm = normalizeSizesArray(sizes, node.children.length);
@@ -1235,7 +1237,7 @@ export class MintDockManagerElement extends LitElement {
       parsed.forEach((p) => {
         [p.h.pathStr, p.v.pathStr].forEach((key) => {
           if (touched.has(key)) return;
-          const path = this.parsePath(key);
+          const path = parsePath(key);
           const node = path ? this.resolveSplitNode(path) : null;
           if (node && Array.isArray(node.sizes)) {
             this.previousSplitSizes.set(key, [...node.sizes]);
@@ -1478,7 +1480,7 @@ export class MintDockManagerElement extends LitElement {
       return;
     }
 
-    const path = this.parsePath(stack.dataset['path']);
+    const path = parsePath(stack.dataset['path']);
     if (!path || (path.type === 'floating' && path.index === state.index)) {
       if (state.dropTarget) {
         delete state.dropTarget;
@@ -2525,7 +2527,7 @@ export class MintDockManagerElement extends LitElement {
     }
 
     const stack = this.findStackAtPoint(clientX, clientY);
-    const path = stack ? this.parsePath(stack.dataset['path']) : null;
+    const path = stack ? parsePath(stack.dataset['path']) : null;
     if (!stack || !path) {
       // While actively dragging, avoid hiding the indicator if it is visible.
       // Transient misses from hit-testing are common near the joystick.
@@ -2553,7 +2555,7 @@ export class MintDockManagerElement extends LitElement {
       this.dragState.floatingIndex !== null &&
       this.dragState.floatingIndex < 0 &&
       path &&
-      this.pathsEqual(path, this.dragState.sourcePath)
+      pathsEqual(path, this.dragState.sourcePath)
     ) {
       const inHeaderByBounds = !!this.dragState.sourceHeaderBounds && isPointWithinBounds(this.dragState.sourceHeaderBounds, clientX, clientY);
       const inHeaderByHitTest = this.isPointerOverSourceHeader(clientX, clientY);
@@ -3005,11 +3007,11 @@ export class MintDockManagerElement extends LitElement {
       return;
     }
     const stack = this.findStackAtPoint(clientX, clientY);
-    const stackPath = stack ? this.parsePath(stack.dataset['path']) : null;
+    const stackPath = stack ? parsePath(stack.dataset['path']) : null;
     const joystickVisible = this.dropJoystick.dataset['visible'] === 'true';
-    const joystickStoredPath = this.parsePath(this.dropJoystick.dataset['path']);
+    const joystickStoredPath = parsePath(this.dropJoystick.dataset['path']);
     const joystickTarget = this.dropJoystickTarget;
-    const joystickTargetPath = joystickTarget ? this.parsePath(joystickTarget.dataset['path']) : null;
+    const joystickTargetPath = joystickTarget ? parsePath(joystickTarget.dataset['path']) : null;
     const path = (joystickVisible ? (joystickStoredPath ?? joystickTargetPath) : null) ?? stackPath;
 
     const joystickZone = this.dropJoystick.dataset['zone'] as DropZone | undefined;
@@ -3025,7 +3027,7 @@ export class MintDockManagerElement extends LitElement {
       stack &&
       path &&
       stackPath &&
-      this.pathsEqual(stackPath, this.dragState.sourcePath) &&
+      pathsEqual(stackPath, this.dragState.sourcePath) &&
       (!zone || zone === 'center')
     ) {
       const location = this.resolveStackLocation(path);
@@ -3114,7 +3116,7 @@ export class MintDockManagerElement extends LitElement {
       return;
     }
 
-    if (zone === 'center' && this.pathsEqual(sourcePath, targetPath)) {
+    if (zone === 'center' && pathsEqual(sourcePath, targetPath)) {
       if (!source.node.panes.includes(pane)) {
         return;
       }
@@ -3392,7 +3394,7 @@ export class MintDockManagerElement extends LitElement {
   }
 
   private showDropIndicator(stack: HTMLElement, zone: DropZone | null): void {
-    const targetPath = this.parsePath(stack.dataset['path']);
+    const targetPath = parsePath(stack.dataset['path']);
     const sourcePath = this.dragState?.sourcePath ?? null;
     if (targetPath && sourcePath && this.isOrIsAncestorOf(targetPath, sourcePath)) {
       // Don't show any drop indicators on the pane being dragged.
@@ -3406,7 +3408,7 @@ export class MintDockManagerElement extends LitElement {
 
     joystick.hidden = false;
 
-    const path = this.parsePath(stack.dataset['path']);
+    const path = parsePath(stack.dataset['path']);
     let overlayZ = 100;
     if (path && path.type === 'floating') {
       overlayZ = floatingZIndex(this.floatingLayouts[path.index], path.index) + 100;
@@ -3655,66 +3657,6 @@ export class MintDockManagerElement extends LitElement {
       return { type: 'floating', index: path.index, segments: [...path.segments] };
     }
     return { type: 'docked', segments: [...path.segments] };
-  }
-
-  private parsePath(path: string | null | undefined): DockPath | null {
-    // The root splitter is tagged with data-path="" (raw segments-join of an
-    // empty array) so empty string is a valid path representing root docked.
-    // Only null/undefined is "no path".
-    if (path == null) {
-      return null;
-    }
-
-    if (path.startsWith('f:')) {
-      const remainder = path.slice(2);
-      const [indexPart, ...segmentParts] = remainder.split('/');
-      const index = Number.parseInt(indexPart, 10);
-      if (!Number.isFinite(index)) {
-        return null;
-      }
-      const segments = segmentParts
-        .filter((segment) => segment.length > 0)
-        .map((segment) => Number.parseInt(segment, 10))
-        .filter((value) => Number.isFinite(value));
-      return { type: 'floating', index, segments };
-    }
-
-    const normalized = path.startsWith('d:') ? path.slice(2) : path;
-    if (normalized.length === 0) {
-      return { type: 'docked', segments: [] };
-    }
-
-    const segments = normalized
-      .split('/')
-      .filter((segment) => segment.length > 0)
-      .map((segment) => Number.parseInt(segment, 10))
-      .filter((value) => Number.isFinite(value));
-
-    return { type: 'docked', segments };
-  }
-
-  private pathsEqual(a: DockPath, b: DockPath): boolean {
-    if (a.type !== b.type) {
-      return false;
-    }
-
-    if (a.type === 'floating') {
-      const other = b as Extract<DockPath, { type: 'floating' }>;
-      if (a.index !== other.index) {
-        return false;
-      }
-      if (a.segments.length !== other.segments.length) {
-        return false;
-      }
-      return a.segments.every((value, index) => value === other.segments[index]);
-    }
-
-    const other = b as Extract<DockPath, { type: 'docked' }>;
-    if (a.segments.length !== other.segments.length) {
-      return false;
-    }
-
-    return a.segments.every((value, index) => value === other.segments[index]);
   }
 
   private isOrIsAncestorOf(ancestor: DockPath, descendant: DockPath): boolean {
@@ -4003,7 +3945,7 @@ export class MintDockManagerElement extends LitElement {
       this.commitPaneMoveAsFloat();
       return;
     }
-    this.commitPaneMoveToZone(candidate.zone, this.parsePath(candidate.pathStr));
+    this.commitPaneMoveToZone(candidate.zone, parsePath(candidate.pathStr));
   }
 
   /** Sole exit point for move mode: drops the arming AND any highlight together. */
@@ -4037,7 +3979,7 @@ export class MintDockManagerElement extends LitElement {
     if (!headerSpan) return null;
     const stack = headerSpan.closest<HTMLElement>('.dock-stack');
     if (!stack) return null;
-    const path = this.parsePath(stack.dataset['path']);
+    const path = parsePath(stack.dataset['path']);
     if (!path) return null;
     return { paneName: headerSpan.dataset['pane']!, sourcePath: path };
   }

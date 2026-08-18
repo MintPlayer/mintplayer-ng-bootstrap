@@ -14,7 +14,7 @@ import {
   removePaneFromStack,
   replaceNodeInTree,
 } from './layout-tree';
-import { formatPath } from './types';
+import { formatPath, parsePath, pathsEqual, type DockPath } from './types';
 
 /**
  * The dock's layout algebra. Every drag, drop, close and resize is a
@@ -793,5 +793,127 @@ describe('normalizeLayoutNode — the cases that produced it', () => {
         return { once, twice };
       })
       .map(({ once, twice }) => expect(twice).toEqual(once));
+  });
+});
+
+/*
+ * `parsePath` and `pathsEqual` moved here from the element alongside
+ * `formatPath`, which is the function they have to agree with: the pointer drop
+ * path formats a path onto `data-path`, and reads it back with `parsePath`. A
+ * round-trip that loses anything sends a drop to the wrong node.
+ */
+describe('parsePath', () => {
+  it('reads a docked path', () => {
+    expect(parsePath('d:1/0')).toEqual({ type: 'docked', segments: [1, 0] });
+  });
+
+  it('reads a floating path', () => {
+    expect(parsePath('f:2/1/0')).toEqual({ type: 'floating', index: 2, segments: [1, 0] });
+  });
+
+  it('reads a floating window root', () => {
+    expect(parsePath('f:0')).toEqual({ type: 'floating', index: 0, segments: [] });
+  });
+
+  /*
+   * The empty string is a VALID path — the root splitter is tagged
+   * `data-path=""`, which is what joining an empty segment array produces.
+   * Only null and undefined mean "no path"; conflating the two makes every drop
+   * onto the root resolve to nothing at all.
+   */
+  it('reads the empty string as the docked root', () => {
+    expect(parsePath('')).toEqual({ type: 'docked', segments: [] });
+    expect(parsePath('d:')).toEqual({ type: 'docked', segments: [] });
+  });
+
+  it('reads nothing only for null or undefined', () => {
+    expect(parsePath(null)).toBeNull();
+    expect(parsePath(undefined)).toBeNull();
+  });
+
+  it('accepts a docked path with no prefix', () => {
+    expect(parsePath('1/2')).toEqual({ type: 'docked', segments: [1, 2] });
+  });
+
+  // A dropped segment beats a NaN one: `NaN` would index the tree as
+  // `undefined` and resolve, silently, to the wrong node.
+  it('drops a segment it cannot read rather than admitting NaN', () => {
+    expect(parsePath('d:1/x/2')).toEqual({ type: 'docked', segments: [1, 2] });
+  });
+
+  it('refuses a floating path with no readable index', () => {
+    expect(parsePath('f:x')).toBeNull();
+  });
+
+  it('tolerates repeated separators', () => {
+    expect(parsePath('d:1//2')).toEqual({ type: 'docked', segments: [1, 2] });
+  });
+
+  // The property that matters: whatever `formatPath` writes, `parsePath` reads
+  // back unchanged. These two are the join between the pointer and keyboard
+  // drop paths.
+  it('round-trips everything formatPath can produce', () => {
+    const paths: DockPath[] = [
+      { type: 'docked', segments: [] },
+      { type: 'docked', segments: [0] },
+      { type: 'docked', segments: [1, 0, 3] },
+      { type: 'floating', index: 0, segments: [] },
+      { type: 'floating', index: 7, segments: [2] },
+      { type: 'floating', index: 3, segments: [0, 1, 2] },
+    ];
+
+    for (const path of paths) {
+      expect(parsePath(formatPath(path)), formatPath(path)).toEqual(path);
+    }
+  });
+});
+
+describe('pathsEqual', () => {
+  it('matches two identical docked paths', () => {
+    expect(pathsEqual({ type: 'docked', segments: [1, 0] }, { type: 'docked', segments: [1, 0] })).toBe(
+      true,
+    );
+  });
+
+  it('matches two identical floating paths', () => {
+    expect(
+      pathsEqual(
+        { type: 'floating', index: 1, segments: [0] },
+        { type: 'floating', index: 1, segments: [0] },
+      ),
+    ).toBe(true);
+  });
+
+  it('separates the two roots, which both have empty segments', () => {
+    expect(
+      pathsEqual({ type: 'docked', segments: [] }, { type: 'floating', index: 0, segments: [] }),
+    ).toBe(false);
+  });
+
+  it('separates two floating windows at the same depth', () => {
+    expect(
+      pathsEqual(
+        { type: 'floating', index: 0, segments: [1] },
+        { type: 'floating', index: 1, segments: [1] },
+      ),
+    ).toBe(false);
+  });
+
+  it('separates paths of different depths', () => {
+    expect(pathsEqual({ type: 'docked', segments: [1] }, { type: 'docked', segments: [1, 0] })).toBe(
+      false,
+    );
+  });
+
+  it('separates paths that differ at one segment', () => {
+    expect(
+      pathsEqual({ type: 'docked', segments: [1, 0] }, { type: 'docked', segments: [1, 2] }),
+    ).toBe(false);
+  });
+
+  it('agrees with formatPath about identity', () => {
+    const a: DockPath = { type: 'docked', segments: [1, 0] };
+    const b: DockPath = { type: 'docked', segments: [1, 0] };
+    expect(pathsEqual(a, b)).toBe(formatPath(a) === formatPath(b));
   });
 });
