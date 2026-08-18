@@ -104,6 +104,7 @@ jobs:
         token: ${{ secrets.COVERAGE_TOKEN }}
         files: |
           coverage/libs/*/lcov.info
+          coverage/tools/lcov.info
         disable-search: true
         flags: pr
         finish: false

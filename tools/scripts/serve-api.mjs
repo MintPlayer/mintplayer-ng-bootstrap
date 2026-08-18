@@ -31,10 +31,9 @@
 // reclaim but NOT the job object — they have no descendants to reap; see that
 // file's header). Only the rules for recognising THIS API's processes are here.
 //
-// Those rules are pure and exported; `dev-processes.check.mjs` next door
+// Those rules are pure and exported; `dev-processes.spec.ts` next door
 // exercises them, and the shared ownership rules, against captured
-// Windows/Linux/macOS process listings. Run it after touching either:
-// `node tools/scripts/dev-processes.check.mjs`.
+// Windows/Linux/macOS process listings. It runs with the `tools` test target.
 //
 // Locally we use `dotnet watch run` for hot-reload during dev. In CI nothing
 // changes between boot and shutdown, so we use a plain `dotnet run` instead:
@@ -223,7 +222,7 @@ export function selectLeftovers(processes, cwd) {
 
 /**
  * True only when this file was RUN, not imported. The matching rules above are
- * exported for `dev-processes.check.mjs`, and an import that kills the API you
+ * exported for `dev-processes.spec.ts`, and an import that kills the API you
  * are currently running is a trap — so every side effect lives behind this guard.
  */
 const isEntryPoint =

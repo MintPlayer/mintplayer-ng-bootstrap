@@ -10,12 +10,9 @@
  * consumer 53.7 KB gzip in THEIR bundle. Size is the wrong instrument; import
  * SHAPE is the thing to assert.
  *
- * Rules, checked against the built entry:
- *   - `highlight.js/lib/core` may be imported statically (8.6 KB gzip, needed
- *     to highlight anything at all).
- *   - `highlight.js/lib/common` and `highlight.js/lib/languages/*` may appear
- *     ONLY inside a dynamic `import(...)`.
- *   - Bare `highlight.js` (the full 314 KB gzip library) may not appear at all.
+ * The rules, and every judgement about them, live in lib/bundle-audit.mjs
+ * (`auditHljsImports`) so they can be tested without a build. This script is the
+ * part that needs `dist/`: find the entry, read it, report.
  *
  * Usage:
  *   node tools/scripts/check-code-snippet-hljs-lazy.mjs
@@ -25,6 +22,7 @@ import { readFileSync, existsSync } from 'node:fs';
 import { gzipSync } from 'node:zlib';
 import { resolve, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { auditHljsImports } from './lib/bundle-audit.mjs';
 
 const repoRoot = resolve(dirname(fileURLToPath(import.meta.url)), '../..');
 
@@ -44,58 +42,17 @@ if (!entry) {
 const source = readFileSync(entry, 'utf8');
 const rel = entry.replace(repoRoot, '.').replace(/\\/g, '/');
 
-/** Static ESM imports: `import … from 'x'`, `import 'x'`, `export … from 'x'`. */
-const staticSpecifiers = [
-  ...source.matchAll(/(?:^|[;\s}])(?:import|export)\s*(?:[^'"()]*?\bfrom\s*)?['"]([^'"]+)['"]/g),
-].map((m) => m[1]);
-
-/** Dynamic imports: `import('x')`. */
-const dynamicSpecifiers = [...source.matchAll(/\bimport\s*\(\s*['"]([^'"]+)['"]\s*\)/g)].map(
-  (m) => m[1],
-);
-
-const isHljs = (s) => s === 'highlight.js' || s.startsWith('highlight.js/');
-const failures = [];
-
-for (const spec of staticSpecifiers.filter(isHljs)) {
-  if (spec === 'highlight.js/lib/core') continue;
-  failures.push(
-    `static import of "${spec}" — grammars must be loaded through the generated ` +
-      'loader map (hljs-loaders.generated.ts), not imported at module top level.',
-  );
-}
-
-for (const spec of dynamicSpecifiers.filter(isHljs)) {
-  if (spec === 'highlight.js' ) {
-    failures.push(
-      'dynamic import of the FULL "highlight.js" library (314 KB gzip) — ' +
-        'import "highlight.js/lib/common" for auto-detect instead.',
-    );
-  }
-}
-
-const hljsStatic = staticSpecifiers.filter(isHljs);
-const hljsDynamic = dynamicSpecifiers.filter(isHljs);
+const { staticHljs, dynamicHljs, failures } = auditHljsImports(source);
 
 console.log(`[check-code-snippet-hljs-lazy] ${rel}`);
 console.log(`  raw:  ${(source.length / 1024).toFixed(2)} kB`);
 console.log(`  gzip: ${(gzipSync(Buffer.from(source), { level: 9 }).length / 1024).toFixed(2)} kB`);
-console.log(`  static hljs imports:  ${hljsStatic.length ? hljsStatic.join(', ') : '(none)'}`);
-console.log(`  dynamic hljs imports: ${hljsDynamic.length}`);
+console.log(`  static hljs imports:  ${staticHljs.length ? staticHljs.join(', ') : '(none)'}`);
+console.log(`  dynamic hljs imports: ${dynamicHljs.length}`);
 
 if (failures.length) {
   console.error('\n❌ highlight.js is no longer lazily loaded:');
-  for (const f of failures) console.error('  - ' + f);
-  process.exit(1);
-}
-
-// A build with no dynamic hljs import at all means the loader map was dropped
-// or inlined — the guarantee is gone even though no rule above fired.
-if (hljsDynamic.length === 0) {
-  console.error(
-    '\n❌ no dynamic highlight.js import found. The generated loader map is ' +
-      'missing from the build, so no grammar can be loaded on demand.',
-  );
+  for (const failure of failures) console.error('  - ' + failure);
   process.exit(1);
 }
 

@@ -1,13 +1,13 @@
 # Plan — raising and defending test coverage
 
 PRD: [test-coverage.md](./test-coverage.md)
-Status: **In progress** (2026-08-18) on `feat/coverage-honest-denominator`. M1, M2 done.
+Status: **In progress** (2026-08-18) on `feat/coverage-honest-denominator`. M1, M2, M3 done.
 
 | Milestone | Scope | Uncovered lines addressed |
 |---|---|---|
 | M1 ✅ | `coverage.include` everywhere + demo apps out of the metric | denominator correction (~0 new coverage) |
 | M2 ✅ | PR-side coverage measurement (no gate yet) | — |
-| M3 | `tools/` project + test target; codegen helper specs | 3,438 currently untargeted lines |
+| M3 ✅ | `tools/` project + test target; codegen helper specs | 3,438 currently untargeted lines |
 | M4 | `apps/api` coverage collection + `TzDateMath` + controllers | ~2,183 untracked today |
 | M5 | Free wins: ng pipes/directives with zero specs | ~120 |
 | M6 | Ribbon family — wc elements + ng wrappers | ~286 + 32 invisible files |
@@ -152,6 +152,33 @@ pure helpers — small in line count, but it guards the codegen every other mile
 
 Out of scope: `tools/lit-ssr-utils/gen-*-chrome.mjs` (import the built `dist`, not unit-testable
 without a build) and `tools/e2e-shared/` (test code, not subject).
+
+### What M3 actually did (2026-08-18)
+
+**124 tests across 5 spec files, ~1.8s.** Three deviations from the plan, all forced by the code:
+
+- **The pure logic had to be extracted before it could be tested.** `build-web-components.mjs`
+  validates argv and calls `process.exit(1)` at module scope, so importing it from a spec kills the
+  runner. Its helpers now live in `tools/scripts/lib/wc-codegen.mjs`, and the two loader-map
+  emitters in `tools/scripts/lib/loader-maps.mjs`. Both extractions were verified
+  behaviour-preserving by re-running the generators: 49 codegen inputs and both loader maps
+  regenerate **byte-identically** (`skipped` on every output).
+- **Only one of the three check scripts converts to a spec.** `dev-processes.check.mjs` was already
+  a fixture-driven PASS/FAIL harness over pure functions — it is now `dev-processes.spec.ts` (17
+  tests) and the script is deleted. The other two read `dist/`, so they are build-artifact gates, not
+  unit tests; converting them would produce specs that skip themselves whenever `dist/` is absent,
+  which is most of the time. Instead their *judgement* moved into `tools/scripts/lib/bundle-audit.mjs`
+  (`auditHljsImports`, `parseMaxBytes`) and is specced there, leaving each CLI as find-file →
+  read → report.
+- **`@nx/vitest:test` requires a `tsconfig.json` in the project root.** `tools/` had only
+  `tsconfig.tools.json`, which nothing referenced; the executor fails with ENOENT before vitest runs.
+
+**One real bug found and fixed while specifying it:** `check-ribbon-bundle-size.mjs` computed its
+budget as `Number(args[maxIdx + 1])`, so `--max` with a typo, a negative number, or no value at all
+produced `NaN` — and `size > NaN` is `false`, meaning the budget silently passed everything.
+`parseMaxBytes` now falls back to the default instead, with a case per input shape.
+
+Coverage output is `coverage/tools/lcov.info`, added to the upload globs in both workflows.
 
 ## M4 — `apps/api` coverage [PRD F5, D6]
 

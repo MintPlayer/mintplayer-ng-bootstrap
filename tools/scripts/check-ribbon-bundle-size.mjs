@@ -20,15 +20,13 @@ import { gzipSync } from 'node:zlib';
 import { readFileSync, existsSync } from 'node:fs';
 import { resolve, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { globSync } from 'node:fs';
+import { parseMaxBytes } from './lib/bundle-audit.mjs';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const repoRoot = resolve(__dirname, '../..');
 
-const args = process.argv.slice(2);
-const maxIdx = args.indexOf('--max');
 const DEFAULT_MAX_BYTES = 40 * 1024;
-const maxBytes = maxIdx >= 0 ? Number(args[maxIdx + 1]) : DEFAULT_MAX_BYTES;
+const maxBytes = parseMaxBytes(process.argv.slice(2), DEFAULT_MAX_BYTES);
 
 // ng-packagr emits one FESM per secondary entry. The ribbon entry's filename
 // is namespaced by the umbrella lib name, so the actual file is something
