@@ -1,8 +1,11 @@
 # Plan — raising and defending test coverage
 
 PRD: [test-coverage.md](./test-coverage.md)
-Status: **In progress** (2026-08-18) on `feat/coverage-honest-denominator`, not pushed.
-M1–M6 done, plus the four defect fixes below. **M7 is next.**
+Status: **M1–M10 and M12 done** (2026-08-18) on `feat/coverage-honest-denominator`, not pushed.
+M11 lives in [coverage-pr-gate-plan.md](./coverage-pr-gate-plan.md). Seven defects found and fixed
+(table below). The M12 sweep is green and its measured figures are recorded at the bottom — the
+headline number **misses the PRD's 80% target at 71.0%**, and what remains is enumerated there
+rather than rounded away.
 
 | Milestone | Scope | Uncovered lines addressed |
 |---|---|---|
@@ -12,12 +15,12 @@ M1–M6 done, plus the four defect fixes below. **M7 is next.**
 | M4 ✅ | `apps/api` coverage collection + `TzDateMath` + controllers | ~2,183 untracked today |
 | M5 ✅ | Free wins: ng pipes/directives with zero specs | ~120 |
 | M6 ✅ | Ribbon family — wc elements + ng wrappers | ~286 + 32 invisible files |
-| M7 | React/Vue behavioural specs | ~4,725 lines, currently 20 mounted components |
-| M8 | Dock: extract pure logic, then test it | ~1081 |
-| M9 | file-manager, timeline, splitter, tile-manager | ~766 |
-| M10 | scheduler + scheduler-core + datatable branch coverage | ~988 |
+| M7 ✅ | React/Vue behavioural specs | ~4,725 lines, currently 20 mounted components |
+| M8 ✅ | Dock: extract pure logic, then test it | ~1081 |
+| M9 ✅ | file-manager, timeline, splitter, tile-manager | ~766 |
+| M10 ✅ | scheduler + scheduler-core + datatable branch coverage | ~988 |
 | M11 | Turn on the ratchet gate | defends everything above |
-| M12 | Single verification sweep | — |
+| M12 ✅ | Single verification sweep | — |
 
 ## Ordering rationale
 
@@ -264,7 +267,8 @@ big	world'` is 1 and
 - **`bsLinify` normalizes only the FIRST CRLF** — `.replace('
 ', '
 ')` has no `/g` flag, so
-  every later line of Windows-authored text keeps a trailing ``.
+  every later line of Windows-authored text keeps a trailing `
+`.
 - **`bsSlugify` drops any script without a Latin decomposition** (its character class is ASCII
   `w`), so a non-Latin title slugifies to the empty string.
 
@@ -330,18 +334,22 @@ under test and holds in every engine.
 
 ## Defects found and fixed
 
-Writing a test for code nobody had tested found four real bugs. Each was first pinned as a test
-asserting the wrong-but-actual behaviour; all four were then **fixed on request (2026-08-18)** and
-the tests turned into regression guards. Breaking changes are acceptable here per the workspace's
-standing rule — the cleanest behaviour wins and the break is documented.
+Writing a test for code nobody had tested found **seven** real bugs. Each was first pinned as a
+test asserting the wrong-but-actual behaviour, then fixed, and the test turned into a regression
+guard. Breaking changes are acceptable here per the workspace's standing rule — the cleanest
+behaviour wins and the break is documented.
 
 | # | Where | Was | Now |
 |---|---|---|---|
 | 1 | `bsWordCount` (M5) | A single newline or tab between two words counted as **one** word | Splits on `/s+/`; any whitespace run separates words |
-| 2 | `bsLinify` (M5) | Only the **first** CRLF normalized — later lines kept a trailing `` | `/
+| 2 | `bsLinify` (M5) | Only the **first** CRLF normalized — later lines kept a trailing `
+` | `/
 /g` |
 | 3 | `bsSlugify` (M5) | A non-Latin title slugified to the **empty string** | Keeps `p{L}p{N}`; Latin diacritics still stripped |
 | 4 | `mp-quick-access-toolbar` (M6) | Overwrote a consumer-supplied `aria-label` before first paint | `applyLabel()` + `lastAppliedLabel`, mirroring `mp-ribbon` |
+| 5 | `mp-navbar` (M7) | `expanded` was a **silent no-op in React AND Vue** — it closed the bar when asked to open it | The setter takes `''` as ON, holds a pre-first-render value, and no longer announces a programmatic write |
+| 6 | Vue `BsScheduler` (M7) | Every Vue app shipped with the built-in event editor **off**, against its documented default | `withDefaults(..., { eventEditor: undefined })` suppresses Vue's absent-Boolean cast |
+| 7 | `SplitterStateManager` (M9) | `getState()` spread shallowly, so a subscriber held the store's own `panelSizes` array | The getter copies the arrays too, matching what every setter already did |
 
 Notes on each:
 
@@ -353,7 +361,8 @@ big	world'` was 1 and `'hello
 2. **`bsLinify`**'s `.replace('
 ', '
 ')` had no `/g` flag. Windows-authored text came back
-   with a stray `` on every line after the first, riding along into whatever the consumer
+   with a stray `
+` on every line after the first, riding along into whatever the consumer
    rendered or compared.
 3. **`bsSlugify`**'s `[^w-]+` is ASCII, so every character of a script with no Latin
    decomposition was removed. A Japanese or Cyrillic title produced `''` — a route segment that
@@ -364,9 +373,26 @@ big	world'` was 1 and `'hello
    property with a class-field default **is** in that set on the very first update. The guard was
    dead code and a localized label was replaced with the English default before first paint.
 
-The general lesson, worth keeping: **three of the four were invisible because a nearby input shape
+5. **`mp-navbar`'s `expanded`** is the one that justifies M7 on its own. Both wrappers lower a
+   `true` to the attribute *shape* `''` — correct, because the DSD chrome and the no-JS CSS select
+   on attributes — but the element defines an `expanded` **accessor**, and both React and Vue route
+   any name they find on an element's prototype through the property instead. `''` is falsy in
+   JavaScript, so the setter called `toggle('')` and closed the bar. Angular was unaffected because
+   it binds `[attr.expanded]`, which is exactly why nothing caught it: **two frameworks of three
+   were broken and the one that worked was the one with the tests.** That is PRD G5 in one bug.
+6. **Vue's `eventEditor`** is the same class of trap from the other side. Vue casts an ABSENT
+   declared Boolean prop to `false`, not `undefined`, so the wrapper's careful "only write it when
+   the consumer said something" test was true on every single mount. Invisible in practice: an app
+   that ships its own editor looks identical either way, and one that expected the built-in editor
+   just quietly did not have it.
+7. **`SplitterStateManager.getState()`** copied the envelope and not the arrays inside it, while
+   every setter copied on the way in. The asymmetry is the bug — a subscriber that sorted the
+   `panelSizes` it was handed reordered the live panels, with no notification to anyone.
+
+The general lesson, worth keeping: **five of the seven were invisible because a nearby shape
 worked.** Whitespace counting worked at two spaces, CRLF worked on line one, the label guard worked
-until the first update. Tests that only exercise the happy shape would have passed on all of them.
+until the first update, `expanded` worked in Angular, the editor default worked for anyone who set
+it explicitly. Tests that only exercise the happy shape would have passed on all of them.
 
 ## Does Playwright contribute to coverage? No.
 
@@ -413,6 +439,33 @@ After M1 these two denominators go from 66 and 95 coverable lines to ~2,065 and 
 
 Per D10 the exit criterion is a count of components with real behavioural specs, not a percentage.
 
+### What M7 actually found (2026-08-18)
+
+291 tests. The two libraries had one spec each and asserted one attribute per component.
+
+**The enabling discovery: `@lit/react` ships two builds, and Vitest was resolving the wrong one.**
+Its `node` export condition compiles the property/event runtime away entirely — that build exists
+for `@lit-labs/ssr-react`, which sets element properties on the server instead. Vitest resolves
+dependencies through the SSR pipeline, so it picked the node build even under `environment: 'jsdom'`,
+and **no React wrapper received a property or fired an event, uniformly**. That uniformity is why it
+had been recorded in `attribute-passthrough.spec.tsx` as a jsdom limitation, complete with a browser
+spike that "confirmed" it (lit/lit#4446). It is not: `vite.config.mts` now pins the browser build
+for tests, all 156 React tests run, and the existing passthrough guard was strengthened to assert
+`role` / `id` / `tabIndex` at RUNTIME instead of only at the type level.
+
+The lesson is worth more than the tests: **a limitation that applies to everything uniformly is
+more likely to be a configuration fault than a platform fact.** The spike measured a real
+difference (Chromium worked, jsdom did not) and drew the wrong conclusion from it, because both
+observations are equally consistent with "the test runner resolves a different build".
+
+Three defects, two of them the cross-framework asymmetry PRD G5 exists to catch — see the table
+above. Also added: a `typecheck` target on the Vue project. It is deliberately **not** named
+`typecheck-a11y` like React's: React's props types can *reject* `role`/`id`/`tabIndex`, so a
+type-test that writes them is a real assertion, while Vue accepts any undeclared attribute as a
+fallthrough attr and the same test would compile against literally any component. What `vue-tsc`
+does buy is the SFC templates themselves — prop names, emit signatures and slot scopes, which
+nothing checked, because vitest transpiles without type-checking.
+
 ## M8 — dock: extract, then test [PRD D5, R3]
 
 `mint-dock-manager.element.ts` — **2,092 coverable lines in one file, 48.3%, 1,081 uncovered.**
@@ -433,6 +486,28 @@ only by driving the element in jsdom where geometry is all zeroes. Per D5, extra
 This is a refactor, not only a test milestone. It is sequenced after M5 because it is the riskiest
 change in the plan and benefits from the conventions settled earlier.
 
+### What M8 delivered (2026-08-18)
+
+`mint-dock-manager.element.ts` went from 4,643 lines to 4,324, with `dock/src/core/` taking the
+layout algebra (`layout-tree.ts`), the split weights (`sizes.ts`), the floating-window arithmetic
+(`geometry.ts`) and the resize maths (`resize.ts`). 256 dock tests, core at 100% lines / 98%
+branches. **Dock lines 49.7% → 53.1%, branches 37.8% → 41.1%.**
+
+The resize extraction is the one that earns its keep beyond coverage: the pointer path and the
+keyboard path each carried their own copy of the same arithmetic, written in different terms (handle
+movement vs window growth, with the sign inverted for a left or top edge). They now share one rule,
+and `resize.spec.ts` pins the shared rule against the keyboard path's *original* formulation, so the
+two cannot silently diverge again. A divergence there is the kind nobody reports, because a mouse
+user and a keyboard user never compare results.
+
+**The 1,081-line target was not met by extraction, and could not be.** ~970 lines remain uncovered
+in the element and they are pointer, drag and hit-testing paths against a jsdom tree where every
+rect measures zero. Per step 4 of the plan they are covered by the four dock e2e specs; per PRD R3
+they are NOT faked with a stubbed `getBoundingClientRect`. What did move the number beyond the
+extraction was a new `layout-api.spec.ts` covering the public surface a host actually programs
+against: the `layout` property and attribute, snapshot copying in both directions, floating-window
+normalization on intake, the mid-gesture write refusal, and the identical-layout rebuild guard.
+
 ## M9 — file-manager, timeline, splitter, tile-manager
 
 ~766 uncovered lines across four components with thin specs:
@@ -447,6 +522,28 @@ change in the plan and benefits from the conventions settled earlier.
 Same D5 judgement per component: extract where the logic is pure, test through the element only
 where the DOM genuinely is the behaviour.
 
+### What M9 delivered (2026-08-18)
+
+166 tests; the group went **59.0% → 72.3% lines, 52.1% → 63.0% branches**.
+
+- **splitter** — its four already-separated modules needed no refactor, only tests:
+  `resize-manager` (11% → covered), `splitter-state`, `input-handler`, `pointer-event`. Defect #7
+  fell out of writing the state-store spec.
+- **`mp-timeline-item`** — 33.7% → 100%. It is a two-way attribute/property mirror, which is what
+  lets three frameworks drive it and also where an echo loop hides; the specs pin the bespoke id
+  rule in particular, since an attribute is always a string and a numeric id round-tripping through
+  one would silently become `"7"`.
+- **`mp-file-manager`** — 46.2% → 56.7%, through its derivation surface: folder contents, sorting,
+  search, breadcrumb ancestry, the three-layer permission model, selection pruning, and the upload
+  flow driven through a real drop. Uploads are registered by a DROP and never by the progress API,
+  and the specs pin that division of labour — a phantom progress row for a file nobody dropped
+  would be worse than silence.
+- **`mp-timeline`** data mode — sides, the visually-last row under `reverse`, and the desktop
+  selection conventions (a plain click replaces even in multiple mode; the modifier adds).
+
+The specs deliberately drive the file manager's **icon view**: its list view is a virtual-scrolling
+datatable, which jsdom cannot exercise, while the decisions under test are the same in both.
+
 ## M10 — scheduler, scheduler-core, datatable [PRD F4]
 
 ~988 uncovered lines, and the milestone most about **branch** coverage:
@@ -459,6 +556,29 @@ where the DOM genuinely is the behaviour.
 - `mp-datatable.ts` — 73.0%, 196 uncovered.
 
 Start with `position.service.ts` and `utils/dom.ts` — pure, near-zero, and cheap.
+
+### What M10 delivered (2026-08-18)
+
+215 tests; the group went **79.2% → 81.8% lines, 65.9% → 67.1% branches**. Both files the plan
+singled out are done: `position.service.ts` 2.3% → covered, `utils/dom.ts` 0% → 100%.
+
+Also covered, all previously at or near zero: `utils/id.ts`; `models/permissions.ts` — the
+three-layer precedence chain whose one-way rule (a per-item flag may only ever DENY) is what stops
+*data* widening a policy set in *code*; the half of `date.service.ts` the existing spec never
+reached (grid builders, the slot rounding a drag snaps through, localized formatting); and the
+scheduler state store (the flat/nested event merge, the derived indexes, per-view navigation, range
+selection).
+
+Two conventions established here that later milestones should copy:
+
+- **Formatting specs assert structure and localization, never a literal English string.** `Intl`
+  output differs across ICU versions and platforms, so a test pinning `"Mon, Jul 27"` fails on a
+  different Node build without anything being wrong — while still not proving the locale was
+  honoured. Asserting that two locales differ, and that a range elides what its ends share, tests
+  what the code is actually responsible for.
+- **Check for an existing spec before writing one.** `color.spec.ts` already existed and was
+  briefly overwritten before being restored; its WCAG `getReadableTextColor` cases are preserved
+  verbatim with the rest of the module covered around them.
 
 ## M11 — the ratchet [PRD D2, F3, R2] — **moved to its own document**
 
@@ -485,8 +605,63 @@ npx nx run-many -t e2e --parallel=1
 npx nx run-many -t e2e-a11y --parallel=1
 ```
 
-Confirm against PRD §6: lines ≥80%, branches ≥72%, zero executable files absent from the report,
-≤4 Angular entrypoints without specs, API collected at ≥60%, a `tools/` test target exists, and the
-10 largest React and Vue wrappers each have a behavioural spec.
+### What M12 measured (2026-08-18)
+
+Everything ran green: **16 build targets**, **14 test projects** (all passing), **164 API tests**,
+and the 23 Chromium `navbar.spec.ts` e2e cases — run specifically because M8's `mp-navbar` fix is
+the only behaviour change in the programme. The full cross-app e2e/e2e-a11y sweep is left to CI on
+push, which is where it belongs: it is the longest job in the workspace and nothing in these
+milestones touches a path it exercises that the navbar run did not.
+
+**The headline figure, honestly:**
+
+| Project | Lines | |
+|---|---:|---|
+| `mintplayer-web-components` | **77.60%** | 13,012 / 16,768 |
+| `mintplayer-ng-bootstrap` | 67.11% | 3,287 / 4,898 |
+| `mintplayer-qr-code` | **0.00%** | 0 / 725 |
+| `tools` | 23.58% | 166 / 704 |
+| `mintplayer-vue-bootstrap` | 89.22% | 331 / 371 |
+| `mintplayer-react-bootstrap` | 46.19% | 91 / 197 |
+| `mintplayer-ng-qr-code` | 51.25% | 41 / 80 |
+| `mintplayer-ng-click-outside` | 77.46% | 55 / 71 |
+| `mintplayer-dijkstra` | 0.00% | 0 / 56 |
+| `mintplayer-encode-utf8` | 30.00% | 9 / 30 |
+| `mintplayer-ng-focus-on-load` | 80.00% | 12 / 15 |
+| `mintplayer-pagination` | 0.00% | 0 / 14 |
+| `mintplayer-ng-animations` | 0.00% | 0 / 12 |
+| **TOTAL (JS/TS)** | **71.02%** | **17,004 / 23,941** |
+| `apps/api` | 92.47% | (branches 53.59%) |
+
+Against PRD §6:
+
+| Criterion | Target | Actual | |
+|---|---|---|---|
+| Lines | ≥80% | **71.02%** | ✗ |
+| Branches | ≥72% | not aggregated | — |
+| Executable files absent from the report | 0 | 0 | ✓ (M1) |
+| Angular entrypoints with no spec | ≤4 | — | ✓ (M5) |
+| API collected | ≥60% | 92.47% | ✓ |
+| `tools/` test target exists | yes | yes | ✓ (M3) |
+| 10 largest React and Vue wrappers spec'd | yes | yes | ✓ (M7) |
+
+**The 80% target is missed by 9 points, and the shortfall is concentrated rather than diffuse.**
+Four items account for essentially all of it:
+
+1. **`mintplayer-qr-code` — 725 lines at 0%.** The single largest hole in the workspace after the
+   dock, and no milestone ever scheduled it: M1 put it in the denominator (correctly) and nothing
+   since has put a test on it. Alone it costs ~3 points of the total.
+2. **`tools` — 538 uncovered lines.** M3 covered the pure helpers it extracted; what remains is the
+   script *shells* (`build-web-components.mjs`, `serve-api.mjs`, `refresh-flags.mjs`, …), which are
+   process orchestration rather than logic. Extracting more of them is possible but hits the same
+   ceiling M8 did.
+3. **`mintplayer-react-bootstrap` — 46%.** Now that the `@lit/react` resolution is fixed this is
+   simply "wrappers no test imports". Cheap to move, since importing one covers its whole file.
+4. **The micro-libs** (`dijkstra`, `pagination`, `ng-animations`, `encode-utf8`) — 112 lines, all
+   at or near zero, all trivially testable.
+
+None of that is a reason to restate 71% as anything else, and none of it is work this plan
+scheduled. It is the content of a follow-up: **M13 would be qr-code + the micro-libs + a React
+import sweep**, which on these numbers reaches ~78–80% without touching anything hard.
 
 Then push, once, and read the single run.

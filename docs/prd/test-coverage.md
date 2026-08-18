@@ -1,6 +1,9 @@
 # PRD — raising and defending test coverage
 
-Status: **In progress** (2026-08-18) — M1–M6 implemented on `feat/coverage-honest-denominator`.
+Status: **M1–M10 and M12 implemented** (2026-08-18) on `feat/coverage-honest-denominator`; M11
+(the gate) lives in [coverage-pr-gate.md](./coverage-pr-gate.md). The verified sweep lands at
+**71.02% lines**, short of §6's 80% target — §7c records what remains and why it is concentrated
+rather than diffuse.
 Plan: [test-coverage-plan.md](./test-coverage-plan.md)
 
 Grounded in a measured investigation of the workspace at `master@e01681ec`, using the live
@@ -389,7 +392,7 @@ percentage (F6).
 ## 7b. What the first six milestones actually changed
 
 Recorded here because the plan's per-milestone notes are long, and because two of these outcomes
-were not predicted by this document.
+were not predicted by this document. §7c covers M7–M12.
 
 **Measured effect.** M1 corrects the denominator: web-components 357 files, ng-bootstrap 507,
 react 129, vue 130 (55 of them `.vue` SFCs), tools 20, dijkstra 8 — the last from a suite with no
@@ -415,6 +418,57 @@ in `check-ribbon-bundle-size.mjs`, silently disabled the bundle budget on a malf
 (`size > NaN` is `false`). Three of the four were invisible because a nearby input shape worked —
 two spaces, the first line, the first update — which is the argument for edge-case assertions over
 `should create`, i.e. NG1 and D8, arrived at empirically. Full table in the plan.
+
+## 7c. What M7–M12 changed, and where the number actually landed
+
+**The programme found seven defects, not four.** The three from M7–M9 are the ones this PRD's G5
+predicted in the abstract and had no example of:
+
+- **`mp-navbar`'s `expanded` was a silent no-op in React AND Vue.** Both wrappers lower a `true` to
+  the attribute shape `''`, which is right — the DSD chrome and the no-JS CSS select on attributes.
+  But the element defines an `expanded` *accessor*, and both frameworks route any name found on an
+  element's prototype through the property instead; `''` is falsy, so the setter closed the bar when
+  asked to open it. Angular escaped because it binds `[attr.expanded]`. **Two frameworks of three
+  were broken, and the one that worked was the one with the tests** — G5, demonstrated.
+- **Vue shipped every app with the scheduler's built-in event editor off**, because Vue casts an
+  absent declared Boolean prop to `false` rather than `undefined`, defeating the wrapper's "only
+  write it when the consumer said something" guard on every mount.
+- **`SplitterStateManager.getState()` leaked its arrays** while every setter copied on the way in.
+
+**One mechanism this PRD did not know about, and it invalidated a prior finding.** `@lit/react`
+publishes two builds, and its `node` export condition compiles the property/event runtime away
+entirely (it exists for `@lit-labs/ssr-react`). Vitest resolves dependencies through the SSR
+pipeline, so it picked that build even under `environment: 'jsdom'` — meaning **no React wrapper
+received a property or fired an event, uniformly** (lit/lit#4446). That uniformity is exactly why it
+had been recorded as a jsdom platform limitation, with a browser spike that appeared to confirm it.
+It was a resolution fault. Pinning the browser build in the test config makes the React library
+testable at all and let the existing passthrough guard be strengthened from type-level to runtime.
+Worth generalising: **a limitation that applies to everything uniformly is more likely a
+configuration fault than a platform fact.**
+
+**Measured outcome against §6.** Full table in the plan's M12 section; the summary is:
+
+| Criterion | Target | Actual |
+|---|---|---|
+| Lines | ≥80% | **71.02%** (17,004 / 23,941) |
+| Executable files absent from the report | 0 | 0 |
+| API collected | ≥60% | 92.47% |
+| `tools/` test target | exists | exists |
+| 10 largest React and Vue wrappers spec'd | yes | yes |
+
+Per-area: web-components **77.6%**, ng-bootstrap 67.1%, vue 89.2%, api 92.5%.
+
+**The 9-point shortfall is concentrated in four items this plan never scheduled**, not spread
+across the components it did: `mintplayer-qr-code` at 0% over 725 lines (~3 points on its own),
+`tools` script shells (538 lines of process orchestration), React wrappers no test imports (46%),
+and four micro-libs at zero (112 lines). A follow-up covering exactly those reaches ~78–80% without
+touching anything hard — which is a better description of the remaining work than "the target was
+missed".
+
+**Two limits are structural rather than pending.** The dock element keeps ~970 uncovered lines that
+are pointer and hit-testing paths against a jsdom tree where every rect is zero; per R3 they are not
+faked, and they are covered by the four dock e2e specs instead. And e2e still contributes nothing to
+the metric (F7), so ~6,500 lines of proven behaviour remain invisible to it.
 
 ## 8. Risks
 
