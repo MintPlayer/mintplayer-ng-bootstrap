@@ -455,312 +455,6 @@ describe('mint-dock-manager — computeHeaderInsertIndex excludes the dragged ta
   });
 });
 
-describe('mint-dock-manager — layout normalization', () => {
-  let dock: MintDockManagerElement;
-
-  type AnyNode = {
-    kind: 'split' | 'stack';
-    direction?: 'horizontal' | 'vertical';
-    sizes?: number[];
-    children?: AnyNode[];
-    panes?: string[];
-    activePane?: string;
-  };
-
-  function normalize(node: AnyNode | null): AnyNode | null {
-    return (
-      dock as unknown as { normalizeLayoutNode(n: AnyNode | null): AnyNode | null }
-    ).normalizeLayoutNode(node);
-  }
-
-  function stack(...panes: string[]): AnyNode {
-    return { kind: 'stack', panes, activePane: panes[0] };
-  }
-
-  function split(
-    direction: 'horizontal' | 'vertical',
-    sizes: number[],
-    ...children: AnyNode[]
-  ): AnyNode {
-    return { kind: 'split', direction, sizes, children };
-  }
-
-  beforeEach(() => {
-    dock = document.createElement('mint-dock-manager') as MintDockManagerElement;
-    document.body.appendChild(dock);
-  });
-
-  afterEach(() => {
-    dock.remove();
-  });
-
-  // --- structural cleanup ---------------------------------------------------
-
-  it('returns null for an empty stack', () => {
-    expect(normalize({ kind: 'stack', panes: [] })).toBeNull();
-  });
-
-  it('returns null for a split with zero children', () => {
-    expect(normalize(split('horizontal', [], ))).toBeNull();
-  });
-
-  it('unwraps a split with a single child (gap C origin)', () => {
-    const out = normalize(split('horizontal', [1], stack('a')));
-    expect(out).toMatchObject({ kind: 'stack', panes: ['a'] });
-  });
-
-  it('drops empty stacks from a split before deciding length', () => {
-    // V[empty, stack(b), empty] → unwrapped to stack(b)
-    const out = normalize(
-      split(
-        'vertical',
-        [0.3, 0.4, 0.3],
-        { kind: 'stack', panes: [] },
-        stack('b'),
-        { kind: 'stack', panes: [] },
-      ),
-    );
-    expect(out).toMatchObject({ kind: 'stack', panes: ['b'] });
-  });
-
-  // --- gap-targeted scenarios ----------------------------------------------
-
-  it('gap A — flattens a same-direction child surfaced by a length-1 collapse', () => {
-    // V[ V[stack(a), stack(b)] alone in its slot ] should bubble up to a flat
-    // V split at this level. Modeled as: V[ inner V[a, b] ] which collapses
-    // to V[a, b] then merges into a parent if same direction.
-    // Single-direct-child: collapse, then re-test from above.
-    const out = normalize(
-      split('vertical', [1.0], split('vertical', [0.4, 0.6], stack('a'), stack('b'))),
-    );
-    expect(out).toMatchObject({
-      kind: 'split',
-      direction: 'vertical',
-      children: [
-        { kind: 'stack', panes: ['a'] },
-        { kind: 'stack', panes: ['b'] },
-      ],
-    });
-  });
-
-  it('gap B — flattens H[stack, H[stack, stack]] (multi-stack floating graft)', () => {
-    const out = normalize(
-      split(
-        'horizontal',
-        [0.5, 0.5],
-        stack('p1'),
-        split('horizontal', [0.5, 0.5], stack('p5'), stack('floating')),
-      ),
-    );
-    expect(out).toMatchObject({
-      kind: 'split',
-      direction: 'horizontal',
-      children: [
-        { kind: 'stack', panes: ['p1'] },
-        { kind: 'stack', panes: ['p5'] },
-        { kind: 'stack', panes: ['floating'] },
-      ],
-    });
-    expect((out as AnyNode).children).toHaveLength(3);
-  });
-
-  it('gap C — flattens V[V[stack, stack], stack] (wrap-then-flatten residue)', () => {
-    const out = normalize(
-      split(
-        'vertical',
-        [0.6, 0.4],
-        split('vertical', [0.4, 0.6], stack('a'), stack('b')),
-        stack('c'),
-      ),
-    );
-    expect(out).toMatchObject({
-      kind: 'split',
-      direction: 'vertical',
-      children: [
-        { kind: 'stack', panes: ['a'] },
-        { kind: 'stack', panes: ['b'] },
-        { kind: 'stack', panes: ['c'] },
-      ],
-    });
-  });
-
-  it("user's repro: dragging panel-4 right of panel-3 produces a flat root", () => {
-    // After this PR's normalize step, the artificial intermediate produced by
-    // dockNodeBeside's wrap branch ought to be flattened so the user-observed
-    // redundant H wrapper does not appear.
-    const out = normalize(
-      split(
-        'horizontal',
-        [0.5, 0.5],
-        stack('p1', 'p2'),
-        split('horizontal', [0.5, 0.5], stack('p3'), stack('p4')),
-      ),
-    );
-    expect((out as AnyNode).kind).toBe('split');
-    const flat = (out as AnyNode).children!;
-    expect(flat).toHaveLength(3);
-    expect(flat[0]).toMatchObject({ panes: ['p1', 'p2'] });
-    expect(flat[1]).toMatchObject({ panes: ['p3'] });
-    expect(flat[2]).toMatchObject({ panes: ['p4'] });
-  });
-
-  it('does NOT flatten a child split with the opposite direction', () => {
-    const input = split(
-      'horizontal',
-      [0.5, 0.5],
-      stack('a'),
-      split('vertical', [0.5, 0.5], stack('b'), stack('c')),
-    );
-    const out = normalize(input);
-    expect(out).toMatchObject({
-      kind: 'split',
-      direction: 'horizontal',
-      children: [
-        { kind: 'stack', panes: ['a'] },
-        {
-          kind: 'split',
-          direction: 'vertical',
-          children: [{ panes: ['b'] }, { panes: ['c'] }],
-        },
-      ],
-    });
-  });
-
-  // --- size redistribution --------------------------------------------------
-
-  it('combines sizes multiplicatively when merging same-direction children', () => {
-    const out = normalize(
-      split(
-        'horizontal',
-        [0.7, 0.3],
-        stack('a'),
-        split('horizontal', [0.3, 0.7], stack('b'), stack('c')),
-      ),
-    ) as AnyNode;
-    expect(out.sizes).toHaveLength(3);
-    // Outer slot for 'a' is 0.7 (kept); merged children get 0.3 * [0.3, 0.7] = [0.09, 0.21].
-    // Sum = 0.7 + 0.09 + 0.21 = 1.0 (no renormalization adjustment needed).
-    expect(out.sizes![0]).toBeCloseTo(0.7, 6);
-    expect(out.sizes![1]).toBeCloseTo(0.09, 6);
-    expect(out.sizes![2]).toBeCloseTo(0.21, 6);
-    expect(out.sizes!.reduce((s, v) => s + v, 0)).toBeCloseTo(1, 6);
-  });
-
-  it('renormalizes size sums to 1 after merging', () => {
-    // Provide non-normalized sizes; result must still sum to 1.
-    const out = normalize(
-      split(
-        'horizontal',
-        [3, 1], // non-normalized
-        stack('a'),
-        split('horizontal', [4, 6], stack('b'), stack('c')),
-      ),
-    ) as AnyNode;
-    expect(out.sizes!.reduce((s, v) => s + v, 0)).toBeCloseTo(1, 10);
-  });
-
-  // --- activePane repair ---------------------------------------------------
-
-  it('repairs a stale activePane on a stack', () => {
-    const out = normalize({ kind: 'stack', panes: ['a', 'b'], activePane: 'gone' });
-    expect(out).toMatchObject({ activePane: 'a' });
-  });
-
-  it('keeps a valid activePane untouched', () => {
-    const out = normalize({ kind: 'stack', panes: ['a', 'b'], activePane: 'b' });
-    expect(out).toMatchObject({ activePane: 'b' });
-  });
-
-  // --- idempotency ---------------------------------------------------------
-
-  it('is idempotent (normalize(normalize(x)) deep-equals normalize(x))', () => {
-    const inputs: AnyNode[] = [
-      stack('a'),
-      split('horizontal', [0.5, 0.5], stack('a'), stack('b')),
-      split(
-        'vertical',
-        [0.4, 0.6],
-        split('vertical', [0.3, 0.7], stack('a'), stack('b')),
-        stack('c'),
-      ),
-      split(
-        'horizontal',
-        [0.7, 0.3],
-        stack('a'),
-        split('horizontal', [0.3, 0.7], stack('b'), stack('c')),
-      ),
-    ];
-    inputs
-      .map((input) => {
-        const once = JSON.parse(JSON.stringify(normalize(JSON.parse(JSON.stringify(input)))));
-        const twice = JSON.parse(JSON.stringify(normalize(JSON.parse(JSON.stringify(once)))));
-        return { once, twice };
-      })
-      .map(({ once, twice }) => expect(twice).toEqual(once));
-  });
-
-  // --- intake (gap D) ------------------------------------------------------
-
-  it('gap D — layout setter sanitizes empty stacks on intake', () => {
-    dock.layout = {
-      root: split('horizontal', [0.5, 0.5], { kind: 'stack', panes: [] }, stack('only')),
-      floating: [],
-      titles: {},
-    } as never;
-    const snap = dock.layout.root as AnyNode;
-    expect(snap).toMatchObject({ kind: 'stack', panes: ['only'] });
-  });
-
-  it('gap D — layout setter flattens nested same-direction splits on intake', () => {
-    dock.layout = {
-      root: split(
-        'vertical',
-        [0.6, 0.4],
-        split('vertical', [0.5, 0.5], stack('a'), stack('b')),
-        stack('c'),
-      ),
-      floating: [],
-      titles: {},
-    } as never;
-    const out = dock.layout.root as AnyNode;
-    expect(out.kind).toBe('split');
-    expect(out.children).toHaveLength(3);
-    expect(out.children![0]).toMatchObject({ panes: ['a'] });
-    expect(out.children![1]).toMatchObject({ panes: ['b'] });
-    expect(out.children![2]).toMatchObject({ panes: ['c'] });
-  });
-
-  // --- floating windows ----------------------------------------------------
-
-  it('drops a floating window whose root collapses to null on intake', () => {
-    dock.layout = {
-      root: stack('docked'),
-      floating: [
-        {
-          bounds: { left: 0, top: 0, width: 200, height: 200 },
-          root: { kind: 'stack', panes: [] },
-        },
-      ],
-      titles: {},
-    } as never;
-    expect(dock.layout.floating).toHaveLength(0);
-  });
-
-  it('repairs a stale activePane on a floating window during normalize', () => {
-    dock.layout = {
-      root: stack('docked'),
-      floating: [
-        {
-          bounds: { left: 0, top: 0, width: 200, height: 200 },
-          root: stack('a', 'b'),
-          activePane: 'ghost',
-        },
-      ],
-      titles: {},
-    } as never;
-    expect(dock.layout.floating[0].activePane).toBe('a');
-  });
-});
 
 describe('mint-dock-manager — whole-pane drag marks the wrapper transparent', () => {
   // Regression for #349 — without data-dragging on the wrapper during the
@@ -859,77 +553,106 @@ describe('mint-dock-manager — whole-pane drag marks the wrapper transparent', 
   });
 });
 
-describe('mint-dock-manager — clampBoundsToHost', () => {
-  type Bounds = { left: number; top: number; width: number; height: number };
-  type Internals = {
-    clampBoundsToHost: (intent: Bounds, host: { width: number; height: number }) => Bounds;
+
+/*
+ * Normalization as the layout SETTER applies it. The transformation itself is
+ * specced in `../core/layout-tree.spec.ts`; what these add is that the element
+ * actually runs it on intake, and that it reaches inside floating windows —
+ * both of which are element behaviour, not tree algebra. The "gap" names are
+ * the original bug reports.
+ */
+describe('mint-dock-manager — normalization on intake', () => {
+  let dock: MintDockManagerElement;
+
+  type AnyNode = {
+    kind: 'split' | 'stack';
+    direction?: 'horizontal' | 'vertical';
+    sizes?: number[];
+    children?: AnyNode[];
+    panes?: string[];
+    activePane?: string;
   };
-  let clamp: Internals['clampBoundsToHost'];
+
+  function aStack(...panes: string[]): AnyNode {
+    return { kind: 'stack', panes, activePane: panes[0] };
+  }
+
+  function aSplit(
+    direction: 'horizontal' | 'vertical',
+    sizes: number[],
+    ...children: AnyNode[]
+  ): AnyNode {
+    return { kind: 'split', direction, sizes, children };
+  }
 
   beforeEach(() => {
-    const dock = document.createElement('mint-dock-manager') as MintDockManagerElement;
-    const internals = dock as unknown as Internals;
-    clamp = internals.clampBoundsToHost.bind(dock);
+    dock = document.createElement('mint-dock-manager') as MintDockManagerElement;
+    document.body.appendChild(dock);
   });
 
-  it('returns intent unchanged when fully inside the host', () => {
-    const out = clamp({ left: 100, top: 50, width: 200, height: 150 }, { width: 1000, height: 800 });
-    expect(out).toEqual({ left: 100, top: 50, width: 200, height: 150 });
+  afterEach(() => {
+    dock.remove();
   });
 
-  it('shifts pane inward when right-overflow (Panel 5 repro)', () => {
-    const out = clamp({ left: 680, top: 96, width: 320, height: 220 }, { width: 900, height: 600 });
-    expect(out).toEqual({ left: 580, top: 96, width: 320, height: 220 });
+  // --- intake (gap D) ------------------------------------------------------
+
+  it('gap D — layout setter sanitizes empty stacks on intake', () => {
+    dock.layout = {
+      root: aSplit('horizontal', [0.5, 0.5], { kind: 'stack', panes: [] }, aStack('only')),
+      floating: [],
+      titles: {},
+    } as never;
+    const snap = dock.layout.root as AnyNode;
+    expect(snap).toMatchObject({ kind: 'stack', panes: ['only'] });
   });
 
-  it('shifts pane inward when bottom-overflow', () => {
-    const out = clamp({ left: 100, top: 500, width: 200, height: 200 }, { width: 1000, height: 600 });
-    expect(out).toEqual({ left: 100, top: 400, width: 200, height: 200 });
+  it('gap D — layout setter flattens nested same-direction splits on intake', () => {
+    dock.layout = {
+      root: aSplit(
+        'vertical',
+        [0.6, 0.4],
+        aSplit('vertical', [0.5, 0.5], aStack('a'), aStack('b')),
+        aStack('c'),
+      ),
+      floating: [],
+      titles: {},
+    } as never;
+    const out = dock.layout.root as AnyNode;
+    expect(out.kind).toBe('split');
+    expect(out.children).toHaveLength(3);
+    expect(out.children![0]).toMatchObject({ panes: ['a'] });
+    expect(out.children![1]).toMatchObject({ panes: ['b'] });
+    expect(out.children![2]).toMatchObject({ panes: ['c'] });
   });
 
-  it('clamps a negative left to 0', () => {
-    const out = clamp({ left: -50, top: 100, width: 200, height: 150 }, { width: 1000, height: 600 });
-    expect(out).toEqual({ left: 0, top: 100, width: 200, height: 150 });
+  // --- floating windows ----------------------------------------------------
+
+  it('drops a floating window whose root collapses to null on intake', () => {
+    dock.layout = {
+      root: aStack('docked'),
+      floating: [
+        {
+          bounds: { left: 0, top: 0, width: 200, height: 200 },
+          root: { kind: 'stack', panes: [] },
+        },
+      ],
+      titles: {},
+    } as never;
+    expect(dock.layout.floating).toHaveLength(0);
   });
 
-  it('clamps a negative top to 0', () => {
-    const out = clamp({ left: 100, top: -50, width: 200, height: 150 }, { width: 1000, height: 600 });
-    expect(out).toEqual({ left: 100, top: 0, width: 200, height: 150 });
-  });
-
-  it('shrinks width and pins left to 0 when pane is wider than host', () => {
-    const out = clamp({ left: 100, top: 50, width: 1200, height: 200 }, { width: 900, height: 600 });
-    expect(out).toEqual({ left: 0, top: 50, width: 900, height: 200 });
-  });
-
-  it('shrinks height and pins top to 0 when pane is taller than host', () => {
-    const out = clamp({ left: 100, top: 50, width: 200, height: 800 }, { width: 1000, height: 600 });
-    expect(out).toEqual({ left: 100, top: 0, width: 200, height: 600 });
-  });
-
-  it('drops the 192/128 minimum when host is smaller — pane shrinks to fit', () => {
-    const out = clamp({ left: 50, top: 50, width: 192, height: 128 }, { width: 100, height: 80 });
-    expect(out).toEqual({ left: 0, top: 0, width: 100, height: 80 });
-  });
-
-  it('returns intent unchanged when host has zero width/height (not yet measured)', () => {
-    const intent = { left: 680, top: 96, width: 320, height: 220 };
-    expect(clamp(intent, { width: 0, height: 0 })).toEqual(intent);
-    expect(clamp(intent, { width: 0, height: 600 })).toEqual(intent);
-    expect(clamp(intent, { width: 1000, height: 0 })).toEqual(intent);
-  });
-
-  it('is idempotent — clamping a clamped value is a no-op', () => {
-    const cases: Bounds[] = [
-      { left: 680, top: 96, width: 320, height: 220 },
-      { left: -50, top: -50, width: 1200, height: 800 },
-      { left: 50, top: 50, width: 192, height: 128 },
-    ];
-    const host = { width: 900, height: 600 };
-    cases.forEach((intent) => {
-      const first = clamp(intent, host);
-      const second = clamp(first, host);
-      expect(second).toEqual(first);
-    });
+  it('repairs a stale activePane on a floating window during normalize', () => {
+    dock.layout = {
+      root: aStack('docked'),
+      floating: [
+        {
+          bounds: { left: 0, top: 0, width: 200, height: 200 },
+          root: aStack('a', 'b'),
+          activePane: 'ghost',
+        },
+      ],
+      titles: {},
+    } as never;
+    expect(dock.layout.floating[0].activePane).toBe('a');
   });
 });
