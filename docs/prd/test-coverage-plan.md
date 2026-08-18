@@ -1,11 +1,11 @@
 # Plan — raising and defending test coverage
 
 PRD: [test-coverage.md](./test-coverage.md)
-Status: **Not started** (2026-08-17). No branch, no PR — awaiting permission.
+Status: **In progress** (2026-08-18) on `feat/coverage-honest-denominator`. M1 done.
 
 | Milestone | Scope | Uncovered lines addressed |
 |---|---|---|
-| M1 | `coverage.include` everywhere + demo apps out of the metric | denominator correction (~0 new coverage) |
+| M1 ✅ | `coverage.include` everywhere + demo apps out of the metric | denominator correction (~0 new coverage) |
 | M2 | PR-side coverage measurement (no gate yet) | — |
 | M3 | `tools/` project + test target; codegen helper specs | 3,438 currently untargeted lines |
 | M4 | `apps/api` coverage collection + `TzDateMath` + controllers | ~2,183 untracked today |
@@ -84,6 +84,32 @@ Verify: `nx run-many --target=test --coverage` locally on two libs only, then re
 justified here rather than deferred to M10.
 
 **This milestone ships alone.** It changes no test and adds no coverage.
+
+### What M1 actually found (2026-08-18)
+
+Two corrections to the assumptions above, both discovered while applying it:
+
+- **Every micro-lib already had a `coverage` block** — none was missing, they were all just missing
+  `include`. The edit was uniform across all twelve configs.
+- **Vitest 4's `coverageConfigDefaults.exclude` no longer carries `**/*.d.ts`.** With `coverage.all`
+  gone, an explicit `include` is the only file selector, and ambient declaration files land in the
+  denominator as 0%-covered source. Two of them (`dock/src/components/mint-dock-manager.element.d.ts`,
+  `flags/src/raw-svg.d.ts`) appeared in the first web-components run and were caught only by diffing
+  the emitted `SF:` list against disk. Every `exclude` here therefore names `'**/*.d.ts'` explicitly.
+
+Verified by single-spec coverage runs per lib, reading the emitted `SF:` lists:
+
+| Lib | Files now in the report | Leaks (generated/spec/d.ts/setup) |
+|---|---|---|
+| web-components | 357 | 0 |
+| ng-bootstrap | 507 | 0 |
+| react-bootstrap | 129 | 0 |
+| vue-bootstrap | 130 (incl. **55 `.vue` SFCs**) | 0 |
+| dijkstra | 8 — from a suite with **no spec files at all** | 0 |
+
+`mintplayer-dijkstra` is the clearest demonstration of F1: it has zero tests, so its lcov was
+previously empty and it contributed nothing to the headline number in either direction. It now
+contributes 8 files at 0%.
 
 ## M2 — measure coverage on pull requests [PRD F3, D7, R5]
 

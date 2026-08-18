@@ -1,5 +1,6 @@
 /// <reference types='vitest' />
 import { defineConfig } from 'vite';
+import { coverageConfigDefaults } from 'vitest/config';
 import react from '@vitejs/plugin-react';
 import dts from 'vite-plugin-dts';
 import { resolve } from 'node:path';
@@ -33,6 +34,10 @@ export default defineConfig(() => ({
     setupFiles: ['./_conformance/vitest-setup.ts'],
     coverage: {
       provider: 'v8' as const,
+      // Vitest 4 removed `coverage.all`: without an explicit `include`, a source
+      // file no test imports is absent from the report rather than 0%.
+      include: ['**/*.{ts,tsx}'],
+      exclude: [...coverageConfigDefaults.exclude, '**/*.d.ts', '_conformance/**'],
       reporter: ['lcov'],
       reportsDirectory: '../../coverage/libs/mintplayer-react-bootstrap',
     },

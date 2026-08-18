@@ -67,8 +67,10 @@ jobs:
       with:
         url: https://coverage.mintplayer.com
         token: ${{ secrets.COVERAGE_TOKEN }}
+        # libs only. The demo apps still run their tests, but their coverage is
+        # not a property of the published libraries — counting them lets a demo
+        # page move the number the ratchet gates on.
         files: |
-          coverage/apps/*/lcov.info
           coverage/libs/*/lcov.info
         # With search on, a glob that matches nothing silently falls back to
         # auto-detection and would upload stray unparsable reports.
