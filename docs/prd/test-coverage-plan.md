@@ -3,10 +3,13 @@
 PRD: [test-coverage.md](./test-coverage.md)
 Status: **M1–M10 and M12–M14 done** (2026-08-18) on `feat/coverage-honest-denominator`, not pushed.
 Workspace total **74.98% lines** (was 71.02% at M12).
-M11 lives in [coverage-pr-gate-plan.md](./coverage-pr-gate-plan.md). Seven defects found and fixed
-(table below). The M12 sweep is green and its measured figures are recorded at the bottom — the
-headline number **misses the PRD's 80% target at 71.0%**, and what remains is enumerated there
-rather than rounded away.
+M11 lives in [coverage-pr-gate-plan.md](./coverage-pr-gate-plan.md). Nine defects found and fixed
+(tables in M12 and M13). The suites are green and the measured figures are recorded per milestone —
+the headline number **still misses the PRD's 80% target, at 74.98%**, and what remains is enumerated
+in M14 and M15 rather than rounded away.
+
+**Resuming on the dock? Start at M15**, which carries the current measurement and the only three
+items left that are not geometry-bound.
 
 | Milestone | Scope | Uncovered lines addressed |
 |---|---|---|
@@ -24,6 +27,7 @@ rather than rounded away.
 | M12 ✅ | Single verification sweep | — |
 | M13 ✅ | `mintplayer-qr-code` — the largest untested library | 725 lines at 0% |
 | M14 ✅ | Deepen the dock and file-manager elements | the two biggest partial files |
+| M15 | Dock — the last non-geometry regions | ~70 of 1,311 uncovered |
 
 ## Ordering rationale
 
@@ -852,3 +856,71 @@ The remaining distance to the 80% target is now two blocks, not four:
 
 The last two rows are ~250 lines and about a point between them. The first is where the next real
 milestone is.
+
+## M15 — the dock's last non-geometry regions
+
+**Measured 2026-08-18, after M14b.** `mint-dock-manager.element.ts` is at **51.79% lines / 38.57%
+branches**, with **1,311 uncovered lines** across 40 runs of 10+. `dock/src/core` is at **99.55%**
+and needs nothing.
+
+This section exists so the next session does not have to re-derive the map. Re-measure with:
+
+```bash
+cd libs/mintplayer-web-components
+npx vitest run --pool=threads --coverage --coverage.reporter=json \
+  --coverage.include='dock/src/components/mint-dock-manager.element.ts' dock
+# then parse coverage/libs/mintplayer-web-components/coverage-final.json —
+# the text reporter TRUNCATES the "Uncovered Line #s" column and is useless here
+```
+
+### The three items that are actually reachable
+
+| Lines | Method | Why it is reachable | Approach |
+|---|---:|---|---|
+| 3747-3760 (14) | `reorderPaneInLocation` | **PURE** — array splice + activePane, no DOM at all | `handleDrop(samePath, 'center')`, i.e. dropping a pane back onto its own stack, which reorders it to the end. Same technique as the "dropping into an empty main area" tests already in `mint-dock-manager.drops.spec.ts`. Zero stubs. **Do this one first.** |
+| 3202-3226 + 3228-3241 (39) | `handleFloatingStackDrop` | takes `(sourceIndex, targetPath, zone)` — callable with data, like `handleDrop` | Drop a WHOLE floating window onto a docked stack. Reachable by calling it directly; verify first that it does not read rects before committing to it. |
+| 2984-3001 + 3023-3042 (38) | `reorderPaneInLocationAtIndex`, `finalizeDropFromPoint` | needs `elementsFromPoint` + tab-button rects | **Judgement call.** `mint-dock-manager.element.spec.ts` already stubs exactly those two for `computeHeaderInsertIndex`, so there is precedent — but it is stubbing geometry, and R3 exists to stop that becoming routine. Decide deliberately; do not drift into it. |
+
+Realistic ceiling from all three: **~90 lines, taking the element to roughly 56%.**
+
+### What is permanently uncovered, and why
+
+About **480 lines** in the largest runs alone. Every one terminates in a `getBoundingClientRect()`,
+an `elementsFromPoint()` or a pointer capture, all of which jsdom reports as zero:
+
+`beginCornerResize` (66) · `showDropIndicator` (77) · `onIntersectionDoubleClick` (68) ·
+`handleCornerResizeMove` (41) · `preparePaneDragSource` (39) · `renderSnapMarkersForCorner` (33) ·
+`updatePaneDragDropTargetFromPoint` (24) · `renderIntersectionHandles` (19) ·
+`findDropZoneByPoint` (18) · `findStackInTargets` (14) · `beginFloatingResize` (13) ·
+`findDropZoneInTargets` (12) · `handleFloatingResizeMove` (11) · `ensureHeaderDragPlaceholder` (11)
+
+These are covered by the four dock e2e specs against a real engine. **Report them as permanently
+uncovered, not as future work** — and per R3 do not fake rects to reach them.
+
+Three more are unreachable for reasons that are NOT geometry, and each would be a mistake to "fix":
+
+- **`renderStack`'s `tab-activate` handler (1887-1901, 15 lines)** — resolves the tab with
+  `:scope > [data-tab-id=…]`, and **jsdom does not implement `:scope`**. Measured:
+  `querySelector(':scope > *')` returns null on an element with six children while the same
+  selector without `:scope` finds them. The child combinator is load-bearing — without it a nested
+  stack's tabs would match and activate the wrong pane. **Do not rewrite the selector to suit the
+  test runner.**
+- **`onRootKeyDown`'s arm branch (3783-3794, 12 lines)** — reads the focused tab through
+  `shadowRoot.activeElement`, which jsdom does not surface through `mp-tab-control`'s nested shadow
+  root. Already documented in `mint-dock-manager.aria.spec.ts`; the specs set `paneMoveMode`
+  directly and drive everything after it for real.
+- **`renderFloatingPanes`'s empty-window placeholder (691-702, 12 lines)** — **dead code.**
+  Normalization drops any floating window whose root is null before it can render, so the branch
+  cannot be entered through the public API.
+
+`updateFloatingPanePositions` (1586-1598) is reachable but **vacuous**: with a zero host,
+`clampBoundsToHost` returns the intent unchanged, so the assertion would prove nothing. Its logic is
+already covered in `core/geometry.spec.ts`.
+
+### The honest framing to keep
+
+M14 added 54 behavioural tests to the dock and moved its line coverage 48.5% → 49.2%; M14b added
+more and reached 51.8%. **That ratio is the point, not a disappointment.** The dock's testable
+surface is nearly exhausted while more than a third of the file remains uncovered, which is why
+§7d of the PRD argues for per-area expectations rather than one workspace number. A uniform 80%
+target applied here would push someone into faking rects — precisely R3's failure mode.
