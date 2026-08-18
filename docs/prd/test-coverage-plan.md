@@ -1,12 +1,12 @@
 # Plan — raising and defending test coverage
 
 PRD: [test-coverage.md](./test-coverage.md)
-Status: **In progress** (2026-08-18) on `feat/coverage-honest-denominator`. M1 done.
+Status: **In progress** (2026-08-18) on `feat/coverage-honest-denominator`. M1, M2 done.
 
 | Milestone | Scope | Uncovered lines addressed |
 |---|---|---|
 | M1 ✅ | `coverage.include` everywhere + demo apps out of the metric | denominator correction (~0 new coverage) |
-| M2 | PR-side coverage measurement (no gate yet) | — |
+| M2 ✅ | PR-side coverage measurement (no gate yet) | — |
 | M3 | `tools/` project + test target; codegen helper specs | 3,438 currently untargeted lines |
 | M4 | `apps/api` coverage collection + `TzDateMath` + controllers | ~2,183 untracked today |
 | M5 | Free wins: ng pipes/directives with zero specs | ~120 |
@@ -122,6 +122,12 @@ File: `.github/workflows/pull-request.yml:84`.
    PRs get neither secrets nor an OIDC token (D7).
 
 No gate yet. This milestone only makes the number visible to reviewers.
+
+Applied 2026-08-18 with one addition the plan missed: **`--exclude=api` is needed on the PR run
+too.** `nx affected` will pick up the API project whenever its files change, and `nx:run-commands`
+forwards `--coverage` verbatim to `dotnet test`, which rejects it — so adding `--coverage` without
+the exclusion turns any API-touching PR red. Master already carried the exclusion for the same
+reason; the PR workflow did not need it until now. The separate `Test API (xUnit)` step still runs.
 
 ## M3 — a test target for `tools/` [PRD F9, D9]
 
