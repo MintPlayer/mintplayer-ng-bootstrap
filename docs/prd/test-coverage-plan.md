@@ -1,7 +1,7 @@
 # Plan — raising and defending test coverage
 
 PRD: [test-coverage.md](./test-coverage.md)
-Status: **In progress** (2026-08-18) on `feat/coverage-honest-denominator`. M1–M4 done.
+Status: **In progress** (2026-08-18) on `feat/coverage-honest-denominator`. M1–M5 done.
 
 | Milestone | Scope | Uncovered lines addressed |
 |---|---|---|
@@ -9,7 +9,7 @@ Status: **In progress** (2026-08-18) on `feat/coverage-honest-denominator`. M1�
 | M2 ✅ | PR-side coverage measurement (no gate yet) | — |
 | M3 ✅ | `tools/` project + test target; codegen helper specs | 3,438 currently untargeted lines |
 | M4 ✅ | `apps/api` coverage collection + `TzDateMath` + controllers | ~2,183 untracked today |
-| M5 | Free wins: ng pipes/directives with zero specs | ~120 |
+| M5 ✅ | Free wins: ng pipes/directives with zero specs | ~120 |
 | M6 | Ribbon family — wc elements + ng wrappers | ~286 + 32 invisible files |
 | M7 | React/Vue behavioural specs | ~4,725 lines, currently 20 mounted components |
 | M8 | Dock: extract pure logic, then test it | ~1081 |
@@ -244,6 +244,34 @@ after the API test in `pull-request.yml`. `--exclude=api` stays on the Nx sweep 
 
 Pure pipes and directives — call the transform, assert the output, including the edge cases
 (empty string, null, unicode). These establish the spec conventions M5–M8 copy.
+
+### What M5 found (2026-08-18)
+
+**66 tests across 6 spec files.** Six of the seven entrypoints; `has-id` is a bare `interface`
+with no executable line, so there is nothing to test and nothing to cover — it is correctly absent
+from the report rather than a gap in it.
+
+Three behaviours were not what the name promises. All three are **pinned as-is** rather than fixed:
+each is a behaviour change that belongs in its own PR, and this milestone must not move the number
+by editing source.
+
+- **`bsWordCount` counts a single newline or tab between two words as ONE word.** It collapses
+  `s{2,}` to a space and then splits on a literal `' '`, so `'hello
+big	world'` is 1 and
+  `'hello 
+ world'` is 2. Two or more whitespace characters happen to work, which is exactly what
+  makes it hard to notice. Genuine defect.
+- **`bsLinify` normalizes only the FIRST CRLF** — `.replace('
+', '
+')` has no `/g` flag, so
+  every later line of Windows-authored text keeps a trailing ``.
+- **`bsSlugify` drops any script without a Latin decomposition** (its character class is ASCII
+  `w`), so a non-Latin title slugifies to the empty string.
+
+The viewport directive needed an `IntersectionObserver` stub — jsdom has none — which is the right
+shape anyway: what is worth asserting is the contract with the observer (observes its own element,
+forwards every entry, disconnects on destroy, never constructs one on the server), and none of that
+needs a real intersection engine.
 
 ## M6 — the ribbon family [PRD F2, Q2]
 
