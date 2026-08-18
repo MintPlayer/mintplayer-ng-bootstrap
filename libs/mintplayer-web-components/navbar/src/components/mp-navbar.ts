@@ -114,8 +114,10 @@ export class MpNavbar extends LitElement {
     } else if (name === 'expanded') {
       // Programmatic control: sync the checkbox + aria, without re-emitting
       // (the attribute write is the consumer's own act, not a state change to
-      // announce back).
-      this.#setExpanded(newValue !== null, false);
+      // announce back). Before the first render there is no checkbox yet —
+      // `<mp-navbar expanded>` in the initial HTML lands here — so it is held
+      // and applied in firstUpdated.
+      this.#applyExpanded(newValue !== null);
     } else if (name === 'aria-label') {
       this.requestUpdate();
     }
@@ -158,12 +160,42 @@ export class MpNavbar extends LitElement {
     return this.renderRoot?.querySelector<HTMLInputElement>('.navbar-toggle') ?? null;
   }
 
+  /**
+   * A programmatic write that arrives before the shadow tree exists. The
+   * checkbox IS the state, so there is nowhere to put the value until it has
+   * rendered, and `render()` deliberately does not bind `checked` (re-rendering
+   * must never clobber what the user toggled). Held here and applied in
+   * `firstUpdated`.
+   */
+  #pendingExpanded: boolean | null = null;
+
   /** Whether the collapse is (visually) expanded — the toggle's checked state. */
   get expanded(): boolean {
-    return this.#toggleInput?.checked ?? this.hasAttribute('expanded');
+    return this.#toggleInput?.checked ?? this.#pendingExpanded ?? this.hasAttribute('expanded');
   }
-  set expanded(v: boolean) {
-    this.toggle(v);
+  /**
+   * Accepts the empty string as ON, the way an HTML boolean attribute does.
+   *
+   * This is not defensive coding — it is the only reason `expanded` works
+   * outside vanilla usage. The React and Vue wrappers both lower a `true` to
+   * the attribute *shape* `''` (the DSD chrome and the no-JS CSS select on
+   * attributes, and only an attribute is serialised by SSR), but both
+   * frameworks route any name they find on the element's prototype through the
+   * PROPERTY instead — and `''` is falsy in JavaScript, so the property setter
+   * used to close the navbar when asked to open it. `expanded` was a silent
+   * no-op in two of the three frameworks.
+   *
+   * Programmatic writes do not emit `expandedchange`: setting the state is the
+   * consumer's own act, not a change to announce back to them. That matches
+   * the `expanded` ATTRIBUTE path, which has always been silent.
+   */
+  set expanded(v: boolean | '') {
+    this.#applyExpanded(v === '' ? true : !!v);
+  }
+
+  #applyExpanded(on: boolean): void {
+    if (this.#toggleInput) this.#setExpanded(on, false);
+    else this.#pendingExpanded = on;
   }
 
   /**
@@ -192,7 +224,12 @@ export class MpNavbar extends LitElement {
     const input = this.#toggleInput;
     if (input) {
       input.setAttribute('role', 'button');
-      input.setAttribute('aria-expanded', String(input.checked));
+      if (this.#pendingExpanded !== null) {
+        this.#setExpanded(this.#pendingExpanded, false);
+        this.#pendingExpanded = null;
+      } else {
+        input.setAttribute('aria-expanded', String(input.checked));
+      }
     }
   }
 

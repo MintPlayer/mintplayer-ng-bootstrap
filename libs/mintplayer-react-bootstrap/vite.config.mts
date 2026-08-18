@@ -29,6 +29,21 @@ export default defineConfig(() => ({
      `src/index.ts`, so discoverEntries() ignores it and it can never be published. */
   test: {
     environment: 'jsdom',
+    /* `@lit/react` ships TWO builds, and its `node` export condition compiles
+       the whole runtime away: the browser build applies element properties and
+       attaches the mapped event listeners from a layout effect, while the node
+       build (published for `@lit/ssr-react`) contains neither. Vitest resolves
+       dependencies through the SSR pipeline, so it picks the node build even
+       under `environment: 'jsdom'` — and every wrapper then renders a bare
+       custom element that receives no property and fires no event, which reads
+       exactly like a broken wrapper (lit/lit#4446).
+
+       Pinning the browser build here is what makes behavioural specs possible
+       at all. It affects the test resolution only; the library build resolves
+       `@lit/react` normally and consumers pick their own condition. */
+    alias: {
+      '@lit/react': resolve(import.meta.dirname, '../../node_modules/@lit/react/development/index.js'),
+    },
     include: ['**/*.spec.{ts,tsx}'],
     exclude: ['**/node_modules/**', '**/dist/**'],
     setupFiles: ['./_conformance/vitest-setup.ts'],

@@ -16,19 +16,28 @@ defineOptions({ inheritAttrs: false });
 // attributes, so we forward via property setters after mount. `resources`
 // accepts groups as well as leaf resources: the timeline renders a nested
 // tree, and typing it as `Resource[]` made every grouped consumer cast.
-const props = defineProps<{
-  events?: SchedulerEvent[];
-  resources?: (Resource | ResourceGroup)[];
-  options?: Partial<SchedulerOptions>;
-  /** Coarse look-but-don't-touch switch; `options.permissions` refines it. */
-  readonly?: boolean;
-  /**
-   * The WC's built-in event editor (double-click / right-click / F2), ON by
-   * default. Set false when the app ships its own editor — `event-dblclick`
-   * keeps firing either way.
-   */
-  eventEditor?: boolean;
-}>();
+const props = withDefaults(
+  defineProps<{
+    events?: SchedulerEvent[];
+    resources?: (Resource | ResourceGroup)[];
+    options?: Partial<SchedulerOptions>;
+    /** Coarse look-but-don't-touch switch; `options.permissions` refines it. */
+    readonly?: boolean;
+    /**
+     * The WC's built-in event editor (double-click / right-click / F2), ON by
+     * default. Set false when the app ships its own editor — `event-dblclick`
+     * keeps firing either way.
+     */
+    eventEditor?: boolean;
+  }>(),
+  // `eventEditor` needs an explicit `undefined` default, and it is load-bearing:
+  // Vue casts an ABSENT declared Boolean prop to `false`, not `undefined`, so
+  // `props.eventEditor !== undefined` below was true on every mount and every
+  // Vue app shipped with `event-editor="false"` — the built-in editor off,
+  // against its documented default. A declared default suppresses the cast and
+  // restores "the consumer said nothing".
+  { eventEditor: undefined },
+);
 
 // `view` and `date` flow through `defineModel` for two-way binding: the WC
 // changes both from within (its view switcher AND prev/next/today date

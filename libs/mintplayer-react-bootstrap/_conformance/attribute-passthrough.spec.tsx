@@ -29,28 +29,27 @@ import { BsTimeline } from '@mintplayer/react-bootstrap/timeline';
  * they know and never spread the remainder, so a consumer's attributes are dropped
  * on the floor *even if* the types were widened to allow them.
  *
- * **This file asserts `aria-label` ONLY, and that is a hard constraint rather than
- * a shortcut.** jsdom cannot see the other attributes arrive. `@lit/react` routes any
- * prop whose name is also a property on `HTMLElement` — `role`, `id`, `tabIndex` —
- * through an element-*property* path in a layout effect, and that path does not take
- * effect under jsdom even though the effect runs and the element upgrades. Measured
- * in `_spike-passthrough/`: in real Chromium every one of those attributes arrives
- * correctly, while in jsdom all three read back `null`. A guard asserting them here
- * would fail permanently against working code — which it did, on all ten wrappers,
- * before the spike caught it.
+ * **The probe covers `aria-label` AND the bare names `role`/`id`/`tabIndex`.**
+ * It did not always: these three used to read back `null` here, and the file
+ * carried a long note saying jsdom could not observe `@lit/react`'s
+ * element-property path. That diagnosis was wrong. `@lit/react` publishes two
+ * builds, and its `node` export condition compiles the property/event runtime
+ * away entirely (it exists for `@lit/ssr-react`, which sets properties on the
+ * server instead). Vitest resolves dependencies through the SSR pipeline, so it
+ * picked the node build even under `environment: 'jsdom'` — nothing was
+ * applied, for any wrapper, and it looked like a jsdom limitation because it
+ * was uniform. `vite.config.mts` now pins the browser build for tests, and all
+ * four attributes arrive exactly as they do in Chromium.
  *
- * `aria-label` is exempt from that routing precisely because it is hyphenated and so
- * cannot be a property name; it goes to React and becomes an attribute. That makes it
- * the one probe jsdom can trust — and it is still sufficient for the defect this file
- * exists to catch, because a wrapper that never spreads its rest props drops
- * `aria-label` along with everything else.
- *
- * The bare-name half therefore lives at the type level (`.types.tsx`, where the
- * defect actually was) and in the browser spike. Do not "strengthen" this file by
- * adding `role`/`id`/`tabIndex` back.
+ * The bare names are the ones that matter most. TypeScript exempts hyphenated
+ * JSX attribute names from excess-property checking, so an `aria-*`-only probe
+ * compiles against a props type that rejects everything else — which is how the
+ * original audit reported these wrappers as fine. `aria-label` still earns its
+ * place: it is the one name that can never be captured by a declared prop, so
+ * it proves the rest-spread independently of any prototype lookup.
  */
 
-const PROBE = { 'aria-label': 'probe-name' } as const;
+const PROBE = { 'aria-label': 'probe-name', role: 'none', id: 'probe-id', tabIndex: -1 } as const;
 
 interface Case {
   name: string;
@@ -130,6 +129,12 @@ describe('React wrapper attribute passthrough', () => {
       // Proves the wrapper spreads its rest props at all. A wrapper that
       // destructures every known prop and forgets `...rest` fails here.
       expect(target!.getAttribute('aria-label')).toBe(PROBE['aria-label']);
+      // The bare names travel a different road — `@lit/react` routes any name
+      // it finds on the element prototype through a property rather than an
+      // attribute — so they are a genuinely separate failure, not a repeat.
+      expect(target!.getAttribute('role')).toBe(PROBE.role);
+      expect(target!.getAttribute('id')).toBe(PROBE.id);
+      expect((target as HTMLElement).tabIndex).toBe(PROBE.tabIndex);
     });
   });
 

@@ -32,6 +32,24 @@
       "options": {
         "reportsDirectory": "coverage/libs/mintplayer-vue-bootstrap"
       }
+    },
+    "typecheck": {
+      "//": [
+        "Compile-time counterpart to React's `typecheck-a11y`, deliberately NOT",
+        "named after accessibility: the guard React needs cannot exist here.",
+        "React's props types can REJECT `role`/`id`/`tabIndex`, so a type-test that",
+        "writes them is a real assertion. Vue always accepts an undeclared",
+        "attribute as a fallthrough attr, so the same test would compile against",
+        "any component and prove nothing. The runtime `$attrs` invariant in",
+        "_conformance/ is what covers that here.",
+        "What vue-tsc does buy is the SFC templates themselves — prop names, emit",
+        "signatures and slot scopes are otherwise checked by nothing at all,",
+        "because vitest transpiles without type-checking."
+      ],
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "npx vue-tsc --noEmit -p libs/mintplayer-vue-bootstrap/tsconfig.lib.json"
+      }
     }
   },
   "release": {
