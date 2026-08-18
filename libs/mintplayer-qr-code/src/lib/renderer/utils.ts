@@ -25,7 +25,20 @@ function hex2rgba(hex: string | number) {
 	// Add default alpha value
 	if (hexCode.length === 6) hexCode.push('F', 'F');
 
-	const hexValue = parseInt(hexCode.join(''), 16);
+	const joined = hexCode.join('');
+
+	// Reject anything that is not actually hexadecimal. Without this check a
+	// three-character CSS colour name — `red` is the obvious one — passes the
+	// length test, expands to `rreeddFF`, and `parseInt` returns NaN. Every
+	// shift below then yields 0, so the caller is handed a fully TRANSPARENT
+	// BLACK and renders an invisible symbol. Returning null instead lets the
+	// caller tell "unparseable" from "black", which is what the length
+	// rejections above were already for.
+	if (!/^[0-9a-f]{8}$/i.test(joined)) {
+		return null;
+	}
+
+	const hexValue = parseInt(joined, 16);
 
 	return <Rgba>{
 		r: (hexValue >> 24) & 255,
