@@ -1,7 +1,7 @@
 # Plan — raising and defending test coverage
 
 PRD: [test-coverage.md](./test-coverage.md)
-Status: **In progress** (2026-08-18) on `feat/coverage-honest-denominator`. M1–M5 done.
+Status: **In progress** (2026-08-18) on `feat/coverage-honest-denominator`. M1–M6 done.
 
 | Milestone | Scope | Uncovered lines addressed |
 |---|---|---|
@@ -10,7 +10,7 @@ Status: **In progress** (2026-08-18) on `feat/coverage-honest-denominator`. M1�
 | M3 ✅ | `tools/` project + test target; codegen helper specs | 3,438 currently untargeted lines |
 | M4 ✅ | `apps/api` coverage collection + `TzDateMath` + controllers | ~2,183 untracked today |
 | M5 ✅ | Free wins: ng pipes/directives with zero specs | ~120 |
-| M6 | Ribbon family — wc elements + ng wrappers | ~286 + 32 invisible files |
+| M6 ✅ | Ribbon family — wc elements + ng wrappers | ~286 + 32 invisible files |
 | M7 | React/Vue behavioural specs | ~4,725 lines, currently 20 mounted components |
 | M8 | Dock: extract pure logic, then test it | ~1081 |
 | M9 | file-manager, timeline, splitter, tile-manager | ~766 |
@@ -287,7 +287,46 @@ The largest *invisible* surface: 32 executable files absent from the report (14 
 2. Angular wrappers (18 files): input passthrough, output bridging, host attribute forwarding.
 3. `mp-ribbon.element.ts` branch coverage — the 241 uncovered lines are mode/overflow branches.
 
-**Q2 is open:** at 32 files this may warrant its own PR. Decide before starting.
+**Q2 resolved: no.** It stays in this branch. Splitting would put the denominator correction (M1,
+which makes the number *drop*) and the largest single fill in separate PRs whose numbers only make
+sense read together — and the reviewability that a split buys is lost to the squash-merge anyway.
+The per-milestone commits are where the review structure lives.
+
+### What M6 delivered (2026-08-18)
+
+**218 tests across 5 new spec files**, over 32 files that had no spec and were therefore *absent*
+from the report rather than at 0%:
+
+| Spec | Tests | Subject |
+|---|---|---|
+| `items/ribbon-items.element.spec.ts` | 73 | the eleven simple item elements |
+| `items/ribbon-menus.element.spec.ts` | 25 | split-button + dropdown-button (overlay, ARIA state) |
+| `mp-quick-access-toolbar.element.spec.ts` | 25 | APG toolbar keyboard pattern, RTL, wrapper drilling |
+| `mp-ribbon.modes.spec.ts` | 42 | layout/theming/minimize/active-tab + reflow guards |
+| `ribbon/src/lib/components/ribbon-wrappers.spec.ts` | 53 | all eighteen Angular wrappers |
+
+**Step 3 was scoped down deliberately, and this is a judgement worth recording.** The 241 uncovered
+lines in `mp-ribbon.element.ts` are mostly the overflow algorithm, which reads `offsetWidth` and
+`clientWidth` — jsdom reports 0 for both. Faking those to reach the branches would manufacture
+coverage over an algorithm whose entire subject is real geometry, and the green would mean nothing
+(PRD R3, applied beyond `getBoundingClientRect`). Its **guard clauses** are reachable without layout
+and are covered here; the measuring path stays with the Playwright suites, where it is already
+exercised against a real engine.
+
+**A second a11y defect found, pinned not fixed** (same rule as M5 — a behaviour change belongs in
+its own PR): `mp-quick-access-toolbar` **overwrites a consumer-supplied `aria-label`.**
+`connectedCallback` guards it with `if (!this.hasAttribute('aria-label'))`, but `updated()` then
+writes it unconditionally whenever `label` is in the changed set — and a Lit property with a
+class-field default IS in that set on the very first update. So the guard is dead code and a
+consumer's own, typically localized, label is replaced with "Quick Access Toolbar" before the first
+paint. `mp-ribbon` gets this right via `applyRegionLabel` + `lastAppliedRegionLabel`, and that
+asymmetry is asserted in both directions.
+
+**One jsdom limit worth knowing:** it does not forward focus through a shadow root's
+`delegatesFocus`, and the QAT sets no tabindex of its own (the roving index is `mp-ribbon-group`'s
+job). `document.activeElement` therefore stays on `<body>` however correct the component is. The
+toolbar specs assert **which item was asked to take focus** instead, which is the actual behaviour
+under test and holds in every engine.
 
 ## M7 — React and Vue behavioural specs [PRD F6, G5, D10]
 
