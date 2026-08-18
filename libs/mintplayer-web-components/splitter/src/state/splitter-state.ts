@@ -24,8 +24,24 @@ export class SplitterStateManager {
     };
   }
 
+  /**
+   * A snapshot no caller can write back through.
+   *
+   * The arrays are copied, not just the envelope: every setter here already
+   * copies on the way IN, and a shallow spread on the way out quietly undid
+   * that — a subscriber holding `panelSizes` was holding the store's own array,
+   * so sorting or splicing it reordered the panels with no notification to
+   * anyone. The asymmetry is the bug; this is the other half of it.
+   */
   getState(): SplitterState {
-    return { ...this.state };
+    return {
+      ...this.state,
+      panelSizes: [...this.state.panelSizes],
+      previewSizes: this.state.previewSizes ? [...this.state.previewSizes] : null,
+      resizeOperation: this.state.resizeOperation
+        ? { ...this.state.resizeOperation, sizes: [...this.state.resizeOperation.sizes] }
+        : null,
+    };
   }
 
   subscribe(listener: SplitterStateListener): () => void {
