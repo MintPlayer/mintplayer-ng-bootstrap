@@ -131,8 +131,21 @@ should it — a partial number and a whole number are not comparable, whoever do
   thing to ratchet on even with a matching baseline, because *which* projects are affected changes
   from PR to PR, so the denominator moves for reasons unrelated to test quality.
 
-**Recommendation: (a).** A ratchet that reports after the merge does not change the decision it
-exists to inform, and (c) makes the number less trustworthy rather than more.
+- **(d) Scope the baseline upstream** — have the service compare the partial upload against the base
+  commit's coverage **restricted to the same file set**. Keeps `affected` on PRs at full value, needs
+  no synthetic total and copies no documents. Written up in
+  [coverage-partial-upload.md](./coverage-partial-upload.md) and filed as
+  [CodeCoverage#11](https://github.com/MintPlayer/CodeCoverage/issues/11).
+
+**Recommendation: (d), with (a) as the fallback if its SP4 says the feature earns less than it
+costs.** A ratchet that reports after the merge (b) does not change the decision it exists to inform,
+and (c) makes the number less trustworthy rather than more.
+
+**A correction worth keeping:** an earlier reading here held that the affected set covers ~99% of
+coverable lines, so (a) was nearly free. That was measured over *master merge commits*, which in this
+repo are dominated by `web-components` work. The mean is the wrong statistic — the gate has to be
+correct on a PR touching one small library, which is exactly the case where `affected` pays and the
+naive comparison is most broken. SP4 in the linked document measures the real distribution, over PRs.
 
 Exit criterion: the PR and master runs measure the same set of projects, verified by comparing the
 `lines-coverable` of a PR run against master's for the same commit — they should match, not merely
