@@ -28,7 +28,8 @@ emitted `SF:` list against disk, not by reading config.
 
 | | before | after |
 |---|---|---|
-| Workspace lines | 73.4% *(over a false denominator)* | **74.98%** (17,953 / 23,944) |
+| Workspace lines | 73.4% *(over a false denominator)* | **76.67%** (19,273 / 25,137) |
+| Files measured | 804 | **927** |
 | `mintplayer-qr-code` | **0%** — 725 lines, invisible | **97.4%** |
 | `ribbon/` | 32 files, no specs | 218 tests |
 | `file-manager` | 56.7% | **84.1%** |

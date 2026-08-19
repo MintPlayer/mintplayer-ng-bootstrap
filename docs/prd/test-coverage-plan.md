@@ -2,11 +2,12 @@
 
 PRD: [test-coverage.md](./test-coverage.md)
 Status: **M1–M10 and M12–M15 done** (2026-08-19) on `feat/coverage-honest-denominator`, not pushed.
-Workspace total **74.98% lines** (was 71.02% at M12). Full verification sweep green — 14 projects,
-API 164/164, four library builds and the API build.
+Workspace total **76.67% lines** (19,273 / 25,137) as measured by the coverage service on the
+branch head — was 71.02% at M12. Full verification sweep green — 14 projects, API 164/164, four
+library builds and the API build.
 M11 lives in [coverage-pr-gate-plan.md](./coverage-pr-gate-plan.md). Nine defects found and fixed
 (tables in M12 and M13). The suites are green and the measured figures are recorded per milestone —
-the headline number **still misses the PRD's 80% target, at 74.98%**, and what remains is enumerated
+the headline number **still misses the PRD's 80% target, at 76.67%**, and what remains is enumerated
 in M14 and M15 rather than rounded away.
 
 M15 closed the dock's last non-geometry regions; what is left there is enumerated as **permanently
@@ -850,8 +851,13 @@ catch by re-measuring, and expensive to act on.
 
 ### Where the workspace stands
 
-**74.98% lines (17,953 / 23,944)**, up from 71.02% at M12. web-components 79.0%, qr-code 97.4%,
-file-manager 84.1%, vue 89.2%, api 92.5%.
+**76.67% lines (19,273 / 25,137)**, up from 71.02% at M12 — the coverage service's own figure for
+the branch head (`fb8186bc`), 927 files, branches 10,482 / 16,439 = 63.8%.
+
+The intermediate local reading was 74.98% (17,953 / 23,944) after M14b; M15 and the final sweep
+account for the difference, and the denominator grew because M1's `coverage.include` work put more
+files in it. Per area: web-components 79.0%, qr-code 97.4%, file-manager 84.1%, vue 89.2%,
+api 92.5%.
 
 The remaining distance to the 80% target is now two blocks, not four:
 

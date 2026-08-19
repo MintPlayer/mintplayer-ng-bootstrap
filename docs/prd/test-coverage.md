@@ -2,8 +2,12 @@
 
 Status: **M1–M10 and M12–M15 implemented** (2026-08-19) on `feat/coverage-honest-denominator`; M11
 (the gate) lives in [coverage-pr-gate.md](./coverage-pr-gate.md) and is deliberately not part of this
-branch. The verified sweep lands at **74.98% lines**, short of §6's 80% target — §7c records what
-remains and why it is concentrated rather than diffuse.
+branch. The coverage service reports **76.67% lines (19,273 / 25,137)** for the branch head — short
+of §6's 80% target, and §7c records what remains and why it is concentrated rather than diffuse.
+
+*(That figure is the service's own, measured from the PR upload, and supersedes the 74.98% quoted
+below: it was computed locally after M14b and predates M15's dock work. The file count also moves
+804 → 927 — M1's honest denominator showing up in the service's count.)*
 
 **Verified 2026-08-19 before push:** `nx run-many --target=test --coverage` green across all 14
 projects, `dotnet test` 164/164, and the four library builds plus the API build. Per the repo
@@ -490,7 +494,9 @@ the metric (F7), so ~6,500 lines of proven behaviour remain invisible to it.
 
 ## 7d. M14, and what the dock's ceiling actually is
 
-M13 and M14 took the workspace to **74.98% lines** (17,953 / 23,944). The file-manager went
+M13 and M14 took the workspace to **74.98% lines** (17,953 / 23,944) — the figure at that point;
+M15 and the final sweep took it to **76.67%** (19,273 / 25,137), as measured by the service on the
+branch head. The file-manager went
 56.7% → **84.05%** across its operations surface (new folder, rename, delete, clipboard, context
 menu, icon-grid keyboard) and its declarative surface (attributes, the lazy-tree bridge, the cell
 formatters) — none of which needed geometry; it had simply never been driven.

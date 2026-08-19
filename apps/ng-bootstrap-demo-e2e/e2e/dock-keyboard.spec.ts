@@ -103,14 +103,33 @@ async function readLiveLayout(page: Page): Promise<string> {
 }
 
 test.describe('mint-dock-manager — keyboard pane move-mode', () => {
-  test.beforeEach(async ({ page }) => {
+  /*
+   * Wait for the dock's own shadow tree, not for light-DOM text.
+   *
+   * `waitForLoadState('networkidle')` cannot be the guard here: the dev server
+   * holds an HMR websocket open, so the network never idles and the wait burns
+   * its timeout. It was previously written with `.catch(() => {})`, which is
+   * worse than no wait at all — on a slow runner it silently skipped, and the
+   * helpers below `page.evaluate` a throw ("mint-dock-manager not mounted")
+   * rather than auto-retrying, so the spec failed in ~1.6s. Measured on CI for
+   * PR #405.
+   *
+   * A heading is no better: the SSR/DSD chrome makes it visible BEFORE the
+   * custom element upgrades, so it says nothing about the shadow root.
+   *
+   * The tabs are the real readiness signal — they only exist once the element
+   * has upgraded and rendered. Same approach the accordion suites already use.
+   */
+  async function gotoDock(page: Page): Promise<void> {
     await page.goto('/enterprise/dock');
-    // Demo SSR uses destructive bootstrap; the WC needs networkidle to settle
-    // before its shadow tree is populated (see memory project_e2e_destructive_bootstrap).
-    await page.waitForLoadState('networkidle', { timeout: 2000 }).catch(() => {
-      /* HMR keeps the socket open, so the network never idles: settle briefly, never hang */
+    await page.waitForFunction(() => {
+      const dock = document.querySelector('mint-dock-manager');
+      return !!dock?.shadowRoot?.querySelector('.dock-tab[data-tab-id]');
     });
-    await expect(page.getByRole('heading', { name: 'Panel 1' })).toBeVisible();
+  }
+
+  test.beforeEach(async ({ page }) => {
+    await gotoDock(page);
   });
 
   test('M → T docks the focused pane to top, announces, and mutates the layout', async ({ page }) => {

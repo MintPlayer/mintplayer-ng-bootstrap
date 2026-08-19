@@ -160,6 +160,22 @@ jobs:
     # Hand dist/ off to the dry-run-publish-libs job. Snippets publishes
     # from libs/ (source); the dry-run job checks the repo out so we don't
     # need to bundle it into this artifact.
+    # Playwright is configured with `trace: 'on-first-retry'`, so a retried test
+    # already records a full trace — but nothing collected it, so the two flakes
+    # on PR #405 left no evidence behind and had to be diagnosed by inference.
+    #
+    # `if: always()` because the interesting case is a run that FAILED, and
+    # `if-no-files-found: ignore` because a clean run legitimately produces
+    # nothing: traces only exist once a test has been retried.
+    - name: Upload Playwright traces
+      if: always()
+      uses: actions/upload-artifact@v7
+      with:
+        name: playwright-traces
+        path: apps/*-e2e/test-results/
+        if-no-files-found: ignore
+        retention-days: 7
+
     - name: Upload dist artifact
       uses: actions/upload-artifact@v7
       with:
