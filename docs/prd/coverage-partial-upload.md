@@ -164,8 +164,9 @@ see no change.
 
 ## 4. Spikes — run 2026-08-19
 
-**Outcome: the feature is not worth building for this workspace.** SP1 cleared the premise, SP3
-found a real but unrelated issue, and SP4 was decisive against.
+**Outcome: the request stands.** SP1 cleared the premise, SP3 found a real issue that applies to the
+gate whatever happens here, and SP4 showed the feature would be exercised rarely — while finding the
+two PRs that prove it is needed. §4.5 records the constraint that decides it.
 
 ### SP1 — Does the Nx cache drop coverage for cached tasks? ⬜ · **NEGATIVE**
 
