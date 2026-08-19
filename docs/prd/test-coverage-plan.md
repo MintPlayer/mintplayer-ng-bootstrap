@@ -1234,18 +1234,41 @@ silently wrong validation rules.
 constants (`:37-44`) need refactoring first and `compileScss` runs real `sass` in the loop.
 `startWatchers` (chokidar + debounce) stays out unless a fake watcher is injected.
 
-### T5 — delete `tools/scripts/publish.mjs` — needs sign-off
+### T5 — `tools/scripts/publish.mjs` is unused and has a one-word bug — decide which 🟨
 
-**This script is dead and would crash if run.** It imports `readCachedProjectGraph` from
-`@nrwl/devkit` (`:10`) and **`node_modules/@nrwl` does not exist** in this workspace — verified. It is
-stock Nx boilerplate, still wired into a `publish` target in four project files:
-`libs/mintplayer-{qr-code,pagination,encode-utf8,dijkstra}/project.json`. Publishing actually happens
-through the release workflow.
+**Corrected after review.** An earlier draft of this section said the script was unfixable stock
+boilerplate importing from a package that does not exist. That overstated it, and the correction is
+worth keeping visible.
 
-Deleting the script and the four targets removes 18 dead lines from the denominator **honestly** and
-fixes a latent bug. This is the only exclusion in the whole map, and the reason matters: *not product
-code*, never *hard to test* — the distinction this PRD exists to defend. Requires confirmation that
-nothing runs `nx publish <lib>`.
+What is actually true, all verified:
+
+- `tools/scripts/publish.mjs:10` imports `readCachedProjectGraph` from **`@nrwl/devkit`**, and
+  `node_modules/@nrwl` genuinely does not exist — so the script would crash on first import today.
+- But the right package **is** installed: `@nx/devkit` is a direct dependency (`package.json:75`,
+  `23.1.1`) and **does export `readCachedProjectGraph`** — confirmed by runtime probe
+  (`typeof === 'function'`). It is absent from `index.d.ts`, which is why grepping for it comes up
+  empty and made it look unavailable. So this is a **one-word import fix**, not a dead end.
+- Nothing invokes it. No workflow runs `nx publish`, and the four `publish` targets in
+  `libs/mintplayer-{qr-code,pagination,encode-utf8,dijkstra}/project.json` are referenced by nothing.
+  Real publishing goes through `MintPlayer/github-actions/publish-npm-packages`, which scans `dist/`
+  (`publish-master.yml:280-311`).
+
+So this is a genuine either/or, and it is the user's call:
+
+- **Fix the import** (`@nrwl/devkit` → `@nx/devkit`). Keeps a working manual-publish escape hatch and
+  repairs four targets that would otherwise fail the moment anyone tried them. The 18 lines then stay
+  in the denominator as honest, coverable code — mostly class (c) (`execSync`, `process.chdir`,
+  `readCachedProjectGraph`), with the semver `validVersion` guard (`:27-31`) and `invariant`
+  (`:15-20`) extractable and worth ~4 cases.
+- **Delete the script and the four targets.** Removes 18 lines from the denominator, and the reason
+  qualifies: *not product code* — unreferenced boilerplate superseded by the release workflow —
+  never *hard to test*, which is the distinction this PRD exists to defend.
+
+Fixing is the smaller, safer change and does not require deciding whether anyone might want the
+target later; deleting is the one that improves the coverage number. **They should not be traded off
+against each other:** if the escape hatch has value, fix it and cover the pure parts; if it does not,
+delete it. Do not keep a broken script merely because deleting it would look like gaming the
+denominator, and do not delete a useful one to avoid 18 uncovered lines.
 
 ### T6 — `free-port.mjs` and the two bundle-check shims
 
@@ -1261,7 +1284,11 @@ demo's serve — cover it, don't exclude it.
 already extracted and specced. Leaving the rest uncovered is the honest outcome; the right instrument
 is a per-area expectation (M14), not a test that asserts a mock.
 
-**Projected if T1-T5 land: ~406 / 718 ≈ 57%**, from the per-milestone estimates above.
+**Projected if T1-T4 land: ~404 / 736 ≈ 55%**, from the per-milestone estimates above.
+T5 then moves it either way by about a point — deleting gives ~404 / 718 ≈ **56%**, fixing the
+import and covering its two pure guards gives ~408 / 736 ≈ **55%**. Worth noting that the two
+options land within a point of each other, which is the argument for deciding T5 on whether the
+escape hatch is wanted rather than on the coverage number.
 
 ### Traps that would make these specs Windows-only-red
 
