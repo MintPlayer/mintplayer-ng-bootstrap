@@ -137,8 +137,18 @@ should it — a partial number and a whole number are not comparable, whoever do
   [coverage-partial-upload.md](./coverage-partial-upload.md) and filed as
   [CodeCoverage#11](https://github.com/MintPlayer/CodeCoverage/issues/11).
 
-**Recommendation: (d), with (a) as the fallback if its SP4 says the feature earns less than it
-costs.** A ratchet that reports after the merge (b) does not change the decision it exists to inform,
+**Decision: (a). SP4 ran on 2026-08-19 and (d) is not worth building** — 20 of 22 merged PRs already
+affect ≥99% of coverable lines, so switching `--target=test` to `run-many` costs approximately
+nothing while making every PR comparable. Leave `nx affected` on e2e and every other target; that is
+where its 5-10 minutes actually come from. Full results in
+[coverage-partial-upload.md](./coverage-partial-upload.md) §4 and on
+[CodeCoverage#11](https://github.com/MintPlayer/CodeCoverage/issues/11).
+
+**SP3 also found something that applies to G3 as written:** a master commit has no coverage roughly
+5% of the time, because `cancel-in-progress: true` kills a superseded run before its upload step. So
+a null baseline is routine, not exceptional — G3's *skip, never fail* is load-bearing.
+
+**The superseded reasoning:** a ratchet that reports after the merge (b) does not change the decision it exists to inform,
 and (c) makes the number less trustworthy rather than more.
 
 **A correction worth keeping:** an earlier reading here held that the affected set covers ~99% of

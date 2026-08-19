@@ -4,7 +4,10 @@ Consumer-authored, for **MintPlayer/CodeCoverage**. Companion to
 [coverage-pr-gate.md](./coverage-pr-gate.md) (the gate this unblocks) and
 [test-coverage.md](./test-coverage.md) (the coverage programme it serves).
 
-Status: **Proposed** (2026-08-19). Written after upstream
+Status: **Investigated and NOT recommended** (2026-08-19). Filed upstream as
+[CodeCoverage#11](https://github.com/MintPlayer/CodeCoverage/issues/11) and left open as a design
+record rather than a request — SP4 measured that this consumer does not need it. **§4 carries the
+spike results; read those before §2.** Written after upstream
 [#9](https://github.com/MintPlayer/CodeCoverage/issues/9) /
 [PR #10](https://github.com/MintPlayer/CodeCoverage/pull/10) shipped the status endpoint, which
 made the gate buildable and immediately exposed the next problem.
@@ -36,6 +39,10 @@ and it argues for something smaller than carryforward.
 
 It is the obvious answer and it is not free. `nx affected` is worth 5–10 minutes per PR check run.
 Nothing here proposes giving that up; the point of the feature is to keep it.
+
+**SP4 later showed this framing was wrong in an important way** (§4): almost all of that saving comes
+from targets other than `test`, so `run-many --target=test` alone gives up nearly none of it. The
+argument below is preserved as it stood before the measurement.
 
 *(An earlier draft of this analysis argued the saving was ~1% of coverable lines. That was measured
 over recent* master *merge commits, which in this repo are dominated by `web-components` work, and
@@ -154,60 +161,79 @@ see no change.
 
 ---
 
-## 4. Spikes
+## 4. Spikes — run 2026-08-19
 
-Each is cheap and each could change the design. **SP1 and SP2 should run before any code.**
+**Outcome: the feature is not worth building for this workspace.** SP1 cleared the premise, SP3
+found a real but unrelated issue, and SP4 was decisive against.
 
-### SP1 — Does the Nx cache drop coverage for cached tasks? ⬜ · cost S
+### SP1 — Does the Nx cache drop coverage for cached tasks? ⬜ · **NEGATIVE**
 
-nrwl/nx#4503 reports that `nx affected --codeCoverage` produces no coverage output for a task served
-from cache. If true here, an affected project can be absent from the upload for a reason that has
-nothing to do with the diff — and no server-side design can distinguish that from "not affected".
+13 of the 14 uploaded projects declare a coverage `outputs` entry on their `test` target
+(`{workspaceRoot}/coverage/libs/<name>` for the nine Angular libs, `{options.reportsDirectory}` for
+the four Vitest ones — and `reportsDirectory` is set in `project.json` `options`, so the token
+resolves rather than expanding to nothing). Confirmed empirically: populate the cache, delete
+`coverage/libs/mintplayer-dijkstra/`, re-run → `Cache: 1/1 hit (100%)` with `lcov.info` restored.
 
-**Method:** run the PR test command twice on an unchanged tree; diff the emitted lcov file set.
-**Changes what:** if confirmed, the consumer must disable the cache for coverage runs, or the gate's
-scope is non-deterministic. This is a consumer-side bug, not a service one, and it invalidates the
-feature's premise if unaddressed.
+`api` is the exception (`nx:run-commands`, no `outputs`), but the workflow runs `dotnet test` as its
+own unconditional step outside `nx affected`, so it is never cache-skipped.
 
-### SP2 — Are normalized paths globally unique? 🟦 · cost S
+**Keep as a standing invariant:** this holds *because* outputs are declared. A project added without
+them would reintroduce nrwl/nx#4503 silently — coverage would vanish from uploads for a reason
+having nothing to do with the diff.
 
-Eight of this workspace's uploaded lcov files contain an identical `SF:src/index.ts`, because each
-project's paths are relative to its own vitest root and no `rootDir` is passed. `PathNormalizer`
-(`PathNormalizer.cs:21-22,46-67`) resolves paths against `rootDir`, `sourceRoots` and the `fileList`
-via exact, case-insensitive and longest-suffix matching.
+### SP2 — Are normalized paths globally unique? 🟦 · not run
 
-**The whole design is a set intersection on paths, so this is load-bearing.** If two projects'
-files can normalize to the same key, the scoped baseline is wrong in a way that will not look wrong.
+Needs the service; it is a server-side observation. Recorded upstream as the load-bearing question
+if the design is ever built.
 
-**Method:** upload this workspace's real reports; assert the resulting `FileCoverage` path set has no
-duplicates and matches `git ls-files` entries 1:1. **Changes what:** if collisions are possible, the
-uploader must send `rootDir` per report, and that becomes a prerequisite milestone.
+### SP3 — How often does the base commit lack coverage? ⬜ · **~5%, and it matters anyway**
 
-### SP3 — How often does the base commit lack coverage? ⬜🟦 · cost S
+Over the last 40 `publish-master.yml` runs: **2 cancelled (5%)**, both by `cancel-in-progress: true`
+when a second merge landed mid-run. A cancelled run never reaches its upload, so that master commit
+has no coverage. Sharper still: uploads only began at `67262d58` — and that commit is one of the two
+cancelled, so of the three master commits since the feature existed, one has none.
 
-`cancel-in-progress: true` on the master workflow means a superseded run never uploads. Also
-`pull_request.base.sha` is the base-branch **tip at event time**, not the merge base, and goes stale
-while a PR sits open.
+**This is independent of everything else here and applies to the gate as designed today.** A null
+baseline is not only a first-upload condition; it is routine at a few percent. G3's *skip, never
+fail* is therefore load-bearing, not defensive decoration.
 
-**Method:** over the last N master commits, count how many have a finalized build.
-**Changes what:** if the miss rate is material, the server should walk back to the nearest ancestor
-*with* coverage — which is what Codecov does (10-hop parent walk) and where much of its reported
-pain comes from. Prefer *skip* over *walk* unless the data says otherwise.
+### SP4 — What does the affected set cover, per PR? ⬜ · **DECISIVE — 20 of 22 PRs ≥99%**
 
-### SP4 — What does the affected set actually cover, per PR? ⬜ · cost S
+Last 22 merged PRs, `nx show projects --affected --with-target=test` between each PR's base and head,
+weighted by coverable lines **as the service itself reports them** for `master@e01681ec` (21,014).
 
-Measure over **pull requests**, not master merge commits — the earlier attempt used the latter and
-got a badly skewed answer.
+| | |
+|---|---|
+| n | 22 |
+| mean / median | 90.4% / 99.1% |
+| share ≥99% | **20 / 22** |
+| share <10% | 2 / 22 — PR 379 (vue only, 0.5%), PR 368 (api only, 0.0%) |
 
-**Method:** for the last N merged PRs, compute affected-set coverable lines ÷ whole-workspace
-coverable lines. Report the distribution, not the mean.
-**Changes what:** the cost/benefit of the whole feature versus simply running `run-many` for
-`--target=test` while leaving e2e affected-gated. If the distribution is overwhelmingly near 100%,
-the feature is not worth building and the consumer should take the simpler fix.
+`web-components` (16,451) + `ng-bootstrap` (4,215) are 98.3% of the denominator, and at least one is
+affected in 20 of 22 PRs. **The distribution is bimodal and the mode is "everything".**
+
+The two outliers are real, and a naive comparison would misfire catastrophically on them — but they
+are also the only PRs where `run-many` costs anything, and there it costs one unit-test run.
+
+**Limits, stated:** one repo, 22 PRs, work concentrated in `web-components`; a stretch of API-only or
+small-library work would shift it. Weights come from `master@e01681ec`, whose tree omits `qr-code`,
+`tools`, `pagination`, `dijkstra`, `ng-animations` and `api` (no coverage at that commit) — the
+unpushed branch adds ~725 lines of `qr-code` plus the API's, which would make PR 368 non-zero.
+Neither changes the shape.
+
+### What this means
+
+**Take the simple fix: `run-many` for `--target=test` only, leaving `nx affected` on e2e and every
+other target.** On 20 of 22 PRs the expensive suites already run, so wall-clock barely moves; the
+5-10 minutes `affected` saves this repo comes from targets this does not touch. Every PR becomes
+comparable to `baseline` as it already exists, with zero upstream work.
+
+The §2 design is still the right shape *if* a genuinely partitioned monorepo ever needs it, and the
+§2 reasons not to build carryforward hold regardless. Both are preserved upstream for that reader.
 
 ---
 
-## 5. Milestones
+## 5. Milestones *(not being pursued — see §4)*
 
 ### N1 — Declare partiality and the base sha 🟦🟪 · cost S
 
