@@ -129,6 +129,14 @@ published.
 Per the repo convention, the suites were batched into one sweep at the end rather than run per
 milestone; intermediate milestones were verified by reading and type-checking.
 
+**One pre-existing diagnostic you will see, not introduced here.** The `vue-bootstrap` build logs
+`BsAccordion.vue:39:24 - error TS2339: Property 'default' does not exist on type '{}'` during
+declaration generation. `vite-plugin-dts` reports it without failing, the build exits 0, and the
+emitted `BsAccordion.vue.d.ts` is complete and correct — props, emits and all. The cause is that the
+component calls `useSlots()` without a `defineSlots<>()` declaration, so the slots type is `{}`; the
+only consumer-visible effect is untyped slots on that one component. It dates from #392 and is
+untouched by this branch. Worth fixing, separately.
+
 ## Review notes
 
 - `refactor(dock)!` is marked breaking: `dock/src/core` is a new public surface and the element's
