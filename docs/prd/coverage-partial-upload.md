@@ -38,12 +38,14 @@ and it argues for something smaller than carryforward.
 
 ### Why not just run the full suite
 
-It is the obvious answer and it is not free. `nx affected` is worth 5–10 minutes per PR check run.
-Nothing here proposes giving that up; the point of the feature is to keep it.
+**`nx affected` on pull requests is a fixed constraint, and the point of the feature is to keep it.**
 
-**SP4 later refined this** (§4): almost all of that saving comes from targets other than `test`, so
-`run-many --target=test` alone would give up little wall-clock. That made the shortcut *cheap* — and
-it was still rejected, on grounds measurement cannot settle. See §4.5.
+Be precise about which argument does the work. The wall-clock one is real but partial: `affected` is
+worth 5–10 minutes across the whole PR check run, and SP4 later showed most of that comes from
+targets other than `test`. The one that decides it is that **this repo is partly a reference for how
+to configure an Nx workspace with GitHub Actions** — the CI setup is a deliverable people read and
+copy — so weakening the most characteristic thing a well-configured Nx monorepo does on a PR, to
+work around a coverage service's limitation, would teach the wrong pattern to its audience. §4.5.
 
 *(An earlier draft of this analysis argued the saving was ~1% of coverable lines. That was measured
 over recent* master *merge commits, which in this repo are dominated by `web-components` work, and
