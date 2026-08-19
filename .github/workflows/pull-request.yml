@@ -90,6 +90,17 @@ jobs:
       # --collect writes coverage.cobertura.xml into a GUID-named subdirectory
       # of --results-directory, hence the ** in the upload glob.
       run: dotnet test apps/api/Tests/Api.Tests.csproj -c Debug --collect:"XPlat Code Coverage" --results-directory coverage/api
+    # Vitest writes `SF:` paths relative to each project's own root, so
+    # `libs/mintplayer-web-components/dock/index.ts` is emitted as
+    # `dock/index.ts` — a suffix that exists under four different libraries.
+    # The service resolves report paths against `git ls-files` by longest
+    # suffix and drops anything ambiguous from the totals. Measured: 314 of
+    # 1405 files (22.3%) silently excluded, incl. ~58% of react and vue.
+    # This rewrites them to workspace-relative, and fails loudly if any path
+    # stops resolving.
+    - name: Rebase coverage paths to workspace-relative
+      run: node tools/scripts/rebase-lcov-paths.mjs
+
 
     # Nothing in this workflow gates the merge. The service publishes the
     # `coverage/project` and `coverage/patch` check runs itself, and those are
