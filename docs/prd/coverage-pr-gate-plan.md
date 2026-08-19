@@ -133,9 +133,21 @@ upstream so nobody re-proposes it.
 
 **No workflow changes.** The service publishes the checks itself; this milestone is configuration.
 
-1. **Accept the GitHub App permission upgrade** — Checks read-write and Pull requests read-write, per
-   installation. **Owner action, and it blocks everything else here**: until accepted, builds record
-   feedback as `Unavailable`, silently by design, and no check run appears.
+1. ~~**Accept the GitHub App permission upgrade**~~ — ✅ **done, and the checks are confirmed
+   posting.** `coverage/project` and `coverage/patch` both appear on the PR head from
+   `CoverageProduction`, conclusion `neutral` (correct: no gate policy configured yet, and #12
+   specifies missing policy ⇒ neutral, never red).
+
+   **This took a full debugging session for a reason worth recording.** Permissions had been accepted
+   all along; the production server was running **the development App's private key**, so every
+   App-authenticated call failed with `A JSON web token could not be decoded`. Nothing else broke —
+   webhooks authenticate with the webhook *secret*, uploads with `covt_`/OIDC — so the service looked
+   entirely healthy. Diagnosis needed container logs because `Build.FeedbackState` is exposed by no
+   API. See the Upstream follow-ups (U1, U2) in
+   [test-coverage-plan.md](./test-coverage-plan.md).
+
+   Verify a key without printing it: `openssl rsa -in key.pem -pubout -outform DER | openssl sha256
+   -binary | openssl base64`, and compare to the fingerprint GitHub shows on the App's General page.
 2. Set the gate in the repository's **Coverage gate** panel, or commit a `coverage.yml`:
 
    ```yaml

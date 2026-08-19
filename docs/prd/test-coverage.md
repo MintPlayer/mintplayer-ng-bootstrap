@@ -2,12 +2,16 @@
 
 Status: **M1–M10 and M12–M15 implemented** (2026-08-19) on `feat/coverage-honest-denominator`; M11
 (the gate) lives in [coverage-pr-gate.md](./coverage-pr-gate.md) and is deliberately not part of this
-branch. The coverage service reports **76.67% lines (19,273 / 25,137)** for the branch head — short
-of §6's 80% target, and §7c records what remains and why it is concentrated rather than diffuse.
+branch. The coverage service reports **76.23% lines (19,423 / 25,478) over 1,240 files** for the
+branch head — short of §6's 80% target, and §7c records what remains and why it is concentrated
+rather than diffuse.
 
-*(That figure is the service's own, measured from the PR upload, and supersedes the 74.98% quoted
-below: it was computed locally after M14b and predates M15's dock work. The file count also moves
-804 → 927 — M1's honest denominator showing up in the service's count.)*
+*(Three figures were quoted during this work and the last one is authoritative: **74.98%** was a
+local reading after M14b, before M15; **76.67%** was the service's figure but computed while 314
+files were being silently discarded (§7e); **76.23% over 1,240 files** is the first measurement with
+the complete file set. It is slightly LOWER than 76.67% and that is the honest direction — the
+recovered files are mostly one-line barrel `index.ts` files and react/vue wrappers, so the
+denominator grew faster than the numerator.)*
 
 **Verified 2026-08-19 before push:** `nx run-many --target=test --coverage` green across all 14
 projects, `dotnet test` 164/164, and the four library builds plus the API build. Per the repo
@@ -495,8 +499,9 @@ the metric (F7), so ~6,500 lines of proven behaviour remain invisible to it.
 ## 7d. M14, and what the dock's ceiling actually is
 
 M13 and M14 took the workspace to **74.98% lines** (17,953 / 23,944) — the figure at that point;
-M15 and the final sweep took it to **76.67%** (19,273 / 25,137), as measured by the service on the
-branch head. The file-manager went
+M15 and the final sweep took it to **76.67%** (19,273 / 25,137) — a figure later superseded once M16
+stopped the service discarding 314 files; the final measurement is **76.23%** (19,423 / 25,478) over
+1,240 files. The file-manager went
 56.7% → **84.05%** across its operations surface (new folder, rename, delete, clipboard, context
 menu, icon-grid keyboard) and its declarative surface (attributes, the lazy-tree bridge, the cell
 formatters) — none of which needed geometry; it had simply never been driven.

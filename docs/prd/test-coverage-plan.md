@@ -2,13 +2,13 @@
 
 PRD: [test-coverage.md](./test-coverage.md)
 Status: **M1–M10 and M12–M15 done** (2026-08-19) on `feat/coverage-honest-denominator`, not pushed.
-Workspace total **76.67% lines** (19,273 / 25,137) as measured by the coverage service on the
-branch head — was 71.02% at M12. Full verification sweep green — 14 projects, API 164/164, four
-library builds and the API build.
+Workspace total **76.23% lines** (19,423 / 25,478) over **1,240 files**, as measured by the
+coverage service on the branch head with the complete file set — was 71.02% at M12. Full
+verification sweep green — 14 projects, API 164/164, four library builds and the API build.
 M11 lives in [coverage-pr-gate-plan.md](./coverage-pr-gate-plan.md). Nine defects found and fixed
 (tables in M12 and M13). The suites are green and the measured figures are recorded per milestone —
-the headline number **still misses the PRD's 80% target, at 76.67%**, and what remains is enumerated
-in M14 and M15 rather than rounded away.
+the headline number **still misses the PRD's 80% target, at 76.23%**, and what remains is enumerated
+in M14, M15 and M16 rather than rounded away.
 
 M15 closed the dock's last non-geometry regions; what is left there is enumerated as **permanently
 uncovered**, not as future work.
@@ -30,6 +30,7 @@ uncovered**, not as future work.
 | M13 ✅ | `mintplayer-qr-code` — the largest untested library | 725 lines at 0% |
 | M14 ✅ | Deepen the dock and file-manager elements | the two biggest partial files |
 | M15 ✅ | Dock — the last non-geometry regions | 116 of 1,311 uncovered |
+| M16 ✅ | Stop the service discarding 22% of measured files | 314 files recovered |
 
 ## Ordering rationale
 
@@ -851,13 +852,34 @@ catch by re-measuring, and expensive to act on.
 
 ### Where the workspace stands
 
-**76.67% lines (19,273 / 25,137)**, up from 71.02% at M12 — the coverage service's own figure for
-the branch head (`fb8186bc`), 927 files, branches 10,482 / 16,439 = 63.8%.
+**76.23% lines (19,423 / 25,478) over 1,240 files**, up from 71.02% at M12 — the coverage service's
+own figure for the branch head, and the first one measured with every file counted (M16).
 
-The intermediate local reading was 74.98% (17,953 / 23,944) after M14b; M15 and the final sweep
-account for the difference, and the denominator grew because M1's `coverage.include` work put more
-files in it. Per area: web-components 79.0%, qr-code 97.4%, file-manager 84.1%, vue 89.2%,
-api 92.5%.
+Per library, as the service now reports it:
+
+| library | covered / coverable | % |
+|---|---:|---:|
+| `mintplayer-web-components` | 13,338 / 16,768 | 79.5% |
+| `mintplayer-ng-bootstrap` | 3,287 / 4,894 | 67.2% |
+| `mintplayer-qr-code` | 709 / 728 | 97.4% |
+| `mintplayer-vue-bootstrap` | 331 / 371 | 89.2% |
+| `mintplayer-react-bootstrap` | 91 / 197 | 46.2% |
+| `mintplayer-ng-focus-on-load` | 12 / 15 | 80.0% |
+| `mintplayer-ng-click-outside` | 55 / 71 | 77.5% |
+| `mintplayer-ng-qr-code` | 41 / 80 | 51.2% |
+| `mintplayer-encode-utf8` | 9 / 30 | 30.0% |
+| **`mintplayer-dijkstra`** | **0 / 56** | **0%** |
+| **`mintplayer-pagination`** | **0 / 14** | **0%** |
+| **`mintplayer-ng-animations`** | **0 / 12** | **0%** |
+
+**The three zeros are real and are not a regression.** Those libraries contain **no spec files at
+all** — verified, zero between them. They passed CI throughout via `passWithNoTests: true` and were
+entirely absent from the report before M1 put them in the denominator. They are the honest-denominator
+argument in miniature: the metric got *worse* by becoming correct. Left as a recorded fact rather
+than fixed here; 82 coverable lines across three tiny libraries is a separate, cheap milestone.
+
+Earlier readings, for the record: 74.98% (local, after M14b, before M15) and 76.67% (service, but
+computed while 314 files were being discarded — see M16).
 
 The remaining distance to the 80% target is now two blocks, not four:
 
@@ -949,3 +971,103 @@ that does not require a layout engine. **That curve is the finding, not a shortf
 third of the file is geometry whose correctness a jsdom assertion cannot establish, which is why
 §7d of the PRD argues for per-area expectations rather than one workspace number. A uniform 80%
 target applied here would push someone into faking rects — precisely R3's failure mode.
+
+## M16 — the 22% of files the service was silently discarding ✅
+
+**Found only because the commit page said so, and even then it understated it.** The Coverage UI
+reported *"50 report path(s) couldn't be matched to the repository tree"*. That 50 is a `.Take(50)`
+display cap (`BrowseController.cs:302`). Measured locally against `git ls-files` using the same
+longest-suffix rule the service applies: **314 of 1,405 files (22.3%) were being excluded from the
+totals.**
+
+### Cause
+
+Vitest writes `SF:` paths relative to **each project's own root**, so
+`libs/mintplayer-web-components/dock/index.ts` is emitted as `dock/index.ts`. That exact path exists
+under **four** libraries (web-components, ng-bootstrap, react-bootstrap, vue-bootstrap). The service
+resolves report paths against `git ls-files` by longest suffix; an ambiguous suffix cannot be
+resolved, the file is marked unmatched, and `RecomputeBuildSummary` sums **only matched files**.
+
+**This had been corrupting figures quoted throughout this PRD.** `react-bootstrap` was reported at
+**66 coverable lines** and `vue-bootstrap` at **95** — for libraries of 129 and 130 files. Each was
+losing ~58% of its files. Those numbers appear in §7's per-project table and were repeated for weeks
+without anyone asking how a 129-file library has 66 lines.
+
+### Fix
+
+`tools/scripts/rebase-lcov-paths.mjs` rewrites every `SF:` to workspace-relative before upload,
+wired into both workflows immediately ahead of the upload step. The mapping is exact because the
+coverage directory mirrors the project path (`coverage/libs/foo/` ⇄ `libs/foo/`).
+
+Two properties are deliberate:
+
+- **Idempotent** — verified against a genuinely mixed tree (505 rewritten, 898 already rooted).
+- **Fails the build** when a rewritten path does not exist on disk. Silence is how the original
+  defect survived for weeks; a project-layout change should break CI rather than quietly shrink the
+  denominator again.
+
+A second, smaller defect fixed alongside: `ng-bootstrap`'s `coverage.exclude` lacked the codegen
+patterns `web-components` carries, so two generated `.element.template.ts` files entered the report
+(507 → 505 files). Being untracked, the service discarded them anyway.
+
+### Result, confirmed server-side
+
+`unmatchedFiles: []` — **0 of 1,403**. Files 927 → **1,240**. Per library:
+react-bootstrap 66 → **197** coverable lines, vue-bootstrap 95 → **371**, ng-bootstrap 4,215 →
+**4,894**, web-components 16,451 → **16,768**.
+
+The headline moved **76.67% → 76.23%**, i.e. slightly *down*. That is the correct direction: the
+recovered files are mostly one-line barrel `index.ts` files and react/vue wrappers with thinner
+coverage, so the denominator grew faster than the numerator. A fix that made the number go up would
+have been the suspicious outcome.
+
+### The lesson worth keeping
+
+This is the same failure mode as the `coverage.all` defect that started this whole PRD — **a
+measurement quietly excluding what it could not account for, in the flattering direction** — and it
+survived a full PRD, four spikes and a merged upstream feature request. The tell was visible the
+whole time in the per-project table; nobody read 66 lines for a 129-file library as impossible.
+
+**Standing check:** after any change to project layout, `coverage.include`, or the upload globs,
+read the commit page's unmatched count. It is capped at 50, so treat any non-zero value as
+*"at least 50"* and measure locally.
+
+
+## Upstream follow-ups — filed from this branch's experience
+
+Three items for **MintPlayer/CodeCoverage**, all of which cost real debugging time here and would
+cost every future consumer the same.
+
+### U1 — Readiness must fail when the App private key is unusable 🟦
+
+The production deployment ran for a week with **the development App's private key**. Every
+App-authenticated call failed with `Octokit.AuthorizationException: A JSON web token could not be
+decoded`, but the service started healthy, reported healthy, and served every other feature
+correctly — webhooks authenticate with the webhook *secret*, uploads with `covt_`/OIDC, so only
+check-runs and `coverage.yml` loading were affected. `GitHubContentService` swallows its failure and
+returns null, so gate config had been silently falling back to defaults with no signal at all.
+
+Their roadmap already has **T0.4 — "a readiness endpoint that can fail"**. Minting one App JWT at
+startup belongs in it: a key that cannot authenticate should fail readiness loudly, not surface
+hours later inside an unrelated feature after five retries.
+
+### U2 — Expose `FeedbackState` on `GET /api/uploads/status` 🟦
+
+`Build.FeedbackState` records exactly what happened to the check-run publish (`Posted`, `Retry`,
+`Failed`, `Unavailable`) — and is exposed by **nothing**: not `/api/browse`, not
+`/api/uploads/status`, not the UI. Diagnosing U1 required shell access to the production container.
+
+Worse, the states are indistinguishable to a consumer: `Unavailable` is deliberately quiet because
+OIDC-only repos are a supported population, so a repo that *should* get check-runs and doesn't looks
+identical to one that never could. One additional field would turn a source dive into a five-second
+check.
+
+### U3 — Raise or disclose the unmatched-files cap 🟦
+
+`BrowseController.cs:302` caps the unmatched list at `.Take(50)` and the UI renders the count as if
+it were the total. Here the true figure was **314**, and the cap made a 22% measurement loss look
+like a rounding detail (M16). Either return the real count alongside the capped sample, or label the
+displayed number as truncated.
+
+*(U3 is the smallest and arguably the highest-value: it is the difference between a consumer noticing
+this class of bug and not.)*
