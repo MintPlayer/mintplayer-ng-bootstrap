@@ -137,16 +137,25 @@ should it — a partial number and a whole number are not comparable, whoever do
   [coverage-partial-upload.md](./coverage-partial-upload.md) and filed as
   [CodeCoverage#11](https://github.com/MintPlayer/CodeCoverage/issues/11).
 
-**Decision: (a). SP4 ran on 2026-08-19 and (d) is not worth building** — 20 of 22 merged PRs already
-affect ≥99% of coverable lines, so switching `--target=test` to `run-many` costs approximately
-nothing while making every PR comparable. Leave `nx affected` on e2e and every other target; that is
-where its 5-10 minutes actually come from. Full results in
-[coverage-partial-upload.md](./coverage-partial-upload.md) §4 and on
-[CodeCoverage#11](https://github.com/MintPlayer/CodeCoverage/issues/11).
+**Decision: (d) — keep `nx affected`, and block G3 on upstream
+[CodeCoverage#11](https://github.com/MintPlayer/CodeCoverage/issues/11).**
 
-**SP3 also found something that applies to G3 as written:** a master commit has no coverage roughly
-5% of the time, because `cancel-in-progress: true` kills a superseded run before its upload step. So
-a null baseline is routine, not exceptional — G3's *skip, never fail* is load-bearing.
+SP4 (2026-08-19) measured that 20 of 22 merged PRs already affect ≥99% of coverable lines, which
+makes (a) nearly free on wall-clock. **(a) is rejected anyway**: this repo is partly a reference for
+Nx + GitHub Actions configuration, and dropping `nx affected` on PRs to work around a coverage-tool
+limitation would demonstrate the wrong pattern. That constraint outranks the ROI argument.
+
+The same spike found **2 of 22 PRs where the current comparison misfires completely** (PR 379 vue
+only, PR 368 api only). Those are the case the gate exists for; being rare does not make a wrong
+verdict acceptable.
+
+**Cost of this decision, accepted deliberately:** the ratchet cannot ship until #11 does. The PR
+upload stays measurement-only until then. A gate that is wrong on 9% of PRs would be worse than no
+gate — the same reasoning that put a week of non-blocking observation between G3 and G4.
+
+**SP3 also found something that applies to G3 whenever it ships:** a master commit has no coverage
+roughly 5% of the time, because `cancel-in-progress: true` kills a superseded run before its upload
+step. A null baseline is routine, not exceptional — G3's *skip, never fail* is load-bearing.
 
 **The superseded reasoning:** a ratchet that reports after the merge (b) does not change the decision it exists to inform,
 and (c) makes the number less trustworthy rather than more.

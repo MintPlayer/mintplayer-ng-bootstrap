@@ -4,10 +4,11 @@ Consumer-authored, for **MintPlayer/CodeCoverage**. Companion to
 [coverage-pr-gate.md](./coverage-pr-gate.md) (the gate this unblocks) and
 [test-coverage.md](./test-coverage.md) (the coverage programme it serves).
 
-Status: **Investigated and NOT recommended** (2026-08-19). Filed upstream as
-[CodeCoverage#11](https://github.com/MintPlayer/CodeCoverage/issues/11) and left open as a design
-record rather than a request — SP4 measured that this consumer does not need it. **§4 carries the
-spike results; read those before §2.** Written after upstream
+Status: **Proposed, spikes run** (2026-08-19). Filed upstream as
+[CodeCoverage#11](https://github.com/MintPlayer/CodeCoverage/issues/11). **§4 carries the spike
+results.** SP4 showed the feature would be exercised on roughly 1 PR in 11 here — and found 2 of 22
+PRs where the current comparison misfires completely. Rarity is a statement about frequency, not
+severity, so the request stands. Written after upstream
 [#9](https://github.com/MintPlayer/CodeCoverage/issues/9) /
 [PR #10](https://github.com/MintPlayer/CodeCoverage/pull/10) shipped the status endpoint, which
 made the gate buildable and immediately exposed the next problem.
@@ -40,9 +41,9 @@ and it argues for something smaller than carryforward.
 It is the obvious answer and it is not free. `nx affected` is worth 5–10 minutes per PR check run.
 Nothing here proposes giving that up; the point of the feature is to keep it.
 
-**SP4 later showed this framing was wrong in an important way** (§4): almost all of that saving comes
-from targets other than `test`, so `run-many --target=test` alone gives up nearly none of it. The
-argument below is preserved as it stood before the measurement.
+**SP4 later refined this** (§4): almost all of that saving comes from targets other than `test`, so
+`run-many --target=test` alone would give up little wall-clock. That made the shortcut *cheap* — and
+it was still rejected, on grounds measurement cannot settle. See §4.5.
 
 *(An earlier draft of this analysis argued the saving was ~1% of coverable lines. That was measured
 over recent* master *merge commits, which in this repo are dominated by `web-components` work, and
@@ -221,19 +222,36 @@ small-library work would shift it. Weights come from `master@e01681ec`, whose tr
 unpushed branch adds ~725 lines of `qr-code` plus the API's, which would make PR 368 non-zero.
 Neither changes the shape.
 
-### What this means
+### 4.5 What this means — and the constraint that decides it
 
-**Take the simple fix: `run-many` for `--target=test` only, leaving `nx affected` on e2e and every
-other target.** On 20 of 22 PRs the expensive suites already run, so wall-clock barely moves; the
-5-10 minutes `affected` saves this repo comes from targets this does not touch. Every PR becomes
-comparable to `baseline` as it already exists, with zero upstream work.
+SP4 makes the shortcut cheap: `run-many --target=test` would cost almost nothing on 20 of 22 PRs,
+because the expensive suites already run. On pure ROI, that wins.
 
-The §2 design is still the right shape *if* a genuinely partitioned monorepo ever needs it, and the
-§2 reasons not to build carryforward hold regardless. Both are preserved upstream for that reader.
+**It is rejected anyway, and the reason is a repo goal that no measurement can weigh.** This
+workspace exists partly to demonstrate how to configure an Nx workspace with GitHub Actions — the CI
+setup is a deliverable people read and copy. Dropping `nx affected` from pull requests, the single
+most characteristic thing a well-configured Nx monorepo does, in order to work around a coverage
+service's limitation, would teach the wrong pattern to exactly the audience this repo is written for.
+
+**So `nx affected` on PRs is fixed, and the coverage tooling accommodates a partial result.**
+
+Two things make that more than a preference:
+
+- **The 2 outliers are the case a gate exists for.** PR 379 (vue only, 0.5%) and PR 368 (api only)
+  would each read as a near-total collapse against the whole-workspace baseline. A gate wrong on 9%
+  of PRs is one people switch off — which is the failure mode G3 was already written to avoid.
+- **SP4 is a snapshot, not a property.** The distribution reflects where this repo's work happens to
+  sit today. More contributors on independent libraries, or a stretch of API work, moves it without
+  any configuration changing.
+
+**Consequence: the project ratchet is blocked on upstream #11 rather than worked around.** The PR
+upload stays measurement-only (`flags: pr`, `finish: false`) until a scoped baseline exists. That is
+a real cost of this decision and is accepted deliberately — a gate built on a number that is wrong
+9% of the time would be worse than no gate.
 
 ---
 
-## 5. Milestones *(not being pursued — see §4)*
+## 5. Milestones
 
 ### N1 — Declare partiality and the base sha 🟦🟪 · cost S
 
