@@ -1,8 +1,15 @@
 # PRD — a PR coverage gate for this workspace
 
-Status: **Proposed** (2026-08-17). Consumer-side companion to
+Status: **Superseded in part, 2026-08-19.** Consumer-side companion to
 [test-coverage.md](./test-coverage.md) §D2 / M11 and its open question **Q3**.
-Upstream issue: MintPlayer/CodeCoverage (filed 2026-08-17).
+Upstream issue: [MintPlayer/CodeCoverage#9](https://github.com/MintPlayer/CodeCoverage/issues/9)
+(filed 2026-08-17), **closed by [PR #10](https://github.com/MintPlayer/CodeCoverage/pull/10), merged
+and deployed 2026-08-19**.
+
+> **Read §2a first.** Everything asked for upstream shipped, which retires most of §3's interim
+> design. §2's evidence is kept as the record of what was true when the question was asked — it is
+> history now, not guidance. The live plan is
+> [coverage-pr-gate-plan.md](./coverage-pr-gate-plan.md).
 
 Grounded in a read of the coverage service's own source at `C:\Repos\Coverage` (ASP.NET Core +
 MintPlayer.Spark + RavenDB), its uploader action at `C:\Repos\Coverage\action`, and its existing
@@ -97,7 +104,51 @@ Two decisions are pending upstream and block the parts we care about
 gates thresholds and `ignore`), and whether to grant the App `checks: write` + `pull requests:
 read → write` (§7.2, gates the check-run half). Patch coverage itself needs **no** permission change.
 
-## 3. What this workspace does in the meantime
+## 2a. Resolution — what shipped, and what it retires
+
+Upstream PR #10 landed all four asks from §8 plus the T0.3 hardening. Verified live: `GET
+/api/uploads/status` returns `401` unauthenticated rather than falling through to the SPA.
+
+**Q3 has a second, better answer.** The original was *"no status API exists, so the ratchet must be
+a workflow step comparing against the master figure."* It is now: **`GET /api/uploads/status` is a
+documented, versioned, token-metered contract**, and the ratchet is still a workflow step — but it
+compares against a `baseline` the server computes, not one we assemble.
+
+| §3 said | Now |
+|---|---|
+| Poll `/api/browse/.../commits/{sha}`, guessing terminal states | `wait-for-finalize: true` on the action; states documented and **closed** (`InFlight` / `Complete` / `CompleteWithErrors`) |
+| `/history?branch=master` for the baseline | `baseline-*` outputs — no second call, and the polled commit is excluded server-side |
+| `Pending` means "in flight, or dead, indistinguishably" | Fixed; a crashed parse reports `Failed` with a message |
+| Guess a timeout | `1800s`, the server's own ceiling, so it cannot expire early |
+
+**Three §3 decisions are now actively wrong**, and only one would have failed loudly:
+
+1. **`/api/browse` is explicitly *not* a contract** — it is the web UI's internal API, and is being
+   reshaped onto the generic query surface. §5's question is answered: build on `/api/uploads/*`.
+2. **Browse is rate limited by client IP.** GitHub-hosted runners share egress addresses, so a gate
+   there could be throttled by traffic that is not ours, on a bucket we cannot claim. This is the one
+   that would have failed loudly — eventually, and confusingly. `/api/uploads/status` meters per
+   *token*.
+3. **Browse authorizes against a signed-in human's GitHub access** and returns the same `404` for
+   "no build yet" as for "not allowed". It structurally cannot answer a poller's question. This would
+   have produced a gate that *looked* like it worked.
+
+The upstream ordering request from §3's blocker paragraph was honoured: N5 bounds the anonymous
+surfaces, and shipped **with** N2 rather than before it, so the token-authenticated path existed
+before the anonymous one was bounded.
+
+**What did not change:** patch coverage still waits for M11.1 (§3's reasoning stands — a single
+server-side implementation is the only way to match GitHub's diff), and `Commit.ParentSha` is no
+longer a trap for us because #10 gave it one writer and one meaning and dropped the unclassifiable
+values via the repo's first Spark migration. D2's "compare against the default branch, never
+`ParentSha`" survives anyway, since that is what `baseline` does.
+
+**What #10 did not and could not fix — see the plan's G2.** Our PR workflow measures `nx affected`
+while master measures `nx run-many`, so the PR number is a subset and the baseline is the whole
+workspace. `baseline` is per-repository-default-branch, not per-flag. That comparability problem is
+ours, and it is now the only thing between us and a working ratchet.
+
+## 3. What this workspace does in the meantime *(superseded — see §2a)*
 
 **Decision: implement the M11 ratchet as a workflow step against the browse API, and treat the
 upstream check run as a later replacement rather than a dependency.**
