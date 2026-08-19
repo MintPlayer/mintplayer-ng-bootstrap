@@ -199,7 +199,7 @@ cancelled, so of the three master commits since the feature existed, one has non
 baseline is not only a first-upload condition; it is routine at a few percent. G3's *skip, never
 fail* is therefore load-bearing, not defensive decoration.
 
-### SP4 — What does the affected set cover, per PR? ⬜ · **DECISIVE — 20 of 22 PRs ≥99%**
+### SP4 — What does the affected set cover, per PR? ⬜ · **20 of 22 PRs ≥99%, and 2 that break**
 
 Last 22 merged PRs, `nx show projects --affected --with-target=test` between each PR's base and head,
 weighted by coverable lines **as the service itself reports them** for `master@e01681ec` (21,014).
