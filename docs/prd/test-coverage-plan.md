@@ -31,6 +31,7 @@ uncovered**, not as future work.
 | M14 ✅ | Deepen the dock and file-manager elements | the two biggest partial files |
 | M15 ✅ | Dock — the last non-geometry regions | 116 of 1,311 uncovered |
 | M16 ✅ | Stop the service discarding 22% of measured files | 314 files recovered |
+| M17 🟦 | `tools/` — mapped and ranked, T1-T6 | 166/704 = 23.6% today |
 
 ## Ordering rationale
 
@@ -1054,13 +1055,20 @@ hours later inside an unrelated feature after five retries.
 ### U2 — Expose `FeedbackState` on `GET /api/uploads/status` 🟦
 
 `Build.FeedbackState` records exactly what happened to the check-run publish (`Posted`, `Retry`,
-`Failed`, `Unavailable`) — and is exposed by **nothing**: not `/api/browse`, not
-`/api/uploads/status`, not the UI. Diagnosing U1 required shell access to the production container.
+`Failed`, `Unavailable`). It is **not** on `/api/uploads/status`, which is the one surface a CI job
+can poll — so a workflow cannot tell whether its check-runs were published, and diagnosing U1 took
+shell access to the production container.
 
-Worse, the states are indistinguishable to a consumer: `Unavailable` is deliberately quiet because
+**Correction to an earlier draft of this item:** it is *not* true that the field is exposed by
+nothing. The Vidyano commit page's builds grid renders a **Feedback State** column, and it read
+`Posted` for the fixed build. That is a human-facing admin surface, not something a workflow can
+consume, so the ask stands — but it is narrower than first written, and the original phrasing was
+simply wrong. Recorded here rather than quietly edited away, because the mistake is the same one M16
+is about: a claim repeated from memory instead of re-measured.
+
+The states are also indistinguishable to a consumer: `Unavailable` is deliberately quiet because
 OIDC-only repos are a supported population, so a repo that *should* get check-runs and doesn't looks
-identical to one that never could. One additional field would turn a source dive into a five-second
-check.
+identical to one that never could. One additional field turns a source dive into a five-second check.
 
 ### U3 — Raise or disclose the unmatched-files cap 🟦
 
@@ -1071,3 +1079,222 @@ displayed number as truncated.
 
 *(U3 is the smallest and arguably the highest-value: it is the difference between a consumer noticing
 this class of bug and not.)*
+
+### U4 — The commit page's flag filter resets itself 🟦
+
+**Reported by the user, then reproduced and root-caused here.** On the commit page the `Flags:` row
+offers `All` and `pr 76.2%`. Clicking `pr` makes the page flash, and about half a second later `All`
+is selected again and the scroll position has jumped.
+
+**Measured in the browser against production** (instrumented click, recording chip state, DOM node
+identity and every `fetch` the app made):
+
+| t | observation |
+|---|---|
+| 0 ms | `All` selected, `pr` not |
+| **1 ms** | click issues `…/tree?flag=pr` — **the correct request** |
+| **3 ms** | an **unflagged** `…/tree` is issued, 2 ms later |
+| 11–322 ms | the flag chips are **absent from the DOM entirely** (the "flashing") |
+| 610 ms | chips return, `All` selected, and they are **different DOM nodes** |
+
+The unflagged refetch at t+3 ms is the decisive detail: it fires *before any response can arrive*, so
+this is not a response handler overwriting state. It is a teardown.
+
+**The server is not at fault, and this was checked rather than assumed.** Against production:
+`?flag=pr` returns data byte-identical to unflagged (correct — this workspace uploads exactly one
+flag, so filtering to it is a no-op), while `?flag=doesnotexist` returns **zero entries**. Filtering
+is real, applied, and honoured. This also disposes of the "the chip shows a number the tree cannot be
+filtered by" hypothesis, and of the deploy-freshness caveat on reading local source: prod demonstrably
+has per-flag tree documents.
+
+**Root cause (client only), from the Coverage source at `45354c09`:** in
+`ClientApp/src/app/components/commit-files-panel/commit-files-panel.component.ts`, the constructor
+`effect()` (line 70) whose job is to *reset* the flag also transitively **reads** it — line 82 calls
+`openFolder('')` synchronously, and line 101 evaluates `this.selectedFlag()` as a call argument
+before its first `await`, inside the effect's reactive consumer context. So the flag becomes a
+dependency of the effect that clears it at line 80. Selecting a flag therefore re-runs the reset:
+blank the tree, hierarchy and path, set the flag back to `null`, refetch everything unflagged. The
+`All` chip re-highlights because its binding is `[class.btn-primary]="!selectedFlag()"`.
+
+**Fix:** one file, roughly five lines, no server change and no migration — read `owner/name/sha` at
+the top of the effect and run the reset+load body inside `untracked()`, so the effect's dependencies
+are what its own comment on line 71 already claims they are.
+
+Two things worth folding into the same change:
+
+- **A latent race that the fix alone does not close.** `openFolder` does `this.tree.set(await …)`
+  with no generation guard (lines 99–104), so a slow `All` response can still land after a fast `pr`
+  one and silently un-filter the list. That failure is *invisible* — the chip stays selected while the
+  data underneath it is unfiltered, which is strictly worse than today's loud reset. Needs a request
+  token, and it is the reason not to stop at the one-line `untracked` fix.
+- **The selected flag lives only in component state**, so it does not survive reload, back, or a
+  shared link. A query param would fix that and would also make the bug reproducible by URL.
+
+**Accessibility nit, same component:** the chips convey selection through Bootstrap classes only
+(`btn-primary` vs `btn-outline-secondary`) with no `aria-pressed` — measured `null` on both. That is
+selection state carried by colour alone, invisible to assistive tech (WCAG 1.4.1, 4.1.2). Cheap to
+fix in the same edit.
+
+**Spike SP5, for the Coverage-repo session** — *is the snap-back caused solely by `selectedFlag()`
+being read inside the constructor effect at line 101?*
+
+*Method:* log effect-body runs and `selectFlag` calls; click the chip; record how many times the
+effect runs and the sequence of `…/tree` requests. Then change **only** line 101 to read through
+`untracked(() => this.selectedFlag())` and repeat the identical click.
+
+*Decision rule:* **confirms** if before the change the effect re-runs and the sequence is
+`tree?flag=pr` then unflagged `tree` + `hierarchy` + `commit`, and after the change the effect does
+not re-run, only `tree?flag=pr` is issued, and the chip stays selected. **Refutes** — look at the
+Spark persistent-object host re-emitting inputs — if the effect still re-runs after the change.
+
+The network half of that decision rule has **already been observed in production** (the table above),
+so the spike is really only confirming the second half: that the `untracked` change removes it.
+
+### U5 — The account page's Repositories grid leads with a constant column 🟦
+
+On `https://coverage.mintplayer.com/a/{account}` the Repositories grid opens with **`Account`**, which
+holds the same value on every row — the account the URL already names. `Repository`, the actual row
+identity, is second.
+
+Measured on `/a/MintPlayer`, the column order is:
+
+`Account` | `Repository` | `Coverage` | `Trend` | `Latest commit` | `Owner Login` | `Is Private` |
+`Default Branch` | `Archived` | `Latest Coverage At Utc`
+
+with `Account` = `MintPlayer` **and** `Owner Login` = `MintPlayer` on all rows. So the constant is
+carried twice, in the two positions that matter most, on a page that cannot show anything else.
+
+**Ask:** make `Repository` the first column, and drop `Account` (and probably `Owner Login`) from the
+account-scoped view entirely — a column that cannot vary within the page is a column that costs
+horizontal space and reader attention for zero information.
+
+The user's reading is that this is a persistent-object-attribute offset — the grid rendering the
+type's attributes in declaration order rather than in a view order chosen for this page. If so the
+fix is column configuration on the query, not a data change. Worth confirming that the grid on a
+*global* (non-account-scoped) repositories view, where `Account` genuinely varies, is the same query —
+because there the column is useful and should stay.
+
+
+## M17 — `tools/` at 23.6%, mapped and ranked 🟦
+
+**Not started.** M3 gave `tools/` a test target and specced the highest-risk helpers; the service now
+reports the directory at ~22.5%. This is the measured map of what is left, so the remainder is a
+decision rather than a shrug.
+
+Measured from `coverage/tools/lcov.info`: **166 / 704 executable lines = 23.58%** (the service's
+22.5% is the same figure over a slightly newer file set). These are v8 *executable* lines, far fewer
+than physical lines — `lib/wc-codegen.mjs` is 71 physical lines and 9 coverable.
+
+Four files are already at 100%: `lib/bundle-audit.mjs`, `lib/loader-maps.mjs`, `lib/wc-codegen.mjs`,
+`vite/multi-entry.mts`. **94 test cases exist across five specs.** Every milestone below is the same
+move M3 already made twice — extract the judgement into a `lib/`, keep the fs/spawn shell thin — so
+this is a continuation, not a new approach.
+
+### T1 — `rebase-lcov-paths.mjs` ★ highest value
+
+~32 coverable lines, **currently 0% and confirmed absent from the report** (0 matches in
+`coverage/tools/lcov.info`) because it was added after that run. It matches `scripts/**/*.mjs`, so it
+enters the denominator at zero on the next CI run.
+
+It is pure string/path logic, and **every coverage number this repo produces now passes through it.**
+A silent regression re-introduces exactly the 314-dropped-files defect its own header documents
+(M16). Newest file, cheapest lines, most load-bearing — first by a wide margin.
+
+It is untestable as written: everything sits at module top level (`:47-102`), so importing it *runs*
+it, rewrites every `coverage/**/lcov.info` on disk, and can `process.exit(1)`. The repo already has
+the fix pattern at `tools/scripts/serve-api.mjs:228-231` — an
+`import.meta.url === pathToFileURL(process.argv[1]).href` entrypoint guard with the pure part
+exported. Copy it verbatim.
+
+Split: export `rebaseLcov({ text, prefix, exists })` (pure, `exists` injected), `findReports(dir)` and
+`prefixFor(report)`; keep fs and `process.exit` inside a guarded `main()`. ~12-15 cases: prefix
+derivation, the empty-prefix refusal (`:65-68`), `SF:` rewriting and backslash normalisation,
+**idempotence** (run the transform twice), byte-identical passthrough of non-`SF:` lines, CRLF input,
+the unresolved-path hard failure, and the no-reports exit.
+
+### T2 — the five `lit-ssr-utils` chrome generators
+
+98 uncovered lines across `gen-{accordion,carousel,dropdown,navbar,shell}-chrome.mjs`, which are five
+copies of the same ~20 lines of DSD-extraction regex plus module emission. Extract
+`lib/chrome-module.mjs` (`extractDsdTemplate`, `buildChromeModule`) and spec it once: ~12 cases move
+~60-70 lines and de-duplicate all five files. Only the `import()` of the built `dist` stays uncovered.
+
+### T3 — the codegen entrypoints
+
+`build-flag-loaders.mjs` (27), `build-hljs-loaders.mjs` (35), `build-phone-metadata.mjs` (42) = 104
+lines. Make root/output paths injectable, guard `main()`, drive from `mkdtemp`. ~30 cases move an
+estimated 70-85 lines. Worth more than the number: it covers the phone-metadata
+`SUPPORTED_FORMAT_VERSION` guard (`:135-142`), the only thing between a libphonenumber bump and
+silently wrong validation rules.
+
+### T4 — `build-web-components.mjs`
+
+96 uncovered lines, the single largest file, and the codegen every other suite's inputs depend on.
+~15 cases move an estimated 60-70. Ranked below T3 only because the module-level `repoRoot`/`libRoots`
+constants (`:37-44`) need refactoring first and `compileScss` runs real `sass` in the loop.
+`startWatchers` (chokidar + debounce) stays out unless a fake watcher is injected.
+
+### T5 — delete `tools/scripts/publish.mjs` — needs sign-off
+
+**This script is dead and would crash if run.** It imports `readCachedProjectGraph` from
+`@nrwl/devkit` (`:10`) and **`node_modules/@nrwl` does not exist** in this workspace — verified. It is
+stock Nx boilerplate, still wired into a `publish` target in four project files:
+`libs/mintplayer-{qr-code,pagination,encode-utf8,dijkstra}/project.json`. Publishing actually happens
+through the release workflow.
+
+Deleting the script and the four targets removes 18 dead lines from the denominator **honestly** and
+fixes a latent bug. This is the only exclusion in the whole map, and the reason matters: *not product
+code*, never *hard to test* — the distinction this PRD exists to defend. Requires confirmation that
+nothing runs `nx publish <lib>`.
+
+### T6 — `free-port.mjs` and the two bundle-check shims
+
+51 lines; an estimated 30 reachable with ~10 cases against a fake `dist/`. Last because their
+judgement is *already* covered in `lib/bundle-audit.mjs` and what remains is mostly `console.log` and
+exit codes. `free-port.mjs` is 6 lines but has a real validation branch and is a `dependsOn` of the
+demo's serve — cover it, don't exclude it.
+
+### Deliberately left at 0%
+
+`serve-api.mjs`'s remaining 66 lines (koffi FFI, `spawn('dotnet')`, signal handlers) and
+`dev-processes.mjs`'s remaining 41 (`netstat`/`ps`/`taskkill`). The testable halves of both are
+already extracted and specced. Leaving the rest uncovered is the honest outcome; the right instrument
+is a per-area expectation (M14), not a test that asserts a mock.
+
+**Projected if T1-T5 land: ~406 / 718 ≈ 57%**, from the per-milestone estimates above.
+
+### Traps that would make these specs Windows-only-red
+
+Recorded because most fail *only* on this workspace's own platform — they would pass review and break
+for the person who wrote them:
+
+1. **`path.sep` vs `posix.sep`.** `rebase-lcov-paths.mjs:64` splits on `sep`, joins on `posix.sep`. A
+   fixture built from the literal `'coverage/libs/foo/lcov.info'` passes on Linux and fails on
+   Windows, where splitting on a backslash never splits. Build fixtures with `join()`, assert both forms.
+2. **cwd.** `COVERAGE_DIR = 'coverage'` and `existsSync` are cwd-relative, and vitest roots `tools/`
+   specs at `tools/`. Inject the base dir and `exists` — **never `process.chdir()`**, which under
+   `pool: 'threads'` is process-wide and corrupts sibling specs running in parallel.
+3. **CRLF.** The rebaser reads with a `\r?\n` split and writes `\n`, silently converting CRLF reports
+   to LF. A committed fixture checked out with `autocrlf` makes "unchanged when already rooted" assert
+   a *changed* file. Assert on parsed lines, or write fixtures with explicit newlines at runtime.
+4. **`file://` in ESM.** The entrypoint guard must compare against
+   `pathToFileURL(process.argv[1]).href`; an `endsWith` check breaks on drive letters and
+   percent-escaped paths.
+5. **`mkdtemp` returns a junction/short-name path** on Windows. `realpathSync` it before comparing
+   against a path the code derived. The existing `wc-codegen.spec.ts` escapes this only because it
+   compares content, never paths — T3 and T4 will compare paths.
+6. **Assert the posix form of generated output**, don't normalise in the test. Several scripts strip
+   backslashes after `relative()`; a missing one is precisely the Windows-only bug these specs exist
+   to catch.
+
+### The trap that matters most
+
+**`tools/vitest.config.ts:24` scopes `coverage.include` by extension** —
+`['scripts/**/*.mjs', 'vite/**/*.mts', 'lit-ssr-utils/**/*.mjs']`. Extracting logic into a `lib/*.ts`
+would move it *out of the denominator*, so coverage would appear to rise while nothing new was
+tested. Extract into `.mjs`, or widen the include in the same commit.
+
+This is the `coverage.all` failure mode (M1) and the ambiguous-path failure mode (M16) wearing a third
+costume. Three times in one PRD a denominator has tried to shrink itself quietly, which is the
+strongest argument yet that the honest-denominator work needed to be a project rather than a setting.
+
