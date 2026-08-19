@@ -4,14 +4,19 @@ Consumer-authored, for **MintPlayer/CodeCoverage**. Companion to
 [coverage-pr-gate.md](./coverage-pr-gate.md) (the gate this unblocks) and
 [test-coverage.md](./test-coverage.md) (the coverage programme it serves).
 
-Status: **Proposed, spikes run** (2026-08-19). Filed upstream as
-[CodeCoverage#11](https://github.com/MintPlayer/CodeCoverage/issues/11). **§4 carries the spike
-results.** SP4 showed the feature would be exercised on roughly 1 PR in 11 here — and found 2 of 22
-PRs where the current comparison misfires completely. Rarity is a statement about frequency, not
-severity, so the request stands. Written after upstream
-[#9](https://github.com/MintPlayer/CodeCoverage/issues/9) /
-[PR #10](https://github.com/MintPlayer/CodeCoverage/pull/10) shipped the status endpoint, which
-made the gate buildable and immediately exposed the next problem.
+Status: **SHIPPED upstream** (2026-08-19). Filed as
+[CodeCoverage#11](https://github.com/MintPlayer/CodeCoverage/issues/11), closed by
+[PR #12](https://github.com/MintPlayer/CodeCoverage/pull/12), merged and deployed the same day.
+
+The scoped baseline landed as filed, and the PR went further: a **projection** (the base tree patched
+with the measured files, PR-deleted files pruned, computed at read time) with an explicit
+`complete` / `incompleteReasons` verdict, base-resolution disclosure
+(`exact | mergeBase | walked | none`), **patch coverage**, and the **`coverage/project` /
+`coverage/patch` check runs**. None of it copies documents or passes anything through the max-only
+merger — the two constraints §2 identified as disqualifying for carryforward.
+
+**§4's spike results are kept as the record of how the decision was reached**, including SP4, whose
+numbers argued against the feature on ROI and were overruled by a repo goal — see §4.5.
 
 Legend, matching the upstream house style: 🟦 Coverage repo · 🟪 `action/` · ⬜ consumer-side.
 
@@ -247,10 +252,10 @@ Two things make that more than a preference:
   sit today. More contributors on independent libraries, or a stretch of API work, moves it without
   any configuration changing.
 
-**Consequence: the project ratchet is blocked on upstream #11 rather than worked around.** The PR
-upload stays measurement-only (`flags: pr`, `finish: false`) until a scoped baseline exists. That is
-a real cost of this decision and is accepted deliberately — a gate built on a number that is wrong
-9% of the time would be worse than no gate.
+**Consequence at the time: the ratchet was blocked on upstream #11 rather than worked around**, and
+that cost was accepted deliberately — a gate built on a number wrong 9% of the time would be worse
+than no gate. *(Resolved 2026-08-19: #12 shipped four hours later. The PR upload now declares
+`partial: true` + `base-sha`, and the block is gone.)*
 
 ---
 

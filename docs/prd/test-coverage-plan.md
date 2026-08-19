@@ -128,11 +128,18 @@ File: `.github/workflows/pull-request.yml:84`.
 
 1. Add `--coverage` to the existing `nx affected --target=test` step.
 2. Add an upload step using `MintPlayer/CodeCoverage/action@master` with a flag distinct from
-   master's `unit`, **`finish: false`**, and **`fail-ci-if-error: false`** (R5).
+   master's `unit` and **`fail-ci-if-error: false`** (R5).
 3. Guard the step on `github.event.pull_request.head.repo.full_name == github.repository` — fork
    PRs get neither secrets nor an OIDC token (D7).
 
 No gate yet. This milestone only makes the number visible to reviewers.
+
+**Revised 2026-08-19, after upstream shipped partial-upload support.** The step originally carried
+`finish: false`, whose only job was to stop a partial `nx affected` number finalizing under master's
+flag and reading as a coverage collapse. That is now handled properly by declaring
+**`partial: true`** with **`base-sha`**, so the step finishes (`finish: true`) and the service's
+`coverage/project` / `coverage/patch` check runs appear promptly. See
+[coverage-pr-gate-plan.md](./coverage-pr-gate-plan.md) G2.
 
 Applied 2026-08-18 with one addition the plan missed: **`--exclude=api` is needed on the PR run
 too.** `nx affected` will pick up the API project whenever its files change, and `nx:run-commands`

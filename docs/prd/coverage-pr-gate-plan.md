@@ -2,17 +2,19 @@
 
 PRD: [coverage-pr-gate.md](./coverage-pr-gate.md)
 Parent: [test-coverage-plan.md](./test-coverage-plan.md) (this replaces its **M11**)
-Status: **Redesigned 2026-08-19 after upstream shipped.** G1 done; G2 is now a blocker of our own
-(the PR number is not comparable to the baseline) and needs a decision before G3 can be written.
-No branch, no PR — awaiting permission.
+Status: **Redesigned twice on 2026-08-19, as upstream shipped underneath it.** G1 and G2 are done.
+G3–G5 collapsed into a single configuration step, because upstream
+[PR #12](https://github.com/MintPlayer/CodeCoverage/pull/12) delivered the `coverage/project` and
+`coverage/patch` **check runs** — the thing G5 was waiting for. **There is no workflow-side gate to
+build, and therefore none to delete later.**
 
 | Milestone | Scope | Depends on |
 |---|---|---|
 | G1 | Upstream requirements issue on MintPlayer/CodeCoverage | — *(done 2026-08-17)* |
-| G2 | ~~Read the figure in CI, observational~~ → **make the PR number comparable to the baseline** | a decision (below) |
-| G3 | Project ratchet as a workflow step, non-blocking | G2 |
-| G4 | Make it required | a week of G3 observation |
-| G5 | Hand over to the upstream check runs, delete our step | upstream M11.3 |
+| G2 ✅ | Make the PR number comparable — `partial: true` + `base-sha` | upstream #12 |
+| G3 | Configure the gate, non-blocking; accept the App permissions | G2 + owner action |
+| G4 | Make it required in branch protection | a week of G3 observation |
+| ~~G5~~ | ~~Hand over to upstream check runs~~ | **shipped upstream; nothing to do** |
 
 ## Ordering rationale
 
@@ -99,123 +101,89 @@ looked like it worked.
 
 ---
 
-## G2 — the blocker we have to resolve first: the PR number is not comparable
+## G2 — make the PR number comparable ✅
 
-**This is the real work of the ratchet, and it is ours, not upstream's.**
+**Done on this branch.** The PR upload now declares what it is:
 
-`baseline-*` returns the latest finalized coverage on `master`. Our two workflows do not measure the
-same thing:
+```yaml
+partial: true
+base-sha: ${{ github.event.pull_request.base.sha }}
+finish: true
+```
 
-| | Test command | Scope | Flag | `finish` |
-|---|---|---|---|---|
-| `publish-master.yml:63` | `nx run-many --target=test` | **whole workspace** | `unit` | `true` |
-| `pull-request.yml:86` | `nx affected --target=test` | **only affected projects** | `pr` | `false` |
+`partial: true` is load-bearing: `nx affected` measures only the projects the diff touched, and
+without the declaration the server reads a subset as a whole-workspace total — a PR touching one
+small library reports a ~98% collapse. `base-sha` is the same value already passed to
+`nx affected --base`; omitted, the server falls back to the newest covered default-branch commit,
+discloses that it did (`baseResolution`), and compares against a commit the affected-computation
+never diffed against.
 
-A PR touching one lib uploads that lib's coverage and nothing else. Compared against master's
-whole-workspace baseline, **every PR reads as a catastrophic drop** — and the existing comment at
-`pull-request.yml:97-100` already says exactly this, which is why the PR upload was given its own
-flag and `finish: false` in the first place.
+`finish: true` replaces the old `finish: false`. That flag existed only to stop a partial number
+finalizing under master's flag and reading as a collapse — a concern `partial: true` now handles
+properly. Finishing closes the build immediately instead of waiting out the ~2-minute debounce, so
+the check runs appear while the PR is still being looked at.
 
-The service cannot fix this for us: `baseline` is per-repository-default-branch, not per-flag. Nor
-should it — a partial number and a whole number are not comparable, whoever does the arithmetic.
+**Why the alternative was rejected**: switching the PR to `run-many` would also have made the number
+comparable, and per SP4 would have cost almost nothing in wall-clock. It was rejected because this
+repo is partly a reference for Nx + GitHub Actions configuration — see
+[coverage-partial-upload.md](./coverage-partial-upload.md) §4.5, and the constraint is recorded
+upstream so nobody re-proposes it.
 
-**Options, and the trade is CI minutes against gate coverage:**
+## G3 — configure the gate, non-blocking [PRD D1, D2, D3]
 
-- **(a) PR runs the full suite** — switch `pull-request.yml` to `run-many --target=test`, matching
-  master. The numbers become comparable and the gate is real. Costs the difference between affected
-  and full unit tests on every PR. Precedent exists in the same file: the a11y gate is already
-  `run-many`, "deliberately, NOT `affected`".
-- **(b) Gate post-merge on master only** — no PR workflow change, zero added PR minutes, but it is an
-  *alarm*, not a gate: it tells us coverage dropped after the drop has landed on `master`.
-- **(c) Per-flag baselines** — would need upstream work. Not proposed; a partial number is a bad
-  thing to ratchet on even with a matching baseline, because *which* projects are affected changes
-  from PR to PR, so the denominator moves for reasons unrelated to test quality.
+**No workflow changes.** The service publishes the checks itself; this milestone is configuration.
 
-- **(d) Scope the baseline upstream** — have the service compare the partial upload against the base
-  commit's coverage **restricted to the same file set**. Keeps `affected` on PRs at full value, needs
-  no synthetic total and copies no documents. Written up in
-  [coverage-partial-upload.md](./coverage-partial-upload.md) and filed as
-  [CodeCoverage#11](https://github.com/MintPlayer/CodeCoverage/issues/11).
+1. **Accept the GitHub App permission upgrade** — Checks read-write and Pull requests read-write, per
+   installation. **Owner action, and it blocks everything else here**: until accepted, builds record
+   feedback as `Unavailable`, silently by design, and no check run appears.
+2. Set the gate in the repository's **Coverage gate** panel, or commit a `coverage.yml`:
 
-**Decision: (d) — keep `nx affected`, and block G3 on upstream
-[CodeCoverage#11](https://github.com/MintPlayer/CodeCoverage/issues/11).**
+   ```yaml
+   gate:
+     projectMode: auto        # ratchet against the base
+     projectThreshold: 1      # allowed drop in percentage points
+     projectBasis: scoped     # judge a partial build on what it measured
+     patchTarget: 80
+     patchThreshold: 5
+     blocking: false          # observe first
+   ```
 
-SP4 (2026-08-19) measured that 20 of 22 merged PRs already affect ≥99% of coverable lines, which
-makes (a) nearly free on wall-clock. **(a) is rejected anyway**: this repo is partly a reference for
-Nx + GitHub Actions configuration, and dropping `nx affected` on PRs to work around a coverage-tool
-limitation would demonstrate the wrong pattern. That constraint outranks the ROI argument.
+   `projectBasis: scoped` over `projection` deliberately: the scoped number is a measurement, the
+   projection is an inference with a completeness verdict attached. Start by gating on the thing we
+   actually measured, and read the projection alongside it.
 
-The same spike found **2 of 22 PRs where the current comparison misfires completely** (PR 379 vue
-only, PR 368 api only). Those are the case the gate exists for; being rare does not make a wrong
-verdict acceptable.
-
-**Cost of this decision, accepted deliberately:** the ratchet cannot ship until #11 does. The PR
-upload stays measurement-only until then. A gate that is wrong on 9% of PRs would be worse than no
-gate — the same reasoning that put a week of non-blocking observation between G3 and G4.
-
-**SP3 also found something that applies to G3 whenever it ships:** a master commit has no coverage
-roughly 5% of the time, because `cancel-in-progress: true` kills a superseded run before its upload
-step. A null baseline is routine, not exceptional — G3's *skip, never fail* is load-bearing.
-
-**The superseded reasoning:** a ratchet that reports after the merge (b) does not change the decision it exists to inform,
-and (c) makes the number less trustworthy rather than more.
-
-**A correction worth keeping:** an earlier reading here held that the affected set covers ~99% of
-coverable lines, so (a) was nearly free. That was measured over *master merge commits*, which in this
-repo are dominated by `web-components` work. The mean is the wrong statistic — the gate has to be
-correct on a PR touching one small library, which is exactly the case where `affected` pays and the
-naive comparison is most broken. SP4 in the linked document measures the real distribution, over PRs.
-
-Exit criterion: the PR and master runs measure the same set of projects, verified by comparing the
-`lines-coverable` of a PR run against master's for the same commit — they should match, not merely
-be close.
-
-## G3 — the project ratchet, non-blocking [PRD D1, D2, D3]
-
-Depends on G2's answer. With (a), the whole milestone is action configuration plus one comparison
-step — the polling, the baseline call and the terminal-state handling are all gone.
-
-1. On the PR upload step: `wait-for-finalize: true`, `finish: true`, `id: coverage`. **`finish: true`
-   is not optional** — without it the wait includes the server's ~2-minute debounce, which would
-   dominate the whole job.
-2. `fail-ci-if-error: true` on the upload, so `CompleteWithErrors` and a timeout fail the step rather
-   than silently yielding an under-count. This is the one place we deliberately fail closed, because
-   an under-count is a *wrong number*, not a missing one.
-3. A comparison step guarded on `steps.coverage.outputs.baseline-line-rate != ''` — empty means first
-   upload, where a ratchet must pass by definition. Empty `line-rate` (no coverable lines) likewise
-   skips.
-4. Tolerance band, not strict non-decrease. Line counts move by a line or two for reasons unrelated
-   to test quality — and our own denominator moves with `coverage.include` edits (parent plan M1).
-5. Emit to the step summary; name the check `coverage/project` (PRD D3).
-6. Still `continue-on-error: true` on the *comparison*. Skip — never fail — on a missing result
-   (PRD D5).
-7. Keep the fork guard (`head.repo.full_name == github.repository`, PRD D4). Note OIDC is
-   **unavailable to fork PRs** regardless, so this stays necessary.
+   `blocking: false` is the upstream default and matches this plan's non-blocking-first discipline —
+   the checks post real numbers with a neutral conclusion.
+3. A tolerance band rather than strict non-decrease: our denominator moves with `coverage.include`
+   edits (parent plan M1), and line counts drift for reasons unrelated to test quality.
+4. `coverage.yml` is read from the **base ref**, so a PR cannot rewrite the policy it is judged by.
+   Worth knowing before wondering why an edit did not take effect on its own PR.
 
 Run for **one week of real PRs** before G4. Read the false-positive rate; a ratchet that cries wolf
 gets disabled, which is worse than not having one.
 
 ## G4 — make it required
 
-1. Drop `continue-on-error` from the comparison step.
-2. Add `coverage/project` to branch protection on `master`.
-3. Keep skip-don't-fail for a *missing* result (PRD D5) — this is the property that makes the gate
-   safe to require, and it must survive this milestone. Note this is distinct from G3.2: a missing
-   number skips, a wrong number fails.
+1. Flip `blocking: true`.
+2. Add `coverage/project` to branch protection on `master`. Add `coverage/patch` separately and
+   later, once its number has been watched for a while — same discipline, one gate at a time.
+3. **Verify the abstain path before requiring anything.** Upstream states a missing baseline or diff
+   is *neutral, never red*, and SP3 measured that a master commit lacks coverage ~5% of the time
+   (`cancel-in-progress` kills a superseded run before its upload). A required check that goes red on
+   abstain would block merges for a reason having nothing to do with coverage.
 
 A PR touching no source is never blocked, per the parent PRD's D2.
 
-## G5 — hand over to upstream check runs [conditional]
+## G5 — ~~hand over to upstream check runs~~ — **shipped upstream, nothing to do**
 
-Only once upstream M11.3 ships and the App's `checks: write` permission has been accepted for the
-MintPlayer org (until accepted, the feature is silently absent — roadmap T2.1/M11.0):
+This milestone existed to delete a workflow-side gate once upstream published check runs. Upstream
+published them in [PR #12](https://github.com/MintPlayer/CodeCoverage/pull/12) **before** that gate
+was ever built, so there is nothing to hand over and nothing to delete.
 
-1. Confirm `coverage/project` appears as a real check run on a PR.
-2. Delete our comparison step and set `wait-for-finalize` back to `false` — once the server publishes
-   the check itself, holding the job open buys nothing.
-3. Add `coverage/patch` to branch protection once M11.1's patch number is trusted — separately, and
-   non-blocking first, exactly as G3→G4 did.
+The `coverage/project` and `coverage/patch` names are fixed upstream, which was the property this
+plan wanted from the start: branch protection configured at G4 survives unchanged.
 
-The `coverage/project` name is fixed upstream, so branch protection survives this milestone
-unchanged. If upstream resequences (PRD R2), G3–G4 stand on their own indefinitely. That is the
-design intent, not a fallback.
+Patch coverage (M11.1) also shipped in the same PR, so the parent PRD's decision to wait for it is
+resolved. It classifies added lines from the build's own per-line data — no base coverage needed —
+and **skips diff files the run did not measure rather than zeroing them**, which is exactly the
+`nx affected` case and avoids `0/0` reading as 100%.
