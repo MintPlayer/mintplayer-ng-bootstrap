@@ -1034,12 +1034,58 @@ read the commit page's unmatched count. It is capped at 50, so treat any non-zer
 *"at least 50"* and measure locally.
 
 
-## Upstream follow-ups — filed from this branch's experience
+## Upstream follow-ups — filed, fixed, and verified ✅
+
+**All five shipped.** Filed as [CodeCoverage#13](https://github.com/MintPlayer/CodeCoverage/issues/13),
+fixed in [CodeCoverage#14](https://github.com/MintPlayer/CodeCoverage/pull/14), deployed 2026-08-19.
+
+**Verified against production, not taken from the merge.** Re-running the same instrumentation that
+diagnosed U4 in the first place:
+
+| item | check | result |
+|---|---|---|
+| U1 | `GET /health/ready` | `{"status":"ready","gitHubApp":{"status":"ready","detail":"authenticated as coverageproduction"}}` |
+| U2 | `GET /api/uploads/status` | **401 — not verifiable from a browser** (see below) |
+| U3 | `tree` response keys | `unmatchedTotal` present, reads `0` |
+| U4 | click the `pr` chip | **one** request (`tree?flag=pr`), no unflagged refetch, chips stable to 1.5s, `same-node` (no remount), URL `?flag=pr`, `aria-pressed` true/false, row is `role="group"` / `aria-label="Filter by flag"` |
+| U4 | deep-link `?flag=pr` | chip restored selected on load |
+| U5 | `/a/MintPlayer` grid | columns now `Repository | Coverage | Trend | Latest commit`; first cell is the row link |
+
+**U1's fix is better than what was asked for.** The endpoint does not merely fail on a bad key — it
+reports *which App it authenticated as* (`coverageproduction`). The week-long incident that prompted
+the item would have been a five-second check rather than a container shell session, because the
+detail string would have read `coveragedevelopment`.
+
+**U2 is the one item this workspace cannot confirm from outside.** `/api/uploads/status` requires a
+`covt_` upload token, which is correct for a CI-facing endpoint and is not something to paste into a
+browser console or a scratch file. The field is covered by `UploadsControllerStatusTests.cs`
+upstream; treat prod behaviour as unverified here until a CI run reads it. Recording the gap rather
+than implying five green checks.
+
+**A small thing noticed while probing U1:** `/health/live` and `/healthz` return **200 with the SPA's
+HTML**, because unknown paths fall through to the Angular app. Only `/health/ready` and `/health` are
+real. A liveness probe pointed at `/healthz` would therefore pass forever, including while the app is
+broken. Not worth its own issue, but worth knowing before wiring up monitoring.
+
+**U5 turned out to be the deepest of the five**, and not the cosmetic ordering issue it was filed as.
+Upstream found that adopting `[GenerateIndex]` made `--spark-synchronize-model` re-derive `showedOn`
+from projection membership, wiping the curated column trims on *every run* — and because the generic
+grid puts the row link on the first column, the account page's only clickable link was the constant
+`Account` cell. So the visible symptom was column order; the actual defect was a model-generation
+step silently reverting hand-curated configuration. A regression guard now pins the visible column
+sets. Filed as a 💄 and it was the one with teeth — a reminder that the triage order in the issue
+(U4 and U3 first) was a guess, and a wrong one.
+
+---
+
+### The items as originally filed
+
+
 
 Three items for **MintPlayer/CodeCoverage**, all of which cost real debugging time here and would
 cost every future consumer the same.
 
-### U1 — Readiness must fail when the App private key is unusable 🟦
+### U1 — Readiness must fail when the App private key is unusable ✅
 
 The production deployment ran for a week with **the development App's private key**. Every
 App-authenticated call failed with `Octokit.AuthorizationException: A JSON web token could not be
@@ -1052,7 +1098,7 @@ Their roadmap already has **T0.4 — "a readiness endpoint that can fail"**. Min
 startup belongs in it: a key that cannot authenticate should fail readiness loudly, not surface
 hours later inside an unrelated feature after five retries.
 
-### U2 — Expose `FeedbackState` on `GET /api/uploads/status` 🟦
+### U2 — Expose `FeedbackState` on `GET /api/uploads/status` ✅
 
 `Build.FeedbackState` records exactly what happened to the check-run publish (`Posted`, `Retry`,
 `Failed`, `Unavailable`). It is **not** on `/api/uploads/status`, which is the one surface a CI job
@@ -1070,7 +1116,7 @@ The states are also indistinguishable to a consumer: `Unavailable` is deliberate
 OIDC-only repos are a supported population, so a repo that *should* get check-runs and doesn't looks
 identical to one that never could. One additional field turns a source dive into a five-second check.
 
-### U3 — Raise or disclose the unmatched-files cap 🟦
+### U3 — Raise or disclose the unmatched-files cap ✅
 
 `BrowseController.cs:302` caps the unmatched list at `.Take(50)` and the UI renders the count as if
 it were the total. Here the true figure was **314**, and the cap made a 22% measurement loss look
@@ -1080,7 +1126,7 @@ displayed number as truncated.
 *(U3 is the smallest and arguably the highest-value: it is the difference between a consumer noticing
 this class of bug and not.)*
 
-### U4 — The commit page's flag filter resets itself 🟦
+### U4 — The commit page's flag filter resets itself ✅
 
 **Reported by the user, then reproduced and root-caused here.** On the commit page the `Flags:` row
 offers `All` and `pr 76.2%`. Clicking `pr` makes the page flash, and about half a second later `All`
@@ -1150,7 +1196,7 @@ Spark persistent-object host re-emitting inputs — if the effect still re-runs 
 The network half of that decision rule has **already been observed in production** (the table above),
 so the spike is really only confirming the second half: that the `untracked` change removes it.
 
-### U5 — The account page's Repositories grid leads with a constant column 🟦
+### U5 — The account page's Repositories grid leads with a constant column ✅
 
 On `https://coverage.mintplayer.com/a/{account}` the Repositories grid opens with **`Account`**, which
 holds the same value on every row — the account the URL already names. `Repository`, the actual row
