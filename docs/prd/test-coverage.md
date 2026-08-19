@@ -1,9 +1,13 @@
 # PRD — raising and defending test coverage
 
-Status: **M1–M10 and M12–M14 implemented** (2026-08-18) on `feat/coverage-honest-denominator`; M11
-(the gate) lives in [coverage-pr-gate.md](./coverage-pr-gate.md). The verified sweep lands at
-**74.98% lines**, short of §6's 80% target — §7c records what remains and why it is concentrated
-rather than diffuse.
+Status: **M1–M10 and M12–M15 implemented** (2026-08-19) on `feat/coverage-honest-denominator`; M11
+(the gate) lives in [coverage-pr-gate.md](./coverage-pr-gate.md) and is deliberately not part of this
+branch. The verified sweep lands at **74.98% lines**, short of §6's 80% target — §7c records what
+remains and why it is concentrated rather than diffuse.
+
+**Verified 2026-08-19 before push:** `nx run-many --target=test --coverage` green across all 14
+projects, `dotnet test` 164/164, and the four library builds plus the API build. Per the repo
+convention the suites ran as one sweep at the end, not per milestone.
 Plan: [test-coverage-plan.md](./test-coverage-plan.md)
 
 Grounded in a measured investigation of the workspace at `master@e01681ec`, using the live

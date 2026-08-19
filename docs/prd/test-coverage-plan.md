@@ -1,8 +1,9 @@
 # Plan — raising and defending test coverage
 
 PRD: [test-coverage.md](./test-coverage.md)
-Status: **M1–M10 and M12–M14 done** (2026-08-18) on `feat/coverage-honest-denominator`, not pushed.
-Workspace total **74.98% lines** (was 71.02% at M12).
+Status: **M1–M10 and M12–M15 done** (2026-08-19) on `feat/coverage-honest-denominator`, not pushed.
+Workspace total **74.98% lines** (was 71.02% at M12). Full verification sweep green — 14 projects,
+API 164/164, four library builds and the API build.
 M11 lives in [coverage-pr-gate-plan.md](./coverage-pr-gate-plan.md). Nine defects found and fixed
 (tables in M12 and M13). The suites are green and the measured figures are recorded per milestone —
 the headline number **still misses the PRD's 80% target, at 74.98%**, and what remains is enumerated
