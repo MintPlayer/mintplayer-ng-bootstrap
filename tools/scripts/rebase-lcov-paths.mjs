@@ -60,6 +60,69 @@ export function prefixFor(report, coverageDir) {
 }
 
 /**
+ * Line and branch totals for one lcov report.
+ *
+ * Every report already carries these — `LF`/`LH` for lines, `BRF`/`BRH` for
+ * branches — and nothing has ever added them up. That is why workspace branch
+ * coverage sat 8.5 points under its own documented target without anyone
+ * noticing: the figure had no home. A number nobody prints is a number nobody
+ * defends.
+ */
+export function summarizeLcov(text) {
+  const sum = (key) =>
+    (String(text ?? '').match(new RegExp(`^${key}:(\\d+)`, 'gm')) ?? [])
+      .reduce((total, line) => total + Number(line.slice(key.length + 1)), 0);
+
+  return {
+    files: (String(text ?? '').match(/^SF:/gm) ?? []).length,
+    lines: { covered: sum('LH'), total: sum('LF') },
+    branches: { covered: sum('BRH'), total: sum('BRF') },
+  };
+}
+
+/** `covered/total (pct%)`, or a dash when there is nothing to measure. */
+function ratio(part) {
+  if (part.total === 0) return '—';
+  return `${part.covered}/${part.total} (${((part.covered / part.total) * 100).toFixed(2)}%)`;
+}
+
+/**
+ * The per-project table plus a TOTAL row, for the workflow log.
+ *
+ * Reporting only, deliberately: no threshold and no exit code. The gate lives
+ * in `coverage-pr-gate.md` and is the service's job, so printing here cannot
+ * start silently failing builds.
+ */
+export function formatCoverageSummary(entries) {
+  const total = entries.reduce(
+    (acc, { summary }) => ({
+      files: acc.files + summary.files,
+      lines: {
+        covered: acc.lines.covered + summary.lines.covered,
+        total: acc.lines.total + summary.lines.total,
+      },
+      branches: {
+        covered: acc.branches.covered + summary.branches.covered,
+        total: acc.branches.total + summary.branches.total,
+      },
+    }),
+    { files: 0, lines: { covered: 0, total: 0 }, branches: { covered: 0, total: 0 } },
+  );
+
+  const width = Math.max(5, ...entries.map((e) => e.name.length));
+  const row = (name, files, summary) =>
+    `  ${name.padEnd(width)}  ${String(files).padStart(5)}  ` +
+    `${ratio(summary.lines).padStart(22)}  ${ratio(summary.branches).padStart(22)}`;
+
+  return [
+    `  ${'project'.padEnd(width)}  ${'files'.padStart(5)}  ${'lines'.padStart(22)}  ${'branches'.padStart(22)}`,
+    ...entries.map((e) => row(e.name, e.summary.files, e.summary)),
+    `  ${'TOTAL'.padEnd(width)}  ${String(total.files).padStart(5)}  ` +
+      `${ratio(total.lines).padStart(22)}  ${ratio(total.branches).padStart(22)}`,
+  ].join('\n');
+}
+
+/**
  * Pure rewrite of one report's text. Normalises separators, prefixes each
  * `SF:` path, and is idempotent — an already-rooted path is left alone, so a
  * second run (or a report that already emits rooted paths) never
@@ -72,6 +135,7 @@ export function rebaseLcov(text, prefix, exists) {
   let rewritten = 0;
   let alreadyRooted = 0;
   const unresolved = [];
+  const summaries = [];
 
   const out = text
     .split(/\r?\n/)
@@ -118,6 +182,7 @@ if (isEntryPoint) {
     alreadyRooted += result.alreadyRooted;
     unresolved.push(...result.unresolved.map((u) => ({ ...u, report })));
     writeFileSync(report, result.text, 'utf8');
+    summaries.push({ name: prefix, summary: summarizeLcov(result.text) });
   }
 
   if (unresolved.length > 0) {
@@ -136,4 +201,5 @@ if (isEntryPoint) {
       (alreadyRooted ? ` (${alreadyRooted} already rooted)` : '') +
       '; all resolve on disk.',
   );
+  console.log(`\nCoverage about to be uploaded:\n${formatCoverageSummary(summaries)}`);
 }
