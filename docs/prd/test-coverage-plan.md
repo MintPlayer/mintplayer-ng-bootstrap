@@ -1280,7 +1280,24 @@ silently wrong validation rules.
 constants (`:37-44`) need refactoring first and `compileScss` runs real `sass` in the loop.
 `startWatchers` (chokidar + debounce) stays out unless a fake watcher is injected.
 
-### T5 — `tools/scripts/publish.mjs` is unused and has a one-word bug — decide which 🟨
+### T5 — `tools/scripts/publish.mjs` is unused and has a one-word bug — decide which ✅ deleted
+
+**Resolved 2026-08-20: the user chose deletion**, conditional on absolute certainty that nothing
+needs it. The certainty sweep, run fresh rather than reusing the earlier check:
+
+- `git grep publish.mjs` — only the four `project.json` targets and the script's own comment.
+- No `publish` in `nx.json` targetDefaults, no `package.json` script, no workflow invokes
+  `nx publish` / `-t publish` for the libs.
+- `apps/api` also has a `publish` target, but it is `dotnet publish` — a different mechanism,
+  **left untouched**.
+- `chalk`, imported by the script, is not even a direct dependency — the script leaned on a hoisted
+  transitive package, one more sign it was never exercised. Nothing to remove from `package.json`.
+
+Deleted: the script and the four targets (`dijkstra`, `encode-utf8`, `pagination`, `qr-code`),
+removed surgically from the raw JSON to avoid reformatting churn. 18 lines leave the denominator as
+*not product code*.
+
+The original either/or analysis is kept below for the record.
 
 **Corrected after review.** An earlier draft of this section said the script was unfixable stock
 boilerplate importing from a package that does not exist. That overstated it, and the correction is
@@ -1330,11 +1347,9 @@ demo's serve — cover it, don't exclude it.
 already extracted and specced. Leaving the rest uncovered is the honest outcome; the right instrument
 is a per-area expectation (M14), not a test that asserts a mock.
 
-**Projected if T1-T4 land: ~404 / 736 ≈ 55%**, from the per-milestone estimates above.
-T5 then moves it either way by about a point — deleting gives ~404 / 718 ≈ **56%**, fixing the
-import and covering its two pure guards gives ~408 / 736 ≈ **55%**. Worth noting that the two
-options land within a point of each other, which is the argument for deciding T5 on whether the
-escape hatch is wanted rather than on the coverage number.
+**Projected if T1-T4 land: ~404 / 718 ≈ 56%** now that T5 resolved as deletion (the two options
+were within a point of each other, so the call was made on whether the escape hatch was wanted —
+it was not — rather than on the coverage number).
 
 ### Traps that would make these specs Windows-only-red
 
