@@ -31,7 +31,8 @@ uncovered**, not as future work.
 | M14 ✅ | Deepen the dock and file-manager elements | the two biggest partial files |
 | M15 ✅ | Dock — the last non-geometry regions | 116 of 1,311 uncovered |
 | M16 ✅ | Stop the service discarding 22% of measured files | 314 files recovered |
-| M17 🟦 | `tools/` — mapped and ranked, T1-T6 | 166/704 = 23.6% today |
+| M17 🟨 | `tools/` — mapped and ranked; T1 ✅ done, T5 ✅ deleted, T2-T4/T6 open | 166/704 = 23.6% at mapping |
+| M18 ✅ | T1 spec + the three zero-spec libraries | ~114 lines, 42 new cases |
 
 ## Ordering rationale
 
@@ -876,8 +877,8 @@ Per library, as the service now reports it:
 **The three zeros are real and are not a regression.** Those libraries contain **no spec files at
 all** — verified, zero between them. They passed CI throughout via `passWithNoTests: true` and were
 entirely absent from the report before M1 put them in the denominator. They are the honest-denominator
-argument in miniature: the metric got *worse* by becoming correct. Left as a recorded fact rather
-than fixed here; 82 coverable lines across three tiny libraries is a separate, cheap milestone.
+argument in miniature: the metric got *worse* by becoming correct. ~~Left as a recorded fact~~
+**Fixed in this PR after all (M18)** — the loop the PR opened, closed in the same PR.
 
 Earlier readings, for the record: 74.98% (local, after M14b, before M15) and 76.67% (service, but
 computed while 314 files were being discarded — see M16).
@@ -1236,7 +1237,7 @@ Four files are already at 100%: `lib/bundle-audit.mjs`, `lib/loader-maps.mjs`, `
 move M3 already made twice — extract the judgement into a `lib/`, keep the fs/spawn shell thin — so
 this is a continuation, not a new approach.
 
-### T1 — `rebase-lcov-paths.mjs` ★ highest value
+### T1 — `rebase-lcov-paths.mjs` ★ highest value ✅ (done in this PR, see M18)
 
 ~32 coverable lines, **currently 0% and confirmed absent from the report** (0 matches in
 `coverage/tools/lcov.info`) because it was added after that run. It matches `scripts/**/*.mjs`, so it
@@ -1385,4 +1386,41 @@ tested. Extract into `.mjs`, or widen the include in the same commit.
 This is the `coverage.all` failure mode (M1) and the ambiguous-path failure mode (M16) wearing a third
 costume. Three times in one PRD a denominator has tried to shrink itself quietly, which is the
 strongest argument yet that the honest-denominator work needed to be a project rather than a setting.
+
+## M18 — close the loops this PR opened: T1 and the three empty libraries ✅
+
+Two things this PR itself created or exposed, fixed before the squash rather than left as
+follow-ups.
+
+### T1 as built
+
+`tools/scripts/rebase-lcov-paths.mjs` was refactored behind the `serve-api.mjs:228` entrypoint
+guard — side-effect-free on import — with the pure units exported: `findReports(dir)`,
+`prefixFor(report, coverageDir)` and `rebaseLcov(text, prefix, exists)` (`exists` injected, so no
+spec touches the real tree or the cwd). One behavioral improvement rode along: `prefixFor` now
+splits on **either** separator (`/[\\/]/`), so posix-path callers work on Windows — previously it
+split on the platform's own `sep` only.
+
+`tools/scripts/rebase-lcov-paths.spec.ts` — 18 cases pinning the load-bearing properties by name:
+**idempotence** (a second run counts already-rooted and changes nothing), the mixed-report case,
+backslash normalisation, `libs/foo-bar` **not** counting as rooted under `libs/foo` (the guard is on
+the full segment), CRLF-in/LF-out, trailing-newline preservation, unresolved-path collection (still
+rewritten — the CLI fails the build, it does not half-apply), `exists` asked only for rewritten
+paths and only with the *rooted* form, and `findReports` against a real temp tree (membership
+asserted, not order — readdir order is platform-dependent).
+
+CLI verified unchanged after the refactor: `Rebased 0 path(s) across 14 report(s) … (1403 already
+rooted); all resolve on disk`, exit 0 — idempotence demonstrated against the real workspace, and a
+bare import performs no work.
+
+### The three empty libraries
+
+| library | spec | cases | what is pinned |
+|---|---|---:|---|
+| `mintplayer-dijkstra` (was 0/56) | `src/lib/dijkstra.spec.ts` | 12 | cheapest-path over fewest-hops, relaxation (a cheaper route found later replaces the predecessor), the unreachable-destination error, start==dest, predecessor extraction, and the PriorityQueue ordering contract incl. custom sorter |
+| `mintplayer-pagination` (was 0/14) | `src/lib/pagination.spec.ts` | 5 | the wire-contract defaults (page 1 of 20, empty sort/data, zero totals) and per-instance array identity — a changed default silently changes every consumer's first request |
+| `mintplayer-ng-animations` (was 0/12) | `src/lib/animations.spec.ts` | 7 | all six triggers: names (consumed stringly from decorators — no compile error on rename), state expressions (`false`→height 0, `true`→`'*'`), transition expressions (`:enter/:leave` vs value-bound), and the overridable default params |
+
+All behavioral — no import-only touching. Sweep: 4 projects green in one batched run.
+
 
