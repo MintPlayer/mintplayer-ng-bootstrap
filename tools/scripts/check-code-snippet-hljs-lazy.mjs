@@ -11,8 +11,10 @@
  * SHAPE is the thing to assert.
  *
  * The rules, and every judgement about them, live in lib/bundle-audit.mjs
- * (`auditHljsImports`) so they can be tested without a build. This script is the
- * part that needs `dist/`: find the entry, read it, report.
+ * (`auditHljsImports`) so they can be tested without a build — as do entry
+ * resolution and the size header, which check-ribbon-bundle-size.mjs needs
+ * identically. What is left here is this guard's own knowledge: where its
+ * artifact may live, and what a failure reads like.
  *
  * Side-effect-free on import: everything runs behind an isEntryPoint guard, and
  * the repo root is a defaulted parameter.
@@ -21,11 +23,15 @@
  *   node tools/scripts/check-code-snippet-hljs-lazy.mjs
  */
 
-import { readFileSync, existsSync } from 'node:fs';
-import { gzipSync } from 'node:zlib';
+import { readFileSync } from 'node:fs';
 import { resolve, dirname } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
-import { auditHljsImports } from './lib/bundle-audit.mjs';
+import {
+  auditHljsImports,
+  missingEntryReport,
+  reportBundle,
+  resolveBuiltEntry,
+} from './lib/bundle-audit.mjs';
 
 export const REPO_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '../..');
 
@@ -35,33 +41,25 @@ export const ENTRY_CANDIDATES = [
   'dist/libs/mintplayer-web-components/code-snippet.mjs',
 ];
 
-/** The first candidate that exists, absolute — undefined when nothing is built. */
-export function findEntry(repoRoot = REPO_ROOT, candidates = ENTRY_CANDIDATES, exists = existsSync) {
-  return candidates.map((p) => resolve(repoRoot, p)).find((p) => exists(p));
-}
+export const LABEL = 'check-code-snippet-hljs-lazy';
 
-/** An absolute path shown workspace-relative and posix-separated. */
-export const relForDisplay = (path, repoRoot = REPO_ROOT) =>
-  path.replace(repoRoot, '.').replace(/\\/g, '/');
+export const BUILD_COMMAND = 'npx nx build mintplayer-web-components';
 
 const isEntryPoint = !!process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href;
 if (isEntryPoint) {
-  const entry = findEntry();
+  const entry = resolveBuiltEntry(REPO_ROOT, ENTRY_CANDIDATES);
   if (!entry) {
-    console.error('[check-code-snippet-hljs-lazy] no built entry found. Tried:');
-    for (const p of ENTRY_CANDIDATES) console.error('  - ' + p);
-    console.error('\nBuild first:\n  npx nx build mintplayer-web-components\n');
+    for (const line of missingEntryReport(LABEL, ENTRY_CANDIDATES, BUILD_COMMAND)) {
+      console.error(line);
+    }
     process.exit(2);
   }
 
   const source = readFileSync(entry, 'utf8');
-  const rel = relForDisplay(entry);
-
   const { staticHljs, dynamicHljs, failures } = auditHljsImports(source);
 
-  console.log(`[check-code-snippet-hljs-lazy] ${rel}`);
-  console.log(`  raw:  ${(source.length / 1024).toFixed(2)} kB`);
-  console.log(`  gzip: ${(gzipSync(Buffer.from(source), { level: 9 }).length / 1024).toFixed(2)} kB`);
+  const { lines } = reportBundle({ label: LABEL, path: entry, repoRoot: REPO_ROOT, contents: source });
+  for (const line of lines) console.log(line);
   console.log(`  static hljs imports:  ${staticHljs.length ? staticHljs.join(', ') : '(none)'}`);
   console.log(`  dynamic hljs imports: ${dynamicHljs.length}`);
 
