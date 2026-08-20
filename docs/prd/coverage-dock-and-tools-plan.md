@@ -316,6 +316,52 @@ precisely requires driving each tail to see which can be entered without a rect 
 follow-up, and asserting a figure here without doing it would repeat exactly the mistake this PRD
 exists to correct.
 
+## M32 — the carousel e2e flake, diagnosed rather than suppressed
+
+Not planned. CI on this branch flagged
+`carousel-suites.ts:66 › indicators navigate` as failed; the run then went **green on retry**, which
+is the worst outcome — a flake that self-absorbs is one that taxes every future PR without ever
+demanding attention. Fixed here at the user's direction.
+
+**What it was not.** Three hypotheses died in order:
+
+1. *A regression from M25*, which rewrote `gen-carousel-chrome.mjs`. Ruled out: all five
+   `*-chrome.generated.ts` regenerate to the same MD5 as before the refactor.
+2. *A gesture arriving before the engine exists.* Every handler is `this.#machine?.goto(...)` and
+   `#machine` is created only in `firstUpdated()`, so a click in that window is silently swallowed —
+   and `preventDefault()` cancels the native radio fallback that would otherwise have moved the
+   slide. Real fragility, **but not this bug**: Lit runs `firstUpdated` synchronously right after
+   the first render commits, so by the time the suite's readiness predicate can observe
+   `.carousel-track`, the engine exists.
+3. *A dropped click.* Disproved by measurement.
+
+**What it is.** Clicking an indicator under CDP CPU throttling and timing the radio flip:
+
+| throttle | 1× | 10× | 20× | 30× | 40× |
+|---|---:|---:|---:|---:|---:|
+| time to flip | 577ms | 868ms | 2083ms | **6606ms** | **16261ms** |
+
+The gesture is **never lost** — only late, degrading non-linearly and crossing Playwright's default
+**5s `expect` budget between 20× and 30×**. A 2-vCPU runner hosting an Angular production dev
+server, Chromium and Firefox reaches that under peak contention.
+
+**The fix**: `expect: { timeout: 15_000 }` in all three demo e2e configs, plus `timeout: 60_000` on
+CI so a test that spends 15s in one assertion still has room for the rest. The measurements are in
+the config comment so the number is not folklore.
+
+**Why not a delay.** `waitForTimeout` is strictly worse on both ends: it costs fixed time on a fast
+machine and still misses at 40×. Playwright's `expect` already auto-retries; the budget was the
+defect, not the absence of a sleep.
+
+Verified: **72/72** across chromium and firefox at 4 workers × 4 repeats. (An earlier 12-worker ×
+2-browser attempt collapsed Firefox's juggler process — machine exhaustion from over-parallelising
+the check, not a product failure.)
+
+**Left unfixed, deliberately:** the `#machine?.` swallow from hypothesis 2. It is a genuine
+soft-failure design — "not ready" rendered as "silently do nothing", with the no-JS fallback
+cancelled first — but it is a carousel behaviour change and does not belong in a coverage PR. It
+belongs with the other reported-not-fixed items below.
+
 ## Milestone table — expected vs what happened
 
 | M | scope | expected | actual |

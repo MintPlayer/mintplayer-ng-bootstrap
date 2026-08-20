@@ -15,6 +15,29 @@ export default defineConfig({
   retries: process.env['CI'] ? 1 : 0,
   workers: process.env['CI'] ? 2 : undefined,
   reporter: 'list',
+  // Playwright's default expect budget is 5s. That is too small for a
+  // component that runs a 500ms CSS transition and a Lit re-render on a
+  // CPU-starved 2-vCPU runner, and it produced an intermittent
+  // `toBeChecked()` failure in the carousel suite that reproduced on neither
+  // a developer machine nor a lightly-loaded CI run.
+  //
+  // Measured, by clicking a carousel indicator under CDP CPU throttling and
+  // timing how long the radio took to flip:
+  //
+  //     1x   577ms      20x  2083ms
+  //    10x   868ms      30x  6606ms   <- past the 5s default
+  //                     40x 16261ms
+  //
+  // The gesture is never LOST at any rate — only late. So this is a budget
+  // that was too tight, not a dropped click, and the fix is to let the
+  // existing auto-retry poll for longer. A fixed `waitForTimeout` would be
+  // strictly worse: it slows the fast path and still misses the slow one.
+  expect: { timeout: 15_000 },
+  // Raised in step with the expect budget above: a test that spends 15s inside
+  // one slow assertion must still have room for the rest of its assertions,
+  // and Playwright's 30s default leaves almost none. Only on CI — locally a
+  // hung test should fail fast rather than sit for a minute.
+  timeout: process.env['CI'] ? 60_000 : 30_000,
   use: {
     // Pin the locale. The scheduler now derives its date/time formatting AND its
     // week start from it, so an unpinned run behaves differently per machine —
