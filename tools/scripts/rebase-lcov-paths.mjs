@@ -135,7 +135,6 @@ export function rebaseLcov(text, prefix, exists) {
   let rewritten = 0;
   let alreadyRooted = 0;
   const unresolved = [];
-  const summaries = [];
 
   const out = text
     .split(/\r?\n/)
@@ -169,6 +168,7 @@ if (isEntryPoint) {
   let rewritten = 0;
   let alreadyRooted = 0;
   const unresolved = [];
+  const summaries = [];
 
   for (const report of reports) {
     const prefix = prefixFor(report, COVERAGE_DIR);

@@ -314,8 +314,24 @@ the eight zero-spec Angular entrypoints from F16. Plus the one that would move e
 
 ## 10. Open questions
 
-- **Q4 — Should `refresh-flags.mjs`'s fetch half be declared permanently uncovered?** It shells out
-  to fetch a pinned `country-flag-icons` tarball. Its shape matches `serve-api.mjs`, which *is* so
-  declared. This PRD covers the pure half (argv parsing, `buildReadme`) and **proposes** declaring
-  the rest 0% by intent — flagged rather than assumed, because F14 is a caution against registers
-  written without re-derivation.
+- ~~**Q4 — Should `refresh-flags.mjs`'s fetch half be declared permanently uncovered?**~~
+  **Resolved during M28, and the answer was narrower than the question.** Only `resolveSource` is
+  permanently uncovered — it shells out via `execFileSync` to `npm pack` a pinned tarball and then
+  `tar`, needing the network and a tar binary for a once-a-year ritual. Everything *around* it is
+  now covered, because making `resolveSource` an injectable parameter turned ~60 previously
+  unreachable lines into testable ones. That mattered well beyond coverage: the code it unlocked
+  includes the pruning branch, which **unlinks committed SVGs** and had never been exercised. The
+  question assumed the fetch and the orchestration were one thing; they were separable, and
+  separating them was the most valuable change in the `tools/` half of this PRD.
+
+- **Q5 — How much of the dock's 271 geometry-free uncovered lines is actually recoverable?**
+  Opened by the M31 measurement (plan §Results). Most are drag-flow tails containing no geometry
+  but reachable only after a rect-dependent gesture has established a non-zero origin. Answering it
+  means driving each tail to see which can be entered without one. Deliberately left open rather
+  than guessed — guessing is what produced F11–F13.
+
+- **Q6 — Is the ribbon bundle budget still meaningful?** The FESM measures 5.45 kB gzip against a
+  40 kB budget, while `check-ribbon-bundle-size.mjs`'s own header describes "the current ~35 kB
+  output". Either the built artifact is stale or the budget is ~7× the real size; in the second case
+  the guard would not fire until the bundle septupled. Found while covering the guard, out of scope
+  to fix here.

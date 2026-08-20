@@ -256,20 +256,124 @@ output rather than by hand-summing lcov files.
 
 ---
 
-## Milestone table
+## Results
 
-| M | scope | expected |
-|---|---|---|
-| M19 | Re-measure; correct the register in place | doc-only |
-| M20 | Dock: delete `debug-snap-markers`; barrels | −37 denom, +4 |
-| M21 | Dock: extract + test intersection sizing | +~64 |
-| M22 | Dock: lift pure path/tree helpers to `core/` | +~20 |
-| M23 | Dock: geometry-free handlers | +~155 |
-| M24 | `tools/`: guard-and-parameterise | 0 (enabler) |
-| M25 | `tools/` T2: shared chrome module | +~58–68 |
-| M26 | `tools/` T3: three codegen entrypoints | +~64–78 |
-| M27 | `tools/` T4: `build-web-components.mjs` | +~50–62 |
-| M28 | `tools/` T6 + `refresh-flags.mjs` | +~40–54 |
-| M29 | `calendar-month` service + `instance-of` | +~130 |
-| M30 | Publish branch coverage | reporting |
-| M31 | Sweep, measure, record | — |
+Measured on `feat/coverage-dock-and-tools` after M30, via
+`nx run-many --target=test --exclude=api --coverage --skip-nx-cache` (14 projects, all green) and
+the rebase step's new summary.
+
+### Against §6's targets
+
+| metric | baseline | final | target | |
+|---|---:|---:|---:|:--:|
+| `mint-dock-manager.element.ts` lines | 56.46% | **68.92%** | ≥67% | ✅ |
+| `mint-dock-manager.element.ts` branches | 41.90% | **53.32%** | ≥50% | ✅ |
+| `tools` lines | 25.82% | **58.00%** | ≥55% | ✅ |
+| `tools` branches | 31.03% | **61.18%** | ≥50% | ✅ |
+| `tools` files at zero coverage | 15 | **5** | ≤6 | ✅ |
+| `calendar-month` service lines | 2.1% | **100%** | ≥90% | ✅ |
+| `instance-of` lines | 0% | **98.7%** (76/77) | ≥85% | ✅ |
+| branch coverage published | never | **every run** | every run | ✅ |
+| misfilings in the register | 5 | **0** | 0 | ✅ |
+
+The five `tools/` files still at zero are the chrome generators. Their residue after M25 is the
+`dist` import, the SSR render and `writeFile` — genuinely out of reach, and now recorded in D12 form
+rather than as "geometry".
+
+### Workspace, which this PRD set no target for
+
+| | lines | branches |
+|---|---:|---:|
+| all 1,405 files | 19,524/25,008 = **78.07%** | 10,604/16,107 = **65.83%** |
+| excluding demo apps (≈ what is uploaded) | 18,773/23,971 = **78.31%** | 10,586/15,936 = **66.43%** |
+
+Against the predecessor's §6 targets of 80% lines / 72% branches, both are still short — but branch
+coverage is now **visible**, which is the whole of M30. Three libraries also read 100% here for the
+first time (`dijkstra`, `pagination`, `ng-animations`): M18 wrote their specs, and every report since
+had understated them because the committed `coverage/` tree predated that milestone.
+
+### R9 checked: F13's residual estimate, re-derived
+
+The PRD predicted (R9) that its own map would most likely be wrong about F13's "~300 lines
+genuinely e2e-only". Bucketing all **537** remaining uncovered lines by enclosing member:
+
+- **266 lines** sit in members that touch `getBoundingClientRect` / `elementsFromPoint` /
+  `offset*` / pointer capture. F13 estimated ~300. **The estimate for the blocked set holds.**
+- **271 lines** sit in members that touch no geometry at all — far more than "the rest is the
+  ceiling" would suggest.
+
+**But 271 is a lead, not a recoverable total** (M14b). Reading the largest of them, most are *drag-flow
+tails* — `finalizeDropFromPoint` (23), `updateFloatingDragDropTarget` (18), `handleDrop` (18),
+`scheduleDeferredDragEnd` (12), `endPaneDrag` (10) — which contain no geometry themselves but are
+reachable only *after* a geometry-dependent gesture has established a non-zero origin. Three more
+are the already-documented jsdom limits: `renderStack`'s `tab-activate` (no `:scope`),
+`onRootKeyDown`'s arm branch (`shadowRoot.activeElement` across nested shadow roots), and
+`renderFloatingPanes`' unreachable placeholder.
+
+So the honest statement is narrower than either number: **the ceiling is real, roughly where F13 put
+it, and the recoverable remainder is materially smaller than 271 and larger than zero.** Naming it
+precisely requires driving each tail to see which can be entered without a rect — that is a
+follow-up, and asserting a figure here without doing it would repeat exactly the mistake this PRD
+exists to correct.
+
+## Milestone table — expected vs what happened
+
+| M | scope | expected | actual |
+|---|---|---|---|
+| M19 | Re-measure; correct the register in place | doc-only | ✅ denominator disagreement resolved: the lcov's 1,842 is authoritative, the plan's 2,606 unreproducible |
+| M20 | Dock: delete `debug-snap-markers`; barrels | −37 denom, +4 | ✅ as expected |
+| M21 | Dock: extract + test intersection sizing | +~64 | ✅ 33 cases; new module 100% |
+| M22 | Dock: lift pure path/tree helpers to `core/` | +~20 | ✅ 30 cases, ~68 lines relocated |
+| M23 | Dock: geometry-free handlers | +~155 | ✅ 72 cases |
+| M24 | `tools/`: guard-and-parameterise | 0 (enabler) | ✅ 8 files; codegen output byte-identical |
+| M25 | `tools/` T2: shared chrome module | +~58–68 | ✅ 32 cases; all 5 chrome files byte-identical by MD5 |
+| M26 | `tools/` T3: three codegen entrypoints | +~64–78 | ✅ 59 cases |
+| M27 | `tools/` T4: `build-web-components.mjs` | +~50–62 | ✅ 31 cases |
+| M28 | `tools/` T6 + `refresh-flags.mjs` | +~40–54 | ✅ 61 cases, **plus a seam the plan did not anticipate** — see below |
+| M29 | `calendar-month` service + `instance-of` | +~130 | ✅ 77 cases; service 2.1% → 100% |
+| M30 | Publish branch coverage | reporting | ✅ 18 cases |
+| M31 | Sweep, measure, record | — | see §Results |
+
+### Where execution departed from the plan
+
+**M28 grew a refactor.** `refresh-flags.main()` was exported and parameterised by M24, and still
+unreachable: `resolveSource` — the one dependency that reaches the network and the `tar` binary —
+was called unconditionally, so ~60 of the file's 64 lines could not run in a spec. That included the
+pruning branch, which **unlinks committed SVGs**. Making `resolveSource` a defaulted parameter was
+not in the plan and is the single most valuable change in the `tools/` half: a destructive path with
+no test is the one that most needs a seam. The prune is now exercised for the first time.
+
+**Two tests were written wrong and are recorded rather than quietly fixed.**
+
+1. `extractDsdTemplate`'s nested-`<template>` case. I asserted the outer match survives a nested
+   template; it does not — the quantifier is lazy, so the match ends at the *inner* close and
+   returns unbalanced chrome. No shipped component renders a nested template, so it is latent, but
+   it is a property of the regex rather than of the fixture. Pinned as actual behaviour with a
+   comment naming the cause.
+2. `refresh-flags`' "leaves non-SVG files alone on a full refresh" passed without reaching the code
+   it named: with an empty fake upstream, a full refresh hits the missing-flag refusal and never
+   gets to the prune. Reaching it needs a fake upstream carrying every dial-code flag, built from
+   `rawCountryData`. The replacement also pins the ordering that makes the script safe — the
+   refusal sits **above** the prune, so an upstream that returned nothing deletes nothing.
+
+Both are instances of the same thing this PRD is about: a check that has never been run against the
+case it claims to cover is not yet a check.
+
+### Reported, deliberately not fixed
+
+Coverage work should not smuggle in behaviour changes. These were found while writing specs and
+belong in follow-ups:
+
+- The `tools/` refusal branches call `process.exit(1)` and **fall through** rather than returning,
+  so each guard rests on `exit` semantics rather than structure.
+- `build-flag-loaders` and `build-hljs-loaders` do not `mkdir` their output directory, unlike
+  `build-phone-metadata`; they rely on the repo's `src/` already existing.
+- `getWeeks` derives each row's week number from a *reconstructed* date while discarding the row's
+  own Monday, and would emit `NaN` if a row ever had no in-month day. Correct today, fragile if the
+  padding rules change.
+- `Week.days` is typed `(DateDayOfMonth | null)[]` but `getWeeks` never emits `null`, so every
+  consumer pays for a check that cannot fire.
+- **`tools/tsconfig.tools.json` does not type-check today** (pre-existing TS5097 in
+  `vite/multi-entry.spec.ts`), so nothing type-checks that directory in CI.
+- The ribbon FESM measures 5.45 kB gzip against a 40 kB budget while the script's header describes
+  "the current ~35 kB output" — either the dist is stale or the budget is ~7× the real size.
