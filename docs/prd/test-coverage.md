@@ -509,13 +509,33 @@ formatters) — none of which needed geometry; it had simply never been driven.
 **The dock is the case worth generalising from, because its number barely moved.** 54 new tests over
 what a drop DOES — which node moves where, the four split zones, tearing off to float, and that the
 tree stays canonical after any sequence of moves — lifted the element from 48.5% to 49.2%. That is
-not a failure of the tests. What remains uncovered is ~480 lines across `beginCornerResize`,
+not a failure of the tests. ~~What remains uncovered is ~480 lines across `beginCornerResize`,
 `handleCornerResizeMove`, `preparePaneDragSource`, `showDropIndicator`, `onIntersectionDoubleClick`,
 `renderSnapMarkersForCorner`, the three hit-testers and the floating-resize handlers — every one of
 them reading `getBoundingClientRect`, `elementsFromPoint` or pointer capture, all of which jsdom
-reports as zero.
+reports as zero.~~
 
-So the dock has a **real ceiling in the mid-fifties**, and a coverage target applied uniformly across
+> **Corrected 2026-08-20 by `coverage-dock-and-tools.md` (F11–F13). Three of those entries were
+> misfiled, and the residual is ~300 lines, not ~480.**
+>
+> - `renderSnapMarkersForCorner` + `clearSnapMarkers` (37 lines) are **dead code, not geometry**.
+>   Both early-return on `showSnapMarkers`, whose only writer is the `debug-snap-markers` branch of
+>   `attributeChangedCallback` — and that attribute is **absent from `observedAttributes`**
+>   (`mint-dock-manager.element.ts:87-89`), so the branch never runs and the flag can never become
+>   true. Deleted in M20.
+> - `onIntersectionDoubleClick` (68 lines) **executes correctly under jsdom**. Its only rect contact,
+>   `pushSizesToSplitter`, self-guards at `containerSize <= 0` (`:1204`), so in jsdom it returns
+>   early and the remaining ~64 lines run and mutate `node.sizes`. Asserting on `node.sizes` is not
+>   an R3 exception — nothing is faked. Extracted and covered in M21.
+> - `showDropIndicator`'s visibility half (~46 lines) and `handleCornerResizeMove` (~15) are
+>   reachable the same way, asserting on `dataset['hidden']`.
+>
+> The lesson generalises: *"reads a rect"* and *"depends on the rect's value"* are different
+> properties, and only the second is a ceiling. Every surviving entry in this register now names the
+> specific blocking call and line, so the next reader can falsify it with one grep (D12).
+
+~~So the dock has a **real ceiling in the mid-fifties**~~ — **the measured ceiling is ~84%; see
+F13** — and a coverage target applied uniformly across
 the workspace would push someone into faking rects to clear it. That is precisely R3's failure mode,
 and it argues for something this PRD did not anticipate: **per-area expectations, not one number.**
 A library with an external specification (qr-code: 97%) and a library that is mostly pointer

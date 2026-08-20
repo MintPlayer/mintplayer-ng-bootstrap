@@ -11,49 +11,63 @@
  * SHAPE is the thing to assert.
  *
  * The rules, and every judgement about them, live in lib/bundle-audit.mjs
- * (`auditHljsImports`) so they can be tested without a build. This script is the
- * part that needs `dist/`: find the entry, read it, report.
+ * (`auditHljsImports`) so they can be tested without a build — as do entry
+ * resolution and the size header, which check-ribbon-bundle-size.mjs needs
+ * identically. What is left here is this guard's own knowledge: where its
+ * artifact may live, and what a failure reads like.
+ *
+ * Side-effect-free on import: everything runs behind an isEntryPoint guard, and
+ * the repo root is a defaulted parameter.
  *
  * Usage:
  *   node tools/scripts/check-code-snippet-hljs-lazy.mjs
  */
 
-import { readFileSync, existsSync } from 'node:fs';
-import { gzipSync } from 'node:zlib';
+import { readFileSync } from 'node:fs';
 import { resolve, dirname } from 'node:path';
-import { fileURLToPath } from 'node:url';
-import { auditHljsImports } from './lib/bundle-audit.mjs';
+import { fileURLToPath, pathToFileURL } from 'node:url';
+import {
+  auditHljsImports,
+  missingEntryReport,
+  reportBundle,
+  resolveBuiltEntry,
+} from './lib/bundle-audit.mjs';
 
-const repoRoot = resolve(dirname(fileURLToPath(import.meta.url)), '../..');
+export const REPO_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '../..');
 
-const candidates = [
+/** Where the built code-snippet entry may live, most-likely first. */
+export const ENTRY_CANDIDATES = [
   'dist/libs/mintplayer-web-components/code-snippet/index.mjs',
   'dist/libs/mintplayer-web-components/code-snippet.mjs',
 ];
 
-const entry = candidates.map((p) => resolve(repoRoot, p)).find((p) => existsSync(p));
-if (!entry) {
-  console.error('[check-code-snippet-hljs-lazy] no built entry found. Tried:');
-  for (const p of candidates) console.error('  - ' + p);
-  console.error('\nBuild first:\n  npx nx build mintplayer-web-components\n');
-  process.exit(2);
+export const LABEL = 'check-code-snippet-hljs-lazy';
+
+export const BUILD_COMMAND = 'npx nx build mintplayer-web-components';
+
+const isEntryPoint = !!process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href;
+if (isEntryPoint) {
+  const entry = resolveBuiltEntry(REPO_ROOT, ENTRY_CANDIDATES);
+  if (!entry) {
+    for (const line of missingEntryReport(LABEL, ENTRY_CANDIDATES, BUILD_COMMAND)) {
+      console.error(line);
+    }
+    process.exit(2);
+  }
+
+  const source = readFileSync(entry, 'utf8');
+  const { staticHljs, dynamicHljs, failures } = auditHljsImports(source);
+
+  const { lines } = reportBundle({ label: LABEL, path: entry, repoRoot: REPO_ROOT, contents: source });
+  for (const line of lines) console.log(line);
+  console.log(`  static hljs imports:  ${staticHljs.length ? staticHljs.join(', ') : '(none)'}`);
+  console.log(`  dynamic hljs imports: ${dynamicHljs.length}`);
+
+  if (failures.length) {
+    console.error('\n❌ highlight.js is no longer lazily loaded:');
+    for (const failure of failures) console.error('  - ' + failure);
+    process.exit(1);
+  }
+
+  console.log('\n✅ grammars load on demand; only lib/core is static.');
 }
-
-const source = readFileSync(entry, 'utf8');
-const rel = entry.replace(repoRoot, '.').replace(/\\/g, '/');
-
-const { staticHljs, dynamicHljs, failures } = auditHljsImports(source);
-
-console.log(`[check-code-snippet-hljs-lazy] ${rel}`);
-console.log(`  raw:  ${(source.length / 1024).toFixed(2)} kB`);
-console.log(`  gzip: ${(gzipSync(Buffer.from(source), { level: 9 }).length / 1024).toFixed(2)} kB`);
-console.log(`  static hljs imports:  ${staticHljs.length ? staticHljs.join(', ') : '(none)'}`);
-console.log(`  dynamic hljs imports: ${dynamicHljs.length}`);
-
-if (failures.length) {
-  console.error('\n❌ highlight.js is no longer lazily loaded:');
-  for (const failure of failures) console.error('  - ' + failure);
-  process.exit(1);
-}
-
-console.log('\n✅ grammars load on demand; only lib/core is static.');

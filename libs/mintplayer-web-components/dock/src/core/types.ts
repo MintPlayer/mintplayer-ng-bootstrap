@@ -106,3 +106,41 @@ export function pathsEqual(a: DockPath, b: DockPath): boolean {
 
   return a.segments.every((value, index) => value === other.segments[index]);
 }
+
+/** A copy that shares no array with the original, so callers can hold onto it across a mutation. */
+export function clonePath(path: DockPath): DockPath {
+  if (path.type === 'floating') {
+    return { type: 'floating', index: path.index, segments: [...path.segments] };
+  }
+  return { type: 'docked', segments: [...path.segments] };
+}
+
+/**
+ * `ancestor` addresses `descendant` or something containing it.
+ *
+ * Reflexive by design: a path is its own ancestor. The dock uses this to refuse
+ * a drop into the subtree being dragged, and dropping a node onto itself has to
+ * be refused by the same test as dropping it into its own child.
+ *
+ * Paths in different layers are never related, even when their segments match —
+ * `f:0/[1]` and `f:1/[1]` are different windows, and a docked path is never an
+ * ancestor of a floating one.
+ */
+export function isOrIsAncestorOf(ancestor: DockPath, descendant: DockPath): boolean {
+  if (ancestor.type !== descendant.type) {
+    return false;
+  }
+
+  if (ancestor.type === 'floating') {
+    const other = descendant as Extract<DockPath, { type: 'floating' }>;
+    if (other.index !== ancestor.index) {
+      return false;
+    }
+  }
+
+  if (ancestor.segments.length > descendant.segments.length) {
+    return false;
+  }
+
+  return ancestor.segments.every((segment, i) => segment === descendant.segments[i]);
+}

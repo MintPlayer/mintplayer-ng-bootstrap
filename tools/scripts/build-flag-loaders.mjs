@@ -25,29 +25,49 @@
  * Idempotent: skips the write when byte-identical, so the Nx cache stays warm
  * and git stays clean.
  *
+ * Side-effect-free on import: the CLI work sits behind an isEntryPoint guard and
+ * every path is a defaulted parameter, so a spec can drive it against a temp tree.
+ *
  * Usage:
  *   node tools/scripts/build-flag-loaders.mjs
  */
 
-import { readFile, writeFile, readdir } from 'node:fs/promises';
+import { readFile, readdir } from 'node:fs/promises';
 import { existsSync } from 'node:fs';
 import { join, relative, resolve } from 'node:path';
-import { fileURLToPath } from 'node:url';
+import { fileURLToPath, pathToFileURL } from 'node:url';
 import { buildFlagBundleModule, buildFlagLoadersModule } from './lib/loader-maps.mjs';
+import { writeIfChanged } from './lib/wc-codegen.mjs';
 
-const repoRoot = resolve(fileURLToPath(import.meta.url), '..', '..', '..');
-const flagsSrc = join(repoRoot, 'libs/mintplayer-web-components/flags/src');
-const assetsDir = join(flagsSrc, 'assets');
-const loadersPath = join(flagsSrc, 'flag-loaders.generated.ts');
-const bundlePath = join(flagsSrc, 'all-flags.generated.ts');
+export const REPO_ROOT = resolve(fileURLToPath(import.meta.url), '..', '..', '..');
 
-async function writeIfChanged(path, next) {
-  const prev = existsSync(path) ? await readFile(path, 'utf8') : null;
-  if (prev !== next) await writeFile(path, next, 'utf8');
-  return prev !== next;
+/** Every path this script reads or writes, derived from the repo root. */
+export function flagPaths(repoRoot = REPO_ROOT) {
+  const flagsSrc = join(repoRoot, 'libs/mintplayer-web-components/flags/src');
+  return {
+    flagsSrc,
+    assetsDir: join(flagsSrc, 'assets'),
+    loadersPath: join(flagsSrc, 'flag-loaders.generated.ts'),
+    bundlePath: join(flagsSrc, 'all-flags.generated.ts'),
+  };
 }
 
-async function main() {
+/** `be.svg`, `fr.svg`, `README.md` -> `['be', 'fr']`, sorted. */
+export function codesFromAssetNames(names) {
+  return names
+    .filter((f) => f.endsWith('.svg'))
+    .map((f) => f.slice(0, -'.svg'.length))
+    .sort();
+}
+
+/** One line of the run summary, posix-normalised so it reads the same on every OS. */
+export function report(wrote, path, repoRoot = REPO_ROOT) {
+  return `${wrote ? 'wrote  ' : 'skipped'} ${relative(repoRoot, path).replace(/\\/g, '/')}`;
+}
+
+export async function main(repoRoot = REPO_ROOT) {
+  const { assetsDir, loadersPath, bundlePath } = flagPaths(repoRoot);
+
   if (!existsSync(assetsDir)) {
     console.error(
       `build-flag-loaders: ${relative(repoRoot, assetsDir)} not found — run tools/scripts/refresh-flags.mjs first.`,
@@ -55,10 +75,7 @@ async function main() {
     process.exit(1);
   }
 
-  const codes = (await readdir(assetsDir))
-    .filter((f) => f.endsWith('.svg'))
-    .map((f) => f.slice(0, -'.svg'.length))
-    .sort();
+  const codes = codesFromAssetNames(await readdir(assetsDir));
 
   if (codes.length === 0) {
     console.error(`build-flag-loaders: no .svg files in ${relative(repoRoot, assetsDir)}.`);
@@ -75,15 +92,16 @@ async function main() {
   const wroteLoaders = await writeIfChanged(loadersPath, buildFlagLoadersModule(codes));
   const wroteBundle = await writeIfChanged(bundlePath, buildFlagBundleModule(entries));
 
-  const report = (wrote, path) =>
-    `${wrote ? 'wrote  ' : 'skipped'} ${relative(repoRoot, path).replace(/\\/g, '/')}`;
   console.log(
     `build-flag-loaders: ${codes.length} flag(s) — ` +
-      `${report(wroteLoaders, loadersPath)}, ${report(wroteBundle, bundlePath)}`,
+      `${report(wroteLoaders, loadersPath, repoRoot)}, ${report(wroteBundle, bundlePath, repoRoot)}`,
   );
 }
 
-main().catch((err) => {
-  console.error(err.stack ?? err);
-  process.exit(1);
-});
+const isEntryPoint = !!process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href;
+if (isEntryPoint) {
+  main().catch((err) => {
+    console.error(err.stack ?? err);
+    process.exit(1);
+  });
+}

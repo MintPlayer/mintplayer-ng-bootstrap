@@ -14,7 +14,13 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { afterAll, describe, expect, it } from 'vitest';
 
-import { findReports, prefixFor, rebaseLcov } from './rebase-lcov-paths.mjs';
+import {
+  findReports,
+  formatCoverageSummary,
+  prefixFor,
+  rebaseLcov,
+  summarizeLcov,
+} from './rebase-lcov-paths.mjs';
 
 // ===========================================================================
 // prefixFor: coverage/<project path>/lcov.info -> <project path>, posix
@@ -168,5 +174,132 @@ describe('findReports', () => {
 
   it('returns [] for a missing directory instead of throwing', () => {
     expect(findReports(join(root, 'does-not-exist'))).toEqual([]);
+  });
+});
+
+// ===========================================================================
+// The coverage summary (M30). Every lcov already carried these totals and
+// nothing had ever added them up, which is how workspace branch coverage
+// drifted 8.5 points under its own documented target unnoticed.
+// ===========================================================================
+
+describe('summarizeLcov', () => {
+  const report = [
+    'TN:',
+    'SF:src/a.ts',
+    'DA:1,1',
+    'BRF:4',
+    'BRH:3',
+    'LF:10',
+    'LH:8',
+    'end_of_record',
+    'SF:src/b.ts',
+    'BRF:2',
+    'BRH:0',
+    'LF:5',
+    'LH:1',
+    'end_of_record',
+    '',
+  ].join('\n');
+
+  it('adds the line totals across every record', () => {
+    expect(summarizeLcov(report).lines).toEqual({ covered: 9, total: 15 });
+  });
+
+  it('adds the branch totals across every record', () => {
+    expect(summarizeLcov(report).branches).toEqual({ covered: 3, total: 6 });
+  });
+
+  it('counts the files', () => {
+    expect(summarizeLcov(report).files).toBe(2);
+  });
+
+  it('reads CRLF reports as readily as LF ones', () => {
+    expect(summarizeLcov(report.split('\n').join('\r\n')).lines).toEqual({ covered: 9, total: 15 });
+  });
+
+  it('does not mistake DA: line hits for LH:', () => {
+    // A naive substring match would pick up DA:, BRDA: and FNF: too.
+    const noisy = 'SF:a.ts\nDA:1,99\nBRDA:1,0,0,7\nFNF:3\nFNH:2\nLF:4\nLH:2\nend_of_record\n';
+    expect(summarizeLcov(noisy).lines).toEqual({ covered: 2, total: 4 });
+  });
+
+  it('reports zeros for a report with no records', () => {
+    expect(summarizeLcov('')).toEqual({
+      files: 0,
+      lines: { covered: 0, total: 0 },
+      branches: { covered: 0, total: 0 },
+    });
+  });
+
+  it.each([
+    ['null', null],
+    ['undefined', undefined],
+  ])('tolerates %s rather than throwing', (_label, input) => {
+    expect(summarizeLcov(input as never).files).toBe(0);
+  });
+
+  it('handles a project with lines but no branches at all', () => {
+    const flat = 'SF:a.ts\nLF:3\nLH:3\nend_of_record\n';
+    expect(summarizeLcov(flat).branches).toEqual({ covered: 0, total: 0 });
+  });
+});
+
+describe('formatCoverageSummary', () => {
+  const entry = (name: string, lines: [number, number], branches: [number, number]) => ({
+    name,
+    summary: {
+      files: 1,
+      lines: { covered: lines[0], total: lines[1] },
+      branches: { covered: branches[0], total: branches[1] },
+    },
+  });
+
+  it('shows each project as covered/total with a percentage', () => {
+    const out = formatCoverageSummary([entry('tools', [432, 753], [239, 397])]);
+    expect(out).toContain('432/753 (57.37%)');
+    expect(out).toContain('239/397 (60.20%)');
+  });
+
+  it('adds a TOTAL row across every project', () => {
+    const out = formatCoverageSummary([
+      entry('a', [1, 2], [1, 4]),
+      entry('b', [3, 8], [1, 6]),
+    ]);
+    const total = out.split('\n').find((l) => l.includes('TOTAL'));
+    expect(total).toContain('4/10 (40.00%)');
+    expect(total).toContain('2/10 (20.00%)');
+  });
+
+  it('reports branches separately from lines, which is the whole point', () => {
+    // D8: branch coverage is the review metric. A project can look healthy on
+    // lines and be far behind on branches — that must be visible at a glance.
+    const out = formatCoverageSummary([entry('x', [100, 100], [1, 100])]);
+    expect(out).toContain('100/100 (100.00%)');
+    expect(out).toContain('1/100 (1.00%)');
+  });
+
+  it('shows a dash rather than dividing by zero for an empty measure', () => {
+    expect(formatCoverageSummary([entry('x', [0, 0], [0, 0])])).toContain('—');
+  });
+
+  it('aligns the project column to the longest name', () => {
+    const out = formatCoverageSummary([
+      entry('a', [1, 1], [1, 1]),
+      entry('libs/mintplayer-web-components', [1, 1], [1, 1]),
+    ]);
+    const [, first, second] = out.split('\n');
+    expect(first.indexOf('1/1')).toBe(second.indexOf('1/1'));
+  });
+
+  it('emits a header row plus one row per project plus the total', () => {
+    const out = formatCoverageSummary([entry('a', [1, 1], [1, 1]), entry('b', [1, 1], [1, 1])]);
+    expect(out.split('\n')).toHaveLength(4);
+  });
+
+  it('produces a header and a TOTAL even with no projects', () => {
+    const out = formatCoverageSummary([]);
+    expect(out.split('\n')).toHaveLength(2);
+    expect(out).toContain('TOTAL');
   });
 });

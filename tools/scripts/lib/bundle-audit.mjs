@@ -7,6 +7,70 @@
  * which is all of it, and it lives here.
  */
 
+import { existsSync } from 'node:fs';
+import { resolve } from 'node:path';
+import { gzipSync } from 'node:zlib';
+
+/**
+ * The first candidate build artifact that exists, absolute — undefined when
+ * nothing is built.
+ *
+ * Both guards face the same problem: the file they audit is named differently
+ * depending on which build produced it (a per-entrypoint `index.mjs` vs a flat
+ * `<name>.mjs`; `dist/libs/<lib>/` vs `dist/<lib>/`), so each carries an
+ * ordered candidate list and takes the first hit. `exists` is injected so a
+ * spec can drive the resolution without a build.
+ */
+export function resolveBuiltEntry(repoRoot, candidates, exists = existsSync) {
+  return candidates.map((p) => resolve(repoRoot, p)).find((p) => exists(p));
+}
+
+/** An absolute path shown workspace-relative and posix-separated. */
+export const relForDisplay = (path, repoRoot) =>
+  path.replace(repoRoot, '.').replace(/\\/g, '/');
+
+/**
+ * What a guard prints when `resolveBuiltEntry` came back empty: the candidates
+ * it tried and the build that would produce one. Returned as lines rather than
+ * printed, so the message is assertable without capturing stderr.
+ */
+export function missingEntryReport(label, candidates, buildCommand) {
+  return [
+    `[${label}] no built entry found. Tried:`,
+    ...candidates.map((p) => '  - ' + p),
+    '',
+    'Build first:',
+    `  ${buildCommand}`,
+    '',
+  ];
+}
+
+/**
+ * The size header both guards print, plus the gzipped byte count they judge on.
+ *
+ * gzip level 9 is the measurement, not a default: a budget compared against a
+ * different level is not comparable run to run. `maxBytes` only annotates the
+ * line — the comparison stays with the caller, since one guard has a budget and
+ * the other deliberately has none (see auditHljsImports on why size is the
+ * wrong instrument there).
+ */
+export function reportBundle({ label, path, repoRoot, contents, maxBytes }) {
+  const raw = Buffer.isBuffer(contents) ? contents : Buffer.from(contents);
+  const gzipBytes = gzipSync(raw, { level: 9 }).length;
+  const kb = (bytes) => (bytes / 1024).toFixed(2);
+  const budget = maxBytes ? `  (budget: ${kb(maxBytes)} kB)` : '';
+
+  return {
+    rawBytes: raw.length,
+    gzipBytes,
+    lines: [
+      `[${label}] ${relForDisplay(path, repoRoot)}`,
+      `  raw:  ${kb(raw.length)} kB`,
+      `  gzip: ${kb(gzipBytes)} kB${budget}`,
+    ],
+  };
+}
+
 /** Static ESM imports: `import … from 'x'`, `import 'x'`, `export … from 'x'`. */
 export function staticSpecifiersOf(source) {
   return [

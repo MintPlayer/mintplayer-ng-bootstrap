@@ -13,6 +13,13 @@ import { writeFile } from 'node:fs/promises';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { resolve, dirname } from 'node:path';
 
+import {
+  buildChromeModule,
+  chromeArrayConstant,
+  extractDsdTemplate,
+  MAX_CHROME_COUNT,
+} from './lib/chrome-module.mjs';
+
 const here = dirname(fileURLToPath(import.meta.url));
 const repoRoot = resolve(here, '..', '..');
 
@@ -25,17 +32,17 @@ await import(
 
 // Variant 0 doubles as the over-cap fallback: styled and visible (slides render
 // through the default slot) but without the radio machine — honest Tier-2.
-const MAX_COUNT = 12;
+const MAX_COUNT = MAX_CHROME_COUNT;
 
 const variants = [];
 for (let n = 0; n <= MAX_COUNT; n++) {
   const full = await collectResult(render(html`<mp-carousel slide-count=${String(n)}></mp-carousel>`));
-  const match = full.match(/<template[^>]*shadowrootmode[^>]*>[\s\S]*?<\/template>/);
-  if (!match) {
+  const chrome = extractDsdTemplate(full);
+  if (!chrome) {
     console.error(`gen-carousel-chrome: no DSD <template> for slide-count=${n}:\n`, full);
     process.exit(1);
   }
-  variants.push(match[0]);
+  variants.push(chrome);
 }
 console.log(
   `gen-carousel-chrome: ${variants.length} variants, ${variants[0].length}–${variants[MAX_COUNT].length} chars`,
@@ -45,12 +52,16 @@ const out = resolve(
   repoRoot,
   'libs/mintplayer-web-components/carousel/ssr/mp-carousel-chrome.generated.ts',
 );
-const content = `// AUTO-GENERATED — do not edit by hand.
-// Regenerate with: node tools/lit-ssr-utils/gen-carousel-chrome.mjs
-// Source: the mp-carousel Lit element rendered via @lit-labs/ssr at each slide count.
-
-/** DSD chrome per slide count (index = count). Index 0 is the inert over-cap fallback. */
-export const MP_CAROUSEL_DSD_CHROME_BY_COUNT: readonly string[] = ${JSON.stringify(variants)};
-`;
+const content = buildChromeModule({
+  generator: 'gen-carousel-chrome.mjs',
+  source: 'the mp-carousel Lit element rendered via @lit-labs/ssr at each slide count.',
+  declarations: [
+    chromeArrayConstant(
+      'MP_CAROUSEL_DSD_CHROME_BY_COUNT',
+      variants,
+      'DSD chrome per slide count (index = count). Index 0 is the inert over-cap fallback.',
+    ),
+  ],
+});
 await writeFile(out, content, 'utf8');
 console.log(`gen-carousel-chrome: wrote ${out}`);

@@ -931,18 +931,56 @@ stop that becoming routine, and splitting the method was the better answer than 
 
 ### What is permanently uncovered, and why
 
-About **480 lines** in the largest runs alone. Every one terminates in a `getBoundingClientRect()`,
-an `elementsFromPoint()` or a pointer capture, all of which jsdom reports as zero:
+~~About **480 lines** in the largest runs alone. Every one terminates in a `getBoundingClientRect()`,
+an `elementsFromPoint()` or a pointer capture, all of which jsdom reports as zero:~~
 
-`beginCornerResize` (66) · `showDropIndicator` (77) · `onIntersectionDoubleClick` (68) ·
+~~`beginCornerResize` (66) · `showDropIndicator` (77) · `onIntersectionDoubleClick` (68) ·
 `handleCornerResizeMove` (41) · `preparePaneDragSource` (39) · `renderSnapMarkersForCorner` (33) ·
 `updatePaneDragDropTargetFromPoint` (24) · `renderIntersectionHandles` (19) ·
 `findDropZoneByPoint` (18) · `findStackInTargets` (14) · `beginFloatingResize` (13) ·
 `findDropZoneInTargets` (12) · `handleFloatingResizeMove` (11) · `ensureHeaderDragPlaceholder` (11) ·
-`computeHeaderInsertIndex` + `finalizeDropFromPoint` (20)
+`computeHeaderInsertIndex` + `finalizeDropFromPoint` (20)~~
 
-These are covered by the four dock e2e specs against a real engine. **Report them as permanently
-uncovered, not as future work** — and per R3 do not fake rects to reach them.
+> **Corrected 2026-08-20 — `coverage-dock-and-tools.md` F11–F13.** Five of those entries were
+> misfiled and the residual is **~300 lines, not ~480**. The test above — *"terminates in a
+> `getBoundingClientRect()`"* — is the flaw: it asks whether a method **touches** geometry, when the
+> question is whether it **depends on the value**. A method that reads a rect and then guards on it
+> runs perfectly well against jsdom's zeros.
+>
+> Rewritten below in D12 form — each entry names the **specific** blocking call and line, so the
+> next reader can falsify it with one grep. "Geometry" is not a reason.
+
+**Genuinely blocked** (~300 lines) — the call that blocks each one:
+
+| method | lines | blocked by |
+|---|---:|---|
+| `beginCornerResize` | 65 | panel `getBoundingClientRect()` compared against divider positions; both zero |
+| `ensureHeaderDragPlaceholder` | 30 | placeholder width from `offsetWidth` |
+| `updatePaneDragDropTargetFromPoint` | 19 | `elementsFromPoint(x, y)` |
+| `renderIntersectionHandles` | 17 | handle placement from measured divider rects |
+| `preparePaneDragSource` | 12 | drag image offset from `getBoundingClientRect()` |
+| `beginFloatingResize` | 12 | `setPointerCapture` + start rect |
+| `findDropZoneByPoint` | 11 | `elementsFromPoint(x, y)` |
+| `handleFloatingResizeMove` | 11 | delta against a zero start rect |
+| the drag-gesture tails | ~120 | reached only after one of the above establishes a non-zero origin |
+
+**Reclassified — NOT blocked** (recovered in M20–M23):
+
+| method | lines | why it was misfiled |
+|---|---:|---|
+| `onIntersectionDoubleClick` | 68 | its only rect call, `pushSizesToSplitter`, **self-guards at `containerSize <= 0` (`:1204`)** and returns early in jsdom; the other ~64 lines run and mutate `node.sizes` |
+| `showDropIndicator` (visibility half) | ~46 | asserts on `dataset['hidden']`, never on position |
+| `renderSnapMarkersForCorner` + `clearSnapMarkers` | 37 | **dead code** — `debug-snap-markers` is absent from `observedAttributes` (`:87-89`), so `showSnapMarkers` can never be set |
+| `handleCornerResizeMove` | ~15 | the state-machine half runs on zeros |
+| `findStackInTargets` / `findDropZoneInTargets` | 26 | pure array search over `data-*`; no geometry at all |
+
+The genuinely-blocked set is covered by the four dock e2e specs against a real engine. **Report those
+as permanently uncovered, not as future work** — and per R3 do not fake rects to reach them.
+
+**On the dead-code miss specifically:** the very next subsection of this document correctly
+identifies `renderFloatingPanes`'s empty-window placeholder as dead code. The category was
+understood; `renderSnapMarkersForCorner` simply landed in the wrong bucket and no one re-derived it.
+That is the argument for D12 — a register written as prose cannot be checked, so it never is.
 
 Three more are unreachable for reasons that are NOT geometry, and each would be a mistake to "fix":
 
@@ -1340,6 +1378,25 @@ denominator, and do not delete a useful one to avoid 18 uncovered lines.
 judgement is *already* covered in `lib/bundle-audit.mjs` and what remains is mostly `console.log` and
 exit codes. `free-port.mjs` is 6 lines but has a real validation branch and is a `dependsOn` of the
 demo's serve — cover it, don't exclude it.
+
+### T7 — `refresh-flags.mjs` — **added 2026-08-20, F14: this ranking did not sum to its own total**
+
+**64 coverable lines, 0% covered, and absent from T1–T6.** Adding the ranking up against the
+measured 704: `166` hit + T2 `98` + T3 `104` + T4 `96` + T6 `51` + T5 `18` + the two
+deliberately-0% remainders (`serve-api` 66, `dev-processes` 41) = **640**. The missing **64** is
+`tools/scripts/refresh-flags.mjs` — 205 physical lines, the second-largest uncovered file in the
+directory and larger than any single T3 item. Its only prior mention in this document is a passing
+list of "script shells" (`:674`).
+
+Testable: the `--only=` argv parser (`:39-42`) and `buildReadme()` (`:51`ff, ~30 physical lines) are
+pure — ~15–22 lines for ~8 cases. Its `resolveSource()` shells out via `execFileSync` to fetch a
+pinned `country-flag-icons@1.6.20` tarball into `tmpdir`; that half matches the `serve-api.mjs`
+shape and is **proposed** for the deliberately-0% list below (Q4 in `coverage-dock-and-tools.md` —
+flagged rather than assumed, since F14 is precisely a caution against registers written without
+re-derivation).
+
+**The general lesson:** a ranking that partitions a measured total should be made to *sum*. This one
+was written per-item, never added up, and lost a file for three milestones.
 
 ### Deliberately left at 0%
 

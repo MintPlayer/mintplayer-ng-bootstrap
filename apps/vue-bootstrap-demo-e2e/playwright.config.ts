@@ -15,6 +15,13 @@ const baseURL = process.env['BASE_URL'] || 'http://localhost:4100';
  */
 export default defineConfig({
   ...nxE2EPreset(__filename, { testDir: './src' }),
+  // The carousel/accordion suites here are the same shared factories the ng
+  // demo runs; see apps/ng-bootstrap-demo-e2e/playwright.config.ts for the
+  // CPU-throttling measurements behind this number. Short version: the click
+  // is never lost under starvation, only late (6.6s at 30x throttle), so the
+  // 5s default budget was the flake, not the component.
+  expect: { timeout: 15_000 },
+  timeout: process.env['CI'] ? 60_000 : 30_000,
   /* Shared settings for all the projects below. See https://playwright.dev/docs/api/class-testoptions. */
   use: {
     baseURL,

@@ -15,56 +15,68 @@
 // Exits non-zero on:
 //   - missing build artifact (with a hint to run `nx build` first)
 //   - size over the budget (with the diff in bytes)
+//
+// Side-effect-free on import: everything runs behind an isEntryPoint guard, and
+// the repo root is a defaulted parameter.
 
-import { gzipSync } from 'node:zlib';
-import { readFileSync, existsSync } from 'node:fs';
+import { readFileSync } from 'node:fs';
 import { resolve, dirname } from 'node:path';
-import { fileURLToPath } from 'node:url';
-import { parseMaxBytes } from './lib/bundle-audit.mjs';
+import { fileURLToPath, pathToFileURL } from 'node:url';
+import {
+  missingEntryReport,
+  parseMaxBytes,
+  relForDisplay,
+  reportBundle,
+  resolveBuiltEntry,
+} from './lib/bundle-audit.mjs';
 
-const __dirname = dirname(fileURLToPath(import.meta.url));
-const repoRoot = resolve(__dirname, '../..');
+export const REPO_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '../..');
 
-const DEFAULT_MAX_BYTES = 40 * 1024;
-const maxBytes = parseMaxBytes(process.argv.slice(2), DEFAULT_MAX_BYTES);
+export const DEFAULT_MAX_BYTES = 40 * 1024;
 
 // ng-packagr emits one FESM per secondary entry. The ribbon entry's filename
 // is namespaced by the umbrella lib name, so the actual file is something
 // like `mintplayer-ng-bootstrap-ribbon.mjs` under `fesm2022/`.
-const candidates = [
+export const FESM_CANDIDATES = [
   'dist/libs/mintplayer-ng-bootstrap/fesm2022/mintplayer-ng-bootstrap-ribbon.mjs',
   'dist/mintplayer-ng-bootstrap/fesm2022/mintplayer-ng-bootstrap-ribbon.mjs',
 ];
 
-const fesmPath = candidates.map((p) => resolve(repoRoot, p)).find((p) => existsSync(p));
-if (!fesmPath) {
-  console.error('[check-ribbon-bundle-size] no FESM found. Tried:');
-  for (const p of candidates) console.error('  - ' + p);
-  console.error(
-    '\nBuild the library first:\n  npx nx build mintplayer-ng-bootstrap\n'
-  );
-  process.exit(2);
+export const LABEL = 'check-ribbon-bundle-size';
+
+export const BUILD_COMMAND = 'npx nx build mintplayer-ng-bootstrap';
+
+const isEntryPoint = !!process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href;
+if (isEntryPoint) {
+  const repoRoot = REPO_ROOT;
+  const maxBytes = parseMaxBytes(process.argv.slice(2), DEFAULT_MAX_BYTES);
+
+  const fesmPath = resolveBuiltEntry(repoRoot, FESM_CANDIDATES);
+  if (!fesmPath) {
+    for (const line of missingEntryReport(LABEL, FESM_CANDIDATES, BUILD_COMMAND)) {
+      console.error(line);
+    }
+    process.exit(2);
+  }
+
+  const rel = relForDisplay(fesmPath, repoRoot);
+  const { gzipBytes, lines } = reportBundle({
+    label: LABEL,
+    path: fesmPath,
+    repoRoot,
+    contents: readFileSync(fesmPath),
+    maxBytes,
+  });
+  for (const line of lines) console.log(line);
+
+  if (gzipBytes > maxBytes) {
+    console.error(
+      `\n❌ Ribbon FESM exceeds gzipped budget by ${gzipBytes - maxBytes} bytes ` +
+        `(${(gzipBytes / 1024).toFixed(2)} kB > ${(maxBytes / 1024).toFixed(2)} kB).`
+    );
+    console.error('Investigate with: npx source-map-explorer ' + rel);
+    process.exit(1);
+  }
+
+  console.log(`✅ Within budget (${gzipBytes} / ${maxBytes} bytes).`);
 }
-
-const raw = readFileSync(fesmPath);
-const gz = gzipSync(raw, { level: 9 });
-const rawKb = (raw.length / 1024).toFixed(2);
-const gzKb = (gz.length / 1024).toFixed(2);
-const budgetKb = (maxBytes / 1024).toFixed(2);
-
-console.log(`[check-ribbon-bundle-size] ${fesmPath.replace(repoRoot, '.')}`);
-console.log(`  raw:  ${rawKb} kB`);
-console.log(`  gzip: ${gzKb} kB  (budget: ${budgetKb} kB)`);
-
-if (gz.length > maxBytes) {
-  console.error(
-    `\n❌ Ribbon FESM exceeds gzipped budget by ${gz.length - maxBytes} bytes ` +
-      `(${gzKb} kB > ${budgetKb} kB).`
-  );
-  console.error(
-    'Investigate with: npx source-map-explorer ' + fesmPath.replace(repoRoot, '.')
-  );
-  process.exit(1);
-}
-
-console.log(`✅ Within budget (${gz.length} / ${maxBytes} bytes).`);

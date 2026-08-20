@@ -1,9 +1,14 @@
+import { join, resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
 
 import {
   auditHljsImports,
   dynamicSpecifiersOf,
+  missingEntryReport,
   parseMaxBytes,
+  relForDisplay,
+  reportBundle,
+  resolveBuiltEntry,
   staticSpecifiersOf,
 } from './bundle-audit.mjs';
 
@@ -152,5 +157,122 @@ describe('parseMaxBytes', () => {
     ['zero', ['--max', '0']],
   ])('falls back on %s rather than disabling the budget', (_label, args) => {
     expect(parseMaxBytes(args, 40960)).toBe(40960);
+  });
+});
+
+// ===========================================================================
+// resolveBuiltEntry / relForDisplay / missingEntryReport / reportBundle
+//
+// The mechanics both built-artifact guards share. `exists` is injected, so no
+// case here needs a build — which is the point of the extraction.
+// ===========================================================================
+
+describe('resolveBuiltEntry', () => {
+  const repoRoot = join('repo', 'root');
+  const candidates = ['dist/a/index.mjs', 'dist/a.mjs'];
+
+  it('returns the first candidate that exists, resolved against the repo root', () => {
+    const found = resolveBuiltEntry(repoRoot, candidates, () => true);
+    expect(found).toBe(resolve(repoRoot, 'dist/a/index.mjs'));
+  });
+
+  it('falls through to a later candidate when the first is absent', () => {
+    const second = resolve(repoRoot, 'dist/a.mjs');
+    expect(resolveBuiltEntry(repoRoot, candidates, (p) => p === second)).toBe(second);
+  });
+
+  it('returns undefined when nothing is built', () => {
+    expect(resolveBuiltEntry(repoRoot, candidates, () => false)).toBeUndefined();
+  });
+
+  it('returns undefined for an empty candidate list', () => {
+    expect(resolveBuiltEntry(repoRoot, [], () => true)).toBeUndefined();
+  });
+
+  it('asks about absolute paths, never the repo-relative candidate strings', () => {
+    const asked: string[] = [];
+    resolveBuiltEntry(repoRoot, candidates, (p) => {
+      asked.push(p);
+      return false;
+    });
+    expect(asked).toEqual(candidates.map((c) => resolve(repoRoot, c)));
+  });
+});
+
+describe('relForDisplay', () => {
+  it('shows a path under the repo root as ./-relative and posix-separated', () => {
+    const repoRoot = join('repo', 'root');
+    expect(relForDisplay(join(repoRoot, 'dist', 'a', 'index.mjs'), repoRoot)).toBe(
+      './dist/a/index.mjs',
+    );
+  });
+
+  it('normalises separators even for a path outside the repo root', () => {
+    // A pure string transform, not a path fixture: no filesystem reads this,
+    // so the backslashes mean the same thing on every platform.
+    expect(relForDisplay('D:\\elsewhere\\a.mjs', join('repo', 'root'))).toBe('D:/elsewhere/a.mjs');
+  });
+});
+
+describe('missingEntryReport', () => {
+  const lines = missingEntryReport('check-x', ['dist/a.mjs', 'dist/b.mjs'], 'npx nx build x');
+
+  it('names the guard that failed', () => {
+    expect(lines[0]).toBe('[check-x] no built entry found. Tried:');
+  });
+
+  it('lists every candidate it tried, in order', () => {
+    expect(lines.slice(1, 3)).toEqual(['  - dist/a.mjs', '  - dist/b.mjs']);
+  });
+
+  it('ends with the build that would produce one', () => {
+    expect(lines).toContain('  npx nx build x');
+  });
+});
+
+describe('reportBundle', () => {
+  const repoRoot = join('repo', 'root');
+  const path = join(repoRoot, 'dist', 'a.mjs');
+  const contents = 'x'.repeat(4096);
+
+  it('heads the report with the guard label and the relative path', () => {
+    const { lines } = reportBundle({ label: 'check-x', path, repoRoot, contents });
+    expect(lines[0]).toBe('[check-x] ./dist/a.mjs');
+  });
+
+  it('reports the raw size in kB', () => {
+    const { lines, rawBytes } = reportBundle({ label: 'check-x', path, repoRoot, contents });
+    expect(rawBytes).toBe(4096);
+    expect(lines[1]).toBe('  raw:  4.00 kB');
+  });
+
+  it('reports a gzipped size smaller than the raw one, and no budget by default', () => {
+    const { lines, gzipBytes } = reportBundle({ label: 'check-x', path, repoRoot, contents });
+    expect(gzipBytes).toBeLessThan(4096);
+    expect(lines[2]).toBe(`  gzip: ${(gzipBytes / 1024).toFixed(2)} kB`);
+  });
+
+  it('annotates the gzip line with the budget when one is given', () => {
+    const { lines } = reportBundle({
+      label: 'check-x',
+      path,
+      repoRoot,
+      contents,
+      maxBytes: 40 * 1024,
+    });
+    expect(lines[2]).toMatch(/ {2}\(budget: 40\.00 kB\)$/);
+  });
+
+  it('measures a Buffer and the equivalent string identically', () => {
+    const asString = reportBundle({ label: 'x', path, repoRoot, contents });
+    const asBuffer = reportBundle({ label: 'x', path, repoRoot, contents: Buffer.from(contents) });
+    expect(asBuffer).toEqual(asString);
+  });
+
+  // The raw figure is bytes, not characters: a multi-byte bundle read as a
+  // string would otherwise be reported smaller than it ships.
+  it('counts bytes rather than characters for multi-byte content', () => {
+    const { rawBytes } = reportBundle({ label: 'x', path, repoRoot, contents: '€'.repeat(10) });
+    expect(rawBytes).toBe(30);
   });
 });

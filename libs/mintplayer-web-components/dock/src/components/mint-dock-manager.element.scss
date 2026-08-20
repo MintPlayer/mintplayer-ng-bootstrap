@@ -273,19 +273,6 @@
   outline-offset: 1px;
 }
 
-.dock-snap-marker {
-  position: absolute;
-  width: 6px;
-  height: 6px;
-  margin-left: -3px;
-  margin-top: -3px;
-  border-radius: 50%;
-  background: var(--bs-primary);
-  box-shadow: 0 0 0 2px var(--bs-primary-bg-subtle);
-  pointer-events: none;
-  z-index: 130;
-}
-
 // `.dock-stack` is now an <mp-tab-control> element. Strip layout, button
 // styling, active-tab class, and pane visibility are all owned by the WC.
 // This rule just gives the host the dock's chrome (border, background) and
