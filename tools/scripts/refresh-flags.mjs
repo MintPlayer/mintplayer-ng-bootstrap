@@ -150,10 +150,21 @@ export function wantedCodes(countryData, only) {
     .sort();
 }
 
-export async function main(argv = process.argv.slice(2), repoRoot = REPO_ROOT) {
+/**
+ * `fetchSource` is a parameter rather than a direct call because it is the only
+ * dependency here that reaches the network (`npm pack`) and the `tar` binary.
+ * With it fixed, none of the orchestration below could be tested — including
+ * the pruning branch, which **unlinks committed SVGs**. A destructive path with
+ * no test is the one that most needs the seam.
+ */
+export async function main(
+  argv = process.argv.slice(2),
+  repoRoot = REPO_ROOT,
+  fetchSource = resolveSource,
+) {
   const only = parseOnly(argv);
   const { flagsRoot, assetsDir } = flagPaths(repoRoot);
-  const { dir: packageDir, cleanup } = await resolveSource(repoRoot);
+  const { dir: packageDir, cleanup } = await fetchSource(repoRoot);
   const sourceDir = join(packageDir, '3x2');
   const licensePath = join(packageDir, 'LICENSE');
   if (!existsSync(sourceDir)) {

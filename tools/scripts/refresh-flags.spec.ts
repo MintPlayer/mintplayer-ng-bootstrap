@@ -13,12 +13,23 @@
  * once-a-year manual ritual — exercising it in CI would buy a flaky test, not a
  * guarantee.
  */
-import { mkdtempSync, realpathSync, rmSync, writeFileSync } from 'node:fs';
+import {
+  existsSync,
+  mkdirSync,
+  mkdtempSync,
+  readFileSync,
+  readdirSync,
+  realpathSync,
+  rmSync,
+  writeFileSync,
+} from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { afterAll, describe, expect, it } from 'vitest';
+import { afterAll, afterEach, describe, expect, it, vi } from 'vitest';
 
-import { buildReadme, flagPaths, parseOnly, wantedCodes } from './refresh-flags.mjs';
+import { rawCountryData } from 'intl-tel-input/data';
+
+import { buildReadme, flagPaths, main, parseOnly, wantedCodes } from './refresh-flags.mjs';
 
 describe('parseOnly', () => {
   it('returns null when --only is absent — the only mode allowed to prune', () => {
@@ -145,5 +156,216 @@ describe('buildReadme', () => {
   it('ends with a trailing newline', async () => {
     const readme = await buildReadme({ version: '1.6.20', license: 'MIT' }, licenseAt('x'));
     expect(readme.endsWith('\n')).toBe(true);
+  });
+});
+
+// ===========================================================================
+// main() — reachable only because `fetchSource` is injectable. Before that
+// seam existed, ~60 of this file's 64 lines could not run in a spec, including
+// the pruning branch, which unlinks committed SVGs.
+// ===========================================================================
+
+describe('main', () => {
+  const roots: string[] = [];
+
+  afterAll(() => roots.forEach((r) => rmSync(r, { recursive: true, force: true })));
+
+  /**
+   * A repo root with a pre-populated flags dir, plus a fake upstream package
+   * carrying the given uppercase SVG names. Returns the paths plus a spy-ish
+   * record of whether cleanup ran.
+   */
+  function scenario(options: {
+    upstream: string[];
+    existingAssets?: string[];
+  }): {
+    repoRoot: string;
+    assetsDir: string;
+    flagsRoot: string;
+    fetchSource: () => Promise<{ dir: string; cleanup: () => Promise<void> }>;
+    cleanedUp: () => boolean;
+  } {
+    const repoRoot = realpathSync(mkdtempSync(join(tmpdir(), 'refresh-flags-')));
+    roots.push(repoRoot);
+
+    const { flagsRoot, assetsDir } = flagPaths(repoRoot);
+    mkdirSync(assetsDir, { recursive: true });
+    for (const name of options.existingAssets ?? []) {
+      writeFileSync(join(assetsDir, name), '<svg>stale</svg>\n');
+    }
+
+    const packageDir = join(repoRoot, 'fake-upstream', 'package');
+    mkdirSync(join(packageDir, '3x2'), { recursive: true });
+    for (const name of options.upstream) {
+      // Untrimmed on purpose: main() trims and appends exactly one newline.
+      writeFileSync(join(packageDir, '3x2', `${name}.svg`), `  <svg>${name}</svg>  \n\n`);
+    }
+    writeFileSync(join(packageDir, 'LICENSE'), 'MIT-ish license text\n');
+    writeFileSync(join(packageDir, 'package.json'), JSON.stringify({ version: '9.9.9' }));
+
+    let cleaned = false;
+    return {
+      repoRoot,
+      assetsDir,
+      flagsRoot,
+      fetchSource: async () => ({
+        dir: packageDir,
+        cleanup: async () => {
+          cleaned = true;
+        },
+      }),
+      cleanedUp: () => cleaned,
+    };
+  }
+
+  const svgsIn = (dir: string) => readdirSync(dir).filter((f) => f.endsWith('.svg')).sort();
+
+  it('vendors every dial-code flag the upstream package provides', async () => {
+    // The real country table has ~244 entries; --only keeps the fixture small
+    // while still exercising the write path.
+    const s = scenario({ upstream: ['BE', 'FR'] });
+    await main(['--only=be,fr'], s.repoRoot, s.fetchSource);
+
+    expect(svgsIn(s.assetsDir)).toEqual(['be.svg', 'fr.svg']);
+  });
+
+  it('copies the artwork byte-for-byte, trimmed, with exactly one trailing newline', async () => {
+    // An upstream bump should read as a content diff, not a reformat.
+    const s = scenario({ upstream: ['BE'] });
+    await main(['--only=be'], s.repoRoot, s.fetchSource);
+
+    expect(readFileSync(join(s.assetsDir, 'be.svg'), 'utf8')).toBe('<svg>BE</svg>\n');
+  });
+
+  it('is idempotent — a second run writes nothing', async () => {
+    const s = scenario({ upstream: ['BE'] });
+    await main(['--only=be'], s.repoRoot, s.fetchSource);
+    const first = readFileSync(join(s.assetsDir, 'be.svg'), 'utf8');
+
+    await main(['--only=be'], s.repoRoot, s.fetchSource);
+
+    expect(readFileSync(join(s.assetsDir, 'be.svg'), 'utf8')).toBe(first);
+  });
+
+  it('writes the README with the fetched package version', async () => {
+    const s = scenario({ upstream: ['BE'] });
+    await main(['--only=be'], s.repoRoot, s.fetchSource);
+
+    expect(readFileSync(join(s.flagsRoot, 'README.md'), 'utf8')).toContain('9.9.9');
+  });
+
+  it('releases the fetched tarball even on the happy path', async () => {
+    const s = scenario({ upstream: ['BE'] });
+    await main(['--only=be'], s.repoRoot, s.fetchSource);
+    expect(s.cleanedUp()).toBe(true);
+  });
+
+  describe('pruning — the destructive branch', () => {
+    it('does NOT prune during a partial refresh, however stale the extra file', async () => {
+      // Only a full refresh knows the complete set. A --only run that pruned
+      // would delete every flag it was not asked about.
+      const s = scenario({ upstream: ['BE'], existingAssets: ['zz.svg', 'xx.svg'] });
+
+      await main(['--only=be'], s.repoRoot, s.fetchSource);
+
+      expect(svgsIn(s.assetsDir)).toEqual(['be.svg', 'xx.svg', 'zz.svg']);
+    });
+
+    it('does NOT prune for --only= either, which parses to an empty set, not null', async () => {
+      // The empty-set/null distinction exists precisely to keep this branch shut.
+      const s = scenario({ upstream: [], existingAssets: ['zz.svg'] });
+
+      await main(['--only='], s.repoRoot, s.fetchSource);
+
+      expect(svgsIn(s.assetsDir)).toEqual(['zz.svg']);
+    });
+
+    // A full refresh must actually succeed to reach the prune, which means
+    // the fake upstream has to carry every dial-code flag. Anything less hits
+    // the missing-flag refusal first and the prune never runs — which is how
+    // an earlier version of these tests passed without testing pruning at all.
+    const ALL_CODES = wantedCodes(rawCountryData, null);
+
+    it('deletes a vendored SVG that is no longer a dial-code country', async () => {
+      // The destructive behaviour, exercised for the first time: `zz` was
+      // vendored once, upstream no longer lists it, so it goes.
+      const s = scenario({
+        upstream: ALL_CODES.map((c) => c.toUpperCase()),
+        existingAssets: ['zz.svg'],
+      });
+
+      await main([], s.repoRoot, s.fetchSource);
+
+      expect(existsSync(join(s.assetsDir, 'zz.svg'))).toBe(false);
+      expect(svgsIn(s.assetsDir)).toEqual(ALL_CODES.map((c) => `${c}.svg`));
+    });
+
+    it('leaves non-SVG files alone even on a full refresh', async () => {
+      const s = scenario({ upstream: ALL_CODES.map((c) => c.toUpperCase()) });
+      writeFileSync(join(s.assetsDir, 'README.txt'), 'keep me');
+
+      await main([], s.repoRoot, s.fetchSource);
+
+      expect(existsSync(join(s.assetsDir, 'README.txt'))).toBe(true);
+    });
+  });
+
+  describe('refusals', () => {
+    /**
+     * The refusal branches call `process.exit(1)` and then fall through rather
+     * than returning, so the guard rests on exit semantics rather than
+     * structure. Making the spy throw both stops the worker being killed and
+     * pins that nothing after the refusal runs.
+     */
+    function exitGuard() {
+      const errors: string[] = [];
+      vi.spyOn(console, 'error').mockImplementation((...args) => {
+        errors.push(args.join(' '));
+      });
+      vi.spyOn(process, 'exit').mockImplementation(((code?: number) => {
+        throw new Error(`process.exit(${code})`);
+      }) as never);
+      return { errors };
+    }
+
+    afterEach(() => vi.restoreAllMocks());
+
+    it('refuses when the fetched package has no 3x2 directory', async () => {
+      const s = scenario({ upstream: ['BE'] });
+      rmSync(join(s.repoRoot, 'fake-upstream', 'package', '3x2'), { recursive: true });
+      const { errors } = exitGuard();
+
+      await expect(main(['--only=be'], s.repoRoot, s.fetchSource)).rejects.toThrow('process.exit(1)');
+      expect(errors.join('\n')).toContain('the fetched package looks wrong');
+    });
+
+    it('refuses an --only naming a country that has no dial code', async () => {
+      const s = scenario({ upstream: ['BE'] });
+      const { errors } = exitGuard();
+
+      await expect(main(['--only=zz'], s.repoRoot, s.fetchSource)).rejects.toThrow('process.exit(1)');
+      expect(errors.join('\n')).toContain('zz');
+    });
+
+    it('refuses, rather than silently skipping, when upstream lacks a wanted flag', async () => {
+      // A missing flag means the pinned package changed shape; carrying on
+      // would ship a phone-input with a blank country.
+      const s = scenario({ upstream: [] });
+      const { errors } = exitGuard();
+
+      await expect(main(['--only=be'], s.repoRoot, s.fetchSource)).rejects.toThrow('process.exit(1)');
+      expect(errors.join('\n')).toContain('no upstream flag for: be');
+    });
+
+    it('refuses BEFORE pruning, so a bad fetch cannot empty the flags directory', async () => {
+      // The ordering is the safety property: the missing-flag refusal sits
+      // above the prune, so an upstream that returned nothing deletes nothing.
+      const s = scenario({ upstream: [], existingAssets: ['be.svg', 'fr.svg'] });
+      exitGuard();
+
+      await expect(main([], s.repoRoot, s.fetchSource)).rejects.toThrow('process.exit(1)');
+
+      expect(svgsIn(s.assetsDir)).toEqual(['be.svg', 'fr.svg']);
+    });
   });
 });
