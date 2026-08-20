@@ -31,11 +31,14 @@ describe('prefixFor', () => {
     );
   });
 
-  it('emits posix separators regardless of how the input was separated', () => {
-    // relative() emits the platform separator; a caller may hand in posix.
-    // Both must land on the same posix prefix.
+  it('accepts posix-separated input even where the native separator differs', () => {
+    // The guarantee that motivated splitting on /[\\/]/: a posix-path caller
+    // works on Windows too. The reverse fixture (a backslash literal) is NOT
+    // asserted — on posix a backslash is a legal filename character, not a
+    // separator, so that input has no portable meaning. The native-separator
+    // case is already covered by the join()-built fixtures above, which use
+    // backslashes when the suite runs on Windows.
     expect(prefixFor('coverage/libs/foo/lcov.info', 'coverage')).toBe('libs/foo');
-    expect(prefixFor('coverage\\libs\\foo\\lcov.info', 'coverage')).toBe('libs/foo');
   });
 
   it('returns an empty prefix for a report sitting directly in the coverage dir', () => {

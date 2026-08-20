@@ -32,7 +32,7 @@ uncovered**, not as future work.
 | M15 ✅ | Dock — the last non-geometry regions | 116 of 1,311 uncovered |
 | M16 ✅ | Stop the service discarding 22% of measured files | 314 files recovered |
 | M17 🟨 | `tools/` — mapped and ranked; T1 ✅ done, T5 ✅ deleted, T2-T4/T6 open | 166/704 = 23.6% at mapping |
-| M18 ✅ | T1 spec + the three zero-spec libraries | ~114 lines, 42 new cases |
+| M18 ✅ | T1 spec + the three zero-spec libraries | ~114 lines, 41 new cases |
 
 ## Ordering rationale
 
@@ -1359,7 +1359,11 @@ for the person who wrote them:
 
 1. **`path.sep` vs `posix.sep`.** `rebase-lcov-paths.mjs:64` splits on `sep`, joins on `posix.sep`. A
    fixture built from the literal `'coverage/libs/foo/lcov.info'` passes on Linux and fails on
-   Windows, where splitting on a backslash never splits. Build fixtures with `join()`, assert both forms.
+   Windows, where splitting on a backslash never splits. Build fixtures with `join()`. ~~Assert both
+   forms explicitly~~ — **that advice was wrong, and T1's first CI run proved it**: a backslash
+   *literal* fixture is the mirror-image trap (passes on Windows, fails on Linux, where `\` is a
+   legal filename character, not a separator). Only the posix-literal form is portable to assert;
+   the native form is exercised by the `join()` fixtures themselves.
 2. **cwd.** `COVERAGE_DIR = 'coverage'` and `existsSync` are cwd-relative, and vitest roots `tools/`
    specs at `tools/`. Inject the base dir and `exists` — **never `process.chdir()`**, which under
    `pool: 'threads'` is process-wide and corrupts sibling specs running in parallel.
@@ -1401,7 +1405,7 @@ spec touches the real tree or the cwd). One behavioral improvement rode along: `
 splits on **either** separator (`/[\\/]/`), so posix-path callers work on Windows — previously it
 split on the platform's own `sep` only.
 
-`tools/scripts/rebase-lcov-paths.spec.ts` — 18 cases pinning the load-bearing properties by name:
+`tools/scripts/rebase-lcov-paths.spec.ts` — 17 cases pinning the load-bearing properties by name:
 **idempotence** (a second run counts already-rooted and changes nothing), the mixed-report case,
 backslash normalisation, `libs/foo-bar` **not** counting as rooted under `libs/foo` (the guard is on
 the full segment), CRLF-in/LF-out, trailing-newline preservation, unresolved-path collection (still
@@ -1412,6 +1416,14 @@ asserted, not order — readdir order is platform-dependent).
 CLI verified unchanged after the refactor: `Rebased 0 path(s) across 14 report(s) … (1403 already
 rooted); all resolve on disk`, exit 0 — idempotence demonstrated against the real workspace, and a
 bare import performs no work.
+
+**First CI run failed on one case, and the failure is worth keeping:** the spec asserted that a
+backslash-*literal* fixture (`'coverage\libs\foo\lcov.info'`) resolves like a path — written to
+guard the Windows trap, green on the Windows dev machine, and impossible on Linux, where a backslash
+is a legal filename character and `relative()` treats the whole string as one name. The
+anti-Windows-trap test was itself the Linux trap, exactly mirrored. Fixed by dropping the
+non-portable literal (the `join()` fixtures already exercise native separators on each platform) and
+correcting the trap-list advice above that recommended it.
 
 ### The three empty libraries
 
