@@ -38,10 +38,15 @@ import {
   normalizeLayoutNode,
   normalizeSizesArray,
   normalizeSplitNode,
+  clonePath,
+  countPanesInTree,
+  isOrIsAncestorOf,
+  normalizeFloatingLayout,
   parseIntersectionPairs,
   parsePath,
   pathsEqual,
   planIntersectionResize,
+  resolveSplitNode,
   removePaneFromStack,
   replaceNodeInTree,
   resizeFloatingBounds,
@@ -508,7 +513,7 @@ export class MintDockManagerElement extends LitElement {
     return {
       root: layout.root ?? null,
       floating: Array.isArray(layout.floating)
-        ? layout.floating.map((floating) => this.normalizeFloatingLayout(floating))
+        ? layout.floating.map((floating) => normalizeFloatingLayout(floating))
         : [],
       titles: layout.titles ? { ...layout.titles } : {},
     };
@@ -961,8 +966,8 @@ export class MintDockManagerElement extends LitElement {
     this.cornerResizeState = {
       pointerId: event.pointerId,
       handle,
-      hs: hs.map((e) => ({ path: this.clonePath(e.path), index: e.index, container: e.container, beforeSize: e.before, afterSize: e.after, initialSizes: e.initialSizes, startY: event.clientY })),
-      vs: vs.map((e) => ({ path: this.clonePath(e.path), index: e.index, container: e.container, beforeSize: e.before, afterSize: e.after, initialSizes: e.initialSizes, startX: event.clientX })),
+      hs: hs.map((e) => ({ path: clonePath(e.path), index: e.index, container: e.container, beforeSize: e.before, afterSize: e.after, initialSizes: e.initialSizes, startY: event.clientY })),
+      vs: vs.map((e) => ({ path: clonePath(e.path), index: e.index, container: e.container, beforeSize: e.before, afterSize: e.after, initialSizes: e.initialSizes, startX: event.clientX })),
     };
 
     this.startPointerTracking();
@@ -1057,7 +1062,7 @@ export class MintDockManagerElement extends LitElement {
       },
       delta: number,
     ): void => {
-      const node = this.resolveSplitNode(entry.path);
+      const node = resolveSplitNode(entry.path, this.rootLayout, this.floatingLayouts);
       if (!node) return;
       const MIN_PANEL_PX = 48;
       const { before, after } = resizePair(
@@ -1114,7 +1119,7 @@ export class MintDockManagerElement extends LitElement {
       this.previousSplitSizes,
       (pathStr) => {
         const path = parsePath(pathStr);
-        const node = path ? this.resolveSplitNode(path) : null;
+        const node = path ? resolveSplitNode(path, this.rootLayout, this.floatingLayouts) : null;
         return node ? { sizes: node.sizes, childCount: node.children.length } : null;
       },
     );
@@ -1122,7 +1127,7 @@ export class MintDockManagerElement extends LitElement {
     plan.remember.forEach(({ pathStr, sizes }) => this.previousSplitSizes.set(pathStr, sizes));
     plan.writes.forEach(({ pathStr, sizes }) => {
       const path = parsePath(pathStr);
-      const node = path ? this.resolveSplitNode(path) : null;
+      const node = path ? resolveSplitNode(path, this.rootLayout, this.floatingLayouts) : null;
       if (!node || !path) return;
       node.sizes = sizes;
       this.pushSizesToSplitter(path, sizes);
@@ -1654,7 +1659,7 @@ export class MintDockManagerElement extends LitElement {
       if (event.target !== splitter) return;
       const detail = (event as CustomEvent<{ sizes: number[] }>).detail;
       if (!Array.isArray(detail?.sizes) || detail.sizes.length === 0) return;
-      const splitNode = this.resolveSplitNode(splitPath);
+      const splitNode = resolveSplitNode(splitPath, this.rootLayout, this.floatingLayouts);
       if (!splitNode) return;
       const previousTotal = (splitNode.sizes ?? []).reduce(
         (s, w) => s + Math.max(w, 0),
@@ -1745,7 +1750,7 @@ export class MintDockManagerElement extends LitElement {
       // coordinates in Firefox, browser-specific drag-image behavior).
       headerSpan.addEventListener('pointerdown', (event) => {
         this.captureTabDragMetrics(event, stack);
-        this.armPaneDragGesture(event, this.clonePath(location), paneName, stack);
+        this.armPaneDragGesture(event, clonePath(location), paneName, stack);
         event.stopPropagation();
         // Do NOT call event.preventDefault() here. On touch, that suppresses
         // the synthesized click on the parent .nav-link button — which is how
@@ -1786,7 +1791,7 @@ export class MintDockManagerElement extends LitElement {
       );
       const paneName = headerSpan?.dataset['pane'];
       if (paneName) {
-        this.activatePane(stack, paneName, this.clonePath(location));
+        this.activatePane(stack, paneName, clonePath(location));
         this.dispatchEvent(
           new CustomEvent('dock-pane-activated', {
             detail: { pane: paneName },
@@ -2190,7 +2195,7 @@ export class MintDockManagerElement extends LitElement {
 
     this.dragState = {
       pane,
-      sourcePath: this.clonePath(sourcePath),
+      sourcePath: clonePath(sourcePath),
       floatingIndex,
       pointerOffsetX,
       pointerOffsetY,
@@ -2233,7 +2238,7 @@ export class MintDockManagerElement extends LitElement {
           shouldConvert = true;
         } else if (loc.context === 'floating') {
           const floating = this.floatingLayouts[loc.index];
-          const totalPanes = floating && floating.root ? this.countPanesInTree(floating.root) : 0;
+          const totalPanes = floating && floating.root ? countPanesInTree(floating.root) : 0;
           shouldConvert = totalPanes > 1;
         }
         if (shouldConvert) {
@@ -2269,7 +2274,7 @@ export class MintDockManagerElement extends LitElement {
     const hasSiblingInStack = location.node.panes.some((existing) => existing !== pane);
     const floating = location.context === 'floating' ? this.floatingLayouts[location.index] : null;
     const floatingPaneCount =
-      floating && floating.root ? this.countPanesInTree(floating.root) : hasSiblingInStack ? 2 : 1;
+      floating && floating.root ? countPanesInTree(floating.root) : hasSiblingInStack ? 2 : 1;
     const shouldReuseExistingWindow =
       location.context === 'floating' &&
       !!floating &&
@@ -3292,7 +3297,7 @@ export class MintDockManagerElement extends LitElement {
   private showDropIndicator(stack: HTMLElement, zone: DropZone | null): void {
     const targetPath = parsePath(stack.dataset['path']);
     const sourcePath = this.dragState?.sourcePath ?? null;
-    if (targetPath && sourcePath && this.isOrIsAncestorOf(targetPath, sourcePath)) {
+    if (targetPath && sourcePath && isOrIsAncestorOf(targetPath, sourcePath)) {
       // Don't show any drop indicators on the pane being dragged.
       return;
     }
@@ -3500,43 +3505,6 @@ export class MintDockManagerElement extends LitElement {
     this.dispatchLayoutChanged();
   }
 
-  private resolveSplitNode(path: DockPath): DockSplitNode | null {
-    if (path.type === 'docked') {
-      const node = getNodeAtPath(this.rootLayout, path.segments);
-      return node && node.kind === 'split' ? node : null;
-    }
-
-    const floating = this.floatingLayouts[path.index];
-    if (!floating || !floating.root) {
-      return null;
-    }
-
-    const node = getNodeAtPath(floating.root, path.segments);
-    return node && node.kind === 'split' ? node : null;
-  }
-
-  private normalizeFloatingLayout(
-    layout: DockFloatingStackLayout,
-  ): DockFloatingStackLayout {
-    const bounds = layout.bounds ?? { left: 0, top: 0, width: 320, height: 200 };
-    const normalizedBounds = {
-      left: Number.isFinite(bounds.left) ? bounds.left : 0,
-      top: Number.isFinite(bounds.top) ? bounds.top : 0,
-      width: Number.isFinite(bounds.width) ? Math.max(bounds.width, 160) : 320,
-      height: Number.isFinite(bounds.height) ? Math.max(bounds.height, 120) : 200,
-    };
-
-    const root = layout.root ? cloneLayoutNode(layout.root) : null;
-
-    return {
-      id: layout.id,
-      bounds: normalizedBounds,
-      zIndex: layout.zIndex,
-      root,
-      activePane: layout.activePane,
-    };
-  }
-
   // Layer identity of a splitter in the rendered shadow tree. Splitters inside
   // floating pane N are nested under `.dock-floating[data-path="f:N"]`;
   // docked-layer splitters have no such ancestor. Two splitters share a layer
@@ -3546,41 +3514,6 @@ export class MintDockManagerElement extends LitElement {
   private splitterLayerKey(splitter: HTMLElement): string {
     const float = splitter.closest<HTMLElement>('.dock-floating');
     return float ? float.dataset['path'] ?? 'f:?' : 'd';
-  }
-
-  private clonePath(path: DockPath): DockPath {
-    if (path.type === 'floating') {
-      return { type: 'floating', index: path.index, segments: [...path.segments] };
-    }
-    return { type: 'docked', segments: [...path.segments] };
-  }
-
-  private isOrIsAncestorOf(ancestor: DockPath, descendant: DockPath): boolean {
-    if (ancestor.type !== descendant.type) {
-      return false;
-    }
-
-    if (ancestor.type === 'floating') {
-      if ((descendant as any).index !== ancestor.index) {
-        return false;
-      }
-    }
-
-    if (ancestor.segments.length > descendant.segments.length) {
-      return false;
-    }
-
-    return ancestor.segments.every((segment, i) => segment === descendant.segments[i]);
-  }
-
-  private countPanesInTree(node: DockLayoutNode | null): number {
-    if (!node) {
-      return 0;
-    }
-    if (node.kind === 'stack') {
-      return node.panes.length;
-    }
-    return node.children.reduce((total, child) => total + this.countPanesInTree(child), 0);
   }
 
   private resolveStackLocation(path: DockPath): ResolvedLocation | null {
@@ -3890,7 +3823,7 @@ export class MintDockManagerElement extends LitElement {
     if (!this.paneMoveMode) return;
     this.dragState = {
       pane: this.paneMoveMode.paneName,
-      sourcePath: this.clonePath(this.paneMoveMode.sourcePath),
+      sourcePath: clonePath(this.paneMoveMode.sourcePath),
       floatingIndex: this.paneMoveMode.sourcePath.type === 'floating'
         ? this.paneMoveMode.sourcePath.index
         : null,

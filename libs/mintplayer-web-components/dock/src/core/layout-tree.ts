@@ -1,6 +1,11 @@
-import type { DockLayoutNode, DockSplitNode, DockStackNode } from '../types/dock-layout';
+import type {
+  DockFloatingStackLayout,
+  DockLayoutNode,
+  DockSplitNode,
+  DockStackNode,
+} from '../types/dock-layout';
 import { insertWeight, normalizeSizesArray, normalizeSplitNode } from './sizes';
-import type { DropZone } from './types';
+import type { DockPath, DropZone } from './types';
 
 /**
  * The dock's layout is a tree of splits and stacks, and every drag, drop, close
@@ -286,4 +291,66 @@ export function cloneLayoutNode(layout: DockLayoutNode | null): DockLayoutNode |
   }
 
   return JSON.parse(JSON.stringify(layout)) as DockLayoutNode;
+}
+
+/** How many panes a subtree holds. A stack contributes its pane count; a split, the sum of its children. */
+export function countPanesInTree(node: DockLayoutNode | null): number {
+  if (!node) {
+    return 0;
+  }
+  if (node.kind === 'stack') {
+    return node.panes.length;
+  }
+  return node.children.reduce((total, child) => total + countPanesInTree(child), 0);
+}
+
+/**
+ * The split node a path addresses, in whichever layer the path names, or null
+ * when the path leaves the tree or lands on a stack.
+ *
+ * Returning null rather than throwing is what makes a stale `data-path` on a
+ * handle harmless: the layout changed under it, the lookup misses, and the
+ * gesture does nothing.
+ */
+export function resolveSplitNode(
+  path: DockPath,
+  rootLayout: DockLayoutNode | null,
+  floatingLayouts: readonly DockFloatingStackLayout[],
+): DockSplitNode | null {
+  const root = path.type === 'docked'
+    ? rootLayout
+    : floatingLayouts[path.index]?.root ?? null;
+  if (!root) {
+    return null;
+  }
+
+  const node = getNodeAtPath(root, path.segments);
+  return node && node.kind === 'split' ? node : null;
+}
+
+/**
+ * Give a floating window a complete, finite set of bounds and a detached root.
+ *
+ * Every field is defended because floating layouts arrive from the `layout`
+ * attribute, i.e. from JSON a consumer wrote: a missing `bounds`, a NaN left
+ * from a bad parse, or a window sized to nothing would each render an
+ * unusable window rather than fail loudly. The minimums (160x120) are the
+ * smallest size at which a window's chrome is still operable.
+ */
+export function normalizeFloatingLayout(
+  layout: DockFloatingStackLayout,
+): DockFloatingStackLayout {
+  const bounds = layout.bounds ?? { left: 0, top: 0, width: 320, height: 200 };
+  return {
+    id: layout.id,
+    bounds: {
+      left: Number.isFinite(bounds.left) ? bounds.left : 0,
+      top: Number.isFinite(bounds.top) ? bounds.top : 0,
+      width: Number.isFinite(bounds.width) ? Math.max(bounds.width, 160) : 320,
+      height: Number.isFinite(bounds.height) ? Math.max(bounds.height, 120) : 200,
+    },
+    zIndex: layout.zIndex,
+    root: layout.root ? cloneLayoutNode(layout.root) : null,
+    activePane: layout.activePane,
+  };
 }

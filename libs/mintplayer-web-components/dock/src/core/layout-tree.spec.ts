@@ -4,17 +4,27 @@ import type { DockLayoutNode, DockSplitNode, DockStackNode } from '../types/dock
 import {
   cloneLayoutNode,
   collectPaneNames,
+  countPanesInTree,
   dockNodeBeside,
   findFirstPaneName,
   findParentSplit,
   findStackContainingPane,
   forEachStack,
   getNodeAtPath,
+  normalizeFloatingLayout,
   normalizeLayoutNode,
   removePaneFromStack,
   replaceNodeInTree,
+  resolveSplitNode,
 } from './layout-tree';
-import { formatPath, parsePath, pathsEqual, type DockPath } from './types';
+import {
+  clonePath,
+  formatPath,
+  isOrIsAncestorOf,
+  parsePath,
+  pathsEqual,
+  type DockPath,
+} from './types';
 
 /**
  * The dock's layout algebra. Every drag, drop, close and resize is a
@@ -915,5 +925,200 @@ describe('pathsEqual', () => {
     const a: DockPath = { type: 'docked', segments: [1, 0] };
     const b: DockPath = { type: 'docked', segments: [1, 0] };
     expect(pathsEqual(a, b)).toBe(formatPath(a) === formatPath(b));
+  });
+});
+
+// ===========================================================================
+// Lifted out of the element in M22 — pure tree/path logic that only ever
+// needed `this.` for the two roots it walks.
+// ===========================================================================
+
+describe('countPanesInTree', () => {
+  it('counts a stack as its pane list', () => {
+    expect(countPanesInTree(stack('a', 'b', 'c'))).toBe(3);
+  });
+
+  it('sums across nested splits', () => {
+    const tree = split('horizontal', [
+      stack('a'),
+      split('vertical', [stack('b', 'c'), stack('d')]),
+    ]);
+    expect(countPanesInTree(tree)).toBe(4);
+  });
+
+  it('is 0 for a null tree', () => {
+    // The dock asks this of a floating window's root, which is legitimately
+    // null for a window whose last pane just closed.
+    expect(countPanesInTree(null)).toBe(0);
+  });
+
+  it('is 0 for an empty stack and for a split with no children', () => {
+    expect(countPanesInTree(stack())).toBe(0);
+    expect(countPanesInTree(split('horizontal', []))).toBe(0);
+  });
+});
+
+describe('resolveSplitNode', () => {
+  const inner = split('vertical', [stack('b'), stack('c')]);
+  const root = split('horizontal', [stack('a'), inner]);
+  const floatingRoot = split('horizontal', [stack('f1'), stack('f2')]);
+  const floating = [
+    { id: 'w0', bounds: { left: 0, top: 0, width: 320, height: 200 }, zIndex: 1, root: floatingRoot },
+  ];
+
+  it('resolves a docked path to its split node by reference', () => {
+    const path: DockPath = { type: 'docked', segments: [1] };
+    expect(resolveSplitNode(path, root, [])).toBe(inner);
+  });
+
+  it('resolves the docked root at the empty path', () => {
+    expect(resolveSplitNode({ type: 'docked', segments: [] }, root, [])).toBe(root);
+  });
+
+  it('resolves inside the floating layer the path names', () => {
+    const path: DockPath = { type: 'floating', index: 0, segments: [] };
+    expect(resolveSplitNode(path, root, floating)).toBe(floatingRoot);
+  });
+
+  it('returns null for a path that lands on a stack, not a split', () => {
+    expect(resolveSplitNode({ type: 'docked', segments: [0] }, root, [])).toBeNull();
+  });
+
+  it('returns null rather than throwing when the path leaves the tree', () => {
+    // This is what makes a handle left over from a previous layout harmless:
+    // the lookup misses and the gesture does nothing.
+    expect(resolveSplitNode({ type: 'docked', segments: [9, 9] }, root, [])).toBeNull();
+  });
+
+  it('returns null for a floating index with no window', () => {
+    expect(resolveSplitNode({ type: 'floating', index: 7, segments: [] }, root, floating)).toBeNull();
+  });
+
+  it('returns null for a floating window whose root is null', () => {
+    const empty = [
+      { id: 'w', bounds: { left: 0, top: 0, width: 320, height: 200 }, zIndex: 1, root: null },
+    ];
+    expect(resolveSplitNode({ type: 'floating', index: 0, segments: [] }, root, empty)).toBeNull();
+  });
+
+  it('returns null for a docked path when there is no docked layout', () => {
+    expect(resolveSplitNode({ type: 'docked', segments: [] }, null, [])).toBeNull();
+  });
+});
+
+describe('normalizeFloatingLayout', () => {
+  const bounds = { left: 10, top: 20, width: 400, height: 300 };
+
+  it('passes complete bounds through unchanged', () => {
+    const result = normalizeFloatingLayout({ id: 'w', bounds, zIndex: 3, root: stack('a') });
+    expect(result.bounds).toEqual(bounds);
+    expect(result.zIndex).toBe(3);
+    expect(result.id).toBe('w');
+  });
+
+  it('substitutes a default box when bounds are missing entirely', () => {
+    const result = normalizeFloatingLayout({ id: 'w', zIndex: 1, root: null } as never);
+    expect(result.bounds).toEqual({ left: 0, top: 0, width: 320, height: 200 });
+  });
+
+  it.each([['left'], ['top']])('replaces a non-finite %s with 0', (key) => {
+    const result = normalizeFloatingLayout({
+      id: 'w',
+      zIndex: 1,
+      root: null,
+      bounds: { ...bounds, [key]: Number.NaN },
+    });
+    expect(result.bounds[key as 'left' | 'top']).toBe(0);
+  });
+
+  it('replaces non-finite width/height with the defaults, not the minimums', () => {
+    const result = normalizeFloatingLayout({
+      id: 'w',
+      zIndex: 1,
+      root: null,
+      bounds: { left: 0, top: 0, width: Number.NaN, height: Number.POSITIVE_INFINITY },
+    });
+    expect(result.bounds.width).toBe(320);
+    expect(result.bounds.height).toBe(200);
+  });
+
+  it('clamps a window smaller than its chrome can operate at', () => {
+    const result = normalizeFloatingLayout({
+      id: 'w',
+      zIndex: 1,
+      root: null,
+      bounds: { left: 0, top: 0, width: 10, height: 10 },
+    });
+    expect(result.bounds.width).toBe(160);
+    expect(result.bounds.height).toBe(120);
+  });
+
+  it('detaches the root so later edits cannot reach the caller tree', () => {
+    const original = stack('a', 'b');
+    const result = normalizeFloatingLayout({ id: 'w', bounds, zIndex: 1, root: original });
+    expect(result.root).not.toBe(original);
+    expect(result.root).toEqual(original);
+  });
+
+  it('keeps a null root null', () => {
+    expect(normalizeFloatingLayout({ id: 'w', bounds, zIndex: 1, root: null }).root).toBeNull();
+  });
+});
+
+describe('clonePath', () => {
+  it('copies a docked path without sharing its segments', () => {
+    const path: DockPath = { type: 'docked', segments: [1, 0] };
+    const copy = clonePath(path);
+    expect(copy).toEqual(path);
+    expect(copy.segments).not.toBe(path.segments);
+  });
+
+  it('preserves the window index of a floating path', () => {
+    const path: DockPath = { type: 'floating', index: 2, segments: [0] };
+    expect(clonePath(path)).toEqual(path);
+  });
+});
+
+describe('isOrIsAncestorOf', () => {
+  const docked = (...segments: number[]): DockPath => ({ type: 'docked', segments });
+  const floating = (index: number, ...segments: number[]): DockPath => ({
+    type: 'floating',
+    index,
+    segments,
+  });
+
+  it('is reflexive — a path is its own ancestor', () => {
+    // The dock refuses a drop into the subtree being dragged, and dropping a
+    // node onto itself has to be refused by the same test.
+    expect(isOrIsAncestorOf(docked(1, 0), docked(1, 0))).toBe(true);
+  });
+
+  it('recognises a proper ancestor', () => {
+    expect(isOrIsAncestorOf(docked(1), docked(1, 0, 2))).toBe(true);
+  });
+
+  it('the root is an ancestor of everything in its layer', () => {
+    expect(isOrIsAncestorOf(docked(), docked(3, 1))).toBe(true);
+  });
+
+  it('is not symmetric — a descendant is not an ancestor', () => {
+    expect(isOrIsAncestorOf(docked(1, 0), docked(1))).toBe(false);
+  });
+
+  it('rejects a sibling branch that shares a prefix length', () => {
+    expect(isOrIsAncestorOf(docked(1, 0), docked(1, 1))).toBe(false);
+  });
+
+  it('never relates paths in different layers', () => {
+    expect(isOrIsAncestorOf(docked(1), floating(0, 1))).toBe(false);
+    expect(isOrIsAncestorOf(floating(0, 1), docked(1))).toBe(false);
+  });
+
+  it('never relates different floating windows, even with identical segments', () => {
+    expect(isOrIsAncestorOf(floating(0), floating(1))).toBe(false);
+  });
+
+  it('relates paths within the same floating window', () => {
+    expect(isOrIsAncestorOf(floating(2), floating(2, 0, 1))).toBe(true);
   });
 });
