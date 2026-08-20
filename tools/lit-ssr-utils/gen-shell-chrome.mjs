@@ -14,6 +14,8 @@ import { writeFile } from 'node:fs/promises';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { resolve, dirname } from 'node:path';
 
+import { buildChromeModule, chromeConstant, extractDsdTemplate } from './lib/chrome-module.mjs';
+
 const here = dirname(fileURLToPath(import.meta.url));
 const repoRoot = resolve(here, '..', '..');
 
@@ -23,8 +25,8 @@ const { html } = await import('lit');
 await import(pathToFileURL(resolve(repoRoot, 'dist/libs/mintplayer-web-components/shell/index.mjs')).href);
 
 const full = await collectResult(render(html`<mp-shell></mp-shell>`));
-const match = full.match(/<template[^>]*shadowrootmode[^>]*>[\s\S]*?<\/template>/);
-if (!match) {
+const chrome = extractDsdTemplate(full);
+if (!chrome) {
   console.error('gen-shell-chrome: no DSD <template> in render output:\n', full);
   process.exit(1);
 }
@@ -33,11 +35,10 @@ const out = resolve(
   repoRoot,
   'libs/mintplayer-web-components/shell/ssr/mp-shell-chrome.generated.ts',
 );
-const content = `// AUTO-GENERATED — do not edit by hand.
-// Regenerate with: node tools/lit-ssr-utils/gen-shell-chrome.mjs
-// Source: the <mp-shell> Lit element rendered via @lit-labs/ssr.
-
-export const MP_SHELL_DSD_CHROME = ${JSON.stringify(match[0])};
-`;
+const content = buildChromeModule({
+  generator: 'gen-shell-chrome.mjs',
+  source: 'the <mp-shell> Lit element rendered via @lit-labs/ssr.',
+  declarations: [chromeConstant('MP_SHELL_DSD_CHROME', chrome)],
+});
 await writeFile(out, content, 'utf8');
-console.log(`gen-shell-chrome: wrote ${out} (${match[0].length} chars)`);
+console.log(`gen-shell-chrome: wrote ${out} (${chrome.length} chars)`);

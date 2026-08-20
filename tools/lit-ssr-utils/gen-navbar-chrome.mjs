@@ -10,6 +10,8 @@ import { writeFile } from 'node:fs/promises';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { resolve, dirname } from 'node:path';
 
+import { buildChromeModule, chromeConstant, extractDsdTemplate } from './lib/chrome-module.mjs';
+
 const here = dirname(fileURLToPath(import.meta.url));
 const repoRoot = resolve(here, '..', '..');
 
@@ -30,24 +32,23 @@ const ELEMENTS = [
 const lines = [];
 for (const { tag, constant, tpl } of ELEMENTS) {
   const full = await collectResult(render(tpl));
-  const match = full.match(/<template[^>]*shadowrootmode[^>]*>[\s\S]*?<\/template>/);
-  if (!match) {
+  const chrome = extractDsdTemplate(full);
+  if (!chrome) {
     console.error(`gen-navbar-chrome: no DSD <template> for <${tag}>:\n`, full);
     process.exit(1);
   }
-  lines.push(`export const ${constant} = ${JSON.stringify(match[0])};`);
-  console.log(`gen-navbar-chrome: <${tag}> chrome ${match[0].length} chars`);
+  lines.push(chromeConstant(constant, chrome));
+  console.log(`gen-navbar-chrome: <${tag}> chrome ${chrome.length} chars`);
 }
 
 const out = resolve(
   repoRoot,
   'libs/mintplayer-web-components/navbar/ssr/mp-navbar-chrome.generated.ts',
 );
-const content = `// AUTO-GENERATED — do not edit by hand.
-// Regenerate with: node tools/lit-ssr-utils/gen-navbar-chrome.mjs
-// Source: the navbar Lit elements rendered via @lit-labs/ssr.
-
-${lines.join('\n')}
-`;
+const content = buildChromeModule({
+  generator: 'gen-navbar-chrome.mjs',
+  source: 'the navbar Lit elements rendered via @lit-labs/ssr.',
+  declarations: lines,
+});
 await writeFile(out, content, 'utf8');
 console.log(`gen-navbar-chrome: wrote ${out}`);

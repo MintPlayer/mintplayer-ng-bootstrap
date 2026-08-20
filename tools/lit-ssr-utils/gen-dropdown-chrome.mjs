@@ -14,6 +14,8 @@ import { writeFile } from 'node:fs/promises';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { resolve, dirname } from 'node:path';
 
+import { buildChromeModule, chromeConstant, extractDsdTemplate } from './lib/chrome-module.mjs';
+
 const here = dirname(fileURLToPath(import.meta.url));
 const repoRoot = resolve(here, '..', '..');
 
@@ -37,24 +39,23 @@ const ELEMENTS = [
 const lines = [];
 for (const { tag, constant, tpl } of ELEMENTS) {
   const full = await collectResult(render(tpl));
-  const match = full.match(/<template[^>]*shadowrootmode[^>]*>[\s\S]*?<\/template>/);
-  if (!match) {
+  const chrome = extractDsdTemplate(full);
+  if (!chrome) {
     console.error(`gen-dropdown-chrome: no DSD <template> for <${tag}>:\n`, full);
     process.exit(1);
   }
-  lines.push(`export const ${constant} = ${JSON.stringify(match[0])};`);
-  console.log(`gen-dropdown-chrome: <${tag}> chrome ${match[0].length} chars`);
+  lines.push(chromeConstant(constant, chrome));
+  console.log(`gen-dropdown-chrome: <${tag}> chrome ${chrome.length} chars`);
 }
 
 const out = resolve(
   repoRoot,
   'libs/mintplayer-web-components/dropdown-menu/ssr/mp-dropdown-chrome.generated.ts',
 );
-const content = `// AUTO-GENERATED — do not edit by hand.
-// Regenerate with: node tools/lit-ssr-utils/gen-dropdown-chrome.mjs
-// Source: the dropdown Lit elements rendered via @lit-labs/ssr.
-
-${lines.join('\n')}
-`;
+const content = buildChromeModule({
+  generator: 'gen-dropdown-chrome.mjs',
+  source: 'the dropdown Lit elements rendered via @lit-labs/ssr.',
+  declarations: lines,
+});
 await writeFile(out, content, 'utf8');
 console.log(`gen-dropdown-chrome: wrote ${out}`);
