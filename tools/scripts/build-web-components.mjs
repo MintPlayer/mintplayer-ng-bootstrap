@@ -17,6 +17,10 @@
  * Idempotent: skips writes when generated content is byte-identical, so Nx
  * cache stays warm and git stays clean.
  *
+ * Side-effect-free on import: argv validation and the CLI work sit behind an
+ * isEntryPoint guard, and every path constant is a defaulted parameter, so a
+ * spec can drive the pieces against a temp tree without touching the workspace.
+ *
  * Usage:
  *   node tools/scripts/build-web-components.mjs <libRoot> [<libRoot> ...]
  */
@@ -24,7 +28,7 @@
 import { readFile, readdir } from 'node:fs/promises';
 import { existsSync } from 'node:fs';
 import { join, dirname, basename, relative, resolve } from 'node:path';
-import { fileURLToPath } from 'node:url';
+import { fileURLToPath, pathToFileURL } from 'node:url';
 import * as sass from 'sass';
 import chokidar from 'chokidar';
 import {
@@ -34,17 +38,17 @@ import {
   writeIfChanged,
 } from './lib/wc-codegen.mjs';
 
-const repoRoot = resolve(fileURLToPath(import.meta.url), '..', '..', '..');
-const args = process.argv.slice(2);
-const watchMode = args.includes('--watch');
-const libRoots = args.filter((a) => a !== '--watch');
+export const REPO_ROOT = resolve(fileURLToPath(import.meta.url), '..', '..', '..');
 
-if (libRoots.length === 0) {
-  console.error('build-web-components: at least one <libRoot> argument is required');
-  process.exit(1);
+/** Split argv into the `--watch` flag and the libRoot positionals. */
+export function parseArgs(argv) {
+  return {
+    watchMode: argv.includes('--watch'),
+    libRoots: argv.filter((a) => a !== '--watch'),
+  };
 }
 
-async function* walk(dir) {
+export async function* walk(dir) {
   let entries;
   try {
     entries = await readdir(dir, { withFileTypes: true });
@@ -63,7 +67,7 @@ async function* walk(dir) {
   }
 }
 
-async function findFiles(libRoot, predicate) {
+export async function findFiles(libRoot, predicate, repoRoot = REPO_ROOT) {
   const matches = [];
   const absRoot = resolve(repoRoot, libRoot);
   for await (const file of walk(absRoot)) {
@@ -77,9 +81,12 @@ async function findFiles(libRoot, predicate) {
 // because the WCs lived inside `libs/mintplayer-ng-bootstrap/.../web-components/`;
 // post-extraction the WCs are at `libs/mintplayer-web-components/...` and
 // the segment no longer exists, so we rely on the libRoot argument instead.
-const isElementHtml = (file) => file.endsWith('.element.html');
+export const isElementHtml = (file) => file.endsWith('.element.html');
 
-const isStylesScss = (file) => file.endsWith('.styles.scss');
+export const isStylesScss = (file) => file.endsWith('.styles.scss');
+
+/** Path separators normalised to posix, so generated headers are identical on every OS. */
+export const toPosix = (p) => p.replace(/\\/g, '/');
 
 // Bootstrap 5.3.x's SCSS triggers these Sass 3.0 deprecations (`@import`,
 // `mix()`/global builtins, `red()`/`green()`/`blue()`, `if()`, the legacy
@@ -94,7 +101,7 @@ const BOOTSTRAP_SILENCED_DEPRECATIONS = [
   'legacy-js-api',
 ];
 
-function compileScss(scssPath) {
+export function compileScss(scssPath, repoRoot = REPO_ROOT) {
   const result = sass.compile(scssPath, {
     style: 'expanded',
     sourceMap: false,
@@ -108,7 +115,7 @@ function compileScss(scssPath) {
   return result.css;
 }
 
-async function processElement(htmlPath) {
+export async function processElement(htmlPath, repoRoot = REPO_ROOT) {
   const dir = dirname(htmlPath);
   const base = basename(htmlPath, '.element.html');
   const scssPath = join(dir, `${base}.element.scss`);
@@ -121,57 +128,57 @@ async function processElement(htmlPath) {
   }
 
   const html = (await readFile(htmlPath, 'utf8')).trimEnd();
-  const css = compileScss(scssPath).trimEnd();
+  const css = compileScss(scssPath, repoRoot).trimEnd();
   const next = buildElementTemplateModule({
     css,
     html,
-    sourceHtmlRel: relative(dir, htmlPath).replace(/\\/g, '/'),
-    sourceScssRel: relative(dir, scssPath).replace(/\\/g, '/'),
+    sourceHtmlRel: toPosix(relative(dir, htmlPath)),
+    sourceScssRel: toPosix(relative(dir, scssPath)),
   });
 
   return { outPath, changed: await writeIfChanged(outPath, next) };
 }
 
-async function processStyles(scssPath) {
+export async function processStyles(scssPath, repoRoot = REPO_ROOT) {
   const dir = dirname(scssPath);
   const base = basename(scssPath, '.styles.scss');
   const outPath = join(dir, `${base}.styles.ts`);
   const exportName = `${toCamelCase(base)}Styles`;
 
-  const css = compileScss(scssPath).trimEnd();
+  const css = compileScss(scssPath, repoRoot).trimEnd();
   const next = buildStylesModule({
     css,
-    sourceScssRel: relative(dir, scssPath).replace(/\\/g, '/'),
+    sourceScssRel: toPosix(relative(dir, scssPath)),
     exportName,
   });
 
   return { outPath, changed: await writeIfChanged(outPath, next) };
 }
 
-async function runOnce() {
+export async function runOnce(libRoots, repoRoot = REPO_ROOT) {
   const elementHtml = [];
   const stylesScss = [];
 
   for (const libRoot of libRoots) {
-    elementHtml.push(...(await findFiles(libRoot, isElementHtml)));
-    stylesScss.push(...(await findFiles(libRoot, isStylesScss)));
+    elementHtml.push(...(await findFiles(libRoot, isElementHtml, repoRoot)));
+    stylesScss.push(...(await findFiles(libRoot, isStylesScss, repoRoot)));
   }
 
   if (elementHtml.length === 0 && stylesScss.length === 0) {
     console.log('build-web-components: no inputs found, nothing to do.');
-    return;
+    return { total: 0, changedCount: 0 };
   }
 
   let changedCount = 0;
   for (const html of elementHtml) {
-    const { outPath, changed } = await processElement(html);
-    const rel = relative(repoRoot, outPath).replace(/\\/g, '/');
+    const { outPath, changed } = await processElement(html, repoRoot);
+    const rel = toPosix(relative(repoRoot, outPath));
     console.log(`${changed ? 'wrote   ' : 'skipped '} ${rel}`);
     if (changed) changedCount++;
   }
   for (const scss of stylesScss) {
-    const { outPath, changed } = await processStyles(scss);
-    const rel = relative(repoRoot, outPath).replace(/\\/g, '/');
+    const { outPath, changed } = await processStyles(scss, repoRoot);
+    const rel = toPosix(relative(repoRoot, outPath));
     console.log(`${changed ? 'wrote   ' : 'skipped '} ${rel}`);
     if (changed) changedCount++;
   }
@@ -180,9 +187,10 @@ async function runOnce() {
   console.log(
     `build-web-components: ${total} input(s) processed, ${changedCount} written.`,
   );
+  return { total, changedCount };
 }
 
-function startWatchers() {
+function startWatchers(libRoots, repoRoot = REPO_ROOT) {
   // SCSS @import graph means any *.scss can affect compiled output (e.g. a
   // shared mixin under src/styles/). Watch every .scss + .html under each
   // libRoot, then filter by suffix so non-codegen edits don't trigger work.
@@ -201,7 +209,7 @@ function startWatchers() {
     inFlight = true;
     dirty = false;
     try {
-      await runOnce();
+      await runOnce(libRoots, repoRoot);
     } catch (err) {
       console.error(err.stack ?? err);
     } finally {
@@ -228,21 +236,31 @@ function startWatchers() {
 
   watcher.on('all', (_event, filepath) => {
     if (!matters(filepath)) return;
-    const rel = relative(repoRoot, filepath).replace(/\\/g, '/');
+    const rel = toPosix(relative(repoRoot, filepath));
     console.log(`build-web-components: change — ${rel}`);
     schedule();
   });
 }
 
-async function main() {
-  await runOnce();
+async function main(argv = process.argv.slice(2), repoRoot = REPO_ROOT) {
+  const { watchMode, libRoots } = parseArgs(argv);
+
+  if (libRoots.length === 0) {
+    console.error('build-web-components: at least one <libRoot> argument is required');
+    process.exit(1);
+  }
+
+  await runOnce(libRoots, repoRoot);
   if (watchMode) {
     console.log('build-web-components: watching for changes (Ctrl+C to stop)...');
-    startWatchers();
+    startWatchers(libRoots, repoRoot);
   }
 }
 
-main().catch((err) => {
-  console.error(err.stack ?? err);
-  process.exit(1);
-});
+const isEntryPoint = !!process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href;
+if (isEntryPoint) {
+  main().catch((err) => {
+    console.error(err.stack ?? err);
+    process.exit(1);
+  });
+}

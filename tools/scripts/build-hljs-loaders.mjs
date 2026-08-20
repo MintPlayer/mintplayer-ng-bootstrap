@@ -26,30 +26,45 @@
  * Idempotent: skips the write when byte-identical, so the Nx cache stays warm
  * and git stays clean.
  *
+ * Side-effect-free on import: the CLI work sits behind an isEntryPoint guard and
+ * every path is a defaulted parameter.
+ *
  * Usage:
  *   node tools/scripts/build-hljs-loaders.mjs
  */
 
-import { readFile, writeFile } from 'node:fs/promises';
+import { readFile } from 'node:fs/promises';
 import { existsSync } from 'node:fs';
 import { join, relative, resolve } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { createRequire } from 'node:module';
 import { buildHljsLoaderModule } from './lib/loader-maps.mjs';
+import { writeIfChanged } from './lib/wc-codegen.mjs';
 
-const repoRoot = resolve(fileURLToPath(import.meta.url), '..', '..', '..');
-const require = createRequire(pathToFileURL(join(repoRoot, 'package.json')));
-const outPath = join(
-  repoRoot,
-  'libs/mintplayer-web-components/code-snippet/src/hljs-loaders.generated.ts',
-);
-const commonPath = join(repoRoot, 'node_modules/highlight.js/lib/common.js');
+export const REPO_ROOT = resolve(fileURLToPath(import.meta.url), '..', '..', '..');
 
-/** The grammars `lib/common` registers — the set we make loadable. */
-async function readCommonIds() {
-  const src = await readFile(commonPath, 'utf8');
+/** A `require` rooted at the workspace, so hljs resolves from ITS node_modules. */
+export const requireFrom = (repoRoot = REPO_ROOT) =>
+  createRequire(pathToFileURL(join(repoRoot, 'package.json')));
+
+export function hljsPaths(repoRoot = REPO_ROOT) {
+  return {
+    outPath: join(repoRoot, 'libs/mintplayer-web-components/code-snippet/src/hljs-loaders.generated.ts'),
+    commonPath: join(repoRoot, 'node_modules/highlight.js/lib/common.js'),
+  };
+}
+
+/**
+ * The grammars `lib/common` registers — the set we make loadable. Pure over the
+ * source text, so a spec can hand it a snippet instead of the real file.
+ */
+export function parseCommonIds(src) {
   const ids = [...src.matchAll(/require\(['"]\.\/languages\/([\w-]+)['"]\)/g)].map((m) => m[1]);
   return [...new Set(ids)].sort();
+}
+
+async function readCommonIds(commonPath) {
+  return parseCommonIds(await readFile(commonPath, 'utf8'));
 }
 
 /**
@@ -58,7 +73,7 @@ async function readCommonIds() {
  * inside the language definition function's return value, and calling that
  * function needs the genuine hljs API object.
  */
-function collectAliases(ids) {
+export function collectAliases(ids, require = requireFrom()) {
   const hljs = require('highlight.js/lib/core');
   const failures = [];
   const entries = [];
@@ -76,13 +91,9 @@ function collectAliases(ids) {
   return { entries, failures };
 }
 
-async function writeIfChanged(path, next) {
-  const prev = existsSync(path) ? await readFile(path, 'utf8') : null;
-  if (prev !== next) await writeFile(path, next, 'utf8');
-  return prev !== next;
-}
+export async function main(repoRoot = REPO_ROOT) {
+  const { outPath, commonPath } = hljsPaths(repoRoot);
 
-async function main() {
   if (!existsSync(commonPath)) {
     console.error(
       `build-hljs-loaders: ${relative(repoRoot, commonPath)} not found — is highlight.js installed?`,
@@ -90,8 +101,8 @@ async function main() {
     process.exit(1);
   }
 
-  const ids = await readCommonIds();
-  const { entries, failures } = collectAliases(ids);
+  const ids = await readCommonIds(commonPath);
+  const { entries, failures } = collectAliases(ids, requireFrom(repoRoot));
 
   // A grammar that fails to register would silently vanish from the map and
   // degrade to auto-detect at runtime, so fail the build instead.
@@ -110,7 +121,10 @@ async function main() {
   );
 }
 
-main().catch((err) => {
-  console.error(err.stack ?? err);
-  process.exit(1);
-});
+const isEntryPoint = !!process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href;
+if (isEntryPoint) {
+  main().catch((err) => {
+    console.error(err.stack ?? err);
+    process.exit(1);
+  });
+}

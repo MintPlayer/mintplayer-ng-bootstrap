@@ -35,21 +35,27 @@
  *
  * Idempotent: skips byte-identical writes so the Nx cache stays warm.
  *
+ * Side-effect-free on import: the CLI work sits behind an isEntryPoint guard and
+ * every path is a defaulted parameter. The slicing itself is pure over the parsed
+ * metadata object, so a spec can drive it from a synthetic fixture.
+ *
  * Usage:
  *   node tools/scripts/build-phone-metadata.mjs
  */
 
-import { readFile, writeFile, mkdir, readdir, unlink } from 'node:fs/promises';
-import { existsSync } from 'node:fs';
+import { readFile, mkdir, readdir, unlink } from 'node:fs/promises';
 import { createRequire } from 'node:module';
 import { join, relative, resolve } from 'node:path';
-import { fileURLToPath } from 'node:url';
+import { fileURLToPath, pathToFileURL } from 'node:url';
+import { writeIfChanged } from './lib/wc-codegen.mjs';
 
 const require = createRequire(import.meta.url);
-const repoRoot = resolve(fileURLToPath(import.meta.url), '..', '..', '..');
-const coreSrc = join(repoRoot, 'libs/mintplayer-web-components/phone-core/src');
-const metadataDir = join(coreSrc, 'metadata');
-const loadersPath = join(coreSrc, 'metadata-loaders.generated.ts');
+export const REPO_ROOT = resolve(fileURLToPath(import.meta.url), '..', '..', '..');
+
+export function phonePaths(repoRoot = REPO_ROOT) {
+  const coreSrc = join(repoRoot, 'libs/mintplayer-web-components/phone-core/src');
+  return { coreSrc, metadataDir: join(coreSrc, 'metadata'), loadersPath: join(coreSrc, 'metadata-loaders.generated.ts') };
+}
 
 /**
  * The metadata format version this slicer understands. libphonenumber-js's own
@@ -57,7 +63,7 @@ const loadersPath = join(coreSrc, 'metadata-loaders.generated.ts');
  * of every field we reason about — so fail the build loudly rather than emit
  * plausible-looking chunks that validate the wrong digits.
  */
-const SUPPORTED_FORMAT_VERSION = 4;
+export const SUPPORTED_FORMAT_VERSION = 4;
 
 const HEADER = [
   '// AUTO-GENERATED — do not edit by hand.',
@@ -66,7 +72,7 @@ const HEADER = [
 ];
 
 /** Every country sharing `callingCode`, in the full table's order (index 0 is the "main" one). */
-function sliceFor(full, callingCode) {
+export function sliceFor(full, callingCode) {
   const members = full.country_calling_codes[callingCode];
   return {
     version: full.version,
@@ -79,9 +85,9 @@ function sliceFor(full, callingCode) {
 }
 
 /** `cc-1`, `cc-32`, … — a filename-safe, stable module name per calling code. */
-const chunkName = (callingCode) => `cc-${callingCode}`;
+export const chunkName = (callingCode) => `cc-${callingCode}`;
 
-function blockModule(callingCode, sliced) {
+export function blockModule(callingCode, sliced) {
   return [
     ...HEADER,
     `// Calling code +${callingCode}: ${Object.keys(sliced.countries).join(', ')}`,
@@ -95,7 +101,7 @@ function blockModule(callingCode, sliced) {
   ].join('\n');
 }
 
-function loaderModule(countryToCallingCode) {
+export function loaderModule(countryToCallingCode) {
   const codes = Object.keys(countryToCallingCode).sort();
   return [
     ...HEADER,
@@ -121,15 +127,21 @@ function loaderModule(countryToCallingCode) {
   ].join('\n');
 }
 
-/** Write only when the content changed, so Nx's cache and git stay quiet. */
-async function writeIfChanged(path, next) {
-  const prev = existsSync(path) ? await readFile(path, 'utf8') : null;
-  if (prev === next) return false;
-  await writeFile(path, next, 'utf8');
-  return true;
+/**
+ * Every selectable country mapped to its calling code, lowercased. '001' is
+ * libphonenumber's pseudo-country for non-geographic plans, which no selectable
+ * country uses.
+ */
+export function countryToCallingCodeMap(full) {
+  return Object.fromEntries(
+    Object.keys(full.countries)
+      .filter((iso2) => iso2 !== '001')
+      .map((iso2) => [iso2.toLowerCase(), full.countries[iso2][0]]),
+  );
 }
 
-async function main() {
+export async function main(repoRoot = REPO_ROOT) {
+  const { metadataDir, loadersPath } = phonePaths(repoRoot);
   const fullPath = require.resolve('libphonenumber-js/metadata.max.json');
   const full = JSON.parse(await readFile(fullPath, 'utf8'));
 
@@ -142,13 +154,7 @@ async function main() {
     process.exit(1);
   }
 
-  // '001' is libphonenumber's pseudo-country for non-geographic plans, which no
-  // selectable country uses.
-  const countryToCallingCode = Object.fromEntries(
-    Object.keys(full.countries)
-      .filter((iso2) => iso2 !== '001')
-      .map((iso2) => [iso2.toLowerCase(), full.countries[iso2][0]]),
-  );
+  const countryToCallingCode = countryToCallingCodeMap(full);
   const callingCodes = [...new Set(Object.values(countryToCallingCode))];
 
   await mkdir(metadataDir, { recursive: true });
@@ -175,7 +181,10 @@ async function main() {
   );
 }
 
-main().catch((err) => {
-  console.error(err.stack ?? err);
-  process.exit(1);
-});
+const isEntryPoint = !!process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href;
+if (isEntryPoint) {
+  main().catch((err) => {
+    console.error(err.stack ?? err);
+    process.exit(1);
+  });
+}

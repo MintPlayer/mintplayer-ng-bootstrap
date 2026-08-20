@@ -17,39 +17,46 @@
  * table `phone-core` selects countries from — so the two can never drift into
  * a country with a dial code but no flag (or a flag nothing can pick).
  *
+ * Side-effect-free on import: argv parsing and the CLI work sit behind an
+ * isEntryPoint guard, and every path is a defaulted parameter.
+ *
  * Usage:
  *   node tools/scripts/refresh-flags.mjs               # all dial-code countries
  *   node tools/scripts/refresh-flags.mjs --only=be,fr  # subset; skips pruning
  */
 
-import { readFile, writeFile, mkdir, readdir, unlink, rm } from 'node:fs/promises';
+import { readFile, mkdir, readdir, unlink, rm } from 'node:fs/promises';
 import { existsSync } from 'node:fs';
 import { execFileSync } from 'node:child_process';
 import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
-import { fileURLToPath } from 'node:url';
+import { fileURLToPath, pathToFileURL } from 'node:url';
 import { rawCountryData } from 'intl-tel-input/data';
+import { writeIfChanged } from './lib/wc-codegen.mjs';
 
-const repoRoot = resolve(fileURLToPath(import.meta.url), '..', '..', '..');
-const flagsRoot = join(repoRoot, 'libs/mintplayer-web-components/flags');
-const assetsDir = join(flagsRoot, 'src/assets');
+export const REPO_ROOT = resolve(fileURLToPath(import.meta.url), '..', '..', '..');
+
 /** Pinned deliberately: a refresh should be an intentional, reviewable bump. */
 const SOURCE_PKG = 'country-flag-icons';
 const SOURCE_VERSION = '1.6.20';
 
-const onlyArg = process.argv.slice(2).find((a) => a.startsWith('--only='));
-const only = onlyArg
-  ? new Set(onlyArg.slice('--only='.length).split(',').map((c) => c.trim().toLowerCase()).filter(Boolean))
-  : null;
-
-async function writeIfChanged(outPath, next) {
-  const prev = existsSync(outPath) ? await readFile(outPath, 'utf8') : null;
-  if (prev === next) return false;
-  await writeFile(outPath, next, 'utf8');
-  return true;
+export function flagPaths(repoRoot = REPO_ROOT) {
+  const flagsRoot = join(repoRoot, 'libs/mintplayer-web-components/flags');
+  return { flagsRoot, assetsDir: join(flagsRoot, 'src/assets') };
 }
 
-async function buildReadme({ version, license }, licensePathArg) {
+/**
+ * The `--only=` subset, lowercased and de-blanked, or null when absent —
+ * null means "full refresh", which is the only mode allowed to prune.
+ */
+export function parseOnly(argv) {
+  const onlyArg = argv.find((a) => a.startsWith('--only='));
+  return onlyArg
+    ? new Set(onlyArg.slice('--only='.length).split(',').map((c) => c.trim().toLowerCase()).filter(Boolean))
+    : null;
+}
+
+export async function buildReadme({ version, license }, licensePathArg) {
   const notice = (await readFile(licensePathArg, 'utf8')).trim();
   return [
     '# `@mintplayer/web-components/flags`',
@@ -107,7 +114,7 @@ async function buildReadme({ version, license }, licensePathArg) {
  * `npm pack` rather than `npm install`: it touches neither the lockfile nor
  * node_modules, so running a refresh cannot perturb the workspace.
  */
-async function resolveSource() {
+async function resolveSource(repoRoot = REPO_ROOT) {
   const local = join(repoRoot, 'node_modules', SOURCE_PKG);
   if (existsSync(join(local, '3x2'))) {
     return { dir: local, cleanup: async () => {} };
@@ -135,8 +142,18 @@ async function resolveSource() {
   return { dir: join(scratch, 'package'), cleanup: () => rm(scratch, { recursive: true, force: true }) };
 }
 
-async function main() {
-  const { dir: packageDir, cleanup } = await resolveSource();
+/** The dial-code countries to vendor, lowercased and sorted, narrowed by `only`. */
+export function wantedCodes(countryData, only) {
+  return countryData
+    .map(([iso2]) => iso2.toLowerCase())
+    .filter((iso2) => !only || only.has(iso2))
+    .sort();
+}
+
+export async function main(argv = process.argv.slice(2), repoRoot = REPO_ROOT) {
+  const only = parseOnly(argv);
+  const { flagsRoot, assetsDir } = flagPaths(repoRoot);
+  const { dir: packageDir, cleanup } = await resolveSource(repoRoot);
   const sourceDir = join(packageDir, '3x2');
   const licensePath = join(packageDir, 'LICENSE');
   if (!existsSync(sourceDir)) {
@@ -144,10 +161,7 @@ async function main() {
     process.exit(1);
   }
 
-  const wanted = rawCountryData
-    .map(([iso2]) => iso2.toLowerCase())
-    .filter((iso2) => !only || only.has(iso2))
-    .sort();
+  const wanted = wantedCodes(rawCountryData, only);
 
   const unknown = only ? [...only].filter((c) => !wanted.includes(c)) : [];
   if (unknown.length > 0) {
@@ -199,7 +213,10 @@ async function main() {
   );
 }
 
-main().catch((err) => {
-  console.error(err.stack ?? err);
-  process.exit(1);
-});
+const isEntryPoint = !!process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href;
+if (isEntryPoint) {
+  main().catch((err) => {
+    console.error(err.stack ?? err);
+    process.exit(1);
+  });
+}
