@@ -38,8 +38,10 @@ import {
   normalizeLayoutNode,
   normalizeSizesArray,
   normalizeSplitNode,
+  parseIntersectionPairs,
   parsePath,
   pathsEqual,
+  planIntersectionResize,
   removePaneFromStack,
   replaceNodeInTree,
   resizeFloatingBounds,
@@ -1104,101 +1106,55 @@ export class MintDockManagerElement extends LitElement {
 
   private onIntersectionDoubleClick(event: MouseEvent, handle: HTMLElement): void {
     event.preventDefault();
-    const pairsRaw = handle.dataset['pairs'];
-    const parsed: Array<{ h: { pathStr: string; index: number }; v: { pathStr: string; index: number } }>
-      = pairsRaw ? JSON.parse(pairsRaw) : [];
-    if (!Array.isArray(parsed) || parsed.length === 0) {
-      const k = handle.dataset['key'] ?? '';
-      const parts = k.split('|');
-      if (parts.length === 2) {
-        const [hPart, vPart] = parts;
-        const hi = hPart.lastIndexOf(':');
-        const vi = vPart.lastIndexOf(':');
-        if (hi > 0 && vi > 0) {
-          const hPathStr = hPart.slice(0, hi);
-          const vPathStr = vPart.slice(0, vi);
-          const hIdx = Number.parseInt(hPart.slice(hi + 1), 10);
-          const vIdx = Number.parseInt(vPart.slice(vi + 1), 10);
-          parsed.push({ h: { pathStr: hPathStr, index: hIdx }, v: { pathStr: vPathStr, index: vIdx } });
-        }
-      }
-    }
-    if (parsed.length === 0) return;
+    const pairs = parseIntersectionPairs(handle.dataset['pairs'], handle.dataset['key']);
+    if (pairs.length === 0) return;
 
-    const splitKeys = new Set<string>();
-    parsed.forEach((p) => { splitKeys.add(p.h.pathStr); splitKeys.add(p.v.pathStr); });
-    let hasStored = false;
-    splitKeys.forEach((k) => { if (this.previousSplitSizes.has(k)) hasStored = true; });
-
-    // Persist `node.sizes` (normalized) and push pixel sizes into the
-    // matching <mp-splitter> via setPanelSizes(). The splitter's panel
-    // wrappers live in its shadow DOM, so direct flex mutation is no
-    // longer an option.
-    const pushSizesToSplitter = (path: DockPath, normalized: number[]): void => {
-      const splitter = this.findSplitterByPath(path.segments);
-      if (!splitter) return;
-      const direction = (splitter.dataset['direction'] as 'horizontal' | 'vertical' | undefined) ?? 'horizontal';
-      const containerSize = direction === 'horizontal'
-        ? splitter.getBoundingClientRect().width
-        : splitter.getBoundingClientRect().height;
-      if (!Number.isFinite(containerSize) || containerSize <= 0) return;
-      const totalWeight = normalized.reduce((s, w) => s + Math.max(w, 0), 0);
-      if (totalWeight <= 0) return;
-      const px = normalized.map((w) => (Math.max(w, 0) / totalWeight) * containerSize);
-      (splitter as unknown as { setPanelSizes?: (sizes: number[]) => void })
-        .setPanelSizes?.(px);
-    };
-
-    const applySizes = (pathStr: string, dividerIndex: number, mutate: (sizes: number[], index: number) => number[]) => {
-      const path = parsePath(pathStr);
-      if (!path) return;
-      const node = this.resolveSplitNode(path);
-      if (!node) return;
-      const sizes = normalizeSizesArray(node.sizes ?? [], node.children.length);
-      const newSizes = mutate([...sizes], dividerIndex);
-      node.sizes = newSizes;
-      pushSizesToSplitter(path, newSizes);
-    };
-
-    if (hasStored) {
-      // Restore stored sizes
-      this.previousSplitSizes.forEach((sizes, pathStr) => {
+    const plan = planIntersectionResize(
+      pairs,
+      this.previousSplitSizes,
+      (pathStr) => {
         const path = parsePath(pathStr);
         const node = path ? this.resolveSplitNode(path) : null;
-        if (!node || !path) return;
-        const norm = normalizeSizesArray(sizes, node.children.length);
-        node.sizes = norm;
-        pushSizesToSplitter(path, norm);
-      });
-      this.previousSplitSizes.clear();
-    } else {
-      // Equalize the two panes adjacent to each divider and store previous sizes
-      const touched = new Set<string>();
-      parsed.forEach((p) => {
-        [p.h.pathStr, p.v.pathStr].forEach((key) => {
-          if (touched.has(key)) return;
-          const path = parsePath(key);
-          const node = path ? this.resolveSplitNode(path) : null;
-          if (node && Array.isArray(node.sizes)) {
-            this.previousSplitSizes.set(key, [...node.sizes]);
-          }
-          touched.add(key);
-        });
-        const equalize = (sizes: number[], idx: number): number[] => {
-          const total = (sizes[idx] ?? 0) + (sizes[idx + 1] ?? 0);
-          if (total <= 0) return sizes;
-          sizes[idx] = total / 2;
-          sizes[idx + 1] = total / 2;
-          const sum = sizes.reduce((a, s) => a + s, 0);
-          return sum > 0 ? sizes.map((s) => s / sum) : sizes;
-        };
-        applySizes(p.h.pathStr, p.h.index, equalize);
-        applySizes(p.v.pathStr, p.v.index, equalize);
-      });
-    }
+        return node ? { sizes: node.sizes, childCount: node.children.length } : null;
+      },
+    );
+
+    plan.remember.forEach(({ pathStr, sizes }) => this.previousSplitSizes.set(pathStr, sizes));
+    plan.writes.forEach(({ pathStr, sizes }) => {
+      const path = parsePath(pathStr);
+      const node = path ? this.resolveSplitNode(path) : null;
+      if (!node || !path) return;
+      node.sizes = sizes;
+      this.pushSizesToSplitter(path, sizes);
+    });
+    if (plan.clearStored) this.previousSplitSizes.clear();
 
     this.dispatchLayoutChanged();
     this.scheduleRenderIntersectionHandles();
+  }
+
+  /**
+   * Push normalized weights into the matching `<mp-splitter>` as pixel sizes.
+   * The splitter's panel wrappers live in its shadow DOM, so direct flex
+   * mutation is not an option.
+   *
+   * Returns without writing when the splitter has no measured size — which is
+   * every case under jsdom, and is why the double-click logic above had to move
+   * out of this method's shadow to become testable.
+   */
+  private pushSizesToSplitter(path: DockPath, normalized: number[]): void {
+    const splitter = this.findSplitterByPath(path.segments);
+    if (!splitter) return;
+    const direction = (splitter.dataset['direction'] as 'horizontal' | 'vertical' | undefined) ?? 'horizontal';
+    const containerSize = direction === 'horizontal'
+      ? splitter.getBoundingClientRect().width
+      : splitter.getBoundingClientRect().height;
+    if (!Number.isFinite(containerSize) || containerSize <= 0) return;
+    const totalWeight = normalized.reduce((s, w) => s + Math.max(w, 0), 0);
+    if (totalWeight <= 0) return;
+    const px = normalized.map((w) => (Math.max(w, 0) / totalWeight) * containerSize);
+    (splitter as unknown as { setPanelSizes?: (sizes: number[]) => void })
+      .setPanelSizes?.(px);
   }
 
   private beginFloatingDrag(
