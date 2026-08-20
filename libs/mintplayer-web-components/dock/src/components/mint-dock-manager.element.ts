@@ -225,65 +225,12 @@ export class MintDockManagerElement extends LitElement {
   // Localized snapping while dragging an intersection handle
   private cornerSnapXTargets: number[] = [];
   private cornerSnapYTargets: number[] = [];
-  // Debug: render snap markers while dragging
-  private showSnapMarkers = false;
   // Debug: assert every pane has a projection slot in shadow DOM after each
   // render. Off by default so production hosts pay no overhead; demo enables
   // it via the `debug-layout-integrity` attribute to catch layout-tree bugs
   // loudly during development.
   debugLayoutIntegrity = false;
 
-  private renderSnapMarkersForCorner(): void {
-    if (!this.showSnapMarkers) return;
-    const layer = this.shadowRoot?.querySelector<HTMLElement>('.dock-intersections-layer, .dock-intersection-layer');
-    if (!layer) return;
-    Array.from(layer.querySelectorAll('.dock-snap-marker')).forEach((el) => el.remove());
-    if (!this.cornerResizeState) return;
-    const rootRect = this.rootEl.getBoundingClientRect();
-    // Compute representative center lines from the dividers being resized.
-    // st.{hs,vs}[i].container is the <mp-splitter>; the divider lives in its
-    // shadow at getSplitterDividers(splitter)[index].
-    let centerX: number | null = null;
-    let centerY: number | null = null;
-    const st = this.cornerResizeState;
-    if (st.vs.length > 0) {
-      const v0 = st.vs[0];
-      const vDiv = this.getSplitterDividers(v0.container)[v0.index];
-      const vRect = vDiv?.getBoundingClientRect();
-      if (vRect) centerX = vRect.left + vRect.width / 2 - rootRect.left;
-    }
-    if (st.hs.length > 0) {
-      const h0 = st.hs[0];
-      const hDiv = this.getSplitterDividers(h0.container)[h0.index];
-      const hRect = hDiv?.getBoundingClientRect();
-      if (hRect) centerY = hRect.top + hRect.height / 2 - rootRect.top;
-    }
-    if (centerY != null) {
-      this.cornerSnapXTargets.forEach((sx) => {
-        const dot = this.documentRef.createElement('div');
-        dot.className = 'dock-snap-marker';
-        dot.style.left = `${sx}px`;
-        dot.style.top = `${centerY}px`;
-        layer.appendChild(dot);
-      });
-    }
-    if (centerX != null) {
-      this.cornerSnapYTargets.forEach((sy) => {
-        const dot = this.documentRef.createElement('div');
-        dot.className = 'dock-snap-marker';
-        dot.style.left = `${centerX}px`;
-        dot.style.top = `${sy}px`;
-        layer.appendChild(dot);
-      });
-    }
-  }
-
-  private clearSnapMarkers(): void {
-    if (!this.showSnapMarkers) return;
-    const layer = this.shadowRoot?.querySelector<HTMLElement>('.dock-intersections-layer, .dock-intersection-layer');
-    if (!layer) return;
-    Array.from(layer.querySelectorAll('.dock-snap-marker')).forEach((el) => el.remove());
-  }
   private pendingDragEndTimeout: number | NodeJS.Timeout | null = null;
   private previousSplitSizes: Map<string, number[]> = new Map();
 
@@ -427,11 +374,6 @@ export class MintDockManagerElement extends LitElement {
     super.attributeChangedCallback(name, _oldValue, newValue);
     if (name === 'layout') {
       this.layout = newValue ? this.parseLayout(newValue) : null;
-    } else if (name === 'debug-snap-markers') {
-      this.showSnapMarkers = !(newValue === null || newValue === 'false' || newValue === '0');
-      if (!this.showSnapMarkers) {
-        this.clearSnapMarkers();
-      }
     } else if (name === 'debug-layout-integrity') {
       this.debugLayoutIntegrity = !(newValue === null || newValue === 'false' || newValue === '0');
     }
@@ -1026,8 +968,6 @@ export class MintDockManagerElement extends LitElement {
     if (!handle.dataset['key']) {
       handle.dataset['key'] = handle.dataset['group'] ?? '';
     }
-    this.renderSnapMarkersForCorner();
-
     // Compute localized snap targets for this intersection
     try {
       const rootRect = this.rootEl.getBoundingClientRect();
