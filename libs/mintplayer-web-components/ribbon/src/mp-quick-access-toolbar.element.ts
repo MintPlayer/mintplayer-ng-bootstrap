@@ -94,12 +94,21 @@ export class MpQuickAccessToolbar extends LitElement {
   @property({ type: String, attribute: 'touch-mode', reflect: true })
   touchMode: 'on' | 'off' | 'auto' = 'auto';
 
+  /**
+   * The last `aria-label` this element wrote itself, so it can tell its own
+   * value apart from a consumer's. Without it, `connectedCallback`'s
+   * "don't clobber" guard is dead code: `updated()` runs whenever `label` is in
+   * the changed set, and a Lit property with a class-field default IS in that
+   * set on the very first update — so a consumer's own, typically localized,
+   * label was replaced before the first paint. Same rule as `mp-ribbon`'s
+   * `applyRegionLabel`.
+   */
+  private lastAppliedLabel: string | null = null;
+
   override connectedCallback(): void {
     super.connectedCallback();
     this.setAttribute('role', 'toolbar');
-    if (!this.hasAttribute('aria-label')) {
-      this.setAttribute('aria-label', this.label);
-    }
+    this.applyLabel();
     this.addEventListener('keydown', this.onKeyDown);
   }
 
@@ -109,9 +118,16 @@ export class MpQuickAccessToolbar extends LitElement {
   }
 
   override updated(changed: Map<string, unknown>): void {
-    if (changed.has('label')) {
-      this.setAttribute('aria-label', this.label);
+    if (changed.has('label')) this.applyLabel();
+  }
+
+  private applyLabel(): void {
+    const current = this.getAttribute('aria-label');
+    if (current !== null && current !== this.lastAppliedLabel && current !== this.label) {
+      return; // consumer-authored — never touch it
     }
+    this.setAttribute('aria-label', this.label);
+    this.lastAppliedLabel = this.label;
   }
 
   override render(): TemplateResult {

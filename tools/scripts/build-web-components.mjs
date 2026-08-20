@@ -21,12 +21,18 @@
  *   node tools/scripts/build-web-components.mjs <libRoot> [<libRoot> ...]
  */
 
-import { readFile, writeFile, readdir } from 'node:fs/promises';
+import { readFile, readdir } from 'node:fs/promises';
 import { existsSync } from 'node:fs';
 import { join, dirname, basename, relative, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import * as sass from 'sass';
 import chokidar from 'chokidar';
+import {
+  buildElementTemplateModule,
+  buildStylesModule,
+  toCamelCase,
+  writeIfChanged,
+} from './lib/wc-codegen.mjs';
 
 const repoRoot = resolve(fileURLToPath(import.meta.url), '..', '..', '..');
 const args = process.argv.slice(2);
@@ -75,13 +81,6 @@ const isElementHtml = (file) => file.endsWith('.element.html');
 
 const isStylesScss = (file) => file.endsWith('.styles.scss');
 
-function escapeForTemplateLiteral(input) {
-  return input
-    .replace(/\\/g, '\\\\')
-    .replace(/`/g, '\\`')
-    .replace(/\$\{/g, '\\${');
-}
-
 // Bootstrap 5.3.x's SCSS triggers these Sass 3.0 deprecations (`@import`,
 // `mix()`/global builtins, `red()`/`green()`/`blue()`, `if()`, the legacy
 // JS API). Upstream's fix PR (twbs/bootstrap#41112) was closed without
@@ -107,46 +106,6 @@ function compileScss(scssPath) {
     silenceDeprecations: BOOTSTRAP_SILENCED_DEPRECATIONS,
   });
   return result.css;
-}
-
-function toCamelCase(kebab) {
-  return kebab.replace(/-([a-z0-9])/g, (_, c) => c.toUpperCase());
-}
-
-function buildElementTemplateModule({ css, html, sourceHtmlRel, sourceScssRel }) {
-  return [
-    '// AUTO-GENERATED — do not edit by hand.',
-    `// Source: ${sourceHtmlRel} + ${sourceScssRel}`,
-    '// Regenerate with the codegen-wc Nx target.',
-    '',
-    "import { html, unsafeCSS } from 'lit';",
-    '',
-    `export const template = html\`${escapeForTemplateLiteral(html)}\`;`,
-    `export const styles = unsafeCSS(\`${escapeForTemplateLiteral(css)}\`);`,
-    '',
-  ].join('\n');
-}
-
-function buildStylesModule({ css, sourceScssRel, exportName }) {
-  return [
-    '// AUTO-GENERATED — do not edit by hand.',
-    `// Source: ${sourceScssRel}`,
-    '// Regenerate with the codegen-wc Nx target.',
-    '',
-    "import { unsafeCSS } from 'lit';",
-    '',
-    `export const ${exportName} = unsafeCSS(\`${escapeForTemplateLiteral(css)}\`);`,
-    `export default ${exportName};`,
-    '',
-  ].join('\n');
-}
-
-async function writeIfChanged(outPath, next) {
-  let prev = null;
-  if (existsSync(outPath)) prev = await readFile(outPath, 'utf8');
-  if (prev === next) return false;
-  await writeFile(outPath, next, 'utf8');
-  return true;
 }
 
 async function processElement(htmlPath) {

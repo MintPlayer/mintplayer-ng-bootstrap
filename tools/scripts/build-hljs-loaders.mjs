@@ -35,6 +35,7 @@ import { existsSync } from 'node:fs';
 import { join, relative, resolve } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { createRequire } from 'node:module';
+import { buildHljsLoaderModule } from './lib/loader-maps.mjs';
 
 const repoRoot = resolve(fileURLToPath(import.meta.url), '..', '..', '..');
 const require = createRequire(pathToFileURL(join(repoRoot, 'package.json')));
@@ -75,50 +76,6 @@ function collectAliases(ids) {
   return { entries, failures };
 }
 
-function buildModule(entries) {
-  // id first, then aliases — so a key collision between two grammars resolves
-  // to the grammar that owns the id rather than to whichever registered last.
-  const keys = new Map();
-  for (const { id } of entries) keys.set(id, id);
-  for (const { id, aliases } of entries) {
-    for (const alias of aliases) if (!keys.has(alias)) keys.set(alias, id);
-  }
-
-  const sorted = [...keys.entries()].sort(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0));
-
-  return [
-    '// AUTO-GENERATED — do not edit by hand.',
-    '// Source: node_modules/highlight.js/lib/common.js (+ each grammar\'s aliases)',
-    '// Regenerate with the codegen-wc Nx target.',
-    '',
-    "import type { LanguageFn } from 'highlight.js';",
-    '',
-    '/** Every language id and alias `<mp-code-snippet>` can load on demand. */',
-    `export type HljsLanguageKey =\n${sorted.map(([k]) => `  | '${k}'`).join('\n')};`,
-    '',
-    '/**',
-    ' * One lazy loader per language id AND alias, so `language="tsx"` and',
-    " * `language=\"html\"` resolve rather than falling through to auto-detect.",
-    ' * Several keys deliberately share a target (tsx/ts/mts/cts -> typescript).',
-    ' *',
-    ' * Each import is a static literal on purpose — see',
-    ' * tools/scripts/build-hljs-loaders.mjs.',
-    ' */',
-    'export const hljsLoaders: Record<HljsLanguageKey, () => Promise<LanguageFn>> = {',
-    ...sorted.map(
-      ([key, id]) =>
-        `  '${key}': () => import('highlight.js/lib/languages/${id}').then((m) => m.default),`,
-    ),
-    '};',
-    '',
-    '/** Canonical grammar id for a key, so one grammar is registered once. */',
-    'export const hljsLanguageIds: Record<HljsLanguageKey, string> = {',
-    ...sorted.map(([key, id]) => `  '${key}': '${id}',`),
-    '};',
-    '',
-  ].join('\n');
-}
-
 async function writeIfChanged(path, next) {
   const prev = existsSync(path) ? await readFile(path, 'utf8') : null;
   if (prev !== next) await writeFile(path, next, 'utf8');
@@ -145,7 +102,7 @@ async function main() {
   }
 
   const aliasCount = entries.reduce((n, e) => n + e.aliases.length, 0);
-  const wrote = await writeIfChanged(outPath, buildModule(entries));
+  const wrote = await writeIfChanged(outPath, buildHljsLoaderModule(entries));
 
   console.log(
     `build-hljs-loaders: ${entries.length} grammar(s) + ${aliasCount} alias(es) — ` +

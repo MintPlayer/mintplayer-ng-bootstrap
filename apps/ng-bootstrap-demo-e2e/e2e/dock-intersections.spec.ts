@@ -25,10 +25,14 @@ async function countHandlesForLayout(
 }
 
 test.describe('mint-dock-manager — cross-layer intersection-glyph regression', () => {
+  // Same readiness rule as dock-keyboard.spec.ts: wait for the shadow tree, not
+  // for the network to idle (it never does — HMR) and not for light-DOM text
+  // (the DSD chrome renders it before the element upgrades).
   test.beforeEach(async ({ page }) => {
     await page.goto('/enterprise/dock');
-    await page.waitForLoadState('networkidle', { timeout: 2000 }).catch(() => {
-      /* HMR keeps the socket open, so the network never idles: settle briefly, never hang */
+    await page.waitForFunction(() => {
+      const dock = document.querySelector('mint-dock-manager');
+      return !!dock?.shadowRoot?.querySelector('.dock-tab[data-tab-id]');
     });
   });
 

@@ -33,58 +33,13 @@ import { readFile, writeFile, readdir } from 'node:fs/promises';
 import { existsSync } from 'node:fs';
 import { join, relative, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { buildFlagBundleModule, buildFlagLoadersModule } from './lib/loader-maps.mjs';
 
 const repoRoot = resolve(fileURLToPath(import.meta.url), '..', '..', '..');
 const flagsSrc = join(repoRoot, 'libs/mintplayer-web-components/flags/src');
 const assetsDir = join(flagsSrc, 'assets');
 const loadersPath = join(flagsSrc, 'flag-loaders.generated.ts');
 const bundlePath = join(flagsSrc, 'all-flags.generated.ts');
-
-function buildLoadersModule(codes) {
-  return [
-    '// AUTO-GENERATED — do not edit by hand.',
-    '// Source: flags/src/assets/*.svg',
-    '// Regenerate with the codegen-wc Nx target.',
-    '',
-    // Carries the `*.svg?raw` module declaration into any program that includes
-    // this file. The WC lib gets it from `vite/client`; the framework wrapper
-    // libs type-check through the path mapping into here and do not.
-    '/// <reference path="./raw-svg.d.ts" />',
-    '',
-    '/** ISO 3166-1 alpha-2 code (lowercase) of every flag this package ships. */',
-    `export type CountryCode =\n${codes.map((c) => `  | '${c}'`).join('\n')};`,
-    '',
-    '/**',
-    ' * One lazy loader per flag. Each import is a static literal on purpose — see',
-    ' * tools/scripts/build-flag-loaders.mjs.',
-    ' */',
-    'export const flagLoaders: Record<CountryCode, () => Promise<string>> = {',
-    ...codes.map((c) => `  '${c}': () => import('./assets/${c}.svg?raw').then((m) => m.default),`),
-    '};',
-    '',
-  ].join('\n');
-}
-
-function buildBundleModule(entries) {
-  return [
-    '// AUTO-GENERATED — do not edit by hand.',
-    '// Source: flags/src/assets/*.svg',
-    '// Regenerate with the codegen-wc Nx target.',
-    '',
-    // Type-only, so this module carries no runtime dependency on the loader map
-    // and a bundler can keep the two delivery shapes independent.
-    "import type { CountryCode } from './flag-loaders.generated';",
-    '',
-    '/**',
-    ' * Every flag, inlined. Reached only through `loadAllFlags()`, so this whole',
-    ' * module is one lazy chunk — see tools/scripts/build-flag-loaders.mjs.',
-    ' */',
-    'export const allFlags: Readonly<Record<CountryCode, string>> = {',
-    ...entries.map(([c, svg]) => `  '${c}': ${JSON.stringify(svg)},`),
-    '};',
-    '',
-  ].join('\n');
-}
 
 async function writeIfChanged(path, next) {
   const prev = existsSync(path) ? await readFile(path, 'utf8') : null;
@@ -117,8 +72,8 @@ async function main() {
     codes.map(async (c) => [c, await readFile(join(assetsDir, `${c}.svg`), 'utf8')]),
   );
 
-  const wroteLoaders = await writeIfChanged(loadersPath, buildLoadersModule(codes));
-  const wroteBundle = await writeIfChanged(bundlePath, buildBundleModule(entries));
+  const wroteLoaders = await writeIfChanged(loadersPath, buildFlagLoadersModule(codes));
+  const wroteBundle = await writeIfChanged(bundlePath, buildFlagBundleModule(entries));
 
   const report = (wrote, path) =>
     `${wrote ? 'wrote  ' : 'skipped'} ${relative(repoRoot, path).replace(/\\/g, '/')}`;

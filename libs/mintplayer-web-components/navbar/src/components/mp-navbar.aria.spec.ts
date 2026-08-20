@@ -98,6 +98,82 @@ describe('mp-navbar toggler ARIA (disclosure button over the checkbox machine)',
     expect(toggle.getAttribute('aria-expanded')).toBe('false');
   });
 
+  /*
+   * The `expanded` PROPERTY, which is a separate road from the attribute above
+   * and the one the React and Vue wrappers actually travel. Both lower a
+   * `true` to the attribute *shape* `''` — the DSD chrome and the no-JS CSS
+   * select on attributes — but both frameworks prefer a property over an
+   * attribute for any name they find on the element's prototype, and `''` is
+   * falsy in JavaScript. The navbar closed itself when asked to open, in two
+   * frameworks of three; Angular escaped it only because it binds
+   * `[attr.expanded]`.
+   */
+  it('treats the empty string as ON, the way a boolean attribute does', async () => {
+    const el = makeNavbar();
+    document.body.appendChild(el);
+    await flush(el);
+    const toggle = el.shadowRoot!.querySelector<HTMLInputElement>('.navbar-toggle')!;
+
+    (el as unknown as { expanded: boolean | '' }).expanded = '';
+
+    expect(toggle.checked).toBe(true);
+    expect(toggle.getAttribute('aria-expanded')).toBe('true');
+    expect(el.expanded).toBe(true);
+  });
+
+  it('closes on a falsy property write', async () => {
+    const el = makeNavbar();
+    document.body.appendChild(el);
+    await flush(el);
+    const toggle = el.shadowRoot!.querySelector<HTMLInputElement>('.navbar-toggle')!;
+    el.expanded = true;
+
+    el.expanded = false;
+
+    expect(toggle.checked).toBe(false);
+    expect(el.expanded).toBe(false);
+  });
+
+  // A programmatic write is the consumer's own act, not a state change to
+  // announce back to them — and it used to fire, so a controlled binding got an
+  // echo of every value it had just set.
+  it('does not emit expandedchange for a programmatic write', async () => {
+    const el = makeNavbar();
+    document.body.appendChild(el);
+    await flush(el);
+    const seen: Event[] = [];
+    el.addEventListener('expandedchange', (e) => seen.push(e));
+
+    el.expanded = true;
+    el.setAttribute('expanded', '');
+
+    expect(seen).toHaveLength(0);
+  });
+
+  // The checkbox IS the state, and it does not exist until the first render, so
+  // a value that arrives before then has to be held. `<mp-navbar expanded>` in
+  // server-rendered HTML lands exactly here.
+  it('applies an expanded set before the first render', async () => {
+    const el = makeNavbar();
+    el.expanded = true;
+    document.body.appendChild(el);
+    await flush(el);
+
+    const toggle = el.shadowRoot!.querySelector<HTMLInputElement>('.navbar-toggle')!;
+    expect(toggle.checked).toBe(true);
+    expect(toggle.getAttribute('aria-expanded')).toBe('true');
+  });
+
+  it('applies an expanded ATTRIBUTE present before the first render', async () => {
+    const el = makeNavbar();
+    el.setAttribute('expanded', '');
+    document.body.appendChild(el);
+    await flush(el);
+
+    const toggle = el.shadowRoot!.querySelector<HTMLInputElement>('.navbar-toggle')!;
+    expect(toggle.checked).toBe(true);
+  });
+
   it('Enter toggles the collapse (native checkboxes only handle Space)', async () => {
     const el = makeNavbar();
     document.body.appendChild(el);

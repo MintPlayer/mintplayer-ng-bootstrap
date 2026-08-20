@@ -18,10 +18,37 @@ import {
   DockStackNode,
 } from '../types/dock-layout';
 import { template, styles } from './mint-dock-manager.element.template';
-
-type DockPath =
-  | { type: 'docked'; segments: number[] }
-  | { type: 'floating'; index: number; segments: number[] };
+// The dock's layout algebra and floating-window arithmetic, extracted so they
+// can be tested as data rather than through a jsdom tree where every rect
+// measures zero. See `../core`.
+import {
+  clampBoundsToHost,
+  cloneLayoutNode,
+  collectPaneNames,
+  dockNodeBeside,
+  findFirstPaneName,
+  findParentSplit,
+  floatingZIndex,
+  forEachStack,
+  formatPath,
+  getNodeAtPath,
+  insertWeight,
+  headerInsertIndex,
+  isPointWithinBounds,
+  normalizeLayoutNode,
+  normalizeSizesArray,
+  normalizeSplitNode,
+  parsePath,
+  pathsEqual,
+  removePaneFromStack,
+  replaceNodeInTree,
+  resizeFloatingBounds,
+  resizePair,
+  snapToNearestTarget,
+  type DockPath,
+  type DropZone,
+  type FloatingResizeEdges,
+} from '../core';
 
 type DockedLocation = { context: 'docked'; path: number[]; node: DockStackNode };
 type FloatingLocation = {
@@ -33,8 +60,6 @@ type FloatingLocation = {
 
 type ResolvedLocation = DockedLocation | FloatingLocation;
 
-type DropZone = 'center' | 'left' | 'right' | 'top' | 'bottom';
-
 /**
  * One enumerated keyboard drop target. `pathStr` is the `data-path` identity of
  * the target stack — the same string the pointer drop path parses off the
@@ -45,11 +70,6 @@ type PaneMoveCandidate = {
   pathStr: string | null;
   zone: DropZone | 'float';
   targetTitles: string;
-};
-
-type FloatingResizeEdges = {
-  horizontal: 'left' | 'right' | 'none';
-  vertical: 'top' | 'bottom' | 'none';
 };
 
 export class MintDockManagerElement extends LitElement {
@@ -334,7 +354,7 @@ export class MintDockManagerElement extends LitElement {
 
     // Tag the docked surface with a root path so it can act as
     // a drop target when the main layout is empty.
-    this.dockedEl.dataset['path'] = this.formatPath({ type: 'docked', segments: [] });
+    this.dockedEl.dataset['path'] = formatPath({ type: 'docked', segments: [] });
 
     // Drop targeting (drop indicator + joystick zone selection) runs entirely
     // off pointer-based hit-testing in updatePaneDragDropTargetFromPoint and
@@ -419,7 +439,7 @@ export class MintDockManagerElement extends LitElement {
 
   get layout(): DockLayoutSnapshot {
     return {
-      root: this.cloneLayoutNode(this.rootLayout),
+      root: cloneLayoutNode(this.rootLayout),
       floating: this.cloneFloatingArray(this.floatingLayouts),
       titles: { ...this.titles },
     };
@@ -455,7 +475,7 @@ export class MintDockManagerElement extends LitElement {
     const newJson = JSON.stringify(snapshot);
     if (currentJson === newJson) return;
 
-    this.rootLayout = this.cloneLayoutNode(snapshot.root);
+    this.rootLayout = cloneLayoutNode(snapshot.root);
     this.floatingLayouts = this.cloneFloatingArray(snapshot.floating);
     this.titles = snapshot.titles ? { ...snapshot.titles } : {};
     // Sanitize whatever the host fed us: empty stacks, 0/1-child splits, and
@@ -608,7 +628,7 @@ export class MintDockManagerElement extends LitElement {
     this.floatingLayouts.forEach((floating, index) => {
       const wrapper = this.documentRef.createElement('div');
       wrapper.classList.add('dock-floating');
-      wrapper.dataset['path'] = this.formatPath({
+      wrapper.dataset['path'] = formatPath({
         type: 'floating',
         index,
         segments: [],
@@ -623,7 +643,7 @@ export class MintDockManagerElement extends LitElement {
       wrapper.setAttribute('aria-labelledby', titleId);
       wrapper.setAttribute('aria-modal', 'false');
 
-      const { left, top, width, height } = this.clampBoundsToHost(floating.bounds, host);
+      const { left, top, width, height } = clampBoundsToHost(floating.bounds, host);
       wrapper.style.left = `${left}px`;
       wrapper.style.top = `${top}px`;
       wrapper.style.width = `${width}px`;
@@ -633,7 +653,7 @@ export class MintDockManagerElement extends LitElement {
       wrapper.style.minWidth = '0';
       wrapper.style.minHeight = '0';
 
-      const zIndex = this.getFloatingPaneZIndex(index);
+      const zIndex = floatingZIndex(this.floatingLayouts[index], index);
       wrapper.style.zIndex = String(zIndex);
 
       const chrome = this.documentRef.createElement('div');
@@ -670,7 +690,7 @@ export class MintDockManagerElement extends LitElement {
       } else {
         const placeholder = this.documentRef.createElement('div');
         placeholder.classList.add('dock-stack');
-        placeholder.dataset['path'] = this.formatPath({
+        placeholder.dataset['path'] = formatPath({
           type: 'floating',
           index,
           segments: [],
@@ -894,8 +914,8 @@ export class MintDockManagerElement extends LitElement {
       // reconstruct the (h, v) pair list, so the (h, v) args we pass here
       // are only used as a fallback when data-pairs is empty — safe to use
       // the first pair's structure as the seed.
-      const seedH = { path: this.parsePath(firstPair.h.pathStr), index: firstPair.h.index, container: this.findSplitterByPath(this.parsePath(firstPair.h.pathStr)?.segments ?? []) ?? this.rootEl, rect: new DOMRect() };
-      const seedV = { path: this.parsePath(firstPair.v.pathStr), index: firstPair.v.index, container: this.findSplitterByPath(this.parsePath(firstPair.v.pathStr)?.segments ?? []) ?? this.rootEl, rect: new DOMRect() };
+      const seedH = { path: parsePath(firstPair.h.pathStr), index: firstPair.h.index, container: this.findSplitterByPath(parsePath(firstPair.h.pathStr)?.segments ?? []) ?? this.rootEl, rect: new DOMRect() };
+      const seedV = { path: parsePath(firstPair.v.pathStr), index: firstPair.v.index, container: this.findSplitterByPath(parsePath(firstPair.v.pathStr)?.segments ?? []) ?? this.rootEl, rect: new DOMRect() };
       handle.addEventListener('pointerdown', (ev) => this.beginCornerResize(ev, seedH, seedV, handle));
       handle.addEventListener('dblclick', (ev) => this.onIntersectionDoubleClick(ev, handle));
       handle.addEventListener('keydown', (ev) => this.onIntersectionKeyDown(ev, handle));
@@ -941,7 +961,7 @@ export class MintDockManagerElement extends LitElement {
     // the splitter to its limit" convention on a horizontal layout).
     const drivesVerticalDivider = isVerticalAxis || isHomeEnd;
     const target = drivesVerticalDivider ? pairs[0].v : pairs[0].h;
-    const path = this.parsePath(target.pathStr);
+    const path = parsePath(target.pathStr);
     const splitter = this.findSplitterByPath(path?.segments ?? []) as unknown as
       | { resizeDividerBy?: (i: number, k: string, fine?: boolean) => void }
       | null;
@@ -964,7 +984,7 @@ export class MintDockManagerElement extends LitElement {
     const vs: Array<{ path: DockPath; index: number; container: HTMLElement; initialSizes: number[]; before: number; after: number }>=[];
 
     const ensureHV = (pathStr: string, index: number, axis: 'h'|'v') => {
-      const path = this.parsePath(pathStr);
+      const path = parsePath(pathStr);
       if (!path) return;
       const splitter = this.findSplitterByPath(path.segments);
       if (!splitter) return;
@@ -983,8 +1003,8 @@ export class MintDockManagerElement extends LitElement {
     if (parsed.length > 0) {
       parsed.forEach((p) => { ensureHV(p.h.pathStr, p.h.index, 'h'); ensureHV(p.v.pathStr, p.v.index, 'v'); });
     } else if (h.path && v.path) {
-      ensureHV(this.formatPath(h.path), h.index, 'h');
-      ensureHV(this.formatPath(v.path), v.index, 'v');
+      ensureHV(formatPath(h.path), h.index, 'h');
+      ensureHV(formatPath(v.path), v.index, 'v');
     }
     if (hs.length === 0 && vs.length === 0) return;
 
@@ -1065,35 +1085,21 @@ export class MintDockManagerElement extends LitElement {
     const state = this.cornerResizeState;
     if (!state || state.pointerId !== event.pointerId) return;
 
-    const snapValue = (val: number, total: number, active: boolean) => {
-      if (!active || total <= 0) return val;
-      const ratios = [1/3, 1/2, 2/3];
-      const r = val / total;
-      let best = ratios[0];
-      let d = Math.abs(r - best);
-      for (let i=1;i<ratios.length;i++){ const dd = Math.abs(r - ratios[i]); if (dd < d) { d = dd; best = ratios[i]; } }
-      return best * total;
-    };
-
-    // Axis snapping to nearby intersections
-    const tol = 10;
+    // Pull the pointer onto a nearby intersection so corners line up across
+    // splitters. Snap targets are stored relative to the dock, so they are
+    // offset into client coordinates before comparing.
+    const SNAP_TOLERANCE = 10;
     const rootRect = this.rootEl.getBoundingClientRect();
-    let clientX = event.clientX;
-    let clientY = event.clientY;
-    if (this.cornerSnapXTargets.length) {
-      let best = clientX, bestDist = tol + 1;
-      this.cornerSnapXTargets.forEach((sx) => {
-        const px = rootRect.left + sx; const d = Math.abs(px - clientX); if (d < bestDist) { bestDist = d; best = px; }
-      });
-      if (bestDist <= tol) clientX = best;
-    }
-    if (this.cornerSnapYTargets.length) {
-      let best = clientY, bestDist = tol + 1;
-      this.cornerSnapYTargets.forEach((sy) => {
-        const py = rootRect.top + sy; const d = Math.abs(py - clientY); if (d < bestDist) { bestDist = d; best = py; }
-      });
-      if (bestDist <= tol) clientY = best;
-    }
+    const clientX = snapToNearestTarget(
+      event.clientX,
+      this.cornerSnapXTargets.map((sx) => rootRect.left + sx),
+      SNAP_TOLERANCE,
+    );
+    const clientY = snapToNearestTarget(
+      event.clientY,
+      this.cornerSnapYTargets.map((sy) => rootRect.top + sy),
+      SNAP_TOLERANCE,
+    );
 
     // Apply the new pair sizes to one splitter's panel-wrappers via
     // mp-splitter's setPanelSizes(pixels) API. We persist the normalized
@@ -1111,14 +1117,17 @@ export class MintDockManagerElement extends LitElement {
     ): void => {
       const node = this.resolveSplitNode(entry.path);
       if (!node) return;
-      const minSize = 48;
-      const pairTotal = entry.beforeSize + entry.afterSize;
-      let newBefore = Math.min(Math.max(entry.beforeSize + delta, minSize), pairTotal - minSize);
-      newBefore = snapValue(newBefore, pairTotal, event.shiftKey);
-      const newAfter = pairTotal - newBefore;
+      const MIN_PANEL_PX = 48;
+      const { before, after } = resizePair(
+        entry.beforeSize,
+        entry.afterSize,
+        delta,
+        MIN_PANEL_PX,
+        event.shiftKey,
+      );
       const sizesPx = [...entry.initialSizes];
-      sizesPx[entry.index] = newBefore;
-      sizesPx[entry.index + 1] = newAfter;
+      sizesPx[entry.index] = before;
+      sizesPx[entry.index + 1] = after;
       const total = sizesPx.reduce((a, s) => a + s, 0);
       node.sizes = total > 0 ? sizesPx.map((s) => s / total) : [];
       (entry.container as unknown as { setPanelSizes?: (sizes: number[]) => void })
@@ -1201,11 +1210,11 @@ export class MintDockManagerElement extends LitElement {
     };
 
     const applySizes = (pathStr: string, dividerIndex: number, mutate: (sizes: number[], index: number) => number[]) => {
-      const path = this.parsePath(pathStr);
+      const path = parsePath(pathStr);
       if (!path) return;
       const node = this.resolveSplitNode(path);
       if (!node) return;
-      const sizes = this.normalizeSizesArray(node.sizes ?? [], node.children.length);
+      const sizes = normalizeSizesArray(node.sizes ?? [], node.children.length);
       const newSizes = mutate([...sizes], dividerIndex);
       node.sizes = newSizes;
       pushSizesToSplitter(path, newSizes);
@@ -1214,10 +1223,10 @@ export class MintDockManagerElement extends LitElement {
     if (hasStored) {
       // Restore stored sizes
       this.previousSplitSizes.forEach((sizes, pathStr) => {
-        const path = this.parsePath(pathStr);
+        const path = parsePath(pathStr);
         const node = path ? this.resolveSplitNode(path) : null;
         if (!node || !path) return;
-        const norm = this.normalizeSizesArray(sizes, node.children.length);
+        const norm = normalizeSizesArray(sizes, node.children.length);
         node.sizes = norm;
         pushSizesToSplitter(path, norm);
       });
@@ -1228,7 +1237,7 @@ export class MintDockManagerElement extends LitElement {
       parsed.forEach((p) => {
         [p.h.pathStr, p.v.pathStr].forEach((key) => {
           if (touched.has(key)) return;
-          const path = this.parsePath(key);
+          const path = parsePath(key);
           const node = path ? this.resolveSplitNode(path) : null;
           if (node && Array.isArray(node.sizes)) {
             this.previousSplitSizes.set(key, [...node.sizes]);
@@ -1268,7 +1277,7 @@ export class MintDockManagerElement extends LitElement {
 
     // Re-anchor intent to the currently-rendered (clamped) position so the
     // drag starts where the user sees the pane, not at a stale intent.
-    floating.bounds = this.clampBoundsToHost(floating.bounds, this.getHostSize());
+    floating.bounds = clampBoundsToHost(floating.bounds, this.getHostSize());
     const { left, top } = floating.bounds;
 
     try {
@@ -1339,41 +1348,18 @@ export class MintDockManagerElement extends LitElement {
     event.preventDefault();
     event.stopPropagation();
 
+    // One arrow press is `step` pixels of HANDLE movement in that direction —
+    // the same quantity a pointer drag reports — so both input paths resolve
+    // through one rule instead of each carrying its own copy of it.
     const step = event.shiftKey ? 1 : 10;
-    const host = this.getHostSize();
-    const minWidth = host.width > 0 ? Math.min(192, host.width) : 192;
-    const minHeight = host.height > 0 ? Math.min(128, host.height) : 128;
-    const bounds = { ...floating.bounds };
+    const bounds = resizeFloatingBounds(
+      floating.bounds,
+      edges,
+      { x: horizontalDelta * step, y: verticalDelta * step },
+      this.getHostSize(),
+    );
 
-    if (horizontalDelta !== 0) {
-      // For a LEFT handle an outward arrow (ArrowLeft) grows the pane.
-      const grow = edges.horizontal === 'left' ? -horizontalDelta * step : horizontalDelta * step;
-      let newWidth = Math.max(minWidth, bounds.width + grow);
-      if (edges.horizontal === 'left') {
-        newWidth = Math.min(newWidth, bounds.left + bounds.width);
-        bounds.left = bounds.left + bounds.width - newWidth;
-      } else if (host.width > 0) {
-        newWidth = Math.min(newWidth, host.width - bounds.left);
-      }
-      bounds.width = newWidth;
-    }
-    if (verticalDelta !== 0) {
-      const grow = edges.vertical === 'top' ? -verticalDelta * step : verticalDelta * step;
-      let newHeight = Math.max(minHeight, bounds.height + grow);
-      if (edges.vertical === 'top') {
-        newHeight = Math.min(newHeight, bounds.top + bounds.height);
-        bounds.top = bounds.top + bounds.height - newHeight;
-      } else if (host.height > 0) {
-        newHeight = Math.min(newHeight, host.height - bounds.top);
-      }
-      bounds.height = newHeight;
-    }
-
-    floating.bounds = bounds;
-    wrapper.style.left = `${bounds.left}px`;
-    wrapper.style.top = `${bounds.top}px`;
-    wrapper.style.width = `${bounds.width}px`;
-    wrapper.style.height = `${bounds.height}px`;
+    this.applyFloatingBounds(wrapper, index, bounds);
     this.syncFloatingResizerValue(resizer, index, edges);
     this.dispatchLayoutChanged();
   }
@@ -1404,7 +1390,7 @@ export class MintDockManagerElement extends LitElement {
 
     // Re-anchor intent to the currently-rendered (clamped) bounds so the
     // resize starts from where the user sees the pane.
-    floating.bounds = this.clampBoundsToHost(floating.bounds, this.getHostSize());
+    floating.bounds = clampBoundsToHost(floating.bounds, this.getHostSize());
 
     this.floatingResizeState = {
       index,
@@ -1434,7 +1420,7 @@ export class MintDockManagerElement extends LitElement {
 
     const deltaX = event.clientX - state.startX;
     const deltaY = event.clientY - state.startY;
-    const clamped = this.clampBoundsToHost(
+    const clamped = clampBoundsToHost(
       {
         left: state.startLeft + deltaX,
         top: state.startTop + deltaY,
@@ -1494,7 +1480,7 @@ export class MintDockManagerElement extends LitElement {
       return;
     }
 
-    const path = this.parsePath(stack.dataset['path']);
+    const path = parsePath(stack.dataset['path']);
     if (!path || (path.type === 'floating' && path.index === state.index)) {
       if (state.dropTarget) {
         delete state.dropTarget;
@@ -1527,51 +1513,39 @@ export class MintDockManagerElement extends LitElement {
       return;
     }
 
-    const deltaX = event.clientX - state.startX;
-    const deltaY = event.clientY - state.startY;
-    const host = this.getHostSize();
-    // Drop the 192/128 minimum when the host is smaller, so a tiny host
-    // can still hold a (cramped) pane rather than overflowing.
-    const minWidth = host.width > 0 ? Math.min(192, host.width) : 192;
-    const minHeight = host.height > 0 ? Math.min(128, host.height) : 128;
-    let newWidth = state.startWidth;
-    let newHeight = state.startHeight;
-    let newLeft = state.startLeft;
-    let newTop = state.startTop;
+    const bounds = resizeFloatingBounds(
+      {
+        left: state.startLeft,
+        top: state.startTop,
+        width: state.startWidth,
+        height: state.startHeight,
+      },
+      state.edges,
+      { x: event.clientX - state.startX, y: event.clientY - state.startY },
+      this.getHostSize(),
+    );
 
-    if (state.edges.horizontal === 'right') {
-      newWidth = Math.max(minWidth, state.startWidth + deltaX);
-      // Cap so right edge doesn't exceed host (left edge stays at startLeft).
-      if (host.width > 0) {
-        newWidth = Math.min(newWidth, host.width - state.startLeft);
-      }
-    } else if (state.edges.horizontal === 'left') {
-      newWidth = Math.max(minWidth, state.startWidth - deltaX);
-      // Cap width so left edge doesn't go below 0; preserves the right-edge
-      // anchor at state.startLeft + state.startWidth.
-      newWidth = Math.min(newWidth, state.startLeft + state.startWidth);
-      newLeft = state.startLeft + state.startWidth - newWidth;
-    }
+    this.applyFloatingBounds(state.wrapper, state.index, bounds);
+  }
 
-    if (state.edges.vertical === 'bottom') {
-      newHeight = Math.max(minHeight, state.startHeight + deltaY);
-      if (host.height > 0) {
-        newHeight = Math.min(newHeight, host.height - state.startTop);
-      }
-    } else if (state.edges.vertical === 'top') {
-      newHeight = Math.max(minHeight, state.startHeight - deltaY);
-      newHeight = Math.min(newHeight, state.startTop + state.startHeight);
-      newTop = state.startTop + state.startHeight - newHeight;
-    }
+  /**
+   * Commit resolved bounds to both the DOM and the layout. Written directly
+   * rather than through a re-render: a resize runs once per pointer move, and
+   * tearing the wrapper down would drop the pointer capture mid-gesture.
+   */
+  private applyFloatingBounds(
+    wrapper: HTMLElement,
+    index: number,
+    bounds: DockFloatingPaneBounds,
+  ): void {
+    wrapper.style.left = `${bounds.left}px`;
+    wrapper.style.top = `${bounds.top}px`;
+    wrapper.style.width = `${bounds.width}px`;
+    wrapper.style.height = `${bounds.height}px`;
 
-    state.wrapper.style.width = `${newWidth}px`;
-    state.wrapper.style.height = `${newHeight}px`;
-    state.wrapper.style.left = `${newLeft}px`;
-    state.wrapper.style.top = `${newTop}px`;
-
-    const floating = this.floatingLayouts[state.index];
+    const floating = this.floatingLayouts[index];
     if (floating) {
-      floating.bounds = { left: newLeft, top: newTop, width: newWidth, height: newHeight };
+      floating.bounds = bounds;
     }
   }
 
@@ -1598,36 +1572,11 @@ export class MintDockManagerElement extends LitElement {
     this.dispatchLayoutChanged();
   }
 
-  private getFloatingPaneZIndex(index: number): number {
-    const floating = this.floatingLayouts[index];
-    if (!floating) {
-      return 10 + index;
-    }
-    const base =
-      typeof floating.zIndex === 'number' && Number.isFinite(floating.zIndex)
-        ? floating.zIndex
-        : 10 + index;
-    return base;
-  }
-
   private getHostSize(): { width: number; height: number } {
     return {
       width: this.rootEl.clientWidth,
       height: this.rootEl.clientHeight,
     };
-  }
-
-  private clampBoundsToHost(
-    intent: DockFloatingPaneBounds,
-    host: { width: number; height: number },
-  ): DockFloatingPaneBounds {
-    // Host not yet measured: return intent so the next render (after ResizeObserver fires) clamps correctly.
-    if (host.width <= 0 || host.height <= 0) return intent;
-    const width = Math.min(intent.width, host.width);
-    const height = Math.min(intent.height, host.height);
-    const left = Math.min(Math.max(intent.left, 0), host.width - width);
-    const top = Math.min(Math.max(intent.top, 0), host.height - height);
-    return { left, top, width, height };
   }
 
   // Re-clamp existing floating-pane wrappers in place. Avoids the full
@@ -1639,7 +1588,7 @@ export class MintDockManagerElement extends LitElement {
     this.floatingLayouts.forEach((floating, index) => {
       const wrapper = this.floatingLayerEl.children[index] as HTMLElement | undefined;
       if (!wrapper) return;
-      const { left, top, width, height } = this.clampBoundsToHost(floating.bounds, host);
+      const { left, top, width, height } = clampBoundsToHost(floating.bounds, host);
       wrapper.style.left = `${left}px`;
       wrapper.style.top = `${top}px`;
       wrapper.style.width = `${width}px`;
@@ -1659,7 +1608,7 @@ export class MintDockManagerElement extends LitElement {
       if (!layout) {
         return max;
       }
-      const z = idx === index ? Number.NEGATIVE_INFINITY : this.getFloatingPaneZIndex(idx);
+      const z = idx === index ? Number.NEGATIVE_INFINITY : floatingZIndex(this.floatingLayouts[idx], idx);
       return Math.max(max, z);
     }, 0);
 
@@ -1669,7 +1618,7 @@ export class MintDockManagerElement extends LitElement {
   }
 
   private getFloatingWrapper(index: number): HTMLElement | null {
-    const selector = `.dock-floating[data-path="${this.formatPath({
+    const selector = `.dock-floating[data-path="${formatPath({
       type: 'floating',
       index,
       segments: [],
@@ -1709,7 +1658,7 @@ export class MintDockManagerElement extends LitElement {
       return fallback;
     }
 
-    const preferred = floating.activePane ?? this.findFirstPaneName(floating.root);
+    const preferred = floating.activePane ?? findFirstPaneName(floating.root);
     if (!preferred) {
       return fallback;
     }
@@ -1723,7 +1672,7 @@ export class MintDockManagerElement extends LitElement {
       return;
     }
 
-    const selector = `.dock-floating[data-path="${this.formatPath({
+    const selector = `.dock-floating[data-path="${formatPath({
       type: 'floating',
       index,
       segments: [],
@@ -1853,7 +1802,7 @@ export class MintDockManagerElement extends LitElement {
       typeof floatingIndex === 'number'
         ? { type: 'floating', index: floatingIndex, segments: [...path] }
         : { type: 'docked', segments: [...path] };
-    stack.dataset['path'] = this.formatPath(location);
+    stack.dataset['path'] = formatPath(location);
 
     const panes = Array.from(new Set(node.panes));
     if (panes.length === 0) {
@@ -2537,7 +2486,7 @@ export class MintDockManagerElement extends LitElement {
       const threshold = 8; // pixels to move before converting (tuned up)
       // Default to inside while bounds are unknown to avoid premature floating
       let insideHeader = true;
-      const insideByBounds = b ? this.isPointWithinBounds(b, clientX, clientY) : true;
+      const insideByBounds = b ? isPointWithinBounds(b, clientX, clientY) : true;
       const insideByHitTest = this.isPointerOverSourceHeader(clientX, clientY);
       insideHeader = insideByBounds || insideByHitTest;
       if (!insideHeader && dist > threshold) {
@@ -2578,7 +2527,7 @@ export class MintDockManagerElement extends LitElement {
     }
 
     const stack = this.findStackAtPoint(clientX, clientY);
-    const path = stack ? this.parsePath(stack.dataset['path']) : null;
+    const path = stack ? parsePath(stack.dataset['path']) : null;
     if (!stack || !path) {
       // While actively dragging, avoid hiding the indicator if it is visible.
       // Transient misses from hit-testing are common near the joystick.
@@ -2606,9 +2555,9 @@ export class MintDockManagerElement extends LitElement {
       this.dragState.floatingIndex !== null &&
       this.dragState.floatingIndex < 0 &&
       path &&
-      this.pathsEqual(path, this.dragState.sourcePath)
+      pathsEqual(path, this.dragState.sourcePath)
     ) {
-      const inHeaderByBounds = !!this.dragState.sourceHeaderBounds && this.isPointWithinBounds(this.dragState.sourceHeaderBounds, clientX, clientY);
+      const inHeaderByBounds = !!this.dragState.sourceHeaderBounds && isPointWithinBounds(this.dragState.sourceHeaderBounds, clientX, clientY);
       const inHeaderByHitTest = this.isPointerOverSourceHeader(clientX, clientY);
       if (inHeaderByBounds || inHeaderByHitTest) {
         // Ensure placeholder exists and move it as the pointer moves.
@@ -2651,14 +2600,6 @@ export class MintDockManagerElement extends LitElement {
     }
     const r = strip.getBoundingClientRect();
     return clientX >= r.left && clientX <= r.right && clientY >= r.top && clientY <= r.bottom;
-  }
-
-  private isPointWithinBounds(
-    bounds: { left: number; right: number; top: number; bottom: number },
-    x: number,
-    y: number,
-  ): boolean {
-    return x >= bounds.left && x <= bounds.right && y >= bounds.top && y <= bounds.bottom;
   }
 
   // Ensure a placeholder tab exists during in-header drag and hide the real dragged tab visually.
@@ -2906,7 +2847,7 @@ export class MintDockManagerElement extends LitElement {
         : 0;
     // Clamp the new floating pane to the host so a tab torn off near the
     // right/bottom edge lands fully inside the dock surface.
-    const clamped = this.clampBoundsToHost(
+    const clamped = clampBoundsToHost(
       { left: proposedLeft, top: proposedTop, width, height },
       this.getHostSize(),
     );
@@ -3027,23 +2968,16 @@ export class MintDockManagerElement extends LitElement {
       return 0;
     }
 
-    const rightBias = 12;
-    const leftBias = 0;
-
     const baseRect = placeholderButton ? placeholderButton.getBoundingClientRect() : null;
     const rectValid = !!baseRect && Number.isFinite(baseRect.width) && baseRect.width > 0;
     const draggedCenter = rectValid && baseRect ? baseRect.left + baseRect.width / 2 : null;
 
-    for (let i = 0; i < targets.length; i += 1) {
-      const rect = targets[i].getBoundingClientRect();
-      const baseMid = rect.left + rect.width / 2;
-      const isRightOfDragged = draggedCenter !== null ? baseMid >= draggedCenter : false;
-      const mid = isRightOfDragged ? baseMid + rightBias : baseMid - leftBias;
-      if (clientX < mid) {
-        return i;
-      }
-    }
-    return targets.length;
+    const midpoints = targets.map((target) => {
+      const rect = target.getBoundingClientRect();
+      return rect.left + rect.width / 2;
+    });
+
+    return headerInsertIndex(midpoints, clientX, draggedCenter);
   }
 
   private reorderPaneInLocationAtIndex(location: ResolvedLocation, pane: string, targetIndex: number): void {
@@ -3073,11 +3007,11 @@ export class MintDockManagerElement extends LitElement {
       return;
     }
     const stack = this.findStackAtPoint(clientX, clientY);
-    const stackPath = stack ? this.parsePath(stack.dataset['path']) : null;
+    const stackPath = stack ? parsePath(stack.dataset['path']) : null;
     const joystickVisible = this.dropJoystick.dataset['visible'] === 'true';
-    const joystickStoredPath = this.parsePath(this.dropJoystick.dataset['path']);
+    const joystickStoredPath = parsePath(this.dropJoystick.dataset['path']);
     const joystickTarget = this.dropJoystickTarget;
-    const joystickTargetPath = joystickTarget ? this.parsePath(joystickTarget.dataset['path']) : null;
+    const joystickTargetPath = joystickTarget ? parsePath(joystickTarget.dataset['path']) : null;
     const path = (joystickVisible ? (joystickStoredPath ?? joystickTargetPath) : null) ?? stackPath;
 
     const joystickZone = this.dropJoystick.dataset['zone'] as DropZone | undefined;
@@ -3093,7 +3027,7 @@ export class MintDockManagerElement extends LitElement {
       stack &&
       path &&
       stackPath &&
-      this.pathsEqual(stackPath, this.dragState.sourcePath) &&
+      pathsEqual(stackPath, this.dragState.sourcePath) &&
       (!zone || zone === 'center')
     ) {
       const location = this.resolveStackLocation(path);
@@ -3182,7 +3116,7 @@ export class MintDockManagerElement extends LitElement {
       return;
     }
 
-    if (zone === 'center' && this.pathsEqual(sourcePath, targetPath)) {
+    if (zone === 'center' && pathsEqual(sourcePath, targetPath)) {
       if (!source.node.panes.includes(pane)) {
         return;
       }
@@ -3217,7 +3151,7 @@ export class MintDockManagerElement extends LitElement {
     };
 
     if (target.context === 'docked') {
-      this.rootLayout = this.dockNodeBeside(this.rootLayout, target.node, newStack, zone);
+      this.rootLayout = dockNodeBeside(this.rootLayout, target.node, newStack, zone);
     } else {
       const floating = this.floatingLayouts[target.index];
       if (!floating) {
@@ -3227,7 +3161,7 @@ export class MintDockManagerElement extends LitElement {
         return;
       }
 
-      floating.root = this.dockNodeBeside(floating.root, target.node, newStack, zone);
+      floating.root = dockNodeBeside(floating.root, target.node, newStack, zone);
       floating.activePane = pane;
     }
 
@@ -3250,7 +3184,7 @@ export class MintDockManagerElement extends LitElement {
     // Allow dropping an entire floating stack onto an empty main dock area
     // (no existing root).
     if (!target && targetPath.type === 'docked' && !this.rootLayout) {
-      this.rootLayout = this.cloneLayoutNode(source.root);
+      this.rootLayout = cloneLayoutNode(source.root);
       this.removeFloatingAt(sourceIndex);
       this.normalizeAllLayouts();
       this.renderLayout();
@@ -3266,7 +3200,7 @@ export class MintDockManagerElement extends LitElement {
     }
 
     if (zone === 'center') {
-      const panes = this.collectPaneNames(source.root);
+      const panes = collectPaneNames(source.root);
       if (panes.length === 0) {
         return false;
       }
@@ -3278,7 +3212,7 @@ export class MintDockManagerElement extends LitElement {
       const activePane =
         source.activePane && panes.includes(source.activePane)
           ? source.activePane
-          : this.findFirstPaneName(source.root) ?? panes[0];
+          : findFirstPaneName(source.root) ?? panes[0];
 
       if (activePane) {
         this.setActivePaneForLocation(target, activePane);
@@ -3297,8 +3231,8 @@ export class MintDockManagerElement extends LitElement {
         return false;
       }
 
-      floating.root = this.dockNodeBeside(floating.root, target.node, source.root, zone);
-      floating.activePane = source.activePane ?? this.findFirstPaneName(source.root) ?? undefined;
+      floating.root = dockNodeBeside(floating.root, target.node, source.root, zone);
+      floating.activePane = source.activePane ?? findFirstPaneName(source.root) ?? undefined;
       this.removeFloatingAt(sourceIndex);
       this.normalizeAllLayouts();
       this.renderLayout();
@@ -3306,78 +3240,12 @@ export class MintDockManagerElement extends LitElement {
       return true;
     }
 
-    this.rootLayout = this.dockNodeBeside(this.rootLayout, target.node, source.root, zone);
+    this.rootLayout = dockNodeBeside(this.rootLayout, target.node, source.root, zone);
     this.removeFloatingAt(sourceIndex);
     this.normalizeAllLayouts();
     this.renderLayout();
     this.dispatchLayoutChanged();
     return true;
-  }
-
-  private insertWeight(sizes: number[] | undefined, index: number, totalChildren: number): number[] {
-    const existingCount = totalChildren - 1;
-    const normalized = this.normalizeSizesArray(sizes, existingCount);
-    const newWeight = 1 / totalChildren;
-    const remaining = 1 - newWeight;
-    const result: number[] = [];
-    for (let i = 0; i < totalChildren; i += 1) {
-      if (i === index) {
-        result.push(newWeight);
-      } else {
-        const sourceIndex = i < index ? i : i - 1;
-        result.push(normalized[sourceIndex] * remaining);
-      }
-    }
-    return result;
-  }
-
-  private removePaneFromStack(stack: DockStackNode, pane: string, skipCleanup = false): boolean {
-    stack.panes = stack.panes.filter((p) => p !== pane);
-    if (!stack.panes.includes(stack.activePane ?? '')) {
-      if (stack.panes.length > 0) {
-        stack.activePane = stack.panes[0];
-      } else {
-        delete stack.activePane;
-      }
-    }
-
-    if (stack.panes.length > 0) {
-      return false;
-    }
-
-    if (skipCleanup) {
-      return true;
-    }
-
-    this.normalizeAllLayouts();
-    return true;
-  }
-
-  private findParentSplit(
-    node: DockLayoutNode | null,
-    child: DockLayoutNode,
-  ): { parent: DockSplitNode; index: number } | null {
-    if (!node || node === child) {
-      return null;
-    }
-
-    if (node.kind !== 'split') {
-      return null;
-    }
-
-    const index = node.children.indexOf(child);
-    if (index !== -1) {
-      return { parent: node, index };
-    }
-
-    for (let i = 0; i < node.children.length; i += 1) {
-      const result = this.findParentSplit(node.children[i], child);
-      if (result) {
-        return result;
-      }
-    }
-
-    return null;
   }
 
   private computeDropZone(
@@ -3526,7 +3394,7 @@ export class MintDockManagerElement extends LitElement {
   }
 
   private showDropIndicator(stack: HTMLElement, zone: DropZone | null): void {
-    const targetPath = this.parsePath(stack.dataset['path']);
+    const targetPath = parsePath(stack.dataset['path']);
     const sourcePath = this.dragState?.sourcePath ?? null;
     if (targetPath && sourcePath && this.isOrIsAncestorOf(targetPath, sourcePath)) {
       // Don't show any drop indicators on the pane being dragged.
@@ -3540,10 +3408,10 @@ export class MintDockManagerElement extends LitElement {
 
     joystick.hidden = false;
 
-    const path = this.parsePath(stack.dataset['path']);
+    const path = parsePath(stack.dataset['path']);
     let overlayZ = 100;
     if (path && path.type === 'floating') {
-      overlayZ = this.getFloatingPaneZIndex(path.index) + 100;
+      overlayZ = floatingZIndex(this.floatingLayouts[path.index], path.index) + 100;
     }
     indicator.style.zIndex = String(overlayZ);
     joystick.style.zIndex = String(overlayZ + 1);
@@ -3736,29 +3604,9 @@ export class MintDockManagerElement extends LitElement {
     this.dispatchLayoutChanged();
   }
 
-  private getNodeAtPath(root: DockLayoutNode | null, path: number[]): DockLayoutNode | null {
-    if (!root) {
-      return null;
-    }
-
-    let current: DockLayoutNode | null = root;
-    if (path.length === 0) {
-      return current;
-    }
-
-    for (const segment of path) {
-      if (!current || current.kind !== 'split') {
-        return null;
-      }
-      current = current.children[segment] ?? null;
-    }
-
-    return current;
-  }
-
   private resolveSplitNode(path: DockPath): DockSplitNode | null {
     if (path.type === 'docked') {
-      const node = this.getNodeAtPath(this.rootLayout, path.segments);
+      const node = getNodeAtPath(this.rootLayout, path.segments);
       return node && node.kind === 'split' ? node : null;
     }
 
@@ -3767,133 +3615,8 @@ export class MintDockManagerElement extends LitElement {
       return null;
     }
 
-    const node = this.getNodeAtPath(floating.root, path.segments);
+    const node = getNodeAtPath(floating.root, path.segments);
     return node && node.kind === 'split' ? node : null;
-  }
-
-  private replaceNodeInTree(
-    root: DockLayoutNode | null,
-    target: DockLayoutNode,
-    replacement: DockLayoutNode,
-  ): DockLayoutNode | null {
-    if (!root) {
-      return replacement;
-    }
-
-    if (root === target) {
-      return replacement;
-    }
-
-    const parentInfo = this.findParentSplit(root, target);
-    if (!parentInfo) {
-      return root;
-    }
-
-    parentInfo.parent.children[parentInfo.index] = replacement;
-    this.normalizeSplitNode(parentInfo.parent);
-    return root;
-  }
-
-  private dockNodeBeside(
-    root: DockLayoutNode | null,
-    targetNode: DockStackNode,
-    newNode: DockLayoutNode,
-    zone: DropZone,
-  ): DockLayoutNode | null {
-    const orientation = zone === 'left' || zone === 'right' ? 'horizontal' : 'vertical';
-    const placeBefore = zone === 'left' || zone === 'top';
-    const parentInfo = this.findParentSplit(root, targetNode);
-
-    if (parentInfo && parentInfo.parent.direction === orientation) {
-      const insertIndex = placeBefore ? parentInfo.index : parentInfo.index + 1;
-      parentInfo.parent.children.splice(insertIndex, 0, newNode);
-      parentInfo.parent.sizes = this.insertWeight(
-        parentInfo.parent.sizes,
-        insertIndex,
-        parentInfo.parent.children.length,
-      );
-      return root ?? newNode;
-    }
-
-    const split: DockSplitNode = {
-      kind: 'split',
-      direction: orientation,
-      children: placeBefore ? [newNode, targetNode] : [targetNode, newNode],
-      sizes: [0.5, 0.5],
-    };
-
-    return this.replaceNodeInTree(root, targetNode, split);
-  }
-
-  private forEachStack(
-    node: DockLayoutNode | null,
-    visitor: (stack: DockStackNode, path: number[]) => void,
-    path: number[] = [],
-  ): void {
-    if (!node) {
-      return;
-    }
-
-    if (node.kind === 'stack') {
-      visitor(node, path);
-      return;
-    }
-
-    node.children.forEach((child, index) =>
-      this.forEachStack(child, visitor, [...path, index]),
-    );
-  }
-
-  private findStackContainingPane(
-    node: DockLayoutNode | null,
-    pane: string,
-  ): DockStackNode | null {
-    let result: DockStackNode | null = null;
-    this.forEachStack(node, (stack) => {
-      if (!result && stack.panes.includes(pane)) {
-        result = stack;
-      }
-    });
-    return result;
-  }
-
-  private findFirstPaneName(node: DockLayoutNode | null): string | null {
-    let found: string | null = null;
-    this.forEachStack(node, (stack) => {
-      if (found || stack.panes.length === 0) {
-        return;
-      }
-      if (stack.activePane && stack.panes.includes(stack.activePane)) {
-        found = stack.activePane;
-      } else {
-        found = stack.panes[0];
-      }
-    });
-    return found;
-  }
-
-  private collectFloatingPaneMetadata(
-    node: DockLayoutNode | null,
-  ): { panes: string[]; titles: Record<string, string> } {
-    // Deprecated method retained temporarily for signature compatibility.
-    // Use collectPaneNames instead.
-    const panes = this.collectPaneNames(node);
-    const titles: Record<string, string> = {};
-    panes.forEach((p) => {
-      const t = this.titles[p];
-      if (t) {
-        titles[p] = t;
-      }
-    });
-    return { panes, titles };
-  }
-
-  private collectPaneNames(node: DockLayoutNode | null): string[] {
-    const panes: string[] = [];
-    this.forEachStack(node, (stack) => {
-      stack.panes.forEach((pane) => panes.push(pane));
-    });
-    return panes;
   }
 
   private normalizeFloatingLayout(
@@ -3907,7 +3630,7 @@ export class MintDockManagerElement extends LitElement {
       height: Number.isFinite(bounds.height) ? Math.max(bounds.height, 120) : 200,
     };
 
-    const root = layout.root ? this.cloneLayoutNode(layout.root) : null;
+    const root = layout.root ? cloneLayoutNode(layout.root) : null;
 
     return {
       id: layout.id,
@@ -3916,18 +3639,6 @@ export class MintDockManagerElement extends LitElement {
       root,
       activePane: layout.activePane,
     };
-  }
-
-  private formatPath(path: DockPath): string {
-    if (path.type === 'floating') {
-      const suffix =
-        path.segments.length > 0
-          ? `/${path.segments.map((segment) => segment.toString()).join('/')}`
-          : '';
-      return `f:${path.index}${suffix}`;
-    }
-    const suffix = path.segments.join('/');
-    return suffix.length > 0 ? `d:${suffix}` : 'd:';
   }
 
   // Layer identity of a splitter in the rendered shadow tree. Splitters inside
@@ -3946,66 +3657,6 @@ export class MintDockManagerElement extends LitElement {
       return { type: 'floating', index: path.index, segments: [...path.segments] };
     }
     return { type: 'docked', segments: [...path.segments] };
-  }
-
-  private parsePath(path: string | null | undefined): DockPath | null {
-    // The root splitter is tagged with data-path="" (raw segments-join of an
-    // empty array) so empty string is a valid path representing root docked.
-    // Only null/undefined is "no path".
-    if (path == null) {
-      return null;
-    }
-
-    if (path.startsWith('f:')) {
-      const remainder = path.slice(2);
-      const [indexPart, ...segmentParts] = remainder.split('/');
-      const index = Number.parseInt(indexPart, 10);
-      if (!Number.isFinite(index)) {
-        return null;
-      }
-      const segments = segmentParts
-        .filter((segment) => segment.length > 0)
-        .map((segment) => Number.parseInt(segment, 10))
-        .filter((value) => Number.isFinite(value));
-      return { type: 'floating', index, segments };
-    }
-
-    const normalized = path.startsWith('d:') ? path.slice(2) : path;
-    if (normalized.length === 0) {
-      return { type: 'docked', segments: [] };
-    }
-
-    const segments = normalized
-      .split('/')
-      .filter((segment) => segment.length > 0)
-      .map((segment) => Number.parseInt(segment, 10))
-      .filter((value) => Number.isFinite(value));
-
-    return { type: 'docked', segments };
-  }
-
-  private pathsEqual(a: DockPath, b: DockPath): boolean {
-    if (a.type !== b.type) {
-      return false;
-    }
-
-    if (a.type === 'floating') {
-      const other = b as Extract<DockPath, { type: 'floating' }>;
-      if (a.index !== other.index) {
-        return false;
-      }
-      if (a.segments.length !== other.segments.length) {
-        return false;
-      }
-      return a.segments.every((value, index) => value === other.segments[index]);
-    }
-
-    const other = b as Extract<DockPath, { type: 'docked' }>;
-    if (a.segments.length !== other.segments.length) {
-      return false;
-    }
-
-    return a.segments.every((value, index) => value === other.segments[index]);
   }
 
   private isOrIsAncestorOf(ancestor: DockPath, descendant: DockPath): boolean {
@@ -4042,14 +3693,14 @@ export class MintDockManagerElement extends LitElement {
       if (!layout || !layout.root) {
         return null;
       }
-      const node = this.getNodeAtPath(layout.root, path.segments);
+      const node = getNodeAtPath(layout.root, path.segments);
       if (!node || node.kind !== 'stack') {
         return null;
       }
       return { context: 'floating', index: path.index, path: [...path.segments], node };
     }
 
-    const node = this.getNodeAtPath(this.rootLayout, path.segments);
+    const node = getNodeAtPath(this.rootLayout, path.segments);
     if (!node || node.kind !== 'stack') {
       return null;
     }
@@ -4063,7 +3714,11 @@ export class MintDockManagerElement extends LitElement {
     skipCleanup = false,
   ): boolean {
     if (location.context === 'docked') {
-      return this.removePaneFromStack(location.node, pane, skipCleanup);
+      const emptied = removePaneFromStack(location.node, pane);
+      if (emptied && !skipCleanup) {
+        this.normalizeAllLayouts();
+      }
+      return emptied;
     }
 
     return this.removePaneFromFloating(location.index, location.path, pane, skipCleanup);
@@ -4224,10 +3879,10 @@ export class MintDockManagerElement extends LitElement {
    * land exactly where a pointer drop on that stack would.
    */
   private buildPaneMoveCandidates(): PaneMoveCandidate[] {
-    const sourcePathStr = this.paneMoveMode ? this.formatPath(this.paneMoveMode.sourcePath) : null;
+    const sourcePathStr = this.paneMoveMode ? formatPath(this.paneMoveMode.sourcePath) : null;
     const stacks: { pathStr: string; targetTitles: string }[] = [];
-    this.forEachStack(this.rootLayout, (stack, path) => {
-      const pathStr = this.formatPath({ type: 'docked', segments: path });
+    forEachStack(this.rootLayout, (stack, path) => {
+      const pathStr = formatPath({ type: 'docked', segments: path });
       if (pathStr === sourcePathStr) return;
       stacks.push({
         pathStr,
@@ -4290,7 +3945,7 @@ export class MintDockManagerElement extends LitElement {
       this.commitPaneMoveAsFloat();
       return;
     }
-    this.commitPaneMoveToZone(candidate.zone, this.parsePath(candidate.pathStr));
+    this.commitPaneMoveToZone(candidate.zone, parsePath(candidate.pathStr));
   }
 
   /** Sole exit point for move mode: drops the arming AND any highlight together. */
@@ -4324,7 +3979,7 @@ export class MintDockManagerElement extends LitElement {
     if (!headerSpan) return null;
     const stack = headerSpan.closest<HTMLElement>('.dock-stack');
     if (!stack) return null;
-    const path = this.parsePath(stack.dataset['path']);
+    const path = parsePath(stack.dataset['path']);
     if (!path) return null;
     return { paneName: headerSpan.dataset['pane']!, sourcePath: path };
   }
@@ -4430,7 +4085,7 @@ export class MintDockManagerElement extends LitElement {
       return false;
     }
 
-    const node = this.getNodeAtPath(floating.root, path);
+    const node = getNodeAtPath(floating.root, path);
     if (!node || node.kind !== 'stack') {
       return false;
     }
@@ -4445,7 +4100,7 @@ export class MintDockManagerElement extends LitElement {
     }
 
     if (floating.activePane === pane) {
-      const fallback = this.findFirstPaneName(floating.root);
+      const fallback = findFirstPaneName(floating.root);
       if (fallback) {
         floating.activePane = fallback;
       } else {
@@ -4465,82 +4120,6 @@ export class MintDockManagerElement extends LitElement {
     return true;
   }
 
-  private normalizeSizesArray(sizes: number[] | undefined, count: number): number[] {
-    if (count <= 0) {
-      return [];
-    }
-
-    if (!Array.isArray(sizes) || sizes.length !== count) {
-      return Array.from({ length: count }, () => 1 / count);
-    }
-
-    const normalized = sizes.map((value) => (Number.isFinite(value) ? Math.max(value, 0) : 0));
-    const total = normalized.reduce((acc, value) => acc + value, 0);
-    if (total <= 0) {
-      return Array.from({ length: count }, () => 1 / count);
-    }
-
-    return normalized.map((value) => value / total);
-  }
-
-  private normalizeSplitNode(split: DockSplitNode): void {
-    split.sizes = this.normalizeSizesArray(split.sizes, split.children.length);
-  }
-
-  /**
-   * Bottom-up layout sanitizer. Returns a normalized version of `node` where:
-   * - Empty stacks (panes.length === 0) are dropped (returned as null).
-   * - A stack's `activePane` is repaired if it no longer references one of `panes`.
-   * - Splits whose direction matches a child split are flattened, with sizes
-   *   combined multiplicatively so the resulting on-screen pixel layout is
-   *   identical to the pre-merge one.
-   * - Splits with 0 children become null. Splits with 1 child are unwrapped.
-   *
-   * Idempotent: passing the result back through this method yields the same
-   * structure. Mutates the input tree in place but only returns nodes that
-   * remain part of the layout.
-   */
-  private normalizeLayoutNode(node: DockLayoutNode | null): DockLayoutNode | null {
-    if (!node) return null;
-
-    if (node.kind === 'stack') {
-      if (node.panes.length === 0) return null;
-      if (!node.activePane || !node.panes.includes(node.activePane)) {
-        node.activePane = node.panes[0];
-      }
-      return node;
-    }
-
-    const slotSizes = this.normalizeSizesArray(node.sizes, node.children.length);
-
-    // Pair each child with its slot weight, drop nulls, then expand any
-    // same-direction child split into its grandchildren with sizes scaled
-    // multiplicatively. A 0.4 slot containing [0.3, 0.7] becomes [0.12, 0.28].
-    const survivors = node.children
-      .map((child, i) => ({ child: this.normalizeLayoutNode(child), slot: slotSizes[i] }))
-      .filter((p): p is { child: DockLayoutNode; slot: number } => p.child !== null)
-      .flatMap(({ child, slot }) => {
-        if (child.kind === 'split' && child.direction === node.direction) {
-          const innerSizes = this.normalizeSizesArray(child.sizes, child.children.length);
-          return child.children.map((grandchild, idx) => ({
-            child: grandchild,
-            slot: slot * innerSizes[idx],
-          }));
-        }
-        return [{ child, slot }];
-      });
-
-    if (survivors.length === 0) return null;
-    if (survivors.length === 1) return survivors[0].child;
-
-    node.children = survivors.map((s) => s.child);
-    node.sizes = this.normalizeSizesArray(
-      survivors.map((s) => s.slot),
-      survivors.length,
-    );
-    return node;
-  }
-
   /**
    * Apply `normalizeLayoutNode` to `rootLayout` and every floating window's
    * root, drop floating windows whose root collapses to null, and repair
@@ -4549,16 +4128,16 @@ export class MintDockManagerElement extends LitElement {
    * pane removal) so the tree the renderer sees is always in canonical form.
    */
   private normalizeAllLayouts(): void {
-    this.rootLayout = this.normalizeLayoutNode(this.rootLayout);
+    this.rootLayout = normalizeLayoutNode(this.rootLayout);
 
     this.floatingLayouts = this.floatingLayouts
       .map((floating) => {
-        floating.root = this.normalizeLayoutNode(floating.root);
+        floating.root = normalizeLayoutNode(floating.root);
         if (!floating.root) return null;
 
-        const panes = this.collectPaneNames(floating.root);
+        const panes = collectPaneNames(floating.root);
         if (!floating.activePane || !panes.includes(floating.activePane)) {
-          const fallback = this.findFirstPaneName(floating.root);
+          const fallback = findFirstPaneName(floating.root);
           if (fallback) {
             floating.activePane = fallback;
           } else {
@@ -4594,8 +4173,8 @@ export class MintDockManagerElement extends LitElement {
     );
 
     const panes = [
-      ...this.collectPaneNames(this.rootLayout),
-      ...this.floatingLayouts.flatMap((f) => this.collectPaneNames(f.root)),
+      ...collectPaneNames(this.rootLayout),
+      ...this.floatingLayouts.flatMap((f) => collectPaneNames(f.root)),
     ];
 
     const missing = panes.find((pane) => !slotNames.has(pane));
@@ -4616,16 +4195,6 @@ export class MintDockManagerElement extends LitElement {
         composed: true,
       }),
     );
-  }
-
-  private cloneLayoutNode(layout: DockLayoutNode): DockLayoutNode;
-  private cloneLayoutNode(layout: DockLayoutNode | null): DockLayoutNode | null;
-  private cloneLayoutNode(layout: DockLayoutNode | null): DockLayoutNode | null {
-    if (!layout) {
-      return null;
-    }
-
-    return JSON.parse(JSON.stringify(layout)) as DockLayoutNode;
   }
 
   private cloneFloatingArray(

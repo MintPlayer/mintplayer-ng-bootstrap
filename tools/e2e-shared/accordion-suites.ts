@@ -113,8 +113,27 @@ export function accordionJsSuite(test: Test, expect: Expect, options: AccordionS
       await summary(outer, 0).click();
       await expect(item(outer, 0)).toHaveJSProperty('open', true);
 
-      // The inner accordion lives in the outer tab's body.
+      // The inner accordion lives in the outer tab's body, so it does not exist
+      // until the outer tab is open — which means `goto`'s readiness wait, which
+      // only covers the FIRST mp-accordion on the page, says nothing about it.
+      // Clicking before it has upgraded hits a summary whose handler is not yet
+      // attached and the assertion below fails. Measured as a Firefox flake on
+      // PR #405 (passed on retry #1).
       const inner = page.locator('[data-demo="nested"] mp-accordion mp-accordion').first();
+      await inner.evaluate((el) =>
+        customElements.whenDefined('mp-accordion').then(() =>
+          el.hasAttribute('data-js')
+            ? undefined
+            : new Promise<void>((resolve) => {
+                new MutationObserver((_, o) => {
+                  if (el.hasAttribute('data-js')) {
+                    o.disconnect();
+                    resolve();
+                  }
+                }).observe(el, { attributes: true, attributeFilter: ['data-js'] });
+              }),
+        ),
+      );
       await summary(inner, 0).click();
       await expect(item(inner, 0)).toHaveJSProperty('open', true);
 

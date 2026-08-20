@@ -15,6 +15,9 @@ export default defineConfig({
     fileParallelism: true,
     coverage: {
       provider: 'v8',
+      // Vitest 4 removed `coverage.all`: without an explicit `include`, a source
+      // file no test imports is absent from the report rather than 0%.
+      include: ['src/**/*.ts'],
       reporter: ['lcov'],
       reportsDirectory: '../../coverage/libs/mintplayer-pagination',
     },

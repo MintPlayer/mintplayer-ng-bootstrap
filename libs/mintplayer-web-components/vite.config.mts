@@ -1,5 +1,6 @@
 /// <reference types='vitest' />
 import { defineConfig } from 'vite';
+import { coverageConfigDefaults } from 'vitest/config';
 import dts from 'vite-plugin-dts';
 import { resolve } from 'node:path';
 import { nxViteTsPaths } from '@nx/vite/plugins/nx-tsconfig-paths.plugin';
@@ -76,6 +77,19 @@ export default defineConfig(() => {
       coverage: {
         reportsDirectory: '../../coverage/libs/mintplayer-web-components',
         provider: 'v8' as const,
+        // Vitest 4 removed `coverage.all`: without an explicit `include`, a source
+        // file no test imports is absent from the report rather than 0%.
+        include: ['**/*.ts'],
+        exclude: [
+          ...coverageConfigDefaults.exclude,
+          '**/*.d.ts',
+          '**/test-setup.ts',
+          // Codegen output (gitignored build artifacts), not authored source.
+          '**/*.styles.ts',
+          '**/*.element.template.ts',
+          '**/*.generated.ts',
+          'phone-core/src/metadata/**',
+        ],
         // Without this, Vitest's default reporters apply and no lcov.info is
         // written — clover/json aren't parsed server-side.
         reporter: ['lcov'],

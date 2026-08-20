@@ -4,8 +4,15 @@ export class BitMatrix {
 			throw new Error('BitMatrix size must be defined and greater than 0');
 		}
 
-		this.data = Array(size * size).map(_ => false);
-		this.reservedBit = Array(size * size).map(_ => false);
+		// `.fill`, not `.map`: `Array(n)` is SPARSE, and `map` skips holes — so
+		// `Array(n).map(() => false)` returns another sparse array of length n
+		// containing nothing at all. `get` survived that (a hole reads falsy),
+		// but `xor` did not: `undefined !== false` is `true`, so XOR-ing an
+		// unwritten module with 0 turned it ON. Latent in the encoder, because
+		// every module is written before masking runs — but this class is
+		// exported, and the intent was never in doubt.
+		this.data = new Array<boolean>(size * size).fill(false);
+		this.reservedBit = new Array<boolean>(size * size).fill(false);
 	}
 
 	public data: boolean[];
