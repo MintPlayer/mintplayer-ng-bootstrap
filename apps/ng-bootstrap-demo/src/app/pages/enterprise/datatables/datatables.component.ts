@@ -9,6 +9,8 @@ import {
   DatatableSettings,
 } from '@mintplayer/ng-bootstrap/datatable';
 import { BsSelectComponent, BsSelectOption } from '@mintplayer/ng-bootstrap/select';
+import { BsBadgeComponent } from '@mintplayer/ng-bootstrap/badge';
+import { Color } from '@mintplayer/ng-bootstrap';
 import { BsCodeSnippetComponent } from '@mintplayer/ng-bootstrap/code-snippet';
 import { dedent } from 'ts-dedent';
 import { Artist } from '../../../entities/artist';
@@ -24,11 +26,14 @@ import { TreeItemService } from '../../../services/tree-item/tree-item.service';
     FormsModule,
     BsDatatableComponent, BsDatatableColumnDirective, BsRowTemplateDirective,
     BsSelectComponent, BsSelectOption,
+    BsBadgeComponent,
     BsCodeSnippetComponent,
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class DatatablesComponent {
+
+  colors = Color;
 
   private artistService = inject(ArtistService);
   private treeItemService = inject(TreeItemService);

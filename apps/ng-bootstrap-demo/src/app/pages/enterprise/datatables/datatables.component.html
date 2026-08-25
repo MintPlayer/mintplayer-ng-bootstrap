@@ -32,7 +32,7 @@
   <ng-container *bsRowTemplate="let artist">
     <td class="text-nowrap">{{ $any(artist)?.name }}</td>
     <td class="text-nowrap">{{ $any(artist)?.yearStarted }}</td>
-    <td class="text-nowrap">{{ $any(artist)?.yearQuit }}</td>
+    <td class="text-nowrap"><bs-badge [type]="colors.danger">{{ $any(artist)?.yearQuit }}</bs-badge></td>
   </ng-container>
 </bs-datatable>
 
