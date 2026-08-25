@@ -798,6 +798,70 @@ drifts on every Bootstrap upgrade with nothing to catch it — the same objectio
 structurally unavailable. *Mitigation:* pin the Bootstrap minor, and add a
 visual-diff test against a plain `.table`.
 
+### 19.5 Two style channels — and D7 was on the wrong one
+
+**Correction.** D7 said `card-global.styles.scss` should move into `mp-card`'s
+shadow sheet. **That is impossible** for the same reason §19.3's naive
+`mp-table` import is: `.card-title` sits inside `.card-body`, and `::slotted()`
+cannot reach a grandchild.
+
+Measured on a blank page (background-colour only), with `.card-body` and
+`.card-title` rules in `document.head`:
+
+| | `.card-body` (depth 1) | `.card-title` (depth 2) | children's root |
+|---|---|---|---|
+| `mp-card` at top level | ✅ applied | ✅ applied | `document` |
+| `mp-card` inside another WC's shadow root | ❌ | ❌ | that shadow root |
+
+**The document sheet has no depth limit.** The depth-1 restriction is
+`::slotted()`'s, i.e. a limit on the *component's* sheet, not the document's.
+What actually decides reachability is **which tree the light-DOM children belong
+to** — and slotting never moves a node between trees.
+
+So the principle, which resolves both card and table:
+
+| markup owned by | styled from | works when |
+|---|---|---|
+| the **component** (its shadow tree) | its own shadow sheet | always, any nesting |
+| the **consumer** (light DOM / slotted) | the **document** sheet | while the component is in the document tree |
+
+Consumer-written markup on the document sheet is the *correct* channel, not a
+hack. What is a hack in `mp-card` is the **delivery**: a runtime
+`document.head` injection (`mp-card.element.ts:56-71`) that is JS-only and gives
+no SSR output.
+
+**Revised D7:** ship the card rules **statically** by uncommenting
+`_bootstrap.scss:74`, and delete `ensureCardStylesInjected()`. That closes the
+SSR hole without inventing anything — consumers already import `_bootstrap.scss`.
+`mp-card`'s `:host` chrome stays in its shadow sheet where it belongs.
+
+The residual: a card nested inside another WC's shadow root still loses its
+interior. After D1 that only happens if *library* code renders a card into a
+shadow root — none does. If it ever needs to be nesting-proof, the fix is the
+§19.3 shape: make the sub-parts their own self-styling elements. Not now.
+
+### 19.6 This reopens D10's scope — and splits it in two
+
+The same principle distinguishes two things I had merged:
+
+- **`mp-datatable` owns its table structure**; the consumer supplies only cell
+  *contents*. So it cannot rely on the document sheet for structure → D2's grid
+  + subgrid + slotted cells stands, unchanged.
+- **`bs-table` is the opposite**: the consumer writes the whole
+  `<table><tr><td>`. That is consumer markup, so the document sheet is the
+  natural channel — **uncomment `_bootstrap.scss:38`** and `bs-table` becomes a
+  near-empty wrapper. No `mp-tr`/`mp-td` family, no hand-rewritten Bootstrap CSS,
+  and **R8 disappears** along with the drift risk.
+
+**Revised D10:** ship `tables` globally for `bs-table`; do **not** build an
+`mp-table`/`mp-tr`/`mp-td` family. Build it only if a table must work inside
+another shadow root, which nothing today requires.
+
+This is the third reversal on this question and the cheapest answer yet, so it
+deserves the scepticism: the thing that changed is the measurement in §19.5 —
+that the document sheet reaches slotted content at *any* depth. Every earlier
+round assumed the `::slotted()` depth-1 limit applied to both channels.
+
 ### 19.4 Measurement discipline (learned the hard way, twice)
 
 **Assert on `background-color` only.** In this codebase's probes, `padding` was
