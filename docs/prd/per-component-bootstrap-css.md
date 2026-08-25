@@ -183,7 +183,43 @@ Measured. This is the complete toolkit; every design decision below picks from i
 | `@keyframes` crossing a boundary | ❌ tree-scoped; duplicate into each root |
 | a `<slot>` inside `<tr>`, or `slot { display: table-row-group }` | ❌ table layout does not cross the flat tree |
 
-### 4.1 The two positional traps
+### 4.1 The slot-per-nesting-level rule
+
+This is the constraint that decides how many elements a component needs, and it
+is worth stating precisely because it is easy to get wrong in both directions.
+
+**A shadow stylesheet's ordinary selectors match only nodes in its own shadow
+tree.** Slotted content is *not* in the shadow tree — it stays in the document
+and is merely *rendered* at the slot's position. Measured, with Bootstrap's own
+`.card-title { … }` rule (a bare class, `_card.scss:77`) placed verbatim in a
+shadow sheet:
+
+| element | lives in | bare `.card-title` matched | `::slotted(.card-title)` matched |
+|---|---|---|---|
+| rendered **by** the component | shadow tree | ✅ | — |
+| slotted, **direct** child | document | ❌ | ✅ |
+| slotted, **nested one level** | document | ❌ | ❌ |
+
+So the depth-1 limit is **`::slotted()`'s, not Bootstrap's** — the selector shape
+upstream is irrelevant. And `::slotted()` must end its compound: measured,
+`.card-body ::slotted(div) .card-title` matches nothing.
+
+**Therefore: a slot reaches one level, a slot needs an element that owns a shadow
+root, and so every nesting level the consumer can template into needs its own
+element.**
+
+The escape hatch — have the WC *render* the wrapper and take only text — is
+**closed by requirement**: consumers must be able to pass templates, not
+strings. So it cannot be used to avoid an element.
+
+The only alternative is to let each framework wrapper carry the CSS itself
+(Angular emulated styles reach light DOM at any depth). **Rejected:** it means
+the same stylesheet written three times — precisely the drift this PRD documents
+elsewhere (six mutually different `.visually-hidden` bodies, §3.5) — and it
+fails the moment the component is nested inside another WC's shadow root, which
+is the failure mode the PRD exists to remove.
+
+### 4.2 The two positional traps
 
 **`:host(:first-of-type)` is framework-conditional and fails loudly.** Measured
 (§15.3): with direct children (React/Vue) → `FIRST, middle, LAST`. With an
@@ -254,17 +290,33 @@ separators, card header/footer radii, accordion first/last, pagination ends.
 | **D10** | **`_bootstrap.scss` imports config-only from `bootstrap-utilities`**, emitting `root`/`helpers`/`utilities/api` exactly once. | Fixes V1: −84,078 B min / −10,780 B gz. Note the second `utilities/api` pass is currently the only *complete* one (it includes the four custom utility sheets), so the dedup must keep that ordering. |
 | **D11** | **`buttons` stays global at `:40`, with a comment explaining why.** | `BsButtonTypeDirective` puts `.btn` on the consumer's own light-DOM `<button>`; there is no `bs-button` and therefore no shadow root that could own it. The `--bs-primary` rebind at `:46-68` depends on it. Deliberate, currently undocumented, reads as drift. |
 | **D12** | **A shared `_styles/utilities.styles.scss` of Sass mixins** replaces the 19 hand-copied utilities. | Mixins, not a `CSSResult`: a class-based sheet inside a shadow root resurrects the inward-leak problem. Model: `_styles/focus-ring.styles.scss`. |
+| **D13** | **One element per nesting level the consumer can template into.** Sub-parts are **one-rule elements**, not components: 3–5 declarations on `:host` taken straight from the partial, a single default slot, no state, no JS, no descendant selectors. | Forced by §4.1 plus the template requirement. The owning element still holds the partial and publishes the custom-property block; sub-elements consume it by inheritance. `mp-card-title` is `:host { margin-bottom: var(--bs-card-title-spacer-y); color: var(--bs-card-title-color) }` and nothing else. |
+| **D14** | **Framework wrappers never carry component CSS**, not even to work around D13. | The alternative to D13 is letting `bs-card-title` style itself from its own Angular/React/Vue stylesheet. Rejected: three implementations of one stylesheet (the exact drift in §3.5), and it dies when the component is nested in another shadow root. |
 
 ## 8. Per-component architecture
 
 From a selector-by-selector classification of Bootstrap 5.3.8 (§15.5).
 
+Derived from D13: count the nesting levels the consumer can template into. One
+element per level; sub-parts are one-rule elements.
+
 | shape | components |
 |---|---|
-| **ONE element** | badge, alert, spinner, placeholder, close, progress, modal, dropdown(+item), tooltip, popover, offcanvas, carousel, button-group *(+M5)* |
-| **SMALL FAMILY (2–3)** | breadcrumb, toast, list-group, pagination, accordion *(built)* |
-| **LARGE FAMILY (5–6)** | card, nav, navbar *(partly built)* |
+| **ONE element** — consumer content is a direct child | badge, alert, spinner, placeholder, close, progress, modal, dropdown(+item), tooltip, popover, offcanvas, carousel, button-group *(+M5)*, **breadcrumb**, **list-group**, **pagination** |
+| **ONE + one-rule sub-elements** | **toast** (+2: header, body) · **card** (+3–5: title, subtitle, text, link) · accordion *(built: +1 marker)* |
+| **GENUINE FAMILY** — sub-part needs its own DSD/SSR boundary or per-item chrome | nav, navbar *(partly built)*, timeline *(built)* |
 | **DATA-MODEL ONLY** | **tables** — D6 |
+
+Breadcrumb, list-group and pagination collapse to one element because their
+items are **direct children**, so the container reaches them with `::slotted()`.
+Measured: `::slotted(:not(:first-child))::before` produces the breadcrumb
+separator correctly (items 2 and 3 only), which retires the separate
+`mp-breadcrumb-item` the first inventory called for.
+
+The genuine-family tier is narrow. A second *real* element is justified only
+when the child needs its own Declarative-Shadow-DOM boundary, is usable
+standalone outside its parent, or renders per-item chrome of its own — `navbar`
+and `timeline` qualify; `card` does not.
 
 **The var channel is Bootstrap's own design, not a workaround.** Six partials
 declare custom properties on a *container* that only *descendants* consume.
@@ -478,6 +530,31 @@ Largest component partials: buttons 12,397 · list-group 12,287 · offcanvas
 11,147 · navbar 10,010 · tables 6,984 · dropdown 6,631 · popover 6,226 · modal
 5,839 · accordion 5,303 · card 4,447. Smallest: badge **564** · placeholders 625
 · breadcrumb 994 · spinners 1,241.
+
+### 15.6 The slot-per-nesting-level measurements (§4.1, D13)
+
+One shadow sheet holding Bootstrap's `.card-title` rule verbatim **and** its
+`::slotted()` twin; three `.card-title` elements:
+
+```
+A rendered by the component (shadow tree)  → bare rule GREEN ✅
+B slotted, direct child      (document)    → bare rule ❌ ; ::slotted BLUE ✅
+C slotted, nested one level  (document)    → both ❌
+```
+
+And the workaround that does not exist:
+
+```css
+.card-body ::slotted(div) .card-title { background: magenta }   /* matches nothing */
+```
+
+Supporting results for the collapsed tier:
+
+| mechanism | result |
+|---|---|
+| `.card-body ::slotted(.card-title)` — M4 with a class, from a shadow-rendered region | ✅ |
+| `::slotted(:not(:first-child))::before` — breadcrumb separator | ✅ items 2 and 3 only |
+| a `display: contents` wrapper that only sets `slot="header"` | ✅ transparent, but does **not** change slot assignment |
 
 ### 15.5 Selector classification
 

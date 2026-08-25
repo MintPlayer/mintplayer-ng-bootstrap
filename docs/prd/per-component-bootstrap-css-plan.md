@@ -276,27 +276,50 @@ Files: `libs/mintplayer-web-components/badge/` (new),
       `bs-alert-close` has **no accessible name at all** — fix while converting.
 - [ ] Verify by reading + `tsc --noEmit`. **Commit** (per component).
 
-## M9 — Small families [PRD §8]
+## M9 — Single-element containers, and the first one-rule sub-elements [PRD §8, D13]
 
-`mp-breadcrumb`(+item), `mp-toast`(+container), `mp-list-group`(+item),
-`mp-pagination`(+`mp-page-link`).
+`mp-breadcrumb`, `mp-list-group`, `mp-pagination` — **one element each**;
+`mp-toast` — one element **+ 2 one-rule sub-elements**.
 
-- [ ] Follow D2/D3: parent owns the partial and publishes the var block on
-      `:host`; children are markers recognised by **attribute**.
+- [ ] Breadcrumb / list-group / pagination take **no** sub-elements: their items
+      are direct children, so the container reaches them with `::slotted()`.
+      The separator is `::slotted(:not(:first-child))::before` (measured, PRD
+      §15.6) — do **not** author an `mp-breadcrumb-item`.
+- [ ] Follow D2/D3: the container owns the partial and publishes the var block
+      on `:host`; where a marker is needed it is recognised by **attribute**.
 - [ ] Positional rules come from the parent via `::slotted(:first-child)` or M5
       stamping — **never** `:host(:first-of-type)` (D5).
 - [ ] **Pagination: delete `.page-item`.** Every unreachable selector there
       exists only because state lives on the `<li>` and paint on the `<a>`.
       Merging them into `mp-page-link` leaves **zero** unreachable selectors.
+- [ ] **Toast** gets `mp-toast-header` / `mp-toast-body` as one-rule elements
+      (D13) — the consumer templates into both, so each needs its own slot.
+      `.toast-header .btn-close` then becomes intra-tree.
 - [ ] **`.list-group-numbered` (R4)** — CSS counters across a shadow boundary.
       Prototype first; fallback is JS ordinals.
-- [ ] Verify by reading + `tsc --noEmit`. **Commit** (per family).
+- [ ] Verify by reading + `tsc --noEmit`. **Commit** (per component).
 
 ## M10 — Card, then nav/navbar [PRD V2, §8]
 
-- [ ] **Card**: `mp-card` + `mp-card-header/-body/-footer/-img/-group`. Delete
-      `ensureCardStylesInjected()` and `card-global.styles.scss` entirely — the
-      chrome moves onto each element's `:host`, killing V2.
+- [ ] **Card**: `mp-card` owns the partial and the 19 custom properties. Regions
+      (`.card-header`, `.card-body`, `.card-footer`) are rendered **in mp-card's
+      own shadow** around named slots — no elements needed for those. Only the
+      parts the consumer templates *inside* the body need their own element, as
+      **one-rule elements** (D13): `mp-card-title`, `mp-card-subtitle`,
+      `mp-card-text`, `mp-card-link`. Each is 3–5 declarations on `:host` from
+      `_card.scss:77-99`, consuming mp-card's tokens by inheritance — no state,
+      no JS, no slots beyond a default one.
+- [ ] The framework layer keeps the API the user asked for — `bs-card`,
+      `bs-card-header`, `bs-card-body`, `bs-card-title`, … — each rendering the
+      matching element (or setting `slot=` on a `display: contents` host for the
+      shadow-rendered regions) and projecting the consumer's template in.
+- [ ] Delete `ensureCardStylesInjected()` and `card-global.styles.scss`
+      entirely — killing V2.
+- [ ] **Region order/repetition:** Bootstrap allows several `.card-body`s and
+      interleaved images. A fixed shadow skeleton gives one of each in one order.
+      Use the accordion's mechanism — enumerate light children on `slotchange`,
+      stamp `slot="r0"`, `slot="r1"`… and render matching regions in order. This
+      is the piece to design deliberately, not assume.
 - [ ] The `.text-bg-*` copy in that sheet is **functionally wrong**
       (`RGBA($value,…)` instead of `RGBA(var(--bs-*-rgb),…)`, so no runtime
       retint, no dark mode) and is currently injected globally with
@@ -382,6 +405,16 @@ NX_ISOLATE_PLUGINS=false NX_DAEMON=false npx nx run-many -t e2e-a11y --parallel=
 - **A class-based utilities sheet adopted into shadow roots** — resurrects the
   inward leak and fixes only *Bootstrap's* utilities, never the consumer's own.
   Mixins instead (D12).
+- **Collapsing a component to a single element when the consumer templates into
+  more than one nesting level** — `::slotted()` reaches exactly one level and
+  cannot be followed by a descendant combinator (measured, PRD §15.6). This was
+  attempted for card and does not work. It is the *requirement* (templates, not
+  strings) that forces the sub-elements, not a design preference.
+- **Letting the framework wrapper carry the component CSS instead** (D14) — the
+  same stylesheet three times, and it dies when nested inside another shadow
+  root.
+- **Having the WC render the wrapper and accept only text** — closed by the
+  template requirement.
 - **`:host-context()`** — Chromium-only.
 - **An `mp-button` element** — reverses a standing user decision; `.btn` stays
   global (D11).
