@@ -1,0 +1,228 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>Spike — what colour reaches what, across a shadow boundary</title>
+<!--
+  Spike harness for docs/prd/shadow-boundary-css.md — open directly in a browser.
+
+  Everything is expressed as COLOUR. Three stylesheets, three colours:
+
+    GREEN   from the PAGE stylesheet (stands in for Bootstrap).
+            Paints .consumer — i.e. markup the CONSUMER wrote.
+            Rule: reaches light-DOM nodes only. Never enters a shadow root.
+
+    RED     from mp-badge's OWN shadow root.
+            A self-contained component: must look identical wherever it sits.
+
+    BLUE    from a component's OWN shadow root, painting its OWN nodes.
+            Must never escape onto anything the page owns.
+-->
+<style>
+  /* ── THE PAGE STYLESHEET (= Bootstrap). Reaches light DOM only. ────────── */
+  :root { --bs-danger-rgb: 220,53,69; --bs-border-radius: .375rem; }
+  .consumer { background: rgb(0,170,70); color: #fff; }   /* GREEN */
+  .owned    { background: #eee; }        /* page's own use of the same name */
+
+  /* harness chrome */
+  body { font: 14px/1.6 system-ui, sans-serif; margin: 2rem; max-width: 54rem; }
+  h2 { font-size: 1rem; margin: 1.8rem 0 .3rem; }
+  pre { background: #f6f6f6; margin: .2rem 0 .5rem; padding: .5rem .7rem;
+        font-size: 12px; border-left: 3px solid #bbb; }
+  table { border-collapse: collapse; width: 100%; margin-top: 1rem; }
+  th, td { border: 1px solid #ccc; padding: .35rem .6rem; text-align: left; font-size: 13px; }
+  th { background: #f4f4f4; }
+  .sw { display: inline-block; width: .8em; height: .8em; border: 1px solid #999;
+        vertical-align: -1px; margin-right: .35em; }
+  .pass { color: #0a7c33; font-weight: 700; }
+  .fail { color: #c0182b; font-weight: 700; }
+</style>
+
+<h1>What colour reaches what, across a shadow boundary</h1>
+<p>
+  <span class="sw" style="background:rgb(0,170,70)"></span><strong>GREEN</strong> = page stylesheet, paints consumer markup &nbsp;
+  <span class="sw" style="background:rgb(220,53,69)"></span><strong>RED</strong> = mp-badge's own shadow &nbsp;
+  <span class="sw" style="background:rgb(0,90,200)"></span><strong>BLUE</strong> = a component's own shadow, its own nodes
+</p>
+
+<h2>A · Baseline — consumer markup in the page</h2>
+<pre>&lt;div&gt;                        ← light DOM
+  &lt;span class="consumer"&gt;    ← expect GREEN
+    &lt;mp-badge&gt;               ← expect RED (own shadow)</pre>
+<div id="A"></div>
+
+<h2>B · BROKEN — component appends consumer markup into its shadow root</h2>
+<pre>&lt;broken-el&gt;
+  #shadow-root  ← SHADOW
+    &lt;span class="consumer"&gt;  ← expect GREEN, page CSS cannot enter
+      &lt;mp-badge&gt;             ← expect RED (carries its own styles)</pre>
+<broken-el id="B"></broken-el>
+
+<h2>C · FIX A (D2) — shadow root kept, consumer markup slotted</h2>
+<pre>&lt;slot-el&gt;
+  #shadow-root  ← SHADOW ── &lt;div class="owned"&gt; BLUE
+                         └─ &lt;slot&gt;
+  &lt;span class="consumer" slot="c"&gt;  ← light DOM, expect GREEN
+    &lt;mp-badge&gt;                      ← expect RED</pre>
+<slot-el id="C"></slot-el>
+
+<h2>D · FIX B (D8) — component mounts its markup in its own light DOM</h2>
+<pre>&lt;light-el&gt;
+  #shadow-root  ← SHADOW ── &lt;slot&gt;
+  &lt;div&gt;                            ← light DOM, built by the component
+    &lt;mp-cell class="owned"&gt;        ← BLUE from mp-cell's own shadow
+    &lt;span class="consumer"&gt;        ← expect GREEN
+      &lt;mp-badge&gt;                   ← expect RED</pre>
+<light-el id="D"></light-el>
+
+<h2>E · Leak check — a page node named the same as a component's internals</h2>
+<pre>&lt;div class="owned"&gt;   ← page owns this. Expect the page's GREY (#eee),
+                         never BLUE. Proves nothing escapes a shadow root.</pre>
+<div id="E" class="owned">page-owned node</div>
+
+<h2>Result</h2>
+<table id="out"></table>
+
+<script>
+const sheetsAtLoad = document.styleSheets.length;
+
+// ── mp-badge: all styling inside its own shadow root ──────────────────────
+customElements.define('mp-badge', class extends HTMLElement {
+  connectedCallback() {
+    if (this.shadowRoot) return;
+    this.attachShadow({ mode: 'open' }).innerHTML =
+      `<style>:host{display:inline-block}
+        .b{background:rgb(var(--bs-danger-rgb));color:#fff;
+           border-radius:var(--bs-border-radius);padding:.1em .5em;font-size:.8em}
+      </style><span class="b"><slot></slot></span>`;
+  }
+});
+
+// ── mp-cell: a component-owned node that styles ITSELF (PRD D9) ───────────
+customElements.define('mp-cell', class extends HTMLElement {
+  connectedCallback() {
+    if (this.shadowRoot) return;
+    this.attachShadow({ mode: 'open' }).innerHTML =
+      `<style>:host{display:inline-block;background:rgb(0,90,200);color:#fff;
+                    padding:.1em .5em}</style><slot></slot>`;
+  }
+});
+
+// The consumer's markup — identical in every case.
+const consumer = () => {
+  const s = document.createElement('span');
+  s.className = 'consumer';
+  s.append('consumer ');
+  const b = document.createElement('mp-badge');
+  b.textContent = '3';
+  s.appendChild(b);
+  return s;
+};
+
+// B — the bug: consumer markup placed inside the shadow root.
+customElements.define('broken-el', class extends HTMLElement {
+  connectedCallback() {
+    const sr = this.attachShadow({ mode: 'open' });
+    sr.innerHTML = `<style>.owned{background:rgb(0,90,200);color:#fff;padding:.1em .5em}</style>
+                    <span class="owned">owned</span> `;
+    sr.appendChild(consumer());
+  }
+});
+
+// C — FIX A: shadow root kept; consumer markup stays in the light DOM, slotted in.
+customElements.define('slot-el', class extends HTMLElement {
+  connectedCallback() {
+    this.attachShadow({ mode: 'open' }).innerHTML =
+      `<style>.owned{background:rgb(0,90,200);color:#fff;padding:.1em .5em}</style>
+       <span class="owned">owned</span> <slot name="c"></slot>`;
+    const c = consumer();
+    c.setAttribute('slot', 'c');
+    this.appendChild(c);
+  }
+});
+
+// D — FIX B: the component builds its markup in its OWN light DOM.
+customElements.define('light-el', class extends HTMLElement {
+  connectedCallback() {
+    this.attachShadow({ mode: 'open' }).innerHTML = '<slot></slot>';
+    const wrap = document.createElement('div');
+    const own = document.createElement('mp-cell');
+    own.className = 'owned';
+    own.textContent = 'owned';
+    wrap.append(own, ' ', consumer());
+    this.appendChild(wrap);
+  }
+});
+
+document.getElementById('A').appendChild(consumer());
+
+// ── Report ────────────────────────────────────────────────────────────────
+addEventListener('load', () => {
+  const GREEN = 'rgb(0, 170, 70)', RED = 'rgb(220, 53, 69)', GREY = 'rgb(238, 238, 238)';
+  const bg = (el) => el ? getComputedStyle(el).backgroundColor : '—';
+  const badgeBg = (el) => {
+    const b = el?.querySelector('mp-badge');
+    return b?.shadowRoot ? bg(b.shadowRoot.querySelector('.b')) : '—';
+  };
+  const pick = (id, inShadow) => {
+    const host = document.getElementById(id);
+    const root = inShadow ? host.shadowRoot : host;
+    return root.querySelector('.consumer');
+  };
+
+  const BLUE = 'rgb(0, 90, 200)';
+  // The component's OWN node in each case — is it still BLUE, or did the
+  // page's identically-named .owned rule reach it?
+  const owned = (id, inShadow) => {
+    const host = document.getElementById(id);
+    const root = inShadow ? host.shadowRoot : host;
+    return root.querySelector('.owned');
+  };
+
+  const cases = [
+    ['A · baseline (light DOM)',    pick('A', false), 'no',                                  null],
+    ['B · BROKEN (in shadow root)', pick('B', true),  'yes — consumer markup inside it',      owned('B', true)],
+    ['C · FIX A (slotted)',         pick('C', false), 'yes — consumer markup stays outside',  owned('C', true)],
+    ['D · FIX B (own light DOM)',   pick('D', false), 'yes — chrome only',                    owned('D', false)],
+  ];
+
+  const rows = cases.map(([name, el, shadow, own]) => {
+    const got = bg(el), gotBadge = badgeBg(el);
+    const ok = got === GREEN, okBadge = gotBadge === RED;
+    const gotOwn = own ? bg(own) : '—';
+    const ownOk = !own || gotOwn === BLUE;
+    return `<tr>
+      <td>${name}</td><td>${shadow}</td>
+      <td><span class="sw" style="background:${GREEN}"></span>GREEN</td>
+      <td><span class="sw" style="background:${got}"></span>${got === 'rgba(0, 0, 0, 0)' ? 'none' : got}</td>
+      <td class="${ok ? 'pass' : 'fail'}">${ok ? 'PASS' : 'FAIL'}</td>
+      <td class="${okBadge ? 'pass' : 'fail'}">${okBadge ? 'RED' : gotBadge}</td>
+      <td>${own ? `<span class="sw" style="background:${gotOwn}"></span>` : ''}<span
+          class="${own ? (ownOk ? 'pass' : 'fail') : ''}">${own ? (ownOk ? 'BLUE' : 'page won') : '—'}</span></td>
+    </tr>`;
+  }).join('');
+
+  const leak = bg(document.getElementById('E'));
+  const leakOk = leak === GREY;
+
+  document.getElementById('out').innerHTML =
+    `<tr><th>case</th><th>shadow DOM used?</th><th>consumer: expected</th>
+         <th>consumer: rendered</th><th></th><th>badge</th>
+         <th>component's own node (expect BLUE)</th></tr>${rows}
+     <tr><td>E · leak check (page node)</td><td>n/a</td>
+         <td><span class="sw" style="background:${GREY}"></span>GREY, never BLUE</td>
+         <td><span class="sw" style="background:${leak}"></span>${leak}</td>
+         <td class="${leakOk ? 'pass' : 'fail'}">${leakOk ? 'PASS' : 'FAIL'}</td><td>—</td><td>—</td></tr>
+     <tr><td colspan="7" style="background:#f9f9f9">
+       <strong>Nothing leaks OUT.</strong> Document stylesheets added by the components:
+       <strong>${document.styleSheets.length - sheetsAtLoad}</strong>. Every component keeps its
+       CSS in its own shadow root and injects no global sheet, so case E stays the page's grey.
+       <br><strong>The badge is RED in all four cases</strong>, including the broken one — a
+       self-contained component is immune to where it is placed. Only the consumer's GREEN
+       distinguishes the designs; that is the whole bug.
+       <br><strong>But look at the last column.</strong> In C the component's own node is inside
+       the shadow root and stays BLUE. In D it sits in the light DOM, so the page's
+       identically-named <code>.owned</code> rule <em>wins</em> and it renders grey. Styles do not
+       leak out of D — they leak <em>in</em>. That is the real cost of mounting a component's
+       markup in the light DOM, and the reason to prefer C.
+     </td></tr>`;
+});
+</script>
