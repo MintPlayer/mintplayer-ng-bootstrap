@@ -717,6 +717,96 @@ and needs no per-row slot bookkeeping.
 Subgrid (D11) goes with it — it was a replacement for table layout, and there is
 now no table layout to replace.
 
+## 19. Locked design (2026-08-25) — supersedes the decision churn above
+
+This section is authoritative. §6's table records how the design was reached,
+including two reversals; where they conflict, §19 wins.
+
+### 19.1 The one mechanism
+
+**Consumer-supplied content is slotted. Always. Nothing else.** A slotted node
+stays a document node at every depth, so page CSS reaches it and the component's
+shadow styles stay sealed. Measured in both directions (§15, and the harness at
+`docs/prd/_spike-table-badge-shadow.html`).
+
+| decision | state |
+|---|---|
+| **D1** slot all consumer content | **LOCKED** |
+| **D2** datatable → CSS grid + `subgrid`, cells slotted | **REINSTATED** — was superseded by D8, now restored |
+| **D3** explicit ARIA roles on the grid | **REINSTATED** with D2 |
+| **D5/D6** `mp-badge`, shadow-styled, `text-bg-*` semantics | LOCKED |
+| **D7** `mp-card` global sheet → shadow | LOCKED |
+| ~~**D8**~~ light-DOM real table | **RETIRED** — §15.7 (SSR-unsafe) + §15.8 (page CSS wins over its own nodes) |
+| ~~**D9**~~ owned cells as custom elements *in a real table* | **RETIRED with D8.** The self-styling-element idea survives inside D10. |
+| **D10** `mp-table` element family | **LOCKED, reshaped** — see 19.3 |
+| ~~**D11**~~ subgrid not used | **RETIRED** — subgrid returns with D2 |
+| **D12/D13** directives need no work; hoist `_styles/buttons` | LOCKED |
+
+### 19.2 Why D8 lost, in one line each
+
+- **§15.7** — the HTML parser forbids mixing custom elements with a real
+  `<table>`; D8's structure cannot survive being re-parsed, which SSR does.
+- **§15.8 / the harness** — a component's own light-DOM node loses to an
+  identically-named page rule. Styles don't leak *out* of D8; they leak *in*.
+- **S4** — a `<mp-td>` is not a `<td>`, so D8 needed explicit ARIA roles anyway.
+  Its one advantage over D2 was never real.
+
+### 19.3 `mp-table` is a family of self-styling elements, not a wrapper
+
+**You cannot `@import` `bootstrap/scss/tables` into `mp-table` and have it
+work.** Measured on background-colour alone, on a blank page:
+
+| shadow rule in `mp-table` | wanted | got |
+|---|---|---|
+| `:host > :not(caption) > * > *` (Bootstrap's cell rule) | `rgb(255,0,255)` | **`rgba(0,0,0,0)`** |
+| `::slotted(tbody)` — depth-1 control | applied | applied |
+
+Every rule in `_tables.scss` is a descendant or child selector rooted at
+`.table` (`.table > :not(caption) > * > *`,
+`.table-striped > tbody > tr:nth-of-type(odd) > *`,
+`.table-hover > tbody > tr:hover > *`). A shadow sheet reaches shadow-tree nodes
+plus **depth-1** assigned nodes via `::slotted()`, which takes a compound
+selector and no combinators. Slotted `<tbody>` is reachable; `<tr>` and `<td>`
+inside it are not. The import compiles fine and styles nothing — no error, no
+warning.
+
+Re-importing the partial into `mp-tr`/`mp-td` does not help either: the
+selectors still expect a `.table` ancestor that is not in their tree. **The
+rules must be re-expressed as `:host` rules.** Measured working:
+
+| mechanism | result |
+|---|---|
+| `mp-td`: `:host { display: table-cell; background: var(--mp-cell-bg, transparent) }` | ✅ |
+| striping via `:host(:nth-of-type(odd))` **on the row** | ✅ row 0 `rgb(240,240,240)`, row 1 transparent |
+| row → cell channel by inherited custom property | ✅ |
+| row hover via `:host(:hover) { --mp-cell-bg: … }` | ✅ |
+| consumer's own `<td>` still page-styled alongside | ✅ |
+
+`:nth-of-type` works because it is evaluated against the host in **its own**
+tree, so a row knows its position without the table telling it. Variant flags
+(`striped`, `bordered`, `sm`) travel the same way: `mp-table` sets a custom
+property on `:host([striped])` and it inherits through every boundary.
+
+The shared sheet lives in `_styles/table.styles.scss` and is adopted by all
+three elements — one `CSSResult`, one parsed `CSSStyleSheet`, N roots
+(`_styles/form-control.styles.scss` precedent).
+
+**R8 — this is a hand-rewrite of Bootstrap's table CSS, not a pass-through.** It
+drifts on every Bootstrap upgrade with nothing to catch it — the same objection
+§18.5 raises against `tab-control`'s hand-copied utilities, and the reason
+`_styles/form-check.styles.scss:9-11` chose pass-through. Here pass-through is
+structurally unavailable. *Mitigation:* pin the Bootstrap minor, and add a
+visual-diff test against a plain `.table`.
+
+### 19.4 Measurement discipline (learned the hard way, twice)
+
+**Assert on `background-color` only.** In this codebase's probes, `padding` was
+silently supplied by a harness `td` rule, and `outline-width` reported `3px`
+because `medium` is the *initial computed value* even when `outline-style: none`
+— both produced a wrong verdict before being caught. Background is transparent
+by default and nothing else sets it. Any future spike here follows the same rule,
+and the harness already does.
+
 ## 18. The 16 class-stamping directives — why they need no work
 
 ### 18.1 The platform fact that settles it

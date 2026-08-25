@@ -1,25 +1,63 @@
 # Plan — consumer content inside a shadow root, and the CSS that never reaches it
 
 PRD: [shadow-boundary-css.md](./shadow-boundary-css.md)
-Status: **Proposed** (2026-08-25) — nothing implemented. Q1 resolved by the user
-2026-08-25 (keep `<table>`, add `mp-table`); spikes recorded in PRD §15. Q2
-still open and gates only how much of PRD F5 is folded in.
+Status: **Proposed** (2026-08-25) — nothing implemented. Design LOCKED in
+PRD §19: slot everything, datatable → grid + subgrid (D2 reinstated), `mp-table`
+as a family of self-styling elements (D10 reshaped). D8/D9/D11 retired. Spikes
+and their reversals recorded in PRD §15.
+
+**Milestones split by cost, because they are not one piece of work.** M0–M4 and
+M6a are cheap, independently valuable, and carry no open risk. M4b/M5/M6b/M8 are
+the expensive, spike-gated half. Nothing in the first group depends on the
+second.
+
+**Cheap half — no open risk, ships on its own**
 
 | Milestone | State |
 |---|---|
-| ~~S1 grid/subgrid under virtual scroll~~ | dropped with D2 |
-| ~~S2 AT verdict on role-based grid~~ | dropped with D3 |
-| S3 Firefox + WebKit parity for §15 | ⏳ |
-| S4 Implicit role of `display:table-cell` custom element | ⏳ |
 | M0 Regression spec that fails today | ⏳ |
 | M1 `mp-badge` WC | ⏳ |
-| M2 Badge wrappers ×3 + demo | ⏳ |
-| M3 Docs: stale comment, CLAUDE.md | ⏳ |
-| M4 Slot projection — the four non-table exposures | ⏳ |
-| M4b `mp-table` element family + `bs-table` wrapper | ⏳ |
-| M5 Datatable → light-DOM table (gated on S3/S4) | ⏳ |
-| M6 `mp-card` global sheet + `mp-file-manager` self-inflicted case | ⏳ |
+| M2 Badge wrappers ×3 + demo (closes React/Vue gap) | ⏳ |
+| M3 Docs: stale `card-classes.ts` comment, CLAUDE.md rule, conformance guard | ⏳ |
+| M4 Slot projection — treeview, query-builder, tree-select, select | ⏳ |
+| M6a Standalone bug fixes (see below) | ⏳ |
+
+**Expensive half — spike-gated**
+
+| Milestone | State |
+|---|---|
+| S1 grid + subgrid under virtual scroll / recycling / column sizing | ⏳ |
+| S3 Firefox + WebKit parity for PRD §15 | ⏳ |
+| S4 ARIA roles for a grid-based table | ⏳ |
+| M4b `mp-table` family + `bs-table` wrapper (PRD §19.3) | ⏳ |
+| M5 Datatable → grid + subgrid + slotted cells (gated on S1/S3/S4) | ⏳ |
+| M6b `mp-card` global sheet → shadow; `mp-file-manager` | ⏳ |
+| M8 The remaining F5 components (G8) | ⏳ |
 | M7 Batched verification sweep | ⏳ |
+
+### M6a — standalone bug fixes, each independently shippable
+
+Found during investigation; none depends on the mechanism work.
+
+- [ ] **`mp-timeline-item.icon`** renders a Bootstrap-icons class *into a shadow
+      root*. Shipped live in all three demos (`timeline.component.ts:61-64`,
+      `TimelinePage.tsx:19-22`, `TimelineView.vue:17-20`). Route it through the
+      existing light-DOM `slot="marker"` path.
+- [ ] **`TimelineItem.cssClass`** — "extra class on the rendered row", applied to
+      a shadow node. Structurally dead since written. Fix or delete.
+- [ ] **Tooltip/popover dead IDREFs** — `tooltip.directive.ts:136` and
+      `popover.directive.ts:133-135` write `aria-describedby`/`aria-controls`
+      onto a consumer trigger pointing at `document.body`. Dead whenever the
+      trigger is in a shadow root. Real a11y bug, unrelated to this PRD's fix.
+- [ ] **`[bsFormGroup]`** stamps `.form-group`, removed in Bootstrap 5 and
+      defined nowhere. Define or delete.
+- [ ] **`libs/mintplayer-ng-bootstrap/dropdown-divider/`** — orphan duplicate of
+      the one in `dropdown-menu/`; only the latter is styled. Delete.
+- [ ] **Hoist `_styles/buttons.styles.scss`** — `bootstrap/scss/buttons` is
+      imported independently by 4 elements (4 × 12.4 KB, 4 parses). Net −37 KB.
+- [ ] Correct plan M4's claim that `mp-select.optionRenderer` has no consumers —
+      `mp-phone-input.ts:400` uses it, and the classes are deliberately declared
+      in `select.styles.scss:88-151`. **Do not delete it.**
 
 ## Conventions (these bite here specifically)
 
@@ -219,7 +257,26 @@ Files: `libs/mintplayer-web-components/table/` (new),
       `::ng-deep` import. Add React + Vue wrappers (neither lib has a table).
 - [ ] Verify by reading + `tsc --noEmit`. **Commit.**
 
-## M5 — Datatable: real `<table>`, mounted in light DOM [PRD §7.1b, D8, D9] — gated on S3, S4, M4b
+> **AMENDED 2026-08-25:** M5 below described the retired D8 (light-DOM real
+> table). The shipped design is D2 — shadow root kept, `<table>` replaced by CSS
+> grid with `grid-template-columns: subgrid` on each row, consumer cells arriving
+> through a per-row named `<slot>` keyed by the existing `rowKey`. See PRD §7.1
+> and §19. The retired text is kept below so the rejected shape stays visible.
+>
+> Under D2, M5's work list becomes: shadow `.grid` / `.hcell` / `.row` (subgrid)
+> / `<slot name="row-<key>">`; wrapper moves `EmbeddedViewRef` root nodes into
+> the WC's light DOM with a slot name, removing stale children when a row leaves;
+> `colspan` → `grid-column: 1/-1`; measured widths → `grid-template-columns`;
+> sticky header on grid items; virtual spacers span all tracks; delete
+> `tbody td { white-space/overflow/text-overflow }` rather than reproducing it as
+> `::slotted()`; explicit ARIA roles per S4 including `aria-rowcount` /
+> `aria-colindex` under virtual scrolling; un-skip M0's spec.
+>
+> **The per-row named-slot bookkeeping is the least-proven part of this whole
+> PRD** and is what S1 exists to de-risk — not the layout, which §15 already
+> measured.
+
+## M5 (retired shape) — Datatable: real `<table>`, mounted in light DOM [D8, D9]
 
 Files: `libs/mintplayer-web-components/datatable/src/components/mp-datatable.ts`,
 `…/datatable/src/styles/datatable.styles.scss`,
