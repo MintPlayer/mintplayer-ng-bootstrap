@@ -10,6 +10,7 @@ from W2 on is component conversion, which is a programme.
 
 | Wave | Milestone | State |
 |---|---|---|
+| — | **S0 Per-partial light-DOM eligibility — resolves Q6, gates M9/M10** | ⏳ |
 | — | S1 Firefox + WebKit parity | ⏳ |
 | **W0** | M0 Regression spec + D9 conformance guard | ⏳ |
 | **W0** | M1 `_bootstrap.scss` dedup (−10.8 KB gz) | ⏳ |
@@ -73,6 +74,25 @@ not while inventing it.
 M11 is a parity project, not a styling one, and is gated on Q1.
 
 ---
+
+## S0 — Per-partial light-DOM eligibility [PRD §17.4, Q6] — **run before M9/M10**
+
+PRD §17 measures a light-DOM + `@layer` + tag-scoped model that removes D13's
+sub-elements entirely. It is viable for `_card.scss` because that partial is
+almost all class selectors. It is **not** automatically viable elsewhere.
+
+- [ ] For every partial in the ONE-element and one-rule-sub-element tiers,
+      classify each selector as class-only, element, or **universal/descendant-
+      universal**. The disqualifier is a selector that would match arbitrary
+      consumer markup once tag-scoped — `_tables.scss`'s
+      `.table > :not(caption) > * > *` is the known example.
+- [ ] Also flag inherited properties each partial sets on its root; these reach
+      consumer content in **both** models (PRD §17.3) and are not a
+      light-DOM-specific cost, but they should be documented per component.
+- [ ] Output: a per-component LIGHT / SHADOW assignment with the disqualifying
+      selector quoted for every SHADOW verdict.
+- [ ] Resolve Q6. If LIGHT is adopted for a tier, re-derive PRD §7 (D2, D13,
+      D14) and §8, and drop the corresponding sub-elements from M9/M10.
 
 ## S1 — Spike: Firefox + WebKit parity [PRD R7]
 

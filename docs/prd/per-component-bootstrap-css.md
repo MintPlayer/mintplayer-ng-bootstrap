@@ -569,6 +569,100 @@ record; the verdicts are §8. The three shapes that force a decision:
 - **var-only** (`.alert-#{$state}`, `.list-group-item-#{$state}`,
   `.table-active`) — free via M3.
 
+## 17. The light-DOM alternative — measured, and probably better for one tier
+
+**Status: an open architectural decision (Q6), not yet folded into §7/§8.** The
+measurements below are complete; the restructuring they imply is not done.
+
+D13's one-rule sub-elements exist only because `::slotted()` reaches one level.
+A light-DOM component has no shadow root, so its CSS is document-level and
+**descendant selectors work at any depth** — which removes that constraint
+entirely.
+
+### 17.1 The recipe
+
+```css
+@layer mp-bootstrap {
+  mp-card .card-body  { … }
+  mp-card .card-title { … }   /* Bootstrap's rule, prefixed. Any depth. */
+}
+```
+
+Light DOM + **`@layer mp-bootstrap`** + **tag-scoped selectors**. Each piece is
+load-bearing:
+
+| variant | works at depth 3 | leaks onto app markup | consumer bare-class override wins |
+|---|---|---|---|
+| unscoped `.card-title` | ✅ | ❌ **leaks** | ✅ |
+| tag-scoped `mp-card .card-title` | ✅ | ✅ contained | ❌ **library wins** |
+| `@scope (mp-card) { .card-title }` | ✅ | ✅ contained | ❌ **library wins** |
+| **`@layer` + tag-scoped** | ✅ | ✅ contained | ✅ |
+
+Tag-scoping raises specificity to (0,1,1), beating a consumer's (0,1,0).
+`@scope` does not fix it — **scope proximity is tie-broken before source
+order**, so it wins too. Only a cascade layer restores Bootstrap's normal
+override contract: any *unlayered* consumer rule beats a layered library rule
+regardless of specificity, while the library still applies when there is no
+override. All four verified, `@layer` and `@scope` both supported.
+
+### 17.2 What it buys
+
+- **No sub-elements.** D13's `mp-card-title` / `-subtitle` / `-text` disappear.
+- **Bootstrap's partial used almost verbatim** — prefix the selectors, done. No
+  re-expressing, no invented custom properties, no `::slotted()` gymnastics.
+- Utilities and `--bs-*` work natively inside, with no re-declaration.
+- SSR is trivial — no DSD chrome.
+
+### 17.3 What actually reaches a consumer's elements
+
+A plain `<div class="my-own-thing">`, a `<div class="card-title">`, an `<hr>`
+and a nested `<span>`, in a light-DOM card vs a shadow card:
+
+| consumer element | light DOM | shadow DOM |
+|---|---|---|
+| plain `<div>` — background | none | none |
+| plain `<div>` — **`color`** | `rgb(150,0,150)` | **identical** |
+| plain `<div>` — **`word-wrap`** | `break-word` | **identical** |
+| nested `<span>` depth 2 — `color` | inherited | inherited |
+| consumer wrote `.card-title` | **styled** | **not styled** |
+| consumer's `<hr>` | `margin-left: 0` | identical |
+
+Three categories, and only one is a light-DOM cost:
+
+1. **Class-matched** — every `_card.scss` rule but one is `.card-*`. A consumer's
+   own class is untouched; if they write `.card-title` they opted in.
+2. **One element selector** — `.card > hr` (`_card.scss:41-44`). Fires under
+   shadow too, via `::slotted(hr)`.
+3. **Inherited** — `.card` sets `color` and `word-wrap: break-word` (`:33-34`),
+   `.card-body` sets `color` (`:75`). **Inheritance crosses shadow boundaries
+   unconditionally**, so this is identical in both models. Not a light-DOM cost.
+
+Net difference: one row, in light DOM's favour — and it is exactly the capability
+that forced D13.
+
+### 17.4 Costs and the limit
+
+- **Two rendering models in one library.** Light DOM suits components whose
+  markup the *consumer* writes (card, breadcrumb, list-group, button-group).
+  Shadow suits components that render their own chrome — **accordion is not a
+  candidate**: it generates headers, buttons, ARIA and a no-JS `:checked` state
+  machine the consumer never writes. Same for modal, dropdown, datatable,
+  carousel, offcanvas.
+- **No inward encapsulation** — now the point rather than a defect, since layers
+  make overriding clean.
+- **Must not Lit-`render()` into light DOM** — clobbers consumer children
+  (`issue_308`). These are plain `HTMLElement` styling hooks that render nothing.
+- **CSS ships document-level**, one file per component, imported by all three
+  wrappers (Angular `ViewEncapsulation.None` — safe once tag-scoped and layered;
+  React/Vue via `import`). One implementation, loaded only if the component is
+  imported, so the premise holds.
+- **THE UNRESOLVED CHECK:** this works because `_card.scss` is almost entirely
+  class-based. Other partials are not. `_tables.scss` is
+  `.table > :not(caption) > * > *` — a **universal** selector that under
+  tag-scoping would hit every descendant element a consumer puts in a cell.
+  **The light-DOM tier must be assigned per partial on the evidence, not adopted
+  wholesale.** That per-partial check has not been run.
+
 ## 16. Open questions
 
 - **Q1** Wave 6 (overlay family off Angular CDK): in this PR, or a successor?
@@ -583,3 +677,11 @@ record; the verdicts are §8. The three shapes that force a decision:
   and a no-JS regression. Recommend **not** converting — confirm.
 - **Q5** `images` at `_bootstrap.scss:35` puts `.figure*` (a component) in the
   cross-cutting sheet. 369 B — fix the classification or accept the wrinkle?
+- **Q6 — the biggest one, and it is live.** Adopt the §17 two-model split?
+  Light DOM + `@layer` + tag-scoping for components whose markup the consumer
+  writes; shadow for components that generate their own chrome. It removes D13's
+  sub-elements and lets Bootstrap's partials be used almost verbatim, at the cost
+  of two models in one library. **Blocked on the §17.4 per-partial check** — the
+  universal selector in `_tables.scss` shows the tier cannot be assigned
+  wholesale. If Q6 is taken, §7 (D2, D13, D14) and §8's table must be
+  re-derived, and the plan loses roughly a wave.
