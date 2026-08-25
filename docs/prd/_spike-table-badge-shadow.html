@@ -78,6 +78,19 @@
                          never BLUE. Proves nothing escapes a shadow root.</pre>
 <div id="E" class="owned">page-owned node</div>
 
+<h2>F · A web component inside a web component</h2>
+<pre>&lt;n-table&gt;  #shadow  ← :host([striped]) sets --n-row-bg
+  &lt;n-tr&gt;   #shadow  ← :host(:hover)    sets --n-cell-bg
+    &lt;n-td&gt; #shadow  ← background: var(--n-cell-bg, var(--n-row-bg))
+      &lt;mp-badge class="consumer"&gt;   ← 3 slot hops from the table</pre>
+<div id="F"></div>
+<p>
+  Does the badge still work three levels deep? And can a container restyle it
+  from outside? The second answer is <em>no</em>, in two of three shapes — which
+  is the trap, not a bug.
+</p>
+<table id="nested"></table>
+
 <h2>Result</h2>
 <table id="out"></table>
 
@@ -154,6 +167,28 @@ customElements.define('light-el', class extends HTMLElement {
 
 document.getElementById('A').appendChild(consumer());
 
+// ── F: nested web components ──────────────────────────────────────────────
+const defEl = (tag, css) => { if (!customElements.get(tag))
+  customElements.define(tag, class extends HTMLElement {
+    connectedCallback(){ if(!this.shadowRoot)
+      this.attachShadow({mode:'open'}).innerHTML = `<style>${css}</style><slot></slot>`; }
+  });
+};
+defEl('n-table', ':host{display:table}:host([striped]){--n-row-bg:rgb(240,240,240)}');
+defEl('n-tr',    ':host{display:table-row}:host(:hover){--n-cell-bg:rgb(0,200,255)}');
+defEl('n-td',    ':host{display:table-cell;padding:.2em .4em;' +
+                 'background:var(--n-cell-bg, var(--n-row-bg, transparent))}');
+// A container that TRIES to restyle a slotted badge from outside.
+defEl('n-restyle', ':host{display:inline-block}' +
+  '::slotted(mp-badge){background:rgb(255,0,255)}' +   /* trap 1: names an mp-* tag */
+  '::slotted(span) mp-badge{background:rgb(255,255,0)}'); /* trap 2: depth-1 only */
+// Stand-in for an Angular wrapper: <bs-badge> renders <mp-badge> INSIDE itself.
+if (!customElements.get('bs-badge-sim')) customElements.define('bs-badge-sim',
+  class extends HTMLElement {
+    connectedCallback(){ if(!this.firstElementChild){
+      const b=document.createElement('mp-badge'); b.textContent='3'; this.appendChild(b); } }
+  });
+
 // ── Report ────────────────────────────────────────────────────────────────
 addEventListener('load', () => {
   const GREEN = 'rgb(0, 170, 70)', RED = 'rgb(220, 53, 69)', GREY = 'rgb(238, 238, 238)';
@@ -202,6 +237,60 @@ addEventListener('load', () => {
 
   const leak = bg(document.getElementById('E'));
   const leakOk = leak === GREY;
+
+  // ── F: build the nested tree and the three restyle shapes ───────────────
+  const fHost = document.getElementById('F');
+  const nt = document.createElement('n-table'); nt.setAttribute('striped','');
+  const nr = document.createElement('n-tr'), nc = document.createElement('n-td');
+  const deep = document.createElement('mp-badge');
+  deep.className = 'consumer'; deep.textContent = '3';
+  nc.appendChild(deep); nr.appendChild(nc); nt.appendChild(nr); fHost.appendChild(nt);
+
+  const shapes = [
+    ['direct <mp-badge> (React / Vue)',      (() => { const e=document.createElement('mp-badge'); e.textContent='3'; return e; })()],
+    ['<bs-badge> wrapper (Angular)',         document.createElement('bs-badge-sim')],
+    ['<mp-badge> nested in a <span>',        (() => { const s=document.createElement('span');
+                                               const e=document.createElement('mp-badge'); e.textContent='3';
+                                               s.appendChild(e); return s; })()],
+  ].map(([name, node]) => {
+    const box = document.createElement('n-restyle');
+    box.appendChild(node); fHost.appendChild(document.createTextNode(' ')); fHost.appendChild(box);
+    const badge = node.tagName === 'MP-BADGE' ? node : node.querySelector('mp-badge');
+    return { name, hostBg: bg(badge), ownBg: bg(badge.shadowRoot.querySelector('.b')) };
+  });
+
+  const MAGENTA = 'rgb(255, 0, 255)';
+  document.getElementById('nested').innerHTML =
+    `<tr><th>badge at depth 3</th><th>expected</th><th>rendered</th><th></th></tr>
+     <tr><td>its own shadow style</td>
+         <td><span class="sw" style="background:${RED}"></span>RED</td>
+         <td><span class="sw" style="background:${bg(deep.shadowRoot.querySelector('.b'))}"></span>${bg(deep.shadowRoot.querySelector('.b'))}</td>
+         <td class="${bg(deep.shadowRoot.querySelector('.b')) === RED ? 'pass' : 'fail'}">${bg(deep.shadowRoot.querySelector('.b')) === RED ? 'PASS' : 'FAIL'}</td></tr>
+     <tr><td>page CSS on its host, through 3 slot hops</td>
+         <td><span class="sw" style="background:${GREEN}"></span>GREEN</td>
+         <td><span class="sw" style="background:${bg(deep)}"></span>${bg(deep)}</td>
+         <td class="${bg(deep) === GREEN ? 'pass' : 'fail'}">${bg(deep) === GREEN ? 'PASS' : 'FAIL'}</td></tr>
+     <tr><td>ancestor's <code>:host([striped])</code> custom property reaching the cell</td>
+         <td><span class="sw" style="background:rgb(240,240,240)"></span>GREY</td>
+         <td><span class="sw" style="background:${bg(nc)}"></span>${bg(nc)}</td>
+         <td class="${bg(nc) === 'rgb(240, 240, 240)' ? 'pass' : 'fail'}">${bg(nc) === 'rgb(240, 240, 240)' ? 'PASS' : 'FAIL'}</td></tr>
+     <tr><th colspan="4">can a container restyle a slotted badge from outside?</th></tr>
+     ${shapes.map(s => `<tr><td>${s.name}</td>
+        <td><span class="sw" style="background:${MAGENTA}"></span>MAGENTA if the rule matches</td>
+        <td><span class="sw" style="background:${s.hostBg}"></span>${s.hostBg === 'rgba(0, 0, 0, 0)' ? 'no match' : s.hostBg}</td>
+        <td>badge itself: <span class="${s.ownBg === RED ? 'pass' : 'fail'}">${s.ownBg === RED ? 'still RED' : s.ownBg}</span></td></tr>`).join('')}
+     <tr><td colspan="4" style="background:#f9f9f9">
+       A nested web component <strong>always renders correctly</strong> — its styles
+       live in its own shadow root, so depth is irrelevant, and both the page's CSS
+       and inherited <code>--bs-*</code> tokens reach it through any number of slot
+       hops. What is <em>not</em> reliable is a container restyling it from outside:
+       <code>::slotted(mp-badge)</code> matches only when the badge is slotted
+       directly (React, Vue). With the Angular wrapper it is
+       <code>&lt;bs-badge&gt;</code> that gets slotted, so the rule silently misses —
+       and <code>::slotted()</code> can never reach a badge nested inside a
+       <code>&lt;span&gt;</code>. Never address a slotted child by its
+       <code>mp-*</code> tag; use an inherited custom property instead.
+     </td></tr>`;
 
   document.getElementById('out').innerHTML =
     `<tr><th>case</th><th>shadow DOM used?</th><th>consumer: expected</th>
