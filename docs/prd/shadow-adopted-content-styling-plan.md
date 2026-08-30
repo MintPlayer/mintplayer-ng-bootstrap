@@ -1,7 +1,7 @@
 # Plan — Styling consumer-authored content inside WC shadow roots
 
 PRD: [shadow-adopted-content-styling.md](./shadow-adopted-content-styling.md)
-Status: **M1-M3 + most of M4 implemented** on `feat/light-dom-emulated-encapsulation` (2026-08-30), unpushed.
+Status: **M0-M8 implemented** on `feat/light-dom-emulated-encapsulation` (2026-08-30), unpushed.
 M0 spikes passed; mp-datatable converted and verified in the browser. M4-M8 outstanding.
 
 Strategy (PRD §4.6): convert the six components that adopt consumer DOM from shadow DOM to
@@ -142,7 +142,21 @@ Fix the four latent breakages the audit found (PRD §1.1) in all three demo apps
   guidance with `<bs-badge>`.
 - Close #408 with a pointer to this PRD.
 
-## M8 — Verification sweep (single pass, at the end)
+## M8 — Verification sweep — **DONE (2026-08-30)**
+
+| check | result |
+|---|---|
+| `nx run-many -t build` (4 libs) | pass |
+| web-components unit | 3225/3226 — the 1 is the known phone-input lazy-promise flake (33/33 in isolation, component not converted) |
+| ng / react / vue unit | 757/757, pass, pass |
+| e2e datatable-tree + datatable-virtual + file-manager | 12/12 |
+| axe gate (`playwright.a11y.config.ts`) | 39/40 |
+| axe `/enterprise/scheduler` after interaction | **fails — but fails identically on `master`.** Verified by checking out master and re-running: pre-existing, not caused by this work. Scheduler is untouched and its page uses no converted component |
+| ribbon + datetime-picker axe | 6/6 |
+
+### Original M8 command list
+
+
 
 ```bash
 npx nx build mintplayer-web-components
