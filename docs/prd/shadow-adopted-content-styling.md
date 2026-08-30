@@ -1,6 +1,8 @@
 # PRD — Styling consumer-authored content that a web component mounts inside its shadow root
 
-Status: **Proposed** (2026-08-30). Not started, no branch, no PR.
+Status: **In progress** on `feat/light-dom-emulated-encapsulation` (2026-08-30), unpushed.
+M0-M3 done; M4 partly done (datatable, treeview, tree-select converted; query-condition family
+outstanding). See the plan for per-milestone state.
 Plan: [shadow-adopted-content-styling-plan.md](./shadow-adopted-content-styling-plan.md)
 Related: issue **#408**; the unmerged branch `feat/wc-style-encapsulation` and its
 [wc-style-encapsulation.md](./wc-style-encapsulation.md) PRD (**not on `master`** — see §7).
