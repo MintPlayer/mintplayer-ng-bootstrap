@@ -18,6 +18,10 @@ export default defineConfig({
   use: {
     baseURL,
     trace: 'on-first-retry',
+    // Pin the locale. The scheduler's visible week starts on the LOCALE's first
+    // weekday, so an unpinned runner makes date-sensitive cases pass or fail
+    // depending on the machine's locale and the day of the week.
+    locale: 'en-US',
   },
   projects: [{ name: 'chromium', use: { ...devices['Desktop Chrome'] } }],
   webServer: {

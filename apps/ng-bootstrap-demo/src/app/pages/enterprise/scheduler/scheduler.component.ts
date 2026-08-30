@@ -271,6 +271,13 @@ export class SchedulerComponent {
       this.createEvent('All Hands Meeting', this.addDays(monday, 4), 15, 16),
     ]);
 
+    // Navigate the view to the week the samples were written into. The sample
+    // data is anchored to the ISO Monday, but the week the scheduler DISPLAYS
+    // starts on the locale's first weekday — Sunday under en-US. On a Sunday
+    // those two disagree, so without this the samples land in the previous
+    // visible week and "Load Sample Data" appears to do nothing.
+    this.date.set(monday);
+
     this.log('Sample data loaded');
   }
 
