@@ -150,9 +150,29 @@ Fix the four latent breakages the audit found (PRD §1.1) in all three demo apps
 | web-components unit | 3225/3226 — the 1 is the known phone-input lazy-promise flake (33/33 in isolation, component not converted) |
 | ng / react / vue unit | 757/757, pass, pass |
 | e2e datatable-tree + datatable-virtual + file-manager | 12/12 |
-| axe gate (`playwright.a11y.config.ts`) | 39/40 |
-| axe `/enterprise/scheduler` after interaction | **fails — but fails identically on `master`.** Verified by checking out master and re-running: pre-existing, not caused by this work. Scheduler is untouched and its page uses no converted component |
+| axe gate (`playwright.a11y.config.ts`) | **40/40** after fixing the one pre-existing failure below |
+| axe `/enterprise/scheduler` after interaction | Failed on this branch AND on `master` (verified by checking master out and re-running), so pre-existing. **Fixed in this PR** per the one-PR rule — see below |
 | ribbon + datetime-picker axe | 6/6 |
+
+### The scheduler failure: root cause and fix
+
+Not a flake — deterministic, and a real demo bug. `fillData()` anchors sample
+events to the ISO Monday, but the week the scheduler DISPLAYS starts on the
+**locale's** first weekday. Measured, same 15 events loaded both times:
+
+| locale | visible week | rendered |
+|---|---|---|
+| `en-US` | Sun 30 – Sat 5 | **0** |
+| `nl-BE` | ma 24 – zo 30 | 15 |
+
+Today is Sunday 2026-08-30, so the two conventions disagree and the samples
+landed in a week the view was not showing. A real en-US user clicking "Load
+Sample Data" on a Sunday sees an empty scheduler.
+
+Fixed by navigating the view to the week that was populated
+(`this.date.set(monday)`), plus pinning `locale: 'en-US'` in the a11y config so
+date-sensitive cases stop depending on the runner's machine locale and the day
+of the week.
 
 ### Original M8 command list
 
