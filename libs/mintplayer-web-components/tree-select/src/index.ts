@@ -11,4 +11,4 @@ export type {
 } from './types';
 export { InMemoryTreeSelectProvider } from './providers/in-memory-provider';
 export type { InMemoryProviderOptions } from './providers/in-memory-provider';
-export { treeSelectStyles } from './styles';
+export { treeSelectLightStyles } from './styles';

@@ -1,4 +1,5 @@
 import { LitElement, html, nothing, type TemplateResult } from 'lit';
+import { adoptLightStyles } from '@mintplayer/web-components/light-dom';
 import { deepActiveElement, RovingFocus, LiveAnnouncerController} from '@mintplayer/web-components/a11y';
 import { repeat } from 'lit/directives/repeat.js';
 import { unsafeHTML } from 'lit/directives/unsafe-html.js';
@@ -441,8 +442,20 @@ export class MpFileManager extends LitElement {
     }
   }
 
+  /** Disposes the light-style mirror; see connectedCallback. */
+  private _releaseLightStyles?: () => void;
+
   override connectedCallback(): void {
     super.connectedCallback();
+    // This component keeps its shadow root but renders LIGHT-TIER components
+    // (mp-datatable, mp-treeview) inside it. Their stylesheets are installed at
+    // document level, which cannot reach in here — so mirror the registry onto
+    // this root, or every nested light-tier component renders unstyled. Any
+    // shadow-DOM component that hosts a light-tier one needs this.
+    if (this.renderRoot instanceof ShadowRoot) {
+      this._releaseLightStyles?.();
+      this._releaseLightStyles = adoptLightStyles(this.renderRoot);
+    }
     if (!this.hasAttribute('role')) {
       this.setAttribute('role', 'region');
     }
@@ -467,6 +480,8 @@ export class MpFileManager extends LitElement {
 
   override disconnectedCallback(): void {
     super.disconnectedCallback();
+    this._releaseLightStyles?.();
+    this._releaseLightStyles = undefined;
     this.removeEventListener('touchstart', this.onTouchStart);
     this.removeEventListener('touchend', this.onTouchEnd);
     this.removeEventListener('touchcancel', this.onTouchEnd);

@@ -46,11 +46,11 @@ async function mount(items: TreeNode[], attrs = ''): Promise<MpTreeview> {
 }
 
 function rows(el: MpTreeview): HTMLElement[] {
-  return Array.from(el.shadowRoot!.querySelectorAll<HTMLElement>('[role="treeitem"]'));
+  return Array.from((el.renderRoot as unknown as ParentNode).querySelectorAll<HTMLElement>('[role="treeitem"]'));
 }
 
 function row(el: MpTreeview, id: string): HTMLElement {
-  return el.shadowRoot!.querySelector<HTMLElement>(`[data-node-id="${id}"]`) as HTMLElement;
+  return (el.renderRoot as unknown as ParentNode).querySelector<HTMLElement>(`[data-node-id="${id}"]`) as HTMLElement;
 }
 
 function press(target: HTMLElement, key: string): void {
@@ -66,7 +66,7 @@ describe('mp-treeview ARIA roles and structure', () => {
     const el = await mount(TREE);
     el.setAttribute('aria-label', 'Files');
     await flush(el);
-    const tree = el.shadowRoot!.querySelector('.treeview-root > ul')!;
+    const tree = (el.renderRoot as unknown as ParentNode).querySelector('.treeview-root > ul')!;
     expect(tree.getAttribute('role')).toBe('tree');
     expect(tree.getAttribute('aria-label')).toBe('Files');
     // The host stays generic — a consumer-set host role is never touched.
@@ -76,17 +76,17 @@ describe('mp-treeview ARIA roles and structure', () => {
     await flush(custom);
     expect(custom.getAttribute('role')).toBe('listbox');
     // A childless tree is invalid ARIA — the list stays presentational.
-    expect(custom.shadowRoot!.querySelector('.treeview-root > ul')!.getAttribute('role')).toBe('presentation');
+    expect((custom.renderRoot as unknown as ParentNode).querySelector('.treeview-root > ul')!.getAttribute('role')).toBe('presentation');
   });
 
   it('keeps the list plumbing out of the a11y tree: role="none" items, role="group" only for an expanded parent', async () => {
     const el = await mount(TREE);
-    expect(el.shadowRoot!.querySelectorAll('li[role="none"]').length).toBe(3);
-    expect(el.shadowRoot!.querySelectorAll('ul[role="group"]').length).toBe(0);
+    expect((el.renderRoot as unknown as ParentNode).querySelectorAll('li[role="none"]').length).toBe(3);
+    expect((el.renderRoot as unknown as ParentNode).querySelectorAll('ul[role="group"]').length).toBe(0);
 
     el.expandedIds = ['1'];
     await flush(el);
-    expect(el.shadowRoot!.querySelectorAll('ul[role="group"]').length).toBe(1);
+    expect((el.renderRoot as unknown as ParentNode).querySelectorAll('ul[role="group"]').length).toBe(1);
   });
 
   it('emits aria-level / aria-posinset / aria-setsize per depth, not per flattened row', async () => {
@@ -165,7 +165,7 @@ describe('mp-treeview ARIA state transitions', () => {
 
   it('toggles aria-multiselectable on the tree node with the selection mode, live', async () => {
     const el = await mount(TREE);
-    const tree = () => el.shadowRoot!.querySelector('.treeview-root > ul')!;
+    const tree = () => (el.renderRoot as unknown as ParentNode).querySelector('.treeview-root > ul')!;
     expect(tree().hasAttribute('aria-multiselectable')).toBe(false);
 
     el.selectionMode = 'multiple';
@@ -220,7 +220,7 @@ describe('mp-treeview lazy-load ARIA', () => {
     const el = await mount(LAZY);
     el.loadChildren = () => new Promise<TreeNode[]>((resolve) => (resolveChildren = resolve));
 
-    const region = el.shadowRoot!.querySelector('[aria-live="polite"]');
+    const region = (el.renderRoot as unknown as ParentNode).querySelector('[aria-live="polite"]');
     expect(region).not.toBeNull();
 
     press(row(el, 'l1'), 'ArrowRight');
@@ -244,7 +244,7 @@ describe('mp-treeview lazy-load ARIA', () => {
     const describedBy = target.getAttribute('aria-describedby');
     expect(describedBy).toBeTruthy();
     // Same-root IDREF: it must actually resolve inside the shadow root.
-    const message = el.shadowRoot!.getElementById(describedBy!);
+    const message = el.renderRoot.querySelector(`[id="${describedBy}"]`);
     expect(message?.textContent).toBe('Network down');
     expect(target.hasAttribute('aria-busy')).toBe(false);
   });

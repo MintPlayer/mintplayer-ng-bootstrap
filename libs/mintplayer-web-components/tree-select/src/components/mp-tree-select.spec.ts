@@ -35,11 +35,11 @@ function makeProvider(): InMemoryTreeSelectProvider {
 }
 
 function tv(el: MpTreeSelect): HTMLElement {
-  return el.shadowRoot!.querySelector('mp-treeview') as HTMLElement;
+  return (el.renderRoot as unknown as ParentNode).querySelector('mp-treeview') as HTMLElement;
 }
 
 function row(el: MpTreeSelect, id: string): HTMLElement {
-  return tv(el).shadowRoot!.querySelector(`[data-node-id="${id}"]`) as HTMLElement;
+  return (tv(el) as unknown as ParentNode).querySelector(`[data-node-id="${id}"]`) as HTMLElement;
 }
 
 function checkbox(el: MpTreeSelect, id: string): HTMLInputElement {
@@ -180,7 +180,7 @@ describe('<mp-tree-select>', () => {
     await settled(el);
     let cleared = false;
     el.addEventListener('clear', () => (cleared = true));
-    (el.shadowRoot!.querySelector('.ts-clear') as HTMLElement).click();
+    ((el.renderRoot as unknown as ParentNode).querySelector('.ts-clear') as HTMLElement).click();
     await settled(el);
     expect((el.value as TreeNode[]).length).toBe(0);
     expect(cleared).toBe(true);

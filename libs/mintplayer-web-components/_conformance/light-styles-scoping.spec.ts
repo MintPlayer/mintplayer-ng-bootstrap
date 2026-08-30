@@ -14,10 +14,11 @@ import selectorParser from 'postcss-selector-parser';
  * can only match elements the owning component stamped.
  *
  * Two independent assertions, because they fail in different ways:
- *  1. STATIC — every compound selector carries the component's own scope
- *     (`[data-mps=<scope>]`) or is its host tag. A rule that lost its scope
- *     during a codegen change fails here even if nothing on the page collides
- *     with it yet.
+ *  1. STATIC — every selector is scope-ANCHORED: some compound carries the
+ *     component's own scope (`[data-mps=<scope>]`) or host tag, and only
+ *     descendant/child combinators separate it from the subject, so a match
+ *     always requires an element we stamped. A rule that lost its scope during a
+ *     codegen change fails here even if nothing on the page collides with it yet.
  *  2. BEHAVIOURAL — no selector matches anything in a decoy tree built from the
  *     class names our components and Bootstrap share (`.badge`, `.card`,
  *     `.table`, `.form-control`, …). This is the assertion that answers "are you
@@ -65,9 +66,35 @@ const generatedSheets = () =>
     })
     .filter((s) => s.css.trim().length > 0);
 
+/**
+ * Whether a selector can only match inside the owning component.
+ *
+ * The obvious rule — "every compound carries the scope" — is too strict. A rule
+ * may legitimately target DOM the template rewriter cannot stamp (`unsafeHTML`
+ * output, a consumer's icon SVG), and the safe form for those is to anchor on a
+ * scoped ANCESTOR: `.treeview-icon[data-mps=treeview] svg`. A match still
+ * requires an element we stamped, so nothing outside the component is reachable.
+ *
+ * The anchoring only holds through descendant/child combinators. A sibling
+ * combinator (`+`, `~`) walks OUT of the stamped subtree, and in the light DOM
+ * that sibling can be consumer content — so an anchor before one does not count.
+ */
+const isScopeAnchored = (
+  compounds: string[],
+  combinators: string[],
+  scopeAttr: string,
+  tag: string,
+): boolean =>
+  compounds.some((compound, i) => {
+    const carriesScope = compound.includes(scopeAttr) || compound === tag || compound.startsWith(tag);
+    if (!carriesScope) return false;
+    // Every combinator between this compound and the subject must keep us inside it.
+    return combinators.slice(i).every((c) => c === ' ' || c === '>');
+  });
+
 /** Every compound selector in the sheet, flattened, with its rule for reporting. */
 const compoundsOf = (css: string) => {
-  const out: { selector: string; compounds: string[] }[] = [];
+  const out: { selector: string; compounds: string[]; combinators: string[] }[] = [];
   postcss.parse(css).walkRules((rule) => {
     // Skip at-rules whose "selectors" are not element selectors.
     for (let p: unknown = rule.parent; p; p = (p as { parent?: unknown }).parent) {
@@ -76,12 +103,14 @@ const compoundsOf = (css: string) => {
     }
     for (const selector of rule.selectors) {
       const compounds: string[] = [];
+      const combinators: string[] = [];
       selectorParser((root) => {
         root.each((sel) => {
           let current = '';
           sel.each((node) => {
             if (node.type === 'combinator') {
               if (current.trim()) compounds.push(current.trim());
+              combinators.push(String(node).trim() === '' ? ' ' : String(node).trim());
               current = '';
             } else {
               current += String(node);
@@ -90,7 +119,7 @@ const compoundsOf = (css: string) => {
           if (current.trim()) compounds.push(current.trim());
         });
       }).processSync(selector);
-      out.push({ selector, compounds });
+      out.push({ selector, compounds, combinators });
     }
   });
   return out;
@@ -112,12 +141,9 @@ describe('light-tier stylesheets are scoped to their own component', () => {
 
       it('every compound carries the component scope or its host tag', () => {
         const unscoped: string[] = [];
-        for (const { selector, compounds } of compoundsOf(sheet.css)) {
+        for (const { selector, compounds, combinators } of compoundsOf(sheet.css)) {
           if (ALLOWED_GLOBAL_SELECTORS.includes(selector)) continue;
-          const anchored = compounds.some(
-            (c) => c.includes(scopeAttr) || c.startsWith(tag) || c === tag,
-          );
-          if (!anchored) unscoped.push(selector);
+          if (!isScopeAnchored(compounds, combinators, scopeAttr, tag)) unscoped.push(selector);
         }
         expect(unscoped).toEqual([]);
       });
