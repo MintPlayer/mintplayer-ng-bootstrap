@@ -5,6 +5,7 @@ import type {
   TreeNode,
   TreeviewSelectionMode,
   TreeNodeRenderer,
+  IconResolver,
 } from '@mintplayer/web-components/treeview';
 import { onMounted, ref, watch } from 'vue';
 
@@ -23,8 +24,8 @@ const props = defineProps<{
    * Exposed here for parity with the Angular and React wrappers.
    */
   nodeRenderer?: TreeNodeRenderer;
-  /** Returns an HTML/SVG string for a node's icon. */
-  iconResolver?: (node: TreeNode) => string | null | undefined;
+  /** Returns an HTML/SVG string for a node's icon key. */
+  iconResolver?: IconResolver;
 }>();
 const expandedIds = defineModel<string[]>('expandedIds', { default: () => [] });
 const selectedIds = defineModel<string[]>('selectedIds', { default: () => [] });
