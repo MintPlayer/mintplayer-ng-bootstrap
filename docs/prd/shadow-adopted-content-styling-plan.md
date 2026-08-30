@@ -150,11 +150,24 @@ Fix the four latent breakages the audit found (PRD §1.1) in all three demo apps
 | `nx run-many -t build` (4 libs) | pass |
 | web-components unit | 3225/3226 — the 1 is the known phone-input lazy-promise flake (33/33 in isolation, component not converted) |
 | ng / react / vue unit | 757/757, pass, pass |
-| e2e datatable-tree + datatable-virtual + file-manager (Chromium) | 12/12 |
-| the same three specs on **Firefox** | 12/12 |
+| e2e **full suite**, Chromium | 213 passed / 1 failed — `card.visual`, a screenshot diff that passes on CI; local runs reuse a dev server instead of the production build the config starts |
+| e2e **full suite**, Firefox | 198 passed, 7 skipped, exit 0 |
 | axe gate (`playwright.a11y.config.ts`) | **40/40** after fixing the one pre-existing failure below |
 | axe `/enterprise/scheduler` after interaction | Failed on this branch AND on `master` (verified by checking master out and re-running), so pre-existing. **Fixed in this PR** per the one-PR rule — see below |
 | ribbon + datetime-picker axe | 6/6 |
+
+### Correction: the first M8 sweep was a subset
+
+The initial sweep ran only three e2e spec files (datatable-tree, datatable-virtual, file-manager) and
+reported "12/12". That was a **subset**, not the suite, and CI on PR #410 caught six further specs
+still holding shadow-DOM assumptions about the converted components — tree-select (its upgrade gate
+waited for a shadow root a light-tier element never gets, timing out at 30-60s), query-builder ×2 and
+the treeview keyboard walkthrough — plus an interaction between the scheduler demo fix and specs that
+seeded events at *today* rather than at the shown week. All fixed; the table above is now a full-suite
+run in both browsers.
+
+The lesson worth keeping: converting a component breaks assertions in specs that never name it, so
+the conversion checklist must include a full e2e run, not the specs of the component being converted.
 
 ### Work that was not in the original milestone list
 
