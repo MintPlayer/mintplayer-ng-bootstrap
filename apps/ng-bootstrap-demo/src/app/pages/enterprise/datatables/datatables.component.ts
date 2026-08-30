@@ -1,6 +1,7 @@
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { PaginationRequest, PaginationResponse } from '@mintplayer/pagination';
+import { Color } from '@mintplayer/ng-bootstrap';
 import {
   BsDatatableComponent,
   BsDatatableColumnDirective,
@@ -10,6 +11,7 @@ import {
 } from '@mintplayer/ng-bootstrap/datatable';
 import { BsSelectComponent, BsSelectOption } from '@mintplayer/ng-bootstrap/select';
 import { BsCodeSnippetComponent } from '@mintplayer/ng-bootstrap/code-snippet';
+import { BsBadgeComponent } from '@mintplayer/ng-bootstrap/badge';
 import { dedent } from 'ts-dedent';
 import { Artist } from '../../../entities/artist';
 import { ArtistService } from '../../../services/artist/artist.service';
@@ -25,10 +27,13 @@ import { TreeItemService } from '../../../services/tree-item/tree-item.service';
     BsDatatableComponent, BsDatatableColumnDirective, BsRowTemplateDirective,
     BsSelectComponent, BsSelectOption,
     BsCodeSnippetComponent,
+    BsBadgeComponent,
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class DatatablesComponent {
+
+  protected readonly colors = Color;
 
   private artistService = inject(ArtistService);
   private treeItemService = inject(TreeItemService);

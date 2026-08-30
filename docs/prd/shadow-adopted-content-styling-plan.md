@@ -1,0 +1,143 @@
+# Plan — Styling consumer-authored content inside WC shadow roots
+
+PRD: [shadow-adopted-content-styling.md](./shadow-adopted-content-styling.md)
+Status: **Proposed** (2026-08-30). Not started. No branch, no PR.
+
+Strategy (PRD §4.6): convert the six components that adopt consumer DOM from shadow DOM to
+**emulated encapsulation** — build-time attribute rescoping, Angular's `ViewEncapsulation.Emulated`
+implemented for our web components — so consumer content stays in the document tree and the styling
+problem stops existing. Built on `feat/wc-style-encapsulation`, whose `rescopeCss` transform and
+`installLightStyles` helper are reused wholesale.
+
+Per repo policy this is **one PR**: all conversions, both guarantee layers, all three wrapper libs,
+demos and docs. Commit per milestone; run the suites once, at the end (M8).
+
+**M0 gates everything.** The design rests on lit rendering a dynamic template in the light DOM
+alongside consumer-authored nodes — the one thing CLAUDE.md's current Tier-L admission rule
+explicitly forbids. If M0 fails, stop and take PRD §9.3, rather than working around it.
+
+---
+
+## M0 — Spikes (blocking; no production code)
+
+Needs a real browser. `playwright_node` MCP was unavailable when this plan was written
+(`CONNECT_TIMEOUT`); the repo's own Playwright e2e projects are the fallback. Spike pages go in
+`docs/prd/_spike-*.html`, matching existing precedent (`_spike-scheduler-sticky-overlay.html`).
+
+| # | Question | Pass condition |
+|---|---|---|
+| **S1** | Can lit render `mp-datatable`'s **dynamic** template into the light DOM without clobbering consumer nodes? Exercise sort, page change, virtual scroll, tree expand — every path that changes the render value | Consumer nodes survive every transition; no orphaned lit markers; no duplicated rows. **This is the go/no-go for the whole PRD** |
+| **S2** | Same for a template that switches shape (`nothing` ↔ template), e.g. empty-state → rows | Either it survives, or we learn the exact constraint and encode it as an authoring rule |
+| **S3** | Does document CSS now style consumer content correctly? | `<bs-badge>` in a row computes the same `background-color`/`border-radius`/`padding` as in the light DOM; `text-nowrap`, `me-2`, `text-muted`, `font-monospace` all apply |
+| **S4** | **Leakage out** (Goal 3) — the user's hard requirement | With a converted `mp-card`/`mp-datatable` on the page, decoy Angular components carrying `.badge`, `.card`, `.table`, `.form-control` compute **byte-identical** styles to a page without our component. Three engines |
+| **S5** | **Leakage in** — how much page CSS now reaches component internals | Quantify against a Bootstrap-styled page; produce the list of internal elements whose computed styles change, for the migration note |
+| **S6** | Accessibility tree after removing the boundary | Row/cell/tree structure unchanged or improved; IDREF associations (`aria-labelledby`, `aria-controls`) that previously could not cross the boundary now resolve |
+| **S7** | SSR / hydration in the light DOM | Angular SSR output for a converted component parses correctly and hydrates without mismatch; scoped `<style>` emitted once |
+| **S8** | Virtual-scroll performance vs. today | No regression in scroll frame time on the 10k-row windowed demo |
+
+Deliverable: findings appended to the PRD, and a go/no-go on §4.6.
+
+## M1 — Rebase and reuse
+
+Rebase onto `feat/wc-style-encapsulation` (PRD §9.2). Inventory what transfers unchanged:
+`light-dom/` (`installLightStyles`, `scopedHtml`, `stampScope`), `rescopeCss` + spec, codegen wiring
+in `build-web-components.mjs` and `project.json`, SSR emission, CLAUDE.md light-tier rules.
+
+Then **rewrite the Tier-L admission rule** in CLAUDE.md to whatever S1/S2 actually established. Its
+current form excludes every component this PR converts; leaving it stale would make the codebase
+self-contradictory.
+
+## M2 — The no-leak guarantee (PRD §5.2)
+
+Build this **before** converting components, so every conversion lands against a live check.
+
+- Build-level conformance test: parse every generated `*.light.styles.ts`, assert each selector
+  carries its own scope attribute or tag, or sits in an explicit `/*! @mps-global */` escape. No
+  silently-growing allowlist.
+- Runtime decoy test (S4 promoted to a permanent spec): converted components adjacent to Angular
+  components with colliding class names; computed styles asserted identical.
+- Extend `rescopeCss`'s spec with the cases the conversions will actually hit — nested compounds,
+  `@media`/`@container`/`@supports` bodies, `:is()`/`:where()`, attribute selectors, pseudo-element
+  placement.
+
+## M3 — Convert `mp-datatable`
+
+The hardest one, and the one the bug was reported on. `<name>.light.scss` + generated rescoped
+styles, `scopedHtml('datatable')` throughout, `createRenderRoot() { return this; }`,
+`installLightStyles` before `define`. Remove the now-unnecessary `adoptLightStyles` call
+(`mp-datatable.ts:645` on the branch).
+
+Restate `@extend`-from-`:host` rules as `:host(...)` forms (the branch's recorded trap). Keep the
+string form of `cellRenderer` working — the React and Vue demos rely on it
+(`DatatablePage.tsx:56-59`, `DatatableView.vue:55-58`).
+
+## M4 — Convert `mp-treeview`, `mp-tree-select`, `mp-query-condition`
+
+Same pipeline. `mp-query-condition` is the clearest win: the direct
+`mount.appendChild(handle.element)` (`mp-query-condition.element.ts:144`) hands a consumer's own
+`<input class="form-control custom-date-editor">` into the shadow root today; in the light DOM both
+classes simply work, and the shadow-root Bootstrap import at `mp-query-condition.element.scss:17`
+can be dropped.
+
+`mp-select` / `mp-file-manager`: confirm no change needed (string-returning resolvers, own styles)
+and record the finding rather than converting.
+
+`mp-tree-select` forwards a `nodeRenderer` into `mp-treeview` (`:877`) — convert together so the
+chain is consistent.
+
+## M5 — Wrappers
+
+- Angular: `datatable.component.ts:185-370`, `treeview.component.ts:132-155`,
+  `tree-select.component.ts:195-256`, `query-builder.component.ts:182-200` — verify the
+  `EmbeddedViewRef` path still holds and that host attributes/`aria-*` forwarding still lands on the
+  right element now that there is no boundary.
+- Vue: `BsTreeSelect.vue:60-131` is the only existing bridge; also expose the renderers on
+  `BsDatatable.vue` / `BsTreeview.vue`, which currently do not, so the three frameworks reach parity.
+- React: passthroughs need no functional change; update doc comments that tell consumers to
+  hand-build DOM nodes (`BsTreeSelect.tsx:8-13`, `BsTreeview.tsx:14-16`).
+
+## M6 — Demos
+
+Fix the four latent breakages the audit found (PRD §1.1) in all three demo apps, and keep the
+`<bs-badge>` in the artist rows as the visible canary.
+
+## M7 — Docs
+
+- CLAUDE.md: the rewritten admission rule (M1), plus the leak-*in* direction documented as a
+  supported property with guidance.
+- Migration note per framework — chiefly that page CSS now reaches component internals, and that
+  `::part()` selectors targeting the converted components stop applying.
+- `treeview-node-template.directive.ts:16` — replace the dead `<span class="badge bg-secondary">`
+  guidance with `<bs-badge>`.
+- Close #408 with a pointer to this PRD.
+
+## M8 — Verification sweep (single pass, at the end)
+
+```bash
+npx nx build mintplayer-web-components
+npx nx build mintplayer-ng-bootstrap
+npx nx build mintplayer-react-bootstrap
+npx nx build mintplayer-vue-bootstrap
+npx nx test mintplayer-web-components
+npx nx test mintplayer-ng-bootstrap
+```
+
+Plus:
+- e2e: `<bs-badge>` in a datatable row has non-default computed `background-color` **and**
+  `border-radius`, in all three demo apps; utility classes from PRD §1.1 apply.
+- The M2 conformance + decoy tests green.
+- axe gate on datatable / treeview / tree-select — removing a boundary reshapes the a11y tree (S6).
+- Firefox smoke pass.
+
+---
+
+## Risks
+
+| Risk | Handling |
+|---|---|
+| **S1 fails** — lit cannot host consumer nodes inside a dynamic light-DOM template | M0 is blocking and this is the likeliest failure. Fall back to PRD §9.3 (SharedStylesHost bridge + per-component utility subset). Confirm the fallback with the user **before** M0, not after |
+| A rescoped selector leaks to another component | M2 lands before any conversion; transform throws at build time, decoy test fails at runtime |
+| Page CSS now restyles component internals (leak in) | S5 quantifies it; documented in the migration note. Accepted — Angular's Emulated has the identical property |
+| a11y tree changes shape when the boundary is removed | S6 measures; axe gate in M8 |
+| Virtual-scroll regression | S8 measures before M3 |
+| Converted components lose `::part()` addressability | Breaking, documented. Consumers gain ordinary CSS access in exchange |
