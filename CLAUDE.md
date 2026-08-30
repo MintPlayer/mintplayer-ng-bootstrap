@@ -83,6 +83,28 @@ Encapsulation is preserved at build time instead of by the boundary, the way Ang
   compound must carry its own scope, and no selector may match a decoy tree of elements sharing our
   class names. Exemptions are listed explicitly in that file, never added silently.
 
+**Two rules that are easy to get wrong, both found by measurement:**
+
+- **Nesting.** A light-tier component's sheet is installed at DOCUMENT level, and document CSS does
+  not cross a shadow boundary — so a component that KEEPS its shadow root but renders a light-tier
+  component inside it starves it (issue #408 again, one level up). Any such host must mirror the
+  registry: `adoptLightStyles(this.renderRoot)` in `connectedCallback`, disposing on disconnect.
+  `mp-file-manager` is the reference. `_conformance/light-styles-nesting.spec.ts` enforces it. The
+  corollary is that converting a component can force its ANCESTORS to convert too — the
+  query-builder family had to go together for exactly this reason.
+- **Do not re-import a Bootstrap partial the page already ships.** `libs/mintplayer-ng-bootstrap/_bootstrap.scss`
+  provides `utilities`, `root`, `reboot`, `type`, `images` and `buttons` globally, and in the light
+  DOM those reach the component. Importing them again ships the CSS twice AND the rescoped copy
+  silently WINS on specificity (`.btn[data-mps=…]` beats `.btn`), making the page's own theming
+  unoverridable. Partials that are commented out there (`forms`, `tables`, `badge`, `card`, `alert`,
+  `list-group`, `close`, …) are NOT global and must still be imported.
+
+Styling DOM the rewriter cannot stamp (`unsafeHTML` output, a consumer's node, another component's
+rendered content) is done by anchoring on a scoped ANCESTOR, marked `/*! @mps-global */` and
+authored in final form — `.treeview-icon[data-mps=treeview] svg`, not `.treeview-icon svg`. The
+match still requires an element we stamped, so nothing outside can be hit. Prefer this over having
+one component stamp another's scope, which would couple it to that component's internals.
+
 Consequences to design around:
 
 - **Encapsulation is one-directional.** Page CSS now reaches the component's internals — the same
@@ -98,6 +120,13 @@ Consequences to design around:
   zero-rows recovery with node identity intact. The trap is different — it bites *pre-existing light
   children the host owns but lit does not manage*.
 - `@extend` from `:host` does not unify into compounds; restate such rules as `:host(...)`.
+- Converting a component breaks its specs in four predictable ways, and each has a faithful
+  translation rather than a weakening: `el.shadowRoot` → `el.renderRoot`; `shadowRoot.activeElement`
+  → `document.activeElement`; `document.activeElement === host` →
+  `host.contains(document.activeElement)` (the equality was asserting shadow focus RETARGETING, not
+  focus location); and any helper that walks `el.shadowRoot` to settle or search descendants must
+  use `el.shadowRoot ?? el` **and filter to custom elements** — in the light DOM that walk covers the
+  whole rendered tree, which took one suite from ~8s to 18-22s per test.
 
 ### WC gotchas
 

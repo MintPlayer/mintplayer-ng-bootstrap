@@ -4,6 +4,7 @@ import type {
   MpTreeview,
   TreeNode,
   TreeviewSelectionMode,
+  TreeNodeRenderer,
 } from '@mintplayer/web-components/treeview';
 import { onMounted, ref, watch } from 'vue';
 
@@ -16,6 +17,14 @@ defineOptions({ inheritAttrs: false });
 const props = defineProps<{
   items?: TreeNode[];
   selectionMode?: TreeviewSelectionMode;
+  /**
+   * Per-node body renderer. Returns a DOM node, which the WC mounts in its
+   * (light-DOM) tree — so the page's stylesheets style it normally.
+   * Exposed here for parity with the Angular and React wrappers.
+   */
+  nodeRenderer?: TreeNodeRenderer;
+  /** Returns an HTML/SVG string for a node's icon. */
+  iconResolver?: (node: TreeNode) => string | null | undefined;
 }>();
 const expandedIds = defineModel<string[]>('expandedIds', { default: () => [] });
 const selectedIds = defineModel<string[]>('selectedIds', { default: () => [] });
@@ -37,17 +46,27 @@ const syncSelectedIds = () => {
 const syncSelectionMode = () => {
   if (el.value) el.value.selectionMode = props.selectionMode ?? 'single';
 };
+// Function-valued props never survive attribute serialization — assign them
+// to the element's JS properties, like `items`.
+const syncRenderers = () => {
+  if (!el.value) return;
+  if (props.nodeRenderer !== undefined) el.value.nodeRenderer = props.nodeRenderer;
+  if (props.iconResolver !== undefined) el.value.iconResolver = props.iconResolver;
+};
 
 onMounted(() => {
   syncItems();
   syncExpandedIds();
   syncSelectedIds();
   syncSelectionMode();
+  syncRenderers();
 });
 watch(() => props.items, syncItems);
 watch(expandedIds, syncExpandedIds);
 watch(selectedIds, syncSelectedIds);
 watch(() => props.selectionMode, syncSelectionMode);
+watch(() => props.nodeRenderer, syncRenderers);
+watch(() => props.iconResolver, syncRenderers);
 
 function onTreeNodeExpand(e: Event) {
   const d = (e as CustomEvent<{ expandedIds: string[] }>).detail;
