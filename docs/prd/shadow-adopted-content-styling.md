@@ -1,8 +1,7 @@
 # PRD — Styling consumer-authored content that a web component mounts inside its shadow root
 
-Status: **In progress** on `feat/light-dom-emulated-encapsulation` (2026-08-30), unpushed.
-M0-M3 done; M4 partly done (datatable, treeview, tree-select converted; query-condition family
-outstanding). See the plan for per-milestone state.
+Status: **Implemented** on `feat/light-dom-emulated-encapsulation` (2026-08-30).
+All milestones M0-M8 complete; see the plan for per-milestone state and the verification sweep.
 Plan: [shadow-adopted-content-styling-plan.md](./shadow-adopted-content-styling-plan.md)
 Related: issue **#408**; the unmerged branch `feat/wc-style-encapsulation` and its
 [wc-style-encapsulation.md](./wc-style-encapsulation.md) PRD (**not on `master`** — see §7).
@@ -280,10 +279,15 @@ convention:
 1. **Transform-level.** `rescopeCss` appends `[data-mps=<scope>]` to *every* compound it emits; a
    selector it cannot scope meaningfully throws at build time. Opting a rule out requires an explicit
    `/*! @mps-global */` comment and authoring it in final form.
-2. **Build-level conformance test.** A test parses every generated `*.light.styles.ts` and asserts
-   that every selector either contains the component's own scope attribute / tag name, or is inside
-   an explicitly-marked global escape. No exceptions, no allowlist that grows silently. This is the
-   artefact that makes the guarantee checkable on every CI run instead of trusted.
+2. **Build-level conformance test.** `_conformance/light-styles-scoping.spec.ts` parses every
+   generated `*.light.styles.ts` and asserts each selector is **scope-anchored**: some compound
+   carries the component's own scope attribute or host tag, and only descendant/child combinators
+   separate it from the subject, so a match always requires an element we stamped. Sibling
+   combinators deliberately do not count — in the light DOM a sibling of a stamped element can be
+   consumer content. (The stricter "every compound carries the scope" was the original design and
+   proved wrong: it rejects legitimate rules targeting `unsafeHTML` output, which must be anchored
+   on an ancestor instead. See §5.5.) Exemptions live in one explicit list, so none can be added
+   silently.
 3. **Runtime test.** A spec renders each converted component adjacent to a set of decoy Angular
    components carrying colliding class names (`.badge`, `.card`, `.table`, `.form-control`) and
    asserts their computed styles are byte-identical with and without our component on the page.
@@ -291,14 +295,19 @@ convention:
 Together these answer "am I certain the Bootstrap styles don't affect other Angular components?" with
 a build failure and a red test, not a review comment.
 
-### 5.3 Scope of conversion
+### 5.3 Scope of conversion — as implemented
 
-Convert the six components in §1.2 that adopt consumer DOM. Leave every slot-based component on
-shadow DOM — they do not have the problem, and converting them would trade a working encapsulation
-boundary for an emulated one for no benefit.
+Every slot-based component keeps its shadow root: they do not have the problem, and converting them
+would trade a working encapsulation boundary for an emulated one for no benefit.
 
-`mp-select` and `mp-file-manager` likely need no change at all (string-returning resolvers, own
-styles); confirm and record rather than convert.
+| component | outcome |
+|---|---|
+| `mp-datatable` | converted |
+| `mp-treeview` | converted |
+| `mp-tree-select` | converted |
+| `mp-query-builder` / `-condition` / `-group` / `-subquery` | converted — **the family had to go together**, because a light-tier element inside an unconverted ancestor's shadow root is unstyled (§9.1) |
+| `mp-select` | no change needed — `optionRenderer` returns a string into an `<option>`, which UAs render as text |
+| `mp-file-manager` | **not** converted, but it hosts light-tier components in its shadow root, so it mirrors the registry via `adoptLightStyles` (§9.1) |
 
 ### 5.4 Invariants
 
@@ -311,14 +320,36 @@ styles); confirm and record rather than convert.
   `mp-accordion.ts:137`, `mp-dropdown-element.ts:25`, `mp-navbar.ts:59`, `mp-navbar-element.ts:14`,
   `mp-shell.ts:61`).
 - Tier L follows the page's theme: it expects Bootstrap `:root` tokens and must not re-declare them.
+- A shadow-DOM component that renders a light-tier component inside its root MUST mirror the
+  registry (`adoptLightStyles`) — see §9.1.
+- A converted component MUST NOT import a Bootstrap partial the page already ships globally
+  (`utilities`, `root`, `reboot`, `type`, `images`, `buttons` in `_bootstrap.scss`). It would ship
+  the CSS twice, and the rescoped copy silently wins on specificity, making the page's own theming
+  unoverridable. Partials commented out there are not global and must still be imported.
 
-## 6. Escape hatch (same PR)
+### 5.5 Styling DOM the rewriter cannot stamp
 
-For a consumer who hands us a detached element they built themselves and expects our component to
-style it, document the §4.2 bridge as an opt-in: an `ɵSHARED_STYLES_HOST` override minting one
-constructed sheet per registered component style into a registry that adopting roots mirror —
-registry-only, never `document.adoptedStyleSheets`. Ship it only if M0 shows a converted component
-still cannot cover a real case; otherwise record it as a considered-and-unneeded option.
+`unsafeHTML` output, a consumer's node, and another component's rendered content never carry the
+scope attribute. Such rules are authored **anchored on a scoped ancestor**, marked
+`/*! @mps-global */` and written in final form — `.treeview-icon[data-mps=treeview] svg`, not
+`.treeview-icon svg`. A match still requires an element we stamped, so nothing outside is reachable.
+Prefer this over having one component stamp another's scope: `mp-tree-select` builds a
+`.treeview-label`, and the rule for it lives in **treeview's** sheet anchored on treeview's own row,
+rather than coupling tree-select to treeview's internal scope name.
+
+## 6. Escape hatch — considered, NOT shipped
+
+The plan reserved the §4.2 `ɵSHARED_STYLES_HOST` bridge as an opt-in for a consumer who hands us a
+detached element and expects our component to style it, to be built **only if** a converted
+component could not cover a real case.
+
+It was not needed and is not in this PR. Once a component renders in the light DOM there is nothing
+to bridge: consumer content sits in the document tree, so the page's stylesheets, the consumer's own
+component CSS and Bootstrap's utilities all reach it by ordinary cascade — measured across every
+affected demo page. Shipping the bridge anyway would have added a dependency on an `ɵ`-prefixed
+Angular API, and an Angular-only mechanism, for no behaviour we lack. Recorded here so the option is
+not re-litigated from scratch: it remains the correct fallback if a future component genuinely
+cannot leave the shadow DOM.
 
 ## 7. Relationship to `feat/wc-style-encapsulation`
 
@@ -328,14 +359,19 @@ contains: the `light-dom` entrypoint (`installLightStyles`, `adoptLightStyles`, 
 `stampScope`), `rescopeCss` + its spec, the codegen wiring in `build-web-components.mjs` and
 `project.json`, SSR emission, and CLAUDE.md's light-tier authoring rules.
 
-**This PRD should be built on that branch, not beside it.** It keeps the branch's transform and
-install machinery wholesale and changes its *strategy*: from "migrate admissible leaves to Tier L,
-and bridge the rest by mirroring sheets into shadow roots" to "convert the components that adopt
-consumer DOM, so there is nothing to bridge." Concretely, `adoptLightStyles` and its two call sites
-(`mp-datatable.ts:645`, `mp-treeview.ts:86`) become unnecessary for the converted components, and the
-Tier-L admission rule in CLAUDE.md must be **rewritten** — its current form (`render()` is `nothing`
-or a single static wrapper) excludes exactly the components this PRD converts, and can only be
-relaxed if M0's lit-in-light-DOM spikes pass.
+**What was actually done** (§9.3): branched fresh from `master` and ported only the *machinery* —
+`rescopeCss` + spec, `installLightStyles` / `adoptLightStyles` / `scopedHtml` / `stampScope`, the
+codegen wiring and the SSR injector. The branch's *strategy* is replaced: instead of "migrate
+admissible leaves to Tier L and bridge the rest", this PR converts the components that adopt
+consumer DOM, so there is nothing left to bridge — which is why the badge and card Tier-L migrations
+were **not** carried over. `bs-badge` works untouched inside a light-DOM datatable, and so do the
+other 22 Angular wrappers that import Bootstrap partials.
+
+Two things that branch got right and this PR keeps: `adoptLightStyles` (still required for the
+nesting case — §9.1) and the loud-failure contract in the transform. One thing it got wrong for this
+purpose: its Tier-L admission rule (`render()` is `nothing` or a single static wrapper) excludes
+every component converted here. CLAUDE.md now carries the rewritten rule, grounded in what the M0
+spikes measured rather than in the leaf-only assumption.
 
 ## 8. Migration and documentation
 
@@ -391,15 +427,42 @@ Angular wrapper stylesheets that import a Bootstrap partial. That branch's per-c
 path collapses from "23 components, one at a time" to "zero". This is the strongest argument for the
 approach and should be stated in the PR description.
 
-## 10. Verification
+## 10. Verification — results
 
-- **M0 spikes decide the design.** Nothing is converted until lit-in-light-DOM is measured in three
-  engines.
-- The §5.2 triple guarantee: transform throws, conformance test, decoy-component runtime test.
-- e2e: `<bs-badge>` in a datatable row has non-default computed `background-color` **and**
-  `border-radius`, in all three demo apps; plus the four latent utility breakages from §1.1.
-- axe pass on datatable / treeview / tree-select after conversion — removing a shadow root changes
-  the accessibility tree's shape, and IDREF resolution (`aria-labelledby` etc.) changes meaning when
-  a boundary disappears. This is a **feature** for a11y (IDREFs now work across what used to be a
-  boundary) but must be verified, not assumed.
-- Firefox smoke pass.
+Measured, not intended. Full per-milestone detail in the plan's M8 section.
+
+**The control experiment** (§1.1): identical probe elements inside the shadow root vs the light DOM
+differed on all six checked properties; after conversion the badge computes
+`rgb(25,135,84)` / `6px` / `4.2px 7.8px` / `inline-block` (was transparent / `0px` / `0px` /
+`inline`), and the previously-inert utilities now apply — `me-2` → `8px`, `font-monospace` →
+SFMono-Regular.
+
+**No leak (Goal 3)**, live on the page: identically-classed decoy elements outside the component are
+untouched — `.datatable-shell` stays `block` (component: `flex`), `.datatable-scroll` stays
+`visible` (`auto`), `th` stays at UA weight `700` (`600`). The conformance suite was itself verified
+non-vacuous: an intentionally unscoped sheet fails both assertions.
+
+**No duplication (Goal 5)**: dropping the globally-provided `bootstrap/scss/buttons` import cut the
+query-builder family's generated CSS from 66,518 to 22,379 bytes (−66%) with a computed-style
+baseline showing **zero** visual diffs.
+
+| suite | result |
+|---|---|
+| builds (4 libs) | pass |
+| web-components unit | 3225/3226 — the 1 is the known phone-input lazy-promise flake (33/33 isolated, component not converted) |
+| ng / react / vue unit | 757/757, pass, pass |
+| e2e datatable-tree + virtual + file-manager, **Chromium** | 12/12 |
+| e2e same three, **Firefox** | 12/12 |
+| axe gate | 40/40 (one pre-existing failure found and fixed — see the plan) |
+
+**SSR/hydration**: 20 rows / 20 badges render with **zero NG05xx** errors and no `ngSkipHydration`.
+The reason is structural and now documented in `app.config.ts`: the wrappers guard on
+`isPlatformServer`, so SSR emits the element empty and lit fills it after hydration.
+
+### Not covered
+
+- WebKit/Safari was not exercised: the repo's Playwright projects are Chromium and Firefox only.
+- The a11y verification is the automated axe gate plus the existing per-component ARIA specs. A
+  human screen-reader pass over the converted components has not been done, and removing a shadow
+  boundary changes IDREF scope — `aria-labelledby` / `-controls` can now resolve across what used to
+  be a boundary, which should be an improvement but is unverified by hand.

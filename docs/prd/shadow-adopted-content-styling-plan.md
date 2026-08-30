@@ -1,10 +1,11 @@
 # Plan — Styling consumer-authored content inside WC shadow roots
 
 PRD: [shadow-adopted-content-styling.md](./shadow-adopted-content-styling.md)
-Status: **M0-M8 implemented** on `feat/light-dom-emulated-encapsulation` (2026-08-30), unpushed.
-M0 spikes passed; mp-datatable converted and verified in the browser. M4-M8 outstanding.
+Status: **Complete** — M0-M8 implemented on `feat/light-dom-emulated-encapsulation` (2026-08-30).
+M0 spikes passed; four component families converted and verified in the browser (Chromium +
+Firefox). Three items beyond the original milestone list also landed — see below.
 
-Strategy (PRD §4.6): convert the six components that adopt consumer DOM from shadow DOM to
+Strategy (PRD §4.6): convert the components that adopt consumer DOM from shadow DOM to
 **emulated encapsulation** — build-time attribute rescoping, Angular's `ViewEncapsulation.Emulated`
 implemented for our web components — so consumer content stays in the document tree and the styling
 problem stops existing. Branched fresh from `master`, porting `feat/wc-style-encapsulation`'s
@@ -94,7 +95,7 @@ Spec translations required by the conversion, recorded because M4 will hit them 
 asserting shadow focus retargeting, not focus location); a shared harness resolves
 `shadowRoot ?? host` so it covers both tiers.
 
-## M4 — Convert `mp-treeview`, `mp-tree-select`, `mp-query-condition`
+## M4 — Convert `mp-treeview`, `mp-tree-select`, `mp-query-condition` — **DONE**
 
 **treeview + tree-select DONE** (and `mp-file-manager` now mirrors the registry — see PRD §9.1).
 `mp-query-condition` outstanding; note its whole family must convert together, because a light-tier
@@ -116,7 +117,7 @@ and record the finding rather than converting.
 `mp-tree-select` forwards a `nodeRenderer` into `mp-treeview` (`:877`) — convert together so the
 chain is consistent.
 
-## M5 — Wrappers
+## M5 — Wrappers — **DONE**
 
 - Angular: `datatable.component.ts:185-370`, `treeview.component.ts:132-155`,
   `tree-select.component.ts:195-256`, `query-builder.component.ts:182-200` — verify the
@@ -127,12 +128,12 @@ chain is consistent.
 - React: passthroughs need no functional change; update doc comments that tell consumers to
   hand-build DOM nodes (`BsTreeSelect.tsx:8-13`, `BsTreeview.tsx:14-16`).
 
-## M6 — Demos
+## M6 — Demos — **DONE**
 
 Fix the four latent breakages the audit found (PRD §1.1) in all three demo apps, and keep the
 `<bs-badge>` in the artist rows as the visible canary.
 
-## M7 — Docs
+## M7 — Docs — **DONE**
 
 - CLAUDE.md: the rewritten admission rule (M1), plus the leak-*in* direction documented as a
   supported property with guidance.
@@ -149,10 +150,27 @@ Fix the four latent breakages the audit found (PRD §1.1) in all three demo apps
 | `nx run-many -t build` (4 libs) | pass |
 | web-components unit | 3225/3226 — the 1 is the known phone-input lazy-promise flake (33/33 in isolation, component not converted) |
 | ng / react / vue unit | 757/757, pass, pass |
-| e2e datatable-tree + datatable-virtual + file-manager | 12/12 |
+| e2e datatable-tree + datatable-virtual + file-manager (Chromium) | 12/12 |
+| the same three specs on **Firefox** | 12/12 |
 | axe gate (`playwright.a11y.config.ts`) | **40/40** after fixing the one pre-existing failure below |
 | axe `/enterprise/scheduler` after interaction | Failed on this branch AND on `master` (verified by checking master out and re-running), so pre-existing. **Fixed in this PR** per the one-PR rule — see below |
 | ribbon + datetime-picker axe | 6/6 |
+
+### Work that was not in the original milestone list
+
+Three items were added during execution and are part of the PR:
+
+1. **`mp-file-manager` mirrors the light-style registry** — the nesting rule (PRD §9.1), found by the
+   browser right after M3, plus `_conformance/light-styles-nesting.spec.ts` to enforce it.
+2. **Bootstrap de-duplication** — the query-builder family stopped importing
+   `bootstrap/scss/buttons`, which the page already ships globally. 66,518 → 22,379 bytes (−66%),
+   zero computed-style diffs. Directly serves the no-duplication goal.
+3. **The scheduler fix below**, per the one-PR rule.
+
+Versions bumped (minor) for the four changed packages: web-components 2.15.0, ng-bootstrap 22.18.0,
+react-bootstrap 19.19.0, vue-bootstrap 3.20.0. Note the branch carries documented breaking changes
+(no shadow root ⇒ no `::part()`/`::slotted()`; `part=` attributes removed; `*Styles` exports renamed
+to `*LightStyles`), so the minor bump is a deliberate call, not an inference.
 
 ### The scheduler failure: root cause and fix
 
