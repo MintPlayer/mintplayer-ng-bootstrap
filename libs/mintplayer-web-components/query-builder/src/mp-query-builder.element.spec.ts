@@ -67,7 +67,8 @@ function shadowText(el: Element): string {
       }
     }
   };
-  if (el.shadowRoot) visit(el.shadowRoot);
+  // Tier-agnostic entry: light-DOM components render into the element itself.
+  visit(el.shadowRoot ?? el);
   return parts.join(' ');
 }
 
@@ -207,7 +208,7 @@ describe('mp-query-builder (M2 read-only rendering)', () => {
     el.depth = 10;
     document.body.appendChild(el);
     await el.updateComplete;
-    expect(el.shadowRoot?.textContent).toContain('Tree too deep');
+    expect((el.renderRoot as unknown as ParentNode).textContent).toContain('Tree too deep');
   });
 
   it('shows the unknown field name as the selected option when the field is not in the schema', async () => {
