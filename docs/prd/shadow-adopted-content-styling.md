@@ -362,7 +362,25 @@ relaxed if M0's lit-in-light-DOM spikes pass.
    classes into a shadow root, so it fails the actual bar. Slotting is the only alternative that
    keeps shadow DOM and still lets utilities apply, because the content never crosses the boundary.
 
-### 9.1 Consequence: the badge migration is no longer needed
+### 9.1 CORRECTION (2026-08-30, found by measurement): the nesting rule
+
+An earlier draft of this PRD said `adoptLightStyles` becomes unnecessary. **That was wrong**, and
+the browser caught it right after M3. A light-tier component's sheet is installed at *document*
+level, so a component that keeps its shadow root but renders a light-tier component **inside** it
+starves that child — the same #408 failure, one level up. Measured: `mp-datatable` inside
+`mp-file-manager`'s shadow root computed `block` / `visible` / `700` instead of `flex` / `auto` /
+`600`.
+
+The corrected rule, now enforced by `_conformance/light-styles-nesting.spec.ts`:
+
+> **Any shadow-DOM component that renders a light-tier component inside its shadow root must mirror
+> the registry with `adoptLightStyles(this.renderRoot)`**, and dispose on disconnect.
+
+`mp-file-manager` is the only such host in the repo today. This is also why converting a component
+can force its *ancestors* to be considered: a light-tier component nested in a shadow root is
+unstyled unless that ancestor mirrors.
+
+### 9.2 Consequence: the badge migration is no longer needed
 
 `feat/wc-style-encapsulation` converts `bs-badge` into a Tier-L web component and strips its
 `::ng-deep` Bootstrap import, specifically so it survives inside a datatable. Once the datatable is

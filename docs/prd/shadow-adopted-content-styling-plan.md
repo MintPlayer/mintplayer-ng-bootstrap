@@ -1,7 +1,7 @@
 # Plan — Styling consumer-authored content inside WC shadow roots
 
 PRD: [shadow-adopted-content-styling.md](./shadow-adopted-content-styling.md)
-Status: **M1-M3 implemented** on `feat/light-dom-emulated-encapsulation` (2026-08-30), unpushed.
+Status: **M1-M3 + most of M4 implemented** on `feat/light-dom-emulated-encapsulation` (2026-08-30), unpushed.
 M0 spikes passed; mp-datatable converted and verified in the browser. M4-M8 outstanding.
 
 Strategy (PRD §4.6): convert the six components that adopt consumer DOM from shadow DOM to
@@ -95,6 +95,10 @@ asserting shadow focus retargeting, not focus location); a shared harness resolv
 `shadowRoot ?? host` so it covers both tiers.
 
 ## M4 — Convert `mp-treeview`, `mp-tree-select`, `mp-query-condition`
+
+**treeview + tree-select DONE** (and `mp-file-manager` now mirrors the registry — see PRD §9.1).
+`mp-query-condition` outstanding; note its whole family must convert together, because a light-tier
+element nested in an unconverted ancestor's shadow root is unstyled.
 
 Same pipeline. `mp-query-condition` is the clearest win: the direct
 `mount.appendChild(handle.element)` (`mp-query-condition.element.ts:144`) hands a consumer's own
