@@ -80,8 +80,10 @@ async function readRows(page: Page) {
     // which is the tree-mode example (the basic example comes first).
     const datatables = document.querySelectorAll('mp-datatable');
     const wc = datatables[datatables.length - 1];
-    if (!wc?.shadowRoot) return [];
-    const rows = wc.shadowRoot.querySelectorAll('tbody tr[data-row-key]');
+    // Tier L: mp-datatable renders in the light DOM, so its rows are ordinary
+    // descendants of the host — no shadow hop.
+    if (!wc) return [];
+    const rows = wc.querySelectorAll('tbody tr[data-row-key]');
     return Array.from(rows).map((row) => ({
       key: row.getAttribute('data-row-key') ?? '',
       depth: Number(row.getAttribute('data-depth') ?? '0'),
@@ -99,8 +101,8 @@ async function clickChevron(page: Page, rowKey: string) {
   await page.evaluate((key) => {
     const datatables = document.querySelectorAll('mp-datatable');
     const wc = datatables[datatables.length - 1];
-    if (!wc?.shadowRoot) throw new Error('mp-datatable shadow root missing');
-    const row = wc.shadowRoot.querySelector(`tr[data-row-key="${key}"]`);
+    if (!wc) throw new Error('mp-datatable not found');
+    const row = wc.querySelector(`tr[data-row-key="${key}"]`);
     if (!row) throw new Error(`row ${key} not found`);
     const btn = row.querySelector('button.tree-chevron') as HTMLButtonElement | null;
     if (!btn) throw new Error(`chevron for row ${key} not found`);
@@ -212,7 +214,7 @@ test.describe('bs-datatable tree mode', () => {
     const role = await page.evaluate(() => {
       const datatables = document.querySelectorAll('mp-datatable');
       const wc = datatables[datatables.length - 1];
-      return wc?.shadowRoot?.querySelector('table')?.getAttribute('role');
+      return wc?.querySelector('table')?.getAttribute('role');
     });
     expect(role).toBe('treegrid');
   });

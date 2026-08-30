@@ -32,7 +32,9 @@ async function mount(attrs = ''): Promise<MpDatatable> {
   return el;
 }
 
-const shadow = (el: MpDatatable) => el.shadowRoot!;
+// Tier L: mp-datatable renders in the light DOM, so its render root IS the
+// host. Kept under the original name so the specs read unchanged.
+const shadow = (el: MpDatatable) => el.renderRoot as unknown as ParentNode;
 const key = (target: HTMLElement, key: string, init: KeyboardEventInit = {}) => {
   const ev = new KeyboardEvent('keydown', { key, bubbles: true, cancelable: true, composed: true, ...init });
   target.dispatchEvent(ev);
@@ -97,10 +99,10 @@ describe('mp-datatable keyboard', () => {
     rows[0].focus();
 
     key(rows[0], 'ArrowDown');
-    expect(shadow(el).activeElement).toBe(shadow(el).querySelectorAll('tbody tr[data-row-key]')[1]);
+    expect(document.activeElement).toBe(shadow(el).querySelectorAll('tbody tr[data-row-key]')[1]);
 
-    key(shadow(el).activeElement as HTMLElement, 'ArrowUp');
-    expect(shadow(el).activeElement).toBe(shadow(el).querySelectorAll('tbody tr[data-row-key]')[0]);
+    key(document.activeElement as HTMLElement, 'ArrowUp');
+    expect(document.activeElement).toBe(shadow(el).querySelectorAll('tbody tr[data-row-key]')[0]);
   });
 
   it('Enter selects the focused row in single mode and emits both events', async () => {
@@ -160,7 +162,7 @@ describe('mp-datatable focus continuity across data swaps', () => {
   });
 
   const focusedRowKey = (el: MpDatatable) => {
-    const active = shadow(el).activeElement as HTMLElement | null;
+    const active = document.activeElement as HTMLElement | null;
     return active?.dataset?.['rowKey'] ?? null;
   };
 
@@ -177,7 +179,10 @@ describe('mp-datatable focus continuity across data swaps', () => {
     ];
     await el.updateComplete;
 
-    expect(document.activeElement).toBe(el);
+    // Light DOM: focus lands on the row itself. Under a shadow root this read
+    // as the host, because focus is retargeted at the boundary; the invariant
+    // being asserted is the same one — focus stayed inside, never hit <body>.
+    expect(el.contains(document.activeElement)).toBe(true);
     expect(focusedRowKey(el)).toBe('11');
   });
 
@@ -188,7 +193,10 @@ describe('mp-datatable focus continuity across data swaps', () => {
     (el as unknown as { data: unknown }).data = [{ id: 10, name: 'Only' }];
     await el.updateComplete;
 
-    expect(document.activeElement).toBe(el);
+    // Light DOM: focus lands on the row itself. Under a shadow root this read
+    // as the host, because focus is retargeted at the boundary; the invariant
+    // being asserted is the same one — focus stayed inside, never hit <body>.
+    expect(el.contains(document.activeElement)).toBe(true);
     expect(focusedRowKey(el)).toBe('10');
   });
 

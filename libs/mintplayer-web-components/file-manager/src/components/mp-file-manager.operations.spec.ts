@@ -74,7 +74,7 @@ const menuItem = (label: string) => menuItems().find((b) => b.textContent!.trim(
  */
 const datatable = () => fm.shadowRoot!.querySelector('mp-datatable');
 const renameInput = () =>
-  datatable()?.shadowRoot?.querySelector<HTMLInputElement>('.rename-input') ?? null;
+  datatable()?.querySelector<HTMLInputElement>('.rename-input') ?? null;
 
 /** Select a row the way the datatable reports it, and switch to the list view. */
 async function selectInList(ids: string[]): Promise<void> {

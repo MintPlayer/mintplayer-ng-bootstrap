@@ -111,6 +111,16 @@ const CASES: NamingCase[] = [
   },
 ];
 
+/**
+ * The component's render root: its shadow root, or the host itself for a
+ * light-DOM (Tier L) component such as mp-datatable. The naming contract is
+ * about where a node ends up relative to its component, not about which
+ * encapsulation mode the component chose.
+ */
+function renderRootOf(host: HTMLElement): ParentNode {
+  return host.shadowRoot ?? host;
+}
+
 async function mount(
   html: string,
   tag: string,
@@ -121,8 +131,8 @@ async function mount(
   const host = document.querySelector(tag) as HTMLElement & { updateComplete?: Promise<unknown> };
   setup?.(host);
   await host.updateComplete;
-  const node = host.shadowRoot!.querySelector(target);
-  expect(node, `${tag}: no ${target} in shadow root`).not.toBeNull();
+  const node = renderRootOf(host).querySelector(target);
+  expect(node, `${tag}: no ${target} in its render root`).not.toBeNull();
   return node as HTMLElement;
 }
 
@@ -197,7 +207,7 @@ describe.each(ERROR_TEXT_CASES)('$tag error-text contract', ({ tag, target, extr
     expect(node.hasAttribute('aria-errormessage')).toBe(false);
     if (ownDescribedBy) expect(node.getAttribute('aria-describedby') ?? '').not.toMatch(/-error$/);
     else expect(node.hasAttribute('aria-describedby')).toBe(false);
-    expect(host().shadowRoot!.querySelector('.invalid-feedback')).toBeNull();
+    expect(renderRootOf(host()).querySelector('.invalid-feedback')).toBeNull();
   });
 
   it('points BOTH references at an in-shadow message node when invalid', async () => {
@@ -211,8 +221,8 @@ describe.each(ERROR_TEXT_CASES)('$tag error-text contract', ({ tag, target, extr
     expect(id, `${tag}: no aria-errormessage`).toBeTruthy();
     if (ownDescribedBy) expect(node.getAttribute('aria-describedby')).toContain(id!);
     else expect(node.getAttribute('aria-describedby')).toBe(id);
-    const message = host().shadowRoot!.getElementById(id!);
-    expect(message, `${tag}: aria-errormessage does not resolve in its own shadow root`).not.toBeNull();
+    const message = renderRootOf(host()).querySelector(`[id="${id}"]`);
+    expect(message, `${tag}: aria-errormessage does not resolve in its own render root`).not.toBeNull();
     expect(message!.textContent).toBe('Probe message.');
   });
 
@@ -229,7 +239,7 @@ describe.each(ERROR_TEXT_CASES)('$tag error-text contract', ({ tag, target, extr
     expect(node.hasAttribute('aria-errormessage')).toBe(false);
     if (ownDescribedBy) expect(node.getAttribute('aria-describedby') ?? '').not.toMatch(/-error$/);
     else expect(node.hasAttribute('aria-describedby')).toBe(false);
-    expect(host().shadowRoot!.querySelector('.invalid-feedback')).toBeNull();
+    expect(renderRootOf(host()).querySelector('.invalid-feedback')).toBeNull();
   });
 });
 
