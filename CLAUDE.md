@@ -54,6 +54,51 @@ WCs with a no-JS SSR path ship a Declarative-Shadow-DOM "chrome" constant, rende
 - Like all generated files, `*-chrome.generated.ts` are gitignored build artifacts (`.gitignore`: `libs/mintplayer-web-components/**/*.generated.ts`). Never commit or hand-edit them.
 - They regenerate automatically because every SSR demo build `dependsOn` the aggregate **`mintplayer-web-components:codegen-ssr-chrome`** (it fans out to the per-component `codegen-*-chrome` targets). **When adding a new SSR WC, add its `codegen-<name>-chrome` to that aggregate** — the demos need no change. After editing a WC's shadow markup/styles, rerun `nx run mintplayer-web-components:codegen-ssr-chrome` (or just build a demo) so the SSR chrome isn't stale.
 
+### Light tier — emulated encapsulation, no shadow DOM
+
+A component that mounts **consumer-authored DOM** (a render callback like `rowRenderer` /
+`cellRenderer` / `nodeRenderer`, or a direct `appendChild` of a consumer element) must render in the
+**light DOM**. Inside a shadow root that content is starved: the page's stylesheets — the consumer's
+own Angular/React/Vue component CSS *and* Bootstrap's global utilities — cannot cross the boundary,
+so a `<bs-badge>` in a datatable row renders as bare text and `me-2` does nothing (issue #408).
+`mp-datatable` is the reference implementation.
+
+**The admission rule is mechanical:** mounts consumer DOM ⇒ light tier. Takes content only through
+real `<slot>`s ⇒ keep the shadow root (slotted nodes never leave the light DOM, so they are already
+fine). Do not convert a slot-based component.
+
+Encapsulation is preserved at build time instead of by the boundary, the way Angular's
+`ViewEncapsulation.Emulated` does it:
+
+- `<name>.light.scss` → codegen emits `<name>.light.styles.ts` with the CSS **rescoped**: `:host`
+  becomes the tag name, every other compound gains `[data-mps=<scope>]`. `::slotted` /
+  `:host-context` / `:root` / `html` / `body` subjects are hard codegen errors. A rule that must
+  ship verbatim is preceded by `/*! @mps-global */` and authored in FINAL form.
+- The element uses `scopedHtml('<scope>')` — **never lit's bare `html`**; an unstamped element is an
+  unstyled element. `unsafeHTML` output and imperative DOM need `stampScope`.
+- `createRenderRoot()` returns `this`; `installLightStyles('<scope>', sheet)` runs right before
+  `customElements.define`. The SSR guard checks `document.head`, not `typeof document` — Angular's
+  SSR DOM shim provides a `document` with no usable head.
+- `_conformance/light-styles-scoping.spec.ts` enforces the no-leak property on every build: each
+  compound must carry its own scope, and no selector may match a decoy tree of elements sharing our
+  class names. Exemptions are listed explicitly in that file, never added silently.
+
+Consequences to design around:
+
+- **Encapsulation is one-directional.** Page CSS now reaches the component's internals — the same
+  property `ViewEncapsulation.Emulated` has everywhere else. Accepted deliberately; document it
+  rather than fighting it.
+- `::part()` and `::slotted()` no longer apply to a converted component. Its `part=` hooks, if any,
+  are removed; consumers style it with ordinary CSS.
+- Queries move from `shadowRoot` to `renderRoot`, and focus reads from `document.activeElement`
+  rather than a shadow root's `activeElement` — under a shadow root, `document.activeElement` was
+  the *host* because focus is retargeted at the boundary.
+- **Lit in the light DOM is safe for nodes passed as binding values** (measured): a keyed dynamic
+  template survives re-render, reorder, whole-page key replacement, template *shape* change and
+  zero-rows recovery with node identity intact. The trap is different — it bites *pre-existing light
+  children the host owns but lit does not manage*.
+- `@extend` from `:host` does not unify into compounds; restate such rules as `:host(...)`.
+
 ### WC gotchas
 
 - `static get observedAttributes()` must be a **static getter** (spread `super.observedAttributes`), not a static array.

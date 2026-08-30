@@ -1,7 +1,8 @@
 # Plan — Styling consumer-authored content inside WC shadow roots
 
 PRD: [shadow-adopted-content-styling.md](./shadow-adopted-content-styling.md)
-Status: **Proposed** (2026-08-30). Not started. No branch, no PR.
+Status: **M1-M3 implemented** on `feat/light-dom-emulated-encapsulation` (2026-08-30), unpushed.
+M0 spikes passed; mp-datatable converted and verified in the browser. M4-M8 outstanding.
 
 Strategy (PRD §4.6): convert the six components that adopt consumer DOM from shadow DOM to
 **emulated encapsulation** — build-time attribute rescoping, Angular's `ViewEncapsulation.Emulated`
@@ -37,7 +38,7 @@ Needs a real browser. `playwright_node` MCP was unavailable when this plan was w
 
 Deliverable: findings appended to the PRD, and a go/no-go on §4.6.
 
-## M1 — Port the transform onto `master`
+## M1 — Port the transform onto `master` — **DONE**
 
 Per PRD §9.3 the branch is **fresh from `master`**; port across only the machinery, not the
 strategy: `rescopeCss` + its spec, `installLightStyles`, `scopedHtml`/`stampScope`, the codegen
@@ -51,7 +52,7 @@ Then **rewrite the Tier-L admission rule** in CLAUDE.md to whatever S1/S2 actual
 current form excludes every component this PR converts; leaving it stale would make the codebase
 self-contradictory.
 
-## M2 — The no-leak guarantee (PRD §5.2)
+## M2 — The no-leak guarantee (PRD §5.2) — **DONE**
 
 Build this **before** converting components, so every conversion lands against a live check.
 
@@ -64,7 +65,7 @@ Build this **before** converting components, so every conversion lands against a
   `@media`/`@container`/`@supports` bodies, `:is()`/`:where()`, attribute selectors, pseudo-element
   placement.
 
-## M3 — Convert `mp-datatable`
+## M3 — Convert `mp-datatable` — **DONE**
 
 The hardest one, and the one the bug was reported on. `<name>.light.scss` + generated rescoped
 styles, `scopedHtml('datatable')` throughout, `createRenderRoot() { return this; }`,
@@ -74,6 +75,24 @@ styles, `scopedHtml('datatable')` throughout, `createRenderRoot() { return this;
 Restate `@extend`-from-`:host` rules as `:host(...)` forms (the branch's recorded trap). Keep the
 string form of `cellRenderer` working — the React and Vue demos rely on it
 (`DatatablePage.tsx:56-59`, `DatatableView.vue:55-58`).
+
+### M3 outcome (measured, Chromium, running demo)
+
+| | inside the datatable | identical decoy on the page |
+|---|---|---|
+| `.datatable-shell` display | `flex` | `block` |
+| `.datatable-scroll` overflow | `auto` | `visible` |
+| `th` font-weight | `600` | `700` (UA default) |
+
+Badge in a row: `rgb(25,135,84)` / `6px` / `4.2px 7.8px` / `inline-block` / `700` — previously
+transparent, `0px`, `0px`, `inline`. Suites: web-components 3207/3211 (the 4 are pre-existing
+scheduler flakes — 151/151 in isolation), mintplayer-ng-bootstrap 757/757.
+
+Spec translations required by the conversion, recorded because M4 will hit them again:
+`shadowRoot` → `renderRoot`; `shadowRoot.activeElement` → `document.activeElement`;
+`document.activeElement === host` → `host.contains(document.activeElement)` (that equality was
+asserting shadow focus retargeting, not focus location); a shared harness resolves
+`shadowRoot ?? host` so it covers both tiers.
 
 ## M4 — Convert `mp-treeview`, `mp-tree-select`, `mp-query-condition`
 
