@@ -37,6 +37,7 @@ import {
   toCamelCase,
   writeIfChanged,
 } from './lib/wc-codegen.mjs';
+import { rescopeCss } from './lib/rescope-css.mjs';
 
 export const REPO_ROOT = resolve(fileURLToPath(import.meta.url), '..', '..', '..');
 
@@ -84,6 +85,11 @@ export async function findFiles(libRoot, predicate, repoRoot = REPO_ROOT) {
 export const isElementHtml = (file) => file.endsWith('.element.html');
 
 export const isStylesScss = (file) => file.endsWith('.styles.scss');
+
+// Light-tier stylesheets (docs/prd/wc-style-encapsulation.md §L4): the file
+// name carries the scope — `badge.light.scss` → scope `badge`, host tag
+// `mp-badge`, output `badge.light.styles.ts` exporting `badgeLightStyles`.
+export const isLightScss = (file) => file.endsWith('.light.scss');
 
 /** Path separators normalised to posix, so generated headers are identical on every OS. */
 export const toPosix = (p) => p.replace(/\\/g, '/');
@@ -155,16 +161,36 @@ export async function processStyles(scssPath, repoRoot = REPO_ROOT) {
   return { outPath, changed: await writeIfChanged(outPath, next) };
 }
 
+export async function processLightStyles(scssPath, repoRoot = REPO_ROOT) {
+  const dir = dirname(scssPath);
+  const base = basename(scssPath, '.light.scss');
+  const outPath = join(dir, `${base}.light.styles.ts`);
+  // Tolerate an `mp-` prefix in the file name; the scope never carries it.
+  const scope = base.replace(/^mp-/, '');
+  const exportName = `${toCamelCase(scope)}LightStyles`;
+
+  const css = rescopeCss(compileScss(scssPath, repoRoot).trimEnd(), { scope });
+  const next = buildStylesModule({
+    css,
+    sourceScssRel: toPosix(relative(dir, scssPath)),
+    exportName,
+  });
+
+  return { outPath, changed: await writeIfChanged(outPath, next) };
+}
+
 export async function runOnce(libRoots, repoRoot = REPO_ROOT) {
   const elementHtml = [];
   const stylesScss = [];
+  const lightScss = [];
 
   for (const libRoot of libRoots) {
     elementHtml.push(...(await findFiles(libRoot, isElementHtml, repoRoot)));
     stylesScss.push(...(await findFiles(libRoot, isStylesScss, repoRoot)));
+    lightScss.push(...(await findFiles(libRoot, isLightScss, repoRoot)));
   }
 
-  if (elementHtml.length === 0 && stylesScss.length === 0) {
+  if (elementHtml.length === 0 && stylesScss.length === 0 && lightScss.length === 0) {
     console.log('build-web-components: no inputs found, nothing to do.');
     return { total: 0, changedCount: 0 };
   }
@@ -182,8 +208,14 @@ export async function runOnce(libRoots, repoRoot = REPO_ROOT) {
     console.log(`${changed ? 'wrote   ' : 'skipped '} ${rel}`);
     if (changed) changedCount++;
   }
+  for (const scss of lightScss) {
+    const { outPath, changed } = await processLightStyles(scss, repoRoot);
+    const rel = toPosix(relative(repoRoot, outPath));
+    console.log(`${changed ? 'wrote   ' : 'skipped '} ${rel}`);
+    if (changed) changedCount++;
+  }
 
-  const total = elementHtml.length + stylesScss.length;
+  const total = elementHtml.length + stylesScss.length + lightScss.length;
   console.log(
     `build-web-components: ${total} input(s) processed, ${changedCount} written.`,
   );
