@@ -7,15 +7,16 @@ M0 spikes passed; mp-datatable converted and verified in the browser. M4-M8 outs
 Strategy (PRD §4.6): convert the six components that adopt consumer DOM from shadow DOM to
 **emulated encapsulation** — build-time attribute rescoping, Angular's `ViewEncapsulation.Emulated`
 implemented for our web components — so consumer content stays in the document tree and the styling
-problem stops existing. Built on `feat/wc-style-encapsulation`, whose `rescopeCss` transform and
-`installLightStyles` helper are reused wholesale.
+problem stops existing. Branched fresh from `master`, porting `feat/wc-style-encapsulation`'s
+`rescopeCss` transform and `installLightStyles` helper — the machinery, not its per-component
+migration strategy (PRD §9.3).
 
 Per repo policy this is **one PR**: all conversions, both guarantee layers, all three wrapper libs,
 demos and docs. Commit per milestone; run the suites once, at the end (M8).
 
-**M0 gates everything.** The design rests on lit rendering a dynamic template in the light DOM
-alongside consumer-authored nodes — the one thing CLAUDE.md's current Tier-L admission rule
-explicitly forbids. If M0 fails, stop and take PRD §9.3, rather than working around it.
+**M0 gated everything and has passed.** The design rested on lit rendering a dynamic template in
+the light DOM alongside consumer-authored nodes; S1-S3 confirmed it, and M3 confirmed it again
+against the real component. S4-S8 remain (S4 is now a permanent spec, see M2).
 
 ---
 
@@ -48,9 +49,8 @@ Explicitly **not** ported: the badge and card Tier-L migrations, and `adoptLight
 call sites. PRD §9.1 — once the datatable is light-DOM, `bs-badge` works untouched, so that
 migration path is unnecessary.
 
-Then **rewrite the Tier-L admission rule** in CLAUDE.md to whatever S1/S2 actually established. Its
-current form excludes every component this PR converts; leaving it stale would make the codebase
-self-contradictory.
+CLAUDE.md gained the light-tier authoring rules (no prior section existed on `master`), written to
+what S1-S3 actually established rather than to the other branch's stricter, leaf-only rule.
 
 ## M2 — The no-leak guarantee (PRD §5.2) — **DONE**
 
@@ -101,6 +101,10 @@ Same pipeline. `mp-query-condition` is the clearest win: the direct
 `<input class="form-control custom-date-editor">` into the shadow root today; in the light DOM both
 classes simply work, and the shadow-root Bootstrap import at `mp-query-condition.element.scss:17`
 can be dropped.
+
+Also drop the ~20 `part=` attributes from the query-builder family (user decision, PRD §9): a
+light-DOM component cannot be addressed by `::part()`, so they are dead weight. Consumers style it
+with ordinary CSS instead.
 
 `mp-select` / `mp-file-manager`: confirm no change needed (string-returning resolvers, own styles)
 and record the finding rather than converting.
