@@ -56,10 +56,28 @@ layout instead of erasing content:
 
 | Location | Inert CSS | Why |
 |---|---|---|
-| `datatables.component.html:33,38,39,93-95` | `text-nowrap` | `datatable.styles.scss` declares no Bootstrap utilities (0 grep hits for `text-nowrap`/`text-muted`/`utilities`) |
-| `datatables.component.html:91,132-141` | `text-muted small fst-italic`, `font-monospace` | same |
+| `datatables.component.html:33,38,39,93-95` | `text-nowrap` | inert, but **not visible**: the datatable's own `tbody td { white-space: nowrap }` (`datatable.styles.scss:89`) already supplies the effect. The class contributes nothing |
+| `datatables.component.html:91,132-141` | `text-muted small fst-italic`, `font-monospace` | `datatable.styles.scss` declares no Bootstrap utilities (0 grep hits for `text-muted`/`utilities`) |
 | `treeview.component.html:17-20` | `me-2` on the icon span | no spacing utility inside the treeview shadow root |
 | `query-builder.component.html:29-35` | `.custom-date-editor` (`width:auto`) | page-level emulated rule; the editor renders full-width. `.form-control` *does* work — only because `mp-query-condition.element.scss:17` imports Bootstrap's form-control **into the shadow root** |
+
+**Measured in Chromium against the running demo (2026-08-30)**, by inserting identical probe
+elements inside the datatable's shadow root and in the light DOM and diffing computed styles:
+
+| probe | inside shadow root | light DOM |
+|---|---|---|
+| `div.text-nowrap` → `white-space` | `normal` | `nowrap` |
+| `span.me-2` → `margin-right` | `0px` | `8px` |
+| `span.text-muted` → `color` | `rgb(222,226,230)` | `rgba(222,226,230,0.75)` |
+| `span.fst-italic` → `font-style` | `normal` | `italic` |
+| `span.font-monospace` → `font-family` | `system-ui, …` | `SFMono-Regular, Menlo, …` |
+| `span.small` → `font-size` | `16px` | `14px` |
+
+and the badge itself, in the shadow root: `background-color: rgba(0,0,0,0)`, `border-radius: 0px`,
+`padding: 0px`, `display: inline` — against correct markup,
+`<span _ngcontent-ng-c1756937229 class="badge bg-success">active</span>`. The DOM is right; only the
+CSS is out of reach. This is the control experiment for the whole PRD: document CSS provably does
+not enter the shadow root, and the failure is tree scope, not the cascade.
 
 This drives the choice of fix. `text-nowrap` and `me-2` come from the app's global `styles.scss`,
 which does not flow through Angular's component-style plumbing at all — so **any fix that only
@@ -209,11 +227,24 @@ to make the no-leak property a verified guarantee rather than a code-review prom
 
 **The honest risks**, all of which M0 must settle before any component is converted:
 
-1. **Lit in the light DOM.** CLAUDE.md records the trap: a render *value transition* (`template` →
-   `nothing`, or a different template) clears everything after lit's marker, which is why the current
-   Tier-L admission rule demands `render()` be `nothing` or a single static wrapper. `mp-datatable`
-   renders a large dynamic template and interleaves consumer nodes with it. **This is the single
-   biggest technical unknown in the PRD** — S1/S2 in the plan.
+1. ~~**Lit in the light DOM.**~~ **RESOLVED — spiked in Chromium 2026-08-30, passes.** A
+   `LitElement` with `createRenderRoot() { return this; }` rendering a dynamic keyed table, with
+   stable consumer-authored nodes supplied by a render callback, survived every transition
+   `mp-datatable` performs: forced re-render, reorder/sort, whole-page key replacement, **template
+   shape change** (table → empty-state `<div>` → table), and zero-rows → recover. Consumer node
+   count, DOM order and **node identity** were correct at every step, with no duplication or
+   orphaning. The consumer span computed `background-color: rgb(25,135,84)` (Bootstrap's global
+   `.bg-success`) and its `<td class="text-nowrap">` computed `white-space: nowrap` — i.e. **global
+   utilities reach consumer content once it is in the light DOM**, which is the entire thesis.
+
+   The CLAUDE.md trap (a render value transition clears everything after lit's marker) does **not**
+   apply to this design, and the distinction matters for the rewritten admission rule: it bites
+   *pre-existing light children that the host owns but lit does not manage*. Consumer nodes here are
+   passed **as binding values** through the render callback, so lit tracks them in its own parts and
+   moves them correctly. `rowRenderer` already has exactly this shape.
+
+   Residual: the spike models the datatable's render patterns, not its literal template (no virtual
+   scroll, tree mode, or `unsafeHTML`). M3 must re-verify against the real component.
 2. **Leak *in*, not out.** Emulated encapsulation is one-directional: page CSS now reaches our
    internals. Angular has the same property and it is broadly accepted, but a Bootstrap-styled page
    restyling a datatable's internal `<table>` is a real behavioural change that must be documented,
@@ -314,16 +345,31 @@ relaxed if M0's lit-in-light-DOM spikes pass.
   recommended usage — doubly dead today; update it.
 - Demo pages keep the `<bs-badge>` from this investigation as the visible regression canary.
 
-## 9. Open decisions (need the user)
+## 9. Decisions (settled with the user, 2026-08-30)
 
-1. **Scope of conversion:** all six components, or datatable + treeview + query-condition first with
-   tree-select following in the same PR? (Repo policy is one PR either way.)
-2. **Base branch:** rebase onto `feat/wc-style-encapsulation` (recommended — the transform is there)
-   or land the transform fresh on `master`?
-3. **If M0 risk 1 fails** (lit cannot render a dynamic template in the light DOM alongside consumer
-   nodes): fall back to §4.2 + a per-component utility subset, accepting that Bootstrap utilities
-   inside those components need explicit import. Confirm this fallback before M0 rather than at the
-   point of failure.
+1. **Leak-in is accepted**, on the grounds that it is exactly what `ViewEncapsulation.Emulated` does
+   everywhere else in a consumer's app. Page CSS reaching a converted component's internals is a
+   documented, supported property, not a defect. §8's migration note carries the surface, measured
+   by S5.
+2. **Scope: all six** components that adopt consumer DOM (§1.2), including confirming that
+   `mp-select` and `mp-file-manager` need no change.
+3. **Base: fresh from `master`**, porting `rescopeCss` and the codegen wiring across. The badge/card
+   Tier-L migrations and `adoptLightStyles` on `feat/wc-style-encapsulation` are **not** carried
+   over — this design makes them unnecessary (see below).
+4. **Fallback if the light-DOM approach had failed** (delegated to the implementer, now moot since
+   S1 passed): cell-granularity slotting, **not** the §4.2 bridge. Rationale, and the user's own
+   framing of it: a bridge that transports component CSS still cannot deliver *global* utility
+   classes into a shadow root, so it fails the actual bar. Slotting is the only alternative that
+   keeps shadow DOM and still lets utilities apply, because the content never crosses the boundary.
+
+### 9.1 Consequence: the badge migration is no longer needed
+
+`feat/wc-style-encapsulation` converts `bs-badge` into a Tier-L web component and strips its
+`::ng-deep` Bootstrap import, specifically so it survives inside a datatable. Once the datatable is
+light-DOM, **the existing Angular `bs-badge` works untouched** — as does every one of the 23
+Angular wrapper stylesheets that import a Bootstrap partial. That branch's per-component migration
+path collapses from "23 components, one at a time" to "zero". This is the strongest argument for the
+approach and should be stated in the PR description.
 
 ## 10. Verification
 

@@ -26,9 +26,9 @@ Needs a real browser. `playwright_node` MCP was unavailable when this plan was w
 
 | # | Question | Pass condition |
 |---|---|---|
-| **S1** | Can lit render `mp-datatable`'s **dynamic** template into the light DOM without clobbering consumer nodes? Exercise sort, page change, virtual scroll, tree expand — every path that changes the render value | Consumer nodes survive every transition; no orphaned lit markers; no duplicated rows. **This is the go/no-go for the whole PRD** |
-| **S2** | Same for a template that switches shape (`nothing` ↔ template), e.g. empty-state → rows | Either it survives, or we learn the exact constraint and encode it as an authoring rule |
-| **S3** | Does document CSS now style consumer content correctly? | `<bs-badge>` in a row computes the same `background-color`/`border-radius`/`padding` as in the light DOM; `text-nowrap`, `me-2`, `text-muted`, `font-monospace` all apply |
+| ~~**S1**~~ | ~~Can lit render a **dynamic** template into the light DOM without clobbering consumer nodes?~~ | **DONE 2026-08-30, PASSED** (Chromium). Keyed dynamic table + stable callback-supplied nodes survived forced re-render, sort/reorder, whole-page key replacement, template **shape** change (table ↔ empty state) and zero-rows recovery — node count, order and identity correct throughout, no duplication. Re-verify against the real component in M3 (virtual scroll, tree mode, `unsafeHTML` not modelled) |
+| ~~**S2**~~ | ~~Template shape transition (`nothing` ↔ template)~~ | **DONE, PASSED** — folded into S1. Recorded finding: the CLAUDE.md value-transition trap applies to *pre-existing unmanaged light children*, not to nodes passed as binding values |
+| ~~**S3**~~ | ~~Does document CSS style consumer content in the light DOM?~~ | **DONE, PASSED** — consumer span computed `rgb(25,135,84)` from global `.bg-success`; its `<td class="text-nowrap">` computed `white-space: nowrap`. Still verify the full utility set against the real component in M3 |
 | **S4** | **Leakage out** (Goal 3) — the user's hard requirement | With a converted `mp-card`/`mp-datatable` on the page, decoy Angular components carrying `.badge`, `.card`, `.table`, `.form-control` compute **byte-identical** styles to a page without our component. Three engines |
 | **S5** | **Leakage in** — how much page CSS now reaches component internals | Quantify against a Bootstrap-styled page; produce the list of internal elements whose computed styles change, for the migration note |
 | **S6** | Accessibility tree after removing the boundary | Row/cell/tree structure unchanged or improved; IDREF associations (`aria-labelledby`, `aria-controls`) that previously could not cross the boundary now resolve |
@@ -37,11 +37,15 @@ Needs a real browser. `playwright_node` MCP was unavailable when this plan was w
 
 Deliverable: findings appended to the PRD, and a go/no-go on §4.6.
 
-## M1 — Rebase and reuse
+## M1 — Port the transform onto `master`
 
-Rebase onto `feat/wc-style-encapsulation` (PRD §9.2). Inventory what transfers unchanged:
-`light-dom/` (`installLightStyles`, `scopedHtml`, `stampScope`), `rescopeCss` + spec, codegen wiring
-in `build-web-components.mjs` and `project.json`, SSR emission, CLAUDE.md light-tier rules.
+Per PRD §9.3 the branch is **fresh from `master`**; port across only the machinery, not the
+strategy: `rescopeCss` + its spec, `installLightStyles`, `scopedHtml`/`stampScope`, the codegen
+wiring in `build-web-components.mjs` and `project.json`, and the SSR emission path.
+
+Explicitly **not** ported: the badge and card Tier-L migrations, and `adoptLightStyles` with its two
+call sites. PRD §9.1 — once the datatable is light-DOM, `bs-badge` works untouched, so that
+migration path is unnecessary.
 
 Then **rewrite the Tier-L admission rule** in CLAUDE.md to whatever S1/S2 actually established. Its
 current form excludes every component this PR converts; leaving it stale would make the codebase
