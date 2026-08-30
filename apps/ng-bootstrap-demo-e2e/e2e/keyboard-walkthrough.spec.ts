@@ -77,7 +77,9 @@ test.describe('treeview — arrow navigation', () => {
     await page.waitForLoadState('networkidle');
     const tree = page.locator('mp-treeview').first();
     await tree.evaluate((el) => {
-      el.shadowRoot?.querySelector<HTMLElement>('[tabindex="0"]')?.focus();
+      // mp-treeview is light-DOM (Tier L): its roving tab stop is a descendant
+      // of the host, not of a shadow root.
+      (el.shadowRoot ?? el).querySelector<HTMLElement>('[tabindex="0"]')?.focus();
     });
     const before = await deepActive(page);
     await page.keyboard.press('ArrowDown');

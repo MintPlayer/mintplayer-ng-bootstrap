@@ -12,13 +12,15 @@ import { test, expect, type Page } from '@playwright/test';
 // .NET backend. The panel lives in the WC's own shadow DOM and is revealed by a
 // `[data-menu-open]` host attribute (.ts-panel is display:none otherwise).
 
-// Open the dropdown for the Nth <mp-tree-select> by clicking its anchor inside
-// shadow DOM, then wait for the host to report open + the panel to be visible.
+// Open the dropdown for the Nth <mp-tree-select> by clicking its anchor, then
+// wait for the host to report open + the panel to be visible. mp-tree-select and
+// mp-treeview are light-DOM (Tier L), so their internals are ordinary
+// descendants — no shadow hop.
 async function openTreeSelect(page: Page, index: number) {
   await page.evaluate((i) => {
     const els = document.querySelectorAll('mp-tree-select');
-    const wc = els[i] as (Element & { shadowRoot: ShadowRoot | null }) | undefined;
-    const anchor = wc?.shadowRoot?.querySelector<HTMLElement>('.ts-anchor');
+    const wc = els[i];
+    const anchor = wc?.querySelector<HTMLElement>('.ts-anchor');
     if (!anchor) throw new Error(`anchor for tree-select #${i} not found`);
     anchor.click();
   }, index);
@@ -37,11 +39,9 @@ async function openTreeSelect(page: Page, index: number) {
 async function readOptionLabels(page: Page, index: number) {
   return page.evaluate((i) => {
     const els = document.querySelectorAll('mp-tree-select');
-    const wc = els[i] as (Element & { shadowRoot: ShadowRoot | null }) | undefined;
-    const tv = wc?.shadowRoot?.querySelector('.ts-panel mp-treeview') as
-      | (Element & { shadowRoot: ShadowRoot | null })
-      | null;
-    const root = tv?.shadowRoot ?? wc?.shadowRoot?.querySelector('.ts-panel');
+    // Inlined deliberately: page.evaluate serialises this callback, so it cannot
+    // close over helpers defined in the test file's Node scope.
+    const root = els[i]?.querySelector('.ts-panel mp-treeview') ?? els[i]?.querySelector('.ts-panel');
     if (!root) return [];
     return Array.from(root.querySelectorAll('.treeview-label')).map(
       (n) => (n.textContent ?? '').trim(),
@@ -56,11 +56,7 @@ async function toggleCheckbox(page: Page, index: number, label: string) {
   await page.evaluate(
     ({ i, lbl }) => {
       const els = document.querySelectorAll('mp-tree-select');
-      const wc = els[i] as (Element & { shadowRoot: ShadowRoot | null }) | undefined;
-      const tv = wc?.shadowRoot?.querySelector('.ts-panel mp-treeview') as
-        | (Element & { shadowRoot: ShadowRoot | null })
-        | null;
-      const root = tv?.shadowRoot ?? wc?.shadowRoot?.querySelector('.ts-panel');
+      const root = els[i]?.querySelector('.ts-panel mp-treeview') ?? els[i]?.querySelector('.ts-panel');
       if (!root) throw new Error('panel/treeview not found');
       const labelEl = Array.from(root.querySelectorAll('.treeview-label')).find(
         (n) => (n.textContent ?? '').trim() === lbl,
@@ -80,8 +76,7 @@ async function toggleCheckbox(page: Page, index: number, label: string) {
 async function chipLabels(page: Page, index: number) {
   return page.evaluate((i) => {
     const els = document.querySelectorAll('mp-tree-select');
-    const wc = els[i] as (Element & { shadowRoot: ShadowRoot | null }) | undefined;
-    const chips = wc?.shadowRoot?.querySelectorAll('.ts-chip .ts-chip-label') ?? [];
+    const chips = els[i]?.querySelectorAll('.ts-chip .ts-chip-label') ?? [];
     return Array.from(chips).map((c) => (c.textContent ?? '').trim());
   }, index);
 }
@@ -95,7 +90,8 @@ test.describe('tree-select demo', () => {
     // Ensure the custom elements have upgraded before reaching into shadow DOM.
     await page.waitForFunction(() => {
       const els = document.querySelectorAll('mp-tree-select');
-      return els.length >= 4 && !!(els[1] as Element & { shadowRoot: ShadowRoot | null }).shadowRoot;
+      // Light DOM: wait for the element to have RENDERED, not for a shadow root.
+      return els.length >= 4 && !!els[1]?.querySelector('.ts-anchor');
     });
   });
 

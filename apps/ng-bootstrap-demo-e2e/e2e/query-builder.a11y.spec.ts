@@ -71,9 +71,8 @@ test.describe('@a11y query-builder', () => {
 
     // Click the "+ Add condition" button inside the WC's shadow root.
     await page.locator('mp-query-builder').evaluate((el) => {
-      const root = (el as HTMLElement & { shadowRoot: ShadowRoot }).shadowRoot;
-      const group = root.querySelector('mp-query-group') as HTMLElement & { shadowRoot: ShadowRoot };
-      const btn = group.shadowRoot.querySelector('.qb-add-condition') as HTMLButtonElement;
+      // Light DOM (Tier L) — no shadow hops needed.
+      const btn = el.querySelector('mp-query-group .qb-add-condition') as HTMLButtonElement;
       btn.click();
     });
     // Let the WC settle.

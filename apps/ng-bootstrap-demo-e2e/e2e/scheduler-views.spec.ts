@@ -460,7 +460,11 @@ test.describe('scheduler — timeline resize ghost stays on top', () => {
           }
           return '';
         };
-        const day = new Date();
+        // Seed relative to the date the scheduler is SHOWING, not to today.
+        // The demo's sample data is anchored to the ISO Monday and the view
+        // follows it, while the week a locale displays starts on its own first
+        // weekday — so on some days "today" is not in the visible week at all.
+        const day = new Date((sched as unknown as { date?: Date }).date ?? new Date());
         day.setHours(0, 0, 0, 0);
         const at = (h: number) => {
           const d = new Date(day);
@@ -637,7 +641,9 @@ async function seedTimelineEvent(page: Page): Promise<{ first: string; second: s
       }
     };
     walk(sched.resources);
-    const day = new Date();
+    // Seed relative to the date the scheduler is SHOWING, not to today — see
+    // the note in the resize-ghost test above.
+    const day = new Date((sched as unknown as { date?: Date }).date ?? new Date());
     day.setHours(0, 0, 0, 0);
     const at = (h: number) => {
       const d = new Date(day);
