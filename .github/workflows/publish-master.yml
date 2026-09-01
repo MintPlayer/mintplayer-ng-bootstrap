@@ -93,7 +93,7 @@ jobs:
 
 
     - name: Upload coverage
-      uses: MintPlayer/CodeCoverage/action@master
+      uses: MintPlayer/MintPlayer.Spark/apps/CodeCoverage/action@coverage-upload-v1
       with:
         url: https://coverage.mintplayer.com
         token: ${{ secrets.COVERAGE_TOKEN }}
