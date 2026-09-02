@@ -7,6 +7,24 @@ package version aligns its major with the supported Angular major.
 
 ### Breaking
 
+- **The four components that mount consumer DOM render in the light DOM.** `<mp-datatable>`,
+  `<mp-treeview>`, `<mp-tree-select>` and the `<mp-query-builder>` family (builder / condition /
+  group / subquery) no longer attach a shadow root; their styles are scoped at build time onto a
+  `data-mps` attribute instead. This is what makes a row template, node template or cell renderer
+  styleable by your own CSS and by Bootstrap's utilities at all (issue #408) — inside a shadow root
+  neither could reach it. **Migration**: `::part()` and `::slotted()` no longer address these
+  components — use ordinary CSS, which now reaches descendants `::part()` never could; page CSS that
+  broadly styles `table` / `td` / `li` / `input` now applies inside them too; `el.shadowRoot` becomes
+  `el.renderRoot` (or `el.shadowRoot ?? el`), and focus assertions read the real element from
+  `document.activeElement` rather than the retargeted host. If you host one of these inside your own
+  shadow root, call `adoptLightStyles(this.shadowRoot)` or it renders unstyled. Full contract and
+  migration table under **Styling and encapsulation** in the README.
+- **`@mintplayer/web-components`**: `datatableStyles`, `treeviewStyles` and `treeSelectStyles` are
+  renamed **`datatableLightStyles`**, **`treeviewLightStyles`** and **`treeSelectLightStyles`**.
+  **Migration**: rename the import; the value is the same rescoped sheet.
+- **`@mintplayer/web-components/query-builder`**: the family's 32 `part=` attributes are removed,
+  since a light-DOM element has no parts. **Migration**: select the elements directly.
+
 - **`@mintplayer/ng-bootstrap/code-snippet`**: `[codeToCopy]` is renamed **`[code]`**, matching the
   property it forwards to. **Migration**: rename the binding; nothing else about it changed.
 - **`@mintplayer/ng-bootstrap/code-snippet`**: `(lineActivate)` now emits the
@@ -26,6 +44,21 @@ package version aligns its major with the supported Angular major.
   property write needs to change.
 
 ### Added
+
+- `@mintplayer/web-components/light-dom`: `installLightStyles` / `adoptLightStyles` /
+  `scopedHtml` / `stampScope` — the light tier's public machinery. `adoptLightStyles` is the one a
+  consumer needs: it mirrors the light-tier sheets into a shadow root that hosts one of these
+  components.
+- `@mintplayer/web-components/light-dom/ssr`: `injectMpLightStyles(html)` inserts the light tier's
+  stylesheets into a server-rendered page's `<head>`, so those components are styled with
+  JavaScript disabled. Compose it with the Declarative Shadow DOM injectors, as the demo's
+  `server.ts` does.
+- `@mintplayer/web-components/query-builder`: `queryBuilderLightStyles`, `queryConditionLightStyles`,
+  `queryGroupLightStyles` and `querySubqueryLightStyles` are now public, matching the other
+  light-tier components — needed to adopt them into a shadow root.
+- `@mintplayer/vue-bootstrap`: `BsDatatable` gains `rowRenderer`; `BsTreeview` gains `nodeRenderer`
+  and `iconResolver`. Angular and React already exposed these, so the renderer APIs were
+  unreachable from Vue.
 
 - `@mintplayer/web-components/code-snippet`: `<mp-code-snippet>` becomes the workspace's code
   **viewer** rather than only a snippet. Adds `line-numbers`, `start-line`, `wrap`, `theme`,

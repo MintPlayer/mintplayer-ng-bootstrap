@@ -1,13 +1,23 @@
-import { LitElement, html, nothing, type TemplateResult } from 'lit';
+import { LitElement, nothing, type TemplateResult } from 'lit';
+import { installLightStyles, scopedHtml } from '@mintplayer/web-components/light-dom';
 import { ContextConsumer } from '@lit/context';
 import type { SubQueryCondition } from './model/expression';
 import type { EntitySchema, FieldDef } from './model/field-def';
 import { DEFAULT_MESSAGES, type QueryBuilderMessages } from './model/messages';
 import { messagesContext } from './context';
-import { styles } from './mp-query-subquery.element.template';
+import { querySubqueryLightStyles } from './mp-query-subquery.light.styles';
+
+/**
+ * Tier L (emulated encapsulation) — the family converts together: a light-tier
+ * element nested inside an unconverted ancestor's shadow root would be
+ * unstyled. Never use lit's bare `html` here.
+ */
+const html = scopedHtml('query-subquery');
 
 export class MpQuerySubqueryElement extends LitElement {
-  static override styles = [styles];
+  protected override createRenderRoot(): HTMLElement {
+    return this;
+  }
 
   static override properties = {
     node: { attribute: false },
@@ -34,7 +44,7 @@ export class MpQuerySubqueryElement extends LitElement {
     if (!e.altKey || (e.key !== 'ArrowUp' && e.key !== 'ArrowDown')) return;
     const node = this.node;
     if (!node) return;
-    const header = this.shadowRoot?.querySelector('.qb-subquery-header');
+    const header = this.renderRoot?.querySelector('.qb-subquery-header');
     if (e.composedPath()[0] !== header) return;
     e.preventDefault();
     this.dispatchEvent(new CustomEvent('qb-keyboard-move', {
@@ -68,10 +78,9 @@ export class MpQuerySubqueryElement extends LitElement {
     const targetEntity = field?.targetEntity ?? '';
 
     return html`
-      <div class="qb-subquery" part="subquery" data-row-id=${node.id}>
+      <div class="qb-subquery" data-row-id=${node.id}>
         <div
           class="qb-subquery-header"
-          part="subquery-header"
           tabindex="0"
           role="group"
           aria-label=${
@@ -92,12 +101,13 @@ export class MpQuerySubqueryElement extends LitElement {
           .schema=${this.schema}
           .rootEntity=${targetEntity}
           .depth=${this.depth + 1}
-          part="subquery-builder"
         ></mp-query-builder>
       </div>
     `;
   }
 }
+
+installLightStyles('query-subquery', querySubqueryLightStyles);
 
 if (typeof customElements !== 'undefined' && !customElements.get('mp-query-subquery')) {
   customElements.define('mp-query-subquery', MpQuerySubqueryElement);

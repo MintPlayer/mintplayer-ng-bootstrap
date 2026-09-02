@@ -8,9 +8,12 @@
 @import 'node_modules/bootstrap/scss/mixins';
 @import 'node_modules/bootstrap/scss/utilities';
 
-// .btn, .btn-sm, .btn-primary, .btn-outline-primary, .btn-outline-danger
-// — used by the saved-query Load / Delete / 💾 Save buttons.
-@import 'node_modules/bootstrap/scss/buttons';
+// .btn and its variants are NOT imported here: the page ships
+// bootstrap/scss/buttons GLOBALLY (libs/mintplayer-ng-bootstrap/_bootstrap.scss),
+// and since this component renders in the light DOM those rules now reach it.
+// Importing them again would ship the same CSS twice — and the scoped copy
+// would silently WIN on specificity (.btn[data-mps=…] beats .btn), making the
+// page's own button theming unoverridable.
 
 // .form-control — used by the "Save current as…" name input.
 @import 'node_modules/bootstrap/scss/forms/form-control';

@@ -41,8 +41,8 @@ async function mockArtistApi(page: Page) {
 async function countRealRows(page: Page): Promise<number> {
   return await page.evaluate(() => {
     const wc = document.querySelector('mp-datatable');
-    if (!wc?.shadowRoot) return 0;
-    return wc.shadowRoot.querySelectorAll('tbody tr[data-row-key]:not([data-placeholder="true"])').length;
+    if (!wc) return 0;
+    return wc.querySelectorAll('tbody tr[data-row-key]:not([data-placeholder="true"])').length;
   });
 }
 
@@ -94,7 +94,7 @@ test.describe('bs-datatable virtual mode', () => {
     // pages.
     const totalPagesFromFooter = await page.evaluate(() => {
       const datatable = document.querySelector('mp-datatable');
-      const pagination = datatable?.shadowRoot?.querySelector('mp-pagination.datatable-pagination') as
+      const pagination = datatable?.querySelector('mp-pagination.datatable-pagination') as
         | (HTMLElement & { pageNumbers?: number[] })
         | null;
       return pagination?.pageNumbers?.length ?? 0;

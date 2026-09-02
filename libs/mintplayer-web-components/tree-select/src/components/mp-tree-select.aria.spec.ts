@@ -50,13 +50,13 @@ async function mount(setup: (el: MpTreeSelect) => void = () => undefined): Promi
 }
 
 const q = <T extends Element>(el: MpTreeSelect, selector: string): T =>
-  el.shadowRoot!.querySelector<T>(selector) as T;
+  (el.renderRoot as unknown as ParentNode).querySelector<T>(selector) as T;
 
 const liveText = (el: MpTreeSelect): string | null =>
   q<HTMLElement>(el, '[role="status"]').textContent;
 
 const treeRow = (el: MpTreeSelect, id: string): HTMLElement =>
-  (q(el, 'mp-treeview') as HTMLElement).shadowRoot!.querySelector<HTMLElement>(
+  (q(el, 'mp-treeview') as unknown as ParentNode).querySelector<HTMLElement>(
     `[data-node-id="${id}"]`,
   ) as HTMLElement;
 
@@ -138,7 +138,7 @@ describe('mp-tree-select action-button naming', () => {
     await settled(el);
 
     const labels = () =>
-      Array.from(el.shadowRoot!.querySelectorAll('.ts-chip-remove')).map((b) =>
+      Array.from((el.renderRoot as unknown as ParentNode).querySelectorAll('.ts-chip-remove')).map((b) =>
         b.getAttribute('aria-label'),
       );
     expect(labels()).toEqual(['Remove Apple', 'Remove Banana']);
@@ -197,7 +197,7 @@ describe('mp-tree-select embedded treeview ARIA', () => {
     // The embedded tree runs selection-mode="none": the checked checkbox is the
     // single source of selection state, so a second aria-selected would fight it.
     const rows = Array.from(
-      (q(el, 'mp-treeview') as HTMLElement).shadowRoot!.querySelectorAll('[role="treeitem"]'),
+      (q(el, 'mp-treeview') as unknown as ParentNode).querySelectorAll('[role="treeitem"]'),
     );
     expect(rows.length).toBeGreaterThan(0);
     expect(rows.every((r) => !r.hasAttribute('aria-selected'))).toBe(true);

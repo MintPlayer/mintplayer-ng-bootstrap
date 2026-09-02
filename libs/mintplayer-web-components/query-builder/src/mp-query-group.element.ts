@@ -1,4 +1,5 @@
-import { LitElement, html, nothing, type TemplateResult } from 'lit';
+import { LitElement, nothing, type TemplateResult } from 'lit';
+import { installLightStyles, scopedHtml } from '@mintplayer/web-components/light-dom';
 import { ContextConsumer } from '@lit/context';
 import type { Expression, Group } from './model/expression';
 import type { EntitySchema } from './model/field-def';
@@ -6,13 +7,22 @@ import { DEFAULT_MESSAGES, type QueryBuilderMessages } from './model/messages';
 import { disabledContext, messagesContext } from './context';
 import { MpQueryConditionElement } from './mp-query-condition.element';
 import { MpQuerySubqueryElement } from './mp-query-subquery.element';
-import { styles } from './mp-query-group.element.template';
+import { queryGroupLightStyles } from './mp-query-group.light.styles';
+
+/**
+ * Tier L (emulated encapsulation) — the family converts together: a light-tier
+ * element nested inside an unconverted ancestor's shadow root would be
+ * unstyled. Never use lit's bare `html` here.
+ */
+const html = scopedHtml('query-group');
 
 void MpQueryConditionElement;
 void MpQuerySubqueryElement;
 
 export class MpQueryGroupElement extends LitElement {
-  static override styles = [styles];
+  protected override createRenderRoot(): HTMLElement {
+    return this;
+  }
 
   static override properties = {
     node: { attribute: false },
@@ -107,14 +117,12 @@ export class MpQueryGroupElement extends LitElement {
           .depth=${this.depth + 1}
           .qbRoot=${this.qbRoot}
           .isDragging=${this.isDragging}
-          part="child-group"
         ></mp-query-group>`;
       case 'condition':
         return html`<mp-query-condition
           .node=${child}
           .schema=${this.schema}
           .currentEntity=${this.currentEntity}
-          part="child-condition"
         ></mp-query-condition>`;
       case 'subquery':
         return html`<mp-query-subquery
@@ -124,7 +132,6 @@ export class MpQueryGroupElement extends LitElement {
           .depth=${this.depth + 1}
           .qbRoot=${this.qbRoot}
           .isDragging=${this.isDragging}
-          part="child-subquery"
         ></mp-query-subquery>`;
     }
   }
@@ -137,7 +144,6 @@ export class MpQueryGroupElement extends LitElement {
       data-parent-id=${this.node.id}
       data-index=${String(index)}
       data-qb-root=${this.qbRoot}
-      part="drop-slot"
       aria-hidden="true"
     ></div>`;
   }
@@ -183,9 +189,8 @@ export class MpQueryGroupElement extends LitElement {
           // treeitem/row/heading.
           `${node.logic === 'and' ? 'AND' : 'OR'} group${this.depth > 0 ? `, level ${this.depth + 1}` : ''}`
         }
-        part="group"
       >
-        <div class="qb-group-header" part="group-header">
+        <div class="qb-group-header">
           <span class="qb-logic-toggle btn-group btn-group-sm" role="group" aria-label=${messages.groupLogic}>
             <button
               type="button"
@@ -206,14 +211,12 @@ export class MpQueryGroupElement extends LitElement {
             <button
               type="button"
               class="btn btn-sm btn-outline-secondary qb-add-condition"
-              part="add-condition"
               ?disabled=${disabled}
               @click=${this._onAddCondition}
             >+ ${messages.addCondition}</button>
             <button
               type="button"
               class="btn btn-sm btn-outline-secondary qb-add-group"
-              part="add-group"
               ?disabled=${disabled}
               @click=${this._onAddGroup}
             >+ ${messages.addGroup}</button>
@@ -221,7 +224,6 @@ export class MpQueryGroupElement extends LitElement {
               ? html`<button
                   type="button"
                   class="btn btn-sm btn-outline-secondary qb-add-subquery"
-                  part="add-subquery"
                   ?disabled=${disabled}
                   @click=${this._onAddSubquery}
                 >+ ${messages.addSubquery}</button>`
@@ -231,7 +233,6 @@ export class MpQueryGroupElement extends LitElement {
               : html`<button
                   type="button"
                   class="btn btn-sm btn-link qb-remove-group"
-                  part="remove-group"
                   ?disabled=${disabled}
                   @click=${this._onRemove}
                   aria-label=${messages.removeGroup}
@@ -239,7 +240,7 @@ export class MpQueryGroupElement extends LitElement {
                 >×</button>`}
           </span>
         </div>
-        <div class="qb-children" part="children">
+        <div class="qb-children">
           ${node.children.length === 0
             ? html`<div class="qb-empty">${this.isDragging ? this._dropPlaceholder() : messages.emptyGroup}</div>`
             : this._renderChildrenWithSlots(node.children)}
@@ -248,6 +249,8 @@ export class MpQueryGroupElement extends LitElement {
     `;
   }
 }
+
+installLightStyles('query-group', queryGroupLightStyles);
 
 if (typeof customElements !== 'undefined' && !customElements.get('mp-query-group')) {
   customElements.define('mp-query-group', MpQueryGroupElement);

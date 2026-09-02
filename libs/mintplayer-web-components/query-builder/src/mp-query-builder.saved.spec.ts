@@ -34,15 +34,15 @@ describe('mp-query-builder saved queries (M11)', () => {
 
   it('renders the saved-queries picker only when showSavedQueries=true', async () => {
     const el = await mount();
-    expect(el.shadowRoot?.querySelector('.qb-saved')).toBeTruthy();
+    expect((el.renderRoot as unknown as ParentNode).querySelector('.qb-saved')).toBeTruthy();
     el.showSavedQueries = false;
     await el.updateComplete;
-    expect(el.shadowRoot?.querySelector('.qb-saved')).toBeNull();
+    expect((el.renderRoot as unknown as ParentNode).querySelector('.qb-saved')).toBeNull();
   });
 
   it('renders "No saved queries" placeholder when savedQueries is empty', async () => {
     const el = await mount();
-    expect(el.shadowRoot?.querySelector('.qb-saved-empty')?.textContent).toContain('No saved queries');
+    expect((el.renderRoot as unknown as ParentNode).querySelector('.qb-saved-empty')?.textContent).toContain('No saved queries');
   });
 
   it('renders each saved query with Load + Delete buttons', async () => {
@@ -52,7 +52,7 @@ describe('mp-query-builder saved queries (M11)', () => {
       { name: 'Open orders', tree: { kind: 'group', id: 'g', logic: 'and', children: [] } },
     ];
     await el.updateComplete;
-    const rows = el.shadowRoot?.querySelectorAll('.qb-saved-row');
+    const rows = (el.renderRoot as unknown as ParentNode).querySelectorAll('.qb-saved-row');
     expect(rows?.length).toBe(2);
     expect((rows?.[0] as HTMLElement).dataset['name']).toBe('Big orders');
     expect((rows?.[1] as HTMLElement).dataset['name']).toBe('Open orders');
@@ -64,7 +64,7 @@ describe('mp-query-builder saved queries (M11)', () => {
     await el.updateComplete;
     let received: { name: string } | null = null;
     el.addEventListener('load-query', (e) => { received = (e as CustomEvent).detail; });
-    (el.shadowRoot?.querySelector('.qb-saved-load') as HTMLButtonElement).click();
+    ((el.renderRoot as unknown as ParentNode).querySelector('.qb-saved-load') as HTMLButtonElement).click();
     expect(received).toEqual({ name: 'A' });
   });
 
@@ -74,7 +74,7 @@ describe('mp-query-builder saved queries (M11)', () => {
     await el.updateComplete;
     let received: { name: string } | null = null;
     el.addEventListener('delete-query', (e) => { received = (e as CustomEvent).detail; });
-    (el.shadowRoot?.querySelector('.qb-saved-delete') as HTMLButtonElement).click();
+    ((el.renderRoot as unknown as ParentNode).querySelector('.qb-saved-delete') as HTMLButtonElement).click();
     expect(received).toEqual({ name: 'A' });
   });
 
@@ -90,18 +90,18 @@ describe('mp-query-builder saved queries (M11)', () => {
     let received: { name: string; tree: Expression } | null = null;
     el.addEventListener('save-query', (e) => { received = (e as CustomEvent).detail; });
 
-    const input = el.shadowRoot?.querySelector('.qb-saved-name') as HTMLInputElement;
+    const input = (el.renderRoot as unknown as ParentNode).querySelector('.qb-saved-name') as HTMLInputElement;
     input.value = 'My new query';
     input.dispatchEvent(new Event('input'));
     await el.updateComplete;
-    (el.shadowRoot?.querySelector('.qb-saved-save') as HTMLButtonElement).click();
+    ((el.renderRoot as unknown as ParentNode).querySelector('.qb-saved-save') as HTMLButtonElement).click();
 
     expect(received).toEqual({ name: 'My new query', tree });
   });
 
   it('save button is disabled when name is empty / whitespace; does not fire on click', async () => {
     const el = await mount();
-    const btn = el.shadowRoot?.querySelector('.qb-saved-save') as HTMLButtonElement;
+    const btn = (el.renderRoot as unknown as ParentNode).querySelector('.qb-saved-save') as HTMLButtonElement;
     expect(btn.disabled).toBe(true);
     let fired = 0;
     el.addEventListener('save-query', () => fired++);
@@ -117,7 +117,7 @@ describe('mp-query-builder saved queries (M11)', () => {
     const handler = () => { onWindow++; };
     window.addEventListener('load-query', handler);
     try {
-      (el.shadowRoot?.querySelector('.qb-saved-load') as HTMLButtonElement).click();
+      ((el.renderRoot as unknown as ParentNode).querySelector('.qb-saved-load') as HTMLButtonElement).click();
       expect(onWindow).toBe(0);
     } finally {
       window.removeEventListener('load-query', handler);

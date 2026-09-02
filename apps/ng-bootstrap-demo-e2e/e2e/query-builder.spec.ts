@@ -72,9 +72,9 @@ test('query-builder demo: schema fetch + search round-trip', async ({ page }) =>
   // Add a condition by clicking the "+ Add condition" button (inside the WC's shadow root).
   // The button text is composed from messages.addCondition default.
   await page.locator('mp-query-builder').evaluate((el) => {
-    const root = (el as HTMLElement & { shadowRoot: ShadowRoot }).shadowRoot;
-    const group = root.querySelector('mp-query-group') as HTMLElement & { shadowRoot: ShadowRoot };
-    const btn = group.shadowRoot.querySelector('.qb-add-condition') as HTMLButtonElement;
+    // The query-builder family is light-DOM (Tier L): its internals are ordinary
+    // descendants, so the whole tree is reachable from the host in one query.
+    const btn = el.querySelector('mp-query-group .qb-add-condition') as HTMLButtonElement;
     btn.click();
   });
 

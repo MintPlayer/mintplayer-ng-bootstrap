@@ -1,1 +1,1 @@
-export { treeSelectStyles } from './tree-select.styles';
+export { treeSelectLightStyles } from './tree-select.light.styles';

@@ -1,6 +1,17 @@
-import { LitElement, html, nothing, type TemplateResult } from 'lit';
+import { LitElement, nothing, type TemplateResult } from 'lit';
+import { installLightStyles, scopedHtml, stampScope } from '@mintplayer/web-components/light-dom';
 import { repeat } from 'lit/directives/repeat.js';
 import { OverlayController } from '@mintplayer/web-components/overlay';
+
+/**
+ * Tier L (emulated encapsulation) — no shadow root, so the consumer templates
+ * this component accepts (item / suggestion / button / panel) land in the
+ * document tree and keep the page's styles. Attribute scoping also survives the
+ * overlay being positioned outside the host, which tag-scoping would not.
+ * Imperative DOM (`renderNode`, `renderCaret`) must be stamped with
+ * `stampScope` — the template rewriter cannot see it.
+ */
+const html = scopedHtml('tree-select');
 import { deepActiveElement, HostAriaController, LiveAnnouncerController } from '@mintplayer/web-components/a11y';
 import '@mintplayer/web-components/treeview';
 import type {
@@ -9,7 +20,7 @@ import type {
   TreeNodeSelectEventDetail,
   TreeviewSelectionMode,
 } from '@mintplayer/web-components/treeview';
-import { treeSelectStyles } from '../styles';
+import { treeSelectLightStyles } from '../styles';
 import type {
   NodePage,
   TreeNode,
@@ -36,7 +47,9 @@ export type PanelTemplate = () => Node;
  * `TreeNode` objects. See the issue #342 PRD for the full contract.
  */
 export class MpTreeSelect extends LitElement {
-  static override styles = [treeSelectStyles];
+  protected override createRenderRoot(): HTMLElement {
+    return this;
+  }
 
   static override get observedAttributes(): string[] {
     return [
@@ -687,10 +700,19 @@ export class MpTreeSelect extends LitElement {
       }
       const label = document.createElement('span');
       label.className = 'treeview-label';
+      wrap.appendChild(label);
+      // `.ts-node` / `.ts-node-check` are ours; the rewriter never saw this DOM.
+      // The label is deliberately left to mp-treeview's row-anchored contract.
+      //
+      // Stamp BEFORE the consumer's suggestionTemplate output lands: stampScope
+      // recurses into every child, so stamping afterwards would put OUR scope on
+      // the consumer's nodes and let our rules match their content — the leak
+      // this tier exists to prevent, and one the decoy suite cannot see because
+      // it only tests UNSTAMPED elements.
+      stampScope(wrap, 'tree-select');
       const custom = this.suggestionTemplate?.(node, this._query);
       if (custom) label.appendChild(custom);
       else label.textContent = node.label;
-      wrap.appendChild(label);
       return wrap;
     };
     return this._nodeRendererFn;
@@ -814,6 +836,7 @@ export class MpTreeSelect extends LitElement {
     span.style.width = '100%';
     span.style.height = '100%';
     span.innerHTML = CARET_SVG;
+    stampScope(span, 'tree-select');
     return span;
   }
 
@@ -888,6 +911,8 @@ export class MpTreeSelect extends LitElement {
     </button>`;
   }
 }
+
+installLightStyles('tree-select', treeSelectLightStyles);
 
 if (typeof customElements !== 'undefined' && !customElements.get('mp-tree-select')) {
   customElements.define('mp-tree-select', MpTreeSelect);

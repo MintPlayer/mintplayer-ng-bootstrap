@@ -24,10 +24,14 @@ const SINGLE_SCHEMA: EntitySchema[] = [MULTI_SCHEMA[0]!];
 async function settle(el: Element): Promise<void> {
   const lit = el as Element & { updateComplete?: Promise<boolean> };
   if (lit.updateComplete) await lit.updateComplete;
-  if (el.shadowRoot) {
-    for (const child of Array.from(el.shadowRoot.querySelectorAll('*'))) {
-      await settle(child);
-    }
+  // Tier-agnostic: the query-builder family is light-DOM, so recurse through the
+  // render root — shadowRoot when a nested component still has one, else the
+  // element's own children. Only custom elements can have an updateComplete, and
+  // in the light DOM the descendant set is the whole rendered tree, so filtering
+  // to `*-*` keeps this from walking thousands of plain nodes.
+  const root: ParentNode = el.shadowRoot ?? el;
+  for (const child of Array.from(root.querySelectorAll('*'))) {
+    if (child.tagName.includes('-')) await settle(child);
   }
 }
 
@@ -52,7 +56,7 @@ async function mount(opts: {
 }
 
 function pickerOf(el: Element): MpSelect | null {
-  return (el.shadowRoot?.querySelector('.qb-entity-picker') as MpSelect | null) ?? null;
+  return ((el.renderRoot as unknown as ParentNode).querySelector('.qb-entity-picker') as MpSelect | null) ?? null;
 }
 
 // mp-select uses light-DOM `<option>` children (mirrored into its shadow
@@ -69,13 +73,13 @@ describe('mp-query-builder — toolbar entity picker (M18)', () => {
 
   it('does not render the toolbar when multiEntityPickerEnabled=false', async () => {
     const el = await mount({ schema: MULTI_SCHEMA, rootEntity: 'orders', multiEntityPickerEnabled: false });
-    expect(el.shadowRoot?.querySelector('.qb-toolbar')).toBeNull();
+    expect((el.renderRoot as unknown as ParentNode).querySelector('.qb-toolbar')).toBeNull();
     expect(pickerOf(el)).toBeNull();
   });
 
   it('does not render the toolbar when schema has only one entity', async () => {
     const el = await mount({ schema: SINGLE_SCHEMA, rootEntity: 'orders', multiEntityPickerEnabled: true });
-    expect(el.shadowRoot?.querySelector('.qb-toolbar')).toBeNull();
+    expect((el.renderRoot as unknown as ParentNode).querySelector('.qb-toolbar')).toBeNull();
   });
 
   it('renders the entity picker when enabled and schema has multiple entities', async () => {
@@ -122,7 +126,7 @@ describe('mp-query-builder — toolbar field projection (M19)', () => {
   // reads `(ev.target as HTMLInputElement).checked`, and mp-checkbox's
   // `checked` getter returns the boolean the WC tracks internally.
   function checkboxesOf(el: Element): MpCheckbox[] {
-    return Array.from(el.shadowRoot?.querySelectorAll('.qb-field-checkbox') ?? []) as MpCheckbox[];
+    return Array.from((el.renderRoot as unknown as ParentNode).querySelectorAll('.qb-field-checkbox') ?? []) as MpCheckbox[];
   }
 
   it('renders one checkbox per non-relation field of the current entity', async () => {
@@ -204,10 +208,10 @@ describe('mp-query-builder — toolbar sort-by (M20)', () => {
   });
 
   function rowsOf(el: Element): Element[] {
-    return Array.from(el.shadowRoot?.querySelectorAll('.qb-sort-row') ?? []);
+    return Array.from((el.renderRoot as unknown as ParentNode).querySelectorAll('.qb-sort-row') ?? []);
   }
   function addBtnOf(el: Element): HTMLButtonElement {
-    return el.shadowRoot?.querySelector('.qb-sort-add') as HTMLButtonElement;
+    return (el.renderRoot as unknown as ParentNode).querySelector('.qb-sort-add') as HTMLButtonElement;
   }
 
   it('renders no sort rows by default, just the add button', async () => {
@@ -251,7 +255,7 @@ describe('mp-query-builder — toolbar sort-by (M20)', () => {
     el.addEventListener('sort-by-change', (e) => {
       emitted = (e as CustomEvent<{ sortBy: SortDescriptor[] }>).detail;
     });
-    const dirSel = el.shadowRoot!.querySelector('.qb-sort-direction') as MpSelect;
+    const dirSel = (el.renderRoot as unknown as ParentNode).querySelector('.qb-sort-direction') as MpSelect;
     dirSel.value = 'desc';
     dirSel.dispatchEvent(new Event('change'));
     await settle(el);
@@ -267,7 +271,7 @@ describe('mp-query-builder — toolbar sort-by (M20)', () => {
     el.addEventListener('sort-by-change', (e) => {
       emitted = (e as CustomEvent<{ sortBy: SortDescriptor[] }>).detail;
     });
-    const removeBtns = el.shadowRoot!.querySelectorAll('.qb-sort-remove') as NodeListOf<HTMLButtonElement>;
+    const removeBtns = (el.renderRoot as unknown as ParentNode).querySelectorAll('.qb-sort-remove') as NodeListOf<HTMLButtonElement>;
     removeBtns[0]!.click();
     await settle(el);
     expect(emitted).toEqual({ sortBy: [{ field: 'status', direction: 'desc' }] });

@@ -127,6 +127,26 @@ export function QueryBuilderPage() {
         <code> apps/api</code>.
       </p>
 
+      <details className="mt-3 mb-4">
+          <summary>Styling — this component renders in the light DOM</summary>
+          <p className="mt-2">
+              It has no shadow root. Anything you render into it — row templates, node
+              templates, cell renderers — stays in the document, so your app's stylesheet,
+              your own component styles and Bootstrap's utility classes reach it normally.
+          </p>
+          <p>
+              Its own CSS is scoped at build time onto a <code>data-mps</code> attribute, the
+              same device Angular uses for <code>_ngcontent</code>, so it cannot leak out onto
+              your markup.
+          </p>
+          <p className="mb-0">
+              The trade-off runs the other way: page CSS now reaches this component's
+              internals, exactly as emulated encapsulation behaves everywhere else.
+              <code>::part()</code> and <code>::slotted()</code> no longer address it — use
+              ordinary CSS selectors instead.
+          </p>
+      </details>
+
       <section>
         <h2>Orders schema</h2>
         <BsQueryBuilder

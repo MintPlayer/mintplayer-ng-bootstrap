@@ -1,1 +1,1 @@
-export { treeviewStyles } from './treeview.styles';
+export { treeviewLightStyles } from './treeview.light.styles';

@@ -38,10 +38,10 @@ const flush = async (el: MpDatatable): Promise<void> => {
 };
 
 function placeholderCount(el: MpDatatable): number {
-  return el.shadowRoot!.querySelectorAll('tbody tr[data-placeholder="true"]').length;
+  return (el.renderRoot as unknown as ParentNode).querySelectorAll('tbody tr[data-placeholder="true"]').length;
 }
 function realRowCount(el: MpDatatable): number {
-  return el.shadowRoot!.querySelectorAll('tbody tr[data-placeholder="false"]').length;
+  return (el.renderRoot as unknown as ParentNode).querySelectorAll('tbody tr[data-placeholder="false"]').length;
 }
 
 /**
@@ -124,7 +124,7 @@ describe('mp-datatable — fetch-callback (vanilla, no framework)', () => {
     el = h.el;
     await flush(el);
     expect(el.totalRecords).toBe(50);
-    const table = el.shadowRoot!.querySelector('table')!;
+    const table = (el.renderRoot as unknown as ParentNode).querySelector('table')!;
     expect(table.getAttribute('aria-rowcount')).toBe('51'); // 50 + header
   });
 
@@ -138,7 +138,7 @@ describe('mp-datatable — fetch-callback (vanilla, no framework)', () => {
     expect(pages).toEqual([1, 2]);
 
     // A second scan (scroll jitter) must not re-request page 2.
-    const scroll = el.shadowRoot!.querySelector('.datatable-scroll')!;
+    const scroll = (el.renderRoot as unknown as ParentNode).querySelector('.datatable-scroll')!;
     scroll.dispatchEvent(new Event('scroll'));
     await flush(el);
     expect(h.calls.filter((c) => c.parentId == null && c.page === 2)).toHaveLength(1);
@@ -167,7 +167,7 @@ describe('mp-datatable — fetch-callback (vanilla, no framework)', () => {
 
     // Sort activation lives on a real <button> now (keyboard-operable), not on
     // the <th> itself.
-    const sortButton = el.shadowRoot!.querySelector(
+    const sortButton = (el.renderRoot as unknown as ParentNode).querySelector(
       'th[data-column="name"] button.header-sort',
     ) as HTMLElement;
     sortButton.click();
@@ -188,7 +188,7 @@ describe('mp-datatable — fetch-callback (vanilla, no framework)', () => {
       detail = (e as CustomEvent<SelectionChangeEventDetail<Row>>).detail;
     });
 
-    const firstCheckbox = el.shadowRoot!.querySelector('tbody tr[data-placeholder="false"] mp-checkbox') as HTMLElement;
+    const firstCheckbox = (el.renderRoot as unknown as ParentNode).querySelector('tbody tr[data-placeholder="false"] mp-checkbox') as HTMLElement;
     firstCheckbox?.dispatchEvent(new CustomEvent('change', { detail: { checked: true }, bubbles: true, composed: true }));
     await flush(el);
 

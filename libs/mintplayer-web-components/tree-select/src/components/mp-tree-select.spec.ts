@@ -35,11 +35,11 @@ function makeProvider(): InMemoryTreeSelectProvider {
 }
 
 function tv(el: MpTreeSelect): HTMLElement {
-  return el.shadowRoot!.querySelector('mp-treeview') as HTMLElement;
+  return (el.renderRoot as unknown as ParentNode).querySelector('mp-treeview') as HTMLElement;
 }
 
 function row(el: MpTreeSelect, id: string): HTMLElement {
-  return tv(el).shadowRoot!.querySelector(`[data-node-id="${id}"]`) as HTMLElement;
+  return (tv(el) as unknown as ParentNode).querySelector(`[data-node-id="${id}"]`) as HTMLElement;
 }
 
 function checkbox(el: MpTreeSelect, id: string): HTMLInputElement {
@@ -180,7 +180,7 @@ describe('<mp-tree-select>', () => {
     await settled(el);
     let cleared = false;
     el.addEventListener('clear', () => (cleared = true));
-    (el.shadowRoot!.querySelector('.ts-clear') as HTMLElement).click();
+    ((el.renderRoot as unknown as ParentNode).querySelector('.ts-clear') as HTMLElement).click();
     await settled(el);
     expect((el.value as TreeNode[]).length).toBe(0);
     expect(cleared).toBe(true);
@@ -208,5 +208,35 @@ describe('<mp-tree-select>', () => {
     el.provider = provider;
     await flush(el);
     expect(row(el, '1a')).toBeTruthy(); // still expanded — not collapsed/reset
+  });
+
+  // The light tier's whole guarantee is that our rules cannot reach content we
+  // do not own. `stampScope` recurses, so stamping the node wrapper AFTER the
+  // consumer's suggestionTemplate output was appended would brand their nodes
+  // with our scope and let rules like `button[data-mps=tree-select]` match
+  // them. The conformance decoy suite cannot see this: it only tests
+  // UNSTAMPED elements.
+  it('never stamps its scope on suggestionTemplate content', async () => {
+    const el = await mount((e) => {
+      e.mode = 'checkbox';
+      e.suggestionTemplate = (node) => {
+        const consumer = document.createElement('span');
+        consumer.className = 'consumer-chip';
+        const inner = document.createElement('button');
+        inner.textContent = node.label;
+        consumer.appendChild(inner);
+        return consumer;
+      };
+    });
+
+    const consumer = row(el, '1').querySelector('.consumer-chip') as HTMLElement;
+    expect(consumer).toBeTruthy();
+    expect(consumer.hasAttribute('data-mps')).toBe(false);
+    expect(consumer.querySelector('button')?.hasAttribute('data-mps')).toBe(false);
+
+    // …while the wrapper we DO own is still stamped, or it would go unstyled.
+    expect((row(el, '1').querySelector('.ts-node') as HTMLElement).getAttribute('data-mps')).toBe(
+      'tree-select',
+    );
   });
 });

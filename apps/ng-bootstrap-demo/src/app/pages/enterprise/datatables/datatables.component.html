@@ -8,6 +8,26 @@
   and (optionally) the virtual viewport.
 </p>
 
+<details class="mt-3 mb-4">
+    <summary>Styling — this component renders in the light DOM</summary>
+    <p class="mt-2">
+        It has no shadow root. Anything you render into it — row templates, node
+        templates, cell renderers — stays in the document, so your app's stylesheet,
+        your own component styles and Bootstrap's utility classes reach it normally.
+    </p>
+    <p>
+        Its own CSS is scoped at build time onto a <code>data-mps</code> attribute, the
+        same device Angular uses for <code>_ngcontent</code>, so it cannot leak out onto
+        your markup.
+    </p>
+    <p class="mb-0">
+        The trade-off runs the other way: page CSS now reaches this component's
+        internals, exactly as emulated encapsulation behaves everywhere else.
+        <code>::part()</code> and <code>::slotted()</code> no longer address it — use
+        ordinary CSS selectors instead.
+    </p>
+</details>
+
 <h2>Basic usage</h2>
 
 <bs-select aria-label="Datatable mode" [ngModel]="mode()" (ngModelChange)="mode.set($event)" class="mb-3 flex-shrink-0">
@@ -30,7 +50,12 @@
   <div *bsDatatableColumn="'YearQuit'; sortable: true">Year quit</div>
 
   <ng-container *bsRowTemplate="let artist">
-    <td class="text-nowrap">{{ $any(artist)?.name }}</td>
+    <td class="text-nowrap">
+      {{ $any(artist)?.name }}
+      <bs-badge [type]="$any(artist)?.yearQuit ? colors.secondary : colors.success">
+        {{ $any(artist)?.yearQuit ? 'ended' : 'active' }}
+      </bs-badge>
+    </td>
     <td class="text-nowrap">{{ $any(artist)?.yearStarted }}</td>
     <td class="text-nowrap">{{ $any(artist)?.yearQuit }}</td>
   </ng-container>

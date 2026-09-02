@@ -54,6 +54,84 @@ WCs with a no-JS SSR path ship a Declarative-Shadow-DOM "chrome" constant, rende
 - Like all generated files, `*-chrome.generated.ts` are gitignored build artifacts (`.gitignore`: `libs/mintplayer-web-components/**/*.generated.ts`). Never commit or hand-edit them.
 - They regenerate automatically because every SSR demo build `dependsOn` the aggregate **`mintplayer-web-components:codegen-ssr-chrome`** (it fans out to the per-component `codegen-*-chrome` targets). **When adding a new SSR WC, add its `codegen-<name>-chrome` to that aggregate** — the demos need no change. After editing a WC's shadow markup/styles, rerun `nx run mintplayer-web-components:codegen-ssr-chrome` (or just build a demo) so the SSR chrome isn't stale.
 
+### Light tier — emulated encapsulation, no shadow DOM
+
+A component that mounts **consumer-authored DOM** (a render callback like `rowRenderer` /
+`cellRenderer` / `nodeRenderer`, or a direct `appendChild` of a consumer element) must render in the
+**light DOM**. Inside a shadow root that content is starved: the page's stylesheets — the consumer's
+own Angular/React/Vue component CSS *and* Bootstrap's global utilities — cannot cross the boundary,
+so a `<bs-badge>` in a datatable row renders as bare text and `me-2` does nothing (issue #408).
+`mp-datatable` is the reference implementation.
+
+**The admission rule is mechanical:** mounts consumer DOM ⇒ light tier. Takes content only through
+real `<slot>`s ⇒ keep the shadow root (slotted nodes never leave the light DOM, so they are already
+fine). Do not convert a slot-based component.
+
+Encapsulation is preserved at build time instead of by the boundary, the way Angular's
+`ViewEncapsulation.Emulated` does it:
+
+- `<name>.light.scss` → codegen emits `<name>.light.styles.ts` with the CSS **rescoped**: `:host`
+  becomes the tag name, every other compound gains `[data-mps=<scope>]`. `::slotted` /
+  `:host-context` / `:root` / `html` / `body` subjects are hard codegen errors. A rule that must
+  ship verbatim is preceded by `/*! @mps-global */` and authored in FINAL form.
+- The element uses `scopedHtml('<scope>')` — **never lit's bare `html`**; an unstamped element is an
+  unstyled element. `unsafeHTML` output and imperative DOM need `stampScope` — and **`stampScope`
+  recurses, so call it BEFORE consumer content is appended**, never after. Stamping a subtree that
+  already holds a consumer's node brands their DOM with your scope and lets your rules (a bare
+  `button[data-mps=…]`, say) match their content. The decoy suite cannot catch this: it only tests
+  UNSTAMPED elements. `mp-tree-select`'s `nodeRenderer` is the reference, and its spec pins it.
+- `createRenderRoot()` returns `this`; `installLightStyles('<scope>', sheet)` runs right before
+  `customElements.define`. The SSR guard checks `document.head`, not `typeof document` — Angular's
+  SSR DOM shim provides a `document` with no usable head.
+- `_conformance/light-styles-scoping.spec.ts` enforces the no-leak property on every build: each
+  compound must carry its own scope, and no selector may match a decoy tree of elements sharing our
+  class names. Exemptions are listed explicitly in that file, never added silently.
+
+**Two rules that are easy to get wrong, both found by measurement:**
+
+- **Nesting.** A light-tier component's sheet is installed at DOCUMENT level, and document CSS does
+  not cross a shadow boundary — so a component that KEEPS its shadow root but renders a light-tier
+  component inside it starves it (issue #408 again, one level up). Any such host must mirror the
+  registry: `adoptLightStyles(this.renderRoot)` in `connectedCallback`, disposing on disconnect.
+  `mp-file-manager` is the reference. `_conformance/light-styles-nesting.spec.ts` enforces it. The
+  corollary is that converting a component can force its ANCESTORS to convert too — the
+  query-builder family had to go together for exactly this reason.
+- **Do not re-import a Bootstrap partial the page already ships.** `libs/mintplayer-ng-bootstrap/_bootstrap.scss`
+  provides `utilities`, `root`, `reboot`, `type`, `images` and `buttons` globally, and in the light
+  DOM those reach the component. Importing them again ships the CSS twice AND the rescoped copy
+  silently WINS on specificity (`.btn[data-mps=…]` beats `.btn`), making the page's own theming
+  unoverridable. Partials that are commented out there (`forms`, `tables`, `badge`, `card`, `alert`,
+  `list-group`, `close`, …) are NOT global and must still be imported.
+
+Styling DOM the rewriter cannot stamp (`unsafeHTML` output, a consumer's node, another component's
+rendered content) is done by anchoring on a scoped ANCESTOR, marked `/*! @mps-global */` and
+authored in final form — `.treeview-icon[data-mps=treeview] svg`, not `.treeview-icon svg`. The
+match still requires an element we stamped, so nothing outside can be hit. Prefer this over having
+one component stamp another's scope, which would couple it to that component's internals.
+
+Consequences to design around:
+
+- **Encapsulation is one-directional.** Page CSS now reaches the component's internals — the same
+  property `ViewEncapsulation.Emulated` has everywhere else. Accepted deliberately; document it
+  rather than fighting it.
+- `::part()` and `::slotted()` no longer apply to a converted component. Its `part=` hooks, if any,
+  are removed; consumers style it with ordinary CSS.
+- Queries move from `shadowRoot` to `renderRoot`, and focus reads from `document.activeElement`
+  rather than a shadow root's `activeElement` — under a shadow root, `document.activeElement` was
+  the *host* because focus is retargeted at the boundary.
+- **Lit in the light DOM is safe for nodes passed as binding values** (measured): a keyed dynamic
+  template survives re-render, reorder, whole-page key replacement, template *shape* change and
+  zero-rows recovery with node identity intact. The trap is different — it bites *pre-existing light
+  children the host owns but lit does not manage*.
+- `@extend` from `:host` does not unify into compounds; restate such rules as `:host(...)`.
+- Converting a component breaks its specs in four predictable ways, and each has a faithful
+  translation rather than a weakening: `el.shadowRoot` → `el.renderRoot`; `shadowRoot.activeElement`
+  → `document.activeElement`; `document.activeElement === host` →
+  `host.contains(document.activeElement)` (the equality was asserting shadow focus RETARGETING, not
+  focus location); and any helper that walks `el.shadowRoot` to settle or search descendants must
+  use `el.shadowRoot ?? el` **and filter to custom elements** — in the light DOM that walk covers the
+  whole rendered tree, which took one suite from ~8s to 18-22s per test.
+
 ### WC gotchas
 
 - `static get observedAttributes()` must be a **static getter** (spread `super.observedAttributes`), not a static array.

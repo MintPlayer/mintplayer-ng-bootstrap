@@ -1,8 +1,19 @@
-import { LitElement, html, nothing, type TemplateResult } from 'lit';
+import { LitElement, nothing, type TemplateResult } from 'lit';
+import { installLightStyles, scopedHtml } from '@mintplayer/web-components/light-dom';
 import { LiveAnnouncerController } from '@mintplayer/web-components/a11y';
 import { repeat } from 'lit/directives/repeat.js';
 import { unsafeHTML } from 'lit/directives/unsafe-html.js';
-import { treeviewStyles } from '../styles';
+
+/**
+ * Tier L (emulated encapsulation) — no shadow root, so node renderers and
+ * icon resolvers land in the document tree where the page's stylesheets can
+ * reach them. Every element this template renders is stamped
+ * `data-mps="treeview"`; never use lit's bare `html` here. The two
+ * `unsafeHTML` SVGs are NOT stamped, so the rules targeting them are authored
+ * anchored on their scoped ancestor (see treeview.light.scss).
+ */
+const html = scopedHtml('treeview');
+import { treeviewLightStyles } from '../styles';
 import type { TreeNode } from '../types';
 
 export type TreeviewSelectionMode = 'none' | 'single' | 'multiple';
@@ -65,7 +76,9 @@ let instanceCounter = 0;
  * Events: `tree-node-select`, `tree-node-expand`, `tree-node-collapse`.
  */
 export class MpTreeview extends LitElement {
-  static override styles = [treeviewStyles];
+  protected override createRenderRoot(): HTMLElement {
+    return this;
+  }
 
   static override get observedAttributes(): string[] {
     return [
@@ -495,7 +508,7 @@ export class MpTreeview extends LitElement {
     this.requestUpdate();
     // Defer focus to next frame so the DOM has the new tabindex applied.
     requestAnimationFrame(() => {
-      const el = this.shadowRoot?.querySelector<HTMLElement>(`[data-node-id="${cssEscape(id)}"]`);
+      const el = this.renderRoot?.querySelector<HTMLElement>(`[data-node-id="${cssEscape(id)}"]`);
       el?.focus({ preventScroll: false });
     });
   }
@@ -622,6 +635,8 @@ function cssEscape(value: string): string {
   }
   return value.replace(/["\\]/g, '\\$&');
 }
+
+installLightStyles('treeview', treeviewLightStyles);
 
 if (typeof customElements !== 'undefined' && !customElements.get('mp-treeview')) {
   customElements.define('mp-treeview', MpTreeview);

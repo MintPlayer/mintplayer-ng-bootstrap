@@ -24,10 +24,11 @@ function condition(field: string, value: unknown, op: Condition['operator'] = 'e
 async function settleDescendants(root: Element): Promise<void> {
   const lit = root as Element & { updateComplete?: Promise<boolean> };
   if (lit.updateComplete) await lit.updateComplete;
-  if (root.shadowRoot) {
-    for (const child of Array.from(root.shadowRoot.querySelectorAll('*'))) {
-      await settleDescendants(child);
-    }
+  // Tier-agnostic: the family is light-DOM, so recurse through the render root.
+  // Filtered to custom elements — only they have an updateComplete, and in the
+  // light DOM the descendant set is the whole rendered tree.
+  for (const child of Array.from((root.shadowRoot ?? root).querySelectorAll('*'))) {
+    if (child.tagName.includes('-')) await settleDescendants(child);
   }
 }
 
@@ -103,8 +104,8 @@ describe('mp-query-condition with editorRegistry (M4 custom editors)', () => {
     await settleDescendants(builder);
 
     const cond = deepFind(builder, 'mp-query-condition');
-    expect(cond?.shadowRoot?.querySelector('input[type="number"]')).toBeTruthy();
-    expect(cond?.shadowRoot?.querySelector('.custom-editor')).toBeNull();
+    expect(cond?.querySelector('input[type="number"]')).toBeTruthy();
+    expect(cond?.querySelector('.custom-editor')).toBeNull();
   });
 
   it('uses the registered factory when provided for the field', async () => {
@@ -125,11 +126,11 @@ describe('mp-query-condition with editorRegistry (M4 custom editors)', () => {
     expect(totalEditor.built).toBe(1);
     expect(totalEditor.disposed).toBe(0);
     const cond = deepFind(builder, 'mp-query-condition');
-    const custom = cond?.shadowRoot?.querySelector('.custom-editor') as HTMLElement;
+    const custom = cond?.querySelector('.custom-editor') as HTMLElement;
     expect(custom).toBeTruthy();
     expect(custom.dataset['field']).toBe('total');
     expect(custom.dataset['value']).toBe('100');
-    expect(cond?.shadowRoot?.querySelector('input[type="number"]')).toBeNull();
+    expect(cond?.querySelector('input[type="number"]')).toBeNull();
   });
 
   it('disposes the registered factory handle when the WC is removed', async () => {
@@ -178,7 +179,7 @@ describe('mp-query-condition with editorRegistry (M4 custom editors)', () => {
     expect(editorA.disposed).toBe(1);
     expect(editorB.built).toBe(1);
     const cond = deepFind(builder, 'mp-query-condition');
-    expect((cond?.shadowRoot?.querySelector('.custom-editor') as HTMLElement).dataset['label']).toBe('B');
+    expect((cond?.querySelector('.custom-editor') as HTMLElement).dataset['label']).toBe('B');
   });
 
   it('propagates editorRegistry into a nested sub-query body (read-through context)', async () => {

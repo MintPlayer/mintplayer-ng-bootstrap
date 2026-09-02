@@ -1,11 +1,20 @@
-import { LitElement, html, nothing, type TemplateResult } from 'lit';
+import { LitElement, nothing, type TemplateResult } from 'lit';
+import { installLightStyles, scopedHtml } from '@mintplayer/web-components/light-dom';
 import { FocusRestore, FocusRestoreController, HostAriaController, LiveAnnouncerController } from '@mintplayer/web-components/a11y';
 import { DEFAULT_DATATABLE_LABELS, type DatatableLabels } from '../types/labels';
 import { repeat } from 'lit/directives/repeat.js';
 import { classMap } from 'lit/directives/class-map.js';
 import { styleMap } from 'lit/directives/style-map.js';
-import { datatableStyles } from '../styles';
+import { datatableLightStyles } from '../styles';
 import { computeNextSort, sortRows, type SortColumn } from '../sort';
+
+/**
+ * Tier L (emulated encapsulation): this component has no shadow root, so every
+ * element it renders is stamped `data-mps="datatable"` and the rescoped
+ * stylesheet selects on that attribute. Never use lit's bare `html` here — an
+ * unstamped element is an unstyled element.
+ */
+const html = scopedHtml('datatable');
 import type {
   CellContent,
   DatatableColumnDef,
@@ -92,7 +101,17 @@ let instanceCounter = 0;
  * - Column resize via a 6px handle at the right edge of each header.
  */
 export class MpDatatable extends LitElement {
-  static override styles = [datatableStyles];
+  /**
+   * Light DOM. Consumer-authored row/cell/header content is mounted here by the
+   * render callbacks, and inside a shadow root the page's stylesheets — the
+   * consumer's own component CSS and Bootstrap's utilities alike — cannot reach
+   * it (issue #408). Rendering in the document tree is what makes that content
+   * style correctly; encapsulation is preserved by the build-time rescoping
+   * instead of by the boundary.
+   */
+  protected override createRenderRoot(): HTMLElement {
+    return this;
+  }
 
   static override get observedAttributes(): string[] {
     return [
@@ -187,7 +206,7 @@ export class MpDatatable extends LitElement {
    * focus is elsewhere never steal it.
    */
   private readonly rowFocusRestore = new FocusRestoreController(this, new FocusRestore(
-    () => (this.renderRoot as ShadowRoot | null) ?? null,
+    () => (this.renderRoot as HTMLElement | null) ?? null,
     {
       selector: 'tbody tr[data-row-key]:not([data-placeholder="true"])',
       keyOf: (el) => el.dataset['rowKey'] ?? null,
@@ -630,7 +649,7 @@ export class MpDatatable extends LitElement {
   }
 
   protected override firstUpdated(): void {
-    this._scrollElement = this.shadowRoot?.querySelector('.datatable-scroll') as HTMLElement | null;
+    this._scrollElement = this.renderRoot?.querySelector('.datatable-scroll') as HTMLElement | null;
     if (this._scrollElement) {
       this._scrollListener = () => this.refreshVirtualRange();
       this._scrollElement.addEventListener('scroll', this._scrollListener, { passive: true });
@@ -692,8 +711,8 @@ export class MpDatatable extends LitElement {
   private maybeMeasureInitialColumnWidths(): void {
     if (this._hasMeasuredInitial) return;
     if (this._columns.length === 0 || this._data.length === 0) return;
-    if (!this.shadowRoot) return;
-    const bodyRows = this.shadowRoot.querySelectorAll('tbody tr[data-row-key]:not([data-placeholder="true"])');
+    if (!this.renderRoot) return;
+    const bodyRows = this.renderRoot.querySelectorAll('tbody tr[data-row-key]:not([data-placeholder="true"])');
     if (bodyRows.length === 0) return; // wait for the first real row before measuring
 
     const next = new Map(this._columnWidths);
@@ -720,8 +739,8 @@ export class MpDatatable extends LitElement {
   }
 
   private measureColumnWidth(name: string): number | null {
-    if (!this.shadowRoot) return null;
-    const th = this.shadowRoot.querySelector(`th[data-column="${name}"]`) as HTMLElement | null;
+    if (!this.renderRoot) return null;
+    const th = this.renderRoot.querySelector(`th[data-column="${name}"]`) as HTMLElement | null;
     if (!th) return null;
     const w = Math.ceil(th.getBoundingClientRect().width);
     return w > 0 ? w : null;
@@ -1840,6 +1859,8 @@ function renderContent(content: CellContent): unknown {
   }
   return content;
 }
+
+installLightStyles('datatable', datatableLightStyles);
 
 if (typeof customElements !== 'undefined' && !customElements.get('mp-datatable')) {
   customElements.define('mp-datatable', MpDatatable);

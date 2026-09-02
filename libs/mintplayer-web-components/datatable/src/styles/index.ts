@@ -1,1 +1,1 @@
-export { datatableStyles } from './datatable.styles';
+export { datatableLightStyles } from './datatable.light.styles';

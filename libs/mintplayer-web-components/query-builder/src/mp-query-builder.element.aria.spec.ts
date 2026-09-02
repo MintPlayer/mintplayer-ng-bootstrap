@@ -37,10 +37,14 @@ const SCHEMA: EntitySchema[] = [
 async function settle(el: Element): Promise<void> {
   const lit = el as Element & { updateComplete?: Promise<boolean> };
   if (lit.updateComplete) await lit.updateComplete;
-  if (el.shadowRoot) {
-    for (const child of Array.from(el.shadowRoot.querySelectorAll('*'))) {
-      await settle(child);
-    }
+  // Tier-agnostic: the query-builder family is light-DOM, so recurse through the
+  // render root — shadowRoot when a nested component still has one, else the
+  // element's own children. Only custom elements can have an updateComplete, and
+  // in the light DOM the descendant set is the whole rendered tree, so filtering
+  // to `*-*` keeps this from walking thousands of plain nodes.
+  const root: ParentNode = el.shadowRoot ?? el;
+  for (const child of Array.from(root.querySelectorAll('*'))) {
+    if (child.tagName.includes('-')) await settle(child);
   }
 }
 

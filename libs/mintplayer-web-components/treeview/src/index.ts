@@ -10,4 +10,4 @@ export type {
   TreeChildrenLoader,
 } from './components';
 export type { TreeNode } from './types';
-export { treeviewStyles } from './styles';
+export { treeviewLightStyles } from './styles';

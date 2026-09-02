@@ -46,7 +46,9 @@ async function settle(el: MpDatatable): Promise<void> {
   await el.updateComplete;
 }
 
-const shadow = (el: MpDatatable) => el.shadowRoot!;
+// Tier L: mp-datatable renders in the light DOM, so its render root IS the
+// host. Kept under the original name so the specs read unchanged.
+const shadow = (el: MpDatatable) => el.renderRoot as unknown as ParentNode;
 const table = (el: MpDatatable) => shadow(el).querySelector('table')!;
 const th = (el: MpDatatable, column: string) =>
   shadow(el).querySelector(`th[data-column="${column}"]`)!;

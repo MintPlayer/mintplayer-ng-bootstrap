@@ -1,4 +1,5 @@
-import { LitElement, html, nothing, type PropertyValues, type TemplateResult } from 'lit';
+import { LitElement, nothing, type PropertyValues, type TemplateResult } from 'lit';
+import { installLightStyles, scopedHtml } from '@mintplayer/web-components/light-dom';
 import { ContextConsumer, ContextProvider } from '@lit/context';
 import type { Expression, Group, Operator } from './model/expression';
 import type { SortDescriptor } from './model/sort';
@@ -29,7 +30,14 @@ import {
   messagesContext,
 } from './context';
 import { MpQueryGroupElement } from './mp-query-group.element';
-import { styles } from './mp-query-builder.element.template';
+import { queryBuilderLightStyles } from './mp-query-builder.light.styles';
+
+/**
+ * Tier L (emulated encapsulation) — the family converts together: a light-tier
+ * element nested inside an unconverted ancestor's shadow root would be
+ * unstyled. Never use lit's bare `html` here.
+ */
+const html = scopedHtml('query-builder');
 
 // Side-effect-registers <mp-select> and <mp-checkbox>. The toolbar uses
 // the former for the entity picker / sort-by rows and the latter for the
@@ -42,7 +50,9 @@ void MpQueryGroupElement;
 const DEFAULT_MAX_DEPTH = 32;
 
 export class MpQueryBuilderElement extends LitElement {
-  static override styles = [styles];
+  protected override createRenderRoot(): HTMLElement {
+    return this;
+  }
 
   static override properties = {
     query: { attribute: false },
@@ -202,7 +212,7 @@ export class MpQueryBuilderElement extends LitElement {
       }
       return null;
     };
-    const target = this.shadowRoot ? visit(this.shadowRoot) : null;
+    const target = visit(this.renderRoot as unknown as Element);
     target?.focus();
   }
 
@@ -493,12 +503,12 @@ export class MpQueryBuilderElement extends LitElement {
 
   private _renderSavedPicker(messages: QueryBuilderMessages): TemplateResult {
     return html`
-      <div class="qb-saved" part="saved-picker">
-        <div class="qb-saved-list" part="saved-list">
+      <div class="qb-saved">
+        <div class="qb-saved-list">
           ${this.savedQueries.length === 0
             ? html`<span class="qb-saved-empty">No saved queries</span>`
             : this.savedQueries.map((sq) => html`
-                <span class="qb-saved-row" part="saved-row" data-name=${sq.name}>
+                <span class="qb-saved-row" data-name=${sq.name}>
                   <button
                     type="button"
                     class="btn btn-sm btn-outline-primary qb-saved-load"
@@ -513,7 +523,7 @@ export class MpQueryBuilderElement extends LitElement {
                 </span>
               `)}
         </div>
-        <span class="qb-saved-new" part="saved-new">
+        <span class="qb-saved-new">
           <input
             type="text"
             class="form-control form-control-sm qb-saved-name"
@@ -547,13 +557,12 @@ export class MpQueryBuilderElement extends LitElement {
     const projectableFields = currentEntity?.fields.filter((f) => f.type !== 'relation') ?? [];
     const messages = this._messages();
     return html`
-      <div class="qb-toolbar" part="toolbar">
+      <div class="qb-toolbar">
         <label class="qb-toolbar-label">
           Entity:
           <mp-select
             class="qb-entity-picker"
             size="sm"
-            part="entity-picker"
             .value=${this.rootEntity}
             ?disabled=${this.disabled}
             @change=${this._onRootEntityChange}
@@ -563,7 +572,7 @@ export class MpQueryBuilderElement extends LitElement {
           </mp-select>
         </label>
         ${projectableFields.length > 0 ? html`
-          <span class="qb-toolbar-section qb-field-projection" part="field-projection" role="group" aria-label=${messages.columns}>
+          <span class="qb-toolbar-section qb-field-projection" role="group" aria-label=${messages.columns}>
             <span class="qb-toolbar-label">${messages.columns}:</span>
             ${projectableFields.map((f) => html`
               <mp-checkbox
@@ -585,10 +594,10 @@ export class MpQueryBuilderElement extends LitElement {
   private _renderSortBy(projectableFields: FieldDef[]): TemplateResult {
     const messages = this._messages();
     return html`
-      <span class="qb-toolbar-section qb-sort-by" part="sort-by" role="group" aria-label=${messages.sortBy}>
+      <span class="qb-toolbar-section qb-sort-by" role="group" aria-label=${messages.sortBy}>
         <span class="qb-toolbar-label">${messages.sortBy}:</span>
         ${this.sortBy.map((s, i) => html`
-          <span class="qb-sort-row" part="sort-row">
+          <span class="qb-sort-row">
             <mp-select
               class="qb-sort-field"
               size="sm"
@@ -626,7 +635,6 @@ export class MpQueryBuilderElement extends LitElement {
         <button
           type="button"
           class="btn btn-sm btn-outline-secondary qb-sort-add"
-          part="sort-add"
           ?disabled=${this.disabled || projectableFields.length === 0}
           @click=${() => this._onSortAdd(projectableFields)}
         >+ Add sort</button>
@@ -700,7 +708,6 @@ export class MpQueryBuilderElement extends LitElement {
     return html`
       <div
         class="qb-root"
-        part="root"
         data-qb-root=${this._qbRootId}
         @condition-field-change=${this._onConditionFieldChange}
         @condition-operator-change=${this._onConditionOperatorChange}
@@ -718,7 +725,7 @@ export class MpQueryBuilderElement extends LitElement {
           ? this._renderSavedPicker(this._messages())
           : nothing}
         ${this.showPreview && this.depth === 0
-          ? html`<pre class="qb-preview" part="preview">${this._renderPreview(tree)}</pre>`
+          ? html`<pre class="qb-preview">${this._renderPreview(tree)}</pre>`
           : nothing}
         ${this.renderTreeRoot(tree)}
       </div>
@@ -785,6 +792,8 @@ export class MpQueryBuilderElement extends LitElement {
     ></mp-query-group>`;
   }
 }
+
+installLightStyles('query-builder', queryBuilderLightStyles);
 
 if (typeof customElements !== 'undefined' && !customElements.get('mp-query-builder')) {
   customElements.define('mp-query-builder', MpQueryBuilderElement);

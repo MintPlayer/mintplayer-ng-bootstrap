@@ -6,6 +6,7 @@ import {
   type DatatableColumnDef,
   type DatatableFetch,
   type RowKey,
+  type RowRenderer,
   type DatatableSelectionMode,
   type TreeIdKey,
   type TreeSelectionStrategy,
@@ -29,6 +30,12 @@ const props = defineProps<{
   /** Server-paged source. The WC owns the whole fetch loop; nothing else to wire. */
   fetch?: DatatableFetch | null;
   rowKey?: RowKey;
+  /**
+   * Whole-row renderer. Returns the cell nodes for a row, which the WC mounts
+   * in its (light-DOM) table — so the page's stylesheets and the consumer's own
+   * component CSS style them normally. Exposed for parity with Angular/React.
+   */
+  rowRenderer?: RowRenderer;
   // Tree-mode JS-property props
   tree?: boolean;
   idKey?: TreeIdKey | string | null;
@@ -70,6 +77,7 @@ const syncProps = () => {
     el.value.data = props.data ?? [];
   }
   if (props.rowKey !== undefined) el.value.rowKey = props.rowKey;
+  if (props.rowRenderer !== undefined) el.value.rowRenderer = props.rowRenderer;
   if (props.tree !== undefined) el.value.tree = props.tree;
   if (props.idKey !== undefined) el.value.idKey = props.idKey as TreeIdKey | null;
   if (props.childCountKey !== undefined) el.value.childCountKey = props.childCountKey;

@@ -1,4 +1,5 @@
-import { LitElement, html, nothing, type PropertyValues, type TemplateResult } from 'lit';
+import { LitElement, nothing, type PropertyValues, type TemplateResult } from 'lit';
+import { installLightStyles, scopedHtml } from '@mintplayer/web-components/light-dom';
 import { createRef, ref } from 'lit/directives/ref.js';
 import { ContextConsumer } from '@lit/context';
 import type { Condition, Operator } from './model/expression';
@@ -8,13 +9,22 @@ import { DEFAULT_MESSAGES, type QueryBuilderMessages } from './model/messages';
 import { operatorsForType, valueShapeFor } from './model/operators';
 import { disabledContext, editorRegistryContext, messagesContext } from './context';
 import { resolveBuiltinEditor } from './value-editors/builtin-editors';
-import { styles } from './mp-query-condition.element.template';
+import { queryConditionLightStyles } from './mp-query-condition.light.styles';
+
+/**
+ * Tier L (emulated encapsulation) — the family converts together: a light-tier
+ * element nested inside an unconverted ancestor's shadow root would be
+ * unstyled. Never use lit's bare `html` here.
+ */
+const html = scopedHtml('query-condition');
 
 // Side-effect-registers <mp-select> for the field + operator pickers.
 import '@mintplayer/web-components/select';
 
 export class MpQueryConditionElement extends LitElement {
-  static override styles = [styles];
+  protected override createRenderRoot(): HTMLElement {
+    return this;
+  }
 
   static override properties = {
     node: { attribute: false },
@@ -184,7 +194,7 @@ export class MpQueryConditionElement extends LitElement {
     // made the advertised keys do nothing precisely where users were told to
     // press them. Child inputs/selects are still excluded (their arrows have
     // native semantics).
-    const row = this.shadowRoot?.querySelector('.qb-condition');
+    const row = this.renderRoot?.querySelector('.qb-condition');
     const origin = e.composedPath()[0];
     const isHandle = origin instanceof HTMLElement && origin.classList.contains('qb-drag-handle');
     if (origin !== row && !isHandle) return;
@@ -200,7 +210,7 @@ export class MpQueryConditionElement extends LitElement {
     const node = this.node;
     if (!node) return;
     // Find the row element to use as the ghost source.
-    const row = this.shadowRoot?.querySelector('.qb-condition') as HTMLElement | null;
+    const row = this.renderRoot?.querySelector('.qb-condition') as HTMLElement | null;
     if (!row) return;
     this.dispatchEvent(new CustomEvent('qb-drag-start', {
       detail: {
@@ -238,7 +248,6 @@ export class MpQueryConditionElement extends LitElement {
     return html`
       <div
         class="qb-condition"
-        part="condition"
         tabindex="0"
         role="group"
         aria-label=${
@@ -253,7 +262,6 @@ export class MpQueryConditionElement extends LitElement {
         <button
           type="button"
           class="qb-drag-handle"
-          part="drag-handle"
           ?disabled=${disabled}
           aria-label=${messages.reorderHint}
           title=${messages.reorderHint}
@@ -262,7 +270,6 @@ export class MpQueryConditionElement extends LitElement {
         <mp-select
           class="qb-field-select"
           size="sm"
-          part="field-select"
           .value=${node.field}
           ?disabled=${disabled}
           @change=${this._onFieldChange}
@@ -274,7 +281,6 @@ export class MpQueryConditionElement extends LitElement {
         <mp-select
           class="qb-operator-select"
           size="sm"
-          part="operator-select"
           .value=${node.operator}
           ?disabled=${disabled || !field}
           @change=${this._onOperatorChange}
@@ -287,11 +293,10 @@ export class MpQueryConditionElement extends LitElement {
         </mp-select>
         ${shape === 'null'
           ? nothing
-          : html`<span class="qb-value" part="value" ${ref(this._editorMount)}></span>`}
+          : html`<span class="qb-value" ${ref(this._editorMount)}></span>`}
         <button
           type="button"
           class="btn btn-sm btn-link qb-remove"
-          part="remove"
           ?disabled=${disabled}
           @click=${this._onRemove}
           aria-label=${messages.removeRow}
@@ -301,6 +306,8 @@ export class MpQueryConditionElement extends LitElement {
     `;
   }
 }
+
+installLightStyles('query-condition', queryConditionLightStyles);
 
 if (typeof customElements !== 'undefined' && !customElements.get('mp-query-condition')) {
   customElements.define('mp-query-condition', MpQueryConditionElement);

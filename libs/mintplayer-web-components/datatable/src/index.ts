@@ -23,4 +23,4 @@ export type {
 } from './types';
 export type { SortColumn, SortDirection } from './sort';
 export { computeNextSort, sortRows } from './sort';
-export { datatableStyles } from './styles';
+export { datatableLightStyles } from './styles';
