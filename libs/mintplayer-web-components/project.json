@@ -109,6 +109,24 @@
         "command": "node tools/lit-ssr-utils/gen-dropdown-chrome.mjs"
       }
     },
+    "codegen-light-styles-chrome": {
+      "executor": "nx:run-commands",
+      "outputs": [
+        "{projectRoot}/light-dom/ssr/mp-light-styles-chrome.generated.ts"
+      ],
+      "inputs": [
+        "{projectRoot}/datatable/src/styles/*.light.scss",
+        "{projectRoot}/treeview/src/styles/*.light.scss",
+        "{projectRoot}/tree-select/src/styles/*.light.scss",
+        "{projectRoot}/query-builder/src/*.light.scss",
+        "{workspaceRoot}/tools/lit-ssr-utils/gen-light-styles-chrome.mjs"
+      ],
+      "dependsOn": ["build"],
+      "cache": true,
+      "options": {
+        "command": "node tools/lit-ssr-utils/gen-light-styles-chrome.mjs"
+      }
+    },
     "codegen-navbar-chrome": {
       "executor": "nx:run-commands",
       "outputs": ["{projectRoot}/navbar/ssr/mp-navbar-chrome.generated.ts"],
@@ -156,14 +174,15 @@
     "codegen-ssr-chrome": {
       "executor": "nx:run-commands",
       "options": {
-        "command": "echo \"SSR DSD chrome generated (shell + navbar + dropdown + carousel + accordion)\""
+        "command": "echo \"SSR chrome generated (shell + navbar + dropdown + carousel + accordion DSD, light-tier style tags)\""
       },
       "dependsOn": [
         "codegen-shell-chrome",
         "codegen-navbar-chrome",
         "codegen-dropdown-chrome",
         "codegen-carousel-chrome",
-        "codegen-accordion-chrome"
+        "codegen-accordion-chrome",
+        "codegen-light-styles-chrome"
       ]
     },
     "build": {

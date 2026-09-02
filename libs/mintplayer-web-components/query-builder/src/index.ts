@@ -70,6 +70,15 @@ export { visitTree } from './visitor/visit-tree';
 export { renderExpression } from './preview/render-expression';
 export type { RenderExpressionOptions } from './preview/render-expression';
 
+// Rescoped light-tier stylesheets. Public for the same reason the datatable's
+// and treeview's are: a shadow-DOM host that renders one of these elements
+// inside its own root must adopt them (the nesting rule), and the SSR
+// light-styles injector reads them to emit no-JS `<style>` tags.
+export { queryBuilderLightStyles } from './mp-query-builder.light.styles';
+export { queryConditionLightStyles } from './mp-query-condition.light.styles';
+export { queryGroupLightStyles } from './mp-query-group.light.styles';
+export { querySubqueryLightStyles } from './mp-query-subquery.light.styles';
+
 // WC elements
 export { MpQueryBuilderElement } from './mp-query-builder.element';
 export { MpQueryGroupElement } from './mp-query-group.element';

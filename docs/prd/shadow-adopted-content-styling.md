@@ -466,3 +466,57 @@ The reason is structural and now documented in `app.config.ts`: the wrappers gua
   human screen-reader pass over the converted components has not been done, and removing a shadow
   boundary changes IDREF scope — `aria-labelledby` / `-controls` can now resolve across what used to
   be a boundary, which should be an improvement but is unverified by hand.
+
+## 11. Post-review fixes (2026-09-02)
+
+Two defects found by a review pass after the branch was verified, both fixed on the branch.
+
+### 11.1 The SSR light-styles injector was inert, and could not compile
+
+`light-dom/ssr/inject-mp-light-styles.ts` imported `./mp-light-styles-chrome.generated`, a file
+**no generator produced**: there was no `gen-*.mjs` for it, no Nx target, and no entry in the
+`codegen-ssr-chrome` aggregate. `tsc` on that file gave `TS2307: Cannot find module`. CI stayed
+green because `tsconfig.lib.json` excludes `*/ssr/**` and nothing imported the module — the demo
+server composed the five DSD injectors and not this one. So §4.4's promise (the light tier is
+styled with JS disabled) was unimplemented, and a consumer importing the subpath would have hit a
+hard build failure.
+
+Fixed by writing the missing half:
+
+- `tools/lit-ssr-utils/gen-light-styles-chrome.mjs` reads the **built** rescoped sheets and emits
+  `MP_LIGHT_STYLE_TAGS` as `[tag, scope key, <style> tag]` triples. It renders nothing — a
+  light-tier component has no shadow root, so there is no DSD chrome to capture — but it reads
+  `dist` for the same reason the DSD generators do: compiling the SCSS here would duplicate the
+  rescoper and could drift from what the element ships.
+- Nx target `codegen-light-styles-chrome` (`dependsOn: build`), added to the `codegen-ssr-chrome`
+  aggregate, so every SSR demo build regenerates it with no per-demo change.
+- The query-builder family's four sheets became public exports, matching what datatable, treeview
+  and tree-select already did. A light-tier sheet is public API: the nesting rule requires a shadow
+  host to adopt it, and the injector reads it.
+- `injectMpLightStyles` is composed into the ng demo's server, and now has the spec every sibling
+  injector has (7 cases: tag gating, head insertion, idempotence, no-`</head>` fallback).
+
+### 11.2 `stampScope` branded consumer DOM in tree-select
+
+`mp-tree-select`'s `nodeRenderer` appended the consumer's `suggestionTemplate` output into the
+label *before* calling `stampScope(wrap, 'tree-select')`, and `stampScope` recurses into every
+child. Consumer nodes therefore received `data-mps="tree-select"` and became matchable by this
+component's rules — including bare-tag ones such as `button[data-mps=tree-select]`. Nothing broke
+visually (that rule only inherits font properties), but it inverts the tier's central guarantee,
+and **the decoy conformance suite cannot see it**: the decoys are unstamped by construction.
+
+Fixed by stamping before the consumer's node lands, with a regression spec proven non-vacuous
+(restoring the old ordering fails it). CLAUDE.md's light-tier rules gained the ordering constraint.
+
+### 11.3 The pattern behind both, and the gap that let them through
+
+A third instance was fixed the same day in `66ccac2d`: the datatable's `td` rules were rescoped to
+`td[data-mps]`, which consumer-rendered cells never carry, so a `*bsRowTemplate` row lost its
+padding, borders and `nowrap`. All three are the same fault line — **rescoped selectors meeting DOM
+the rewriter cannot stamp** — and they fail in both directions: stamping too little starves our own
+chrome, stamping too much brands the consumer's content.
+
+The suite checks that our rules do not match *unstamped decoys*. Nothing checks the boundary the
+other way: that content a consumer hands us through a render callback is styled by the page and
+**not** by us. That is the test worth adding next, one case per callback API (`rowRenderer`,
+`cellRenderer`, `headerRenderer`, `nodeRenderer`, `suggestionTemplate`, `EditorFactory`).

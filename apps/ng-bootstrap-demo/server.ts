@@ -23,6 +23,12 @@ import { injectMpCarouselDsd } from '@mintplayer/web-components/carousel/ssr';
 // Same pattern for <mp-accordion>: [multi] x [tab-count] DSD chrome variants,
 // so tabs open and close through the shadow input state machine with JS off.
 import { injectMpAccordionDsd } from '@mintplayer/web-components/accordion/ssr';
+// The light-tier WCs (datatable, treeview, tree-select, query-builder family)
+// have no shadow root, so there is no DSD chrome for them — their rescoped
+// sheets are document-level. This inserts those <style> tags into <head> for
+// the tags the page actually contains, so they are styled with JS disabled;
+// the client-side installLightStyles sees the marker and skips its own install.
+import { injectMpLightStyles } from '@mintplayer/web-components/light-dom/ssr';
 
 // Resolve browser assets relative to the *bundled* server (canonical Angular
 // pattern) so the standalone Node SSR server finds them in production.
@@ -86,7 +92,7 @@ app.use((req, res, next) => {
       // Angular's). Reusable helper from @mintplayer/ng-bootstrap/shell.
       const contentType = response.headers.get('content-type') ?? '';
       if (contentType.includes('text/html')) {
-        const body = injectMpAccordionDsd(injectMpCarouselDsd(injectMpNavbarDsd(injectMpDropdownDsd(injectMpShellDsd(await response.text())))));
+        const body = injectMpLightStyles(injectMpAccordionDsd(injectMpCarouselDsd(injectMpNavbarDsd(injectMpDropdownDsd(injectMpShellDsd(await response.text()))))));
         const headers = new Headers(response.headers);
         headers.delete('content-length');
         return writeResponseToNodeResponse(new Response(body, { status: response.status, headers }), res);
