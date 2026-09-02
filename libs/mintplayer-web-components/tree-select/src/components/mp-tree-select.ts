@@ -700,13 +700,19 @@ export class MpTreeSelect extends LitElement {
       }
       const label = document.createElement('span');
       label.className = 'treeview-label';
-      const custom = this.suggestionTemplate?.(node, this._query);
-      if (custom) label.appendChild(custom);
-      else label.textContent = node.label;
       wrap.appendChild(label);
       // `.ts-node` / `.ts-node-check` are ours; the rewriter never saw this DOM.
       // The label is deliberately left to mp-treeview's row-anchored contract.
+      //
+      // Stamp BEFORE the consumer's suggestionTemplate output lands: stampScope
+      // recurses into every child, so stamping afterwards would put OUR scope on
+      // the consumer's nodes and let our rules match their content — the leak
+      // this tier exists to prevent, and one the decoy suite cannot see because
+      // it only tests UNSTAMPED elements.
       stampScope(wrap, 'tree-select');
+      const custom = this.suggestionTemplate?.(node, this._query);
+      if (custom) label.appendChild(custom);
+      else label.textContent = node.label;
       return wrap;
     };
     return this._nodeRendererFn;

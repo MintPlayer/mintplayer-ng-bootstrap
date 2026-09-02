@@ -75,7 +75,11 @@ Encapsulation is preserved at build time instead of by the boundary, the way Ang
   `:host-context` / `:root` / `html` / `body` subjects are hard codegen errors. A rule that must
   ship verbatim is preceded by `/*! @mps-global */` and authored in FINAL form.
 - The element uses `scopedHtml('<scope>')` — **never lit's bare `html`**; an unstamped element is an
-  unstyled element. `unsafeHTML` output and imperative DOM need `stampScope`.
+  unstyled element. `unsafeHTML` output and imperative DOM need `stampScope` — and **`stampScope`
+  recurses, so call it BEFORE consumer content is appended**, never after. Stamping a subtree that
+  already holds a consumer's node brands their DOM with your scope and lets your rules (a bare
+  `button[data-mps=…]`, say) match their content. The decoy suite cannot catch this: it only tests
+  UNSTAMPED elements. `mp-tree-select`'s `nodeRenderer` is the reference, and its spec pins it.
 - `createRenderRoot()` returns `this`; `installLightStyles('<scope>', sheet)` runs right before
   `customElements.define`. The SSR guard checks `document.head`, not `typeof document` — Angular's
   SSR DOM shim provides a `document` with no usable head.

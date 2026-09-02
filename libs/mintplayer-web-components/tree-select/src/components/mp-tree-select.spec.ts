@@ -209,4 +209,34 @@ describe('<mp-tree-select>', () => {
     await flush(el);
     expect(row(el, '1a')).toBeTruthy(); // still expanded — not collapsed/reset
   });
+
+  // The light tier's whole guarantee is that our rules cannot reach content we
+  // do not own. `stampScope` recurses, so stamping the node wrapper AFTER the
+  // consumer's suggestionTemplate output was appended would brand their nodes
+  // with our scope and let rules like `button[data-mps=tree-select]` match
+  // them. The conformance decoy suite cannot see this: it only tests
+  // UNSTAMPED elements.
+  it('never stamps its scope on suggestionTemplate content', async () => {
+    const el = await mount((e) => {
+      e.mode = 'checkbox';
+      e.suggestionTemplate = (node) => {
+        const consumer = document.createElement('span');
+        consumer.className = 'consumer-chip';
+        const inner = document.createElement('button');
+        inner.textContent = node.label;
+        consumer.appendChild(inner);
+        return consumer;
+      };
+    });
+
+    const consumer = row(el, '1').querySelector('.consumer-chip') as HTMLElement;
+    expect(consumer).toBeTruthy();
+    expect(consumer.hasAttribute('data-mps')).toBe(false);
+    expect(consumer.querySelector('button')?.hasAttribute('data-mps')).toBe(false);
+
+    // …while the wrapper we DO own is still stamped, or it would go unstyled.
+    expect((row(el, '1').querySelector('.ts-node') as HTMLElement).getAttribute('data-mps')).toBe(
+      'tree-select',
+    );
+  });
 });
