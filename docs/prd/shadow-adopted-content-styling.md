@@ -516,7 +516,18 @@ padding, borders and `nowrap`. All three are the same fault line — **rescoped 
 the rewriter cannot stamp** — and they fail in both directions: stamping too little starves our own
 chrome, stamping too much brands the consumer's content.
 
-The suite checks that our rules do not match *unstamped decoys*. Nothing checks the boundary the
-other way: that content a consumer hands us through a render callback is styled by the page and
-**not** by us. That is the test worth adding next, one case per callback API (`rowRenderer`,
-`cellRenderer`, `headerRenderer`, `nodeRenderer`, `suggestionTemplate`, `EditorFactory`).
+The scoping suite checks that our rules do not match *unstamped decoys* — markup standing in for a
+consumer's page elsewhere. It cannot see the case all three bugs lived in: DOM a consumer hands us
+through a render callback that we then mount INSIDE our own subtree, beside elements we did stamp.
+
+`_conformance/consumer-dom-boundary.spec.ts` closes that direction, one case per callback API
+(`cellRenderer`, `headerRenderer`, `rowRenderer`, `nodeRenderer`, `itemTemplate`, `buttonTemplate`,
+`suggestionTemplate`). Each mounts a real consumer node and asserts two things: it carries no
+`data-mps` on itself or any descendant, and no selector in ANY installed light-tier sheet matches
+it. The second is not implied by the first — an unstamped bare-tag or descendant rule would still
+reach in — so it is asserted directly. Every case also asserts the callback's output actually
+reached the DOM, so a renderer that silently stops rendering fails instead of passing vacuously.
+
+Proven non-vacuous: reintroducing the §11.2 ordering bug fails the `suggestionTemplate` case with
+the diagnostic naming the cause. Deliberate styling of consumer content is still allowed, through a
+rule anchored on an element we stamped — the mechanism the scoping suite already governs.
