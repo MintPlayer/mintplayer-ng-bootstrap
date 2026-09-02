@@ -60,6 +60,74 @@ Each demo's `serve` target lists the API serve as a dependency and is flagged `c
 
 The shorter `npm start -- --open` is wired to the Angular demo by default (see `scripts.start` in `package.json`).
 
+## Styling and encapsulation
+
+Components come in two tiers. Which tier a component is in decides whether your stylesheets reach
+inside it, and it is decided by one question: **does the component mount DOM that you authored?**
+
+### Shadow tier — the default
+
+Around thirty components keep a shadow root and take your content through native `<slot>`s: card,
+accordion, carousel, tab-control, navbar, shell, splitter, dock and the rest. Slotted content never
+leaves your document, so your stylesheets, your framework's component CSS and Bootstrap's utility
+classes all reach it exactly as they would anywhere else. The component's own internals are isolated
+by the browser; where a component wants to expose one, it does so through `::part()`.
+
+### Light tier — components that mount your DOM
+
+`<mp-datatable>`, `<mp-treeview>`, `<mp-tree-select>` and the `<mp-query-builder>` family accept
+render callbacks — a row template, a node template, a cell renderer, an editor factory — and mount
+the DOM you return **inside themselves**. A shadow root would starve that content: document
+stylesheets do not cross the boundary, so your own component's CSS and every Bootstrap utility would
+be inert on markup you wrote (issue #408).
+
+These components therefore render in the **light DOM**, and their own styles are scoped at build
+time onto a `data-mps` attribute instead — the same device Angular's `ViewEncapsulation.Emulated`
+uses for `_ngcontent`. Two consequences follow, and they are the whole trade:
+
+- **Your CSS reaches your content, normally.** Nothing to configure, nothing to transport. A
+  `<span class="badge bg-success">` in a datatable row is styled by the Bootstrap you already load.
+- **Page CSS also reaches the component's internals.** A global `td { padding: 0 }` in your
+  stylesheet will affect these components. This is the identical property emulated encapsulation has
+  everywhere else in your app; it is supported and deliberate, not a defect.
+
+The component's own styles still cannot leak **out** onto your markup: every rule is anchored to an
+element the build stamped, and two conformance suites enforce it on every build — one proving no
+rule matches unstamped markup, one proving no rule matches DOM you hand in through a callback.
+
+### Migrating to the light tier
+
+If you use any of the four components above, check for these. Everything else is unchanged.
+
+| What changes | What to do |
+|---|---|
+| `::part()` and `::slotted()` no longer address these components | Use ordinary CSS selectors — they now reach descendants `::part()` never could |
+| The `<mp-query-builder>` family's `part=` attributes are removed | As above; nothing in the demos consumed them |
+| `datatableStyles` / `treeviewStyles` / `treeSelectStyles` exports | Renamed to `datatableLightStyles` / `treeviewLightStyles` / `treeSelectLightStyles` |
+| `el.shadowRoot` in your own code or tests | Use `el.renderRoot`, or `el.shadowRoot ?? el` |
+| Focus assertions against a shadow root | `document.activeElement` is now the real element, not the retargeted host |
+| A page stylesheet that broadly styles `table`, `td`, `li` or `input` | It now applies inside these components too — scope it, or override with the component's own custom properties |
+
+If you host one of these components **inside your own shadow root**, adopt their sheets into it or
+they render unstyled — the same boundary problem, one level up:
+
+```ts
+import { adoptLightStyles } from '@mintplayer/web-components/light-dom';
+
+connectedCallback() {
+  super.connectedCallback();
+  this.releaseStyles = adoptLightStyles(this.shadowRoot);
+}
+disconnectedCallback() {
+  this.releaseStyles?.();
+  super.disconnectedCallback();
+}
+```
+
+Server-rendered pages get the same sheets injected into `<head>` by `injectMpLightStyles` from
+`@mintplayer/web-components/light-dom/ssr`, so the light tier is styled with JavaScript disabled.
+The demo's `server.ts` shows it composed with the Declarative Shadow DOM injectors.
+
 ## Docker image
 Alternatively you can run the docker image which is published on GitHub Container Registry
 
