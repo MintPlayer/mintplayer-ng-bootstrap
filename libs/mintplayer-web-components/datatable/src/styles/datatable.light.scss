@@ -61,7 +61,8 @@ tr.virtual-spacer {
   pointer-events: none;
 }
 
-tr.virtual-spacer > td {
+/*! @mps-global */
+tr.virtual-spacer[data-mps=datatable] > td {
   border-bottom: 0;
 }
 
@@ -81,7 +82,13 @@ table.measured {
   table-layout: fixed;
 }
 
-tbody td {
+// Body cells are usually CONSUMER DOM: a rowRenderer hands the component its
+// own td elements, which the rewriter cannot stamp. Every td rule below is
+// therefore authored in final form, anchored on the tr this component renders
+// (child combinator, so a nested consumer table is left alone). Only the
+// checkbox cell is ours, and it needs to out-rank these anchored rules.
+/*! @mps-global */
+tbody[data-mps=datatable] > tr[data-mps=datatable] > td {
   // Pair with `table-layout: fixed` so wider content in later
   // virtual-scroll slices clips with ellipsis instead of wrapping or
   // shifting the column. Consumers that need wrapping cells can opt out
@@ -193,7 +200,8 @@ tbody tr:focus-visible {
   background-color: var(--mp-datatable-resize-handle-color);
 }
 
-tbody td {
+/*! @mps-global */
+tbody[data-mps=datatable] > tr[data-mps=datatable] > td {
   padding: 0.5rem 0.75rem;
   border-bottom: 1px solid var(--mp-datatable-border-color);
   vertical-align: middle;
@@ -204,8 +212,9 @@ tbody td {
 // stylesheet. Cap it here and keep it centered against the adjacent text;
 // consumers tune the cap via `--mp-datatable-cell-media-max-width`
 // (defaults to `none`, i.e. unconstrained).
-tbody td svg,
-tbody td img {
+/*! @mps-global */
+tbody[data-mps=datatable] > tr[data-mps=datatable] > td svg,
+tbody[data-mps=datatable] > tr[data-mps=datatable] > td img {
   max-width: var(--mp-datatable-cell-media-max-width, none);
   height: auto;
   vertical-align: middle;
@@ -237,9 +246,16 @@ tbody tr[data-focused="true"] {
   outline-offset: -2px;
 }
 
-.checkbox-cell {
+// Final form so it out-ranks the anchored td rules above (0,3,0 vs 0,2,3).
+// 20px checkbox + 0.5rem padding each side. The generic td rule clips
+// overflow with an ellipsis; a checkbox cell never holds text, so a
+// too-narrow cell must clip silently rather than render ".." next to it.
+/*! @mps-global */
+tr[data-mps=datatable] > .checkbox-cell[data-mps=datatable] {
   width: 2.5rem;
+  padding-inline: 0.5rem;
   text-align: center;
+  text-overflow: clip;
 }
 
 // ── Tree mode ──────────────────────────────────────────────────────────────
