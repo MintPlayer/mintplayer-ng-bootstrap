@@ -1,0 +1,88 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>adoptedStyleSheets spike</title>
+<script>
+  // Query flags: bs=1 -> document loads bootstrap-subset.css; ff=doc -> document loads bootstrap-icons.css;
+  // cdn=1 -> document loads a cross-origin bootstrap.min.css (to demonstrate cssRules throwing)
+  const q = new URLSearchParams(location.search);
+  window.FLAGS = { bs: q.get('bs') === '1', ff: q.get('ff') === 'doc', cdn: q.get('cdn') === '1' };
+  if (FLAGS.bs) document.write('<link rel="stylesheet" href="bootstrap-subset.css">');
+  if (FLAGS.ff) document.write('<link rel="stylesheet" href="bi.css">');
+  if (FLAGS.cdn) document.write('<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css">');
+</script>
+<style id="ng-emulated">
+  /* Angular emulated-encapsulation style, document level */
+  .hdr[_ngcontent-x] { color: rgb(1, 2, 3); }
+  .leak-probe { color: rgb(200, 200, 200); }
+</style>
+</head>
+<body>
+<div id="light-leak" class="leak">light-dom .leak</div>
+<x-host id="host">
+  <button id="slotted" class="btn btn-primary">slotted btn</button>
+</x-host>
+<div id="dsd-area"></div>
+<div id="many"></div>
+
+<script>
+  class XHost extends HTMLElement {
+    constructor() {
+      super();
+      const r = this.attachShadow({ mode: 'open' });
+      r.innerHTML = `
+        <style id="shadow-style">.cas { letter-spacing: 1px; }</style>
+        <button id="btn" class="btn btn-primary">btn</button>
+        <span id="badge" class="badge text-bg-danger">badge</span>
+        <i id="icon" class="bi bi-info-circle"></i>
+        <div id="hdr" class="hdr" _ngcontent-x>hdr (ng emulated, doc-level)</div>
+        <div id="hdr2" class="hdr2" _ngcontent-y>hdr2 (ng emulated, appended later)</div>
+        <p id="p">paragraph</p>
+        <span id="tp" class="text-primary">text-primary</span>
+        <h1 id="h1">heading</h1>
+        <span id="cas" class="cas btn">cascade probe</span>
+        <span id="leak" class="leak">shadow .leak</span>
+        <div id="slotwrap"><slot></slot></div>`;
+    }
+  }
+  customElements.define('x-host', XHost);
+
+  const cache = {};
+  window.fetchText = async (url) => cache[url] ??= await (await fetch(url)).text();
+
+  window.makeSheet = (text) => { const s = new CSSStyleSheet(); s.replaceSync(text); return s; };
+
+  // Measure everything we care about inside the x-host shadow root
+  window.measure = () => {
+    const r = document.getElementById('host').shadowRoot;
+    const cs = (id, pseudo) => getComputedStyle(r.getElementById(id), pseudo || null);
+    const btn = cs('btn'), badge = cs('badge'), iconB = cs('icon', '::before'), icon = r.getElementById('icon');
+    const p = cs('p'), tp = cs('tp'), h1 = cs('h1'), hdr = cs('hdr'), hdr2 = cs('hdr2'), cas = cs('cas'), leak = cs('leak');
+    const host = getComputedStyle(document.getElementById('host'));
+    const slotted = getComputedStyle(document.getElementById('slotted'));
+    const lightLeak = getComputedStyle(document.getElementById('light-leak'));
+    const fonts = [...document.fonts].map(f => f.family + ':' + f.status);
+    return {
+      btn: { bg: btn.backgroundColor, color: btn.color, borderRadius: btn.borderRadius, padding: btn.padding, btnBgVar: btn.getPropertyValue('--bs-btn-bg').trim() },
+      badge: { bg: badge.backgroundColor, color: badge.color, fontSize: badge.fontSize, display: badge.display, borderRadius: badge.borderRadius },
+      icon: { fontFamily: iconB.fontFamily, content: iconB.content, width: icon.getBoundingClientRect().width, height: icon.getBoundingClientRect().height, fontsCheck: document.fonts.check('16px "bootstrap-icons"') },
+      documentFonts: fonts,
+      p: { marginTop: p.marginTop, marginBottom: p.marginBottom },
+      tp: { color: tp.color, primaryRgb: tp.getPropertyValue('--bs-primary-rgb').trim() },
+      h1: { fontSize: h1.fontSize, fontWeight: h1.fontWeight, marginBottom: h1.marginBottom },
+      hdr: { color: hdr.color }, hdr2: { color: hdr2.color },
+      cas: { letterSpacing: cas.letterSpacing },
+      probes: {
+        root: cas.getPropertyValue('--spike-root').trim(), host: cas.getPropertyValue('--spike-host').trim(),
+        html: cas.getPropertyValue('--spike-html').trim(), body: cas.getPropertyValue('--spike-body').trim(),
+        hostColor: host.color, hostFromAdopted: host.getPropertyValue('--spike-host').trim()
+      },
+      leak: { shadow: leak.color, light: lightLeak.color },
+      slotted: { bg: slotted.backgroundColor, borderRadius: slotted.borderRadius, letterSpacing: slotted.letterSpacing },
+      adoptedCount: r.adoptedStyleSheets.length,
+    };
+  };
+</script>
+</body>
+</html>
