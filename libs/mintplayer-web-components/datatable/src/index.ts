@@ -10,6 +10,7 @@ export type {
   CellContent,
   CellRenderer,
   HeaderRenderer,
+  FilterRenderer,
   RowKey,
   RowRenderer,
   RowRenderContext,

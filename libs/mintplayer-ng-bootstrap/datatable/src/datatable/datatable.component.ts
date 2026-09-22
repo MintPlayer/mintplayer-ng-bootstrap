@@ -42,6 +42,7 @@ import '@mintplayer/web-components/datatable';
 import { DatatableSettings } from '../datatable-settings';
 import { BsDatatableFetch } from '../datatable-fetch';
 import { BsDatatableColumnDirective } from '../datatable-column/datatable-column.directive';
+import { BsDatatableFilterDirective } from '../datatable-filter/datatable-filter.directive';
 import { BsRowTemplateDirective, BsRowTemplateContext } from '../row-template/row-template.directive';
 import { BsForwardAriaDirective } from '@mintplayer/ng-bootstrap/a11y';
 
@@ -172,6 +173,9 @@ export class BsDatatableComponent<TData> implements AfterViewInit {
   /** Optional row template. When present, drives a per-row EmbeddedView render path. */
   readonly rowTemplate = contentChild(BsRowTemplateDirective<TData>);
 
+  /** Filter panel templates, matched to columns by name. */
+  readonly filterDirectives = contentChildren(BsDatatableFilterDirective);
+
   /**
    * Merged column defs:
    *  - `[columns]` if provided
@@ -181,11 +185,23 @@ export class BsDatatableComponent<TData> implements AfterViewInit {
   protected readonly effectiveColumns = computed<DatatableColumnDef<TData>[]>(() => {
     const programmatic = this.columnsInput();
     if (programmatic && programmatic.length) return programmatic;
+
+    // Every recompute builds fresh closures with fresh views, so the previous
+    // generation is dead the moment we return. Without this they accumulated
+    // until the component was destroyed — harmless-looking with one view per
+    // column, twice as bad now that filters add a second.
+    this.destroyTemplateViews();
+
+    const filters = this.filterDirectives();
     return this.columnDirectives().map((dir): DatatableColumnDef<TData> => {
+      const filterDir = filters.find((f) => f.name() === dir.name());
       let headerView: EmbeddedViewRef<unknown> | undefined;
+      let filterView: EmbeddedViewRef<unknown> | undefined;
       return {
         name: dir.name(),
         sortable: dir.sortable(),
+        filterable: !!filterDir,
+        filterActive: filterDir?.active() ?? false,
         headerRenderer: () => {
           if (!headerView) {
             headerView = this.vcr.createEmbeddedView(dir.templateRef);
@@ -199,19 +215,44 @@ export class BsDatatableComponent<TData> implements AfterViewInit {
           for (const n of nodes) frag.appendChild(n);
           return frag;
         },
+        // Same lazy-view shape as headerRenderer. The WC treats the returned
+        // node as opaque consumer DOM: it mounts it and never stamps or styles
+        // it, so the template renders exactly as it would anywhere else.
+        filterRenderer: filterDir
+          ? () => {
+              if (!filterView) {
+                filterView = this.vcr.createEmbeddedView(filterDir.templateRef);
+                this.filterViews.push(filterView);
+              }
+              filterView.detectChanges();
+              const nodes = filterView.rootNodes.filter((n: unknown): n is Node => n instanceof Node);
+              if (nodes.length === 1) return nodes[0];
+              const frag = document.createDocumentFragment();
+              for (const n of nodes) frag.appendChild(n);
+              return frag;
+            }
+          : undefined,
       };
     });
   });
 
   /** EmbeddedViews for header templates (one per column directive). */
   private headerViews: EmbeddedViewRef<unknown>[] = [];
+  /** EmbeddedViews for filter templates (one per filter directive). */
+  private filterViews: EmbeddedViewRef<unknown>[] = [];
+
+  private destroyTemplateViews(): void {
+    for (const v of this.headerViews) v.destroy();
+    this.headerViews = [];
+    for (const v of this.filterViews) v.destroy();
+    this.filterViews = [];
+  }
   /** EmbeddedViews for row templates, keyed by rowKey for reuse. */
   private rowViews = new Map<string, EmbeddedViewRef<BsRowTemplateContext<TData>>>();
 
   constructor() {
     this.destroyRef.onDestroy(() => {
-      for (const v of this.headerViews) v.destroy();
-      this.headerViews = [];
+      this.destroyTemplateViews();
       for (const v of this.rowViews.values()) v.destroy();
       this.rowViews.clear();
     });
