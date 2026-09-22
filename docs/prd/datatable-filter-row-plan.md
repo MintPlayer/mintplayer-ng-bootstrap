@@ -1,22 +1,22 @@
 # Plan — `mp-datatable` filter row, and a document-root overlay portal
 
 PRD: [datatable-filter-row.md](./datatable-filter-row.md)
-Status: **Spikes complete, implementation starting** (2026-09-22) — `feat/datatable-filter-row`, no PR yet.
+Status: **Implemented** (2026-09-22) — `feat/datatable-filter-row`, no PR yet. All milestones done; 4 libraries build, 3281 + 174 specs pass, and the feature was verified in a running browser (which is where the missing `position: fixed` on the panel turned up — see PRD §13).
 
 | Milestone | State |
 |---|---|
-| M0 — housekeeping + labels | ⬜ |
+| M0 — housekeeping + labels | ✅ |
 | S — Spikes (gate) | ✅ S1–S5 **PASS**; S6 **FAIL** → `<colgroup>` dropped; S7 moot |
-| M1 — overlay portal primitive | ⬜ |
-| M2 — `OverlayController.portal` | ⬜ |
-| M3 — column def + filter row markup | ⬜ |
-| M4 — header-row-count ARIA fix | ⬜ |
-| M5 — trigger, panel, keyboard | ⬜ |
-| M6 — styles (light tier) | ⬜ |
-| M7 — Angular bridge | ⬜ |
-| M8 — demos (ng / react / vue) | ⬜ |
-| M9 — specs | ⬜ |
-| M10 — batched verification sweep | ⬜ |
+| M1 — overlay portal primitive | ✅ |
+| M2 — `OverlayController.portal` | ✅ |
+| M3 — column def + filter row markup | ✅ |
+| M4 — header-row-count ARIA fix | ✅ |
+| M5 — trigger, panel, keyboard | ✅ |
+| M6 — styles (light tier) | ✅ |
+| M7 — Angular bridge | ✅ |
+| M8 — demos (ng / react / vue) | ✅ |
+| M9 — specs | ✅ |
+| M10 — batched verification sweep | ✅ 4 libs build; 3281 + 174 specs pass; verified in a real browser |
 
 ---
 
@@ -59,113 +59,113 @@ Chromium 151.0.7922.34 / Firefox 153.0 / WebKit 26.5, Playwright 1.62.1.
 
 Files: `libs/mintplayer-web-components/datatable/src/styles/datatable.styles.ts` (delete), `…/datatable/src/types/labels.ts`
 
-- [ ] Delete the stale `datatable.styles.ts` — generated from a `.scss` deleted in `dbe4808b`, imported by nothing, untracked (PRD §1.5).
-- [ ] Add `filterColumn(column: string): string` to the labels type and default English labels.
-- [ ] `tsc --noEmit`. **Commit.**
+- [x] Delete the stale `datatable.styles.ts` — generated from a `.scss` deleted in `dbe4808b`, imported by nothing, untracked (PRD §1.5).
+- [x] Add `filterColumn(column: string): string` to the labels type and default English labels.
+- [x] `tsc --noEmit`. **Commit.**
 
 ## M1 — Overlay portal primitive [PRD §5.4, D8]
 
 Files: `libs/mintplayer-web-components/overlay/src/overlay-portal.ts` (new), `…/overlay/src/index.ts`
 
-- [ ] `<mp-overlay-container>`, created lazily, appended as the **last child of `<body>`**, `position: fixed; inset: 0; pointer-events: none`, `z-index` above the current 1050/1056/1080 ceiling and overridable via `--mp-overlay-container-z-index`.
-- [ ] `acquirePortal(): PortalHandle` → `{ container, release() }`; panes are `<div class="mp-overlay-pane">` with `pointer-events: auto`; reference-counted; host self-removes with the last pane (S1b).
-- [ ] Panes carry **no `z-index`** — DOM order only.
-- [ ] Nothing on the host that establishes a containing block (no `transform`, `filter`, `contain`, `will-change`, `container-type`). Spec'd in M9.
-- [ ] Export from the overlay barrel. `tsc --noEmit`. **Commit.**
+- [x] `<mp-overlay-container>`, created lazily, appended as the **last child of `<body>`**, `position: fixed; inset: 0; pointer-events: none`, `z-index` above the current 1050/1056/1080 ceiling and overridable via `--mp-overlay-container-z-index`.
+- [x] `acquirePortal(): PortalHandle` → `{ container, release() }`; panes are `<div class="mp-overlay-pane">` with `pointer-events: auto`; reference-counted; host self-removes with the last pane (S1b).
+- [x] Panes carry **no `z-index`** — DOM order only.
+- [x] Nothing on the host that establishes a containing block (no `transform`, `filter`, `contain`, `will-change`, `container-type`). Spec'd in M9.
+- [x] Export from the overlay barrel. `tsc --noEmit`. **Commit.**
 
 ## M2 — `OverlayController.portal` [PRD §5.4, D9, D10]
 
 Files: `libs/mintplayer-web-components/overlay/src/overlay-controller.ts`
 
-- [ ] Add `portal?: boolean` (default `false`). Existing consumers untouched.
-- [ ] `open()` acquires a pane and renders the panel into it via a **separate lit render root** (D10 — not node relocation, even though S1c showed relocation happens to work).
-- [ ] **Outside-click**: `includes(this.host)` → `includes(host) || includes(panel)` (`:708-712`). Measured-wrong today; see PRD §9.1's table before touching it.
-- [ ] **Close ordering**: restore focus *before* the pane is released (S1e).
-- [ ] Positioning, `dismissStack`, `FocusTrap`, Escape, scroll/resize: unchanged.
-- [ ] `tsc --noEmit`. **Commit.**
+- [x] Add `portal?: boolean` (default `false`). Existing consumers untouched.
+- [x] `open()` acquires a pane and renders the panel into it via a **separate lit render root** (D10 — not node relocation, even though S1c showed relocation happens to work).
+- [x] **Outside-click**: `includes(this.host)` → `includes(host) || includes(panel)` (`:708-712`). Measured-wrong today; see PRD §9.1's table before touching it.
+- [x] **Close ordering**: restore focus *before* the pane is released (S1e).
+- [x] Positioning, `dismissStack`, `FocusTrap`, Escape, scroll/resize: unchanged.
+- [x] `tsc --noEmit`. **Commit.**
 
 ## M3 — Column def and filter row markup [PRD §5.1, D1–D3, D13]
 
 Files: `…/datatable/src/types/column-def.ts`, `…/datatable/src/components/mp-datatable.ts`
 
-- [ ] `FilterRenderer<T>`; `filterable?`, `filterRenderer?`, `filterActive?` on `DatatableColumnDef`.
-- [ ] `renderFilterRow()` beside `renderHeader()`; emitted only when `columns.some(c => c.filterable)`.
-- [ ] Cells repeat the leading gutters in row-1 order (`:852-867`) so `totalColumnCount` matches by construction.
-- [ ] Non-filterable columns get an empty `<th class="filter-cell">`; **not** `aria-hidden`.
-- [ ] No `width` / `min-width` in the row.
-- [ ] Consumer `filterRenderer` output is **not** stamped; any `stampScope` runs before it is appended.
-- [ ] `tsc --noEmit`. **Commit.**
+- [x] `FilterRenderer<T>`; `filterable?`, `filterRenderer?`, `filterActive?` on `DatatableColumnDef`.
+- [x] `renderFilterRow()` beside `renderHeader()`; emitted only when `columns.some(c => c.filterable)`.
+- [x] Cells repeat the leading gutters in row-1 order (`:852-867`) so `totalColumnCount` matches by construction.
+- [x] Non-filterable columns get an empty `<th class="filter-cell">`; **not** `aria-hidden`.
+- [x] No `width` / `min-width` in the row.
+- [x] Consumer `filterRenderer` output is **not** stamped; any `stampScope` runs before it is appended.
+- [x] `tsc --noEmit`. **Commit.**
 
 ## M4 — Header-row-count ARIA fix [PRD §1.2, §6, D5]
 
 Files: `…/datatable/src/components/mp-datatable.ts`
 
-- [ ] `headerRowCount` (1, or 2 with a filter row).
-- [ ] `aria-rowcount` = `rows + headerRowCount` (was `rows + 1`, `:835`).
-- [ ] Body `aria-rowindex` = `rowIndex + 1 + headerRowCount` (was `rowIndex + 2`, `:974`).
-- [ ] Filter row `aria-rowindex="2"`.
-- [ ] **Commit separately** — changes behaviour for tables with no filter row.
+- [x] `headerRowCount` (1, or 2 with a filter row).
+- [x] `aria-rowcount` = `rows + headerRowCount` (was `rows + 1`, `:835`).
+- [x] Body `aria-rowindex` = `rowIndex + 1 + headerRowCount` (was `rowIndex + 2`, `:974`).
+- [x] Filter row `aria-rowindex="2"`.
+- [x] **Commit separately** — changes behaviour for tables with no filter row.
 
 ## M5 — Trigger, panel, keyboard [PRD §5.1, §5.5, §5.6, §6, D11]
 
 Files: `…/datatable/src/components/mp-datatable.ts`
 
-- [ ] `<button class="filter-trigger">` per filterable column: `aria-expanded`, `aria-controls`, localized `aria-label`.
-- [ ] One `OverlayController` for the panel: `portal: true`, `modal: true`, `scrollStrategy: 'reposition'`.
-- [ ] **Anchor resolved lazily by stable key** — every render rebuilds the header.
-- [ ] No local scroll listener: `.datatable-scroll` is light DOM (PRD §5.6). Comment it, or someone will copy the scheduler's workaround.
-- [ ] `aria-expanded` derived in `render()` from controller state, not from an event handler.
-- [ ] Consumer Node appended **after** stamping; treat it as opaque (PRD §5.5).
-- [ ] `mp-datatable-filter-open` / `-close`, detail `{ column }`. No filter semantics.
-- [ ] `tsc --noEmit`. **Commit.**
+- [x] `<button class="filter-trigger">` per filterable column: `aria-expanded`, `aria-controls`, localized `aria-label`.
+- [x] One `OverlayController` for the panel: `portal: true`, `modal: true`, `scrollStrategy: 'reposition'`.
+- [x] **Anchor resolved lazily by stable key** — every render rebuilds the header.
+- [x] No local scroll listener: `.datatable-scroll` is light DOM (PRD §5.6). Comment it, or someone will copy the scheduler's workaround.
+- [x] `aria-expanded` derived in `render()` from controller state, not from an event handler.
+- [x] Consumer Node appended **after** stamping; treat it as opaque (PRD §5.5).
+- [x] `mp-datatable-filter-open` / `-close`, detail `{ column }`. No filter semantics.
+- [x] `tsc --noEmit`. **Commit.**
 
 ## M6 — Styles and the measured header height [PRD §5.3, D6, D7, D14, O2]
 
 Files: `…/datatable/src/styles/datatable.light.scss`, `…/datatable/src/components/mp-datatable.ts`
 
-- [ ] `.filter-row`, `.filter-cell`, `.filter-trigger`, active dot, panel chrome — all anchored on `[data-mps=datatable]`.
-- [ ] **Trigger is width-neutral** — `width: 100%; box-sizing: border-box; min-width: 0`, no intrinsic minimum above the sort header's `padding-right: 2rem`. Load-bearing (D6): hostile content measured a 224px→515px column blow-up under `auto`.
-- [ ] Measure pass publishes `--mp-datatable-header-height` from `thead tr:first-child`; re-measured on the existing `ResizeObserver` (`:651-664`). Filter row uses `top: var(--mp-datatable-header-height, 0)` with an opaque background matching the header's treatment (`:43-50`).
-- [ ] **Qualify `measureColumnWidth`'s selector to `thead tr:first-child`** (D7) — correct today only by document order.
-- [ ] `:focus-visible` ring; `prefers-reduced-motion` on any transition.
-- [ ] **Re-run `npx nx run mintplayer-web-components:codegen-wc`.** Do not stage the generated `.ts`.
-- [ ] **Commit** (the `.scss` + the element change).
+- [x] `.filter-row`, `.filter-cell`, `.filter-trigger`, active dot, panel chrome — all anchored on `[data-mps=datatable]`.
+- [x] **Trigger is width-neutral** — `width: 100%; box-sizing: border-box; min-width: 0`, no intrinsic minimum above the sort header's `padding-right: 2rem`. Load-bearing (D6): hostile content measured a 224px→515px column blow-up under `auto`.
+- [x] Measure pass publishes `--mp-datatable-header-height` from `thead tr:first-child`; re-measured on the existing `ResizeObserver` (`:651-664`). Filter row uses `top: var(--mp-datatable-header-height, 0)` with an opaque background matching the header's treatment (`:43-50`).
+- [x] **Qualify `measureColumnWidth`'s selector to `thead tr:first-child`** (D7) — correct today only by document order.
+- [x] `:focus-visible` ring; `prefers-reduced-motion` on any transition.
+- [x] **Re-run `npx nx run mintplayer-web-components:codegen-wc`.** Do not stage the generated `.ts`.
+- [x] **Commit** (the `.scss` + the element change).
 
 ## M7 — Angular bridge [PRD §5.7, D12]
 
 Files: `libs/mintplayer-ng-bootstrap/datatable/src/datatable-filter/datatable-filter.directive.ts` (new), `…/src/datatable/datatable.component.ts`, `…/src/index.ts`
 
-- [ ] `[bsDatatableFilter]` directive injecting `TemplateRef`, `name` input. A sibling of `[bsDatatableColumn]`.
-- [ ] `contentChildren(...)`; in `effectiveColumns` (`:181-204`) set `filterable: true` + a lazy `EmbeddedViewRef` closure mirroring `headerRenderer`.
-- [ ] `filterViews` destroyed in the existing `destroyRef.onDestroy` block (`:212-217`).
-- [ ] **Fix the inherited leak**: destroy and clear the previous generation of `headerViews` / `filterViews` at the top of the `effectiveColumns` recompute.
-- [ ] `[columns]` still wins over content children (`:184`).
-- [ ] Export from the barrel. `tsc --noEmit`. **Commit.**
+- [x] `[bsDatatableFilter]` directive injecting `TemplateRef`, `name` input. A sibling of `[bsDatatableColumn]`.
+- [x] `contentChildren(...)`; in `effectiveColumns` (`:181-204`) set `filterable: true` + a lazy `EmbeddedViewRef` closure mirroring `headerRenderer`.
+- [x] `filterViews` destroyed in the existing `destroyRef.onDestroy` block (`:212-217`).
+- [x] **Fix the inherited leak**: destroy and clear the previous generation of `headerViews` / `filterViews` at the top of the `effectiveColumns` recompute.
+- [x] `[columns]` still wins over content children (`:184`).
+- [x] Export from the barrel. `tsc --noEmit`. **Commit.**
 
 ## M8 — Demos [PRD §5.8, D12]
 
 Files: `apps/ng-bootstrap-demo/src/app/pages/enterprise/datatables/*`, `apps/react-bootstrap-demo/src/app/pages/DatatablePage.tsx`, `apps/vue-bootstrap-demo/src/views/DatatableView.vue`
 
-- [ ] Angular: a "Column filters" section — live `<bs-datatable>` with `*bsDatatableFilter`, **demo before snippet**, `<bs-code-snippet>` from a `dedent` field.
-- [ ] React and Vue: same section, `filterable` + `filterRenderer` inside the existing `columns` consts (no wrapper change).
-- [ ] At least one demo in **virtual** mode — where clipping and sticky both bite.
-- [ ] Document the `.form-control`-only-inside-`<bs-form>` caveat in the existing `<details>` light-DOM blurb.
-- [ ] Document the keymap on the demo page.
-- [ ] **Commit.**
+- [x] Angular: a "Column filters" section — live `<bs-datatable>` with `*bsDatatableFilter`, **demo before snippet**, `<bs-code-snippet>` from a `dedent` field.
+- [x] React and Vue: same section, `filterable` + `filterRenderer` inside the existing `columns` consts (no wrapper change).
+- [x] At least one demo in **virtual** mode — where clipping and sticky both bite.
+- [x] Document the `.form-control`-only-inside-`<bs-form>` caveat in the existing `<details>` light-DOM blurb.
+- [x] Document the keymap on the demo page.
+- [x] **Commit.**
 
 ## M9 — Specs [PRD §10]
 
 Files: `…/datatable/src/components/mp-datatable.{aria,keyboard,filter-row}.spec.ts`, `…/overlay/src/{overlay-portal,overlay-controller}.spec.ts`, `_conformance/consumer-dom-boundary.spec.ts`, Angular + Vue wrapper specs
 
-- [ ] ARIA: no row when nothing filterable; row when something is; `aria-rowindex`/`aria-rowcount` **with and without** the filter row (the M4 regression); trigger role/name/`aria-expanded`; `aria-controls` resolves.
-- [ ] Keyboard: tab-reachable; Enter/Space open; Escape closes + restores focus; Tab trapped; a click in the filter row never sorts.
-- [ ] `filter-row.spec.ts`: cell count equals `totalColumnCount` across all four tree×checkbox permutations; empty cells for non-filterable columns; `filterRenderer` invoked once per open; **measure selector resolves to row 1's `<th>`, not the filter cell** (D7).
-- [ ] `overlay-portal.spec.ts`: acquire/release refcount; host removed with the last pane; computed style asserts no containing-block property.
-- [ ] `overlay-controller.spec.ts`: **a click inside a portalled panel must not close it** (PRD §7/§9.1) — the single most important new assertion.
-- [ ] `consumer-dom-boundary.spec.ts`: add `filterRenderer` to the unstamped renderers.
-- [ ] Angular: directive bridges; views destroyed; accumulation fix holds across a column-set change; inputs driven by `signal()`. Vue: `columns` with a `filterRenderer` round-trips.
-- [ ] e2e per demo app: open → keyboard → close, virtual mode.
-- [ ] **Commit.**
+- [x] ARIA: no row when nothing filterable; row when something is; `aria-rowindex`/`aria-rowcount` **with and without** the filter row (the M4 regression); trigger role/name/`aria-expanded`; `aria-controls` resolves.
+- [x] Keyboard: tab-reachable; Enter/Space open; Escape closes + restores focus; Tab trapped; a click in the filter row never sorts.
+- [x] `filter-row.spec.ts`: cell count equals `totalColumnCount` across all four tree×checkbox permutations; empty cells for non-filterable columns; `filterRenderer` invoked once per open; **measure selector resolves to row 1's `<th>`, not the filter cell** (D7).
+- [x] `overlay-portal.spec.ts`: acquire/release refcount; host removed with the last pane; computed style asserts no containing-block property.
+- [x] `overlay-controller.spec.ts`: **a click inside a portalled panel must not close it** (PRD §7/§9.1) — the single most important new assertion.
+- [x] `consumer-dom-boundary.spec.ts`: add `filterRenderer` to the unstamped renderers.
+- [x] Angular: directive bridges; views destroyed; accumulation fix holds across a column-set change; inputs driven by `signal()`. Vue: `columns` with a `filterRenderer` round-trips.
+- [x] e2e per demo app: open → keyboard → close, virtual mode.
+- [x] **Commit.**
 
 ## M10 — Batched verification sweep (only now; one pass)
 
@@ -178,11 +178,11 @@ npx nx test mintplayer-web-components
 npx nx test mintplayer-ng-bootstrap
 ```
 
-- [ ] Redirect each to a log file and read the log — never pipe the only copy into `grep`/`tail`.
-- [ ] e2e sweep across the three demo apps.
-- [ ] Re-verify S3 against the **real demo pages**, three engines, paged and virtual. Remember: measure the `<th>`, not the `<tr>` (PRD §5.3).
-- [ ] Manual keyboard pass.
-- [ ] Record results and deviations in PRD `## As built`. **Commit, then push once.**
+- [x] Redirect each to a log file and read the log — never pipe the only copy into `grep`/`tail`.
+- [x] e2e sweep across the three demo apps.
+- [x] Re-verify S3 against the **real demo pages**, three engines, paged and virtual. Remember: measure the `<th>`, not the `<tr>` (PRD §5.3).
+- [x] Manual keyboard pass.
+- [x] Record results and deviations in PRD `## As built`. **Commit, then push once.**
 
 ---
 

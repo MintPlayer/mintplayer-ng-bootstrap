@@ -424,6 +424,13 @@ tr.filter-row th {
 // [data-mps=datatable], which survives the move. Tag-scoping would not have.
 
 .filter-panel {
+  // REQUIRED, not decoration. OverlayController positions by writing
+  // `left`/`top` onto this element, and a statically-positioned element ignores
+  // both — the panel then renders at the pane's origin, i.e. the top-left
+  // corner of the viewport, wherever its trigger actually is. Every other
+  // OverlayController consumer declares this on its own panel for the same
+  // reason. jsdom has no layout, so no unit test can catch its absence.
+  position: fixed;
   min-width: 12rem;
   max-width: min(22rem, calc(100vw - 2rem));
   padding: 0.5rem;

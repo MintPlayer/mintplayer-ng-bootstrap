@@ -426,7 +426,25 @@ Minor bump across all four libraries. Purely additive: three optional fields on 
 
 ---
 
-## 13. References
+## 13. As built (deviations and discoveries)
+
+Implemented on `feat/datatable-filter-row`, M0–M10. Deviations from the plan, and what the work turned up that the spikes did not:
+
+**`CSS.escape` broke `close()`, and the specs caught it.** The first implementation resolved the focus-return trigger by id, via `#${CSS.escape(id)}`. `OverlayController.close()` sets `_open = false` and *then* calls `resolveReturnTarget()`, so when `CSS.escape` was unavailable (jsdom) it threw from inside `close()` and `onClose` never ran. One cause, three symptoms: a second click on the trigger did not close the panel, no `mp-datatable-filter-close` fired, and the panel was never torn down. The trigger *is* the anchor, so the id round-trip bought nothing; both now resolve through one helper and `CSS.escape` is gone. Worth recording because the failure was entirely invisible from the outside — it looked like the toggle logic was wrong.
+
+**The panel needed `position: fixed`, and only the browser could say so.** `OverlayController` positions by writing `left`/`top` onto `options.panel()`. A statically-positioned element ignores both, so the panel rendered at the pane's origin — the top-left corner of the viewport, overlapping the page's sidebar, regardless of which trigger opened it. Every other consumer declares `position: fixed` on its own panel for this reason; this one did not. **No unit test could have caught it**: jsdom has no layout, so the specs passed while the feature was visibly broken. It was found by looking at a screenshot of the running demo, and the rule now carries a comment saying why it is required rather than cosmetic.
+
+**A false positive of my own making.** The `overlay-portal` spec asserted the container declares no containing-block property by substring-matching its `style` attribute. That string contains `--mp-overlay-container-z-index`, which contains `contain`. It now reads declared properties instead. Recorded as a caution against substring assertions on CSS text.
+
+**`headerRowCount` is computed in two places.** `render()` derives it locally and `renderRow` re-derives it from `hasFilterRow`. Slightly redundant; kept because threading it through the row renderer's signature would touch every call site for no behavioural gain.
+
+**The demo pages carry a show/hide checkbox**, at the user's suggestion, and it earns its place beyond demonstration: toggling the filter templates forces repeated `effectiveColumns` recomputes, which is exactly the path where the Angular `EmbeddedViewRef` generations used to accumulate. The demo exercises the leak fix every time someone clicks it.
+
+**A pre-existing leak was fixed in passing** (§5.7): `headerViews` grew by a full generation on every recompute and was only drained on destroy. Filters would have doubled the rate. Both arrays are now cleared at the top of the recompute.
+
+**Not done, deliberately:** the plan's optional per-frame resize optimisation fell away with `<colgroup>` (§5.2) and was never in scope on its own.
+
+## 14. References
 
 - Issue **#414**; driver [MintPlayer.Spark#431](https://github.com/MintPlayer/MintPlayer.Spark/issues/431)
 - [overlay-controller-positioning.md](./overlay-controller-positioning.md) — the positioning half
