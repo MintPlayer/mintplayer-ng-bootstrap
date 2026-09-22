@@ -198,7 +198,7 @@ PRD §14. Status: **Designed and adversarially verified (`wf_699b142e-239`) — 
 | M11 — WC: `distincts` source, local fallback, `DistinctValue` types, labels | ⬜ |
 | M12 — WC: default panel (search / ≠ / checkbox list / clear), `ctx`, events | ⬜ |
 | M13 — WC: `filterSummary` on the trigger; aria-label composition | ⬜ |
-| M14 — Angular: `filterable`/`filterActive`/`filterSummary` inputs on `*bsDatatableColumn`; nested `*bsDatatableFilterPanel`; eager header views; delete the sibling directive | ⬜ |
+| M14 — Angular: `filterable`/`filterActive`/`filterSummary`/`filterSelection` inputs on `*bsDatatableColumn`; nested `*bsDatatableFilterPanel`; header views stay **lazy**; delete the sibling directive | ⬜ |
 | M15 — Wrappers: forward `distincts` + `labels` + filter events in ng / react / vue | ⬜ |
 | M16 — Demos: default panel on one column, override on another, `filterable` toggled by the checkbox; a listener that filters the demo's own data | ⬜ |
 | M17 — Specs: rewrite `datatable-filter.spec.ts`; default-panel focus/mount-once/a11y; `distincts` fallback across data modes; Signal `$implicit` under zoneless | ⬜ |
@@ -207,7 +207,9 @@ PRD §14. Status: **Designed and adversarially verified (`wf_699b142e-239`) — 
 
 ## Ordering rationale (Revision 2)
 
-The WC goes first (M11–M13) because every wrapper and demo consumes it and because the default panel's mount-once behaviour is the riskiest interaction with what already shipped (R13). Angular (M14) is next because it carries the one structural change — eager header views — and the directive deletion; React/Vue (M15) are plumbing. Demos before specs, as before. Spark stays docs-only (D30).
+The WC goes first (M11–M13) because every wrapper and demo consumes it and because the default panel's mount-once behaviour is the riskiest interaction with what already shipped (R13). Angular (M14) is next because it carries the directive deletion and the new nested directive; React/Vue (M15) are plumbing. Demos before specs, as before. Spark stays docs-only (D30).
+
+Within M11–M13 the six WC steps are strictly serial — each depends on the names the previous one introduced. M14–M16 can run per-framework in parallel once the WC core lands, each wrapper followed by its own demo.
 
 ## Standing rules for Revision 2
 
@@ -219,6 +221,42 @@ The WC goes first (M11–M13) because every wrapper and demo consumes it and bec
 - **Every string in the default panel routes through `labels`**, including checkbox names via `labels.filterValue(value)` and the active trigger name via `labels.filterColumnActive(column, summary?)` — never string concatenation (D28, D29).
 - **The WC emits UI state only** — one event, `{column, selected: DistinctValue[], inverse}`; Clear fires it with `selected: []` (D26).
 - **The nested directive's inputs are unreadable in its constructor**; anything the column def needs is an input on `*bsDatatableColumn` (D18).
+
+## M11–M13 — WC core (serial; every step depends on the last)
+
+**M11.1 — types.** `datatable/src/types/column-def.ts`: `FilterRenderer<T> = (column: DatatableColumnDef<T>, ctx: FilterContext) => Node | null`; add `filterSummary?: string`, `filterSelection?: FilterSelection`. New `datatable/src/types/filter.ts`: `DistinctValue {value: unknown; label: string}`, `DistinctValues {matching: DistinctValue[]; remaining: DistinctValue[]; hasMore: boolean}`, `DistinctsRequest {column: string; search: string; signal: AbortSignal}`, `DatatableDistincts = (req) => Promise<DistinctValues | null>`, `FilterSelection {values: DistinctValue[]; inverse: boolean}`, `FilterContext {values(); loading(); search(term); apply(values, inverse); clear(); onChange(cb): () => void}`, `FilterChangeDetail {column; selected: DistinctValue[]; inverse}`. Export from `types/index.ts` **and** `src/index.ts`.
+
+**M11.2 — labels.** `types/labels.ts`: `filterClear(column)`, `filterSearch`, `filterInvert`, `filterNone`, `filterEmpty`, `filterTrue`, `filterFalse`, `filterHasMore`, `filterNoValues`, `filterGroup(column)`, `filterColumnActive(column, summary?)`, `filterValue(value: unknown): string`, `announceFilter(column, count)`. `filterValue` default: `null`/`undefined` → `filterNone`, `''` → `filterEmpty`, boolean → `filterTrue`/`filterFalse`, `Date` → `toLocaleDateString()`, else `String(value)`. Document that a consumer overriding `filterNone` should also override `filterValue`, or the two disagree.
+
+**M11.3 — element state.** `components/mp-datatable.ts`: (a) `set fetch(null)` resets `_totalRecords = null` and clears `_pageCache`, `_pendingPageFetches`, `_childCache`, `_childTotals`, `_pendingFetches`, `_fetchGeneration++` — measured today to reset nothing (R14); (b) `distincts` getter/setter mirroring `fetch` (property only, no attribute); (c) per-column `Map<string, {selection; snapshot; loaded; loadedTerm; term; loading; generation; listeners; ctx}>`, seeded/reset from `col.filterSelection` in the `columns` setter; SameValueZero helpers keyed on `value`.
+
+**M11.4 — distincts loading.** `loadDistincts(column, term)`: called on every panel open (no cross-open cache) and on re-query. Source path first (`AbortController` per column); a `null` resolution falls through to local. Local gated on `fetch == null && !isExternallyPaged() && _childCache.size === 0`, else `loaded = null` → `filterNoValues`. Buckets: selection empty → `matching` = distinct over all `_data`, `remaining` = `[]`; on first non-empty selection **snapshot** the list, then `matching` = snapshot ∩ `_data`, `remaining` = snapshot − `_data` − selected. Search: client filter on `label` (case-insensitive substring); 250 ms debounced, generation-guarded re-query when `loaded.hasMore || !term.startsWith(loadedTerm)`. Notify `listeners` on every change. **Never filters `_data`.**
+
+**M12 — default panel + M13 trigger.** `renderFilterPanel`: `aria-modal="true"` on `.filter-panel`; `initialFocus` → callback resolving `.filter-search`, falling back to first tabbable; `const node = col.filterRenderer?.(col, state.ctx) ?? null`; node → mount consumer DOM once (as today); `null` → lit-render the default into `.filter-panel-body` under the same `_mountedFilterColumn` guard, using the module-level scoped `html`. Order: Clear `<button class="filter-clear" ?disabled>` (clears selection, resets inverse, fires change, **then focuses search**) → `<input type="search" class="filter-search">` → `<button class="filter-invert" aria-pressed>` → `<div role="group" class="filter-options">` with a **keyed `repeat()` on `value`** over [selected (checked) → `matching` → `remaining` (`.filter-remaining`)] → `.filter-has-more` → `.filter-no-values`. One event `mp-datatable-filter-change` `{column, selected: DistinctValue[], inverse}` on every check/uncheck/inverse **and on Clear** (`selected: []`, `inverse: false`). Announce via the existing `liveAnnouncer` with `labels.announceFilter`. Trigger: `span.filter-summary` visible text from `col.filterSummary`; `aria-label` = `filterColumn` / `filterColumnActive(col, summary)` / `filterColumnActive(col)`.
+
+**M13.2 — styles.** `styles/datatable.light.scss`, extending the `.filter-panel` block: `.filter-clear`, `.filter-search`, `.filter-invert[aria-pressed=true]`, `.filter-options`, `.filter-remaining { color: var(--bs-secondary-color); }`, `.filter-has-more`, `.filter-no-values`, `.filter-trigger .filter-summary`; `:focus-visible` on every control; `prefers-reduced-motion`. Then `npx nx run mintplayer-web-components:codegen-wc` and grep the generated sheet for `filter-` to confirm every compound is scope-anchored.
+
+## M14–M16 — wrappers and demos (per framework, parallel after M13)
+
+**M14 Angular directives.** `datatable-column.directive.ts`: inputs `filterable` (alias `bsDatatableColumnFilterable`), `filterActive`, `filterSummary`, `filterSelection`; **plain field** `filterPanelTemplate?: TemplateRef<BsDatatableFilterPanelContext>`. New `datatable-filter-panel/datatable-filter-panel.directive.ts` (`[bsDatatableFilterPanel]`): constructor `inject(BsDatatableColumnDirective)` + `inject(TemplateRef)` → assign; `inject(DestroyRef).onDestroy(() => { if (col.filterPanelTemplate === tpl) col.filterPanelTemplate = undefined })`; `BsDatatableFilterPanelContext {$implicit: Signal<DistinctValues|null>; ctx: FilterContext}` + `static ngTemplateContextGuard` (**required** — without it `values().anything.deeper` type-checks). **Delete `datatable-filter/`** and its barrel export.
+
+**M14.2 Angular component.** `datatable.component.ts`: drop `filterDirectives` and the `filters.find(...)` lookup; `effectiveColumns` maps the four new inputs; **header view stays lazy**; always set `filterRenderer: (col, ctx) => { const tpl = dir.filterPanelTemplate; if (!tpl) return null; if (!filterView) { const values = signal(ctx.values()); filterView = this.vcr.createEmbeddedView(tpl, {$implicit: values, ctx}); this.filterViews.push(filterView); this.filterUnsubs.push(ctx.onChange(() => values.set(ctx.values()))); } filterView.detectChanges(); … rootNodes }`; `destroyTemplateViews` also runs every unsubscribe. Add `distincts` + `labels` inputs (own effects, `isPlatformServer`-guarded like `fetch`) and `filterChange` output bound from `(mp-datatable-filter-change)`. Rewrite the `data` JSDoc: the **complete** row set; a consumer paging `[data]` itself must supply `[distincts]`.
+
+**M15 React/Vue.** React `BsDatatable.tsx`: `onFilterChange` in the `events` map; verify `distincts`/`labels` forward as properties. Vue `BsDatatable.vue`: `distincts`/`labels` props assigned in `syncProps` + `watch`; `filterChange` emit from the listener; note `filterRenderer` may return `null`.
+
+**M16 demos (all three).** Checkbox drives `filterable` (not an `@if` around the directive); one column uses the **default** panel, another an **override**; the page keeps an **unfiltered master copy** and filters from it in a `filterChange` handler, setting `filterActive`/`filterSummary` itself; React/Vue overrides must return a **stable node** and repaint it inside `ctx.onChange`. Prose documents the default, the override, that the component holds no filter state, and the keymap including Clear → search focus.
+
+## M17 — specs
+
+**WC** (`filter-row` / `filter-aria` + new `filter-default.spec.ts`): default renders when `filterRenderer` is absent **and** when it returns `null`; mount-once (text + `document.activeElement` survive a `data` reassignment **and** a search repaint); Clear disabled/enabled, emits `selected: []`, moves focus to search; `aria-pressed` both values; `aria-modal`; keyed identity across a repaint and a `matching`↔`remaining` move; selected-first after a re-query that drops the value; local distincts cover **all** rows with pagination smaller than the row count; `filterValue` for `null`/`''`/`true`; snapshot keeps other values listed after rebinding `data` to the subset; `fetch = null` resets `totalRecords` and the local list; source `null` → local for that column; the `hasMore || !startsWith` re-query rule with debounce; trigger summary text + the three `aria-label` forms.
+
+**Angular** (rewrite `datatable-filter.spec.ts`, per S8): harness **must declare a `viewChild`** (that is what exposed NG0600) and drive inputs from `signal()`; default panel with no nested template; override on first open; override under `@if (true)` on first open; a signal read in a header template does **not** recompute `effectiveColumns`; `@if (flag())` off → reopen → default, on → reopen → override; destroy clears the field; `filterChange` shape; `$implicit` Signal repaints with **no** `detectChanges()`.
+
+## M18–M19 — docs and sweep
+
+M18: PRD §5.7/D12 already marked historical (commit `6e11a256`); extend §13 as-built after implementation; amend Spark `query_column_filter_PRD.md` §5.8 to consume `distincts` + the default panel and map `selected.map(v => v.value)` to `includes`/`excludes` by `inverse` (**docs only, no Spark code** — D30).
+
+M19: one batched sweep — `codegen-wc`, build + test `mintplayer-web-components`, build + test `mintplayer-ng-bootstrap`, build react/vue, then the three demo e2e projects; each redirected to a log with `echo "EXIT: $?"`. Then a **real-browser** check of the default panel and an override in the React demo (the only demo servable without the API — `nx serve react-bootstrap-demo --exclude-task-dependencies`, which binds **:4000**, ignoring `--port`).
 
 ## Risks
 
