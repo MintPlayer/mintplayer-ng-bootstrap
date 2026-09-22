@@ -190,11 +190,11 @@ npx nx test mintplayer-ng-bootstrap
 
 # Revision 2 — default panel, nested override, datatable-supplied values
 
-PRD §14. Status: **Designed; adversarial verification running (`wf_699b142e-239`)** — 2026-09-22. Milestones below are the shape of the work; individual decisions may be amended by the verification synthesis before M11 starts, and the amendment is recorded in PRD §14.9 first.
+PRD §14. Status: **Designed and adversarially verified (`wf_699b142e-239`) — implementation starting** — 2026-09-22. Six of eight refuters amended something; the amendments are in PRD §14.3/§14.4/§14.7/§14.8 and the record is §14.9. The load-bearing change: header views stay **lazy**; the wrapper's `filterRenderer` resolves the nested template **at panel open** and returns `null` for "default" (D20). Eager creation inside the `computed` was measured to throw NG0600 with any `viewChild` on the host and is gone.
 
 | Milestone | State |
 |---|---|
-| S8–S10 — Revision 2 spikes (PRD §14.8) | ⬜ folded into the refuters' measurements where possible |
+| S8–S10 — Revision 2 spikes (PRD §14.8) | ✅ S9, S10 **PASS** by measurement inside verification (jsdom); S8 rewritten for lazy D20 and pinned by the M17 Angular spec |
 | M11 — WC: `distincts` source, local fallback, `DistinctValue` types, labels | ⬜ |
 | M12 — WC: default panel (search / ≠ / checkbox list / clear), `ctx`, events | ⬜ |
 | M13 — WC: `filterSummary` on the trigger; aria-label composition | ⬜ |
@@ -212,11 +212,13 @@ The WC goes first (M11–M13) because every wrapper and demo consumes it and bec
 ## Standing rules for Revision 2
 
 - Everything in "Conventions (these still bite)" above.
-- **No signal write in the nested directive's constructor or `onDestroy`** — it runs inside `effectiveColumns`, a `computed` (F3, R12).
-- **The default panel is mounted once per open** under the same `_mountedFilterColumn` guard as consumer content; its state (search text, checked set, inverse) lives on the element, not in the template (R13).
-- **`hasMore` is required** on the source response (R15).
-- **Every string in the default panel routes through `labels`** (D29); a hard-coded literal is a translation bug.
-- **The WC emits UI state only** — `{column, selected, inverse}` — never `includes`/`excludes` (D26).
+- **Nothing is created or change-detected inside `effectiveColumns`.** Header views stay lazy; `filterRenderer` resolves `dir.filterPanelTemplate` when the WC invokes it at panel open and returns `null` for "default" (D20). Measured: `createEmbeddedView` inside the computed throws NG0600 as soon as the host declares a `viewChild`.
+- **The default panel is mounted once per open** under the same `_mountedFilterColumn` guard as consumer content; its state (search text, selection, inverse) lives on the element; the checkbox list is a **keyed `repeat()` on `value`** (R13).
+- **`hasMore` is required** on the source response; a source resolving **`null` for a column means compute locally** for that column (D22, R15).
+- **Local distincts are gated** on `fetch == null && !isExternallyPaged() && _childCache.size === 0`, and `set fetch(null)` must reset every fetch-derived field (D23, R14).
+- **Every string in the default panel routes through `labels`**, including checkbox names via `labels.filterValue(value)` and the active trigger name via `labels.filterColumnActive(column, summary?)` — never string concatenation (D28, D29).
+- **The WC emits UI state only** — one event, `{column, selected: DistinctValue[], inverse}`; Clear fires it with `selected: []` (D26).
+- **The nested directive's inputs are unreadable in its constructor**; anything the column def needs is an input on `*bsDatatableColumn` (D18).
 
 ## Risks
 
