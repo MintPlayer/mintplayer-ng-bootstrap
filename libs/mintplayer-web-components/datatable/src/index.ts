@@ -21,7 +21,16 @@ export type {
   DatatableFetch,
   TreeRowExpandDetail,
   TreeExpandedIdsChangeDetail,
+  DistinctValue,
+  DistinctValues,
+  DistinctsRequest,
+  DatatableDistincts,
+  FilterSelection,
+  FilterContext,
+  FilterChangeDetail,
 } from './types';
+export type { DatatableLabels } from './types';
+export { DEFAULT_DATATABLE_LABELS } from './types';
 export type { SortColumn, SortDirection } from './sort';
 export { computeNextSort, sortRows } from './sort';
 export { datatableLightStyles } from './styles';

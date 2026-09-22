@@ -23,6 +23,43 @@ export interface DatatableLabels {
   selectRow: (rowNumber: number) => string;
   /** Accessible name of a column's filter trigger in the filter row. */
   filterColumn: (column: string) => string;
+  /**
+   * Accessible name of a filter trigger whose column is filtered. `summary` is
+   * the column's `filterSummary` when it set one — a formatter, not a suffix,
+   * because a translation may need it first.
+   */
+  filterColumnActive: (column: string, summary?: string) => string;
+  /** The filter panel's Clear button. */
+  filterClear: (column: string) => string;
+  /** The filter panel's search box. */
+  filterSearch: string;
+  /** The filter panel's include/exclude toggle. */
+  filterInvert: string;
+  /** Accessible name of the filter panel's checkbox list. */
+  filterGroup: (column: string) => string;
+  /** Shown when the source truncated the value list. */
+  filterHasMore: string;
+  /** Shown when no value list could be produced for this column. */
+  filterNoValues: string;
+  /**
+   * Renders one distinct value as a checkbox label.
+   *
+   * The default implementation reads `filterNone` / `filterEmpty` /
+   * `filterTrue` / `filterFalse` off `this`, so it is invoked as a METHOD on
+   * the merged label set and a consumer translating only those four keys gets
+   * them. A consumer who replaces `filterValue` outright owns all four cases.
+   */
+  filterValue: (this: DatatableLabels, value: unknown) => string;
+  /** `filterValue`'s rendering of `null` / `undefined`. */
+  filterNone: string;
+  /** `filterValue`'s rendering of the empty string. */
+  filterEmpty: string;
+  /** `filterValue`'s rendering of `true`. */
+  filterTrue: string;
+  /** `filterValue`'s rendering of `false`. */
+  filterFalse: string;
+  /** Announced when a column's filter selection changes. */
+  announceFilter: (column: string, count: number) => string;
   /** Live-region announcements (Phase E). */
   announceSorted: (column: string, direction: 'ascending' | 'descending' | 'none') => string;
   announcePage: (page: number, totalPages: number) => string;
@@ -41,6 +78,32 @@ export const DEFAULT_DATATABLE_LABELS: DatatableLabels = {
   resizeColumn: (column) => `Resize column ${column}`,
   selectRow: (rowNumber) => `Select row ${rowNumber}`,
   filterColumn: (column) => `Filter ${column}`,
+  filterColumnActive: (column, summary) =>
+    summary ? `Filter ${column}, filtered by ${summary}` : `Filter ${column}, filtered`,
+  filterClear: (column) => `Clear the filter on ${column}`,
+  filterSearch: 'Search values',
+  filterInvert: 'Exclude the selected values',
+  filterGroup: (column) => `Values of ${column}`,
+  filterHasMore: 'More values exist — refine the search to see them',
+  filterNoValues: 'No values available',
+  filterValue(value) {
+    if (value === null || value === undefined) return this.filterNone;
+    if (value === '') return this.filterEmpty;
+    if (value === true) return this.filterTrue;
+    if (value === false) return this.filterFalse;
+    if (value instanceof Date) return value.toLocaleDateString();
+    return String(value);
+  },
+  filterNone: '(none)',
+  filterEmpty: '(empty)',
+  filterTrue: 'Yes',
+  filterFalse: 'No',
+  announceFilter: (column, count) =>
+    count === 0
+      ? `Filter cleared on ${column}`
+      : count === 1
+        ? `1 value selected in ${column}`
+        : `${count} values selected in ${column}`,
   announceSorted: (column, direction) =>
     direction === 'none' ? `Sorting removed from ${column}` : `Sorted by ${column}, ${direction}`,
   announcePage: (page, totalPages) => `Page ${page} of ${totalPages}`,

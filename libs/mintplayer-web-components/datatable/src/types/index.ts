@@ -9,6 +9,15 @@ export type {
   RowRenderContext,
 } from './column-def';
 export type {
+  DistinctValue,
+  DistinctValues,
+  DistinctsRequest,
+  DatatableDistincts,
+  FilterSelection,
+  FilterContext,
+  FilterChangeDetail,
+} from './filter';
+export type {
   DatatableFetchRequest,
   DatatableFetchResponse,
   DatatableFetch,

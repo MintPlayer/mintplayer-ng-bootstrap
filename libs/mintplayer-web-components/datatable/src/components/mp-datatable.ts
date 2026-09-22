@@ -24,6 +24,12 @@ import type {
   RowRenderer,
   RowRenderContext,
   DatatableFetch,
+  DatatableDistincts,
+  DistinctValue,
+  DistinctValues,
+  FilterChangeDetail,
+  FilterContext,
+  FilterSelection,
   TreeRowExpandDetail,
   TreeExpandedIdsChangeDetail,
   TreeIdKey,
@@ -85,6 +91,69 @@ interface FlatVisibleRow {
   /** Root-window placeholders only: the 1-based root page this slot belongs to. */
   page?: number;
 }
+
+/**
+ * Everything one column's filter panel needs, for as long as the column exists.
+ *
+ * It outlives the panel (a closed panel keeps its selection) but not a `columns`
+ * assignment, which re-seeds from `filterSelection` — the consumer owning the
+ * column defs is the consumer owning the initial selection.
+ */
+interface ColumnFilterState {
+  /** The user's current selection. Never derived from the data. */
+  selection: FilterSelection;
+  /**
+   * The value list as it stood when the selection first became non-empty.
+   *
+   * Without it, selecting a value narrows the data, which narrows the list,
+   * which removes every OTHER value the user might want to add — so a filter
+   * could only ever be narrowed, never widened, without clearing it first.
+   */
+  snapshot: DistinctValue[] | null;
+  /**
+   * The list exactly as the source (or the local pass) produced it. Never
+   * narrowed in place: the search box derives `view` from this, so clearing the
+   * search restores the full list without a round trip.
+   */
+  loaded: DistinctValues | null;
+  /** `loaded` re-bucketed against the snapshot and narrowed by `term`. */
+  view: DistinctValues | null;
+  /** The search term `loaded` was produced for; `null` when never loaded. */
+  loadedTerm: string | null;
+  /** The term currently in the search box (may be ahead of `loadedTerm`). */
+  term: string;
+  loading: boolean;
+  /** Bumped per request; a stale response checks this before writing. */
+  generation: number;
+  /** Aborts the in-flight source request. */
+  controller: AbortController | null;
+  /** Pending debounce for a source re-query. */
+  debounce: ReturnType<typeof setTimeout> | null;
+  /** Subscribers from `FilterContext.onChange`. */
+  listeners: Set<() => void>;
+  /** The `filterSelection` reference this state was seeded from, if any. */
+  seededFrom: FilterSelection | null;
+  /** The context handed to `filterRenderer`; stable for the column's lifetime. */
+  ctx: FilterContext;
+}
+
+/** `===` except that `NaN` equals itself — the identity `Map`/`Set` keys use. */
+function sameValue(a: unknown, b: unknown): boolean {
+  return a === b || (a !== a && b !== b);
+}
+
+function includesValue(values: readonly DistinctValue[], value: unknown): boolean {
+  return values.some((v) => sameValue(v.value, value));
+}
+
+/**
+ * Debounce before a search term is sent to the distinct-value source.
+ *
+ * Matched to the reference implementation (Vidyano) rather than chosen: the
+ * list is filtered in place on every keystroke, and this delay only gates the
+ * round trip that a truncated list or a widened term makes necessary.
+ */
+const FILTER_SEARCH_DEBOUNCE_MS = 250;
 
 let instanceCounter = 0;
 
@@ -249,6 +318,10 @@ export class MpDatatable extends LitElement {
   private _mountedFilterColumn: string | null = null;
   /** Unique per instance so several datatables on a page cannot collide on IDREFs. */
   private readonly _filterUid = `mp-dt-${Math.random().toString(36).slice(2, 9)}`;
+  /** Consumer-supplied distinct-value source; null = compute locally when possible. */
+  private _distincts: DatatableDistincts | null = null;
+  /** Per-column filter panel state, keyed by `DatatableColumnDef.name`. */
+  private readonly _filterStates: Map<string, ColumnFilterState> = new Map();
 
   // ─── Tree-mode state ─────────────────────────────────────────────────────
   private _tree = false;
@@ -360,7 +433,44 @@ export class MpDatatable extends LitElement {
   }
   set columns(value: DatatableColumnDef[]) {
     this._columns = Array.isArray(value) ? value : [];
+    this.syncFilterStates();
     this.requestUpdate();
+  }
+
+  /**
+   * Drops state for columns that are gone and seeds state for new ones from
+   * `filterSelection`.
+   *
+   * An existing column keeps its state: the Angular wrapper rebuilds the whole
+   * column array on every change detection, so treating a re-assignment as
+   * "new columns" would wipe the user's selection on any unrelated input change.
+   * A column whose `filterSelection` reference actually changed is re-seeded —
+   * that is the consumer restoring a filter, and it is why the input is a
+   * reference and not a value.
+   */
+  private syncFilterStates(): void {
+    const names = new Set(this._columns.map((c) => c.name));
+    this._filterStates.forEach((state, name) => {
+      if (names.has(name)) return;
+      this.abortFilterRequest(state);
+      this._filterStates.delete(name);
+    });
+
+    this._columns.forEach((col) => {
+      const existing = this._filterStates.get(col.name);
+      if (!existing) {
+        if (col.filterable) this._filterStates.set(col.name, this.createFilterState(col));
+        return;
+      }
+      if (col.filterSelection && col.filterSelection !== existing.seededFrom) {
+        existing.seededFrom = col.filterSelection;
+        existing.selection = {
+          values: [...col.filterSelection.values],
+          inverse: !!col.filterSelection.inverse,
+        };
+        existing.snapshot = null;
+      }
+    });
   }
 
   get data(): unknown[] {
@@ -389,7 +499,47 @@ export class MpDatatable extends LitElement {
       this._initialFetchDone = false;
       this._lastReloadKey = null;
       this.scheduleFetchReload();
+      return;
     }
+
+    // Clearing the callback used to reset nothing, which left the element
+    // claiming a `totalRecords` no data backed and serving rows out of caches
+    // whose source was gone. It also kept `isExternallyPaged()` true forever,
+    // and that is the gate on computing distinct values locally — so a table
+    // switched from `[fetch]` to `[data]` could never produce a value list.
+    this._totalRecords = null;
+    this._pageCache.clear();
+    this._pendingPageFetches.clear();
+    this._childCache.clear();
+    this._childTotals.clear();
+    this._pendingFetches.clear();
+    // Invalidates every in-flight response: they check this before writing.
+    this._fetchGeneration++;
+    this._initialFetchDone = false;
+    this._lastReloadKey = null;
+    this.requestUpdate();
+  }
+
+  /**
+   * Consumer-supplied source of distinct values for the filter panels.
+   * Property-only (it holds a function), mirroring `fetch` and `labels`.
+   *
+   * A source that resolves `null` for a column means "compute that column
+   * locally", so one table can mix server-backed and local filter columns.
+   */
+  get distincts(): DatatableDistincts | null {
+    return this._distincts;
+  }
+  set distincts(value: DatatableDistincts | null) {
+    this._distincts = typeof value === 'function' ? value : null;
+    // Lists are loaded per open, never cached across opens, so there is nothing
+    // to invalidate beyond what is on screen right now.
+    this._filterStates.forEach((state) => {
+      state.loaded = null;
+      state.view = null;
+      state.loadedTerm = null;
+    });
+    if (this._openFilterColumn) this.requestUpdate();
   }
 
   get sortColumns(): SortColumn[] {
@@ -962,6 +1112,231 @@ export class MpDatatable extends LitElement {
 
   private filterTriggerId(column: string): string {
     return `${this._filterUid}-filter-trigger-${column}`;
+  }
+
+  private createFilterState(col: DatatableColumnDef): ColumnFilterState {
+    const name = col.name;
+    const state: ColumnFilterState = {
+      selection: {
+        values: col.filterSelection ? [...col.filterSelection.values] : [],
+        inverse: !!col.filterSelection?.inverse,
+      },
+      seededFrom: col.filterSelection ?? null,
+      snapshot: null,
+      loaded: null,
+      view: null,
+      loadedTerm: null,
+      term: '',
+      loading: false,
+      generation: 0,
+      controller: null,
+      debounce: null,
+      listeners: new Set(),
+      // Assigned below: the context closes over `state`, which does not exist
+      // until the literal is complete.
+      ctx: null as unknown as FilterContext,
+    };
+
+    state.ctx = {
+      values: () => state.view,
+      loading: () => state.loading,
+      search: (term) => this.setFilterSearch(name, term),
+      apply: (values, inverse) => this.applyFilter(name, values, inverse),
+      clear: () => this.applyFilter(name, [], false),
+      onChange: (callback) => {
+        state.listeners.add(callback);
+        return () => state.listeners.delete(callback);
+      },
+    };
+
+    return state;
+  }
+
+  /** State for a filterable column, created on demand. */
+  private filterState(name: string): ColumnFilterState | null {
+    const existing = this._filterStates.get(name);
+    if (existing) return existing;
+    const col = this._columns.find((c) => c.name === name);
+    if (!col?.filterable) return null;
+    const created = this.createFilterState(col);
+    this._filterStates.set(name, created);
+    return created;
+  }
+
+  private notifyFilterListeners(state: ColumnFilterState): void {
+    state.listeners.forEach((listener) => listener());
+    this.requestUpdate();
+  }
+
+  private abortFilterRequest(state: ColumnFilterState): void {
+    state.controller?.abort();
+    state.controller = null;
+    if (state.debounce != null) clearTimeout(state.debounce);
+    state.debounce = null;
+    state.loading = false;
+  }
+
+  /**
+   * Replaces a column's selection and emits the one event the component owns.
+   *
+   * The component never filters `_data` itself — what a selection means, and
+   * whether it is applied here or on a server, belongs to the consumer. All it
+   * does locally is snapshot the value list the first time a selection becomes
+   * non-empty, so the list cannot collapse to the selection.
+   */
+  private applyFilter(name: string, values: DistinctValue[], inverse: boolean): void {
+    const state = this.filterState(name);
+    if (!state) return;
+
+    const wasEmpty = state.selection.values.length === 0;
+    if (wasEmpty && values.length > 0 && state.snapshot == null && state.loaded) {
+      state.snapshot = [...state.loaded.matching, ...state.loaded.remaining];
+    }
+    if (values.length === 0) state.snapshot = null;
+
+    state.selection = { values: [...values], inverse };
+    this.rebucket(state);
+    this.notifyFilterListeners(state);
+
+    const column = this._columns.find((c) => c.name === name);
+    this.liveAnnouncer.announce(
+      this.mergedLabels.announceFilter(column?.label ?? name, values.length),
+    );
+    this.dispatchEvent(
+      new CustomEvent<FilterChangeDetail>('mp-datatable-filter-change', {
+        detail: { column: name, selected: [...values], inverse },
+        bubbles: true,
+        composed: true,
+      }),
+    );
+  }
+
+  private setFilterSearch(name: string, term: string): void {
+    const state = this.filterState(name);
+    if (!state) return;
+    state.term = term;
+    this.rebucket(state);
+    this.notifyFilterListeners(state);
+
+    // A re-query is only worth a round trip when the loaded list cannot already
+    // answer the question: either the source truncated it, or the term is not a
+    // refinement of the one it was loaded for. Anything else filters in place.
+    const loadedTerm = state.loadedTerm ?? '';
+    const needsRequery = !!state.loaded?.hasMore || !term.startsWith(loadedTerm);
+    if (!needsRequery) return;
+
+    if (state.debounce != null) clearTimeout(state.debounce);
+    state.debounce = setTimeout(() => {
+      state.debounce = null;
+      void this.loadDistincts(name, term);
+    }, FILTER_SEARCH_DEBOUNCE_MS);
+  }
+
+  /**
+   * Loads (or recomputes) one column's value list.
+   *
+   * Called on every panel open — there is no cross-open cache, because the data
+   * behind a list can change while the panel is closed and a stale list is worse
+   * than a re-query. The source is asked first; a source resolving `null` means
+   * it cannot answer for this column, and the local path takes over.
+   */
+  private async loadDistincts(name: string, term: string): Promise<void> {
+    const state = this.filterState(name);
+    if (!state) return;
+
+    const generation = ++state.generation;
+    state.controller?.abort();
+
+    if (this._distincts) {
+      const controller = new AbortController();
+      state.controller = controller;
+      state.loading = true;
+      this.notifyFilterListeners(state);
+      try {
+        const response = await this._distincts({ column: name, search: term, signal: controller.signal });
+        if (generation !== state.generation) return;
+        state.loading = false;
+        state.controller = null;
+        if (response) {
+          state.loaded = response;
+          state.loadedTerm = term;
+          this.rebucket(state);
+          this.notifyFilterListeners(state);
+          return;
+        }
+        // `null` = "not mine"; fall through to the local path.
+      } catch {
+        if (generation !== state.generation) return;
+        state.loading = false;
+        state.controller = null;
+        state.loaded = null;
+        state.loadedTerm = term;
+        this.notifyFilterListeners(state);
+        return;
+      }
+    }
+
+    state.loaded = this.localDistincts(name);
+    state.loadedTerm = '';
+    this.rebucket(state);
+    this.notifyFilterListeners(state);
+  }
+
+  /**
+   * The value list computed from the rows this element holds — but only when it
+   * holds all of them.
+   *
+   * With a `fetch` callback, external paging, or loaded tree children, `_data`
+   * is a window onto a larger set, and a list built from a window silently omits
+   * values. There is no partial answer worth giving there: the column reports
+   * that it has no values and the consumer is expected to supply `distincts`.
+   */
+  private localDistincts(name: string): DistinctValues | null {
+    if (this._fetch != null || this.isExternallyPaged() || this._childCache.size > 0) return null;
+
+    const labels = this.mergedLabels;
+    const seen: DistinctValue[] = [];
+    this._data.forEach((row) => {
+      const value = (row as Record<string, unknown> | null | undefined)?.[name];
+      if (includesValue(seen, value)) return;
+      seen.push({ value, label: labels.filterValue(value) });
+    });
+    seen.sort((a, b) => a.label.localeCompare(b.label));
+    return { matching: seen, remaining: [], hasMore: false };
+  }
+
+  /**
+   * Re-derives `matching` / `remaining` from the snapshot and the search term.
+   *
+   * `remaining` holds snapshot values the current list no longer contains: they
+   * stay listed (dimmed) so a selection can be widened. Search is applied to
+   * both buckets client-side — the debounced re-query above is the exception,
+   * not the rule.
+   */
+  private rebucket(state: ColumnFilterState): void {
+    if (!state.loaded) {
+      state.view = null;
+      return;
+    }
+
+    const term = state.term.trim().toLowerCase();
+    const matches = (v: DistinctValue) => term === '' || v.label.toLowerCase().includes(term);
+
+    // The snapshot, when there is one, IS the universe of listed values: the
+    // loaded list only decides which bucket each one falls into.
+    const present = [...state.loaded.matching, ...state.loaded.remaining];
+    const matching = state.snapshot
+      ? state.snapshot.filter((v) => includesValue(present, v.value))
+      : state.loaded.matching;
+    const remaining = state.snapshot
+      ? state.snapshot.filter((v) => !includesValue(present, v.value))
+      : state.loaded.remaining;
+
+    state.view = {
+      matching: matching.filter(matches),
+      remaining: remaining.filter(matches),
+      hasMore: state.loaded.hasMore,
+    };
   }
 
   /** The open column's trigger button, or null. Re-queried on every call. */

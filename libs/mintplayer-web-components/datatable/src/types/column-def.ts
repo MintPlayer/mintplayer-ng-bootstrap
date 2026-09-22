@@ -1,4 +1,5 @@
 import type { TemplateResult } from 'lit';
+import type { FilterContext, FilterSelection } from './filter';
 
 export type CellContent = string | number | boolean | null | undefined | TemplateResult | Node;
 
@@ -46,10 +47,17 @@ export type RowRenderer<T = unknown> = (
  * asks where it came from, so React/Vue pass one directly and the Angular
  * wrapper bridges an `ng-template` through an `EmbeddedViewRef`.
  *
+ * Returning `null` means "use the built-in panel" — that is what a wrapper
+ * returns when the consumer declared no override, and it is why a wrapper can
+ * install this unconditionally instead of deciding up front.
+ *
  * The returned node is the CONSUMER's DOM: it is never stamped with this
  * component's style scope, and none of its rules reach inside.
  */
-export type FilterRenderer<T = unknown> = (column: DatatableColumnDef<T>) => Node;
+export type FilterRenderer<T = unknown> = (
+  column: DatatableColumnDef<T>,
+  context: FilterContext,
+) => Node | null;
 
 export interface DatatableColumnDef<T = unknown> {
   /** Data property name + sort key. */
@@ -72,7 +80,10 @@ export interface DatatableColumnDef<T = unknown> {
    * table. The row itself is emitted only when at least one column sets this.
    */
   filterable?: boolean;
-  /** Contents of this column's filter panel. Ignored unless `filterable`. */
+  /**
+   * Contents of this column's filter panel. Ignored unless `filterable`.
+   * Absent — or present and returning `null` — renders the built-in panel.
+   */
   filterRenderer?: FilterRenderer<T>;
   /**
    * Purely visual: marks the trigger as "this column has an active filter".
@@ -80,4 +91,16 @@ export interface DatatableColumnDef<T = unknown> {
    * belongs to the consumer.
    */
   filterActive?: boolean;
+  /**
+   * Short description of the active filter, rendered on the trigger and folded
+   * into its accessible name. Also consumer-owned: the component never derives
+   * it from a selection, because only the consumer knows what it filtered on.
+   */
+  filterSummary?: string;
+  /**
+   * Initial (or externally restored) selection for this column's panel. Read
+   * when `columns` is set; the component then owns the selection until the next
+   * `columns` assignment, so this is a seed, not a binding.
+   */
+  filterSelection?: FilterSelection;
 }
