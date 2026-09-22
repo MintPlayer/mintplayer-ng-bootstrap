@@ -96,9 +96,37 @@ test.describe('bs-datatable filter panel', () => {
   });
 
   /**
+   * The demo's filter table runs in VIRTUAL mode, which is the harder case and
+   * the one §9.3 measured as worse ("clipped on both axes"). Asserted rather
+   * than assumed: if the demo is ever switched to paged, the clipping and
+   * occlusion tests below would keep passing while quietly losing their teeth.
+   */
+  test('exercises the virtual-scroll configuration', async ({ page }) => {
+    const mode = await page.evaluate((tableSel) => {
+      const scroller = document.querySelector(`${tableSel} .datatable-scroll`);
+      const th = document.querySelector(`${tableSel} thead tr:first-child th`);
+      if (!scroller || !th) return null;
+      const cs = getComputedStyle(th);
+      return {
+        virtual: scroller.classList.contains('datatable-virtual'),
+        headerPosition: cs.position,
+        headerZIndex: cs.zIndex,
+      };
+    }, FILTER_TABLE);
+
+    expect(mode).not.toBeNull();
+    expect(mode!.virtual).toBe(true);
+    // The sticky header is what the panel has to beat — in paged mode there is
+    // nothing for it to be occluded by, only clipped by.
+    expect(mode!.headerPosition).toBe('sticky');
+    expect(Number(mode!.headerZIndex)).toBeGreaterThan(0);
+  });
+
+  /**
    * The whole reason for the portal: an in-flow panel is clipped by
    * `.datatable-scroll`. Measured in three engines during the spikes, whose
-   * harnesses were then deleted — this keeps the property under test.
+   * harnesses were then deleted — this keeps the property under test in the two
+   * the Playwright projects cover.
    */
   test('is not clipped by the scroll container', async ({ page }) => {
     await openPanel(page, 'name');
@@ -137,6 +165,55 @@ test.describe('bs-datatable filter panel', () => {
     expect(escapes!.outsideTable).toBe(true);
     expect(escapes!.escapesScroller).toBe(true);
     expect(escapes!.insideViewport).toBe(true);
+  });
+
+  /**
+   * Clipping is not the only virtual-mode hazard: `thead th` is
+   * `position: sticky; z-index: 1` there, so the panel has something to be
+   * painted *over* by, not merely cut off by. Escaping `overflow: auto` would
+   * be no use if the header then covered it.
+   *
+   * Hit-tested rather than reasoned about from z-index values: what matters is
+   * which element the browser says is on top at that point, and the panel flips
+   * up over the header often enough that this is a live question.
+   */
+  test('is painted above the sticky header', async ({ page }) => {
+    await openPanel(page, 'name');
+
+    const onTop = await page.evaluate(
+      ({ panelSel, tableSel }) => {
+        const panel = document.querySelector(panelSel) as HTMLElement | null;
+        const header = document.querySelector(`${tableSel} thead`) as HTMLElement | null;
+        if (!panel || !header) return null;
+        const p = panel.getBoundingClientRect();
+        const h = header.getBoundingClientRect();
+
+        const hit = (x: number, y: number) => {
+          const el = document.elementFromPoint(x, y);
+          return el ? panel === el || panel.contains(el) : false;
+        };
+
+        // The panel's own centre: nothing may paint over it.
+        const centreIsPanel = hit(p.left + p.width / 2, p.top + p.height / 2);
+
+        // And, where it overlaps the sticky header, the panel must win there too.
+        const overlapTop = Math.max(p.top, h.top);
+        const overlapBottom = Math.min(p.bottom, h.bottom);
+        const overlaps = overlapBottom - overlapTop > 2;
+        const overlapIsPanel = overlaps
+          ? hit(p.left + p.width / 2, (overlapTop + overlapBottom) / 2)
+          : null;
+
+        return { centreIsPanel, overlaps, overlapIsPanel };
+      },
+      { panelSel: PANEL, tableSel: FILTER_TABLE },
+    );
+
+    expect(onTop).not.toBeNull();
+    expect(onTop!.centreIsPanel).toBe(true);
+    // Only assert the overlap case when there is one — the panel's placement
+    // depends on available space, and a flaky test is worse than a narrow one.
+    if (onTop!.overlaps) expect(onTop!.overlapIsPanel).toBe(true);
   });
 
   /**

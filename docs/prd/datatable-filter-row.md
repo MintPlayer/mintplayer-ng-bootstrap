@@ -424,11 +424,14 @@ Two by-products are kept: **D7** (qualify the measure selector — `s6c2` confir
 The spec asserts only what jsdom cannot, so it does not duplicate the unit suite:
 
 1. **Anchored, not at the pane origin** — and direction-agnostically. The overlay legitimately flips *above* the trigger when the list is tall enough that opening downward would leave the viewport, which is what the demo does with 40 rows. An assertion of "below the trigger" fails against correct behaviour; the real property is adjacency on whichever side had room.
-2. **Escapes the scroll container** on some edge while staying inside the viewport. This is the property the three-engine spike measured and then deleted its harnesses for (§9.3) — it is now under continuous test instead of being a claim in a document.
-3. **Border resolvable across the portal** — the custom-property regression.
-4. **Tab trapped and Escape returns focus to the trigger**, exercised *through* `mp-datatable` rather than through `OverlayController` alone.
-5. **A filter-row click fires without sorting** — a real click, asserting `aria-sort` did not move.
-6. **A partial `-` survives in the number operand** — only a browser keeps the text visible, since `input.value` reports `''` either way.
+2. **Escapes the scroll container** on some edge while staying inside the viewport, **in virtual mode** — the configuration §9.3 measured as the worse one ("clipped on both axes"). The mode is asserted rather than assumed, so switching the demo to paged fails the spec instead of quietly weakening it.
+3. **Painted above the sticky header.** Virtual mode makes `thead th` `position: sticky; z-index: 1`, so the panel has something to be painted *over* by, not merely cut off by — escaping `overflow: auto` is no use if the header then covers it. Hit-tested with `elementFromPoint`, because what matters is which element the browser puts on top, not what the z-index values suggest.
+
+   **On engine coverage:** §9.3's original measurement was Chromium, Firefox **and** WebKit, via spike harnesses that were then deleted. The Playwright projects here are **Chromium and Firefox only**, so what is now under continuous test is two of those three. That is a real improvement over a claim in a document, but it is not the same claim — WebKit remains measured-once rather than guarded, and §9.3 should be read that way.
+4. **Border resolvable across the portal** — the custom-property regression.
+5. **Tab trapped and Escape returns focus to the trigger**, exercised *through* `mp-datatable` rather than through `OverlayController` alone.
+6. **A filter-row click fires without sorting** — a real click, asserting `aria-sort` did not move.
+7. **A partial `-` survives in the number operand** — only a browser keeps the text visible, since `input.value` reports `''` either way.
 
 **Both e2e specs select their table by a named class** (`.filter-table`, `.tree-table`) rather than by position. `datatable-tree.spec.ts` previously took "the last `mp-datatable` on the page" and silently began reading the filter table when that section was added below it — every tree assertion passed against the wrong element until CI ran e2e for the first time.
 
