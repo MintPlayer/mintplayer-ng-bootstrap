@@ -1,7 +1,7 @@
 # Plan — `mp-datatable` filter row, and a document-root overlay portal
 
 PRD: [datatable-filter-row.md](./datatable-filter-row.md)
-Status: **Implemented** (2026-09-22) — `feat/datatable-filter-row`, no PR yet. All milestones done; 4 libraries build, 3281 + 174 specs pass, and the feature was verified in a running browser (which is where the missing `position: fixed` on the panel turned up — see PRD §13).
+Status: **Implemented** (2026-09-22) — `feat/datatable-filter-row`. Three revisions: the filter row and the overlay portal (§§1–13), the built-in distinct-value panel with a nested override (§14), and comparison mode plus the styling round that came out of review (§15). 4 libraries build, 3328 + 768 specs pass, and every revision was verified in a running browser — which is where the missing `position: fixed`, the panel's missing border and the dead header click target each turned up, none of them visible to a green suite.
 
 | Milestone | State |
 |---|---|
@@ -285,6 +285,41 @@ M19: one batched sweep — `codegen-wc`, build + test `mintplayer-web-components
 
 🤖 Generated with [Claude Code](https://claude.com/claude-code)
 
+
+# Revision 3 — comparison mode, and who styles what
+
+PRD §15. Status: **Implemented** — 2026-09-22. Four review remarks after Revision 2 was verified in a browser: two defects in the demos, two asking for a capability the built-in panel did not have.
+
+| Milestone | State |
+|---|---|
+| M20 — WC: `filterMode` / `filterInputType` / `filterOperators`; comparison panel; `FilterChangeDetail` becomes a union on `mode` | ✅ |
+| M21 — WC: one shared rule for every panel field; number-input spinners stripped; the comparison row stretches | ✅ |
+| M22 — Wrappers: the three new column inputs on `*bsDatatableColumn`; new types exported from every barrel | ✅ |
+| M23 — Demos: comparison mode on the year/founded column; the override moves to a column that needs one, styled by the page in each framework's own way | ✅ |
+| M24 — Specs: nine comparison-mode cases; three style guards | ✅ |
+| M25 — Docs: PRD §15 (D31–D37), this block | ✅ |
+| M26 — Version bump + sweep + browser check | ✅ 3328 WC + 768 ng tests; 4 libs build; measured in Chromium |
+
+## What the review round cost, and why it was worth it
+
+Four remarks produced five defects, **none of which reading the code had found**:
+
+1. `filterSelection` dropped `operator` and `operand` when seeding — a restored comparison filter came back as an active-looking trigger over an empty panel. Caught by its own spec.
+2. The operand box clobbered partial input, because a `number` input reads back `''` for `-` or `1e`. Caught by a spec that was itself wrong first.
+3. The portalled panel inherited none of the component's custom properties, so it had no border at all. **Only a browser could see this** — three green suites could not.
+4. The sortable header's click target was its label, not its cell. Reported from the running demo.
+5. `≠` reached the React demo as the literal text `2260`, because it was written through a `perl` one-liner inside a double-quoted shell string.
+
+**Two process rules follow, and both generalise beyond this feature:**
+
+- **Rewriting source containing escapes through a shell one-liner is unsafe** — the same hazard as the repo's heredoc ban, and it broke exactly one of three otherwise identical files. Use the editing tools.
+- **Verifying logic in a scratch script does not verify the spec.** The style assertions were checked against the generated sheet by a standalone Node script, which defined its own copies of the helpers; the real spec then failed three cases with `ReferenceError` because those helpers lived in a different file.
+
+## Versioning
+
+Breaking — the sibling `[bsDatatableFilter]` directive is gone, `FilterRenderer` gained a parameter and may return `null`, and `FilterChangeDetail` is now a union — but the bump is **minor**, following commit `dbe4808b` (`feat!`, shadow → light DOM, `::part()` removed), which took a minor across all four packages.
+
+The majors are pinned to the framework each package wraps (`@angular/core ^22`, `react ^19`, `vue ^3.5`), so a major bump would falsely advertise Angular 23 / React 20 / Vue 4. Breaking changes therefore land in the minor, and the PR description carries the migration notes.
 ## Appendix — the pending MintPlayer.Spark doc change (M18)
 
 Not applied: a PreToolUse hook gates that repo from this session. It belongs in this unit of

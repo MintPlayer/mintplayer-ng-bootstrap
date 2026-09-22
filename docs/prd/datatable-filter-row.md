@@ -606,7 +606,74 @@ Workflow `wf_699b142e-239`, 2026-09-22: eight refuters (each told to refute; dis
 
 **Residual risks the verification left open** (carried into §14.7 and the plan): the lazy null-fallback (D20) is inferred from measured legs but not measured end-to-end — S8 pins it, and the measured fallback is `untracked(() => { view = vcr.createEmbeddedView(tpl); view.detectChanges(); })`, accepting sampled-once semantics; `aria-modal` without `inert` relies on modern AT; `filterValue`'s `Date` default uses the browser locale; all D17/D25 mechanism measurements were jsdom — a real-engine e2e of the default panel is M19; the datatable page has no no-JS e2e pin (unchanged from today).
 
-## 15. References
+## 15. Revision 3 — comparison mode, and who styles what
+
+Status: **Implemented 2026-09-22.** Four review remarks after Revision 2 was verified in a browser. Two were defects in the demos; two asked for a capability the built-in panel did not have. Everything in §§1–14 still stands.
+
+### 15.1 Two questions, not one
+
+Revision 2's built-in panel asks exactly one question: *which of these values?* That is the wrong question for a quantity — ticking forty individual years is not how anyone says "after 1990" — and the reviewer could not choose an operator at all.
+
+`DatatableColumnDef.filterMode` now selects between them:
+
+| mode | panel | for |
+|---|---|---|
+| `'values'` (default) | search, include/exclude, checkbox list, clear | a set: names, statuses, genres |
+| `'comparison'` | operator + one operand, clear | a quantity: numbers, dates |
+
+`filterInputType` (`'text' \| 'number' \| 'date'`) types the operand box and decides how the operand is parsed back out. `filterOperators` narrows the six defaults (`eq neq lt lte gt gte`) when only some make sense — equality alone for an id.
+
+**D31. The consumer picks the mode; the component never infers it.** Inference was considered and rejected: a numeric column is very often an enum (a year, in a five-row table) and a string column is very often ordinal, so a type-based guess is wrong about half the time — and wrong in a way the consumer cannot override without a second knob anyway.
+
+**D32. The end user picks the operator.** Within `'comparison'` the operator is a `<select>`, not a column setting. That was the literal gap in the report ("the user also can't choose between ><=").
+
+**D33. `FilterChangeDetail` is a discriminated union on `mode`.** One flat shape carrying `selected`, `inverse`, `operator` and `operand` — most of them unset most of the time — invites a consumer to read `selected` off a comparison event and get `undefined`. Switching on `mode` makes that a compile error. Clearing emits the shape of the column's *own* mode, so a consumer's `switch` cannot miss a clear.
+
+**D34. A comparison column never calls `distincts`.** Its panel displays no list, so the round trip's answer would never be read. A consumer's own renderer still gets one, because `filterMode` stays at its `'values'` default unless the consumer changes it.
+
+**D35. An empty or unparseable operand means no filter.** Not a comparison against `NaN`, which is false for every row and would silently empty the table on the keystroke that produced it.
+
+### 15.2 The operand box cannot echo its parsed value
+
+A `number` input's `value` is `''` for any content that is not a valid number — `-`, `1e` and `.` all read back empty, in every engine. So typing `-` over `1990` moves the component's state from `'1990'` to `''`; a plain lit binding sees a change and writes `value = ''`, **wiping the character the user just typed**.
+
+The panel therefore keeps the raw text separately from the parsed operand, and binds it through lit's `live()`, which compares against what the element currently holds rather than against the last committed binding — both `''`, so nothing is written.
+
+This is the same failure as the Revision 1 search-focus regression (§13), reached by a different route: *the component overwriting input the user is still in the middle of*. Any future field in this panel is subject to it.
+
+### 15.3 Who styles the panel
+
+Two reported defects, one root cause: **`.form-control` is not styled outside a `bs-*` component in this workspace**, and all three demos' override panels were using it.
+
+**D36. A consumer's override panel is the consumer's to style.** The component cannot help: the node is never stamped with its scope, and the panel renders in the document-root overlay. What each framework needs differs, and all three are now demonstrated:
+
+- **Angular** — ordinary component styles reach it. Emulated encapsulation is attribute-based and the nodes come from the component's own `<ng-template>`, so they carry its `_ngcontent` attribute wherever they end up in the document.
+- **React** — a page-level stylesheet; plain class names on imperatively built nodes.
+- **Vue** — a **non-scoped** `<style>` block. `scoped` stamps `data-v-*` onto nodes Vue renders from the template, and an imperatively built node never gets one, so a scoped rule matches nothing.
+
+**D37. Every field in the built-in panel shares one rule.** `.filter-search`, `.filter-operand` and `.filter-operator` had been three near-copies, and had already drifted: `font: inherit` was missing from the search box, so it rendered in the UA's system font while its neighbours used the page's. A form control inherits neither font nor line-height, and the `font` shorthand resets `line-height`, so both are set explicitly.
+
+A `type=number` operand additionally strips its spinner buttons (`appearance: textfield` plus zeroed `::-webkit-*-spin-button`), which otherwise make it a different size from a `type=text` one. Measured in Chromium: the same element as both types computes byte-for-byte identically.
+
+The operator `<select>` still sat 1px short of the input beside it whatever font and padding they shared, because Chromium's UA sheet forces `line-height: normal` on a select. `.filter-comparison` uses `align-items: stretch` so the row decides, rather than fighting the UA.
+
+### 15.4 Bugs this round surfaced
+
+Recorded because none was found by reading the code:
+
+- **`filterSelection` dropped `operator` and `operand` when seeding.** A restored comparison filter came back as an active-looking trigger over an empty panel. Found by the seeding spec.
+- **The portalled panel inherits none of the component's custom properties** (§13.1) — found in a browser, invisible to three green suites.
+- **The sortable header's click target was its label, not its cell** (§13.1) — reported from the running demo.
+- **`≠` reached the React demo as the literal text `2260`.** Written through a `perl` one-liner inside a double-quoted shell string; the backslash survived neither bash nor perl's replacement parser. The Angular and Vue copies, written with the editing tools, were correct — which is why only one of three broke. **Rewriting source that contains escapes through a shell one-liner is not safe**, the same hazard as the repo's heredoc ban.
+
+### 15.5 Guards added
+
+- `mp-datatable.filter-panel-styles.spec.ts` — no bare `var(--mp-datatable-*)` in any portalled rule; the fields share one rule (a fourth field must join it or fail); spinners stripped and scope-anchored; the comparison row stretches.
+- `mp-datatable.header-click-target.spec.ts` — the sort button fills its cell.
+- `mp-datatable.filter-default.spec.ts` — nine comparison-mode cases, including the raw-text echo, the empty/unparseable operand, and clearing in the column's own mode.
+
+Both style specs assert against the **generated** sheet by exact selector. jsdom has no layout, so this is the strongest available guard short of a browser — and a substring match on CSS text has already produced one false positive here (§13).
+## 16. References
 
 - Issue **#414**; driver [MintPlayer.Spark#431](https://github.com/MintPlayer/MintPlayer.Spark/issues/431)
 - [overlay-controller-positioning.md](./overlay-controller-positioning.md) — the positioning half
