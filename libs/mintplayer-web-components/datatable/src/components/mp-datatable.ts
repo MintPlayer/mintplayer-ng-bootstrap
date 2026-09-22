@@ -1,4 +1,5 @@
-import { LitElement, nothing, type TemplateResult } from 'lit';
+import { LitElement, nothing, render, type TemplateResult } from 'lit';
+import { OverlayController } from '@mintplayer/web-components/overlay';
 import { installLightStyles, scopedHtml } from '@mintplayer/web-components/light-dom';
 import { FocusRestore, FocusRestoreController, HostAriaController, LiveAnnouncerController } from '@mintplayer/web-components/a11y';
 import { DEFAULT_DATATABLE_LABELS, type DatatableLabels } from '../types/labels';
@@ -239,6 +240,12 @@ export class MpDatatable extends LitElement {
   private _resizeObserver: ResizeObserver | null = null;
   private _scrollListener: (() => void) | null = null;
   private _viewportHeight = 0;
+
+  // ─── Filter row state ────────────────────────────────────────────────────
+  /** Name of the column whose filter panel is open, or null. Only ever one. */
+  private _openFilterColumn: string | null = null;
+  /** Unique per instance so several datatables on a page cannot collide on IDREFs. */
+  private readonly _filterUid = `mp-dt-${Math.random().toString(36).slice(2, 9)}`;
 
   // ─── Tree-mode state ─────────────────────────────────────────────────────
   private _tree = false;
@@ -697,6 +704,31 @@ export class MpDatatable extends LitElement {
       const th = handle.closest('th');
       if (th) handle.setAttribute('aria-valuenow', String(Math.round(th.getBoundingClientRect().width)));
     }
+    // The filter panel lives in an overlay pane, not in this element's
+    // template, so it is rendered here — during the same update the controller
+    // awaits, which is why it is laid out by the time position() runs.
+    if (this._openFilterColumn) this.renderFilterPanel();
+    // The filter row is sticky below the header in virtual mode, and `top`
+    // cannot reference a sibling's height, so publish it. Measured per engine:
+    // 36px in Chromium/Firefox, 33px in WebKit — a hard-coded value would be
+    // wrong somewhere.
+    this.publishHeaderHeight();
+  }
+
+  /**
+   * Publish header row 1's height as `--mp-datatable-header-height` for the
+   * filter row's sticky offset. Cheap and idempotent: it writes only on change,
+   * so it cannot feed back into the render loop.
+   */
+  private publishHeaderHeight(): void {
+    if (!this.hasFilterRow) return;
+    const headerCell = this.renderRoot?.querySelector<HTMLElement>('thead tr:first-child th');
+    const shell = this.renderRoot?.querySelector<HTMLElement>('.datatable-shell');
+    if (!headerCell || !shell) return;
+    const height = Math.round(headerCell.getBoundingClientRect().height);
+    if (height <= 0) return;
+    if (shell.style.getPropertyValue('--mp-datatable-header-height') === `${height}px`) return;
+    shell.style.setProperty('--mp-datatable-header-height', `${height}px`);
   }
 
   /**
@@ -740,7 +772,13 @@ export class MpDatatable extends LitElement {
 
   private measureColumnWidth(name: string): number | null {
     if (!this.renderRoot) return null;
-    const th = this.renderRoot.querySelector(`th[data-column="${name}"]`) as HTMLElement | null;
+    // Qualified to the FIRST header row. The filter row carries `data-column`
+    // too, so an unqualified selector would be relying on document order to
+    // pick the right cell — measured true today, but an accident, not a
+    // contract, and silently wrong the day the rows are reordered.
+    const th = this.renderRoot.querySelector(
+      `thead tr:first-child th[data-column="${name}"]`,
+    ) as HTMLElement | null;
     if (!th) return null;
     const w = Math.ceil(th.getBoundingClientRect().width);
     return w > 0 ? w : null;
@@ -832,7 +870,13 @@ export class MpDatatable extends LitElement {
 
     // Virtual scroll: spacer rows at top and bottom.
     const virtualMeta = this.getVirtualSpacerHeights();
-    const ariaRowcount = (this._tree || this.isRootWindowed() ? this.getFlatList().length : this._data.length) + 1;
+    // `<thead>` is no longer guaranteed to hold exactly one row. Every
+    // aria-rowindex/-rowcount below is derived from this count rather than the
+    // literal 1 it used to assume; getting that wrong shifts every row's
+    // announced position by one, silently, for the whole grid.
+    const headerRowCount = this.hasFilterRow ? 2 : 1;
+    const ariaRowcount =
+      (this._tree || this.isRootWindowed() ? this.getFlatList().length : this._data.length) + headerRowCount;
 
     return html`
       ${this.liveAnnouncer.template()}
@@ -866,6 +910,7 @@ export class MpDatatable extends LitElement {
                   : nothing}
                 ${this._columns.map((col, idx) => this.renderHeader(col, idx))}
               </tr>
+              ${this.hasFilterRow ? this.renderFilterRow(showCheckboxes) : nothing}
             </thead>
             <tbody>
               ${this._loading
@@ -901,6 +946,181 @@ export class MpDatatable extends LitElement {
       top: startIndex * this._itemSize,
       bottom: Math.max(0, (total - endIndex) * this._itemSize),
     };
+  }
+
+  /** True when any column opted in. No column opts in, no second row, no cost. */
+  private get hasFilterRow(): boolean {
+    return this._columns.some((c) => c.filterable);
+  }
+
+  private get filterPanelId(): string {
+    return `${this._filterUid}-filter-panel`;
+  }
+
+  private filterTriggerId(column: string): string {
+    return `${this._filterUid}-filter-trigger-${column}`;
+  }
+
+  /**
+   * The filter panel is portalled to the document root, because an in-flow
+   * panel opened from a header cell is clipped by `.datatable-scroll` — on the
+   * right in paged mode, and on both axes in virtual mode, measured in three
+   * engines. Positioning stays the controller's job; only DOM ownership moves.
+   *
+   * No local scroll listener is needed. `scroll` does not compose, so a
+   * component whose scroller lives in a shadow root must re-dispatch it (see
+   * `mp-scheduler`) — but `.datatable-scroll` is in the LIGHT DOM, so the
+   * controller's document-level capture listener already sees it and
+   * `scrollStrategy: 'reposition'` works as-is. Do not copy the scheduler's
+   * workaround here; it would be redundant.
+   */
+  // Explicitly annotated: `panel()` reads back `this.filterOverlay`, and
+  // without the annotation that self-reference makes the whole field `any`.
+  private readonly filterOverlay: OverlayController = new OverlayController(this, {
+    portal: true,
+    modal: true,
+    scrollStrategy: 'reposition',
+    // Resolved lazily by column name on every call: each render rebuilds the
+    // header, so a captured element would detach under the open panel.
+    anchor: () =>
+      this._openFilterColumn
+        ? this.renderRoot?.querySelector<HTMLElement>(
+            `tr.filter-row th[data-column="${this._openFilterColumn}"] .filter-trigger`,
+          ) ?? null
+        : null,
+    trigger: () =>
+      this._openFilterColumn
+        ? this.renderRoot?.querySelector<HTMLElement>(
+            `#${CSS.escape(this.filterTriggerId(this._openFilterColumn))}`,
+          ) ?? null
+        : null,
+    panel: () => this.filterOverlay.portalContainer?.querySelector<HTMLElement>('.filter-panel') ?? null,
+    initialFocus: 'first',
+    onClose: () => {
+      const column = this._openFilterColumn;
+      if (column == null) return;
+      this._openFilterColumn = null;
+      this.requestUpdate();
+      this.dispatchEvent(
+        new CustomEvent('mp-datatable-filter-close', {
+          detail: { column },
+          bubbles: true,
+          composed: true,
+        }),
+      );
+    },
+  });
+
+  private onFilterTriggerClick(col: DatatableColumnDef, ev: MouseEvent): void {
+    ev.preventDefault();
+    ev.stopPropagation();
+    if (this._openFilterColumn === col.name) {
+      this.filterOverlay.close();
+      return;
+    }
+    // Switching columns closes the previous panel first, so `onClose` still
+    // fires for it and only one panel is ever open.
+    if (this.filterOverlay.isOpen) this.filterOverlay.close(false);
+    this._openFilterColumn = col.name;
+    this.requestUpdate();
+    void this.filterOverlay.open();
+    this.dispatchEvent(
+      new CustomEvent('mp-datatable-filter-open', {
+        detail: { column: col.name },
+        bubbles: true,
+        composed: true,
+      }),
+    );
+  }
+
+  /**
+   * Renders the open panel into the overlay pane, with a render root of its
+   * own. The panel is NOT part of this element's template: relocating a node
+   * lit rendered is unsupported, so the pane gets its own `render()` call
+   * whose container happens to live in `document.body`.
+   *
+   * The consumer's node is appended AFTER the template has been stamped —
+   * `stampScope` recurses, so stamping a subtree that already holds consumer
+   * DOM would brand it with our scope and let our rules match their content.
+   */
+  private renderFilterPanel(): void {
+    const container = this.filterOverlay.portalContainer;
+    if (!container) return;
+
+    const column = this._columns.find((c) => c.name === this._openFilterColumn);
+    if (!column) return;
+
+    render(
+      html`
+        <div
+          class="filter-panel"
+          id=${this.filterPanelId}
+          role="dialog"
+          aria-label=${this.mergedLabels.filterColumn(column.label ?? column.name)}
+        >
+          <div class="filter-panel-body"></div>
+        </div>
+      `,
+      container,
+    );
+
+    const body = container.querySelector<HTMLElement>('.filter-panel-body');
+    if (!body) return;
+    const content = column.filterRenderer?.(column);
+    if (content && body.firstChild !== content) {
+      body.replaceChildren(content);
+    }
+  }
+
+  /**
+   * The second `<thead>` row. One cell per column in the SAME order as row 1,
+   * gutters included — alignment is structural, not a CSS problem, and the
+   * empty cells for non-filterable columns are what keeps it that way.
+   *
+   * The cells deliberately carry no width. Widths live on row 1's `<th>`, and
+   * `table-layout: fixed` resolves columns from the first row only, so this row
+   * cannot perturb geometry once the measure pass has run. Before it runs the
+   * table is `auto`, where the row is only harmless because `.filter-trigger`
+   * is width-neutral — see the note on that rule in `datatable.light.scss`.
+   */
+  private renderFilterRow(showCheckboxes: boolean): TemplateResult {
+    return html`
+      <tr role="row" aria-rowindex="2" class="filter-row">
+        ${this._tree ? html`<th class="filter-cell tree-chevron-cell"></th>` : nothing}
+        ${showCheckboxes ? html`<th class="filter-cell checkbox-cell"></th>` : nothing}
+        ${this._columns.map((col) => this.renderFilterCell(col))}
+      </tr>
+    `;
+  }
+
+  private renderFilterCell(col: DatatableColumnDef): TemplateResult {
+    // A column with no filter still gets its cell. It is empty, and it is NOT
+    // aria-hidden: it belongs to the table's structural grid, and hiding it
+    // would desynchronise the column count from the other two rows.
+    if (!col.filterable) {
+      return html`<th class="filter-cell" data-column=${col.name} scope="col"></th>`;
+    }
+
+    const open = this._openFilterColumn === col.name;
+    const label = this.mergedLabels.filterColumn(col.label ?? col.name);
+
+    return html`
+      <th class="filter-cell" data-column=${col.name} scope="col">
+        <button
+          type="button"
+          class=${classMap({ 'filter-trigger': true, active: !!col.filterActive, open })}
+          id=${this.filterTriggerId(col.name)}
+          aria-expanded=${open ? 'true' : 'false'}
+          aria-controls=${open ? this.filterPanelId : nothing}
+          aria-label=${label}
+          @click=${(ev: MouseEvent) => this.onFilterTriggerClick(col, ev)}
+        >
+          <svg class="filter-icon" viewBox="0 0 16 16" aria-hidden="true" focusable="false">
+            <path d="M2 3h12l-4.5 5.25V13L6.5 11.5V8.25L2 3z" />
+          </svg>
+        </button>
+      </th>
+    `;
   }
 
   private renderHeader(col: DatatableColumnDef, _index: number): TemplateResult {
@@ -971,7 +1191,7 @@ export class MpDatatable extends LitElement {
     return html`
       <tr
         role="row"
-        aria-rowindex=${rowIndex + 2}
+        aria-rowindex=${rowIndex + 1 + (this.hasFilterRow ? 2 : 1)}
         aria-level=${this._tree ? depth + 1 : nothing}
         aria-expanded=${this._tree && childCount > 0 ? (isExpanded ? 'true' : 'false') : nothing}
         aria-busy=${isPlaceholder ? 'true' : nothing}

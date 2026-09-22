@@ -40,6 +40,17 @@ export type RowRenderer<T = unknown> = (
   context?: RowRenderContext,
 ) => ReadonlyArray<Node> | Node | undefined;
 
+/**
+ * Contents of a column's filter panel. Like every other renderer here, it is a
+ * plain function returning a DOM `Node` — the component appends it and never
+ * asks where it came from, so React/Vue pass one directly and the Angular
+ * wrapper bridges an `ng-template` through an `EmbeddedViewRef`.
+ *
+ * The returned node is the CONSUMER's DOM: it is never stamped with this
+ * component's style scope, and none of its rules reach inside.
+ */
+export type FilterRenderer<T = unknown> = (column: DatatableColumnDef<T>) => Node;
+
 export interface DatatableColumnDef<T = unknown> {
   /** Data property name + sort key. */
   name: string;
@@ -55,4 +66,18 @@ export interface DatatableColumnDef<T = unknown> {
   headerRenderer?: HeaderRenderer<T>;
   /** Forwarded to the cell as `class` attribute. */
   cellClass?: string;
+  /**
+   * Opt this column into the filter row. Default `false` — deliberately the
+   * opposite of `sortable`, because adding the row is a visible change to the
+   * table. The row itself is emitted only when at least one column sets this.
+   */
+  filterable?: boolean;
+  /** Contents of this column's filter panel. Ignored unless `filterable`. */
+  filterRenderer?: FilterRenderer<T>;
+  /**
+   * Purely visual: marks the trigger as "this column has an active filter".
+   * The component attaches no meaning to it — what counts as active, and when,
+   * belongs to the consumer.
+   */
+  filterActive?: boolean;
 }
