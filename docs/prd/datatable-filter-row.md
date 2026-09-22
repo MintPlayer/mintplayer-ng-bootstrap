@@ -464,6 +464,12 @@ Implemented on the same branch, M11–M19. What the implementation changed relat
 
 **The Angular demo moved from `[fetch]` to `[data]`.** Under `[fetch]` the element holds one page and therefore declines to compute a value list at all — correct behaviour, and a poor demonstration of the list. The section now loads one large page into an unfiltered master copy and binds the filtered view.
 
+**The portalled panel does not inherit the component's custom properties, and the browser is the only place that showed it.** `--mp-datatable-*` are declared on the element; the panel lives in `<mp-overlay-container>` at `document.body`, and custom properties inherit down the DOM tree. So `border: 1px solid var(--mp-datatable-border-color)` on the panel was invalid at computed-value time, which drops `border-style` to `none` — the panel shipped with **no border at all**, while its background looked right because that uses a `--bs-*` property declared on `:root`. Nothing throws and nothing warns. Every `--mp-datatable-*` reference in a portalled rule now carries the same fallback chain the `:host` declaration uses, and `mp-datatable.filter-panel-styles.spec.ts` fails the build on a bare one.
+
+This generalises §5.4's trade: the portal buys freedom from clipping and costs inheritance. The light-tier **stylesheet** reaches the pane (it is document-level and anchors on `[data-mps=datatable]`, measured in S2) — but anything travelling through the *inherited* channel does not. Any future overlay content must be written against that.
+
+**The sortable header's click target was the label, not the cell** — reported from the running demo, and pre-existing rather than introduced here. `button.header-sort` had `padding: 0` and inherited `display: inline-flex` from `.header-cell`, so it shrink-wrapped its text while the `<th>` held the padding *and* set `cursor: pointer` plus a hover background. The whole cell advertised itself as clickable and only the label was. The padding moved onto the button, which is now `display: flex; width: 100%; box-sizing: border-box` — total cell width unchanged, so the `auto`-phase measure pass is unaffected, and the resize handle's `z-index: 2` still wins over it. Verified in a browser: `elementFromPoint` 30px past the label returns the button, and a click at the cell's centre sorts.
+
 **Not done, deliberately:** no Spark code (D30). `query_column_filter_PRD.md` §5.8 is amended to consume this, and nothing in `MintPlayer.Spark` is touched.
 ## 14. Revision 2 — a default panel, a nested override, and datatable-supplied values
 
