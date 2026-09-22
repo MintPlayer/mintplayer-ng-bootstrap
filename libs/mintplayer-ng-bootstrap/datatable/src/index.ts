@@ -2,7 +2,7 @@ export * from './datatable/datatable.component';
 export * from './datatable-settings';
 export * from './datatable-fetch';
 export * from './datatable-column/datatable-column.directive';
-export * from './datatable-filter/datatable-filter.directive';
+export * from './datatable-filter-panel/datatable-filter-panel.directive';
 export * from './row-template/row-template.directive';
 export type {
   DatatableColumnDef,
@@ -10,6 +10,14 @@ export type {
   CellRenderer,
   HeaderRenderer,
   FilterRenderer,
+  FilterContext,
+  FilterSelection,
+  FilterChangeDetail,
+  DistinctValue,
+  DistinctValues,
+  DistinctsRequest,
+  DatatableDistincts,
+  DatatableLabels,
   RowKey,
   RowRenderer,
   RowRenderContext,
