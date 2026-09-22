@@ -547,17 +547,31 @@ describe('mp-datatable built-in filter panel', () => {
      * against what the element currently holds — also `''` — and writes nothing.
      */
     it('echoes the raw text back rather than the parsed value', async () => {
-      const el = await mount(
-        [COMPARISON[0], { ...COMPARISON[1], filterInputType: 'text' }],
-        ROWS,
-      );
+      const el = await mount(COMPARISON, ROWS);
       await open(el, 'founded');
 
       await type(el, '19');
       expect(operandInput().value).toBe('19');
-      // Not a number, so nothing is emitted for it — but it stays in the box.
-      await type(el, '19xy');
-      expect(operandInput().value).toBe('19xy');
+      await type(el, '1990');
+      expect(operandInput().value).toBe('1990');
+    });
+
+    it('keeps a date operand as its ISO string', async () => {
+      const el = await mount(
+        [COMPARISON[0], { ...COMPARISON[1], name: 'when', filterInputType: 'date' }],
+        [{ when: '1985-03-01' }],
+      );
+      const seen: FilterChangeDetail[] = [];
+      el.addEventListener('mp-datatable-filter-change', (e) =>
+        seen.push((e as CustomEvent<FilterChangeDetail>).detail),
+      );
+      await open(el, 'when');
+
+      await type(el, '1990-06-15');
+      // NOT parsed to a Date: that would pick the runtime's timezone, and a
+      // filter that shifts by a day depending on where it runs is worse than a
+      // string.
+      expect(seen.at(-1)).toMatchObject({ operand: '1990-06-15' });
     });
 
     it('clears in its own shape, not the values shape', async () => {

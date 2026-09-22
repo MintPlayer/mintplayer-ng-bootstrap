@@ -106,8 +106,16 @@ The house answer to clipping so far is `position: fixed` + a hand-picked `z-inde
 
 ## 3. Non-goals
 
-1. **Any filter semantics.** No predicate model, no operator vocabulary, no filter state, no `filter-change` event carrying a query. The panel's contents are the consumer's template. If a shared vocabulary is ever wanted it comes from `bs-query-builder`'s existing `Expression` / operator / per-type editor registry.
-2. Server- or client-side filtering of `data` / `fetch`.
+1. ~~**Any filter semantics.** No predicate model, no operator vocabulary, no filter state, no `filter-change` event carrying a query. The panel's contents are the consumer's template.~~ **REVERSED in Revisions 2 and 3 — deliberately, and this is a permanent commitment.** The component now owns filter *UI* semantics: a distinct-value list, an operator vocabulary (`eq neq lt lte gt gte`), a per-column selection it holds across opens, and a `filter-change` event carrying that selection.
+
+   The trade was made with open eyes and is worth restating, because the original non-goal was not silly: **React and Vue get the entire feature with no wrapper code**, which an Angular-template-only design could not deliver (§14.1). What the component still does **not** own is the *predicate* — it never filters `data`, never derives `filterActive` or `filterSummary`, and attaches no meaning to a selection. That line is the one this PR does not cross, and §3.2 below still holds.
+
+   If a shared *expression* vocabulary is ever wanted it comes from `bs-query-builder`'s existing `Expression` / operator / per-type editor registry — this operator enum is panel UI, not a query language, and should not grow into one.
+2. Server- or client-side filtering of `data` / `fetch`. **Still a non-goal, and the one that matters** — see 1 above.
+
+   **3.1 A free-text filter.** `filterInputType` is `'number' | 'date'` and there is no `contains` operator. Comparing strings is either exact match — which the value list already does better, with a list — or a lexicographic `>`, which is almost never what anyone means by "filter this column". A substring filter is a **nest-your-own** case, driven from the same `FilterContext`.
+
+   **3.2 Styling a consumer's nested panel.** A nested panel is the consumer's DOM: never stamped with this component's scope, and rendered into the document-root overlay rather than inside the table. **Every consumer who nests hits this**, so it is stated here rather than only in a demo comment. What works differs per framework and all three are demonstrated: Angular's component styles reach it (emulated encapsulation is attribute-based, and the nodes come from the component's own `<ng-template>`); React needs page-level CSS; **Vue needs a non-scoped `<style>` block**, because `scoped` stamps `data-v-*` onto template-rendered nodes and an imperatively built node never gets one. Bootstrap's `.form-control` helps in none of them — it is only styled inside `bs-*` components in this workspace.
 3. **Column hiding, reordering, or any `<colgroup>` adoption** (§5.2).
 4. Converting any other component to the portal in this PR.
 5. A no-JS tier for the filter row. A script-positioned dropdown has no meaningful inert rendering; `mp-datatable` ships no `ssr/` directory today.
@@ -396,8 +404,10 @@ Two by-products are kept: **D7** (qualify the measure selector — `s6c2` confir
 
 ## 10. Testing
 
-- `mp-datatable.aria.spec.ts` — no second row when nothing is filterable; row present when something is; `aria-rowindex`/`aria-rowcount` **with and without** the filter row (the D5 regression); trigger role/name/`aria-expanded` in both states; `aria-controls` resolves.
-- `mp-datatable.keyboard.spec.ts` — trigger tab-reachable; Enter/Space open; Escape closes and restores focus; Tab trapped; a click in the filter row never sorts.
+> **As built, this section was only half right — corrected after review.** The two existing spec files named below were *not* modified; the filter cases went into new sibling files instead (`mp-datatable.filter-aria.spec.ts`, `mp-datatable.filter-row.spec.ts`, `mp-datatable.filter-default.spec.ts`), which is the better layout and is what shipped. More importantly, two claims here were **never pinned in jsdom at all** and had to become an e2e spec: the keyboard trap and focus-return came from `OverlayController`'s `modal: true` and were covered only generically, never *through* `mp-datatable`; and "a click in the filter row never sorts" was asserted structurally (no `button.header-sort` inside the row) rather than by firing a click. Both are now in `apps/ng-bootstrap-demo-e2e/e2e/datatable-filter.spec.ts` — see §10.1.
+
+- ~~`mp-datatable.aria.spec.ts`~~ → `mp-datatable.filter-aria.spec.ts` — no second row when nothing is filterable; row present when something is; `aria-rowindex`/`aria-rowcount` **with and without** the filter row (the D5 regression); trigger role/name/`aria-expanded` in both states; `aria-controls` resolves; the three accessible-name forms.
+- ~~`mp-datatable.keyboard.spec.ts`~~ → **e2e**, §10.1. Tab-trapping and focus restoration are real-browser properties; jsdom can assert the wiring exists but not that it works.
 - New `mp-datatable.filter-row.spec.ts` — cell count equals `totalColumnCount` across all four tree×checkbox permutations; empty cells for non-filterable columns; `filterRenderer` invoked once per open, not per render; the measure selector resolves to row 1's `<th>` and not the filter cell (D7).
 - New `overlay-portal.spec.ts` — acquire/release refcount; host removed with the last pane; computed style asserts no containing-block-forming property (§5.4).
 - `overlay-controller.spec.ts` — `portal: true` open/close; **outside-click: a click inside a portalled panel must not close it** (§7).
@@ -406,6 +416,21 @@ Two by-products are kept: **D7** (qualify the measure selector — `s6c2` confir
 - Angular `datatable.component.spec.ts` — the directive bridges; views destroyed; the accumulation fix holds across a column-set change. **Drive inputs from a `signal()`**, never a mutable field.
 - Vue `_conformance/behaviour/BsDatatable.spec.ts` — `columns` carrying a `filterRenderer` round-trips.
 - e2e: one Playwright test per demo app, open → keyboard → close, in virtual mode.
+
+### 10.1 What only a browser can check
+
+`apps/ng-bootstrap-demo-e2e/e2e/datatable-filter.spec.ts`. Every other test for this feature runs under jsdom, which has **no layout** — and that blind spot shipped two bugs already: the panel rendered at the viewport's top-left because `position: fixed` was missing (§13), and later rendered with no border because a portalled element inherits none of the component's custom properties (§13.1). Both passed a green unit suite; both were caught by a human looking at the page.
+
+The spec asserts only what jsdom cannot, so it does not duplicate the unit suite:
+
+1. **Anchored, not at the pane origin** — and direction-agnostically. The overlay legitimately flips *above* the trigger when the list is tall enough that opening downward would leave the viewport, which is what the demo does with 40 rows. An assertion of "below the trigger" fails against correct behaviour; the real property is adjacency on whichever side had room.
+2. **Escapes the scroll container** on some edge while staying inside the viewport. This is the property the three-engine spike measured and then deleted its harnesses for (§9.3) — it is now under continuous test instead of being a claim in a document.
+3. **Border resolvable across the portal** — the custom-property regression.
+4. **Tab trapped and Escape returns focus to the trigger**, exercised *through* `mp-datatable` rather than through `OverlayController` alone.
+5. **A filter-row click fires without sorting** — a real click, asserting `aria-sort` did not move.
+6. **A partial `-` survives in the number operand** — only a browser keeps the text visible, since `input.value` reports `''` either way.
+
+**Both e2e specs select their table by a named class** (`.filter-table`, `.tree-table`) rather than by position. `datatable-tree.spec.ts` previously took "the last `mp-datatable` on the page" and silently began reading the filter table when that section was added below it — every tree assertion passed against the wrong element until CI ran e2e for the first time.
 
 All of it runs in **one sweep at the end**, not per milestone.
 

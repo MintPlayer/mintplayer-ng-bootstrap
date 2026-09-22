@@ -443,11 +443,17 @@ const TREE_SOURCE = `<!-- The same callback, branching on req.parentId for roots
         A checkbox list is the wrong question for a quantity, so a column can ask
         a different one: <code>filterMode: 'comparison'</code> renders an
         operator (=, &ne;, &lt;, &le;, &gt;, &ge;) and a single input, with
-        <code>filterInputType</code> choosing <code>text</code>,
-        <code>number</code> or <code>date</code> &mdash; the <em>Founded</em>
-        column below. Still the built-in panel: no renderer, no styling of your
-        own. Narrow the list with <code>filterOperators</code> when only some
-        operators make sense.
+        <code>filterInputType</code> choosing <code>number</code> (the default)
+        or <code>date</code> &mdash; the <em>Founded</em> column below. Still the
+        built-in panel: no renderer, no styling of your own. Narrow the list with
+        <code>filterOperators</code> when only some operators make sense.
+      </p>
+      <p>
+        Quantities only &mdash; there is no <code>text</code> input type and no
+        <code>contains</code> operator. Comparing strings is either exact match,
+        which the value list already does better, or a lexicographic
+        <code>&gt;</code>, which is almost never what anyone means.
+        <strong>A free-text filter is a nest-your-own case</strong>, below.
       </p>
       <p>
         You pick the mode per column and the component never infers it: a numeric

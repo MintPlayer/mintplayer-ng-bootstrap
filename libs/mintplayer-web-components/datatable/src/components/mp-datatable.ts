@@ -1314,7 +1314,10 @@ export class MpDatatable extends LitElement {
    */
   private parseOperand(raw: string, type: FilterInputType | undefined): string | number | null {
     if (raw.trim() === '') return null;
-    if (type !== 'number') return raw;
+    // `'date'` stays the ISO `yyyy-mm-dd` string the input reports: parsing it
+    // to a Date here would pick the runtime's timezone, and a filter that
+    // shifts by a day depending on where it runs is worse than a string.
+    if ((type ?? 'number') === 'date') return raw;
     const parsed = Number(raw);
     return Number.isNaN(parsed) ? null : parsed;
   }
@@ -1750,7 +1753,7 @@ export class MpDatatable extends LitElement {
       : DEFAULT_FILTER_OPERATORS;
     const operator = state.selection.operator ?? operators[0];
     const operand = state.selection.operand;
-    const inputType = column.filterInputType ?? 'text';
+    const inputType = column.filterInputType ?? 'number';
 
     const currentOperand = () =>
       body.querySelector<HTMLInputElement>('.filter-operand')?.value ?? '';

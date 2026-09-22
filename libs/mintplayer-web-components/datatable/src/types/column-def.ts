@@ -116,8 +116,9 @@ export interface DatatableColumnDef<T = unknown> {
    */
   filterMode?: FilterMode;
   /**
-   * `type` of the operand input in `'comparison'` mode. Default `'text'`.
-   * `'number'` and `'date'` also decide how the operand is parsed back out.
+   * `type` of the operand input in `'comparison'` mode. Default `'number'`,
+   * and it also decides how the operand is parsed back out. There is no text
+   * option -- a free-text filter is a nest-your-own case, see FilterInputType.
    */
   filterInputType?: FilterInputType;
   /**

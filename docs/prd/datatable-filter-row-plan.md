@@ -374,22 +374,43 @@ This maps onto §5.1's `canListDistincts` endpoint directly. Three things to hon
   the loaded list client-side and only goes back to the source when `hasMore` is set or the term is
   *widened* (not a refinement of the loaded one), debounced 250 ms — the same behaviour as Vidyano,
   which filters in memory and re-queries only when the list was truncated.
-- **Resolve `null` for a column you cannot answer for**, and that one column falls back to the
-  component's local pass. That is how a grid mixes server-backed columns with columns whose values
-  the client already holds — a column whose `canListDistincts` flag is false resolves `null`.
+- **Resolve `null` only for a column the LOCAL pass can answer.** `null` means "fall back to the
+  component's own pass over the rows it holds" — and `localDistincts()` returns `null` immediately
+  when `_fetch != null` (`mp-datatable.ts:1429`). `spark-query-grid` is server-paged, so for it the
+  local pass can never answer: a column resolved `null` there renders the built-in panel showing
+  `filterNoValues` — **a dead panel, not a text box**. Do not use `null` to express "this column is
+  not filterable"; leave `filterable` off, or nest a panel that asks a question the source can
+  answer. `null` is for a grid that mixes a server source with columns whose values the client
+  already holds, which `spark-query-grid` is not.
 - **`remaining`** holds values that were present when the filter was applied but are not any more.
   They stay listed (dimmed) so a selection can be widened without clearing it first. A server-backed
   source should return them; the component snapshots locally when it can.
 
-Selections arrive as one event, `(filterChange)` → `{ column, selected: DistinctValue[], inverse }`,
-emitted on every toggle **and on clear** (`selected: []`). Spark maps it to the query filter:
+Selections arrive as one event, `(filterChange)`, emitted on every toggle **and on clear**.
+`FilterChangeDetail` is a **discriminated union on `mode`**, so it must be switched on before any
+payload field is read — destructuring `{ column, selected, inverse }` does not type-check, because
+`selected` and `inverse` are not on the `'comparison'` arm:
 
 ```ts
-onFilterChange({ column, selected, inverse }: FilterChangeDetail) {
-  const values = selected.map((v) => v.value);
-  this.setColumnFilter(column, inverse ? { excludes: values } : { includes: values });
+onFilterChange(detail: FilterChangeDetail) {
+  switch (detail.mode) {
+    case 'values': {
+      const values = detail.selected.map((v) => v.value);   // [] when cleared
+      this.setColumnFilter(detail.column, detail.inverse ? { excludes: values } : { includes: values });
+      break;
+    }
+    case 'comparison': {
+      // operand is null when cleared or the box is empty.
+      this.setColumnFilter(detail.column, { operator: detail.operator, operand: detail.operand });
+      break;
+    }
+  }
 }
 ```
+
+Spark nests a panel on every filterable column, so in practice it will only ever see the `'values'`
+arm — but the `switch` is what makes that a checked fact rather than an assumption, and it is what
+the compiler requires.
 
 **The component holds no filter state and applies no predicate.** It does not filter `[data]`, and it
 never derives `filterActive` or `filterSummary` — Spark sets both back on the column from its own

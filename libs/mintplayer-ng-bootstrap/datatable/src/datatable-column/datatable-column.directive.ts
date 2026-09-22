@@ -75,7 +75,7 @@ export class BsDatatableColumnDirective {
    */
   readonly filterMode = input<FilterMode>('values', { alias: 'bsDatatableColumnFilterMode' });
 
-  /** `type` of the operand input in comparison mode. Default `'text'`. */
+  /** `type` of the operand input in comparison mode. Default `'number'`. */
   readonly filterInputType = input<FilterInputType | undefined>(undefined, {
     alias: 'bsDatatableColumnFilterInputType',
   });

@@ -71,8 +71,18 @@ export type FilterMode = 'values' | 'comparison';
 /** The comparison a `'comparison'` panel applies. */
 export type FilterOperator = 'eq' | 'neq' | 'lt' | 'lte' | 'gt' | 'gte';
 
-/** The `type` of the operand input in a `'comparison'` panel. */
-export type FilterInputType = 'text' | 'number' | 'date';
+/**
+ * The `type` of the operand input in a `'comparison'` panel.
+ *
+ * Quantities only, and deliberately no `'text'`. A comparison against a string
+ * is either exact-match — which `'values'` already does better, with a list —
+ * or a lexicographic `>`, which is almost never what someone means by
+ * "filter this column". **A free-text filter is a nest-your-own case**: supply a
+ * `filterRenderer` (Angular: `*bsDatatableFilterPanel`) and drive it from the
+ * same `FilterContext` the built-in panels use. There is no `contains` operator
+ * for the same reason.
+ */
+export type FilterInputType = 'number' | 'date';
 
 /** A column's current filter selection. */
 export interface FilterSelection {

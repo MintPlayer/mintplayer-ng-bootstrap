@@ -193,10 +193,17 @@
   different one: <code>filterMode: 'comparison'</code> renders an operator
   (<code>=</code>, <code>&ne;</code>, <code>&lt;</code>, <code>&le;</code>,
   <code>&gt;</code>, <code>&ge;</code>) and a single input, with
-  <code>filterInputType</code> choosing <code>text</code>, <code>number</code> or
+  <code>filterInputType</code> choosing <code>number</code> (the default) or
   <code>date</code> &mdash; the <em>Year started</em> column below. Still the
   built-in panel: no template and no styling of your own. Narrow the operator
   list with <code>filterOperators</code> when only some make sense.
+</p>
+<p>
+  Quantities only &mdash; there is no <code>text</code> input type and no
+  <code>contains</code> operator. Comparing strings is either exact match, which
+  the value list already does better, or a lexicographic <code>&gt;</code>, which
+  is almost never what anyone means. <strong>A free-text filter is a
+  nest-your-own case</strong>, below.
 </p>
 <p>
   The consumer picks the mode per column and the component never infers it: a
@@ -238,7 +245,7 @@
   Show the filter row
 </bs-checkbox>
 
-<bs-datatable class="flex-grow-1"
+<bs-datatable class="flex-grow-1 filter-table"
   [virtualScroll]="true"
   [itemSize]="40"
   [isResponsive]="true"
