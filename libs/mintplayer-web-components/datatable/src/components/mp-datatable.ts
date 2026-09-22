@@ -120,6 +120,11 @@ interface ColumnFilterState {
   view: DistinctValues | null;
   /** The search term `loaded` was produced for; `null` when never loaded. */
   loadedTerm: string | null;
+  /**
+   * Whether `loaded` came from the local pass rather than a consumer source.
+   * Only a locally derived list is recomputed when `data` changes underneath it.
+   */
+  fromLocal: boolean;
   /** The term currently in the search box (may be ahead of `loadedTerm`). */
   term: string;
   loading: boolean;
@@ -480,6 +485,7 @@ export class MpDatatable extends LitElement {
   }
   set data(value: unknown[]) {
     this._data = Array.isArray(value) ? value : [];
+    this.refreshLocalDistincts();
     this.requestUpdate();
   }
 
@@ -1131,6 +1137,7 @@ export class MpDatatable extends LitElement {
       loaded: null,
       view: null,
       loadedTerm: null,
+      fromLocal: false,
       term: '',
       loading: false,
       generation: 0,
@@ -1283,6 +1290,31 @@ export class MpDatatable extends LitElement {
 
     state.loaded = this.localDistincts(name);
     state.loadedTerm = '';
+    state.fromLocal = true;
+    this.rebucket(state);
+    this.notifyFilterListeners(state);
+  }
+
+  /**
+   * Recomputes the OPEN column's list when it is locally derived and the rows
+   * changed under it.
+   *
+   * This is what makes the `remaining` bucket work at all. A consumer applies a
+   * filter by rebinding `data` to the subset; if the list were not recomputed,
+   * `loaded` would still describe the pre-filter rows, every snapshot value
+   * would still look present, and nothing would ever be marked as having left
+   * the data.
+   *
+   * Only the open column, and only the local path: a closed panel reloads when
+   * it opens, and a consumer-supplied source owns its own freshness — re-asking
+   * it on every `data` assignment would be a request per keystroke of whatever
+   * the consumer's own filtering does.
+   */
+  private refreshLocalDistincts(): void {
+    if (!this._openFilterColumn) return;
+    const state = this._filterStates.get(this._openFilterColumn);
+    if (!state || !state.fromLocal) return;
+    state.loaded = this.localDistincts(this._openFilterColumn);
     this.rebucket(state);
     this.notifyFilterListeners(state);
   }

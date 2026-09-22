@@ -127,7 +127,15 @@ thead th {
 
 thead th[data-sortable="true"] {
   cursor: pointer;
-  padding-right: 2rem;
+  // The padding moves INTO the button below. The whole cell reads as clickable
+  // — `cursor: pointer` and a hover background on the `<th>` — so the whole
+  // cell has to BE clickable; with the padding out here, only the text was, and
+  // a short label in a wide column left most of the header dead.
+  //
+  // Total width is unchanged: the same padding is simply inside a `border-box`
+  // button that fills the cell, so the intrinsic width the measure pass reads
+  // during the `auto` phase is the same text plus the same padding.
+  padding: 0;
 
   &::before,
   &::after {
@@ -171,13 +179,23 @@ thead th[data-sortable="true"]:hover {
 // needed because a UA button does not inherit either.
 button.header-sort {
   border: 0;
-  padding: 0;
   margin: 0;
   background: none;
   font: inherit;
   color: inherit;
   text-align: inherit;
   cursor: pointer;
+  // Fills the cell, so clicking anywhere in the header sorts — not just the
+  // label. `display: flex` overrides the `inline-flex` of `.header-cell`, which
+  // the button also carries; `width: 100%` + `border-box` make it cover the
+  // cell whose padding it inherited (see `thead th[data-sortable]` above).
+  display: flex;
+  width: 100%;
+  box-sizing: border-box;
+  padding: 0.5rem 2rem 0.5rem 0.75rem;
+  // The cell is the positioned ancestor for the sort arrows and the resize
+  // handle, and the handle sits at z-index 2 — above this button, so a drag to
+  // resize still beats a click to sort.
 }
 
 .resize-handle:focus-visible,

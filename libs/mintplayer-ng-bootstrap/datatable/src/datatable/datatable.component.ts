@@ -10,6 +10,7 @@ import {
   effect,
   ElementRef,
   EmbeddedViewRef,
+  type ViewRef,
   inject,
   input,
   model,
@@ -222,10 +223,13 @@ export class BsDatatableComponent<TData> implements AfterViewInit {
     if (programmatic && programmatic.length) return programmatic;
 
     // Every recompute builds fresh closures with fresh views, so the previous
-    // generation is dead the moment we return. Without this they accumulated
-    // until the component was destroyed — harmless-looking with one view per
-    // column, twice as bad now that filters add a second.
-    this.destroyTemplateViews();
+    // generation is dead the moment we return. Without retiring them they
+    // accumulated until the component was destroyed — harmless-looking with one
+    // view per column, twice as bad now that filters add a second.
+    //
+    // Retired, not destroyed: see `retireTemplateViews`. Destroying here is
+    // NG0600.
+    this.retireTemplateViews();
 
     return this.columnDirectives().map((dir): DatatableColumnDef<TData> => {
       let headerView: EmbeddedViewRef<unknown> | undefined;
@@ -295,13 +299,41 @@ export class BsDatatableComponent<TData> implements AfterViewInit {
   /** `FilterContext.onChange` unsubscribes, one per live filter view. */
   private filterUnsubscribes: (() => void)[] = [];
 
-  private destroyTemplateViews(): void {
-    for (const v of this.headerViews) v.destroy();
+  /** The previous generation, awaiting disposal by the columns effect. */
+  private staleViews: ViewRef[] = [];
+
+  /**
+   * Hands the previous generation over for disposal — it does **not** destroy
+   * anything, and must not.
+   *
+   * This runs inside `effectiveColumns`, and destroying a view detaches it,
+   * which dirties Angular's query signals: a signal write inside a computed,
+   * i.e. NG0600, the moment the host declares any view query. It is the exact
+   * mirror of why views are not CREATED here either — attach and detach are
+   * both signal writes, so neither belongs in a computed.
+   *
+   * Handing over is a plain field write, and the effect that forwards the
+   * columns disposes the batch on the same tick, so the leak this replaced
+   * stays fixed: at most one dead generation exists, and only momentarily.
+   */
+  private retireTemplateViews(): void {
+    this.staleViews.push(...this.headerViews, ...this.filterViews);
     this.headerViews = [];
-    for (const v of this.filterViews) v.destroy();
     this.filterViews = [];
-    // Without this the web component keeps calling into a destroyed view's
-    // signal on every value change, for the life of the element.
+    this.releaseFilterSubscriptions();
+  }
+
+  /** Destroys the retired generation. Only ever called from an effect. */
+  private disposeStaleViews(): void {
+    for (const v of this.staleViews) v.destroy();
+    this.staleViews = [];
+  }
+
+  /**
+   * Without this the web component keeps calling into a destroyed view's signal
+   * on every value change, for the life of the element.
+   */
+  private releaseFilterSubscriptions(): void {
     for (const unsubscribe of this.filterUnsubscribes) unsubscribe();
     this.filterUnsubscribes = [];
   }
@@ -310,8 +342,20 @@ export class BsDatatableComponent<TData> implements AfterViewInit {
 
   constructor() {
     this.destroyRef.onDestroy(() => {
-      this.destroyTemplateViews();
-      for (const v of this.rowViews.values()) v.destroy();
+      // Deliberately does NOT destroy the views. Every one of them is attached
+      // to this component's ViewContainerRef, so Angular tears them down with
+      // the host view; destroying them again from a cleanup hook re-enters that
+      // teardown and desynchronises the container's view bookkeeping — a hard
+      // "attached view should be in the same position within its container"
+      // assertion in dev mode. It only surfaces once a header template contains
+      // a nested structural directive, which `*bsDatatableFilterPanel` is, so
+      // the previous code looked correct right up until it was not.
+      //
+      // The subscriptions are the only thing here Angular knows nothing about.
+      this.releaseFilterSubscriptions();
+      this.headerViews = [];
+      this.filterViews = [];
+      this.staleViews = [];
       this.rowViews.clear();
     });
 
@@ -342,11 +386,15 @@ export class BsDatatableComponent<TData> implements AfterViewInit {
       el.labels = this.labels() ?? undefined;
     });
 
-    // Forward columns to the WC.
+    // Forward columns to the WC, and dispose the generation the recompute
+    // retired. An effect may write signals; a computed may not, which is the
+    // whole reason the disposal happens out here.
     effect(() => {
+      const columns = this.effectiveColumns();
+      this.disposeStaleViews();
       const el = this.datatableRef()?.nativeElement;
       if (!el) return;
-      el.columns = this.effectiveColumns() as DatatableColumnDef[];
+      el.columns = columns as DatatableColumnDef[];
     });
 
     // Static `[data]` only. When `[fetch]` is set the WC owns the rows, so the

@@ -224,6 +224,7 @@ describe('bs-datatable — *bsDatatableFilterPanel', () => {
     const component = fixture.debugElement.children[0].componentInstance as unknown as {
       headerViews: unknown[];
       filterViews: unknown[];
+      staleViews: unknown[];
       filterUnsubscribes: unknown[];
     };
 
@@ -235,6 +236,9 @@ describe('bs-datatable — *bsDatatableFilterPanel', () => {
     expect(component.headerViews.length).toBeLessThanOrEqual(2);
     expect(component.filterViews.length).toBeLessThanOrEqual(1);
     expect(component.filterUnsubscribes.length).toBeLessThanOrEqual(1);
+    // Retired views are disposed by the columns effect on the same tick, so the
+    // hand-over queue must not be a second place for them to pile up.
+    expect(component.staleViews.length).toBe(0);
   });
 
   it('clears the column’s template when the nested directive is destroyed', async () => {

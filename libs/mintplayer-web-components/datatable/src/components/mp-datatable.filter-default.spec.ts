@@ -326,10 +326,12 @@ describe('mp-datatable built-in filter panel', () => {
    * either it was truncated, or the term is not a refinement of the loaded one.
    */
   it('re-queries the source only when the loaded list cannot answer', async () => {
-    const source = vi.fn<DatatableDistincts>(async () => ({
+    // Truncated on the first call only, so the panel starts out unable to
+    // answer and then becomes able to — both rules are exercised in one run.
+    const source = vi.fn<DatatableDistincts>(async ({ search }) => ({
       matching: [{ value: 'UK', label: 'UK' }],
       remaining: [],
-      hasMore: false,
+      hasMore: search === '',
     }));
     const el = await mount(FILTERABLE);
     (el as unknown as { distincts: DatatableDistincts }).distincts = source;
@@ -345,13 +347,17 @@ describe('mp-datatable built-in filter panel', () => {
       await settle(el);
     };
 
-    // A refinement of '' with a complete list: answerable in place.
+    // The loaded list was truncated, so it cannot answer for a narrower term.
     await type('U');
-    expect(source).toHaveBeenCalledTimes(1);
-
-    // Backspacing WIDENS the term, so the loaded list may be missing values.
-    await type('');
     expect(source).toHaveBeenCalledTimes(2);
+
+    // 'UK' refines 'U', and the list loaded for 'U' is complete: no round trip.
+    await type('UK');
+    expect(source).toHaveBeenCalledTimes(2);
+
+    // Clearing WIDENS past 'U', so the loaded list may be missing values.
+    await type('');
+    expect(source).toHaveBeenCalledTimes(3);
   });
 
   it('hands a working context to a consumer renderer', async () => {
