@@ -56,6 +56,52 @@ async function openPanel(page: Page, column: string) {
   await expect(page.locator(PANEL)).toBeVisible();
 }
 
+/**
+ * Where the panel sits relative to its trigger and the sticky header, and who
+ * the browser says is painted on top there.
+ *
+ * `elementFromPoint` rather than comparing z-index values: what matters is what
+ * the browser actually puts in front, not what the numbers imply. The hit test
+ * fails closed — if it ever returned the overlay host rather than the panel,
+ * `panel === el || panel.contains(el)` is false and the assertion fails rather
+ * than passing quietly.
+ */
+async function measureStacking(page: Page) {
+  return page.evaluate(
+    ({ panelSel, tableSel }) => {
+      const panel = document.querySelector(panelSel) as HTMLElement | null;
+      const header = document.querySelector(`${tableSel} thead`) as HTMLElement | null;
+      const btn = document.querySelector(
+        `${tableSel} tr.filter-row th[data-column="name"] .filter-trigger`,
+      ) as HTMLElement | null;
+      if (!panel || !header || !btn) return null;
+
+      const p = panel.getBoundingClientRect();
+      const h = header.getBoundingClientRect();
+      const b = btn.getBoundingClientRect();
+
+      const hit = (x: number, y: number) => {
+        const el = document.elementFromPoint(x, y);
+        return el ? panel === el || panel.contains(el) : false;
+      };
+
+      const overlapTop = Math.max(p.top, h.top);
+      const overlapBottom = Math.min(p.bottom, h.bottom);
+      const overlapsHeader = overlapBottom - overlapTop > 2;
+
+      return {
+        flippedUp: p.bottom <= b.top + 2,
+        overlapsHeader,
+        overlapIsPanel: overlapsHeader
+          ? hit(p.left + p.width / 2, (overlapTop + overlapBottom) / 2)
+          : false,
+        centreIsPanel: hit(p.left + p.width / 2, p.top + p.height / 2),
+      };
+    },
+    { panelSel: PANEL, tableSel: FILTER_TABLE },
+  );
+}
+
 test.describe('bs-datatable filter panel', () => {
   test.beforeEach(async ({ page }) => {
     await mockArtistApi(page);
@@ -176,27 +222,47 @@ test.describe('bs-datatable filter panel', () => {
    * Hit-tested rather than reasoned about from z-index values: what matters is
    * which element the browser says is on top at that point.
    *
-   * The overlap is FORCED, not hoped for. A short viewport with the trigger
-   * scrolled hard against the bottom leaves no room below, so the panel has to
-   * open upward across the header — which lets the occlusion assertion be
-   * unconditional. An earlier version guarded it with `if (overlaps)`, which
-   * would have gone green while testing nothing the moment placement changed:
-   * the panel's own centre is nearly free when it opens downward, because it
-   * sits over the table body where nothing was going to paint over it anyway.
+   * Two tests, because there are **two flip paths and they are different code**:
+   * choosing an upward placement when the panel first opens, and repositioning
+   * an already-open panel as the page scrolls under it. Testing one does not
+   * cover the other.
    */
-  test('is painted above the sticky header', async ({ page }) => {
-    // Open FIRST, then move the trigger. Scrolling the trigger against the
-    // viewport edge before clicking makes it unclickable — Playwright runs its
-    // own scroll-into-view and actionability check, which fought the manual
-    // scroll and timed out in Firefox. The overlay uses
-    // `scrollStrategy: 'reposition'`, so it follows the trigger instead of
-    // closing, and the flip happens while the panel is already up.
+  test('flips above the trigger when it opens into a constrained space', async ({ page }) => {
+    await page.setViewportSize({ width: 1280, height: 420 });
+
+    // Trigger at mid-viewport: comfortably clickable, but with far less room
+    // below than the panel needs, so the OPENING placement must go upward.
+    // Jamming it against the bottom edge instead made it unclickable in
+    // Firefox — Playwright's own scroll-into-view and actionability check
+    // fought the manual scroll and timed out.
+    await page.evaluate((tableSel) => {
+      const btn = document.querySelector(
+        `${tableSel} tr.filter-row th[data-column="name"] .filter-trigger`,
+      ) as HTMLElement | null;
+      if (!btn) return;
+      const r = btn.getBoundingClientRect();
+      window.scrollBy(0, r.top - window.innerHeight / 2);
+    }, FILTER_TABLE);
+
     await openPanel(page, 'name');
 
+    const placed = await measureStacking(page);
+    expect(placed).not.toBeNull();
+    // Unconditional: the setup exists to produce this, and if it stops doing so
+    // the test must fail rather than quietly stop exercising the flip.
+    expect(placed!.flippedUp).toBe(true);
+    expect(placed!.overlapsHeader).toBe(true);
+    expect(placed!.overlapIsPanel).toBe(true);
+    expect(placed!.centreIsPanel).toBe(true);
+  });
+
+  test('stays above the sticky header when a scroll repositions it', async ({ page }) => {
+    // The other path: open with room, then take the room away. The overlay uses
+    // `scrollStrategy: 'reposition'`, so it follows the trigger rather than
+    // closing, and flips while already up.
+    await openPanel(page, 'name');
     await page.setViewportSize({ width: 1280, height: 520 });
 
-    // Leave the trigger less room below than any panel needs, so the overlay
-    // has to flip up across the header.
     await page.evaluate((tableSel) => {
       const btn = document.querySelector(
         `${tableSel} tr.filter-row th[data-column="name"] .filter-trigger`,
@@ -206,45 +272,16 @@ test.describe('bs-datatable filter panel', () => {
       window.scrollBy(0, r.top - (window.innerHeight - r.height - 8));
     }, FILTER_TABLE);
 
-    // The reposition runs off a scroll listener; let it land before measuring.
-    await expect(page.locator(PANEL)).toBeVisible();
-    await page.waitForTimeout(150);
+    // Polled, not slept on. The reposition runs off a scroll listener, and a
+    // fixed timeout is a magic number that goes flaky on a loaded runner
+    // instead of failing honestly.
+    await expect
+      .poll(async () => (await measureStacking(page))?.overlapsHeader ?? false, { timeout: 5000 })
+      .toBe(true);
 
-    const onTop = await page.evaluate(
-      ({ panelSel, tableSel }) => {
-        const panel = document.querySelector(panelSel) as HTMLElement | null;
-        const header = document.querySelector(`${tableSel} thead`) as HTMLElement | null;
-        if (!panel || !header) return null;
-        const p = panel.getBoundingClientRect();
-        const h = header.getBoundingClientRect();
-
-        const hit = (x: number, y: number) => {
-          const el = document.elementFromPoint(x, y);
-          return el ? panel === el || panel.contains(el) : false;
-        };
-
-        // The panel's own centre: nothing may paint over it.
-        const centreIsPanel = hit(p.left + p.width / 2, p.top + p.height / 2);
-
-        // And, where it overlaps the sticky header, the panel must win there too.
-        const overlapTop = Math.max(p.top, h.top);
-        const overlapBottom = Math.min(p.bottom, h.bottom);
-        const overlaps = overlapBottom - overlapTop > 2;
-        const overlapIsPanel = overlaps
-          ? hit(p.left + p.width / 2, (overlapTop + overlapBottom) / 2)
-          : null;
-
-        return { centreIsPanel, overlaps, overlapIsPanel };
-      },
-      { panelSel: PANEL, tableSel: FILTER_TABLE },
-    );
-
-    expect(onTop).not.toBeNull();
-    // The setup exists to make this true; if it ever is not, the test has
-    // stopped exercising occlusion and must fail rather than pass vacuously.
-    expect(onTop!.overlaps).toBe(true);
-    expect(onTop!.overlapIsPanel).toBe(true);
-    expect(onTop!.centreIsPanel).toBe(true);
+    const repositioned = await measureStacking(page);
+    expect(repositioned!.overlapIsPanel).toBe(true);
+    expect(repositioned!.centreIsPanel).toBe(true);
   });
 
   /**
