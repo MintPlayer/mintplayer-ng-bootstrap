@@ -98,11 +98,37 @@ describe('mp-datatable built-in filter panel', () => {
     expect(optionLabels().sort()).toEqual(['UK', 'US']);
   });
 
-  it('marks the panel aria-modal and focuses the search box on open', async () => {
+  /**
+   * #416: the panel used to claim `aria-modal="true"` while nothing behind it
+   * was `inert` — telling a screen reader the page was unavailable when a
+   * virtual cursor could still reach it.
+   *
+   * Removed rather than enforced. A column filter is anchored, dismissible and
+   * does not own the page, and making the table `inert` would hide the rows
+   * whose values the user is choosing from. Asserted because an absent
+   * attribute is exactly what nobody notices coming back.
+   */
+  it('is a NON-modal dialog: no aria-modal, and the page stays available', async () => {
     const el = await mount(FILTERABLE);
     await open(el);
 
-    expect(panelQuery('.filter-panel')?.getAttribute('aria-modal')).toBe('true');
+    const panel = panelQuery('.filter-panel');
+    expect(panel?.getAttribute('role')).toBe('dialog');
+    expect(panel?.hasAttribute('aria-modal')).toBe(false);
+
+    // Nothing outside the panel is hidden from assistive tech either.
+    expect(el.hasAttribute('inert')).toBe(false);
+    expect(el.getAttribute('aria-hidden')).toBeNull();
+    expect(document.body.hasAttribute('inert')).toBe(false);
+  });
+
+  it('names the panel and focuses the search box on open', async () => {
+    const el = await mount(FILTERABLE);
+    await open(el);
+
+    // A dialog whose role lives on a node the consumer cannot reach needs its
+    // name from the component, routed through `labels`.
+    expect(panelQuery('.filter-panel')?.getAttribute('aria-label')).toBe('Filter Country');
     expect(document.activeElement).toBe(panelQuery('.filter-search'));
   });
 

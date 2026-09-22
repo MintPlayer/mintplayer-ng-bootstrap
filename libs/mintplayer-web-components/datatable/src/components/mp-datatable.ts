@@ -1586,6 +1586,23 @@ export class MpDatatable extends LitElement {
    * The consumer's node is appended AFTER the template has been stamped —
    * `stampScope` recurses, so stamping a subtree that already holds consumer
    * DOM would brand it with our scope and let our rules match their content.
+   *
+   * ### Why this dialog is deliberately NOT `aria-modal` (#416)
+   *
+   * Tab is contained and Escape closes, but the rest of the page stays
+   * available to assistive tech — and it must. A column filter is anchored to
+   * its trigger, dismissible, and does not own the page.
+   *
+   * `aria-modal="true"` would tell a screen reader that everything outside the
+   * panel is unavailable while a virtual cursor could still walk into the table
+   * behind it. The honest way to keep that promise — marking the table `inert`
+   * while the panel is open — would hide the very rows whose values the user is
+   * picking from, which is worse than the inconsistency it fixes.
+   *
+   * So it is a non-modal dialog: the wrong claim removed rather than an
+   * unfinished one completed. `OverlayController` is right to refuse to guess
+   * whether its host is a dialog or a menu; the call belongs here, where the
+   * component knows what it is.
    */
   private renderFilterPanel(): void {
     const container = this.filterOverlay.portalContainer;
@@ -1602,7 +1619,6 @@ export class MpDatatable extends LitElement {
           class="filter-panel"
           id=${this.filterPanelId}
           role="dialog"
-          aria-modal="true"
           aria-label=${this.mergedLabels.filterColumn(column.label ?? column.name)}
         >
           <div class="filter-panel-body"></div>

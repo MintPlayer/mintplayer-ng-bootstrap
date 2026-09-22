@@ -554,7 +554,7 @@ Layout follows Vidyano (`query-grid-column-filter.html:19-58`): a **Clear** item
 - The list is a **native `<input type="checkbox">` + `<label>` group** inside `role="group"` named by `labels.filterGroup(column)`, rendered with **keyed `repeat()` on `value`** so a search or `hasMore` repaint keeps focus on the same option and never leaves an unbound `checked` bit on the wrong row. Order: **selected values first (always checked, regardless of bucket), then `matching`, then `remaining`.** Tab-per-item, no roving focus: buckets are capped at 100 + 100.
 - `remaining` is de-emphasised with `color: var(--bs-secondary-color)` (4.69:1 on white) — never `#aaa` or opacity alone, which fail WCAG 1.4.3. `hasMore` is localized text (`labels.filterHasMore`), not an icon.
 - **Clear** is a real `<button>`, disabled when the selection is empty. Activating it clears the selection, resets inverse, fires the change event **and moves focus to the search input in the same handler** — measured: a button that disables itself keeps focus (Chrome 153), parking a keyboard user on an inoperable control inside the trap.
-- The chrome is `role="dialog"` **with `aria-modal="true"`**: it already traps Tab (`modal: true`), so it is modal for keyboard users and must say so to AT. No `inert` on siblings; outside-click dismissal stays as §5.4.
+- ~~The chrome is `role="dialog"` **with `aria-modal="true"`**: it already traps Tab (`modal: true`), so it is modal for keyboard users and must say so to AT. No `inert` on siblings~~ — **reversed, see #416 and §15.6.** The chrome is `role="dialog"` **without** `aria-modal`. "It traps Tab, so it must say so" was the wrong inference: focus containment is a keyboard convenience, not a claim about the accessibility tree, and the sentence quietly conceded the bug in its own second half — `aria-modal` with no `inert` on siblings tells AT the page is unavailable while a virtual cursor can still reach it. Outside-click dismissal stays as §5.4.
 - **Initial focus is the callback form**, resolving the search input; for a consumer-rendered panel it falls back to the first tabbable. `'first'` would land on Clear the moment a filter is active.
 - The inverse button writes `aria-pressed` for **both** values from render; its name is `labels.filterInvert`.
 - **One announcement channel:** a polite `liveAnnouncer.announce(labels.announceFilter(column, count))` on each change. The consumer's resulting refetch may also announce `announceLoaded`; those are distinct events (R16).
@@ -632,7 +632,7 @@ Workflow `wf_699b142e-239`, 2026-09-22: eight refuters (each told to refute; dis
 | D29 | **Amended** | Additional formatters forced by §14.4 and D28 |
 | D30 | **Survives** | Heterogeneous grids met by D22's per-column fallback |
 
-**Residual risks the verification left open** (carried into §14.7 and the plan): the lazy null-fallback (D20) is inferred from measured legs but not measured end-to-end — S8 pins it, and the measured fallback is `untracked(() => { view = vcr.createEmbeddedView(tpl); view.detectChanges(); })`, accepting sampled-once semantics; `aria-modal` without `inert` relies on modern AT; `filterValue`'s `Date` default uses the browser locale; all D17/D25 mechanism measurements were jsdom — a real-engine e2e of the default panel is M19; the datatable page has no no-JS e2e pin (unchanged from today).
+**Residual risks the verification left open** (carried into §14.7 and the plan): the lazy null-fallback (D20) is inferred from measured legs but not measured end-to-end — S8 pins it, and the measured fallback is `untracked(() => { view = vcr.createEmbeddedView(tpl); view.detectChanges(); })`, accepting sampled-once semantics; ~~`aria-modal` without `inert` relies on modern AT~~ (**resolved: `aria-modal` removed, #416 / §15.6**); `filterValue`'s `Date` default uses the browser locale; all D17/D25 mechanism measurements were jsdom — a real-engine e2e of the default panel is M19; the datatable page has no no-JS e2e pin (unchanged from today).
 
 ## 15. Revision 3 — comparison mode, and who styles what
 
@@ -700,6 +700,24 @@ Recorded because none was found by reading the code:
 - `mp-datatable.header-click-target.spec.ts` — the sort button fills its cell.
 - `mp-datatable.filter-default.spec.ts` — nine comparison-mode cases, including the raw-text echo, the empty/unparseable operand, and clearing in the column's own mode.
 
+### 15.6 The panel is a non-modal dialog (#416)
+
+**D38. `aria-modal` is removed, not enforced.**
+
+The panel shipped as `role="dialog"` with `aria-modal="true"` while nothing behind it was `inert` or `aria-hidden`. That is a promise no code keeps: a screen reader is told everything outside the panel is unavailable, while a virtual cursor can still walk the table behind it. Visual focus was trapped; the accessibility tree was not.
+
+§14.4's reasoning — *"it already traps Tab, so it is modal for keyboard users and must say so to AT"* — is the error, and it conceded the bug in its own next clause (*"No `inert` on siblings"*). **Focus containment is a keyboard convenience, not a statement about the accessibility tree.** The two are separate contracts and this conflated them.
+
+Of the two ways out, removing the attribute is right rather than merely cheaper:
+
+- A column filter is **anchored to its trigger, dismissible, and does not own the page**. It is a disclosure that happens to contain a composite widget, not a dialog that blocks the document. `aria-modal` was the wrong claim, not an unfinished one.
+- Enforcing it would mean marking the table `inert` while the panel is open — **hiding the very rows whose values the user is choosing from**. A user reading "United Kingdom — 42 rows" behind the panel is doing exactly what the feature is for. That cure is worse than the disease.
+
+What is unchanged: `role="dialog"`, the accessible name from `labels.filterColumn`, the focus trap (`modal: true` on the controller), Escape-to-close, focus restoration to the trigger, and outside-click dismissal. A keyboard user sees no difference; a screen-reader user stops being told a falsehood.
+
+**The fix belongs in `mp-datatable`, not `OverlayController`.** The controller's refusal to guess whether its host is a dialog or a menu (`overlay-controller.ts:70-71`) is correct and unchanged — `modal: true` means "contain Tab", and it deliberately does not set `aria-modal`. The component is the only layer that knows what the surface *is*.
+
+Asserted in `mp-datatable.filter-default.spec.ts`: the role is present, `aria-modal` is **absent**, and neither the host nor `document.body` gains `inert`/`aria-hidden` while the panel is open. An absent attribute is exactly the kind of thing that creeps back, and the issue was right that whichever answer was chosen had to be pinned.
 Both style specs assert against the **generated** sheet by exact selector. jsdom has no layout, so this is the strongest available guard short of a browser — and a substring match on CSS text has already produced one false positive here (§13).
 ## 16. References
 

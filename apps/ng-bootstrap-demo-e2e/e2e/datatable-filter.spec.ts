@@ -185,10 +185,18 @@ test.describe('bs-datatable filter panel', () => {
    * sits over the table body where nothing was going to paint over it anyway.
    */
   test('is painted above the sticky header', async ({ page }) => {
+    // Open FIRST, then move the trigger. Scrolling the trigger against the
+    // viewport edge before clicking makes it unclickable — Playwright runs its
+    // own scroll-into-view and actionability check, which fought the manual
+    // scroll and timed out in Firefox. The overlay uses
+    // `scrollStrategy: 'reposition'`, so it follows the trigger instead of
+    // closing, and the flip happens while the panel is already up.
+    await openPanel(page, 'name');
+
     await page.setViewportSize({ width: 1280, height: 520 });
 
-    // Put the trigger's bottom edge at the viewport's, so the space below it is
-    // smaller than any panel and the overlay must flip up.
+    // Leave the trigger less room below than any panel needs, so the overlay
+    // has to flip up across the header.
     await page.evaluate((tableSel) => {
       const btn = document.querySelector(
         `${tableSel} tr.filter-row th[data-column="name"] .filter-trigger`,
@@ -198,7 +206,9 @@ test.describe('bs-datatable filter panel', () => {
       window.scrollBy(0, r.top - (window.innerHeight - r.height - 8));
     }, FILTER_TABLE);
 
-    await openPanel(page, 'name');
+    // The reposition runs off a scroll listener; let it land before measuring.
+    await expect(page.locator(PANEL)).toBeVisible();
+    await page.waitForTimeout(150);
 
     const onTop = await page.evaluate(
       ({ panelSel, tableSel }) => {
