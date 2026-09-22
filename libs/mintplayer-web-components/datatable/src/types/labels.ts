@@ -21,6 +21,8 @@ export interface DatatableLabels {
   rowsPerPage: string;
   resizeColumn: (column: string) => string;
   selectRow: (rowNumber: number) => string;
+  /** Accessible name of a column's filter trigger in the filter row. */
+  filterColumn: (column: string) => string;
   /** Live-region announcements (Phase E). */
   announceSorted: (column: string, direction: 'ascending' | 'descending' | 'none') => string;
   announcePage: (page: number, totalPages: number) => string;
@@ -38,6 +40,7 @@ export const DEFAULT_DATATABLE_LABELS: DatatableLabels = {
   rowsPerPage: 'Rows per page',
   resizeColumn: (column) => `Resize column ${column}`,
   selectRow: (rowNumber) => `Select row ${rowNumber}`,
+  filterColumn: (column) => `Filter ${column}`,
   announceSorted: (column, direction) =>
     direction === 'none' ? `Sorting removed from ${column}` : `Sorted by ${column}, ${direction}`,
   announcePage: (page, totalPages) => `Page ${page} of ${totalPages}`,

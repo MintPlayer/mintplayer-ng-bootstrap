@@ -1,3 +1,5 @@
+export { acquirePortal, currentOverlayContainer, openPaneCount } from './overlay-portal';
+export type { PortalHandle } from './overlay-portal';
 export { OverlayController } from './overlay-controller';
 export type {
   OverlayControllerOptions,

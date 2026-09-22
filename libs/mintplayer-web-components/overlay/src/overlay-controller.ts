@@ -1,5 +1,6 @@
 import type { ReactiveController, ReactiveControllerHost } from 'lit';
 import { dismissStack, deepActiveElement, collectTabbables, FocusTrap, type InitialFocusTarget } from '@mintplayer/web-components/a11y';
+import { acquirePortal, type PortalHandle } from './overlay-portal';
 
 export type OverlayOriginX = 'start' | 'center' | 'end';
 export type OverlayOriginY = 'top' | 'center' | 'bottom';
@@ -99,6 +100,24 @@ export interface OverlayControllerOptions {
    * - `string` — any CSS width value (`'50vw'`, `'fit-content'`, …)
    */
   panelWidth?: PanelWidth;
+  /**
+   * Render the panel into a document-root overlay pane instead of leaving it
+   * where the host rendered it. Default: false, so every existing consumer is
+   * unaffected.
+   *
+   * A panel left in place is clipped by any `overflow: auto` ancestor and
+   * stacked against whatever `z-index` its neighbours use; a portalled one is
+   * neither. Use it when the panel opens from inside a scroll container, or
+   * when the host's ancestors belong to a consumer's application and so cannot
+   * be relied on to avoid establishing a fixed containing block.
+   *
+   * The controller does **not** render the panel — it never has. It acquires
+   * the pane before the host's update, so the host can render into
+   * {@link OverlayController.portalContainer} during that same update, and
+   * releases it on close. `panel()` must therefore resolve to an element inside
+   * that container while the overlay is open.
+   */
+  portal?: boolean;
   onOpen?: () => void;
   onClose?: () => void;
 }
@@ -183,6 +202,8 @@ export class OverlayController implements ReactiveController {
   /** Inline `padding-right` we wrote on <body> to compensate for the
    *  disappearing scrollbar — captured so release() can restore exactly. */
   private blockedBodyPaddingRight: string | null = null;
+  /** Live pane in the document-root container, when `options.portal` is set. */
+  private portalHandle: PortalHandle | null = null;
 
   constructor(
     host: ReactiveControllerHost & HTMLElement,
@@ -208,10 +229,26 @@ export class OverlayController implements ReactiveController {
     document.removeEventListener('keydown', this.onKeyDown);
     this.detachMouseDown();
     if (this.stackToken) this.releaseStackToken();
+    // A host torn down while open would otherwise strand its pane in <body>.
+    this.releasePortal();
   }
 
   get isOpen(): boolean {
     return this._open;
+  }
+
+  /**
+   * The document-root pane to render the panel into, or `null` when this
+   * overlay is closed or not portalled. Read it from the host's update so the
+   * panel exists by the time the controller positions it.
+   */
+  get portalContainer(): HTMLElement | null {
+    return this.portalHandle?.container ?? null;
+  }
+
+  private releasePortal(): void {
+    this.portalHandle?.release();
+    this.portalHandle = null;
   }
 
   /**
@@ -244,6 +281,9 @@ export class OverlayController implements ReactiveController {
     this.restoreTo =
       active instanceof HTMLElement && active !== active.ownerDocument.body ? active : null;
     this.stackToken = OverlayController.pushFrame();
+    // The pane must exist BEFORE the host's update, so the host can render the
+    // panel into it in that same pass and `position()` below finds it laid out.
+    if (this.options.portal) this.portalHandle = acquirePortal();
     this.host.setAttribute('data-menu-open', '');
     this.host.requestUpdate();
     await this.host.updateComplete;
@@ -277,6 +317,10 @@ export class OverlayController implements ReactiveController {
       // trigger's scroll position.
       target?.focus({ preventScroll: true });
     }
+    // Released only AFTER focus has been returned. Removing the pane detaches
+    // whatever is focused inside it, which blurs to <body> — the same failure
+    // the `data-menu-open` ordering above avoids, by a different route.
+    this.releasePortal();
     this.restoreTo = null;
     this.activeAnchor = null;
     this.options.onClose?.();
@@ -707,7 +751,16 @@ export class OverlayController implements ReactiveController {
 
   private onMouseDown = (event: MouseEvent): void => {
     if (!this._open) return;
-    if (event.composedPath().includes(this.host)) return;
+    const path = event.composedPath();
+    // The host covers an in-place panel, which is inside it. A PORTALLED panel
+    // is not: its composed path contains the panel and the overlay container,
+    // and no part of the host. Testing the host alone therefore reads a click
+    // INSIDE the panel as an outside click and dismisses it — measured in all
+    // three engines before this was written, and invisible in a demo because it
+    // presents as a flaky dropdown rather than a logic error.
+    if (path.includes(this.host)) return;
+    const panel = this.options.panel();
+    if (panel && path.includes(panel)) return;
     this.close(false);
   };
 }
