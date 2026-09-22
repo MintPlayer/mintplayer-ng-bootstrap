@@ -2,8 +2,14 @@ import { LitElement, nothing, render, type TemplateResult } from 'lit';
 import { OverlayController } from '@mintplayer/web-components/overlay';
 import { installLightStyles, scopedHtml } from '@mintplayer/web-components/light-dom';
 import { FocusRestore, FocusRestoreController, HostAriaController, LiveAnnouncerController } from '@mintplayer/web-components/a11y';
-import { DEFAULT_DATATABLE_LABELS, type DatatableLabels } from '../types/labels';
+import {
+  DEFAULT_DATATABLE_LABELS,
+  DEFAULT_FILTER_OPERATORS,
+  FILTER_OPERATOR_SYMBOLS,
+  type DatatableLabels,
+} from '../types/labels';
 import { repeat } from 'lit/directives/repeat.js';
+import { live } from 'lit/directives/live.js';
 import { classMap } from 'lit/directives/class-map.js';
 import { styleMap } from 'lit/directives/style-map.js';
 import { datatableLightStyles } from '../styles';
@@ -29,6 +35,9 @@ import type {
   DistinctValues,
   FilterChangeDetail,
   FilterContext,
+  FilterInputType,
+  FilterMode,
+  FilterOperator,
   FilterSelection,
   TreeRowExpandDetail,
   TreeExpandedIdsChangeDetail,
@@ -127,6 +136,16 @@ interface ColumnFilterState {
   fromLocal: boolean;
   /** The term currently in the search box (may be ahead of `loadedTerm`). */
   term: string;
+  /**
+   * The RAW text in the comparison operand box, echoed back verbatim on
+   * re-render.
+   *
+   * Binding the parsed operand instead would clobber the box mid-typing: in a
+   * `number` input the intermediate states `-`, `1e` and `.` all parse to
+   * nothing, so the value would be wiped on the very keystroke that produced
+   * them. The parsed value is what gets emitted; this is what gets displayed.
+   */
+  operandText: string;
   loading: boolean;
   /** Bumped per request; a stale response checks this before writing. */
   generation: number;
@@ -474,7 +493,11 @@ export class MpDatatable extends LitElement {
         existing.selection = {
           values: [...col.filterSelection.values],
           inverse: !!col.filterSelection.inverse,
+          operator: col.filterSelection.operator,
+          operand: col.filterSelection.operand ?? null,
         };
+        existing.operandText =
+          col.filterSelection.operand == null ? '' : String(col.filterSelection.operand);
         existing.snapshot = null;
       }
     });
@@ -1131,6 +1154,10 @@ export class MpDatatable extends LitElement {
       selection: {
         values: col.filterSelection ? [...col.filterSelection.values] : [],
         inverse: !!col.filterSelection?.inverse,
+        // Seeded too, or a restored comparison filter comes back empty while
+        // its trigger still claims to be active.
+        operator: col.filterSelection?.operator,
+        operand: col.filterSelection?.operand ?? null,
       },
       seededFrom: col.filterSelection ?? null,
       snapshot: null,
@@ -1139,6 +1166,7 @@ export class MpDatatable extends LitElement {
       loadedTerm: null,
       fromLocal: false,
       term: '',
+      operandText: col.filterSelection?.operand == null ? '' : String(col.filterSelection.operand),
       loading: false,
       generation: 0,
       controller: null,
@@ -1154,7 +1182,10 @@ export class MpDatatable extends LitElement {
       loading: () => state.loading,
       search: (term) => this.setFilterSearch(name, term),
       apply: (values, inverse) => this.applyFilter(name, values, inverse),
-      clear: () => this.applyFilter(name, [], false),
+      // Clearing emits the shape of the column's OWN mode. A comparison column
+      // emitting an empty `selected` array would be reporting a values-mode
+      // filter it never had, and a consumer switching on `mode` would miss it.
+      clear: () => this.clearFilter(name),
       onChange: (callback) => {
         state.listeners.add(callback);
         return () => state.listeners.delete(callback);
@@ -1206,7 +1237,7 @@ export class MpDatatable extends LitElement {
     }
     if (values.length === 0) state.snapshot = null;
 
-    state.selection = { values: [...values], inverse };
+    state.selection = { ...state.selection, values: [...values], inverse };
     this.rebucket(state);
     this.notifyFilterListeners(state);
 
@@ -1216,11 +1247,76 @@ export class MpDatatable extends LitElement {
     );
     this.dispatchEvent(
       new CustomEvent<FilterChangeDetail>('mp-datatable-filter-change', {
-        detail: { column: name, selected: [...values], inverse },
+        detail: { mode: 'values', column: name, selected: [...values], inverse },
         bubbles: true,
         composed: true,
       }),
     );
+  }
+
+  /** The column's mode, defaulting to a checkbox list of distinct values. */
+  private filterModeOf(name: string): FilterMode {
+    return this._columns.find((c) => c.name === name)?.filterMode ?? 'values';
+  }
+
+  private clearFilter(name: string): void {
+    if (this.filterModeOf(name) === 'comparison') {
+      const state = this.filterState(name);
+      this.applyComparison(name, state?.selection.operator ?? 'eq', '');
+      return;
+    }
+    this.applyFilter(name, [], false);
+  }
+
+  /**
+   * Comparison mode's counterpart to `applyFilter`.
+   *
+   * It keeps the same contract: the component records what the user asked for
+   * and emits it, and never filters `_data`. An empty operand is a cleared
+   * filter, not a comparison against the empty string — otherwise every column
+   * would filter everything away the moment its panel opened.
+   */
+  private applyComparison(
+    name: string,
+    operator: FilterOperator,
+    rawOperand: string,
+  ): void {
+    const state = this.filterState(name);
+    if (!state) return;
+
+    const column = this._columns.find((c) => c.name === name);
+    const operand = this.parseOperand(rawOperand, column?.filterInputType);
+    state.operandText = rawOperand;
+    state.selection = { ...state.selection, operator, operand };
+    this.notifyFilterListeners(state);
+
+    const labels = this.mergedLabels;
+    this.liveAnnouncer.announce(
+      labels.announceComparisonFilter(
+        column?.label ?? name,
+        labels.filterOperatorLabel(operator),
+        operand == null ? '' : String(operand),
+      ),
+    );
+    this.dispatchEvent(
+      new CustomEvent<FilterChangeDetail>('mp-datatable-filter-change', {
+        detail: { mode: 'comparison', column: name, operator, operand },
+        bubbles: true,
+        composed: true,
+      }),
+    );
+  }
+
+  /**
+   * An empty input, and a `'number'` input holding something unparseable, both
+   * mean "no filter" rather than a comparison against `NaN` — which would be
+   * false for every row and silently empty the table.
+   */
+  private parseOperand(raw: string, type: FilterInputType | undefined): string | number | null {
+    if (raw.trim() === '') return null;
+    if (type !== 'number') return raw;
+    const parsed = Number(raw);
+    return Number.isNaN(parsed) ? null : parsed;
   }
 
   private setFilterSearch(name: string, term: string): void {
@@ -1420,7 +1516,7 @@ export class MpDatatable extends LitElement {
     // Returning null falls back to 'first', which is what a consumer's own
     // panel gets — it has no `.filter-search` to aim at.
     initialFocus: () =>
-      this.filterOverlay.portalContainer?.querySelector<HTMLElement>('.filter-search') ?? null,
+      this.filterOverlay.portalContainer?.querySelector<HTMLElement>('.filter-search, .filter-operand') ?? null,
     onClose: () => {
       const column = this._openFilterColumn;
       if (column == null) return;
@@ -1461,7 +1557,13 @@ export class MpDatatable extends LitElement {
     this.requestUpdate();
     // Loaded per open, never cached across opens: the rows behind a list can
     // change while the panel is closed, and a stale list is worse than a wait.
-    void this.loadDistincts(col.name, '');
+    //
+    // Skipped in comparison mode only: that panel shows no value list, so
+    // asking the source for one is a round trip whose answer is never read. A
+    // consumer's own renderer still gets the list, because `filterMode` stays
+    // at its 'values' default unless the consumer changes it — the demos read
+    // `ctx.values()` on open and would break otherwise.
+    if ((col.filterMode ?? 'values') !== 'comparison') void this.loadDistincts(col.name, '');
     void this.filterOverlay.open();
     this.dispatchEvent(
       new CustomEvent('mp-datatable-filter-open', {
@@ -1559,6 +1661,11 @@ export class MpDatatable extends LitElement {
     state: ColumnFilterState,
     body: HTMLElement,
   ): void {
+    if ((column.filterMode ?? 'values') === 'comparison') {
+      this.renderComparisonFilterPanel(column, state, body);
+      return;
+    }
+
     const labels = this.mergedLabels;
     const columnLabel = column.label ?? column.name;
     const view = state.view;
@@ -1623,6 +1730,71 @@ export class MpDatatable extends LitElement {
     );
   }
 
+  /**
+   * The `'comparison'` panel: an operator and one operand.
+   *
+   * It deliberately does NOT load distinct values — the whole point of this mode
+   * is that the column's values are a quantity rather than a set worth listing,
+   * so asking the source for them would be a round trip whose answer is never
+   * displayed.
+   */
+  private renderComparisonFilterPanel(
+    column: DatatableColumnDef,
+    state: ColumnFilterState,
+    body: HTMLElement,
+  ): void {
+    const labels = this.mergedLabels;
+    const columnLabel = column.label ?? column.name;
+    const operators = column.filterOperators?.length
+      ? column.filterOperators
+      : DEFAULT_FILTER_OPERATORS;
+    const operator = state.selection.operator ?? operators[0];
+    const operand = state.selection.operand;
+    const inputType = column.filterInputType ?? 'text';
+
+    const currentOperand = () =>
+      body.querySelector<HTMLInputElement>('.filter-operand')?.value ?? '';
+    const currentOperator = () =>
+      (body.querySelector<HTMLSelectElement>('.filter-operator')?.value as FilterOperator) ??
+      operator;
+
+    render(
+      html`
+        <button
+          type="button"
+          class="filter-clear"
+          ?disabled=${operand == null}
+          @click=${() => this.onFilterClear(column.name)}
+        >
+          ${labels.filterClear(columnLabel)}
+        </button>
+        <div class="filter-comparison">
+          <select
+            class="filter-operator"
+            aria-label=${labels.filterOperator}
+            @change=${() => this.applyComparison(column.name, currentOperator(), currentOperand())}
+          >
+            ${operators.map(
+              (op) => html`
+                <option value=${op} ?selected=${op === operator}>
+                  ${FILTER_OPERATOR_SYMBOLS[op]} ${labels.filterOperatorLabel(op)}
+                </option>
+              `,
+            )}
+          </select>
+          <input
+            class="filter-operand"
+            type=${inputType}
+            .value=${live(state.operandText)}
+            aria-label=${labels.filterOperand}
+            @input=${() => this.applyComparison(column.name, currentOperator(), currentOperand())}
+          />
+        </div>
+      `,
+      body,
+    );
+  }
+
   private onFilterToggle(column: string, value: DistinctValue, checked: boolean): void {
     const state = this.filterState(column);
     if (!state) return;
@@ -1640,7 +1812,7 @@ export class MpDatatable extends LitElement {
     // disables itself), so focus must go somewhere deliberate rather than to
     // <body>. The search box is where the next action starts.
     this.filterOverlay.portalContainer
-      ?.querySelector<HTMLElement>('.filter-search')
+      ?.querySelector<HTMLElement>('.filter-search, .filter-operand')
       ?.focus({ preventScroll: true });
   }
 

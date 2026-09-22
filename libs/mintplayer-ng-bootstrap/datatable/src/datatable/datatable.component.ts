@@ -242,6 +242,9 @@ export class BsDatatableComponent<TData> implements AfterViewInit {
         filterActive: dir.filterActive(),
         filterSummary: dir.filterSummary(),
         filterSelection: dir.filterSelection(),
+        filterMode: dir.filterMode(),
+        filterInputType: dir.filterInputType(),
+        filterOperators: dir.filterOperators(),
         headerRenderer: () => {
           if (!headerView) {
             headerView = this.vcr.createEmbeddedView(dir.templateRef);

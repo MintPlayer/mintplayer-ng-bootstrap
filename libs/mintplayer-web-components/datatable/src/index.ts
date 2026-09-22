@@ -28,6 +28,11 @@ export type {
   FilterSelection,
   FilterContext,
   FilterChangeDetail,
+  ValuesFilterChangeDetail,
+  ComparisonFilterChangeDetail,
+  FilterMode,
+  FilterOperator,
+  FilterInputType,
 } from './types';
 export type { DatatableLabels } from './types';
 export { DEFAULT_DATATABLE_LABELS } from './types';

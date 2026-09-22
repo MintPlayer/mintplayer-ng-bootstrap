@@ -531,6 +531,45 @@ tr.filter-row th {
   outline-offset: 1px;
 }
 
+// Comparison mode: an operator and one operand, side by side. The operand takes
+// the remaining width with `min-width: 0`, so a long `type=date` control shrinks
+// instead of pushing the panel wider than its max-width.
+.filter-comparison {
+  display: flex;
+  gap: 0.375rem;
+  align-items: center;
+}
+
+.filter-operator {
+  flex: 0 0 auto;
+  // A native select sizes to its WIDEST option, so without a basis the six
+  // spelled-out operators would set the panel's width on their own.
+  max-width: 9rem;
+  padding: 0.25rem 0.375rem;
+  background-color: var(--bs-body-bg, #fff);
+  color: inherit;
+  border: 1px solid var(--mp-datatable-border-color, var(--bs-border-color, rgba(0, 0, 0, 0.125)));
+  border-radius: 0.25rem;
+  font: inherit;
+}
+
+.filter-operand {
+  flex: 1 1 auto;
+  min-width: 0;
+  padding: 0.25rem 0.5rem;
+  background-color: var(--bs-body-bg, #fff);
+  color: inherit;
+  border: 1px solid var(--mp-datatable-border-color, var(--bs-border-color, rgba(0, 0, 0, 0.125)));
+  border-radius: 0.25rem;
+  font: inherit;
+}
+
+.filter-operator:focus-visible,
+.filter-operand:focus-visible {
+  outline: 2px solid var(--bs-focus-ring-color, #0d6efd);
+  outline-offset: 1px;
+}
+
 .filter-options {
   display: flex;
   flex-direction: column;

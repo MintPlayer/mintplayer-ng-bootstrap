@@ -1,5 +1,11 @@
 import type { TemplateResult } from 'lit';
-import type { FilterContext, FilterSelection } from './filter';
+import type {
+  FilterContext,
+  FilterInputType,
+  FilterMode,
+  FilterOperator,
+  FilterSelection,
+} from './filter';
 
 export type CellContent = string | number | boolean | null | undefined | TemplateResult | Node;
 
@@ -103,4 +109,20 @@ export interface DatatableColumnDef<T = unknown> {
    * `columns` assignment, so this is a seed, not a binding.
    */
   filterSelection?: FilterSelection;
+  /**
+   * Which question the built-in panel asks: a checkbox list of distinct values
+   * (default) or an operator plus one operand. Ignored when `filterRenderer`
+   * returns a node, which replaces the panel entirely.
+   */
+  filterMode?: FilterMode;
+  /**
+   * `type` of the operand input in `'comparison'` mode. Default `'text'`.
+   * `'number'` and `'date'` also decide how the operand is parsed back out.
+   */
+  filterInputType?: FilterInputType;
+  /**
+   * Operators offered in `'comparison'` mode, in the order shown. Defaults to
+   * all six; narrow it when only some make sense (equality alone for an id).
+   */
+  filterOperators?: FilterOperator[];
 }

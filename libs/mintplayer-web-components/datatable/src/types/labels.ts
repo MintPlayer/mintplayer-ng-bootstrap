@@ -1,3 +1,5 @@
+import type { FilterOperator } from './filter';
+
 /**
  * User-visible strings rendered by `<mp-datatable>`. Consumers override via the
  * `labels` property; merge semantics are partial — any key the consumer omits
@@ -60,12 +62,53 @@ export interface DatatableLabels {
   filterFalse: string;
   /** Announced when a column's filter selection changes. */
   announceFilter: (column: string, count: number) => string;
+  /** Accessible name of the operator selector in a comparison panel. */
+  filterOperator: string;
+  /** Accessible name of the operand input in a comparison panel. */
+  filterOperand: string;
+  /**
+   * Visible text of each operator option.
+   *
+   * Words, not bare glyphs: `<` and `>` are read as "less than sign" by some
+   * screen readers and not at all by others, and the symbol is carried
+   * separately so the option still reads as a symbol to sighted users.
+   */
+  filterOperatorLabel: (operator: FilterOperator) => string;
+  /** Announced when a comparison filter changes. */
+  announceComparisonFilter: (column: string, operator: string, operand: string) => string;
   /** Live-region announcements (Phase E). */
   announceSorted: (column: string, direction: 'ascending' | 'descending' | 'none') => string;
   announcePage: (page: number, totalPages: number) => string;
   announceSelection: (count: number) => string;
   announceLoaded: (rows: number) => string;
 }
+
+/**
+ * Read by the default `filterOperatorLabel`. Spelled out rather than `<` / `>`:
+ * a lone angle bracket is announced as "less than sign" by some screen readers
+ * and skipped entirely by others.
+ */
+const FILTER_OPERATOR_LABELS: Record<FilterOperator, string> = {
+  eq: 'equals',
+  neq: 'does not equal',
+  lt: 'is less than',
+  lte: 'is at most',
+  gt: 'is greater than',
+  gte: 'is at least',
+};
+
+/** The symbol shown alongside each operator's words. */
+export const FILTER_OPERATOR_SYMBOLS: Record<FilterOperator, string> = {
+  eq: '=',
+  neq: '≠',
+  lt: '<',
+  lte: '≤',
+  gt: '>',
+  gte: '≥',
+};
+
+/** Every operator, in the order a panel offers them when a column names none. */
+export const DEFAULT_FILTER_OPERATORS: FilterOperator[] = ['eq', 'neq', 'lt', 'lte', 'gt', 'gte'];
 
 export const DEFAULT_DATATABLE_LABELS: DatatableLabels = {
   treeChevronColumn: 'Expand or collapse',
@@ -104,6 +147,11 @@ export const DEFAULT_DATATABLE_LABELS: DatatableLabels = {
       : count === 1
         ? `1 value selected in ${column}`
         : `${count} values selected in ${column}`,
+  filterOperator: 'Comparison',
+  filterOperand: 'Value to compare with',
+  filterOperatorLabel: (operator) => FILTER_OPERATOR_LABELS[operator],
+  announceComparisonFilter: (column, operator, operand) =>
+    operand === '' ? `Filter cleared on ${column}` : `${column} ${operator} ${operand}`,
   announceSorted: (column, direction) =>
     direction === 'none' ? `Sorting removed from ${column}` : `Sorted by ${column}, ${direction}`,
   announcePage: (page, totalPages) => `Page ${page} of ${totalPages}`,

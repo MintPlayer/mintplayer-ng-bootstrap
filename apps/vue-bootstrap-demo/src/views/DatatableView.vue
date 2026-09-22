@@ -9,6 +9,7 @@ import type {
   SelectionChangeEventDetail,
   DistinctValue,
   FilterChangeDetail,
+  FilterOperator,
 } from '@mintplayer/web-components/datatable';
 
 // Dev: /api is proxied to localhost:5000 by vite.config; prod hits the API
@@ -44,8 +45,26 @@ const SIMPLE_SOURCE = `<BsDatatable :columns="COLUMNS" :data="ARTISTS" />`;
 const showFilters = ref(true);
 const nameSelection = ref<DistinctValue[]>([]);
 const nameInverse = ref(false);
-const minFounded = ref<number | null>(null);
+const foundedOperator = ref<FilterOperator>('gte');
+const foundedOperand = ref<number | null>(null);
+const genreStartsWith = ref('');
 const artistRowKey = (row: unknown) => String((row as Artist).id);
+
+/** Mirrors the component's operator glyphs for the trigger summary. */
+const OPERATOR_SYMBOLS: Record<FilterOperator, string> = {
+  eq: '=', neq: '≠', lt: '<', lte: '≤', gt: '>', gte: '≥',
+};
+
+function compare(value: number, operator: FilterOperator, operand: number): boolean {
+  switch (operator) {
+    case 'eq': return value === operand;
+    case 'neq': return value !== operand;
+    case 'lt': return value < operand;
+    case 'lte': return value <= operand;
+    case 'gt': return value > operand;
+    case 'gte': return value >= operand;
+  }
+}
 
 // ARTISTS is the UNFILTERED master copy. `:data` gets the filtered view, and
 // the value lists are computed from the rows the element holds — so filtering
@@ -58,7 +77,12 @@ const filteredArtists = computed(() =>
         : nameInverse.value
           ? !nameSelection.value.some((v) => v.value === a.name)
           : nameSelection.value.some((v) => v.value === a.name)) &&
-      (minFounded.value === null ? true : a.founded >= minFounded.value),
+      (foundedOperand.value === null
+        ? true
+        : compare(a.founded, foundedOperator.value, foundedOperand.value)) &&
+      (genreStartsWith.value === ''
+        ? true
+        : a.genre.toLowerCase().startsWith(genreStartsWith.value.toLowerCase())),
   ),
 );
 
@@ -69,38 +93,56 @@ const nameSummary = computed(() => {
   return `${selected.length} selected`;
 });
 
+// One handler, one discriminated union: switching on `mode` means the
+// comparison branch cannot read `selected` and the values branch cannot read
+// `operand` — the compiler enforces the real runtime shape.
 function onFilterChange(detail: FilterChangeDetail) {
-  if (detail.column !== 'name') return;
-  nameSelection.value = detail.selected;
-  nameInverse.value = detail.inverse;
+  if (detail.mode === 'values' && detail.column === 'name') {
+    nameSelection.value = detail.selected;
+    nameInverse.value = detail.inverse;
+    return;
+  }
+  if (detail.mode === 'comparison' && detail.column === 'founded') {
+    foundedOperator.value = detail.operator;
+    foundedOperand.value = detail.operand === null ? null : Number(detail.operand);
+  }
 }
 
-// An override panel. `filterRenderer` returns a DOM Node — the same contract
-// all three frameworks see — and it must return a STABLE one: the element
-// mounts it once per open, so repainting it is this function's job.
-let foundedPanel: HTMLElement | null = null;
-function foundedPanelNode(): Node {
-  if (foundedPanel) return foundedPanel;
+// An override panel, for the case neither built-in question fits.
+// `filterRenderer` returns a DOM Node — the same contract all three frameworks
+// see — and it must return a STABLE one: the element mounts it once per open,
+// so repainting it is this function's job.
+//
+// The classes below are styled in a NON-scoped <style> block on purpose: Vue's
+// `scoped` works by stamping `data-v-*` onto nodes it renders from the
+// template, and this node is built imperatively, so a scoped rule would match
+// nothing. Bootstrap's `.form-control` would not help either — it is only
+// styled inside `bs-*` components in this workspace.
+let genrePanel: HTMLElement | null = null;
+function genrePanelNode(): Node {
+  if (genrePanel) return genrePanel;
   const wrap = document.createElement('div');
+  wrap.className = 'demo-filter-panel';
   const lbl = document.createElement('label');
-  lbl.className = 'form-label small mb-1';
-  lbl.textContent = 'Founded after';
+  lbl.className = 'demo-filter-label';
+  lbl.textContent = 'Genre starts with';
   const input = document.createElement('input');
-  input.type = 'number';
-  input.className = 'form-control form-control-sm';
-  input.id = lbl.htmlFor = 'vue-filter-founded';
+  input.type = 'text';
+  input.className = 'demo-filter-input';
+  input.id = lbl.htmlFor = 'vue-filter-genre';
   input.addEventListener('input', () => {
-    minFounded.value = input.value.trim() === '' ? null : Number(input.value);
+    genreStartsWith.value = input.value;
   });
   wrap.append(lbl, input);
-  foundedPanel = wrap;
+  genrePanel = wrap;
   return wrap;
 }
 
 const filterColumns = computed<DatatableColumnDef[]>(() =>
   COLUMNS.map((col) => {
     if (!showFilters.value) return col;
-    // No filterRenderer: the built-in panel renders. That is the whole opt-in.
+    // No filterRenderer and no filterMode: the built-in value list renders.
+    // That is the whole opt-in.
     if (col.name === 'name') {
       return {
         ...col,
@@ -109,13 +151,27 @@ const filterColumns = computed<DatatableColumnDef[]>(() =>
         filterSummary: nameSummary.value,
       };
     }
+    // Comparison mode: still the built-in panel, asking a different question.
     if (col.name === 'founded') {
       return {
         ...col,
         filterable: true,
-        filterActive: minFounded.value !== null,
-        filterSummary: minFounded.value === null ? undefined : `≥ ${minFounded.value}`,
-        filterRenderer: foundedPanelNode,
+        filterMode: 'comparison' as const,
+        filterInputType: 'number' as const,
+        filterActive: foundedOperand.value !== null,
+        filterSummary:
+          foundedOperand.value === null
+            ? undefined
+            : `${OPERATOR_SYMBOLS[foundedOperator.value]} ${foundedOperand.value}`,
+      };
+    }
+    if (col.name === 'genre') {
+      return {
+        ...col,
+        filterable: true,
+        filterActive: genreStartsWith.value !== '',
+        filterSummary: genreStartsWith.value || undefined,
+        filterRenderer: genrePanelNode,
       };
     }
     return col;
@@ -132,11 +188,21 @@ const FILTER_SOURCE = `<!-- filterable is the whole opt-in: with no filterRender
 const nameSelection = ref<DistinctValue[]>([]);
 const nameInverse = ref(false);
 
+// One handler, one discriminated union: switching on \`mode\` means the
+// comparison branch cannot read \`selected\`, and vice versa.
 function onFilterChange(detail: FilterChangeDetail) {
-  if (detail.column !== 'name') return;
-  nameSelection.value = detail.selected;   // [] when the user clears
-  nameInverse.value = detail.inverse;      // the include/exclude toggle
+  if (detail.mode === 'values' && detail.column === 'name') {
+    nameSelection.value = detail.selected;   // [] when the user clears
+    nameInverse.value = detail.inverse;      // the include/exclude toggle
+  } else if (detail.mode === 'comparison' && detail.column === 'founded') {
+    foundedOperator.value = detail.operator; // 'eq' | 'neq' | 'lt' | 'lte' | 'gt' | 'gte'
+    foundedOperand.value = detail.operand as number | null;   // null = cleared
+  }
 }
+
+// A column asking a different question — still the built-in panel, no renderer.
+const founded = { ...col, filterable: true,
+  filterMode: 'comparison', filterInputType: 'number' };
 
 const filterColumns = computed<DatatableColumnDef[]>(() =>
   COLUMNS.map(col => col.name === 'name'
@@ -374,11 +440,30 @@ const TREE_SOURCE = `<!-- The same callback, branching on req.parentId for roots
         below just sets <code>filterable</code>.
       </p>
       <p>
-        When a column needs something else, give it a <code>filterRenderer</code>
-        &mdash; <em>Founded</em> does, because a range is not a set of values to
-        tick. It returns a DOM <code>Node</code> (the same contract all three
-        frameworks see) and must return a <strong>stable</strong> one: the
-        element mounts it once per open, so repainting it is the renderer's job.
+        A checkbox list is the wrong question for a quantity, so a column can ask
+        a different one: <code>filterMode: 'comparison'</code> renders an
+        operator (=, &ne;, &lt;, &le;, &gt;, &ge;) and a single input, with
+        <code>filterInputType</code> choosing <code>text</code>,
+        <code>number</code> or <code>date</code> &mdash; the <em>Founded</em>
+        column below. Still the built-in panel: no renderer, no styling of your
+        own. Narrow the list with <code>filterOperators</code> when only some
+        operators make sense.
+      </p>
+      <p>
+        You pick the mode per column and the component never infers it: a numeric
+        column is often an enum and a string column is often ordinal, so any
+        guess would be wrong about half the time.
+      </p>
+      <p>
+        When neither built-in question fits, give the column a
+        <code>filterRenderer</code> &mdash; <em>Genre</em> does. It returns a DOM
+        <code>Node</code> (the same contract all three frameworks see) and must
+        return a <strong>stable</strong> one: the element mounts it once per
+        open, so repainting it is the renderer's job.
+        <strong>That markup is yours, so you style it</strong> &mdash; and in Vue
+        it needs a <em>non-scoped</em> rule, because an imperatively built node
+        never gets the <code>data-v-*</code> attribute <code>scoped</code>
+        matches on.
       </p>
       <p>
         The panel opens in an overlay at the document root, so it is not clipped
@@ -429,5 +514,48 @@ const TREE_SOURCE = `<!-- The same callback, branching on req.parentId for roots
 .windowed-table {
   display: block;
   height: 360px;
+}
+</style>
+
+<!--
+  NOT scoped, deliberately. `scoped` works by stamping `data-v-*` onto the nodes
+  Vue renders from this template; the override filter panel is built
+  imperatively in the script above, so it carries no such attribute and a scoped
+  rule would match nothing. The panel also renders into the document-root
+  overlay, outside this component's DOM entirely.
+
+  The spacing mirrors the built-in panel's, so the two do not read as different
+  widgets when a user opens them one after the other.
+-->
+<style>
+.demo-filter-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 0.375rem;
+  min-width: 12rem;
+  padding: 0.25rem;
+}
+
+.demo-filter-label {
+  margin: 0;
+  font-size: 0.875em;
+  color: var(--bs-secondary-color, #6c757d);
+}
+
+.demo-filter-input {
+  display: block;
+  width: 100%;
+  box-sizing: border-box;
+  padding: 0.25rem 0.5rem;
+  background-color: var(--bs-body-bg, #fff);
+  color: inherit;
+  border: 1px solid var(--bs-border-color, rgba(0, 0, 0, 0.125));
+  border-radius: 0.25rem;
+  font: inherit;
+}
+
+.demo-filter-input:focus-visible {
+  outline: 2px solid var(--bs-focus-ring-color, #0d6efd);
+  outline-offset: 1px;
 }
 </style>

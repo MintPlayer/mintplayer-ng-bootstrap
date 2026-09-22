@@ -185,11 +185,29 @@
   it as-is.
 </p>
 <p>
-  When that is not what a column needs, nest a
+  A checkbox list is the wrong question for a quantity, so a column can ask a
+  different one: <code>filterMode: 'comparison'</code> renders an operator
+  (<code>=</code>, <code>&ne;</code>, <code>&lt;</code>, <code>&le;</code>,
+  <code>&gt;</code>, <code>&ge;</code>) and a single input, with
+  <code>filterInputType</code> choosing <code>text</code>, <code>number</code> or
+  <code>date</code> &mdash; the <em>Year started</em> column below. Still the
+  built-in panel: no template and no styling of your own. Narrow the operator
+  list with <code>filterOperators</code> when only some make sense.
+</p>
+<p>
+  The consumer picks the mode per column and the component never infers it: a
+  numeric column is often an enum and a string column is often ordinal, so any
+  guess would be wrong about half the time.
+</p>
+<p>
+  When neither built-in question fits, nest a
   <code>*bsDatatableFilterPanel</code> inside the column and render whatever you
-  like &mdash; the <em>Year started</em> column does, because a range is not a
-  set of values to tick. The template receives the loaded values as a signal and
-  a context object for driving the search and the selection.
+  like &mdash; the <em>Year quit</em> column does. The template receives the
+  loaded values as a signal and a context object for driving the search and the
+  selection. <strong>That markup is yours, so you style it yourself</strong>:
+  Bootstrap's <code>.form-control</code> is only styled inside
+  <code>bs-*</code> components in this workspace, and the panel renders in the
+  document-root overlay, outside the table's DOM.
 </p>
 <p>
   The panel opens in an overlay at the document root, so it is not clipped by
@@ -235,30 +253,40 @@
     Artist
   </div>
 
-  <!-- An override: a year range is not a set of values to tick. -->
+  <!-- Comparison mode: a year is a quantity, so an operator and one number
+       beats ticking every distinct year. Still the built-in panel — no
+       template, no styling, nothing to wire but the two inputs. -->
   <div *bsDatatableColumn="'yearStarted';
         sortable: true;
         filterable: showFilters();
-        filterActive: minYear() !== null;
-        filterSummary: minYear() !== null ? '≥ ' + minYear() : undefined">
+        filterMode: 'comparison';
+        filterInputType: 'number';
+        filterActive: yearOperand() !== null;
+        filterSummary: yearSummary()">
     Year started
-    <ng-container *bsDatatableFilterPanel="let values">
-      <label class="form-label small mb-1" for="filter-year">Started after</label>
-      <input id="filter-year" class="form-control form-control-sm" type="number"
-        [ngModel]="minYear()" (ngModelChange)="setMinYear($event)"
-        placeholder="1960" />
-      <p class="text-muted small mb-0 mt-1">
-        {{ values()?.matching?.length ?? 0 }} distinct year(s) in view.
-      </p>
-      @if (minYear() !== null) {
-        <button type="button" class="btn btn-sm btn-link px-0 mt-1" (click)="setMinYear(null)">
-          Clear
-        </button>
-      }
-    </ng-container>
   </div>
 
-  <div *bsDatatableColumn="'yearQuit'; sortable: false">Year quit</div>
+  <!-- The escape hatch: a panel the component could not have guessed. Its
+       markup is the page's own, so the page styles it (see the .demo-filter-*
+       rules) — Bootstrap's .form-control is only styled inside bs-* components
+       here, and would reach nothing in the document-root overlay anyway. -->
+  <div *bsDatatableColumn="'yearQuit';
+        sortable: false;
+        filterable: showFilters();
+        filterActive: activeOnly()">
+    Year quit
+    <ng-container *bsDatatableFilterPanel="let values">
+      <div class="demo-filter-panel">
+        <label class="demo-filter-check">
+          <input type="checkbox" [ngModel]="activeOnly()" (ngModelChange)="activeOnly.set($event)" />
+          <span>Still active only</span>
+        </label>
+        <p class="demo-filter-hint">
+          {{ values()?.matching?.length ?? 0 }} distinct value(s) in view.
+        </p>
+      </div>
+    </ng-container>
+  </div>
 
   <ng-container *bsRowTemplate="let artist">
     <td class="text-nowrap">{{ $any(artist)?.name }}</td>

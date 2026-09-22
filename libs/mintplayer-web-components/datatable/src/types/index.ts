@@ -16,6 +16,11 @@ export type {
   FilterSelection,
   FilterContext,
   FilterChangeDetail,
+  ValuesFilterChangeDetail,
+  ComparisonFilterChangeDetail,
+  FilterMode,
+  FilterOperator,
+  FilterInputType,
 } from './filter';
 export type {
   DatatableFetchRequest,
@@ -26,5 +31,5 @@ export type {
   TreeIdKey,
   TreeSelectionStrategy,
 } from './tree';
-export { DEFAULT_DATATABLE_LABELS } from './labels';
+export { DEFAULT_DATATABLE_LABELS, FILTER_OPERATOR_SYMBOLS, DEFAULT_FILTER_OPERATORS } from './labels';
 export type { DatatableLabels } from './labels';

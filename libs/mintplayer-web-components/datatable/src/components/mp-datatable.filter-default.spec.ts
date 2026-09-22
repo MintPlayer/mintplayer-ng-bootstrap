@@ -439,6 +439,170 @@ describe('mp-datatable built-in filter panel', () => {
     expect(panelQuery<HTMLButtonElement>('.filter-clear')!.disabled).toBe(false);
   });
 
+  describe('comparison mode', () => {
+    const COMPARISON: DatatableColumnDef[] = [
+      { name: 'name', label: 'Name' },
+      { name: 'founded', label: 'Founded', filterable: true, filterMode: 'comparison', filterInputType: 'number' },
+    ];
+    const ROWS = [{ founded: 1985 }, { founded: 1993 }, { founded: 2007 }];
+
+    const operatorSelect = () => panelQuery<HTMLSelectElement>('.filter-operator')!;
+    const operandInput = () => panelQuery<HTMLInputElement>('.filter-operand')!;
+    const type = async (el: MpDatatable, value: string) => {
+      const input = operandInput();
+      input.value = value;
+      input.dispatchEvent(new Event('input', { bubbles: true }));
+      await settle(el);
+    };
+
+    it('renders an operator and one operand instead of a value list', async () => {
+      const el = await mount(COMPARISON, ROWS);
+      await open(el, 'founded');
+
+      expect(operatorSelect()).toBeTruthy();
+      expect(operandInput().type).toBe('number');
+      expect(panelQuery('.filter-options')).toBeNull();
+      expect(panelQuery('.filter-search')).toBeNull();
+    });
+
+    it('offers all six operators by default, and only the named ones otherwise', async () => {
+      const el = await mount(COMPARISON, ROWS);
+      await open(el, 'founded');
+      expect([...operatorSelect().options].map((o) => o.value)).toEqual([
+        'eq', 'neq', 'lt', 'lte', 'gt', 'gte',
+      ]);
+      await open(el, 'founded');
+
+      const narrowed = await mount(
+        [COMPARISON[0], { ...COMPARISON[1], filterOperators: ['gte', 'lte'] }],
+        ROWS,
+      );
+      await open(narrowed, 'founded');
+      expect([...operatorSelect().options].map((o) => o.value)).toEqual(['gte', 'lte']);
+    });
+
+    /**
+     * The panel shows no value list, so asking the source for one would be a
+     * round trip whose answer is never read.
+     */
+    it('never asks the distincts source', async () => {
+      const source = vi.fn<DatatableDistincts>(async () => ({
+        matching: [], remaining: [], hasMore: false,
+      }));
+      const el = await mount(COMPARISON, ROWS);
+      (el as unknown as { distincts: DatatableDistincts }).distincts = source;
+      await settle(el);
+      await open(el, 'founded');
+
+      expect(source).not.toHaveBeenCalled();
+    });
+
+    it('emits the operator and a parsed operand', async () => {
+      const el = await mount(COMPARISON, ROWS);
+      const seen: FilterChangeDetail[] = [];
+      el.addEventListener('mp-datatable-filter-change', (e) =>
+        seen.push((e as CustomEvent<FilterChangeDetail>).detail),
+      );
+      await open(el, 'founded');
+
+      await type(el, '1990');
+      expect(seen.at(-1)).toEqual({
+        mode: 'comparison', column: 'founded', operator: 'eq', operand: 1990,
+      });
+
+      operatorSelect().value = 'gte';
+      operatorSelect().dispatchEvent(new Event('change', { bubbles: true }));
+      await settle(el);
+      expect(seen.at(-1)).toMatchObject({ operator: 'gte', operand: 1990 });
+    });
+
+    /**
+     * An empty box is "no filter", not a comparison against the empty string —
+     * otherwise every column would empty the table the moment its panel opened.
+     */
+    it('treats an empty or unparseable operand as no filter', async () => {
+      const el = await mount(COMPARISON, ROWS);
+      const seen: FilterChangeDetail[] = [];
+      el.addEventListener('mp-datatable-filter-change', (e) =>
+        seen.push((e as CustomEvent<FilterChangeDetail>).detail),
+      );
+      await open(el, 'founded');
+
+      await type(el, '1990');
+      await type(el, '');
+      expect(seen.at(-1)).toMatchObject({ operand: null });
+
+      await type(el, '-');
+      expect(seen.at(-1)).toMatchObject({ operand: null });
+    });
+
+    /**
+     * Asserted on a TEXT column, because a `number` input's `value` is `''`
+     * whenever its content is not a valid number (DOM spec — `-` and `1e` both
+     * read back empty), so the echo is unobservable there by construction.
+     *
+     * That same rule is why the binding uses `live()`. Typing `-` over `1990`
+     * takes our state from `'1990'` to `''`; a plain binding sees a change and
+     * writes `value = ''`, wiping the `-` the user just typed. `live()` compares
+     * against what the element currently holds — also `''` — and writes nothing.
+     */
+    it('echoes the raw text back rather than the parsed value', async () => {
+      const el = await mount(
+        [COMPARISON[0], { ...COMPARISON[1], filterInputType: 'text' }],
+        ROWS,
+      );
+      await open(el, 'founded');
+
+      await type(el, '19');
+      expect(operandInput().value).toBe('19');
+      // Not a number, so nothing is emitted for it — but it stays in the box.
+      await type(el, '19xy');
+      expect(operandInput().value).toBe('19xy');
+    });
+
+    it('clears in its own shape, not the values shape', async () => {
+      const el = await mount(COMPARISON, ROWS);
+      const seen: FilterChangeDetail[] = [];
+      el.addEventListener('mp-datatable-filter-change', (e) =>
+        seen.push((e as CustomEvent<FilterChangeDetail>).detail),
+      );
+      await open(el, 'founded');
+      await type(el, '1990');
+
+      expect(panelQuery<HTMLButtonElement>('.filter-clear')!.disabled).toBe(false);
+      panelQuery<HTMLButtonElement>('.filter-clear')!.click();
+      await settle(el);
+
+      // A consumer switching on `mode` would miss a values-shaped clear here.
+      expect(seen.at(-1)).toMatchObject({ mode: 'comparison', operand: null });
+      expect(document.activeElement).toBe(panelQuery('.filter-operand'));
+    });
+
+    it('focuses the operand box on open', async () => {
+      const el = await mount(COMPARISON, ROWS);
+      await open(el, 'founded');
+      expect(document.activeElement).toBe(panelQuery('.filter-operand'));
+    });
+
+    it('seeds operator and operand from filterSelection', async () => {
+      const el = await mount(
+        [
+          COMPARISON[0],
+          {
+            ...COMPARISON[1],
+            filterSelection: { values: [], inverse: false, operator: 'lt', operand: 2000 },
+          },
+        ],
+        ROWS,
+      );
+      await open(el, 'founded');
+
+      expect(operatorSelect().value).toBe('lt');
+      expect(operandInput().value).toBe('2000');
+      expect(panelQuery<HTMLButtonElement>('.filter-clear')!.disabled).toBe(false);
+    });
+  });
+
   it('drops the panel and its state when the column goes away', async () => {
     const el = await mount(FILTERABLE);
     await open(el);

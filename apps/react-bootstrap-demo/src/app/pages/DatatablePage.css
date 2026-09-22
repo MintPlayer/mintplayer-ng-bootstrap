@@ -1,0 +1,43 @@
+/*
+ * Styles for the datatable page's OVERRIDE filter panel.
+ *
+ * This markup is the page's own, so the page styles it. Two reasons it cannot
+ * lean on Bootstrap's form classes: `.form-control` is only styled inside
+ * `bs-*` components in this workspace, and the panel is rendered into the
+ * document-root overlay, outside the table's DOM — page-level classes still
+ * reach it, anything scoped to a subtree would not.
+ *
+ * The spacing deliberately mirrors the built-in panel's, so the two do not read
+ * as different widgets when a user opens them one after the other.
+ */
+
+.demo-filter-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 0.375rem;
+  min-width: 12rem;
+  padding: 0.25rem;
+}
+
+.demo-filter-label {
+  margin: 0;
+  font-size: 0.875em;
+  color: var(--bs-secondary-color, #6c757d);
+}
+
+.demo-filter-input {
+  display: block;
+  width: 100%;
+  box-sizing: border-box;
+  padding: 0.25rem 0.5rem;
+  background-color: var(--bs-body-bg, #fff);
+  color: inherit;
+  border: 1px solid var(--bs-border-color, rgba(0, 0, 0, 0.125));
+  border-radius: 0.25rem;
+  font: inherit;
+}
+
+.demo-filter-input:focus-visible {
+  outline: 2px solid var(--bs-focus-ring-color, #0d6efd);
+  outline-offset: 1px;
+}

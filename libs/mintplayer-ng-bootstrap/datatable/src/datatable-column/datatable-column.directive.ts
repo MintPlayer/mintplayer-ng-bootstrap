@@ -1,5 +1,12 @@
 import { Directive, inject, input, TemplateRef, type Signal } from '@angular/core';
-import type { FilterContext, FilterSelection, DistinctValues } from '@mintplayer/web-components/datatable';
+import type {
+  FilterContext,
+  FilterInputType,
+  FilterMode,
+  FilterOperator,
+  FilterSelection,
+  DistinctValues,
+} from '@mintplayer/web-components/datatable';
 
 /**
  * Context of a `*bsDatatableFilterPanel` template.
@@ -58,6 +65,24 @@ export class BsDatatableColumnDirective {
   /** Initial or externally restored selection for this column's panel. */
   readonly filterSelection = input<FilterSelection | undefined>(undefined, {
     alias: 'bsDatatableColumnFilterSelection',
+  });
+
+  /**
+   * `'values'` (default) lists the column's distinct values as checkboxes;
+   * `'comparison'` offers an operator and one operand — the right shape for a
+   * quantity, where ticking forty individual years is a poor way to say
+   * "after 1990".
+   */
+  readonly filterMode = input<FilterMode>('values', { alias: 'bsDatatableColumnFilterMode' });
+
+  /** `type` of the operand input in comparison mode. Default `'text'`. */
+  readonly filterInputType = input<FilterInputType | undefined>(undefined, {
+    alias: 'bsDatatableColumnFilterInputType',
+  });
+
+  /** Operators offered in comparison mode, in order. Defaults to all six. */
+  readonly filterOperators = input<FilterOperator[] | undefined>(undefined, {
+    alias: 'bsDatatableColumnFilterOperators',
   });
 
   /**

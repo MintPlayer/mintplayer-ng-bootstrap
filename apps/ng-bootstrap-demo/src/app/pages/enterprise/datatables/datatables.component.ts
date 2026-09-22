@@ -8,6 +8,7 @@ import {
   BsDatatableFilterPanelDirective,
   type DistinctValue,
   type FilterChangeDetail,
+  type FilterOperator,
   BsRowTemplateDirective,
   BsDatatableFetch,
   DatatableSettings,
@@ -21,6 +22,33 @@ import { Artist } from '../../../entities/artist';
 import { ArtistService } from '../../../services/artist/artist.service';
 import { TreeItem } from '../../../entities/tree-item';
 import { TreeItemService } from '../../../services/tree-item/tree-item.service';
+
+/** Mirrors the component's own operator glyphs for the trigger summary. */
+const OPERATOR_SYMBOLS: Record<FilterOperator, string> = {
+  eq: '=',
+  neq: '≠',
+  lt: '<',
+  lte: '≤',
+  gt: '>',
+  gte: '≥',
+};
+
+function compare(value: number, operator: FilterOperator, operand: number): boolean {
+  switch (operator) {
+    case 'eq':
+      return value === operand;
+    case 'neq':
+      return value !== operand;
+    case 'lt':
+      return value < operand;
+    case 'lte':
+      return value <= operand;
+    case 'gt':
+      return value > operand;
+    case 'gte':
+      return value >= operand;
+  }
+}
 
 @Component({
   selector: 'demo-datatables',
@@ -368,8 +396,11 @@ export class DatatablesComponent {
   nameSelection = signal<DistinctValue[]>([]);
   /** The panel's include/exclude toggle. */
   nameInverse = signal(false);
-  /** The override panel's state; a range is not a set of values to tick. */
-  minYear = signal<number | null>(null);
+  /** Comparison-mode state for `yearStarted`, straight off the event. */
+  yearOperator = signal<FilterOperator>('gte');
+  yearOperand = signal<number | null>(null);
+  /** The override panel's own state — something the component could not guess. */
+  activeOnly = signal(false);
 
   nameSummary = computed(() => {
     const selected = this.nameSelection();
@@ -378,17 +409,25 @@ export class DatatablesComponent {
     return `${selected.length} selected`;
   });
 
+  yearSummary = computed(() => {
+    const operand = this.yearOperand();
+    return operand === null ? undefined : `${OPERATOR_SYMBOLS[this.yearOperator()]} ${operand}`;
+  });
+
   filteredArtists = computed(() => {
     const selected = this.nameSelection();
     const inverse = this.nameInverse();
-    const min = this.minYear();
+    const operator = this.yearOperator();
+    const operand = this.yearOperand();
+    const activeOnly = this.activeOnly();
     return this.allArtists()
       .filter((a) => {
         if (selected.length === 0) return true;
         const hit = selected.some((v) => v.value === a.name);
         return inverse ? !hit : hit;
       })
-      .filter((a) => (min === null ? true : (a.yearStarted ?? 0) >= min));
+      .filter((a) => (operand === null ? true : compare(a.yearStarted ?? 0, operator, operand)))
+      .filter((a) => (activeOnly ? a.yearQuit == null : true));
   });
 
   filterSettings = signal(new DatatableSettings({
@@ -397,14 +436,21 @@ export class DatatablesComponent {
     page: { values: [1], selected: 1 },
   }));
 
+  /**
+   * One handler for both panels. `mode` discriminates the union, so the
+   * comparison branch cannot read `selected` and the values branch cannot read
+   * `operand` — the compiler enforces what the runtime shape actually is.
+   */
   onFilterChange(detail: FilterChangeDetail) {
-    if (detail.column !== 'name') return;
-    this.nameSelection.set(detail.selected);
-    this.nameInverse.set(detail.inverse);
-  }
-
-  setMinYear(value: number | null) {
-    this.minYear.set(value === null || Number.isNaN(value) ? null : Number(value));
+    if (detail.mode === 'values' && detail.column === 'name') {
+      this.nameSelection.set(detail.selected);
+      this.nameInverse.set(detail.inverse);
+      return;
+    }
+    if (detail.mode === 'comparison' && detail.column === 'yearStarted') {
+      this.yearOperator.set(detail.operator);
+      this.yearOperand.set(detail.operand === null ? null : Number(detail.operand));
+    }
   }
 
   protected readonly snippetFilterHtml = dedent`
@@ -414,8 +460,8 @@ export class DatatablesComponent {
     <bs-datatable [data]="filteredArtists()" [(settings)]="settings" [rowKey]="rowKey"
       (filterChange)="onFilterChange($event)">
 
-      <!-- No nested panel, so the built-in one renders: search, include/exclude,
-           a checkbox list of the column's distinct values, and clear. -->
+      <!-- Default: a checkbox list of the column's distinct values, with
+           search, include/exclude and clear. No template, no wiring. -->
       <div *bsDatatableColumn="'name';
             filterable: showFilters();
             filterActive: nameSelection().length > 0;
@@ -423,15 +469,29 @@ export class DatatablesComponent {
         Artist
       </div>
 
-      <!-- An override, nested INSIDE the column it belongs to. -->
+      <!-- Comparison mode: an operator and one number. The right shape for a
+           quantity — ticking forty individual years is not a filter. -->
       <div *bsDatatableColumn="'yearStarted';
             filterable: showFilters();
-            filterActive: minYear() !== null">
+            filterMode: 'comparison';
+            filterInputType: 'number';
+            filterActive: yearOperand() !== null;
+            filterSummary: yearSummary()">
         Year started
+      </div>
+
+      <!-- The escape hatch, nested INSIDE the column it belongs to. Style this
+           markup yourself: it is your DOM, the component never touches it, and
+           .form-control is only styled inside bs-* components here. -->
+      <div *bsDatatableColumn="'yearQuit'; filterable: showFilters()">
+        Year quit
         <ng-container *bsDatatableFilterPanel="let values">
-          <input type="number" class="form-control form-control-sm"
-            [ngModel]="minYear()" (ngModelChange)="setMinYear($event)" />
-          <p class="small">{{ values()?.matching?.length ?? 0 }} distinct year(s).</p>
+          <div class="demo-filter-panel">
+            <label class="demo-filter-check">
+              <input type="checkbox" [ngModel]="activeOnly()" (ngModelChange)="activeOnly.set($event)" />
+              <span>Still active only</span>
+            </label>
+          </div>
         </ng-container>
       </div>
     </bs-datatable>
@@ -445,21 +505,22 @@ export class DatatablesComponent {
 
     nameSelection = signal<DistinctValue[]>([]);
     nameInverse = signal(false);
+    yearOperator = signal<FilterOperator>('gte');
+    yearOperand = signal<number | null>(null);
 
-    filteredArtists = computed(() => {
-      const selected = this.nameSelection();
-      const inverse = this.nameInverse();
-      return this.allArtists().filter(a => {
-        if (selected.length === 0) return true;
-        const hit = selected.some(v => v.value === a.name);
-        return inverse ? !hit : hit;   // the panel's include/exclude toggle
-      });
-    });
-
+    // One handler, one discriminated union. Switching on \`mode\` means the
+    // comparison branch cannot read \`selected\` and the values branch cannot
+    // read \`operand\` — the compiler enforces the real runtime shape.
     onFilterChange(detail: FilterChangeDetail) {
-      if (detail.column !== 'name') return;
-      this.nameSelection.set(detail.selected);   // [] when the user clears
-      this.nameInverse.set(detail.inverse);
+      if (detail.mode === 'values' && detail.column === 'name') {
+        this.nameSelection.set(detail.selected);   // [] when the user clears
+        this.nameInverse.set(detail.inverse);      // the include/exclude toggle
+        return;
+      }
+      if (detail.mode === 'comparison' && detail.column === 'yearStarted') {
+        this.yearOperator.set(detail.operator);    // 'eq' | 'neq' | 'lt' | 'lte' | 'gt' | 'gte'
+        this.yearOperand.set(detail.operand as number | null);   // null = cleared
+      }
     }
 
     // The table does not hold every row? Then it cannot compute a value list,
@@ -468,6 +529,7 @@ export class DatatablesComponent {
     //   loadDistincts: DatatableDistincts = async ({ column, search, signal }) =>
     //     fetch(\`/api/distincts/\${column}?q=\${search}\`, { signal }).then(r => r.json());
     // Resolve null for a column to hand that one back to the local path.
+    // Comparison columns never ask — that panel shows no list.
 
     // filterActive and filterSummary are yours too: the component never derives
     // them, because only you know what your filter did.

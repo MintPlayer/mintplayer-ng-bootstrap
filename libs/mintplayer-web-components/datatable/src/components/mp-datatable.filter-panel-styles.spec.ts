@@ -29,6 +29,9 @@ const PORTALLED_SELECTOR_MARKERS = [
   '.filter-loading',
   '.filter-no-values',
   '.filter-has-more',
+  '.filter-comparison',
+  '.filter-operator',
+  '.filter-operand',
 ];
 
 interface Rule {

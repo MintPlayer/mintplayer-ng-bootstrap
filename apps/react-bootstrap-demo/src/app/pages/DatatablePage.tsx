@@ -8,7 +8,9 @@ import type {
   SelectionChangeEventDetail,
   DistinctValue,
   FilterChangeDetail,
+  FilterOperator,
 } from '@mintplayer/web-components/datatable';
+import './DatatablePage.css';
 
 // In dev, /api is proxied to localhost:5000 by vite.config.mts. In prod we
 // hit the api subdomain (CORS-allowed in apps/api/Program.cs).
@@ -34,6 +36,22 @@ const ARTISTS: Artist[] = [
   { id: 4, name: 'Pink Floyd',  genre: 'Progressive', founded: 1965 },
 ];
 
+/** Mirrors the component's operator glyphs for the trigger summary. */
+const OPERATOR_SYMBOLS: Record<FilterOperator, string> = {
+  eq: '=', neq: '2260', lt: '<', lte: '2264', gt: '>', gte: '2265',
+};
+
+function compare(value: number, operator: FilterOperator, operand: number): boolean {
+  switch (operator) {
+    case 'eq': return value === operand;
+    case 'neq': return value !== operand;
+    case 'lt': return value < operand;
+    case 'lte': return value <= operand;
+    case 'gt': return value > operand;
+    case 'gte': return value >= operand;
+  }
+}
+
 const SIMPLE_SOURCE = `<BsDatatable columns={COLUMNS} data={ARTISTS} />`;
 
 const FILTER_SOURCE = `// filterable is the whole opt-in: with no filterRenderer the built-in
@@ -50,10 +68,21 @@ const columns: DatatableColumnDef[] = COLUMNS.map((col) =>
 const [nameSelection, setNameSelection] = useState<DistinctValue[]>([]);
 const [nameInverse, setNameInverse] = useState(false);
 
+// A column asking a different question — still the built-in panel.
+const founded = { ...col, filterable: true,
+  filterMode: 'comparison', filterInputType: 'number' };
+
+// One handler, one discriminated union: switching on \`mode\` means the
+// comparison branch cannot read \`selected\`, and vice versa.
 const onFilterChange = useCallback((e: CustomEvent<FilterChangeDetail>) => {
-  if (e.detail.column !== 'name') return;
-  setNameSelection(e.detail.selected);   // [] when the user clears
-  setNameInverse(e.detail.inverse);      // the include/exclude toggle
+  const d = e.detail;
+  if (d.mode === 'values' && d.column === 'name') {
+    setNameSelection(d.selected);   // [] when the user clears
+    setNameInverse(d.inverse);      // the include/exclude toggle
+  } else if (d.mode === 'comparison' && d.column === 'founded') {
+    setFoundedOperator(d.operator); // 'eq' | 'neq' | 'lt' | 'lte' | 'gt' | 'gte'
+    setFoundedOperand(d.operand as number | null);   // null = cleared
+  }
 }, []);
 
 // ARTISTS is the UNFILTERED master copy. The value lists are computed from
@@ -209,7 +238,9 @@ export function DatatablePage() {
   const [showFilters, setShowFilters] = useState(true);
   const [nameSelection, setNameSelection] = useState<DistinctValue[]>([]);
   const [nameInverse, setNameInverse] = useState(false);
-  const [minFounded, setMinFounded] = useState<number | null>(null);
+  const [foundedOperator, setFoundedOperator] = useState<FilterOperator>('gte');
+  const [foundedOperand, setFoundedOperand] = useState<number | null>(null);
+  const [genreStartsWith, setGenreStartsWith] = useState('');
 
   // ARTISTS is the UNFILTERED master copy. `data` gets the filtered view, and
   // the value lists are computed from the rows the element holds — so filtering
@@ -221,7 +252,10 @@ export function DatatablePage() {
         : nameInverse
           ? !nameSelection.some((v) => v.value === a.name)
           : nameSelection.some((v) => v.value === a.name)) &&
-      (minFounded === null ? true : a.founded >= minFounded),
+      (foundedOperand === null ? true : compare(a.founded, foundedOperator, foundedOperand)) &&
+      (genreStartsWith === ''
+        ? true
+        : a.genre.toLowerCase().startsWith(genreStartsWith.toLowerCase())),
   );
 
   const nameSummary =
@@ -231,38 +265,53 @@ export function DatatablePage() {
         ? nameSelection[0].label
         : `${nameSelection.length} selected`;
 
+  // One handler, one discriminated union: switching on `mode` means the
+  // comparison branch cannot read `selected` and the values branch cannot read
+  // `operand` — the compiler enforces the real runtime shape.
   const onFilterChange = useCallback((e: CustomEvent<FilterChangeDetail>) => {
-    if (e.detail.column !== 'name') return;
-    setNameSelection(e.detail.selected);
-    setNameInverse(e.detail.inverse);
+    const d = e.detail;
+    if (d.mode === 'values' && d.column === 'name') {
+      setNameSelection(d.selected);
+      setNameInverse(d.inverse);
+      return;
+    }
+    if (d.mode === 'comparison' && d.column === 'founded') {
+      setFoundedOperator(d.operator);
+      setFoundedOperand(d.operand === null ? null : Number(d.operand));
+    }
   }, []);
 
-  // An override panel. `filterRenderer` returns a DOM Node — the same contract
-  // all three frameworks see — so it is built imperatively rather than as JSX,
-  // and it must return a STABLE node: the element mounts it once per open, so
-  // repainting it is this function's job, not the element's.
-  const foundedPanel = useRef<HTMLElement | null>(null);
-  const foundedPanelNode = (): Node => {
-    if (foundedPanel.current) return foundedPanel.current;
+  // An override panel, for the case neither built-in question fits.
+  // `filterRenderer` returns a DOM Node — the same contract all three frameworks
+  // see — so it is built imperatively rather than as JSX, and it must return a
+  // STABLE node: the element mounts it once per open, so repainting it is this
+  // function's job, not the element's.
+  //
+  // The classes below are the PAGE's (see DatatablePage.css). Bootstrap's
+  // `.form-control` is only styled inside `bs-*` components in this workspace,
+  // and the panel renders in the document-root overlay, outside the table.
+  const genrePanel = useRef<HTMLElement | null>(null);
+  const genrePanelNode = (): Node => {
+    if (genrePanel.current) return genrePanel.current;
     const wrap = document.createElement('div');
+    wrap.className = 'demo-filter-panel';
     const label = document.createElement('label');
-    label.className = 'form-label small mb-1';
-    label.textContent = 'Founded after';
+    label.className = 'demo-filter-label';
+    label.textContent = 'Genre starts with';
     const input = document.createElement('input');
-    input.type = 'number';
-    input.className = 'form-control form-control-sm';
-    label.htmlFor = input.id = 'react-filter-founded';
-    input.addEventListener('input', () =>
-      setMinFounded(input.value.trim() === '' ? null : Number(input.value)),
-    );
+    input.type = 'text';
+    input.className = 'demo-filter-input';
+    label.htmlFor = input.id = 'react-filter-genre';
+    input.addEventListener('input', () => setGenreStartsWith(input.value));
     wrap.append(label, input);
-    foundedPanel.current = wrap;
+    genrePanel.current = wrap;
     return wrap;
   };
 
   const filterColumns: DatatableColumnDef[] = COLUMNS.map((col) => {
     if (!showFilters) return col;
-    // No filterRenderer: the built-in panel renders. That is the whole opt-in.
+    // No filterRenderer and no filterMode: the built-in value list renders.
+    // That is the whole opt-in.
     if (col.name === 'name') {
       return {
         ...col,
@@ -271,13 +320,27 @@ export function DatatablePage() {
         filterSummary: nameSummary,
       };
     }
+    // Comparison mode: still the built-in panel, asking a different question.
     if (col.name === 'founded') {
       return {
         ...col,
         filterable: true,
-        filterActive: minFounded !== null,
-        filterSummary: minFounded === null ? undefined : `≥ ${minFounded}`,
-        filterRenderer: foundedPanelNode,
+        filterMode: 'comparison',
+        filterInputType: 'number',
+        filterActive: foundedOperand !== null,
+        filterSummary:
+          foundedOperand === null
+            ? undefined
+            : `${OPERATOR_SYMBOLS[foundedOperator]} ${foundedOperand}`,
+      };
+    }
+    if (col.name === 'genre') {
+      return {
+        ...col,
+        filterable: true,
+        filterActive: genreStartsWith !== '',
+        filterSummary: genreStartsWith || undefined,
+        filterRenderer: genrePanelNode,
       };
     }
     return col;
@@ -390,12 +453,30 @@ export function DatatablePage() {
           column below just sets <code>filterable</code>.
         </p>
         <p>
-          When a column needs something else, give it a{' '}
-          <code>filterRenderer</code> &mdash; <em>Founded</em> does, because a
-          range is not a set of values to tick. It returns a DOM{' '}
-          <code>Node</code> (the same contract all three frameworks see) and must
-          return a <strong>stable</strong> one: the element mounts it once per
-          open, so repainting it is the renderer's job.
+          A checkbox list is the wrong question for a quantity, so a column can
+          ask a different one: <code>filterMode: 'comparison'</code> renders an
+          operator (=, &ne;, &lt;, &le;, &gt;, &ge;) and a single input, with{' '}
+          <code>filterInputType</code> choosing <code>text</code>,{' '}
+          <code>number</code> or <code>date</code> &mdash; the <em>Founded</em>{' '}
+          column below. Still the built-in panel: no renderer, no styling of your
+          own. Narrow the list with <code>filterOperators</code> when only some
+          operators make sense.
+        </p>
+        <p>
+          You pick the mode per column and the component never infers it: a
+          numeric column is often an enum and a string column is often ordinal,
+          so any guess would be wrong about half the time.
+        </p>
+        <p>
+          When neither built-in question fits, give the column a{' '}
+          <code>filterRenderer</code> &mdash; <em>Genre</em> does. It returns a
+          DOM <code>Node</code> (the same contract all three frameworks see) and
+          must return a <strong>stable</strong> one: the element mounts it once
+          per open, so repainting it is the renderer's job.{' '}
+          <strong>That markup is yours, so you style it</strong> &mdash;
+          Bootstrap's <code>.form-control</code> is only styled inside{' '}
+          <code>bs-*</code> components here, and the panel renders in the
+          document-root overlay, outside the table.
         </p>
         <p>
           The panel opens in an overlay at the document root, so it is not

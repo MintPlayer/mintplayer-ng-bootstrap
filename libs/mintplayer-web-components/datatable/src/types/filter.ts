@@ -55,11 +55,38 @@ export interface DistinctsRequest {
  */
 export type DatatableDistincts = (request: DistinctsRequest) => Promise<DistinctValues | null>;
 
+/**
+ * How a column's built-in panel asks the question.
+ *
+ * `'values'` lists the column's distinct values as checkboxes. `'comparison'`
+ * offers an operator and a single operand — the right shape for a quantity,
+ * where ticking forty individual years is a poor way to say "after 1990".
+ *
+ * The consumer picks this per column and the component never infers it: a
+ * numeric column is often an enum (a year, in a five-row table) and a string
+ * column is often ordinal, so any guess would be wrong about half the time.
+ */
+export type FilterMode = 'values' | 'comparison';
+
+/** The comparison a `'comparison'` panel applies. */
+export type FilterOperator = 'eq' | 'neq' | 'lt' | 'lte' | 'gt' | 'gte';
+
+/** The `type` of the operand input in a `'comparison'` panel. */
+export type FilterInputType = 'text' | 'number' | 'date';
+
 /** A column's current filter selection. */
 export interface FilterSelection {
   values: DistinctValue[];
   /** `true` = exclude the selected values instead of including them. */
   inverse: boolean;
+  /** Comparison-mode operator. Ignored in `'values'` mode. */
+  operator?: FilterOperator;
+  /**
+   * Comparison-mode operand: a `number` for `filterInputType: 'number'`, an
+   * ISO `yyyy-mm-dd` string for `'date'`, otherwise the raw text. `null` means
+   * the user has not entered one, and no filter is active.
+   */
+  operand?: string | number | null;
 }
 
 /**
@@ -85,11 +112,29 @@ export interface FilterContext {
   onChange(callback: () => void): () => void;
 }
 
-/** Detail of the `mp-datatable-filter-change` event. */
-export interface FilterChangeDetail {
+/**
+ * Detail of the `mp-datatable-filter-change` event.
+ *
+ * A discriminated union on `mode`, not one flat shape with half its fields
+ * unset: a consumer switching on `mode` cannot then read a field the other mode
+ * never fills, which is the mistake a single optional-everything interface
+ * invites. Clearing fires the shape of the column's own mode, emptied.
+ */
+export type FilterChangeDetail = ValuesFilterChangeDetail | ComparisonFilterChangeDetail;
+
+export interface ValuesFilterChangeDetail {
+  mode: 'values';
   /** `DatatableColumnDef.name` of the column whose selection changed. */
   column: string;
   /** Empty when the user cleared the filter. */
   selected: DistinctValue[];
   inverse: boolean;
+}
+
+export interface ComparisonFilterChangeDetail {
+  mode: 'comparison';
+  column: string;
+  operator: FilterOperator;
+  /** `null` when the user cleared the filter or emptied the input. */
+  operand: string | number | null;
 }
