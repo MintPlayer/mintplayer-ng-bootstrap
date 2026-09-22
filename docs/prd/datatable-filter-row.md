@@ -446,6 +446,25 @@ Implemented on `feat/datatable-filter-row`, M0–M10. Deviations from the plan, 
 
 **Not done, deliberately:** the plan's optional per-frame resize optimisation fell away with `<colgroup>` (§5.2) and was never in scope on its own.
 
+### 13.1 As built — Revision 2
+
+Implemented on the same branch, M11–M19. What the implementation changed relative to the design in §14, and why:
+
+**The loaded list and the displayed list had to become separate fields.** §14 spoke of one `DistinctValues` per column. The first implementation re-bucketed and search-filtered it in place, which is wrong in a way no design review would catch: narrowing `loaded` destroys the full list, so clearing the search box cannot restore it without a round trip — and with a local (sourceless) column there is no round trip to make, so the values were simply gone. `ColumnFilterState` now holds `loaded` (raw, from the source or the local pass) and `view` (re-bucketed against the snapshot, narrowed by the term). `FilterContext.values()` returns `view`.
+
+**`labels.filterValue` is invoked as a method, not a closure.** D29 gives `filterValue` and the four value labels (`filterNone`, `filterEmpty`, `filterTrue`, `filterFalse`) it renders. Written the obvious way — a default that closes over `DEFAULT_DATATABLE_LABELS` — a consumer who translated only those four keys would see no change, because the default `filterValue` is what reads them and it would read the untranslated originals. It now reads them off `this`, so `mergedLabels.filterValue(v)` resolves against the merged set. The interface declares the `this` parameter; a destructured call would break, and the JSDoc says so.
+
+**`set fetch(null)` reset nothing, and that was load-bearing here** (R14). Beyond the obvious staleness, `isExternallyPaged()` stayed true forever once a fetch callback had been set, and that is the gate on computing distinct values locally — so a table switched from `[fetch]` to `[data]` could never produce a value list again. The setter now clears `_totalRecords`, both page caches, both child caches, the pending sets, and bumps `_fetchGeneration` so in-flight responses drop.
+
+**The mount-once guard needed a direction.** R13 asked how the default panel coexists with the guard that fixed the Revision 1 focus bug. It is exempt in one direction only: the guard still decides the consumer-vs-default branch exactly once per open, but the default panel is lit-rendered into the panel body, so re-rendering it is a diff rather than a replacement and the focused input survives. A new `_consumerMountedFilter` flag records which branch was taken.
+
+**The search term resets on close, the selection does not.** Unspecified in §14. A reopened panel showing the previous search would hide values the user never chose to hide; a reopened panel having forgotten the selection would be a data-loss bug. `onClose` clears `term` and re-buckets, and leaves `selection` alone.
+
+**`syncFilterStates` re-seeds on reference change, not on every assignment.** The Angular wrapper rebuilds the whole column array on any input change, so treating a `columns` assignment as "new columns" would wipe the user's selection whenever an unrelated input moved. State is keyed by column name and survives re-assignment; a column whose `filterSelection` *reference* changed is re-seeded, which is how a consumer restores a filter.
+
+**The Angular demo moved from `[fetch]` to `[data]`.** Under `[fetch]` the element holds one page and therefore declines to compute a value list at all — correct behaviour, and a poor demonstration of the list. The section now loads one large page into an unfiltered master copy and binds the filtered view.
+
+**Not done, deliberately:** no Spark code (D30). `query_column_filter_PRD.md` §5.8 is amended to consume this, and nothing in `MintPlayer.Spark` is touched.
 ## 14. Revision 2 — a default panel, a nested override, and datatable-supplied values
 
 Status: **Designed and adversarially verified 2026-09-22** (§14.9) — implementation follows the amended decisions below. Supersedes §5.5's "the panel's contents are the consumer's template, full stop" and §5.7's sibling directive. Everything in §§1–13 that is not contradicted here still stands.

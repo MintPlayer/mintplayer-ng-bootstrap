@@ -190,19 +190,19 @@ npx nx test mintplayer-ng-bootstrap
 
 # Revision 2 — default panel, nested override, datatable-supplied values
 
-PRD §14. Status: **Designed and adversarially verified (`wf_699b142e-239`) — implementation starting** — 2026-09-22. Six of eight refuters amended something; the amendments are in PRD §14.3/§14.4/§14.7/§14.8 and the record is §14.9. The load-bearing change: header views stay **lazy**; the wrapper's `filterRenderer` resolves the nested template **at panel open** and returns `null` for "default" (D20). Eager creation inside the `computed` was measured to throw NG0600 with any `viewChild` on the host and is gone.
+PRD §14. Status: **Implemented** — 2026-09-22. M11–M18 complete; M19 (the batched sweep and the real-browser check) is the remaining step. As-built deviations are recorded in PRD §13.1. Six of eight refuters amended something; the amendments are in PRD §14.3/§14.4/§14.7/§14.8 and the record is §14.9. The load-bearing change: header views stay **lazy**; the wrapper's `filterRenderer` resolves the nested template **at panel open** and returns `null` for "default" (D20). Eager creation inside the `computed` was measured to throw NG0600 with any `viewChild` on the host and is gone.
 
 | Milestone | State |
 |---|---|
 | S8–S10 — Revision 2 spikes (PRD §14.8) | ✅ S9, S10 **PASS** by measurement inside verification (jsdom); S8 rewritten for lazy D20 and pinned by the M17 Angular spec |
-| M11 — WC: `distincts` source, local fallback, `DistinctValue` types, labels | ⬜ |
-| M12 — WC: default panel (search / ≠ / checkbox list / clear), `ctx`, events | ⬜ |
-| M13 — WC: `filterSummary` on the trigger; aria-label composition | ⬜ |
-| M14 — Angular: `filterable`/`filterActive`/`filterSummary`/`filterSelection` inputs on `*bsDatatableColumn`; nested `*bsDatatableFilterPanel`; header views stay **lazy**; delete the sibling directive | ⬜ |
-| M15 — Wrappers: forward `distincts` + `labels` + filter events in ng / react / vue | ⬜ |
-| M16 — Demos: default panel on one column, override on another, `filterable` toggled by the checkbox; a listener that filters the demo's own data | ⬜ |
-| M17 — Specs: rewrite `datatable-filter.spec.ts`; default-panel focus/mount-once/a11y; `distincts` fallback across data modes; Signal `$implicit` under zoneless | ⬜ |
-| M18 — Docs: PRD §5.7/D12 marked historical, §14.9 verification record, §13 as-built extended; Spark `query_column_filter_PRD.md` §5.8 amended (docs only, no Spark code) | ⬜ |
+| M11 — WC: `distincts` source, local fallback, `DistinctValue` types, labels | ✅ |
+| M12 — WC: default panel (search / ≠ / checkbox list / clear), `ctx`, events | ✅ |
+| M13 — WC: `filterSummary` on the trigger; aria-label composition | ✅ |
+| M14 — Angular: `filterable`/`filterActive`/`filterSummary`/`filterSelection` inputs on `*bsDatatableColumn`; nested `*bsDatatableFilterPanel`; header views stay **lazy**; delete the sibling directive | ✅ |
+| M15 — Wrappers: forward `distincts` + `labels` + filter events in ng / react / vue | ✅ |
+| M16 — Demos: default panel on one column, override on another, `filterable` toggled by the checkbox; a listener that filters the demo's own data | ✅ |
+| M17 — Specs: rewrite `datatable-filter.spec.ts`; default-panel focus/mount-once/a11y; `distincts` fallback across data modes; Signal `$implicit` under zoneless | ✅ |
+| M18 — Docs: PRD §5.7/D12 marked historical, §14.9 verification record, §13 as-built extended; Spark `query_column_filter_PRD.md` §5.8 amended (docs only, no Spark code) | ✅ |
 | M19 — Batched verification sweep; browser check of default panel + override in the React demo (the only demo servable without the API) | ⬜ |
 
 ## Ordering rationale (Revision 2)
@@ -254,7 +254,7 @@ Within M11–M13 the six WC steps are strictly serial — each depends on the na
 
 ## M18–M19 — docs and sweep
 
-M18: PRD §5.7/D12 already marked historical (commit `6e11a256`); extend §13 as-built after implementation; amend Spark `query_column_filter_PRD.md` §5.8 to consume `distincts` + the default panel and map `selected.map(v => v.value)` to `includes`/`excludes` by `inverse` (**docs only, no Spark code** — D30).
+M18: PRD §5.7/D12 marked historical (commit `6e11a256`); §13.1 records the Revision 2 as-built. **The Spark doc amendment is written but NOT applied** — a PreToolUse hook blocks edits to the `MintPlayer.Spark` repo from this session and directs them through the `handoff` skill. The full replacement text for §5.8 (plus striking O2, which the three-engine clipping measurement answers) must be landed in the same unit of work — one PR, both repos. Amend Spark `query_column_filter_PRD.md` §5.8 to consume `distincts` + the default panel and map `selected.map(v => v.value)` to `includes`/`excludes` by `inverse` (**docs only, no Spark code** — D30).
 
 M19: one batched sweep — `codegen-wc`, build + test `mintplayer-web-components`, build + test `mintplayer-ng-bootstrap`, build react/vue, then the three demo e2e projects; each redirected to a log with `echo "EXIT: $?"`. Then a **real-browser** check of the default panel and an override in the React demo (the only demo servable without the API — `nx serve react-bootstrap-demo --exclude-task-dependencies`, which binds **:4000**, ignoring `--port`).
 
@@ -284,3 +284,89 @@ M19: one batched sweep — `codegen-wc`, build + test `mintplayer-web-components
 - **Sticky on `<thead>` instead of per-`th` (O3).** S4 passed with the per-`th` approach, so there is no reason to disturb a shipped header.
 
 🤖 Generated with [Claude Code](https://claude.com/claude-code)
+
+## Appendix — the pending MintPlayer.Spark doc change (M18)
+
+Not applied: a PreToolUse hook gates that repo from this session. It belongs in this unit of
+work, so the full text lives here rather than in a scratchpad that does not survive the session.
+`docs/query_column_filter_PRD.md` §5.8 is replaced wholesale by the following, and O2 in the
+open-questions list is struck through as answered.
+
+---
+
+### 5.8 The filter row — **built, in ng-bootstrap** (resolved)
+
+> **Status 2026-09-22: no longer a blocker.** The filter row, the document-root overlay and a
+> Vidyano-style distinct-value panel shipped in MintPlayer/mintplayer-ng-bootstrap#414
+> (`docs/prd/datatable-filter-row.md`, Revisions 1 and 2). Spark consumes it; nothing below needs
+> building here. The original analysis is kept because its two constraints turned out to be real and
+> both are answered by measurement rather than assertion.
+
+**The original problem.** The `<thead>` was rendered by `mp-datatable` as one `<th>` per column, with
+no second row and no filter slot, and a sortable column's header content sits *inside*
+`<button class="header-sort">` — so a filter control placed there would be an interactive element
+nested in a button: invalid HTML, an a11y failure, and every filter click would also toggle the sort.
+
+**How it was resolved.** A second `<tr class="filter-row">` in `<thead>`, one cell per column
+(gutters included, so alignment stays structural), with a width-neutral trigger button. The panel is
+rendered into a `<mp-overlay-container>` at the document root, modelled on `@angular/cdk/overlay`'s
+container/portal split.
+
+**SP2/O2 is answered: yes, the popup escapes both.** An in-flow panel *is* clipped — measured in
+Chromium, Firefox and WebKit: on the right edge in paged mode, on both axes in virtual mode. A
+portalled one is not, in all three. The light-tier stylesheet still reaches it, because it is
+installed at document level and anchors on `[data-mps=datatable]`, which survives the move; an
+unstamped decoy stays unstyled, so the no-leak property holds across the portal.
+
+#### What Spark consumes
+
+A column opts in with `filterable`. With no `filterRenderer`, it gets the **built-in panel** —
+search box, include/exclude toggle, checkbox list of distinct values, clear button — which is exactly
+the Vidyano shape this PRD asks for, and which React and Vue get identically because it lives in the
+web component rather than in an Angular template.
+
+The value lists come from `[distincts]`:
+
+```ts
+// DatatableDistincts
+(request: { column: string; search: string; signal: AbortSignal })
+  => Promise<{ matching: DistinctValue[]; remaining: DistinctValue[]; hasMore: boolean } | null>
+```
+
+This maps onto §5.1's `canListDistincts` endpoint directly. Three things to honour:
+
+- **`hasMore` is required.** It is what drives the re-query as the user types. The component filters
+  the loaded list client-side and only goes back to the source when `hasMore` is set or the term is
+  *widened* (not a refinement of the loaded one), debounced 250 ms — the same behaviour as Vidyano,
+  which filters in memory and re-queries only when the list was truncated.
+- **Resolve `null` for a column you cannot answer for**, and that one column falls back to the
+  component's local pass. That is how a grid mixes server-backed columns with columns whose values
+  the client already holds — a column whose `canListDistincts` flag is false resolves `null`.
+- **`remaining`** holds values that were present when the filter was applied but are not any more.
+  They stay listed (dimmed) so a selection can be widened without clearing it first. A server-backed
+  source should return them; the component snapshots locally when it can.
+
+Selections arrive as one event, `(filterChange)` → `{ column, selected: DistinctValue[], inverse }`,
+emitted on every toggle **and on clear** (`selected: []`). Spark maps it to the query filter:
+
+```ts
+onFilterChange({ column, selected, inverse }: FilterChangeDetail) {
+  const values = selected.map((v) => v.value);
+  this.setColumnFilter(column, inverse ? { excludes: values } : { includes: values });
+}
+```
+
+**The component holds no filter state and applies no predicate.** It does not filter `[data]`, and it
+never derives `filterActive` or `filterSummary` — Spark sets both back on the column from its own
+filter model, because only Spark knows whether the filter became a new server query. This is what
+makes the same panel usable for a client-side grid and a server-paged one.
+
+**One trap that is easy to hit.** The value lists are computed from the rows the element holds, so a
+server-paged grid (`[fetch]`, external paging, or lazily loaded tree children) gets **no local list at
+all** — the component reports "no values" rather than guessing from the page it happens to have.
+`spark-query-grid` is server-paged, so `[distincts]` is not optional there; it is the only source.
+
+**Unchanged from the original analysis:** `bs-query-builder` already owns an `Expression` / operator /
+per-type editor vocabulary. This feature must not invent a second, incompatible filter expression
+shape; where the two meet, reuse its vocabulary. And Bootstrap CSS reaches controls in the header only
+because `mp-datatable` renders into the light DOM — that remains true for the portalled panel.
