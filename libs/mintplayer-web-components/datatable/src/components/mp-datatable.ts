@@ -961,6 +961,16 @@ export class MpDatatable extends LitElement {
     return `${this._filterUid}-filter-trigger-${column}`;
   }
 
+  /** The open column's trigger button, or null. Re-queried on every call. */
+  private openFilterTrigger(): HTMLElement | null {
+    if (!this._openFilterColumn) return null;
+    return (
+      this.renderRoot?.querySelector<HTMLElement>(
+        `tr.filter-row th[data-column="${this._openFilterColumn}"] .filter-trigger`,
+      ) ?? null
+    );
+  }
+
   /**
    * The filter panel is portalled to the document root, because an in-flow
    * panel opened from a header cell is clipped by `.datatable-scroll` — on the
@@ -981,19 +991,13 @@ export class MpDatatable extends LitElement {
     modal: true,
     scrollStrategy: 'reposition',
     // Resolved lazily by column name on every call: each render rebuilds the
-    // header, so a captured element would detach under the open panel.
-    anchor: () =>
-      this._openFilterColumn
-        ? this.renderRoot?.querySelector<HTMLElement>(
-            `tr.filter-row th[data-column="${this._openFilterColumn}"] .filter-trigger`,
-          ) ?? null
-        : null,
-    trigger: () =>
-      this._openFilterColumn
-        ? this.renderRoot?.querySelector<HTMLElement>(
-            `#${CSS.escape(this.filterTriggerId(this._openFilterColumn))}`,
-          ) ?? null
-        : null,
+    // header, so a captured element would detach under the open panel. The
+    // trigger IS the anchor, so both read the same element — resolving the
+    // trigger by id instead would buy nothing and cost a CSS.escape call, which
+    // is not universally available and threw out of close() before it could
+    // fire onClose.
+    anchor: () => this.openFilterTrigger(),
+    trigger: () => this.openFilterTrigger(),
     panel: () => this.filterOverlay.portalContainer?.querySelector<HTMLElement>('.filter-panel') ?? null,
     initialFocus: 'first',
     onClose: () => {

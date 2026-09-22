@@ -189,6 +189,27 @@ describe('consumer DOM mounted through a render callback', () => {
     for (const node of mounted) expectUntouched(node as HTMLElement, 'datatable rowRenderer', selectors);
   });
 
+  it('mp-datatable filterRenderer', async () => {
+    document.body.innerHTML = '<mp-datatable></mp-datatable>';
+    const el = document.querySelector('mp-datatable') as HTMLElement & Record<string, unknown>;
+    el.columns = [{ ...COLUMNS[0], filterable: true, filterRenderer: () => consumerNode('filter') }];
+    el.data = ROWS;
+    await settle(el);
+
+    const trigger = el.querySelector<HTMLButtonElement>('tr.filter-row .filter-trigger');
+    expect(trigger, 'no filter trigger rendered').not.toBeNull();
+    trigger!.click();
+    await settle(el);
+
+    // The panel is portalled to the document root, so unlike the other three
+    // renderers this content is NOT inside the element — which is precisely why
+    // it is worth asserting: the scoped sheet is installed on the document and
+    // reaches the pane, so an accidental stamp here would be styled by us.
+    const mounted = document.querySelectorAll(`.mp-overlay-pane .${CONSUMER_CLASS}`);
+    expect(mounted.length, 'filterRenderer output never reached the DOM').toBeGreaterThan(0);
+    for (const node of mounted) expectUntouched(node as HTMLElement, 'datatable filterRenderer', selectors);
+  });
+
   it('mp-treeview nodeRenderer', async () => {
     document.body.innerHTML = '<mp-treeview></mp-treeview>';
     const el = document.querySelector('mp-treeview') as HTMLElement & Record<string, unknown>;
