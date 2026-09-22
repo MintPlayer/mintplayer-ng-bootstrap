@@ -130,7 +130,11 @@
   descendants; partially-selected parents render an indeterminate state.
 </p>
 
-<bs-datatable class="flex-grow-1"
+<!-- `tree-table` is an e2e hook, not a style: datatable-tree.spec.ts used to
+     reach this table as "the last mp-datatable on the page", which silently
+     started reading the Column filters table below once that section was
+     added. A named hook cannot rot that way. -->
+<bs-datatable class="flex-grow-1 tree-table"
   [virtualScroll]="true"
   [itemSize]="40"
   [tree]="true"

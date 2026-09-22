@@ -73,13 +73,15 @@ async function mockTreeApi(page: Page) {
   });
 }
 
-// Read every visible body row (real + placeholder) out of the WC's shadow DOM.
+// Read every visible body row (real + placeholder) out of the tree-mode table.
+//
+// Scoped by the `tree-table` class the demo puts on that <bs-datatable>, NOT by
+// position. These helpers used to take "the last <mp-datatable> on the page",
+// which was the tree example until a Column filters section was added below it
+// — after which every tree assertion was silently reading the wrong table.
 async function readRows(page: Page) {
   return page.evaluate(() => {
-    // Scope to the tree-mode datatable — last <mp-datatable> on the page,
-    // which is the tree-mode example (the basic example comes first).
-    const datatables = document.querySelectorAll('mp-datatable');
-    const wc = datatables[datatables.length - 1];
+    const wc = document.querySelector('.tree-table mp-datatable');
     // Tier L: mp-datatable renders in the light DOM, so its rows are ordinary
     // descendants of the host — no shadow hop.
     if (!wc) return [];
@@ -99,9 +101,8 @@ async function readRows(page: Page) {
 // aria-label="Expand row"|"Collapse row">`.
 async function clickChevron(page: Page, rowKey: string) {
   await page.evaluate((key) => {
-    const datatables = document.querySelectorAll('mp-datatable');
-    const wc = datatables[datatables.length - 1];
-    if (!wc) throw new Error('mp-datatable not found');
+    const wc = document.querySelector('.tree-table mp-datatable');
+    if (!wc) throw new Error('tree-mode mp-datatable not found');
     const row = wc.querySelector(`tr[data-row-key="${key}"]`);
     if (!row) throw new Error(`row ${key} not found`);
     const btn = row.querySelector('button.tree-chevron') as HTMLButtonElement | null;
@@ -212,8 +213,7 @@ test.describe('bs-datatable tree mode', () => {
 
   test('table uses role=treegrid', async ({ page }) => {
     const role = await page.evaluate(() => {
-      const datatables = document.querySelectorAll('mp-datatable');
-      const wc = datatables[datatables.length - 1];
+      const wc = document.querySelector('.tree-table mp-datatable');
       return wc?.querySelector('table')?.getAttribute('role');
     });
     expect(role).toBe('treegrid');
