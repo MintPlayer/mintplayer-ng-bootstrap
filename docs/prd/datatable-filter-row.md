@@ -444,7 +444,118 @@ Implemented on `feat/datatable-filter-row`, M0–M10. Deviations from the plan, 
 
 **Not done, deliberately:** the plan's optional per-frame resize optimisation fell away with `<colgroup>` (§5.2) and was never in scope on its own.
 
-## 14. References
+## 14. Revision 2 — a default panel, a nested override, and datatable-supplied values
+
+Status: **Designed 2026-09-22, adversarially verified before implementation** (see §14.9). Supersedes §5.5's "the panel's contents are the consumer's template, full stop" and §5.7's sibling directive. Everything in §§1–13 that is not contradicted here still stands.
+
+### 14.1 What changed, and why
+
+After the filter row shipped (§13), the user pointed at the Vidyano reference (`https://localhost:5001/fleet/cars/…`, surveyed in `C:\Repos\MintPlayer.Spark\docs\query_column_filter_PRD.md` §3) and at how Spark would consume this, and asked for three things the first revision did not have:
+
+1. The override template nests **inside** the column directive — `*bsDatatableFilterPanel` inside `*bsDatatableColumn` — instead of a sibling matched by a `name` input.
+2. The datatable **supplies the available values** for the column to that template (`let availableValues = $implicit`).
+3. There is a **default panel** — search box, `≠` toggle, checkbox list, clear — so consumers get the Vidyano behaviour for free and override only when they want to. It must exist in React and Vue too.
+
+A six-reader investigation plus a completeness critic (workflow `wf_a0e05a54-add`) mapped the repo against that sketch. Two findings change the sketch's *mechanism* without changing its *shape*; one corrects the reference behaviour; three surface constraints the sketch did not know about. They are recorded here because a future reader will otherwise re-propose the sketch as written.
+
+### 14.2 Findings that reshape the sketch
+
+**F1 — `*ngTemplateOutlet` cannot be the mechanism.** The wrapper's template is a single `<mp-datatable>` (`datatable.component.html:1-14`); the panel is rendered by the WC into a `document.body` overlay pane (`mp-datatable.ts` `renderFilterPanel`). An `*ngTemplateOutlet` renders in place in the wrapper's own DOM, which is the wrong tree. The pattern becomes `this.vcr.createEmbeddedView(dir.filterPanelTemplate, ctx).rootNodes`, which is the path the wrapper already uses for headers and rows (`datatable.component.ts:207, :224, :401`). **The consumer-facing syntax is unchanged.**
+
+**F2 — the default panel belongs in the web component, not in an Angular `<ng-template>`.** Measured across the repo: every WC-backed default is rendered by the WC — `mp-tree-select.nodeRenderer` (`mp-tree-select.ts:673-718`) renders the default row and composes the consumer's optional template *inside* it; treeview icon+label (`mp-treeview.ts:362-369`); datatable `defaultCellContent` (`mp-datatable.ts:2092`); select `o.label` (`mp-select.ts:445-453`). React (`BsTreeSelect.tsx:15-27`, a bare `createComponent`) and Vue (`BsTreeSelect.vue:70-132`) inherit those defaults with zero wrapper code. The `<ng-template #default…> ?? ` pattern the sketch cites exists in exactly **one** full instance — `bs-file-upload` (`file-upload-template.directive.ts:9-13`, `file-upload.component.html:10,15`) — an Angular-only component with no WC behind it. An Angular default would give React and Vue nothing, contradicting the parity requirement. So the WC renders the default when `filterRenderer` is absent, and each framework's override sits on top. This is the one place the design departs from the sketch's *placement*; it follows the sketch's *requirements*.
+
+**F3 — nested discovery works, with a structural precondition (measured by spike).** Three strategies were tested in a throwaway spec. (a) `contentChildren(Inner, {descendants:true})` on the component finds the nested directive only *after* the header view exists and cannot say which column it belongs to. (c) `contentChild` on the outer directive matched **0 at every checkpoint** — rejected. **(b) works:** the inner directive does `inject(BsDatatableColumnDirective)` and assigns its `TemplateRef` onto the outer in its constructor, which resolves correctly from inside the lazily-instantiated header template and lands synchronously inside `createEmbeddedView`. **But** with today's lazy `headerRenderer` that is *too late*: `filterable`/`filterRenderer` are fixed in `effectiveColumns` (`:203`) and pushed to the WC (`:275`) before the header view — the only place the nested directive is instantiated — is ever created. Header views must therefore be created **eagerly** when the column defs are built. And because that happens inside the `effectiveColumns` computed (already impure — it calls `destroyTemplateViews()` at `:193`), the registration **must be a plain field, not a signal**: a signal write in the nested directive's constructor would execute inside a reactive context. The file-upload precedent everyone cites does `.set()` on a signal in a constructor (`file-upload-template.directive.ts:13`) — that precedent and eager creation inside the computed are mutually exclusive, and eager creation wins.
+
+**F4 — Vidyano does not round-trip on every keystroke.** Verified in `C:\Repos\Vidyano\src\WebComponents\QueryGrid\query-grid-column-filter.ts`: the loaded distincts are filtered **client-side** (`:269-280`, case-insensitive `contains`); a server refresh happens only inside `if (…distincts.hasMore)` (`:249`), debounced 250 ms (`:252, :265`). The "per keystroke" description in this conversation was loose; Spark's PRD (`:100-101`) says only that the search box "round-trips to the server instead" of paging. The design copies what Vidyano does, which also means `hasMore` is **required** in the response, not optional.
+
+**F5 — zoneless change detection.** The demo app and the lib's tests provide `provideZonelessChangeDetection()` (`app.config.ts:29`, `test-setup.ts:28`). The WC invokes `filterRenderer` **once per open** (§13, the focus fix) and never again. A plain context object the WC mutates later is therefore never repainted — an `EmbeddedViewRef` in its container is *checked when CD runs*, but nothing makes CD run. `$implicit` has to be a **`Signal`**.
+
+**F6 — `filterable` must be explicit.** Today `filterable: !!filterDir` (`:203`). Once a default panel exists, the presence of an *override* cannot mean opt-in — a column with no override still wants the default. `filterable` becomes a `*bsDatatableColumn` microsyntax input like `sortable` (`datatable-column.directive.ts:27`).
+
+### 14.3 Decisions (D17–D30)
+
+| # | Decision | Consequence |
+|---|---|---|
+| D17 | **The default panel is rendered by `mp-datatable`** as the `filterRenderer`-absent branch of `renderFilterPanel`, with inline `scopedHtml('datatable')`, not a new shadow-rooted element | React and Vue inherit it (F2); one a11y implementation; the light-tier sheet is proven to reach the pane (§9, S2); `initialFocus` and `aria-controls` stay in one tree |
+| D18 | `filterable` is an explicit column flag; in Angular a `*bsDatatableColumn` input (`filterable: true`) beside `sortable`. `filterActive` and `filterSummary` are authored on the column directive too | Readable synchronously in `effectiveColumns`; presence of an override no longer implies opt-in (F6) |
+| D19 | `*bsDatatableFilterPanel` **nests inside** `*bsDatatableColumn`; it `inject`s the column directive and assigns a **plain field** `filterPanelTemplate` in its constructor, clearing it in `DestroyRef.onDestroy`. The sibling `[bsDatatableFilter]` is **deleted** | F3; `name` matching goes away |
+| D20 | The Angular wrapper creates header `EmbeddedView`s **eagerly** while building column defs, reads `dir.filterPanelTemplate` in the same synchronous pass, and skips creation under `isPlatformServer` | F3; `filterRenderer` is correct on the first `el.columns` push; no second pass |
+| D21 | Runtime `@if`-toggling of `*bsDatatableFilterPanel` inside the header is **unsupported** and documented; toggle `filterable` instead | A plain field cannot notify (F3, F5); the demo toggles `filterable` |
+| D22 | **Table-level** `distincts` source on the WC, mirroring `fetch` in every respect (property, `null` when absent, forwarded by all three wrappers): `(req: {column, search, signal}) => Promise<{matching, remaining, hasMore}>`, `DistinctValue = {value: unknown; label: string}` | Spark's implementation is one closure adding its own identifiers, as `makeFetch` is today; the WC stays free of Spark's vocabulary |
+| D23 | **Absent source:** static `[data]` → the WC computes distincts locally over **all** of `_data` (sound only because `_totalRecords` is written solely from fetch responses, `:1671, :1718`), `label = String(value)`, `null` → `labels.filterNone`, single `matching` bucket, `hasMore: false`. `[fetch]` set and no source → the default panel renders a localized "no values available" state, **never a partial list from the current window** | Consumers with static data get the panel for free; server-paged consumers must supply the source |
+| D24 | **Search = Vidyano's real semantics (F4):** client-side filter of the loaded lists; a debounced (250 ms), generation-guarded re-query of the source only when the last response had `hasMore: true` | `hasMore` is required; no over-querying |
+| D25 | `filterRenderer(column, ctx)` gains a context: `ctx.values(): DistinctValues | null` (live getter), `ctx.loading(): boolean`, `ctx.search(term)`, `ctx.apply(selected, inverse)`, `ctx.clear()`, `ctx.onChange(cb): () => void`. Angular exposes `$implicit` as a **`Signal<DistinctValues|null>`** fed from `onChange`, plus `ctx` as a named let | Override panels get the same data channel and back-channel as the default (F5); an override may ignore `ctx` entirely and own its data |
+| D26 | **PRD non-goal 1 is amended:** the WC emits **UI state**, not semantics — `mp-datatable-filter-change` `{column, selected: unknown[], inverse: boolean}` and `mp-datatable-filter-clear` `{column}`. No `includes`/`excludes`, no predicate, no operator vocabulary | The consumer maps selection + inverse to its own model (Spark → `includes`/`excludes`); `bs-query-builder` is not coupled in |
+| D27 | **Non-goal 2 stands:** the WC never filters `data`/`fetch`. "Applies immediately" means the event fires on every check; the consumer filters | The demo listens and filters its own data, which is what Spark does in its `fetch` closure |
+| D28 | `DatatableColumnDef.filterSummary?: string` — consumer-authored collapsed text (`= Nee`, `≠ Apcoa, Cityparking`) rendered in the trigger and composed into its `aria-label` in the same render | The trigger's accessible name reflects state; the WC never derives the text |
+| D29 | `labels` becomes an input on **all three wrappers** (none forwards it today — verified zero matches) and `DatatableLabels` gains `filterClear(column)`, `filterSearch`, `filterInvert`, `filterNone`, `filterHasMore`, `filterNoValues`, `filterGroup(column)`, `announceFilter(column, count)` | A WC default cannot be localized otherwise |
+| D30 | **Out of this PR:** Vidyano's global clear-all gutter cell, the Enter-free-text term (`1|@text`), a per-column source override, and any Spark code. Spark's PRD §5.8 is **amended** to consume `distincts` + the default panel instead of building the popup itself | Scope stays bounded; successors named in §12 |
+
+### 14.4 Default panel — behaviour and accessibility
+
+Layout follows Vidyano (`query-grid-column-filter.html:19-58`): a **Clear** item (`labels.filterClear(column)`, disabled when nothing is selected), a **search** `<input type="search">` auto-focused, an **inverse** `<button aria-pressed>` in a left gutter (`labels.filterInvert`), and a **checkbox list** — `matching` first, then `remaining` visually de-emphasised but selectable, `hasMore` shown as localized text (`labels.filterHasMore`), not opacity alone.
+
+A11y, per CLAUDE.md and the readers' checklist:
+
+- The list is a **native `<input type="checkbox">` + `<label>` group** inside `role="group"` named by `labels.filterGroup(column)` — native inputs own their checked state with no write path (CLAUDE.md "prefer a native element"). Tab-per-item, no roving focus: buckets are capped at 100 + 100 and `RovingFocus` would cost `sync()` after every repaint.
+- **Initial focus is the callback form**, resolving the search input. `'first'` would land on Clear the moment a filter is active (the focus-trap walks DOM order), diverging from Vidyano's autofocus.
+- The inverse button writes `aria-pressed` for **both** values from render.
+- **One announcement channel:** a polite `liveAnnouncer.announce(labels.announceFilter(column, count))` on each change. The consumer's resulting refetch may also announce `announceLoaded`; that is the consumer's fetch, and the two are distinct events.
+- Every string routes through `labels` (D29). Nothing is hard-coded English.
+- Escape/outside-click/focus-return are unchanged from §5.4 — the panel chrome and controller are the same.
+
+### 14.5 Angular surface, as it will read
+
+```html
+<bs-datatable [data]="rows()" [distincts]="loadDistincts" [labels]="labels()"
+              (filterChange)="onFilter($event)" (filterClear)="onClear($event)">
+
+  <!-- default panel, nothing else to write -->
+  <div *bsDatatableColumn="'country'; filterable: true">Country</div>
+
+  <!-- override: values arrive as a Signal because CD is zoneless -->
+  <div *bsDatatableColumn="'model'; filterable: true; filterActive: modelActive(); filterSummary: modelSummary()">
+    Model
+    <div *bsDatatableFilterPanel="let values = $implicit; let ctx = ctx">
+      <input (input)="ctx.search($any($event.target).value)" />
+      @for (v of values()?.matching ?? []; track v.value) { … }
+    </div>
+  </div>
+</bs-datatable>
+```
+
+React and Vue: `filterable` / `filterActive` / `filterSummary` / `filterRenderer(column, ctx)` inside `columns`; `distincts` and `labels` as element properties forwarded like `fetch`; `onFilterChange` / `@filterChange` events. No wrapper carries a copy of the default.
+
+### 14.6 Migration inside this PR
+
+- Delete `datatable-filter.directive.ts` and rewrite `datatable-filter.spec.ts` for the nested directive.
+- Rewrite the three demo pages: default panel on one column, an override on another, the show/hide checkbox drives `filterable`.
+- Extend `mp-datatable.filter-row.spec.ts` / `.filter-aria.spec.ts` for the default panel (mount-once must hold for the *default* too — pinned the way the consumer path is pinned).
+- Update §5.7 and D12 above (both now historical); amend Spark's `query_column_filter_PRD.md` §5.8.
+
+### 14.7 Risks specific to this revision
+
+| # | Risk | Mitigation |
+|---|---|---|
+| R12 | Eager header views inside a `computed` — a signal write anywhere in the nested directive's constructor or `onDestroy` throws or loops | D19: plain field; `onDestroy` clears a plain field; spec pins a full recompute cycle |
+| R13 | The default panel re-renders on every `updated()` and loses search text/focus | Default is rendered once per open into `.filter-panel-body` under the same `_mountedFilterColumn` guard; its own state lives on the element, not in the template; spec pins focus across re-render |
+| R14 | Local distinct computation over `_data` silently covers only the current window in some mode | D23 gates it on `fetch == null`; `_totalRecords` provenance verified |
+| R15 | `hasMore` optional → consumers omit it → search never re-queries | Required in the type |
+| R16 | Two announcements per filter change (ours + consumer's refetch) | Documented; they describe different events. If measured as double-speak, drop ours |
+
+### 14.8 Spikes for this revision (gate)
+
+| # | Question | Pass criterion | Verdict |
+|---|---|---|---|
+| S8 | Nested directive registration under **eager** creation inside `effectiveColumns`, plain field, full destroy/recompute cycle, zoneless | `filterRenderer` correct on the first `el.columns` push; no signal-write error; no loop across 5 recomputes; `onDestroy` clears the field | — |
+| S9 | Default panel focus survives a table re-render while open, and search text is retained | typed text and `document.activeElement` unchanged across `data` reassignment | — |
+| S10 | `Signal`-valued `$implicit` repaints an override panel under zoneless CD when `ctx.onChange` fires | `@for` over `values()?.matching` updates with no `detectChanges()` call from the consumer | — |
+
+### 14.9 Adversarial verification of this design
+
+Recorded after the verify workflow runs; see the plan.
+
+## 15. References
 
 - Issue **#414**; driver [MintPlayer.Spark#431](https://github.com/MintPlayer/MintPlayer.Spark/issues/431)
 - [overlay-controller-positioning.md](./overlay-controller-positioning.md) — the positioning half

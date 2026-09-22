@@ -186,6 +186,38 @@ npx nx test mintplayer-ng-bootstrap
 
 ---
 
+---
+
+# Revision 2 — default panel, nested override, datatable-supplied values
+
+PRD §14. Status: **Designed; adversarial verification running (`wf_699b142e-239`)** — 2026-09-22. Milestones below are the shape of the work; individual decisions may be amended by the verification synthesis before M11 starts, and the amendment is recorded in PRD §14.9 first.
+
+| Milestone | State |
+|---|---|
+| S8–S10 — Revision 2 spikes (PRD §14.8) | ⬜ folded into the refuters' measurements where possible |
+| M11 — WC: `distincts` source, local fallback, `DistinctValue` types, labels | ⬜ |
+| M12 — WC: default panel (search / ≠ / checkbox list / clear), `ctx`, events | ⬜ |
+| M13 — WC: `filterSummary` on the trigger; aria-label composition | ⬜ |
+| M14 — Angular: `filterable`/`filterActive`/`filterSummary` inputs on `*bsDatatableColumn`; nested `*bsDatatableFilterPanel`; eager header views; delete the sibling directive | ⬜ |
+| M15 — Wrappers: forward `distincts` + `labels` + filter events in ng / react / vue | ⬜ |
+| M16 — Demos: default panel on one column, override on another, `filterable` toggled by the checkbox; a listener that filters the demo's own data | ⬜ |
+| M17 — Specs: rewrite `datatable-filter.spec.ts`; default-panel focus/mount-once/a11y; `distincts` fallback across data modes; Signal `$implicit` under zoneless | ⬜ |
+| M18 — Docs: PRD §5.7/D12 marked historical, §14.9 verification record, §13 as-built extended; Spark `query_column_filter_PRD.md` §5.8 amended (docs only, no Spark code) | ⬜ |
+| M19 — Batched verification sweep; browser check of default panel + override in the React demo (the only demo servable without the API) | ⬜ |
+
+## Ordering rationale (Revision 2)
+
+The WC goes first (M11–M13) because every wrapper and demo consumes it and because the default panel's mount-once behaviour is the riskiest interaction with what already shipped (R13). Angular (M14) is next because it carries the one structural change — eager header views — and the directive deletion; React/Vue (M15) are plumbing. Demos before specs, as before. Spark stays docs-only (D30).
+
+## Standing rules for Revision 2
+
+- Everything in "Conventions (these still bite)" above.
+- **No signal write in the nested directive's constructor or `onDestroy`** — it runs inside `effectiveColumns`, a `computed` (F3, R12).
+- **The default panel is mounted once per open** under the same `_mountedFilterColumn` guard as consumer content; its state (search text, checked set, inverse) lives on the element, not in the template (R13).
+- **`hasMore` is required** on the source response (R15).
+- **Every string in the default panel routes through `labels`** (D29); a hard-coded literal is a translation bug.
+- **The WC emits UI state only** — `{column, selected, inverse}` — never `includes`/`excludes` (D26).
+
 ## Risks
 
 | # | Risk | Mitigation |
