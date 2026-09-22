@@ -190,7 +190,7 @@ npx nx test mintplayer-ng-bootstrap
 
 # Revision 2 — default panel, nested override, datatable-supplied values
 
-PRD §14. Status: **Implemented** — 2026-09-22. M11–M18 complete; M19 (the batched sweep and the real-browser check) is the remaining step. As-built deviations are recorded in PRD §13.1. Six of eight refuters amended something; the amendments are in PRD §14.3/§14.4/§14.7/§14.8 and the record is §14.9. The load-bearing change: header views stay **lazy**; the wrapper's `filterRenderer` resolves the nested template **at panel open** and returns `null` for "default" (D20). Eager creation inside the `computed` was measured to throw NG0600 with any `viewChild` on the host and is gone.
+PRD §14. Status: **Implemented** — 2026-09-22. All milestones complete. The sweep and the real-browser check found four bugs the design review did not: a stale local value list, NG0600 on view DISPOSAL inside the computed, a header click target that covered only the label, and a portalled panel inheriting none of the component's custom properties. As-built deviations are recorded in PRD §13.1. Six of eight refuters amended something; the amendments are in PRD §14.3/§14.4/§14.7/§14.8 and the record is §14.9. The load-bearing change: header views stay **lazy**; the wrapper's `filterRenderer` resolves the nested template **at panel open** and returns `null` for "default" (D20). Eager creation inside the `computed` was measured to throw NG0600 with any `viewChild` on the host and is gone.
 
 | Milestone | State |
 |---|---|
@@ -203,7 +203,7 @@ PRD §14. Status: **Implemented** — 2026-09-22. M11–M18 complete; M19 (the b
 | M16 — Demos: default panel on one column, override on another, `filterable` toggled by the checkbox; a listener that filters the demo's own data | ✅ |
 | M17 — Specs: rewrite `datatable-filter.spec.ts`; default-panel focus/mount-once/a11y; `distincts` fallback across data modes; Signal `$implicit` under zoneless | ✅ |
 | M18 — Docs: PRD §5.7/D12 marked historical, §14.9 verification record, §13 as-built extended; Spark `query_column_filter_PRD.md` §5.8 amended (docs only, no Spark code) | ✅ |
-| M19 — Batched verification sweep; browser check of default panel + override in the React demo (the only demo servable without the API) | ⬜ |
+| M19 — Batched verification sweep; browser check of default panel + override in the React demo (the only demo servable without the API) | ✅ 3316 WC + 768 ng tests pass; 4 libs build; verified in Chromium |
 
 ## Ordering rationale (Revision 2)
 
