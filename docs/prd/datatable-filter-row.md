@@ -129,7 +129,7 @@ The house answer to clipping so far is `position: fixed` + a hand-picked `z-inde
 | D9 | `OverlayController` grows the portal as an **option**, not a rewrite | Eleven working consumers stay untouched |
 | D10 | The portal uses a **separate lit render root** whose container is the pane — not relocation of a template-rendered node | Both worked in S1, but relocation is unsupported by lit in general and only survived a narrow test (§9, S1c) |
 | D11 | The trigger is a real `<button>` owned by **this component**; only the panel's *contents* are the consumer's | Role, name, `aria-expanded`, `aria-controls`, focus and keymap stay testable |
-| D12 | Angular bridges via a third structural directive `[bsDatatableFilter]`; React and Vue need **no wrapper change** | `filterable`/`filterRenderer` ride inside the `columns` objects, which both already forward as element properties |
+| D12 | **Historical — superseded by D19/D20/D29 (§14).** Angular bridged via a sibling directive `[bsDatatableFilter]` matched by `name`; React and Vue needed no wrapper change. Revision 2 nests the override inside `*bsDatatableColumn`, adds a default panel in the WC, and adds `distincts` / `labels` / `filterChange` to all three wrappers | `filterable`/`filterRenderer` ride inside the `columns` objects, which both already forward as element properties |
 | D13 | Consumer filter DOM is **not** stamped with `data-mps=datatable` | Measured to hold across the portal (§9, S5); joins the three renderers already asserted in `_conformance/consumer-dom-boundary.spec.ts:151-189` |
 | D14 | All CSS goes in `datatable.light.scss`, scope-anchored; the stale `datatable.styles.ts` is deleted | §1.5 |
 | D15 | No third-party dependency. No `@angular/cdk` in a web component | Standing repo rule |
@@ -238,7 +238,9 @@ The scheduler records that `scroll` does not compose, so `OverlayController`'s d
 
 The anchor must still be resolved **lazily by stable key**, because every render rebuilds the header and a captured element detaches under an open panel (`scheduler-compact-timeline-localization.md:216-218`).
 
-### 5.7 Angular bridge
+### 5.7 Angular bridge — **historical, superseded by §14 (D19–D21)**
+
+> The sibling `[bsDatatableFilter]` directive described below shipped in the first revision and is **deleted** in Revision 2. The claim that "overloading `[bsDatatableColumn]` is not possible" was correct only for a *second `TemplateRef` on the same directive*; nesting a second structural directive *inside* the column's template and having it `inject` the column directive works, and is measured in §14.9. Kept for the record.
 
 A third directive, `[bsDatatableFilter]`, injecting `TemplateRef`, with a `name` input associating it with a column — a structural directive has exactly one `TemplateRef`, so overloading `[bsDatatableColumn]` is not possible.
 
