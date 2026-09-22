@@ -7,6 +7,8 @@ import type {
   DatatableFetchRequest,
   DatatableFetchResponse,
   SelectionChangeEventDetail,
+  DistinctValue,
+  FilterChangeDetail,
 } from '@mintplayer/web-components/datatable';
 
 // Dev: /api is proxied to localhost:5000 by vite.config; prod hits the API
@@ -36,46 +38,75 @@ const ARTISTS: Artist[] = [
 const SIMPLE_SOURCE = `<BsDatatable :columns="COLUMNS" :data="ARTISTS" />`;
 
 // ─── Column filters ─────────────────────────────────────────────────────────
-// The filter values live in this view, not in the table. `filterRenderer`
-// returns a DOM Node — the same contract the Angular and React wrappers
-// satisfy — so it is built imperatively rather than as a template.
+// The component holds no filter state and defines no predicate model: it
+// collects a selection and emits it. The master copy, the predicate,
+// `filterActive` and `filterSummary` all live in this view.
 const showFilters = ref(true);
-const nameFilter = ref('');
+const nameSelection = ref<DistinctValue[]>([]);
+const nameInverse = ref(false);
 const minFounded = ref<number | null>(null);
 const artistRowKey = (row: unknown) => String((row as Artist).id);
 
+// ARTISTS is the UNFILTERED master copy. `:data` gets the filtered view, and
+// the value lists are computed from the rows the element holds — so filtering
+// the source would remove the values needed to widen the filter again.
 const filteredArtists = computed(() =>
   ARTISTS.filter(
     (a) =>
-      (nameFilter.value ? a.name.toLowerCase().includes(nameFilter.value.toLowerCase()) : true) &&
+      (nameSelection.value.length === 0
+        ? true
+        : nameInverse.value
+          ? !nameSelection.value.some((v) => v.value === a.name)
+          : nameSelection.value.some((v) => v.value === a.name)) &&
       (minFounded.value === null ? true : a.founded >= minFounded.value),
   ),
 );
 
-function textFilterNode(value: string, label: string, onInput: (v: string) => void): Node {
+const nameSummary = computed(() => {
+  const selected = nameSelection.value;
+  if (selected.length === 0) return undefined;
+  if (selected.length === 1) return selected[0].label;
+  return `${selected.length} selected`;
+});
+
+function onFilterChange(detail: FilterChangeDetail) {
+  if (detail.column !== 'name') return;
+  nameSelection.value = detail.selected;
+  nameInverse.value = detail.inverse;
+}
+
+// An override panel. `filterRenderer` returns a DOM Node — the same contract
+// all three frameworks see — and it must return a STABLE one: the element
+// mounts it once per open, so repainting it is this function's job.
+let foundedPanel: HTMLElement | null = null;
+function foundedPanelNode(): Node {
+  if (foundedPanel) return foundedPanel;
   const wrap = document.createElement('div');
   const lbl = document.createElement('label');
   lbl.className = 'form-label small mb-1';
-  lbl.textContent = label;
+  lbl.textContent = 'Founded after';
   const input = document.createElement('input');
+  input.type = 'number';
   input.className = 'form-control form-control-sm';
-  input.value = value;
-  input.id = lbl.htmlFor = `filter-${label.replace(/\W+/g, '-').toLowerCase()}`;
-  input.addEventListener('input', () => onInput(input.value));
+  input.id = lbl.htmlFor = 'vue-filter-founded';
+  input.addEventListener('input', () => {
+    minFounded.value = input.value.trim() === '' ? null : Number(input.value);
+  });
   wrap.append(lbl, input);
+  foundedPanel = wrap;
   return wrap;
 }
 
 const filterColumns = computed<DatatableColumnDef[]>(() =>
   COLUMNS.map((col) => {
     if (!showFilters.value) return col;
+    // No filterRenderer: the built-in panel renders. That is the whole opt-in.
     if (col.name === 'name') {
       return {
         ...col,
         filterable: true,
-        filterActive: nameFilter.value.length > 0,
-        filterRenderer: () =>
-          textFilterNode(nameFilter.value, 'Name contains', (v) => (nameFilter.value = v)),
+        filterActive: nameSelection.value.length > 0,
+        filterSummary: nameSummary.value,
       };
     }
     if (col.name === 'founded') {
@@ -83,42 +114,51 @@ const filterColumns = computed<DatatableColumnDef[]>(() =>
         ...col,
         filterable: true,
         filterActive: minFounded.value !== null,
-        filterRenderer: () =>
-          textFilterNode(minFounded.value === null ? '' : String(minFounded.value), 'Founded after', (v) => {
-            minFounded.value = v.trim() === '' ? null : Number(v);
-          }),
+        filterSummary: minFounded.value === null ? undefined : `≥ ${minFounded.value}`,
+        filterRenderer: foundedPanelNode,
       };
     }
     return col;
   }),
 );
 
-const FILTER_SOURCE = `<!-- The filter row follows the column defs: no column carries a
-     filterRenderer, no second header row is rendered. -->
-<BsDatatable :columns="filterColumns" :data="filteredArtists" virtualScroll :itemSize="40" />
+const FILTER_SOURCE = `<!-- filterable is the whole opt-in: with no filterRenderer the
+     built-in panel renders (search, include/exclude, a checkbox list of
+     the column's distinct values, clear). No Vue code behind it. -->
+<BsDatatable :columns="filterColumns" :data="filteredArtists"
+  @filterChange="onFilterChange" virtualScroll :itemSize="40" />
 
 <script setup lang="ts">
-const nameFilter = ref('');
+const nameSelection = ref<DistinctValue[]>([]);
+const nameInverse = ref(false);
 
-// filterRenderer returns a DOM Node, so it is built imperatively.
+function onFilterChange(detail: FilterChangeDetail) {
+  if (detail.column !== 'name') return;
+  nameSelection.value = detail.selected;   // [] when the user clears
+  nameInverse.value = detail.inverse;      // the include/exclude toggle
+}
+
 const filterColumns = computed<DatatableColumnDef[]>(() =>
   COLUMNS.map(col => col.name === 'name'
     ? { ...col,
         filterable: true,
-        filterActive: nameFilter.value.length > 0,  // visual only; meaning is yours
-        filterRenderer: () => {
-          const input = document.createElement('input');
-          input.className = 'form-control form-control-sm';
-          input.value = nameFilter.value;
-          input.addEventListener('input', () => (nameFilter.value = input.value));
-          return input;
-        } }
+        filterActive: nameSelection.value.length > 0,  // visual only; meaning is yours
+        filterSummary: nameSummary.value }
     : col),
 );
 
-// The table holds no filter state and defines no predicate model.
-const filteredArtists = computed(() =>
-  ARTISTS.filter(a => a.name.toLowerCase().includes(nameFilter.value.toLowerCase())));
+// ARTISTS is the UNFILTERED master copy: the value lists are computed from
+// the rows the element holds, so filtering the source would remove the
+// values needed to widen the filter again.
+const filteredArtists = computed(() => ARTISTS.filter(a => {
+  if (nameSelection.value.length === 0) return true;
+  const hit = nameSelection.value.some(v => v.value === a.name);
+  return nameInverse.value ? !hit : hit;
+}));
+
+// The table does not hold every row? Then it cannot compute a value list,
+// and says so rather than guessing from the page it has. Supply one with
+// :distincts, and resolve null for a column to hand it back to the local path.
 <\/script>`;
 
 // ─── Lazy windowed-fetch demo (real API: 1000 seeded orders) ──────────────
@@ -320,11 +360,25 @@ const TREE_SOURCE = `<!-- The same callback, branching on req.parentId for roots
     <section>
       <h2>Column filters</h2>
       <p>
-        Give a column a <code>filterRenderer</code> and the table grows a second
-        header row with a dropdown trigger in that column. Columns without one
+        Mark a column <code>filterable</code> and the table grows a second
+        header row with a dropdown trigger in that column. Columns without it
         get an empty, correctly-sized cell, so the row stays aligned. Drop them
         all and the row is not rendered at all &mdash; toggle the checkbox to
         see it.
+      </p>
+      <p>
+        A filterable column gets a <strong>built-in panel</strong> for free: a
+        search box, an include/exclude toggle, a checkbox list of the column's
+        distinct values, and a clear button. It lives in the web component, so
+        there is no Vue code behind it at all &mdash; the <em>Name</em> column
+        below just sets <code>filterable</code>.
+      </p>
+      <p>
+        When a column needs something else, give it a <code>filterRenderer</code>
+        &mdash; <em>Founded</em> does, because a range is not a set of values to
+        tick. It returns a DOM <code>Node</code> (the same contract all three
+        frameworks see) and must return a <strong>stable</strong> one: the
+        element mounts it once per open, so repainting it is the renderer's job.
       </p>
       <p>
         The panel opens in an overlay at the document root, so it is not clipped
@@ -334,14 +388,17 @@ const TREE_SOURCE = `<!-- The same callback, branching on req.parentId for roots
       </p>
       <p>
         <strong>The component decides nothing about what a filter means.</strong>
-        There is no predicate model and no filter state: this view owns the
-        values below and simply re-filters its own data.
+        It collects a selection and emits it on <code>filterChange</code>; this
+        view holds the unfiltered master copy, applies the selection, and sets
+        <code>filterActive</code> and <code>filterSummary</code> back on the
+        column.
       </p>
       <p class="text-body-secondary small">
         <strong>Keyboard:</strong> <kbd>Tab</kbd> reaches each trigger,
-        <kbd>Enter</kbd>/<kbd>Space</kbd> opens the panel and moves focus into
-        it, <kbd>Tab</kbd> cycles inside it, <kbd>Esc</kbd> closes and returns
-        focus to the trigger.
+        <kbd>Enter</kbd>/<kbd>Space</kbd> opens the panel and moves focus to its
+        search box, <kbd>Tab</kbd> cycles inside it, <kbd>Esc</kbd> closes and
+        returns focus to the trigger. Clearing a filter moves focus back to the
+        search box, because the clear button disables itself.
       </p>
 
       <label class="d-block mb-3">
@@ -356,6 +413,7 @@ const TREE_SOURCE = `<!-- The same callback, branching on req.parentId for roots
         virtualScroll
         :itemSize="40"
         :rowKey="artistRowKey"
+        @filterChange="onFilterChange"
       />
       <small class="text-body-secondary">
         Showing {{ filteredArtists.length }} of {{ ARTISTS.length }} artists.

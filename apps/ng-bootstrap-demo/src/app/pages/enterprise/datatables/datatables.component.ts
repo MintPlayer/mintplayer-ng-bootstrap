@@ -5,7 +5,9 @@ import { Color } from '@mintplayer/ng-bootstrap';
 import {
   BsDatatableComponent,
   BsDatatableColumnDirective,
-  BsDatatableFilterDirective,
+  BsDatatableFilterPanelDirective,
+  type DistinctValue,
+  type FilterChangeDetail,
   BsRowTemplateDirective,
   BsDatatableFetch,
   DatatableSettings,
@@ -26,7 +28,7 @@ import { TreeItemService } from '../../../services/tree-item/tree-item.service';
   styleUrls: ['./datatables.component.scss'],
   imports: [
     FormsModule,
-    BsDatatableComponent, BsDatatableColumnDirective, BsDatatableFilterDirective, BsRowTemplateDirective,
+    BsDatatableComponent, BsDatatableColumnDirective, BsDatatableFilterPanelDirective, BsRowTemplateDirective,
     BsSelectComponent, BsSelectOption,
     BsCodeSnippetComponent,
     BsBadgeComponent,
@@ -332,118 +334,142 @@ export class DatatablesComponent {
   `;
 
   // ─── Column filters ───────────────────────────────────────────────────────
-  // The filter row carries no state of its own. These signals belong to the
-  // page, and the datatable only re-fetches because `fetchFilteredArtists`
-  // reads them — which is exactly why the same row can drive a text match, a
-  // numeric range or a server-side query without the component knowing.
+  // The component holds no filter state and defines no predicate model: it
+  // collects a selection and emits it. Everything below — the master copy, the
+  // predicate, `filterActive`, `filterSummary` — belongs to this page, which is
+  // what lets the same row drive a client-side match here and a server query
+  // somewhere else.
 
-  /**
-   * Toggles the `*bsDatatableFilter` templates in and out of the content.
-   * With none present no column is filterable, so the second header row is not
-   * rendered at all — the row is a consequence of the templates, not a flag.
-   */
+  /** Drives `filterable` on the columns. No filterable column, no filter row. */
   showFilters = signal(true);
 
-  nameFilter = signal('');
+  /**
+   * The UNFILTERED master copy. `[data]` is bound to the filtered view, so
+   * without this the first selection would be the last: the value lists are
+   * computed from the rows the element holds, and filtering the source would
+   * remove the values the user needs in order to widen the filter again.
+   */
+  allArtists = signal<Artist[]>([]);
+
+  constructor() {
+    // One page big enough to hold the lot. A consumer with more rows than that
+    // would supply `[distincts]` instead — the element reports that it has no
+    // values rather than computing a list from the page it happens to hold.
+    this.artistService
+      .pageArtists(<PaginationRequest>{
+        page: 1,
+        perPage: 500,
+        sortColumns: [{ property: 'Name', direction: 'ascending' }],
+      })
+      .then((response) => this.allArtists.set(response?.data ?? []));
+  }
+
+  /** Selected distinct values for the Artist column, from the built-in panel. */
+  nameSelection = signal<DistinctValue[]>([]);
+  /** The panel's include/exclude toggle. */
+  nameInverse = signal(false);
+  /** The override panel's state; a range is not a set of values to tick. */
   minYear = signal<number | null>(null);
 
+  nameSummary = computed(() => {
+    const selected = this.nameSelection();
+    if (selected.length === 0) return undefined;
+    if (selected.length === 1) return selected[0].label;
+    return `${selected.length} selected`;
+  });
+
+  filteredArtists = computed(() => {
+    const selected = this.nameSelection();
+    const inverse = this.nameInverse();
+    const min = this.minYear();
+    return this.allArtists()
+      .filter((a) => {
+        if (selected.length === 0) return true;
+        const hit = selected.some((v) => v.value === a.name);
+        return inverse ? !hit : hit;
+      })
+      .filter((a) => (min === null ? true : (a.yearStarted ?? 0) >= min));
+  });
+
   filterSettings = signal(new DatatableSettings({
-    sortColumns: [{ property: 'Name', direction: 'ascending' }],
+    sortColumns: [{ property: 'name', direction: 'ascending' }],
     perPage: { values: [10, 20, 50], selected: 20 },
     page: { values: [1], selected: 1 },
   }));
 
-  setNameFilter(value: string) {
-    this.nameFilter.set(value ?? '');
-    this.resetFilterPage();
+  onFilterChange(detail: FilterChangeDetail) {
+    if (detail.column !== 'name') return;
+    this.nameSelection.set(detail.selected);
+    this.nameInverse.set(detail.inverse);
   }
 
   setMinYear(value: number | null) {
     this.minYear.set(value === null || Number.isNaN(value) ? null : Number(value));
-    this.resetFilterPage();
   }
-
-  /** A narrowed result set has fewer pages; staying on page 7 would show nothing. */
-  private resetFilterPage() {
-    const current = this.filterSettings();
-    this.filterSettings.set(new DatatableSettings({
-      sortColumns: current.sortColumns,
-      perPage: current.perPage,
-      page: { values: current.page.values, selected: 1 },
-    }));
-  }
-
-  fetchFilteredArtists: BsDatatableFetch<Artist> = (req: PaginationRequest) =>
-    this.artistService.pageArtists(req).then((response) => {
-      const all = response?.data ?? [];
-      const name = this.nameFilter().trim().toLowerCase();
-      const min = this.minYear();
-      const filtered = all
-        .filter((a) => (name ? (a.name ?? '').toLowerCase().includes(name) : true))
-        .filter((a) => (min === null ? true : (a.yearStarted ?? 0) >= min));
-      // Client-side here only because the demo API has no filter endpoint; a
-      // real consumer would pass these into the request instead.
-      return <PaginationResponse<Artist>>{
-        data: filtered,
-        totalRecords: filtered.length,
-        totalPages: 1,
-        page: req.page,
-        perPage: req.perPage,
-      };
-    });
 
   protected readonly snippetFilterHtml = dedent`
-    <!-- The filter row follows the templates: remove them all and it is gone. -->
+    <!-- filterable drives the row: with none, there is no second header row. -->
     <bs-checkbox [type]="'checkbox'" [(ngModel)]="showFilters">Show the filter row</bs-checkbox>
 
-    <bs-datatable [fetch]="fetchFilteredArtists" [(settings)]="settings" [rowKey]="rowKey">
-      <div *bsDatatableColumn="'Name'">Artist</div>
-      <div *bsDatatableColumn="'YearStarted'">Year started</div>
-      <div *bsDatatableColumn="'YearQuit'; sortable: false">Year quit</div>
+    <bs-datatable [data]="filteredArtists()" [(settings)]="settings" [rowKey]="rowKey"
+      (filterChange)="onFilterChange($event)">
 
-      @if (showFilters()) {
-      <!-- Adding this grows a second header row. Columns without a filter
-           template get an empty, correctly-sized cell. -->
-      <div *bsDatatableFilter="'Name'; active: nameFilter().length > 0">
-        <label class="form-label small mb-1" for="filter-name">Name contains</label>
-        <input id="filter-name" class="form-control form-control-sm" type="search"
-          [ngModel]="nameFilter()" (ngModelChange)="setNameFilter($event)" />
+      <!-- No nested panel, so the built-in one renders: search, include/exclude,
+           a checkbox list of the column's distinct values, and clear. -->
+      <div *bsDatatableColumn="'name';
+            filterable: showFilters();
+            filterActive: nameSelection().length > 0;
+            filterSummary: nameSummary()">
+        Artist
       </div>
 
-      <div *bsDatatableFilter="'YearStarted'; active: minYear() !== null">
-        <label class="form-label small mb-1" for="filter-year">Started after</label>
-        <input id="filter-year" class="form-control form-control-sm" type="number"
-          [ngModel]="minYear()" (ngModelChange)="setMinYear($event)" />
+      <!-- An override, nested INSIDE the column it belongs to. -->
+      <div *bsDatatableColumn="'yearStarted';
+            filterable: showFilters();
+            filterActive: minYear() !== null">
+        Year started
+        <ng-container *bsDatatableFilterPanel="let values">
+          <input type="number" class="form-control form-control-sm"
+            [ngModel]="minYear()" (ngModelChange)="setMinYear($event)" />
+          <p class="small">{{ values()?.matching?.length ?? 0 }} distinct year(s).</p>
+        </ng-container>
       </div>
-      }
     </bs-datatable>
   `;
 
   protected readonly snippetFilterTs = dedent`
-    // The component holds no filter state and defines no predicate model.
-    // These signals are the page's; the table re-fetches only because the
-    // fetch callback reads them.
-    nameFilter = signal('');
-    minYear = signal<number | null>(null);
+    // Bind [data] to the FILTERED view but keep the unfiltered master copy:
+    // the value lists are computed from the rows the element holds, so
+    // filtering the source would remove the values needed to widen the filter.
+    allArtists = signal<Artist[]>([]);
 
-    setNameFilter(value: string) {
-      this.nameFilter.set(value ?? '');
-      this.resetFilterPage();   // a narrower result set has fewer pages
+    nameSelection = signal<DistinctValue[]>([]);
+    nameInverse = signal(false);
+
+    filteredArtists = computed(() => {
+      const selected = this.nameSelection();
+      const inverse = this.nameInverse();
+      return this.allArtists().filter(a => {
+        if (selected.length === 0) return true;
+        const hit = selected.some(v => v.value === a.name);
+        return inverse ? !hit : hit;   // the panel's include/exclude toggle
+      });
+    });
+
+    onFilterChange(detail: FilterChangeDetail) {
+      if (detail.column !== 'name') return;
+      this.nameSelection.set(detail.selected);   // [] when the user clears
+      this.nameInverse.set(detail.inverse);
     }
 
-    fetchFilteredArtists: BsDatatableFetch<Artist> = (req) =>
-      this.artistService.pageArtists(req).then((response) => {
-        const name = this.nameFilter().trim().toLowerCase();
-        const min = this.minYear();
-        const filtered = (response?.data ?? [])
-          .filter(a => name ? (a.name ?? '').toLowerCase().includes(name) : true)
-          .filter(a => min === null ? true : (a.yearStarted ?? 0) >= min);
-        return { data: filtered, totalRecords: filtered.length, totalPages: 1,
-                 page: req.page, perPage: req.perPage };
-      });
+    // The table does not hold every row? Then it cannot compute a value list,
+    // and it says so rather than guessing from the page it has. Supply one:
+    //   [distincts]="loadDistincts"
+    //   loadDistincts: DatatableDistincts = async ({ column, search, signal }) =>
+    //     fetch(\`/api/distincts/\${column}?q=\${search}\`, { signal }).then(r => r.json());
+    // Resolve null for a column to hand that one back to the local path.
 
-    // \`*bsDatatableFilterActive\` is purely visual — it dots the trigger so a
-    // collapsed panel still shows the column is filtered. What "active" means
-    // is yours.
+    // filterActive and filterSummary are yours too: the component never derives
+    // them, because only you know what your filter did.
   `;
 }

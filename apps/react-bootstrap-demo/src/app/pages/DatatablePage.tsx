@@ -1,4 +1,4 @@
-import { useCallback, useState } from 'react';
+import { useCallback, useRef, useState } from 'react';
 import { BsDatatable } from '@mintplayer/react-bootstrap/datatable';
 import { BsCodeSnippet } from '@mintplayer/react-bootstrap/code-snippet';
 import type {
@@ -6,6 +6,8 @@ import type {
   DatatableFetchRequest,
   DatatableFetchResponse,
   SelectionChangeEventDetail,
+  DistinctValue,
+  FilterChangeDetail,
 } from '@mintplayer/web-components/datatable';
 
 // In dev, /api is proxied to localhost:5000 by vite.config.mts. In prod we
@@ -34,34 +36,43 @@ const ARTISTS: Artist[] = [
 
 const SIMPLE_SOURCE = `<BsDatatable columns={COLUMNS} data={ARTISTS} />`;
 
-const FILTER_SOURCE = `// The filter row follows the column defs: no column carries a
-// filterRenderer, no second header row is rendered.
-const [nameFilter, setNameFilter] = useState('');
-
-// filterRenderer returns a DOM Node — the same contract the Angular and Vue
-// wrappers satisfy — so it is built imperatively rather than as JSX.
-const nameFilterNode = () => {
-  const input = document.createElement('input');
-  input.className = 'form-control form-control-sm';
-  input.value = nameFilter;
-  input.addEventListener('input', () => setNameFilter(input.value));
-  return input;
-};
-
+const FILTER_SOURCE = `// filterable is the whole opt-in: with no filterRenderer the built-in
+// panel renders — search, include/exclude, a checkbox list of the
+// column's distinct values, and clear. No React code behind it.
 const columns: DatatableColumnDef[] = COLUMNS.map((col) =>
   col.name === 'name'
     ? { ...col, filterable: true,
-        filterActive: nameFilter.length > 0,   // visual only; the meaning is yours
-        filterRenderer: nameFilterNode }
+        filterActive: nameSelection.length > 0,   // visual only; the meaning is yours
+        filterSummary: nameSummary }
     : col,
 );
 
-// The table holds no filter state and defines no predicate model: this page
-// filters its own data and hands over the result.
-const rows = ARTISTS.filter(a =>
-  a.name.toLowerCase().includes(nameFilter.toLowerCase()));
+const [nameSelection, setNameSelection] = useState<DistinctValue[]>([]);
+const [nameInverse, setNameInverse] = useState(false);
 
-<BsDatatable columns={columns} data={rows} virtualScroll itemSize={40} />`;
+const onFilterChange = useCallback((e: CustomEvent<FilterChangeDetail>) => {
+  if (e.detail.column !== 'name') return;
+  setNameSelection(e.detail.selected);   // [] when the user clears
+  setNameInverse(e.detail.inverse);      // the include/exclude toggle
+}, []);
+
+// ARTISTS is the UNFILTERED master copy. The value lists are computed from
+// the rows the element holds, so filtering the source would remove the
+// values needed to widen the filter again.
+const rows = ARTISTS.filter(a => {
+  if (nameSelection.length === 0) return true;
+  const hit = nameSelection.some(v => v.value === a.name);
+  return nameInverse ? !hit : hit;
+});
+
+// The table does not hold every row? Then it cannot compute a value list,
+// and says so rather than guessing from the page it has. Supply one:
+//   <BsDatatable distincts={async ({ column, search, signal }) =>
+//     (await fetch(\`/api/distincts/\${column}?q=\${search}\`, { signal })).json()} />
+// Resolve null for a column to hand that one back to the local path.
+
+<BsDatatable columns={columns} data={rows} onFilterChange={onFilterChange}
+  virtualScroll itemSize={40} />`;
 
 // ─── Lazy windowed-fetch demo (real API: 1000 seeded orders) ─────────────────
 // One `fetch` callback drives the whole table: the WC calls it for page 1 and
@@ -192,41 +203,72 @@ export function DatatablePage() {
   }, []);
 
   // ─── Column filters ───────────────────────────────────────────────────────
-  // The filter values live here, not in the table. `filterRenderer` returns a
-  // DOM Node, so it is built imperatively rather than as JSX — the same
-  // contract every framework sees.
+  // The component holds no filter state and defines no predicate model: it
+  // collects a selection and emits it. The master copy, the predicate,
+  // `filterActive` and `filterSummary` are all this page's.
   const [showFilters, setShowFilters] = useState(true);
-  const [nameFilter, setNameFilter] = useState('');
+  const [nameSelection, setNameSelection] = useState<DistinctValue[]>([]);
+  const [nameInverse, setNameInverse] = useState(false);
   const [minFounded, setMinFounded] = useState<number | null>(null);
 
+  // ARTISTS is the UNFILTERED master copy. `data` gets the filtered view, and
+  // the value lists are computed from the rows the element holds — so filtering
+  // the source would remove the values needed to widen the filter again.
   const filteredArtists = ARTISTS.filter(
     (a) =>
-      (nameFilter ? a.name.toLowerCase().includes(nameFilter.toLowerCase()) : true) &&
+      (nameSelection.length === 0
+        ? true
+        : nameInverse
+          ? !nameSelection.some((v) => v.value === a.name)
+          : nameSelection.some((v) => v.value === a.name)) &&
       (minFounded === null ? true : a.founded >= minFounded),
   );
 
-  const textFilterNode = (value: string, placeholder: string, onInput: (v: string) => void): Node => {
+  const nameSummary =
+    nameSelection.length === 0
+      ? undefined
+      : nameSelection.length === 1
+        ? nameSelection[0].label
+        : `${nameSelection.length} selected`;
+
+  const onFilterChange = useCallback((e: CustomEvent<FilterChangeDetail>) => {
+    if (e.detail.column !== 'name') return;
+    setNameSelection(e.detail.selected);
+    setNameInverse(e.detail.inverse);
+  }, []);
+
+  // An override panel. `filterRenderer` returns a DOM Node — the same contract
+  // all three frameworks see — so it is built imperatively rather than as JSX,
+  // and it must return a STABLE node: the element mounts it once per open, so
+  // repainting it is this function's job, not the element's.
+  const foundedPanel = useRef<HTMLElement | null>(null);
+  const foundedPanelNode = (): Node => {
+    if (foundedPanel.current) return foundedPanel.current;
     const wrap = document.createElement('div');
     const label = document.createElement('label');
     label.className = 'form-label small mb-1';
-    label.textContent = placeholder;
+    label.textContent = 'Founded after';
     const input = document.createElement('input');
+    input.type = 'number';
     input.className = 'form-control form-control-sm';
-    input.value = value;
-    input.addEventListener('input', () => onInput(input.value));
-    label.htmlFor = input.id = `filter-${placeholder.replace(/\W+/g, '-').toLowerCase()}`;
+    label.htmlFor = input.id = 'react-filter-founded';
+    input.addEventListener('input', () =>
+      setMinFounded(input.value.trim() === '' ? null : Number(input.value)),
+    );
     wrap.append(label, input);
+    foundedPanel.current = wrap;
     return wrap;
   };
 
   const filterColumns: DatatableColumnDef[] = COLUMNS.map((col) => {
     if (!showFilters) return col;
+    // No filterRenderer: the built-in panel renders. That is the whole opt-in.
     if (col.name === 'name') {
       return {
         ...col,
         filterable: true,
-        filterActive: nameFilter.length > 0,
-        filterRenderer: () => textFilterNode(nameFilter, 'Name contains', setNameFilter),
+        filterActive: nameSelection.length > 0,
+        filterSummary: nameSummary,
       };
     }
     if (col.name === 'founded') {
@@ -234,10 +276,8 @@ export function DatatablePage() {
         ...col,
         filterable: true,
         filterActive: minFounded !== null,
-        filterRenderer: () =>
-          textFilterNode(minFounded === null ? '' : String(minFounded), 'Founded after', (v) =>
-            setMinFounded(v.trim() === '' ? null : Number(v)),
-          ),
+        filterSummary: minFounded === null ? undefined : `≥ ${minFounded}`,
+        filterRenderer: foundedPanelNode,
       };
     }
     return col;
@@ -336,11 +376,26 @@ export function DatatablePage() {
       <section>
         <h2>Column filters</h2>
         <p>
-          Give a column a <code>filterRenderer</code> and the table grows a
-          second header row with a dropdown trigger in that column. Columns
-          without one get an empty, correctly-sized cell, so the row stays
-          aligned. Drop them all and the row is not rendered at all &mdash;
-          toggle the checkbox to see it.
+          Mark a column <code>filterable</code> and the table grows a second
+          header row with a dropdown trigger in that column. Columns without it
+          get an empty, correctly-sized cell, so the row stays aligned. Drop them
+          all and the row is not rendered at all &mdash; toggle the checkbox to
+          see it.
+        </p>
+        <p>
+          A filterable column gets a <strong>built-in panel</strong> for free: a
+          search box, an include/exclude toggle, a checkbox list of the column's
+          distinct values, and a clear button. It lives in the web component, so
+          there is no React code behind it at all &mdash; the <em>Artist</em>{' '}
+          column below just sets <code>filterable</code>.
+        </p>
+        <p>
+          When a column needs something else, give it a{' '}
+          <code>filterRenderer</code> &mdash; <em>Founded</em> does, because a
+          range is not a set of values to tick. It returns a DOM{' '}
+          <code>Node</code> (the same contract all three frameworks see) and must
+          return a <strong>stable</strong> one: the element mounts it once per
+          open, so repainting it is the renderer's job.
         </p>
         <p>
           The panel opens in an overlay at the document root, so it is not
@@ -350,14 +405,17 @@ export function DatatablePage() {
         </p>
         <p>
           <strong>The component decides nothing about what a filter means.</strong>{' '}
-          There is no predicate model and no filter state: the page owns the
-          values below and simply re-filters its own data.
+          It collects a selection and emits it on{' '}
+          <code>onFilterChange</code>; this page holds the unfiltered master
+          copy, applies the selection, and sets <code>filterActive</code> and{' '}
+          <code>filterSummary</code> back on the column.
         </p>
         <p className="text-body-secondary small">
           <strong>Keyboard:</strong> <kbd>Tab</kbd> reaches each trigger,{' '}
-          <kbd>Enter</kbd>/<kbd>Space</kbd> opens the panel and moves focus into
-          it, <kbd>Tab</kbd> cycles inside it, <kbd>Esc</kbd> closes and returns
-          focus to the trigger.
+          <kbd>Enter</kbd>/<kbd>Space</kbd> opens the panel and moves focus to
+          its search box, <kbd>Tab</kbd> cycles inside it, <kbd>Esc</kbd> closes
+          and returns focus to the trigger. Clearing a filter moves focus back to
+          the search box, because the clear button disables itself.
         </p>
 
         <label className="d-block mb-3">
@@ -376,6 +434,7 @@ export function DatatablePage() {
           virtualScroll
           itemSize={40}
           rowKey={(row: unknown) => String((row as Artist).id)}
+          onFilterChange={onFilterChange}
         />
         <small className="text-body-secondary">
           Showing {filteredArtists.length} of {ARTISTS.length} artists.
