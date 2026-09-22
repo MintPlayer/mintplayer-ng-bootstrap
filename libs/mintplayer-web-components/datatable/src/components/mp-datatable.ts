@@ -244,6 +244,9 @@ export class MpDatatable extends LitElement {
   // ─── Filter row state ────────────────────────────────────────────────────
   /** Name of the column whose filter panel is open, or null. Only ever one. */
   private _openFilterColumn: string | null = null;
+  /** Column whose consumer content is currently mounted in the panel. Guards
+   *  against re-mounting on every render, which would destroy focus. */
+  private _mountedFilterColumn: string | null = null;
   /** Unique per instance so several datatables on a page cannot collide on IDREFs. */
   private readonly _filterUid = `mp-dt-${Math.random().toString(36).slice(2, 9)}`;
 
@@ -1004,6 +1007,9 @@ export class MpDatatable extends LitElement {
       const column = this._openFilterColumn;
       if (column == null) return;
       this._openFilterColumn = null;
+      // The pane is destroyed with the panel, so the next open must mount fresh
+      // content rather than believe it is still there.
+      this._mountedFilterColumn = null;
       this.requestUpdate();
       this.dispatchEvent(
         new CustomEvent('mp-datatable-filter-close', {
@@ -1070,9 +1076,26 @@ export class MpDatatable extends LitElement {
 
     const body = container.querySelector<HTMLElement>('.filter-panel-body');
     if (!body) return;
+
+    // Mount the consumer's content ONCE per open, not on every update.
+    //
+    // `updated()` runs on every render while the panel is open — including the
+    // renders a consumer's own filter causes by typing into it. A renderer that
+    // returns a fresh node per call (the React/Vue render-prop shape) would
+    // hand back a new element each time, and replacing the mounted one destroys
+    // whatever the user was focused on: the field loses focus on the first
+    // keystroke and every keystroke after it.
+    //
+    // Mounting once is also correct for the cached-node shape (Angular's
+    // EmbeddedViewRef, tree-select's LRU): that view is inserted into its
+    // ViewContainerRef, so it stays in the host's change-detection tree and
+    // keeps updating in place without us re-invoking the renderer.
+    if (this._mountedFilterColumn === column.name && body.firstChild) return;
+
     const content = column.filterRenderer?.(column);
-    if (content && body.firstChild !== content) {
+    if (content) {
       body.replaceChildren(content);
+      this._mountedFilterColumn = column.name;
     }
   }
 
@@ -1102,17 +1125,23 @@ export class MpDatatable extends LitElement {
     // aria-hidden: it belongs to the table's structural grid, and hiding it
     // would desynchronise the column count from the other two rows.
     if (!col.filterable) {
-      return html`<th class="filter-cell" data-column=${col.name} scope="col"></th>`;
+      return html`<th class="filter-cell p-0" data-column=${col.name} scope="col"></th>`;
     }
 
     const open = this._openFilterColumn === col.name;
     const label = this.mergedLabels.filterColumn(col.label ?? col.name);
 
     return html`
-      <th class="filter-cell" data-column=${col.name} scope="col">
+      <th class="filter-cell p-0" data-column=${col.name} scope="col">
         <button
           type="button"
-          class=${classMap({ 'filter-trigger': true, active: !!col.filterActive, open })}
+          class=${classMap({
+            'filter-trigger': true,
+            'p-2': true,
+            'rounded-0': true,
+            active: !!col.filterActive,
+            open,
+          })}
           id=${this.filterTriggerId(col.name)}
           aria-expanded=${open ? 'true' : 'false'}
           aria-controls=${open ? this.filterPanelId : nothing}

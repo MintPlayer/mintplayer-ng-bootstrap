@@ -349,7 +349,13 @@ tr.filter-row th {
   // resolves columns from the first row only — so once the measure pass has run
   // this row is structurally incapable of affecting geometry. Restating a width
   // here would be ignored at best and fight the measurement at worst.
-  padding: 0.25rem 0.5rem;
+  //
+  // The cell carries no padding: the trigger fills it edge to edge and owns the
+  // padding instead, so the whole cell is a click target. The element also
+  // renders `class="p-0"`, whose Bootstrap utility is `!important` and would win
+  // anyway — this keeps the component looking the same when it is used WITHOUT
+  // Bootstrap loaded, rather than leaving two disagreeing sources of truth.
+  padding: 0;
   border-bottom: 1px solid var(--mp-datatable-border-color);
   font-weight: 400;
   // The sort affordance's 2rem right padding belongs to row 1 only; repeating
@@ -370,10 +376,13 @@ tr.filter-row th {
   width: 100%;
   min-width: 0;
   box-sizing: border-box;
-  padding: 0.125rem 0.25rem;
+  // Mirrors the `p-2 rounded-0` utilities the element renders. Those are
+  // `!important` and win where Bootstrap is loaded; these keep the appearance
+  // identical where it is not.
+  padding: 0.5rem;
+  border-radius: 0;
   background: transparent;
   border: 1px solid transparent;
-  border-radius: 0.25rem;
   color: inherit;
   cursor: pointer;
   line-height: 1;

@@ -167,8 +167,129 @@ describe('mp-datatable filter row', () => {
     trigger.click();
     await settle(el);
 
-    expect(calls).toBeGreaterThan(0);
+    expect(calls).toBe(1);
     expect(document.querySelector('.mp-overlay-pane .consumer-filter')).toBe(node);
+
+    // Re-rendering while the panel is open must NOT re-invoke it. A renderer
+    // that returns a fresh node per call would otherwise have its mounted node
+    // swapped out from under the user on every update — which destroys focus,
+    // so a filter field would lose focus on its first keystroke.
+    el.requestUpdate();
+    await settle(el);
+    (el as unknown as { data: unknown[] }).data = [...DATA];
+    await settle(el);
+
+    expect(calls).toBe(1);
+  });
+
+  it('keeps a focused field in the panel focused across re-renders', async () => {
+    // The shape that exposes the bug: a NEW node every call, as a React or Vue
+    // render prop naturally produces.
+    const el = await mount(
+      columns([
+        {
+          filterable: true,
+          filterRenderer: () => {
+            const input = document.createElement('input');
+            input.className = 'consumer-input';
+            return input;
+          },
+        },
+      ]),
+    );
+
+    root(el).querySelector<HTMLButtonElement>('.filter-trigger')!.click();
+    await settle(el);
+
+    const input = document.querySelector<HTMLInputElement>('.mp-overlay-pane .consumer-input')!;
+    input.focus();
+    expect(document.activeElement).toBe(input);
+
+    // Simulate what typing into that field does to a consumer: state changes,
+    // the table re-renders.
+    (el as unknown as { data: unknown[] }).data = [...DATA];
+    await settle(el);
+    el.requestUpdate();
+    await settle(el);
+
+    expect(document.querySelector('.mp-overlay-pane .consumer-input')).toBe(input);
+    expect(document.activeElement).toBe(input);
+  });
+
+  /**
+   * The search-as-you-type shape: the consumer returns a STABLE node once and
+   * updates its contents itself as results arrive. This is what a Vidyano-style
+   * distinct-value list needs — every keystroke re-queries and repaints the
+   * list, while the search box keeps focus — and it is what the Angular bridge
+   * gives for free, because an EmbeddedViewRef stays in its ViewContainerRef's
+   * change-detection tree even with its nodes mounted elsewhere.
+   */
+  it('lets the consumer repaint its own mounted content, keeping focus', async () => {
+    const host = document.createElement('div');
+    const search = document.createElement('input');
+    search.className = 'consumer-search';
+    const list = document.createElement('ul');
+    list.className = 'consumer-list';
+    host.append(search, list);
+    const paint = (items: string[]) => {
+      list.replaceChildren(
+        ...items.map((i) => {
+          const li = document.createElement('li');
+          li.textContent = i;
+          return li;
+        }),
+      );
+    };
+    paint(['alpha', 'beta', 'gamma']);
+
+    const el = await mount(columns([{ filterable: true, filterRenderer: () => host }]));
+    root(el).querySelector<HTMLButtonElement>('.filter-trigger')!.click();
+    await settle(el);
+
+    const mountedSearch = document.querySelector<HTMLInputElement>('.mp-overlay-pane .consumer-search')!;
+    mountedSearch.focus();
+    expect(document.querySelectorAll('.mp-overlay-pane .consumer-list li')).toHaveLength(3);
+
+    // "keystroke → server round-trip → new results", with a table re-render in
+    // between, as a real consumer's state change would cause.
+    paint(['beta']);
+    (el as unknown as { data: unknown[] }).data = [...DATA];
+    await settle(el);
+
+    const items = [...document.querySelectorAll('.mp-overlay-pane .consumer-list li')].map((n) => n.textContent);
+    expect(items).toEqual(['beta']);
+    expect(document.activeElement).toBe(mountedSearch);
+  });
+
+  it('mounts fresh content when the panel is reopened', async () => {
+    let calls = 0;
+    const el = await mount(
+      columns([
+        {
+          filterable: true,
+          filterRenderer: () => {
+            calls++;
+            const n = document.createElement('div');
+            n.className = 'consumer-filter';
+            return n;
+          },
+        },
+      ]),
+    );
+
+    const trigger = () => root(el).querySelector<HTMLButtonElement>('.filter-trigger')!;
+    trigger().click();
+    await settle(el);
+    expect(calls).toBe(1);
+
+    trigger().click();
+    await settle(el);
+
+    // The pane is destroyed with the panel, so a reopen cannot reuse it.
+    trigger().click();
+    await settle(el);
+    expect(calls).toBe(2);
+    expect(document.querySelector('.mp-overlay-pane .consumer-filter')).not.toBeNull();
   });
 
   it('leaves the consumer node unstamped', async () => {
