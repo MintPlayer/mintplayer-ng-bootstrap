@@ -14,9 +14,14 @@ const COLUMNS: DatatableColumnDef[] = [
   { name: 'name', label: 'Name' },
 ];
 
-const withFilter = (): DatatableColumnDef[] => [
+const withFilter = (overrides: Partial<DatatableColumnDef> = {}): DatatableColumnDef[] => [
   COLUMNS[0],
-  { ...COLUMNS[1], filterable: true, filterRenderer: () => document.createElement('input') },
+  {
+    ...COLUMNS[1],
+    filterable: true,
+    filterRenderer: () => document.createElement('input'),
+    ...overrides,
+  },
 ];
 
 async function settle(el: MpDatatable) {
@@ -88,6 +93,23 @@ describe('mp-datatable filter row — ARIA', () => {
       // Routed through labels, not a hard-coded literal — a name that only
       // exists in English is a translation bug.
       expect(btn.getAttribute('aria-label')).toBe('Filter Name');
+    });
+
+    /**
+     * Three distinct names, not a name plus a visual state. A user who cannot
+     * see the trigger's active styling has nothing else telling them the column
+     * is filtered, so it has to be part of the accessible name.
+     */
+    it('names an active column as filtered, with its summary when there is one', async () => {
+      const active = await mount(withFilter({ filterActive: true }));
+      expect(trigger(active).getAttribute('aria-label')).toBe('Filter Name, filtered');
+
+      const summarised = await mount(withFilter({ filterActive: true, filterSummary: '2 selected' }));
+      expect(trigger(summarised).getAttribute('aria-label')).toBe(
+        'Filter Name, filtered by 2 selected',
+      );
+      // The summary is also visible text, so the state is not colour-only.
+      expect(trigger(summarised).querySelector('.filter-summary')?.textContent).toContain('2 selected');
     });
 
     it('reports its state, and updates it in the same render as the panel', async () => {
