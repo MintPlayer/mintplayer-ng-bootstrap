@@ -509,16 +509,43 @@ tr.filter-row th {
   color: var(--bs-primary-bg-subtle, #fff);
 }
 
-.filter-search {
-  display: block;
-  width: 100%;
+// One look for every field in the panel, whatever its type. Declared once and
+// shared: the search box, the operand box and the operator select were drifting
+// apart three copies at a time, and `font: inherit` had already gone missing
+// from the search box — a form control does NOT inherit the page font, so it
+// was rendering in the UA's system font while its neighbours used the page's.
+.filter-search,
+.filter-operand,
+.filter-operator {
   box-sizing: border-box;
   padding: 0.25rem 0.5rem;
-  margin-bottom: 0.375rem;
   background-color: var(--bs-body-bg, #fff);
   color: inherit;
   border: 1px solid var(--mp-datatable-border-color, var(--bs-border-color, rgba(0, 0, 0, 0.125)));
   border-radius: 0.25rem;
+  // Both halves matter: `font` alone leaves the UA line-height, which differs
+  // between an input and a select and makes them different heights.
+  font: inherit;
+  line-height: 1.5;
+}
+
+// `type=number` otherwise renders a pair of spinner buttons that make it taller
+// and narrower than the text field beside it — the two read as different
+// controls for no reason. Arrow-key stepping still works without them.
+.filter-operand[type='number'] {
+  appearance: textfield;
+}
+
+.filter-operand::-webkit-outer-spin-button,
+.filter-operand::-webkit-inner-spin-button {
+  appearance: none;
+  margin: 0;
+}
+
+.filter-search {
+  display: block;
+  width: 100%;
+  margin-bottom: 0.375rem;
 }
 
 // Bootstrap's focus-ring utilities do not reach here (see the trigger above),
@@ -537,31 +564,28 @@ tr.filter-row th {
 .filter-comparison {
   display: flex;
   gap: 0.375rem;
-  align-items: center;
+  // `stretch`, not `center`: a <select> and an <input> do not agree on their
+  // intrinsic height — Chromium's UA sheet forces `line-height: normal` on a
+  // select, so it lands a pixel short of the input beside it however carefully
+  // the two are given the same font, padding and border. Stretching makes the
+  // row decide instead of the UA.
+  align-items: stretch;
 }
 
 .filter-operator {
   flex: 0 0 auto;
-  // A native select sizes to its WIDEST option, so without a basis the six
+  // A native select sizes to its WIDEST option, so without a cap the six
   // spelled-out operators would set the panel's width on their own.
   max-width: 9rem;
-  padding: 0.25rem 0.375rem;
-  background-color: var(--bs-body-bg, #fff);
-  color: inherit;
-  border: 1px solid var(--mp-datatable-border-color, var(--bs-border-color, rgba(0, 0, 0, 0.125)));
-  border-radius: 0.25rem;
-  font: inherit;
+  padding-inline: 0.375rem;
 }
 
 .filter-operand {
   flex: 1 1 auto;
+  // In flex, `min-width: 0` is what lets a `type=date` control — which has a
+  // wide intrinsic size — shrink instead of pushing the panel past its
+  // max-width.
   min-width: 0;
-  padding: 0.25rem 0.5rem;
-  background-color: var(--bs-body-bg, #fff);
-  color: inherit;
-  border: 1px solid var(--mp-datatable-border-color, var(--bs-border-color, rgba(0, 0, 0, 0.125)));
-  border-radius: 0.25rem;
-  font: inherit;
 }
 
 .filter-operator:focus-visible,

@@ -38,7 +38,7 @@ const ARTISTS: Artist[] = [
 
 /** Mirrors the component's operator glyphs for the trigger summary. */
 const OPERATOR_SYMBOLS: Record<FilterOperator, string> = {
-  eq: '=', neq: '2260', lt: '<', lte: '2264', gt: '>', gte: '2265',
+  eq: '=', neq: '≠', lt: '<', lte: '≤', gt: '>', gte: '≥',
 };
 
 function compare(value: number, operator: FilterOperator, operand: number): boolean {
