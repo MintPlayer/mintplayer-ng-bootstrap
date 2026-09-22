@@ -34,6 +34,35 @@ const ARTISTS: Artist[] = [
 
 const SIMPLE_SOURCE = `<BsDatatable columns={COLUMNS} data={ARTISTS} />`;
 
+const FILTER_SOURCE = `// The filter row follows the column defs: no column carries a
+// filterRenderer, no second header row is rendered.
+const [nameFilter, setNameFilter] = useState('');
+
+// filterRenderer returns a DOM Node — the same contract the Angular and Vue
+// wrappers satisfy — so it is built imperatively rather than as JSX.
+const nameFilterNode = () => {
+  const input = document.createElement('input');
+  input.className = 'form-control form-control-sm';
+  input.value = nameFilter;
+  input.addEventListener('input', () => setNameFilter(input.value));
+  return input;
+};
+
+const columns: DatatableColumnDef[] = COLUMNS.map((col) =>
+  col.name === 'name'
+    ? { ...col, filterable: true,
+        filterActive: nameFilter.length > 0,   // visual only; the meaning is yours
+        filterRenderer: nameFilterNode }
+    : col,
+);
+
+// The table holds no filter state and defines no predicate model: this page
+// filters its own data and hands over the result.
+const rows = ARTISTS.filter(a =>
+  a.name.toLowerCase().includes(nameFilter.toLowerCase()));
+
+<BsDatatable columns={columns} data={rows} virtualScroll itemSize={40} />`;
+
 // ─── Lazy windowed-fetch demo (real API: 1000 seeded orders) ─────────────────
 // One `fetch` callback drives the whole table: the WC calls it for page 1 and
 // each window as the user scrolls, reading the grand total from the response.
@@ -162,6 +191,58 @@ export function DatatablePage() {
     setSelectedRows(e.detail.selectedRows as TreeItem[]);
   }, []);
 
+  // ─── Column filters ───────────────────────────────────────────────────────
+  // The filter values live here, not in the table. `filterRenderer` returns a
+  // DOM Node, so it is built imperatively rather than as JSX — the same
+  // contract every framework sees.
+  const [showFilters, setShowFilters] = useState(true);
+  const [nameFilter, setNameFilter] = useState('');
+  const [minFounded, setMinFounded] = useState<number | null>(null);
+
+  const filteredArtists = ARTISTS.filter(
+    (a) =>
+      (nameFilter ? a.name.toLowerCase().includes(nameFilter.toLowerCase()) : true) &&
+      (minFounded === null ? true : a.founded >= minFounded),
+  );
+
+  const textFilterNode = (value: string, placeholder: string, onInput: (v: string) => void): Node => {
+    const wrap = document.createElement('div');
+    const label = document.createElement('label');
+    label.className = 'form-label small mb-1';
+    label.textContent = placeholder;
+    const input = document.createElement('input');
+    input.className = 'form-control form-control-sm';
+    input.value = value;
+    input.addEventListener('input', () => onInput(input.value));
+    label.htmlFor = input.id = `filter-${placeholder.replace(/\W+/g, '-').toLowerCase()}`;
+    wrap.append(label, input);
+    return wrap;
+  };
+
+  const filterColumns: DatatableColumnDef[] = COLUMNS.map((col) => {
+    if (!showFilters) return col;
+    if (col.name === 'name') {
+      return {
+        ...col,
+        filterable: true,
+        filterActive: nameFilter.length > 0,
+        filterRenderer: () => textFilterNode(nameFilter, 'Name contains', setNameFilter),
+      };
+    }
+    if (col.name === 'founded') {
+      return {
+        ...col,
+        filterable: true,
+        filterActive: minFounded !== null,
+        filterRenderer: () =>
+          textFilterNode(minFounded === null ? '' : String(minFounded), 'Founded after', (v) =>
+            setMinFounded(v.trim() === '' ? null : Number(v)),
+          ),
+      };
+    }
+    return col;
+  });
+
   return (
     <div className="demo-page">
       <h1>Datatable</h1>
@@ -250,6 +331,57 @@ export function DatatablePage() {
         )}
 
         <BsCodeSnippet code={TREE_SOURCE} language="tsx" />
+      </section>
+
+      <section>
+        <h2>Column filters</h2>
+        <p>
+          Give a column a <code>filterRenderer</code> and the table grows a
+          second header row with a dropdown trigger in that column. Columns
+          without one get an empty, correctly-sized cell, so the row stays
+          aligned. Drop them all and the row is not rendered at all &mdash;
+          toggle the checkbox to see it.
+        </p>
+        <p>
+          The panel opens in an overlay at the document root, so it is not
+          clipped by the scroll container and not hidden behind the sticky
+          header &mdash; this demo runs in virtual-scroll mode, where both would
+          otherwise happen.
+        </p>
+        <p>
+          <strong>The component decides nothing about what a filter means.</strong>{' '}
+          There is no predicate model and no filter state: the page owns the
+          values below and simply re-filters its own data.
+        </p>
+        <p className="text-body-secondary small">
+          <strong>Keyboard:</strong> <kbd>Tab</kbd> reaches each trigger,{' '}
+          <kbd>Enter</kbd>/<kbd>Space</kbd> opens the panel and moves focus into
+          it, <kbd>Tab</kbd> cycles inside it, <kbd>Esc</kbd> closes and returns
+          focus to the trigger.
+        </p>
+
+        <label className="d-block mb-3">
+          <input
+            type="checkbox"
+            checked={showFilters}
+            onChange={(e) => setShowFilters(e.target.checked)}
+          />{' '}
+          Show the filter row
+        </label>
+
+        <BsDatatable
+          className="windowed-table"
+          columns={filterColumns}
+          data={filteredArtists}
+          virtualScroll
+          itemSize={40}
+          rowKey={(row: unknown) => String((row as Artist).id)}
+        />
+        <small className="text-body-secondary">
+          Showing {filteredArtists.length} of {ARTISTS.length} artists.
+        </small>
+
+        <BsCodeSnippet code={FILTER_SOURCE} language="tsx" />
       </section>
     </div>
   );

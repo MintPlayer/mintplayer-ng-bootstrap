@@ -167,3 +167,89 @@
 <bs-code-snippet [code]="snippetTreeHtml" [language]="'html'"></bs-code-snippet>
 <bs-code-snippet [code]="snippetTreeTs" [language]="'ts'"></bs-code-snippet>
 <bs-code-snippet [code]="snippetTreeServiceTs" [language]="'ts'"></bs-code-snippet>
+
+<h2>Column filters</h2>
+
+<p>
+  Add a <code>*bsDatatableFilter</code> template for a column and the table
+  grows a second header row with a dropdown trigger in that column. Columns
+  without one get an empty, correctly-sized cell, so the row stays aligned.
+  No column declares a filter, no second row is rendered at all &mdash; toggle
+  the checkbox below to watch the row appear and disappear.
+</p>
+<p>
+  The panel opens in an overlay at the document root, so it is not clipped by
+  the table's scroll container and is not hidden behind the sticky header
+  &mdash; this demo runs in virtual-scroll mode, where both would otherwise
+  happen. The component owns the trigger, its accessible name and the
+  open/close behaviour; the template is only what goes <em>inside</em> the
+  panel.
+</p>
+<p>
+  <strong>This component decides nothing about what a filter means.</strong>
+  There is no predicate model and no filter state &mdash; the template below
+  keeps its own signals and re-fetches, which is what lets the same row drive a
+  text match, a range, or a server-side query.
+</p>
+<p class="text-muted small">
+  <strong>Keyboard:</strong> <kbd>Tab</kbd> reaches each filter trigger;
+  <kbd>Enter</kbd> or <kbd>Space</kbd> opens the panel and moves focus into it;
+  <kbd>Tab</kbd> cycles within the open panel; <kbd>Esc</kbd> closes it and
+  returns focus to the trigger.
+</p>
+
+<bs-checkbox [type]="'checkbox'" [(ngModel)]="showFilters" class="mb-3 d-block">
+  Show the filter row
+</bs-checkbox>
+
+<bs-datatable class="flex-grow-1"
+  [virtualScroll]="true"
+  [itemSize]="40"
+  [isResponsive]="true"
+  [fetch]="fetchFilteredArtists"
+  [(settings)]="filterSettings"
+  [rowKey]="rowKey">
+
+  <div *bsDatatableColumn="'Name'; sortable: true">Artist</div>
+  <div *bsDatatableColumn="'YearStarted'; sortable: true">Year started</div>
+  <div *bsDatatableColumn="'YearQuit'; sortable: false">Year quit</div>
+
+  @if (showFilters()) {
+  <div *bsDatatableFilter="'Name'; active: nameFilter().length > 0">
+    <label class="form-label small mb-1" for="filter-name">Name contains</label>
+    <input id="filter-name" class="form-control form-control-sm" type="search"
+      [ngModel]="nameFilter()" (ngModelChange)="setNameFilter($event)"
+      placeholder="e.g. Beatles" />
+    @if (nameFilter().length) {
+      <button type="button" class="btn btn-sm btn-link px-0 mt-1" (click)="setNameFilter('')">
+        Clear
+      </button>
+    }
+  </div>
+
+  <div *bsDatatableFilter="'YearStarted'; active: minYear() !== null">
+    <label class="form-label small mb-1" for="filter-year">Started after</label>
+    <input id="filter-year" class="form-control form-control-sm" type="number"
+      [ngModel]="minYear()" (ngModelChange)="setMinYear($event)"
+      placeholder="1960" />
+    @if (minYear() !== null) {
+      <button type="button" class="btn btn-sm btn-link px-0 mt-1" (click)="setMinYear(null)">
+        Clear
+      </button>
+    }
+  </div>
+  }
+
+  <ng-container *bsRowTemplate="let artist">
+    <td class="text-nowrap">{{ $any(artist)?.name }}</td>
+    <td class="text-nowrap">{{ $any(artist)?.yearStarted }}</td>
+    <td class="text-nowrap">{{ $any(artist)?.yearQuit }}</td>
+  </ng-container>
+</bs-datatable>
+
+<small class="text-muted">
+  Filtering {{ nameFilter() ? '“' + nameFilter() + '”' : 'everything' }}{{ minYear() !== null ? ', started after ' + minYear() : '' }}.
+</small>
+
+<bs-code-snippet [code]="snippetFilterHtml" [language]="'html'"></bs-code-snippet>
+<bs-code-snippet [code]="snippetFilterTs" [language]="'ts'"></bs-code-snippet>

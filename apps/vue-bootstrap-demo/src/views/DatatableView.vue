@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref } from 'vue';
+import { computed, ref } from 'vue';
 import { BsDatatable } from '@mintplayer/vue-bootstrap/datatable';
 import { BsCodeSnippet } from '@mintplayer/vue-bootstrap/code-snippet';
 import type {
@@ -34,6 +34,92 @@ const ARTISTS: Artist[] = [
 ];
 
 const SIMPLE_SOURCE = `<BsDatatable :columns="COLUMNS" :data="ARTISTS" />`;
+
+// ─── Column filters ─────────────────────────────────────────────────────────
+// The filter values live in this view, not in the table. `filterRenderer`
+// returns a DOM Node — the same contract the Angular and React wrappers
+// satisfy — so it is built imperatively rather than as a template.
+const showFilters = ref(true);
+const nameFilter = ref('');
+const minFounded = ref<number | null>(null);
+const artistRowKey = (row: unknown) => String((row as Artist).id);
+
+const filteredArtists = computed(() =>
+  ARTISTS.filter(
+    (a) =>
+      (nameFilter.value ? a.name.toLowerCase().includes(nameFilter.value.toLowerCase()) : true) &&
+      (minFounded.value === null ? true : a.founded >= minFounded.value),
+  ),
+);
+
+function textFilterNode(value: string, label: string, onInput: (v: string) => void): Node {
+  const wrap = document.createElement('div');
+  const lbl = document.createElement('label');
+  lbl.className = 'form-label small mb-1';
+  lbl.textContent = label;
+  const input = document.createElement('input');
+  input.className = 'form-control form-control-sm';
+  input.value = value;
+  input.id = lbl.htmlFor = `filter-${label.replace(/\W+/g, '-').toLowerCase()}`;
+  input.addEventListener('input', () => onInput(input.value));
+  wrap.append(lbl, input);
+  return wrap;
+}
+
+const filterColumns = computed<DatatableColumnDef[]>(() =>
+  COLUMNS.map((col) => {
+    if (!showFilters.value) return col;
+    if (col.name === 'name') {
+      return {
+        ...col,
+        filterable: true,
+        filterActive: nameFilter.value.length > 0,
+        filterRenderer: () =>
+          textFilterNode(nameFilter.value, 'Name contains', (v) => (nameFilter.value = v)),
+      };
+    }
+    if (col.name === 'founded') {
+      return {
+        ...col,
+        filterable: true,
+        filterActive: minFounded.value !== null,
+        filterRenderer: () =>
+          textFilterNode(minFounded.value === null ? '' : String(minFounded.value), 'Founded after', (v) => {
+            minFounded.value = v.trim() === '' ? null : Number(v);
+          }),
+      };
+    }
+    return col;
+  }),
+);
+
+const FILTER_SOURCE = `<!-- The filter row follows the column defs: no column carries a
+     filterRenderer, no second header row is rendered. -->
+<BsDatatable :columns="filterColumns" :data="filteredArtists" virtualScroll :itemSize="40" />
+
+<script setup lang="ts">
+const nameFilter = ref('');
+
+// filterRenderer returns a DOM Node, so it is built imperatively.
+const filterColumns = computed<DatatableColumnDef[]>(() =>
+  COLUMNS.map(col => col.name === 'name'
+    ? { ...col,
+        filterable: true,
+        filterActive: nameFilter.value.length > 0,  // visual only; meaning is yours
+        filterRenderer: () => {
+          const input = document.createElement('input');
+          input.className = 'form-control form-control-sm';
+          input.value = nameFilter.value;
+          input.addEventListener('input', () => (nameFilter.value = input.value));
+          return input;
+        } }
+    : col),
+);
+
+// The table holds no filter state and defines no predicate model.
+const filteredArtists = computed(() =>
+  ARTISTS.filter(a => a.name.toLowerCase().includes(nameFilter.value.toLowerCase())));
+<\/script>`;
 
 // ─── Lazy windowed-fetch demo (real API: 1000 seeded orders) ──────────────
 // One `fetch` callback drives the whole table: the WC calls it for page 1 and
@@ -229,6 +315,53 @@ const TREE_SOURCE = `<!-- The same callback, branching on req.parentId for roots
       </small>
 
       <BsCodeSnippet :code="TREE_SOURCE" language="html" />
+    </section>
+
+    <section>
+      <h2>Column filters</h2>
+      <p>
+        Give a column a <code>filterRenderer</code> and the table grows a second
+        header row with a dropdown trigger in that column. Columns without one
+        get an empty, correctly-sized cell, so the row stays aligned. Drop them
+        all and the row is not rendered at all &mdash; toggle the checkbox to
+        see it.
+      </p>
+      <p>
+        The panel opens in an overlay at the document root, so it is not clipped
+        by the scroll container and not hidden behind the sticky header &mdash;
+        this demo runs in virtual-scroll mode, where both would otherwise
+        happen.
+      </p>
+      <p>
+        <strong>The component decides nothing about what a filter means.</strong>
+        There is no predicate model and no filter state: this view owns the
+        values below and simply re-filters its own data.
+      </p>
+      <p class="text-body-secondary small">
+        <strong>Keyboard:</strong> <kbd>Tab</kbd> reaches each trigger,
+        <kbd>Enter</kbd>/<kbd>Space</kbd> opens the panel and moves focus into
+        it, <kbd>Tab</kbd> cycles inside it, <kbd>Esc</kbd> closes and returns
+        focus to the trigger.
+      </p>
+
+      <label class="d-block mb-3">
+        <input type="checkbox" v-model="showFilters" />
+        Show the filter row
+      </label>
+
+      <BsDatatable
+        class="windowed-table"
+        :columns="filterColumns"
+        :data="filteredArtists"
+        virtualScroll
+        :itemSize="40"
+        :rowKey="artistRowKey"
+      />
+      <small class="text-body-secondary">
+        Showing {{ filteredArtists.length }} of {{ ARTISTS.length }} artists.
+      </small>
+
+      <BsCodeSnippet :code="FILTER_SOURCE" language="html" />
     </section>
   </div>
 </template>
