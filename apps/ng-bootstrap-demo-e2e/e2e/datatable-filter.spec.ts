@@ -174,10 +174,30 @@ test.describe('bs-datatable filter panel', () => {
    * be no use if the header then covered it.
    *
    * Hit-tested rather than reasoned about from z-index values: what matters is
-   * which element the browser says is on top at that point, and the panel flips
-   * up over the header often enough that this is a live question.
+   * which element the browser says is on top at that point.
+   *
+   * The overlap is FORCED, not hoped for. A short viewport with the trigger
+   * scrolled hard against the bottom leaves no room below, so the panel has to
+   * open upward across the header — which lets the occlusion assertion be
+   * unconditional. An earlier version guarded it with `if (overlaps)`, which
+   * would have gone green while testing nothing the moment placement changed:
+   * the panel's own centre is nearly free when it opens downward, because it
+   * sits over the table body where nothing was going to paint over it anyway.
    */
   test('is painted above the sticky header', async ({ page }) => {
+    await page.setViewportSize({ width: 1280, height: 520 });
+
+    // Put the trigger's bottom edge at the viewport's, so the space below it is
+    // smaller than any panel and the overlay must flip up.
+    await page.evaluate((tableSel) => {
+      const btn = document.querySelector(
+        `${tableSel} tr.filter-row th[data-column="name"] .filter-trigger`,
+      ) as HTMLElement | null;
+      if (!btn) return;
+      const r = btn.getBoundingClientRect();
+      window.scrollBy(0, r.top - (window.innerHeight - r.height - 8));
+    }, FILTER_TABLE);
+
     await openPanel(page, 'name');
 
     const onTop = await page.evaluate(
@@ -210,10 +230,11 @@ test.describe('bs-datatable filter panel', () => {
     );
 
     expect(onTop).not.toBeNull();
+    // The setup exists to make this true; if it ever is not, the test has
+    // stopped exercising occlusion and must fail rather than pass vacuously.
+    expect(onTop!.overlaps).toBe(true);
+    expect(onTop!.overlapIsPanel).toBe(true);
     expect(onTop!.centreIsPanel).toBe(true);
-    // Only assert the overlap case when there is one — the panel's placement
-    // depends on available space, and a flaky test is worse than a narrow one.
-    if (onTop!.overlaps) expect(onTop!.overlapIsPanel).toBe(true);
   });
 
   /**
