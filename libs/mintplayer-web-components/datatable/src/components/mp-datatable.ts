@@ -316,6 +316,8 @@ export class MpDatatable extends LitElement {
   /** Column whose consumer content is currently mounted in the panel. Guards
    *  against re-mounting on every render, which would destroy focus. */
   private _mountedFilterColumn: string | null = null;
+  /** Whether the mounted panel is the consumer's node rather than the built-in one. */
+  private _consumerMountedFilter = false;
   /** Unique per instance so several datatables on a page cannot collide on IDREFs. */
   private readonly _filterUid = `mp-dt-${Math.random().toString(36).slice(2, 9)}`;
   /** Consumer-supplied distinct-value source; null = compute locally when possible. */
@@ -946,6 +948,9 @@ export class MpDatatable extends LitElement {
     this._resizeObserver?.disconnect();
     this._resizeObserver = null;
     this._scrollElement = null;
+    // Timers and in-flight requests outlive the element otherwise, and a
+    // debounced re-query firing after disconnect writes to a dead panel.
+    this._filterStates.forEach((state) => this.abortFilterRequest(state));
   }
 
   private refreshVirtualRange(): void {
@@ -1377,10 +1382,24 @@ export class MpDatatable extends LitElement {
     anchor: () => this.openFilterTrigger(),
     trigger: () => this.openFilterTrigger(),
     panel: () => this.filterOverlay.portalContainer?.querySelector<HTMLElement>('.filter-panel') ?? null,
-    initialFocus: 'first',
+    // The search box, not merely the first tabbable: Clear precedes it in the
+    // DOM because it belongs at the top of the panel visually, and opening onto
+    // a disabled-or-destructive button is the wrong place to land.
+    // Returning null falls back to 'first', which is what a consumer's own
+    // panel gets — it has no `.filter-search` to aim at.
+    initialFocus: () =>
+      this.filterOverlay.portalContainer?.querySelector<HTMLElement>('.filter-search') ?? null,
     onClose: () => {
       const column = this._openFilterColumn;
       if (column == null) return;
+      const state = this._filterStates.get(column);
+      if (state) {
+        this.abortFilterRequest(state);
+        // The search term is panel state, not filter state: a reopened panel
+        // shows the whole list again, with the selection intact.
+        state.term = '';
+        this.rebucket(state);
+      }
       this._openFilterColumn = null;
       // The pane is destroyed with the panel, so the next open must mount fresh
       // content rather than believe it is still there.
@@ -1408,6 +1427,9 @@ export class MpDatatable extends LitElement {
     if (this.filterOverlay.isOpen) this.filterOverlay.close(false);
     this._openFilterColumn = col.name;
     this.requestUpdate();
+    // Loaded per open, never cached across opens: the rows behind a list can
+    // change while the panel is closed, and a stale list is worse than a wait.
+    void this.loadDistincts(col.name, '');
     void this.filterOverlay.open();
     this.dispatchEvent(
       new CustomEvent('mp-datatable-filter-open', {
@@ -1435,12 +1457,15 @@ export class MpDatatable extends LitElement {
     const column = this._columns.find((c) => c.name === this._openFilterColumn);
     if (!column) return;
 
+    const state = this.filterState(column.name);
+
     render(
       html`
         <div
           class="filter-panel"
           id=${this.filterPanelId}
           role="dialog"
+          aria-modal="true"
           aria-label=${this.mergedLabels.filterColumn(column.label ?? column.name)}
         >
           <div class="filter-panel-body"></div>
@@ -1450,7 +1475,7 @@ export class MpDatatable extends LitElement {
     );
 
     const body = container.querySelector<HTMLElement>('.filter-panel-body');
-    if (!body) return;
+    if (!body || !state) return;
 
     // Mount the consumer's content ONCE per open, not on every update.
     //
@@ -1465,13 +1490,126 @@ export class MpDatatable extends LitElement {
     // EmbeddedViewRef, tree-select's LRU): that view is inserted into its
     // ViewContainerRef, so it stays in the host's change-detection tree and
     // keeps updating in place without us re-invoking the renderer.
-    if (this._mountedFilterColumn === column.name && body.firstChild) return;
+    //
+    // The default panel is exempt from the guard in one direction: it is lit-
+    // rendered into `body`, so re-rendering it is a diff, not a replacement, and
+    // the focused input survives. It still mounts once in the sense that the
+    // consumer branch is only chosen once per open.
+    if (this._mountedFilterColumn === column.name && body.firstChild) {
+      if (!this._consumerMountedFilter) this.renderDefaultFilterPanel(column, state, body);
+      return;
+    }
 
-    const content = column.filterRenderer?.(column);
+    const content = column.filterRenderer?.(column, state.ctx) ?? null;
     if (content) {
       body.replaceChildren(content);
+      this._consumerMountedFilter = true;
       this._mountedFilterColumn = column.name;
+      return;
     }
+
+    this._consumerMountedFilter = false;
+    this.renderDefaultFilterPanel(column, state, body);
+    this._mountedFilterColumn = column.name;
+  }
+
+  /**
+   * The built-in panel: clear, search, invert, checkbox list.
+   *
+   * Rendered with a `render()` of its own into the panel body, for the same
+   * reason the panel itself is: this is not part of the element's template, and
+   * lit must own the container it diffs. The checkbox list is keyed on `value`
+   * so a repaint after a re-query moves rows instead of rebuilding them — an
+   * unkeyed list would rebuild the input the user is interacting with.
+   */
+  private renderDefaultFilterPanel(
+    column: DatatableColumnDef,
+    state: ColumnFilterState,
+    body: HTMLElement,
+  ): void {
+    const labels = this.mergedLabels;
+    const columnLabel = column.label ?? column.name;
+    const view = state.view;
+    const selected = state.selection.values;
+    // Selected values lead the list and stay there while the panel is open:
+    // re-sorting under a click would move the row out from under the pointer.
+    const listed = [
+      ...selected,
+      ...(view?.matching ?? []).filter((v) => !includesValue(selected, v.value)),
+      ...(view?.remaining ?? []).filter((v) => !includesValue(selected, v.value)),
+    ];
+    const isRemaining = (value: unknown) => !!view && includesValue(view.remaining, value);
+
+    render(
+      html`
+        <button
+          type="button"
+          class="filter-clear"
+          ?disabled=${selected.length === 0 && !state.selection.inverse}
+          @click=${() => this.onFilterClear(column.name)}
+        >
+          ${labels.filterClear(columnLabel)}
+        </button>
+        <input
+          type="search"
+          class="filter-search"
+          .value=${state.term}
+          aria-label=${labels.filterSearch}
+          @input=${(ev: Event) => state.ctx.search((ev.target as HTMLInputElement).value)}
+        />
+        <button
+          type="button"
+          class="filter-invert"
+          aria-pressed=${state.selection.inverse ? 'true' : 'false'}
+          @click=${() => state.ctx.apply(selected, !state.selection.inverse)}
+        >
+          ${labels.filterInvert}
+        </button>
+        <div class="filter-options" role="group" aria-label=${labels.filterGroup(columnLabel)}>
+          ${state.loading ? html`<span class="filter-loading">${labels.loading}</span>` : nothing}
+          ${repeat(
+            listed,
+            (v) => v.value,
+            (v) => html`
+              <label class=${classMap({ 'filter-option': true, 'filter-remaining': isRemaining(v.value) })}>
+                <input
+                  type="checkbox"
+                  .checked=${includesValue(selected, v.value)}
+                  @change=${(ev: Event) => this.onFilterToggle(column.name, v, (ev.target as HTMLInputElement).checked)}
+                />
+                <span>${v.label}</span>
+              </label>
+            `,
+          )}
+          ${listed.length === 0 && !state.loading
+            ? html`<span class="filter-no-values">${labels.filterNoValues}</span>`
+            : nothing}
+        </div>
+        ${view?.hasMore ? html`<span class="filter-has-more">${labels.filterHasMore}</span>` : nothing}
+      `,
+      body,
+    );
+  }
+
+  private onFilterToggle(column: string, value: DistinctValue, checked: boolean): void {
+    const state = this.filterState(column);
+    if (!state) return;
+    const next = checked
+      ? [...state.selection.values, value]
+      : state.selection.values.filter((v) => !sameValue(v.value, value.value));
+    state.ctx.apply(next, state.selection.inverse);
+  }
+
+  private onFilterClear(column: string): void {
+    const state = this.filterState(column);
+    if (!state) return;
+    state.ctx.clear();
+    // Clear removes the control the user just pressed from the tab order (it
+    // disables itself), so focus must go somewhere deliberate rather than to
+    // <body>. The search box is where the next action starts.
+    this.filterOverlay.portalContainer
+      ?.querySelector<HTMLElement>('.filter-search')
+      ?.focus({ preventScroll: true });
   }
 
   /**
@@ -1504,7 +1642,14 @@ export class MpDatatable extends LitElement {
     }
 
     const open = this._openFilterColumn === col.name;
-    const label = this.mergedLabels.filterColumn(col.label ?? col.name);
+    const labels = this.mergedLabels;
+    const columnLabel = col.label ?? col.name;
+    // Three distinct names, not a name plus a decoration: "filtered" has to be
+    // part of the accessible name, because a user who cannot see the trigger's
+    // active styling has nothing else telling them the column is filtered.
+    const label = col.filterActive
+      ? labels.filterColumnActive(columnLabel, col.filterSummary)
+      : labels.filterColumn(columnLabel);
 
     return html`
       <th class="filter-cell p-0" data-column=${col.name} scope="col">
@@ -1526,6 +1671,9 @@ export class MpDatatable extends LitElement {
           <svg class="filter-icon" viewBox="0 0 16 16" aria-hidden="true" focusable="false">
             <path d="M2 3h12l-4.5 5.25V13L6.5 11.5V8.25L2 3z" />
           </svg>
+          ${col.filterSummary
+            ? html`<span class="filter-summary">${col.filterSummary}</span>`
+            : nothing}
         </button>
       </th>
     `;
