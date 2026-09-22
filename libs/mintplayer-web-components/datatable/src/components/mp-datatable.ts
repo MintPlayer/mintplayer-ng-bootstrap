@@ -1,8 +1,15 @@
-import { LitElement, nothing, type TemplateResult } from 'lit';
+import { LitElement, nothing, render, type TemplateResult } from 'lit';
+import { OverlayController } from '@mintplayer/web-components/overlay';
 import { installLightStyles, scopedHtml } from '@mintplayer/web-components/light-dom';
 import { FocusRestore, FocusRestoreController, HostAriaController, LiveAnnouncerController } from '@mintplayer/web-components/a11y';
-import { DEFAULT_DATATABLE_LABELS, type DatatableLabels } from '../types/labels';
+import {
+  DEFAULT_DATATABLE_LABELS,
+  DEFAULT_FILTER_OPERATORS,
+  FILTER_OPERATOR_SYMBOLS,
+  type DatatableLabels,
+} from '../types/labels';
 import { repeat } from 'lit/directives/repeat.js';
+import { live } from 'lit/directives/live.js';
 import { classMap } from 'lit/directives/class-map.js';
 import { styleMap } from 'lit/directives/style-map.js';
 import { datatableLightStyles } from '../styles';
@@ -23,6 +30,15 @@ import type {
   RowRenderer,
   RowRenderContext,
   DatatableFetch,
+  DatatableDistincts,
+  DistinctValue,
+  DistinctValues,
+  FilterChangeDetail,
+  FilterContext,
+  FilterInputType,
+  FilterMode,
+  FilterOperator,
+  FilterSelection,
   TreeRowExpandDetail,
   TreeExpandedIdsChangeDetail,
   TreeIdKey,
@@ -84,6 +100,84 @@ interface FlatVisibleRow {
   /** Root-window placeholders only: the 1-based root page this slot belongs to. */
   page?: number;
 }
+
+/**
+ * Everything one column's filter panel needs, for as long as the column exists.
+ *
+ * It outlives the panel (a closed panel keeps its selection) but not a `columns`
+ * assignment, which re-seeds from `filterSelection` — the consumer owning the
+ * column defs is the consumer owning the initial selection.
+ */
+interface ColumnFilterState {
+  /** The user's current selection. Never derived from the data. */
+  selection: FilterSelection;
+  /**
+   * The value list as it stood when the selection first became non-empty.
+   *
+   * Without it, selecting a value narrows the data, which narrows the list,
+   * which removes every OTHER value the user might want to add — so a filter
+   * could only ever be narrowed, never widened, without clearing it first.
+   */
+  snapshot: DistinctValue[] | null;
+  /**
+   * The list exactly as the source (or the local pass) produced it. Never
+   * narrowed in place: the search box derives `view` from this, so clearing the
+   * search restores the full list without a round trip.
+   */
+  loaded: DistinctValues | null;
+  /** `loaded` re-bucketed against the snapshot and narrowed by `term`. */
+  view: DistinctValues | null;
+  /** The search term `loaded` was produced for; `null` when never loaded. */
+  loadedTerm: string | null;
+  /**
+   * Whether `loaded` came from the local pass rather than a consumer source.
+   * Only a locally derived list is recomputed when `data` changes underneath it.
+   */
+  fromLocal: boolean;
+  /** The term currently in the search box (may be ahead of `loadedTerm`). */
+  term: string;
+  /**
+   * The RAW text in the comparison operand box, echoed back verbatim on
+   * re-render.
+   *
+   * Binding the parsed operand instead would clobber the box mid-typing: in a
+   * `number` input the intermediate states `-`, `1e` and `.` all parse to
+   * nothing, so the value would be wiped on the very keystroke that produced
+   * them. The parsed value is what gets emitted; this is what gets displayed.
+   */
+  operandText: string;
+  loading: boolean;
+  /** Bumped per request; a stale response checks this before writing. */
+  generation: number;
+  /** Aborts the in-flight source request. */
+  controller: AbortController | null;
+  /** Pending debounce for a source re-query. */
+  debounce: ReturnType<typeof setTimeout> | null;
+  /** Subscribers from `FilterContext.onChange`. */
+  listeners: Set<() => void>;
+  /** The `filterSelection` reference this state was seeded from, if any. */
+  seededFrom: FilterSelection | null;
+  /** The context handed to `filterRenderer`; stable for the column's lifetime. */
+  ctx: FilterContext;
+}
+
+/** `===` except that `NaN` equals itself — the identity `Map`/`Set` keys use. */
+function sameValue(a: unknown, b: unknown): boolean {
+  return a === b || (a !== a && b !== b);
+}
+
+function includesValue(values: readonly DistinctValue[], value: unknown): boolean {
+  return values.some((v) => sameValue(v.value, value));
+}
+
+/**
+ * Debounce before a search term is sent to the distinct-value source.
+ *
+ * Matched to the reference implementation (Vidyano) rather than chosen: the
+ * list is filtered in place on every keystroke, and this delay only gates the
+ * round trip that a truncated list or a widened term makes necessary.
+ */
+const FILTER_SEARCH_DEBOUNCE_MS = 250;
 
 let instanceCounter = 0;
 
@@ -240,6 +334,21 @@ export class MpDatatable extends LitElement {
   private _scrollListener: (() => void) | null = null;
   private _viewportHeight = 0;
 
+  // ─── Filter row state ────────────────────────────────────────────────────
+  /** Name of the column whose filter panel is open, or null. Only ever one. */
+  private _openFilterColumn: string | null = null;
+  /** Column whose consumer content is currently mounted in the panel. Guards
+   *  against re-mounting on every render, which would destroy focus. */
+  private _mountedFilterColumn: string | null = null;
+  /** Whether the mounted panel is the consumer's node rather than the built-in one. */
+  private _consumerMountedFilter = false;
+  /** Unique per instance so several datatables on a page cannot collide on IDREFs. */
+  private readonly _filterUid = `mp-dt-${Math.random().toString(36).slice(2, 9)}`;
+  /** Consumer-supplied distinct-value source; null = compute locally when possible. */
+  private _distincts: DatatableDistincts | null = null;
+  /** Per-column filter panel state, keyed by `DatatableColumnDef.name`. */
+  private readonly _filterStates: Map<string, ColumnFilterState> = new Map();
+
   // ─── Tree-mode state ─────────────────────────────────────────────────────
   private _tree = false;
   private _idKey: TreeIdKey | null = null;
@@ -350,7 +459,48 @@ export class MpDatatable extends LitElement {
   }
   set columns(value: DatatableColumnDef[]) {
     this._columns = Array.isArray(value) ? value : [];
+    this.syncFilterStates();
     this.requestUpdate();
+  }
+
+  /**
+   * Drops state for columns that are gone and seeds state for new ones from
+   * `filterSelection`.
+   *
+   * An existing column keeps its state: the Angular wrapper rebuilds the whole
+   * column array on every change detection, so treating a re-assignment as
+   * "new columns" would wipe the user's selection on any unrelated input change.
+   * A column whose `filterSelection` reference actually changed is re-seeded —
+   * that is the consumer restoring a filter, and it is why the input is a
+   * reference and not a value.
+   */
+  private syncFilterStates(): void {
+    const names = new Set(this._columns.map((c) => c.name));
+    this._filterStates.forEach((state, name) => {
+      if (names.has(name)) return;
+      this.abortFilterRequest(state);
+      this._filterStates.delete(name);
+    });
+
+    this._columns.forEach((col) => {
+      const existing = this._filterStates.get(col.name);
+      if (!existing) {
+        if (col.filterable) this._filterStates.set(col.name, this.createFilterState(col));
+        return;
+      }
+      if (col.filterSelection && col.filterSelection !== existing.seededFrom) {
+        existing.seededFrom = col.filterSelection;
+        existing.selection = {
+          values: [...col.filterSelection.values],
+          inverse: !!col.filterSelection.inverse,
+          operator: col.filterSelection.operator,
+          operand: col.filterSelection.operand ?? null,
+        };
+        existing.operandText =
+          col.filterSelection.operand == null ? '' : String(col.filterSelection.operand);
+        existing.snapshot = null;
+      }
+    });
   }
 
   get data(): unknown[] {
@@ -358,6 +508,7 @@ export class MpDatatable extends LitElement {
   }
   set data(value: unknown[]) {
     this._data = Array.isArray(value) ? value : [];
+    this.refreshLocalDistincts();
     this.requestUpdate();
   }
 
@@ -379,7 +530,47 @@ export class MpDatatable extends LitElement {
       this._initialFetchDone = false;
       this._lastReloadKey = null;
       this.scheduleFetchReload();
+      return;
     }
+
+    // Clearing the callback used to reset nothing, which left the element
+    // claiming a `totalRecords` no data backed and serving rows out of caches
+    // whose source was gone. It also kept `isExternallyPaged()` true forever,
+    // and that is the gate on computing distinct values locally — so a table
+    // switched from `[fetch]` to `[data]` could never produce a value list.
+    this._totalRecords = null;
+    this._pageCache.clear();
+    this._pendingPageFetches.clear();
+    this._childCache.clear();
+    this._childTotals.clear();
+    this._pendingFetches.clear();
+    // Invalidates every in-flight response: they check this before writing.
+    this._fetchGeneration++;
+    this._initialFetchDone = false;
+    this._lastReloadKey = null;
+    this.requestUpdate();
+  }
+
+  /**
+   * Consumer-supplied source of distinct values for the filter panels.
+   * Property-only (it holds a function), mirroring `fetch` and `labels`.
+   *
+   * A source that resolves `null` for a column means "compute that column
+   * locally", so one table can mix server-backed and local filter columns.
+   */
+  get distincts(): DatatableDistincts | null {
+    return this._distincts;
+  }
+  set distincts(value: DatatableDistincts | null) {
+    this._distincts = typeof value === 'function' ? value : null;
+    // Lists are loaded per open, never cached across opens, so there is nothing
+    // to invalidate beyond what is on screen right now.
+    this._filterStates.forEach((state) => {
+      state.loaded = null;
+      state.view = null;
+      state.loadedTerm = null;
+    });
+    if (this._openFilterColumn) this.requestUpdate();
   }
 
   get sortColumns(): SortColumn[] {
@@ -697,6 +888,31 @@ export class MpDatatable extends LitElement {
       const th = handle.closest('th');
       if (th) handle.setAttribute('aria-valuenow', String(Math.round(th.getBoundingClientRect().width)));
     }
+    // The filter panel lives in an overlay pane, not in this element's
+    // template, so it is rendered here — during the same update the controller
+    // awaits, which is why it is laid out by the time position() runs.
+    if (this._openFilterColumn) this.renderFilterPanel();
+    // The filter row is sticky below the header in virtual mode, and `top`
+    // cannot reference a sibling's height, so publish it. Measured per engine:
+    // 36px in Chromium/Firefox, 33px in WebKit — a hard-coded value would be
+    // wrong somewhere.
+    this.publishHeaderHeight();
+  }
+
+  /**
+   * Publish header row 1's height as `--mp-datatable-header-height` for the
+   * filter row's sticky offset. Cheap and idempotent: it writes only on change,
+   * so it cannot feed back into the render loop.
+   */
+  private publishHeaderHeight(): void {
+    if (!this.hasFilterRow) return;
+    const headerCell = this.renderRoot?.querySelector<HTMLElement>('thead tr:first-child th');
+    const shell = this.renderRoot?.querySelector<HTMLElement>('.datatable-shell');
+    if (!headerCell || !shell) return;
+    const height = Math.round(headerCell.getBoundingClientRect().height);
+    if (height <= 0) return;
+    if (shell.style.getPropertyValue('--mp-datatable-header-height') === `${height}px`) return;
+    shell.style.setProperty('--mp-datatable-header-height', `${height}px`);
   }
 
   /**
@@ -740,7 +956,13 @@ export class MpDatatable extends LitElement {
 
   private measureColumnWidth(name: string): number | null {
     if (!this.renderRoot) return null;
-    const th = this.renderRoot.querySelector(`th[data-column="${name}"]`) as HTMLElement | null;
+    // Qualified to the FIRST header row. The filter row carries `data-column`
+    // too, so an unqualified selector would be relying on document order to
+    // pick the right cell — measured true today, but an accident, not a
+    // contract, and silently wrong the day the rows are reordered.
+    const th = this.renderRoot.querySelector(
+      `thead tr:first-child th[data-column="${name}"]`,
+    ) as HTMLElement | null;
     if (!th) return null;
     const w = Math.ceil(th.getBoundingClientRect().width);
     return w > 0 ? w : null;
@@ -755,6 +977,9 @@ export class MpDatatable extends LitElement {
     this._resizeObserver?.disconnect();
     this._resizeObserver = null;
     this._scrollElement = null;
+    // Timers and in-flight requests outlive the element otherwise, and a
+    // debounced re-query firing after disconnect writes to a dead panel.
+    this._filterStates.forEach((state) => this.abortFilterRequest(state));
   }
 
   private refreshVirtualRange(): void {
@@ -832,7 +1057,13 @@ export class MpDatatable extends LitElement {
 
     // Virtual scroll: spacer rows at top and bottom.
     const virtualMeta = this.getVirtualSpacerHeights();
-    const ariaRowcount = (this._tree || this.isRootWindowed() ? this.getFlatList().length : this._data.length) + 1;
+    // `<thead>` is no longer guaranteed to hold exactly one row. Every
+    // aria-rowindex/-rowcount below is derived from this count rather than the
+    // literal 1 it used to assume; getting that wrong shifts every row's
+    // announced position by one, silently, for the whole grid.
+    const headerRowCount = this.hasFilterRow ? 2 : 1;
+    const ariaRowcount =
+      (this._tree || this.isRootWindowed() ? this.getFlatList().length : this._data.length) + headerRowCount;
 
     return html`
       ${this.liveAnnouncer.template()}
@@ -866,6 +1097,7 @@ export class MpDatatable extends LitElement {
                   : nothing}
                 ${this._columns.map((col, idx) => this.renderHeader(col, idx))}
               </tr>
+              ${this.hasFilterRow ? this.renderFilterRow(showCheckboxes) : nothing}
             </thead>
             <tbody>
               ${this._loading
@@ -901,6 +1133,773 @@ export class MpDatatable extends LitElement {
       top: startIndex * this._itemSize,
       bottom: Math.max(0, (total - endIndex) * this._itemSize),
     };
+  }
+
+  /** True when any column opted in. No column opts in, no second row, no cost. */
+  private get hasFilterRow(): boolean {
+    return this._columns.some((c) => c.filterable);
+  }
+
+  private get filterPanelId(): string {
+    return `${this._filterUid}-filter-panel`;
+  }
+
+  private filterTriggerId(column: string): string {
+    return `${this._filterUid}-filter-trigger-${column}`;
+  }
+
+  private createFilterState(col: DatatableColumnDef): ColumnFilterState {
+    const name = col.name;
+    const state: ColumnFilterState = {
+      selection: {
+        values: col.filterSelection ? [...col.filterSelection.values] : [],
+        inverse: !!col.filterSelection?.inverse,
+        // Seeded too, or a restored comparison filter comes back empty while
+        // its trigger still claims to be active.
+        operator: col.filterSelection?.operator,
+        operand: col.filterSelection?.operand ?? null,
+      },
+      seededFrom: col.filterSelection ?? null,
+      snapshot: null,
+      loaded: null,
+      view: null,
+      loadedTerm: null,
+      fromLocal: false,
+      term: '',
+      operandText: col.filterSelection?.operand == null ? '' : String(col.filterSelection.operand),
+      loading: false,
+      generation: 0,
+      controller: null,
+      debounce: null,
+      listeners: new Set(),
+      // Assigned below: the context closes over `state`, which does not exist
+      // until the literal is complete.
+      ctx: null as unknown as FilterContext,
+    };
+
+    state.ctx = {
+      values: () => state.view,
+      loading: () => state.loading,
+      search: (term) => this.setFilterSearch(name, term),
+      apply: (values, inverse) => this.applyFilter(name, values, inverse),
+      // Clearing emits the shape of the column's OWN mode. A comparison column
+      // emitting an empty `selected` array would be reporting a values-mode
+      // filter it never had, and a consumer switching on `mode` would miss it.
+      clear: () => this.clearFilter(name),
+      onChange: (callback) => {
+        state.listeners.add(callback);
+        return () => state.listeners.delete(callback);
+      },
+    };
+
+    return state;
+  }
+
+  /** State for a filterable column, created on demand. */
+  private filterState(name: string): ColumnFilterState | null {
+    const existing = this._filterStates.get(name);
+    if (existing) return existing;
+    const col = this._columns.find((c) => c.name === name);
+    if (!col?.filterable) return null;
+    const created = this.createFilterState(col);
+    this._filterStates.set(name, created);
+    return created;
+  }
+
+  private notifyFilterListeners(state: ColumnFilterState): void {
+    state.listeners.forEach((listener) => listener());
+    this.requestUpdate();
+  }
+
+  private abortFilterRequest(state: ColumnFilterState): void {
+    state.controller?.abort();
+    state.controller = null;
+    if (state.debounce != null) clearTimeout(state.debounce);
+    state.debounce = null;
+    state.loading = false;
+  }
+
+  /**
+   * Replaces a column's selection and emits the one event the component owns.
+   *
+   * The component never filters `_data` itself — what a selection means, and
+   * whether it is applied here or on a server, belongs to the consumer. All it
+   * does locally is snapshot the value list the first time a selection becomes
+   * non-empty, so the list cannot collapse to the selection.
+   */
+  private applyFilter(name: string, values: DistinctValue[], inverse: boolean): void {
+    const state = this.filterState(name);
+    if (!state) return;
+
+    const wasEmpty = state.selection.values.length === 0;
+    if (wasEmpty && values.length > 0 && state.snapshot == null && state.loaded) {
+      state.snapshot = [...state.loaded.matching, ...state.loaded.remaining];
+    }
+    if (values.length === 0) state.snapshot = null;
+
+    state.selection = { ...state.selection, values: [...values], inverse };
+    this.rebucket(state);
+    this.notifyFilterListeners(state);
+
+    const column = this._columns.find((c) => c.name === name);
+    this.liveAnnouncer.announce(
+      this.mergedLabels.announceFilter(column?.label ?? name, values.length),
+    );
+    this.dispatchEvent(
+      new CustomEvent<FilterChangeDetail>('mp-datatable-filter-change', {
+        detail: { mode: 'values', column: name, selected: [...values], inverse },
+        bubbles: true,
+        composed: true,
+      }),
+    );
+  }
+
+  /** The column's mode, defaulting to a checkbox list of distinct values. */
+  private filterModeOf(name: string): FilterMode {
+    return this._columns.find((c) => c.name === name)?.filterMode ?? 'values';
+  }
+
+  private clearFilter(name: string): void {
+    if (this.filterModeOf(name) === 'comparison') {
+      const state = this.filterState(name);
+      this.applyComparison(name, state?.selection.operator ?? 'eq', '');
+      return;
+    }
+    this.applyFilter(name, [], false);
+  }
+
+  /**
+   * Comparison mode's counterpart to `applyFilter`.
+   *
+   * It keeps the same contract: the component records what the user asked for
+   * and emits it, and never filters `_data`. An empty operand is a cleared
+   * filter, not a comparison against the empty string — otherwise every column
+   * would filter everything away the moment its panel opened.
+   */
+  private applyComparison(
+    name: string,
+    operator: FilterOperator,
+    rawOperand: string,
+  ): void {
+    const state = this.filterState(name);
+    if (!state) return;
+
+    const column = this._columns.find((c) => c.name === name);
+    const operand = this.parseOperand(rawOperand, column?.filterInputType);
+    state.operandText = rawOperand;
+    state.selection = { ...state.selection, operator, operand };
+    this.notifyFilterListeners(state);
+
+    const labels = this.mergedLabels;
+    this.liveAnnouncer.announce(
+      labels.announceComparisonFilter(
+        column?.label ?? name,
+        labels.filterOperatorLabel(operator),
+        operand == null ? '' : String(operand),
+      ),
+    );
+    this.dispatchEvent(
+      new CustomEvent<FilterChangeDetail>('mp-datatable-filter-change', {
+        detail: { mode: 'comparison', column: name, operator, operand },
+        bubbles: true,
+        composed: true,
+      }),
+    );
+  }
+
+  /**
+   * An empty input, and a `'number'` input holding something unparseable, both
+   * mean "no filter" rather than a comparison against `NaN` — which would be
+   * false for every row and silently empty the table.
+   */
+  private parseOperand(raw: string, type: FilterInputType | undefined): string | number | null {
+    if (raw.trim() === '') return null;
+    // `'date'` stays the ISO `yyyy-mm-dd` string the input reports: parsing it
+    // to a Date here would pick the runtime's timezone, and a filter that
+    // shifts by a day depending on where it runs is worse than a string.
+    if ((type ?? 'number') === 'date') return raw;
+    const parsed = Number(raw);
+    return Number.isNaN(parsed) ? null : parsed;
+  }
+
+  private setFilterSearch(name: string, term: string): void {
+    const state = this.filterState(name);
+    if (!state) return;
+    state.term = term;
+    this.rebucket(state);
+    this.notifyFilterListeners(state);
+
+    // A re-query is only worth a round trip when the loaded list cannot already
+    // answer the question: either the source truncated it, or the term is not a
+    // refinement of the one it was loaded for. Anything else filters in place.
+    const loadedTerm = state.loadedTerm ?? '';
+    const needsRequery = !!state.loaded?.hasMore || !term.startsWith(loadedTerm);
+    if (!needsRequery) return;
+
+    if (state.debounce != null) clearTimeout(state.debounce);
+    state.debounce = setTimeout(() => {
+      state.debounce = null;
+      void this.loadDistincts(name, term);
+    }, FILTER_SEARCH_DEBOUNCE_MS);
+  }
+
+  /**
+   * Loads (or recomputes) one column's value list.
+   *
+   * Called on every panel open — there is no cross-open cache, because the data
+   * behind a list can change while the panel is closed and a stale list is worse
+   * than a re-query. The source is asked first; a source resolving `null` means
+   * it cannot answer for this column, and the local path takes over.
+   */
+  private async loadDistincts(name: string, term: string): Promise<void> {
+    const state = this.filterState(name);
+    if (!state) return;
+
+    const generation = ++state.generation;
+    state.controller?.abort();
+
+    if (this._distincts) {
+      const controller = new AbortController();
+      state.controller = controller;
+      state.loading = true;
+      this.notifyFilterListeners(state);
+      try {
+        const response = await this._distincts({ column: name, search: term, signal: controller.signal });
+        if (generation !== state.generation) return;
+        state.loading = false;
+        state.controller = null;
+        if (response) {
+          state.loaded = response;
+          state.loadedTerm = term;
+          this.rebucket(state);
+          this.notifyFilterListeners(state);
+          return;
+        }
+        // `null` = "not mine"; fall through to the local path.
+      } catch {
+        if (generation !== state.generation) return;
+        state.loading = false;
+        state.controller = null;
+        state.loaded = null;
+        state.loadedTerm = term;
+        this.notifyFilterListeners(state);
+        return;
+      }
+    }
+
+    state.loaded = this.localDistincts(name);
+    state.loadedTerm = '';
+    state.fromLocal = true;
+    this.rebucket(state);
+    this.notifyFilterListeners(state);
+  }
+
+  /**
+   * Recomputes the OPEN column's list when it is locally derived and the rows
+   * changed under it.
+   *
+   * This is what makes the `remaining` bucket work at all. A consumer applies a
+   * filter by rebinding `data` to the subset; if the list were not recomputed,
+   * `loaded` would still describe the pre-filter rows, every snapshot value
+   * would still look present, and nothing would ever be marked as having left
+   * the data.
+   *
+   * Only the open column, and only the local path: a closed panel reloads when
+   * it opens, and a consumer-supplied source owns its own freshness — re-asking
+   * it on every `data` assignment would be a request per keystroke of whatever
+   * the consumer's own filtering does.
+   */
+  private refreshLocalDistincts(): void {
+    if (!this._openFilterColumn) return;
+    const state = this._filterStates.get(this._openFilterColumn);
+    if (!state || !state.fromLocal) return;
+    state.loaded = this.localDistincts(this._openFilterColumn);
+    this.rebucket(state);
+    this.notifyFilterListeners(state);
+  }
+
+  /**
+   * The value list computed from the rows this element holds — but only when it
+   * holds all of them.
+   *
+   * With a `fetch` callback, external paging, or loaded tree children, `_data`
+   * is a window onto a larger set, and a list built from a window silently omits
+   * values. There is no partial answer worth giving there: the column reports
+   * that it has no values and the consumer is expected to supply `distincts`.
+   */
+  private localDistincts(name: string): DistinctValues | null {
+    if (this._fetch != null || this.isExternallyPaged() || this._childCache.size > 0) return null;
+
+    const labels = this.mergedLabels;
+    const seen: DistinctValue[] = [];
+    this._data.forEach((row) => {
+      const value = (row as Record<string, unknown> | null | undefined)?.[name];
+      if (includesValue(seen, value)) return;
+      seen.push({ value, label: labels.filterValue(value) });
+    });
+    seen.sort((a, b) => a.label.localeCompare(b.label));
+    return { matching: seen, remaining: [], hasMore: false };
+  }
+
+  /**
+   * Re-derives `matching` / `remaining` from the snapshot and the search term.
+   *
+   * `remaining` holds snapshot values the current list no longer contains: they
+   * stay listed (dimmed) so a selection can be widened. Search is applied to
+   * both buckets client-side — the debounced re-query above is the exception,
+   * not the rule.
+   */
+  private rebucket(state: ColumnFilterState): void {
+    if (!state.loaded) {
+      state.view = null;
+      return;
+    }
+
+    const term = state.term.trim().toLowerCase();
+    const matches = (v: DistinctValue) => term === '' || v.label.toLowerCase().includes(term);
+
+    // The snapshot, when there is one, IS the universe of listed values: the
+    // loaded list only decides which bucket each one falls into.
+    const present = [...state.loaded.matching, ...state.loaded.remaining];
+    const matching = state.snapshot
+      ? state.snapshot.filter((v) => includesValue(present, v.value))
+      : state.loaded.matching;
+    const remaining = state.snapshot
+      ? state.snapshot.filter((v) => !includesValue(present, v.value))
+      : state.loaded.remaining;
+
+    state.view = {
+      matching: matching.filter(matches),
+      remaining: remaining.filter(matches),
+      hasMore: state.loaded.hasMore,
+    };
+  }
+
+  /** The open column's trigger button, or null. Re-queried on every call. */
+  private openFilterTrigger(): HTMLElement | null {
+    if (!this._openFilterColumn) return null;
+    return (
+      this.renderRoot?.querySelector<HTMLElement>(
+        `tr.filter-row th[data-column="${this._openFilterColumn}"] .filter-trigger`,
+      ) ?? null
+    );
+  }
+
+  /**
+   * The filter panel is portalled to the document root, because an in-flow
+   * panel opened from a header cell is clipped by `.datatable-scroll` — on the
+   * right in paged mode, and on both axes in virtual mode, measured in three
+   * engines. Positioning stays the controller's job; only DOM ownership moves.
+   *
+   * No local scroll listener is needed. `scroll` does not compose, so a
+   * component whose scroller lives in a shadow root must re-dispatch it (see
+   * `mp-scheduler`) — but `.datatable-scroll` is in the LIGHT DOM, so the
+   * controller's document-level capture listener already sees it and
+   * `scrollStrategy: 'reposition'` works as-is. Do not copy the scheduler's
+   * workaround here; it would be redundant.
+   */
+  // Explicitly annotated: `panel()` reads back `this.filterOverlay`, and
+  // without the annotation that self-reference makes the whole field `any`.
+  private readonly filterOverlay: OverlayController = new OverlayController(this, {
+    portal: true,
+    modal: true,
+    scrollStrategy: 'reposition',
+    // Resolved lazily by column name on every call: each render rebuilds the
+    // header, so a captured element would detach under the open panel. The
+    // trigger IS the anchor, so both read the same element — resolving the
+    // trigger by id instead would buy nothing and cost a CSS.escape call, which
+    // is not universally available and threw out of close() before it could
+    // fire onClose.
+    anchor: () => this.openFilterTrigger(),
+    trigger: () => this.openFilterTrigger(),
+    panel: () => this.filterOverlay.portalContainer?.querySelector<HTMLElement>('.filter-panel') ?? null,
+    // The search box, not merely the first tabbable: Clear precedes it in the
+    // DOM because it belongs at the top of the panel visually, and opening onto
+    // a disabled-or-destructive button is the wrong place to land.
+    // Returning null falls back to 'first', which is what a consumer's own
+    // panel gets — it has no `.filter-search` to aim at.
+    initialFocus: () =>
+      this.filterOverlay.portalContainer?.querySelector<HTMLElement>('.filter-search, .filter-operand') ?? null,
+    onClose: () => {
+      const column = this._openFilterColumn;
+      if (column == null) return;
+      const state = this._filterStates.get(column);
+      if (state) {
+        this.abortFilterRequest(state);
+        // The search term is panel state, not filter state: a reopened panel
+        // shows the whole list again, with the selection intact.
+        state.term = '';
+        this.rebucket(state);
+      }
+      this._openFilterColumn = null;
+      // The pane is destroyed with the panel, so the next open must mount fresh
+      // content rather than believe it is still there.
+      this._mountedFilterColumn = null;
+      this.requestUpdate();
+      this.dispatchEvent(
+        new CustomEvent('mp-datatable-filter-close', {
+          detail: { column },
+          bubbles: true,
+          composed: true,
+        }),
+      );
+    },
+  });
+
+  private onFilterTriggerClick(col: DatatableColumnDef, ev: MouseEvent): void {
+    ev.preventDefault();
+    ev.stopPropagation();
+    if (this._openFilterColumn === col.name) {
+      this.filterOverlay.close();
+      return;
+    }
+    // Switching columns closes the previous panel first, so `onClose` still
+    // fires for it and only one panel is ever open.
+    if (this.filterOverlay.isOpen) this.filterOverlay.close(false);
+    this._openFilterColumn = col.name;
+    this.requestUpdate();
+    // Loaded per open, never cached across opens: the rows behind a list can
+    // change while the panel is closed, and a stale list is worse than a wait.
+    //
+    // Skipped in comparison mode only: that panel shows no value list, so
+    // asking the source for one is a round trip whose answer is never read. A
+    // consumer's own renderer still gets the list, because `filterMode` stays
+    // at its 'values' default unless the consumer changes it — the demos read
+    // `ctx.values()` on open and would break otherwise.
+    if ((col.filterMode ?? 'values') !== 'comparison') void this.loadDistincts(col.name, '');
+    void this.filterOverlay.open();
+    this.dispatchEvent(
+      new CustomEvent('mp-datatable-filter-open', {
+        detail: { column: col.name },
+        bubbles: true,
+        composed: true,
+      }),
+    );
+  }
+
+  /**
+   * Renders the open panel into the overlay pane, with a render root of its
+   * own. The panel is NOT part of this element's template: relocating a node
+   * lit rendered is unsupported, so the pane gets its own `render()` call
+   * whose container happens to live in `document.body`.
+   *
+   * The consumer's node is appended AFTER the template has been stamped —
+   * `stampScope` recurses, so stamping a subtree that already holds consumer
+   * DOM would brand it with our scope and let our rules match their content.
+   *
+   * ### Why this dialog is deliberately NOT `aria-modal` (#416)
+   *
+   * Tab is contained and Escape closes, but the rest of the page stays
+   * available to assistive tech — and it must. A column filter is anchored to
+   * its trigger, dismissible, and does not own the page.
+   *
+   * `aria-modal="true"` would tell a screen reader that everything outside the
+   * panel is unavailable while a virtual cursor could still walk into the table
+   * behind it. The honest way to keep that promise — marking the table `inert`
+   * while the panel is open — would hide the very rows whose values the user is
+   * picking from, which is worse than the inconsistency it fixes.
+   *
+   * So it is a non-modal dialog: the wrong claim removed rather than an
+   * unfinished one completed. `OverlayController` is right to refuse to guess
+   * whether its host is a dialog or a menu; the call belongs here, where the
+   * component knows what it is.
+   */
+  private renderFilterPanel(): void {
+    const container = this.filterOverlay.portalContainer;
+    if (!container) return;
+
+    const column = this._columns.find((c) => c.name === this._openFilterColumn);
+    if (!column) return;
+
+    const state = this.filterState(column.name);
+
+    render(
+      html`
+        <div
+          class="filter-panel"
+          id=${this.filterPanelId}
+          role="dialog"
+          aria-label=${this.mergedLabels.filterColumn(column.label ?? column.name)}
+        >
+          <div class="filter-panel-body"></div>
+        </div>
+      `,
+      container,
+    );
+
+    const body = container.querySelector<HTMLElement>('.filter-panel-body');
+    if (!body || !state) return;
+
+    // Mount the consumer's content ONCE per open, not on every update.
+    //
+    // `updated()` runs on every render while the panel is open — including the
+    // renders a consumer's own filter causes by typing into it. A renderer that
+    // returns a fresh node per call (the React/Vue render-prop shape) would
+    // hand back a new element each time, and replacing the mounted one destroys
+    // whatever the user was focused on: the field loses focus on the first
+    // keystroke and every keystroke after it.
+    //
+    // Mounting once is also correct for the cached-node shape (Angular's
+    // EmbeddedViewRef, tree-select's LRU): that view is inserted into its
+    // ViewContainerRef, so it stays in the host's change-detection tree and
+    // keeps updating in place without us re-invoking the renderer.
+    //
+    // The default panel is exempt from the guard in one direction: it is lit-
+    // rendered into `body`, so re-rendering it is a diff, not a replacement, and
+    // the focused input survives. It still mounts once in the sense that the
+    // consumer branch is only chosen once per open.
+    if (this._mountedFilterColumn === column.name && body.firstChild) {
+      if (!this._consumerMountedFilter) this.renderDefaultFilterPanel(column, state, body);
+      return;
+    }
+
+    const content = column.filterRenderer?.(column, state.ctx) ?? null;
+    if (content) {
+      body.replaceChildren(content);
+      this._consumerMountedFilter = true;
+      this._mountedFilterColumn = column.name;
+      return;
+    }
+
+    this._consumerMountedFilter = false;
+    this.renderDefaultFilterPanel(column, state, body);
+    this._mountedFilterColumn = column.name;
+  }
+
+  /**
+   * The built-in panel: clear, search, invert, checkbox list.
+   *
+   * Rendered with a `render()` of its own into the panel body, for the same
+   * reason the panel itself is: this is not part of the element's template, and
+   * lit must own the container it diffs. The checkbox list is keyed on `value`
+   * so a repaint after a re-query moves rows instead of rebuilding them — an
+   * unkeyed list would rebuild the input the user is interacting with.
+   */
+  private renderDefaultFilterPanel(
+    column: DatatableColumnDef,
+    state: ColumnFilterState,
+    body: HTMLElement,
+  ): void {
+    if ((column.filterMode ?? 'values') === 'comparison') {
+      this.renderComparisonFilterPanel(column, state, body);
+      return;
+    }
+
+    const labels = this.mergedLabels;
+    const columnLabel = column.label ?? column.name;
+    const view = state.view;
+    const selected = state.selection.values;
+    // Selected values lead the list and stay there while the panel is open:
+    // re-sorting under a click would move the row out from under the pointer.
+    const listed = [
+      ...selected,
+      ...(view?.matching ?? []).filter((v) => !includesValue(selected, v.value)),
+      ...(view?.remaining ?? []).filter((v) => !includesValue(selected, v.value)),
+    ];
+    const isRemaining = (value: unknown) => !!view && includesValue(view.remaining, value);
+
+    render(
+      html`
+        <button
+          type="button"
+          class="filter-clear"
+          ?disabled=${selected.length === 0 && !state.selection.inverse}
+          @click=${() => this.onFilterClear(column.name)}
+        >
+          ${labels.filterClear(columnLabel)}
+        </button>
+        <input
+          type="search"
+          class="filter-search"
+          .value=${state.term}
+          aria-label=${labels.filterSearch}
+          @input=${(ev: Event) => state.ctx.search((ev.target as HTMLInputElement).value)}
+        />
+        <button
+          type="button"
+          class="filter-invert"
+          aria-pressed=${state.selection.inverse ? 'true' : 'false'}
+          @click=${() => state.ctx.apply(selected, !state.selection.inverse)}
+        >
+          ${labels.filterInvert}
+        </button>
+        <div class="filter-options" role="group" aria-label=${labels.filterGroup(columnLabel)}>
+          ${state.loading ? html`<span class="filter-loading">${labels.loading}</span>` : nothing}
+          ${repeat(
+            listed,
+            (v) => v.value,
+            (v) => html`
+              <label class=${classMap({ 'filter-option': true, 'filter-remaining': isRemaining(v.value) })}>
+                <input
+                  type="checkbox"
+                  .checked=${includesValue(selected, v.value)}
+                  @change=${(ev: Event) => this.onFilterToggle(column.name, v, (ev.target as HTMLInputElement).checked)}
+                />
+                <span>${v.label}</span>
+              </label>
+            `,
+          )}
+          ${listed.length === 0 && !state.loading
+            ? html`<span class="filter-no-values">${labels.filterNoValues}</span>`
+            : nothing}
+        </div>
+        ${view?.hasMore ? html`<span class="filter-has-more">${labels.filterHasMore}</span>` : nothing}
+      `,
+      body,
+    );
+  }
+
+  /**
+   * The `'comparison'` panel: an operator and one operand.
+   *
+   * It deliberately does NOT load distinct values — the whole point of this mode
+   * is that the column's values are a quantity rather than a set worth listing,
+   * so asking the source for them would be a round trip whose answer is never
+   * displayed.
+   */
+  private renderComparisonFilterPanel(
+    column: DatatableColumnDef,
+    state: ColumnFilterState,
+    body: HTMLElement,
+  ): void {
+    const labels = this.mergedLabels;
+    const columnLabel = column.label ?? column.name;
+    const operators = column.filterOperators?.length
+      ? column.filterOperators
+      : DEFAULT_FILTER_OPERATORS;
+    const operator = state.selection.operator ?? operators[0];
+    const operand = state.selection.operand;
+    const inputType = column.filterInputType ?? 'number';
+
+    const currentOperand = () =>
+      body.querySelector<HTMLInputElement>('.filter-operand')?.value ?? '';
+    const currentOperator = () =>
+      (body.querySelector<HTMLSelectElement>('.filter-operator')?.value as FilterOperator) ??
+      operator;
+
+    render(
+      html`
+        <button
+          type="button"
+          class="filter-clear"
+          ?disabled=${operand == null}
+          @click=${() => this.onFilterClear(column.name)}
+        >
+          ${labels.filterClear(columnLabel)}
+        </button>
+        <div class="filter-comparison">
+          <select
+            class="filter-operator"
+            aria-label=${labels.filterOperator}
+            @change=${() => this.applyComparison(column.name, currentOperator(), currentOperand())}
+          >
+            ${operators.map(
+              (op) => html`
+                <option value=${op} ?selected=${op === operator}>
+                  ${FILTER_OPERATOR_SYMBOLS[op]} ${labels.filterOperatorLabel(op)}
+                </option>
+              `,
+            )}
+          </select>
+          <input
+            class="filter-operand"
+            type=${inputType}
+            .value=${live(state.operandText)}
+            aria-label=${labels.filterOperand}
+            @input=${() => this.applyComparison(column.name, currentOperator(), currentOperand())}
+          />
+        </div>
+      `,
+      body,
+    );
+  }
+
+  private onFilterToggle(column: string, value: DistinctValue, checked: boolean): void {
+    const state = this.filterState(column);
+    if (!state) return;
+    const next = checked
+      ? [...state.selection.values, value]
+      : state.selection.values.filter((v) => !sameValue(v.value, value.value));
+    state.ctx.apply(next, state.selection.inverse);
+  }
+
+  private onFilterClear(column: string): void {
+    const state = this.filterState(column);
+    if (!state) return;
+    state.ctx.clear();
+    // Clear removes the control the user just pressed from the tab order (it
+    // disables itself), so focus must go somewhere deliberate rather than to
+    // <body>. The search box is where the next action starts.
+    this.filterOverlay.portalContainer
+      ?.querySelector<HTMLElement>('.filter-search, .filter-operand')
+      ?.focus({ preventScroll: true });
+  }
+
+  /**
+   * The second `<thead>` row. One cell per column in the SAME order as row 1,
+   * gutters included — alignment is structural, not a CSS problem, and the
+   * empty cells for non-filterable columns are what keeps it that way.
+   *
+   * The cells deliberately carry no width. Widths live on row 1's `<th>`, and
+   * `table-layout: fixed` resolves columns from the first row only, so this row
+   * cannot perturb geometry once the measure pass has run. Before it runs the
+   * table is `auto`, where the row is only harmless because `.filter-trigger`
+   * is width-neutral — see the note on that rule in `datatable.light.scss`.
+   */
+  private renderFilterRow(showCheckboxes: boolean): TemplateResult {
+    return html`
+      <tr role="row" aria-rowindex="2" class="filter-row">
+        ${this._tree ? html`<th class="filter-cell tree-chevron-cell"></th>` : nothing}
+        ${showCheckboxes ? html`<th class="filter-cell checkbox-cell"></th>` : nothing}
+        ${this._columns.map((col) => this.renderFilterCell(col))}
+      </tr>
+    `;
+  }
+
+  private renderFilterCell(col: DatatableColumnDef): TemplateResult {
+    // A column with no filter still gets its cell. It is empty, and it is NOT
+    // aria-hidden: it belongs to the table's structural grid, and hiding it
+    // would desynchronise the column count from the other two rows.
+    if (!col.filterable) {
+      return html`<th class="filter-cell p-0" data-column=${col.name} scope="col"></th>`;
+    }
+
+    const open = this._openFilterColumn === col.name;
+    const labels = this.mergedLabels;
+    const columnLabel = col.label ?? col.name;
+    // Three distinct names, not a name plus a decoration: "filtered" has to be
+    // part of the accessible name, because a user who cannot see the trigger's
+    // active styling has nothing else telling them the column is filtered.
+    const label = col.filterActive
+      ? labels.filterColumnActive(columnLabel, col.filterSummary)
+      : labels.filterColumn(columnLabel);
+
+    return html`
+      <th class="filter-cell p-0" data-column=${col.name} scope="col">
+        <button
+          type="button"
+          class=${classMap({
+            'filter-trigger': true,
+            'p-2': true,
+            'rounded-0': true,
+            active: !!col.filterActive,
+            open,
+          })}
+          id=${this.filterTriggerId(col.name)}
+          aria-expanded=${open ? 'true' : 'false'}
+          aria-controls=${open ? this.filterPanelId : nothing}
+          aria-label=${label}
+          @click=${(ev: MouseEvent) => this.onFilterTriggerClick(col, ev)}
+        >
+          <svg class="filter-icon" viewBox="0 0 16 16" aria-hidden="true" focusable="false">
+            <path d="M2 3h12l-4.5 5.25V13L6.5 11.5V8.25L2 3z" />
+          </svg>
+          ${col.filterSummary
+            ? html`<span class="filter-summary">${col.filterSummary}</span>`
+            : nothing}
+        </button>
+      </th>
+    `;
   }
 
   private renderHeader(col: DatatableColumnDef, _index: number): TemplateResult {
@@ -971,7 +1970,7 @@ export class MpDatatable extends LitElement {
     return html`
       <tr
         role="row"
-        aria-rowindex=${rowIndex + 2}
+        aria-rowindex=${rowIndex + 1 + (this.hasFilterRow ? 2 : 1)}
         aria-level=${this._tree ? depth + 1 : nothing}
         aria-expanded=${this._tree && childCount > 0 ? (isExpanded ? 'true' : 'false') : nothing}
         aria-busy=${isPlaceholder ? 'true' : nothing}

@@ -130,7 +130,11 @@
   descendants; partially-selected parents render an indeterminate state.
 </p>
 
-<bs-datatable class="flex-grow-1"
+<!-- `tree-table` is an e2e hook, not a style: datatable-tree.spec.ts used to
+     reach this table as "the last mp-datatable on the page", which silently
+     started reading the Column filters table below once that section was
+     added. A named hook cannot rot that way. -->
+<bs-datatable class="flex-grow-1 tree-table"
   [virtualScroll]="true"
   [itemSize]="40"
   [tree]="true"
@@ -167,3 +171,144 @@
 <bs-code-snippet [code]="snippetTreeHtml" [language]="'html'"></bs-code-snippet>
 <bs-code-snippet [code]="snippetTreeTs" [language]="'ts'"></bs-code-snippet>
 <bs-code-snippet [code]="snippetTreeServiceTs" [language]="'ts'"></bs-code-snippet>
+
+<h2>Column filters</h2>
+
+<p>
+  Mark a column <code>filterable</code> and the table grows a second header row
+  with a dropdown trigger in that column. Columns without it get an empty,
+  correctly-sized cell, so the row stays aligned. No filterable column, no second
+  row at all &mdash; toggle the checkbox below to watch the row appear and
+  disappear.
+</p>
+<p>
+  A filterable column gets a <strong>built-in panel</strong> for free: a search
+  box, an include/exclude toggle, a checkbox list of the column's distinct
+  values, and a clear button. It lives in the web component, so React and Vue
+  get the same panel with no wrapper code. The <em>Artist</em> column below uses
+  it as-is.
+</p>
+<p>
+  A checkbox list is the wrong question for a quantity, so a column can ask a
+  different one: <code>filterMode: 'comparison'</code> renders an operator
+  (<code>=</code>, <code>&ne;</code>, <code>&lt;</code>, <code>&le;</code>,
+  <code>&gt;</code>, <code>&ge;</code>) and a single input, with
+  <code>filterInputType</code> choosing <code>number</code> (the default) or
+  <code>date</code> &mdash; the <em>Year started</em> column below. Still the
+  built-in panel: no template and no styling of your own. Narrow the operator
+  list with <code>filterOperators</code> when only some make sense.
+</p>
+<p>
+  Quantities only &mdash; there is no <code>text</code> input type and no
+  <code>contains</code> operator. Comparing strings is either exact match, which
+  the value list already does better, or a lexicographic <code>&gt;</code>, which
+  is almost never what anyone means. <strong>A free-text filter is a
+  nest-your-own case</strong>, below.
+</p>
+<p>
+  The consumer picks the mode per column and the component never infers it: a
+  numeric column is often an enum and a string column is often ordinal, so any
+  guess would be wrong about half the time.
+</p>
+<p>
+  When neither built-in question fits, nest a
+  <code>*bsDatatableFilterPanel</code> inside the column and render whatever you
+  like &mdash; the <em>Year quit</em> column does. The template receives the
+  loaded values as a signal and a context object for driving the search and the
+  selection. <strong>That markup is yours, so you style it yourself</strong>:
+  Bootstrap's <code>.form-control</code> is only styled inside
+  <code>bs-*</code> components in this workspace, and the panel renders in the
+  document-root overlay, outside the table's DOM.
+</p>
+<p>
+  The panel opens in an overlay at the document root, so it is not clipped by
+  the table's scroll container and is not hidden behind the sticky header
+  &mdash; this demo runs in virtual-scroll mode, where both would otherwise
+  happen.
+</p>
+<p>
+  <strong>The component decides nothing about what a filter means.</strong> It
+  collects a selection and emits it; the page below holds an unfiltered master
+  copy, applies the selection itself, and sets <code>filterActive</code> and
+  <code>filterSummary</code> back on the column. That is what lets the same row
+  drive a client-side match here and a server query elsewhere.
+</p>
+<p class="text-muted small">
+  <strong>Keyboard:</strong> <kbd>Tab</kbd> reaches each filter trigger;
+  <kbd>Enter</kbd> or <kbd>Space</kbd> opens the panel and moves focus to its
+  search box; <kbd>Tab</kbd> cycles within the open panel; <kbd>Esc</kbd> closes
+  it and returns focus to the trigger. Clearing a filter moves focus back to the
+  search box, because the clear button disables itself.
+</p>
+
+<bs-checkbox [type]="'checkbox'" [(ngModel)]="showFilters" class="mb-3 d-block">
+  Show the filter row
+</bs-checkbox>
+
+<bs-datatable class="flex-grow-1 filter-table"
+  [virtualScroll]="true"
+  [itemSize]="40"
+  [isResponsive]="true"
+  [data]="filteredArtists()"
+  [(settings)]="filterSettings"
+  [rowKey]="rowKey"
+  (filterChange)="onFilterChange($event)">
+
+  <!-- No nested panel: the built-in one renders, listing every distinct name
+       in the data. -->
+  <div *bsDatatableColumn="'name';
+        sortable: true;
+        filterable: showFilters();
+        filterActive: nameSelection().length > 0;
+        filterSummary: nameSummary()">
+    Artist
+  </div>
+
+  <!-- Comparison mode: a year is a quantity, so an operator and one number
+       beats ticking every distinct year. Still the built-in panel — no
+       template, no styling, nothing to wire but the two inputs. -->
+  <div *bsDatatableColumn="'yearStarted';
+        sortable: true;
+        filterable: showFilters();
+        filterMode: 'comparison';
+        filterInputType: 'number';
+        filterActive: yearOperand() !== null;
+        filterSummary: yearSummary()">
+    Year started
+  </div>
+
+  <!-- The escape hatch: a panel the component could not have guessed. Its
+       markup is the page's own, so the page styles it (see the .demo-filter-*
+       rules) — Bootstrap's .form-control is only styled inside bs-* components
+       here, and would reach nothing in the document-root overlay anyway. -->
+  <div *bsDatatableColumn="'yearQuit';
+        sortable: false;
+        filterable: showFilters();
+        filterActive: activeOnly()">
+    Year quit
+    <ng-container *bsDatatableFilterPanel="let values">
+      <div class="demo-filter-panel">
+        <label class="demo-filter-check">
+          <input type="checkbox" [ngModel]="activeOnly()" (ngModelChange)="activeOnly.set($event)" />
+          <span>Still active only</span>
+        </label>
+        <p class="demo-filter-hint">
+          {{ values()?.matching?.length ?? 0 }} distinct value(s) in view.
+        </p>
+      </div>
+    </ng-container>
+  </div>
+
+  <ng-container *bsRowTemplate="let artist">
+    <td class="text-nowrap">{{ $any(artist)?.name }}</td>
+    <td class="text-nowrap">{{ $any(artist)?.yearStarted }}</td>
+    <td class="text-nowrap">{{ $any(artist)?.yearQuit }}</td>
+  </ng-container>
+</bs-datatable>
+
+<small class="text-muted">
+  Showing {{ filteredArtists().length }} of {{ allArtists().length }} artist(s).
+</small>
+
+<bs-code-snippet [code]="snippetFilterHtml" [language]="'html'"></bs-code-snippet>
+<bs-code-snippet [code]="snippetFilterTs" [language]="'ts'"></bs-code-snippet>

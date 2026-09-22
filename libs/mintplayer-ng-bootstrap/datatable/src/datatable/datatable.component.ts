@@ -10,12 +10,14 @@ import {
   effect,
   ElementRef,
   EmbeddedViewRef,
+  type ViewRef,
   inject,
   input,
   model,
   output,
   PLATFORM_ID,
   signal,
+  type WritableSignal,
   ViewContainerRef,
   viewChild,
 } from '@angular/core';
@@ -24,7 +26,11 @@ import { SortColumn } from '@mintplayer/pagination';
 import {
   computeNextSort,
   type DatatableColumnDef,
+  type DatatableDistincts,
+  type DatatableLabels,
   type DatatableSelectionMode,
+  type DistinctValues,
+  type FilterChangeDetail,
   type MpDatatable,
   type RowEventDetail,
   type RowRenderer,
@@ -41,7 +47,10 @@ import '@mintplayer/web-components/datatable';
 
 import { DatatableSettings } from '../datatable-settings';
 import { BsDatatableFetch } from '../datatable-fetch';
-import { BsDatatableColumnDirective } from '../datatable-column/datatable-column.directive';
+import {
+  BsDatatableColumnDirective,
+  type BsDatatableFilterPanelContext,
+} from '../datatable-column/datatable-column.directive';
 import { BsRowTemplateDirective, BsRowTemplateContext } from '../row-template/row-template.directive';
 import { BsForwardAriaDirective } from '@mintplayer/ng-bootstrap/a11y';
 
@@ -77,11 +86,32 @@ export class BsDatatableComponent<TData> implements AfterViewInit {
    */
   readonly columnsInput = input<DatatableColumnDef<TData>[] | null>(null, { alias: 'columns' });
 
-  /** Static (already-paginated) data array. Use `[fetch]` for server-side pagination. */
+  /**
+   * The **complete** row set. Use `[fetch]` for server-side pagination.
+   *
+   * "Complete" matters to the filter panels: their value lists are computed from
+   * this array, so a consumer who pages `[data]` themselves is showing the
+   * component one page and will get a value list covering one page. That case
+   * needs `[distincts]`.
+   */
   readonly data = input<TData[] | null>(null);
 
   /** Async data loader (server-side pagination). Mutually exclusive with `[data]`. */
   readonly fetch = input<BsDatatableFetch<TData> | null>(null);
+
+  /**
+   * Source of distinct values for the filter panels.
+   *
+   * Required whenever the component does not hold every row — with `[fetch]`,
+   * with external paging, or with a tree whose children are loaded on demand, a
+   * locally computed list would silently omit values, so it is not computed at
+   * all. Resolve `null` for a column to hand that one column back to the local
+   * path.
+   */
+  readonly distincts = input<DatatableDistincts | null>(null);
+
+  /** Partial override of the component's user-visible strings. */
+  readonly labels = input<Partial<DatatableLabels> | null>(null);
 
   /** Two-way bound pagination / sort settings. */
   readonly settings = model<DatatableSettings>(new DatatableSettings());
@@ -164,6 +194,16 @@ export class BsDatatableComponent<TData> implements AfterViewInit {
   /** Emitted after a row is collapsed. */
   readonly rowCollapse = output<BsDatatableTreeRowEvent<TData>>();
 
+  /**
+   * Emitted whenever a column's filter selection changes, including when it is
+   * cleared (`selected: []`).
+   *
+   * The component does not filter `[data]`: acting on this — and setting
+   * `filterActive` / `filterSummary` back on the column — is the consumer's job,
+   * because only they know whether the filter is client-side or a new query.
+   */
+  readonly filterChange = output<FilterChangeDetail>();
+
   readonly datatableRef = viewChild<ElementRef<MpDatatable>>('datatable');
 
   /** Column directives (header template + sortable). Wrapper-level discovery. */
@@ -181,11 +221,30 @@ export class BsDatatableComponent<TData> implements AfterViewInit {
   protected readonly effectiveColumns = computed<DatatableColumnDef<TData>[]>(() => {
     const programmatic = this.columnsInput();
     if (programmatic && programmatic.length) return programmatic;
+
+    // Every recompute builds fresh closures with fresh views, so the previous
+    // generation is dead the moment we return. Without retiring them they
+    // accumulated until the component was destroyed — harmless-looking with one
+    // view per column, twice as bad now that filters add a second.
+    //
+    // Retired, not destroyed: see `retireTemplateViews`. Destroying here is
+    // NG0600.
+    this.retireTemplateViews();
+
     return this.columnDirectives().map((dir): DatatableColumnDef<TData> => {
       let headerView: EmbeddedViewRef<unknown> | undefined;
+      let filterView: EmbeddedViewRef<BsDatatableFilterPanelContext> | undefined;
+      let filterValues: WritableSignal<DistinctValues | null> | undefined;
       return {
         name: dir.name(),
         sortable: dir.sortable(),
+        filterable: dir.filterable(),
+        filterActive: dir.filterActive(),
+        filterSummary: dir.filterSummary(),
+        filterSelection: dir.filterSelection(),
+        filterMode: dir.filterMode(),
+        filterInputType: dir.filterInputType(),
+        filterOperators: dir.filterOperators(),
         headerRenderer: () => {
           if (!headerView) {
             headerView = this.vcr.createEmbeddedView(dir.templateRef);
@@ -199,20 +258,107 @@ export class BsDatatableComponent<TData> implements AfterViewInit {
           for (const n of nodes) frag.appendChild(n);
           return frag;
         },
+        // Installed UNCONDITIONALLY, and the nested template is resolved inside
+        // it rather than out here.
+        //
+        // `dir.filterPanelTemplate` is assigned by the nested directive's
+        // constructor, which does not run until the column's header view is
+        // created — too late for this computed's first evaluation. Reading it
+        // here would see `undefined` for every column and no override would ever
+        // appear. Creating the header view eagerly to force it is worse: the
+        // insertion dirties Angular's query signals inside a reactive read, and
+        // that throws NG0600 as soon as the host declares any `viewChild`.
+        //
+        // Returning `null` means "use the built-in panel", so a column with no
+        // override costs nothing.
+        filterRenderer: (_col, ctx) => {
+          const tpl = dir.filterPanelTemplate;
+          if (!tpl) return null;
+          if (!filterView || !filterValues) {
+            // The context is a signal because the demos and specs are zoneless:
+            // mutating a context object notifies nothing, so the override would
+            // never repaint as values load.
+            filterValues = signal(ctx.values());
+            filterView = this.vcr.createEmbeddedView(tpl, { $implicit: filterValues, ctx });
+            this.filterViews.push(filterView);
+            const values = filterValues;
+            this.filterUnsubscribes.push(ctx.onChange(() => values.set(ctx.values())));
+          }
+          filterView.detectChanges();
+          const nodes = filterView.rootNodes.filter((n: unknown): n is Node => n instanceof Node);
+          if (nodes.length === 1) return nodes[0];
+          const frag = document.createDocumentFragment();
+          for (const n of nodes) frag.appendChild(n);
+          return frag;
+        },
       };
     });
   });
 
   /** EmbeddedViews for header templates (one per column directive). */
   private headerViews: EmbeddedViewRef<unknown>[] = [];
+  /** EmbeddedViews for filter panel templates (one per overriding column). */
+  private filterViews: EmbeddedViewRef<BsDatatableFilterPanelContext>[] = [];
+  /** `FilterContext.onChange` unsubscribes, one per live filter view. */
+  private filterUnsubscribes: (() => void)[] = [];
+
+  /** The previous generation, awaiting disposal by the columns effect. */
+  private staleViews: ViewRef[] = [];
+
+  /**
+   * Hands the previous generation over for disposal — it does **not** destroy
+   * anything, and must not.
+   *
+   * This runs inside `effectiveColumns`, and destroying a view detaches it,
+   * which dirties Angular's query signals: a signal write inside a computed,
+   * i.e. NG0600, the moment the host declares any view query. It is the exact
+   * mirror of why views are not CREATED here either — attach and detach are
+   * both signal writes, so neither belongs in a computed.
+   *
+   * Handing over is a plain field write, and the effect that forwards the
+   * columns disposes the batch on the same tick, so the leak this replaced
+   * stays fixed: at most one dead generation exists, and only momentarily.
+   */
+  private retireTemplateViews(): void {
+    this.staleViews.push(...this.headerViews, ...this.filterViews);
+    this.headerViews = [];
+    this.filterViews = [];
+    this.releaseFilterSubscriptions();
+  }
+
+  /** Destroys the retired generation. Only ever called from an effect. */
+  private disposeStaleViews(): void {
+    for (const v of this.staleViews) v.destroy();
+    this.staleViews = [];
+  }
+
+  /**
+   * Without this the web component keeps calling into a destroyed view's signal
+   * on every value change, for the life of the element.
+   */
+  private releaseFilterSubscriptions(): void {
+    for (const unsubscribe of this.filterUnsubscribes) unsubscribe();
+    this.filterUnsubscribes = [];
+  }
   /** EmbeddedViews for row templates, keyed by rowKey for reuse. */
   private rowViews = new Map<string, EmbeddedViewRef<BsRowTemplateContext<TData>>>();
 
   constructor() {
     this.destroyRef.onDestroy(() => {
-      for (const v of this.headerViews) v.destroy();
+      // Deliberately does NOT destroy the views. Every one of them is attached
+      // to this component's ViewContainerRef, so Angular tears them down with
+      // the host view; destroying them again from a cleanup hook re-enters that
+      // teardown and desynchronises the container's view bookkeeping — a hard
+      // "attached view should be in the same position within its container"
+      // assertion in dev mode. It only surfaces once a header template contains
+      // a nested structural directive, which `*bsDatatableFilterPanel` is, so
+      // the previous code looked correct right up until it was not.
+      //
+      // The subscriptions are the only thing here Angular knows nothing about.
+      this.releaseFilterSubscriptions();
       this.headerViews = [];
-      for (const v of this.rowViews.values()) v.destroy();
+      this.filterViews = [];
+      this.staleViews = [];
       this.rowViews.clear();
     });
 
@@ -228,11 +374,30 @@ export class BsDatatableComponent<TData> implements AfterViewInit {
       el.fetch = (this.fetch() as unknown as MpDatatable['fetch']) ?? null;
     });
 
-    // Forward columns to the WC.
+    // Same server guard as `fetch`: the source is a network call in every real
+    // consumer, and a panel cannot be opened during SSR anyway.
     effect(() => {
       const el = this.datatableRef()?.nativeElement;
       if (!el) return;
-      el.columns = this.effectiveColumns() as DatatableColumnDef[];
+      if (isPlatformServer(this.platformId)) return;
+      el.distincts = this.distincts();
+    });
+
+    effect(() => {
+      const el = this.datatableRef()?.nativeElement;
+      if (!el) return;
+      el.labels = this.labels() ?? undefined;
+    });
+
+    // Forward columns to the WC, and dispose the generation the recompute
+    // retired. An effect may write signals; a computed may not, which is the
+    // whole reason the disposal happens out here.
+    effect(() => {
+      const columns = this.effectiveColumns();
+      this.disposeStaleViews();
+      const el = this.datatableRef()?.nativeElement;
+      if (!el) return;
+      el.columns = columns as DatatableColumnDef[];
     });
 
     // Static `[data]` only. When `[fetch]` is set the WC owns the rows, so the
@@ -444,6 +609,10 @@ export class BsDatatableComponent<TData> implements AfterViewInit {
     const next = new Set(detail.expandedIds);
     if (setsEqual(this.expandedIds(), next)) return;
     this.expandedIds.set(next);
+  }
+
+  onFilterChange(event: Event): void {
+    this.filterChange.emit((event as CustomEvent<FilterChangeDetail>).detail);
   }
 
   private toBsEvent(event: Event): BsDatatableRowEvent<TData> {

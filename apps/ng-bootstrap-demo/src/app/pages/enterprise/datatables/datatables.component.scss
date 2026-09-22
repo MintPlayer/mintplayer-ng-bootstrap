@@ -9,3 +9,52 @@
 .windowed-table {
   height: 360px;
 }
+
+// ─── The override filter panel ─────────────────────────────────────────────
+// This markup is the PAGE's, not the component's, so the page styles it.
+//
+// Two reasons it cannot lean on Bootstrap's form classes. `.form-control` is
+// only styled inside `bs-*` components in this workspace (see the root
+// CLAUDE.md), so it does nothing here to begin with. And the panel is rendered
+// into the document-root overlay, outside this component's DOM — page-level
+// classes still work there, but anything scoped to a subtree would not.
+//
+// These rules DO reach it: Angular's emulated encapsulation is attribute-based,
+// and the nodes come from this component's own `<ng-template>`, so they carry
+// its `_ngcontent` attribute wherever they end up in the document.
+//
+// The spacing mirrors the built-in panel's so the two do not read as different
+// widgets when a user opens them one after the other.
+.demo-filter-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  min-width: 12rem;
+  padding: 0.25rem;
+}
+
+.demo-filter-check {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.25rem;
+  margin: 0;
+  border-radius: 0.25rem;
+  cursor: pointer;
+
+  input {
+    margin: 0;
+    flex: 0 0 auto;
+  }
+}
+
+.demo-filter-check:hover {
+  background-color: var(--bs-tertiary-bg, rgba(0, 0, 0, 0.04));
+}
+
+.demo-filter-hint {
+  margin: 0;
+  padding: 0 0.25rem;
+  color: var(--bs-secondary-color, #6c757d);
+  font-size: 0.875em;
+}

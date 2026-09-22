@@ -55,6 +55,22 @@
       var(--mp-datatable-row-hover-bg)
     );
   }
+
+  // The filter row sticks BELOW the header row. `top` cannot reference a
+  // sibling's height and the header's height varies with content, padding and
+  // font, so the component measures row 1 and publishes it as
+  // `--mp-datatable-header-height` (36px in Chromium/Firefox, 33px in WebKit on
+  // the same markup — a hard-coded value would be wrong somewhere). Without the
+  // offset both rows pin at 0 and the filter row lands ON the header.
+  //
+  // The opaque background is not decoration: without it, body rows scrolling
+  // underneath show through, exactly as for the header above.
+  thead tr.filter-row th {
+    position: sticky;
+    top: var(--mp-datatable-header-height, 0px);
+    z-index: 1;
+    background-color: var(--bs-body-bg, #fff);
+  }
 }
 
 tr.virtual-spacer {
@@ -111,7 +127,15 @@ thead th {
 
 thead th[data-sortable="true"] {
   cursor: pointer;
-  padding-right: 2rem;
+  // The padding moves INTO the button below. The whole cell reads as clickable
+  // — `cursor: pointer` and a hover background on the `<th>` — so the whole
+  // cell has to BE clickable; with the padding out here, only the text was, and
+  // a short label in a wide column left most of the header dead.
+  //
+  // Total width is unchanged: the same padding is simply inside a `border-box`
+  // button that fills the cell, so the intrinsic width the measure pass reads
+  // during the `auto` phase is the same text plus the same padding.
+  padding: 0;
 
   &::before,
   &::after {
@@ -155,13 +179,23 @@ thead th[data-sortable="true"]:hover {
 // needed because a UA button does not inherit either.
 button.header-sort {
   border: 0;
-  padding: 0;
   margin: 0;
   background: none;
   font: inherit;
   color: inherit;
   text-align: inherit;
   cursor: pointer;
+  // Fills the cell, so clicking anywhere in the header sorts — not just the
+  // label. `display: flex` overrides the `inline-flex` of `.header-cell`, which
+  // the button also carries; `width: 100%` + `border-box` make it cover the
+  // cell whose padding it inherited (see `thead th[data-sortable]` above).
+  display: flex;
+  width: 100%;
+  box-sizing: border-box;
+  padding: 0.5rem 2rem 0.5rem 0.75rem;
+  // The cell is the positioned ancestor for the sort arrows and the resize
+  // handle, and the handle sits at z-index 2 — above this button, so a drag to
+  // resize still beats a click to sort.
 }
 
 .resize-handle:focus-visible,
@@ -324,6 +358,288 @@ tbody tr[data-placeholder="true"] {
 .datatable-per-page,
 .datatable-pagination {
   flex: 0 1 auto;
+}
+
+// ─── Filter row ────────────────────────────────────────────────────────────
+
+tr.filter-row th {
+  // No width here, ever. Widths live on row 1's <th>, and `table-layout: fixed`
+  // resolves columns from the first row only — so once the measure pass has run
+  // this row is structurally incapable of affecting geometry. Restating a width
+  // here would be ignored at best and fight the measurement at worst.
+  //
+  // The cell carries no padding: the trigger fills it edge to edge and owns the
+  // padding instead, so the whole cell is a click target. The element also
+  // renders `class="p-0"`, whose Bootstrap utility is `!important` and would win
+  // anyway — this keeps the component looking the same when it is used WITHOUT
+  // Bootstrap loaded, rather than leaving two disagreeing sources of truth.
+  padding: 0;
+  border-bottom: 1px solid var(--mp-datatable-border-color);
+  font-weight: 400;
+  // The sort affordance's 2rem right padding belongs to row 1 only; repeating
+  // it here would push the trigger off-centre under the header label.
+  user-select: none;
+}
+
+.filter-trigger {
+  // WIDTH-NEUTRAL, and this is load-bearing rather than cosmetic. Before the
+  // measure pass the table is `table-layout: auto`, where a filter cell wider
+  // than its column WIDENS that column — and the inflated value is then what
+  // gets measured and pinned for the life of the table. Measured: a trigger
+  // with unbreakable content took a 224px column to 515px. `width: 100%` plus
+  // `min-width: 0` keeps the cell's contribution at zero.
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
+  // Mirrors the `p-2 rounded-0` utilities the element renders. Those are
+  // `!important` and win where Bootstrap is loaded; these keep the appearance
+  // identical where it is not.
+  padding: 0.5rem;
+  border-radius: 0;
+  background: transparent;
+  border: 1px solid transparent;
+  color: inherit;
+  cursor: pointer;
+  line-height: 1;
+}
+
+.filter-trigger:hover {
+  background-color: var(--mp-datatable-row-hover-bg, rgba(0, 0, 0, 0.04));
+}
+
+// Bootstrap's focus-ring utilities do not reach here, and the hover style above
+// is not a focus indicator — it is shared with the pointer state.
+.filter-trigger:focus-visible {
+  outline: 2px solid var(--bs-focus-ring-color, #0d6efd);
+  outline-offset: 1px;
+}
+
+.filter-trigger[aria-expanded='true'] {
+  background-color: var(--mp-datatable-row-hover-bg, rgba(0, 0, 0, 0.04));
+  border-color: var(--mp-datatable-border-color);
+}
+
+.filter-icon {
+  width: 0.875rem;
+  height: 0.875rem;
+  fill: currentColor;
+  flex: 0 0 auto;
+}
+
+// "This column is filtered" — the component attaches no meaning to it; the
+// consumer decides when it is true.
+.filter-trigger.active .filter-icon {
+  fill: var(--bs-primary, #0d6efd);
+}
+
+.filter-trigger.active::after {
+  content: '';
+  width: 0.375rem;
+  height: 0.375rem;
+  margin-inline-start: 0.25rem;
+  border-radius: 50%;
+  background-color: var(--bs-primary, #0d6efd);
+  flex: 0 0 auto;
+}
+
+// ─── Filter panel (rendered into the document-root overlay pane) ───────────
+// Reached by the document-level light-tier sheet even though it sits outside
+// this element's subtree: the sheet is installed on the document and anchors on
+// [data-mps=datatable], which survives the move. Tag-scoping would not have.
+
+.filter-panel {
+  // REQUIRED, not decoration. OverlayController positions by writing
+  // `left`/`top` onto this element, and a statically-positioned element ignores
+  // both — the panel then renders at the pane's origin, i.e. the top-left
+  // corner of the viewport, wherever its trigger actually is. Every other
+  // OverlayController consumer declares this on its own panel for the same
+  // reason. jsdom has no layout, so no unit test can catch its absence.
+  position: fixed;
+  min-width: 12rem;
+  max-width: min(22rem, calc(100vw - 2rem));
+  padding: 0.5rem;
+  background-color: var(--bs-body-bg, #fff);
+  color: var(--bs-body-color, inherit);
+  border: 1px solid var(--mp-datatable-border-color, var(--bs-border-color, rgba(0, 0, 0, 0.125)));
+  border-radius: 0.375rem;
+  box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
+}
+
+.filter-panel-body {
+  // Either the consumer's node or the built-in panel below is mounted here.
+  // Nothing in this block may assume anything about a consumer's contents.
+  display: block;
+  max-height: min(20rem, 60vh);
+  overflow: auto;
+}
+
+// ─── Built-in filter panel ─────────────────────────────────────────────────
+// Rendered only when the column supplies no `filterRenderer`, or supplies one
+// that returns null. A consumer's own panel reaches none of these rules: they
+// all anchor on class names this component renders, and the rewriter stamps
+// only what it rendered.
+
+.filter-clear,
+.filter-invert {
+  display: block;
+  width: 100%;
+  box-sizing: border-box;
+  padding: 0.25rem 0.5rem;
+  margin-bottom: 0.375rem;
+  background: transparent;
+  border: 1px solid var(--mp-datatable-border-color, var(--bs-border-color, rgba(0, 0, 0, 0.125)));
+  border-radius: 0.25rem;
+  color: inherit;
+  cursor: pointer;
+  text-align: start;
+  line-height: 1.4;
+}
+
+.filter-clear:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+.filter-invert[aria-pressed='true'] {
+  background-color: var(--bs-primary, #0d6efd);
+  border-color: var(--bs-primary, #0d6efd);
+  color: var(--bs-primary-bg-subtle, #fff);
+}
+
+// One look for every field in the panel, whatever its type. Declared once and
+// shared: the search box, the operand box and the operator select were drifting
+// apart three copies at a time, and `font: inherit` had already gone missing
+// from the search box — a form control does NOT inherit the page font, so it
+// was rendering in the UA's system font while its neighbours used the page's.
+.filter-search,
+.filter-operand,
+.filter-operator {
+  box-sizing: border-box;
+  padding: 0.25rem 0.5rem;
+  background-color: var(--bs-body-bg, #fff);
+  color: inherit;
+  border: 1px solid var(--mp-datatable-border-color, var(--bs-border-color, rgba(0, 0, 0, 0.125)));
+  border-radius: 0.25rem;
+  // Both halves matter: `font` alone leaves the UA line-height, which differs
+  // between an input and a select and makes them different heights.
+  font: inherit;
+  line-height: 1.5;
+}
+
+// `type=number` otherwise renders a pair of spinner buttons that make it taller
+// and narrower than the text field beside it — the two read as different
+// controls for no reason. Arrow-key stepping still works without them.
+.filter-operand[type='number'] {
+  appearance: textfield;
+}
+
+.filter-operand::-webkit-outer-spin-button,
+.filter-operand::-webkit-inner-spin-button {
+  appearance: none;
+  margin: 0;
+}
+
+.filter-search {
+  display: block;
+  width: 100%;
+  margin-bottom: 0.375rem;
+}
+
+// Bootstrap's focus-ring utilities do not reach here (see the trigger above),
+// and none of these controls has a state that could double as an indicator.
+.filter-clear:focus-visible,
+.filter-invert:focus-visible,
+.filter-search:focus-visible,
+.filter-option input:focus-visible {
+  outline: 2px solid var(--bs-focus-ring-color, #0d6efd);
+  outline-offset: 1px;
+}
+
+// Comparison mode: an operator and one operand, side by side. The operand takes
+// the remaining width with `min-width: 0`, so a long `type=date` control shrinks
+// instead of pushing the panel wider than its max-width.
+.filter-comparison {
+  display: flex;
+  gap: 0.375rem;
+  // `stretch`, not `center`: a <select> and an <input> do not agree on their
+  // intrinsic height — Chromium's UA sheet forces `line-height: normal` on a
+  // select, so it lands a pixel short of the input beside it however carefully
+  // the two are given the same font, padding and border. Stretching makes the
+  // row decide instead of the UA.
+  align-items: stretch;
+}
+
+.filter-operator {
+  flex: 0 0 auto;
+  // A native select sizes to its WIDEST option, so without a cap the six
+  // spelled-out operators would set the panel's width on their own.
+  max-width: 9rem;
+  padding-inline: 0.375rem;
+}
+
+.filter-operand {
+  flex: 1 1 auto;
+  // In flex, `min-width: 0` is what lets a `type=date` control — which has a
+  // wide intrinsic size — shrink instead of pushing the panel past its
+  // max-width.
+  min-width: 0;
+}
+
+.filter-operator:focus-visible,
+.filter-operand:focus-visible {
+  outline: 2px solid var(--bs-focus-ring-color, #0d6efd);
+  outline-offset: 1px;
+}
+
+.filter-options {
+  display: flex;
+  flex-direction: column;
+  gap: 0.125rem;
+}
+
+.filter-option {
+  display: flex;
+  align-items: center;
+  gap: 0.375rem;
+  padding: 0.125rem 0.25rem;
+  border-radius: 0.25rem;
+  cursor: pointer;
+  // A long value must not widen the panel past its max-width.
+  overflow-wrap: anywhere;
+}
+
+.filter-option:hover {
+  background-color: var(--mp-datatable-row-hover-bg, rgba(0, 0, 0, 0.04));
+}
+
+// Values that were present when the filter was applied but are not in the data
+// any more. Listed so a selection can be widened without clearing it first —
+// dimmed, never hidden, and never removed from the tab order.
+.filter-remaining {
+  color: var(--bs-secondary-color, #6c757d);
+}
+
+.filter-loading,
+.filter-no-values,
+.filter-has-more {
+  display: block;
+  padding: 0.25rem;
+  color: var(--bs-secondary-color, #6c757d);
+  font-size: 0.875em;
+}
+
+.filter-summary {
+  margin-inline-start: 0.25rem;
+  // The trigger is width-neutral by contract (see `.filter-trigger`), so the
+  // summary must never be what makes it wide: it truncates instead.
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 0.875em;
 }
 
 @media (prefers-reduced-motion: reduce) {

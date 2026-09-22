@@ -15,6 +15,9 @@ import {
   type RowEventDetail,
   type SortChangeEventDetail,
   type SelectionChangeEventDetail,
+  type DatatableDistincts,
+  type DatatableLabels,
+  type FilterChangeDetail,
 } from '@mintplayer/web-components/datatable';
 import { ref, watch, onMounted, onBeforeUnmount } from 'vue';
 
@@ -45,6 +48,15 @@ const props = defineProps<{
   selectionMode?: DatatableSelectionMode;
   selectionStrategy?: TreeSelectionStrategy;
   selectedIds?: string[] | ReadonlyArray<string>;
+  /**
+   * Source of distinct values for the filter panels. Required whenever the
+   * element does not hold every row -- with `fetch`, external paging, or a tree
+   * with lazily loaded children, a locally computed list would omit values, so
+   * none is computed.
+   */
+  distincts?: DatatableDistincts | null;
+  /** Partial override of the component's user-visible strings. */
+  labels?: Partial<DatatableLabels> | null;
 }>();
 
 const emit = defineEmits<{
@@ -59,6 +71,7 @@ const emit = defineEmits<{
   (e: 'rowContextMenu', detail: RowEventDetail): void;
   (e: 'pageChange', detail: { page: number }): void;
   (e: 'perPageChange', detail: { perPage: number }): void;
+  (e: 'filterChange', detail: FilterChangeDetail): void;
 }>();
 
 const el = ref<MpDatatable | null>(null);
@@ -90,6 +103,8 @@ const syncProps = () => {
   if (props.selectionMode !== undefined) el.value.selectionMode = props.selectionMode;
   if (props.selectionStrategy !== undefined) el.value.selectionStrategy = props.selectionStrategy;
   if (props.selectedIds !== undefined) el.value.selectedIds = [...props.selectedIds];
+  if (props.distincts !== undefined) el.value.distincts = props.distincts;
+  if (props.labels !== undefined) el.value.labels = props.labels ?? undefined;
 };
 
 // One handler per dispatched WC event; the WC's `mp-datatable-*` names
@@ -113,6 +128,7 @@ const handlers: Record<string, (e: Event) => void> = {
   'mp-datatable-row-contextmenu': (e) => emit('rowContextMenu', (e as CustomEvent<RowEventDetail>).detail),
   'mp-datatable-page-change': (e) => emit('pageChange', (e as CustomEvent<{ page: number }>).detail),
   'mp-datatable-per-page-change': (e) => emit('perPageChange', (e as CustomEvent<{ perPage: number }>).detail),
+  'mp-datatable-filter-change': (e) => emit('filterChange', (e as CustomEvent<FilterChangeDetail>).detail),
 };
 
 const attachEvents = () => {
@@ -148,6 +164,8 @@ watch(() => props.expandedIds, syncProps, { deep: false });
 watch(() => props.selectionMode, syncProps);
 watch(() => props.selectionStrategy, syncProps);
 watch(() => props.selectedIds, syncProps, { deep: false });
+watch(() => props.distincts, syncProps);
+watch(() => props.labels, syncProps, { deep: false });
 
 // The WC owns the fetch loop, so there are no imperative fetch methods to
 // expose any more — just the underlying element for advanced access.

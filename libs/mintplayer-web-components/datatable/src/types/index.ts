@@ -3,10 +3,25 @@ export type {
   CellContent,
   CellRenderer,
   HeaderRenderer,
+  FilterRenderer,
   RowKey,
   RowRenderer,
   RowRenderContext,
 } from './column-def';
+export type {
+  DistinctValue,
+  DistinctValues,
+  DistinctsRequest,
+  DatatableDistincts,
+  FilterSelection,
+  FilterContext,
+  FilterChangeDetail,
+  ValuesFilterChangeDetail,
+  ComparisonFilterChangeDetail,
+  FilterMode,
+  FilterOperator,
+  FilterInputType,
+} from './filter';
 export type {
   DatatableFetchRequest,
   DatatableFetchResponse,
@@ -16,5 +31,5 @@ export type {
   TreeIdKey,
   TreeSelectionStrategy,
 } from './tree';
-export { DEFAULT_DATATABLE_LABELS } from './labels';
+export { DEFAULT_DATATABLE_LABELS, FILTER_OPERATOR_SYMBOLS, DEFAULT_FILTER_OPERATORS } from './labels';
 export type { DatatableLabels } from './labels';

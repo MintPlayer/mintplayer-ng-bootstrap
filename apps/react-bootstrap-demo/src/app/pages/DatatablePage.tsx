@@ -1,4 +1,4 @@
-import { useCallback, useState } from 'react';
+import { useCallback, useRef, useState } from 'react';
 import { BsDatatable } from '@mintplayer/react-bootstrap/datatable';
 import { BsCodeSnippet } from '@mintplayer/react-bootstrap/code-snippet';
 import type {
@@ -6,7 +6,11 @@ import type {
   DatatableFetchRequest,
   DatatableFetchResponse,
   SelectionChangeEventDetail,
+  DistinctValue,
+  FilterChangeDetail,
+  FilterOperator,
 } from '@mintplayer/web-components/datatable';
+import './DatatablePage.css';
 
 // In dev, /api is proxied to localhost:5000 by vite.config.mts. In prod we
 // hit the api subdomain (CORS-allowed in apps/api/Program.cs).
@@ -32,7 +36,72 @@ const ARTISTS: Artist[] = [
   { id: 4, name: 'Pink Floyd',  genre: 'Progressive', founded: 1965 },
 ];
 
+/** Mirrors the component's operator glyphs for the trigger summary. */
+const OPERATOR_SYMBOLS: Record<FilterOperator, string> = {
+  eq: '=', neq: '≠', lt: '<', lte: '≤', gt: '>', gte: '≥',
+};
+
+function compare(value: number, operator: FilterOperator, operand: number): boolean {
+  switch (operator) {
+    case 'eq': return value === operand;
+    case 'neq': return value !== operand;
+    case 'lt': return value < operand;
+    case 'lte': return value <= operand;
+    case 'gt': return value > operand;
+    case 'gte': return value >= operand;
+  }
+}
+
 const SIMPLE_SOURCE = `<BsDatatable columns={COLUMNS} data={ARTISTS} />`;
+
+const FILTER_SOURCE = `// filterable is the whole opt-in: with no filterRenderer the built-in
+// panel renders — search, include/exclude, a checkbox list of the
+// column's distinct values, and clear. No React code behind it.
+const columns: DatatableColumnDef[] = COLUMNS.map((col) =>
+  col.name === 'name'
+    ? { ...col, filterable: true,
+        filterActive: nameSelection.length > 0,   // visual only; the meaning is yours
+        filterSummary: nameSummary }
+    : col,
+);
+
+const [nameSelection, setNameSelection] = useState<DistinctValue[]>([]);
+const [nameInverse, setNameInverse] = useState(false);
+
+// A column asking a different question — still the built-in panel.
+const founded = { ...col, filterable: true,
+  filterMode: 'comparison', filterInputType: 'number' };
+
+// One handler, one discriminated union: switching on \`mode\` means the
+// comparison branch cannot read \`selected\`, and vice versa.
+const onFilterChange = useCallback((e: CustomEvent<FilterChangeDetail>) => {
+  const d = e.detail;
+  if (d.mode === 'values' && d.column === 'name') {
+    setNameSelection(d.selected);   // [] when the user clears
+    setNameInverse(d.inverse);      // the include/exclude toggle
+  } else if (d.mode === 'comparison' && d.column === 'founded') {
+    setFoundedOperator(d.operator); // 'eq' | 'neq' | 'lt' | 'lte' | 'gt' | 'gte'
+    setFoundedOperand(d.operand as number | null);   // null = cleared
+  }
+}, []);
+
+// ARTISTS is the UNFILTERED master copy. The value lists are computed from
+// the rows the element holds, so filtering the source would remove the
+// values needed to widen the filter again.
+const rows = ARTISTS.filter(a => {
+  if (nameSelection.length === 0) return true;
+  const hit = nameSelection.some(v => v.value === a.name);
+  return nameInverse ? !hit : hit;
+});
+
+// The table does not hold every row? Then it cannot compute a value list,
+// and says so rather than guessing from the page it has. Supply one:
+//   <BsDatatable distincts={async ({ column, search, signal }) =>
+//     (await fetch(\`/api/distincts/\${column}?q=\${search}\`, { signal })).json()} />
+// Resolve null for a column to hand that one back to the local path.
+
+<BsDatatable columns={columns} data={rows} onFilterChange={onFilterChange}
+  virtualScroll itemSize={40} />`;
 
 // ─── Lazy windowed-fetch demo (real API: 1000 seeded orders) ─────────────────
 // One `fetch` callback drives the whole table: the WC calls it for page 1 and
@@ -162,6 +231,121 @@ export function DatatablePage() {
     setSelectedRows(e.detail.selectedRows as TreeItem[]);
   }, []);
 
+  // ─── Column filters ───────────────────────────────────────────────────────
+  // The component holds no filter state and defines no predicate model: it
+  // collects a selection and emits it. The master copy, the predicate,
+  // `filterActive` and `filterSummary` are all this page's.
+  const [showFilters, setShowFilters] = useState(true);
+  const [nameSelection, setNameSelection] = useState<DistinctValue[]>([]);
+  const [nameInverse, setNameInverse] = useState(false);
+  const [foundedOperator, setFoundedOperator] = useState<FilterOperator>('gte');
+  const [foundedOperand, setFoundedOperand] = useState<number | null>(null);
+  const [genreStartsWith, setGenreStartsWith] = useState('');
+
+  // ARTISTS is the UNFILTERED master copy. `data` gets the filtered view, and
+  // the value lists are computed from the rows the element holds — so filtering
+  // the source would remove the values needed to widen the filter again.
+  const filteredArtists = ARTISTS.filter(
+    (a) =>
+      (nameSelection.length === 0
+        ? true
+        : nameInverse
+          ? !nameSelection.some((v) => v.value === a.name)
+          : nameSelection.some((v) => v.value === a.name)) &&
+      (foundedOperand === null ? true : compare(a.founded, foundedOperator, foundedOperand)) &&
+      (genreStartsWith === ''
+        ? true
+        : a.genre.toLowerCase().startsWith(genreStartsWith.toLowerCase())),
+  );
+
+  const nameSummary =
+    nameSelection.length === 0
+      ? undefined
+      : nameSelection.length === 1
+        ? nameSelection[0].label
+        : `${nameSelection.length} selected`;
+
+  // One handler, one discriminated union: switching on `mode` means the
+  // comparison branch cannot read `selected` and the values branch cannot read
+  // `operand` — the compiler enforces the real runtime shape.
+  const onFilterChange = useCallback((e: CustomEvent<FilterChangeDetail>) => {
+    const d = e.detail;
+    if (d.mode === 'values' && d.column === 'name') {
+      setNameSelection(d.selected);
+      setNameInverse(d.inverse);
+      return;
+    }
+    if (d.mode === 'comparison' && d.column === 'founded') {
+      setFoundedOperator(d.operator);
+      setFoundedOperand(d.operand === null ? null : Number(d.operand));
+    }
+  }, []);
+
+  // An override panel, for the case neither built-in question fits.
+  // `filterRenderer` returns a DOM Node — the same contract all three frameworks
+  // see — so it is built imperatively rather than as JSX, and it must return a
+  // STABLE node: the element mounts it once per open, so repainting it is this
+  // function's job, not the element's.
+  //
+  // The classes below are the PAGE's (see DatatablePage.css). Bootstrap's
+  // `.form-control` is only styled inside `bs-*` components in this workspace,
+  // and the panel renders in the document-root overlay, outside the table.
+  const genrePanel = useRef<HTMLElement | null>(null);
+  const genrePanelNode = (): Node => {
+    if (genrePanel.current) return genrePanel.current;
+    const wrap = document.createElement('div');
+    wrap.className = 'demo-filter-panel';
+    const label = document.createElement('label');
+    label.className = 'demo-filter-label';
+    label.textContent = 'Genre starts with';
+    const input = document.createElement('input');
+    input.type = 'text';
+    input.className = 'demo-filter-input';
+    label.htmlFor = input.id = 'react-filter-genre';
+    input.addEventListener('input', () => setGenreStartsWith(input.value));
+    wrap.append(label, input);
+    genrePanel.current = wrap;
+    return wrap;
+  };
+
+  const filterColumns: DatatableColumnDef[] = COLUMNS.map((col) => {
+    if (!showFilters) return col;
+    // No filterRenderer and no filterMode: the built-in value list renders.
+    // That is the whole opt-in.
+    if (col.name === 'name') {
+      return {
+        ...col,
+        filterable: true,
+        filterActive: nameSelection.length > 0,
+        filterSummary: nameSummary,
+      };
+    }
+    // Comparison mode: still the built-in panel, asking a different question.
+    if (col.name === 'founded') {
+      return {
+        ...col,
+        filterable: true,
+        filterMode: 'comparison',
+        filterInputType: 'number',
+        filterActive: foundedOperand !== null,
+        filterSummary:
+          foundedOperand === null
+            ? undefined
+            : `${OPERATOR_SYMBOLS[foundedOperator]} ${foundedOperand}`,
+      };
+    }
+    if (col.name === 'genre') {
+      return {
+        ...col,
+        filterable: true,
+        filterActive: genreStartsWith !== '',
+        filterSummary: genreStartsWith || undefined,
+        filterRenderer: genrePanelNode,
+      };
+    }
+    return col;
+  });
+
   return (
     <div className="demo-page">
       <h1>Datatable</h1>
@@ -250,6 +434,101 @@ export function DatatablePage() {
         )}
 
         <BsCodeSnippet code={TREE_SOURCE} language="tsx" />
+      </section>
+
+      <section>
+        <h2>Column filters</h2>
+        <p>
+          Mark a column <code>filterable</code> and the table grows a second
+          header row with a dropdown trigger in that column. Columns without it
+          get an empty, correctly-sized cell, so the row stays aligned. Drop them
+          all and the row is not rendered at all &mdash; toggle the checkbox to
+          see it.
+        </p>
+        <p>
+          A filterable column gets a <strong>built-in panel</strong> for free: a
+          search box, an include/exclude toggle, a checkbox list of the column's
+          distinct values, and a clear button. It lives in the web component, so
+          there is no React code behind it at all &mdash; the <em>Artist</em>{' '}
+          column below just sets <code>filterable</code>.
+        </p>
+        <p>
+          A checkbox list is the wrong question for a quantity, so a column can
+          ask a different one: <code>filterMode: 'comparison'</code> renders an
+          operator (=, &ne;, &lt;, &le;, &gt;, &ge;) and a single input, with{' '}
+          <code>filterInputType</code> choosing <code>number</code> (the
+          default) or <code>date</code> &mdash; the <em>Founded</em> column
+          below. Still the built-in panel: no renderer, no styling of your own.
+          Narrow the list with <code>filterOperators</code> when only some
+          operators make sense.
+        </p>
+        <p>
+          Quantities only &mdash; there is no <code>text</code> input type and no{' '}
+          <code>contains</code> operator. Comparing strings is either exact
+          match, which the value list already does better, or a lexicographic{' '}
+          <code>&gt;</code>, which is almost never what anyone means.{' '}
+          <strong>A free-text filter is a nest-your-own case</strong>, below.
+        </p>
+        <p>
+          You pick the mode per column and the component never infers it: a
+          numeric column is often an enum and a string column is often ordinal,
+          so any guess would be wrong about half the time.
+        </p>
+        <p>
+          When neither built-in question fits, give the column a{' '}
+          <code>filterRenderer</code> &mdash; <em>Genre</em> does. It returns a
+          DOM <code>Node</code> (the same contract all three frameworks see) and
+          must return a <strong>stable</strong> one: the element mounts it once
+          per open, so repainting it is the renderer's job.{' '}
+          <strong>That markup is yours, so you style it</strong> &mdash;
+          Bootstrap's <code>.form-control</code> is only styled inside{' '}
+          <code>bs-*</code> components here, and the panel renders in the
+          document-root overlay, outside the table.
+        </p>
+        <p>
+          The panel opens in an overlay at the document root, so it is not
+          clipped by the scroll container and not hidden behind the sticky
+          header &mdash; this demo runs in virtual-scroll mode, where both would
+          otherwise happen.
+        </p>
+        <p>
+          <strong>The component decides nothing about what a filter means.</strong>{' '}
+          It collects a selection and emits it on{' '}
+          <code>onFilterChange</code>; this page holds the unfiltered master
+          copy, applies the selection, and sets <code>filterActive</code> and{' '}
+          <code>filterSummary</code> back on the column.
+        </p>
+        <p className="text-body-secondary small">
+          <strong>Keyboard:</strong> <kbd>Tab</kbd> reaches each trigger,{' '}
+          <kbd>Enter</kbd>/<kbd>Space</kbd> opens the panel and moves focus to
+          its search box, <kbd>Tab</kbd> cycles inside it, <kbd>Esc</kbd> closes
+          and returns focus to the trigger. Clearing a filter moves focus back to
+          the search box, because the clear button disables itself.
+        </p>
+
+        <label className="d-block mb-3">
+          <input
+            type="checkbox"
+            checked={showFilters}
+            onChange={(e) => setShowFilters(e.target.checked)}
+          />{' '}
+          Show the filter row
+        </label>
+
+        <BsDatatable
+          className="windowed-table"
+          columns={filterColumns}
+          data={filteredArtists}
+          virtualScroll
+          itemSize={40}
+          rowKey={(row: unknown) => String((row as Artist).id)}
+          onFilterChange={onFilterChange}
+        />
+        <small className="text-body-secondary">
+          Showing {filteredArtists.length} of {ARTISTS.length} artists.
+        </small>
+
+        <BsCodeSnippet code={FILTER_SOURCE} language="tsx" />
       </section>
     </div>
   );

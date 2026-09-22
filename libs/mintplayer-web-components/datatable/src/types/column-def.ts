@@ -1,4 +1,11 @@
 import type { TemplateResult } from 'lit';
+import type {
+  FilterContext,
+  FilterInputType,
+  FilterMode,
+  FilterOperator,
+  FilterSelection,
+} from './filter';
 
 export type CellContent = string | number | boolean | null | undefined | TemplateResult | Node;
 
@@ -40,6 +47,24 @@ export type RowRenderer<T = unknown> = (
   context?: RowRenderContext,
 ) => ReadonlyArray<Node> | Node | undefined;
 
+/**
+ * Contents of a column's filter panel. Like every other renderer here, it is a
+ * plain function returning a DOM `Node` — the component appends it and never
+ * asks where it came from, so React/Vue pass one directly and the Angular
+ * wrapper bridges an `ng-template` through an `EmbeddedViewRef`.
+ *
+ * Returning `null` means "use the built-in panel" — that is what a wrapper
+ * returns when the consumer declared no override, and it is why a wrapper can
+ * install this unconditionally instead of deciding up front.
+ *
+ * The returned node is the CONSUMER's DOM: it is never stamped with this
+ * component's style scope, and none of its rules reach inside.
+ */
+export type FilterRenderer<T = unknown> = (
+  column: DatatableColumnDef<T>,
+  context: FilterContext,
+) => Node | null;
+
 export interface DatatableColumnDef<T = unknown> {
   /** Data property name + sort key. */
   name: string;
@@ -55,4 +80,50 @@ export interface DatatableColumnDef<T = unknown> {
   headerRenderer?: HeaderRenderer<T>;
   /** Forwarded to the cell as `class` attribute. */
   cellClass?: string;
+  /**
+   * Opt this column into the filter row. Default `false` — deliberately the
+   * opposite of `sortable`, because adding the row is a visible change to the
+   * table. The row itself is emitted only when at least one column sets this.
+   */
+  filterable?: boolean;
+  /**
+   * Contents of this column's filter panel. Ignored unless `filterable`.
+   * Absent — or present and returning `null` — renders the built-in panel.
+   */
+  filterRenderer?: FilterRenderer<T>;
+  /**
+   * Purely visual: marks the trigger as "this column has an active filter".
+   * The component attaches no meaning to it — what counts as active, and when,
+   * belongs to the consumer.
+   */
+  filterActive?: boolean;
+  /**
+   * Short description of the active filter, rendered on the trigger and folded
+   * into its accessible name. Also consumer-owned: the component never derives
+   * it from a selection, because only the consumer knows what it filtered on.
+   */
+  filterSummary?: string;
+  /**
+   * Initial (or externally restored) selection for this column's panel. Read
+   * when `columns` is set; the component then owns the selection until the next
+   * `columns` assignment, so this is a seed, not a binding.
+   */
+  filterSelection?: FilterSelection;
+  /**
+   * Which question the built-in panel asks: a checkbox list of distinct values
+   * (default) or an operator plus one operand. Ignored when `filterRenderer`
+   * returns a node, which replaces the panel entirely.
+   */
+  filterMode?: FilterMode;
+  /**
+   * `type` of the operand input in `'comparison'` mode. Default `'number'`,
+   * and it also decides how the operand is parsed back out. There is no text
+   * option -- a free-text filter is a nest-your-own case, see FilterInputType.
+   */
+  filterInputType?: FilterInputType;
+  /**
+   * Operators offered in `'comparison'` mode, in the order shown. Defaults to
+   * all six; narrow it when only some make sense (equality alone for an id).
+   */
+  filterOperators?: FilterOperator[];
 }

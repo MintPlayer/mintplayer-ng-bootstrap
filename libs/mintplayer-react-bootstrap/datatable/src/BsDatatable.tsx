@@ -7,6 +7,7 @@ import {
   type SelectionChangeEventDetail,
   type TreeRowExpandDetail,
   type TreeExpandedIdsChangeDetail,
+  type FilterChangeDetail,
 } from '@mintplayer/web-components/datatable';
 
 /**
@@ -26,6 +27,14 @@ import {
  * on-demand windows, tree children, pagination, sort/perPage reloads. The
  * consumer wires nothing else (no `totalRecords`, no event bridge). Selected
  * row objects arrive on `onSelectionChange`'s `detail.selectedRows`.
+ *
+ * Filtering: mark a column `filterable` and it gets the built-in panel — search,
+ * include/exclude, checkbox list, clear — with no wrapper code, because the
+ * panel lives in the web component. `distincts` supplies the value lists when
+ * the element does not hold every row; `onFilterChange` reports the selection,
+ * which the consumer applies. A column's `filterRenderer` replaces the panel
+ * entirely, and must return a STABLE node: it is mounted once per open, and
+ * repainting it is the renderer's job via `context.onChange`.
  */
 export const BsDatatable = createComponent({
   react: React,
@@ -42,5 +51,8 @@ export const BsDatatable = createComponent({
     onRowExpand: 'mp-datatable-row-expand' as EventName<CustomEvent<TreeRowExpandDetail>>,
     onRowCollapse: 'mp-datatable-row-collapse' as EventName<CustomEvent<TreeRowExpandDetail>>,
     onExpandedIdsChange: 'mp-datatable-expanded-ids-change' as EventName<CustomEvent<TreeExpandedIdsChangeDetail>>,
+    onFilterOpen: 'mp-datatable-filter-open' as EventName<CustomEvent<{ column: string }>>,
+    onFilterClose: 'mp-datatable-filter-close' as EventName<CustomEvent<{ column: string }>>,
+    onFilterChange: 'mp-datatable-filter-change' as EventName<CustomEvent<FilterChangeDetail>>,
   },
 });
