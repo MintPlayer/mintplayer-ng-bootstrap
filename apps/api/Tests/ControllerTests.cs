@@ -145,7 +145,13 @@ public class ControllerTests(ApiFactory factory) : IClassFixture<ApiFactory>
         var result = await PostSearchAsync<OrderRow>(
             "/api/orders/search",
             Search(Where("orderDate", "this-year", null), pageSize: 100, timezone: "Europe/Brussels"));
-        Assert.All(result.Items, o => Assert.Equal(DateTime.UtcNow.Year, o.OrderDate.Year));
+        // "This year" is evaluated in the query's timezone, so compare years there too: an order at
+        // 2025-12-31 23:27 UTC is 2026-01-01 00:27 in Brussels and correctly belongs to 2026.
+        var brussels = TimeZoneInfo.FindSystemTimeZoneById("Europe/Brussels");
+        var thisYear = TimeZoneInfo.ConvertTimeFromUtc(DateTime.UtcNow, brussels).Year;
+        Assert.All(result.Items, o => Assert.Equal(
+            thisYear,
+            TimeZoneInfo.ConvertTimeFromUtc(DateTime.SpecifyKind(o.OrderDate, DateTimeKind.Utc), brussels).Year));
     }
 
     [Fact]
