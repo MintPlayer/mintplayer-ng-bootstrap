@@ -292,11 +292,11 @@ describe('the size and date cells', () => {
     );
   });
 
-  // An unparseable timestamp yields "Invalid Date" from `toLocaleDateString`
-  // rather than throwing, so the cell shows that rather than the raw string —
-  // recorded because the `catch` suggests otherwise and can never fire.
-  it('does not throw on a timestamp it cannot parse', () => {
-    expect(() => format({ type: 'file', modifiedAt: 'not a date' })).not.toThrow();
+  // An unparseable timestamp makes `toLocaleDateString` return "Invalid Date"
+  // rather than throw, so the old try/catch fallback could never fire and the
+  // cell showed "Invalid Date". The raw value is more useful to the reader.
+  it('shows a timestamp it cannot parse as given, not as "Invalid Date"', () => {
+    expect(format({ type: 'file', modifiedAt: 'not a date' }).date).toBe('not a date');
   });
 });
 

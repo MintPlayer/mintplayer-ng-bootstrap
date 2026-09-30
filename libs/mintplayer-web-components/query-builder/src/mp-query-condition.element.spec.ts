@@ -90,6 +90,62 @@ describe('mp-query-condition (M3 editor mounting)', () => {
     expect((el.renderRoot as unknown as ParentNode).querySelector('input[type="date"]')).toBeTruthy();
   });
 
+  it('switching to a parameterless operator and back brings the value editor back', async () => {
+    const el = await mount({ kind: 'condition', id: 'c7', field: 'total', operator: 'gt', value: 1 });
+    const root = el.renderRoot as unknown as ParentNode;
+    el.node = { kind: 'condition', id: 'c7', field: 'total', operator: 'is-null', value: null };
+    await el.updateComplete;
+    expect(root.querySelector('input')).toBeNull();
+    el.node = { kind: 'condition', id: 'c7', field: 'total', operator: 'gt', value: null };
+    await el.updateComplete;
+    expect(root.querySelector('.qb-value input[type="number"]')).toBeTruthy();
+  });
+
+  it('stamps the built-in editor with the condition style scope, including chips added later', async () => {
+    const el = await mount({ kind: 'condition', id: 'c8', field: 'total', operator: 'in', value: [1] });
+    const root = el.renderRoot as unknown as ParentNode;
+    const wrap = root.querySelector('.qb-editor-chip-input') as HTMLElement;
+    expect(wrap.getAttribute('data-mps')).toBe('query-condition');
+    const add = root.querySelector('.qb-editor-chip-add') as HTMLInputElement;
+    add.value = '2';
+    add.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter' }));
+    const unstamped = Array.from(wrap.querySelectorAll('*')).filter((n) => n.getAttribute('data-mps') !== 'query-condition');
+    expect(wrap.querySelectorAll('.qb-editor-chip')).toHaveLength(2);
+    expect(unstamped).toEqual([]);
+  });
+
+  it('pressing on the drag handle emits qb-drag-start with the row and pointer position', async () => {
+    const el = await mount({ kind: 'condition', id: 'c9', field: 'total', operator: 'gt', value: 1 });
+    const root = el.renderRoot as unknown as ParentNode;
+    const details: Array<{ id: string; clientX: number; clientY: number; rowElement: HTMLElement }> = [];
+    el.addEventListener('qb-drag-start', (e) => details.push((e as CustomEvent).detail));
+    (root.querySelector('.qb-drag-handle') as HTMLElement)
+      .dispatchEvent(new PointerEvent('pointerdown', { bubbles: true, clientX: 12, clientY: 34 }));
+    expect(details).toHaveLength(1);
+    expect(details[0]).toMatchObject({ id: 'c9', clientX: 12, clientY: 34 });
+    expect(details[0]!.rowElement).toBe(root.querySelector('.qb-condition'));
+  });
+
+  it('Alt+Arrow from inside a value input does not reorder (the input owns its arrows)', async () => {
+    const el = await mount({ kind: 'condition', id: 'c10', field: 'total', operator: 'gt', value: 1 });
+    const root = el.renderRoot as unknown as ParentNode;
+    let moves = 0;
+    el.addEventListener('qb-keyboard-move', () => moves++);
+    (root.querySelector('.qb-value input') as HTMLInputElement)
+      .dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowUp', altKey: true, bubbles: true }));
+    // Plain arrows on the row are not a reorder either.
+    (root.querySelector('.qb-condition') as HTMLElement)
+      .dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowUp', bubbles: true }));
+    expect(moves).toBe(0);
+  });
+
+  it('an unknown field gets no value editor and a disabled operator select', async () => {
+    const el = await mount({ kind: 'condition', id: 'c11', field: 'ghost', operator: 'equals', value: 1 });
+    const root = el.renderRoot as unknown as ParentNode;
+    expect(root.querySelector('.qb-value')?.children.length ?? 0).toBe(0);
+    expect((root.querySelector('.qb-operator-select') as HTMLElement).hasAttribute('disabled')).toBe(true);
+  });
+
   it('disposing the WC cleans up the editor handle', async () => {
     const node: Condition = { kind: 'condition', id: 'c6', field: 'total', operator: 'gt', value: 100 };
     const el = await mount(node);

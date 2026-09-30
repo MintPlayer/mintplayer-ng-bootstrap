@@ -133,4 +133,23 @@ describe('visitTree (M10)', () => {
     expect(() => visitTree(tree, visitor, { schema: SCHEMA, rootEntity: 'orders' }))
       .toThrow(/has no field "mystery"/);
   });
+
+  it('throws when a relation targets an entity the schema does not declare', () => {
+    const schema: EntitySchema[] = [{
+      name: 'orders', label: 'Orders',
+      fields: [{ name: 'lines', label: 'Lines', type: 'relation', targetEntity: 'absent' }],
+    }];
+    const tree: Group = {
+      kind: 'group', id: 'g1', logic: 'and',
+      children: [{
+        kind: 'subquery', id: 'sq', field: 'lines', operator: 'in',
+        subQuery: { kind: 'group', id: 'sg', logic: 'and', children: [] },
+      }],
+    };
+    const visitor: TreeVisitor<string> = {
+      condition: () => 'c', group: () => 'g', subquery: (_n, _c, walkInner) => walkInner(),
+    };
+    expect(() => visitTree(tree, visitor, { schema, rootEntity: 'orders' }))
+      .toThrow(/relation target "absent" missing from schema/);
+  });
 });

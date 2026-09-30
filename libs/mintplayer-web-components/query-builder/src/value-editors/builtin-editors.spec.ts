@@ -196,3 +196,204 @@ describe('resolveBuiltinEditor', () => {
     expect((element as HTMLInputElement).disabled).toBe(true);
   });
 });
+
+// The host (mp-query-condition) creates an editor ONCE per field|operator|
+// disabled|registry key and keeps it across value changes, so ctx.value is the
+// value at creation time for the editor's whole life. An editor that rebuilds
+// its next value from ctx.value drops every edit but the last.
+describe('builtin editors keep their own edits (ctx.value is creation-time only)', () => {
+  it('between: editing "from" then "to" emits both bounds', () => {
+    const f: FieldDef = { name: 'total', label: 'Total', type: 'number' };
+    const { ctx, changes } = makeCtx(f, 'between', [null, null]);
+    const { element } = resolveBuiltinEditor(f, 'between')!(ctx);
+    const [from, to] = Array.from(element.querySelectorAll('input'));
+    from!.value = '5';
+    from!.dispatchEvent(new Event('input'));
+    to!.value = '10';
+    to!.dispatchEvent(new Event('input'));
+    expect(changes.at(-1)).toEqual([5, 10]);
+  });
+
+  it('chip input: adding two chips in a row keeps both, and both are rendered', () => {
+    const f: FieldDef = { name: 'name', label: 'Name', type: 'string' };
+    const { ctx, changes } = makeCtx(f, 'in', []);
+    const { element } = resolveBuiltinEditor(f, 'in')!(ctx);
+    const add = (v: string): void => {
+      const input = element.querySelector('.qb-editor-chip-add') as HTMLInputElement;
+      input.value = v;
+      input.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter' }));
+    };
+    add('Alice');
+    add('Bob');
+    expect(changes.at(-1)).toEqual(['Alice', 'Bob']);
+    expect(Array.from(element.querySelectorAll('.qb-editor-chip')).map((c) => c.firstChild?.textContent))
+      .toEqual(['Alice', 'Bob']);
+  });
+
+  it('chip input: removing a chip emits the remaining values and drops it from the DOM', () => {
+    const f: FieldDef = { name: 'name', label: 'Name', type: 'string' };
+    const { ctx, changes } = makeCtx(f, 'in', ['Alice', 'Bob', 'Carol']);
+    const { element } = resolveBuiltinEditor(f, 'in')!(ctx);
+    (element.querySelectorAll('.qb-editor-chip-remove')[1] as HTMLButtonElement).click();
+    expect(changes.at(-1)).toEqual(['Alice', 'Carol']);
+    expect(element.querySelectorAll('.qb-editor-chip')).toHaveLength(2);
+    // A second removal works against the already-reduced list.
+    (element.querySelectorAll('.qb-editor-chip-remove')[0] as HTMLButtonElement).click();
+    expect(changes.at(-1)).toEqual(['Carol']);
+  });
+
+  it('chip input: the add box keeps focus after adding a chip', () => {
+    const f: FieldDef = { name: 'name', label: 'Name', type: 'string' };
+    const { ctx } = makeCtx(f, 'in', []);
+    const { element } = resolveBuiltinEditor(f, 'in')!(ctx);
+    document.body.appendChild(element);
+    const input = element.querySelector('.qb-editor-chip-add') as HTMLInputElement;
+    input.focus();
+    input.value = 'Alice';
+    input.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter' }));
+    expect(document.activeElement).toBe(element.querySelector('.qb-editor-chip-add'));
+    element.remove();
+  });
+});
+
+describe('builtin editor parsing and formatting', () => {
+  it('integer chip input parses entries as integers', () => {
+    const f: FieldDef = { name: 'qty', label: 'Qty', type: 'integer' };
+    const { ctx, changes } = makeCtx(f, 'in', []);
+    const { element } = resolveBuiltinEditor(f, 'in')!(ctx);
+    const input = element.querySelector('.qb-editor-chip-add') as HTMLInputElement;
+    input.value = '7.9';
+    input.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter' }));
+    expect(changes).toEqual([[7]]);
+  });
+
+  it('number chip input parses entries as numbers', () => {
+    const f: FieldDef = { name: 'total', label: 'Total', type: 'number' };
+    const { ctx, changes } = makeCtx(f, 'in', []);
+    const { element } = resolveBuiltinEditor(f, 'in')!(ctx);
+    const input = element.querySelector('.qb-editor-chip-add') as HTMLInputElement;
+    input.value = '7.5';
+    input.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter' }));
+    expect(changes).toEqual([[7.5]]);
+  });
+
+  it('chip input ignores Enter on a blank entry and other keys', () => {
+    const f: FieldDef = { name: 'name', label: 'Name', type: 'string' };
+    const { ctx, changes } = makeCtx(f, 'in', []);
+    const { element } = resolveBuiltinEditor(f, 'in')!(ctx);
+    const input = element.querySelector('.qb-editor-chip-add') as HTMLInputElement;
+    input.value = '   ';
+    input.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter' }));
+    input.value = 'x';
+    input.dispatchEvent(new KeyboardEvent('keydown', { key: 'a' }));
+    expect(changes).toEqual([]);
+  });
+
+  it('disabled chip input disables the add box and every remove button', () => {
+    const f: FieldDef = { name: 'name', label: 'Name', type: 'string' };
+    const ctx: EditorContext = {
+      field: f, operator: 'in', value: ['a'], disabled: true, onChange: () => undefined,
+    };
+    const { element } = resolveBuiltinEditor(f, 'in')!(ctx);
+    expect((element.querySelector('.qb-editor-chip-add') as HTMLInputElement).disabled).toBe(true);
+    expect((element.querySelector('.qb-editor-chip-remove') as HTMLButtonElement).disabled).toBe(true);
+  });
+
+  it('a non-array value renders an empty chip list', () => {
+    const f: FieldDef = { name: 'name', label: 'Name', type: 'string' };
+    const { ctx } = makeCtx(f, 'in', 'not-an-array');
+    const { element } = resolveBuiltinEditor(f, 'in')!(ctx);
+    expect(element.querySelectorAll('.qb-editor-chip')).toHaveLength(0);
+  });
+
+  it('enum select: choosing the empty option emits null', () => {
+    const f: FieldDef = {
+      name: 'st', label: 'St', type: 'enum',
+      options: [{ value: 1, label: 'One' }, { value: 2, label: 'Two' }],
+    };
+    const { ctx, changes } = makeCtx(f, 'equals', 1);
+    const { element } = resolveBuiltinEditor(f, 'equals')!(ctx);
+    const select = element as HTMLSelectElement;
+    select.value = '';
+    select.dispatchEvent(new Event('change'));
+    select.value = '2';
+    select.dispatchEvent(new Event('change'));
+    // The option's typed value comes back, not its string form.
+    expect(changes).toEqual([null, 2]);
+  });
+
+  it('multi-select returns typed option values and treats a non-array value as none selected', () => {
+    const f: FieldDef = {
+      name: 'n', label: 'N', type: 'array',
+      options: [{ value: 1, label: 'One' }, { value: 2, label: 'Two' }],
+    };
+    const { ctx, changes } = makeCtx(f, 'any-of', null);
+    const { element } = resolveBuiltinEditor(f, 'any-of')!(ctx);
+    const select = element as HTMLSelectElement;
+    expect(select.selectedOptions).toHaveLength(0);
+    select.options[1]!.selected = true;
+    select.dispatchEvent(new Event('change'));
+    expect(changes).toEqual([[2]]);
+  });
+
+  it('date between formats Date and ISO-string bounds to YYYY-MM-DD', () => {
+    const f: FieldDef = { name: 'd', label: 'D', type: 'date' };
+    const { ctx } = makeCtx(f, 'between', [new Date('2026-03-04T10:00:00Z'), '2026-05-06T11:22:33Z']);
+    const { element } = resolveBuiltinEditor(f, 'between')!(ctx);
+    const [from, to] = Array.from(element.querySelectorAll('input'));
+    expect(from!.type).toBe('date');
+    expect([from!.value, to!.value]).toEqual(['2026-03-04', '2026-05-06']);
+  });
+
+  it('datetime between uses datetime-local and keeps minutes precision', () => {
+    const f: FieldDef = { name: 'dt', label: 'DT', type: 'datetime' };
+    const { ctx, changes } = makeCtx(f, 'between', [new Date('2026-03-04T10:15:00Z'), null]);
+    const { element } = resolveBuiltinEditor(f, 'between')!(ctx);
+    const [from, to] = Array.from(element.querySelectorAll('input'));
+    expect(from!.type).toBe('datetime-local');
+    expect(from!.value).toBe('2026-03-04T10:15');
+    to!.value = '2026-03-05T08:00';
+    to!.dispatchEvent(new Event('input'));
+    // The untouched bound is passed through as given; the edited one is the input's ISO text.
+    expect(changes).toEqual([[new Date('2026-03-04T10:15:00Z'), '2026-03-05T08:00']]);
+  });
+
+  it('integer between steps by 1 and parses integers; a non-array value starts empty', () => {
+    const f: FieldDef = { name: 'q', label: 'Q', type: 'integer' };
+    const { ctx, changes } = makeCtx(f, 'between', 'garbage');
+    const { element } = resolveBuiltinEditor(f, 'between')!(ctx);
+    const [from] = Array.from(element.querySelectorAll('input'));
+    expect(from!.getAttribute('step')).toBe('1');
+    expect(from!.value).toBe('');
+    from!.value = '3';
+    from!.dispatchEvent(new Event('input'));
+    expect(changes).toEqual([[3, null]]);
+  });
+
+  it('between on a non-numeric field falls back to number inputs', () => {
+    const f: FieldDef = { name: 's', label: 'S', type: 'string' };
+    const { ctx } = makeCtx(f, 'between', [1, 2]);
+    const { element } = resolveBuiltinEditor(f, 'between')!(ctx);
+    expect(Array.from(element.querySelectorAll('input')).map((i) => i.type)).toEqual(['number', 'number']);
+  });
+
+  it('datetime equals formats an ISO string to minutes precision', () => {
+    const f: FieldDef = { name: 'dt', label: 'DT', type: 'datetime' };
+    const { ctx } = makeCtx(f, 'equals', '2026-03-04T10:15:59Z');
+    const { element } = resolveBuiltinEditor(f, 'equals')!(ctx);
+    expect((element as HTMLInputElement).value).toBe('2026-03-04T10:15');
+  });
+
+  it('last-n-days with a missing n starts at 1', () => {
+    const f: FieldDef = { name: 'd', label: 'D', type: 'date' };
+    const withoutN = makeCtx(f, 'last-n-days', {});
+    const withNull = makeCtx(f, 'last-n-days', null);
+    expect((resolveBuiltinEditor(f, 'last-n-days')!(withoutN.ctx).element as HTMLInputElement).value).toBe('1');
+    expect((resolveBuiltinEditor(f, 'last-n-days')!(withNull.ctx).element as HTMLInputElement).value).toBe('1');
+  });
+
+  it('an enum field without options gets no scalar editor', () => {
+    expect(resolveBuiltinEditor({ name: 'e', label: 'E', type: 'enum' }, 'equals')).toBeNull();
+    expect(resolveBuiltinEditor({ name: 'e', label: 'E', type: 'enum', options: [] }, 'equals')).toBeNull();
+  });
+});

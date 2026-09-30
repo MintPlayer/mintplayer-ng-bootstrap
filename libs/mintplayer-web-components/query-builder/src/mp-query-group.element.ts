@@ -182,6 +182,7 @@ export class MpQueryGroupElement extends LitElement {
     return html`
       <div
         class="qb-group"
+        data-row-id=${node.id}
         role="group"
         aria-label=${
           // Depth rides in the NAME: aria-level is not an allowed attribute

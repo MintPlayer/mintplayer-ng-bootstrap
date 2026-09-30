@@ -21,8 +21,10 @@ import {
   setGroupLogic,
   updateCondition,
 } from './model/tree-ops';
-import { DragController, type DropTarget } from './dnd/drag-controller';
+import { DragController, type DragSource, type DropTarget } from './dnd/drag-controller';
 import { renderExpression } from './preview/render-expression';
+
+const QB_ELEMENTS = 'mp-query-group, mp-query-condition, mp-query-subquery, mp-query-builder';
 import {
   disabledContext,
   editorRegistryContext,
@@ -69,6 +71,7 @@ export class MpQueryBuilderElement extends LitElement {
     showSavedQueries: { attribute: 'show-saved-queries', type: Boolean, reflect: true },
     savedQueries: { attribute: false },
     depth: { attribute: false },
+    dragActive: { attribute: false },
     _isDragging: { state: true },
     _saveDraftName: { state: true },
   };
@@ -99,6 +102,11 @@ export class MpQueryBuilderElement extends LitElement {
   // `depth` is set by parent <mp-query-subquery> when this WC renders a nested
   // sub-query body. The outermost root keeps depth=0.
   depth = 0;
+
+  // Also set by the parent <mp-query-subquery>: the OUTER root is dragging.
+  // The root owns the drag, so without this a sub-query body rendered no drop
+  // slots and a row could never be dropped into it (cross-tree DnD, FR-13).
+  dragActive = false;
 
   // Stable id used to tag drop slots so cross-tree DnD can match.
   private _qbRootId = `qb-${Math.random().toString(36).slice(2, 10)}`;
@@ -192,28 +200,32 @@ export class MpQueryBuilderElement extends LitElement {
     if (this._pendingRefocusId === null) return;
     const id = this._pendingRefocusId;
     this._pendingRefocusId = null;
-    // Pierce through shadow roots to find the row that owns the moved node.
-    queueMicrotask(() => this._focusRowById(id));
+    // Rows re-render in their own (later) update cycles, and an unkeyed
+    // reorder reuses row DOM for a different node: focusing before they have
+    // settled lands on whichever row still carries the stale data-row-id.
+    void this._descendantsSettled().then(() => this._focusRowById(id));
+  }
+
+  private async _descendantsSettled(): Promise<void> {
+    const pending = Array.from(this.querySelectorAll(QB_ELEMENTS))
+      .filter((el) => (el as LitElement).isUpdatePending);
+    if (pending.length === 0) return;
+    await Promise.all(pending.map((el) => (el as LitElement).updateComplete));
+    return this._descendantsSettled();
   }
 
   private _focusRowById(id: string): void {
-    const visit = (root: ShadowRoot | Element): HTMLElement | null => {
-      const direct = root.querySelector(`[data-row-id="${id}"]`) as HTMLElement | null;
-      if (direct) {
-        // For subqueries, focus the header (the tabbable inner element) rather than the wrapper.
-        const header = direct.querySelector('.qb-subquery-header') as HTMLElement | null;
-        return header ?? direct;
-      }
-      for (const el of Array.from(root.querySelectorAll('*'))) {
-        if ((el as Element).shadowRoot) {
-          const hit = visit((el as Element).shadowRoot as ShadowRoot);
-          if (hit) return hit;
-        }
-      }
-      return null;
-    };
-    const target = visit(this.renderRoot as unknown as Element);
-    target?.focus();
+    // The whole family renders in the light DOM, so every row (sub-query
+    // bodies included) is a descendant of this element.
+    const row = this.querySelector(`[data-row-id="${id}"]`) as HTMLElement | null;
+    if (!row) return;
+    // A condition row is itself a tab stop. A sub-query's tab stop is its
+    // header; a group has none, so its "+ Add condition" button takes focus
+    // (a removed row re-homes on its parent group).
+    const inner = row.querySelector(
+      ':scope > .qb-subquery-header, :scope > .qb-group-header .qb-add-condition',
+    ) as HTMLElement | null;
+    (inner ?? row).focus();
   }
 
   /**
@@ -409,11 +421,14 @@ export class MpQueryBuilderElement extends LitElement {
   };
 
   private _finishDrag(event: PointerEvent): void {
+    // Read the source BEFORE end(): end() resets the controller, and reading
+    // it afterwards silently turned every drop into a no-op.
+    const source = this._drag.source();
     const target = this._drag.end(event);
     this._teardownDragListeners();
     this._isDragging = false;
-    if (!target) return;
-    this._applyDrop(target);
+    if (!target || !source) return;
+    this._applyDrop(source, target);
   }
 
   private _cancelDrag(): void {
@@ -432,37 +447,15 @@ export class MpQueryBuilderElement extends LitElement {
     this._pointerCancelHandler = null;
   }
 
-  private _applyDrop(target: DropTarget): void {
+  private _applyDrop(source: DragSource, target: DropTarget): void {
     const tree = this.query;
-    const source = this._drag.source();
-    if (!tree || !source) return;
+    if (!tree) return;
     // Resolve target schema if cross-tree (different qbRoot).
     const targetSchema = target.qbRoot !== source.qbRoot
-      ? this._schemaForGroup(target.parentId)
+      ? this._resolveEntityForNode(target.parentId) ?? undefined
       : undefined;
     const next = moveNode(tree, source.id, target.parentId, target.index, targetSchema);
     this._mutate(next);
-  }
-
-  private _schemaForGroup(groupId: string): EntitySchema | undefined {
-    const tree = this.query;
-    if (!tree) return undefined;
-    const root = this._entitySchemaForCurrentRoot();
-    if (!root) return undefined;
-    const found = { schema: root };
-    const walk = (n: Expression, schema: EntitySchema): boolean => {
-      if (n.id === groupId) { found.schema = schema; return true; }
-      if (n.kind === 'group') {
-        for (const c of n.children) if (walk(c, schema)) return true;
-      } else if (n.kind === 'subquery') {
-        const fieldDef = schema.fields.find((f) => f.name === n.field);
-        const target = fieldDef?.targetEntity ? this.schema.find((s) => s.name === fieldDef.targetEntity) ?? schema : schema;
-        if (walk(n.subQuery, target)) return true;
-      }
-      return false;
-    };
-    walk(tree, root);
-    return found.schema;
   }
 
   override disconnectedCallback(): void {
@@ -763,32 +756,18 @@ export class MpQueryBuilderElement extends LitElement {
   }
 
   private renderTreeRoot(tree: Expression): TemplateResult {
-    if (tree.kind === 'group') {
-      return html`<mp-query-group
-        .node=${tree}
-        .schema=${this.schema}
-        .currentEntity=${this.rootEntity}
-        .depth=${this.depth}
-        .isRoot=${true}
-        .qbRoot=${this._qbRootId}
-        .isDragging=${this._isDragging}
-      ></mp-query-group>`;
-    }
     // Non-group root: wrap in a synthetic group for rendering.
-    const synthetic: Group = {
-      kind: 'group',
-      id: 'synthetic-root',
-      logic: 'and',
-      children: [tree],
-    };
+    const root: Group = tree.kind === 'group'
+      ? tree
+      : { kind: 'group', id: 'synthetic-root', logic: 'and', children: [tree] };
     return html`<mp-query-group
-      .node=${synthetic}
+      .node=${root}
       .schema=${this.schema}
       .currentEntity=${this.rootEntity}
       .depth=${this.depth}
       .isRoot=${true}
       .qbRoot=${this._qbRootId}
-      .isDragging=${this._isDragging}
+      .isDragging=${this._isDragging || this.dragActive}
     ></mp-query-group>`;
   }
 }

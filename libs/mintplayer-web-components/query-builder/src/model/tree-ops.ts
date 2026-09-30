@@ -32,18 +32,22 @@ export function mapTree(
   return mapped;
 }
 
+/** {@link mapTree} for a transform that never drops a node, so the root always survives. */
+function mapNodes(tree: Expression, fn: (node: Expression) => Expression): Expression {
+  return mapTree(tree, fn) as Expression;
+}
+
 /** Find a node by id, walking the entire tree (incl. sub-query bodies). */
 export function findNodeById(tree: Expression, id: string): Expression | null {
   if (tree.id === id) return tree;
-  if (tree.kind === 'group') {
-    for (const c of tree.children) {
-      const found = findNodeById(c, id);
-      if (found) return found;
-    }
-  } else if (tree.kind === 'subquery') {
-    return findNodeById(tree.subQuery, id);
-  }
+  if (tree.kind === 'group') return firstHit(tree.children, (c) => findNodeById(c, id));
+  if (tree.kind === 'subquery') return findNodeById(tree.subQuery, id);
   return null;
+}
+
+/** The first non-null result of `fn` over `items`; `fn` is not called past the first hit. */
+function firstHit<T, R>(items: readonly T[], fn: (item: T) => R | null): R | null {
+  return items.reduce<R | null>((hit, item) => hit ?? fn(item), null);
 }
 
 /**
@@ -59,56 +63,20 @@ export function findParentGroup(
   if (tree.kind === 'group') {
     const idx = tree.children.findIndex((c) => c.id === id);
     if (idx >= 0) return { parent: tree, index: idx };
-    for (const c of tree.children) {
-      const found = findParentGroup(c, id);
-      if (found) return found;
-    }
-  } else if (tree.kind === 'subquery') {
-    return findParentGroup(tree.subQuery, id);
+    return firstHit(tree.children, (c) => findParentGroup(c, id));
   }
+  if (tree.kind === 'subquery') return findParentGroup(tree.subQuery, id);
   return null;
 }
 
 /** Collect all descendant ids of a node (incl. the node itself). */
 export function collectDescendantIds(node: Expression): Set<string> {
-  const out = new Set<string>();
-  const walk = (n: Expression): void => {
-    out.add(n.id);
-    if (n.kind === 'group') n.children.forEach(walk);
-    else if (n.kind === 'subquery') walk(n.subQuery);
+  const ids = (n: Expression): string[] => {
+    if (n.kind === 'group') return [n.id, ...n.children.flatMap(ids)];
+    if (n.kind === 'subquery') return [n.id, ...ids(n.subQuery)];
+    return [n.id];
   };
-  walk(node);
-  return out;
-}
-
-function resolveEntityForGroup(
-  tree: Expression,
-  rootEntity: string,
-  groupId: string,
-): string {
-  // Walk and remember the entity context at each group node.
-  const found = { entity: rootEntity, done: false };
-  const walk = (n: Expression, entity: string): void => {
-    if (found.done) return;
-    if (n.kind === 'group') {
-      if (n.id === groupId) {
-        found.entity = entity;
-        found.done = true;
-        return;
-      }
-      for (const c of n.children) walk(c, entity);
-    } else if (n.kind === 'subquery') {
-      // Sub-query body is rooted on the target entity, not the parent's entity.
-      // We pass through the sub-query's targetEntity if available; here we
-      // approximate by using the sub-query's field name → caller resolves the
-      // actual targetEntity via schema. For simplicity we keep `entity` until
-      // we reach the inner group, then the inner group itself carries the
-      // (caller-provided) target.
-      walk(n.subQuery, entity);
-    }
-  };
-  walk(tree, rootEntity);
-  return found.entity;
+  return new Set(ids(node));
 }
 
 /** Insert a child into the group with matching id. Returns a new tree; original unchanged. */
@@ -117,12 +85,12 @@ export function addChild(
   groupId: string,
   child: Expression,
 ): Expression {
-  return mapTree(tree, (n) => {
+  return mapNodes(tree, (n) => {
     if (n.kind === 'group' && n.id === groupId) {
       return { ...n, children: [...n.children, child] };
     }
     return n;
-  }) ?? tree;
+  });
 }
 
 export function addEmptyConditionTo(
@@ -164,10 +132,10 @@ export function setGroupLogic(
   groupId: string,
   logic: 'and' | 'or',
 ): Expression {
-  return mapTree(tree, (n) => {
+  return mapNodes(tree, (n) => {
     if (n.kind === 'group' && n.id === groupId) return { ...n, logic };
     return n;
-  }) ?? tree;
+  });
 }
 
 interface ConditionPatch {
@@ -182,7 +150,7 @@ export function updateCondition(
   conditionId: string,
   patch: ConditionPatch,
 ): Expression {
-  return mapTree(tree, (n) => {
+  return mapNodes(tree, (n) => {
     if ((n.kind === 'condition' || n.kind === 'subquery') && n.id === conditionId) {
       if (n.kind === 'subquery') {
         // Sub-queries only patch field/operator; value is the subQuery body.
@@ -202,7 +170,7 @@ export function updateCondition(
       return next;
     }
     return n;
-  }) ?? tree;
+  });
 }
 
 /**
@@ -215,17 +183,22 @@ export function changeConditionField(
   conditionId: string,
   newField: FieldDef,
 ): Expression {
-  return mapTree(tree, (n) => {
-    if (n.kind === 'condition' && n.id === conditionId) {
-      const allowed = operatorsForType(newField.type);
-      const operator: Operator = allowed.includes(n.operator) ? n.operator : (allowed[0] ?? 'equals');
-      const value = (allowed.includes(n.operator) && valueShapeFor(n.operator) === valueShapeFor(operator))
-        ? n.value
-        : defaultValueFor(operator);
-      return { ...n, field: newField.name, operator, value };
-    }
+  return mapNodes(tree, (n) => {
+    if (n.kind === 'condition' && n.id === conditionId) return fitConditionToField(n, newField);
     return n;
-  }) ?? tree;
+  });
+}
+
+/**
+ * Re-point a condition at `field`. An operator the field's type still allows
+ * is kept together with its value (same operator, so same value shape);
+ * otherwise the type's first operator and its default value replace them.
+ */
+function fitConditionToField(node: Condition, field: FieldDef): Condition {
+  const allowed = operatorsForType(field.type);
+  if (allowed.includes(node.operator)) return { ...node, field: field.name };
+  const operator: Operator = allowed[0] ?? 'equals';
+  return { ...node, field: field.name, operator, value: defaultValueFor(operator) };
 }
 
 /**
@@ -236,14 +209,14 @@ export function changeConditionOperator(
   conditionId: string,
   newOperator: Operator,
 ): Expression {
-  return mapTree(tree, (n) => {
+  return mapNodes(tree, (n) => {
     if (n.kind === 'condition' && n.id === conditionId) {
       const sameShape = valueShapeFor(n.operator) === valueShapeFor(newOperator);
       const value = sameShape ? n.value : defaultValueFor(newOperator);
       return { ...n, operator: newOperator, value };
     }
     return n;
-  }) ?? tree;
+  });
 }
 
 /**
@@ -281,7 +254,7 @@ export function moveNode(
   const detached = removeNode(tree, sourceId);
 
   // Insert reshaped into target.
-  return mapTree(detached, (n) => {
+  return mapNodes(detached, (n) => {
     if (n.kind === 'group' && n.id === targetParentId) {
       const next = [...n.children];
       const idx = Math.max(0, Math.min(targetIndex, next.length));
@@ -289,7 +262,7 @@ export function moveNode(
       return { ...n, children: next };
     }
     return n;
-  }) ?? detached;
+  });
 }
 
 /**
@@ -300,14 +273,7 @@ function resetNodeToSchema(node: Expression, schema: EntitySchema): Expression {
   const firstField = schema.fields.find((f) => f.type !== 'relation');
   if (node.kind === 'condition') {
     const existing = schema.fields.find((f) => f.name === node.field);
-    if (existing && existing.type !== 'relation') {
-      const allowed = operatorsForType(existing.type);
-      const op = allowed.includes(node.operator) ? node.operator : (allowed[0] ?? 'equals');
-      const value = (allowed.includes(node.operator) && valueShapeFor(node.operator) === valueShapeFor(op))
-        ? node.value
-        : defaultValueFor(op);
-      return { ...node, operator: op, value };
-    }
+    if (existing && existing.type !== 'relation') return fitConditionToField(node, existing);
     // Field missing — reset.
     if (!firstField) return node;
     const op = (operatorsForType(firstField.type)[0]) ?? 'equals';
@@ -327,5 +293,3 @@ function resetNodeToSchema(node: Expression, schema: EntitySchema): Expression {
 
 // Re-export `newId` so callers don't need a second import path.
 export { newId, emptyGroup, emptyCondition, emptySubquery };
-// Suppress unused warning in the resolveEntityForGroup helper (kept for M8 hit-test).
-void resolveEntityForGroup;

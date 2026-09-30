@@ -14,6 +14,7 @@ import { classMap } from 'lit/directives/class-map.js';
 import { styleMap } from 'lit/directives/style-map.js';
 import { datatableLightStyles } from '../styles';
 import { computeNextSort, sortRows, type SortColumn } from '../sort';
+import { KEYBOARD_RESIZE_STEP, MIN_COLUMN_WIDTH, resizedColumnWidth } from './column-resize';
 
 /**
  * Tier L (emulated encapsulation): this component has no shadow root, so every
@@ -1948,7 +1949,7 @@ export class MpDatatable extends LitElement {
               tabindex="0"
               aria-orientation="vertical"
               aria-label=${this.mergedLabels.resizeColumn(col.label ?? col.name)}
-              aria-valuemin="40"
+              aria-valuemin=${MIN_COLUMN_WIDTH}
               aria-valuenow=${Math.round(width ?? 0) || nothing}
               @pointerdown=${(ev: PointerEvent) => this.startColumnResize(col, ev)}
               @keydown=${(ev: KeyboardEvent) => this.onResizeHandleKeydown(col, ev)}
@@ -2013,7 +2014,7 @@ export class MpDatatable extends LitElement {
                     aria-label=${this.mergedLabels.selectRow(rowIndex + 1)}
                     .checked=${selected}
                     .indeterminate=${indeterminate}
-                    @change=${(ev: Event) => this.onRowCheckboxToggle(row, key, rowIndex, ev)}
+                    @change=${() => this.onRowCheckboxToggle(row, key)}
                   ></mp-checkbox>`}
             </td>`
           : nothing}
@@ -2568,11 +2569,11 @@ export class MpDatatable extends LitElement {
     return true;
   }
 
+  /**
+   * Bound only to the sort <button>, which renders only for sortable columns;
+   * the resize handle is the button's sibling, so its clicks never land here.
+   */
   private onHeaderClick(col: DatatableColumnDef, ev: MouseEvent): void {
-    const sortable = col.sortable ?? true;
-    if (!sortable) return;
-    const target = ev.target as HTMLElement;
-    if (target.closest('.resize-handle')) return;
     const next = computeNextSort(this._sortColumns, col.name, ev.shiftKey);
     this._sortColumns = next;
     this._page = 1; // a new sort returns to the first page
@@ -2626,7 +2627,10 @@ export class MpDatatable extends LitElement {
       this.emitSelectionChange();
       this.requestUpdate();
     }
-    this.dispatchEvent(
+    // The event is cancelable so a consumer opening its own menu can say so:
+    // cancelling it suppresses the native browser menu. Before, the flag was
+    // declared but the dispatch result ignored, so cancelling did nothing.
+    const notCancelled = this.dispatchEvent(
       new CustomEvent<RowEventDetail>('mp-datatable-row-contextmenu', {
         detail: { row, rowIndex, rowKey: key, originalEvent: ev },
         bubbles: true,
@@ -2634,29 +2638,20 @@ export class MpDatatable extends LitElement {
         cancelable: true,
       }),
     );
+    if (!notCancelled) ev.preventDefault();
   }
 
-  private onRowCheckboxToggle(row: unknown, key: string, _rowIndex: number, _ev: Event): void {
-    if (this._selectionMode === 'none') return;
-    if (this._selectionMode === 'single') {
-      this._selectedIds = new Set([key]);
-    } else {
-      const next = new Set(this._selectedIds);
-      const willSelect = !next.has(key);
-      if (willSelect) next.add(key);
-      else next.delete(key);
-
-      // Cascading: propagate to all currently-loaded descendants.
-      if (this._tree && this._selectionStrategy === 'cascading' && row != null) {
-        const descendantKeys = this.collectDescendantKeys(row);
-        if (willSelect) {
-          for (const k of descendantKeys) next.add(k);
-        } else {
-          for (const k of descendantKeys) next.delete(k);
-        }
-      }
-      this._selectedIds = next;
-    }
+  /** Row checkboxes render only in `'multiple'` mode, so this is multi-select toggling. */
+  private onRowCheckboxToggle(row: unknown, key: string): void {
+    const willSelect = !this._selectedIds.has(key);
+    // Cascading: the toggle propagates to every currently-loaded descendant.
+    const affected = new Set([
+      key,
+      ...(this._tree && this._selectionStrategy === 'cascading' ? this.collectDescendantKeys(row) : []),
+    ]);
+    this._selectedIds = willSelect
+      ? new Set([...this._selectedIds, ...affected])
+      : new Set([...this._selectedIds].filter((k) => !affected.has(k)));
     this.emitSelectionChange();
     this.requestUpdate();
   }
@@ -2789,7 +2784,10 @@ export class MpDatatable extends LitElement {
     const current = this._columnWidths.get(col.name)
       ?? th?.getBoundingClientRect().width
       ?? 100;
-    const next = Math.max(40, current + (ev.key === 'ArrowRight' ? 10 : -10));
+    const next = resizedColumnWidth(
+      current,
+      ev.key === 'ArrowRight' ? KEYBOARD_RESIZE_STEP : -KEYBOARD_RESIZE_STEP,
+    );
     this._columnWidths = new Map(this._columnWidths);
     this._columnWidths.set(col.name, next);
     this.requestUpdate();
@@ -2813,8 +2811,7 @@ export class MpDatatable extends LitElement {
 
   private onColumnResizeMove = (ev: PointerEvent): void => {
     if (!this.resizeState) return;
-    const dx = ev.clientX - this.resizeState.startX;
-    const next = Math.max(40, this.resizeState.startWidth + dx);
+    const next = resizedColumnWidth(this.resizeState.startWidth, ev.clientX - this.resizeState.startX);
     this._columnWidths = new Map(this._columnWidths);
     this._columnWidths.set(this.resizeState.columnName, next);
     this.requestUpdate();
