@@ -417,23 +417,27 @@ export class MpDatetimePickerElement extends LitElement {
   protected onCalendarSelectedDateChange = (event: Event): void => {
     const detail = (event as CustomEvent<Date>).detail;
     if (!(detail instanceof Date)) return;
-    const sameDay =
-      this.value !== null &&
-      this.value.getFullYear() === detail.getFullYear() &&
-      this.value.getMonth() === detail.getMonth() &&
-      this.value.getDate() === detail.getDate();
+    // The calendar's event is composed; the picker reports through value-change
+    // only, so the inner event must not escape the host.
+    event.stopPropagation();
     this.updateDatePart(detail);
-    if (sameDay) this.dateOverlay.close();
+    // Every pick closes the popup, a re-pick of the selected day included. This
+    // used to read "close only on the same day", and closed on a new day anyway
+    // because a second listener re-ran the handler after the value had changed.
+    this.dateOverlay.close();
   };
 
   protected onCalendarCurrentMonthChange = (event: Event): void => {
     const detail = (event as CustomEvent<Date>).detail;
-    if (detail instanceof Date) this._calendarMonth = detail;
+    if (!(detail instanceof Date)) return;
+    event.stopPropagation();
+    this._calendarMonth = detail;
   };
 
   protected onTimeListSelectedTimeChange = (event: Event): void => {
     const detail = (event as CustomEvent<Date>).detail;
     if (detail instanceof Date) {
+      event.stopPropagation();
       this.updateTimePart(detail);
       this.timeOverlay.close();
     }
@@ -571,6 +575,8 @@ export class MpDatetimePickerElement extends LitElement {
       ${this.liveAnnouncer.template()}
 
       <div class="popup popup-date" id="${this.datePopupId}" role="dialog" aria-label="${this.dateButtonLabel}">
+        <!-- One listener per popup, on the slot: it sees both the fallback widget
+             (a child of the slot) and a slotted consumer widget. -->
         <slot name="calendar"
           @selected-date-change="${this.onCalendarSelectedDateChange}"
           @current-month-change="${this.onCalendarCurrentMonthChange}"
@@ -583,8 +589,6 @@ export class MpDatetimePickerElement extends LitElement {
             .max="${this.max}"
             .firstDayOfWeek="${this.firstDayOfWeek}"
             .locale="${this.locale}"
-            @selected-date-change="${this.onCalendarSelectedDateChange}"
-            @current-month-change="${this.onCalendarCurrentMonthChange}"
           ></mp-calendar>
         </slot>
         <div class="popup-footer">
@@ -607,7 +611,6 @@ export class MpDatetimePickerElement extends LitElement {
             .maxMinutes="${timeBounds.maxMinutes}"
             .hour12="${this.hour12}"
             .locale="${this.locale}"
-            @selected-time-change="${this.onTimeListSelectedTimeChange}"
           ></mp-time-list>
         </slot>
         <div class="popup-footer">

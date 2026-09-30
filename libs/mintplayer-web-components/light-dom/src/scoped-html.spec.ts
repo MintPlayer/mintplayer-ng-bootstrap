@@ -122,6 +122,45 @@ describe('rewriteStatics — torture corpus', () => {
       '<!doctype html><?xml?><b data-mps="badge">x</b>',
     );
   });
+
+  it('a single-dash <!-x declaration is a bogus comment, not markup', () => {
+    expect(joinRewritten(['<!-x <i>y</i>><b>z</b>'])).toBe(
+      '<!-x <i>y</i>><b data-mps="badge">z</b>',
+    );
+  });
+
+  it('a stray quote in a tag (no =) hides a > inside it from the tag end', () => {
+    expect(joinRewritten(['<div "a>b"><i>x</i></div>'])).toBe(
+      '<div data-mps="badge" "a>b"><i data-mps="badge">x</i></div>',
+    );
+    expect(joinRewritten(["<div 'a>b'><i>x</i></div>"])).toBe(
+      `<div data-mps="badge" 'a>b'><i data-mps="badge">x</i></div>`,
+    );
+  });
+
+  it('whitespace around = before a quoted value', () => {
+    expect(joinRewritten(['<div class= "a>b"><i></i></div>'])).toBe(
+      '<div data-mps="badge" class= "a>b"><i data-mps="badge"></i></div>',
+    );
+  });
+
+  it('single-quoted value right after =', () => {
+    expect(joinRewritten(["<div title='a>b'><i></i></div>"])).toBe(
+      `<div data-mps="badge" title='a>b'><i data-mps="badge"></i></div>`,
+    );
+  });
+
+  it('an empty value (attr=>) ends the tag', () => {
+    expect(joinRewritten(['<div a=><i></i></div>'])).toBe(
+      '<div data-mps="badge" a=><i data-mps="badge"></i></div>',
+    );
+  });
+
+  it('an unquoted value ends at whitespace and the next attribute still parses', () => {
+    expect(joinRewritten(['<div a=b c="d>e"><i></i></div>'])).toBe(
+      '<div data-mps="badge" a=b c="d>e"><i data-mps="badge"></i></div>',
+    );
+  });
 });
 
 describe('scopedHtml — lit integration', () => {

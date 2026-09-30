@@ -17,6 +17,12 @@ import {
   subtreeDepth,
   levelOf,
   pathTo,
+  FITTED_VIEW,
+  panView,
+  pointFraction,
+  projectRect,
+  zoomViewAt,
+  type ViewWindow,
   type HierarchyHoverEventDetail,
   type HierarchyIndex,
   type HierarchyLoadErrorEventDetail,
@@ -580,67 +586,47 @@ export class MpHierarchyChart extends LitElement {
    * stays crisp and nothing re-rasterizes. Click/Enter/breadcrumb keep the
    * SEMANTIC re-root, which resets the view (the subtree fills the chart).
    */
-  private _viewZoom = 1;
-  private _viewX = 0;
-  private _viewY = 0;
+  private _view: ViewWindow = FITTED_VIEW;
   private static readonly MAX_ZOOM = 32;
 
   /** Current geometric magnification (1 = fitted). Read-only state for consumers/tests. */
   get zoomLevel(): number {
-    return this._viewZoom;
+    return this._view.zoom;
   }
 
   /** Programmatic geometric zoom, anchored at chart fractions (default: center). */
   setZoomLevel(zoom: number, anchorX = 0.5, anchorY = 0.5): void {
-    const next = Math.min(MpHierarchyChart.MAX_ZOOM, Math.max(1, Number(zoom) || 1));
-    // The content point under the anchor stays under the anchor.
-    const contentX = this._viewX + anchorX / this._viewZoom;
-    const contentY = this._viewY + anchorY / this._viewZoom;
-    this._viewZoom = next;
-    this._viewX = clampView(contentX - anchorX / next, next);
-    this._viewY = clampView(contentY - anchorY / next, next);
+    this._view = zoomViewAt(this._view, zoom, anchorX, anchorY, MpHierarchyChart.MAX_ZOOM);
     this.requestUpdate();
   }
 
   resetZoom(): void {
-    this._viewZoom = 1;
-    this._viewX = 0;
-    this._viewY = 0;
+    this._view = FITTED_VIEW;
     this.requestUpdate();
   }
 
   /** Pan by chart-screen fractions (drag / two-finger move). */
   private panBy(dxFraction: number, dyFraction: number): void {
-    if (this._viewZoom <= 1) return;
-    this._viewX = clampView(this._viewX - dxFraction / this._viewZoom, this._viewZoom);
-    this._viewY = clampView(this._viewY - dyFraction / this._viewZoom, this._viewZoom);
+    const next = panView(this._view, dxFraction, dyFraction);
+    if (next === this._view) return;
+    this._view = next;
     this.requestUpdate();
   }
 
   /** Map a normalized content rect through the view window to chart fractions. */
   private viewRect(x0: number, y0: number, x1: number, y1: number): { x0: number; y0: number; x1: number; y1: number } {
-    const z = this._viewZoom;
-    return {
-      x0: (x0 - this._viewX) * z,
-      y0: (y0 - this._viewY) * z,
-      x1: (x1 - this._viewX) * z,
-      y1: (y1 - this._viewY) * z,
-    };
+    return projectRect(this._view, x0, y0, x1, y1);
   }
 
   /** Pointer position as chart fractions, for anchor-at-cursor zooming. */
   private chartAnchor(event: { clientX: number; clientY: number }): { x: number; y: number } {
     const rect = this.shadowRoot?.querySelector<HTMLElement>('.chart')?.getBoundingClientRect();
-    if (!rect || !rect.width || !rect.height) return { x: 0.5, y: 0.5 };
-    return {
-      x: Math.min(1, Math.max(0, (event.clientX - rect.left) / rect.width)),
-      y: Math.min(1, Math.max(0, (event.clientY - rect.top) / rect.height)),
-    };
+    return pointFraction(rect, event.clientX, event.clientY);
   }
 
   /** Device px per normalized content unit — the label fit tests' scale. */
   private get effectiveScale(): number {
-    return this._hostScale * this._viewZoom;
+    return this._hostScale * this._view.zoom;
   }
 
   private onWheel(event: WheelEvent): void {
@@ -654,7 +640,7 @@ export class MpHierarchyChart extends LitElement {
     const unit = event.deltaMode === 1 ? 16 : event.deltaMode === 2 ? (this.clientHeight || 400) : 1;
     const delta = Math.max(-100, Math.min(100, event.deltaY * unit));
     const anchor = this.chartAnchor(event);
-    this.setZoomLevel(this._viewZoom * Math.exp(-delta * 0.005), anchor.x, anchor.y);
+    this.setZoomLevel(this._view.zoom * Math.exp(-delta * 0.005), anchor.x, anchor.y);
   }
 
   /* ----- touch pinch (S4-gated: pan-x pan-y delivers two pointers, Chromium-measured) ----- */
@@ -686,7 +672,7 @@ export class MpHierarchyChart extends LitElement {
     }
     // Mouse/pen: primary-button drag pans the zoomed view. At 1x there is
     // nothing to pan, so plain clicking is untouched.
-    if (this._viewZoom > 1 && event.button === 0) {
+    if (this._view.zoom > 1 && event.button === 0) {
       this._dragPointer = event.pointerId;
       this._dragLast = { x: event.clientX, y: event.clientY };
       this._dragTotal = 0;
@@ -708,7 +694,7 @@ export class MpHierarchyChart extends LitElement {
         const mid = this.pinchMidpoint();
         const anchor = this.chartAnchor({ clientX: mid.x, clientY: mid.y });
         // Continuous: spread magnifies, squeeze shrinks, midpoint movement pans.
-        this.setZoomLevel(this._viewZoom * (this.pinchDistance() / beforeDistance), anchor.x, anchor.y);
+        this.setZoomLevel(this._view.zoom * (this.pinchDistance() / beforeDistance), anchor.x, anchor.y);
         const rect = this.shadowRoot?.querySelector<HTMLElement>('.chart')?.getBoundingClientRect();
         if (rect?.width && rect.height) {
           this.panBy((mid.x - beforeMid.x) / rect.width, (mid.y - beforeMid.y) / rect.height);
@@ -997,8 +983,8 @@ export class MpHierarchyChart extends LitElement {
         const node = index.byId.get(id);
         if (!node) return;
         // Activating a node retries a failed OR empty load.
-    this._failedIds.delete(node.id);
-    this._loadedIds.delete(node.id);
+        this._failedIds.delete(node.id);
+        this._loadedIds.delete(node.id);
         if (node === this.focusedRoot) this.zoomOut();
         else if (node.children?.length || (node.hasChildren && this._loadChildren)) this.zoomTo(node.id);
         else this.emit<HierarchyNodeEventDetail>('hierarchy-node-select', { node, path: pathTo(index, node) });
@@ -1012,7 +998,7 @@ export class MpHierarchyChart extends LitElement {
           this._dismissedForId = id;
           break;
         }
-        if (this._viewZoom > 1) {
+        if (this._view.zoom > 1) {
           this.resetZoom();
           break;
         }
@@ -1027,11 +1013,11 @@ export class MpHierarchyChart extends LitElement {
       // anchored on the focused node so it stays in view.
       case '+':
       case '=':
-        this.zoomKeyboard(id, this._viewZoom * 1.5);
+        this.zoomKeyboard(id, this._view.zoom * 1.5);
         break;
       case '-':
       case '_':
-        this.zoomKeyboard(id, this._viewZoom / 1.5);
+        this.zoomKeyboard(id, this._view.zoom / 1.5);
         break;
       case '0':
         this.resetZoom();
@@ -1229,7 +1215,7 @@ export class MpHierarchyChart extends LitElement {
       maxDepth: depth,
       // The cull relaxes with magnification: a sliver you zoomed into is no
       // longer a sliver on screen.
-      minFraction: this._minAngle / 360 / this._viewZoom,
+      minFraction: this._minAngle / 360 / this._view.zoom,
     });
     // Rings fill the half-size: hole is 1 unit, ring d spans [d, d+1] units.
     const unit = VIEW / 2 / (depth + 1);
@@ -1245,12 +1231,12 @@ export class MpHierarchyChart extends LitElement {
     // The geometric view window IS the viewBox — no transform, no
     // re-rasterization, and label font-size (in viewBox units) divides by the
     // zoom so rendered text never scales.
-    const z = this._viewZoom;
+    const z = this._view.zoom;
     const holeCenter = this.viewRect(0.5, 0.5, 0.5, 0.5);
     // The zoom-out control is a real HTML button OVERLAY, not a node inside
     // the svg: role=tree only allows treeitem/group children.
     return html`<svg
-      viewBox="${this._viewX * VIEW} ${this._viewY * VIEW} ${VIEW / z} ${VIEW / z}"
+      viewBox="${this._view.x * VIEW} ${this._view.y * VIEW} ${VIEW / z} ${VIEW / z}"
       role="tree"
       aria-label=${label ?? nothing}
     >
@@ -1336,7 +1322,7 @@ export class MpHierarchyChart extends LitElement {
     const depth = this.renderedDepth;
     const nodes = partitionLayout(index, this._rootId, {
       maxDepth: depth,
-      minFraction: this._minSize / VIEW / this._viewZoom,
+      minFraction: this._minSize / VIEW / this._view.zoom,
     });
     const columns = depth + 1; // column 0 is the focus cell
     const label = this.treeLabel();
@@ -1374,7 +1360,7 @@ export class MpHierarchyChart extends LitElement {
     const depth = this.renderedDepth;
     const nodes = squarifyLayout(index, this._rootId, {
       maxDepth: depth,
-      minArea: (this._minSize / VIEW) ** 2 / (this._viewZoom * this._viewZoom),
+      minArea: (this._minSize / VIEW) ** 2 / (this._view.zoom * this._view.zoom),
       childPadding: 0.004,
       childHeaderSpace: 0.028,
     });
@@ -1445,11 +1431,6 @@ export class MpHierarchyChart extends LitElement {
       })}
     >${labeled ? html`<span class="cell-label">${this.labelText(n.node)}</span>` : nothing}</div>`;
   }
-}
-
-/** Keep the view window inside the content: x in [0, 1 - 1/zoom]. */
-function clampView(value: number, zoom: number): number {
-  return Math.min(1 - 1 / zoom, Math.max(0, value));
 }
 
 /** Computed backgrounds are rgb()/rgba(); 'transparent' computes to rgba(0, 0, 0, 0). */

@@ -3,6 +3,7 @@ import { query } from 'lit/decorators.js';
 import { HostAriaController } from '@mintplayer/web-components/a11y';
 import { styles } from './mp-signature-pad.element.template';
 import type { Signature } from './types/signature';
+import { toBitmapPoint, type CanvasPoint } from './canvas-point';
 
 /**
  * mp-signature-pad — freehand signature capture with a typed alternative.
@@ -156,30 +157,21 @@ export class MpSignaturePadElement extends LitElement {
 
   /* ---- Drawing ---- */
 
-  /**
-   * Map a pointer event into canvas BITMAP coordinates. `offsetX/offsetY` are
-   * CSS pixels of the rendered box; when the canvas is CSS-sized (e.g.
-   * `width: 100%`) those disagree with the `width`/`height` drawing space and
-   * every stroke would land offset and stretched. Scaling by
-   * bitmap-size / rendered-rect keeps drawing correct under any CSS sizing.
-   */
-  private toCanvasPoint(ev: PointerEvent): { x: number; y: number } {
+  /** Map a pointer event into canvas bitmap coordinates; see toBitmapPoint. */
+  private toCanvasPoint(ev: PointerEvent): CanvasPoint {
     const canvas = this.canvasEl;
-    if (!canvas) return { x: ev.offsetX, y: ev.offsetY };
-    const rect = canvas.getBoundingClientRect();
-    if (!rect.width || !rect.height) return { x: ev.offsetX, y: ev.offsetY };
-    return {
-      x: (ev.clientX - rect.left) * (canvas.width / rect.width),
-      y: (ev.clientY - rect.top) * (canvas.height / rect.height),
-    };
+    const offset = { x: ev.offsetX, y: ev.offsetY };
+    if (!canvas) return offset;
+    return toBitmapPoint({ x: ev.clientX, y: ev.clientY }, offset, canvas.getBoundingClientRect(), canvas);
   }
 
   private onPointerStart = (ev: PointerEvent): void => {
     ev.preventDefault();
     this._isDrawing = true;
     const point = this.toCanvasPoint(ev);
-    this._signature.strokes.push({ points: [point] });
-    this._signature = { ...this._signature };
+    // Copy-on-write: the model may be the consumer's own object (the signature
+    // setter keeps it by reference) and every emitted detail is a snapshot.
+    this._signature = { ...this._signature, strokes: [...this._signature.strokes, { points: [point] }] };
     if (this._context) {
       this._context.strokeStyle = 'black';
       this._context.beginPath();
@@ -192,8 +184,14 @@ export class MpSignaturePadElement extends LitElement {
     if (!this._isDrawing) return;
     ev.preventDefault();
     const point = this.toCanvasPoint(ev);
-    this._signature.strokes.at(-1)?.points.push(point);
-    this._signature = { ...this._signature };
+    const strokes = this._signature.strokes;
+    const last = strokes.at(-1);
+    if (last) {
+      this._signature = {
+        ...this._signature,
+        strokes: [...strokes.slice(0, -1), { ...last, points: [...last.points, point] }],
+      };
+    }
     if (this._context) {
       this._context.lineTo(point.x, point.y);
       this._context.stroke();

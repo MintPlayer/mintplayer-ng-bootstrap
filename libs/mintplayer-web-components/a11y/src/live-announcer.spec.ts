@@ -19,6 +19,14 @@ class TestHostAssertive extends LitElement {
   }
 }
 
+@customElement('test-host-no-role')
+class TestHostNoRole extends LitElement {
+  announcer = new LiveAnnouncerController(this, { omitRole: true });
+  override render(): TemplateResult {
+    return html`${this.announcer.template()}`;
+  }
+}
+
 async function flush(el: LitElement): Promise<void> {
   await el.updateComplete;
   await Promise.resolve();
@@ -119,5 +127,37 @@ describe('LiveAnnouncerController', () => {
     // on a disconnected host. Vitest's fake timers won't crash, but the test
     // documents the contract.
     expect(() => vi.advanceTimersByTime(2000)).not.toThrow();
+  });
+
+  it('delivers a message announced before the first render once the region exists', async () => {
+    const el = document.createElement('test-host-default') as TestHostDefault;
+    el.announcer.announce('Loaded 12 rows');
+    document.body.appendChild(el);
+    await flush(el);
+
+    expect(el.shadowRoot!.querySelector('[role="status"]')!.textContent).toBe('Loaded 12 rows');
+  });
+
+  it('re-fires an identical message by blanking the region for a microtask', async () => {
+    const el = document.createElement('test-host-default') as TestHostDefault;
+    document.body.appendChild(el);
+    await flush(el);
+    const region = el.shadowRoot!.querySelector('[role="status"]')!;
+
+    el.announcer.announce('Saved');
+    el.announcer.announce('Saved');
+    expect(region.textContent).toBe('');
+    await Promise.resolve();
+    expect(region.textContent).toBe('Saved');
+  });
+
+  it('omitRole keeps aria-live but renders no role, for hosts that already carry one', async () => {
+    const el = document.createElement('test-host-no-role') as TestHostNoRole;
+    document.body.appendChild(el);
+    await flush(el);
+
+    const region = el.shadowRoot!.querySelector('[aria-live]')!;
+    expect(region.getAttribute('aria-live')).toBe('polite');
+    expect(region.hasAttribute('role')).toBe(false);
   });
 });

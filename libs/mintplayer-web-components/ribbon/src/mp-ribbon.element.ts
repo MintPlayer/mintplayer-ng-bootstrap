@@ -2,8 +2,16 @@ import { css, html, LitElement, nothing, type TemplateResult } from 'lit';
 import { property, state } from 'lit/decorators.js';
 import { LiveAnnouncerController } from '@mintplayer/web-components/a11y';
 import type { RibbonGroupSize, RibbonReduceStep } from './mp-ribbon-tab.element';
-
-type RibbonItemSize = 'large' | 'medium' | 'small';
+import { bandTextColor } from './core/band-text-color';
+import { allocateKeyTip } from './core/key-tip-allocator';
+import {
+  deriveItemSize,
+  occupiedWidth,
+  planReduceStep,
+  RIBBON_GROUP_GAP,
+  sizeAtStepIndex,
+  type RibbonItemSize,
+} from './core/plan-reduce-steps';
 
 interface TabEntry {
   tabId: string;
@@ -784,56 +792,6 @@ export class MpRibbon extends LitElement {
     target.click();
   }
 
-  /**
-   * Deterministic 1-letter tip allocator (FR-12). Tries (in order):
-   * 1. Explicit `data-key-tip` attribute on the element.
-   * 2. First letter of the label that isn't already taken.
-   * 3. Subsequent consonants in the label.
-   * 4. Other letters of the label.
-   * 5. Digits 1-9 then 0 (fallback when every letter is taken).
-   */
-  private allocateKeyTip(label: string, explicit: string | null, used: Set<string>): string {
-    if (explicit) {
-      const tip = explicit.toUpperCase().slice(0, 1);
-      used.add(tip);
-      return tip;
-    }
-    const normalized = (label ?? '').toUpperCase();
-    const isVowel = (ch: string) => 'AEIOU'.includes(ch);
-    // First-letter pass
-    if (normalized.length > 0) {
-      const first = normalized[0];
-      if (/[A-Z0-9]/.test(first) && !used.has(first)) {
-        used.add(first);
-        return first;
-      }
-    }
-    // Consonants pass
-    for (let i = 1; i < normalized.length; i++) {
-      const ch = normalized[i];
-      if (/[A-Z]/.test(ch) && !isVowel(ch) && !used.has(ch)) {
-        used.add(ch);
-        return ch;
-      }
-    }
-    // Any remaining letter
-    for (let i = 0; i < normalized.length; i++) {
-      const ch = normalized[i];
-      if (/[A-Z]/.test(ch) && !used.has(ch)) {
-        used.add(ch);
-        return ch;
-      }
-    }
-    // Digits
-    for (const ch of '123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ0') {
-      if (!used.has(ch)) {
-        used.add(ch);
-        return ch;
-      }
-    }
-    return '?';
-  }
-
   /** Compute key-tip badges anchored under each tab button in the strip. */
   private deriveTabBadges(): KeyTipBadge[] {
     const result: KeyTipBadge[] = [];
@@ -850,7 +808,7 @@ export class MpRibbon extends LitElement {
         sourceTab?.getAttribute('data-key-tip') ??
         null;
       const label = button.textContent ?? '';
-      const tip = this.allocateKeyTip(label, explicit, used);
+      const tip = allocateKeyTip(label, explicit, used);
       const r = button.getBoundingClientRect();
       result.push({ tip, target: button, rect: { left: r.left + 4, top: r.bottom - 4 } });
     }
@@ -873,7 +831,7 @@ export class MpRibbon extends LitElement {
         if (trigger) {
           const explicit = group.getAttribute('data-key-tip');
           const label = group.getAttribute('label') ?? '';
-          const tip = this.allocateKeyTip(label, explicit, used);
+          const tip = allocateKeyTip(label, explicit, used);
           const r = trigger.getBoundingClientRect();
           result.push({ tip, target: trigger, rect: { left: r.left + 4, top: r.bottom - 6 } });
         }
@@ -885,7 +843,7 @@ export class MpRibbon extends LitElement {
         if (item.hasAttribute('disabled')) continue;
         const explicit = item.getAttribute('data-key-tip');
         const label = item.getAttribute('label') ?? '';
-        const tip = this.allocateKeyTip(label, explicit, used);
+        const tip = allocateKeyTip(label, explicit, used);
         const r = item.getBoundingClientRect();
         result.push({ tip, target: item, rect: { left: r.left + 2, top: r.bottom - 6 } });
       }
@@ -1146,7 +1104,7 @@ export class MpRibbon extends LitElement {
         i++;
       }
       const groupTabs = this.tabsList.slice(runStart, i);
-      const textColor = this.getBandTextColor(setColor);
+      const textColor = bandTextColor(setColor);
       const wrapperStyle =
         `--bs-ribbon-contextual-color: ${setColor};` +
         `--ribbon-contextual-text: ${textColor};`;
@@ -1162,21 +1120,6 @@ export class MpRibbon extends LitElement {
       `);
     }
     return result;
-  }
-
-  /**
-   * Office-faithful contrast rule: dark text on pastel bands, white text on
-   * saturated bands. Uses W3C relative luminance with a 0.6 cutoff. Accepts
-   * 6-digit hex; falls back to dark on parse failure (safe default).
-   */
-  private getBandTextColor(bg: string): string {
-    const hex = bg.replace('#', '').trim();
-    if (hex.length !== 6 || !/^[0-9a-fA-F]{6}$/.test(hex)) return '#262626';
-    const r = parseInt(hex.substring(0, 2), 16) / 255;
-    const g = parseInt(hex.substring(2, 4), 16) / 255;
-    const b = parseInt(hex.substring(4, 6), 16) / 255;
-    const luminance = 0.2126 * r + 0.7152 * g + 0.0722 * b;
-    return luminance >= 0.6 ? '#262626' : '#FFFFFF';
   }
 
   private renderTabButton(tab: TabEntry, _index: number): TemplateResult {
@@ -1450,79 +1393,37 @@ export class MpRibbon extends LitElement {
       return;
     }
 
+    // Each step is planned from fresh measurements: a collapsed group's width
+    // is only known once it has been laid out collapsed.
     const available = panel.clientWidth;
-    const gap = 8;
-    const occupied = () =>
-      groups.reduce(
-        (sum, g, i) => sum + g.offsetWidth + (i > 0 ? gap : 0),
-        0
-      );
+    const measure = () => ({
+      available,
+      gap: RIBBON_GROUP_GAP,
+      groups: groups.map((g) => ({
+        width: g.offsetWidth,
+        naturalWidth: this.naturalWidths.get(g) ?? 0,
+        priority: Number(g.getAttribute('priority') ?? '0'),
+        autoScale: g.getAttribute('auto-scale') !== 'false',
+        collapsed: g.getAttribute('data-resolved-size') === 'popup',
+      })),
+    });
     let mutated = false;
 
-    const priorityOf = (g: HTMLElement) =>
-      Number(g.getAttribute('priority') ?? '0');
-    const isAutoScale = (g: HTMLElement) =>
-      g.getAttribute('auto-scale') !== 'false';
-
-    // Choose which group to collapse next: among non-popup, auto-scale groups,
-    // pick the one with the lowest priority. Tiebreak: rightmost (DOM-order).
-    const pickCollapseCandidate = (): HTMLElement | null => {
-      let chosen: HTMLElement | null = null;
-      let chosenPriority = Infinity;
-      let chosenIndex = -1;
-      for (let i = 0; i < groups.length; i++) {
-        const g = groups[i];
-        if (g.getAttribute('data-resolved-size') === 'popup') continue;
-        if (!isAutoScale(g)) continue;
-        const p = priorityOf(g);
-        if (p < chosenPriority || (p === chosenPriority && i > chosenIndex)) {
-          chosen = g;
-          chosenPriority = p;
-          chosenIndex = i;
-        }
-      }
-      return chosen;
-    };
-
-    // On grow: expand highest-priority-first; tiebreak leftmost.
-    const pickExpandCandidate = (): HTMLElement | null => {
-      let chosen: HTMLElement | null = null;
-      let chosenPriority = -Infinity;
-      let chosenIndex = Infinity;
-      for (let i = 0; i < groups.length; i++) {
-        const g = groups[i];
-        if (g.getAttribute('data-resolved-size') !== 'popup') continue;
-        const p = priorityOf(g);
-        if (p > chosenPriority || (p === chosenPriority && i < chosenIndex)) {
-          chosen = g;
-          chosenPriority = p;
-          chosenIndex = i;
-        }
-      }
-      return chosen;
-    };
-
-    // Collapse priority-aware until content fits or no groups can collapse.
-    let safety = groups.length;
-    while (occupied() > available && safety-- > 0) {
-      const candidate = pickCollapseCandidate();
-      if (!candidate) break;
-      candidate.setAttribute('data-resolved-size', 'popup');
-      mutated = true;
-    }
-
-    // If we have headroom, try expanding the highest-priority popup'd group.
-    safety = groups.length;
-    while (occupied() < available && safety-- > 0) {
-      const candidate = pickExpandCandidate();
-      if (!candidate) break;
-      const natural = this.naturalWidths.get(candidate) ?? 0;
-      const current = candidate.offsetWidth;
-      const projected = occupied() + (natural - current);
-      if (projected > available) break;
-      candidate.removeAttribute('data-resolved-size');
-      mutated = true;
-    }
+    // Collapse until the content fits or nothing can collapse, then expand
+    // while the next expansion still fits. Each phase is bounded by the group
+    // count so a layout that never settles cannot spin.
+    const runPhase = (action: 'collapse' | 'expand') =>
+      groups.some(() => {
+        const step = planReduceStep(measure());
+        if (step?.action !== action) return true;
+        const group = groups[step.index];
+        if (action === 'collapse') group.setAttribute('data-resolved-size', 'popup');
+        else group.removeAttribute('data-resolved-size');
+        mutated = true;
+        return false;
+      });
+    runPhase('collapse');
+    runPhase('expand');
 
     // Re-measure once more if we mutated; layout may settle into a new state
     // that itself crosses a threshold (e.g. expanding one then needing to
@@ -1585,12 +1486,11 @@ export class MpRibbon extends LitElement {
     steps: readonly RibbonReduceStep[],
     idealSizes: Record<string, RibbonGroupSize>
   ): boolean {
-    const gap = 8;
     const available = tab.clientWidth;
     const occupied = () =>
-      groups.reduce(
-        (sum, g, i) => sum + g.offsetWidth + (i > 0 ? gap : 0),
-        0
+      occupiedWidth(
+        groups.map((g) => g.offsetWidth),
+        RIBBON_GROUP_GAP
       );
     const groupById = (id: string) =>
       groups.find((g) => g.getAttribute('group-id') === id) ?? null;
@@ -1622,8 +1522,8 @@ export class MpRibbon extends LitElement {
         applied--;
         continue;
       }
-      const projectedSize = this.sizeAtStepIndex(steps, applied - 1, groupId, idealSizes);
-      const currentSize = this.sizeAtStepIndex(steps, applied, groupId, idealSizes);
+      const projectedSize = sizeAtStepIndex(steps, applied - 1, groupId, idealSizes);
+      const currentSize = sizeAtStepIndex(steps, applied, groupId, idealSizes);
       // Try the revert tentatively; measure.
       this.applyGroupSize(group, projectedSize, idealSizes);
       if (occupied() > available) {
@@ -1637,24 +1537,6 @@ export class MpRibbon extends LitElement {
 
     this.appliedReduceSteps.set(tab, applied);
     return mutated;
-  }
-
-  /**
-   * Compute the resolved size of `groupId` after the first `count` steps of
-   * `steps` have been applied. The starting point is `idealSizes[groupId]`
-   * or `large` if unset.
-   */
-  private sizeAtStepIndex(
-    steps: readonly RibbonReduceStep[],
-    count: number,
-    groupId: string,
-    idealSizes: Record<string, RibbonGroupSize>
-  ): RibbonGroupSize {
-    let size: RibbonGroupSize = idealSizes[groupId] ?? 'large';
-    for (let i = 0; i < count; i++) {
-      if (steps[i][0] === groupId) size = steps[i][1];
-    }
-    return size;
   }
 
   /**
@@ -1684,28 +1566,13 @@ export class MpRibbon extends LitElement {
         this.originalItemSizes.set(item, cur);
       }
       const original = this.originalItemSizes.get(item)!;
-      const next = this.deriveItemSize(original, target);
+      const next = deriveItemSize(original, target);
       if (item.getAttribute('size') !== next) {
         item.setAttribute('size', next);
       }
     }
     // Mark groupId so other code can read this group's idealSize.
     void idealSizes;
-  }
-
-  /**
-   * Compute the rendered item size given its consumer-declared "original"
-   * size and the group's resolved size. Items can only ever shrink, never
-   * grow above their original.
-   */
-  private deriveItemSize(
-    original: RibbonItemSize,
-    groupSize: Exclude<RibbonGroupSize, 'popup'>
-  ): RibbonItemSize {
-    if (groupSize === 'large') return original;
-    if (groupSize === 'small') return 'small';
-    // groupSize === 'medium' — downsize large → medium; keep medium/small.
-    return original === 'large' ? 'medium' : original;
   }
 
   private collectGroupItems(group: HTMLElement): HTMLElement[] {

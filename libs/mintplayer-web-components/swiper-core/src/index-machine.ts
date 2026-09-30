@@ -116,7 +116,9 @@ export class IndexMachine {
     const raw = this.index + delta;
     const resolved = this.resolve(raw);
     if (resolved === null) return;
-    if (!this.wrap && resolved === this.index && !this.dragging) return;
+    // Nowhere to go: a clamped edge (wrap off) or a single-slide deck, where
+    // wrapping would slide the only slide out into an empty wrap cell.
+    if (resolved === this.index && !this.dragging) return;
     // The visual target keeps the raw value so a wrap animates through the
     // host's wrap cell (-1 or count) instead of rewinding across the deck.
     this.transitionTo(raw, resolved);
@@ -151,8 +153,8 @@ export class IndexMachine {
     const exceeded = Math.abs(deltaPx) >= this.minimumOffsetPx;
     const raw = exceeded ? this.index + (deltaPx < 0 ? 1 : -1) : this.index;
     const resolved = this.resolve(raw);
-    if (resolved === null || (!this.wrap && resolved === this.index && raw !== this.index)) {
-      // Edge with wrap off: snap back to the current slide.
+    if (resolved === null || (resolved === this.index && raw !== this.index)) {
+      // Nowhere to go (edge with wrap off, or a single-slide deck): snap back.
       this.transitionTo(this.index, this.index);
       return;
     }

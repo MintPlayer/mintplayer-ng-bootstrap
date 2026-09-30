@@ -82,4 +82,44 @@ describe('injectMpDropdownDsd', () => {
     );
     expect(out).toContain('role="menuitem"');
   });
+
+  it('stamps a void item directly, in the enclosing menu\'s mode', () => {
+    expect(injectMpDropdownDsd('<mp-dropdown-menu><input class="dropdown-item" type="button"></mp-dropdown-menu>'))
+      .toContain('<input class="dropdown-item" type="button" role="menuitem">');
+    expect(injectMpDropdownDsd("<mp-dropdown-menu mode='listbox'><img class=dropdown-item /></mp-dropdown-menu>"))
+      .toContain('<img class=dropdown-item / role="option">');
+  });
+
+  it('keeps an authored role on a void item', () => {
+    const out = injectMpDropdownDsd('<mp-dropdown-menu><hr class="dropdown-item" role="none"></mp-dropdown-menu>');
+    expect(out).not.toContain('menuitem');
+  });
+
+  it('reads single-quoted and unquoted class values', () => {
+    const out = injectMpDropdownDsd(
+      "<mp-dropdown-menu><li class='x dropdown-item'>A</li><li class=dropdown-item>B</li></mp-dropdown-menu>",
+    );
+    expect(out.match(/role="menuitem"/g)).toHaveLength(2);
+  });
+
+  it('leaves both item and control alone when the control carries its own role', () => {
+    const out = injectMpDropdownDsd(
+      '<mp-dropdown-menu><li class="dropdown-item"><button role="menuitemcheckbox">A</button></li></mp-dropdown-menu>',
+    );
+    expect(out).not.toContain('presentation');
+    expect(out).not.toContain('role="menuitem"');
+  });
+
+  it('only the first control of an item gets the role', () => {
+    const out = injectMpDropdownDsd(
+      '<mp-dropdown-menu><li class="dropdown-item"><a href="/a">A</a><button>B</button></li></mp-dropdown-menu>',
+    );
+    expect(out).toContain('<button>B</button>');
+    expect(out.match(/role="menuitem"/g)).toHaveLength(1);
+  });
+
+  it('ignores a class attribute without a value', () => {
+    const html = '<mp-dropdown-menu><li class>A</li></mp-dropdown-menu>';
+    expect(injectMpDropdownDsd(html)).not.toContain('role=');
+  });
 });
