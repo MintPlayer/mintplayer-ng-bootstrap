@@ -60,7 +60,6 @@ export class BsCarouselComponent {
   readonly wrap = input(true);
   /** Arrow/Home/End navigation on the focused viewport. */
   readonly keyboardEvents = input(true);
-  /** Accessible label for the carousel region. */
   /** Two-way: whether autoplay is paused. */
   readonly paused = model(false);
 
@@ -69,6 +68,9 @@ export class BsCarouselComponent {
   readonly animationStart = output<void>();
   readonly animationEnd = output<void>();
 
+  // Deliberately NOT viewChild.required: public methods read it, and a caller that reaches
+  // this component through DI (a child's constructor, say) can call one before this
+  // component's view exists. There, NG0951 would throw where the guard is a no-op.
   protected readonly element = viewChild<ElementRef<MpCarousel>>('element');
 
   /** Presence/string-or-absent attributes derived once via signals. */

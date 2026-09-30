@@ -55,8 +55,7 @@ export class BsRadioComponent {
 
   constructor() {
     effect(() => {
-      const el = this.radioRef()?.nativeElement;
-      if (!el) return;
+      const el = this.radioRef().nativeElement;
       el.type = this.type();
       el.value = this.value();
       el.name = this.nameResult();

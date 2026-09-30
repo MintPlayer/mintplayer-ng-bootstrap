@@ -19,7 +19,7 @@
             <span class="d-block text-truncate text-secondary">{{ upload.file.name }}</span>
             <span class="d-block text-grey mb-0">{{ upload.file.size | bsFormatBytes }}</span>
             <bs-progress [height]="4">
-                <bs-progress-bar [minimum]="0" [maximum]="upload.file.size" [value]="upload.progress" [ariaLabel]="'Upload progress for ' + upload.file.name"></bs-progress-bar>
+                <bs-progress-bar [minimum]="0" [maximum]="upload.file.size" [value]="upload.progress" [ariaLabel]="progressLabel()(upload.file.name)"></bs-progress-bar>
             </bs-progress>
         </div>
     </div>

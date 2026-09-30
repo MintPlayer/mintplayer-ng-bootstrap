@@ -56,7 +56,7 @@ export class BsDatepickerComponent implements AfterViewInit, ControlValueAccesso
   disabled = input<boolean>(false);
   protected readonly effectiveDisabled = signal(false);
 
-  readonly wcRef = viewChild<ElementRef<MpDatepickerElement>>('wc');
+  readonly wcRef = viewChild.required<ElementRef<MpDatepickerElement>>('wc');
 
   private onChange: (value: Date | null) => void = () => {};
   private onTouched: () => void = () => {};
@@ -65,8 +65,7 @@ export class BsDatepickerComponent implements AfterViewInit, ControlValueAccesso
   constructor() {
     // Mirror inputs to the WC.
     effect(() => {
-      const wc = this.wcRef()?.nativeElement;
-      if (!wc) return;
+      const wc = this.wcRef().nativeElement;
       wc.selectedDate = this.selectedDate();
       wc.currentMonth = this.currentMonth();
       wc.disableDateFn = this.disableDateFn() ?? null;

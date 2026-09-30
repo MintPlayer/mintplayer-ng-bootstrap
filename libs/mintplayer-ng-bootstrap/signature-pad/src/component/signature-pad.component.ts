@@ -71,7 +71,6 @@ export class BsSignaturePadComponent {
     // event → model → property round trip cannot loop.
     effect(() => {
       const ref = this.elementRef();
-      if (!ref) return;
       ref.nativeElement.signature = this.signature();
     });
   }
@@ -82,11 +81,11 @@ export class BsSignaturePadComponent {
 
   /** Remove the most recent stroke. */
   undo(): void {
-    this.elementRef()?.nativeElement.undo();
+    this.elementRef().nativeElement.undo();
   }
 
   /** Wipe strokes and typed text. */
   clear(): void {
-    this.elementRef()?.nativeElement.clear();
+    this.elementRef().nativeElement.clear();
   }
 }

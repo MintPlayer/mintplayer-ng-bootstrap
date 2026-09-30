@@ -29,6 +29,12 @@ export class BsFileUploadComponent {
   readonly placeholder = input('Drop files to upload');
   readonly ariaLabel = input<string>('File upload drop zone');
   readonly inputAriaLabel = input<string>('Choose files to upload');
+  /** Live-region announcement after one file is added. Override to translate. */
+  readonly fileAddedAnnouncement = input<(fileName: string) => string>((fileName) => `Added ${fileName}`);
+  /** Live-region announcement after several files are added at once. Override to translate. */
+  readonly filesAddedAnnouncement = input<(count: number) => string>((count) => `Added ${count} files`);
+  /** Accessible name of the default template's progress bar. Override to translate. */
+  readonly progressLabel = input<(fileName: string) => string>((fileName) => `Upload progress for ${fileName}`);
 
   readonly colors = Color;
   isDraggingFile = signal(false);
@@ -82,9 +88,9 @@ export class BsFileUploadComponent {
     this.filesDropped.emit(newFiles);
 
     if (newFiles.length === 1) {
-      this.announcer.announce(`Added ${newFiles[0].file.name}`);
+      this.announcer.announce(this.fileAddedAnnouncement()(newFiles[0].file.name));
     } else if (newFiles.length > 1) {
-      this.announcer.announce(`Added ${newFiles.length} files`);
+      this.announcer.announce(this.filesAddedAnnouncement()(newFiles.length));
     }
   }
 }

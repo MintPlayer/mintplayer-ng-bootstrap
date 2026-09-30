@@ -31,13 +31,12 @@ export class BsCalendarComponent implements AfterViewInit {
   firstDayOfWeek = input<FirstDayOfWeek>(1);
   locale = input<string | undefined>(undefined);
 
-  readonly wcRef = viewChild<ElementRef<MpCalendarElement>>('wc');
+  readonly wcRef = viewChild.required<ElementRef<MpCalendarElement>>('wc');
 
   constructor() {
     // Sync Angular signal state into the WC properties on every change.
     effect(() => {
-      const wc = this.wcRef()?.nativeElement;
-      if (!wc) return;
+      const wc = this.wcRef().nativeElement;
       wc.selectedDate = this.selectedDate();
       wc.currentMonth = this.currentMonth();
       wc.disableDateFn = this.disableDateFn() ?? null;

@@ -35,8 +35,7 @@ import { BsForwardAriaDirective, BsControlValidityDirective } from '@mintplayer/
 export class BsSelectComponent {
   constructor() {
     effect(() => {
-      const el = this.selectBox()?.nativeElement;
-      if (!el) return;
+      const el = this.selectBox().nativeElement;
       el.size = this.size();
       el.multiple = this.multiple();
       el.numberVisible = this.numberVisible();

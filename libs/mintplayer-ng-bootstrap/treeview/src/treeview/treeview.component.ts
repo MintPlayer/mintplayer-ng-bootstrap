@@ -1,5 +1,4 @@
 import {
-  AfterViewInit,
   ChangeDetectionStrategy,
   Component,
   contentChild,
@@ -40,7 +39,7 @@ import { BsForwardAriaDirective } from '@mintplayer/ng-bootstrap/a11y';
   schemas: [CUSTOM_ELEMENTS_SCHEMA],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class BsTreeviewComponent implements AfterViewInit {
+export class BsTreeviewComponent {
   readonly items = input<TreeNode[]>([]);
   readonly expandedIds = model<string[]>([]);
   readonly selectedIds = model<string[]>([]);
@@ -52,7 +51,7 @@ export class BsTreeviewComponent implements AfterViewInit {
   readonly nodeExpand = output<TreeNodeExpandEventDetail>();
   readonly nodeCollapse = output<TreeNodeCollapseEventDetail>();
 
-  readonly treeviewRef = viewChild<ElementRef<MpTreeview>>('treeview');
+  readonly treeviewRef = viewChild.required<ElementRef<MpTreeview>>('treeview');
   readonly nodeTemplate = contentChild(BsTreeviewNodeTemplateDirective);
 
   private readonly viewContainerRef = inject(ViewContainerRef);
@@ -60,80 +59,56 @@ export class BsTreeviewComponent implements AfterViewInit {
   private readonly viewCache = new Map<string, EmbeddedViewRef<{ $implicit: TreeNode }>>();
 
   constructor() {
-    this.destroyRef.onDestroy(() => {
-      for (const view of this.viewCache.values()) view.destroy();
-      this.viewCache.clear();
-    });
+    this.destroyRef.onDestroy(() => this.destroyCachedViews());
 
     effect(() => {
-      const el = this.treeviewRef()?.nativeElement;
-      if (!el) return;
+      const el = this.treeviewRef().nativeElement;
       el.items = this.items();
       // Prune cached views for nodes that no longer exist.
-      const liveIds = new Set<string>();
-      const walk = (nodes: ReadonlyArray<TreeNode>) => {
-        for (const n of nodes) {
-          liveIds.add(n.id);
-          if (n.children) walk(n.children);
-        }
-      };
-      walk(this.items());
-      for (const [id, view] of this.viewCache) {
-        if (!liveIds.has(id)) {
+      const ids = (nodes: ReadonlyArray<TreeNode>): string[] =>
+        nodes.flatMap((n) => [n.id, ...ids(n.children ?? [])]);
+      const liveIds = new Set(ids(this.items()));
+      [...this.viewCache.entries()]
+        .filter(([id]) => !liveIds.has(id))
+        .map(([id, view]) => {
           view.destroy();
           this.viewCache.delete(id);
-        }
-      }
+        });
     });
 
     effect(() => {
-      const el = this.treeviewRef()?.nativeElement;
-      if (!el) return;
+      const el = this.treeviewRef().nativeElement;
       el.expandedIds = this.expandedIds();
     });
 
     effect(() => {
-      const el = this.treeviewRef()?.nativeElement;
-      if (!el) return;
+      const el = this.treeviewRef().nativeElement;
       el.selectedIds = this.selectedIds();
     });
 
     effect(() => {
-      const el = this.treeviewRef()?.nativeElement;
-      if (!el) return;
+      const el = this.treeviewRef().nativeElement;
       el.selectionMode = this.selectionMode();
     });
 
     effect(() => {
-      const el = this.treeviewRef()?.nativeElement;
-      if (!el) return;
+      const el = this.treeviewRef().nativeElement;
       el.hideBorders = this.hideBorders();
     });
 
     effect(() => {
-      const el = this.treeviewRef()?.nativeElement;
-      if (!el) return;
+      const el = this.treeviewRef().nativeElement;
       el.iconResolver = this.iconResolver();
     });
 
     // Wire nodeRenderer when a *bsTreeviewNode template is provided.
     effect(() => {
-      const el = this.treeviewRef()?.nativeElement;
-      if (!el) return;
+      const el = this.treeviewRef().nativeElement;
       const tpl = this.nodeTemplate();
-      if (!tpl) {
-        el.nodeRenderer = undefined;
-        // Destroy any stale views from a previous template.
-        for (const view of this.viewCache.values()) view.destroy();
-        this.viewCache.clear();
-        return;
-      }
-      el.nodeRenderer = this.buildNodeRenderer(tpl);
+      // Views cached for a previous template would keep rendering ITS markup: drop them.
+      this.destroyCachedViews();
+      el.nodeRenderer = tpl ? this.buildNodeRenderer(tpl) : undefined;
     });
-  }
-
-  ngAfterViewInit(): void {
-    // Effects above re-run as the view is created; nothing else needed.
   }
 
   private buildNodeRenderer(tpl: BsTreeviewNodeTemplateDirective): TreeNodeRenderer {
@@ -150,9 +125,14 @@ export class BsTreeviewComponent implements AfterViewInit {
       if (nodes.length === 0) return undefined;
       if (nodes.length === 1) return nodes[0];
       const fragment = document.createDocumentFragment();
-      for (const n of nodes) fragment.appendChild(n);
+      fragment.append(...nodes);
       return fragment;
     };
+  }
+
+  private destroyCachedViews(): void {
+    [...this.viewCache.values()].map((view) => view.destroy());
+    this.viewCache.clear();
   }
 
   onSelect(event: Event): void {

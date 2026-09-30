@@ -11,7 +11,10 @@ import { BsSelectComponent } from "../component/select.component";
   }],
   host: {
     '(change)': 'hostOnChange($event)',
-    '(blur)': 'hostBlur($event)',
+    // focusout, not blur: the focusable <select> lives in mp-select's shadow root, and blur
+    // neither bubbles nor reaches an ancestor of the shadow host, so (blur) here never fired
+    // and the control was never marked touched. focusout is composed and bubbles.
+    '(focusout)': 'onTouched()',
   },
 })
 export class BsSelectValueAccessor implements ControlValueAccessor {
@@ -30,24 +33,17 @@ export class BsSelectValueAccessor implements ControlValueAccessor {
       // View -> Model
       this.value = this.getOptionValue(valueString);
       fn(this.value);
-      // fn(valueString);
     };
   }
   setDisabledState(isDisabled: boolean): void {
     this.setProperty('disabled', isDisabled);
   }
   protected setProperty(key: string, value: any): void {
-    if (this.selectBox.selectBox()) {
-      this._renderer.setProperty(this.selectBox.selectBox().nativeElement, key, value);
-    }
+    this._renderer.setProperty(this.selectBox.selectBox().nativeElement, key, value);
   }
 
   hostOnChange(event: Event) {
     this.onChange((<any>event.target).value);
-  }
-
-  hostBlur(ev: Event) {
-    this.onTouched();
   }
 
   value: any;
@@ -109,17 +105,9 @@ export class BsSelectValueAccessor implements ControlValueAccessor {
     return (this.idCounter++).toString();
   }
 
-  getOptionId(value: any) {
-    for (const id of Array.from(this.optionMap.keys())) {
-      if (this.compareWithFunction(this.optionMap.get(id), value)) {
-        return id;
-      }
-    }
-
-    // This shouldn't happen
-    // debugger;
-    
-    return null;
+  /** The id of the registered option whose value matches, or null when none does. */
+  getOptionId(value: any): string | null {
+    return [...this.optionMap.keys()].find((id) => this.compareWithFunction(this.optionMap.get(id), value)) ?? null;
   }
 
   getOptionValue(valueString: string | null | undefined) {
@@ -172,11 +160,6 @@ export class BsSelectOption implements OnDestroy {
   readonly value = input<any>(undefined);
 
   setElementValue(value: string) {
-    // console.log('setElementValue', value);
-    // const nativeSelect = this.select['selectBox'].selectBox;
-    // if (nativeSelect) {
-    //   this.renderer.setProperty(nativeSelect.nativeElement, 'value', value);
-    // }
     this.renderer.setProperty(this.element.nativeElement, 'value', value);
   }
 
@@ -187,101 +170,3 @@ export class BsSelectOption implements OnDestroy {
     }
   }
 }
-
-// @Directive({
-//   selector: 'bs-select',
-//   providers: [{
-//     provide: NG_VALUE_ACCESSOR,
-//     useExisting: forwardRef(() => BsSelectValueAccessor),
-//     multi: true,
-//   }],
-// })
-// export class BsSelectValueAccessor implements ControlValueAccessor, AfterViewInit, OnDestroy {
-//   constructor(private host: BsSelectComponent) {}
-
-//   destroyed$ = new Subject();
-
-//   onValueChange?: (value: any) => void;
-//   onTouched?: () => void;
-
-//   //#region Lifecycle hooks
-//   ngAfterViewInit() {
-//     fromEvent(this.host.selectBox.nativeElement, 'change')
-//       .pipe(takeUntil(this.destroyed$))
-//       .subscribe((ev) => {
-//         if (this.onValueChange) {
-//           const val = (<HTMLSelectElement>ev.target).value;
-//           console.log('selected', val);
-//           this.onValueChange(val);
-//         }
-//       });
-//   }
-
-//   ngOnDestroy() {
-//     this.destroyed$.next(true);
-//   }
-//   //#endregion
-
-//   @Input('ngValue') set ngValue(value: any) {
-//     if (this.host) {
-//       this.host.opt
-//     }
-//   }
-
-//   //#region OptionId mapping
-//   private compareWithFunction: (value1: any, value2: any) => boolean = Object.is;
-//   private optionMap = new Map<string, any>();
-//   @Input() public set compareWith(fn: (value1: any, value2: any) => boolean) {
-//     if (typeof fn !== 'function') {
-//       throw new Error('compareWith must be a function');
-//     }
-//     this.compareWithFunction = fn;
-//   }
-
-//   private getOptionId(value: any) {
-//     for (const id of Array.from(this.optionMap.keys())) {
-//       if (this.compareWith(this.optionMap.get(id), value)) {
-//         return id;
-//       }
-//     }
-//     return null;
-//   }
-
-//   private getOptionValue(valueString: string) {
-//     const id = this.extractId(valueString);
-//     return this.optionMap.has(id) ? this.optionMap.get(id) : valueString;
-//   }
-
-//   private extractId(valueString: string) {
-//     return valueString.split(':')[0];
-//   }
-//   //#endregion
-
-//   //#region ControlValueAccessor implementation
-//   registerOnChange(fn: (_: any) => void) {
-//     this.onValueChange = (valueString: string) => {
-//       this.value = this.getOptionValue(valueString);
-//       fn(this.value);
-//     };
-//   }
-  
-//   registerOnTouched(fn: () => void) {
-//     this.onTouched = fn;
-//   }
-
-//   value: any;
-//   writeValue(value: any) {
-//     this.value = value;
-//     if (this.host.selectBox) {
-//       // this.host.selectBox.nativeElement.selectedIndex = this.host.selectBox.nativeElement.options.item();
-//     }
-//   }
-
-//   setDisabledState(isDisabled: boolean) {
-//     if (this.host.selectBox) {
-//       this.host.selectBox.nativeElement.disabled = isDisabled;
-//     }
-//   }
-//   //#endregion
-
-// }

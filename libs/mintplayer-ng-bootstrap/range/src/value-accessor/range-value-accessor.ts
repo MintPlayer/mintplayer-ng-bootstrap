@@ -40,15 +40,13 @@ export class BsRangeValueAccessor implements ControlValueAccessor {
   }
 
   writeValue(value?: number) {
-    if (this.host.slider() && (typeof value === 'number')) {
+    if (typeof value === 'number') {
       this.host.slider().nativeElement.value = value.toString();
     }
   }
 
   setDisabledState(isDisabled: boolean) {
-    if (this.host.slider()) {
-      this.host.slider().nativeElement.disabled = isDisabled;
-    }
+    this.host.slider().nativeElement.disabled = isDisabled;
   }
   //#endregion
 

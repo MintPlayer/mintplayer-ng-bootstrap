@@ -5,6 +5,27 @@ import { BsScrollspyDirective } from '../directives/scrollspy.directive';
 
 type ScrollTarget = HTMLElement | Window;
 
+/**
+ * The section the reader is in: the last one whose top has passed the trigger line, or the
+ * first when none has yet. -1 when there are no sections.
+ */
+export function activeSectionIndex(sectionTops: readonly number[], triggerY: number): number {
+  if (sectionTops.length === 0) return -1;
+  return sectionTops.reduce((active, top, index) => (top < triggerY ? index : active), 0);
+}
+
+/**
+ * The scroll position that puts a section's top 1px past the trigger line. The extra pixel
+ * makes the section count as passed (see getTriggerY), so it becomes the active one.
+ *
+ * @param headerTop the section's current top, in viewport coordinates
+ * @param originTop where the trigger line sits: the container's top, or the fixed offset
+ * @param currentScroll the scroll position now
+ */
+export function sectionScrollTop(headerTop: number, originTop: number, currentScroll: number): number {
+  return headerTop - originTop + currentScroll + 1;
+}
+
 @Component({
   selector: 'bs-scrollspy',
   templateUrl: './scrollspy.component.html',
@@ -18,6 +39,8 @@ export class BsScrollspyComponent implements AfterViewInit, AfterContentInit {
   doc = inject<Document>(DOCUMENT);
 
   readonly scrollContainer = input<HTMLElement | null>(null);
+  /** Accessible name of the section navigation. Override to translate. */
+  readonly ariaLabel = input('Section navigation');
 
   private viewInit = signal<boolean>(false);
   private contentInit = signal<boolean>(false);
@@ -69,17 +92,9 @@ export class BsScrollspyComponent implements AfterViewInit, AfterContentInit {
   }
 
   setActiveDirective() {
-    const triggerY = this.getTriggerY();
-    const allDirectives = this.directives();
-    const dirs = allDirectives.filter((d) => d.element.nativeElement.getBoundingClientRect().y < triggerY);
-
-    if (allDirectives.length === 0) {
-      this.activeDirective.set(null);
-    } else if (dirs.length === 0) {
-      this.activeDirective.set(allDirectives[0] ?? null);
-    } else {
-      this.activeDirective.set(dirs[dirs.length - 1]);
-    }
+    const directives = this.directives();
+    const tops = directives.map((d) => d.element.nativeElement.getBoundingClientRect().y);
+    this.activeDirective.set(directives[activeSectionIndex(tops, this.getTriggerY())] ?? null);
   }
 
   scrollToCurrentInSpy() {
@@ -108,11 +123,10 @@ export class BsScrollspyComponent implements AfterViewInit, AfterContentInit {
     // and is robust in jsdom (which implements HTMLElement). The previous
     // `instanceof Window` check failed in jsdom due to a realm mismatch.
     if (target instanceof HTMLElement) {
-      const containerTop = target.getBoundingClientRect().top;
-      target.scrollTo({ top: headerTop - containerTop + target.scrollTop + 1, behavior: 'smooth' });
+      target.scrollTo({ top: sectionScrollTop(headerTop, target.getBoundingClientRect().top, target.scrollTop), behavior: 'smooth' });
     } else {
       const offsetY = this.scrollOffsetService.getScrollOffset()[1];
-      window.scrollTo({ top: headerTop + window.scrollY - offsetY + 1, behavior: 'smooth' });
+      window.scrollTo({ top: sectionScrollTop(headerTop, offsetY, window.scrollY), behavior: 'smooth' });
     }
   }
 
@@ -127,21 +141,14 @@ export class BsScrollspyComponent implements AfterViewInit, AfterContentInit {
     return this.scrollOffsetService.getScrollOffset()[1] + 1;
   }
 
-  private findScrollableAncestor(start: HTMLElement): HTMLElement | null {
+  private findScrollableAncestor(el: HTMLElement | null): HTMLElement | null {
     // Walk the element + its ancestors. The host itself participates so a
     // consumer can opt in by setting overflow-y: auto on <bs-scrollspy>.
     // We rely only on the declared overflow style (no scrollHeight check) —
     // a container declared overflow: auto is the consumer's intended scroll
     // target whether or not the content currently exceeds the box.
-    let el: HTMLElement | null = start;
-    while (el) {
-      const style = getComputedStyle(el);
-      const overflowY = style.overflowY;
-      if (overflowY === 'auto' || overflowY === 'scroll') {
-        return el;
-      }
-      el = el.parentElement;
-    }
-    return null;
+    if (!el) return null;
+    const overflowY = getComputedStyle(el).overflowY;
+    return overflowY === 'auto' || overflowY === 'scroll' ? el : this.findScrollableAncestor(el.parentElement);
   }
 }

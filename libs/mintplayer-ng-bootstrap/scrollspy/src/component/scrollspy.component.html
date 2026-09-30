@@ -1,4 +1,4 @@
-<nav class="spy" aria-label="Section navigation">
+<nav class="spy" [attr.aria-label]="ariaLabel()">
     <ul class="text-muted">
         @for (dir of directives(); track dir; let i = $index) {
             <li>

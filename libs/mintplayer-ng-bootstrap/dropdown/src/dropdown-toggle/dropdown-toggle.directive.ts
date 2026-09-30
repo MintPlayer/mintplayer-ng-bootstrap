@@ -40,10 +40,9 @@ export class BsDropdownToggleDirective {
         roving.focusFirst();
         return;
       }
-      const menu = this.dropdown.elementRef.nativeElement.querySelector<HTMLElement>(
-        '[role="menu"] [role="menuitem"], .dropdown-item',
-      );
-      menu?.focus();
+      // The menu renders in an overlay, outside the dropdown's own element.
+      const root = this.dropdown.menu().overlayElement ?? this.dropdown.elementRef.nativeElement;
+      root.querySelector<HTMLElement>('[role="menu"] [role="menuitem"], .dropdown-item')?.focus();
     });
   }
 }

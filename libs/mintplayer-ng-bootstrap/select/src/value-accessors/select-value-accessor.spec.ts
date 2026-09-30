@@ -1,4 +1,8 @@
-import { BsSelectValueAccessor } from './select-value-accessor';
+import { Component, signal } from '@angular/core';
+import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { FormControl, ReactiveFormsModule } from '@angular/forms';
+import { BsSelectComponent } from '../component/select.component';
+import { BsSelectOption, BsSelectValueAccessor } from './select-value-accessor';
 
 /**
  * A placeholder option — `<option value="">` — is the idiomatic way to offer
@@ -58,5 +62,122 @@ describe('BsSelectValueAccessor — placeholder options', () => {
     a.optionMap.set('0', 'zero');
 
     expect(a.getOptionValue('7: seven')).toBe('7: seven');
+  });
+});
+
+interface Person { id: number; name: string }
+const PEOPLE: Person[] = [{ id: 1, name: 'Ann' }, { id: 2, name: 'Bob' }];
+
+@Component({
+  imports: [BsSelectComponent, BsSelectOption, ReactiveFormsModule],
+  template: `
+    <bs-select [formControl]="ctrl" [compareWith]="byId">
+      <option [ngValue]="null">None</option>
+      @for (p of people(); track p.id) {
+        <option [ngValue]="p">{{ p.name }}</option>
+      }
+    </bs-select>`,
+})
+class ReactiveHost {
+  readonly people = signal<Person[]>(PEOPLE);
+  readonly ctrl = new FormControl<Person | null>({ id: 2, name: 'Bob (copy)' });
+  readonly byId = (a: Person | null, b: Person | null) => a?.id === b?.id;
+}
+
+@Component({
+  imports: [BsSelectComponent, BsSelectOption, ReactiveFormsModule],
+  template: `
+    <bs-select [formControl]="ctrl">
+      <option value="">Browser locale</option>
+      <option value="nl-BE">Nederlands</option>
+      <option value="en-US">English</option>
+    </bs-select>`,
+})
+class PlainValueHost {
+  readonly ctrl = new FormControl<string | null>('en-US');
+}
+
+describe('BsSelectValueAccessor with Angular forms', () => {
+  const mpSelect = (f: ComponentFixture<unknown>) => (f.nativeElement as HTMLElement).querySelector('mp-select') as HTMLElement & { value: string | null; disabled: boolean };
+  const choose = (f: ComponentFixture<unknown>, value: string | null) => {
+    const el = mpSelect(f);
+    // mp-select re-dispatches a composed change on its host, whose value is the chosen option's
+    Object.defineProperty(el, 'value', { configurable: true, get: () => value, set: () => undefined });
+    el.dispatchEvent(new Event('change', { bubbles: true }));
+    delete (el as { value?: unknown }).value;
+  };
+
+  it('writes the model to the element as the matching option\'s id string, using compareWith', async () => {
+    const f = TestBed.createComponent(ReactiveHost);
+    f.detectChanges();
+    await f.whenStable();
+    // Bob is the third option (after None and Ann): id "2"
+    expect(mpSelect(f).value).toBe('2: Object');
+  });
+
+  it('maps a chosen [ngValue] option back to its object', async () => {
+    const f = TestBed.createComponent(ReactiveHost);
+    f.detectChanges();
+    await f.whenStable();
+    choose(f, '1: Object');
+    expect(f.componentInstance.ctrl.value).toBe(PEOPLE[0]);
+    choose(f, '0: null');
+    expect(f.componentInstance.ctrl.value).toBeNull();
+  });
+
+  it('marks the control touched when focus leaves the inner <select>', async () => {
+    const f = TestBed.createComponent(ReactiveHost);
+    f.detectChanges();
+    await f.whenStable();
+    const inner = mpSelect(f).shadowRoot!.querySelector('select')!;
+    // what a browser fires on the shadow <select>: blur (non-bubbling) and a composed focusout
+    inner.dispatchEvent(new FocusEvent('blur', { composed: true }));
+    expect(f.componentInstance.ctrl.touched).toBe(false);
+    inner.dispatchEvent(new FocusEvent('focusout', { bubbles: true, composed: true }));
+    expect(f.componentInstance.ctrl.touched).toBe(true);
+  });
+
+  it('disables the element with the control', async () => {
+    const f = TestBed.createComponent(ReactiveHost);
+    f.detectChanges();
+    await f.whenStable();
+    f.componentInstance.ctrl.disable();
+    expect(mpSelect(f).disabled).toBe(true);
+    f.componentInstance.ctrl.enable();
+    expect(mpSelect(f).disabled).toBe(false);
+  });
+
+  it('forgets a removed option: a value that only it matched no longer resolves', async () => {
+    const f = TestBed.createComponent(ReactiveHost);
+    f.detectChanges();
+    await f.whenStable();
+    f.componentInstance.people.set([PEOPLE[0]]);
+    f.detectChanges();
+    choose(f, '2: Object');
+    expect(f.componentInstance.ctrl.value).toBe('2: Object');
+  });
+
+  it('plain value options pass their string through, and the placeholder reaches the model as null', async () => {
+    const f = TestBed.createComponent(PlainValueHost);
+    f.detectChanges();
+    await f.whenStable();
+    expect(mpSelect(f).value).toBe('en-US');
+    choose(f, 'nl-BE');
+    expect(f.componentInstance.ctrl.value).toBe('nl-BE');
+    choose(f, null);
+    expect(f.componentInstance.ctrl.value).toBeNull();
+  });
+});
+
+describe('BsSelectValueAccessor.buildValueString', () => {
+  const a = Object.create(BsSelectValueAccessor.prototype) as BsSelectValueAccessor;
+
+  it('is the bare value without an id', () => {
+    expect(a.buildValueString(null, 'x')).toBe('x');
+  });
+
+  it('prefixes the id, names objects "Object", and caps the length at 50', () => {
+    expect(a.buildValueString('3', { a: 1 })).toBe('3: Object');
+    expect(a.buildValueString('4', 'y'.repeat(80))).toHaveLength(50);
   });
 });

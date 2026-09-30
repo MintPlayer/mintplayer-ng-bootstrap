@@ -40,10 +40,9 @@ export class BsOffcanvasPushDirective {
           el = el.parentElement;
         }
         if (this.element.nativeElement.parentElement) {
-          this.initialOverflowX = {
-            value: this.element.nativeElement.parentElement.style.overflowX,
-            element: el,
-          };
+          // Remember the value of the element that is clipped, which is only the direct
+          // parent when the walk stopped immediately.
+          this.initialOverflowX = { value: el.style.overflowX, element: el };
           el.style.overflowX = 'hidden';
         }
       } else {

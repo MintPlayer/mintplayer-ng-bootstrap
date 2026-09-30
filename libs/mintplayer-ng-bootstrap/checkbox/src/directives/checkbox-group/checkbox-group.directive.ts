@@ -75,12 +75,11 @@ export class BsCheckboxGroupDirective implements ControlValueAccessor {
     });
     effect(() => {
       const arr = this.currentValue();
-      this.checkboxes().forEach(cb => {
+      this.checkboxes().map((cb) => {
         const v = cb.value();
         const isSelected = v != null && arr.includes(v);
         cb.isToggled.set(isSelected);
-        const wc = cb.checkboxRef()?.nativeElement;
-        if (wc) wc.checked = isSelected;
+        cb.checkboxRef().nativeElement.checked = isSelected;
       });
     });
   }
@@ -106,9 +105,6 @@ export class BsCheckboxGroupDirective implements ControlValueAccessor {
   }
 
   setDisabledState(isDisabled: boolean) {
-    this.checkboxes().forEach(cb => {
-      const wc = cb.checkboxRef()?.nativeElement;
-      if (wc) wc.disabled = isDisabled;
-    });
+    this.checkboxes().map((cb) => (cb.checkboxRef().nativeElement.disabled = isDisabled));
   }
 }

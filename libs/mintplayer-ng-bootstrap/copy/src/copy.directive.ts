@@ -13,20 +13,22 @@ export class BsCopyDirective {
   private announcer = inject(BsLiveAnnouncerService);
 
   readonly bsCopy = input<string | null>(null);
+  /** Announced to screen readers after a copy. Override to translate. */
+  readonly copiedAnnouncement = input('Copied to clipboard.');
   readonly bsCopied = output<string>();
 
   click(event: MouseEvent) {
     event.preventDefault();
     const listener = (e: ClipboardEvent) => {
       const bsCopyValue = this.bsCopy();
-      if (!!bsCopyValue && !!window) {
-        const clipboard = e.clipboardData || <DataTransfer | null>(<any>window)['clipboardData'] || null;
+      if (bsCopyValue) {
+        const clipboard = e.clipboardData ?? (window as unknown as { clipboardData?: DataTransfer }).clipboardData ?? null;
         if (clipboard) {
           clipboard.setData('text', bsCopyValue.toString());
           e.preventDefault();
           this.bsCopied.emit(bsCopyValue);
           // Copying gives zero visual/SR feedback of its own.
-          void this.announcer.announce('Copied to clipboard.');
+          void this.announcer.announce(this.copiedAnnouncement());
         }
       }
     };

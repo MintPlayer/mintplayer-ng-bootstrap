@@ -44,23 +44,23 @@ export class BsTrendChartComponent {
   readonly pointHover = output<TrendHoverEventDetail>();
   readonly pointSelect = output<TrendPointEventDetail>();
 
-  readonly chartRef = viewChild<ElementRef<MpTrendChart>>('chart');
+  readonly chartRef = viewChild.required<ElementRef<MpTrendChart>>('chart');
 
   constructor() {
-    effect(() => { const el = this.chartRef()?.nativeElement; if (el) el.series = this.series(); });
-    effect(() => { const el = this.chartRef()?.nativeElement; if (el) el.area = this.area(); });
-    effect(() => { const el = this.chartRef()?.nativeElement; if (el) el.stacked = this.stacked(); });
-    effect(() => { const el = this.chartRef()?.nativeElement; if (el) el.yMin = this.yMin(); });
-    effect(() => { const el = this.chartRef()?.nativeElement; if (el) el.yMax = this.yMax(); });
-    effect(() => { const el = this.chartRef()?.nativeElement; if (el) el.goal = this.goal(); });
-    effect(() => { const el = this.chartRef()?.nativeElement; if (el) el.goalLabel = this.goalLabel(); });
-    effect(() => { const el = this.chartRef()?.nativeElement; if (el) el.locale = this.locale(); });
-    effect(() => { const el = this.chartRef()?.nativeElement; if (el) el.summary = this.summary(); });
+    effect(() => { const el = this.chartRef().nativeElement; el.series = this.series(); });
+    effect(() => { const el = this.chartRef().nativeElement; el.area = this.area(); });
+    effect(() => { const el = this.chartRef().nativeElement; el.stacked = this.stacked(); });
+    effect(() => { const el = this.chartRef().nativeElement; el.yMin = this.yMin(); });
+    effect(() => { const el = this.chartRef().nativeElement; el.yMax = this.yMax(); });
+    effect(() => { const el = this.chartRef().nativeElement; el.goal = this.goal(); });
+    effect(() => { const el = this.chartRef().nativeElement; el.goalLabel = this.goalLabel(); });
+    effect(() => { const el = this.chartRef().nativeElement; el.locale = this.locale(); });
+    effect(() => { const el = this.chartRef().nativeElement; el.summary = this.summary(); });
     effect(() => {
-      const el = this.chartRef()?.nativeElement;
-      if (el) el.inputLabel = this.inputLabel() ?? null;
+      const el = this.chartRef().nativeElement;
+      el.inputLabel = this.inputLabel() ?? null;
     });
-    effect(() => { const el = this.chartRef()?.nativeElement; if (el) el.summaryFormatter = this.summaryFormatter(); });
+    effect(() => { const el = this.chartRef().nativeElement; el.summaryFormatter = this.summaryFormatter(); });
   }
 
   protected onPointHover(event: Event): void {

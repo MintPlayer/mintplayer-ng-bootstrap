@@ -111,16 +111,12 @@ export class BsCodeSnippetComponent implements AfterViewInit {
     const host = this.host.nativeElement;
     const target = this.element().nativeElement as unknown as HTMLElement;
 
-    const names = [...host.getAttributeNames()].filter(
-      (name) => name.startsWith('aria-') || FORWARDED_ATTRIBUTES.includes(name),
-    );
-
-    for (const name of names) {
-      const value = host.getAttribute(name);
-      if (value === null) continue;
-      target.setAttribute(name, value);
-      host.removeAttribute(name);
-    }
+    host.getAttributeNames()
+      .filter((name) => name.startsWith('aria-') || FORWARDED_ATTRIBUTES.includes(name))
+      .map((name) => {
+        target.setAttribute(name, host.getAttribute(name)!);
+        host.removeAttribute(name);
+      });
   }
 
   protected onLanguageDetected(event: Event): void {

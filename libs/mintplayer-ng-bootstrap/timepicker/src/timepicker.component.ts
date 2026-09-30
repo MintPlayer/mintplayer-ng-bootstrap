@@ -53,7 +53,7 @@ export class BsTimepickerComponent implements AfterViewInit, ControlValueAccesso
   protected readonly formDisabled = signal(false);
   protected readonly effectiveDisabled = signal(false);
 
-  readonly wcRef = viewChild<ElementRef<MpTimepickerElement>>('wc');
+  readonly wcRef = viewChild.required<ElementRef<MpTimepickerElement>>('wc');
 
   private onChange: (value: Date | null) => void = () => {};
   private onTouched: () => void = () => {};
@@ -61,8 +61,7 @@ export class BsTimepickerComponent implements AfterViewInit, ControlValueAccesso
 
   constructor() {
     effect(() => {
-      const wc = this.wcRef()?.nativeElement;
-      if (!wc) return;
+      const wc = this.wcRef().nativeElement;
       wc.selectedTime = this.selectedTime();
       wc.step = this.step();
       wc.min = this.min() ?? null;

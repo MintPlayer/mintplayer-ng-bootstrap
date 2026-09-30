@@ -99,11 +99,21 @@ export class BsSliderComponent {
   }
 
   private updateColor(ev: MouseEvent | TouchEvent) {
-    const rect = this.track().nativeElement.getBoundingClientRect();
+    const track = this.track().nativeElement;
     const clientX = 'touches' in ev ? ev.touches[0].clientX : ev.clientX;
-    const percent = (clientX - rect.left) / this.track().nativeElement.clientWidth;
-    this.value.set(Math.max(0, Math.min(1, percent)));
+    const fraction = trackFraction(clientX, track.getBoundingClientRect().left, track.clientWidth);
+    if (fraction !== null) this.value.set(fraction);
   }
+}
+
+/**
+ * Where `clientX` falls along a track starting at `left` and `width` px wide, clamped to 0..1.
+ * A track with no width (not laid out yet, or display:none) has no position to report: null,
+ * rather than the NaN or Infinity the division would produce.
+ */
+export function trackFraction(clientX: number, left: number, width: number): number | null {
+  if (!(width > 0)) return null;
+  return Math.max(0, Math.min(1, (clientX - left) / width));
 }
 
 @Directive({

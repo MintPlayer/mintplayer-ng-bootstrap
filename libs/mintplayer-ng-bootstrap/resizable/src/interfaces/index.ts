@@ -1,3 +1,3 @@
 export * from './resize-action';
-export * from './pointer-data';
+export * from './resize-labels';
 export * from './preset-position';

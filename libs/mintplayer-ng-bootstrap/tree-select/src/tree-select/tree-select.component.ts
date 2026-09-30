@@ -1,5 +1,4 @@
 import {
-  AfterViewInit,
   ChangeDetectionStrategy,
   Component,
   computed,
@@ -66,7 +65,7 @@ type Value = TreeNode | TreeNode[] | null;
     },
   ],
 })
-export class BsTreeSelectComponent implements ControlValueAccessor, AfterViewInit {
+export class BsTreeSelectComponent implements ControlValueAccessor {
   // ---- inputs (pushed to the WC as properties) --------------------------
   readonly provider = input<TreeSelectProvider | undefined>(undefined);
   readonly mode = input<TreeSelectMode>('single');
@@ -84,7 +83,7 @@ export class BsTreeSelectComponent implements ControlValueAccessor, AfterViewIni
   readonly closed = output<void>();
   readonly cleared = output<void>();
 
-  readonly elementRef = viewChild<ElementRef<MpTreeSelect>>('el');
+  readonly elementRef = viewChild.required<ElementRef<MpTreeSelect>>('el');
 
   private readonly itemTpl = contentChild(BsTreeSelectItemTemplateDirective);
   private readonly suggestionTpl = contentChild(BsTreeSelectSuggestionTemplateDirective);
@@ -112,8 +111,8 @@ export class BsTreeSelectComponent implements ControlValueAccessor, AfterViewIni
     }
 
     this.destroyRef.onDestroy(() => {
-      for (const cache of this.nodeCaches) for (const v of cache.values()) v.destroy();
-      for (const v of this.singleViews) v.destroy();
+      [...this.nodeCaches].flatMap((cache) => [...cache.values()]).map((v) => v.destroy());
+      this.singleViews.map((v) => v.destroy());
     });
 
     // Push scalar config to the WC element.
@@ -138,14 +137,10 @@ export class BsTreeSelectComponent implements ControlValueAccessor, AfterViewIni
     this.bindProp((el) => (el.enterSearchTermTemplate = this.staticRenderer(this.enterSearchTermTpl())));
   }
 
-  ngAfterViewInit(): void {
-    // Effects above run as the view initializes; nothing else required.
-  }
-
   private bindProp(apply: (el: MpTreeSelect) => void): void {
     effect(() => {
-      const el = this.elementRef()?.nativeElement;
-      if (el) apply(el);
+      const el = this.elementRef().nativeElement;
+      apply(el);
     });
   }
 
@@ -251,7 +246,7 @@ export class BsTreeSelectComponent implements ControlValueAccessor, AfterViewIni
     const nodes = (view.rootNodes as unknown[]).filter((n): n is Node => n instanceof Node);
     if (nodes.length === 1) return nodes[0];
     const fragment = document.createDocumentFragment();
-    for (const n of nodes) fragment.appendChild(n);
+    fragment.append(...nodes);
     return fragment;
   }
 }

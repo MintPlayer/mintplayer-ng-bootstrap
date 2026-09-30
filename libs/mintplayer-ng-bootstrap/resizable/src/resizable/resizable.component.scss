@@ -18,20 +18,32 @@ $thumb-size: 14px;
     height: $thumb-size;
     z-index: 20;
 
+    // The glyph's classes are PHYSICAL sides: the directive resolves start/end against the
+    // document direction, so placement, drag math and accessible name share one source.
     &.top {
         top: math.div($thumb-size, -2);
     }
-    &.start {
+    &.left {
         left: math.div($thumb-size, -2);
     }
     &.bottom {
         bottom: math.div($thumb-size, -2);
     }
-    &.end {
+    &.right {
         right: math.div($thumb-size, -2);
     }
 
-    &.start, &.end {
+    &.top, &.bottom { cursor: ns-resize; }
+    &.left, &.right { cursor: ew-resize; }
+    &.top.left, &.bottom.right { cursor: nwse-resize; }
+    &.top.right, &.bottom.left { cursor: nesw-resize; }
+
+    &:focus-visible {
+        outline: 2px solid var(--bs-primary);
+        outline-offset: 1px;
+    }
+
+    &.left, &.right {
         &:not(.top):not(.bottom) {
             top: math.div($glyph-size, 2);
             height: calc(100% - $glyph-size);
@@ -47,7 +59,7 @@ $thumb-size: 14px;
         }
     }
     &.top, &.bottom {
-        &:not(.start):not(.end) {
+        &:not(.left):not(.right) {
             left: math.div($glyph-size, 2);
             width: calc(100% - $glyph-size);
 

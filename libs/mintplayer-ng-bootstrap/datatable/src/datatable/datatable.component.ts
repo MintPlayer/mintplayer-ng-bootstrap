@@ -1,5 +1,4 @@
 import {
-  AfterViewInit,
   ChangeDetectionStrategy,
   Component,
   computed,
@@ -75,7 +74,7 @@ export interface BsDatatableTreeRowEvent<T> {
   schemas: [CUSTOM_ELEMENTS_SCHEMA],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class BsDatatableComponent<TData> implements AfterViewInit {
+export class BsDatatableComponent<TData> {
   private readonly platformId = inject(PLATFORM_ID);
   private readonly vcr = inject(ViewContainerRef);
   private readonly destroyRef = inject(DestroyRef);
@@ -204,7 +203,7 @@ export class BsDatatableComponent<TData> implements AfterViewInit {
    */
   readonly filterChange = output<FilterChangeDetail>();
 
-  readonly datatableRef = viewChild<ElementRef<MpDatatable>>('datatable');
+  readonly datatableRef = viewChild.required<ElementRef<MpDatatable>>('datatable');
 
   /** Column directives (header template + sortable). Wrapper-level discovery. */
   readonly columnDirectives = contentChildren(BsDatatableColumnDirective);
@@ -368,8 +367,7 @@ export class BsDatatableComponent<TData> implements AfterViewInit {
     // response. The wrapper no longer runs any fetch loop. Skipped on the
     // server so SSR doesn't kick off a client fetch.
     effect(() => {
-      const el = this.datatableRef()?.nativeElement;
-      if (!el) return;
+      const el = this.datatableRef().nativeElement;
       if (isPlatformServer(this.platformId)) return;
       el.fetch = (this.fetch() as unknown as MpDatatable['fetch']) ?? null;
     });
@@ -377,15 +375,13 @@ export class BsDatatableComponent<TData> implements AfterViewInit {
     // Same server guard as `fetch`: the source is a network call in every real
     // consumer, and a panel cannot be opened during SSR anyway.
     effect(() => {
-      const el = this.datatableRef()?.nativeElement;
-      if (!el) return;
+      const el = this.datatableRef().nativeElement;
       if (isPlatformServer(this.platformId)) return;
       el.distincts = this.distincts();
     });
 
     effect(() => {
-      const el = this.datatableRef()?.nativeElement;
-      if (!el) return;
+      const el = this.datatableRef().nativeElement;
       el.labels = this.labels() ?? undefined;
     });
 
@@ -395,24 +391,21 @@ export class BsDatatableComponent<TData> implements AfterViewInit {
     effect(() => {
       const columns = this.effectiveColumns();
       this.disposeStaleViews();
-      const el = this.datatableRef()?.nativeElement;
-      if (!el) return;
+      const el = this.datatableRef().nativeElement;
       el.columns = columns as DatatableColumnDef[];
     });
 
     // Static `[data]` only. When `[fetch]` is set the WC owns the rows, so the
     // wrapper must not also push `el.data` (it would clobber fetched pages).
     effect(() => {
-      const el = this.datatableRef()?.nativeElement;
-      if (!el) return;
+      const el = this.datatableRef().nativeElement;
       if (this.fetch()) return;
       const d = this.data();
       el.data = (d ?? []) as unknown[];
     });
 
     effect(() => {
-      const el = this.datatableRef()?.nativeElement;
-      if (!el) return;
+      const el = this.datatableRef().nativeElement;
       const settings = this.settings();
       const fetching = !!this.fetch();
       const virtual = this.virtualScroll();
@@ -427,27 +420,23 @@ export class BsDatatableComponent<TData> implements AfterViewInit {
     });
 
     effect(() => {
-      const el = this.datatableRef()?.nativeElement;
-      if (!el) return;
+      const el = this.datatableRef().nativeElement;
       const mode = this.selectable() ?? this.selectionMode();
       el.selectionMode = mode;
     });
 
     effect(() => {
-      const el = this.datatableRef()?.nativeElement;
-      if (!el) return;
+      const el = this.datatableRef().nativeElement;
       el.rowKey = (row, index) => this.rowKey()(row as TData, index);
     });
 
     effect(() => {
-      const el = this.datatableRef()?.nativeElement;
-      if (!el) return;
+      const el = this.datatableRef().nativeElement;
       el.resizableColumns = this.resizableColumns();
     });
 
     effect(() => {
-      const el = this.datatableRef()?.nativeElement;
-      if (!el) return;
+      const el = this.datatableRef().nativeElement;
       el.virtualScroll = this.virtualScroll();
       el.itemSize = this.itemSize();
       el.virtualBuffer = this.virtualBuffer();
@@ -455,8 +444,7 @@ export class BsDatatableComponent<TData> implements AfterViewInit {
 
     // Tree-mode prop sync to the WC.
     effect(() => {
-      const el = this.datatableRef()?.nativeElement;
-      if (!el) return;
+      const el = this.datatableRef().nativeElement;
       el.tree = this.tree();
       el.idKey = this.idKey() as TreeIdKey;
       el.childCountKey = this.childCountKey();
@@ -468,8 +456,7 @@ export class BsDatatableComponent<TData> implements AfterViewInit {
     // — the WC's getter returns a fresh Set on every read.
     effect(() => {
       const desired = this.expandedIds();
-      const el = this.datatableRef()?.nativeElement;
-      if (!el) return;
+      const el = this.datatableRef().nativeElement;
       const current = el.expandedIds;
       if (setsEqual(current, desired)) return;
       el.expandedIds = desired;
@@ -477,31 +464,21 @@ export class BsDatatableComponent<TData> implements AfterViewInit {
 
     // Wire the row renderer when *bsRowTemplate is provided.
     effect(() => {
-      const el = this.datatableRef()?.nativeElement;
-      if (!el) return;
+      const el = this.datatableRef().nativeElement;
       const tpl = this.rowTemplate();
-      if (!tpl) {
-        el.rowRenderer = undefined;
-        // Destroy any stale row views.
-        for (const v of this.rowViews.values()) v.destroy();
-        this.rowViews.clear();
-        return;
-      }
-      el.rowRenderer = this.buildRowRenderer(tpl) as RowRenderer;
+      // Row views cached for a previous template would keep rendering ITS cells: drop them.
+      [...this.rowViews.values()].map((v) => v.destroy());
+      this.rowViews.clear();
+      el.rowRenderer = tpl ? this.buildRowRenderer(tpl) as RowRenderer : undefined;
     });
 
     // Selection rows → IDs forwarded to WC.
     effect(() => {
-      const el = this.datatableRef()?.nativeElement;
-      if (!el) return;
+      const el = this.datatableRef().nativeElement;
       const rows = this.selection();
       const keyFn = this.rowKey();
       el.selectedIds = rows.map((row, i) => keyFn(row, i));
     });
-  }
-
-  ngAfterViewInit(): void {
-    // Effects above re-run as the view is created; nothing else needed.
   }
 
   private buildRowRenderer(tpl: BsRowTemplateDirective<TData>): RowRenderer<TData> {
