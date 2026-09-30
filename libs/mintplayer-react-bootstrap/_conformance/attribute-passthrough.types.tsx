@@ -10,6 +10,7 @@ import { BsTrendChart } from '@mintplayer/react-bootstrap/charts/trend';
 import { BsDropdownMenu } from '@mintplayer/react-bootstrap/dropdown-menu';
 import { BsNavbar, BsNavbarBrand, BsNavbarDropdown, BsNavbarItem } from '@mintplayer/react-bootstrap/navbar';
 import { BsShell } from '@mintplayer/react-bootstrap/shell';
+import { BsThemeToggle } from '@mintplayer/react-bootstrap/theming';
 import { BsTimeline } from '@mintplayer/react-bootstrap/timeline';
 
 /**
@@ -52,6 +53,7 @@ export const probes = [
     <BsNavbarItem role="none" id="ni" tabIndex={-1} />
   </BsNavbar>,
   <BsShell role="none" id="s" tabIndex={-1} />,
+  <BsThemeToggle role="none" id="tt" tabIndex={-1} />,
   <BsTimeline role="none" id="t" tabIndex={-1} />,
 ];
 
