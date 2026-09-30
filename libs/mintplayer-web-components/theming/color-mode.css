@@ -23,9 +23,14 @@
 /*
  * Reserve the toggle's box before the element upgrades, so defining it causes
  * no layout shift. It renders nothing until then: the toggle has no no-JS tier.
+ * Every box-affecting declaration must match :host in theme-toggle.styles.scss,
+ * vertical-align included: an empty inline-block sits on the baseline by default,
+ * 4px lower than the upgraded, middle-aligned host.
  */
 mp-theme-toggle:not(:defined) {
   display: inline-block;
   width: 1.5em;
   height: 1.5em;
+  vertical-align: middle;
+  line-height: 1;
 }

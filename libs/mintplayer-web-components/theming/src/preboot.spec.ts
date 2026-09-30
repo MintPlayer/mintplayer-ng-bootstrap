@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { existsSync, readFileSync } from 'node:fs';
-import { fileURLToPath } from 'node:url';
+import { join } from 'node:path';
 import { parse } from 'acorn';
 import { readThemeCookie } from './cookie';
 import { readDefaultModeMeta, resolveMode } from './resolve';
@@ -8,7 +8,12 @@ import { readDefaultModeMeta, resolveMode } from './resolve';
 // Smoke test of the GENERATED bundle (PRD dark-mode D5). It is produced by
 // tools/scripts/build-theme-preboot.mjs during codegen-wc; the file is a
 // gitignored build artifact, so a fresh checkout has to run codegen first.
-const BUNDLE_PATH = fileURLToPath(new URL('../bs-theme-preboot.js', import.meta.url));
+// jsdom gives import.meta.url a non-file scheme, so resolve from the cwd the
+// way _conformance/light-styles-scoping.spec.ts does.
+const LIB_ROOT = existsSync(join(process.cwd(), 'theming'))
+  ? process.cwd()
+  : join(process.cwd(), 'libs', 'mintplayer-web-components');
+const BUNDLE_PATH = join(LIB_ROOT, 'theming', 'bs-theme-preboot.js');
 const bundleExists = existsSync(BUNDLE_PATH);
 const SKIP_REASON =
   'theming/bs-theme-preboot.js does not exist: run `npx nx run mintplayer-web-components:codegen-wc` first';

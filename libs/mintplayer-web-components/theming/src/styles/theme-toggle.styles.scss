@@ -3,6 +3,7 @@
 //
 // The host reserves the same 1.5em box that color-mode.css reserves for
 // mp-theme-toggle:not(:defined), so upgrading the element causes no layout shift.
+// Keep the two in lockstep: size, display, vertical-align and line-height.
 //
 // Nothing here animates, so there is nothing for prefers-reduced-motion to turn
 // off. Keep it that way: an icon swap on a theme change must stay instant.

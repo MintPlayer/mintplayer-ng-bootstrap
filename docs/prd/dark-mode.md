@@ -330,8 +330,10 @@ and `theming/color-mode.css`.
   the webkit rules. The thumb uses `--bs-secondary-color`, not `--bs-secondary-bg` (§2.6).
 - Scheduler `:36,:37` → `rgba(var(--bs-primary-rgb), .3)` / `rgba(var(--bs-emphasis-color-rgb), .1)`.
 - query-builder `:109` → `var(--bs-secondary-color)`.
-- datatable `:7` and treeview `:8` → `rgba(var(--bs-emphasis-color-rgb), .04)` fallback. The unreachable fallbacks at
-  datatable `:410,:421,:615` are deleted.
+- datatable `:7` and treeview `:8` → `rgba(var(--bs-emphasis-color-rgb), .04)` fallback.
+- datatable `:410,:421,:615`: the fallbacks there are **not** dead, despite what §2.6 says. The filter panel is
+  portaled outside the datatable host (#415), where `--mp-datatable-row-hover-bg` is undefined. They stay, and are
+  retokenized the same way. This was caught by `mp-datatable.filter-panel-styles.spec.ts`.
 - code-snippet `:286` → `var(--bs-white)`.
 - **Card: no change.**
 - Dropdown CDK pane panel class, **only if** spike A4 says so after D10.
