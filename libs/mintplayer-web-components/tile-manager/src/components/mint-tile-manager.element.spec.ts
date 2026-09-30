@@ -481,3 +481,662 @@ describe('mint-tile-manager — resize animation', () => {
     expect(style).not.toContain('height:');
   });
 });
+
+// ---------------------------------------------------------------------------
+// Pointer gesture lifecycle. jsdom lays nothing out, so every rect is 0x0 and
+// the cached cell metrics are zero — these suites deliberately do NOT fake
+// geometry (the snapping maths is pinned by utils/grid-geometry.spec.ts).
+// They assert the gesture state machine: arming, activation, cancellation and
+// cleanup, which run the same way whatever the cell size is.
+// ---------------------------------------------------------------------------
+
+function headerOf(host: MintTileManagerElement, id: string): HTMLElement {
+  return host.shadowRoot!.querySelector<HTMLElement>(`.tile[data-tile-id="${id}"] .tile__header-shell`)!;
+}
+
+function tileEl(host: MintTileManagerElement, id: string): HTMLElement {
+  return host.shadowRoot!.querySelector<HTMLElement>(`.tile[data-tile-id="${id}"]`)!;
+}
+
+function liveText(host: MintTileManagerElement): string {
+  return host.shadowRoot!.querySelector('[role="status"]')?.textContent ?? '';
+}
+
+async function settle(host: MintTileManagerElement): Promise<void> {
+  await (host as unknown as { updateComplete: Promise<void> }).updateComplete;
+}
+
+/** Mouse pointerdown on a tile header, then a move past the 5 px threshold. */
+function startMouseDrag(host: MintTileManagerElement, id: string, pointerId = 1): void {
+  headerOf(host, id).dispatchEvent(makePointerEvent('pointerdown', { clientX: 50, clientY: 50, pointerId }));
+  window.dispatchEvent(makePointerEvent('pointermove', { clientX: 70, clientY: 50, pointerId }));
+}
+
+function recordEvents(host: MintTileManagerElement): string[] {
+  const events: string[] = [];
+  host.addEventListener('tilelayoutchange', () => events.push('layout'));
+  host.addEventListener('tilepositionchange', () => events.push('position'));
+  host.addEventListener('tilegestureblocked', () => events.push('blocked'));
+  return events;
+}
+
+describe('mint-tile-manager — mouse drag lifecycle', () => {
+  let el: MintTileManagerElement;
+  afterEach(() => el?.remove());
+
+  const mountFour = () =>
+    mount((m) => {
+      m.columnCount = 2;
+      m.tiles = fourTiles;
+    });
+
+  it('does not arm a drag until the pointer travels 5 px', async () => {
+    el = await mountFour();
+    headerOf(el, 'a').dispatchEvent(makePointerEvent('pointerdown', { clientX: 50, clientY: 50 }));
+    window.dispatchEvent(makePointerEvent('pointermove', { clientX: 53, clientY: 52 }));
+    expect(el.isGestureActive).toBe(false);
+    window.dispatchEvent(makePointerEvent('pointermove', { clientX: 55, clientY: 50 }));
+    expect(el.isGestureActive).toBe(true);
+  });
+
+  it('ignores moves from another pointer while arming', async () => {
+    el = await mountFour();
+    headerOf(el, 'a').dispatchEvent(makePointerEvent('pointerdown', { clientX: 50, clientY: 50, pointerId: 1 }));
+    window.dispatchEvent(makePointerEvent('pointermove', { clientX: 200, clientY: 50, pointerId: 2 }));
+    expect(el.isGestureActive).toBe(false);
+  });
+
+  it('a pointerup below the threshold disarms: a later move no longer starts a drag', async () => {
+    el = await mountFour();
+    headerOf(el, 'a').dispatchEvent(makePointerEvent('pointerdown', { clientX: 50, clientY: 50 }));
+    window.dispatchEvent(makePointerEvent('pointerup', { clientX: 50, clientY: 50 }));
+    window.dispatchEvent(makePointerEvent('pointermove', { clientX: 120, clientY: 50 }));
+    expect(el.isGestureActive).toBe(false);
+  });
+
+  it('a pointerup from another pointer does not disarm', async () => {
+    el = await mountFour();
+    headerOf(el, 'a').dispatchEvent(makePointerEvent('pointerdown', { clientX: 50, clientY: 50, pointerId: 1 }));
+    window.dispatchEvent(makePointerEvent('pointerup', { clientX: 50, clientY: 50, pointerId: 2 }));
+    window.dispatchEvent(makePointerEvent('pointermove', { clientX: 120, clientY: 50, pointerId: 1 }));
+    expect(el.isGestureActive).toBe(true);
+  });
+
+  it('marks the dragged tile and announces the drag', async () => {
+    el = await mountFour();
+    startMouseDrag(el, 'a');
+    await settle(el);
+    expect(tileEl(el, 'a').dataset['dragging']).toBe('true');
+    expect(tileEl(el, 'b').dataset['dragging']).toBe('false');
+    expect(liveText(el)).toContain('Dragging tile at row 1, column 1.');
+  });
+
+  it('announces a labelled tile by its label', async () => {
+    el = await mount((m) => {
+      m.columnCount = 2;
+      m.tiles = [{ id: 'w', label: 'Weather', position: { colStart: 1, rowStart: 1, colSpan: 1, rowSpan: 1 } }];
+    });
+    startMouseDrag(el, 'w');
+    await settle(el);
+    expect(liveText(el)).toContain('Dragging Weather.');
+  });
+
+  it('never renders a NaN grid placement when the grid has no measurable cell size', async () => {
+    el = await mountFour();
+    startMouseDrag(el, 'a');
+    window.dispatchEvent(makePointerEvent('pointermove', { clientX: 400, clientY: 300 }));
+    await settle(el);
+    const styles = Array.from(el.shadowRoot!.querySelectorAll<HTMLElement>('.tile')).map(
+      (t) => t.getAttribute('style') ?? '',
+    );
+    expect(styles.join('|')).not.toContain('NaN');
+  });
+
+  it('a pointerup with no resolvable target cell commits nothing and keeps the layout', async () => {
+    el = await mountFour();
+    const events = recordEvents(el);
+    startMouseDrag(el, 'a');
+    window.dispatchEvent(makePointerEvent('pointermove', { clientX: 400, clientY: 300 }));
+    window.dispatchEvent(makePointerEvent('pointerup', { clientX: 400, clientY: 300 }));
+    await settle(el);
+    expect(events).toEqual([]);
+    expect(el.isGestureActive).toBe(false);
+    expect(el.captureLayout()).toEqual(fourTiles.map((t) => ({ id: t.id, position: t.position })));
+    expect(tileEl(el, 'a').dataset['dragging']).toBe('false');
+  });
+
+  it('ignores the pointerup of a different pointer mid-drag', async () => {
+    el = await mountFour();
+    startMouseDrag(el, 'a', 1);
+    window.dispatchEvent(makePointerEvent('pointerup', { clientX: 70, clientY: 50, pointerId: 2 }));
+    expect(el.isGestureActive).toBe(true);
+  });
+
+  it('Escape cancels an in-flight drag without emitting layout events', async () => {
+    el = await mountFour();
+    const events = recordEvents(el);
+    startMouseDrag(el, 'a');
+    const esc = new KeyboardEvent('keydown', { key: 'Escape', cancelable: true });
+    window.dispatchEvent(esc);
+    await settle(el);
+    expect(esc.defaultPrevented).toBe(true);
+    expect(el.isGestureActive).toBe(false);
+    expect(events).toEqual([]);
+    expect(tileEl(el, 'a').dataset['dragging']).toBe('false');
+  });
+
+  it('other keys do not cancel a drag', async () => {
+    el = await mountFour();
+    startMouseDrag(el, 'a');
+    window.dispatchEvent(new KeyboardEvent('keydown', { key: 'Tab', cancelable: true }));
+    expect(el.isGestureActive).toBe(true);
+  });
+
+  it('pointercancel ends the drag; one from another pointer does not', async () => {
+    el = await mountFour();
+    startMouseDrag(el, 'a', 1);
+    window.dispatchEvent(makePointerEvent('pointercancel', { clientX: 0, clientY: 0, pointerId: 2 }));
+    expect(el.isGestureActive).toBe(true);
+    window.dispatchEvent(makePointerEvent('pointercancel', { clientX: 0, clientY: 0, pointerId: 1 }));
+    expect(el.isGestureActive).toBe(false);
+  });
+
+  it('the page becoming hidden cancels the drag', async () => {
+    el = await mountFour();
+    startMouseDrag(el, 'a');
+    const spy = vi.spyOn(document, 'visibilityState', 'get').mockReturnValue('hidden');
+    try {
+      document.dispatchEvent(new Event('visibilitychange'));
+    } finally {
+      spy.mockRestore();
+    }
+    expect(el.isGestureActive).toBe(false);
+  });
+
+  it('the page becoming visible again leaves a drag alone', async () => {
+    el = await mountFour();
+    startMouseDrag(el, 'a');
+    document.dispatchEvent(new Event('visibilitychange'));
+    expect(el.isGestureActive).toBe(true);
+  });
+
+  it('a second pointerdown while a drag is in flight is ignored', async () => {
+    el = await mountFour();
+    startMouseDrag(el, 'a');
+    headerOf(el, 'b').dispatchEvent(makePointerEvent('pointerdown', { clientX: 10, clientY: 10, pointerId: 2 }));
+    await settle(el);
+    expect(tileEl(el, 'a').dataset['dragging']).toBe('true');
+    expect(tileEl(el, 'b').dataset['dragging']).toBe('false');
+  });
+
+  it('removing the element mid-drag cancels it and detaches the window listeners', async () => {
+    el = await mountFour();
+    startMouseDrag(el, 'a');
+    const removeSpy = vi.spyOn(window, 'removeEventListener');
+    el.remove();
+    const removed = removeSpy.mock.calls.map((c) => c[0]);
+    removeSpy.mockRestore();
+    expect(el.isGestureActive).toBe(false);
+    expect(removed).toEqual(expect.arrayContaining(['pointermove', 'pointerup', 'pointercancel', 'keydown']));
+  });
+
+  it('a tile removed from `tiles` mid-drag ends the gesture on the next move', async () => {
+    el = await mountFour();
+    startMouseDrag(el, 'a');
+    el.tiles = fourTiles.filter((t) => t.id !== 'a');
+    window.dispatchEvent(makePointerEvent('pointermove', { clientX: 90, clientY: 50 }));
+    expect(el.isGestureActive).toBe(false);
+  });
+});
+
+describe('mint-tile-manager — drag surface by drag-mode', () => {
+  let el: MintTileManagerElement;
+  afterEach(() => el?.remove());
+
+  function contentOf(host: MintTileManagerElement, id: string): HTMLElement {
+    return host.shadowRoot!.querySelector<HTMLElement>(`.tile[data-tile-id="${id}"] .tile__content-shell`)!;
+  }
+
+  it('drag-mode="header" does not start a drag from the tile body', async () => {
+    el = await mount((m) => {
+      m.columnCount = 2;
+      m.tiles = fourTiles;
+    });
+    contentOf(el, 'a').dispatchEvent(makePointerEvent('pointerdown', { clientX: 50, clientY: 50 }));
+    window.dispatchEvent(makePointerEvent('pointermove', { clientX: 90, clientY: 50 }));
+    expect(el.isGestureActive).toBe(false);
+  });
+
+  it('drag-mode="tile" starts a mouse drag from anywhere on the tile', async () => {
+    el = await mount((m) => {
+      m.columnCount = 2;
+      m.dragMode = 'tile';
+      m.tiles = fourTiles;
+    });
+    contentOf(el, 'a').dispatchEvent(makePointerEvent('pointerdown', { clientX: 50, clientY: 50 }));
+    window.dispatchEvent(makePointerEvent('pointermove', { clientX: 90, clientY: 50 }));
+    expect(el.isGestureActive).toBe(true);
+  });
+
+  it('drag-mode="tile" still requires the header for touch, so the body can scroll', async () => {
+    vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] });
+    try {
+      el = await mount((m) => {
+        m.columnCount = 2;
+        m.dragMode = 'tile';
+        m.tiles = fourTiles;
+      });
+      contentOf(el, 'a').dispatchEvent(
+        makePointerEvent('pointerdown', { clientX: 50, clientY: 50, pointerType: 'touch' }),
+      );
+      vi.advanceTimersByTime(700);
+      expect(el.isGestureActive).toBe(false);
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+});
+
+describe('mint-tile-manager — touch long-press drag', () => {
+  let el: MintTileManagerElement;
+
+  beforeEach(() => {
+    vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] });
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
+    el?.remove();
+  });
+
+  const mountFour = () =>
+    mount((m) => {
+      m.columnCount = 2;
+      m.tiles = fourTiles;
+    });
+
+  const touchDown = (host: MintTileManagerElement, id: string, pointerId = 7) =>
+    headerOf(host, id).dispatchEvent(
+      makePointerEvent('pointerdown', { clientX: 50, clientY: 50, pointerType: 'touch', pointerId }),
+    );
+
+  it('shows press feedback on the held tile while arming', async () => {
+    el = await mountFour();
+    touchDown(el, 'a');
+    vi.advanceTimersByTime(200);
+    await settle(el);
+    expect(tileEl(el, 'a').dataset['pressing']).toBe('true');
+    expect(tileEl(el, 'b').dataset['pressing']).toBe('false');
+  });
+
+  it('arms a drag after the 600 ms hold, vibrating once', async () => {
+    const vibrate = vi.fn();
+    const nav = navigator as Navigator & { vibrate?: (p: number) => boolean };
+    const original = nav.vibrate;
+    Object.defineProperty(navigator, 'vibrate', { value: vibrate, configurable: true, writable: true });
+    try {
+      el = await mountFour();
+      touchDown(el, 'a');
+      vi.advanceTimersByTime(600);
+      await settle(el);
+      expect(el.isGestureActive).toBe(true);
+      expect(vibrate).toHaveBeenCalledWith(10);
+      expect(tileEl(el, 'a').dataset['dragging']).toBe('true');
+      expect(tileEl(el, 'a').dataset['pressing']).toBe('false');
+      expect(liveText(el)).toContain('Dragging tile at row 1, column 1.');
+    } finally {
+      Object.defineProperty(navigator, 'vibrate', { value: original, configurable: true, writable: true });
+    }
+  });
+
+  it('still arms when navigator.vibrate throws', async () => {
+    const original = (navigator as Navigator & { vibrate?: unknown }).vibrate;
+    Object.defineProperty(navigator, 'vibrate', {
+      value: () => {
+        throw new Error('blocked');
+      },
+      configurable: true,
+      writable: true,
+    });
+    try {
+      el = await mountFour();
+      touchDown(el, 'a');
+      vi.advanceTimersByTime(600);
+      expect(el.isGestureActive).toBe(true);
+    } finally {
+      Object.defineProperty(navigator, 'vibrate', { value: original, configurable: true, writable: true });
+    }
+  });
+
+  it('lifting the finger before 600 ms cancels the hold', async () => {
+    el = await mountFour();
+    touchDown(el, 'a');
+    vi.advanceTimersByTime(300);
+    window.dispatchEvent(makePointerEvent('pointerup', { clientX: 50, clientY: 50, pointerType: 'touch', pointerId: 7 }));
+    vi.advanceTimersByTime(600);
+    await settle(el);
+    expect(el.isGestureActive).toBe(false);
+    expect(tileEl(el, 'a').dataset['pressing']).toBe('false');
+  });
+
+  it('a pointercancel during the hold cancels it', async () => {
+    el = await mountFour();
+    touchDown(el, 'a');
+    window.dispatchEvent(
+      makePointerEvent('pointercancel', { clientX: 50, clientY: 50, pointerType: 'touch', pointerId: 7 }),
+    );
+    vi.advanceTimersByTime(700);
+    expect(el.isGestureActive).toBe(false);
+  });
+
+  it('small finger jitter within the 10 px slop keeps the hold alive', async () => {
+    el = await mountFour();
+    touchDown(el, 'a');
+    window.dispatchEvent(makePointerEvent('pointermove', { clientX: 55, clientY: 54, pointerType: 'touch', pointerId: 7 }));
+    vi.advanceTimersByTime(600);
+    expect(el.isGestureActive).toBe(true);
+  });
+
+  it('events from another finger do not disturb the hold', async () => {
+    el = await mountFour();
+    touchDown(el, 'a', 7);
+    window.dispatchEvent(makePointerEvent('pointermove', { clientX: 300, clientY: 50, pointerType: 'touch', pointerId: 8 }));
+    window.dispatchEvent(makePointerEvent('pointerup', { clientX: 300, clientY: 50, pointerType: 'touch', pointerId: 8 }));
+    vi.advanceTimersByTime(600);
+    expect(el.isGestureActive).toBe(true);
+  });
+
+  it('the page becoming hidden during the hold cancels it', async () => {
+    el = await mountFour();
+    touchDown(el, 'a');
+    const spy = vi.spyOn(document, 'visibilityState', 'get').mockReturnValue('hidden');
+    try {
+      document.dispatchEvent(new Event('visibilitychange'));
+    } finally {
+      spy.mockRestore();
+    }
+    vi.advanceTimersByTime(700);
+    await settle(el);
+    expect(el.isGestureActive).toBe(false);
+    expect(tileEl(el, 'a').dataset['pressing']).toBe('false');
+  });
+
+  it('a touch drag armed by the hold ends on pointerup without committing an unresolved target', async () => {
+    el = await mountFour();
+    const events = recordEvents(el);
+    touchDown(el, 'a');
+    vi.advanceTimersByTime(600);
+    window.dispatchEvent(makePointerEvent('pointerup', { clientX: 50, clientY: 50, pointerType: 'touch', pointerId: 7 }));
+    expect(el.isGestureActive).toBe(false);
+    expect(events).toEqual([]);
+  });
+});
+
+describe('mint-tile-manager — pointer resize lifecycle', () => {
+  let el: MintTileManagerElement;
+  afterEach(() => el?.remove());
+
+  const handleOf = (host: MintTileManagerElement, id: string, which: 'side' | 'bottom' | 'corner') =>
+    host.shadowRoot!.querySelector<HTMLElement>(`.tile[data-tile-id="${id}"] .tile__resize-${which}`)!;
+
+  const mountFour = () =>
+    mount((m) => {
+      m.columnCount = 2;
+      m.tiles = fourTiles;
+    });
+
+  it.each(['side', 'bottom', 'corner'] as const)('the %s handle starts a resize and announces it', async (which) => {
+    el = await mountFour();
+    handleOf(el, 'a', which).dispatchEvent(makePointerEvent('pointerdown', { clientX: 10, clientY: 10 }));
+    await settle(el);
+    expect(el.isGestureActive).toBe(true);
+    expect(tileEl(el, 'a').dataset['resizing']).toBe('true');
+    expect(liveText(el)).toContain('Resizing tile at row 1, column 1.');
+  });
+
+  it('a resize-handle pointerdown does not also arm a drag of the tile', async () => {
+    el = await mount((m) => {
+      m.columnCount = 2;
+      m.dragMode = 'tile';
+      m.tiles = fourTiles;
+    });
+    handleOf(el, 'a', 'corner').dispatchEvent(makePointerEvent('pointerdown', { clientX: 10, clientY: 10 }));
+    window.dispatchEvent(makePointerEvent('pointermove', { clientX: 60, clientY: 10 }));
+    await settle(el);
+    expect(tileEl(el, 'a').dataset['dragging']).toBe('false');
+    expect(tileEl(el, 'a').dataset['resizing']).toBe('true');
+  });
+
+  it('a right-button pointerdown on a handle is ignored', async () => {
+    el = await mountFour();
+    handleOf(el, 'a', 'corner').dispatchEvent(makePointerEvent('pointerdown', { clientX: 10, clientY: 10, button: 2 }));
+    expect(el.isGestureActive).toBe(false);
+  });
+
+  it('resize-mode="off" removes the handles', async () => {
+    el = await mount((m) => {
+      m.columnCount = 2;
+      m.resizeMode = 'off';
+      m.tiles = fourTiles;
+    });
+    expect(el.shadowRoot!.querySelector('.tile__resize-corner')).toBeNull();
+  });
+
+  it('a second handle pointerdown while resizing is ignored', async () => {
+    el = await mountFour();
+    handleOf(el, 'a', 'corner').dispatchEvent(makePointerEvent('pointerdown', { clientX: 10, clientY: 10, pointerId: 1 }));
+    handleOf(el, 'b', 'corner').dispatchEvent(makePointerEvent('pointerdown', { clientX: 10, clientY: 10, pointerId: 2 }));
+    await settle(el);
+    expect(tileEl(el, 'a').dataset['resizing']).toBe('true');
+    expect(tileEl(el, 'b').dataset['resizing']).toBe('false');
+  });
+
+  it('never renders a NaN span when the grid has no measurable cell size', async () => {
+    el = await mountFour();
+    handleOf(el, 'a', 'corner').dispatchEvent(makePointerEvent('pointerdown', { clientX: 10, clientY: 10 }));
+    window.dispatchEvent(makePointerEvent('pointermove', { clientX: 300, clientY: 300 }));
+    await settle(el);
+    expect(tileEl(el, 'a').getAttribute('style') ?? '').not.toContain('NaN');
+  });
+
+  it('Escape cancels a resize', async () => {
+    el = await mountFour();
+    const events = recordEvents(el);
+    handleOf(el, 'a', 'side').dispatchEvent(makePointerEvent('pointerdown', { clientX: 10, clientY: 10 }));
+    window.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', cancelable: true }));
+    expect(el.isGestureActive).toBe(false);
+    expect(events).toEqual([]);
+  });
+});
+
+describe('mint-tile-manager — attributes and layout cache', () => {
+  let el: MintTileManagerElement;
+  afterEach(() => el?.remove());
+
+  it.each([
+    [null, false],
+    ['', true],
+    ['true', true],
+    ['false', false],
+    ['0', false],
+  ])('animate-reflow=%j sets animateReflow to %s', async (value, expected) => {
+    el = await mount((m) => {
+      m.tiles = fourTiles;
+    });
+    el.setAttribute('animate-reflow', 'true');
+    if (value === null) el.removeAttribute('animate-reflow');
+    else el.setAttribute('animate-reflow', value);
+    expect(el.animateReflow).toBe(expected);
+  });
+
+  it('without a column count the grid uses auto-fit tracks of min-column-width', async () => {
+    el = await mount((m) => {
+      m.minColumnWidth = '150px';
+      m.minRowHeight = '6rem';
+      m.gap = '1rem';
+      m.tiles = fourTiles;
+    });
+    const style = el.shadowRoot!.querySelector<HTMLElement>('.tile-grid')!.getAttribute('style') ?? '';
+    expect(style).toContain('repeat(auto-fit, minmax(150px, 1fr))');
+    expect(style).toContain('--mp-tile-row-height: 6rem');
+    expect(style).toContain('--mp-tile-gap: 1rem');
+  });
+
+  it('a column count renders that many equal tracks', async () => {
+    el = await mount((m) => {
+      m.columnCount = 3;
+      m.tiles = fourTiles;
+    });
+    const style = el.shadowRoot!.querySelector<HTMLElement>('.tile-grid')!.getAttribute('style') ?? '';
+    expect(style).toContain('repeat(3, minmax(0, 1fr))');
+  });
+
+  it('keyboard moves clamp to the current column count after it changes', async () => {
+    el = await mount((m) => {
+      m.columnCount = 2;
+      m.tiles = [tile('a', { colStart: 2, rowStart: 1, colSpan: 1, rowSpan: 1 })];
+    });
+    const a = tileEl(el, 'a');
+    a.dispatchEvent(new KeyboardEvent('keydown', { key: 'm', bubbles: true, cancelable: true }));
+    a.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowRight', bubbles: true, cancelable: true }));
+    expect(el.tiles[0].position.colStart).toBe(2);
+    el.columnCount = 3;
+    await settle(el);
+    a.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowRight', bubbles: true, cancelable: true }));
+    expect(el.tiles[0].position.colStart).toBe(3);
+  });
+});
+
+describe('mint-tile-manager — host ResizeObserver', () => {
+  let el: MintTileManagerElement;
+  const original = globalThis.ResizeObserver;
+  let observers: { cb: ResizeObserverCallback; targets: Element[]; disconnected: boolean }[] = [];
+
+  beforeEach(() => {
+    observers = [];
+    globalThis.ResizeObserver = class {
+      private readonly rec: { cb: ResizeObserverCallback; targets: Element[]; disconnected: boolean };
+      constructor(cb: ResizeObserverCallback) {
+        this.rec = { cb, targets: [], disconnected: false };
+        observers.push(this.rec);
+      }
+      observe(target: Element): void {
+        this.rec.targets.push(target);
+      }
+      unobserve(): void {
+        /* not used by the element */
+      }
+      disconnect(): void {
+        this.rec.disconnected = true;
+      }
+    } as unknown as typeof ResizeObserver;
+  });
+
+  afterEach(() => {
+    globalThis.ResizeObserver = original;
+    el?.remove();
+  });
+
+  const tick = () => observers.at(-1)!.cb([], {} as ResizeObserver);
+
+  it('observes the host itself', async () => {
+    el = await mount((m) => {
+      m.tiles = fourTiles;
+    });
+    expect(observers.at(-1)!.targets).toEqual([el]);
+  });
+
+  it('coalesces observer ticks into one layout refresh per frame', async () => {
+    el = await mount((m) => {
+      m.tiles = fourTiles;
+    });
+    const refresh = vi.spyOn(el as unknown as { updateLayoutCache: () => void }, 'updateLayoutCache');
+    tick();
+    tick();
+    tick();
+    expect(refresh).not.toHaveBeenCalled();
+    await nextRaf();
+    expect(refresh).toHaveBeenCalledTimes(1);
+    tick();
+    await nextRaf();
+    expect(refresh).toHaveBeenCalledTimes(2);
+  });
+
+  it('disconnects the observer when the element is removed', async () => {
+    el = await mount((m) => {
+      m.tiles = fourTiles;
+    });
+    el.remove();
+    expect(observers.at(-1)!.disconnected).toBe(true);
+  });
+});
+
+describe('mint-tile-manager — reflow animation', () => {
+  let el: MintTileManagerElement;
+  const originalMatchMedia = window.matchMedia;
+
+  afterEach(() => {
+    window.matchMedia = originalMatchMedia;
+    el?.remove();
+  });
+
+  function stubReducedMotion(reduce: boolean): void {
+    window.matchMedia = ((query: string) => ({
+      matches: reduce && query.includes('reduce'),
+      media: query,
+      onchange: null,
+      addListener: () => undefined,
+      removeListener: () => undefined,
+      addEventListener: () => undefined,
+      removeEventListener: () => undefined,
+      dispatchEvent: () => false,
+    })) as typeof window.matchMedia;
+  }
+
+  /** Keyboard-move tile a down one row (pushes c), counting tile box reads. */
+  async function moveTileADownCountingTileReads(): Promise<number> {
+    const a = tileEl(el, 'a');
+    a.dispatchEvent(new KeyboardEvent('keydown', { key: 'm', bubbles: true, cancelable: true }));
+    await settle(el);
+    const spy = vi.spyOn(Element.prototype, 'getBoundingClientRect');
+    try {
+      a.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowDown', bubbles: true, cancelable: true }));
+      await settle(el);
+      return spy.mock.contexts.filter((ctx) => (ctx as Element).classList?.contains('tile')).length;
+    } finally {
+      spy.mockRestore();
+    }
+  }
+
+  it('measures every tile around a reflow, and inverts none whose box did not move', async () => {
+    stubReducedMotion(false);
+    el = await mount((m) => {
+      m.columnCount = 2;
+      m.tiles = fourTiles;
+    });
+    const reads = await moveTileADownCountingTileReads();
+    // First and Last of FLIP: each of the 4 tiles before and after the update.
+    expect(reads).toBe(8);
+    const transforms = ['a', 'b', 'c', 'd'].map((id) => tileEl(el, id).style.transform);
+    expect(transforms).toEqual(['', '', '', '']);
+  });
+
+  it('honours prefers-reduced-motion by skipping the FLIP pass entirely', async () => {
+    stubReducedMotion(true);
+    el = await mount((m) => {
+      m.columnCount = 2;
+      m.tiles = fourTiles;
+    });
+    expect(await moveTileADownCountingTileReads()).toBe(0);
+  });
+
+  it('animate-reflow off skips the FLIP pass even when motion is allowed', async () => {
+    stubReducedMotion(false);
+    el = await mount((m) => {
+      m.columnCount = 2;
+      m.animateReflow = false;
+      m.tiles = fourTiles;
+    });
+    expect(await moveTileADownCountingTileReads()).toBe(0);
+  });
+});

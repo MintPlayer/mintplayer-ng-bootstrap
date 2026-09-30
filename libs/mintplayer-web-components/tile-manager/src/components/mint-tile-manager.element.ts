@@ -4,6 +4,7 @@ import { TilePosition } from '../types/tile-position';
 import { TileLayoutSnapshot, TileGestureBlocked } from '../types/tile-layout-snapshot';
 import { GridRect } from '../types/grid-rect';
 import { pack } from '../utils/pack';
+import { cellOrigin, dragTranslate, pointerToGridRect, resizeSpans, type DragPointer } from '../utils/grid-geometry';
 import { styles } from './mint-tile-manager.element.template';
 
 const TILE_INSTRUCTIONS =
@@ -306,14 +307,22 @@ export class MintTileManagerElement extends LitElement {
     // for the visual translate. gridRect read here is unavoidable: we need
     // the live grid origin to convert pointer (viewport coords) into
     // grid-relative space. One read per render, not one per tile.
+    const t = dragTranslate(this.dragPointer(grid, g, pointer), g.currentRect, this.cellMetrics);
+    return `translate(${t.x}px, ${t.y}px)`;
+  }
+
+  /** The numbers the pure drag geometry needs: pointer, live grid origin, grab offset. */
+  private dragPointer(
+    grid: HTMLElement,
+    g: Extract<GestureState, { kind: 'drag' }>,
+    pointer: { x: number; y: number },
+  ): DragPointer {
     const gridRect = grid.getBoundingClientRect();
-    const cell = this.cellMetrics;
-    const snapped = g.currentRect;
-    const desiredLeft = pointer.x - gridRect.left - g.pointerOffset.dx;
-    const desiredTop = pointer.y - gridRect.top - g.pointerOffset.dy;
-    const snappedLeft = (snapped.colStart - 1) * (cell.width + cell.gapX);
-    const snappedTop = (snapped.rowStart - 1) * (cell.height + cell.gapY);
-    return `translate(${Math.round(desiredLeft - snappedLeft)}px, ${Math.round(desiredTop - snappedTop)}px)`;
+    return {
+      pointer,
+      gridOrigin: { x: gridRect.left, y: gridRect.top },
+      pointerOffset: { x: g.pointerOffset.dx, y: g.pointerOffset.dy },
+    };
   }
 
   // ---------------- Lifecycle ----------------
@@ -560,52 +569,41 @@ export class MintTileManagerElement extends LitElement {
   }
 
   private beginDragFromTouchArm(tile: MintTile, startX: number, startY: number, pointerId: number): void {
-    // Synthesize the same begin call as for mouse, with a fake pointer event.
-    // Refresh the layout cache once at gesture start — guarantees fresh metrics
-    // even if the grid has resized since the last cache tick.
-    this.updateLayoutCache();
-    const grid = this.shadowRoot?.querySelector<HTMLElement>('.tile-grid');
-    if (!grid) return;
-    const cell = this.cellMetrics;
-    const gridRect = grid.getBoundingClientRect();
-    const tileLeft = gridRect.left + (tile.position.colStart - 1) * (cell.width + cell.gapX);
-    const tileTop = gridRect.top + (tile.position.rowStart - 1) * (cell.height + cell.gapY);
-    this.gestureState = {
-      kind: 'drag',
-      pointerId,
-      tileId: tile.id,
-      pointerOffset: { dx: startX - tileLeft, dy: startY - tileTop },
-      currentRect: { ...tile.position },
-      blocked: false,
-    };
-    this.gestureKind = 'drag';
-    this.lastPointerPosition = { x: startX, y: startY };
-    this.attachWindowListeners();
-    this.announceDragBegin(tile);
+    // Same entry as the mouse path; the touch arm only re-renders (no packer
+    // run) because the finger has not moved yet.
+    if (!this.startDrag(tile, pointerId, startX, startY)) return;
     this.requestUpdate();
   }
 
   private beginDrag(event: PointerEvent, tile: MintTile): void {
+    if (!this.startDrag(tile, event.pointerId, event.clientX, event.clientY)) return;
+    this.runPackerForCurrentGesture();
+  }
+
+  /**
+   * Enter the drag state for a pointer at (x, y). Refreshes the layout cache
+   * once at gesture start, so the metrics are fresh even if the grid resized
+   * since the last cache tick. Returns false when there is no grid to drag in.
+   */
+  private startDrag(tile: MintTile, pointerId: number, x: number, y: number): boolean {
     this.updateLayoutCache();
     const grid = this.shadowRoot?.querySelector<HTMLElement>('.tile-grid');
-    if (!grid) return;
-    const cell = this.cellMetrics;
+    if (!grid) return false;
     const gridRect = grid.getBoundingClientRect();
-    const tileLeft = gridRect.left + (tile.position.colStart - 1) * (cell.width + cell.gapX);
-    const tileTop = gridRect.top + (tile.position.rowStart - 1) * (cell.height + cell.gapY);
+    const origin = cellOrigin(tile.position, this.cellMetrics);
     this.gestureState = {
       kind: 'drag',
-      pointerId: event.pointerId,
+      pointerId,
       tileId: tile.id,
-      pointerOffset: { dx: event.clientX - tileLeft, dy: event.clientY - tileTop },
+      pointerOffset: { dx: x - (gridRect.left + origin.x), dy: y - (gridRect.top + origin.y) },
       currentRect: { ...tile.position },
       blocked: false,
     };
     this.gestureKind = 'drag';
-    this.lastPointerPosition = { x: event.clientX, y: event.clientY };
+    this.lastPointerPosition = { x, y };
     this.attachWindowListeners();
     this.announceDragBegin(tile);
-    this.runPackerForCurrentGesture();
+    return true;
   }
 
   private beginResize(event: PointerEvent, tile: MintTile, mode: 'side' | 'bottom' | 'corner'): void {
@@ -718,48 +716,27 @@ export class MintTileManagerElement extends LitElement {
   private computeDragRect(g: Extract<GestureState, { kind: 'drag' }>, tile: MintTile): GridRect | null {
     const grid = this.shadowRoot?.querySelector<HTMLElement>('.tile-grid');
     if (!grid) return null;
-    const cell = this.cellMetrics;
-    const cols = this.effectiveColumnCount;
     const pointer = this.lastPointerPosition;
     if (!pointer) return null;
-    const gridRect = grid.getBoundingClientRect();
-    // Pointer position relative to grid origin, minus the where-on-the-tile offset.
-    const localX = pointer.x - gridRect.left - g.pointerOffset.dx;
-    const localY = pointer.y - gridRect.top - g.pointerOffset.dy;
-    const colStart = Math.round(localX / (cell.width + cell.gapX)) + 1;
-    const rowStart = Math.round(localY / (cell.height + cell.gapY)) + 1;
-    return {
-      colStart: Math.max(1, Math.min(colStart, cols - tile.position.colSpan + 1)),
-      rowStart: Math.max(1, rowStart),
-      colSpan: tile.position.colSpan,
-      rowSpan: tile.position.rowSpan,
-    };
+    return pointerToGridRect(this.dragPointer(grid, g, pointer), tile.position, this.cellMetrics, this.effectiveColumnCount);
   }
 
   private computeResizeRect(
     g: Extract<GestureState, { kind: 'resize' }>,
     tile: MintTile,
   ): GridRect | null {
-    const cell = this.cellMetrics;
-    const cols = this.effectiveColumnCount;
     const pointer = this.lastPointerPosition;
     if (!pointer) return null;
-    const dx = pointer.x - g.startPointer.x;
-    const dy = pointer.y - g.startPointer.y;
-    const colDelta = Math.round(dx / (cell.width + cell.gapX));
-    const rowDelta = Math.round(dy / (cell.height + cell.gapY));
-    const colSpan =
-      g.mode === 'bottom'
-        ? g.startSpans.colSpan
-        : Math.max(1, Math.min(g.startSpans.colSpan + colDelta, cols - tile.position.colStart + 1));
-    const rowSpan =
-      g.mode === 'side' ? g.startSpans.rowSpan : Math.max(1, g.startSpans.rowSpan + rowDelta);
-    return {
-      colStart: tile.position.colStart,
-      rowStart: tile.position.rowStart,
-      colSpan,
-      rowSpan,
-    };
+    const spans = resizeSpans(
+      { x: pointer.x - g.startPointer.x, y: pointer.y - g.startPointer.y },
+      g.mode,
+      g.startSpans,
+      tile.position.colStart,
+      this.cellMetrics,
+      this.effectiveColumnCount,
+    );
+    if (!spans) return null;
+    return { colStart: tile.position.colStart, rowStart: tile.position.rowStart, ...spans };
   }
 
   // ---------------- Commit / cancel ----------------
