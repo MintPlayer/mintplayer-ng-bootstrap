@@ -3,3 +3,5 @@
 export * from './cookie';
 export * from './resolve';
 export * from './store';
+export * from './toggle-modes';
+export { MpThemeToggle } from './components/mp-theme-toggle';
