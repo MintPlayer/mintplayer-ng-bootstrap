@@ -218,6 +218,31 @@ request; **injection of `REQUEST` and `DOCUMENT`**; and **signals**.
 - React/Vue `server.mjs` pass it to `resolveServerTheme({ defaultMode })` explicitly. They splice the attribute before
   any parsed DOM exists, so this is the one remaining duplicate, and the docs show it right beside the meta tag.
 - A non-`auto` default counts as explicit on the server: it renders the attribute.
+- **Precedence** (confirmed in spike A1): a valid cookie wins, including a valid `auto` cookie over a non-auto meta,
+  since the user's explicit choice beats the site default. Then the meta. Then `auto`. An invalid cookie counts as
+  absent, so the meta applies.
+
+### D5c — Critical CSS keeps the dark tokens (Q11 = B, found by spike A2)
+
+Angular's critical-CSS inliner (beasties) prunes every `[data-bs-theme=dark]` rule, because the static `index.html`
+carries no attribute. The effect: a dark user paints light until the async stylesheet arrives. That hits `auto`,
+prerendered pages, cached pages and CSR builds.
+
+- **Fix:** `_bootstrap.scss` wraps the dark token block (Bootstrap's `[data-bs-theme=dark]` `--bs-*` block plus the
+  `color-mode.css` rules) in beasties' `/* beasties:include start */ … /* beasties:include end */` markers. The
+  implementation must first verify that the markers survive Angular's CSS minification (loud `/*!` comments, if
+  needed).
+- **Recorded fallback:** if they don't survive, set `optimization.styles.inlineCritical: false` in the demo and in
+  the docs.
+- **Guard:** a production-build check asserts that the inlined `<style>` in the built `index.html` contains
+  `[data-bs-theme=dark]`. This catches a silent regression if Angular swaps inliners again.
+
+### D5d — Static-file shipping fix (found by spike A2, in scope)
+
+`nxCopyAssetsPlugin` silently skips gitignored files, so **`custom-elements.json` is missing from the published
+`@mintplayer/web-components@2.16.0`**. An `emitStaticFiles()` Vite plugin (in `tools/vite/`, calling `this.emitFile`
+in `generateBundle` and failing when a file is missing) ships `custom-elements.json`, `theming/bs-theme-preboot.js`
+and `theming/color-mode.css`.
 
 ### D6 — Dark icons inside shadow and light-tier sheets: style queries (Q10 = C′, gated by spike A3)
 
@@ -408,4 +433,18 @@ It is checked in light and dark, standalone, inside the dropdown, and inside the
 
 ## 8. Open questions
 
-None. All were resolved in the 2026-09-30 grill (Q1–Q10). A3 can still flip D6 to its recorded mask fallback.
+None. All were resolved in the 2026-09-30 grill (Q1–Q11).
+
+**Spike outcomes** ([spikes/dark-mode/FINDINGS.md](./spikes/dark-mode/FINDINGS.md)):
+- A1 confirmed D4.
+- A2 confirmed D5 and produced D5c and D5d.
+- A3 confirmed D6 (style queries pass in Chromium 151, Firefox 153 and WebKit 26.5; the rescoper needs no change),
+  so the mask fallback is **not** used. Forced colours still need their own rules:
+  - select: `appearance: auto; background-image: none`
+  - switch knob: an override
+  - accordion mask: `background-color: CanvasText`
+
+**Implementation notes from the spikes:**
+- The esbuild ES5 pipeline must be es2015 IIFE → `ts.transpileModule` → es5 minify.
+- React/Vue Vite need a `resolve.alias` for the `color-mode.css` import.
+- Local SSR runs need `NG_ALLOWED_HOSTS=localhost` and requests to `127.0.0.1`.
