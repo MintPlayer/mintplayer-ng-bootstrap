@@ -88,10 +88,15 @@ test.describe('theme toggle', () => {
     await page.goto('/', { waitUntil: 'commit' });
     const toggle = page.locator(TOGGLE);
     // color-mode.css reserves the box through mp-theme-toggle:not(:defined).
+    // Assert the box, not display: the topbar is a flex container, which
+    // blockifies the rule's inline-block to block. An empty undefined element
+    // without the rule would lay out at 0x0.
     await page.waitForFunction(
       (selector) => {
         const el = document.querySelector(selector);
-        return !!el && !customElements.get('mp-theme-toggle') && getComputedStyle(el).display === 'inline-block';
+        if (!el || customElements.get('mp-theme-toggle')) return false;
+        const rect = el.getBoundingClientRect();
+        return rect.width > 0 && rect.height > 0;
       },
       TOGGLE,
     );
