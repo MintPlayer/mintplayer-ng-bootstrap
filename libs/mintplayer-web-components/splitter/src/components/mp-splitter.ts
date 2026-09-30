@@ -154,9 +154,7 @@ export class MpSplitter extends LitElement {
 
     switch (name) {
       case 'orientation':
-        this.stateManager.setOrientation(
-          (newValue as Direction) || 'horizontal'
-        );
+        this.stateManager.setOrientation(this.orientation);
         this.updateContainerOrientation();
         break;
       case 'min-panel-size':
@@ -170,8 +168,13 @@ export class MpSplitter extends LitElement {
   }
 
   // Public API
+  /**
+   * Anything but "vertical" is horizontal. The attribute was cast straight to
+   * `Direction`, so an unknown value was reported as the orientation and added
+   * to the container as a class, matching neither layout rule.
+   */
   get orientation(): Direction {
-    return (this.getAttribute('orientation') as Direction) || 'horizontal';
+    return this.getAttribute('orientation') === 'vertical' ? 'vertical' : 'horizontal';
   }
 
   set orientation(value: Direction) {

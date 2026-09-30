@@ -7,6 +7,23 @@ import { escapeHtml, normalizeSource, splitHighlightedLines } from './core/split
 import { highlight } from './core/highlighter';
 import type { CodeLineAnnotation } from './types';
 
+const COPY_LABEL = 'Copy ${language} code to clipboard';
+const LINE_LABEL = 'Line ${line}';
+const REGION_LABEL = '${language} code sample';
+const COPIED_LABEL = 'Copied!';
+const COPIED_ANNOUNCEMENT = 'Copied to clipboard';
+const KEYMAP_HINT =
+  'Use the up and down arrow keys to move between line links, Home and End for the first and last line.';
+
+/**
+ * A localisable text attribute whose removal restores its English default.
+ * lit's String converter reads a removed attribute as null, which crashed the
+ * pattern labels (null.replace) and silently blanked the others.
+ */
+const textAttribute = (fallback: string) => ({
+  fromAttribute: (value: string | null): string => value ?? fallback,
+});
+
 const TAG_NAME = 'mp-code-snippet';
 
 /**
@@ -59,7 +76,7 @@ export class MpCodeSnippet extends LitElement {
    * detected language; override for localisation. The ${language} placeholder
    * is substituted, so a translated pattern keeps the dynamic part.
    */
-  @property({ type: String, attribute: 'copy-label' }) copyLabel = 'Copy ${language} code to clipboard';
+  @property({ attribute: 'copy-label', converter: textAttribute(COPY_LABEL) }) copyLabel = COPY_LABEL;
   @property({ type: String }) code = '';
 
   /** Show a line-number gutter. Off by default — a one-line install command
@@ -106,7 +123,7 @@ export class MpCodeSnippet extends LitElement {
    * Localisable, because an accessible name that only exists as an English
    * literal is a translation bug.
    */
-  @property({ type: String, attribute: 'line-label' }) lineLabel = 'Line ${line}';
+  @property({ attribute: 'line-label', converter: textAttribute(LINE_LABEL) }) lineLabel = LINE_LABEL;
 
   /**
    * Accessible name for the code region. Defaults to a pattern derived from
@@ -116,23 +133,22 @@ export class MpCodeSnippet extends LitElement {
   @property({ type: String }) label = '';
 
   /** Region name pattern used when `label` is empty. `${language}` is substituted. */
-  @property({ type: String, attribute: 'region-label' }) regionLabel = '${language} code sample';
+  @property({ attribute: 'region-label', converter: textAttribute(REGION_LABEL) }) regionLabel = REGION_LABEL;
 
   /** Visible confirmation in the toast after a successful copy. */
-  @property({ type: String, attribute: 'copied-label' }) copiedLabel = 'Copied!';
+  @property({ attribute: 'copied-label', converter: textAttribute(COPIED_LABEL) }) copiedLabel = COPIED_LABEL;
 
   /** What a screen reader hears after a successful copy. */
-  @property({ type: String, attribute: 'copied-announcement' })
-  copiedAnnouncement = 'Copied to clipboard';
+  @property({ attribute: 'copied-announcement', converter: textAttribute(COPIED_ANNOUNCEMENT) })
+  copiedAnnouncement = COPIED_ANNOUNCEMENT;
 
   /**
    * Keyboard help for the line-anchor list, exposed as the region's
    * description so entering it reads the keymap once. Only rendered when
    * `lineHref` makes the anchors exist.
    */
-  @property({ type: String, attribute: 'keymap-hint' })
-  keymapHint =
-    'Use the up and down arrow keys to move between line links, Home and End for the first and last line.';
+  @property({ attribute: 'keymap-hint', converter: textAttribute(KEYMAP_HINT) })
+  keymapHint = KEYMAP_HINT;
 
   @state() private detectedLanguage = 'code';
   /** One highlighted HTML fragment per source line. */

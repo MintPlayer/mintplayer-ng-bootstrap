@@ -436,7 +436,9 @@ export class MpDatatable extends LitElement {
     return this._itemSize;
   }
   set itemSize(value: number) {
-    const next = Math.max(1, Math.floor(value || 0)) || 40;
+    // A non-positive or non-numeric size (a removed item-size attribute reads as
+    // Number(null) = 0) falls back to the default instead of clamping to 1px rows.
+    const next = Number.isFinite(value) && value > 0 ? Math.max(1, Math.floor(value)) : 40;
     if (this._itemSize !== next) {
       this._itemSize = next;
       this.requestUpdate();
@@ -796,14 +798,19 @@ export class MpDatatable extends LitElement {
     } else if (name === 'aria-labelledby' || name === 'aria-describedby') {
       this.hostAria.syncReferences();
     } else if (name === 'selection-mode') {
-      const v = newValue;
+      // Removing the attribute restores the default (a framework binding clears
+      // an attribute by removing it).
+      const v = newValue ?? 'none';
       if (v === 'none' || v === 'single' || v === 'multiple') {
         this.selectionMode = v;
       }
     } else if (name === 'pagination') {
       this.pagination = newValue !== null;
     } else if (name === 'resizable-columns') {
-      this.resizableColumns = newValue !== null;
+      // Default-on, so the attribute can only switch it OFF, with "false" —
+      // the auto-sort convention. Presence semantics made resizable-columns="false"
+      // read as true and made removing the attribute disable the default.
+      this.resizableColumns = newValue !== 'false';
     } else if (name === 'auto-sort') {
       this.autoSort = newValue !== 'false';
     } else if (name === 'empty-message') {
@@ -816,7 +823,8 @@ export class MpDatatable extends LitElement {
     } else if (name === 'tree') {
       this.tree = newValue !== null;
     } else if (name === 'tree-indent') {
-      const n = Number(newValue);
+      // Number(null) is 0, so a removed attribute used to set a zero indent.
+      const n = newValue === null ? 1.25 : Number(newValue);
       if (Number.isFinite(n)) this.treeIndent = n;
     } else if (name === 'selection-strategy') {
       this.selectionStrategy = newValue === 'cascading' ? 'cascading' : 'flat';

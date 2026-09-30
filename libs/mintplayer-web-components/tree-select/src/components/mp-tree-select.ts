@@ -263,11 +263,14 @@ export class MpTreeSelect extends LitElement {
   override attributeChangedCallback(name: string, oldValue: string | null, newValue: string | null): void {
     super.attributeChangedCallback(name, oldValue, newValue);
     switch (name) {
+      // Enum and numeric attributes: a removed or unrecognised value falls back to
+      // the default instead of reaching the setter verbatim (an unknown mode used
+      // to disable single-mode pruning; a non-numeric debounce became 0 ms).
       case 'mode':
-        this.mode = (newValue as TreeSelectMode) ?? 'single';
+        this.mode = newValue === 'multiple' || newValue === 'checkbox' ? newValue : 'single';
         break;
       case 'variant':
-        this.variant = (newValue as TreeSelectVariant) ?? 'textbox';
+        this.variant = newValue === 'button' ? 'button' : 'textbox';
         break;
       case 'cascade-select':
         this.cascadeSelect = newValue !== null;
@@ -284,9 +287,11 @@ export class MpTreeSelect extends LitElement {
       case 'disabled':
         this.disabled = newValue !== null;
         break;
-      case 'search-debounce-ms':
-        this.searchDebounceMs = Number(newValue);
+      case 'search-debounce-ms': {
+        const ms = newValue === null ? NaN : Number(newValue);
+        this.searchDebounceMs = Number.isFinite(ms) ? ms : 200;
         break;
+      }
       case 'aria-label':
         this.requestUpdate();
         break;

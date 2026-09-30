@@ -5,7 +5,9 @@ import { OverlayController } from '@mintplayer/web-components/overlay';
 import { MpCalendarElement, type FirstDayOfWeek } from '@mintplayer/web-components/calendar';
 import {
   MpTimeListElement,
+  hour12Converter,
   minutesOfDay,
+  resolveTimeStep,
   type Hour12Mode,
   type TimeStep,
 } from '@mintplayer/web-components/timepicker';
@@ -63,7 +65,7 @@ export class MpDatetimePickerElement extends LitElement {
     disableDateFn: { attribute: false },
     firstDayOfWeek: { attribute: 'first-day-of-week', type: Number, reflect: true },
     locale: { attribute: 'locale', type: String, reflect: true },
-    hour12: { attribute: 'hour12' },
+    hour12: { attribute: 'hour12', converter: hour12Converter },
     step: { attribute: 'step', type: Number, reflect: true },
     defaultTime: { attribute: false },
     placeholder: { attribute: 'placeholder', type: String, reflect: true },
@@ -457,7 +459,8 @@ export class MpDatetimePickerElement extends LitElement {
   /** `Now`, snapped down to the nearest step — the value that button writes. */
   private roundedNow(): Date {
     const now = new Date();
-    const minutes = Math.floor(now.getMinutes() / this.step) * this.step;
+    const step = resolveTimeStep(this.step);
+    const minutes = Math.floor(now.getMinutes() / step) * step;
     return new Date(now.getFullYear(), now.getMonth(), now.getDate(), now.getHours(), minutes, 0, 0);
   }
 

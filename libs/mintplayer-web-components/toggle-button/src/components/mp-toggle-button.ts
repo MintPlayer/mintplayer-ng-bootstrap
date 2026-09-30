@@ -209,12 +209,16 @@ export class MpToggleButton extends FormAssociatedMixin(LitElement) {
         this._value = newValue;
         this.requestUpdate();
         break;
-      case 'color':
-        if (newValue && VALID_COLORS.has(newValue)) {
-          this._color = newValue as ToggleButtonColor;
+      case 'color': {
+        // Removing the attribute restores the default rather than keeping the
+        // last value (a framework binding clears an attribute by removing it).
+        const color = newValue ?? 'primary';
+        if (VALID_COLORS.has(color)) {
+          this._color = color as ToggleButtonColor;
           this.requestUpdate();
         }
         break;
+      }
       case 'aria-label':
         this.requestUpdate();
         break;

@@ -425,19 +425,25 @@ export class MpFileManager extends LitElement {
         this._allowUpload = newValue !== null;
         this.requestUpdate();
         break;
-      case 'view-mode':
-        if (newValue === 'list' || newValue === 'icons') {
-          this._viewMode = newValue;
+      case 'view-mode': {
+        // Removing an enum attribute restores its default rather than keeping
+        // the last value (a framework binding clears an attribute by removing it).
+        const viewMode = newValue ?? 'list';
+        if (viewMode === 'list' || viewMode === 'icons') {
+          this._viewMode = viewMode;
           this.requestUpdate();
         }
         break;
-      case 'selection-mode':
-        if (newValue === 'none' || newValue === 'single' || newValue === 'multiple') {
-          this._selectionMode = newValue;
-          if (newValue === 'none') this._selection.clear();
+      }
+      case 'selection-mode': {
+        const selectionMode = newValue ?? 'multiple';
+        if (selectionMode === 'none' || selectionMode === 'single' || selectionMode === 'multiple') {
+          this._selectionMode = selectionMode;
+          if (selectionMode === 'none') this._selection.clear();
           this.requestUpdate();
         }
         break;
+      }
       case 'search-placeholder':
         this._searchPlaceholder = newValue ?? '';
         this.requestUpdate();

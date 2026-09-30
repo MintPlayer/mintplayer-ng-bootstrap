@@ -109,23 +109,30 @@ export class MpPagination extends LitElement {
 
   override attributeChangedCallback(name: string, oldValue: string | null, newValue: string | null): void {
     super.attributeChangedCallback(name, oldValue, newValue);
-    if (name === 'page-numbers' && newValue) {
-      const parsed = newValue
+    if (name === 'page-numbers') {
+      // A removed attribute clears the list; it used to be ignored, leaving the
+      // last pages rendered after a framework binding cleared it.
+      const parsed = (newValue ?? '')
         .split(',')
+        .filter((s) => s.trim() !== '')
         .map((s) => Number(s.trim()))
         .filter((n) => Number.isFinite(n));
       this.pageNumbers = parsed;
     } else if (name === 'selected-page-number') {
-      const n = Number(newValue);
+      // Removing an attribute restores its default: Number(null) is 0, which
+      // used to select a page 0 that no paginator has.
+      const n = newValue === null ? 1 : Number(newValue);
       if (Number.isFinite(n)) this.selectedPageNumber = n;
     } else if (name === 'number-of-boxes') {
       const n = Number(newValue);
       if (Number.isFinite(n)) this.numberOfBoxes = n;
     } else if (name === 'show-arrows') {
-      this.showArrows = newValue !== 'false' && newValue !== null;
+      // Default-on: only "false" switches it off, and removal restores it.
+      this.showArrows = newValue !== 'false';
     } else if (name === 'size') {
-      if (newValue === 'small' || newValue === 'medium' || newValue === 'large') {
-        this.size = newValue;
+      const size = newValue ?? 'medium';
+      if (size === 'small' || size === 'medium' || size === 'large') {
+        this.size = size;
       }
     } else if (name === 'aria-label') {
       this._ariaLabel = newValue ?? 'Pagination';

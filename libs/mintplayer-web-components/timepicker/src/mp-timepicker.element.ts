@@ -4,6 +4,7 @@ import { OverlayController } from '@mintplayer/web-components/overlay';
 import { HostAriaController } from '@mintplayer/web-components/a11y';
 import {
   MpTimeListElement,
+  hour12Converter,
   minutesOfDay,
   type TimeStep,
   type Hour12Mode,
@@ -39,7 +40,7 @@ export class MpTimepickerElement extends LitElement {
     step: { attribute: 'step', type: Number, reflect: true },
     min: { attribute: false },
     max: { attribute: false },
-    hour12: { attribute: 'hour12' },
+    hour12: { attribute: 'hour12', converter: hour12Converter },
     locale: { attribute: 'locale', type: String, reflect: true },
     disabled: { attribute: 'disabled', type: Boolean, reflect: true },
     placeholder: { attribute: 'placeholder', type: String, reflect: true },

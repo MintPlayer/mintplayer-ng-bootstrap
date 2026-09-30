@@ -285,20 +285,27 @@ export class MpSelect extends FormAssociatedMixin(LitElement) {
   ): void {
     super.attributeChangedCallback(name, oldValue, newValue);
     switch (name) {
-      case 'size':
-        if (newValue && VALID_SIZES.has(newValue as MpSelectSize)) {
-          this._size = newValue as MpSelectSize;
+      case 'size': {
+        // Removing the attribute restores the default rather than keeping the
+        // last value (a framework binding clears an attribute by removing it).
+        const size = (newValue ?? 'md') as MpSelectSize;
+        if (VALID_SIZES.has(size)) {
+          this._size = size;
           this.requestUpdate();
         }
         break;
+      }
       case 'multiple':
         this._multiple = newValue !== null;
         this.requestUpdate();
         break;
-      case 'number-visible':
-        this._numberVisible = newValue == null ? null : Number(newValue);
+      case 'number-visible': {
+        // Unparseable reads as unset, not NaN.
+        const n = newValue == null ? NaN : Number(newValue);
+        this._numberVisible = Number.isFinite(n) ? n : null;
         this.requestUpdate();
         break;
+      }
       case 'disabled':
         this._disabled = newValue !== null;
         this.requestUpdate();

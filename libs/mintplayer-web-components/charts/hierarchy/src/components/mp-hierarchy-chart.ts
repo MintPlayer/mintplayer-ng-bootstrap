@@ -3,8 +3,10 @@ import { repeat } from 'lit/directives/repeat.js';
 import { styleMap } from 'lit/directives/style-map.js';
 import { LiveAnnouncerController } from '@mintplayer/web-components/a11y';
 import {
+  booleanAttribute,
   buildIndex,
   colorScale,
+  numberAttribute,
   composite,
   contrastText,
   arcPath,
@@ -398,20 +400,20 @@ export class MpHierarchyChart extends LitElement {
         if (newValue === null) { this._maxDepth = undefined; this.requestUpdate(); }
         else this.maxDepth = newValue === 'auto' ? 'auto' : Number(newValue);
         break;
-      case 'min-angle': this.minAngle = Number(newValue ?? 0.2); break;
-      case 'min-size': this.minSize = Number(newValue ?? 4); break;
-      case 'show-labels': this.showLabels = newValue !== 'false' && newValue !== null; break;
-      case 'label-font-size': this.labelFontSize = Number(newValue ?? 12); break;
+      case 'min-angle': this.minAngle = numberAttribute(newValue, 0.2); break;
+      case 'min-size': this.minSize = numberAttribute(newValue, 4); break;
+      case 'show-labels': this.showLabels = booleanAttribute(newValue, true); break;
+      case 'label-font-size': this.labelFontSize = numberAttribute(newValue, 12); break;
       case 'backdrop': this.backdrop = newValue ?? undefined; break;
-      case 'color-min': this.colorMin = Number(newValue ?? 0); break;
-      case 'color-max': this.colorMax = Number(newValue ?? 100); break;
+      case 'color-min': this.colorMin = numberAttribute(newValue, 0); break;
+      case 'color-max': this.colorMax = numberAttribute(newValue, 100); break;
       case 'color-start': this.colorStart = newValue ?? '#fe0000'; break;
       case 'color-end': this.colorEnd = newValue ?? '#21b577'; break;
-      case 'transition-duration': this.transitionDuration = Number(newValue ?? 300); break;
+      case 'transition-duration': this.transitionDuration = numberAttribute(newValue, 300); break;
       case 'locale': this.locale = newValue ?? undefined; break;
       case 'zoom-gestures': this.zoomGestures = newValue ?? 'wheel pinch'; break;
       case 'zoom-hint-label': this._zoomHintLabel = newValue ?? undefined; break;
-      case 'show-breadcrumb': this.showBreadcrumb = newValue !== 'false' && newValue !== null; break;
+      case 'show-breadcrumb': this.showBreadcrumb = booleanAttribute(newValue, false); break;
       case 'breadcrumb-label': this._breadcrumbLabel = newValue ?? 'Chart path'; this.requestUpdate(); break;
       case 'zoom-out-label': this._zoomOutLabel = newValue ?? 'Zoom out one level'; this.requestUpdate(); break;
       case 'loading-label': this._loadingLabel = newValue ?? 'Loading'; break;
