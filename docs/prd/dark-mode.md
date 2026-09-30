@@ -336,7 +336,7 @@ and `theming/color-mode.css`.
   retokenized the same way. This was caught by `mp-datatable.filter-panel-styles.spec.ts`.
 - code-snippet `:286` → `var(--bs-white)`.
 - **Card: no change.**
-- Dropdown CDK pane panel class, **only if** spike A4 says so after D10.
+- Dropdown CDK pane panel class: **not needed** (resolved by the K browser pass: the calendar fills the pane and is opaque).
 - Demos, all three: ribbon tell-me box → `var(--bs-body-bg)`/`var(--bs-border-color)`/`var(--bs-secondary-color)`,
   and accordion multi-level `#ccc` → `var(--bs-secondary-bg)`. ng demo: tab-control, scheduler, anchor-scrolling and
   dock borders → tokens.
