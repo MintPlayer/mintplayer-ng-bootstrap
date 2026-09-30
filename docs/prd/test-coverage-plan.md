@@ -1,7 +1,7 @@
 # Plan — raising and defending test coverage
 
 PRD: [test-coverage.md](./test-coverage.md)
-Status: **M1–M10 and M12–M15 done** (2026-08-19) on `feat/coverage-honest-denominator`, not pushed.
+Status: **M1–M10 and M12–M18 done** (2026-08). **Phase 2 (M19–M31, PRD §10) planned 2026-09-30** on `feat/462-dark-mode` (PR #421): 74.4% → ≥ 90% combined.
 Workspace total **76.23% lines** (19,423 / 25,478) over **1,240 files**, as measured by the
 coverage service on the branch head with the complete file set — was 71.02% at M12. Full
 verification sweep green — 14 projects, API 164/164, four library builds and the API build.
@@ -1493,3 +1493,128 @@ correcting the trap-list advice above that recommended it.
 All behavioral — no import-only touching. Sweep: 4 projects green in one batched run.
 
 
+
+
+---
+
+# Phase 2 — toward 90% combined (2026-09-30, PRD §10)
+
+This phase lands in the same PR as dark mode (#421). **Baseline: 74.4% combined** (lines 79.4%, branches
+66.6%). **Target: ≥ 90% combined, with lines ≥ 92% and branches ≥ 85%** (P2-D1).
+
+**Working rules:**
+- Milestones touch disjoint files so they can run in parallel.
+- Commit per milestone. Run the full suite **once**, in M31.
+- Every new spec asserts behaviour; none only touches lines.
+- Every bug in P2-D6 gets a failing-first spec.
+- Dead code in P2-D5 is deleted, not tested.
+
+## M19 — Entry points, honest Vue, React passthrough [P2-D2, D3, D11] (~+650)
+- [ ] `entrypoints.spec` per lib (web-components, ng-bootstrap, react, vue): import every public barrel and
+      assert it resolves and exports at least one symbol.
+- [ ] Vue: a runtime passthrough spec that mounts every SFC and asserts `$attrs` land on the `mp-*` element.
+      The number may drop first (F22).
+- [ ] React: `attribute-passthrough.spec.tsx` covers every entry, plus the card and dropdown-item helpers
+      (`navStyle`, `color`, className merge, ref forwarding).
+
+## M20 — CEM-driven property/attribute table spec [F19] (~+450)
+- [ ] One web-components spec generated from `custom-elements.json`. For every element and every property:
+      set the property and assert the reflected state and attribute. For every observed attribute: set a
+      value and remove it.
+
+## M21 — Dock [F17, P2-D4] (~+660)
+- [ ] Add the private `elementsAt(x, y)` seam and route all hit-test sites through it.
+- [ ] Pointer drag pipeline: placeholder, drop target, finalize, deferred end, float conversion.
+- [ ] Corner resize.
+- [ ] Keyboard move-mode arming by pressing M on a focused tab.
+- [ ] Drop commits: onto a floating target, and the empty-main joystick.
+- [ ] Floating resize.
+- [ ] Extract `collectCornerSnapTargets` and the corner pair math into `dock/core`.
+- [ ] Delete the "No panes configured" block.
+- [ ] Fix `setPointerCapture` sharing a `try` with the visual state, and `sizes = []` on a zero total.
+- [ ] Angular `dock-manager` / `dock-pane` spec with a signal host.
+
+## M22 — Tile manager + splitter [F17] (~+280)
+- [ ] Extract `pointerToGridRect` / `dragTranslate` for the tile manager, and add its zero-cell guard.
+- [ ] Tile: mouse drag lifecycle, touch arm with fake timers, Escape, visibility cancel, ResizeObserver.
+- [ ] Splitter: extract `rescalePanelSizes`; pointer resize lifecycle; getters, setters and attributes.
+- [ ] Fix the splitter's `minPanelSize` NaN.
+
+## M23 — Scheduler [F18] (~+900)
+- [ ] Keyboard matrix `it.each` tables.
+- [ ] `mp-scheduler.api.spec.ts` for the public API and attributes.
+- [ ] Drag completion through `setSlotResolver`.
+- [ ] `input-handler.spec.ts` for the touch path.
+- [ ] Views: day `update()`, week preview, now indicator, timeline focus restore.
+- [ ] Extract `edgeScrollVector` and `clampColumnWidth`.
+- [ ] `drag-manager.spec.ts` and the state-machine additions.
+- [ ] scheduler-core services.
+- [ ] Delete the P2-D5 scheduler dead code.
+- [ ] Fix `selectedRange` and the touch listener leak.
+
+## M24 — Timeline + Angular scheduler/timeline wrappers [F18] (~+240)
+- [ ] `mp-timeline`: activatable mode, declarative MutationObserver, setters. Merge the duplicated
+      click/keydown logic.
+- [ ] Angular `scheduler.component` and `timeline.component` specs: output bridges, method forwards, the
+      template directives with context interfaces.
+
+## M25 — Data components: datatable, tree-select, treeview, file-manager, query-builder [F19] (~+800)
+- [ ] Datatable: cascade selection, tree keys, context menu, deselect-all, per-page, column resize.
+- [ ] Tree-select: `onComboboxKeydown`, request cancel/error, panel close.
+- [ ] Treeview: `onRowKeydown`.
+- [ ] File-manager: long-press, file DnD, upload picker, Enter and Shift+F10.
+- [ ] Query-builder: element handlers, pure `tree-ops`, `default-tree` clone and uuid fallback. Delete
+      `resolveEntityForGroup`.
+
+## M26 — Remaining web components [F19] (~+900)
+- [ ] Ribbon: extract `planReduceSteps`; key tips, Ctrl+Arrow, contextual tabs. Fix the hex-colour parsing.
+- [ ] Tab-control and `mp-tab-page`; dropdown-menu roving; navbar and shell (`matchMedia` stub); the SSR
+      DSD injectors.
+- [ ] Carousel: DSD handoff, WAAPI settle, touch arbiter.
+- [ ] Charts: ResizeObserver, tween, `panBy`, reduced motion.
+- [ ] Signature-pad; multi-range (`pointerFraction` plus the zero-rect fix).
+- [ ] Small pieces: `scoped-html` states, the `install-light-styles` fallback, `color-mode-warning`,
+      overlay alignment, select/toggle form reset, `card-classes`.
+- [ ] `theming/src/preboot.ts` imported as source.
+
+## M27 — ng-bootstrap [F20, P2-D7] (~+1,650)
+- [ ] `resize-glyph.directive` spec. Fix its keyboard edge, inline-mode and i18n/RTL-label bugs.
+- [ ] Color-picker (fix the step comment); offcanvas, with a cancellable dispose.
+- [ ] Priority-nav: extract `computeOverflowIds`.
+- [ ] Wrapper event forwarders: scheduler, file-manager, treeview, timeline, dock-manager, query-builder,
+      tab-control, carousel, modal-host.
+- [ ] Datatable, select and tree-select accessors.
+- [ ] Context-menu, tooltip and popover.
+- [ ] Form groups and accessors.
+- [ ] Small pure units: fix `enum.service`, and `file-upload` i18n.
+- [ ] The code-snippet and ribbon zero files.
+- [ ] SSR branches.
+- [ ] `viewChild.required` sweep, where it is safe.
+
+## M28 — tools [F21, P2-D8] (~+480)
+- [ ] Move CLI bodies into an exported `main()`; add the `lib/chrome-module.mjs` shared generator.
+- [ ] Specs for `check-critical-dark-tokens`, `dev-processes` (mocked `child_process`), `build-web-components`,
+      `rebase-lcov-paths`, `build-theme-preboot` (`validatePreboot`), the `vite/theme-preboot` plugin,
+      `check-code-snippet` and `check-ribbon`, and `refresh-flags`.
+- [ ] Justified `v8 ignore` on `serve-api.mjs`.
+
+## M29 — API [F21, P2-D9, D10] (~+265)
+- [ ] An all-operators `[Theory]` over `QueryBuilderWalker`, including `ConvertJsonValue` and collection
+      element resolution.
+- [ ] Validator SubQuery and shape errors; the `ApplySort` sort-key Theory.
+- [ ] Delete `EntitySchemaService.Get`.
+- [ ] `pull-request.yml`: run the API tests in Release.
+
+## M30 — Small libs [F21] (~+190)
+- [ ] `ng-qr-code`: stub `getContext`. Fix `version`, the unused `height`, and the cached centre image.
+- [ ] `encode-utf8`: prove it equivalent to `TextEncoder`, then table-test it.
+- [ ] `click-outside`: fake timers, hidden document, server platform. Fix the listener leak and delete
+      `_excludeCheck`.
+- [ ] `qr-code` error paths; delete the commented-out `server.ts` block.
+- [ ] `focus-on-load` via `ElementRef`.
+
+## M31 — Sweep, measure, record
+- [ ] One full run: all four lib builds; `run-many -t test --coverage`; `dotnet test` in Release; the e2e
+      suites for dock, scheduler, ribbon, datatable, theme and SSR in all three frameworks.
+- [ ] Recompute the combined metric with `cov-summary`, and fill in PRD §10.5: the per-area realised gain,
+      the true residual, and any P2-D7 sites that kept their guard.

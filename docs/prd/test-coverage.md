@@ -1,6 +1,6 @@
 # PRD — raising and defending test coverage
 
-Status: **M1–M10 and M12–M15 implemented** (2026-08-19) on `feat/coverage-honest-denominator`; M11
+Status: **Phase 1 done** (2026-08; see §7b–7d). **Phase 2 (§10) planned 2026-09-30**: the service's combined metric from 74.4% to ≥ 90%, on PR #421. Earlier status:
 (the gate) lives in [coverage-pr-gate.md](./coverage-pr-gate.md) and is deliberately not part of this
 branch. The coverage service reports **76.23% lines (19,423 / 25,478) over 1,240 files** for the
 branch head — short of §6's 80% target, and §7c records what remains and why it is concentrated
@@ -595,3 +595,195 @@ the Angular wrappers) and `tools` (538, script shells). React wrappers (106) and
   waits for upstream. This is specified in its own consumer-side document —
   [coverage-pr-gate.md](./coverage-pr-gate.md) and
   [coverage-pr-gate-plan.md](./coverage-pr-gate-plan.md) — which **replaces M11** of the plan.
+
+## 10. Phase 2 — toward 90% combined (2026-09-30)
+
+Requested on PR #421: take the coverage service's number from **74%** toward **90% and beyond**. Anything in
+the workspace is in scope, not just the dark-mode work. The work ships in the same PR. Plan: milestones
+M19–M31 in [test-coverage-plan.md](./test-coverage-plan.md).
+
+### 10.1 What the service's number is
+
+The 74% shown on coverage.mintplayer.com is **lines and branches combined**. It is not line coverage. A
+local, CI-identical run (`nx run-many -t test --exclude=api --coverage` plus `dotnet test --collect`) gives:
+
+| scope (as uploaded: `libs/*`, `tools`, `api`) | covered / total | % |
+|---|---|---|
+| lines | 21,020 / 26,461 | 79.4 |
+| branches | 11,454 / 17,190 | 66.6 |
+| **combined** | **32,474 / 43,651** | **74.4** |
+
+`apps/ng-bootstrap-demo` is measured but not uploaded, so it is not counted. **Reaching 90% combined needs
+about +6,800 covered lines+branches.** Branches are the larger gap.
+
+Per project (lines / branches):
+- web-components: 81.8% / 68.9%
+- ng-bootstrap: 70.6% / 50.5%
+- tools: 54.6% / 60.6%
+- react: 52.0% / 70.2%
+- vue: 89.9% / 80.5%, **inflated**, see F22
+- api: 92.5% / 53.6%
+- qr-code: 97.4% / 90.9%
+- the small ng libs: 30–80%
+
+### 10.2 Findings (five parallel read-only investigations; the estimate is the reachable gain)
+
+| # | area | missed L+B | reachable | notes |
+|---|---|---|---|---|
+| F17 | dock + tile + splitter | ~1,600 | **~990** | Disagrees with part of the §7d/F13 ceiling (below). |
+| F18 | scheduler + timeline | ~1,615 | **~1,140** | `dragManager.setSlotResolver` is an existing hit-test seam. |
+| F19 | other web components | ~4,254 | **~2,750** | 71 property setters are never called. |
+| F20 | ng-bootstrap | ~2,401 | **~1,860** | 226 of the misses are barrel lines. |
+| F21 | tools, API, small libs, React, Vue | ~1,700 | **~1,125** | V8 cannot see CLI entry points run as child processes. |
+| | **total** | | **~7,865** | Projects to about 91–92% combined if the estimates hold. |
+
+- **F17. Dock: part of the recorded ceiling can be reached.**
+  - `beginCornerResize`, `beginFloatingResize`, `ensureHeaderDragPlaceholder` and `preparePaneDragSource` run
+    correctly on jsdom's zero rects, or are arithmetic on stored metrics.
+  - `updatePaneDragDropTargetFromPoint` needs a **hit-test result** (which element is under the pointer),
+    not a rect value. Stubbing `elementsFromPoint` invents no number, so it is not the R3 failure mode, and
+    `element.spec.ts:81-85` already does it.
+  - The residual for these is ~170 lines, not ~300.
+  - Keyboard move-mode *arming* (`onRootKeyDown`, `findFocusedPaneOrigin`) has 0 hits: the spec calls
+    `handlePaneMoveModeKey` directly and never presses M.
+- **F18. Scheduler and timeline.**
+  - The keyboard matrix has gaps: Ctrl+Home/End, PageUp/Down, Shift/Alt combos, and month and year cells.
+  - The public API and attributes are untested.
+  - `handleDragComplete`, including the null un-assign tri-state, is untested.
+  - `input-handler.ts` is at 43.6%: the whole touch path.
+  - `DayView.update()` is never called.
+  - The Angular scheduler and timeline wrappers have **no spec at all**.
+- **F19. Other web components.**
+  - **One CEM-driven property/attribute table spec** reaches 187 lines and 176 branches of setters, plus 64
+    lines and 134 branches of `attributeChangedCallback` arms, across every element at once.
+  - Per component:
+    - ribbon: keyboard paths. Its geometry needs an extraction.
+    - query-builder: pure `tree-ops`.
+    - datatable: cascading tree selection, tree keys, column resize.
+    - file-manager: long-press, file DnD.
+    - tree-select: `onComboboxKeydown`, never called.
+    - carousel: DSD handoff, WAAPI settle.
+    - charts: fake ResizeObserver, tween.
+    - tab-control, treeview, dropdown-menu, navbar/shell, signature-pad: keyboard, focus and navigation paths.
+  - 25 zero-coverage files: 18 barrels, `card-classes.ts`, the two SSR DSD injectors, three
+    never-registered navbar and ribbon elements, and `theming/src/preboot.ts`. Only the *generated* bundle
+    is evaluated, never the source.
+- **F20. ng-bootstrap.**
+  - `coverage.include: ['**/*.ts']` without an `index.ts` exclude, so 132 of 137 zero files are barrels
+    (385 lines, 226 missed). **This corrects F1**, which said barrels have no executable lines. Under v8
+    each `export` line counts.
+  - Top real gaps:
+    - `resize-glyph.directive` (109 / 88, no spec; the resizable spec mocks it)
+    - color-picker (~155)
+    - offcanvas (~146)
+    - priority-nav (~99)
+    - the wrapper event forwarders (~330, mechanical)
+    - the datatable, select and tree-select accessors
+    - context-menu, tooltip and popover (context-menu is at 2.4%, never instantiated)
+    - form groups
+    - about 290 lines of small pure units
+    - 42 SSR branches
+  - **129 `ref()?.nativeElement` / `if (el)` guards** in 23 files have null branches that never run, about
+    150–200 of them.
+- **F21. tools, API, small libs, React, Vue.**
+  - **tools:** the uncovered code is mostly `if (isEntryPoint)` bodies and top-level-await scripts. The six
+    `gen-*-chrome.mjs` scripts duplicate one loop. `check-critical-dark-tokens.mjs`, a CI guard, has no spec.
+  - **API:** the `QueryBuilderWalker` operator switch arms are missed (lt/lte/gt/gte, not-between, not-in,
+    is-true/false, relative dates), and so are `ConvertJsonValue` and the `Validator` SubQuery and
+    shape errors.
+  - **React:** 33 one-line wrappers and 25 barrels are never imported. The card and dropdown-item helpers are
+    real logic.
+  - **Small libs:** `ng-qr-code` stops at `getContext`. `encode-utf8` is output-identical to `TextEncoder`.
+    `click-outside`'s timers and hidden-document paths are untested.
+- **F22. Vue's 89.9% is not honest.** 43 of 56 SFCs report `LF:0`: only SFCs a spec actually mounts are
+  counted, and the `?raw` passthrough glob counts nothing. About 230 lines and ~100 branches are missing
+  from the denominator.
+- **F23. CI inconsistency.** `pull-request.yml` runs `dotnet test -c Debug`, while `publish-master.yml` uses
+  `-c Release`, so the API branch counts differ between the PR comparison and master.
+
+### 10.3 Decisions
+
+- **P2-D1. The target is the service's own metric.**
+  - **≥ 90% combined lines+branches**, as uploaded.
+  - Two floors, so it cannot be reached on lines alone: **lines ≥ 92%, branches ≥ 85%**.
+  - The ratchet rules in §6/§7 still hold: no change may raise the number by shrinking the denominator.
+- **P2-D2. Barrels are covered, not excluded.** Each lib gets an `entrypoints.spec` that imports every public
+  barrel. It also asserts that each barrel resolves and exports something, which is a real contract.
+  Excluding barrels would be the denominator game §6 forbids.
+- **P2-D3. Vue is made honest first (F22).** A runtime passthrough spec mounts every SFC and asserts that
+  `$attrs` reach the `mp-*` element, which is today's static rule enforced at runtime. The Vue percentage
+  may *drop* before it rises. That is accepted.
+- **P2-D4. A hit-test stub is not a geometry fake.**
+  - Stubbing *which element* is under a point (`elementsFromPoint`, `setSlotResolver`) is allowed. It is
+    routed through one private `elementsAt(x, y)` seam per element, not ad-hoc `shadowRoot` monkeypatching.
+  - Faking rect **values** to reach geometry branches stays forbidden (R3). Geometry becomes testable only by
+    extracting it into a pure function that takes numbers. The extractions:
+    - `pointerToGridRect` / `dragTranslate` (tile)
+    - `rescalePanelSizes` (splitter)
+    - `planReduceSteps` (ribbon)
+    - `computeOverflowIds` (priority-nav)
+    - `pointerFraction` (multi-range)
+    - `edgeScrollVector` and `clampColumnWidth` (scheduler)
+    - `collectCornerSnapTargets` (dock)
+    - `rescalePanelSizes`-style corner math into `dock/core/resize.ts`
+- **P2-D5. Dead code is deleted, not tested:**
+  - dock "No panes configured" (`mint-dock-manager.element.ts:639-651`)
+  - `timeline.service` `getRelativeTrackPosition` / `getPartsForDay`
+  - `drag-manager` `createEventFromResult` / `updateEventFromResult`
+  - the empty `triggerHapticFeedback`
+  - the Angular scheduler `currentWeekStart` / `currentWeekEnd` / `visibleEvents`
+  - the timeline template context classes, which become interfaces
+  - `tree-ops` `resolveEntityForGroup` and its `void` keep-alive
+  - `EntitySchemaService.Get`
+  - the `click-outside` `_excludeCheck` try/catch
+  - the commented-out `qr-code/src/lib/server.ts` block
+  - the redundant `typeof window` check in `qr-code.directive`
+  - `resource.service` `collapseAll` / `expandAll`, unless a caller exists
+- **P2-D6. Every product bug found is fixed in this PR** (the one-PR rule), each pinned by a spec:
+  - `mp-scheduler` `selectedRange` returns the preview, not the selection
+  - `input-handler` adds three listeners per `touchstart` and never removes them
+  - `mp-splitter` `minPanelSize` returns NaN where the internals use 50
+  - dock `setPointerCapture` shares a `try` with the visual state; `handleCornerResizeMove` wipes
+    `node.sizes` when the pixel total is 0
+  - tile `computeDragRect` has no zero-cell guard
+  - multi-range `valueFromPointer` divides by a zero rect
+  - ribbon `getBandTextColor` parses only 6-digit hex
+  - resize-glyph: keyboard resize moves the opposite edge on start/top glyphs; inline mode writes width
+    where drag writes margins; its aria-labels are English-only and say "left" in RTL
+  - `file-upload` announcements are hard-coded English
+  - the color-wheel comment and code disagree on the step
+  - `offcanvas-host` disposes its overlay after an uncancellable 3 s timeout
+  - `enum.service` mishandles string and mixed enums
+  - `qr-code.directive`: `version` is null for 1–40; `height` is unused; the centre image is lost on a
+    cached redraw
+  - `click-outside` leaks listeners on re-init and on a `clickOutsideEvents` change
+  - `focus-on-load` reads Angular's private `_lContainer`
+- **P2-D7. `viewChild()` guards that can never be null become `viewChild.required()`**, where the query is
+  read only after view init. This removes ~150–200 null branches that can never be taken. SSR is verified
+  through the demo SSR e2e. Any site where NG0951 is possible keeps its guard, with a comment saying why.
+- **P2-D8. tools.**
+  - CLI entry bodies move into an exported `main({ argv, repoRoot }) → exitCode`, tested against temp dirs.
+  - The six chrome generators share `lib/chrome-module.mjs`, with the renderer injected.
+  - `serve-api.mjs`, which is koffi FFI Job Object setup plus signal handlers, is the **only**
+    `/* v8 ignore */` block, with a comment giving the reason.
+- **P2-D9. API: tests only.** Add an all-operators `[Theory]`, the Validator SubQuery and shape cases, and
+  the sort-key Theory. The walker's switch is **not** rewritten to dictionary dispatch just to erase
+  compiler-lowered branches: that would be restructuring for the metric. The EF migrations stay counted as
+  they are.
+- **P2-D10. CI parity.** `pull-request.yml` runs the API tests in Release, like master (F23).
+- **P2-D11. React passthrough covers every entry,** not only 12 subpaths. That closes the CLAUDE.md
+  wrapper-transparency rule for all React wrappers at the same time.
+
+### 10.4 Risks specific to phase 2
+
+- **The extractions and the `viewChild.required` sweep touch hot paths.** Mitigation: the dock, scheduler
+  and ribbon e2e suites in all three frameworks run once, at the end.
+- **The estimates are optimistic.** If the realistic yield is about 80%, the result is about 88%. The
+  ratchet then records the true number, and §10.5 records what remains and why. No test is written only to
+  execute a line without asserting behaviour.
+- **Suite time grows.** New specs use fake timers and avoid real waits. The light-tier "filter walks to
+  custom elements" rule from CLAUDE.md applies.
+
+### 10.5 As-built
+
+To be filled in after M31.
