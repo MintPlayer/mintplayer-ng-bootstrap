@@ -7,6 +7,28 @@ package version aligns its major with the supported Angular major.
 
 ### Breaking
 
+- **The theme mode is stored in a cookie, not localStorage (issue #420).**
+  - `BsThemeService` now persists the user's choice in the `bs-theme-mode` cookie (`Path=/`, `SameSite=Lax`, one
+    year, `Secure` on https), so a server can render `<html data-bs-theme>` itself.
+  - **Stored choices reset to `auto`.** There is no migration from localStorage.
+  - `BS_THEME_STORAGE_KEY` is removed. Use `BS_THEME_COOKIE_NAME`, now exported from
+    `@mintplayer/web-components/theming` and re-exported by `@mintplayer/ng-bootstrap/theming`.
+  - Replace the inline localStorage pre-boot script with the shipped
+    `@mintplayer/web-components/theming/bs-theme-preboot.js` (see the theming docs page).
+- **`BsThemeService` is a thin mirror of the framework-neutral theme store** in `@mintplayer/web-components/theming`.
+  Its public API (`mode`, `effectiveMode`, `setMode`) is unchanged. On the server it reads the request cookie and a
+  `<meta name="bs-theme-default-mode">`, and writes `data-bs-theme` into the rendered HTML. `setMode` with an invalid
+  value (outside `^[a-z0-9-]{1,32}$`) is now a no-op with a warning.
+- **Dead `[data-bs-theme=dark]` rules are removed from the web components' sheets.** They could never match from
+  inside a shadow root.
+  - The `mp-select` caret, the query-builder value-editor caret and the `mp-checkbox` switch knob now follow the
+    theme through `@container style(--mp-color-mode: dark)`.
+  - This needs the `--mp-color-mode` token: `_bootstrap.scss` includes it, and React/Vue consumers add
+    `@import '@mintplayer/web-components/theming/color-mode.css'`. A custom theme declares its own
+    `--mp-color-mode: dark|light`.
+- **Angular consumers using dark mode should set `optimization.styles.inlineCritical: false`.** The critical-CSS
+  inliner prunes every `[data-bs-theme=dark]` rule, so dark users see light until the stylesheet loads.
+
 - **The four components that mount consumer DOM render in the light DOM.** `<mp-datatable>`,
   `<mp-treeview>`, `<mp-tree-select>` and the `<mp-query-builder>` family (builder / condition /
   group / subquery) no longer attach a shadow root; their styles are scoped at build time onto a
@@ -45,6 +67,19 @@ package version aligns its major with the supported Angular major.
 
 ### Added
 
+- **Dark mode across all three frameworks (issue #420).**
+  - `@mintplayer/web-components/theming`: the framework-neutral theme core.
+    - Cookie and resolution helpers: `readThemeCookie`, `isValidThemeMode`, `resolveServerTheme`,
+      `injectThemeAttribute`.
+    - A browser-only store (`getBsThemeStore`, `configureBsTheme`) that follows `prefers-color-scheme` live in
+      `auto` and syncs across tabs through `BroadcastChannel`.
+    - `color-mode.css`.
+    - The generated no-flash `bs-theme-preboot.js` (ES5, under 1 KB).
+  - `<mp-theme-toggle>` / `<bs-theme-toggle>` / `BsThemeToggle` (React, Vue): a cycle button driven by a `modes`
+    array of `{ mode, label, announcement, icon }`. Consumers localize by overriding the strings, and can pass 2–5
+    modes. The accessible name is the next action; the current state is its description, and each change is
+    announced.
+  - `provideBsTheme({ cookieDomain })` (Angular). `useBsTheme()` (React, Vue).
 - `@mintplayer/web-components/light-dom`: `installLightStyles` / `adoptLightStyles` /
   `scopedHtml` / `stampScope` — the light tier's public machinery. `adoptLightStyles` is the one a
   consumer needs: it mirrors the light-tier sheets into a shadow root that hosts one of these
@@ -72,6 +107,18 @@ package version aligns its major with the supported Angular major.
   cannot navigate away from an Angular route via `<base href>`. Wrapped for all three frameworks.
 - `@mintplayer/ng-bootstrap/code-snippet`: the Angular wrapper now forwards host `aria-*`, `role`,
   `id` and `tabindex` onto the `mp-*` element, where they reach the accessibility tree.
+
+### Fixed
+
+- **Dark mode colours (issue #420).** Hard-coded light values are replaced with `--bs-*` tokens in:
+  - the scheduler scrollbar and greyed slots
+  - the query-builder toolbar buttons
+  - the datatable and treeview hover
+  - the code-snippet "Copied!" label
+- **Forced colours:** the select caret, switch knob and accordion chevron stay visible in forced-colours mode.
+- **Calendar:** the month header gets its 40px height, borders and background back. This was a regression from #393.
+- **Packaging:** `@mintplayer/web-components` now actually ships `custom-elements.json`. It was missing from the
+  2.16.0 tarball, because the asset copier skipped gitignored files.
 
 ### Removed
 
