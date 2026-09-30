@@ -49,8 +49,15 @@ export function readThemeCookie(cookieString: string | null | undefined): string
     .map((part) => part.trim())
     .filter((part) => part.slice(0, prefix.length) === prefix);
   if (pairs.length === 0) return null;
-  const value = decode(pairs[0].slice(prefix.length).trim());
+  const value = decode(unquote(pairs[0].slice(prefix.length).trim()));
   return isValidThemeMode(value) ? value.toLowerCase() : null;
+}
+
+/** RFC 6265 allows a cookie value wrapped in double quotes; strip one pair. */
+function unquote(raw: string): string {
+  return raw.length > 1 && raw.charAt(0) === '"' && raw.charAt(raw.length - 1) === '"'
+    ? raw.slice(1, -1)
+    : raw;
 }
 
 export interface WriteThemeCookieOptions {
@@ -75,7 +82,14 @@ export function writeThemeCookie(mode: string, opts: WriteThemeCookieOptions, do
     'SameSite=Lax',
     'Max-Age=' + MAX_AGE,
   ];
-  if (opts.cookieDomain) parts.push('Domain=' + opts.cookieDomain);
+  if (opts.cookieDomain) {
+    // A host-only cookie from before cookieDomain was configured would shadow
+    // the Domain cookie: readThemeCookie takes the first pair, and browsers
+    // list the older cookie first. Expire it (a delete without Domain= only
+    // matches the host-only cookie) before writing the shared one.
+    target.cookie = BS_THEME_COOKIE_NAME + '=; Path=/; Max-Age=0';
+    parts.push('Domain=' + opts.cookieDomain);
+  }
   if (opts.secure) parts.push('Secure');
   target.cookie = parts.join('; ');
 }

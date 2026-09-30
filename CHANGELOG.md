@@ -14,7 +14,13 @@ package version aligns its major with the supported Angular major.
   - `BS_THEME_STORAGE_KEY` is removed. Use `BS_THEME_COOKIE_NAME`, now exported from
     `@mintplayer/web-components/theming` and re-exported by `@mintplayer/ng-bootstrap/theming`.
   - Replace the inline localStorage pre-boot script with the shipped
-    `@mintplayer/web-components/theming/bs-theme-preboot.js` (see the theming docs page).
+    `@mintplayer/web-components/theming/bs-theme-preboot.js` (see the theming docs page). **It ships from
+    `@mintplayer/web-components` only**, not from `@mintplayer/ng-bootstrap/theming/` as issue #420 proposed; an
+    assets glob pointing at `node_modules/@mintplayer/ng-bootstrap/theming` finds nothing. The script is generated
+    from the same helpers as the store, so it cannot drift from them.
+  - Critical CSS: see the `inlineCritical` note below. The caret/knob dark variants use
+    `@container style(--mp-color-mode: dark)` (measured in Chromium 151, Firefox 153, WebKit 26.5); an engine
+    without custom-property style queries keeps the light icons.
 - **`BsThemeService` is a thin mirror of the framework-neutral theme store** in `@mintplayer/web-components/theming`.
   Its public API (`mode`, `effectiveMode`, `setMode`) is unchanged. On the server it reads the request cookie and a
   `<meta name="bs-theme-default-mode">`, and writes `data-bs-theme` into the rendered HTML. `setMode` with an invalid

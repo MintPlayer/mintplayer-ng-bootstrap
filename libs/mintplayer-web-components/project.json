@@ -64,7 +64,11 @@
       "continuous": true,
       "cache": false,
       "options": {
-        "command": "node tools/scripts/build-web-components.mjs libs/mintplayer-ng-bootstrap libs/mintplayer-web-components --watch"
+        "commands": [
+          "node --watch-path=libs/mintplayer-web-components/theming/src tools/scripts/build-theme-preboot.mjs",
+          "node tools/scripts/build-web-components.mjs libs/mintplayer-ng-bootstrap libs/mintplayer-web-components --watch"
+        ],
+        "parallel": true
       }
     },
     "cem": {
@@ -208,6 +212,7 @@
     },
     "test": {
       "executor": "@nx/vitest:test",
+      "dependsOn": ["codegen-wc"],
       "outputs": ["{options.reportsDirectory}"],
       "options": {
         "reportsDirectory": "coverage/libs/mintplayer-web-components"

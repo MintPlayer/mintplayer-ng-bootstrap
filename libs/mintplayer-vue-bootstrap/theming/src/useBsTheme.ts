@@ -21,6 +21,12 @@ export interface UseBsThemeResult {
   effectiveMode: Readonly<Ref<BsEffectiveThemeMode>>;
   /** Set, persist and apply a mode. An invalid mode is a no-op with a warning; a no-op on the server. */
   setMode: (mode: BsThemeMode) => void;
+  /**
+   * Stop mirroring the store. Called automatically when the calling effect
+   * scope is disposed; call it yourself when using the composable outside any
+   * scope (a plain module, a store setup). Idempotent; a no-op on the server.
+   */
+  stop: () => void;
 }
 
 const isBrowser = () => typeof window !== 'undefined';
@@ -39,7 +45,7 @@ const setMode = (mode: BsThemeMode): void => {
  *
  * The subscription is released when the calling effect scope is disposed
  * (the component unmounts, or a manual `effectScope()` stops). Called outside
- * any scope it is never released, like any other Vue composable.
+ * any scope, nothing can release it automatically, so call the returned `stop()`.
  *
  * SSR-safe, and consistent with the React adapter: on the server the store is
  * never touched and the refs hold `auto` resolved with `prefersDark = false`
@@ -51,6 +57,7 @@ const setMode = (mode: BsThemeMode): void => {
 export function useBsTheme(): UseBsThemeResult {
   const mode = shallowRef<BsThemeMode>('auto');
   const effectiveMode = shallowRef<BsEffectiveThemeMode>(resolveMode('auto', false));
+  let stop = (): void => undefined;
 
   if (isBrowser()) {
     const store = getBsThemeStore();
@@ -59,7 +66,13 @@ export function useBsTheme(): UseBsThemeResult {
       effectiveMode.value = store.effectiveMode();
     };
     const unsubscribe = store.subscribe(sync);
-    if (getCurrentScope()) onScopeDispose(unsubscribe);
+    let stopped = false;
+    stop = () => {
+      if (stopped) return;
+      stopped = true;
+      unsubscribe();
+    };
+    if (getCurrentScope()) onScopeDispose(stop);
 
     if (getCurrentInstance()) onMounted(sync);
     else sync();
@@ -69,5 +82,6 @@ export function useBsTheme(): UseBsThemeResult {
     mode: readonly(mode) as Readonly<Ref<BsThemeMode>>,
     effectiveMode: readonly(effectiveMode) as Readonly<Ref<BsEffectiveThemeMode>>,
     setMode,
+    stop,
   };
 }

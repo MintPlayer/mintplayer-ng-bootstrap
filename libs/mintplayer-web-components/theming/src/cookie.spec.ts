@@ -66,6 +66,11 @@ describe('readThemeCookie', () => {
     ['bs-theme-mode=x"><script>', null],
     ['bs-theme-mode=', null],
     ['bs-theme-mode', null],
+    // RFC 6265 quoted values: one surrounding pair is stripped, nothing else.
+    ['bs-theme-mode="dark"', 'dark'],
+    ['bs-theme-mode=""', null],
+    ['bs-theme-mode="', null],
+    ['bs-theme-mode=""dark""', null],
   ])('%j → %j', (input, expected) => {
     expect(readThemeCookie(input)).toBe(expected);
   });
@@ -97,10 +102,19 @@ describe('writeThemeCookie', () => {
     expect(writes[0]).toMatch(/; Secure$/);
   });
 
-  it('passes cookieDomain through verbatim', () => {
+  it('passes cookieDomain through verbatim, after expiring a shadowing host-only cookie', () => {
     const { doc, writes } = fakeDoc();
     writeThemeCookie('dark', { cookieDomain: '.example.com', secure: true }, doc);
-    expect(writes[0]).toBe('bs-theme-mode=dark; Path=/; SameSite=Lax; Max-Age=31536000; Domain=.example.com; Secure');
+    expect(writes).toEqual([
+      'bs-theme-mode=; Path=/; Max-Age=0',
+      'bs-theme-mode=dark; Path=/; SameSite=Lax; Max-Age=31536000; Domain=.example.com; Secure',
+    ]);
+  });
+
+  it('does not expire anything without cookieDomain', () => {
+    const { doc, writes } = fakeDoc();
+    writeThemeCookie('dark', { secure: false }, doc);
+    expect(writes).toHaveLength(1);
   });
 
   it('lower-cases the stored mode', () => {

@@ -75,6 +75,10 @@ function expected(env: Env): string {
   return resolveMode(mode, env.prefersDark === true);
 }
 
+// Locally a missing bundle skips (with the reason above). On CI it must fail:
+// a skipped agreement test reads as green while proving nothing.
+if (!bundleExists && process.env['CI']) throw new Error(SKIP_REASON);
+
 describe.skipIf(!bundleExists)('bs-theme-preboot.js (generated)', () => {
   const code = bundleExists ? readFileSync(BUNDLE_PATH, 'utf8') : '';
 

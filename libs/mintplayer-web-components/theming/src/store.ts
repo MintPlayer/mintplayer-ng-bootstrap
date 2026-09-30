@@ -71,7 +71,18 @@ function createStore(): RegisteredBsThemeStore {
 
   const effective = () => resolveMode(mode, prefersDark);
   const applyAttribute = () => document.documentElement.setAttribute('data-bs-theme', effective());
-  const notify = () => [...listeners].map((listener) => listener());
+  // Isolate listeners: one that throws must not starve the others. The error is
+  // rethrown asynchronously so it still surfaces in the console / error handler.
+  const notify = () =>
+    [...listeners].map((listener) => {
+      try {
+        listener();
+      } catch (error) {
+        setTimeout(() => {
+          throw error;
+        });
+      }
+    });
 
   const onSchemeChange = (event: MediaQueryListEvent) => {
     const before = effective();

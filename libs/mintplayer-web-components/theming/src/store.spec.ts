@@ -259,13 +259,15 @@ describe('bs-theme store', () => {
 
       configureBsTheme({ cookieDomain: '.example.test' });
       store.setMode('light');
-      expect(cookie.writes[1]).toMatch(/; Domain=\.example\.test(;|$)/);
+      // First the host-only cookie is expired so it cannot shadow the shared one.
+      expect(cookie.writes[1]).toBe('bs-theme-mode=; Path=/; Max-Age=0');
+      expect(cookie.writes[2]).toMatch(/; Domain=\.example\.test(;|$)/);
     });
 
     it('accepts configureBsTheme before the store is first used', () => {
       configureBsTheme({ cookieDomain: 'example.test' });
       getBsThemeStore().setMode('dark');
-      expect(cookie.writes[0]).toMatch(/; Domain=example\.test(;|$)/);
+      expect(cookie.writes.at(-1)).toMatch(/; Domain=example\.test(;|$)/);
     });
 
     it('omits Secure on http:', () => {
@@ -295,6 +297,25 @@ describe('bs-theme store', () => {
       unsubscribe();
       store.setMode('light');
       expect(listener).toHaveBeenCalledTimes(1);
+    });
+
+    it('still notifies the other listeners when one throws', () => {
+      vi.useFakeTimers();
+      try {
+        const store = getBsThemeStore();
+        const failing = vi.fn(() => {
+          throw new Error('boom');
+        });
+        const healthy = vi.fn();
+        store.subscribe(failing);
+        store.subscribe(healthy);
+        store.setMode('dark');
+        expect(healthy).toHaveBeenCalledTimes(1);
+        // The error is rethrown asynchronously, not swallowed.
+        expect(() => vi.runAllTimers()).toThrow('boom');
+      } finally {
+        vi.useRealTimers();
+      }
     });
   });
 

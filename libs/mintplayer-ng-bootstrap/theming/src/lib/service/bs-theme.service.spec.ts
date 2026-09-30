@@ -128,6 +128,22 @@ describe('BsThemeService (browser mirror)', () => {
     expect(svc.effectiveMode()).toBe('dark');
   });
 
+  it('an explicit mode ignores an OS change (sticky), and auto hands control back', () => {
+    stubCookie();
+    const media = stubMatchMedia(false);
+    const svc = TestBed.inject(BsThemeService);
+    svc.setMode('light');
+
+    media.setPrefersDark(true);
+    expect(svc.mode()).toBe('light');
+    expect(svc.effectiveMode()).toBe('light');
+    expect(themeAttr()).toBe('light');
+
+    svc.setMode('auto');
+    expect(svc.effectiveMode()).toBe('dark');
+    expect(themeAttr()).toBe('dark');
+  });
+
   it('cookie dark + empty localStorage stays dark (a server-written theme survives boot)', () => {
     stubCookie('bs-theme-mode=dark');
     stubMatchMedia(false);

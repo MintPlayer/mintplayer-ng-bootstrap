@@ -45,7 +45,9 @@
 
 <p>
   The script ships once, from <code>&#64;mintplayer/web-components/theming/bs-theme-preboot.js</code>:
-  there is no copy in <code>&#64;mintplayer/ng-bootstrap</code>. It is generated from
+  there is no copy in <code>&#64;mintplayer/ng-bootstrap</code>, so an
+  <code>input</code> of <code>node_modules/&#64;mintplayer/ng-bootstrap/theming</code>
+  (the path issue #420 originally proposed) finds nothing. It is generated from
   the same cookie and resolve helpers the library uses, so it cannot drift from
   them, and it stays under 1 KB. Copy it into your build output with an assets
   glob, so it is served at <code>/theming/bs-theme-preboot.js</code>.
@@ -272,6 +274,14 @@
   cannot see Bootstrap's <code>[data-bs-theme=dark]</code> rules through their
   encapsulation, so they read this token to pick their light or dark icons (the
   select caret, the switch knob). Without it they fall back to light.
+</bs-alert>
+
+<bs-alert [type]="colors.info" class="d-block mb-3">
+  <strong>Browser support.</strong> Those icons switch through a CSS style query
+  (<code>&#64;container style(--mp-color-mode: dark)</code>), measured working in
+  Chromium 151, Firefox 153 and WebKit 26.5. An engine without custom-property style
+  queries keeps the light caret and knob on a dark page. Everything else (colours,
+  borders, backgrounds) follows the theme regardless.
 </bs-alert>
 
 <bs-alert [type]="colors.warning" class="d-block mb-4">

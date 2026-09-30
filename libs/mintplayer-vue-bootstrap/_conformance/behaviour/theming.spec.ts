@@ -121,6 +121,17 @@ describe('useBsTheme', () => {
     expect(theme.mode.value).toBe('auto');
   });
 
+  it('can be stopped by hand when called outside any scope', () => {
+    const theme = useBsTheme();
+    getBsThemeStore().setMode('dark');
+    expect(theme.mode.value).toBe('dark');
+
+    theme.stop();
+    theme.stop(); // idempotent
+    getBsThemeStore().setMode('light');
+    expect(theme.mode.value).toBe('dark');
+  });
+
   it('exposes readonly refs', () => {
     const warn = vi.spyOn(console, 'warn').mockImplementation(() => undefined);
     const scope = effectScope();
