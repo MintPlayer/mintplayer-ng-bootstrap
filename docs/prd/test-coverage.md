@@ -1,6 +1,6 @@
 # PRD — raising and defending test coverage
 
-Status: **Phase 1 done** (2026-08; see §7b–7d). **Phase 2 (§10) planned 2026-09-30**: the service's combined metric from 74.4% to ≥ 90%, on PR #421. Earlier status: **M1–M10 and M12–M15 implemented** (2026-08-19) on `feat/coverage-honest-denominator`; M11
+Status: **Phase 1 done** (2026-08; see §7b–7d). **Phase 2 (§10) done 2026-10-01**: combined 74.4% → ~93.3% (lines 97.5%, branches 87.3%), on PR #421. Earlier status: **M1–M10 and M12–M15 implemented** (2026-08-19) on `feat/coverage-honest-denominator`; M11
 (the gate) lives in [coverage-pr-gate.md](./coverage-pr-gate.md) and is deliberately not part of this
 branch. The coverage service reports **76.23% lines (19,423 / 25,478) over 1,240 files** for the
 branch head — short of §6's 80% target, and §7c records what remains and why it is concentrated
@@ -784,6 +784,76 @@ Per project (lines / branches):
 - **Suite time grows.** New specs use fake timers and avoid real waits. The light-tier "filter walks to
   custom elements" rule from CLAUDE.md applies.
 
-### 10.5 As-built
+### 10.5 As-built (2026-10-01)
 
-To be filled in after M31.
+**Result.** Measured with a CI-identical run: `run-many -t test --exclude=api --coverage` plus `dotnet test -c
+Release`, counting what CI uploads (`libs/*`, `tools`, `api`).
+
+| | before | after |
+|---|---|---|
+| lines | 21,020 / 26,461 (79.4%) | 25,033 / 25,664 (**97.5%**) |
+| branches | 11,454 / 17,190 (66.6%) | 14,569 / 16,682 (**87.3%**) |
+| **combined** | **74.4%** | **93.5%** |
+
+The table excludes Vue. Its lcov was missing from the sweep run, because the task failed under the parallel,
+loaded run; it passes alone. Folding Vue back in at its measured 92.7% lines and 70.1% branches gives **about
+93.3% combined**. That clears P2-D1's 90% target and its lines floor (92%). Branches reach 87.3%, above the
+85% floor.
+
+Per project (lines / branches):
+- web-components: 97.4 / 86.6
+- ng-bootstrap: 97.3 / 85.8
+- tools: 99.5 / 93.9
+- react: 100 / 93.6
+- vue: 92.7 / 70.1 (honest; F22)
+- api: 98.6 / 96.3
+- qr-code: 98.8 / 94.1
+
+**Realised against the estimates.** Every milestone met or beat its estimate:
+- dock: 1,163 → 415 missed
+- scheduler: 83.9/67.3 → 98.8/86.0
+- tile + splitter: 77.7/64.5 → 96.4/83.4
+- M26 dirs: 2,747 → 1,143 missed
+- ng touched files: 1,803 → 177 missed
+- tools: 54.6/60.6 → 99.5/93.9
+- API branches: 53.6 → 96.3
+- M20 (CEM table): +218 lines / +260 branches on top of everything else
+
+**Bugs found and fixed while doing it.** There were about **90**, each pinned by a failing-first spec. They are
+listed per milestone in the commit messages and in the CHANGELOG. The most serious:
+- A zero-size tile cell hung the main thread in `pack()`.
+- Removing `step` from the time list, timepicker or datetime-picker looped forever.
+- Query-builder drag-and-drop never changed the tree.
+- A floating dock window's intersection handle resized the *docked* splitter.
+- `BsDropdownItem` values were coerced to 0 in all three frameworks, because `<li>.value` is numeric.
+- Pickers fired each pick three times.
+- `bs-select` never marked its form control touched.
+- The tab-control SSR render had no page content.
+
+**Decisions as applied.**
+- P2-D7 kept guards, each with a comment, in accordion, carousel, splitter, tile-manager and file-manager
+  (public methods can be reached through DI before the view exists), in typeahead, and in priority-nav's
+  conditional sizer. OTP input went back to an optional query, because a `focus()` fired from a directive
+  constructor threw NG0951.
+- `@mintplayer/encode-utf8` is kept and published, but nothing in the repo uses it any more: `qr-code` now
+  uses `TextEncoder`, proven identical over every code unit and surrogate pair.
+- The one `v8 ignore` is `tools/serve-api.mjs` (P2-D8).
+
+**True residual.** What remains is measurement-dependent geometry, where R3 forbids faking rects:
+- ribbon reflow
+- `ResizeObserver` callbacks with real sizes
+- FLIP inversion
+- the scheduler's rAF edge-scroll loop
+- the dock's `pushSizesToSplitter`
+
+Beyond that, SSR `typeof window` branches (jsdom always has a window), optional-chaining defaults, and lit's
+normal "a removed attribute becomes `null`" behaviour. The CEM table pins that last one instead of changing it.
+
+**Left open, for a decision:**
+- The scheduler's "loading events" announcement can never fire, because nothing calls
+  `stateManager.setLoading`. Wire it up or delete it.
+- The existing `overlay-controller.spec.ts` still fakes `getBoundingClientRect`, against R3. The same logic is
+  now also pinned by the pure `placement.spec.ts`, so the rect-faking spec could be deleted.
+- Two ng e2e specs were date- and scroll-dependent (B30, and the datatable filter flip). Both are now
+  deterministic.
+- The Nx Playwright targets moved to the inferred plugin in the same PR.
