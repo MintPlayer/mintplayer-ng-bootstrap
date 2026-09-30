@@ -2,7 +2,7 @@
 
 Issue: [#420](https://github.com/MintPlayer/mintplayer-ng-bootstrap/issues/420)
 Plan: [dark-mode-plan.md](./dark-mode-plan.md)
-Status: **Proposed — decisions locked** (2026-09-30, grilled Q1–Q10). Not started. Spikes in plan milestone A gate D4, D5, D6 and D9.
+Status: **Implemented** on `feat/462-dark-mode` (2026-09-30, grilled Q1–Q11, spikes A1–A3 passed). Not pushed; no PR yet. See §9 As-built notes.
 First consumer: MintPlayer.Spark [#462](https://github.com/MintPlayer/MintPlayer.Spark/issues/462) (`docs/issue_462_PRD.md` on its
 `feat/462-dark-mode` branch). Spark is blocked until `@mintplayer/ng-bootstrap@22.20.0` is on npm.
 
@@ -458,3 +458,44 @@ None. All were resolved in the 2026-09-30 grill (Q1–Q11).
 - The esbuild ES5 pipeline must be es2015 IIFE → `ts.transpileModule` → es5 minify.
 - React/Vue Vite need a `resolve.alias` for the `color-mode.css` import.
 - Local SSR runs need `NG_ALLOWED_HOSTS=localhost` and requests to `127.0.0.1`.
+
+## 9. As-built notes (2026-09-30)
+
+**Deviations from the decisions above:**
+- **D5c:** the fallback applies. `inlineCritical: false` is used, guarded by `check-critical-css`.
+- **D9:** the datatable portal fallbacks are kept, not deleted.
+- **D4:** SSR construction. `BsThemeService` renders the server attribute in its constructor, but once the toggle
+  talked to the store directly, nothing guaranteed the service got constructed. The demo's SSR check caught it:
+  `/` with a dark cookie rendered no attribute. Now both `provideBsTheme()` and `bs-theme-toggle` inject it.
+
+**How the dead dark rules were removed, per partial (D6):**
+- form-select, form-check, accordion and query-condition: `$enable-dark-mode: false` before the variables import.
+- navbar and carousel: the rules they use are restated locally. The carousel tokens are pinned light on `:host`, so a
+  page's dark swap from stock `bootstrap.min.css` can't invert the controls.
+
+**`mp-theme-toggle` (D7):**
+- Pre-upgrade box: the `mp-theme-toggle:not(:defined)` rule must match the `:host` `vertical-align`/`line-height`,
+  or upgrading shifts the toggle 4px. The e2e layout-shift specs pin this.
+- `modes` setter: `null`/`undefined`, an empty list or an all-invalid list all fall back to `BS_THEME_DEFAULT_MODES`.
+  A toggle with zero modes is never rendered.
+
+**Packaging:**
+- `esbuild` (pinned to 0.28.1 to match `@angular/build`) and `acorn` are now explicit devDependencies of the
+  workspace.
+- The React/Vue peer range on `@mintplayer/web-components` is `^2.17.0`, and ng-bootstrap's dependency is too.
+
+**Verification:**
+- **Builds:** the four library builds pass.
+- **Unit tests:** web-components, ng, react and vue all pass. Two failures surfaced and were fixed: the `preboot.spec`
+  path, and the datatable portal fallback.
+- **e2e:** all theme specs pass in every engine for all three demos.
+- **Pre-existing failures,** confirmed identical on `master` 26ab9813:
+  - `card.visual.spec.ts:39`: a stale baseline; code-snippet toolbars are about 20px taller since #402.
+  - `datatable-filter.spec.ts:230` (the flip-above check).
+  - `scheduler-views.spec.ts:1165`: depends on today's date.
+- **Flakes that passed on rerun:** dock-intersections :39/:87, dock-keyboard :135, and the axe
+  `/basic/forms/phone-input` "on load" check.
+- **Browser pass** (playwright_node, Chromium, light, dark and nested-light): every FR-10/12/13 surface OK; forced
+  colours OK. The toggle's keyboard behaviour, name, description, announcement and cookie are OK. SSR attribute and
+  `Vary` OK in Angular and React.
+- **A4:** the CDK pane is transparent, but the calendar fills it exactly and is opaque, so no panel class is needed.

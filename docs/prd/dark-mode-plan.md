@@ -1,7 +1,7 @@
 # Plan — Dark mode (issue #420)
 
 PRD: [dark-mode.md](./dark-mode.md) (decisions D1–D11, locked in the 2026-09-30 grill)
-Status: **Proposed** (2026-09-30). Branch: `feat/462-dark-mode` (already checked out) → one PR against `master`.
+Status: **Implemented** (2026-09-30), all milestones A–K on `feat/462-dark-mode`; not pushed. A4 folded into the K browser pass (no panel class needed).
 
 ## Conventions that apply throughout
 
