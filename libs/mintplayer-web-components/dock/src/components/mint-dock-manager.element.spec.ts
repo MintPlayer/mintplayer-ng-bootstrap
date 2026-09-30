@@ -78,11 +78,11 @@ describe('mint-dock-manager — drag-to-detach follows the cursor mid-gesture', 
     await (dock as unknown as { updateComplete: Promise<void> }).updateComplete;
     await nextRaf();
 
-    // jsdom ShadowRoot has no elementsFromPoint; the dock calls it from
-    // findStackAtPoint while updating drop targets mid-drag. Stub to no-op
-    // so the drag-follow logic can run without exploding.
+    // jsdom ShadowRoot has no elementsFromPoint; the dock asks its hit-test
+    // seam (elementsAt) while updating drop targets mid-drag. Nothing is under
+    // the pointer here, so the drag-follow logic runs without a drop target.
     if (dock.shadowRoot) {
-      (dock.shadowRoot as unknown as { elementsFromPoint: (x: number, y: number) => Element[] }).elementsFromPoint =
+      (dock as unknown as { elementsAt: (x: number, y: number) => Element[] }).elementsAt =
         () => [];
     }
   });
@@ -161,7 +161,7 @@ describe('mint-dock-manager — touch long-press arming', () => {
     await nextRaf();
 
     if (dock.shadowRoot) {
-      (dock.shadowRoot as unknown as { elementsFromPoint: (x: number, y: number) => Element[] }).elementsFromPoint =
+      (dock as unknown as { elementsAt: (x: number, y: number) => Element[] }).elementsAt =
         () => [];
     }
   });
@@ -289,7 +289,7 @@ describe('mint-dock-manager — touch swipe scrolls the tabstrip', () => {
     await nextRaf();
 
     if (dock.shadowRoot) {
-      (dock.shadowRoot as unknown as { elementsFromPoint: (x: number, y: number) => Element[] }).elementsFromPoint =
+      (dock as unknown as { elementsAt: (x: number, y: number) => Element[] }).elementsAt =
         () => [];
     }
   });
@@ -481,7 +481,7 @@ describe('mint-dock-manager — whole-pane drag marks the wrapper transparent', 
     await (dock as unknown as { updateComplete: Promise<void> }).updateComplete;
     await nextRaf();
     if (dock.shadowRoot) {
-      (dock.shadowRoot as unknown as { elementsFromPoint: (x: number, y: number) => Element[] }).elementsFromPoint =
+      (dock as unknown as { elementsAt: (x: number, y: number) => Element[] }).elementsAt =
         () => [];
     }
   });

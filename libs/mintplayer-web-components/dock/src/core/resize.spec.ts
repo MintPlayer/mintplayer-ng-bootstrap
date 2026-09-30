@@ -1,14 +1,17 @@
 import { describe, expect, it } from 'vitest';
 
 import {
+  collectCornerSnapTargets,
   FLOATING_MIN_HEIGHT,
   FLOATING_MIN_WIDTH,
   headerInsertIndex,
   resizeFloatingBounds,
   resizePair,
+  resizeTrackPair,
   snapToNearestTarget,
   snapToRatio,
   type FloatingResizeEdges,
+  type SnapDivider,
 } from './resize';
 
 /**
@@ -388,5 +391,110 @@ describe('headerInsertIndex', () => {
 
   it('behaves as if unbiased when the bias is zero', () => {
     expect(headerInsertIndex(MIDS, 155, 50, 0)).toBe(2);
+  });
+});
+
+describe('resizeTrackPair', () => {
+  it('moves only the divider it was given and leaves the other panels alone', () => {
+    const result = resizeTrackPair([100, 200, 300], 1, 50, 48);
+    expect(result?.pixels).toEqual([100, 250, 250]);
+  });
+
+  it('normalizes the pixels against the unchanged track total', () => {
+    const result = resizeTrackPair([100, 100], 0, 50, 10);
+    expect(result?.pixels).toEqual([150, 50]);
+    expect(result?.weights).toEqual([0.75, 0.25]);
+  });
+
+  it('conserves the track total, so the weights always sum to one', () => {
+    const result = resizeTrackPair([120, 280, 400], 0, 1000, 48)!;
+    expect(result.pixels.reduce((a, b) => a + b, 0)).toBe(800);
+    expect(result.weights.reduce((a, b) => a + b, 0)).toBeCloseTo(1, 10);
+  });
+
+  it('keeps the minimum on the panel the divider is pushed into', () => {
+    expect(resizeTrackPair([200, 200], 0, 1000, 48)?.pixels).toEqual([352, 48]);
+    expect(resizeTrackPair([200, 200], 0, -1000, 48)?.pixels).toEqual([48, 352]);
+  });
+
+  it('snaps to a conventional ratio of the pair when asked', () => {
+    // The pair is 400px: 190px of it snaps to one half, 300px to two thirds.
+    expect(resizeTrackPair([100, 200, 200], 1, -10, 10, true)?.pixels).toEqual([100, 200, 200]);
+    const [first, before, after] = resizeTrackPair([100, 300, 100], 1, 0, 10, true)!.pixels;
+    expect(first).toBe(100);
+    expect(before).toBeCloseTo((400 * 2) / 3, 10);
+    expect(after).toBeCloseTo(400 / 3, 10);
+  });
+
+  it('returns null for a track with no measured size instead of wiping the weights', () => {
+    // A zero total used to normalize to [] and erase the stored layout.
+    expect(resizeTrackPair([0, 0], 0, 30, 48)).toBeNull();
+    expect(resizeTrackPair([], 0, 30, 48)).toBeNull();
+  });
+
+  it('returns null for an index with no divider, rather than inventing a panel', () => {
+    expect(resizeTrackPair([100, 100], 1, 30, 10)).toBeNull();
+    expect(resizeTrackPair([100, 100], -1, 30, 10)).toBeNull();
+  });
+});
+
+describe('collectCornerSnapTargets', () => {
+  const bar = (
+    direction: SnapDivider['direction'],
+    left: number,
+    top: number,
+    width: number,
+    height: number,
+  ): SnapDivider => ({
+    direction,
+    rect: { left, top, width, height, right: left + width, bottom: top + height },
+  });
+
+  const ORIGIN = { left: 10, top: 20 };
+
+  it('turns every vertical bar the corner row crosses into an x target, relative to the origin', () => {
+    const targets = collectCornerSnapTargets(
+      { x: 300, y: 200 },
+      [bar('horizontal', 100, 0, 4, 400), bar('horizontal', 500, 150, 4, 100)],
+      ORIGIN,
+    );
+    expect(targets.x).toEqual([92, 492]);
+  });
+
+  it('turns every horizontal bar the corner column crosses into a y target', () => {
+    const targets = collectCornerSnapTargets(
+      { x: 300, y: 200 },
+      [bar('vertical', 0, 100, 600, 4), bar('vertical', 250, 400, 100, 6)],
+      ORIGIN,
+    );
+    expect(targets.y).toEqual([82, 383]);
+  });
+
+  it('ignores bars the corner lines do not pass through', () => {
+    const targets = collectCornerSnapTargets(
+      { x: 300, y: 200 },
+      [bar('horizontal', 100, 250, 4, 100), bar('vertical', 400, 100, 100, 4)],
+      ORIGIN,
+    );
+    expect(targets).toEqual({ x: [], y: [] });
+  });
+
+  it('counts a bar the line only touches at its end', () => {
+    const targets = collectCornerSnapTargets(
+      { x: 300, y: 200 },
+      [bar('horizontal', 100, 200, 4, 100), bar('vertical', 200, 100, 100, 4)],
+      { left: 0, top: 0 },
+    );
+    expect(targets).toEqual({ x: [102], y: [102] });
+  });
+
+  it('offers no x targets when the corner has no horizontal line, and vice versa', () => {
+    const dividers = [bar('horizontal', 100, 0, 4, 400), bar('vertical', 0, 100, 600, 4)];
+    expect(collectCornerSnapTargets({ x: 300, y: null }, dividers, ORIGIN)).toEqual({ x: [], y: [82] });
+    expect(collectCornerSnapTargets({ x: null, y: 200 }, dividers, ORIGIN)).toEqual({ x: [92], y: [] });
+  });
+
+  it('skips a divider whose splitter has no direction', () => {
+    expect(collectCornerSnapTargets({ x: 5, y: 5 }, [bar(undefined, 0, 0, 10, 10)], ORIGIN)).toEqual({ x: [], y: [] });
   });
 });

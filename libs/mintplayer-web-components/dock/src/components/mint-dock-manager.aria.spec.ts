@@ -128,12 +128,10 @@ describe('mint-dock-manager — live announcer', () => {
   });
 });
 
-// Intersection handles' creation in renderIntersectionHandles depends on
-// real layout (getBoundingClientRect on dividers + a setTimeout(5) gate).
-// jsdom returns 0×0 rects for every element, which collapses every divider
-// to coordinate (0,0) and the algorithm produces zero intersections — so a
-// unit-level "render then click the handle" test isn't viable here. The
-// keyboard delegation path is covered at the splitter side via
+// Intersection handles do render under jsdom (every divider collapses to
+// (0, 0), so crossing splitters still meet); the pointer and double-click
+// gestures on them are specified in mint-dock-manager.pointer.spec.ts. The
+// keyboard delegation's percent-step math is covered at the splitter side via
 // MpSplitter.resizeDividerBy() (see mp-splitter.aria.spec.ts).
 
 describe('mint-dock-manager — keyboard pane move (M to enter, T/R/B/L/F to commit)', () => {
@@ -152,13 +150,9 @@ describe('mint-dock-manager — keyboard pane move (M to enter, T/R/B/L/F to com
   });
   afterEach(() => dock.remove());
 
-  // The capture-phase keydown listener is wired in firstUpdated, but
-  // jsdom's composed-event traversal through nested shadow roots doesn't
-  // reliably surface a focused button inside mp-tab-control's shadow root
-  // back to the dock root via shadowRoot.activeElement. We exercise the
-  // commit pipeline directly: the higher-level "find focused tab + dispatch
-  // composed event" path is covered by the manual NVDA + Playwright passes
-  // documented in the PRD's §9 test strategy.
+  // These drive the commit pipeline directly. The "focus a tab + press M"
+  // arming path is specified with real focus and keystrokes in
+  // mint-dock-manager.pointer.spec.ts ("pressing M on a focused tab").
   it('commitPaneMoveAsFloat tears off the named pane into a floating window', async () => {
     const internals = dock as unknown as {
       paneMoveMode: { paneName: string; sourcePath: { type: 'docked'; segments: number[] } } | null;

@@ -92,7 +92,8 @@ function key(init: KeyboardEventInit): KeyboardEvent {
 function stubSplitter(pathSegments: string, resize = vi.fn()): { el: HTMLElement; resize: ReturnType<typeof vi.fn> } {
   const el = document.createElement('div');
   el.classList.add('dock-split');
-  el.dataset['path'] = pathSegments;
+  // Stamped as renderSplit stamps a docked splitter: layer prefix + segments.
+  el.dataset['path'] = `d:${pathSegments}`;
   (el as unknown as { resizeDividerBy: unknown }).resizeDividerBy = resize;
   dock.shadowRoot.appendChild(el);
   return { el, resize };

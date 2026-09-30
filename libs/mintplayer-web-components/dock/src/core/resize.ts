@@ -159,6 +159,99 @@ export function resizePair(
 }
 
 /**
+ * One splitter track after the divider at `index` moves by `delta`: the pixel
+ * sizes to push into the splitter and the weights they normalize to.
+ *
+ * This is the pair rule applied to a whole track, which is what a corner
+ * (intersection) drag needs — it moves one divider in each of several
+ * splitters at once, and each must keep the panels it does not touch exactly
+ * as they were.
+ *
+ * `null` means there is nothing to move: no divider at `index`, or a track
+ * with no measured size (every panel reads zero, as in a frame before layout). There is nothing to redistribute then, and writing
+ * anything would be worse than writing nothing: normalizing a zero total used
+ * to wipe the stored weights to `[]`, and the pair rule on a zero track yields
+ * negative pixel sizes.
+ */
+export function resizeTrackPair(
+  initialSizes: readonly number[],
+  index: number,
+  delta: number,
+  minSize: number,
+  snap = false,
+): { pixels: number[]; weights: number[] } | null {
+  // No divider sits at `index` unless there is a panel on each side of it.
+  if (index < 0 || index + 1 >= initialSizes.length) return null;
+  const total = initialSizes.reduce((sum, size) => sum + size, 0);
+  if (!(total > 0)) return null;
+  const { before, after } = resizePair(initialSizes[index], initialSizes[index + 1], delta, minSize, snap);
+  const pixels = initialSizes.map((size, i) =>
+    i === index ? before : i === index + 1 ? after : size,
+  );
+  return { pixels, weights: pixels.map((size) => size / total) };
+}
+
+/** The numbers of a measured rect that the corner-snap rule reads. */
+export interface SnapRect {
+  left: number;
+  top: number;
+  right: number;
+  bottom: number;
+  width: number;
+  height: number;
+}
+
+/**
+ * A splitter divider as the snap rule sees it. `direction` is the SPLITTER's
+ * flow: a `horizontal` split lays its children left to right, so its dividers
+ * are vertical bars, and vice versa.
+ */
+export interface SnapDivider {
+  direction: 'horizontal' | 'vertical' | undefined;
+  rect: SnapRect;
+}
+
+/**
+ * The lines a corner drag should snap to, relative to `origin`.
+ *
+ * A corner sits where a vertical and a horizontal divider cross, at
+ * (`center.x`, `center.y`). Any OTHER vertical bar that the corner's horizontal
+ * line passes through is somewhere the corner could line up with, so its
+ * centre becomes an x target; symmetrically for y. Bars the line misses belong
+ * to an unrelated region of the layout and are ignored — snapping to them would
+ * pull the corner towards something the user cannot see it aligning with.
+ *
+ * A missing coordinate (the corner has no divider on that axis) contributes no
+ * targets on the other axis.
+ */
+export function collectCornerSnapTargets(
+  center: { x: number | null; y: number | null },
+  dividers: readonly SnapDivider[],
+  origin: { left: number; top: number },
+): { x: number[]; y: number[] } {
+  const { x: centerX, y: centerY } = center;
+  const x =
+    centerY === null
+      ? []
+      : dividers
+          .filter(
+            ({ direction, rect }) =>
+              direction === 'horizontal' && centerY >= rect.top && centerY <= rect.bottom,
+          )
+          .map(({ rect }) => rect.left + rect.width / 2 - origin.left);
+  const y =
+    centerX === null
+      ? []
+      : dividers
+          .filter(
+            ({ direction, rect }) =>
+              direction === 'vertical' && centerX >= rect.left && centerX <= rect.right,
+          )
+          .map(({ rect }) => rect.top + rect.height / 2 - origin.top);
+  return { x, y };
+}
+
+/**
  * Where a dragged tab would land in a header, given the horizontal midpoint of
  * each tab that is a candidate target.
  *
