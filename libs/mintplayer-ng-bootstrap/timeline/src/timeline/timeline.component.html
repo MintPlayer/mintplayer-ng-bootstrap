@@ -4,6 +4,7 @@
   [attr.align]="align()"
   [attr.reverse]="reverse() ? '' : null"
   [attr.selectable]="selectable()"
+  [attr.activatable]="activatable() ? '' : null"
   (item-click)="onItemClick($event)"
   (selection-change)="onSelectionChange($event)"
 >

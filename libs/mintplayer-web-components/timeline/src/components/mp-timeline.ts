@@ -165,6 +165,22 @@ export class MpTimeline extends LitElement {
     this.requestUpdate();
   }
 
+  /**
+   * Opt-in keyboard reachability for click-only consumers (no selection): rows
+   * become buttons in a group with a roving tab stop, and Enter/Space emit
+   * `item-click`.
+   */
+  get activatable(): boolean {
+    return this._activatable;
+  }
+  set activatable(value: boolean) {
+    const next = !!value;
+    if (this._activatable === next) return;
+    this._activatable = next;
+    this.reflectBoolean('activatable', next);
+    this.requestUpdate();
+  }
+
   get isServerSide(): boolean {
     return this._isServerSide;
   }
@@ -188,10 +204,7 @@ export class MpTimeline extends LitElement {
     // writes (side/selected/tabindex/…) are excluded, so this can't feed back
     // into a loop. Handler is idempotent and also runs via updated()/slotchange.
     if (!isServer && !this._observer) {
-      this._observer = new MutationObserver(() => {
-        this.seedDeclarativeSelection();
-        this.enhanceDeclarativeItems();
-      });
+      this._observer = new MutationObserver(this.syncDeclarative);
       this._observer.observe(this, {
         childList: true,
         subtree: true,
@@ -247,8 +260,11 @@ export class MpTimeline extends LitElement {
   }
 
   protected override updated(): void {
-    // Declarative mode: project state onto slotted items (client only).
-    if (!isServer && this._items.length === 0) this.enhanceDeclarativeItems();
+    // Declarative mode: project state onto slotted items (client only). The
+    // seed comes first: the first render's updated() runs before slotchange,
+    // and enhancing alone would strip the authored `selected` attributes the
+    // seed reads.
+    if (!isServer && this._items.length === 0) this.syncDeclarative();
     // References point at a specific node; re-land them after every render.
     this.hostAria.syncReferences();
   }
@@ -302,7 +318,7 @@ export class MpTimeline extends LitElement {
       >
         ${this._items.length
           ? this.renderDataItems()
-          : html`<slot @slotchange=${this.onSlotChange}></slot>`}
+          : html`<slot @slotchange=${this.syncDeclarative}></slot>`}
       </div>
     `;
   }
@@ -333,10 +349,10 @@ export class MpTimeline extends LitElement {
           side=${sides[i]}
           orientation=${orientation}
           ?last=${isLast}
-          role=${selectable !== 'none' ? 'option' : this._activatable ? 'button' : 'listitem'}
+          role=${this.itemRole}
           ?selected=${selected}
           aria-selected=${selectable !== 'none' ? (selected ? 'true' : 'false') : nothing}
-          tabindex=${selectable !== 'none' || this._activatable ? (i === activeIndex ? '0' : '-1') : nothing}
+          tabindex=${this.roving ? (i === activeIndex ? '0' : '-1') : nothing}
           data-index=${i}
         ></mp-timeline-item>`;
       })}
@@ -345,7 +361,11 @@ export class MpTimeline extends LitElement {
 
   // ----- declarative enhancement ------------------------------------------
 
-  private onSlotChange = (): void => {
+  /**
+   * Declarative-mode sync, shared by slotchange, the MutationObserver and
+   * updated(): seed the authored selection once, then project state.
+   */
+  private syncDeclarative = (): void => {
     this.seedDeclarativeSelection();
     this.enhanceDeclarativeItems();
   };
@@ -369,156 +389,144 @@ export class MpTimeline extends LitElement {
     if (this._selectionExplicit || this._selectionSeeded) return;
     const els = this.declarativeItems;
     if (!els.length) return;
-    els.forEach((el, i) => {
-      if (el.hasAttribute('selected')) this._selectedSet.add(this.idForElement(el, i));
-    });
+    const authored = els.flatMap((el, i) =>
+      el.hasAttribute('selected') ? [this.idForElement(el, i)] : [],
+    );
+    this._selectedSet = new Set([...this._selectedSet, ...authored]);
     this._selectionSeeded = true;
   }
 
+  /**
+   * Projects the container state onto slotted items — the same role, selection
+   * and roving-tabindex contract `renderDataItems` renders in data mode.
+   */
   private enhanceDeclarativeItems(): void {
     const els = this.declarativeItems;
     if (!els.length) return;
     const orientation = this._orientation;
-    const selectable = this._selectable;
-    const reverse = this._reverse;
-    const sides = resolveSides(els.length, this._align, reverse);
-    const visualLast = reverse ? 0 : els.length - 1;
-    const activeIndex = this.resolvedActiveIndex(els.length, (i) => !els[i].hasAttribute('disabled'));
+    const selecting = this._selectable !== 'none';
+    const roving = this.roving;
+    const role = this.itemRole;
+    const sides = resolveSides(els.length, this._align, this._reverse);
+    const visualLast = this._reverse ? 0 : els.length - 1;
+    const activeIndex = this.resolvedActiveIndex(els.length, (i) => isEnabled(els[i]));
 
-    els.forEach((el, i) => {
+    els.map((el, i) => {
       el.setAttribute('side', sides[i]);
       el.setAttribute('orientation', orientation);
-      if (i === visualLast) el.setAttribute('last', '');
-      else el.removeAttribute('last');
-
-      if (selectable !== 'none') {
+      el.toggleAttribute('last', i === visualLast);
+      el.setAttribute('role', role);
+      if (selecting) {
         const selected = this.isSelected(this.idForElement(el, i));
-        el.setAttribute('role', 'option');
-        if (selected) el.setAttribute('selected', '');
-        else el.removeAttribute('selected');
+        el.toggleAttribute('selected', selected);
         el.setAttribute('aria-selected', selected ? 'true' : 'false');
-        el.setAttribute('tabindex', i === activeIndex ? '0' : '-1');
       } else {
-        el.setAttribute('role', 'listitem');
         el.removeAttribute('aria-selected');
-        el.removeAttribute('tabindex');
       }
+      if (roving) el.setAttribute('tabindex', i === activeIndex ? '0' : '-1');
+      else el.removeAttribute('tabindex');
+      return el;
     });
+  }
+
+  /** Re-applies roving tabindex / selection state after an interaction. */
+  private refreshItems(): void {
+    if (this._items.length) this.requestUpdate();
+    else this.enhanceDeclarativeItems();
   }
 
   // ----- interaction -------------------------------------------------------
 
+  /** Items are keyboard-reachable when selectable, or opted in via `activatable`. */
+  private get roving(): boolean {
+    return this._selectable !== 'none' || this._activatable;
+  }
+
+  /**
+   * activatable-without-selection = buttons in a group: a `listitem` may not be
+   * interactive, so the item role follows what the items actually are.
+   */
+  private get itemRole(): string {
+    if (this._selectable !== 'none') return 'option';
+    return this._activatable ? 'button' : 'listitem';
+  }
+
   private onClick = (ev: Event): void => {
-    const { el, index } = this.itemFromEvent(ev);
-    if (!el || index < 0) return;
-    if (el.hasAttribute('disabled')) return;
-    const model = this.modelFor(el, index);
-    this.dispatchEvent(
-      new CustomEvent<TimelineItemClickDetail>('item-click', {
-        detail: { item: model, index, originalEvent: ev },
-        bubbles: true,
-        composed: true,
-      }),
-    );
+    const { index } = this.itemFromEvent(ev);
+    if (!this.emitItemClick(index, ev)) return;
+    if (!this.roving) return;
+    // The clicked item becomes the tab stop BEFORE the selection re-projects
+    // state, so both land in the same enhancement pass.
+    this.setActiveIndex(index);
     if (this._selectable !== 'none') {
       const me = ev as MouseEvent;
       this.applySelection(index, { toggle: me.ctrlKey || me.metaKey, range: me.shiftKey });
-      this.setActiveIndex(index);
+    } else {
+      this.refreshItems();
     }
   };
 
-  /** The item-click emission shared by pointer and keyboard activation. */
-  private emitItemClick(index: number, originalEvent: Event): void {
+  /**
+   * The item-click emission shared by pointer and keyboard activation.
+   * Returns false when there is no enabled item at `index`.
+   */
+  private emitItemClick(index: number, originalEvent: Event): boolean {
     const el = this.itemElements[index];
-    if (!el || el.hasAttribute('disabled')) return;
-    const model = this.modelFor(el, index);
+    if (!el || !isEnabled(el)) return false;
     this.dispatchEvent(
       new CustomEvent<TimelineItemClickDetail>('item-click', {
-        detail: { item: model, index, originalEvent },
+        detail: { item: this.modelFor(el, index), index, originalEvent },
         bubbles: true,
         composed: true,
       }),
     );
+    return true;
   }
 
-  /** Arrows rove; Enter/Space emit item-click — activation without selection. */
-  private onActivatableKeydown(ev: KeyboardEvent): void {
+  /**
+   * Arrows rove, Home/End jump; Enter/Space select when selectable, and emit
+   * item-click when merely activatable (activation without selection).
+   */
+  private onKeydown = (ev: KeyboardEvent): void => {
+    if (!this.roving) return;
     const els = this.itemElements;
     if (!els.length) return;
     const current = this.itemFromEvent(ev).index;
-    switch (ev.key) {
-      case 'ArrowDown':
-      case 'ArrowRight':
-        ev.preventDefault();
-        this.moveFocus(current, 1, els);
-        return;
-      case 'ArrowUp':
-      case 'ArrowLeft':
-        ev.preventDefault();
-        this.moveFocus(current, -1, els);
-        return;
-      case 'Home':
-        ev.preventDefault();
-        this.moveFocusTo(this.firstFocusable(els), els);
-        return;
-      case 'End':
-        ev.preventDefault();
-        this.moveFocusTo(this.lastFocusable(els), els);
-        return;
-      case 'Enter':
-      case ' ': {
-        if (current < 0) return;
-        ev.preventDefault();
-        this.emitItemClick(current, ev);
-        return;
-      }
-    }
-  }
-
-  private onKeydown = (ev: KeyboardEvent): void => {
-    if (this._selectable === 'none') {
-      if (!this._activatable) return;
-      this.onActivatableKeydown(ev);
+    const target = this.navigationTarget(ev.key, current, els);
+    if (target !== undefined) {
+      ev.preventDefault();
+      this.moveFocusTo(target, els);
       return;
     }
-    const els = this.itemElements;
-    if (!els.length) return;
-    const current = this.itemFromEvent(ev).index;
-    switch (ev.key) {
-      case 'ArrowDown':
-      case 'ArrowRight': {
-        ev.preventDefault();
-        this.moveFocus(current, 1, els);
-        return;
-      }
-      case 'ArrowUp':
-      case 'ArrowLeft': {
-        ev.preventDefault();
-        this.moveFocus(current, -1, els);
-        return;
-      }
-      case 'Home': {
-        ev.preventDefault();
-        this.moveFocusTo(this.firstFocusable(els), els);
-        return;
-      }
-      case 'End': {
-        ev.preventDefault();
-        this.moveFocusTo(this.lastFocusable(els), els);
-        return;
-      }
-      case 'Enter':
-      case ' ': {
-        if (current < 0) return;
-        ev.preventDefault();
-        this.applySelection(current, {
-          toggle: ev.key === ' ' && this._selectable === 'multiple',
-          range: ev.shiftKey,
-        });
-        return;
-      }
+    if ((ev.key !== 'Enter' && ev.key !== ' ') || current < 0) return;
+    ev.preventDefault();
+    if (this._selectable === 'none') {
+      this.emitItemClick(current, ev);
+      return;
     }
+    this.applySelection(current, {
+      toggle: ev.key === ' ' && this._selectable === 'multiple',
+      range: ev.shiftKey,
+    });
   };
+
+  /** The index a navigation key moves to, or undefined for a non-navigation key. */
+  private navigationTarget(key: string, current: number, els: MpTimelineItem[]): number | undefined {
+    switch (key) {
+      case 'ArrowDown':
+      case 'ArrowRight':
+        return this.stepFrom(current, 1, els);
+      case 'ArrowUp':
+      case 'ArrowLeft':
+        return this.stepFrom(current, -1, els);
+      case 'Home':
+        return els.findIndex(isEnabled);
+      case 'End':
+        return els.reduce((last, el, i) => (isEnabled(el) ? i : last), -1);
+      default:
+        return undefined;
+    }
+  }
 
   private itemFromEvent(ev: Event): { el: MpTimelineItem | null; index: number } {
     const path = ev.composedPath();
@@ -548,20 +556,19 @@ export class MpTimeline extends LitElement {
   private applySelection(index: number, opts: { toggle: boolean; range: boolean }): void {
     const els = this.itemElements;
     const el = els[index];
-    if (!el || el.hasAttribute('disabled')) return;
+    if (!el || !isEnabled(el)) return;
     const id = this.idForId(index, el);
     const before = new Set(this._selectedSet);
 
     if (this._selectable === 'single') {
       this._selectedSet = new Set([id]);
     } else if (opts.range && this._anchorIndex >= 0) {
-      const [lo, hi] = [Math.min(this._anchorIndex, index), Math.max(this._anchorIndex, index)];
-      const next = new Set(this._selectedSet);
-      for (let i = lo; i <= hi; i++) {
-        const e = els[i];
-        if (e && !e.hasAttribute('disabled')) next.add(this.idForId(i, e));
-      }
-      this._selectedSet = next;
+      const lo = Math.min(this._anchorIndex, index);
+      const hi = Math.max(this._anchorIndex, index);
+      const rangeIds = els
+        .slice(lo, hi + 1)
+        .flatMap((e, k) => (isEnabled(e) ? [this.idForId(lo + k, e)] : []));
+      this._selectedSet = new Set([...this._selectedSet, ...rangeIds]);
     } else if (opts.toggle) {
       const next = new Set(this._selectedSet);
       if (next.has(id)) next.delete(id);
@@ -620,42 +627,39 @@ export class MpTimeline extends LitElement {
     if (this._activeIndex >= 0 && this._activeIndex < count && enabled(this._activeIndex)) {
       return this._activeIndex;
     }
-    for (let i = 0; i < count; i++) if (enabled(i)) return i;
-    return -1;
+    return Array.from({ length: count }, (_, i) => i).find(enabled) ?? -1;
   }
 
   private setActiveIndex(index: number): void {
     this._activeIndex = index;
   }
 
-  private moveFocus(from: number, dir: 1 | -1, els: MpTimelineItem[]): void {
-    const start =
-      from < 0 ? this.resolvedActiveIndex(els.length, (i) => !els[i].hasAttribute('disabled')) : from;
-    let next = start;
-    for (let step = 0; step < els.length; step++) {
-      next = (next + dir + els.length) % els.length;
-      if (!els[next].hasAttribute('disabled')) break;
-    }
-    this.moveFocusTo(next, els);
+  /**
+   * The next enabled item from `from` in direction `dir`, wrapping; -1 when no
+   * item is enabled. A `from` of -1 (focus not on an item) starts at the
+   * current tab stop.
+   */
+  private stepFrom(from: number, dir: 1 | -1, els: MpTimelineItem[]): number {
+    const n = els.length;
+    const start = from < 0 ? this.resolvedActiveIndex(n, (i) => isEnabled(els[i])) : from;
+    return (
+      Array.from({ length: n }, (_, k) => (((start + dir * (k + 1)) % n) + n) % n).find((i) =>
+        isEnabled(els[i]),
+      ) ?? -1
+    );
   }
 
   private moveFocusTo(index: number, els: MpTimelineItem[]): void {
     if (index < 0 || index >= els.length) return;
     this.setActiveIndex(index);
-    if (this._items.length) this.requestUpdate();
-    else this.enhanceDeclarativeItems();
+    this.refreshItems();
     // Focus after the tabindex is applied.
     requestAnimationFrame(() => this.itemElements[index]?.focus());
   }
+}
 
-  private firstFocusable(els: MpTimelineItem[]): number {
-    return els.findIndex((el) => !el.hasAttribute('disabled'));
-  }
-
-  private lastFocusable(els: MpTimelineItem[]): number {
-    for (let i = els.length - 1; i >= 0; i--) if (!els[i].hasAttribute('disabled')) return i;
-    return -1;
-  }
+function isEnabled(el: Element): boolean {
+  return !el.hasAttribute('disabled');
 }
 
 if (typeof customElements !== 'undefined' && !customElements.get('mp-timeline')) {

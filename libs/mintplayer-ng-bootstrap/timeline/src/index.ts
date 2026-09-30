@@ -6,9 +6,8 @@ export {
   BsTimelineContentDirective,
   BsTimelineOppositeDirective,
   BsTimelineConnectorDirective,
-  BsTimelineItemContext,
-  BsTimelineConnectorContext,
 } from './directives/timeline-template.directives';
+export type { BsTimelineItemContext, BsTimelineConnectorContext } from './directives/timeline-template.directives';
 
 // Re-export core types + helper for convenience.
 export type {

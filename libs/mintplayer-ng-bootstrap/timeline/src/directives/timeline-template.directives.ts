@@ -6,24 +6,26 @@ import type { TimelineItem, TimelineOrientation, TimelineSide } from '@mintplaye
  * `*bsTimelineContent="let item"` binds the item; named context vars expose the
  * resolved layout state.
  */
-export class BsTimelineItemContext {
-  $implicit!: TimelineItem;
-  index = 0;
-  visualIndex = 0;
-  isFirst = false;
-  isLast = false;
-  orientation: TimelineOrientation = 'vertical';
-  side: TimelineSide = 'start';
+export interface BsTimelineItemContext {
+  $implicit: TimelineItem;
+  /** Position in the items array. */
+  index: number;
+  /** Position in the rendered order (differs from index under reverse). */
+  visualIndex: number;
+  isFirst: boolean;
+  isLast: boolean;
+  orientation: TimelineOrientation;
+  side: TimelineSide;
 }
 
 /** Context for the connector template (the segment trailing this item). */
-export class BsTimelineConnectorContext {
+export interface BsTimelineConnectorContext {
   /** The item the connector trails. */
-  $implicit!: TimelineItem;
+  $implicit: TimelineItem;
   /** The next item (undefined for the last). */
   toItem?: TimelineItem;
-  index = 0;
-  orientation: TimelineOrientation = 'vertical';
+  index: number;
+  orientation: TimelineOrientation;
 }
 
 /** Custom bullet / marker template. */
