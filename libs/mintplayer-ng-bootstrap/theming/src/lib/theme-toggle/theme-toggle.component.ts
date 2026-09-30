@@ -4,6 +4,7 @@ import {
   CUSTOM_ELEMENTS_SCHEMA,
   effect,
   ElementRef,
+  inject,
   input,
   viewChild,
 } from '@angular/core';
@@ -13,6 +14,7 @@ import {
   MpThemeToggle,
   type BsThemeToggleMode,
 } from '@mintplayer/web-components/theming';
+import { BsThemeService } from '../service/bs-theme.service';
 
 // Load-bearing: referencing the class keeps the module (and its
 // customElements.define) from being tree-shaken out of the bundle.
@@ -45,6 +47,10 @@ export class BsThemeToggleComponent {
   private readonly toggleRef = viewChild.required<ElementRef<MpThemeToggle>>('toggle');
 
   constructor() {
+    // Construct the service even though the element never calls it: on the
+    // server its constructor is what renders <html data-bs-theme> from the
+    // request cookie, so an app that only renders a toggle still gets SSR.
+    inject(BsThemeService);
     effect(() => {
       this.toggleRef().nativeElement.modes = this.modes();
     });

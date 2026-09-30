@@ -20,11 +20,11 @@
     <li><strong>Signal-first APIs.</strong> Components expose <code>input()</code> / <code>model()</code> / <code>output()</code> / <code>computed()</code> — no RxJS Subjects on public surfaces.</li>
     <li><strong>Zoneless-ready.</strong> The demo itself runs on <code>provideZonelessChangeDetection()</code>. Every component uses <code>ChangeDetectionStrategy.OnPush</code>.</li>
     <li><strong>Standalone-only.</strong> No <code>NgModule</code>s on public exports — bare classes you can drop straight into your <code>imports: [...]</code>.</li>
-    <li><strong>Built on Bootstrap 5.3</strong> with first-class dark-mode and custom-variant support via <code>BsThemeService</code>. See the <a routerLink="/additional-samples/theming">Theming</a> guide.</li>
+    <li><strong>Built on Bootstrap 5.3</strong> with first-class dark-mode and custom-variant support: a <code>&lt;bs-theme-toggle&gt;</code>, a signal-based <code>BsThemeService</code> and a cookie the server renders. See the <a routerLink="/additional-samples/theming">Theming</a> guide.</li>
     <li><strong>Lit 3 web components under the hood</strong> for the heavy widgets (dock, scheduler, tile-manager, ribbon) — accessible, encapsulated, framework-agnostic at the core.</li>
     <li><strong>Tree-shakeable subpath imports</strong> like <code>&#64;mintplayer/ng-bootstrap/theming</code> — each component is its own secondary entry point.</li>
     <li><strong>Per-component styles</strong> instead of one global stylesheet — unused components are dropped at build time and the main bundle stays small.</li>
-    <li><strong>SSR-safe.</strong> The theming service defers <code>DOCUMENT</code> / <code>DestroyRef</code> injection behind <code>isPlatformBrowser</code>; a pre-paint script pattern is documented.</li>
+    <li><strong>SSR-safe.</strong> The server renders the visitor's theme from the <code>bs-theme-mode</code> cookie, and a generated pre-boot script applies it before the first paint on prerendered and cached pages, so dark-mode users never see a light flash.</li>
   </ul>
 </bs-alert>
 

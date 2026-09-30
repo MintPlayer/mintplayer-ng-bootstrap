@@ -33,7 +33,12 @@
           "apps/ng-bootstrap-demo/src/favicon.ico",
           "apps/ng-bootstrap-demo/src/assets",
           "apps/ng-bootstrap-demo/src/web.config",
-          "apps/ng-bootstrap-demo/src/nginx.conf"
+          "apps/ng-bootstrap-demo/src/nginx.conf",
+          {
+            "glob": "bs-theme-preboot.js",
+            "input": "libs/mintplayer-web-components/theming",
+            "output": "theming"
+          }
         ],
         "styles": ["apps/ng-bootstrap-demo/src/styles.scss"],
         "scripts": [],

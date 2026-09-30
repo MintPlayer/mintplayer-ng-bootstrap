@@ -5,30 +5,20 @@
     <title>ng-bootstrap showcase</title>
     <base href="/" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <!-- Native form controls and scrollbars follow the theme; the browser chrome
+         colour follows the OS scheme. -->
+    <meta name="color-scheme" content="light dark" />
+    <meta name="theme-color" media="(prefers-color-scheme: light)" content="#ffffff" />
+    <meta name="theme-color" media="(prefers-color-scheme: dark)" content="#212529" />
+    <!-- Theme pre-boot (PRD dark-mode D5, D5b): the site default, then the blocking
+         script that applies the bs-theme-mode cookie (or this default, or the OS
+         scheme) to <html data-bs-theme> before any stylesheet evaluates, so a
+         dark user never sees a light flash. Both must stay ahead of the styles.
+         The script is @mintplayer/web-components/theming/bs-theme-preboot.js,
+         copied by the "theming" assets glob in project.json. -->
+    <meta name="bs-theme-default-mode" content="auto" />
+    <script src="theming/bs-theme-preboot.js"></script>
     <link rel="icon" type="image/x-icon" href="favicon.ico" />
-    <script>
-      // Pre-boot: apply the persisted (or system-resolved) data-bs-theme before
-      // any stylesheet evaluates, preventing a light-mode flash for dark-mode
-      // users on reload. The storage key MUST stay in sync with
-      // BS_THEME_STORAGE_KEY in @mintplayer/ng-bootstrap/theming. See
-      // /additional-samples/theming for the recipe.
-      (function () {
-        try {
-          var m = localStorage.getItem('bs-theme-mode') || 'auto';
-          var r;
-          if (m === 'auto') {
-            r = matchMedia('(prefers-color-scheme: dark)').matches
-              ? 'dark'
-              : 'light';
-          } else {
-            r = m;
-          }
-          document.documentElement.setAttribute('data-bs-theme', r);
-        } catch (_) {
-          /* localStorage / matchMedia unavailable — leave attribute unset */
-        }
-      })();
-    </script>
   </head>
   <body>
     <demo-bootstrap-root></demo-bootstrap-root>
