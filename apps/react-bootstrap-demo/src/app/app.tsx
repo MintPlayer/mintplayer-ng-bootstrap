@@ -55,6 +55,7 @@ const TimelinePage     = lazyNamed(() => import('./pages/enterprise/TimelinePage
 const ShellPage        = lazyNamed(() => import('./pages/enterprise/ShellPage'),     'ShellPage');
 const AccordionPage    = lazyNamed(() => import('./pages/enterprise/AccordionPage'), 'AccordionPage');
 const ChartsPage       = lazyNamed(() => import('./pages/enterprise/ChartsPage'),    'ChartsPage');
+const ThemingPage      = lazyNamed(() => import('./pages/ThemingPage'),      'ThemingPage');
 
 function PageFallback() {
   return (
@@ -107,6 +108,8 @@ export function App() {
           <Route path="/enterprise/scheduler" element={<SchedulerPage />} />
           <Route path="/enterprise/timeline" element={<TimelinePage />} />
           <Route path="/enterprise/shell" element={<ShellPage />} />
+          {/* Additional samples */}
+          <Route path="/additional-samples/theming" element={<ThemingPage />} />
           <Route path="*" element={<ComingSoonPage />} />
         </Routes>
       </Suspense>

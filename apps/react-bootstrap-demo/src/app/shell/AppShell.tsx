@@ -3,6 +3,7 @@ import { Link, NavLink } from 'react-router-dom';
 import { BsShell } from '@mintplayer/react-bootstrap/shell';
 import { FrameworkLinks } from './FrameworkLinks';
 import { GithubLink } from './GithubLink';
+import { BsThemeToggle } from '@mintplayer/react-bootstrap/theming';
 const SECTIONS = [
   { title: 'Basic', routes: [
     { path: '/basic/card', label: 'Card' },
@@ -43,6 +44,9 @@ const SECTIONS = [
     { path: '/enterprise/shell', label: 'Shell' },
     { path: '/enterprise/charts', label: 'Charts' },
   ]},
+  { title: 'Additional samples', routes: [
+    { path: '/additional-samples/theming', label: 'Theming & dark mode' },
+  ]},
 ];
 
 export function AppShell({ children }: { children: ReactNode }) {
@@ -57,6 +61,8 @@ export function AppShell({ children }: { children: ReactNode }) {
         <span className="text-body-secondary small">demo</span>
         <div className="flex-grow-1" />
         <FrameworkLinks />
+        {/* Cycles auto / light / dark and persists the choice in the bs-theme-mode cookie. */}
+        <BsThemeToggle className="mx-2" />
         <GithubLink />
       </div>
       <nav slot="sidebar" className="border-end bg-body-tertiary p-3 app-shell-sidebar">

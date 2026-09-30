@@ -2,6 +2,7 @@
 import { RouterLink, RouterView } from 'vue-router';
 import { BsShell } from '@mintplayer/vue-bootstrap/shell';
 import FrameworkLinks from './FrameworkLinks.vue';
+import { BsThemeToggle } from '@mintplayer/vue-bootstrap/theming';
 import pkg from '@mintplayer/vue-bootstrap/package.json';
 
 // Read the version from the wrapper package so the navbar tracks
@@ -59,6 +60,12 @@ const SECTIONS = [
       { path: '/enterprise/charts', label: 'Charts' },
     ],
   },
+  {
+    title: 'Additional samples',
+    routes: [
+      { path: '/additional-samples/theming', label: 'Theming & dark mode' },
+    ],
+  },
 ];
 </script>
 
@@ -73,6 +80,8 @@ const SECTIONS = [
       <span class="text-body-secondary small">demo</span>
       <div class="flex-grow-1" />
       <FrameworkLinks />
+      <!-- Cycles auto / light / dark and persists the choice in the bs-theme-mode cookie. -->
+      <BsThemeToggle class="mx-2" />
       <a
         class="github-link"
         :href="repoUrl"

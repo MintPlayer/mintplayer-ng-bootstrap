@@ -2,26 +2,24 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8">
-    <link rel="icon" type="image/svg+xml" href="/favicon.svg">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>vue-bootstrap-demo</title>
+    <!-- Native form controls and scrollbars follow the theme; the browser chrome
+         colour follows the OS scheme. -->
+    <meta name="color-scheme" content="light dark">
+    <meta name="theme-color" media="(prefers-color-scheme: light)" content="#ffffff">
+    <meta name="theme-color" media="(prefers-color-scheme: dark)" content="#212529">
+    <!-- Theme pre-boot (PRD dark-mode D5, D5b): the site default, then the blocking
+         script that applies the bs-theme-mode cookie (or this default, or the OS
+         scheme) to the root data-bs-theme attribute before any stylesheet evaluates, so a
+         dark user never sees a light flash. Both must stay ahead of the styles.
+         The script is @mintplayer/web-components/theming/bs-theme-preboot.js,
+         served and emitted by tools/vite/theme-preboot.mts. server.mjs reads this
+         meta too, so the SSR splice uses the same default. -->
+    <meta name="bs-theme-default-mode" content="auto">
+    <script src="/theming/bs-theme-preboot.js"></script>
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg">
     <link rel="stylesheet" href="/src/styles.css">
-    <script>
-      // Pre-boot: mirror the OS prefers-color-scheme to Bootstrap's
-      // data-bs-theme attribute before the Vue app paints. The Vue
-      // demo intentionally has NO in-app theme toggle — system pref is
-      // the source of truth. Re-applied on matchMedia change so Night
-      // Shift / Dark Mode flips on macOS, Windows and GNOME take effect
-      // without a reload.
-      (function () {
-        var mq = matchMedia('(prefers-color-scheme: dark)');
-        function apply() {
-          document.documentElement.setAttribute('data-bs-theme', mq.matches ? 'dark' : 'light');
-        }
-        apply();
-        try { mq.addEventListener('change', apply); } catch (_) { mq.addListener(apply); }
-      })();
-    </script>
   </head>
   <body>
     <div id="root"><!--app-html--></div>

@@ -3,6 +3,8 @@ import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 import { nxViteTsPaths } from '@nx/vite/plugins/nx-tsconfig-paths.plugin';
 import { nxCopyAssetsPlugin } from '@nx/vite/plugins/nx-copy-assets.plugin';
+// Pre-boot script + color-mode.css alias for the dark-mode wiring (PRD dark-mode D5, D6).
+import { colorModeCssAlias, themePreboot } from '../../tools/vite/theme-preboot.mts';
 export default defineConfig(({ isSsrBuild }) => ({
   root: import.meta.dirname,
   cacheDir: '../../node_modules/.vite/apps/react-bootstrap-demo',
@@ -24,7 +26,8 @@ export default defineConfig(({ isSsrBuild }) => ({
     port: 4000,
     host: 'localhost',
   },
-  plugins: [react(), nxViteTsPaths(), nxCopyAssetsPlugin(['*.md'])],
+  plugins: [react(), nxViteTsPaths(), nxCopyAssetsPlugin(['*.md']), themePreboot()],
+  resolve: { alias: [colorModeCssAlias] },
   // Uncomment this if you are using workers.
   // worker: {
   //   plugins: () => [ nxViteTsPaths() ],

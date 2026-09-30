@@ -3,6 +3,8 @@ import { defineConfig } from 'vite';
 import vue from '@vitejs/plugin-vue';
 import { nxViteTsPaths } from '@nx/vite/plugins/nx-tsconfig-paths.plugin';
 import { nxCopyAssetsPlugin } from '@nx/vite/plugins/nx-copy-assets.plugin';
+// Pre-boot script + color-mode.css alias for the dark-mode wiring (PRD dark-mode D5, D6).
+import { colorModeCssAlias, themePreboot } from '../../tools/vite/theme-preboot.mts';
 export default defineConfig(({ isSsrBuild }) => ({
   root: import.meta.dirname,
   cacheDir: '../../node_modules/.vite/apps/vue-bootstrap-demo',
@@ -36,7 +38,11 @@ export default defineConfig(({ isSsrBuild }) => ({
     }),
     nxViteTsPaths(),
     nxCopyAssetsPlugin(['*.md']),
+    themePreboot(),
   ],
+  resolve: {
+    alias: [colorModeCssAlias],
+  },
   build: {
     // Split into browser/ + server/ — the standard Vite SSR layout server.mjs
     // reads in production. The SSR bundle targets Node (esnext: allows the
