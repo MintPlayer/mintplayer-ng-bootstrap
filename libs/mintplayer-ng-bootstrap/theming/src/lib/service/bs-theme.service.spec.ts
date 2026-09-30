@@ -7,6 +7,7 @@ import {
   getBsThemeStore,
 } from '@mintplayer/web-components/theming';
 import { BsThemeService } from './bs-theme.service';
+import { installFakeBroadcastChannel } from '@mintplayer/web-components/theming/src/testing/fake-broadcast-channel';
 import { provideBsTheme } from '../provide-bs-theme';
 
 /**
@@ -60,6 +61,11 @@ function stubMatchMedia(prefersDark: boolean): MatchMediaStub {
 }
 
 const themeAttr = () => document.documentElement.getAttribute('data-bs-theme');
+
+// The store opens a BroadcastChannel; the real one crosses worker threads under
+// --pool=threads, so another spec file could post a mode into this one. Use the
+// in-memory fake, scoped to this file.
+installFakeBroadcastChannel();
 
 describe('BsThemeService (browser mirror)', () => {
   beforeEach(() => {

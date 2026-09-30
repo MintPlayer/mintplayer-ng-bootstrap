@@ -1,4 +1,5 @@
 import { Directive, ElementRef, effect, inject, input } from '@angular/core';
+import type { DropdownItemElement } from '@mintplayer/web-components/dropdown-menu';
 
 /**
  * `[bsDropdownItem]` — marks a plain `<li>` as a Bootstrap `.dropdown-item`
@@ -14,7 +15,9 @@ import { Directive, ElementRef, effect, inject, input } from '@angular/core';
  *    a `listbox` menu).
  *  - `disabled` — non-interactive; removed from the menu's roving order.
  *  - `value`    — opaque value carried in the menu's `select` event detail;
- *    assigned as a `value` property on the host `<li>` (the WC reads it).
+ *    written to the host `<li>` as its `dropdownValue` property, which the WC
+ *    reads. Not the `value` property: `HTMLLIElement.value` is a native long
+ *    that turns an object or a string into 0.
  */
 @Directive({
   selector: '[bsDropdownItem]',
@@ -32,9 +35,9 @@ export class BsDropdownItemDirective {
   readonly value = input<unknown>();
 
   constructor() {
-    const el = inject<ElementRef<HTMLElement>>(ElementRef);
+    const el = inject<ElementRef<DropdownItemElement>>(ElementRef);
     effect(() => {
-      (el.nativeElement as HTMLElement & { value?: unknown }).value = this.value();
+      el.nativeElement.dropdownValue = this.value();
     });
   }
 }

@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it } from 'vitest';
 import { MpDropdownMenu } from './mp-dropdown-menu';
-import type { DropdownSelectEventDetail } from '../types';
+import type { DropdownItemElement, DropdownSelectEventDetail } from '../types';
 
 async function mount(markup: string, attrs = ''): Promise<MpDropdownMenu> {
   document.body.innerHTML = `<mp-dropdown-menu ${attrs}>${markup}</mp-dropdown-menu>`;
@@ -195,6 +195,32 @@ describe('mp-dropdown-menu activation and values', () => {
     a.click();
     b.click();
     expect(seen.map((s) => s.value)).toEqual([{ id: 1 }, 'd']);
+  });
+
+  it('reports an li dropdownValue object or string unchanged, ahead of data-value', async () => {
+    const menu = await mount(
+      '<li class="dropdown-item" data-value="attr">A</li><li class="dropdown-item">B</li><li class="dropdown-item">C</li>',
+    );
+    const seen = collect(menu);
+    const [a, b, c] = items(menu) as DropdownItemElement[];
+    const obj = { id: 1 };
+    a.dropdownValue = obj;
+    b.dropdownValue = 'two';
+    c.dropdownValue = 3;
+    [a, b, c].map((el) => el.click());
+    expect(seen.map((s) => s.value)).toEqual([obj, 'two', 3]);
+    expect(seen[0].value).toBe(obj);
+  });
+
+  it('falls back to data-value once dropdownValue is cleared to undefined', async () => {
+    const menu = await mount('<li class="dropdown-item" data-value="attr">A</li>');
+    const seen = collect(menu);
+    const [a] = items(menu) as DropdownItemElement[];
+    a.dropdownValue = 'set';
+    a.click();
+    a.dropdownValue = undefined;
+    a.click();
+    expect(seen.map((s) => s.value)).toEqual(['set', 'attr']);
   });
 
   it('a bare li without data-value yields undefined rather than its native ordinal 0', async () => {

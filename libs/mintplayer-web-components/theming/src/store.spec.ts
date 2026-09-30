@@ -1,5 +1,6 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { __resetBsThemeStoreForTests, configureBsTheme, getBsThemeStore } from './store';
+import { installFakeBroadcastChannel } from './testing/fake-broadcast-channel';
 
 // vitest's jsdom environment exposes the JSDOM instance; reconfigure() is the
 // only way to change location.protocol (window.location is unforgeable).
@@ -80,12 +81,9 @@ function nextMessage(channel: BroadcastChannel, ms = 100): Promise<unknown> {
 describe('bs-theme store', () => {
   let cookie: CookieStub;
   let media: MatchMediaStub;
-  const peers: BroadcastChannel[] = [];
-  const peer = () => {
-    const channel = new BroadcastChannel('bs-theme-mode');
-    peers.push(channel);
-    return channel;
-  };
+  // Hermetic channel: see testing/fake-broadcast-channel.ts for why the real one flakes.
+  const FakeBroadcastChannel = installFakeBroadcastChannel();
+  const peer = () => new BroadcastChannel('bs-theme-mode');
 
   beforeEach(() => {
     __resetBsThemeStoreForTests();
@@ -96,9 +94,7 @@ describe('bs-theme store', () => {
   });
 
   afterEach(() => {
-    // Close every channel, or the open BroadcastChannel handles keep the vitest fork alive.
     __resetBsThemeStoreForTests();
-    peers.splice(0).map((channel) => channel.close());
     delete (document as { cookie?: string }).cookie;
     vi.restoreAllMocks();
   });
@@ -340,8 +336,32 @@ describe('bs-theme store', () => {
       expect(listener).toHaveBeenCalledTimes(1);
       expect(cookie.writes).toEqual([]);
 
-      // No echo: nothing comes back on the channel.
+      // No echo: nothing comes back on the channel, and the only post is the other tab's.
       expect(await nextMessage(otherTab)).toBeUndefined();
+      expect(FakeBroadcastChannel.posted).toEqual([{ name: 'bs-theme-mode', data: 'dark' }]);
+    });
+
+    it('syncs a mode between two store instances (two tabs) with exactly one post', async () => {
+      const key = Symbol.for('mintplayer.bs-theme');
+      const tabA = getBsThemeStore();
+      // Detach tab A from the singleton slot so the next access builds a second store.
+      delete (globalThis as Record<symbol, unknown>)[key];
+      const tabB = getBsThemeStore();
+      try {
+        const listenerB = vi.fn();
+        tabB.subscribe(listenerB);
+
+        tabA.setMode('dark');
+        await vi.waitFor(() => expect(tabB.getMode()).toBe('dark'));
+        expect(listenerB).toHaveBeenCalledTimes(1);
+
+        // Let any echo from tab B land; tab A's post must remain the only one.
+        await new Promise((resolve) => setTimeout(resolve, 20));
+        expect(FakeBroadcastChannel.posted).toEqual([{ name: 'bs-theme-mode', data: 'dark' }]);
+        expect(tabA.getMode()).toBe('dark');
+      } finally {
+        (tabA as typeof tabA & { dispose(): void }).dispose();
+      }
     });
 
     it('ignores an invalid mode from another tab', async () => {

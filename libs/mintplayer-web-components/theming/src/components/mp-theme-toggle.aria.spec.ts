@@ -3,6 +3,7 @@ import './mp-theme-toggle';
 import type { MpThemeToggle } from './mp-theme-toggle';
 import { __resetBsThemeStoreForTests, getBsThemeStore } from '../store';
 import { BS_THEME_DEFAULT_MODES } from '../toggle-modes';
+import { installFakeBroadcastChannel } from '../testing/fake-broadcast-channel';
 
 /**
  * Roles, names and state for <mp-theme-toggle> (PRD dark-mode D7): a native
@@ -41,6 +42,11 @@ function description(host: MpThemeToggle): string | null {
   if (!id) return null;
   return host.shadowRoot!.getElementById(id)?.textContent ?? null;
 }
+
+// The store opens a BroadcastChannel; the real one crosses worker threads under
+// --pool=threads, so another spec file could post a mode into this one. Use the
+// in-memory fake, scoped to this file.
+installFakeBroadcastChannel();
 
 describe('mp-theme-toggle aria', () => {
   beforeEach(() => {

@@ -14,6 +14,7 @@ import {
 import { __resetBsThemeStoreForTests, type MpThemeToggle } from '@mintplayer/web-components/theming';
 
 import { render, renderEl } from './harness';
+import { installFakeBroadcastChannel } from '@mintplayer/web-components/theming/src/testing/fake-broadcast-channel';
 
 /**
  * `useBsTheme()` is a thin `useSyncExternalStore` adapter over the shared
@@ -36,6 +37,11 @@ function clearThemeState(): void {
   document.cookie = 'bs-theme-mode=; max-age=0; path=/';
   document.documentElement.removeAttribute('data-bs-theme');
 }
+
+// The store opens a BroadcastChannel; the real one crosses worker threads under
+// --pool=threads, so another spec file could post a mode into this one. Use the
+// in-memory fake, scoped to this file.
+installFakeBroadcastChannel();
 
 beforeEach(clearThemeState);
 afterEach(clearThemeState);

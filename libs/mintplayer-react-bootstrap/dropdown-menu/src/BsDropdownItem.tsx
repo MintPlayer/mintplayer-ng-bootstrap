@@ -1,4 +1,5 @@
 import * as React from 'react';
+import type { DropdownItemElement } from '@mintplayer/web-components/dropdown-menu';
 
 export interface BsDropdownItemProps extends Omit<React.LiHTMLAttributes<HTMLLIElement>, 'value'> {
   /** Bootstrap `.active` appearance (also drives `aria-selected` in a listbox menu). */
@@ -15,15 +16,17 @@ export interface BsDropdownItemProps extends Omit<React.LiHTMLAttributes<HTMLLIE
  * light-DOM `<li class="dropdown-item">` that the menu WC styles via its shadow
  * `::slotted(.dropdown-item)` rule. Put the navigable content inside, e.g.
  * `<BsDropdownItem><a href="/x">Action</a></BsDropdownItem>` (the companion
- * stylesheet resets the nested link). The opaque `value` is assigned as a `value`
- * property on the `<li>` so the menu can carry it in its `select` event.
+ * stylesheet resets the nested link). The opaque `value` is assigned as the
+ * `dropdownValue` property on the `<li>` so the menu can carry it in its `select`
+ * event — not as `value`, which `HTMLLIElement` owns as a native long (an object
+ * or a string written there becomes 0).
  */
 export const BsDropdownItem = React.forwardRef<HTMLLIElement, BsDropdownItemProps>(
   function BsDropdownItem({ active, disabled, value, className, children, ...rest }, ref) {
-    const innerRef = React.useRef<HTMLLIElement>(null);
+    const innerRef = React.useRef<HTMLLIElement & DropdownItemElement>(null);
     React.useImperativeHandle(ref, () => innerRef.current as HTMLLIElement);
     React.useEffect(() => {
-      if (innerRef.current) (innerRef.current as unknown as { value?: unknown }).value = value;
+      if (innerRef.current) innerRef.current.dropdownValue = value;
     }, [value]);
 
     const classes = ['dropdown-item', active ? 'active' : '', disabled ? 'disabled' : '', className ?? '']

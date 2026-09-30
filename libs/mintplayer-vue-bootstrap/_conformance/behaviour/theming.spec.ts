@@ -12,6 +12,7 @@ import {
 } from '@mintplayer/web-components/theming';
 
 import { mountEl, mountWrapper } from './harness';
+import { installFakeBroadcastChannel } from '@mintplayer/web-components/theming/src/testing/fake-broadcast-channel';
 
 /**
  * `useBsTheme()` mirrors the shared browser store into `shallowRef`s and
@@ -34,6 +35,11 @@ function clearThemeState(): void {
   document.cookie = 'bs-theme-mode=; max-age=0; path=/';
   document.documentElement.removeAttribute('data-bs-theme');
 }
+
+// The store opens a BroadcastChannel; the real one crosses worker threads under
+// --pool=threads, so another spec file could post a mode into this one. Use the
+// in-memory fake, scoped to this file.
+installFakeBroadcastChannel();
 
 beforeEach(clearThemeState);
 afterEach(() => {

@@ -3,6 +3,7 @@ import './mp-theme-toggle';
 import type { MpThemeToggle } from './mp-theme-toggle';
 import { __resetBsThemeStoreForTests, getBsThemeStore } from '../store';
 import { BS_THEME_DEFAULT_MODES, type BsThemeToggleMode } from '../toggle-modes';
+import { installFakeBroadcastChannel } from '../testing/fake-broadcast-channel';
 
 /** A cookie jar that keeps the last written pair (the store's cookie write). */
 function stubCookie(initial = ''): void {
@@ -52,6 +53,11 @@ const entry = (mode: string): BsThemeToggleMode => ({
   announcement: `${mode} on`,
   icon: 'M0 0h16v16H0z',
 });
+
+// The store opens a BroadcastChannel; the real one crosses worker threads under
+// --pool=threads, so another spec file could post a mode into this one. Use the
+// in-memory fake, scoped to this file.
+installFakeBroadcastChannel();
 
 describe('mp-theme-toggle', () => {
   beforeEach(() => {

@@ -68,26 +68,28 @@ describe('React BsDropdownItem', () => {
   });
 
   /*
-   * KNOWN BUG, not fixable from the wrapper (reported, M19). The wrapper assigns
-   * `value` to the `<li>` as a property, but `HTMLLIElement.value` is a NATIVE
-   * numeric property (the `<ol>` ordinal, IDL type `long`): assigning an object or
-   * a string coerces it to 0 and reflects `value="0"`, so the menu's `select`
-   * event reports 0. The documented "opaque value" works only for integers. The
-   * Angular `bsDropdownItem` and Vue `BsDropdownItem` share the defect; the fix
-   * is an opaque channel the menu reads (web-components dropdown-menu) — flip
-   * these to `it` when it lands.
+   * Regression (M19): the wrapper used to assign `value` to the `<li>` as a
+   * property, but `HTMLLIElement.value` is a NATIVE long (the `<ol>` ordinal), so
+   * an object or a string became 0 and the menu's `select` event reported 0. The
+   * value now travels on the non-colliding `dropdownValue` property the menu reads.
    */
-  it.fails('carries an object value to the menu select event unchanged', async () => {
+  it('carries an object value to the menu select event unchanged', async () => {
     const value = { id: 7 };
     const host = await render(inMenu(<BsDropdownItem value={value}>A</BsDropdownItem>));
 
     expect(await selectedValue(host)).toBe(value);
   });
 
-  it.fails('carries a string value to the menu select event unchanged', async () => {
+  it('carries a string value to the menu select event unchanged', async () => {
     const host = await render(inMenu(<BsDropdownItem value="two">A</BsDropdownItem>));
 
     expect(await selectedValue(host)).toBe('two');
+  });
+
+  it('leaves the li native value untouched, so no value="0" attribute appears', async () => {
+    const li = await renderEl(inMenu(<BsDropdownItem value="two">A</BsDropdownItem>), 'li');
+
+    expect(li.hasAttribute('value')).toBe(false);
   });
 
   it('forwards its ref to the <li>', async () => {

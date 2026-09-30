@@ -3,6 +3,7 @@
 // menu WC styles via its shadow `::slotted(.dropdown-item)` rule. Put navigable
 // content inside, e.g. <BsDropdownItem><a href="/x">Action</a></BsDropdownItem>.
 import { onMounted, ref, watch } from 'vue';
+import type { DropdownItemElement } from '@mintplayer/web-components/dropdown-menu';
 
 defineOptions({ inheritAttrs: false });
 
@@ -18,11 +19,13 @@ const props = withDefaults(
   { active: false, disabled: false },
 );
 
-const el = ref<HTMLLIElement | null>(null);
+const el = ref<(HTMLLIElement & DropdownItemElement) | null>(null);
 
-// `value` is opaque, so push it to the <li> as a property (the menu reads it).
+// `value` is opaque, so push it to the <li> as its `dropdownValue` property (the
+// menu reads it). Not `value`: HTMLLIElement owns that as a native long, which
+// turns an object or a string into 0.
 const syncValue = () => {
-  if (el.value) (el.value as unknown as { value?: unknown }).value = props.value;
+  if (el.value) el.value.dropdownValue = props.value;
 };
 onMounted(syncValue);
 watch(() => props.value, syncValue);
