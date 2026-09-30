@@ -3,12 +3,12 @@
  * and a `dependsOn` of the Angular demo's serve — so a parse that accepts a
  * bad port would run a port reclaim against NaN on every `nx serve`.
  *
- * The module is side-effect-free on import (the reclaim sits behind an
- * isEntryPoint guard), so importing it here kills nothing.
+ * The module is side-effect-free on import (the reclaim sits behind runCli),
+ * and main() takes the reclaim as a parameter, so nothing here kills anything.
  */
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 
-import { isValidPort, parseArgs } from './free-port.mjs';
+import { isValidPort, main, parseArgs } from './free-port.mjs';
 
 describe('parseArgs', () => {
   it('reads the port and the label positionally', () => {
@@ -44,5 +44,35 @@ describe('isValidPort', () => {
     ['NaN from a missing argument', Number.NaN, false],
   ])('%s -> %s', (_label, port, expected) => {
     expect(isValidPort(port)).toBe(expected);
+  });
+});
+
+describe('main', () => {
+  it('reclaims the parsed port under the given label and exits 0', async () => {
+    const reclaim = vi.fn(async () => 0);
+    expect(await main({ argv: ['4200', 'ng-demo'], reclaim })).toBe(0);
+    expect(reclaim).toHaveBeenCalledWith(4200, { label: 'ng-demo' });
+  });
+
+  it('waits for the reclaim to finish before reporting success', async () => {
+    let released = false;
+    const reclaim = async () => {
+      await new Promise((r) => setTimeout(r, 5));
+      released = true;
+    };
+    await main({ argv: ['4200'], reclaim });
+    expect(released).toBe(true);
+  });
+
+  it('prints usage and exits 1 without reclaiming anything on a bad port', async () => {
+    const reclaim = vi.fn();
+    const error = vi.spyOn(console, 'error').mockImplementation(() => undefined);
+    try {
+      expect(await main({ argv: ['abc'], reclaim })).toBe(1);
+      expect(error).toHaveBeenCalledWith('[free-port] usage: node tools/scripts/free-port.mjs <port> [label]');
+      expect(reclaim).not.toHaveBeenCalled();
+    } finally {
+      error.mockRestore();
+    }
   });
 });

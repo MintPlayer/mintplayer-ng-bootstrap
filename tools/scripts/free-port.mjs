@@ -15,7 +15,7 @@
 // Side-effect-free on import: everything runs behind an isEntryPoint guard, so
 // importing this never kills anything.
 
-import { pathToFileURL } from 'node:url';
+import { runCli } from './lib/cli.mjs';
 import { reclaimPortAndWait } from './lib/dev-processes.mjs';
 
 /**
@@ -31,16 +31,24 @@ export function parseArgs(argv) {
 
 export const isValidPort = (port) => Number.isInteger(port) && port > 0;
 
-const isEntryPoint = !!process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href;
-if (isEntryPoint) {
-  const { port, label } = parseArgs(process.argv.slice(2));
+/**
+ * `reclaim` is a parameter because the real one kills processes: a spec
+ * checks the usage error and the forwarded port and label without touching one.
+ *
+ * @param {{ argv?: string[], reclaim?: (port: number, options: { label: string }) => Promise<unknown> }} [options]
+ */
+export async function main({ argv = process.argv.slice(2), reclaim = reclaimPortAndWait } = {}) {
+  const { port, label } = parseArgs(argv);
 
   if (!isValidPort(port)) {
     console.error('[free-port] usage: node tools/scripts/free-port.mjs <port> [label]');
-    process.exit(1);
+    return 1;
   }
 
   // Waits for the socket to be released, not just the holder killed — the serve
   // this runs ahead of would otherwise still be able to hit EADDRINUSE.
-  await reclaimPortAndWait(port, { label });
+  await reclaim(port, { label });
+  return 0;
 }
+
+runCli(import.meta.url, main);

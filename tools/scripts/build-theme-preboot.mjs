@@ -27,48 +27,75 @@ import ts from 'typescript';
 import { existsSync, rmSync, writeFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 
+import { runCli } from './lib/cli.mjs';
+
 const root = resolve(import.meta.dirname, '../../libs/mintplayer-web-components/theming');
-const entry = resolve(root, 'src/preboot.ts');
-const outfile = resolve(root, 'bs-theme-preboot.js');
-const BUDGET = 1024;
+export const ENTRY = resolve(root, 'src/preboot.ts');
+export const OUTFILE = resolve(root, 'bs-theme-preboot.js');
+export const BUDGET = 1024;
 
-const fail = (message) => {
-  if (existsSync(outfile)) rmSync(outfile);
-  console.error(`build-theme-preboot: ${message}`);
-  process.exit(1);
-};
+/** The three-stage pipeline: bundle at es2015, lower to ES5, minify at es5. Returns the trimmed script. */
+export async function bundlePreboot(entry = ENTRY) {
+  const bundled = await build({
+    entryPoints: [entry],
+    write: false,
+    bundle: true,
+    format: 'iife',
+    target: 'es2015',
+    platform: 'browser',
+    legalComments: 'none',
+    logLevel: 'warning',
+  });
 
-const bundled = await build({
-  entryPoints: [entry],
-  write: false,
-  bundle: true,
-  format: 'iife',
-  target: 'es2015',
-  platform: 'browser',
-  legalComments: 'none',
-  logLevel: 'warning',
-});
+  const es5 = ts.transpileModule(bundled.outputFiles[0].text, {
+    compilerOptions: {
+      target: ts.ScriptTarget.ES5,
+      module: ts.ModuleKind.None,
+      removeComments: true,
+    },
+  }).outputText;
 
-const es5 = ts.transpileModule(bundled.outputFiles[0].text, {
-  compilerOptions: {
-    target: ts.ScriptTarget.ES5,
-    module: ts.ModuleKind.None,
-    removeComments: true,
-  },
-}).outputText;
-
-const { code } = await transform(es5, { minify: true, target: 'es5', legalComments: 'none' });
-const output = code.trim();
-
-const bytes = Buffer.byteLength(output);
-if (bytes > BUDGET) fail(`${bytes} B exceeds the ${BUDGET} B budget`);
-if (/\b(?:import|export)\b/.test(output)) fail('output contains import/export (module syntax leaked into the IIFE)');
-try {
-  // sourceType 'script' rejects module syntax; ecmaVersion 5 rejects const/let/arrows/classes/templates.
-  parse(output, { ecmaVersion: 5, sourceType: 'script' });
-} catch (error) {
-  fail(`output does not parse as an ES5 script: ${error.message}`);
+  const { code } = await transform(es5, { minify: true, target: 'es5', legalComments: 'none' });
+  return code.trim();
 }
 
-writeFileSync(outfile, output + '\n');
-console.log(`build-theme-preboot: wrote ${outfile} (${bytes} B, budget ${BUDGET} B)`);
+/** Why `output` must not ship, or null when it passes every guard. */
+export function validatePreboot(output, budget = BUDGET) {
+  const bytes = Buffer.byteLength(output);
+  if (bytes > budget) return `${bytes} B exceeds the ${budget} B budget`;
+  if (/\b(?:import|export)\b/.test(output)) return 'output contains import/export (module syntax leaked into the IIFE)';
+  try {
+    // sourceType 'script' rejects module syntax; ecmaVersion 5 rejects const/let/arrows/classes/templates.
+    parse(output, { ecmaVersion: 5, sourceType: 'script' });
+  } catch (error) {
+    return `output does not parse as an ES5 script: ${error.message}`;
+  }
+  return null;
+}
+
+/**
+ * Build, guard, write. A failed guard removes a stale `outfile` (so a page can
+ * never load the previous, passing build by accident) and exits 1.
+ */
+export async function main({
+  entry = ENTRY,
+  outfile = OUTFILE,
+  budget = BUDGET,
+  bundle = bundlePreboot,
+  log = console.log,
+  error = console.error,
+} = {}) {
+  const output = await bundle(entry);
+  const problem = validatePreboot(output, budget);
+  if (problem) {
+    if (existsSync(outfile)) rmSync(outfile);
+    error(`build-theme-preboot: ${problem}`);
+    return 1;
+  }
+
+  writeFileSync(outfile, output + '\n');
+  log(`build-theme-preboot: wrote ${outfile} (${Buffer.byteLength(output)} B, budget ${budget} B)`);
+  return 0;
+}
+
+runCli(import.meta.url, main);

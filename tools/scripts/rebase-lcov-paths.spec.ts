@@ -9,14 +9,15 @@
  * isEntryPoint guard); `exists` is injected so no case touches the real tree
  * or depends on the cwd vitest happens to run from.
  */
-import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
-import { join } from 'node:path';
-import { afterAll, describe, expect, it } from 'vitest';
+import { dirname, join } from 'node:path';
+import { afterAll, describe, expect, it, vi } from 'vitest';
 
 import {
   findReports,
   formatCoverageSummary,
+  main,
   prefixFor,
   rebaseLcov,
   summarizeLcov,
@@ -132,7 +133,7 @@ describe('rebaseLcov', () => {
 
   it('checks existence of the ROOTED path, never the raw one', () => {
     const asked: string[] = [];
-    rebaseLcov('SF:src/a.ts\n', 'libs/foo', (p) => {
+    rebaseLcov('SF:src/a.ts\n', 'libs/foo', (p: string) => {
       asked.push(p);
       return true;
     });
@@ -141,7 +142,7 @@ describe('rebaseLcov', () => {
 
   it('does not consult exists for already-rooted paths', () => {
     const asked: string[] = [];
-    rebaseLcov('SF:libs/foo/src/a.ts\n', 'libs/foo', (p) => {
+    rebaseLcov('SF:libs/foo/src/a.ts\n', 'libs/foo', (p: string) => {
       asked.push(p);
       return true;
     });
@@ -301,5 +302,91 @@ describe('formatCoverageSummary', () => {
     const out = formatCoverageSummary([]);
     expect(out.split('\n')).toHaveLength(2);
     expect(out).toContain('TOTAL');
+  });
+});
+
+// ===========================================================================
+// main: the CLI the workflows run, against a temp workspace
+// ===========================================================================
+
+describe('main', () => {
+  const workspaces: string[] = [];
+  afterAll(() => workspaces.map((dir) => rmSync(dir, { recursive: true, force: true })));
+
+  /** A temp workspace: `files` are sources that exist on disk, `reports` lcov texts under coverage/. */
+  function workspace(files: string[], reports: Record<string, string>) {
+    const root = mkdtempSync(join(tmpdir(), 'mp-lcov-main-'));
+    workspaces.push(root);
+    const put = (rel: string, text: string) => {
+      mkdirSync(dirname(join(root, rel)), { recursive: true });
+      writeFileSync(join(root, rel), text, 'utf8');
+    };
+    files.map((rel) => put(rel, ''));
+    Object.entries(reports).map(([rel, text]) => put(join('coverage', rel), text));
+    const log = vi.fn();
+    const error = vi.fn();
+    return {
+      root,
+      run: () =>
+        main({
+          coverageDir: join(root, 'coverage'),
+          exists: (p: string) => existsSync(join(root, p)),
+          log,
+          error,
+        }),
+      report: (rel: string) => readFileSync(join(root, 'coverage', rel), 'utf8'),
+      logged: () => log.mock.calls.map(([l]) => String(l)),
+      errored: () => error.mock.calls.map(([l]) => String(l)),
+    };
+  }
+
+  const LCOV = (sf: string) => `TN:\nSF:${sf}\nLF:4\nLH:3\nBRF:2\nBRH:1\nend_of_record\n`;
+
+  it('fails when the test run emitted no report at all', () => {
+    const ws = workspace([], {});
+    expect(ws.run()).toBe(1);
+    expect(ws.errored()[0]).toMatch(/^No lcov\.info found under .*coverage\/ — did the test run emit coverage\?$/);
+  });
+
+  it('rewrites every report in place to workspace-relative paths and prints the totals', () => {
+    const ws = workspace(['libs/a/dock/index.ts', 'libs/b/dock/index.ts'], {
+      'libs/a/lcov.info': LCOV('dock/index.ts'),
+      'libs/b/lcov.info': LCOV('dock\\index.ts'),
+    });
+    expect(ws.run()).toBe(0);
+    expect(ws.report('libs/a/lcov.info')).toContain('SF:libs/a/dock/index.ts');
+    expect(ws.report('libs/b/lcov.info')).toContain('SF:libs/b/dock/index.ts');
+    expect(ws.logged()[0]).toBe('Rebased 2 path(s) across 2 report(s) to workspace-relative; all resolve on disk.');
+    expect(ws.logged()[1]).toMatch(/^\nCoverage about to be uploaded:\n/);
+    expect(ws.logged()[1]).toContain('libs/a');
+  });
+
+  it('counts already-rooted paths separately, so a rerun is visibly a no-op', () => {
+    const ws = workspace(['libs/a/x.ts'], { 'libs/a/lcov.info': LCOV('libs/a/x.ts') });
+    expect(ws.run()).toBe(0);
+    expect(ws.logged()[0]).toBe('Rebased 0 path(s) across 1 report(s) to workspace-relative (1 already rooted); all resolve on disk.');
+  });
+
+  it('refuses a report sitting directly in coverage/, and rewrites nothing', () => {
+    const ws = workspace(['libs/a/x.ts'], { 'lcov.info': LCOV('x.ts'), 'libs/a/lcov.info': LCOV('x.ts') });
+    expect(ws.run()).toBe(1);
+    expect(ws.errored()[0]).toMatch(/^Refusing to rewrite .*lcov\.info: it sits directly in .*coverage\/, so there is no project prefix to apply\.$/);
+    expect(ws.report('libs/a/lcov.info')).toContain('SF:x.ts');
+  });
+
+  it('fails hard on a rewritten path that does not exist, since it would shrink the denominator', () => {
+    const ws = workspace([], { 'libs/a/lcov.info': LCOV('gone.ts') });
+    expect(ws.run()).toBe(1);
+    expect(ws.errored()[0]).toBe('\n1 rewritten path(s) do not exist on disk:');
+    expect(ws.errored()[1]).toMatch(/^ {2}libs\/a\/gone\.ts {3}\(from .*lcov\.info\)$/);
+    expect(ws.errored()[2]).toMatch(/hard failure rather than a warning/);
+  });
+
+  it('lists at most 20 unresolved paths', () => {
+    const many = Array.from({ length: 25 }, (_, i) => LCOV(`gone${i}.ts`)).join('');
+    const ws = workspace([], { 'libs/a/lcov.info': many });
+    ws.run();
+    expect(ws.errored()[0]).toBe('\n25 rewritten path(s) do not exist on disk:');
+    expect(ws.errored().filter((l) => l.includes('(from '))).toHaveLength(20);
   });
 });

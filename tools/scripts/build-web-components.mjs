@@ -28,7 +28,7 @@
 import { readFile, readdir } from 'node:fs/promises';
 import { existsSync } from 'node:fs';
 import { join, dirname, basename, relative, resolve } from 'node:path';
-import { fileURLToPath, pathToFileURL } from 'node:url';
+import { fileURLToPath } from 'node:url';
 import * as sass from 'sass';
 import chokidar from 'chokidar';
 import {
@@ -38,6 +38,7 @@ import {
   writeIfChanged,
 } from './lib/wc-codegen.mjs';
 import { rescopeCss } from './lib/rescope-css.mjs';
+import { runCli } from './lib/cli.mjs';
 
 export const REPO_ROOT = resolve(fileURLToPath(import.meta.url), '..', '..', '..');
 
@@ -222,7 +223,23 @@ export async function runOnce(libRoots, repoRoot = REPO_ROOT) {
   return { total, changedCount };
 }
 
-function startWatchers(libRoots, repoRoot = REPO_ROOT) {
+/**
+ * Watch every libRoot and rerun codegen, debounced, on each relevant change.
+ *
+ * `watch` (chokidar's) and `run` (runOnce) are parameters so a spec can drive
+ * the debounce and the in-flight coalescing with fake timers instead of a real
+ * file watcher. Returns the watcher.
+ *
+ * @typedef {(paths: string[], options: object) => { on: (event: string, handler: (event: string, path: string) => void) => unknown }} WatchFn
+ * @param {string[]} libRoots
+ * @param {string} [repoRoot]
+ * @param {{ watch?: WatchFn, run?: (libRoots: string[], repoRoot: string) => Promise<unknown> }} [deps]
+ */
+export function startWatchers(
+  libRoots,
+  repoRoot = REPO_ROOT,
+  { watch = (paths, options) => chokidar.watch(paths, options), run = runOnce } = {},
+) {
   // SCSS @import graph means any *.scss can affect compiled output (e.g. a
   // shared mixin under src/styles/). Watch every .scss + .html under each
   // libRoot, then filter by suffix so non-codegen edits don't trigger work.
@@ -241,7 +258,7 @@ function startWatchers(libRoots, repoRoot = REPO_ROOT) {
     inFlight = true;
     dirty = false;
     try {
-      await runOnce(libRoots, repoRoot);
+      await run(libRoots, repoRoot);
     } catch (err) {
       console.error(err.stack ?? err);
     } finally {
@@ -260,7 +277,7 @@ function startWatchers(libRoots, repoRoot = REPO_ROOT) {
   // ERR_FEATURE_UNAVAILABLE_ON_PLATFORM on Linux, which would crash the
   // sidecar and (via `concurrently -k`) take `nx serve` down with it.
   const watchPaths = libRoots.map((r) => resolve(repoRoot, r));
-  const watcher = chokidar.watch(watchPaths, {
+  const watcher = watch(watchPaths, {
     ignored: /(^|[\\/])(node_modules|\..+)/,
     ignoreInitial: true,
     persistent: true,
@@ -272,27 +289,32 @@ function startWatchers(libRoots, repoRoot = REPO_ROOT) {
     console.log(`build-web-components: change — ${rel}`);
     schedule();
   });
+  return watcher;
 }
 
-async function main(argv = process.argv.slice(2), repoRoot = REPO_ROOT) {
+/**
+ * The CLI: one codegen pass, then (with `--watch`) the watchers. Returns 1 on a
+ * usage error; in watch mode it resolves once the watchers are up and the
+ * watcher keeps the process alive.
+ *
+ * @param {string[]} [argv]
+ * @param {string} [repoRoot]
+ * @param {{ watch?: WatchFn }} [deps]
+ */
+export async function main(argv = process.argv.slice(2), repoRoot = REPO_ROOT, { watch } = {}) {
   const { watchMode, libRoots } = parseArgs(argv);
 
   if (libRoots.length === 0) {
     console.error('build-web-components: at least one <libRoot> argument is required');
-    process.exit(1);
+    return 1;
   }
 
   await runOnce(libRoots, repoRoot);
   if (watchMode) {
     console.log('build-web-components: watching for changes (Ctrl+C to stop)...');
-    startWatchers(libRoots, repoRoot);
+    startWatchers(libRoots, repoRoot, { watch });
   }
+  return 0;
 }
 
-const isEntryPoint = !!process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href;
-if (isEntryPoint) {
-  main().catch((err) => {
-    console.error(err.stack ?? err);
-    process.exit(1);
-  });
-}
+runCli(import.meta.url, main);

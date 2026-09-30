@@ -5,50 +5,65 @@
 //
 //   nx run mintplayer-web-components:codegen-navbar-chrome   (preferred)
 //   node tools/lit-ssr-utils/gen-navbar-chrome.mjs           (needs a prior WC build)
-import '@lit-labs/ssr/lib/install-global-dom-shim.js';
 import { writeFile } from 'node:fs/promises';
-import { fileURLToPath, pathToFileURL } from 'node:url';
-import { resolve, dirname } from 'node:path';
 
-import { buildChromeModule, chromeConstant, extractDsdTemplate } from './lib/chrome-module.mjs';
+import { runCli } from '../scripts/lib/cli.mjs';
+import {
+  chromeOutPath,
+  distEntryUrl,
+  dsdChromeOf,
+  REPO_ROOT,
+  runChromeGenerator,
+  staticChromeConstants,
+} from './lib/chrome-module.mjs';
+import { createLitRenderer } from './lib/lit-renderer.mjs';
 
-const here = dirname(fileURLToPath(import.meta.url));
-const repoRoot = resolve(here, '..', '..');
+const GENERATOR = 'gen-navbar-chrome';
 
-const { render } = await import('@lit-labs/ssr');
-const { collectResult } = await import('@lit-labs/ssr/lib/render-result.js');
-const { html } = await import('lit');
-await import(
-  pathToFileURL(resolve(repoRoot, 'dist/libs/mintplayer-web-components/navbar/index.mjs')).href
-);
+/** @param {import('./lib/chrome-module.mjs').GeneratorOptions} [options] */
+export async function main({
+  repoRoot = REPO_ROOT,
+  renderer,
+  write = writeFile,
+  log = console.log,
+  error = console.error,
+} = {}) {
+  const { html, render } =
+    renderer ?? (await createLitRenderer([distEntryUrl(repoRoot, 'navbar')]));
 
-const ELEMENTS = [
-  { tag: 'mp-navbar', constant: 'MP_NAVBAR_DSD_CHROME', tpl: html`<mp-navbar></mp-navbar>` },
-  { tag: 'mp-navbar-item', constant: 'MP_NAVBAR_ITEM_DSD_CHROME', tpl: html`<mp-navbar-item></mp-navbar-item>` },
-  { tag: 'mp-navbar-brand', constant: 'MP_NAVBAR_BRAND_DSD_CHROME', tpl: html`<mp-navbar-brand></mp-navbar-brand>` },
-  { tag: 'mp-navbar-dropdown', constant: 'MP_NAVBAR_DROPDOWN_DSD_CHROME', tpl: html`<mp-navbar-dropdown></mp-navbar-dropdown>` },
-];
-
-const lines = [];
-for (const { tag, constant, tpl } of ELEMENTS) {
-  const full = await collectResult(render(tpl));
-  const chrome = extractDsdTemplate(full);
-  if (!chrome) {
-    console.error(`gen-navbar-chrome: no DSD <template> for <${tag}>:\n`, full);
-    process.exit(1);
-  }
-  lines.push(chromeConstant(constant, chrome));
-  console.log(`gen-navbar-chrome: <${tag}> chrome ${chrome.length} chars`);
+  return runChromeGenerator({
+    generator: GENERATOR,
+    source: 'the navbar Lit elements rendered via @lit-labs/ssr.',
+    out: chromeOutPath(repoRoot, 'navbar', 'mp-navbar-chrome.generated.ts'),
+    write,
+    log,
+    error,
+    build: async () => ({
+      declarations: await staticChromeConstants({
+        generator: GENERATOR,
+        chromeOf: dsdChromeOf({ render }),
+        log,
+        elements: [
+          { tag: 'mp-navbar', constant: 'MP_NAVBAR_DSD_CHROME', template: html`<mp-navbar></mp-navbar>` },
+          {
+            tag: 'mp-navbar-item',
+            constant: 'MP_NAVBAR_ITEM_DSD_CHROME',
+            template: html`<mp-navbar-item></mp-navbar-item>`,
+          },
+          {
+            tag: 'mp-navbar-brand',
+            constant: 'MP_NAVBAR_BRAND_DSD_CHROME',
+            template: html`<mp-navbar-brand></mp-navbar-brand>`,
+          },
+          {
+            tag: 'mp-navbar-dropdown',
+            constant: 'MP_NAVBAR_DROPDOWN_DSD_CHROME',
+            template: html`<mp-navbar-dropdown></mp-navbar-dropdown>`,
+          },
+        ],
+      }),
+    }),
+  });
 }
 
-const out = resolve(
-  repoRoot,
-  'libs/mintplayer-web-components/navbar/ssr/mp-navbar-chrome.generated.ts',
-);
-const content = buildChromeModule({
-  generator: 'gen-navbar-chrome.mjs',
-  source: 'the navbar Lit elements rendered via @lit-labs/ssr.',
-  declarations: lines,
-});
-await writeFile(out, content, 'utf8');
-console.log(`gen-navbar-chrome: wrote ${out}`);
+runCli(import.meta.url, main);

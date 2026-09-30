@@ -8,60 +8,64 @@
 //
 //   nx run mintplayer-web-components:codegen-carousel-chrome   (preferred)
 //   node tools/lit-ssr-utils/gen-carousel-chrome.mjs           (needs a prior WC build)
-import '@lit-labs/ssr/lib/install-global-dom-shim.js';
 import { writeFile } from 'node:fs/promises';
-import { fileURLToPath, pathToFileURL } from 'node:url';
-import { resolve, dirname } from 'node:path';
 
+import { runCli } from '../scripts/lib/cli.mjs';
 import {
-  buildChromeModule,
   chromeArrayConstant,
-  extractDsdTemplate,
+  chromeOutPath,
+  distEntryUrl,
+  dsdChromeOf,
+  mapSequential,
   MAX_CHROME_COUNT,
+  REPO_ROOT,
+  runChromeGenerator,
 } from './lib/chrome-module.mjs';
+import { createLitRenderer } from './lib/lit-renderer.mjs';
 
-const here = dirname(fileURLToPath(import.meta.url));
-const repoRoot = resolve(here, '..', '..');
+const GENERATOR = 'gen-carousel-chrome';
 
-const { render } = await import('@lit-labs/ssr');
-const { collectResult } = await import('@lit-labs/ssr/lib/render-result.js');
-const { html } = await import('lit');
-await import(
-  pathToFileURL(resolve(repoRoot, 'dist/libs/mintplayer-web-components/carousel/index.mjs')).href
-);
+// Index 0 is the inert over-cap fallback (see MAX_CHROME_COUNT).
+const COUNTS = Array.from({ length: MAX_CHROME_COUNT + 1 }, (_, n) => n);
 
-// Variant 0 doubles as the over-cap fallback: styled and visible (slides render
-// through the default slot) but without the radio machine — honest Tier-2.
-const MAX_COUNT = MAX_CHROME_COUNT;
+/** @param {import('./lib/chrome-module.mjs').GeneratorOptions} [options] */
+export async function main({
+  repoRoot = REPO_ROOT,
+  renderer,
+  write = writeFile,
+  log = console.log,
+  error = console.error,
+} = {}) {
+  const { html, render } =
+    renderer ?? (await createLitRenderer([distEntryUrl(repoRoot, 'carousel')]));
+  const chromeOf = dsdChromeOf({ render });
 
-const variants = [];
-for (let n = 0; n <= MAX_COUNT; n++) {
-  const full = await collectResult(render(html`<mp-carousel slide-count=${String(n)}></mp-carousel>`));
-  const chrome = extractDsdTemplate(full);
-  if (!chrome) {
-    console.error(`gen-carousel-chrome: no DSD <template> for slide-count=${n}:\n`, full);
-    process.exit(1);
-  }
-  variants.push(chrome);
+  return runChromeGenerator({
+    generator: GENERATOR,
+    source: 'the mp-carousel Lit element rendered via @lit-labs/ssr at each slide count.',
+    out: chromeOutPath(repoRoot, 'carousel', 'mp-carousel-chrome.generated.ts'),
+    write,
+    log,
+    error,
+    build: async () => {
+      const variants = await mapSequential(COUNTS, (n) =>
+        chromeOf(html`<mp-carousel slide-count=${String(n)}></mp-carousel>`, `slide-count=${n}`),
+      );
+      log(
+        `${GENERATOR}: ${variants.length} variants, ` +
+          `${variants[0].length}–${variants[MAX_CHROME_COUNT].length} chars`,
+      );
+      return {
+        declarations: [
+          chromeArrayConstant(
+            'MP_CAROUSEL_DSD_CHROME_BY_COUNT',
+            variants,
+            'DSD chrome per slide count (index = count). Index 0 is the inert over-cap fallback.',
+          ),
+        ],
+      };
+    },
+  });
 }
-console.log(
-  `gen-carousel-chrome: ${variants.length} variants, ${variants[0].length}–${variants[MAX_COUNT].length} chars`,
-);
 
-const out = resolve(
-  repoRoot,
-  'libs/mintplayer-web-components/carousel/ssr/mp-carousel-chrome.generated.ts',
-);
-const content = buildChromeModule({
-  generator: 'gen-carousel-chrome.mjs',
-  source: 'the mp-carousel Lit element rendered via @lit-labs/ssr at each slide count.',
-  declarations: [
-    chromeArrayConstant(
-      'MP_CAROUSEL_DSD_CHROME_BY_COUNT',
-      variants,
-      'DSD chrome per slide count (index = count). Index 0 is the inert over-cap fallback.',
-    ),
-  ],
-});
-await writeFile(out, content, 'utf8');
-console.log(`gen-carousel-chrome: wrote ${out}`);
+runCli(import.meta.url, main);

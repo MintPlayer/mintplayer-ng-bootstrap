@@ -46,7 +46,8 @@
 import { readFile, mkdir, readdir, unlink } from 'node:fs/promises';
 import { createRequire } from 'node:module';
 import { join, relative, resolve } from 'node:path';
-import { fileURLToPath, pathToFileURL } from 'node:url';
+import { fileURLToPath } from 'node:url';
+import { runCli } from './lib/cli.mjs';
 import { writeIfChanged } from './lib/wc-codegen.mjs';
 
 const require = createRequire(import.meta.url);
@@ -181,10 +182,4 @@ export async function main(repoRoot = REPO_ROOT) {
   );
 }
 
-const isEntryPoint = !!process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href;
-if (isEntryPoint) {
-  main().catch((err) => {
-    console.error(err.stack ?? err);
-    process.exit(1);
-  });
-}
+runCli(import.meta.url, main);

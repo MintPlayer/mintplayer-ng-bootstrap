@@ -30,7 +30,8 @@ import { existsSync } from 'node:fs';
 import { execFileSync } from 'node:child_process';
 import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
-import { fileURLToPath, pathToFileURL } from 'node:url';
+import { fileURLToPath } from 'node:url';
+import { runCli } from './lib/cli.mjs';
 import { rawCountryData } from 'intl-tel-input/data';
 import { writeIfChanged } from './lib/wc-codegen.mjs';
 
@@ -114,7 +115,7 @@ export async function buildReadme({ version, license }, licensePathArg) {
  * `npm pack` rather than `npm install`: it touches neither the lockfile nor
  * node_modules, so running a refresh cannot perturb the workspace.
  */
-async function resolveSource(repoRoot = REPO_ROOT) {
+export async function resolveSource(repoRoot = REPO_ROOT) {
   const local = join(repoRoot, 'node_modules', SOURCE_PKG);
   if (existsSync(join(local, '3x2'))) {
     return { dir: local, cleanup: async () => {} };
@@ -224,10 +225,4 @@ export async function main(
   );
 }
 
-const isEntryPoint = !!process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href;
-if (isEntryPoint) {
-  main().catch((err) => {
-    console.error(err.stack ?? err);
-    process.exit(1);
-  });
-}
+runCli(import.meta.url, main);

@@ -23,9 +23,11 @@ export const THEME_PREBOOT_URL = '/theming/bs-theme-preboot.js';
  * `THEME_PREBOOT_URL`. The SSR build emits nothing: the Node server serves the
  * client build's copy. A missing file fails the build (codegen-wc did not run)
  * instead of shipping a page whose blocking script 404s.
+ *
+ * `file` defaults to the codegen output; a spec passes a temp file instead,
+ * because the real one is a gitignored artifact that may not exist yet.
  */
-export function themePreboot(): Plugin {
-  const file = resolve(WC_THEMING_DIR, 'bs-theme-preboot.js');
+export function themePreboot(file: string = resolve(WC_THEMING_DIR, 'bs-theme-preboot.js')): Plugin {
   const read = (fail: (message: string) => never): Buffer => {
     if (!existsSync(file)) fail(`themePreboot: ${file} is missing (run nx run mintplayer-web-components:codegen-wc)`);
     return readFileSync(file);
