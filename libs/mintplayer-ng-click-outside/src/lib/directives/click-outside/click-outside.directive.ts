@@ -12,9 +12,10 @@ export class ClickOutsideDirective implements OnInit, OnDestroy {
   readonly delayClickOutsideInit = input(false);
   readonly emitOnBlur = input(false);
 
+  /** Elements whose clicks do not count as outside. Read at click time, so it is always current. */
   readonly exclude = input<HTMLElement[]>([]);
-  readonly excludeBeforeClick = input(false);
 
+  /** Comma-separated DOM event names that count as a click (default `click`). */
   readonly clickOutsideEvents = input('');
 
   readonly clickOutside = output<Event>();
@@ -22,21 +23,23 @@ export class ClickOutsideDirective implements OnInit, OnDestroy {
   private element = inject(ElementRef);
   private platformId = inject(PLATFORM_ID);
 
-  private _nodesExcluded: Array<HTMLElement> = [];
   private _events: Array<string> = ['click'];
   private _initialized = false;
+  /** Every listener of the current configuration is registered with this signal. */
+  private _listeners?: AbortController;
+  private _timers = new Set<ReturnType<typeof setTimeout>>();
 
   constructor() {
     this._initOnClickBody = this._initOnClickBody.bind(this);
     this._onClickBody = this._onClickBody.bind(this);
     this._onWindowBlur = this._onWindowBlur.bind(this);
 
-    // Replace ngOnChanges: react to changes in attachOutsideOnClick, exclude, emitOnBlur
+    // Re-register when the configuration changes. The signals are read before the
+    // guard so they are tracked from the first run.
     effect(() => {
-      // Read the signals to track them
       this.attachOutsideOnClick();
-      this.exclude();
       this.emitOnBlur();
+      this.clickOutsideEvents();
 
       if (this._initialized && isPlatformBrowser(this.platformId)) {
         this._init();
@@ -52,58 +55,47 @@ export class ClickOutsideDirective implements OnInit, OnDestroy {
   }
 
   ngOnDestroy() {
-    if (!isPlatformBrowser(this.platformId)) { return; }
-
-    this._removeClickOutsideListener();
-    this._removeAttachOutsideOnClickListener();
-    this._removeWindowBlurListener();
+    this._teardown();
   }
 
   private _init() {
-    if (this.clickOutsideEvents() !== '') {
-      this._events = this.clickOutsideEvents().split(',').map(e => e.trim());
-    }
+    // A re-init replaces the previous registration outright: without this, a
+    // change of event names or of attachOutsideOnClick left the old listeners
+    // attached, and each kept emitting.
+    this._teardown();
+    this._listeners = new AbortController();
 
-    this._excludeCheck();
+    const events = this.clickOutsideEvents();
+    this._events = events !== '' ? events.split(',').map(e => e.trim()) : ['click'];
 
     if (this.attachOutsideOnClick()) {
-      this._initAttachOutsideOnClickListener();
+      this._listen(this.element.nativeElement, this._initOnClickBody);
     } else {
       this._initOnClickBody();
     }
 
     if (this.emitOnBlur()) {
-      this._initWindowBlurListener();
+      window.addEventListener('blur', this._onWindowBlur, { signal: this._listeners.signal });
     }
+  }
+
+  private _teardown() {
+    this._listeners?.abort();
+    this._listeners = undefined;
+    this._timers.forEach(clearTimeout);
+    this._timers.clear();
   }
 
   private _initOnClickBody() {
     if (this.delayClickOutsideInit()) {
-      setTimeout(this._initClickOutsideListener.bind(this));
+      this._later(() => this._initClickOutsideListener());
     } else {
       this._initClickOutsideListener();
     }
   }
 
-  private _excludeCheck() {
-    if (this.exclude()) {
-      try {
-        const nodes = this.exclude();
-        if (nodes) {
-          this._nodesExcluded = nodes;
-        }
-      } catch (err) {
-        console.error('[ng-click-outside] Check your exclude selector syntax.', err);
-      }
-    }
-  }
-
   private _onClickBody(ev: Event) {
     if (!this.clickOutsideEnabled()) { return; }
-
-    if (this.excludeBeforeClick()) {
-      this._excludeCheck();
-    }
 
     if (!this.element.nativeElement.contains(ev.target) && !!ev.target && !this._shouldExclude(ev.target)) {
       this._emit(ev);
@@ -119,7 +111,7 @@ export class ClickOutsideDirective implements OnInit, OnDestroy {
    * @see https://github.com/arkon/ng-click-outside/issues/32
    */
   private _onWindowBlur(ev: Event) {
-    setTimeout(() => {
+    this._later(() => {
       if (!document.hidden) {
         this._emit(ev);
       }
@@ -133,37 +125,30 @@ export class ClickOutsideDirective implements OnInit, OnDestroy {
   }
 
   private _shouldExclude(target: EventTarget): boolean {
-    for (const excludedNode of this._nodesExcluded) {
-      if (excludedNode.contains(<Node>target)) {
-        return true;
-      }
-    }
-
-    return false;
+    return this.exclude().some(excludedNode => excludedNode.contains(<Node>target));
   }
 
   private _initClickOutsideListener() {
-    this._events.forEach(e => document.addEventListener(e, this._onClickBody));
+    this._listen(document, this._onClickBody);
   }
 
   private _removeClickOutsideListener() {
     this._events.forEach(e => document.removeEventListener(e, this._onClickBody));
   }
 
-  private _initAttachOutsideOnClickListener() {
-    this._events.forEach(e => this.element.nativeElement.addEventListener(e, this._initOnClickBody));
+  private _listen(target: EventTarget, handler: (ev: Event) => void) {
+    const signal = this._listeners?.signal;
+    if (!signal) { return; }
+    this._events.forEach(e => target.addEventListener(e, handler, { signal }));
   }
 
-  private _removeAttachOutsideOnClickListener() {
-    this._events.forEach(e => this.element.nativeElement.removeEventListener(e, this._initOnClickBody));
-  }
-
-  private _initWindowBlurListener() {
-    window.addEventListener('blur', this._onWindowBlur);
-  }
-
-  private _removeWindowBlurListener() {
-    window.removeEventListener('blur', this._onWindowBlur);
+  /** A timer that teardown cancels, so nothing registers or emits after destroy. */
+  private _later(fn: () => void) {
+    const timer = setTimeout(() => {
+      this._timers.delete(timer);
+      fn();
+    });
+    this._timers.add(timer);
   }
 
 }

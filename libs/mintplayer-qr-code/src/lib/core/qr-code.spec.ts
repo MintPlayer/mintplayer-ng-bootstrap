@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { create } from './qr-code';
 import * as ECLevel from './error-correction-level';
@@ -94,6 +94,36 @@ describe('create — version selection', () => {
 
   it('ignores a version outside the valid range and chooses one itself', () => {
     expect(qr('HELLO', { version: 99 }).version).toBe(1);
+  });
+
+  // node-qrcode's API also takes an array of pre-built segments; the typed
+  // signature says string, but JS consumers reach this path.
+  it('accepts pre-built segments instead of a string', () => {
+    const code = create([{ data: '0123456789', mode: 'numeric' }] as unknown as string, {});
+    expect(code.segments.map((s) => s.mode)).toEqual([Mode.NUMERIC]);
+  });
+
+  it('refuses input that is neither text nor segments', () => {
+    expect(() => create(42 as unknown as string, {})).toThrow(/Invalid data/);
+  });
+});
+
+describe('create — the toSJISFunc option', () => {
+  // The converter is module-global state, so each test gets a fresh module graph.
+  beforeEach(() => {
+    vi.resetModules();
+  });
+
+  it('switches Japanese text from byte mode to Kanji mode once a converter is passed', async () => {
+    const fresh = await import('./qr-code');
+    const FreshMode = await import('./mode');
+    const { toSJIS } = await import('../utils/functions/to-sjis');
+
+    const withoutConverter = fresh.create('漢字', {});
+    expect(withoutConverter.segments.map((s) => s.mode)).toEqual([FreshMode.BYTE]);
+
+    const withConverter = fresh.create('漢字', { toSJISFunc: toSJIS as unknown as (c: string) => number });
+    expect(withConverter.segments.map((s) => s.mode)).toEqual([FreshMode.KANJI]);
   });
 });
 

@@ -226,4 +226,31 @@ describe('KanjiData', () => {
   it('refuses a character the converter cannot map', () => {
     expect(() => bits((b) => new KanjiData('A').write(b))).toThrow();
   });
+
+  it('writes nothing and predicts zero bits for an empty payload', () => {
+    expect(new KanjiData('').getBitsLength()).toBe(0);
+    expect(bits((b) => new KanjiData('').write(b))).toBe('');
+  });
+
+  // Clause 7.4.6 step 1: 0x8140..0x9FFC subtracts 0x8140, 0xE040..0xEBBF
+  // subtracts 0xC140; then (msb * 0xC0) + lsb. 漾 is SJIS 0xE040, the first
+  // character of the upper range: 0xE040 - 0xC140 = 0x1F00 -> 0x1F * 0xC0 = 5952.
+  it('packs a character from the upper Shift-JIS range with its own offset', () => {
+    expect(bits((b) => new KanjiData('漾').write(b))).toBe((0x1f * 0xc0).toString(2).padStart(13, '0'));
+  });
+
+  // 0x8140 itself (the ideographic space) is the first value of the lower range.
+  it('packs the first character of the lower Shift-JIS range as zero', () => {
+    expect(bits((b) => new KanjiData('　').write(b))).toBe('0'.repeat(13));
+  });
+
+  it('refuses a Shift-JIS value that lies between the two Kanji ranges', async () => {
+    const { toSJIS } = await import('../../utils/functions/to-sjis');
+    setToSJISFunction(() => 0xa000);
+    try {
+      expect(() => bits((b) => new KanjiData('x').write(b))).toThrow(/Invalid SJIS character: x/);
+    } finally {
+      setToSJISFunction(toSJIS as unknown as (data: string) => number);
+    }
+  });
 });

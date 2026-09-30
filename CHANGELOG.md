@@ -7,6 +7,17 @@ package version aligns its major with the supported Angular major.
 
 ### Breaking
 
+- **Satellite libraries (found by the coverage phase 2 audit).**
+  - `@mintplayer/ng-qr-code` 22.2.0:
+    - The unused `height` input is removed; a QR code is square.
+    - `qrCodeVersion` 1–40 now takes effect (it was silently ignored); `null`/`0` means auto.
+    - Changing only the centre-image inputs now redraws, and a cached centre image survives a redraw.
+  - `@mintplayer/ng-click-outside` 22.2.0:
+    - The no-op `excludeBeforeClick` input is removed.
+    - Re-initialising, or changing `clickOutsideEvents`, no longer leaks listeners.
+  - `@mintplayer/qr-code` 1.8.0 encodes byte data with the platform `TextEncoder`, and no longer peer-depends on
+    `@mintplayer/encode-utf8`. A spec proves the output is identical over every code unit and surrogate pair.
+
 - **The theme mode is stored in a cookie, not localStorage (issue #420).**
   - `BsThemeService` now persists the user's choice in the `bs-theme-mode` cookie (`Path=/`, `SameSite=Lax`, one
     year, `Secure` on https), so a server can render `<html data-bs-theme>` itself.

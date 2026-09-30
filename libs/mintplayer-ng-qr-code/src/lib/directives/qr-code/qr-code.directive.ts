@@ -3,6 +3,18 @@ import { QRCodeErrorCorrectionLevel } from '@mintplayer/qr-code';
 import * as qrCodeService from '@mintplayer/qr-code';
 import { RgbaColor } from '../../types/rgba-color';
 
+interface QrCodeRenderRequest {
+  value: string;
+  options: Parameters<typeof qrCodeService.toCanvas>[2];
+  centerImage: { src: string; width: number; height: number } | null;
+}
+
+/**
+ * Renders a QR code onto the host canvas.
+ *
+ * A QR code is square: the canvas is sized from `width` (or, without one, from
+ * the module count), so there is deliberately no `height` input.
+ */
 @Directive({
   selector: 'canvas[qrCode]',
 })
@@ -15,23 +27,14 @@ export class QrCodeDirective {
 
   readonly value = input.required<string>({ alias: 'qrCode' });
 
-  //#region Version
+  /** QR version 1..40; values outside the range are clamped, null/0 lets the encoder choose. */
   readonly qrCodeVersion = input<number | null>(null);
-  private version = computed(() => {
+  private readonly version = computed(() => {
     const value = this.qrCodeVersion();
-    if (value && (value > 40)) {
-      return 40;
-    } else if (value && (value < 1)) {
-      return 1;
-    } else {
-      return null;
-    }
+    return value ? Math.min(40, Math.max(1, value)) : null;
   });
-  //#endregion
-
 
   readonly width = input<number | undefined>(undefined);
-  readonly height = input<number | undefined>(undefined);
   readonly darkColor = input<RgbaColor | undefined>('#000000FF');
   readonly lightColor = input<RgbaColor | undefined>('#FFFFFFFF');
 
@@ -42,16 +45,46 @@ export class QrCodeDirective {
   readonly margin = input<number | undefined>(16, { alias: 'qrCodeMargin' });
 
   private centerImage?: HTMLImageElement;
+  /** The src the centre image has finished loading, so a redraw can paint it at once. */
+  private centerImageLoadedSrc?: string;
+
+  /**
+   * Everything one render needs, read synchronously. The render itself is async,
+   * and a signal read after its first `await` is not tracked by the effect — the
+   * centre-image inputs used to be read there, so changing only them never redrew.
+   */
+  private readonly renderRequest = computed((): QrCodeRenderRequest => {
+    const centerImageSrc = this.centerImageSrc();
+    return {
+      value: this.value(),
+      options: {
+        version: this.version() ?? undefined,
+        errorCorrectionLevel: this.errorCorrectionLevel() ?? QrCodeDirective.DEFAULT_ERROR_CORRECTION_LEVEL,
+        width: this.width(),
+        margin: this.margin(),
+        color: {
+          dark: QrCodeDirective.validColor(this.darkColor()),
+          light: QrCodeDirective.validColor(this.lightColor()),
+        },
+      },
+      centerImage: centerImageSrc
+        ? {
+          src: centerImageSrc,
+          width: this.getIntOrDefault(this.centerImageWidth(), QrCodeDirective.DEFAULT_CENTER_IMAGE_SIZE),
+          height: this.getIntOrDefault(this.centerImageHeight(), QrCodeDirective.DEFAULT_CENTER_IMAGE_SIZE),
+        }
+        : null,
+    };
+  });
 
   constructor() {
     effect(() => {
-      this.renderQrCode();
+      this.renderQrCode(this.renderRequest());
     });
   }
 
-  private async renderQrCode() {
-    const value = this.value();
-    if (!value) {
+  private async renderQrCode(request: QrCodeRenderRequest) {
+    if (!request.value) {
       return;
     }
 
@@ -61,72 +94,54 @@ export class QrCodeDirective {
       return;
     }
 
-    if (typeof window !== 'undefined') {
-      const context = canvas.getContext('2d');
-      if (context) {
-        context.clearRect(0, 0, context.canvas.width, context.canvas.height);
-
-        const errorCorrectionLevel = this.errorCorrectionLevel() ?? QrCodeDirective.DEFAULT_ERROR_CORRECTION_LEVEL;
-        const darkColor = this.darkColor();
-        const lightColor = this.lightColor();
-
-        const dark = !darkColor
-          ? undefined
-          : QrCodeDirective.VALID_COLOR_REGEX.test(darkColor)
-          ? darkColor
-          : undefined;
-        const light = !lightColor
-          ? undefined
-          : QrCodeDirective.VALID_COLOR_REGEX.test(lightColor)
-          ? lightColor
-          : undefined;
-
-        await qrCodeService
-          .toCanvas(canvas, value, {
-            version: this.version() ?? undefined,
-            errorCorrectionLevel,
-            width: this.width(),
-            margin: this.margin(),
-            color: {
-              dark,
-              light,
-            },
-          });
-
-        const centerImageSrc = this.centerImageSrc();
-        const centerImageWidth = this.getIntOrDefault(this.centerImageWidth(), QrCodeDirective.DEFAULT_CENTER_IMAGE_SIZE);
-        const centerImageHeight = this.getIntOrDefault(this.centerImageHeight(), QrCodeDirective.DEFAULT_CENTER_IMAGE_SIZE);
-
-        if (centerImageSrc && context) {
-
-          if (!this.centerImage) {
-            this.centerImage = new Image(centerImageWidth, centerImageHeight);
-          }
-
-          if (centerImageSrc !== this.centerImage?.src) {
-            this.centerImage.src = centerImageSrc;
-          }
-
-          if (centerImageWidth !== this.centerImage.width) {
-            this.centerImage.width = centerImageWidth;
-          }
-
-          if (centerImageHeight !== this.centerImage.height) {
-            this.centerImage.height = centerImageHeight;
-          }
-
-          const centerImage = this.centerImage;
-
-          centerImage.onload = () => {
-            context.drawImage(
-              centerImage,
-              canvas.width / 2 - centerImageWidth / 2,
-              canvas.height / 2 - centerImageHeight / 2, centerImageWidth, centerImageHeight,
-            );
-          }
-        }
-      }
+    const context = canvas.getContext('2d');
+    if (!context) {
+      return;
     }
+    context.clearRect(0, 0, context.canvas.width, context.canvas.height);
+
+    await qrCodeService.toCanvas(canvas, request.value, request.options);
+
+    if (request.centerImage) {
+      this.drawCenterImage(context, canvas, request.centerImage);
+    }
+  }
+
+  private drawCenterImage(
+    context: CanvasRenderingContext2D,
+    canvas: HTMLCanvasElement,
+    { src, width, height }: NonNullable<QrCodeRenderRequest['centerImage']>,
+  ) {
+    const image = this.centerImage ??= new Image(width, height);
+    image.width = width;
+    image.height = height;
+
+    const draw = () => context.drawImage(
+      image,
+      canvas.width / 2 - width / 2,
+      canvas.height / 2 - height / 2, width, height,
+    );
+
+    // A redraw (colour, size, value change) repaints the canvas; an image that has
+    // already loaded fires no second load event, so it must be drawn right away or
+    // the centre image disappears.
+    if (this.centerImageLoadedSrc === src) {
+      image.onload = null;
+      draw();
+      return;
+    }
+
+    image.onload = () => {
+      this.centerImageLoadedSrc = src;
+      draw();
+    };
+    if (image.getAttribute('src') !== src) {
+      image.src = src;
+    }
+  }
+
+  private static validColor(color: RgbaColor | undefined) {
+    return color && QrCodeDirective.VALID_COLOR_REGEX.test(color) ? color : undefined;
   }
 
   private getIntOrDefault(value: string | number | undefined, defaultValue: number): number {

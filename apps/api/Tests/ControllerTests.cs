@@ -280,6 +280,49 @@ public class ControllerTests(ApiFactory factory) : IClassFixture<ApiFactory>
         Assert.Equal(names.OrderBy(n => n, StringComparer.Ordinal).ToArray(), names);
     }
 
+    // Every arm of TreeItemsController.ApplySort. The direction token is
+    // case-insensitive and so is the field; ties are allowed, so the check is
+    // that the key sequence is monotonic, not that it equals a re-sort.
+    [Theory]
+    [InlineData("name:asc", "name", false)]
+    [InlineData("name:desc", "name", true)]
+    [InlineData("code", "code", false)]
+    [InlineData("code:DESC", "code", true)]
+    [InlineData("headcount:asc", "headcount", false)]
+    [InlineData("Headcount:desc", "headcount", true)]
+    [InlineData("childcount:asc", "childcount", false)]
+    [InlineData("childCount:desc", "childcount", true)]
+    public async Task TreeItems_SortsByEveryKeyInBothDirections(string sort, string key, bool descending)
+    {
+        var result = await Client.GetFromJsonAsync<PagedResult<TreeRow>>(
+            $"/api/treeItems?sort={sort}&perPage=200", Camel);
+        var rows = result!.Items;
+        Assert.True(rows.Count > 1);
+
+        int Compare(TreeRow a, TreeRow b) => key switch
+        {
+            "name" => string.CompareOrdinal(a.Name, b.Name),
+            "code" => string.CompareOrdinal(a.Code, b.Code),
+            "headcount" => a.Headcount.CompareTo(b.Headcount),
+            _ => a.ChildCount.CompareTo(b.ChildCount),
+        };
+        var pairs = rows.Zip(rows.Skip(1));
+        Assert.All(pairs, p => Assert.True(descending ? Compare(p.First, p.Second) >= 0 : Compare(p.First, p.Second) <= 0));
+        // A no-op sort cannot pass both directions: the key sequence must not be constant.
+        Assert.NotEqual(0, Compare(rows[0], rows[^1]));
+    }
+
+    [Theory]
+    [InlineData("")]
+    [InlineData("%20")]
+    public async Task TreeItems_WithoutASortKey_OrdersById(string sort)
+    {
+        var result = await Client.GetFromJsonAsync<PagedResult<TreeRow>>(
+            $"/api/treeItems?sort={sort}&perPage=200", Camel);
+        var ids = result!.Items.Select(t => t.Id).ToArray();
+        Assert.Equal(ids.Order().ToArray(), ids);
+    }
+
     [Fact]
     public async Task TreeItems_FallsBackToIdOnAnUnknownSortField()
     {

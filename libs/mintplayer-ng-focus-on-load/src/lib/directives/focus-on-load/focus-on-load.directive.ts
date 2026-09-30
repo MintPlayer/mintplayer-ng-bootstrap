@@ -1,22 +1,19 @@
-import { computed, input, ViewContainerRef, Directive, AfterViewInit } from '@angular/core';
+import { computed, input, Directive, AfterViewInit, ElementRef, inject } from '@angular/core';
 
+/**
+ * Focuses its host shortly after the view initialises, whenever `autofocus` is
+ * truthy (a bare `autofocus` attribute counts as true).
+ *
+ * The host is read through `ElementRef`, which is the host element for a plain
+ * element and for a component host alike. A host that overrides `focus()` (the
+ * OTP input routes it into its inner control) receives the call.
+ */
 @Directive({
   selector: '*[autofocus]',
 })
 export class FocusOnLoadDirective implements AfterViewInit {
 
-  constructor(
-    private viewContainer: ViewContainerRef
-  ) {
-    const container = (<any>this.viewContainer)['_lContainer'][0]
-    if (container instanceof HTMLElement) {
-      this.inputBox = <HTMLInputElement>container;
-    } else {
-      this.inputBox = container[8];
-    }
-  }
-
-  private readonly inputBox!: any;
+  private readonly host = inject<ElementRef<HTMLElement>>(ElementRef);
 
   readonly autofocus = input<any>(true);
 
@@ -28,7 +25,7 @@ export class FocusOnLoadDirective implements AfterViewInit {
   ngAfterViewInit() {
     setTimeout(() => {
       if (this._autofocusResolved()) {
-        this.inputBox.focus();
+        this.host.nativeElement.focus();
       }
     }, 10);
   }

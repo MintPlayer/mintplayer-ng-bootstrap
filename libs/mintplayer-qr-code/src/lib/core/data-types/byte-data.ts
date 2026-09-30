@@ -1,14 +1,12 @@
-import { encodeUtf8 } from "@mintplayer/encode-utf8";
 import { BitBuffer } from "../bit-buffer";
 import * as Mode from '../mode';
 
 export class ByteData {
 	constructor(data: string | ArrayBuffer) {
 		this.mode = Mode.BYTE;
-		if (typeof data === 'string') {
-			data = encodeUtf8(data)
-		}
-		this.data = new Uint8Array(data);
+		// TextEncoder is byte-for-byte what @mintplayer/encode-utf8 produced (proved
+		// exhaustively in that lib's spec), and it exists in every browser and in Node.
+		this.data = typeof data === 'string' ? new TextEncoder().encode(data) : new Uint8Array(data);
 	}
 
 	private data: Uint8Array;
