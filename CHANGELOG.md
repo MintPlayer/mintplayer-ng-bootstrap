@@ -7,6 +7,8 @@ package version aligns its major with the supported Angular major.
 
 ### Breaking
 
+- **`bs-query-builder`: the `timezone` input is removed.** It was declared but never reached the element, so
+  binding it had no effect. Remove the binding.
 - **Satellite libraries (found by the coverage phase 2 audit).**
   - `@mintplayer/ng-qr-code` 22.2.0:
     - The unused `height` input is removed; a QR code is square.
@@ -124,8 +126,50 @@ package version aligns its major with the supported Angular major.
   cannot navigate away from an Angular route via `<base href>`. Wrapped for all three frameworks.
 - `@mintplayer/ng-bootstrap/code-snippet`: the Angular wrapper now forwards host `aria-*`, `role`,
   `id` and `tabindex` onto the `mp-*` element, where they reach the accessibility tree.
+- **Localizable strings and new inputs (coverage phase 2 audit):**
+  - `bs-resizable` `[labels]`: physical-side labels for the resize glyphs, driven by `Directionality`, so "start"
+    is no longer called "left" in RTL.
+  - `bs-file-upload`: `[fileAddedAnnouncement]`, `[filesAddedAnnouncement]` and `[progressLabel]` replace
+    hard-coded English.
+  - `bs-timeline` `[activatable]` and `mp-timeline` `activatable`: `(itemClick)` without `selectable` is now
+    keyboard-operable.
+- **Coverage phase 2:** thousands of behavioural specs across every library, the `tools/` scripts and the API.
+  See `docs/prd/test-coverage.md` §10.
 
 ### Fixed
+
+- **Found and fixed while raising coverage** (each pinned by a spec; full list in `docs/prd/test-coverage.md`
+  §10.5):
+  - **query-builder:** drag-and-drop never changed the tree, dropping into a sub-query didn't work, and value
+    editors lost edits and were never style-scoped.
+  - **scheduler:**
+    - `selectedRange` returned the drag preview.
+    - A `touchstart` listener leak, and `touchcancel` never ended an armed drag.
+    - A re-attached scheduler rendered an empty grid.
+  - **dock:** a floating window's intersection handle resized the docked splitter at the same position.
+    `setPointerCapture` failures lost the resizing state, and a zero-size move wiped the stored ratios.
+  - **tile-manager:** a zero-size cell hung the main thread in `pack()`.
+  - **splitter:**
+    - `minPanelSize` read NaN.
+    - Removing the splitter mid-drag left it resizing forever.
+    - A reconnected splitter lost its observers.
+  - **Date/time/datetime pickers:** fired each pick three times.
+  - **multi-range:** divided by a zero-size track.
+  - **Ribbon:** the contextual band colour parsed only 6-digit hex.
+  - **Carousel, swiper and signature-pad:**
+    - Carousel: slides became focusable after a reconnect.
+    - Swiper: one-slide wrap showed a blank cell.
+    - Signature-pad: mutated the data it had already emitted.
+  - **Angular wrappers:**
+    - Stale cached views after a template swap (treeview, datatable).
+    - `bs-select` never marked its form control touched.
+    - Dropdown and context-menu overlays leaked on destroy.
+    - The tab-control server render had no page content.
+    - Offcanvas/modal dispose timers couldn't be cancelled.
+    - `bs-scheduler` lost a date set together with `view`.
+    - `bs-timeline` mis-keyed numeric and id-less items.
+    - The tooltip overwrote `aria-describedby`.
+    - `enum.service` dropped members of string and mixed enums.
 
 - **Dark mode colours (issue #420).** Hard-coded light values are replaced with `--bs-*` tokens in:
   - the scheduler scrollbar and greyed slots
