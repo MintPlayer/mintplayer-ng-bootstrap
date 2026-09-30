@@ -106,7 +106,7 @@
 // it clears the threshold; the hover invert (white on filled secondary) is
 // unaffected.
 .qb-sort-add {
-  --bs-btn-color: #646b72;
+  --bs-btn-color: var(--bs-secondary-color);
 }
 
 .qb-too-deep {

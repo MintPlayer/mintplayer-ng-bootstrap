@@ -15,8 +15,133 @@
 @import "node_modules/bootstrap/scss/maps";
 @import "node_modules/bootstrap/scss/mixins";
 
-// .carousel-control-prev/-next (+icons), .carousel-indicators, tokens.
-@import "node_modules/bootstrap/scss/carousel";
+// ---------------------------------------------------------------------------
+// Bootstrap carousel base, restated
+// ---------------------------------------------------------------------------
+// The subset of bootstrap/scss/carousel this shadow root renders (controls,
+// icons, indicators, the item/inner base), restated from Bootstrap's own
+// variables so values still follow upgrades. The partial is NOT imported
+// whole: its token block is keyed on :root / [data-bs-theme=light] and its
+// dark swap on [data-bs-theme=dark], and none of those selectors can match
+// inside a shadow root. .carousel-fade, .carousel-caption and .carousel-dark
+// are not used here (fade and captions are the element's own).
+//
+// The controls and indicators are WHITE IN BOTH COLOUR MODES BY DESIGN: they
+// sit over photographs, not over the page background, so there is no dark
+// inversion. The tokens are pinned on the host with Bootstrap's light values
+// so an inherited page-level dark swap cannot flip them either; a consumer
+// who wants dark controls sets the three --bs-carousel-* properties on
+// mp-carousel itself (a rule matching the element outranks :host).
+:host {
+  --#{$prefix}carousel-indicator-active-bg: #{$carousel-indicator-active-bg};
+  --#{$prefix}carousel-caption-color: #{$carousel-caption-color};
+  --#{$prefix}carousel-control-icon-filter: #{$carousel-control-icon-filter};
+}
+
+.carousel-inner {
+  position: relative;
+  width: 100%;
+  overflow: hidden;
+}
+
+.carousel-item {
+  position: relative;
+  width: 100%;
+  backface-visibility: hidden;
+}
+
+.carousel-control-prev,
+.carousel-control-next {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: $carousel-control-width;
+  padding: 0;
+  color: $carousel-control-color;
+  text-align: center;
+  background: none;
+  filter: var(--#{$prefix}carousel-control-icon-filter);
+  border: 0;
+  opacity: $carousel-control-opacity;
+  @include transition($carousel-control-transition);
+
+  &:hover,
+  &:focus {
+    color: $carousel-control-color;
+    text-decoration: none;
+    outline: 0;
+    opacity: $carousel-control-hover-opacity;
+  }
+}
+
+.carousel-control-prev {
+  left: 0;
+  background-image: if($enable-gradients, linear-gradient(90deg, rgba($black, .25), rgba($black, .001)), null);
+}
+
+.carousel-control-next {
+  right: 0;
+  background-image: if($enable-gradients, linear-gradient(270deg, rgba($black, .25), rgba($black, .001)), null);
+}
+
+.carousel-control-prev-icon,
+.carousel-control-next-icon {
+  display: inline-block;
+  width: $carousel-control-icon-width;
+  height: $carousel-control-icon-width;
+  background-repeat: no-repeat;
+  background-position: 50%;
+  background-size: 100% 100%;
+}
+
+.carousel-control-prev-icon {
+  background-image: escape-svg($carousel-control-prev-icon-bg);
+}
+
+.carousel-control-next-icon {
+  background-image: escape-svg($carousel-control-next-icon-bg);
+}
+
+.carousel-indicators {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  z-index: 2;
+  display: flex;
+  justify-content: center;
+  padding: 0;
+  margin-right: $carousel-control-width;
+  margin-bottom: 1rem;
+  margin-left: $carousel-control-width;
+
+  [data-bs-target] {
+    box-sizing: content-box;
+    flex: 0 1 auto;
+    width: $carousel-indicator-width;
+    height: $carousel-indicator-height;
+    padding: 0;
+    margin-right: $carousel-indicator-spacer;
+    margin-left: $carousel-indicator-spacer;
+    text-indent: -999px;
+    cursor: pointer;
+    background-color: var(--#{$prefix}carousel-indicator-active-bg);
+    background-clip: padding-box;
+    border: 0;
+    border-top: $carousel-indicator-hit-area-height solid transparent;
+    border-bottom: $carousel-indicator-hit-area-height solid transparent;
+    opacity: $carousel-indicator-opacity;
+    @include transition($carousel-indicator-transition);
+  }
+
+  .active {
+    opacity: $carousel-indicator-active-opacity;
+  }
+}
 
 // ---------------------------------------------------------------------------
 // Reboot basics + host (the host IS the .carousel wrapper: positioned region)

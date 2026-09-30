@@ -7,6 +7,7 @@ import { unsafeHTML } from 'lit/directives/unsafe-html.js';
 // Lives outside the per-entry tree at libs/.../_styles/ — internal helper, not
 // a public sub-entry of @mintplayer/web-components.
 import { formSelectStyles } from '../../../_styles/form-select.styles';
+import { warnIfColorModeTokenMissing } from '../../../_styles/color-mode-warning';
 import { invalidFeedbackStyles } from '../../../_styles/invalid-feedback.styles';
 import { selectStyles } from '../styles';
 import {
@@ -328,6 +329,12 @@ export class MpSelect extends FormAssociatedMixin(LitElement) {
         this.hostAria.syncReferences();
         break;
     }
+  }
+
+  override connectedCallback(): void {
+    super.connectedCallback();
+    // The dark caret switches on --mp-color-mode; say so once if it is missing.
+    warnIfColorModeTokenMissing();
   }
 
   override disconnectedCallback(): void {

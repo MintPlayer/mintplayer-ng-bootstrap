@@ -4,7 +4,7 @@
   position: relative;
 
   --mp-datatable-border-color: var(--bs-border-color, rgba(0, 0, 0, 0.125));
-  --mp-datatable-row-hover-bg: var(--bs-table-hover-bg, rgba(0, 0, 0, 0.04));
+  --mp-datatable-row-hover-bg: var(--bs-table-hover-bg, rgba(var(--bs-emphasis-color-rgb), 0.04));
   --mp-datatable-row-selected-bg: var(--bs-list-group-active-bg, var(--bs-primary, #0d6efd));
   --mp-datatable-row-selected-color: var(--bs-list-group-active-color, #fff);
   --mp-datatable-cut-opacity: 0.55;
@@ -407,7 +407,7 @@ tr.filter-row th {
 }
 
 .filter-trigger:hover {
-  background-color: var(--mp-datatable-row-hover-bg, rgba(0, 0, 0, 0.04));
+  background-color: var(--mp-datatable-row-hover-bg);
 }
 
 // Bootstrap's focus-ring utilities do not reach here, and the hover style above
@@ -418,7 +418,7 @@ tr.filter-row th {
 }
 
 .filter-trigger[aria-expanded='true'] {
-  background-color: var(--mp-datatable-row-hover-bg, rgba(0, 0, 0, 0.04));
+  background-color: var(--mp-datatable-row-hover-bg);
   border-color: var(--mp-datatable-border-color);
 }
 
@@ -612,7 +612,7 @@ tr.filter-row th {
 }
 
 .filter-option:hover {
-  background-color: var(--mp-datatable-row-hover-bg, rgba(0, 0, 0, 0.04));
+  background-color: var(--mp-datatable-row-hover-bg);
 }
 
 // Values that were present when the filter was applied but are not in the data

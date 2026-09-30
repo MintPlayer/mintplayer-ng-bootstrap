@@ -10,6 +10,7 @@ import { operatorsForType, valueShapeFor } from './model/operators';
 import { disabledContext, editorRegistryContext, messagesContext } from './context';
 import { resolveBuiltinEditor } from './value-editors/builtin-editors';
 import { queryConditionLightStyles } from './mp-query-condition.light.styles';
+import { warnIfColorModeTokenMissing } from '../../_styles/color-mode-warning';
 
 /**
  * Tier L (emulated encapsulation) — the family converts together: a light-tier
@@ -62,6 +63,12 @@ export class MpQueryConditionElement extends LitElement {
     const t = this._nextRegistryToken++;
     this._registryTokens.set(reg, t);
     return t;
+  }
+
+  override connectedCallback(): void {
+    super.connectedCallback();
+    // The value-editor select caret switches on --mp-color-mode; say so once if it is missing.
+    warnIfColorModeTokenMissing();
   }
 
   override disconnectedCallback(): void {

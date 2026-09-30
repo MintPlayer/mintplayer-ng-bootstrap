@@ -68,15 +68,26 @@ table {
   }
 }
 
+// The nav sits above the table as the header row it replaced: same height as
+// a day cell, an opaque background (it shows through inside a dropdown
+// otherwise), and the table's side borders continued up. No bottom border:
+// the table's top border draws the separator.
 .calendar-nav {
   display: flex;
   align-items: center;
-  border-bottom: 1px solid var(--bs-border-color);
+  min-height: $cell-size;
+  padding: 0 .25rem;
+  background-color: var(--bs-body-bg);
+  border: 1px solid var(--bs-border-color);
+  border-bottom: 0;
 
+  // A day-cell-sized square; the focus ring below is inset (negative offset),
+  // so it stays inside the square and is never clipped by the nav.
   .chevron-btn {
-    flex: 0 0 auto;
-    width: auto;
-    padding: 0.25rem 0.5rem;
+    flex: 0 0 $cell-size;
+    width: $cell-size;
+    height: $cell-size;
+    padding: 0;
   }
 
   .month-label {

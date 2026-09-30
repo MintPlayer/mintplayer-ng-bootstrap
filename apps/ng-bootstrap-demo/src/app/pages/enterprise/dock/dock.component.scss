@@ -5,7 +5,7 @@
 
 .dock-demo__surface {
   min-height: 24rem;
-  border: 1px solid rgba(0, 0, 0, 0.1);
+  border: 1px solid var(--bs-border-color-translucent);
   border-radius: 0.5rem;
   overflow: hidden;
 }

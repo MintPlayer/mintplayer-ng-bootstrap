@@ -8,6 +8,7 @@ import { ref, createRef, type Ref } from 'lit/directives/ref.js';
 // Lives outside the per-entry tree at libs/.../_styles/ — an internal
 // directory, NOT a public sub-entry of @mintplayer/web-components.
 import { formCheckStyles } from '../../../_styles/form-check.styles';
+import { warnIfColorModeTokenMissing } from '../../../_styles/color-mode-warning';
 import { invalidFeedbackStyles } from '../../../_styles/invalid-feedback.styles';
 import {
   HostAriaController,
@@ -245,6 +246,12 @@ export class MpCheckbox extends FormAssociatedMixin(LitElement) {
     if (!VALID_COLORS.has(value) || this._color === value) return;
     this._color = value;
     this.requestUpdate();
+  }
+
+  override connectedCallback(): void {
+    super.connectedCallback();
+    // The dark switch knob switches on --mp-color-mode; say so once if it is missing.
+    warnIfColorModeTokenMissing();
   }
 
   override attributeChangedCallback(
