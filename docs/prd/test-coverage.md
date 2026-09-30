@@ -1,6 +1,6 @@
 # PRD — raising and defending test coverage
 
-Status: **Phase 1 done** (2026-08; see §7b–7d). **Phase 2 (§10) planned 2026-09-30**: the service's combined metric from 74.4% to ≥ 90%, on PR #421. Earlier status:
+Status: **Phase 1 done** (2026-08; see §7b–7d). **Phase 2 (§10) planned 2026-09-30**: the service's combined metric from 74.4% to ≥ 90%, on PR #421. Earlier status: **M1–M10 and M12–M15 implemented** (2026-08-19) on `feat/coverage-honest-denominator`; M11
 (the gate) lives in [coverage-pr-gate.md](./coverage-pr-gate.md) and is deliberately not part of this
 branch. The coverage service reports **76.23% lines (19,423 / 25,478) over 1,240 files** for the
 branch head — short of §6's 80% target, and §7c records what remains and why it is concentrated
