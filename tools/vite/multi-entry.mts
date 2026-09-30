@@ -64,6 +64,26 @@ export function discoverEntries(libRoot: string, options: DiscoverEntriesOptions
 }
 
 /**
+ * Emit non-module files (codegen output included) into the bundle at the same
+ * relative path. Unlike `nxCopyAssetsPlugin` this does not consult
+ * `.gitignore` (which silently dropped the gitignored `custom-elements.json`
+ * from a published tarball), and a missing file fails the build instead of
+ * shipping a hole.
+ */
+export function emitStaticFiles(libRoot: string, files: readonly string[]): Plugin {
+  return {
+    name: 'mp-emit-static-files',
+    generateBundle() {
+      files.map((fileName) => {
+        const abs = join(libRoot, fileName);
+        if (!existsSync(abs)) this.error(`emitStaticFiles: ${fileName} is missing (did codegen run?)`);
+        return this.emitFile({ type: 'asset', fileName, source: readFileSync(abs) });
+      });
+    },
+  };
+}
+
+/**
  * Write one `exports` subpath per discovered entry into the built package.json,
  * derived from the same `discoverEntries()` scan as `lib.entry`. Adding a new
  * entrypoint directory is the only step needed — its export appears

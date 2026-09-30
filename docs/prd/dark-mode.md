@@ -234,6 +234,14 @@ prerendered pages, cached pages and CSR builds.
   needed).
 - **Recorded fallback:** if they don't survive, set `optimization.styles.inlineCritical: false` in the demo and in
   the docs.
+- **As built, the fallback applies.** Angular's CSS minifier strips every comment (`removeSpecialComments`), and
+  beasties 0.4.2 only honours markers matching `^(?<!! )beasties:`, which excludes the loud `/*!` form. So neither
+  marker form can reach it. `html:is([data-bs-theme=dark])` fails too: beasties never matches `<html>` itself. The
+  outcome:
+  - The demo sets `inlineCritical: false`.
+  - The theming docs tell Angular consumers to do the same.
+  - `nx run ng-bootstrap-demo:check-critical-css` (`tools/scripts/check-critical-dark-tokens.mjs`) fails the moment
+    inlining is re-enabled without the dark tokens.
 - **Guard:** a production-build check asserts that the inlined `<style>` in the built `index.html` contains
   `[data-bs-theme=dark]`. This catches a silent regression if Angular swaps inliners again.
 

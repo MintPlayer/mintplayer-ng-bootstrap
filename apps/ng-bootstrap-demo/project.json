@@ -13,6 +13,7 @@
   "targets": {
     "build": {
       "//silenceDeprecations": "stylePreprocessorOptions.sass.silenceDeprecations below is needed only because Bootstrap 5.3.x's SCSS triggers these Sass 3.0 deprecation IDs (twbs/bootstrap#40849, #40962). Upstream's fix PR (twbs/bootstrap#41112) was closed without merging; the cleanup landed only on v6-dev as part of a full rewrite. Drop the silenceDeprecations array here AND in libs/mintplayer-ng-bootstrap/ng-package.json (lib.sass.silenceDeprecations) when bumping the bootstrap peer dep to v6.",
+      "//inlineCritical": "PRD dark-mode D5c fallback: beasties prunes every [data-bs-theme=dark] rule from the inlined critical CSS (the static index.html has no attribute), and its include markers do not survive the production CSS minifier, so a dark user would paint light until the async stylesheet loaded. Guarded by the check-critical-css target.",
       "executor": "@angular/build:application",
       "outputs": [
         "{options.outputPath}"
@@ -75,6 +76,14 @@
               "with": "apps/ng-bootstrap-demo/src/environments/environment.prod.ts"
             }
           ],
+          "optimization": {
+            "scripts": true,
+            "styles": {
+              "minify": true,
+              "inlineCritical": false
+            },
+            "fonts": true
+          },
           "outputHashing": "all"
         },
         "development": {
@@ -170,6 +179,17 @@
       "executor": "nx:run-commands",
       "options": {
         "command": "node tools/scripts/free-port.mjs 4200 ng-demo"
+      }
+    },
+    "check-critical-css": {
+      "//why": "PRD dark-mode D5c: when the production build inlines critical CSS, that CSS must keep the [data-bs-theme=dark] tokens, or a dark user paints light until the async stylesheet loads. With the recorded fallback (inlineCritical false) it asserts nothing is inlined, so re-enabling inlining without a fix fails here.",
+      "executor": "nx:run-commands",
+      "dependsOn": [
+        "build"
+      ],
+      "cache": false,
+      "options": {
+        "command": "node tools/scripts/check-critical-dark-tokens.mjs dist/apps/ng-bootstrap-demo/browser"
       }
     }
   }

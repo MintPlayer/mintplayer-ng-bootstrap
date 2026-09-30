@@ -5,7 +5,7 @@ import dts from 'vite-plugin-dts';
 import { resolve } from 'node:path';
 import { nxViteTsPaths } from '@nx/vite/plugins/nx-tsconfig-paths.plugin';
 import { nxCopyAssetsPlugin } from '@nx/vite/plugins/nx-copy-assets.plugin';
-import { discoverEntries, generateSubpathExports } from '../../tools/vite/multi-entry.mts';
+import { discoverEntries, emitStaticFiles, generateSubpathExports } from '../../tools/vite/multi-entry.mts';
 
 export default defineConfig(() => {
   // Barrel-based entries: `<entry>/index.ts` re-exports `<entry>/src`, so the
@@ -21,7 +21,15 @@ export default defineConfig(() => {
       nxViteTsPaths(),
       // `*/README.md` is not cosmetic: flags/README.md carries the MIT notice for
       // the vendored artwork that ships inside the published flag chunks.
-      nxCopyAssetsPlugin(['*.md', '*/README.md', 'custom-elements.json']),
+      nxCopyAssetsPlugin(['*.md', '*/README.md']),
+      // Not nxCopyAssetsPlugin: it silently skips .gitignore'd files, which is how
+      // custom-elements.json went missing from the published 2.16.0 tarball. This
+      // emits them into the bundle and fails the build when one is missing.
+      emitStaticFiles(import.meta.dirname, [
+        'custom-elements.json',
+        'theming/bs-theme-preboot.js',
+        'theming/color-mode.css',
+      ]),
       dts({
         entryRoot: '.',
         tsconfigPath: resolve(import.meta.dirname, 'tsconfig.lib.json'),
