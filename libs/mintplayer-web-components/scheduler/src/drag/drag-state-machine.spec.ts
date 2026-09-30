@@ -488,4 +488,93 @@ describe('DragStateMachine', () => {
       expect(machine.getPreview()).toBeNull();
     });
   });
+
+  describe('events a phase does not handle', () => {
+    it('a second pointer-down while pending keeps the original gesture', () => {
+      machine.send(createPointerDown({ type: 'slot' }, 100, 100, createSlot(9, 10)));
+      const before = machine.getState();
+      expect(machine.send(createPointerDown({ type: 'slot' }, 300, 300, createSlot(14, 15)))).toBe(false);
+      expect(machine.getState()).toBe(before);
+    });
+
+    it('a pointer-down while active keeps the drag', () => {
+      machine.send(createPointerDown({ type: 'slot' }));
+      machine.send(createPointerMove(110, 100));
+      const before = machine.getState();
+      machine.send(createPointerDown({ type: 'slot' }, 0, 0, createSlot(1, 2)));
+      expect(machine.getState()).toBe(before);
+    });
+
+    it('an unconsumed result survives moves and releases', () => {
+      machine.send(createPointerDown({ type: 'slot' }));
+      machine.send(createPointerUp());
+      machine.send(createPointerMove(500, 500));
+      machine.send(createPointerUp());
+      expect(machine.getPhase()).toBe('completing');
+      expect(machine.getCompletionResult()?.wasClick).toBe(true);
+    });
+
+    it('cancel or a new pointer-down discards an unconsumed result', () => {
+      machine.send(createPointerDown({ type: 'slot' }));
+      machine.send(createPointerUp());
+      machine.send(cancel());
+      expect(machine.getPhase()).toBe('idle');
+
+      machine.send(createPointerDown({ type: 'slot' }));
+      machine.send(createPointerUp());
+      machine.send(createPointerDown({ type: 'slot' }));
+      expect(machine.getPhase()).toBe('idle');
+      expect(machine.consumeResult()).toBeNull();
+    });
+  });
+
+  describe('activation that cannot produce a preview', () => {
+    it('a create with no slot at the start or at the move falls back to idle', () => {
+      machine.send(createPointerDown({ type: 'slot' }, 100, 100, null));
+      machine.send(createPointerMove(200, 200, null));
+      expect(machine.getPhase()).toBe('idle');
+    });
+
+    it('a create started off-grid anchors on the first slot the pointer reaches', () => {
+      machine.send(createPointerDown({ type: 'slot' }, 100, 100, null));
+      machine.send(createPointerMove(200, 200, createSlot(11, 12)));
+      expect(machine.getPreview()).toEqual({ start: createSlot(11, 12).start, end: createSlot(11, 12).end });
+    });
+
+    it('a move target that carries no event never activates, not even immediately', () => {
+      machine.send(createPointerDown({ type: 'event' }, 100, 100, createSlot(9, 10)));
+      machine.send(createPointerMove(200, 200));
+      expect(machine.getPhase()).toBe('idle');
+
+      machine.send({ ...createPointerDown({ type: 'event' }), immediate: true } as DragMachineEvent);
+      expect(machine.getPhase()).toBe('pending');
+    });
+  });
+
+  describe('the preview reported for a click', () => {
+    it('a click on a slot reports that slot', () => {
+      machine.send(createPointerDown({ type: 'slot' }, 100, 100, createSlot(13, 14)));
+      machine.send(createPointerUp());
+      expect(machine.consumeResult()?.preview).toEqual({
+        start: createSlot(13, 14).start,
+        end: createSlot(13, 14).end,
+      });
+    });
+
+    it('a click on an event reports the event itself', () => {
+      const ev = createEvent('e', 15, 16);
+      machine.send(createPointerDown({ type: 'event', event: ev }, 100, 100, createSlot(9, 10)));
+      machine.send(createPointerUp());
+      const result = machine.consumeResult();
+      expect(result).toMatchObject({ type: 'move', wasClick: true, event: ev, originalEvent: ev });
+      expect(result?.preview).toEqual({ start: ev.start, end: ev.end });
+    });
+
+    it('a click with neither slot nor event reports a zero-length range', () => {
+      machine.send(createPointerDown({ type: 'slot' }, 100, 100, null));
+      machine.send(createPointerUp());
+      const preview = machine.consumeResult()!.preview;
+      expect(preview.end.getTime() - preview.start.getTime()).toBeLessThanOrEqual(1);
+    });
+  });
 });

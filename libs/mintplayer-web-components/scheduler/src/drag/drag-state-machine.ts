@@ -11,6 +11,9 @@ import {
 import { DragPreviewCalculator } from './drag-preview';
 import { getPointerDistance } from '../input/pointer-event';
 
+type PendingState = Extract<DragMachineState, { phase: 'pending' }>;
+type ActiveState = Extract<DragMachineState, { phase: 'active' }>;
+
 /**
  * Explicit state machine for drag operations.
  *
@@ -124,17 +127,16 @@ export class DragStateMachine {
    * Given current state and event, returns new state.
    */
   private transition(event: DragMachineEvent): DragMachineState {
-    switch (this.state.phase) {
+    const state = this.state;
+    switch (state.phase) {
       case 'idle':
         return this.transitionFromIdle(event);
       case 'pending':
-        return this.transitionFromPending(event);
+        return this.transitionFromPending(state, event);
       case 'active':
-        return this.transitionFromActive(event);
+        return this.transitionFromActive(state, event);
       case 'completing':
         return this.transitionFromCompleting(event);
-      default:
-        return this.state;
     }
   }
 
@@ -212,23 +214,18 @@ export class DragStateMachine {
   /**
    * Transitions from pending state.
    */
-  private transitionFromPending(event: DragMachineEvent): DragMachineState {
-    if (this.state.phase !== 'pending') return this.state;
-
+  private transitionFromPending(state: PendingState, event: DragMachineEvent): DragMachineState {
     switch (event.type) {
       case 'POINTER_MOVE': {
-        const distance = getPointerDistance(
-          this.state.startPosition,
-          event.position
-        );
+        const distance = getPointerDistance(state.startPosition, event.position);
 
         if (distance < this.config.dragThreshold) {
           // Not enough movement, stay in pending
-          return this.state;
+          return state;
         }
 
         // Threshold exceeded - activate drag
-        return this.activateDrag(event.slot);
+        return this.activateDrag(state, event.slot);
       }
 
       case 'POINTER_UP': {
@@ -236,10 +233,10 @@ export class DragStateMachine {
         return {
           phase: 'completing',
           result: {
-            type: this.state.operationType,
-            preview: this.getInitialPreview(),
-            event: this.state.event,
-            originalEvent: this.state.event ?? undefined,
+            type: state.operationType,
+            preview: this.getInitialPreview(state),
+            event: state.event,
+            originalEvent: state.event ?? undefined,
             wasClick: true,
           },
         };
@@ -249,37 +246,35 @@ export class DragStateMachine {
         return { phase: 'idle' };
 
       default:
-        return this.state;
+        return state;
     }
   }
 
   /**
    * Transitions from active state.
    */
-  private transitionFromActive(event: DragMachineEvent): DragMachineState {
-    if (this.state.phase !== 'active') return this.state;
-
+  private transitionFromActive(state: ActiveState, event: DragMachineEvent): DragMachineState {
     switch (event.type) {
       case 'POINTER_MOVE': {
         if (!event.slot) {
           // No valid slot under pointer, keep current state
-          return this.state;
+          return state;
         }
 
         // Calculate new preview
         const preview = this.previewCalculator.calculatePreview(
-          this.state.operationType,
-          this.state.startSlot,
+          state.operationType,
+          state.startSlot,
           event.slot,
-          this.state.originalEvent ?? null
+          state.originalEvent ?? null
         );
 
         if (!preview) {
-          return this.state;
+          return state;
         }
 
         return {
-          ...this.state,
+          ...state,
           currentSlot: event.slot,
           preview,
         };
@@ -289,10 +284,10 @@ export class DragStateMachine {
         return {
           phase: 'completing',
           result: {
-            type: this.state.operationType,
-            preview: this.state.preview,
-            event: this.state.event,
-            originalEvent: this.state.originalEvent,
+            type: state.operationType,
+            preview: state.preview,
+            event: state.event,
+            originalEvent: state.originalEvent,
             wasClick: false,
           },
         };
@@ -302,7 +297,7 @@ export class DragStateMachine {
         return { phase: 'idle' };
 
       default:
-        return this.state;
+        return state;
     }
   }
 
@@ -321,12 +316,8 @@ export class DragStateMachine {
   /**
    * Activate drag from pending state.
    */
-  private activateDrag(currentSlot: TimeSlot | null): DragMachineState {
-    if (this.state.phase !== 'pending') {
-      return this.state;
-    }
-
-    const startSlot = this.state.startSlot ?? currentSlot;
+  private activateDrag(state: PendingState, currentSlot: TimeSlot | null): DragMachineState {
+    const startSlot = state.startSlot ?? currentSlot;
     if (!startSlot) {
       return { phase: 'idle' };
     }
@@ -335,10 +326,10 @@ export class DragStateMachine {
 
     // Calculate initial preview
     const preview = this.previewCalculator.calculatePreview(
-      this.state.operationType,
+      state.operationType,
       startSlot,
       slot,
-      this.state.event
+      state.event
     );
 
     if (!preview) {
@@ -347,12 +338,12 @@ export class DragStateMachine {
 
     return {
       phase: 'active',
-      operationType: this.state.operationType,
-      event: this.state.event,
+      operationType: state.operationType,
+      event: state.event,
       startSlot,
       currentSlot: slot,
       preview,
-      originalEvent: this.state.event ?? undefined,
+      originalEvent: state.event ?? undefined,
     };
   }
 
@@ -375,22 +366,18 @@ export class DragStateMachine {
   /**
    * Get initial preview for a pending drag (used for click detection).
    */
-  private getInitialPreview(): PreviewEvent {
-    if (this.state.phase !== 'pending') {
-      return { start: new Date(), end: new Date() };
-    }
-
-    if (this.state.event) {
+  private getInitialPreview(state: PendingState): PreviewEvent {
+    if (state.event) {
       return {
-        start: this.state.event.start,
-        end: this.state.event.end,
+        start: state.event.start,
+        end: state.event.end,
       };
     }
 
-    if (this.state.startSlot) {
+    if (state.startSlot) {
       return {
-        start: this.state.startSlot.start,
-        end: this.state.startSlot.end,
+        start: state.startSlot.start,
+        end: state.startSlot.end,
       };
     }
 

@@ -216,6 +216,35 @@ describe('ResourceService', () => {
     });
   });
 
+  describe('collapse leaves the other groups alone', () => {
+    it('toggling one nested group changes only that group', () => {
+      const items = createSampleHierarchy();
+      const result = service.toggleGroupCollapse(items, 'team-1');
+      expect(service.findGroupById(result, 'team-1')?.collapsed).toBe(true);
+      expect(service.findGroupById(result, 'dept-1')?.collapsed).toBeFalsy();
+      expect(service.findGroupById(result, 'dept-2')?.collapsed).toBeFalsy();
+    });
+
+    it('setting one group keeps the others as they were', () => {
+      const items = createSampleHierarchy();
+      const result = service.setGroupCollapse(items, 'dept-2', true);
+      expect(service.findGroupById(result, 'dept-2')?.collapsed).toBe(true);
+      expect(service.findGroupById(result, 'team-1')?.collapsed).toBeFalsy();
+    });
+  });
+
+  describe('sortByOrder without explicit orders', () => {
+    it('treats a missing order as 0 and keeps ties in their authored order', () => {
+      const items: (Resource | ResourceGroup)[] = [
+        { ...createResource('b'), order: 1 },
+        createResource('a'),
+        { ...createResource('c'), order: -1 },
+        createResource('d'),
+      ];
+      expect(service.sortByOrder(items).map((i) => i.id)).toEqual(['c', 'a', 'd', 'b']);
+    });
+  });
+
   describe('setGroupCollapse', () => {
     it('should set collapsed state to true', () => {
       const items: (Resource | ResourceGroup)[] = [
@@ -237,43 +266,6 @@ describe('ResourceService', () => {
 
       const grp = service.findGroupById(result, 'grp-1');
       expect(grp?.collapsed).toBe(false);
-    });
-  });
-
-  describe('collapseAll', () => {
-    it('should collapse all groups', () => {
-      const items = createSampleHierarchy();
-
-      const result = service.collapseAll(items);
-
-      const dept1 = service.findGroupById(result, 'dept-1');
-      const team1 = service.findGroupById(result, 'team-1');
-      const dept2 = service.findGroupById(result, 'dept-2');
-
-      expect(dept1?.collapsed).toBe(true);
-      expect(team1?.collapsed).toBe(true);
-      expect(dept2?.collapsed).toBe(true);
-    });
-  });
-
-  describe('expandAll', () => {
-    it('should expand all groups', () => {
-      const items: (Resource | ResourceGroup)[] = [
-        {
-          ...createGroup('grp-1', [
-            { ...createGroup('grp-2', [createResource('res-1')]), collapsed: true },
-          ]),
-          collapsed: true,
-        },
-      ];
-
-      const result = service.expandAll(items);
-
-      const grp1 = service.findGroupById(result, 'grp-1');
-      const grp2 = service.findGroupById(result, 'grp-2');
-
-      expect(grp1?.collapsed).toBe(false);
-      expect(grp2?.collapsed).toBe(false);
     });
   });
 

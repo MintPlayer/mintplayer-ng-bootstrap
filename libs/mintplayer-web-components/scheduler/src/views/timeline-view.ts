@@ -24,6 +24,7 @@ import {
   isSlotInSelection,
 } from './base-view';
 import { SchedulerState } from '../state/scheduler-state';
+import { clampColumnWidth, columnWidthPercent } from '../utils/geometry';
 
 /**
  * DOM/row-map key for the synthetic unassigned row. Not a resource id — the
@@ -561,16 +562,12 @@ export class TimelineView extends BaseView {
     return cell?.getBoundingClientRect().width || 200;
   }
 
-  private maxColumnWidth(): number {
-    return Math.max(
-      TimelineView.MIN_COLUMN_PX,
-      this.container.clientWidth - TimelineView.MIN_GRID_PX,
-    );
-  }
-
   private applyColumnWidth(px: number): void {
-    const clamped = Math.round(
-      Math.min(Math.max(px, TimelineView.MIN_COLUMN_PX), this.maxColumnWidth()),
+    const clamped = clampColumnWidth(
+      px,
+      this.container.clientWidth,
+      TimelineView.MIN_COLUMN_PX,
+      TimelineView.MIN_GRID_PX,
     );
     // Keep the declaration's own `calc(100% - 50px)` cap in the written value:
     // the JS clamp above measured NOW, the CSS min() keeps holding when the
@@ -585,11 +582,13 @@ export class TimelineView extends BaseView {
 
   /** aria-valuenow as a percentage of the scroller, per the splitter pattern. */
   private updateResizerValue(resizer: HTMLElement, widthPx?: number): void {
-    const total = this.container.clientWidth || 1;
     const width = widthPx ?? this.currentColumnWidth();
     resizer.setAttribute('aria-valuemin', '0');
     resizer.setAttribute('aria-valuemax', '100');
-    resizer.setAttribute('aria-valuenow', String(Math.round((width / total) * 100)));
+    resizer.setAttribute(
+      'aria-valuenow',
+      String(columnWidthPercent(width, this.container.clientWidth)),
+    );
   }
 
   private onColumnDragMove(e: PointerEvent): void {

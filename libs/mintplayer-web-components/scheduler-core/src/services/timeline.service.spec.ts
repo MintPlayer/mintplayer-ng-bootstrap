@@ -94,6 +94,36 @@ describe('TimelineService', () => {
       expect(result.parts.length).toBe(1);
       expect(result.parts[0].event).toBeNull();
     });
+
+    it('an event ending exactly at midnight ends on its last part, with no empty tail part', () => {
+      const event: SchedulerEvent = {
+        id: 'late',
+        title: 'Late',
+        start: new Date(2025, 0, 15, 22, 0),
+        end: new Date(2025, 0, 16, 0, 0),
+      };
+      const result = service.splitInParts(event);
+
+      expect(result.parts).toHaveLength(1);
+      expect(result.parts[0]).toMatchObject({ isStart: true, isEnd: true, totalDays: 1 });
+      expect(result.parts[0].end).toEqual(event.end);
+    });
+
+    it('a two-day all-day event ending at midnight has two parts, the second one ending it', () => {
+      const event: SchedulerEvent = {
+        id: 'allday',
+        title: 'All day',
+        start: new Date(2025, 0, 15, 0, 0),
+        end: new Date(2025, 0, 17, 0, 0),
+      };
+      const result = service.splitInParts(event);
+
+      expect(result.parts.map((p) => [p.isStart, p.isEnd])).toEqual([
+        [true, false],
+        [false, true],
+      ]);
+      expect(result.parts.every((p) => p.totalDays === 2)).toBe(true);
+    });
   });
 
   describe('getTimeline', () => {
@@ -168,6 +198,12 @@ describe('TimelineService', () => {
   });
 
   describe('getTimelinedParts', () => {
+    it('a preview part (no event behind it) takes the full width alone', () => {
+      const preview = { start: new Date(2025, 0, 15, 9, 0), end: new Date(2025, 0, 15, 10, 0) };
+      const [laid] = service.getTimelinedParts(service.splitInParts(preview).parts);
+      expect(laid).toMatchObject({ trackIndex: 0, totalTracks: 1, colspan: 1 });
+    });
+
     it('should assign track indices to parts', () => {
       const event1 = createEvent('1', 9, 12);
       const event2 = createEvent('2', 10, 13);

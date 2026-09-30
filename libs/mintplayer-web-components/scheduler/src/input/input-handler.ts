@@ -25,6 +25,8 @@ export interface InputHandlerCallbacks {
   onTouchDragActivated?: () => void;
   /** Called when touch drag mode is deactivated */
   onTouchDragDeactivated?: () => void;
+  /** Called when the platform cancels an active touch drag; the drag must be abandoned, not committed */
+  onPointerCancel?: () => void;
   /** Called to get the scrollable container for panning */
   getScrollContainer?: () => HTMLElement | null;
 }
@@ -80,7 +82,8 @@ export class InputHandler {
   private touchStartPosition: { x: number; y: number } | null = null;
   private isTouchDragMode = false;
   private touchHoldTarget: HTMLElement | null = null;
-  private touchHoldPointer: NormalizedPointerEvent | null = null;
+  /** The element the current gesture started on; see bindGestureElement. */
+  private gestureElement: HTMLElement | null = null;
 
   // Pan mode state (touch-only: pan when touch starts on event and moves quickly)
   private isPanMode = false;
@@ -168,6 +171,7 @@ export class InputHandler {
     root.removeEventListener('touchend', this.boundHandleTouchEnd as EventListener);
     root.removeEventListener('touchcancel', this.boundHandleTouchCancel as EventListener);
 
+    this.unbindGestureElement();
     this.cancelTouchHold();
     this.exitPanMode();
     this.removeScrollBlock();
@@ -302,32 +306,16 @@ export class InputHandler {
 
     this.touchStartPosition = { x: pointer.clientX, y: pointer.clientY };
     this.touchHoldTarget = pointer.target;
-    this.touchHoldPointer = pointer;
 
     // Track if touch started on an event (for pan support)
     this.panStartedOnEvent = target.type === 'event' || target.type === 'resize-handle';
 
-    // Add element-level listeners IMMEDIATELY for ALL drag-initiating touches
-    // CRITICAL: Use e.target (the actual touched element) not pointer.target
-    // In shadow DOM, touch.target and e.target can differ due to event retargeting.
-    // Only the listener on e.target will continue to receive events after DOM replacement
-    // (e.g., when Lit re-renders and replaces the element due to visual feedback classes).
-    const self = this;
-    const touchedElement = e.target as HTMLElement;
-
-    // Add listener directly to the touched element - this is the ONLY listener
-    // that will work after the element is replaced during re-render
-    touchedElement.addEventListener('touchmove', function(evt: TouchEvent) {
-      self.handleTouchMove(evt);
-    }, { passive: false });
-
-    touchedElement.addEventListener('touchend', function(evt: TouchEvent) {
-      self.handleTouchEnd(evt);
-    });
-
-    touchedElement.addEventListener('touchcancel', function(evt: TouchEvent) {
-      self.handleTouchCancel(evt);
-    });
+    // Add element-level listeners IMMEDIATELY for ALL drag-initiating touches.
+    // Use e.target (the actual touched element), not pointer.target: in shadow
+    // DOM the two can differ due to retargeting. Touch events stay locked to the
+    // element the touch started on, so once a re-render replaces that element it
+    // is detached and only a listener ON it still hears the rest of the gesture.
+    this.bindGestureElement(e.target as HTMLElement);
 
     // A touch that starts on a resize handle of the ALREADY-SELECTED event
     // arms the resize immediately: the visible glyph is the affordance the
@@ -411,6 +399,8 @@ export class InputHandler {
 
   private handleTouchEnd(e: TouchEvent): void {
     const pointer = normalizeTouchEvent(e);
+    // The gesture is over whichever branch below handles it.
+    this.unbindGestureElement();
 
     // If in pan mode, exit it
     if (this.isPanMode) {
@@ -428,7 +418,6 @@ export class InputHandler {
       }
 
       this.touchHoldTarget = null;
-      this.touchHoldPointer = null;
       return;
     }
 
@@ -440,24 +429,41 @@ export class InputHandler {
   }
 
   private handleTouchCancel(_e: TouchEvent): void {
+    this.unbindGestureElement();
     this.cancelTouchHold();
     this.exitPanMode();
 
     if (this.isTouchDragMode) {
-      // Notify pointer up to cancel the drag
-      if (this.touchStartPosition) {
-        this.callbacks.onPointerUp({
-          pointerId: 0,
-          pointerType: 'touch',
-          clientX: this.touchStartPosition.x,
-          clientY: this.touchStartPosition.y,
-          originalEvent: _e,
-          target: this.touchHoldTarget ?? document.body,
-          isPrimary: true,
-        });
-      }
+      // The platform took the touch away (an incoming call, a system gesture):
+      // abandon the drag. It used to replay a pointer-up at the touch origin,
+      // but that origin was always cleared when the drag armed, so the drag was
+      // never ended and its preview stayed stuck on screen.
+      this.callbacks.onPointerCancel?.();
       this.exitTouchDragMode();
     }
+  }
+
+  /**
+   * Listen for the rest of the gesture on the element the touch started on.
+   * At most one element is bound at a time, and it is released when the
+   * gesture ends — before, every touchstart added three listeners that were
+   * never removed.
+   */
+  private bindGestureElement(element: HTMLElement): void {
+    this.unbindGestureElement();
+    this.gestureElement = element;
+    element.addEventListener('touchmove', this.boundHandleTouchMove, { passive: false });
+    element.addEventListener('touchend', this.boundHandleTouchEnd);
+    element.addEventListener('touchcancel', this.boundHandleTouchCancel);
+  }
+
+  private unbindGestureElement(): void {
+    const element = this.gestureElement;
+    if (!element) return;
+    this.gestureElement = null;
+    element.removeEventListener('touchmove', this.boundHandleTouchMove);
+    element.removeEventListener('touchend', this.boundHandleTouchEnd);
+    element.removeEventListener('touchcancel', this.boundHandleTouchCancel);
   }
 
   // Touch helpers
@@ -469,14 +475,11 @@ export class InputHandler {
     this.touchHoldTimer = null;
     this.touchStartPosition = null; // Clear so touchmove doesn't think we're still pending
 
-    // Trigger haptic feedback
-    this.triggerHapticFeedback();
-
     // Enter touch drag mode
     this.isTouchDragMode = true;
 
-    // Document listeners were already added in handleTouchStart for event touches
-    // For slot touches, add them now
+    // A drag that started on a slot also listens at document level (an event
+    // touch is served by the gesture element alone).
     if (!this.touchHoldTarget?.closest('.scheduler-event')) {
       document.addEventListener('touchmove', this.boundHandleTouchMove, { passive: false });
       document.addEventListener('touchend', this.boundHandleTouchEnd);
@@ -541,7 +544,6 @@ export class InputHandler {
     this.isTouchDragMode = false;
     this.touchStartPosition = null;
     this.touchHoldTarget = null;
-    this.touchHoldPointer = null;
 
     // Remove document-level listeners added during drag mode
     document.removeEventListener('touchmove', this.boundHandleTouchMove);
@@ -584,10 +586,6 @@ export class InputHandler {
       '.scheduler-event, .scheduler-time-slot, .scheduler-timeline-slot'
     );
     targetEl?.classList.remove(`touch-hold-${type}`);
-  }
-
-  private triggerHapticFeedback(): void {
-    // Vibration API removed - can cause issues on some devices
   }
 
   // Pan helpers (touch-only: pan is never initiated from a mouse gesture)
