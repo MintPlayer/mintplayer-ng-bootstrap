@@ -1,4 +1,5 @@
 import {
+  booleanAttribute,
   ChangeDetectionStrategy,
   Component,
   computed,
@@ -29,10 +30,10 @@ import type {
 import '@mintplayer/web-components/timeline';
 
 import {
-  BsTimelineConnectorContext,
+  type BsTimelineConnectorContext,
   BsTimelineConnectorDirective,
   BsTimelineContentDirective,
-  BsTimelineItemContext,
+  type BsTimelineItemContext,
   BsTimelineMarkerDirective,
   BsTimelineOppositeDirective,
   BsTimelineTimestampDirective,
@@ -62,6 +63,12 @@ export class BsTimelineComponent {
   readonly align = input<TimelineAlign>('start');
   readonly reverse = input<boolean>(false);
   readonly selectable = input<TimelineSelectable>('none');
+  /**
+   * Make the rows keyboard-operable without selection: they become buttons
+   * with a roving tab stop, and Enter/Space emit `(itemClick)`. Set this when
+   * `(itemClick)` is used without `selectable`, or the click is pointer-only.
+   */
+  readonly activatable = input(false, { transform: booleanAttribute });
 
   /** Two-way bound array of selected items (identity via `id`). */
   readonly selection = model<TimelineItem[]>([]);
@@ -82,19 +89,37 @@ export class BsTimelineComponent {
     resolveSides(this.items().length, this.align(), this.reverse()),
   );
 
+  /**
+   * The selection most recently reported BY the element. Writing it back would
+   * be an echo at best, and at worst lossy: a declarative id-less item has no
+   * key the wrapper could send.
+   */
+  private selectionFromElement: TimelineItem[] | null = null;
+
   constructor() {
-    // Push the selection model into the WC (identity via id).
+    // Push the selection model into the WC, keyed the way the WC keys it.
     effect(() => {
       const el = this.timelineRef()?.nativeElement;
-      if (!el) return;
-      el.selectedIds = this.selection().map((item, i) => this.idForItem(item, i));
+      const selection = this.selection();
+      if (!el || selection === this.selectionFromElement) return;
+      const items = this.items();
+      el.selectedIds = selection.flatMap<string | number>((item) => {
+        if (item.id != null) return [String(item.id)];
+        const index = items.indexOf(item);
+        return index >= 0 ? [index] : [];
+      });
     });
   }
 
   // ----- template helpers --------------------------------------------------
 
-  protected idForItem(item: TimelineItem, index: number): string | number {
-    return item.id ?? index;
+  /**
+   * The key the WC gives an item. The items are lowered to attributes, and an
+   * attribute is always a string, so a numeric id is keyed as its string form;
+   * an id-less item is keyed by its position.
+   */
+  private keyFor(item: TimelineItem, index: number): string | number {
+    return item.id != null ? String(item.id) : index;
   }
 
   protected idAttr(item: TimelineItem): string | number | null {
@@ -116,7 +141,7 @@ export class BsTimelineComponent {
       isFirst: visualIndex === 0,
       isLast: visualIndex === len - 1,
       orientation: this.orientation(),
-      side: this.sides()[index] ?? 'start',
+      side: this.sides()[index],
     };
   }
 
@@ -136,16 +161,18 @@ export class BsTimelineComponent {
   }
 
   protected onSelectionChange(event: Event): void {
-    const detail = (event as CustomEvent<TimelineSelectionChangeDetail>).detail;
     const items = this.items();
-    if (items.length) {
-      const byId = new Map(items.map((it, i) => [this.idForItem(it, i), it] as const));
-      const el = this.timelineRef()?.nativeElement;
-      const ids = el?.selectedIds ?? detail.selected.map((m, i) => m.id ?? i);
-      this.selection.set(ids.map((id) => byId.get(id)).filter((it): it is TimelineItem => it !== undefined));
-    } else {
-      // Declarative mode: surface the attribute-derived models from the event.
-      this.selection.set(detail.selected);
-    }
+    // Declarative mode: surface the attribute-derived models from the event.
+    const next = items.length
+      ? this.boundItems((event.currentTarget as MpTimeline).selectedIds, items)
+      : (event as CustomEvent<TimelineSelectionChangeDetail>).detail.selected;
+    this.selectionFromElement = next;
+    this.selection.set(next);
+  }
+
+  /** Maps the element's selected keys back onto the consumer's own items. */
+  private boundItems(ids: (string | number)[], items: TimelineItem[]): TimelineItem[] {
+    const byKey = new Map(items.map((it, i) => [this.keyFor(it, i), it] as const));
+    return ids.map((id) => byKey.get(id)).filter((it): it is TimelineItem => it !== undefined);
   }
 }

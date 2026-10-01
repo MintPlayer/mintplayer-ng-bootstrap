@@ -1,6 +1,7 @@
 import type { ReactiveController, ReactiveControllerHost } from 'lit';
 import { dismissStack, deepActiveElement, collectTabbables, FocusTrap, type InitialFocusTarget } from '@mintplayer/web-components/a11y';
 import { acquirePortal, type PortalHandle } from './overlay-portal';
+import { choosePlacement, clampToViewport, isAnchorOffscreen } from './placement';
 
 export type OverlayOriginX = 'start' | 'center' | 'end';
 export type OverlayOriginY = 'top' | 'center' | 'bottom';
@@ -436,54 +437,39 @@ export class OverlayController implements ReactiveController {
     // width reflects the strategy (matters for the position-pair fit check).
     this.applyPanelWidth(panel, anchors[0]);
 
-    const margin = this.options.viewportMargin ?? 8;
     const panelRect = panel.getBoundingClientRect();
-    const vw = window.innerWidth;
-    const vh = window.innerHeight;
+    const viewport = {
+      width: window.innerWidth,
+      height: window.innerHeight,
+      margin: this.options.viewportMargin ?? 8,
+    };
 
     // Sticky-offscreen logic: keyed off the FIRST anchor (the "preferred"
     // one). If it's offscreen and sticky is on, pin to viewport regardless
     // of other candidates.
-    const primaryRect = anchors[0].getBoundingClientRect();
-    if (this.options.stickyOnAnchorOffscreen && this.isAnchorOffscreen(primaryRect, vw, vh)) {
-      const currentLeft = parseFloat(panel.style.left) || panelRect.left;
-      const currentTop = parseFloat(panel.style.top) || panelRect.top;
-      const clamped = this.clampToViewport({ left: currentLeft, top: currentTop }, panelRect, vw, vh, margin);
+    const anchorRects = anchors.map((anchor) => anchor.getBoundingClientRect());
+    if (this.options.stickyOnAnchorOffscreen && isAnchorOffscreen(anchorRects[0], viewport)) {
+      const current = {
+        left: parseFloat(panel.style.left) || panelRect.left,
+        top: parseFloat(panel.style.top) || panelRect.top,
+      };
+      const clamped = clampToViewport(current, panelRect, viewport);
       panel.style.left = `${clamped.left}px`;
       panel.style.top = `${clamped.top}px`;
       return;
     }
 
-    const positions = this.options.positions ?? DEFAULT_POSITIONS;
-    const rtl = this.isRtl();
-
-    let chosenAnchor: HTMLElement | null = null;
-    let chosenPlacement: { left: number; top: number } | null = null;
-
-    // Walk (anchor × position) pairs. The first pair that fits the viewport
-    // cleanly wins. If none do, the LAST evaluated placement (and its
-    // anchor) is the fallback, then clamped into the viewport.
-    outer: for (const anchor of anchors) {
-      const triggerRect = anchor.getBoundingClientRect();
-      for (const candidate of positions) {
-        const placed = this.placeFor(candidate, triggerRect, panelRect, rtl);
-        chosenAnchor = anchor;
-        chosenPlacement = placed;
-        if (this.fitsInViewport(placed, panelRect, vw, vh, margin)) break outer;
-      }
-    }
-
-    if (!chosenPlacement || !chosenAnchor) return;
-    this.activeAnchor = chosenAnchor;
-
-    const clamped = this.clampToViewport(chosenPlacement, panelRect, vw, vh, margin);
-    panel.style.left = `${clamped.left}px`;
-    panel.style.top = `${clamped.top}px`;
-  }
-
-  /** True when the anchor's bounding rect lies entirely outside the viewport. */
-  private isAnchorOffscreen(rect: DOMRect, vw: number, vh: number): boolean {
-    return rect.right < 0 || rect.bottom < 0 || rect.left > vw || rect.top > vh;
+    const chosen = choosePlacement(
+      anchorRects,
+      this.options.positions ?? DEFAULT_POSITIONS,
+      panelRect,
+      viewport,
+      this.isRtl()
+    );
+    if (!chosen) return;
+    this.activeAnchor = anchors[chosen.anchorIndex];
+    panel.style.left = `${chosen.placement.left}px`;
+    panel.style.top = `${chosen.placement.top}px`;
   }
 
   /**
@@ -521,87 +507,6 @@ export class OverlayController implements ReactiveController {
 
   private isRtl(): boolean {
     return getComputedStyle(this.host).direction === 'rtl';
-  }
-
-  /**
-   * Compute the (left, top) at which `panel` should be placed for a single
-   * position candidate. The candidate identifies which corner of the anchor
-   * to align which corner of the panel to, plus optional pixel offsets.
-   */
-  private placeFor(
-    candidate: OverlayPosition,
-    triggerRect: DOMRect,
-    panelRect: DOMRect,
-    rtl: boolean,
-  ): { left: number; top: number } {
-    const anchorX = this.anchorXFor(candidate.originX, triggerRect, rtl);
-    const anchorY = this.anchorYFor(candidate.originY, triggerRect);
-    const panelXOffset = this.panelXOffsetFor(candidate.overlayX, panelRect.width, rtl);
-    const panelYOffset = this.panelYOffsetFor(candidate.overlayY, panelRect.height);
-    return {
-      left: anchorX + panelXOffset + (candidate.offsetX ?? 0),
-      top: anchorY + panelYOffset + (candidate.offsetY ?? 0),
-    };
-  }
-
-  private anchorXFor(origin: OverlayOriginX, rect: DOMRect, rtl: boolean): number {
-    // In RTL, 'start' visually maps to the right edge of the anchor.
-    const start = rtl ? rect.right : rect.left;
-    const end = rtl ? rect.left : rect.right;
-    if (origin === 'start') return start;
-    if (origin === 'end') return end;
-    return rect.left + rect.width / 2;
-  }
-
-  private anchorYFor(origin: OverlayOriginY, rect: DOMRect): number {
-    if (origin === 'top') return rect.top;
-    if (origin === 'bottom') return rect.bottom;
-    return rect.top + rect.height / 2;
-  }
-
-  private panelXOffsetFor(overlayX: OverlayOriginX, width: number, rtl: boolean): number {
-    // Offset = amount to shift the panel left so that its (start | center | end)
-    // edge lines up with the anchor point. In RTL, the panel's 'start' is its
-    // right edge, so we mirror.
-    if (overlayX === 'start') return rtl ? -width : 0;
-    if (overlayX === 'end') return rtl ? 0 : -width;
-    return -width / 2;
-  }
-
-  private panelYOffsetFor(overlayY: OverlayOriginY, height: number): number {
-    if (overlayY === 'top') return 0;
-    if (overlayY === 'bottom') return -height;
-    return -height / 2;
-  }
-
-  private fitsInViewport(
-    placed: { left: number; top: number },
-    panelRect: DOMRect,
-    vw: number,
-    vh: number,
-    margin: number,
-  ): boolean {
-    return (
-      placed.left >= margin &&
-      placed.top >= margin &&
-      placed.left + panelRect.width <= vw - margin &&
-      placed.top + panelRect.height <= vh - margin
-    );
-  }
-
-  private clampToViewport(
-    placed: { left: number; top: number },
-    panelRect: DOMRect,
-    vw: number,
-    vh: number,
-    margin: number,
-  ): { left: number; top: number } {
-    let { left, top } = placed;
-    if (left + panelRect.width > vw - margin) left = vw - panelRect.width - margin;
-    if (left < margin) left = margin;
-    if (top + panelRect.height > vh - margin) top = vh - panelRect.height - margin;
-    if (top < margin) top = margin;
-    return { left, top };
   }
 
   /* ---- Scroll + resize tracking ---- */

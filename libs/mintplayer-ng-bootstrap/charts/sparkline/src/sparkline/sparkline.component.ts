@@ -32,19 +32,19 @@ export class BsSparklineComponent {
   readonly inputLabel = input<string | undefined>(undefined);
   readonly summaryFormatter = input<((points: (number | null)[]) => string | undefined) | undefined>(undefined);
 
-  readonly sparklineRef = viewChild<ElementRef<MpSparkline>>('sparkline');
+  readonly sparklineRef = viewChild.required<ElementRef<MpSparkline>>('sparkline');
 
   constructor() {
-    effect(() => { const el = this.sparklineRef()?.nativeElement; if (el) el.points = this.points(); });
-    effect(() => { const el = this.sparklineRef()?.nativeElement; if (el) el.area = this.area(); });
-    effect(() => { const el = this.sparklineRef()?.nativeElement; if (el) el.showLastDot = this.showLastDot(); });
-    effect(() => { const el = this.sparklineRef()?.nativeElement; if (el) el.yMin = this.yMin(); });
-    effect(() => { const el = this.sparklineRef()?.nativeElement; if (el) el.yMax = this.yMax(); });
-    effect(() => { const el = this.sparklineRef()?.nativeElement; if (el) el.locale = this.locale(); });
+    effect(() => { const el = this.sparklineRef().nativeElement; el.points = this.points(); });
+    effect(() => { const el = this.sparklineRef().nativeElement; el.area = this.area(); });
+    effect(() => { const el = this.sparklineRef().nativeElement; el.showLastDot = this.showLastDot(); });
+    effect(() => { const el = this.sparklineRef().nativeElement; el.yMin = this.yMin(); });
+    effect(() => { const el = this.sparklineRef().nativeElement; el.yMax = this.yMax(); });
+    effect(() => { const el = this.sparklineRef().nativeElement; el.locale = this.locale(); });
     effect(() => {
-      const el = this.sparklineRef()?.nativeElement;
-      if (el) el.inputLabel = this.inputLabel() ?? null;
+      const el = this.sparklineRef().nativeElement;
+      el.inputLabel = this.inputLabel() ?? null;
     });
-    effect(() => { const el = this.sparklineRef()?.nativeElement; if (el) el.summaryFormatter = this.summaryFormatter(); });
+    effect(() => { const el = this.sparklineRef().nativeElement; el.summaryFormatter = this.summaryFormatter(); });
   }
 }

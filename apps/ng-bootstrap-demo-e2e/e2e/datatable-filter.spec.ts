@@ -230,19 +230,37 @@ test.describe('bs-datatable filter panel', () => {
   test('flips above the trigger when it opens into a constrained space', async ({ page }) => {
     await page.setViewportSize({ width: 1280, height: 420 });
 
-    // Trigger at mid-viewport: comfortably clickable, but with far less room
-    // below than the panel needs, so the OPENING placement must go upward.
-    // Jamming it against the bottom edge instead made it unclickable in
-    // Firefox — Playwright's own scroll-into-view and actionability check
-    // fought the manual scroll and timed out.
+    // Trigger in the LOWER part of the viewport: far less room below than the
+    // panel needs, and enough above it, so the OPENING placement must go up.
+    //
+    // Mid-viewport is not enough. The built-in panel is ~270px tall here (its
+    // list is capped at 60vh), so at a 420px viewport a trigger at the middle
+    // has ~205px above and ~165px below: NEITHER side fits, the controller
+    // takes its last candidate and clamps it to the top margin, and the panel
+    // covers the trigger instead of flipping (measured, both engines).
+    //
+    // Not jammed against the bottom edge either: that made it unclickable in
+    // Firefox, where Playwright's own scroll-into-view fought the manual scroll.
+    // ~70px clearance below keeps the trigger comfortably actionable.
+    //
+    // `behavior: 'instant'` because Bootstrap's reboot sets
+    // `scroll-behavior: smooth` on :root; a plain scrollBy animates, and the
+    // click then lands on a page that is still moving.
     await page.evaluate((tableSel) => {
       const btn = document.querySelector(
         `${tableSel} tr.filter-row th[data-column="name"] .filter-trigger`,
       ) as HTMLElement | null;
       if (!btn) return;
       const r = btn.getBoundingClientRect();
-      window.scrollBy(0, r.top - window.innerHeight / 2);
+      window.scrollBy({ top: r.top - (window.innerHeight - 100), behavior: 'instant' });
     }, FILTER_TABLE);
+
+    // The setup must have produced its precondition, or the flip assertion
+    // below would be testing a different layout than the one described.
+    const before = await trigger(page, 'name').boundingBox();
+    expect(before).not.toBeNull();
+    expect(before!.y).toBeGreaterThan(420 / 2);
+    expect(before!.y + before!.height).toBeLessThan(420);
 
     await openPanel(page, 'name');
 

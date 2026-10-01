@@ -3,6 +3,7 @@ import { ResizeAction } from '../interfaces/resize-action';
 import { RESIZABLE } from '../providers/resizable.provider';
 import { ResizablePositioning } from '../types/positioning';
 import { PresetPosition } from '../interfaces/preset-position';
+import { BsResizableLabels } from '../interfaces/resize-labels';
 import { BsResizeGlyphDirective } from '../resize-glyph/resize-glyph.directive';
 
 @Component({
@@ -36,6 +37,8 @@ export class BsResizableComponent {
   horizontal = input(true);
   vertical = input(true);
   corners = input(true);
+  /** Translations of the glyphs' accessible names; missing keys keep the English default. */
+  labels = input<Partial<BsResizableLabels>>({});
 
   showCorners = computed(() => this.horizontal() && this.vertical() && this.corners());
 

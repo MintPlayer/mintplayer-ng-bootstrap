@@ -119,7 +119,7 @@ export class MpTreeview extends LitElement {
   // Visible (flattened) node order for keyboard navigation
   private _visibleOrder: TreeNode[] = [];
   // Precomputed lookup tables — refreshed whenever `items` changes.
-  // Without these, `findNode` / `findParent` are O(N) per keystroke and the
+  // Without these, node/parent lookups are O(N) per keystroke and the
   // entire walk degenerates to O(N²) on deep trees (Gemini PR-341 review).
   private _byId: Map<string, TreeNode> = new Map();
   private _parentById: Map<string, TreeNode | null> = new Map();
@@ -395,14 +395,15 @@ export class MpTreeview extends LitElement {
     }
   }
 
-  /** O(1) lookup against the precomputed index. */
-  private findNode(_unused: ReadonlyArray<TreeNode>, id: string): TreeNode | null {
-    return this._byId.get(id) ?? null;
-  }
-
-  /** O(1) lookup against the precomputed parent map. */
-  private findParent(_unused: ReadonlyArray<TreeNode>, id: string): TreeNode | null {
-    return this._parentById.get(id) ?? null;
+  /**
+   * The host is generic and not itself focusable (light tier, no
+   * delegatesFocus), so a bare host focus() would be a silent no-op. Hand it
+   * to the roving tab stop instead — the row a Tab would have reached.
+   */
+  override focus(options?: FocusOptions): void {
+    const target = this.renderRoot?.querySelector<HTMLElement>('[role="treeitem"][tabindex="0"]');
+    if (target) target.focus(options);
+    else super.focus(options);
   }
 
   private onRowClick(node: TreeNode, ev: MouseEvent): void {
@@ -461,7 +462,7 @@ export class MpTreeview extends LitElement {
         if ((hasChildren || node.lazy) && expanded) {
           this.collapse(node);
         } else {
-          const parent = this.findParent(this._items, node.id);
+          const parent = this._parentById.get(node.id);
           if (parent) this.focusNode(parent.id);
         }
         return;
@@ -554,10 +555,13 @@ export class MpTreeview extends LitElement {
     const hasChildren = !!(node.children && node.children.length > 0);
     if (!hasChildren && !node.lazy) return;
     if (this._expandedIds.has(node.id)) return;
+    // Children already in flight: the load's own resolution expands the node.
+    // Falling through would mark it expanded early and fire a duplicate expand.
+    if (this._loadingIds.has(node.id)) return;
 
     // Lazy load: when expanding a node with no children yet and we have a
     // loader, fire the async load before flipping `expandedIds`.
-    if (!hasChildren && node.lazy && this._loadChildren && !this._loadingIds.has(node.id)) {
+    if (!hasChildren && node.lazy && this._loadChildren) {
       this._loadingIds.add(node.id);
       this._errorIds.delete(node.id);
       this.liveAnnouncer.announce(`Loading ${node.label}.`);

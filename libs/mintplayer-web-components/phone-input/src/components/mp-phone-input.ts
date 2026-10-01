@@ -25,6 +25,7 @@ import { formControlStyles } from '../../../_styles/form-control.styles';
 import { invalidFeedbackStyles } from '../../../_styles/invalid-feedback.styles';
 import { phoneInputStyles } from '../styles';
 import { digitsBefore, digitsOf, indexAfterDigits, nearestDigitIndex } from './caret';
+import { isStackedWidth } from './stack';
 
 export interface PhoneChangeEventDetail {
   /** E.164 (`'+32470123456'`), or null while the input is empty. */
@@ -42,9 +43,6 @@ export interface CountryChangeEventDetail {
 }
 
 let instanceCounter = 0;
-
-/** Matches the `@container (max-width: 22rem)` threshold in the stylesheet. */
-const STACK_THRESHOLD_PX = 352;
 
 const escapeHtml = (text: string) =>
   text.replace(/[&<>"']/g, (c) => `&#${c.charCodeAt(0)};`);
@@ -358,7 +356,7 @@ export class MpPhoneInput extends FormAssociatedMixin(LitElement) {
     if (typeof ResizeObserver !== 'undefined') {
       this.#stackObserver ??= new ResizeObserver((entries) => {
         const width = entries[entries.length - 1]?.contentRect.width ?? 0;
-        const stacked = width > 0 && width <= STACK_THRESHOLD_PX;
+        const stacked = isStackedWidth(width);
         const group = this.renderRoot?.querySelector('mp-input-group');
         group?.toggleAttribute('stacked', stacked);
       });

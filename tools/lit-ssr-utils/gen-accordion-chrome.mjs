@@ -9,84 +9,79 @@
 //
 //   nx run mintplayer-web-components:codegen-accordion-chrome   (preferred)
 //   node tools/lit-ssr-utils/gen-accordion-chrome.mjs           (needs a prior WC build)
-import '@lit-labs/ssr/lib/install-global-dom-shim.js';
 import { writeFile } from 'node:fs/promises';
-import { fileURLToPath, pathToFileURL } from 'node:url';
-import { resolve, dirname } from 'node:path';
 
+import { runCli } from '../scripts/lib/cli.mjs';
 import {
-  buildChromeModule,
   chromeArrayConstant,
-  extractDsdTemplate,
+  chromeOutPath,
+  distEntryUrl,
+  dsdChromeOf,
+  mapSequential,
   MAX_CHROME_COUNT,
+  REPO_ROOT,
+  runChromeGenerator,
 } from './lib/chrome-module.mjs';
+import { createLitRenderer } from './lib/lit-renderer.mjs';
 
-const here = dirname(fileURLToPath(import.meta.url));
-const repoRoot = resolve(here, '..', '..');
-
-const { render } = await import('@lit-labs/ssr');
-const { collectResult } = await import('@lit-labs/ssr/lib/render-result.js');
-const { html } = await import('lit');
-await import(
-  pathToFileURL(resolve(repoRoot, 'dist/libs/mintplayer-web-components/accordion/index.mjs')).href
-);
+const GENERATOR = 'gen-accordion-chrome';
 
 // Variant 0 doubles as the over-cap fallback: styled and visible (children
 // render through the default slot) but without the input machine — honest
 // Tier-2 — and is also the genuine chrome for a tab-less accordion used as a
 // plain styled container.
-const MAX_COUNT = MAX_CHROME_COUNT;
+const COUNTS = Array.from({ length: MAX_CHROME_COUNT + 1 }, (_, n) => n);
 
-async function renderVariant(multi, count) {
-  const full = await collectResult(
-    render(
+/** @param {import('./lib/chrome-module.mjs').GeneratorOptions} [options] */
+export async function main({
+  repoRoot = REPO_ROOT,
+  renderer,
+  write = writeFile,
+  log = console.log,
+  error = console.error,
+} = {}) {
+  const { html, render } =
+    renderer ?? (await createLitRenderer([distEntryUrl(repoRoot, 'accordion')]));
+  const chromeOf = dsdChromeOf({ render });
+  const variant = (multi) => (count) =>
+    chromeOf(
       multi
         ? html`<mp-accordion multi tab-count=${String(count)}></mp-accordion>`
         : html`<mp-accordion tab-count=${String(count)}></mp-accordion>`,
-    ),
-  );
-  const chrome = extractDsdTemplate(full);
-  if (!chrome) {
-    console.error(
-      `gen-accordion-chrome: no DSD <template> for multi=${multi} tab-count=${count}:\n`,
-      full,
+      `multi=${multi} tab-count=${count}`,
     );
-    process.exit(1);
-  }
-  return chrome;
+
+  return runChromeGenerator({
+    generator: GENERATOR,
+    source: 'the mp-accordion Lit element rendered via @lit-labs/ssr at each tab count.',
+    out: chromeOutPath(repoRoot, 'accordion', 'mp-accordion-chrome.generated.ts'),
+    write,
+    log,
+    error,
+    build: async () => {
+      const single = await mapSequential(COUNTS, variant(false));
+      const multi = await mapSequential(COUNTS, variant(true));
+      log(
+        `${GENERATOR}: ${single.length + multi.length} variants, ` +
+          `${single[0].length}–${multi[MAX_CHROME_COUNT].length} chars`,
+      );
+      return {
+        declarations: [
+          chromeArrayConstant(
+            'MP_ACCORDION_DSD_CHROME_BY_COUNT',
+            single,
+            'DSD chrome per tab count (index = count), single-open (radio) mode.',
+          ),
+          '',
+          chromeArrayConstant(
+            'MP_ACCORDION_MULTI_DSD_CHROME_BY_COUNT',
+            multi,
+            'DSD chrome per tab count (index = count), `multi` (checkbox) mode.',
+          ),
+        ],
+      };
+    },
+  });
 }
 
-const single = [];
-const multi = [];
-for (let n = 0; n <= MAX_COUNT; n++) {
-  single.push(await renderVariant(false, n));
-  multi.push(await renderVariant(true, n));
-}
-console.log(
-  `gen-accordion-chrome: ${single.length + multi.length} variants, ` +
-    `${single[0].length}–${multi[MAX_COUNT].length} chars`,
-);
-
-const out = resolve(
-  repoRoot,
-  'libs/mintplayer-web-components/accordion/ssr/mp-accordion-chrome.generated.ts',
-);
-const content = buildChromeModule({
-  generator: 'gen-accordion-chrome.mjs',
-  source: 'the mp-accordion Lit element rendered via @lit-labs/ssr at each tab count.',
-  declarations: [
-    chromeArrayConstant(
-      'MP_ACCORDION_DSD_CHROME_BY_COUNT',
-      single,
-      'DSD chrome per tab count (index = count), single-open (radio) mode.',
-    ),
-    '',
-    chromeArrayConstant(
-      'MP_ACCORDION_MULTI_DSD_CHROME_BY_COUNT',
-      multi,
-      'DSD chrome per tab count (index = count), `multi` (checkbox) mode.',
-    ),
-  ],
-});
-await writeFile(out, content, 'utf8');
-console.log(`gen-accordion-chrome: wrote ${out}`);
+runCli(import.meta.url, main);

@@ -9,12 +9,59 @@
 // Pass-through to Bootstrap's `forms/form-check` module so future
 // Bootstrap upgrades flow in automatically — no hand-curated subset
 // to maintain.
+//
+// Dark mode: Bootstrap's dark switch knob is an ancestor selector
+// ([data-bs-theme=dark] .form-switch ...) that can never match from inside a
+// shadow root, so it is switched off at the Sass level ($enable-dark-mode is
+// !default, so this must precede the variables import) and restated below as
+// a style query on the inherited --mp-color-mode token (theming/color-mode.css).
+
+$enable-dark-mode: false;
 
 @import "node_modules/bootstrap/scss/functions";
 @import "node_modules/bootstrap/scss/variables";
 @import "node_modules/bootstrap/scss/variables-dark";
 @import "node_modules/bootstrap/scss/mixins";
 @import "node_modules/bootstrap/scss/forms/form-check";
+
+// Bootstrap's own selector, unchanged: only the unchecked, unfocused knob is
+// dark-specific (the checked knob is white on the primary fill in both modes).
+@container style(--mp-color-mode: dark) {
+  .form-switch .form-check-input:not(:checked):not(:focus) {
+    --#{$prefix}form-switch-bg: #{escape-svg($form-switch-bg-image-dark)};
+  }
+}
+
+// Forced colours: the knob is a data-URI whose baked colour follows
+// --mp-color-mode, not the forced palette, so it can vanish against a forced
+// Canvas track. Paint the track and knob from system colours instead; the
+// knob is a gradient here, which only survives with forced-color-adjust: none.
+// The knob image covers half the track so background-position (left / right
+// centre, from Bootstrap) still carries the on/off state. The extra
+// .form-check compound outranks the style-query rule above.
+@media (forced-colors: active) {
+  .form-check.form-switch .form-check-input {
+    forced-color-adjust: none;
+    background-color: Canvas;
+    background-size: 50% 100%;
+    border-color: CanvasText;
+  }
+
+  .form-check.form-switch .form-check-input:not(:checked) {
+    --#{$prefix}form-switch-bg: radial-gradient(circle closest-side, CanvasText 75%, transparent 76%);
+  }
+
+  .form-check.form-switch .form-check-input:checked {
+    --#{$prefix}form-switch-bg: radial-gradient(circle closest-side, HighlightText 75%, transparent 76%);
+    background-color: Highlight;
+    border-color: Highlight;
+  }
+
+  .form-check.form-switch .form-check-input:focus-visible {
+    outline: 2px solid Highlight;
+    outline-offset: 2px;
+  }
+}
 
 // Bootstrap's `.form-check` ships a `margin-bottom: 0.125rem` that's
 // only useful when stacking multiple checkboxes/radios in a form

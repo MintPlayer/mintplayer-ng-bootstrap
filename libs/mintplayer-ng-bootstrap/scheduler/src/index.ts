@@ -1,7 +1,7 @@
 export * from './components';
 
 // Re-export core types for convenience
-export {
+export type {
   ViewType,
   SchedulerEvent,
   SchedulerEventPart,
@@ -10,6 +10,8 @@ export {
   SchedulerOptions,
   TimeSlot,
   PreviewEvent,
+} from '@mintplayer/web-components/scheduler-core';
+export {
   generateEventId,
   generateResourceId,
   generateGroupId,

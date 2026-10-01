@@ -61,7 +61,10 @@ export class BsOtpInputComponent {
 
   readonly complete = output<string>();
 
-  readonly elementRef = viewChild.required<ElementRef<MintOtpInputElement>>('el');
+  // Deliberately NOT viewChild.required: the host's focus() override below can run before
+  // this view exists (a directive on the host focusing it from its constructor), and a
+  // required query throws NG0951 there instead of reaching the deferred-focus fallback.
+  readonly elementRef = viewChild<ElementRef<MintOtpInputElement>>('el');
 
   private readonly hostRef = inject(ElementRef<HTMLElement>);
 

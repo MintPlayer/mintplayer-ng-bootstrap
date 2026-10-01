@@ -45,12 +45,11 @@ export class BsPaginationComponent {
   /** Page number size. */
   readonly size = input<Size>('medium');
 
-  protected readonly paginationRef = viewChild<ElementRef<MpPagination>>('pagination');
+  protected readonly paginationRef = viewChild.required<ElementRef<MpPagination>>('pagination');
 
   constructor() {
     effect(() => {
-      const el = this.paginationRef()?.nativeElement;
-      if (!el) return;
+      const el = this.paginationRef().nativeElement;
       el.pageNumbers = this.pageNumbers();
       el.selectedPageNumber = this.selectedPageNumber();
       el.numberOfBoxes = this.numberOfBoxes();

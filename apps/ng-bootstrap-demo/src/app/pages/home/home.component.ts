@@ -70,7 +70,7 @@ export class HomeComponent {
     },
     {
       title: 'Theming',
-      pitch: "Live light / dark / auto plus custom variants like sepia, all via a single signal-based service. SSR-safe.",
+      pitch: 'Light / dark / auto plus custom variants like sepia: a drop-in toggle, a signal-based service and a cookie the server renders, with no flash on reload.',
       routerLink: '/additional-samples/theming',
     },
   ];

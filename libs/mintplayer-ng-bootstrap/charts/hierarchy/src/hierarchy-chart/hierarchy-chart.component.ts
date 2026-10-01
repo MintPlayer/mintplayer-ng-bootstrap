@@ -76,69 +76,69 @@ export class BsHierarchyChartComponent {
   readonly nodeHover = output<HierarchyHoverEventDetail>();
   readonly nodeLoadError = output<HierarchyLoadErrorEventDetail>();
 
-  readonly chartRef = viewChild<ElementRef<MpHierarchyChart>>('chart');
+  readonly chartRef = viewChild.required<ElementRef<MpHierarchyChart>>('chart');
 
   constructor() {
     // One effect per input, deliberately: a `data` write must not re-fire on
     // every zoom tick and vice versa.
-    effect(() => { const el = this.chartRef()?.nativeElement; if (el) el.data = this.data(); });
-    effect(() => { const el = this.chartRef()?.nativeElement; if (el) el.layout = this.layout(); });
-    effect(() => { const el = this.chartRef()?.nativeElement; if (el) el.rootId = this.rootId(); });
+    effect(() => { const el = this.chartRef().nativeElement; el.data = this.data(); });
+    effect(() => { const el = this.chartRef().nativeElement; el.layout = this.layout(); });
+    effect(() => { const el = this.chartRef().nativeElement; el.rootId = this.rootId(); });
     effect(() => {
-      const el = this.chartRef()?.nativeElement;
+      const el = this.chartRef().nativeElement;
       const depth = this.maxDepth();
-      if (el && depth !== undefined) el.maxDepth = depth;
+      if (depth !== undefined) el.maxDepth = depth;
     });
-    effect(() => { const el = this.chartRef()?.nativeElement; if (el) el.minAngle = this.minAngle(); });
-    effect(() => { const el = this.chartRef()?.nativeElement; if (el) el.minSize = this.minSize(); });
-    effect(() => { const el = this.chartRef()?.nativeElement; if (el) el.showLabels = this.showLabels(); });
-    effect(() => { const el = this.chartRef()?.nativeElement; if (el) el.labelFontSize = this.labelFontSize(); });
-    effect(() => { const el = this.chartRef()?.nativeElement; if (el) el.backdrop = this.backdrop(); });
-    effect(() => { const el = this.chartRef()?.nativeElement; if (el) el.zoomGestures = this.zoomGestures(); });
+    effect(() => { const el = this.chartRef().nativeElement; el.minAngle = this.minAngle(); });
+    effect(() => { const el = this.chartRef().nativeElement; el.minSize = this.minSize(); });
+    effect(() => { const el = this.chartRef().nativeElement; el.showLabels = this.showLabels(); });
+    effect(() => { const el = this.chartRef().nativeElement; el.labelFontSize = this.labelFontSize(); });
+    effect(() => { const el = this.chartRef().nativeElement; el.backdrop = this.backdrop(); });
+    effect(() => { const el = this.chartRef().nativeElement; el.zoomGestures = this.zoomGestures(); });
     effect(() => {
-      const el = this.chartRef()?.nativeElement;
+      const el = this.chartRef().nativeElement;
       const label = this.zoomHintLabel();
-      if (el && label !== undefined) el.zoomHintLabel = label;
+      if (label !== undefined) el.zoomHintLabel = label;
     });
-    effect(() => { const el = this.chartRef()?.nativeElement; if (el) el.showBreadcrumb = this.showBreadcrumb(); });
+    effect(() => { const el = this.chartRef().nativeElement; el.showBreadcrumb = this.showBreadcrumb(); });
     effect(() => {
-      const el = this.chartRef()?.nativeElement;
+      const el = this.chartRef().nativeElement;
       const label = this.breadcrumbLabel();
-      if (el && label !== undefined) el.breadcrumbLabel = label;
+      if (label !== undefined) el.breadcrumbLabel = label;
     });
-    effect(() => { const el = this.chartRef()?.nativeElement; if (el) el.colorMin = this.colorMin(); });
-    effect(() => { const el = this.chartRef()?.nativeElement; if (el) el.colorMax = this.colorMax(); });
-    effect(() => { const el = this.chartRef()?.nativeElement; if (el) el.colorStart = this.colorStart(); });
-    effect(() => { const el = this.chartRef()?.nativeElement; if (el) el.colorEnd = this.colorEnd(); });
-    effect(() => { const el = this.chartRef()?.nativeElement; if (el) el.transitionDuration = this.transitionDuration(); });
-    effect(() => { const el = this.chartRef()?.nativeElement; if (el) el.locale = this.locale(); });
+    effect(() => { const el = this.chartRef().nativeElement; el.colorMin = this.colorMin(); });
+    effect(() => { const el = this.chartRef().nativeElement; el.colorMax = this.colorMax(); });
+    effect(() => { const el = this.chartRef().nativeElement; el.colorStart = this.colorStart(); });
+    effect(() => { const el = this.chartRef().nativeElement; el.colorEnd = this.colorEnd(); });
+    effect(() => { const el = this.chartRef().nativeElement; el.transitionDuration = this.transitionDuration(); });
+    effect(() => { const el = this.chartRef().nativeElement; el.locale = this.locale(); });
     effect(() => {
-      const el = this.chartRef()?.nativeElement;
-      if (el) el.inputLabel = this.inputLabel() ?? null;
+      const el = this.chartRef().nativeElement;
+      el.inputLabel = this.inputLabel() ?? null;
     });
     effect(() => {
-      const el = this.chartRef()?.nativeElement;
+      const el = this.chartRef().nativeElement;
       const label = this.zoomOutLabel();
-      if (el && label !== undefined) el.zoomOutLabel = label;
+      if (label !== undefined) el.zoomOutLabel = label;
     });
     effect(() => {
-      const el = this.chartRef()?.nativeElement;
+      const el = this.chartRef().nativeElement;
       const label = this.metricUnitLabel();
-      if (el && label !== undefined) el.metricUnitLabel = label;
+      if (label !== undefined) el.metricUnitLabel = label;
     });
     effect(() => {
-      const el = this.chartRef()?.nativeElement;
+      const el = this.chartRef().nativeElement;
       const label = this.valueUnitLabel();
-      if (el && label !== undefined) el.valueUnitLabel = label;
+      if (label !== undefined) el.valueUnitLabel = label;
     });
     effect(() => {
-      const el = this.chartRef()?.nativeElement;
+      const el = this.chartRef().nativeElement;
       const label = this.loadingLabel();
-      if (el && label !== undefined) el.loadingLabel = label;
+      if (label !== undefined) el.loadingLabel = label;
     });
-    effect(() => { const el = this.chartRef()?.nativeElement; if (el) el.tooltipFormatter = this.tooltipFormatter(); });
-    effect(() => { const el = this.chartRef()?.nativeElement; if (el) el.labelFormatter = this.labelFormatter(); });
-    effect(() => { const el = this.chartRef()?.nativeElement; if (el) el.loadChildren = this.loadChildren(); });
+    effect(() => { const el = this.chartRef().nativeElement; el.tooltipFormatter = this.tooltipFormatter(); });
+    effect(() => { const el = this.chartRef().nativeElement; el.labelFormatter = this.labelFormatter(); });
+    effect(() => { const el = this.chartRef().nativeElement; el.loadChildren = this.loadChildren(); });
   }
 
   protected onZoom(event: Event): void {

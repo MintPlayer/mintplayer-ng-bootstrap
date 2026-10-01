@@ -1,9 +1,9 @@
 import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { discoverEntries, generateSubpathExports } from './multi-entry.mts';
+import { discoverEntries, emitStaticFiles, generateSubpathExports } from './multi-entry.mts';
 
 let root: string;
 
@@ -184,5 +184,48 @@ describe('generateSubpathExports', () => {
     rmSync(join(outDir, 'package.json'));
     const plugin = generateSubpathExports(outDir, root, { index: join(root, 'src/index.ts') });
     expect(() => (plugin.closeBundle as () => void).call(plugin)).not.toThrow();
+  });
+});
+
+describe('discoverEntries — loose files in a namespace dir', () => {
+  it('ignores a file beside the nested entry dirs', () => {
+    touch('charts', 'README.md');
+    touch('charts', 'core', 'src', 'index.ts');
+    expect(Object.keys(discoverEntries(root))).toEqual(['charts/core/index']);
+  });
+});
+
+describe('emitStaticFiles', () => {
+  type Ctx = { emitFile: ReturnType<typeof vi.fn>; error: (message: string) => never };
+  const context = (): Ctx => ({
+    emitFile: vi.fn(),
+    error: (message: string) => {
+      throw new Error(message);
+    },
+  });
+  const run = (plugin: object, ctx: Ctx) =>
+    (plugin as { generateBundle: (this: Ctx) => void }).generateBundle.call(ctx);
+
+  it('emits each file as an asset at its own relative path, with its bytes', () => {
+    touch('custom-elements.json');
+    writeFileSync(join(root, 'custom-elements.json'), '{"schemaVersion":"1"}');
+    touch('theming', 'color-mode.css');
+    const ctx = context();
+    run(emitStaticFiles(root, ['custom-elements.json', 'theming/color-mode.css']), ctx);
+
+    expect(ctx.emitFile.mock.calls.map(([asset]) => asset.fileName)).toEqual([
+      'custom-elements.json',
+      'theming/color-mode.css',
+    ]);
+    expect(String(ctx.emitFile.mock.calls[0][0].source)).toBe('{"schemaVersion":"1"}');
+    expect(ctx.emitFile.mock.calls[0][0].type).toBe('asset');
+  });
+
+  it('fails the build on a missing file rather than shipping a hole', () => {
+    const ctx = context();
+    expect(() => run(emitStaticFiles(root, ['custom-elements.json']), ctx)).toThrow(
+      'emitStaticFiles: custom-elements.json is missing (did codegen run?)',
+    );
+    expect(ctx.emitFile).not.toHaveBeenCalled();
   });
 });

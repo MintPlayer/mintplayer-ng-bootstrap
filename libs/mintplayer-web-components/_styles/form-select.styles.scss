@@ -5,12 +5,38 @@
 //
 // Pass-through to Bootstrap's `forms/form-select` module so future
 // Bootstrap upgrades flow in automatically.
+//
+// Dark mode: Bootstrap's own dark caret is an ancestor selector
+// ([data-bs-theme=dark] .form-select) that can never match from inside a
+// shadow root, so it is switched off at the Sass level ($enable-dark-mode is
+// !default, so this must precede the variables import) and restated below as
+// a style query on the inherited --mp-color-mode token (theming/color-mode.css).
+
+$enable-dark-mode: false;
 
 @import "node_modules/bootstrap/scss/functions";
 @import "node_modules/bootstrap/scss/variables";
 @import "node_modules/bootstrap/scss/variables-dark";
 @import "node_modules/bootstrap/scss/mixins";
 @import "node_modules/bootstrap/scss/forms/form-select";
+
+// Style-container lookup crosses the shadow boundary, so the page's
+// --mp-color-mode (or the nearest themed ancestor's) decides the caret.
+@container style(--mp-color-mode: dark) {
+  .form-select {
+    --#{$prefix}form-select-bg-img: #{escape-svg($form-select-indicator-dark)};
+  }
+}
+
+// Forced colours: the data-URI caret keeps its baked colour, which follows
+// --mp-color-mode rather than the forced palette and washes out when the two
+// disagree. Hand the arrow back to the system instead.
+@media (forced-colors: active) {
+  .form-select {
+    appearance: auto;
+    background-image: none;
+  }
+}
 
 // Host should behave like an inline-block control (mirrors the
 // d-inline-block hint the Angular bs-select wrapper applied at the

@@ -23,7 +23,7 @@ describe('QrCodeComponent ARIA', () => {
     fixture.detectChanges();
   });
 
-  const canvas = () => fixture.nativeElement.querySelector<HTMLCanvasElement>('canvas');
+  const canvas = () => (fixture.nativeElement as HTMLElement).querySelector<HTMLCanvasElement>('canvas');
 
   it('canvas has role="img"', () => {
     expect(canvas()!.getAttribute('role')).toBe('img');

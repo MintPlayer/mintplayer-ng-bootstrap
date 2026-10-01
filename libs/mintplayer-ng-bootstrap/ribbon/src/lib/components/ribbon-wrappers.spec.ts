@@ -16,6 +16,10 @@ import { BsRibbonMenuSeparatorComponent } from './ribbon-menu-separator.componen
 import { BsRibbonSplitButtonComponent } from './ribbon-split-button.component';
 import { BsRibbonTemplateItemComponent } from './ribbon-template-item.component';
 import { BsRibbonToggleButtonComponent } from './ribbon-toggle-button.component';
+import { BsRibbonComponent } from './ribbon.component';
+import { BsRibbonTabComponent } from './ribbon-tab.component';
+import { BsRibbonGroupComponent } from './ribbon-group.component';
+import { BsRibbonContextualTabSetComponent } from './ribbon-contextual-tab-set.component';
 
 /**
  * The eighteen Angular ribbon wrappers, none of which had a spec.
@@ -405,5 +409,104 @@ describe('ribbon wrappers — ControlValueAccessor', () => {
     const control = new FormControl<string | null>(null);
     const fixture = await renderControl(BsRibbonComboBoxComponent, 'bs-ribbon-combo-box', control);
     expect(fixture.nativeElement.querySelector('mp-ribbon-combobox')!.getAttribute('value')).toBe('');
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Structural wrappers: ribbon, tab, group, contextual tab set
+// ---------------------------------------------------------------------------
+
+describe('ribbon wrappers — structure', () => {
+  it('bs-ribbon forwards its configuration and projects its tabs', async () => {
+    const { fixture, host } = await render(
+      [BsRibbonComponent, BsRibbonTabComponent],
+      `<bs-ribbon [layout]="state.layout()" [(minimized)]="state.minimized" [version]="'office-2013'"
+         [colorScheme]="'dark'" [touchMode]="'on'" [keyTips]="'off'" [appAccent]="state.accent()">
+         <bs-ribbon-tab tabId="home" label="Home"></bs-ribbon-tab>
+       </bs-ribbon>`,
+      () => ({ layout: signal<'classic' | 'simplified'>('classic'), minimized: signal(false), accent: signal<string | null>('#123456') }),
+    );
+    const el = inner(fixture, 'mp-ribbon');
+    expect(el.getAttribute('layout')).toBe('classic');
+    expect(el.hasAttribute('minimized')).toBe(false);
+    expect(el.getAttribute('version')).toBe('office-2013');
+    expect(el.getAttribute('color-scheme')).toBe('dark');
+    expect(el.getAttribute('touch-mode')).toBe('on');
+    expect(el.getAttribute('key-tips')).toBe('off');
+    expect(el.style.getPropertyValue('--bs-ribbon-app-accent')).toBe('#123456');
+    expect(el.querySelector('mp-ribbon-tab')?.getAttribute('tab-id')).toBe('home');
+
+    host.state.layout.set('simplified');
+    host.state.minimized.set(true);
+    fixture.detectChanges();
+    expect(el.getAttribute('layout')).toBe('simplified');
+    expect(el.getAttribute('minimized')).toBe('');
+  });
+
+  it('bs-ribbon tracks the active tab and the minimized state from the element', async () => {
+    const { fixture, host } = await render(
+      [BsRibbonComponent],
+      `<bs-ribbon [(minimized)]="state.minimized" (tabChange)="record($event)"></bs-ribbon>`,
+      () => ({ minimized: signal(false) }),
+    );
+    const el = inner(fixture, 'mp-ribbon');
+    el.dispatchEvent(new CustomEvent('tab-change', { detail: { activeTabId: 'insert', previousTabId: 'home' } }));
+    el.dispatchEvent(new CustomEvent('minimize-toggle', { detail: { minimized: true } }));
+    fixture.detectChanges();
+    expect(host.events).toEqual([{ activeTabId: 'insert', previousTabId: 'home' }]);
+    expect(el.getAttribute('active-tab-id')).toBe('insert');
+    expect(host.state.minimized()).toBe(true);
+  });
+
+  it('bs-ribbon-tab forwards its id and label as attributes and its layout plan as properties', async () => {
+    const reduceOrder = [{ groupId: 'clipboard', size: 'medium' }];
+    const { fixture } = await render(
+      [BsRibbonTabComponent],
+      `<bs-ribbon-tab tabId="home" label="Home" [idealSizes]="state.ideal" [reduceOrder]="state.reduce"></bs-ribbon-tab>`,
+      () => ({ ideal: { clipboard: 'large' }, reduce: reduceOrder }),
+    );
+    const el = inner(fixture, 'mp-ribbon-tab') as HTMLElement & { idealSizes: unknown; reduceOrder: unknown };
+    expect(el.getAttribute('tab-id')).toBe('home');
+    expect(el.getAttribute('label')).toBe('Home');
+    expect(el.idealSizes).toEqual({ clipboard: 'large' });
+    expect(el.reduceOrder).toBe(reduceOrder);
+  });
+
+  it('bs-ribbon-group forwards its inputs and opts out of auto-scale only when asked', async () => {
+    const { fixture, host } = await render(
+      [BsRibbonGroupComponent],
+      `<bs-ribbon-group groupId="font" label="Font" icon="type" dialogLauncher="Font settings" [priority]="3"
+         [autoScale]="state.autoScale()" (dialogLauncherClick)="record($event)"><span class="child">B</span></bs-ribbon-group>`,
+      () => ({ autoScale: signal(true) }),
+    );
+    const el = inner(fixture, 'mp-ribbon-group');
+    expect(el.getAttribute('group-id')).toBe('font');
+    expect(el.getAttribute('label')).toBe('Font');
+    expect(el.getAttribute('icon')).toBe('type');
+    expect(el.getAttribute('dialog-launcher')).toBe('Font settings');
+    expect(el.getAttribute('priority')).toBe('3');
+    expect(el.hasAttribute('auto-scale')).toBe(false);
+    expect(el.querySelector('.child')).not.toBeNull();
+    host.state.autoScale.set(false);
+    fixture.detectChanges();
+    expect(el.getAttribute('auto-scale')).toBe('false');
+
+    el.dispatchEvent(new CustomEvent('dialog-launcher-click', { detail: { groupId: 'font' } }));
+    expect(host.events).toEqual([{ groupId: 'font' }]);
+  });
+
+  it('bs-ribbon-contextual-tab-set forwards label and colour, and hides as a present-or-absent attribute', async () => {
+    const { fixture, host } = await render(
+      [BsRibbonContextualTabSetComponent],
+      `<bs-ribbon-contextual-tab-set label="Table tools" [hidden]="state.hidden()"></bs-ribbon-contextual-tab-set>`,
+      () => ({ hidden: signal(false) }),
+    );
+    const el = inner(fixture, 'mp-ribbon-contextual-tab-set');
+    expect(el.getAttribute('label')).toBe('Table tools');
+    expect(el.getAttribute('color')).toBe('#F0AF84');
+    expect(el.hasAttribute('hidden')).toBe(false);
+    host.state.hidden.set(true);
+    fixture.detectChanges();
+    expect(el.getAttribute('hidden')).toBe('');
   });
 });

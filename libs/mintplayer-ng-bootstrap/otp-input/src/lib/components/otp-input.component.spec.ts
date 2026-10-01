@@ -1,6 +1,6 @@
-import { Component, signal } from '@angular/core';
+import { Component, Directive, ElementRef, inject, signal } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { FormControl, FormsModule, ReactiveFormsModule, Validators } from '@angular/forms';
 import { BsOtpInputComponent } from './otp-input.component';
 
@@ -272,5 +272,30 @@ describe('BsOtpInputComponent', () => {
       fixture.detectChanges();
       expect(fixture.componentInstance.received).toEqual(['654321']);
     });
+  });
+});
+
+/** Focuses its host from its constructor: before the component's view (and the WC) exists. */
+@Directive({ selector: '[focusAtConstruction]' })
+class FocusAtConstructionDirective {
+  constructor() {
+    (inject(ElementRef).nativeElement as HTMLElement).focus();
+  }
+}
+
+@Component({
+  imports: [BsOtpInputComponent, FocusAtConstructionDirective],
+  template: `<bs-otp-input focusAtConstruction></bs-otp-input>`,
+})
+class EarlyFocusHostComponent {}
+
+describe('BsOtpInputComponent focus before its view exists', () => {
+  it('a focus() that lands before the view is created is deferred to the WC instead of throwing', async () => {
+    let fixture!: ComponentFixture<EarlyFocusHostComponent>;
+    expect(() => { fixture = TestBed.createComponent(EarlyFocusHostComponent); }).not.toThrow();
+    const wc = fixture.nativeElement.querySelector('mp-otp-input') as HTMLElement;
+    const focus = vi.spyOn(wc, 'focus');
+    await Promise.resolve();
+    expect(focus).toHaveBeenCalled();
   });
 });

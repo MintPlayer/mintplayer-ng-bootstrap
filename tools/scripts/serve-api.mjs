@@ -46,7 +46,7 @@
 
 import { spawn, spawnSync } from 'node:child_process';
 import { platform } from 'node:os';
-import { pathToFileURL } from 'node:url';
+import { runCli } from './lib/cli.mjs';
 import { createRequire } from 'node:module';
 import { listProcesses, killProcesses } from './lib/dev-processes.mjs';
 
@@ -60,6 +60,60 @@ const dotnetArgs = isCI
   ? ['run', '--project', 'apps/api/Api.csproj', '--urls', API_URL]
   : ['watch', '--project', 'apps/api/Api.csproj', 'run', '--urls', API_URL];
 
+/**
+ * Pure: pick this repo's API processes out of a process list, deepest child
+ * first. Split out from the platform I/O so the matching rules can be reasoned
+ * about — and checked — without spawning anything.
+ */
+export function selectLeftovers(processes, cwd) {
+  const slash = (value) => (value ?? '').replace(/\\/g, '/').toLowerCase();
+  const projectRef = 'apps/api/api.csproj';
+  const binRef = `${slash(cwd)}/apps/api/bin/`;
+
+  const matches = processes.filter((proc) => {
+    if (proc.pid === process.pid) return false; // never ourselves
+    const args = slash(proc.args);
+    return args.includes(projectRef) || args.includes(binRef);
+  });
+
+  // Depth = how many of the OTHER matches are ancestors of this one, so the
+  // apphost sorts after its runner regardless of the list order we were given.
+  const byPid = new Map(processes.map((proc) => [proc.pid, proc]));
+  const matchedPids = new Set(matches.map((proc) => proc.pid));
+  const depthOf = (proc) => {
+    let depth = 0;
+    let current = byPid.get(proc.ppid);
+    const seen = new Set([proc.pid]);
+    while (current && !seen.has(current.pid)) {
+      seen.add(current.pid);
+      if (matchedPids.has(current.pid)) depth++;
+      current = byPid.get(current.ppid);
+    }
+    return depth;
+  };
+
+  return matches
+    .map((proc) => ({ ...proc, depth: depthOf(proc) }))
+    .sort((a, b) => b.depth - a.depth);
+}
+
+/**
+ * Every side effect runs only when this file was RUN, not imported. The matching
+ * rules above are exported for `dev-processes.spec.ts`, and an import that kills
+ * the API you are currently running is a trap.
+ */
+runCli(import.meta.url, main);
+
+// The rest of this file is the only `v8 ignore` block in tools/ (PRD test
+// coverage P2-D8). It is koffi FFI calls into kernel32 (a Windows Job Object),
+// a real `dotnet` spawn, and process-wide signal and exit handlers that call
+// process.exit. None of it has a seam a unit test could drive without either
+// mocking the entire FFI surface (asserting the mock, not the job) or
+// installing handlers that kill the test runner. The decisions it makes are
+// factored out and specced: selectLeftovers above, and listProcesses /
+// killProcesses in lib/dev-processes.mjs. What is left is wiring, verified by
+// running `nx serve api` and interrupting it.
+/* v8 ignore start */
 // Best-effort Windows Job Object. Returns { assign(pid), terminate() } or null.
 // Windows-only: the FFI module is never required on Linux/macOS.
 function setupWindowsJob() {
@@ -183,53 +237,6 @@ function killLeftoverApi() {
   killProcesses(leftovers);
 }
 
-/**
- * Pure: pick this repo's API processes out of a process list, deepest child
- * first. Split out from the platform I/O so the matching rules can be reasoned
- * about — and checked — without spawning anything.
- */
-export function selectLeftovers(processes, cwd) {
-  const slash = (value) => (value ?? '').replace(/\\/g, '/').toLowerCase();
-  const projectRef = 'apps/api/api.csproj';
-  const binRef = `${slash(cwd)}/apps/api/bin/`;
-
-  const matches = processes.filter((proc) => {
-    if (proc.pid === process.pid) return false; // never ourselves
-    const args = slash(proc.args);
-    return args.includes(projectRef) || args.includes(binRef);
-  });
-
-  // Depth = how many of the OTHER matches are ancestors of this one, so the
-  // apphost sorts after its runner regardless of the list order we were given.
-  const byPid = new Map(processes.map((proc) => [proc.pid, proc]));
-  const matchedPids = new Set(matches.map((proc) => proc.pid));
-  const depthOf = (proc) => {
-    let depth = 0;
-    let current = byPid.get(proc.ppid);
-    const seen = new Set([proc.pid]);
-    while (current && !seen.has(current.pid)) {
-      seen.add(current.pid);
-      if (matchedPids.has(current.pid)) depth++;
-      current = byPid.get(current.ppid);
-    }
-    return depth;
-  };
-
-  return matches
-    .map((proc) => ({ ...proc, depth: depthOf(proc) }))
-    .sort((a, b) => b.depth - a.depth);
-}
-
-/**
- * True only when this file was RUN, not imported. The matching rules above are
- * exported for `dev-processes.spec.ts`, and an import that kills the API you
- * are currently running is a trap — so every side effect lives behind this guard.
- */
-const isEntryPoint =
-  !!process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href;
-
-if (isEntryPoint) main();
-
 function main() {
 killLeftoverApi();
 
@@ -303,3 +310,4 @@ child.on('exit', (code, signal) => {
   process.exit(signal ? 1 : code ?? 0);
 });
 }
+/* v8 ignore stop */

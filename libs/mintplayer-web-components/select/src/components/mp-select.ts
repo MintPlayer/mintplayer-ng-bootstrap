@@ -7,6 +7,7 @@ import { unsafeHTML } from 'lit/directives/unsafe-html.js';
 // Lives outside the per-entry tree at libs/.../_styles/ — internal helper, not
 // a public sub-entry of @mintplayer/web-components.
 import { formSelectStyles } from '../../../_styles/form-select.styles';
+import { warnIfColorModeTokenMissing } from '../../../_styles/color-mode-warning';
 import { invalidFeedbackStyles } from '../../../_styles/invalid-feedback.styles';
 import { selectStyles } from '../styles';
 import {
@@ -284,20 +285,27 @@ export class MpSelect extends FormAssociatedMixin(LitElement) {
   ): void {
     super.attributeChangedCallback(name, oldValue, newValue);
     switch (name) {
-      case 'size':
-        if (newValue && VALID_SIZES.has(newValue as MpSelectSize)) {
-          this._size = newValue as MpSelectSize;
+      case 'size': {
+        // Removing the attribute restores the default rather than keeping the
+        // last value (a framework binding clears an attribute by removing it).
+        const size = (newValue ?? 'md') as MpSelectSize;
+        if (VALID_SIZES.has(size)) {
+          this._size = size;
           this.requestUpdate();
         }
         break;
+      }
       case 'multiple':
         this._multiple = newValue !== null;
         this.requestUpdate();
         break;
-      case 'number-visible':
-        this._numberVisible = newValue == null ? null : Number(newValue);
+      case 'number-visible': {
+        // Unparseable reads as unset, not NaN.
+        const n = newValue == null ? NaN : Number(newValue);
+        this._numberVisible = Number.isFinite(n) ? n : null;
         this.requestUpdate();
         break;
+      }
       case 'disabled':
         this._disabled = newValue !== null;
         this.requestUpdate();
@@ -328,6 +336,12 @@ export class MpSelect extends FormAssociatedMixin(LitElement) {
         this.hostAria.syncReferences();
         break;
     }
+  }
+
+  override connectedCallback(): void {
+    super.connectedCallback();
+    // The dark caret switches on --mp-color-mode; say so once if it is missing.
+    warnIfColorModeTokenMissing();
   }
 
   override disconnectedCallback(): void {

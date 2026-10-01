@@ -1,14 +1,22 @@
-import { computed, Directive, effect, inject, input, signal } from '@angular/core';
+import { computed, Directive, inject, input, signal } from '@angular/core';
+import { Directionality } from '@angular/cdk/bidi';
 import { Position } from '@mintplayer/ng-bootstrap';
 import type { BsResizableComponent } from '../resizable/resizable.component';
-import { ResizeAction } from '../interfaces/resize-action';
-import { PointerData } from '../interfaces/pointer-data';
+import { PhysicalSide, ResizeAction } from '../interfaces/resize-action';
+import { BsResizableLabels, DEFAULT_RESIZABLE_LABELS } from '../interfaces/resize-labels';
 import { RESIZABLE } from '../providers/resizable.provider';
+import { dragResize, keyboardResizePoint, ResizeUpdate, toPhysicalSides } from './resize-math';
 
+/**
+ * One drag handle of `bs-resizable`. Its logical positions (`start`/`end`) are resolved to
+ * physical sides once, from the document direction, and that one value drives the glyph's
+ * placement class, its drag and keyboard math and its accessible name, so the three can never
+ * disagree.
+ */
 @Directive({
   selector: '[bsResizeGlyph]',
   host: {
-    '[class]': 'positions()',
+    '[class]': 'sideClasses()',
     '[class.glyph]': 'true',
     '[class.active]': 'activeClass()',
     '[attr.role]': '"separator"',
@@ -19,7 +27,7 @@ import { RESIZABLE } from '../providers/resizable.provider';
     '(touchstart)': 'onTouchStart($event)',
     '(document:mousemove)': 'onMouseMove($event)',
     '(touchmove)': 'onTouchMove($event)',
-    '(document:mouseup)': 'onMouseUp($event)',
+    '(document:mouseup)': 'onPointerUp()',
     '(touchend)': 'onTouchEnd($event)',
     '(keydown)': 'onKeydown($event)',
   },
@@ -28,45 +36,37 @@ export class BsResizeGlyphDirective {
 
   // Can't use typed DI because of the `import type`
   private readonly resizable: BsResizableComponent = inject(RESIZABLE);
-
-  constructor() {
-    effect(() => {
-      const value = this.bsResizeGlyph();
-      this.positions.set(value.join(' '));
-    });
-  }
-
-  positions = signal('');
-  activeClass = signal(false);
+  private readonly dir = inject(Directionality);
 
   readonly bsResizeGlyph = input<Position[]>([]);
 
+  readonly activeClass = signal(false);
+
+  readonly sides = computed(() => toPhysicalSides(this.bsResizeGlyph(), this.dir.valueSignal() === 'rtl'));
+
+  readonly sideClasses = computed(() => this.sides().join(' '));
+
   readonly ariaOrientation = computed(() => {
-    const p = this.bsResizeGlyph();
-    if (p.length !== 1) return null;
-    if (p[0] === 'top' || p[0] === 'bottom') return 'horizontal';
-    if (p[0] === 'start' || p[0] === 'end') return 'vertical';
-    return null;
+    const s = this.sides();
+    if (s.length !== 1) return null;
+    return (s[0] === 'top' || s[0] === 'bottom') ? 'horizontal' : 'vertical';
   });
 
   readonly ariaLabel = computed(() => {
-    const p = [...this.bsResizeGlyph()].sort().join(' ');
-    switch (p) {
-      case 'top': return 'Resize from top edge';
-      case 'bottom': return 'Resize from bottom edge';
-      case 'start': return 'Resize from left edge';
-      case 'end': return 'Resize from right edge';
-      case 'start top': return 'Resize from top-left corner';
-      case 'end top': return 'Resize from top-right corner';
-      case 'bottom start': return 'Resize from bottom-left corner';
-      case 'bottom end': return 'Resize from bottom-right corner';
-      default: return 'Resize';
+    const labels: BsResizableLabels = { ...DEFAULT_RESIZABLE_LABELS, ...this.resizable.labels() };
+    const s = this.sides();
+    const v = s.find((side) => side === 'top' || side === 'bottom');
+    const h = s.find((side) => side === 'left' || side === 'right');
+    if (v && h) {
+      const key = `${v}${h === 'left' ? 'Left' : 'Right'}` as keyof BsResizableLabels;
+      return labels[key];
     }
+    return (v ?? h) ? labels[(v ?? h) as PhysicalSide] : null;
   });
 
   onMouseDown(ev: MouseEvent) {
     ev.preventDefault();
-    this.onPointerDown()
+    this.onPointerDown();
   }
 
   onTouchStart(ev: TouchEvent) {
@@ -76,19 +76,17 @@ export class BsResizeGlyphDirective {
   }
 
   onMouseMove(ev: MouseEvent) {
-    this.onPointerMove({ clientX: ev.clientX, clientY: ev.clientY, preventDefault: () => ev.preventDefault() });
+    // Registered on the document by every glyph: only the one that started the drag applies it.
+    if (!this.activeClass() || !this.resizable.resizeAction) return;
+    ev.preventDefault();
+    this.apply(dragResize(this.resizable.resizeAction, ev.clientX, ev.clientY));
   }
 
   onTouchMove(ev: TouchEvent) {
-    if (ev.touches.length === 1) {
-      ev.preventDefault();
-      ev.stopPropagation();
-      this.onPointerMove({ clientX: ev.touches[0].clientX, clientY: ev.touches[0].clientY, preventDefault: () => ev.preventDefault() });
-    }
-  }
-
-  onMouseUp(ev: Event) {
-    this.onPointerUp();
+    if (ev.touches.length !== 1 || !this.activeClass() || !this.resizable.resizeAction) return;
+    ev.preventDefault();
+    ev.stopPropagation();
+    this.apply(dragResize(this.resizable.resizeAction, ev.touches[0].clientX, ev.touches[0].clientY));
   }
 
   onTouchEnd(ev: TouchEvent) {
@@ -98,186 +96,55 @@ export class BsResizeGlyphDirective {
   }
 
   onPointerDown() {
-    let action: ResizeAction = {
-      positioning: this.resizable.positioning()
-    };
-    const rect = this.resizable.element.nativeElement.getBoundingClientRect();
-    const styles = window.getComputedStyle(this.resizable.element.nativeElement);
-
-    const marginLeft = (this.resizable.positioning() === 'absolute') ? undefined : parseFloat(styles.marginLeft.slice(0, -2));
-    const marginRight = (this.resizable.positioning() === 'absolute') ? undefined : parseFloat(styles.marginRight.slice(0, -2));
-    const marginTop = (this.resizable.positioning() === 'absolute') ? undefined : parseFloat(styles.marginTop.slice(0, -2));
-    const marginBottom = (this.resizable.positioning() === 'absolute') ? undefined : parseFloat(styles.marginBottom.slice(0, -2));
-
-
-    if (this.positions()?.includes('start')) {
-      action = {
-        ...action,
-        end: {
-          edge: rect.right,
-          size: rect.width,
-          margin: marginRight,
-          dragMargin: marginLeft
-        },
-      };
-    }
-    if (this.positions()?.includes('end')) {
-      action = {
-        ...action,
-        start: {
-          edge: rect.left,
-          size: rect.width,
-          margin: marginLeft,
-          dragMargin: marginRight
-        },
-      };
-    }
-    if (this.positions()?.includes('top')) {
-      action = {
-        ...action,
-        bottom: {
-          edge: rect.bottom,
-          size: rect.height,
-          margin: marginBottom,
-          dragMargin: marginTop
-        },
-      };
-    }
-    if (this.positions()?.includes('bottom')) {
-      action = {
-        ...action,
-        top: {
-          edge: rect.top,
-          size: rect.height,
-          margin: marginTop,
-          dragMargin: marginBottom
-        },
-      };
-    }
-
-    this.resizable.resizeAction = action;
+    this.resizable.resizeAction = this.captureAction();
     this.activeClass.set(true);
   }
 
-  private isBusy = false;
-  onPointerMove(ev: PointerData) {
-    if (this.resizable.resizeAction && !this.isBusy) {
-      ev.preventDefault();
-      this.isBusy = true;
-      const action = this.resizable.resizeAction;
-      // Note: the live bounding rect must NOT be used in the size/margin math.
-      // Reading it per-frame creates a feedback loop when content inside the
-      // host changes layout during the drag (e.g. a child component that
-      // shows/hides items in response to width). Use the captured `action`
-      // values from pointer-down — they're stable for the duration of the drag.
-
-      if (action.start && this.positions()?.includes('end')) {
-        // Right glyph — fixed left edge
-        const initialLeft = action.start.edge;
-        const initialRight = action.start.edge + action.start.size;
-        const x = (ev.clientX < initialLeft + 10) ? initialLeft + 10 : ev.clientX;
-        switch (this.resizable.positioning()) {
-          case 'inline': {
-            const initialMargin = action.start.dragMargin ?? 0;
-            this.resizable.marginRight.set(initialMargin + (initialRight - x));
-          } break;
-          case 'absolute': {
-            this.resizable.width.set(x - initialLeft);
-          } break;
-        }
-      } else if (action.end && this.positions()?.includes('start')) {
-        // Left glyph — fixed right edge
-        const initialRight = action.end.edge;
-        const initialLeft = action.end.edge - action.end.size;
-        const x = (ev.clientX > initialRight - 10) ? initialRight - 10 : ev.clientX;
-        switch (this.resizable.positioning()) {
-          case 'inline': {
-            const initialMargin = action.end.dragMargin ?? 0;
-            this.resizable.marginLeft.set(initialMargin + (x - initialLeft));
-          } break;
-          case 'absolute': {
-            this.resizable.left.set(x);
-            this.resizable.width.set(initialRight - x);
-          } break;
-        }
-      }
-
-      if (action.top && this.positions()?.includes('bottom')) {
-        // Bottom glyph — fixed top edge. action.top.edge = captured rect.top
-        const initialTop = action.top.edge;
-        const initialBottom = action.top.edge + action.top.size;
-        const y = (ev.clientY < initialTop + 10) ? initialTop + 10 : ev.clientY;
-        switch (this.resizable.positioning()) {
-          case 'inline': {
-            const initialMargin = action.top.dragMargin ?? 0;
-            this.resizable.height.set(y - initialTop);
-            this.resizable.marginBottom.set(initialMargin + (initialBottom - y));
-          } break;
-          case 'absolute': {
-            this.resizable.height.set(y - initialTop);
-          } break;
-        }
-      } else if (action.bottom && this.positions()?.includes('top')) {
-        // Top glyph — fixed bottom edge. action.bottom.edge = captured rect.bottom
-        const initialBottom = action.bottom.edge;
-        const initialTop = action.bottom.edge - action.bottom.size;
-        const y = (ev.clientY > initialBottom - 10) ? initialBottom - 10 : ev.clientY;
-        switch (this.resizable.positioning()) {
-          case 'inline': {
-            const initialMargin = action.bottom.dragMargin ?? 0;
-            this.resizable.height.set(initialBottom - y);
-            this.resizable.marginTop.set(initialMargin + (y - initialTop));
-          } break;
-          case 'absolute': {
-            this.resizable.top.set(y);
-            this.resizable.height.set(initialBottom - y);
-          } break;
-        }
-      }
-      this.isBusy = false;
-    }
-  }
-
   onPointerUp() {
+    if (!this.activeClass()) return;
     this.resizable.resizeAction = undefined;
     this.activeClass.set(false);
   }
 
-  /** Keyboard alternative to drag. Arrow keys resize by 10px from the corresponding edge. */
+  /**
+   * Keyboard alternative to drag: an arrow key moves the glyph's own edge by 10px (1px with
+   * Shift). It is computed as a one-step drag, so it moves the same edge and writes the same
+   * signals as dragging would, in both positioning modes.
+   */
   onKeydown(event: KeyboardEvent) {
-    const positions = this.bsResizeGlyph();
-    const step = event.shiftKey ? 1 : 10;
-    let consumed = false;
+    const action = this.captureAction();
+    const point = keyboardResizePoint(action, event.key, event.shiftKey ? 1 : 10);
+    if (!point) return;
+    event.preventDefault();
+    this.apply(dragResize(action, point.x, point.y));
+  }
 
-    const adjustWidth = (dx: number) => {
-      const el = this.resizable.element.nativeElement;
-      const rect = el.getBoundingClientRect();
-      this.resizable.width.set(Math.max(20, rect.width + dx));
+  private captureAction(): ResizeAction {
+    const el: HTMLElement = this.resizable.element.nativeElement;
+    const rect = el.getBoundingClientRect();
+    const styles = window.getComputedStyle(el);
+    // An unset margin computes to '' in some engines: treat it as 0, never NaN.
+    const px = (value: string) => parseFloat(value) || 0;
+    return {
+      positioning: this.resizable.positioning(),
+      sides: this.sides(),
+      rect: { left: rect.left, top: rect.top, width: rect.width, height: rect.height },
+      offset: { left: el.offsetLeft, top: el.offsetTop },
+      margin: {
+        left: px(styles.marginLeft),
+        right: px(styles.marginRight),
+        top: px(styles.marginTop),
+        bottom: px(styles.marginBottom),
+      },
     };
-    const adjustHeight = (dy: number) => {
-      const el = this.resizable.element.nativeElement;
-      const rect = el.getBoundingClientRect();
-      this.resizable.height.set(Math.max(20, rect.height + dy));
-    };
+  }
 
-    switch (event.key) {
-      case 'ArrowRight':
-        if (positions.includes('end')) { adjustWidth(step); consumed = true; }
-        else if (positions.includes('start')) { adjustWidth(-step); consumed = true; }
-        break;
-      case 'ArrowLeft':
-        if (positions.includes('end')) { adjustWidth(-step); consumed = true; }
-        else if (positions.includes('start')) { adjustWidth(step); consumed = true; }
-        break;
-      case 'ArrowDown':
-        if (positions.includes('bottom')) { adjustHeight(step); consumed = true; }
-        else if (positions.includes('top')) { adjustHeight(-step); consumed = true; }
-        break;
-      case 'ArrowUp':
-        if (positions.includes('bottom')) { adjustHeight(-step); consumed = true; }
-        else if (positions.includes('top')) { adjustHeight(step); consumed = true; }
-        break;
-    }
-    if (consumed) event.preventDefault();
+  private apply(update: ResizeUpdate) {
+    const r = this.resizable;
+    const targets = {
+      width: r.width, height: r.height, left: r.left, top: r.top,
+      marginLeft: r.marginLeft, marginRight: r.marginRight, marginTop: r.marginTop, marginBottom: r.marginBottom,
+    };
+    (Object.keys(update) as (keyof ResizeUpdate)[]).map((key) => targets[key].set(update[key]));
   }
 }

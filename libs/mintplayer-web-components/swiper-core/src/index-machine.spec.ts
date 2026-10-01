@@ -222,4 +222,23 @@ describe('IndexMachine', () => {
     expect(m.getIndex()).toBe(0);
     expect(callbacks.onAnimationEnd).toHaveBeenCalledTimes(0);
   });
+
+  it('a single-slide deck ignores next/previous even with wrap on (no slide-out into an empty wrap cell)', () => {
+    const m = make({ count: 1 });
+    m.next();
+    m.previous();
+    expect(host.transitions).toHaveLength(0);
+    expect(callbacks.onAnimationStart).not.toHaveBeenCalled();
+    expect(m.getIndex()).toBe(0);
+  });
+
+  it('a single-slide drag still snaps back to the slide', () => {
+    const m = make({ count: 1 });
+    m.beginDrag();
+    m.dragBy(-80, 400);
+    m.endDrag(-80, 400);
+    expect(host.last.to).toBe(0);
+    host.complete();
+    expect(m.getIndex()).toBe(0);
+  });
 });

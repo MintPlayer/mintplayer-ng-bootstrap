@@ -74,13 +74,29 @@ export class BsDropdownMenuDirective extends ClickOutsideDirective {
           view.rootNodes[0].style.width = width + 'px';
         }
       } else {
-        if (this.overlayRef) {
-          this.overlayRef.detach();
-          this.overlayRef.dispose();
-          this.overlayRef = null;
-        }
+        this.disposeOverlay();
       }
     });
+
+    // Destroyed while open (an @if around the dropdown, a route change): the overlay and the
+    // stack entry are not in this view, so nothing else would ever remove them.
+    this.destroy.onDestroy(() => {
+      this.disposeOverlay();
+      if (this.stackToken !== null) {
+        this.overlayStack.release(this.stackToken);
+        this.stackToken = null;
+      }
+    });
+  }
+
+  /** The open menu's overlay pane, where its items are; null while closed. */
+  get overlayElement(): HTMLElement | null {
+    return this.overlayRef?.overlayElement ?? null;
+  }
+
+  private disposeOverlay() {
+    this.overlayRef?.dispose();
+    this.overlayRef = null;
   }
 
   clickedOutside(event: Event) {

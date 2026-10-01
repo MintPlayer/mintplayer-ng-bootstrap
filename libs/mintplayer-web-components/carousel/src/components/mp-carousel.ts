@@ -141,6 +141,10 @@ export class MpCarousel extends LitElement {
       this.#observe();
       this.#syncSlides();
       this.#syncAutoplay();
+      // disconnectedCallback disposed the inert set; an unchanged deck
+      // triggers no update, so re-declare it here or every hidden slide
+      // stays focusable after a move in the DOM.
+      this.#declareInert();
     }
   }
 
@@ -418,6 +422,9 @@ export class MpCarousel extends LitElement {
       slides.forEach((s, i) => {
         if (s.getAttribute('slot') !== `s${i}`) s.setAttribute('slot', `s${i}`);
       });
+      // The non-slide child that came or went may be the play-pause slot
+      // content, whose presence render() reads.
+      this.requestUpdate();
       return;
     }
     // A membership change mid-transition: settle the transition first so the

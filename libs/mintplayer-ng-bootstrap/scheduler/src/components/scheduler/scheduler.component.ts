@@ -3,16 +3,15 @@ import {
   ElementRef,
   viewChild,
   AfterViewInit,
-  OnDestroy,
   ChangeDetectionStrategy,
   booleanAttribute,
   CUSTOM_ELEMENTS_SCHEMA,
   input,
   output,
+  OutputEmitterRef,
   model,
   computed,
   effect,
-  signal,
   Injector,
   inject,
   runInInjectionContext,
@@ -159,7 +158,7 @@ export interface SchedulerResourceDeleteEvent {
   changeDetection: ChangeDetectionStrategy.OnPush,
   schemas: [CUSTOM_ELEMENTS_SCHEMA],
 })
-export class BsSchedulerComponent implements AfterViewInit, OnDestroy {
+export class BsSchedulerComponent implements AfterViewInit {
   private readonly injector = inject(Injector);
 
   private readonly schedulerRef = viewChild.required<ElementRef<MpSchedulerElement>>('scheduler');
@@ -193,7 +192,7 @@ export class BsSchedulerComponent implements AfterViewInit, OnDestroy {
   // because the web component changes both from within — prev/next/today
   // navigation and the view switcher — and delivers the new values via its
   // `view-change` event; a one-way input would go stale after any internal
-  // navigation (and with it currentWeekStart/visibleEvents below).
+  // navigation.
   readonly view = model<ViewType>('week');
   readonly date = model<Date>(new Date());
   readonly selectedEvent = model<SchedulerEvent | null>(null);
@@ -215,168 +214,69 @@ export class BsSchedulerComponent implements AfterViewInit, OnDestroy {
   readonly resourceUpdate = output<SchedulerResourceUpdateEvent>();
   readonly resourceDelete = output<SchedulerResourceDeleteEvent>();
 
-  // Computed signals
-  readonly currentWeekStart = computed(() => {
-    const d = new Date(this.date());
-    const day = d.getDay();
-    const diff = (day === 0 ? 6 : day - 1); // Adjust for Monday start
-    d.setDate(d.getDate() - diff);
-    d.setHours(0, 0, 0, 0);
-    return d;
-  });
-
-  readonly currentWeekEnd = computed(() => {
-    const start = this.currentWeekStart();
-    const end = new Date(start);
-    end.setDate(end.getDate() + 6);
-    end.setHours(23, 59, 59, 999);
-    return end;
-  });
-
-  readonly visibleEvents = computed(() => {
-    const start = this.currentWeekStart();
-    const end = this.currentWeekEnd();
-    return this.events().filter(
-      (e) => e.start < end && e.end > start
-    );
-  });
-
-  // Internal state
-  private readonly initialized = signal(false);
-  private eventListeners: Array<{ type: string; listener: EventListener }> = [];
-
   ngAfterViewInit(): void {
+    const el = this.schedulerRef().nativeElement;
+    // One effect per property, so a change to one input re-assigns only that
+    // property on the element.
     runInInjectionContext(this.injector, () => {
-      // Set up effects to sync inputs to web component
-      effect(() => {
-        const el = this.schedulerRef()?.nativeElement;
-        if (el) {
-          el.view = this.view();
-        }
-      });
-
-      effect(() => {
-        const el = this.schedulerRef()?.nativeElement;
-        if (el) {
-          el.date = this.date();
-        }
-      });
-
-      effect(() => {
-        const el = this.schedulerRef()?.nativeElement;
-        if (el) {
-          el.events = this.events();
-        }
-      });
-
-      effect(() => {
-        const el = this.schedulerRef()?.nativeElement;
-        if (el) {
-          el.resources = this.resources();
-        }
-      });
-
-      effect(() => {
-        const el = this.schedulerRef()?.nativeElement;
-        if (el) {
-          el.options = this.options();
-        }
-      });
-
-      // Sync selectedEvent to web component
-      effect(() => {
-        const el = this.schedulerRef()?.nativeElement;
-        if (el) {
-          el.selectedEvent = this.selectedEvent();
-        }
-      });
-    });
-
-    // Set up event listeners
-    this.setupEventListeners();
-    this.initialized.set(true);
-  }
-
-  ngOnDestroy(): void {
-    this.removeEventListeners();
-  }
-
-  private setupEventListeners(): void {
-    const el = this.schedulerRef()?.nativeElement;
-    if (!el) return;
-
-    const addListener = (type: string, handler: (e: CustomEvent) => void) => {
-      const listener = (e: Event) => handler(e as CustomEvent);
-      el.addEventListener(type, listener);
-      this.eventListeners.push({ type, listener });
-    };
-
-    addListener('event-selected', (e) => {
-      this.eventSelected.emit(e.detail);
-      this.selectedEvent.set(e.detail.event);
-    });
-
-    addListener('event-dblclick', (e) => {
-      this.eventDblClick.emit(e.detail);
-    });
-
-    addListener('event-create', (e) => {
-      this.eventCreate.emit(e.detail);
-    });
-
-    addListener('event-update', (e) => {
-      this.eventUpdate.emit(e.detail);
-    });
-
-    addListener('event-delete', (e) => {
-      this.eventDelete.emit(e.detail);
-    });
-
-    addListener('date-click', (e) => {
-      this.dateClick.emit(e.detail);
-    });
-
-    addListener('resource-create', (e) => {
-      this.resourceCreate.emit(e.detail);
-    });
-
-    addListener('group-create', (e) => {
-      this.groupCreate.emit(e.detail);
-    });
-
-    addListener('resource-update', (e) => {
-      this.resourceUpdate.emit(e.detail);
-    });
-
-    addListener('resource-delete', (e) => {
-      this.resourceDelete.emit(e.detail);
-    });
-
-    addListener('view-change', (e) => {
-      // The WC fires view-change for BOTH view switches and internal date
-      // navigation (prev/next/today/gotoDate) — write both back so the
-      // consumer's two-way bindings track reality. The model .set() calls
-      // emit the implicit viewChange/dateChange outputs.
-      this.view.set(e.detail.view);
-      this.date.set(e.detail.date);
-    });
-
-    addListener('selection-change', (e) => {
-      this.selectionChange.emit(e.detail);
-      this.selectedEvent.set(e.detail.selectedEvent);
-      this.selectedRange.set(e.detail.range);
+      effect(() => { this.writeNavigation(() => (el.view = this.view())); });
+      effect(() => { this.writeNavigation(() => (el.date = this.date())); });
+      effect(() => { el.events = this.events(); });
+      effect(() => { el.resources = this.resources(); });
+      effect(() => { el.options = this.options(); });
+      effect(() => { el.selectedEvent = this.selectedEvent(); });
     });
   }
 
-  private removeEventListeners(): void {
-    const el = this.schedulerRef()?.nativeElement;
-    if (!el) return;
+  /**
+   * True while the wrapper itself assigns `view` / `date`. The element answers
+   * such a write with a synchronous `view-change` carrying its state at that
+   * moment, i.e. the OTHER value still old; adopting it would overwrite a date
+   * the consumer set in the same tick. Only the element's own navigation is
+   * written back.
+   */
+  private writingNavigation = false;
 
-    for (const { type, listener } of this.eventListeners) {
-      el.removeEventListener(type, listener);
+  private writeNavigation(write: () => void): void {
+    this.writingNavigation = true;
+    try {
+      write();
+    } finally {
+      this.writingNavigation = false;
     }
-    this.eventListeners = [];
   }
+
+  // ----- WC event bridges (bound in the template) --------------------------
+
+  protected onEventSelected(e: Event): void {
+    const detail = (e as CustomEvent<SchedulerEventSelectedEvent>).detail;
+    this.eventSelected.emit(detail);
+    this.selectedEvent.set(detail.event);
+  }
+
+  protected onViewChange(e: Event): void {
+    if (this.writingNavigation) return;
+    // The WC fires view-change for BOTH view switches and internal date
+    // navigation (prev/next/today/gotoDate) — write both back so the
+    // consumer's two-way bindings track reality. The model .set() calls
+    // emit the implicit viewChange/dateChange outputs.
+    const detail = (e as CustomEvent<{ view: ViewType; date: Date }>).detail;
+    this.view.set(detail.view);
+    this.date.set(detail.date);
+  }
+
+  protected onSelectionChange(e: Event): void {
+    const detail = (e as CustomEvent<SchedulerSelectionChangeEvent>).detail;
+    this.selectionChange.emit(detail);
+    this.selectedEvent.set(detail.selectedEvent);
+    this.selectedRange.set(detail.range);
+  }
+
+  /** Re-emits a WC event's detail on the matching output, unchanged. */
+  protected forward<T>(target: OutputEmitterRef<T>, e: Event): void {
+    target.emit((e as CustomEvent<T>).detail);
+  }
+
 
   // Public API methods (delegate to web component)
 
@@ -384,35 +284,35 @@ export class BsSchedulerComponent implements AfterViewInit, OnDestroy {
    * Navigate to next period
    */
   next(): void {
-    this.schedulerRef()?.nativeElement?.next();
+    this.schedulerRef().nativeElement.next();
   }
 
   /**
    * Navigate to previous period
    */
   prev(): void {
-    this.schedulerRef()?.nativeElement?.prev();
+    this.schedulerRef().nativeElement.prev();
   }
 
   /**
    * Navigate to today
    */
   today(): void {
-    this.schedulerRef()?.nativeElement?.today();
+    this.schedulerRef().nativeElement.today();
   }
 
   /**
    * Navigate to a specific date
    */
   gotoDate(date: Date): void {
-    this.schedulerRef()?.nativeElement?.gotoDate(date);
+    this.schedulerRef().nativeElement.gotoDate(date);
   }
 
   /**
    * Change the current view
    */
   changeView(view: ViewType): void {
-    this.schedulerRef()?.nativeElement?.changeView(view);
+    this.schedulerRef().nativeElement.changeView(view);
   }
 
   /**
@@ -421,41 +321,41 @@ export class BsSchedulerComponent implements AfterViewInit, OnDestroy {
    * cleared — the scheduler no longer auto-clears (PRD: scheduler-controlled-selection).
    */
   clearSelection(): void {
-    this.schedulerRef()?.nativeElement?.clearSelection();
+    this.schedulerRef().nativeElement.clearSelection();
   }
 
   /**
    * Add an event
    */
   addEvent(event: SchedulerEvent): void {
-    this.schedulerRef()?.nativeElement?.addEvent(event);
+    this.schedulerRef().nativeElement.addEvent(event);
   }
 
   /**
    * Update an event
    */
   updateEvent(event: SchedulerEvent): void {
-    this.schedulerRef()?.nativeElement?.updateEvent(event);
+    this.schedulerRef().nativeElement.updateEvent(event);
   }
 
   /**
    * Remove an event
    */
   removeEvent(eventId: string): void {
-    this.schedulerRef()?.nativeElement?.removeEvent(eventId);
+    this.schedulerRef().nativeElement.removeEvent(eventId);
   }
 
   /**
    * Get an event by ID
    */
   getEventById(eventId: string): SchedulerEvent | null {
-    return this.schedulerRef()?.nativeElement?.getEventById(eventId) ?? null;
+    return this.schedulerRef().nativeElement.getEventById(eventId);
   }
 
   /**
    * Refetch/refresh events
    */
   refetchEvents(): void {
-    this.schedulerRef()?.nativeElement?.refetchEvents();
+    this.schedulerRef().nativeElement.refetchEvents();
   }
 }

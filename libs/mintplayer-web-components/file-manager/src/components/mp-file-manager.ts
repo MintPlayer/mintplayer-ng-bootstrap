@@ -124,6 +124,9 @@ export type OperationEventDetail =
 
 let instanceCounter = 0;
 
+/** Elements that stand for one node: icon cards, tree rows, and list-view datatable rows. */
+const NODE_ELEMENT_SELECTOR = '[data-node-id], tr[data-row-key]';
+
 const FOLDER_SVG =
   '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true">' +
   '<path d="M.54 3.87.5 3a2 2 0 0 1 2-2h3.672a2 2 0 0 1 1.414.586l.828.828A2 2 0 0 0 9.828 3h3.982a2 2 0 0 1 1.992 2.181L15.546 8H2.454l-.913-3.13a.5.5 0 0 1 .013-.087.5.5 0 0 1-.014-.913zM13.81 4H2.19l-.572 6 1.193 4 11.078-2.5L15.81 5.66A1 1 0 0 0 14.81 4z"/></svg>';
@@ -201,7 +204,6 @@ export class MpFileManager extends LitElement {
   private _contextMenu: { x: number; y: number; targetId: string } | null = null;
   private _isTouchMode = false;
   private _touchHoldTimer: ReturnType<typeof setTimeout> | null = null;
-  private _touchHoldTarget: string | null = null;
   private _pendingOps: Map<string, OperationKind> = new Map();
   private _uploads: UploadEntry[] = [];
   private _dialogResolver: DialogResolver | undefined;
@@ -277,7 +279,8 @@ export class MpFileManager extends LitElement {
     return this._searchPlaceholder;
   }
   set searchPlaceholder(value: string) {
-    this._searchPlaceholder = value || 'Search…';
+    // Empty means "use the localized default" — render falls back to messages.
+    this._searchPlaceholder = value || '';
     this.requestUpdate();
   }
 
@@ -422,21 +425,27 @@ export class MpFileManager extends LitElement {
         this._allowUpload = newValue !== null;
         this.requestUpdate();
         break;
-      case 'view-mode':
-        if (newValue === 'list' || newValue === 'icons') {
-          this._viewMode = newValue;
+      case 'view-mode': {
+        // Removing an enum attribute restores its default rather than keeping
+        // the last value (a framework binding clears an attribute by removing it).
+        const viewMode = newValue ?? 'list';
+        if (viewMode === 'list' || viewMode === 'icons') {
+          this._viewMode = viewMode;
           this.requestUpdate();
         }
         break;
-      case 'selection-mode':
-        if (newValue === 'none' || newValue === 'single' || newValue === 'multiple') {
-          this._selectionMode = newValue;
-          if (newValue === 'none') this._selection.clear();
+      }
+      case 'selection-mode': {
+        const selectionMode = newValue ?? 'multiple';
+        if (selectionMode === 'none' || selectionMode === 'single' || selectionMode === 'multiple') {
+          this._selectionMode = selectionMode;
+          if (selectionMode === 'none') this._selection.clear();
           this.requestUpdate();
         }
         break;
+      }
       case 'search-placeholder':
-        this._searchPlaceholder = newValue ?? 'Search…';
+        this._searchPlaceholder = newValue ?? '';
         this.requestUpdate();
         break;
     }
@@ -473,9 +482,9 @@ export class MpFileManager extends LitElement {
       }
     }
     this.addEventListener('touchstart', this.onTouchStart, { passive: false });
-    this.addEventListener('touchend', this.onTouchEnd);
-    this.addEventListener('touchcancel', this.onTouchEnd);
-    this.addEventListener('touchmove', this.onTouchMove);
+    this.addEventListener('touchend', this.cancelTouchHold);
+    this.addEventListener('touchcancel', this.cancelTouchHold);
+    this.addEventListener('touchmove', this.cancelTouchHold);
   }
 
   override disconnectedCallback(): void {
@@ -483,13 +492,10 @@ export class MpFileManager extends LitElement {
     this._releaseLightStyles?.();
     this._releaseLightStyles = undefined;
     this.removeEventListener('touchstart', this.onTouchStart);
-    this.removeEventListener('touchend', this.onTouchEnd);
-    this.removeEventListener('touchcancel', this.onTouchEnd);
-    this.removeEventListener('touchmove', this.onTouchMove);
-    if (this._touchHoldTimer) {
-      clearTimeout(this._touchHoldTimer);
-      this._touchHoldTimer = null;
-    }
+    this.removeEventListener('touchend', this.cancelTouchHold);
+    this.removeEventListener('touchcancel', this.cancelTouchHold);
+    this.removeEventListener('touchmove', this.cancelTouchHold);
+    this.cancelTouchHold();
   }
 
   // ─── Touch support ──────────────────────────────────────────────────────
@@ -498,19 +504,22 @@ export class MpFileManager extends LitElement {
    * the context menu on the touched row. Movement aborts the long-press.
    */
   private onTouchStart = (ev: TouchEvent): void => {
+    // Any new touch disarms a pending hold first: a second finger turns the
+    // press into a pinch, and a fresh press replaces the earlier one.
+    this.cancelTouchHold();
     if (ev.touches.length !== 1) return;
     const touch = ev.touches[0];
+    // Icon cards and tree rows carry `data-node-id`; list-view rows are
+    // datatable rows keyed by `data-row-key` (the rowKey is the node id).
     const target = (ev.composedPath().find(
-      (el) => el instanceof HTMLElement && el.hasAttribute('data-node-id'),
-    ) as HTMLElement | undefined)
-      ?? (this.shadowRoot?.elementFromPoint(touch.clientX, touch.clientY) as HTMLElement | null)?.closest('[data-node-id]') as HTMLElement | null;
-    const nodeId = target?.getAttribute('data-node-id');
+      (el): el is HTMLElement => el instanceof HTMLElement && el.matches(NODE_ELEMENT_SELECTOR),
+    ))
+      ?? this.elementAt(touch.clientX, touch.clientY)?.closest<HTMLElement>(NODE_ELEMENT_SELECTOR);
+    const nodeId = target?.getAttribute('data-node-id') ?? target?.getAttribute('data-row-key');
     if (!nodeId) return;
-    this._touchHoldTarget = nodeId;
     const x = touch.clientX;
     const y = touch.clientY;
     this._touchHoldTimer = setTimeout(() => {
-      if (this._touchHoldTarget !== nodeId) return;
       this._touchHoldTimer = null;
       if (this._selectionMode !== 'none' && !this._selection.has(nodeId)) {
         this._selection = new Set([nodeId]);
@@ -520,20 +529,17 @@ export class MpFileManager extends LitElement {
     }, 600);
   };
 
-  private onTouchMove = (): void => {
-    if (this._touchHoldTimer) {
-      clearTimeout(this._touchHoldTimer);
-      this._touchHoldTimer = null;
-    }
-    this._touchHoldTarget = null;
-  };
+  /** The one hit-test seam: which element of this component is under a viewport point. */
+  private elementAt(x: number, y: number): Element | null {
+    return this.shadowRoot?.elementFromPoint?.(x, y) ?? null;
+  }
 
-  private onTouchEnd = (): void => {
+  /** Movement (a scroll), lifting (a tap) and touchcancel all abandon the hold. */
+  private cancelTouchHold = (): void => {
     if (this._touchHoldTimer) {
       clearTimeout(this._touchHoldTimer);
       this._touchHoldTimer = null;
     }
-    this._touchHoldTarget = null;
   };
 
   /**
@@ -546,12 +552,14 @@ export class MpFileManager extends LitElement {
     const input = document.createElement('input');
     input.type = 'file';
     input.multiple = true;
-    input.style.display = 'none';
+    input.hidden = true;
     input.addEventListener('change', () => {
       const files = Array.from(input.files ?? []);
-      if (files.length > 0) this.handleFiles(files);
+      if (files.length > 0) void this.handleFiles(files);
       input.remove();
     });
+    // A dismissed OS dialog fires `cancel`, never `change`.
+    input.addEventListener('cancel', () => input.remove());
     document.body.appendChild(input);
     input.click();
   };
@@ -1099,8 +1107,7 @@ export class MpFileManager extends LitElement {
     this.requestUpdate();
   };
 
-  private onRowClick = (ev: Event): void => {
-    const detail = (ev as CustomEvent<RowEventDetail<FileSystemNode>>).detail;
+  private onRowClick = (): void => {
     // Selection is already handled by the datatable; we only re-emit at the file-manager level.
     this.emitSelectionChange();
   };
@@ -1593,12 +1600,9 @@ export class MpFileManager extends LitElement {
 
   private formatDate(row: FileSystemNode): string {
     if (!row.modifiedAt) return '—';
-    try {
-      const d = new Date(row.modifiedAt);
-      return d.toLocaleDateString();
-    } catch {
-      return row.modifiedAt;
-    }
+    // An unparseable value does not throw; it yields an Invalid Date.
+    const d = new Date(row.modifiedAt);
+    return Number.isNaN(d.getTime()) ? row.modifiedAt : d.toLocaleDateString();
   }
 }
 

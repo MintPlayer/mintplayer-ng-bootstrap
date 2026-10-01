@@ -108,6 +108,40 @@ describe('mp-query-condition with editorRegistry (M4 custom editors)', () => {
     expect(cond?.querySelector('.custom-editor')).toBeNull();
   });
 
+  it('never brands a registered (consumer) editor with the condition\'s style scope', async () => {
+    const totalEditor = trackingFactory('total-custom');
+    const builder = document.createElement('mp-query-builder') as MpQueryBuilderElement;
+    builder.schema = SCHEMA;
+    builder.rootEntity = 'orders';
+    builder.editorRegistry = { total: totalEditor.factory };
+    builder.query = { kind: 'group', id: 'g1', logic: 'and', children: [condition('total', 100)] };
+    document.body.appendChild(builder);
+    await settleDescendants(builder);
+    await settleDescendants(builder);
+    const custom = deepFind(builder, '.custom-editor') as HTMLElement;
+    expect(custom).toBeTruthy();
+    expect(custom.hasAttribute('data-mps')).toBe(false);
+  });
+
+  it('disposes a registered editor when the operator becomes parameterless, and rebuilds it on the way back', async () => {
+    const totalEditor = trackingFactory('total-custom');
+    const builder = document.createElement('mp-query-builder') as MpQueryBuilderElement;
+    builder.schema = SCHEMA;
+    builder.rootEntity = 'orders';
+    builder.editorRegistry = { total: totalEditor.factory };
+    builder.query = { kind: 'group', id: 'g1', logic: 'and', children: [condition('total', 100, 'gt')] };
+    document.body.appendChild(builder);
+    await settleDescendants(builder);
+    await settleDescendants(builder);
+    builder.query = { kind: 'group', id: 'g1', logic: 'and', children: [condition('total', null, 'is-null')] };
+    await settleDescendants(builder);
+    expect(totalEditor.disposed).toBe(1);
+    builder.query = { kind: 'group', id: 'g1', logic: 'and', children: [condition('total', 5, 'gt')] };
+    await settleDescendants(builder);
+    expect(totalEditor.built).toBe(2);
+    expect(deepFind(builder, '.custom-editor')).toBeTruthy();
+  });
+
   it('uses the registered factory when provided for the field', async () => {
     const totalEditor = trackingFactory('total-custom');
     const registry: EditorRegistry = { total: totalEditor.factory };

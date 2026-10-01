@@ -4,6 +4,7 @@ import { OverlayController } from '@mintplayer/web-components/overlay';
 import { HostAriaController } from '@mintplayer/web-components/a11y';
 import {
   MpTimeListElement,
+  hour12Converter,
   minutesOfDay,
   type TimeStep,
   type Hour12Mode,
@@ -39,7 +40,7 @@ export class MpTimepickerElement extends LitElement {
     step: { attribute: 'step', type: Number, reflect: true },
     min: { attribute: false },
     max: { attribute: false },
-    hour12: { attribute: 'hour12' },
+    hour12: { attribute: 'hour12', converter: hour12Converter },
     locale: { attribute: 'locale', type: String, reflect: true },
     disabled: { attribute: 'disabled', type: Boolean, reflect: true },
     placeholder: { attribute: 'placeholder', type: String, reflect: true },
@@ -163,6 +164,9 @@ export class MpTimepickerElement extends LitElement {
   private onSelectedTimeChange = (event: Event): void => {
     const detail = (event as CustomEvent<Date>).detail;
     if (!(detail instanceof Date)) return;
+    // The list's own event is composed, so without this the host's listeners
+    // would see it AND the re-emitted copy below.
+    event.stopPropagation();
     this.selectedTime = detail;
     this.requestUpdate();
     this.dispatchEvent(
@@ -203,6 +207,9 @@ export class MpTimepickerElement extends LitElement {
         ></button>
       </div>
       <div class="popup" id="${this.popupId}">
+        <!-- The one listener for both the default list (fallback content is a
+             child of the slot) and a slotted consumer list. The inner event is
+             stopped here and re-emitted once from the host. -->
         <slot name="time-list"
           @selected-time-change="${this.onSelectedTimeChange}"
         >
@@ -213,7 +220,6 @@ export class MpTimepickerElement extends LitElement {
             .maxMinutes="${minutesOfDay(this.max)}"
             .hour12="${this.hour12}"
             .locale="${this.locale}"
-            @selected-time-change="${this.onSelectedTimeChange}"
           ></mp-time-list>
         </slot>
       </div>

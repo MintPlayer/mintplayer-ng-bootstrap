@@ -1,48 +1,59 @@
-import { DOCUMENT, isPlatformBrowser } from '@angular/common';
+import { DOCUMENT, isPlatformBrowser, isPlatformServer } from '@angular/common';
 import {
-  computed,
   DestroyRef,
-  effect,
   inject,
   Injectable,
   PLATFORM_ID,
+  REQUEST,
   signal,
   type Signal,
 } from '@angular/core';
 import {
-  BS_THEME_STORAGE_KEY,
+  getBsThemeStore,
+  readDefaultModeMeta,
+  resolveServerTheme,
   type BsEffectiveThemeMode,
   type BsThemeMode,
-} from './bs-theme-mode';
+} from '@mintplayer/web-components/theming';
 
 /**
- * Owns the user's Bootstrap color-mode choice and keeps `<html data-bs-theme>`
- * in sync with it.
+ * Angular's view of the document's Bootstrap colour mode (PRD dark-mode D4).
  *
  * - `mode` is the *authored* value (`'auto' | 'light' | 'dark' | custom`).
- * - `effectiveMode` is the *resolved* value — `'auto'` resolves via
- *   `matchMedia('(prefers-color-scheme: dark)')`, explicit values pass through.
- * - `setMode()` is the only writer. Both signals are read-only views.
+ * - `effectiveMode` is the value on `<html data-bs-theme>`: `'auto'` resolved
+ *   against `prefers-color-scheme`, everything else passed through.
+ * - `setMode()` changes it. Both signals are read-only views.
  *
- * Switching strategy: Bootstrap 5.3+ ships a full `[data-bs-theme="dark"]` block
- * in its SCSS. Flipping the attribute on `<html>` swaps the entire palette in
- * one DOM write. We deliberately do NOT mutate individual `--bs-*` custom
- * properties — that primitive is documented for runtime *customization* (brand
- * colors, end-user theming), not for the light/dark switch.
+ * **This service is a pure mirror of the framework-neutral store.** In the
+ * browser it holds no state of its own: `mode`/`effectiveMode` are refreshed
+ * from `getBsThemeStore().subscribe()`, and `setMode()` forwards to the store's
+ * `setMode()` (libs/mintplayer-web-components/theming/src/store.ts), which owns
+ * validation, the `bs-theme-mode` cookie, the `data-bs-theme` write, the
+ * `prefers-color-scheme` listener and cross-tab sync. So a change made anywhere
+ * else (`<mp-theme-toggle>`, another tab, the OS) reaches these signals, and a
+ * copy here could never drift. Any behaviour added to the store's `setMode()`
+ * must be reflected here, and vice versa; the mirror tests in
+ * bs-theme.service.spec.ts pin it.
  *
- * SSR: on the server we skip `localStorage`, `matchMedia`, and the DOM-write
- * effect. Server-rendered HTML therefore has no `data-bs-theme` attribute. The
- * documented inline pre-boot `<script>` writes it client-side before any CSS
- * link evaluates, preventing a light-mode flash for dark-mode users.
+ * **Server:** Angular SSR creates a root injector per request, which is the one
+ * thing the store cannot do (it is a document singleton and never exists on a
+ * server). The service resolves the request's `bs-theme-mode` cookie against the
+ * page's `<meta name="bs-theme-default-mode">` with `resolveServerTheme()`,
+ * seeds the signals and, for an explicit mode, writes `data-bs-theme` on the
+ * server `<html>` synchronously in the constructor, so the first byte of HTML is
+ * already themed. Hydration never touches `<html>`, and the browser branch never
+ * writes anything itself, so the server's attribute survives client boot.
+ * `REQUEST` is `null` during prerender and route extraction: that is treated as
+ * "no cookie", and the pre-boot script themes those pages on the client.
  *
  * Usage:
  *   ```ts
  *   const theme = inject(BsThemeService);
  *   theme.setMode('dark');       // explicit
- *   theme.setMode('auto');       // follow system
- *   theme.setMode('sepia');      // custom variant — consumer ships matching CSS
- *   theme.mode();                // → 'sepia'
- *   theme.effectiveMode();       // → 'sepia' (auto would resolve to 'light'|'dark')
+ *   theme.setMode('auto');       // follow the OS
+ *   theme.setMode('sepia');      // custom variant: ship a matching [data-bs-theme=sepia] block
+ *   theme.mode();                // 'sepia'
+ *   theme.effectiveMode();       // 'sepia' (auto would resolve to 'light' | 'dark')
  *   ```
  */
 @Injectable({ providedIn: 'root' })
@@ -50,69 +61,57 @@ export class BsThemeService {
   private readonly platformId = inject(PLATFORM_ID);
 
   private readonly _mode = signal<BsThemeMode>('auto');
-  private readonly _prefersDark = signal(false);
+  private readonly _effectiveMode = signal<BsEffectiveThemeMode>('light');
 
-  /** The mode the user picked. Use `setMode()` to change. */
+  /** The mode the user picked. Use `setMode()` to change it. */
   readonly mode: Signal<BsThemeMode> = this._mode.asReadonly();
 
-  /**
-   * The mode that's actually applied. `'auto'` is resolved via
-   * `prefers-color-scheme`; everything else passes through unchanged.
-   */
-  readonly effectiveMode: Signal<BsEffectiveThemeMode> = computed(() => {
-    const m = this._mode();
-    if (m === 'auto') return this._prefersDark() ? 'dark' : 'light';
-    return m;
-  });
+  /** The mode applied to `<html data-bs-theme>`. */
+  readonly effectiveMode: Signal<BsEffectiveThemeMode> = this._effectiveMode.asReadonly();
 
   constructor() {
-    if (isPlatformBrowser(this.platformId)) {
-      // Defer DestroyRef + DOCUMENT injections to inside the platform check —
-      // pulling them at the field-init level meant the SSR injector resolved
-      // tokens whose destroy-time callbacks fire during ApplicationRef
-      // teardown and surface as NG0953 ("Unexpected emit for destroyed
-      // OutputRef") on the dev server.
-      const destroyRef = inject(DestroyRef);
+    // REQUEST, DOCUMENT and DestroyRef are injected INSIDE the platform checks,
+    // never at field level: pulling them for every platform meant the SSR
+    // injector resolved tokens whose destroy-time callbacks fire during
+    // ApplicationRef teardown and surface as NG0953 ("Unexpected emit for
+    // destroyed OutputRef") on the dev server.
+    if (isPlatformServer(this.platformId)) {
+      const request = inject(REQUEST);
       const document = inject(DOCUMENT);
-
-      // Hydrate initial mode from localStorage. Wrapped because privacy modes
-      // or sandboxed iframes can throw on access.
-      try {
-        const stored = localStorage.getItem(BS_THEME_STORAGE_KEY);
-        if (stored) this._mode.set(stored);
-      } catch {
-        // localStorage unavailable — stick with the 'auto' default.
-      }
-
-      if (typeof window !== 'undefined' && typeof window.matchMedia === 'function') {
-        const mql = window.matchMedia('(prefers-color-scheme: dark)');
-        this._prefersDark.set(mql.matches);
-        const listener = (e: MediaQueryListEvent) => this._prefersDark.set(e.matches);
-        mql.addEventListener('change', listener);
-        destroyRef.onDestroy(() => mql.removeEventListener('change', listener));
-      }
-
-      // Keep <html data-bs-theme> in sync with the resolved mode.
-      effect(() => {
-        const resolved = this.effectiveMode();
-        document.documentElement.setAttribute('data-bs-theme', resolved);
+      const resolved = resolveServerTheme(request?.headers.get('cookie') ?? null, {
+        defaultMode: readDefaultModeMeta(document),
       });
+      if (resolved !== null) {
+        this._mode.set(resolved);
+        this._effectiveMode.set(resolved);
+        // resolveServerTheme only returns values that pass isValidThemeMode.
+        document.documentElement.setAttribute('data-bs-theme', resolved);
+      }
+      return;
+    }
+
+    if (isPlatformBrowser(this.platformId)) {
+      const destroyRef = inject(DestroyRef);
+      const store = getBsThemeStore();
+      const sync = () => {
+        this._mode.set(store.getMode());
+        this._effectiveMode.set(store.effectiveMode());
+      };
+      sync();
+      destroyRef.onDestroy(store.subscribe(sync));
     }
   }
 
   /**
-   * Set the user's mode. Persists to localStorage and updates the DOM attribute.
-   * Accepts any string for custom variants — consumer is responsible for
-   * shipping a matching `[data-bs-theme="<value>"] { … }` rule.
+   * Set the user's mode. Forwards to the store's `setMode()`
+   * (libs/mintplayer-web-components/theming/src/store.ts): an invalid mode is a
+   * no-op with a warning, a valid one is persisted to the cookie and applied to
+   * `<html>`, and the signals update through the store subscription. Custom
+   * variants need a matching `[data-bs-theme="<value>"] { ... }` rule.
+   * A no-op on the server, where a mode comes only from the request cookie.
    */
   setMode(mode: BsThemeMode): void {
-    this._mode.set(mode);
-    if (isPlatformBrowser(this.platformId)) {
-      try {
-        localStorage.setItem(BS_THEME_STORAGE_KEY, mode);
-      } catch {
-        // localStorage unavailable — state is in-memory only.
-      }
-    }
+    if (!isPlatformBrowser(this.platformId)) return;
+    getBsThemeStore().setMode(mode);
   }
 }

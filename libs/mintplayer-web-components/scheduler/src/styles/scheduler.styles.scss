@@ -33,8 +33,8 @@ $z-event-selected: 2;    // selected event: its straddling handles must win
   --scheduler-time-gutter-width: 80px;
   --scheduler-event-border-radius: 4px;
   --scheduler-now-indicator-color: var(--bs-danger, #dc3545);
-  --scheduler-preview-bg: rgba(0, 123, 255, 0.3);
-  --scheduler-greyed-slot-bg: rgba(0, 0, 0, 0.1);
+  --scheduler-preview-bg: rgba(var(--bs-primary-rgb), 0.3);
+  --scheduler-greyed-slot-bg: rgba(var(--bs-emphasis-color-rgb), 0.1);
   --scheduler-column-min-width: 120px;
   --scheduler-touch-hold-duration: 500ms;
   /* Timeline slot width. Was hard-coded at 50px in TS, which made a default week
@@ -1565,23 +1565,30 @@ $z-event-selected: 2;    // selected event: its straddling handles must win
   touch-action: none !important;
 }
 
-/* Scrollbar styling */
+/* Scrollbar styling. Theme tokens, so the bar follows dark mode: the thumb uses
+   --bs-secondary-color (--bs-secondary-bg is nearly invisible on --bs-tertiary-bg
+   in dark). scrollbar-color is the standard path; the webkit rules cover engines
+   that ignore it. */
+.scheduler-content {
+  scrollbar-color: var(--bs-secondary-color) var(--bs-tertiary-bg);
+}
+
 .scheduler-content::-webkit-scrollbar {
   width: 8px;
   height: 8px;
 }
 
 .scheduler-content::-webkit-scrollbar-track {
-  background: #f1f1f1;
+  background: var(--bs-tertiary-bg);
 }
 
 .scheduler-content::-webkit-scrollbar-thumb {
-  background: #c1c1c1;
+  background: var(--bs-secondary-color);
   border-radius: 4px;
 }
 
 .scheduler-content::-webkit-scrollbar-thumb:hover {
-  background: #a1a1a1;
+  background: var(--bs-emphasis-color);
 }
 
 @media (prefers-reduced-motion: reduce) {

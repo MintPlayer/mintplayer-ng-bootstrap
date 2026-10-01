@@ -4,59 +4,64 @@ import { BsUserAgent } from '../interfaces/user-agent';
 import { BsOperatingSystem } from '../types/operating-system.type';
 import { BsWebbrowser } from '../types/webbrowser.type';
 
+/**
+ * The browser a user-agent string names. Order matters: Opera and Edge also claim Chrome,
+ * and Chrome also claims Safari.
+ */
+export function detectBrowser(userAgent: string): BsWebbrowser | undefined {
+  if (/opr\//i.test(userAgent)) return 'Opera';
+  if (/edg/i.test(userAgent)) return 'Edge';
+  if (/chrome|chromium|crios/i.test(userAgent)) return 'Chrome';
+  if (/firefox|fxios/i.test(userAgent)) return 'Firefox';
+  if (/safari/i.test(userAgent)) return 'Safari';
+  return undefined;
+}
+
+/** The operating system a user-agent string names, when it is one this directive marks. */
+export function detectOperatingSystem(userAgent: string): BsOperatingSystem | undefined {
+  if (/Android/i.test(userAgent)) return 'Android';
+  if (/iPhone|iPad|iPod/i.test(userAgent)) return 'iOS';
+  if (/Windows/i.test(userAgent)) return 'Windows';
+  return undefined;
+}
+
 @Directive({
   selector: '[bsUserAgent]',
   host: {
-    '[class.os-android]': 'isAndroid',
-    '[class.os-ios]': 'isIos',
-    '[class.os-windows]': 'isWindows',
+    '[class.os-android]': 'os === "Android"',
+    '[class.os-ios]': 'os === "iOS"',
+    '[class.os-windows]': 'os === "Windows"',
     '[class]': 'browserClass',
   },
 })
 export class BsUserAgentDirective implements AfterViewInit {
-  private platformId = inject(PLATFORM_ID);
-  private destroyRef = inject(DestroyRef);
+  private readonly isServer = isPlatformServer(inject(PLATFORM_ID));
+  private readonly destroyRef = inject(DestroyRef);
+
+  /** There is no user agent on the server: nothing is detected, nothing is marked. */
+  private get userAgent(): string {
+    return this.isServer ? '' : navigator.userAgent;
+  }
+
+  get os(): BsOperatingSystem | undefined {
+    return detectOperatingSystem(this.userAgent);
+  }
 
   get isAndroid() {
-    return !isPlatformServer(this.platformId) && !!navigator && !!navigator.userAgent.match(/Android/i);
+    return this.os === 'Android';
   }
 
   get isIos() {
-    return !isPlatformServer(this.platformId) && !!navigator && !!navigator.userAgent.match(/iPhone|iPad|iPod/i);
+    return this.os === 'iOS';
   }
 
   get isWindows() {
-    return !isPlatformServer(this.platformId) && !!navigator && !!navigator.userAgent.match(/Windows/i);
+    return this.os === 'Windows';
   }
 
   get browserClass() {
-    const browser = this.getBrowser();
-    if (!browser) {
-      return null;
-    } else {
-      return `browser-${browser.toLowerCase()}`;
-    }
-  }
-
-  private getBrowser(): BsWebbrowser | undefined {
-    if (!isPlatformServer(this.platformId) && !!navigator) {
-      const userAgent = navigator.userAgent;
-      if(userAgent.match(/opr\//i)) {
-        return 'Opera';
-      } else if(userAgent.match(/edg/i)) {
-        return 'Edge';
-      } else if (userAgent.match(/chrome|chromium|crios/i)) {
-        return 'Chrome';
-      } else if(userAgent.match(/firefox|fxios/i)) {
-        return 'Firefox';
-      } else if(userAgent.match(/safari/i)) {
-        return 'Safari';
-      } else {
-        return undefined;
-      }
-    } else {
-      return undefined;
-    }
+    const browser = detectBrowser(this.userAgent);
+    return browser ? `browser-${browser.toLowerCase()}` : null;
   }
 
   ngAfterViewInit() {
@@ -64,23 +69,10 @@ export class BsUserAgentDirective implements AfterViewInit {
     // setTimeout-then-emit pattern races prerender teardown — the macrotask
     // can fire after Angular destroys the application, hitting NG0953 on
     // every prerendered route.
-    if (isPlatformServer(this.platformId)) return;
+    if (this.isServer) return;
 
     const handle = setTimeout(() => {
-      let os: BsOperatingSystem | undefined;
-      let webbrowser = this.getBrowser();
-
-      if (this.isAndroid) {
-        os = 'Android';
-      } else if (this.isIos) {
-        os = 'iOS';
-      } else if (this.isWindows) {
-        os = 'Windows';
-      } else {
-        os = undefined;
-      }
-
-      this.detected.emit({ os, webbrowser });
+      this.detected.emit({ os: this.os, webbrowser: detectBrowser(this.userAgent) });
     });
     this.destroyRef.onDestroy(() => clearTimeout(handle));
   }

@@ -1165,6 +1165,13 @@ test.describe('scheduler — editing an event moves it (B30)', () => {
   test('right-click, pick a later start, Save — the event moves and keeps its duration', async ({
     page,
   }) => {
+    // Pin the browser clock. The sample week is built around today and the
+    // Lunch event sits on its Wednesday, so on a Wednesday that is the last
+    // day of its month (2026-09-30) the start picker opens on a month with no
+    // later day in it and "pick a later day" cannot be satisfied. A fixed
+    // mid-month Monday keeps the whole sample week inside one month.
+    // setFixedTime only freezes Date; timers and rAF keep running.
+    await page.clock.setFixedTime(new Date('2026-06-15T09:00:00'));
     await loadSampleWeek(page);
     await scrollSchedulerIntoView(page);
 
@@ -1212,15 +1219,19 @@ test.describe('scheduler — editing an event moves it (B30)', () => {
       const sched = document.querySelector('mp-scheduler')!;
       const picker = sched.shadowRoot!.querySelector('mp-datetime-picker.editor-start-input')!;
       const cal = picker.shadowRoot!.querySelector('mp-calendar')!;
-      const cells = Array.from(
+      const all = Array.from(
         cal.shadowRoot!.querySelectorAll<HTMLElement>('td[role="gridcell"]'),
-      ).filter(
-        (td) =>
-          /^\d+$/.test(td.textContent?.trim() ?? '') &&
-          td.getAttribute('aria-disabled') !== 'true' &&
-          !td.classList.contains('selected'),
       );
-      const target = cells[cells.length - 1];
+      // A day strictly AFTER the selected one: the assertion below is "later".
+      const selectedAt = all.findIndex((td) => td.classList.contains('selected'));
+      const cells = all
+        .slice(selectedAt + 1)
+        .filter(
+          (td) =>
+            /^\d+$/.test(td.textContent?.trim() ?? '') &&
+            td.getAttribute('aria-disabled') !== 'true',
+        );
+      const target = selectedAt < 0 ? undefined : cells[cells.length - 1];
       if (!target) return null;
       const r = target.getBoundingClientRect();
       return { x: r.x + r.width / 2, y: r.y + r.height / 2 };

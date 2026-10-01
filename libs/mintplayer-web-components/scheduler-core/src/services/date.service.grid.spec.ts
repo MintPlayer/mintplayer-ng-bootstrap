@@ -286,6 +286,22 @@ describe('ranges', () => {
     expect(range).not.toContain(' - ');
   });
 
+  it('falls back to joining both ends with an en dash where Intl has no formatRange', () => {
+    const proto = Intl.DateTimeFormat.prototype as unknown as { formatRange?: unknown };
+    const original = proto.formatRange;
+    delete proto.formatRange;
+    try {
+      const dates = dateService.formatDateRange(start, end, 'en-US', { month: 'short', day: 'numeric' });
+      const times = dateService.formatTimeRange(new Date(2026, 0, 15, 9, 0), new Date(2026, 0, 15, 10, 0), '24h', 'en-US');
+      expect(dates.split(' – ')).toHaveLength(2);
+      expect(times.split(' – ')).toHaveLength(2);
+      expect(times).toContain('09');
+      expect(times).toContain('10');
+    } finally {
+      proto.formatRange = original;
+    }
+  });
+
   it('honours the requested clock', () => {
     const noon = new Date(2026, 0, 15, 13, 0);
     const later = new Date(2026, 0, 15, 14, 0);

@@ -64,8 +64,7 @@ export class BsCheckboxComponent {
 
   constructor() {
     effect(() => {
-      const el = this.checkboxRef()?.nativeElement;
-      if (!el) return;
+      const el = this.checkboxRef().nativeElement;
       el.type = this.type();
       el.value = this.value();
       el.name = this.nameResult();

@@ -89,6 +89,18 @@ describe('mp-query-builder (FR-33 Alt+Arrow keyboard reorder)', () => {
     expect(moved.value).toBe(2);
   });
 
+  it('focus follows the moved row by id, not by DOM position', async () => {
+    const el = await mount(threeConditions());
+    const row = rowFor(el, 'c2');
+    row.focus();
+    row.dispatchEvent(new KeyboardEvent('keydown', {
+      key: 'ArrowDown', altKey: true, bubbles: true, composed: true,
+    }));
+    await settle(el);
+    await new Promise((r) => setTimeout(r, 0));
+    expect((document.activeElement as HTMLElement).dataset['rowId']).toBe('c2');
+  });
+
   it('Alt+ArrowUp on a middle row moves it past its previous sibling', async () => {
     const el = await mount(threeConditions());
     const row = rowFor(el, 'c2');

@@ -83,6 +83,40 @@ describe('inertRegions', () => {
     expect(document.body.contains(inner)).toBe(true);
   });
 
+  it('inside a shadow root with no focusable ancestor, moves focus to the focusable host', () => {
+    const host = document.createElement('div');
+    host.tabIndex = 0;
+    document.body.appendChild(host);
+    const root = host.attachShadow({ mode: 'open' });
+    const region = document.createElement('div');
+    const inner = document.createElement('button');
+    region.appendChild(inner);
+    root.appendChild(region);
+
+    inner.focus();
+    expect(deepActiveElement()).toBe(inner);
+
+    inertRegions().setHidden([region]);
+
+    expect(deepActiveElement()).toBe(host);
+  });
+
+  it('with nowhere focusable to go, blurs rather than leave focus inside the hidden region', () => {
+    const host = document.createElement('div');
+    document.body.appendChild(host);
+    const root = host.attachShadow({ mode: 'open' });
+    const region = document.createElement('button');
+    root.appendChild(region);
+
+    region.focus();
+    expect(deepActiveElement()).toBe(region);
+
+    inertRegions().setHidden([region]);
+
+    expect(deepActiveElement()).not.toBe(region);
+    expect(root.activeElement).toBeNull();
+  });
+
   it('leaves focus alone when it is outside the hidden region', () => {
     const a = cell('a');
     const outside = document.createElement('button');

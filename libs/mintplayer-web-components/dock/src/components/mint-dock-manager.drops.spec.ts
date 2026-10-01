@@ -90,16 +90,13 @@ function pathOf(pane: string): { type: 'docked'; segments: number[] } {
 }
 
 /*
- * Arming is the one step of the flow jsdom cannot perform. The dock reads the
- * focused tab through `shadowRoot.activeElement`, and jsdom does not surface a
- * button focused inside `mp-tab-control`'s nested shadow root back to the dock
- * root — the same limitation `mint-dock-manager.aria.spec.ts` documents, where
- * the real `M` keystroke is likewise covered by the Playwright and manual
- * screen-reader passes instead.
- *
- * So arming is set directly and EVERYTHING AFTER IT is driven through real
- * keyboard events: the key routing, the zone mapping, the commit and the
- * layout mutation all run exactly as they do for a user.
+ * Arming is set directly here so each spec can name the pane it moves without
+ * focusing its tab first. The real arming step — focus a tab, press M — is
+ * specified on its own in `mint-dock-manager.pointer.spec.ts` ("pressing M on
+ * a focused tab"); jsdom does surface the focused tab button through the
+ * nested shadow roots. Everything AFTER arming is driven through real keyboard
+ * events: the key routing, the zone mapping, the commit and the layout
+ * mutation all run exactly as they do for a user.
  */
 async function armMove(pane: string): Promise<void> {
   (dock as unknown as { paneMoveMode: unknown }).paneMoveMode = {
@@ -694,23 +691,48 @@ describe('the splitter reports a drag back as weights', () => {
 
 describe('activating a tab', () => {
   /*
-   * **Not reachable under jsdom, and the product code is right.**
-   *
-   * `renderStack`'s `tab-activate` listener maps the tab id back to a pane with
-   * `stack.querySelector(':scope > [data-tab-id=…]')`. The `:scope >` is
-   * load-bearing — without the child combinator a nested stack's tabs would
-   * match and activate the wrong pane — but **jsdom does not implement
-   * `:scope`**: measured here, `stack.querySelector(':scope > *')` returns null
-   * on an element with six children, while the same selector without `:scope`
-   * finds them. So the lookup always fails and the handler always returns early,
-   * whatever the test dispatches.
-   *
-   * Rewriting the selector to suit the test runner would trade a correct
-   * scoping rule for a coverage line. The activation path is covered by the
-   * dock e2e specs against a real engine instead; what IS asserted here is the
-   * precondition the handler depends on — that every tab carries the id and
-   * pane name it will be looked up by, as a direct child of its stack.
+   * `renderStack`'s `tab-activate` listener maps the tab id back to a pane
+   * among the stack's DIRECT children — the child-only rule is load-bearing,
+   * since a nested stack's tabs must never match. It used to express that as a
+   * `:scope >` selector, which jsdom matches nothing for, so this path was
+   * unreachable here. It now walks `stack.children`, which is the same
+   * child-only rule without the selector engine, and the path runs for real.
    */
+  it('activates the pane whose tab is clicked, in the tree and on the stack', async () => {
+    dock.layout = split('horizontal', [stack('a', 'b'), stack('c')]) as never;
+    await settle();
+    const activated: string[] = [];
+    dock.addEventListener('dock-pane-activated', (e) =>
+      activated.push((e as CustomEvent<{ pane: string }>).detail.pane),
+    );
+
+    const tabB = dock.shadowRoot!.querySelector<HTMLElement>('.dock-tab[data-pane="b"]')!;
+    const control = tabB.closest('mp-tab-control') as HTMLElement & { updateComplete: Promise<unknown> };
+    await control.updateComplete;
+    control.shadowRoot!.querySelector<HTMLElement>(`[id="${tabB.dataset['tabId']}-header-button"]`)!.click();
+
+    expect(activated).toEqual(['b']);
+    expect(control.getAttribute('active-tab')).toBe(tabB.dataset['tabId']);
+    expect((dock.layout.root as DockSplitNode).children[0]).toMatchObject({ activePane: 'b' });
+  });
+
+  it('keeps a floating window\'s title on the pane activated inside it', async () => {
+    dock.layout = {
+      root: stack('a'),
+      floating: [{ bounds: { left: 0, top: 0, width: 300, height: 200 }, root: stack('x', 'y') }],
+      titles: { y: 'Why' },
+    } as never;
+    await settle();
+
+    const tabY = dock.shadowRoot!.querySelector<HTMLElement>('.dock-tab[data-pane="y"]')!;
+    const control = tabY.closest('mp-tab-control') as HTMLElement & { updateComplete: Promise<unknown> };
+    await control.updateComplete;
+    control.shadowRoot!.querySelector<HTMLElement>(`[id="${tabY.dataset['tabId']}-header-button"]`)!.click();
+
+    expect(dock.layout.floating[0].activePane).toBe('y');
+    expect(dock.shadowRoot!.querySelector('.dock-floating__title')!.textContent).toBe('Why');
+  });
+
   it('gives every tab the id and pane name the activation handler looks up', async () => {
     dock.layout = split('horizontal', [stack('a', 'b'), stack('c')]) as never;
     await settle();

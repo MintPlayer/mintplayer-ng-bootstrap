@@ -71,4 +71,21 @@ describe('validateOperatorOverrides (M6)', () => {
     expect(r.warnings.length).toBe(1);
     expect(r.warnings[0]).toMatch(/equals.*contains|contains.*equals/);
   });
+
+  it('a field name declared by two entities is validated against the first declaration', () => {
+    const schema: EntitySchema[] = [
+      SCHEMA[0]!,
+      { name: 'other', label: 'Other', fields: [{ name: 'total', label: 'Total', type: 'string' }] },
+    ];
+    // 'contains' is a string operator: valid on other.total, invalid on orders.total (number).
+    const r = validateOperatorOverrides(schema, { total: ['contains', 'gt'] });
+    expect(r.sanitized.total).toEqual(['gt']);
+    expect(r.warnings[0]).toMatch(/orders\.total, type=number/);
+  });
+
+  it('an explicitly undefined entry yields an empty list without an empty-dropdown warning', () => {
+    const r = validateOperatorOverrides(SCHEMA, { total: undefined });
+    expect(r.sanitized.total).toEqual([]);
+    expect(r.warnings).toEqual([]);
+  });
 });

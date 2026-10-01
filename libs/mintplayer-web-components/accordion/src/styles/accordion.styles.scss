@@ -1,3 +1,9 @@
+// Bootstrap's dark chevron swap ([data-bs-theme=dark] .accordion-button::after)
+// can never match from inside this shadow root, and the currentColor mask
+// below makes it unnecessary: switched off at the Sass level. The flag is
+// !default, so it must precede the variables import.
+$enable-dark-mode: false;
+
 @import 'node_modules/bootstrap/scss/functions';
 @import 'node_modules/bootstrap/scss/variables';
 @import 'node_modules/bootstrap/scss/variables-dark';
@@ -111,6 +117,15 @@ summary.accordion-button::after {
   -webkit-mask-image: var(--bs-accordion-btn-icon);
   -webkit-mask-repeat: no-repeat;
   -webkit-mask-size: var(--bs-accordion-btn-icon-width);
+}
+
+// Forced colours force the mask's background to Canvas, which makes the
+// chevron invisible. CanvasText is correct in every forced palette measured
+// (both Chromium palettes, Firefox); forced-color-adjust: none is not.
+@media (forced-colors: active) {
+  summary.accordion-button::after {
+    background-color: CanvasText;
+  }
 }
 
 // Open state: everything Bootstrap keys on `.accordion-button:not(.collapsed)`

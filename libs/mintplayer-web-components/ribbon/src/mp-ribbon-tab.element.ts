@@ -1,6 +1,7 @@
 import { css, html, LitElement, nothing, type TemplateResult } from 'lit';
 import { property, state, query } from 'lit/decorators.js';
 import { OverlayController } from '@mintplayer/web-components/overlay';
+import { simplifiedOverflowStart } from './core/plan-reduce-steps';
 
 export type RibbonGroupSize = 'large' | 'medium' | 'small' | 'popup';
 export type RibbonReduceStep = readonly [groupId: string, target: RibbonGroupSize];
@@ -331,17 +332,12 @@ export class MpRibbonTab extends LitElement {
       this.removeAttribute('data-has-overflow');
       return;
     }
-    const chevronReservation = 40;
-    const gap = 8;
-    let cum = 0;
-    const hidden: HTMLElement[] = [];
-    for (let i = 0; i < groups.length; i++) {
-      const g = groups[i];
-      cum += g.offsetWidth + (i > 0 ? gap : 0);
-      if (cum > available - chevronReservation) {
-        hidden.push(g);
-      }
-    }
+    const hidden = groups.slice(
+      simplifiedOverflowStart(
+        groups.map((g) => g.offsetWidth),
+        available
+      )
+    );
 
     for (const g of hidden) g.setAttribute('data-overflow-hidden', '');
 

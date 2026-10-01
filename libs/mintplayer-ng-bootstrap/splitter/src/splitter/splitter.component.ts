@@ -77,6 +77,9 @@ export class BsSplitterComponent {
   /** Drag or keyboard resize committed. Detail: final `{ sizes, orientation }`. */
   readonly resizeEnd = output<SplitterResizeEventDetail>();
 
+  // Deliberately NOT viewChild.required: public methods read it, and a caller that reaches
+  // this component through DI (a child's constructor, say) can call one before this
+  // component's view exists. There, NG0951 would throw where the guard is a no-op.
   protected readonly element = viewChild<ElementRef<MpSplitter>>('element');
 
   protected readonly minPanelSizeAttr = computed(() => {

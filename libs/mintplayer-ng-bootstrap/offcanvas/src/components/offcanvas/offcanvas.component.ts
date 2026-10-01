@@ -6,6 +6,9 @@ import { Position } from '@mintplayer/ng-bootstrap';
 import { OFFCANVAS_CONTENT } from '../../providers/offcanvas-content.provider';
 import { BsOffcanvasContextService } from '../../services/offcanvas-context.service';
 
+/** Duration of the panel's slide transition (Bootstrap's $offcanvas-transition-duration). */
+export const OFFCANVAS_TRANSITION_MS = 300;
+
 @Component({
   selector: 'bs-offcanvas-holder',
   host: {
@@ -64,7 +67,7 @@ export class BsOffcanvasComponent {
             if (!this.isVisible()) {
               this.visibility.set('hidden');
             }
-          }, 300);
+          }, OFFCANVAS_TRANSITION_MS);
         }
       });
     });

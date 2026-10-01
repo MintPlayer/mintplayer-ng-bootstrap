@@ -1,1 +1,16 @@
-<mp-scheduler bsForwardAria #scheduler [attr.readonly]="readonlyAttr()" [attr.event-editor]="eventEditorAttr()"></mp-scheduler>
+<mp-scheduler bsForwardAria #scheduler
+  [attr.readonly]="readonlyAttr()"
+  [attr.event-editor]="eventEditorAttr()"
+  (event-selected)="onEventSelected($event)"
+  (event-dblclick)="forward(eventDblClick, $event)"
+  (event-create)="forward(eventCreate, $event)"
+  (event-update)="forward(eventUpdate, $event)"
+  (event-delete)="forward(eventDelete, $event)"
+  (date-click)="forward(dateClick, $event)"
+  (resource-create)="forward(resourceCreate, $event)"
+  (group-create)="forward(groupCreate, $event)"
+  (resource-update)="forward(resourceUpdate, $event)"
+  (resource-delete)="forward(resourceDelete, $event)"
+  (view-change)="onViewChange($event)"
+  (selection-change)="onSelectionChange($event)"
+></mp-scheduler>

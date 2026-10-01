@@ -88,17 +88,17 @@ export class BsPhoneInputComponent implements ControlValueAccessor {
 
   constructor() {
     effect(() => {
-      const el = this.phoneInput()?.nativeElement;
-      if (el) el.disabled = this.disabledByForm;
+      const el = this.phoneInput().nativeElement;
+      el.disabled = this.disabledByForm;
     });
   }
 
   writeValue(value: string | null): void {
-    const el = this.phoneInput()?.nativeElement;
+    const el = this.phoneInput().nativeElement;
     // The WC decomposes E.164 into country + national digits itself, so the
-    // accessor never has to parse — and a value arriving before the view exists
-    // is applied by the same assignment once it does.
-    if (el) el.value = value ?? null;
+    // accessor never has to parse. Forms call writeValue from the update pass,
+    // after this component's view (and so the required query) exists.
+    el.value = value ?? null;
   }
 
   registerOnChange(fn: (value: string | null) => void): void {
@@ -111,8 +111,8 @@ export class BsPhoneInputComponent implements ControlValueAccessor {
 
   setDisabledState(isDisabled: boolean): void {
     this.disabledByForm = isDisabled;
-    const el = this.phoneInput()?.nativeElement;
-    if (el) el.disabled = isDisabled;
+    const el = this.phoneInput().nativeElement;
+    el.disabled = isDisabled;
   }
 
   protected onValueChange(ev: Event): void {

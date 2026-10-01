@@ -52,7 +52,7 @@ export class BsCheckboxValueAccessor implements ControlValueAccessor {
   }
 
   setDisabledState(isDisabled: boolean) {
-    const wc = this.host.checkboxRef()?.nativeElement;
-    if (wc) wc.disabled = isDisabled;
+    const wc = this.host.checkboxRef().nativeElement;
+    wc.disabled = isDisabled;
   }
 }

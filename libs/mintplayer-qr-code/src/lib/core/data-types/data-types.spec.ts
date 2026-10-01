@@ -160,6 +160,24 @@ describe('ByteData', () => {
     expect(bits((b) => new ByteData('é').write(b))).toBe('1100001110101001');
   });
 
+  /*
+   * The exact bytes per UTF-8 width, plus the one case where a "UTF-8 encoder"
+   * has a choice: a lone surrogate is not encodable and must become U+FFFD
+   * (EF BF BD), never three raw surrogate bytes. These are the guarantees the
+   * former @mintplayer/encode-utf8 provided; the platform TextEncoder now does.
+   */
+  it.each([
+    ['A', [0x41]],
+    ['é', [0xc3, 0xa9]],
+    ['日', [0xe6, 0x97, 0xa5]],
+    ['😀', [0xf0, 0x9f, 0x98, 0x80]],
+    ['\ud800', [0xef, 0xbf, 0xbd]],
+    ['a\udc00b', [0x61, 0xef, 0xbf, 0xbd, 0x62]],
+  ])('encodes %j as the UTF-8 bytes %j', (text, bytes) => {
+    const expected = bytes.map((byte) => byte.toString(2).padStart(8, '0')).join('');
+    expect(bits((b) => new ByteData(text).write(b))).toBe(expected);
+  });
+
   it('accepts raw binary as well as text', () => {
     const raw = new Uint8Array([0x00, 0xff, 0x7f]).buffer;
     expect(new ByteData(raw).getLength()).toBe(3);
@@ -225,5 +243,32 @@ describe('KanjiData', () => {
   // something else.
   it('refuses a character the converter cannot map', () => {
     expect(() => bits((b) => new KanjiData('A').write(b))).toThrow();
+  });
+
+  it('writes nothing and predicts zero bits for an empty payload', () => {
+    expect(new KanjiData('').getBitsLength()).toBe(0);
+    expect(bits((b) => new KanjiData('').write(b))).toBe('');
+  });
+
+  // Clause 7.4.6 step 1: 0x8140..0x9FFC subtracts 0x8140, 0xE040..0xEBBF
+  // subtracts 0xC140; then (msb * 0xC0) + lsb. 漾 is SJIS 0xE040, the first
+  // character of the upper range: 0xE040 - 0xC140 = 0x1F00 -> 0x1F * 0xC0 = 5952.
+  it('packs a character from the upper Shift-JIS range with its own offset', () => {
+    expect(bits((b) => new KanjiData('漾').write(b))).toBe((0x1f * 0xc0).toString(2).padStart(13, '0'));
+  });
+
+  // 0x8140 itself (the ideographic space) is the first value of the lower range.
+  it('packs the first character of the lower Shift-JIS range as zero', () => {
+    expect(bits((b) => new KanjiData('　').write(b))).toBe('0'.repeat(13));
+  });
+
+  it('refuses a Shift-JIS value that lies between the two Kanji ranges', async () => {
+    const { toSJIS } = await import('../../utils/functions/to-sjis');
+    setToSJISFunction(() => 0xa000);
+    try {
+      expect(() => bits((b) => new KanjiData('x').write(b))).toThrow(/Invalid SJIS character: x/);
+    } finally {
+      setToSJISFunction(toSJIS as unknown as (data: string) => number);
+    }
   });
 });

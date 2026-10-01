@@ -8,6 +8,7 @@ import { BsOverlayStackService } from '@mintplayer/ng-bootstrap/a11y';
 import { BsNoNoscriptDirective } from '@mintplayer/ng-bootstrap/no-noscript';
 import { BsObserveSizeDirective } from '@mintplayer/ng-bootstrap/observe-size';
 import { BsPriorityNavItemDirective } from '../priority-nav-item/priority-nav-item.directive';
+import { computeOverflowIds, computeOverflowOrder } from './overflow';
 
 @Component({
   selector: 'bs-priority-nav',
@@ -49,9 +50,10 @@ export class BsPriorityNavComponent {
   // Per-item width measurements (from the off-screen measure strip)
   private measureSizers = viewChildren<BsObserveSizeDirective>('measureItem');
   // Visible strip width and its element (for reading computed `column-gap`)
-  stripSizer = viewChild<BsObserveSizeDirective>('stripSize');
-  private stripElement = viewChild('stripSize', { read: ElementRef });
-  // More button width
+  stripSizer = viewChild.required<BsObserveSizeDirective>('stripSize');
+  private stripElement = viewChild.required('stripSize', { read: ElementRef });
+  // More button width. Optional on purpose: the button exists only in the JS branch of the
+  // template (the server renders a label instead), so this query is empty on the server.
   moreSizer = viewChild<BsObserveSizeDirective>('moreSize');
 
   // Open/closed state for the More menu (JS path)
@@ -77,43 +79,19 @@ export class BsPriorityNavComponent {
     return w > 0 && w < bp;
   });
 
-  // Items in overflow order. Convention: a LOWER priority number means MORE
-  // important (priority: 1 stays visible longest). Items without a priority
-  // are treated as least important and overflow before any prioritized item.
-  // Tiebreaker uses declaration order (last-declared overflows first when
-  // overflowFrom='end').
+  // Items in overflow order (see computeOverflowOrder for the priority convention).
   overflowOrder = computed(() => {
-    const items = this.items();
-    const fromEnd = this.overflowFrom() === 'end';
-    return [...items]
-      .map((item, index) => ({ item, index, priority: item.priority() }))
-      .sort((a, b) => {
-        // Unprioritized items overflow first
-        if (a.priority === null && b.priority !== null) return -1;
-        if (a.priority !== null && b.priority === null) return 1;
-        // Both prioritized: higher number overflows first (less important)
-        if (a.priority !== null && b.priority !== null && a.priority !== b.priority) {
-          return b.priority - a.priority;
-        }
-        // Tiebreaker by declaration order
-        return fromEnd ? b.index - a.index : a.index - b.index;
-      })
-      .map(x => x.item);
+    const entries = this.items().map((item) => ({ item, priority: item.priority() }));
+    return computeOverflowOrder(entries, this.overflowFrom() === 'end').map(({ item }) => item);
   });
 
   // Per-item width map (from measure strip, indexed by item id, in items() order)
   itemWidths = computed<Map<number, number>>(() => {
     if (this.isServerSide) return new Map();
     const sizers = this.measureSizers();
-    const items = this.items();
-    const map = new Map<number, number>();
-    items.forEach((item, i) => {
-      const sizer = sizers[i];
-      if (!sizer) return;
-      const w = sizer.width();
-      if (w !== undefined) map.set(item.id, w);
-    });
-    return map;
+    return new Map(this.items()
+      .map((item, i) => [item.id, sizers[i]?.width()] as const)
+      .filter((entry): entry is readonly [number, number] => entry[1] !== undefined));
   });
 
   // The strip's `column-gap` (or `gap`) value in pixels. Read from computed
@@ -123,10 +101,8 @@ export class BsPriorityNavComponent {
   // that piggy-back on the same breakpoint).
   itemGap = computed(() => {
     if (this.isServerSide) return 0;
-    this.stripSizer()?.width();
-    const el = this.stripElement()?.nativeElement as HTMLElement | undefined;
-    if (!el) return 0;
-    const cs = getComputedStyle(el);
+    this.stripSizer().width();
+    const cs = getComputedStyle(this.stripElement().nativeElement as HTMLElement);
     const raw = parseFloat(cs.columnGap || cs.gap || '0');
     return Number.isFinite(raw) ? raw : 0;
   });
@@ -136,33 +112,13 @@ export class BsPriorityNavComponent {
     if (this.forceCollapse()) {
       return new Set(this.items().map(i => i.id));
     }
-
-    const stripWidth = this.stripSizer()?.width() ?? 0;
-    const moreWidth = this.moreSizer()?.width() ?? 0;
-    const widths = this.itemWidths();
-    const gap = this.itemGap();
-
-    if (stripWidth === 0 || widths.size === 0) return new Set();
-
-    // Layout when all items fit (no More toggle): N items separated by N-1 gaps
-    const sumWidths = Array.from(widths.values()).reduce((a, b) => a + b, 0);
-    const allVisibleWidth = sumWidths + gap * Math.max(0, widths.size - 1);
-    if (allVisibleWidth <= stripWidth) return new Set();
-
-    // Need overflow → More toggle is shown. Layout when K items are kicked:
-    //   (N - K) items + 1 More toggle = (N - K + 1) elements with (N - K) gaps
-    const overflowing = new Set<number>();
-    let visibleSum = sumWidths;
-    let visibleCount = widths.size;
-
-    for (const item of this.overflowOrder()) {
-      const totalWithMore = visibleSum + moreWidth + gap * visibleCount;
-      if (totalWithMore <= stripWidth) break;
-      visibleSum -= widths.get(item.id) ?? 0;
-      visibleCount -= 1;
-      overflowing.add(item.id);
-    }
-    return overflowing;
+    return computeOverflowIds({
+      stripWidth: this.stripSizer().width() ?? 0,
+      moreWidth: this.moreSizer()?.width() ?? 0,
+      gap: this.itemGap(),
+      widths: this.itemWidths(),
+      order: this.overflowOrder().map((item) => item.id),
+    });
   });
 
   hasAnyOverflow = computed(() => this.overflowingIds().size > 0);

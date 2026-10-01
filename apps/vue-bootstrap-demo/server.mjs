@@ -28,6 +28,13 @@ const serverEntry = path.join(distDir, 'server', 'entry-server.mjs');
 // Cache the immutable prod index.html in memory — avoids a disk read per request.
 let prodTemplate;
 
+// The site default mode, read from index.html's
+// <meta name="bs-theme-default-mode" content="..."> so the SSR splice and the
+// pre-boot script can never disagree (PRD dark-mode D5b). resolveServerTheme
+// validates it; absent or invalid means auto.
+const DEFAULT_MODE_META = /<meta\s+name=["']bs-theme-default-mode["']\s+content=["']([^"']*)["']/i;
+const readDefaultMode = (template) => DEFAULT_MODE_META.exec(template)?.[1] ?? null;
+
 async function createServer() {
   const app = express();
 
@@ -51,7 +58,18 @@ async function createServer() {
     const compression = (await import('compression')).default;
     app.use(compression());
     app.use(
-      express.static(clientDir, { index: false, maxAge: '1y', redirect: false }),
+      express.static(clientDir, {
+        index: false,
+        maxAge: '1y',
+        redirect: false,
+        // Everything Vite emits is content-hashed, so a year is safe. The theme
+        // pre-boot script is not: it keeps a stable URL (index.html loads it by
+        // name), so it revalidates on every load and a new release reaches
+        // returning visitors (PRD dark-mode D5).
+        setHeaders: (res, filePath) => {
+          if (path.basename(filePath) === 'bs-theme-preboot.js') res.setHeader('Cache-Control', 'no-cache');
+        },
+      }),
     );
   }
 
@@ -59,20 +77,30 @@ async function createServer() {
     const url = req.originalUrl;
     try {
       let template;
-      let render;
+      let entry;
 
       if (!isProd) {
         template = await fs.readFile(path.join(__dirname, 'index.html'), 'utf-8');
         template = await vite.transformIndexHtml(url, template);
-        render = (await vite.ssrLoadModule('/src/entry-server.ts')).render;
+        entry = await vite.ssrLoadModule('/src/entry-server.ts');
       } else {
         template = prodTemplate ??= await fs.readFile(path.join(clientDir, 'index.html'), 'utf-8');
-        render = (await import(pathToFileURL(serverEntry).href)).render;
+        entry = await import(pathToFileURL(serverEntry).href);
       }
 
+      // The theme helpers come through the SSR entry (it re-exports them from
+      // @mintplayer/web-components/theming): the entry is bundled by Vite, so
+      // this plain-ESM file needs no path alias in dev or prod.
+      const { render, resolveServerTheme, injectThemeAttribute } = entry;
       const appHtml = await render(url);
-      const html = template.replace('<!--app-html-->', appHtml);
-      res.status(200).set({ 'Content-Type': 'text/html' }).end(html);
+      // SSR theme splice (PRD dark-mode D5b, FR-6): a valid bs-theme-mode cookie,
+      // else the meta default, becomes <html data-bs-theme>; auto renders none
+      // and the pre-boot script resolves it from the OS scheme.
+      const mode = resolveServerTheme(req.headers.cookie, { defaultMode: readDefaultMode(template) });
+      const html = injectThemeAttribute(template.replace('<!--app-html-->', appHtml), mode);
+      // The markup depends on the cookie, so no shared cache may serve one
+      // visitor's theme to another.
+      res.status(200).set({ 'Content-Type': 'text/html', Vary: 'Cookie' }).end(html);
     } catch (error) {
       vite?.ssrFixStacktrace(error);
       next(error);

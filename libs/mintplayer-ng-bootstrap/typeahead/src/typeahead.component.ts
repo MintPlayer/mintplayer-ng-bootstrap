@@ -38,6 +38,7 @@ export class BsTypeaheadComponent {
   showNoSuggestions = computed(() => this.suggestions().length === 0);
 
   readonly textbox = viewChild.required<ElementRef<HTMLInputElement>>('textbox');
+  // Optional on purpose: it lives in the dropdown menu, which renders only while open.
   readonly rovingFocus = viewChild(BsRovingFocusDirective);
   searchterm = model('');
   isLoadingText = input('Loading...');

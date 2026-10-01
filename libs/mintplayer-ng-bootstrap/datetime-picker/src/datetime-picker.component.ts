@@ -81,7 +81,7 @@ export class BsDatetimePickerComponent implements AfterViewInit, ControlValueAcc
   readonly opened = output<DatetimePopup>();
   readonly closed = output<DatetimePopup>();
 
-  readonly wcRef = viewChild<ElementRef<MpDatetimePickerElement>>('wc');
+  readonly wcRef = viewChild.required<ElementRef<MpDatetimePickerElement>>('wc');
 
   private onChange: (value: Date | null) => void = () => {};
   private onTouched: () => void = () => {};
@@ -89,8 +89,7 @@ export class BsDatetimePickerComponent implements AfterViewInit, ControlValueAcc
 
   constructor() {
     effect(() => {
-      const wc = this.wcRef()?.nativeElement;
-      if (!wc) return;
+      const wc = this.wcRef().nativeElement;
       wc.value = this.value();
       wc.min = this.min() ?? null;
       wc.max = this.max() ?? null;

@@ -7,6 +7,51 @@ package version aligns its major with the supported Angular major.
 
 ### Breaking
 
+- **`bs-query-builder`: the `timezone` input is removed.** It was declared but never reached the element, so
+  binding it had no effect. Remove the binding.
+- **Satellite libraries (found by the coverage phase 2 audit).**
+  - `@mintplayer/ng-qr-code` 22.2.0:
+    - The unused `height` input is removed; a QR code is square.
+    - `qrCodeVersion` 1–40 now takes effect (it was silently ignored); `null`/`0` means auto.
+    - Changing only the centre-image inputs now redraws, and a cached centre image survives a redraw.
+  - `@mintplayer/ng-click-outside` 22.2.0:
+    - The no-op `excludeBeforeClick` input is removed.
+    - Re-initialising, or changing `clickOutsideEvents`, no longer leaks listeners.
+  - `@mintplayer/qr-code` 1.8.0 encodes byte data with the platform `TextEncoder`, and no longer peer-depends on
+    `@mintplayer/encode-utf8`. A spec proved the output identical over every code unit and surrogate pair before
+    the switch, and `qr-code`'s own spec now pins the bytes.
+  - **`@mintplayer/encode-utf8` is removed from the repository** and will receive no further releases. It had no
+    remaining consumer. The last published version, 1.7.0, stays on npm. Use the platform `TextEncoder`
+    instead.
+
+- **The theme mode is stored in a cookie, not localStorage (issue #420).**
+  - `BsThemeService` now persists the user's choice in the `bs-theme-mode` cookie (`Path=/`, `SameSite=Lax`, one
+    year, `Secure` on https), so a server can render `<html data-bs-theme>` itself.
+  - **Stored choices reset to `auto`.** There is no migration from localStorage.
+  - `BS_THEME_STORAGE_KEY` is removed. Use `BS_THEME_COOKIE_NAME`, now exported from
+    `@mintplayer/web-components/theming` and re-exported by `@mintplayer/ng-bootstrap/theming`.
+  - Replace the inline localStorage pre-boot script with the shipped
+    `@mintplayer/web-components/theming/bs-theme-preboot.js` (see the theming docs page). **It ships from
+    `@mintplayer/web-components` only**, not from `@mintplayer/ng-bootstrap/theming/` as issue #420 proposed; an
+    assets glob pointing at `node_modules/@mintplayer/ng-bootstrap/theming` finds nothing. The script is generated
+    from the same helpers as the store, so it cannot drift from them.
+  - Critical CSS: see the `inlineCritical` note below. The caret/knob dark variants use
+    `@container style(--mp-color-mode: dark)` (measured in Chromium 151, Firefox 153, WebKit 26.5); an engine
+    without custom-property style queries keeps the light icons.
+- **`BsThemeService` is a thin mirror of the framework-neutral theme store** in `@mintplayer/web-components/theming`.
+  Its public API (`mode`, `effectiveMode`, `setMode`) is unchanged. On the server it reads the request cookie and a
+  `<meta name="bs-theme-default-mode">`, and writes `data-bs-theme` into the rendered HTML. `setMode` with an invalid
+  value (outside `^[a-z0-9-]{1,32}$`) is now a no-op with a warning.
+- **Dead `[data-bs-theme=dark]` rules are removed from the web components' sheets.** They could never match from
+  inside a shadow root.
+  - The `mp-select` caret, the query-builder value-editor caret and the `mp-checkbox` switch knob now follow the
+    theme through `@container style(--mp-color-mode: dark)`.
+  - This needs the `--mp-color-mode` token: `_bootstrap.scss` includes it, and React/Vue consumers add
+    `@import '@mintplayer/web-components/theming/color-mode.css'`. A custom theme declares its own
+    `--mp-color-mode: dark|light`.
+- **Angular consumers using dark mode should set `optimization.styles.inlineCritical: false`.** The critical-CSS
+  inliner prunes every `[data-bs-theme=dark]` rule, so dark users see light until the stylesheet loads.
+
 - **The four components that mount consumer DOM render in the light DOM.** `<mp-datatable>`,
   `<mp-treeview>`, `<mp-tree-select>` and the `<mp-query-builder>` family (builder / condition /
   group / subquery) no longer attach a shadow root; their styles are scoped at build time onto a
@@ -45,6 +90,19 @@ package version aligns its major with the supported Angular major.
 
 ### Added
 
+- **Dark mode across all three frameworks (issue #420).**
+  - `@mintplayer/web-components/theming`: the framework-neutral theme core.
+    - Cookie and resolution helpers: `readThemeCookie`, `isValidThemeMode`, `resolveServerTheme`,
+      `injectThemeAttribute`.
+    - A browser-only store (`getBsThemeStore`, `configureBsTheme`) that follows `prefers-color-scheme` live in
+      `auto` and syncs across tabs through `BroadcastChannel`.
+    - `color-mode.css`.
+    - The generated no-flash `bs-theme-preboot.js` (ES5, under 1 KB).
+  - `<mp-theme-toggle>` / `<bs-theme-toggle>` / `BsThemeToggle` (React, Vue): a cycle button driven by a `modes`
+    array of `{ mode, label, announcement, icon }`. Consumers localize by overriding the strings, and can pass 2–5
+    modes. The accessible name is the next action; the current state is its description, and each change is
+    announced.
+  - `provideBsTheme({ cookieDomain })` (Angular). `useBsTheme()` (React, Vue).
 - `@mintplayer/web-components/light-dom`: `installLightStyles` / `adoptLightStyles` /
   `scopedHtml` / `stampScope` — the light tier's public machinery. `adoptLightStyles` is the one a
   consumer needs: it mirrors the light-tier sheets into a shadow root that hosts one of these
@@ -72,6 +130,67 @@ package version aligns its major with the supported Angular major.
   cannot navigate away from an Angular route via `<base href>`. Wrapped for all three frameworks.
 - `@mintplayer/ng-bootstrap/code-snippet`: the Angular wrapper now forwards host `aria-*`, `role`,
   `id` and `tabindex` onto the `mp-*` element, where they reach the accessibility tree.
+- **Localizable strings and new inputs (coverage phase 2 audit):**
+  - `bs-resizable` `[labels]`: physical-side labels for the resize glyphs, driven by `Directionality`, so "start"
+    is no longer called "left" in RTL.
+  - `bs-file-upload`: `[fileAddedAnnouncement]`, `[filesAddedAnnouncement]` and `[progressLabel]` replace
+    hard-coded English.
+  - `bs-timeline` `[activatable]` and `mp-timeline` `activatable`: `(itemClick)` without `selectable` is now
+    keyboard-operable.
+  - `mp-dropdown-menu` reads an item's value from a documented `dropdownValue` property first (typed by
+    `DropdownItemElement`), then `data-value`, then `value`. All three `BsDropdownItem` wrappers use it, so object
+    and string values now reach the `select` event intact. Before, `<li>.value` coerced them to 0.
+  - Vue `useBsTheme()` returns an idempotent `stop()`, for use outside an effect scope. Inside a scope it is called
+    automatically.
+- **Behaviour change:** `mp-datetime-picker` now closes on every pick, which is what it already did in practice.
+  Pick events fire once instead of three times, and the inner pickers' events no longer leak out of the host.
+- **Coverage phase 2:** thousands of behavioural specs across every library, the `tools/` scripts and the API.
+  See `docs/prd/test-coverage.md` §10.
+
+### Fixed
+
+- **Found and fixed while raising coverage** (each pinned by a spec; full register in `docs/prd/test-coverage.md`
+  §10.6):
+  - **query-builder:** drag-and-drop never changed the tree, dropping into a sub-query didn't work, and value
+    editors lost edits and were never style-scoped.
+  - **scheduler:**
+    - `selectedRange` returned the drag preview.
+    - A `touchstart` listener leak, and `touchcancel` never ended an armed drag.
+    - A re-attached scheduler rendered an empty grid.
+  - **dock:** a floating window's intersection handle resized the docked splitter at the same position.
+    `setPointerCapture` failures lost the resizing state, and a zero-size move wiped the stored ratios.
+  - **tile-manager:** a zero-size cell hung the main thread in `pack()`.
+  - **splitter:**
+    - `minPanelSize` read NaN.
+    - Removing the splitter mid-drag left it resizing forever.
+    - A reconnected splitter lost its observers.
+  - **Date/time/datetime pickers:** fired each pick three times.
+  - **multi-range:** divided by a zero-size track.
+  - **Ribbon:** the contextual band colour parsed only 6-digit hex.
+  - **Carousel, swiper and signature-pad:**
+    - Carousel: slides became focusable after a reconnect.
+    - Swiper: one-slide wrap showed a blank cell.
+    - Signature-pad: mutated the data it had already emitted.
+  - **Angular wrappers:**
+    - Stale cached views after a template swap (treeview, datatable).
+    - `bs-select` never marked its form control touched.
+    - Dropdown and context-menu overlays leaked on destroy.
+    - The tab-control server render had no page content.
+    - Offcanvas/modal dispose timers couldn't be cancelled.
+    - `bs-scheduler` lost a date set together with `view`.
+    - `bs-timeline` mis-keyed numeric and id-less items.
+    - The tooltip overwrote `aria-describedby`.
+    - `enum.service` dropped members of string and mixed enums.
+
+- **Dark mode colours (issue #420).** Hard-coded light values are replaced with `--bs-*` tokens in:
+  - the scheduler scrollbar and greyed slots
+  - the query-builder toolbar buttons
+  - the datatable and treeview hover
+  - the code-snippet "Copied!" label
+- **Forced colours:** the select caret, switch knob and accordion chevron stay visible in forced-colours mode.
+- **Calendar:** the month header gets its 40px height, borders and background back. This was a regression from #393.
+- **Packaging:** `@mintplayer/web-components` now actually ships `custom-elements.json`. It was missing from the
+  2.16.0 tarball, because the asset copier skipped gitignored files.
 
 ### Removed
 

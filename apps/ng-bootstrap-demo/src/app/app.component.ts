@@ -7,14 +7,14 @@ import { ViewportScroller } from '@angular/common';
 import { RouterLink, RouterOutlet } from '@angular/router';
 import { NavbarRouterLinkActiveDirective } from './directives/navbar-routerlink-active/navbar-router-link-active.directive';
 import { BOOTSTRAP_VERSION } from './providers/bootstrap-version.provider';
-import { ThemeToggleComponent } from './components/theme-toggle/theme-toggle.component';
+import { BsThemeToggleComponent } from '@mintplayer/ng-bootstrap/theming';
 import { FrameworkLinksComponent } from './components/framework-links/framework-links.component';
 
 @Component({
   selector: 'demo-bootstrap-root',
   templateUrl: './app.component.html',
   styleUrls: ['./app.component.scss'],
-  imports: [RouterOutlet, RouterLink, BsNavbarComponent, BsNavbarNavComponent, BsNavbarDropdownComponent, BsNavbarDropdownLabelDirective, BsNavbarItemComponent, BsNavbarBrandComponent, BsNavbarContentDirective, BsDropdownDividerDirective, NavbarRouterLinkActiveDirective, ThemeToggleComponent, FrameworkLinksComponent],
+  imports: [RouterOutlet, RouterLink, BsNavbarComponent, BsNavbarNavComponent, BsNavbarDropdownComponent, BsNavbarDropdownLabelDirective, BsNavbarItemComponent, BsNavbarBrandComponent, BsNavbarContentDirective, BsDropdownDividerDirective, NavbarRouterLinkActiveDirective, BsThemeToggleComponent, FrameworkLinksComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class AppComponent {

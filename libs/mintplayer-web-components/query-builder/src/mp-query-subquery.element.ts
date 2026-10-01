@@ -101,6 +101,7 @@ export class MpQuerySubqueryElement extends LitElement {
           .schema=${this.schema}
           .rootEntity=${targetEntity}
           .depth=${this.depth + 1}
+          .dragActive=${this.isDragging}
         ></mp-query-builder>
       </div>
     `;

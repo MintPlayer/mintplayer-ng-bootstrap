@@ -122,6 +122,44 @@ describe('renderExpression (M9)', () => {
       .toBe('(Total >> 100)');
   });
 
+  it('defaults the root entity to the first schema entry, and tolerates an empty schema', () => {
+    const tree: Group = { kind: 'group', id: 'g', logic: 'and', children: [cond('total', 'gt', 1)] };
+    expect(renderExpression(tree, SCHEMA)).toBe('(Total > 1)');
+    expect(renderExpression(tree, [])).toBe('(total > 1)');
+  });
+
+  it('a sub-query on an unknown field renders its name and walks the body without an entity', () => {
+    const tree: Group = {
+      kind: 'group', id: 'g', logic: 'and',
+      children: [{
+        kind: 'subquery', id: 's', field: 'ghost', operator: 'in',
+        subQuery: { kind: 'group', id: 'sg', logic: 'or', children: [cond('amount', 'gt', 2)] },
+      }],
+    };
+    expect(renderExpression(tree, SCHEMA)).toBe('(ghost in (amount > 2))');
+  });
+
+  it('falls back to the raw operator key when no label exists for it', () => {
+    const tree: Group = {
+      kind: 'group', id: 'g', logic: 'and',
+      children: [cond('total', 'mystery-op' as Condition['operator'], 1)],
+    };
+    expect(renderExpression(tree, SCHEMA)).toBe('(Total mystery-op 1)');
+  });
+
+  it('renders an n-input value without a numeric n as JSON, and Date values as ISO strings', () => {
+    const tree: Group = {
+      kind: 'group', id: 'g', logic: 'and',
+      children: [
+        cond('orderDate', 'last-n-days', { days: 3 }),
+        cond('orderDate', 'equals', new Date('2026-01-02T03:04:05.000Z')),
+      ],
+    };
+    const out = renderExpression(tree, SCHEMA);
+    expect(out).toContain('{"days":3}');
+    expect(out).toContain('2026-01-02T03:04:05.000Z');
+  });
+
   it('renders unknown field names verbatim', () => {
     const tree: Group = {
       kind: 'group', id: 'g', logic: 'and',

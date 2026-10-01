@@ -1,3 +1,7 @@
+<!-- One ng-content, shared by both branches: with an ng-content in each, Angular projects
+     into the LAST one only, so the server branch rendered no pages at all. -->
+<ng-template #pages><ng-content></ng-content></ng-template>
+
 @if (isServerSide) {
 	@for (tab of tabPages(); track tab) {
 		<!-- The radio IS the control: clipped (not display:none) so Tab reaches
@@ -40,7 +44,7 @@
 		</div>
 	}
 	<div class="tab-content flex-grow-1 overflow-auto" bsNoNoscript [class.border]="border() && activeTabValue" [class.border-top]="border() && !activeTabValue">
-		<ng-content></ng-content>
+		<ng-container [ngTemplateOutlet]="pages"></ng-container>
 	</div>
 	@if (bottomTabs()) {
 		<div class="overflow-hidden mw-100 tsc bottom-tabs">
@@ -61,6 +65,6 @@
 				</span>
 			}
 		}
-		<ng-content></ng-content>
+		<ng-container [ngTemplateOutlet]="pages"></ng-container>
 	</mp-tab-control>
 }

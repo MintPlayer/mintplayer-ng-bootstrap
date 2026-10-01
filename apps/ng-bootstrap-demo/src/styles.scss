@@ -16,3 +16,18 @@ bs-navbar-brand {
     margin-top: 3px;
     margin-bottom: 3px;
 }
+
+// The custom "sepia" variant used by the theming page (four-mode toggle, Sepia
+// button). Global, so a reload on any page with bs-theme-mode=sepia stays sepia.
+// A custom variant must declare --mp-color-mode, which the web components read
+// to pick their light or dark icons (PRD dark-mode D6).
+[data-bs-theme="sepia"] {
+    --mp-color-mode: light;
+    color-scheme: light;
+    --bs-body-bg: #f4ecd8;
+    --bs-body-color: #5b4636;
+    --bs-emphasis-color: #3b2a1a;
+    --bs-link-color: #8b5a2b;
+    --bs-link-hover-color: #5b4636;
+    --bs-border-color: #d8c9a5;
+}

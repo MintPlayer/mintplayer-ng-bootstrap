@@ -1,3 +1,6 @@
+<!-- One ng-content for both branches (see bs-tab-control): Angular projects into the last. -->
+<ng-template #content><ng-content></ng-content></ng-template>
+
 @if (tabControl.isServerSide) {
 	<!-- region, not tabpanel: the no-JS tier ships no role="tab" (a static
 	     aria-selected would go stale), and a tabpanel without a tab is an
@@ -7,8 +10,8 @@
 		role="region"
 		[attr.aria-labelledby]="tabName() + '-header'"
 		[class.d-block]="tabControl.activeTab() === this">
-		<ng-content></ng-content>
+		<ng-container [ngTemplateOutlet]="content"></ng-container>
 	</div>
 } @else {
-	<ng-content></ng-content>
+	<ng-container [ngTemplateOutlet]="content"></ng-container>
 }

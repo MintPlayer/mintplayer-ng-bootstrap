@@ -1,0 +1,67 @@
+// Styles for <mp-theme-toggle> (PRD dark-mode D7). Shadow tier: nothing from
+// the page reaches the button, so every rule it needs is declared here.
+//
+// The host reserves the same 1.5em box that color-mode.css reserves for
+// mp-theme-toggle:not(:defined), so upgrading the element causes no layout shift.
+// Keep the two in lockstep: size, display, vertical-align and line-height.
+//
+// Nothing here animates, so there is nothing for prefers-reduced-motion to turn
+// off. Keep it that way: an icon swap on a theme change must stay instant.
+
+:host {
+  display: inline-block;
+  inline-size: 1.5em;
+  block-size: 1.5em;
+  vertical-align: middle;
+  line-height: 1;
+}
+
+:host([hidden]) {
+  display: none;
+}
+
+button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+  inline-size: 100%;
+  block-size: 100%;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  border-radius: var(--bs-border-radius-sm, 0.25rem);
+  background: none;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+  // Removed only because :focus-visible below replaces it.
+  outline: none;
+}
+
+button:focus-visible {
+  // currentColor keeps the ring at the text's contrast in light, dark and
+  // forced-colors modes alike (a translucent focus-ring colour would not).
+  outline: 2px solid currentColor;
+  outline-offset: 2px;
+}
+
+svg {
+  display: block;
+  inline-size: 1.5em;
+  block-size: 1.5em;
+  fill: currentColor;
+}
+
+// The in-shadow description node the button's aria-describedby points at.
+.visually-hidden {
+  position: absolute;
+  inline-size: 1px;
+  block-size: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}

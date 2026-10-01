@@ -108,58 +108,41 @@ export class DragController {
   }
 
   /**
-   * Walks `document.elementsFromPoint(x, y)` (composed path; cross-browser
-   * supported in Chromium / Firefox / modern WebKit) and returns the first
-   * `[data-drop-slot]` ancestor whose data-parent-id is NOT in the source's
-   * descendant set.
-   *
-   * For older WebKit which doesn't implement `elementsFromPoint`, callers
-   * can extend the resolver with a shadow-DOM walker (FR-38 fallback) —
-   * not implemented here since we target evergreen browsers.
+   * The one hit-test seam: every element under (x, y), topmost first.
+   * `document.elementsFromPoint` (evergreen: Chromium, Firefox, WebKit 11.1+)
+   * stops at a shadow host, so the chain is extended one level into the
+   * shadow root of any host it contains — the builder may itself live inside
+   * another component's shadow root. Specs stub this method to say which
+   * element is under the pointer; they never fake geometry.
+   */
+  private elementsAt(x: number, y: number): Element[] {
+    return expandShadowChain(document.elementsFromPoint(x, y), x, y);
+  }
+
+  /**
+   * Returns the first `[data-drop-slot]` under the pointer (or its ancestor)
+   * that carries a complete target and whose data-parent-id is NOT in the
+   * source's descendant set (cycle prevention).
    */
   private resolveDropTarget(x: number, y: number): DropTarget | null {
-    if (typeof document === 'undefined') return null;
     const source = this._source;
     if (!source) return null;
-
-    const elementsFromPoint = (document as Document & { elementsFromPoint?: (x: number, y: number) => Element[] }).elementsFromPoint;
-    let chain: Element[] = [];
-    if (typeof elementsFromPoint === 'function') {
-      chain = elementsFromPoint.call(document, x, y) ?? [];
-    } else {
-      const el = document.elementFromPoint(x, y);
-      if (el) chain = [el];
-    }
-
-    // Also walk into shadow roots of mp-query-builder hosts that overlap the
-    // point — needed because elementsFromPoint can stop at a closed/open
-    // shadow boundary depending on the browser. We descend through any
-    // [data-qb-root] host's shadow root.
-    const expanded = expandShadowChain(chain, x, y);
-
-    for (const el of expanded) {
-      const slot = el.closest('[data-drop-slot]') as HTMLElement | null;
-      if (!slot) continue;
-      const parentId = slot.dataset['parentId'];
-      const indexAttr = slot.dataset['index'];
-      const qbRoot = slot.dataset['qbRoot'];
-      if (!parentId || !indexAttr || !qbRoot) continue;
-      if (source.descendantIds.has(parentId)) continue; // cycle: drop into self/descendant
-      return { parentId, index: Number(indexAttr), qbRoot };
-    }
-    return null;
+    const targets = this.elementsAt(x, y)
+      .map((el) => el.closest('[data-drop-slot]') as HTMLElement | null)
+      .map((slot) => slot && {
+        parentId: slot.dataset['parentId'],
+        index: slot.dataset['index'],
+        qbRoot: slot.dataset['qbRoot'],
+      });
+    const hit = targets.find((t) => !!t && !!t.parentId && !!t.index && !!t.qbRoot
+      && !source.descendantIds.has(t.parentId));
+    return hit ? { parentId: hit.parentId!, index: Number(hit.index), qbRoot: hit.qbRoot! } : null;
   }
 }
 
 function expandShadowChain(chain: Element[], x: number, y: number): Element[] {
-  const out: Element[] = [...chain];
-  const visited = new Set<ShadowRoot>();
-  for (const el of chain) {
-    const shadow = (el as Element & { shadowRoot?: ShadowRoot }).shadowRoot;
-    if (!shadow || visited.has(shadow)) continue;
-    visited.add(shadow);
-    const inner = shadow.elementFromPoint(x, y);
-    if (inner) out.push(inner);
-  }
-  return out;
+  const inner = [...new Set(chain.map((el) => el.shadowRoot).filter((s): s is ShadowRoot => !!s))]
+    .map((shadow) => shadow.elementFromPoint(x, y))
+    .filter((el): el is Element => !!el);
+  return [...chain, ...inner];
 }

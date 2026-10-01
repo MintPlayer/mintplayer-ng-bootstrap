@@ -2,7 +2,7 @@ import { html, nothing } from 'lit';
 import { HostAriaController } from '@mintplayer/web-components/a11y';
 import { MpDropdownElement } from './mp-dropdown-element';
 import { dropdownMenuStyles } from '../styles';
-import type { DropdownMode, DropdownSelectEventDetail } from '../types';
+import type { DropdownItemElement, DropdownMode, DropdownSelectEventDetail } from '../types';
 
 /**
  * `<mp-dropdown-menu>` — a Bootstrap `.dropdown-menu` rendered inside its shadow
@@ -33,7 +33,12 @@ import type { DropdownMode, DropdownSelectEventDetail } from '../types';
  *    it copied an IDREF into the shadow root, where it resolved to nothing.
  *
  * An item is disabled via the `.disabled` class (or `aria-disabled="true"`), and
- * carries an opaque `value` via a `value` JS property or a `data-value` attribute.
+ * carries an opaque value, read in this order: a `dropdownValue` JS property (any
+ * value, passed through unchanged; see `DropdownItemElement`), a `data-value`
+ * attribute (a string), then the element's own `value` (an authored `value`
+ * attribute on an `<li>` is its native number; a non-`<li>` item's `value`
+ * property). Never assign an object or a string to an `<li>`'s `value`
+ * property: `HTMLLIElement.value` is a native long and coerces it to 0.
  * Events: `select` (`detail: { item, value }`) when an enabled item is activated.
  */
 export class MpDropdownMenu extends MpDropdownElement {
@@ -156,6 +161,12 @@ export class MpDropdownMenu extends MpDropdownElement {
   }
 
   #valueOf(item: HTMLElement): unknown {
+    // The opaque channel: `dropdownValue` names no built-in DOM property, so it
+    // carries any value unchanged. The framework wrappers write it; `value`
+    // cannot serve, because HTMLLIElement.value is a native long that coerces an
+    // object or a string to 0.
+    const opaque = (item as DropdownItemElement).dropdownValue;
+    if (opaque !== undefined) return opaque;
     const prop = (item as HTMLElement & { value?: unknown }).value;
     // <li> has a NATIVE numeric `value` (its <ol> ordinal, default 0), so for a
     // bare <li class="dropdown-item"> the property is always "set" and the

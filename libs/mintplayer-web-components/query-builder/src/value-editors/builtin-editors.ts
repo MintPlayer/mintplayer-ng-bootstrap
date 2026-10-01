@@ -2,8 +2,26 @@ import type { Operator } from '../model/expression';
 import type { FieldDef, FieldDefOption } from '../model/field-def';
 import type { EditorContext, EditorHandle } from '../model/editor';
 import { valueShapeFor } from '../model/operators';
+import { stampScope } from '@mintplayer/web-components/light-dom';
 
 type BuiltinFactory = (ctx: EditorContext) => EditorHandle;
+
+/**
+ * The built-in editors are mp-query-condition's own DOM and are styled by its
+ * light-tier sheet, whose rules all require this scope. They are built
+ * imperatively, so the scopedHtml rewriter never sees them: stamp them here.
+ * A registry (consumer) editor never passes through this module, so it is
+ * never branded.
+ */
+const EDITOR_SCOPE = 'query-condition';
+
+function stamped(factory: BuiltinFactory): BuiltinFactory {
+  return (ctx) => {
+    const handle = factory(ctx);
+    stampScope(handle.element, EDITOR_SCOPE);
+    return handle;
+  };
+}
 
 function makeInput(
   type: 'text' | 'number' | 'date' | 'datetime-local',
@@ -76,15 +94,16 @@ function tupleFactory(scalarType: 'number' | 'integer' | 'date' | 'datetime'): B
   return (ctx) => {
     const wrap = document.createElement('span');
     wrap.className = 'qb-editor-tuple';
-    const [v0, v1] = Array.isArray(ctx.value)
+    // The editor outlives value changes (the host keeps it while field and
+    // operator are unchanged), so ctx.value is only the initial value. Track the
+    // pair locally, or editing the second bound would drop the first.
+    let current: unknown[] = Array.isArray(ctx.value)
       ? [ctx.value[0] ?? null, ctx.value[1] ?? null]
       : [null, null];
+    const [v0, v1] = current;
 
     const update = (idx: 0 | 1, raw: string): void => {
-      const current = Array.isArray(ctx.value)
-        ? [ctx.value[0] ?? null, ctx.value[1] ?? null]
-        : [null, null];
-      current[idx] = parseScalar(raw, scalarType);
+      current = current.map((v, i) => (i === idx ? parseScalar(raw, scalarType) : v));
       ctx.onChange(current);
     };
 
@@ -191,45 +210,61 @@ function chipInputFactory(parser: (raw: string) => unknown): BuiltinFactory {
     const wrap = document.createElement('span');
     wrap.className = 'qb-editor-chip-input';
 
-    const renderChips = (): void => {
-      wrap.innerHTML = '';
-      const arr = Array.isArray(ctx.value) ? ctx.value : [];
-      for (let i = 0; i < arr.length; i++) {
-        const v = arr[i];
-        const chip = document.createElement('span');
-        chip.className = 'qb-editor-chip';
-        chip.textContent = String(v);
-        const close = document.createElement('button');
-        close.type = 'button';
-        close.className = 'qb-editor-chip-remove';
-        close.setAttribute('aria-label', `Remove ${String(v)}`);
-        close.textContent = '×';
-        if (ctx.disabled) close.disabled = true;
-        close.addEventListener('click', () => {
-          const next = (Array.isArray(ctx.value) ? ctx.value : []).filter((_, idx) => idx !== i);
-          ctx.onChange(next);
-        });
-        chip.appendChild(close);
-        wrap.appendChild(chip);
-      }
-      const input = document.createElement('input');
-      input.type = 'text';
-      input.className = 'form-control form-control-sm qb-editor-chip-add';
-      input.placeholder = '+ add';
-      input.size = 8;
-      input.setAttribute('aria-label', `${ctx.field.label} — add value`);
-      if (ctx.disabled) input.disabled = true;
-      input.addEventListener('keydown', (e) => {
-        if (e.key === 'Enter' && input.value.trim() !== '') {
-          e.preventDefault();
-          const parsed = parser(input.value.trim());
-          const next = [...(Array.isArray(ctx.value) ? ctx.value : []), parsed];
-          input.value = '';
-          ctx.onChange(next);
-        }
-      });
-      wrap.appendChild(input);
+    // The editor outlives value changes (the host keeps it while field and
+    // operator are unchanged), so ctx.value is only the initial value. The
+    // list is tracked here and the chips re-rendered from it; the add box is
+    // created once so it keeps focus across adds.
+    let values: unknown[] = Array.isArray(ctx.value) ? [...ctx.value] : [];
+
+    const input = document.createElement('input');
+    input.type = 'text';
+    input.className = 'form-control form-control-sm qb-editor-chip-add';
+    input.placeholder = '+ add';
+    input.size = 8;
+    input.setAttribute('aria-label', `${ctx.field.label} — add value`);
+    if (ctx.disabled) input.disabled = true;
+
+    const commit = (next: unknown[]): void => {
+      values = next;
+      renderChips();
+      ctx.onChange(next);
     };
+
+    const makeChip = (v: unknown, i: number): HTMLElement => {
+      const chip = document.createElement('span');
+      chip.className = 'qb-editor-chip';
+      chip.textContent = String(v);
+      const close = document.createElement('button');
+      close.type = 'button';
+      close.className = 'qb-editor-chip-remove';
+      close.setAttribute('aria-label', `Remove ${String(v)}`);
+      close.textContent = '×';
+      if (ctx.disabled) close.disabled = true;
+      close.addEventListener('click', () => commit(values.filter((_, idx) => idx !== i)));
+      chip.appendChild(close);
+      stampScope(chip, EDITOR_SCOPE);
+      return chip;
+    };
+
+    // Replace only the chips in front of the add box: moving the box itself
+    // (replaceChildren) would blur it mid-typing.
+    const renderChips = (): void => {
+      const chips = document.createRange();
+      chips.selectNodeContents(wrap);
+      chips.setEndBefore(input);
+      chips.deleteContents();
+      input.before(...values.map(makeChip));
+    };
+    wrap.appendChild(input);
+
+    input.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter' && input.value.trim() !== '') {
+        e.preventDefault();
+        const parsed = parser(input.value.trim());
+        input.value = '';
+        commit([...values, parsed]);
+      }
+    });
 
     renderChips();
     return {
@@ -242,6 +277,14 @@ function chipInputFactory(parser: (raw: string) => unknown): BuiltinFactory {
 }
 
 export function resolveBuiltinEditor(
+  field: FieldDef,
+  operator: Operator,
+): BuiltinFactory | null {
+  const factory = unstampedBuiltinEditor(field, operator);
+  return factory ? stamped(factory) : null;
+}
+
+function unstampedBuiltinEditor(
   field: FieldDef,
   operator: Operator,
 ): BuiltinFactory | null {

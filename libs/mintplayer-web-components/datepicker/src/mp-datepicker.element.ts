@@ -154,6 +154,9 @@ export class MpDatepickerElement extends LitElement {
   private onSelectedDateChange = (event: Event): void => {
     const detail = (event as CustomEvent<Date>).detail;
     if (!(detail instanceof Date)) return;
+    // The calendar's own event is composed, so without this the host's listeners
+    // would see it AND the re-emitted copy below.
+    event.stopPropagation();
     this.selectedDate = detail;
     this.requestUpdate();
     // Re-emit at host level so light-DOM consumers receive a stable event source.
@@ -171,6 +174,7 @@ export class MpDatepickerElement extends LitElement {
   private onCurrentMonthChange = (event: Event): void => {
     const detail = (event as CustomEvent<Date>).detail;
     if (!(detail instanceof Date)) return;
+    event.stopPropagation();
     this.currentMonth = detail;
     this.requestUpdate();
     this.dispatchEvent(
@@ -223,6 +227,9 @@ export class MpDatepickerElement extends LitElement {
         role="dialog"
         aria-label="${this.triggerLabel}"
       >
+        <!-- The one listener for both the default calendar (fallback content is a
+             child of the slot) and a slotted consumer calendar. The inner event
+             is stopped here and re-emitted once from the host. -->
         <slot name="calendar"
           @selected-date-change="${this.onSelectedDateChange}"
           @current-month-change="${this.onCurrentMonthChange}"
@@ -235,8 +242,6 @@ export class MpDatepickerElement extends LitElement {
             .max="${this.max}"
             .firstDayOfWeek="${this.firstDayOfWeek}"
             .locale="${this.locale}"
-            @selected-date-change="${this.onSelectedDateChange}"
-            @current-month-change="${this.onCurrentMonthChange}"
           ></mp-calendar>
         </slot>
       </div>

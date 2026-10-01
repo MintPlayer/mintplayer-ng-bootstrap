@@ -5,7 +5,7 @@
   --mp-treeview-indent: 20px;
   --mp-treeview-row-padding-y: 0.5rem;
   --mp-treeview-row-padding-x: 0.75rem;
-  --mp-treeview-row-hover-bg: var(--bs-list-group-action-hover-bg, rgba(0, 0, 0, 0.04));
+  --mp-treeview-row-hover-bg: var(--bs-list-group-action-hover-bg, rgba(var(--bs-emphasis-color-rgb), 0.04));
   --mp-treeview-row-selected-bg: var(--bs-list-group-active-bg, var(--bs-primary));
   --mp-treeview-row-selected-color: var(--bs-list-group-active-color, #fff);
   --mp-treeview-row-focus-outline: 2px solid var(--bs-primary, #1389fd);

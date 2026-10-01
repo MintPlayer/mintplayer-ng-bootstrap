@@ -121,24 +121,12 @@ describe('mp-signature-pad — typed alternative & model', () => {
   });
 });
 
-describe('mp-signature-pad — CSS-scaled canvas coordinate mapping', () => {
+describe('mp-signature-pad — canvas coordinate mapping', () => {
   let el: MpSignaturePadElement;
   afterEach(() => el.remove());
 
-  it('maps pointer coordinates from rendered CSS pixels to bitmap pixels', async () => {
-    el = await mount((host) => {
-      host.width = 500;
-      host.height = 300;
-    });
-    const canvas = shadow(el).querySelector('canvas')!;
-    // Simulate `width: 100%` shrinking the 500x300 bitmap to a 250x150 box at (10, 20).
-    canvas.getBoundingClientRect = () =>
-      ({ left: 10, top: 20, width: 250, height: 150, right: 260, bottom: 170, x: 10, y: 20, toJSON: () => ({}) }) as DOMRect;
-    canvas.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true, clientX: 110, clientY: 95 }));
-    // (110-10) CSS px * (500/250) = 200 bitmap px; (95-20) * (300/150) = 150.
-    expect(el.signature.strokes[0].points[0]).toEqual({ x: 200, y: 150 });
-  });
-
+  // The scaling itself is the pure toBitmapPoint (mp-signature-pad.drawing.spec.ts);
+  // here only the element's use of it, on jsdom's real zero-area box.
   it('falls back to offsetX/offsetY when the canvas has no layout (rect 0x0)', async () => {
     el = await mount();
     const canvas = shadow(el).querySelector('canvas')!;

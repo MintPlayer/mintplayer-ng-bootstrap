@@ -51,6 +51,21 @@ const angularApp = new AngularNodeAppEngine();
  */
 
 /**
+ * The theme pre-boot script (PRD dark-mode D5) has a stable, unhashed name, so
+ * it must not inherit the one-year max-age below: a cached copy would outlive a
+ * library upgrade. Revalidate it on every load instead (it is under 1 KB). The
+ * "theming" assets glob in project.json puts only that file in this folder.
+ */
+app.use(
+  '/theming',
+  express.static(resolve(browserDistFolder, 'theming'), {
+    maxAge: 0,
+    index: false,
+    redirect: false,
+  }),
+);
+
+/**
  * Serve static files from /browser
  */
 app.use(
@@ -95,6 +110,10 @@ app.use((req, res, next) => {
         const body = injectMpLightStyles(injectMpAccordionDsd(injectMpCarouselDsd(injectMpNavbarDsd(injectMpDropdownDsd(injectMpShellDsd(await response.text()))))));
         const headers = new Headers(response.headers);
         headers.delete('content-length');
+        // BsThemeService renders <html data-bs-theme> from the bs-theme-mode
+        // cookie (PRD dark-mode D4), so the HTML differs per cookie: a shared
+        // cache must key on it, or one user's theme is served to another.
+        headers.append('Vary', 'Cookie');
         return writeResponseToNodeResponse(new Response(body, { status: response.status, headers }), res);
       }
       return writeResponseToNodeResponse(response, res);

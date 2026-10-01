@@ -1,5 +1,5 @@
 import { LitElement, html, svg, nothing, type TemplateResult } from 'lit';
-import { linearScale } from '@mintplayer/web-components/charts/core';
+import { booleanAttribute, linearScale, optionalNumberAttribute } from '@mintplayer/web-components/charts/core';
 import { sparklineStyles } from '../styles';
 
 const W = 100;
@@ -113,10 +113,10 @@ export class MpSparkline extends LitElement {
   override attributeChangedCallback(name: string, oldValue: string | null, newValue: string | null): void {
     super.attributeChangedCallback(name, oldValue, newValue);
     switch (name) {
-      case 'area': this.area = newValue !== null && newValue !== 'false'; break;
-      case 'show-last-dot': this.showLastDot = newValue !== 'false' && newValue !== null; break;
-      case 'y-min': this.yMin = newValue === null ? undefined : Number(newValue); break;
-      case 'y-max': this.yMax = newValue === null ? undefined : Number(newValue); break;
+      case 'area': this.area = booleanAttribute(newValue, false); break;
+      case 'show-last-dot': this.showLastDot = booleanAttribute(newValue, true); break;
+      case 'y-min': this.yMin = optionalNumberAttribute(newValue); break;
+      case 'y-max': this.yMax = optionalNumberAttribute(newValue); break;
       case 'locale': this.locale = newValue ?? undefined; break;
       case 'aria-label': this.requestUpdate(); break;
       case 'input-label': this.inputLabel = newValue; break;

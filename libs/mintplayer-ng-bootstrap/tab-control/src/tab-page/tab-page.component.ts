@@ -1,3 +1,4 @@
+import { NgTemplateOutlet } from '@angular/common';
 import { ChangeDetectionStrategy, Component, contentChild, computed, inject, input, ElementRef, signal } from '@angular/core';
 import { BsTabControlComponent } from '../tab-control/tab-control.component';
 import { BsTabPageHeaderDirective } from '../tab-page-header/tab-page-header.directive';
@@ -6,6 +7,7 @@ import { BsTabPageHeaderDirective } from '../tab-page-header/tab-page-header.dir
   selector: 'bs-tab-page',
   templateUrl: './tab-page.component.html',
   styleUrls: ['./tab-page.component.scss'],
+  imports: [NgTemplateOutlet],
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: {
     // Used by <mp-tab-control> to project the active page into its content slot.

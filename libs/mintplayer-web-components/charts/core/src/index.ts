@@ -4,3 +4,5 @@ export * from './arc';
 export * from './label-fit';
 export * from './scale';
 export * from './color';
+export * from './view-window';
+export * from './attributes';

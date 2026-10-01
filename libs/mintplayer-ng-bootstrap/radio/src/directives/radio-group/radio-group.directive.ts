@@ -69,11 +69,10 @@ export class BsRadioGroupDirective implements ControlValueAccessor {
   constructor() {
     effect(() => {
       const value = this.currentValue();
-      this.radios().forEach(r => {
+      this.radios().map((r) => {
         const isSelected = r.value() === value;
         r.isToggled.set(isSelected);
-        const wc = r.radioRef()?.nativeElement;
-        if (wc) wc.checked = isSelected;
+        r.radioRef().nativeElement.checked = isSelected;
       });
     });
   }
@@ -82,7 +81,7 @@ export class BsRadioGroupDirective implements ControlValueAccessor {
   onGroupChange(ev: Event) {
     if (ev.target !== this.host) return;
     const value = (ev as CustomEvent<RadioGroupChangeEventDetail>).detail.value;
-    this.radios().forEach(r => r.isToggled.set(r.value() === value));
+    this.radios().map((r) => r.isToggled.set(r.value() === value));
     this.onValueChange?.(value);
   }
 
@@ -92,17 +91,15 @@ export class BsRadioGroupDirective implements ControlValueAccessor {
     if (this.host.tagName === 'MP-RADIO-GROUP') return;
     if (!this.onValueChange) return;
     const target = ev.target as HTMLElement;
-    let selectedValue: string | null = null;
-    this.radios().forEach(r => {
-      const wc = r.radioRef()?.nativeElement as MpRadio | undefined;
-      const isTarget = !!wc && wc === target;
-      const isChecked = isTarget && wc.checked;
+    const checked = this.radios().filter((r) => {
+      const wc: MpRadio = r.radioRef().nativeElement;
+      const isChecked = wc === target && wc.checked;
       // Shadow DOM blocks native one-of-N — uncheck every non-target sibling.
-      if (!isTarget && wc && wc.checked) wc.checked = false;
+      if (wc !== target) wc.checked = false;
       r.isToggled.set(isChecked);
-      if (isChecked) selectedValue = r.value();
+      return isChecked;
     });
-    this.onValueChange(selectedValue);
+    this.onValueChange(checked[0]?.value() ?? null);
   }
 
   registerOnChange(fn: (_: string | null) => void) {
@@ -118,9 +115,6 @@ export class BsRadioGroupDirective implements ControlValueAccessor {
   }
 
   setDisabledState(isDisabled: boolean) {
-    this.radios().forEach(r => {
-      const wc = r.radioRef()?.nativeElement;
-      if (wc) wc.disabled = isDisabled;
-    });
+    this.radios().map((r) => (r.radioRef().nativeElement.disabled = isDisabled));
   }
 }

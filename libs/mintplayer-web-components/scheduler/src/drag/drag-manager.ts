@@ -1,8 +1,4 @@
-import {
-  SchedulerEvent,
-  TimeSlot,
-  generateEventId,
-} from '@mintplayer/web-components/scheduler-core';
+import { TimeSlot } from '@mintplayer/web-components/scheduler-core';
 import { SchedulerStateManager } from '../state/scheduler-state';
 import { DragStateMachine } from './drag-state-machine';
 import {
@@ -171,33 +167,6 @@ export class DragManager {
     this.cancelPendingUpdate();
     this.latestPointer = null;
     this.getSlotAtPosition = null;
-  }
-
-  /**
-   * Create a new event from a completed create drag.
-   */
-  createEventFromResult(result: DragCompletionResult): SchedulerEvent {
-    return {
-      id: generateEventId(),
-      title: 'New Event',
-      start: result.preview.start,
-      end: result.preview.end,
-      color: '#3788d8',
-    };
-  }
-
-  /**
-   * Update an event from a completed move/resize drag.
-   */
-  updateEventFromResult(
-    result: DragCompletionResult,
-    event: SchedulerEvent
-  ): SchedulerEvent {
-    return {
-      ...event,
-      start: result.preview.start,
-      end: result.preview.end,
-    };
   }
 
   /**

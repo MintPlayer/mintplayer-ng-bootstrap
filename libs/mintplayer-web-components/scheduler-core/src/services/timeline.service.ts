@@ -66,8 +66,15 @@ export class TimelineService {
       dayIndex++;
     }
 
-    // Add final part if the end time is not midnight
-    if (event.end.getHours() !== 0 || event.end.getMinutes() !== 0 || event.end.getSeconds() !== 0) {
+    // Add final part if the end time is not midnight. An event ending exactly
+    // at midnight has no tail on its end day, so the last whole-day part IS its
+    // end — without marking it, such an event had no part with isEnd at all and
+    // every view drew it as continuing into a day it never touches.
+    const endsAtMidnight =
+      event.end.getHours() === 0 && event.end.getMinutes() === 0 && event.end.getSeconds() === 0;
+    if (endsAtMidnight) {
+      parts[parts.length - 1] = { ...parts[parts.length - 1], isEnd: true };
+    } else {
       const isFullEvent = 'id' in event;
       parts.push({
         id: isFullEvent ? `${event.id}-${dayIndex}` : `preview-${dayIndex}`,
@@ -365,39 +372,6 @@ export class TimelineService {
   }
 
   /**
-   * Calculate the relative track position for an event part (legacy method)
-   * @deprecated Use getColspanLayout instead for better layout
-   */
-  private getRelativeTrackPosition(
-    tracks: TimelineTrack[],
-    part: SchedulerEventPart,
-    globalTrackIndex: number
-  ): { relativeIndex: number; overlappingCount: number } {
-    // Find all track indices that have events overlapping with this part
-    const overlappingTrackIndices: number[] = [];
-
-    for (const track of tracks) {
-      const hasOverlap = track.events.some((event) =>
-        event.start < part.end && event.end > part.start
-      );
-      if (hasOverlap) {
-        overlappingTrackIndices.push(track.index);
-      }
-    }
-
-    // Sort to ensure consistent ordering
-    overlappingTrackIndices.sort((a, b) => a - b);
-
-    // Find the relative position of this event's track among overlapping tracks
-    const relativeIndex = overlappingTrackIndices.indexOf(globalTrackIndex);
-
-    return {
-      relativeIndex: relativeIndex >= 0 ? relativeIndex : 0,
-      overlappingCount: Math.max(1, overlappingTrackIndices.length),
-    };
-  }
-
-  /**
    * Filter events that fall within a date range
    */
   filterByRange(events: SchedulerEvent[], start: Date, end: Date): SchedulerEvent[] {
@@ -453,18 +427,6 @@ export class TimelineService {
     dayEnd.setHours(23, 59, 59, 999);
 
     return this.filterByRange(events, dayStart, dayEnd);
-  }
-
-  /**
-   * Get event parts for a specific day
-   */
-  getPartsForDay(parts: SchedulerEventPart[], day: Date): SchedulerEventPart[] {
-    const dayStart = new Date(day);
-    dayStart.setHours(0, 0, 0, 0);
-    const dayEnd = new Date(day);
-    dayEnd.setHours(23, 59, 59, 999);
-
-    return this.filterPartsByRange(parts, dayStart, dayEnd);
   }
 }
 

@@ -1,6 +1,14 @@
 // Bootstrap configuration partials. Compile to no CSS on their own — they
 // exist so the @imports below can resolve $prefix, mixin references, the
 // colour map, etc.
+//
+// Dark mode is switched off at the Sass level (it must precede the variables
+// import, since the flag is !default): the rescoper would stamp Bootstrap's
+// [data-bs-theme=dark] .form-select ancestor and leave a selector that can
+// never match (rescope-css.spec documents the trap). The dark caret is
+// restated below as a style query on --mp-color-mode instead.
+$enable-dark-mode: false;
+
 @import 'node_modules/bootstrap/scss/functions';
 @import 'node_modules/bootstrap/scss/variables';
 @import 'node_modules/bootstrap/scss/variables-dark';
@@ -20,6 +28,22 @@
 // the date-relative N-input, etc.).
 @import 'node_modules/bootstrap/scss/forms/form-control';
 @import 'node_modules/bootstrap/scss/forms/form-select';
+
+// The rescoper passes the style query through and scopes the inner compound.
+@container style(--mp-color-mode: dark) {
+  .form-select {
+    --#{$prefix}form-select-bg-img: #{escape-svg($form-select-indicator-dark)};
+  }
+}
+
+// Forced colours: the data-URI caret keeps a colour that follows
+// --mp-color-mode, not the forced palette; let the system draw the arrow.
+@media (forced-colors: active) {
+  .form-select {
+    appearance: auto;
+    background-image: none;
+  }
+}
 
 :host {
   display: block;

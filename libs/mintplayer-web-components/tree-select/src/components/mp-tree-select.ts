@@ -238,7 +238,9 @@ export class MpTreeSelect extends LitElement {
   }
   set panelScrollHeight(value: string) {
     this._scrollHeight = value || '300px';
-    this.requestUpdate();
+    // The panel body reads this through its stylesheet rule, so the panel
+    // carries no inline style (same channel as mp-dropdown-menu's max height).
+    this.style.setProperty('--mp-tree-select-panel-max-height', this._scrollHeight);
   }
 
   get disabled(): boolean {
@@ -261,11 +263,14 @@ export class MpTreeSelect extends LitElement {
   override attributeChangedCallback(name: string, oldValue: string | null, newValue: string | null): void {
     super.attributeChangedCallback(name, oldValue, newValue);
     switch (name) {
+      // Enum and numeric attributes: a removed or unrecognised value falls back to
+      // the default instead of reaching the setter verbatim (an unknown mode used
+      // to disable single-mode pruning; a non-numeric debounce became 0 ms).
       case 'mode':
-        this.mode = (newValue as TreeSelectMode) ?? 'single';
+        this.mode = newValue === 'multiple' || newValue === 'checkbox' ? newValue : 'single';
         break;
       case 'variant':
-        this.variant = (newValue as TreeSelectVariant) ?? 'textbox';
+        this.variant = newValue === 'button' ? 'button' : 'textbox';
         break;
       case 'cascade-select':
         this.cascadeSelect = newValue !== null;
@@ -282,9 +287,11 @@ export class MpTreeSelect extends LitElement {
       case 'disabled':
         this.disabled = newValue !== null;
         break;
-      case 'search-debounce-ms':
-        this.searchDebounceMs = Number(newValue);
+      case 'search-debounce-ms': {
+        const ms = newValue === null ? NaN : Number(newValue);
+        this.searchDebounceMs = Number.isFinite(ms) ? ms : 200;
         break;
+      }
       case 'aria-label':
         this.requestUpdate();
         break;
@@ -832,9 +839,7 @@ export class MpTreeSelect extends LitElement {
 
   private renderCaret(): unknown {
     const span = document.createElement('span');
-    span.style.display = 'inline-flex';
-    span.style.width = '100%';
-    span.style.height = '100%';
+    span.className = 'ts-caret-icon';
     span.innerHTML = CARET_SVG;
     stampScope(span, 'tree-select');
     return span;
@@ -856,7 +861,7 @@ export class MpTreeSelect extends LitElement {
               />
             </div>`
           : nothing}
-        <div class="ts-panel-body" style=${`max-height:${this._scrollHeight}`}>${this.renderBody()}</div>
+        <div class="ts-panel-body">${this.renderBody()}</div>
         ${this.renderLoadMore()}
         ${this.footerTemplate ? html`<div class="ts-panel-footer">${this.footerTemplate()}</div>` : nothing}
       </div>

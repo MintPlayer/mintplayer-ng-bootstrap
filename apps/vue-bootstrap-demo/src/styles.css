@@ -4,6 +4,9 @@
  * part of that one linked stylesheet; Vite inlines + url()-rebases these in dev
  * and bundles them into a hashed stylesheet in the production build. */
 @import 'bootstrap/dist/css/bootstrap.min.css';
+/* --mp-color-mode, the token the components' dark icons query (PRD dark-mode D6).
+ * Stock bootstrap.min.css does not declare it. */
+@import '@mintplayer/web-components/theming/color-mode.css';
 @import 'bootstrap-icons/font/bootstrap-icons.css';
 
 body {

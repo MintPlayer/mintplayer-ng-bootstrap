@@ -1,14 +1,13 @@
-import { encodeUtf8 } from "@mintplayer/encode-utf8";
 import { BitBuffer } from "../bit-buffer";
 import * as Mode from '../mode';
 
 export class ByteData {
 	constructor(data: string | ArrayBuffer) {
 		this.mode = Mode.BYTE;
-		if (typeof data === 'string') {
-			data = encodeUtf8(data)
-		}
-		this.data = new Uint8Array(data);
+		// UTF-8 via the platform TextEncoder (every browser and Node). It replaced the
+		// former @mintplayer/encode-utf8, after a spec proved the two byte-identical over
+		// every code unit and surrogate pair; data-types.spec.ts pins the encoding.
+		this.data = typeof data === 'string' ? new TextEncoder().encode(data) : new Uint8Array(data);
 	}
 
 	private data: Uint8Array;

@@ -1,24 +1,294 @@
 <h1 class="text-center">Theming &amp; dark mode</h1>
 
 <p class="lead">
-  Bootstrap 5.3 ships a built-in color-mode system based on the
-  <code>data-bs-theme</code> attribute. <code>@mintplayer/ng-bootstrap</code> adds
-  a tiny service on top that owns the user's preference, persists it, and
-  resolves <code>auto</code> via <code>prefers-color-scheme</code> — and exposes
-  it as Angular signals.
+  Bootstrap 5.3 ships a color-mode system based on the <code>data-bs-theme</code>
+  attribute. <code>&#64;mintplayer/ng-bootstrap</code> adds what it leaves out: the
+  user's choice is kept in a cookie, a tiny pre-boot script applies it before the
+  first paint, the server renders it into the HTML, and a toggle and a
+  signal-based service change it.
 </p>
 
 <bs-alert [type]="colors.info" class="d-block mb-4">
-  <strong>Three primitives, two recipes.</strong>
+  <strong>Three steps, all in your app shell.</strong>
   <ul class="mb-0">
-    <li>To <strong>switch</strong> light/dark/auto at runtime, flip
-      <code>data-bs-theme</code> on <code>&lt;html&gt;</code>. <code>BsThemeService</code> does this for you.</li>
-    <li>To <strong>customize colors at build time</strong>, override Bootstrap's SCSS variables
-      <em>before</em> <code>&#64;import</code>ing the library's bundle.</li>
-    <li>To <strong>customize colors at runtime</strong>, set the corresponding
-      <code>--bs-*</code> CSS variables via
-      <code>document.documentElement.style.setProperty(...)</code>.</li>
+    <li>Add the <a [routerLink]="[]" fragment="head">head tags</a>: the colour-scheme metas, the optional default-mode meta and the pre-boot script.</li>
+    <li>Copy the pre-boot script with an <a [routerLink]="[]" fragment="assets">assets glob</a>, and <a [routerLink]="[]" fragment="critical-css">turn off critical-CSS inlining</a>.</li>
+    <li>Drop a <a [routerLink]="[]" fragment="toggle"><code>&lt;bs-theme-toggle&gt;</code></a> into your navbar. Server rendering needs no code.</li>
   </ul>
+</bs-alert>
+
+
+<h2 id="head">Head tags</h2>
+
+<p>
+  The pre-boot script sets <code>&lt;html data-bs-theme&gt;</code> synchronously
+  from the <code>{{ cookieName }}</code> cookie, the site default or
+  <code>prefers-color-scheme</code>, before the browser has resolved any CSS. That is
+  what keeps a dark user from seeing a light flash on reload, on prerendered and
+  cached pages as well as on server-rendered ones. Place it in
+  <code>&lt;head&gt;</code>, after the <code>{{ metaName }}</code> meta it reads and
+  before every stylesheet. It is a plain blocking script on purpose: do not add
+  <code>async</code>, <code>defer</code> or <code>type="module"</code>.
+</p>
+
+<bs-code-snippet [code]="headSnippet" [language]="'html'"></bs-code-snippet>
+
+<p>
+  <code>&lt;meta name="color-scheme" content="light dark"&gt;</code> lets the browser
+  draw native controls and scrollbars in either scheme. The two
+  <code>theme-color</code> metas colour the browser's own chrome (the mobile
+  address bar, the installed-app title bar) to match the OS scheme.
+</p>
+
+
+<h2 id="assets">Copying the pre-boot script</h2>
+
+<p>
+  The script ships once, from <code>&#64;mintplayer/web-components/theming/bs-theme-preboot.js</code>:
+  there is no copy in <code>&#64;mintplayer/ng-bootstrap</code>, so an
+  <code>input</code> of <code>node_modules/&#64;mintplayer/ng-bootstrap/theming</code>
+  (the path issue #420 originally proposed) finds nothing. It is generated from
+  the same cookie and resolve helpers the library uses, so it cannot drift from
+  them, and it stays under 1 KB. Copy it into your build output with an assets
+  glob, so it is served at <code>/theming/bs-theme-preboot.js</code>.
+</p>
+
+<bs-code-snippet [code]="assetsSnippet" [language]="'json'"></bs-code-snippet>
+
+<p class="text-muted">
+  Its file name carries no content hash, so do not serve it with a long
+  <code>max-age</code>: a cached copy would outlive a library upgrade. This demo's
+  <code>server.ts</code> serves it with <code>max-age=0</code>.
+</p>
+
+
+<h2 id="critical-css">Turn off critical-CSS inlining</h2>
+
+<p>
+  In a production build Angular inlines the CSS it judges critical for the static
+  <code>index.html</code> and loads the rest asynchronously. That file has no
+  <code>data-bs-theme</code> attribute, so the inliner prunes every
+  <code>[data-bs-theme=dark]</code> rule, and a dark user paints light until the
+  async stylesheet arrives. Angular's CSS minifier strips the comments that would
+  keep those rules, so the fix is to switch the inliner off.
+</p>
+
+<bs-code-snippet [code]="inlineCriticalSnippet" [language]="'json'"></bs-code-snippet>
+
+
+<h2 id="toggle">The theme toggle</h2>
+
+<p>
+  <code>&lt;bs-theme-toggle&gt;</code> is a single button that cycles through its
+  modes. Its accessible name is the <em>next</em> action ("Switch to dark theme"),
+  its description is the <em>current</em> mode ("Light theme"), and each click is
+  announced to screen readers. All the toggles on this page drive the same
+  document theme, so clicking one updates the others.
+</p>
+
+<h3>Live demo</h3>
+<bs-grid>
+  <div bsRow>
+    <div [md]="4">
+      <p class="mb-1"><strong>Default</strong></p>
+      <bs-theme-toggle />
+    </div>
+    <div [md]="4">
+      <p class="mb-1"><strong>Localized (Dutch)</strong></p>
+      <bs-theme-toggle [modes]="dutchModes" />
+    </div>
+    <div [md]="4">
+      <p class="mb-1"><strong>Four modes, with sepia</strong></p>
+      <bs-theme-toggle [modes]="sepiaModes" />
+    </div>
+  </div>
+</bs-grid>
+<p class="mt-3">
+  <code>mode</code>: <strong>{{ mode() }}</strong>
+  &nbsp; <code>effectiveMode</code>: <strong>{{ effectiveMode() }}</strong>
+</p>
+
+<h3>Default</h3>
+<p>
+  With no inputs the toggle cycles auto, light, dark
+  (<code>BS_THEME_DEFAULT_MODES</code>). It talks to the theme store directly, so
+  there is nothing to wire up, and <code>BsThemeService</code> follows every click.
+</p>
+<bs-code-snippet [code]="defaultToggleSnippet" [language]="'ts'"></bs-code-snippet>
+
+<h3>Localized</h3>
+<p>
+  <code>[modes]</code> is the cycle, in order. Each entry has a <code>mode</code>, a
+  <code>label</code> (the name while it is next), an <code>announcement</code> (the
+  description while it is current) and an <code>icon</code>. To translate the toggle,
+  spread the defaults and override the two strings, so the modes and icons stay the
+  library's.
+</p>
+<bs-code-snippet [code]="localizedToggleSnippet" [language]="'ts'"></bs-code-snippet>
+
+<h3>More modes</h3>
+<p>
+  Add an entry per custom variant. <code>icon</code> is SVG path data for a 16&times;16
+  viewBox (a string, or an array of strings for several paths). Entries whose
+  <code>mode</code> is not a valid mode are dropped with a warning. If the current
+  mode is not in the list, the toggle shows the first entry and moves to the second.
+</p>
+<bs-code-snippet [code]="sepiaToggleSnippet" [language]="'ts'"></bs-code-snippet>
+
+<bs-alert [type]="colors.warning" class="d-block mb-4">
+  <strong>More than three modes? Consider a menu.</strong>
+  A cycling button makes the user click through every mode to reach the one they
+  want, and they cannot see the choices up front. Past about three modes, a menu or
+  radio group that calls <code>BsThemeService.setMode()</code> serves them better.
+</bs-alert>
+
+
+<h2 id="service">Switching mode from code</h2>
+
+<p>
+  <code>BsThemeService</code> exposes the mode as signals. <code>auto</code>
+  resolves to light or dark via <code>prefers-color-scheme</code> and follows the OS
+  live; explicit and custom modes stick. A change in one tab re-themes your other
+  open tabs.
+</p>
+
+<h3>Live demo</h3>
+<div class="d-flex gap-2 align-items-center mb-3 flex-wrap">
+  <button type="button" class="btn btn-outline-primary" (click)="setMode('auto')">Auto</button>
+  <button type="button" class="btn btn-outline-primary" (click)="setMode('light')">Light</button>
+  <button type="button" class="btn btn-outline-primary" (click)="setMode('dark')">Dark</button>
+  <button type="button" class="btn btn-outline-warning" (click)="setMode('sepia')">Sepia (custom)</button>
+  <span class="ms-3">
+    <code>mode</code>: <strong>{{ mode() }}</strong>
+    &nbsp; <code>effectiveMode</code>: <strong>{{ effectiveMode() }}</strong>
+  </span>
+</div>
+
+<bs-code-snippet [code]="serviceUsageSnippet" [language]="'ts'"></bs-code-snippet>
+
+
+<h2 id="cookie">The cookie</h2>
+
+<p>
+  The choice lives in a first-party cookie rather than in
+  <code>localStorage</code>, because the server has to see it to render the right
+  theme. The pre-boot script, the store and the server all read the same cookie.
+  With the mode you have now, it reads:
+</p>
+<p><code>{{ cookieExample() }}</code></p>
+
+<bs-table [isResponsive]="true">
+  <thead>
+    <tr>
+      <th>Attribute</th>
+      <th>Value</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr><td>Name</td><td><code>{{ cookieName }}</code> (<code>BS_THEME_COOKIE_NAME</code>)</td></tr>
+    <tr><td><code>Path</code></td><td><code>/</code></td></tr>
+    <tr><td><code>SameSite</code></td><td><code>Lax</code></td></tr>
+    <tr><td><code>Max-Age</code></td><td>One year, renewed on every change</td></tr>
+    <tr><td><code>Secure</code></td><td>Only when the page is served over <code>https:</code></td></tr>
+    <tr><td><code>Domain</code></td><td>Only when you pass <code>cookieDomain</code> (below)</td></tr>
+    <tr><td><code>HttpOnly</code></td><td>No: the pre-boot script and the store read it in the page</td></tr>
+  </tbody>
+</bs-table>
+
+<p>
+  A value must be 1 to 32 characters of <code>a-z</code>, <code>0-9</code> and
+  <code>-</code>; it is matched case-insensitively and lower-cased on read. Anything
+  else counts as no cookie at all. This is a security rule, not a style rule: the
+  server writes the value into the HTML, so the check is what keeps a crafted cookie
+  from injecting markup. <code>isValidThemeMode()</code> implements it.
+</p>
+
+<p>
+  To share one choice across subdomains, set the cookie's <code>Domain</code> with
+  <code>provideBsTheme()</code>. The value is passed through exactly as given.
+</p>
+
+<bs-code-snippet [code]="cookieDomainSnippet" [language]="'ts'"></bs-code-snippet>
+
+
+<h2 id="default-mode">The default mode</h2>
+
+<p>
+  A site that should start dark declares it once, in the HTML, with
+  <code>&lt;meta name="{{ metaName }}" content="dark"&gt;</code> before the pre-boot
+  script. The script, the store and the Angular server all read the same tag, so
+  there is no provider option to keep in sync. An absent or invalid value means
+  <code>auto</code>. The mode is resolved in this order:
+</p>
+<ol>
+  <li>A valid <code>{{ cookieName }}</code> cookie, <em>including</em> <code>auto</code>: a user who chose to follow the OS keeps following it on a dark-by-default site.</li>
+  <li>The <code>{{ metaName }}</code> meta.</li>
+  <li><code>auto</code>.</li>
+</ol>
+
+
+<h2 id="ssr">Server-side rendering</h2>
+
+<p>
+  With Angular SSR there is no server code to write. On the server,
+  <code>BsThemeService</code> reads the request's cookie and the page's default-mode
+  meta, and renders <code>&lt;html data-bs-theme="dark"&gt;</code> for an explicit
+  mode, so the first byte of HTML is already themed. For <code>auto</code> it
+  renders no attribute, and the pre-boot script resolves it in the browser.
+  Prerendered pages have no request, so they are themed by the pre-boot script too.
+</p>
+
+<p>
+  The service does this in its constructor, so it has to exist on every request.
+  <code>provideBsTheme()</code> constructs it eagerly, and so does
+  <code>&lt;bs-theme-toggle&gt;</code>. Add the provider so that pages without a toggle
+  are covered as well:
+</p>
+
+<bs-code-snippet [code]="ssrProvidersSnippet" [language]="'ts'"></bs-code-snippet>
+
+<bs-alert [type]="colors.warning" class="d-block mb-3">
+  <strong>Send <code>Vary: Cookie</code> with rendered HTML.</strong>
+  The HTML now differs per cookie. Without the header, a CDN or reverse proxy that
+  caches the page serves one user's theme to everyone.
+</bs-alert>
+
+<bs-code-snippet [code]="varySnippet" [language]="'ts'"></bs-code-snippet>
+
+
+<h2 id="custom-variants">Custom variants beyond light &amp; dark</h2>
+
+<p>
+  The mode string is open-ended. Author a <code>[data-bs-theme="..."]</code> block in
+  your global styles, then activate it with a toggle entry or
+  <code>setMode('your-variant')</code>. The sepia variant used on this page lives in
+  the demo's <code>styles.scss</code>; try it with the four-mode toggle above or the
+  Sepia button.
+</p>
+
+<bs-code-snippet [code]="customVariantSnippet" [language]="'scss'"></bs-code-snippet>
+
+<bs-alert [type]="colors.info" class="d-block mb-3">
+  <strong>Every custom variant must declare <code>--mp-color-mode</code>.</strong>
+  Set it to <code>light</code> or <code>dark</code>. The library's web components
+  cannot see Bootstrap's <code>[data-bs-theme=dark]</code> rules through their
+  encapsulation, so they read this token to pick their light or dark icons (the
+  select caret, the switch knob). Without it they fall back to light.
+</bs-alert>
+
+<bs-alert [type]="colors.info" class="d-block mb-3">
+  <strong>Browser support.</strong> Those icons switch through a CSS style query
+  (<code>&#64;container style(--mp-color-mode: dark)</code>), measured working in
+  Chromium 151, Firefox 153 and WebKit 26.5. An engine without custom-property style
+  queries keeps the light caret and knob on a dark page. Everything else (colours,
+  borders, backgrounds) follows the theme regardless.
+</bs-alert>
+
+<bs-alert [type]="colors.warning" class="d-block mb-4">
+  <strong><code>auto</code> only resolves to light or dark.</strong>
+  <code>prefers-color-scheme</code> doesn't know about custom variants, so they
+  must be set explicitly. Switching to <em>auto</em> while the user is on a custom
+  variant returns them to the system preference.
 </bs-alert>
 
 
@@ -26,7 +296,7 @@
 
 <p>
   Bootstrap's design tokens are SCSS variables. Override them before importing
-  the library's SCSS bundle to bake your palette into the compiled CSS — no
+  the library's SCSS bundle to bake your palette into the compiled CSS, with no
   runtime cost. This is the right approach when your brand colors are fixed.
 </p>
 
@@ -34,7 +304,7 @@
 
 <p class="text-muted">
   All standard Bootstrap variables (<code>$primary</code>, <code>$body-bg</code>,
-  <code>$navbar-padding-y</code>, …) are available — see the
+  <code>$navbar-padding-y</code>, …) are available. See the
   <a href="https://getbootstrap.com/docs/5.3/customize/sass/" target="_blank" rel="noopener">Bootstrap Sass reference</a>
   for the full list.
 </p>
@@ -60,13 +330,27 @@
 </div>
 <p class="text-muted">
   <strong>What changes when you Apply:</strong> every component below uses
-  <code>--bs-primary</code> — the swatch, the buttons, the alert, the link, and
-  the progress bar all swap in lockstep with the CSS variable.
+  <code>--bs-primary</code>: the swatch, the buttons, the badge, the link and
+  the bar all swap in lockstep with the CSS variable.
 </p>
+<div class="d-flex flex-wrap gap-3 align-items-center mb-3">
+  <div class="d-flex flex-column align-items-center">
+    <div class="demo-swatch"></div>
+    <small class="text-muted mt-1">swatch</small>
+  </div>
+  <button type="button" class="btn btn-primary">btn-primary</button>
+  <button type="button" class="btn btn-outline-primary">outline-primary</button>
+  <bs-badge [type]="colors.primary">badge</bs-badge>
+  <a href="javascript:void(0)" class="link-primary">link-primary</a>
+  <div class="demo-bar flex-grow-1"><div class="demo-bar-fill"></div></div>
+</div>
+
+<bs-code-snippet [code]="runtimeCssVarSnippet" [language]="'ts'"></bs-code-snippet>
+
 <bs-alert [type]="colors.info" class="d-block mb-3">
   <strong>Note about <code>.btn-primary</code> and <code>.btn-outline-primary</code>.</strong>
   Vanilla Bootstrap 5.3 bakes literal color values into each button variant's
-  scoped <code>--bs-btn-*</code> variables — so mutating <code>--bs-primary</code>
+  scoped <code>--bs-btn-*</code> variables, so mutating <code>--bs-primary</code>
   at runtime does <em>not</em> reach buttons in a stock Bootstrap project.
   <code>&#64;mintplayer/ng-bootstrap</code> ships a small override that re-binds
   <code>.btn-primary</code> and <code>.btn-outline-primary</code> to
@@ -75,21 +359,6 @@
   same behavior for <code>.btn-success</code>, <code>.btn-danger</code>, etc.,
   add an analogous block in your own stylesheet.
 </bs-alert>
-<div class="d-flex flex-wrap gap-3 align-items-center mb-3">
-  <div class="d-flex flex-column align-items-center">
-    <div style="width: 3rem; height: 3rem; border-radius: 0.5rem; background-color: var(--bs-primary); border: 1px solid var(--bs-border-color);"></div>
-    <small class="text-muted mt-1">swatch</small>
-  </div>
-  <button type="button" class="btn btn-primary">btn-primary</button>
-  <button type="button" class="btn btn-outline-primary">outline-primary</button>
-  <bs-badge [type]="colors.primary">badge</bs-badge>
-  <a href="javascript:void(0)" class="link-primary">link-primary</a>
-  <div class="progress flex-grow-1" style="min-width: 8rem; max-width: 14rem; height: 1rem;">
-    <div class="progress-bar" style="width: 65%; background-color: var(--bs-primary);"></div>
-  </div>
-</div>
-
-<bs-code-snippet [code]="runtimeCssVarSnippet" [language]="'ts'"></bs-code-snippet>
 
 <h3>Per-component variables</h3>
 <p>
@@ -98,67 +367,40 @@
   global palette. A few common ones:
 </p>
 
-<div class="table-responsive mb-3">
-  <table class="table table-sm table-bordered align-top">
-    <thead>
-      <tr>
-        <th>Component</th>
-        <th>Variable</th>
-        <th>Effect</th>
-      </tr>
-    </thead>
-    <tbody>
-      <tr><td>Navbar</td><td><code>--bs-navbar-color</code></td><td>Default link/text color</td></tr>
-      <tr><td>Navbar</td><td><code>--bs-navbar-active-color</code></td><td>Active link color</td></tr>
-      <tr><td>Navbar</td><td><code>--bs-navbar-brand-color</code></td><td>Brand text color</td></tr>
-      <tr><td>Card</td><td><code>--bs-card-bg</code></td><td>Card surface color</td></tr>
-      <tr><td>Card</td><td><code>--bs-card-border-color</code></td><td>Card border</td></tr>
-      <tr><td>Card</td><td><code>--bs-card-cap-bg</code></td><td>Card header / footer surface</td></tr>
-      <tr><td>Dropdown</td><td><code>--bs-dropdown-bg</code></td><td>Dropdown menu surface</td></tr>
-      <tr><td>Dropdown</td><td><code>--bs-dropdown-link-hover-bg</code></td><td>Hovered item background</td></tr>
-      <tr><td>Modal</td><td><code>--bs-modal-bg</code></td><td>Modal surface</td></tr>
-      <tr><td>Modal</td><td><code>--bs-modal-header-border-color</code></td><td>Header separator</td></tr>
-      <tr><td>Button</td><td><code>--bs-btn-bg</code></td><td>Button surface (scope to a selector)</td></tr>
-      <tr><td>Button</td><td><code>--bs-btn-border-color</code></td><td>Button border</td></tr>
-      <tr><td>Body / global</td><td><code>--bs-body-bg</code></td><td>Page background</td></tr>
-      <tr><td>Body / global</td><td><code>--bs-body-color</code></td><td>Default text color</td></tr>
-      <tr><td>Body / global</td><td><code>--bs-border-color</code></td><td>Default border color</td></tr>
-      <tr><td>Body / global</td><td><code>--bs-primary</code> &nbsp;/&nbsp; <code>--bs-primary-rgb</code></td><td>Primary brand color (pair both for opacity-aware usage)</td></tr>
-    </tbody>
-  </table>
-</div>
+<bs-table [isResponsive]="true">
+  <thead>
+    <tr>
+      <th>Component</th>
+      <th>Variable</th>
+      <th>Effect</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr><td>Navbar</td><td><code>--bs-navbar-color</code></td><td>Default link/text color</td></tr>
+    <tr><td>Navbar</td><td><code>--bs-navbar-active-color</code></td><td>Active link color</td></tr>
+    <tr><td>Navbar</td><td><code>--bs-navbar-brand-color</code></td><td>Brand text color</td></tr>
+    <tr><td>Card</td><td><code>--bs-card-bg</code></td><td>Card surface color</td></tr>
+    <tr><td>Card</td><td><code>--bs-card-border-color</code></td><td>Card border</td></tr>
+    <tr><td>Card</td><td><code>--bs-card-cap-bg</code></td><td>Card header / footer surface</td></tr>
+    <tr><td>Dropdown</td><td><code>--bs-dropdown-bg</code></td><td>Dropdown menu surface</td></tr>
+    <tr><td>Dropdown</td><td><code>--bs-dropdown-link-hover-bg</code></td><td>Hovered item background</td></tr>
+    <tr><td>Modal</td><td><code>--bs-modal-bg</code></td><td>Modal surface</td></tr>
+    <tr><td>Modal</td><td><code>--bs-modal-header-border-color</code></td><td>Header separator</td></tr>
+    <tr><td>Button</td><td><code>--bs-btn-bg</code></td><td>Button surface (scope to a selector)</td></tr>
+    <tr><td>Button</td><td><code>--bs-btn-border-color</code></td><td>Button border</td></tr>
+    <tr><td>Body / global</td><td><code>--bs-body-bg</code></td><td>Page background</td></tr>
+    <tr><td>Body / global</td><td><code>--bs-body-color</code></td><td>Default text color</td></tr>
+    <tr><td>Body / global</td><td><code>--bs-border-color</code></td><td>Default border color</td></tr>
+    <tr><td>Body / global</td><td><code>--bs-primary</code> &nbsp;/&nbsp; <code>--bs-primary-rgb</code></td><td>Primary brand color (pair both for opacity-aware usage)</td></tr>
+  </tbody>
+</bs-table>
 
 <p class="text-muted">
   The canonical list is component-specific and may shift between Bootstrap
-  versions — see the
+  versions. See the
   <a href="https://getbootstrap.com/docs/5.3/customize/css-variables/" target="_blank" rel="noopener">CSS variables reference</a>
   for the authoritative table.
 </p>
-
-
-<h2 id="runtime-switch">Switching mode at runtime</h2>
-
-<p>
-  <code>BsThemeService</code> is a signal-first service that owns the user's
-  chosen mode and writes the resolved value to
-  <code>&lt;html data-bs-theme&gt;</code>. <code>auto</code> resolves to light or
-  dark via <code>matchMedia('(prefers-color-scheme: dark)')</code> and live-updates
-  when the OS preference changes.
-</p>
-
-<h3>Live demo</h3>
-<div class="d-flex gap-2 align-items-center mb-3 flex-wrap">
-  <button type="button" class="btn btn-outline-primary" (click)="setMode('auto')">Auto</button>
-  <button type="button" class="btn btn-outline-primary" (click)="setMode('light')">Light</button>
-  <button type="button" class="btn btn-outline-primary" (click)="setMode('dark')">Dark</button>
-  <button type="button" class="btn btn-outline-warning" (click)="applySepia()">Sepia (custom)</button>
-  <span class="ms-3">
-    <code>mode</code>: <strong>{{ theme.mode() }}</strong>
-    &nbsp; <code>effectiveMode</code>: <strong>{{ theme.effectiveMode() }}</strong>
-  </span>
-</div>
-
-<bs-code-snippet [code]="serviceUsageSnippet" [language]="'ts'"></bs-code-snippet>
 
 
 <h2 id="adaptive-navbar">Adaptive navbar</h2>
@@ -168,7 +410,7 @@
   pass <code>[color]="'body-tertiary'"</code>. The navbar emits
   <code>bg-body-tertiary</code> (no <code>data-bs-theme</code> override) and
   Bootstrap's <code>--bs-tertiary-bg</code> CSS variable swaps with the page
-  theme — giving a slightly tinted, theme-aware navbar in both light and dark.
+  theme, giving a slightly tinted, theme-aware navbar in both light and dark.
 </p>
 
 <bs-code-snippet [code]="adaptiveNavbarSnippet" [language]="'html'"></bs-code-snippet>
@@ -179,80 +421,34 @@
   utility-class suffix (<code>'body-tertiary'</code>,
   <code>'body-secondary'</code>). Enum values also pin the navbar's own theme via
   <code>data-bs-theme</code>; string suffixes let the page theme cascade
-  through. <code>null</code> emits no background — fully transparent navbar that
+  through. <code>null</code> emits no background: a fully transparent navbar that
   inherits everything from the page.
 </p>
 
 
-<h2 id="custom-variants">Custom variants beyond light &amp; dark</h2>
-
-<p>
-  The mode string is open-ended. Author a custom <code>[data-bs-theme="…"]</code>
-  block in your global SCSS, then activate it via
-  <code>setMode('your-variant')</code>. Known values (<code>auto</code>,
-  <code>light</code>, <code>dark</code>) keep autocomplete; arbitrary strings
-  also compile.
-</p>
-
-<bs-code-snippet [code]="customVariantSnippet" [language]="'scss'"></bs-code-snippet>
-
-<bs-alert [type]="colors.warning" class="d-block mb-4">
-  <strong>auto only resolves to light or dark.</strong>
-  <code>prefers-color-scheme</code> doesn't know about custom variants — they
-  must be set explicitly. Switching to <em>auto</em> while the user is on a
-  custom variant returns them to the system preference.
-</bs-alert>
-
-
-<h2 id="ssr">SSR &amp; no-flash integration</h2>
-
-<p>
-  Server-rendered HTML has no <code>data-bs-theme</code> attribute by default —
-  which means dark-mode users see a brief light-mode flash before the Angular
-  service runs. Fix it with a tiny <em>pre-boot</em>
-  <code>&lt;script&gt;</code> in <code>&lt;head&gt;</code>, before any
-  <code>&lt;link rel="stylesheet"&gt;</code>. The script reads localStorage and
-  <code>prefers-color-scheme</code>, then writes the attribute synchronously —
-  before the browser has resolved any CSS.
-</p>
-
-<bs-code-snippet [code]="preBootScriptSnippet" [language]="'html'"></bs-code-snippet>
-
-<bs-alert [type]="colors.info" class="d-block mb-4">
-  The storage key (<code>'bs-theme-mode'</code>) must match the
-  <code>BS_THEME_STORAGE_KEY</code> constant exported by
-  <code>@mintplayer/ng-bootstrap/theming</code>. The script can't import the
-  constant because it runs before any module loads — keep the two literals in
-  lockstep.
-</bs-alert>
-
-
 <h2 id="reference">API reference</h2>
 
-<dl class="row">
-  <dt class="col-sm-4"><code>theme.mode</code></dt>
-  <dd class="col-sm-8">
-    <code>Signal&lt;'auto' | 'light' | 'dark' | string&gt;</code> — the user's
-    authored preference. Read-only; use <code>setMode()</code> to change.
-  </dd>
+<p>
+  Everything is exported from <code>&#64;mintplayer/ng-bootstrap/theming</code>. The
+  framework-neutral parts come from <code>&#64;mintplayer/web-components/theming</code>
+  and are re-exported, so one import is enough.
+</p>
 
-  <dt class="col-sm-4"><code>theme.effectiveMode</code></dt>
-  <dd class="col-sm-8">
-    <code>Signal&lt;'light' | 'dark' | string&gt;</code> — the resolved value.
-    <code>auto</code> resolves to light or dark via
-    <code>matchMedia('(prefers-color-scheme: dark)')</code>; explicit values pass
-    through unchanged.
-  </dd>
-
-  <dt class="col-sm-4"><code>theme.setMode(m)</code></dt>
-  <dd class="col-sm-8">
-    Set the mode. Persists to localStorage and updates
-    <code>&lt;html data-bs-theme&gt;</code>.
-  </dd>
-
-  <dt class="col-sm-4"><code>BS_THEME_STORAGE_KEY</code></dt>
-  <dd class="col-sm-8">
-    The localStorage key (<code>'bs-theme-mode'</code>) used by the service.
-    Exposed for the pre-boot script.
-  </dd>
-</dl>
+<bs-table [isResponsive]="true">
+  <thead>
+    <tr>
+      <th>Export</th>
+      <th>Kind</th>
+      <th>Description</th>
+    </tr>
+  </thead>
+  <tbody>
+    @for (entry of apiReference; track entry.name) {
+      <tr>
+        <td><code>{{ entry.name }}</code></td>
+        <td>{{ entry.kind }}</td>
+        <td>{{ entry.description }}</td>
+      </tr>
+    }
+  </tbody>
+</bs-table>

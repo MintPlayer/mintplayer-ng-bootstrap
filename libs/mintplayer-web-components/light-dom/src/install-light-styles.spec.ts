@@ -1,4 +1,5 @@
-import { describe, expect, it } from 'vitest';
+import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
+import { unsafeCSS, type CSSResult } from 'lit';
 
 import {
   adoptLightStyles,
@@ -63,5 +64,89 @@ describe('adoptLightStyles', () => {
     installLightStyles('t-e', 'mp-e{color:green}');
     expect(inRoot('t-e')).toBe(false);
     host.remove();
+  });
+});
+
+/**
+ * The constructable-sheet path, which every current browser takes. jsdom has
+ * `CSSStyleSheet.replaceSync` but not `adoptedStyleSheets`, so the property is
+ * provided here as a plain per-node array, which is its entire contract.
+ */
+describe('installLightStyles — constructable stylesheets', () => {
+  const adopted = new WeakMap<object, CSSStyleSheet[]>();
+  const accessor: PropertyDescriptor = {
+    configurable: true,
+    get(this: object) {
+      return adopted.get(this) ?? [];
+    },
+    set(this: object, sheets: CSSStyleSheet[]) {
+      adopted.set(this, sheets);
+    },
+  };
+
+  beforeAll(() => {
+    Object.defineProperty(Document.prototype, 'adoptedStyleSheets', accessor);
+    Object.defineProperty(ShadowRoot.prototype, 'adoptedStyleSheets', accessor);
+  });
+
+  afterAll(() => {
+    delete (Document.prototype as { adoptedStyleSheets?: unknown }).adoptedStyleSheets;
+    delete (ShadowRoot.prototype as { adoptedStyleSheets?: unknown }).adoptedStyleSheets;
+  });
+
+  it('adopts a constructed sheet at document level instead of writing a <style>', () => {
+    installLightStyles('t-sheet-a', 'mp-f{color:red}');
+    const entry = getLightStyleEntries().find((e) => e.key === 't-sheet-a')!;
+    expect(entry.sheet).toBeInstanceOf(CSSStyleSheet);
+    expect(document.adoptedStyleSheets).toContain(entry.sheet);
+    expect(styleFor('t-sheet-a')).toBeNull();
+  });
+
+  it('keeps sheets adopted earlier when adding one', () => {
+    installLightStyles('t-sheet-b', 'mp-g{color:red}');
+    installLightStyles('t-sheet-c', 'mp-h{color:red}');
+    const keys = getLightStyleEntries()
+      .filter((e) => e.sheet && document.adoptedStyleSheets.includes(e.sheet))
+      .map((e) => e.key);
+    expect(keys).toEqual(expect.arrayContaining(['t-sheet-b', 't-sheet-c']));
+  });
+
+  it('reuses the sheet lit already built for a CSSResult', () => {
+    // Lit builds CSSResult.styleSheet only where it detected adoptable sheets
+    // at load, which jsdom lacks; model a result from such a browser.
+    const sheet = new CSSStyleSheet();
+    const styles = { cssText: 'mp-i{color:red}', styleSheet: sheet } as unknown as CSSResult;
+    installLightStyles('t-sheet-d', styles);
+    const entry = getLightStyleEntries().find((e) => e.key === 't-sheet-d')!;
+    expect(entry.sheet).toBe(sheet);
+    expect(entry.cssText).toBe('mp-i{color:red}');
+  });
+
+  it('builds its own sheet from a CSSResult that has none', () => {
+    installLightStyles('t-sheet-f', unsafeCSS('mp-l{color:red}'));
+    const entry = getLightStyleEntries().find((e) => e.key === 't-sheet-f')!;
+    expect(entry.sheet).toBeInstanceOf(CSSStyleSheet);
+    expect(document.adoptedStyleSheets).toContain(entry.sheet);
+  });
+
+  it('mirrors sheets into a shadow root once, without duplicates', () => {
+    installLightStyles('t-sheet-e', 'mp-j{color:red}');
+    const host = document.createElement('div');
+    const root = host.attachShadow({ mode: 'open' });
+    const disposeA = adoptLightStyles(root);
+    const disposeB = adoptLightStyles(root);
+    const sheet = getLightStyleEntries().find((e) => e.key === 't-sheet-e')!.sheet!;
+    expect(root.adoptedStyleSheets.filter((s) => s === sheet)).toHaveLength(1);
+    disposeA();
+    disposeB();
+  });
+});
+
+describe('installLightStyles — SSR guard', () => {
+  it('does nothing on a document without a head (SSR DOM shim)', () => {
+    const head = vi.spyOn(document, 'head', 'get').mockReturnValue(null as unknown as HTMLHeadElement);
+    installLightStyles('t-ssr', 'mp-k{color:red}');
+    head.mockRestore();
+    expect(getLightStyleEntries().some((e) => e.key === 't-ssr')).toBe(false);
   });
 });

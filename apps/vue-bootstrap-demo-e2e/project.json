@@ -3,23 +3,18 @@
   "$schema": "../../node_modules/nx/schemas/project-schema.json",
   "projectType": "application",
   "sourceRoot": "apps/vue-bootstrap-demo-e2e/src",
-  "implicitDependencies": [
-    "vue-bootstrap-demo"
-  ],
+  "implicitDependencies": ["vue-bootstrap-demo"],
   "targets": {
     "e2e": {
-      "executor": "@nx/playwright:playwright",
       "outputs": [
         "{workspaceRoot}/dist/.playwright/apps/vue-bootstrap-demo-e2e"
-      ],
-      "options": {
-        "config": "apps/vue-bootstrap-demo-e2e/playwright.config.ts"
-      }
+      ]
     },
     "e2e-a11y": {
-      "executor": "@nx/playwright:playwright",
+      "executor": "nx:run-commands",
       "options": {
-        "config": "apps/vue-bootstrap-demo-e2e/playwright.a11y.config.ts"
+        "command": "playwright test --config=playwright.a11y.config.ts",
+        "cwd": "apps/vue-bootstrap-demo-e2e"
       }
     }
   }

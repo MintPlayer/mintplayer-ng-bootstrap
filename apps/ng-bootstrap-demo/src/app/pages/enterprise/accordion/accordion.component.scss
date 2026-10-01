@@ -46,7 +46,7 @@
     // currentColor, so it follows --bs-accordion-btn-color automatically.
 
     &::part(content) {
-        background-color: #ccc;
+        background-color: var(--bs-secondary-bg);
     }
 
     // Each nesting level gets a lighter header.

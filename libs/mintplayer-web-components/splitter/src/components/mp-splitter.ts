@@ -2,7 +2,7 @@ import { LitElement, html, type TemplateResult } from 'lit';
 import { FocusRestore } from '@mintplayer/web-components/a11y';
 import { SplitterStateManager } from '../state';
 import { InputHandler, type ResizeKey } from '../input';
-import { ResizeManager } from '../managers';
+import { ResizeManager, rescalePanelSizes } from '../managers';
 import { splitterStyles } from '../styles';
 import type { Direction, Point } from '../types';
 
@@ -93,17 +93,38 @@ export class MpSplitter extends LitElement {
       this.updatePanelsFromSlot();
     });
 
+    this.attachObservers();
+  }
+
+  override connectedCallback(): void {
+    super.connectedCallback();
+    // A reconnect (the element moved to a new parent) must re-arm what
+    // disconnectedCallback tore down; firstUpdated only ever runs once.
+    if (this.container) this.attachObservers();
+  }
+
+  /**
+   * Observers + state subscription, plus a deferred panel rebuild so children
+   * changed while detached are picked up. Paired with disconnectedCallback.
+   */
+  private attachObservers(): void {
     this.setupMutationObserver();
     this.subscribeToState();
     this.setupContainerResizeObserver();
 
-    // Initial setup after first render
     requestAnimationFrame(() => {
       this.updatePanelsFromSlot();
     });
   }
 
   override disconnectedCallback(): void {
+    // A drag interrupted by removal ends here, committing the preview the user
+    // saw and emitting the resize-end that pairs its resize-start. Without
+    // this the state stays "resizing" forever, which also silences every
+    // later container-resize rescale.
+    if (this.stateManager.isResizing()) {
+      this.handleResizeEnd();
+    }
     this.inputHandler.dispose();
 
     if (this.mutationObserver) {
@@ -133,9 +154,7 @@ export class MpSplitter extends LitElement {
 
     switch (name) {
       case 'orientation':
-        this.stateManager.setOrientation(
-          (newValue as Direction) || 'horizontal'
-        );
+        this.stateManager.setOrientation(this.orientation);
         this.updateContainerOrientation();
         break;
       case 'min-panel-size':
@@ -149,17 +168,26 @@ export class MpSplitter extends LitElement {
   }
 
   // Public API
+  /**
+   * Anything but "vertical" is horizontal. The attribute was cast straight to
+   * `Direction`, so an unknown value was reported as the orientation and added
+   * to the container as a class, matching neither layout rule.
+   */
   get orientation(): Direction {
-    return (this.getAttribute('orientation') as Direction) || 'horizontal';
+    return this.getAttribute('orientation') === 'vertical' ? 'vertical' : 'horizontal';
   }
 
   set orientation(value: Direction) {
     this.setAttribute('orientation', value);
   }
 
+  /**
+   * The minimum panel size the resize maths enforces. Read from the resize
+   * manager, the single source of truth, so a non-numeric attribute reads
+   * back as the 50 px fallback actually in use rather than NaN.
+   */
   get minPanelSize(): number {
-    const attr = this.getAttribute('min-panel-size');
-    return attr ? parseInt(attr, 10) : 50;
+    return this.resizeManager.getMinPanelSize();
   }
 
   set minPanelSize(value: number) {
@@ -438,15 +466,8 @@ export class MpSplitter extends LitElement {
       const cs = getComputedStyle(wrapper);
       return sum + parseFloat(cs[startMarginProp]) + parseFloat(cs[endMarginProp]);
     }, 0);
-    const targetPanelTotal = Math.max(0, containerSize - dividerTotal - marginTotal);
-    const previousPanelTotal = stored.reduce((a, b) => a + b, 0);
-    if (previousPanelTotal <= 0) return;
-
-    // Below 1 px we'd be amplifying our own subpixel writes. Skip.
-    if (Math.abs(targetPanelTotal - previousPanelTotal) < 1) return;
-
-    const scale = targetPanelTotal / previousPanelTotal;
-    const newSizes = stored.map((s) => s * scale);
+    const newSizes = rescalePanelSizes(stored, containerSize - dividerTotal - marginTotal);
+    if (!newSizes) return;
     this.applyPanelSizes(newSizes);
     this.stateManager.setPanelSizes(newSizes);
     this.updateDividerAriaValues();
@@ -521,7 +542,7 @@ export class MpSplitter extends LitElement {
     );
   }
 
-  private handleResizeEnd(_event: {
+  private handleResizeEnd(_event?: {
     point: Point;
     originalEvent: MouseEvent | TouchEvent;
   }): void {

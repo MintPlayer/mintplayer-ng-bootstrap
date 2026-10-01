@@ -21,7 +21,8 @@
 
 import { readFileSync } from 'node:fs';
 import { resolve, dirname } from 'node:path';
-import { fileURLToPath, pathToFileURL } from 'node:url';
+import { fileURLToPath } from 'node:url';
+import { runCli } from './lib/cli.mjs';
 import {
   missingEntryReport,
   parseMaxBytes,
@@ -46,17 +47,21 @@ export const LABEL = 'check-ribbon-bundle-size';
 
 export const BUILD_COMMAND = 'npx nx build mintplayer-ng-bootstrap';
 
-const isEntryPoint = !!process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href;
-if (isEntryPoint) {
-  const repoRoot = REPO_ROOT;
-  const maxBytes = parseMaxBytes(process.argv.slice(2), DEFAULT_MAX_BYTES);
+/**
+ * The guard. Exit 2 when there is no build to measure, 1 over budget, 0 within.
+ */
+export function main({
+  argv = process.argv.slice(2),
+  repoRoot = REPO_ROOT,
+  log = console.log,
+  error = console.error,
+} = {}) {
+  const maxBytes = parseMaxBytes(argv, DEFAULT_MAX_BYTES);
 
   const fesmPath = resolveBuiltEntry(repoRoot, FESM_CANDIDATES);
   if (!fesmPath) {
-    for (const line of missingEntryReport(LABEL, FESM_CANDIDATES, BUILD_COMMAND)) {
-      console.error(line);
-    }
-    process.exit(2);
+    missingEntryReport(LABEL, FESM_CANDIDATES, BUILD_COMMAND).map((line) => error(line));
+    return 2;
   }
 
   const rel = relForDisplay(fesmPath, repoRoot);
@@ -67,16 +72,19 @@ if (isEntryPoint) {
     contents: readFileSync(fesmPath),
     maxBytes,
   });
-  for (const line of lines) console.log(line);
+  lines.map((line) => log(line));
 
   if (gzipBytes > maxBytes) {
-    console.error(
+    error(
       `\n❌ Ribbon FESM exceeds gzipped budget by ${gzipBytes - maxBytes} bytes ` +
         `(${(gzipBytes / 1024).toFixed(2)} kB > ${(maxBytes / 1024).toFixed(2)} kB).`
     );
-    console.error('Investigate with: npx source-map-explorer ' + rel);
-    process.exit(1);
+    error('Investigate with: npx source-map-explorer ' + rel);
+    return 1;
   }
 
-  console.log(`✅ Within budget (${gzipBytes} / ${maxBytes} bytes).`);
+  log(`✅ Within budget (${gzipBytes} / ${maxBytes} bytes).`);
+  return 0;
 }
+
+runCli(import.meta.url, main);

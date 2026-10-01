@@ -25,7 +25,8 @@
 
 import { readFileSync } from 'node:fs';
 import { resolve, dirname } from 'node:path';
-import { fileURLToPath, pathToFileURL } from 'node:url';
+import { fileURLToPath } from 'node:url';
+import { runCli } from './lib/cli.mjs';
 import {
   auditHljsImports,
   missingEntryReport,
@@ -45,29 +46,33 @@ export const LABEL = 'check-code-snippet-hljs-lazy';
 
 export const BUILD_COMMAND = 'npx nx build mintplayer-web-components';
 
-const isEntryPoint = !!process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href;
-if (isEntryPoint) {
-  const entry = resolveBuiltEntry(REPO_ROOT, ENTRY_CANDIDATES);
+/**
+ * The guard. Exit 2 when there is no build to audit, 1 when highlight.js is no
+ * longer lazily loaded, 0 when it is.
+ */
+export function main({ repoRoot = REPO_ROOT, log = console.log, error = console.error } = {}) {
+  const entry = resolveBuiltEntry(repoRoot, ENTRY_CANDIDATES);
   if (!entry) {
-    for (const line of missingEntryReport(LABEL, ENTRY_CANDIDATES, BUILD_COMMAND)) {
-      console.error(line);
-    }
-    process.exit(2);
+    missingEntryReport(LABEL, ENTRY_CANDIDATES, BUILD_COMMAND).map((line) => error(line));
+    return 2;
   }
 
   const source = readFileSync(entry, 'utf8');
   const { staticHljs, dynamicHljs, failures } = auditHljsImports(source);
 
-  const { lines } = reportBundle({ label: LABEL, path: entry, repoRoot: REPO_ROOT, contents: source });
-  for (const line of lines) console.log(line);
-  console.log(`  static hljs imports:  ${staticHljs.length ? staticHljs.join(', ') : '(none)'}`);
-  console.log(`  dynamic hljs imports: ${dynamicHljs.length}`);
+  const { lines } = reportBundle({ label: LABEL, path: entry, repoRoot, contents: source });
+  lines.map((line) => log(line));
+  log(`  static hljs imports:  ${staticHljs.length ? staticHljs.join(', ') : '(none)'}`);
+  log(`  dynamic hljs imports: ${dynamicHljs.length}`);
 
   if (failures.length) {
-    console.error('\n❌ highlight.js is no longer lazily loaded:');
-    for (const failure of failures) console.error('  - ' + failure);
-    process.exit(1);
+    error('\n❌ highlight.js is no longer lazily loaded:');
+    failures.map((failure) => error('  - ' + failure));
+    return 1;
   }
 
-  console.log('\n✅ grammars load on demand; only lib/core is static.');
+  log('\n✅ grammars load on demand; only lib/core is static.');
+  return 0;
 }
+
+runCli(import.meta.url, main);

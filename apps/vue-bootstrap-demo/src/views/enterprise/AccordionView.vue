@@ -102,6 +102,6 @@ function onToggle(detail: AccordionTabToggleDetail) {
 }
 
 .multi-level::part(content) {
-  background-color: #ccc;
+  background-color: var(--bs-secondary-bg);
 }
 </style>

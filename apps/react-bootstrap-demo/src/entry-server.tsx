@@ -29,6 +29,10 @@ import { injectMpCarouselDsd } from '@mintplayer/web-components/carousel/ssr';
 // Same pattern for <mp-accordion>: [multi] x [tab-count] DSD chrome variants,
 // so tabs open and close through the shadow input state machine with JS off.
 import { injectMpAccordionDsd } from '@mintplayer/web-components/accordion/ssr';
+// Re-exported for server.mjs, which splices the theme attribute onto <html> and
+// cannot resolve the @mintplayer path alias itself (PRD dark-mode D8, FR-6).
+// Import-safe on the server: the store is only created on first browser use.
+export { injectThemeAttribute, resolveServerTheme } from '@mintplayer/web-components/theming';
 import App from './app/app';
 
 /**

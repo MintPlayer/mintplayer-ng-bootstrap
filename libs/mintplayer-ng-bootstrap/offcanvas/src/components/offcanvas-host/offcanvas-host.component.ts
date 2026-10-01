@@ -1,11 +1,11 @@
 import { Overlay, OverlayRef } from '@angular/cdk/overlay';
 import { ComponentPortal } from '@angular/cdk/portal';
-import { AfterViewInit, Component, ComponentRef, effect, inject, Injector, model, OnDestroy, output, OutputRefSubscription, signal, TemplateRef, ChangeDetectionStrategy} from '@angular/core';
+import { AfterViewInit, ApplicationRef, Component, ComponentRef, effect, inject, Injector, model, OnDestroy, output, OutputRefSubscription, signal, TemplateRef, ChangeDetectionStrategy} from '@angular/core';
 import { Position } from '@mintplayer/ng-bootstrap';
 import { BsHasOverlayComponent } from '@mintplayer/ng-bootstrap/has-overlay';
 import { OFFCANVAS_CONTENT } from '../../providers/offcanvas-content.provider';
 import { PORTAL_FACTORY } from '../../providers/portal-factory.provider';
-import { BsOffcanvasComponent } from '../offcanvas/offcanvas.component';
+import { BsOffcanvasComponent, OFFCANVAS_TRANSITION_MS } from '../offcanvas/offcanvas.component';
 
 @Component({
   selector: 'bs-offcanvas',
@@ -23,6 +23,7 @@ import { BsOffcanvasComponent } from '../offcanvas/offcanvas.component';
 export class BsOffcanvasHostComponent implements AfterViewInit, OnDestroy {
   private overlayService = inject(Overlay);
   private rootInjector = inject(Injector);
+  private appRef = inject(ApplicationRef);
   private portalFactory = inject<(injector: Injector) => ComponentPortal<any>>(PORTAL_FACTORY);
 
   constructor() {
@@ -80,7 +81,7 @@ export class BsOffcanvasHostComponent implements AfterViewInit, OnDestroy {
       ],
       parent: this.rootInjector,
     });
-    // const portal = new ComponentPortal(BsOffcanvasComponent, null, injector);
+
     const portal = this.portalFactory(injector);
     this.overlayRef = this.overlayService.create({
       scrollStrategy: this.overlayService.scrollStrategies.reposition(),
@@ -102,10 +103,24 @@ export class BsOffcanvasHostComponent implements AfterViewInit, OnDestroy {
     this.viewInited.set(true);
   }
 
+  /**
+   * Plays the panel's hide transition, then disposes the overlay. The hide is written to the
+   * panel directly: this host's sync effects are destroyed with it and would never deliver it.
+   * If the application is torn down before the transition ends, the pending dispose is
+   * cancelled and runs at once, so no timer outlives the app.
+   */
   ngOnDestroy() {
     this.backdropClickSubscription?.unsubscribe();
-    this.isVisible.set(false);
-    setTimeout(() => this.overlayRef && this.overlayRef.dispose(), 3000);
+    if (!this.overlayRef) return;
+    const overlayRef = this.overlayRef;
+    this.component.instance.isVisible.set(false);
+    const dispose = () => {
+      clearTimeout(timer);
+      unregister();
+      overlayRef.dispose();
+    };
+    const timer = setTimeout(dispose, OFFCANVAS_TRANSITION_MS);
+    const unregister = this.appRef.onDestroy(dispose);
   }
 
 }

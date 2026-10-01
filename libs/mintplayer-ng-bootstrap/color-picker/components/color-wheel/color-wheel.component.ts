@@ -77,8 +77,8 @@ export class BsColorWheelComponent {
 
   /**
    * Keyboard model for the 2-D wheel:
-   *  ArrowLeft  / ArrowRight  → -1° / +1° hue          (Shift: stays 1° for "fine")
-   *  ArrowDown / ArrowUp      → -1% / +1% saturation   (Shift: stays 1% for "fine")
+   *  ArrowLeft  / ArrowRight  → -5° / +5° hue          (Shift: 1° for "fine")
+   *  ArrowDown / ArrowUp      → -5% / +5% saturation   (Shift: 1% for "fine")
    *  PageDown / PageUp        → -30° / +30° hue
    *  Home / End               → saturation 100% / 0%
    *

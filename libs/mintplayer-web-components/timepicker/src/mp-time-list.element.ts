@@ -29,6 +29,38 @@ export function minutesOfDay(d: Date | null | undefined): number | null {
   return d ? d.getHours() * 60 + d.getMinutes() : null;
 }
 
+/** The slot spacing used when `step` holds no usable value. */
+export const DEFAULT_TIME_STEP: TimeStep = 15;
+
+/**
+ * The slot spacing `step` actually yields: a finite number of minutes in
+ * (0, 1440], else {@link DEFAULT_TIME_STEP}.
+ *
+ * `step` is a lit Number attribute, so removing it sets the property to `null`
+ * and a non-numeric value sets `NaN`. Dividing the day by `null` (that is, by 0)
+ * made the slot loop unbounded and hung the page; `NaN` rendered an empty
+ * listbox. Every consumer of the step goes through this instead.
+ */
+export function resolveTimeStep(step: unknown): number {
+  return typeof step === 'number' && Number.isFinite(step) && step > 0 && step <= 24 * 60 ? step : DEFAULT_TIME_STEP;
+}
+
+/**
+ * Attribute converter for `hour12`, shared by every element that owns the mode.
+ *
+ * The attribute was untyped, so lit stored its STRING: `hour12="true"` became
+ * `'true'`, which is neither `true` nor `false`, and the element fell back to
+ * the locale — the attribute form of the option silently did nothing. A bare
+ * `hour12` reads as true; a removed or unrecognised value is `'auto'`.
+ */
+export const hour12Converter = {
+  fromAttribute(value: string | null): Hour12Mode {
+    if (value === '' || value === 'true') return true;
+    if (value === 'false') return false;
+    return 'auto';
+  },
+};
+
 /**
  * mp-time-list — Bootstrap-styled time-slot listbox primitive.
  *
@@ -58,7 +90,7 @@ export class MpTimeListElement extends LitElement {
     step: { attribute: 'step', type: Number, reflect: true },
     minMinutes: { attribute: 'min-minutes', type: Number },
     maxMinutes: { attribute: 'max-minutes', type: Number },
-    hour12: { attribute: 'hour12' },
+    hour12: { attribute: 'hour12', converter: hour12Converter },
     locale: { attribute: 'locale', type: String, reflect: true },
     _focusedMinutes: { state: true },
   };
@@ -148,14 +180,12 @@ export class MpTimeListElement extends LitElement {
   private slots(): TimeSlot[] {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
-    const count = Math.floor((24 * 60) / this.step);
-    const result: TimeSlot[] = [];
-    for (let i = 0; i < count; i++) {
-      const minutes = i * this.step;
+    const step = resolveTimeStep(this.step);
+    return Array.from({ length: Math.floor((24 * 60) / step) }, (_, i) => {
+      const minutes = i * step;
       const date = new Date(today.getTime() + minutes * 60_000);
-      result.push({ minutes, date, label: this.formatTime(date) });
-    }
-    return result;
+      return { minutes, date, label: this.formatTime(date) };
+    });
   }
 
   private formatTime(date: Date): string {
@@ -196,7 +226,8 @@ export class MpTimeListElement extends LitElement {
     if (this.selectedTime) {
       // Snap to nearest slot at or below selectedTime.
       const m = this.timeMinutes(this.selectedTime);
-      return Math.floor(m / this.step) * this.step;
+      const step = resolveTimeStep(this.step);
+      return Math.floor(m / step) * step;
     }
     return 0;
   }

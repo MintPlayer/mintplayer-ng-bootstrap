@@ -1,6 +1,7 @@
 import { LitElement, html, nothing, type TemplateResult } from 'lit';
 import { styles } from './mint-multi-range.element.template';
 import { MultiRangeOrientation } from './types/multi-range-orientation';
+import { nearestThumbIndex, pointerFraction } from './pointer-geometry';
 
 /**
  * Bootstrap-flavoured multi-thumb range slider.
@@ -147,22 +148,19 @@ export class MintMultiRangeElement extends LitElement {
     return Math.min(Math.max(candidate, lower), upper);
   }
 
-  /** Map a pointer coordinate inside the track rect to a value in [min, max]. */
-  private valueFromPointer(clientX: number, clientY: number): number {
+  /**
+   * Map a pointer coordinate inside the track rect to a value in [min, max],
+   * or null when the track has no length to map onto (see pointerFraction).
+   */
+  private valueFromPointer(clientX: number, clientY: number): number | null {
     const track = this.trackEl ?? this.renderRoot.querySelector<HTMLElement>('.track');
-    if (!track) return this.min;
-    const rect = track.getBoundingClientRect();
-    let pct: number;
-    if (this.isVertical()) {
-      pct = (rect.bottom - clientY) / rect.height;
-    } else if (this.isRtl()) {
-      pct = (rect.right - clientX) / rect.width;
-    } else {
-      pct = (clientX - rect.left) / rect.width;
-    }
-    pct = Math.min(1, Math.max(0, pct));
-    const raw = this.min + pct * (this.max - this.min);
-    return this.snapToStep(raw);
+    if (!track) return null;
+    const fraction = pointerFraction(track.getBoundingClientRect(), clientX, clientY, {
+      vertical: this.isVertical(),
+      rtl: this.isRtl(),
+    });
+    if (fraction === null) return null;
+    return this.snapToStep(this.min + fraction * (this.max - this.min));
   }
 
   /** Update one thumb in-place; emit `value-input`. Returns true if value changed. */
@@ -214,8 +212,11 @@ export class MintMultiRangeElement extends LitElement {
     // calculation in this gesture sees a consistent value.
     this.rtlDuringGesture = getComputedStyle(this).direction === 'rtl';
     const targetValue = this.valueFromPointer(ev.clientX, ev.clientY);
-    const values = this.value;
-    const nearestIndex = this.nearestThumbIndex(values, targetValue);
+    if (targetValue === null) {
+      this.rtlDuringGesture = null;
+      return;
+    }
+    const nearestIndex = nearestThumbIndex(this.value, targetValue);
     if (this.moveThumb(nearestIndex, targetValue)) this.dispatchValueChange();
     // Transfer drag to the nearest thumb so a continued press-and-drag keeps moving it.
     const thumbEl = this.renderRoot.querySelector<HTMLElement>(
@@ -224,29 +225,10 @@ export class MintMultiRangeElement extends LitElement {
     if (thumbEl) this.startDrag(nearestIndex, ev.pointerId, thumbEl);
   };
 
-  /**
-   * Returns the index of the thumb closest to `target`. Ties (multiple thumbs
-   * stacked at the same value) are broken by direction: clicks to the right of
-   * the stack pick the highest-index thumb, clicks to the left pick the
-   * lowest. Without this, a stack would always select the lowest-index thumb,
-   * which is blocked by its higher-indexed neighbours and can't move toward
-   * the click — the user would see no response.
-   */
-  private nearestThumbIndex(values: number[], target: number): number {
-    return values.reduce((best, v, i) => {
-      const dBest = Math.abs(values[best] - target);
-      const dCur = Math.abs(v - target);
-      if (dCur < dBest) return i;
-      if (dCur > dBest) return best;
-      // Tie. Prefer the thumb on the side of the target so it can move toward it.
-      return target > v ? i : best;
-    }, 0);
-  }
-
   private onPointerMove = (ev: PointerEvent): void => {
     if (!this.dragState || ev.pointerId !== this.dragState.pointerId) return;
     const candidate = this.valueFromPointer(ev.clientX, ev.clientY);
-    this.moveThumb(this.dragState.thumbIndex, candidate);
+    if (candidate !== null) this.moveThumb(this.dragState.thumbIndex, candidate);
   };
 
   private onPointerUp = (ev: PointerEvent): void => {

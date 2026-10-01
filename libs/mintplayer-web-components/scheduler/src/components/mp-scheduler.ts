@@ -44,6 +44,7 @@ import { formControlStyles } from '../../../_styles/form-control.styles';
 import { invalidFeedbackStyles } from '../../../_styles/invalid-feedback.styles';
 import { DragManager, PointerTarget, DragCompletionResult } from '../drag';
 import { InputHandler, NormalizedPointerEvent } from '../input';
+import { edgeScrollVector } from '../utils/geometry';
 import { SchedulerEventEmitter } from '../events';
 import { OverlayController } from '@mintplayer/web-components/overlay';
 // Side-effect import: registers <mp-checkbox> for the event editor. Worth it
@@ -279,7 +280,16 @@ export class MpScheduler extends LitElement {
   override connectedCallback(): void {
     super.connectedCallback();
     if (this.inputHandler) {
+      // A RE-connection (the element was moved in the DOM; firstUpdated does
+      // not run again). disconnectedCallback tore down the view, the drag
+      // manager's slot resolver and the header observer, so rebuild all three —
+      // otherwise a moved scheduler showed an empty grid and no drag could
+      // resolve a slot.
       this.inputHandler.attach();
+      this.dragManager.setSlotResolver((x, y) => this.getSlotAtPosition(x, y));
+      const header = this.shadowRoot?.querySelector<HTMLElement>('.scheduler-header');
+      if (header) this.observeHeaderWidth(header);
+      this.renderView();
     }
     // Seed the resolved permission table before the first render so affordances
     // are gated on the very first paint, not one update later. Outside the
@@ -311,13 +321,7 @@ export class MpScheduler extends LitElement {
     this.headerResizeObserver = null;
 
     this.stopEdgeScroll();
-
-    // Cancel any pending RAF
-    if (this.pendingDragUpdate !== null) {
-      cancelAnimationFrame(this.pendingDragUpdate);
-      this.pendingDragUpdate = null;
-    }
-    this.latestDragState = null;
+    this.cancelPendingDragUpdate();
     super.disconnectedCallback();
   }
 
@@ -471,12 +475,14 @@ export class MpScheduler extends LitElement {
     this.stateManager.setSelectedEvent(value);
   }
 
+  /**
+   * The active time-range selection: the same range `selection-change`
+   * reports, and the one Enter turns into an `event-create` request. Not the
+   * drag or move-mode preview, which is transient and never a selection.
+   */
   get selectedRange(): { start: Date; end: Date } | null {
-    const state = this.stateManager.getState();
-    if (state.previewEvent) {
-      return { start: state.previewEvent.start, end: state.previewEvent.end };
-    }
-    return null;
+    const range = selectionRange(this.stateManager.getState());
+    return range ? { start: range.start, end: range.end } : null;
   }
 
   next(): void {
@@ -1895,6 +1901,7 @@ export class MpScheduler extends LitElement {
         onPointerUp: (pointer) => this.handlePointerUp(pointer),
         onClick: (pointer, target) => this.handleClick(pointer, target),
         onDoubleClick: (pointer, target) => this.handleDoubleClick(pointer, target),
+        onPointerCancel: () => this.cancelPointerDrag(),
         getScrollContainer: () => this.contentContainer,
       }
     );
@@ -2269,9 +2276,21 @@ export class MpScheduler extends LitElement {
       } else if (state.dragState || state.previewEvent) {
         this.scheduleDragUpdate(state);
       } else {
+        // A drag frame still queued from the last move would repaint the
+        // finished drag (greyed slots, a ghost) over this update: a release
+        // inside the same frame as the final move left both stuck on screen.
+        this.cancelPendingDragUpdate();
         this.currentView.update(state);
       }
     }
+  }
+
+  private cancelPendingDragUpdate(): void {
+    if (this.pendingDragUpdate !== null) {
+      cancelAnimationFrame(this.pendingDragUpdate);
+      this.pendingDragUpdate = null;
+    }
+    this.latestDragState = null;
   }
 
   private scheduleDragUpdate(state: SchedulerState): void {
@@ -2340,6 +2359,12 @@ export class MpScheduler extends LitElement {
     }
   }
 
+  /** Abandon a pointer drag without committing it (the platform cancelled the touch). */
+  private cancelPointerDrag(): void {
+    this.stopEdgeScroll();
+    this.dragManager.cancel();
+  }
+
   // ============================================
   // Edge auto-scroll during a drag
   // ============================================
@@ -2375,20 +2400,13 @@ export class MpScheduler extends LitElement {
       return;
     }
 
-    const rect = container.getBoundingClientRect();
-    const zone = MpScheduler.EDGE_SCROLL_ZONE_PX;
-    const max = MpScheduler.EDGE_SCROLL_MAX_PX;
     // Ramp: 0 at the zone boundary, `max` at the edge (and beyond it, clamped).
-    const axis = (position: number, low: number, high: number): number => {
-      if (position < low + zone) return -Math.min(1, (low + zone - position) / zone) * max;
-      if (position > high - zone) return Math.min(1, (position - (high - zone)) / zone) * max;
-      return 0;
-    };
-
-    this.edgeScrollVector = {
-      x: axis(pointer.clientX, rect.left, rect.right),
-      y: axis(pointer.clientY, rect.top, rect.bottom),
-    };
+    this.edgeScrollVector = edgeScrollVector(
+      { x: pointer.clientX, y: pointer.clientY },
+      container.getBoundingClientRect(),
+      MpScheduler.EDGE_SCROLL_ZONE_PX,
+      MpScheduler.EDGE_SCROLL_MAX_PX,
+    );
     this.edgeScrollPointer = pointer;
 
     if (this.edgeScrollVector.x === 0 && this.edgeScrollVector.y === 0) {
@@ -2529,8 +2547,10 @@ export class MpScheduler extends LitElement {
     if (toggle) {
       const groupId = toggle.dataset['groupId'];
       if (groupId) {
+        // The state change alone rebuilds the rows (TimelineView.update sees
+        // collapsedGroups change) and restores focus to the new toggle. A
+        // second, full renderView() here used to destroy that restored focus.
         this.stateManager.toggleGroupCollapse(groupId);
-        this.renderView();
         return;
       }
     }
@@ -3200,7 +3220,7 @@ export class MpScheduler extends LitElement {
       // prevented, so the page scrolled the widget out of view instead.
       case 'PageUp':     e.preventDefault(); this.moveFocusedDateByMonths(-1); return;
       case 'PageDown':   e.preventDefault(); this.moveFocusedDateByMonths(+1); return;
-      case 'Enter':      e.preventDefault(); this.commitFocusedDateAsCreate(e, 'day'); return;
+      case 'Enter':      e.preventDefault(); this.commitFocusedDateAsCreate(e); return;
       // Space, not Enter: Enter already means "create for this day" and taking
       // it would remove the only keyboard create path in this view.
       case ' ': {
@@ -3342,22 +3362,19 @@ export class MpScheduler extends LitElement {
   }
 
   /**
-   * Emit `event-create` covering the focused day (month view) or focused
-   * month (year view). No internal mutation per PRD
-   * scheduler-controlled-selection — consumer constructs the actual event.
+   * Emit `event-create` covering the focused day (month view). No internal
+   * mutation per PRD scheduler-controlled-selection — consumer constructs the
+   * actual event. (Year view's Enter drills into the month instead, so there
+   * is no month-spanning variant.)
    */
-  private commitFocusedDateAsCreate(originalEvent: Event, unit: 'day' | 'month'): void {
+  private commitFocusedDateAsCreate(originalEvent: Event): void {
     const state = this.stateManager.getState();
     const focused = state.focusedDate;
     if (!focused) return;
     const start = new Date(focused);
     start.setHours(0, 0, 0, 0);
     const end = new Date(start);
-    if (unit === 'day') {
-      end.setDate(end.getDate() + 1);
-    } else {
-      end.setMonth(end.getMonth() + 1);
-    }
+    end.setDate(end.getDate() + 1);
     if (!this.can('createEvent') || !this.allowsCreateAt({ start, end })) {
       this.announceDenied();
       return;
@@ -3651,7 +3668,11 @@ export class MpScheduler extends LitElement {
     if (state.focusedCell) {
       this.scrollAndFocusCell(state.focusedCell, state.focusedResourceId);
     }
-    if (this.shadowRoot?.activeElement) return;
+    // Done only if focus now sits on a CELL. Testing for any active element
+    // meant Escape on an event reached before any cell was focused (Tab straight
+    // onto it) left focus on the event, because the event itself was active.
+    const active = this.shadowRoot?.activeElement as HTMLElement | null;
+    if (active?.getAttribute('role') === 'gridcell') return;
     this.contentContainer
       ?.querySelector<HTMLElement>('[role="gridcell"][tabindex="0"]')
       ?.focus();
@@ -4022,8 +4043,18 @@ export class MpScheduler extends LitElement {
   // Slot Resolution
   // ============================================
 
+  /**
+   * The one hit-test seam (PRD test-coverage P2-D4): which elements sit under a
+   * viewport point, topmost first. Every pointer-to-slot resolution goes
+   * through here, so a spec can answer "what is under the pointer" without
+   * inventing a single rect value.
+   */
+  private elementsAt(clientX: number, clientY: number): Element[] {
+    return this.shadowRoot!.elementsFromPoint(clientX, clientY);
+  }
+
   private getSlotAtPosition(clientX: number, clientY: number): TimeSlot | null {
-    const elements = this.shadowRoot!.elementsFromPoint(clientX, clientY);
+    const elements = this.elementsAt(clientX, clientY);
     const slotEl = elements.find((el) =>
       el.matches('.scheduler-time-slot, .scheduler-timeline-slot')
     ) as HTMLElement | undefined;

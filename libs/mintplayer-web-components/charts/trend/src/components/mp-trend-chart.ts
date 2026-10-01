@@ -1,8 +1,10 @@
 import { LitElement, html, svg, nothing, type PropertyValues, type TemplateResult } from 'lit';
 import { repeat } from 'lit/directives/repeat.js';
 import {
+  booleanAttribute,
   linearScale,
   niceDomain,
+  optionalNumberAttribute,
   niceTicks,
   timeTicks,
   type TrendHoverEventDetail,
@@ -184,11 +186,11 @@ export class MpTrendChart extends LitElement {
   override attributeChangedCallback(name: string, oldValue: string | null, newValue: string | null): void {
     super.attributeChangedCallback(name, oldValue, newValue);
     switch (name) {
-      case 'area': this.area = newValue !== 'false' && newValue !== null; break;
-      case 'stacked': this.stacked = newValue !== null && newValue !== 'false'; break;
-      case 'y-min': this.yMin = newValue === null ? undefined : Number(newValue); break;
-      case 'y-max': this.yMax = newValue === null ? undefined : Number(newValue); break;
-      case 'goal': this.goal = newValue === null ? undefined : Number(newValue); break;
+      case 'area': this.area = booleanAttribute(newValue, true); break;
+      case 'stacked': this.stacked = booleanAttribute(newValue, false); break;
+      case 'y-min': this.yMin = optionalNumberAttribute(newValue); break;
+      case 'y-max': this.yMax = optionalNumberAttribute(newValue); break;
+      case 'goal': this.goal = optionalNumberAttribute(newValue); break;
       case 'goal-label': this.goalLabel = newValue ?? undefined; break;
       case 'locale': this.locale = newValue ?? undefined; break;
       case 'summary': this.summary = newValue ?? undefined; break;

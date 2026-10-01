@@ -37,6 +37,7 @@ import { readFile } from 'node:fs/promises';
 import { existsSync } from 'node:fs';
 import { join, relative, resolve } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
+import { runCli } from './lib/cli.mjs';
 import { createRequire } from 'node:module';
 import { buildHljsLoaderModule } from './lib/loader-maps.mjs';
 import { writeIfChanged } from './lib/wc-codegen.mjs';
@@ -121,10 +122,4 @@ export async function main(repoRoot = REPO_ROOT) {
   );
 }
 
-const isEntryPoint = !!process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href;
-if (isEntryPoint) {
-  main().catch((err) => {
-    console.error(err.stack ?? err);
-    process.exit(1);
-  });
-}
+runCli(import.meta.url, main);

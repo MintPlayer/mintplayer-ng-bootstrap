@@ -10,6 +10,7 @@ import { operatorsForType, valueShapeFor } from './model/operators';
 import { disabledContext, editorRegistryContext, messagesContext } from './context';
 import { resolveBuiltinEditor } from './value-editors/builtin-editors';
 import { queryConditionLightStyles } from './mp-query-condition.light.styles';
+import { warnIfColorModeTokenMissing } from '../../_styles/color-mode-warning';
 
 /**
  * Tier L (emulated encapsulation) — the family converts together: a light-tier
@@ -64,6 +65,12 @@ export class MpQueryConditionElement extends LitElement {
     return t;
   }
 
+  override connectedCallback(): void {
+    super.connectedCallback();
+    // The value-editor select caret switches on --mp-color-mode; say so once if it is missing.
+    warnIfColorModeTokenMissing();
+  }
+
   override disconnectedCallback(): void {
     super.disconnectedCallback();
     this._disposeEditor();
@@ -102,20 +109,18 @@ export class MpQueryConditionElement extends LitElement {
   }
 
   private _refreshEditor(): void {
+    // No mount means render() dropped the value slot: no node, or a
+    // parameterless operator. The old editor went with the slot's DOM, but
+    // its handle must still be disposed — a retained handle whose key still
+    // matched made the editor vanish when the operator switched back.
     const mount = this._editorMount.value;
-    if (!mount) return;
     const node = this.node;
-    if (!node) {
+    if (!mount || !node) {
       this._disposeEditor();
       return;
     }
     const field = this.resolveField(node.field);
     if (!field) {
-      this._disposeEditor();
-      return;
-    }
-    const shape = valueShapeFor(node.operator);
-    if (shape === 'null') {
       this._disposeEditor();
       return;
     }

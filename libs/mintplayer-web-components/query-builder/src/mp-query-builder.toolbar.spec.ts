@@ -290,4 +290,33 @@ describe('mp-query-builder — toolbar sort-by (M20)', () => {
     await settle(el);
     expect(emitted!.sortBy.map((s) => s.field)).toEqual(['total', 'status']);
   });
+
+  it('changing the field on one row emits sort-by-change with only that row updated', async () => {
+    const el = await mount({
+      schema: MULTI_SCHEMA, rootEntity: 'orders', multiEntityPickerEnabled: true,
+      sortBy: [{ field: 'total', direction: 'asc' }, { field: 'status', direction: 'desc' }],
+    });
+    let emitted: { sortBy: SortDescriptor[] } | null = null;
+    el.addEventListener('sort-by-change', (e) => {
+      emitted = (e as CustomEvent<{ sortBy: SortDescriptor[] }>).detail;
+    });
+    const fieldSels = (el.renderRoot as unknown as ParentNode).querySelectorAll('.qb-sort-field') as NodeListOf<MpSelect>;
+    fieldSels[1]!.value = 'total';
+    fieldSels[1]!.dispatchEvent(new Event('change'));
+    await settle(el);
+    expect(emitted).toEqual({
+      sortBy: [{ field: 'total', direction: 'asc' }, { field: 'total', direction: 'desc' }],
+    });
+    expect(el.sortBy).toEqual(emitted!.sortBy);
+  });
+
+  it('a sort on a field the entity no longer projects keeps it visible as a stale option', async () => {
+    const el = await mount({
+      schema: MULTI_SCHEMA, rootEntity: 'orders', multiEntityPickerEnabled: true,
+      sortBy: [{ field: 'gone', direction: 'asc' }],
+    });
+    const fieldSel = (el.renderRoot as unknown as ParentNode).querySelector('.qb-sort-field') as MpSelect;
+    const stale = lightOptionsOf(fieldSel).find((o) => o.value === 'gone');
+    expect(stale?.textContent?.trim()).toBe('(gone)');
+  });
 });

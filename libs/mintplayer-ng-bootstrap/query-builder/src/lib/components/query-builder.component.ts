@@ -39,14 +39,6 @@ import { BsForwardAriaDirective } from '@mintplayer/ng-bootstrap/a11y';
 
 void MpQueryBuilderElement;
 
-function browserTimezone(): string {
-  try {
-    return Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC';
-  } catch {
-    return 'UTC';
-  }
-}
-
 @Component({
   selector: 'bs-query-builder',
   standalone: true,
@@ -97,7 +89,6 @@ export class BsQueryBuilderComponent implements AfterContentInit, ControlValueAc
   showPreview = input<boolean>(false);
   showSavedQueries = input<boolean>(false);
   maxDepth = input<number>(32);
-  timezone = input<string>(browserTimezone());
   savedQueries = input<SavedQuery[]>([]);
   operatorOverrides = input<OperatorOverrides | undefined>(undefined);
   disabled = input<boolean>(false);
@@ -107,7 +98,7 @@ export class BsQueryBuilderComponent implements AfterContentInit, ControlValueAc
   readonly loadQuery = output<{ name: string }>();
   readonly deleteQuery = output<{ name: string }>();
 
-  readonly wcRef = viewChild<ElementRef<MpQueryBuilderElement>>('wc');
+  readonly wcRef = viewChild.required<ElementRef<MpQueryBuilderElement>>('wc');
 
   @ContentChildren(BsQueryBuilderEditorDirective)
   protected editorDirectives!: QueryList<BsQueryBuilderEditorDirective>;
@@ -135,8 +126,7 @@ export class BsQueryBuilderComponent implements AfterContentInit, ControlValueAc
 
     // Push every reactive input down to the WC. Lit reflects via property assignment.
     effect(() => {
-      const wc = this.wcRef()?.nativeElement;
-      if (!wc) return;
+      const wc = this.wcRef().nativeElement;
       wc.query = this.query();
       wc.schema = this.schema();
       wc.rootEntity = this.rootEntity();

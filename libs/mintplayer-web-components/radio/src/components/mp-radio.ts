@@ -278,12 +278,16 @@ export class MpRadio extends LitElement {
         this._errorText = newValue;
         this.requestUpdate();
         break;
-      case 'type':
-        if (newValue && VALID_TYPES.has(newValue)) {
-          this._type = newValue as MpRadioType;
+      case 'type': {
+        // Removing the attribute restores the default rather than keeping the
+        // last value (a framework binding clears an attribute by removing it).
+        const type = newValue ?? 'radio';
+        if (VALID_TYPES.has(type)) {
+          this._type = type as MpRadioType;
           this.requestUpdate();
         }
         break;
+      }
       case 'checked':
         this._checked = newValue !== null;
         this.requestUpdate();
@@ -300,12 +304,14 @@ export class MpRadio extends LitElement {
         this._value = newValue;
         this.requestUpdate();
         break;
-      case 'color':
-        if (newValue && VALID_COLORS.has(newValue)) {
-          this._color = newValue as ToggleButtonColor;
+      case 'color': {
+        const color = newValue ?? 'secondary';
+        if (VALID_COLORS.has(color)) {
+          this._color = color as ToggleButtonColor;
           this.requestUpdate();
         }
         break;
+      }
       case 'aria-label':
         this.requestUpdate();
         break;

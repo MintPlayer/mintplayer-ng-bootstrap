@@ -17,17 +17,20 @@
  */
 import { mkdirSync, mkdtempSync, readFileSync, realpathSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
-import { dirname, join } from 'node:path';
+import { dirname, join, resolve } from 'node:path';
 import { afterAll, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import {
   findFiles,
   isElementHtml,
   isStylesScss,
+  main,
   parseArgs,
   processElement,
+  processLightStyles,
   processStyles,
   runOnce,
+  startWatchers,
   toPosix,
   walk,
 } from './build-web-components.mjs';
@@ -261,7 +264,7 @@ describe('runOnce', () => {
     return () => log.mockRestore();
   });
 
-  const logged = () => log.mock.calls.map((c) => String(c[0]));
+  const logged = () => log.mock.calls.map((c: unknown[]) => String(c[0]));
 
   it('reports nothing to do when no libRoot holds an input', async () => {
     const root = makeTree();
@@ -317,5 +320,214 @@ describe('runOnce', () => {
     write(join(root, 'wc', 'mp-a.element.html'), '<b></b>');
 
     await expect(runOnce(['wc'], root)).rejects.toThrow(/missing sibling/);
+  });
+});
+
+// ===========================================================================
+// processLightStyles: the light-tier pattern (rescoped, no shadow root)
+// ===========================================================================
+
+describe('processLightStyles', () => {
+  it('rescopes the compiled CSS to the file\'s scope, dropping an mp- prefix', async () => {
+    const root = makeTree();
+    const scss = write(join(root, 'wc', 'mp-tree-thing.light.scss'), ':host { display: block; } .row { color: red; }');
+
+    const { outPath, changed } = await processLightStyles(scss, root);
+
+    expect(outPath).toBe(join(root, 'wc', 'mp-tree-thing.light.styles.ts'));
+    expect(changed).toBe(true);
+    const out = readFileSync(outPath, 'utf8');
+    expect(out).toContain('export const treeThingLightStyles');
+    // :host becomes the tag; every other compound carries the scope attribute.
+    expect(out).toContain('.row[data-mps=tree-thing]');
+    expect(out).not.toContain(':host');
+  });
+
+  it('skips the write when the rescoped output is unchanged', async () => {
+    const root = makeTree();
+    const scss = write(join(root, 'wc', 'plain.light.scss'), '.a { color: red; }');
+    await processLightStyles(scss, root);
+    expect((await processLightStyles(scss, root)).changed).toBe(false);
+  });
+});
+
+describe('runOnce — light-tier inputs', () => {
+  it('processes .light.scss alongside the other two patterns', async () => {
+    const log = vi.spyOn(console, 'log').mockImplementation(() => undefined);
+    try {
+      const root = makeTree();
+      write(join(root, 'wc', 'mp-a.styles.scss'), ':host { display: block; }');
+      write(join(root, 'wc', 'mp-b.light.scss'), '.b { color: red; }');
+
+      expect(await runOnce(['wc'], root)).toEqual({ total: 2, changedCount: 2 });
+      expect(log.mock.calls.map(([l]) => l)).toContain('wrote    wc/mp-b.light.styles.ts');
+
+      log.mockClear();
+      await runOnce(['wc'], root);
+      expect(log.mock.calls.map(([l]) => l)).toContain('skipped  wc/mp-b.light.styles.ts');
+    } finally {
+      log.mockRestore();
+    }
+  });
+});
+
+// ===========================================================================
+// startWatchers: debounce and in-flight coalescing, driven with fake timers
+// ===========================================================================
+
+describe('startWatchers', () => {
+  /** A stand-in for chokidar: records its arguments and lets the spec fire events. */
+  function fakeWatch() {
+    const handlers: ((event: string, path: string) => void)[] = [];
+    const watch = vi.fn((_paths: string[], _options: object) => ({
+      on: (_name: string, handler: (event: string, path: string) => void) => {
+        handlers.push(handler);
+      },
+    }));
+    const fire = (path: string) => handlers.map((h) => h('change', path));
+    return { watch, fire };
+  }
+
+  beforeEach(() => {
+    vi.useFakeTimers();
+    const log = vi.spyOn(console, 'log').mockImplementation(() => undefined);
+    return () => {
+      vi.useRealTimers();
+      log.mockRestore();
+    };
+  });
+
+  const root = resolve('/repo');
+
+  it('watches each libRoot resolved against the repo root, ignoring node_modules and dot dirs', () => {
+    const { watch } = fakeWatch();
+    startWatchers(['libs/a', 'libs/b'], root, { watch, run: vi.fn() });
+
+    const [paths, options] = watch.mock.calls[0];
+    expect(paths).toEqual([resolve(root, 'libs/a'), resolve(root, 'libs/b')]);
+    expect(options).toMatchObject({ ignoreInitial: true, persistent: true });
+    const ignored = (options as { ignored: RegExp }).ignored;
+    expect(ignored.test('/repo/libs/a/node_modules/x.scss')).toBe(true);
+    expect(ignored.test('/repo/libs/a/.cache/x.scss')).toBe(true);
+    expect(ignored.test('/repo/libs/a/src/x.scss')).toBe(false);
+  });
+
+  it('coalesces a burst of changes into one run, 150ms after the last', async () => {
+    const { watch, fire } = fakeWatch();
+    const run = vi.fn(async () => undefined);
+    startWatchers(['libs/a'], root, { watch, run });
+
+    fire('/repo/libs/a/x.styles.scss');
+    await vi.advanceTimersByTimeAsync(100);
+    fire('/repo/libs/a/y.element.html');
+    await vi.advanceTimersByTimeAsync(100);
+    expect(run).not.toHaveBeenCalled();
+
+    await vi.advanceTimersByTimeAsync(50);
+    expect(run).toHaveBeenCalledTimes(1);
+    expect(run).toHaveBeenCalledWith(['libs/a'], root);
+  });
+
+  it('ignores changes to files codegen does not read', async () => {
+    const { watch, fire } = fakeWatch();
+    const run = vi.fn(async () => undefined);
+    startWatchers(['libs/a'], root, { watch, run });
+
+    fire('/repo/libs/a/x.ts');
+    fire('/repo/libs/a/README.md');
+    fire('');
+    await vi.advanceTimersByTimeAsync(500);
+    expect(run).not.toHaveBeenCalled();
+  });
+
+  it('reruns once more when a change lands while a run is in flight, never concurrently', async () => {
+    const { watch, fire } = fakeWatch();
+    let release!: () => void;
+    let concurrent = 0;
+    let maxConcurrent = 0;
+    const run = vi.fn(async () => {
+      concurrent++;
+      maxConcurrent = Math.max(maxConcurrent, concurrent);
+      await new Promise<void>((r) => (release = r));
+      concurrent--;
+    });
+    startWatchers(['libs/a'], root, { watch, run });
+
+    fire('/repo/libs/a/x.scss');
+    await vi.advanceTimersByTimeAsync(150);
+    expect(run).toHaveBeenCalledTimes(1);
+
+    // Two changes during the run: the second flush finds the first in flight.
+    fire('/repo/libs/a/x.scss');
+    await vi.advanceTimersByTimeAsync(150);
+    expect(run).toHaveBeenCalledTimes(1);
+
+    release();
+    await vi.advanceTimersByTimeAsync(150);
+    expect(run).toHaveBeenCalledTimes(2);
+    release();
+    await vi.advanceTimersByTimeAsync(500);
+    expect(run).toHaveBeenCalledTimes(2);
+    expect(maxConcurrent).toBe(1);
+  });
+
+  it('keeps watching after a failed run, logging the error instead of crashing the sidecar', async () => {
+    const { watch, fire } = fakeWatch();
+    const error = vi.spyOn(console, 'error').mockImplementation(() => undefined);
+    try {
+      const run = vi.fn(async () => {
+        throw new Error('bad scss');
+      });
+      startWatchers(['libs/a'], root, { watch, run });
+
+      fire('/repo/libs/a/x.scss');
+      await vi.advanceTimersByTimeAsync(150);
+      expect(error.mock.calls[0][0]).toMatch(/bad scss/);
+
+      fire('/repo/libs/a/x.scss');
+      await vi.advanceTimersByTimeAsync(150);
+      expect(run).toHaveBeenCalledTimes(2);
+    } finally {
+      error.mockRestore();
+    }
+  });
+});
+
+// ===========================================================================
+// main: the CLI
+// ===========================================================================
+
+describe('main', () => {
+  beforeEach(() => {
+    const log = vi.spyOn(console, 'log').mockImplementation(() => undefined);
+    return () => log.mockRestore();
+  });
+
+  it('exits 1 with a usage error when no libRoot is given', async () => {
+    const error = vi.spyOn(console, 'error').mockImplementation(() => undefined);
+    try {
+      expect(await main([], makeTree())).toBe(1);
+      expect(error).toHaveBeenCalledWith('build-web-components: at least one <libRoot> argument is required');
+    } finally {
+      error.mockRestore();
+    }
+  });
+
+  it('runs codegen once and exits 0 without starting a watcher', async () => {
+    const root = makeTree();
+    write(join(root, 'wc', 'mp-a.styles.scss'), ':host { display: block; }');
+    const watch = vi.fn();
+
+    expect(await main(['wc'], root, { watch })).toBe(0);
+    expect(readFileSync(join(root, 'wc', 'mp-a.styles.ts'), 'utf8')).toContain('export const mpAStyles');
+    expect(watch).not.toHaveBeenCalled();
+  });
+
+  it('starts watching every libRoot after the first pass under --watch', async () => {
+    const root = makeTree();
+    const watch = vi.fn((_paths: string[], _options: object) => ({ on: vi.fn() }));
+
+    expect(await main(['one', '--watch', 'two'], root, { watch })).toBe(0);
+    expect(watch.mock.calls[0][0]).toEqual([resolve(root, 'one'), resolve(root, 'two')]);
   });
 });

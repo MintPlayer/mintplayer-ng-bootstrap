@@ -178,38 +178,6 @@ export class ResourceService {
   }
 
   /**
-   * Collapse all groups
-   */
-  collapseAll(items: (Resource | ResourceGroup)[]): (Resource | ResourceGroup)[] {
-    return this.mapGroups(items, (group) => ({ ...group, collapsed: true }));
-  }
-
-  /**
-   * Expand all groups
-   */
-  expandAll(items: (Resource | ResourceGroup)[]): (Resource | ResourceGroup)[] {
-    return this.mapGroups(items, (group) => ({ ...group, collapsed: false }));
-  }
-
-  /**
-   * Map over all resources in the hierarchy
-   */
-  private mapResources(
-    items: (Resource | ResourceGroup)[],
-    mapper: (resource: Resource) => Resource
-  ): (Resource | ResourceGroup)[] {
-    return items.map((item) => {
-      if (isResource(item)) {
-        return mapper(item);
-      }
-      return {
-        ...item,
-        children: this.mapResources(item.children, mapper),
-      };
-    });
-  }
-
-  /**
    * Map over all groups in the hierarchy
    */
   private mapGroups(

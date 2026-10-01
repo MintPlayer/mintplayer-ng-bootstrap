@@ -1,1 +1,1 @@
-export { QRCodeErrorCorrectionLevel } from './error-correction-level';
+export type { QRCodeErrorCorrectionLevel } from './error-correction-level';

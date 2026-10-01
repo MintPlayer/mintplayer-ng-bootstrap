@@ -1,11 +1,14 @@
 import { Overlay, OverlayRef } from '@angular/cdk/overlay';
 import { ComponentPortal } from '@angular/cdk/portal';
-import { AfterViewInit, Component, ComponentRef, effect, inject, Injector, input, model, OnDestroy, TemplateRef, ChangeDetectionStrategy} from '@angular/core';
+import { AfterViewInit, ApplicationRef, Component, ComponentRef, effect, inject, Injector, input, model, OnDestroy, TemplateRef, ChangeDetectionStrategy} from '@angular/core';
 import { BsOverlayStackService } from '@mintplayer/ng-bootstrap/a11y';
 import { BsHasOverlayComponent } from '@mintplayer/ng-bootstrap/has-overlay';
 import { MODAL_CONTENT } from '../../providers/modal-content.provider';
 import { PORTAL_FACTORY } from '../../providers/portal-factory.provider';
 import { BsModalComponent } from '../modal/modal.component';
+
+/** Time the modal's leave animation is given before its overlay is disposed. */
+export const MODAL_LEAVE_MS = 500;
 
 @Component({
   selector: 'bs-modal',
@@ -25,6 +28,7 @@ import { BsModalComponent } from '../modal/modal.component';
 })
 export class BsModalHostComponent implements AfterViewInit, OnDestroy {
   private overlay = inject(Overlay);
+  private appRef = inject(ApplicationRef);
   private parentInjector = inject(Injector);
   private portalFactory = inject<(injector: Injector) => ComponentPortal<BsModalComponent>>(PORTAL_FACTORY);
   private overlayStack = inject(BsOverlayStackService);
@@ -83,13 +87,26 @@ export class BsModalHostComponent implements AfterViewInit, OnDestroy {
     this.componentInstance.instance.scrollable.set(this.scrollable());
   }
 
+  /**
+   * Plays the modal's leave animation, then disposes the overlay. The close is written to the
+   * modal directly: this host's sync effect is destroyed with it and would never deliver it.
+   * If the application is torn down first, the pending dispose is cancelled and runs at once.
+   */
   ngOnDestroy() {
-    this.isOpen.set(false);
     if (this.stackToken !== null) {
       this.overlayStack.release(this.stackToken);
       this.stackToken = null;
     }
-    setTimeout(() => this.overlayRef && this.overlayRef.dispose(), 500);
+    if (!this.overlayRef) return;
+    const overlayRef = this.overlayRef;
+    this.componentInstance?.instance.isOpen.set(false);
+    const dispose = () => {
+      clearTimeout(timer);
+      unregister();
+      overlayRef.dispose();
+    };
+    const timer = setTimeout(dispose, MODAL_LEAVE_MS);
+    const unregister = this.appRef.onDestroy(dispose);
   }
 
   onKeyDown(event: Event) {

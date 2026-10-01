@@ -812,10 +812,10 @@ const snippetSlotIcons = `<!-- Project any element with slot="icon" — SVGs, <i
   width: 220px;
   padding: 3px 8px;
   font-size: 12px;
-  border: 1px solid rgba(0, 0, 0, 0.2);
+  border: 1px solid var(--bs-border-color);
   border-radius: 3px;
-  background: rgba(255, 255, 255, 0.92);
-  color: inherit;
+  background: var(--bs-body-bg);
+  color: var(--bs-body-color);
 }
 
 .demo-ribbon .demo-tell-me:focus-visible {
@@ -824,7 +824,7 @@ const snippetSlotIcons = `<!-- Project any element with slot="icon" — SVGs, <i
 }
 
 .demo-ribbon .demo-tell-me::placeholder {
-  color: rgba(0, 0, 0, 0.45);
+  color: var(--bs-secondary-color);
 }
 
 .demo-ribbon .controls {

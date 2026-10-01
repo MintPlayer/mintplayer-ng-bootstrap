@@ -1,23 +1,21 @@
 import { ResizablePositioning } from "../types/positioning";
 
+/** A physical edge of the box, after `start`/`end` are resolved against the text direction. */
+export type PhysicalSide = 'top' | 'bottom' | 'left' | 'right';
+
+/** The geometry captured when a resize begins; every move is computed from it. */
 export interface ResizeAction {
     positioning: ResizablePositioning;
-    top?: ResizeActionSide;
-    start?: ResizeActionSide;
-    bottom?: ResizeActionSide;
-    end?: ResizeActionSide;
-}
 
-export interface ResizeActionSide {
-    /** Fixed edge */
-    edge: number;
+    /** The physical edges the active glyph drags. */
+    sides: PhysicalSide[];
 
-    /** Initial margin at the fixed edge */
-    margin?: number;
+    /** The box's viewport rect at the start of the resize. */
+    rect: { left: number; top: number; width: number; height: number };
 
-    /** Initial margin at the edge that's being dragged */
-    dragMargin?: number;
+    /** The box's offsetLeft/offsetTop: its position in its containing block. */
+    offset: { left: number; top: number };
 
-    /** Initial size */
-    size: number;
+    /** The box's computed margins, in px. */
+    margin: { left: number; right: number; top: number; bottom: number };
 }

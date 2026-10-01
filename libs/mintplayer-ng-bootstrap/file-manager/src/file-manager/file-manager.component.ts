@@ -1,5 +1,4 @@
 import {
-  AfterViewInit,
   ChangeDetectionStrategy,
   Component,
   computed,
@@ -52,7 +51,7 @@ export interface ChildrenLoadedEventDetail {
   schemas: [CUSTOM_ELEMENTS_SCHEMA],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class BsFileManagerComponent implements AfterViewInit {
+export class BsFileManagerComponent {
   /** All file-system nodes. Consumer mutates this in response to operation events. */
   readonly nodes = input<FileSystemNode[]>([]);
 
@@ -115,6 +114,9 @@ export class BsFileManagerComponent implements AfterViewInit {
   readonly errorReported = output<{ kind: string; message: string; nodeId?: string }>();
   readonly childrenLoaded = output<ChildrenLoadedEventDetail>();
 
+  // Deliberately NOT viewChild.required: public methods read it, and a caller that reaches
+  // this component through DI (a child's constructor, say) can call one before this
+  // component's view exists. There, NG0951 would throw where the guard is a no-op.
   readonly fileManagerRef = viewChild<ElementRef<MpFileManager>>('fileManager');
 
   /**
@@ -209,10 +211,6 @@ export class BsFileManagerComponent implements AfterViewInit {
       if (!el) return;
       el.messages = this.messages();
     });
-  }
-
-  ngAfterViewInit(): void {
-    // Effects re-run after view init; nothing else required.
   }
 
   /** Mark a node as having an operation in flight (rows render busy). */

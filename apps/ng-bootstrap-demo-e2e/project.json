@@ -3,32 +3,25 @@
   "$schema": "../../node_modules/nx/schemas/project-schema.json",
   "sourceRoot": "apps/ng-bootstrap-demo-e2e",
   "projectType": "application",
+  "tags": [],
+  "implicitDependencies": ["ng-bootstrap-demo"],
   "targets": {
-    "e2e": {
-      "executor": "@nx/playwright:playwright",
-      "options": {
-        "config": "apps/ng-bootstrap-demo-e2e/playwright.config.ts",
-        "skipInstall": true
-      }
-    },
     "e2e-live": {
-      "executor": "@nx/playwright:playwright",
+      "executor": "nx:run-commands",
       "options": {
-        "config": "apps/ng-bootstrap-demo-e2e/playwright.live-api.config.ts",
-        "skipInstall": true
+        "command": "playwright test --config=playwright.live-api.config.ts",
+        "cwd": "apps/ng-bootstrap-demo-e2e"
       }
     },
     "e2e-a11y": {
-      "executor": "@nx/playwright:playwright",
+      "executor": "nx:run-commands",
       "options": {
-        "config": "apps/ng-bootstrap-demo-e2e/playwright.a11y.config.ts",
-        "skipInstall": true
+        "command": "playwright test --config=playwright.a11y.config.ts",
+        "cwd": "apps/ng-bootstrap-demo-e2e"
       }
     },
     "lint": {
       "executor": "@nx/eslint:lint"
     }
-  },
-  "tags": [],
-  "implicitDependencies": ["ng-bootstrap-demo"]
+  }
 }
