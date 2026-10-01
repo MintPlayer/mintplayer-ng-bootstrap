@@ -484,6 +484,25 @@ None. All were resolved in the 2026-09-30 grill (Q1–Q11).
   workspace.
 - The React/Vue peer range on `@mintplayer/web-components` is `^2.17.0`, and ng-bootstrap's dependency is too.
 
+**Review round (PR #421, 2026-09-30).** Changes made after the first review:
+- **Pre-boot path:** stated explicitly in the PR, the CHANGELOG and the docs. It ships only as
+  `@mintplayer/web-components/theming/bs-theme-preboot.js`, not under `ng-bootstrap/theming` as #420 proposed.
+- **D3, cookie:** when `cookieDomain` is set, `writeThemeCookie` first expires the host-only cookie
+  (`Path=/; Max-Age=0`). Otherwise an older host-only cookie, which browsers list first, would shadow the
+  `Domain` cookie. `readThemeCookie` also strips one pair of RFC 6265 quotes before validating.
+- **D2, store:** each listener is isolated, so one that throws no longer starves the others. Its error is
+  rethrown asynchronously, not swallowed.
+- **D4, Angular:** `@mintplayer/ng-bootstrap/theming` re-exports the core **by name**. `getBsThemeStore`,
+  `configureBsTheme`, `writeThemeCookie`, `MpThemeToggle` and the test reset are no longer public there.
+- **D8, Vue:** `useBsTheme()` returns an idempotent `stop()` for use outside an effect scope.
+- **Agreement test:** it can no longer pass vacuously. The web-components `test` target `dependsOn`
+  `codegen-wc`, and `preboot.spec` throws on CI when the bundle is missing.
+- **Watch mode:** `codegen-wc-watch` also regenerates the pre-boot bundle.
+- **Pre-boot size:** with the quoted-cookie handling the bundle is 995 B against the 1 KB budget, so there is
+  little headroom.
+- **Test isolation:** the theme specs use an in-memory `BroadcastChannel` fake. Node's real one crosses vitest
+  worker threads, which made cross-tab specs flaky under `--pool=threads`.
+
 **Verification:**
 - **Builds:** the four library builds pass.
 - **Unit tests:** web-components, ng, react and vue all pass. Two failures surfaced and were fixed: the `preboot.spec`

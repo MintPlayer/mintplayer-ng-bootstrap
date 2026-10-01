@@ -819,8 +819,9 @@ Per project (lines / branches):
 - API branches: 53.6 → 96.3
 - M20 (CEM table): +218 lines / +260 branches on top of everything else
 
-**Bugs found and fixed while doing it.** There were about **90**, each pinned by a failing-first spec. They are
-listed per milestone in the commit messages and in the CHANGELOG. The most serious:
+**Bugs found and fixed while doing it.** There were about **90**, each pinned by a failing-first spec. The
+complete register is §10.6. PRs squash-merge, so this document, not the commit messages, is the durable list.
+The most serious:
 - A zero-size tile cell hung the main thread in `pack()`.
 - Removing `step` from the time list, timepicker or datetime-picker looped forever.
 - Query-builder drag-and-drop never changed the tree.
@@ -861,3 +862,110 @@ normal "a removed attribute becomes `null`" behaviour. The CEM table pins that l
 - Two ng e2e specs were date- and scroll-dependent (B30, and the datatable filter flip). Both are now
   deterministic.
 - The Nx Playwright targets moved to the inferred plugin in the same PR.
+
+### 10.6 Bug register (phase 2)
+
+Every entry was pinned by a spec that failed before the fix. The milestones are in brackets.
+
+**Web components**
+- **dock [M21]:**
+  - `setPointerCapture` shared a `try` with the resizing visual state, so the state was lost when capture threw.
+  - A corner move with a zero pixel total wiped `node.sizes`.
+  - Splitters were stamped with segments only, so a floating window's intersection handle resized the docked
+    splitter at the same tree path. They now carry a full `DockPath`.
+  - Re-rendering the handles mid-drag threw.
+- **tile-manager [M22]:** a zero-size cell made the drag row Infinity, which hung `pack()`, and the resize spans
+  became NaN.
+- **splitter [M22]:**
+  - `minPanelSize` read NaN.
+  - A splitter removed mid-drag stayed "resizing" forever.
+  - A reconnected splitter lost its observers and state subscription.
+- **scheduler [M23]:**
+  - `selectedRange` returned the drag preview.
+  - Every `touchstart` leaked three listeners.
+  - `touchcancel` never ended an armed drag.
+  - A re-attached scheduler rendered an empty grid and could not be dragged.
+  - Releasing in the same frame left the greyed slots and the ghost behind.
+  - Toggling a group dropped focus.
+  - Escape on a Tab-focused event did not return focus.
+  - An event ending at midnight had no `isEnd` part.
+- **timeline [M24]:**
+  - The authored `selected` attribute was lost in the browser.
+  - When every row was disabled, an arrow key focused a disabled row.
+- **data components [M25]:**
+  - **datatable:** cancelling the row-contextmenu event did not suppress the native menu.
+  - **tree-select:** ArrowDown on an open combobox did nothing.
+  - **treeview:** a second expand while loading fired a duplicate expand.
+  - **file-manager:**
+    - long-press did nothing in list view
+    - a pinch gesture opened the context menu
+    - a stray upload `<input>` was left behind
+    - the search placeholder was not localized
+    - invalid dates printed "Invalid Date"
+  - **query-builder:**
+    - drag-and-drop never mutated the tree
+    - you could not drop into a sub-query
+    - focus went stale after Alt+Arrow, and to `<body>` after a removal
+    - value editors vanished after an operator round trip and were never disposed
+    - built-in editors were never scope-stamped, so they had no styles
+    - the between editor and the chip editors lost earlier edits
+- **remaining WCs [M26]:**
+  - **ribbon:** the band colour parsed only 6-digit hex.
+  - **multi-range:** divided by a zero-size track.
+  - **carousel:** hidden slides became focusable after a reconnect, and a late `play-pause` slot was ignored.
+  - **swiper:** a one-slide wrap slid into a blank cell.
+  - **date/time/datetime pickers:** fired each pick three times and leaked inner events.
+  - **signature-pad:** mutated data it had already emitted.
+  - **tree-select:** inline styles, moved to a class plus a custom property.
+- **setters [M20]:**
+  - **time-list, timepicker, datetime-picker:**
+    - a removed `step` looped forever
+    - a NaN `step` gave an empty list
+    - `hour12="true"` was ignored
+  - **code-snippet:** a removed label attribute crashed the render.
+  - **enum attributes kept stale values on removal:** checkbox/radio `type`/`color`, toggle-button `color`, datatable `selection-mode`, file-manager `view-mode`/`selection-mode`, select/pagination `size`.
+  - **`Number(null)` gave 0 on removal:** datatable `item-size`/`tree-indent`, pagination `selected-page-number`, tree-select `search-debounce-ms`.
+  - **NaN from non-numeric input:** select `number-visible`, and the chart number attributes.
+  - **default-on flags were turned off by removal, and `="false"` read as true:** datatable `resizable-columns`, pagination `show-arrows`, the hierarchy, sparkline and trend flags.
+  - **unknown enum values were accepted:** splitter `orientation`, tree-select `mode`/`variant`.
+  - **pagination:** removing `page-numbers` was ignored.
+- **dropdown:** `BsDropdownItem` values were coerced to 0 (`<li>.value` is numeric). Fixed with a `dropdownValue`
+  channel in all three frameworks.
+
+**Angular [M24, M27]**
+- **resize-glyph:**
+  - the keyboard moved the opposite edge on start and top glyphs
+  - inline mode wrote `width`
+  - the labels were English-only and said "left" in RTL
+  - an absolute drag wrote viewport coordinates
+- Cached views went stale after a template swap (treeview, datatable).
+- The tab-control SSR render had no page content.
+- Offcanvas and modal dispose timers could not be cancelled, and the hide never reached the panel.
+- `bs-select` never marked its form control touched.
+- **dropdown:** leaked its overlay on destroy, and ArrowDown did not enter the menu.
+- **context-menu:** crashed on comment roots and leaked on destroy.
+- **enum.service:** lost string and mixed enum members.
+- **Strings and attributes:**
+  - `file-upload` strings were not localizable
+  - `format-bytes` had an unbounded unit index
+  - the tooltip overwrote `aria-describedby`
+  - `enhanced-paste` swallowed valid pastes and ignored a bound of 0
+  - `button-type` kept a stale class
+  - `offcanvas-push` restored `overflow-x` wrongly
+  - the alert close button had no name
+  - scrollspy and copy had hard-coded English
+- **bs-scheduler:** lost a date set together with `view`.
+- **bs-timeline:** mis-keyed numeric and id-less items, and echoed the selection.
+
+**Satellite libraries and the API [M29, M30]**
+- **ng-qr-code:**
+  - `version` 1–40 was ignored
+  - a cached centre image was lost on redraw
+  - the centre-image inputs were untracked
+- **click-outside:** leaked listeners on re-init and on an events change.
+- **focus-on-load:** read Angular's private `_lContainer`.
+
+**Tests made deterministic [M31]**
+- Scheduler B30 failed on the last day of a month.
+- The datatable filter flip relied on smooth scrolling.
+- The API "this-year" check compared UTC years for a query run in Brussels time.

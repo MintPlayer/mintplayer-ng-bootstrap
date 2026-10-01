@@ -137,13 +137,20 @@ package version aligns its major with the supported Angular major.
     hard-coded English.
   - `bs-timeline` `[activatable]` and `mp-timeline` `activatable`: `(itemClick)` without `selectable` is now
     keyboard-operable.
+  - `mp-dropdown-menu` reads an item's value from a documented `dropdownValue` property first (typed by
+    `DropdownItemElement`), then `data-value`, then `value`. All three `BsDropdownItem` wrappers use it, so object
+    and string values now reach the `select` event intact. Before, `<li>.value` coerced them to 0.
+  - Vue `useBsTheme()` returns an idempotent `stop()`, for use outside an effect scope. Inside a scope it is called
+    automatically.
+- **Behaviour change:** `mp-datetime-picker` now closes on every pick, which is what it already did in practice.
+  Pick events fire once instead of three times, and the inner pickers' events no longer leak out of the host.
 - **Coverage phase 2:** thousands of behavioural specs across every library, the `tools/` scripts and the API.
   See `docs/prd/test-coverage.md` §10.
 
 ### Fixed
 
-- **Found and fixed while raising coverage** (each pinned by a spec; full list in `docs/prd/test-coverage.md`
-  §10.5):
+- **Found and fixed while raising coverage** (each pinned by a spec; full register in `docs/prd/test-coverage.md`
+  §10.6):
   - **query-builder:** drag-and-drop never changed the tree, dropping into a sub-query didn't work, and value
     editors lost edits and were never style-scoped.
   - **scheduler:**
