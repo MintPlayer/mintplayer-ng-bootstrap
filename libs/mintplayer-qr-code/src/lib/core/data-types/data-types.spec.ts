@@ -160,6 +160,24 @@ describe('ByteData', () => {
     expect(bits((b) => new ByteData('é').write(b))).toBe('1100001110101001');
   });
 
+  /*
+   * The exact bytes per UTF-8 width, plus the one case where a "UTF-8 encoder"
+   * has a choice: a lone surrogate is not encodable and must become U+FFFD
+   * (EF BF BD), never three raw surrogate bytes. These are the guarantees the
+   * former @mintplayer/encode-utf8 provided; the platform TextEncoder now does.
+   */
+  it.each([
+    ['A', [0x41]],
+    ['é', [0xc3, 0xa9]],
+    ['日', [0xe6, 0x97, 0xa5]],
+    ['😀', [0xf0, 0x9f, 0x98, 0x80]],
+    ['\ud800', [0xef, 0xbf, 0xbd]],
+    ['a\udc00b', [0x61, 0xef, 0xbf, 0xbd, 0x62]],
+  ])('encodes %j as the UTF-8 bytes %j', (text, bytes) => {
+    const expected = bytes.map((byte) => byte.toString(2).padStart(8, '0')).join('');
+    expect(bits((b) => new ByteData(text).write(b))).toBe(expected);
+  });
+
   it('accepts raw binary as well as text', () => {
     const raw = new Uint8Array([0x00, 0xff, 0x7f]).buffer;
     expect(new ByteData(raw).getLength()).toBe(3);

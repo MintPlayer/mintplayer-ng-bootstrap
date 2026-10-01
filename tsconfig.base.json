@@ -15,7 +15,6 @@
     "skipDefaultLibCheck": true,
     "paths": {
       "@mintplayer/dijkstra": ["./libs/mintplayer-dijkstra/src/index.ts"],
-      "@mintplayer/encode-utf8": ["./libs/mintplayer-encode-utf8/src/index.ts"],
       "@mintplayer/ng-animations": [
         "./libs/mintplayer-ng-animations/src/index.ts"
       ],

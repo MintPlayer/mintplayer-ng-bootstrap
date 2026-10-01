@@ -835,8 +835,12 @@ listed per milestone in the commit messages and in the CHANGELOG. The most serio
   (public methods can be reached through DI before the view exists), in typeahead, and in priority-nav's
   conditional sizer. OTP input went back to an optional query, because a `focus()` fired from a directive
   constructor threw NG0951.
-- `@mintplayer/encode-utf8` is kept and published, but nothing in the repo uses it any more: `qr-code` now
-  uses `TextEncoder`, proven identical over every code unit and surrogate pair.
+- `@mintplayer/encode-utf8` was **removed from the repository** (user decision, 2026-10-01). `qr-code` uses
+  `TextEncoder`, which was proven identical over every code unit and surrogate pair before the switch, so the
+  library had no consumer left. `qr-code`'s data-types spec now pins the exact UTF-8 bytes, lone surrogates →
+  U+FFFD included. The empty leftover `libs/mintplayer-ng-swiper/` folder (untracked, `.vite` cache only, from
+  the #392 deletion) was removed at the same time. `ng-bootstrap-snippets` stays: it is the VS Code
+  extension that CI publishes, not an unused library.
 - The one `v8 ignore` is `tools/serve-api.mjs` (P2-D8).
 
 **True residual.** What remains is measurement-dependent geometry, where R3 forbids faking rects:

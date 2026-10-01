@@ -18,7 +18,11 @@ package version aligns its major with the supported Angular major.
     - The no-op `excludeBeforeClick` input is removed.
     - Re-initialising, or changing `clickOutsideEvents`, no longer leaks listeners.
   - `@mintplayer/qr-code` 1.8.0 encodes byte data with the platform `TextEncoder`, and no longer peer-depends on
-    `@mintplayer/encode-utf8`. A spec proves the output is identical over every code unit and surrogate pair.
+    `@mintplayer/encode-utf8`. A spec proved the output identical over every code unit and surrogate pair before
+    the switch, and `qr-code`'s own spec now pins the bytes.
+  - **`@mintplayer/encode-utf8` is removed from the repository** and will receive no further releases. It had no
+    remaining consumer. The last published version, 1.7.0, stays on npm. Use the platform `TextEncoder`
+    instead.
 
 - **The theme mode is stored in a cookie, not localStorage (issue #420).**
   - `BsThemeService` now persists the user's choice in the `bs-theme-mode` cookie (`Path=/`, `SameSite=Lax`, one
