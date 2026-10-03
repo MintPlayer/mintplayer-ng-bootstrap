@@ -365,3 +365,119 @@ describe('mp-datatable live-region content per action', () => {
     expect(liveText(el)).toBe('Page 2 of 2');
   });
 });
+
+describe('mp-datatable multi-select state (D10, #422)', () => {
+  beforeEach(() => {
+    document.body.innerHTML = '';
+  });
+
+  const rowCheckbox = (el: MpDatatable, index: number) =>
+    bodyRows(el)[index].querySelector<HTMLElement>('mp-checkbox')!;
+
+  it('marks the grid aria-multiselectable in multiple and checkbox modes only, following the setter', async () => {
+    const el = await mount('selection-mode="multiple"');
+    expect(table(el).getAttribute('aria-multiselectable')).toBe('true');
+
+    (el as unknown as { selectionMode: string }).selectionMode = 'checkbox';
+    await el.updateComplete;
+    expect(table(el).getAttribute('aria-multiselectable')).toBe('true');
+
+    (el as unknown as { selectionMode: string }).selectionMode = 'single';
+    await el.updateComplete;
+    expect(table(el).getAttribute('role')).toBe('grid');
+    expect(table(el).hasAttribute('aria-multiselectable')).toBe(false);
+
+    (el as unknown as { selectionMode: string }).selectionMode = 'none';
+    await el.updateComplete;
+    expect(table(el).hasAttribute('aria-multiselectable')).toBe(false);
+  });
+
+  it("leaves aria-selected unchanged after Enter in 'checkbox' mode, and Space flips it", async () => {
+    const el = await mount('selection-mode="checkbox"');
+    expect(bodyRows(el).every((r) => r.getAttribute('aria-selected') === 'false')).toBe(true);
+
+    bodyRows(el)[1].focus();
+    pressKey(bodyRows(el)[1], 'Enter');
+    await el.updateComplete;
+    expect(bodyRows(el).map((r) => r.getAttribute('aria-selected'))).toEqual(['false', 'false', 'false']);
+
+    pressKey(bodyRows(el)[1], ' ');
+    await el.updateComplete;
+    expect(bodyRows(el).map((r) => r.getAttribute('aria-selected'))).toEqual(['false', 'true', 'false']);
+  });
+
+  it('marks only loaded rows selected while selectedIds holds keys that are not loaded', async () => {
+    const el = await mount('selection-mode="multiple"');
+    (el as unknown as { selectedIds: unknown }).selectedIds = ['2', '99', '100'];
+    await el.updateComplete;
+    expect(bodyRows(el).map((r) => r.getAttribute('aria-selected'))).toEqual(['false', 'true', 'false']);
+    expect(rowCheckbox(el, 1).getAttribute('aria-label')).toBe('Select Beta');
+    // The unloaded keys keep the header in its "something is selected" state.
+    const header = shadow(el).querySelector<HTMLElement>('thead th.checkbox-cell mp-checkbox')!;
+    expect(header.hasAttribute('aria-hidden')).toBe(false);
+  });
+
+  it('announces a count that includes the keys that are not loaded', async () => {
+    const el = await mount('selection-mode="checkbox"');
+    (el as unknown as { selectedIds: unknown }).selectedIds = ['99', '100'];
+    await el.updateComplete;
+
+    rowCheckbox(el, 0).dispatchEvent(new CustomEvent('change'));
+    await el.updateComplete;
+    expect(liveText(el)).toBe('3 rows selected');
+  });
+});
+
+describe('mp-datatable row checkbox names (D14)', () => {
+  beforeEach(() => {
+    document.body.innerHTML = '';
+  });
+
+  const names = (el: MpDatatable) =>
+    bodyRows(el).map((r) => r.querySelector('mp-checkbox')!.getAttribute('aria-label'));
+
+  it("names each checkbox from the row's first data cell by default", async () => {
+    const el = await mount('selection-mode="multiple"');
+    expect(names(el)).toEqual(['Select Alpha', 'Select Beta', 'Select Gamma']);
+  });
+
+  it('prefers rowLabel, and falls back to the cell text where it returns an empty string', async () => {
+    const el = await mount('selection-mode="checkbox"');
+    (el as unknown as { rowLabel: (row: Row) => string }).rowLabel = (row) =>
+      row.id === 2 ? '  ' : `${row.name}, age ${row.age}`;
+    await settle(el);
+    expect(names(el)).toEqual(['Select Alpha, age 30', 'Select Beta', 'Select Gamma, age 40']);
+
+    // Removing the callback returns to the cell text.
+    (el as unknown as { rowLabel: unknown }).rowLabel = null;
+    await settle(el);
+    expect(names(el)).toEqual(['Select Alpha', 'Select Beta', 'Select Gamma']);
+  });
+
+  it('falls back to "Select row N" when the first cell is empty', async () => {
+    const el = await mount('selection-mode="multiple"', [
+      { id: 1, name: 'Alpha', age: 30 },
+      { id: 2, name: '', age: 20 },
+    ]);
+    expect(names(el)).toEqual(['Select Alpha', 'Select row 2']);
+  });
+
+  it('renames a checkbox when its cell re-renders with new data', async () => {
+    const el = await mount('selection-mode="multiple"');
+    (el as unknown as { data: unknown }).data = [
+      { id: 1, name: 'Renamed', age: 30 },
+      ...DATA.slice(1),
+    ];
+    await settle(el);
+    expect(names(el)).toEqual(['Select Renamed', 'Select Beta', 'Select Gamma']);
+  });
+
+  it('routes the name through the labels, so it is localizable', async () => {
+    const el = await mount('selection-mode="multiple"');
+    // `labels` is a plain (non-reactive) field, so the change is rendered on the next update.
+    (el as unknown as { labels: unknown }).labels = { selectRowNamed: (label: string) => `Selecteer ${label}` };
+    el.requestUpdate();
+    await settle(el);
+    expect(names(el)).toEqual(['Selecteer Alpha', 'Selecteer Beta', 'Selecteer Gamma']);
+  });
+});

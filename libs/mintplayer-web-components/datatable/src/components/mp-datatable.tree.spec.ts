@@ -11,7 +11,8 @@ import type {
 
 /**
  * Tree-mode keyboard (the treegrid pattern: ArrowRight expands, ArrowLeft
- * collapses, Enter/Space toggle a parent) and the lazy child fetch expansion
+ * collapses; Enter opens and Space selects on every row, parents included —
+ * D13) and the lazy child fetch expansion
  * triggers.
  */
 interface Row { id: number; name: string; childCount?: number; }
@@ -34,7 +35,7 @@ const press = (target: HTMLElement, key: string, init: KeyboardEventInit = {}) =
   return ev;
 };
 
-async function mountTree(selectionMode: 'none' | 'multiple' = 'none') {
+async function mountTree(selectionMode: 'none' | 'multiple' | 'checkbox' = 'none') {
   const calls: DatatableFetchRequest[] = [];
   const fetchFn: DatatableFetch<Row> = async (req) => {
     calls.push(req);
@@ -98,20 +99,81 @@ describe('mp-datatable tree keyboard', () => {
     expect(collapse).toHaveBeenCalledOnce();
   });
 
-  it('Enter and Space toggle a parent, and re-expanding reuses the cached children', async () => {
+  it('collapsing and re-expanding with the arrows reuses the cached children', async () => {
     const { el, calls } = await mountTree();
-    press(rowEl(el, '1')!, 'Enter');
+    press(rowEl(el, '1')!, 'ArrowRight');
     await settle(el);
     expect(keys(el)).toEqual(['1', '11', '2']);
 
-    press(rowEl(el, '1')!, ' ');
+    press(rowEl(el, '1')!, 'ArrowLeft');
     await settle(el);
     expect(keys(el)).toEqual(['1', '2']);
 
-    press(rowEl(el, '1')!, 'Enter');
+    press(rowEl(el, '1')!, 'ArrowRight');
     await settle(el);
     expect(keys(el)).toEqual(['1', '11', '2']);
     expect(calls.filter((c) => c.parentId === 1)).toHaveLength(1);
+  });
+
+  for (const mode of ['multiple', 'checkbox'] as const) {
+    it(`Enter on a parent row opens it (row-click) and does not expand (D13, ${mode})`, async () => {
+      const { el, calls } = await mountTree(mode);
+      const clicks: string[] = [];
+      el.addEventListener('mp-datatable-row-click', (e) => clicks.push((e as CustomEvent).detail.rowKey));
+      const expand = vi.fn();
+      el.addEventListener('mp-datatable-row-expand', expand);
+
+      press(rowEl(el, '1')!, 'Enter');
+      await settle(el);
+      expect(clicks).toEqual(['1']);
+      expect(expand).not.toHaveBeenCalled();
+      expect(el.expandedIds.size).toBe(0);
+      expect(keys(el)).toEqual(['1', '2']);
+      expect(calls.filter((c) => c.parentId === 1)).toHaveLength(0);
+      // Enter opens; only the default mode selects on the way.
+      expect(el.selectedIds).toEqual(mode === 'multiple' ? ['1'] : []);
+    });
+
+    it(`Space on a parent row selects it and does not expand (D13, ${mode})`, async () => {
+      const { el } = await mountTree(mode);
+      const clicks: string[] = [];
+      el.addEventListener('mp-datatable-row-click', (e) => clicks.push((e as CustomEvent).detail.rowKey));
+
+      press(rowEl(el, '1')!, ' ');
+      await settle(el);
+      expect(el.expandedIds.size).toBe(0);
+      expect(keys(el)).toEqual(['1', '2']);
+      expect(el.selectedIds).toEqual(['1']);
+      // The default mode's Space is a click-equivalent; 'checkbox' mode's is the checkbox only.
+      expect(clicks).toEqual(mode === 'multiple' ? ['1'] : []);
+
+      // The arrows still expand and collapse the same row.
+      press(rowEl(el, '1')!, 'ArrowRight');
+      await settle(el);
+      expect(keys(el)).toEqual(['1', '11', '2']);
+      press(rowEl(el, '1')!, 'ArrowLeft');
+      await settle(el);
+      expect(keys(el)).toEqual(['1', '2']);
+    });
+  }
+
+  it('Enter on a parent row with selection off no longer expands it', async () => {
+    const { el } = await mountTree();
+    press(rowEl(el, '1')!, 'Enter');
+    await settle(el);
+    expect(el.expandedIds.size).toBe(0);
+    expect(keys(el)).toEqual(['1', '2']);
+  });
+
+  it("Enter on a leaf in 'checkbox' mode opens it without selecting", async () => {
+    const { el } = await mountTree('checkbox');
+    const clicks: string[] = [];
+    el.addEventListener('mp-datatable-row-click', (e) => clicks.push((e as CustomEvent).detail.rowKey));
+    press(rowEl(el, '2')!, 'Enter');
+    await settle(el);
+    expect(clicks).toEqual(['2']);
+    expect(el.selectedIds).toEqual([]);
+    expect(el.expandedIds.size).toBe(0);
   });
 
   it('Enter on a leaf falls through to selection when rows are selectable', async () => {
