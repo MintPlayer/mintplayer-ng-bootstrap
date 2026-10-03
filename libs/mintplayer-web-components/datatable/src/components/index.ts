@@ -4,4 +4,6 @@ export type {
   RowEventDetail,
   SortChangeEventDetail,
   SelectionChangeEventDetail,
+  DatatableFetchState,
+  DatatableReloadOptions,
 } from './mp-datatable';

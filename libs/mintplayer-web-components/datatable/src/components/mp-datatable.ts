@@ -71,6 +71,23 @@ export interface RowEventDetail<T = unknown> {
   originalEvent: Event;
 }
 
+/**
+ * The fetch-driving state `applyFetchState` applies as one change. Every field
+ * is optional; see that method for the absent-field rules.
+ */
+export interface DatatableFetchState {
+  fetch?: DatatableFetch | null;
+  sortColumns?: SortColumn[];
+  page?: number;
+  perPage?: number;
+}
+
+/** Options for `reload()`. */
+export interface DatatableReloadOptions {
+  /** Return to page 1 before re-fetching. Default `false`. */
+  resetPage?: boolean;
+}
+
 export interface SortChangeEventDetail {
   sortColumns: SortColumn[];
 }
@@ -416,7 +433,8 @@ export class MpDatatable extends LitElement {
   // lives in `_data` (mirroring tree roots), pages ≥ 2 are fetched on demand as
   // their rows scroll into view and stored here. Kept separate from the tree
   // caches because `parentId: null` already means "tree root" — the WC
-  // disambiguates by `this._tree` being false. Cleared by `invalidateData()`.
+  // disambiguates by `this._tree` being false. Cleared by every reload
+  // (`scheduleFetchReload`) and when the `fetch` callback is removed.
   /** Loaded rows per 1-based page (pages ≥ 2; page 1 is `_data`). */
   private _pageCache: Map<number, unknown[]> = new Map();
   /** Pages with an in-flight fetch; suppresses re-requests. */
@@ -425,14 +443,14 @@ export class MpDatatable extends LitElement {
   // ─── High-level fetch-callback ownership ────────────────────────────────
   // When `_fetch` is set, the WC owns the whole server-paged loop: it calls the
   // callback for page 1, every window, every tree child, every page change, and
-  // reloads on sort/perPage — deriving totalRecords from the response. The
-  // existing `mp-datatable-fetch-request` event + `setFetchResponse` remain the
-  // lower-level path used when no callback is provided; when one is, the WC
-  // self-handles its own event so the same cache code is reused, not duplicated.
+  // reloads on sort/perPage — deriving totalRecords from the response. Every
+  // reload goes through `scheduleFetchReload`, which coalesces a burst of
+  // changes into one request; `reload()` forces one and `applyFetchState`
+  // applies several changes as a single one (#407).
   private _fetch: DatatableFetch | null = null;
   /** Bumped on invalidation; in-flight responses from an older generation are dropped. */
   private _fetchGeneration = 0;
-  /** Guards the one-time initial page-1 load. Reset by `invalidateData`. */
+  /** Guards the one-time initial page-1 load. Reset when the callback changes. */
   private _initialFetchDone = false;
   /** Coalesces multiple setter calls in one flush into a single reload. */
   private _reloadScheduled = false;
@@ -567,20 +585,36 @@ export class MpDatatable extends LitElement {
    * loop and the consumer provides nothing else — no page-1 seeding via `data`,
    * no separate `totalRecords`, no event bridge. Works with any framework or
    * none (`el.fetch = fn`). Setting it kicks off the initial page-1 load.
+   *
+   * Pass a STABLE function. Assigning the same function again is a no-op, but
+   * a new closure on every render is a new callback, and each one reloads. To
+   * re-query with an unchanged callback, call `reload()`.
    */
   get fetch(): DatatableFetch | null {
     return this._fetch;
   }
   set fetch(value: DatatableFetch | null) {
-    this._fetch = typeof value === 'function' ? value : null;
+    if (this.assignFetch(value)) this.scheduleFetchReload();
+  }
+
+  /**
+   * Assigns the callback without scheduling a load; true when a load is due.
+   * Shared by the setter and `applyFetchState`, which schedules once for all
+   * of its fields.
+   */
+  private assignFetch(value: DatatableFetch | null | undefined): boolean {
+    const next = typeof value === 'function' ? value : null;
+    // A framework binding re-assigns an unchanged callback on every change
+    // detection; treating that as a new source restarted the load each time (#407).
+    if (next === this._fetch) return false;
+    this._fetch = next;
     if (this._fetch) {
       // The server owns sorting/paging when fetching; never client-sort.
       this._autoSort = false;
       // (Re)seed from the callback. New callback ⇒ fresh data.
       this._initialFetchDone = false;
       this._lastReloadKey = null;
-      this.scheduleFetchReload();
-      return;
+      return true;
     }
 
     // Clearing the callback used to reset nothing, which left the element
@@ -599,6 +633,7 @@ export class MpDatatable extends LitElement {
     this._initialFetchDone = false;
     this._lastReloadKey = null;
     this.requestUpdate();
+    return false;
   }
 
   /**
@@ -627,9 +662,77 @@ export class MpDatatable extends LitElement {
     return [...this._sortColumns];
   }
   set sortColumns(value: SortColumn[]) {
-    this._sortColumns = Array.isArray(value) ? [...value] : [];
+    if (!this.assignSortColumns(value)) return;
     this.requestUpdate();
     this.scheduleFetchReload(); // no-op unless `fetch` is set; coalesced + echo-deduped
+  }
+
+  /**
+   * Assigns without scheduling; false when the value is structurally equal. A
+   * wrapper echoing back the array it was just given is not a sort change, and
+   * must not cost a re-render or a request (#407).
+   */
+  private assignSortColumns(value: SortColumn[] | null | undefined): boolean {
+    const next = Array.isArray(value) ? [...value] : [];
+    const same = next.length === this._sortColumns.length
+      && next.every((c, i) =>
+        c.property === this._sortColumns[i].property && c.direction === this._sortColumns[i].direction);
+    if (same) return false;
+    this._sortColumns = next;
+    return true;
+  }
+
+  /**
+   * Re-queries the `fetch` callback for the current sort, page and page size,
+   * even though none of them changed (the server data did). One request,
+   * coalesced with any change already pending in the same task.
+   *
+   * The loaded windows and tree children are dropped, because they may be
+   * stale. The selection is NOT: every selected key and its remembered row
+   * survive, so a re-fetched row simply replaces the remembered one.
+   *
+   * `resetPage: true` also returns to page 1 (and emits
+   * `mp-datatable-page-change` when that moves the page). A no-op without a
+   * `fetch` callback, apart from the page reset.
+   */
+  reload({ resetPage = false }: DatatableReloadOptions = {}): void {
+    if (resetPage && this.assignPage(1)) {
+      this.requestUpdate();
+      this.dispatchEvent(
+        new CustomEvent<{ page: number }>('mp-datatable-page-change', {
+          detail: { page: 1 },
+          bubbles: true,
+          composed: true,
+        }),
+      );
+    }
+    // Forgetting the last-loaded signature is what makes the scheduled reload
+    // not look like an echo. That reload bumps the fetch generation and clears
+    // the page and child caches before it loads.
+    this._lastReloadKey = null;
+    this.scheduleFetchReload();
+  }
+
+  /**
+   * Applies any of `fetch`, `sortColumns`, `page` and `perPage` as ONE change:
+   * every provided field is assigned first, then exactly one reload is
+   * scheduled. Assigning them one by one through the setters can split across
+   * ticks and cost two requests; this cannot (#407). Framework wrappers that
+   * forward several of these inputs should call this rather than the setters.
+   *
+   * A field that is absent (or `undefined`) is left alone, except `fetch`: a
+   * present `fetch` key is always assigned, so `{ fetch: null }` removes the
+   * callback. `perPage` returns to page 1 unless `page` is also given.
+   * Unchanged values cost nothing, as with the setters.
+   */
+  applyFetchState(state: DatatableFetchState): void {
+    if ('fetch' in state) this.assignFetch(state.fetch);
+    if (state.sortColumns !== undefined) this.assignSortColumns(state.sortColumns);
+    if (state.perPage !== undefined) this.assignPerPage(state.perPage);
+    if (state.page !== undefined) this.assignPage(state.page);
+    this.requestUpdate();
+    // Coalesced and echo-deduped: nothing changed ⇒ no request.
+    this.scheduleFetchReload();
   }
 
   get selectionMode(): DatatableSelectionMode {
@@ -814,25 +917,37 @@ export class MpDatatable extends LitElement {
     return this._page;
   }
   set page(value: number) {
-    const next = Math.max(1, Math.floor(value || 1));
-    if (this._page !== next) {
-      this._page = next;
+    if (this.assignPage(value)) {
       this.requestUpdate();
       this.scheduleFetchReload(); // non-virtual page change → fetch that page (coalesced)
     }
+  }
+
+  /** Assigns without scheduling; true when the page changed. */
+  private assignPage(value: number): boolean {
+    const next = Math.max(1, Math.floor(value || 1));
+    if (this._page === next) return false;
+    this._page = next;
+    return true;
   }
 
   get perPage(): number {
     return this._perPage;
   }
   set perPage(value: number) {
-    const next = Math.max(1, Math.floor(value || 1));
-    if (this._perPage !== next) {
-      this._perPage = next;
-      this._page = 1;
+    if (this.assignPerPage(value)) {
       this.requestUpdate();
       this.scheduleFetchReload();
     }
+  }
+
+  /** Assigns without scheduling (and returns to page 1); true when it changed. */
+  private assignPerPage(value: number): boolean {
+    const next = Math.max(1, Math.floor(value || 1));
+    if (this._perPage === next) return false;
+    this._perPage = next;
+    this._page = 1;
+    return true;
   }
 
   get perPageOptions(): number[] {
