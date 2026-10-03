@@ -292,6 +292,13 @@ tr[data-mps=datatable] > .checkbox-cell[data-mps=datatable] {
   text-overflow: clip;
 }
 
+// selection-mode="checkbox": the whole cell toggles, not only the checkbox.
+// A class rendered by the element rather than a :host attribute selector, because
+// selectionMode is often set as a property and the attribute is not reflected.
+.checkbox-cell.checkbox-cell-toggles {
+  cursor: pointer;
+}
+
 // ── Tree mode ──────────────────────────────────────────────────────────────
 .tree-chevron-cell {
   width: 2rem;

@@ -53,7 +53,16 @@ import type { PageChangeEventDetail } from '@mintplayer/web-components/paginatio
 // Side-effect import: registers <mp-checkbox> for selection columns.
 import '@mintplayer/web-components/checkbox';
 
-export type DatatableSelectionMode = 'none' | 'single' | 'multiple';
+/**
+ * - `'none'`: rows are not selectable.
+ * - `'single'`: a row click or Enter/Space selects that one row.
+ * - `'multiple'`: a row click selects (Ctrl/Cmd toggles, Shift selects a range),
+ *   and a checkbox column toggles rows individually.
+ * - `'checkbox'`: multi-select through the checkbox column ONLY. A row click and
+ *   Enter emit `mp-datatable-row-click` without selecting, so a row can open
+ *   something; Space toggles the focused row's checkbox.
+ */
+export type DatatableSelectionMode = 'none' | 'single' | 'multiple' | 'checkbox';
 
 export interface RowEventDetail<T = unknown> {
   row: T;
@@ -62,20 +71,45 @@ export interface RowEventDetail<T = unknown> {
   originalEvent: Event;
 }
 
+/**
+ * The fetch-driving state `applyFetchState` applies as one change. Every field
+ * is optional; see that method for the absent-field rules.
+ */
+export interface DatatableFetchState {
+  fetch?: DatatableFetch | null;
+  sortColumns?: SortColumn[];
+  page?: number;
+  perPage?: number;
+}
+
+/** Options for `reload()`. */
+export interface DatatableReloadOptions {
+  /** Return to page 1 before re-fetching. Default `false`. */
+  resetPage?: boolean;
+}
+
 export interface SortChangeEventDetail {
   sortColumns: SortColumn[];
 }
 
 export interface SelectionChangeEventDetail<T = unknown> {
+  /**
+   * The selection, authoritative. Act on this: it holds every selected key,
+   * including keys whose rows are on another page or were never loaded.
+   */
   selectedIds: string[];
   /**
-   * The selected row objects, resolved from the WC's loaded data (page 1 +
-   * fetched windows + tree children). Since the WC owns the data when fetching,
-   * consumers can't resolve ids → rows themselves — this is how a consumer gets
-   * the actual selected records. An id whose row isn't currently loaded is
-   * omitted (shouldn't happen: you can only select a row you can see).
+   * Index-aligned with `selectedIds`: `selectedRows[i]` is the row of
+   * `selectedIds[i]`. Render from this.
+   *
+   * A row is resolved from the loaded data first (page 1, fetched windows,
+   * tree children), so a re-fetched row object wins; otherwise from the rows
+   * the element remembered when they were selected, which is what keeps a row
+   * that has paged, sorted or re-fetched out of view. `undefined` marks a key
+   * whose row the element has never seen (a host seeded the key without its
+   * row). Nothing is dropped, so the two arrays always pair positionally.
    */
-  selectedRows: T[];
+  selectedRows: (T | undefined)[];
 }
 
 /**
@@ -188,8 +222,8 @@ let instanceCounter = 0;
  * - Columns are declared programmatically via `DatatableColumnDef[]`.
  *   Each column supplies a name (sort key) + optional `cellRenderer`.
  * - Sort algorithm extracted into the pure `computeNextSort` helper.
- * - Selection model: `'none' | 'single' | 'multiple'` with checkbox column
- *   when multi-select.
+ * - Selection model: `'none' | 'single' | 'multiple' | 'checkbox'` with a checkbox column
+ *   in the multi-select modes (see `DatatableSelectionMode`).
  * - Row events: `mp-datatable-row-click`, `mp-datatable-row-dblclick`,
  *   `mp-datatable-row-contextmenu` — all carry `RowEventDetail`.
  * - Pagination footer when `pagination` enabled.
@@ -260,9 +294,20 @@ export class MpDatatable extends LitElement {
 
   /**
    * User-visible strings, overridable per key for localisation
-   * (see DatatableLabels). Property-only: it holds functions.
+   * (see DatatableLabels). Property-only: it holds functions. Re-renders on
+   * assignment, so switching language on a mounted table renames every
+   * control (row-checkbox names included) without waiting for an unrelated
+   * update.
    */
-  labels: Partial<DatatableLabels> | undefined = undefined;
+  get labels(): Partial<DatatableLabels> | undefined {
+    return this._labels;
+  }
+  set labels(value: Partial<DatatableLabels> | undefined) {
+    if (value === this._labels) return;
+    this._labels = value;
+    this.requestUpdate();
+  }
+  private _labels: Partial<DatatableLabels> | undefined = undefined;
 
   /** Merged view of labels — consumer keys over the English defaults. */
   private get mergedLabels(): DatatableLabels {
@@ -285,6 +330,14 @@ export class MpDatatable extends LitElement {
   private _sortColumns: SortColumn[] = [];
   private _selectionMode: DatatableSelectionMode = 'none';
   private _selectedIds: Set<string> = new Set();
+  /**
+   * The row of each selected key, remembered when it was selected (or seeded
+   * via `selectedRows`). Loaded data is replaced on every page change, sort and
+   * re-fetch, so without this a selected row that leaves the loaded set could
+   * no longer be reported. Keys ⊆ `_selectedIds`: every path that deselects
+   * prunes it, so it holds the selection's own rows and never mirrors the data.
+   */
+  private _selectedRowCache: Map<string, unknown> = new Map();
   private _cutIds: Set<string> = new Set();
   private _focusedRowKey: string | null = null;
 
@@ -309,10 +362,38 @@ export class MpDatatable extends LitElement {
     },
   ));
 
+  /**
+   * The default key: the row's `id`, else its position. A positional key names
+   * a different row after every re-fetch, sort or tree expansion, so it cannot
+   * carry a selection across them — hence the one-time warning below.
+   *
+   * Worse, a row that is NOT loaded (an off-page selected row, a child of a
+   * collapsed parent) has no index at all and is keyed `rowKey(row, -1)`, so
+   * every id-less off-page row collapses onto the one key `row--1` and the
+   * selection can no longer tell them apart. A stable, id-based `rowKey` is
+   * therefore required for selection with `fetch` or pagination.
+   */
   private _rowKey: RowKey = (row, index) => {
     const r = row as { id?: unknown } | null;
-    return r && r.id != null ? String(r.id) : `row-${index}`;
+    if (r && r.id != null) return String(r.id);
+    this.warnPositionalKeyOnce();
+    return `row-${index}`;
   };
+  private _warnedPositionalKey = false;
+
+  /**
+   * Warn rather than throw: a static table without ids keeps working, and only
+   * a fetched or selectable one is actually harmed by a positional key.
+   */
+  private warnPositionalKeyOnce(): void {
+    if (this._warnedPositionalKey || (!this._fetch && this._selectionMode === 'none')) return;
+    this._warnedPositionalKey = true;
+    console.warn(
+      '[mp-datatable] A row has no `id` and no `rowKey` is set, so it is keyed by its position. '
+      + 'A positional key names a different row after a re-fetch, sort or expansion, so a selection '
+      + 'cannot survive them. Set `rowKey` to return a stable identity.',
+    );
+  }
   private _columnWidths: Map<string, number> = new Map();
   /** Becomes `true` after the first measure-once pass locks column widths. Drives the `.measured` class on the table (→ `table-layout: fixed`). */
   private _hasMeasuredInitial = false;
@@ -369,7 +450,8 @@ export class MpDatatable extends LitElement {
   // lives in `_data` (mirroring tree roots), pages ≥ 2 are fetched on demand as
   // their rows scroll into view and stored here. Kept separate from the tree
   // caches because `parentId: null` already means "tree root" — the WC
-  // disambiguates by `this._tree` being false. Cleared by `invalidateData()`.
+  // disambiguates by `this._tree` being false. Cleared by every reload
+  // (`scheduleFetchReload`) and when the `fetch` callback is removed.
   /** Loaded rows per 1-based page (pages ≥ 2; page 1 is `_data`). */
   private _pageCache: Map<number, unknown[]> = new Map();
   /** Pages with an in-flight fetch; suppresses re-requests. */
@@ -378,14 +460,14 @@ export class MpDatatable extends LitElement {
   // ─── High-level fetch-callback ownership ────────────────────────────────
   // When `_fetch` is set, the WC owns the whole server-paged loop: it calls the
   // callback for page 1, every window, every tree child, every page change, and
-  // reloads on sort/perPage — deriving totalRecords from the response. The
-  // existing `mp-datatable-fetch-request` event + `setFetchResponse` remain the
-  // lower-level path used when no callback is provided; when one is, the WC
-  // self-handles its own event so the same cache code is reused, not duplicated.
+  // reloads on sort/perPage — deriving totalRecords from the response. Every
+  // reload goes through `scheduleFetchReload`, which coalesces a burst of
+  // changes into one request; `reload()` forces one and `applyFetchState`
+  // applies several changes as a single one (#407).
   private _fetch: DatatableFetch | null = null;
   /** Bumped on invalidation; in-flight responses from an older generation are dropped. */
   private _fetchGeneration = 0;
-  /** Guards the one-time initial page-1 load. Reset by `invalidateData`. */
+  /** Guards the one-time initial page-1 load. Reset when the callback changes. */
   private _initialFetchDone = false;
   /** Coalesces multiple setter calls in one flush into a single reload. */
   private _reloadScheduled = false;
@@ -520,20 +602,36 @@ export class MpDatatable extends LitElement {
    * loop and the consumer provides nothing else — no page-1 seeding via `data`,
    * no separate `totalRecords`, no event bridge. Works with any framework or
    * none (`el.fetch = fn`). Setting it kicks off the initial page-1 load.
+   *
+   * Pass a STABLE function. Assigning the same function again is a no-op, but
+   * a new closure on every render is a new callback, and each one reloads. To
+   * re-query with an unchanged callback, call `reload()`.
    */
   get fetch(): DatatableFetch | null {
     return this._fetch;
   }
   set fetch(value: DatatableFetch | null) {
-    this._fetch = typeof value === 'function' ? value : null;
+    if (this.assignFetch(value)) this.scheduleFetchReload();
+  }
+
+  /**
+   * Assigns the callback without scheduling a load; true when a load is due.
+   * Shared by the setter and `applyFetchState`, which schedules once for all
+   * of its fields.
+   */
+  private assignFetch(value: DatatableFetch | null | undefined): boolean {
+    const next = typeof value === 'function' ? value : null;
+    // A framework binding re-assigns an unchanged callback on every change
+    // detection; treating that as a new source restarted the load each time (#407).
+    if (next === this._fetch) return false;
+    this._fetch = next;
     if (this._fetch) {
       // The server owns sorting/paging when fetching; never client-sort.
       this._autoSort = false;
       // (Re)seed from the callback. New callback ⇒ fresh data.
       this._initialFetchDone = false;
       this._lastReloadKey = null;
-      this.scheduleFetchReload();
-      return;
+      return true;
     }
 
     // Clearing the callback used to reset nothing, which left the element
@@ -552,6 +650,7 @@ export class MpDatatable extends LitElement {
     this._initialFetchDone = false;
     this._lastReloadKey = null;
     this.requestUpdate();
+    return false;
   }
 
   /**
@@ -580,9 +679,89 @@ export class MpDatatable extends LitElement {
     return [...this._sortColumns];
   }
   set sortColumns(value: SortColumn[]) {
-    this._sortColumns = Array.isArray(value) ? [...value] : [];
+    if (!this.assignSortColumns(value)) return;
     this.requestUpdate();
     this.scheduleFetchReload(); // no-op unless `fetch` is set; coalesced + echo-deduped
+  }
+
+  /**
+   * Assigns without scheduling; false when the value is structurally equal. A
+   * wrapper echoing back the array it was just given is not a sort change, and
+   * must not cost a re-render or a request (#407).
+   */
+  private assignSortColumns(value: SortColumn[] | null | undefined): boolean {
+    const next = Array.isArray(value) ? [...value] : [];
+    const same = next.length === this._sortColumns.length
+      && next.every((c, i) =>
+        c.property === this._sortColumns[i].property && c.direction === this._sortColumns[i].direction);
+    if (same) return false;
+    this._sortColumns = next;
+    return true;
+  }
+
+  /**
+   * Re-queries the `fetch` callback for the current sort, page and page size,
+   * even though none of them changed (the server data did). One request,
+   * coalesced with any change already pending in the same task.
+   *
+   * The loaded windows and tree children are dropped, because they may be
+   * stale. The selection is NOT: every selected key and its remembered row
+   * survive, so a re-fetched row simply replaces the remembered one.
+   *
+   * `resetPage: true` also returns to page 1 (and emits
+   * `mp-datatable-page-change` when that moves the page). A no-op without a
+   * `fetch` callback, apart from the page reset.
+   */
+  reload({ resetPage = false }: DatatableReloadOptions = {}): void {
+    if (resetPage && this.assignPage(1)) {
+      this.requestUpdate();
+      this.dispatchEvent(
+        new CustomEvent<{ page: number }>('mp-datatable-page-change', {
+          detail: { page: 1 },
+          bubbles: true,
+          composed: true,
+        }),
+      );
+    }
+    // Forgetting the last-loaded signature is what makes the scheduled reload
+    // not look like an echo. That reload bumps the fetch generation and clears
+    // the page and child caches before it loads.
+    this._lastReloadKey = null;
+    this.scheduleFetchReload();
+  }
+
+  /**
+   * Applies any of `fetch`, `sortColumns`, `page` and `perPage` as ONE change:
+   * every provided field is assigned first, then exactly one reload is
+   * scheduled. Assigning them one by one through the setters can split across
+   * ticks and cost two requests; this cannot (#407). Framework wrappers that
+   * forward several of these inputs should call this rather than the setters.
+   *
+   * A field that is absent (or `undefined`) is left alone, except `fetch`: a
+   * present `fetch` key is always assigned, so `{ fetch: null }` removes the
+   * callback. `perPage` returns to page 1 unless `page` is also given.
+   * Unchanged values cost nothing, as with the setters.
+   *
+   * When `perPage` changes and the given `page` would lie past the last page
+   * of the known row count (20 → 50 per page while on page 5 of 100 rows), the
+   * page is clamped to the last page and `mp-datatable-page-change` reports
+   * it, so a wrapper's page state follows. With no known count (a fetch table
+   * before its first response, or a new `fetch` in the same call) the page is
+   * kept as given.
+   */
+  applyFetchState(state: DatatableFetchState): void {
+    // A NEW callback is a new source, so the count it would be clamped against
+    // belongs to the old one: no clamp then.
+    const newSource = 'fetch' in state && this.assignFetch(state.fetch);
+    if (state.sortColumns !== undefined) this.assignSortColumns(state.sortColumns);
+    const perPageChanged = state.perPage !== undefined && this.assignPerPage(state.perPage);
+    if (state.page !== undefined) {
+      this.assignPage(state.page);
+      if (perPageChanged && !newSource) this.clampPageToKnownTotal();
+    }
+    this.requestUpdate();
+    // Coalesced and echo-deduped: nothing changed ⇒ no request.
+    this.scheduleFetchReload();
   }
 
   get selectionMode(): DatatableSelectionMode {
@@ -590,15 +769,62 @@ export class MpDatatable extends LitElement {
   }
   set selectionMode(value: DatatableSelectionMode) {
     this._selectionMode = value;
-    if (value === 'none') this._selectedIds.clear();
+    if (value === 'none') {
+      this._selectionAnchorKey = null;
+      // Clearing silently left every wrapper's selection model holding keys the
+      // element had dropped (K6), so a non-empty clear is reported like any other.
+      const hadSelection = this._selectedIds.size > 0;
+      this.commitSelection([]);
+      if (hadSelection) this.emitSelectionChange();
+    }
     this.requestUpdate();
+  }
+
+  /** Modes that select many rows and render the checkbox column. */
+  private get isMulti(): boolean {
+    return this._selectionMode === 'multiple' || this._selectionMode === 'checkbox';
   }
 
   get selectedIds(): string[] {
     return [...this._selectedIds];
   }
   set selectedIds(value: string[] | ReadonlyArray<string>) {
-    this._selectedIds = new Set(value ?? []);
+    const next = new Set(value ?? []);
+    // Hosts such as mp-file-manager push the same keys on every render. An
+    // unchanged selection skips the rebuild and the re-render (spike S5).
+    // Compared as SETS: an array with a duplicate key (`['a', 'a']` against
+    // `{a, b}`) has the old size but is a different selection.
+    if (next.size === this._selectedIds.size && [...next].every((k) => this._selectedIds.has(k))) return;
+    this._selectedIds = next;
+    this.pruneSelectedRowCache();
+    // Remember the rows that are loaded NOW. Without this, a key seeded while
+    // its row is on screen reported `undefined` once that page was gone, which
+    // `undefined` must only mean for a row the element has never seen.
+    if (next.size > 0) this.rememberLiveSelectedRows();
+    this.requestUpdate();
+  }
+
+  /**
+   * The selected rows, index-aligned with `selectedIds` (`undefined` for a key
+   * whose row the element has never seen). See `SelectionChangeEventDetail`.
+   *
+   * Setting it REPLACES the selection: the keys are derived through `rowKey`,
+   * and the rows are remembered, so a host that owns row objects (the Angular
+   * wrapper's `selection` model) can seed rows that are not loaded here — they
+   * are reported back in `selectedRows` even while off-page.
+   */
+  get selectedRows(): unknown[] {
+    return this.resolveRows([...this._selectedIds]);
+  }
+  set selectedRows(value: unknown[] | ReadonlyArray<unknown>) {
+    const rows = value ?? [];
+    const keyOf = this.rowKeyLookup();
+    const pairs = rows.map((row) => [keyOf(row), row] as const);
+    // A host re-pushing the selection it already holds (same keys, same order,
+    // the very row objects the element reports) costs no rebuild or render.
+    if (this.isSameSelectedRows(pairs)) return;
+    this._selectedIds = new Set(pairs.map(([key]) => key));
+    this._selectedRowCache = new Map(pairs);
     this.requestUpdate();
   }
 
@@ -618,6 +844,31 @@ export class MpDatatable extends LitElement {
     this.requestUpdate();
   }
 
+  private _rowLabel: ((row: unknown) => string) | null = null;
+
+  /**
+   * Names a row for its selection checkbox ("Select {label}"). Property-only (it
+   * holds a function). When unset, or when it returns an empty string, the
+   * trimmed text of the row's first data cell is used, and when that is empty
+   * too, the row number ("Select row N").
+   *
+   * The name is a string handed to the checkbox: an `aria-labelledby` pointing
+   * at the cell could not cross the checkbox's shadow boundary.
+   */
+  get rowLabel(): ((row: unknown) => string) | null {
+    return this._rowLabel;
+  }
+  set rowLabel(value: ((row: unknown) => string) | null) {
+    this._rowLabel = typeof value === 'function' ? value : null;
+    this.requestUpdate();
+  }
+
+  /**
+   * Row identity: selection, focus and row-view reuse are keyed by it. It must
+   * be stable, and derived from the row rather than its index: a row that is
+   * not loaded is keyed `rowKey(row, -1)`, so an index-based key maps every
+   * off-page row onto `row--1`. Required with `fetch`.
+   */
   get rowKey(): RowKey {
     return this._rowKey;
   }
@@ -729,25 +980,57 @@ export class MpDatatable extends LitElement {
     return this._page;
   }
   set page(value: number) {
-    const next = Math.max(1, Math.floor(value || 1));
-    if (this._page !== next) {
-      this._page = next;
+    if (this.assignPage(value)) {
       this.requestUpdate();
       this.scheduleFetchReload(); // non-virtual page change → fetch that page (coalesced)
     }
+  }
+
+  /** Assigns without scheduling; true when the page changed. */
+  private assignPage(value: number): boolean {
+    const next = Math.max(1, Math.floor(value || 1));
+    if (this._page === next) return false;
+    this._page = next;
+    return true;
   }
 
   get perPage(): number {
     return this._perPage;
   }
   set perPage(value: number) {
-    const next = Math.max(1, Math.floor(value || 1));
-    if (this._perPage !== next) {
-      this._perPage = next;
-      this._page = 1;
+    if (this.assignPerPage(value)) {
       this.requestUpdate();
       this.scheduleFetchReload();
     }
+  }
+
+  /**
+   * Moves a page past the end back to the last page, when the row count is
+   * known: the server's `totalRecords` with `fetch`, the data length without.
+   * Reported through `mp-datatable-page-change` when it moves the page.
+   */
+  private clampPageToKnownTotal(): void {
+    const total = this._fetch ? this._totalRecords : this._data.length;
+    if (total == null) return;
+    const lastPage = Math.max(1, Math.ceil(total / this._perPage));
+    if (this._page <= lastPage) return;
+    this._page = lastPage;
+    this.dispatchEvent(
+      new CustomEvent<{ page: number }>('mp-datatable-page-change', {
+        detail: { page: lastPage },
+        bubbles: true,
+        composed: true,
+      }),
+    );
+  }
+
+  /** Assigns without scheduling (and returns to page 1); true when it changed. */
+  private assignPerPage(value: number): boolean {
+    const next = Math.max(1, Math.floor(value || 1));
+    if (this._perPage === next) return false;
+    this._perPage = next;
+    this._page = 1;
+    return true;
   }
 
   get perPageOptions(): number[] {
@@ -801,7 +1084,7 @@ export class MpDatatable extends LitElement {
       // Removing the attribute restores the default (a framework binding clears
       // an attribute by removing it).
       const v = newValue ?? 'none';
-      if (v === 'none' || v === 'single' || v === 'multiple') {
+      if (v === 'none' || v === 'single' || v === 'multiple' || v === 'checkbox') {
         this.selectionMode = v;
       }
     } else if (name === 'pagination') {
@@ -884,6 +1167,7 @@ export class MpDatatable extends LitElement {
     // only requestUpdates when the range actually changes, so this can't
     // loop.
     this.refreshVirtualRange();
+    this.nameRowCheckboxes();
     // Measure-once: lock per-column widths the first time a non-empty body
     // is in the DOM, then switch the table to `table-layout: fixed` so
     // later rows clip with ellipsis instead of growing the column. See the
@@ -1060,7 +1344,7 @@ export class MpDatatable extends LitElement {
     const totalPages = this.pagination && !this._tree
       ? Math.max(1, Math.ceil(paginationDenominator / this._perPage))
       : 1;
-    const showCheckboxes = this._selectionMode === 'multiple';
+    const showCheckboxes = this.isMulti;
     const totalColumnCount =
       this._columns.length + (showCheckboxes ? 1 : 0) + (this._tree ? 1 : 0);
 
@@ -1080,6 +1364,7 @@ export class MpDatatable extends LitElement {
         <div class="datatable-scroll ${this._virtualScroll ? 'datatable-virtual' : ''}" role="presentation">
           <table
             role=${this._tree ? 'treegrid' : this._selectionMode !== 'none' ? 'grid' : nothing}
+            aria-multiselectable=${this.isMulti ? 'true' : nothing}
             aria-rowcount=${ariaRowcount}
             aria-colcount=${totalColumnCount}
             aria-busy=${this._loading ? 'true' : nothing}
@@ -1974,7 +2259,7 @@ export class MpDatatable extends LitElement {
     const focused = !isPlaceholder && this._focusedRowKey === key;
     const childCount = isPlaceholder ? 0 : this.extractChildCount(row);
     const hasChevron = this._tree && !isPlaceholder && childCount > 0;
-    const indeterminate = !isPlaceholder && row != null && this.isParentIndeterminate(row);
+    const indeterminate = !isPlaceholder && row != null && this.isParentIndeterminate(row, key);
 
     return html`
       <tr
@@ -2015,11 +2300,14 @@ export class MpDatatable extends LitElement {
             </td>`
           : nothing}
         ${showCheckboxes
-          ? html`<td class="checkbox-cell" @click=${(e: Event) => e.stopPropagation()}>
+          ? html`<td
+              class=${classMap({ 'checkbox-cell': true, 'checkbox-cell-toggles': this._selectionMode === 'checkbox' })}
+              @click=${isPlaceholder ? (e: Event) => e.stopPropagation() : (ev: MouseEvent) => this.onCheckboxCellClick(row, key, ev)}
+              @dblclick=${(e: Event) => e.stopPropagation()}
+            >
               ${isPlaceholder
                 ? nothing
                 : html`<mp-checkbox
-                    aria-label=${this.mergedLabels.selectRow(rowIndex + 1)}
                     .checked=${selected}
                     .indeterminate=${indeterminate}
                     @change=${() => this.onRowCheckboxToggle(row, key)}
@@ -2033,6 +2321,33 @@ export class MpDatatable extends LitElement {
             : this._columns.map((col) => this.renderCell(row, col, rowIndex))}
       </tr>
     `;
+  }
+
+  /**
+   * Names every rendered row checkbox (D14): `rowLabel(row)`, else the trimmed
+   * text of the row's first data cell, else the row number.
+   *
+   * Runs after each render rather than in the template because the cell text
+   * only exists once the cell is rendered — and it may be consumer DOM from a
+   * `cellRenderer` or `rowRenderer` — so a re-rendered cell renames its
+   * checkbox on the same update. The attribute is written only when it
+   * changes, so an unchanged name costs no mutation.
+   */
+  private nameRowCheckboxes(): void {
+    if (!this.isMulti) return;
+    const labels = this.mergedLabels;
+    const visible = new Map(this.computeVisibleRows().map((r) => [r.key, r]));
+    const trs = this.renderRoot.querySelectorAll<HTMLTableRowElement>('tbody tr[data-row-key]:not([data-placeholder="true"])');
+    for (const tr of trs) {
+      const checkbox = tr.querySelector<HTMLElement>(':scope > td.checkbox-cell > mp-checkbox');
+      const entry = visible.get(tr.dataset['rowKey'] ?? '');
+      if (!checkbox || !entry) continue;
+      const fromCallback = this._rowLabel?.(entry.row)?.trim();
+      const fromCell = tr.querySelector(':scope > td:not(.checkbox-cell):not(.tree-chevron-cell)')?.textContent?.trim();
+      const text = fromCallback || fromCell;
+      const name = text ? labels.selectRowNamed(text) : labels.selectRow(entry.rowIndex + 1);
+      if (checkbox.getAttribute('aria-label') !== name) checkbox.setAttribute('aria-label', name);
+    }
   }
 
   private renderRowFromRenderer(row: unknown, rowIndex: number, ctx: RowRenderContext): unknown {
@@ -2177,18 +2492,16 @@ export class MpDatatable extends LitElement {
         return this._cachedFlatList = out;
       }
 
-      const rows = (() => {
-        let r: unknown[] = this._data;
-        if (this._autoSort && this._sortColumns.length > 0) r = sortRows(r, this._sortColumns);
-        if (this._pagination && !this.isExternallyPaged()) {
-          const start = (this._page - 1) * this._perPage;
-          r = r.slice(start, start + this._perPage);
-        }
-        return r;
-      })();
+      // Keys use the GLOBAL index (K2): keyed by the position within the page,
+      // row 0 of page 1 and row 0 of page 2 shared the fallback key `row-0`.
+      // With external paging `_data` is one page, so the offset is the same.
+      const offset = this._pagination ? (this._page - 1) * this._perPage : 0;
+      const rows = this._pagination && !this.isExternallyPaged()
+        ? this.localSortedRows().slice(offset, offset + this._perPage)
+        : this.localSortedRows();
       return this._cachedFlatList = rows.map((row, i) => ({
         row,
-        key: this._rowKey(row, i),
+        key: this._rowKey(row, offset + i),
         depth: 0,
         parentId: null,
         isExpanded: false,
@@ -2255,6 +2568,55 @@ export class MpDatatable extends LitElement {
     return this._cachedFlatList = out;
   }
 
+  /** `_data` in display order: client-sorted when the WC owns sorting. */
+  private localSortedRows(): unknown[] {
+    return this._autoSort && this._sortColumns.length > 0 ? sortRows(this._data, this._sortColumns) : this._data;
+  }
+
+  /**
+   * Drops the flat-list memo. It is otherwise reset only in `willUpdate`, so a
+   * path that runs between a data change and the next render (a programmatic
+   * setter, an event fired before the re-render) would read the old rows.
+   */
+  private freshFlatList(): FlatVisibleRow[] {
+    this._cachedFlatList = null;
+    return this.getFlatList();
+  }
+
+  /**
+   * Every loaded row that has a renderer-assigned key, as `[key, row]`. The keys
+   * are the ones the renderer uses (K1): a positional fallback key only means
+   * anything at the row's rendered index. With local pagination every page is
+   * loaded, so rows of the other pages are keyed by their global index too.
+   */
+  private liveRowEntries(list: FlatVisibleRow[]): Array<readonly [string, unknown]> {
+    const rendered = list.filter((r) => !r.isPlaceholder).map((r) => [r.key, r.row] as const);
+    if (this._tree || !this._pagination || this.isExternallyPaged()) return rendered;
+    return this.localSortedRows().map((row, i) => [this._rowKey(row, i), row] as const);
+  }
+
+  private _keyByRowMemo: { list: FlatVisibleRow[]; byRow: Map<unknown, string> } | null = null;
+
+  /**
+   * The key the renderer gives a row object. A row outside the live entries (a
+   * child of a collapsed parent, a row only the host knows) has no rendered
+   * index, so it falls back to an index-free `rowKey` call — exact for any
+   * id-based key, and a positional key is already warned about.
+   */
+  private keyOfRow(row: unknown): string {
+    const list = this.getFlatList();
+    if (this._keyByRowMemo?.list !== list) {
+      this._keyByRowMemo = { list, byRow: new Map(this.liveRowEntries(list).map(([key, r]) => [r, key])) };
+    }
+    return this._keyByRowMemo.byRow.get(row) ?? this._rowKey(row, -1);
+  }
+
+  /** `keyOfRow` against the current data, for paths that may run before a re-render. */
+  private rowKeyLookup(): (row: unknown) => string {
+    this.freshFlatList();
+    return (row) => this.keyOfRow(row);
+  }
+
   private computeVisibleRows(): Array<{ row: unknown; key: string; rowIndex: number; flat: FlatVisibleRow }> {
     const flatList = this.getFlatList();
     const pageOffset = this._tree
@@ -2287,24 +2649,22 @@ export class MpDatatable extends LitElement {
     return typeof v === 'number' && v > 0 ? v : 0;
   }
 
-  /** Walks the loaded subtree of `row` and returns the rowKey for every descendant. */
-  private collectDescendantKeys(row: unknown): string[] {
+  /**
+   * Walks the loaded subtree of `row` and returns `[key, row]` for every
+   * descendant — the row too, because a cascade selects it and the selection
+   * remembers the rows it selected.
+   */
+  private collectDescendants(row: unknown): Array<readonly [string, unknown]> {
     const id = this.extractId(row);
     const cached = id != null ? this._childCache.get(id) : undefined;
     if (!cached) return [];
-    const out: string[] = [];
-    for (const child of cached) {
-      out.push(this._rowKey(child, -1));
-      const sub = this.collectDescendantKeys(child);
-      for (const k of sub) out.push(k);
-    }
-    return out;
+    return cached.flatMap((child) => [[this.keyOfRow(child), child] as const, ...this.collectDescendants(child)]);
   }
 
   /** Some-but-not-all loaded descendants selected → indeterminate parent checkbox. */
-  private isParentIndeterminate(row: unknown): boolean {
+  private isParentIndeterminate(row: unknown, key: string): boolean {
     if (this._selectionStrategy !== 'cascading' || row == null) return false;
-    return this.getIndeterminateKeys().has(this._rowKey(row, -1));
+    return this.getIndeterminateKeys().has(key);
   }
 
   /**
@@ -2331,14 +2691,14 @@ export class MpDatatable extends LitElement {
       let selected = 0;
       let total = 0;
       for (const child of children) {
-        const childKey = this._rowKey(child, -1);
+        const childKey = this.keyOfRow(child);
         const childSelected = this._selectedIds.has(childKey) ? 1 : 0;
         const sub = visit(child);
         selected += childSelected + sub.selected;
         total += 1 + sub.total;
       }
       if (total > 0 && selected > 0 && selected < total) {
-        out.add(this._rowKey(row, -1));
+        out.add(this.keyOfRow(row));
       }
       return { selected, total };
     };
@@ -2505,7 +2865,13 @@ export class MpDatatable extends LitElement {
     });
   }
 
-  /** Keyboard handling on a tree-mode row. Arrow keys + Enter/Space toggle expansion. */
+  /**
+   * Row keymap, the same in every mode: ArrowUp/Down move, ArrowRight/Left
+   * expand/collapse a tree row, Enter opens (row-click), Space selects.
+   * 'single'/'multiple': Enter and Space both select with the click modifiers
+   * and emit row-click. 'checkbox': Enter only emits row-click, Space only
+   * toggles the row's checkbox.
+   */
   private onRowKeydown(
     row: unknown,
     key: string,
@@ -2549,10 +2915,31 @@ export class MpDatatable extends LitElement {
         this.toggleExpand(row, parentId, depth, ev);
         return;
       }
-      if ((ev.key === 'Enter' || ev.key === ' ') && childCount > 0) {
-        this.toggleExpand(row, parentId, depth, ev);
+      // Enter/Space deliberately do NOT expand (D13): one keymap for every row
+      // — Enter opens, Space selects, the arrows and the expander expand. The
+      // old shortcut made a parent row impossible to open from the keyboard.
+    }
+
+    if ((ev.key === 'Enter' || ev.key === ' ') && this._selectionMode === 'checkbox') {
+      // The keyboard face of 'checkbox' mode's pointer split: Space is the
+      // checkbox, Enter is the row click. Shift+Space does nothing — there is
+      // no range in this mode. preventDefault stops Space scrolling the page.
+      ev.preventDefault();
+      this._focusedRowKey = key;
+      if (ev.key === ' ') {
+        if (!ev.shiftKey) this.onRowCheckboxToggle(row, key);
+        this.requestUpdate();
         return;
       }
+      this.requestUpdate();
+      this.dispatchEvent(
+        new CustomEvent<RowEventDetail>('mp-datatable-row-click', {
+          detail: { row, rowIndex, rowKey: key, originalEvent: ev },
+          bubbles: true,
+          composed: true,
+        }),
+      );
+      return;
     }
 
     if ((ev.key === 'Enter' || ev.key === ' ') && this._selectionMode !== 'none') {
@@ -2560,7 +2947,7 @@ export class MpDatatable extends LitElement {
       // (Ctrl toggles, Shift ranges), same event, same focused-row bookkeeping.
       ev.preventDefault();
       this._focusedRowKey = key;
-      this.handleSelectionOnClick(key, ev as unknown as MouseEvent);
+      this.handleSelectionOnClick(row, key, ev);
       this.requestUpdate();
       this.dispatchEvent(
         new CustomEvent<RowEventDetail>('mp-datatable-row-click', {
@@ -2604,9 +2991,9 @@ export class MpDatatable extends LitElement {
   }
 
   private onRowClick(row: unknown, key: string, rowIndex: number, ev: MouseEvent): void {
-    if ((ev.target as HTMLElement).closest('input[type="checkbox"]')) return;
     this._focusedRowKey = key;
-    this.handleSelectionOnClick(key, ev);
+    // In 'checkbox' mode a row click OPENS the row: only the checkbox selects.
+    if (this._selectionMode !== 'checkbox') this.handleSelectionOnClick(row, key, ev);
     this.requestUpdate();
     this.dispatchEvent(
       new CustomEvent<RowEventDetail>('mp-datatable-row-click', {
@@ -2628,9 +3015,10 @@ export class MpDatatable extends LitElement {
   }
 
   private onRowContextMenu(row: unknown, key: string, rowIndex: number, ev: MouseEvent): void {
-    // Promote the row to the selection if not already selected (file-manager convention).
-    if (this._selectionMode !== 'none' && !this._selectedIds.has(key)) {
-      this._selectedIds = new Set([key]);
+    // Promote the row to the selection if not already selected (file-manager
+    // convention). Not in 'checkbox' mode, where only the checkbox selects.
+    if (this._selectionMode !== 'none' && this._selectionMode !== 'checkbox' && !this._selectedIds.has(key)) {
+      this.commitSelection([key], [[key, row]]);
       this._focusedRowKey = key;
       this.emitSelectionChange();
       this.requestUpdate();
@@ -2649,17 +3037,39 @@ export class MpDatatable extends LitElement {
     if (!notCancelled) ev.preventDefault();
   }
 
-  /** Row checkboxes render only in `'multiple'` mode, so this is multi-select toggling. */
+  /**
+   * A click anywhere in the checkbox cell, in every mode. The cell is
+   * selection-only, so neither its click nor its double-click reaches the row
+   * (D12: a double-click on a checkbox used to open the row).
+   *
+   * In 'checkbox' mode the whole cell is the hit target, not just the 20px box.
+   * A click that went through the checkbox's own shadow root is the checkbox
+   * operating itself (its change handler toggles), so it is left alone; every
+   * other click toggles here. `closest('mp-checkbox')` cannot tell the two
+   * apart: a click on the checkbox host's padding is retargeted to the host yet
+   * fires no change, so it would be swallowed (spike S1). No focus() and no
+   * preventDefault(): the browser focuses the row natively, which keeps Enter,
+   * Space and the arrow keys working from there (spike S4).
+   */
+  private onCheckboxCellClick(row: unknown, key: string, ev: MouseEvent): void {
+    ev.stopPropagation();
+    if (this._selectionMode !== 'checkbox') return;
+    const checkboxRoot = (ev.currentTarget as HTMLElement).querySelector('mp-checkbox')?.shadowRoot;
+    if (checkboxRoot && ev.composedPath().includes(checkboxRoot)) return;
+    this.onRowCheckboxToggle(row, key);
+  }
+
+  /** Row checkboxes render only in the multi-select modes, so this is multi-select toggling. */
   private onRowCheckboxToggle(row: unknown, key: string): void {
     const willSelect = !this._selectedIds.has(key);
     // Cascading: the toggle propagates to every currently-loaded descendant.
-    const affected = new Set([
-      key,
-      ...(this._tree && this._selectionStrategy === 'cascading' ? this.collectDescendantKeys(row) : []),
-    ]);
-    this._selectedIds = willSelect
-      ? new Set([...this._selectedIds, ...affected])
-      : new Set([...this._selectedIds].filter((k) => !affected.has(k)));
+    const affected: Array<readonly [string, unknown]> = [
+      [key, row],
+      ...(this._tree && this._selectionStrategy === 'cascading' ? this.collectDescendants(row) : []),
+    ];
+    const affectedKeys = new Set(affected.map(([k]) => k));
+    if (willSelect) this.commitSelection([...this._selectedIds, ...affectedKeys], affected);
+    else this.commitSelection([...this._selectedIds].filter((k) => !affectedKeys.has(k)));
     this.emitSelectionChange();
     this.requestUpdate();
   }
@@ -2673,7 +3083,7 @@ export class MpDatatable extends LitElement {
    */
   private onDeselectAll(): void {
     if (this._selectedIds.size === 0) return;
-    this._selectedIds = new Set();
+    this.commitSelection([]);
     this.emitSelectionChange();
     this.requestUpdate();
   }
@@ -2688,23 +3098,37 @@ export class MpDatatable extends LitElement {
    */
   private _selectionAnchorKey: string | null = null;
 
-  private handleSelectionOnClick(key: string, ev: MouseEvent): void {
+  private handleSelectionOnClick(
+    row: unknown,
+    key: string,
+    ev: Pick<MouseEvent, 'shiftKey' | 'ctrlKey' | 'metaKey'>,
+  ): void {
     if (this._selectionMode === 'none') return;
     if (this._selectionMode === 'single') {
-      this._selectedIds = new Set([key]);
+      this.commitSelection([key], [[key, row]]);
       this.emitSelectionChange();
       return;
     }
-    // multiple
+    // multiple ('checkbox' never reaches here: its row click does not select)
     if (ev.shiftKey && this._selectionAnchorKey && this._selectionAnchorKey !== key) {
-      // Range select between focused row and clicked row
-      const rows = this.computeVisibleRows();
-      const fromIdx = rows.findIndex((r) => r.key === this._selectionAnchorKey);
-      const toIdx = rows.findIndex((r) => r.key === key);
+      // Resolved against the whole flat list, not the rendered virtual window:
+      // an anchor scrolled out of the window used to turn the range into a
+      // plain select (K7). An anchor no longer in the list at all (another
+      // page, a re-fetch) deliberately still falls through to a plain select.
+      const list = this.getFlatList();
+      const fromIdx = list.findIndex((r) => !r.isPlaceholder && r.key === this._selectionAnchorKey);
+      const toIdx = list.findIndex((r) => r.key === key);
       if (fromIdx >= 0 && toIdx >= 0) {
         const [lo, hi] = fromIdx < toIdx ? [fromIdx, toIdx] : [toIdx, fromIdx];
-        const range = rows.slice(lo, hi + 1).map((r) => r.key);
-        this._selectedIds = new Set([...this._selectedIds, ...range]);
+        const span = list.slice(lo, hi + 1);
+        // Unloaded rows in between: refuse rather than select a range with
+        // holes that looks contiguous (spike S3). Selection and anchor stay.
+        if (span.some((r) => r.isPlaceholder)) {
+          this.liveAnnouncer.announce(this.mergedLabels.rangeIncomplete);
+          return;
+        }
+        const range = span.map((r) => [r.key, r.row] as const);
+        this.commitSelection([...this._selectedIds, ...range.map(([k]) => k)], range);
         this.emitSelectionChange();
         return;
       }
@@ -2713,14 +3137,72 @@ export class MpDatatable extends LitElement {
       const next = new Set(this._selectedIds);
       if (next.has(key)) next.delete(key);
       else next.add(key);
-      this._selectedIds = next;
+      this.commitSelection(next, [[key, row]]);
       this._selectionAnchorKey = key;
       this.emitSelectionChange();
       return;
     }
-    this._selectedIds = new Set([key]);
+    this.commitSelection([key], [[key, row]]);
     this._selectionAnchorKey = key;
     this.emitSelectionChange();
+  }
+
+  /**
+   * The one write path for a user-driven selection change. `rows` supplies the
+   * row of each key being selected; the remembered rows are then pruned to the
+   * new keys, so a deselected row is forgotten in the same step.
+   */
+  private commitSelection(
+    keys: Iterable<string>,
+    rows: ReadonlyArray<readonly [string, unknown]> = [],
+  ): void {
+    this._selectedIds = new Set(keys);
+    for (const [key, row] of rows) {
+      if (row !== undefined && this._selectedIds.has(key)) this._selectedRowCache.set(key, row);
+    }
+    this.pruneSelectedRowCache();
+  }
+
+  /**
+   * Every row the element holds right now, by key: the loaded rows (keyed as
+   * the renderer keys them, K1) plus the fetched children of collapsed parents
+   * (through `keyOfRow`'s index-free fallback).
+   */
+  private liveRowMap(): Map<string, unknown> {
+    const live = new Map(this.liveRowEntries(this.freshFlatList()));
+    for (const children of this._childCache.values()) {
+      for (const child of children) {
+        const key = this.keyOfRow(child);
+        if (!live.has(key)) live.set(key, child);
+      }
+    }
+    return live;
+  }
+
+  /** Remembers the loaded row of every selected key (a loaded row always wins, D2). */
+  private rememberLiveSelectedRows(): void {
+    for (const [key, row] of this.liveRowMap()) {
+      if (row !== undefined && this._selectedIds.has(key)) this._selectedRowCache.set(key, row);
+    }
+  }
+
+  /**
+   * True when `pairs` is exactly the current selection: the same keys in the
+   * same order, each with the row object the element would report for it.
+   */
+  private isSameSelectedRows(pairs: ReadonlyArray<readonly [string, unknown]>): boolean {
+    if (pairs.length !== this._selectedIds.size) return false;
+    const ids = [...this._selectedIds];
+    if (!pairs.every(([key], i) => key === ids[i])) return false;
+    const current = this.resolveRows(ids);
+    return pairs.every(([, row], i) => row === current[i]);
+  }
+
+  /** Forgets the rows of keys that left the selection. One pass, deletes in place. */
+  private pruneSelectedRowCache(): void {
+    for (const key of this._selectedRowCache.keys()) {
+      if (!this._selectedIds.has(key)) this._selectedRowCache.delete(key);
+    }
   }
 
   private emitSelectionChange(): void {
@@ -2736,20 +3218,23 @@ export class MpDatatable extends LitElement {
   }
 
   /**
-   * Resolve row keys → row objects across every loaded source (page-1 `_data`,
-   * fetched windows in `_pageCache`, tree children in `_childCache`). One pass
-   * builds a key→row index; unresolvable ids are skipped.
+   * Resolves keys to rows, index-aligned with `ids` (D3): the loaded row if
+   * there is one, else the row remembered at selection time, else `undefined`.
+   *
+   * A loaded row also refreshes the remembered one, so a re-fetched row object
+   * always wins over a stale copy. Loaded rows are keyed exactly as the
+   * renderer keys them (K1); children of collapsed parents have no rendered
+   * index and go through `keyOfRow`'s index-free fallback.
    */
   private resolveRows(ids: string[]): unknown[] {
     if (ids.length === 0) return [];
-    const byKey = new Map<string, unknown>();
-    const index = (rows: unknown[]): void => {
-      for (const row of rows) byKey.set(this._rowKey(row, -1), row);
-    };
-    index(this._data);
-    for (const rows of this._pageCache.values()) index(rows);
-    for (const rows of this._childCache.values()) index(rows);
-    return ids.map((id) => byKey.get(id)).filter((row): row is unknown => row !== undefined);
+    const live = this.liveRowMap();
+    return ids.map((id) => {
+      const row = live.get(id);
+      if (row === undefined) return this._selectedRowCache.get(id);
+      if (this._selectedIds.has(id)) this._selectedRowCache.set(id, row);
+      return row;
+    });
   }
 
   private gotoPage(page: number): void {

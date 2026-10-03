@@ -1,6 +1,6 @@
 import { Component, signal } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import type { DatatableColumnDef, MpDatatable } from '@mintplayer/web-components/datatable';
+import type { DatatableColumnDef, DatatableSelectionMode, MpDatatable } from '@mintplayer/web-components/datatable';
 import { BsDatatableColumnDirective } from '../datatable-column/datatable-column.directive';
 import { BsRowTemplateDirective } from '../row-template/row-template.directive';
 import { DatatableSettings } from '../datatable-settings';
@@ -99,13 +99,23 @@ describe('BsDatatableComponent wrapper bridges', () => {
     expect(fixture.componentInstance.settings().page.selected).toBe(1);
   });
 
-  it('a selection change takes the rows from the event, and a selection pushes ids down', () => {
+  it('a selection change merges by key: the event row, else the model row, else omitted; a host selection pushes down', () => {
     const rows = fixture.componentInstance.data();
-    fire('mp-datatable-selection-change', { selectedRows: [rows[1]] });
+    fire('mp-datatable-selection-change', { selectedIds: ['2'], selectedRows: [rows[1]] });
     expect(fixture.componentInstance.selection()).toEqual([rows[1]]);
+
+    // '2' has no row in the event (off-page): the model's row for that key is
+    // kept, by reference. '77' has no row anywhere: it is left out of the model.
+    fire('mp-datatable-selection-change', { selectedIds: ['2', '1', '77'], selectedRows: [undefined, rows[0], undefined] });
+    const merged = fixture.componentInstance.selection();
+    expect(merged).toHaveLength(2);
+    expect(merged[0]).toBe(rows[1]);
+    expect(merged[1]).toBe(rows[0]);
+
     fixture.componentInstance.selection.set([rows[0]]);
     fixture.detectChanges();
     expect([...wc().selectedIds]).toEqual(['1']);
+    expect(wc().selectedRows).toEqual([rows[0]]);
   });
 
   it.each([
@@ -180,6 +190,231 @@ describe('BsDatatableComponent wrapper bridges', () => {
     fixture.componentInstance.rowTpl.set('none');
     fixture.detectChanges();
     expect(wc().rowRenderer).toBeUndefined();
+  });
+});
+
+@Component({
+  selector: 'datatable-selection-harness',
+  imports: [BsDatatableComponent],
+  template: `<bs-datatable [columns]="columns()" [data]="data()" [selectionMode]="mode()" [rowLabel]="rowLabel()"
+    [selection]="selection()" (selectionChange)="onSelection($event)"></bs-datatable>`,
+})
+class SelectionHarness {
+  readonly data = signal<Row[]>([
+    { id: 1, name: 'Alpha' },
+    { id: 2, name: 'Bravo' },
+    { id: 3, name: 'Charlie' },
+  ]);
+  readonly columns = signal<DatatableColumnDef<Row>[]>([
+    { name: 'name', label: 'Name', cellRenderer: (r) => r.name },
+  ]);
+  readonly mode = signal<DatatableSelectionMode>('multiple');
+  readonly rowLabel = signal<((row: Row) => string) | null>(null);
+  readonly selection = signal<Row[]>([]);
+  /** Every value the wrapper's `selection` model emitted (the two-way write-back). */
+  readonly emissions: Row[][] = [];
+  onSelection(rows: Row[]) {
+    this.emissions.push(rows);
+    this.selection.set(rows);
+  }
+}
+
+/**
+ * Spike S2: the WC event → `selection.set` → selection effect → `selectedRows`
+ * setter round-trip. Three counters prove there is no echo and no loop:
+ * `mp-datatable-selection-change` events the element dispatched, values the
+ * wrapper's model emitted, and calls to the element's `selectedRows` setter.
+ */
+describe('BsDatatableComponent selection model (S2 echo guard)', () => {
+  let fixture: ComponentFixture<SelectionHarness>;
+  let host: SelectionHarness;
+  let el: MpDatatable;
+  let events: number;
+  let pushes: { mock: { calls: unknown[][] } };
+
+  const settle = async () => {
+    fixture.detectChanges();
+    await el.updateComplete;
+    await new Promise((r) => setTimeout(r));
+    fixture.detectChanges();
+    await el.updateComplete;
+  };
+  const rowEl = (key: string) => el.querySelector<HTMLTableRowElement>(`tbody tr[data-row-key="${key}"]`)!;
+  const clickRow = async (key: string, init: MouseEventInit = {}) => {
+    rowEl(key).dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true, ...init }));
+    await settle();
+  };
+  /** Clicks the header checkbox's native input (its real hit target), not a synthetic `change`. */
+  const headerClear = async () => {
+    const header = el.querySelector('thead th.checkbox-cell mp-checkbox') as HTMLElement & { updateComplete: Promise<unknown> };
+    await header.updateComplete;
+    header.shadowRoot!.querySelector<HTMLInputElement>('input')!.click();
+    await settle();
+  };
+
+  beforeEach(async () => {
+    fixture = TestBed.createComponent(SelectionHarness);
+    host = fixture.componentInstance;
+    fixture.detectChanges();
+    el = fixture.nativeElement.querySelector('mp-datatable') as MpDatatable;
+    await settle();
+    events = 0;
+    el.addEventListener('mp-datatable-selection-change', () => events++);
+    pushes = vi.spyOn(el, 'selectedRows', 'set');
+  });
+
+  it('a row click lands in the model once and is not pushed back', async () => {
+    await clickRow('2');
+    expect(host.selection()).toHaveLength(1);
+    expect(host.selection()[0]).toBe(host.data()[1]);
+    expect(events).toBe(1);
+    expect(host.emissions).toHaveLength(1);
+    expect(pushes.mock.calls).toHaveLength(0);
+  });
+
+  it('(a) a key without a row stays in the element and out of the model, and is never pushed back', async () => {
+    // A key the element holds but has never had a row for (seeded as a key).
+    el.selectedIds = ['99'];
+    await settle();
+    await clickRow('1', { ctrlKey: true });
+    expect(host.selection()).toEqual([host.data()[0]]);
+    expect(el.selectedIds).toEqual(['99', '1']);
+    // An unrelated input change re-runs change detection: still no push, so '99' survives.
+    host.rowLabel.set((r) => r.name);
+    await settle();
+    expect(el.selectedIds).toEqual(['99', '1']);
+    expect(events).toBe(1);
+    expect(host.emissions).toHaveLength(1);
+    expect(pushes.mock.calls).toHaveLength(0);
+  });
+
+  it('(b) a new host array with the same keys and the same row objects is not pushed', async () => {
+    await clickRow('1');
+    host.selection.set([...host.selection()]);
+    await settle();
+    expect(pushes.mock.calls).toHaveLength(0);
+    expect(el.selectedIds).toEqual(['1']);
+    expect(events).toBe(1);
+    expect(host.emissions).toHaveLength(1);
+  });
+
+  it('(b2) the same keys with a fresher row object are pushed, keys intact, with no event', async () => {
+    await clickRow('1');
+    host.selection.set([{ ...host.data()[0] }]);
+    await settle();
+    expect(pushes.mock.calls).toHaveLength(1);
+    expect(el.selectedIds).toEqual(['1']);
+    expect(events).toBe(1);
+    expect(host.emissions).toHaveLength(1);
+  });
+
+  it('(b3) a fresher object for an OFF-PAGE key replaces the remembered one (etag v1 → v2)', async () => {
+    const v1: Row = { id: 50, name: 'etag v1' };
+    host.selection.set([v1]);
+    await settle();
+    expect(pushes.mock.calls).toHaveLength(1);
+
+    // Conflict resolved: the host re-reads the row. Same key, new object.
+    const v2: Row = { id: 50, name: 'etag v2' };
+    host.selection.set([v2]);
+    await settle();
+    expect(pushes.mock.calls).toHaveLength(2);
+    expect(el.selectedRows[0]).toBe(v2);
+
+    // The next user change must carry v2, not the element's stale v1.
+    await clickRow('2', { ctrlKey: true });
+    const model = host.selection();
+    expect(model).toHaveLength(2);
+    expect(model[0]).toBe(v2);
+    expect(model[1]).toBe(host.data()[1]);
+    expect(pushes.mock.calls).toHaveLength(2);
+  });
+
+  it('(e) a plain host clear empties the element, without an event', async () => {
+    await clickRow('1');
+    await clickRow('2', { ctrlKey: true });
+    host.selection.set([]);
+    await settle();
+    expect(el.selectedIds).toEqual([]);
+    expect(pushes.mock.calls).toHaveLength(1);
+    expect(events).toBe(2);
+    expect(host.emissions).toHaveLength(2);
+  });
+
+  it('(f) clear-then-restore: restoring the earlier (emitted) array is pushed again', async () => {
+    await clickRow('1');
+    await clickRow('2', { ctrlKey: true });
+    const prev = host.selection();
+    expect(prev).toBe(host.emissions.at(-1));
+
+    host.selection.set([]);
+    await settle();
+    expect(el.selectedIds).toEqual([]);
+
+    // Cancel / error: the host puts back the very array the wrapper emitted.
+    host.selection.set(prev);
+    await settle();
+    expect(el.selectedIds).toEqual(['1', '2']);
+    expect(pushes.mock.calls).toHaveLength(2);
+
+    // And the next click extends the restored selection instead of losing it.
+    await clickRow('3', { ctrlKey: true });
+    expect(host.selection()).toEqual(host.data());
+  });
+
+  it('(c) a host array with a new key is pushed once, and the element reports that row back later', async () => {
+    await clickRow('1');
+    const offPage: Row = { id: 50, name: 'Not loaded' };
+    host.selection.set([host.data()[0], offPage]);
+    await settle();
+    expect(pushes.mock.calls).toHaveLength(1);
+    expect(el.selectedIds).toEqual(['1', '50']);
+
+    await clickRow('2', { ctrlKey: true });
+    const model = host.selection();
+    expect(model).toHaveLength(3);
+    expect(model[0]).toBe(host.data()[0]);
+    expect(model[1]).toBe(offPage);
+    expect(model[2]).toBe(host.data()[1]);
+    expect(pushes.mock.calls).toHaveLength(1);
+    expect(events).toBe(2);
+    expect(host.emissions).toHaveLength(2);
+  });
+
+  it('(d) a header clear, including a row-less key, ends as [] with one event and no push', async () => {
+    el.selectedIds = ['99'];
+    await settle();
+    await clickRow('1', { ctrlKey: true });
+    await headerClear();
+    expect(host.selection()).toEqual([]);
+    expect(el.selectedIds).toEqual([]);
+    expect(events).toBe(2);
+    expect(host.emissions).toHaveLength(2);
+    expect(pushes.mock.calls).toHaveLength(0);
+  });
+
+  it('[rowLabel] reaches the element, and clearing it clears the element', async () => {
+    host.rowLabel.set((r) => `row ${r.name}`);
+    await settle();
+    expect(el.rowLabel!(host.data()[0])).toBe('row Alpha');
+    host.rowLabel.set(null);
+    await settle();
+    expect(el.rowLabel).toBeNull();
+  });
+
+  it("[selectionMode]=\"'checkbox'\" reaches the element: a row click selects nothing, a row checkbox does", async () => {
+    host.mode.set('checkbox');
+    await settle();
+    expect(el.selectionMode).toBe('checkbox');
+    await clickRow('2');
+    expect(host.selection()).toEqual([]);
+    expect(events).toBe(0);
+    rowEl('2').querySelector('mp-checkbox')!.dispatchEvent(new CustomEvent('change'));
+    await settle();
+    expect(host.selection()).toHaveLength(1);
+    expect(host.selection()[0]).toBe(host.data()[1]);
+    expect(events).toBe(1);
+    expect(pushes.mock.calls).toHaveLength(0);
   });
 });
 

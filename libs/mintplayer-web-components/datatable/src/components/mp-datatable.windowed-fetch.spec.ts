@@ -193,8 +193,141 @@ describe('mp-datatable — fetch-callback (vanilla, no framework)', () => {
     await flush(el);
 
     expect(detail).toBeDefined();
-    expect(detail!.selectedRows.length).toBe(detail!.selectedIds.length);
+    // Index-aligned with selectedIds: selectedRows[i] is the row of selectedIds[i].
+    expect(detail!.selectedIds).toHaveLength(1);
+    expect(detail!.selectedRows.map((r) => (r ? String(r.id) : undefined))).toEqual(detail!.selectedIds);
     expect(detail!.selectedRows[0]).toMatchObject({ id: expect.any(Number), name: expect.any(String) });
+  });
+
+  it('keeps selectedRows aligned when a seeded key has no row (undefined at its index)', async () => {
+    const h = setup({ total: 50, perPage: 10 });
+    el = h.el;
+    el.selectionMode = 'multiple';
+    await flush(el);
+    el.selectedIds = ['999', '1'];
+
+    let detail: SelectionChangeEventDetail<Row> | undefined;
+    el.addEventListener('mp-datatable-selection-change', (e) => {
+      detail = (e as CustomEvent<SelectionChangeEventDetail<Row>>).detail;
+    });
+    const second = (el.renderRoot as unknown as ParentNode).querySelector('tbody tr[data-row-key="2"] mp-checkbox')!;
+    second.dispatchEvent(new CustomEvent('change'));
+    await flush(el);
+
+    expect(detail!.selectedIds).toEqual(['999', '1', '2']);
+    expect(detail!.selectedRows.map((r) => r?.name)).toEqual([undefined, 'r1', 'r2']);
+  });
+
+  it('keeps a selected row through virtual-scroll windows: it is reported after it scrolled out', async () => {
+    const h = setup({ total: 50, perPage: 10 });
+    el = h.el;
+    el.selectionMode = 'checkbox';
+    await flush(el);
+    const root = el.renderRoot as unknown as ParentNode;
+    root.querySelector('tbody tr[data-row-key="1"] mp-checkbox')!.dispatchEvent(new CustomEvent('change'));
+    await flush(el);
+
+    // Scroll the window to rows ~31-40: row 1 is no longer rendered, and
+    // pages 3 and 4 are fetched on demand.
+    const scroller = root.querySelector<HTMLElement>('.datatable-scroll')!;
+    Object.defineProperty(scroller, 'scrollTop', { configurable: true, get: () => 30 * el!.itemSize });
+    scroller.dispatchEvent(new Event('scroll'));
+    await flush(el);
+    await flush(el);
+    expect(root.querySelector('tbody tr[data-row-key="1"]')).toBeNull();
+    expect(h.calls.some((c) => c.parentId == null && c.page === 4)).toBe(true);
+
+    let detail: SelectionChangeEventDetail<Row> | undefined;
+    el.addEventListener('mp-datatable-selection-change', (e) => {
+      detail = (e as CustomEvent<SelectionChangeEventDetail<Row>>).detail;
+    });
+    root.querySelector('tbody tr[data-row-key="35"] mp-checkbox')!.dispatchEvent(new CustomEvent('change'));
+    await flush(el);
+
+    expect(detail!.selectedIds).toEqual(['1', '35']);
+    expect(detail!.selectedRows.map((r) => r?.name)).toEqual(['r1', 'r35']);
+  });
+});
+
+/**
+ * D9 / spike S3: a Shift range is resolved against the whole flat list, and is
+ * REFUSED while any row inside it is still a placeholder. Page 2 is held back
+ * by a latch; every other page answers at once.
+ */
+describe('mp-datatable — Shift range over unloaded windows (D9)', () => {
+  let el: MpDatatable | undefined;
+  afterEach(() => {
+    el?.remove();
+    el = undefined;
+  });
+
+  function setupHeldPage2() {
+    let releasePage2: (() => void) | null = null;
+    const fetchFn: DatatableFetch<Row> = (req) => {
+      const resp = { data: makeRows(req.page, req.perPage, 50), totalRecords: 50 };
+      return req.page === 2
+        ? new Promise<typeof resp>((res) => { releasePage2 = () => res(resp); })
+        : Promise.resolve(resp);
+    };
+    const table = document.createElement('mp-datatable') as MpDatatable;
+    table.columns = columns as DatatableColumnDef[];
+    table.virtualScroll = true;
+    table.perPage = 10;
+    table.selectionMode = 'multiple';
+    table.fetch = fetchFn as DatatableFetch;
+    document.body.appendChild(table);
+    return { table, release: () => releasePage2?.() };
+  }
+
+  const root = (t: MpDatatable) => t.renderRoot as unknown as ParentNode;
+  const rowOf = (t: MpDatatable, key: string) =>
+    root(t).querySelector<HTMLElement>(`tbody tr[data-row-key="${key}"]`)!;
+  const clickRow = (t: MpDatatable, key: string, init: MouseEventInit = {}) =>
+    rowOf(t, key).dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true, ...init }));
+  /** Scroll the virtual window so it starts at `index` (minus the buffer). */
+  async function scrollTo(t: MpDatatable, index: number): Promise<void> {
+    const scroller = root(t).querySelector<HTMLElement>('.datatable-scroll')!;
+    Object.defineProperty(scroller, 'scrollTop', { configurable: true, get: () => index * t.itemSize });
+    scroller.dispatchEvent(new Event('scroll'));
+    await flush(t);
+    await flush(t);
+  }
+
+  it('refuses a range with placeholders inside it, keeps selection and anchor, and announces why', async () => {
+    const h = setupHeldPage2();
+    el = h.table;
+    await flush(el);
+
+    clickRow(el, '1'); // anchor
+    await flush(el);
+    // Rows 21-40 render and load (pages 3 and 4); page 2 (rows 11-20) is still held.
+    await scrollTo(el, 30);
+    expect(rowOf(el, '25').dataset['placeholder']).toBe('false');
+
+    const events: string[][] = [];
+    el.addEventListener('mp-datatable-selection-change', (e) =>
+      events.push((e as CustomEvent<SelectionChangeEventDetail>).detail.selectedIds));
+    clickRow(el, '25', { shiftKey: true });
+    await flush(el);
+
+    expect(events).toEqual([]);
+    expect(el.selectedIds).toEqual(['1']);
+    expect(root(el).querySelector('[role="status"]')?.textContent)
+      .toBe('Range not selected: some rows in it have not loaded yet');
+    // No placeholder key ever entered the selection.
+    expect(el.selectedIds.some((k) => k.startsWith('__placeholder'))).toBe(false);
+
+    // Once page 2 has loaded, the same Shift-click ranges from the kept anchor,
+    // which is no longer rendered (it scrolled out of the window).
+    h.release();
+    await flush(el);
+    expect(rowOf(el, '1')).toBeNull();
+    clickRow(el, '25', { shiftKey: true });
+    await flush(el);
+
+    expect(events).toHaveLength(1);
+    expect(events[0]).toEqual(Array.from({ length: 25 }, (_, i) => String(i + 1)));
+    expect(el.selectedRows.every((r) => r !== undefined)).toBe(true);
   });
 });
 

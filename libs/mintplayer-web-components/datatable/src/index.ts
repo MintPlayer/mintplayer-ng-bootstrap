@@ -4,6 +4,8 @@ export type {
   RowEventDetail,
   SortChangeEventDetail,
   SelectionChangeEventDetail,
+  DatatableFetchState,
+  DatatableReloadOptions,
 } from './components';
 export type {
   DatatableColumnDef,

@@ -245,34 +245,89 @@ describe('mp-datatable — keys from interactive descendants do not run row sema
   });
 });
 
-describe('mp-datatable — keys from interactive descendants do not run row semantics', () => {
+describe("mp-datatable keyboard — 'checkbox' selection mode (Enter opens, Space toggles)", () => {
   beforeEach(() => {
     document.body.innerHTML = '';
   });
 
-  it('Space bubbling from the selection checkbox does not wipe a multi selection', async () => {
-    const el = await mount('selection-mode="multiple"');
-    (el as unknown as { selectedIds: unknown }).selectedIds = ['1', '2'];
-    await el.updateComplete;
+  const rowOf = (el: MpDatatable, k: string) =>
+    shadow(el).querySelector<HTMLTableRowElement>(`tbody tr[data-row-key="${k}"]`)!;
+  const selectedKeys = (el: MpDatatable) =>
+    Array.from(shadow(el).querySelectorAll<HTMLElement>('tbody tr[data-selected="true"]'))
+      .map((r) => r.dataset['rowKey']);
+  function record(el: MpDatatable) {
+    const selections: string[][] = [];
+    const clicks: string[] = [];
+    el.addEventListener('mp-datatable-selection-change', (e) =>
+      selections.push((e as CustomEvent).detail.selectedIds));
+    el.addEventListener('mp-datatable-row-click', (e) => clicks.push((e as CustomEvent).detail.rowKey));
+    return { selections, clicks };
+  }
 
-    const checkbox = shadow(el).querySelector('tbody tr[data-row-key="3"] mp-checkbox')!;
-    key(checkbox as HTMLElement, ' ');
-    await el.updateComplete;
-
-    // The row handler must NOT have replaced the selection with row 3 only.
-    const selected = Array.from(
-      shadow(el).querySelectorAll('tbody tr[data-selected="true"]'),
-    ).map((r) => (r as HTMLElement).dataset['rowKey']);
-    expect(selected).toEqual(['1', '2']);
+  it('rows keep a roving tab stop, because Enter opens them', async () => {
+    const el = await mount('selection-mode="checkbox"');
+    const rows = Array.from(shadow(el).querySelectorAll<HTMLElement>('tbody tr[data-row-key]'));
+    expect(rows.filter((r) => r.getAttribute('tabindex') === '0')).toHaveLength(1);
+    expect(rows.filter((r) => r.getAttribute('tabindex') === '-1')).toHaveLength(2);
   });
 
-  it('Space on the row itself still selects', async () => {
-    const el = await mount('selection-mode="multiple"');
-    const rowEl = shadow(el).querySelector<HTMLTableRowElement>('tbody tr[data-row-key="1"]')!;
-    rowEl.focus();
-    key(rowEl, ' ');
+  it('Enter emits row-click only and never selects', async () => {
+    const el = await mount('selection-mode="checkbox"');
+    const { selections, clicks } = record(el);
+    rowOf(el, '2').focus();
+    const ev = key(rowOf(el, '2'), 'Enter');
     await el.updateComplete;
-    expect(rowEl.dataset['selected']).toBe('true');
+
+    expect(ev.defaultPrevented).toBe(true);
+    expect(clicks).toEqual(['2']);
+    expect(selections).toEqual([]);
+    expect(selectedKeys(el)).toEqual([]);
+  });
+
+  it('Space toggles the focused row and emits no row-click', async () => {
+    const el = await mount('selection-mode="checkbox"');
+    (el as unknown as { selectedIds: unknown }).selectedIds = ['1'];
+    await el.updateComplete;
+    const { selections, clicks } = record(el);
+
+    rowOf(el, '3').focus();
+    const ev = key(rowOf(el, '3'), ' ');
+    await el.updateComplete;
+    // Additive, like the checkbox: the existing selection is kept.
+    expect(ev.defaultPrevented).toBe(true);
+    expect(selectedKeys(el)).toEqual(['1', '3']);
+
+    key(rowOf(el, '3'), ' ');
+    await el.updateComplete;
+    expect(selectedKeys(el)).toEqual(['1']);
+    expect(selections).toEqual([['1', '3'], ['1']]);
+    expect(clicks).toEqual([]);
+  });
+
+  it('Shift+Space does nothing — there is no range in this mode', async () => {
+    const el = await mount('selection-mode="checkbox"');
+    rowOf(el, '1').focus();
+    key(rowOf(el, '1'), ' ');
+    await el.updateComplete;
+    const { selections, clicks } = record(el);
+
+    key(rowOf(el, '3'), ' ', { shiftKey: true });
+    await el.updateComplete;
+    expect(selectedKeys(el)).toEqual(['1']);
+    expect(selections).toEqual([]);
+    expect(clicks).toEqual([]);
+  });
+
+  it('Space bubbling from the row checkbox does not toggle the row a second time', async () => {
+    const el = await mount('selection-mode="checkbox"');
+    (el as unknown as { selectedIds: unknown }).selectedIds = ['1', '2'];
+    await el.updateComplete;
+    const { selections } = record(el);
+
+    key(rowOf(el, '3').querySelector('mp-checkbox') as HTMLElement, ' ');
+    await el.updateComplete;
+    expect(selectedKeys(el)).toEqual(['1', '2']);
+    expect(selections).toEqual([]);
   });
 });
 

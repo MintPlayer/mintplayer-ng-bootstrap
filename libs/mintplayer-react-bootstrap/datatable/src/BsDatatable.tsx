@@ -25,8 +25,27 @@ import {
  * `{ data, totalRecords }`. `createComponent` forwards it to the element's
  * `fetch` property, and the web component owns the whole loop — initial page,
  * on-demand windows, tree children, pagination, sort/perPage reloads. The
- * consumer wires nothing else (no `totalRecords`, no event bridge). Selected
- * row objects arrive on `onSelectionChange`'s `detail.selectedRows`.
+ * consumer wires nothing else (no `totalRecords`, no event bridge). To
+ * re-query with an unchanged callback, call `reload({ resetPage? })` on the
+ * element ref; `applyFetchState({ fetch, sortColumns, page, perPage })` applies
+ * several of those as one change (one request). Pass a stable `fetch`
+ * (`useCallback`): a new function is a new source and reloads.
+ *
+ * Selection: `selectionMode` is `'none' | 'single' | 'multiple' | 'checkbox'`
+ * (`'checkbox'` selects only through the checkbox column; a row click just
+ * opens the row). Act on `onSelectionChange`'s `detail.selectedIds` — it is
+ * authoritative and holds every selected key, across pages. `detail.selectedRows`
+ * is index-aligned with it and covers every key whose row the element has ever
+ * seen, off-page rows included; it is `undefined` where a key's row was never
+ * seen, so narrow before use. The `selectedRows` prop REPLACES the selection
+ * with the given rows (keys derived through `rowKey`, rows remembered even
+ * when not loaded) and emits no event; it is pushed when its reference changes,
+ * never on an unrelated re-render. **Memoise it** (`useMemo`, or state): an
+ * inline literal such as `selectedRows={[row]}` is a new array on every render,
+ * so every render pushes it again and reverts the user's clicks. `rowKey` is
+ * required to be stable too (an id-less row that is not loaded is keyed
+ * `rowKey(row, -1)`, so they all collapse onto `row--1`). `rowLabel: (row) => string` names each
+ * row's checkbox ("Select {label}"); it defaults to the first cell's text.
  *
  * Filtering: mark a column `filterable` and it gets the built-in panel — search,
  * include/exclude, checkbox list, clear — with no wrapper code, because the
@@ -36,7 +55,7 @@ import {
  * entirely, and must return a STABLE node: it is mounted once per open, and
  * repainting it is the renderer's job via `context.onChange`.
  */
-export const BsDatatable = createComponent({
+const BsDatatableElement = createComponent({
   react: React,
   tagName: 'mp-datatable',
   elementClass: MpDatatable,
@@ -56,3 +75,27 @@ export const BsDatatable = createComponent({
     onFilterChange: 'mp-datatable-filter-change' as EventName<CustomEvent<FilterChangeDetail>>,
   },
 });
+
+export type BsDatatableProps = Omit<React.ComponentProps<typeof BsDatatableElement>, 'ref'>;
+
+/**
+ * `createComponent` re-assigns every element property on every render (it
+ * leaves dirty-checking to the element). That is harmless for every prop but
+ * `selectedRows`, whose setter REPLACES the selection: an unrelated re-render
+ * would revert the user's clicks to the stale prop. So `selectedRows` is held
+ * back and pushed only when its own reference changes (as the Vue wrapper does).
+ * That only helps a MEMOISED array: an inline `selectedRows={[row]}` is a new
+ * reference on every render and still reverts clicks.
+ * The effect runs after the inner element's, so `rowKey` and `data` are set
+ * before the keys are derived.
+ */
+export const BsDatatable = React.forwardRef<MpDatatable, BsDatatableProps>(
+  function BsDatatable({ selectedRows, ...rest }, ref) {
+    const innerRef = React.useRef<MpDatatable>(null);
+    React.useImperativeHandle(ref, () => innerRef.current as MpDatatable);
+    React.useLayoutEffect(() => {
+      if (innerRef.current && selectedRows !== undefined) innerRef.current.selectedRows = selectedRows;
+    }, [selectedRows]);
+    return <BsDatatableElement ref={innerRef} {...rest} />;
+  },
+);

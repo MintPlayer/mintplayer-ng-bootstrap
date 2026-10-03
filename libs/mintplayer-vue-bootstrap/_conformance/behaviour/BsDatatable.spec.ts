@@ -1,5 +1,5 @@
-import { describe, expect, it } from 'vitest';
-import { nextTick } from 'vue';
+import { describe, expect, it, vi } from 'vitest';
+import { nextTick, toRaw } from 'vue';
 
 import BsDatatable from '../../datatable/src/BsDatatable.vue';
 import type { MpDatatable } from '@mintplayer/web-components/datatable';
@@ -127,6 +127,126 @@ describe('BsDatatable — property sync', () => {
   it('exposes the underlying element for advanced access', () => {
     const { wrapper, el } = mountTable();
     expect((wrapper.vm as unknown as { el: { value?: unknown } }).el).toBe(el);
+  });
+});
+
+/**
+ * `selectedRows` REPLACES the element's selection, so it must be pushed on
+ * mount and on its own change only — never from the catch-all `syncProps`,
+ * or an unrelated prop change would revert the user's clicks to the stale prop.
+ */
+describe('BsDatatable — selection seed, rowLabel and imperative API (#422, #407)', () => {
+  interface Row { id: number; name: string; }
+  const ROWS: Row[] = [{ id: 1, name: 'Alpha' }, { id: 2, name: 'Bravo' }];
+  const COLS = [{ name: 'name', label: 'Name' }];
+  const settle = () => new Promise((r) => setTimeout(r));
+
+  it('seeds the selection from selectedRows: keys derived, an unloaded row remembered', () => {
+    const offPage: Row = { id: 50, name: 'Not loaded' };
+    const { el } = mountTable({ columns: COLS, data: ROWS, selectionMode: 'multiple', selectedRows: [ROWS[0], offPage] });
+    expect(el.selectedIds).toEqual(['1', '50']);
+    // Mounted props are reactive, so the element holds the proxy of the same object.
+    expect(toRaw(el.selectedRows[1])).toBe(offPage);
+  });
+
+  it('does not re-push selectedRows when another prop changes, so a click survives', async () => {
+    const seed = [ROWS[0]];
+    const { wrapper, el } = mountTable({ columns: COLS, data: ROWS, selectionMode: 'multiple', selectedRows: seed });
+    await el.updateComplete;
+    const push = vi.spyOn(el, 'selectedRows', 'set');
+    el.querySelector<HTMLElement>('tbody tr[data-row-key="2"]')!
+      .dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true }));
+    expect(el.selectedIds).toEqual(['2']);
+
+    await wrapper.setProps({ rowLabel: (r: unknown) => (r as Row).name });
+    await wrapper.setProps({ columns: [...COLS] });
+    await wrapper.setProps({ selectionMode: 'checkbox' });
+    expect(push).not.toHaveBeenCalled();
+    expect(el.selectedIds).toEqual(['2']);
+
+    // A new array is a new seed and does replace the selection.
+    await wrapper.setProps({ selectedRows: [ROWS[0]] });
+    expect(push).toHaveBeenCalledTimes(1);
+    expect(el.selectedIds).toEqual(['1']);
+  });
+
+  it('does not re-push a one-way selectedIds when another prop changes, so a click survives', async () => {
+    const { wrapper, el } = mountTable({ columns: COLS, data: ROWS, selectionMode: 'multiple', selectedIds: ['1'] });
+    await el.updateComplete;
+    const push = vi.spyOn(el, 'selectedIds', 'set');
+    el.querySelector<HTMLElement>('tbody tr[data-row-key="2"]')!
+      .dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true }));
+    expect(el.selectedIds).toEqual(['2']);
+
+    await wrapper.setProps({ rowLabel: (r: unknown) => (r as Row).name });
+    await wrapper.setProps({ columns: [...COLS] });
+    await wrapper.setProps({ data: [...ROWS] });
+    expect(push).not.toHaveBeenCalled();
+    expect(el.selectedIds).toEqual(['2']);
+
+    // Its own change is still pushed.
+    await wrapper.setProps({ selectedIds: ['1', '2'] });
+    expect(push).toHaveBeenCalledTimes(1);
+    expect(el.selectedIds).toEqual(['1', '2']);
+  });
+
+  it('a stale selectedIds never overrides a selectedRows seed', async () => {
+    const offPage: Row = { id: 50, name: 'Not loaded' };
+    const { wrapper, el } = mountTable({
+      columns: COLS, data: ROWS, selectionMode: 'multiple', selectedIds: ['1'], selectedRows: [offPage],
+    });
+    // On mount the rows are pushed last, so the seed wins.
+    expect(el.selectedIds).toEqual(['50']);
+    await wrapper.setProps({ columns: [...COLS] });
+    expect(el.selectedIds).toEqual(['50']);
+    expect(toRaw(el.selectedRows[0])).toBe(offPage);
+
+    // Both changing in one update: the rows are still pushed last.
+    await wrapper.setProps({ selectedIds: ['2'], selectedRows: [ROWS[0]] });
+    expect(el.selectedIds).toEqual(['1']);
+  });
+
+  it('does not re-push a one-way expandedIds when another prop changes', async () => {
+    const { wrapper, el } = mountTable({ columns: COLS, data: ROWS, expandedIds: ['a'] });
+    const push = vi.spyOn(el, 'expandedIds', 'set');
+    await wrapper.setProps({ columns: [...COLS] });
+    expect(push).not.toHaveBeenCalled();
+    await wrapper.setProps({ expandedIds: ['b'] });
+    expect(push).toHaveBeenCalledTimes(1);
+    expect([...(el.expandedIds as Set<unknown>)]).toEqual(['b']);
+  });
+
+  it('forwards rowLabel and the checkbox selection mode', async () => {
+    const rowLabel = (r: unknown) => `#${(r as Row).name}`;
+    const { wrapper, el } = mountTable({ columns: COLS, data: ROWS, selectionMode: 'checkbox', rowLabel });
+    expect(el.rowLabel).toBe(rowLabel);
+    expect(el.selectionMode).toBe('checkbox');
+    await wrapper.setProps({ rowLabel: null });
+    expect(el.rowLabel).toBeNull();
+  });
+
+  it('exposes reload() and applyFetchState(), each costing one request', async () => {
+    const calls: { page: number; perPage: number }[] = [];
+    const fetch = async (req: { page: number; perPage: number }) => {
+      calls.push({ page: req.page, perPage: req.perPage });
+      return { data: ROWS, totalRecords: ROWS.length };
+    };
+    const { wrapper } = mountTable({ columns: COLS, fetch });
+    await settle();
+    expect(calls).toHaveLength(1);
+    const vm = wrapper.vm as unknown as {
+      reload: (o?: { resetPage?: boolean }) => void;
+      applyFetchState: (s: Record<string, unknown>) => void;
+    };
+
+    vm.reload();
+    await settle();
+    expect(calls).toHaveLength(2);
+
+    vm.applyFetchState({ fetch, perPage: 5, page: 1, sortColumns: [{ property: 'name', direction: 'ascending' }] });
+    await settle();
+    expect(calls).toHaveLength(3);
+    expect(calls[2].perPage).toBe(5);
   });
 });
 

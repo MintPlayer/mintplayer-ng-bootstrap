@@ -22,7 +22,13 @@ export interface DatatableLabels {
   loading: string;
   rowsPerPage: string;
   resizeColumn: (column: string) => string;
+  /** A row checkbox's name when the row yields no text (see `selectRowNamed`). */
   selectRow: (rowNumber: number) => string;
+  /**
+   * A row checkbox's name, from the datatable's `rowLabel` callback or else the
+   * text of the row's first data cell.
+   */
+  selectRowNamed: (label: string) => string;
   /** Accessible name of a column's filter trigger in the filter row. */
   filterColumn: (column: string) => string;
   /**
@@ -81,6 +87,11 @@ export interface DatatableLabels {
   announcePage: (page: number, totalPages: number) => string;
   announceSelection: (count: number) => string;
   announceLoaded: (rows: number) => string;
+  /**
+   * Announced when a Shift range is refused because rows inside it have not
+   * loaded yet. The selection is left unchanged.
+   */
+  rangeIncomplete: string;
 }
 
 /**
@@ -120,6 +131,7 @@ export const DEFAULT_DATATABLE_LABELS: DatatableLabels = {
   rowsPerPage: 'Rows per page',
   resizeColumn: (column) => `Resize column ${column}`,
   selectRow: (rowNumber) => `Select row ${rowNumber}`,
+  selectRowNamed: (label) => `Select ${label}`,
   filterColumn: (column) => `Filter ${column}`,
   filterColumnActive: (column, summary) =>
     summary ? `Filter ${column}, filtered by ${summary}` : `Filter ${column}, filtered`,
@@ -157,4 +169,5 @@ export const DEFAULT_DATATABLE_LABELS: DatatableLabels = {
   announcePage: (page, totalPages) => `Page ${page} of ${totalPages}`,
   announceSelection: (count) => (count === 1 ? '1 row selected' : `${count} rows selected`),
   announceLoaded: (rows) => (rows === 1 ? 'Loaded 1 row' : `Loaded ${rows} rows`),
+  rangeIncomplete: 'Range not selected: some rows in it have not loaded yet',
 };

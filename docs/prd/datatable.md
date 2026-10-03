@@ -100,9 +100,9 @@ adding the ellipsis CSS — see § Resizable columns.
 | `itemSize` | `number` | `40` | Row height in px (required for virtual mode) |
 | `virtualBuffer` | `number` | `10` | Off-screen row buffer per side in virtual mode |
 | `pagination` | `boolean` | `true` | Show the pagination footer (auto-suppressed in tree mode) |
-| `selectionMode` | `'none' \| 'single' \| 'multiple'` | `'none'` | Selection mode |
-| `compareWith` | `(a, b) => boolean` | `Object.is` | Cross-fetch identity for selection |
-| `rowKey` | `(row, index) => string` | `id`-based | Stable row identity for the selection set + virtualization |
+| `selectionMode` | `'none' \| 'single' \| 'multiple' \| 'checkbox'` | `'none'` | Selection mode (`'checkbox'` added in #422) |
+| ~~`compareWith`~~ | ~~`(a, b) => boolean`~~ | | **Removed in #422** — selection identity is `rowKey`. See "Identity across pages / fetches" |
+| `rowKey` | `(row, index) => string` | `id`-based | Stable row identity for the selection set + virtualization. **Must be stable (derived from the row, never its position) with `[fetch]`** |
 | `resizableColumns` | `boolean` | `true` | Show the resize handle + run the auto-size pass |
 | `isResponsive` | `boolean` | `false` | Forwarded responsive flag on the inner table |
 | **Tree-mode inputs** | | | |
@@ -306,6 +306,16 @@ When `selectionStrategy="cascading"`:
   not-all selected descendants → tri-state parent checkbox.
 
 ### Identity across pages / fetches
+
+> **Correction (#422).** `compareWith` was removed in #422; this section
+> describes the original design only. Selection identity is now `rowKey`
+> alone: the web component holds the selected keys (authoritative, across
+> pages) plus every selected row it has ever seen, and the Angular
+> `[(selection)]` model is rebuilt from those keys, so it is no longer
+> truncated on a page change. With `[fetch]` the `rowKey` **must be stable**
+> — derived from the row itself, never from its position; the `row-${index}`
+> fallback for a row without an `id` is positional and therefore unstable.
+> See `docs/prd/datatable-selection.md`.
 
 The same record refetched as a different object would lose its selection
 via reference equality. We use the consumer-supplied `compareWith`:

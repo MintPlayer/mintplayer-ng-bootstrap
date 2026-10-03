@@ -5,6 +5,8 @@ import {
   MpDatatable,
   type DatatableColumnDef,
   type DatatableFetch,
+  type DatatableFetchState,
+  type DatatableReloadOptions,
   type RowKey,
   type RowRenderer,
   type DatatableSelectionMode,
@@ -45,9 +47,25 @@ const props = defineProps<{
   childCountKey?: string | null;
   treeIndent?: number;
   expandedIds?: Set<unknown> | ReadonlyArray<unknown>;
+  /** `'none' | 'single' | 'multiple' | 'checkbox'` (`'checkbox'`: selection only through the checkbox column). */
   selectionMode?: DatatableSelectionMode;
   selectionStrategy?: TreeSelectionStrategy;
+  /** The selected keys; `v-model:selectedIds`. Authoritative. */
   selectedIds?: string[] | ReadonlyArray<string>;
+  /**
+   * Seeds the selection with row objects: REPLACES it, deriving the keys
+   * through `rowKey` and remembering the rows, so rows that are not loaded
+   * (another page, not fetched yet) are still reported in
+   * `selectionChange`'s `detail.selectedRows`. One-way: it is pushed when it
+   * changes, and takes precedence over `selectedIds` when both change at once.
+   * Read the selection back from `selectionChange` / `v-model:selectedIds`.
+   */
+  selectedRows?: unknown[] | ReadonlyArray<unknown>;
+  /**
+   * Names a row for its selection checkbox ("Select {label}"). Defaults to the
+   * text of the row's first cell, then the row number.
+   */
+  rowLabel?: ((row: unknown) => string) | null;
   /**
    * Source of distinct values for the filter panels. Required whenever the
    * element does not hold every row -- with `fetch`, external paging, or a tree
@@ -65,6 +83,8 @@ const emit = defineEmits<{
   (e: 'rowExpand', detail: TreeRowExpandDetail): void;
   (e: 'rowCollapse', detail: TreeRowExpandDetail): void;
   (e: 'sortChange', detail: SortChangeEventDetail): void;
+  // `detail.selectedIds` is authoritative; `detail.selectedRows` is
+  // index-aligned with it, `undefined` where a key's row was never seen.
   (e: 'selectionChange', detail: SelectionChangeEventDetail): void;
   (e: 'rowClick', detail: RowEventDetail): void;
   (e: 'rowDblClick', detail: RowEventDetail): void;
@@ -95,16 +115,30 @@ const syncProps = () => {
   if (props.idKey !== undefined) el.value.idKey = props.idKey as TreeIdKey | null;
   if (props.childCountKey !== undefined) el.value.childCountKey = props.childCountKey;
   if (props.treeIndent !== undefined) el.value.treeIndent = props.treeIndent;
-  if (props.expandedIds !== undefined) {
-    el.value.expandedIds = props.expandedIds instanceof Set
-      ? new Set(props.expandedIds)
-      : new Set(props.expandedIds);
-  }
   if (props.selectionMode !== undefined) el.value.selectionMode = props.selectionMode;
   if (props.selectionStrategy !== undefined) el.value.selectionStrategy = props.selectionStrategy;
-  if (props.selectedIds !== undefined) el.value.selectedIds = [...props.selectedIds];
   if (props.distincts !== undefined) el.value.distincts = props.distincts;
   if (props.labels !== undefined) el.value.labels = props.labels ?? undefined;
+  if (props.rowLabel !== undefined) el.value.rowLabel = props.rowLabel;
+};
+
+// Not part of `syncProps`: these three are STATE the user changes in the
+// element (clicks, expansion), and their setters replace that state. Bound
+// one-way (no `v-model`), the prop keeps its first value, so re-pushing it on
+// every unrelated prop change would revert the user's clicks — and a stale
+// `selectedIds` would override a `selectedRows` seed. Each is pushed on mount
+// and when its OWN value changes only.
+const syncExpandedIds = () => {
+  if (!el.value || props.expandedIds === undefined) return;
+  el.value.expandedIds = new Set(props.expandedIds);
+};
+const syncSelectedIds = () => {
+  if (!el.value || props.selectedIds === undefined) return;
+  el.value.selectedIds = [...props.selectedIds];
+};
+const syncSelectedRows = () => {
+  if (!el.value || props.selectedRows === undefined) return;
+  el.value.selectedRows = [...props.selectedRows];
 };
 
 // One handler per dispatched WC event; the WC's `mp-datatable-*` names
@@ -147,6 +181,10 @@ const detachEvents = () => {
 
 onMounted(() => {
   syncProps();
+  syncExpandedIds();
+  // Keys first, rows last: a `selectedRows` seed wins over `selectedIds`.
+  syncSelectedIds();
+  syncSelectedRows();
   attachEvents();
 });
 
@@ -160,16 +198,32 @@ watch(() => props.tree, syncProps);
 watch(() => props.idKey, syncProps);
 watch(() => props.childCountKey, syncProps);
 watch(() => props.treeIndent, syncProps);
-watch(() => props.expandedIds, syncProps, { deep: false });
 watch(() => props.selectionMode, syncProps);
 watch(() => props.selectionStrategy, syncProps);
-watch(() => props.selectedIds, syncProps, { deep: false });
 watch(() => props.distincts, syncProps);
 watch(() => props.labels, syncProps, { deep: false });
+watch(() => props.rowLabel, syncProps);
+watch(() => props.expandedIds, syncExpandedIds, { deep: false });
+// Watchers of one flush run in definition order: when both change at once,
+// the rows are pushed last and win, as documented on `selectedRows`.
+watch(() => props.selectedIds, syncSelectedIds, { deep: false });
+watch(() => props.selectedRows, syncSelectedRows, { deep: false });
 
-// The WC owns the fetch loop, so there are no imperative fetch methods to
-// expose any more — just the underlying element for advanced access.
-defineExpose({ el });
+/**
+ * Re-queries `fetch` for the current sort, page and page size (the server data
+ * changed). The selection is kept; `resetPage: true` also returns to page 1.
+ */
+const reload = (options?: DatatableReloadOptions) => el.value?.reload(options);
+
+/**
+ * Applies any of `fetch`, `sortColumns`, `page` and `perPage` as one change,
+ * costing at most one request. See `MpDatatable.applyFetchState`.
+ */
+const applyFetchState = (state: DatatableFetchState) => el.value?.applyFetchState(state);
+
+// The WC owns the fetch loop; these are the only imperative entry points,
+// plus the underlying element for advanced access.
+defineExpose({ el, reload, applyFetchState });
 </script>
 
 <template>
