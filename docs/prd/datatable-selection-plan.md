@@ -98,7 +98,7 @@ Each spike records its verdict and evidence in PRD §9. Throwaway code goes in t
 - [ ] Add `'checkbox'` to the `DatatableSelectionMode` type (:56) and to the attribute parser whitelist (:800-806).
 - [ ] `onRowClick`: skip `handleSelectionOnClick` in `'checkbox'` mode, and still emit row-click. Delete the dead `input[type=checkbox]` guard (:2607).
 - [ ] `onRowContextMenu`: no promote in `'checkbox'` mode.
-- [ ] The checkbox `<td>` click toggles via `onRowCheckboxToggle` unless `closest('mp-checkbox')` matches (S1).
+- [ ] The checkbox `<td>` click toggles via `onRowCheckboxToggle` unless `ev.composedPath()` enters the checkbox's shadow root (S1; `closest` was rejected). No `focus()`/`preventDefault()` (S4).
 - [ ] Stop `dblclick` at the td in **every** mode (D12).
 - [ ] Remove the Enter/Space expand branch (:2552-2555) in every mode. ArrowRight/ArrowLeft (:2544-2551) and the expander button stay (D13).
 - [ ] `'checkbox'` keyboard (:2558-2572): Enter only emits row-click. Space toggles the checkbox and emits nothing else. Shift+Space does nothing.
