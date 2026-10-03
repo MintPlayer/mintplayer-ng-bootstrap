@@ -5,6 +5,8 @@ import {
   MpDatatable,
   type DatatableColumnDef,
   type DatatableFetch,
+  type DatatableFetchState,
+  type DatatableReloadOptions,
   type RowKey,
   type RowRenderer,
   type DatatableSelectionMode,
@@ -45,9 +47,25 @@ const props = defineProps<{
   childCountKey?: string | null;
   treeIndent?: number;
   expandedIds?: Set<unknown> | ReadonlyArray<unknown>;
+  /** `'none' | 'single' | 'multiple' | 'checkbox'` (`'checkbox'`: selection only through the checkbox column). */
   selectionMode?: DatatableSelectionMode;
   selectionStrategy?: TreeSelectionStrategy;
+  /** The selected keys; `v-model:selectedIds`. Authoritative. */
   selectedIds?: string[] | ReadonlyArray<string>;
+  /**
+   * Seeds the selection with row objects: REPLACES it, deriving the keys
+   * through `rowKey` and remembering the rows, so rows that are not loaded
+   * (another page, not fetched yet) are still reported in
+   * `selectionChange`'s `detail.selectedRows`. One-way: it is pushed when it
+   * changes, and takes precedence over `selectedIds` when both change at once.
+   * Read the selection back from `selectionChange` / `v-model:selectedIds`.
+   */
+  selectedRows?: unknown[] | ReadonlyArray<unknown>;
+  /**
+   * Names a row for its selection checkbox ("Select {label}"). Defaults to the
+   * text of the row's first cell, then the row number.
+   */
+  rowLabel?: ((row: unknown) => string) | null;
   /**
    * Source of distinct values for the filter panels. Required whenever the
    * element does not hold every row -- with `fetch`, external paging, or a tree
@@ -65,6 +83,8 @@ const emit = defineEmits<{
   (e: 'rowExpand', detail: TreeRowExpandDetail): void;
   (e: 'rowCollapse', detail: TreeRowExpandDetail): void;
   (e: 'sortChange', detail: SortChangeEventDetail): void;
+  // `detail.selectedIds` is authoritative; `detail.selectedRows` is
+  // index-aligned with it, `undefined` where a key's row was never seen.
   (e: 'selectionChange', detail: SelectionChangeEventDetail): void;
   (e: 'rowClick', detail: RowEventDetail): void;
   (e: 'rowDblClick', detail: RowEventDetail): void;
@@ -105,6 +125,15 @@ const syncProps = () => {
   if (props.selectedIds !== undefined) el.value.selectedIds = [...props.selectedIds];
   if (props.distincts !== undefined) el.value.distincts = props.distincts;
   if (props.labels !== undefined) el.value.labels = props.labels ?? undefined;
+  if (props.rowLabel !== undefined) el.value.rowLabel = props.rowLabel;
+};
+
+// Not part of `syncProps`: the `selectedRows` setter REPLACES the selection,
+// so re-running it on every unrelated prop change would revert the user's
+// clicks to a stale prop. It is pushed on mount and when it changes only.
+const syncSelectedRows = () => {
+  if (!el.value || props.selectedRows === undefined) return;
+  el.value.selectedRows = [...props.selectedRows];
 };
 
 // One handler per dispatched WC event; the WC's `mp-datatable-*` names
@@ -147,6 +176,7 @@ const detachEvents = () => {
 
 onMounted(() => {
   syncProps();
+  syncSelectedRows();
   attachEvents();
 });
 
@@ -166,10 +196,24 @@ watch(() => props.selectionStrategy, syncProps);
 watch(() => props.selectedIds, syncProps, { deep: false });
 watch(() => props.distincts, syncProps);
 watch(() => props.labels, syncProps, { deep: false });
+watch(() => props.rowLabel, syncProps);
+watch(() => props.selectedRows, syncSelectedRows, { deep: false });
 
-// The WC owns the fetch loop, so there are no imperative fetch methods to
-// expose any more — just the underlying element for advanced access.
-defineExpose({ el });
+/**
+ * Re-queries `fetch` for the current sort, page and page size (the server data
+ * changed). The selection is kept; `resetPage: true` also returns to page 1.
+ */
+const reload = (options?: DatatableReloadOptions) => el.value?.reload(options);
+
+/**
+ * Applies any of `fetch`, `sortColumns`, `page` and `perPage` as one change,
+ * costing at most one request. See `MpDatatable.applyFetchState`.
+ */
+const applyFetchState = (state: DatatableFetchState) => el.value?.applyFetchState(state);
+
+// The WC owns the fetch loop; these are the only imperative entry points,
+// plus the underlying element for advanced access.
+defineExpose({ el, reload, applyFetchState });
 </script>
 
 <template>

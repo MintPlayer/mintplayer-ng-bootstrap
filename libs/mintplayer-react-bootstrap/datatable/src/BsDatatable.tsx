@@ -25,8 +25,22 @@ import {
  * `{ data, totalRecords }`. `createComponent` forwards it to the element's
  * `fetch` property, and the web component owns the whole loop — initial page,
  * on-demand windows, tree children, pagination, sort/perPage reloads. The
- * consumer wires nothing else (no `totalRecords`, no event bridge). Selected
- * row objects arrive on `onSelectionChange`'s `detail.selectedRows`.
+ * consumer wires nothing else (no `totalRecords`, no event bridge). To
+ * re-query with an unchanged callback, call `reload({ resetPage? })` on the
+ * element ref; `applyFetchState({ fetch, sortColumns, page, perPage })` applies
+ * several of those as one change (one request). Pass a stable `fetch`
+ * (`useCallback`): a new function is a new source and reloads.
+ *
+ * Selection: `selectionMode` is `'none' | 'single' | 'multiple' | 'checkbox'`
+ * (`'checkbox'` selects only through the checkbox column; a row click just
+ * opens the row). Act on `onSelectionChange`'s `detail.selectedIds` — it is
+ * authoritative and holds every selected key, across pages. `detail.selectedRows`
+ * is index-aligned with it and covers every key whose row the element has ever
+ * seen, off-page rows included; it is `undefined` where a key's row was never
+ * seen, so narrow before use. The `selectedRows` prop REPLACES the selection
+ * with the given rows (keys derived through `rowKey`, rows remembered even
+ * when not loaded) and emits no event. `rowLabel: (row) => string` names each
+ * row's checkbox ("Select {label}"); it defaults to the first cell's text.
  *
  * Filtering: mark a column `filterable` and it gets the built-in panel — search,
  * include/exclude, checkbox list, clear — with no wrapper code, because the
