@@ -39,7 +39,8 @@ import {
  * seen, off-page rows included; it is `undefined` where a key's row was never
  * seen, so narrow before use. The `selectedRows` prop REPLACES the selection
  * with the given rows (keys derived through `rowKey`, rows remembered even
- * when not loaded) and emits no event. `rowLabel: (row) => string` names each
+ * when not loaded) and emits no event; it is pushed when its reference changes,
+ * never on an unrelated re-render. `rowLabel: (row) => string` names each
  * row's checkbox ("Select {label}"); it defaults to the first cell's text.
  *
  * Filtering: mark a column `filterable` and it gets the built-in panel — search,
@@ -50,7 +51,7 @@ import {
  * entirely, and must return a STABLE node: it is mounted once per open, and
  * repainting it is the renderer's job via `context.onChange`.
  */
-export const BsDatatable = createComponent({
+const BsDatatableElement = createComponent({
   react: React,
   tagName: 'mp-datatable',
   elementClass: MpDatatable,
@@ -70,3 +71,25 @@ export const BsDatatable = createComponent({
     onFilterChange: 'mp-datatable-filter-change' as EventName<CustomEvent<FilterChangeDetail>>,
   },
 });
+
+export type BsDatatableProps = Omit<React.ComponentProps<typeof BsDatatableElement>, 'ref'>;
+
+/**
+ * `createComponent` re-assigns every element property on every render (it
+ * leaves dirty-checking to the element). That is harmless for every prop but
+ * `selectedRows`, whose setter REPLACES the selection: an unrelated re-render
+ * would revert the user's clicks to the stale prop. So `selectedRows` is held
+ * back and pushed only when its own reference changes (as the Vue wrapper does).
+ * The effect runs after the inner element's, so `rowKey` and `data` are set
+ * before the keys are derived.
+ */
+export const BsDatatable = React.forwardRef<MpDatatable, BsDatatableProps>(
+  function BsDatatable({ selectedRows, ...rest }, ref) {
+    const innerRef = React.useRef<MpDatatable>(null);
+    React.useImperativeHandle(ref, () => innerRef.current as MpDatatable);
+    React.useLayoutEffect(() => {
+      if (innerRef.current && selectedRows !== undefined) innerRef.current.selectedRows = selectedRows;
+    }, [selectedRows]);
+    return <BsDatatableElement ref={innerRef} {...rest} />;
+  },
+);

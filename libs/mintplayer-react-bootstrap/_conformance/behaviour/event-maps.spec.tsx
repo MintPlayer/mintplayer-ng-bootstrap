@@ -7,7 +7,7 @@ import { BsScheduler } from '@mintplayer/react-bootstrap/scheduler';
 import { emit, renderEl } from './harness';
 
 /**
- * `BsScheduler` and `BsDatatable` are pure `createComponent` declarations: a
+ * `BsScheduler` and `BsDatatable` are (thin wrappers over) `createComponent` declarations: a
  * tag name, an element class, and a map from DOM event name to React prop.
  * TypeScript checks the *payload* type of each entry and nothing else — the
  * event name on the left is an unchecked string literal, and the datatable's
