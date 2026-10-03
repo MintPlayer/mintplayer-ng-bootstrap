@@ -307,3 +307,29 @@ None. Everything in scope ships in one PR (see the global one-PR rule).
 - **Vue:** `selectedRows` is a one-way seed. There is no `v-model:selectedRows`, because echoing an array with holes back would drop keys. `v-model:selectedIds` remains the two-way channel. `defineExpose({ el, reload, applyFetchState })`.
 - **Angular:** on the server, the single fetch-state effect assigns plain properties and does not call `applyFetchState`, because the element may not be upgraded during SSR. When settings carry both `page` and `perPage`, the given `page` is kept.
 - **Demo keymap:** in the default mode, Enter and Space both select and then emit row-click. This matches the code.
+
+### 14.1 PR review round (2026-10-03)
+
+- **S2 guard 2 is now row-aware (Angular).** Equal key sets used to skip the push outright, so a host's fresher
+  object for an already-selected key (a new etag after a conflict) never reached the element, and the next event
+  reported the element's stale copy back into the model. The effect now pushes whenever any host row is not
+  identical (`!==`) to the element's row for its key. Equal key sets mean no row-less key can be lost, and the
+  setter emits no event, so this cannot loop. Loaded rows still resolve to the live object (D2): a fresher host
+  object for a LOADED row is remembered but not reported while that row is loaded. This reverses the earlier
+  "(b) a new host array with the same keys is not pushed" spec, which now asserts the same with the same row
+  objects; (b2)/(b3) pin the push.
+- **S2 guard 1 covers the immediate echo only.** The reference check on `lastEmittedSelection` is cleared by the
+  first other value, so clear-then-restore (`set([])`, then `set(prev)`) pushes `prev` again instead of being
+  mistaken for the echo.
+- **`selectedIds` setter (WC)** compares against `new Set(next)` (duplicates no longer pass a length check), and
+  remembers the loaded row of every selected key, so `undefined` means only "never seen". **`selectedRows`
+  setter** skips an unchanged push (same keys, same order, the very row objects the element reports).
+- **`perPage` with `page`:** `applyFetchState` keeps the given page, but when `perPage` changed and the page lies
+  past the last page of the KNOWN row count (`totalRecords` with `fetch`, the data length without), it is
+  clamped to the last page and `mp-datatable-page-change` reports it, so `[(settings)]` follows. With no known
+  count (before the first response, or a new `fetch` in the same call) the page is kept.
+- **Vue:** `selectedIds` and `expandedIds` left the catch-all `syncProps` and are pushed on mount and on their own
+  change only. A one-way `selectedIds` used to be re-pushed on every unrelated prop change, reverting clicks and
+  overriding a `selectedRows` seed. `selectedRows` is pushed after `selectedIds`, so a seed wins.
+- **`rowKey(row, -1)`:** documented on the WC and Angular `rowKey` that every id-less off-page row collapses onto
+  `row--1`, which is why a stable `rowKey` is required.

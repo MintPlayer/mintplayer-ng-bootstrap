@@ -40,7 +40,11 @@ import {
  * seen, so narrow before use. The `selectedRows` prop REPLACES the selection
  * with the given rows (keys derived through `rowKey`, rows remembered even
  * when not loaded) and emits no event; it is pushed when its reference changes,
- * never on an unrelated re-render. `rowLabel: (row) => string` names each
+ * never on an unrelated re-render. **Memoise it** (`useMemo`, or state): an
+ * inline literal such as `selectedRows={[row]}` is a new array on every render,
+ * so every render pushes it again and reverts the user's clicks. `rowKey` is
+ * required to be stable too (an id-less row that is not loaded is keyed
+ * `rowKey(row, -1)`, so they all collapse onto `row--1`). `rowLabel: (row) => string` names each
  * row's checkbox ("Select {label}"); it defaults to the first cell's text.
  *
  * Filtering: mark a column `filterable` and it gets the built-in panel — search,
@@ -80,6 +84,8 @@ export type BsDatatableProps = Omit<React.ComponentProps<typeof BsDatatableEleme
  * `selectedRows`, whose setter REPLACES the selection: an unrelated re-render
  * would revert the user's clicks to the stale prop. So `selectedRows` is held
  * back and pushed only when its own reference changes (as the Vue wrapper does).
+ * That only helps a MEMOISED array: an inline `selectedRows={[row]}` is a new
+ * reference on every render and still reverts clicks.
  * The effect runs after the inner element's, so `rowKey` and `data` are set
  * before the keys are derived.
  */

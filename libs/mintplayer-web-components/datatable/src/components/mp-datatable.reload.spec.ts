@@ -154,6 +154,46 @@ describe('mp-datatable applyFetchState (#407)', () => {
     expect(calls[2]).toMatchObject({ page: 1, perPage: 5 });
   });
 
+  it('a perPage change that puts the kept page past the end clamps it to the last page and reports it', async () => {
+    const { el, calls } = await mount();
+    el.page = 3; // rows 21-30 of 30
+    await settle(el);
+    expect(calls).toHaveLength(2);
+    const pageChanges = record(el, 'mp-datatable-page-change');
+
+    // 20 per page: there is no page 3 any more.
+    el.applyFetchState({ perPage: 20, page: 3 });
+    await settle(el);
+    expect(el.page).toBe(2);
+    expect(pageChanges).toEqual([{ page: 2 }]);
+    expect(calls).toHaveLength(3);
+    expect(calls[2]).toMatchObject({ page: 2, perPage: 20 });
+  });
+
+  it('a perPage change whose kept page still exists keeps it, and reports nothing', async () => {
+    const { el, calls } = await mount();
+    el.page = 2;
+    await settle(el);
+    const pageChanges = record(el, 'mp-datatable-page-change');
+    el.applyFetchState({ perPage: 5, page: 2 });
+    await settle(el);
+    expect(el.page).toBe(2);
+    expect(pageChanges).toEqual([]);
+    expect(calls.at(-1)).toMatchObject({ page: 2, perPage: 5 });
+  });
+
+  it('with no known row count yet, the given page is kept', async () => {
+    const calls: DatatableFetchRequest[] = [];
+    const el = document.createElement('mp-datatable') as MpDatatable;
+    el.setAttribute('pagination', '');
+    el.columns = columns;
+    // Before the first response there is no totalRecords to clamp against.
+    el.applyFetchState({ fetch: makeFetch(calls), perPage: 20, page: 3 });
+    document.body.appendChild(el);
+    await settle(el);
+    expect(calls[0]).toMatchObject({ page: 3, perPage: 20 });
+  });
+
   it('{ fetch: null } removes the callback and requests nothing', async () => {
     const { el, calls } = await mount();
     el.applyFetchState({ fetch: null });

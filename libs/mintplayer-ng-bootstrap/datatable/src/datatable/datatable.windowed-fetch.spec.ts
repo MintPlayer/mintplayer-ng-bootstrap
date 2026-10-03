@@ -223,4 +223,24 @@ describe('BsDatatableComponent — fetch state and paging selection (wrapper, #4
     expect(mpEl().selectedIds).toEqual(['3', '12']);
     expect(host.selection()).toBe(model);
   });
+
+  it('a host perPage change past the last page clamps [(settings)] to the last page; the selection survives', async () => {
+    host.settings.set(withPage(10)); // rows 91-100 of 100
+    await flush(fixture);
+    await flush(fixture);
+    await clickRow('95');
+    const [row95] = host.selection();
+
+    host.calls.length = 0;
+    const s = host.settings();
+    host.settings.set(new DatatableSettings({ ...s, perPage: { values: [10, 50], selected: 50 } }));
+    await flush(fixture);
+    await flush(fixture);
+
+    // 100 rows at 50 per page: page 10 no longer exists, page 2 is the last.
+    expect(host.settings().page.selected).toBe(2);
+    expect(host.calls.map((c) => [c.page, c.perPage])).toEqual([[2, 50]]);
+    expect(mpEl().selectedIds).toEqual(['95']);
+    expect(host.selection()[0]).toBe(row95);
+  });
 });

@@ -244,8 +244,11 @@ describe('BsDatatableComponent selection model (S2 echo guard)', () => {
     rowEl(key).dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true, ...init }));
     await settle();
   };
+  /** Clicks the header checkbox's native input (its real hit target), not a synthetic `change`. */
   const headerClear = async () => {
-    el.querySelector('thead th.checkbox-cell mp-checkbox')!.dispatchEvent(new CustomEvent('change'));
+    const header = el.querySelector('thead th.checkbox-cell mp-checkbox') as HTMLElement & { updateComplete: Promise<unknown> };
+    await header.updateComplete;
+    header.shadowRoot!.querySelector<HTMLInputElement>('input')!.click();
     await settle();
   };
 
@@ -285,14 +288,78 @@ describe('BsDatatableComponent selection model (S2 echo guard)', () => {
     expect(pushes.mock.calls).toHaveLength(0);
   });
 
-  it('(b) a new host array with the same keys is not pushed', async () => {
+  it('(b) a new host array with the same keys and the same row objects is not pushed', async () => {
     await clickRow('1');
-    host.selection.set([{ ...host.data()[0] }]);
+    host.selection.set([...host.selection()]);
     await settle();
     expect(pushes.mock.calls).toHaveLength(0);
     expect(el.selectedIds).toEqual(['1']);
     expect(events).toBe(1);
     expect(host.emissions).toHaveLength(1);
+  });
+
+  it('(b2) the same keys with a fresher row object are pushed, keys intact, with no event', async () => {
+    await clickRow('1');
+    host.selection.set([{ ...host.data()[0] }]);
+    await settle();
+    expect(pushes.mock.calls).toHaveLength(1);
+    expect(el.selectedIds).toEqual(['1']);
+    expect(events).toBe(1);
+    expect(host.emissions).toHaveLength(1);
+  });
+
+  it('(b3) a fresher object for an OFF-PAGE key replaces the remembered one (etag v1 → v2)', async () => {
+    const v1: Row = { id: 50, name: 'etag v1' };
+    host.selection.set([v1]);
+    await settle();
+    expect(pushes.mock.calls).toHaveLength(1);
+
+    // Conflict resolved: the host re-reads the row. Same key, new object.
+    const v2: Row = { id: 50, name: 'etag v2' };
+    host.selection.set([v2]);
+    await settle();
+    expect(pushes.mock.calls).toHaveLength(2);
+    expect(el.selectedRows[0]).toBe(v2);
+
+    // The next user change must carry v2, not the element's stale v1.
+    await clickRow('2', { ctrlKey: true });
+    const model = host.selection();
+    expect(model).toHaveLength(2);
+    expect(model[0]).toBe(v2);
+    expect(model[1]).toBe(host.data()[1]);
+    expect(pushes.mock.calls).toHaveLength(2);
+  });
+
+  it('(e) a plain host clear empties the element, without an event', async () => {
+    await clickRow('1');
+    await clickRow('2', { ctrlKey: true });
+    host.selection.set([]);
+    await settle();
+    expect(el.selectedIds).toEqual([]);
+    expect(pushes.mock.calls).toHaveLength(1);
+    expect(events).toBe(2);
+    expect(host.emissions).toHaveLength(2);
+  });
+
+  it('(f) clear-then-restore: restoring the earlier (emitted) array is pushed again', async () => {
+    await clickRow('1');
+    await clickRow('2', { ctrlKey: true });
+    const prev = host.selection();
+    expect(prev).toBe(host.emissions.at(-1));
+
+    host.selection.set([]);
+    await settle();
+    expect(el.selectedIds).toEqual([]);
+
+    // Cancel / error: the host puts back the very array the wrapper emitted.
+    host.selection.set(prev);
+    await settle();
+    expect(el.selectedIds).toEqual(['1', '2']);
+    expect(pushes.mock.calls).toHaveLength(2);
+
+    // And the next click extends the restored selection instead of losing it.
+    await clickRow('3', { ctrlKey: true });
+    expect(host.selection()).toEqual(host.data());
   });
 
   it('(c) a host array with a new key is pushed once, and the element reports that row back later', async () => {

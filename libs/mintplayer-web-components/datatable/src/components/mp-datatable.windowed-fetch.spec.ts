@@ -217,6 +217,36 @@ describe('mp-datatable — fetch-callback (vanilla, no framework)', () => {
     expect(detail!.selectedIds).toEqual(['999', '1', '2']);
     expect(detail!.selectedRows.map((r) => r?.name)).toEqual([undefined, 'r1', 'r2']);
   });
+
+  it('keeps a selected row through virtual-scroll windows: it is reported after it scrolled out', async () => {
+    const h = setup({ total: 50, perPage: 10 });
+    el = h.el;
+    el.selectionMode = 'checkbox';
+    await flush(el);
+    const root = el.renderRoot as unknown as ParentNode;
+    root.querySelector('tbody tr[data-row-key="1"] mp-checkbox')!.dispatchEvent(new CustomEvent('change'));
+    await flush(el);
+
+    // Scroll the window to rows ~31-40: row 1 is no longer rendered, and
+    // pages 3 and 4 are fetched on demand.
+    const scroller = root.querySelector<HTMLElement>('.datatable-scroll')!;
+    Object.defineProperty(scroller, 'scrollTop', { configurable: true, get: () => 30 * el!.itemSize });
+    scroller.dispatchEvent(new Event('scroll'));
+    await flush(el);
+    await flush(el);
+    expect(root.querySelector('tbody tr[data-row-key="1"]')).toBeNull();
+    expect(h.calls.some((c) => c.parentId == null && c.page === 4)).toBe(true);
+
+    let detail: SelectionChangeEventDetail<Row> | undefined;
+    el.addEventListener('mp-datatable-selection-change', (e) => {
+      detail = (e as CustomEvent<SelectionChangeEventDetail<Row>>).detail;
+    });
+    root.querySelector('tbody tr[data-row-key="35"] mp-checkbox')!.dispatchEvent(new CustomEvent('change'));
+    await flush(el);
+
+    expect(detail!.selectedIds).toEqual(['1', '35']);
+    expect(detail!.selectedRows.map((r) => r?.name)).toEqual(['r1', 'r35']);
+  });
 });
 
 /**

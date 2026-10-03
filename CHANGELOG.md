@@ -88,6 +88,29 @@ package version aligns its major with the supported Angular major.
   "the output is on screen"; only code that reached inside the shadow root synchronously after a
   property write needs to change.
 
+- **Datatable selection across pages (issues #422, #407).** Design and decisions in
+  `docs/prd/datatable-selection.md`.
+  - **`@mintplayer/web-components/datatable`**: the `mp-datatable-selection-change` event's `selectedRows` is now
+    `(T | undefined)[]`, **index-aligned with `selectedIds`**, with `undefined` where a key's row was never seen (a
+    key seeded without a row). Nothing is dropped any more. **Migration**: act on `selectedIds`, render from
+    `selectedRows`, and narrow before use.
+  - Tree parent rows: Enter now opens the row (selects, then emits `row-click`) and Space selects. Neither expands
+    any more. **Migration**: expand and collapse with ArrowRight/ArrowLeft or the expander button.
+  - A double-click in the checkbox cell no longer emits `row-dblclick`, in every mode.
+  - The fallback key `row-${index}` on a paginated table uses the row's **global** index, so page 2 starts at
+    `row-{perPage}` rather than reusing `row-0`. A stable, id-based `rowKey` is required with `fetch`.
+  - The default row-checkbox name is "Select {first-cell text}" instead of "Select row N".
+  - A Shift-range over rows that have not loaded yet is refused and announced, instead of selecting placeholders.
+  - **`DatatableLabels` has two new required members, `selectRowNamed(label)` and `rangeIncomplete`.** A consumer
+    that builds a complete `DatatableLabels` object (rather than a `Partial`) gets a type error until it adds them.
+  - **`@mintplayer/ng-bootstrap/datatable`**: the `compareWith` input is removed (it was dead code). Identity is
+    `rowKey`. **Migration**: delete the binding; supply a `rowKey` if rows have no `id`.
+  - `bs-datatable`: when `[settings]` carries both `page` and `perPage`, the given `page` is kept (a `perPage`
+    change no longer forces page 1). When the new page size leaves that page past the last page of the known row
+    count, the element clamps it to the last page and reports it, so `[(settings)]` follows. **Migration**: none
+    for two-way `[(settings)]`; a host with one-way `[settings]` should handle `(pageChange)`, or reset `page`
+    itself.
+
 ### Added
 
 - **Dark mode across all three frameworks (issue #420).**
@@ -146,6 +169,25 @@ package version aligns its major with the supported Angular major.
   Pick events fire once instead of three times, and the inner pickers' events no longer leak out of the host.
 - **Coverage phase 2:** thousands of behavioural specs across every library, the `tools/` scripts and the API.
   See `docs/prd/test-coverage.md` §10.
+- **Datatable selection across pages (issues #422, #407).**
+  - The selection survives server paging, sorting, `perPage` changes, virtual-scroll windows and re-fetches: the
+    element remembers the row of every selected key, and a re-fetched row replaces the remembered one.
+  - `selectionMode="checkbox"`: multi-select through the checkbox column only. A row click (any modifiers) only
+    emits `row-click`, a right-click does not select, the whole checkbox cell toggles (`cursor: pointer`), Enter
+    opens and Space toggles. There is no Shift-range.
+  - A settable `selectedRows` on `mp-datatable`: it replaces the selection, deriving the keys through `rowKey`, and
+    remembers rows that are not loaded. It emits no event, and an unchanged push costs nothing.
+  - `reload({ resetPage? })` re-queries `fetch` for the current state and keeps the selection.
+    `applyFetchState({ fetch, sortColumns, page, perPage })` applies several of those as one request. Re-assigning
+    the same `fetch`, or a structurally equal `sortColumns`, is a no-op.
+  - `rowLabel: (row) => string` names each row checkbox ("Select {label}"), falling back to the first cell's text,
+    then the row number. Localized through the new `selectRowNamed` label.
+  - `aria-multiselectable="true"` on the grid in `multiple` and `checkbox` modes.
+  - Assigning `labels` now re-renders the table, so a language switch renames everything at once.
+  - Wrappers: Angular gains `[rowLabel]`, `reload()` and the `'checkbox'` mode, and `[(selection)]` keeps the
+    host's row objects by key. React gains `selectedRows` (pushed only when its reference changes; memoise it) and
+    `rowLabel`. Vue gains `selectedRows` (a one-way seed), `rowLabel` and `defineExpose({ el, reload,
+    applyFetchState })`.
 
 ### Fixed
 
@@ -191,6 +233,31 @@ package version aligns its major with the supported Angular major.
 - **Calendar:** the month header gets its 40px height, borders and background back. This was a regression from #393.
 - **Packaging:** `@mintplayer/web-components` now actually ships `custom-elements.json`. It was missing from the
   2.16.0 tarball, because the asset copier skipped gitignored files.
+- **Datatable selection (issues #422, #407).**
+  - Selected rows that left the loaded data were silently dropped from `selectedRows`, and the Angular wrapper then
+    pushed the shorter list back down, wiping the element's own keys.
+  - K1: `resolveRows` keyed rows with index `-1`, so every id-less row became `row--1` and `selectedRows` was
+    always empty for them.
+  - K2: paginated tables used page-relative fallback keys, so `row-0` named a different row on every page.
+  - K3: the Angular selection effect passed the selection-array index to `rowKey`.
+  - K4: the Angular wrapper's `row-${index}` fallback key was unstable across pages. A stable `rowKey` is now
+    documented as required with `[fetch]`, and the element warns once when a selectable or `fetch` table has rows
+    without an `id` and no custom `rowKey`.
+  - K5: `compareWith` was dead code (removed, see Breaking).
+  - K6: switching `selectionMode` to `'none'` cleared the selection without an event, leaving wrapper models stale.
+  - K7: a Shift-range selected `__placeholder-*` keys, and silently fell back to a plain select when its anchor had
+    scrolled out of the rendered window.
+  - #407: an unchanged `fetch` or `sortColumns` re-assignment restarted the load, and the Angular wrapper's two
+    forwarding effects could split one settings change into two requests.
+  - React: `@lit/react` re-assigns every property on every render, so with the replacing `selectedRows` setter any
+    unrelated re-render reverted the user's clicks. `selectedRows` is now pushed only when its reference changes.
+  - Vue: a one-way `selectedIds` (and `expandedIds`) was re-pushed on every unrelated prop change, reverting the
+    user's clicks and overriding a `selectedRows` seed. Each is now pushed on mount and on its own change only.
+  - Angular: a host's fresher row object for an already-selected key was never pushed (only key changes were), so
+    the next event reported the element's stale copy (a stale etag). Restoring an earlier emitted selection after
+    a clear was mistaken for an echo and ignored.
+  - `mp-datatable`: `selectedIds` treated `['a', 'a']` as equal to `{a, b}` (a length check), and a key set while
+    its row was loaded reported `undefined` once that page was gone.
 
 ### Removed
 

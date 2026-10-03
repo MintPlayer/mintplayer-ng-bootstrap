@@ -170,6 +170,52 @@ describe('BsDatatable — selection seed, rowLabel and imperative API (#422, #40
     expect(el.selectedIds).toEqual(['1']);
   });
 
+  it('does not re-push a one-way selectedIds when another prop changes, so a click survives', async () => {
+    const { wrapper, el } = mountTable({ columns: COLS, data: ROWS, selectionMode: 'multiple', selectedIds: ['1'] });
+    await el.updateComplete;
+    const push = vi.spyOn(el, 'selectedIds', 'set');
+    el.querySelector<HTMLElement>('tbody tr[data-row-key="2"]')!
+      .dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true }));
+    expect(el.selectedIds).toEqual(['2']);
+
+    await wrapper.setProps({ rowLabel: (r: unknown) => (r as Row).name });
+    await wrapper.setProps({ columns: [...COLS] });
+    await wrapper.setProps({ data: [...ROWS] });
+    expect(push).not.toHaveBeenCalled();
+    expect(el.selectedIds).toEqual(['2']);
+
+    // Its own change is still pushed.
+    await wrapper.setProps({ selectedIds: ['1', '2'] });
+    expect(push).toHaveBeenCalledTimes(1);
+    expect(el.selectedIds).toEqual(['1', '2']);
+  });
+
+  it('a stale selectedIds never overrides a selectedRows seed', async () => {
+    const offPage: Row = { id: 50, name: 'Not loaded' };
+    const { wrapper, el } = mountTable({
+      columns: COLS, data: ROWS, selectionMode: 'multiple', selectedIds: ['1'], selectedRows: [offPage],
+    });
+    // On mount the rows are pushed last, so the seed wins.
+    expect(el.selectedIds).toEqual(['50']);
+    await wrapper.setProps({ columns: [...COLS] });
+    expect(el.selectedIds).toEqual(['50']);
+    expect(toRaw(el.selectedRows[0])).toBe(offPage);
+
+    // Both changing in one update: the rows are still pushed last.
+    await wrapper.setProps({ selectedIds: ['2'], selectedRows: [ROWS[0]] });
+    expect(el.selectedIds).toEqual(['1']);
+  });
+
+  it('does not re-push a one-way expandedIds when another prop changes', async () => {
+    const { wrapper, el } = mountTable({ columns: COLS, data: ROWS, expandedIds: ['a'] });
+    const push = vi.spyOn(el, 'expandedIds', 'set');
+    await wrapper.setProps({ columns: [...COLS] });
+    expect(push).not.toHaveBeenCalled();
+    await wrapper.setProps({ expandedIds: ['b'] });
+    expect(push).toHaveBeenCalledTimes(1);
+    expect([...(el.expandedIds as Set<unknown>)]).toEqual(['b']);
+  });
+
   it('forwards rowLabel and the checkbox selection mode', async () => {
     const rowLabel = (r: unknown) => `#${(r as Row).name}`;
     const { wrapper, el } = mountTable({ columns: COLS, data: ROWS, selectionMode: 'checkbox', rowLabel });

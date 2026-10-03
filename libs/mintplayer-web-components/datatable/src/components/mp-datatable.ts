@@ -366,6 +366,12 @@ export class MpDatatable extends LitElement {
    * The default key: the row's `id`, else its position. A positional key names
    * a different row after every re-fetch, sort or tree expansion, so it cannot
    * carry a selection across them — hence the one-time warning below.
+   *
+   * Worse, a row that is NOT loaded (an off-page selected row, a child of a
+   * collapsed parent) has no index at all and is keyed `rowKey(row, -1)`, so
+   * every id-less off-page row collapses onto the one key `row--1` and the
+   * selection can no longer tell them apart. A stable, id-based `rowKey` is
+   * therefore required for selection with `fetch` or pagination.
    */
   private _rowKey: RowKey = (row, index) => {
     const r = row as { id?: unknown } | null;
@@ -735,12 +741,24 @@ export class MpDatatable extends LitElement {
    * present `fetch` key is always assigned, so `{ fetch: null }` removes the
    * callback. `perPage` returns to page 1 unless `page` is also given.
    * Unchanged values cost nothing, as with the setters.
+   *
+   * When `perPage` changes and the given `page` would lie past the last page
+   * of the known row count (20 → 50 per page while on page 5 of 100 rows), the
+   * page is clamped to the last page and `mp-datatable-page-change` reports
+   * it, so a wrapper's page state follows. With no known count (a fetch table
+   * before its first response, or a new `fetch` in the same call) the page is
+   * kept as given.
    */
   applyFetchState(state: DatatableFetchState): void {
-    if ('fetch' in state) this.assignFetch(state.fetch);
+    // A NEW callback is a new source, so the count it would be clamped against
+    // belongs to the old one: no clamp then.
+    const newSource = 'fetch' in state && this.assignFetch(state.fetch);
     if (state.sortColumns !== undefined) this.assignSortColumns(state.sortColumns);
-    if (state.perPage !== undefined) this.assignPerPage(state.perPage);
-    if (state.page !== undefined) this.assignPage(state.page);
+    const perPageChanged = state.perPage !== undefined && this.assignPerPage(state.perPage);
+    if (state.page !== undefined) {
+      this.assignPage(state.page);
+      if (perPageChanged && !newSource) this.clampPageToKnownTotal();
+    }
     this.requestUpdate();
     // Coalesced and echo-deduped: nothing changed ⇒ no request.
     this.scheduleFetchReload();
@@ -771,12 +789,18 @@ export class MpDatatable extends LitElement {
     return [...this._selectedIds];
   }
   set selectedIds(value: string[] | ReadonlyArray<string>) {
-    const next = value ?? [];
+    const next = new Set(value ?? []);
     // Hosts such as mp-file-manager push the same keys on every render. An
     // unchanged selection skips the rebuild and the re-render (spike S5).
-    if (next.length === this._selectedIds.size && next.every((k) => this._selectedIds.has(k))) return;
-    this._selectedIds = new Set(next);
+    // Compared as SETS: an array with a duplicate key (`['a', 'a']` against
+    // `{a, b}`) has the old size but is a different selection.
+    if (next.size === this._selectedIds.size && [...next].every((k) => this._selectedIds.has(k))) return;
+    this._selectedIds = next;
     this.pruneSelectedRowCache();
+    // Remember the rows that are loaded NOW. Without this, a key seeded while
+    // its row is on screen reported `undefined` once that page was gone, which
+    // `undefined` must only mean for a row the element has never seen.
+    if (next.size > 0) this.rememberLiveSelectedRows();
     this.requestUpdate();
   }
 
@@ -796,6 +820,9 @@ export class MpDatatable extends LitElement {
     const rows = value ?? [];
     const keyOf = this.rowKeyLookup();
     const pairs = rows.map((row) => [keyOf(row), row] as const);
+    // A host re-pushing the selection it already holds (same keys, same order,
+    // the very row objects the element reports) costs no rebuild or render.
+    if (this.isSameSelectedRows(pairs)) return;
     this._selectedIds = new Set(pairs.map(([key]) => key));
     this._selectedRowCache = new Map(pairs);
     this.requestUpdate();
@@ -836,6 +863,12 @@ export class MpDatatable extends LitElement {
     this.requestUpdate();
   }
 
+  /**
+   * Row identity: selection, focus and row-view reuse are keyed by it. It must
+   * be stable, and derived from the row rather than its index: a row that is
+   * not loaded is keyed `rowKey(row, -1)`, so an index-based key maps every
+   * off-page row onto `row--1`. Required with `fetch`.
+   */
   get rowKey(): RowKey {
     return this._rowKey;
   }
@@ -969,6 +1002,26 @@ export class MpDatatable extends LitElement {
       this.requestUpdate();
       this.scheduleFetchReload();
     }
+  }
+
+  /**
+   * Moves a page past the end back to the last page, when the row count is
+   * known: the server's `totalRecords` with `fetch`, the data length without.
+   * Reported through `mp-datatable-page-change` when it moves the page.
+   */
+  private clampPageToKnownTotal(): void {
+    const total = this._fetch ? this._totalRecords : this._data.length;
+    if (total == null) return;
+    const lastPage = Math.max(1, Math.ceil(total / this._perPage));
+    if (this._page <= lastPage) return;
+    this._page = lastPage;
+    this.dispatchEvent(
+      new CustomEvent<{ page: number }>('mp-datatable-page-change', {
+        detail: { page: lastPage },
+        bubbles: true,
+        composed: true,
+      }),
+    );
   }
 
   /** Assigns without scheduling (and returns to page 1); true when it changed. */
@@ -3110,6 +3163,41 @@ export class MpDatatable extends LitElement {
     this.pruneSelectedRowCache();
   }
 
+  /**
+   * Every row the element holds right now, by key: the loaded rows (keyed as
+   * the renderer keys them, K1) plus the fetched children of collapsed parents
+   * (through `keyOfRow`'s index-free fallback).
+   */
+  private liveRowMap(): Map<string, unknown> {
+    const live = new Map(this.liveRowEntries(this.freshFlatList()));
+    for (const children of this._childCache.values()) {
+      for (const child of children) {
+        const key = this.keyOfRow(child);
+        if (!live.has(key)) live.set(key, child);
+      }
+    }
+    return live;
+  }
+
+  /** Remembers the loaded row of every selected key (a loaded row always wins, D2). */
+  private rememberLiveSelectedRows(): void {
+    for (const [key, row] of this.liveRowMap()) {
+      if (row !== undefined && this._selectedIds.has(key)) this._selectedRowCache.set(key, row);
+    }
+  }
+
+  /**
+   * True when `pairs` is exactly the current selection: the same keys in the
+   * same order, each with the row object the element would report for it.
+   */
+  private isSameSelectedRows(pairs: ReadonlyArray<readonly [string, unknown]>): boolean {
+    if (pairs.length !== this._selectedIds.size) return false;
+    const ids = [...this._selectedIds];
+    if (!pairs.every(([key], i) => key === ids[i])) return false;
+    const current = this.resolveRows(ids);
+    return pairs.every(([, row], i) => row === current[i]);
+  }
+
   /** Forgets the rows of keys that left the selection. One pass, deletes in place. */
   private pruneSelectedRowCache(): void {
     for (const key of this._selectedRowCache.keys()) {
@@ -3140,13 +3228,7 @@ export class MpDatatable extends LitElement {
    */
   private resolveRows(ids: string[]): unknown[] {
     if (ids.length === 0) return [];
-    const live = new Map(this.liveRowEntries(this.freshFlatList()));
-    for (const children of this._childCache.values()) {
-      for (const child of children) {
-        const key = this.keyOfRow(child);
-        if (!live.has(key)) live.set(key, child);
-      }
-    }
+    const live = this.liveRowMap();
     return ids.map((id) => {
       const row = live.get(id);
       if (row === undefined) return this._selectedRowCache.get(id);

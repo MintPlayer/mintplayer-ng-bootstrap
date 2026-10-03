@@ -35,6 +35,22 @@ const toggleCheckbox = (el: MpDatatable, key: string) =>
   rowEl(el, key).querySelector('mp-checkbox')!.dispatchEvent(new CustomEvent('change'));
 const click = (target: HTMLElement, init: MouseEventInit = {}) =>
   target.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true, ...init }));
+const headerCheckbox = (el: MpDatatable) =>
+  root(el).querySelector('thead th.checkbox-cell mp-checkbox') as HTMLElement & {
+    updateComplete: Promise<unknown>;
+    indeterminate: boolean;
+  };
+/**
+ * Clicks the header checkbox's own native input (inside mp-checkbox's shadow
+ * root), the real hit target, rather than dispatching a synthetic `change`:
+ * this proves the activation reaches the clear, not only the handler.
+ */
+async function clickHeaderCheckbox(el: MpDatatable): Promise<void> {
+  const header = headerCheckbox(el);
+  await header.updateComplete;
+  header.shadowRoot!.querySelector<HTMLInputElement>('input')!.click();
+  await settle(el);
+}
 
 async function mountFlat(mode = 'multiple'): Promise<MpDatatable> {
   const el = document.createElement('mp-datatable') as MpDatatable;
@@ -165,8 +181,7 @@ describe('mp-datatable deselect-all header checkbox', () => {
     const events: string[][] = [];
     el.addEventListener('mp-datatable-selection-change', (e) =>
       events.push((e as CustomEvent<SelectionChangeEventDetail>).detail.selectedIds));
-    header(el).dispatchEvent(new CustomEvent('change'));
-    await settle(el);
+    await clickHeaderCheckbox(el);
 
     expect(selectedKeys(el)).toEqual([]);
     expect(events).toEqual([[]]);
@@ -724,10 +739,95 @@ describe('mp-datatable selection across fetch reloads', () => {
     toggleCheckbox(el, '3');
     await settle(el);
     const selections = recordSelection(el);
-    root(el).querySelector<HTMLElement>('thead th.checkbox-cell mp-checkbox')!
-      .dispatchEvent(new CustomEvent('change'));
-    await settle(el);
+    await clickHeaderCheckbox(el);
     expect(selections).toEqual([{ selectedIds: [], selectedRows: [] }]);
     expect(el.selectedIds).toEqual([]);
+  });
+
+  it('the header checkbox is visible and indeterminate when only off-page keys are selected', async () => {
+    const { el } = await mountFetched();
+    toggleCheckbox(el, '1');
+    await gotoPage(el, 3);
+    // Nothing on this page is selected, yet the selection is not empty.
+    expect(selectedKeys(el)).toEqual([]);
+    const header = headerCheckbox(el);
+    expect(header.style.visibility).toBe('visible');
+    expect(header.hasAttribute('aria-hidden')).toBe(false);
+    expect(header.indeterminate).toBe(true);
+  });
+
+  it('a key seeded while its row is loaded is reported after its page is gone', async () => {
+    const { el } = await mountFetched();
+    el.selectedIds = ['1'];
+    await gotoPage(el, 2);
+    const selections = recordSelection(el);
+    toggleCheckbox(el, '3');
+    await settle(el);
+    expect(selections.at(-1)!.selectedIds).toEqual(['1', '3']);
+    expect(names(selections.at(-1)!.selectedRows)).toEqual(['r1', 'r3']);
+  });
+
+  it('keeps off-page rows through a perPage change', async () => {
+    const { el, calls } = await mountFetched();
+    toggleCheckbox(el, '1');
+    await gotoPage(el, 2);
+    toggleCheckbox(el, '3');
+    await settle(el);
+
+    el.perPage = 3;
+    await settle(el);
+    expect(calls.at(-1)).toMatchObject({ page: 1, perPage: 3 });
+    expect(el.selectedIds).toEqual(['1', '3']);
+    expect(names(el.selectedRows as Row[])).toEqual(['r1', 'r3']);
+
+    // Page 2 at 3 per page holds rows 4-6: neither selected row is loaded now.
+    await gotoPage(el, 2);
+    const selections = recordSelection(el);
+    toggleCheckbox(el, '5');
+    await settle(el);
+    expect(selections.at(-1)!.selectedIds).toEqual(['1', '3', '5']);
+    expect(names(selections.at(-1)!.selectedRows)).toEqual(['r1', 'r3', 'r5']);
+  });
+});
+
+describe('mp-datatable selection setters: unchanged pushes', () => {
+  afterEach(() => {
+    document.body.innerHTML = '';
+    vi.restoreAllMocks();
+  });
+
+  it('a selectedIds push with a duplicate key is compared as a set, not by length', async () => {
+    const el = await mountFlat();
+    el.selectedIds = ['1', '2'];
+    await settle(el);
+    // Same length as the current selection, but the set {1} is not {1, 2}.
+    el.selectedIds = ['1', '1'];
+    await settle(el);
+    expect(el.selectedIds).toEqual(['1']);
+    expect(selectedKeys(el)).toEqual(['1']);
+  });
+
+  it('a selectedRows push of the same keys and row objects costs no update; any difference does', async () => {
+    const el = await mountFlat();
+    const offPage: Row = { id: 40, name: 'Forty' };
+    el.selectedRows = [FLAT[0], offPage];
+    await settle(el);
+    const updates = vi.spyOn(el, 'requestUpdate');
+
+    // A new array holding the same rows in the same order: unchanged.
+    el.selectedRows = [FLAT[0], offPage];
+    expect(updates).not.toHaveBeenCalled();
+
+    // A fresher object for a key is a change, and is the one reported.
+    const fresher: Row = { ...offPage };
+    el.selectedRows = [FLAT[0], fresher];
+    expect(updates).toHaveBeenCalled();
+    expect(el.selectedRows[1]).toBe(fresher);
+
+    // So is another order.
+    updates.mockClear();
+    el.selectedRows = [fresher, FLAT[0]];
+    expect(updates).toHaveBeenCalled();
+    expect(el.selectedIds).toEqual(['40', '1']);
   });
 });

@@ -147,6 +147,10 @@ export class BsDatatableComponent<TData> {
    * be stable** — derived from the row itself, never from its position. The
    * fallback for a row without an `id`, `row-${index}`, is positional and
    * therefore unstable: the same row gets another key on another page or sort.
+   * Worse, a selected row that is not loaded has no index and is keyed
+   * `rowKey(row, -1)`, so every id-less off-page row collapses onto the one
+   * key `row--1` — in this wrapper's model and in the element alike — and the
+   * selection can no longer tell them apart. Supply a stable `rowKey`.
    */
   readonly rowKey = input<(row: TData, index: number) => string>((row: TData, index: number) => {
     const r = row as { id?: unknown } | null;
@@ -526,12 +530,16 @@ export class BsDatatableComponent<TData> {
     // A model built from an event can legitimately lack a key the element
     // still holds (a key that has never had a row, D3), so pushing that model
     // back would silently DROP the key. Two checks keep that from happening:
-    //  1. The model the wrapper itself just built from an event is never
-    //     pushed back — compared by reference, so any host write (always a new
-    //     array) still goes through.
-    //  2. Anything else is pushed only when its keys differ from the element's
-    //     `selectedIds`, so re-setting the same selection with other (stale or
-    //     fresh) row objects does not replace the rows the element resolved.
+    //  1. The model the wrapper itself just built from an event is not pushed
+    //     back — compared by reference. The guard covers that IMMEDIATE echo
+    //     only: the first other value clears it, so a host that clears the
+    //     selection and later restores the earlier array (cancel, error) is
+    //     pushed like any other write.
+    //  2. Anything else with the element's key set is pushed only when some
+    //     row differs (`!==`) from the row the element holds for its key: a
+    //     host's fresher object (a new etag) must reach the element, or its
+    //     next event would report the stale one. Equal key sets mean no
+    //     row-less key can be lost by that push; an identical model is skipped.
     // The setter emits no event and this effect writes no signal, so there is
     // no loop either way.
     effect(() => {
@@ -539,10 +547,17 @@ export class BsDatatableComponent<TData> {
       const rows = this.selection();
       const keyFn = this.rowKey();
       if (rows === this.lastEmittedSelection) return;
+      this.lastEmittedSelection = null;
       const current = el.selectedIds ?? [];
-      const keyOf = this.selectionKeyLookup(keyFn, current, el.selectedRows ?? []);
-      const next = new Set(rows.map(keyOf));
-      if (next.size === current.length && current.every((k) => next.has(k))) return;
+      const currentRows = el.selectedRows ?? [];
+      const keyOf = this.selectionKeyLookup(keyFn, current, currentRows);
+      const keys = rows.map(keyOf);
+      const next = new Set(keys);
+      const sameKeys = next.size === current.length && current.every((k) => next.has(k));
+      if (sameKeys) {
+        const elementRow = new Map(current.map((k, i) => [k, currentRows[i]] as const));
+        if (rows.every((row, i) => elementRow.get(keys[i]) === row)) return;
+      }
       el.selectedRows = rows;
     });
   }
