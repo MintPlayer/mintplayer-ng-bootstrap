@@ -53,7 +53,16 @@ import type { PageChangeEventDetail } from '@mintplayer/web-components/paginatio
 // Side-effect import: registers <mp-checkbox> for selection columns.
 import '@mintplayer/web-components/checkbox';
 
-export type DatatableSelectionMode = 'none' | 'single' | 'multiple';
+/**
+ * - `'none'`: rows are not selectable.
+ * - `'single'`: a row click or Enter/Space selects that one row.
+ * - `'multiple'`: a row click selects (Ctrl/Cmd toggles, Shift selects a range),
+ *   and a checkbox column toggles rows individually.
+ * - `'checkbox'`: multi-select through the checkbox column ONLY. A row click and
+ *   Enter emit `mp-datatable-row-click` without selecting, so a row can open
+ *   something; Space toggles the focused row's checkbox.
+ */
+export type DatatableSelectionMode = 'none' | 'single' | 'multiple' | 'checkbox';
 
 export interface RowEventDetail<T = unknown> {
   row: T;
@@ -628,8 +637,20 @@ export class MpDatatable extends LitElement {
   }
   set selectionMode(value: DatatableSelectionMode) {
     this._selectionMode = value;
-    if (value === 'none') this._selectedIds.clear();
+    if (value === 'none') {
+      this._selectionAnchorKey = null;
+      // Clearing silently left every wrapper's selection model holding keys the
+      // element had dropped (K6), so a non-empty clear is reported like any other.
+      const hadSelection = this._selectedIds.size > 0;
+      this.commitSelection([]);
+      if (hadSelection) this.emitSelectionChange();
+    }
     this.requestUpdate();
+  }
+
+  /** Modes that select many rows and render the checkbox column. */
+  private get isMulti(): boolean {
+    return this._selectionMode === 'multiple' || this._selectionMode === 'checkbox';
   }
 
   get selectedIds(): string[] {
@@ -1124,7 +1145,7 @@ export class MpDatatable extends LitElement {
     const totalPages = this.pagination && !this._tree
       ? Math.max(1, Math.ceil(paginationDenominator / this._perPage))
       : 1;
-    const showCheckboxes = this._selectionMode === 'multiple';
+    const showCheckboxes = this.isMulti;
     const totalColumnCount =
       this._columns.length + (showCheckboxes ? 1 : 0) + (this._tree ? 1 : 0);
 
@@ -2808,15 +2829,25 @@ export class MpDatatable extends LitElement {
       this.emitSelectionChange();
       return;
     }
-    // multiple
+    // multiple ('checkbox' never reaches here: its row click does not select)
     if (ev.shiftKey && this._selectionAnchorKey && this._selectionAnchorKey !== key) {
-      // Range select between focused row and clicked row
-      const rows = this.computeVisibleRows();
-      const fromIdx = rows.findIndex((r) => r.key === this._selectionAnchorKey);
-      const toIdx = rows.findIndex((r) => r.key === key);
+      // Resolved against the whole flat list, not the rendered virtual window:
+      // an anchor scrolled out of the window used to turn the range into a
+      // plain select (K7). An anchor no longer in the list at all (another
+      // page, a re-fetch) deliberately still falls through to a plain select.
+      const list = this.getFlatList();
+      const fromIdx = list.findIndex((r) => !r.isPlaceholder && r.key === this._selectionAnchorKey);
+      const toIdx = list.findIndex((r) => r.key === key);
       if (fromIdx >= 0 && toIdx >= 0) {
         const [lo, hi] = fromIdx < toIdx ? [fromIdx, toIdx] : [toIdx, fromIdx];
-        const range = rows.slice(lo, hi + 1).map((r) => [r.key, r.row] as const);
+        const span = list.slice(lo, hi + 1);
+        // Unloaded rows in between: refuse rather than select a range with
+        // holes that looks contiguous (spike S3). Selection and anchor stay.
+        if (span.some((r) => r.isPlaceholder)) {
+          this.liveAnnouncer.announce(this.mergedLabels.rangeIncomplete);
+          return;
+        }
+        const range = span.map((r) => [r.key, r.row] as const);
         this.commitSelection([...this._selectedIds, ...range.map(([k]) => k)], range);
         this.emitSelectionChange();
         return;

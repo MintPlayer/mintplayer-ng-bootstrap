@@ -81,6 +81,11 @@ export interface DatatableLabels {
   announcePage: (page: number, totalPages: number) => string;
   announceSelection: (count: number) => string;
   announceLoaded: (rows: number) => string;
+  /**
+   * Announced when a Shift range is refused because rows inside it have not
+   * loaded yet. The selection is left unchanged.
+   */
+  rangeIncomplete: string;
 }
 
 /**
@@ -157,4 +162,5 @@ export const DEFAULT_DATATABLE_LABELS: DatatableLabels = {
   announcePage: (page, totalPages) => `Page ${page} of ${totalPages}`,
   announceSelection: (count) => (count === 1 ? '1 row selected' : `${count} rows selected`),
   announceLoaded: (rows) => (rows === 1 ? 'Loaded 1 row' : `Loaded ${rows} rows`),
+  rangeIncomplete: 'Range not selected: some rows in it have not loaded yet',
 };
