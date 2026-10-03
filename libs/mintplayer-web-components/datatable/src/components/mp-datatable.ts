@@ -806,6 +806,25 @@ export class MpDatatable extends LitElement {
     this.requestUpdate();
   }
 
+  private _rowLabel: ((row: unknown) => string) | null = null;
+
+  /**
+   * Names a row for its selection checkbox ("Select {label}"). Property-only (it
+   * holds a function). When unset, or when it returns an empty string, the
+   * trimmed text of the row's first data cell is used, and when that is empty
+   * too, the row number ("Select row N").
+   *
+   * The name is a string handed to the checkbox: an `aria-labelledby` pointing
+   * at the cell could not cross the checkbox's shadow boundary.
+   */
+  get rowLabel(): ((row: unknown) => string) | null {
+    return this._rowLabel;
+  }
+  set rowLabel(value: ((row: unknown) => string) | null) {
+    this._rowLabel = typeof value === 'function' ? value : null;
+    this.requestUpdate();
+  }
+
   get rowKey(): RowKey {
     return this._rowKey;
   }
@@ -1084,6 +1103,7 @@ export class MpDatatable extends LitElement {
     // only requestUpdates when the range actually changes, so this can't
     // loop.
     this.refreshVirtualRange();
+    this.nameRowCheckboxes();
     // Measure-once: lock per-column widths the first time a non-empty body
     // is in the DOM, then switch the table to `table-layout: fixed` so
     // later rows clip with ellipsis instead of growing the column. See the
@@ -1280,6 +1300,7 @@ export class MpDatatable extends LitElement {
         <div class="datatable-scroll ${this._virtualScroll ? 'datatable-virtual' : ''}" role="presentation">
           <table
             role=${this._tree ? 'treegrid' : this._selectionMode !== 'none' ? 'grid' : nothing}
+            aria-multiselectable=${this.isMulti ? 'true' : nothing}
             aria-rowcount=${ariaRowcount}
             aria-colcount=${totalColumnCount}
             aria-busy=${this._loading ? 'true' : nothing}
@@ -2223,7 +2244,6 @@ export class MpDatatable extends LitElement {
               ${isPlaceholder
                 ? nothing
                 : html`<mp-checkbox
-                    aria-label=${this.mergedLabels.selectRow(rowIndex + 1)}
                     .checked=${selected}
                     .indeterminate=${indeterminate}
                     @change=${() => this.onRowCheckboxToggle(row, key)}
@@ -2237,6 +2257,33 @@ export class MpDatatable extends LitElement {
             : this._columns.map((col) => this.renderCell(row, col, rowIndex))}
       </tr>
     `;
+  }
+
+  /**
+   * Names every rendered row checkbox (D14): `rowLabel(row)`, else the trimmed
+   * text of the row's first data cell, else the row number.
+   *
+   * Runs after each render rather than in the template because the cell text
+   * only exists once the cell is rendered — and it may be consumer DOM from a
+   * `cellRenderer` or `rowRenderer` — so a re-rendered cell renames its
+   * checkbox on the same update. The attribute is written only when it
+   * changes, so an unchanged name costs no mutation.
+   */
+  private nameRowCheckboxes(): void {
+    if (!this.isMulti) return;
+    const labels = this.mergedLabels;
+    const visible = new Map(this.computeVisibleRows().map((r) => [r.key, r]));
+    const trs = this.renderRoot.querySelectorAll<HTMLTableRowElement>('tbody tr[data-row-key]:not([data-placeholder="true"])');
+    for (const tr of trs) {
+      const checkbox = tr.querySelector<HTMLElement>(':scope > td.checkbox-cell > mp-checkbox');
+      const entry = visible.get(tr.dataset['rowKey'] ?? '');
+      if (!checkbox || !entry) continue;
+      const fromCallback = this._rowLabel?.(entry.row)?.trim();
+      const fromCell = tr.querySelector(':scope > td:not(.checkbox-cell):not(.tree-chevron-cell)')?.textContent?.trim();
+      const text = fromCallback || fromCell;
+      const name = text ? labels.selectRowNamed(text) : labels.selectRow(entry.rowIndex + 1);
+      if (checkbox.getAttribute('aria-label') !== name) checkbox.setAttribute('aria-label', name);
+    }
   }
 
   private renderRowFromRenderer(row: unknown, rowIndex: number, ctx: RowRenderContext): unknown {
