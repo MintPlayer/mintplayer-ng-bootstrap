@@ -222,7 +222,7 @@ Each spike gets a verdict row and its evidence (engine and Playwright versions).
 | # | Question | Method | Verdict |
 |---|---|---|---|
 | S1 | When the checkbox `<td>` is clicked: does a click on the `mp-checkbox` label/padding arrive as two clicks (label, then the synthetic input click), both retargeted to `mp-checkbox`? Can `closest('mp-checkbox')` alone prevent every double toggle, in Chromium, Firefox and WebKit? | A static replica `<tr tabindex><td class=checkbox-cell><mp-checkbox>` (built `mp-checkbox` bundled with esbuild), driven by `page.mouse.click`. Playwright 1.62.1; Chromium 151.0.7922.34, Firefox 153.0, WebKit 26.5. | **`closest()` REJECTED.** A click on the host's own padding or border (present as soon as any CSS gives the host a box) is retargeted to `mp-checkbox` and fires no `change`, so the `closest` guard swallows it: zero toggles, and in Chromium/Firefox focus still moves to the input. A label click arrives at the td twice; both clicks are retargeted. **Adopted guard: skip the td toggle only when `ev.composedPath()` enters the checkbox's shadow root.** That gave exactly one toggle at every location (td padding, host padding, label, input, Space) in all 3 engines. |
-| S2 | Angular echo: WC event → `selection.set` → effect → `selectedRows` setter. Does it re-emit or loop? What guard is minimal: reference equality on the key list, or a suppress flag? | Wrapper spec driven by a `signal()` host, counting events across page change and header clear | Measured during M3 (see §13). |
+| S2 | Angular echo: WC event → `selection.set` → effect → `selectedRows` setter. Does it re-emit or loop? What guard is minimal: reference equality on the key list, or a suppress flag? | Angular wrapper spec, `signal()` host; counted element events, model emissions and `selectedRows`-setter calls | **Pass, two guards, both required.** (1) The effect skips when `selection() === lastEmittedSelection`. Without it, a key with no row (`'99'`) was dropped when the model was echoed back; removing the guard fails 2 specs. (2) Otherwise the effect pushes only when the key set differs from `el.selectedIds`. Measured: a row click gives 1 event, 1 emission and 0 setter calls; the host sending a same-key array gives 0 setter calls; the host adding a key gives 1 setter call, and the WC then returns that row object; a header clear leaves both sides at `[]`. No loop and no double emit. |
 | S3 | Shift-range across a virtual window whose pages have not all loaded. Should the range be "loaded keys between anchor and target in flat order", or should it be refused while placeholders are inside it? | jsdom on the `windowed-fetch` harness; total 100, perPage 10, scroll simulated. Node 24.15.0, vitest 4.1.10, jsdom 27.4.0. | **K7 confirmed twice.** (a) Shift-click across an unloaded page selected 25 ids, **10 of them `__placeholder-flat-*`**. `selectedRows` had 15 entries, and the placeholder keys became orphans after the page loaded. (b) With the anchor scrolled out of the window, the range silently degraded to a plain select. **Adopted (D9): resolve both ends against `getFlatList()`. If any placeholder lies in `[lo, hi]`, refuse: the selection and the anchor are unchanged, and the live region announces `rangeIncomplete`. Otherwise select every real key in the range. An anchor that is no longer in the flat list deliberately falls back to a plain select.** "Skip the placeholders" was rejected because it gives a range with holes that looks contiguous, i.e. a silent partial selection. |
 | S4 | Focus after a click on the td padding in `'checkbox'` mode: should it go to the row (roving `_focusedRowKey`) or to the checkbox? Check what NVDA/axe expect, and what keeps Space working afterwards. | The S1 replica with Playwright in all 3 engines. Neither NVDA nor axe was run (axe runs in the M9 sweep). | **Row.** The browser focuses the `tr` natively in all 3 engines, and the row's `@focus` updates roving. Space then toggles, Enter opens, and ArrowDown moves. Moving focus to the checkbox strands Enter and the arrow keys: the row keydown bails on `composedPath()[0] !== currentTarget`. **So the td handler calls neither `focus()` nor `preventDefault()`.** |
 | S5 | Cost of reconciling the Map on file-manager's every-render `selectedIds` push | Plain-TS vitest micro-benchmark, 10k rows, 1k selected, 2,000 iterations | **Pass.** Full prune: 0.055 ms per push (0.096 ms with 50% of keys changed). The early exit (same length, and every key already in the Set) takes 0.007 ms and also avoids a needless `requestUpdate`. **Adopted:** early exit, otherwise one pass over the Map keys. |
@@ -270,8 +270,16 @@ These are the cases only a browser can check (S1 retargeting).
 
 ## 11. Versioning
 
-- `@mintplayer/web-components`: minor (additive), with the behavioural fixes noted.
-- `@mintplayer/ng-bootstrap`: **major-worthy** (`compareWith` removed). Bump it the way this repo bumps breaking changes, with a note in the changelog/PR.
+Each wrapper's major version tracks its framework's major, and breaking PRs here (#408, #414, #420) ship as **minor** bumps of all four libs, with the breaks documented in the PR. This PR follows that:
+
+| Package | Before | After |
+|---|---|---|
+| `@mintplayer/web-components` | 2.17.0 | 2.18.0 |
+| `@mintplayer/ng-bootstrap` | 22.20.0 | 22.21.0 |
+| `@mintplayer/react-bootstrap` | 19.21.0 | 19.22.0 |
+| `@mintplayer/vue-bootstrap` | 3.22.0 | 3.23.0 |
+
+The wrappers require `@mintplayer/web-components` `^2.18.0`.
 
 ## 12. Resolved questions (grilled 2026-10-03)
 
@@ -288,3 +296,14 @@ Guiding preference from the grilling: **resilience is best**. Pick the option th
 ## 13. Successors, named rather than implied
 
 None. Everything in scope ships in one PR (see the global one-PR rule).
+
+## 14. As built
+
+- **Cursor rule:** `selection-mode` is not reflected as an attribute, so the checkbox cell in `'checkbox'` mode gets a rendered class, `checkbox-cell-toggles`, rather than `:host([selection-mode=checkbox])`.
+- **Checkbox names (D14)** are written as `aria-label` on each row's `mp-checkbox` in `updated()` (`nameRowCheckboxes()`), and only when the name changed.
+- **`labels` now re-renders on assignment.** It was a plain field before, so a language switch on a mounted table renamed nothing until some other update. This was found while writing the D14 specs and is fixed here.
+- **`selectedRows` setter semantics:** it **replaces** the selection, with keys taken from `rowKey`, and emits no event. Collapsed tree children with no rendered index fall back to `rowKey(row, -1)`, which is exact for id keys; positional keys already trigger the D7 warning.
+- **React:** `@lit/react` re-assigns every element property on every render. Combined with the replacing `selectedRows` setter, any unrelated re-render reverted the user's clicks. `BsDatatable` is now a `forwardRef` wrapper that pushes `selectedRows` in a `useLayoutEffect([selectedRows])`, matching the Vue wrapper's "seed on change only".
+- **Vue:** `selectedRows` is a one-way seed. There is no `v-model:selectedRows`, because echoing an array with holes back would drop keys. `v-model:selectedIds` remains the two-way channel. `defineExpose({ el, reload, applyFetchState })`.
+- **Angular:** on the server, the single fetch-state effect assigns plain properties and does not call `applyFetchState`, because the element may not be upgraded during SSR. When settings carry both `page` and `perPage`, the given `page` is kept.
+- **Demo keymap:** in the default mode, Enter and Space both select and then emit row-click. This matches the code.

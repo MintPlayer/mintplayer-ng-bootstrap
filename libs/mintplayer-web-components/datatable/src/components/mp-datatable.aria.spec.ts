@@ -474,9 +474,8 @@ describe('mp-datatable row checkbox names (D14)', () => {
 
   it('routes the name through the labels, so it is localizable', async () => {
     const el = await mount('selection-mode="multiple"');
-    // `labels` is a plain (non-reactive) field, so the change is rendered on the next update.
+    // Assigning `labels` alone must re-render: no requestUpdate() from the test.
     (el as unknown as { labels: unknown }).labels = { selectRowNamed: (label: string) => `Selecteer ${label}` };
-    el.requestUpdate();
     await settle(el);
     expect(names(el)).toEqual(['Selecteer Alpha', 'Selecteer Beta', 'Selecteer Gamma']);
   });

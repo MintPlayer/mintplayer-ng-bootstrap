@@ -432,11 +432,17 @@ describe("mp-datatable 'checkbox' selection mode — only the checkbox selects",
     const checkbox = rowEl(el, '3').querySelector('mp-checkbox') as HTMLElement & { updateComplete: Promise<unknown> };
     await checkbox.updateComplete;
     const input = checkbox.shadowRoot!.querySelector<HTMLInputElement>('input')!;
+    let checkboxChanges = 0;
+    checkbox.addEventListener('change', () => checkboxChanges++);
     // The native activation flips the input and mp-checkbox re-emits `change`;
     // the composed click then reaches the td, which must NOT toggle again.
     input.click();
     await settle(el);
 
+    // Pins WHICH path produced the single toggle: the checkbox's own change,
+    // not the td handler. Without this, a skipped native change plus a
+    // guard-less td toggle would also yield exactly one selection event.
+    expect(checkboxChanges).toBe(1);
     expect(selections.map((d) => d.selectedIds)).toEqual([['3']]);
     expect(selectedKeys(el)).toEqual(['3']);
     expect(clicks).toEqual([]);

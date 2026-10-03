@@ -294,9 +294,20 @@ export class MpDatatable extends LitElement {
 
   /**
    * User-visible strings, overridable per key for localisation
-   * (see DatatableLabels). Property-only: it holds functions.
+   * (see DatatableLabels). Property-only: it holds functions. Re-renders on
+   * assignment, so switching language on a mounted table renames every
+   * control (row-checkbox names included) without waiting for an unrelated
+   * update.
    */
-  labels: Partial<DatatableLabels> | undefined = undefined;
+  get labels(): Partial<DatatableLabels> | undefined {
+    return this._labels;
+  }
+  set labels(value: Partial<DatatableLabels> | undefined) {
+    if (value === this._labels) return;
+    this._labels = value;
+    this.requestUpdate();
+  }
+  private _labels: Partial<DatatableLabels> | undefined = undefined;
 
   /** Merged view of labels — consumer keys over the English defaults. */
   private get mergedLabels(): DatatableLabels {
