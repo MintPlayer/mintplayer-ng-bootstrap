@@ -1,7 +1,7 @@
 # Plan — Datatable selection across pages + `'checkbox'` selection mode (#422)
 
 **PRD:** [datatable-selection.md](./datatable-selection.md)
-**Status:** Not started. The PRD's open questions were resolved by grilling on 2026-10-03 (D11–D14). The spikes run before M1.
+**Status:** Implemented (2026-10-03). All spikes, M1–M8 and the M9 sweep are done. The sweep: 4 libs build; unit 5,827 passed; Angular datatable e2e 44 passed (Chromium + Firefox); axe ng/react/vue 40/44/44; React + Vue e2e green (one unrelated Vue accordion flake passed 90/90 on `--repeat-each=3`); a keyboard walk of the checkbox-mode demo via the MCP browser. The PRD's open questions were resolved by grilling (D11–D14).
 
 | Milestone | Scope | PRD |
 |---|---|---|

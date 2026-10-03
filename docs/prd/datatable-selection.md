@@ -1,6 +1,6 @@
 # PRD — Datatable selection that survives paging, and a checkbox-only selection mode
 
-**Status:** Decisions locked (grilled 2026-10-03). Spikes not started.
+**Status:** Implemented (2026-10-03). Decisions locked by grilling; the spike verdicts are in §9, and §14 records the as-built deviations.
 **Plan:** [datatable-selection-plan.md](./datatable-selection-plan.md)
 **Related issues:** #422 (this), **#407 (reload dedupe / `reload()`), folded into this PR (D11)**, #307 (checkboxes), #384/#385/#386 (windowed fetch, `selectedRows`), MintPlayer/MintPlayer.Spark#467 (consumer)
 
