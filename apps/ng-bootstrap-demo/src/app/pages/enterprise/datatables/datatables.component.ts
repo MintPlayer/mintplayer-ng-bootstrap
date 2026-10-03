@@ -129,7 +129,6 @@ export class DatatablesComponent {
   treeRowKey = (item: TreeItem) => String(item.id);
   treeIdKey: keyof TreeItem = 'id';
   treeChildCountKey: keyof TreeItem = 'childCount';
-  compareTreeItems = (a: TreeItem, b: TreeItem) => a.id === b.id;
 
   protected readonly snippetBasicHtml = dedent`
     <bs-datatable
@@ -276,7 +275,6 @@ export class DatatablesComponent {
       [(settings)]="treeSettings"
       [(expandedIds)]="treeExpanded"
       [rowKey]="treeRowKey"
-      [compareWith]="compareTreeItems"
       selectionMode="multiple"
       selectionStrategy="cascading"
       [(selection)]="treeSelection">
@@ -337,7 +335,6 @@ export class DatatablesComponent {
       treeRowKey = (item: TreeItem) => String(item.id);
       treeIdKey: keyof TreeItem = 'id';
       treeChildCountKey: keyof TreeItem = 'childCount';
-      compareTreeItems = (a: TreeItem, b: TreeItem) => a.id === b.id;
     }
   `;
 

@@ -27,6 +27,7 @@ import {
   type DatatableColumnDef,
   type DatatableDistincts,
   type DatatableLabels,
+  type DatatableReloadOptions,
   type DatatableSelectionMode,
   type DistinctValues,
   type FilterChangeDetail,
@@ -115,19 +116,49 @@ export class BsDatatableComponent<TData> {
   /** Two-way bound pagination / sort settings. */
   readonly settings = model<DatatableSettings>(new DatatableSettings());
 
-  /** `'none'` hides selection; `'multiple'` shows checkboxes; `'single'` is a single-row selection. */
+  /**
+   * - `'none'` (default): no selection, no checkbox column.
+   * - `'single'`: a row click selects that one row.
+   * - `'multiple'`: a row click selects (Ctrl/Shift extend it), plus a checkbox column.
+   * - `'checkbox'`: multi-select through the checkbox column only; a row click
+   *   just opens the row (`rowClick`), it never changes the selection.
+   */
   readonly selectionMode = input<DatatableSelectionMode>('none');
   /** @deprecated Use `selectionMode`. Kept for source-level compatibility. */
   readonly selectable = input<DatatableSelectionMode | undefined>(undefined);
 
-  /** Two-way bound array of selected rows (identity via `rowKey`). */
+  /**
+   * Two-way bound array of selected rows. Identity is `rowKey`: two row
+   * objects with the same key are the same selection entry.
+   *
+   * The selection survives paging, sorting and re-fetching: a selected row
+   * that leaves the loaded data stays in the model (the element remembers it).
+   * Rows written here are handed to the element, so a host may select rows
+   * that are not loaded at all. After a selection change the model holds the
+   * freshest row object the element knows for each key.
+   */
   readonly selection = model<TData[]>([]);
 
-  /** Required for selection / async refetch identity. Default `String((row as any).id)`. */
+  /**
+   * The row's identity, used for selection and for keeping views across
+   * re-renders. Default: `String(row.id)`.
+   *
+   * **With `[fetch]` (or any selection that must survive paging) the key must
+   * be stable** — derived from the row itself, never from its position. The
+   * fallback for a row without an `id`, `row-${index}`, is positional and
+   * therefore unstable: the same row gets another key on another page or sort.
+   */
   readonly rowKey = input<(row: TData, index: number) => string>((row: TData, index: number) => {
     const r = row as { id?: unknown } | null;
     return r && r.id != null ? String(r.id) : `row-${index}`;
   });
+
+  /**
+   * Names a row for its selection checkbox ("Select {label}"). When unset, or
+   * when it returns an empty string, the trimmed text of the row's first cell
+   * is used, and failing that the row number.
+   */
+  readonly rowLabel = input<((row: TData) => string) | null>(null);
 
   /** Drag-resize column widths. Default `true`. */
   readonly resizableColumns = input<boolean>(true);
@@ -144,9 +175,6 @@ export class BsDatatableComponent<TData> {
 
   /** Forwarded to the inner table (legacy responsive flag, currently a CSS hook). */
   readonly isResponsive = input<boolean>(false);
-
-  /** Optional row equality predicate (selection identity across re-fetches). */
-  readonly compareWith = input<((a: TData, b: TData) => boolean) | undefined>(undefined);
 
   /** Emitted on row single-click. */
   readonly rowClick = output<BsDatatableRowEvent<TData>>();
@@ -361,17 +389,6 @@ export class BsDatatableComponent<TData> {
       this.rowViews.clear();
     });
 
-    // Forward the `[fetch]` callback to the WC, which owns the entire
-    // server-paged loop (initial page, on-demand windows, tree children,
-    // pagination, sort/perPage reloads) and derives `totalRecords` from the
-    // response. The wrapper no longer runs any fetch loop. Skipped on the
-    // server so SSR doesn't kick off a client fetch.
-    effect(() => {
-      const el = this.datatableRef().nativeElement;
-      if (isPlatformServer(this.platformId)) return;
-      el.fetch = (this.fetch() as unknown as MpDatatable['fetch']) ?? null;
-    });
-
     // Same server guard as `fetch`: the source is a network call in every real
     // consumer, and a panel cannot be opened during SSR anyway.
     effect(() => {
@@ -404,18 +421,40 @@ export class BsDatatableComponent<TData> {
       el.data = (d ?? []) as unknown[];
     });
 
+    // Forward `[fetch]` and the paging/sort settings as ONE change (#407). The
+    // WC owns the entire server-paged loop (initial page, on-demand windows,
+    // tree children, pagination, sort/perPage reloads) and derives
+    // `totalRecords` from the response; the wrapper runs no fetch loop.
+    // Assigning fetch, sort, page and perPage through separate setters (they
+    // used to live in two effects) could split across ticks and cost two
+    // requests; `applyFetchState` schedules exactly one.
+    //
+    // This effect must never read `selection`: a selection change would then
+    // re-run it, and with an inline `[fetch]` closure that is a request.
     effect(() => {
       const el = this.datatableRef().nativeElement;
       const settings = this.settings();
-      const fetching = !!this.fetch();
+      const fetch = this.fetch();
       const virtual = this.virtualScroll();
-      el.sortColumns = settings.sortColumns.map((c) => ({ property: c.property, direction: c.direction }));
-      el.autoSort = !fetching;
+      const sortColumns = settings.sortColumns.map((c) => ({ property: c.property, direction: c.direction }));
+      if (isPlatformServer(this.platformId)) {
+        // No fetch on the server (SSR must not kick off a client request), and
+        // the element may not be upgraded there, so no method calls either.
+        el.sortColumns = sortColumns;
+        el.page = settings.page.selected;
+        el.perPage = settings.perPage.selected;
+      } else {
+        el.applyFetchState({
+          fetch: (fetch as unknown as MpDatatable['fetch']) ?? null,
+          sortColumns,
+          perPage: settings.perPage.selected,
+          page: settings.page.selected,
+        });
+      }
+      el.autoSort = !fetch;
       // Pagination renders in non-virtual mode; in fetch mode the wrapper
       // owns page state and the WC just reports the change via event.
       el.pagination = this.pagination() && !virtual;
-      el.page = settings.page.selected;
-      el.perPage = settings.perPage.selected;
       el.perPageOptions = settings.perPage.values;
     });
 
@@ -428,6 +467,12 @@ export class BsDatatableComponent<TData> {
     effect(() => {
       const el = this.datatableRef().nativeElement;
       el.rowKey = (row, index) => this.rowKey()(row as TData, index);
+    });
+
+    effect(() => {
+      const el = this.datatableRef().nativeElement;
+      const label = this.rowLabel();
+      el.rowLabel = label ? (row) => label(row as TData) : null;
     });
 
     effect(() => {
@@ -472,13 +517,64 @@ export class BsDatatableComponent<TData> {
       el.rowRenderer = tpl ? this.buildRowRenderer(tpl) as RowRenderer : undefined;
     });
 
-    // Selection rows → IDs forwarded to WC.
+    // Selection model → WC. Rows are pushed, not keys, so the element
+    // remembers host-supplied rows that are not loaded (and derives the keys
+    // itself, from the row's position in its data — not from the row's index
+    // in this array, which was K3).
+    //
+    // Echo guard (spike S2). The `selectedRows` setter REPLACES the selection.
+    // A model built from an event can legitimately lack a key the element
+    // still holds (a key that has never had a row, D3), so pushing that model
+    // back would silently DROP the key. Two checks keep that from happening:
+    //  1. The model the wrapper itself just built from an event is never
+    //     pushed back — compared by reference, so any host write (always a new
+    //     array) still goes through.
+    //  2. Anything else is pushed only when its keys differ from the element's
+    //     `selectedIds`, so re-setting the same selection with other (stale or
+    //     fresh) row objects does not replace the rows the element resolved.
+    // The setter emits no event and this effect writes no signal, so there is
+    // no loop either way.
     effect(() => {
       const el = this.datatableRef().nativeElement;
       const rows = this.selection();
       const keyFn = this.rowKey();
-      el.selectedIds = rows.map((row, i) => keyFn(row, i));
+      if (rows === this.lastEmittedSelection) return;
+      const current = el.selectedIds ?? [];
+      const keyOf = this.selectionKeyLookup(keyFn, current, el.selectedRows ?? []);
+      const next = new Set(rows.map(keyOf));
+      if (next.size === current.length && current.every((k) => next.has(k))) return;
+      el.selectedRows = rows;
     });
+  }
+
+  /** The selection model the wrapper last built from a WC event (echo guard). */
+  private lastEmittedSelection: TData[] | null = null;
+
+  /**
+   * Keys a selection-model row the way the element would: a row the element
+   * currently reports keeps the key it reports it under; any other row gets
+   * `rowKey(row, -1)`, which is what the element uses for a row that is not
+   * in its loaded data.
+   */
+  private selectionKeyLookup(
+    keyFn: (row: TData, index: number) => string,
+    ids: ReadonlyArray<string>,
+    rows: ReadonlyArray<unknown>,
+  ): (row: TData) => string {
+    const known = new Map(
+      rows.flatMap((row, i): [unknown, string][] => (row === undefined ? [] : [[row, ids[i]]])),
+    );
+    return (row) => known.get(row) ?? keyFn(row, -1);
+  }
+
+  /**
+   * Re-queries `[fetch]` for the current sort, page and page size, e.g. after
+   * the server data changed. The selection is kept. `resetPage: true` also
+   * returns to page 1. A no-op on the server and without `[fetch]`.
+   */
+  reload(options?: DatatableReloadOptions): void {
+    if (isPlatformServer(this.platformId)) return;
+    this.datatableRef().nativeElement.reload(options);
   }
 
   private buildRowRenderer(tpl: BsRowTemplateDirective<TData>): RowRenderer<TData> {
@@ -530,10 +626,19 @@ export class BsDatatableComponent<TData> {
 
   onSelectionChange(event: Event): void {
     const detail = (event as CustomEvent<SelectionChangeEventDetail<TData>>).detail;
-    // The WC owns the data and resolves ids → row objects itself (across page 1,
-    // fetched windows, and tree children), so we take the rows straight from the
-    // event — no wrapper-side row bookkeeping.
-    this.selection.set([...detail.selectedRows]);
+    // `selectedIds` is authoritative; `selectedRows` is index-aligned with it,
+    // with `undefined` for a key whose row the element has never seen (D3/D5).
+    // Such a key falls back to the row the model already held for it, and is
+    // otherwise left out of the model — it stays selected in the element,
+    // which is why the selection effect's echo guard never pushes it back.
+    const keyFn = this.rowKey();
+    const previous = new Map(this.selection().map((row) => [keyFn(row, -1), row] as const));
+    const next = detail.selectedIds.flatMap((id, i): TData[] => {
+      const row = detail.selectedRows[i] ?? previous.get(id);
+      return row === undefined ? [] : [row];
+    });
+    this.lastEmittedSelection = next;
+    this.selection.set(next);
   }
 
   onPageChange(event: Event): void {
