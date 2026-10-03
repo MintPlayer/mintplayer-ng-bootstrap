@@ -67,15 +67,23 @@ export interface SortChangeEventDetail {
 }
 
 export interface SelectionChangeEventDetail<T = unknown> {
+  /**
+   * The selection, authoritative. Act on this: it holds every selected key,
+   * including keys whose rows are on another page or were never loaded.
+   */
   selectedIds: string[];
   /**
-   * The selected row objects, resolved from the WC's loaded data (page 1 +
-   * fetched windows + tree children). Since the WC owns the data when fetching,
-   * consumers can't resolve ids → rows themselves — this is how a consumer gets
-   * the actual selected records. An id whose row isn't currently loaded is
-   * omitted (shouldn't happen: you can only select a row you can see).
+   * Index-aligned with `selectedIds`: `selectedRows[i]` is the row of
+   * `selectedIds[i]`. Render from this.
+   *
+   * A row is resolved from the loaded data first (page 1, fetched windows,
+   * tree children), so a re-fetched row object wins; otherwise from the rows
+   * the element remembered when they were selected, which is what keeps a row
+   * that has paged, sorted or re-fetched out of view. `undefined` marks a key
+   * whose row the element has never seen (a host seeded the key without its
+   * row). Nothing is dropped, so the two arrays always pair positionally.
    */
-  selectedRows: T[];
+  selectedRows: (T | undefined)[];
 }
 
 /**
@@ -285,6 +293,14 @@ export class MpDatatable extends LitElement {
   private _sortColumns: SortColumn[] = [];
   private _selectionMode: DatatableSelectionMode = 'none';
   private _selectedIds: Set<string> = new Set();
+  /**
+   * The row of each selected key, remembered when it was selected (or seeded
+   * via `selectedRows`). Loaded data is replaced on every page change, sort and
+   * re-fetch, so without this a selected row that leaves the loaded set could
+   * no longer be reported. Keys ⊆ `_selectedIds`: every path that deselects
+   * prunes it, so it holds the selection's own rows and never mirrors the data.
+   */
+  private _selectedRowCache: Map<string, unknown> = new Map();
   private _cutIds: Set<string> = new Set();
   private _focusedRowKey: string | null = null;
 
@@ -309,10 +325,32 @@ export class MpDatatable extends LitElement {
     },
   ));
 
+  /**
+   * The default key: the row's `id`, else its position. A positional key names
+   * a different row after every re-fetch, sort or tree expansion, so it cannot
+   * carry a selection across them — hence the one-time warning below.
+   */
   private _rowKey: RowKey = (row, index) => {
     const r = row as { id?: unknown } | null;
-    return r && r.id != null ? String(r.id) : `row-${index}`;
+    if (r && r.id != null) return String(r.id);
+    this.warnPositionalKeyOnce();
+    return `row-${index}`;
   };
+  private _warnedPositionalKey = false;
+
+  /**
+   * Warn rather than throw: a static table without ids keeps working, and only
+   * a fetched or selectable one is actually harmed by a positional key.
+   */
+  private warnPositionalKeyOnce(): void {
+    if (this._warnedPositionalKey || (!this._fetch && this._selectionMode === 'none')) return;
+    this._warnedPositionalKey = true;
+    console.warn(
+      '[mp-datatable] A row has no `id` and no `rowKey` is set, so it is keyed by its position. '
+      + 'A positional key names a different row after a re-fetch, sort or expansion, so a selection '
+      + 'cannot survive them. Set `rowKey` to return a stable identity.',
+    );
+  }
   private _columnWidths: Map<string, number> = new Map();
   /** Becomes `true` after the first measure-once pass locks column widths. Drives the `.measured` class on the table (→ `table-layout: fixed`). */
   private _hasMeasuredInitial = false;
@@ -598,7 +636,33 @@ export class MpDatatable extends LitElement {
     return [...this._selectedIds];
   }
   set selectedIds(value: string[] | ReadonlyArray<string>) {
-    this._selectedIds = new Set(value ?? []);
+    const next = value ?? [];
+    // Hosts such as mp-file-manager push the same keys on every render. An
+    // unchanged selection skips the rebuild and the re-render (spike S5).
+    if (next.length === this._selectedIds.size && next.every((k) => this._selectedIds.has(k))) return;
+    this._selectedIds = new Set(next);
+    this.pruneSelectedRowCache();
+    this.requestUpdate();
+  }
+
+  /**
+   * The selected rows, index-aligned with `selectedIds` (`undefined` for a key
+   * whose row the element has never seen). See `SelectionChangeEventDetail`.
+   *
+   * Setting it REPLACES the selection: the keys are derived through `rowKey`,
+   * and the rows are remembered, so a host that owns row objects (the Angular
+   * wrapper's `selection` model) can seed rows that are not loaded here — they
+   * are reported back in `selectedRows` even while off-page.
+   */
+  get selectedRows(): unknown[] {
+    return this.resolveRows([...this._selectedIds]);
+  }
+  set selectedRows(value: unknown[] | ReadonlyArray<unknown>) {
+    const rows = value ?? [];
+    const keyOf = this.rowKeyLookup();
+    const pairs = rows.map((row) => [keyOf(row), row] as const);
+    this._selectedIds = new Set(pairs.map(([key]) => key));
+    this._selectedRowCache = new Map(pairs);
     this.requestUpdate();
   }
 
@@ -1974,7 +2038,7 @@ export class MpDatatable extends LitElement {
     const focused = !isPlaceholder && this._focusedRowKey === key;
     const childCount = isPlaceholder ? 0 : this.extractChildCount(row);
     const hasChevron = this._tree && !isPlaceholder && childCount > 0;
-    const indeterminate = !isPlaceholder && row != null && this.isParentIndeterminate(row);
+    const indeterminate = !isPlaceholder && row != null && this.isParentIndeterminate(row, key);
 
     return html`
       <tr
@@ -2177,18 +2241,16 @@ export class MpDatatable extends LitElement {
         return this._cachedFlatList = out;
       }
 
-      const rows = (() => {
-        let r: unknown[] = this._data;
-        if (this._autoSort && this._sortColumns.length > 0) r = sortRows(r, this._sortColumns);
-        if (this._pagination && !this.isExternallyPaged()) {
-          const start = (this._page - 1) * this._perPage;
-          r = r.slice(start, start + this._perPage);
-        }
-        return r;
-      })();
+      // Keys use the GLOBAL index (K2): keyed by the position within the page,
+      // row 0 of page 1 and row 0 of page 2 shared the fallback key `row-0`.
+      // With external paging `_data` is one page, so the offset is the same.
+      const offset = this._pagination ? (this._page - 1) * this._perPage : 0;
+      const rows = this._pagination && !this.isExternallyPaged()
+        ? this.localSortedRows().slice(offset, offset + this._perPage)
+        : this.localSortedRows();
       return this._cachedFlatList = rows.map((row, i) => ({
         row,
-        key: this._rowKey(row, i),
+        key: this._rowKey(row, offset + i),
         depth: 0,
         parentId: null,
         isExpanded: false,
@@ -2255,6 +2317,55 @@ export class MpDatatable extends LitElement {
     return this._cachedFlatList = out;
   }
 
+  /** `_data` in display order: client-sorted when the WC owns sorting. */
+  private localSortedRows(): unknown[] {
+    return this._autoSort && this._sortColumns.length > 0 ? sortRows(this._data, this._sortColumns) : this._data;
+  }
+
+  /**
+   * Drops the flat-list memo. It is otherwise reset only in `willUpdate`, so a
+   * path that runs between a data change and the next render (a programmatic
+   * setter, an event fired before the re-render) would read the old rows.
+   */
+  private freshFlatList(): FlatVisibleRow[] {
+    this._cachedFlatList = null;
+    return this.getFlatList();
+  }
+
+  /**
+   * Every loaded row that has a renderer-assigned key, as `[key, row]`. The keys
+   * are the ones the renderer uses (K1): a positional fallback key only means
+   * anything at the row's rendered index. With local pagination every page is
+   * loaded, so rows of the other pages are keyed by their global index too.
+   */
+  private liveRowEntries(list: FlatVisibleRow[]): Array<readonly [string, unknown]> {
+    const rendered = list.filter((r) => !r.isPlaceholder).map((r) => [r.key, r.row] as const);
+    if (this._tree || !this._pagination || this.isExternallyPaged()) return rendered;
+    return this.localSortedRows().map((row, i) => [this._rowKey(row, i), row] as const);
+  }
+
+  private _keyByRowMemo: { list: FlatVisibleRow[]; byRow: Map<unknown, string> } | null = null;
+
+  /**
+   * The key the renderer gives a row object. A row outside the live entries (a
+   * child of a collapsed parent, a row only the host knows) has no rendered
+   * index, so it falls back to an index-free `rowKey` call — exact for any
+   * id-based key, and a positional key is already warned about.
+   */
+  private keyOfRow(row: unknown): string {
+    const list = this.getFlatList();
+    if (this._keyByRowMemo?.list !== list) {
+      this._keyByRowMemo = { list, byRow: new Map(this.liveRowEntries(list).map(([key, r]) => [r, key])) };
+    }
+    return this._keyByRowMemo.byRow.get(row) ?? this._rowKey(row, -1);
+  }
+
+  /** `keyOfRow` against the current data, for paths that may run before a re-render. */
+  private rowKeyLookup(): (row: unknown) => string {
+    this.freshFlatList();
+    return (row) => this.keyOfRow(row);
+  }
+
   private computeVisibleRows(): Array<{ row: unknown; key: string; rowIndex: number; flat: FlatVisibleRow }> {
     const flatList = this.getFlatList();
     const pageOffset = this._tree
@@ -2287,24 +2398,22 @@ export class MpDatatable extends LitElement {
     return typeof v === 'number' && v > 0 ? v : 0;
   }
 
-  /** Walks the loaded subtree of `row` and returns the rowKey for every descendant. */
-  private collectDescendantKeys(row: unknown): string[] {
+  /**
+   * Walks the loaded subtree of `row` and returns `[key, row]` for every
+   * descendant — the row too, because a cascade selects it and the selection
+   * remembers the rows it selected.
+   */
+  private collectDescendants(row: unknown): Array<readonly [string, unknown]> {
     const id = this.extractId(row);
     const cached = id != null ? this._childCache.get(id) : undefined;
     if (!cached) return [];
-    const out: string[] = [];
-    for (const child of cached) {
-      out.push(this._rowKey(child, -1));
-      const sub = this.collectDescendantKeys(child);
-      for (const k of sub) out.push(k);
-    }
-    return out;
+    return cached.flatMap((child) => [[this.keyOfRow(child), child] as const, ...this.collectDescendants(child)]);
   }
 
   /** Some-but-not-all loaded descendants selected → indeterminate parent checkbox. */
-  private isParentIndeterminate(row: unknown): boolean {
+  private isParentIndeterminate(row: unknown, key: string): boolean {
     if (this._selectionStrategy !== 'cascading' || row == null) return false;
-    return this.getIndeterminateKeys().has(this._rowKey(row, -1));
+    return this.getIndeterminateKeys().has(key);
   }
 
   /**
@@ -2331,14 +2440,14 @@ export class MpDatatable extends LitElement {
       let selected = 0;
       let total = 0;
       for (const child of children) {
-        const childKey = this._rowKey(child, -1);
+        const childKey = this.keyOfRow(child);
         const childSelected = this._selectedIds.has(childKey) ? 1 : 0;
         const sub = visit(child);
         selected += childSelected + sub.selected;
         total += 1 + sub.total;
       }
       if (total > 0 && selected > 0 && selected < total) {
-        out.add(this._rowKey(row, -1));
+        out.add(this.keyOfRow(row));
       }
       return { selected, total };
     };
@@ -2560,7 +2669,7 @@ export class MpDatatable extends LitElement {
       // (Ctrl toggles, Shift ranges), same event, same focused-row bookkeeping.
       ev.preventDefault();
       this._focusedRowKey = key;
-      this.handleSelectionOnClick(key, ev as unknown as MouseEvent);
+      this.handleSelectionOnClick(row, key, ev);
       this.requestUpdate();
       this.dispatchEvent(
         new CustomEvent<RowEventDetail>('mp-datatable-row-click', {
@@ -2606,7 +2715,7 @@ export class MpDatatable extends LitElement {
   private onRowClick(row: unknown, key: string, rowIndex: number, ev: MouseEvent): void {
     if ((ev.target as HTMLElement).closest('input[type="checkbox"]')) return;
     this._focusedRowKey = key;
-    this.handleSelectionOnClick(key, ev);
+    this.handleSelectionOnClick(row, key, ev);
     this.requestUpdate();
     this.dispatchEvent(
       new CustomEvent<RowEventDetail>('mp-datatable-row-click', {
@@ -2630,7 +2739,7 @@ export class MpDatatable extends LitElement {
   private onRowContextMenu(row: unknown, key: string, rowIndex: number, ev: MouseEvent): void {
     // Promote the row to the selection if not already selected (file-manager convention).
     if (this._selectionMode !== 'none' && !this._selectedIds.has(key)) {
-      this._selectedIds = new Set([key]);
+      this.commitSelection([key], [[key, row]]);
       this._focusedRowKey = key;
       this.emitSelectionChange();
       this.requestUpdate();
@@ -2653,13 +2762,13 @@ export class MpDatatable extends LitElement {
   private onRowCheckboxToggle(row: unknown, key: string): void {
     const willSelect = !this._selectedIds.has(key);
     // Cascading: the toggle propagates to every currently-loaded descendant.
-    const affected = new Set([
-      key,
-      ...(this._tree && this._selectionStrategy === 'cascading' ? this.collectDescendantKeys(row) : []),
-    ]);
-    this._selectedIds = willSelect
-      ? new Set([...this._selectedIds, ...affected])
-      : new Set([...this._selectedIds].filter((k) => !affected.has(k)));
+    const affected: Array<readonly [string, unknown]> = [
+      [key, row],
+      ...(this._tree && this._selectionStrategy === 'cascading' ? this.collectDescendants(row) : []),
+    ];
+    const affectedKeys = new Set(affected.map(([k]) => k));
+    if (willSelect) this.commitSelection([...this._selectedIds, ...affectedKeys], affected);
+    else this.commitSelection([...this._selectedIds].filter((k) => !affectedKeys.has(k)));
     this.emitSelectionChange();
     this.requestUpdate();
   }
@@ -2673,7 +2782,7 @@ export class MpDatatable extends LitElement {
    */
   private onDeselectAll(): void {
     if (this._selectedIds.size === 0) return;
-    this._selectedIds = new Set();
+    this.commitSelection([]);
     this.emitSelectionChange();
     this.requestUpdate();
   }
@@ -2688,10 +2797,14 @@ export class MpDatatable extends LitElement {
    */
   private _selectionAnchorKey: string | null = null;
 
-  private handleSelectionOnClick(key: string, ev: MouseEvent): void {
+  private handleSelectionOnClick(
+    row: unknown,
+    key: string,
+    ev: Pick<MouseEvent, 'shiftKey' | 'ctrlKey' | 'metaKey'>,
+  ): void {
     if (this._selectionMode === 'none') return;
     if (this._selectionMode === 'single') {
-      this._selectedIds = new Set([key]);
+      this.commitSelection([key], [[key, row]]);
       this.emitSelectionChange();
       return;
     }
@@ -2703,8 +2816,8 @@ export class MpDatatable extends LitElement {
       const toIdx = rows.findIndex((r) => r.key === key);
       if (fromIdx >= 0 && toIdx >= 0) {
         const [lo, hi] = fromIdx < toIdx ? [fromIdx, toIdx] : [toIdx, fromIdx];
-        const range = rows.slice(lo, hi + 1).map((r) => r.key);
-        this._selectedIds = new Set([...this._selectedIds, ...range]);
+        const range = rows.slice(lo, hi + 1).map((r) => [r.key, r.row] as const);
+        this.commitSelection([...this._selectedIds, ...range.map(([k]) => k)], range);
         this.emitSelectionChange();
         return;
       }
@@ -2713,14 +2826,37 @@ export class MpDatatable extends LitElement {
       const next = new Set(this._selectedIds);
       if (next.has(key)) next.delete(key);
       else next.add(key);
-      this._selectedIds = next;
+      this.commitSelection(next, [[key, row]]);
       this._selectionAnchorKey = key;
       this.emitSelectionChange();
       return;
     }
-    this._selectedIds = new Set([key]);
+    this.commitSelection([key], [[key, row]]);
     this._selectionAnchorKey = key;
     this.emitSelectionChange();
+  }
+
+  /**
+   * The one write path for a user-driven selection change. `rows` supplies the
+   * row of each key being selected; the remembered rows are then pruned to the
+   * new keys, so a deselected row is forgotten in the same step.
+   */
+  private commitSelection(
+    keys: Iterable<string>,
+    rows: ReadonlyArray<readonly [string, unknown]> = [],
+  ): void {
+    this._selectedIds = new Set(keys);
+    for (const [key, row] of rows) {
+      if (row !== undefined && this._selectedIds.has(key)) this._selectedRowCache.set(key, row);
+    }
+    this.pruneSelectedRowCache();
+  }
+
+  /** Forgets the rows of keys that left the selection. One pass, deletes in place. */
+  private pruneSelectedRowCache(): void {
+    for (const key of this._selectedRowCache.keys()) {
+      if (!this._selectedIds.has(key)) this._selectedRowCache.delete(key);
+    }
   }
 
   private emitSelectionChange(): void {
@@ -2736,20 +2872,29 @@ export class MpDatatable extends LitElement {
   }
 
   /**
-   * Resolve row keys → row objects across every loaded source (page-1 `_data`,
-   * fetched windows in `_pageCache`, tree children in `_childCache`). One pass
-   * builds a key→row index; unresolvable ids are skipped.
+   * Resolves keys to rows, index-aligned with `ids` (D3): the loaded row if
+   * there is one, else the row remembered at selection time, else `undefined`.
+   *
+   * A loaded row also refreshes the remembered one, so a re-fetched row object
+   * always wins over a stale copy. Loaded rows are keyed exactly as the
+   * renderer keys them (K1); children of collapsed parents have no rendered
+   * index and go through `keyOfRow`'s index-free fallback.
    */
   private resolveRows(ids: string[]): unknown[] {
     if (ids.length === 0) return [];
-    const byKey = new Map<string, unknown>();
-    const index = (rows: unknown[]): void => {
-      for (const row of rows) byKey.set(this._rowKey(row, -1), row);
-    };
-    index(this._data);
-    for (const rows of this._pageCache.values()) index(rows);
-    for (const rows of this._childCache.values()) index(rows);
-    return ids.map((id) => byKey.get(id)).filter((row): row is unknown => row !== undefined);
+    const live = new Map(this.liveRowEntries(this.freshFlatList()));
+    for (const children of this._childCache.values()) {
+      for (const child of children) {
+        const key = this.keyOfRow(child);
+        if (!live.has(key)) live.set(key, child);
+      }
+    }
+    return ids.map((id) => {
+      const row = live.get(id);
+      if (row === undefined) return this._selectedRowCache.get(id);
+      if (this._selectedIds.has(id)) this._selectedRowCache.set(id, row);
+      return row;
+    });
   }
 
   private gotoPage(page: number): void {
