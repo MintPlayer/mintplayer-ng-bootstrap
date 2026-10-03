@@ -222,8 +222,8 @@ let instanceCounter = 0;
  * - Columns are declared programmatically via `DatatableColumnDef[]`.
  *   Each column supplies a name (sort key) + optional `cellRenderer`.
  * - Sort algorithm extracted into the pure `computeNextSort` helper.
- * - Selection model: `'none' | 'single' | 'multiple'` with checkbox column
- *   when multi-select.
+ * - Selection model: `'none' | 'single' | 'multiple' | 'checkbox'` with a checkbox column
+ *   in the multi-select modes (see `DatatableSelectionMode`).
  * - Row events: `mp-datatable-row-click`, `mp-datatable-row-dblclick`,
  *   `mp-datatable-row-contextmenu` — all carry `RowEventDetail`.
  * - Pagination footer when `pagination` enabled.
@@ -1001,7 +1001,7 @@ export class MpDatatable extends LitElement {
       // Removing the attribute restores the default (a framework binding clears
       // an attribute by removing it).
       const v = newValue ?? 'none';
-      if (v === 'none' || v === 'single' || v === 'multiple') {
+      if (v === 'none' || v === 'single' || v === 'multiple' || v === 'checkbox') {
         this.selectionMode = v;
       }
     } else if (name === 'pagination') {
@@ -2215,7 +2215,11 @@ export class MpDatatable extends LitElement {
             </td>`
           : nothing}
         ${showCheckboxes
-          ? html`<td class="checkbox-cell" @click=${(e: Event) => e.stopPropagation()}>
+          ? html`<td
+              class=${classMap({ 'checkbox-cell': true, 'checkbox-cell-toggles': this._selectionMode === 'checkbox' })}
+              @click=${isPlaceholder ? (e: Event) => e.stopPropagation() : (ev: MouseEvent) => this.onCheckboxCellClick(row, key, ev)}
+              @dblclick=${(e: Event) => e.stopPropagation()}
+            >
               ${isPlaceholder
                 ? nothing
                 : html`<mp-checkbox
@@ -2750,7 +2754,13 @@ export class MpDatatable extends LitElement {
     });
   }
 
-  /** Keyboard handling on a tree-mode row. Arrow keys + Enter/Space toggle expansion. */
+  /**
+   * Row keymap, the same in every mode: ArrowUp/Down move, ArrowRight/Left
+   * expand/collapse a tree row, Enter opens (row-click), Space selects.
+   * 'single'/'multiple': Enter and Space both select with the click modifiers
+   * and emit row-click. 'checkbox': Enter only emits row-click, Space only
+   * toggles the row's checkbox.
+   */
   private onRowKeydown(
     row: unknown,
     key: string,
@@ -2794,10 +2804,31 @@ export class MpDatatable extends LitElement {
         this.toggleExpand(row, parentId, depth, ev);
         return;
       }
-      if ((ev.key === 'Enter' || ev.key === ' ') && childCount > 0) {
-        this.toggleExpand(row, parentId, depth, ev);
+      // Enter/Space deliberately do NOT expand (D13): one keymap for every row
+      // — Enter opens, Space selects, the arrows and the expander expand. The
+      // old shortcut made a parent row impossible to open from the keyboard.
+    }
+
+    if ((ev.key === 'Enter' || ev.key === ' ') && this._selectionMode === 'checkbox') {
+      // The keyboard face of 'checkbox' mode's pointer split: Space is the
+      // checkbox, Enter is the row click. Shift+Space does nothing — there is
+      // no range in this mode. preventDefault stops Space scrolling the page.
+      ev.preventDefault();
+      this._focusedRowKey = key;
+      if (ev.key === ' ') {
+        if (!ev.shiftKey) this.onRowCheckboxToggle(row, key);
+        this.requestUpdate();
         return;
       }
+      this.requestUpdate();
+      this.dispatchEvent(
+        new CustomEvent<RowEventDetail>('mp-datatable-row-click', {
+          detail: { row, rowIndex, rowKey: key, originalEvent: ev },
+          bubbles: true,
+          composed: true,
+        }),
+      );
+      return;
     }
 
     if ((ev.key === 'Enter' || ev.key === ' ') && this._selectionMode !== 'none') {
@@ -2849,9 +2880,9 @@ export class MpDatatable extends LitElement {
   }
 
   private onRowClick(row: unknown, key: string, rowIndex: number, ev: MouseEvent): void {
-    if ((ev.target as HTMLElement).closest('input[type="checkbox"]')) return;
     this._focusedRowKey = key;
-    this.handleSelectionOnClick(row, key, ev);
+    // In 'checkbox' mode a row click OPENS the row: only the checkbox selects.
+    if (this._selectionMode !== 'checkbox') this.handleSelectionOnClick(row, key, ev);
     this.requestUpdate();
     this.dispatchEvent(
       new CustomEvent<RowEventDetail>('mp-datatable-row-click', {
@@ -2873,8 +2904,9 @@ export class MpDatatable extends LitElement {
   }
 
   private onRowContextMenu(row: unknown, key: string, rowIndex: number, ev: MouseEvent): void {
-    // Promote the row to the selection if not already selected (file-manager convention).
-    if (this._selectionMode !== 'none' && !this._selectedIds.has(key)) {
+    // Promote the row to the selection if not already selected (file-manager
+    // convention). Not in 'checkbox' mode, where only the checkbox selects.
+    if (this._selectionMode !== 'none' && this._selectionMode !== 'checkbox' && !this._selectedIds.has(key)) {
       this.commitSelection([key], [[key, row]]);
       this._focusedRowKey = key;
       this.emitSelectionChange();
@@ -2894,7 +2926,29 @@ export class MpDatatable extends LitElement {
     if (!notCancelled) ev.preventDefault();
   }
 
-  /** Row checkboxes render only in `'multiple'` mode, so this is multi-select toggling. */
+  /**
+   * A click anywhere in the checkbox cell, in every mode. The cell is
+   * selection-only, so neither its click nor its double-click reaches the row
+   * (D12: a double-click on a checkbox used to open the row).
+   *
+   * In 'checkbox' mode the whole cell is the hit target, not just the 20px box.
+   * A click that went through the checkbox's own shadow root is the checkbox
+   * operating itself (its change handler toggles), so it is left alone; every
+   * other click toggles here. `closest('mp-checkbox')` cannot tell the two
+   * apart: a click on the checkbox host's padding is retargeted to the host yet
+   * fires no change, so it would be swallowed (spike S1). No focus() and no
+   * preventDefault(): the browser focuses the row natively, which keeps Enter,
+   * Space and the arrow keys working from there (spike S4).
+   */
+  private onCheckboxCellClick(row: unknown, key: string, ev: MouseEvent): void {
+    ev.stopPropagation();
+    if (this._selectionMode !== 'checkbox') return;
+    const checkboxRoot = (ev.currentTarget as HTMLElement).querySelector('mp-checkbox')?.shadowRoot;
+    if (checkboxRoot && ev.composedPath().includes(checkboxRoot)) return;
+    this.onRowCheckboxToggle(row, key);
+  }
+
+  /** Row checkboxes render only in the multi-select modes, so this is multi-select toggling. */
   private onRowCheckboxToggle(row: unknown, key: string): void {
     const willSelect = !this._selectedIds.has(key);
     // Cascading: the toggle propagates to every currently-loaded descendant.
