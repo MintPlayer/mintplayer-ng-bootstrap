@@ -6,6 +6,7 @@ import type {
   DatatableFetchRequest,
   DatatableFetchResponse,
   SelectionChangeEventDetail,
+  RowEventDetail,
   DistinctValue,
   FilterChangeDetail,
   FilterOperator,
@@ -156,6 +157,25 @@ const fetchOrders = useCallback(
 
 <BsDatatable columns={ORDER_COLUMNS} fetch={fetchOrders} virtualScroll itemSize={40} perPage={25} />`;
 
+// ─── Row selection: 'checkbox' mode ──────────────────────────────────────────
+// A row click only opens the row; the checkbox cell alone selects. The
+// selection is keyed by rowKey (stable — required with `fetch`), so it
+// survives paging and sorting.
+
+const orderRowKey = (row: unknown) => String((row as Order).id);
+const orderRowLabel = (row: unknown) => `order #${(row as Order).id}`;
+
+const SELECTION_SOURCE = `<BsDatatable
+  columns={ORDER_COLUMNS}
+  fetch={fetchOrders}          // stable: module-level or useCallback
+  perPage={10}
+  selectionMode="checkbox"     // row click opens; the checkbox cell selects
+  rowKey={(row) => String(row.id)}       // stable identity, required with fetch
+  rowLabel={(row) => \`order #\${row.id}\`} // "Select order #12"
+  onRowClick={(e) => setOpened(e.detail.row)}
+  onSelectionChange={(e) => setSelectedIds(e.detail.selectedIds)}
+/>`;
+
 // ─── Tree-mode demo ──────────────────────────────────────────────────────────
 
 interface TreeItem {
@@ -209,6 +229,15 @@ const fetchTree = useCallback(
 export function DatatablePage() {
   const [fetchedPages, setFetchedPages] = useState<number[]>([]);
   const [selectedRows, setSelectedRows] = useState<TreeItem[]>([]);
+  const [selectedOrderIds, setSelectedOrderIds] = useState<string[]>([]);
+  const [openedOrder, setOpenedOrder] = useState<Order | null>(null);
+
+  const onOrderSelectionChange = useCallback((e: CustomEvent<SelectionChangeEventDetail>) => {
+    setSelectedOrderIds(e.detail.selectedIds);
+  }, []);
+  const onOrderRowClick = useCallback((e: CustomEvent<RowEventDetail>) => {
+    setOpenedOrder(e.detail.row as Order);
+  }, []);
 
   // Real orders source (1000 seeded rows) + a live fetch log.
   const fetchWindowed = useCallback(
@@ -404,6 +433,50 @@ export function DatatablePage() {
         />
 
         <BsCodeSnippet code={WINDOWED_SOURCE} language="tsx" />
+      </section>
+
+      <section>
+        <h2>Row selection &mdash; checkbox mode</h2>
+        <p>
+          With <code>selectionMode="checkbox"</code> a row click only opens the
+          row (<code>onRowClick</code>); selecting happens in the checkbox cell
+          alone. The selection is keyed by <code>rowKey</code> &mdash; which must
+          be stable with <code>fetch</code> &mdash; so it survives paging and
+          sorting: tick a row, change page, and the count keeps it.{' '}
+          <code>rowLabel</code> names each checkbox for assistive technology.
+        </p>
+        <p className="text-body-secondary">
+          <small>
+            Selected {selectedOrderIds.length} order(s) &middot; Opened:{' '}
+            {openedOrder ? `#${openedOrder.id}` : '—'}
+          </small>
+        </p>
+
+        <BsDatatable
+          columns={ORDER_COLUMNS}
+          fetch={fetchOrders}
+          perPage={10}
+          selectionMode="checkbox"
+          rowKey={orderRowKey}
+          rowLabel={orderRowLabel}
+          onRowClick={onOrderRowClick}
+          onSelectionChange={onOrderSelectionChange}
+        />
+
+        <p className="text-body-secondary">
+          <small>
+            <strong>Keyboard, rows:</strong> <kbd>↑</kbd>/<kbd>↓</kbd> move
+            between rows; <kbd>→</kbd>/<kbd>←</kbd> expand/collapse a tree row.
+            In <code>checkbox</code> mode <kbd>Enter</kbd> opens the row and{' '}
+            <kbd>Space</kbd> toggles its checkbox. In the default{' '}
+            <code>multiple</code> mode <kbd>Enter</kbd> or <kbd>Space</kbd>{' '}
+            selects the row and then opens it, with <kbd>Ctrl</kbd> toggling and{' '}
+            <kbd>Shift</kbd> selecting a range &mdash; the same modifiers as a
+            click.
+          </small>
+        </p>
+
+        <BsCodeSnippet code={SELECTION_SOURCE} language="tsx" />
       </section>
 
       <section>

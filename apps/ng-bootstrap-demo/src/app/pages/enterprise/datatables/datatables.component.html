@@ -74,6 +74,57 @@
 
 <h2>Row selection</h2>
 
+<p>
+  Two selection styles. In the default <code>multiple</code> mode a row click
+  selects (<kbd>Ctrl</kbd>+click toggles, <kbd>Shift</kbd>+click selects a
+  range) and then emits <code>(rowClick)</code>, which is what the
+  <em>Basic usage</em> table above does. In <code>checkbox</code> mode, below, a
+  row click only <em>opens</em> the row: selecting happens in the checkbox cell
+  alone, anywhere inside it.
+</p>
+<p>
+  The selection is keyed by <code>[rowKey]</code>, so it survives paging,
+  sorting and <code>reload()</code>: tick rows here, move to another page, sort,
+  and the count keeps every key. With <code>[fetch]</code> that key must be
+  <strong>stable</strong>, taken from the row itself and never from its position.
+  <code>[rowLabel]</code> names each row checkbox for assistive technology
+  ("Select Coldplay").
+</p>
+
+<div class="d-flex flex-wrap align-items-center gap-2 mb-2 flex-shrink-0">
+  <button type="button" class="selection-reload" [color]="colors.secondary" (click)="checkboxTable.reload()">
+    Reload
+  </button>
+  <span class="small text-muted selection-count">{{ checkboxSelectionSummary() }}</span>
+  <span class="small text-muted">&middot;</span>
+  <span class="small text-muted selection-opened">{{ openedArtistSummary() }}</span>
+</div>
+
+<bs-datatable #checkboxTable class="flex-shrink-0 selection-table"
+  [fetch]="fetchArtists"
+  [(settings)]="checkboxSettings"
+  selectionMode="checkbox"
+  [rowKey]="rowKey"
+  [rowLabel]="rowLabel"
+  [(selection)]="checkboxSelection"
+  (rowClick)="openedArtist.set($event.row)">
+
+  <div *bsDatatableColumn="'Name'; sortable: true">Artist</div>
+  <div *bsDatatableColumn="'YearStarted'; sortable: true">Year started</div>
+  <div *bsDatatableColumn="'YearQuit'; sortable: true">Year quit</div>
+
+  <ng-container *bsRowTemplate="let artist">
+    <td class="text-nowrap">{{ $any(artist)?.name }}</td>
+    <td class="text-nowrap">{{ $any(artist)?.yearStarted }}</td>
+    <td class="text-nowrap">{{ $any(artist)?.yearQuit }}</td>
+  </ng-container>
+</bs-datatable>
+
+<p class="small text-muted">
+  Selected keys:
+  <span class="font-monospace selection-keys">{{ checkboxSelectionKeys() }}</span>
+</p>
+
 <bs-code-snippet [code]="snippetSelectionHtml" [language]="'html'"></bs-code-snippet>
 <bs-code-snippet [code]="snippetSelectionTs" [language]="'ts'"></bs-code-snippet>
 
@@ -239,6 +290,31 @@
   it and returns focus to the trigger. Clearing a filter moves focus back to the
   search box, because the clear button disables itself.
 </p>
+
+<bs-grid class="row-keymap text-muted small">
+  <div bsRow>
+    <div [md]="6">
+      <strong>Keyboard, rows &mdash; default (<code>multiple</code>) mode:</strong>
+      <ul class="mb-2">
+        <li><kbd>&uarr;</kbd> / <kbd>&darr;</kbd> move between rows.</li>
+        <li><kbd>Enter</kbd> or <kbd>Space</kbd> selects the row, then opens it (<code>rowClick</code>) &mdash; exactly like a click.</li>
+        <li><kbd>Ctrl</kbd>+<kbd>Space</kbd> toggles the row and <kbd>Shift</kbd>+<kbd>Space</kbd> selects a range, the same modifiers as <kbd>Ctrl</kbd>+click and <kbd>Shift</kbd>+click.</li>
+        <li><kbd>&rarr;</kbd> / <kbd>&larr;</kbd> expand / collapse a tree row.</li>
+        <li><kbd>Tab</kbd> reaches each row checkbox; <kbd>Space</kbd> on it toggles that row.</li>
+      </ul>
+    </div>
+    <div [md]="6">
+      <strong>Keyboard, rows &mdash; <code>checkbox</code> mode:</strong>
+      <ul class="mb-2">
+        <li><kbd>&uarr;</kbd> / <kbd>&darr;</kbd> move between rows.</li>
+        <li><kbd>Enter</kbd> opens the row (<code>rowClick</code>) and never selects it.</li>
+        <li><kbd>Space</kbd> toggles the row's checkbox and does not open it. There are no ranges.</li>
+        <li><kbd>&rarr;</kbd> / <kbd>&larr;</kbd> expand / collapse a tree row.</li>
+        <li>A click anywhere in the checkbox cell toggles the row; a click elsewhere only opens it.</li>
+      </ul>
+    </div>
+  </div>
+</bs-grid>
 
 <bs-checkbox [type]="'checkbox'" [(ngModel)]="showFilters" class="mb-3 d-block">
   Show the filter row

@@ -7,6 +7,7 @@ import type {
   DatatableFetchRequest,
   DatatableFetchResponse,
   SelectionChangeEventDetail,
+  RowEventDetail,
   DistinctValue,
   FilterChangeDetail,
   FilterOperator,
@@ -259,6 +260,10 @@ async function fetchWindowed(req: DatatableFetchRequest): Promise<DatatableFetch
   if (!fetchedPages.value.includes(req.page)) {
     fetchedPages.value = [...fetchedPages.value, req.page].sort((a, b) => a - b);
   }
+  return fetchOrders(req);
+}
+
+async function fetchOrders(req: DatatableFetchRequest): Promise<DatatableFetchResponse<Order>> {
   const res = await fetch(`${API_BASE}/api/orders/search`, {
     method: 'POST',
     headers: { 'content-type': 'application/json' },
@@ -276,6 +281,31 @@ async function fetchWindowed(req: DatatableFetchRequest): Promise<DatatableFetch
 
 const WINDOWED_SOURCE = `<!-- One callback; the WC owns page 1, every window, the total + scrollbar. -->
 <BsDatatable :columns="ORDER_COLUMNS" :fetch="fetchWindowed" :virtualScroll="true" :itemSize="40" :perPage="25" />`;
+
+// ─── Row selection: 'checkbox' mode ──────────────────────────────────────
+// A row click only opens the row; the checkbox cell alone selects. The
+// selection is keyed by rowKey (stable — required with `fetch`), so it
+// survives paging and sorting.
+const orderRowKey = (row: unknown) => String((row as Order).id);
+const orderRowLabel = (row: unknown) => `order #${(row as Order).id}`;
+const selectedOrderIds = ref<string[]>([]);
+const openedOrder = ref<Order | null>(null);
+const openedOrderSummary = computed(() => (openedOrder.value ? `#${openedOrder.value.id}` : '—'));
+
+function onOrderRowClick(detail: RowEventDetail) {
+  openedOrder.value = detail.row as Order;
+}
+
+const SELECTION_SOURCE = `<BsDatatable
+  :columns="ORDER_COLUMNS"
+  :fetch="fetchOrders"
+  :perPage="10"
+  selectionMode="checkbox"
+  :rowKey="(row) => String(row.id)"
+  :rowLabel="(row) => 'order #' + row.id"
+  v-model:selectedIds="selectedIds"
+  @rowClick="(detail) => (opened = detail.row)"
+/>`;
 
 // ─── Tree-mode demo ──────────────────────────────────────────────────────
 
@@ -391,6 +421,49 @@ const TREE_SOURCE = `<!-- The same callback, branching on req.parentId for roots
       />
 
       <BsCodeSnippet :code="WINDOWED_SOURCE" language="html" />
+    </section>
+
+    <section>
+      <h2>Row selection &mdash; checkbox mode</h2>
+      <p>
+        With <code>selectionMode="checkbox"</code> a row click only opens the row
+        (<code>@rowClick</code>); selecting happens in the checkbox cell alone.
+        The selection is keyed by <code>rowKey</code> &mdash; which must be stable
+        with <code>fetch</code> &mdash; so it survives paging and sorting: tick a
+        row, change page, and the count keeps it. <code>rowLabel</code> names
+        each checkbox for assistive technology.
+      </p>
+      <p class="text-body-secondary">
+        <small>
+          Selected {{ selectedOrderIds.length }} order(s) &middot; Opened:
+          {{ openedOrderSummary }}
+        </small>
+      </p>
+
+      <BsDatatable
+        :columns="ORDER_COLUMNS"
+        :fetch="fetchOrders"
+        :perPage="10"
+        selectionMode="checkbox"
+        :rowKey="orderRowKey"
+        :rowLabel="orderRowLabel"
+        v-model:selectedIds="selectedOrderIds"
+        @rowClick="onOrderRowClick"
+      />
+
+      <p class="text-body-secondary">
+        <small>
+          <strong>Keyboard, rows:</strong> <kbd>↑</kbd>/<kbd>↓</kbd> move between
+          rows; <kbd>→</kbd>/<kbd>←</kbd> expand/collapse a tree row. In
+          <code>checkbox</code> mode <kbd>Enter</kbd> opens the row and
+          <kbd>Space</kbd> toggles its checkbox. In the default
+          <code>multiple</code> mode <kbd>Enter</kbd> or <kbd>Space</kbd> selects
+          the row and then opens it, with <kbd>Ctrl</kbd> toggling and
+          <kbd>Shift</kbd> selecting a range &mdash; the same modifiers as a click.
+        </small>
+      </p>
+
+      <BsCodeSnippet :code="SELECTION_SOURCE" language="html" />
     </section>
 
     <section>

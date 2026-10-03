@@ -17,6 +17,8 @@ import { BsSelectComponent, BsSelectOption } from '@mintplayer/ng-bootstrap/sele
 import { BsCodeSnippetComponent } from '@mintplayer/ng-bootstrap/code-snippet';
 import { BsBadgeComponent } from '@mintplayer/ng-bootstrap/badge';
 import { BsCheckboxComponent } from '@mintplayer/ng-bootstrap/checkbox';
+import { BsButtonTypeDirective } from '@mintplayer/ng-bootstrap/button-type';
+import { BsGridComponent, BsGridRowDirective, BsGridColumnDirective } from '@mintplayer/ng-bootstrap/grid';
 import { dedent } from 'ts-dedent';
 import { Artist } from '../../../entities/artist';
 import { ArtistService } from '../../../services/artist/artist.service';
@@ -61,6 +63,8 @@ function compare(value: number, operator: FilterOperator, operand: number): bool
     BsCodeSnippetComponent,
     BsBadgeComponent,
     BsCheckboxComponent,
+    BsButtonTypeDirective,
+    BsGridComponent, BsGridRowDirective, BsGridColumnDirective,
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
@@ -87,9 +91,31 @@ export class DatatablesComponent {
       (response) => response ?? <PaginationResponse<Artist>>{ data: [], totalRecords: 0, totalPages: 1, page: req.page, perPage: req.perPage },
     );
 
-  compareArtists = (a: Artist, b: Artist) => a.id === b.id;
-
   rowKey = (a: Artist) => String(a.id);
+
+  // ─── Row selection demo: 'checkbox' mode ───────────────────────────────
+  // A row click only opens the row; the checkbox cell alone selects. The
+  // selection is keyed by rowKey, so it survives paging, sorting and reload().
+
+  checkboxSettings = signal(new DatatableSettings({
+    sortColumns: [],
+    perPage: { values: [10, 20, 50], selected: 10 },
+    page: { values: [1], selected: 1 },
+  }));
+
+  checkboxSelection = signal<Artist[]>([]);
+  openedArtist = signal<Artist | null>(null);
+
+  rowLabel = (a: Artist) => a.name;
+
+  checkboxSelectionSummary = computed(() => `Selected ${this.checkboxSelection().length} artist(s)`);
+  checkboxSelectionKeys = computed(() =>
+    this.checkboxSelection()
+      .map((a) => a.id)
+      .sort((a, b) => Number(a) - Number(b))
+      .join(', ') || '—',
+  );
+  openedArtistSummary = computed(() => `Opened: ${this.openedArtist()?.name ?? '—'}`);
 
   // ─── Lazy windowed-fetch demo (real artist API, server-paged) ──────────
   // Reuses the same real, server-paged artist endpoint as the basic section.
@@ -202,21 +228,36 @@ export class DatatablesComponent {
   `;
 
   protected readonly snippetSelectionHtml = dedent`
-    <!-- selectionMode = 'single' | 'multiple' | 'none'.
-         Provide [rowKey] so selection survives paging / re-fetch. -->
-    <bs-datatable
+    <!-- selectionMode = 'none' | 'single' | 'multiple' | 'checkbox'.
+         'checkbox': a row click only opens the row (rowClick); the checkbox
+         cell alone selects. Enter opens, Space toggles.
+
+         The selection is keyed by [rowKey] and survives paging, sorting and
+         reload(). With [fetch] the key MUST be stable — taken from the row,
+         never from its position. The default, String(row.id), is stable only
+         when every row has an id. -->
+    <button type="button" (click)="table.reload()">Reload</button>
+
+    <bs-datatable #table
       [fetch]="fetchArtists"
       [(settings)]="settings"
-      selectionMode="multiple"
+      selectionMode="checkbox"
       [rowKey]="rowKey"
-      [(selection)]="selection">
+      [rowLabel]="rowLabel"
+      [(selection)]="selection"
+      (rowClick)="opened.set($event.row)">
       <!-- columns + row template as above -->
     </bs-datatable>
   `;
 
   protected readonly snippetSelectionTs = dedent`
     selection = signal<Artist[]>([]);
+    opened = signal<Artist | null>(null);
+
+    // Identity: a stable key per row. Required with [fetch].
     rowKey = (a: Artist) => String(a.id);
+    // Names each row checkbox for assistive technology: "Select Coldplay".
+    rowLabel = (a: Artist) => a.name;
   `;
 
   protected readonly snippetWindowedHtml = dedent`
