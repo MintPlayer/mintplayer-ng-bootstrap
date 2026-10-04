@@ -4,3 +4,10 @@
 :host {
   display: inline-block;
 }
+
+// Fill the bs-select host, so a width set on <bs-select> (w-100, an explicit
+// width) reaches the inner <select>. An unsized bs-select is still
+// inline-block and still shrinks to its content.
+mp-select {
+  display: block;
+}
