@@ -268,7 +268,9 @@ export class BsDatatableComponent<TData> {
       let filterValues: WritableSignal<DistinctValues | null> | undefined;
       return {
         name: dir.name(),
+        label: dir.label(),
         sortable: dir.sortable(),
+        resizable: dir.resizable(),
         filterable: dir.filterable(),
         filterActive: dir.filterActive(),
         filterSummary: dir.filterSummary(),

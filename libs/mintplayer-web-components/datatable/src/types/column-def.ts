@@ -68,10 +68,22 @@ export type FilterRenderer<T = unknown> = (
 export interface DatatableColumnDef<T = unknown> {
   /** Data property name + sort key. */
   name: string;
-  /** Header label (rendered when no `headerRenderer` is provided). */
+  /**
+   * Header label (rendered when no `headerRenderer` is provided) and the
+   * column's name in every generated accessible string: resize handle, filter
+   * trigger and panel, sort and filter announcements. When absent, those
+   * strings use the text a `headerRenderer` node renders, and only then
+   * `name`. Set it when the header is icon-only or should be spoken differently.
+   */
   label?: string;
   /** Whether the header is clickable to toggle sort. Default `true`. */
   sortable?: boolean;
+  /**
+   * Whether this column offers a resize handle. Absent follows the table-wide
+   * `resizableColumns`; a set value wins over it in either direction, so one
+   * column can be resizable in a table that is not, and vice versa.
+   */
+  resizable?: boolean;
   /** Initial pinned width in px. Resizable columns can override at runtime. */
   width?: number;
   /** Cell renderer; defaults to `String(row[column.name])`. */

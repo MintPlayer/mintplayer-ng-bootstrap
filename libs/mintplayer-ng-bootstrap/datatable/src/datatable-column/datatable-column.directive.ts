@@ -47,6 +47,23 @@ export class BsDatatableColumnDirective {
 
   readonly sortable = input(true, { alias: 'bsDatatableColumnSortable' });
 
+  /**
+   * The column's name in generated accessible strings (resize handle, filter
+   * trigger and panel, announcements). Optional: without it the datatable uses
+   * the text the header template renders, so set it only for an icon-only
+   * header or when the spoken name should differ from the visible one.
+   */
+  readonly label = input<string | undefined>(undefined, { alias: 'bsDatatableColumnLabel' });
+
+  /**
+   * Whether this column offers a resize handle. Left unset it follows the
+   * table's `resizableColumns`; a set value wins over it in either direction.
+   * Deliberately no `true` default, which would override a table-wide `false`.
+   */
+  readonly resizable = input<boolean | undefined>(undefined, {
+    alias: 'bsDatatableColumnResizable',
+  });
+
   /** Opt this column into the filter row. Default `false`, unlike `sortable`. */
   readonly filterable = input(false, { alias: 'bsDatatableColumnFilterable' });
 

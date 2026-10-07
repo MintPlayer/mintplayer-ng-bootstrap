@@ -395,6 +395,13 @@ export class MpDatatable extends LitElement {
     );
   }
   private _columnWidths: Map<string, number> = new Map();
+  /**
+   * Text each column's header actually renders, read from a Node a
+   * headerRenderer returned. It names the column in generated strings when the
+   * consumer set no label, so a header template that says Artist is not
+   * announced by its internal key. See columnLabel().
+   */
+  private _derivedLabels: Map<string, string> = new Map();
   /** Becomes `true` after the first measure-once pass locks column widths. Drives the `.measured` class on the table (→ `table-layout: fixed`). */
   private _hasMeasuredInitial = false;
   private _loading = false;
@@ -1537,7 +1544,7 @@ export class MpDatatable extends LitElement {
 
     const column = this._columns.find((c) => c.name === name);
     this.liveAnnouncer.announce(
-      this.mergedLabels.announceFilter(column?.label ?? name, values.length),
+      this.mergedLabels.announceFilter(column ? this.columnLabel(column) : name, values.length),
     );
     this.dispatchEvent(
       new CustomEvent<FilterChangeDetail>('mp-datatable-filter-change', {
@@ -1587,7 +1594,7 @@ export class MpDatatable extends LitElement {
     const labels = this.mergedLabels;
     this.liveAnnouncer.announce(
       labels.announceComparisonFilter(
-        column?.label ?? name,
+        column ? this.columnLabel(column) : name,
         labels.filterOperatorLabel(operator),
         operand == null ? '' : String(operand),
       ),
@@ -1913,7 +1920,7 @@ export class MpDatatable extends LitElement {
           class="filter-panel"
           id=${this.filterPanelId}
           role="dialog"
-          aria-label=${this.mergedLabels.filterColumn(column.label ?? column.name)}
+          aria-label=${this.mergedLabels.filterColumn(this.columnLabel(column))}
         >
           <div class="filter-panel-body"></div>
         </div>
@@ -1980,7 +1987,7 @@ export class MpDatatable extends LitElement {
     }
 
     const labels = this.mergedLabels;
-    const columnLabel = column.label ?? column.name;
+    const columnLabel = this.columnLabel(column);
     const view = state.view;
     const selected = state.selection.values;
     // Selected values lead the list and stay there while the panel is open:
@@ -2057,7 +2064,7 @@ export class MpDatatable extends LitElement {
     body: HTMLElement,
   ): void {
     const labels = this.mergedLabels;
-    const columnLabel = column.label ?? column.name;
+    const columnLabel = this.columnLabel(column);
     const operators = column.filterOperators?.length
       ? column.filterOperators
       : DEFAULT_FILTER_OPERATORS;
@@ -2160,7 +2167,7 @@ export class MpDatatable extends LitElement {
 
     const open = this._openFilterColumn === col.name;
     const labels = this.mergedLabels;
-    const columnLabel = col.label ?? col.name;
+    const columnLabel = this.columnLabel(col);
     // Three distinct names, not a name plus a decoration: "filtered" has to be
     // part of the accessible name, because a user who cannot see the trigger's
     // active styling has nothing else telling them the column is filtered.
@@ -2196,12 +2203,43 @@ export class MpDatatable extends LitElement {
     `;
   }
 
+  /**
+   * The column's name in every generated string: the consumer's label, else the
+   * text its header renders, else its key. The header-text step is what makes a
+   * wrapper that only passes a header template (Angular) correct with no extra
+   * input, and that text is already localized because the consumer rendered it.
+   */
+  private columnLabel(col: DatatableColumnDef): string {
+    return col.label ?? this._derivedLabels.get(col.name) ?? col.name;
+  }
+
+  /**
+   * Caches the text of a Node header. Read during render, before lit moves a
+   * fragment's children into the cell, and only a non-empty text replaces the
+   * cache: a renderer that hands back the same, already-emptied fragment on a
+   * later render must not erase the name it had.
+   */
+  private deriveHeaderLabel(col: DatatableColumnDef, content: CellContent): void {
+    if (!(content instanceof Node)) {
+      this._derivedLabels.delete(col.name);
+      return;
+    }
+    const text = content.textContent?.replace(/\s+/g, ' ').trim();
+    if (text) this._derivedLabels.set(col.name, text);
+  }
+
+  /** The column's own flag wins in either direction; absent, the table-wide one. */
+  private isColumnResizable(col: DatatableColumnDef): boolean {
+    return col.resizable ?? this._resizableColumns;
+  }
+
   private renderHeader(col: DatatableColumnDef, _index: number): TemplateResult {
     const sortable = col.sortable ?? true;
     const sortIndex = this._sortColumns.findIndex((s) => s.property === col.name);
     const sortDirection = sortIndex >= 0 ? this._sortColumns[sortIndex].direction : null;
     const width = this._columnWidths.get(col.name) ?? col.width;
     const headerContent: CellContent = col.headerRenderer ? col.headerRenderer(col) : (col.label ?? col.name);
+    this.deriveHeaderLabel(col, headerContent);
 
     const style: Record<string, string> = {};
     if (typeof width === 'number') {
@@ -2235,13 +2273,13 @@ export class MpDatatable extends LitElement {
           : html`<span class="header-cell">
               <span>${renderContent(headerContent)}</span>
             </span>`}
-        ${this._resizableColumns
+        ${this.isColumnResizable(col)
           ? html`<span
               class="resize-handle"
               role="separator"
               tabindex="0"
               aria-orientation="vertical"
-              aria-label=${this.mergedLabels.resizeColumn(col.label ?? col.name)}
+              aria-label=${this.mergedLabels.resizeColumn(this.columnLabel(col))}
               aria-valuemin=${MIN_COLUMN_WIDTH}
               aria-valuenow=${Math.round(width ?? 0) || nothing}
               @pointerdown=${(ev: PointerEvent) => this.startColumnResize(col, ev)}
@@ -2975,7 +3013,7 @@ export class MpDatatable extends LitElement {
     const mine = next.find((sc) => sc.property === col.name);
     this.liveAnnouncer.announce(
       this.mergedLabels.announceSorted(
-        col.label ?? col.name,
+        this.columnLabel(col),
         mine ? (mine.direction === 'ascending' ? 'ascending' : 'descending') : 'none',
       ),
     );
@@ -3267,7 +3305,7 @@ export class MpDatatable extends LitElement {
    * audit's pointer-only finding for the datatable.
    */
   private onResizeHandleKeydown(col: DatatableColumnDef, ev: KeyboardEvent): void {
-    if (!this._resizableColumns) return;
+    if (!this.isColumnResizable(col)) return;
     if (ev.key !== 'ArrowLeft' && ev.key !== 'ArrowRight') return;
     ev.preventDefault();
     ev.stopPropagation();
@@ -3287,7 +3325,7 @@ export class MpDatatable extends LitElement {
   }
 
   private startColumnResize(col: DatatableColumnDef, ev: PointerEvent): void {
-    if (!this._resizableColumns) return;
+    if (!this.isColumnResizable(col)) return;
     ev.preventDefault();
     ev.stopPropagation();
     const handle = ev.currentTarget as HTMLElement;

@@ -9,6 +9,7 @@ import { BsNoNoscriptDirective } from '@mintplayer/ng-bootstrap/no-noscript';
 import { BsObserveSizeDirective } from '@mintplayer/ng-bootstrap/observe-size';
 import { BsPriorityNavItemDirective } from '../priority-nav-item/priority-nav-item.directive';
 import { computeOverflowIds, computeOverflowOrder } from './overflow';
+import { isClosingActivation } from './overflow-activation';
 
 @Component({
   selector: 'bs-priority-nav',
@@ -55,6 +56,8 @@ export class BsPriorityNavComponent {
   // More button width. Optional on purpose: the button exists only in the JS branch of the
   // template (the server renders a label instead), so this query is empty on the server.
   moreSizer = viewChild<BsObserveSizeDirective>('moreSize');
+  private moreButton = viewChild('moreSize', { read: ElementRef });
+  private overflowPanel = viewChild('overflowPanel', { read: ElementRef });
 
   // Open/closed state for the More menu (JS path)
   isMoreOpen = signal(false);
@@ -188,8 +191,29 @@ export class BsPriorityNavComponent {
 
   onEscape() {
     if (this.isMoreOpen() && this.stackToken !== null && this.overlayStack.isTop(this.stackToken)) {
-      this.isMoreOpen.set(false);
+      this.closeMore();
     }
+  }
+
+  /** Closes the panel after an item ACTION; see `isClosingActivation` for what counts as one. */
+  onOverflowClick(event: MouseEvent) {
+    if (event.button !== 0 || !this.isMoreOpen()) return;
+    const panel = this.overflowPanel()?.nativeElement;
+    if (panel && isClosingActivation(event.composedPath(), panel)) {
+      this.closeMore();
+    }
+  }
+
+  /**
+   * Closing hides the panel, so focus inside it would fall to `<body>`. It goes back to the More
+   * button instead, but only if it is still in the panel: an action that already moved focus
+   * elsewhere (a dialog it opened) keeps it.
+   */
+  private closeMore() {
+    const panel = this.overflowPanel()?.nativeElement;
+    const focusInPanel = !!panel && panel.contains(panel.ownerDocument.activeElement);
+    this.isMoreOpen.set(false);
+    if (focusInPanel) this.moreButton()?.nativeElement.focus();
   }
 
   onDocumentClick(event: MouseEvent) {
