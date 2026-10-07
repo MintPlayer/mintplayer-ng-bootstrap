@@ -218,20 +218,54 @@ tbody tr:focus-visible {
   opacity: 0.7;
 }
 
+// The hit area is wide and transparent; the line you see is the ::before. It
+// grows LEFTWARD, inside its own column, never across the border: in virtual
+// mode every header cell is sticky, and the next one would paint over an
+// overhang (and on the last column an overhang widens the scroller).
 .resize-handle {
   position: absolute;
   right: 0;
   top: 0;
-  width: 6px;
+  // WCAG 2.5.8: 24px, since the sort button abuts it and the spacing
+  // exception cannot apply. Capped so a narrow column keeps a sort target.
+  width: 24px;
+  max-width: 50%;
   height: 100%;
   cursor: col-resize;
   user-select: none;
   z-index: 2;
+  // Without this a touch drag is claimed by the scroller as a pan: the browser
+  // fires pointercancel a few pixels in and the resize stops. preventDefault()
+  // on pointerdown cannot prevent that, and touch-action is frozen at
+  // touchstart, so it must be declared up front.
+  touch-action: none;
+  -webkit-touch-callout: none;
 }
 
-.resize-handle:hover,
-.resize-handle.active {
+.resize-handle::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  right: 0;
+  width: 3px;
+}
+
+.resize-handle:hover::before,
+.resize-handle.active::before {
   background-color: var(--mp-datatable-resize-handle-color);
+}
+
+// A finger needs more than a mouse, and with no hover it needs to SEE where the
+// handle is, so the line rests visible.
+@media (pointer: coarse) {
+  .resize-handle {
+    width: 40px;
+  }
+
+  .resize-handle::before {
+    background-color: var(--mp-datatable-border-color);
+  }
 }
 
 /*! @mps-global */
@@ -481,6 +515,69 @@ tr.filter-row th {
   display: block;
   max-height: min(20rem, 60vh);
   overflow: auto;
+}
+
+// ─── Resize options dialog (overlay pane, opened by a tap or Enter on a handle)
+// The non-drag way to resize, so its targets are full touch size: whoever
+// opened it may well be on a phone.
+
+.resize-panel {
+  // Required for the same reason as on .filter-panel: the controller writes
+  // left/top onto this element.
+  position: fixed;
+  display: flex;
+  flex-direction: column;
+  gap: 0.375rem;
+  min-width: 12rem;
+  padding: 0.5rem;
+  background-color: var(--bs-body-bg, #fff);
+  color: var(--bs-body-color, inherit);
+  border: 1px solid var(--mp-datatable-border-color, var(--bs-border-color, rgba(0, 0, 0, 0.125)));
+  border-radius: 0.375rem;
+  box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
+}
+
+.resize-panel-steps {
+  display: flex;
+  align-items: center;
+  gap: 0.375rem;
+}
+
+.resize-panel-width {
+  flex: 1 1 auto;
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+}
+
+.resize-panel-step,
+.resize-panel-action {
+  min-height: 2.75rem;
+  padding: 0.25rem 0.75rem;
+  font: inherit;
+  color: inherit;
+  background: transparent;
+  border: 1px solid var(--mp-datatable-border-color, var(--bs-border-color, rgba(0, 0, 0, 0.125)));
+  border-radius: 0.25rem;
+  cursor: pointer;
+}
+
+.resize-panel-step {
+  flex: 0 0 2.75rem;
+  font-size: 1.25rem;
+  line-height: 1;
+}
+
+.resize-panel-step:hover,
+.resize-panel-action:hover {
+  // Fallbacks: the pane lives in document.body, outside the host that
+  // declares these properties.
+  background-color: var(--mp-datatable-row-hover-bg, rgba(var(--bs-emphasis-color-rgb), 0.04));
+}
+
+.resize-panel-step:focus-visible,
+.resize-panel-action:focus-visible {
+  outline: 2px solid var(--mp-datatable-resize-handle-color, var(--bs-primary, #0d6efd));
+  outline-offset: 1px;
 }
 
 // ─── Built-in filter panel ─────────────────────────────────────────────────

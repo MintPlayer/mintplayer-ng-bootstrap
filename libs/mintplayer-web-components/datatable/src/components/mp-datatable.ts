@@ -14,7 +14,13 @@ import { classMap } from 'lit/directives/class-map.js';
 import { styleMap } from 'lit/directives/style-map.js';
 import { datatableLightStyles } from '../styles';
 import { computeNextSort, sortRows, type SortColumn } from '../sort';
-import { KEYBOARD_RESIZE_STEP, MIN_COLUMN_WIDTH, resizedColumnWidth } from './column-resize';
+import {
+  fittedColumnWidth,
+  KEYBOARD_RESIZE_STEP,
+  MIN_COLUMN_WIDTH,
+  RESIZE_TAP_SLOP,
+  resizedColumnWidth,
+} from './column-resize';
 
 /**
  * Tier L (emulated encapsulation): this component has no shadow root, so every
@@ -227,7 +233,10 @@ let instanceCounter = 0;
  * - Row events: `mp-datatable-row-click`, `mp-datatable-row-dblclick`,
  *   `mp-datatable-row-contextmenu` — all carry `RowEventDetail`.
  * - Pagination footer when `pagination` enabled.
- * - Column resize via a 6px handle at the right edge of each header.
+ * - Column resize via a handle at the right edge of each header (24px hit
+ *   area, 40px on coarse pointers): drag, Left/Right arrows, or tap / Enter
+ *   for an options dialog (narrower, wider, fit, reset). Per column via
+ *   `DatatableColumnDef.resizable`, table-wide via `resizable-columns`.
  */
 export class MpDatatable extends LitElement {
   /**
@@ -395,6 +404,10 @@ export class MpDatatable extends LitElement {
     );
   }
   private _columnWidths: Map<string, number> = new Map();
+  /** Widths the measure pass chose, kept so Reset can return to them. */
+  private _measuredWidths: Map<string, number> = new Map();
+  /** Columns the user sized (drag, keys, the options dialog): never re-fitted. */
+  private _userWidths: Set<string> = new Set();
   /**
    * Text each column's header actually renders, read from a Node a
    * headerRenderer returned. It names the column in generated strings when the
@@ -1192,6 +1205,7 @@ export class MpDatatable extends LitElement {
     // template, so it is rendered here — during the same update the controller
     // awaits, which is why it is laid out by the time position() runs.
     if (this._openFilterColumn) this.renderFilterPanel();
+    if (this._openResizeColumn) this.renderResizePanel();
     // The filter row is sticky below the header in virtual mode, and `top`
     // cannot reference a sibling's height, so publish it. Measured per engine:
     // 36px in Chromium/Firefox, 33px in WebKit — a hard-coded value would be
@@ -2284,6 +2298,7 @@ export class MpDatatable extends LitElement {
               aria-valuenow=${Math.round(width ?? 0) || nothing}
               @pointerdown=${(ev: PointerEvent) => this.startColumnResize(col, ev)}
               @keydown=${(ev: KeyboardEvent) => this.onResizeHandleKeydown(col, ev)}
+              @focus=${() => this.onResizeHandleFocus()}
             ></span>`
           : nothing}
       </th>
@@ -3293,46 +3308,103 @@ export class MpDatatable extends LitElement {
 
   // ─── Column resize ───────────────────────────────────────────────────────
   private resizeState: {
-    columnName: string;
+    column: DatatableColumnDef;
+    pointerId: number;
     startX: number;
     startWidth: number;
     handle: HTMLElement;
+    /** Set once the pointer leaves the tap slop; until then nothing is resized. */
+    dragging: boolean;
   } | null = null;
 
-  /**
-   * Keyboard column resize — the same ±px model as the pointer path, same 40px
-   * floor. The handle is a focusable role="separator"; without this it was the
-   * audit's pointer-only finding for the datatable.
-   */
-  private onResizeHandleKeydown(col: DatatableColumnDef, ev: KeyboardEvent): void {
-    if (!this.isColumnResizable(col)) return;
-    if (ev.key !== 'ArrowLeft' && ev.key !== 'ArrowRight') return;
-    ev.preventDefault();
-    ev.stopPropagation();
+  /** The column whose resize options dialog is open, or null. */
+  private _openResizeColumn: string | null = null;
+  private _resizeHintAnnounced = false;
 
-    const handle = ev.currentTarget as HTMLElement;
-    const th = handle.closest('th');
-    const current = this._columnWidths.get(col.name)
-      ?? th?.getBoundingClientRect().width
-      ?? 100;
-    const next = resizedColumnWidth(
-      current,
-      ev.key === 'ArrowRight' ? KEYBOARD_RESIZE_STEP : -KEYBOARD_RESIZE_STEP,
-    );
+  /**
+   * Every resize path ends here. A user-set width is never re-fitted when the
+   * scroller resizes (see `refitMeasuredWidths`): the user chose it.
+   */
+  private setUserColumnWidth(name: string, width: number): void {
     this._columnWidths = new Map(this._columnWidths);
-    this._columnWidths.set(col.name, next);
+    this._columnWidths.set(name, width);
+    this._userWidths.add(name);
     this.requestUpdate();
   }
 
+  private currentColumnWidth(col: DatatableColumnDef): number {
+    return this._columnWidths.get(col.name)
+      ?? this.headerCell(col.name)?.getBoundingClientRect().width
+      ?? 100;
+  }
+
+  private headerCell(name: string): HTMLElement | null {
+    return this.renderRoot?.querySelector<HTMLElement>(
+      `thead tr:first-child th[data-column="${name}"]`,
+    ) ?? null;
+  }
+
+  private resizeHandle(name: string): HTMLElement | null {
+    return this.headerCell(name)?.querySelector<HTMLElement>('.resize-handle') ?? null;
+  }
+
+  /**
+   * Keyboard column resize — the same ±px model as the pointer path, same 40px
+   * floor. Enter opens the same options dialog a tap does, so every pointer
+   * path has a keyboard twin and the other way round.
+   */
+  private onResizeHandleKeydown(col: DatatableColumnDef, ev: KeyboardEvent): void {
+    if (!this.isColumnResizable(col)) return;
+    if (ev.key === 'Enter') {
+      ev.preventDefault();
+      ev.stopPropagation();
+      this.openResizePanel(col);
+      return;
+    }
+    if (ev.key !== 'ArrowLeft' && ev.key !== 'ArrowRight') return;
+    ev.preventDefault();
+    ev.stopPropagation();
+    this.stepColumnWidth(col, ev.key === 'ArrowRight' ? KEYBOARD_RESIZE_STEP : -KEYBOARD_RESIZE_STEP);
+  }
+
+  private stepColumnWidth(col: DatatableColumnDef, delta: number): void {
+    this.setUserColumnWidth(col.name, resizedColumnWidth(this.currentColumnWidth(col), delta));
+  }
+
+  /** The keymap, spoken once per element: a separator gives no hint of Enter on its own. */
+  private onResizeHandleFocus(): void {
+    if (this._resizeHintAnnounced) return;
+    this._resizeHintAnnounced = true;
+    this.liveAnnouncer.announce(this.mergedLabels.resizeColumnHint);
+  }
+
+  /**
+   * A press on a handle is a drag only once it moves past `RESIZE_TAP_SLOP`;
+   * released before that it is a tap, and a tap opens the options dialog. That
+   * dialog is the single-pointer alternative WCAG 2.5.7 requires for the drag,
+   * and the arrow keys do not count as one.
+   *
+   * The gesture itself is protected by `touch-action: none` on the handle, not
+   * by anything here: `preventDefault()` on pointerdown does not stop a touch
+   * pan, and a pan the browser claims ends in `pointercancel`.
+   */
   private startColumnResize(col: DatatableColumnDef, ev: PointerEvent): void {
     if (!this.isColumnResizable(col)) return;
+    // Right- and middle-click are not resize gestures (context menu, autoscroll).
+    if (ev.pointerType === 'mouse' && ev.button !== 0) return;
     ev.preventDefault();
     ev.stopPropagation();
     const handle = ev.currentTarget as HTMLElement;
     const th = handle.closest('th') as HTMLTableCellElement | null;
     if (!th) return;
-    const startWidth = th.getBoundingClientRect().width;
-    this.resizeState = { columnName: col.name, startX: ev.clientX, startWidth, handle };
+    this.resizeState = {
+      column: col,
+      pointerId: ev.pointerId,
+      startX: ev.clientX,
+      startWidth: th.getBoundingClientRect().width,
+      handle,
+      dragging: false,
+    };
     handle.classList.add('active');
     handle.setPointerCapture(ev.pointerId);
     handle.addEventListener('pointermove', this.onColumnResizeMove);
@@ -3341,26 +3413,153 @@ export class MpDatatable extends LitElement {
   }
 
   private onColumnResizeMove = (ev: PointerEvent): void => {
-    if (!this.resizeState) return;
-    const next = resizedColumnWidth(this.resizeState.startWidth, ev.clientX - this.resizeState.startX);
-    this._columnWidths = new Map(this._columnWidths);
-    this._columnWidths.set(this.resizeState.columnName, next);
-    this.requestUpdate();
+    const state = this.resizeState;
+    if (!state || ev.pointerId !== state.pointerId) return;
+    const delta = ev.clientX - state.startX;
+    if (!state.dragging && Math.abs(delta) <= RESIZE_TAP_SLOP) return;
+    state.dragging = true;
+    this.setUserColumnWidth(state.column.name, resizedColumnWidth(state.startWidth, delta));
   };
 
   private onColumnResizeEnd = (ev: PointerEvent): void => {
-    if (!this.resizeState) return;
-    this.resizeState.handle.classList.remove('active');
-    this.resizeState.handle.removeEventListener('pointermove', this.onColumnResizeMove);
-    this.resizeState.handle.removeEventListener('pointerup', this.onColumnResizeEnd);
-    this.resizeState.handle.removeEventListener('pointercancel', this.onColumnResizeEnd);
+    const state = this.resizeState;
+    if (!state || ev.pointerId !== state.pointerId) return;
+    state.handle.classList.remove('active');
+    state.handle.removeEventListener('pointermove', this.onColumnResizeMove);
+    state.handle.removeEventListener('pointerup', this.onColumnResizeEnd);
+    state.handle.removeEventListener('pointercancel', this.onColumnResizeEnd);
     try {
-      this.resizeState.handle.releasePointerCapture(ev.pointerId);
+      state.handle.releasePointerCapture(ev.pointerId);
     } catch {
       /* ignore */
     }
     this.resizeState = null;
+    if (ev.type === 'pointerup' && !state.dragging) this.openResizePanel(state.column);
   };
+
+  // Annotated for the same reason as filterOverlay: panel() reads it back.
+  private readonly resizeOverlay: OverlayController = new OverlayController(this, {
+    portal: true,
+    modal: true,
+    scrollStrategy: 'reposition',
+    // Re-queried by name: every render rebuilds the header row.
+    anchor: () => (this._openResizeColumn ? this.resizeHandle(this._openResizeColumn) : null),
+    trigger: () => (this._openResizeColumn ? this.resizeHandle(this._openResizeColumn) : null),
+    panel: () => this.resizeOverlay.portalContainer?.querySelector<HTMLElement>('.resize-panel') ?? null,
+    onClose: () => {
+      this._openResizeColumn = null;
+      this.requestUpdate();
+    },
+  });
+
+  private openResizePanel(col: DatatableColumnDef): void {
+    if (this.filterOverlay.isOpen) this.filterOverlay.close(false);
+    if (this.resizeOverlay.isOpen) this.resizeOverlay.close(false);
+    // Focus first, so the controller captures the handle as the element to
+    // return to: a mouse press whose pointerdown was default-prevented never
+    // focused it.
+    this.resizeHandle(col.name)?.focus({ preventScroll: true });
+    this._openResizeColumn = col.name;
+    this.requestUpdate();
+    void this.resizeOverlay.open();
+  }
+
+  /**
+   * The resize options dialog: step narrower, step wider, fit, reset. Rendered
+   * into the overlay pane with a render() of its own, like the filter panel,
+   * and for the same reasons — including being a NON-modal dialog in ARIA
+   * terms (#416): it is anchored, dismissible and does not own the page.
+   *
+   * The readout is an `output`, whose implicit status role announces each new
+   * width: the only feedback a screen reader gets for a step, because the
+   * buttons keep focus and the separator's valuenow is not where focus is.
+   */
+  private renderResizePanel(): void {
+    const container = this.resizeOverlay.portalContainer;
+    if (!container) return;
+    const col = this._columns.find((c) => c.name === this._openResizeColumn);
+    if (!col) return;
+    const labels = this.mergedLabels;
+    const name = this.columnLabel(col);
+    const width = Math.round(this.currentColumnWidth(col));
+    render(
+      html`
+        <div class="resize-panel" role="dialog" aria-label=${labels.resizeColumnOptions(name)}>
+          <div class="resize-panel-steps">
+            <button
+              type="button"
+              class="resize-panel-step"
+              aria-label=${labels.narrowerColumn(name)}
+              @click=${() => this.stepColumnWidth(col, -KEYBOARD_RESIZE_STEP)}
+            ><span aria-hidden="true">&minus;</span></button>
+            <output class="resize-panel-width">${labels.columnWidth(width)}</output>
+            <button
+              type="button"
+              class="resize-panel-step"
+              aria-label=${labels.widerColumn(name)}
+              @click=${() => this.stepColumnWidth(col, KEYBOARD_RESIZE_STEP)}
+            ><span aria-hidden="true">+</span></button>
+          </div>
+          <button type="button" class="resize-panel-action" @click=${() => this.fitColumnWidth(col)}>
+            ${labels.fitColumn}
+          </button>
+          <button type="button" class="resize-panel-action" @click=${() => this.resetColumnWidth(col)}>
+            ${labels.resetColumn}
+          </button>
+        </div>
+      `,
+      container,
+    );
+  }
+
+  /**
+   * Sizes the column to its widest RENDERED content: header plus the body rows
+   * currently in the DOM (one window, in virtual mode). Read with a Range,
+   * because a clipped cell's own box reports the column width, not its
+   * content's, while a range over its contents measures the text itself.
+   */
+  private fitColumnWidth(col: DatatableColumnDef): void {
+    const root = this.renderRoot;
+    if (!root) return;
+    const th = this.headerCell(col.name);
+    const headerContent = th?.querySelector<HTMLElement>('.header-cell > span') ?? null;
+    const headerBox = th?.querySelector<HTMLElement>('.header-cell') ?? null;
+    const cells = [...root.querySelectorAll<HTMLElement>(
+      `tbody tr[data-row-key] > td[data-column="${col.name}"]`,
+    )];
+    const widths = [
+      headerContent && headerBox && th
+        ? contentWidth(headerContent) + horizontalPadding(headerBox) + horizontalPadding(th)
+        : NaN,
+      ...cells.map((td) => contentWidth(td) + horizontalPadding(td)),
+    ];
+    const fitted = fittedColumnWidth(widths);
+    if (fitted != null) this.setUserColumnWidth(col.name, fitted);
+  }
+
+  /** Back to the width the table chose: the measured one, else the column's own. */
+  private resetColumnWidth(col: DatatableColumnDef): void {
+    const initial = this._measuredWidths.get(col.name) ?? col.width;
+    this._columnWidths = new Map(this._columnWidths);
+    if (typeof initial === 'number') this._columnWidths.set(col.name, initial);
+    else this._columnWidths.delete(col.name);
+    this._userWidths.delete(col.name);
+    this.requestUpdate();
+  }
+}
+
+/** Width of an element's CONTENTS, unclipped; NaN where layout is unavailable (jsdom). */
+function contentWidth(el: Element): number {
+  const doc = el.ownerDocument;
+  if (typeof doc.createRange !== 'function') return NaN;
+  const range = doc.createRange();
+  range.selectNodeContents(el);
+  return typeof range.getBoundingClientRect === 'function' ? range.getBoundingClientRect().width : NaN;
+}
+
+function horizontalPadding(el: Element): number {
+  const style = getComputedStyle(el);
+  return (parseFloat(style.paddingLeft) || 0) + (parseFloat(style.paddingRight) || 0);
 }
 
 function defaultCellContent(row: unknown, col: DatatableColumnDef): CellContent {
