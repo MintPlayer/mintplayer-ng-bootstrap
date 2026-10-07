@@ -72,6 +72,45 @@
 
 <bs-code-snippet [code]="snippetSortableHtml" [language]="'html'"></bs-code-snippet>
 
+<h2>Column resizing</h2>
+
+<p>
+  Drag the line at the right edge of a header, or focus it and use the keyboard.
+  A tap or click on it, without dragging, opens the resize options instead.
+</p>
+<ul>
+  <li><kbd>Tab</kbd> reaches each column's resize handle.</li>
+  <li><kbd>&larr;</kbd> / <kbd>&rarr;</kbd> make the column 10&nbsp;px narrower or wider.</li>
+  <li><kbd>Enter</kbd> opens the resize options: narrower, wider, fit to content, reset. <kbd>Esc</kbd> closes them.</li>
+</ul>
+
+<bs-datatable class="flex-shrink-0 resize-table"
+  [fetch]="fetchArtists"
+  [(settings)]="resizeSettings">
+
+  <div *bsDatatableColumn="'Name'">Artist</div>
+  <div *bsDatatableColumn="'YearStarted'">Year started</div>
+  <div *bsDatatableColumn="'actions'; sortable: false; resizable: false; label: 'Actions'">
+    <span aria-hidden="true">&#8943;</span>
+  </div>
+
+  <ng-container *bsRowTemplate="let artist">
+    <td class="text-nowrap">{{ $any(artist)?.name }}</td>
+    <td class="text-nowrap">{{ $any(artist)?.yearStarted }}</td>
+    <td>
+      <button type="button" class="btn btn-sm btn-outline-secondary"
+              [attr.aria-label]="'Details for ' + $any(artist)?.name"
+              (click)="inspectedArtist.set($any(artist))">Details</button>
+    </td>
+  </ng-container>
+</bs-datatable>
+
+@if (inspectedArtist(); as artist) {
+  <small class="text-muted">Details for {{ artist.name }}.</small>
+}
+
+<bs-code-snippet [code]="snippetResizeHtml" [language]="'html'"></bs-code-snippet>
+
 <h2>Row selection</h2>
 
 <p>

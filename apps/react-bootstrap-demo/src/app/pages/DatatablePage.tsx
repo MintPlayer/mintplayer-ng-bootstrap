@@ -55,6 +55,41 @@ function compare(value: number, operator: FilterOperator, operand: number): bool
 
 const SIMPLE_SOURCE = `<BsDatatable columns={COLUMNS} data={ARTISTS} />`;
 
+// Column resizing: the actions column has an icon-only header, so `label`
+// names it in the generated strings, and `resizable: false` drops its handle.
+function actionsHeader(): Node {
+  const glyph = document.createElement('span');
+  glyph.setAttribute('aria-hidden', 'true');
+  glyph.textContent = '⋯';
+  return glyph;
+}
+
+function detailsButton(row: unknown): Node {
+  const button = document.createElement('button');
+  button.type = 'button';
+  button.className = 'btn btn-sm btn-outline-secondary';
+  button.textContent = 'Details';
+  button.setAttribute('aria-label', `Details for ${(row as Artist).name}`);
+  return button;
+}
+
+const RESIZE_COLUMNS: DatatableColumnDef[] = [
+  { name: 'name',    label: 'Name' },
+  { name: 'genre',   label: 'Genre' },
+  { name: 'actions', label: 'Actions', sortable: false, resizable: false,
+    headerRenderer: actionsHeader, cellRenderer: detailsButton },
+];
+
+const RESIZE_SOURCE = `const RESIZE_COLUMNS: DatatableColumnDef[] = [
+  { name: 'name',  label: 'Name' },
+  { name: 'genre', label: 'Genre' },
+  // Icon-only header: label names it; resizable: false drops its handle.
+  { name: 'actions', label: 'Actions', sortable: false, resizable: false,
+    headerRenderer: actionsHeader, cellRenderer: detailsButton },
+];
+
+<BsDatatable columns={RESIZE_COLUMNS} data={ARTISTS} />`;
+
 const FILTER_SOURCE = `// filterable is the whole opt-in: with no filterRenderer the built-in
 // panel renders — search, include/exclude, a checkbox list of the
 // column's distinct values, and clear. No React code behind it.
@@ -403,6 +438,22 @@ export function DatatablePage() {
         <h2>Simple in-memory table</h2>
         <BsDatatable columns={COLUMNS} data={ARTISTS} />
         <BsCodeSnippet code={SIMPLE_SOURCE} language="tsx" />
+      </section>
+
+      <section>
+        <h2>Column resizing</h2>
+        <p>
+          Drag the line at the right edge of a header, or focus it and use the
+          keyboard. A tap or click on it, without dragging, opens the resize
+          options instead.
+        </p>
+        <ul>
+          <li><kbd>Tab</kbd> reaches each column's resize handle.</li>
+          <li><kbd>&larr;</kbd> / <kbd>&rarr;</kbd> make the column 10&nbsp;px narrower or wider.</li>
+          <li><kbd>Enter</kbd> opens the resize options: narrower, wider, fit to content, reset. <kbd>Esc</kbd> closes them.</li>
+        </ul>
+        <BsDatatable columns={RESIZE_COLUMNS} data={ARTISTS} />
+        <BsCodeSnippet code={RESIZE_SOURCE} language="tsx" />
       </section>
 
       <section>

@@ -143,6 +143,10 @@ thead th[data-sortable="true"] {
     display: block;
     opacity: 0.3;
     bottom: 0.5em;
+    // They paint over the sort button, so without this a click on the arrows
+    // lands on the th, which has no listener: a dead zone 12-24px wide at the
+    // right of every sortable header (measured, #426 spike S2).
+    pointer-events: none;
   }
 
   &::before {

@@ -93,6 +93,39 @@ export class DatatablesComponent {
 
   rowKey = (a: Artist) => String(a.id);
 
+  // ─── Column resizing demo ──────────────────────────────────────────────
+  // Per-column resizable + label: the actions column has a fixed width and an
+  // icon-only header, so it opts out of resizing and names itself.
+
+  resizeSettings = signal(new DatatableSettings({
+    sortColumns: [],
+    perPage: { values: [10, 20, 50], selected: 10 },
+    page: { values: [1], selected: 1 },
+  }));
+
+  inspectedArtist = signal<Artist | null>(null);
+
+  protected readonly snippetResizeHtml = dedent`
+    <bs-datatable [fetch]="fetchArtists" [(settings)]="settings">
+      <!-- No label needed: the generated names use the header text, "Artist". -->
+      <div *bsDatatableColumn="'Name'">Artist</div>
+      <div *bsDatatableColumn="'YearStarted'">Year started</div>
+      <!-- Icon-only header: label names it; resizable: false drops its handle. -->
+      <div *bsDatatableColumn="'actions'; sortable: false; resizable: false; label: 'Actions'">
+        <span aria-hidden="true">&#8943;</span>
+      </div>
+
+      <ng-container *bsRowTemplate="let artist">
+        <td>{{ artist?.name }}</td>
+        <td>{{ artist?.yearStarted }}</td>
+        <td>
+          <button type="button" class="btn btn-sm btn-outline-secondary"
+                  (click)="inspect(artist)">Details</button>
+        </td>
+      </ng-container>
+    </bs-datatable>
+  `;
+
   // ─── Row selection demo: 'checkbox' mode ───────────────────────────────
   // A row click only opens the row; the checkbox cell alone selects. The
   // selection is keyed by rowKey, so it survives paging, sorting and reload().
