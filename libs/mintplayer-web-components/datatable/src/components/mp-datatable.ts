@@ -433,6 +433,15 @@ export class MpDatatable extends LitElement {
   private _virtualRange: { startIndex: number; endIndex: number } = { startIndex: 0, endIndex: 0 };
   private _scrollElement: HTMLElement | null = null;
   private _resizeObserver: ResizeObserver | null = null;
+  /**
+   * Re-renders when a header's TEXT changes in place. A wrapper's header view
+   * (Angular's EmbeddedViewRef) updates its own nodes — a language switch, say
+   * — without any property of this element changing, so without this the
+   * names derived from header text would go stale until some unrelated render.
+   * A render that changes nothing mutates nothing, so it cannot loop.
+   */
+  private _headerObserver: MutationObserver | null = null;
+  private _observedThead: Element | null = null;
   private _scrollListener: (() => void) | null = null;
   private _viewportHeight = 0;
 
@@ -1206,6 +1215,7 @@ export class MpDatatable extends LitElement {
     // awaits, which is why it is laid out by the time position() runs.
     if (this._openFilterColumn) this.renderFilterPanel();
     if (this._openResizeColumn) this.renderResizePanel();
+    this.observeHeaderText();
     // The filter row is sticky below the header in virtual mode, and `top`
     // cannot reference a sibling's height, so publish it. Measured per engine:
     // 36px in Chromium/Firefox, 33px in WebKit — a hard-coded value would be
@@ -1290,6 +1300,8 @@ export class MpDatatable extends LitElement {
     this._scrollListener = null;
     this._resizeObserver?.disconnect();
     this._resizeObserver = null;
+    this._headerObserver?.disconnect();
+    this._observedThead = null;
     this._scrollElement = null;
     // Timers and in-flight requests outlive the element otherwise, and a
     // debounced re-query firing after disconnect writes to a dead panel.
@@ -2240,6 +2252,34 @@ export class MpDatatable extends LitElement {
     }
     const text = content.textContent?.replace(/\s+/g, ' ').trim();
     if (text) this._derivedLabels.set(col.name, text);
+  }
+
+  /** Idempotent; re-attaches if the thead was replaced or the element reconnected. */
+  private observeHeaderText(): void {
+    if (typeof MutationObserver === 'undefined') return;
+    const thead = this.renderRoot?.querySelector('thead') ?? null;
+    if (thead === this._observedThead) return;
+    this._headerObserver ??= new MutationObserver(() => {
+      if (this.headerTextChanged()) this.requestUpdate();
+    });
+    this._headerObserver.disconnect();
+    this._observedThead = thead;
+    if (thead) this._headerObserver.observe(thead, { characterData: true, childList: true, subtree: true });
+  }
+
+  /**
+   * Whether a header now shows different text than the name derived from it.
+   * The gate that keeps the observer from looping: a renderer that returns
+   * fresh nodes on every call (a new fragment each time, the React/Vue
+   * render-prop shape) mutates the header on EVERY render, but its text stays
+   * the same, so only a real change re-renders.
+   */
+  private headerTextChanged(): boolean {
+    return [...this._derivedLabels].some(([name, derived]) => {
+      const content = this.headerCell(name)?.querySelector('.header-cell > span');
+      const text = content?.textContent?.replace(/\s+/g, ' ').trim();
+      return !!text && text !== derived;
+    });
   }
 
   /** The column's own flag wins in either direction; absent, the table-wide one. */

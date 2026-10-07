@@ -195,3 +195,72 @@ describe('BsPriorityNavComponent on the server', () => {
     expect(nav.itemsWithMeta()[0].hideBelowClass).toBe('priority-nav-item-hide-below-md');
   });
 });
+
+@Component({
+  selector: 'priority-nav-action-test',
+  imports: [BsPriorityNavComponent, BsPriorityNavItemDirective],
+  template: `
+    <bs-priority-nav [hideEmptyMore]="false">
+      <button *bsPriorityNavItem="1" type="button" class="action" (click)="runs.set(runs() + 1)">Run</button>
+      <button *bsPriorityNavItem="2" type="button" class="submenu" aria-haspopup="menu" aria-expanded="false">Sub</button>
+      <input *bsPriorityNavItem="3" class="field" aria-label="Search">
+    </bs-priority-nav>
+  `,
+})
+class ActionHostComponent {
+  readonly runs = signal(0);
+}
+
+describe('BsPriorityNavComponent overflow item activation (#426)', () => {
+  let fixture: ComponentFixture<ActionHostComponent>;
+  const nav = () => fixture.debugElement.query(By.directive(BsPriorityNavComponent)).componentInstance as BsPriorityNavComponent;
+  const toggle = () => fixture.nativeElement.querySelector('.priority-nav-more-toggle') as HTMLButtonElement;
+  const inOverflow = (selector: string) =>
+    fixture.nativeElement.querySelector(`.priority-nav-overflow ${selector}`) as HTMLElement;
+
+  beforeEach(() => {
+    fixture = TestBed.createComponent(ActionHostComponent);
+    document.body.appendChild(fixture.nativeElement);
+    fixture.detectChanges();
+    toggle().click();
+    fixture.detectChanges();
+  });
+
+  afterEach(() => fixture.nativeElement.remove());
+
+  it('an action item runs AND closes the menu, returning focus to More', () => {
+    const action = inOverflow('.action');
+    action.focus();
+    action.click();
+    fixture.detectChanges();
+    expect(fixture.componentInstance.runs()).toBe(1);
+    expect(nav().isMoreOpen()).toBe(false);
+    expect(toggle().getAttribute('aria-expanded')).toBe('false');
+    expect(document.activeElement).toBe(toggle());
+  });
+
+  it('does not steal focus an action already moved elsewhere', () => {
+    const elsewhere = document.createElement('button');
+    document.body.appendChild(elsewhere);
+    const action = inOverflow('.action');
+    action.addEventListener('click', () => elsewhere.focus());
+    action.click();
+    expect(nav().isMoreOpen()).toBe(false);
+    expect(document.activeElement).toBe(elsewhere);
+    elsewhere.remove();
+  });
+
+  it('a nested-menu trigger and a form field keep the menu open', () => {
+    inOverflow('.submenu').click();
+    expect(nav().isMoreOpen()).toBe(true);
+    inOverflow('.field').click();
+    expect(nav().isMoreOpen()).toBe(true);
+  });
+
+  it('Escape returns focus from inside the panel to More', () => {
+    inOverflow('.field').focus();
+    document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape' }));
+    expect(nav().isMoreOpen()).toBe(false);
+    expect(document.activeElement).toBe(toggle());
+  });
+});

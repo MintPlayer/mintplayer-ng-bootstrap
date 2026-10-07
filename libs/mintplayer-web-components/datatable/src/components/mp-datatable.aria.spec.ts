@@ -480,3 +480,71 @@ describe('mp-datatable row checkbox names (D14)', () => {
     expect(names(el)).toEqual(['Selecteer Alpha', 'Selecteer Beta', 'Selecteer Gamma']);
   });
 });
+
+describe('mp-datatable column names in generated strings (#426)', () => {
+  beforeEach(() => {
+    document.body.innerHTML = '';
+  });
+
+  /** The Angular wrapper's shape: no label, the header is a node from a template. */
+  function nodeHeader(text: string): () => Node {
+    return () => {
+      const div = document.createElement('div');
+      div.textContent = text;
+      return div;
+    };
+  }
+
+  async function mountColumns(columns: unknown[]): Promise<MpDatatable> {
+    document.body.innerHTML = '<mp-datatable></mp-datatable>';
+    const el = document.querySelector('mp-datatable') as MpDatatable;
+    (el as unknown as { columns: unknown }).columns = columns;
+    (el as unknown as { data: unknown }).data = DATA;
+    await settle(el);
+    return el;
+  }
+
+  const resizeName = (el: MpDatatable, column: string) =>
+    th(el, column).querySelector('.resize-handle')?.getAttribute('aria-label');
+
+  it('uses the text a header node renders when no label is set', async () => {
+    const el = await mountColumns([{ name: 'name', headerRenderer: nodeHeader('  Artist\n ') }]);
+    expect(resizeName(el, 'name')).toBe('Resize column Artist');
+    clickHeader(el, 'name');
+    await el.updateComplete;
+    expect(liveText(el)).toBe('Sorted by Artist, ascending');
+  });
+
+  it('prefers an explicit label over the header text', async () => {
+    const el = await mountColumns([
+      { name: 'actions', label: 'Actions', headerRenderer: nodeHeader('⋯') },
+    ]);
+    expect(resizeName(el, 'actions')).toBe('Resize column Actions');
+  });
+
+  it('falls back to the name when the header renders no text', async () => {
+    const el = await mountColumns([{ name: 'name', headerRenderer: nodeHeader('') }]);
+    expect(resizeName(el, 'name')).toBe('Resize column name');
+  });
+
+  it('keeps the derived name when a renderer hands back an already-emptied fragment', async () => {
+    const frag = document.createDocumentFragment();
+    const span = document.createElement('span');
+    span.textContent = 'Artist';
+    frag.appendChild(span);
+    // Same fragment every call: after the first render lit has moved its
+    // children into the cell, so later calls see an empty fragment.
+    const el = await mountColumns([{ name: 'name', headerRenderer: () => frag }]);
+    el.requestUpdate();
+    await settle(el);
+    expect(resizeName(el, 'name')).toBe('Resize column Artist');
+  });
+
+  it('names the filter trigger from the header text too', async () => {
+    const el = await mountColumns([
+      { name: 'name', filterable: true, headerRenderer: nodeHeader('Artist') },
+    ]);
+    const trigger = shadow(el).querySelector('tr.filter-row .filter-trigger');
+    expect(trigger?.getAttribute('aria-label')).toBe('Filter Artist');
+  });
+});
