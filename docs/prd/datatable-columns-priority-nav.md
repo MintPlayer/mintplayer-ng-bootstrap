@@ -1,6 +1,8 @@
 # PRD — Datatable column fixes (phantom scrollbar, column labels, per-column resize, touch resize) and priority-nav close-on-action
 
-**Status:** Proposed (2026-10-07). Investigated; spikes S1–S4 are still open (§8).
+**Status:** Implemented (2026-10-07), pending the M9 sweep and the real-device check S4. The
+recommendations in §4 were adopted as written, without a grilling round; spike verdicts are in §8.1 and
+as-built deviations in §11.
 **Plan:** [datatable-columns-priority-nav-plan.md](./datatable-columns-priority-nav-plan.md)
 **Related issues:** #426 (this), MintPlayer.Spark generic query grid (consumer, ships stopgaps for items 2 and 4)
 
@@ -331,6 +333,72 @@ stopgaps after the release; that removal is tracked in Spark, not here.
 
 No spike is needed for items 2, 3 and 4; the code fully determines them.
 
+### 8.1 Verdicts (2026-10-07)
+
+The spike pages are `docs/prd/_spike-datatable-rounding.html` and `_spike-datatable-touch-resize.html`,
+standalone replicas of the datatable's layout and handle logic, driven by Playwright 1.62.
+
+**S1 — rounding (→ D1: `Math.floor`).** Horizontal overflow right after measuring:
+
+| mode | 1094 / 1095 / 1097 px, fractional containers | 254 px phone |
+|---|---|---|
+| ceil (before) | 1–3 px in every cell | scrolls |
+| floor | 0 | scrolls |
+| fractional | 0 | scrolls |
+
+The results were identical in Chromium, Firefox and WebKit at DPR 1, 1.25 and 1.5; DPR has no effect
+because layout is in CSS px.
+
+Fractional also passes, but it overflows as soon as the container shrinks by 1 px after measuring.
+Floor absorbs that jitter with its ≤N px of slack.
+
+**S1b — re-fit (→ D2: needed).**
+
+- After measuring, a classic vertical scrollbar brings back 13 px of overflow in Chromium and 15 px in
+  Firefox. WebKit on Windows only has overlay scrollbars, so it could not be tested.
+- Narrowing the window by 100 px gives 98–99 px of overflow.
+- A proportional re-fit clears both to 0, and nothing oscillates.
+
+Three pitfalls shaped the implementation:
+
+1. Re-fitting inside the ResizeObserver callback, or in a microtask, reports "ResizeObserver loop completed
+   with undelivered notifications" to `window.onerror`. A `requestAnimationFrame` deferral avoids that.
+2. Scaling from the previous result ratchets the widths down, because each pass floors again. The re-fit
+   therefore always scales from the measured base.
+3. Unbounded scaling crushes a desktop table at phone width to 40 px columns, and those still overflow.
+   The scale is therefore bounded at **0.75** (`MIN_REFIT_SCALE`). Below that the columns keep 75 % and the
+   table scrolls.
+
+   This bound was **decided during implementation, not grilled.** It is continuous: there is no jump back
+   to the full widths at the threshold.
+
+**S2 — touch (→ D7.1 and D7.2 confirmed).** The test uses a Pixel 7 emulation with CDP touch input and
+drags +80 px:
+
+| variant | Δwidth | pointercancel | Δ scrollLeft |
+|---|---|---|---|
+| as-is | ±16 | yes, after 2 moves | 65 (the scroller panned) |
+| hit area only | ±16 | yes | 65 |
+| `touch-action: none` | ±80 | no | 0 |
+
+So the root cause is `touch-action`. The target size is an independent second problem:
+
+- **Today:** a touch landing 12 px or more from the border misses the handle.
+- **With the 40 px coarse handle:** touches from 0 to 40 px all land on the handle, with zero mis-sorts.
+  Beyond 48 px the touch sorts, as it should.
+
+A tap fires `pointerdown → pointerup → click` with no `pointercancel`. A 1.2 s long-press produces the same
+sequence, so a long-press without movement also opens the options dialog. This is accepted: a user who
+pressed and held without moving gets the non-drag alternative.
+
+**S3 — overhang (→ the hit area stays inside the column).** In virtual mode a 12 px overhang across the
+border is painted over by the neighbouring sticky `th`. `elementFromPoint` returns the next column's sort
+button, and a touch there does not resize.
+
+**Found by S2: a dead zone in every sortable header.** The ↑/↓ sort arrows are `::before`/`::after` on the
+`th` and paint over the sort button. A click 12–24 px from the right edge therefore hit the `th`, which has
+no listener, and did not sort. This affected the mouse too, and is fixed with `pointer-events: none`.
+
 ## 9. Testing
 
 - **WC (vitest/jsdom).**
@@ -378,3 +446,20 @@ No spike is needed for items 2, 3 and 4; the code fully determines them.
       grid. The hit target is ≥ 24 px (≥ ~40 px on coarse pointers), and a tap opens the non-drag resize
       popover.
 - [ ] The demo pages in all three frameworks show the label, a non-resizable column and the resize keymap.
+
+## 11. As-built deviations
+
+- **Header-text labels stay live.** A wrapper's header view can change its text in place (an Angular
+  language switch) without any property of the element changing. So `mp-datatable` observes `thead` with a
+  `MutationObserver` and re-renders when a header's text differs from the name it derived.
+  - The observer is gated on that difference. A renderer that returns fresh nodes on every call mutates the
+    header on every render, and an ungated observer would loop on it.
+- **The handle carries no `aria-haspopup` or `aria-expanded`.** Neither is allowed on `role="separator"`. Enter
+  is announced as part of the keymap instead (`resizeColumnHint`).
+- **The resize dialog's width readout is an `<output>`.** Its implicit status role is the one channel that
+  announces each new width, because the step buttons keep focus.
+- **Reset** returns a column to its measured base and lets it rejoin the re-fit.
+- **The `isClosingActivation` helper lives in its own file**, `overflow-activation.ts`. `overflow.ts` is
+  documented as pure number functions, so the helper does not go there.
+- **The priority-nav demo gains an "Actions in the overflow" section.** It holds button items under
+  `collapseAt='sm'`, which is the e2e target.

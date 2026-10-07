@@ -1,0 +1,185 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Spike S1/S1b: datatable rounding</title>
+<!--
+  Spike S1 / S1b for docs/prd/datatable-columns-priority-nav.md (D1, D2).
+  Replicates the mp-datatable layout mechanism: .datatable-scroll overflow:auto,
+  table width:100% border-collapse:collapse, auto layout, measure each data th via
+  getBoundingClientRect, round, write inline width + min-width, switch to
+  table-layout:fixed. The 2.5rem checkbox column is never pinned.
+  Driven by a node + playwright runner (window.spike API below).
+-->
+<style>
+  * { box-sizing: border-box; }
+  body { margin: 0; padding: 8px; font: 16px/1.5 system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif; background: #fff; }
+  .host { display: block; width: 1094px; }
+  .datatable-shell { display: flex; flex-direction: column; width: 100%; height: 100%; }
+  .datatable-scroll { overflow: auto; flex: 1 1 auto; }
+  table { width: 100%; border-collapse: collapse; table-layout: auto; }
+  table.measured { table-layout: fixed; }
+  thead th { border-bottom: 1px solid rgba(0,0,0,.125); text-align: left; font-weight: 600; padding: 0.5rem 0.75rem; white-space: nowrap; position: relative; }
+  tbody td { padding: 0.5rem 0.75rem; border-bottom: 1px solid rgba(0,0,0,.125); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .checkbox-cell { width: 2.5rem; padding-inline: 0.5rem !important; text-align: center; text-overflow: clip; }
+  .checkbox-cell input { width: 20px; height: 20px; margin: 0; vertical-align: middle; }
+  .fixedw { display: inline-block; vertical-align: top; }
+</style>
+</head>
+<body>
+<div class="host" id="host">
+  <div class="datatable-shell">
+    <div class="datatable-scroll" id="scroller">
+      <table id="table">
+        <thead><tr id="hr"></tr></thead>
+        <tbody id="tb"></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+<script>
+(() => {
+  const host = document.getElementById('host');
+  const scroller = document.getElementById('scroller');
+  const table = document.getElementById('table');
+  const hr = document.getElementById('hr');
+  const tb = document.getElementById('tb');
+
+  // Two header variants. "fixed": inline-block spans with fractional widths, so
+  // the natural widths are fractional on every engine; auto layout then spreads
+  // the surplus, giving more fractions. "text": real header text in the page font.
+  const VARIANTS = {
+    fixed: [
+      { name: 'title', w: 260.43 }, { name: 'artist', w: 240.11 },
+      { name: 'album', w: 340.14 }, { name: 'year', w: 82.72 },
+    ],
+    text: [
+      { name: 'title', t: 'Song title (original release)' },
+      { name: 'artist', t: 'Performing artist or ensemble name' },
+      { name: 'album', t: 'Album name including deluxe edition subtitle' },
+      { name: 'year', t: 'Year' },
+    ],
+  };
+  let cols = [];
+  let state = null; // { measured: Map, prevClient, fixedSum, refits, skipped }
+  let ro = null;
+  const log = { roCalls: 0, errors: [] };
+  window.addEventListener('error', (e) => log.errors.push(String(e.message)));
+
+  function rowHtml(i) {
+    return '<tr><td class="checkbox-cell"><input type="checkbox" aria-label="Select row"></td>' +
+      cols.map((c) => `<td>${c.name} ${i}</td>`).join('') + '</tr>';
+  }
+
+  function setup({ width, variant = 'fixed', rows = 3, maxHeight = null }) {
+    if (ro) { ro.disconnect(); ro = null; }
+    log.roCalls = 0; log.errors = [];
+    state = null;
+    cols = VARIANTS[variant];
+    host.style.width = width + 'px';
+    scroller.style.maxHeight = maxHeight == null ? '' : maxHeight + 'px';
+    table.classList.remove('measured');
+    hr.innerHTML = '<th class="checkbox-cell" scope="col"><input type="checkbox" aria-label="Select all"></th>' +
+      cols.map((c) => `<th scope="col" data-column="${c.name}">` +
+        (c.w != null ? `<span class="fixedw" style="width:${c.w}px">${c.name}</span>` : c.t) + '</th>').join('');
+    tb.innerHTML = Array.from({ length: rows }, (_, i) => rowHtml(i)).join('');
+  }
+
+  function setRows(n) {
+    tb.innerHTML = Array.from({ length: n }, (_, i) => rowHtml(i)).join('');
+  }
+
+  const ROUND = {
+    ceil: Math.ceil,
+    floor: Math.floor,
+    fractional: (w) => w,
+    floor64: (w) => Math.floor(w * 64) / 64,
+  };
+
+  function apply(map) {
+    for (const [name, w] of map) {
+      const th = hr.querySelector(`th[data-column="${name}"]`);
+      th.style.width = w + 'px';
+      th.style.minWidth = w + 'px';
+    }
+    table.classList.add('measured');
+  }
+
+  function measure(mode) {
+    const natural = cols.map((c) => hr.querySelector(`th[data-column="${c.name}"]`).getBoundingClientRect().width);
+    const measured = new Map(cols.map((c, i) => [c.name, ROUND[mode](natural[i])]));
+    const fixedSum = hr.querySelector('th.checkbox-cell').getBoundingClientRect().width;
+    apply(measured);
+    state = { measured, prevClient: scroller.clientWidth, fixedSum, refits: 0, skipped: 0 };
+    return { natural, measured: [...measured.values()], fixedSum };
+  }
+
+  // D2 prototype. Scale measured widths down proportionally so they fit the new
+  // clientWidth, floor each, clamp at 40. Only while the pinned sum fitted the
+  // previous clientWidth (the phone case, where content truly overflows, is left
+  // alone). Only shrinks: widening is distributed by fixed layout already.
+  function refit() {
+    if (!state) return 'no-state';
+    const client = scroller.clientWidth;
+    const sum = [...state.measured.values()].reduce((a, b) => a + b, 0);
+    const fitPrev = sum + state.fixedSum <= state.prevClient;
+    let result;
+    if (!fitPrev) { state.skipped++; result = 'skip-overflowing'; }
+    else if (sum + state.fixedSum <= client) { result = 'fits'; }
+    else {
+      const target = client - state.fixedSum;
+      const k = target / sum;
+      const next = new Map([...state.measured].map(([n, w]) => [n, Math.max(40, Math.floor(w * k))]));
+      state.measured = next;
+      apply(next);
+      state.refits++;
+      result = 'refit';
+    }
+    state.prevClient = client;
+    return result;
+  }
+
+  // timing: 'sync' refits inside the RO callback; 'microtask' mimics a Lit
+  // requestUpdate(); 'raf' defers to the next animation frame.
+  function enableRefitObserver(timing = 'sync') {
+    let pending = false;
+    const run = () => { pending = false; refit(); };
+    ro = new ResizeObserver(() => {
+      log.roCalls++;
+      if (timing === 'sync') return refit();
+      if (pending) return;
+      pending = true;
+      if (timing === 'microtask') queueMicrotask(run); else requestAnimationFrame(run);
+    });
+    ro.observe(scroller);
+  }
+
+  function metrics() {
+    const ths = [...hr.children];
+    return {
+      overflowX: scroller.scrollWidth - scroller.clientWidth,
+      scrollWidth: scroller.scrollWidth,
+      clientWidth: scroller.clientWidth,
+      vsb: scroller.offsetWidth - scroller.clientWidth,
+      hsb: scroller.offsetHeight - scroller.clientHeight,
+      vOverflow: scroller.scrollHeight - scroller.clientHeight,
+      sumTh: +ths.reduce((a, th) => a + th.getBoundingClientRect().width, 0).toFixed(4),
+      tableW: +table.getBoundingClientRect().width.toFixed(4),
+      widths: ths.map((th) => +th.getBoundingClientRect().width.toFixed(4)),
+      measured: state ? [...state.measured.values()] : null,
+      refits: state ? state.refits : 0,
+      skipped: state ? state.skipped : 0,
+      roCalls: log.roCalls,
+      errors: log.errors.slice(),
+    };
+  }
+
+  const frames = (n = 2) => new Promise((r) => { const f = () => (--n <= 0 ? r() : requestAnimationFrame(f)); requestAnimationFrame(f); });
+
+  window.spike = { setup, setRows, measure, refit, enableRefitObserver, metrics, frames,
+    setWidth: (w) => { host.style.width = w + 'px'; },
+    setMaxHeight: (h) => { scroller.style.maxHeight = h == null ? '' : h + 'px'; } };
+})();
+</script>
+</body>
+</html>
