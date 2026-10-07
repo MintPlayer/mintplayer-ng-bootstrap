@@ -1,0 +1,160 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Spike S2/S3 — datatable touch resize</title>
+<!--
+  Spike for docs/prd/datatable-columns-priority-nav.md (S2, S3).
+  Replicates mp-datatable's header + resize handle (datatable.light.scss and
+  mp-datatable.ts startColumnResize / onColumnResizeMove / onColumnResizeEnd)
+  without lit or scope stamping. Variants by query string:
+    ?ta=none      touch-action:none + -webkit-touch-callout:none on the handle (D7.1)
+    ?hit=coarse   proposed D7.2 hit area: 24px, 40px max-width:50% under pointer:coarse,
+                  visible ::before line pinned at right:0, inside the column
+    ?virtual=1    .datatable-virtual: thead th sticky, z-index 1
+    ?overhang=1   handle overhangs the border by 12px (right:-12px) — the rejected design
+-->
+<style>
+  :root { --mp-datatable-border-color: rgba(0,0,0,.125); --mp-datatable-resize-handle-color: #0d6efd; --mp-datatable-row-hover-bg: rgba(0,0,0,.04); }
+  body { margin: 0; font-family: system-ui, sans-serif; background: #fff; }
+  * { box-sizing: border-box; }
+  .host { display: block; width: 100%; position: relative; }
+  .datatable-shell { display: flex; flex-direction: column; width: 100%; height: 100%; }
+  .datatable-scroll { overflow: auto; flex: 1 1 auto; }
+  .datatable-scroll.datatable-virtual { max-height: 480px; }
+  .datatable-scroll.datatable-virtual thead th { position: sticky; top: 0; z-index: 1; background-color: #fff; }
+
+  table { width: 100%; border-collapse: collapse; margin: 0; table-layout: auto; }
+  table.measured { table-layout: fixed; }
+  tbody > tr > td { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; padding: .5rem .75rem; border-bottom: 1px solid var(--mp-datatable-border-color); }
+
+  thead th { background-color: transparent; border-bottom: 1px solid var(--mp-datatable-border-color); text-align: left; font-weight: 600; padding: .5rem .75rem; white-space: nowrap; position: relative; user-select: none; }
+  thead th[data-sortable="true"] { cursor: pointer; padding: 0; }
+  thead th[data-sortable="true"]::before, thead th[data-sortable="true"]::after { position: absolute; display: block; opacity: .3; bottom: .5em; }
+  thead th[data-sortable="true"]::before { content: "\2191"; right: 1em; }
+  thead th[data-sortable="true"]::after { content: "\2193"; right: .5em; }
+  thead th[data-sortable="true"]:hover { background-color: var(--mp-datatable-row-hover-bg); }
+  .header-cell { display: inline-flex; align-items: center; gap: .4rem; }
+  button.header-sort { border: 0; margin: 0; background: none; font: inherit; color: inherit; text-align: inherit; cursor: pointer; display: flex; width: 100%; box-sizing: border-box; padding: .5rem 2rem .5rem .75rem; }
+
+  .resize-handle { position: absolute; right: 0; top: 0; width: 6px; height: 100%; cursor: col-resize; user-select: none; z-index: 2; }
+  .resize-handle:hover, .resize-handle.active { background-color: var(--mp-datatable-resize-handle-color); }
+
+  /* ?ta=none (D7.1) */
+  .ta-none .resize-handle { touch-action: none; -webkit-touch-callout: none; }
+
+  /* ?hit=coarse (D7.2) */
+  .hit-coarse .resize-handle { width: 24px; max-width: 50%; background: transparent; }
+  .hit-coarse .resize-handle:hover, .hit-coarse .resize-handle.active { background: transparent; }
+  .hit-coarse .resize-handle::before { content: ""; position: absolute; top: 20%; bottom: 20%; right: 0; width: 3px; border-radius: 2px; background: var(--mp-datatable-resize-handle-color); opacity: .35; }
+  .hit-coarse .resize-handle.active::before { opacity: 1; }
+  @media (pointer: coarse) { .hit-coarse .resize-handle { width: 40px; } }
+
+  /* ?overhang=1 — the rejected cross-the-border design */
+  .overhang .resize-handle { right: -12px; width: 24px; }
+
+  .filler { height: 1500px; background: linear-gradient(#fff, #eee); }
+  #status { font: 12px monospace; padding: 4px; }
+</style>
+</head>
+<body>
+<div id="status">sorts: <span id="sorts">0</span></div>
+<div class="host" id="host">
+  <div class="datatable-shell">
+    <div class="datatable-scroll" id="scroller">
+      <table id="table">
+        <thead><tr id="hdr"></tr></thead>
+        <tbody id="body"></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+<div class="filler"></div>
+<script>
+  const q = new URLSearchParams(location.search);
+  const host = document.getElementById('host');
+  if (q.get('ta') === 'none') host.classList.add('ta-none');
+  if (q.get('hit') === 'coarse') host.classList.add('hit-coarse');
+  if (q.get('overhang') === '1') host.classList.add('overhang');
+  if (q.get('virtual') === '1') document.getElementById('scroller').classList.add('datatable-virtual');
+
+  const cols = ['Name', 'Email', 'Country', 'City', 'Company', 'Phone'];
+  const widths = new Map(cols.map(c => [c, 120]));
+  window.__ev = [];
+  window.__sorts = 0;
+  const log = (type, ev, extra) => window.__ev.push(Object.assign({ type, t: Math.round(performance.now()), target: ev && ev.target && ev.target.className || ev && ev.target && ev.target.tagName, ptype: ev && ev.pointerType, x: ev && Math.round(ev.clientX) }, extra || {}));
+
+  const hdr = document.getElementById('hdr');
+  cols.forEach(c => {
+    const th = document.createElement('th');
+    th.dataset.column = c; th.dataset.sortable = 'true'; th.setAttribute('aria-sort', 'none');
+    th.style.width = widths.get(c) + 'px';
+    const btn = document.createElement('button');
+    btn.type = 'button'; btn.className = 'header-cell header-sort';
+    btn.innerHTML = '<span>' + c + '</span>';
+    btn.addEventListener('click', ev => { window.__sorts++; document.getElementById('sorts').textContent = window.__sorts; log('sort-click', ev, { col: c }); });
+    const h = document.createElement('span');
+    h.className = 'resize-handle'; h.setAttribute('role', 'separator'); h.tabIndex = 0;
+    h.setAttribute('aria-orientation', 'vertical'); h.setAttribute('aria-label', 'Resize ' + c);
+    h.addEventListener('pointerdown', ev => startColumnResize(c, ev));
+    h.addEventListener('click', ev => log('handle-click', ev, { col: c }));
+    h.addEventListener('contextmenu', ev => log('handle-contextmenu', ev, { col: c }));
+    th.append(btn, h);
+    hdr.append(th);
+  });
+  const body = document.getElementById('body');
+  for (let r = 0; r < 40; r++) {
+    const tr = document.createElement('tr');
+    cols.forEach(c => { const td = document.createElement('td'); td.textContent = c + ' value ' + r + ' with some extra text'; tr.append(td); });
+    body.append(tr);
+  }
+  document.getElementById('table').classList.add('measured');
+  document.getElementById('table').style.width = (cols.length * 120) + 'px';
+
+  // Diagnostics on the document (capture) — independent of the drag listeners.
+  ['pointerdown', 'pointerup', 'pointercancel', 'click', 'contextmenu', 'lostpointercapture', 'gotpointercapture'].forEach(t =>
+    document.addEventListener(t, ev => log('doc-' + t, ev), true));
+  let moves = 0;
+  document.addEventListener('pointermove', () => { moves++; }, true);
+  window.__moves = () => moves;
+
+  // ---- verbatim port of mp-datatable startColumnResize / onColumnResizeMove / onColumnResizeEnd ----
+  let resizeState = null;
+  function resizedColumnWidth(startWidth, delta) { return Math.max(40, startWidth + delta); }
+  function startColumnResize(colName, ev) {
+    ev.preventDefault();
+    ev.stopPropagation();
+    const handle = ev.currentTarget;
+    const th = handle.closest('th');
+    if (!th) return;
+    const startWidth = th.getBoundingClientRect().width;
+    resizeState = { columnName: colName, startX: ev.clientX, startWidth, handle };
+    handle.classList.add('active');
+    handle.setPointerCapture(ev.pointerId);
+    handle.addEventListener('pointermove', onColumnResizeMove);
+    handle.addEventListener('pointerup', onColumnResizeEnd);
+    handle.addEventListener('pointercancel', onColumnResizeEnd);
+    log('resize-start', ev, { col: colName, startWidth });
+  }
+  function onColumnResizeMove(ev) {
+    if (!resizeState) return;
+    const next = resizedColumnWidth(resizeState.startWidth, ev.clientX - resizeState.startX);
+    widths.set(resizeState.columnName, next);
+    const th = hdr.querySelector('th[data-column="' + resizeState.columnName + '"]');
+    th.style.width = next + 'px';
+    document.getElementById('table').style.width = [...widths.values()].reduce((a, b) => a + b, 0) + 'px';
+  }
+  function onColumnResizeEnd(ev) {
+    if (!resizeState) return;
+    log('resize-end-' + ev.type, ev, { col: resizeState.columnName });
+    resizeState.handle.classList.remove('active');
+    resizeState.handle.removeEventListener('pointermove', onColumnResizeMove);
+    resizeState.handle.removeEventListener('pointerup', onColumnResizeEnd);
+    resizeState.handle.removeEventListener('pointercancel', onColumnResizeEnd);
+    try { resizeState.handle.releasePointerCapture(ev.pointerId); } catch { /* ignore */ }
+    resizeState = null;
+  }
+</script>
+</body>
+</html>

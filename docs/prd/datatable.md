@@ -103,7 +103,7 @@ adding the ellipsis CSS — see § Resizable columns.
 | `selectionMode` | `'none' \| 'single' \| 'multiple' \| 'checkbox'` | `'none'` | Selection mode (`'checkbox'` added in #422) |
 | ~~`compareWith`~~ | ~~`(a, b) => boolean`~~ | | **Removed in #422** — selection identity is `rowKey`. See "Identity across pages / fetches" |
 | `rowKey` | `(row, index) => string` | `id`-based | Stable row identity for the selection set + virtualization. **Must be stable (derived from the row, never its position) with `[fetch]`** |
-| `resizableColumns` | `boolean` | `true` | Show the resize handle + run the auto-size pass |
+| `resizableColumns` | `boolean` | `true` | Show the resize handles + run the auto-size pass. Per column: `DatatableColumnDef.resizable` / `bsDatatableColumnResizable` wins in either direction (#426) |
 | `isResponsive` | `boolean` | `false` | Forwarded responsive flag on the inner table |
 | **Tree-mode inputs** | | | |
 | `tree` | `boolean` | `false` | Enable tree mode (chevron column, nested expansion, lazy children) |
@@ -329,59 +329,93 @@ id key — that's an explicit contract.
 
 ## Resizable columns — measure-once
 
+Updated for #426 (PR #427). Design and measurements: `docs/prd/datatable-columns-priority-nav.md`.
+
 ### Lifecycle
 
 | State | Entered when | Width source |
 |---|---|---|
 | **Pristine** | Component mounted, no rows yet | Natural — `table-layout: auto` |
-| **Auto-sized** | First non-placeholder row in DOM | `max(header content, every visible td content)` via the header's `getBoundingClientRect().width` while the table is still in auto layout |
-| **User-locked** | User drags the resize handle | Pixel value from the drag |
+| **Auto-sized** | First non-placeholder row in DOM | The header's `getBoundingClientRect().width` while the table is still in auto layout, **floored** |
+| **Frozen** | The user resizes any column (drag, arrow keys, or the options dialog) | Every column pinned at the width it rendered; the table gets that total as an explicit width |
+| **Back to Auto-sized** | The last user-resized column is Reset | The measured widths again; the table fills its container |
 
-Transitions are one-way. **Once Auto-sized or User-locked, content-
-driven re-measurement never runs again.** Sort changes, page loads,
-and virtual-scroll row swaps don't shift widths. Wider content in
-later rows clips with ellipsis.
+Content-driven re-measurement never runs again after the first pass: sort changes, page loads and
+virtual-scroll row swaps don't shift widths, and wider content in later rows clips with an ellipsis.
 
-### Implementation (commit `dc5d093d`)
+### Implementation
 
-* `_columnWidths: Map<string, number>` — keyed by column name. `has(name)`
-  is the lock test.
-* `_hasMeasuredInitial: boolean` — flag, flips after the first successful
-  measurement pass.
-* `maybeMeasureInitialColumnWidths()` runs from Lit's `updated()`
-  lifecycle. Idempotent (gated on `_hasMeasuredInitial`). Skips columns
-  with explicit `col.width` (pins to that value) or an existing entry
-  in `_columnWidths` (preserves user-drag-set widths).
-* Measurement waits for at least one non-placeholder body row to land —
-  placeholders are short-text and would yield artificially narrow
-  columns.
-* CSS: `tbody td { white-space: nowrap; overflow: hidden;
-  text-overflow: ellipsis; }` applies in both flat and tree modes.
-  `table.measured { table-layout: fixed; }` flips on after the first
-  pass.
+* `_columnWidths: Map<string, number>` — the pins, keyed by column name, rendered as `width` and
+  `min-width` on the first header row's `<th>`.
+* `_measuredWidths` — what the measure pass chose; the base the re-fit scales from and Reset returns to.
+* `_userWidths: Set<string>` — columns the user sized; never re-fitted.
+* `maybeMeasureInitialColumnWidths()` runs from Lit's `updated()`, once (`_hasMeasuredInitial`).
+  Explicit `col.width` is pinned as given. It waits for a non-placeholder body row, because placeholders
+  would yield artificially narrow columns.
+* **Floor, never ceil.** Rounding up added up to 1 px per column, and columns that fitted overflowed the
+  scroller by a few pixels: a phantom horizontal scrollbar (#426). Floored, the sum can only undershoot,
+  and fixed layout hands the slack back out. Measured in 3 engines at DPR 1, 1.25 and 1.5.
+* **Re-fit while it fits.** When the natural widths fitted the scroller at measurement, the ResizeObserver
+  re-fits the measured (not user, not explicit) widths. It runs when the scroller narrows, or when a classic
+  vertical scrollbar appears (13–15 px on Windows), which would otherwise bring the scrollbar back.
+  * It is deferred one `requestAnimationFrame`, because a write inside the callback trips the
+    ResizeObserver loop error.
+  * It always scales from `_measuredWidths`; scaling the previous result ratchets down.
+  * It only shrinks, and never below 75 % (`MIN_REFIT_SCALE`). Below that the table scrolls.
+* **Freeze on first user resize.** The table is `width: 100%` with fixed layout, so while the pins add up
+  to less than the container the slack is shared out over every column, the one being resized included.
+  The edge then drifts away from the pointer. `freezeColumnWidths()` pins every column at its rendered
+  width and sets the table's width to that total, so the edge tracks the pointer 1:1. Narrowing leaves
+  room on the right, as in a spreadsheet. While frozen there is no re-fit.
+* CSS: `tbody td { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }` in both flat and
+  tree modes. `table.measured { table-layout: fixed; }` after the first pass.
 
-### Drag — pointer events with capture
+### Per column
 
-`pointerdown` on the handle stops propagation so the `<th>`'s sort
-handler doesn't fire. Pointer move updates `_columnWidths`; pointer up
-releases capture.
+`DatatableColumnDef.resizable` (Angular `bsDatatableColumnResizable`) removes or adds one column's handle.
+Precedence: `col.resizable ?? resizableColumns`, so the column's own value wins in either direction.
+Leaving it unset follows the table. The Angular input defaults to `undefined` for exactly that reason.
 
-**No adjacent-column compensation.** Resizing column X grows or shrinks
-the total table width; neighbours stay at their own widths. One column,
-one delta.
+### The handle
 
-### Keyboard / dblclick (deferred)
+* A transparent hit area, 24 px wide (WCAG 2.5.8), 40 px under `@media (pointer: coarse)`, capped at 50 %
+  of the column. The visible line is a 3 px `::before` at the border, and rests visible on touch.
+* **Inside its own column, never across the border.** In virtual mode every header cell is sticky, and the
+  next one paints over an overhang (measured).
+* **`touch-action: none`.** Without it, a touch drag is claimed by the scroller as a pan: `pointercancel`
+  after about 16 px and the table scrolls instead. `preventDefault()` on `pointerdown` and pointer capture
+  cannot prevent that.
+* Its name comes from the column label (below): "Resize column Artist".
 
-The handle is focusable (`tabindex="0"`). The original PRD specified:
+### Input paths
 
-* `ArrowLeft` / `ArrowRight` → ±10 px; `Shift` → ±1 px
-* `Home` → re-fit to content
-* `dblclick` → re-fit to content
+| Input | Effect |
+|---|---|
+| Drag (pointer, capture) | Resizes once the pointer moves more than 4 px (`RESIZE_TAP_SLOP`). Non-primary mouse buttons are ignored |
+| Tap / click without moving | Opens the resize options dialog |
+| `ArrowLeft` / `ArrowRight` | −/+ 10 px |
+| `Enter` | Opens the resize options dialog |
 
-These handlers existed in the Angular wrapper before the WC merge and
-were lost. They are **not currently in the WC**. Restoring them is a
-follow-up — they're nice-to-have on top of the now-working
-measure-once + drag.
+**The resize options dialog** is the single-pointer alternative WCAG 2.5.7 requires for the drag; arrow
+keys do not count as one.
+* It is a non-modal `role="dialog"` in the overlay pane, like the filter panel.
+* Controls: Narrower, Wider, Fit to content, Reset.
+* Width readout: an `<output>`, whose status role announces each new width.
+* Fit to content measures the header and the rendered rows with a Range, so clipped text is measured
+  whole.
+* The keymap is announced once, on the first handle focus.
+
+**No adjacent-column compensation.** Resizing column X grows or shrinks the table; neighbours keep their
+widths.
+
+### Column labels
+
+Every generated string (resize handle, filter trigger and panel, sort and filter announcements) names a
+column by `label`, else the text its header renders, else `name`. The header-text step makes Angular
+(whose header is a template) correct without configuration, and the text is already localized. A
+`MutationObserver` on `thead` keeps the derived name current when that text changes in place. It is gated
+on an actual text change, so renderers that return fresh nodes every render cannot loop it. Angular:
+`bsDatatableColumnLabel`.
 
 ## Column fill (deferred)
 

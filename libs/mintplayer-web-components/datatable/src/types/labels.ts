@@ -22,6 +22,23 @@ export interface DatatableLabels {
   loading: string;
   rowsPerPage: string;
   resizeColumn: (column: string) => string;
+  /**
+   * Announced once, the first time a resize handle takes focus: how to resize
+   * without dragging.
+   */
+  resizeColumnHint: string;
+  /** Name of the resize options dialog a tap (or Enter) on a handle opens. */
+  resizeColumnOptions: (column: string) => string;
+  /** The dialog's step-down button; its visible glyph is a minus sign. */
+  narrowerColumn: (column: string) => string;
+  /** The dialog's step-up button; its visible glyph is a plus sign. */
+  widerColumn: (column: string) => string;
+  /** The dialog's current-width readout. */
+  columnWidth: (px: number) => string;
+  /** The dialog's button that sizes the column to its widest rendered content. */
+  fitColumn: string;
+  /** The dialog's button that drops a resized width again. */
+  resetColumn: string;
   /** A row checkbox's name when the row yields no text (see `selectRowNamed`). */
   selectRow: (rowNumber: number) => string;
   /**
@@ -130,6 +147,13 @@ export const DEFAULT_DATATABLE_LABELS: DatatableLabels = {
   loading: 'Loading',
   rowsPerPage: 'Rows per page',
   resizeColumn: (column) => `Resize column ${column}`,
+  resizeColumnHint: 'Left and Right arrows resize the column. Enter opens the resize options.',
+  resizeColumnOptions: (column) => `Resize options for ${column}`,
+  narrowerColumn: (column) => `Make ${column} narrower`,
+  widerColumn: (column) => `Make ${column} wider`,
+  columnWidth: (px) => `${px} px`,
+  fitColumn: 'Fit to content',
+  resetColumn: 'Reset width',
   selectRow: (rowNumber) => `Select row ${rowNumber}`,
   selectRowNamed: (label) => `Select ${label}`,
   filterColumn: (column) => `Filter ${column}`,

@@ -42,6 +42,27 @@
 
 <bs-code-snippet [code]="snippetCollapseAtHtml" [language]="'html'"></bs-code-snippet>
 
+<h2 class="mt-4">Actions in the overflow</h2>
+<p>
+    Activating a link or button in the More menu closes it and returns focus to More.
+    A control that opens a menu of its own (<code>aria-haspopup</code> or <code>aria-expanded</code>),
+    a form field, or a disabled item keeps it open. Narrow the window to below <code>sm</code> to try it.
+</p>
+
+<div class="p-2 demo-box actions-demo">
+    <bs-priority-nav [collapseAt]="'sm'">
+        @for (action of actions; track action) {
+            <button *bsPriorityNavItem="1" type="button" class="btn btn-sm btn-outline-secondary"
+                    (click)="lastAction.set(action)">{{ action }}</button>
+        }
+    </bs-priority-nav>
+</div>
+@if (lastAction(); as action) {
+    <p class="text-muted small">Last action: {{ action }}</p>
+}
+
+<bs-code-snippet [code]="snippetActionsHtml" [language]="'html'"></bs-code-snippet>
+
 <h2 class="mt-4">Noscript fallback</h2>
 <p>
     Open DevTools, disable JavaScript, and reload the page. The strip continues to work:

@@ -58,8 +58,10 @@
     <!-- No role="menu"/"menuitem": this is a disclosure overflow list (APG
          disclosure navigation), and a menu role would demand a focus-managed
          menuitem keyboard model the projected links neither need nor have. -->
-    <div [id]="uid + '-overflow'"
+    <div #overflowPanel
+         [id]="uid + '-overflow'"
          class="priority-nav-overflow"
+         (click)="onOverflowClick($event)"
          [class.priority-nav-overflow-open]="!isServerSide && isMoreOpen()"
          [class.priority-nav-overflow-align-start]="!isServerSide && fullyCollapsed()">
         @for (entry of itemsWithMeta(); track entry.item.id) {
