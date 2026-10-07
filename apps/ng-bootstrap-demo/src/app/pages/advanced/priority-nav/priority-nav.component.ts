@@ -1,4 +1,4 @@
-import { Component, ChangeDetectionStrategy } from '@angular/core';
+import { Component, ChangeDetectionStrategy, signal } from '@angular/core';
 import { BsCodeSnippetComponent } from '@mintplayer/ng-bootstrap/code-snippet';
 import { BsPriorityNavComponent, BsPriorityNavItemDirective } from '@mintplayer/ng-bootstrap/priority-nav';
 import { BsResizableComponent } from '@mintplayer/ng-bootstrap/resizable';
@@ -27,6 +27,20 @@ export class PriorityNavComponent {
     { label: 'Support',  priority: 7, hideBelow: 'xl' as const },
     { label: 'Contact',  priority: 8, hideBelow: 'xl' as const },
   ];
+
+  actions = ['Edit', 'Duplicate', 'Delete'];
+  lastAction = signal<string | null>(null);
+
+  protected readonly snippetActionsHtml = dedent`
+    <!-- Nothing to configure: a click on a link or button in the More menu
+         closes it. Menu triggers, form fields and disabled items keep it open. -->
+    <bs-priority-nav [collapseAt]="'sm'">
+      @for (action of actions; track action) {
+        <button *bsPriorityNavItem="1" type="button" class="btn btn-sm btn-outline-secondary"
+                (click)="run(action)">{{ action }}</button>
+      }
+    </bs-priority-nav>
+  `;
 
   protected readonly snippetBasicHtml = dedent`
     <bs-priority-nav>

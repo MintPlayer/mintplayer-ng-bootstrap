@@ -317,3 +317,20 @@ describe('BsDatatable — event bridge', () => {
     expect(wrapper.emitted('rowClick')).toBeUndefined();
   });
 });
+
+describe('BsDatatable — per-column label and resizable (#426)', () => {
+  it('both reach the element through the column defs', async () => {
+    const { el } = mountTable({
+      columns: [
+        { name: 'name', label: 'Artist' },
+        { name: 'id', label: 'Id', resizable: false },
+      ],
+      data: [{ id: 1, name: 'a' }],
+    });
+    await el.updateComplete;
+    const handle = (column: string) =>
+      el.querySelector(`thead tr:first-child th[data-column="${column}"] .resize-handle`);
+    expect(handle('name')?.getAttribute('aria-label')).toBe('Resize column Artist');
+    expect(handle('id')).toBeNull();
+  });
+});

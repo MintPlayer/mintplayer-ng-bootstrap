@@ -115,3 +115,23 @@ describe('BsDatatable — selection props', () => {
     expect(pages).toEqual([1, 1]);
   });
 });
+
+describe('BsDatatable — per-column label and resizable (#426)', () => {
+  it('both reach the element through the column defs', async () => {
+    const el = await renderEl<MpDatatable>(
+      <BsDatatable
+        columns={[
+          { name: 'name', label: 'Artist' },
+          { name: 'id', label: 'Id', resizable: false },
+        ]}
+        data={DATA}
+      />,
+      'mp-datatable',
+    );
+    await el.updateComplete;
+    const handle = (column: string) =>
+      el.querySelector(`thead tr:first-child th[data-column="${column}"] .resize-handle`);
+    expect(handle('name')?.getAttribute('aria-label')).toBe('Resize column Artist');
+    expect(handle('id')).toBeNull();
+  });
+});
