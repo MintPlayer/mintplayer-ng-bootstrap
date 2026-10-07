@@ -1,7 +1,7 @@
 # Plan — Datatable column fixes + priority-nav close-on-action (#426)
 
 **PRD:** [datatable-columns-priority-nav.md](./datatable-columns-priority-nav.md)
-**Status:** Proposed (2026-10-07). It waits on grilling D1–D7, then the spikes.
+**Status:** Implemented (2026-10-07), PR #427, CI green. D1–D7 were adopted as recommended without grilling; spike verdicts are in PRD §8.1. Open: S4, the check on a real Android device. Released as web-components 2.19.0, ng-bootstrap 22.22.0, react-bootstrap 19.23.0, vue-bootstrap 3.24.0.
 
 | Milestone | Scope | PRD |
 |---|---|---|

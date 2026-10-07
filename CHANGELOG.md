@@ -110,8 +110,38 @@ package version aligns its major with the supported Angular major.
     count, the element clamps it to the last page and reports it, so `[(settings)]` follows. **Migration**: none
     for two-way `[(settings)]`; a host with one-way `[settings]` should handle `(pageChange)`, or reset `page`
     itself.
+- **Datatable column labels and resizing (issue #426).** Design and measurements in
+  `docs/prd/datatable-columns-priority-nav.md`.
+  - **`DatatableLabels` has seven new required members:** `resizeColumnHint`, `resizeColumnOptions(column)`,
+    `narrowerColumn(column)`, `widerColumn(column)`, `columnWidth(px)`, `fitColumn` and `resetColumn`. A
+    consumer that builds a complete `DatatableLabels` object (rather than a `Partial`) gets a type error until
+    it adds them.
+  - **Generated strings name a column by its header text when no `label` is set**, instead of by its `name`.
+    This affects the resize handle, the filter trigger and panel, and the sort and filter announcements. For
+    example, a header template reading "Artist" over a column named `Name` used to be announced "Resize column
+    Name" and is now announced "Resize column Artist". **Migration**: none, unless a test asserts the old
+    string. Set `label` (Angular `bsDatatableColumnLabel`) for an icon-only header.
+  - **The first user resize freezes the layout.** All columns are pinned at their rendered widths, and the
+    table takes their total as an explicit width instead of `100%`, so the dragged edge follows the pointer.
+    Narrowing a column now leaves room on the right. Resetting the last user-resized column restores the
+    full-width table.
 
 ### Added
+
+- **Datatable column resizing, per column and by touch (issue #426).**
+  - **`DatatableColumnDef.resizable`** / Angular **`bsDatatableColumnResizable`**: removes or adds one column's
+    resize handle. The column's own value wins over the table-wide `resizableColumns` in either direction, and
+    leaving it unset follows the table.
+  - **Angular `bsDatatableColumnLabel`**: the column's name in generated accessible strings.
+  - **A resize options dialog.** It opens on a tap or click on a resize handle without dragging, or on Enter,
+    and offers Narrower, Wider, Fit to content and Reset. This is the single-pointer alternative to dragging
+    that WCAG 2.5.7 requires. The keymap is announced on the first handle focus.
+  - **A larger resize target.** The handle is now 24 px wide (WCAG 2.5.8), and 40 px on coarse pointers, with a
+    resting grip line on touch devices.
+- **`bs-priority-nav`: activating an item in the More menu closes it (issue #426).**
+  - A link or button closes it and returns focus to More. Escape now returns focus to More as well.
+  - Nested-menu triggers (`aria-haspopup` / `aria-expanded`, including inside shadow DOM), form fields and
+    disabled items keep the menu open.
 
 - **Dark mode across all three frameworks (issue #420).**
   - `@mintplayer/web-components/theming`: the framework-neutral theme core.
@@ -191,6 +221,15 @@ package version aligns its major with the supported Angular major.
 
 ### Fixed
 
+- **Datatable (issue #426).**
+  - **Phantom horizontal scrollbar.** Measured column widths were rounded up, so columns that fitted
+    overflowed by up to 1 px each. They are now rounded down.
+  - **Columns keep fitting after measurement.** The fitted widths are re-fitted when the container narrows or
+    a classic vertical scrollbar appears, down to 75 %; below that the table scrolls.
+  - **Column resizing on touch devices (Android).** The handle had no `touch-action`, so the browser took
+    the drag as a scroll and cancelled the resize after a few pixels.
+  - **The sort arrows no longer swallow clicks** 12–24 px from the right edge of a sortable header.
+  - **A right- or middle-click on a resize handle** no longer starts a resize.
 - **Found and fixed while raising coverage** (each pinned by a spec; full register in `docs/prd/test-coverage.md`
   §10.6):
   - **query-builder:** drag-and-drop never changed the tree, dropping into a sub-query didn't work, and value
