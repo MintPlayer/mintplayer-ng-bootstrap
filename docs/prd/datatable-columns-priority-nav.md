@@ -458,7 +458,17 @@ no listener, and did not sort. This affected the mouse too, and is fixed with `p
   is announced as part of the keymap instead (`resizeColumnHint`).
 - **The resize dialog's width readout is an `<output>`.** Its implicit status role is the one channel that
   announces each new width, because the step buttons keep focus.
-- **Reset** returns a column to its measured base and lets it rejoin the re-fit.
+- **The first user resize freezes the layout.** Found in review: the edge drifted away from the cursor.
+  - **Why it drifted.** The table is `width: 100%` with fixed layout. Whenever the pins add up to less than
+    the container, the slack is shared across every column, including the one being dragged. Widening a
+    column therefore shrinks its share, and narrowing it grows its share.
+  - **The fix.** `freezeColumnWidths()` pins every column at its rendered width and gives the table that
+    total as an explicit width. The edge then tracks the pointer 1:1, which an e2e test now asserts.
+    Narrowing leaves room on the right, as in a spreadsheet.
+  - **While frozen** the re-fit is off: the user owns the widths.
+- **Reset** returns a column to its frozen width while other user widths remain. Resetting the last one
+  unfreezes the table, which goes back to filling its container at the measured widths and rejoins the
+  re-fit.
 - **The `isClosingActivation` helper lives in its own file**, `overflow-activation.ts`. `overflow.ts` is
   documented as pure number functions, so the helper does not go there.
 - **The priority-nav demo gains an "Actions in the overflow" section.** It holds button items under

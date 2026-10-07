@@ -35,9 +35,14 @@ async function mockArtistApi(page: Page) {
 const TABLE = '.resize-table mp-datatable';
 const handle = (page: Page, column: string) =>
   page.locator(`${TABLE} thead tr:first-child th[data-column="${column}"] .resize-handle`);
+/**
+ * The column's PINNED width, not its rendered one: the table is 100% wide with
+ * fixed layout, so surplus space is shared out across the columns and a 40px
+ * drag can render as 30px. What the resize controls is the pin.
+ */
 const headerWidth = (page: Page, column: string) =>
   page.locator(`${TABLE} thead tr:first-child th[data-column="${column}"]`)
-    .evaluate((th) => th.getBoundingClientRect().width);
+    .evaluate((th) => parseFloat((th as HTMLElement).style.width));
 
 async function open(page: Page) {
   await mockArtistApi(page);
@@ -105,6 +110,8 @@ test.describe('datatable column resize', () => {
 
   test('a mouse drag resizes; a click without moving opens the options', async ({ page }) => {
     const before = await headerWidth(page, 'Name');
+    // The table is below the fold, and raw mouse coordinates do not scroll.
+    await handle(page, 'Name').scrollIntoViewIfNeeded();
     const box = (await handle(page, 'Name').boundingBox())!;
     const x = box.x + box.width - 2;
     const y = box.y + box.height / 2;
@@ -117,6 +124,28 @@ test.describe('datatable column resize', () => {
 
     await handle(page, 'Name').click();
     await expect(page.locator('.resize-panel')).toBeVisible();
+  });
+
+  test('the rendered column edge follows the pointer 1:1, in both directions', async ({ page }) => {
+    // The demo table is narrower than its container, so fixed layout shares
+    // slack across the columns: without the freeze on first resize the edge
+    // drifted away from the cursor (#426 review).
+    const rendered = () =>
+      page.locator(`${TABLE} thead tr:first-child th[data-column="Name"]`)
+        .evaluate((th) => th.getBoundingClientRect().right);
+    await handle(page, 'Name').scrollIntoViewIfNeeded();
+    const box = (await handle(page, 'Name').boundingBox())!;
+    const x = box.x + box.width - 2;
+    const y = box.y + box.height / 2;
+    const edge = await rendered();
+
+    await page.mouse.move(x, y);
+    await page.mouse.down();
+    await page.mouse.move(x + 60, y, { steps: 6 });
+    expect(Math.abs((await rendered()) - (edge + 60))).toBeLessThanOrEqual(1);
+    await page.mouse.move(x - 50, y, { steps: 10 });
+    expect(Math.abs((await rendered()) - (edge - 50))).toBeLessThanOrEqual(1);
+    await page.mouse.up();
   });
 
   test('Enter opens the options; the steps resize; Escape returns focus to the handle', async ({ page }) => {
@@ -151,6 +180,8 @@ test.describe('datatable column resize by touch', () => {
     const before = await headerWidth(page, 'Name');
     const scrollBefore = await scroller.evaluate((s) => s.scrollLeft);
 
+    // Raw touch coordinates do not scroll the table into view.
+    await handle(page, 'Name').scrollIntoViewIfNeeded();
     const box = (await handle(page, 'Name').boundingBox())!;
     const x = Math.round(box.x + box.width - 4);
     const y = Math.round(box.y + box.height / 2);

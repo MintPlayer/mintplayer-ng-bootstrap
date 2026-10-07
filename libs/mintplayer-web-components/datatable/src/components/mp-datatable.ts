@@ -1320,6 +1320,9 @@ export class MpDatatable extends LitElement {
    * ellipses, and content that no longer fits is meant to scroll instead.
    */
   private refitMeasuredWidths(): void {
+    // Frozen means the user has taken over the widths (see freezeColumnWidths):
+    // the table is as wide as they made it, and overflowing is their call.
+    if (this._frozenExtraWidth != null) return;
     if (!this._measuredFit || !this._scrollElement || !this.renderRoot) return;
     const scaled = [...this._measuredWidths].filter(([name]) => !this._userWidths.has(name));
     if (scaled.length === 0) return;
@@ -1478,6 +1481,7 @@ export class MpDatatable extends LitElement {
             aria-busy=${this._loading ? 'true' : nothing}
             aria-label=${this.getAttribute('aria-label') ?? this._inputLabel ?? nothing}
             class=${this._hasMeasuredInitial ? 'measured' : ''}
+            style=${styleMap(this._frozenExtraWidth == null ? {} : { width: `${this.frozenTableWidth()}px` })}
           >
             ${this._caption ? html`<caption>${this._caption}</caption>` : nothing}
             <thead>
@@ -3441,6 +3445,7 @@ export class MpDatatable extends LitElement {
    * scroller resizes (see `refitMeasuredWidths`): the user chose it.
    */
   private setUserColumnWidth(name: string, width: number): void {
+    this.freezeColumnWidths();
     this._columnWidths = new Map(this._columnWidths);
     this._columnWidths.set(name, width);
     this._userWidths.add(name);
@@ -3451,6 +3456,49 @@ export class MpDatatable extends LitElement {
     return this._columnWidths.get(col.name)
       ?? this.headerCell(col.name)?.getBoundingClientRect().width
       ?? 100;
+  }
+
+  /**
+   * Width of the cells no column owns (selection checkbox, tree chevron) while
+   * the widths are frozen; null while the table fills its container.
+   */
+  private _frozenExtraWidth: number | null = null;
+
+  /**
+   * Before the first user resize, pins every column at the width it RENDERS
+   * and gives the table that total as an explicit width.
+   *
+   * Without this the resized edge does not follow the pointer. The table is
+   * 100% wide with fixed layout, so whenever the pins add up to less than the
+   * container the slack is shared out over every column, the one being
+   * resized included: widening it shrinks its share (it grows slower than the
+   * pointer), narrowing it grows its share (it hardly moves). With an explicit
+   * width equal to the sum there is no slack to share, so a column is exactly
+   * as wide as its pin and the edge tracks the pointer 1:1. Narrowing then
+   * leaves room on the right, as in a spreadsheet, instead of refusing to move.
+   *
+   * Idempotent. Unfrozen again when the last user width is reset.
+   */
+  private freezeColumnWidths(): void {
+    if (this._frozenExtraWidth != null || !this.renderRoot) return;
+    const table = this.renderRoot.querySelector('table');
+    if (!table) return;
+    const rendered = this._columns
+      .map((col) => [col.name, this.headerCell(col.name)?.getBoundingClientRect().width ?? 0] as const)
+      .filter(([, width]) => width > 0);
+    if (rendered.length === 0) return;
+    const sum = rendered.reduce((total, [, width]) => total + width, 0);
+    this._frozenExtraWidth = Math.max(0, table.getBoundingClientRect().width - sum);
+    this._columnWidths = new Map([...this._columnWidths, ...rendered]);
+    this._frozenWidths = new Map(rendered);
+  }
+
+  /** Widths at the moment of freezing: what Reset returns a column to while frozen. */
+  private _frozenWidths: Map<string, number> = new Map();
+
+  private frozenTableWidth(): number {
+    const columns = this._columns.reduce((total, col) => total + (this._columnWidths.get(col.name) ?? 0), 0);
+    return columns + (this._frozenExtraWidth ?? 0);
   }
 
   private headerCell(name: string): HTMLElement | null {
@@ -3483,6 +3531,9 @@ export class MpDatatable extends LitElement {
   }
 
   private stepColumnWidth(col: DatatableColumnDef, delta: number): void {
+    // Frozen first, so the step starts from the width the column RENDERS
+    // rather than from its smaller pin.
+    this.freezeColumnWidths();
     this.setUserColumnWidth(col.name, resizedColumnWidth(this.currentColumnWidth(col), delta));
   }
 
@@ -3654,14 +3705,28 @@ export class MpDatatable extends LitElement {
 
   /** Back to the width the table chose: the measured one, else the column's own. */
   private resetColumnWidth(col: DatatableColumnDef): void {
-    const initial = this._measuredWidths.get(col.name) ?? col.width;
+    this._userWidths.delete(col.name);
+    if (this._userWidths.size === 0) {
+      // The last user width is gone: back to the table the user started with,
+      // filling its container, every column at its measured or explicit width.
+      this._frozenExtraWidth = null;
+      this._frozenWidths = new Map();
+      this._columnWidths = new Map(
+        this._columns
+          .map((c) => [c.name, this._measuredWidths.get(c.name) ?? c.width] as const)
+          .filter((entry): entry is readonly [string, number] => typeof entry[1] === 'number'),
+      );
+      this.requestUpdate();
+      this.refitMeasuredWidths();
+      return;
+    }
+    // Other columns are still user-sized, so the table stays frozen and this
+    // column returns to the width it had when the widths were frozen.
+    const initial = this._frozenWidths.get(col.name) ?? this._measuredWidths.get(col.name) ?? col.width;
     this._columnWidths = new Map(this._columnWidths);
     if (typeof initial === 'number') this._columnWidths.set(col.name, initial);
     else this._columnWidths.delete(col.name);
-    this._userWidths.delete(col.name);
     this.requestUpdate();
-    // Measured again, so it rejoins the re-fit and takes its scaled share.
-    this.refitMeasuredWidths();
   }
 }
 
