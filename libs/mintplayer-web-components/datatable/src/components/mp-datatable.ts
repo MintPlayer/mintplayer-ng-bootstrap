@@ -18,6 +18,7 @@ import {
   fittedColumnWidth,
   KEYBOARD_RESIZE_STEP,
   MIN_COLUMN_WIDTH,
+  MIN_REFIT_SCALE,
   RESIZE_TAP_SLOP,
   resizedColumnWidth,
 } from './column-resize';
@@ -417,6 +418,9 @@ export class MpDatatable extends LitElement {
   private _derivedLabels: Map<string, string> = new Map();
   /** Becomes `true` after the first measure-once pass locks column widths. Drives the `.measured` class on the table (→ `table-layout: fixed`). */
   private _hasMeasuredInitial = false;
+  /** Whether the natural column widths fitted the scroller at measurement; see refitMeasuredWidths. */
+  private _measuredFit = false;
+  private _refitFrame: number | null = null;
   private _loading = false;
   private _emptyMessage = 'No data';
   private _pagination = false;
@@ -1166,7 +1170,10 @@ export class MpDatatable extends LitElement {
       this._scrollListener = () => this.refreshVirtualRange();
       this._scrollElement.addEventListener('scroll', this._scrollListener, { passive: true });
       if (typeof ResizeObserver !== 'undefined') {
-        this._resizeObserver = new ResizeObserver(() => this.refreshVirtualRange());
+        this._resizeObserver = new ResizeObserver(() => {
+          this.refreshVirtualRange();
+          this.scheduleRefit();
+        });
         this._resizeObserver.observe(this._scrollElement);
       }
     }
@@ -1267,15 +1274,74 @@ export class MpDatatable extends LitElement {
       const w = this.measureColumnWidth(col.name);
       if (w != null) {
         next.set(col.name, w);
+        this._measuredWidths.set(col.name, w);
         anyAdded = true;
       }
     }
 
     if (anyAdded) {
+      // Decided once, against the natural layout: only a table whose columns
+      // fitted is ever re-fitted. One that overflowed was meant to scroll.
+      const natural = [...this.renderRoot.querySelectorAll<HTMLElement>('thead tr:first-child th')]
+        .reduce((sum, th) => sum + th.getBoundingClientRect().width, 0);
+      this._measuredFit = !!this._scrollElement && natural <= this._scrollElement.clientWidth + 0.5;
       this._columnWidths = next;
       this._hasMeasuredInitial = true;
       this.requestUpdate();
     }
+  }
+
+  private scheduleRefit(): void {
+    if (this._refitFrame != null || typeof requestAnimationFrame === 'undefined') return;
+    // A frame later, never inside the observer callback or a microtask: a
+    // width change there re-triggers the observer in the same frame, and
+    // Chromium and Firefox report "ResizeObserver loop completed with
+    // undelivered notifications" to window.onerror (#426 spike S1b).
+    this._refitFrame = requestAnimationFrame(() => {
+      this._refitFrame = null;
+      this.refitMeasuredWidths();
+    });
+  }
+
+  /**
+   * Keeps columns that fitted fitting when the scroller narrows: when it is
+   * resized, or when a classic vertical scrollbar appears after the
+   * measurement (13-15px, measured on Windows Chromium and Firefox), which
+   * otherwise brings back the very horizontal scrollbar #426 removed.
+   *
+   * Only MEASURED widths move. A user-set width, an explicit `col.width` and
+   * the fixed checkbox/chevron cells keep theirs, and their total is taken off
+   * the room first. Scaling is always from the measured base, never from the
+   * previous result, which would ratchet down a pixel per pass through the
+   * floor; that also restores the exact widths when the scroller widens again.
+   *
+   * It only ever shrinks (fixed layout spreads any surplus by itself), and
+   * never below MIN_REFIT_SCALE: past that the columns would crush into
+   * ellipses, and content that no longer fits is meant to scroll instead.
+   */
+  private refitMeasuredWidths(): void {
+    if (!this._measuredFit || !this._scrollElement || !this.renderRoot) return;
+    const scaled = [...this._measuredWidths].filter(([name]) => !this._userWidths.has(name));
+    if (scaled.length === 0) return;
+    const scaledNames = new Set(scaled.map(([name]) => name));
+    const fixed = [...this.renderRoot.querySelectorAll<HTMLElement>('thead tr:first-child th')]
+      .filter((th) => !scaledNames.has(th.dataset['column'] ?? ''))
+      .reduce((sum, th) => sum + th.getBoundingClientRect().width, 0);
+    const base = scaled.reduce((sum, [, w]) => sum + w, 0);
+    const room = this._scrollElement.clientWidth - fixed;
+    const k = Math.min(1, Math.max(MIN_REFIT_SCALE, room / base));
+    const next = new Map(this._columnWidths);
+    const changed = scaled
+      .map(([name, w]) => {
+        const fitted = Math.max(MIN_COLUMN_WIDTH, Math.floor(w * k));
+        const differs = next.get(name) !== fitted;
+        next.set(name, fitted);
+        return differs;
+      })
+      .some(Boolean);
+    if (!changed) return;
+    this._columnWidths = next;
+    this.requestUpdate();
   }
 
   private measureColumnWidth(name: string): number | null {
@@ -1288,7 +1354,14 @@ export class MpDatatable extends LitElement {
       `thead tr:first-child th[data-column="${name}"]`,
     ) as HTMLElement | null;
     if (!th) return null;
-    const w = Math.ceil(th.getBoundingClientRect().width);
+    // FLOOR, never ceil: each column is pinned as a min-width, so rounding up
+    // adds up to 1px per column and columns that fitted overflow the scroller
+    // by a few pixels, a phantom horizontal scrollbar (#426). Floored, the sum
+    // can only undershoot, and fixed layout hands the slack back out. Measured
+    // across Chromium, Firefox and WebKit at DPR 1, 1.25 and 1.5: ceil
+    // overflowed in every case, floor in none, and floor also absorbs the
+    // sub-pixel container jitter that a fractional width does not.
+    const w = Math.floor(th.getBoundingClientRect().width);
     return w > 0 ? w : null;
   }
 
@@ -1302,6 +1375,8 @@ export class MpDatatable extends LitElement {
     this._resizeObserver = null;
     this._headerObserver?.disconnect();
     this._observedThead = null;
+    if (this._refitFrame != null) cancelAnimationFrame(this._refitFrame);
+    this._refitFrame = null;
     this._scrollElement = null;
     // Timers and in-flight requests outlive the element otherwise, and a
     // debounced re-query firing after disconnect writes to a dead panel.
@@ -3585,6 +3660,8 @@ export class MpDatatable extends LitElement {
     else this._columnWidths.delete(col.name);
     this._userWidths.delete(col.name);
     this.requestUpdate();
+    // Measured again, so it rejoins the re-fit and takes its scaled share.
+    this.refitMeasuredWidths();
   }
 }
 

@@ -15,6 +15,15 @@ export function resizedColumnWidth(startWidth: number, delta: number): number {
 }
 
 /**
+ * The furthest measured columns are scaled down to keep fitting a narrowing
+ * scroller. Past it they keep this share and the table scrolls: crushing them
+ * to the floor would overflow anyway (measured: a desktop table narrowed to
+ * 254px clamps to 40px columns and still overflows), with every cell an
+ * ellipsis on the way there.
+ */
+export const MIN_REFIT_SCALE = 0.75;
+
+/**
  * Movement, in px, below which a press on a resize handle is a TAP: it opens
  * the resize options instead of resizing. Without it a finger, which never
  * lands perfectly still, would nudge the column on every tap.

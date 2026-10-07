@@ -68,6 +68,18 @@ test.describe('datatable column widths', () => {
     }
   });
 
+  test('columns that fitted are re-fitted when the window narrows after measuring', async ({ page }) => {
+    await page.setViewportSize({ width: 1440, height: 900 });
+    await open(page);
+    const scroller = page.locator(`${TABLE} .datatable-scroll`);
+    const fitted = await overflows(page);
+    expect(fitted.every((r) => r.overflow === 0 || r.natural > r.client + 1)).toBe(true);
+
+    await page.setViewportSize({ width: 1340, height: 900 });
+    // The re-fit runs a frame after the ResizeObserver, hence the poll.
+    await expect.poll(() => scroller.evaluate((s) => s.scrollWidth - s.clientWidth)).toBe(0);
+  });
+
   test('wider content still scrolls horizontally on a phone', async ({ page }) => {
     await page.setViewportSize({ width: 375, height: 800 });
     await open(page);

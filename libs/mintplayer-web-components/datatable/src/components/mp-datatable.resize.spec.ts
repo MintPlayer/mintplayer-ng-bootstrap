@@ -166,6 +166,29 @@ describe('mp-datatable per-column resizable', () => {
   });
 });
 
+describe('mp-datatable initial width measurement (#426)', () => {
+  afterEach(() => {
+    vi.restoreAllMocks();
+    document.body.innerHTML = '';
+  });
+
+  it('pins measured widths rounded DOWN, so columns that fit cannot overflow', async () => {
+    // jsdom has no layout; the stub stands in for a natural fractional width.
+    vi.spyOn(HTMLElement.prototype, 'getBoundingClientRect').mockImplementation(function (this: HTMLElement) {
+      const width = this.tagName === 'TH' ? 296.43 : 0;
+      return { width, height: 0, x: 0, y: 0, top: 0, left: 0, right: width, bottom: 0, toJSON: () => ({}) } as DOMRect;
+    });
+    const el = document.createElement('mp-datatable') as MpDatatable;
+    el.columns = [{ name: 'name', label: 'Name' }] as DatatableColumnDef[];
+    el.data = [{ id: 1, name: 'a' }];
+    document.body.appendChild(el);
+    await settle(el);
+    await settle(el);
+    expect(th(el).style.width).toBe('296px');
+    expect(th(el).style.minWidth).toBe('296px');
+  });
+});
+
 describe('fittedColumnWidth', () => {
   it('rounds the widest content up', () => {
     expect(fittedColumnWidth([80.2, 120.4, 99])).toBe(121);
