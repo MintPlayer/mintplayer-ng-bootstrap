@@ -1,0 +1,31 @@
+name: Install Playwright browsers
+description: >
+  Chromium, Firefox and WebKit from a lockfile-keyed cache, plus the OS
+  libraries they link against. Run after the setup action (needs node_modules).
+
+runs:
+  using: composite
+  steps:
+    # The three engines are ~400 MB and were re-downloaded on every run. The
+    # key is the lockfile hash because the required browser build is pinned by
+    # the Playwright version in it — a Playwright bump invalidates the cache,
+    # which is exactly when new builds are needed.
+    - name: Cache Playwright browsers
+      id: playwright-cache
+      uses: actions/cache@v4
+      with:
+        path: ~/.cache/ms-playwright
+        key: playwright-${{ runner.os }}-${{ hashFiles('package-lock.json') }}
+
+    - name: Install Playwright browsers
+      if: steps.playwright-cache.outputs.cache-hit != 'true'
+      shell: bash
+      run: npx playwright install --with-deps chromium firefox webkit
+
+    # On a cache hit the binaries are already there, but the OS-level libraries
+    # they link against are not — those live outside the cached directory and
+    # have to be installed every run regardless.
+    - name: Install Playwright system dependencies
+      if: steps.playwright-cache.outputs.cache-hit == 'true'
+      shell: bash
+      run: npx playwright install-deps chromium firefox webkit
