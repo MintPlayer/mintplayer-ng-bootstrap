@@ -235,6 +235,11 @@ Non-goals: larger (paid) runners, replacing the coverage service, changing which
   - Move `query-builder.memory-leak.spec` to fake timers, or shrink it.
   - Collapse ng-bootstrap-demo's 93 "should create" specs into one table-driven spec, or try
     `isolate: false` for that project (S4).
+- **Build ∥ sharded unit tests in both workflows** (added after the first green run, plan M12): a
+  reusable `test.yml` with web-components ×2 and ng-bootstrap ×2 vitest shards, an "other suites" leg and
+  the API's xUnit tests, and one coverage job that merges every leg's report. Shard reports sit in
+  `shard-<i>-of-<n>/`. The coverage server combines a file reported several times by taking the maximum
+  hits per line, so sharding cannot lower coverage.
 - Optional `api:test` Nx target wrapping `dotnet test`, so API tests become cacheable and affected-gated
   on PRs (~30 s saved when the API is untouched).
 - Cache `node_modules` keyed on `hashFiles('package-lock.json')` + Node version in the setup action. On a

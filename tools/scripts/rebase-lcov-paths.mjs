@@ -56,8 +56,17 @@ export function findReports(dir) {
 export function prefixFor(report, coverageDir) {
   // Split on either separator: relative() emits the platform's own, but the
   // spec (and any caller) may hand in posix paths on Windows.
-  return relative(coverageDir, report).split(/[\\/]/).slice(0, -1).join(posix.sep);
+  const dirs = relative(coverageDir, report).split(/[\\/]/).slice(0, -1);
+  // A sharded test job (.github/workflows/test.yml) parks its report in
+  // `<project coverage dir>/shard-<i>-of-<n>/` so the shards of one project do
+  // not overwrite each other when their artifacts are merged. That folder is
+  // not part of the project path.
+  const project = SHARD_DIR.test(dirs.at(-1) ?? '') ? dirs.slice(0, -1) : dirs;
+  return project.join(posix.sep);
 }
+
+/** The folder a sharded test job moves its lcov.info into: `shard-1-of-2`. */
+export const SHARD_DIR = /^shard-\d+-of-\d+$/;
 
 /**
  * Line and branch totals for one lcov report.

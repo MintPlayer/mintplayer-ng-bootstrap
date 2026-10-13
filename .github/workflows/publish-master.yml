@@ -23,15 +23,14 @@ env:
 # The jobs run in PARALLEL wherever nothing forces an order, the same layout
 # pull-request.yml uses (docs/prd/ci-workflow-speed.md):
 #
-#   build ─────────┐
-#   test ──────────┼─► docker (×4, matrix) ─► deploy
-#   test-api ──────┤
-#                  ├─► publish-libs
-#                  └─► publish-snippets
-#   test + test-api ─► coverage
+#   build ──────────────┐
+#   tests (test.yml) ───┼─► docker (×4, matrix) ─► deploy
+#                       ├─► publish-libs
+#                       └─► publish-snippets
+#   tests ─► coverage
 #
-# The publishing gate: nothing a test covers reaches npm or GHCR unless `test`
-# AND `test-api` passed. The images are built from the very `dist` the build
+# The publishing gate: nothing a test covers reaches npm or GHCR unless every
+# `tests` leg passed (the unit-test shards and the API's xUnit tests). The images are built from the very `dist` the build
 # job produced, so what is deployed is what was tested — the old image steps
 # ran `npm install` + `nx build` a second time inside Docker, which was ~95% of
 # their ~5 minutes.
@@ -69,67 +68,19 @@ jobs:
         path: dist/
         retention-days: 1
 
-  test:
-    name: unit tests
-    runs-on: ubuntu-latest
-    timeout-minutes: 20
-
-    steps:
-    - name: Checkout
-      uses: actions/checkout@v6
-
-    - name: Setup workspace
-      uses: ./.github/actions/setup
-      with:
-        dotnet: 'false'
-
-    - name: Test (with coverage)
-      # run-many, not affected: a partial set reads as a coverage collapse.
-      # --exclude=api: nx:run-commands forwards --coverage verbatim to
-      # `dotnet test` (VSTest), which rejects it; the API has its own job.
-      run: npx nx run-many --target=test --exclude=api --coverage --parallel=2 --output-style=stream
-
-    - name: Upload coverage artifact
-      uses: actions/upload-artifact@v7
-      with:
-        name: coverage-js
-        path: coverage/
-        retention-days: 1
-
-  test-api:
-    name: API tests
-    runs-on: ubuntu-latest
-    timeout-minutes: 10
-
-    steps:
-    - name: Checkout
-      uses: actions/checkout@v6
-
-    # .NET only: `dotnet test` builds the project itself, and nothing here
-    # needs Node or node_modules.
-    - name: Setup workspace
-      uses: ./.github/actions/setup
-      with:
-        node: 'false'
-
-    - name: Test API (with coverage)
-      # --collect writes coverage.cobertura.xml into a GUID-named subdirectory
-      # of --results-directory, hence the ** in the upload glob of `coverage`.
-      run: dotnet test apps/api/Tests/Api.Tests.csproj -c Release --collect:"XPlat Code Coverage" --results-directory coverage/api
-
-    - name: Upload coverage artifact
-      uses: actions/upload-artifact@v7
-      with:
-        name: coverage-api
-        path: coverage/
-        retention-days: 1
+  # Every unit-test suite as parallel jobs, web-components and ng-bootstrap in
+  # two vitest shards each, plus the API's xUnit tests (test.yml, shared with
+  # pull-request.yml).
+  tests:
+    uses: ./.github/workflows/test.yml
+    secrets: inherit
 
   # A side job, NOT a publishing gate: publishing depends on the tests passing,
   # never on the coverage service being up. A failed upload still turns the
   # run red through the aggregator, it just cannot hold a deploy back.
   coverage:
     name: coverage
-    needs: [test, test-api]
+    needs: tests
     runs-on: ubuntu-latest
     timeout-minutes: 10
 
@@ -149,7 +100,6 @@ jobs:
       with:
         pattern: coverage-*
         merge-multiple: true
-        path: coverage
 
     # Vitest writes `SF:` paths relative to each project's own root, so
     # `libs/mintplayer-web-components/dock/index.ts` is emitted as
@@ -171,7 +121,7 @@ jobs:
         # not a property of the published libraries — counting them lets a demo
         # page move the number the ratchet gates on.
         files: |
-          coverage/libs/*/lcov.info
+          coverage/libs/**/lcov.info
           coverage/tools/lcov.info
           coverage/api/**/coverage.cobertura.xml
         # With search on, a glob that matches nothing silently falls back to
@@ -187,7 +137,7 @@ jobs:
   # instead of building from source.
   docker:
     name: image (${{ matrix.label }})
-    needs: [build, test, test-api]
+    needs: [build, tests]
     runs-on: ubuntu-latest
     timeout-minutes: 15
 
@@ -288,7 +238,7 @@ jobs:
 
   publish-libs:
     name: publish-libs
-    needs: [build, test, test-api]
+    needs: [build, tests]
     runs-on: ubuntu-latest
     timeout-minutes: 15
 
@@ -324,7 +274,7 @@ jobs:
   # not dist/.
   publish-snippets:
     name: publish-snippets
-    needs: [test, test-api]
+    needs: tests
     runs-on: ubuntu-latest
     timeout-minutes: 10
 
@@ -413,7 +363,7 @@ jobs:
   publish-master:
     name: publish-master
     if: always()
-    needs: [build, test, test-api, coverage, docker, publish-libs, publish-snippets, deploy]
+    needs: [build, tests, coverage, docker, publish-libs, publish-snippets, deploy]
     runs-on: ubuntu-latest
     timeout-minutes: 5
 
