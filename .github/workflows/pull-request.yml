@@ -18,7 +18,7 @@ permissions:
   contents: read
 
 # The jobs run in PARALLEL, not as one long sequence: build + unit tests, the
-# e2e suites (the Angular one in two shards), the axe gate per app and the
+# e2e suites (the Angular one in four shards), the axe gate per app and the
 # live-API smoke each get their own runner. Public repository, so standard
 # runners cost nothing extra; each job pays ~1.5 min of setup and the wall time
 # becomes the slowest job instead of the sum of all of them (was 15+ min).
@@ -123,7 +123,11 @@ jobs:
         retention-days: 1
 
   # One runner per e2e suite, the Angular one (by far the longest: ~480 tests
-  # over Chromium + Firefox) split into two Playwright shards. Still `affected`:
+  # over Chromium + Firefox) split into four Playwright shards. Measured on the
+  # two-shard layout: each shard spent ~2 min on setup, ~1 min building the
+  # production server and ~4.2 min on its tests, so four shards bring the
+  # Angular jobs down to the React/Vue ones (~5 min); more would not shorten
+  # the run, React and Vue become the long pole. Still `affected`:
   # each job asks Nx whether its project is affected by the PR and skips its
   # browsers and its run when it is not, exactly as the old single
   # `nx affected --target=e2e` step did for the whole set.
@@ -134,8 +138,10 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - { label: ng 1/2, project: ng-bootstrap-demo-e2e, shard: 1/2, artifact: ng-1 }
-          - { label: ng 2/2, project: ng-bootstrap-demo-e2e, shard: 2/2, artifact: ng-2 }
+          - { label: ng 1/4, project: ng-bootstrap-demo-e2e, shard: 1/4, artifact: ng-1 }
+          - { label: ng 2/4, project: ng-bootstrap-demo-e2e, shard: 2/4, artifact: ng-2 }
+          - { label: ng 3/4, project: ng-bootstrap-demo-e2e, shard: 3/4, artifact: ng-3 }
+          - { label: ng 4/4, project: ng-bootstrap-demo-e2e, shard: 4/4, artifact: ng-4 }
           - { label: react, project: react-bootstrap-demo-e2e, shard: 1/1, artifact: react }
           - { label: vue, project: vue-bootstrap-demo-e2e, shard: 1/1, artifact: vue }
 
