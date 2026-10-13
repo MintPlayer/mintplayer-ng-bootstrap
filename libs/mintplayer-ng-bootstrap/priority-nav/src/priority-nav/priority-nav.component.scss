@@ -1,18 +1,23 @@
+// min-width: 0 lets a host that is a flex item shrink below its items, so it can
+// collapse into More instead of overflowing its parent. The component binds a
+// min-width of the More toggle's width on top (hostMinWidth).
 :host {
     display: block;
+    min-width: 0;
 }
 
 .priority-nav {
     position: relative;
 }
 
-// Off-screen measurement strip. Wrapped in a zero-size, overflow-hidden box
-// so its natural-width children don't extend the document's scrollWidth.
+// Measurement strip. Deliberately in normal flow (zero height, overflow
+// hidden, so nothing shows and the document's scrollWidth is untouched): its
+// max-content is the width of ALL items whatever is currently overflowing, so
+// a host that shrink-wraps its content gets the same natural width in every
+// overflow state. Positioned out of flow, the host would size to the live
+// strip instead, whose width depends on the overflow decision, and the
+// decision would feed its own input and flip every frame (issue #428).
 .priority-nav-measure-wrapper {
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 0;
     height: 0;
     overflow: hidden;
     pointer-events: none;
@@ -52,26 +57,32 @@
     display: none !important;
 }
 
-.priority-nav-more-toggle {
+// The toggle's box. Shared with its clone in the measure strip
+// (.priority-nav-more-toggle-box), which must measure exactly as wide.
+.priority-nav-more-toggle,
+.priority-nav-more-toggle-box {
     flex-shrink: 0;
     display: inline-flex;
     align-items: center;
     gap: 0.25rem;
     padding: 0.5rem 0.75rem;
     border: none;
-    background: transparent;
-    cursor: pointer;
-    color: inherit;
     font: inherit;
-
-    &:focus-visible {
-        outline: 2px solid var(--bs-primary, #0d6efd);
-        outline-offset: 2px;
-    }
 
     .priority-nav-caret {
         font-size: 0.75em;
         line-height: 1;
+    }
+}
+
+.priority-nav-more-toggle {
+    background: transparent;
+    cursor: pointer;
+    color: inherit;
+
+    &:focus-visible {
+        outline: 2px solid var(--bs-primary, #0d6efd);
+        outline-offset: 2px;
     }
 }
 

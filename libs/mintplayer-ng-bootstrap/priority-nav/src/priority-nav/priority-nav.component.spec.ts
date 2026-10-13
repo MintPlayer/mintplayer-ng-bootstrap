@@ -5,6 +5,7 @@ import { Breakpoint } from '@mintplayer/ng-bootstrap';
 import { BsOverlayStackService } from '@mintplayer/ng-bootstrap/a11y';
 import { BsPriorityNavComponent } from './priority-nav.component';
 import { BsPriorityNavItemDirective } from '../priority-nav-item/priority-nav-item.directive';
+import { BsObserveSizeDirective } from '@mintplayer/ng-bootstrap/observe-size';
 
 @Component({
   selector: 'priority-nav-test',
@@ -80,6 +81,26 @@ describe('BsPriorityNavComponent behaviour', () => {
     fixture.componentInstance.hideEmptyMore.set(false);
     fixture.detectChanges();
     expect(toggle().classList).not.toContain('priority-nav-hidden');
+  });
+
+  it('measures the More toggle on a hidden, inert clone, so the live toggle is never the one measured', () => {
+    const clone = fixture.nativeElement.querySelector(
+      '.priority-nav-measure-wrapper[aria-hidden="true"][inert] .priority-nav-more-toggle-box') as HTMLElement;
+    expect(clone.tagName).toBe('SPAN');
+    expect(clone.textContent).toContain('More');
+    // the toggle class stays unique to the real button
+    expect(fixture.nativeElement.querySelectorAll('.priority-nav-more-toggle').length).toBe(1);
+    expect(toggle().tagName).toBe('BUTTON');
+  });
+
+  it('floors the host min-width at the measured More width (#428)', () => {
+    const moreSizer = fixture.debugElement.queryAll(By.directive(BsObserveSizeDirective))
+      .find((de) => de.nativeElement.querySelector('.priority-nav-more-toggle-box'))!
+      .injector.get(BsObserveSizeDirective);
+    moreSizer.size.set({ width: 76.25, height: 40 });
+    fixture.detectChanges();
+    expect((fixture.nativeElement.querySelector('bs-priority-nav') as HTMLElement).style.minWidth).toBe('76.25px');
+    expect(nav().moreWidth()).toBe(76.25);
   });
 
   it.each([

@@ -21,6 +21,18 @@
                     </span>
                 }
             </div>
+            <!-- The More toggle is measured here, not on the live button: that one is
+                 display:none until something overflows, so it would measure 0 exactly
+                 when the first overflow decision needs its width. A span, not a
+                 button, and its own class (sharing the toggle's box styles) so a
+                 query for the toggle never finds the clone. -->
+            <div class="priority-nav-measure">
+                <span #measureMore="bsObserveSize" bsObserveSize class="priority-nav-measure-item">
+                    <span class="priority-nav-more-toggle-box">
+                        <ng-container *ngTemplateOutlet="moreLabelTemplate() ?? defaultMoreLabel; context: { $implicit: false }"></ng-container>
+                    </span>
+                </span>
+            </div>
         </div>
     }
 
@@ -44,7 +56,7 @@
             <!-- Disclosure pattern: aria-expanded on the button; no
                  aria-haspopup (that token means menu/dialog, and the overflow
                  is a plain disclosure list). -->
-            <button bsObserveSize #moreSize="bsObserveSize" type="button"
+            <button #moreButton type="button"
                     class="priority-nav-more-toggle"
                     [class.priority-nav-hidden]="!showMoreButton()"
                     (click)="toggleMore()"

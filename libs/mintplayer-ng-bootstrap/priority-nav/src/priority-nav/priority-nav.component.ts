@@ -21,6 +21,7 @@ import { isClosingActivation } from './overflow-activation';
     '(document:click)': 'onDocumentClick($event)',
     '(document:keydown.escape)': 'onEscape()',
     '(window:resize)': 'onWindowResize()',
+    '[style.min-width.px]': 'hostMinWidth()',
   },
 })
 export class BsPriorityNavComponent {
@@ -53,10 +54,11 @@ export class BsPriorityNavComponent {
   // Visible strip width and its element (for reading computed `column-gap`)
   stripSizer = viewChild.required<BsObserveSizeDirective>('stripSize');
   private stripElement = viewChild.required('stripSize', { read: ElementRef });
-  // More button width. Optional on purpose: the button exists only in the JS branch of the
-  // template (the server renders a label instead), so this query is empty on the server.
-  moreSizer = viewChild<BsObserveSizeDirective>('moreSize');
-  private moreButton = viewChild('moreSize', { read: ElementRef });
+  // More toggle width, from its clone in the measure strip (always rendered, padding included).
+  // Optional on purpose: the measure strip exists only in the JS branch of the template, so this
+  // query is empty on the server.
+  private moreMeasure = viewChild<BsObserveSizeDirective>('measureMore');
+  private moreButton = viewChild('moreButton', { read: ElementRef });
   private overflowPanel = viewChild('overflowPanel', { read: ElementRef });
 
   // Open/closed state for the More menu (JS path)
@@ -110,6 +112,12 @@ export class BsPriorityNavComponent {
     return Number.isFinite(raw) ? raw : 0;
   });
 
+  moreWidth = computed(() => this.moreMeasure()?.width());
+
+  // The host may shrink below its items (`min-width: 0`, so a shrink-wrapped nav can collapse),
+  // but never below the More toggle, or the toggle itself would be clipped.
+  hostMinWidth = computed(() => this.items().length > 0 ? this.moreWidth() ?? null : null);
+
   overflowingIds = computed<Set<number>>(() => {
     if (this.isServerSide) return new Set();
     if (this.forceCollapse()) {
@@ -117,7 +125,7 @@ export class BsPriorityNavComponent {
     }
     return computeOverflowIds({
       stripWidth: this.stripSizer().width() ?? 0,
-      moreWidth: this.moreSizer()?.width() ?? 0,
+      moreWidth: this.moreWidth() ?? 0,
       gap: this.itemGap(),
       widths: this.itemWidths(),
       order: this.overflowOrder().map((item) => item.id),
