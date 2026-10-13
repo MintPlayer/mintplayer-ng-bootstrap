@@ -26,7 +26,7 @@ function navState(page: Page, selector: string) {
     const inline = [...strip.querySelectorAll('.priority-nav-item')].filter((i) => !i.classList.contains('priority-nav-hidden'));
     return {
       inline: inline.length,
-      more: !more.classList.contains('priority-nav-hidden'),
+      more: !more.parentElement!.classList.contains('priority-nav-more-slot-idle'),
       clipped: strip.scrollWidth > strip.clientWidth + 1,
     };
   }, selector);

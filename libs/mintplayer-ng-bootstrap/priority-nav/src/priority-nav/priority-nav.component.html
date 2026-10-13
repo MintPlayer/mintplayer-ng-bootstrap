@@ -21,18 +21,6 @@
                     </span>
                 }
             </div>
-            <!-- The More toggle is measured here, not on the live button: that one is
-                 display:none until something overflows, so it would measure 0 exactly
-                 when the first overflow decision needs its width. A span, not a
-                 button, and its own class (sharing the toggle's box styles) so a
-                 query for the toggle never finds the clone. -->
-            <div class="priority-nav-measure">
-                <span #measureMore="bsObserveSize" bsObserveSize class="priority-nav-measure-item">
-                    <span class="priority-nav-more-toggle-box">
-                        <ng-container *ngTemplateOutlet="moreLabelTemplate() ?? defaultMoreLabel; context: { $implicit: false }"></ng-container>
-                    </span>
-                </span>
-            </div>
         </div>
     }
 
@@ -53,17 +41,26 @@
                 <ng-container *ngTemplateOutlet="moreLabelTemplate() ?? defaultMoreLabel; context: { $implicit: false }"></ng-container>
             </label>
         } @else {
-            <!-- Disclosure pattern: aria-expanded on the button; no
-                 aria-haspopup (that token means menu/dialog, and the overflow
-                 is a plain disclosure list). -->
-            <button #moreButton type="button"
-                    class="priority-nav-more-toggle"
-                    [class.priority-nav-hidden]="!showMoreButton()"
-                    (click)="toggleMore()"
-                    [attr.aria-controls]="uid + '-overflow'"
-                    [attr.aria-expanded]="isMoreOpen()">
-                <ng-container *ngTemplateOutlet="moreLabelTemplate() ?? defaultMoreLabel; context: { $implicit: isMoreOpen() }"></ng-container>
-            </button>
+            <!-- The slot is what gets measured: its content box is the
+                 button's border box, so the toggle's padding, the browser's
+                 button styles and any consumer CSS on the toggle all count.
+                 With nothing to show it is taken out of flow and made
+                 invisible, never display:none, which would measure 0 exactly
+                 when the first overflow decision needs the width. -->
+            <span bsObserveSize #moreSize="bsObserveSize"
+                  class="priority-nav-more-slot"
+                  [class.priority-nav-more-slot-idle]="!showMoreButton()">
+                <!-- Disclosure pattern: aria-expanded on the button; no
+                     aria-haspopup (that token means menu/dialog, and the overflow
+                     is a plain disclosure list). -->
+                <button #moreButton type="button"
+                        class="priority-nav-more-toggle"
+                        (click)="toggleMore()"
+                        [attr.aria-controls]="uid + '-overflow'"
+                        [attr.aria-expanded]="isMoreOpen()">
+                    <ng-container *ngTemplateOutlet="moreLabelTemplate() ?? defaultMoreLabel; context: { $implicit: isMoreOpen() }"></ng-container>
+                </button>
+            </span>
         }
     </div>
 

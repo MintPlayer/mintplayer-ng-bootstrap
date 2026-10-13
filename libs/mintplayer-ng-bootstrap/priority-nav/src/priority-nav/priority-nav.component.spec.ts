@@ -75,32 +75,38 @@ describe('BsPriorityNavComponent behaviour', () => {
     fixture.detectChanges();
   });
 
-  it('overflows nothing while unmeasured (jsdom lays nothing out) and hides the empty More toggle', () => {
+  const moreSlot = () => toggle().parentElement as HTMLElement;
+
+  it('overflows nothing while unmeasured (jsdom lays nothing out) and idles the empty More toggle', () => {
     expect(nav().hasAnyOverflow()).toBe(false);
-    expect(toggle().classList).toContain('priority-nav-hidden');
+    expect(moreSlot().classList).toContain('priority-nav-more-slot-idle');
     fixture.componentInstance.hideEmptyMore.set(false);
     fixture.detectChanges();
+    expect(moreSlot().classList).not.toContain('priority-nav-more-slot-idle');
+  });
+
+  it('measures the real More button through its slot, and never display:none-hides it (#428)', () => {
+    // An idle toggle is parked (out of flow, invisible), not removed from layout, or it would
+    // measure 0 exactly when the first overflow decision needs its width.
+    expect(moreSlot().classList).toContain('priority-nav-more-slot');
     expect(toggle().classList).not.toContain('priority-nav-hidden');
+    const slotSizer = fixture.debugElement.queryAll(By.directive(BsObserveSizeDirective))
+      .find((de) => de.nativeElement === moreSlot());
+    expect(slotSizer).toBeDefined();
   });
 
-  it('measures the More toggle on a hidden, inert clone, so the live toggle is never the one measured', () => {
-    const clone = fixture.nativeElement.querySelector(
-      '.priority-nav-measure-wrapper[aria-hidden="true"][inert] .priority-nav-more-toggle-box') as HTMLElement;
-    expect(clone.tagName).toBe('SPAN');
-    expect(clone.textContent).toContain('More');
-    // the toggle class stays unique to the real button
-    expect(fixture.nativeElement.querySelectorAll('.priority-nav-more-toggle').length).toBe(1);
-    expect(toggle().tagName).toBe('BUTTON');
-  });
-
-  it('floors the host min-width at the measured More width (#428)', () => {
-    const moreSizer = fixture.debugElement.queryAll(By.directive(BsObserveSizeDirective))
-      .find((de) => de.nativeElement.querySelector('.priority-nav-more-toggle-box'))!
+  it('floors the host min-width at the measured More width, via a custom property (#428)', () => {
+    const slotSizer = fixture.debugElement.queryAll(By.directive(BsObserveSizeDirective))
+      .find((de) => de.nativeElement === moreSlot())!
       .injector.get(BsObserveSizeDirective);
-    moreSizer.size.set({ width: 76.25, height: 40 });
+    slotSizer.size.set({ width: 76.25, height: 40 });
     fixture.detectChanges();
-    expect((fixture.nativeElement.querySelector('bs-priority-nav') as HTMLElement).style.minWidth).toBe('76.25px');
     expect(nav().moreWidth()).toBe(76.25);
+    expect(nav().hostMinWidth()).toBe('76.25px');
+    const host = fixture.nativeElement.querySelector('bs-priority-nav') as HTMLElement;
+    expect(host.style.getPropertyValue('--priority-nav-more-width')).toBe('76.25px');
+    // not an inline min-width, which no consumer rule could override
+    expect(host.style.minWidth).toBe('');
   });
 
   it.each([

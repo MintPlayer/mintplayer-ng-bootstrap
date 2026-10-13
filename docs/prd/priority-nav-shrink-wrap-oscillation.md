@@ -83,33 +83,41 @@ is what the absolute positioning was for — update that SCSS comment). Its max-
 host's flex basis — and therefore the strip width the decision reads — no longer depends on the decision.
 Block parents are unaffected (the host is already full width there).
 
-### D2 — `:host { min-width: 0 }`
+### D2 — `:host { min-width: 0 }` (as built: the `0` fallback of D4's custom property)
 
 Lets the shrink-wrapped host shrink below its content so the nav can collapse (R4). Alone (spike A2) it
 oscillates and then gets *stuck* fully collapsed after widening; with D1 it collapses and recovers.
 
-### D3 — Measure More in the measure strip, padded, always rendered
+### D3 — Measure the real More button, padded, and never as 0
 
-Add a clone of the More toggle (same `moreLabelTemplate ?? defaultMoreLabel`) inside its own measure row;
-`moreWidth` reads it. More is then never `0` (R1) and never 24 px short (R2/R3).
+The spike measured a clone of the More toggle in the measure strip. **Revised after review:** a clone
+is a `span` while the toggle is a `<button>`, so the browser's button styles and any consumer CSS on
+`.priority-nav-more-toggle` reach only the real one — the measured width could silently drift from the
+rendered one and clip More. (A clone carrying the toggle's own class would instead capture every
+`querySelector('.priority-nav-more-toggle')`, since it comes first in DOM order.)
 
-**As built:** the clone is a `span.priority-nav-more-toggle-box` inside the observed
-`span.priority-nav-measure-item`, so the observed content box includes the toggle's padding. It does
-**not** carry `.priority-nav-more-toggle` (the spike's choice): the clone comes first in DOM order, so
-every `querySelector('.priority-nav-more-toggle')` — specs, e2e, consumers — would have hit the clone.
-The box styles (`display`, `gap`, `padding`, `border`, `font`, caret) are shared by a selector list;
-the button-only ones (`background`, `cursor`, `color`, focus ring) stay on `.priority-nav-more-toggle`.
-The visible button no longer carries `bsObserveSize`; the public `moreSizer` field is replaced by a
-public `moreWidth` computed.
+**As built:** no clone. The real button sits in a `span.priority-nav-more-slot` that carries
+`bsObserveSize`; the slot has no padding, so its content box is the button's border box — padding,
+button UA styles and consumer CSS all count. With nothing to show, the slot gets
+`.priority-nav-more-slot-idle` (`position: absolute; visibility: hidden; pointer-events: none`) instead
+of `display: none`: out of flow (no room in the strip, nothing added to the host's width), out of the
+tab order and the accessibility tree, but still laid out, so `moreWidth` is never 0 (R1). The idle
+slot's containing block is `.priority-nav` (the strip is not positioned), so it never adds to the
+strip's scroll width. The width is measured with the button's real label, so a `moreLabelTemplate`
+that renders differently when open is measured as rendered. The public `moreSizer` field is replaced
+by a public `moreWidth` computed; the button's `priority-nav-hidden` class is replaced by the slot's
+idle class.
 
 ### D4 — Host `min-width` = measured More width
 
 With D2 the host may shrink below the More toggle and clip it. Floor the host at More's measured width.
 The spike wrote `style.minWidth` from an `effect` because a `[style.min-width.px]` host binding "did not
-update". **As built:** a plain host binding, `'[style.min-width.px]': 'hostMinWidth()'`, where
-`hostMinWidth` is `moreWidth()` when there are items and `null` otherwise. It updates as expected (the
-component spec drives the measured width and asserts the host's `min-width`; verified by hand in the
-browser), so no imperative style write and no custom-property fallback.
+update". A host binding does update (the first implementation used `[style.min-width.px]` and the
+spec confirmed it). **Revised after review:** an inline `min-width` beats any consumer rule short of
+`!important`. **As built:** the host binding sets only a custom property,
+`'[style.--priority-nav-more-width]': 'hostMinWidth()'` (`"<n>px"`, or `null` without items), and the
+stylesheet declares `:host { min-width: var(--priority-nav-more-width, 0) }`, so a consumer's own
+`min-width` rule on `bs-priority-nav` can still compete in the cascade. The `0` fallback is D2.
 
 ### D5 — Sub-pixel tolerance in both comparisons
 
@@ -147,7 +155,8 @@ stays a pure function.
   basic demo at 600 px now shows 5/8 inline instead of 6/8 with a clipped More), and shrink-wrapped navs
   now collapse instead of overflowing their parent.
 - `computeOverflowIds` gains tolerance; `SUBPIXEL_TOLERANCE` exported alongside it.
-- `BsPriorityNavComponent.moreSizer` (public field) is gone; `moreWidth` (computed) replaces it.
+- `BsPriorityNavComponent.moreSizer` (public field) is gone; `moreWidth` (computed) replaces it. An idle More button is no longer `.priority-nav-hidden`; its new wrapper `.priority-nav-more-slot` gets `.priority-nav-more-slot-idle`.
+- The host's floor comes from `--priority-nav-more-width` in the stylesheet, so a consumer `min-width` rule can override it.
 - `@mintplayer/ng-bootstrap/observe-size` exports `contentBoxSize`; the directive no longer seeds a size
   on the server.
 - Release as a **patch/minor fix** of `@mintplayer/ng-bootstrap`; Spark bumps the dependency.
@@ -197,9 +206,9 @@ header actions stay right of the caption, block action bar stays start-aligned.
   although everything fits, which a settle-count assertion would pass.
 - **Unit (`observe-size`)** — `contentBoxSize` keeps the fractional used size of a content-box element
   and subtracts padding + border for a border-box one (D6).
-- **Component spec** — the More clone exists in the measure strip, is a `span` inside the
-  `aria-hidden` + `inert` wrapper, renders the label, and `.priority-nav-more-toggle` still matches only
-  the real button; host `min-width` follows the measured More width.
+- **Component spec** — the real More button is measured through its slot, which idles (never
+  `priority-nav-hidden` / `display:none`) when nothing overflows; the host's
+  `--priority-nav-more-width` follows the measured width and no inline `min-width` is written.
 - **e2e (`priority-nav.spec.ts`, runs on chromium + firefox)** — on the new "Inside a flex header" demo
   section: zero class mutations over 1 s at 1280 / 600 / 400 px; the strip + More never exceed the host
   (no clipping); narrowing the card collapses into More and widening restores all items; the block action
@@ -209,7 +218,11 @@ header actions stay right of the caption, block action bar stays start-aligned.
 
 ## 9. Accessibility
 
-The More clone is measurement-only: `aria-hidden="true"`, not focusable (no `<button>` — a `span` with
-the toggle's box styles), inside the existing `inert`/hidden measure wrapper. No change to the
-disclosure pattern, roles, names or keyboard behaviour. The stabilised layout removes a WCAG 2.3.x-adjacent
+An idle More toggle is `visibility: hidden` (via its slot) instead of `display: none`: both remove it
+from the tab order and the accessibility tree, so nothing changes for assistive technology or
+keyboard users. No change to the disclosure pattern, roles, names or keyboard behaviour.
+
+Known, out of scope: the More toggle (`padding: .5rem .75rem`) is taller than `btn-sm` items, so a
+header like Spark's grows by ~9 px when something overflows. That is now a one-time change instead of
+per-frame jitter; consumers can size the toggle through `.priority-nav-more-toggle`. The stabilised layout removes a WCAG 2.3.x-adjacent
 problem (content moving every frame) for the affected consumers.

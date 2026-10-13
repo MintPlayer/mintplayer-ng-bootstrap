@@ -21,7 +21,7 @@ import { isClosingActivation } from './overflow-activation';
     '(document:click)': 'onDocumentClick($event)',
     '(document:keydown.escape)': 'onEscape()',
     '(window:resize)': 'onWindowResize()',
-    '[style.min-width.px]': 'hostMinWidth()',
+    '[style.--priority-nav-more-width]': 'hostMinWidth()',
   },
 })
 export class BsPriorityNavComponent {
@@ -54,10 +54,10 @@ export class BsPriorityNavComponent {
   // Visible strip width and its element (for reading computed `column-gap`)
   stripSizer = viewChild.required<BsObserveSizeDirective>('stripSize');
   private stripElement = viewChild.required('stripSize', { read: ElementRef });
-  // More toggle width, from its clone in the measure strip (always rendered, padding included).
-  // Optional on purpose: the measure strip exists only in the JS branch of the template, so this
-  // query is empty on the server.
-  private moreMeasure = viewChild<BsObserveSizeDirective>('measureMore');
+  // More toggle width, from the slot around the real button (measured even while idle, padding
+  // included). Optional on purpose: the button exists only in the JS branch of the template (the
+  // server renders a label instead), so this query is empty on the server.
+  private moreMeasure = viewChild<BsObserveSizeDirective>('moreSize');
   private moreButton = viewChild('moreButton', { read: ElementRef });
   private overflowPanel = viewChild('overflowPanel', { read: ElementRef });
 
@@ -114,9 +114,12 @@ export class BsPriorityNavComponent {
 
   moreWidth = computed(() => this.moreMeasure()?.width());
 
-  // The host may shrink below its items (`min-width: 0`, so a shrink-wrapped nav can collapse),
-  // but never below the More toggle, or the toggle itself would be clipped.
-  hostMinWidth = computed(() => this.items().length > 0 ? this.moreWidth() ?? null : null);
+  // Feeds `:host { min-width: var(--priority-nav-more-width, 0) }`: the host may shrink below its
+  // items, so a shrink-wrapped nav can collapse, but never below the More toggle.
+  hostMinWidth = computed(() => {
+    const width = this.items().length > 0 ? this.moreWidth() : undefined;
+    return width === undefined ? null : `${width}px`;
+  });
 
   overflowingIds = computed<Set<number>>(() => {
     if (this.isServerSide) return new Set();
