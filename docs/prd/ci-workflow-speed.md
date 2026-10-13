@@ -2,9 +2,10 @@
 
 **Issue:** [#430](https://github.com/MintPlayer/mintplayer-ng-bootstrap/issues/430)
 **Plan:** [ci-workflow-speed-plan.md](./ci-workflow-speed-plan.md)
-**Status:** In progress (2026-10-13) on `ci/workflow-speed-430`, PR #431. D1–D9 decided by the owner
-(§5). Workflows, actions, Dockerfiles and cache metadata implemented; the spec speed-ups (plan M7) and
-the local sweep (M10) are pending; post-merge measurement in M11. Progress per milestone in the plan.
+**Status:** Implemented (2026-10-13) on `ci/workflow-speed-430`, PR #431. D1–D9 decided by the owner
+(§5). Workflows, actions, Dockerfiles, cache metadata and spec speed-ups are done; the PR run is the
+verdict, branch protection (D7) is with the owner, and post-merge measurement is plan M11. Progress per
+milestone is in the plan.
 **Scope:** `.github/workflows/publish-master.yml`, `.github/workflows/pull-request.yml`,
 `.github/actions/{setup,playwright}`, the four image Dockerfiles, `apps/*-e2e/playwright.config.ts`,
 the slowest vitest suites, and `nx.json` / `project.json` cache metadata. Everything lands in **one PR**.

@@ -1,4 +1,4 @@
-import { afterEach, describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { TestBed } from '@angular/core/testing';
 import { ApplicationRef, Component, signal } from '@angular/core';
 import { BsQueryBuilderComponent } from './query-builder.component';
@@ -25,14 +25,29 @@ const SCHEMA: EntitySchema[] = [
   },
 ];
 
-const CYCLES = 100;
+// 25 cycles, down from 100. Every invariant below is EXACT per cycle, so one
+// cycle that leaks already fails it: built === disposed (one missed dispose),
+// zero orphan .projected-editor nodes (one stray node), and viewCount within
+// baseline + 1 (a leak of one root view per cycle trips it from cycle 2). The
+// cycle is deterministic: the element count of the whole document (light +
+// every shadow root) was measured flat across all 100 cycles, and the cost per
+// cycle is jsdom slot assignment on insert (findSlot / findSlotable, ~80% of
+// the CPU profile), not anything that accumulates. Cycles 25..99 therefore
+// re-ran the same path at four times the cost; 25 still covers value 0 (the
+// falsy editor value) and multi-digit values.
+const CYCLES = 25;
 
 async function settle(host: Element): Promise<void> {
   // One macrotask + microtask drain is enough — Lit batches into the next
   // microtask, Angular's signal-driven effects pick up on the macrotask.
-  // We keep this tight because the harness runs hundreds of iterations.
+  // The macrotask is a FAKE timer tick (see beforeEach): it runs exactly the
+  // zero-delay timers a real setTimeout(r, 0) would have waited behind
+  // (Angular's zoneless scheduler among them), with microtasks drained in
+  // between, but without the wall-clock wait. A real setTimeout(0) costs
+  // ~1 ms on Linux and ~10 ms on Windows (timer granularity), and the harness
+  // pays it 400 times — that idle wait was ~a third of the file's time locally.
   await Promise.resolve();
-  await new Promise<void>((r) => setTimeout(r, 0));
+  await vi.advanceTimersByTimeAsync(0);
   void host;
 }
 
@@ -58,9 +73,17 @@ function conditionFor(i: number): Expression {
 }
 
 describe('bs-query-builder memory-leak harness (M16 pre-merge gate)', () => {
-  afterEach(() => TestBed.resetTestingModule());
+  beforeEach(() => {
+    vi.useFakeTimers({
+      toFake: ['setTimeout', 'clearTimeout', 'setInterval', 'clearInterval', 'requestAnimationFrame', 'cancelAnimationFrame'],
+    });
+  });
+  afterEach(() => {
+    vi.useRealTimers();
+    TestBed.resetTestingModule();
+  });
 
-  it('programmatic editorRegistry: 100 add/remove cycles → built === disposed (M4 contract)', { timeout: 30_000 }, async () => {
+  it(`programmatic editorRegistry: ${CYCLES} add/remove cycles → built === disposed (M4 contract)`, { timeout: 30_000 }, async () => {
     let built = 0;
     let disposed = 0;
     const trackedFactory: EditorFactory = (_ctx: EditorContext): EditorHandle => {
@@ -113,7 +136,7 @@ describe('bs-query-builder memory-leak harness (M16 pre-merge gate)', () => {
     expect(disposed).toBe(built);
   });
 
-  it('*bsQueryBuilderEditor template projection: 100 add/remove cycles leave no orphan DOM and viewCount stable', { timeout: 30_000 }, async () => {
+  it(`*bsQueryBuilderEditor template projection: ${CYCLES} add/remove cycles leave no orphan DOM and viewCount stable`, { timeout: 30_000 }, async () => {
     @Component({
       standalone: true,
       imports: [BsQueryBuilderComponent, BsQueryBuilderEditorDirective],

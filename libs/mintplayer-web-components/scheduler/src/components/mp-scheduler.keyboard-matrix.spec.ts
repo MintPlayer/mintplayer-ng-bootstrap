@@ -1,74 +1,28 @@
-import { afterEach, describe, expect, it } from 'vitest';
-import './mp-scheduler';
-import type { MpScheduler } from './mp-scheduler';
-import type { SchedulerEvent } from '@mintplayer/web-components/scheduler-core';
+import { describe, expect, it } from 'vitest';
+import {
+  state,
+  settle,
+  el,
+  mount,
+  key,
+  at,
+  DENIED,
+  liveText,
+  type Mods,
+  useMatrixFixture,
+} from '../../testing/keyboard-matrix-fixture';
 
 /**
  * The keyboard matrix, as tables. mp-scheduler.keyboard.spec.ts pins the
  * individual contracts; this file walks every key x modifier x view the grid
- * and move-mode handlers dispatch on, so a key that silently stops doing its
- * job in one view shows up as one failing row.
- *
- * Fixture: Tuesday 12 May 2026 in en-US (weeks start on Sunday 10 May),
- * 30-minute slots, the focused cell at 09:00.
+ * handler dispatches on, so a key that silently stops doing its job in one
+ * view shows up as one failing row. Keys on a focused event and in move-mode
+ * live in mp-scheduler.keyboard-matrix-events.spec.ts (split so vitest runs
+ * the two halves in parallel); the fixture is shared in
+ * scheduler/testing/keyboard-matrix-fixture.ts.
  */
+useMatrixFixture();
 
-type State = {
-  focusedCell: { start: Date; end: Date } | null;
-  focusedResourceId: string | null;
-  focusedDate: Date | null;
-  previewEvent: { start: Date; end: Date; resourceId?: string | null } | null;
-  selectedEvent: SchedulerEvent | null;
-  date: Date;
-  view: string;
-};
-
-type Internals = {
-  stateManager: { getState: () => State };
-  dragManager: { isDragging: () => boolean; handlePointerDown: (...a: unknown[]) => void };
-  updateComplete: Promise<void>;
-};
-
-const internals = (el: MpScheduler) => el as unknown as Internals;
-const state = (el: MpScheduler) => internals(el).stateManager.getState();
-
-async function nextRaf(): Promise<void> {
-  return new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(() => r())));
-}
-
-async function settle(el: MpScheduler): Promise<void> {
-  await internals(el).updateComplete;
-  await nextRaf();
-}
-
-let el: MpScheduler;
-afterEach(() => el?.remove());
-
-async function mount(
-  view: 'week' | 'day' | 'timeline' | 'month' | 'year',
-  setup: (el: MpScheduler) => void = () => undefined,
-): Promise<MpScheduler> {
-  el = document.createElement('mp-scheduler') as MpScheduler;
-  el.setAttribute('locale', 'en-US');
-  document.body.appendChild(el);
-  el.date = new Date(2026, 4, 12);
-  setup(el);
-  el.setAttribute('view', view);
-  await settle(el);
-  return el;
-}
-
-function key(k: string, init: KeyboardEventInit = {}): KeyboardEvent {
-  const ev = new KeyboardEvent('keydown', { key: k, bubbles: true, cancelable: true, ...init });
-  el.dispatchEvent(ev);
-  return ev;
-}
-
-const at = (day: number, h: number, m = 0) => new Date(2026, 4, day, h, m);
-const DENIED = 'That action is not allowed here.';
-const liveText = () => el.shadowRoot!.querySelector('[role="status"][aria-live]')?.textContent ?? '';
-
-type Mods = { shiftKey?: boolean; ctrlKey?: boolean; altKey?: boolean };
 
 // ---------------------------------------------------------------------------
 // Grid navigation
@@ -276,145 +230,5 @@ describe('keyboard matrix — Alt shortcuts', () => {
     await mount('week');
     key('m', { altKey: true, shiftKey: true });
     expect(el.view).toBe('week');
-  });
-});
-
-// ---------------------------------------------------------------------------
-// Keys on a focused event
-// ---------------------------------------------------------------------------
-
-const EV: SchedulerEvent = { id: 'task', title: 'Task', start: at(12, 9), end: at(12, 10) };
-
-async function focusEvent(selector = '.scheduler-event[data-event-id="task"]'): Promise<void> {
-  el.shadowRoot!.querySelector<HTMLElement>(selector)!.focus();
-  await nextRaf();
-}
-
-describe('keyboard matrix — a focused event', () => {
-  it('Delete requests the deletion of the selected event', async () => {
-    await mount('week', (e) => (e.events = [EV]));
-    const deletes: CustomEvent<{ event: SchedulerEvent }>[] = [];
-    el.addEventListener('event-delete', (e) => deletes.push(e as CustomEvent<{ event: SchedulerEvent }>));
-    await focusEvent();
-    key('Delete');
-    expect(deletes).toHaveLength(1);
-    expect(deletes[0].detail.event.id).toBe('task');
-  });
-
-  it('Escape hands focus back to the grid', async () => {
-    await mount('week', (e) => (e.events = [EV]));
-    await focusEvent();
-    key('Escape');
-    await nextRaf();
-    expect(el.shadowRoot!.activeElement?.classList.contains('scheduler-time-slot')).toBe(true);
-  });
-
-  it('Escape cancels a pointer drag in progress, whatever has focus', async () => {
-    await mount('week', (e) => (e.events = [EV]));
-    // No slot under the pointer: the hit-test seam answers with nothing.
-    (el as unknown as { elementsAt: () => Element[] }).elementsAt = () => [];
-    internals(el).dragManager.handlePointerDown(
-      { pointerId: 0, pointerType: 'mouse', clientX: 0, clientY: 0, originalEvent: new MouseEvent('mousedown'), target: el, isPrimary: true },
-      { type: 'event', event: EV },
-    );
-    expect(internals(el).dragManager.isDragging()).toBe(true);
-    key('Escape');
-    expect(internals(el).dragManager.isDragging()).toBe(false);
-  });
-});
-
-// ---------------------------------------------------------------------------
-// Move-mode
-// ---------------------------------------------------------------------------
-
-describe('keyboard matrix — week move-mode', () => {
-  it.each<[string, Mods, Date, Date]>([
-    ['ArrowUp', {}, at(12, 8, 30), at(12, 9, 30)],
-    ['ArrowDown', {}, at(12, 9, 30), at(12, 10, 30)],
-    ['ArrowUp', { shiftKey: true }, at(12, 9), at(12, 9, 30)],
-    ['ArrowDown', { shiftKey: true }, at(12, 9), at(12, 10, 30)],
-    ['ArrowUp', { shiftKey: true, altKey: true }, at(12, 8, 30), at(12, 10)],
-    ['ArrowDown', { shiftKey: true, altKey: true }, at(12, 9, 30), at(12, 10)],
-    ['ArrowLeft', {}, at(11, 9), at(11, 10)],
-    ['ArrowRight', {}, at(13, 9), at(13, 10)],
-    ['ArrowRight', { shiftKey: true }, at(12, 9), at(13, 10)],
-    ['ArrowLeft', { shiftKey: true, altKey: true }, at(11, 9), at(12, 10)],
-    // Would invert the event: refused, the working copy stays put.
-    ['ArrowLeft', { shiftKey: true }, at(12, 9), at(12, 10)],
-    ['ArrowRight', { shiftKey: true, altKey: true }, at(12, 9), at(12, 10)],
-  ])('%s %o moves the working copy to %s - %s', async (k, mods, start, end) => {
-    await mount('week', (e) => (e.events = [EV]));
-    await focusEvent();
-    key('Enter');
-    key(k, mods);
-    expect(state(el).previewEvent).toMatchObject({ start, end });
-  });
-
-  it('a pinned start edge refuses the start resize and says so', async () => {
-    await mount('week', (e) => (e.events = [{ ...EV, resizable: { start: false, end: true } }]));
-    await focusEvent();
-    key('Enter');
-    key('ArrowUp', { shiftKey: true, altKey: true });
-    await settle(el);
-    expect(state(el).previewEvent).toMatchObject({ start: at(12, 9), end: at(12, 10) });
-    expect(liveText()).toBe(DENIED);
-  });
-});
-
-describe('keyboard matrix — day move-mode', () => {
-  it.each(['ArrowLeft', 'ArrowRight'])('%s has no day axis to move along', async (k) => {
-    await mount('day', (e) => (e.events = [EV]));
-    await focusEvent();
-    key('Enter');
-    expect(key(k).defaultPrevented).toBe(true);
-    expect(state(el).previewEvent).toMatchObject({ start: at(12, 9), end: at(12, 10) });
-  });
-});
-
-describe('keyboard matrix — timeline move-mode', () => {
-  const RESOURCES = [
-    { id: 'alice', title: 'Alice' },
-    { id: 'bob', title: 'Bob' },
-  ];
-  const TASK = { ...EV, resourceId: 'alice' };
-  const enterMove = async () => {
-    await mount('timeline', (e) => {
-      e.resources = RESOURCES;
-      e.events = [TASK];
-    });
-    await focusEvent('.scheduler-timeline-event[data-event-id="task"]');
-    key('Enter');
-  };
-
-  it.each<[string, Mods, Date, Date]>([
-    ['ArrowLeft', {}, at(12, 8, 30), at(12, 9, 30)],
-    ['ArrowRight', {}, at(12, 9, 30), at(12, 10, 30)],
-    ['ArrowLeft', { shiftKey: true }, at(12, 9), at(12, 9, 30)],
-    ['ArrowRight', { shiftKey: true }, at(12, 9), at(12, 10, 30)],
-    ['ArrowLeft', { shiftKey: true, altKey: true }, at(12, 8, 30), at(12, 10)],
-    ['ArrowRight', { shiftKey: true, altKey: true }, at(12, 9, 30), at(12, 10)],
-    // Time runs horizontally here; a modified vertical arrow does nothing.
-    ['ArrowDown', { shiftKey: true }, at(12, 9), at(12, 10)],
-  ])('%s %o moves the working copy to %s - %s', async (k, mods, start, end) => {
-    await enterMove();
-    key(k, mods);
-    expect(state(el).previewEvent).toMatchObject({ start, end });
-  });
-
-  it('ArrowDown carries the event to the next row, and Enter commits the reassignment', async () => {
-    await enterMove();
-    const updates: CustomEvent<{ event: SchedulerEvent }>[] = [];
-    el.addEventListener('event-update', (e) => updates.push(e as CustomEvent<{ event: SchedulerEvent }>));
-    key('ArrowDown');
-    expect(state(el).previewEvent?.resourceId).toBe('bob');
-    key('Enter');
-    expect(updates).toHaveLength(1);
-    expect(updates[0].detail.event.resourceId).toBe('bob');
-  });
-
-  it('ArrowUp on the first row stays on it', async () => {
-    await enterMove();
-    key('ArrowUp');
-    expect(state(el).previewEvent?.resourceId ?? 'alice').toBe('alice');
   });
 });
