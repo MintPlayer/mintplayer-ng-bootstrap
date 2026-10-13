@@ -1,11 +1,9 @@
 import { defineConfig } from 'vitest/config';
 import angular from '@analogjs/vite-plugin-angular';
-import { nxViteTsPaths } from '@nx/vite/plugins/nx-tsconfig-paths.plugin';
 
 export default defineConfig({
   plugins: [
     angular({ jit: true, tsconfig: 'tsconfig.spec.json' }),
-    nxViteTsPaths(),
   ],
   test: {
     name: 'ng-bootstrap-demo',
@@ -27,6 +25,8 @@ export default defineConfig({
     },
   },
   resolve: {
+    // Vite 8 resolves the tsconfig `paths` (@mintplayer/*) natively.
+    tsconfigPaths: true,
     alias: {
       '\\.svg$': '../../tools/testing/svg.mock.ts',
     },

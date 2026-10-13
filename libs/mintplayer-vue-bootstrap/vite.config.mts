@@ -4,7 +4,7 @@ import { coverageConfigDefaults } from 'vitest/config';
 import vue from '@vitejs/plugin-vue';
 import dts from 'vite-plugin-dts';
 import { resolve } from 'node:path';
-import { nxViteTsPaths } from '@nx/vite/plugins/nx-tsconfig-paths.plugin';
+import { copyPackageJson } from '../../tools/vite/copy-package-json.mts';
 import { nxCopyAssetsPlugin } from '@nx/vite/plugins/nx-copy-assets.plugin';
 import { discoverEntries, generateSubpathExports } from '../../tools/vite/multi-entry.mts';
 
@@ -14,6 +14,8 @@ const outDir = resolve(import.meta.dirname, '../../dist/libs/mintplayer-vue-boot
 export default defineConfig(() => ({
   root: import.meta.dirname,
   cacheDir: '../../node_modules/.vite/libs/mintplayer-vue-bootstrap',
+  // Vite 8 resolves the tsconfig `paths` (@mintplayer/*) natively.
+  resolve: { tsconfigPaths: true },
   plugins: [
     vue({
       // The Vue compiler needs to know which tags are custom elements so
@@ -25,7 +27,7 @@ export default defineConfig(() => ({
         },
       },
     }),
-    nxViteTsPaths(),
+    copyPackageJson(import.meta.dirname),
     nxCopyAssetsPlugin(['*.md']),
     dts({
       entryRoot: '.',
@@ -56,15 +58,12 @@ export default defineConfig(() => ({
     emptyOutDir: true,
     reportCompressedSize: true,
     target: 'es2022',
-    commonjsOptions: {
-      transformMixedEsModules: true,
-    },
     lib: {
       entry: entries,
       formats: ['es' as const],
       fileName: (_format, entryName) => `${entryName}.mjs`,
     },
-    rollupOptions: {
+    rolldownOptions: {
       external: [
         'vue',
         /^@mintplayer\/web-components(\/.*)?$/,
