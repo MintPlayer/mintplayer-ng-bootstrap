@@ -2,10 +2,9 @@
 
 **Issue:** [#430](https://github.com/MintPlayer/mintplayer-ng-bootstrap/issues/430)
 **Plan:** [ci-workflow-speed-plan.md](./ci-workflow-speed-plan.md)
-**Status:** Implemented (2026-10-13) on `ci/workflow-speed-430`, PR #431. D1–D9 decided by the owner
-(§5). Workflows, actions, Dockerfiles, cache metadata and spec speed-ups are done; the PR run is the
-verdict, branch protection (D7) is with the owner, and post-merge measurement is plan M11. Progress per
-milestone is in the plan.
+**Status:** Merged (2026-10-13, PR #431). D1–D9 decided by the owner (§5). Measured: pull-request ~3m40s
+(was ~5.6 min); publish-master cold 6m37s (was 14.6 min); warm still to measure. Branch protection (D7)
+is with the owner. Progress per milestone is in the plan.
 **Scope:** `.github/workflows/publish-master.yml`, `.github/workflows/pull-request.yml`,
 `.github/actions/{setup,playwright}`, the four image Dockerfiles, `apps/*-e2e/playwright.config.ts`,
 the slowest vitest suites, and `nx.json` / `project.json` cache metadata. Everything lands in **one PR**.
@@ -299,3 +298,7 @@ Non-goals: larger (paid) runners, replacing the coverage service, changing which
 - [ ] Every job has `timeout-minutes`.
 - [ ] Measured on the first runs after merge: publish-master ≤ 3 min warm / ≤ 6 min cold; pull-request
       ≤ 3 min with the Angular e2e running against a cached build.
+      **Measured:** publish-master **cold 6m37s** (run 38436039250, attempt 2; 37 s over, all in the cold
+      ng-bootstrap test shard), warm still to measure. pull-request **~3m40s** (run 38431034666). Not
+      ≤ 3 min: S2 (prebuilt server) was rejected and `workers: 3` was reverted (plan M13), and the
+      Angular e2e shards (~3.5 min each including setup) set the floor.
