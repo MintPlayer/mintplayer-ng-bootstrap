@@ -4,13 +4,15 @@ on:
   push:
     branches: [ master ]
 
+# A newer push cancels the run in flight, even between the npm publish and the
+# deploy: the newer run publishes and deploys the newer commit anyway (decided
+# in docs/prd/ci-workflow-speed.md, D6).
 concurrency:
   group: ${{ github.workflow }}-${{ github.head_ref || github.ref }}
   cancel-in-progress: true
 
 permissions:
   contents: read
-  packages: write
 
 # Self-hosted Nx remote cache. RW token is only used on push to the default
 # branch; everything else (PRs, feature branches) gets the read-only token.
@@ -18,68 +20,137 @@ env:
   NX_SELF_HOSTED_REMOTE_CACHE_SERVER: ${{ secrets.NX_CACHE_SERVER }}
   NX_SELF_HOSTED_REMOTE_CACHE_ACCESS_TOKEN: ${{ (github.event_name == 'push' && github.ref_name == github.event.repository.default_branch) && secrets.NX_CACHE_RW_TOKEN || secrets.NX_CACHE_RO_TOKEN }}
 
+# The jobs run in PARALLEL wherever nothing forces an order, the same layout
+# pull-request.yml uses (docs/prd/ci-workflow-speed.md):
+#
+#   build ─────────┐
+#   test ──────────┼─► docker (×4, matrix) ─► deploy
+#   test-api ──────┤
+#                  ├─► publish-libs
+#                  └─► publish-snippets
+#   test + test-api ─► coverage
+#
+# The publishing gate: nothing a test covers reaches npm or GHCR unless `test`
+# AND `test-api` passed. The images are built from the very `dist` the build
+# job produced, so what is deployed is what was tested — the old image steps
+# ran `npm install` + `nx build` a second time inside Docker, which was ~95% of
+# their ~5 minutes.
 jobs:
   build:
-  
-    name: publish-master
+    name: build
     runs-on: ubuntu-latest
-    
-    permissions:
-      contents: read
-      id-token: write
-      packages: write
-      attestations: write
-      # attest-build-provenance also files an artifact-metadata storage record
-      # alongside the attestation itself; without this it warns and skips that
-      # half. The attestation is still created either way.
-      artifact-metadata: write
+    timeout-minutes: 20
 
     steps:
     - name: Checkout
       uses: actions/checkout@v6
-    
-    - name: Setup node
-      uses: actions/setup-node@v6
-      with:
-        node-version: 24
 
-    - name: Install dependencies
-      run: npm ci
-    
+    - name: Setup workspace
+      uses: ./.github/actions/setup
+      with:
+        dotnet: 'false'
+
     - name: Build
-      timeout-minutes: 15
       # run-many so EVERY publishable lib lands in dist/libs/ for the
       # discovery action. Plain `nx build` only builds the default
       # project (ng-bootstrap-demo) and its transitive deps — react-
       # and vue-bootstrap aren't reachable from there, so they were
       # silently absent from the publish plan on the first PR-4 deploy.
-      run: npx nx run-many --target=build --configuration=production
+      # build-ssr: the React and Vue SSR server bundles, which the demo images
+      # copy alongside the client bundles.
+      run: npx nx run-many -t build build-ssr --configuration=production
+
+    # Hands dist/ to the docker and publish-libs jobs. The snippets package
+    # publishes from libs/ (source, not dist/), so it is not in here.
+    - name: Upload dist artifact
+      uses: actions/upload-artifact@v7
+      with:
+        name: dist
+        path: dist/
+        retention-days: 1
+
+  test:
+    name: unit tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v6
+
+    - name: Setup workspace
+      uses: ./.github/actions/setup
+      with:
+        dotnet: 'false'
 
     - name: Test (with coverage)
-      timeout-minutes: 15
       # run-many, not affected: a partial set reads as a coverage collapse.
       # --exclude=api: nx:run-commands forwards --coverage verbatim to
-      # `dotnet test` (VSTest), which rejects it; the API has its own step.
+      # `dotnet test` (VSTest), which rejects it; the API has its own job.
       run: npx nx run-many --target=test --exclude=api --coverage --parallel=2 --output-style=stream
 
-    # ---- ASP.NET Core API ----
-    #
-    # Ahead of the coverage upload on purpose: the upload below finalizes the
-    # build, so every report has to exist before it runs. The API image steps
-    # further down consume the same `dotnet build` output.
-
-    - name: Setup .NET 10
-      uses: actions/setup-dotnet@v5
+    - name: Upload coverage artifact
+      uses: actions/upload-artifact@v7
       with:
-        dotnet-version: '10.0.x'
+        name: coverage-js
+        path: coverage/
+        retention-days: 1
 
-    - name: Build API
-      run: dotnet build apps/api/Api.csproj -c Release
+  test-api:
+    name: API tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v6
+
+    # .NET only: `dotnet test` builds the project itself, and nothing here
+    # needs Node or node_modules.
+    - name: Setup workspace
+      uses: ./.github/actions/setup
+      with:
+        node: 'false'
 
     - name: Test API (with coverage)
       # --collect writes coverage.cobertura.xml into a GUID-named subdirectory
-      # of --results-directory, hence the ** in the upload glob below.
+      # of --results-directory, hence the ** in the upload glob of `coverage`.
       run: dotnet test apps/api/Tests/Api.Tests.csproj -c Release --collect:"XPlat Code Coverage" --results-directory coverage/api
+
+    - name: Upload coverage artifact
+      uses: actions/upload-artifact@v7
+      with:
+        name: coverage-api
+        path: coverage/
+        retention-days: 1
+
+  # A side job, NOT a publishing gate: publishing depends on the tests passing,
+  # never on the coverage service being up. A failed upload still turns the
+  # run red through the aggregator, it just cannot hold a deploy back.
+  coverage:
+    name: coverage
+    needs: [test, test-api]
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v6
+
+    # rebase-lcov-paths.mjs imports only node: built-ins and a local helper,
+    # so Node itself is enough: no node_modules, no .NET.
+    - name: Setup node
+      uses: actions/setup-node@v6
+      with:
+        node-version: 24
+
+    - name: Download coverage artifacts
+      uses: actions/download-artifact@v8
+      with:
+        pattern: coverage-*
+        merge-multiple: true
+        path: coverage
+
     # Vitest writes `SF:` paths relative to each project's own root, so
     # `libs/mintplayer-web-components/dock/index.ts` is emitted as
     # `dock/index.ts` — a suffix that exists under four different libraries.
@@ -90,7 +161,6 @@ jobs:
     # stops resolving.
     - name: Rebase coverage paths to workspace-relative
       run: node tools/scripts/rebase-lcov-paths.mjs
-
 
     - name: Upload coverage
       uses: MintPlayer/MintPlayer.Spark/apps/CodeCoverage/action@coverage-upload-v1
@@ -109,31 +179,55 @@ jobs:
         disable-search: true
         flags: unit
         finish: true
-        # Strict while wiring this up; relax once stable so a coverage-service
-        # outage can't block `deploy` (which needs: build).
         fail-ci-if-error: true
 
-    # Hand dist/ off to the publish-libs / publish-snippets jobs. The
-    # snippets package publishes from libs/ (source, not dist/) so the
-    # snippets job checks the repo out separately — no need to bundle
-    # that dir into this artifact.
-    - name: Upload dist artifact
-      uses: actions/upload-artifact@v7
+  # One leg per image, side by side. Each leg builds, pushes, attests and
+  # publishes only its own image. The Node demos use the Dockerfile's
+  # `prebuilt` target, which copies dist/apps/<app> from a named build context
+  # instead of building from source.
+  docker:
+    name: image (${{ matrix.label }})
+    needs: [build, test, test-api]
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    permissions:
+      contents: read
+      id-token: write
+      packages: write
+      attestations: write
+      # attest-build-provenance also files an artifact-metadata storage record
+      # alongside the attestation itself; without this it warns and skips that
+      # half. The attestation is still created either way.
+      artifact-metadata: write
+
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - { label: ng, app: ng-bootstrap-demo, suffix: '', prebuilt: true }
+          - { label: react, app: react-bootstrap-demo, suffix: -react-demo, prebuilt: true }
+          - { label: vue, app: vue-bootstrap-demo, suffix: -vue-demo, prebuilt: true }
+          # The API image builds from source: restore + publish take ~8 s.
+          - { label: api, app: api, suffix: -api, prebuilt: false }
+
+    env:
+      IMAGE: ghcr.io/${{ github.repository }}${{ matrix.suffix }}
+      # The build-record artifact each build-push step uploads is ~2 s per
+      # image that nothing reads.
+      DOCKER_BUILD_RECORD_UPLOAD: false
+
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v6
+
+    - name: Download dist artifact
+      if: matrix.prebuilt
+      uses: actions/download-artifact@v8
       with:
         name: dist
-        path: dist/
-        retention-days: 1
+        path: dist
 
-    - name: Publish to Visual Studio Marketplace
-      # uses: MintPlayer/publish-vscode-extension@v4.0.3
-      uses: HaaLeo/publish-vscode-extension@v2
-      with:
-        packagePath: 'libs/mintplayer-ng-bootstrap-snippets'
-        pat: ${{ secrets.PUBLISH_SNIPPETS }}
-        skipDuplicate: true
-        registryUrl: https://marketplace.visualstudio.com
-
-    # Publish to GitHub Container Registry
     - name: Authenticate with GHCR
       uses: docker/login-action@v4
       with:
@@ -142,145 +236,61 @@ jobs:
         password: ${{ github.token }}
 
     - name: Extract tags/labels
-      id: meta-ghcr
+      id: meta
       uses: docker/metadata-action@v6
       with:
         github-token: ${{ github.token }}
-        images: ghcr.io/${{ github.repository }}
-    
-    - name: Publish to Github Container Registry
-      id: push-ghcr
+        images: ${{ env.IMAGE }}
+
+    - name: Build and push
+      id: push
       uses: docker/build-push-action@v7
       with:
         context: .
-        file: ./apps/ng-bootstrap-demo/Dockerfile
+        file: ./apps/${{ matrix.app }}/Dockerfile
+        target: ${{ matrix.prebuilt && 'prebuilt' || '' }}
+        build-contexts: ${{ matrix.prebuilt && format('dist=dist/apps/{0}', matrix.app) || '' }}
         push: true
-        tags: ${{ steps.meta-ghcr.outputs.tags }}
-        labels: ${{ steps.meta-ghcr.outputs.labels }}
+        tags: ${{ steps.meta.outputs.tags }}
+        labels: ${{ steps.meta.outputs.labels }}
 
     - name: Generate artifact attestation
       uses: actions/attest-build-provenance@v4
       with:
-        subject-name: ghcr.io/${{ github.repository }}
-        subject-digest: ${{ steps.push-ghcr.outputs.digest }}
+        subject-name: ${{ env.IMAGE }}
+        subject-digest: ${{ steps.push.outputs.digest }}
         push-to-registry: true
 
-    # ---- React demo image ----
-
-    - name: Extract React demo image tags/labels
-      id: meta-react-demo
-      uses: docker/metadata-action@v6
-      with:
-        github-token: ${{ github.token }}
-        images: ghcr.io/${{ github.repository }}-react-demo
-
-    - name: Publish React demo to Github Container Registry
-      id: push-react-demo
-      uses: docker/build-push-action@v7
-      with:
-        context: .
-        file: ./apps/react-bootstrap-demo/Dockerfile
-        push: true
-        tags: ${{ steps.meta-react-demo.outputs.tags }}
-        labels: ${{ steps.meta-react-demo.outputs.labels }}
-
-    - name: Generate React demo artifact attestation
-      uses: actions/attest-build-provenance@v4
-      with:
-        subject-name: ghcr.io/${{ github.repository }}-react-demo
-        subject-digest: ${{ steps.push-react-demo.outputs.digest }}
-        push-to-registry: true
-
-    # ---- Vue demo image ----
-
-    - name: Extract Vue demo image tags/labels
-      id: meta-vue-demo
-      uses: docker/metadata-action@v6
-      with:
-        github-token: ${{ github.token }}
-        images: ghcr.io/${{ github.repository }}-vue-demo
-
-    - name: Publish Vue demo to Github Container Registry
-      id: push-vue-demo
-      uses: docker/build-push-action@v7
-      with:
-        context: .
-        file: ./apps/vue-bootstrap-demo/Dockerfile
-        push: true
-        tags: ${{ steps.meta-vue-demo.outputs.tags }}
-        labels: ${{ steps.meta-vue-demo.outputs.labels }}
-
-    - name: Generate Vue demo artifact attestation
-      uses: actions/attest-build-provenance@v4
-      with:
-        subject-name: ghcr.io/${{ github.repository }}-vue-demo
-        subject-digest: ${{ steps.push-vue-demo.outputs.digest }}
-        push-to-registry: true
-
-    - name: Extract API image tags/labels
-      id: meta-api
-      uses: docker/metadata-action@v6
-      with:
-        github-token: ${{ github.token }}
-        images: ghcr.io/${{ github.repository }}-api
-
-    - name: Publish API to Github Container Registry
-      id: push-api
-      uses: docker/build-push-action@v7
-      with:
-        context: .
-        file: ./apps/api/Dockerfile
-        push: true
-        tags: ${{ steps.meta-api.outputs.tags }}
-        labels: ${{ steps.meta-api.outputs.labels }}
-
-    - name: Generate API artifact attestation
-      uses: actions/attest-build-provenance@v4
-      with:
-        subject-name: ghcr.io/${{ github.repository }}-api
-        subject-digest: ${{ steps.push-api.outputs.digest }}
-        push-to-registry: true
-
-    # GHCR packages default to private on first publish. The 'ng-bootstrap'
-    # image was already flipped to public manually long ago, but the three
-    # new images (react-demo, vue-demo, api) start private — VPS docker
-    # compose pull then fails with 'denied'. Flip each one to public via
-    # the org-packages API. PATCH is idempotent: already-public packages
-    # return 204 No Content; we swallow any 403/404 so a misconfigured
-    # token doesn't fail the whole workflow.
-    - name: Make GHCR images public
+    # GHCR packages default to private on first publish, and the VPS's
+    # `docker compose pull` then fails with 'denied'. PATCH is idempotent:
+    # an already-public package returns 204. A 403/404 is swallowed so a
+    # misconfigured token doesn't fail the leg.
+    - name: Make the image public
       env:
         GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        PACKAGE: ${{ github.event.repository.name }}${{ matrix.suffix }}
       run: |
-        for pkg in \
-            mintplayer-ng-bootstrap \
-            mintplayer-ng-bootstrap-react-demo \
-            mintplayer-ng-bootstrap-vue-demo \
-            mintplayer-ng-bootstrap-api; do
-          echo "→ $pkg"
-          gh api --method PATCH \
-            "/orgs/${{ github.repository_owner }}/packages/container/$pkg" \
-            -f visibility=public 2>&1 || echo "  (skipped — already public, missing, or insufficient scope)"
-        done
+        gh api --method PATCH \
+          "/orgs/${{ github.repository_owner }}/packages/container/$PACKAGE" \
+          -f visibility=public 2>&1 || echo "  (skipped — already public, missing, or insufficient scope)"
 
   # ----------------------------------------------------------------------
   # NPM publishing
   #
   # MintPlayer/github-actions/publish-npm-packages scans the given folder,
   # topo-sorts the discovered libs by peerDependencies, and fans out to
-  # every registry it's given. Replaces what previously needed 18 hand-
-  # listed JS-DevTools/npm-publish steps (9 libs × 2 registries) plus the
-  # snippets publish.
+  # every registry it's given.
   #
   # ng-bootstrap-snippets is unusual: it publishes from libs/ (source,
   # not dist/) and only goes to NPM, never to GitHub Packages — so it
-  # gets its own action invocation with a different `folder` root.
+  # gets its own job with a different `folder` root.
   # ----------------------------------------------------------------------
 
   publish-libs:
     name: publish-libs
-    needs: build
+    needs: [build, test, test-api]
     runs-on: ubuntu-latest
+    timeout-minutes: 15
 
     permissions:
       contents: read
@@ -309,10 +319,14 @@ jobs:
               { "url": "https://npm.pkg.github.com", "token": "${{ github.token }}" }
             ]
 
+  # No test covers the snippets, but nothing publishes on a red run (D1), so
+  # this still waits for both test jobs. It reads only the snippets source,
+  # not dist/.
   publish-snippets:
     name: publish-snippets
-    needs: build
+    needs: [test, test-api]
     runs-on: ubuntu-latest
+    timeout-minutes: 10
 
     permissions:
       contents: read
@@ -331,10 +345,22 @@ jobs:
               { "url": "https://registry.npmjs.org", "token": "${{ secrets.PUBLISH_TO_NPMJS }}" }
             ]
 
+      - name: Publish to Visual Studio Marketplace
+        uses: HaaLeo/publish-vscode-extension@v2
+        with:
+          packagePath: 'libs/mintplayer-ng-bootstrap-snippets'
+          pat: ${{ secrets.PUBLISH_SNIPPETS }}
+          skipDuplicate: true
+          registryUrl: https://marketplace.visualstudio.com
+
+  # Needs the images only: it pulls them from GHCR and restarts compose. The
+  # npm packages have nothing to do with it.
   deploy:
+    name: deploy
     runs-on: ubuntu-latest
-    needs: [build, publish-libs, publish-snippets]
+    needs: [docker]
     if: github.ref == 'refs/heads/master'
+    timeout-minutes: 10
 
     permissions:
       contents: read
@@ -372,11 +398,28 @@ jobs:
             # Pull latest image
             docker compose --env-file .env pull
 
-            # Stop and remove old containers (including any orphans from prior service renames)
-            docker compose --env-file .env down --remove-orphans
-
-            # Start new containers
+            # Recreate only the containers whose image changed. No `down` first:
+            # it stopped every container before the new ones could start, which
+            # was pure downtime. --remove-orphans still clears services renamed
+            # away in docker-compose.yml.
             docker compose --env-file .env up -d --remove-orphans
 
             # Clean up old images
             docker image prune -f
+
+  # The single check that sums the run up, under the name the old single job
+  # had (`publish-master`). `if: always()` so it reports a failure instead of
+  # being skipped when a job it needs failed.
+  publish-master:
+    name: publish-master
+    if: always()
+    needs: [build, test, test-api, coverage, docker, publish-libs, publish-snippets, deploy]
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    steps:
+    - name: All jobs passed
+      if: contains(needs.*.result, 'failure') || contains(needs.*.result, 'cancelled')
+      run: |
+        echo '${{ toJSON(needs) }}'
+        exit 1

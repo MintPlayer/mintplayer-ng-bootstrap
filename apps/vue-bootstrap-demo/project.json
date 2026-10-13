@@ -29,6 +29,8 @@
     },
     "build-ssr": {
       "executor": "nx:run-commands",
+      "cache": true,
+      "inputs": ["production", "^production"],
       "outputs": [
         "{workspaceRoot}/dist/apps/vue-bootstrap-demo/server"
       ],

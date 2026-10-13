@@ -136,6 +136,27 @@ repo or environment secret), so a repo-scoped `gh` login cannot read or list it.
 Traefik has no access log enabled, so which router served a request cannot be confirmed afterwards.
 Enabling it (with headers dropped) would make this checkable later.
 
+**Follow-up after the secret was corrected: a refused write is fatal to Nx.** With the real RO token, PR
+run 38395501588 failed in every job's `npm ci` postinstall with
+`Misconfigured remote cache endpoint: Unexpected response status: 403 Forbidden`. Reads worked, but
+Nx 23.1.1's native `HttpRemoteCache.store` throws on any status it does not expect, and
+`tasks-runner/cache.js` `put()` lets the error propagate. A server that correctly refuses writes
+therefore breaks the client.
+
+**Fix (applied on the VPS 2026-10-13):** a `nx-cache-ro-sink` service (`traefik/whoami:v1.10.1`) whose
+router matches `Host && Method(PUT) && Header(Authorization, Bearer <RO token>)` at priority 150, between
+RW (200) and RO (100). It answers 200 and stores nothing. The compose backup is
+`docker-compose.yml.bak-2026-10-13`. Probe afterwards: RO `PUT` → 200, then `GET` → 404 (not stored);
+RO `POST` → 403; no token → 403.
+
+**Why the secret was wrong twice:** the old RO token contained a non-ASCII character (`£`). Piping it
+through PowerShell into `gh secret set` re-encoded that byte, so GitHub stored a different string. Nx
+then got 403 on its reads too, and a deliberately bogus token reproduced CI's output exactly. The token
+was rotated to an ASCII-only value. Traefik reads tokens from container **labels**, which compose bakes
+in at creation, so a changed `.env` only takes effect after `docker compose up -d` recreates the
+containers. Verified on PR run 38395501588 (attempt 3): every Nx task was a `[remote cache]` hit, and
+no cache file was written during the run.
+
 ## 3. Goals
 
 1. publish-master: **≤ 3 min warm, ≤ 6 min cold** (today 8.0 / 14.6; #430 targeted ~6 / ~10.5).

@@ -1,26 +1,42 @@
 name: Install Playwright browsers
 description: >
-  Chromium, Firefox and WebKit from a lockfile-keyed cache, plus the OS
+  The requested Playwright engines from a lockfile-keyed cache, plus the OS
   libraries they link against. Run after the setup action (needs node_modules).
+
+inputs:
+  browsers:
+    description: >
+      Space-separated engines to install. Only what the job runs: every engine
+      costs its download on a cache miss and its apt packages on EVERY run
+      (WebKit's media libraries alone are most of the ~117 MB install-deps pulls).
+    default: chromium firefox webkit
 
 runs:
   using: composite
   steps:
-    # The three engines are ~400 MB and were re-downloaded on every run. The
-    # key is the lockfile hash because the required browser build is pinned by
-    # the Playwright version in it — a Playwright bump invalidates the cache,
-    # which is exactly when new builds are needed.
+    # The key is the lockfile hash because the required browser build is pinned
+    # by the Playwright version in it — a Playwright bump invalidates the cache,
+    # which is exactly when new builds are needed. The engine list is part of
+    # the key so a chromium-only job never restores (or saves) a 400 MB
+    # three-engine cache.
+    - name: Cache key
+      id: key
+      shell: bash
+      env:
+        BROWSERS: ${{ inputs.browsers }}
+      run: echo "engines=$(echo $BROWSERS | tr ' ' '-')" >> "$GITHUB_OUTPUT"
+
     - name: Cache Playwright browsers
       id: playwright-cache
       uses: actions/cache@v4
       with:
         path: ~/.cache/ms-playwright
-        key: playwright-${{ runner.os }}-${{ hashFiles('package-lock.json') }}
+        key: playwright-${{ runner.os }}-${{ steps.key.outputs.engines }}-${{ hashFiles('package-lock.json') }}
 
     - name: Install Playwright browsers
       if: steps.playwright-cache.outputs.cache-hit != 'true'
       shell: bash
-      run: npx playwright install --with-deps chromium firefox webkit
+      run: npx playwright install --with-deps ${{ inputs.browsers }}
 
     # On a cache hit the binaries are already there, but the OS-level libraries
     # they link against are not — those live outside the cached directory and
@@ -28,4 +44,4 @@ runs:
     - name: Install Playwright system dependencies
       if: steps.playwright-cache.outputs.cache-hit == 'true'
       shell: bash
-      run: npx playwright install-deps chromium firefox webkit
+      run: npx playwright install-deps ${{ inputs.browsers }}

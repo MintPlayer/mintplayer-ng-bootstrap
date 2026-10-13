@@ -25,6 +25,8 @@
     },
     "build-ssr": {
       "executor": "nx:run-commands",
+      "cache": true,
+      "inputs": ["production", "^production"],
       "outputs": [
         "{workspaceRoot}/dist/apps/react-bootstrap-demo/server"
       ],
