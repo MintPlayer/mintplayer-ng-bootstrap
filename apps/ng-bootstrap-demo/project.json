@@ -5,11 +5,6 @@
   "sourceRoot": "apps/ng-bootstrap-demo/src",
   "prefix": "demo",
   "tags": [],
-  "cli": {
-    "cache": {
-      "environment": "all"
-    }
-  },
   "generators": {
     "@schematics/angular:component": {
       "style": "scss"
