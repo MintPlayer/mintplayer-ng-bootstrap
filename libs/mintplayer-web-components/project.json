@@ -225,7 +225,7 @@
     },
     "test": {
       "executor": "@nx/vitest:test",
-      "dependsOn": ["codegen-wc", "cem"],
+      "dependsOn": ["codegen-wc", "cem", "codegen-ssr-chrome"],
       "outputs": ["{options.reportsDirectory}"],
       "options": {
         "reportsDirectory": "coverage/libs/mintplayer-web-components"

@@ -17,8 +17,8 @@ env:
 permissions:
   contents: read
 
-# The jobs run in PARALLEL, not as one long sequence: build + unit tests, the
-# e2e suites (the Angular one in four shards), the axe gate per app and the
+# The jobs run in PARALLEL, not as one long sequence: the build, the unit tests (test.yml, sharded), the
+# e2e suites (sharded per browser), the axe gate per app and the
 # live-API smoke each get their own runner. Public repository, so standard
 # runners cost nothing extra; each job pays ~1.5 min of setup and the wall time
 # becomes the slowest job instead of the sum of all of them (was 15+ min).
@@ -33,84 +33,21 @@ permissions:
 # for why, and put it back if that ever changes.
 jobs:
   build:
-    name: build + unit tests
+    name: build
+    timeout-minutes: 20
     runs-on: ubuntu-latest
 
     steps:
     - name: Checkout
       uses: actions/checkout@v6
-      with:
-        fetch-depth: 0
 
     - name: Setup workspace
       uses: ./.github/actions/setup
+      with:
+        dotnet: 'false'
 
     - name: Build
-      timeout-minutes: 15
       run: npx nx build --configuration=production
-
-    - name: Unit tests
-      timeout-minutes: 15
-      # --exclude=api: nx:run-commands forwards --coverage verbatim to
-      # `dotnet test` (VSTest), which rejects it. The API has its own step below.
-      run: npx nx affected --target=test --exclude=api --coverage --parallel=2 --output-style=stream --base=${{ github.event.pull_request.base.sha }} --head=${{ github.event.pull_request.head.sha }}
-
-    - name: Test API (xUnit, with coverage)
-      timeout-minutes: 10
-      # --collect writes coverage.cobertura.xml into a GUID-named subdirectory
-      # of --results-directory, hence the ** in the upload glob.
-      run: dotnet test apps/api/Tests/Api.Tests.csproj -c Release --collect:"XPlat Code Coverage" --results-directory coverage/api
-    # Vitest writes `SF:` paths relative to each project's own root, so
-    # `libs/mintplayer-web-components/dock/index.ts` is emitted as
-    # `dock/index.ts` — a suffix that exists under four different libraries.
-    # The service resolves report paths against `git ls-files` by longest
-    # suffix and drops anything ambiguous from the totals. Measured: 314 of
-    # 1405 files (22.3%) silently excluded, incl. ~58% of react and vue.
-    # This rewrites them to workspace-relative, and fails loudly if any path
-    # stops resolving.
-    - name: Rebase coverage paths to workspace-relative
-      run: node tools/scripts/rebase-lcov-paths.mjs
-
-
-    # Nothing in this workflow gates the merge. The service publishes the
-    # `coverage/project` and `coverage/patch` check runs itself, and those are
-    # what branch protection will eventually require — so there is deliberately
-    # no comparison step here to delete later (docs/prd/coverage-pr-gate-plan.md).
-    #
-    # `partial: true` is the load-bearing input. This is `nx affected`, so it
-    # measures only the projects the diff touched; without the declaration the
-    # server would read a subset as a whole-workspace total and a PR touching one
-    # small library would report a ~98% collapse. Declared, it compares
-    # like-for-like against the same base the affected-computation used.
-    #
-    # `base-sha` is that same base, and passing it explicitly matters: left out,
-    # the server falls back to the newest covered default-branch commit — which
-    # it discloses, but which is not the commit `nx affected` diffed against.
-    - name: Upload coverage
-      # Fork PRs get no secrets, so the upload cannot work there. Skip rather
-      # than fail — a contributor's PR must not go red over a missing token.
-      # (OIDC is unavailable to fork PRs too, so this guard stays either way.)
-      if: github.event.pull_request.head.repo.full_name == github.repository
-      continue-on-error: true
-      uses: MintPlayer/MintPlayer.Spark/apps/CodeCoverage/action@coverage-upload-v1
-      with:
-        url: https://coverage.mintplayer.com
-        token: ${{ secrets.COVERAGE_TOKEN }}
-        files: |
-          coverage/libs/*/lcov.info
-          coverage/tools/lcov.info
-          coverage/api/**/coverage.cobertura.xml
-        disable-search: true
-        flags: pr
-        partial: true
-        base-sha: ${{ github.event.pull_request.base.sha }}
-        # Closes the build now instead of waiting out the ~2-minute debounce, so
-        # the check runs appear while the PR is still being looked at. Safe for a
-        # partial upload only because `partial: true` above tells the server what
-        # it is receiving — a partial build can never become the repo headline.
-        finish: true
-        # A coverage-service outage must never be the reason a PR cannot merge.
-        fail-ci-if-error: false
 
     # Hand dist/ off to the dry-run-publish-libs job. Snippets publishes
     # from libs/ (source); the dry-run job checks the repo out so we don't
@@ -122,28 +59,114 @@ jobs:
         path: dist/
         retention-days: 1
 
-  # One runner per e2e suite, the Angular one (by far the longest: ~480 tests
-  # over Chromium + Firefox) split into four Playwright shards. Measured on the
-  # two-shard layout: each shard spent ~2 min on setup, ~1 min building the
-  # production server and ~4.2 min on its tests, so four shards bring the
-  # Angular jobs down to the React/Vue ones (~5 min); more would not shorten
-  # the run, React and Vue become the long pole. Still `affected`:
-  # each job asks Nx whether its project is affected by the PR and skips its
-  # browsers and its run when it is not, exactly as the old single
-  # `nx affected --target=e2e` step did for the whole set.
+  # Every unit-test suite as parallel jobs, web-components and ng-bootstrap in
+  # two vitest shards each (test.yml, shared with publish-master.yml).
+  tests:
+    uses: ./.github/workflows/test.yml
+    secrets: inherit
+
+  # The coverage of every test job, uploaded together: the reports are the same
+  # files at the same paths a single job used to produce, collected from the test
+  # jobs' artifacts (each sharded project contributes one report per shard).
+  coverage:
+    name: coverage upload
+    needs: tests
+    if: ${{ !cancelled() }}
+    timeout-minutes: 10
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v6
+
+    # rebase-lcov-paths.mjs imports only node: built-ins and a local helper.
+    - name: Setup node
+      uses: actions/setup-node@v6
+      with:
+        node-version: 24
+
+    - name: Collect the test jobs' reports
+      uses: actions/download-artifact@v8
+      with:
+        pattern: coverage-*
+        merge-multiple: true
+
+    # Vitest writes `SF:` paths relative to each project's own root, so
+    # `libs/mintplayer-web-components/dock/index.ts` is emitted as
+    # `dock/index.ts` — a suffix that exists under four different libraries.
+    # The service resolves report paths against `git ls-files` by longest
+    # suffix and drops anything ambiguous from the totals. Measured: 314 of
+    # 1405 files (22.3%) silently excluded, incl. ~58% of react and vue.
+    # This rewrites them to workspace-relative, and fails loudly if any path
+    # stops resolving.
+    - name: Rebase coverage paths to workspace-relative
+      run: node tools/scripts/rebase-lcov-paths.mjs
+
+    # Nothing in this workflow gates the merge. The service publishes the
+    # `coverage/project` and `coverage/patch` check runs itself, and those are
+    # what branch protection will eventually require — so there is deliberately
+    # no comparison step here to delete later (docs/prd/coverage-pr-gate-plan.md).
+    #
+    # `base-sha` is the PR base, passed explicitly: left out, the server falls
+    # back to the newest covered default-branch commit — which it discloses, but
+    # which is not the commit this PR is compared against.
+    - name: Upload coverage
+      # Fork PRs get no secrets, so the upload cannot work there. Skip rather
+      # than fail — a contributor's PR must not go red over a missing token.
+      # (OIDC is unavailable to fork PRs too, so this guard stays either way.)
+      if: github.event.pull_request.head.repo.full_name == github.repository
+      continue-on-error: true
+      uses: MintPlayer/MintPlayer.Spark/apps/CodeCoverage/action@coverage-upload-v1
+      with:
+        url: https://coverage.mintplayer.com
+        token: ${{ secrets.COVERAGE_TOKEN }}
+        # `**`: a sharded project's reports sit in coverage/libs/<project>/shard-<i>-of-<n>/.
+        files: |
+          coverage/libs/**/lcov.info
+          coverage/tools/lcov.info
+          coverage/api/**/coverage.cobertura.xml
+        disable-search: true
+        flags: pr
+        partial: true
+        base-sha: ${{ github.event.pull_request.base.sha }}
+        # Closes the build now instead of waiting out the ~2-minute debounce, so
+        # the check runs appear while the PR is still being looked at.
+        finish: true
+        # A coverage-service outage must never be the reason a PR cannot merge.
+        fail-ci-if-error: false
+
+
+  # One runner per (suite, browser, shard). Sharded PER BROWSER on purpose: a
+  # plain `--shard=i/4` over both projects cuts the ordered test list, which
+  # runs browser by browser, so shards 1-2 got every chromium test and 3-4
+  # every firefox test — and firefox is ~1.8x slower per test (measured on PR
+  # #429: ~205 s of chromium work vs ~360 s of firefox work, worst shard 186 s
+  # against a 141 s even split). Angular: chromium x2 + firefox x4, ~100 s and
+  # ~90 s of tests per shard. React and Vue: one job per browser. Each job
+  # installs only its own engine. Still `affected`: each job asks Nx whether
+  # its project is affected by the PR and skips its browsers and its run when
+  # it is not, exactly as the old single `nx affected --target=e2e` step did
+  # for the whole set.
   e2e:
     name: e2e (${{ matrix.label }})
     runs-on: ubuntu-latest
+    timeout-minutes: 30
     strategy:
       fail-fast: false
       matrix:
         include:
-          - { label: ng 1/4, project: ng-bootstrap-demo-e2e, shard: 1/4, artifact: ng-1 }
-          - { label: ng 2/4, project: ng-bootstrap-demo-e2e, shard: 2/4, artifact: ng-2 }
-          - { label: ng 3/4, project: ng-bootstrap-demo-e2e, shard: 3/4, artifact: ng-3 }
-          - { label: ng 4/4, project: ng-bootstrap-demo-e2e, shard: 4/4, artifact: ng-4 }
-          - { label: react, project: react-bootstrap-demo-e2e, shard: 1/1, artifact: react }
-          - { label: vue, project: vue-bootstrap-demo-e2e, shard: 1/1, artifact: vue }
+          - { label: ng chromium 1/2, project: ng-bootstrap-demo-e2e, browser: chromium, shard: 1/2, artifact: ng-chromium-1 }
+          - { label: ng chromium 2/2, project: ng-bootstrap-demo-e2e, browser: chromium, shard: 2/2, artifact: ng-chromium-2 }
+          - { label: ng firefox 1/4, project: ng-bootstrap-demo-e2e, browser: firefox, shard: 1/4, artifact: ng-firefox-1 }
+          - { label: ng firefox 2/4, project: ng-bootstrap-demo-e2e, browser: firefox, shard: 2/4, artifact: ng-firefox-2 }
+          - { label: ng firefox 3/4, project: ng-bootstrap-demo-e2e, browser: firefox, shard: 3/4, artifact: ng-firefox-3 }
+          - { label: ng firefox 4/4, project: ng-bootstrap-demo-e2e, browser: firefox, shard: 4/4, artifact: ng-firefox-4 }
+          - { label: react chromium, project: react-bootstrap-demo-e2e, browser: chromium, shard: 1/1, artifact: react-chromium }
+          - { label: react firefox, project: react-bootstrap-demo-e2e, browser: firefox, shard: 1/1, artifact: react-firefox }
+          - { label: react webkit, project: react-bootstrap-demo-e2e, browser: webkit, shard: 1/1, artifact: react-webkit }
+          - { label: vue chromium, project: vue-bootstrap-demo-e2e, browser: chromium, shard: 1/1, artifact: vue-chromium }
+          - { label: vue firefox, project: vue-bootstrap-demo-e2e, browser: firefox, shard: 1/1, artifact: vue-firefox }
+          - { label: vue webkit, project: vue-bootstrap-demo-e2e, browser: webkit, shard: 1/1, artifact: vue-webkit }
 
     steps:
     - name: Checkout
@@ -151,8 +174,12 @@ jobs:
       with:
         fetch-depth: 0
 
+    # .NET only for the Angular suite: its `nx serve` starts the API as a
+    # continuous dependency. The React/Vue web servers run without it.
     - name: Setup workspace
       uses: ./.github/actions/setup
+      with:
+        dotnet: ${{ matrix.project == 'ng-bootstrap-demo-e2e' }}
 
     - name: Is ${{ matrix.project }} affected?
       id: affected
@@ -167,13 +194,15 @@ jobs:
     - name: Install Playwright browsers
       if: steps.affected.outputs.run == 'true'
       uses: ./.github/actions/playwright
+      with:
+        browsers: ${{ matrix.browser }}
 
     - name: E2E tests
       if: steps.affected.outputs.run == 'true'
-      timeout-minutes: 30
-      # Extra flags on an nx:run-commands target are forwarded to the command,
-      # so --shard reaches `playwright test`.
-      run: npx nx run ${{ matrix.project }}:e2e --output-style=stream --shard=${{ matrix.shard }}
+      # Everything after `--` is forwarded to `playwright test` untouched. It
+      # has to be: Nx consumes a bare `--project` itself ("Cannot find project
+      # 'firefox'").
+      run: npx nx run ${{ matrix.project }}:e2e --output-style=stream -- --project=${{ matrix.browser }} --shard=${{ matrix.shard }}
 
     # Playwright is configured with `trace: 'on-first-retry'`, so a retried test
     # already records a full trace — but nothing collected it, so the two flakes
@@ -198,6 +227,7 @@ jobs:
   e2e-a11y:
     name: axe (${{ matrix.app }})
     runs-on: ubuntu-latest
+    timeout-minutes: 30
     strategy:
       fail-fast: false
       matrix:
@@ -207,14 +237,19 @@ jobs:
     - name: Checkout
       uses: actions/checkout@v6
 
+    # .NET only for the Angular gate: its `nx serve` starts the API.
     - name: Setup workspace
       uses: ./.github/actions/setup
+      with:
+        dotnet: ${{ matrix.app == 'ng' }}
 
+    # The axe configs run chromium only.
     - name: Install Playwright browsers
       uses: ./.github/actions/playwright
+      with:
+        browsers: chromium
 
     - name: E2E accessibility gate (axe)
-      timeout-minutes: 30
       run: npx nx run ${{ matrix.app }}-bootstrap-demo-e2e:e2e-a11y --output-style=stream
 
     - name: Upload Playwright traces
@@ -233,6 +268,7 @@ jobs:
   e2e-live:
     name: e2e (live API)
     runs-on: ubuntu-latest
+    timeout-minutes: 20
 
     steps:
     - name: Checkout
@@ -241,11 +277,13 @@ jobs:
     - name: Setup workspace
       uses: ./.github/actions/setup
 
+    # The live-API config runs chromium only.
     - name: Install Playwright browsers
       uses: ./.github/actions/playwright
+      with:
+        browsers: chromium
 
     - name: E2E (live API)
-      timeout-minutes: 15
       run: npx nx run ng-bootstrap-demo-e2e:e2e-live --output-style=stream
 
     - name: Upload Playwright traces
@@ -264,14 +302,15 @@ jobs:
   pull-request:
     name: pull-request
     if: always()
-    needs: [build, e2e, e2e-a11y, e2e-live]
+    needs: [build, tests, coverage, e2e, e2e-a11y, e2e-live]
     runs-on: ubuntu-latest
+    timeout-minutes: 5
 
     steps:
     - name: All jobs passed
       if: contains(needs.*.result, 'failure') || contains(needs.*.result, 'cancelled')
       run: |
-        echo "build: ${{ needs.build.result }}, e2e: ${{ needs.e2e.result }}, e2e-a11y: ${{ needs.e2e-a11y.result }}, e2e-live: ${{ needs.e2e-live.result }}"
+        echo '${{ toJSON(needs) }}'
         exit 1
 
   # Single dry-run sweep covering both folder roots (dist/libs + the
@@ -283,6 +322,7 @@ jobs:
     name: dry-run-publish-libs
     needs: build
     runs-on: ubuntu-latest
+    timeout-minutes: 10
 
     permissions:
       contents: read

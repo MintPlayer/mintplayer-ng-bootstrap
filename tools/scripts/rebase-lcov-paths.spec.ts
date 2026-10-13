@@ -48,6 +48,18 @@ describe('prefixFor', () => {
     expect(prefixFor('coverage/libs/foo/lcov.info', 'coverage')).toBe('libs/foo');
   });
 
+  it('drops the shard folder a sharded test job parks its report in', () => {
+    expect(
+      prefixFor(join('coverage', 'libs', 'foo', 'shard-2-of-3', 'lcov.info'), 'coverage'),
+    ).toBe('libs/foo');
+  });
+
+  it('keeps a project folder that merely starts with "shard"', () => {
+    expect(prefixFor(join('coverage', 'libs', 'shard-utils', 'lcov.info'), 'coverage')).toBe(
+      'libs/shard-utils',
+    );
+  });
+
   it('returns an empty prefix for a report sitting directly in the coverage dir', () => {
     // The CLI refuses to rewrite in that case — there is no project to
     // attribute the paths to.

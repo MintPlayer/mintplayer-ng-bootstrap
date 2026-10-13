@@ -1,0 +1,107 @@
+name: test
+
+# Every unit-test suite, as parallel jobs. Called by pull-request.yml and
+# publish-master.yml, so both measure the same thing (the layout MintPlayer.Spark
+# uses). One job used to run them all in sequence after the build: 331 s of
+# tests behind 87 s of build on PR #431, with web-components (~200 s cold) and
+# ng-bootstrap (~155 s cold) as the long poles. Here those two run in two vitest
+# shards each, beside the other suites and the API's xUnit tests.
+#
+# run-many, NOT affected, in every job: `test` declares its coverage directory
+# as a cached output, so an unaffected project's report is RESTORED from the Nx
+# cache rather than regenerated, and the coverage upload still gets a report for
+# every project. Each job hands its reports to the caller's coverage job as an
+# artifact, and that job uploads them together.
+
+on:
+  workflow_call:
+
+permissions:
+  contents: read
+
+env:
+  NX_SELF_HOSTED_REMOTE_CACHE_SERVER: ${{ secrets.NX_CACHE_SERVER }}
+  NX_SELF_HOSTED_REMOTE_CACHE_ACCESS_TOKEN: ${{ (github.event_name == 'push' && github.ref_name == github.event.repository.default_branch) && secrets.NX_CACHE_RW_TOKEN || secrets.NX_CACHE_RO_TOKEN }}
+
+jobs:
+  test:
+    name: ${{ matrix.name }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    strategy:
+      # Every suite reports even when another fails: one red shard must not hide the rest.
+      fail-fast: false
+      matrix:
+        include:
+          - { name: web-components 1/2, artifact: wc-1, projects: mintplayer-web-components, shard: 1/2, dir: coverage/libs/mintplayer-web-components }
+          - { name: web-components 2/2, artifact: wc-2, projects: mintplayer-web-components, shard: 2/2, dir: coverage/libs/mintplayer-web-components }
+          - { name: ng-bootstrap 1/2, artifact: ng-1, projects: mintplayer-ng-bootstrap, shard: 1/2, dir: coverage/libs/mintplayer-ng-bootstrap }
+          - { name: ng-bootstrap 2/2, artifact: ng-2, projects: mintplayer-ng-bootstrap, shard: 2/2, dir: coverage/libs/mintplayer-ng-bootstrap }
+          # Everything else: react/vue-bootstrap, the small libs, the demo apps and tools.
+          # --exclude=api: nx:run-commands forwards --coverage verbatim to
+          # `dotnet test` (VSTest), which rejects it; the API has its own leg.
+          - { name: other suites, artifact: other, exclude: 'mintplayer-web-components,mintplayer-ng-bootstrap,api' }
+          - { name: API (xUnit), artifact: api, api: true }
+
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v6
+
+    - name: Setup workspace
+      uses: ./.github/actions/setup
+      with:
+        node: ${{ !matrix.api }}
+        dotnet: ${{ matrix.api == true }}
+
+    - name: Run tests
+      # Step-level, so a hung suite fails here and the artifact upload below
+      # still runs with what the suite produced.
+      timeout-minutes: 20
+      # --shard reaches vitest through both executors (@nx/vitest and
+      # @analogjs/vitest-angular forward unknown options), and it is part of the
+      # task hash, so each shard is cached on its own.
+      run: |
+        if [ "${{ matrix.api }}" = "true" ]; then
+          # --collect writes coverage.cobertura.xml into a GUID-named
+          # subdirectory of --results-directory.
+          dotnet test apps/api/Tests/Api.Tests.csproj -c Release --collect:"XPlat Code Coverage" --results-directory coverage/api
+        elif [ -n "${{ matrix.shard }}" ]; then
+          npx nx run-many --target=test --projects=${{ matrix.projects }} --coverage --output-style=stream --shard=${{ matrix.shard }}
+        else
+          npx nx run-many --target=test --exclude=${{ matrix.exclude }} --coverage --parallel=2 --output-style=stream
+        fi
+
+    # Both shards of a project write the same coverage/<project>/lcov.info, and
+    # merging the artifacts would keep only one. Each shard parks its report in
+    # shard-<i>-of-<n>/, which rebase-lcov-paths.mjs knows is not part of the
+    # project path. (@analogjs/vitest-angular ignores a `reportsDirectory`
+    # override, so the report cannot be pointed there directly.)
+    - name: Keep the shard's report apart
+      if: matrix.shard
+      env:
+        DIR: ${{ matrix.dir }}
+        SHARD: ${{ matrix.shard }}
+      run: |
+        target="$DIR/shard-${SHARD%/*}-of-${SHARD#*/}"
+        mkdir -p "$target"
+        mv "$DIR/lcov.info" "$target/lcov.info"
+
+    # upload-artifact roots the artifact at the deepest folder ALL matched files
+    # share, so a job that only produced coverage/libs/foo/** would lose that
+    # prefix and the coverage job would put the report where the rebase script
+    # cannot attribute it. A file at the workspace root pins the root.
+    - name: Pin the artifact root
+      if: always()
+      run: echo "${{ matrix.name }}" > coverage-artifact-root.txt
+
+    - name: Upload coverage reports
+      if: always()
+      uses: actions/upload-artifact@v7
+      with:
+        name: coverage-${{ matrix.artifact }}
+        path: |
+          coverage-artifact-root.txt
+          coverage/**/lcov.info
+          coverage/api/**/coverage.cobertura.xml
+        if-no-files-found: ignore
+        retention-days: 1
