@@ -1,6 +1,11 @@
 import { defineConfig, devices } from '@playwright/test';
 
 const PORT = 4200;
+// No file watching, no live reload, no HMR: the dev server must never reload or
+// patch the page mid-test. A reload wipes the state a test just built (a test
+// that opened an accordion tab found it closed again and waited out its 60s
+// timeout on a summary that was no longer visible).
+const NO_RELOAD = '--watch=false --live-reload=false --hmr=false';
 const baseURL = `http://localhost:${PORT}`;
 
 export default defineConfig({
@@ -57,7 +62,7 @@ export default defineConfig({
   // a real `nx build` output. Avoids the brittle "test against the built
   // SSR server.mjs" path which struggles with Nx's cache lifecycle.
   webServer: {
-    command: `npx nx serve ng-bootstrap-demo --configuration=production --port=${PORT}`,
+    command: `npx nx serve ng-bootstrap-demo --configuration=production --port=${PORT} ${NO_RELOAD}`,
     url: baseURL,
     reuseExistingServer: !process.env['CI'],
     timeout: 180_000,

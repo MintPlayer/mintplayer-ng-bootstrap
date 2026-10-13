@@ -12,6 +12,11 @@ import { defineConfig, devices } from '@playwright/test';
 // https://api.bootstrap.mintplayer.com, which doesn't exist in CI.
 
 const PORT = 4200;
+// No file watching, no live reload, no HMR: the dev server must never reload or
+// patch the page mid-test. A reload wipes the state a test just built (a test
+// that opened an accordion tab found it closed again and waited out its 60s
+// timeout on a summary that was no longer visible).
+const NO_RELOAD = '--watch=false --live-reload=false --hmr=false';
 const API_PORT = 5000;
 const baseURL = `http://localhost:${PORT}`;
 const apiURL = `http://localhost:${API_PORT}`;
@@ -39,7 +44,7 @@ export default defineConfig({
   // seeding on cold CI runners.
   webServer: [
     {
-      command: `npx nx serve ng-bootstrap-demo --configuration=development --port=${PORT}`,
+      command: `npx nx serve ng-bootstrap-demo --configuration=development --port=${PORT} ${NO_RELOAD}`,
       url: baseURL,
       // Even in CI we accept an existing :4200 / :5000 server. The prior
       // "E2E tests" step boots `nx serve ng-bootstrap-demo` (which starts
