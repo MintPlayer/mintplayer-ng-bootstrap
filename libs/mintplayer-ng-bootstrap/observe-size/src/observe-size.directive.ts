@@ -49,6 +49,8 @@ export class BsObserveSizeDirective implements AfterViewInit, OnDestroy {
   height = computed(() => this.size()?.height);
 
   ngAfterViewInit() {
+    // The server has no layout (and no getComputedStyle): leave the size unmeasured.
+    if (isPlatformServer(this.platformId)) return;
     const el: HTMLElement = this.element.nativeElement;
     this.observer?.observe(el);
     this.size.set(contentBoxSize(el));

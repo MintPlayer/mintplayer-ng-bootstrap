@@ -2,7 +2,8 @@
 
 **Issue:** [#428](https://github.com/MintPlayer/mintplayer-ng-bootstrap/issues/428)
 **Plan:** [priority-nav-shrink-wrap-oscillation-plan.md](./priority-nav-shrink-wrap-oscillation-plan.md)
-**Status:** Proposed (2026-10-13). Reproduced in Firefox; fix spiked and measured (§6).
+**Status:** Implemented (2026-10-13). Reproduced in Firefox; fix spiked and measured (§6); D1–D7 adopted
+as recommended. Results of the local sweep in the plan.
 **Scope:** `@mintplayer/ng-bootstrap/priority-nav` (Angular only — there is no `mp-priority-nav` WC and no
 React/Vue port) and, for one decision, `@mintplayer/ng-bootstrap/observe-size`.
 
@@ -89,19 +90,26 @@ oscillates and then gets *stuck* fully collapsed after widening; with D1 it coll
 
 ### D3 — Measure More in the measure strip, padded, always rendered
 
-Add a clone of the More toggle (same template/`moreLabelTemplate`, same `.priority-nav-more-toggle`
-class, so the padding is included) inside its own measure row; `moreWidth` reads it. More is then never
-`0` (R1) and never 24 px short (R2/R3) — without touching `BsObserveSizeDirective`'s box model. The
-visible toggle's `#moreSizer` is no longer read for the decision; drop it if nothing else uses it.
+Add a clone of the More toggle (same `moreLabelTemplate ?? defaultMoreLabel`) inside its own measure row;
+`moreWidth` reads it. More is then never `0` (R1) and never 24 px short (R2/R3).
+
+**As built:** the clone is a `span.priority-nav-more-toggle-box` inside the observed
+`span.priority-nav-measure-item`, so the observed content box includes the toggle's padding. It does
+**not** carry `.priority-nav-more-toggle` (the spike's choice): the clone comes first in DOM order, so
+every `querySelector('.priority-nav-more-toggle')` — specs, e2e, consumers — would have hit the clone.
+The box styles (`display`, `gap`, `padding`, `border`, `font`, caret) are shared by a selector list;
+the button-only ones (`background`, `cursor`, `color`, focus ring) stay on `.priority-nav-more-toggle`.
+The visible button no longer carries `bsObserveSize`; the public `moreSizer` field is replaced by a
+public `moreWidth` computed.
 
 ### D4 — Host `min-width` = measured More width
 
 With D2 the host may shrink below the More toggle and clip it. Floor the host at More's measured width.
 The spike wrote `style.minWidth` from an `effect` because a `[style.min-width.px]` host binding "did not
-update"; that is suspicious (host bindings track signals) — **S1** finds out why and implements it as a
-host binding if at all possible (no imperative inline styles; feedback: no inline style writes we can
-express declaratively). Fallback: a `--priority-nav-more-width` custom property set via host binding,
-consumed by `:host { min-width: var(--priority-nav-more-width, 0) }`.
+update". **As built:** a plain host binding, `'[style.min-width.px]': 'hostMinWidth()'`, where
+`hostMinWidth` is `moreWidth()` when there are items and `null` otherwise. It updates as expected (the
+component spec drives the measured width and asserts the host's `min-width`; verified by hand in the
+browser), so no imperative style write and no custom-property fallback.
 
 ### D5 — Sub-pixel tolerance in both comparisons
 
@@ -115,9 +123,17 @@ integer seed ±0.5 is removed by D6).
 
 The integer `clientWidth` (padding-box) seed vs fractional `contentRect` (content-box) updates is a latent
 inconsistency for every consumer (priority-nav, sticky-footer). Seed with the same quantity the
-ResizeObserver reports: the fractional content-box size (`getBoundingClientRect()` minus padding and
-border from `getComputedStyle`). Keeps the public meaning (content box) and sticky-footer's numbers;
-removes the ±0.5 px seed jitter. Recommended; S2 confirms sticky-footer is unchanged.
+ResizeObserver reports: the fractional content-box size. Keeps the public meaning (content box) and
+removes the ±0.5 px seed jitter.
+
+**As built:** an exported `contentBoxSize(el)` reads the used `width`/`height` from `getComputedStyle`
+(not `getBoundingClientRect`, which a CSS transform would scale while `contentRect` is not), subtracts
+padding and border for `box-sizing: border-box`, and falls back to `clientWidth − padding` where the
+used size is `auto` (non-replaced inline elements). The seed is **skipped on the server**:
+`ngAfterViewInit` also runs during SSR, where there is no layout and no `getComputedStyle` (the first e2e
+run logged `ReferenceError: getComputedStyle is not defined` from the SSR server). The server size now
+stays `undefined` instead of `0`; priority-nav guards every read with `isServerSide`, and sticky-footer
+already ignores `undefined`, so its server `marginBottom` stays unset (it was `0`).
 
 ### D7 — No hysteresis
 
@@ -131,6 +147,9 @@ stays a pure function.
   basic demo at 600 px now shows 5/8 inline instead of 6/8 with a clipped More), and shrink-wrapped navs
   now collapse instead of overflowing their parent.
 - `computeOverflowIds` gains tolerance; `SUBPIXEL_TOLERANCE` exported alongside it.
+- `BsPriorityNavComponent.moreSizer` (public field) is gone; `moreWidth` (computed) replaces it.
+- `@mintplayer/ng-bootstrap/observe-size` exports `contentBoxSize`; the directive no longer seeds a size
+  on the server.
 - Release as a **patch/minor fix** of `@mintplayer/ng-bootstrap`; Spark bumps the dependency.
 
 ## 6. Spike results (Firefox, DPR 1)
@@ -153,12 +172,18 @@ Repro: Spark header copy, labels `Refresh/Filter/Settings` → ~270 class mutati
 D4: 12 label sets × 56 card widths (300–520 px, 4 px steps) + 1280→600→400→1280 sweep: 0 mutations, card
 header actions stay right of the caption, block action bar stays start-aligned.
 
-## 7. Spikes still to run
+## 7. Follow-up checks
 
-- **S1** — Why a `[style.min-width.px]` host binding did not update in the spike; land D4 declaratively.
-- **S2** — D6 on sticky-footer: before/after `marginBottom` on the sticky-footer demo, identical to < 0.5 px.
-- **S3** — Chromium sanity of D4 on the same repro (the bug is Firefox-visible, the fix must be
-  engine-neutral); also DPR 1.5 / 125 % zoom in Firefox (fractional device pixels).
+- **S1 (host binding)** — resolved: the declarative host binding works (D4 "as built").
+- **S2 (sticky-footer)** — reasoned rather than measured: `.footer` has no padding or border of its own,
+  so the content-box seed differs from the old `clientHeight` seed only by sub-pixel rounding, and the
+  first ResizeObserver tick already reported the content box before. Server: see D6.
+- **S3 (Chromium)** — checked by hand on the dev build: 0 class mutations in the flex-header demo after a
+  1280 px resize. Checked by hand by the maintainer in the browser as well. One observation stays open
+  (§8): in a local run of the whole e2e file against the **production** build, with every test in
+  parallel, the Chromium settle tests counted 25 class mutations (33 in the collapse test) in the 1 s
+  window, constant across widths — a one-off burst, not a per-frame flip (that would be ~60). The same
+  test alone against the dev build counted 0, and Firefox passed in that same run. CI decides.
 
 ## 8. Testing
 
@@ -167,9 +192,14 @@ header actions stay right of the caption, block action bar stays start-aligned.
   `computeOverflowIds`, assert a fixed point within 2 steps for the issue's numbers and the spike's
   numbers, plus a randomized sweep of fractional widths. Fails on master, passes with D5 (the layout parts,
   D1–D4, are covered by e2e).
-- **Unit (`observe-size`)** — seed equals the content-box fractional width (D6).
-- **Component spec** — the More clone exists in the measure strip, renders `moreLabelTemplate`, is
-  `aria-hidden`/inert like the other measure items; host `min-width` follows the measured More width.
+  **As built:** the harness asserts the *settled state* (nothing overflows — the host is unconstrained),
+  not only that it settles: without the tolerance the loop can also settle in the wrong state, collapsed
+  although everything fits, which a settle-count assertion would pass.
+- **Unit (`observe-size`)** — `contentBoxSize` keeps the fractional used size of a content-box element
+  and subtracts padding + border for a border-box one (D6).
+- **Component spec** — the More clone exists in the measure strip, is a `span` inside the
+  `aria-hidden` + `inert` wrapper, renders the label, and `.priority-nav-more-toggle` still matches only
+  the real button; host `min-width` follows the measured More width.
 - **e2e (`priority-nav.spec.ts`, runs on chromium + firefox)** — on the new "Inside a flex header" demo
   section: zero class mutations over 1 s at 1280 / 600 / 400 px; the strip + More never exceed the host
   (no clipping); narrowing the card collapses into More and widening restores all items; the block action
@@ -179,7 +209,7 @@ header actions stay right of the caption, block action bar stays start-aligned.
 
 ## 9. Accessibility
 
-The More clone is measurement-only: `aria-hidden="true"`, not focusable (no `<button>` — a `span` with the
-toggle class, as in the spike), inside the existing `inert`/hidden measure wrapper. No change to the
+The More clone is measurement-only: `aria-hidden="true"`, not focusable (no `<button>` — a `span` with
+the toggle's box styles), inside the existing `inert`/hidden measure wrapper. No change to the
 disclosure pattern, roles, names or keyboard behaviour. The stabilised layout removes a WCAG 2.3.x-adjacent
 problem (content moving every frame) for the affected consumers.

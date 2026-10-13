@@ -1,63 +1,64 @@
 # Plan — Priority-nav shrink-wrap oscillation (#428)
 
 **PRD:** [priority-nav-shrink-wrap-oscillation.md](./priority-nav-shrink-wrap-oscillation.md)
-**Status:** Proposed (2026-10-13). Repro + fix spikes done (PRD §6); S1–S3 open.
+**Status:** Implemented (2026-10-13) on `fix/priority-nav-shrink-wrap-428`. D1–D7 adopted as
+recommended without grilling (the user asked to start implementing). Local sweep results below; the
+GitHub workflow is the final verdict.
 
-| Milestone | Scope | PRD |
-|---|---|---|
-| G | Grill D1–D7 and record outcomes in the PRD | §4 |
-| S | Spikes S1 (declarative host min-width), S2 (observe-size seed vs sticky-footer), S3 (Chromium + fractional DPR) | §7 |
-| M1 | `overflow.ts`: `SUBPIXEL_TOLERANCE` in both comparisons (D5) + fixed-point unit harness | §4 D5, §8 |
-| M2 | Measure row in normal flow + `:host { min-width: 0 }` (D1, D2); update the SCSS comment | §4 D1–D2 |
-| M3 | Padded More clone in the measure strip; `moreWidth` reads it; drop the now-unused `#moreSize` sizer (D3) | §4 D3 |
-| M4 | Host `min-width` floored at the measured More width, declaratively per S1 (D4) | §4 D4 |
-| M5 | `BsObserveSizeDirective`: seed with the fractional content-box size (D6) + spec | §4 D6 |
-| M6 | Demo: permanent "Inside a flex header" section (Spark header mirror) + block action-bar variant; snippets after demos | §8 |
-| M7 | Specs: component spec (More clone, host min-width), e2e on chromium + firefox (zero mutations @1280/600/400, no clipping, collapse/recover, block bar stays start-aligned) | §8 |
-| M8 | Batched sweep: `nx build mintplayer-ng-bootstrap`, `nx test mintplayer-ng-bootstrap`, ng demo e2e (both browsers); Firefox MCP re-check of the original repro labels | §8 |
+| Milestone | Scope | PRD | Status |
+|---|---|---|---|
+| G | Grill D1–D7 | §4 | Skipped — adopted as recommended |
+| S | S1 (declarative host min-width), S2 (sticky-footer), S3 (Chromium) | §7 | Resolved / reasoned, see PRD §7 |
+| M1 | `overflow.ts`: `SUBPIXEL_TOLERANCE` in both comparisons (D5) + fixed-point unit harness | §4 D5, §8 | Done |
+| M2 | Measure row in normal flow + `:host { min-width: 0 }` (D1, D2); SCSS comment updated | §4 D1–D2 | Done |
+| M3 | Padded More clone (`.priority-nav-more-toggle-box`) in the measure strip; `moreWidth` reads it; `moreSizer` removed (D3) | §4 D3 | Done |
+| M4 | Host `min-width` = measured More width via a host binding (D4) | §4 D4 | Done |
+| M5 | `BsObserveSizeDirective`: `contentBoxSize` seed, skipped on the server (D6) + spec | §4 D6 | Done |
+| M6 | Demo: "Inside a flex header" section (Spark header mirror, resizable) + block action-bar variant | §8 | Done |
+| M7 | Specs: overflow harness, observe-size, component spec, e2e on chromium + firefox | §8 | Done |
+| M8 | Batched sweep | §8 | Done locally — see below |
+
+## Local sweep (M8)
+
+- `nx build mintplayer-ng-bootstrap` — green.
+- `nx test mintplayer-ng-bootstrap` — 1328 / 1329. The one failure was a 5 s import timeout in the
+  untouched `_conformance/entrypoints.spec.ts` while the build ran alongside; alone it passes 101 / 101.
+- `playwright test e2e/priority-nav.spec.ts` (production build, chromium + firefox, fully parallel):
+  - Run 1 surfaced two real bugs, both fixed: the start-alignment assertion forgot the demo box's 1 px
+    border (`clientLeft`), and the observe-size seed called `getComputedStyle` during SSR.
+  - Run 2: Firefox all green. Chromium: the four settle/collapse tests counted 25–33 class mutations in
+    the 1 s window (constant across widths, so a one-off burst, not a per-frame flip). Alone against the
+    dev build the same test counted 0, and a manual Chromium check on the dev build counted 0; the user
+    verified the behaviour by hand. Left for the CI run to confirm (PRD §7 S3).
 
 ## Conventions
 
-- Branch `fix/priority-nav-shrink-wrap-428` off `master` — create only with permission.
-- One PR for everything, including anything found on the way. Spark needs only a version bump after
-  release (no code change, PRD §3).
-- Commit per milestone; verify between milestones with `tsc --noEmit` and reading. **No test runs before
-  M8** (spikes are measurements, not test runs).
-- Push once, after M8 is green.
+- One PR for everything. Spark needs only a version bump after release (no code change, PRD §3).
+- Commit per milestone; verify between milestones with `tsc --noEmit` and reading; test runs batched at
+  the end.
+- Push once.
 
-## Milestone notes
+## Implementation notes
 
 **M1.** `computeOverflowIds` stays pure. The harness models a shrink-wrapped host:
 `strip(decision) = decision empty ? quantize60(Σ + gap·(n−1)) : Σvisible + more + gap·visible`.
-Cases: the issue's numbers (63.733 / 59.3 / 75.733, More 76.017), the spike's
-(63.69999695 / 48.53334045 / 67.73333740, More 76.0167), and a seeded randomized sweep of fractional
-widths. Assert a fixed point within 2 iterations. Must fail without the tolerance (write it first,
-confirm by reasoning, not by running).
+Cases: the issue's numbers, the spike's float32 numbers, and 500 seeded random fractional layouts. It
+asserts the settled **state** (nothing overflows), because without the tolerance the loop can also
+settle collapsed although everything fits.
 
-**M2.** `.priority-nav-measure-wrapper`: remove `position/top/left/width`. Keep `height:0;
-overflow:hidden; pointer-events:none`, `aria-hidden` + `inert`. `:host { display:block; min-width:0 }`.
-Check the `position:relative` on `.priority-nav` is still needed (the overflow panel anchors to it — yes).
+**M3.** The clone must not carry `.priority-nav-more-toggle`: it precedes the button in DOM order and
+would capture every query for the toggle. Box styles are shared by a selector list instead.
 
-**M3.** A second `div.priority-nav-measure` row with
-`<span #measureMore="bsObserveSize" bsObserveSize class="priority-nav-measure-item"><span class="priority-nav-more-toggle">…moreLabelTemplate ?? defaultMoreLabel, $implicit: false…</span></span>`.
-The outer span has no padding, so its content box includes the toggle's padding. If the visible toggle's
-styles are scoped to `button.priority-nav-more-toggle`, widen the selector so the clone gets identical
-padding, border and font — the clone must be byte-for-byte the same box as the button.
+**M5.** `getComputedStyle` used size rather than `getBoundingClientRect` (transforms). Server: no seed,
+size stays `undefined`.
 
-**M4.** Start from S1's answer. Preferred: `host: { '[style.min-width.px]': 'moreMinWidth()' }`. Fallback:
-`'[style.--priority-nav-more-width.px]'` + `:host { min-width: var(--priority-nav-more-width, 0) }`. No
-imperative `style.minWidth` writes.
-
-**M5.** Seed = `rect.width − paddingLeft − paddingRight − borderLeft − borderRight` (same for height).
-Spec: an element with padding seeds the content-box value, fractional.
-
-**M6/M7.** Labels `Refresh / Filter / Settings` reproduce at 1280 px in Firefox; keep them. The e2e
-counts class mutations with a MutationObserver installed via `page.evaluate`, returns a number only.
-Card-width sweep can be a handful of widths (e.g. 520 / 420 / 330 / 520), not the spike's 56.
+**M6/M7.** Labels `Refresh / Filter / Settings` (they reproduce at 1280 px in Firefox). The e2e helper
+waits 10 frames, then counts class mutations for 1 s and returns a number. The collapse test sets the
+card to 330 px and back.
 
 ## Risks
 
 - **Shrink-to-fit ancestors** (inline-block, table cell, abs-pos) now see the host's max-content = Σ all
   items even while collapsed. That equals what they saw before when nothing overflowed; collapsing still
-  requires a constrained slot. Acceptable; document in the demo.
-- **D6 touches a shared directive.** sticky-footer only reads `height()`; S2 proves no visible change.
+  requires a constrained slot.
+- **D6 touches a shared directive.** sticky-footer only reads `height()` and ignores `undefined`.

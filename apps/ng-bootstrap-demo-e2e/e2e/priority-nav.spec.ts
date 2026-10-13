@@ -108,7 +108,7 @@ test.describe('priority-nav in a flex header', () => {
     await page.setViewportSize({ width: 1280, height: 900 });
     const offset = await page.locator('.action-bar-demo').evaluate((bar) => {
       const first = bar.querySelector('.priority-nav-item')!.getBoundingClientRect();
-      return first.left - (bar.getBoundingClientRect().left + parseFloat(getComputedStyle(bar).paddingLeft));
+      return first.left - (bar.getBoundingClientRect().left + bar.clientLeft + parseFloat(getComputedStyle(bar).paddingLeft));
     });
     expect(Math.abs(offset)).toBeLessThan(1);
   });
