@@ -25,6 +25,15 @@ export function computeOverflowOrder<T extends { priority: number | null }>(item
     .map(({ item }) => item);
 }
 
+/**
+ * How far a width may exceed the strip and still count as fitting. The item widths come from a
+ * separate measure strip and the strip width from the live one, and each is rounded on its own
+ * (float32 layout values, Firefox's 1/60px app units), so a row of items laid out at exactly its
+ * own width can measure a hair wider than itself. Half a pixel is above every such rounding error
+ * and below one device pixel at a DPR of 2. Issue #428.
+ */
+export const SUBPIXEL_TOLERANCE = 0.5;
+
 export interface OverflowLayout {
   /** Width of the visible strip. 0 means not measured yet. */
   stripWidth: number;
@@ -48,11 +57,11 @@ export function computeOverflowIds({ stripWidth, moreWidth, gap, widths, order }
   if (stripWidth === 0 || widths.size === 0) return new Set();
 
   const sumWidths = [...widths.values()].reduce((a, b) => a + b, 0);
-  if (sumWidths + gap * Math.max(0, widths.size - 1) <= stripWidth) return new Set();
+  if (sumWidths + gap * Math.max(0, widths.size - 1) <= stripWidth + SUBPIXEL_TOLERANCE) return new Set();
 
   const result = order.reduce(
     (acc, id) => {
-      if (acc.done || acc.visibleSum + moreWidth + gap * acc.visibleCount <= stripWidth) {
+      if (acc.done || acc.visibleSum + moreWidth + gap * acc.visibleCount <= stripWidth + SUBPIXEL_TOLERANCE) {
         return { ...acc, done: true };
       }
       return {

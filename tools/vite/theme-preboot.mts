@@ -58,8 +58,9 @@ export function themePreboot(file: string = resolve(WC_THEMING_DIR, 'bs-theme-pr
 
 /**
  * `resolve.alias` entry for `@import '@mintplayer/web-components/theming/color-mode.css'`.
- * CSS `@import` is resolved by Vite's CSS pipeline, which never consults
- * `nxViteTsPaths`, so the tsconfig path mapping has to be restated for it.
+ * CSS `@import` is resolved by Vite's CSS pipeline, and tsconfig `paths` only
+ * apply to TS/JS importers (`resolve.tsconfigPaths`), so the mapping has to be
+ * restated for it.
  * A consumer installing the package from npm needs no alias.
  */
 export const colorModeCssAlias: Alias = {

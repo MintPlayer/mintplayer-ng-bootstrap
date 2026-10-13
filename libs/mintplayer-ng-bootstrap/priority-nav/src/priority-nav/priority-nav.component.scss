@@ -1,18 +1,25 @@
+// A host that is a flex item may shrink below its items, so it can collapse into
+// More instead of overflowing its parent, but not below the More toggle, or the
+// toggle itself would be clipped. The component sets --priority-nav-more-width
+// to the toggle's measured width. Declared here rather than as an inline
+// min-width so a consumer's own min-width rule can still win.
 :host {
     display: block;
+    min-width: var(--priority-nav-more-width, 0);
 }
 
 .priority-nav {
     position: relative;
 }
 
-// Off-screen measurement strip. Wrapped in a zero-size, overflow-hidden box
-// so its natural-width children don't extend the document's scrollWidth.
+// Measurement strip. Deliberately in normal flow (zero height, overflow
+// hidden, so nothing shows and the document's scrollWidth is untouched): its
+// max-content is the width of ALL items whatever is currently overflowing, so
+// a host that shrink-wraps its content gets the same natural width in every
+// overflow state. Positioned out of flow, the host would size to the live
+// strip instead, whose width depends on the overflow decision, and the
+// decision would feed its own input and flip every frame (issue #428).
 .priority-nav-measure-wrapper {
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 0;
     height: 0;
     overflow: hidden;
     pointer-events: none;
@@ -50,6 +57,23 @@
 
 .priority-nav-overflow-hidden {
     display: none !important;
+}
+
+// The measured wrapper around the More toggle (see the template).
+.priority-nav-more-slot {
+    display: inline-flex;
+    flex-shrink: 0;
+}
+
+// Nothing to show: out of flow (takes no room in the strip, adds nothing to
+// the host's width) and invisible (out of the tab order and the accessibility
+// tree), but still laid out, so it keeps its measured width.
+.priority-nav-more-slot-idle {
+    position: absolute;
+    top: 0;
+    left: 0;
+    visibility: hidden;
+    pointer-events: none;
 }
 
 .priority-nav-more-toggle {

@@ -1,7 +1,6 @@
 /// <reference types='vitest' />
 import { defineConfig } from 'vite';
 import vue from '@vitejs/plugin-vue';
-import { nxViteTsPaths } from '@nx/vite/plugins/nx-tsconfig-paths.plugin';
 import { nxCopyAssetsPlugin } from '@nx/vite/plugins/nx-copy-assets.plugin';
 // Pre-boot script + color-mode.css alias for the dark-mode wiring (PRD dark-mode D5, D6).
 import { colorModeCssAlias, themePreboot } from '../../tools/vite/theme-preboot.mts';
@@ -36,11 +35,12 @@ export default defineConfig(({ isSsrBuild }) => ({
         },
       },
     }),
-    nxViteTsPaths(),
     nxCopyAssetsPlugin(['*.md']),
     themePreboot(),
   ],
   resolve: {
+    // Vite 8 resolves the tsconfig `paths` (@mintplayer/*) natively.
+    tsconfigPaths: true,
     alias: [colorModeCssAlias],
   },
   build: {
@@ -50,18 +50,20 @@ export default defineConfig(({ isSsrBuild }) => ({
     outDir: isSsrBuild
       ? '../../dist/apps/vue-bootstrap-demo/server'
       : '../../dist/apps/vue-bootstrap-demo/browser',
-    target: isSsrBuild ? 'esnext' : 'modules',
+    target: isSsrBuild ? 'esnext' : 'baseline-widely-available',
     emptyOutDir: true,
     reportCompressedSize: true,
-    commonjsOptions: {
-      transformMixedEsModules: true,
-    },
+    // @lit-labs/ssr-dom-shim's register-css-hook (pulled in by install-global-dom-shim) probes
+    // Node for CSS-module support with a dynamic import of a data: URL. That probe must run in
+    // Node at runtime; Rolldown would try to bundle the CSS and refuses ("Bundling CSS is no
+    // longer supported"), so keep data: specifiers external.
+    rolldownOptions: isSsrBuild ? { external: [/^data:/] } : undefined,
   },
   // Production SSR *build*: bundle every dep so the runtime image needs only
   // express + compression (no monorepo node_modules to ship).
   // Dev SSR server (`node server.mjs` → Vite middleware + ssrLoadModule): only
   // the workspace `@mintplayer/*` libs are noExternal — they're tsconfig-path
-  // aliases (nxViteTsPaths) Node can't resolve on its own, so Vite must process
+  // aliases (resolve.tsconfigPaths) Node can't resolve on its own, so Vite must process
   // them. Everything else stays external so Node loads it normally; forcing CJS
   // deps (node-domexception, …) through Vite's ESM module runner throws
   // `module is not defined`.

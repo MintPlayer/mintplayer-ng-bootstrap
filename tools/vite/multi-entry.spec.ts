@@ -178,7 +178,7 @@ describe('generateSubpathExports', () => {
     expect(pkg.name).toBe('@mintplayer/x');
   });
 
-  // nxViteTsPaths copies package.json into dist during writeBundle; if that has
+  // copyPackageJson copies package.json into dist during writeBundle; if that has
   // not happened the plugin must be a no-op rather than create a stub package.
   it('does nothing when dist has no package.json yet', () => {
     rmSync(join(outDir, 'package.json'));

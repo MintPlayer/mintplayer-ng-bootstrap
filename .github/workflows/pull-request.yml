@@ -14,66 +14,36 @@ env:
   NX_SELF_HOSTED_REMOTE_CACHE_SERVER: ${{ secrets.NX_CACHE_SERVER }}
   NX_SELF_HOSTED_REMOTE_CACHE_ACCESS_TOKEN: ${{ (github.event_name == 'push' && github.ref_name == github.event.repository.default_branch) && secrets.NX_CACHE_RW_TOKEN || secrets.NX_CACHE_RO_TOKEN }}
 
+permissions:
+  contents: read
+
+# The jobs run in PARALLEL, not as one long sequence: build + unit tests, the
+# e2e suites (the Angular one in four shards), the axe gate per app and the
+# live-API smoke each get their own runner. Public repository, so standard
+# runners cost nothing extra; each job pays ~1.5 min of setup and the wall time
+# becomes the slowest job instead of the sum of all of them (was 15+ min).
+# Every job checks the repo out with full history (`nx affected` diffs against
+# the PR base SHA) and then runs the shared ./.github/actions/setup.
+#
+# NOTE on checkout: `lfs: true` used to be set to fetch the Playwright
+# visual-regression baselines. It was pure cost — the only LFS objects in the
+# repo are those baselines, and the visual specs skip themselves on Linux, so CI
+# paid LFS bandwidth every run for PNGs nothing then read. Visual regression is
+# deliberately a local-only check; see apps/ng-bootstrap-demo-e2e/VISUAL-BASELINES.md
+# for why, and put it back if that ever changes.
 jobs:
   build:
-  
-    name: pull-request
+    name: build + unit tests
     runs-on: ubuntu-latest
-    
-    permissions: 
-      contents: read
-    
+
     steps:
     - name: Checkout
       uses: actions/checkout@v6
       with:
-        # Full history: `nx affected` below diffs against the PR base SHA.
         fetch-depth: 0
-        # NOTE: `lfs: true` was here to fetch the Playwright visual-regression
-        # baselines. It was pure cost — the only LFS objects in the repo are
-        # those baselines, and the visual specs skip themselves on Linux, so CI
-        # paid LFS bandwidth every run for PNGs nothing then read. Visual
-        # regression is deliberately a local-only check; see
-        # apps/ng-bootstrap-demo-e2e/VISUAL-BASELINES.md for why, and put this
-        # back if that ever changes.
-    
-    - name: Setup node
-      uses: actions/setup-node@v6
-      with:
-        node-version: 24
-        # Caches ~/.npm keyed on the lockfile, so `npm ci` resolves from disk
-        # instead of re-downloading every package on every run.
-        cache: 'npm'
 
-    - name: Setup .NET 10
-      uses: actions/setup-dotnet@v5
-      with:
-        dotnet-version: '10.0.x'
-
-    - name: Install dependencies
-      run: npm ci
-
-    # The three engines are ~400 MB and were re-downloaded on every run. The
-    # key is the lockfile hash because the required browser build is pinned by
-    # the Playwright version in it — a Playwright bump invalidates the cache,
-    # which is exactly when new builds are needed.
-    - name: Cache Playwright browsers
-      id: playwright-cache
-      uses: actions/cache@v4
-      with:
-        path: ~/.cache/ms-playwright
-        key: playwright-${{ runner.os }}-${{ hashFiles('package-lock.json') }}
-
-    - name: Install Playwright browsers
-      if: steps.playwright-cache.outputs.cache-hit != 'true'
-      run: npx playwright install --with-deps chromium firefox webkit
-
-    # On a cache hit the binaries are already there, but the OS-level libraries
-    # they link against are not — those live outside the cached directory and
-    # have to be installed every run regardless.
-    - name: Install Playwright system dependencies
-      if: steps.playwright-cache.outputs.cache-hit == 'true'
-      run: npx playwright install-deps chromium firefox webkit
+    - name: Setup workspace
+      uses: ./.github/actions/setup
 
     - name: Build
       timeout-minutes: 15
@@ -142,35 +112,69 @@ jobs:
         # A coverage-service outage must never be the reason a PR cannot merge.
         fail-ci-if-error: false
 
-    - name: E2E tests
-      timeout-minutes: 30
-      run: npx nx affected --target=e2e --parallel=1 --output-style=stream --base=${{ github.event.pull_request.base.sha }} --head=${{ github.event.pull_request.head.sha }}
-
-    # Accessibility gate — deliberately `run-many`, NOT `affected`, so it runs
-    # on every PR and cannot be silenced by the affected graph. Fails on any
-    # serious/critical axe finding across the three demo apps, hydrated AND
-    # no-JS SSR tiers (see tools/e2e-shared/axe-suites.ts).
-    - name: E2E accessibility gate (axe)
-      timeout-minutes: 30
-      run: npx nx run-many -t e2e-a11y --parallel=1 --output-style=stream
-
-    # Force-free :5000 in case Nx's continuous-task teardown didn't propagate
-    # SIGTERM to api:serve cleanly — the leftover dotnet would otherwise
-    # collide with the live-API step's webServer trying to boot a second
-    # dotnet on the same port. Harmless if :5000 is already free.
-    - name: Free :5000 before live-API step
-      if: always()
-      run: lsof -ti:5000 | xargs -r kill -9 || true
-
-    # Live-API contract smoke. Boots `dotnet run` + `ng serve` and runs the
-    # query-builder specs unmocked against the real .NET backend.
-    - name: E2E (live API)
-      timeout-minutes: 15
-      run: npx nx run ng-bootstrap-demo-e2e:e2e-live --output-style=stream
-
     # Hand dist/ off to the dry-run-publish-libs job. Snippets publishes
     # from libs/ (source); the dry-run job checks the repo out so we don't
     # need to bundle it into this artifact.
+    - name: Upload dist artifact
+      uses: actions/upload-artifact@v7
+      with:
+        name: dist
+        path: dist/
+        retention-days: 1
+
+  # One runner per e2e suite, the Angular one (by far the longest: ~480 tests
+  # over Chromium + Firefox) split into four Playwright shards. Measured on the
+  # two-shard layout: each shard spent ~2 min on setup, ~1 min building the
+  # production server and ~4.2 min on its tests, so four shards bring the
+  # Angular jobs down to the React/Vue ones (~5 min); more would not shorten
+  # the run, React and Vue become the long pole. Still `affected`:
+  # each job asks Nx whether its project is affected by the PR and skips its
+  # browsers and its run when it is not, exactly as the old single
+  # `nx affected --target=e2e` step did for the whole set.
+  e2e:
+    name: e2e (${{ matrix.label }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - { label: ng 1/4, project: ng-bootstrap-demo-e2e, shard: 1/4, artifact: ng-1 }
+          - { label: ng 2/4, project: ng-bootstrap-demo-e2e, shard: 2/4, artifact: ng-2 }
+          - { label: ng 3/4, project: ng-bootstrap-demo-e2e, shard: 3/4, artifact: ng-3 }
+          - { label: ng 4/4, project: ng-bootstrap-demo-e2e, shard: 4/4, artifact: ng-4 }
+          - { label: react, project: react-bootstrap-demo-e2e, shard: 1/1, artifact: react }
+          - { label: vue, project: vue-bootstrap-demo-e2e, shard: 1/1, artifact: vue }
+
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v6
+      with:
+        fetch-depth: 0
+
+    - name: Setup workspace
+      uses: ./.github/actions/setup
+
+    - name: Is ${{ matrix.project }} affected?
+      id: affected
+      run: |
+        if npx nx show projects --affected --base=${{ github.event.pull_request.base.sha }} --head=${{ github.event.pull_request.head.sha }} | grep -qx '${{ matrix.project }}'; then
+          echo "run=true" >> "$GITHUB_OUTPUT"
+        else
+          echo "run=false" >> "$GITHUB_OUTPUT"
+          echo "${{ matrix.project }} is not affected by this PR; skipping."
+        fi
+
+    - name: Install Playwright browsers
+      if: steps.affected.outputs.run == 'true'
+      uses: ./.github/actions/playwright
+
+    - name: E2E tests
+      if: steps.affected.outputs.run == 'true'
+      timeout-minutes: 30
+      # Extra flags on an nx:run-commands target are forwarded to the command,
+      # so --shard reaches `playwright test`.
+      run: npx nx run ${{ matrix.project }}:e2e --output-style=stream --shard=${{ matrix.shard }}
+
     # Playwright is configured with `trace: 'on-first-retry'`, so a retried test
     # already records a full trace — but nothing collected it, so the two flakes
     # on PR #405 left no evidence behind and had to be diagnosed by inference.
@@ -182,17 +186,93 @@ jobs:
       if: always()
       uses: actions/upload-artifact@v7
       with:
-        name: playwright-traces
+        name: playwright-traces-${{ matrix.artifact }}
         path: apps/*-e2e/test-results/
         if-no-files-found: ignore
         retention-days: 7
 
-    - name: Upload dist artifact
+  # Accessibility gate — deliberately NOT `affected`, so it runs on every PR and
+  # cannot be silenced by the affected graph. Fails on any serious/critical axe
+  # finding across the three demo apps, hydrated AND no-JS SSR tiers (see
+  # tools/e2e-shared/axe-suites.ts). One runner per app.
+  e2e-a11y:
+    name: axe (${{ matrix.app }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        app: [ng, react, vue]
+
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v6
+
+    - name: Setup workspace
+      uses: ./.github/actions/setup
+
+    - name: Install Playwright browsers
+      uses: ./.github/actions/playwright
+
+    - name: E2E accessibility gate (axe)
+      timeout-minutes: 30
+      run: npx nx run ${{ matrix.app }}-bootstrap-demo-e2e:e2e-a11y --output-style=stream
+
+    - name: Upload Playwright traces
+      if: always()
       uses: actions/upload-artifact@v7
       with:
-        name: dist
-        path: dist/
-        retention-days: 1
+        name: playwright-traces-a11y-${{ matrix.app }}
+        path: apps/*-e2e/test-results/
+        if-no-files-found: ignore
+        retention-days: 7
+
+  # Live-API contract smoke. Boots `dotnet run` + `ng serve` and runs the
+  # query-builder specs unmocked against the real .NET backend. On its own
+  # runner, so no other suite's API process can still hold :5000 (the
+  # sequential workflow needed a step that force-freed the port first).
+  e2e-live:
+    name: e2e (live API)
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v6
+
+    - name: Setup workspace
+      uses: ./.github/actions/setup
+
+    - name: Install Playwright browsers
+      uses: ./.github/actions/playwright
+
+    - name: E2E (live API)
+      timeout-minutes: 15
+      run: npx nx run ng-bootstrap-demo-e2e:e2e-live --output-style=stream
+
+    - name: Upload Playwright traces
+      if: always()
+      uses: actions/upload-artifact@v7
+      with:
+        name: playwright-traces-live
+        path: apps/*-e2e/test-results/
+        if-no-files-found: ignore
+        retention-days: 7
+
+  # The single check that sums the parallel jobs up, under the name the old
+  # single job had (`pull-request`), so branch protection or anything else that
+  # looks for that check keeps working. `if: always()` so it reports a failure
+  # instead of being skipped when a job it needs failed.
+  pull-request:
+    name: pull-request
+    if: always()
+    needs: [build, e2e, e2e-a11y, e2e-live]
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: All jobs passed
+      if: contains(needs.*.result, 'failure') || contains(needs.*.result, 'cancelled')
+      run: |
+        echo "build: ${{ needs.build.result }}, e2e: ${{ needs.e2e.result }}, e2e-a11y: ${{ needs.e2e-a11y.result }}, e2e-live: ${{ needs.e2e-live.result }}"
+        exit 1
 
   # Single dry-run sweep covering both folder roots (dist/libs + the
   # snippets source dir). The action handles discovery, topo-sort and

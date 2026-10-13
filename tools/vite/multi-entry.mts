@@ -96,7 +96,8 @@ export function emitStaticFiles(libRoot: string, files: readonly string[]): Plug
 export function generateSubpathExports(outDir: string, libRoot: string, entries: Record<string, string>): Plugin {
   return {
     name: 'mp-generate-subpath-exports',
-    // Run after nxViteTsPaths' writeBundle has copied package.json into dist.
+    // Run after copyPackageJson's writeBundle (copy-package-json.mts) has copied
+    // package.json into dist: every writeBundle precedes every closeBundle.
     closeBundle() {
       const pkgPath = join(outDir, 'package.json');
       if (!existsSync(pkgPath)) return;

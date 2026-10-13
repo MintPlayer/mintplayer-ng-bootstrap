@@ -21,6 +21,7 @@ import { isClosingActivation } from './overflow-activation';
     '(document:click)': 'onDocumentClick($event)',
     '(document:keydown.escape)': 'onEscape()',
     '(window:resize)': 'onWindowResize()',
+    '[style.--priority-nav-more-width]': 'hostMinWidth()',
   },
 })
 export class BsPriorityNavComponent {
@@ -53,10 +54,11 @@ export class BsPriorityNavComponent {
   // Visible strip width and its element (for reading computed `column-gap`)
   stripSizer = viewChild.required<BsObserveSizeDirective>('stripSize');
   private stripElement = viewChild.required('stripSize', { read: ElementRef });
-  // More button width. Optional on purpose: the button exists only in the JS branch of the
-  // template (the server renders a label instead), so this query is empty on the server.
-  moreSizer = viewChild<BsObserveSizeDirective>('moreSize');
-  private moreButton = viewChild('moreSize', { read: ElementRef });
+  // More toggle width, from the slot around the real button (measured even while idle, padding
+  // included). Optional on purpose: the button exists only in the JS branch of the template (the
+  // server renders a label instead), so this query is empty on the server.
+  private moreMeasure = viewChild<BsObserveSizeDirective>('moreSize');
+  private moreButton = viewChild('moreButton', { read: ElementRef });
   private overflowPanel = viewChild('overflowPanel', { read: ElementRef });
 
   // Open/closed state for the More menu (JS path)
@@ -110,6 +112,15 @@ export class BsPriorityNavComponent {
     return Number.isFinite(raw) ? raw : 0;
   });
 
+  moreWidth = computed(() => this.moreMeasure()?.width());
+
+  // Feeds `:host { min-width: var(--priority-nav-more-width, 0) }`: the host may shrink below its
+  // items, so a shrink-wrapped nav can collapse, but never below the More toggle.
+  hostMinWidth = computed(() => {
+    const width = this.items().length > 0 ? this.moreWidth() : undefined;
+    return width === undefined ? null : `${width}px`;
+  });
+
   overflowingIds = computed<Set<number>>(() => {
     if (this.isServerSide) return new Set();
     if (this.forceCollapse()) {
@@ -117,7 +128,7 @@ export class BsPriorityNavComponent {
     }
     return computeOverflowIds({
       stripWidth: this.stripSizer().width() ?? 0,
-      moreWidth: this.moreSizer()?.width() ?? 0,
+      moreWidth: this.moreWidth() ?? 0,
       gap: this.itemGap(),
       widths: this.itemWidths(),
       order: this.overflowOrder().map((item) => item.id),

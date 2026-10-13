@@ -1,13 +1,15 @@
 /// <reference types="vitest" />
 import { defineConfig } from 'vite';
 import angular from '@analogjs/vite-plugin-angular';
-import { nxViteTsPaths } from '@nx/vite/plugins/nx-tsconfig-paths.plugin';
 
 export default defineConfig({
   plugins: [
     angular(),
-    nxViteTsPaths(),
   ],
+  resolve: {
+    // Vite 8 resolves the tsconfig `paths` (@mintplayer/*) natively.
+    tsconfigPaths: true,
+  },
   test: {
     globals: true,
     environment: 'jsdom',

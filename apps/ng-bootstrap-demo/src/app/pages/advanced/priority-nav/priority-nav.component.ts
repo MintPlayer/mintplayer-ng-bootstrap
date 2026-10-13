@@ -31,6 +31,24 @@ export class PriorityNavComponent {
   actions = ['Edit', 'Duplicate', 'Delete'];
   lastAction = signal<string | null>(null);
 
+  // Labels whose fractional widths made a shrink-wrapped nav flip every frame in Firefox (#428).
+  headerActions = ['Refresh', 'Filter', 'Settings'];
+  barActions = ['Back', 'Edit', 'Delete'];
+
+  protected readonly snippetHeaderHtml = dedent`
+    <!-- No sizing needed: the nav is an ordinary flex item. It is as wide as
+         its items when there is room, and collapses into More when there is not. -->
+    <div class="card-header d-flex align-items-center gap-2">
+      <span class="me-auto">Sites</span>
+      <bs-priority-nav ariaLabel="Site actions">
+        @for (action of actions; track action) {
+          <button *bsPriorityNavItem="1" type="button" class="btn btn-sm btn-outline-secondary">{{ action }}</button>
+        }
+      </bs-priority-nav>
+      <input type="search" class="form-control form-control-sm" aria-label="Search sites">
+    </div>
+  `;
+
   protected readonly snippetActionsHtml = dedent`
     <!-- Nothing to configure: a click on a link or button in the More menu
          closes it. Menu triggers, form fields and disabled items keep it open. -->

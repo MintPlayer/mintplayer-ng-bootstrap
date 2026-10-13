@@ -3,7 +3,7 @@ import { defineConfig } from 'vite';
 import { coverageConfigDefaults } from 'vitest/config';
 import dts from 'vite-plugin-dts';
 import { resolve } from 'node:path';
-import { nxViteTsPaths } from '@nx/vite/plugins/nx-tsconfig-paths.plugin';
+import { copyPackageJson } from '../../tools/vite/copy-package-json.mts';
 import { nxCopyAssetsPlugin } from '@nx/vite/plugins/nx-copy-assets.plugin';
 import { discoverEntries, emitStaticFiles, generateSubpathExports } from '../../tools/vite/multi-entry.mts';
 
@@ -17,8 +17,10 @@ export default defineConfig(() => {
   return {
     root: import.meta.dirname,
     cacheDir: '../../node_modules/.vite/libs/mintplayer-web-components',
+    // Vite 8 resolves the tsconfig `paths` (@mintplayer/*) natively.
+    resolve: { tsconfigPaths: true },
     plugins: [
-      nxViteTsPaths(),
+      copyPackageJson(import.meta.dirname),
       // `*/README.md` is not cosmetic: flags/README.md carries the MIT notice for
       // the vendored artwork that ships inside the published flag chunks.
       nxCopyAssetsPlugin(['*.md', '*/README.md']),
@@ -42,15 +44,12 @@ export default defineConfig(() => {
       emptyOutDir: true,
       reportCompressedSize: true,
       target: 'es2022',
-      commonjsOptions: {
-        transformMixedEsModules: true,
-      },
       lib: {
         entry: entries,
         formats: ['es' as const],
         fileName: (_format, entryName) => `${entryName}.mjs`,
       },
-      rollupOptions: {
+      rolldownOptions: {
         external: [
           'lit',
           /^lit\//,

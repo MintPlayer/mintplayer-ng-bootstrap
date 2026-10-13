@@ -1,0 +1,28 @@
+name: Setup workspace
+description: >
+  Node 24 with the npm cache, .NET 10 and `npm ci`. Shared by every job of the
+  pull-request workflow, which runs its jobs in parallel instead of as one long
+  sequence (each job needs the same toolchain). Run actions/checkout first: a
+  local action can only be used once the repository is on disk.
+
+runs:
+  using: composite
+  steps:
+    - name: Setup node
+      uses: actions/setup-node@v6
+      with:
+        node-version: 24
+        # Caches ~/.npm keyed on the lockfile, so `npm ci` resolves from disk
+        # instead of re-downloading every package on every run.
+        cache: 'npm'
+
+    # The demo apps' dev/e2e servers start the .NET API as a continuous
+    # dependency, and the build job runs the API's xUnit tests.
+    - name: Setup .NET 10
+      uses: actions/setup-dotnet@v5
+      with:
+        dotnet-version: '10.0.x'
+
+    - name: Install dependencies
+      shell: bash
+      run: npm ci
