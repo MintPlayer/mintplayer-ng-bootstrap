@@ -4,6 +4,24 @@
     background: var(--bs-body-bg, #fff);
 }
 
+// Mirrors a Spark query-card header (#428).
+.header-demo-header {
+    padding: 0.5rem 1rem;
+
+    @media (max-width: 575.98px) {
+        flex-wrap: wrap;
+    }
+}
+
+.header-demo-search {
+    flex: 0 1 14rem;
+    min-width: 8rem;
+
+    @media (max-width: 575.98px) {
+        flex: 1 1 8rem;
+    }
+}
+
 .demo-link {
     display: inline-flex;
     align-items: center;
