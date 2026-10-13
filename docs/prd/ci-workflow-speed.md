@@ -2,8 +2,9 @@
 
 **Issue:** [#430](https://github.com/MintPlayer/mintplayer-ng-bootstrap/issues/430)
 **Plan:** [ci-workflow-speed-plan.md](./ci-workflow-speed-plan.md)
-**Status:** Proposed (2026-10-13). Research only; nothing is implemented yet. D1–D9 decided by the owner
-(2026-10-13, §5).
+**Status:** In progress (2026-10-13) on `ci/workflow-speed-430`, PR #431. D1–D9 decided by the owner
+(§5). Workflows, actions, Dockerfiles and cache metadata implemented; the spec speed-ups (plan M7) and
+the local sweep (M10) are pending; post-merge measurement in M11. Progress per milestone in the plan.
 **Scope:** `.github/workflows/publish-master.yml`, `.github/workflows/pull-request.yml`,
 `.github/actions/{setup,playwright}`, the four image Dockerfiles, `apps/*-e2e/playwright.config.ts`,
 the slowest vitest suites, and `nx.json` / `project.json` cache metadata. Everything lands in **one PR**.
@@ -186,9 +187,10 @@ Non-goals: larger (paid) runners, replacing the coverage service, changing which
 
 - **Runtime-only Dockerfiles.** Each Node demo image becomes one stage on `node:24-slim` (Debian, D3) that
   copies `dist/apps/<app>` (browser + server). React and Vue also copy `server.mjs` and install pinned
-  `express` / `compression`. Because the root `.dockerignore` excludes `dist`, each image gets its own
-  `apps/<app>/Dockerfile.dockerignore`. Whether a clean-checkout local `docker build` must keep working
-  is D2.
+  `express` / `compression`. The root `.dockerignore` excludes `dist`, so the bundle arrives through a
+  **named build context** (`--build-context dist=dist/apps/<app>`, consumed by the `prebuilt` target's
+  `COPY --from=dist`). That made per-app `.dockerignore` files unnecessary. The default target still builds
+  from a clean checkout (D2).
 - **Make-public moves into the matrix leg** (one PATCH per package). That drops a whole job and its
   ~10–15 s runner start.
 - **#430's optional "build images before the tests with a GHA layer cache" is dropped.** Once the legs
@@ -205,17 +207,20 @@ Non-goals: larger (paid) runners, replacing the coverage service, changing which
 - **`browsers` input on `.github/actions/playwright`**, included in the cache key. It installs browsers
   and `install-deps` only for those engines. chromium for chromium shards, axe and live API; firefox for
   firefox shards; all three for React and Vue.
-- **Skip the browser install when the e2e task will be a cache hit.** Run `nx show` or a
-  `--skip-nx-cache=false` dry check, or reorder so the install runs lazily from the e2e target. This saves
-  runner minutes rather than wall time (D9 picks the mechanism).
+- ~~**Skip the browser install when the e2e task will be a cache hit.**~~ **Dropped (D9, S5):** Nx only
+  knows a task is a hit when it runs it, and the install must come first. A dry-run probe is the hack D9
+  ruled out, and it would have saved runner minutes only, not wall time.
 - ~~**Serve the prebuilt Angular demo** instead of `nx serve`.~~ **Rejected by S2:** on a cache hit the
   51 s compile would become ~5 s, but on CI the build almost never hits. The Angular e2e runs only when
   the PR affects the demo, so the hash is new, and since D8 PR runs cannot share builds through the
   cache. A miss builds every library first (over 5 min locally), so `nx serve`, which compiles from
   source, stays.
-- **`workers: 3`** in CI, decided by an A/B on the firefox shard (S3). It stays at 2 if flakes return.
-- React and Vue e2e get the same per-browser matrix when they are affected and miss the cache. They
-  become the critical path once Angular is fixed (~220–230 s today).
+- ~~**`workers: 3`** in CI.~~ **Dropped (S3):** with per-browser shards each shard holds ~90–100 s of tests,
+  so a third worker buys little against the recorded CPU-starvation flakes. `workers: 2` stays.
+- React and Vue e2e get the same per-browser matrix (one leg per engine) when they are affected and miss
+  the cache. They become the critical path once Angular is fixed (~220–230 s today).
+- Playwright arguments are passed after `--` (`nx run <e2e>:e2e -- --project=firefox --shard=1/4`):
+  Nx consumes a bare `--project` itself ("Cannot find project 'firefox'").
 
 ### 4.3 Cross-cutting
 
@@ -265,13 +270,12 @@ Non-goals: larger (paid) runners, replacing the coverage service, changing which
   after a merge recomputes what the PR changed. Measure it on the first post-merge runs; the §3 cold
   target already covers it.
 - **More matrix legs mean more runner minutes.** Wall time drops, but billed minutes may rise slightly.
-  The browser-install trimming and the cache-hit skip offset part of it.
+  The browser-install trimming offsets part of it.
 - **Renamed checks.** Matrix changes rename the per-job checks; branch protection keys on the
   `pull-request` aggregator only.
-- **The prebuilt Angular SSR server in e2e** may differ from `nx serve` (proxy, base href). S2 must pass
-  before it lands.
-- **`workers: 3`** may bring back the CPU-starvation flakes. A/B it first; `retries: 1` hides flakes, so
-  read retry counts, not just pass/fail.
+- **Cold lib builds in React/Vue e2e.** Their web servers run `nx run <demo>:build`, which builds every
+  library on a cache miss, and since D8 a PR's legs cannot share that build. This was already the case
+  before this PR, and it is why the Angular prebuilt-server item was rejected (§4.2).
 
 ## 8. Acceptance criteria
 
