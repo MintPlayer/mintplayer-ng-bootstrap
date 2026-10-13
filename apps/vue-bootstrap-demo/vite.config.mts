@@ -53,6 +53,11 @@ export default defineConfig(({ isSsrBuild }) => ({
     target: isSsrBuild ? 'esnext' : 'baseline-widely-available',
     emptyOutDir: true,
     reportCompressedSize: true,
+    // @lit-labs/ssr-dom-shim's register-css-hook (pulled in by install-global-dom-shim) probes
+    // Node for CSS-module support with a dynamic import of a data: URL. That probe must run in
+    // Node at runtime; Rolldown would try to bundle the CSS and refuses ("Bundling CSS is no
+    // longer supported"), so keep data: specifiers external.
+    rolldownOptions: isSsrBuild ? { external: [/^data:/] } : undefined,
   },
   // Production SSR *build*: bundle every dep so the runtime image needs only
   // express + compression (no monorepo node_modules to ship).
