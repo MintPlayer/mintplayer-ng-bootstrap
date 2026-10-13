@@ -18,7 +18,13 @@ export default defineConfig({
   fullyParallel: true,
   forbidOnly: !!process.env['CI'],
   retries: process.env['CI'] ? 1 : 0,
-  workers: process.env['CI'] ? 2 : undefined,
+  // 3 on CI: GitHub's Linux runners for public repos have 4 vCPUs, and with
+  // per-browser shards (pull-request.yml) the tests are the largest part of
+  // every Angular e2e job (~103 s of ~211 s at 2 workers). The dev server is
+  // idle once compiled, so a third worker gets a core. Watch the retry count
+  // (`retries: 1` hides flakes) — the expect budget below exists because of
+  // CPU starvation on the old 2-vCPU runners.
+  workers: process.env['CI'] ? 3 : undefined,
   reporter: 'list',
   // Playwright's default expect budget is 5s. That is too small for a
   // component that runs a 500ms CSS transition and a Lit re-render on a

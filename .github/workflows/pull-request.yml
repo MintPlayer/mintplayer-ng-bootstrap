@@ -191,6 +191,10 @@ jobs:
           echo "${{ matrix.project }} is not affected by this PR; skipping."
         fi
 
+    - name: Angular build cache
+      if: steps.affected.outputs.run == 'true' && matrix.project == 'ng-bootstrap-demo-e2e'
+      uses: ./.github/actions/angular-cache
+
     - name: Install Playwright browsers
       if: steps.affected.outputs.run == 'true'
       uses: ./.github/actions/playwright
@@ -242,6 +246,10 @@ jobs:
       uses: ./.github/actions/setup
       with:
         dotnet: ${{ matrix.app == 'ng' }}
+
+    - name: Angular build cache
+      if: matrix.app == 'ng'
+      uses: ./.github/actions/angular-cache
 
     # The axe configs run chromium only.
     - name: Install Playwright browsers
