@@ -208,10 +208,11 @@ Non-goals: larger (paid) runners, replacing the coverage service, changing which
 - **Skip the browser install when the e2e task will be a cache hit.** Run `nx show` or a
   `--skip-nx-cache=false` dry check, or reorder so the install runs lazily from the e2e target. This saves
   runner minutes rather than wall time (D9 picks the mechanism).
-- **Serve the prebuilt Angular demo** (`dist/apps/ng-bootstrap-demo` via its SSR `server.mjs`, as React
-  and Vue already do) instead of `nx serve`. On a cache hit the 51 s compile becomes ~5 s. The config
-  comment calls this path brittle, so the plan has a spike step (S2) before committing to it.
-  Fallback: persist `.angular/cache`.
+- ~~**Serve the prebuilt Angular demo** instead of `nx serve`.~~ **Rejected by S2:** on a cache hit the
+  51 s compile would become ~5 s, but on CI the build almost never hits. The Angular e2e runs only when
+  the PR affects the demo, so the hash is new, and since D8 PR runs cannot share builds through the
+  cache. A miss builds every library first (over 5 min locally), so `nx serve`, which compiles from
+  source, stays.
 - **`workers: 3`** in CI, decided by an A/B on the firefox shard (S3). It stays at 2 if flakes return.
 - React and Vue e2e get the same per-browser matrix when they are affected and miss the cache. They
   become the critical path once Angular is fixed (~220–230 s today).
@@ -254,7 +255,7 @@ Non-goals: larger (paid) runners, replacing the coverage service, changing which
 |---|---|---|---|
 | publish-master warm | 8.0 min | ~5.5–6 min (likely worse, §2.1) | **~2.5 min** (build/test ~70 s → image leg ~40 s → deploy ~25 s) |
 | publish-master cold | 14.6 min | ~10.5 min | **~5.5–7 min** (the faster-specs work decides which) |
-| pull-request (Angular affected, build cached) | ~5.6 min | — | **~2.5–3 min** |
+| pull-request (Angular affected, build cached) | ~5.6 min | — | **~3–3.5 min** (the prebuilt-server item was rejected, §4.2) |
 
 ## 7. Risks
 

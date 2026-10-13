@@ -166,12 +166,12 @@ jobs:
       with:
         fetch-depth: 0
 
-    # No .NET: none of the e2e web servers starts the API (the specs mock /api
-    # with page.route). Only e2e-live boots it.
+    # .NET only for the Angular suite: its `nx serve` starts the API as a
+    # continuous dependency. The React/Vue web servers run without it.
     - name: Setup workspace
       uses: ./.github/actions/setup
       with:
-        dotnet: 'false'
+        dotnet: ${{ matrix.project == 'ng-bootstrap-demo-e2e' }}
 
     - name: Is ${{ matrix.project }} affected?
       id: affected
@@ -229,11 +229,11 @@ jobs:
     - name: Checkout
       uses: actions/checkout@v6
 
-    # No .NET: the axe web servers do not start the API either.
+    # .NET only for the Angular gate: its `nx serve` starts the API.
     - name: Setup workspace
       uses: ./.github/actions/setup
       with:
-        dotnet: 'false'
+        dotnet: ${{ matrix.app == 'ng' }}
 
     # The axe configs run chromium only.
     - name: Install Playwright browsers
