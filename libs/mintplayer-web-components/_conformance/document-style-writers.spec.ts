@@ -31,8 +31,17 @@ const WRITER_PATTERNS: readonly RegExp[] = [
   /\bcreateElement\(\s*['"]style['"]\s*\)/,
   /\bdocument\.head\.(?:append|appendChild|prepend|insertBefore|insertAdjacentHTML|innerHTML)\b/,
   /\bdocument\.adoptedStyleSheets\s*=/,
+  /\bdocument\.adoptedStyleSheets\.(?:push|unshift|splice)\(/,
   /\.insertRule\(/,
 ];
+
+/**
+ * A light-DOM component (`createRenderRoot()` returns `this`) that renders a
+ * `<style>` element in its template writes document-level CSS too — its
+ * render root IS the document.
+ */
+const RENDERS_INTO_LIGHT_DOM = /createRenderRoot\(\)[^{]*\{\s*return this;?\s*\}/;
+const STYLE_ELEMENT_IN_TEMPLATE = /<style[\s>]/;
 
 const isSource = (name: string): boolean =>
   name.endsWith('.ts') &&
@@ -71,5 +80,16 @@ describe('document-level CSS has a single writer', () => {
       .filter((s) => !ALLOWED_WRITERS.includes(s.file))
       .flatMap((s) => WRITER_PATTERNS.filter((p) => p.test(s.code)).map((p) => `${s.file}: ${p.source}`));
     expect(offenders).toEqual([]);
+  });
+
+  it('no light-DOM component renders a <style> element', () => {
+    const offenders = sources
+      .filter((s) => RENDERS_INTO_LIGHT_DOM.test(s.code) && STYLE_ELEMENT_IN_TEMPLATE.test(s.code))
+      .map((s) => s.file);
+    expect(offenders).toEqual([]);
+  });
+
+  it('finds the light-DOM components (the pattern still matches their createRenderRoot)', () => {
+    expect(sources.filter((s) => RENDERS_INTO_LIGHT_DOM.test(s.code)).length).toBeGreaterThan(0);
   });
 });

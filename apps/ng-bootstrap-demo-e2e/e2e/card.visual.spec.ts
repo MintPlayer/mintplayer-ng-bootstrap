@@ -41,4 +41,20 @@ test.describe('card — visual regression', () => {
       maxDiffPixelRatio: 0.01,
     });
   });
+
+  // The page is ~11k px tall, so the 1% tolerance above admits ~97k changed
+  // pixels — enough to swallow a whole header + footer going transparent
+  // (#432 shipped with exactly that in its baseline). Colour regions that a
+  // stylesheet regression can blank get their own zero-tolerance shots.
+  test('header / footer colours render opaque', async ({ page }) => {
+    await expect(page.locator('h2:has-text("Header / footer colours") + bs-card')).toHaveScreenshot(
+      'card-header-footer-colours.png',
+    );
+  });
+
+  test('filled colour variants keep their contrast text', async ({ page }) => {
+    await expect(page.locator('mp-card[color="dark"]:not([outline])').first()).toHaveScreenshot(
+      'card-filled-dark.png',
+    );
+  });
 });

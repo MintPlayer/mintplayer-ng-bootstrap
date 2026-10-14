@@ -59,6 +59,16 @@ mp-card .card-img-bottom {
   width: 100%;
 }
 
+// ── Card group ─────────────────────────────────────────────────────────────
+// Where Bootstrap's card partial is loaded (React/Vue ship full Bootstrap),
+// `.card-group` is a flex row from `sm` up, sized by `.card-group > .card`.
+// Our cards are mp-card, which carries no `.card` class, so mirror the sizing
+// on the element itself; without it the row holds content-width cards. Where
+// the group is not a flex container this declaration does nothing.
+.card-group > mp-card {
+  flex: 1 0 0%;
+}
+
 // ── Deep typography (lives inside a slotted card-body) ─────────────────────
 mp-card .card-title {
   display: block;

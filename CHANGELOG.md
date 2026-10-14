@@ -7,6 +7,17 @@ package version aligns its major with the supported Angular major.
 
 ### Breaking
 
+- **Card: no more global `.card-*` / `.text-bg-*` rules (issue #432).** `@mintplayer/web-components` 2.20.0.
+  - `ensureCardStylesInjected` is removed from `@mintplayer/web-components/card`. Importing the element installs
+    its stylesheet; no call is needed.
+  - The card's stylesheet used to style every `.card-header`, `.card-body`, `.card-title`, … on the page. It now
+    styles them only inside a card. **Plain Bootstrap card markup** (`<div class="card">`) in an Angular app that
+    imports `@mintplayer/ng-bootstrap/bootstrap.scss` loses the padding and caps it picked up from that leak, because
+    that file does not ship Bootstrap's card partial. Use `<bs-card>`, or import `bootstrap/scss/card` yourself.
+  - **React / Vue `<BsCardGroup>`** is now laid out by Bootstrap's `.card-group` (a flex row from `sm` up, with
+    equal-width cards) instead of the leaked `display: block` stack. Angular's `<bs-card-group>` keeps stacking
+    unless Bootstrap's card partial is imported.
+
 - **`bs-query-builder`: the `timezone` input is removed.** It was declared but never reached the element, so
   binding it had no effect. Remove the binding.
 - **Satellite libraries (found by the coverage phase 2 audit).**
@@ -220,6 +231,17 @@ package version aligns its major with the supported Angular major.
     applyFetchState })`.
 
 ### Fixed
+
+- **Loading `<bs-card>` / `<mp-card>` no longer blanks every `.text-bg-*` on the page (issue #432).**
+  - The card injected an unscoped stylesheet that re-shipped Bootstrap's `.text-bg-*` utilities with an invalid
+    `RGBA(#hex, var(--bs-bg-opacity, 1)) !important` value. It computed to transparent and, coming later in the
+    cascade, overrode Bootstrap's own rule for every badge and coloured element on the page, in light and dark
+    mode. The copy is gone; the page's Bootstrap utilities apply again.
+  - The card's stylesheet is now installed through the shared light-style registry, with every rule anchored on
+    `mp-card`, so it cannot reach anything outside a card.
+  - **The body text of a filled colour card follows its colour.** `<bs-card [color]>` set the card's text colour
+    but not `--mp-card-color`, which the body and title read, so they kept the page body colour: invisible on
+    `dark` (1:1) and below AA on `primary` / `danger`.
 
 - **Datatable (issue #426).**
   - **Phantom horizontal scrollbar.** Measured column widths were rounded up, so columns that fitted

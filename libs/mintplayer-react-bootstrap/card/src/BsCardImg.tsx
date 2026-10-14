@@ -15,7 +15,7 @@ interface BsCardImgProps extends ImgHTMLAttributes<HTMLImageElement> {
  * Plain React `card-img` element. Renders a `card-img-top` / `card-img-bottom`
  * image, or — for `overlay` — a `card-img` paired with a `card-img-overlay`
  * div that holds `children`. The result gets slotted into `<mp-card>` and
- * styled by mp-card's shadow + the global card sheet. Merges an incoming
+ * styled by mp-card's shadow + its card-anchored document sheet. Merges an incoming
  * `className` and spreads remaining props onto the `<img>`.
  */
 export const BsCardImg = forwardRef<HTMLImageElement, PropsWithChildren<BsCardImgProps>>(

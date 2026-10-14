@@ -23,7 +23,8 @@ import { describe, expect, it } from 'vitest';
  *    (`#{` interpolation, `$variable`). Comments are stripped first.
  *  - every built `dist/libs/mintplayer-web-components/**\/*.mjs` — for a hex
  *    colour inside a colour function (Sass syntax checks would false-positive
- *    on JavaScript). This is what consumers actually install.
+ *    on JavaScript), and every built `*.css` for all of the sheet checks. This
+ *    is what consumers actually install.
  *
  * `light-dark(#…, #…)` is valid CSS and is not matched.
  */
@@ -62,14 +63,27 @@ const sheets = walk(LIB_ROOT, isGeneratedSheet).map((abs) => ({
   css: stripComments(readFileSync(abs, 'utf8')),
 }));
 
-const modules = existsSync(DIST_ROOT)
-  ? walk(DIST_ROOT, (_dir, name) => name.endsWith('.mjs')).map((abs) => ({
-      file: relative(DIST_ROOT, abs),
-      code: readFileSync(abs, 'utf8'),
-    }))
-  : [];
+const built = (extension: string) =>
+  existsSync(DIST_ROOT)
+    ? walk(DIST_ROOT, (_dir, name) => name.endsWith(extension)).map((abs) => ({
+        file: relative(DIST_ROOT, abs),
+        code: readFileSync(abs, 'utf8'),
+      }))
+    : [];
+
+const modules = built('.mjs');
+// Shipped stylesheets (theming/color-mode.css, …) are plain CSS, so they get
+// the full sheet checks.
+const builtSheets = built('.css').map((m) => ({ file: m.file, css: stripComments(m.code) }));
 
 const matches = (text: string, pattern: RegExp): string[] => [...text.matchAll(pattern)].map((m) => m[0]);
+
+const sheetFindings = (css: string) => ({
+  hexInColorFunction: matches(css, HEX_IN_COLOR_FUNCTION),
+  sassInterpolation: matches(css, SASS_INTERPOLATION),
+  sassVariable: matches(css, SASS_VARIABLE),
+});
+const NO_FINDINGS = { hexInColorFunction: [], sassInterpolation: [], sassVariable: [] };
 
 describe('no unresolved or invalid CSS values', () => {
   it('finds generated sheets to check (codegen has run)', () => {
@@ -82,13 +96,19 @@ describe('no unresolved or invalid CSS values', () => {
 
   describe('generated sheets', () => {
     it.each(sheets.map((s) => [s.file, s.css] as const))('%s', (_file, css) => {
-      expect({
-        hexInColorFunction: matches(css, HEX_IN_COLOR_FUNCTION),
-        sassInterpolation: matches(css, SASS_INTERPOLATION),
-        sassVariable: matches(css, SASS_VARIABLE),
-      }).toEqual({ hexInColorFunction: [], sassInterpolation: [], sassVariable: [] });
+      expect(sheetFindings(css)).toEqual(NO_FINDINGS);
     });
   });
+
+  // Guarded: it.each over an empty table throws, and a package with no CSS
+  // file is fine.
+  if (builtSheets.length > 0) {
+    describe('built stylesheets', () => {
+      it.each(builtSheets.map((s) => [s.file, s.css] as const))('%s', (_file, css) => {
+        expect(sheetFindings(css)).toEqual(NO_FINDINGS);
+      });
+    });
+  }
 
   describe('built modules', () => {
     it.each(modules.map((m) => [m.file, m.code] as const))('%s', (_file, code) => {

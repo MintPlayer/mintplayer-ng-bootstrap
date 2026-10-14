@@ -70,7 +70,7 @@ const relative = (abs: string): string => abs.slice(LIB_ROOT.length + 1).replace
  */
 const installedKeysInSource = (): string[] =>
   walk(LIB_ROOT, (name) => name.endsWith('.ts') && !name.endsWith('.spec.ts') && !name.endsWith('.d.ts'))
-    .flatMap((abs) => [...readFileSync(abs, 'utf8').matchAll(/\binstallLightStyles\(\s*'([^']+)'/g)].map((m) => m[1]))
+    .flatMap((abs) => [...readFileSync(abs, 'utf8').matchAll(/\binstallLightStyles\(\s*(['"`])([^'"`]+)\1/g)].map((m) => m[2]))
     .sort();
 
 /**

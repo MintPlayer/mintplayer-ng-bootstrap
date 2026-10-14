@@ -190,8 +190,12 @@ not.
 - After loading `<mp-card>`, a `.badge.text-bg-{primary,secondary,success,info,warning,danger,light,dark}`
   **outside** the card keeps Bootstrap's background in light and dark mode (issue AC1).
 - A plain Bootstrap `.card` outside any `mp-card` renders exactly as without `mp-card` loaded.
-- `mp-card` header and footer colours render opaque, with ≥ 4.5:1 contrast, in light and dark mode,
-  in ng, React and Vue.
+- `mp-card` header and footer colours render opaque, with ≥ 4.5:1 contrast, in light and dark mode.
+  Asserted by e2e in ng and React. Vue renders the same shared element and is covered by the existing
+  Vue e2e jobs, but has no dedicated spec (D4.4 made it optional).
+- The body text of a filled `<mp-card color>` follows the colour contract (white on `dark`), asserted
+  in ng and React. This was found in review: `:host([color])` set `color` but not `--mp-card-color`,
+  which the regions read.
 - No `RGBA(#…` or other hex-in-colour-function in any built module, enforced by spec (issue AC2).
 - The regression e2e above is in the suite and fails on master (issue AC3).
 - Only the shared installer writes CSS to the document, enforced by spec.
@@ -254,3 +258,21 @@ Notes: [spikes/issue-432/](./spikes/issue-432/).
 - **Release:** minor bumps (web-components 2.20.0, ng 22.24.0, react 19.24.0, vue 3.25.0, peers
   `^2.20.0`). `ensureCardStylesInjected` is removed, and the global `.card-*` / `.text-bg-*` rules
   are gone. Both are documented breaking cleanups.
+
+## 10. Review follow-ups (PR #433 review, 2026-10-14)
+
+- **CHANGELOG** gets a Fixed entry and a Breaking entry. The Breaking entry includes the migration
+  note: plain `.card` markup in an ng app loses the padding it got from the leak.
+- **Filled card body text:** each `:host([color])` variant now sets `--mp-card-color` too. Outline and
+  transparent cards set it to `inherit`.
+- **All 8 `.text-bg-*` variants** are asserted page-level in both e2e specs, plus a filled dark card's
+  body and title colour.
+- **`.card-group > mp-card { flex: 1 0 0% }`** mirrors Bootstrap's `.card-group > .card` sizing. The
+  rule is anchored on `mp-card` as its subject.
+- **Guards widened:**
+  - the dist scan covers shipped `.css`;
+  - the writer scan catches `document.adoptedStyleSheets.push(…)` and a `<style>` in a light-DOM
+    component's template;
+  - the completeness regex accepts any quote style.
+- **Visual:** zero-tolerance element shots of the header/footer colours card and the filled dark card,
+  next to the 1 % full-page shot.

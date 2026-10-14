@@ -54,12 +54,13 @@
 }
 
 // NOTE: the inner regions (.card-header / .card-body / .card-footer / .card-img-*)
-// are styled by the GLOBAL sheet (card-global.styles.scss), NOT here via
-// `::slotted()`. `::slotted()` is the lowest-priority way to style slotted
-// content — any document rule (e.g. Bootstrap's own `.card-header`, present when
-// the host app loads full Bootstrap as React/Vue do) wins over it regardless of
-// specificity. The global sheet's document-level rules out-rank Bootstrap on
-// source order, so they apply consistently across all three frameworks. Only the
+// are styled by the card-anchored document sheet (card-global.styles.scss,
+// installed through installLightStyles), NOT here via `::slotted()`.
+// `::slotted()` is the lowest-priority way to style slotted content — any
+// document rule (e.g. Bootstrap's own `.card-header`, present when the host app
+// loads full Bootstrap as React/Vue do) wins over it regardless of specificity.
+// The sheet's `mp-card .card-*` rules out-rank Bootstrap's `.card-*` on
+// specificity, so they apply consistently across all three frameworks. Only the
 // card *chrome* (above, on :host — which Bootstrap's `.card` selector never
 // matches, since mp-card carries no `.card` class) and the colour contract
 // (below) stay in the shadow.
@@ -68,13 +69,22 @@
 // Driven by the reflected `color` / `outline` attributes, generated from the
 // Bootstrap theme map plus the extra body/white/transparent tokens the Color
 // enum exposes. Encapsulated on :host — no dependency on global utilities.
+//
+// Each variant sets --mp-card-color as well as color: the card-anchored
+// document sheet colours the slotted regions with var(--mp-card-color), so a
+// variant that set only color left the body text on the :host default (the
+// body colour) — 1:1 on a dark card. Outline and transparent cards follow the
+// surrounding text, so they set it to inherit (the parent's value, else the
+// regions' own inherit fallback).
 @each $name, $value in $theme-colors {
   :host([color="#{$name}"]) {
+    --mp-card-color: #{color-contrast($value)};
     color: color-contrast($value);
     background-color: $value;
     border-color: $value;
   }
   :host([color="#{$name}"][outline]) {
+    --mp-card-color: inherit;
     color: inherit;
     background-color: transparent;
     border-color: $value;
@@ -82,14 +92,17 @@
 }
 
 :host([color="body"]) {
+  --mp-card-color: var(--bs-body-color);
   color: var(--bs-body-color);
   background-color: var(--bs-body-bg, #{$card-bg});
 }
 :host([color="white"]) {
+  --mp-card-color: #000;
   color: #000;
   background-color: #fff;
 }
 :host([color="transparent"]) {
+  --mp-card-color: inherit;
   color: inherit;
   background-color: transparent;
 }
