@@ -1,4 +1,5 @@
 import { LitElement, html, type TemplateResult } from 'lit';
+import { installLightStyles } from '@mintplayer/web-components/light-dom';
 import { styles } from './mp-card.element.template';
 import { cardGlobalStyles } from './card-global.styles';
 
@@ -19,8 +20,9 @@ import { cardGlobalStyles } from './card-global.styles';
  * class-carrying elements projected into the slot (by consumers or the
  * framework `BsCard*` wrappers). `mp-card`'s shadow styles the direct regions
  * via `::slotted(.card-header/.card-body/…)`; deeper typography (`.card-title`
- * inside a body, which `::slotted` can't reach) comes from a small global
- * sheet injected once via `ensureCardStylesInjected()`.
+ * inside a body, which `::slotted` can't reach) comes from a document-level
+ * sheet installed through the shared light-style registry. Every rule in it is
+ * anchored on `mp-card`, so it never reaches content outside a card (#432).
  *
  * Attributes:
  *  - `color`   — a Bootstrap colour name; selects the filled `:host([color])`.
@@ -41,33 +43,17 @@ export class MpCardElement extends LitElement {
   outline = false;
   isServerSide = false;
 
-  override connectedCallback(): void {
-    super.connectedCallback();
-    ensureCardStylesInjected();
-  }
-
   override render(): TemplateResult {
     return html`<slot></slot>`;
   }
 }
 
-let cardStylesInjected = false;
-/**
- * Inject the global card typography sheet (`.card-title`, `.card-text`,
- * `.card-link`, the `text-bg-*` utilities, …) into `document.head` exactly
- * once. These rules target content nested inside a card-body, which
- * `mp-card`'s shadow `::slotted()` rules cannot reach. Exported for the
- * framework wrappers, which render the same class-carrying elements.
- */
-export function ensureCardStylesInjected(): void {
-  if (cardStylesInjected) return;
-  if (typeof document === 'undefined') return;
-  cardStylesInjected = true;
-  const style = document.createElement('style');
-  style.setAttribute('data-mp-card', '');
-  style.textContent = String(cardGlobalStyles);
-  document.head.appendChild(style);
-}
+// The sheet styles regions and typography nested inside a card, which
+// mp-card's shadow ::slotted() rules cannot reach (or cannot out-rank). It goes
+// through the shared registry — the only document-level CSS writer — so the
+// scoping conformance suite checks it and shadow hosts that adopt the registry
+// mirror it. Installed before define, so importing the element is enough.
+installLightStyles('card', cardGlobalStyles);
 
 if (typeof customElements !== 'undefined' && !customElements.get('mp-card')) {
   customElements.define('mp-card', MpCardElement);

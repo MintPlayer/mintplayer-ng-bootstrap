@@ -2,8 +2,10 @@ import type { CSSResult } from 'lit';
 
 /**
  * Document-level installation of light-tier component styles
- * (docs/prd/wc-style-encapsulation.md §L5), generalizing the pattern that
- * `ensureCardStylesInjected` pioneered.
+ * (docs/prd/wc-style-encapsulation.md §L5) — and the ONLY document-level CSS
+ * writer in the library: a slot-based component that needs a document sheet
+ * for its slotted content (mp-card) installs it here too, anchored on its host
+ * tag (#432). _conformance/document-style-writers.spec.ts enforces this.
  *
  * A light-tier component has no shadow root, so its (rescoped) styles go to
  * the document — once per component class, at `customElements.define` time.
@@ -12,9 +14,10 @@ import type { CSSResult } from 'lit';
  * and installing degrades to a no-op instead of a duplicate sheet.
  *
  * The same registry is the bridge into render-callback shadow trees (issue
- * #408): components that adopt consumer DOM into their shadow root (datatable,
- * treeview) call `adoptLightStyles(shadowRoot)` so consumer content keeps its
- * light-tier styling inside those trees — including sheets registered later.
+ * #408): shadow-rooted components that render light-tier components or
+ * consumer DOM inside their shadow root (mp-file-manager) call
+ * `adoptLightStyles(shadowRoot)` so that content keeps its light-tier styling
+ * inside those trees — including sheets registered later.
  */
 
 const REGISTRY_KEY = Symbol.for('mp.lightStyles');

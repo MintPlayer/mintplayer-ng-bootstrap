@@ -1,4 +1,5 @@
 import { describe, it, expect, afterEach } from 'vitest';
+import { getLightStyleEntries } from '@mintplayer/web-components/light-dom';
 import './mp-card.element';
 import { MpCardElement } from './mp-card.element';
 
@@ -39,11 +40,12 @@ describe('mp-card', () => {
     expect(el.hasAttribute('outline')).toBe(false);
   });
 
-  it('injects the global card sheet into document.head exactly once', () => {
+  it('installs its document-level sheet once, through the light-style registry (#432)', () => {
     el = makeCard();
-    expect(document.head.querySelectorAll('style[data-mp-card]').length).toBe(1);
-    const el2 = makeCard();
-    expect(document.head.querySelectorAll('style[data-mp-card]').length).toBe(1);
-    el2.remove();
+    makeCard().remove();
+    const entries = getLightStyleEntries().filter((e) => e.key === 'card');
+    expect(entries.length).toBe(1);
+    // A private <style> next to the registry is what let #432 leak unchecked.
+    expect(document.head.querySelectorAll('style[data-mp-card]').length).toBe(0);
   });
 });

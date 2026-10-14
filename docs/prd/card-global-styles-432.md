@@ -1,7 +1,7 @@
 # PRD — `mp-card` must not leak broken global styles (#432)
 
 Issue: [#432](https://github.com/MintPlayer/mintplayer-ng-bootstrap/issues/432)
-Status: **Proposed** (2026-10-14). Plan: [card-global-styles-432-plan.md](./card-global-styles-432-plan.md)
+Status: **Implemented** on `fix/432-card-global-styles` (2026-10-14); spikes resolved, see §9. Plan: [card-global-styles-432-plan.md](./card-global-styles-432-plan.md)
 
 ## 1. Problem
 
@@ -221,3 +221,36 @@ of S3. After release, MintPlayer.Spark updates and removes its merge-queue worka
 | S2 | Can the card sheet go through `installLightStyles` unchanged (un-rescoped, final form)? What marker or key does it get, and does `adoptLightStyles` mirror it into a shadow host? | D1, D4.1 readiness marker |
 | S3 | With Bootstrap's helpers loaded, do `mp-card` header/footer colours render correctly once the card's `.text-bg-*` block is gone? Without them (WC-only page), what breaks? | D3 fallback yes/no, version bump |
 | S4 | Is the published npm 2.19.0 `card/index.mjs` byte-identical in this respect (`RGBA(#` present) to the local dist? | Confirms the fix targets what Spark actually installed |
+
+## 9. Decisions (spikes resolved 2026-10-14)
+
+Notes: [spikes/issue-432/](./spikes/issue-432/).
+
+- **S1 → D2:** header and footer are direct children of `mp-card` in ng, React and Vue, so they use
+  `mp-card > .card-header|footer`, and a plain `.card` nested in a card body keeps its own look. Body
+  and images use a descendant combinator, because Angular's horizontal card nests them in
+  `bs-grid › .row › .col-*`. Typography, links and header tabs/pills are always nested, so they use a
+  descendant combinator too. `.card-group` *wraps* cards, so no `mp-card` anchor can reach it: its
+  only rule (`display: block`, needed for Angular's inline `bs-card-group` host) moves to that
+  component's own `:host` style. React and Vue render a `div` there.
+- **S2 → D1:** `installLightStyles` never rescopes. It adopts the sheet verbatim (a `<style data-mp-light-styles>`
+  appears only as a fallback or in SSR). The call sits at module level, before `define`, so importing
+  the element fills the registry. The scoping spec now reads the registry and checks completeness
+  against every `installLightStyles('…')` call in source. Anchoring is relaxed in one way: only the
+  combinator *directly after* the anchor must be a descendant or child combinator (a sibling of a
+  descendant stays inside), and the host-tag match now requires a word boundary. No shadow WC renders
+  `mp-card`, so there is no nesting witness to e2e. The card has no SSR chrome and gets no SSR
+  injection, both today and after this change; that stays out of scope (a card without its DSD
+  chrome would be half-styled anyway). The e2e readiness check waits for `mp-card:defined`, which
+  implies the module-level install.
+- **S3 → D3:** **no fallback.** Measured in ng and React, light and dark: once the copy is deleted,
+  the dark header computes `rgb(33,37,41)` and the success footer `rgb(25,135,84)`. Before, both
+  were transparent with white text. All three demos load Bootstrap's helpers. On a page with no
+  Bootstrap at all, the old copy gave white-on-transparent and removing it gives a readable plain
+  header. `<mp-card color>` uses `:host([color])` and is unaffected.
+- **S4:** the published 2.19.0 `card/index.mjs` has the 8 `RGBA(#` values and the private `<style>`
+  writer. Its `chunks/install-light-styles-*.mjs` is clean (0 `text-bg`, 0 `RGBA(#`). That answers
+  the issue's third question.
+- **Release:** minor bumps (web-components 2.20.0, ng 22.24.0, react 19.24.0, vue 3.25.0, peers
+  `^2.20.0`). `ensureCardStylesInjected` is removed, and the global `.card-*` / `.text-bg-*` rules
+  are gone. Both are documented breaking cleanups.

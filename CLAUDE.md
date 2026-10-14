@@ -102,6 +102,15 @@ Encapsulation is preserved at build time instead of by the boundary, the way Ang
   silently WINS on specificity (`.btn[data-mps=…]` beats `.btn`), making the page's own theming
   unoverridable. Partials that are commented out there (`forms`, `tables`, `badge`, `card`, `alert`,
   `list-group`, `close`, …) are NOT global and must still be imported.
+- **Every document-level sheet goes through `installLightStyles` — light tier or not.** A slot-based
+  component that needs document CSS for its slotted content (`mp-card`: `::slotted()` cannot reach
+  `.card-title` inside a body, nor out-rank Bootstrap's `.card-header`) installs it through the
+  registry too, with every rule anchored on its host tag (`mp-card > .card-header`). Issue #432: the
+  card appended its own `<style>` instead, no spec saw it, and its unanchored `.text-bg-*` copy —
+  with a Sass-printed `RGBA(#hex, var(…))` that computes to transparent — blanked every badge on the
+  page. `_conformance/document-style-writers.spec.ts` enforces the single writer,
+  `light-styles-scoping.spec.ts` checks every REGISTERED sheet (not a filename glob), and
+  `no-invalid-css-values.spec.ts` rejects hex inside a colour function in sheets and in the dist.
 
 Styling DOM the rewriter cannot stamp (`unsafeHTML` output, a consumer's node, another component's
 rendered content) is done by anchoring on a scoped ANCESTOR, marked `/*! @mps-global */` and
