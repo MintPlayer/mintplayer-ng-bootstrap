@@ -17,7 +17,7 @@ import { render, renderEl } from './harness';
 /**
  * The card helpers are the only React wrappers with logic of their own: they do
  * not wrap a web component, they render the light-DOM `div`/`img`/`a` that
- * `<mp-card>` slots and the global card sheet styles. Each one owns a class
+ * `<mp-card>` slots and its card-anchored document sheet styles. Each one owns a class
  * contract (the Bootstrap class, a consumer's `className` merged in, a
  * `text-bg-{color}` modifier) and forwards its ref to the element it renders.
  * `BsCardHeader` additionally promotes a nested nav to `card-header-tabs` /
