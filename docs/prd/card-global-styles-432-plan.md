@@ -1,7 +1,7 @@
 # Plan — `mp-card` global-style leak (#432)
 
 PRD: [card-global-styles-432.md](./card-global-styles-432.md)
-Status: **S1–S4, M1–M4, M6 done; M5 visual baseline + M7 sweep pending** (2026-10-14), on `fix/432-card-global-styles` → `master`.
+Status: **S1–S4, M1–M7 done except push + PR** (2026-10-14), on `fix/432-card-global-styles` → `master`.
 Everything lands in **one PR**.
 
 Spike artifacts go in `docs/prd/spikes/issue-432/`, one short `S<n>-*.md` per spike. Each records

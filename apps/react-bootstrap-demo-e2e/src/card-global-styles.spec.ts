@@ -61,7 +61,11 @@ for (const mode of ['light', 'dark'] as const) {
     test("a plain Bootstrap card outside mp-card keeps Bootstrap's own styling", async ({ page }) => {
       // Bootstrap: .card { --bs-card-cap-bg: rgba(var(--bs-body-color-rgb), 0.03) }
       const bodyColorRgb = await page.evaluate(() =>
-        getComputedStyle(document.documentElement).getPropertyValue('--bs-body-color-rgb').trim(),
+        getComputedStyle(document.documentElement)
+          .getPropertyValue('--bs-body-color-rgb')
+          .split(',')
+          .map((channel) => channel.trim())
+          .join(', '),
       );
       expect(await computed(page, '#probe-card-header', 'background-color')).toBe(`rgba(${bodyColorRgb}, 0.03)`);
     });

@@ -158,9 +158,14 @@ describe('document-level stylesheets are scoped to their own component', () => {
     expect(sheets.length).toBeGreaterThan(0);
   });
 
+  // Walked at collection time: reading the whole lib inside a test body can
+  // exceed the 5s test timeout when the full suite runs in parallel.
+  const sourceKeys = installedKeysInSource();
+
   it('registers every sheet the source installs (the imports above are complete)', () => {
     const registered = getLightStyleEntries().map((e) => e.key);
-    expect(installedKeysInSource().filter((key) => !registered.includes(key))).toEqual([]);
+    expect(sourceKeys.length).toBeGreaterThan(0);
+    expect(sourceKeys.filter((key) => !registered.includes(key))).toEqual([]);
   });
 
   it('registers every generated light-tier sheet', () => {
