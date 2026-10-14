@@ -106,8 +106,14 @@
   color: inherit;
   background-color: transparent;
 }
+// Outline cards are transparent, so like the theme-colour outlines above they
+// follow the surrounding text — and must undo the filled rule's colour, or an
+// outline-white card keeps black text on whatever is behind it (1.4:1 in dark
+// mode).
 :host([color="body"][outline]),
 :host([color="white"][outline]),
 :host([color="transparent"][outline]) {
+  --mp-card-color: inherit;
+  color: inherit;
   background-color: transparent;
 }

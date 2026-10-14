@@ -18,10 +18,10 @@ import { cardGlobalStyles } from './card-global.styles';
  *
  * Card sub-parts (header / body / footer / title / text / img / …) are plain
  * class-carrying elements projected into the slot (by consumers or the
- * framework `BsCard*` wrappers). `mp-card`'s shadow styles the direct regions
- * via `::slotted(.card-header/.card-body/…)`; deeper typography (`.card-title`
- * inside a body, which `::slotted` can't reach) comes from a document-level
- * sheet installed through the shared light-style registry. Every rule in it is
+ * framework `BsCard*` wrappers). The regions and the typography inside them
+ * are styled by a document-level sheet installed through the shared
+ * light-style registry, not by `::slotted()` — which cannot reach `.card-title`
+ * inside a body, nor out-rank Bootstrap's own `.card-header`. Every rule in it is
  * anchored on `mp-card`, so it never reaches content outside a card (#432).
  *
  * Attributes:

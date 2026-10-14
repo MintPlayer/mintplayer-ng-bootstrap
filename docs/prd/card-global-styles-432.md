@@ -276,3 +276,20 @@ Notes: [spikes/issue-432/](./spikes/issue-432/).
   - the completeness regex accepts any quote style.
 - **Visual:** zero-tolerance element shots of the header/footer colours card and the filled dark card,
   next to the 1 % full-page shot.
+  - **These shots are Win32 + Chromium only**, following the spec's existing policy. CI runs on
+    Ubuntu, so CI skips all three.
+  - The CI guard for #432 is therefore the computed-style e2e (`card-global-styles.spec.ts`, ng and
+    React, every browser project) plus the conformance specs. The screenshots catch regressions only
+    in a local Windows run.
+  - A Linux baseline was not added: cross-OS font rasterisation would make zero-tolerance shots
+    noisy, which is the reason for the existing policy.
+
+Second follow-up (same review thread):
+
+- **Outline-white cards** kept the filled white rule's black `color` and `--mp-card-color`, giving
+  black text on a transparent card (≈1.4:1 in dark mode). The body, white and transparent outline
+  variants now reset both to `inherit`, like the theme-colour outlines. e2e (ng and React, light and
+  dark): the outline-white card and its body compute the page's text colour.
+- **Stale comments:** the React card parts, `mp-card.element.ts` and `bs-card.component.ts` no longer
+  say `::slotted()` or "global sheet".
+- **The dist CSS scan cannot pass vacuously:** it asserts `theming/color-mode.css` is in the build.

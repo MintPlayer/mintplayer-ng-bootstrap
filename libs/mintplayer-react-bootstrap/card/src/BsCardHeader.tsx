@@ -13,8 +13,8 @@ interface BsCardHeaderProps extends HTMLAttributes<HTMLDivElement> {
 
 /**
  * Plain React `card-header` element. Renders a `div.card-header` that gets
- * slotted into `<mp-card>` and styled by mp-card's shadow + the global
- * card sheet. When `navStyle` is set, the kept `applyHeaderNavStyle` helper
+ * slotted into `<mp-card>` and styled by mp-card's card-anchored
+ * document sheet. When `navStyle` is set, the kept `applyHeaderNavStyle` helper
  * promotes the first slotted nav to the matching Bootstrap class.
  * Merges an incoming `className` and spreads remaining props.
  */

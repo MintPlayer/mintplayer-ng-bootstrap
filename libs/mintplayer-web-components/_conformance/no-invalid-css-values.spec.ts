@@ -100,8 +100,14 @@ describe('no unresolved or invalid CSS values', () => {
     });
   });
 
-  // Guarded: it.each over an empty table throws, and a package with no CSS
-  // file is fine.
+  it('finds the shipped stylesheets to check (the CSS scan cannot pass vacuously)', () => {
+    // theming/color-mode.css is the package's known stylesheet; if a packaging
+    // change stops shipping it (or moves it), this scan must not go quiet.
+    expect(builtSheets.map((s) => s.file)).toContain('theming/color-mode.css');
+  });
+
+  // Guarded only so an empty table cannot throw at collection time; the
+  // assertion above fails loudly in that case.
   if (builtSheets.length > 0) {
     describe('built stylesheets', () => {
       it.each(builtSheets.map((s) => [s.file, s.css] as const))('%s', (_file, css) => {

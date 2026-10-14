@@ -14,9 +14,9 @@ import '@mintplayer/web-components/card';
  *
  * Renders an inner `<mp-card>` — the single card web component, which owns the
  * card chrome (border / radius / background) in its shadow DOM. Projected
- * `<bs-card-*>` content lands in `<mp-card>`'s default slot and is styled via
- * the WC's `::slotted()` rules (header / body / footer / img) plus the global
- * typography sheet (title / text). This is what makes the card render
+ * `<bs-card-*>` content lands in `<mp-card>`'s default slot and is styled by
+ * the WC's card-anchored document sheet (header / body / footer / img / title /
+ * text). This is what makes the card render
  * correctly even when itself slotted inside another web component.
  */
 @Component({

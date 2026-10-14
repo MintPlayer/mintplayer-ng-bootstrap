@@ -52,6 +52,8 @@ const appendProbes = (page: Page) =>
         .join('') +
       '<mp-card color="dark" id="probe-filled-card"><div class="card-body" id="probe-filled-body">' +
       '<div class="card-title" id="probe-filled-title">t</div>x</div></mp-card>' +
+      '<mp-card color="white" outline id="probe-outline-white">' +
+      '<div class="card-body" id="probe-outline-white-body">x</div></mp-card>' +
       '<div class="card" id="probe-card"><div class="card-header" id="probe-card-header">x</div>' +
       '<div class="card-body" id="probe-card-body"><div class="card-title" id="probe-card-title">t</div></div></div>';
     document.body.appendChild(host);
@@ -75,6 +77,14 @@ for (const mode of ['light', 'dark'] as const) {
         expect(await computed(page, `#probe-badge-${name}`, 'background-color')).toBe(rgb);
       });
     }
+
+    test('the body text of an outline-white mp-card keeps the page colour', async ({ page }) => {
+      // The outline variant is transparent, so it must undo the filled white
+      // rule's black text — else black on the dark page background (1.4:1).
+      const pageColor = await page.evaluate(() => getComputedStyle(document.body).color);
+      expect(await computed(page, '#probe-outline-white', 'color')).toBe(pageColor);
+      expect(await computed(page, '#probe-outline-white-body', 'color')).toBe(pageColor);
+    });
 
     test('the body text of a filled dark mp-card follows its colour contract', async ({ page }) => {
       // The regions read var(--mp-card-color); a variant that set only `color`

@@ -5,8 +5,8 @@ const cx = (...c: (string | false | null | undefined)[]) => c.filter(Boolean).jo
 
 /**
  * Plain React `card-subtitle` element. Renders a `div.card-subtitle` that
- * gets slotted into `<mp-card>` and styled by mp-card's shadow + the global
- * card sheet. Merges an incoming `className` and spreads remaining props.
+ * gets slotted into `<mp-card>` and styled by mp-card's card-anchored
+ * document sheet. Merges an incoming `className` and spreads remaining props.
  */
 export const BsCardSubtitle = forwardRef<HTMLDivElement, PropsWithChildren<HTMLAttributes<HTMLDivElement>>>(
   ({ className, ...rest }, ref) => <div ref={ref} className={cx('card-subtitle', className)} {...rest} />,
