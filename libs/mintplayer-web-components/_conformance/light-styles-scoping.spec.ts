@@ -5,13 +5,24 @@ import { describe, expect, it } from 'vitest';
 import postcss from 'postcss';
 import selectorParser from 'postcss-selector-parser';
 
+import { getLightStyleEntries } from '@mintplayer/web-components/light-dom';
+// Every component that installs a document-level sheet. Completeness is
+// asserted below against the installLightStyles calls in the source.
+import '@mintplayer/web-components/card';
+import '@mintplayer/web-components/datatable';
+import '@mintplayer/web-components/query-builder';
+import '@mintplayer/web-components/treeview';
+import '@mintplayer/web-components/tree-select';
+
 /**
- * The no-leak guarantee for light-tier (emulated-encapsulation) components.
+ * The no-leak guarantee for every stylesheet installed at DOCUMENT level —
+ * light-tier (emulated-encapsulation) components, and the document sheet a
+ * slot-based component such as mp-card ships for its slotted content.
  *
- * Dropping the shadow root trades a browser-enforced boundary for a build-time
- * one, so the boundary has to be *checked* rather than trusted. This suite is
- * that check: it reads every generated `*.light.styles.ts` and proves each rule
- * can only match elements the owning component stamped.
+ * A document-level sheet has no browser-enforced boundary, so the boundary has
+ * to be *checked* rather than trusted. This suite is that check: it reads every
+ * sheet registered through `installLightStyles` and proves each rule can only
+ * match elements inside the owning component.
  *
  * Two independent assertions, because they fail in different ways:
  *  1. STATIC — every selector is scope-ANCHORED: some compound carries the
@@ -40,30 +51,37 @@ const ALLOWED_GLOBAL_SELECTORS: readonly string[] = [
   // (none yet — every converted component is fully scoped)
 ];
 
-const walk = (dir: string, acc: string[] = []): string[] => {
+const walk = (dir: string, keep: (name: string) => boolean, acc: string[] = []): string[] => {
   for (const entry of readdirSync(dir, { withFileTypes: true })) {
     if (entry.name === 'node_modules' || entry.name.startsWith('.')) continue;
     const full = join(dir, entry.name);
-    if (entry.isDirectory()) walk(full, acc);
-    else if (entry.name.endsWith('.light.styles.ts')) acc.push(full);
+    if (entry.isDirectory()) walk(full, keep, acc);
+    else if (keep(entry.name)) acc.push(full);
   }
   return acc;
 };
 
-const generatedSheets = () =>
-  walk(LIB_ROOT)
-    .map((abs) => {
-      const rel = abs.slice(LIB_ROOT.length + 1);
-      const source = readFileSync(abs, 'utf8');
-      // The generated module exports a single css`` literal; the CSS text is
-      // everything between the first backtick pair.
-      const match = /`([\s\S]*)`/.exec(source);
-      return {
-        file: rel.replace(/\\/g, '/'),
-        scope: basename(rel, '.light.styles.ts').replace(/^mp-/, ''),
-        css: match ? match[1] : '',
-      };
-    })
+const relative = (abs: string): string => abs.slice(LIB_ROOT.length + 1).replace(/\\/g, '/');
+
+/**
+ * Every key passed to `installLightStyles('<key>', …)` anywhere in the lib's
+ * source. Each must be registered once the components below are imported, so a
+ * new document-level sheet cannot dodge this suite by not being imported here.
+ */
+const installedKeysInSource = (): string[] =>
+  walk(LIB_ROOT, (name) => name.endsWith('.ts') && !name.endsWith('.spec.ts') && !name.endsWith('.d.ts'))
+    .flatMap((abs) => [...readFileSync(abs, 'utf8').matchAll(/\binstallLightStyles\(\s*'([^']+)'/g)].map((m) => m[1]))
+    .sort();
+
+/**
+ * The sheets actually installed at DOCUMENT level, read from the registry —
+ * not from a filename glob. Issue #432: the card's global sheet was named
+ * `card-global.styles.ts`, a glob for `*.light.styles.ts` never saw it, and its
+ * unscoped `.text-bg-*` / `.card-*` rules leaked onto the whole page.
+ */
+const documentSheets = () =>
+  getLightStyleEntries()
+    .map((entry) => ({ key: entry.key, css: entry.cssText }))
     .filter((s) => s.css.trim().length > 0);
 
 /**
@@ -75,9 +93,15 @@ const generatedSheets = () =>
  * scoped ANCESTOR: `.treeview-icon[data-mps=treeview] svg`. A match still
  * requires an element we stamped, so nothing outside the component is reachable.
  *
- * The anchoring only holds through descendant/child combinators. A sibling
- * combinator (`+`, `~`) walks OUT of the stamped subtree, and in the light DOM
- * that sibling can be consumer content — so an anchor before one does not count.
+ * A sibling combinator (`+`, `~`) directly after the anchor walks OUT of the
+ * stamped subtree, and in the light DOM that sibling can be consumer content —
+ * so such an anchor does not count. Once a descendant/child combinator has
+ * entered the anchor's subtree, later sibling combinators stay inside it (a
+ * sibling of a descendant shares its parent): `mp-card .card-link + .card-link`
+ * is anchored.
+ *
+ * The host tag must be the compound's whole type selector: `mp-card` anchors,
+ * `mp-card-group` does not.
  */
 const isScopeAnchored = (
   compounds: string[],
@@ -86,10 +110,10 @@ const isScopeAnchored = (
   tag: string,
 ): boolean =>
   compounds.some((compound, i) => {
-    const carriesScope = compound.includes(scopeAttr) || compound === tag || compound.startsWith(tag);
+    const carriesScope = compound.includes(scopeAttr) || new RegExp(`^${tag}(?![\\w-])`).test(compound);
     if (!carriesScope) return false;
-    // Every combinator between this compound and the subject must keep us inside it.
-    return combinators.slice(i).every((c) => c === ' ' || c === '>');
+    // The anchor is the subject, or the next combinator descends into it.
+    return i === compounds.length - 1 || combinators[i] === ' ' || combinators[i] === '>';
   });
 
 /** Every compound selector in the sheet, flattened, with its rule for reporting. */
@@ -125,19 +149,38 @@ const compoundsOf = (css: string) => {
   return out;
 };
 
-describe('light-tier stylesheets are scoped to their own component', () => {
-  const sheets = generatedSheets();
+describe('document-level stylesheets are scoped to their own component', () => {
+  const sheets = documentSheets();
 
-  it('finds generated light stylesheets to check', () => {
+  it('finds installed document-level stylesheets to check', () => {
     // A codegen regression that emits nothing must fail loudly rather than
     // making this whole suite vacuously green.
     expect(sheets.length).toBeGreaterThan(0);
   });
 
+  it('registers every sheet the source installs (the imports above are complete)', () => {
+    const registered = getLightStyleEntries().map((e) => e.key);
+    expect(installedKeysInSource().filter((key) => !registered.includes(key))).toEqual([]);
+  });
+
+  it('registers every generated light-tier sheet', () => {
+    const registered = getLightStyleEntries().map((e) => e.key);
+    const lightFiles = walk(LIB_ROOT, (name) => name.endsWith('.light.styles.ts'));
+    const missing = lightFiles
+      .map((abs) => ({ file: relative(abs), key: basename(abs, '.light.styles.ts').replace(/^mp-/, '') }))
+      .filter(({ key }) => !registered.includes(key))
+      .map(({ file }) => file);
+    expect(missing).toEqual([]);
+  });
+
+  it('importing mp-card registers its document-level sheet (#432)', () => {
+    expect(getLightStyleEntries().map((e) => e.key)).toContain('card');
+  });
+
   for (const sheet of sheets) {
-    describe(sheet.file, () => {
-      const tag = `mp-${sheet.scope}`;
-      const scopeAttr = `[data-mps=${sheet.scope}]`;
+    describe(sheet.key, () => {
+      const tag = `mp-${sheet.key}`;
+      const scopeAttr = `[data-mps=${sheet.key}]`;
 
       it('every compound carries the component scope or its host tag', () => {
         const unscoped: string[] = [];
@@ -153,7 +196,15 @@ describe('light-tier stylesheets are scoped to their own component', () => {
         const decoy = document.createElement('div');
         decoy.innerHTML = `
           <span class="badge bg-success">x</span>
-          <div class="card"><div class="card-body"><h5 class="card-title">t</h5></div></div>
+          <span class="badge text-bg-warning">w</span>
+          <span class="text-bg-primary">p</span>
+          <div class="card">
+            <div class="card-header text-bg-dark">h</div>
+            <img class="card-img-top" alt="" />
+            <div class="card-body"><h5 class="card-title">t</h5><p class="card-text">x</p>
+              <a class="card-link">a</a><a class="card-link">b</a></div>
+            <div class="card-footer">f</div>
+          </div>
           <table class="table"><thead><tr><th>h</th></tr></thead>
             <tbody><tr><td class="text-nowrap">c</td></tr></tbody></table>
           <input class="form-control form-control-sm" />
