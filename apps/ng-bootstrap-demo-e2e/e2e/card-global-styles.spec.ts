@@ -13,7 +13,8 @@ import { expect, test, type Page } from '@playwright/test';
  * a real engine, in light and dark mode. The probes are appended by the test,
  * outside any card, so the demo page itself stays unchanged.
  *
- * A plain span is used on purpose: <bs-badge> renders `bg-*`, not `text-bg-*`.
+ * A plain span is used on purpose: the probes are raw markup, and a <bs-badge>
+ * cannot be created from markup at runtime.
  */
 
 const COOKIE = 'bs-theme-mode';

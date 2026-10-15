@@ -232,6 +232,18 @@ package version aligns its major with the supported Angular major.
 
 ### Fixed
 
+- **`<bs-badge>` text contrasts with its background (issue #434).**
+  - The badge painted `bg-{color}`, which sets only the background, so its text stayed `.badge`'s white: 1.63:1 on
+    `warning`, 1.96:1 on `info` and 1.05:1 on `light`, below WCAG AA (4.5:1). It now paints `text-bg-{color}`, the
+    same background with the text colour Bootstrap's `color-contrast()` picks: black on warning, info and light,
+    white as before on the other theme colours. That text colour is fixed at build time, so a theme-coloured badge
+    reads the same in light and dark mode.
+  - `body`, `white` and `transparent` have no `text-bg-*` in Bootstrap and rendered white on white (1:1). They now
+    pair the background with a text utility, as `<bs-card [color]>` colours them: `bg-body text-body`,
+    `bg-white text-black` and `bg-transparent text-reset`. `body` and `transparent` follow the theme, because their
+    background does.
+  - `text-bg-*` sets `color` with `!important`: a consumer rule that recoloured badge text now needs `!important` too.
+
 - **Loading `<bs-card>` / `<mp-card>` no longer blanks every `.text-bg-*` on the page (issue #432).**
   - The card injected an unscoped stylesheet that re-shipped Bootstrap's `.text-bg-*` utilities with an invalid
     `RGBA(#hex, var(--bs-bg-opacity, 1)) !important` value. It computed to transparent and, coming later in the
