@@ -34,7 +34,8 @@ import { BsCheckboxType } from '../types/checkbox-type';
  * `tabindex` on `<bs-checkbox>` land on the input.
  */
 @Component({
-  selector: 'bs-checkbox',
+  // bs-toggle-button is the toggle-button front: the same control, type fixed.
+  selector: 'bs-checkbox, bs-toggle-button',
   templateUrl: './checkbox.component.html',
   imports: [MpPropsDirective, NgTemplateOutlet],
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -50,7 +51,8 @@ export class BsCheckboxComponent {
 
   private readonly parentGroup = inject(BsCheckboxGroupDirective, { optional: true, skipSelf: true });
   private readonly validity = inject(BsControlValidityDirective, { self: true });
-  private readonly hostAria = takeHostAria(inject(ElementRef).nativeElement as HTMLElement);
+  private readonly host = inject(ElementRef).nativeElement as HTMLElement;
+  private readonly hostAria = takeHostAria(this.host);
   private readonly id = inject(BsIdService).next('bs-checkbox');
   private readonly inputRef = viewChild<ElementRef<HTMLInputElement>>('input');
 
@@ -82,10 +84,14 @@ export class BsCheckboxComponent {
 
   readonly checked = computed(() => !!this.isToggled());
 
+  /** `<bs-toggle-button>` is a toggle button whatever `[type]` says. */
+  private readonly isToggleButtonHost = this.host.localName === 'bs-toggle-button';
+  readonly resolvedType = computed<BsCheckboxType>(() => this.isToggleButtonHost ? 'toggle_button' : this.type());
+
   private readonly state = computed<CheckboxState>(() => ({
-    type: this.type(),
+    type: this.resolvedType(),
     checked: this.checked(),
-    indeterminate: effectiveIndeterminate({ type: this.type(), indeterminate: this.indeterminate() }),
+    indeterminate: effectiveIndeterminate({ type: this.resolvedType(), indeterminate: this.indeterminate() }),
     disabled: this.disabled() || this.formDisabled(),
     required: this.validity.required(),
     invalid: this.validity.invalid(),
@@ -94,7 +100,7 @@ export class BsCheckboxComponent {
     errorText: this.validity.errorText(),
   }));
 
-  readonly classes = computed(() => checkboxClasses(this.type(), this.color(), this.state().invalid));
+  readonly classes = computed(() => checkboxClasses(this.resolvedType(), this.color(), this.state().invalid));
 
   readonly bags = computed(() => {
     const { 'aria-describedby': describedBy, ...aria } = this.hostAria;

@@ -109,7 +109,6 @@ const NOT_YET_MIGRATED: readonly string[] = [
   'react:tile-manager',
   'react:timeline',
   'react:timepicker',
-  'react:toggle-button',
   'react:tree-select',
   'react:treeview',
   'vue:accordion',
@@ -142,7 +141,6 @@ const NOT_YET_MIGRATED: readonly string[] = [
   'vue:tile-manager',
   'vue:timeline',
   'vue:timepicker',
-  'vue:toggle-button',
   'vue:tree-select',
   'vue:treeview',
 ];

@@ -24,8 +24,8 @@ describe('<mp-toggle-button>', () => {
     host.innerHTML = '<mp-toggle-button value="opt-a">Toggle</mp-toggle-button>';
     const el = host.firstElementChild as MpToggleButton;
     await settled(el);
-    const input = el.shadowRoot!.querySelector('input[type="checkbox"]');
-    const label = el.shadowRoot!.querySelector('label');
+    const input = el.querySelector('input[type="checkbox"]');
+    const label = el.querySelector('label');
     expect(input).toBeTruthy();
     expect(label).toBeTruthy();
     expect(label!.className).toContain('btn');
@@ -53,7 +53,7 @@ describe('<mp-toggle-button>', () => {
       received.push((ev as CustomEvent<ToggleChangeEventDetail>).detail);
     });
 
-    const input = el.shadowRoot!.querySelector('input') as HTMLInputElement;
+    const input = el.querySelector('input') as HTMLInputElement;
     input.checked = true;
     input.dispatchEvent(new Event('change', { bubbles: true }));
 
@@ -66,7 +66,7 @@ describe('<mp-toggle-button>', () => {
     host.innerHTML = '<mp-toggle-button color="outline-success"></mp-toggle-button>';
     const el = host.firstElementChild as MpToggleButton;
     await settled(el);
-    const label = el.shadowRoot!.querySelector('label')!;
+    const label = el.querySelector('label')!;
     expect(label.className).toContain('btn-outline-success');
   });
 
@@ -74,7 +74,7 @@ describe('<mp-toggle-button>', () => {
     host.innerHTML = '<mp-toggle-button color="bogus"></mp-toggle-button>';
     const el = host.firstElementChild as MpToggleButton;
     await settled(el);
-    const label = el.shadowRoot!.querySelector('label')!;
+    const label = el.querySelector('label')!;
     expect(label.className).toContain('btn-primary');
   });
 
@@ -82,7 +82,7 @@ describe('<mp-toggle-button>', () => {
     host.innerHTML = '<mp-toggle-button disabled></mp-toggle-button>';
     const el = host.firstElementChild as MpToggleButton;
     await settled(el);
-    const input = el.shadowRoot!.querySelector('input') as HTMLInputElement;
+    const input = el.querySelector('input') as HTMLInputElement;
     expect(input.disabled).toBe(true);
   });
 });

@@ -94,3 +94,29 @@ describe('BsCheckboxComponent', () => {
     expect(input().getAttribute('aria-pressed')).toBe('true');
   });
 });
+
+@Component({
+  imports: [BsCheckboxComponent],
+  template: `<bs-toggle-button [(isToggled)]="on" color="outline-success">Bold</bs-toggle-button>`,
+})
+class ToggleHostComponent {
+  on = signal<boolean | null>(false);
+}
+
+describe('bs-toggle-button', () => {
+  it('is the toggle-button front: btn-check input + label.btn, whatever [type] says', () => {
+    const fixture = TestBed.createComponent(ToggleHostComponent);
+    fixture.detectChanges();
+    const host = fixture.nativeElement.querySelector('bs-toggle-button') as HTMLElement;
+    const input = host.querySelector('input') as HTMLInputElement;
+    const label = host.querySelector('label') as HTMLLabelElement;
+    expect(input.classList.contains('btn-check')).toBe(true);
+    expect(label.className).toBe('btn btn-outline-success');
+    expect(label.htmlFor).toBe(input.id);
+
+    input.click();
+    fixture.detectChanges();
+    expect(fixture.componentInstance.on()).toBe(true);
+    expect(input.getAttribute('aria-pressed')).toBe('true');
+  });
+});

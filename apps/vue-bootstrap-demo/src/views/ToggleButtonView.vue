@@ -25,8 +25,8 @@ const on = ref(false);
     <h1>Toggle button</h1>
     <p class="text-body-secondary">
       On/off button using Bootstrap&apos;s <code>btn-check</code> +
-      <code>label.btn</code> pattern. Emits a native-style
-      <code>change</code> event with <code>detail.checked</code>.
+      <code>label.btn</code> pattern, with <code>role="button"</code> and
+      <code>aria-pressed</code>. <code>v-model</code> is the pressed state.
     </p>
 
     <section>

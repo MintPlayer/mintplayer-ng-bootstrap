@@ -1,27 +1,15 @@
 import { LitElement, html, nothing, type TemplateResult } from 'lit';
 import { createRef, ref, type Ref } from 'lit/directives/ref.js';
+import { FormAssociatedMixin } from '@mintplayer/web-components/a11y';
+import { props } from '@mintplayer/web-components/machine';
 import {
-  HostAriaController,
-  FormAssociatedMixin,
-  errorFeedback,
-  errorFeedbackElements,
-} from '@mintplayer/web-components/a11y';
-import { toggleButtonStyles } from '../styles';
-import { invalidFeedbackStyles } from '../../../_styles/invalid-feedback.styles';
+  checkboxClasses,
+  connectCheckbox,
+  isToggleButtonColor,
+  type ToggleButtonColor,
+} from '@mintplayer/ui-core/checkbox';
 
-/** Bootstrap button-color tokens that map to a `.btn-<color>` class. */
-export type ToggleButtonColor =
-  | 'primary' | 'secondary' | 'success' | 'danger'
-  | 'warning' | 'info' | 'light' | 'dark'
-  | 'outline-primary' | 'outline-secondary' | 'outline-success' | 'outline-danger'
-  | 'outline-warning' | 'outline-info' | 'outline-light' | 'outline-dark';
-
-const VALID_COLORS: ReadonlySet<string> = new Set([
-  'primary', 'secondary', 'success', 'danger',
-  'warning', 'info', 'light', 'dark',
-  'outline-primary', 'outline-secondary', 'outline-success', 'outline-danger',
-  'outline-warning', 'outline-info', 'outline-light', 'outline-dark',
-]);
+export type { ToggleButtonColor };
 
 export interface ToggleChangeEventDetail {
   checked: boolean;
@@ -31,43 +19,36 @@ export interface ToggleChangeEventDetail {
 let instanceCounter = 0;
 
 /**
- * `<mp-toggle-button>` — a single Bootstrap-styled on/off button using the
- * `btn-check` + `label.btn` pattern. Acts as both a usable standalone WC
- * and the carrier of the shared `form-check` / `btn-check` SCSS that
- * `<mp-checkbox>` and `<mp-radio>` reuse via the exported `toggleButtonStyles`
- * `CSSResult` (single parsed stylesheet shared across shadow roots).
+ * `<mp-toggle-button>` — the Lit front of a single Bootstrap on/off button:
+ * `input.btn-check` + `label.btn`, rendered in the light DOM (#437) and styled
+ * by the page's Bootstrap baseline. The ARIA contract (`role=button` +
+ * `aria-pressed`, validity, error message) comes from
+ * `@mintplayer/ui-core/checkbox`, as in the Angular, React and Vue fronts.
  *
- * Attributes (all reflected): `checked`, `disabled`, `name`, `value`, `color`.
- * Emits a native-style `change` event with
+ * The element's children become the label's content. The host is
+ * form-associated and submits `value` (or `on`) while checked, so the inner
+ * input carries no `name` — in the light DOM it would submit a second time.
+ *
+ * Attributes: `checked`, `disabled` (reflected), `name`, `value`, `color`,
+ * `invalid`, `required`, `error-text`, `input-label`. A host `aria-label`,
+ * `aria-labelledby` or `aria-describedby` lands on the input — the same tree,
+ * so the IDREFs resolve as written. Emits `change` with
  * `detail: { checked, value }` when toggled.
  */
 export class MpToggleButton extends FormAssociatedMixin(LitElement) {
-  static override styles = [toggleButtonStyles, invalidFeedbackStyles];
-
-  static override shadowRootOptions = {
-    ...LitElement.shadowRootOptions,
-    delegatesFocus: true,
-  };
-
   static override get observedAttributes(): string[] {
     return [
       ...(super.observedAttributes ?? []),
       'invalid',
       'required',
-      // Validation message rendered inside the shadow root and referenced by the
-      // inner <input>; shown only while `invalid` is also set.
       'error-text',
       'checked',
       'disabled',
       'name',
       'value',
       'color',
-      // Copied to the inner <input>; the slotted label already names the control
-      // (flat-tree label association), so these are overrides.
       'aria-label',
       'input-label',
-      // Resolved into element references against the host's tree — an IDREF
-      // string cannot cross the shadow boundary.
       'aria-labelledby',
       'aria-describedby',
     ];
@@ -80,21 +61,26 @@ export class MpToggleButton extends FormAssociatedMixin(LitElement) {
   private _color: ToggleButtonColor = 'primary';
   private _inputLabel: string | null = null;
   private _errorText: string | null = null;
+  /** The consumer's children, moved into the label on first render. */
+  private _content: Node[] = [];
 
-  /** Tier-2 naming; references target the real control inside the shadow root. */
-  private readonly hostAria = new HostAriaController(this, {
-    referenceTarget: () => this._inputRef.value ?? null,
-    describedByExtras: () => errorFeedbackElements(this.renderRoot),
-  });
-  private readonly _inputId = `mp-toggle-button-${++instanceCounter}`;
-  private readonly _errorId = `mp-toggle-button-${instanceCounter}-error`;
+  private readonly _rootId = `mp-toggle-button-${++instanceCounter}`;
   private readonly _inputRef: Ref<HTMLInputElement> = createRef();
 
+  protected override createRenderRoot(): HTMLElement {
+    return this;
+  }
+
+  override connectedCallback(): void {
+    // Captured before lit renders into the host, so its own nodes are never taken.
+    if (!this.hasUpdated) this._content = Array.from(this.childNodes);
+    super.connectedCallback();
+  }
+
   /**
-   * Optional override for the inner <input>'s accessible name. Usually
-   * unnecessary — the slotted visible text names the control through the
-   * flat-tree label association (slotted-label spike; verdict in the plan). For an icon-only
-   * toggle, or a name that must differ from the visible text, set this.
+   * Optional override for the input's accessible name. Usually unnecessary —
+   * the label's visible content names the control. For an icon-only toggle, or
+   * a name that must differ from the visible text, set this.
    */
   get inputLabel(): string | null {
     return this._inputLabel;
@@ -107,12 +93,11 @@ export class MpToggleButton extends FormAssociatedMixin(LitElement) {
   }
 
   /**
-   * Validation message, as `errorText` / `error-text`. Rendered as a
-   * `.invalid-feedback` node inside the shadow root and referenced from the inner
-   * `<input>` by `aria-errormessage` **and** `aria-describedby`, but only while
-   * `invalid` is set — `aria-errormessage` is meaningless on a control that is not
-   * `aria-invalid`. Text rather than a node, because a consumer's own element sits
-   * outside this shadow root where an IDREF from the input cannot reach it.
+   * Validation message, as `errorText` / `error-text`. Rendered as an
+   * `.invalid-feedback` node and referenced from the input by
+   * `aria-errormessage` **and** `aria-describedby`, but only while `invalid` is
+   * set — `aria-errormessage` is meaningless on a control that is not
+   * `aria-invalid`.
    */
   get errorText(): string | null {
     return this._errorText;
@@ -170,7 +155,7 @@ export class MpToggleButton extends FormAssociatedMixin(LitElement) {
     return this._color;
   }
   set color(value: ToggleButtonColor) {
-    if (!VALID_COLORS.has(value) || this._color === value) return;
+    if (!isToggleButtonColor(value) || this._color === value) return;
     this._color = value;
     this.requestUpdate();
   }
@@ -182,87 +167,72 @@ export class MpToggleButton extends FormAssociatedMixin(LitElement) {
   ): void {
     super.attributeChangedCallback(name, oldValue, newValue);
     switch (name) {
-      // Read from the host in render(), so a change has to ask for one — without
-      // this, aria-invalid / aria-required froze at their first-render values and
-      // an error message could never appear on a control that started out valid.
-      case 'invalid':
-      case 'required':
-        this.requestUpdate();
-        break;
       case 'error-text':
         this._errorText = newValue;
-        this.requestUpdate();
         break;
       case 'checked':
         this._checked = newValue !== null;
-        this.requestUpdate();
         break;
       case 'disabled':
         this._disabled = newValue !== null;
-        this.requestUpdate();
         break;
       case 'name':
         this._name = newValue;
-        this.requestUpdate();
         break;
       case 'value':
         this._value = newValue;
-        this.requestUpdate();
         break;
       case 'color': {
         // Removing the attribute restores the default rather than keeping the
         // last value (a framework binding clears an attribute by removing it).
         const color = newValue ?? 'primary';
-        if (VALID_COLORS.has(color)) {
-          this._color = color as ToggleButtonColor;
-          this.requestUpdate();
-        }
+        if (!isToggleButtonColor(color)) return;
+        this._color = color;
         break;
       }
-      case 'aria-label':
-        this.requestUpdate();
-        break;
       case 'input-label':
         this._inputLabel = newValue;
-        this.requestUpdate();
-        break;
-      case 'aria-labelledby':
-      case 'aria-describedby':
-        this.hostAria.syncReferences();
         break;
     }
+    // Every observed attribute is read in render() — invalid / required /
+    // aria-* straight from the host — so each change asks for one.
+    this.requestUpdate();
   }
 
-  // After every render — element references point at a specific node, and Lit
-  // may replace the <input> on re-render.
   protected override updated(): void {
     this.syncFormValue();
-    this.hostAria.syncReferences();
   }
 
   override render(): TemplateResult {
-    const error = errorFeedback(this._errorId, this._errorText, this.hasAttribute('invalid'));
+    const invalid = this.hasAttribute('invalid');
+    const bags = connectCheckbox({
+      type: 'toggle_button',
+      checked: this._checked,
+      indeterminate: false,
+      disabled: this._disabled,
+      required: this.hasAttribute('required'),
+      invalid,
+      // The host submits (form-associated); a named inner input would submit twice.
+      name: null,
+      value: null,
+      errorText: this._errorText,
+    }, this._rootId, this.getAttribute('aria-describedby'));
+    const classes = checkboxClasses('toggle_button', this._color, invalid);
+    const input = {
+      ...bags.input,
+      class: classes.input,
+      'aria-label': this.getAttribute('aria-label') ?? this._inputLabel,
+      'aria-labelledby': this.getAttribute('aria-labelledby'),
+    };
     return html`
       <input
         ${ref(this._inputRef)}
-        type="checkbox"
-        class="btn-check"
-        id=${this._inputId}
+        ${props(input)}
         .checked=${this._checked}
-        ?disabled=${this._disabled}
-          aria-invalid=${this.hasAttribute('invalid') ? 'true' : nothing}
-          aria-required=${this.hasAttribute('required') ? 'true' : nothing}
-        aria-errormessage=${error.id}
-        aria-describedby=${error.id}
-        name=${this._name ?? nothing}
-        value=${this._value ?? nothing}
-        aria-label=${this.getAttribute('aria-label') ?? this._inputLabel ?? nothing}
         @change=${this.onInputChange}
       />
-      <label class="btn btn-${this._color}" for=${this._inputId}>
-        <slot></slot>
-      </label>
-      ${error.node}
+      <label class=${classes.label} for=${bags.labelFor ?? nothing}>${this._content}</label>
+      ${bags.feedback ? html`<div ${props(bags.feedback.attrs)}>${bags.feedback.text}</div>` : nothing}
     `;
   }
 
@@ -272,6 +242,9 @@ export class MpToggleButton extends FormAssociatedMixin(LitElement) {
   }
 
   private onInputChange = (ev: Event): void => {
+    // The input's own change event is not the element's contract; the
+    // element's `change` (with detail) is, so stop the native one here.
+    ev.stopPropagation();
     const next = (ev.target as HTMLInputElement).checked;
     this._checked = next;
     this.reflectBoolean('checked', next);
@@ -284,7 +257,7 @@ export class MpToggleButton extends FormAssociatedMixin(LitElement) {
     );
   };
 
-  // ---- form association (FormAssociatedHost, Phase F) ----
+  // ---- form association ----
 
   formValue(): string | null {
     return this._checked ? (this._value ?? 'on') : null;

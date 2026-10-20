@@ -46,6 +46,18 @@ package version aligns its major with the supported Angular major.
   - `FEEDBACK_CLASS` in `@mintplayer/ui-core/forms` is now `invalid-feedback d-block`.
   - `takeHostAria` moved to `@mintplayer/ng-bootstrap/a11y`.
   - `<mp-checkbox>` (Lit) is unchanged for now: `mp-datatable` renders it in its shadow root.
+- **Toggle button is a checkbox toggle button in every front (issue #437, wave A).** It renders
+  `input.btn-check` + `label.btn` with `role="button"` and `aria-pressed`, with the contract from
+  `@mintplayer/ui-core/checkbox`.
+  - Angular gains `<bs-toggle-button>`, a second selector of `BsCheckboxComponent` with the type fixed to
+    `toggle_button`. It takes `[(isToggled)]`, `ngModel` / `formControl` and `color`.
+  - React: `BsToggleButton` is `<BsCheckbox type="toggle_button">`. `onChange` is the native event; use
+    `onCheckedChange(checked)` instead of `e.detail.checked`. `color` is a typed prop, and the ref is the input.
+  - Vue: `BsToggleButton` is `<BsCheckbox type="toggle_button">`, so `v-model` is unchanged and attributes land on
+    the input.
+  - `<mp-toggle-button>` (Lit) renders in the light DOM. Its children become the label, and host `aria-label`,
+    `aria-labelledby` and `aria-describedby` are written onto the input. The inner input has no `name`, because the
+    form-associated host submits. `toggleButtonStyles` is still exported for `mp-checkbox` / `mp-radio`.
 
 - **Typeahead rebuilt on a headless core (issue #436).** `@mintplayer/ng-bootstrap` 22.26.0,
   `@mintplayer/web-components` 2.21.0, `@mintplayer/react-bootstrap` 19.25.0, `@mintplayer/vue-bootstrap` 3.26.0,
