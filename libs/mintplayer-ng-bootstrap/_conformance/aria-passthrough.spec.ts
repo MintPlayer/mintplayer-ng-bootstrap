@@ -6,7 +6,6 @@ import { BsCarouselComponent } from '@mintplayer/ng-bootstrap/carousel';
 import { BsHierarchyChartComponent } from '@mintplayer/ng-bootstrap/charts/hierarchy';
 import { BsSparklineComponent } from '@mintplayer/ng-bootstrap/charts/sparkline';
 import { BsTrendChartComponent } from '@mintplayer/ng-bootstrap/charts/trend';
-import { BsCheckboxComponent } from '@mintplayer/ng-bootstrap/checkbox';
 import { BsDatatableComponent } from '@mintplayer/ng-bootstrap/datatable';
 import { BsDockManagerComponent } from '@mintplayer/ng-bootstrap/dock';
 import { BsDropdownMenuComponent } from '@mintplayer/ng-bootstrap/dropdown-menu';
@@ -129,7 +128,6 @@ interface WrapperCase {
 const WRAPPERS: WrapperCase[] = [
   { selector: 'bs-accordion', tag: 'mp-accordion', component: BsAccordionComponent },
   { selector: 'bs-carousel', tag: 'mp-carousel', component: BsCarouselComponent },
-  { selector: 'bs-checkbox', tag: 'mp-checkbox', component: BsCheckboxComponent },
   { selector: 'bs-hierarchy-chart', tag: 'mp-hierarchy-chart', component: BsHierarchyChartComponent },
   { selector: 'bs-sparkline', tag: 'mp-sparkline', component: BsSparklineComponent },
   { selector: 'bs-trend-chart', tag: 'mp-trend-chart', component: BsTrendChartComponent },

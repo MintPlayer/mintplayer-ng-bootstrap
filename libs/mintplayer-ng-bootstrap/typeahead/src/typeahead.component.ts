@@ -20,7 +20,7 @@ import {
 } from '@angular/core';
 import { ControlValueAccessor, NG_VALUE_ACCESSOR } from '@angular/forms';
 import { isObservable, Observable } from 'rxjs';
-import { BsIdService } from '@mintplayer/ng-bootstrap/a11y';
+import { BsIdService, takeHostAria } from '@mintplayer/ng-bootstrap/a11y';
 import { machineSignal, MpPropsDirective, useScopedStyles } from '@mintplayer/ng-bootstrap/machine';
 import { abortError } from '@mintplayer/ui-core/async';
 import { preHydrationValue } from '@mintplayer/ui-core/forms';
@@ -247,17 +247,6 @@ export class BsTypeaheadComponent<T = unknown> implements ControlValueAccessor {
   setDisabledState(isDisabled: boolean): void {
     this.disabledByCva.set(isDisabled);
   }
-}
-
-/** Collect `aria-*` (copied) and `id` / `tabindex` (moved) from the host element. */
-function takeHostAria(host: HTMLElement): Record<string, string> {
-  const bag = Object.fromEntries(
-    Array.from(host.attributes)
-      .filter(({ name }) => name.startsWith('aria-') || name === 'id' || name === 'tabindex')
-      .map(({ name, value }) => [name, value]),
-  );
-  ['id', 'tabindex'].filter((name) => name in bag).forEach((name) => host.removeAttribute(name));
-  return bag;
 }
 
 /** Promise or Observable in, Promise out; the Observable is unsubscribed when the request aborts. */

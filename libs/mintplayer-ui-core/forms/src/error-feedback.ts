@@ -1,4 +1,7 @@
-export const FEEDBACK_CLASS = 'invalid-feedback';
+// The node exists only while the control is invalid, so it is always shown: Bootstrap's
+// `.is-invalid ~ .invalid-feedback` reveal needs a sibling, which a wrapped checkbox
+// label or a control inside a group never has.
+export const FEEDBACK_CLASS = 'invalid-feedback d-block';
 
 export interface ErrorFeedback {
   /** Spread onto the ROLE-BEARING control. All three are null when there is no message. */

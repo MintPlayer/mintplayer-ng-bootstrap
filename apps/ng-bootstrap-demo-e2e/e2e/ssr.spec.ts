@@ -5,5 +5,6 @@ import { ssrSuite } from '../../../tools/e2e-shared/ssr-suites';
 ssrSuite(test, expect, [
   { path: '/overlays/typeahead', expect: ['[role=combobox]', '[role=listbox]'] },
   { path: '/basic/containers/card', expect: ['.card .card-header', '.card .card-body'] },
-  { path: '/basic/forms/input-group', expect: ['bs-input-group.input-group[data-mps=input-group] > .form-control'] },
+  { path: '/basic/forms/input-group', expect: ['bs-input-group.input-group[data-mps=input-group] > input'] },
+  { path: '/basic/forms/checkbox', expect: ['bs-checkbox label.form-check > input[type=checkbox].form-check-input'] },
 ]);

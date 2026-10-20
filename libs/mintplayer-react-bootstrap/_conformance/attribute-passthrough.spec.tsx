@@ -172,7 +172,7 @@ const CASES: Case[] = [
   bare('BsHierarchyChart', 'mp-hierarchy-chart', BsHierarchyChart),
   bare('BsSparkline', 'mp-sparkline', BsSparkline),
   bare('BsTrendChart', 'mp-trend-chart', BsTrendChart),
-  bare('BsCheckbox', 'mp-checkbox', BsCheckbox),
+  bare('BsCheckbox', 'input[type=checkbox]', BsCheckbox),
   bare('BsCodeSnippet', 'mp-code-snippet', BsCodeSnippet),
   bare('BsDatatable', 'mp-datatable', BsDatatable),
   bare('BsDatepicker', 'mp-datepicker', BsDatepicker),

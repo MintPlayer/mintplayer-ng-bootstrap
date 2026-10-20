@@ -161,13 +161,13 @@ export function TimelinePage() {
           </div>
 
           <div className="control-toggles">
-            <BsCheckbox type="switch" checked={reverse} onChange={(e) => setReverse(e.detail.checked)}>
+            <BsCheckbox type="switch" checked={reverse} onCheckedChange={setReverse}>
               Reverse
             </BsCheckbox>
-            <BsCheckbox type="switch" checked={customMarkers} onChange={(e) => setCustomMarkers(e.detail.checked)}>
+            <BsCheckbox type="switch" checked={customMarkers} onCheckedChange={setCustomMarkers}>
               Custom markers
             </BsCheckbox>
-            <BsCheckbox type="switch" checked={cardContent} onChange={(e) => setCardContent(e.detail.checked)}>
+            <BsCheckbox type="switch" checked={cardContent} onCheckedChange={setCardContent}>
               Card content
             </BsCheckbox>
           </div>

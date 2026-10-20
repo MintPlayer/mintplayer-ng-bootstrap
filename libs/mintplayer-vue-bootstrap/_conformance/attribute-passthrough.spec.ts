@@ -92,7 +92,7 @@ const TARGETS: Record<string, string> = {
   BsHierarchyChart: 'mp-hierarchy-chart',
   BsSparkline: 'mp-sparkline',
   BsTrendChart: 'mp-trend-chart',
-  BsCheckbox: 'mp-checkbox',
+  BsCheckbox: 'input[type=checkbox]',
   BsCodeSnippet: 'mp-code-snippet',
   BsDatatable: 'mp-datatable',
   BsDatepicker: 'mp-datepicker',
