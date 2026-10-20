@@ -58,10 +58,10 @@ test.describe('pagination — activation does not relabel or strand focus', () =
   test('Enter on a page button keeps focus on a page button', async ({ page }) => {
     await page.goto('/basic/pagination');
     await page.waitForLoadState('networkidle');
-    const target = page.locator('mp-pagination').first();
+    const target = page.locator('bs-pagination nav').first();
     await expect(target).toBeVisible();
     await target.evaluate((el) => {
-      const btn = el.shadowRoot?.querySelectorAll<HTMLButtonElement>('button:not([disabled])')[1];
+      const btn = el.querySelectorAll<HTMLButtonElement>('button:not([disabled])')[1];
       btn?.focus();
     });
     await page.keyboard.press('Enter');

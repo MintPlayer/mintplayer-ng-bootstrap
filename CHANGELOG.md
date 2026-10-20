@@ -77,6 +77,18 @@ breaking change is a major. (2.20.0 and 2.21.0 broke `^2.x` consumers in a minor
   - `<mp-radio>` / `<mp-radio-group>` (Lit) render in the light DOM. The group is no longer form-associated: the
     checked native input submits itself. The custom roving tabindex and arrow handling are gone in favour of the
     native set. The `checked` attribute is the initial state only; the `checked` property reads the input.
+- **Pagination renders Bootstrap's `.pagination` markup in every front (issue #437, wave A).** Each front renders
+  `<nav aria-label><ul class="pagination"><li class="page-item"><button class="page-link">` itself, from
+  `@mintplayer/ui-core/pagination` (`connectPagination`, `buildPaginationLayout`, `previousPage`, `nextPage`), so
+  Angular SSR emits the real control. A new `hrefFor(page)` renders every page as a link that works with JS off
+  (a plain click still selects in place), and `labels` localizes the accessible names (default English).
+  - Angular: no `<mp-pagination>` inside `bs-pagination`; `aria-*` / `id` / `tabindex` land on the `<nav>`.
+    New `[labels]` and `[hrefFor]` inputs.
+  - React: `BsPagination` is a plain component. `onMpPaginationPageChange(event)` is replaced by
+    `onPageChange(page)`; `defaultSelectedPageNumber` makes it uncontrolled. The ref is the `<nav>`.
+  - Vue: `pageNumbers`, `numberOfBoxes`, `showArrows`, `size`, `labels` and `hrefFor` are declared props;
+    attributes land on the `<nav>`.
+  - `<mp-pagination>` (Lit) is unchanged and keeps its shadow root until `mp-datatable` converts.
 
 - **Tile manager rebuilt on a headless core, and responsive (issue #440).** `@mintplayer/web-components`
   **3.0.0**, `@mintplayer/ui-core` 1.1.0 (new `tile-manager` entry), `@mintplayer/ng-bootstrap` 22.27.0,

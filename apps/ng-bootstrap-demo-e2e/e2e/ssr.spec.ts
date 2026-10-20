@@ -8,4 +8,5 @@ ssrSuite(test, expect, [
   { path: '/basic/forms/input-group', expect: ['bs-input-group.input-group[data-mps=input-group] > input'] },
   { path: '/basic/forms/checkbox', expect: ['bs-checkbox label.form-check > input[type=checkbox].form-check-input'] },
   { path: '/basic/forms/radio', expect: ['bs-radio-group[role=radiogroup] label.form-check > input[type=radio].form-check-input'] },
+  { path: '/basic/pagination', expect: ['bs-pagination > nav[aria-label] > ul.pagination > li.page-item > button.page-link[aria-label]'] },
 ]);
