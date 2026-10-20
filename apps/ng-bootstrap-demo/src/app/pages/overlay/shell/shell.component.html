@@ -2,8 +2,8 @@
 
 <p>
   <code>bs-shell</code> is a responsive app-shell layout with a collapsible
-  sidebar. The sidebar is projected via the <code>bsShellSidebar</code>
-  attribute directive (sets <code>slot="sidebar"</code>); all other children
+  sidebar. The sidebar content is marked with the structural <code>*bsShellSidebar</code>
+  directive (top-bar content with <code>*bsShellTopbar</code>); all other children
   form the main content area. The
   <code>[state]</code> input (<code>'auto'</code>, <code>'show'</code>,
   <code>'hide'</code>) controls visibility, while <code>[breakpoint]</code> sets
@@ -15,7 +15,7 @@
 
 <div class="shell-demo">
 <bs-shell [state]="shellState" [breakpoint]="'md'" #shell (statechange)="onShellToggle($event)">
-    <div bsShellSidebar class="text-light">
+    <div *bsShellSidebar class="text-light">
         <bs-accordion>
             <bs-accordion-tab>
                 <ng-container *bsAccordionTabHeader>Receipes</ng-container>

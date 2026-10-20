@@ -1,19 +1,21 @@
-import { Directive } from '@angular/core';
+import { Directive, inject, TemplateRef } from '@angular/core';
 
 /**
- * Marks the element that should be projected into `<mp-shell>`'s `sidebar`
- * slot. Use as a plain attribute on the sidebar element:
+ * The shell's sidebar content, rendered inside its `<aside>`:
  *
- *     <nav bsShellSidebar>…</nav>
- *
- * (Previously a structural directive capturing a `TemplateRef`; the WC migration
- * replaced template projection with a named slot, so this now just sets
- * `slot="sidebar"` on its host.)
+ *     <nav *bsShellSidebar>…</nav>
  */
-@Directive({
-  selector: '[bsShellSidebar]',
-  host: {
-    '[attr.slot]': "'sidebar'",
-  },
-})
-export class BsShellSidebarDirective {}
+@Directive({ selector: '[bsShellSidebar]' })
+export class BsShellSidebarDirective {
+  readonly template = inject(TemplateRef);
+}
+
+/**
+ * Content for the shell's top bar, rendered after the hamburger:
+ *
+ *     <div *bsShellTopbar>…brand / nav…</div>
+ */
+@Directive({ selector: '[bsShellTopbar]' })
+export class BsShellTopbarDirective {
+  readonly template = inject(TemplateRef);
+}

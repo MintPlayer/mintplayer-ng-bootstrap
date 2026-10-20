@@ -68,6 +68,8 @@ describe('Vue wrapper attribute passthrough — the invariant, statically', () =
       '../radio/src/BsRadio.vue',
       '../pagination/src/BsPagination.vue',
       '../radio-group/src/BsRadioGroup.vue',
+      '../shell/src/BsShell.vue',
+
       '../tile-manager/src/BsTileManager.vue',
       '../typeahead/src/BsTypeahead.vue',
     ];
@@ -126,7 +128,7 @@ const TARGETS: Record<string, string> = {
   BsRibbon: 'mp-ribbon',
   BsScheduler: 'mp-scheduler',
   BsSelect: 'mp-select',
-  BsShell: 'mp-shell',
+  BsShell: 'div.shell',
   BsSignaturePad: 'mp-signature-pad',
   BsSplitter: 'mp-splitter',
   BsTabControl: 'mp-tab-control',

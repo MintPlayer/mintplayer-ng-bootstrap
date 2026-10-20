@@ -20,7 +20,6 @@ import { BsQueryBuilderComponent } from '@mintplayer/ng-bootstrap/query-builder'
 import { BsSchedulerComponent } from '@mintplayer/ng-bootstrap/scheduler';
 import { BsPhoneInputComponent } from '@mintplayer/ng-bootstrap/phone-input';
 import { BsSelectComponent } from '@mintplayer/ng-bootstrap/select';
-import { BsShellComponent } from '@mintplayer/ng-bootstrap/shell';
 import { BsSignaturePadComponent } from '@mintplayer/ng-bootstrap/signature-pad';
 import { BsSplitterComponent } from '@mintplayer/ng-bootstrap/splitter';
 import { BsThemeToggleComponent } from '@mintplayer/ng-bootstrap/theming';
@@ -148,7 +147,6 @@ const WRAPPERS: WrapperCase[] = [
   { selector: 'bs-scheduler', tag: 'mp-scheduler', component: BsSchedulerComponent },
   { selector: 'bs-phone-input', tag: 'mp-phone-input', component: BsPhoneInputComponent },
   { selector: 'bs-select', tag: 'mp-select', component: BsSelectComponent },
-  { selector: 'bs-shell', tag: 'mp-shell', component: BsShellComponent },
   { selector: 'bs-signature-pad', tag: 'mp-signature-pad', component: BsSignaturePadComponent },
   { selector: 'bs-splitter', tag: 'mp-splitter', component: BsSplitterComponent },
   { selector: 'bs-theme-toggle', tag: 'mp-theme-toggle', component: BsThemeToggleComponent },

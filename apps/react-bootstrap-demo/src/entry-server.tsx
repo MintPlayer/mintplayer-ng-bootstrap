@@ -13,9 +13,6 @@ import { StrictMode } from 'react';
 import { renderToPipeableStream } from 'react-dom/server';
 import { StaticRouter } from 'react-router-dom/server';
 import { Writable } from 'node:stream';
-// Framework-agnostic helper: splices `<mp-shell>`'s Declarative Shadow DOM into
-// the HTML so the sidebar + hamburger toggle work with JavaScript disabled.
-import { injectMpShellDsd } from '@mintplayer/web-components/shell/ssr';
 // Splices each `<mp-dropdown-menu>`'s Declarative Shadow DOM into the HTML so
 // the menu renders styled with JavaScript disabled.
 import { injectMpDropdownDsd } from '@mintplayer/web-components/dropdown-menu/ssr';
@@ -39,7 +36,7 @@ export { collectScopedStyles } from '@mintplayer/ui-core/scoped-styles';
 import App from './app/app';
 
 /**
- * Render the app for `url` to an HTML string with `<mp-shell>`'s DSD injected.
+ * Render the app for `url` to an HTML string with the WCs' DSD chrome injected.
  *
  * Uses `renderToPipeableStream` + `onAllReady` (rather than `renderToString`)
  * so lazy/`Suspense` routes fully resolve server-side — every page's markup is
@@ -59,7 +56,7 @@ export function render(url: string): Promise<string> {
       },
       final(cb) {
         clearTimeout(timer);
-        resolve(injectMpAccordionDsd(injectMpCarouselDsd(injectMpNavbarDsd(injectMpDropdownDsd(injectMpShellDsd(Buffer.concat(chunks).toString('utf-8')))))));
+        resolve(injectMpAccordionDsd(injectMpCarouselDsd(injectMpNavbarDsd(injectMpDropdownDsd(Buffer.concat(chunks).toString('utf-8'))))));
         cb();
       },
     });

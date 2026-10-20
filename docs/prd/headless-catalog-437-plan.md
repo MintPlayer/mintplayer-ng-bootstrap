@@ -83,7 +83,7 @@ Each component milestone is the same checklist, done for every component in the 
 - [x] toggle-button (new Angular front): `bs-toggle-button` is a second selector of `BsCheckboxComponent` with the type fixed, so there is one code path, not a duplicate component. React and Vue compose `BsCheckbox`, and Lit `mp-toggle-button` is light DOM on `connectCheckbox`
 - [x] radio + radio-group
 - [x] pagination (+ `hrefFor`)
-- [ ] shell
+- [x] shell
 - [ ] accordion (+ tab)
 - [ ] tab-control (+ page); delete `isServerSide`
 - [ ] dropdown-menu

@@ -9,4 +9,5 @@ ssrSuite(test, expect, [
   { path: '/basic/forms/checkbox', expect: ['bs-checkbox label.form-check > input[type=checkbox].form-check-input'] },
   { path: '/basic/forms/radio', expect: ['bs-radio-group[role=radiogroup] label.form-check > input[type=radio].form-check-input'] },
   { path: '/basic/pagination', expect: ['bs-pagination > nav[aria-label] > ul.pagination > li.page-item > button.page-link[aria-label]'] },
+  { path: '/overlays/shell', expect: ['bs-shell.shell[data-mps=shell] > input.shell-toggle-wide[checked]', 'bs-shell .sidebar-root > aside.sidebar'] },
 ]);

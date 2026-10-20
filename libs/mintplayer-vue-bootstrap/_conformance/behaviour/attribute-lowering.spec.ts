@@ -1,13 +1,14 @@
 import { describe, expect, it } from 'vitest';
+import { nextTick } from 'vue';
 
 import BsCarousel from '../../carousel/src/BsCarousel.vue';
 import BsNavbar from '../../navbar/src/BsNavbar.vue';
 import BsShell from '../../shell/src/BsShell.vue';
 
-import { emit, mountEl } from './harness';
+import { emit, mountEl, mountWrapper } from './harness';
 
 /**
- * Three layout wrappers whose web components read *attributes* rather than
+ * Two layout wrappers whose web components read *attributes* rather than
  * properties, because their behaviour is a pure-CSS state machine that has to
  * survive SSR and a page with JavaScript switched off.
  *
@@ -121,55 +122,54 @@ describe('BsCarousel — attribute lowering', () => {
   });
 });
 
-describe('BsShell — attribute lowering', () => {
+// BsShell renders the headless shell itself (#437): its root IS the component
+// element, and the props lower onto the core's data attributes and onto which
+// native checkbox starts checked.
+describe('BsShell — lowering onto the shell markup', () => {
+  const mountShell = (options: Record<string, unknown> = {}) => {
+    const wrapper = mountWrapper(BsShell, options);
+    return { wrapper, el: wrapper.element as HTMLElement };
+  };
+  const check = (el: HTMLElement, mode: 'narrow' | 'wide') =>
+    el.querySelector<HTMLInputElement>(`input.shell-toggle-${mode}`)!;
+
   it('applies the documented defaults', () => {
-    const { el } = mountEl(BsShell, 'mp-shell');
-    expect(el.getAttribute('state')).toBe('auto');
-    expect(el.getAttribute('breakpoint')).toBe('md');
+    const { el } = mountShell();
+    expect(el.matches('div.shell[data-mps=shell]')).toBe(true);
+    expect(el.getAttribute('data-breakpoint')).toBe('md');
+    expect(el.hasAttribute('data-external-toggle')).toBe(false);
+    expect(check(el, 'narrow').checked).toBe(false);
+    expect(check(el, 'wide').checked).toBe(true);
   });
 
-  it('emits neither flag by default', () => {
-    const { el } = mountEl(BsShell, 'mp-shell');
-    expect(el.hasAttribute('external-toggle')).toBe(false);
-    expect(el.hasAttribute('dismiss-on-navigate')).toBe(false);
+  // The sheet tests for attribute PRESENCE, so the value must be the empty string.
+  it('sets data-external-toggle as a bare attribute', () => {
+    const { el } = mountShell({ props: { externalToggle: true } });
+    expect(el.getAttribute('data-external-toggle')).toBe('');
   });
 
-  it('sets external-toggle as a bare attribute', () => {
-    const { el } = mountEl(BsShell, 'mp-shell', { props: { externalToggle: true } });
-    expect(el.getAttribute('external-toggle')).toBe('');
+  it('lowers an explicit state and size', () => {
+    const { el } = mountShell({ props: { state: 'show', size: '15rem' } });
+    expect(check(el, 'narrow').checked).toBe(true);
+    expect(el.style.getPropertyValue('--mp-shell-size')).toBe('15rem');
   });
 
-  it('sets dismiss-on-navigate as a bare attribute', () => {
-    const { el } = mountEl(BsShell, 'mp-shell', { props: { dismissOnNavigate: true } });
-    expect(el.getAttribute('dismiss-on-navigate')).toBe('');
+  it('emits statechange as { open } when a toggle flips', async () => {
+    const { wrapper, el } = mountShell();
+
+    check(el, 'wide').click();
+    await nextTick();
+
+    expect(wrapper.emitted('statechange')![0]).toEqual([{ open: false }]);
   });
 
-  it('forwards an explicit state and size', () => {
-    const { el } = mountEl(BsShell, 'mp-shell', { props: { state: 'show', size: '15rem' } });
-    expect(el.getAttribute('state')).toBe('show');
-    expect(el.getAttribute('size')).toBe('15rem');
-  });
-
-  it('re-emits statechange with its detail', async () => {
-    const { wrapper, el } = mountEl(BsShell, 'mp-shell');
-
-    await emit(el, 'statechange', { state: 'hide' });
-
-    expect(wrapper.emitted('statechange')![0]).toEqual([{ state: 'hide' }]);
-  });
-
-  it('stops emitting once unmounted', () => {
-    const { wrapper, el } = mountEl(BsShell, 'mp-shell');
-    wrapper.unmount();
-
-    el.dispatchEvent(new CustomEvent('statechange', { detail: { state: 'hide' } }));
-
-    expect(wrapper.emitted('statechange')).toBeUndefined();
-  });
-
-  it('projects children into the element', () => {
-    const { el } = mountEl(BsShell, 'mp-shell', { slots: { default: () => 'content' } });
-    expect(el.textContent).toContain('content');
+  it('renders the named slots into their regions', () => {
+    const { el } = mountShell({
+      slots: { topbar: () => 'brand', sidebar: () => 'links', default: () => 'content' },
+    });
+    expect(el.querySelector('.topbar')?.textContent).toContain('brand');
+    expect(el.querySelector('aside.sidebar')?.textContent).toContain('links');
+    expect(el.querySelector('.content')?.textContent).toContain('content');
   });
 });
 

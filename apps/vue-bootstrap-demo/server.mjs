@@ -5,7 +5,7 @@
 //   dev:  node apps/vue-bootstrap-demo/server.mjs
 //   prod: NODE_ENV=production node apps/vue-bootstrap-demo/server.mjs
 //
-// Declarative Shadow DOM injection for `<mp-shell>` happens inside
+// Declarative Shadow DOM injection for the remaining WCs happens inside
 // entry-server's `render()` (it has the path alias), so this file never needs
 // to import the framework libraries.
 import fs from 'node:fs/promises';

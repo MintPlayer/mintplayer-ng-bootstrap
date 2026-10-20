@@ -4,8 +4,7 @@ import { ChangeDetectionStrategy, Component, CUSTOM_ELEMENTS_SCHEMA } from '@ang
  * `<bs-navbar-brand>` — Angular wrapper around `<mp-navbar-brand>`.
  *
  * Project an `<a routerLink>` / text as the brand. The host sets
- * `slot="brand"` so the wrapper element lands in `<mp-navbar>`'s `brand` slot
- * (mirrors `BsShellSidebarDirective`, which sets `slot="sidebar"`).
+ * `slot="brand"` so the wrapper element lands in `<mp-navbar>`'s `brand` slot.
  */
 @Component({
   selector: 'bs-navbar-brand',

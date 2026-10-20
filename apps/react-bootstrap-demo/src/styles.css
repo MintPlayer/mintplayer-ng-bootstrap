@@ -90,17 +90,17 @@ body {
   gap: 0.25rem 1rem;
 }
 
-/* <mp-shell> is the full-viewport layout root: a top bar over a sidebar/content
+/* The shell is the full-viewport layout root: a top bar over a sidebar/content
  * row. A BOUNDED height (not min-height) makes the shell exactly viewport-tall,
  * so the top bar + sidebar stay put and the content/sidebar scroll internally
  * (the shell handles that via flexbox — no position:fixed, no body padding).
- * Style the top bar via its shadow ::part so the bar chrome (border + bg) spans
- * the full width including under the hamburger. */
+ * The top bar is the shell's own light-DOM .topbar, so the bar chrome (border +
+ * bg) spans the full width including under the hamburger. */
 .app-shell {
   height: 100dvh;
 }
 
-.app-shell::part(topbar) {
+.app-shell > .topbar {
   border-bottom: 1px solid var(--bs-border-color);
   background-color: var(--bs-tertiary-bg);
 }

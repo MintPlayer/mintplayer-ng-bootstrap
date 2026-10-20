@@ -12,7 +12,7 @@ import { BOOTSTRAP_VERSION, displayVersion } from "./providers/bootstrap-version
 export const config: ApplicationConfig = {
     providers: [
         // Reuse the server-rendered DOM instead of a destructive re-render. This
-        // removes the brief two-<mp-shell> overlap on reload (Angular used to build
+        // removes the brief two-shell overlap on reload (Angular used to build
         // its fresh tree — a second shell + hamburger — before discarding the SSR
         // one). Two different reasons the WC content survives the hydration
         // walk, depending on the component's tier:
