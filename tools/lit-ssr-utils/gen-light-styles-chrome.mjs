@@ -28,6 +28,7 @@ import {
   REPO_ROOT,
   runChromeGenerator,
 } from './lib/chrome-module.mjs';
+import { registerWorkspaceResolution } from './lib/workspace-resolve.mjs';
 
 const GENERATOR = 'gen-light-styles-chrome';
 
@@ -75,7 +76,7 @@ export function lightStyleTag(exportName, key, styles) {
  */
 export async function main({
   repoRoot = REPO_ROOT,
-  importDist = (entry) => import(distEntryUrl(repoRoot, entry)),
+  importDist = (entry) => (registerWorkspaceResolution(repoRoot), import(distEntryUrl(repoRoot, entry))),
   components = LIGHT_TIER_COMPONENTS,
   write = writeFile,
   log = console.log,

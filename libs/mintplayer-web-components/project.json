@@ -98,7 +98,7 @@
         "{workspaceRoot}/tools/lit-ssr-utils/lib/*.mjs",
         "{workspaceRoot}/tools/scripts/lib/cli.mjs"
       ],
-      "dependsOn": ["build"],
+      "dependsOn": ["build", { "projects": ["mintplayer-ui-core"], "target": "build" }],
       "cache": true,
       "options": {
         "command": "node tools/lit-ssr-utils/gen-shell-chrome.mjs"
@@ -116,7 +116,7 @@
         "{workspaceRoot}/tools/lit-ssr-utils/lib/*.mjs",
         "{workspaceRoot}/tools/scripts/lib/cli.mjs"
       ],
-      "dependsOn": ["build"],
+      "dependsOn": ["build", { "projects": ["mintplayer-ui-core"], "target": "build" }],
       "cache": true,
       "options": {
         "command": "node tools/lit-ssr-utils/gen-dropdown-chrome.mjs"
@@ -136,7 +136,7 @@
         "{workspaceRoot}/tools/lit-ssr-utils/lib/*.mjs",
         "{workspaceRoot}/tools/scripts/lib/cli.mjs"
       ],
-      "dependsOn": ["build"],
+      "dependsOn": ["build", { "projects": ["mintplayer-ui-core"], "target": "build" }],
       "cache": true,
       "options": {
         "command": "node tools/lit-ssr-utils/gen-light-styles-chrome.mjs"
@@ -152,7 +152,7 @@
         "{workspaceRoot}/tools/lit-ssr-utils/lib/*.mjs",
         "{workspaceRoot}/tools/scripts/lib/cli.mjs"
       ],
-      "dependsOn": ["build"],
+      "dependsOn": ["build", { "projects": ["mintplayer-ui-core"], "target": "build" }],
       "cache": true,
       "options": {
         "command": "node tools/lit-ssr-utils/gen-navbar-chrome.mjs"
@@ -168,7 +168,7 @@
         "{workspaceRoot}/tools/lit-ssr-utils/lib/*.mjs",
         "{workspaceRoot}/tools/scripts/lib/cli.mjs"
       ],
-      "dependsOn": ["build"],
+      "dependsOn": ["build", { "projects": ["mintplayer-ui-core"], "target": "build" }],
       "cache": true,
       "options": {
         "command": "node tools/lit-ssr-utils/gen-carousel-chrome.mjs"
@@ -186,7 +186,7 @@
         "{workspaceRoot}/tools/lit-ssr-utils/lib/*.mjs",
         "{workspaceRoot}/tools/scripts/lib/cli.mjs"
       ],
-      "dependsOn": ["build"],
+      "dependsOn": ["build", { "projects": ["mintplayer-ui-core"], "target": "build" }],
       "cache": true,
       "options": {
         "command": "node tools/lit-ssr-utils/gen-accordion-chrome.mjs"
