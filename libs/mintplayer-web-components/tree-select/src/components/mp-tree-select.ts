@@ -547,8 +547,8 @@ export class MpTreeSelect extends LitElement {
   }
 
   /**
-   * The BsComboboxDirective contract, inside the shadow root where the
-   * directive cannot reach: ArrowDown opens the popup (and a second ArrowDown
+   * The combobox keyboard contract (the same keys the typeahead core owns):
+   * ArrowDown opens the popup (and a second ArrowDown
    * hands focus to the tree, whose own roving model takes over); Escape closes
    * unconditionally and keeps focus in the input. aria-expanded re-renders with
    * the overlay state, so it is live rather than a first-render snapshot.

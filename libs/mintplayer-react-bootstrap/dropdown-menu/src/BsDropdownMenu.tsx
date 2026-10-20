@@ -2,7 +2,6 @@ import * as React from 'react';
 import { createComponent, type EventName } from '@lit/react';
 import {
   MpDropdownMenu,
-  type DropdownMode,
   type DropdownSelectEventDetail,
 } from '@mintplayer/web-components/dropdown-menu';
 // Companion light-DOM sheet (nested-link reset ::slotted can't reach). Imported
@@ -14,8 +13,6 @@ import './dropdown-menu.css';
    Same trade as BsCarousel's animation handlers. */
 export interface BsDropdownMenuProps
   extends Omit<React.HTMLAttributes<HTMLElement>, 'onSelect'> {
-  /** `menu` (default, roving-tabindex keyboard nav) | `listbox`. */
-  mode?: DropdownMode;
   /** px cap on the menu height; scrolls beyond. Maps to the `max-height` attribute. */
   maxHeight?: number;
   /** Fires when an enabled item is activated; `detail.value` carries the item's value. */
@@ -25,8 +22,8 @@ export interface BsDropdownMenuProps
 }
 
 /**
- * Inner `@lit/react` component. `mode`/`maxHeight` are surfaced to the
- * WC as attributes (`mode`, `max-height`) — the layout/roles read the
+ * Inner `@lit/react` component. `maxHeight` is surfaced to the
+ * WC as the `max-height` attribute — the layout/roles read the
  * attributes to keep the menu SSR- and no-JS-friendly — so `createComponent`
  * forwards them as React props → attributes. We retype its props to the clean
  * public surface; the runtime forwards everything to the element unchanged.
@@ -51,8 +48,7 @@ const MpDropdownMenuComponent = createComponent({
  * The menu chrome is server-rendered as Declarative Shadow DOM (see
  * `injectMpDropdownDsd` in `@mintplayer/web-components/dropdown-menu/ssr`), so it
  * renders styled with JavaScript disabled. Slot `<BsDropdownItem>` /
- * `<BsDropdownDivider>` / `<BsDropdownHeader>` children. In `menu` mode (default)
- * the menu provides roving-tabindex keyboard navigation over the enabled items.
+ * `<BsDropdownDivider>` / `<BsDropdownHeader>` children. The menu provides roving-tabindex keyboard navigation over the enabled items.
  *
  *     <BsDropdownMenu onSelect={(e) => console.log(e.detail.value)}>
  *       <BsDropdownHeader>Section</BsDropdownHeader>

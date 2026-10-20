@@ -9,7 +9,7 @@ defineOptions({ inheritAttrs: false });
 
 const props = withDefaults(
   defineProps<{
-    /** Bootstrap `.active` appearance (also drives `aria-selected` in a listbox). */
+    /** Bootstrap `.active` appearance. */
     active?: boolean;
     /** Non-interactive; removed from the menu's roving order. */
     disabled?: boolean;

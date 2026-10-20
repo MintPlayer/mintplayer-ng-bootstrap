@@ -1,5 +1,5 @@
 import { afterNextRender, ChangeDetectionStrategy, Component, computed, CUSTOM_ELEMENTS_SCHEMA, input, output, ViewEncapsulation } from '@angular/core';
-import type { DropdownMode, DropdownSelectEventDetail } from '@mintplayer/web-components/dropdown-menu';
+import type { DropdownSelectEventDetail } from '@mintplayer/web-components/dropdown-menu';
 import { BS_DROPDOWN_MENU_CONTEXT } from '../tokens/menu-context.token';
 import { BsForwardAriaDirective } from '@mintplayer/ng-bootstrap/a11y';
 
@@ -7,8 +7,8 @@ import { BsForwardAriaDirective } from '@mintplayer/ng-bootstrap/a11y';
  * `<bs-dropdown-menu>` — Angular wrapper around the `<mp-dropdown-menu>` web
  * component. This is the single dropdown-menu implementation: it is used
  * standalone (projected through `*bsDropdownMenu` by the `[bsDropdown]` trigger
- * stack), inside `<bs-navbar>`, and as the listbox panel for the combobox /
- * typeahead (`mode="listbox"`).
+ * stack) and inside `<bs-navbar>`. Menu only: the typeahead renders its own
+ * listbox from its headless core (#436).
  *
  * Keyboard navigation, roving tabindex, the ARIA roles and the theme-aware
  * styling all live in the WC (single source of UI truth). This wrapper bridges
@@ -20,10 +20,7 @@ import { BsForwardAriaDirective } from '@mintplayer/ng-bootstrap/a11y';
  * Declarative Shadow DOM (see `injectMpDropdownDsd`), so it renders with JS off.
  *
  * This wrapper stays framework-agnostic of the `[bsDropdown]` trigger stack (it
- * lives in a sibling entry point). When projected as a combobox/listbox panel,
- * the consumer sets `mode="listbox"` and mirrors the trigger's `menuId`/
- * `popupRole` onto this host (`[attr.id]`/`[attr.role]`) via the exported
- * `bsDropdown` reference — the same directive the toggle and combobox read.
+ * lives in a sibling entry point).
  */
 @Component({
   selector: 'bs-dropdown-menu',
@@ -66,14 +63,6 @@ import { BsForwardAriaDirective } from '@mintplayer/ng-bootstrap/a11y';
   `],
 })
 export class BsDropdownMenuComponent {
-  /**
-   * `menu` (default, roving-tabindex nav) | `listbox` (consumer manages focus).
-   *
-   * Aliased to `menuMode` so it never collides with the `mode` input of the
-   * a11y `bsRovingFocus` directive when a combobox/listbox stacks both on this
-   * one element (same reason `bsCombobox` aliases its `autocomplete`).
-   */
-  readonly mode = input<DropdownMode>('menu', { alias: 'menuMode' });
   /** Pixel cap on the menu height; scrolls beyond. */
   readonly maxHeight = input<number>();
   /** Id of an external label, set as `aria-labelledby` on the WC's list. */

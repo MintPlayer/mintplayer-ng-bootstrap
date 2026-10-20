@@ -6,7 +6,6 @@
 import '@mintplayer/web-components/dropdown-menu';
 import type {
   MpDropdownMenu,
-  DropdownMode,
   DropdownSelectEventDetail,
 } from '@mintplayer/web-components/dropdown-menu';
 import { onBeforeUnmount, onMounted, ref } from 'vue';
@@ -16,18 +15,11 @@ import './dropdown-menu.css';
 
 defineOptions({ inheritAttrs: false });
 
-withDefaults(
-  defineProps<{
-    /** `menu` (default) exposes roving-tabindex menu semantics | `listbox`. */
-    mode?: DropdownMode;
+defineProps<{
     /** Max panel height in px before the item list scrolls. */
     maxHeight?: number;
     /** `id` of an external element that labels the menu (aria-labelledby). */
-  }>(),
-  {
-    mode: 'menu',
-  },
-);
+}>();
 
 const emit = defineEmits<{ select: [detail: DropdownSelectEventDetail] }>();
 
@@ -46,7 +38,6 @@ onBeforeUnmount(() => el.value?.removeEventListener('select', onSelect));
   <mp-dropdown-menu
     ref="el"
     v-bind="$attrs"
-    :mode="mode"
     :max-height="maxHeight"
   >
     <slot />

@@ -2,7 +2,7 @@ import * as React from 'react';
 import type { DropdownItemElement } from '@mintplayer/web-components/dropdown-menu';
 
 export interface BsDropdownItemProps extends Omit<React.LiHTMLAttributes<HTMLLIElement>, 'value'> {
-  /** Bootstrap `.active` appearance (also drives `aria-selected` in a listbox menu). */
+  /** Bootstrap `.active` appearance. */
   active?: boolean;
   /** Non-interactive; removed from the menu's roving order. */
   disabled?: boolean;

@@ -162,11 +162,6 @@ describe('BsDropdownMenu — conditional attribute mapping', () => {
     expect(el.getAttribute('max-height')).toBe('0');
   });
 
-  it('forwards mode', async () => {
-    const el = await renderEl(<BsDropdownMenu mode="listbox" />, 'mp-dropdown-menu');
-    expect(el.getAttribute('mode')).toBe('listbox');
-  });
-
   // Renamed on purpose: React's own `onSelect` is a text-selection event, so
   // the WC's item-selection event takes the name and the native one is dropped
   // from the props type.

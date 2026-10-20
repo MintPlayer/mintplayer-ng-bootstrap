@@ -24,7 +24,7 @@ import '@mintplayer/web-components/dropdown-menu';
   template: `
     <div bsDropdown #dd="bsDropdown" [(isOpen)]="isOpen">
       <button bsDropdownToggle>Open</button>
-      <bs-dropdown-menu *bsDropdownMenu [menuMode]="role()" [attr.id]="dd.menuId() || null">
+      <bs-dropdown-menu *bsDropdownMenu [attr.id]="dd.menuId() || null">
         <li bsDropdownItem [active]="true">Item A</li>
         <li bsDropdownItem>Item B</li>
       </bs-dropdown-menu>
@@ -32,7 +32,6 @@ import '@mintplayer/web-components/dropdown-menu';
   `,
 })
 class HarnessComponent {
-  role = signal<'menu' | 'listbox'>('menu');
   isOpen = signal(false);
 }
 
