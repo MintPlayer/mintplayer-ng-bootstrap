@@ -30,8 +30,8 @@
   (submitted)="submitted.set($event)"
 ></bs-typeahead>
 <p class="mt-2 small text-secondary">
-  Aborted requests: {{ aborted() }} ·
-  Selected: {{ selected()?.text ?? '—' }} ·
+  Aborted requests: <span data-testid="aborted">{{ aborted() }}</span> ·
+  Selected: <span data-testid="selected">{{ selected()?.text ?? '—' }}</span> ·
   Submitted: {{ submitted() ?? '—' }}
 </p>
 

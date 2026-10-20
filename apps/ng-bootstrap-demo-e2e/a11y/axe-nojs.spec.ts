@@ -11,4 +11,6 @@ axeNojsSuite(test, expect, [
   { path: '/enterprise/accordion' },
   { path: '/basic/carousel' },
   { path: '/overlays/shell' },
+  // The headless-core typeahead server-renders a real input (#436).
+  { path: '/overlays/typeahead' },
 ]);

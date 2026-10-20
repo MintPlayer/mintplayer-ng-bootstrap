@@ -43,6 +43,7 @@ export function createAppRouter(ssr: boolean) {
     { path: '/basic/tab-control',   name: 'tab-control',   component: () => import('../views/TabControlView.vue') },
     { path: '/basic/treeview',      name: 'treeview',      component: () => import('../views/TreeviewView.vue') },
     { path: '/basic/tree-select',   name: 'tree-select',   component: () => import('../views/TreeSelectView.vue') },
+    { path: '/basic/typeahead',     name: 'typeahead',     component: () => import('../views/TypeaheadView.vue') },
     { path: '/basic/dropdown-menu', name: 'dropdown-menu',  component: () => import('../views/DropdownMenuView.vue') },
     { path: '/basic/navbar',        name: 'navbar',         component: () => import('../views/NavbarView.vue') },
     // Enterprise
