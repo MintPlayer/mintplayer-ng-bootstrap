@@ -1,4 +1,5 @@
 import * as React from 'react';
+import { act } from 'react';
 import { describe, expect, it } from 'vitest';
 
 import { BsCarousel } from '@mintplayer/react-bootstrap/carousel';
@@ -9,7 +10,7 @@ import { BsShell } from '@mintplayer/react-bootstrap/shell';
 import { emit, renderEl } from './harness';
 
 /**
- * Four wrappers exist for one reason each: to turn an idiomatic React prop into
+ * These wrappers exist for one reason each: to turn an idiomatic React prop into
  * the *attribute* shape the web component reads. They read attributes rather
  * than properties deliberately — the layout is a pure-CSS state machine so it
  * survives SSR and a JS-disabled page, and only an attribute is serialised into
@@ -106,40 +107,46 @@ describe('BsCarousel — conditional attribute mapping', () => {
   });
 });
 
-describe('BsShell — conditional attribute mapping', () => {
-  it('emits neither flag by default', async () => {
-    const el = await renderEl(<BsShell />, 'mp-shell');
-    expect(el.hasAttribute('external-toggle')).toBe(false);
-    expect(el.hasAttribute('dismiss-on-navigate')).toBe(false);
+// BsShell renders the headless shell itself (#437): the props lower onto the
+// core's data attributes and onto which native checkbox starts checked.
+describe('BsShell — lowering onto the shell markup', () => {
+  it('emits no external-toggle flag by default', async () => {
+    const el = await renderEl(<BsShell />, 'div.shell');
+    expect(el.hasAttribute('data-external-toggle')).toBe(false);
+    expect(el.getAttribute('data-breakpoint')).toBe('md');
   });
 
-  // The WC tests for attribute PRESENCE, so the value must be the empty string
-  // — `external-toggle="true"` works by accident and `="false"` would not.
-  it('sets external-toggle as a bare attribute', async () => {
-    const el = await renderEl(<BsShell externalToggle />, 'mp-shell');
-    expect(el.getAttribute('external-toggle')).toBe('');
+  // The sheet tests for attribute PRESENCE, so the value must be the empty string.
+  it('sets data-external-toggle as a bare attribute', async () => {
+    const el = await renderEl(<BsShell externalToggle />, 'div.shell');
+    expect(el.getAttribute('data-external-toggle')).toBe('');
   });
 
-  it('sets dismiss-on-navigate as a bare attribute', async () => {
-    const el = await renderEl(<BsShell dismissOnNavigate />, 'mp-shell');
-    expect(el.getAttribute('dismiss-on-navigate')).toBe('');
+  it('lowers breakpoint and size', async () => {
+    const el = await renderEl(<BsShell breakpoint="lg" size="15rem" />, 'div.shell');
+    expect(el.getAttribute('data-breakpoint')).toBe('lg');
+    expect(el.style.getPropertyValue('--mp-shell-size')).toBe('15rem');
   });
 
-  it('forwards state, breakpoint and size as attributes', async () => {
-    const el = await renderEl(<BsShell state="show" breakpoint="lg" size="15rem" />, 'mp-shell');
-    expect(el.getAttribute('state')).toBe('show');
-    expect(el.getAttribute('breakpoint')).toBe('lg');
-    expect(el.getAttribute('size')).toBe('15rem');
+  it('lowers state onto the initial checks (checked means revealed)', async () => {
+    const auto = await renderEl(<BsShell />, 'div.shell');
+    expect(auto.querySelector<HTMLInputElement>('input.shell-toggle-narrow')?.checked).toBe(false);
+    expect(auto.querySelector<HTMLInputElement>('input.shell-toggle-wide')?.checked).toBe(true);
+
+    const show = await renderEl(<BsShell state="show" />, 'div.shell');
+    expect(show.querySelector<HTMLInputElement>('input.shell-toggle-narrow')?.checked).toBe(true);
+    expect(show.querySelector<HTMLInputElement>('input.shell-toggle-wide')?.checked).toBe(true);
   });
 
-  it('routes statechange to onStatechange', async () => {
-    const seen: CustomEvent[] = [];
-    const el = await renderEl(<BsShell onStatechange={(e) => seen.push(e)} />, 'mp-shell');
+  it('routes a toggle flip to onStatechange as { open }', async () => {
+    const seen: { open: boolean }[] = [];
+    const el = await renderEl(<BsShell onStatechange={(change) => seen.push(change)} />, 'div.shell');
 
-    await emit(el, 'statechange', { state: 'show' });
+    await act(async () => {
+      el.querySelector<HTMLInputElement>('input.shell-toggle-wide')?.click();
+    });
 
-    expect(seen).toHaveLength(1);
-    expect(seen[0].detail).toEqual({ state: 'show' });
+    expect(seen).toEqual([{ open: false }]);
   });
 });
 

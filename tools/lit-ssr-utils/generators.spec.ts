@@ -21,7 +21,6 @@ import { main as carousel } from './gen-carousel-chrome.mjs';
 import { main as dropdown } from './gen-dropdown-chrome.mjs';
 import { LIGHT_TIER_COMPONENTS, lightStyleTag, main as lightStyles } from './gen-light-styles-chrome.mjs';
 import { main as navbar } from './gen-navbar-chrome.mjs';
-import { main as shell } from './gen-shell-chrome.mjs';
 import { ChromeGeneratorError, MAX_CHROME_COUNT } from './lib/chrome-module.mjs';
 
 const REPO = resolve('/repo');
@@ -157,25 +156,6 @@ describe('gen-navbar-chrome', () => {
     const render = vi.fn(noShadow.render);
     expect(await navbar({ repoRoot: REPO, renderer: { html, render }, ...h })).toBe(1);
     expect(render).toHaveBeenCalledTimes(1);
-  });
-});
-
-describe('gen-shell-chrome', () => {
-  it('emits the single shell constant and reports its size on the wrote line', async () => {
-    const h = harness();
-    expect(await shell({ repoRoot: REPO, renderer: echo, ...h })).toBe(0);
-
-    const { path, content } = h.written[0];
-    const chrome = dsd('<mp-shell></mp-shell>');
-    expect(path).toBe(resolve(REPO, 'libs/mintplayer-web-components/shell/ssr/mp-shell-chrome.generated.ts'));
-    expect(constant(content, 'MP_SHELL_DSD_CHROME')).toBe(chrome);
-    expect(h.log).toHaveBeenLastCalledWith(`gen-shell-chrome: wrote ${path} (${chrome.length} chars)`);
-  });
-
-  it('exits 1 and writes nothing without a shadow root', async () => {
-    const h = harness();
-    expect(await shell({ repoRoot: REPO, renderer: noShadow, ...h })).toBe(1);
-    expect(h.write).not.toHaveBeenCalled();
   });
 });
 

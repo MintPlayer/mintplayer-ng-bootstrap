@@ -1,0 +1,176 @@
+// The shell's stylesheet, shared by the fronts (PRD #437 wave A). Ported from
+// the former mp-shell shadow sheet: `:host([breakpoint])` is now the stamped
+// root's `data-breakpoint`, and the state matrix is gone because the two
+// checkboxes ARE the state (see shell.ts).
+@import "node_modules/bootstrap/scss/functions";
+@import "node_modules/bootstrap/scss/variables";
+@import "node_modules/bootstrap/scss/mixins/breakpoints";
+
+// Every write of the open lever also mirrors a visibility pair: CSS cannot
+// select on a custom-property VALUE, so the visibility outcome is set
+// alongside the number. Hide waits for the 0.3s slide (the outgoing sidebar
+// stays visible in motion); reveal is immediate.
+@mixin shell-open($open) {
+  --mp-shell-open: #{$open};
+  @if $open == 1 {
+    --mp-shell-vis: visible;
+    --mp-shell-vis-delay: 0s;
+  } @else {
+    --mp-shell-vis: hidden;
+    --mp-shell-vis-delay: 0.3s;
+  }
+}
+
+// The open state funnels through ONE numeric lever, `--mp-shell-open`
+// (1 = open), set on .sidebar-root by the current mode's checkbox. In both
+// modes the sidebar is absolutely positioned and slides by its own width:
+//   - wide (>= breakpoint): a fixed-width sidebar pushes the content by a
+//     transitioned margin, so a breakpoint crossing slides instead of snapping;
+//   - narrow (< breakpoint): a full-width sidebar overlays the content.
+// `--mp-shell-wide` mirrors which mode the media queries picked, so script
+// reads the resolved mode without re-deriving the breakpoint.
+.shell {
+  display: flex;
+  flex-direction: column;            // top bar over the sidebar/content row
+  position: relative;
+  --mp-shell-size: 15rem;            // expanded sidebar width (consumer override via `size` / this var)
+}
+
+// Full-width bar above the sidebar/content row. Holds the hamburger (left)
+// and the consumer's topbar content; stays put while the sidebar slides.
+.topbar {
+  display: flex;
+  align-items: center;
+  flex: 0 0 auto;
+}
+
+.sidebar-root {
+  @include shell-open(0);
+  --mp-shell-wide: 0;
+  display: flex;
+  align-items: stretch;
+  overflow: hidden;                  // clip the sidebar (slid off-screen, both modes)
+  flex: 1 1 auto;                    // fill the height below the top bar
+  min-block-size: 0;
+  position: relative;                // anchor for the overlay sidebar
+}
+
+.sidebar {
+  flex: 0 0 auto;
+  overflow-x: hidden;
+  overflow-y: auto;                  // a tall sidebar scrolls within itself
+  min-block-size: 0;
+  position: absolute;
+  inset-block: 0;
+  inset-inline-start: 0;
+  z-index: 1030;
+  transform: translateX(calc((var(--mp-shell-open) - 1) * 100%));
+  // visibility (not just the off-screen transform) removes a closed
+  // sidebar's links from the tab order and the accessibility tree.
+  visibility: var(--mp-shell-vis, visible);
+  transition:
+    transform 0.3s ease-in-out,
+    inline-size 0.3s ease-in-out,
+    visibility 0s var(--mp-shell-vis-delay, 0s);
+}
+
+.content {
+  flex: 1 1 auto;
+  min-inline-size: 0;
+  min-block-size: 0;
+  // The content is the scroll region once the root has a bounded height
+  // (e.g. `height: 100dvh`); with an auto height it just grows.
+  overflow-y: auto;
+  transition: margin-inline-start 0.3s ease-in-out;
+}
+
+// Visually hidden but focusable: the no-JS state holder.
+.shell-toggle {
+  position: absolute;
+  inline-size: 1px;
+  block-size: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+// Focus lives on the clipped checkbox; paint its ring on its hamburger.
+.shell-toggle-narrow:focus-visible ~ .topbar .shell-hamburger-narrow,
+.shell-toggle-wide:focus-visible ~ .topbar .shell-hamburger-wide {
+  outline: 2px solid var(--bs-primary, #0d6efd);
+  outline-offset: 2px;
+}
+
+// Visually hidden until focused: the first tab stop of the shell.
+.skip-link {
+  position: absolute;
+  inset-block-start: 0;
+  inset-inline-start: 0;
+  z-index: 1050;
+  padding: 0.5rem 1rem;
+  background: var(--bs-body-bg, #fff);
+  color: var(--bs-body-color, #212529);
+  transform: translateY(-200%);
+
+  &:focus-visible {
+    transform: none;
+    outline: 2px solid var(--bs-primary, #0d6efd);
+  }
+}
+
+.shell-hamburger {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
+  cursor: pointer;
+  padding: 0.5rem 0.75rem;
+  font-size: 1.25rem;
+  line-height: 1;
+  user-select: none;
+}
+
+// External toggle: no built-in control at all. The checkboxes still hold the
+// state for `state` / `toggle()`; hidden, they leave the tab order too.
+.shell[data-external-toggle] > .shell-toggle,
+.shell[data-external-toggle] .shell-hamburger {
+  display: none;
+}
+
+// --- one mode per breakpoint -------------------------------------------------
+@mixin wide-mode($bp) {
+  .shell[data-breakpoint=#{$bp}] > .shell-toggle-narrow,
+  .shell[data-breakpoint=#{$bp}] .shell-hamburger-narrow { display: none; }
+  .shell[data-breakpoint=#{$bp}] .sidebar { inline-size: var(--mp-shell-size); }
+  .shell[data-breakpoint=#{$bp}] .content { margin-inline-start: calc(var(--mp-shell-open) * var(--mp-shell-size)); }
+  .shell[data-breakpoint=#{$bp}] > .sidebar-root { --mp-shell-wide: 1; }
+  .shell[data-breakpoint=#{$bp}] > .shell-toggle-wide:checked ~ .sidebar-root { @include shell-open(1); }
+}
+
+@mixin narrow-mode($bp) {
+  .shell[data-breakpoint=#{$bp}] > .shell-toggle-wide,
+  .shell[data-breakpoint=#{$bp}] .shell-hamburger-wide { display: none; }
+  .shell[data-breakpoint=#{$bp}] .sidebar { inline-size: 100%; }
+  .shell[data-breakpoint=#{$bp}] .content { margin-inline-start: 0; }
+  .shell[data-breakpoint=#{$bp}] > .shell-toggle-narrow:checked ~ .sidebar-root { @include shell-open(1); }
+}
+
+@each $name, $min in $grid-breakpoints {
+  @if $min and $min > 0 {
+    @include media-breakpoint-up($name, $grid-breakpoints) { @include wide-mode($name); }
+    @include media-breakpoint-down($name, $grid-breakpoints) { @include narrow-mode($name); }
+  } @else {
+    // xs (min 0): always the overlay mode.
+    @include narrow-mode($name);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .sidebar,
+  .content {
+    transition: none;
+  }
+}

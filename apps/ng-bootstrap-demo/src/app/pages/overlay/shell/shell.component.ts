@@ -6,7 +6,7 @@ import { BsButtonGroupComponent } from '@mintplayer/ng-bootstrap/button-group';
 import { BsButtonTypeDirective } from '@mintplayer/ng-bootstrap/button-type';
 import { BsCodeSnippetComponent } from '@mintplayer/ng-bootstrap/code-snippet';
 import { BsShellComponent, BsShellSidebarDirective } from '@mintplayer/ng-bootstrap/shell';
-import type { ShellStateChangeEventDetail } from '@mintplayer/web-components/shell';
+import type { BsShellStateChange } from '@mintplayer/ng-bootstrap/shell';
 import { BsRadioComponent, BsRadioGroupDirective } from '@mintplayer/ng-bootstrap/radio';
 import { dedent } from 'ts-dedent';
 
@@ -28,19 +28,19 @@ export class ShellComponent {
 
   // Reflect an in-shell toggle (the hamburger) back onto the auto/show/hide
   // radios so they light up to match the sidebar's open/closed state.
-  onShellToggle(detail: ShellStateChangeEventDetail) {
+  onShellToggle(detail: BsShellStateChange) {
     this.shellState = detail.open ? 'show' : 'hide';
   }
 
   protected readonly snippetBasicHtml = dedent`
     <bs-shell [state]="'auto'" [breakpoint]="'md'">
-      <nav bsShellSidebar>
+      <nav *bsShellSidebar>
         <span class="d-block p-3">Home</span>
         <span class="d-block p-3">Settings</span>
       </nav>
 
       <main class="p-3">
-        Main content is any non-[bsShellSidebar] child.
+        Main content is every other child.
       </main>
     </bs-shell>
   `;

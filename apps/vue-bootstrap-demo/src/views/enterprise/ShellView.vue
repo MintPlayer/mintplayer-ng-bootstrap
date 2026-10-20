@@ -8,13 +8,13 @@ import { BsShell } from '@mintplayer/vue-bootstrap/shell';
 <template>
   <BsShell breakpoint="md" size="14rem" class="app-shell">
     <!-- The shell renders the hamburger at the top bar's left;
-         this slot fills the rest (brand, nav, …). -->
-    <div slot="topbar">Brand · nav</div>
+         the #topbar slot fills the rest (brand, nav, …). -->
+    <template #topbar><div>Brand · nav</div></template>
 
-    <!-- Anything with slot="sidebar" becomes the collapsible sidebar. -->
-    <nav slot="sidebar">…links…</nav>
+    <!-- The #sidebar slot is the collapsible sidebar. -->
+    <template #sidebar><nav>…links…</nav></template>
 
-    <!-- Every other child is the main content area. -->
+    <!-- The default slot is the main content area. -->
     <main><RouterView /></main>
   </BsShell>
 </template>`;
@@ -29,26 +29,26 @@ const SNIPPET_HEIGHT = `/* The shell becomes its own scroll region (top bar + si
 
 const SNIPPET_STATE = `<script setup lang="ts">
 import { ref } from 'vue';
-import { BsShell } from '@mintplayer/vue-bootstrap/shell';
-import type { ShellStateChangeEventDetail } from '@mintplayer/web-components/shell';
+import { BsShell, type ShellStateChange } from '@mintplayer/vue-bootstrap/shell';
 
 // 'auto' is responsive; 'show'/'hide' force the sidebar open/closed.
 const state = ref<'auto' | 'show' | 'hide'>('auto');
-function onStatechange(detail: ShellStateChangeEventDetail) {
-  state.value = detail.open ? 'show' : 'hide';
+function onStatechange({ open }: ShellStateChange) {
+  state.value = open ? 'show' : 'hide';
 }
 <\/script>
 
 <template>
   <BsShell breakpoint="md" :state="state" @statechange="onStatechange">
-    <nav slot="sidebar">…</nav>
+    <template #sidebar><nav>…</nav></template>
     <main>…</main>
   </BsShell>
 </template>`;
 
-const SNIPPET_EXTERNAL = `<!-- Hide the built-in hamburger and drive the toggle from your own control. -->
-<BsShell external-toggle breakpoint="md">
-  <nav slot="sidebar">…</nav>
+const SNIPPET_EXTERNAL = `<!-- Hide the built-in hamburger and drive the toggle from your own control
+     (a template ref exposes toggle(force?)). -->
+<BsShell ref="shell" external-toggle breakpoint="md">
+  <template #sidebar><nav>…</nav></template>
   <main>…</main>
 </BsShell>`;
 </script>
@@ -58,17 +58,17 @@ const SNIPPET_EXTERNAL = `<!-- Hide the built-in hamburger and drive the toggle 
     <h1>Shell</h1>
     <p class="text-body-secondary">
       <code>BsShell</code> is a responsive app-shell layout with a collapsible
-      sidebar. Place the sidebar as a child with <code>slot="sidebar"</code>;
-      every other child is the main content area. It is server-rendered as
-      Declarative Shadow DOM, so the sidebar and its hamburger toggle work with
-      JavaScript disabled. The chrome around this very page is a live
+      sidebar. Put the sidebar in the <code>#sidebar</code> slot and the top-bar content
+      in <code>#topbar</code>; the default slot is the main content area. It
+      renders plain HTML on the server, and the open state is a native checkbox,
+      so the sidebar and its hamburger toggle work with JavaScript disabled. The chrome around this very page is a live
       <code>BsShell</code>.
     </p>
 
     <section>
       <h2>Basic usage</h2>
       <p>
-        A full-width top bar (built-in hamburger + <code>topbar</code> slot) sits
+        A full-width top bar (built-in hamburger + <code>#topbar</code> slot) sits
         above the sidebar/content row. <code>breakpoint</code> sets the viewport
         width at/above which the sidebar is expanded; <code>size</code> is the
         expanded width.
@@ -91,7 +91,7 @@ const SNIPPET_EXTERNAL = `<!-- Hide the built-in hamburger and drive the toggle 
       <p>
         Leave <code>state</code> as <code>"auto"</code> for responsive behaviour,
         or drive it yourself and react to <code>@statechange</code> (its
-        <code>detail.open</code> is the resolved visual state).
+        <code>open</code> is the resolved visual state).
       </p>
       <BsCodeSnippet :code="SNIPPET_STATE" language="html" />
     </section>
@@ -154,7 +154,7 @@ const SNIPPET_EXTERNAL = `<!-- Hide the built-in hamburger and drive the toggle 
           </tr>
           <tr>
             <td><code>@statechange</code></td>
-            <td><code>(detail: {'{'} open: boolean {'}'}) =&gt; void</code></td>
+            <td><code>(change: {'{'} open: boolean {'}'}) =&gt; void</code></td>
             <td>—</td>
             <td>Fires when the toggle flips.</td>
           </tr>

@@ -1,7 +1,7 @@
 // MUST load before any LitElement is defined (i.e. before App pulls in a WC
 // wrapper). It teaches Lit to HYDRATE the server-rendered Declarative Shadow
-// DOM instead of re-rendering into it — without this, upgrading <mp-shell>
-// appends a second copy of its shadow chrome (a duplicated top bar/sidebar)
+// DOM instead of re-rendering into it — without this, upgrading a DSD WC
+// appends a second copy of its shadow chrome
 // because React hydration preserves the SSR'd DSD rather than recreating it.
 import '@lit-labs/ssr-client/lit-element-hydrate-support.js';
 import { StrictMode } from 'react';
@@ -15,7 +15,7 @@ import App from './app/app';
 
 // The server already rendered the markup into #root (see entry-server.tsx), so
 // we hydrate rather than create a fresh root — this preserves the SSR'd DOM
-// (including `<mp-shell>`'s Declarative Shadow DOM) and just attaches React's
+// (including the WCs' Declarative Shadow DOM) and just attaches React's
 // event handlers + the web-component upgrades.
 hydrateRoot(
   document.getElementById('root') as HTMLElement,

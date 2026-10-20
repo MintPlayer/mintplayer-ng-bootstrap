@@ -1,71 +1,117 @@
 <script setup lang="ts">
-// Registers <mp-shell> on the client. On the SSR server this import runs after
-// the lit-ssr DOM shim is installed (see the demo's entry-server.ts), so
-// `customElements.define` doesn't throw in Node — same pattern as every other
-// @mintplayer/vue-bootstrap wrapper.
-import '@mintplayer/web-components/shell';
-import type {
-  MpShell,
-  ShellState,
-  ShellStateChangeEventDetail,
-} from '@mintplayer/web-components/shell';
-import { onBeforeUnmount, onMounted, ref } from 'vue';
+/**
+ * Responsive app shell with a collapsible sidebar (#437), rendering the
+ * markup of @mintplayer/ui-core/shell. The open state is a native checkbox
+ * per viewport mode and every rule is CSS, so the server-rendered page works
+ * with JavaScript off.
+ *
+ *   <BsShell>
+ *     <template #topbar>…brand…</template>
+ *     <template #sidebar><nav>…</nav></template>
+ *     …main content…
+ *   </BsShell>
+ */
+import { computed, getCurrentInstance, mergeProps, useAttrs, useTemplateRef, watch } from 'vue';
+import { installLightStyles } from '@mintplayer/ui-core/scoped-styles';
+import {
+  SHELL_SCOPE,
+  applyShellState,
+  connectShell,
+  focusShellContent,
+  shellScopedStyles,
+  shouldDismissShell,
+  toggleShell,
+  type ShellBreakpoint,
+  type ShellLabels,
+  type ShellState,
+} from '@mintplayer/ui-core/shell';
+import type { ShellStateChange } from './shell-state-change';
 
 defineOptions({ inheritAttrs: false });
 
-withDefaults(
+const props = withDefaults(
   defineProps<{
     /** `auto` (default, responsive) | `show` (force open) | `hide` (force closed). */
     state?: ShellState;
-    /** Breakpoint below which the sidebar starts collapsed. Default `md`. */
-    breakpoint?: 'xs' | 'sm' | 'md' | 'lg' | 'xl' | 'xxl';
+    /** Breakpoint below which the sidebar overlays the content. Default `md`. */
+    breakpoint?: ShellBreakpoint;
     /** Expanded sidebar width (any CSS length), e.g. `"15rem"`. */
-    size?: string;
-    /** Hide the built-in hamburger and drive the toggle from a consumer control. */
+    size?: string | null;
+    /** Hide the built-in hamburger and drive the shell through `state` or `toggle()`. */
     externalToggle?: boolean;
     /** Auto-close the overlay drawer when a sidebar link is clicked (narrow mode only). */
     dismissOnNavigate?: boolean;
+    /** Localized accessible names; missing keys fall back to English. */
+    labels?: Partial<ShellLabels> | null;
   }>(),
   {
     state: 'auto',
     breakpoint: 'md',
+    size: null,
+    externalToggle: false,
+    dismissOnNavigate: false,
+    labels: null,
   },
 );
 
-const emit = defineEmits<{ statechange: [detail: ShellStateChangeEventDetail] }>();
+const emit = defineEmits<{ statechange: [change: ShellStateChange] }>();
 
-const el = ref<MpShell | null>(null);
+installLightStyles(SHELL_SCOPE, shellScopedStyles);
 
-function onStatechange(event: Event) {
-  emit('statechange', (event as CustomEvent<ShellStateChangeEventDetail>).detail);
+const id = `bs-shell-${getCurrentInstance()?.uid ?? Math.random().toString(36).slice(2)}`;
+const view = computed(() => connectShell({
+  id,
+  state: props.state,
+  breakpoint: props.breakpoint,
+  externalToggle: props.externalToggle,
+  labels: props.labels,
+}));
+const root = useTemplateRef<HTMLDivElement>('root');
+
+// `useAttrs()` is not reactive for computed(), so the merge is read in the
+// template (render-time); mergeProps joins the consumer's class and style.
+const consumerAttrs = useAttrs();
+function rootAttrs(): Record<string, unknown> {
+  return mergeProps(view.value.root, consumerAttrs, props.size ? { style: { '--mp-shell-size': props.size } } : {});
 }
 
-// `statechange` is a CustomEvent the WC dispatches; wire it up client-side only.
-onMounted(() => el.value?.addEventListener('statechange', onStatechange));
-onBeforeUnmount(() => el.value?.removeEventListener('statechange', onStatechange));
+function toggle(force?: boolean) {
+  const open = root.value ? toggleShell(root.value, force) : null;
+  if (open !== null) emit('statechange', { open });
+}
+
+function onRootClick(event: MouseEvent) {
+  if (props.dismissOnNavigate && root.value && shouldDismissShell(event, root.value)) toggle(false);
+}
+
+function onSkip(event: MouseEvent) {
+  if (root.value) focusShellContent(event, root.value);
+}
+
+function onToggleChange(event: Event) {
+  emit('statechange', { open: (event.target as HTMLInputElement).checked });
+}
+
+// The bags set the initial state (what SSR emits); a later `state` change must
+// also reach a checkbox the user already flipped.
+watch(() => props.state, (state) => {
+  if (root.value) applyShellState(root.value, state);
+});
+
+defineExpose({ toggle });
 </script>
 
 <template>
-  <!--
-    Layout is server-rendered as Declarative Shadow DOM (see injectMpShellDsd in
-    @mintplayer/web-components/shell/ssr), so the sidebar + hamburger toggle work
-    with JavaScript disabled. Place the sidebar as a child with slot="sidebar";
-    everything else is main content:
-
-      <BsShell breakpoint="md">
-        <nav slot="sidebar">…</nav>
-        <main>…</main>
-      </BsShell>
-  -->
-  <mp-shell
-    ref="el"
-    v-bind="$attrs"
-    :state="state"
-    :breakpoint="breakpoint"
-    :size="size"
-    :external-toggle="externalToggle ? '' : undefined"
-    :dismiss-on-navigate="dismissOnNavigate ? '' : undefined"
-  >
-    <slot />
-  </mp-shell>
+  <div ref="root" v-bind="rootAttrs()" @click="onRootClick">
+    <a v-bind="view.skip" :href="view.skipHref" @click="onSkip">{{ view.skipText }}</a>
+    <input v-for="t in view.toggles" :key="t.mode" v-bind="t.input" @change="onToggleChange" />
+    <div v-bind="view.topbar">
+      <label v-for="t in view.toggles" :key="t.mode" v-bind="t.label">{{ view.hamburgerText }}</label>
+      <slot name="topbar" />
+    </div>
+    <div v-bind="view.sidebarRoot">
+      <aside v-bind="view.sidebar"><slot name="sidebar" /></aside>
+      <div v-bind="view.content"><slot /></div>
+    </div>
+  </div>
 </template>

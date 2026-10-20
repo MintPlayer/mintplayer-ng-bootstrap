@@ -87,6 +87,20 @@ package version aligns its major with the supported Angular major.
     attributes land on the `<nav>`.
   - `<mp-pagination>` (Lit) is unchanged and keeps its shadow root until `mp-datatable` converts.
 
+- **Shell renders its own HTML in every front (issue #437, wave A).** `bs-shell` (Angular) is the `.shell` itself,
+  `BsShell` (React/Vue) renders a `div.shell`, and `mp-shell` (Lit) renders the same markup in its shadow root.
+  The markup, ids and ARIA come from `@mintplayer/ui-core/shell`. The open state is one native checkbox per
+  viewport mode, with a hamburger `<label>` for each. `checked` always means revealed, so the drawer toggles with
+  JS off and in Angular SSR, and no viewport inverts it.
+  - **Angular:** `*bsShellSidebar` is now a structural directive. A new `*bsShellTopbar` fills the top bar.
+    `(statechange)` emits `BsShellStateChange` (`{ open }`), not the WC's `CustomEvent`.
+  - **React:** the top bar and sidebar are the `topbar` / `sidebar` props instead of `slot=` children, and
+    `onStatechange` receives `{ open }`. The ref is `BsShellHandle` (`{ element, toggle }`).
+  - **Vue:** the top bar and sidebar are the `#topbar` / `#sidebar` named slots, and `@statechange` receives
+    `ShellStateChange` (`{ open }`), now exported from `@mintplayer/vue-bootstrap/shell`.
+  - **Removed:** the `hamburger` slot, `shellStyles` and the `::part(topbar)` hook. Style the shell's
+    `.topbar` with ordinary CSS. Also removed: the `mp-shell` Declarative-Shadow-DOM chrome
+    (`injectMpShellDsd`, `@mintplayer/web-components/shell/ssr`) and the `codegen-shell-chrome` target.
 - **Typeahead rebuilt on a headless core (issue #436).** `@mintplayer/ng-bootstrap` 22.26.0,
   `@mintplayer/web-components` 2.21.0, `@mintplayer/react-bootstrap` 19.25.0, `@mintplayer/vue-bootstrap` 3.26.0,
   new `@mintplayer/ui-core` 1.0.0 (a peer of the three framework libraries). Migrating `bs-typeahead`:

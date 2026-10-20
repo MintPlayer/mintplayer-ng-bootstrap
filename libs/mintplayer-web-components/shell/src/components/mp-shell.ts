@@ -1,21 +1,31 @@
-import { LitElement, html, nothing } from 'lit';
-import { shellStyles } from '../styles';
+import { LitElement, css, html } from 'lit';
+import { adoptLightStyles, installLightStyles } from '@mintplayer/web-components/light-dom';
+import { props } from '@mintplayer/web-components/machine';
+import {
+  SHELL_SCOPE,
+  applyShellState,
+  connectShell,
+  focusShellContent,
+  shellScopedStyles,
+  shouldDismissShell,
+  toggleShell,
+  type ShellBreakpoint,
+  type ShellState,
+} from '@mintplayer/ui-core/shell';
 
 export interface ShellStateChangeEventDetail {
-  /** Whether the sidebar is now (visually) open after the toggle. */
+  /** Whether the sidebar is now open. */
   open: boolean;
 }
 
+const BREAKPOINTS = new Set<string>(['xs', 'sm', 'md', 'lg', 'xl', 'xxl']);
+let instanceCounter = 0;
+
 /**
- * `<mp-shell>` — responsive sidebar layout shell.
- *
- * The shadow DOM is *static chrome* (a hidden checkbox toggle, the hamburger
- * label, the sidebar-root with named slots); the consumer's sidebar and main
- * content are slotted light DOM. All visibility is pure CSS (see
- * `shell.styles.scss`), so it works with JavaScript disabled when the shadow
- * root is present (e.g. server-rendered as Declarative Shadow DOM).
- *
- * Authoring (vanilla):
+ * `<mp-shell>` — the Lit front of the responsive app shell (#437), rendering
+ * the markup of `@mintplayer/ui-core/shell` in its shadow root. The open state
+ * is a native checkbox per viewport mode and every rule is the shared scoped
+ * sheet, which is mirrored into the shadow root.
  *
  *     <mp-shell breakpoint="md">
  *       <div slot="topbar">…brand / nav…</div>
@@ -23,288 +33,123 @@ export interface ShellStateChangeEventDetail {
  *       <main>…</main>
  *     </mp-shell>
  *
- * Layout: a full-width top bar (the built-in hamburger toggle on its left, plus
- * the `topbar` slot) sits above a row of `sidebar` + default (content) slots.
- * The sidebar slides in/out below the top bar, which stays put.
+ * Content arrives through real slots only, so the shadow root stays. Tier:
+ * JS-only — server-rendered pages use a framework front, which emits the
+ * working shell as plain HTML.
  *
- * Attributes:
- *  - `state` — `auto` (default) | `show` | `hide`.
- *  - `breakpoint` — Bootstrap breakpoint name (`xs`…`xxl`, default `md`); below
- *    it the sidebar starts collapsed, at/above it expanded.
- *  - `size` — expanded sidebar width (any CSS length); also settable via the
- *    `--mp-shell-size` custom property.
- *  - `external-toggle` — hides the built-in hamburger; the consumer supplies a
- *    `<label for>` + a `slot="toggle"` checkbox and a global bridge rule.
- *  - `dismiss-on-navigate` — opt-in: when a navigation link (`<a href>`) inside
- *    the `sidebar` slot is clicked while in narrow/overlay mode, auto-close the
- *    drawer (the mobile-drawer convention). No effect in wide mode; a pure
- *    progressive enhancement (with JS off the link just navigates). Mark a link
- *    (or any wrapper around it) with `data-no-dismiss` to exclude it — e.g. a
- *    parent nav item that only expands a sub-list or highlights the active path
- *    and cancels its own navigation.
+ * Attributes: `state` (`auto` | `show` | `hide`), `breakpoint` (`xs`…`xxl`,
+ * default `md`), `size` (expanded width, any CSS length), `external-toggle`
+ * (hide the hamburger), `dismiss-on-navigate` (close the overlay drawer when a
+ * sidebar link is clicked; `data-no-dismiss` exempts a link).
  *
- * Events: `statechange` (`detail: { open }`) when the toggle flips.
+ * Events: `statechange` (`detail: { open }`).
  */
 export class MpShell extends LitElement {
-  static override styles = [shellStyles];
+  static override styles = css`
+    :host { display: flex; flex-direction: column; }
+    .shell { flex: 1 1 auto; min-block-size: 0; }
+  `;
 
-  static override get observedAttributes(): string[] {
-    return [
-      ...(super.observedAttributes ?? []),
-      'state',
-      'breakpoint',
-      'size',
-      'external-toggle',
-    ];
-  }
+  static override properties = {
+    state: { type: String, reflect: true },
+    breakpoint: { type: String, reflect: true },
+    size: { type: String, reflect: true },
+    externalToggle: { type: Boolean, reflect: true, attribute: 'external-toggle' },
+    dismissOnNavigate: { type: Boolean, reflect: true, attribute: 'dismiss-on-navigate' },
+  };
 
-  protected override createRenderRoot(): HTMLElement | DocumentFragment {
-    // When this element is server-rendered as Declarative Shadow DOM, the parser
-    // attaches a shadow root pre-filled with an *inert* copy of our chrome (no
-    // lit-html "part" link). There are two ways the client can take over it:
-    //
-    //  - True hydration, when @lit-labs/ssr-client's hydrate-support has patched
-    //    *this* element's LitElement. The app and this WC must then share a single
-    //    `lit` instance (the case in the React/Vue demos). Detect it via the
-    //    `defer-hydration` attribute the shim adds to `observedAttributes`, and
-    //    defer entirely to the patched `super` (which reuses the DSD via hydrate()).
-    //
-    //  - Plain re-render, when the shim hasn't reached us — e.g. a host that
-    //    bundles `lit` as a *different* instance than this WC (Vite dep
-    //    pre-bundling a workspace lib's lit separately, as in the Angular demo).
-    //    Then lit-element's createRenderRoot pins `renderOptions.renderBefore` to
-    //    the first SSR node and the first render() inserts a SECOND copy ahead of
-    //    it (a duplicate top bar/hamburger). Clear the inert SSR chrome BEFORE
-    //    `super` captures it so render() repopulates the shadow exactly once.
-    //    `super` re-adopts our styles via adoptedStyleSheets (not children), and
-    //    the result is visually identical because the chrome is static — the DSD
-    //    still does its only job, the no-JS render before this element upgrades.
-    const hydrateSupportActive =
-      (this.constructor as typeof MpShell).observedAttributes.includes('defer-hydration');
-    if (!hydrateSupportActive) {
-      this.shadowRoot?.replaceChildren();
-    }
-    return super.createRenderRoot();
+  declare state: ShellState;
+  declare breakpoint: ShellBreakpoint;
+  declare size: string | null;
+  declare externalToggle: boolean;
+  declare dismissOnNavigate: boolean;
+
+  readonly #id = `mp-shell-${++instanceCounter}`;
+  #releaseStyles: (() => void) | null = null;
+  #appliedState: ShellState | null = null;
+
+  constructor() {
+    super();
+    this.state = 'auto';
+    this.breakpoint = 'md';
+    this.size = null;
+    this.externalToggle = false;
+    this.dismissOnNavigate = false;
   }
 
   override connectedCallback(): void {
     super.connectedCallback();
-    // Hydration marker (lit-ssr never runs this): gates the JS-only skip link
-    // in render() and the live aria-expanded upgrade.
-    this.setAttribute('data-js', '');
-    // Progressive enhancement for the `dismiss-on-navigate` opt-in: a click on a
-    // sidebar link closes the overlay drawer (narrow mode only). The listener is
-    // on the host, so it catches clicks bubbling out of the slotted sidebar.
-    this.addEventListener('click', this.#onSidebarClick);
-    // A breakpoint crossing flips the RESOLVED open state in `auto` mode with
-    // no toggle event — aria-expanded must follow (PRD 11a).
-    if (typeof window !== 'undefined') window.addEventListener('resize', this.#onResize);
+    this.#releaseStyles = adoptLightStyles(this.renderRoot as ShadowRoot);
   }
 
   override disconnectedCallback(): void {
     super.disconnectedCallback();
-    this.removeEventListener('click', this.#onSidebarClick);
-    if (typeof window !== 'undefined') window.removeEventListener('resize', this.#onResize);
-    if (this.#resizeFrame !== null) cancelAnimationFrame(this.#resizeFrame);
+    this.#releaseStyles?.();
+    this.#releaseStyles = null;
   }
 
-  #resizeFrame: number | null = null;
-
-  #onResize = (): void => {
-    if (this.#resizeFrame !== null) return;
-    this.#resizeFrame = requestAnimationFrame(() => {
-      this.#resizeFrame = null;
-      this.#syncAria();
-    });
-  };
-
-  /**
-   * The live aria-expanded upgrade — driven by the RESOLVED visual state
-   * (#cssOpen), never the raw checkbox: in `auto` wide mode the checkbox is
-   * INVERTED (checked means closed), so mirroring `checked` would announce
-   * the opposite of the truth. Only the JS tier writes it; the static chrome
-   * keeps the honest native checkbox.
-   */
-  #syncAria(): void {
-    const input = this.toggleInput;
-    if (!input || !this.hasAttribute('data-js')) return;
-    input.setAttribute('role', 'button');
-    input.setAttribute('aria-expanded', String(this.#cssOpen()));
+  get #root(): HTMLElement | null {
+    return this.renderRoot.querySelector<HTMLElement>('.shell');
   }
 
-  protected override firstUpdated(): void {
-    this.#syncAria();
-  }
-
-  /** Skip link (WCAG 2.4.1): the shell is the app frame, so it owns the one
-   *  bypass block an app needs. JS tier only — with no script the click could
-   *  not move focus into the shadow content region. */
-  #onSkipLink = (event: Event): void => {
-    event.preventDefault();
-    const content = this.renderRoot?.querySelector<HTMLElement>('.content');
-    content?.focus();
-  };
-
-  /**
-   * Auto-close the drawer when a navigation link inside the `sidebar` slot is
-   * clicked — only when `dismiss-on-navigate` is set AND the shell is in
-   * narrow/overlay mode. Reads the attribute on demand (no reactive property).
-   * The anchor must sit *before* the sidebar slot in the composed path, i.e.
-   * inside the slotted sidebar content — so topbar/content clicks are ignored.
-   * Opt-out: a clicked link (or any wrapper around it) carrying `data-no-dismiss`
-   * is ignored — for parent items that only expand a sub-list / highlight the
-   * active path and cancel their own navigation. Opt-out (rather than opt-in)
-   * keeps the common case — every leaf link dismisses — annotation-free.
-   */
-  #onSidebarClick = (event: MouseEvent): void => {
-    if (!this.hasAttribute('dismiss-on-navigate')) return;
-    if (this.#isWide()) return;
-    const path = event.composedPath();
-    const sidebarSlot = this.renderRoot?.querySelector('slot[name="sidebar"]');
-    const slotIndex = sidebarSlot ? path.indexOf(sidebarSlot) : -1;
-    if (slotIndex < 0) return;
-    // The slotted sidebar subtree the click passed through (target → … → slot).
-    const within = path.slice(0, slotIndex);
-    if (within.some((el) => el instanceof HTMLElement && el.hasAttribute('data-no-dismiss'))) return;
-    const clickedSidebarLink = within.some(
-      (el) => el instanceof HTMLElement && el.tagName === 'A' && el.hasAttribute('href'),
-    );
-    if (clickedSidebarLink && this.open) this.toggle(false);
-  };
-
-  override attributeChangedCallback(name: string, oldValue: string | null, newValue: string | null): void {
-    super.attributeChangedCallback(name, oldValue, newValue);
-    // `state`, `breakpoint` and `external-toggle` drive the layout purely via
-    // `:host([...])` selectors — no JS needed. Only `size` maps to a custom
-    // property on the host.
-    if (name === 'size') {
-      if (newValue) this.style.setProperty('--mp-shell-size', newValue);
-      else this.style.removeProperty('--mp-shell-size');
-    }
-    // `state` flips the resolved open with no checkbox event.
-    if (name === 'state') this.#syncAria();
-  }
-
-  private get toggleInput(): HTMLInputElement | null {
-    return this.renderRoot?.querySelector<HTMLInputElement>('.shell-toggle') ?? null;
-  }
-
-  /**
-   * The *resolved, visual* open state — read straight from the value the CSS
-   * computed (`--mp-shell-open`), so it accounts for `state`, `breakpoint`, the
-   * viewport and the toggle checkbox all at once. The CSS is the single source
-   * of truth; we don't re-derive the matrix in JS.
-   */
-  #cssOpen(): boolean {
-    if (typeof window === 'undefined') return false;
-    // Read it off `.sidebar-root`: in `auto` the matrix sets the lever there
-    // (per breakpoint); with an explicit `state` the host sets it and it
-    // inherits down. Either way `.sidebar-root` carries the resolved value.
-    const root = this.renderRoot?.querySelector<HTMLElement>('.sidebar-root');
-    if (!root) return false;
-    return getComputedStyle(root).getPropertyValue('--mp-shell-open').trim() === '1';
-  }
-
-  /** An explicit `state` (`show`/`hide`) freezes the CSS checkbox. */
-  #hasExplicitState(): boolean {
-    const state = this.getAttribute('state');
-    return state === 'show' || state === 'hide';
-  }
-
-  /**
-   * Wide (sidebar pushes content) vs narrow (sidebar overlays) — read from the
-   * `--mp-shell-wide` lever the media queries resolved (1 = wide, 0 = narrow),
-   * avoiding any breakpoint duplication in JS. (The sidebar is now
-   * `position: absolute` in BOTH modes, so position no longer discriminates.)
-   */
-  #isWide(): boolean {
-    if (typeof window === 'undefined') return true;
-    const root = this.renderRoot?.querySelector<HTMLElement>('.sidebar-root');
-    if (!root) return true;
-    return getComputedStyle(root).getPropertyValue('--mp-shell-wide').trim() === '1';
-  }
-
-  /**
-   * Keep the checkbox encoding the resolved open for the current viewport, so
-   * that returning to `auto` (where the checkbox drives the CSS again) resolves
-   * to the same visual state instead of jumping. In `auto` the checkbox means
-   * "inverted from the responsive default": wide default = open (checked ⇒
-   * closed); narrow default = closed (checked ⇒ open).
-   */
-  #syncCheckbox(open: boolean): void {
-    const input = this.toggleInput;
-    if (!input) return;
-    input.checked = this.#isWide() ? !open : open;
-  }
-
-  /** Whether the sidebar is currently (visually) open. */
-  get open(): boolean {
-    return this.#cssOpen();
-  }
-
-  /** Programmatically open/close the sidebar. Pass a boolean to force a state. */
+  /** Open or close the sidebar in the current viewport mode. */
   toggle(force?: boolean): void {
-    const next = force ?? !this.open;
-    this.#syncCheckbox(next);
-    this.#syncAria();
-    this.#emit(next);
+    const root = this.#root;
+    const open = root ? toggleShell(root, force) : null;
+    if (open !== null) this.#emit(open);
   }
-
-  #onToggleChange = (): void => {
-    // The checkbox has just flipped. In `auto` it already drove the CSS to the
-    // new visual state, so the resolved value IS the new state. With an explicit
-    // `state` the CSS ignores the checkbox, so the click means "flip the frozen
-    // value". Either way `next` is the new visual open; the consumer drives
-    // `state` from our event (controlled), we never mutate `state` ourselves.
-    const cssOpen = this.#cssOpen();
-    const next = this.#hasExplicitState() ? !cssOpen : cssOpen;
-    this.#syncCheckbox(next);
-    this.#syncAria();
-    this.#emit(next);
-  };
 
   #emit(open: boolean): void {
-    this.dispatchEvent(
-      new CustomEvent<ShellStateChangeEventDetail>('statechange', {
-        detail: { open },
-        bubbles: true,
-        composed: true,
-      }),
-    );
+    this.dispatchEvent(new CustomEvent<ShellStateChangeEventDetail>('statechange', { detail: { open }, bubbles: true, composed: true }));
+  }
+
+  #onToggleChange = (event: Event): void => {
+    this.#emit((event.target as HTMLInputElement).checked);
+  };
+
+  #onSkip = (event: Event): void => {
+    const root = this.#root;
+    if (root) focusShellContent(event, root);
+  };
+
+  #onClick = (event: MouseEvent): void => {
+    const root = this.#root;
+    if (this.dismissOnNavigate && root && shouldDismissShell(event, root)) this.toggle(false);
+  };
+
+  protected override updated(): void {
+    // The bags set the initial state; a later change must also reach a checkbox
+    // the user already flipped, whose attribute no longer applies.
+    const root = this.#root;
+    if (root && this.#appliedState !== null && this.#appliedState !== this.state) applyShellState(root, this.state);
+    this.#appliedState = this.state;
   }
 
   override render() {
-    const isBrowser = this.hasAttribute('data-js');
+    const view = connectShell({
+      id: this.#id,
+      state: this.state,
+      breakpoint: BREAKPOINTS.has(this.breakpoint) ? this.breakpoint : 'md',
+      externalToggle: this.externalToggle,
+    });
     return html`
-      ${isBrowser
-        ? html`<a href="#" class="skip-link" @click=${this.#onSkipLink}>Skip to content</a>`
-        : nothing}
-      <input
-        type="checkbox"
-        id="mp-shell-toggle"
-        class="shell-toggle"
-        aria-label="Toggle sidebar"
-        aria-controls="shell-sidebar"
-        @change=${this.#onToggleChange}
-      />
-      <div class="topbar" part="topbar" role="banner">
-        <label for="mp-shell-toggle" class="shell-hamburger" part="hamburger" title="Toggle sidebar">
-          <slot name="hamburger">&#9776;</slot>
-        </label>
-        <slot name="topbar"></slot>
+      <div ${props(view.root)} style=${this.size ? `--mp-shell-size: ${this.size}` : ''} @click=${this.#onClick}>
+        <a ${props(view.skip)} href=${view.skipHref} @click=${this.#onSkip}>${view.skipText}</a>
+        ${view.toggles.map((t) => html`<input ${props(t.input)} @change=${this.#onToggleChange} />`)}
+        <div ${props(view.topbar)}>
+          ${view.toggles.map((t) => html`<label ${props(t.label)}>${view.hamburgerText}</label>`)}
+          <slot name="topbar"></slot>
+        </div>
+        <div ${props(view.sidebarRoot)}>
+          <aside ${props(view.sidebar)}><slot name="sidebar"></slot></aside>
+          <div ${props(view.content)}><slot></slot></div>
+        </div>
       </div>
-      <div class="sidebar-root" part="sidebar-root">
-        <aside id="shell-sidebar" class="sidebar" part="sidebar" aria-label="Sidebar"><slot name="sidebar"></slot></aside>
-        <!-- tabindex=0, not -1: .content is the scroll container, and a
-             scrollable region only a mouse can reach fails WCAG 2.1.1 (axe
-             scrollable-region-focusable). The skip link's focus() target is
-             unaffected. -->
-        <div class="content" part="content" role="main" tabindex="0"><slot></slot></div>
-      </div>
-      <slot name="toggle"></slot>
     `;
   }
 }
+
+if (typeof document !== 'undefined' && document.head) installLightStyles(SHELL_SCOPE, shellScopedStyles);
 
 if (!customElements.get('mp-shell')) {
   customElements.define('mp-shell', MpShell);

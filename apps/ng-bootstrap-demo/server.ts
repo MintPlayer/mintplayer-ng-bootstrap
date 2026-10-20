@@ -7,15 +7,12 @@ import {
 import express from 'express';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
-// Injects <mp-shell>'s Declarative Shadow DOM into SSR output — see docs/prd/shell-wc-ssr.md
-// Framework-agnostic helper, shared by all three SSR servers.
-import { injectMpShellDsd } from '@mintplayer/web-components/shell/ssr';
 // Injects <mp-dropdown-menu> & friends' Declarative Shadow DOM into SSR output
-// so the dropdown WC renders with JS disabled. Composed with injectMpShellDsd.
+// so the dropdown WC renders with JS disabled.
 import { injectMpDropdownDsd } from '@mintplayer/web-components/dropdown-menu/ssr';
 // Injects <mp-navbar> & friends' Declarative Shadow DOM into SSR output so the
 // navbar WC renders — and collapses/reveals via its CSS state machine — with JS
-// disabled. Composed with the shell + dropdown injectors.
+// disabled. Composed with the dropdown injector.
 import { injectMpNavbarDsd } from '@mintplayer/web-components/navbar/ssr';
 // Same pattern for <mp-carousel>: count-variant DSD chrome so the radio-driven
 // no-JS carousel navigates with JS disabled. Composed with the other injectors.
@@ -102,12 +99,10 @@ app.use((req, res, next) => {
     .handle(req)
     .then(async (response) => {
       if (!response) return next();
-      // Inject <mp-shell>'s Declarative Shadow DOM so the WC renders/toggles
-      // with JS disabled (shadow chrome is static; slotted light DOM is
-      // Angular's). Reusable helper from @mintplayer/ng-bootstrap/shell.
+      // Splice the remaining WCs' Declarative Shadow DOM chrome into HTML responses.
       const contentType = response.headers.get('content-type') ?? '';
       if (contentType.includes('text/html')) {
-        const body = injectMpLightStyles(injectMpAccordionDsd(injectMpCarouselDsd(injectMpNavbarDsd(injectMpDropdownDsd(injectMpShellDsd(await response.text()))))));
+        const body = injectMpLightStyles(injectMpAccordionDsd(injectMpCarouselDsd(injectMpNavbarDsd(injectMpDropdownDsd(await response.text())))));
         const headers = new Headers(response.headers);
         headers.delete('content-length');
         // BsThemeService renders <html data-bs-theme> from the bs-theme-mode

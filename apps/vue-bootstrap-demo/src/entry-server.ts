@@ -11,14 +11,11 @@
 import './install-ssr-dom-globals';
 
 import { renderToString } from 'vue/server-renderer';
-// Framework-agnostic helper: splices <mp-shell>'s Declarative Shadow DOM into
-// the HTML so the sidebar + hamburger toggle work with JavaScript disabled.
-import { injectMpShellDsd } from '@mintplayer/web-components/shell/ssr';
 // Splices the dropdown elements' Declarative Shadow DOM into the HTML so the
-// menu chrome is server-rendered alongside <mp-shell>'s.
+// menu chrome is server-rendered.
 import { injectMpDropdownDsd } from '@mintplayer/web-components/dropdown-menu/ssr';
 // Splices the navbar elements' Declarative Shadow DOM into the HTML so the bar
-// chrome is server-rendered alongside <mp-shell>'s and the dropdowns'.
+// chrome is server-rendered alongside the dropdowns'.
 import { injectMpNavbarDsd } from '@mintplayer/web-components/navbar/ssr';
 // Same pattern for <mp-carousel>: count-variant DSD chrome so the radio-driven
 // no-JS carousel navigates with JS disabled. Composed with the other injectors.
@@ -36,7 +33,7 @@ export { collectScopedStyles } from '@mintplayer/ui-core/scoped-styles';
 import { createApp } from './main';
 
 /**
- * Render the app for `url` to an HTML string with `<mp-shell>`'s DSD injected.
+ * Render the app for `url` to an HTML string with the WCs' DSD chrome injected.
  * Awaiting `router.isReady()` resolves the matched (lazily-imported) view so
  * its markup is in the response — the no-JavaScript page shows real content,
  * not just the shell.
@@ -46,5 +43,5 @@ export async function render(url: string): Promise<string> {
   await router.push(url);
   await router.isReady();
   const html = await renderToString(app);
-  return injectMpAccordionDsd(injectMpCarouselDsd(injectMpNavbarDsd(injectMpDropdownDsd(injectMpShellDsd(html)))));
+  return injectMpAccordionDsd(injectMpCarouselDsd(injectMpNavbarDsd(injectMpDropdownDsd(html))));
 }

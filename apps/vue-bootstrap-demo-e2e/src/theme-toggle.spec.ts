@@ -5,7 +5,7 @@ import { test, expect, type Page } from '@playwright/test';
 // in server.mjs. Runs against the SSR server (see playwright.config webServer).
 
 const COOKIE = 'bs-theme-mode';
-const TOGGLE = '[slot="topbar"] mp-theme-toggle';
+const TOGGLE = '.app-shell-header mp-theme-toggle';
 
 const settle = (page: Page) =>
   page.waitForLoadState('networkidle', { timeout: 2000 }).catch(() => {

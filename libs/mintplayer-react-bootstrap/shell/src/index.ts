@@ -1,3 +1,3 @@
 export { BsShell } from './BsShell';
-export type { BsShellProps, ShellBreakpoint } from './BsShell';
-export type { ShellState, ShellStateChangeEventDetail } from '@mintplayer/web-components/shell';
+export type { BsShellHandle, BsShellProps, ShellStateChange } from './BsShell';
+export type { ShellBreakpoint, ShellLabels, ShellState } from '@mintplayer/ui-core/shell';
