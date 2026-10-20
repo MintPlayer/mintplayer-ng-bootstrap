@@ -1,0 +1,108 @@
+// The typeahead's stylesheet, shared by all four fronts (#436 D8). Rescoped at
+// build time: every compound gains `[data-mps=typeahead]`, so only nodes a
+// front stamped are matched and nothing leaks to the page. Consumer-rendered
+// rows are never stamped and keep the page's styles.
+//
+// Bootstrap's `forms` and `dropdown` partials are NOT shipped globally by
+// libs/mintplayer-ng-bootstrap/_bootstrap.scss (they are commented out there),
+// so the pieces this component needs are imported here. `buttons`, `reboot` and
+// the utilities ARE global and must never be re-imported: a rescoped copy would
+// out-rank the page's own rules.
+@import "node_modules/bootstrap/scss/functions";
+@import "node_modules/bootstrap/scss/variables";
+@import "node_modules/bootstrap/scss/variables-dark";
+@import "node_modules/bootstrap/scss/maps";
+@import "node_modules/bootstrap/scss/mixins";
+@import "node_modules/bootstrap/scss/forms/form-control";
+@import "node_modules/bootstrap/scss/dropdown";
+
+.mp-typeahead {
+  position: relative;
+  display: block;
+}
+
+// The listbox sits under the input, as wide as it, and opens downward. Plain
+// absolute positioning (what Bootstrap's own dropdowns do): the pilot does not
+// carry the overlay controller, which is lifted into ui-core under #437.
+.mp-typeahead > .dropdown-menu {
+  position: absolute;
+  inset-inline: 0;
+  top: 100%;
+  width: 100%;
+  margin-top: 0.125rem;
+  max-height: 20rem;
+  overflow-y: auto;
+  display: block;
+  padding-top: 0;
+
+  &[hidden] {
+    display: none;
+  }
+}
+
+// A thin indeterminate progress line at the top of the open panel while a
+// request is in flight (replaces the Angular-only bs-progress bar).
+.mp-typeahead > .dropdown-menu[aria-busy="true"]::before {
+  content: "";
+  display: block;
+  height: 2px;
+  margin-bottom: 0.25rem;
+  background: linear-gradient(90deg, transparent 0%, var(--bs-primary) 50%, transparent 100%);
+  background-size: 50% 100%;
+  animation: mp-typeahead-busy 1s linear infinite;
+}
+
+@keyframes mp-typeahead-busy {
+  from {
+    background-position: -50% 0;
+  }
+  to {
+    background-position: 150% 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .mp-typeahead > .dropdown-menu[aria-busy="true"]::before {
+    animation: none;
+    background: var(--bs-primary);
+  }
+}
+
+// Loading / no-results row: looks like a disabled item, is not an option.
+.mp-typeahead .ta-status {
+  display: block;
+  padding: $dropdown-item-padding-y $dropdown-item-padding-x;
+  color: var(--bs-secondary-color);
+}
+
+// Options. Focus stays in the input; the active option is the visual cursor.
+.mp-typeahead .dropdown-item {
+  cursor: pointer;
+  white-space: normal;
+}
+
+.mp-typeahead .dropdown-item[aria-selected="true"] {
+  color: var(--bs-dropdown-link-active-color);
+  background-color: var(--bs-dropdown-link-active-bg);
+}
+
+// The live region and the error message.
+.mp-typeahead .visually-hidden {
+  position: absolute !important;
+  width: 1px !important;
+  height: 1px !important;
+  padding: 0 !important;
+  margin: -1px !important;
+  overflow: hidden !important;
+  clip: rect(0, 0, 0, 0) !important;
+  white-space: nowrap !important;
+  border: 0 !important;
+}
+
+.mp-typeahead .ta-error {
+  display: block;
+  width: 100%;
+  margin-top: 0.25rem;
+  font-size: $form-feedback-font-size;
+  color: var(--bs-form-invalid-color);
+}

@@ -33,6 +33,7 @@ import * as sass from 'sass';
 import chokidar from 'chokidar';
 import {
   buildElementTemplateModule,
+  buildPlainStylesModule,
   buildStylesModule,
   toCamelCase,
   writeIfChanged,
@@ -91,6 +92,12 @@ export const isStylesScss = (file) => file.endsWith('.styles.scss');
 // name carries the scope — `badge.light.scss` → scope `badge`, host tag
 // `mp-badge`, output `badge.light.styles.ts` exporting `badgeLightStyles`.
 export const isLightScss = (file) => file.endsWith('.light.scss');
+
+// Scoped stylesheets of @mintplayer/ui-core cores (#436 D8): the same rescoping
+// as a light sheet, emitted as a plain string with no lit import —
+// `typeahead.scoped.scss` → scope `typeahead`, output
+// `typeahead.scoped.styles.ts` exporting `typeaheadScopedStyles`.
+export const isScopedScss = (file) => file.endsWith('.scoped.scss');
 
 /** Path separators normalised to posix, so generated headers are identical on every OS. */
 export const toPosix = (p) => p.replace(/\\/g, '/');
@@ -180,18 +187,37 @@ export async function processLightStyles(scssPath, repoRoot = REPO_ROOT) {
   return { outPath, changed: await writeIfChanged(outPath, next) };
 }
 
+export async function processScopedStyles(scssPath, repoRoot = REPO_ROOT) {
+  const dir = dirname(scssPath);
+  const base = basename(scssPath, '.scoped.scss');
+  const outPath = join(dir, `${base}.scoped.styles.ts`);
+  const scope = base.replace(/^mp-/, '');
+  const exportName = `${toCamelCase(scope)}ScopedStyles`;
+
+  const css = rescopeCss(compileScss(scssPath, repoRoot).trimEnd(), { scope });
+  const next = buildPlainStylesModule({
+    css,
+    sourceScssRel: toPosix(relative(dir, scssPath)),
+    exportName,
+  });
+
+  return { outPath, changed: await writeIfChanged(outPath, next) };
+}
+
 export async function runOnce(libRoots, repoRoot = REPO_ROOT) {
   const elementHtml = [];
   const stylesScss = [];
   const lightScss = [];
+  const scopedScss = [];
 
   for (const libRoot of libRoots) {
     elementHtml.push(...(await findFiles(libRoot, isElementHtml, repoRoot)));
     stylesScss.push(...(await findFiles(libRoot, isStylesScss, repoRoot)));
     lightScss.push(...(await findFiles(libRoot, isLightScss, repoRoot)));
+    scopedScss.push(...(await findFiles(libRoot, isScopedScss, repoRoot)));
   }
 
-  if (elementHtml.length === 0 && stylesScss.length === 0 && lightScss.length === 0) {
+  if (elementHtml.length === 0 && stylesScss.length === 0 && lightScss.length === 0 && scopedScss.length === 0) {
     console.log('build-web-components: no inputs found, nothing to do.');
     return { total: 0, changedCount: 0 };
   }
@@ -216,7 +242,14 @@ export async function runOnce(libRoots, repoRoot = REPO_ROOT) {
     if (changed) changedCount++;
   }
 
-  const total = elementHtml.length + stylesScss.length + lightScss.length;
+  for (const scss of scopedScss) {
+    const { outPath, changed } = await processScopedStyles(scss, repoRoot);
+    const rel = toPosix(relative(repoRoot, outPath));
+    console.log(`${changed ? 'wrote   ' : 'skipped '} ${rel}`);
+    if (changed) changedCount++;
+  }
+
+  const total = elementHtml.length + stylesScss.length + lightScss.length + scopedScss.length;
   console.log(
     `build-web-components: ${total} input(s) processed, ${changedCount} written.`,
   );

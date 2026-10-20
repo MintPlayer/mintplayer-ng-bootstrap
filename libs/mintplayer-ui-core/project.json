@@ -17,10 +17,25 @@
         "packageRoot": "dist/{projectRoot}"
       }
     },
+    "codegen": {
+      "executor": "nx:run-commands",
+      "outputs": ["{projectRoot}/**/*.scoped.styles.ts"],
+      "inputs": [
+        "{projectRoot}/**/*.scss",
+        "{workspaceRoot}/libs/mintplayer-ng-bootstrap/_bootstrap.scss",
+        "{workspaceRoot}/tools/scripts/build-web-components.mjs",
+        "{workspaceRoot}/tools/scripts/lib/*.mjs"
+      ],
+      "cache": true,
+      "options": {
+        "command": "node tools/scripts/build-web-components.mjs libs/mintplayer-ui-core"
+      }
+    },
     "build": {
       "executor": "@nx/vite:build",
       "outputs": ["{options.outputPath}"],
       "defaultConfiguration": "production",
+      "dependsOn": ["codegen"],
       "options": {
         "outputPath": "dist/libs/mintplayer-ui-core"
       },
@@ -35,6 +50,7 @@
     },
     "test": {
       "executor": "@nx/vitest:test",
+      "dependsOn": ["codegen"],
       "outputs": ["{options.reportsDirectory}"],
       "options": {
         "reportsDirectory": "coverage/libs/mintplayer-ui-core"

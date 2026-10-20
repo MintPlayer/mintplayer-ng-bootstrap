@@ -28,6 +28,7 @@
     },
     "test": {
       "executor": "@nx/vitest:test",
+      "dependsOn": [{ "projects": ["mintplayer-ui-core"], "target": "codegen" }],
       "outputs": ["{options.reportsDirectory}"],
       "options": {
         "reportsDirectory": "coverage/libs/mintplayer-vue-bootstrap"

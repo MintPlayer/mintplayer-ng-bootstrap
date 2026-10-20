@@ -210,7 +210,7 @@
       "executor": "@nx/vite:build",
       "outputs": ["{options.outputPath}"],
       "defaultConfiguration": "production",
-      "dependsOn": ["codegen-wc", "cem"],
+      "dependsOn": ["codegen-wc", "cem", { "projects": ["mintplayer-ui-core"], "target": "codegen" }],
       "options": {
         "outputPath": "dist/libs/mintplayer-web-components"
       },
@@ -225,7 +225,7 @@
     },
     "test": {
       "executor": "@nx/vitest:test",
-      "dependsOn": ["codegen-wc", "cem", "codegen-ssr-chrome"],
+      "dependsOn": ["codegen-wc", "cem", "codegen-ssr-chrome", { "projects": ["mintplayer-ui-core"], "target": "codegen" }],
       "outputs": ["{options.reportsDirectory}"],
       "options": {
         "reportsDirectory": "coverage/libs/mintplayer-web-components"
