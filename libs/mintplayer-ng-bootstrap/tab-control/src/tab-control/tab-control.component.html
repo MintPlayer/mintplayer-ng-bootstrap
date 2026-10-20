@@ -1,70 +1,30 @@
-<!-- One ng-content, shared by both branches: with an ng-content in each, Angular projects
-     into the LAST one only, so the server branch rendered no pages at all. -->
-<ng-template #pages><ng-content></ng-content></ng-template>
-
-@if (isServerSide) {
-	@for (tab of tabPages(); track tab) {
-		<!-- The radio IS the control: clipped (not display:none) so Tab reaches
-		     it, and the native radio group gives arrow-key switching, a live
-		     checked state and the label's text as its name — all with no script
-		     and nothing that can go stale (PRD 11a). -->
-		<input type="radio" class="tab-radio" bsNoNoscript
-			[name]="tabControlName()"
-			[id]="tab.tabName()"
-			[checked]="checkedTab() === tab"
-			[disabled]="tab.disabled()"
-			[attr.aria-controls]="tab.tabName() + '-panel'">
-	}
-	@let activeTabValue = activeTab();
-	<ng-template #tabStrip>
-		<!-- No role="tab"/aria-selected here: with no script to update them a
-		     static aria-selected would lie after the first switch. The labels
-		     are the radios' visual skin and accessible name; the radios carry
-		     the live selection state natively. -->
-		<ul class="nav nav-tabs flex-nowrap overflow-x-auto overflow-y-hidden">
-			@for (tab of tabPages(); track tab) {
-				@if (tab.headerTemplate()) {
-					<li class="nav-item">
-						<label
-							[for]="tab.tabName()"
-							[id]="tab.tabName() + '-header'"
-							class="nav-link text-nowrap"
-							[class.active]="activeTabValue === tab"
-							[class.disabled]="tab.disabled()">
-							<ng-container [ngTemplateOutlet]="tab.headerTemplate()!.template"></ng-container>
-						</label>
-					</li>
-				}
-			}
-		</ul>
-	</ng-template>
-	@if (topTabs()) {
-		<div class="overflow-hidden mw-100 tsc">
-			<ng-container [ngTemplateOutlet]="tabStrip"></ng-container>
-		</div>
-	}
-	<div class="tab-content flex-grow-1 overflow-auto" bsNoNoscript [class.border]="border() && activeTabValue" [class.border-top]="border() && !activeTabValue">
-		<ng-container [ngTemplateOutlet]="pages"></ng-container>
-	</div>
-	@if (bottomTabs()) {
-		<div class="overflow-hidden mw-100 tsc bottom-tabs">
-			<ng-container [ngTemplateOutlet]="tabStrip"></ng-container>
-		</div>
-	}
-} @else {
-	<mp-tab-control #wc
-		[attr.tabs-position]="tabsPosition()"
-		[attr.border]="border() ? null : 'false'"
-		[attr.active-tab]="activeTabName()"
-		[attr.select-first-tab]="selectFirstTab() ? null : 'false'"
-		(tab-activate)="onTabActivate($event)">
-		@for (tab of tabPages(); track tab) {
-			@if (tab.headerTemplate()) {
-				<span [attr.slot]="tab.tabName() + '-header'">
-					<ng-container [ngTemplateOutlet]="tab.headerTemplate()!.template"></ng-container>
-				</span>
-			}
-		}
-		<ng-container [ngTemplateOutlet]="pages"></ng-container>
-	</mp-tab-control>
+@let v = view();
+@for (tab of tabPages(); track tab; let i = $index) {
+  <input [mpProps]="v.tabs[i].radio" [checked]="i === activeIndex()" [attr.checked]="i === activeIndex() ? '' : null">
 }
+@if (!bottomTabs()) {
+  <ng-container [ngTemplateOutlet]="strip" />
+}
+<div [mpProps]="v.content">
+  @for (tab of tabPages(); track tab; let i = $index) {
+    <div [mpProps]="v.tabs[i].pane"><ng-container [ngTemplateOutlet]="tab.body() ?? null" /></div>
+  }
+</div>
+@if (bottomTabs()) {
+  <ng-container [ngTemplateOutlet]="strip" />
+}
+<ng-content />
+
+<ng-template #strip>
+  <div [mpProps]="v.strip">
+    <ul [mpProps]="v.list">
+      @for (tab of tabPages(); track tab; let i = $index) {
+        <li [mpProps]="v.item">
+          <label [mpProps]="v.tabs[i].tab" (click)="onTabClick($event, tab)" (keydown)="onTabKeydown($event, i)">
+            <ng-container [ngTemplateOutlet]="tab.headerTemplate()?.template ?? null" />
+          </label>
+        </li>
+      }
+    </ul>
+  </div>
+</ng-template>

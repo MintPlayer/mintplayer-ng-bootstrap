@@ -1,214 +1,157 @@
-import { Component, PLATFORM_ID, signal } from '@angular/core';
-import { By } from '@angular/platform-browser';
-import { BsTabsPosition } from '../tabs-position';
+import { Component, signal, viewChild } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-
-import { BsTabControlComponent } from './tab-control.component';
-// after the control: tab-page imports it back (a cycle), so it must be evaluated first
-import { BsTabPageComponent } from '../tab-page/tab-page.component';
+import { beforeEach, describe, expect, it } from 'vitest';
 import { BsTabPageHeaderDirective } from '../tab-page-header/tab-page-header.directive';
-
-describe('BsTabControlComponent', () => {
-  let component: BsTabControlComponent;
-  let fixture: ComponentFixture<BsTabControlComponent>;
-
-  beforeEach(async () => {
-    await TestBed.configureTestingModule({
-      imports: [
-        // Component to test
-        BsTabControlComponent,
-
-        // Testbench
-        BsTabControlTestComponent,
-
-        // Mock components
-        BsTabPageMockComponent,
-      ],
-    })
-    .compileComponents();
-  });
-
-  beforeEach(() => {
-    fixture = TestBed.createComponent(BsTabControlComponent);
-    component = fixture.componentInstance;
-    fixture.detectChanges();
-  });
-
-  it('should create', () => {
-    expect(component).toBeTruthy();
-  });
-});
+import { BsTabPageComponent } from '../tab-page/tab-page.component';
+import { BsTabsPosition } from '../tabs-position';
+import { BsTabControlComponent } from './tab-control.component';
 
 @Component({
   selector: 'bs-tab-control-test',
   template: `
-    <bs-tab-control>
-      <bs-tab-page>
-        <ng-template>
-          <span class="triangle me-2"></span>
-          Tab 1
-        </ng-template>
-        This is tab 1
-      </bs-tab-page>
-      <bs-tab-page>
-        <ng-template>
-          <span class="triangle me-2"></span>
-          Tab 2
-        </ng-template>
-        This is tab 2
-      </bs-tab-page>
-      <bs-tab-page [disabled]="true">
-        <ng-template>
-          <span class="triangle me-2"></span>
-          Tab 3
-        </ng-template>
-        This is tab 3
-      </bs-tab-page>
-      <bs-tab-page>
-        <ng-template>
-          <span class="triangle me-2"></span>
-          Tab 4
-        </ng-template>
-        This is tab 4
-      </bs-tab-page>
-    </bs-tab-control>`
-})
-class BsTabControlTestComponent {}
-
-@Component({
-  selector: 'bs-tab-page',
-  template: 'tab-page works',
-})
-class BsTabPageMockComponent {}
-
-
-@Component({
-  selector: 'bs-tab-control-signal-host',
-  imports: [BsTabControlComponent, BsTabPageComponent, BsTabPageHeaderDirective],
-  template: `
     <bs-tab-control [border]="border()" [selectFirstTab]="selectFirst()" [tabsPosition]="position()">
-      <bs-tab-page [disabled]="firstDisabled()"><span *bsTabPageHeader>One</span>Page 1</bs-tab-page>
-      <bs-tab-page><span *bsTabPageHeader>Two</span>Page 2</bs-tab-page>
-      <bs-tab-page [disabled]="true"><span *bsTabPageHeader>Three</span>Page 3</bs-tab-page>
+      @for (tab of tabs(); track tab) {
+        <bs-tab-page [disabled]="tab.disabled">
+          <ng-container *bsTabPageHeader>{{ tab.title }}</ng-container>
+          <span class="body">{{ tab.title }} body</span>
+        </bs-tab-page>
+      }
     </bs-tab-control>`,
+  imports: [BsTabControlComponent, BsTabPageComponent, BsTabPageHeaderDirective],
 })
-class SignalHostComponent {
-  readonly border = signal(true);
-  readonly selectFirst = signal(true);
-  readonly position = signal<BsTabsPosition>('top');
-  readonly firstDisabled = signal(false);
+class BsTabControlTestComponent {
+  border = signal(true);
+  selectFirst = signal(true);
+  position = signal<BsTabsPosition>('top');
+  tabs = signal([
+    { title: 'One', disabled: false },
+    { title: 'Two', disabled: false },
+    { title: 'Three', disabled: true },
+  ]);
+
+  control = viewChild.required(BsTabControlComponent);
 }
 
-describe('BsTabControlComponent behaviour', () => {
-  const create = () => {
-    const fixture = TestBed.createComponent(SignalHostComponent);
+describe('BsTabControlComponent', () => {
+  let component: BsTabControlTestComponent;
+  let fixture: ComponentFixture<BsTabControlTestComponent>;
+
+  const root = () => (fixture.nativeElement as HTMLElement).querySelector('bs-tab-control') as HTMLElement;
+  const radios = () => [...root().querySelectorAll<HTMLInputElement>(':scope > input.tab-radio')];
+  const tabs = () => [...root().querySelectorAll<HTMLElement>(':scope > .tsc > ul > li > label.nav-link')];
+  const panes = () => [...root().querySelectorAll<HTMLElement>(':scope > .tab-content > .tab-pane')];
+
+  beforeEach(async () => {
+    await TestBed.configureTestingModule({
+      imports: [BsTabControlTestComponent],
+    }).compileComponents();
+
+    fixture = TestBed.createComponent(BsTabControlTestComponent);
+    component = fixture.componentInstance;
     fixture.detectChanges();
-    const control = fixture.debugElement.query(By.directive(BsTabControlComponent)).componentInstance as BsTabControlComponent;
-    return { fixture, control, root: fixture.nativeElement as HTMLElement };
-  };
-
-  afterEach(() => vi.useRealTimers());
-
-  it('selects the first enabled tab, both as the checked tab and, after a tick, as the active one', () => {
-    vi.useFakeTimers();
-    const { fixture, control } = create();
-    fixture.componentInstance.firstDisabled.set(true);
+    await fixture.whenStable();
     fixture.detectChanges();
-    const pages = control.tabPages();
-    expect(control.checkedTab()).toBe(pages[1]);
-    vi.runAllTimers();
-    expect(control.activeTab()).toBe(pages[1]);
   });
 
-  it('with selectFirstTab off, nothing is selected', () => {
-    vi.useFakeTimers();
-    const { fixture, control } = create();
-    fixture.componentInstance.selectFirst.set(false);
-    fixture.detectChanges();
-    vi.runAllTimers();
-    // the effect's timer from the first render may already have chosen a tab
-    control.activeTab.set(null);
-    expect(control.checkedTab()).toBeNull();
-    expect(control.activeTabName()).toBeNull();
+  describe('markup', () => {
+    it('makes the host the .tab-control root with one radio, tab and pane per page', () => {
+      expect(root().classList.contains('tab-control')).toBe(true);
+      expect(root().getAttribute('data-mps')).toBe('tab-control');
+      expect(radios()).toHaveLength(3);
+      expect(tabs().map((tab) => tab.textContent?.trim())).toEqual(['One', 'Two', 'Three']);
+      expect(panes().map((pane) => pane.textContent?.trim())).toEqual(['One body', 'Two body', 'Three body']);
+    });
+
+    it('names every radio into one group and points each label at its radio', () => {
+      const name = radios()[0].name;
+      expect(radios().every((radio) => radio.name === name)).toBe(true);
+      tabs().forEach((tab, i) => expect(tab.getAttribute('for')).toBe(radios()[i].id));
+    });
+
+    it('renders the strip after the panes for bottom tabs', () => {
+      component.position.set('bottom');
+      fixture.detectChanges();
+      const strip = root().querySelector(':scope > .tsc') as HTMLElement;
+      expect(strip.classList.contains('bottom-tabs')).toBe(true);
+      expect(strip.previousElementSibling?.classList.contains('tab-content')).toBe(true);
+      expect(root().getAttribute('data-tabs-position')).toBe('bottom');
+    });
+
+    it('draws the pane border only when asked', () => {
+      const content = root().querySelector(':scope > .tab-content') as HTMLElement;
+      expect(content.classList.contains('border')).toBe(true);
+      component.border.set(false);
+      fixture.detectChanges();
+      expect(content.classList.contains('border')).toBe(false);
+    });
   });
 
-  it('maps the inputs onto the element\'s attributes', () => {
-    const { fixture, root, control } = create();
-    const wc = root.querySelector('mp-tab-control') as HTMLElement;
-    expect(wc.getAttribute('tabs-position')).toBe('top');
-    expect(wc.hasAttribute('border')).toBe(false);
-    expect(wc.getAttribute('active-tab')).toBe(control.tabPages()[0].tabName());
-    fixture.componentInstance.border.set(false);
-    fixture.componentInstance.selectFirst.set(false);
-    fixture.componentInstance.position.set('bottom');
-    fixture.detectChanges();
-    expect(wc.getAttribute('border')).toBe('false');
-    expect(wc.getAttribute('select-first-tab')).toBe('false');
-    expect(wc.getAttribute('tabs-position')).toBe('bottom');
+  describe('selection', () => {
+    it('checks the first enabled page by default', () => {
+      expect(radios().map((radio) => radio.checked)).toEqual([true, false, false]);
+      expect(component.control().checkedTab()).toBe(component.control().tabPages()[0]);
+    });
+
+    it('checks nothing without selectFirstTab', () => {
+      component.selectFirst.set(false);
+      fixture.detectChanges();
+      expect(radios().some((radio) => radio.checked)).toBe(false);
+      expect(component.control().checkedTab()).toBeNull();
+    });
+
+    it('selects a page on tab click and refuses a disabled one', () => {
+      tabs()[1].click();
+      fixture.detectChanges();
+      expect(radios()[1].checked).toBe(true);
+      tabs()[2].click();
+      fixture.detectChanges();
+      expect(radios()[1].checked).toBe(true);
+    });
+
+    it('follows a radio change (the not-enhanced tier)', () => {
+      radios()[1].checked = true;
+      radios()[1].dispatchEvent(new Event('change', { bubbles: true }));
+      fixture.detectChanges();
+      expect(component.control().checkedTab()).toBe(component.control().tabPages()[1]);
+    });
+
+    it('selects through setActiveTab', () => {
+      component.control().setActiveTab(component.control().tabPages()[1]);
+      fixture.detectChanges();
+      expect(radios()[1].checked).toBe(true);
+    });
   });
 
-  it('slots each page\'s header and content by its tab name', () => {
-    const { root, control } = create();
-    const name = control.tabPages()[1].tabName();
-    expect(root.querySelector(`[slot="${name}-header"]`)?.textContent).toBe('Two');
-    expect(root.querySelector(`bs-tab-page[slot="${name}-content"]`)).not.toBeNull();
-    expect(root.querySelectorAll('bs-tab-page[data-disabled]')).toHaveLength(1);
+  describe('enhanced tier', () => {
+    it('turns the labels into APG tabs and hides the radios', () => {
+      expect(root().querySelector('ul')?.getAttribute('role')).toBe('tablist');
+      expect(tabs().map((tab) => tab.getAttribute('role'))).toEqual(['tab', 'tab', 'tab']);
+      expect(tabs().map((tab) => tab.getAttribute('aria-selected'))).toEqual(['true', 'false', 'false']);
+      expect(tabs().map((tab) => tab.getAttribute('tabindex'))).toEqual(['0', '-1', '-1']);
+      expect(tabs()[2].getAttribute('aria-disabled')).toBe('true');
+      expect(radios().every((radio) => radio.hidden)).toBe(true);
+      panes().forEach((pane, i) => {
+        expect(pane.getAttribute('role')).toBe('tabpanel');
+        expect(pane.getAttribute('aria-labelledby')).toBe(tabs()[i].id);
+        expect(tabs()[i].getAttribute('aria-controls')).toBe(pane.id);
+      });
+    });
+
+    it('moves focus and selection with the arrow keys, skipping disabled tabs', () => {
+      tabs()[1].dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowRight', bubbles: true }));
+      fixture.detectChanges();
+      expect(radios()[0].checked).toBe(true);
+      expect(document.activeElement).toBe(tabs()[0]);
+      tabs()[0].dispatchEvent(new KeyboardEvent('keydown', { key: 'End', bubbles: true }));
+      fixture.detectChanges();
+      expect(radios()[1].checked).toBe(true);
+      expect(tabs()[1].getAttribute('tabindex')).toBe('0');
+    });
   });
 
-  it('a tab-activate event from the element activates that page, but never a disabled one', () => {
-    const { root, control } = create();
-    const wc = root.querySelector('mp-tab-control') as HTMLElement;
-    const [, second, third] = control.tabPages();
-    wc.dispatchEvent(new CustomEvent('tab-activate', { detail: { tabId: second.tabName() } }));
-    expect(control.activeTab()).toBe(second);
-    wc.dispatchEvent(new CustomEvent('tab-activate', { detail: { tabId: third.tabName() } }));
-    wc.dispatchEvent(new CustomEvent('tab-activate', { detail: { tabId: 'no-such-tab' } }));
-    expect(control.activeTab()).toBe(second);
-  });
-
-  it('setActiveTab prevents the event default and skips disabled pages', () => {
-    const { control } = create();
-    const [first, , third] = control.tabPages();
-    const ev = new Event('click', { cancelable: true });
-    expect(control.setActiveTab(first, ev)).toBe(false);
-    expect(ev.defaultPrevented).toBe(true);
-    expect(control.activeTab()).toBe(first);
-    control.setActiveTab(third);
-    expect(control.activeTab()).toBe(first);
-  });
-});
-
-describe('BsTabControlComponent on the server', () => {
-  beforeEach(() => {
-    TestBed.configureTestingModule({ providers: [{ provide: PLATFORM_ID, useValue: 'server' }] });
-  });
-
-  it('renders the no-JS radio group: one radio per page, labelled by its header, disabled where the page is', () => {
-    const fixture = TestBed.createComponent(SignalHostComponent);
-    fixture.detectChanges();
-    const root: HTMLElement = fixture.nativeElement;
-    const radios = [...root.querySelectorAll('input.tab-radio')] as HTMLInputElement[];
-    expect(radios).toHaveLength(3);
-    expect(new Set(radios.map((r) => r.name)).size).toBe(1);
-    expect(radios[0].checked).toBe(true);
-    expect(radios[2].disabled).toBe(true);
-    const label = root.querySelector(`label[for="${radios[1].id}"]`);
-    expect(label?.textContent?.trim()).toBe('Two');
-    expect(radios[1].getAttribute('aria-controls')).toBe(`${radios[1].id}-panel`);
-    const region = root.querySelector(`[id="${radios[1].id}-panel"]`);
-    // the page content is projected on the server too
-    expect(region?.textContent).toContain('Page 2');
-    expect(region?.getAttribute('role')).toBe('region');
-    expect(region?.getAttribute('aria-labelledby')).toBe(`${radios[1].id}-header`);
-    expect(root.querySelector('mp-tab-control')).toBeNull();
-  });
-
-  it('puts the strip below the content for bottom tabs', () => {
-    const fixture = TestBed.createComponent(SignalHostComponent);
-    fixture.componentInstance.position.set('bottom');
-    fixture.detectChanges();
-    const root: HTMLElement = fixture.nativeElement;
-    expect(root.querySelector('.bottom-tabs .nav-tabs')).not.toBeNull();
-    expect(root.querySelectorAll('.nav-tabs')).toHaveLength(1);
+  it('keeps the page hosts out of the layout', () => {
+    const hosts = [...root().querySelectorAll('bs-tab-page')];
+    expect(hosts).toHaveLength(3);
+    expect(hosts.every((host) => host.hasAttribute('hidden'))).toBe(true);
   });
 });

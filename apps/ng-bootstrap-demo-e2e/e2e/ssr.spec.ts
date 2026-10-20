@@ -11,4 +11,5 @@ ssrSuite(test, expect, [
   { path: '/basic/pagination', expect: ['bs-pagination > nav[aria-label] > ul.pagination > li.page-item > button.page-link[aria-label]'] },
   { path: '/overlays/shell', expect: ['bs-shell.shell[data-mps=shell] > input.shell-toggle-wide[checked]', 'bs-shell .sidebar-root > aside.sidebar'] },
   { path: '/enterprise/accordion', expect: ['bs-accordion.accordion[data-mps=accordion] > details.accordion-item > summary.accordion-button[aria-controls]', 'bs-accordion.accordion > details.accordion-item > div.accordion-content[role=region]'] },
+  { path: '/basic/containers/tab-control', expect: ['bs-tab-control.tab-control[data-mps=tab-control] > input.tab-radio[type=radio][checked][aria-controls]', 'bs-tab-control.tab-control > .tsc > ul.nav-tabs > li.nav-item > label.nav-link[for]', 'bs-tab-control.tab-control > .tab-content > .tab-pane[role=region]'] },
 ]);

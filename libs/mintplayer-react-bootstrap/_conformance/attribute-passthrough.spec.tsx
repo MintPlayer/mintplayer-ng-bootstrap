@@ -233,11 +233,13 @@ const CASES: Case[] = [
   bare('BsShell', 'div.shell', BsShell),
   bare('BsSignaturePad', 'mp-signature-pad', BsSignaturePad),
   bare('BsSplitter', 'mp-splitter', BsSplitter),
-  bare('BsTabControl', 'mp-tab-control', BsTabControl),
+  bare('BsTabControl', 'div.tab-control', BsTabControl),
   {
+    // A marker: BsTabControl renders its pane and forwards the page's attributes there.
     name: 'BsTabPage',
-    target: 'mp-tab-page',
-    render: (p) => <BsTabControl><BsTabPage {...p} /></BsTabControl>,
+    target: 'div.tab-pane',
+    render: (p) => <BsTabControl><BsTabPage header="Tab" {...p} /></BsTabControl>,
+    fixedRole: 'tabpanel',
   },
   bare('BsThemeToggle', 'mp-theme-toggle', BsThemeToggle),
   {

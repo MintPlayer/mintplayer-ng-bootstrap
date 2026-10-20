@@ -8,6 +8,7 @@ import { axeNojsSuite } from '../../../tools/e2e-shared/axe-suites';
 axeNojsSuite(test, expect, [
   { path: '/' },
   { path: '/enterprise/accordion' },
+  { path: '/basic/tab-control' },
   { path: '/basic/carousel' },
   { path: '/basic/navbar' },
   { path: '/enterprise/shell' },

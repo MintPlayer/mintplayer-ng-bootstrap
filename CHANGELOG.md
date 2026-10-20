@@ -120,6 +120,23 @@ breaking change is a major. (2.20.0 and 2.21.0 broke `^2.x` consumers in a minor
     `::part(header)`, `::part(button)` and `::part(content)` hooks are removed.
   - **Removed:** the Declarative-Shadow-DOM chrome (`injectMpAccordionDsd`,
     `@mintplayer/web-components/accordion/ssr`) and the `codegen-accordion-chrome` target.
+  - **Vue:** the accordion's id comes from `useId()` rather than the instance `uid`, so the server and the
+    hydrating client agree on every IDREF.
+- **Tab control renders Bootstrap nav-tabs over native radios in every front (issue #437, wave A).** One radio
+  per tab is the selection and the CSS pairs the n-th radio with the n-th pane, so the server HTML switches tabs
+  with JS off (panes are `region`s labelled by their tab). After hydration the labels become APG tabs: roving
+  tabindex, `aria-selected`, Left/Right/Home/End with automatic activation, disabled tabs skipped. Ids and ARIA
+  come from `@mintplayer/ui-core/tab-control`.
+  - **Angular:** `bs-tab-control` is the `.tab-control` itself. `bs-tab-page` renders nothing in place (its
+    content is projected into the control's pane). `isServerSide`, `tabName` and `tabControlName` are removed.
+  - **React:** `<BsTabPage tabId header disabled>` pages inside `<BsTabControl activeTab onTabActivate>`;
+    `onTabActivate` receives the `tabId`. The ref is the `.tab-control` `HTMLDivElement`. Page attributes land
+    on the pane (except `role`).
+  - **Vue:** `<BsTabControl v-model>` with `<BsTabPage tab-id disabled>`, the tab content in a `#header` slot.
+    `BsTabPage` is exported. Page attributes land on the pane (except `role`).
+  - **Removed:** the `MpTabControl` / `MpTabPage` re-exports from the framework libraries. The Lit
+    `mp-tab-control` stays unchanged until the dock, which depends on it, converts.
+
 
 - **Tile manager rebuilt on a headless core, and responsive (issue #440).** `@mintplayer/web-components`
   **3.0.0**, `@mintplayer/ui-core` 1.1.0 (new `tile-manager` entry), `@mintplayer/ng-bootstrap` 22.27.0,
