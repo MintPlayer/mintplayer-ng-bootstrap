@@ -70,57 +70,57 @@ S1 and S2 can sink the bridge design (D2, D9) and change M2/M4's shape; they run
 
 ## M2: typeahead core `[§5.1, §6, D2–D7, D13]`
 **Files:** `libs/mintplayer-ui-core/typeahead/{index.ts,src/index.ts,src/typeahead-machine.ts,src/connect.ts,src/types.ts,src/in-memory-provider.ts,src/styles/typeahead.scss,src/*.spec.ts}`
-- [ ] `TypeaheadMachine<T>` per PRD §5.1: options, snapshot, commands, keyboard table, request lifecycle on `SupersedingRequest`, announcement with a 1500 ms self-clear, `destroy()`.
-- [ ] `connect()` bags: `root`, `input`, `listbox`, `status`, `option(i)`, plus the intent handlers.
-- [ ] `inMemoryTypeaheadProvider(items, { filter?, limit? })`, throws `AbortError` when aborted.
-- [ ] `typeahead.scss` (imports `forms` + `dropdown` partials; root `.mp-typeahead`; `.ta-status`, loading bar, active option highlight, `prefers-reduced-motion`), codegen'd to a scoped sheet.
-- [ ] Core specs per PRD §10 incl. golden bag snapshots per state.
-- [ ] `tsc --noEmit`, commit. Then run **S3 with throwaway fronts**.
+- [x] `TypeaheadMachine<T>` per PRD §5.1: options, snapshot, commands, keyboard table, request lifecycle on `SupersedingRequest`, announcement with a 1500 ms self-clear, `destroy()`.
+- [x] `connect()` bags: `root`, `input`, `listbox`, `status`, `option(i)`, plus the intent handlers.
+- [x] `inMemoryTypeaheadProvider(items, { filter?, limit? })`, throws `AbortError` when aborted.
+- [x] `typeahead.scss` (imports `forms` + `dropdown` partials; root `.mp-typeahead`; `.ta-status`, loading bar, active option highlight, `prefers-reduced-motion`), codegen'd to a scoped sheet.
+- [x] Core specs per PRD §10 incl. golden bag snapshots per state.
+- [x] `tsc --noEmit`, commit. Then run **S3 with throwaway fronts**.
 
 ## M3: shared runner in tree-select and datatable `[D4]`
 **Files:** `libs/mintplayer-web-components/tree-select/src/components/mp-tree-select.ts`, `datatable/src/components/mp-datatable.ts`, `datatable/src/types/{tree.ts,filter.ts}`, `libs/mintplayer-ng-bootstrap/datatable/src/datatable/datatable.component.ts` (`[fetch]` orchestration), related specs.
-- [ ] tree-select `runRequest` + `onSearchInput` → `SupersedingRequest`; keyboard spec (stale, AbortError, disconnect) unchanged and green by reading.
-- [ ] datatable distincts → runner (drop the generation counter); `FILTER_SEARCH_DEBOUNCE_MS` 250 → shared 200.
-- [ ] datatable `fetch`: `DatatableFetchRequest.signal`, runner wraps `_fetch`, `_fetchGeneration` echo guard stays; Angular `[fetch]` passes `signal` through; new spec: a superseded page request's signal is aborted.
-- [ ] `tsc --noEmit`, commit.
+- [x] tree-select `runRequest` + `onSearchInput` → `SupersedingRequest`; keyboard spec (stale, AbortError, disconnect) unchanged and green by reading.
+- [x] datatable distincts → runner (drop the generation counter); `FILTER_SEARCH_DEBOUNCE_MS` 250 → shared 200.
+- [x] datatable `fetch`: `DatatableFetchRequest.signal`, runner wraps `_fetch`, `_fetchGeneration` echo guard stays; Angular `[fetch]` passes `signal` through; new spec: a superseded page request's signal is aborted.
+- [x] `tsc --noEmit`, commit.
 
 ## M4: Angular front + deletions `[§5.3, D9, D10, D12, D15]`
 **Files:** `libs/mintplayer-ng-bootstrap/scoped-styles/` (new entry: `MpPropsDirective`, `ScopedStylesServerInstaller`, `provideScopedStyles()`), `typeahead/src/{typeahead.component.ts,.html,.spec.ts,.aria.spec.ts,.ssr.spec.ts,directives/typeahead-item.directive.ts,index.ts}`, `dropdown/src/{combobox/*,dropdown/dropdown.directive.ts,dropdown-toggle/*,index.ts}`, `a11y/src/roving-focus/*`, `_conformance/aria-passthrough.spec.ts`, `apps/ng-bootstrap-demo/src/app/app.config.ts` (`provideScopedStyles()`).
-- [ ] `[mpProps]` (S2 outcome): diff, remove, refuse unsafe names, Renderer2; spec.
-- [ ] `ScopedStylesServerInstaller`: on the server, append one `<style data-mps-sheet="<key>">` per registered sheet to `DOCUMENT.head` via `Renderer2`, once per request; in the browser, delegate to the core registry. Hydration-safe: the client registry recognises the server-installed node by the data attribute and does not duplicate it.
-- [ ] `BsTypeaheadComponent` per §5.3: machine + `signal` bridge, template with bags, `*ngTemplateOutlet` rows + `defaultItem`, inputs/outputs/model, CVA, Observable adapter, `isPlatformServer` branch (no listbox), `bsForwardAria` onto the input.
-- [ ] `BsTypeaheadItemDirective` with context guard.
-- [ ] Deletions: `combobox/` + export; `popupRole` (+ `BsDropdownPopupRole`), toggle `aria-haspopup` constant; roving `mode` input (+ `activeDescendantId` if unused after). Grep `bsCombobox|popupRole|activedescendant` in `libs/mintplayer-ng-bootstrap` to specs-only, then fix the specs (`dropdown.aria.spec.ts:25-27,115-152`, `dropdown-toggle.directive.spec.ts:25`).
-- [ ] Specs per PRD §10 (the issue's four cases translated; `.aria.spec.ts` through the bags; `.ssr.spec.ts` with `renderApplication`); passthrough row, count 26 → 27.
-- [ ] `tsc --noEmit`, commit. Then run **S4**.
+- [x] `[mpProps]` (S2 outcome): diff, remove, refuse unsafe names, Renderer2; spec.
+- [x] `ScopedStylesServerInstaller`: on the server, append one `<style data-mps-sheet="<key>">` per registered sheet to `DOCUMENT.head` via `Renderer2`, once per request; in the browser, delegate to the core registry. Hydration-safe: the client registry recognises the server-installed node by the data attribute and does not duplicate it.
+- [x] `BsTypeaheadComponent` per §5.3: machine + `signal` bridge, template with bags, `*ngTemplateOutlet` rows + `defaultItem`, inputs/outputs/model, CVA, Observable adapter, `isPlatformServer` branch (no listbox), `bsForwardAria` onto the input.
+- [x] `BsTypeaheadItemDirective` with context guard.
+- [x] Deletions: `combobox/` + export; `popupRole` (+ `BsDropdownPopupRole`), toggle `aria-haspopup` constant; roving `mode` input (+ `activeDescendantId` if unused after). Grep `bsCombobox|popupRole|activedescendant` in `libs/mintplayer-ng-bootstrap` to specs-only, then fix the specs (`dropdown.aria.spec.ts:25-27,115-152`, `dropdown-toggle.directive.spec.ts:25`).
+- [x] Specs per PRD §10 (the issue's four cases translated; `.aria.spec.ts` through the bags; `.ssr.spec.ts` with `renderApplication`); passthrough row, count 26 → 27.
+- [x] `tsc --noEmit`, commit. Then run **S4**.
 
 ## M5: React and Vue fronts; listbox-mode removal `[§5.4, §5.5, D10]`
 **Files:** `libs/mintplayer-react-bootstrap/{core/src/useMachine.ts (new entry), typeahead/*, _conformance/attribute-passthrough.{spec.tsx,types.tsx}, _conformance/behaviour/prop-lowering.spec.tsx}`, `libs/mintplayer-vue-bootstrap/{core/src/useMachine.ts, typeahead/*, _conformance/*}`, `libs/mintplayer-web-components/dropdown-menu/src/{components/mp-dropdown-menu.ts,types/dropdown.ts,*.spec.ts}`, `dropdown-menu/ssr/*`, `tools/lit-ssr-utils/gen-dropdown-chrome.mjs` (drop the listbox variant), React/Vue dropdown-menu wrappers (`mode` prop).
-- [ ] `useMachine` hook / composable per S1 outcome.
-- [ ] `BsTypeahead.tsx`: bags spread, `renderItem` + default, controlled `value`, `onValueChange`/`onSelect`/`onSubmit`, attrs spread onto the input, sheet install effect.
-- [ ] `BsTypeahead.vue`: `v-bind` bags, `#item` slot + default, `defineModel`, `inheritAttrs:false`, sheet install `onMounted`.
-- [ ] Remove `mode="listbox"` from `mp-dropdown-menu` (menu only), `DropdownMode`, its spec cases, the listbox DSD chrome variant, React/Vue `mode` props and the prop-lowering spec line.
-- [ ] Passthrough rows + completeness checks; Vue behaviour spec.
-- [ ] `tsc --noEmit` / `vue-tsc`, commit.
+- [x] `useMachine` hook / composable per S1 outcome.
+- [x] `BsTypeahead.tsx`: bags spread, `renderItem` + default, controlled `value`, `onValueChange`/`onSelect`/`onSubmit`, attrs spread onto the input, sheet install effect.
+- [x] `BsTypeahead.vue`: `v-bind` bags, `#item` slot + default, `defineModel`, `inheritAttrs:false`, sheet install `onMounted`.
+- [x] Remove `mode="listbox"` from `mp-dropdown-menu` (menu only), `DropdownMode`, its spec cases, the listbox DSD chrome variant, React/Vue `mode` props and the prop-lowering spec line.
+- [x] Passthrough rows + completeness checks; Vue behaviour spec.
+- [x] `tsc --noEmit` / `vue-tsc`, commit.
 
 ## M6: Lit front `[§5.6, D14]`
 **Files:** `libs/mintplayer-web-components/typeahead/{index.ts,src/index.ts,src/components/mp-typeahead.ts,src/components/*.spec.ts}`, `_conformance/{light-styles-scoping,light-styles-nesting,consumer-dom-boundary,naming,properties-attributes}.spec.ts`, `tools/lit-ssr-utils/gen-light-styles-chrome.mjs`.
-- [ ] `mp-typeahead`: Tier L, FACE, machine in a ReactiveController, `applyProps` directive for the bags, `itemRenderer` with `stampScope` before append, events, attributes ↔ properties table.
-- [ ] Specs: FACE, renderer never stamped, events; registries (`LIGHT_TIER_TAGS`, naming `{ tag: 'mp-typeahead', target: 'input' }`, consumer-dom-boundary case, `LIGHT_TIER_COMPONENTS`).
-- [ ] `tsc --noEmit`, commit.
+- [x] `mp-typeahead`: Tier L, FACE, machine in a ReactiveController, `applyProps` directive for the bags, `itemRenderer` with `stampScope` before append, events, attributes ↔ properties table.
+- [x] Specs: FACE, renderer never stamped, events; registries (`LIGHT_TIER_TAGS`, naming `{ tag: 'mp-typeahead', target: 'input' }`, consumer-dom-boundary case, `LIGHT_TIER_COMPONENTS`).
+- [x] `tsc --noEmit`, commit.
 
 ## M7: demos, e2e, cross-front conformance `[§5.7, §10]`
 **Files:** `apps/ng-bootstrap-demo/src/app/pages/overlay/typeahead/*`, `overlay.pages.spec.ts`; `apps/react-bootstrap-demo/src/app/pages/TypeaheadPage.tsx`, `app.tsx`, `shell/AppShell.tsx`; `apps/vue-bootstrap-demo/src/views/TypeaheadView.vue`, `router/index.ts`, `app/App.vue`; `apps/{ng,react,vue}-bootstrap-demo-e2e/**/typeahead*.spec.ts`; the three `a11y/axe.spec.ts` lists; `apps/ng-bootstrap-demo-e2e/a11y/axe-nojs.spec.ts`; `libs/mintplayer-ui-core/typeahead/_conformance/four-fronts.spec.ts`.
-- [ ] Pages on the new API (slow provider honouring `signal`, highlighted row template, forms binding, keymap table, demo before snippet, no-JS note on the Angular page).
-- [ ] E2e per app; Angular `typeahead-nojs.spec.ts`; axe and axe-nojs lists.
-- [ ] S3's diff spec made permanent.
-- [ ] `tsc --noEmit`, commit.
+- [x] Pages on the new API (slow provider honouring `signal`, highlighted row template, forms binding, keymap table, demo before snippet, no-JS note on the Angular page).
+- [x] E2e per app; Angular `typeahead-nojs.spec.ts`; axe and axe-nojs lists.
+- [x] S3's diff spec made permanent.
+- [x] `tsc --noEmit`, commit.
 
 ## M8: CHANGELOG, versions, workflow, docs, pilot numbers `[§7, §11, §15]`
-- [ ] `CHANGELOG.md` `[Unreleased]`: `### Breaking` (the §7 table incl. the dropdown-menu, dropdown, a11y and datatable `fetch` breaks), `### Added` (ui-core, React/Vue `BsTypeahead`, the four capabilities).
-- [ ] Versions per PRD §11; `publish-master.yml` publishes `dist/libs/mintplayer-ui-core` first in the topo order; `.github` build matrix includes the new project.
-- [ ] CLAUDE.md: a short "Headless core + fronts (pilot: typeahead, programme: #437)" section stating the reversed duplication rule, the `data-mps` catalog-wide rule, and pointing at `ui-core`; fix the stale `#renderNoJsItem` reference.
-- [ ] PRD §9 verdicts, §15 numbers, add §16 "As built" with deviations. Commit.
+- [x] `CHANGELOG.md` `[Unreleased]`: `### Breaking` (the §7 table incl. the dropdown-menu, dropdown, a11y and datatable `fetch` breaks), `### Added` (ui-core, React/Vue `BsTypeahead`, the four capabilities).
+- [x] Versions per PRD §11; `publish-master.yml` publishes `dist/libs/mintplayer-ui-core` first in the topo order; `.github` build matrix includes the new project.
+- [x] CLAUDE.md: a short "Headless core + fronts (pilot: typeahead, programme: #437)" section stating the reversed duplication rule, the `data-mps` catalog-wide rule, and pointing at `ui-core`; fix the stale `#renderNoJsItem` reference.
+- [x] PRD §9 verdicts, §15 numbers, add §16 "As built" with deviations. Commit.
 
 ## M9: verification sweep (once, at the end)
 - [ ] Builds: `mintplayer-ui-core` → `mintplayer-web-components` → `mintplayer-ng-bootstrap` → `mintplayer-react-bootstrap` → `mintplayer-vue-bootstrap` (`--skip-remote-cache` locally).
