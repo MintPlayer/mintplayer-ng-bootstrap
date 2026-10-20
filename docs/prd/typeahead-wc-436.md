@@ -162,7 +162,7 @@ Produced by `connect()`, so stated once:
 | `[(isOpen)]` | `(opened)` / `(closed)` |
 | `[isLoadingText]`, `[noSuggestionsText]`, `[resultsAnnouncementSingular/Plural]` | `[loadingLabel]`, `[noResultsLabel]`, `[resultsLabel]` |
 | request per keystroke | `[debounceMs]` (200), `[minLength]` (1) |
-| `{{ suggestion.text }}` only | `*bsTypeaheadItem="let item; term: term"`, default = `itemText(item)` |
+| `{{ suggestion.text }}` only | `*bsTypeaheadItem="let item; let term = term; of: items"` (`of:` optional, types the item), default = `itemText(item)` |
 | `input[bsCombobox]`, `[bsDropdown] popupRole`, `[bsRovingFocus] mode` | removed |
 | `mp-dropdown-menu mode="listbox"`, `DropdownMode` (WC, React, Vue) | removed; menu only |
 | `DatatableFetchRequest` (WC + Angular `[fetch]`) | gains `signal: AbortSignal` |

@@ -311,6 +311,9 @@ export class MpTypeahead<T = unknown> extends FormAssociatedMixin(LitElement) {
   }
 
   #emit(type: string, detail?: unknown): void {
+    // The deferred close after removal stops work silently: nothing listens to a detached
+    // element, and under a torn-down test realm the dispatch itself throws.
+    if (!this.isConnected) return;
     this.dispatchEvent(new CustomEvent(type, { detail, bubbles: true, composed: true }));
   }
 }
