@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import type { DragOperationType, TimeSlot } from '@mintplayer/web-components/scheduler-core';
+import type { DragOperationType, TimeSlot } from '@mintplayer/ui-core/scheduler-core';
 import { DragPreviewCalculator } from './drag-preview';
 import { DEFAULT_DRAG_CONFIG } from './drag-types';
 

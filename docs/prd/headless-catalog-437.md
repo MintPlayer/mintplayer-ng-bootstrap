@@ -117,7 +117,7 @@ The Angular `createEmbeddedView` / `rootNodes` bridges are deleted. A nested ove
   - a checkbox or radio `:checked` machine for shell, navbar toggle, tab-control and carousel;
   - native `<select>` and `<input>`.
 - **JS-only enhancement attaches after hydration.** Examples: setting `indeterminate`, canvas drawing, measurement, and `aria-expanded` writes that a native element does not already own.
-- **The `data-js` host attribute disappears.** Where CSS must differ with JS on, the core adds a stable class on hydration (`mp-hydrated`) on the front's root node, written through the bags.
+- **The `data-js` host attribute disappears.** Where CSS must differ with JS on, the core adds a stable attribute on hydration (`data-mp-hydrated`, `ui-core/store` `hydratedAttr`) on the front's root node, written through the bags. It is an attribute rather than a class because `class` stays the front's business and the bags only carry attributes (decided at M2).
 
 ### D5. URL state for no-JS navigation
 
@@ -162,7 +162,8 @@ The pilot did not lift any of this; it lands before the waves that need it.
 ### D9. The Lit front
 
 - **Tag names and public element APIs stay.** `mp-*` remains the Lit front, rebuilt on the core.
-- **Which DOM it renders into** follows the existing admission rule: light DOM if it mounts consumer DOM, shadow root if it takes content only through slots. Shadow-tier Lit fronts keep importing the Bootstrap partials they need into their shadow sheet (today's behaviour). This is the one place partials are still imported (§6 C5).
+- **Every Lit front renders into the light DOM** (`createRenderRoot() { return this; }`), as the typeahead does. It stamps `data-mps` with `scopedHtml` and installs the same `<name>.scoped.styles.ts` sheet as the other three fronts. No front has a shadow root, so no front imports Bootstrap partials. The baseline reaches every node, and the shadow/light admission rule retires with the old elements in M7.
+- Slot-like content (a card body, an accordion panel) is consumer children that the element moves into its own rendered container once, before the first render. The element owns those nodes, and Lit never manages them.
 
 ## 6. Bootstrap CSS integration
 
@@ -193,7 +194,7 @@ The pilot did not lift any of this; it lands before the waves that need it.
   - reduced motion.
 
   They still go through `[data-mps]` rescoping and `installLightStyles`, the single document-style writer. **They never import a Bootstrap partial; they may import functions, variables and mixins only.** A new conformance spec (`_conformance/no-bootstrap-partials-in-scoped.spec.ts`) fails if a scoped sheet's compiled CSS contains a selector from the Bootstrap partial list.
-- **C5. Shadow-tier Lit fronts** keep importing partials into their shadow sheet. Page CSS cannot reach inside, which is the old behaviour and acceptable for WC consumers. Those imports are not rescoped, so they cannot leak.
+- **C5. No front has a shadow root** (D9), so no front imports partials. The Lit fronts get Bootstrap from the page baseline, exactly as the framework fronts do.
 - **C6. Dark mode becomes page-level.** With no shadow boundary, `[data-bs-theme=dark]` on `<html>` reaches every framework front directly. The `light-dark()` / `color-scheme` workarounds and the `@container style(--mp-color-mode)` queries are removed from scoped sheets. They stay only where a shadow-tier Lit front still needs them.
 - **C7. SSR delivery.**
   - Angular already writes scoped sheets into `DOCUMENT.head` on the server.

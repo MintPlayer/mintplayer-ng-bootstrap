@@ -1,69 +1,13 @@
-export type RovingFocusOrientation = 'vertical' | 'horizontal' | 'both';
+import { firstEnabledIndex, lastEnabledIndex, nextEnabledIndex } from '@mintplayer/ui-core/roving';
+import type { RovingOrientation } from '@mintplayer/ui-core/roving';
+
+export type RovingFocusOrientation = RovingOrientation;
 
 /**
- * Index arithmetic for roving navigation, with no DOM and no framework in it.
- *
- * Extracted so the Angular `BsRovingFocusDirective` can share it rather than
- * keep a second copy. That directive predates this controller and the two had
- * independently identical `step` / `firstEnabled` / `lastEnabled` logic — and
- * they had already drifted on the wrap-vs-clamp default, which is precisely the
- * inconsistency a shared primitive exists to remove.
- *
- * Only the arithmetic is shared. The adapters stay separate on purpose: Angular
- * discovers items through `contentChildren`, exposes `activeIndex` as a signal,
- * and writes `tabindex` through a host binding on each item directive, while
- * this controller takes a callback and writes `tabIndex` imperatively. Making
- * Angular delegate to the class below would put two writers on one attribute —
- * the hazard the workspace has already been bitten by once (see
- * `otp-input.component.ts:124-131`).
- *
- * @param count      number of candidate items
- * @param from       current index
- * @param delta      +1 or -1
- * @param wrap       pass the ends, or stop at them
- * @param isDisabled by index, so callers can consult signals or attributes
- * @returns the next enabled index, or `-1` when there is nowhere to go
+ * DOM adapter over the ui-core roving arithmetic: discovers items through a
+ * callback and writes `tabIndex` imperatively. Headless cores do not use it —
+ * they keep the tab stop in their snapshot and call `rovingTarget` directly.
  */
-export function nextEnabledIndex(
-  count: number,
-  from: number,
-  delta: 1 | -1,
-  wrap: boolean,
-  isDisabled: (index: number) => boolean,
-): number {
-  if (count === 0) return -1;
-
-  let cursor = from;
-  for (let attempt = 0; attempt < count; attempt++) {
-    cursor += delta;
-    if (cursor < 0) {
-      if (!wrap) return -1;
-      cursor = count - 1;
-    } else if (cursor >= count) {
-      if (!wrap) return -1;
-      cursor = 0;
-    }
-    if (!isDisabled(cursor)) return cursor;
-  }
-  return -1;
-}
-
-/** First enabled index, or `-1` when every item is disabled. */
-export function firstEnabledIndex(count: number, isDisabled: (index: number) => boolean): number {
-  for (let i = 0; i < count; i++) {
-    if (!isDisabled(i)) return i;
-  }
-  return -1;
-}
-
-/** Last enabled index, or `-1` when every item is disabled. */
-export function lastEnabledIndex(count: number, isDisabled: (index: number) => boolean): number {
-  for (let i = count - 1; i >= 0; i--) {
-    if (!isDisabled(i)) return i;
-  }
-  return -1;
-}
-
 export interface RovingFocusOptions {
   /**
    * The navigable items, in tab order, recomputed on every interaction.

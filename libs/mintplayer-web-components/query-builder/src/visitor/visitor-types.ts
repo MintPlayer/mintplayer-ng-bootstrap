@@ -1,5 +1,5 @@
-import type { Condition, Group, SubQueryCondition } from '../model/expression';
-import type { EntitySchema } from '../model/field-def';
+import type { Condition, Group, SubQueryCondition } from '@mintplayer/ui-core/query-builder';
+import type { EntitySchema } from '@mintplayer/ui-core/query-builder';
 
 export interface VisitorContext {
   schema: EntitySchema[];

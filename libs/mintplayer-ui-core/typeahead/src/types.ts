@@ -1,4 +1,5 @@
 import type { AbortableRequest } from '@mintplayer/ui-core/async';
+import type { OpenSide } from '@mintplayer/ui-core/overlay';
 
 /** The request a provider receives. `signal` aborts when a newer term supersedes this one or the machine is destroyed. */
 export type TypeaheadRequest = AbortableRequest;
@@ -35,6 +36,8 @@ export interface TypeaheadState<T> {
   items: readonly T[];
   status: TypeaheadStatus;
   open: boolean;
+  /** Which side of the input the list opens on; a front measures and calls `place()` (ui-core/overlay `measureOpenSide`). */
+  side: OpenSide;
   /** Index into `items` of the highlighted option, or -1. */
   activeIndex: number;
   /** The last picked item; `null` once the text changes after the pick. */

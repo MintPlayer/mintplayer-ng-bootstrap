@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import type { SchedulerEvent } from '@mintplayer/web-components/scheduler-core';
+import type { SchedulerEvent } from '@mintplayer/ui-core/scheduler-core';
 import {
   internals,
   state,

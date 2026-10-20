@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { resolveBuiltinEditor } from './builtin-editors';
-import type { FieldDef } from '../model/field-def';
-import type { EditorContext } from '../model/editor';
+import type { FieldDef } from '@mintplayer/ui-core/query-builder';
+import type { EditorContext } from '@mintplayer/ui-core/query-builder';
 
 function makeCtx(field: FieldDef, operator: EditorContext['operator'], value: unknown): {
   ctx: EditorContext;

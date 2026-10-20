@@ -1,24 +1,10 @@
 import type { ReactiveController, ReactiveControllerHost } from 'lit';
 import { dismissStack, deepActiveElement, collectTabbables, FocusTrap, type InitialFocusTarget } from '@mintplayer/web-components/a11y';
 import { acquirePortal, type PortalHandle } from './overlay-portal';
-import { choosePlacement, clampToViewport, isAnchorOffscreen } from './placement';
+import { choosePlacement, clampToViewport, isAnchorOffscreen } from '@mintplayer/ui-core/overlay';
 
-export type OverlayOriginX = 'start' | 'center' | 'end';
-export type OverlayOriginY = 'top' | 'center' | 'bottom';
-
-export interface OverlayPosition {
-  /** Which X corner of the anchor to align from. */
-  originX: OverlayOriginX;
-  /** Which Y corner of the anchor to align from. */
-  originY: OverlayOriginY;
-  /** Which X corner of the overlay panel to align to. */
-  overlayX: OverlayOriginX;
-  /** Which Y corner of the overlay panel to align to. */
-  overlayY: OverlayOriginY;
-  /** Optional pixel offset, applied after corner alignment. */
-  offsetX?: number;
-  offsetY?: number;
-}
+import type { OverlayPosition } from '@mintplayer/ui-core/overlay';
+export type { OverlayOriginX, OverlayOriginY, OverlayPosition } from '@mintplayer/ui-core/overlay';
 
 export type ScrollStrategy =
   | 'reposition' // re-position on every scroll (default; CDK parity)

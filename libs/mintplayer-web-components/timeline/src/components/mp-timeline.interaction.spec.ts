@@ -2,7 +2,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import './mp-timeline';
 import type { MpTimeline } from './mp-timeline';
-import type { TimelineItem, TimelineItemClickDetail } from '@mintplayer/web-components/timeline-core';
+import type { TimelineItem, TimelineItemClickDetail } from '@mintplayer/ui-core/timeline-core';
 
 /**
  * `<mp-timeline>` interaction outside selection, and its property/attribute

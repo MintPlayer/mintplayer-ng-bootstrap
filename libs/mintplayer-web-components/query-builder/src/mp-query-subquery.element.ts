@@ -1,9 +1,9 @@
 import { LitElement, nothing, type TemplateResult } from 'lit';
 import { installLightStyles, scopedHtml } from '@mintplayer/web-components/light-dom';
 import { ContextConsumer } from '@lit/context';
-import type { SubQueryCondition } from './model/expression';
-import type { EntitySchema, FieldDef } from './model/field-def';
-import { DEFAULT_MESSAGES, type QueryBuilderMessages } from './model/messages';
+import type { SubQueryCondition } from '@mintplayer/ui-core/query-builder';
+import type { EntitySchema, FieldDef } from '@mintplayer/ui-core/query-builder';
+import { DEFAULT_MESSAGES, type QueryBuilderMessages } from '@mintplayer/ui-core/query-builder';
 import { messagesContext } from './context';
 import { querySubqueryLightStyles } from './mp-query-subquery.light.styles';
 

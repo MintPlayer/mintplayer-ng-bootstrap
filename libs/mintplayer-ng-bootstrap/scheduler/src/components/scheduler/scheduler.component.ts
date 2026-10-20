@@ -23,7 +23,7 @@ import {
   Resource,
   ResourceGroup,
   SchedulerOptions,
-} from '@mintplayer/web-components/scheduler-core';
+} from '@mintplayer/ui-core/scheduler-core';
 
 // Import the web component to ensure it gets registered
 import '@mintplayer/web-components/scheduler';

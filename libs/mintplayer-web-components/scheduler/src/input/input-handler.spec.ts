@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import type { SchedulerEvent } from '@mintplayer/web-components/scheduler-core';
+import type { SchedulerEvent } from '@mintplayer/ui-core/scheduler-core';
 import { InputHandler, InputHandlerCallbacks } from './input-handler';
 
 /**

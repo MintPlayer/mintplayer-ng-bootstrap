@@ -12,7 +12,7 @@ import { provideBsTheme } from '../provide-bs-theme';
 
 /**
  * BsThemeService is a pure MIRROR of the core store
- * (libs/mintplayer-web-components/theming/src/store.ts). These tests pin that:
+ * (libs/mintplayer-ui-core/theming/src/store.ts). These tests pin that:
  * the store is the only state, a write on either side shows on both, and the
  * server branch resolves the request cookie against the page's meta default.
  */

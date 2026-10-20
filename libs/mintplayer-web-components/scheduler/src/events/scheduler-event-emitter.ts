@@ -5,7 +5,7 @@ import {
   ViewType,
   Resource,
   ResourceGroup,
-} from '@mintplayer/web-components/scheduler-core';
+} from '@mintplayer/ui-core/scheduler-core';
 
 /**
  * Handles dispatching custom events from the scheduler.

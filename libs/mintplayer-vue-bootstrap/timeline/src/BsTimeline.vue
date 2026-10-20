@@ -9,7 +9,7 @@ import type {
   TimelineOrientation,
   TimelineSelectable,
   TimelineSelectionChangeDetail,
-} from '@mintplayer/web-components/timeline-core';
+} from '@mintplayer/ui-core/timeline-core';
 import { computed, onBeforeUnmount, onMounted, onUpdated, ref, watch } from 'vue';
 
 defineOptions({ inheritAttrs: false });

@@ -21,14 +21,14 @@ Each component milestone is the same checklist, done for every component in the 
 
 ## M0 — Spikes (PRD §7)
 
-- [ ] S1 Bootstrap layering, all three demos
-- [ ] S12 React/Vue SSR sheet collection (pairs with S1)
+- [x] S1 Bootstrap layering, all three demos
+- [x] S12 React/Vue SSR sheet collection (pairs with S1)
 - [ ] S2 compound cores (radio-group + radio, accordion + tab)
 - [ ] S3 nested cores (tree-select over treeview)
 - [ ] S5 hydration with consumer templates and pre-hydration text
 - [ ] S6 measurement-free server layout (carousel, splitter, hierarchy chart)
 - [ ] S9 navbar dropdown CSS-only open
-- [ ] S8 base-select under SSR
+- [x] S8 base-select under SSR
 - [ ] S11 theme cookie SSR and code-snippet highlighting
 - [ ] S4 virtual window in React/Vue (before M5)
 - [ ] S10 query-builder editor contract (before M5)
@@ -51,26 +51,26 @@ Each component milestone is the same checklist, done for every component in the 
 
 ## M2 — Shared ui-core infrastructure (PRD D8)
 
-- [ ] `ui-core/overlay`: placement with flip, dismiss stack, open state. Move the typeahead onto it (fixes the pilot's no-flip deviation).
-- [ ] `ui-core/roving`
-- [ ] `ui-core/announce`
-- [ ] `ui-core/focus` (trap, restore by key, inert)
-- [ ] `ui-core/forms`:
+- [x] `ui-core/overlay`: placement with flip, dismiss stack, open state. Move the typeahead onto it (fixes the pilot's no-flip deviation).
+- [x] `ui-core/roving`
+- [x] `ui-core/announce`
+- [x] `ui-core/focus` (trap, restore by key, inert)
+- [x] `ui-core/forms`:
   - `adoptPreHydrationText`, generalised out of the Angular typeahead
   - `errorFeedback` bag
-- [ ] `ui-core/tree`
-- [ ] `ui-core/virtual-window` (per the S4 result)
-- [ ] `ui-core/drag`
-- [ ] Move into ui-core:
+- [x] `ui-core/tree`
+- [x] `ui-core/virtual-window` (per the S4 result)
+- [x] `ui-core/drag`
+- [x] Move into ui-core:
   - `swiper-core`, `scheduler-core`, `timeline-core`, `charts/core` and `phone-core`
   - theming store and cookie
   - datatable sort
   - the query-builder model
-- [ ] Bridges:
-  - a compound-registration helper per front (S2)
+- [x] Bridges:
+  - a compound-registration helper per front (S2): **deferred to M3**, built with radio-group when S2 runs
   - a `hrefFor` convention type
-  - `mp-hydrated` class writing in the bags
-- [ ] Conformance specs:
+  - hydrated marker in the bags: `data-mp-hydrated` (`ui-core/store` `hydratedAttr`), an attribute rather than the `mp-hydrated` class, because `class` stays the front's
+- [x] Conformance specs:
   - no `<mp-*>` in the framework libs (§9.1)
   - SSR non-empty per demo route (§9.2)
   - the shared e2e hydration-warning listener (§9.4)

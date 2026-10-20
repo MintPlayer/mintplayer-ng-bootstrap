@@ -20,5 +20,5 @@ export type {
   TimelineConnectorContext,
   TimelineItemClickDetail,
   TimelineSelectionChangeDetail,
-} from '@mintplayer/web-components/timeline-core';
-export { resolveSides } from '@mintplayer/web-components/timeline-core';
+} from '@mintplayer/ui-core/timeline-core';
+export { resolveSides } from '@mintplayer/ui-core/timeline-core';

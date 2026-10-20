@@ -10,9 +10,9 @@ export type {
   SchedulerOptions,
   TimeSlot,
   PreviewEvent,
-} from '@mintplayer/web-components/scheduler-core';
+} from '@mintplayer/ui-core/scheduler-core';
 export {
   generateEventId,
   generateResourceId,
   generateGroupId,
-} from '@mintplayer/web-components/scheduler-core';
+} from '@mintplayer/ui-core/scheduler-core';

@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it } from 'vitest';
 import './mp-hierarchy-chart';
 import type { MpHierarchyChart } from './mp-hierarchy-chart';
-import type { HierarchyNode } from '@mintplayer/web-components/charts/core';
+import type { HierarchyNode } from '@mintplayer/ui-core/charts/core';
 
 /**
  * Ctrl/⌘+wheel is GEOMETRIC magnification (user decision 2026-08-14): the

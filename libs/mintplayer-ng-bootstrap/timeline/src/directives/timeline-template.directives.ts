@@ -1,5 +1,5 @@
 import { Directive, inject, TemplateRef } from '@angular/core';
-import type { TimelineItem, TimelineOrientation, TimelineSide } from '@mintplayer/web-components/timeline-core';
+import type { TimelineItem, TimelineOrientation, TimelineSide } from '@mintplayer/ui-core/timeline-core';
 
 /**
  * Context for the per-item template directives. The `$implicit` is the item, so

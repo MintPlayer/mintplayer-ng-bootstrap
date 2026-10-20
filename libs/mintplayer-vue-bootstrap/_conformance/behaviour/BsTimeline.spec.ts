@@ -3,7 +3,7 @@ import { h, reactive } from 'vue';
 
 import BsTimeline from '../../timeline/src/BsTimeline.vue';
 import type { MpTimeline } from '@mintplayer/web-components/timeline';
-import type { TimelineItem, TimelineItemContext } from '@mintplayer/web-components/timeline-core';
+import type { TimelineItem, TimelineItemContext } from '@mintplayer/ui-core/timeline-core';
 
 import { emit, mountEl, mountWrapper } from './harness';
 

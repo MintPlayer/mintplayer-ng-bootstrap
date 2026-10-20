@@ -4,6 +4,7 @@ import { repeat } from 'lit/directives/repeat.js';
 import { installLightStyles, scopedHtml } from '@mintplayer/web-components/light-dom';
 import { FormAssociatedMixin, HostAriaController } from '@mintplayer/web-components/a11y';
 import { MachineController, props } from '@mintplayer/web-components/machine';
+import { trackOpenSide } from '@mintplayer/ui-core/overlay';
 import {
   connect,
   TYPEAHEAD_SCOPE,
@@ -251,8 +252,22 @@ export class MpTypeahead<T = unknown> extends FormAssociatedMixin(LitElement) {
     this.syncFormValue();
   }
 
+  #untrackSide: (() => void) | null = null;
+
+  override connectedCallback(): void {
+    super.connectedCallback();
+    // Flip the list above the input near the viewport bottom.
+    this.#untrackSide ??= trackOpenSide(
+      this.machine,
+      () => this.querySelector(`input[data-mps=${TYPEAHEAD_SCOPE}]`),
+      () => this.querySelector<HTMLElement>(`ul[data-mps=${TYPEAHEAD_SCOPE}]`),
+    );
+  }
+
   override disconnectedCallback(): void {
     super.disconnectedCallback();
+    this.#untrackSide?.();
+    this.#untrackSide = null;
     // A node moved in the DOM reconnects with its machine intact; a removed one stops its work.
     queueMicrotask(() => {
       if (!this.isConnected) this.machine.close();

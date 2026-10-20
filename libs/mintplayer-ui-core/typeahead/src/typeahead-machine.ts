@@ -1,4 +1,5 @@
 import { SupersedingRequest } from '@mintplayer/ui-core/async';
+import type { OpenSide } from '@mintplayer/ui-core/overlay';
 import { Machine } from '@mintplayer/ui-core/store';
 import {
   DEFAULT_TYPEAHEAD_LABELS,
@@ -37,6 +38,7 @@ export class TypeaheadMachine<T = unknown> extends Machine<TypeaheadState<T>> {
       items: [],
       status: 'idle',
       open: false,
+      side: 'below',
       activeIndex: -1,
       selectedItem: null,
       announcement: '',
@@ -163,6 +165,11 @@ export class TypeaheadMachine<T = unknown> extends Machine<TypeaheadState<T>> {
       this.update({ open: false, activeIndex: -1 });
       this.#callbacks.onClose?.();
     });
+  }
+
+  /** The side the front measured for the open list. A no-op while closed, so a late measurement cannot reopen anything. */
+  place(side: OpenSide): void {
+    if (this.snapshot.open && this.snapshot.side !== side) this.update({ side });
   }
 
   /** Focus left the input: close, keep the term and the pick. */

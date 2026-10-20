@@ -1,9 +1,9 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import './mp-theme-toggle';
 import type { MpThemeToggle } from './mp-theme-toggle';
-import { __resetBsThemeStoreForTests, getBsThemeStore } from '../store';
-import { BS_THEME_DEFAULT_MODES, type BsThemeToggleMode } from '../toggle-modes';
-import { installFakeBroadcastChannel } from '../testing/fake-broadcast-channel';
+import { __resetBsThemeStoreForTests, getBsThemeStore } from '@mintplayer/ui-core/theming';
+import { BS_THEME_DEFAULT_MODES, type BsThemeToggleMode } from '@mintplayer/ui-core/theming';
+import { installFakeBroadcastChannel } from '@mintplayer/ui-core/theming/src/testing/fake-broadcast-channel';
 
 /** A cookie jar that keeps the last written pair (the store's cookie write). */
 function stubCookie(initial = ''): void {

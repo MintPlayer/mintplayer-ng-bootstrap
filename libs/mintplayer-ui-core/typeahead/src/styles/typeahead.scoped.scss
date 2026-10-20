@@ -44,6 +44,15 @@ mp-typeahead {
   &[hidden] {
     display: none;
   }
+
+  // The core flips the list above the input near the viewport bottom
+  // (ui-core/overlay openSide); the front only measures.
+  &[data-side="above"] {
+    top: auto;
+    bottom: 100%;
+    margin-top: 0;
+    margin-bottom: 0.125rem;
+  }
 }
 
 // A thin indeterminate progress line at the top of the open panel while a

@@ -3,9 +3,9 @@ import './mp-query-builder.element';
 import './mp-query-group.element';
 import type { MpQueryBuilderElement } from './mp-query-builder.element';
 import type { MpQueryGroupElement } from './mp-query-group.element';
-import type { Expression, Group } from './model/expression';
-import type { EntitySchema } from './model/field-def';
-import { emptyGroup } from './model/default-tree';
+import type { Expression, Group } from '@mintplayer/ui-core/query-builder';
+import type { EntitySchema } from '@mintplayer/ui-core/query-builder';
+import { emptyGroup } from '@mintplayer/ui-core/query-builder';
 
 /**
  * The ARIA surface of the query builder: the role/level structure of the group

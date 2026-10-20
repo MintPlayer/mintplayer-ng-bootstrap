@@ -7,7 +7,7 @@ import type {
   Resource,
   ResourceGroup,
   ViewType,
-} from '@mintplayer/web-components/scheduler-core';
+} from '@mintplayer/ui-core/scheduler-core';
 import { ref, watch, onMounted } from 'vue';
 
 defineOptions({ inheritAttrs: false });

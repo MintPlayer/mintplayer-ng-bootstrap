@@ -1,5 +1,6 @@
 import * as React from 'react';
 import { useEffect, useId, useRef } from 'react';
+import { trackOpenSide } from '@mintplayer/ui-core/overlay';
 import { installLightStyles } from '@mintplayer/ui-core/scoped-styles';
 import {
   connect,
@@ -140,12 +141,18 @@ export function BsTypeahead<T = unknown>(props: BsTypeaheadProps<T>): React.Reac
     if (value !== undefined && value !== machine.snapshot.term) machine.setValue(value);
   }, [machine, value]);
 
+  // Flip the list above the input near the viewport bottom.
+  const inputRef = useRef<HTMLInputElement>(null);
+  const listboxRef = useRef<HTMLUListElement>(null);
+  useEffect(() => trackOpenSide(machine, () => inputRef.current, () => listboxRef.current), [machine]);
+
   const api = connect(state, id, { name: name ?? null });
   const { value: termValue, ...inputBag } = reactProps(api.input);
 
   return (
     <div className="mp-typeahead" {...reactProps(api.root)}>
       <input
+        ref={inputRef}
         className="form-control"
         type="text"
         {...inputBag}
@@ -163,7 +170,7 @@ export function BsTypeahead<T = unknown>(props: BsTypeaheadProps<T>): React.Reac
           machine.blur();
         }}
       />
-      <ul className="dropdown-menu" {...reactProps(api.listbox)}>
+      <ul ref={listboxRef} className="dropdown-menu" {...reactProps(api.listbox)}>
         {api.status && (
           <li className="ta-status" {...reactProps(api.status.attrs)}>
             {api.status.text}
