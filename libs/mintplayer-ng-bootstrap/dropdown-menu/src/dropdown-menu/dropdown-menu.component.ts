@@ -1,97 +1,64 @@
-import { afterNextRender, ChangeDetectionStrategy, Component, computed, CUSTOM_ELEMENTS_SCHEMA, input, output, ViewEncapsulation } from '@angular/core';
-import type { DropdownSelectEventDetail } from '@mintplayer/web-components/dropdown-menu';
-import { BS_DROPDOWN_MENU_CONTEXT } from '../tokens/menu-context.token';
+import { afterNextRender, ChangeDetectionStrategy, Component, computed, DestroyRef, ElementRef, inject, input, output, signal, viewChild } from '@angular/core';
 import { BsForwardAriaDirective } from '@mintplayer/ng-bootstrap/a11y';
+import { MpPropsDirective, useScopedStyles } from '@mintplayer/ng-bootstrap/machine';
+import {
+  DROPDOWN_MENU_SCOPE,
+  attachDropdownMenu,
+  connectDropdownMenu,
+  dropdownMenuScopedStyles,
+  type DropdownSelectEventDetail,
+} from '@mintplayer/ui-core/dropdown-menu';
+import { BS_DROPDOWN_MENU_CONTEXT } from '../tokens/menu-context.token';
 
 /**
- * `<bs-dropdown-menu>` — Angular wrapper around the `<mp-dropdown-menu>` web
- * component. This is the single dropdown-menu implementation: it is used
- * standalone (projected through `*bsDropdownMenu` by the `[bsDropdown]` trigger
- * stack) and inside `<bs-navbar>`. Menu only: the typeahead renders its own
- * listbox from its headless core (#436).
+ * `<bs-dropdown-menu>` — a Bootstrap `.dropdown-menu` list (#437). Used
+ * standalone, projected through `*bsDropdownMenu` by the `[bsDropdown]`
+ * trigger stack. Menu only: the typeahead renders its own listbox, and the
+ * navbar renders its own navigation panels.
  *
- * Keyboard navigation, roving tabindex, the ARIA roles and the theme-aware
- * styling all live in the WC (single source of UI truth). This wrapper bridges
- * inputs to attributes and projects `[bsDropdownItem]` / `[bsDropdownDivider]` /
- * `[bsDropdownHeader]` `<li>`s into the WC's default slot.
+ * Renders the markup of `@mintplayer/ui-core/dropdown-menu` in its own
+ * template: a `<ul>` around the projected `[bsDropdownItem]` /
+ * `[bsDropdownDivider]` / `[bsDropdownHeader]` `<li>`s. Once hydrated, the
+ * core's attachment adds the menu roles, the roving tabindex, the arrow keys
+ * and the `select` output; the server output is a plain list of links, which
+ * is valid and works with JavaScript off.
  *
- * The WC is registered **client-side only** (`afterNextRender`); on the server
- * Angular emits a bare `<mp-dropdown-menu>` tag and the SSR layer injects its
- * Declarative Shadow DOM (see `injectMpDropdownDsd`), so it renders with JS off.
- *
- * This wrapper stays framework-agnostic of the `[bsDropdown]` trigger stack (it
- * lives in a sibling entry point).
+ * A consumer's `aria-*`, `role` and `id` on `bs-dropdown-menu` reach the list.
  */
 @Component({
   selector: 'bs-dropdown-menu',
   templateUrl: './dropdown-menu.component.html',
-  imports: [BsForwardAriaDirective],
+  imports: [BsForwardAriaDirective, MpPropsDirective],
   changeDetection: ChangeDetectionStrategy.OnPush,
-  schemas: [CUSTOM_ELEMENTS_SCHEMA],
   // Marks content authored between these tags as "inside a menu" so
-  // context-aware children (bs-navbar-item) render their dropdown-item shape.
+  // context-aware children render their dropdown-item shape.
   providers: [{ provide: BS_DROPDOWN_MENU_CONTEXT, useValue: true }],
-  // The COMPANION light-DOM sheet: the one thing the menu's shadow `::slotted`
-  // rules cannot reach is a nested `<a>`/`<button>` inside an item. Ship it as an
-  // un-encapsulated (global, class-scoped) rule so the link fills the padded item
-  // box and inherits its color — the whole row navigates, like Bootstrap. The
-  // `--bs-dropdown-item-padding-*` tokens inherit out of the menu's shadow through
-  // the flat tree (fallbacks cover standalone use).
-  encapsulation: ViewEncapsulation.None,
-  styles: [`
-    .dropdown-item > a,
-    .dropdown-item > button {
-      display: block;
-      width: auto;
-      margin: calc(-1 * var(--bs-dropdown-item-padding-y, 0.25rem)) calc(-1 * var(--bs-dropdown-item-padding-x, 1rem));
-      padding: var(--bs-dropdown-item-padding-y, 0.25rem) var(--bs-dropdown-item-padding-x, 1rem);
-      color: inherit;
-      text-decoration: none;
-      text-align: inherit;
-      background: none;
-      border: 0;
-      font: inherit;
-    }
-    /* Active route (routerLinkActive classes the ANCHOR, which ::slotted can't
-       reach) — stock .dropdown-item.active look; the negative-margin fill above
-       makes the anchor paint the FULL item row. */
-    .dropdown-item > a.active,
-    .dropdown-item > button.active {
-      color: var(--bs-dropdown-link-active-color, #fff);
-      background-color: var(--bs-dropdown-link-active-bg, var(--bs-primary));
-    }
-  `],
 })
 export class BsDropdownMenuComponent {
   /** Pixel cap on the menu height; scrolls beyond. */
   readonly maxHeight = input<number>();
-  /** Id of an external label, set as `aria-labelledby` on the WC's list. */
 
-  /** Fires when an enabled item is activated (re-emits the WC's `select`). */
+  /** Fires when an enabled item is activated. */
   readonly select = output<DropdownSelectEventDetail>();
 
-  /** `max-height` attribute is numeric-or-absent; derive once via a signal. */
-  protected readonly maxHeightAttr = computed(() => {
+  private readonly menu = viewChild.required<ElementRef<HTMLElement>>('menu');
+  private readonly hydrated = signal(false);
+
+  protected readonly bag = computed(() => connectDropdownMenu({ hydrated: this.hydrated() }));
+  protected readonly maxHeightCss = computed(() => {
     const value = this.maxHeight();
-    return value === undefined ? null : `${value}`;
+    return value === undefined ? null : `${value}px`;
   });
 
-
-  protected onSelect(event: Event) {
-    // The WC's `select` is a general-purpose DOM event (bubbles + composed).
-    // The public Angular API is this typed `output()`, so consume the raw
-    // event here. Without `stopPropagation` it keeps bubbling to the consumer's
-    // `<bs-dropdown-menu>` host, where their `(select)` binding fires a
-    // SECOND time with the raw `CustomEvent` (Angular doesn't unwrap `.detail`).
-    event.stopPropagation();
-    this.select.emit((event as CustomEvent<DropdownSelectEventDetail>).detail);
-  }
-
   constructor() {
+    useScopedStyles(DROPDOWN_MENU_SCOPE, dropdownMenuScopedStyles);
+    const destroyRef = inject(DestroyRef);
     afterNextRender(() => {
-      // Side-effect import registers <mp-dropdown-menu> and friends; client-only
-      // so SSR stays a bare tag for DSD injection.
-      import('@mintplayer/web-components/dropdown-menu');
+      this.hydrated.set(true);
+      const dispose = attachDropdownMenu(this.menu().nativeElement, {
+        onSelect: (detail) => this.select.emit(detail),
+      });
+      destroyRef.onDestroy(dispose);
     });
   }
 }

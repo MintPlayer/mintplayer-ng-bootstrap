@@ -6,13 +6,7 @@ import { BsHierarchyChartComponent } from '@mintplayer/ng-bootstrap/charts/hiera
 import { BsTrendChartComponent } from '@mintplayer/ng-bootstrap/charts/trend';
 import { BsDatatableComponent } from '@mintplayer/ng-bootstrap/datatable';
 import { BsDockManagerComponent } from '@mintplayer/ng-bootstrap/dock';
-import { BsDropdownMenuComponent } from '@mintplayer/ng-bootstrap/dropdown-menu';
 import { BsFileManagerComponent } from '@mintplayer/ng-bootstrap/file-manager';
-import {
-  BsNavbarComponent,
-  BsNavbarDropdownComponent,
-  BsNavbarDropdownLabelDirective,
-} from '@mintplayer/ng-bootstrap/navbar';
 import { BsFormComponent } from '@mintplayer/ng-bootstrap/form';
 import { BsQueryBuilderComponent } from '@mintplayer/ng-bootstrap/query-builder';
 import { BsSchedulerComponent } from '@mintplayer/ng-bootstrap/scheduler';
@@ -126,19 +120,7 @@ const WRAPPERS: WrapperCase[] = [
   { selector: 'bs-trend-chart', tag: 'mp-trend-chart', component: BsTrendChartComponent },
   { selector: 'bs-datatable', tag: 'mp-datatable', component: BsDatatableComponent },
   { selector: 'bs-dock-manager', tag: 'mint-dock-manager', component: BsDockManagerComponent },
-  { selector: 'bs-dropdown-menu', tag: 'mp-dropdown-menu', component: BsDropdownMenuComponent },
   { selector: 'bs-file-manager', tag: 'mp-file-manager', component: BsFileManagerComponent },
-  { selector: 'bs-navbar', tag: 'mp-navbar', component: BsNavbarComponent },
-  {
-    selector: 'bs-navbar-dropdown',
-    tag: 'mp-navbar-dropdown',
-    component: BsNavbarDropdownComponent,
-    // contentChild.required(BsNavbarDropdownLabelDirective) — NG0951 without it.
-    // Must be an <ng-template>: the directive injects TemplateRef (the wrapper
-    // renders it through ngTemplateOutlet), so on a plain element it fails NG0201.
-    content: '<ng-template bsNavbarDropdownLabel>label</ng-template>',
-    needs: [BsNavbarDropdownLabelDirective],
-  },
   { selector: 'bs-query-builder', tag: 'mp-query-builder', component: BsQueryBuilderComponent },
   { selector: 'bs-scheduler', tag: 'mp-scheduler', component: BsSchedulerComponent },
   { selector: 'bs-phone-input', tag: 'mp-phone-input', component: BsPhoneInputComponent },

@@ -27,19 +27,20 @@ describe('BsNavbarItemComponent', () => {
       fixture.detectChanges();
     });
 
-    it('wraps its link in an mp-navbar-item', () => {
-      expect(host().querySelector('mp-navbar-item > a')?.textContent).toBe('Home');
+    it('is a scoped nav-item around its link', () => {
+      expect(host().classList).toContain('nav-item');
+      expect(host().classList).not.toContain('dropdown-item');
+      expect(host().getAttribute('data-mps')).toBe('navbar');
+      expect(host().querySelector(':scope > a')?.textContent).toBe('Home');
     });
 
-    it('bridges active and disabled to presence attributes, and marks the current page', () => {
-      const item = host().querySelector('mp-navbar-item') as HTMLElement;
-      expect(item.hasAttribute('active')).toBe(false);
-      expect(item.hasAttribute('aria-current')).toBe(false);
+    it('marks the current page and the disabled state', () => {
+      expect(host().hasAttribute('aria-current')).toBe(false);
       set(true, true);
-      expect(item.getAttribute('active')).toBe('');
-      expect(item.getAttribute('disabled')).toBe('');
-      expect(item.getAttribute('aria-current')).toBe('page');
-      expect(host().classList).not.toContain('dropdown-item');
+      expect(host().classList).toContain('active');
+      expect(host().classList).toContain('disabled');
+      expect(host().getAttribute('aria-current')).toBe('page');
+      expect(host().getAttribute('aria-disabled')).toBe('true');
     });
   });
 
@@ -50,10 +51,10 @@ describe('BsNavbarItemComponent', () => {
       fixture.detectChanges();
     });
 
-    it('renders its link bare, as a dropdown item', () => {
-      expect(host().querySelector('mp-navbar-item')).toBeNull();
-      expect(host().querySelector('a')?.textContent).toBe('Home');
+    it('is a dropdown item around its link', () => {
       expect(host().classList).toContain('dropdown-item');
+      expect(host().classList).not.toContain('nav-item');
+      expect(host().querySelector(':scope > a')?.textContent).toBe('Home');
     });
 
     it('uses Bootstrap item classes and ARIA on itself for active and disabled', () => {
@@ -61,7 +62,7 @@ describe('BsNavbarItemComponent', () => {
       expect(host().classList).toContain('active');
       expect(host().classList).toContain('disabled');
       expect(host().getAttribute('aria-disabled')).toBe('true');
-      expect(host().getAttribute('aria-current')).toBe('page');
+      expect(host().getAttribute('aria-current')).toBe('true');
       set(false, false);
       expect(host().hasAttribute('aria-disabled')).toBe(false);
       expect(host().hasAttribute('aria-current')).toBe(false);

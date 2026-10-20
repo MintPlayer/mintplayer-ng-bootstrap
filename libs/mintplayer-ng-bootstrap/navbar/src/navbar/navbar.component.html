@@ -1,3 +1,20 @@
-<mp-navbar bsForwardAria [attr.breakpoint]="breakpoint()" [attr.color]="colorAttr()" [attr.expanded]="expandedAttr()" [attr.positioning]="positioningAttr()" (expandedchange)="onExpandedchange($event)">
-    <ng-content></ng-content>
-</mp-navbar>
+@if (brand(); as brand) {
+    <div [mpProps]="brandBag">
+        <ng-container [ngTemplateOutlet]="brand.templateRef"></ng-container>
+    </div>
+}
+<input [mpProps]="view().toggle" [checked]="isExpanded()" />
+<label [mpProps]="view().toggler">
+    @if (toggler(); as toggler) {
+        <ng-container [ngTemplateOutlet]="toggler.templateRef"></ng-container>
+    } @else {
+        <span [mpProps]="view().bar"></span>
+        <span [mpProps]="view().bar"></span>
+        <span [mpProps]="view().bar"></span>
+    }
+</label>
+<div [mpProps]="view().collapse">
+    <div [mpProps]="view().inner">
+        <ng-content></ng-content>
+    </div>
+</div>

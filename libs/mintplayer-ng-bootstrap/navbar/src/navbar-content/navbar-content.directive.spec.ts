@@ -50,7 +50,7 @@ describe('BsNavbarContentDirective', () => {
     fixture.detectChanges();
     await fixture.whenStable();
     const main = fixture.nativeElement.querySelector('main') as HTMLElement;
-    const [observer] = FakeResizeObserver.instances.filter((o) => o.observed.some((el) => el.tagName === 'MP-NAVBAR'));
+    const [observer] = FakeResizeObserver.instances.filter((o) => o.observed.some((el) => el.tagName === 'BS-NAVBAR'));
     expect(observer).toBeDefined();
     // removed before measuring, so it is not counted twice
     expect(main.style.paddingTop).toBe('');
@@ -63,7 +63,7 @@ describe('BsNavbarContentDirective', () => {
     const fixture = TestBed.createComponent(HostComponent);
     fixture.detectChanges();
     await fixture.whenStable();
-    const [observer] = FakeResizeObserver.instances.filter((o) => o.observed.some((el) => el.tagName === 'MP-NAVBAR'));
+    const [observer] = FakeResizeObserver.instances.filter((o) => o.observed.some((el) => el.tagName === 'BS-NAVBAR'));
     fixture.destroy();
     expect(observer.disconnected).toBe(true);
   });

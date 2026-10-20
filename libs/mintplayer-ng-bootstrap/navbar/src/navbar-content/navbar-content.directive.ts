@@ -13,7 +13,7 @@ import { BsNavbarComponent } from '../navbar/navbar.component';
  * resize it) and sets `padding-top` = the element's own initial padding + the
  * bar height. On the server — where the bar can't be measured — a fixed 58px
  * approximation is serialized into the HTML so SSR/no-JS pages still clear the
- * bar (same contract as the pre-WC directive).
+ * bar.
  */
 @Directive({
   selector: '[bsNavbarContent]',
@@ -35,18 +35,14 @@ export class BsNavbarContentDirective implements OnDestroy {
       return;
     }
     afterNextRender(() => {
-      // The measurable bar is the WC inside the wrapper host (the host itself
-      // is inline and reports no height for a fixed child).
-      const bar = this.navbar().elementRef.nativeElement.querySelector('mp-navbar');
-      if (!bar) return;
+      // The bs-navbar host is the .navbar itself.
+      const bar = this.navbar().elementRef.nativeElement;
       // Hydration reuses the SSR element, so the 58px approximation this
       // directive wrote server-side is still inline here. Remove it BEFORE
       // measuring, or the author's baseline would double-count it.
       this.#renderer.removeStyle(this.#element, 'padding-top');
       const initial = parseFloat(getComputedStyle(this.#element).paddingTop) || 0;
-      this.#observer = new ResizeObserver(() =>
-        this.#setPadding(initial + (bar as HTMLElement).offsetHeight),
-      );
+      this.#observer = new ResizeObserver(() => this.#setPadding(initial + bar.offsetHeight));
       this.#observer.observe(bar);
     });
   }

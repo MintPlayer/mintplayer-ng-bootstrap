@@ -1,0 +1,246 @@
+// The navbar's stylesheet, shared by the fronts (PRD #437 wave B). The page's
+// Bootstrap supplies `.navbar`, `.navbar-expand-<bp>`, `.navbar-brand`,
+// `.navbar-nav`, `.nav-link`, `.dropdown-toggle`, `.dropdown-menu`, the
+// `bg-*` utilities and `.fixed-top`; these rules add what Bootstrap does with
+// its collapse plugin: the no-JS checkbox collapse, the animated hamburger and
+// the native-details dropdowns. Ported from the former mp-navbar shadow sheets;
+// `:host([breakpoint])` is now the stamped root's `data-breakpoint`, and the
+// `data-js` gates are gone because the checkbox and `<details>` work the same
+// with and without JavaScript.
+@import "node_modules/bootstrap/scss/functions";
+@import "node_modules/bootstrap/scss/variables";
+@import "node_modules/bootstrap/scss/mixins/breakpoints";
+
+// --- toggle: a visually hidden but focusable checkbox holds the open state ---
+.navbar-toggle {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+// --- toggler: the animated hamburger, painted from the theme-aware token ---
+// A consumer glyph (the toggler content slot) must not be interactive, or the
+// label's click forwarding to the checkbox dies. It reads the open state from
+// `--mp-navbar-expanded: 0|1`, which inherits into it.
+.navbar-toggler {
+  padding: 0.75rem 1rem;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  --mp-navbar-expanded: 0;
+}
+.navbar-toggler-bar {
+  display: block;
+  width: 25px;
+  height: 2px;
+  margin: 6px 0;
+  background-color: var(--bs-navbar-color, currentColor);
+  transition: 0.4s;
+}
+// Rotate FIRST, so each translate runs in its bar's rotated space (that is why
+// the vectors look asymmetric; reordering misaligns the X).
+.navbar-toggle:checked ~ .navbar-toggler {
+  --mp-navbar-expanded: 1;
+  .navbar-toggler-bar:nth-child(1) { transform: rotate(-45deg) translate(-7px, 5px); }
+  .navbar-toggler-bar:nth-child(2) { opacity: 0; }
+  .navbar-toggler-bar:nth-child(3) { transform: rotate(45deg) translate(-6px, -4px); }
+}
+// Focus sits on the 1px checkbox, so ring the visible label instead.
+.navbar-toggle:focus-visible ~ .navbar-toggler {
+  border-radius: var(--bs-navbar-toggler-border-radius, 0.375rem);
+  box-shadow: 0 0 0 var(--bs-navbar-toggler-focus-width, 0.25rem);
+}
+
+// --- collapse: grid-template-rows 0fr <-> 1fr slides (height: auto cannot) ---
+// `visibility` rides the same transition so the collapsed links leave the tab
+// order and the accessibility tree only after the slide-shut finishes; the
+// open rule resets the delay so they are focusable at once.
+.navbar-collapse {
+  display: grid;
+  grid-template-rows: 1fr;
+  transition: grid-template-rows 0.35s ease, visibility 0s var(--mp-collapse-hide-delay, 0s);
+  overflow: hidden;
+}
+.navbar-collapse-inner {
+  min-height: 0;
+}
+
+// A front that must keep a host element around a node of the bar (Angular's
+// `bs-navbar-dropdown` around its `<details>`) takes it out of the layout, so
+// the flex and Bootstrap child rules see the real node.
+.navbar-contents {
+  display: contents;
+}
+
+// The summary keeps its native disclosure semantics; only the marker goes.
+summary.dropdown-toggle {
+  list-style: none;
+  cursor: pointer;
+  user-select: none;
+}
+summary.dropdown-toggle::-webkit-details-marker {
+  display: none;
+}
+// Narrow, `.navbar-nav` zeroes the link padding; keep the trigger aligned with
+// the links next to it, which use the navbar's own padding token.
+.nav-link {
+  padding-inline: var(--bs-navbar-nav-link-padding-x);
+}
+// A submenu trigger is a dropdown item with a caret pointing at its panel.
+.dropdown-submenu > summary.dropdown-toggle {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.dropdown-submenu > summary.dropdown-toggle::after {
+  margin-inline-start: 0.5rem;
+  border-top: 0.3em solid transparent;
+  border-bottom: 0.3em solid transparent;
+  border-inline-start: 0.3em solid;
+  border-inline-end: 0;
+}
+
+// The panel is the dropdown-menu front's node (its own scope), and the items in
+// it and the links in the nav are consumer DOM: these rules anchor on the
+// stamped navbar node above them and ship verbatim.
+/*! @mps-global */
+.nav-item.dropdown[data-mps=navbar] > .dropdown-menu {
+  margin: 0 1rem;
+}
+/*! @mps-global */
+.dropdown-submenu[data-mps=navbar] > .dropdown-menu {
+  margin: 0 0.5rem;
+}
+
+/*! @mps-global */
+.nav-item[data-mps=navbar] > a,
+.nav-item[data-mps=navbar] > button {
+  display: block;
+  padding: var(--bs-nav-link-padding-y) var(--bs-navbar-nav-link-padding-x);
+  font-size: var(--bs-nav-link-font-size);
+  font-weight: var(--bs-nav-link-font-weight);
+  color: var(--bs-nav-link-color);
+  text-decoration: none;
+  white-space: nowrap;
+  background: none;
+  border: 0;
+  transition: color 0.15s ease-in-out;
+}
+/*! @mps-global */
+.nav-item[data-mps=navbar] > a:hover,
+.nav-item[data-mps=navbar] > a:focus-visible,
+.nav-item[data-mps=navbar] > button:hover,
+.nav-item[data-mps=navbar] > button:focus-visible {
+  color: var(--bs-nav-link-hover-color);
+}
+// Two channels for the active state: the item's `active` input, and the
+// `active` class a router integration (routerLinkActive) writes on the link.
+/*! @mps-global */
+.nav-item.active[data-mps=navbar] > a,
+.nav-item.active[data-mps=navbar] > button,
+.nav-item[data-mps=navbar] > a.active,
+.nav-item[data-mps=navbar] > button.active {
+  color: var(--bs-navbar-active-color);
+}
+/*! @mps-global */
+.nav-item.disabled[data-mps=navbar] > a,
+.nav-item.disabled[data-mps=navbar] > button {
+  color: var(--bs-nav-link-disabled-color);
+  pointer-events: none;
+}
+/*! @mps-global */
+.navbar-brand[data-mps=navbar] > a {
+  color: inherit;
+  text-decoration: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .navbar-collapse,
+  .navbar-toggler-bar {
+    transition: none;
+  }
+}
+
+// --- per breakpoint ---
+// Wide: Bootstrap's .navbar-expand-<bp> lays the bar out and hides the label;
+// these hide the checkbox, lift the grid and float the panels.
+@mixin wide($bp) {
+  .navbar[data-breakpoint=#{$bp}] {
+    .navbar-toggle { display: none; }
+    .navbar-collapse { grid-template-rows: none; overflow: visible; transition: none; }
+    .navbar-collapse-inner { display: contents; }
+    .nav-end { margin-inline-start: auto; }
+    .nav-item.dropdown,
+    .dropdown-submenu { position: relative; }
+  }
+  /*! @mps-global */
+  .navbar[data-mps=navbar][data-breakpoint=#{$bp}] .nav-item.dropdown[data-mps=navbar] > .dropdown-menu {
+    position: absolute;
+    top: 100%;
+    inset-inline-start: 0;
+    z-index: 1000;
+    margin: 0;
+    max-height: none;
+    overflow: visible;
+  }
+  /*! @mps-global */
+  .navbar[data-mps=navbar][data-breakpoint=#{$bp}] .dropdown-submenu[data-mps=navbar] > .dropdown-menu {
+    position: absolute;
+    top: calc(-1 * var(--bs-dropdown-padding-y) - var(--bs-dropdown-border-width));
+    inset-inline-start: 100%;
+    z-index: 1000;
+    margin: 0;
+    max-height: none;
+    overflow: visible;
+  }
+  // Set by the attachment when the submenu would run off the viewport's end.
+  /*! @mps-global */
+  .navbar[data-mps=navbar][data-breakpoint=#{$bp}] .dropdown-submenu[data-flip][data-mps=navbar] > .dropdown-menu {
+    inset-inline-start: auto;
+    inset-inline-end: 100%;
+  }
+}
+
+// Narrow: collapsed until the checkbox opens it. A fixed bar whose open menu
+// is taller than the viewport scrolls inside itself.
+@mixin narrow($bp) {
+  .navbar[data-breakpoint=#{$bp}] {
+    .navbar-collapse {
+      grid-template-rows: 0fr;
+      visibility: hidden;
+      --mp-collapse-hide-delay: 0.35s;
+    }
+    .navbar-brand { margin-inline: auto; }
+  }
+  .navbar.fixed-top[data-breakpoint=#{$bp}] {
+    max-height: 100dvh;
+    overflow: hidden auto;
+    scrollbar-width: none;
+  }
+}
+
+@include wide(xs);
+@each $name, $min in $grid-breakpoints {
+  @if $min and $min > 0 {
+    @include media-breakpoint-up($name, $grid-breakpoints) {
+      @include wide($name);
+    }
+    @include media-breakpoint-down($name, $grid-breakpoints) {
+      @include narrow($name);
+    }
+  }
+}
+
+// Open. More specific than the narrow rule, so no !important is needed, and it
+// resets the hide delay so the revealed links are focusable at once.
+.navbar .navbar-toggle:checked ~ .navbar-collapse {
+  grid-template-rows: 1fr;
+  visibility: visible;
+  --mp-collapse-hide-delay: 0s;
+}
