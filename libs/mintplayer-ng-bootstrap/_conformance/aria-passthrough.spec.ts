@@ -16,7 +16,6 @@ import {
   BsNavbarDropdownLabelDirective,
 } from '@mintplayer/ng-bootstrap/navbar';
 import { BsFormComponent } from '@mintplayer/ng-bootstrap/form';
-import { BsPaginationComponent } from '@mintplayer/ng-bootstrap/pagination';
 import { BsQueryBuilderComponent } from '@mintplayer/ng-bootstrap/query-builder';
 import { BsSchedulerComponent } from '@mintplayer/ng-bootstrap/scheduler';
 import { BsPhoneInputComponent } from '@mintplayer/ng-bootstrap/phone-input';
@@ -145,7 +144,6 @@ const WRAPPERS: WrapperCase[] = [
     content: '<ng-template bsNavbarDropdownLabel>label</ng-template>',
     needs: [BsNavbarDropdownLabelDirective],
   },
-  { selector: 'bs-pagination', tag: 'mp-pagination', component: BsPaginationComponent },
   { selector: 'bs-query-builder', tag: 'mp-query-builder', component: BsQueryBuilderComponent },
   { selector: 'bs-scheduler', tag: 'mp-scheduler', component: BsSchedulerComponent },
   { selector: 'bs-phone-input', tag: 'mp-phone-input', component: BsPhoneInputComponent },

@@ -82,7 +82,7 @@ Each component milestone is the same checklist, done for every component in the 
 - [x] checkbox / switch (no machine; the native input is the state): ids, classes and the ARIA bag live in `ui-core/checkbox`. `BsControlValidityDirective` exposes signals the front renders, and the error node is `.invalid-feedback d-block`. The Lit `mp-checkbox` stays a shadow WC until datatable converts (M5), because `mp-datatable` renders it in its shadow root
 - [x] toggle-button (new Angular front): `bs-toggle-button` is a second selector of `BsCheckboxComponent` with the type fixed, so there is one code path, not a duplicate component. React and Vue compose `BsCheckbox`, and Lit `mp-toggle-button` is light DOM on `connectCheckbox`
 - [x] radio + radio-group
-- [ ] pagination (+ `hrefFor`)
+- [x] pagination (+ `hrefFor`)
 - [ ] shell
 - [ ] accordion (+ tab)
 - [ ] tab-control (+ page); delete `isServerSide`

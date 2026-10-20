@@ -66,6 +66,7 @@ describe('Vue wrapper attribute passthrough — the invariant, statically', () =
     const FILTERED_FORWARDING = [
       '../checkbox/src/BsCheckbox.vue',
       '../radio/src/BsRadio.vue',
+      '../pagination/src/BsPagination.vue',
       '../radio-group/src/BsRadioGroup.vue',
       '../typeahead/src/BsTypeahead.vue',
     ];
@@ -116,7 +117,7 @@ const TARGETS: Record<string, string> = {
   BsNavbarDropdown: 'mp-navbar-dropdown',
   BsNavbarItem: 'mp-navbar-item',
   BsOtpInput: 'mp-otp-input',
-  BsPagination: 'mp-pagination',
+  BsPagination: 'nav',
   BsPhoneInput: 'mp-phone-input',
   BsQueryBuilder: 'mp-query-builder',
   BsRadio: 'input[type=radio]',

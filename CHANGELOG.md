@@ -74,6 +74,18 @@ package version aligns its major with the supported Angular major.
   - `<mp-radio>` / `<mp-radio-group>` (Lit) render in the light DOM. The group is no longer form-associated: the
     checked native input submits itself. The custom roving tabindex and arrow handling are gone in favour of the
     native set. The `checked` attribute is the initial state only; the `checked` property reads the input.
+- **Pagination renders Bootstrap's `.pagination` markup in every front (issue #437, wave A).** Each front renders
+  `<nav aria-label><ul class="pagination"><li class="page-item"><button class="page-link">` itself, from
+  `@mintplayer/ui-core/pagination` (`connectPagination`, `buildPaginationLayout`, `previousPage`, `nextPage`), so
+  Angular SSR emits the real control. A new `hrefFor(page)` renders every page as a link that works with JS off
+  (a plain click still selects in place), and `labels` localizes the accessible names (default English).
+  - Angular: no `<mp-pagination>` inside `bs-pagination`; `aria-*` / `id` / `tabindex` land on the `<nav>`.
+    New `[labels]` and `[hrefFor]` inputs.
+  - React: `BsPagination` is a plain component. `onMpPaginationPageChange(event)` is replaced by
+    `onPageChange(page)`; `defaultSelectedPageNumber` makes it uncontrolled. The ref is the `<nav>`.
+  - Vue: `pageNumbers`, `numberOfBoxes`, `showArrows`, `size`, `labels` and `hrefFor` are declared props;
+    attributes land on the `<nav>`.
+  - `<mp-pagination>` (Lit) is unchanged and keeps its shadow root until `mp-datatable` converts.
 
 - **Typeahead rebuilt on a headless core (issue #436).** `@mintplayer/ng-bootstrap` 22.26.0,
   `@mintplayer/web-components` 2.21.0, `@mintplayer/react-bootstrap` 19.25.0, `@mintplayer/vue-bootstrap` 3.26.0,
