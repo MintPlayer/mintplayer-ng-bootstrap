@@ -2,6 +2,7 @@ import { LitElement, nothing, type TemplateResult } from 'lit';
 import { installLightStyles, scopedHtml, stampScope } from '@mintplayer/web-components/light-dom';
 import { repeat } from 'lit/directives/repeat.js';
 import { OverlayController } from '@mintplayer/web-components/overlay';
+import { SupersedingRequest } from '@mintplayer/ui-core/async';
 
 /**
  * Tier L (emulated encapsulation) — no shadow root, so the consumer templates
@@ -140,8 +141,12 @@ export class MpTreeSelect extends LitElement {
   private readonly _indeterminate = new Set<string>();
 
   // ---- infrastructure ----------------------------------------------------
-  private _abort?: AbortController;
-  private _debounceTimer = 0;
+  /**
+   * One request lifecycle for roots, search and load-more: the newest call
+   * aborts the previous one and a late answer never lands. Shared with the
+   * typeahead and the datatable (`@mintplayer/ui-core/async`, #436 D4).
+   */
+  private _runner = this.createRunner(200);
   private readonly overlay = new OverlayController(this, {
     anchor: () => this.renderRoot.querySelector<HTMLElement>('.ts-anchor'),
     panel: () => this.renderRoot.querySelector<HTMLElement>('.ts-panel'),
@@ -257,7 +262,22 @@ export class MpTreeSelect extends LitElement {
     return this._searchDebounceMs;
   }
   set searchDebounceMs(value: number) {
-    this._searchDebounceMs = Math.max(0, Number(value) || 0);
+    const ms = Math.max(0, Number(value) || 0);
+    if (ms === this._searchDebounceMs) return;
+    this._searchDebounceMs = ms;
+    this._runner.dispose();
+    this._runner = this.createRunner(ms);
+  }
+
+  private createRunner(debounceMs: number): SupersedingRequest {
+    return new SupersedingRequest({
+      debounceMs,
+      onError: (error) => {
+        this._loading = false;
+        this.dispatchEvent(new CustomEvent('load-error', { detail: { error }, bubbles: true, composed: true }));
+        this.requestUpdate();
+      },
+    });
   }
 
   override attributeChangedCallback(name: string, oldValue: string | null, newValue: string | null): void {
@@ -347,8 +367,7 @@ export class MpTreeSelect extends LitElement {
 
   override disconnectedCallback(): void {
     super.disconnectedCallback();
-    this._abort?.abort();
-    if (this._debounceTimer) clearTimeout(this._debounceTimer);
+    this._runner.cancel();
   }
 
   // ---- index helpers -----------------------------------------------------
@@ -392,11 +411,14 @@ export class MpTreeSelect extends LitElement {
     this.requestUpdate();
   }
 
-  private async runSearch(append: boolean): Promise<void> {
+  private async runSearch(append: boolean, debounced = false): Promise<void> {
     if (!this._provider) return;
     const query = this._query;
     const offset = append ? (this._searchResults?.length ?? 0) : 0;
-    const page = await this.runRequest((signal) => this._provider!.search(query, { offset, signal }));
+    const page = await this.runRequest((signal) => this._provider!.search(query, { offset, signal }), {
+      debounced,
+      onStart: () => this.dispatchSearchEvent(),
+    });
     if (!page) return;
     this._searchResults = append ? [...(this._searchResults ?? []), ...page.nodes] : page.nodes;
     if (!append) {
@@ -408,28 +430,33 @@ export class MpTreeSelect extends LitElement {
     this.requestUpdate();
   }
 
-  /** Run a provider call with abort + loading bookkeeping. Returns null on abort/error. */
-  private async runRequest(call: (signal: AbortSignal) => Promise<NodePage>): Promise<NodePage | null> {
-    this._abort?.abort();
-    const controller = new AbortController();
-    this._abort = controller;
+  /**
+   * Run a provider call through the shared runner with loading bookkeeping.
+   * Returns null on abort or error (the runner has already dispatched
+   * `load-error` for an error). `debounced` waits out `searchDebounceMs`;
+   * `onStart` fires when the call actually begins (after the wait).
+   */
+  private async runRequest(
+    call: (signal: AbortSignal) => Promise<NodePage>,
+    options: { debounced?: boolean; onStart?: () => void } = {},
+  ): Promise<NodePage | null> {
     this._loading = true;
     this.requestUpdate();
-    try {
-      const page = await call(controller.signal);
-      if (controller.signal.aborted) return null;
-      this._loading = false;
-      this.requestUpdate();
-      return page;
-    } catch (err) {
-      if (controller.signal.aborted || (err as Error)?.name === 'AbortError') return null;
-      this._loading = false;
-      this.dispatchEvent(
-        new CustomEvent('load-error', { detail: { error: err }, bubbles: true, composed: true }),
-      );
-      this.requestUpdate();
-      return null;
-    }
+    const result = await this._runner.run(
+      ({ signal }) => {
+        options.onStart?.();
+        return call(signal);
+      },
+      { debounceMs: options.debounced ? undefined : 0 },
+    );
+    if (result.aborted) return null;
+    this._loading = false;
+    this.requestUpdate();
+    return result.value;
+  }
+
+  private dispatchSearchEvent(): void {
+    this.dispatchEvent(new CustomEvent('search', { detail: { query: this._query }, bubbles: true, composed: true }));
   }
 
   /** Lazy children loader wired into the embedded `mp-treeview`. */
@@ -472,24 +499,21 @@ export class MpTreeSelect extends LitElement {
   private onSearchInput(ev: Event): void {
     this._query = (ev.target as HTMLInputElement).value;
     if (!this.overlay.isOpen) void this.open();
-    if (this._debounceTimer) clearTimeout(this._debounceTimer);
-    const run = () => {
-      if (this._query.trim()) {
-        void this.runSearch(false);
-      } else {
-        this._abort?.abort();
+    if (this._query.trim()) {
+      void this.runSearch(false, true);
+      return;
+    }
+    // A blank query, after the same quiet time: drop any in-flight search and
+    // restore the browse tree (search may have overwritten its index).
+    void this._runner
+      .run(async () => {
         this._searchResults = null;
         this._loading = false;
-        // Restore the browse-tree index (search may have overwritten it).
         this.reindexActive();
         this.requestUpdate();
-      }
-      this.dispatchEvent(
-        new CustomEvent('search', { detail: { query: this._query }, bubbles: true, composed: true }),
-      );
-    };
-    if (this._searchDebounceMs > 0) this._debounceTimer = window.setTimeout(run, this._searchDebounceMs);
-    else run();
+        this.dispatchSearchEvent();
+      })
+      .then(() => undefined);
   }
 
   // ---- open / close ------------------------------------------------------
@@ -507,7 +531,7 @@ export class MpTreeSelect extends LitElement {
   private onPanelClosed(): void {
     // Reset search so reopening shows a fresh browse tree, not stale results.
     if (this._query || this._searchResults) {
-      this._abort?.abort();
+      this._runner.cancel();
       this._query = '';
       this._searchResults = null;
       this._loading = false;

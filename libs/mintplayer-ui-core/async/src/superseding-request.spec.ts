@@ -77,6 +77,16 @@ describe('SupersedingRequest', () => {
     expect(calls).toEqual(['kru']);
   });
 
+  it('a per-call debounce override of 0 runs immediately and still supersedes a waiting call', async () => {
+    vi.useFakeTimers();
+    const runner = new SupersedingRequest({ debounceMs: 200 });
+    const waiting = runner.run(async () => 'debounced');
+    const immediate = runner.run(async () => 'now', { debounceMs: 0 });
+    expect(await immediate).toEqual({ value: 'now', aborted: false });
+    vi.advanceTimersByTime(200);
+    expect(await waiting).toEqual({ value: null, aborted: true });
+  });
+
   it('cancel aborts an in-flight call and clears a waiting one', async () => {
     vi.useFakeTimers();
     const runner = new SupersedingRequest({ debounceMs: 50 });

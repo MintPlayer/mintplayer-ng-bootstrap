@@ -60,16 +60,17 @@ export class SupersedingRequest {
    * Schedule `call`. Any waiting or in-flight call is cancelled first. Resolves
    * when this call settles, or with `aborted: true` as soon as it is superseded.
    */
-  run<R>(call: (request: AbortableRequest) => Promise<R>): Promise<RunResult<R>> {
+  run<R>(call: (request: AbortableRequest) => Promise<R>, options: { debounceMs?: number } = {}): Promise<RunResult<R>> {
     if (this.#disposed) return Promise.resolve({ value: null, aborted: true });
     this.cancel();
-    if (this.#debounceMs === 0) return this.#start(call);
+    const debounceMs = Math.max(0, options.debounceMs ?? this.#debounceMs);
+    if (debounceMs === 0) return this.#start(call);
     return new Promise<RunResult<R>>((resolve) => {
       const timer = this.#timers.setTimeout(() => {
         if (this.#timer === timer) this.#timer = null;
         this.#onTimerCleared.delete(timer);
         void this.#start(call).then(resolve);
-      }, this.#debounceMs);
+      }, debounceMs);
       this.#timer = timer;
       // A later `run`/`cancel` clears the timer; settle this promise as aborted then.
       this.#onTimerCleared.set(timer, () => resolve({ value: null, aborted: true }));
