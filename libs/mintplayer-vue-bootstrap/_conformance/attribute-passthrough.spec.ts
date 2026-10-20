@@ -60,7 +60,11 @@ describe('Vue wrapper attribute passthrough — the invariant, statically', () =
   });
 
   it('every inheritAttrs:false wrapper re-binds v-bind="$attrs"', () => {
+    // Fronts of a headless core forward useAttrs() minus `role` (the core owns
+    // the role); behaviour/BsTypeahead.spec.ts pins the forwarding.
+    const FILTERED_FORWARDING = ['../typeahead/src/BsTypeahead.vue'];
     const offenders = Object.entries(SFC_SOURCES)
+      .filter(([path]) => !FILTERED_FORWARDING.includes(path))
       .filter(([, source]) => source.includes('inheritAttrs: false'))
       .filter(([, source]) => !source.includes('v-bind="$attrs"'))
       .map(([path]) => path);

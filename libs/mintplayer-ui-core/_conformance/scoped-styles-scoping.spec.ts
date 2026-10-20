@@ -45,7 +45,8 @@ describe.each(SHEETS)('scoped sheet "$scope"', ({ scope, css }) => {
     const hostTag = `mp-${scope}`;
     const offenders = rules
       .flatMap((rule) => compoundsOf(rule.selectorText).map((compound) => ({ compound, selector: rule.selectorText })))
-      .filter(({ compound }) => !compound.includes(marker) && compound !== hostTag)
+      // The CSSOM re-serializes the attribute value quoted: [data-mps="typeahead"].
+      .filter(({ compound }) => !compound.replace(/"/g, '').includes(marker) && compound !== hostTag)
       .map(({ selector }) => selector);
     expect([...new Set(offenders)]).toEqual([]);
   });

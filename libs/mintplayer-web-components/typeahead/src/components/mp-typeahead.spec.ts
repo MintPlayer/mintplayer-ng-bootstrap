@@ -24,9 +24,11 @@ const settle = async (el: MpTypeahead<Item>) => {
   await el.updateComplete;
 };
 
-function mount(attrs = '') {
+async function mount(attrs = '') {
   document.body.innerHTML = `<mp-typeahead ${attrs}></mp-typeahead>`;
-  return document.querySelector('mp-typeahead') as unknown as MpTypeahead<Item>;
+  const el = document.querySelector('mp-typeahead') as unknown as MpTypeahead<Item>;
+  await el.updateComplete;
+  return el;
 }
 
 function recordingProvider() {
@@ -60,7 +62,7 @@ afterEach(() => {
 
 describe('mp-typeahead', () => {
   it('renders in the light DOM with the combobox contract and the scope stamped', async () => {
-    const el = mount('input-label="Street"');
+    const el = await mount('input-label="Street"');
     await el.updateComplete;
     expect(el.shadowRoot).toBeNull();
     const input = el.querySelector('input')!;
@@ -74,14 +76,14 @@ describe('mp-typeahead', () => {
   });
 
   it('a host aria-label wins over input-label', async () => {
-    const el = mount('input-label="Street" aria-label="Straat"');
+    const el = await mount('input-label="Street" aria-label="Straat"');
     await el.updateComplete;
     expect(el.querySelector('input')!.getAttribute('aria-label')).toBe('Straat');
   });
 
   it('debounce-ms from the attribute; a superseded request is aborted and its late answer ignored', async () => {
     vi.useFakeTimers();
-    const el = mount('debounce-ms="100"');
+    const el = await mount('debounce-ms="100"');
     const { provider, calls, answers } = recordingProvider();
     el.provider = provider;
     type(el, 'k');
@@ -100,7 +102,7 @@ describe('mp-typeahead', () => {
   });
 
   it('itemRenderer receives the term; keyboard moves aria-activedescendant and Enter picks', async () => {
-    const el = mount('debounce-ms="0"');
+    const el = await mount('debounce-ms="0"');
     const { provider, answers } = recordingProvider();
     el.provider = provider;
     el.itemRenderer = (item, term) => {
@@ -136,7 +138,7 @@ describe('mp-typeahead', () => {
   });
 
   it('value is a property that never queries, and the form value is the term under name', async () => {
-    const el = mount('name="street" debounce-ms="0"');
+    const el = await mount('name="street" debounce-ms="0"');
     const { provider, calls } = recordingProvider();
     el.provider = provider;
     el.value = 'Molenstraat';
@@ -151,7 +153,7 @@ describe('mp-typeahead', () => {
   });
 
   it('disabled disables the input and closes the list', async () => {
-    const el = mount('debounce-ms="0"');
+    const el = await mount('debounce-ms="0"');
     el.provider = recordingProvider().provider;
     type(el, 'k');
     await el.updateComplete;
@@ -163,7 +165,7 @@ describe('mp-typeahead', () => {
   });
 
   it('error-text wires aria-errormessage and aria-describedby to the message node', async () => {
-    const el = mount('error-text="Pick a street"');
+    const el = await mount('error-text="Pick a street"');
     await el.updateComplete;
     const input = el.querySelector('input')!;
     const id = input.getAttribute('aria-errormessage')!;

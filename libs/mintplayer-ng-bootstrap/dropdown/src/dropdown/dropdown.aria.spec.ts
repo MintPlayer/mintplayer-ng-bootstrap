@@ -100,7 +100,8 @@ describe('Dropdown ARIA wiring', () => {
 
       const menu = queryMenu()!;
       const items = queryItems();
-      expect(menu.getAttribute('role')).toBe('menu');
+      // The role lives on the shadow <ul>; nothing writes one onto the host.
+      expect(menu.shadowRoot!.querySelector('ul')!.getAttribute('role')).toBe('menu');
       expect(items).toHaveLength(2);
       items.forEach(item => {
         expect(item.getAttribute('role')).toBe('menuitem');
