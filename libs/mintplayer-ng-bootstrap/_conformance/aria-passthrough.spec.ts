@@ -1,7 +1,6 @@
 import { Component, type Type } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 
-import { BsAccordionComponent } from '@mintplayer/ng-bootstrap/accordion';
 import { BsCarouselComponent } from '@mintplayer/ng-bootstrap/carousel';
 import { BsHierarchyChartComponent } from '@mintplayer/ng-bootstrap/charts/hierarchy';
 import { BsSparklineComponent } from '@mintplayer/ng-bootstrap/charts/sparkline';
@@ -123,7 +122,6 @@ interface WrapperCase {
  * silently fall behind.
  */
 const WRAPPERS: WrapperCase[] = [
-  { selector: 'bs-accordion', tag: 'mp-accordion', component: BsAccordionComponent },
   { selector: 'bs-carousel', tag: 'mp-carousel', component: BsCarouselComponent },
   { selector: 'bs-hierarchy-chart', tag: 'mp-hierarchy-chart', component: BsHierarchyChartComponent },
   { selector: 'bs-sparkline', tag: 'mp-sparkline', component: BsSparklineComponent },

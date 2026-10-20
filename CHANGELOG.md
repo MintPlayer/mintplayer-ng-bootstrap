@@ -105,6 +105,22 @@ breaking change is a major. (2.20.0 and 2.21.0 broke `^2.x` consumers in a minor
     `.topbar` with ordinary CSS. Also removed: the `mp-shell` Declarative-Shadow-DOM chrome
     (`injectMpShellDsd`, `@mintplayer/web-components/shell/ssr`) and the `codegen-shell-chrome` target.
 
+- **Accordion renders Bootstrap's accordion markup in every front (issue #437, wave A).** `bs-accordion` (Angular)
+  is the `.accordion` itself, `BsAccordion` (React/Vue) renders a `div.accordion`, and `mp-accordion` (Lit)
+  renders the same markup in its shadow root. Each row is a native `<details class="accordion-item">`, and the
+  ids, `name` group and ARIA come from `@mintplayer/ui-core/accordion`. The server HTML is a working accordion
+  with JS off. Single-open uses the `name` attribute, so no script or CSS state machine is involved.
+  - **React/Vue:** `onTabToggle` / `@tab-toggle` receives `AccordionTabToggle` (`{ index, active }`), not a
+    `CustomEvent` with `detail`. `AccordionTabToggleDetail` is replaced by `AccordionTabToggle`. The React ref
+    is the `.accordion` `HTMLDivElement`.
+  - **Lit:** the shadow ids and the group name changed (`acc-h<n>`, `acc-c<n>`, `acc-group`). The `tab-count`
+    attribute and the `data-js` marker are gone.
+  - **Theming:** set Bootstrap's `--bs-accordion-*` custom properties on `.accordion` with ordinary CSS.
+    Bootstrap re-declares them on every `.accordion`, so a nested accordion needs its own rule. The
+    `::part(header)`, `::part(button)` and `::part(content)` hooks are removed.
+  - **Removed:** the Declarative-Shadow-DOM chrome (`injectMpAccordionDsd`,
+    `@mintplayer/web-components/accordion/ssr`) and the `codegen-accordion-chrome` target.
+
 - **Tile manager rebuilt on a headless core, and responsive (issue #440).** `@mintplayer/web-components`
   **3.0.0**, `@mintplayer/ui-core` 1.1.0 (new `tile-manager` entry), `@mintplayer/ng-bootstrap` 22.27.0,
   `@mintplayer/react-bootstrap` 19.26.0, `@mintplayer/vue-bootstrap` 3.27.0. `mp-tile-manager` now runs on

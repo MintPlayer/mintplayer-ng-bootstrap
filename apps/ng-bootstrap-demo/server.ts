@@ -19,7 +19,6 @@ import { injectMpNavbarDsd } from '@mintplayer/web-components/navbar/ssr';
 import { injectMpCarouselDsd } from '@mintplayer/web-components/carousel/ssr';
 // Same pattern for <mp-accordion>: [multi] x [tab-count] DSD chrome variants,
 // so tabs open and close through the shadow input state machine with JS off.
-import { injectMpAccordionDsd } from '@mintplayer/web-components/accordion/ssr';
 // The light-tier WCs (datatable, treeview, tree-select, query-builder family)
 // have no shadow root, so there is no DSD chrome for them — their rescoped
 // sheets are document-level. This inserts those <style> tags into <head> for
@@ -102,7 +101,7 @@ app.use((req, res, next) => {
       // Splice the remaining WCs' Declarative Shadow DOM chrome into HTML responses.
       const contentType = response.headers.get('content-type') ?? '';
       if (contentType.includes('text/html')) {
-        const body = injectMpLightStyles(injectMpAccordionDsd(injectMpCarouselDsd(injectMpNavbarDsd(injectMpDropdownDsd(await response.text())))));
+        const body = injectMpLightStyles(injectMpCarouselDsd(injectMpNavbarDsd(injectMpDropdownDsd(await response.text()))));
         const headers = new Headers(response.headers);
         headers.delete('content-length');
         // BsThemeService renders <html data-bs-theme> from the bs-theme-mode

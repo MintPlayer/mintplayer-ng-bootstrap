@@ -34,10 +34,16 @@ describe('BsAccordionComponent', () => {
   let component: BsAccordionTestComponent;
   let fixture: ComponentFixture<BsAccordionTestComponent>;
 
-  const host = () => fixture.nativeElement as HTMLElement;
-  const element = () => host().querySelector('mp-accordion') as HTMLElement;
-  const headers = () => [...host().querySelectorAll<HTMLElement>('[accordion-header]')];
-  const tabs = () => [...host().querySelectorAll<HTMLElement>('bs-accordion-tab')];
+  const root = () => (fixture.nativeElement as HTMLElement).querySelector('bs-accordion') as HTMLElement;
+  const rows = () => [...root().querySelectorAll<HTMLDetailsElement>(':scope > details')];
+  const summaries = () => rows().map((row) => row.querySelector('summary') as HTMLElement);
+
+  /** Open or close a row the way the platform does: flip `open`, then `toggle`. */
+  const flip = (row: HTMLDetailsElement, open: boolean) => {
+    row.open = open;
+    row.dispatchEvent(new Event('toggle'));
+    fixture.detectChanges();
+  };
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
@@ -49,105 +55,100 @@ describe('BsAccordionComponent', () => {
     fixture.detectChanges();
   });
 
-  it('should create', () => {
-    expect(component).toBeTruthy();
-    expect(element()).toBeTruthy();
-  });
+  describe('markup', () => {
+    it('makes the host the .accordion root and renders one details row per tab', () => {
+      expect(root().classList.contains('accordion')).toBe(true);
+      expect(root().getAttribute('data-mps')).toBe('accordion');
+      expect(rows()).toHaveLength(3);
+      expect(rows().every((row) => row.classList.contains('accordion-item'))).toBe(true);
+    });
 
-  describe('marker bridging', () => {
-    it('makes each tab host the marker the web component reads', () => {
-      tabs().forEach((tab, index) => {
-        expect(tab.hasAttribute('accordion-tab')).toBe(true);
-        expect(tab.getAttribute('slot')).toBe(`c${index}`);
-        // Markers must be DIRECT children of the element — named slots
-        // accept nothing else.
-        expect(tab.parentElement).toBe(element());
+    it('renders each header and body inside its own row', () => {
+      expect(summaries().map((s) => s.textContent?.trim())).toEqual(['One', 'Two', 'Three']);
+      rows().forEach((row, index) => {
+        expect(row.querySelector('.accordion-content .body')?.textContent).toBe(`${['One', 'Two', 'Three'][index]} body`);
       });
     });
 
-    it('hoists each tab header into an index-slotted sibling of its tab', () => {
-      const rendered = headers();
-      expect(rendered).toHaveLength(3);
-      rendered.forEach((header, index) => {
-        expect(header.getAttribute('slot')).toBe(`h${index}`);
-        expect(header.parentElement).toBe(element());
-        expect(header.textContent?.trim()).toBe(['One', 'Two', 'Three'][index]);
+    it('wires each header to its region', () => {
+      rows().forEach((row) => {
+        const summary = row.querySelector('summary') as HTMLElement;
+        const region = row.querySelector('[role=region]') as HTMLElement;
+        expect(summary.getAttribute('aria-controls')).toBe(region.id);
+        expect(region.getAttribute('aria-labelledby')).toBe(summary.id);
       });
     });
 
-    it('keeps header and tab indexes aligned when a tab has no header', () => {
-      component.tabs.update((list) => [
-        ...list,
-        { title: '', open: signal(false), disabled: false },
-      ]);
-      fixture.detectChanges();
-      expect(headers()).toHaveLength(4);
-      expect(headers()[3].getAttribute('slot')).toBe('h3');
-      expect(tabs()[3].getAttribute('slot')).toBe('c3');
-    });
-
-    it('reflects state onto the marker attributes', () => {
-      expect(tabs()[1].hasAttribute('is-active')).toBe(false);
-
-      component.tabs()[1].open.set(true);
-      fixture.detectChanges();
-      expect(tabs()[1].getAttribute('is-active')).toBe('');
-
-      component.tabs.update((list) =>
-        list.map((tab, index) => (index === 2 ? { ...tab, disabled: true } : tab)));
-      fixture.detectChanges();
-      expect(tabs()[2].getAttribute('disabled')).toBe('');
-    });
-
-    it('bridges multi and highlightActiveTab as presence attributes', () => {
-      expect(element().hasAttribute('multi')).toBe(false);
-      expect(element().hasAttribute('highlight-active-tab')).toBe(false);
+    it('groups the rows by name only when single-open', () => {
+      const name = rows()[0].getAttribute('name');
+      expect(name).toBeTruthy();
+      expect(rows().every((row) => row.getAttribute('name') === name)).toBe(true);
 
       component.multi.set(true);
+      fixture.detectChanges();
+      expect(rows().some((row) => row.hasAttribute('name'))).toBe(false);
+    });
+
+    it('lowers highlightActiveTab onto a data attribute', () => {
+      expect(root().hasAttribute('data-highlight-active')).toBe(false);
       component.highlight.set(true);
       fixture.detectChanges();
+      expect(root().hasAttribute('data-highlight-active')).toBe(true);
+    });
 
-      expect(element().getAttribute('multi')).toBe('');
-      expect(element().getAttribute('highlight-active-tab')).toBe('');
+    it('takes a disabled tab out of the tab order', () => {
+      component.tabs.update((list) => list.map((tab, index) => (index === 2 ? { ...tab, disabled: true } : tab)));
+      fixture.detectChanges();
+      expect(summaries()[2].getAttribute('aria-disabled')).toBe('true');
+      expect(summaries()[2].getAttribute('tabindex')).toBe('-1');
     });
   });
 
-  describe('toggle event bridging', () => {
-    const toggle = (target: Element, index: number, active: boolean) =>
-      target.dispatchEvent(
-        new CustomEvent('mp-accordion-tab-toggle', {
-          detail: { index, active, originalEvent: null },
-          bubbles: true,
-          composed: true,
-        }),
-      );
-
-    it('writes the web component toggle back into the tab model', () => {
-      toggle(element(), 1, true);
+  describe('state', () => {
+    it('renders isActive onto the row', () => {
+      component.tabs()[1].open.set(true);
       fixture.detectChanges();
+      expect(rows().map((row) => row.open)).toEqual([false, true, false]);
+    });
+
+    it('writes a row toggle back into the tab model', () => {
+      flip(rows()[1], true);
       expect(component.tabs()[1].open()).toBe(true);
-
-      toggle(element(), 1, false);
-      fixture.detectChanges();
+      flip(rows()[1], false);
       expect(component.tabs()[1].open()).toBe(false);
     });
 
-    it('ignores a nested accordion toggle instead of applying its index', () => {
-      // Nesting is the normal case and the event is composed, so it passes
-      // straight through this accordion — whose tab 0 must NOT open.
-      const nested = document.createElement('mp-accordion');
-      tabs()[2].appendChild(nested);
-      toggle(nested, 0, true);
-      fixture.detectChanges();
+    it('closes the open sibling when single-open', () => {
+      flip(rows()[0], true);
+      flip(rows()[2], true);
+      expect(component.tabs().map((tab) => tab.open())).toEqual([false, false, true]);
+    });
 
+    it('keeps siblings open when multi', () => {
+      component.multi.set(true);
+      fixture.detectChanges();
+      flip(rows()[0], true);
+      flip(rows()[2], true);
+      expect(component.tabs().map((tab) => tab.open())).toEqual([true, false, true]);
+    });
+
+    it('ignores a nested accordion row', () => {
+      const nested = document.createElement('div');
+      nested.className = 'accordion';
+      nested.setAttribute('data-mps', 'accordion');
+      nested.innerHTML = '<details class="accordion-item" data-mps="accordion"><summary>n</summary></details>';
+      rows()[2].querySelector('.accordion-content')?.append(nested);
+      flip(nested.querySelector('details') as HTMLDetailsElement, true);
       expect(component.tabs().map((tab) => tab.open())).toEqual([false, false, false]);
     });
 
-    it('stops a claimed event at the accordion that handled it', () => {
-      const seen: Event[] = [];
-      host().addEventListener('mp-accordion-tab-toggle', (event) => seen.push(event));
-      toggle(element(), 0, true);
-      expect(seen).toHaveLength(0);
+    it('closeAll closes every row', () => {
+      component.multi.set(true);
+      fixture.detectChanges();
+      flip(rows()[0], true);
+      flip(rows()[1], true);
+      component.accordion().closeAll();
+      expect(rows().some((row) => row.open)).toBe(false);
     });
   });
 });

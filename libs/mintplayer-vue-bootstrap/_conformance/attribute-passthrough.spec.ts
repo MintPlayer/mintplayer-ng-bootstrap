@@ -85,8 +85,8 @@ describe('Vue wrapper attribute passthrough — the invariant, statically', () =
 
 /** SFC name → CSS selector of the element a consumer's attributes must land on. */
 const TARGETS: Record<string, string> = {
-  BsAccordion: 'mp-accordion',
-  BsAccordionItem: 'mp-accordion-tab',
+  BsAccordion: 'div.accordion',
+  BsAccordionItem: 'details.accordion-item',
   BsCalendar: 'mp-calendar',
   BsCard: 'div.card',
   BsCardBody: 'div.card-body',

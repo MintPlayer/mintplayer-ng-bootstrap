@@ -43,11 +43,8 @@ axeAuditSuite(test, expect, [
   { path: '/basic/treeview' },
   {
     path: '/enterprise/accordion',
-    ready: async (page) => {
-      await page.waitForFunction(() => !!document.querySelector('mp-accordion')?.hasAttribute('data-js'));
-    },
     interact: async (page) => {
-      await page.locator('mp-accordion').first().locator('summary').first().click();
+      await page.locator('[data-mps="accordion"]').first().locator('summary').first().click();
     },
   },
   { path: '/enterprise/datatables' },

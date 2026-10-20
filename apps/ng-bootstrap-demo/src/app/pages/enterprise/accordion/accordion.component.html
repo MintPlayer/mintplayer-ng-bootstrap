@@ -1,8 +1,9 @@
 <h1 class="text-center">Accordion</h1>
 
 <p>
-  <code>bs-accordion</code> wraps a stack of <code>bs-accordion-tab</code> children,
-  backed by the <code>mp-accordion</code> web component. Each tab declares its header
+  <code>bs-accordion</code> wraps a stack of <code>bs-accordion-tab</code> children and
+  renders Bootstrap's accordion markup itself, from the framework-neutral
+  <code>@mintplayer/ui-core/accordion</code> core. Each tab declares its header
   with the <code>*bsAccordionTabHeader</code> structural directive; the rest of the tab
   body is projected below. Set <code>[multi]="true"</code> to allow multiple tabs to
   stay open simultaneously, or <code>[highlightActiveTab]="true"</code> to visually
@@ -164,14 +165,13 @@
 
 <bs-code-snippet [code]="snippetMultiLevelHtml" [language]="'html'"></bs-code-snippet>
 
-<h2>Theming across the shadow boundary</h2>
+<h2>Theming</h2>
 
 <p>
-  The chrome now lives inside the web component's shadow root, so the page reaches it
-  through Bootstrap's <code>--bs-accordion-*</code> custom properties and the exposed
-  <code>::part(header)</code>, <code>::part(button)</code> and
-  <code>::part(content)</code> — which is how the dark multi-level example above is
-  styled.
+  The markup is Bootstrap's own, so Bootstrap's <code>--bs-accordion-*</code> custom
+  properties theme it from page CSS. Bootstrap declares them on every
+  <code>.accordion</code>, so a nested accordion needs its own rule — which is how the
+  dark multi-level example above is styled.
 </p>
 
 <bs-code-snippet [code]="snippetThemingScss" [language]="'scss'"></bs-code-snippet>
