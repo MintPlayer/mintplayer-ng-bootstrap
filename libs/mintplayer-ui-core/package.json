@@ -1,0 +1,30 @@
+{
+  "name": "@mintplayer/ui-core",
+  "version": "1.0.0",
+  "description": "Headless, framework-neutral cores for the @mintplayer/bootstrap design system: component state machines, ARIA prop bags, request lifecycles and scoped styles. Consumed by @mintplayer/ng-bootstrap, @mintplayer/react-bootstrap, @mintplayer/vue-bootstrap and @mintplayer/web-components, each of which renders its own template from these cores.",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/MintPlayer/mintplayer-ng-bootstrap",
+    "directory": "libs/mintplayer-ui-core"
+  },
+  "author": {
+    "name": "Pieterjan De Clippel",
+    "url": "https://github.com/MintPlayer",
+    "email": "info@mintplayer.com"
+  },
+  "type": "module",
+  "sideEffects": false,
+  "main": "./index.mjs",
+  "types": "./src/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./src/index.d.ts",
+      "import": "./index.mjs"
+    },
+    "./package.json": "./package.json"
+  },
+  "dependencies": {
+    "tslib": "^2.3.0"
+  }
+}

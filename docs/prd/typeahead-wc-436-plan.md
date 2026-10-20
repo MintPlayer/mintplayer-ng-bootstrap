@@ -1,7 +1,7 @@
 # Plan — Typeahead pilot of the headless-core architecture (#436)
 
 PRD: [typeahead-wc-436.md](./typeahead-wc-436.md)
-Status: **Proposed, decisions locked** (2026-10-19). Nothing started. Branch `feat/typeahead-core-436` off `master`, created only with permission.
+Status: **In progress** (2026-10-20). S1 PASS, S2 PASS; M1 done except the scoped-styles move and the overlay lift (tracked as M1b below). Branch `feat/typeahead-core-436`, draft PR #438.
 Everything lands in **one PR**: the new `@mintplayer/ui-core` package, the scoped-styles move, the shared runner in tree-select and both datatable paths, the four typeahead fronts, the four deletions, demos, e2e, versions. The Spark adoption (PRD §12) follows the publish. The catalog migration is **#437** and is not touched here.
 
 Spike artifacts go in `docs/prd/spikes/issue-436/`, one short `S<n>-*.md` per spike: what was measured, in which engines and versions, and the decision it settles. Throwaway harness code stays in the scratchpad or a `_spike-*` folder deleted before the PR.
@@ -59,8 +59,11 @@ S1 and S2 can sink the bridge design (D2, D9) and change M2/M4's shape; they run
 
 ## M1: `@mintplayer/ui-core` package `[§5.1, D4, D8]`
 **Files:** `libs/mintplayer-ui-core/{project.json,package.json,vite.config.mts,tsconfig*.json,README.md}`, `async/`, `scoped-styles/` (moved), `overlay/` (lifted), `tsconfig.base.json` path `@mintplayer/ui-core/*`, `libs/mintplayer-web-components/light-dom/` → re-export shim, `tools/scripts/build-web-components.mjs` (codegen scans ui-core too), `tools/lit-ssr-utils/gen-light-styles-chrome.mjs` (import path).
-- [ ] Scaffold the package like the WC lib (`discoverEntries`, `generateSubpathExports`, vitest + jsdom). Version `1.0.0`.
-- [ ] `async/`: `SupersedingRequest` (debounce, abort previous, stale-drop, `AbortError` silent), `Request { signal }` type, unit spec.
+- [x] Scaffold the package like the WC lib (`discoverEntries`, `generateSubpathExports`, vitest + jsdom). Version `1.0.0`.
+- [x] `store/`: `Machine<S>` base (immutable snapshot, `subscribe`, `update` with `Object.is` skip, nested `batch`, `destroy`), `Store<S>`, `SnapshotOf<M>`; unit spec. (Not in the original plan: S1 needed a real base class, and every core will extend it.)
+- [x] `async/`: `SupersedingRequest` (debounce, abort previous, stale-drop, `AbortError` silent), `AbortableRequest { signal }` type, unit spec.
+- [x] Bridges, one per front, written as part of S1 and kept as deliverables: `@mintplayer/ng-bootstrap/machine` (`machineSignal`, `MpPropsDirective`), `@mintplayer/react-bootstrap/machine` (`useSnapshot`, `useMachine`), `@mintplayer/vue-bootstrap/machine` (same), `@mintplayer/web-components/machine` (`MachineController`). The Angular `[mpProps]` directive lives here, not in `scoped-styles` as the PRD §5.3 first said: it is about prop bags, not styles.
+- **M1b (open):**
 - [ ] Move `light-dom` sources and `_conformance/{light-styles-scoping,light-styles-nesting,consumer-dom-boundary,document-style-writers,no-invalid-css-values}.spec.ts` to `scoped-styles/`; keep `@mintplayer/web-components/light-dom` as a re-export so no WC changes. Add the **server-install contract**: `scopedStyleSheets()` returns `[key, css][]` for the Angular installer.
 - [ ] Lift `OverlayController` into `ui-core/overlay` with a host-agnostic `attach(host: { requestUpdate?(): void }, options)` API; the WC `overlay` entry re-exports it (its other consumers unchanged).
 - [ ] `tsc --noEmit`, commit.
