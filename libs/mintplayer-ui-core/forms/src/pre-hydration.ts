@@ -18,3 +18,14 @@ export function preHydrationValue(
   const typed = node?.value ?? '';
   return typed && typed !== current ? typed : null;
 }
+
+/**
+ * A choice made in a server-rendered radio set before hydration. The server
+ * writes the `checked` ATTRIBUTE on the initially selected radio, so a radio
+ * that is `:checked` without it was picked by the user; the framework's
+ * `[checked]` binding would revert it. Call it while the host still holds the
+ * server DOM. Returns that radio's value, or `null` when nothing changed.
+ */
+export function preHydrationChoice(root: ParentNode | null | undefined): string | null {
+  return root?.querySelector<HTMLInputElement>('input[type=radio]:checked:not([checked])')?.value ?? null;
+}

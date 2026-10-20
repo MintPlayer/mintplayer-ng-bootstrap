@@ -11,11 +11,11 @@ import { test, expect, type Page } from '@playwright/test';
 const shellOf = (page: Page) => page.locator('mp-shell').first();
 const hamburger = (page: Page) => shellOf(page).locator('label.shell-hamburger');
 const sidebar = (page: Page) => shellOf(page).locator('aside.sidebar');
-const checkedRadio = (page: Page) => page.locator('mp-radio[checked]');
+const checkedRadio = (page: Page) => page.locator('input.btn-check:checked + label.btn');
 // The toggle-button radios are Bootstrap `btn-check`: a visually-hidden <input>
 // covered by a clickable <label class="btn">. Click the label, not the input.
 const radio = (page: Page, name: string) =>
-  page.locator('mp-radio').filter({ hasText: name }).locator('label.btn');
+  page.locator('input.btn-check + label.btn').filter({ hasText: name });
 
 async function goto(page: Page) {
   await page.goto('/overlays/shell');
@@ -30,7 +30,7 @@ async function goto(page: Page) {
     const s = document.querySelector('mp-shell') as (HTMLElement & { toggle?: unknown }) | null;
     return !!(s && typeof s.toggle === 'function' && s.shadowRoot?.querySelector('.shell-hamburger'));
   });
-  await expect(page.locator('mp-radio[checked]')).toHaveCount(1);
+  await expect(checkedRadio(page)).toHaveCount(1);
 }
 
 test.describe('mp-shell toggle <-> radio sync (JS enabled)', () => {

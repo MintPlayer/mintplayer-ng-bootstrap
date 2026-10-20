@@ -60,9 +60,15 @@ describe('Vue wrapper attribute passthrough — the invariant, statically', () =
   });
 
   it('every inheritAttrs:false wrapper re-binds v-bind="$attrs"', () => {
-    // Fronts of a headless core forward useAttrs() minus `role` (the core owns
-    // the role); behaviour/BsTypeahead.spec.ts pins the forwarding.
-    const FILTERED_FORWARDING = ['../typeahead/src/BsTypeahead.vue'];
+    // Fronts of a headless core merge useAttrs() with the core's bags instead
+    // (the core owns role and the IDREFs); the runtime sweep below pins where
+    // the attributes land, behaviour/BsTypeahead.spec.ts the typeahead's.
+    const FILTERED_FORWARDING = [
+      '../checkbox/src/BsCheckbox.vue',
+      '../radio/src/BsRadio.vue',
+      '../radio-group/src/BsRadioGroup.vue',
+      '../typeahead/src/BsTypeahead.vue',
+    ];
     const offenders = Object.entries(SFC_SOURCES)
       .filter(([path]) => !FILTERED_FORWARDING.includes(path))
       .filter(([, source]) => source.includes('inheritAttrs: false'))
@@ -113,8 +119,8 @@ const TARGETS: Record<string, string> = {
   BsPagination: 'mp-pagination',
   BsPhoneInput: 'mp-phone-input',
   BsQueryBuilder: 'mp-query-builder',
-  BsRadio: 'mp-radio',
-  BsRadioGroup: 'mp-radio-group',
+  BsRadio: 'input[type=radio]',
+  BsRadioGroup: 'div[role=radiogroup]',
   BsRibbon: 'mp-ribbon',
   BsScheduler: 'mp-scheduler',
   BsSelect: 'mp-select',
