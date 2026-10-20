@@ -1,46 +1,100 @@
 <script setup lang="ts">
-// Side-effect-registers <mp-checkbox> via the upstream WC entry.
-import '@mintplayer/web-components/checkbox';
+/**
+ * Checkbox, switch or toggle button: a native <input type=checkbox> in
+ * Bootstrap's .form-check / .form-switch / .btn-check markup (#437), with the
+ * ARIA contract from @mintplayer/ui-core/checkbox. Consumer attributes land
+ * on the input; a consumer `role` reaches a plain checkbox only — `switch`
+ * and `button` are the contract of the other types.
+ *
+ * `v-model` is the checked state, `v-model:indeterminate` the mixed state
+ * (a user toggle clears it).
+ */
+import { computed, getCurrentInstance, useAttrs, useTemplateRef, watchEffect } from 'vue';
 import {
-  MpCheckbox,
-  type CheckboxChangeEventDetail,
-} from '@mintplayer/web-components/checkbox';
-import { ref, watch, onMounted } from 'vue';
+  checkboxClasses,
+  connectCheckbox,
+  effectiveIndeterminate,
+  type CheckboxType,
+  type ToggleButtonColor,
+} from '@mintplayer/ui-core/checkbox';
+
 defineOptions({ inheritAttrs: false });
 
-// The checkbox WC's v-model surface is the `checked` property (`boolean`)
-// + the `change` CustomEvent<CheckboxChangeEventDetail>. The event detail
-// also carries `indeterminate` + `value`, but the canonical v-model binds
-// to the boolean checked-ness; consumers wanting tri-state can listen to
-// `@change` directly for the full detail.
-const modelValue = defineModel<boolean>();
-const el = ref<MpCheckbox | null>(null);
+const props = withDefaults(
+  defineProps<{
+    type?: CheckboxType;
+    /** Button colour of a toggle_button; ignored by the other types. */
+    color?: ToggleButtonColor;
+    name?: string | null;
+    value?: string | null;
+    disabled?: boolean;
+    required?: boolean;
+    invalid?: boolean;
+    errorText?: string | null;
+  }>(),
+  {
+    type: 'checkbox',
+    color: 'primary',
+    name: null,
+    value: null,
+    disabled: false,
+    required: false,
+    invalid: false,
+    errorText: null,
+  },
+);
 
-const syncToEl = (v: boolean | undefined) => {
-  if (el.value) el.value.checked = !!v;
-};
+const checked = defineModel<boolean>({ default: false });
+const indeterminate = defineModel<boolean>('indeterminate', { default: false });
 
-onMounted(() => syncToEl(modelValue.value));
-watch(modelValue, syncToEl);
+const rootId = `bs-checkbox-${getCurrentInstance()?.uid ?? Math.random().toString(36).slice(2)}`;
 
-function onChange(e: Event) {
-  // Only react to the WC's own CustomEvent (which carries `detail`). The
-  // native `change` from the inner `<input>` has composed:false so it
-  // shouldn't escape the WC's shadow root, but guard anyway — if it ever
-  // does (or if a consumer forwards a plain native event), `detail` is
-  // undefined and `!!undefined.checked` would silently reset the model
-  // to false.
-  const detail = (e as CustomEvent<CheckboxChangeEventDetail>).detail;
-  if (detail) modelValue.value = !!detail.checked;
+const state = computed(() => ({
+  type: props.type,
+  checked: checked.value,
+  indeterminate: effectiveIndeterminate({ type: props.type, indeterminate: indeterminate.value }),
+  disabled: props.disabled,
+  required: props.required,
+  invalid: props.invalid,
+  name: props.name,
+  value: props.value,
+  errorText: props.errorText,
+}));
+const classes = computed(() => checkboxClasses(props.type, props.color, props.invalid));
+
+// `useAttrs()` is not reactive for computed(), so the merge is read in the
+// template (render-time), like the typeahead front.
+const consumerAttrs = useAttrs();
+function inputAttrs(): Record<string, unknown> {
+  const { 'aria-describedby': describedBy, role, ...rest } = consumerAttrs;
+  const bags = connectCheckbox(state.value, rootId, (describedBy as string | undefined) ?? null);
+  return { ...bags.input, ...rest, role: bags.input.role ?? role ?? null };
+}
+const bags = computed(() => connectCheckbox(state.value, rootId));
+function inputId(): string {
+  return String(consumerAttrs['id'] ?? bags.value.input.id);
+}
+
+// indeterminate has no attribute; aria-checked="mixed" carries it in server HTML.
+const inputEl = useTemplateRef<HTMLInputElement>('input');
+watchEffect(() => {
+  if (inputEl.value) inputEl.value.indeterminate = state.value.indeterminate;
+}, { flush: 'post' });
+
+function onChange(event: Event): void {
+  checked.value = (event.target as HTMLInputElement).checked;
+  indeterminate.value = false;
 }
 </script>
 
 <template>
-  <mp-checkbox
-    ref="el"
-    v-bind="$attrs"
-    @change="onChange"
-  >
-    <slot />
-  </mp-checkbox>
+  <template v-if="classes.root === null">
+    <input ref="input" type="checkbox" :class="classes.input" v-bind="inputAttrs()" :checked="checked" @change="onChange" />
+    <label :class="classes.label" :for="inputId()"><slot /></label>
+  </template>
+  <label v-else :class="classes.root">
+    <input ref="input" type="checkbox" :class="classes.input" v-bind="inputAttrs()" :checked="checked" @change="onChange" />
+    <span :class="classes.label"><slot /></span>
+  </label>
+  <div v-if="bags.feedback" v-bind="bags.feedback.attrs">{{ bags.feedback.text }}</div>
 </template>

@@ -6,7 +6,7 @@ describe('errorFeedback', () => {
   it('wires both references and aria-invalid together while invalid', () => {
     const feedback = errorFeedback('x-error', ' Required ');
     expect(feedback.control).toEqual({ 'aria-invalid': 'true', 'aria-errormessage': 'x-error', 'aria-describedby': 'x-error' });
-    expect(feedback.message).toEqual({ attrs: { id: 'x-error', class: 'invalid-feedback' }, text: 'Required' });
+    expect(feedback.message).toEqual({ attrs: { id: 'x-error', class: 'invalid-feedback d-block' }, text: 'Required' });
   });
 
   it('emits nothing for a valid control or a blank message', () => {

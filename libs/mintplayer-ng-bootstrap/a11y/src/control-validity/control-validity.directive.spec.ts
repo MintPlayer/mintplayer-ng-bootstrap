@@ -1,4 +1,4 @@
-import { Component } from '@angular/core';
+import { Component, signal } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { FormControl, ReactiveFormsModule, Validators } from '@angular/forms';
 import { BsCheckboxComponent } from '@mintplayer/ng-bootstrap/checkbox';
@@ -12,6 +12,11 @@ class HarnessComponent {
   control = new FormControl(false, { validators: [Validators.requiredTrue] });
 }
 
+/**
+ * bs-checkbox renders its own native input (#437), so the directive's state
+ * reaches AT through the front's attribute bag on that input — the
+ * role-bearing node — and never as attributes on the bs-* host.
+ */
 describe('BsControlValidityDirective (via bs-checkbox)', () => {
   let fixture: ComponentFixture<HarnessComponent>;
 
@@ -21,47 +26,51 @@ describe('BsControlValidityDirective (via bs-checkbox)', () => {
     fixture.detectChanges();
   });
 
-  const wc = () => fixture.nativeElement.querySelector('mp-checkbox') as HTMLElement;
+  const input = () => fixture.nativeElement.querySelector('input') as HTMLInputElement;
 
   it('an untouched invalid control is NOT flagged — pristine forms must not scream', () => {
     expect(fixture.componentInstance.control.invalid).toBe(true);
-    expect(wc().hasAttribute('invalid')).toBe(false);
+    expect(input().hasAttribute('aria-invalid')).toBe(false);
   });
 
   it('invalid appears once the control is touched, and clears when it becomes valid', () => {
     fixture.componentInstance.control.markAsTouched();
     fixture.detectChanges();
-    expect(wc().hasAttribute('invalid')).toBe(true);
+    expect(input().getAttribute('aria-invalid')).toBe('true');
 
     fixture.componentInstance.control.setValue(true);
     fixture.detectChanges();
-    expect(wc().hasAttribute('invalid')).toBe(false);
+    expect(input().hasAttribute('aria-invalid')).toBe(false);
   });
 
   it('required mirrors the validator', () => {
-    expect(wc().hasAttribute('required')).toBe(true);
+    expect(input().required).toBe(true);
+    expect(input().getAttribute('aria-required')).toBe('true');
+  });
+
+  it('writes nothing onto the bs-* host', () => {
+    fixture.componentInstance.control.markAsTouched();
+    fixture.detectChanges();
+    const host = fixture.nativeElement.querySelector('bs-checkbox') as HTMLElement;
+    expect(['invalid', 'required', 'error-text'].filter((name) => host.hasAttribute(name))).toEqual([]);
   });
 });
 
 @Component({
   selector: 'error-message-harness',
   imports: [BsCheckboxComponent, ReactiveFormsModule],
-  template: `<bs-checkbox [formControl]="control" [errorMessages]="messages">Accept</bs-checkbox>`,
+  template: `<bs-checkbox [formControl]="control" [errorMessages]="messages()">Accept</bs-checkbox>`,
 })
 class ErrorMessageHarnessComponent {
   control = new FormControl(false, { validators: [Validators.requiredTrue] });
-  messages: Record<string, string> = { required: 'Accept the terms to continue.' };
+  messages = signal<Record<string, string>>({ required: 'Accept the terms to continue.' });
 }
 
 /**
- * The `error-text` half of the mirror: the message the WC renders inside its shadow
- * root and points its inner `<input>` at with `aria-errormessage` +
- * `aria-describedby`.
- *
- * It rides the same touched-and-invalid predicate as `invalid`, which is not an
- * implementation detail — `aria-errormessage` is only defined while the control is
- * `aria-invalid`, so a message written any earlier would be a reference the WC
- * cannot legally emit.
+ * The message rides the same touched-and-invalid predicate as `invalid`, which
+ * is not an implementation detail — `aria-errormessage` is only defined while
+ * the control is `aria-invalid`, so a message any earlier would be a reference
+ * the control cannot legally carry.
  */
 describe('BsControlValidityDirective error messages', () => {
   let fixture: ComponentFixture<ErrorMessageHarnessComponent>;
@@ -72,22 +81,22 @@ describe('BsControlValidityDirective error messages', () => {
     fixture.detectChanges();
   });
 
-  const wc = () => fixture.nativeElement.querySelector('mp-checkbox') as HTMLElement;
+  const input = () => fixture.nativeElement.querySelector('input') as HTMLInputElement;
+  const feedback = () => fixture.nativeElement.querySelector('.invalid-feedback') as HTMLElement | null;
 
-  it('writes nothing while the control is untouched, like invalid', () => {
-    expect(wc().hasAttribute('error-text')).toBe(false);
+  it('renders no message while the control is untouched, like invalid', () => {
+    expect(feedback()).toBeNull();
+    expect(input().hasAttribute('aria-errormessage')).toBe(false);
   });
 
-  it('writes the message for the active error once touched', () => {
+  it('renders the message for the active error once touched, referenced from the input', () => {
     fixture.componentInstance.control.markAsTouched();
     fixture.detectChanges();
 
-    expect(wc().getAttribute('error-text')).toBe('Accept the terms to continue.');
-    // On the WC, not on the bs-* host: the host has no role to read it from, and
-    // the directive finds the WC as the wrapper's first element child.
-    const wrapper = fixture.nativeElement.querySelector('bs-checkbox') as HTMLElement;
-    expect(wrapper.hasAttribute('error-text')).toBe(false);
-    expect(wrapper.firstElementChild).toBe(wc());
+    const message = feedback()!;
+    expect(message.textContent?.trim()).toBe('Accept the terms to continue.');
+    expect(input().getAttribute('aria-errormessage')).toBe(message.id);
+    expect(input().getAttribute('aria-describedby')).toBe(message.id);
   });
 
   it('removes the message again when the control becomes valid', () => {
@@ -96,17 +105,17 @@ describe('BsControlValidityDirective error messages', () => {
     fixture.componentInstance.control.setValue(true);
     fixture.detectChanges();
 
-    expect(wc().hasAttribute('error-text')).toBe(false);
-    expect(wc().hasAttribute('invalid')).toBe(false);
+    expect(feedback()).toBeNull();
+    expect(input().hasAttribute('aria-invalid')).toBe(false);
   });
 
   it('stays silent for an error key with no message, rather than inventing one', () => {
-    fixture.componentInstance.messages = {};
+    fixture.componentInstance.messages.set({});
     fixture.componentInstance.control.markAsTouched();
     fixture.detectChanges();
 
-    expect(wc().hasAttribute('error-text')).toBe(false);
+    expect(feedback()).toBeNull();
     // The control is still flagged — a message is an enhancement, not the flag.
-    expect(wc().hasAttribute('invalid')).toBe(true);
+    expect(input().getAttribute('aria-invalid')).toBe('true');
   });
 });

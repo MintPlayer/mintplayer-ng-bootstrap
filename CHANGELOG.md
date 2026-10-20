@@ -30,6 +30,22 @@ package version aligns its major with the supported Angular major.
   - `size` is no longer mirrored onto `mp-*` controls inside the group; the controls read the group's size
     class themselves.
   - `<mp-input-group>` (Lit) is unchanged for now: `mp-phone-input` composes it in its shadow root.
+- **Checkbox renders a native input (issue #437, wave A).** `bs-checkbox` / `BsCheckbox` render a plain
+  `<input type=checkbox>` in Bootstrap's `.form-check` / `.form-switch` / `.btn-check` markup, with no
+  `<mp-checkbox>`, so a checkbox renders with JS off and in Angular SSR. The class mapping and ARIA contract live in
+  `@mintplayer/ui-core/checkbox` (`connectCheckbox`, `checkboxClasses`, `checkboxIds`).
+  - Angular: `checkboxRef` is removed. `id` and `tabindex` move from the host to the input, and `aria-*` is
+    copied onto it. Validation state from `BsControlValidityDirective` is rendered on the input with an
+    `.invalid-feedback` message, not mirrored onto the host.
+  - React: `onChange` is now the native input `change` event. Use the new `onCheckedChange(checked)` for the
+    boolean. The ref is the `<input>`. `checked` / `defaultChecked` / `indeterminate` / `invalid` / `errorText`
+    are props.
+  - Vue: `v-model` is the checked state, and the new `v-model:indeterminate` is the mixed state. Attributes land on
+    the input (`inheritAttrs: false`).
+  - The mixed state is the `indeterminate` property plus `aria-checked="mixed"`. A user toggle clears it.
+  - `FEEDBACK_CLASS` in `@mintplayer/ui-core/forms` is now `invalid-feedback d-block`.
+  - `takeHostAria` moved to `@mintplayer/ng-bootstrap/a11y`.
+  - `<mp-checkbox>` (Lit) is unchanged for now: `mp-datatable` renders it in its shadow root.
 
 - **Typeahead rebuilt on a headless core (issue #436).** `@mintplayer/ng-bootstrap` 22.26.0,
   `@mintplayer/web-components` 2.21.0, `@mintplayer/react-bootstrap` 19.25.0, `@mintplayer/vue-bootstrap` 3.26.0,
