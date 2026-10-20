@@ -186,7 +186,7 @@ const CASES: Case[] = [
   bare('BsDropdownHeader', 'li.dropdown-header', BsDropdownHeader),
   bare('BsDropdownDivider', 'li.dropdown-divider', BsDropdownDivider),
   bare('BsFileManager', 'mp-file-manager', BsFileManager),
-  bare('BsInputGroup', 'mp-input-group', BsInputGroup),
+  bare('BsInputGroup', 'div.input-group', BsInputGroup),
   bare('BsMultiRange', 'mp-multi-range', BsMultiRange),
   bare('BsNavbar', 'mp-navbar', BsNavbar),
   {

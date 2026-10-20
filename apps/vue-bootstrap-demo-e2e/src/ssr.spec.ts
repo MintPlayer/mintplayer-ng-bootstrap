@@ -5,4 +5,5 @@ import { ssrSuite } from '../../../tools/e2e-shared/ssr-suites';
 ssrSuite(test, expect, [
   { path: '/basic/typeahead', expect: ['[role=combobox]', '[role=listbox]'] },
   { path: '/basic/card', expect: ['.card .card-header', '.card .card-body'] },
+  { path: '/basic/forms/phone-input', expect: ['div.input-group[data-mps=input-group]'] },
 ]);

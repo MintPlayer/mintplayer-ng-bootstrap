@@ -77,8 +77,8 @@ Each component milestone is the same checklist, done for every component in the 
 
 ## M3 — Wave A (PRD §8)
 
-- [ ] card (no core)
-- [ ] input-group (no core)
+- [x] card (no core): class mapping in `ui-core/card`; `navStyle` dropped (breaking)
+- [x] input-group (no core): plain `.input-group` in every front; sheet in `ui-core/input-group` for RTL, bare and hosted controls. The Lit `mp-input-group` stays a shadow WC until phone-input converts (M4), because `mp-phone-input` composes it in its shadow root
 - [ ] checkbox / switch
 - [ ] toggle-button (new Angular front)
 - [ ] radio + radio-group
@@ -101,7 +101,8 @@ Each component milestone is the same checklist, done for every component in the 
 - [ ] signature-pad
 - [ ] theme-toggle (Q2)
 - [ ] code-snippet
-- [ ] phone-input
+- [ ] phone-input; convert the Lit `mp-input-group` to a light front over `ui-core/input-group` with it
+- [ ] M4 controls that sit in a group (select, phone-input, datepicker, ...) read the `.input-group-sm/lg` ancestor and the `--mp-group-radius-*` channel in their own scoped sheets: the group no longer mirrors `size` onto them
 - [ ] splitter
 - [ ] timeline (+ item)
 - [ ] trend-chart (+ Vue front)
