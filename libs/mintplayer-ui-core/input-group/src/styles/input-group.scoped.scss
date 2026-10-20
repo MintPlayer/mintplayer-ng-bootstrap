@@ -1,0 +1,125 @@
+// The input group's stylesheet, shared by the fronts (PRD #437 wave A).
+//
+// Bootstrap's `.input-group` (page baseline, @layer mp.bootstrap) already joins
+// native children: `.input-group > .form-control`, `> :not(:first-child)` and so
+// on match because every front renders light DOM. This sheet covers what those
+// direct-child selectors miss:
+//
+//  1. RTL. The baseline is the LTR build, so the seam corners and the -1px
+//     overlap are mirrored here under :dir(rtl). PHYSICAL properties keyed off
+//     the group's own direction, not logical ones: the UA forces
+//     input[type=tel|url|email] to ltr even inside dir=rtl, and a logical
+//     property on that input would square the wrong corner.
+//  2. A control inside a framework host. Angular renders `<bs-select>` with its
+//     control one level in, so the group's direct child is the host and
+//     Bootstrap's `.input-group > .form-select` matches nothing. Such children
+//     are named by what they are NOT (never by tag: CLAUDE.md, slotted mp-*
+//     trap), sized like Bootstrap's own controls, and handed their corner
+//     pairing through the inherited `--mp-group-radius-start` / `-end` contract
+//     that a control's own sheet consumes.
+//
+// The children are consumer DOM and carry no scope, so every child rule is
+// anchored on the stamped group and shipped verbatim (@mps-global).
+@import "node_modules/bootstrap/scss/functions";
+@import "node_modules/bootstrap/scss/variables";
+@import "node_modules/bootstrap/scss/variables-dark";
+@import "node_modules/bootstrap/scss/maps";
+@import "node_modules/bootstrap/scss/mixins";
+
+// The web-component host; anchored on the tag, so it matches nothing else.
+/*! @mps-global */
+mp-input-group {
+  display: block;
+}
+
+/*! @mps-global */
+.input-group[data-mps=input-group]:dir(rtl) > :not(:first-child):not(.dropdown-menu):not(.valid-tooltip):not(.valid-feedback):not(.invalid-tooltip):not(.invalid-feedback) {
+  margin-left: 0;
+  margin-right: calc(var(--bs-border-width) * -1);
+  border-top-right-radius: 0;
+  border-bottom-right-radius: 0;
+  border-top-left-radius: var(--bs-border-radius);
+  border-bottom-left-radius: var(--bs-border-radius);
+}
+
+/*! @mps-global */
+.input-group[data-mps=input-group]:dir(rtl) > :not(:last-child):not(.dropdown-toggle):not(.dropdown-menu):not(.form-floating) {
+  border-top-left-radius: 0;
+  border-bottom-left-radius: 0;
+}
+
+/*! @mps-global */
+.input-group[data-mps=input-group]:dir(rtl) > :first-child:not(:last-child) {
+  border-top-right-radius: var(--bs-border-radius);
+  border-bottom-right-radius: var(--bs-border-radius);
+}
+
+// Every growable child that is not one of Bootstrap's own items: a framework
+// host or a control that renders its own box. `width: 1%` + a min-width floor
+// is Bootstrap's own trick; the floor lets a toolbar shrink to readable and
+// only then wrap (CLAUDE.md, flex min-width note).
+/*! @mps-global */
+.input-group[data-mps=input-group] > :not(.form-control):not(.form-select):not(.form-floating):not(.input-group-text):not(.btn):not(.dropdown-menu):not(.addon):not([data-addon]):not(input):not(select):not(textarea):not(button):not(span):not(label) {
+  position: relative;
+  flex: 1 1 auto;
+  width: 1%;
+  min-width: var(--mp-group-min-item-width, 6rem);
+}
+
+// A bare native field (no .form-control) grows like Bootstrap's own control.
+/*! @mps-global */
+.input-group[data-mps=input-group] > :is(input, textarea, select) {
+  position: relative;
+  flex: 1 1 auto;
+  width: 1%;
+  min-width: 0;
+}
+
+/*! @mps-global */
+.input-group[data-mps=input-group] > :not(:first-child) {
+  --mp-group-radius-start: 0;
+}
+
+/*! @mps-global */
+.input-group[data-mps=input-group] > :not(:last-child) {
+  --mp-group-radius-end: 0;
+}
+
+// The focused child's ring must not be clipped by the next sibling's overlap;
+// :focus-within catches focus landing inside a hosted control.
+/*! @mps-global */
+.input-group[data-mps=input-group] > :focus-within {
+  z-index: 5;
+}
+
+// Addon text for consumers that pass a plain element marked as an addon
+// rather than Bootstrap's `.input-group-text`.
+/*! @mps-global */
+.input-group[data-mps=input-group] > :is(.addon, [data-addon]) {
+  display: flex;
+  align-items: center;
+  padding: $input-group-addon-padding-y $input-group-addon-padding-x;
+  font-size: $input-font-size;
+  font-weight: $input-group-addon-font-weight;
+  line-height: $input-line-height;
+  color: $input-group-addon-color;
+  text-align: center;
+  white-space: nowrap;
+  background-color: $input-group-addon-bg;
+  border: $input-border-width solid $input-group-addon-border-color;
+  border-radius: var(--bs-border-radius);
+}
+
+/*! @mps-global */
+.input-group-sm[data-mps=input-group] > :is(.addon, [data-addon]) {
+  padding: $input-padding-y-sm $input-padding-x-sm;
+  font-size: $input-font-size-sm;
+  border-radius: var(--bs-border-radius-sm);
+}
+
+/*! @mps-global */
+.input-group-lg[data-mps=input-group] > :is(.addon, [data-addon]) {
+  padding: $input-padding-y-lg $input-padding-x-lg;
+  font-size: $input-font-size-lg;
+  border-radius: var(--bs-border-radius-lg);
+}

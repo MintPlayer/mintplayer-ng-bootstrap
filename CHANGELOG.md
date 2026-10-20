@@ -21,6 +21,15 @@ package version aligns its major with the supported Angular major.
     are gone. Style a card with ordinary CSS on `.card`.
   - `bs-card-title`, `bs-card-subtitle` and `bs-card-text` hosts carry `d-block`, and `bs-card-group` drops its
     `:host { display: block }` so Bootstrap's `.card-group` flex layout applies.
+- **Input group is a plain `.input-group` (issue #437, wave A).** `bs-input-group` (Angular) is the `.input-group`
+  itself and `BsInputGroup` (React/Vue) renders a `div.input-group`, so the children are its direct children
+  and render with JS off and in Angular SSR. `size` maps to `input-group-sm` / `input-group-lg`; the class and
+  role mapping and the RTL / hosted-control sheet live in `@mintplayer/ui-core/input-group`.
+  - `role="group"` is still added only when the group is named, but the Angular front reads the name from the
+    host's static `aria-label` / `aria-labelledby`. A group named through a binding sets `role="group"` itself.
+  - `size` is no longer mirrored onto `mp-*` controls inside the group; the controls read the group's size
+    class themselves.
+  - `<mp-input-group>` (Lit) is unchanged for now: `mp-phone-input` composes it in its shadow root.
 
 - **Typeahead rebuilt on a headless core (issue #436).** `@mintplayer/ng-bootstrap` 22.26.0,
   `@mintplayer/web-components` 2.21.0, `@mintplayer/react-bootstrap` 19.25.0, `@mintplayer/vue-bootstrap` 3.26.0,
