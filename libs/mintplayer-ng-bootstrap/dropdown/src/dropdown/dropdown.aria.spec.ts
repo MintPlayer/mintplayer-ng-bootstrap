@@ -22,9 +22,9 @@ import '@mintplayer/web-components/dropdown-menu';
     BsDropdownItemDirective,
   ],
   template: `
-    <div bsDropdown #dd="bsDropdown" [popupRole]="role()" [(isOpen)]="isOpen">
+    <div bsDropdown #dd="bsDropdown" [(isOpen)]="isOpen">
       <button bsDropdownToggle>Open</button>
-      <bs-dropdown-menu *bsDropdownMenu [menuMode]="role()" [attr.id]="dd.menuId() || null" [attr.role]="dd.popupRole()">
+      <bs-dropdown-menu *bsDropdownMenu [menuMode]="role()" [attr.id]="dd.menuId() || null">
         <li bsDropdownItem [active]="true">Item A</li>
         <li bsDropdownItem>Item B</li>
       </bs-dropdown-menu>
@@ -110,28 +110,6 @@ describe('Dropdown ARIA wiring', () => {
     });
   });
 
-  describe('listbox mode', () => {
-    beforeEach(() => {
-      host.role.set('listbox');
-      fixture.detectChanges();
-    });
-
-    it('toggle advertises aria-haspopup="listbox"', () => {
-      expect(queryToggle().getAttribute('aria-haspopup')).toBe('listbox');
-    });
-
-    it('menu host has role="listbox" and items have role="option" with aria-selected mirrored from active', async () => {
-      await open();
-
-      const menu = queryMenu()!;
-      const items = queryItems();
-      expect(menu.getAttribute('role')).toBe('listbox');
-      expect(items[0].getAttribute('role')).toBe('option');
-      expect(items[0].getAttribute('aria-selected')).toBe('true');
-      expect(items[1].getAttribute('role')).toBe('option');
-      expect(items[1].getAttribute('aria-selected')).toBe('false');
-    });
-  });
 
   it('roving-focus items expose stable generated ids (so aria-activedescendant can target them)', async () => {
     @Component({
@@ -146,10 +124,10 @@ describe('Dropdown ARIA wiring', () => {
         BsRovingFocusItemDirective,
       ],
       template: `
-        <div bsDropdown #dd="bsDropdown" popupRole="listbox" [(isOpen)]="isOpen">
+        <div bsDropdown #dd="bsDropdown" [(isOpen)]="isOpen">
           <button bsDropdownToggle>Open</button>
-          <bs-dropdown-menu *bsDropdownMenu bsRovingFocus mode="activedescendant" menuMode="listbox"
-            [attr.id]="dd.menuId() || null" [attr.role]="dd.popupRole()">
+          <bs-dropdown-menu *bsDropdownMenu bsRovingFocus
+            [attr.id]="dd.menuId() || null">
             <li bsDropdownItem bsRovingFocusItem>Item A</li>
             <li bsDropdownItem bsRovingFocusItem>Item B</li>
           </bs-dropdown-menu>

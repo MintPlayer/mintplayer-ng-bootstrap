@@ -53,10 +53,7 @@ export class BsRovingFocusItemDirective {
   readonly index = computed(() => this.parent.items().indexOf(this));
   readonly isActive = computed(() => this.index() === this.parent.activeIndex());
 
-  readonly tabindex = computed(() => {
-    if (this.parent.mode() === 'activedescendant') return -1;
-    return this.isActive() ? 0 : -1;
-  });
+  readonly tabindex = computed(() => (this.isActive() ? 0 : -1));
 
   constructor() {
     // After the first render, all sibling host bindings on this element have applied.

@@ -42,7 +42,8 @@ export function connect<T>(state: TypeaheadState<T>, id: string, extra: { name?:
   const statusText = state.status === 'loading' ? state.labels.loading : state.status === 'ready' && state.items.length === 0 ? state.labels.noResults : null;
 
   return {
-    root: { ...scope, class: 'mp-typeahead' },
+    // Classes stay the front's business (Angular/Vue/React each manage `class`); the bag carries only the scope.
+    root: { ...scope },
     input: {
       ...scope,
       role: 'combobox',

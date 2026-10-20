@@ -22,7 +22,6 @@ class BsDropdownMockDirective {
   hasBackdrop = input(false);
   closeOnClickOutside = input(true);
   sameDropdownWidth = input(false);
-  popupRole = input<'menu' | 'listbox' | 'tree' | 'grid' | 'dialog'>('menu');
   menuId = signal<string>('').asReadonly();
 
   @ContentChild(BsDropdownMenuMockDirective, {static: false}) menu!: BsDropdownMenuMockDirective;
