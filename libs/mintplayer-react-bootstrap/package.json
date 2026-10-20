@@ -28,6 +28,7 @@
     "./package.json": "./package.json"
   },
   "peerDependencies": {
+    "@mintplayer/ui-core": "^1.0.0",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
     "@lit/react": "^1.0.0",

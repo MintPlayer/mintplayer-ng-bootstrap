@@ -46,6 +46,7 @@ import { BsTileManager } from '@mintplayer/react-bootstrap/tile-manager';
 import { BsTimeList, BsTimepicker } from '@mintplayer/react-bootstrap/timepicker';
 import { BsToggleButton } from '@mintplayer/react-bootstrap/toggle-button';
 import { BsTreeSelect } from '@mintplayer/react-bootstrap/tree-select';
+import { BsTypeahead } from '@mintplayer/react-bootstrap/typeahead';
 import { BsTreeview } from '@mintplayer/react-bootstrap/treeview';
 
 /**
@@ -155,6 +156,10 @@ export const everyWrapperProbes = [
   <BsToggleButton role="none" id="x" tabIndex={-1} />,
   <BsTreeSelect role="none" id="x" tabIndex={-1} />,
   <BsTreeview role="none" id="x" tabIndex={-1} />,
+  <BsTypeahead id="x" tabIndex={-1} />,
+  // The combobox contract owns the input's role (#436): a consumer role must not compile.
+  // @ts-expect-error role is not an accepted prop
+  <BsTypeahead role="none" />,
 ];
 
 /**

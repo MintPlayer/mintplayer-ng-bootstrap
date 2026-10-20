@@ -127,6 +127,8 @@ const TARGETS: Record<string, string> = {
   BsToggleButton: 'mp-toggle-button',
   BsTreeSelect: 'mp-tree-select',
   BsTreeview: 'mp-treeview',
+  // Headless-core front (#436): attributes land on its own combobox <input>.
+  BsTypeahead: 'input',
 };
 
 /**

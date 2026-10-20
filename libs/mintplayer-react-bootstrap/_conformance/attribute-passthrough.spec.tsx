@@ -75,6 +75,7 @@ import { BsTimeline, BsTimelineItem } from '@mintplayer/react-bootstrap/timeline
 import { BsTimeList, BsTimepicker } from '@mintplayer/react-bootstrap/timepicker';
 import { BsToggleButton } from '@mintplayer/react-bootstrap/toggle-button';
 import { BsTreeSelect } from '@mintplayer/react-bootstrap/tree-select';
+import { BsTypeahead } from '@mintplayer/react-bootstrap/typeahead';
 import { BsTreeview } from '@mintplayer/react-bootstrap/treeview';
 
 /**
@@ -128,6 +129,13 @@ interface Case {
   /** CSS selector of the element that must receive the consumer's attributes. */
   target: string;
   render: (probe: Record<string, unknown>) => React.ReactElement;
+  /**
+   * Set when the target's role is part of the component's contract and a
+   * consumer role must NOT override it: a headless-core front whose
+   * role-bearing node is a combobox input (#436). Everything else in the probe
+   * must still arrive.
+   */
+  fixedRole?: string;
 }
 
 /** A case whose wrapper can be rendered bare, with nothing but the probe. */
@@ -240,6 +248,7 @@ const CASES: Case[] = [
   bare('BsToggleButton', 'mp-toggle-button', BsToggleButton),
   bare('BsTreeSelect', 'mp-tree-select', BsTreeSelect),
   bare('BsTreeview', 'mp-treeview', BsTreeview),
+  { ...bare('BsTypeahead', 'input', BsTypeahead), fixedRole: 'combobox' },
 ];
 
 /*
@@ -304,7 +313,7 @@ describe('React wrapper attribute passthrough', () => {
       // The bare names travel a different road — `@lit/react` routes any name
       // it finds on the element prototype through a property rather than an
       // attribute — so they are a genuinely separate failure, not a repeat.
-      expect(target!.getAttribute('role')).toBe(PROBE.role);
+      expect(target!.getAttribute('role')).toBe(entry.fixedRole ?? PROBE.role);
       expect(target!.getAttribute('id')).toBe(PROBE.id);
       expect(target!.tabIndex).toBe(PROBE.tabIndex);
       // Nothing OUTSIDE the target carries the probe too: an attribute duplicated

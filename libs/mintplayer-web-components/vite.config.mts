@@ -54,6 +54,8 @@ export default defineConfig(() => {
           'lit',
           /^lit\//,
           '@lit/context',
+          // A declared dependency: the registry and the cores are shared with the framework fronts.
+          /^@mintplayer\/ui-core(\/.*)?$/,
           'tslib',
           /^highlight\.js(\/.*)?$/,
           // Declared `dependencies`, so consumers resolve them from their own
