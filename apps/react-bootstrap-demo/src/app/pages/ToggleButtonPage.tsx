@@ -2,9 +2,6 @@ import { useState } from 'react';
 import { BsToggleButton } from '@mintplayer/react-bootstrap/toggle-button';
 import { BsCodeSnippet } from '@mintplayer/react-bootstrap/code-snippet';
 
-// `color` is an HTML attribute (observedAttributes) on the WC, not a typed
-// class field, so @lit/react doesn't surface it on the React props. Forward
-// via a small spread cast at the call site.
 const SOURCE = `import { useState } from 'react';
 import { BsToggleButton } from '@mintplayer/react-bootstrap/toggle-button';
 
@@ -13,8 +10,8 @@ export function MyToggle() {
   return (
     <BsToggleButton
       checked={on}
-      onChange={(e) => setOn(e.detail.checked)}
-      {...{ color: 'primary' }}
+      onCheckedChange={setOn}
+      color="primary"
     >
       {on ? 'On' : 'Off'}
     </BsToggleButton>
@@ -30,16 +27,16 @@ export function ToggleButtonPage() {
       <h1>Toggle button</h1>
       <p className="text-body-secondary">
         On/off button using Bootstrap&apos;s <code>btn-check</code> +{' '}
-        <code>label.btn</code> pattern. Emits a native-style{' '}
-        <code>change</code> event with <code>detail.checked</code>.
+        <code>label.btn</code> pattern, with <code>role=&quot;button&quot;</code> and{' '}
+        <code>aria-pressed</code>. <code>onCheckedChange</code> reports the pressed state.
       </p>
 
       <section>
         <h2>Default</h2>
         <BsToggleButton
           checked={primary}
-          onChange={(e) => setPrimary(e.detail.checked)}
-          {...{ color: 'primary' }}
+          onCheckedChange={setPrimary}
+          color="primary"
         >
           {primary ? 'On' : 'Off'}
         </BsToggleButton>
@@ -49,8 +46,8 @@ export function ToggleButtonPage() {
         <h2>Colour variants</h2>
         <BsToggleButton
           checked={success}
-          onChange={(e) => setSuccess(e.detail.checked)}
-          {...{ color: 'outline-success' }}
+          onCheckedChange={setSuccess}
+          color="outline-success"
         >
           Outline success
         </BsToggleButton>

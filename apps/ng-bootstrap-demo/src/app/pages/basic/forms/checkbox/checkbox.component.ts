@@ -127,9 +127,9 @@ export class CheckboxComponent {
       readonly bold = signal(false);
     }`;
   readonly toggleButtonHtml = dedent`
-    <bs-checkbox type="toggle_button" [(ngModel)]="bold">
+    <bs-toggle-button [(ngModel)]="bold">
       Bold
-    </bs-checkbox>`;
+    </bs-toggle-button>`;
 
   readonly groupTemplateTs = dedent`
     import { Component, signal } from '@angular/core';

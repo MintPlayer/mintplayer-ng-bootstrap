@@ -1,1 +1,1 @@
-export { BsToggleButton } from './BsToggleButton';
+export { BsToggleButton, type BsToggleButtonProps } from './BsToggleButton';
