@@ -1,7 +1,7 @@
 # PRD — Typeahead as the pilot of the headless-core architecture: debounce, cancellable provider, item renderer, forms binding, across Angular, React, Vue and a web component (#436)
 
 Issue: [#436](https://github.com/MintPlayer/mintplayer-ng-bootstrap/issues/436)
-Status: **Implemented** (2026-10-20) on `feat/typeahead-core-436`, draft PR #438; unit sweep green, the first CI run (39415902128) red on the SSR chrome generators, fixed in d0fd671d and 00b93211; targeted e2e, keyboard and no-JS checks pending. S1 and S2 PASS; S3–S5 folded into the permanent specs and e2e (see §16). Plan: [typeahead-wc-436-plan.md](./typeahead-wc-436-plan.md)
+Status: **Implemented** (2026-10-20) on `feat/typeahead-core-436`, draft PR #438; unit sweep green, the first CI run (39415902128) red on the SSR chrome generators, fixed in d0fd671d and 00b93211; targeted e2e, keyboard and no-JS checks green after two fixes in 1a08c158 (browser-only "Illegal invocation" from the bare `setTimeout` receiver in `SupersedingRequest`; Angular text entered before hydration overwritten by the `[value]` binding, now adopted in the constructor). S1 and S2 PASS; S3–S5 folded into the permanent specs and e2e (see §16). Plan: [typeahead-wc-436-plan.md](./typeahead-wc-436-plan.md)
 Catalog migration: [#437](https://github.com/MintPlayer/mintplayer-ng-bootstrap/issues/437) — **out of scope for this PR**; this PR is its pilot and must produce the numbers #437 is sized with.
 Everything in scope lands in **one PR**.
 
