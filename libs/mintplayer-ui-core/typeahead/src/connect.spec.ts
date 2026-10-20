@@ -6,6 +6,7 @@ const base: TypeaheadState<{ text: string }> = {
   items: [{ text: 'A' }, { text: 'B' }],
   status: 'ready',
   open: true,
+  side: 'below',
   activeIndex: 1,
   selectedItem: null,
   announcement: '2 results found',

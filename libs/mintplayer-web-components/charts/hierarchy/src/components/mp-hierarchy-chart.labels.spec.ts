@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it } from 'vitest';
 import './mp-hierarchy-chart';
 import type { MpHierarchyChart } from './mp-hierarchy-chart';
-import type { HierarchyNode } from '@mintplayer/web-components/charts/core';
+import type { HierarchyNode } from '@mintplayer/ui-core/charts/core';
 
 /**
  * Label decluttering + contrast (PRD hierarchy-chart-zoom-labels L1–L7).

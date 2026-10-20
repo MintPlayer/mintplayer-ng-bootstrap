@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import type { TimelineItemClickDetail } from '@mintplayer/web-components/timeline-core';
+import type { TimelineItemClickDetail } from '@mintplayer/ui-core/timeline-core';
 import type { MpTimeline } from './mp-timeline';
 
 /**

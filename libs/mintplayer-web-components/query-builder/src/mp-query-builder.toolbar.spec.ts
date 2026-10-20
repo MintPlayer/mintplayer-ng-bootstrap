@@ -3,9 +3,9 @@ import './mp-query-builder.element';
 import type { MpQueryBuilderElement } from './mp-query-builder.element';
 import type { MpSelect } from '@mintplayer/web-components/select';
 import type { MpCheckbox } from '@mintplayer/web-components/checkbox';
-import type { EntitySchema } from './model/field-def';
-import type { SortDescriptor } from './model/sort';
-import { emptyGroup } from './model/default-tree';
+import type { EntitySchema } from '@mintplayer/ui-core/query-builder';
+import type { SortDescriptor } from '@mintplayer/ui-core/query-builder';
+import { emptyGroup } from '@mintplayer/ui-core/query-builder';
 
 const MULTI_SCHEMA: EntitySchema[] = [
   {

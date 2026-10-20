@@ -1,4 +1,4 @@
-import { SchedulerEvent, TimeSlot } from '@mintplayer/web-components/scheduler-core';
+import { SchedulerEvent, TimeSlot } from '@mintplayer/ui-core/scheduler-core';
 import {
   NormalizedPointerEvent,
   normalizeMouseEvent,

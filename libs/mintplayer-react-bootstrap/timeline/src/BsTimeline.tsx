@@ -11,7 +11,7 @@ import type {
   TimelineOrientation,
   TimelineSelectable,
   TimelineSelectionChangeDetail,
-} from '@mintplayer/web-components/timeline-core';
+} from '@mintplayer/ui-core/timeline-core';
 import { BsTimelineItem } from './BsTimelineItem';
 
 type RenderProp = (item: TimelineItem, ctx: TimelineItemContext) => React.ReactNode;

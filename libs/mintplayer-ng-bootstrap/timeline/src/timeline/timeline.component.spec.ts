@@ -7,7 +7,7 @@ import type {
   TimelineItemClickDetail,
   TimelineOrientation,
   TimelineSelectable,
-} from '@mintplayer/web-components/timeline-core';
+} from '@mintplayer/ui-core/timeline-core';
 import { BsTimelineComponent } from './timeline.component';
 import {
   BsTimelineConnectorDirective,

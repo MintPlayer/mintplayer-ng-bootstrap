@@ -23,6 +23,8 @@ import { isObservable, Observable } from 'rxjs';
 import { BsIdService } from '@mintplayer/ng-bootstrap/a11y';
 import { machineSignal, MpPropsDirective, useScopedStyles } from '@mintplayer/ng-bootstrap/machine';
 import { abortError } from '@mintplayer/ui-core/async';
+import { preHydrationValue } from '@mintplayer/ui-core/forms';
+import { trackOpenSide } from '@mintplayer/ui-core/overlay';
 import {
   connect,
   TYPEAHEAD_SCOPE,
@@ -96,6 +98,7 @@ export class BsTypeaheadComponent<T = unknown> implements ControlValueAccessor {
 
   readonly itemTemplate = contentChild<BsTypeaheadItemDirective<T>>(BsTypeaheadItemDirective);
   private readonly inputRef = viewChild.required<ElementRef<HTMLInputElement>>('input');
+  private readonly listboxRef = viewChild.required<ElementRef<HTMLUListElement>>('listbox');
 
   readonly id = inject(BsIdService).next('bs-typeahead');
   /**
@@ -173,6 +176,13 @@ export class BsTypeaheadComponent<T = unknown> implements ControlValueAccessor {
     });
 
     this.adoptPreHydrationText(host);
+
+    // Browser only (afterNextRender never runs on the server): flip the list above the input near the viewport bottom.
+    const destroyRef = inject(DestroyRef);
+    afterNextRender(() => {
+      const untrack = trackOpenSide(this.machine, () => this.inputRef().nativeElement, () => this.listboxRef().nativeElement);
+      destroyRef.onDestroy(untrack);
+    });
   }
 
   /**
@@ -185,8 +195,8 @@ export class BsTypeaheadComponent<T = unknown> implements ControlValueAccessor {
    */
   private adoptPreHydrationText(host: HTMLElement): void {
     if (!isPlatformBrowser(inject(PLATFORM_ID))) return;
-    const typed = host.querySelector('input')?.value ?? '';
-    if (!typed || typed === this.machine.snapshot.term) return;
+    const typed = preHydrationValue(host, this.machine.snapshot.term, 'input');
+    if (typed === null) return;
     this.machine.setValue(typed);
     this.value.set(typed);
     afterNextRender(() => {

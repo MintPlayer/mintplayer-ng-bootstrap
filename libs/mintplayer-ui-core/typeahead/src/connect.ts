@@ -66,6 +66,7 @@ export function connect<T>(state: TypeaheadState<T>, id: string, extra: { name?:
       id: ids.listbox,
       role: 'listbox',
       'aria-busy': state.status === 'loading' ? 'true' : null,
+      'data-side': state.side,
       hidden: !state.open,
     },
     status: statusText === null ? null : { attrs: { ...scope, role: 'presentation' }, text: statusText },

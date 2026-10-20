@@ -3,7 +3,7 @@ import { afterEach, describe, expect, it } from 'vitest';
 import './mp-timeline';
 import './mp-timeline-item';
 import type { MpTimeline } from './mp-timeline';
-import type { TimelineItem } from '@mintplayer/web-components/timeline-core';
+import type { TimelineItem } from '@mintplayer/ui-core/timeline-core';
 
 /**
  * `<mp-timeline>` in **data mode**: given an `items` array it renders the rows

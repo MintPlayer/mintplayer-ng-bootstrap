@@ -33,7 +33,7 @@ import {
   type ArcLabelFit,
   type PartitionNode,
   type RectNode,
-} from '@mintplayer/web-components/charts/core';
+} from '@mintplayer/ui-core/charts/core';
 import { hierarchyChartStyles } from '../styles';
 
 export type HierarchyChartLayout = 'sunburst' | 'icicle' | 'treemap';

@@ -11,7 +11,7 @@ import {
   type SchedulerEvent,
   type SchedulerOptions,
   type ViewType,
-} from '@mintplayer/web-components/scheduler-core';
+} from '@mintplayer/ui-core/scheduler-core';
 import type { MpScheduler } from '@mintplayer/web-components/scheduler';
 
 interface TimeRange { start: Date; end: Date }

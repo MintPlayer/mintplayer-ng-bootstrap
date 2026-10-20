@@ -7,7 +7,7 @@ import {
   PointerArbiter,
   TransitionHandle,
   keyToIntent,
-} from '@mintplayer/web-components/swiper-core';
+} from '@mintplayer/ui-core/swiper-core';
 import { inertRegions, type InertRegions } from '@mintplayer/web-components/a11y';
 import { carouselStyles } from '../styles';
 import {

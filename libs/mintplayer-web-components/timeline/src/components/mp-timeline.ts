@@ -9,7 +9,7 @@ import {
   type TimelineSelectable,
   type TimelineSelectionChangeDetail,
   type TimelineSide,
-} from '@mintplayer/web-components/timeline-core';
+} from '@mintplayer/ui-core/timeline-core';
 import { timelineStyles } from '../styles';
 // Side-effect import so <mp-timeline-item> is registered when items[] mode
 // renders rows in the shadow tree.

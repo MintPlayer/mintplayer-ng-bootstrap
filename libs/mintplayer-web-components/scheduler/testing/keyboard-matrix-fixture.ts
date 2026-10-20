@@ -1,7 +1,7 @@
 import { afterEach } from 'vitest';
 import '../src/components/mp-scheduler';
 import type { MpScheduler } from '../src/components/mp-scheduler';
-import type { SchedulerEvent } from '@mintplayer/web-components/scheduler-core';
+import type { SchedulerEvent } from '@mintplayer/ui-core/scheduler-core';
 import { nextRaf, useFakeAnimationFrames } from './scheduler-spec-fixture';
 
 /**

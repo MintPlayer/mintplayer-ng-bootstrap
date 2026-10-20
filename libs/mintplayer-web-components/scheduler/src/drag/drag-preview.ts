@@ -3,7 +3,7 @@ import {
   PreviewEvent,
   SchedulerEvent,
   TimeSlot,
-} from '@mintplayer/web-components/scheduler-core';
+} from '@mintplayer/ui-core/scheduler-core';
 import { DragConfig, DEFAULT_DRAG_CONFIG } from './drag-types';
 
 /**

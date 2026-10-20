@@ -1,7 +1,7 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import './mp-scheduler';
 import type { MpScheduler } from './mp-scheduler';
-import type { SchedulerEvent } from '@mintplayer/web-components/scheduler-core';
+import type { SchedulerEvent } from '@mintplayer/ui-core/scheduler-core';
 
 /**
  * The public surface of <mp-scheduler>: properties, attributes, navigation and

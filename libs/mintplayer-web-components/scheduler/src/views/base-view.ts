@@ -11,7 +11,7 @@ import {
   type DayOfWeek,
   type SchedulerOptions,
   type TimeSlot,
-} from '@mintplayer/web-components/scheduler-core';
+} from '@mintplayer/ui-core/scheduler-core';
 import { SchedulerState } from '../state/scheduler-state';
 
 /**

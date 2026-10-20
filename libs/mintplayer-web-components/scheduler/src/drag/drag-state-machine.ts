@@ -1,4 +1,4 @@
-import { DragOperationType, PreviewEvent, SchedulerEvent, TimeSlot } from '@mintplayer/web-components/scheduler-core';
+import { DragOperationType, PreviewEvent, SchedulerEvent, TimeSlot } from '@mintplayer/ui-core/scheduler-core';
 import {
   DragMachineState,
   DragMachineEvent,

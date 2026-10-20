@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import type { SchedulerEvent, TimeSlot } from '@mintplayer/web-components/scheduler-core';
+import type { SchedulerEvent, TimeSlot } from '@mintplayer/ui-core/scheduler-core';
 import { SchedulerStateManager } from '../state/scheduler-state';
 import { DragManager } from './drag-manager';
 import type { NormalizedPointerEvent } from '../input/pointer-event';

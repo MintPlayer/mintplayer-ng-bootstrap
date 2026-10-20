@@ -1,5 +1,5 @@
 import { LitElement, html, svg, nothing, type TemplateResult } from 'lit';
-import { booleanAttribute, linearScale, optionalNumberAttribute } from '@mintplayer/web-components/charts/core';
+import { booleanAttribute, linearScale, optionalNumberAttribute } from '@mintplayer/ui-core/charts/core';
 import { sparklineStyles } from '../styles';
 
 const W = 100;

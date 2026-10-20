@@ -10,7 +10,7 @@ import {
   TimeSlot,
   isResourceGroup,
   type SchedulerPermissions,
-} from '@mintplayer/web-components/scheduler-core';
+} from '@mintplayer/ui-core/scheduler-core';
 
 /**
  * Collect every event authored *inside* a resource tree, stamping each with the

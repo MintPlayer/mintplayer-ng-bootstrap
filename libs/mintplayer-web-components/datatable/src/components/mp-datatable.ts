@@ -14,7 +14,7 @@ import { live } from 'lit/directives/live.js';
 import { classMap } from 'lit/directives/class-map.js';
 import { styleMap } from 'lit/directives/style-map.js';
 import { datatableLightStyles } from '../styles';
-import { computeNextSort, sortRows, type SortColumn } from '../sort';
+import { computeNextSort, sortRows, type SortColumn } from '@mintplayer/ui-core/datatable';
 import {
   fittedColumnWidth,
   KEYBOARD_RESIZE_STEP,

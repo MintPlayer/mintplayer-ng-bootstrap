@@ -54,7 +54,7 @@ const require = createRequire(import.meta.url);
 export const REPO_ROOT = resolve(fileURLToPath(import.meta.url), '..', '..', '..');
 
 export function phonePaths(repoRoot = REPO_ROOT) {
-  const coreSrc = join(repoRoot, 'libs/mintplayer-web-components/phone-core/src');
+  const coreSrc = join(repoRoot, 'libs/mintplayer-ui-core/phone-core/src');
   return { coreSrc, metadataDir: join(coreSrc, 'metadata'), loadersPath: join(coreSrc, 'metadata-loaders.generated.ts') };
 }
 

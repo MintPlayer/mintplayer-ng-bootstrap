@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
 
 import { SchedulerStateManager } from './scheduler-state';
-import type { Resource, ResourceGroup, SchedulerEvent, TimeSlot } from '@mintplayer/web-components/scheduler-core';
+import type { Resource, ResourceGroup, SchedulerEvent, TimeSlot } from '@mintplayer/ui-core/scheduler-core';
 
 /**
  * The scheduler's state store.

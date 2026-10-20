@@ -27,7 +27,7 @@ import {
  * **This service is a pure mirror of the framework-neutral store.** In the
  * browser it holds no state of its own: `mode`/`effectiveMode` are refreshed
  * from `getBsThemeStore().subscribe()`, and `setMode()` forwards to the store's
- * `setMode()` (libs/mintplayer-web-components/theming/src/store.ts), which owns
+ * `setMode()` (libs/mintplayer-ui-core/theming/src/store.ts), which owns
  * validation, the `bs-theme-mode` cookie, the `data-bs-theme` write, the
  * `prefers-color-scheme` listener and cross-tab sync. So a change made anywhere
  * else (`<mp-theme-toggle>`, another tab, the OS) reaches these signals, and a
@@ -104,7 +104,7 @@ export class BsThemeService {
 
   /**
    * Set the user's mode. Forwards to the store's `setMode()`
-   * (libs/mintplayer-web-components/theming/src/store.ts): an invalid mode is a
+   * (libs/mintplayer-ui-core/theming/src/store.ts): an invalid mode is a
    * no-op with a warning, a valid one is persisted to the cookie and applied to
    * `<html>`, and the signals update through the store subscription. Custom
    * variants need a matching `[data-bs-theme="<value>"] { ... }` rule.

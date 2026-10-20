@@ -1,6 +1,7 @@
 import { describe, it, expect, afterEach, vi } from 'vitest';
-import { RovingFocus, nextEnabledIndex, firstEnabledIndex, lastEnabledIndex } from './roving-focus';
-import { deepActiveElement } from './focus-restore';
+import { RovingFocus } from './roving-focus';
+import { nextEnabledIndex, firstEnabledIndex, lastEnabledIndex } from '@mintplayer/ui-core/roving';
+import { deepActiveElement } from '@mintplayer/ui-core/focus';
 
 function list(count: number, disabled: number[] = []): HTMLElement[] {
   const container = document.createElement('div');

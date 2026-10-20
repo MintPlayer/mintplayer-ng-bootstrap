@@ -19,7 +19,7 @@ import {
   isResource,
   type DayOfWeek,
   resolveEventColor,
-} from '@mintplayer/web-components/scheduler-core';
+} from '@mintplayer/ui-core/scheduler-core';
 import { SchedulerStateManager, SchedulerState } from '../state/scheduler-state';
 import {
   BaseView,

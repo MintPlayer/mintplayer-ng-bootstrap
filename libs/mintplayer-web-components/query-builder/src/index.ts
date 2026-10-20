@@ -5,32 +5,32 @@ export type {
   Condition,
   SubQueryCondition,
   Operator,
-} from './model/expression';
+} from '@mintplayer/ui-core/query-builder';
 export type {
   FieldDef,
   FieldDefOption,
   FieldType,
   EntitySchema,
-} from './model/field-def';
+} from '@mintplayer/ui-core/query-builder';
 export {
   DEFAULT_OPERATOR_CATALOG,
   operatorsForType,
   valueShapeFor,
   defaultValueFor,
-} from './model/operators';
-export type { OperatorCatalog, ValueShape } from './model/operators';
-export { validateOperatorOverrides } from './model/operator-overrides';
+} from '@mintplayer/ui-core/query-builder';
+export type { OperatorCatalog, ValueShape } from '@mintplayer/ui-core/query-builder';
+export { validateOperatorOverrides } from '@mintplayer/ui-core/query-builder';
 export type {
   OperatorOverrides,
   ValidateOperatorOverridesResult,
-} from './model/operator-overrides';
+} from '@mintplayer/ui-core/query-builder';
 export {
   emptyGroup,
   emptyCondition,
   emptySubquery,
   cloneTree,
   newId,
-} from './model/default-tree';
+} from '@mintplayer/ui-core/query-builder';
 export {
   mapTree,
   findNodeById,
@@ -45,18 +45,18 @@ export {
   changeConditionField,
   changeConditionOperator,
   moveNode,
-} from './model/tree-ops';
-export { MaxDepthExceededError } from './model/errors';
-export { DEFAULT_MESSAGES } from './model/messages';
-export type { QueryBuilderMessages } from './model/messages';
+} from '@mintplayer/ui-core/query-builder';
+export { MaxDepthExceededError } from '@mintplayer/ui-core/query-builder';
+export { DEFAULT_MESSAGES } from '@mintplayer/ui-core/query-builder';
+export type { QueryBuilderMessages } from '@mintplayer/ui-core/query-builder';
 export type {
   EditorContext,
   EditorHandle,
   EditorFactory,
   EditorRegistry,
-} from './model/editor';
-export type { SavedQuery } from './model/saved-query';
-export type { SortDescriptor } from './model/sort';
+} from '@mintplayer/ui-core/query-builder';
+export type { SavedQuery } from '@mintplayer/ui-core/query-builder';
+export type { SortDescriptor } from '@mintplayer/ui-core/query-builder';
 
 // Visitor pipeline
 export type {

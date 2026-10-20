@@ -3,7 +3,7 @@ import {
   PreviewEvent,
   SchedulerEvent,
   TimeSlot,
-} from '@mintplayer/web-components/scheduler-core';
+} from '@mintplayer/ui-core/scheduler-core';
 
 /**
  * Simple position with x/y coordinates.

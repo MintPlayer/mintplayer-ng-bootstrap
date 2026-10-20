@@ -38,6 +38,6 @@ export type {
 } from './types';
 export type { DatatableLabels } from './types';
 export { DEFAULT_DATATABLE_LABELS } from './types';
-export type { SortColumn, SortDirection } from './sort';
-export { computeNextSort, sortRows } from './sort';
+export type { SortColumn, SortDirection } from '@mintplayer/ui-core/datatable';
+export { computeNextSort, sortRows } from '@mintplayer/ui-core/datatable';
 export { datatableLightStyles } from './styles';

@@ -2,11 +2,11 @@ import { LitElement, nothing, type PropertyValues, type TemplateResult } from 'l
 import { installLightStyles, scopedHtml } from '@mintplayer/web-components/light-dom';
 import { createRef, ref } from 'lit/directives/ref.js';
 import { ContextConsumer } from '@lit/context';
-import type { Condition, Operator } from './model/expression';
-import type { EntitySchema, FieldDef } from './model/field-def';
-import type { EditorContext, EditorFactory, EditorHandle } from './model/editor';
-import { DEFAULT_MESSAGES, type QueryBuilderMessages } from './model/messages';
-import { operatorsForType, valueShapeFor } from './model/operators';
+import type { Condition, Operator } from '@mintplayer/ui-core/query-builder';
+import type { EntitySchema, FieldDef } from '@mintplayer/ui-core/query-builder';
+import type { EditorContext, EditorFactory, EditorHandle } from '@mintplayer/ui-core/query-builder';
+import { DEFAULT_MESSAGES, type QueryBuilderMessages } from '@mintplayer/ui-core/query-builder';
+import { operatorsForType, valueShapeFor } from '@mintplayer/ui-core/query-builder';
 import { disabledContext, editorRegistryContext, messagesContext } from './context';
 import { resolveBuiltinEditor } from './value-editors/builtin-editors';
 import { queryConditionLightStyles } from './mp-query-condition.light.styles';
