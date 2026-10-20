@@ -10,59 +10,52 @@ export interface AccordionSuiteOptions {
 
 const PATH = '/enterprise/accordion';
 
-const single = (page: Page) => page.locator('[data-demo="single"] mp-accordion');
-const multi = (page: Page) => page.locator('[data-demo="multi"] mp-accordion');
-const nested = (page: Page) => page.locator('[data-demo="nested"] mp-accordion').first();
+// Every front renders the core's markup (#437): the root carries data-mps and
+// the rows are its direct children — the Angular host and the React/Vue div
+// alike. `:scope >` keeps a nested accordion's rows out of its parent's count.
+const ROOT = '[data-mps="accordion"]';
+const single = (page: Page) => page.locator(`[data-demo="single"] ${ROOT}`).first();
+const multi = (page: Page) => page.locator(`[data-demo="multi"] ${ROOT}`).first();
+const nested = (page: Page) => page.locator(`[data-demo="nested"] ${ROOT}`).first();
 
 const item = (accordion: Locator, index: number) =>
-  accordion.locator(`details.accordion-item >> nth=${index}`);
+  accordion.locator(`:scope > details.accordion-item >> nth=${index}`);
 const summary = (accordion: Locator, index: number) =>
-  accordion.locator(`summary.accordion-button >> nth=${index}`);
+  item(accordion, index).locator(':scope > summary.accordion-button');
 const content = (accordion: Locator, index: number) =>
-  accordion.locator(`.accordion-content >> nth=${index}`);
+  item(accordion, index).locator(':scope > .accordion-content');
 
 /**
- * JS-enabled behavior suite. Readiness is a deterministic shadow predicate
- * (not networkidle — the dev server's HMR socket hangs it on Firefox), per the
- * carousel/navbar precedent.
+ * JS-enabled behavior suite. The server HTML is already a working accordion,
+ * so "rendered" says nothing about "hydrated": readiness is behavioural —
+ * End on the first header moves focus only once the front's keydown handler
+ * is attached. Every front hydrates its whole tree at once, so one accordion
+ * answering means every accordion on the page does. (Not networkidle — the
+ * dev server's HMR socket hangs it on Firefox.)
  *
- * D1: both tiers render the same `<details name>` template; the UA owns
- * disclosure state, and `open` is the reflected source of truth these tests
- * read (never toggle-event counting — spike 0.1a).
+ * The UA owns disclosure state, and `open` is the reflected source of truth
+ * these tests read (never toggle-event counting — spike 0.1a).
  */
 export function accordionJsSuite(test: Test, expect: Expect, options: AccordionSuiteOptions = {}) {
   const path = options.path ?? PATH;
 
   async function goto(page: Page) {
     await page.goto(path);
-    await page.waitForFunction(() => {
-      const accordion = document.querySelector('mp-accordion');
-      // data-js only exists after connectedCallback — i.e. after hydration
-      // replaced the server DOM. Without it the DSD chrome satisfies the
-      // structural checks and the element detaches mid-test.
-      return !!(
-        accordion &&
-        accordion.hasAttribute('data-js') &&
-        accordion.shadowRoot?.querySelector('summary.accordion-button') &&
-        accordion.querySelector('[accordion-tab]')?.assignedSlot
-      );
-    });
+    const accordion = single(page);
+    await expect(async () => {
+      await summary(accordion, 0).focus();
+      await page.keyboard.press('End');
+      await expect(summary(accordion, 2)).toBeFocused({ timeout: 250 });
+    }).toPass();
   }
 
   test.describe('accordion (JS)', () => {
-    test('hydrates into the details tier, once', async ({ page }) => {
+    test('hydrates the server rows in place, once', async ({ page }) => {
       await goto(page);
-      const counts = await single(page).evaluate((el: Element) => {
-        const shadow = (el as HTMLElement & { shadowRoot: ShadowRoot }).shadowRoot;
-        return {
-          items: shadow.querySelectorAll('details.accordion-item').length,
-          summaries: shadow.querySelectorAll('summary.accordion-button').length,
-          // Pre-D1 machinery must not resurface in either tier.
-          inputs: shadow.querySelectorAll('.acc-input').length,
-          buttons: shadow.querySelectorAll('button').length,
-        };
-      });
-      expect(counts).toEqual({ items: 3, summaries: 3, inputs: 0, buttons: 0 });
+      const accordion = single(page);
+      await expect(accordion.locator(':scope > details.accordion-item')).toHaveCount(3);
+      await expect(accordion.locator('summary.accordion-button')).toHaveCount(3);
+      await expect(accordion.locator('button')).toHaveCount(0);
     });
 
     test('a closed tab exposes no content at all', async ({ page }) => {
@@ -113,27 +106,7 @@ export function accordionJsSuite(test: Test, expect: Expect, options: AccordionS
       await summary(outer, 0).click();
       await expect(item(outer, 0)).toHaveJSProperty('open', true);
 
-      // The inner accordion lives in the outer tab's body, so it does not exist
-      // until the outer tab is open — which means `goto`'s readiness wait, which
-      // only covers the FIRST mp-accordion on the page, says nothing about it.
-      // Clicking before it has upgraded hits a summary whose handler is not yet
-      // attached and the assertion below fails. Measured as a Firefox flake on
-      // PR #405 (passed on retry #1).
-      const inner = page.locator('[data-demo="nested"] mp-accordion mp-accordion').first();
-      await inner.evaluate((el) =>
-        customElements.whenDefined('mp-accordion').then(() =>
-          el.hasAttribute('data-js')
-            ? undefined
-            : new Promise<void>((resolve) => {
-                new MutationObserver((_, o) => {
-                  if (el.hasAttribute('data-js')) {
-                    o.disconnect();
-                    resolve();
-                  }
-                }).observe(el, { attributes: true, attributeFilter: ['data-js'] });
-              }),
-        ),
-      );
+      const inner = content(outer, 0).locator(ROOT).first();
       await summary(inner, 0).click();
       await expect(item(inner, 0)).toHaveJSProperty('open', true);
 
@@ -146,10 +119,12 @@ export function accordionJsSuite(test: Test, expect: Expect, options: AccordionS
       await goto(page);
       const accordion = single(page);
 
-      await expect(summary(accordion, 0)).toHaveAttribute('aria-controls', 'c0');
       await summary(accordion, 0).click(); // regions of closed details are hidden
+      const regionId = await content(accordion, 0).getAttribute('id');
+      const headerId = await summary(accordion, 0).getAttribute('id');
+      await expect(summary(accordion, 0)).toHaveAttribute('aria-controls', regionId!);
       await expect(content(accordion, 0)).toHaveAttribute('role', 'region');
-      await expect(content(accordion, 0)).toHaveAttribute('aria-labelledby', 'h0');
+      await expect(content(accordion, 0)).toHaveAttribute('aria-labelledby', headerId!);
 
       await summary(accordion, 0).focus();
       await page.keyboard.press('ArrowDown');
@@ -164,15 +139,15 @@ export function accordionJsSuite(test: Test, expect: Expect, options: AccordionS
 
 /**
  * No-JS suite (file-level `test.use({ javaScriptEnabled: false })` is applied
- * by the caller). With D1 the no-JS tier is the SAME details markup, fully
- * interactive through the UA: summaries are natively focusable and
- * Enter/Space-activatable, and `name` gives single-open exclusivity with no
- * script and no CSS state machine.
+ * by the caller). The server HTML is the same details markup the client
+ * renders, fully interactive through the UA: summaries are natively focusable
+ * and Enter/Space-activatable, and `name` gives single-open exclusivity with
+ * no script and no CSS state machine.
  */
 export function accordionNojsSuite(test: Test, expect: Expect, options: AccordionSuiteOptions = {}) {
   const path = options.path ?? PATH;
 
-  test.describe('accordion (no JS, DSD)', () => {
+  test.describe('accordion (no JS)', () => {
     // No `waitForLoadState('networkidle')`: the dev server holds an HMR
     // websocket open, so the network never goes idle and the wait burns its
     // full timeout on Firefox. Nothing here needs it either — everything
@@ -182,9 +157,9 @@ export function accordionNojsSuite(test: Test, expect: Expect, options: Accordio
       await page.goto(path);
     });
 
-    test('the DSD attaches server-side with native details rows in place', async ({ page }) => {
+    test('the server renders native details rows', async ({ page }) => {
       const accordion = single(page);
-      await expect(accordion.locator('details.accordion-item')).toHaveCount(3);
+      await expect(accordion.locator(':scope > details.accordion-item')).toHaveCount(3);
       await expect(accordion.locator('summary.accordion-button')).toHaveCount(3);
       // Everything starts collapsed, and collapsed means the content is not
       // rendered at all — no padding strip, no readable text.
@@ -215,9 +190,6 @@ export function accordionNojsSuite(test: Test, expect: Expect, options: Accordio
 
       await summary(accordion, 0).focus();
       await page.keyboard.press('Enter');
-      // Tab reaches the next tab's summary natively; the open panel's content
-      // sits between them in the tab order, so tab twice past the body link
-      // count of this demo (plain text bodies — one Tab suffices).
       await summary(accordion, 1).focus();
       await page.keyboard.press('Enter');
 
@@ -225,11 +197,11 @@ export function accordionNojsSuite(test: Test, expect: Expect, options: Accordio
       await expect(item(accordion, 1)).toHaveAttribute('open', '');
     });
 
-    test('two accordions on one page keep independent state (shadow-scoped name groups)', async ({ page }) => {
-      // <details name> groups per node tree, so each accordion's own shadow
-      // root scopes its group — opening a tab in one must leave every other
-      // accordion alone. A single action plus pure assertions, per the
-      // Chromium/no-JS actionability lesson from the carousel suite.
+    test('two accordions on one page keep independent state (per-accordion name groups)', async ({ page }) => {
+      // Each accordion's rows share a name derived from its own id, so
+      // opening a tab in one must leave every other accordion alone. A single
+      // action plus pure assertions, per the Chromium/no-JS actionability
+      // lesson from the carousel suite.
       await summary(single(page), 1).click();
       await expect(item(single(page), 1)).toHaveAttribute('open', '');
       await expect(item(multi(page), 0)).not.toHaveAttribute('open', '');

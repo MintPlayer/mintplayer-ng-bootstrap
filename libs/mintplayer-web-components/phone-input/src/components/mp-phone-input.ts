@@ -13,7 +13,7 @@ import {
   phoneCountryList,
   type PhoneCountryOption,
   type PhoneRules,
-} from '@mintplayer/web-components/phone-core';
+} from '@mintplayer/ui-core/phone-core';
 import { loadAllFlags, type FlagMap } from '@mintplayer/web-components/flags';
 import {
   HostAriaController,

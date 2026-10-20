@@ -13,30 +13,22 @@ import { StrictMode } from 'react';
 import { renderToPipeableStream } from 'react-dom/server';
 import { StaticRouter } from 'react-router-dom/server';
 import { Writable } from 'node:stream';
-// Framework-agnostic helper: splices `<mp-shell>`'s Declarative Shadow DOM into
-// the HTML so the sidebar + hamburger toggle work with JavaScript disabled.
-import { injectMpShellDsd } from '@mintplayer/web-components/shell/ssr';
-// Splices each `<mp-dropdown-menu>`'s Declarative Shadow DOM into the HTML so
-// the menu renders styled with JavaScript disabled.
-import { injectMpDropdownDsd } from '@mintplayer/web-components/dropdown-menu/ssr';
-// Splices each `<mp-navbar>` family element's Declarative Shadow DOM into the
-// HTML so the navbar renders — and collapses/reveals via its pure-CSS state
-// machine — with JavaScript disabled.
-import { injectMpNavbarDsd } from '@mintplayer/web-components/navbar/ssr';
 // Same pattern for <mp-carousel>: count-variant DSD chrome so the radio-driven
 // no-JS carousel navigates with JS disabled. Composed with the other injectors.
 import { injectMpCarouselDsd } from '@mintplayer/web-components/carousel/ssr';
 // Same pattern for <mp-accordion>: [multi] x [tab-count] DSD chrome variants,
 // so tabs open and close through the shadow input state machine with JS off.
-import { injectMpAccordionDsd } from '@mintplayer/web-components/accordion/ssr';
 // Re-exported for server.mjs, which splices the theme attribute onto <html> and
 // cannot resolve the @mintplayer path alias itself (PRD dark-mode D8, FR-6).
 // Import-safe on the server: the store is only created on first browser use.
 export { injectThemeAttribute, resolveServerTheme } from '@mintplayer/web-components/theming';
+// The component sheets the render installed, as marker <style> tags for the
+// <!--app-head--> slot (PRD #437 S12). Read AFTER render(): fronts install on first render.
+export { collectScopedStyles } from '@mintplayer/ui-core/scoped-styles';
 import App from './app/app';
 
 /**
- * Render the app for `url` to an HTML string with `<mp-shell>`'s DSD injected.
+ * Render the app for `url` to an HTML string with the WCs' DSD chrome injected.
  *
  * Uses `renderToPipeableStream` + `onAllReady` (rather than `renderToString`)
  * so lazy/`Suspense` routes fully resolve server-side — every page's markup is
@@ -56,7 +48,7 @@ export function render(url: string): Promise<string> {
       },
       final(cb) {
         clearTimeout(timer);
-        resolve(injectMpAccordionDsd(injectMpCarouselDsd(injectMpNavbarDsd(injectMpDropdownDsd(injectMpShellDsd(Buffer.concat(chunks).toString('utf-8')))))));
+        resolve(injectMpCarouselDsd(Buffer.concat(chunks).toString('utf-8')));
         cb();
       },
     });

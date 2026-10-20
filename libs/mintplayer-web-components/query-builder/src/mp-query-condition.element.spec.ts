@@ -1,8 +1,8 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import './mp-query-condition.element';
 import type { MpQueryConditionElement } from './mp-query-condition.element';
-import type { Condition } from './model/expression';
-import type { EntitySchema } from './model/field-def';
+import type { Condition } from '@mintplayer/ui-core/query-builder';
+import type { EntitySchema } from '@mintplayer/ui-core/query-builder';
 
 const SCHEMA: EntitySchema[] = [
   {

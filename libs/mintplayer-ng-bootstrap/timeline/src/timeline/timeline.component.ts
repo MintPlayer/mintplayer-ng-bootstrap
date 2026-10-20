@@ -24,7 +24,7 @@ import type {
   TimelineOrientation,
   TimelineSelectable,
   TimelineSelectionChangeDetail,
-} from '@mintplayer/web-components/timeline-core';
+} from '@mintplayer/ui-core/timeline-core';
 
 // Side-effect import: registers <mp-timeline> + <mp-timeline-item>.
 import '@mintplayer/web-components/timeline';

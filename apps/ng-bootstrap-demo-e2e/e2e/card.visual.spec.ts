@@ -53,7 +53,7 @@ test.describe('card — visual regression', () => {
   });
 
   test('filled colour variants keep their contrast text', async ({ page }) => {
-    await expect(page.locator('mp-card[color="dark"]:not([outline])').first()).toHaveScreenshot(
+    await expect(page.locator('bs-card.text-bg-dark').first()).toHaveScreenshot(
       'card-filled-dark.png',
     );
   });

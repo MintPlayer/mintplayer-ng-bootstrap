@@ -9,7 +9,7 @@ axeAuditSuite(test, expect, [
   {
     path: '/basic/forms/radio',
     interact: async (page) => {
-      await page.locator('mp-radio-group[name="fruitTemplate"] input[type="radio"]').first().click();
+      await page.locator('input[type="radio"][name="fruitTemplate"]').first().click();
     },
   },
   {
@@ -36,7 +36,7 @@ axeAuditSuite(test, expect, [
   {
     path: '/basic/containers/tab-control',
     interact: async (page) => {
-      await page.locator('mp-tab-control').first().locator('[role="tab"]').nth(1).click();
+      await page.locator('.tab-control[data-mps="tab-control"]').first().locator('[role="tab"]').nth(1).click();
     },
   },
   { path: '/basic/containers/card' },
@@ -48,11 +48,8 @@ axeAuditSuite(test, expect, [
   { path: '/basic/rating' },
   {
     path: '/enterprise/accordion',
-    ready: async (page) => {
-      await page.waitForFunction(() => !!document.querySelector('mp-accordion')?.hasAttribute('data-js'));
-    },
     interact: async (page) => {
-      await page.locator('mp-accordion').first().locator('summary').first().click();
+      await page.locator('[data-mps="accordion"]').first().locator('summary').first().click();
     },
   },
   {

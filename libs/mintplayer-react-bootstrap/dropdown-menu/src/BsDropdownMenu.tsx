@@ -1,71 +1,68 @@
 import * as React from 'react';
-import { createComponent, type EventName } from '@lit/react';
+import { forwardRef, useEffect, useImperativeHandle, useRef, useState } from 'react';
+import { installLightStyles } from '@mintplayer/ui-core/scoped-styles';
 import {
-  MpDropdownMenu,
+  DROPDOWN_MENU_SCOPE,
+  attachDropdownMenu,
+  connectDropdownMenu,
+  dropdownMenuScopedStyles,
   type DropdownSelectEventDetail,
-} from '@mintplayer/web-components/dropdown-menu';
-// Companion light-DOM sheet (nested-link reset ::slotted can't reach). Imported
-// here so it lands in the app's static CSS bundle — present with JS disabled.
-import './dropdown-menu.css';
+} from '@mintplayer/ui-core/dropdown-menu';
+import { reactProps } from '../../machine/src/react-props';
 
 /* Omits React's native `onSelect` (a text-selection event) because this
-   component's `onSelect` is the menu-item selection event and collides by name.
-   Same trade as BsCarousel's animation handlers. */
-export interface BsDropdownMenuProps
-  extends Omit<React.HTMLAttributes<HTMLElement>, 'onSelect'> {
-  /** px cap on the menu height; scrolls beyond. Maps to the `max-height` attribute. */
+   component's `onSelect` is the menu-item selection and collides by name. */
+export interface BsDropdownMenuProps extends Omit<React.HTMLAttributes<HTMLUListElement>, 'onSelect'> {
+  /** Pixel cap on the menu height; scrolls beyond. */
   maxHeight?: number;
-  /** Fires when an enabled item is activated; `detail.value` carries the item's value. */
-  onSelect?: (event: CustomEvent<DropdownSelectEventDetail>) => void;
-  className?: string;
+  /** Fires when an enabled item is activated; `value` carries the item's value. */
+  onSelect?: (detail: DropdownSelectEventDetail) => void;
   children?: React.ReactNode;
 }
 
 /**
- * Inner `@lit/react` component. `maxHeight` is surfaced to the
- * WC as the `max-height` attribute — the layout/roles read the
- * attributes to keep the menu SSR- and no-JS-friendly — so `createComponent`
- * forwards them as React props → attributes. We retype its props to the clean
- * public surface; the runtime forwards everything to the element unchanged.
- */
-type MpDropdownMenuInnerProps = Omit<BsDropdownMenuProps, 'maxHeight'> & {
-  'max-height'?: number;
-} & React.RefAttributes<MpDropdownMenu>;
-
-const MpDropdownMenuComponent = createComponent({
-  react: React,
-  tagName: 'mp-dropdown-menu',
-  elementClass: MpDropdownMenu,
-  events: {
-    onSelect: 'select' as EventName<CustomEvent<DropdownSelectEventDetail>>,
-  },
-}) as unknown as React.ForwardRefExoticComponent<MpDropdownMenuInnerProps>;
-
-/**
- * React wrapper for `<mp-dropdown-menu>` — a Bootstrap `.dropdown-menu`.
- * Side-effect-registers the WC on import.
+ * `BsDropdownMenu` — a Bootstrap `.dropdown-menu` list (#437).
  *
- * The menu chrome is server-rendered as Declarative Shadow DOM (see
- * `injectMpDropdownDsd` in `@mintplayer/web-components/dropdown-menu/ssr`), so it
- * renders styled with JavaScript disabled. Slot `<BsDropdownItem>` /
- * `<BsDropdownDivider>` / `<BsDropdownHeader>` children. The menu provides roving-tabindex keyboard navigation over the enabled items.
- *
- *     <BsDropdownMenu onSelect={(e) => console.log(e.detail.value)}>
+ *     <BsDropdownMenu onSelect={({ value }) => console.log(value)}>
  *       <BsDropdownHeader>Section</BsDropdownHeader>
- *       <BsDropdownItem value="a">First</BsDropdownItem>
+ *       <BsDropdownItem value="a"><a href="/a">First</a></BsDropdownItem>
  *       <BsDropdownDivider />
- *       <BsDropdownItem value="b" selected>Second</BsDropdownItem>
+ *       <BsDropdownItem value="b"><button type="button">Second</button></BsDropdownItem>
  *     </BsDropdownMenu>
+ *
+ * Renders the markup of `@mintplayer/ui-core/dropdown-menu`: a `<ul>` around
+ * the item `<li>`s. Once hydrated, the core's attachment adds the menu roles,
+ * the roving tabindex, the arrow keys and `onSelect`; the server output is a
+ * plain list of links, which is valid and works with JavaScript off.
  */
-export const BsDropdownMenu = React.forwardRef<MpDropdownMenu, BsDropdownMenuProps>(function BsDropdownMenu(
-  { maxHeight, ...props },
+export const BsDropdownMenu = forwardRef<HTMLUListElement | null, BsDropdownMenuProps>(function BsDropdownMenu(
+  { maxHeight, onSelect, className, style, children, ...rest },
   ref,
 ) {
+  installLightStyles(DROPDOWN_MENU_SCOPE, dropdownMenuScopedStyles);
+
+  const menuRef = useRef<HTMLUListElement>(null);
+  useImperativeHandle(ref, () => menuRef.current);
+  const [hydrated, setHydrated] = useState(false);
+
+  const latest = useRef(onSelect);
+  latest.current = onSelect;
+  useEffect(() => {
+    setHydrated(true);
+    const menu = menuRef.current;
+    if (!menu) return;
+    return attachDropdownMenu(menu, { onSelect: (detail) => latest.current?.(detail) });
+  }, []);
+
+  const { class: menuClass, ...bag } = connectDropdownMenu({ hydrated });
   return (
-    <MpDropdownMenuComponent
-      ref={ref}
-      {...(maxHeight != null ? { 'max-height': maxHeight } : {})}
-      {...props}
-    />
+    <ul
+      ref={menuRef}
+      {...reactProps(bag)}
+      {...rest}
+      style={maxHeight === undefined ? style : ({ ...style, '--mp-dropdown-max-height': `${maxHeight}px` } as React.CSSProperties)}
+      className={[String(menuClass), className].filter(Boolean).join(' ')}>
+      {children}
+    </ul>
   );
 });

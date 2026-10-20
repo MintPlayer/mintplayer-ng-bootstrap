@@ -70,6 +70,18 @@ export function typeaheadSuite(test: Test, expect: Expect, { path }: TypeaheadSu
       await expect(input).toBeFocused();
     });
 
+    // PRD #437 C1: component sheets live in @layer mp.components and Bootstrap in
+    // mp.bootstrap, so an UNLAYERED consumer rule wins even at lower specificity
+    // than the scoped one (.mp-typeahead[data-mps] .dropdown-item[data-mps]).
+    test('an unlayered consumer rule overrides the component and baseline layers', async ({ page }) => {
+      await page.addStyleTag({ content: '.dropdown-item { white-space: pre; padding-left: 7px; }' });
+      const input = combobox(page, 'Artist, highlighted');
+      await input.fill('mi');
+      const option = (await listboxOf(input)).getByRole('option').first();
+      await expect(option).toHaveCSS('white-space', 'pre'); // beats the component layer
+      await expect(option).toHaveCSS('padding-left', '7px'); // beats the Bootstrap layer
+    });
+
     test('a superseded slow request is aborted and only the newest answer shows', async ({ page }) => {
       const input = combobox(page, 'Artist');
       await input.pressSequentially('mi', { delay: 20 });

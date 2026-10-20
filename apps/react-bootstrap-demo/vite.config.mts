@@ -31,6 +31,14 @@ export default defineConfig(({ isSsrBuild }) => ({
     tsconfigPaths: true,
     alias: [colorModeCssAlias],
   },
+  // src/bootstrap.scss compiles Bootstrap 5.3's Sass, which trips these Sass 3.0
+  // deprecations (same list as the ng demo's stylePreprocessorOptions; drop on
+  // Bootstrap 6).
+  css: {
+    preprocessorOptions: {
+      scss: { silenceDeprecations: ['import', 'global-builtin', 'color-functions', 'if-function'] },
+    },
+  },
   build: {
     // Split into browser/ + server/ — the standard Vite SSR layout server.mjs
     // reads in production. The SSR bundle targets Node (esnext: allows the

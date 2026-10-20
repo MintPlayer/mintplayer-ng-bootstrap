@@ -4,18 +4,17 @@ import { BsRadioGroup } from '@mintplayer/react-bootstrap/radio-group';
 import { BsCodeSnippet } from '@mintplayer/react-bootstrap/code-snippet';
 
 const SOURCE = `<BsRadioGroup name="color" aria-label="Color" value={color}
-              onGroupChange={e => e.detail.value && setColor(e.detail.value)}>
+              onValueChange={setColor}>
   <BsRadio value="red">Red</BsRadio>
   <BsRadio value="green">Green</BsRadio>
 </BsRadioGroup>`;
 
-// <BsRadioGroup> (the mp-radio-group WC) owns what shadow roots keep the
-// platform from providing: one-of-N exclusivity, role="radiogroup", the
-// roving tab stop and arrow move-and-select. The consumer holds ONE value
-// per group and listens for group-change — which also covers keyboard
-// selection, where no per-radio change event ever fires. Same rule for
-// BOTH the form-check variant AND the toggle_button variant, since
-// they're both <mp-radio>s under the hood.
+// <BsRadioGroup> renders a div with role="radiogroup" and hands its
+// <BsRadio>s one name. They are then native radios of one set, so the
+// browser supplies exclusivity, the single tab stop and arrow
+// move-and-select, with JavaScript off as well. The consumer holds ONE
+// value per group; onValueChange fires for pointer and keyboard picks
+// alike, for the form-check and toggle_button variants both.
 export function RadioPage() {
   const [color, setColor] = useState<string>('green');
   const [size, setSize] = useState<string>('m');
@@ -27,7 +26,7 @@ export function RadioPage() {
       <section>
         <h2>With labels</h2>
         <BsRadioGroup name="color" aria-label="Color" value={color}
-                      onGroupChange={e => e.detail.value && setColor(e.detail.value)}>
+                      onValueChange={setColor}>
           <BsRadio value="red">Red</BsRadio>{' '}
           <BsRadio value="green">Green</BsRadio>{' '}
           <BsRadio value="blue">Blue</BsRadio>
@@ -38,7 +37,7 @@ export function RadioPage() {
       <section>
         <h2>Toggle-button variant</h2>
         <BsRadioGroup name="size" aria-label="Size" value={size}
-                      onGroupChange={e => e.detail.value && setSize(e.detail.value)}>
+                      onValueChange={setSize}>
           <BsRadio type="toggle_button" value="s" color="outline-primary">Small</BsRadio>{' '}
           <BsRadio type="toggle_button" value="m" color="outline-primary">Medium</BsRadio>{' '}
           <BsRadio type="toggle_button" value="l" color="outline-primary">Large</BsRadio>

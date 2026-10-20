@@ -3,7 +3,7 @@ import {
   formatMessage,
   resolveMessages,
   timelineService,
-} from '@mintplayer/web-components/scheduler-core';
+} from '@mintplayer/ui-core/scheduler-core';
 import { BaseView } from './base-view';
 import { SchedulerState } from '../state/scheduler-state';
 

@@ -60,9 +60,19 @@ describe('Vue wrapper attribute passthrough — the invariant, statically', () =
   });
 
   it('every inheritAttrs:false wrapper re-binds v-bind="$attrs"', () => {
-    // Fronts of a headless core forward useAttrs() minus `role` (the core owns
-    // the role); behaviour/BsTypeahead.spec.ts pins the forwarding.
-    const FILTERED_FORWARDING = ['../typeahead/src/BsTypeahead.vue'];
+    // Fronts of a headless core merge useAttrs() with the core's bags instead
+    // (the core owns role and the IDREFs); the runtime sweep below pins where
+    // the attributes land, behaviour/BsTypeahead.spec.ts the typeahead's.
+    const FILTERED_FORWARDING = [
+      '../checkbox/src/BsCheckbox.vue',
+      '../radio/src/BsRadio.vue',
+      '../pagination/src/BsPagination.vue',
+      '../radio-group/src/BsRadioGroup.vue',
+      '../shell/src/BsShell.vue',
+      '../tab-control/src/BsTabControl.vue',
+      '../tab-control/src/BsTabPage.vue',
+      '../typeahead/src/BsTypeahead.vue',
+    ];
     const offenders = Object.entries(SFC_SOURCES)
       .filter(([path]) => !FILTERED_FORWARDING.includes(path))
       .filter(([, source]) => source.includes('inheritAttrs: false'))
@@ -75,10 +85,10 @@ describe('Vue wrapper attribute passthrough — the invariant, statically', () =
 
 /** SFC name → CSS selector of the element a consumer's attributes must land on. */
 const TARGETS: Record<string, string> = {
-  BsAccordion: 'mp-accordion',
-  BsAccordionItem: 'mp-accordion-tab',
+  BsAccordion: 'div.accordion',
+  BsAccordionItem: 'details.accordion-item',
   BsCalendar: 'mp-calendar',
-  BsCard: 'mp-card',
+  BsCard: 'div.card',
   BsCardBody: 'div.card-body',
   BsCardFooter: 'div.card-footer',
   BsCardGroup: 'div.card-group',
@@ -90,9 +100,9 @@ const TARGETS: Record<string, string> = {
   BsCardTitle: 'div.card-title',
   BsCarousel: 'mp-carousel',
   BsHierarchyChart: 'mp-hierarchy-chart',
-  BsSparkline: 'mp-sparkline',
+  BsSparkline: 'span.sparkline',
   BsTrendChart: 'mp-trend-chart',
-  BsCheckbox: 'mp-checkbox',
+  BsCheckbox: 'input[type=checkbox]',
   BsCodeSnippet: 'mp-code-snippet',
   BsDatatable: 'mp-datatable',
   BsDatepicker: 'mp-datepicker',
@@ -101,34 +111,36 @@ const TARGETS: Record<string, string> = {
   BsDropdownDivider: 'li.dropdown-divider',
   BsDropdownHeader: 'li.dropdown-header',
   BsDropdownItem: 'li.dropdown-item',
-  BsDropdownMenu: 'mp-dropdown-menu',
+  BsDropdownMenu: 'ul.dropdown-menu',
   BsFileManager: 'mp-file-manager',
-  BsInputGroup: 'mp-input-group',
+  BsInputGroup: 'div.input-group',
   BsMultiRange: 'mp-multi-range',
-  BsNavbar: 'mp-navbar',
-  BsNavbarBrand: 'mp-navbar-brand',
-  BsNavbarDropdown: 'mp-navbar-dropdown',
-  BsNavbarItem: 'mp-navbar-item',
+  BsNavbar: 'nav.navbar',
+  BsNavbarNav: 'div.navbar-nav',
+  BsNavbarDropdown: 'details.dropdown',
+  BsNavbarItem: 'div.nav-item',
   BsOtpInput: 'mp-otp-input',
-  BsPagination: 'mp-pagination',
+  BsPagination: 'nav',
   BsPhoneInput: 'mp-phone-input',
   BsQueryBuilder: 'mp-query-builder',
-  BsRadio: 'mp-radio',
-  BsRadioGroup: 'mp-radio-group',
+  BsRadio: 'input[type=radio]',
+  BsRadioGroup: 'div[role=radiogroup]',
   BsRibbon: 'mp-ribbon',
   BsScheduler: 'mp-scheduler',
   BsSelect: 'mp-select',
-  BsShell: 'mp-shell',
+  BsShell: 'div.shell',
   BsSignaturePad: 'mp-signature-pad',
   BsSplitter: 'mp-splitter',
-  BsTabControl: 'mp-tab-control',
+  BsTabControl: 'div.tab-control',
+  // A marker that renders nothing alone: mounted in BsTabControl (COMPOSED).
+  BsTabPage: 'div.tab-pane',
   BsThemeToggle: 'mp-theme-toggle',
   BsTileManager: 'mp-tile-manager',
   BsTimeline: 'mp-timeline',
   BsTimelineItem: 'mp-timeline-item',
   BsTimeList: 'mp-time-list',
   BsTimepicker: 'mp-timepicker',
-  BsToggleButton: 'mp-toggle-button',
+  BsToggleButton: 'input[type=checkbox]',
   BsTreeSelect: 'mp-tree-select',
   BsTreeview: 'mp-treeview',
   // Headless-core front (#436): attributes land on its own combobox <input>.
@@ -143,6 +155,13 @@ const TARGETS: Record<string, string> = {
 const slots = { default: () => h('span', { class: 'slot-content' }, 'content') };
 
 const PROBE = { 'aria-label': 'probe-name', 'data-probe': 'x', id: 'probe-id' };
+
+/** Marker SFCs that render nothing alone: mounted inside their parent, with the probe on the marker. */
+const COMPOSED: Record<string, () => Component> = {
+  BsTabPage: () => ({
+    render: () => h(SFC_COMPONENTS['BsTabControl'], null, { default: () => [h(SFC_COMPONENTS['BsTabPage'], PROBE, slots)] }),
+  }),
+};
 
 const CASES = Object.entries(TARGETS).map(([name, target]) => ({ name, target }));
 
@@ -169,7 +188,9 @@ describe('Vue wrapper attribute passthrough — every SFC, at runtime', () => {
   });
 
   it.each(CASES)('$name forwards consumer attributes to $target', ({ name, target }) => {
-    const wrapper = mountWrapper(SFC_COMPONENTS[name], { attrs: PROBE, slots });
+    const wrapper = COMPOSED[name]
+      ? mountWrapper(COMPOSED[name]())
+      : mountWrapper(SFC_COMPONENTS[name], { attrs: PROBE, slots });
     const host: HTMLElement = (wrapper.element as Node).parentElement ?? document.body;
     const el = host.querySelector<HTMLElement>(target);
 

@@ -20,7 +20,9 @@ export default defineConfig(() => {
     resolve: { tsconfigPaths: true },
     plugins: [
       copyPackageJson(import.meta.dirname),
-      nxCopyAssetsPlugin(['*.md', '*/README.md']),
+      // The page baseline ships as Sass (to @use) and as the prebuilt bootstrap.css
+      // (to link); both resolve as @mintplayer/ui-core/styles/* (PRD #437 §6).
+      nxCopyAssetsPlugin(['*.md', '*/README.md', 'styles/**/*.scss', 'styles/bootstrap.css']),
       dts({
         entryRoot: '.',
         tsconfigPath: resolve(import.meta.dirname, 'tsconfig.lib.json'),
@@ -39,7 +41,13 @@ export default defineConfig(() => {
         fileName: (_format, entryName) => `${entryName}.mjs`,
       },
       rolldownOptions: {
-        external: ['tslib'],
+        external: [
+          'tslib',
+          // Declared dependencies of phone-core: a consumer resolves them from its own
+          // node_modules, and import('libphonenumber-js/max') stays a lazy chunk there.
+          /^libphonenumber-js(\/.*)?$/,
+          /^intl-tel-input(\/.*)?$/,
+        ],
         output: {
           preserveModules: false,
           entryFileNames: '[name].mjs',
@@ -60,7 +68,7 @@ export default defineConfig(() => {
         reportsDirectory: '../../coverage/libs/mintplayer-ui-core',
         provider: 'v8' as const,
         include: ['**/*.ts'],
-        exclude: [...coverageConfigDefaults.exclude, '**/*.d.ts', '**/test-setup.ts', '**/*.styles.ts'],
+        exclude: [...coverageConfigDefaults.exclude, '**/*.d.ts', '**/test-setup.ts', '**/*.styles.ts', '**/*.generated.ts', 'phone-core/src/metadata/**'],
         reporter: ['lcov'],
       },
     },

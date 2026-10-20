@@ -5,7 +5,7 @@
 //   dev:  node apps/react-bootstrap-demo/server.js
 //   prod: NODE_ENV=production node apps/react-bootstrap-demo/server.js
 //
-// Declarative Shadow DOM injection for `<mp-shell>` happens inside
+// Declarative Shadow DOM injection for the remaining WCs happens inside
 // entry-server's `render()` (it has the path alias), so this file never needs
 // to import the framework libraries.
 import fs from 'node:fs/promises';
@@ -91,13 +91,14 @@ async function createServer() {
       // The theme helpers come through the SSR entry (it re-exports them from
       // @mintplayer/web-components/theming): the entry is bundled by Vite, so
       // this plain-ESM file needs no path alias in dev or prod.
-      const { render, resolveServerTheme, injectThemeAttribute } = entry;
+      const { render, resolveServerTheme, injectThemeAttribute, collectScopedStyles } = entry;
       const appHtml = await render(url);
       // SSR theme splice (PRD dark-mode D5b, FR-6): a valid bs-theme-mode cookie,
       // else the meta default, becomes <html data-bs-theme>; auto renders none
       // and the pre-boot script resolves it from the OS scheme.
       const mode = resolveServerTheme(req.headers.cookie, { defaultMode: readDefaultMode(template) });
-      const html = injectThemeAttribute(template.replace('<!--app-html-->', appHtml), mode);
+      const page = template.replace('<!--app-head-->', collectScopedStyles()).replace('<!--app-html-->', appHtml);
+      const html = injectThemeAttribute(page, mode);
       // The markup depends on the cookie, so no shared cache may serve one
       // visitor's theme to another.
       res.status(200).set({ 'Content-Type': 'text/html', Vary: 'Cookie' }).end(html);

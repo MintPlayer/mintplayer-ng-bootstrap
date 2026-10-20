@@ -10,7 +10,7 @@ async function mount(markup: string): Promise<MpToggleButton> {
   return el;
 }
 
-const inner = (el: MpToggleButton) => el.shadowRoot!.querySelector('input') as HTMLInputElement;
+const inner = (el: MpToggleButton) => el.querySelector('input') as HTMLInputElement;
 
 /** jsdom's ElementInternals has no setFormValue; record what the element submits. */
 function recordFormValue(el: MpToggleButton): unknown[] {
@@ -83,26 +83,24 @@ describe('mp-toggle-button property surface', () => {
     document.body.innerHTML = '';
   });
 
-  it('name and value reach the inner input and clear on null', async () => {
+  it('name and value stay on the host — the light-DOM input must not submit a second time', async () => {
     const el = await mount('<mp-toggle-button>T</mp-toggle-button>');
     el.name = 'opt';
     el.value = 'a';
     await el.updateComplete;
-    expect(inner(el).getAttribute('name')).toBe('opt');
-    expect(inner(el).getAttribute('value')).toBe('a');
     expect([el.name, el.value]).toEqual(['opt', 'a']);
+    expect(inner(el).hasAttribute('name')).toBe(false);
+    expect(inner(el).hasAttribute('value')).toBe(false);
 
     el.name = null;
     el.value = null;
-    await el.updateComplete;
-    expect(inner(el).hasAttribute('name')).toBe(false);
-    expect(inner(el).hasAttribute('value')).toBe(false);
+    expect([el.name, el.value]).toEqual([null, null]);
   });
 
   it('the name and value attributes drive the same state', async () => {
     const el = await mount('<mp-toggle-button name="n" value="v">T</mp-toggle-button>');
     expect([el.name, el.value]).toEqual(['n', 'v']);
-    expect(inner(el).getAttribute('name')).toBe('n');
+    expect(inner(el).hasAttribute('name')).toBe(false);
   });
 
   it('disabled reflects both ways', async () => {
@@ -137,7 +135,7 @@ describe('mp-toggle-button property surface', () => {
     const el = await mount('<mp-toggle-button>T</mp-toggle-button>');
     el.color = 'outline-danger';
     await el.updateComplete;
-    const label = el.shadowRoot!.querySelector('label')!;
+    const label = el.querySelector('label')!;
     expect(label.className).toBe('btn btn-outline-danger');
     el.color = 'neon' as never;
     await el.updateComplete;

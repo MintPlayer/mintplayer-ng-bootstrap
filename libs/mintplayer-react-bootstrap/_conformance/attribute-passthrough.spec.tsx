@@ -36,7 +36,7 @@ import {
 import { BsFileManager } from '@mintplayer/react-bootstrap/file-manager';
 import { BsInputGroup } from '@mintplayer/react-bootstrap/input-group';
 import { BsMultiRange } from '@mintplayer/react-bootstrap/multi-range';
-import { BsNavbar, BsNavbarBrand, BsNavbarDropdown, BsNavbarItem } from '@mintplayer/react-bootstrap/navbar';
+import { BsNavbar, BsNavbarDropdown, BsNavbarItem, BsNavbarNav } from '@mintplayer/react-bootstrap/navbar';
 import { BsOtpInput } from '@mintplayer/react-bootstrap/otp-input';
 import { BsPagination } from '@mintplayer/react-bootstrap/pagination';
 import { BsPhoneInput } from '@mintplayer/react-bootstrap/phone-input';
@@ -147,10 +147,10 @@ const bare = (name: string, target: string, Component: React.ElementType): Case 
 
 /** Every exported React wrapper, and the element its attributes must land on. */
 const CASES: Case[] = [
-  bare('BsAccordion', 'mp-accordion', BsAccordion),
+  bare('BsAccordion', 'div.accordion', BsAccordion),
   {
     name: 'BsAccordionItem',
-    target: 'mp-accordion-tab',
+    target: 'details.accordion-item',
     render: (p) => (
       <BsAccordion>
         <BsAccordionItem header="Header" {...p} />
@@ -158,7 +158,7 @@ const CASES: Case[] = [
     ),
   },
   bare('BsCalendar', 'mp-calendar', BsCalendar),
-  bare('BsCard', 'mp-card', BsCard),
+  bare('BsCard', 'div.card', BsCard),
   bare('BsCardBody', 'div.card-body', BsCardBody),
   bare('BsCardFooter', 'div.card-footer', BsCardFooter),
   bare('BsCardGroup', 'div.card-group', BsCardGroup),
@@ -170,46 +170,42 @@ const CASES: Case[] = [
   bare('BsCardTitle', 'div.card-title', BsCardTitle),
   bare('BsCarousel', 'mp-carousel', BsCarousel),
   bare('BsHierarchyChart', 'mp-hierarchy-chart', BsHierarchyChart),
-  bare('BsSparkline', 'mp-sparkline', BsSparkline),
+  bare('BsSparkline', 'span.sparkline', BsSparkline),
   bare('BsTrendChart', 'mp-trend-chart', BsTrendChart),
-  bare('BsCheckbox', 'mp-checkbox', BsCheckbox),
+  bare('BsCheckbox', 'input[type=checkbox]', BsCheckbox),
   bare('BsCodeSnippet', 'mp-code-snippet', BsCodeSnippet),
   bare('BsDatatable', 'mp-datatable', BsDatatable),
   bare('BsDatepicker', 'mp-datepicker', BsDatepicker),
   bare('BsDatetimePicker', 'mp-datetime-picker', BsDatetimePicker),
   bare('BsDockManager', 'mint-dock-manager', BsDockManager),
-  bare('BsDropdownMenu', 'mp-dropdown-menu', BsDropdownMenu),
-  /* Rendered outside a menu on purpose: inside one, `<mp-dropdown-menu>` assigns
+  bare('BsDropdownMenu', 'ul.dropdown-menu', BsDropdownMenu),
+  /* Rendered outside a menu on purpose: inside one, the hydrated menu assigns
      the item roles itself (`menuitem`, `separator`), which would overwrite the
      probe's `role` and test the menu instead of the wrapper's rest-spread. */
   bare('BsDropdownItem', 'li.dropdown-item', BsDropdownItem),
   bare('BsDropdownHeader', 'li.dropdown-header', BsDropdownHeader),
   bare('BsDropdownDivider', 'li.dropdown-divider', BsDropdownDivider),
   bare('BsFileManager', 'mp-file-manager', BsFileManager),
-  bare('BsInputGroup', 'mp-input-group', BsInputGroup),
+  bare('BsInputGroup', 'div.input-group', BsInputGroup),
   bare('BsMultiRange', 'mp-multi-range', BsMultiRange),
-  bare('BsNavbar', 'mp-navbar', BsNavbar),
-  {
-    name: 'BsNavbarBrand',
-    target: 'mp-navbar-brand',
-    render: (p) => <BsNavbar><BsNavbarBrand {...p} /></BsNavbar>,
-  },
+  bare('BsNavbar', 'nav.navbar', BsNavbar),
   {
     name: 'BsNavbarDropdown',
-    target: 'mp-navbar-dropdown',
-    render: (p) => <BsNavbar><BsNavbarDropdown {...p}><span slot="label">Menu</span></BsNavbarDropdown></BsNavbar>,
+    target: 'details.dropdown',
+    render: (p) => <BsNavbar><BsNavbarNav><BsNavbarDropdown label="Menu" {...p} /></BsNavbarNav></BsNavbar>,
   },
   {
     name: 'BsNavbarItem',
-    target: 'mp-navbar-item',
-    render: (p) => <BsNavbar><BsNavbarItem {...p} /></BsNavbar>,
+    target: 'div.nav-item',
+    render: (p) => <BsNavbar><BsNavbarNav><BsNavbarItem {...p} /></BsNavbarNav></BsNavbar>,
   },
+  bare('BsNavbarNav', 'div.navbar-nav', BsNavbarNav),
   bare('BsOtpInput', 'mp-otp-input', BsOtpInput),
-  bare('BsPagination', 'mp-pagination', BsPagination),
+  bare('BsPagination', 'nav', BsPagination),
   bare('BsPhoneInput', 'mp-phone-input', BsPhoneInput),
   bare('BsQueryBuilder', 'mp-query-builder', BsQueryBuilder),
-  bare('BsRadio', 'mp-radio', BsRadio),
-  bare('BsRadioGroup', 'mp-radio-group', BsRadioGroup),
+  bare('BsRadio', 'input[type=radio]', BsRadio),
+  { ...bare('BsRadioGroup', 'div', BsRadioGroup), fixedRole: 'radiogroup' },
   bare('BsRibbon', 'mp-ribbon', BsRibbon),
   bare('BsQuickAccessToolbar', 'mp-quick-access-toolbar', BsQuickAccessToolbar),
   bare('BsRibbonTab', 'mp-ribbon-tab', BsRibbonTab),
@@ -230,14 +226,16 @@ const CASES: Case[] = [
   bare('BsRibbonTemplateItem', 'mp-ribbon-template-item', BsRibbonTemplateItem),
   bare('BsScheduler', 'mp-scheduler', BsScheduler),
   bare('BsSelect', 'mp-select', BsSelect),
-  bare('BsShell', 'mp-shell', BsShell),
+  bare('BsShell', 'div.shell', BsShell),
   bare('BsSignaturePad', 'mp-signature-pad', BsSignaturePad),
   bare('BsSplitter', 'mp-splitter', BsSplitter),
-  bare('BsTabControl', 'mp-tab-control', BsTabControl),
+  bare('BsTabControl', 'div.tab-control', BsTabControl),
   {
+    // A marker: BsTabControl renders its pane and forwards the page's attributes there.
     name: 'BsTabPage',
-    target: 'mp-tab-page',
-    render: (p) => <BsTabControl><BsTabPage {...p} /></BsTabControl>,
+    target: 'div.tab-pane',
+    render: (p) => <BsTabControl><BsTabPage header="Tab" {...p} /></BsTabControl>,
+    fixedRole: 'tabpanel',
   },
   bare('BsThemeToggle', 'mp-theme-toggle', BsThemeToggle),
   bare('BsTileManager', 'mp-tile-manager', BsTileManager),
@@ -245,7 +243,7 @@ const CASES: Case[] = [
   bare('BsTimelineItem', 'mp-timeline-item', BsTimelineItem),
   bare('BsTimeList', 'mp-time-list', BsTimeList),
   bare('BsTimepicker', 'mp-timepicker', BsTimepicker),
-  bare('BsToggleButton', 'mp-toggle-button', BsToggleButton),
+  bare('BsToggleButton', 'input[type=checkbox]', BsToggleButton),
   bare('BsTreeSelect', 'mp-tree-select', BsTreeSelect),
   bare('BsTreeview', 'mp-treeview', BsTreeview),
   { ...bare('BsTypeahead', 'input', BsTypeahead), fixedRole: 'combobox' },

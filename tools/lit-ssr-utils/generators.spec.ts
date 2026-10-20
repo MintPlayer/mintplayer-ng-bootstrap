@@ -16,12 +16,10 @@
 import { resolve } from 'node:path';
 import { describe, expect, it, vi } from 'vitest';
 
-import { main as accordion } from './gen-accordion-chrome.mjs';
 import { main as carousel } from './gen-carousel-chrome.mjs';
 import { main as dropdown } from './gen-dropdown-chrome.mjs';
 import { LIGHT_TIER_COMPONENTS, lightStyleTag, main as lightStyles } from './gen-light-styles-chrome.mjs';
 import { main as navbar } from './gen-navbar-chrome.mjs';
-import { main as shell } from './gen-shell-chrome.mjs';
 import { ChromeGeneratorError, MAX_CHROME_COUNT } from './lib/chrome-module.mjs';
 
 const REPO = resolve('/repo');
@@ -52,41 +50,6 @@ function constant(content: string, name: string): unknown {
   if (!match) throw new Error(`${name} not found in:\n${content}`);
   return JSON.parse(match[1]);
 }
-
-describe('gen-accordion-chrome', () => {
-  it('renders one single-open and one multi variant per tab count, index = count', async () => {
-    const h = harness();
-    expect(await accordion({ repoRoot: REPO, renderer: echo, ...h })).toBe(0);
-
-    const { path, content } = h.written[0];
-    expect(path).toBe(resolve(REPO, 'libs/mintplayer-web-components/accordion/ssr/mp-accordion-chrome.generated.ts'));
-    const single = constant(content, 'MP_ACCORDION_DSD_CHROME_BY_COUNT') as string[];
-    const multi = constant(content, 'MP_ACCORDION_MULTI_DSD_CHROME_BY_COUNT') as string[];
-    expect(single).toHaveLength(MAX_CHROME_COUNT + 1);
-    expect(multi).toHaveLength(MAX_CHROME_COUNT + 1);
-    expect(single[3]).toBe(dsd('<mp-accordion tab-count=3></mp-accordion>'));
-    expect(multi[3]).toBe(dsd('<mp-accordion multi tab-count=3></mp-accordion>'));
-    expect(multi[MAX_CHROME_COUNT]).toContain(`tab-count=${MAX_CHROME_COUNT}`);
-  });
-
-  it('names its regeneration command in the header and reports what it wrote', async () => {
-    const h = harness();
-    await accordion({ repoRoot: REPO, renderer: echo, ...h });
-    expect(h.written[0].content).toContain('node tools/lit-ssr-utils/gen-accordion-chrome.mjs');
-    expect(h.log).toHaveBeenCalledWith(expect.stringMatching(/^gen-accordion-chrome: 26 variants, \d+–\d+ chars$/));
-    expect(h.log).toHaveBeenLastCalledWith(`gen-accordion-chrome: wrote ${h.written[0].path}`);
-  });
-
-  it('exits 1 and writes nothing when a variant renders no shadow root', async () => {
-    const h = harness();
-    expect(await accordion({ repoRoot: REPO, renderer: noShadow, ...h })).toBe(1);
-    expect(h.write).not.toHaveBeenCalled();
-    expect(h.error).toHaveBeenCalledWith(
-      'gen-accordion-chrome: no DSD <template> for multi=false tab-count=0:\n',
-      '<mp-accordion tab-count=0></mp-accordion>',
-    );
-  });
-});
 
 describe('gen-carousel-chrome', () => {
   it('renders one variant per slide count, index = count', async () => {
@@ -157,25 +120,6 @@ describe('gen-navbar-chrome', () => {
     const render = vi.fn(noShadow.render);
     expect(await navbar({ repoRoot: REPO, renderer: { html, render }, ...h })).toBe(1);
     expect(render).toHaveBeenCalledTimes(1);
-  });
-});
-
-describe('gen-shell-chrome', () => {
-  it('emits the single shell constant and reports its size on the wrote line', async () => {
-    const h = harness();
-    expect(await shell({ repoRoot: REPO, renderer: echo, ...h })).toBe(0);
-
-    const { path, content } = h.written[0];
-    const chrome = dsd('<mp-shell></mp-shell>');
-    expect(path).toBe(resolve(REPO, 'libs/mintplayer-web-components/shell/ssr/mp-shell-chrome.generated.ts'));
-    expect(constant(content, 'MP_SHELL_DSD_CHROME')).toBe(chrome);
-    expect(h.log).toHaveBeenLastCalledWith(`gen-shell-chrome: wrote ${path} (${chrome.length} chars)`);
-  });
-
-  it('exits 1 and writes nothing without a shadow root', async () => {
-    const h = harness();
-    expect(await shell({ repoRoot: REPO, renderer: noShadow, ...h })).toBe(1);
-    expect(h.write).not.toHaveBeenCalled();
   });
 });
 

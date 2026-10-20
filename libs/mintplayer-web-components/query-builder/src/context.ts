@@ -1,6 +1,6 @@
 import { createContext } from '@lit/context';
-import type { EditorRegistry } from './model/editor';
-import type { QueryBuilderMessages } from './model/messages';
+import type { EditorRegistry } from '@mintplayer/ui-core/query-builder';
+import type { QueryBuilderMessages } from '@mintplayer/ui-core/query-builder';
 
 export const editorRegistryContext = createContext<EditorRegistry | undefined>(
   Symbol('mp-query-builder.editorRegistry'),

@@ -1,6 +1,5 @@
 <script setup lang="ts">
-// Renders a plain <li class="dropdown-divider">; the menu WC styles it via
-// `::slotted(.dropdown-divider)`.
+// Renders a plain <li class="dropdown-divider">, styled by the menu's scoped sheet.
 defineOptions({ inheritAttrs: false });
 </script>
 

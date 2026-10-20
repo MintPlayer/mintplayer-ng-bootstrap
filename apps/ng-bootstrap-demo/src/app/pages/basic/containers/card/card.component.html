@@ -197,8 +197,8 @@
 <h2>Header with nav-tabs</h2>
 
 <bs-card class="d-block mb-3">
-    <bs-card-header [navStyle]="'tabs'">
-        <ul class="nav">
+    <bs-card-header>
+        <ul class="nav card-header-tabs">
             @for (page of tabPages; track page) {
                 <li class="nav-item">
                     <a class="nav-link" [class.active]="page === activeTab()" href="#"
@@ -209,7 +209,7 @@
     </bs-card-header>
     <bs-card-body>
         <bs-card-title>{{ activeTab() }}</bs-card-title>
-        <bs-card-text>The slotted &lt;ul class="nav"&gt; gets <code>card-header-tabs</code> applied; click a tab to switch the body content.</bs-card-text>
+        <bs-card-text>The &lt;ul class="nav card-header-tabs"&gt; carries Bootstrap's own class; click a tab to switch the body content.</bs-card-text>
     </bs-card-body>
 </bs-card>
 
@@ -218,8 +218,8 @@
 <h2>Header with nav-pills</h2>
 
 <bs-card class="d-block mb-3">
-    <bs-card-header [navStyle]="'pills'">
-        <ul class="nav">
+    <bs-card-header>
+        <ul class="nav card-header-pills">
             @for (page of pillPages; track page) {
                 <li class="nav-item">
                     <a class="nav-link" [class.active]="page === activePill()" href="#"
@@ -230,7 +230,7 @@
     </bs-card-header>
     <bs-card-body>
         <bs-card-title>{{ activePill() }}</bs-card-title>
-        <bs-card-text>The slotted nav gets <code>card-header-pills</code> applied; click a pill to switch the body content.</bs-card-text>
+        <bs-card-text>The nav carries <code>card-header-pills</code>; click a pill to switch the body content.</bs-card-text>
     </bs-card-body>
 </bs-card>
 

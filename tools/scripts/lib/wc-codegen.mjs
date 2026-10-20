@@ -77,6 +77,25 @@ export function buildPlainStylesModule({ css, sourceScssRel, exportName }) {
   ].join('\n');
 }
 
+/**
+ * The cascade-layer order every page-level sheet declares first (PRD #437 C1).
+ * Repeated at the top of each component sheet, so it does not matter whether
+ * the baseline or a component sheet reaches the page first: the first order
+ * statement fixes the order, and an identical one later is a no-op.
+ */
+export const LAYER_ORDER = '@layer mp.bootstrap, mp.components;';
+
+/**
+ * Put a compiled component sheet in `@layer mp.components`, after the order
+ * statement. A leading `@charset` (Sass emits one for non-ASCII output) must
+ * stay the very first rule, so it is hoisted above the order statement.
+ */
+export function wrapInComponentsLayer(css) {
+  const charset = /^@charset "[^"]*";\s*/.exec(css);
+  const body = (charset ? css.slice(charset[0].length) : css).trim();
+  return `${charset ? charset[0].trim() + '\n' : ''}${LAYER_ORDER}\n@layer mp.components {\n${body}\n}`;
+}
+
 /** Returns true iff it actually wrote. Byte-identical output is left alone so
  *  the Nx cache stays warm and git stays clean. */
 export async function writeIfChanged(outPath, next) {

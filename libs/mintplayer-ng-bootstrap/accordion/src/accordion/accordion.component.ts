@@ -4,21 +4,29 @@ import {
   Component,
   computed,
   contentChildren,
-  CUSTOM_ELEMENTS_SCHEMA,
+  DestroyRef,
   ElementRef,
   forwardRef,
+  inject,
   input,
-  viewChild,
 } from '@angular/core';
-// Eager side-effect registration: the SSR chrome is injected as Declarative
-// Shadow DOM, so there is no unstyled window to protect by deferring.
-import '@mintplayer/web-components/accordion';
-import type { AccordionTabToggleDetail, MpAccordion } from '@mintplayer/web-components/accordion';
+import { BsIdService } from '@mintplayer/ng-bootstrap/a11y';
+import { MpPropsDirective, useScopedStyles } from '@mintplayer/ng-bootstrap/machine';
+import {
+  ACCORDION_SCOPE,
+  accordionKeydown,
+  accordionRows,
+  accordionScopedStyles,
+  accordionSummaryClick,
+  accordionToggled,
+  closeAccordion,
+  connectAccordion,
+  connectAccordionTab,
+} from '@mintplayer/ui-core/accordion';
 import { BsAccordionTabComponent } from '../accordion-tab/accordion-tab.component';
-import { BsForwardAriaDirective } from '@mintplayer/ng-bootstrap/a11y';
 
 /**
- * `<bs-accordion>` — Angular wrapper around the `<mp-accordion>` web component.
+ * `<bs-accordion>` — Bootstrap accordion on native `<details name>` (#437).
  *
  *     <bs-accordion [multi]="true">
  *       <bs-accordion-tab [(isActive)]="open">
@@ -27,27 +35,28 @@ import { BsForwardAriaDirective } from '@mintplayer/ng-bootstrap/a11y';
  *       </bs-accordion-tab>
  *     </bs-accordion>
  *
- * Each tab's header is HOISTED out of the tab and rendered here, as a sibling
- * of the tab's own marker element. Named slots only accept direct children of
- * the shadow host, and an Angular component can only render inside its own
- * host element — so a header authored inside `<bs-accordion-tab>` could never
- * reach the accordion's shadow on its own. `*bsAccordionTabHeader` captures it
- * as a template that this component renders in the right place.
+ * Renders the markup of `@mintplayer/ui-core/accordion` in its own template,
+ * so the server-rendered page is the working accordion: each tab is a
+ * `<details>`, which opens and closes with JavaScript off, and single-open is
+ * the platform's `name` exclusivity. The host is the `.accordion` root.
  *
- * The WC owns interaction, ARIA, animation and the no-JS tier; this wrapper
- * bridges inputs to attributes and the toggle event back into each tab's
- * `isActive` model.
+ * The rows are rendered here, as siblings, rather than by each tab: Bootstrap
+ * draws the borders between items with `:first-of-type`, which a per-tab host
+ * element would break. Each tab hands over its header and body as templates.
  */
 @Component({
   selector: 'bs-accordion',
   templateUrl: './accordion.component.html',
-  styleUrls: ['./accordion.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [BsForwardAriaDirective, NgTemplateOutlet],
-  schemas: [CUSTOM_ELEMENTS_SCHEMA],
+  imports: [MpPropsDirective, NgTemplateOutlet],
+  host: {
+    '[attr.data-mps]': 'root()["data-mps"]',
+    '[class.accordion]': 'true',
+    '[attr.data-highlight-active]': 'root()["data-highlight-active"]',
+  },
 })
 export class BsAccordionComponent {
-  /** Allow several tabs to stay open at once (checkbox machine with JS off). */
+  /** Allow several tabs to stay open at once. */
   readonly multi = input(false);
   /** Paint the open header with the Bootstrap active background. */
   readonly highlightActiveTab = input(false);
@@ -56,36 +65,50 @@ export class BsAccordionComponent {
     forwardRef(() => BsAccordionTabComponent),
   );
 
-  // Deliberately NOT viewChild.required: public methods read it, and a caller that reaches
-  // this component through DI (a child's constructor, say) can call one before this
-  // component's view exists. There, NG0951 would throw where the guard is a no-op.
-  protected readonly element = viewChild<ElementRef<MpAccordion>>('element');
+  private readonly host = inject(ElementRef).nativeElement as HTMLElement;
+  private readonly id = inject(BsIdService).next('bs-accordion');
 
-  protected readonly multiAttr = computed(() => (this.multi() ? '' : null));
-  protected readonly highlightActiveTabAttr = computed(() =>
-    this.highlightActiveTab() ? '' : null,
+  private readonly options = computed(() => ({
+    id: this.id,
+    multi: this.multi(),
+    highlightActiveTab: this.highlightActiveTab(),
+  }));
+  protected readonly root = computed(() => connectAccordion(this.options()));
+  protected readonly views = computed(() =>
+    this.tabPages().map((tab, index) => connectAccordionTab(this.options(), index, { disabled: tab.disabled() })),
   );
+
+  constructor() {
+    useScopedStyles(ACCORDION_SCOPE, accordionScopedStyles);
+    // `toggle` does not bubble, so a host listener never hears it: one
+    // capture-phase listener on the root hears every row.
+    const onToggle = (event: Event) => {
+      const change = accordionToggled(this.host, event, this.multi());
+      if (change) this.tabPages()[change.index]?.isActive.set(change.active);
+    };
+    this.host.addEventListener('toggle', onToggle, { capture: true });
+    inject(DestroyRef).onDestroy(() => this.host.removeEventListener('toggle', onToggle, { capture: true }));
+  }
 
   /** Close every open tab, and every accordion nested inside them. */
   closeAll(): void {
-    this.element()?.nativeElement.closeAll();
+    closeAccordion(this.host);
   }
 
-  /** Drive a tab through the WC so nested accordions collapse with it. */
+  /**
+   * Open or close a tab through its `<details>`, so single-open exclusivity
+   * and the nested-accordion collapse both apply.
+   */
   setActive(index: number, active: boolean): void {
-    const accordion = this.element()?.nativeElement;
-    if (active) accordion?.open(index);
-    else accordion?.close(index);
+    const row = accordionRows(this.host)[index];
+    if (row) row.open = active;
   }
 
-  protected onTabToggle(event: Event): void {
-    // Nesting is the normal case here and the WC's event is composed, so a
-    // descendant accordion's toggles pass straight through this host. Claim
-    // only our own — then stop, since this accordion has already handled it.
-    if (event.target !== this.element()?.nativeElement) return;
-    event.stopPropagation();
+  protected onSummaryClick(event: Event, tab: BsAccordionTabComponent): void {
+    accordionSummaryClick(event, tab.disabled());
+  }
 
-    const detail = (event as CustomEvent<AccordionTabToggleDetail>).detail;
-    this.tabPages()[detail.index]?.isActive.set(detail.active);
+  protected onSummaryKeydown(event: KeyboardEvent, index: number, tab: BsAccordionTabComponent): void {
+    accordionKeydown(this.host, event, index, tab.disabled());
   }
 }

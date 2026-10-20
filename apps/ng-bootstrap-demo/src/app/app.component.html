@@ -1,11 +1,9 @@
 <bs-navbar [color]="'body-tertiary'" [breakpoint]="'xl'" aria-label="Main navigation" [positioning]="'fixed'" #nav>
-  <bs-navbar-brand>
-    <a [routerLink]='["/"]'>
-      <span class="brand d-block px-3 pb-3 pt-3">
-        ng-bootstrap
-      </span>
-    </a>
-  </bs-navbar-brand>
+  <a *bsNavbarBrand [routerLink]='["/"]'>
+    <span class="brand d-block px-3 pb-3 pt-3">
+      ng-bootstrap
+    </span>
+  </a>
 
   <bs-navbar-nav>
 

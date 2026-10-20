@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import './mp-trend-chart';
 import type { MpTrendChart } from './mp-trend-chart';
-import type { TrendSeries } from '@mintplayer/web-components/charts/core';
+import type { TrendSeries } from '@mintplayer/ui-core/charts/core';
 
 /**
  * What the configuration attributes and properties DO to the rendered chart:

@@ -1,0 +1,95 @@
+// The tab control's stylesheet, shared by the fronts (PRD #437 wave A). The
+// page's Bootstrap supplies .nav, .nav-tabs, .nav-link and .tab-content (which
+// hides every .tab-pane); these rules lay out the strip and let the checked
+// radio show its pane and paint its tab. Ported from the former bs-tab-control
+// sheet, whose no-JS branch already worked this way.
+
+.tab-control {
+  display: flex;
+  flex-direction: column;
+  position: relative;
+}
+
+// Tab-strip container. A bottom strip is rendered after the panes, so source
+// order is visual order and no `order` is needed.
+.tsc {
+  max-height: 41px;
+  z-index: 10;
+  flex-shrink: 0;
+  overflow: hidden;
+  max-width: 100%;
+
+  > .nav-tabs {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    overflow-y: hidden;
+    border-bottom: 0;
+  }
+
+  .nav-link {
+    cursor: pointer;
+  }
+}
+
+.tsc.bottom-tabs {
+  margin-top: -1px;
+
+  > .nav-tabs > .nav-item {
+    margin-bottom: 2px;
+    margin-top: -1px;
+
+    > .nav-link {
+      border: 1px solid transparent;
+      border-radius: 0 0 var(--bs-border-radius) var(--bs-border-radius);
+    }
+  }
+}
+
+.tab-content {
+  flex-grow: 1;
+  overflow: auto;
+  margin-top: -1px;
+}
+
+// The radio is the control until the front enhances (then it is `hidden`).
+// Clipped, never display:none: that would take it out of the tab order and
+// break the native arrow-key radio group.
+.tab-radio {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+// The checked radio shows its pane and paints its tab, in both tiers: the
+// enhanced front writes `checked` from its model, so CSS has one source.
+// Plain CSS cannot pair the n-th radio with the n-th pane for any n, so the
+// pairing is generated up to a fixed count.
+$max-tabs: 20;
+
+@for $i from 1 through $max-tabs {
+  .tab-control > .tab-radio:nth-of-type(#{$i}):checked ~ .tsc > .nav-tabs > .nav-item:nth-child(#{$i}) > .nav-link {
+    color: var(--bs-nav-tabs-link-active-color);
+    background-color: var(--bs-nav-tabs-link-active-bg);
+    border-color: var(--bs-nav-tabs-link-active-border-color);
+  }
+
+  .tab-control > .tab-radio:nth-of-type(#{$i}):checked ~ .tsc.bottom-tabs > .nav-tabs > .nav-item:nth-child(#{$i}) > .nav-link {
+    border-color: var(--bs-body-bg) var(--bs-border-color) var(--bs-border-color) var(--bs-border-color);
+  }
+
+  .tab-control > .tab-radio:nth-of-type(#{$i}):checked ~ .tab-content > .tab-pane:nth-child(#{$i}) {
+    display: block;
+  }
+
+  // Before enhancement focus lives on the clipped radio: ring its tab.
+  .tab-control > .tab-radio:nth-of-type(#{$i}):focus-visible ~ .tsc > .nav-tabs > .nav-item:nth-child(#{$i}) > .nav-link {
+    outline: 2px solid var(--bs-primary);
+    outline-offset: -2px;
+  }
+}

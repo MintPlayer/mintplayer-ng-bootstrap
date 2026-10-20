@@ -3,7 +3,7 @@ import { defineComponent, h, nextTick, shallowRef } from 'vue';
 
 import BsDropdownItem from '../../dropdown-menu/src/BsDropdownItem.vue';
 import BsDropdownMenu from '../../dropdown-menu/src/BsDropdownMenu.vue';
-import type { DropdownSelectEventDetail } from '@mintplayer/web-components/dropdown-menu';
+import type { DropdownSelectEventDetail } from '@mintplayer/ui-core/dropdown-menu';
 
 import { mountWrapper } from './harness';
 
@@ -16,19 +16,21 @@ import { mountWrapper } from './harness';
 // shallowRef, not ref: a deep ref would hand the wrapper a reactive PROXY of the
 // object, and the identity check below would compare the proxy, not the value.
 const value = shallowRef<unknown>(undefined);
+const seen: unknown[] = [];
 
 const Host = defineComponent({
-  setup: () => () => h(BsDropdownMenu, null, () => h(BsDropdownItem, { value: value.value }, () => 'A')),
+  setup: () => () =>
+    h(BsDropdownMenu, { onSelect: (d: DropdownSelectEventDetail) => seen.push(d.value) }, () =>
+      h(BsDropdownItem, { value: value.value }, () => 'A'),
+    ),
 });
 
 async function select(next: unknown): Promise<unknown> {
   value.value = next;
   const root = mountWrapper(Host).element as Element;
   await nextTick();
-  const menu = (root.matches('mp-dropdown-menu') ? root : root.querySelector('mp-dropdown-menu'))!;
-  const seen: unknown[] = [];
-  menu.addEventListener('select', (e) => seen.push((e as CustomEvent<DropdownSelectEventDetail>).detail.value));
-  menu.querySelector<HTMLElement>('li.dropdown-item')!.click();
+  seen.splice(0);
+  root.querySelector<HTMLElement>('li.dropdown-item')!.click();
   expect(seen, 'the menu emitted no select event').toHaveLength(1);
   return seen[0];
 }
@@ -54,9 +56,7 @@ describe('Vue BsDropdownItem value', () => {
     value.value = { id: 2 };
     await nextTick();
     const li = root.querySelector('li.dropdown-item')!;
-    const menu = li.closest('mp-dropdown-menu')!;
-    const seen: unknown[] = [];
-    menu.addEventListener('select', (e) => seen.push((e as CustomEvent<DropdownSelectEventDetail>).detail.value));
+    seen.splice(0);
     (li as HTMLElement).click();
     expect(seen).toEqual([{ id: 2 }]);
   });

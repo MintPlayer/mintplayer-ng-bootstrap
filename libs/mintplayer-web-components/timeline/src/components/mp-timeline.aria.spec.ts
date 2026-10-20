@@ -1,7 +1,7 @@
 import { afterEach, describe, expect, it } from 'vitest';
 import './mp-timeline';
 import type { MpTimeline } from './mp-timeline';
-import type { TimelineItem } from '@mintplayer/web-components/timeline-core';
+import type { TimelineItem } from '@mintplayer/ui-core/timeline-core';
 
 /**
  * ARIA surface of `<mp-timeline>` — the container's role/state and the row

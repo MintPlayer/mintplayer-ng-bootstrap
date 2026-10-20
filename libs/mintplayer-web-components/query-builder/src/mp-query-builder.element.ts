@@ -1,12 +1,12 @@
 import { LitElement, nothing, type PropertyValues, type TemplateResult } from 'lit';
 import { installLightStyles, scopedHtml } from '@mintplayer/web-components/light-dom';
 import { ContextConsumer, ContextProvider } from '@lit/context';
-import type { Expression, Group, Operator } from './model/expression';
-import type { SortDescriptor } from './model/sort';
-import type { EntitySchema, FieldDef } from './model/field-def';
-import type { EditorRegistry } from './model/editor';
-import { DEFAULT_MESSAGES, type QueryBuilderMessages } from './model/messages';
-import type { SavedQuery } from './model/saved-query';
+import type { Expression, Group, Operator } from '@mintplayer/ui-core/query-builder';
+import type { SortDescriptor } from '@mintplayer/ui-core/query-builder';
+import type { EntitySchema, FieldDef } from '@mintplayer/ui-core/query-builder';
+import type { EditorRegistry } from '@mintplayer/ui-core/query-builder';
+import { DEFAULT_MESSAGES, type QueryBuilderMessages } from '@mintplayer/ui-core/query-builder';
+import type { SavedQuery } from '@mintplayer/ui-core/query-builder';
 import {
   addEmptyConditionTo,
   addEmptyGroupTo,
@@ -20,7 +20,7 @@ import {
   removeNode,
   setGroupLogic,
   updateCondition,
-} from './model/tree-ops';
+} from '@mintplayer/ui-core/query-builder';
 import { DragController, type DragSource, type DropTarget } from './dnd/drag-controller';
 import { renderExpression } from './preview/render-expression';
 

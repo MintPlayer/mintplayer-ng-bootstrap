@@ -7,7 +7,9 @@ import {
   buildElementTemplateModule,
   buildStylesModule,
   escapeForTemplateLiteral,
+  LAYER_ORDER,
   toCamelCase,
+  wrapInComponentsLayer,
   writeIfChanged,
 } from './wc-codegen.mjs';
 
@@ -100,6 +102,20 @@ describe('toCamelCase', () => {
 
   it('does not touch a dash followed by an uppercase letter', () => {
     expect(toCamelCase('mp-Card')).toBe('mp-Card');
+  });
+});
+
+describe('wrapInComponentsLayer', () => {
+  it('declares the layer order, then puts the body in mp.components', () => {
+    expect(wrapInComponentsLayer('a[data-mps=x]{color:red}\n')).toBe(
+      `${LAYER_ORDER}\n@layer mp.components {\na[data-mps=x]{color:red}\n}`,
+    );
+  });
+
+  it('keeps a leading @charset as the very first rule', () => {
+    const out = wrapInComponentsLayer('@charset "UTF-8";\na{content:"é"}');
+    expect(out.startsWith(`@charset "UTF-8";\n${LAYER_ORDER}\n@layer mp.components {`)).toBe(true);
+    expect(out.match(/@charset/g)).toHaveLength(1);
   });
 });
 

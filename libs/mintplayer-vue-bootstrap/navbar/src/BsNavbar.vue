@@ -1,68 +1,112 @@
 <script setup lang="ts">
-// Registers <mp-navbar> (and its sibling elements) on the client. On the SSR
-// server this import runs after the lit-ssr DOM shim is installed (see the
-// demo's entry-server.ts), so `customElements.define` doesn't throw in Node —
-// same pattern as every other @mintplayer/vue-bootstrap wrapper.
-import '@mintplayer/web-components/navbar';
-import type {
-  MpNavbar,
-  NavbarBreakpoint,
-  NavbarExpandedChangeEventDetail,
-} from '@mintplayer/web-components/navbar';
-import { onBeforeUnmount, onMounted, ref } from 'vue';
+import { installLightStyles } from '@mintplayer/ui-core/scoped-styles';
+import { DROPDOWN_MENU_SCOPE, dropdownMenuScopedStyles } from '@mintplayer/ui-core/dropdown-menu';
+import {
+  NAVBAR_SCOPE,
+  attachNavbar,
+  connectNavbar,
+  connectNavbarBrand,
+  navbarScopedStyles,
+  setNavbarExpanded,
+  type NavbarBreakpoint,
+  type NavbarExpandedChangeEventDetail,
+  type NavbarLabels,
+} from '@mintplayer/ui-core/navbar';
+import { computed, onBeforeUnmount, onMounted, ref, useAttrs, useId, useTemplateRef, watch } from 'vue';
 
-defineOptions({ inheritAttrs: false });
-
-withDefaults(
+/**
+ * `BsNavbar` — Bootstrap's navbar rendered from the headless
+ * `@mintplayer/ui-core/navbar` core (#437), server-side included. The
+ * responsive collapse is a checkbox and every dropdown a native `<details>`,
+ * so the bar works with JavaScript off.
+ *
+ *     <BsNavbar breakpoint="lg" color="body-tertiary">
+ *       <template #brand><a href="/">MyApp</a></template>
+ *       <BsNavbarNav>
+ *         <BsNavbarItem active><a href="/">Home</a></BsNavbarItem>
+ *       </BsNavbarNav>
+ *       <BsNavbarNav align="end">…</BsNavbarNav>
+ *     </BsNavbar>
+ *
+ * Slots: `brand`, `toggler` (a custom hamburger glyph; it reads the open state
+ * from `--mp-navbar-expanded: 0|1`) and the default slot for `BsNavbarNav`s.
+ */
+const props = withDefaults(
   defineProps<{
-    /** Breakpoint at/above which the navbar lays out horizontally. Default `md`. */
+    /** Bootstrap breakpoint name (`xs`…`xxl`, default `md`); at/above it the nav is inline. */
     breakpoint?: NavbarBreakpoint;
-    /** Bootstrap color (`primary`/`dark`/…) or adaptive (`body`/`body-secondary`/`body-tertiary`). */
+    /** Background: a theme color (`primary`…`dark`) or adaptive `body` / `body-secondary` / `body-tertiary`. */
     color?: string;
-    /** Reflected open state of the collapsed menu (boolean attribute). */
+    /** Collapse state (narrow mode). Written when it changes; follow the toggle with `expandedchange`. */
     expanded?: boolean;
     /** `fixed` pins the bar to the top of the viewport, full width; omit for in-flow. */
     positioning?: 'fixed';
+    /** Localized accessible names; `aria-label` names the landmark too. */
+    labels?: Partial<NavbarLabels>;
   }>(),
-  {
-    breakpoint: 'md',
-  },
+  { expanded: false },
 );
 
 const emit = defineEmits<{ expandedchange: [detail: NavbarExpandedChangeEventDetail] }>();
 
-const el = ref<MpNavbar | null>(null);
+installLightStyles(NAVBAR_SCOPE, navbarScopedStyles);
+installLightStyles(DROPDOWN_MENU_SCOPE, dropdownMenuScopedStyles);
 
-function onExpandedchange(event: Event) {
-  emit('expandedchange', (event as CustomEvent<NavbarExpandedChangeEventDetail>).detail);
-}
+// useId, not the instance uid: it matches between the server render and hydration.
+const id = `bs-navbar-${useId()}`;
+const attrs = useAttrs();
+const root = useTemplateRef<HTMLElement>('root');
+const hydrated = ref(false);
+const isExpanded = ref(props.expanded);
 
-// `expandedchange` is a CustomEvent the WC dispatches; wire it up client-side only.
-onMounted(() => el.value?.addEventListener('expandedchange', onExpandedchange));
-onBeforeUnmount(() => el.value?.removeEventListener('expandedchange', onExpandedchange));
+const view = computed(() => {
+  const ariaLabel = attrs['aria-label'] as string | undefined;
+  return connectNavbar({
+    id,
+    breakpoint: props.breakpoint,
+    color: props.color,
+    positioning: props.positioning,
+    expanded: isExpanded.value,
+    hydrated: hydrated.value,
+    labels: { ...(ariaLabel ? { nav: ariaLabel } : {}), ...(props.labels ?? {}) },
+  });
+});
+const brand = connectNavbarBrand();
+
+let detach: (() => void) | undefined;
+onMounted(() => {
+  hydrated.value = true;
+  if (!root.value) return;
+  detach = attachNavbar(root.value, {
+    onExpandedChange: (next) => {
+      isExpanded.value = next;
+      emit('expandedchange', { expanded: next });
+    },
+  });
+});
+onBeforeUnmount(() => detach?.());
+
+watch(
+  () => props.expanded,
+  (next) => {
+    if (root.value && setNavbarExpanded(root.value, next) !== null) isExpanded.value = next;
+  },
+);
 </script>
 
 <template>
-  <!--
-    Brand + items are server-rendered as Declarative Shadow DOM (see
-    injectMpNavbarDsd in @mintplayer/web-components/navbar/ssr), so the bar
-    renders with JavaScript disabled. Place the brand with slot="brand",
-    right-aligned items with slot="end", everything else is left items:
-
-      <BsNavbar breakpoint="lg" color="body-tertiary">
-        <BsNavbarBrand>…</BsNavbarBrand>
-        <BsNavbarItem active><a href="…">Home</a></BsNavbarItem>
-        <BsNavbarItem slot="end"><a href="…">Sign in</a></BsNavbarItem>
-      </BsNavbar>
-  -->
-  <mp-navbar
-    ref="el"
-    v-bind="$attrs"
-    :breakpoint="breakpoint"
-    :color="color"
-    :expanded="expanded ? '' : undefined"
-    :positioning="positioning"
-  >
-    <slot />
-  </mp-navbar>
+  <nav ref="root" v-bind="view.root">
+    <div v-if="$slots.brand" v-bind="brand"><slot name="brand" /></div>
+    <input v-bind="view.toggle" />
+    <label v-bind="view.toggler">
+      <slot name="toggler">
+        <span v-bind="view.bar" />
+        <span v-bind="view.bar" />
+        <span v-bind="view.bar" />
+      </slot>
+    </label>
+    <div v-bind="view.collapse">
+      <div v-bind="view.inner"><slot /></div>
+    </div>
+  </nav>
 </template>

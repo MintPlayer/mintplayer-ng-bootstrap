@@ -9,6 +9,7 @@ import { axeNojsSuite } from '../../../tools/e2e-shared/axe-suites';
 axeNojsSuite(test, expect, [
   { path: '/' },
   { path: '/enterprise/accordion' },
+  { path: '/basic/containers/tab-control' },
   { path: '/basic/carousel' },
   { path: '/overlays/shell' },
   // The headless-core typeahead server-renders a real input (#436).

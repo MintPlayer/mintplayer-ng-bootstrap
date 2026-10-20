@@ -1,4 +1,4 @@
-import { TimeSlot } from '@mintplayer/web-components/scheduler-core';
+import { TimeSlot } from '@mintplayer/ui-core/scheduler-core';
 import { SchedulerStateManager } from '../state/scheduler-state';
 import { DragStateMachine } from './drag-state-machine';
 import {

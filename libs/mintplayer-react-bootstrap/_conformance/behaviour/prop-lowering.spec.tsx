@@ -1,15 +1,16 @@
 import * as React from 'react';
+import { act } from 'react';
 import { describe, expect, it } from 'vitest';
 
 import { BsCarousel } from '@mintplayer/react-bootstrap/carousel';
 import { BsDropdownMenu } from '@mintplayer/react-bootstrap/dropdown-menu';
-import { BsNavbar, BsNavbarItem } from '@mintplayer/react-bootstrap/navbar';
+import { BsNavbar, BsNavbarDropdown, BsNavbarItem } from '@mintplayer/react-bootstrap/navbar';
 import { BsShell } from '@mintplayer/react-bootstrap/shell';
 
-import { emit, renderEl } from './harness';
+import { renderEl } from './harness';
 
 /**
- * Four wrappers exist for one reason each: to turn an idiomatic React prop into
+ * These wrappers exist for one reason each: to turn an idiomatic React prop into
  * the *attribute* shape the web component reads. They read attributes rather
  * than properties deliberately — the layout is a pure-CSS state machine so it
  * survives SSR and a JS-disabled page, and only an attribute is serialised into
@@ -106,157 +107,164 @@ describe('BsCarousel — conditional attribute mapping', () => {
   });
 });
 
-describe('BsShell — conditional attribute mapping', () => {
-  it('emits neither flag by default', async () => {
-    const el = await renderEl(<BsShell />, 'mp-shell');
-    expect(el.hasAttribute('external-toggle')).toBe(false);
-    expect(el.hasAttribute('dismiss-on-navigate')).toBe(false);
+// BsShell renders the headless shell itself (#437): the props lower onto the
+// core's data attributes and onto which native checkbox starts checked.
+describe('BsShell — lowering onto the shell markup', () => {
+  it('emits no external-toggle flag by default', async () => {
+    const el = await renderEl(<BsShell />, 'div.shell');
+    expect(el.hasAttribute('data-external-toggle')).toBe(false);
+    expect(el.getAttribute('data-breakpoint')).toBe('md');
   });
 
-  // The WC tests for attribute PRESENCE, so the value must be the empty string
-  // — `external-toggle="true"` works by accident and `="false"` would not.
-  it('sets external-toggle as a bare attribute', async () => {
-    const el = await renderEl(<BsShell externalToggle />, 'mp-shell');
-    expect(el.getAttribute('external-toggle')).toBe('');
+  // The sheet tests for attribute PRESENCE, so the value must be the empty string.
+  it('sets data-external-toggle as a bare attribute', async () => {
+    const el = await renderEl(<BsShell externalToggle />, 'div.shell');
+    expect(el.getAttribute('data-external-toggle')).toBe('');
   });
 
-  it('sets dismiss-on-navigate as a bare attribute', async () => {
-    const el = await renderEl(<BsShell dismissOnNavigate />, 'mp-shell');
-    expect(el.getAttribute('dismiss-on-navigate')).toBe('');
+  it('lowers breakpoint and size', async () => {
+    const el = await renderEl(<BsShell breakpoint="lg" size="15rem" />, 'div.shell');
+    expect(el.getAttribute('data-breakpoint')).toBe('lg');
+    expect(el.style.getPropertyValue('--mp-shell-size')).toBe('15rem');
   });
 
-  it('forwards state, breakpoint and size as attributes', async () => {
-    const el = await renderEl(<BsShell state="show" breakpoint="lg" size="15rem" />, 'mp-shell');
-    expect(el.getAttribute('state')).toBe('show');
-    expect(el.getAttribute('breakpoint')).toBe('lg');
-    expect(el.getAttribute('size')).toBe('15rem');
+  it('lowers state onto the initial checks (checked means revealed)', async () => {
+    const auto = await renderEl(<BsShell />, 'div.shell');
+    expect(auto.querySelector<HTMLInputElement>('input.shell-toggle-narrow')?.checked).toBe(false);
+    expect(auto.querySelector<HTMLInputElement>('input.shell-toggle-wide')?.checked).toBe(true);
+
+    const show = await renderEl(<BsShell state="show" />, 'div.shell');
+    expect(show.querySelector<HTMLInputElement>('input.shell-toggle-narrow')?.checked).toBe(true);
+    expect(show.querySelector<HTMLInputElement>('input.shell-toggle-wide')?.checked).toBe(true);
   });
 
-  it('routes statechange to onStatechange', async () => {
-    const seen: CustomEvent[] = [];
-    const el = await renderEl(<BsShell onStatechange={(e) => seen.push(e)} />, 'mp-shell');
+  it('routes a toggle flip to onStatechange as { open }', async () => {
+    const seen: { open: boolean }[] = [];
+    const el = await renderEl(<BsShell onStatechange={(change) => seen.push(change)} />, 'div.shell');
 
-    await emit(el, 'statechange', { state: 'show' });
+    await act(async () => {
+      el.querySelector<HTMLInputElement>('input.shell-toggle-wide')?.click();
+    });
 
-    expect(seen).toHaveLength(1);
-    expect(seen[0].detail).toEqual({ state: 'show' });
+    expect(seen).toEqual([{ open: false }]);
   });
 });
 
-describe('BsDropdownMenu — conditional attribute mapping', () => {
-  it('omits max-height when there is no cap', async () => {
-    const el = await renderEl(<BsDropdownMenu />, 'mp-dropdown-menu');
-    expect(el.hasAttribute('max-height')).toBe(false);
+describe('BsDropdownMenu — markup from the headless core', () => {
+  it('renders the scoped .dropdown-menu list with no height cap by default', async () => {
+    const ul = await renderEl(<BsDropdownMenu />, 'ul');
+    expect(ul.classList).toContain('dropdown-menu');
+    expect(ul.getAttribute('data-mps')).toBe('dropdown-menu');
+    expect(ul.style.getPropertyValue('--mp-dropdown-max-height')).toBe('');
   });
 
-  it('hyphenates maxHeight', async () => {
-    const el = await renderEl(<BsDropdownMenu maxHeight={240} />, 'mp-dropdown-menu');
-    expect(el.getAttribute('max-height')).toBe('240');
-    expect(el.hasAttribute('maxHeight')).toBe(false);
-  });
-
-  // `!= null` rather than truthiness: zero is a legitimate cap and must not be
-  // silently dropped the way an unset value is.
-  it('forwards a cap of zero', async () => {
-    const el = await renderEl(<BsDropdownMenu maxHeight={0} />, 'mp-dropdown-menu');
-    expect(el.getAttribute('max-height')).toBe('0');
+  // Zero is a legitimate cap and must not be dropped the way an unset value is.
+  it('writes maxHeight as the height-cap custom property, zero included', async () => {
+    const capped = await renderEl(<BsDropdownMenu maxHeight={240} />, 'ul');
+    expect(capped.style.getPropertyValue('--mp-dropdown-max-height')).toBe('240px');
+    const zero = await renderEl(<BsDropdownMenu maxHeight={0} />, 'ul');
+    expect(zero.style.getPropertyValue('--mp-dropdown-max-height')).toBe('0px');
   });
 
   // Renamed on purpose: React's own `onSelect` is a text-selection event, so
-  // the WC's item-selection event takes the name and the native one is dropped
+  // the menu's item selection takes the name and the native one is dropped
   // from the props type.
-  it('routes the WC select event to onSelect', async () => {
-    const seen: CustomEvent[] = [];
-    const el = await renderEl(
-      <BsDropdownMenu onSelect={(e) => seen.push(e)} />,
-      'mp-dropdown-menu',
+  it('reports an item activation to onSelect', async () => {
+    const seen: unknown[] = [];
+    const ul = await renderEl(
+      <BsDropdownMenu onSelect={({ value }) => seen.push(value)}>
+        <li className="dropdown-item" data-value="a">A</li>
+      </BsDropdownMenu>,
+      'ul',
     );
 
-    await emit(el, 'select', { value: 'a' });
+    await act(async () => {
+      ul.querySelector<HTMLElement>('li')!.click();
+    });
 
-    expect(seen).toHaveLength(1);
-    expect(seen[0].detail).toEqual({ value: 'a' });
+    expect(seen).toEqual(['a']);
   });
 });
 
-describe('BsNavbar — conditional attribute mapping', () => {
-  it('leaves the navbar collapsed by default', async () => {
-    const el = await renderEl<HTMLElement & { expanded: boolean }>(<BsNavbar />, 'mp-navbar');
-    expect(el.expanded).toBe(false);
+describe('BsNavbar — markup from the headless core', () => {
+  const toggle = (nav: Element) => nav.querySelector<HTMLInputElement>('input.navbar-toggle')!;
+
+  it('renders a collapsed navigation landmark by default', async () => {
+    const nav = await renderEl(<BsNavbar />, 'nav');
+    expect(nav.classList).toContain('navbar');
+    expect(nav.getAttribute('aria-label')).toBe('Main navigation');
+    expect(toggle(nav).checked).toBe(false);
+    expect(toggle(nav).getAttribute('aria-expanded')).toBe('false');
   });
 
-  /*
-   * Asserted on the PROPERTY rather than the attribute, and that is the whole
-   * point of this case. The wrapper lowers `expanded` to the attribute shape
-   * `''` — but `expanded` is an accessor on the element's prototype, so
-   * `@lit/react` (and Vue) route it through the property instead, and the
-   * attribute never appears. `''` is falsy in JavaScript, so the navbar used to
-   * close itself when asked to open. Angular is unaffected because it binds
-   * `[attr.expanded]`, which is exactly why nothing caught this for so long.
-   */
   it('opens the collapse when expanded is set', async () => {
-    const el = await renderEl<HTMLElement & { expanded: boolean }>(<BsNavbar expanded />, 'mp-navbar');
-    expect(el.expanded).toBe(true);
+    const nav = await renderEl(<BsNavbar expanded />, 'nav');
+    expect(toggle(nav).checked).toBe(true);
+    expect(toggle(nav).getAttribute('aria-expanded')).toBe('true');
   });
 
   it('does not announce a programmatic open as a user toggle', async () => {
-    const seen: CustomEvent[] = [];
-    await renderEl(<BsNavbar expanded onExpandedChange={(e) => seen.push(e)} />, 'mp-navbar');
+    const seen: unknown[] = [];
+    await renderEl(<BsNavbar expanded onExpandedChange={(d) => seen.push(d)} />, 'nav');
     expect(seen).toHaveLength(0);
   });
 
-  it('forwards breakpoint, color and positioning', async () => {
-    const el = await renderEl(
-      <BsNavbar breakpoint="lg" color="body-tertiary" positioning="fixed" />,
-      'mp-navbar',
-    );
-    expect(el.getAttribute('breakpoint')).toBe('lg');
-    expect(el.getAttribute('color')).toBe('body-tertiary');
-    expect(el.getAttribute('positioning')).toBe('fixed');
+  it('maps breakpoint, color and positioning onto Bootstrap classes', async () => {
+    const nav = await renderEl(<BsNavbar breakpoint="lg" color="body-tertiary" positioning="fixed" />, 'nav');
+    expect([...nav.classList]).toEqual(expect.arrayContaining(['navbar-expand-lg', 'bg-body-tertiary', 'fixed-top']));
+    expect(nav.getAttribute('data-breakpoint')).toBe('lg');
   });
 
-  it('routes expandedchange to onExpandedChange', async () => {
-    const seen: CustomEvent[] = [];
-    const el = await renderEl(<BsNavbar onExpandedChange={(e) => seen.push(e)} />, 'mp-navbar');
+  it('reports a toggle of the checkbox to onExpandedChange', async () => {
+    const seen: unknown[] = [];
+    const nav = await renderEl(<BsNavbar onExpandedChange={(d) => seen.push(d)} />, 'nav');
 
-    await emit(el, 'expandedchange', { expanded: true });
+    await act(async () => {
+      toggle(nav).click();
+    });
 
-    expect(seen).toHaveLength(1);
-    expect(seen[0].detail).toEqual({ expanded: true });
+    expect(seen).toEqual([{ expanded: true }]);
+    expect(toggle(nav).getAttribute('aria-expanded')).toBe('true');
+  });
+
+  it('renders the brand prop in .navbar-brand', async () => {
+    const nav = await renderEl(<BsNavbar brand={<a href="/">Brand</a>} />, 'nav');
+    expect(nav.querySelector('.navbar-brand > a')?.getAttribute('href')).toBe('/');
   });
 });
 
-describe('BsNavbarItem — conditional attribute mapping', () => {
-  it('emits neither flag by default', async () => {
-    const el = await renderEl(<BsNavbarItem />, 'mp-navbar-item');
-    expect(el.hasAttribute('active')).toBe(false);
-    expect(el.hasAttribute('disabled')).toBe(false);
-  });
-
-  it('marks the current page', async () => {
-    const el = await renderEl(<BsNavbarItem active />, 'mp-navbar-item');
-    expect(el.getAttribute('active')).toBe('');
-  });
-
-  it('marks a disabled entry', async () => {
-    const el = await renderEl(<BsNavbarItem disabled />, 'mp-navbar-item');
-    expect(el.getAttribute('disabled')).toBe('');
-  });
-
-  // The item is deliberately transparent: the link stays in light DOM so it
-  // navigates with no JavaScript at all.
-  it('keeps a slotted link in the light DOM', async () => {
-    const el = await renderEl(
+describe('BsNavbarItem — markup from the headless core', () => {
+  it('is a plain nav-item around its link by default', async () => {
+    const item = await renderEl(
       <BsNavbarItem>
         <a href="/home">Home</a>
       </BsNavbarItem>,
-      'mp-navbar-item',
+      'div',
     );
-    expect(el.querySelector('a')?.getAttribute('href')).toBe('/home');
+    expect(item.className).toBe('nav-item');
+    expect(item.hasAttribute('aria-current')).toBe(false);
+    expect(item.querySelector('a')?.getAttribute('href')).toBe('/home');
   });
 
-  it('places the item in the requested navbar slot', async () => {
-    const el = await renderEl(<BsNavbarItem slot="end" />, 'mp-navbar-item');
-    expect(el.getAttribute('slot')).toBe('end');
+  it('marks the current page and a disabled entry', async () => {
+    const item = await renderEl(<BsNavbarItem active disabled />, 'div');
+    expect([...item.classList]).toEqual(['nav-item', 'active', 'disabled']);
+    expect(item.getAttribute('aria-current')).toBe('page');
+    expect(item.getAttribute('aria-disabled')).toBe('true');
+  });
+
+  it('becomes a dropdown item inside a BsNavbarDropdown', async () => {
+    const details = await renderEl(
+      <BsNavbarDropdown label="More">
+        <BsNavbarItem active>
+          <a href="/x">X</a>
+        </BsNavbarItem>
+      </BsNavbarDropdown>,
+      'details',
+    );
+    const item = details.querySelector('.dropdown-menu > div')!;
+    expect([...item.classList]).toEqual(['dropdown-item', 'active']);
+    expect(item.getAttribute('aria-current')).toBe('true');
+    expect(details.getAttribute('name')).toBe('mp-navbar-0');
   });
 });

@@ -1,6 +1,6 @@
 import * as React from 'react';
 import { forwardRef, ImgHTMLAttributes, PropsWithChildren } from 'react';
-import { CardImagePosition } from '@mintplayer/web-components/card';
+import { cardImgClass, type CardImagePosition } from '@mintplayer/ui-core/card';
 
 const cx = (...c: (string | false | null | undefined)[]) => c.filter(Boolean).join(' ');
 
@@ -14,8 +14,7 @@ interface BsCardImgProps extends ImgHTMLAttributes<HTMLImageElement> {
 /**
  * Plain React `card-img` element. Renders a `card-img-top` / `card-img-bottom`
  * image, or — for `overlay` — a `card-img` paired with a `card-img-overlay`
- * div that holds `children`. The result gets slotted into `<mp-card>` and
- * styled by mp-card's shadow + its card-anchored document sheet. Merges an incoming
+ * div that holds `children`. Merges an incoming
  * `className` and spreads remaining props onto the `<img>`.
  */
 export const BsCardImg = forwardRef<HTMLImageElement, PropsWithChildren<BsCardImgProps>>(
@@ -29,7 +28,7 @@ export const BsCardImg = forwardRef<HTMLImageElement, PropsWithChildren<BsCardIm
       );
     }
 
-    const positionClass = position === 'bottom' ? 'card-img-bottom' : 'card-img-top';
+    const positionClass = cardImgClass(position);
     return <img ref={ref} className={cx(positionClass, className)} src={src} alt={alt ?? ''} {...rest} />;
   },
 );

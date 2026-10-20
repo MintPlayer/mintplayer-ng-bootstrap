@@ -31,7 +31,7 @@ import {
   generateEventId,
   generateResourceId,
   generateGroupId,
-} from '@mintplayer/web-components/scheduler-core';
+} from '@mintplayer/ui-core/scheduler-core';
 
 @Component({
   selector: 'demo-scheduler',
@@ -633,7 +633,7 @@ export class SchedulerComponent {
       SchedulerEvent,
       SchedulerOptions,
       generateEventId,
-    } from '@mintplayer/web-components/scheduler-core';
+    } from '@mintplayer/ui-core/scheduler-core';
 
     @Component({
       selector: 'my-calendar',

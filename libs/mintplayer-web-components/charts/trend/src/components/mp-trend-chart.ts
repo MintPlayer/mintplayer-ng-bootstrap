@@ -11,7 +11,7 @@ import {
   type TrendPoint,
   type TrendPointEventDetail,
   type TrendSeries,
-} from '@mintplayer/web-components/charts/core';
+} from '@mintplayer/ui-core/charts/core';
 import { trendChartStyles } from '../styles';
 
 /** Default series palette (series.color overrides per series). */

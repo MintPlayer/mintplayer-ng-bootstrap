@@ -51,44 +51,48 @@ const SECTIONS = [
 ];
 
 export function AppShell({ children }: { children: ReactNode }) {
-  return (
-    <BsShell breakpoint="md" size="14rem" className="app-shell" dismissOnNavigate>
-      {/* Top bar: the shell renders the hamburger toggle at its left; this slot
-          fills the rest with the brand + framework links. */}
-      <div slot="topbar" className="d-flex align-items-center px-3 py-2 app-shell-header flex-grow-1">
-        <Link to="/" className="text-decoration-none fw-semibold text-body fs-5">
-          @mintplayer/react-bootstrap
-        </Link>
-        <span className="text-body-secondary small">demo</span>
-        <div className="flex-grow-1" />
-        <FrameworkLinks />
-        {/* Cycles auto / light / dark and persists the choice in the bs-theme-mode cookie. */}
-        <BsThemeToggle className="mx-2" />
-        <GithubLink />
-      </div>
-      <nav slot="sidebar" className="border-end bg-body-tertiary p-3 app-shell-sidebar">
-        {SECTIONS.map((section) => (
-          <div key={section.title} className="mb-3">
-            <div className="text-uppercase small text-body-secondary fw-semibold mb-2">
-              {section.title}
-            </div>
-            <ul className="list-unstyled mb-0">
-              {section.routes.map((r) => (
-                <li key={r.path}>
-                  <NavLink
-                    to={r.path}
-                    className={({ isActive }) =>
-                      `d-block px-2 py-1 rounded text-decoration-none ${isActive ? 'bg-primary-subtle text-primary fw-semibold' : 'text-body'}`
-                    }
-                  >
-                    {r.label}
-                  </NavLink>
-                </li>
-              ))}
-            </ul>
+  // Top bar: the shell renders the hamburger toggle at its left; `topbar`
+  // fills the rest with the brand + framework links.
+  const topbar = (
+    <div className="d-flex align-items-center px-3 py-2 app-shell-header flex-grow-1">
+      <Link to="/" className="text-decoration-none fw-semibold text-body fs-5">
+        @mintplayer/react-bootstrap
+      </Link>
+      <span className="text-body-secondary small">demo</span>
+      <div className="flex-grow-1" />
+      <FrameworkLinks />
+      {/* Cycles auto / light / dark and persists the choice in the bs-theme-mode cookie. */}
+      <BsThemeToggle className="mx-2" />
+      <GithubLink />
+    </div>
+  );
+  const sidebar = (
+    <nav className="border-end bg-body-tertiary p-3 app-shell-sidebar">
+      {SECTIONS.map((section) => (
+        <div key={section.title} className="mb-3">
+          <div className="text-uppercase small text-body-secondary fw-semibold mb-2">
+            {section.title}
           </div>
-        ))}
-      </nav>
+          <ul className="list-unstyled mb-0">
+            {section.routes.map((r) => (
+              <li key={r.path}>
+                <NavLink
+                  to={r.path}
+                  className={({ isActive }) =>
+                    `d-block px-2 py-1 rounded text-decoration-none ${isActive ? 'bg-primary-subtle text-primary fw-semibold' : 'text-body'}`
+                  }
+                >
+                  {r.label}
+                </NavLink>
+              </li>
+            ))}
+          </ul>
+        </div>
+      ))}
+    </nav>
+  );
+  return (
+    <BsShell breakpoint="md" size="14rem" className="app-shell" dismissOnNavigate topbar={topbar} sidebar={sidebar}>
       <main className="app-shell-main flex-grow-1">{children}</main>
     </BsShell>
   );

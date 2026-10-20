@@ -7,6 +7,142 @@ package version aligns its major with the supported Angular major.
 
 ### Breaking
 
+- **Card is plain Bootstrap markup (issue #437, wave A).** No front renders `<mp-card>` any more:
+  `bs-card` (Angular) is the `.card` itself, `BsCard` (React/Vue) renders a `div.card`, and `mp-card` (Lit) is a
+  light-DOM element that toggles the same classes on itself. The card ships no stylesheet; the layered Bootstrap
+  baseline styles it, so the card renders with JS off and in Angular SSR.
+  - **`navStyle` removed** from `bs-card-header` / `BsCardHeader` in all three frameworks, and
+    `applyHeaderNavStyle` from `@mintplayer/web-components/card`. Put Bootstrap's own `card-header-tabs` /
+    `card-header-pills` class on the nav: `<ul class="nav card-header-tabs">`.
+  - The class mapping for `color` / `outline` / image `position` lives in `@mintplayer/ui-core/card`
+    (`cardColorClasses`, `capColorClasses`, `cardImgClass`, `CARD_COLORS`, `CardColor`, `CardImagePosition`).
+    `CardImagePosition` moved there from `@mintplayer/web-components/card`, which re-exports it.
+  - `mp-card`'s shadow root, its `part`s, its `--mp-card-*` custom properties and its document-level card sheet
+    are gone. Style a card with ordinary CSS on `.card`.
+  - `bs-card-title`, `bs-card-subtitle` and `bs-card-text` hosts carry `d-block`, and `bs-card-group` drops its
+    `:host { display: block }` so Bootstrap's `.card-group` flex layout applies.
+- **Input group is a plain `.input-group` (issue #437, wave A).** `bs-input-group` (Angular) is the `.input-group`
+  itself and `BsInputGroup` (React/Vue) renders a `div.input-group`, so the children are its direct children
+  and render with JS off and in Angular SSR. `size` maps to `input-group-sm` / `input-group-lg`; the class and
+  role mapping and the RTL / hosted-control sheet live in `@mintplayer/ui-core/input-group`.
+  - `role="group"` is still added only when the group is named, but the Angular front reads the name from the
+    host's static `aria-label` / `aria-labelledby`. A group named through a binding sets `role="group"` itself.
+  - `size` is no longer mirrored onto `mp-*` controls inside the group; the controls read the group's size
+    class themselves.
+  - `<mp-input-group>` (Lit) is unchanged for now: `mp-phone-input` composes it in its shadow root.
+- **Checkbox renders a native input (issue #437, wave A).** `bs-checkbox` / `BsCheckbox` render a plain
+  `<input type=checkbox>` in Bootstrap's `.form-check` / `.form-switch` / `.btn-check` markup, with no
+  `<mp-checkbox>`, so a checkbox renders with JS off and in Angular SSR. The class mapping and ARIA contract live in
+  `@mintplayer/ui-core/checkbox` (`connectCheckbox`, `checkboxClasses`, `checkboxIds`).
+  - Angular: `checkboxRef` is removed. `id` and `tabindex` move from the host to the input, and `aria-*` is
+    copied onto it. Validation state from `BsControlValidityDirective` is rendered on the input with an
+    `.invalid-feedback` message, not mirrored onto the host.
+  - React: `onChange` is now the native input `change` event. Use the new `onCheckedChange(checked)` for the
+    boolean. The ref is the `<input>`. `checked` / `defaultChecked` / `indeterminate` / `invalid` / `errorText`
+    are props.
+  - Vue: `v-model` is the checked state, and the new `v-model:indeterminate` is the mixed state. Attributes land on
+    the input (`inheritAttrs: false`).
+  - The mixed state is the `indeterminate` property plus `aria-checked="mixed"`. A user toggle clears it.
+  - `FEEDBACK_CLASS` in `@mintplayer/ui-core/forms` is now `invalid-feedback d-block`.
+  - `takeHostAria` moved to `@mintplayer/ng-bootstrap/a11y`.
+  - `<mp-checkbox>` (Lit) is unchanged for now: `mp-datatable` renders it in its shadow root.
+- **Toggle button is a checkbox toggle button in every front (issue #437, wave A).** It renders
+  `input.btn-check` + `label.btn` with `role="button"` and `aria-pressed`, with the contract from
+  `@mintplayer/ui-core/checkbox`.
+  - Angular gains `<bs-toggle-button>`, a second selector of `BsCheckboxComponent` with the type fixed to
+    `toggle_button`. It takes `[(isToggled)]`, `ngModel` / `formControl` and `color`.
+  - React: `BsToggleButton` is `<BsCheckbox type="toggle_button">`. `onChange` is the native event; use
+    `onCheckedChange(checked)` instead of `e.detail.checked`. `color` is a typed prop, and the ref is the input.
+  - Vue: `BsToggleButton` is `<BsCheckbox type="toggle_button">`, so `v-model` is unchanged and attributes land on
+    the input.
+  - `<mp-toggle-button>` (Lit) renders in the light DOM. Its children become the label, and host `aria-label`,
+    `aria-labelledby` and `aria-describedby` are written onto the input. The inner input has no `name`, because the
+    form-associated host submits. `toggleButtonStyles` is still exported for `mp-checkbox`.
+
+- **Radios are native radios sharing a name in every front (issue #437, wave A).** A radio renders a plain
+  `<input type=radio>` in `.form-check` (or `.btn-check` + `label.btn` for `type="toggle_button"`) markup, and a
+  group renders an element with `role="radiogroup"` that hands every radio one `name`. The browser then supplies
+  one-of-N, the single tab stop, arrow move-and-select, position-in-set and form submission, with JS off and in
+  Angular SSR. The contract lives in `@mintplayer/ui-core/radio` (`connectRadio`, `radioClasses`,
+  `connectRadioGroup`, `radioGroupName`).
+  - Angular: `bsRadioGroup` also matches a `<bs-radio-group>` element, which takes `name`, `required`, `disabled`
+    and `ngModel` / `formControl`. `radioRef` is removed. `id`, `tabindex` and `aria-*` land on the input, and
+    `[inputLabel]` names a radio that has no visible label. A choice made before hydration is adopted.
+  - React: `BsRadioGroup` takes `value` + `onValueChange(value)` (or `defaultValue`), replacing `onGroupChange`.
+    A standalone `BsRadio` takes `checked` + `onCheckedChange`. The refs are the `div` and the input.
+  - Vue: `BsRadioGroup` keeps `v-model` and provides `radioGroupKey`. Attributes on `BsRadio` land on the input.
+  - `<mp-radio>` / `<mp-radio-group>` (Lit) render in the light DOM. The group is no longer form-associated: the
+    checked native input submits itself. The custom roving tabindex and arrow handling are gone in favour of the
+    native set. The `checked` attribute is the initial state only; the `checked` property reads the input.
+- **Pagination renders Bootstrap's `.pagination` markup in every front (issue #437, wave A).** Each front renders
+  `<nav aria-label><ul class="pagination"><li class="page-item"><button class="page-link">` itself, from
+  `@mintplayer/ui-core/pagination` (`connectPagination`, `buildPaginationLayout`, `previousPage`, `nextPage`), so
+  Angular SSR emits the real control. A new `hrefFor(page)` renders every page as a link that works with JS off
+  (a plain click still selects in place), and `labels` localizes the accessible names (default English).
+  - Angular: no `<mp-pagination>` inside `bs-pagination`; `aria-*` / `id` / `tabindex` land on the `<nav>`.
+    New `[labels]` and `[hrefFor]` inputs.
+  - React: `BsPagination` is a plain component. `onMpPaginationPageChange(event)` is replaced by
+    `onPageChange(page)`; `defaultSelectedPageNumber` makes it uncontrolled. The ref is the `<nav>`.
+  - Vue: `pageNumbers`, `numberOfBoxes`, `showArrows`, `size`, `labels` and `hrefFor` are declared props;
+    attributes land on the `<nav>`.
+  - `<mp-pagination>` (Lit) is unchanged and keeps its shadow root until `mp-datatable` converts.
+
+- **Shell renders its own HTML in every front (issue #437, wave A).** `bs-shell` (Angular) is the `.shell` itself,
+  `BsShell` (React/Vue) renders a `div.shell`, and `mp-shell` (Lit) renders the same markup in its shadow root.
+  The markup, ids and ARIA come from `@mintplayer/ui-core/shell`. The open state is one native checkbox per
+  viewport mode, with a hamburger `<label>` for each. `checked` always means revealed, so the drawer toggles with
+  JS off and in Angular SSR, and no viewport inverts it.
+  - **Angular:** `*bsShellSidebar` is now a structural directive. A new `*bsShellTopbar` fills the top bar.
+    `(statechange)` emits `BsShellStateChange` (`{ open }`), not the WC's `CustomEvent`.
+  - **React:** the top bar and sidebar are the `topbar` / `sidebar` props instead of `slot=` children, and
+    `onStatechange` receives `{ open }`. The ref is `BsShellHandle` (`{ element, toggle }`).
+  - **Vue:** the top bar and sidebar are the `#topbar` / `#sidebar` named slots, and `@statechange` receives
+    `ShellStateChange` (`{ open }`), now exported from `@mintplayer/vue-bootstrap/shell`.
+  - **Removed:** the `hamburger` slot, `shellStyles` and the `::part(topbar)` hook. Style the shell's
+    `.topbar` with ordinary CSS. Also removed: the `mp-shell` Declarative-Shadow-DOM chrome
+    (`injectMpShellDsd`, `@mintplayer/web-components/shell/ssr`) and the `codegen-shell-chrome` target.
+
+- **Accordion renders Bootstrap's accordion markup in every front (issue #437, wave A).** `bs-accordion` (Angular)
+  is the `.accordion` itself, `BsAccordion` (React/Vue) renders a `div.accordion`, and `mp-accordion` (Lit)
+  renders the same markup in its shadow root. Each row is a native `<details class="accordion-item">`, and the
+  ids, `name` group and ARIA come from `@mintplayer/ui-core/accordion`. The server HTML is a working accordion
+  with JS off. Single-open uses the `name` attribute, so no script or CSS state machine is involved.
+  - **React/Vue:** `onTabToggle` / `@tab-toggle` receives `AccordionTabToggle` (`{ index, active }`), not a
+    `CustomEvent` with `detail`. `AccordionTabToggleDetail` is replaced by `AccordionTabToggle`. The React ref
+    is the `.accordion` `HTMLDivElement`.
+  - **Lit:** the shadow ids and the group name changed (`acc-h<n>`, `acc-c<n>`, `acc-group`). The `tab-count`
+    attribute and the `data-js` marker are gone.
+  - **Theming:** set Bootstrap's `--bs-accordion-*` custom properties on `.accordion` with ordinary CSS.
+    Bootstrap re-declares them on every `.accordion`, so a nested accordion needs its own rule. The
+    `::part(header)`, `::part(button)` and `::part(content)` hooks are removed.
+  - **Removed:** the Declarative-Shadow-DOM chrome (`injectMpAccordionDsd`,
+    `@mintplayer/web-components/accordion/ssr`) and the `codegen-accordion-chrome` target.
+  - **Vue:** the accordion's id comes from `useId()` rather than the instance `uid`, so the server and the
+    hydrating client agree on every IDREF.
+- **Tab control renders Bootstrap nav-tabs over native radios in every front (issue #437, wave A).** One radio
+  per tab is the selection and the CSS pairs the n-th radio with the n-th pane, so the server HTML switches tabs
+  with JS off (panes are `region`s labelled by their tab). After hydration the labels become APG tabs: roving
+  tabindex, `aria-selected`, Left/Right/Home/End with automatic activation, disabled tabs skipped. Ids and ARIA
+  come from `@mintplayer/ui-core/tab-control`.
+  - **Angular:** `bs-tab-control` is the `.tab-control` itself. `bs-tab-page` renders nothing in place (its
+    content is projected into the control's pane). `isServerSide`, `tabName` and `tabControlName` are removed.
+  - **React:** `<BsTabPage tabId header disabled>` pages inside `<BsTabControl activeTab onTabActivate>`;
+    `onTabActivate` receives the `tabId`. The ref is the `.tab-control` `HTMLDivElement`. Page attributes land
+    on the pane (except `role`).
+  - **Vue:** `<BsTabControl v-model>` with `<BsTabPage tab-id disabled>`, the tab content in a `#header` slot.
+    `BsTabPage` is exported. Page attributes land on the pane (except `role`).
+  - **Removed:** the `MpTabControl` / `MpTabPage` re-exports from the framework libraries. The Lit
+    `mp-tab-control` stays unchanged until the dock, which depends on it, converts.
+- **Sparkline renders its own svg in every front (issue #437, wave A).** The geometry and the accessible name
+  come from `@mintplayer/ui-core/charts/sparkline`, so the server HTML is the finished chart. A `.sparkline` box
+  holds a `role="img"` viewBox svg; the consumer's `aria-label` names the svg.
+  - **Angular:** `bs-sparkline` is the `.sparkline` box itself. `sparklineRef` is removed. Without a `locale`,
+    the summary is formatted for `LOCALE_ID`.
+  - **React:** the ref is the `.sparkline` `HTMLSpanElement`. The props are React props, no longer
+    custom-element properties. Other attributes land on the box.
+  - **Vue:** `points`, `area`, `showLastDot`, `yMin`, `yMax`, `locale`, `inputLabel` and `summaryFormatter`
+    are declared props, so numbers need a binding (`:y-min="0"`). Other attributes land on the box.
+  - The Lit `mp-sparkline` renders from the same core and keeps its shadow root.
 - **Typeahead rebuilt on a headless core (issue #436).** `@mintplayer/ng-bootstrap` 22.26.0,
   `@mintplayer/web-components` 2.21.0, `@mintplayer/react-bootstrap` 19.25.0, `@mintplayer/vue-bootstrap` 3.26.0,
   new `@mintplayer/ui-core` 1.0.0 (a peer of the three framework libraries). Migrating `bs-typeahead`:

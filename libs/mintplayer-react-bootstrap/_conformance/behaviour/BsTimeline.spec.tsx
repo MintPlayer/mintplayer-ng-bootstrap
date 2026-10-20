@@ -3,7 +3,7 @@ import { describe, expect, it } from 'vitest';
 
 import { BsTimeline, BsTimelineItem } from '@mintplayer/react-bootstrap/timeline';
 import type { MpTimeline } from '@mintplayer/web-components/timeline';
-import type { TimelineItem, TimelineItemContext } from '@mintplayer/web-components/timeline-core';
+import type { TimelineItem, TimelineItemContext } from '@mintplayer/ui-core/timeline-core';
 
 import { emit, render, renderEl } from './harness';
 

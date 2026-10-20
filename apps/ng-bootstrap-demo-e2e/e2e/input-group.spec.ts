@@ -21,10 +21,9 @@ import { test, expect, type Page } from '@playwright/test';
 /** An input group's core promise: its children form ONE continuous row. */
 async function slottedRow(page: Page, groupIndex = 0) {
   return page.evaluate((index) => {
+    // Since #437 the bs-input-group host IS the .input-group: its children are the items.
     const host = document.querySelectorAll('bs-input-group')[index];
-    const wc = host.querySelector(':scope > mp-input-group')!;
-    const assigned = (wc.shadowRoot!.querySelector('slot') as HTMLSlotElement).assignedElements();
-    const boxes = assigned.map((el) => {
+    const boxes = [...host.children].map((el) => {
       const b = el.getBoundingClientRect();
       const cs = getComputedStyle(el);
       return { tag: el.tagName, y: Math.round(b.y), width: +b.width.toFixed(1), flexGrow: cs.flexGrow };

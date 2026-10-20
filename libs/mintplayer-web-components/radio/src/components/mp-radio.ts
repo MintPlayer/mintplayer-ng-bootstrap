@@ -1,80 +1,48 @@
 import { LitElement, html, nothing, type TemplateResult } from 'lit';
 import { createRef, ref, type Ref } from 'lit/directives/ref.js';
+import { props } from '@mintplayer/web-components/machine';
+import { connectRadio, radioClasses, type RadioType } from '@mintplayer/ui-core/radio';
+import { isToggleButtonColor, type ToggleButtonColor } from '@mintplayer/ui-core/checkbox';
 
-// Side-effect import: registers `<mp-toggle-button>`. The styles are reused
-// by `MpRadio.styles` below — sharing the same `CSSResult` instance means
-// Lit attaches one underlying `CSSStyleSheet` to every shadow root that
-// includes it (`adoptedStyleSheets`), so each component pays a registration
-// cost but the parsed Bootstrap button CSS exists once.
-import {
-  toggleButtonStyles,
-  type ToggleButtonColor,
-} from '@mintplayer/web-components/toggle-button';
-
-// `.btn-check` (visually hides the input when used with `type="toggle_button"`)
-// + `.form-check` (default `type="radio"` layout) both live in the shared
-// form-check stylesheet, alongside `mp-checkbox`. Internal `_styles/` dir,
-// reached via relative path — not a public sub-entry of the package.
-import { formCheckStyles } from '../../../_styles/form-check.styles';
-import { invalidFeedbackStyles } from '../../../_styles/invalid-feedback.styles';
-import {
-  HostAriaController,
-  errorFeedback,
-  errorFeedbackElements,
-} from '@mintplayer/web-components/a11y';
-
-export type MpRadioType = 'radio' | 'toggle_button';
+export type MpRadioType = RadioType;
 
 export interface RadioChangeEventDetail {
   checked: boolean;
   value: string | null;
 }
 
-const VALID_TYPES: ReadonlySet<string> = new Set(['radio', 'toggle_button']);
-
-const VALID_COLORS: ReadonlySet<string> = new Set([
-  'primary', 'secondary', 'success', 'danger',
-  'warning', 'info', 'light', 'dark',
-  'outline-primary', 'outline-secondary', 'outline-success', 'outline-danger',
-  'outline-warning', 'outline-info', 'outline-light', 'outline-dark',
-]);
-
 let instanceCounter = 0;
 
+/** What an enclosing `<mp-radio-group>` hands its radios. */
+interface RadioGroupHost extends HTMLElement {
+  readonly groupName: string;
+}
+
 /**
- * `<mp-radio>` — a Bootstrap-styled radio button with two visual variants:
+ * `<mp-radio>` — the Lit front of a Bootstrap radio (#437): a native
+ * `<input type=radio>` in `.form-check` markup, or `.btn-check` + `label.btn`
+ * for `type="toggle_button"`, rendered in the light DOM and styled by the
+ * page's Bootstrap baseline. The ARIA contract comes from
+ * `@mintplayer/ui-core/radio`, as in the Angular, React and Vue fronts.
  *
- * - `type="radio"` (default) — standard `.form-check` styling with a round
- *   indicator and a label.
- * - `type="toggle_button"` — `.btn-check` styling rendered as a button
- *   (`.btn .btn-<color>`). Defaults to `color="secondary"` to match the
- *   prior Angular `<bs-radio type="toggle_button">` behaviour.
+ * Radios that share a `name` in one document are a native set: the browser
+ * supplies exclusivity, the single tab stop, arrow move-and-select and form
+ * submission, with JavaScript off as well. Inside an `<mp-radio-group>` the
+ * group's name wins over the radio's own. The element's children become the
+ * label's content.
  *
- * Native one-of-N behaviour relies on multiple inputs sharing a `name` in
- * the same scope. Each `<mp-radio>` keeps its `<input>` inside its own
- * shadow root, so the browser cannot auto-uncheck a sibling for us. A
- * coordinating parent — `<mp-radio-group>`, or the Angular `[bsRadioGroup]`
- * directive on hosts where that element can't be used — must listen for
- * `change` and update the other radios' `checked` properties.
- *
- * Emits `change` with `detail: { checked, value }` when this radio
- * transitions to the checked state.
+ * Attributes: `type`, `checked` (the initial state, like the input's own),
+ * `disabled`, `name`, `value`, `color`, `invalid`, `required`, `error-text`,
+ * `input-label`. A host `aria-label`, `aria-labelledby` or `aria-describedby`
+ * lands on the input. Emits `change` with `detail: { checked, value }` when
+ * this radio becomes checked.
  */
 export class MpRadio extends LitElement {
-  static override styles = [formCheckStyles, toggleButtonStyles, invalidFeedbackStyles];
-
-  static override shadowRootOptions = {
-    ...LitElement.shadowRootOptions,
-    delegatesFocus: true,
-  };
-
   static override get observedAttributes(): string[] {
     return [
       ...(super.observedAttributes ?? []),
       'invalid',
       'required',
-      // Validation message rendered inside the shadow root and referenced by the
-      // inner <input>; shown only while `invalid` is also set.
       'error-text',
       'type',
       'checked',
@@ -82,13 +50,8 @@ export class MpRadio extends LitElement {
       'name',
       'value',
       'color',
-      // Copied to the inner <input> in render(); the slotted label already names
-      // the control (flat-tree label association), so these are overrides.
       'aria-label',
       'input-label',
-      // NOT copied inward — resolved into element references against the host's
-      // tree by hostAria.syncReferences(); an IDREF string cannot cross the
-      // shadow boundary.
       'aria-labelledby',
       'aria-describedby',
     ];
@@ -102,54 +65,40 @@ export class MpRadio extends LitElement {
   private _color: ToggleButtonColor = 'secondary';
   private _inputLabel: string | null = null;
   private _errorText: string | null = null;
+  /** The consumer's children, moved into the label on first render. */
+  private _content: Node[] = [];
 
-  /**
-   * Tier-2 naming. No role on the host: the inner <input> is the real control, so
-   * a host role would announce the radio twice. References target that <input>.
-   */
-  private readonly hostAria = new HostAriaController(this, {
-    referenceTarget: () => this._inputRef.value ?? null,
-    describedByExtras: () => errorFeedbackElements(this.renderRoot),
-  });
-  private readonly _inputId = `mp-radio-${++instanceCounter}`;
-  private readonly _errorId = `mp-radio-${instanceCounter}-error`;
+  private readonly _rootId = `mp-radio-${++instanceCounter}`;
   private readonly _inputRef: Ref<HTMLInputElement> = createRef();
 
-  /**
-   * Optional override for the inner <input>'s accessible name. Usually
-   * unnecessary: the slotted visible text already names the control through the
-   * flat-tree label association (slotted-label spike; verdict in the plan). For a radio
-   * with no visible text, or a name that must differ from it, set this.
-   */
+  protected override createRenderRoot(): HTMLElement {
+    return this;
+  }
+
+  override connectedCallback(): void {
+    // Captured before lit renders into the host, so its own nodes are never taken.
+    if (!this.hasUpdated) this._content = Array.from(this.childNodes);
+    super.connectedCallback();
+  }
+
+  /** Optional override for the input's accessible name, for a radio with no visible label. */
   get inputLabel(): string | null {
     return this._inputLabel;
   }
   set inputLabel(value: string | null) {
-    const next = value ?? null;
-    if (this._inputLabel === next) return;
-    this._inputLabel = next;
+    this._inputLabel = value ?? null;
     this.requestUpdate();
   }
 
   /**
-   * Validation message, as `errorText` / `error-text`. Rendered as a
-   * `.invalid-feedback` node inside the shadow root and referenced from the inner
-   * `<input>` by `aria-errormessage` **and** `aria-describedby`, but only while
-   * `invalid` is set — `aria-errormessage` is meaningless on a control that is not
-   * `aria-invalid`.
-   *
-   * On a radio the message belongs to the whole group, not to one option, so put
-   * it on the radio the group's validity is anchored to (or on each, which
-   * repeats it). Text rather than a node because a consumer's own element lives
-   * outside this shadow root, where an IDREF from the inner input cannot reach it.
+   * Validation message, as `errorText` / `error-text`, referenced from the
+   * input by `aria-errormessage` and `aria-describedby` while `invalid` is set.
    */
   get errorText(): string | null {
     return this._errorText;
   }
   set errorText(value: string | null) {
-    const next = value ?? null;
-    if (this._errorText === next) return;
-    this._errorText = next;
+    this._errorText = value ?? null;
     this.requestUpdate();
   }
 
@@ -157,20 +106,22 @@ export class MpRadio extends LitElement {
     return this._type;
   }
   set type(value: MpRadioType) {
-    if (!VALID_TYPES.has(value) || this._type === value) return;
+    if (value !== 'radio' && value !== 'toggle_button') return;
     this._type = value;
     this.requestUpdate();
   }
 
+  /**
+   * The live checked state. Once rendered, the input is the state: the browser
+   * unchecks a radio when another of its set is picked, and fires no event on
+   * the one it unchecks.
+   */
   get checked(): boolean {
-    return this._checked;
+    return this._inputRef.value?.checked ?? this._checked;
   }
   set checked(value: boolean) {
-    const next = !!value;
-    if (this._checked === next) return;
-    this._checked = next;
-    this.reflectBoolean('checked', next);
-    this.requestUpdate();
+    this._checked = !!value;
+    if (this._inputRef.value) this._inputRef.value.checked = this._checked;
   }
 
   get disabled(): boolean {
@@ -180,7 +131,8 @@ export class MpRadio extends LitElement {
     const next = !!value;
     if (this._disabled === next) return;
     this._disabled = next;
-    this.reflectBoolean('disabled', next);
+    if (next) this.setAttribute('disabled', '');
+    else this.removeAttribute('disabled');
     this.requestUpdate();
   }
 
@@ -188,9 +140,7 @@ export class MpRadio extends LitElement {
     return this._name;
   }
   set name(value: string | null) {
-    const next = value ?? null;
-    if (this._name === next) return;
-    this._name = next;
+    this._name = value ?? null;
     this.requestUpdate();
   }
 
@@ -198,9 +148,7 @@ export class MpRadio extends LitElement {
     return this._value;
   }
   set value(value: string | null) {
-    const next = value ?? null;
-    if (this._value === next) return;
-    this._value = next;
+    this._value = value ?? null;
     this.requestUpdate();
   }
 
@@ -208,209 +156,92 @@ export class MpRadio extends LitElement {
     return this._color;
   }
   set color(value: ToggleButtonColor) {
-    if (!VALID_COLORS.has(value) || this._color === value) return;
+    if (!isToggleButtonColor(value)) return;
     this._color = value;
     this.requestUpdate();
   }
 
-  private _groupTabIndex: number | null = null;
-  private _groupPosInSet: number | null = null;
-  private _groupSetSize: number | null = null;
-
-  /**
-   * Roving tab stop, written by an enclosing `<mp-radio-group>`. With
-   * delegatesFocus a tabindex on the HOST cannot take the inner input out of
-   * the tab order — the input's own tabindex is the only lever, and it lives
-   * behind the shadow boundary, hence this property. Coordination state, not
-   * author API: property-only, no attribute.
-   */
-  get groupTabIndex(): number | null {
-    return this._groupTabIndex;
-  }
-  set groupTabIndex(value: number | null) {
-    const next = value ?? null;
-    if (this._groupTabIndex === next) return;
-    this._groupTabIndex = next;
-    this.requestUpdate();
-  }
-
-  /**
-   * Set-position pair, written by the enclosing group. They belong on the
-   * inner `<input>` — the role bearer — because aria-posinset on a role-less
-   * host is dropped by AT, and shadow roots keep native name-grouping (the
-   * usual "2 of 3" source) from ever forming.
-   */
-  get groupPosInSet(): number | null {
-    return this._groupPosInSet;
-  }
-  set groupPosInSet(value: number | null) {
-    const next = value ?? null;
-    if (this._groupPosInSet === next) return;
-    this._groupPosInSet = next;
-    this.requestUpdate();
-  }
-
-  get groupSetSize(): number | null {
-    return this._groupSetSize;
-  }
-  set groupSetSize(value: number | null) {
-    const next = value ?? null;
-    if (this._groupSetSize === next) return;
-    this._groupSetSize = next;
-    this.requestUpdate();
-  }
-
-  override attributeChangedCallback(
-    name: string,
-    oldValue: string | null,
-    newValue: string | null,
-  ): void {
+  override attributeChangedCallback(name: string, oldValue: string | null, newValue: string | null): void {
     super.attributeChangedCallback(name, oldValue, newValue);
     switch (name) {
-      // Read from the host in render(), so a change has to ask for one — without
-      // this, aria-invalid / aria-required froze at their first-render values and
-      // an error message could never appear on a control that started out valid.
-      case 'invalid':
-      case 'required':
-        this.requestUpdate();
-        break;
       case 'error-text':
         this._errorText = newValue;
-        this.requestUpdate();
         break;
-      case 'type': {
-        // Removing the attribute restores the default rather than keeping the
-        // last value (a framework binding clears an attribute by removing it).
-        const type = newValue ?? 'radio';
-        if (VALID_TYPES.has(type)) {
-          this._type = type as MpRadioType;
-          this.requestUpdate();
-        }
+      case 'type':
+        this._type = newValue === 'toggle_button' ? 'toggle_button' : 'radio';
         break;
-      }
       case 'checked':
-        this._checked = newValue !== null;
-        this.requestUpdate();
+        this.checked = newValue !== null;
         break;
       case 'disabled':
         this._disabled = newValue !== null;
-        this.requestUpdate();
         break;
       case 'name':
         this._name = newValue;
-        this.requestUpdate();
         break;
       case 'value':
         this._value = newValue;
-        this.requestUpdate();
         break;
       case 'color': {
+        // Removing the attribute restores the default rather than keeping the last value.
         const color = newValue ?? 'secondary';
-        if (VALID_COLORS.has(color)) {
-          this._color = color as ToggleButtonColor;
-          this.requestUpdate();
-        }
+        if (!isToggleButtonColor(color)) return;
+        this._color = color;
         break;
       }
-      case 'aria-label':
-        this.requestUpdate();
-        break;
       case 'input-label':
         this._inputLabel = newValue;
-        this.requestUpdate();
-        break;
-      case 'aria-labelledby':
-      case 'aria-describedby':
-        this.hostAria.syncReferences();
         break;
     }
+    // invalid / required / aria-* are read from the host in render().
+    this.requestUpdate();
   }
 
-  // After every render, not once: element references point at a specific node,
-  // and switching `type` replaces the <input> outright. See mp-checkbox's aria
-  // spec, where the same transition is exercised.
-  protected override updated(): void {
-    this.hostAria.syncReferences();
+  private group(): RadioGroupHost | null {
+    return this.closest<RadioGroupHost>('mp-radio-group');
   }
 
   override render(): TemplateResult {
-    return this._type === 'toggle_button' ? this.renderToggleButton() : this.renderRadio();
+    const group = this.group();
+    const invalid = this.hasAttribute('invalid');
+    const bags = connectRadio({
+      type: this._type,
+      checked: this._checked,
+      disabled: this._disabled || !!group?.hasAttribute('disabled'),
+      required: this.hasAttribute('required') || !!group?.hasAttribute('required'),
+      invalid,
+      name: group?.groupName ?? this._name,
+      value: this._value,
+      errorText: this._errorText,
+    }, this._rootId, this.getAttribute('aria-describedby'));
+    const classes = radioClasses(this._type, this._color, invalid);
+    const input = {
+      ...bags.input,
+      class: classes.input,
+      'aria-label': this.getAttribute('aria-label') ?? this._inputLabel,
+      'aria-labelledby': this.getAttribute('aria-labelledby'),
+    };
+    // The checked state is applied once; after that the input owns it (see `checked`).
+    const control = html`<input ${ref(this._inputRef)} ${props(input)} ?checked=${this._checked} @change=${this.onInputChange} />`;
+    const feedback = bags.feedback ? html`<div ${props(bags.feedback.attrs)}>${bags.feedback.text}</div>` : nothing;
+    if (classes.root === null) {
+      return html`${control}<label class=${classes.label} for=${bags.labelFor ?? nothing}>${this._content}</label>${feedback}`;
+    }
+    return html`<label class=${classes.root}>${control}<span class=${classes.label}>${this._content}</span></label>${feedback}`;
   }
 
-  private renderRadio(): TemplateResult {
-    const error = this.errorFeedback();
-    return html`
-      <label class="form-check">
-        <input
-          ${ref(this._inputRef)}
-          type="radio"
-          class="form-check-input"
-          id=${this._inputId}
-          .checked=${this._checked}
-          ?disabled=${this._disabled}
-          aria-invalid=${this.hasAttribute('invalid') ? 'true' : nothing}
-          aria-required=${this.hasAttribute('required') ? 'true' : nothing}
-          aria-errormessage=${error.id}
-          aria-describedby=${error.id}
-          name=${this._name ?? nothing}
-          value=${this._value ?? nothing}
-          tabindex=${this._groupTabIndex ?? nothing}
-          aria-posinset=${this._groupPosInSet ?? nothing}
-          aria-setsize=${this._groupSetSize ?? nothing}
-          aria-label=${this.getAttribute('aria-label') ?? this._inputLabel ?? nothing}
-          @change=${this.onInputChange}
-        />
-        <span class="form-check-label"><slot></slot></span>
-      </label>
-      ${error.node}
-    `;
-  }
-
-  private errorFeedback() {
-    return errorFeedback(this._errorId, this._errorText, this.hasAttribute('invalid'));
-  }
-
-  private renderToggleButton(): TemplateResult {
-    const error = this.errorFeedback();
-    return html`
-      <input
-        ${ref(this._inputRef)}
-        type="radio"
-        class="btn-check"
-        id=${this._inputId}
-        .checked=${this._checked}
-        ?disabled=${this._disabled}
-          aria-invalid=${this.hasAttribute('invalid') ? 'true' : nothing}
-          aria-required=${this.hasAttribute('required') ? 'true' : nothing}
-        aria-errormessage=${error.id}
-        aria-describedby=${error.id}
-        name=${this._name ?? nothing}
-        value=${this._value ?? nothing}
-        tabindex=${this._groupTabIndex ?? nothing}
-        aria-posinset=${this._groupPosInSet ?? nothing}
-        aria-setsize=${this._groupSetSize ?? nothing}
-        aria-label=${this.getAttribute('aria-label') ?? this._inputLabel ?? nothing}
-        @change=${this.onInputChange}
-      />
-      <label class="btn btn-${this._color}" for=${this._inputId}>
-        <slot></slot>
-      </label>
-      ${error.node}
-    `;
-  }
-
-  private reflectBoolean(attr: string, value: boolean): void {
-    if (value) this.setAttribute(attr, '');
-    else this.removeAttribute(attr);
+  protected override firstUpdated(): void {
+    if (this._inputRef.value) this._inputRef.value.checked = this._checked;
   }
 
   private onInputChange = (ev: Event): void => {
-    const next = (ev.target as HTMLInputElement).checked;
-    this._checked = next;
-    this.reflectBoolean('checked', next);
+    // The input's own change event is not the element's contract; the
+    // element's `change` (with detail) is, so stop the native one here.
+    ev.stopPropagation();
+    this._checked = (ev.target as HTMLInputElement).checked;
     this.dispatchEvent(
       new CustomEvent<RadioChangeEventDetail>('change', {
-        detail: { checked: next, value: this._value },
+        detail: { checked: this._checked, value: this._value },
         bubbles: true,
         composed: true,
       }),
@@ -420,4 +251,10 @@ export class MpRadio extends LitElement {
 
 if (typeof customElements !== 'undefined' && !customElements.get('mp-radio')) {
   customElements.define('mp-radio', MpRadio);
+}
+
+declare global {
+  interface HTMLElementTagNameMap {
+    'mp-radio': MpRadio;
+  }
 }

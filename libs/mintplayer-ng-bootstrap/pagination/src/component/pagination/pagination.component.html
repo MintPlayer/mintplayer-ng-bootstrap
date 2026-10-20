@@ -1,1 +1,15 @@
-<mp-pagination bsForwardAria #pagination (mp-pagination-page-change)="onPageChange($event)"></mp-pagination>
+<nav [mpProps]="navBag()">
+  <ul [class]="view().listClass">
+    @for (entry of view().entries; track entry.key) {
+      <li [class]="entry.itemClass">
+        @if (entry.kind === 'gap') {
+          <span [mpProps]="entry.attrs">{{ entry.text }}</span>
+        } @else if (view().tag === 'a') {
+          <a [mpProps]="entry.attrs" [attr.href]="entry.href" (click)="onLinkClick($event, entry.target)">{{ entry.text }}</a>
+        } @else {
+          <button [mpProps]="entry.attrs" (click)="select(entry.target)">{{ entry.text }}</button>
+        }
+      </li>
+    }
+  </ul>
+</nav>

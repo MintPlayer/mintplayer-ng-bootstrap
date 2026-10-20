@@ -7,7 +7,7 @@
     (input)="onInput($event)"
     (keydown)="onKeydown($event)"
     (blur)="onBlur()" />
-  <ul class="dropdown-menu" [mpProps]="api().listbox">
+  <ul #listbox class="dropdown-menu" [mpProps]="api().listbox">
     @if (api().status; as status) {
       <li class="ta-status" [mpProps]="status.attrs">{{ status.text }}</li>
     }

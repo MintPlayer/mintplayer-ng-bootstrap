@@ -1,2 +1,3 @@
 export { default as BsShell } from './BsShell.vue';
-export type { ShellState, ShellStateChangeEventDetail } from '@mintplayer/web-components/shell';
+export type { ShellStateChange } from './shell-state-change';
+export type { ShellBreakpoint, ShellLabels, ShellState } from '@mintplayer/ui-core/shell';

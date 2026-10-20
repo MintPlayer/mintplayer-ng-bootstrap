@@ -1,0 +1,144 @@
+// The accordion's stylesheet, shared by the fronts (PRD #437 wave A). The
+// page's Bootstrap supplies `.accordion` (every --bs-accordion-* property),
+// `.accordion-item` and `.accordion-button`; these rules only adapt them to
+// <details>/<summary>. Ported from the former mp-accordion shadow sheet.
+
+// A nested accordion sits inside its parent tab's body, so its own item border
+// lands right against the parent's: a doubled line at every level. Pulling in
+// by exactly one border width overlaps them, and tracks a themed width.
+.accordion .accordion {
+  margin: calc(-1 * var(--bs-accordion-border-width));
+}
+
+// Lets block-size animate to and from auto (below). It inherits, so the root
+// covers every row and its ::details-content.
+.accordion {
+  interpolate-size: allow-keywords;
+}
+
+// The consumer owns body spacing: every existing consumer passes its own
+// padding utilities, and Bootstrap's 1rem would compound at each nesting level.
+.accordion-content {
+  padding: 0;
+}
+
+// <summary> is not a <button>: remove the disclosure marker (all three
+// mechanisms, since engines disagree on which one works) and give it the
+// affordances Bootstrap's rules assume are native. The line-height pin keeps
+// the 52px header the button version rendered at.
+summary.accordion-button {
+  cursor: pointer;
+  user-select: none;
+  list-style: none;
+  line-height: normal;
+
+  &::marker {
+    content: '';
+  }
+  &::-webkit-details-marker {
+    display: none;
+  }
+}
+
+// A disabled tab: the pointer is blocked here, the keyboard by the cancellable
+// keydown guard in each front (toggle itself cannot be cancelled, spike 0.1a).
+summary.accordion-button[aria-disabled='true'] {
+  pointer-events: none;
+  opacity: 0.65;
+}
+
+// The chevron as a currentColor MASK, so it takes the header's text colour in
+// both colour modes and under any consumer override. The --bs-accordion-btn-icon
+// properties keep working as the SHAPE knob.
+summary.accordion-button::after {
+  background-image: none;
+  background-color: currentColor;
+  mask-image: var(--bs-accordion-btn-icon);
+  mask-repeat: no-repeat;
+  mask-size: var(--bs-accordion-btn-icon-width);
+  -webkit-mask-image: var(--bs-accordion-btn-icon);
+  -webkit-mask-repeat: no-repeat;
+  -webkit-mask-size: var(--bs-accordion-btn-icon-width);
+}
+
+// Forced colours force the mask's background to Canvas, which hides the
+// chevron. CanvasText is correct in every forced palette measured.
+@media (forced-colors: active) {
+  summary.accordion-button::after {
+    background-color: CanvasText;
+  }
+}
+
+// Open state: what Bootstrap keys on `.accordion-button:not(.collapsed)` lives
+// on `details[open] > summary` instead, so no class bookkeeping is needed with
+// or without JS (spike 0.1b).
+details[open] > summary.accordion-button {
+  color: var(--bs-accordion-active-color);
+  background-color: var(--bs-accordion-active-bg);
+  box-shadow: inset 0 calc(-1 * var(--bs-accordion-border-width)) 0 var(--bs-accordion-border-color);
+  border-bottom-left-radius: 0;
+  border-bottom-right-radius: 0;
+
+  &::after {
+    background-image: none;
+    mask-image: var(--bs-accordion-btn-active-icon);
+    -webkit-mask-image: var(--bs-accordion-btn-active-icon);
+    transform: var(--bs-accordion-btn-icon-transform);
+  }
+}
+
+summary.accordion-button:focus-visible {
+  z-index: 3;
+  outline: 0;
+  box-shadow: var(--bs-accordion-btn-focus-box-shadow);
+}
+
+// `highlightActiveTab` is opt-in: without it an open header keeps the resting
+// background.
+.accordion:not([data-highlight-active]) > details[open] > summary.accordion-button {
+  background-color: unset;
+  color: inherit;
+}
+
+// Slide open and closed as a pure-CSS enhancement. Engines with
+// interpolate-size (Chromium 129+) tween block-size to auto.
+@supports (interpolate-size: allow-keywords) {
+  details.accordion-item::details-content {
+    block-size: 0;
+    overflow-y: clip;
+    transition:
+      block-size 0.35s ease,
+      content-visibility 0.35s allow-discrete;
+  }
+
+  details.accordion-item[open]::details-content {
+    block-size: auto;
+  }
+}
+
+// Engines with ::details-content but not interpolate-size (Firefox 138+) get
+// the same slide from the fr-track trick. Engines with neither simply snap.
+@supports (not (interpolate-size: allow-keywords)) and (selector(::details-content)) {
+  details.accordion-item::details-content {
+    display: grid;
+    grid-template-rows: 0fr;
+    transition:
+      grid-template-rows 0.35s ease,
+      content-visibility 0.35s allow-discrete;
+  }
+
+  details.accordion-item[open]::details-content {
+    grid-template-rows: 1fr;
+  }
+
+  details.accordion-item .accordion-content {
+    min-height: 0;
+    overflow-y: clip;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  details.accordion-item::details-content {
+    transition: none;
+  }
+}

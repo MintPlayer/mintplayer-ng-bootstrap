@@ -154,7 +154,7 @@ describe('phonePaths', () => {
   it('derives every path from the injected repo root', () => {
     const root = join('base', 'repo');
     const paths = phonePaths(root);
-    expect(paths.coreSrc).toBe(join(root, 'libs/mintplayer-web-components/phone-core/src'));
+    expect(paths.coreSrc).toBe(join(root, 'libs/mintplayer-ui-core/phone-core/src'));
     expect(paths.metadataDir).toBe(join(paths.coreSrc, 'metadata'));
     expect(paths.loadersPath).toBe(join(paths.coreSrc, 'metadata-loaders.generated.ts'));
   });

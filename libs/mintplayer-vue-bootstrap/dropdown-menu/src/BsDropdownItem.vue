@@ -1,9 +1,8 @@
 <script setup lang="ts">
-// No per-item web component: renders a plain <li class="dropdown-item"> that the
-// menu WC styles via its shadow `::slotted(.dropdown-item)` rule. Put navigable
-// content inside, e.g. <BsDropdownItem><a href="/x">Action</a></BsDropdownItem>.
+// Renders a plain <li class="dropdown-item"> styled by the menu's scoped sheet.
+// Put navigable content inside, e.g. <BsDropdownItem><a href="/x">Action</a></BsDropdownItem>.
 import { onMounted, ref, watch } from 'vue';
-import type { DropdownItemElement } from '@mintplayer/web-components/dropdown-menu';
+import type { DropdownItemElement } from '@mintplayer/ui-core/dropdown-menu';
 
 defineOptions({ inheritAttrs: false });
 

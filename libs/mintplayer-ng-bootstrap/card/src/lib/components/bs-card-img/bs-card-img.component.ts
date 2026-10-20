@@ -1,6 +1,6 @@
 import { NgTemplateOutlet } from '@angular/common';
 import { ChangeDetectionStrategy, Component, computed, input } from '@angular/core';
-import type { CardImagePosition } from '@mintplayer/web-components/card';
+import { cardImgClass, type CardImagePosition } from '@mintplayer/ui-core/card';
 
 /**
  * Card image. `position` switches the rendered shape; `src` and `alt` map
@@ -11,8 +11,7 @@ import type { CardImagePosition } from '@mintplayer/web-components/card';
  * `.card-group > .card > .card-img-top` corner-rounding selectors match
  * (the inner `<img>` would otherwise be a grandchild of `.card`). The inner
  * `<img>` carries the same class so Bootstrap's `width: 100%` sizing rule
- * applies; the host's border-radius is paired with `overflow: hidden` (in
- * `mp-card.element.scss`) so the img's straight corners get clipped.
+ * applies; the host's border-radius is paired with `overflow: hidden` so the img's straight corners get clipped.
  *
  * Projection uses `*ngTemplateOutlet` instead of inlining `<ng-content>` in
  * each `@case`: multiple `<ng-content>` slots in conditional branches silently
@@ -53,16 +52,7 @@ export class BsCardImgComponent {
   readonly src = input<string | undefined>(undefined);
   readonly alt = input<string | undefined>(undefined);
 
-  readonly hostClass = computed(() => {
-    switch (this.position()) {
-      case 'overlay':
-        return 'card-img';
-      case 'bottom':
-        return 'card-img-bottom';
-      default:
-        return 'card-img-top';
-    }
-  });
+  readonly hostClass = computed(() => cardImgClass(this.position()));
 
   // The inner <img> carries the same card-img-* class so Bootstrap's
   // `width: 100%` rule sizes the actual image element.

@@ -97,7 +97,6 @@ export default defineConfig(() => {
           '**/*.styles.ts',
           '**/*.element.template.ts',
           '**/*.generated.ts',
-          'phone-core/src/metadata/**',
         ],
         // Without this, Vitest's default reporters apply and no lcov.info is
         // written — clover/json aren't parsed server-side.

@@ -23,4 +23,4 @@ export type {
   TimeSlot,
   PreviewEvent,
   DragState,
-} from '@mintplayer/web-components/scheduler-core';
+} from '@mintplayer/ui-core/scheduler-core';

@@ -74,7 +74,7 @@ const SOURCE = `<BsHierarchyChart
 <BsTrendChart :series="series" y-min="0" y-max="100" goal="80"
   goal-label="Goal 80%" input-label="Coverage over time" />
 
-<BsSparkline :points="sparkPoints" area y-min="0" y-max="100" />`;
+<BsSparkline :points="sparkPoints" area :y-min="0" :y-max="100" />`;
 </script>
 
 <template>
@@ -138,7 +138,7 @@ const SOURCE = `<BsHierarchyChart
 
     <h2 class="mt-4">Sparkline</h2>
     <p>
-      unit coverage <BsSparkline :points="sparkPoints" area y-min="0" y-max="100" /> 84%
+      unit coverage <BsSparkline :points="sparkPoints" area :y-min="0" :y-max="100" /> 84%
     </p>
 
     <h2 class="mt-4">Source</h2>

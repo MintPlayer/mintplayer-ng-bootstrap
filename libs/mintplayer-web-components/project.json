@@ -5,7 +5,9 @@
   "projectType": "library",
   "release": {
     "version": {
-      "manifestRootsToUpdate": ["dist/{projectRoot}"],
+      "manifestRootsToUpdate": [
+        "dist/{projectRoot}"
+      ],
       "currentVersionResolver": "git-tag",
       "fallbackCurrentVersionResolver": "disk"
     }
@@ -24,8 +26,6 @@
         "{projectRoot}/**/*.styles.ts",
         "{projectRoot}/flags/src/flag-loaders.generated.ts",
         "{projectRoot}/flags/src/all-flags.generated.ts",
-        "{projectRoot}/phone-core/src/metadata-loaders.generated.ts",
-        "{projectRoot}/phone-core/src/metadata/*.generated.ts",
         "{projectRoot}/code-snippet/src/hljs-loaders.generated.ts",
         "{projectRoot}/theming/bs-theme-preboot.js"
       ],
@@ -39,13 +39,15 @@
         "{workspaceRoot}/tools/scripts/lib/wc-codegen.mjs",
         "{workspaceRoot}/tools/scripts/lib/rescope-css.mjs",
         "{workspaceRoot}/tools/scripts/build-flag-loaders.mjs",
-        "{workspaceRoot}/tools/scripts/build-phone-metadata.mjs",
         "{workspaceRoot}/tools/scripts/build-hljs-loaders.mjs",
         "{projectRoot}/theming/src/**/*.ts",
+        "{workspaceRoot}/libs/mintplayer-ui-core/theming/src/**/*.ts",
         "{workspaceRoot}/tools/scripts/build-theme-preboot.mjs",
         "{workspaceRoot}/tools/scripts/lib/cli.mjs",
         {
-          "externalDependencies": ["libphonenumber-js", "highlight.js"]
+          "externalDependencies": [
+            "highlight.js"
+          ]
         }
       ],
       "cache": true,
@@ -54,7 +56,6 @@
         "commands": [
           "node tools/scripts/build-web-components.mjs libs/mintplayer-web-components",
           "node tools/scripts/build-flag-loaders.mjs",
-          "node tools/scripts/build-phone-metadata.mjs",
           "node tools/scripts/build-hljs-loaders.mjs",
           "node tools/scripts/build-theme-preboot.mjs"
         ]
@@ -66,7 +67,7 @@
       "cache": false,
       "options": {
         "commands": [
-          "node --watch-path=libs/mintplayer-web-components/theming/src tools/scripts/build-theme-preboot.mjs",
+          "node --watch-path=libs/mintplayer-ui-core/theming/src tools/scripts/build-theme-preboot.mjs",
           "node tools/scripts/build-web-components.mjs libs/mintplayer-ng-bootstrap libs/mintplayer-web-components --watch"
         ],
         "parallel": true
@@ -74,7 +75,9 @@
     },
     "cem": {
       "executor": "nx:run-commands",
-      "outputs": ["{projectRoot}/custom-elements.json"],
+      "outputs": [
+        "{projectRoot}/custom-elements.json"
+      ],
       "inputs": [
         "{projectRoot}/**/*.element.ts",
         "{projectRoot}/**/src/**/*.ts",
@@ -86,22 +89,6 @@
       "options": {
         "cwd": "libs/mintplayer-web-components",
         "command": "custom-elements-manifest analyze --litelement"
-      }
-    },
-    "codegen-shell-chrome": {
-      "executor": "nx:run-commands",
-      "outputs": ["{projectRoot}/shell/ssr/mp-shell-chrome.generated.ts"],
-      "inputs": [
-        "{projectRoot}/shell/src/components/mp-shell.ts",
-        "{projectRoot}/shell/src/styles/shell.styles.scss",
-        "{workspaceRoot}/tools/lit-ssr-utils/gen-shell-chrome.mjs",
-        "{workspaceRoot}/tools/lit-ssr-utils/lib/*.mjs",
-        "{workspaceRoot}/tools/scripts/lib/cli.mjs"
-      ],
-      "dependsOn": ["build", { "projects": ["mintplayer-ui-core"], "target": "build" }],
-      "cache": true,
-      "options": {
-        "command": "node tools/lit-ssr-utils/gen-shell-chrome.mjs"
       }
     },
     "codegen-dropdown-chrome": {
@@ -116,7 +103,15 @@
         "{workspaceRoot}/tools/lit-ssr-utils/lib/*.mjs",
         "{workspaceRoot}/tools/scripts/lib/cli.mjs"
       ],
-      "dependsOn": ["build", { "projects": ["mintplayer-ui-core"], "target": "build" }],
+      "dependsOn": [
+        "build",
+        {
+          "projects": [
+            "mintplayer-ui-core"
+          ],
+          "target": "build"
+        }
+      ],
       "cache": true,
       "options": {
         "command": "node tools/lit-ssr-utils/gen-dropdown-chrome.mjs"
@@ -136,7 +131,15 @@
         "{workspaceRoot}/tools/lit-ssr-utils/lib/*.mjs",
         "{workspaceRoot}/tools/scripts/lib/cli.mjs"
       ],
-      "dependsOn": ["build", { "projects": ["mintplayer-ui-core"], "target": "build" }],
+      "dependsOn": [
+        "build",
+        {
+          "projects": [
+            "mintplayer-ui-core"
+          ],
+          "target": "build"
+        }
+      ],
       "cache": true,
       "options": {
         "command": "node tools/lit-ssr-utils/gen-light-styles-chrome.mjs"
@@ -144,7 +147,9 @@
     },
     "codegen-navbar-chrome": {
       "executor": "nx:run-commands",
-      "outputs": ["{projectRoot}/navbar/ssr/mp-navbar-chrome.generated.ts"],
+      "outputs": [
+        "{projectRoot}/navbar/ssr/mp-navbar-chrome.generated.ts"
+      ],
       "inputs": [
         "{projectRoot}/navbar/src/components/*.ts",
         "{projectRoot}/navbar/src/styles/*.styles.scss",
@@ -152,7 +157,15 @@
         "{workspaceRoot}/tools/lit-ssr-utils/lib/*.mjs",
         "{workspaceRoot}/tools/scripts/lib/cli.mjs"
       ],
-      "dependsOn": ["build", { "projects": ["mintplayer-ui-core"], "target": "build" }],
+      "dependsOn": [
+        "build",
+        {
+          "projects": [
+            "mintplayer-ui-core"
+          ],
+          "target": "build"
+        }
+      ],
       "cache": true,
       "options": {
         "command": "node tools/lit-ssr-utils/gen-navbar-chrome.mjs"
@@ -160,7 +173,9 @@
     },
     "codegen-carousel-chrome": {
       "executor": "nx:run-commands",
-      "outputs": ["{projectRoot}/carousel/ssr/mp-carousel-chrome.generated.ts"],
+      "outputs": [
+        "{projectRoot}/carousel/ssr/mp-carousel-chrome.generated.ts"
+      ],
       "inputs": [
         "{projectRoot}/carousel/src/components/*.ts",
         "{projectRoot}/carousel/src/styles/*.styles.scss",
@@ -168,49 +183,48 @@
         "{workspaceRoot}/tools/lit-ssr-utils/lib/*.mjs",
         "{workspaceRoot}/tools/scripts/lib/cli.mjs"
       ],
-      "dependsOn": ["build", { "projects": ["mintplayer-ui-core"], "target": "build" }],
+      "dependsOn": [
+        "build",
+        {
+          "projects": [
+            "mintplayer-ui-core"
+          ],
+          "target": "build"
+        }
+      ],
       "cache": true,
       "options": {
         "command": "node tools/lit-ssr-utils/gen-carousel-chrome.mjs"
       }
     },
-    "codegen-accordion-chrome": {
-      "executor": "nx:run-commands",
-      "outputs": [
-        "{projectRoot}/accordion/ssr/mp-accordion-chrome.generated.ts"
-      ],
-      "inputs": [
-        "{projectRoot}/accordion/src/components/*.ts",
-        "{projectRoot}/accordion/src/styles/*.styles.scss",
-        "{workspaceRoot}/tools/lit-ssr-utils/gen-accordion-chrome.mjs",
-        "{workspaceRoot}/tools/lit-ssr-utils/lib/*.mjs",
-        "{workspaceRoot}/tools/scripts/lib/cli.mjs"
-      ],
-      "dependsOn": ["build", { "projects": ["mintplayer-ui-core"], "target": "build" }],
-      "cache": true,
-      "options": {
-        "command": "node tools/lit-ssr-utils/gen-accordion-chrome.mjs"
-      }
-    },
     "codegen-ssr-chrome": {
       "executor": "nx:run-commands",
       "options": {
-        "command": "echo \"SSR chrome generated (shell + navbar + dropdown + carousel + accordion DSD, light-tier style tags)\""
+        "command": "echo \"SSR chrome generated (navbar + dropdown + carousel DSD, light-tier style tags)\""
       },
       "dependsOn": [
-        "codegen-shell-chrome",
         "codegen-navbar-chrome",
         "codegen-dropdown-chrome",
         "codegen-carousel-chrome",
-        "codegen-accordion-chrome",
         "codegen-light-styles-chrome"
       ]
     },
     "build": {
       "executor": "@nx/vite:build",
-      "outputs": ["{options.outputPath}"],
+      "outputs": [
+        "{options.outputPath}"
+      ],
       "defaultConfiguration": "production",
-      "dependsOn": ["codegen-wc", "cem", { "projects": ["mintplayer-ui-core"], "target": "codegen" }],
+      "dependsOn": [
+        "codegen-wc",
+        "cem",
+        {
+          "projects": [
+            "mintplayer-ui-core"
+          ],
+          "target": "codegen"
+        }
+      ],
       "options": {
         "outputPath": "dist/libs/mintplayer-web-components"
       },
@@ -225,8 +239,20 @@
     },
     "test": {
       "executor": "@nx/vitest:test",
-      "dependsOn": ["codegen-wc", "cem", "codegen-ssr-chrome", { "projects": ["mintplayer-ui-core"], "target": "codegen" }],
-      "outputs": ["{options.reportsDirectory}"],
+      "dependsOn": [
+        "codegen-wc",
+        "cem",
+        "codegen-ssr-chrome",
+        {
+          "projects": [
+            "mintplayer-ui-core"
+          ],
+          "target": "codegen"
+        }
+      ],
+      "outputs": [
+        "{options.reportsDirectory}"
+      ],
       "options": {
         "reportsDirectory": "coverage/libs/mintplayer-web-components"
       }

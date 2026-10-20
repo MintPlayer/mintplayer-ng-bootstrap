@@ -16,7 +16,7 @@ import {
   resolveCapability,
   SchedulerCapability,
   TimeSlot,
-} from '@mintplayer/web-components/scheduler-core';
+} from '@mintplayer/ui-core/scheduler-core';
 import {
   BaseView,
   formatCellAnnouncement,

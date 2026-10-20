@@ -6,6 +6,8 @@ import {
   inject,
   input,
   model,
+  TemplateRef,
+  viewChild,
 } from '@angular/core';
 import { BsAccordionComponent } from '../accordion/accordion.component';
 import { BsAccordionTabHeaderDirective } from '../accordion-tab-header/accordion-tab-header.directive';
@@ -13,25 +15,16 @@ import { BsAccordionTabHeaderDirective } from '../accordion-tab-header/accordion
 /**
  * `<bs-accordion-tab>` — one tab of a `<bs-accordion>`.
  *
- * This host element IS the tab marker the web component reads: it carries
- * `accordion-tab`, its index slot and the tab's state, and its projected
- * children become the tab body. There is no separate `<mp-accordion-tab>`
- * here — an Angular component can only render inside its own host, which
- * would put that element one level too deep to be slotted.
- *
- * The header is declared with `*bsAccordionTabHeader` and rendered by the
- * parent accordion (see `BsAccordionComponent`).
+ * It renders nothing in place: its projected children become a template
+ * (`body`) that the parent accordion renders inside the tab's `<details>`,
+ * together with the `*bsAccordionTabHeader` template. The parent renders
+ * every row so the rows are siblings (see `BsAccordionComponent`).
  */
 @Component({
   selector: 'bs-accordion-tab',
   templateUrl: './accordion-tab.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  host: {
-    'accordion-tab': '',
-    '[attr.slot]': '"c" + index()',
-    '[attr.is-active]': 'isActive() ? "" : null',
-    '[attr.disabled]': 'disabled() ? "" : null',
-  },
+  host: { hidden: '' },
 })
 export class BsAccordionTabComponent {
   readonly accordion = inject(BsAccordionComponent);
@@ -41,12 +34,14 @@ export class BsAccordionTabComponent {
   readonly disabled = input<boolean>(false);
 
   readonly headerTemplate = contentChild(BsAccordionTabHeaderDirective);
+  /** The tab's projected content, rendered by the parent accordion. */
+  readonly body = viewChild<TemplateRef<unknown>>('body');
 
-  /** Position among its siblings — the tab's identity for slots and events. */
+  /** Position among its siblings. */
   readonly index = computed(() => this.accordion.tabPages().indexOf(this));
 
   /**
-   * Open or close this tab through the web component, so single-open
+   * Open or close this tab through its `<details>`, so single-open
    * exclusivity and the nested-accordion collapse both apply — unlike
    * writing `isActive` directly.
    */

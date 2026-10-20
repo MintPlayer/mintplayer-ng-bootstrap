@@ -1,9 +1,9 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import './mp-query-builder.element';
 import type { MpQueryBuilderElement } from './mp-query-builder.element';
-import type { EntitySchema } from './model/field-def';
-import { emptyGroup, newId } from './model/default-tree';
-import type { Expression } from './model/expression';
+import type { EntitySchema } from '@mintplayer/ui-core/query-builder';
+import { emptyGroup, newId } from '@mintplayer/ui-core/query-builder';
+import type { Expression } from '@mintplayer/ui-core/query-builder';
 
 const SCHEMA: EntitySchema[] = [
   {

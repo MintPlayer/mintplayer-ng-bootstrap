@@ -1,12 +1,11 @@
 /**
- * The shared half of the five DSD-chrome generators.
+ * The shared half of the DSD-chrome generators.
  *
- * These rules were previously copied into `gen-accordion-`, `gen-carousel-`,
- * `gen-dropdown-`, `gen-navbar-` and `gen-shell-chrome.mjs`, where none of them
- * could be tested: each generator does a top-level `await import()` of a built
+ * These rules were previously copied into each `gen-<name>-chrome.mjs`, where
+ * none of them could be tested: each generator does a top-level `await import()` of a built
  * `dist/` bundle and installs a global DOM shim, so importing one from a spec
  * needs a prior build and mutates globals process-wide. Lifting the pure half
- * out is what makes it reachable, and specs it once instead of five times.
+ * out is what makes it reachable, and specs it once instead of per generator.
  *
  * The generator loop itself (runChromeGenerator) lives here too now, with the
  * renderer injected; generators.spec.ts drives each generator through it.
@@ -143,8 +142,8 @@ describe('chromeArrayConstant', () => {
 
 describe('buildChromeModule', () => {
   const built = buildChromeModule({
-    generator: 'gen-shell-chrome.mjs',
-    source: 'the <mp-shell> Lit element rendered via @lit-labs/ssr.',
+    generator: 'gen-carousel-chrome.mjs',
+    source: 'the <mp-carousel> Lit element rendered via @lit-labs/ssr.',
     declarations: ['export const A = "x";'],
   });
 
@@ -152,11 +151,11 @@ describe('buildChromeModule', () => {
     // This header is the only thing between the file and someone editing a
     // generated artifact by hand.
     expect(built).toContain('AUTO-GENERATED — do not edit by hand.');
-    expect(built).toContain('node tools/lit-ssr-utils/gen-shell-chrome.mjs');
+    expect(built).toContain('node tools/lit-ssr-utils/gen-carousel-chrome.mjs');
   });
 
   it('records what the chrome was rendered from', () => {
-    expect(built).toContain('// Source: the <mp-shell> Lit element rendered via @lit-labs/ssr.');
+    expect(built).toContain('// Source: the <mp-carousel> Lit element rendered via @lit-labs/ssr.');
   });
 
   it('separates the header from the declarations with one blank line', () => {

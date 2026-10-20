@@ -1,4 +1,4 @@
-import { Component } from '@angular/core';
+import { Component, signal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { describe, it, expect, beforeEach } from 'vitest';
 import { Color } from '@mintplayer/ng-bootstrap';
@@ -7,52 +7,33 @@ import { BsCardComponent } from './bs-card.component';
 describe('BsCardComponent', () => {
   beforeEach(() => TestBed.resetTestingModule());
 
-  it('renders an inner <mp-card> and keeps no `card` class on the host', () => {
+  it('is the .card itself and renders no custom element', () => {
     TestBed.configureTestingModule({ imports: [BsCardComponent] });
     const fixture = TestBed.createComponent(BsCardComponent);
     fixture.detectChanges();
     const host = fixture.nativeElement as HTMLElement;
-    expect(host.classList.contains('card')).toBe(false);
-    expect(host.querySelector('mp-card')).toBeTruthy();
+    expect(host.classList.contains('card')).toBe(true);
+    expect(host.querySelector('mp-card')).toBeNull();
   });
 
-  it('maps [color]=Color.primary to the mp-card `color` attribute (no outline)', () => {
+  it('maps [color] and [outline] onto Bootstrap classes, keeping a consumer class', () => {
     @Component({
       imports: [BsCardComponent],
-      template: `<bs-card [color]="color"></bs-card>`,
+      template: `<bs-card class="h-100" [color]="color()" [outline]="outline()"></bs-card>`,
     })
     class Host {
-      readonly color = Color.primary;
+      readonly color = signal<Color>(Color.primary);
+      readonly outline = signal(false);
     }
     TestBed.configureTestingModule({ imports: [Host] });
     const fixture = TestBed.createComponent(Host);
     fixture.detectChanges();
-    const mpCard = fixture.nativeElement.querySelector('mp-card') as HTMLElement;
-    expect(mpCard.getAttribute('color')).toBe('primary');
-    expect(mpCard.hasAttribute('outline')).toBe(false);
-  });
+    const card = fixture.nativeElement.querySelector('bs-card') as HTMLElement;
+    expect([...card.classList].sort()).toEqual(['border-primary', 'card', 'h-100', 'text-bg-primary']);
 
-  it('sets the `outline` attribute when [outline]=true', () => {
-    @Component({
-      imports: [BsCardComponent],
-      template: `<bs-card [color]="color" [outline]="true"></bs-card>`,
-    })
-    class Host {
-      readonly color = Color.danger;
-    }
-    TestBed.configureTestingModule({ imports: [Host] });
-    const fixture = TestBed.createComponent(Host);
+    fixture.componentInstance.color.set(Color.danger);
+    fixture.componentInstance.outline.set(true);
     fixture.detectChanges();
-    const mpCard = fixture.nativeElement.querySelector('mp-card') as HTMLElement;
-    expect(mpCard.getAttribute('color')).toBe('danger');
-    expect(mpCard.getAttribute('outline')).toBe('');
-  });
-
-  it('sets no `color` attribute when [color] is unset', () => {
-    TestBed.configureTestingModule({ imports: [BsCardComponent] });
-    const fixture = TestBed.createComponent(BsCardComponent);
-    fixture.detectChanges();
-    const mpCard = fixture.nativeElement.querySelector('mp-card') as HTMLElement;
-    expect(mpCard.getAttribute('color')).toBeNull();
+    expect([...card.classList].sort()).toEqual(['bg-transparent', 'border-danger', 'card', 'h-100']);
   });
 });

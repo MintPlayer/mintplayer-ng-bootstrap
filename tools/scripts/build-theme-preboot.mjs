@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * Codegen: libs/mintplayer-web-components/theming/src/preboot.ts
+ * Codegen: libs/mintplayer-ui-core/theming/src/preboot.ts
  *       -> libs/mintplayer-web-components/theming/bs-theme-preboot.js (gitignored build artifact)
  *
  * PRD dark-mode D5: a minified ES5 IIFE that consumers load with a blocking
@@ -29,9 +29,9 @@ import { resolve } from 'node:path';
 
 import { runCli } from './lib/cli.mjs';
 
-const root = resolve(import.meta.dirname, '../../libs/mintplayer-web-components/theming');
-export const ENTRY = resolve(root, 'src/preboot.ts');
-export const OUTFILE = resolve(root, 'bs-theme-preboot.js');
+// Source in ui-core (with the cookie/resolve it bundles); the artifact ships from the WC package, where pages load it.
+export const ENTRY = resolve(import.meta.dirname, '../../libs/mintplayer-ui-core/theming/src/preboot.ts');
+export const OUTFILE = resolve(import.meta.dirname, '../../libs/mintplayer-web-components/theming/bs-theme-preboot.js');
 export const BUDGET = 1024;
 
 /** The three-stage pipeline: bundle at es2015, lower to ES5, minify at es5. Returns the trimmed script. */

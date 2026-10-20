@@ -4,15 +4,17 @@ const SNIPPET_BASIC = `import { BsShell } from '@mintplayer/react-bootstrap/shel
 
 export function AppShell({ children }: { children: React.ReactNode }) {
   return (
-    <BsShell breakpoint="md" size="14rem" className="app-shell">
-      {/* The shell renders the hamburger at the top bar's left;
-          this slot fills the rest (brand, nav, …). */}
-      <div slot="topbar">Brand · nav</div>
-
-      {/* Anything with slot="sidebar" becomes the collapsible sidebar. */}
-      <nav slot="sidebar">…links…</nav>
-
-      {/* Every other child is the main content area. */}
+    <BsShell
+      breakpoint="md"
+      size="14rem"
+      className="app-shell"
+      // The shell renders the hamburger at the top bar's left;
+      // `topbar` fills the rest (brand, nav, …).
+      topbar={<div>Brand · nav</div>}
+      // `sidebar` is the collapsible sidebar.
+      sidebar={<nav>…links…</nav>}
+    >
+      {/* The children are the main content area. */}
       <main>{children}</main>
     </BsShell>
   );
@@ -37,17 +39,17 @@ function Layout() {
     <BsShell
       breakpoint="md"
       state={state}
-      onStatechange={(e) => setState(e.detail.open ? 'show' : 'hide')}
+      onStatechange={({ open }) => setState(open ? 'show' : 'hide')}
+      sidebar={<nav>…</nav>}
     >
-      <nav slot="sidebar">…</nav>
       <main>…</main>
     </BsShell>
   );
 }`;
 
-const SNIPPET_EXTERNAL = `// Hide the built-in hamburger and drive the toggle from your own control.
-<BsShell externalToggle breakpoint="md">
-  <nav slot="sidebar">…</nav>
+const SNIPPET_EXTERNAL = `// Hide the built-in hamburger and drive the toggle from your own control
+// (the ref exposes toggle(force?)).
+<BsShell ref={shellRef} externalToggle breakpoint="md" sidebar={<nav>…</nav>}>
   <main>…</main>
 </BsShell>`;
 
@@ -57,17 +59,17 @@ export function ShellPage() {
       <h1>Shell</h1>
       <p className="text-body-secondary">
         <code>BsShell</code> is a responsive app-shell layout with a collapsible
-        sidebar. Place the sidebar as a child with <code>slot="sidebar"</code>;
-        every other child is the main content area. It is server-rendered as
-        Declarative Shadow DOM, so the sidebar and its hamburger toggle work with
-        JavaScript disabled. The chrome around this very page is a live{' '}
+        sidebar. Pass the sidebar as the <code>sidebar</code> prop and the top-bar content
+        as <code>topbar</code>; the children are the main content area. It renders
+        plain HTML on the server, and the open state is a native checkbox, so the
+        sidebar and its hamburger toggle work with JavaScript disabled. The chrome around this very page is a live{' '}
         <code>BsShell</code>.
       </p>
 
       <section>
         <h2>Basic usage</h2>
         <p>
-          A full-width top bar (built-in hamburger + <code>topbar</code> slot)
+          A full-width top bar (built-in hamburger + <code>topbar</code> prop)
           sits above the sidebar/content row. <code>breakpoint</code> sets the
           viewport width at/above which the sidebar is expanded; <code>size</code>{' '}
           is the expanded width.
@@ -91,7 +93,7 @@ export function ShellPage() {
         <p>
           Leave <code>state</code> as <code>"auto"</code> for responsive
           behaviour, or drive it yourself and react to{' '}
-          <code>onStatechange</code> (its <code>detail.open</code> is the
+          <code>onStatechange</code> (its <code>open</code> is the
           resolved visual state).
         </p>
         <BsCodeSnippet code={SNIPPET_STATE} language="tsx" />
@@ -155,15 +157,15 @@ export function ShellPage() {
             </tr>
             <tr>
               <td><code>onStatechange</code></td>
-              <td><code>(e: CustomEvent&lt;{'{'} open: boolean {'}'}&gt;) =&gt; void</code></td>
+              <td><code>(change: {'{'} open: boolean {'}'}) =&gt; void</code></td>
               <td>—</td>
               <td>Fires when the toggle flips.</td>
             </tr>
           </tbody>
         </table>
         <p className="text-body-secondary">
-          Slots: <code>topbar</code>, <code>sidebar</code>, and the default
-          (unnamed) slot for main content.
+          Content: the <code>topbar</code> and <code>sidebar</code> props
+          (React nodes), and <code>children</code> for the main content.
         </p>
       </section>
     </div>

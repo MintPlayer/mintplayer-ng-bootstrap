@@ -1,8 +1,8 @@
 import { LitElement, html, nothing, svg, type TemplateResult } from 'lit';
 import { LiveAnnouncerController } from '@mintplayer/web-components/a11y';
-import { isValidThemeMode } from '../cookie';
-import { getBsThemeStore } from '../store';
-import { BS_THEME_DEFAULT_MODES, type BsThemeToggleMode } from '../toggle-modes';
+import { isValidThemeMode } from '@mintplayer/ui-core/theming';
+import { getBsThemeStore } from '@mintplayer/ui-core/theming';
+import { BS_THEME_DEFAULT_MODES, type BsThemeToggleMode } from '@mintplayer/ui-core/theming';
 import { themeToggleStyles } from '../styles/theme-toggle.styles';
 
 const DESCRIPTION_ID = 'current-theme';

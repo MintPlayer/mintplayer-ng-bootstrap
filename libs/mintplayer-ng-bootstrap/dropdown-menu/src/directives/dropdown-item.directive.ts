@@ -1,12 +1,10 @@
 import { Directive, ElementRef, effect, inject, input } from '@angular/core';
-import type { DropdownItemElement } from '@mintplayer/web-components/dropdown-menu';
+import type { DropdownItemElement } from '@mintplayer/ui-core/dropdown-menu';
 
 /**
  * `[bsDropdownItem]` — marks a plain `<li>` as a Bootstrap `.dropdown-item`
- * inside a `<bs-dropdown-menu>`. There is no per-item web component: the item is
- * light-DOM `<li>` slotted into `<mp-dropdown-menu>`, whose shadow styles the box
- * via `::slotted(.dropdown-item)`. A nested `<a>`/`<button>` (e.g. a `routerLink`)
- * is reset by the companion light-DOM stylesheet the menu wrapper ships.
+ * inside a `<bs-dropdown-menu>`. Bootstrap styles the box; a nested `<a>` /
+ * `<button>` (e.g. a `routerLink`) fills it through the menu's scoped sheet.
  *
  * Usage: `<li bsDropdownItem><a routerLink="/x">Action</a></li>`.
  *
@@ -14,7 +12,7 @@ import type { DropdownItemElement } from '@mintplayer/web-components/dropdown-me
  *  - `active`   — Bootstrap `.active` appearance.
  *  - `disabled` — non-interactive; removed from the menu's roving order.
  *  - `value`    — opaque value carried in the menu's `select` event detail;
- *    written to the host `<li>` as its `dropdownValue` property, which the WC
+ *    written to the host `<li>` as its `dropdownValue` property, which the menu
  *    reads. Not the `value` property: `HTMLLIElement.value` is a native long
  *    that turns an object or a string into 0.
  */

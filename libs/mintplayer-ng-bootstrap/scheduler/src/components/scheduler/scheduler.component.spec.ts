@@ -6,7 +6,7 @@ import type {
   SchedulerEvent,
   SchedulerOptions,
   ViewType,
-} from '@mintplayer/web-components/scheduler-core';
+} from '@mintplayer/ui-core/scheduler-core';
 import type { MpScheduler } from '@mintplayer/web-components/scheduler';
 import { BsSchedulerComponent } from './scheduler.component';
 
