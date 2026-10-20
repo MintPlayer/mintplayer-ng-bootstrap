@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref } from 'vue';
 import { BsAccordion, BsAccordionItem } from '@mintplayer/vue-bootstrap/accordion';
-import type { AccordionTabToggleDetail } from '@mintplayer/vue-bootstrap/accordion';
+import type { AccordionTabToggle } from '@mintplayer/vue-bootstrap/accordion';
 import { BsCodeSnippet } from '@mintplayer/vue-bootstrap/code-snippet';
 
 const SOURCE = `<BsAccordion multi highlight-active-tab @tab-toggle="onToggle">
@@ -19,8 +19,8 @@ const SECTIONS = [
 
 const lastToggle = ref('—');
 
-function onToggle(detail: AccordionTabToggleDetail) {
-  lastToggle.value = `tab ${detail.index} → ${detail.active ? 'open' : 'closed'}`;
+function onToggle({ index, active }: AccordionTabToggle) {
+  lastToggle.value = `tab ${index} → ${active ? 'open' : 'closed'}`;
 }
 </script>
 
@@ -28,9 +28,10 @@ function onToggle(detail: AccordionTabToggleDetail) {
   <div class="demo-page">
     <h1>Accordion</h1>
     <p>
-      <code>BsAccordion</code> wraps the framework-agnostic <code>&lt;mp-accordion&gt;</code>
-      web component. Headers and bodies come from <code>BsAccordionItem</code>, which renders
-      them as siblings so the element can place each one in its own slot.
+      <code>BsAccordion</code> renders Bootstrap's accordion markup itself, from the
+      framework-neutral <code>@mintplayer/ui-core/accordion</code> core. Each
+      <code>BsAccordionItem</code> is one row: its <code>#header</code> slot goes in the row's
+      summary, its default slot in the collapsible region.
     </p>
     <p>
       The accordion is built on native <code>&lt;details name&gt;</code> / <code>&lt;summary&gt;</code>,
@@ -92,16 +93,29 @@ function onToggle(detail: AccordionTabToggleDetail) {
 </template>
 
 <style scoped>
-/* The chrome lives in the web component's shadow root, so page CSS reaches it
-   through Bootstrap's custom properties and the exposed parts. */
-.multi-level {
+/* Bootstrap declares the --bs-accordion-* properties on every .accordion,
+   in a lower cascade layer than page CSS, so a plain rule on the accordion
+   wins — and a nested accordion needs its own rule, or it re-declares the
+   defaults. */
+.multi-level,
+.multi-level .accordion {
   --bs-accordion-btn-bg: #333;
   --bs-accordion-btn-color: #fff;
   --bs-accordion-active-bg: #444;
   --bs-accordion-active-color: #fff;
+  --bs-accordion-border-width: 0;
 }
 
-.multi-level::part(content) {
+/* Each nesting level gets a lighter header. */
+.multi-level .accordion {
+  --bs-accordion-btn-bg: #666;
+}
+
+.multi-level .accordion .accordion {
+  --bs-accordion-btn-bg: #999;
+}
+
+.multi-level :deep(.accordion-content) {
   background-color: var(--bs-secondary-bg);
 }
 </style>

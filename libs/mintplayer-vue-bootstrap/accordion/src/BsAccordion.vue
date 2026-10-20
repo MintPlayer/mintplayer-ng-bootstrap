@@ -1,19 +1,36 @@
 <script setup lang="ts">
-import '@mintplayer/web-components/accordion';
-import type { AccordionTabToggleDetail } from '@mintplayer/web-components/accordion';
-import { cloneVNode, computed, Fragment, useSlots, type VNode } from 'vue';
+import { installLightStyles } from '@mintplayer/ui-core/scoped-styles';
+import {
+  ACCORDION_SCOPE,
+  accordionScopedStyles,
+  accordionToggled,
+  connectAccordion,
+  type AccordionTabToggle,
+} from '@mintplayer/ui-core/accordion';
+import { cloneVNode, computed, Fragment, getCurrentInstance, provide, useSlots, useTemplateRef, type VNode } from 'vue';
 import BsAccordionItem from './BsAccordionItem.vue';
+import { ACCORDION_CONTEXT } from './accordion-context';
 
-defineOptions({ inheritAttrs: false });
-
+/**
+ * `BsAccordion` — Bootstrap accordion on native `<details name>` (#437).
+ * Renders the markup of `@mintplayer/ui-core/accordion`, so the server HTML is
+ * the working accordion with JavaScript off.
+ */
 const props = defineProps<{
-  /** Allow several tabs to stay open at once (checkbox machine with JS off). */
+  /** Allow several tabs to stay open at once. */
   multi?: boolean;
   /** Paint the open header with the Bootstrap active background. */
   highlightActiveTab?: boolean;
 }>();
 
-const emit = defineEmits<{ tabToggle: [detail: AccordionTabToggleDetail] }>();
+const emit = defineEmits<{ tabToggle: [change: AccordionTabToggle] }>();
+
+installLightStyles(ACCORDION_SCOPE, accordionScopedStyles);
+
+const id = `bs-accordion-${getCurrentInstance()?.uid ?? Math.random().toString(36).slice(2)}`;
+const options = computed(() => ({ id, multi: props.multi, highlightActiveTab: props.highlightActiveTab }));
+const root = useTemplateRef<HTMLDivElement>('root');
+provide(ACCORDION_CONTEXT, { options, root });
 
 const slots = useSlots();
 
@@ -32,7 +49,7 @@ function flatten(nodes: VNode[]): VNode[] {
 
 /**
  * Items are numbered here rather than by themselves: the index is a tab's
- * identity for slots and toggle events, and only the parent knows the order.
+ * identity for ids and toggles, and only the parent knows the order.
  */
 const items = computed<VNode[]>(() => {
   let index = 0;
@@ -43,24 +60,16 @@ const items = computed<VNode[]>(() => {
 
 const Items = () => items.value;
 
-const multiAttr = computed(() => (props.multi ? '' : undefined));
-const highlightAttr = computed(() => (props.highlightActiveTab ? '' : undefined));
-
-function onTabToggle(event: Event) {
-  // Nesting is the normal case and the event is composed, so a descendant
-  // accordion's toggles pass straight through this host. Claim only our own.
-  if (event.target !== event.currentTarget) return;
-  event.stopPropagation();
-  emit('tabToggle', (event as CustomEvent<AccordionTabToggleDetail>).detail);
+// `toggle` does not bubble: one capture-phase listener hears every row.
+function onToggle(event: Event) {
+  if (!root.value) return;
+  const change = accordionToggled(root.value, event, !!props.multi);
+  if (change) emit('tabToggle', change);
 }
 </script>
 
 <template>
-  <mp-accordion
-    v-bind="$attrs"
-    :multi="multiAttr"
-    :highlight-active-tab="highlightAttr"
-    @mp-accordion-tab-toggle="onTabToggle">
+  <div ref="root" v-bind="connectAccordion(options)" @toggle.capture="onToggle">
     <Items />
-  </mp-accordion>
+  </div>
 </template>

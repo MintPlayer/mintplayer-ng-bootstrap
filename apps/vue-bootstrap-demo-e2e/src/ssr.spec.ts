@@ -7,4 +7,5 @@ ssrSuite(test, expect, [
   { path: '/basic/card', expect: ['.card .card-header', '.card .card-body'] },
   { path: '/basic/forms/phone-input', expect: ['div.input-group[data-mps=input-group]'] },
   { path: '/enterprise/shell', expect: ['div.shell[data-mps=shell] > input.shell-toggle-wide[checked]', 'div.shell .sidebar-root > aside.sidebar > nav'] },
+  { path: '/enterprise/accordion', expect: ['div.accordion[data-mps=accordion] > details.accordion-item > summary.accordion-button[aria-controls]', 'div.accordion > details.accordion-item > div.accordion-content[role=region]'] },
 ]);

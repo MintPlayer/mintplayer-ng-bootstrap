@@ -23,7 +23,7 @@ Each component milestone is the same checklist, done for every component in the 
 
 - [x] S1 Bootstrap layering, all three demos
 - [x] S12 React/Vue SSR sheet collection (pairs with S1)
-- [ ] S2 compound cores (radio-group + radio [x], accordion + tab)
+- [ ] S2 compound cores (radio-group + radio [x], accordion [x] + tab)
 - [ ] S3 nested cores (tree-select over treeview)
 - [x] S5 hydration with consumer templates and pre-hydration text
 - [ ] S6 measurement-free server layout (carousel, splitter, hierarchy chart)
@@ -84,7 +84,7 @@ Each component milestone is the same checklist, done for every component in the 
 - [x] radio + radio-group
 - [x] pagination (+ `hrefFor`)
 - [x] shell
-- [ ] accordion (+ tab)
+- [x] accordion (+ tab)
 - [ ] tab-control (+ page); delete `isServerSide`
 - [ ] dropdown-menu
 - [ ] sparkline (+ Vue front)

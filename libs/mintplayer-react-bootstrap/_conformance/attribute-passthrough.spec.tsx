@@ -147,10 +147,10 @@ const bare = (name: string, target: string, Component: React.ElementType): Case 
 
 /** Every exported React wrapper, and the element its attributes must land on. */
 const CASES: Case[] = [
-  bare('BsAccordion', 'mp-accordion', BsAccordion),
+  bare('BsAccordion', 'div.accordion', BsAccordion),
   {
     name: 'BsAccordionItem',
-    target: 'mp-accordion-tab',
+    target: 'details.accordion-item',
     render: (p) => (
       <BsAccordion>
         <BsAccordionItem header="Header" {...p} />
