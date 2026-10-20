@@ -238,35 +238,9 @@ describe('mp-dropdown-menu activation and values', () => {
   });
 });
 
-describe('mp-dropdown-menu listbox mode and attributes', () => {
+describe('mp-dropdown-menu attributes', () => {
   afterEach(() => {
     document.body.innerHTML = '';
-  });
-
-  it('listbox mode assigns option roles with aria-selected and no tab stops', async () => {
-    const menu = await mount(
-      '<li class="dropdown-item active">A</li><li class="dropdown-item">B</li>',
-      'mode="listbox"',
-    );
-    expect(menu.shadowRoot!.querySelector('ul')!.getAttribute('role')).toBe('listbox');
-    expect(items(menu).map((i) => [i.getAttribute('role'), i.getAttribute('aria-selected'), i.getAttribute('tabindex')])).toEqual([
-      ['option', 'true', '-1'],
-      ['option', 'false', '-1'],
-    ]);
-  });
-
-  it('the mode property reflects, and switching back to menu drops aria-selected', async () => {
-    const menu = await mount('<li class="dropdown-item">A</li>');
-    expect(menu.mode).toBe('menu');
-    menu.mode = 'listbox';
-    expect(menu.getAttribute('mode')).toBe('listbox');
-    expect(items(menu)[0].getAttribute('aria-selected')).toBe('false');
-    menu.mode = '' as never;
-    expect(menu.hasAttribute('mode')).toBe(false);
-    expect(menu.mode).toBe('menu');
-    expect(items(menu)[0].hasAttribute('aria-selected')).toBe(false);
-    await menu.updateComplete;
-    expect(menu.shadowRoot!.querySelector('ul')!.getAttribute('role')).toBe('menu');
   });
 
   it('max-height maps to the custom property and is cleared on removal', async () => {

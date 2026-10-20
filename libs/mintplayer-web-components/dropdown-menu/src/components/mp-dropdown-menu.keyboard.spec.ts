@@ -99,14 +99,4 @@ describe('mp-dropdown-menu keyboard activation', () => {
     expect(selections).toHaveLength(0);
   });
 
-  it('stays inert in listbox mode, whose keyboard model belongs to the consumer', async () => {
-    document.body.innerHTML =
-      '<mp-dropdown-menu mode="listbox"><li class="dropdown-item" data-value="a">Item</li></mp-dropdown-menu>';
-    const menu = document.querySelector('mp-dropdown-menu') as MpDropdownMenu;
-    await menu.updateComplete;
-    collect(menu);
-
-    key(menu.querySelector<HTMLElement>('.dropdown-item')!, 'Enter');
-    expect(selections).toHaveLength(0);
-  });
 });

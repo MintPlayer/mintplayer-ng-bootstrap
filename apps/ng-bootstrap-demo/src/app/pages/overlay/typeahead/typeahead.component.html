@@ -1,23 +1,86 @@
 <h1 class="text-center">Typeahead</h1>
 
 <p>
-  <code>bs-typeahead</code> is a search input with asynchronous suggestion
-  dropdown. The <code>[(searchterm)]</code> two-way binding tracks the user's
-  query; <code>(provideSuggestions)</code> fires whenever the term changes so the
-  parent can populate <code>[suggestions]</code>. The
-  <code>(suggestionSelected)</code> event fires when an entry is chosen and
-  <code>(submitted)</code> fires on free-form submit.
+  <code>bs-typeahead</code> is a text input with asynchronous suggestions and free text. A
+  <code>[provider]</code> function supplies the suggestions for a settled term and receives an
+  <code>AbortSignal</code>: when a newer term supersedes a request, the older one is aborted and its
+  answer is never shown. Typing is debounced (<code>[debounceMs]</code>, 200 ms) and gated on a
+  minimum length (<code>[minLength]</code>, 1). The value is the text, usable with
+  <code>[(ngModel)]</code> or <code>formControlName</code>; <code>(select)</code> delivers the picked item
+  and <code>(submitted)</code> the term on Enter.
+</p>
+<p>
+  This is the first component built on the headless core architecture: an Angular template rendered
+  from a framework-neutral <code>TypeaheadMachine</code>. With JavaScript disabled, the server still
+  renders a real, named input that submits as free text.
 </p>
 
-<h2>Basic usage</h2>
+<h2>Slow provider with cancellation</h2>
+<p>
+  This provider answers after 1.5 seconds. Type <kbd>mi</kbd>, then quickly <kbd>mich</kbd>: the first
+  request is aborted (count below) and only the second answer appears.
+</p>
 
 <bs-typeahead
-    [(searchterm)]="searchterm"
-    (provideSuggestions)="provideSuggestions($event)"
-    [suggestions]="suggestions()"
-    (submitted)="doSearch($event)"
-    (suggestionSelected)="gotoArtist($event)"
+  [provider]="slow"
+  [debounceMs]="200"
+  [minLength]="2"
+  inputLabel="Artist"
+  (select)="selected.set($event)"
+  (submitted)="submitted.set($event)"
 ></bs-typeahead>
+<p class="mt-2 small text-secondary">
+  Aborted requests: <span data-testid="aborted">{{ aborted() }}</span> ·
+  Selected: <span data-testid="selected">{{ selected()?.text ?? '—' }}</span> ·
+  Submitted: {{ submitted() ?? '—' }}
+</p>
 
-<bs-code-snippet [code]="snippetBasicHtml" [language]="'html'"></bs-code-snippet>
-<bs-code-snippet [code]="snippetBasicTs" [language]="'ts'"></bs-code-snippet>
+<bs-code-snippet [code]="snippetProviderHtml" [language]="'html'"></bs-code-snippet>
+<bs-code-snippet [code]="snippetProviderTs" [language]="'ts'"></bs-code-snippet>
+
+<h2>Custom row template</h2>
+<p>
+  <code>*bsTypeaheadItem</code> renders one suggestion and receives the current term, here used to
+  highlight the match. An in-memory provider with <code>[debounceMs]="0"</code> answers instantly.
+</p>
+
+<bs-typeahead [provider]="instant" [debounceMs]="0" inputLabel="Artist, highlighted">
+  <ng-container *bsTypeaheadItem="let artist; let term = term; of: artists">
+    @let p = parts(artist.text, term);
+    {{ p.before }}<mark>{{ p.match }}</mark>{{ p.after }}
+    <small class="text-secondary">{{ artist.genre }}</small>
+  </ng-container>
+</bs-typeahead>
+
+<bs-code-snippet [code]="snippetTemplateHtml" [language]="'html'"></bs-code-snippet>
+
+<h2>Forms</h2>
+<p>
+  The control's value is the text, so free text is a valid value. A pick writes the item's text and
+  keeps the item in <code>selectedItem()</code> until the text changes again.
+</p>
+
+<form class="row g-2 align-items-end" (ngSubmit)="submitted.set(street())">
+  <div class="col-auto">
+    <label for="street-input" class="form-label">Street</label>
+    <bs-typeahead id="street-input" name="street" [(ngModel)]="street" [provider]="instant" [debounceMs]="0"></bs-typeahead>
+  </div>
+  <div class="col-auto">
+    <button type="submit" class="btn btn-primary">Submit</button>
+  </div>
+</form>
+<p class="mt-2 small text-secondary">Model: {{ street() || '—' }}</p>
+
+<bs-code-snippet [code]="snippetFormsHtml" [language]="'html'"></bs-code-snippet>
+
+<h2>Keyboard</h2>
+<table class="table table-sm w-auto">
+  <thead><tr><th>Key</th><th>Action</th></tr></thead>
+  <tbody>
+    <tr><td><kbd>↓</kbd> / <kbd>↑</kbd></td><td>Open the list; move the highlighted suggestion (focus stays in the input)</td></tr>
+    <tr><td><kbd>Home</kbd> / <kbd>End</kbd></td><td>First / last suggestion</td></tr>
+    <tr><td><kbd>Enter</kbd></td><td>Pick the highlighted suggestion, or submit the text when none is highlighted</td></tr>
+    <tr><td><kbd>Esc</kbd></td><td>Close the list</td></tr>
+    <tr><td><kbd>Tab</kbd></td><td>Close the list and move on</td></tr>
+  </tbody>
+</table>

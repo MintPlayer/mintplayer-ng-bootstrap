@@ -4,8 +4,6 @@ import { BsIdService, BsRovingFocusDirective } from '@mintplayer/ng-bootstrap/a1
 import { BsDropdownMenuDirective } from '../dropdown-menu/dropdown-menu.directive';
 import { BsDropdownToggleDirective } from '../dropdown-toggle/dropdown-toggle.directive';
 
-export type BsDropdownPopupRole = 'menu' | 'listbox';
-
 @Directive({
   selector: '[bsDropdown]',
   exportAs: 'bsDropdown',
@@ -28,7 +26,6 @@ export class BsDropdownDirective {
   closeOnClickOutside = input(true);
   sameDropdownWidth = input(false);
   isOpen = model<boolean>(false);
-  readonly popupRole = input<BsDropdownPopupRole>('menu');
 
   /** Reactive id used for the menu's host id and for the toggle's aria-controls. Empty until afterNextRender resolves the host's static id (or generates one), so sibling host bindings on the wrapper element get a chance to land first. */
   private _menuId = signal<string>('');

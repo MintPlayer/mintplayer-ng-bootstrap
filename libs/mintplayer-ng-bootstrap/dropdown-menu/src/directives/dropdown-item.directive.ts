@@ -11,8 +11,7 @@ import type { DropdownItemElement } from '@mintplayer/web-components/dropdown-me
  * Usage: `<li bsDropdownItem><a routerLink="/x">Action</a></li>`.
  *
  * Inputs:
- *  - `active`   — Bootstrap `.active` appearance (also drives `aria-selected` in
- *    a `listbox` menu).
+ *  - `active`   — Bootstrap `.active` appearance.
  *  - `disabled` — non-interactive; removed from the menu's roving order.
  *  - `value`    — opaque value carried in the menu's `select` event detail;
  *    written to the host `<li>` as its `dropdownValue` property, which the WC

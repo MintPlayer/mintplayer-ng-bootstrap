@@ -39,6 +39,7 @@ axeAuditSuite(test, expect, [
   },
   { path: '/basic/toggle-button' },
   { path: '/basic/tree-select' },
+  { path: '/basic/typeahead' },
   { path: '/basic/treeview' },
   {
     path: '/enterprise/accordion',

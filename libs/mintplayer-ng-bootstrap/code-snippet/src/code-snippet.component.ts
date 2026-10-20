@@ -80,7 +80,6 @@ export class BsCodeSnippetComponent implements AfterViewInit {
    *
    * Angular's `output()` emits synchronously inside the DOM listener, so a
    * `preventDefault()` in the handler lands before `dispatchEvent` returns.
-   * Same shape as `BsComboboxDirective`'s `activate`/`cancel`.
    */
   readonly lineActivate = output<CustomEvent<{ line: number }>>();
 

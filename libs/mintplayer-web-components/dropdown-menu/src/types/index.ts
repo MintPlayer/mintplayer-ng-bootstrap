@@ -1,1 +1,1 @@
-export type { DropdownItemElement, DropdownMode, DropdownSelectEventDetail } from './dropdown';
+export type { DropdownItemElement, DropdownSelectEventDetail } from './dropdown';

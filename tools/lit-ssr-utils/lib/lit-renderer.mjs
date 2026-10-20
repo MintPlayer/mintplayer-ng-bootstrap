@@ -1,3 +1,6 @@
+import { REPO_ROOT } from './chrome-module.mjs';
+import { registerWorkspaceResolution } from './workspace-resolve.mjs';
+
 /**
  * The real renderer the DSD-chrome generators inject into `runChromeGenerator`
  * when a spec has not handed them a fake.
@@ -14,6 +17,7 @@
  * @returns {Promise<{ html: Function, render: (template: unknown) => Promise<string> }>}
  */
 export async function createLitRenderer(entryUrls = []) {
+  registerWorkspaceResolution(REPO_ROOT);
   await import('@lit-labs/ssr/lib/install-global-dom-shim.js');
   const { render } = await import('@lit-labs/ssr');
   const { collectResult } = await import('@lit-labs/ssr/lib/render-result.js');

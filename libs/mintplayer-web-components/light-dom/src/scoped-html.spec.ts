@@ -2,7 +2,8 @@ import { html, render } from 'lit';
 import { ref, createRef } from 'lit/directives/ref.js';
 import { describe, expect, it } from 'vitest';
 
-import { rewriteStatics, scopedHtml, scopedSvg, stampScope } from './scoped-html';
+import { rewriteStatics, scopedHtml, scopedSvg } from './scoped-html';
+import { stampScope } from '@mintplayer/ui-core/scoped-styles';
 
 /** Build a real TemplateStringsArray without invoking lit. */
 const tsa = (...parts: string[]): TemplateStringsArray => {

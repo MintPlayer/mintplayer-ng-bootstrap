@@ -1,6 +1,6 @@
 import { Component, signal } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { BsRovingFocusDirective, BsRovingFocusMode, BsRovingFocusOrientation } from './roving-focus.directive';
+import { BsRovingFocusDirective, BsRovingFocusOrientation } from './roving-focus.directive';
 import { BsRovingFocusItemDirective } from './roving-focus-item.directive';
 
 @Component({
@@ -10,7 +10,6 @@ import { BsRovingFocusItemDirective } from './roving-focus-item.directive';
     <ul
       bsRovingFocus
       [orientation]="orientation()"
-      [mode]="mode()"
       [wrap]="wrap()"
       data-testid="container"
     >
@@ -24,7 +23,6 @@ class HarnessComponent {
   labels = signal(['A', 'B', 'C', 'D']);
   disabled = signal<string[]>([]);
   orientation = signal<BsRovingFocusOrientation>('vertical');
-  mode = signal<BsRovingFocusMode>('tabindex');
   wrap = signal(true);
 }
 
@@ -159,32 +157,6 @@ describe('BsRovingFocusDirective', () => {
       expect(items()[1].getAttribute('tabindex')).toBe('0');
       press('ArrowUp');
       expect(items()[0].getAttribute('tabindex')).toBe('0');
-    });
-  });
-
-  describe('activedescendant mode', () => {
-    let directive: BsRovingFocusDirective;
-
-    beforeEach(() => {
-      host.mode.set('activedescendant');
-      fixture.detectChanges();
-      directive = fixture.debugElement.query(el => el.nativeElement === container()).injector.get(BsRovingFocusDirective);
-    });
-
-    it('all items have tabindex=-1 (no roving tabindex)', () => {
-      const tabindexes = items().map(li => li.getAttribute('tabindex'));
-      expect(tabindexes.every(v => v === '-1')).toBe(true);
-    });
-
-    it('exposes activeDescendantId pointing at the first item', () => {
-      expect(directive.activeDescendantId()).toBe(items()[0].id);
-      expect(items()[0].id).toMatch(/^bs-rovingitem-\d+$/);
-    });
-
-    it('arrow keys update activeDescendantId without moving browser focus to any item', () => {
-      press('ArrowDown');
-      expect(directive.activeDescendantId()).toBe(items()[1].id);
-      expect(items().some(li => li === document.activeElement)).toBe(false);
     });
   });
 });

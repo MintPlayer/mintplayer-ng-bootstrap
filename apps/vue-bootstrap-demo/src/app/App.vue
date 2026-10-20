@@ -30,6 +30,7 @@ const SECTIONS = [
       { path: '/basic/pagination', label: 'Pagination' },
       { path: '/basic/treeview', label: 'Treeview' },
       { path: '/basic/tree-select', label: 'Tree select' },
+      { path: '/basic/typeahead', label: 'Typeahead' },
       { path: '/basic/dropdown-menu', label: 'Dropdown menu' },
       { path: '/basic/navbar', label: 'Navbar' },
       { path: '/basic/tab-control', label: 'Tab control' },

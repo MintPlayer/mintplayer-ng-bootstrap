@@ -26,6 +26,13 @@ export interface DatatableFetchRequest {
   page: number;
   perPage: number;
   sortColumns: SortColumn[];
+  /**
+   * Aborts when the table invalidates its pages (sort, page size, a new `fetch`,
+   * `reload()`), so a superseded request stops instead of running to completion
+   * and being ignored. Pass it to `fetch`; the same shape as every other
+   * provider request in the libraries (#436 D4).
+   */
+  signal: AbortSignal;
 }
 
 /**

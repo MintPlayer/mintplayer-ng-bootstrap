@@ -25,7 +25,7 @@ import { html as litHtml, svg as litSvg, type TemplateResult } from 'lit';
  * two use `stampScope`.
  */
 
-const SCOPE_ATTRIBUTE = 'data-mps';
+import { SCOPE_ATTRIBUTE, validateScope } from '@mintplayer/ui-core/scoped-styles';
 
 /** Elements whose content is raw text — never markup — until the matching
  *  close tag. Tags inside them must not be stamped. */
@@ -381,15 +381,6 @@ function verifyRewrite(
   }
 }
 
-function validateScope(scope: string): void {
-  if (!/^[a-z][a-z0-9-]*$/.test(scope)) {
-    throw new Error(
-      `scopedHtml: invalid scope ${JSON.stringify(scope)} — expected a ` +
-        `lowercase identifier (the element name without its mp- prefix)`,
-    );
-  }
-}
-
 type TemplateTag = (strings: TemplateStringsArray, ...values: unknown[]) => TemplateResult;
 
 function makeScopedTag(scope: string, delegate: TemplateTag): TemplateTag {
@@ -415,19 +406,4 @@ export function scopedHtml(scope: string): TemplateTag {
 /** The `svg` twin (data-* attributes are valid on SVG elements). */
 export function scopedSvg(scope: string): TemplateTag {
   return makeScopedTag(scope, litSvg as TemplateTag);
-}
-
-/**
- * Imperatively stamp a DOM subtree with a scope — for DOM the rewriter can't
- * see (`unsafeHTML` output, `document.createElement`, an overlay panel built
- * by hand). Skips subtrees that already belong to another scope.
- */
-export function stampScope(root: Element, scope: string): void {
-  validateScope(scope);
-  const existing = root.getAttribute(SCOPE_ATTRIBUTE);
-  if (existing !== null && existing !== scope) return;
-  root.setAttribute(SCOPE_ATTRIBUTE, scope);
-  for (const child of Array.from(root.children)) {
-    stampScope(child, scope);
-  }
 }

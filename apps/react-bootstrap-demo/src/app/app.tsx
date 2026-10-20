@@ -47,6 +47,7 @@ const ToggleButtonPage = lazyNamed(() => import('./pages/ToggleButtonPage'), 'To
 const TabControlPage   = lazyNamed(() => import('./pages/TabControlPage'),   'TabControlPage');
 const TreeviewPage     = lazyNamed(() => import('./pages/TreeviewPage'),     'TreeviewPage');
 const TreeSelectPage   = lazyNamed(() => import('./pages/TreeSelectPage'),   'TreeSelectPage');
+const TypeaheadPage    = lazyNamed(() => import('./pages/TypeaheadPage'),    'TypeaheadPage');
 const DropdownMenuPage = lazyNamed(() => import('./pages/DropdownMenuPage'), 'DropdownMenuPage');
 const NavbarPage       = lazyNamed(() => import('./pages/NavbarPage'),       'NavbarPage');
 const SplitterPage     = lazyNamed(() => import('./pages/advanced/SplitterPage'), 'SplitterPage');
@@ -90,6 +91,7 @@ export function App() {
           <Route path="/basic/tab-control" element={<TabControlPage />} />
           <Route path="/basic/treeview" element={<TreeviewPage />} />
           <Route path="/basic/tree-select" element={<TreeSelectPage />} />
+          <Route path="/basic/typeahead" element={<TypeaheadPage />} />
           <Route path="/basic/dropdown-menu" element={<DropdownMenuPage />} />
           <Route path="/basic/navbar" element={<NavbarPage />} />
           {/* Advanced */}

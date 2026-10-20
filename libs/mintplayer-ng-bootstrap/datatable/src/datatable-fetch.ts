@@ -11,6 +11,13 @@ import { PaginationRequest, PaginationResponse } from '@mintplayer/pagination';
  */
 export interface BsDatatableFetchRequest extends PaginationRequest {
   parentId?: unknown;
+  /**
+   * Aborts when the table invalidates its pages (sort, page size, a new
+   * `[fetch]`, `reload()`), so a superseded request stops instead of running to
+   * completion and being ignored. Hand it to `fetch`; for an `HttpClient`
+   * observable, unsubscribe on `signal.addEventListener('abort', …)`.
+   */
+  signal: AbortSignal;
 }
 
 export type BsDatatableFetch<T> =

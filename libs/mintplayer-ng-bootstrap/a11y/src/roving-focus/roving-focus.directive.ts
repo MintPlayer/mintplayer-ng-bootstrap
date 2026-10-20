@@ -3,25 +3,21 @@ import { firstEnabledIndex, lastEnabledIndex, nextEnabledIndex } from '@mintplay
 import { BsRovingFocusItemDirective } from './roving-focus-item.directive';
 
 export type BsRovingFocusOrientation = 'vertical' | 'horizontal' | 'both';
-export type BsRovingFocusMode = 'tabindex' | 'activedescendant';
 
 /**
- * APG roving-tabindex / active-descendant container.
+ * APG roving-tabindex container.
  *
- * Place on a list/menu/listbox; mark each focusable child with
+ * Place on a list/menu/tablist; mark each focusable child with
  * `bsRovingFocusItem`. Arrow keys, Home, and End move the active item; the
- * directive auto-handles disabled items, wrap-around, and orientation.
+ * directive auto-handles disabled items, wrap-around, and orientation. Only
+ * the active item has `tabindex="0"`; real DOM focus moves.
  *
- * Two modes:
- * - **`tabindex`** (default) — only the active item has `tabindex="0"`; real
- *   DOM focus moves. Right for menus, treeviews, tablists.
- * - **`activedescendant`** — items keep `tabindex="-1"`; DOM focus stays on
- *   an external owner (e.g. a combobox `<input>`) which mirrors the active
- *   item's id via `aria-activedescendant`. Right for comboboxes/listboxes
- *   where the user is also typing.
+ * The former `activedescendant` mode (focus parked on a combobox input) was
+ * removed with the typeahead's move to its headless core (#436 D10): the
+ * typeahead core owns that keyboard model, and nothing else used the mode.
  *
  * Consumers that need to react to the active item externally read
- * `activeIndex()` (signal) or `activeDescendantId()` (computed).
+ * `activeIndex()` (signal).
  */
 @Directive({
   selector: '[bsRovingFocus]',
@@ -34,16 +30,10 @@ export class BsRovingFocusDirective {
   private elementRef = inject<ElementRef<HTMLElement>>(ElementRef);
 
   readonly orientation = input<BsRovingFocusOrientation>('vertical');
-  readonly mode = input<BsRovingFocusMode>('tabindex');
   readonly wrap = input(true);
 
   readonly items = contentChildren(BsRovingFocusItemDirective);
   readonly activeIndex = signal(0);
-
-  readonly activeDescendantId = computed(() => {
-    if (this.mode() !== 'activedescendant') return null;
-    return this.items()[this.activeIndex()]?.itemId ?? null;
-  });
 
   focusFirst(): void {
     this.moveTo(this.firstEnabledIndex());
@@ -107,11 +97,11 @@ export class BsRovingFocusDirective {
    * @mintplayer/web-components/a11y — this directive and the WC RovingFocus
    * controller had independently identical copies that had ALREADY drifted
    * (wrap-vs-clamp default). One implementation, two adapters. The directive
-   * keeps its own signals, discovery and activedescendant mode: those are
-   * Angular/light-DOM concerns the WC controller rightly lacks.
+   * keeps its own signals and discovery: those are Angular/light-DOM concerns
+   * the WC controller rightly lacks.
    *
-   * Public so consumers (e.g. BsComboboxDirective's TAB handling) can detect
-   * edges without re-implementing the disabled-aware scan.
+   * Public so consumers can detect edges without re-implementing the
+   * disabled-aware scan.
    */
   firstEnabledIndex(): number {
     const items = this.items();
@@ -138,7 +128,7 @@ export class BsRovingFocusDirective {
   private moveTo(index: number): void {
     if (index < 0) return;
     this.activeIndex.set(index);
-    if (this.mode() === 'tabindex' && this.elementRef.nativeElement.contains(document.activeElement)) {
+    if (this.elementRef.nativeElement.contains(document.activeElement)) {
       this.items()[index]?.elementRef.nativeElement.focus();
     }
   }

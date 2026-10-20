@@ -2,7 +2,7 @@ import { html, nothing } from 'lit';
 import { HostAriaController } from '@mintplayer/web-components/a11y';
 import { MpDropdownElement } from './mp-dropdown-element';
 import { dropdownMenuStyles } from '../styles';
-import type { DropdownItemElement, DropdownMode, DropdownSelectEventDetail } from '../types';
+import type { DropdownItemElement, DropdownSelectEventDetail } from '../types';
 
 /**
  * `<mp-dropdown-menu>` — a Bootstrap `.dropdown-menu` rendered inside its shadow
@@ -20,13 +20,13 @@ import type { DropdownItemElement, DropdownMode, DropdownSelectEventDetail } fro
  * framework wrapper ships. In Angular the classes come from the `[bsDropdownItem]`
  * / `[bsDropdownDivider]` / `[bsDropdownHeader]` attribute directives.
  *
- * In `menu` mode (default) the menu provides roving-tabindex keyboard navigation
- * (Arrow keys / Home / End) over the enabled items and assigns `role="menuitem"`
- * to each item's interactive control. In `listbox` mode it assigns `role="option"`
- * + `aria-selected` and leaves focus management to the consumer.
+ * The menu provides roving-tabindex keyboard navigation (Arrow keys / Home /
+ * End) over the enabled items and assigns `role="menuitem"` to each item's
+ * interactive control. It is a menu only: the former `mode="listbox"` existed
+ * for the typeahead alone, which now renders its own listbox from its headless
+ * core (#436 D10).
  *
  * Attributes:
- *  - `mode` — `menu` (default) | `listbox`.
  *  - `max-height` — px cap; maps to `--mp-dropdown-max-height` (scrolls beyond).
  *  - naming: `aria-label` / `input-label`, or `aria-labelledby` on the host
  *    (resolved into cross-root element references). The old `label-id` is gone —
@@ -47,7 +47,6 @@ export class MpDropdownMenu extends MpDropdownElement {
   static override get observedAttributes(): string[] {
     return [
       ...(super.observedAttributes ?? []),
-      'mode',
       'max-height',
       // Copied to the role-bearing <ul> in render(); label-id is DELETED, not
       // aliased: it wrote aria-labelledby on a node inside the shadow root
@@ -64,15 +63,6 @@ export class MpDropdownMenu extends MpDropdownElement {
   /** Index (into the item list) holding the roving tabindex in menu mode. */
   #focusedIndex = 0;
 
-  // `mode` reflects to its attribute (the layout/roles read the attribute).
-  // Setters matter for `@lit/react`'s createComponent, which sets matching props.
-  get mode(): DropdownMode {
-    return this.getAttribute('mode') === 'listbox' ? 'listbox' : 'menu';
-  }
-  set mode(v: DropdownMode) {
-    if (v) this.setAttribute('mode', v);
-    else this.removeAttribute('mode');
-  }
 
   private _inputLabel: string | null = null;
 
@@ -118,7 +108,7 @@ export class MpDropdownMenu extends MpDropdownElement {
     } else if (name === 'input-label') {
       this._inputLabel = newValue;
       this.requestUpdate();
-    } else if (name === 'mode' || name === 'aria-label') {
+    } else if (name === 'aria-label') {
       // Read in render(); re-render and re-sync item roles.
       this.requestUpdate();
       this.#syncItems();
@@ -204,27 +194,23 @@ export class MpDropdownMenu extends MpDropdownElement {
       this.#focusedIndex = firstEnabled >= 0 ? firstEnabled : 0;
     }
 
-    const listbox = this.mode === 'listbox';
     items.forEach((item, i) => {
       const control = this.#controlOf(item);
       // The <li> is presentational when a real control carries the role.
       if (control !== item) item.setAttribute('role', 'presentation');
-      control.setAttribute('role', listbox ? 'option' : 'menuitem');
+      control.setAttribute('role', 'menuitem');
       const disabled = this.#isDisabled(item);
-      if (listbox) control.setAttribute('aria-selected', item.classList.contains('active') ? 'true' : 'false');
-      else control.removeAttribute('aria-selected');
+      control.removeAttribute('aria-selected');
       if (disabled) control.setAttribute('aria-disabled', 'true');
       else control.removeAttribute('aria-disabled');
-      // Roving tabindex only in menu mode; listbox consumers manage activedescendant.
-      const tabbable = !listbox && i === this.#focusedIndex && !disabled;
+      const tabbable = i === this.#focusedIndex && !disabled;
       control.setAttribute('tabindex', tabbable ? '0' : '-1');
     });
   }
 
-  // --- keyboard (menu mode) --------------------------------------------------
+  // --- keyboard --------------------------------------------------
 
   #onKeydown = (event: KeyboardEvent): void => {
-    if (this.mode !== 'menu') return;
     switch (event.key) {
       case 'ArrowDown':
         this.#move(1);
@@ -323,7 +309,7 @@ export class MpDropdownMenu extends MpDropdownElement {
     return html`
       <ul
         class="dropdown-menu show"
-        role=${this.mode}
+        role="menu"
         part="menu"
         aria-label=${this.getAttribute('aria-label') ?? this._inputLabel ?? nothing}
       >

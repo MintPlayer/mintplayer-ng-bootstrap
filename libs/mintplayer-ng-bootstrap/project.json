@@ -43,6 +43,7 @@
     },
     "test": {
       "executor": "@analogjs/vitest-angular:test",
+      "dependsOn": [{ "projects": ["mintplayer-ui-core"], "target": "codegen" }],
       "outputs": ["{workspaceRoot}/coverage/libs/mintplayer-ng-bootstrap"],
       "options": {
         "configFile": "vitest.config.ts"

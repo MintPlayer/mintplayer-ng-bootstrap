@@ -76,6 +76,7 @@ export default defineConfig(() => ({
         'react/jsx-runtime',
         '@lit/react',
         /^@mintplayer\/web-components(\/.*)?$/,
+        /^@mintplayer\/ui-core(\/.*)?$/,
         'lit',
         /^lit\//,
         '@lit/context',

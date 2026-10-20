@@ -29,14 +29,6 @@ describe('injectMpDropdownDsd', () => {
     expect(out.match(/role="menuitem"/g)?.length).toBe(2);
   });
 
-  it('stamps role="option" in listbox mode', () => {
-    const out = injectMpDropdownDsd(
-      '<mp-dropdown-menu mode="listbox"><li class="dropdown-item">A</li></mp-dropdown-menu>',
-    );
-    expect(out).toContain('role="option"');
-    expect(out).not.toContain('menuitem');
-  });
-
   it('puts the role on the item\'s first link/button and presentation on the item', () => {
     const out = injectMpDropdownDsd(
       '<mp-dropdown-menu><li class="dropdown-item"><a href="/x">Go</a></li></mp-dropdown-menu>',
@@ -59,16 +51,14 @@ describe('injectMpDropdownDsd', () => {
     expect(out).not.toContain('menuitem');
   });
 
-  it('a nested menu\'s items get the NESTED menu\'s mode, not the outer one\'s', () => {
+  it('a nested menu stamps its own items, and the outer item hosting it keeps its own role', () => {
     const out = injectMpDropdownDsd(
       `<mp-dropdown-menu>
         <li class="dropdown-item">outer</li>
-        <li class="dropdown-item"><mp-dropdown-menu mode="listbox"><li class="dropdown-item">inner</li></mp-dropdown-menu></li>
+        <li class="dropdown-item"><mp-dropdown-menu><li class="dropdown-item">inner</li></mp-dropdown-menu></li>
       </mp-dropdown-menu>`,
     );
-    expect(out).toContain('role="option"');
-    // The outer item hosting the nested menu still gets its own role.
-    expect((out.match(/role="menuitem"/g) ?? []).length).toBe(2);
+    expect((out.match(/role="menuitem"/g) ?? []).length).toBe(3);
   });
 
   it('leaves dropdown-item classes outside any menu alone', () => {
@@ -83,11 +73,9 @@ describe('injectMpDropdownDsd', () => {
     expect(out).toContain('role="menuitem"');
   });
 
-  it('stamps a void item directly, in the enclosing menu\'s mode', () => {
+  it('stamps a void item directly', () => {
     expect(injectMpDropdownDsd('<mp-dropdown-menu><input class="dropdown-item" type="button"></mp-dropdown-menu>'))
       .toContain('<input class="dropdown-item" type="button" role="menuitem">');
-    expect(injectMpDropdownDsd("<mp-dropdown-menu mode='listbox'><img class=dropdown-item /></mp-dropdown-menu>"))
-      .toContain('<img class=dropdown-item / role="option">');
   });
 
   it('keeps an authored role on a void item', () => {

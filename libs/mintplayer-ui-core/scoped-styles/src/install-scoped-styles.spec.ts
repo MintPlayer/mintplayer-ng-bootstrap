@@ -1,11 +1,11 @@
 import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
-import { unsafeCSS, type CSSResult } from 'lit';
 
 import {
   adoptLightStyles,
   getLightStyleEntries,
   installLightStyles,
-} from './install-light-styles';
+  writeScopedStyleTag,
+} from './install-scoped-styles';
 
 // The registry is deliberately global (Symbol.for on globalThis), so each test
 // uses its own keys.
@@ -111,19 +111,19 @@ describe('installLightStyles — constructable stylesheets', () => {
     expect(keys).toEqual(expect.arrayContaining(['t-sheet-b', 't-sheet-c']));
   });
 
-  it('reuses the sheet lit already built for a CSSResult', () => {
+  it('reuses a sheet the source already built (lit CSSResult shape)', () => {
     // Lit builds CSSResult.styleSheet only where it detected adoptable sheets
     // at load, which jsdom lacks; model a result from such a browser.
     const sheet = new CSSStyleSheet();
-    const styles = { cssText: 'mp-i{color:red}', styleSheet: sheet } as unknown as CSSResult;
+    const styles = { cssText: 'mp-i{color:red}', styleSheet: sheet };
     installLightStyles('t-sheet-d', styles);
     const entry = getLightStyleEntries().find((e) => e.key === 't-sheet-d')!;
     expect(entry.sheet).toBe(sheet);
     expect(entry.cssText).toBe('mp-i{color:red}');
   });
 
-  it('builds its own sheet from a CSSResult that has none', () => {
-    installLightStyles('t-sheet-f', unsafeCSS('mp-l{color:red}'));
+  it('builds its own sheet from a source that has none', () => {
+    installLightStyles('t-sheet-f', { cssText: 'mp-l{color:red}' });
     const entry = getLightStyleEntries().find((e) => e.key === 't-sheet-f')!;
     expect(entry.sheet).toBeInstanceOf(CSSStyleSheet);
     expect(document.adoptedStyleSheets).toContain(entry.sheet);

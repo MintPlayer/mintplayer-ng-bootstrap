@@ -60,6 +60,23 @@ export function buildStylesModule({ css, sourceScssRel, exportName }) {
   ].join('\n');
 }
 
+/**
+ * Lit-free variant for @mintplayer/ui-core: the sheet as a plain string, so a
+ * front that never loads lit (Angular, React, Vue) can install it through the
+ * scoped-styles registry.
+ */
+export function buildPlainStylesModule({ css, sourceScssRel, exportName }) {
+  return [
+    '// AUTO-GENERATED — do not edit by hand.',
+    `// Source: ${sourceScssRel}`,
+    '// Regenerate with the codegen Nx target of the owning library.',
+    '',
+    `export const ${exportName} = \`${escapeForTemplateLiteral(css)}\`;`,
+    `export default ${exportName};`,
+    '',
+  ].join('\n');
+}
+
 /** Returns true iff it actually wrote. Byte-identical output is left alone so
  *  the Nx cache stays warm and git stays clean. */
 export async function writeIfChanged(outPath, next) {

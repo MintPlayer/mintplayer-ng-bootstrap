@@ -41,13 +41,13 @@ function hasClass(attrs: string, name: string): boolean {
  * server-rendered HTML so the menu renders (bordered panel + item/divider/header
  * `::slotted` styling) with JavaScript disabled — and stamps the item roles the
  * element would assign in `#syncItems`, which never runs server-side: without
- * them the chrome's menu/listbox has no owned menuitems/options in the no-JS
+ * them the chrome's menu has no owned menuitems in the no-JS
  * accessibility tree.
  *
  * Role placement mirrors the element: the item's first `<a>`/`<button>` carries
  * the role and the item becomes presentational; a control-less item carries the
- * role itself. `mode` is read from each menu's own open tag (menus nest — navbar
- * submenus — and each stamps its own subtree only). Authored roles are never
+ * role itself. Menus nest (navbar submenus) and each stamps its own subtree
+ * only. Authored roles are never
  * overwritten, which also makes the stamping idempotent.
  */
 export function injectMpDropdownDsd(html: string): string {
@@ -57,10 +57,10 @@ export function injectMpDropdownDsd(html: string): string {
 
   const insertions: Insertion[] = [];
 
-  // Pass 1 — walk every tag once, tracking the stack of open menus (for mode)
+  // Pass 1 — walk every tag once, tracking the stack of open menus (for nesting)
   // and, within an item, whether its role-bearing control has been found.
   TAG.lastIndex = 0;
-  interface OpenMenu { mode: 'menu' | 'listbox'; depth: number }
+  interface OpenMenu { depth: number }
   interface OpenItem { menuDepth: number; depth: number; tagEnd: number; attrs: string; name: string; done: boolean }
   const menus: OpenMenu[] = [];
   const items: OpenItem[] = [];
@@ -76,8 +76,7 @@ export function injectMpDropdownDsd(html: string): string {
       if (item && depth === item.depth) {
         // Item closed without an inner control: the item itself gets the role.
         if (!item.done && readAttribute(item.attrs, 'role') === null) {
-          const mode = menus[menus.length - 1]?.mode ?? 'menu';
-          insertions.push({ at: item.tagEnd - 1, text: ` role="${mode === 'listbox' ? 'option' : 'menuitem'}"` });
+          insertions.push({ at: item.tagEnd - 1, text: ' role="menuitem"' });
         }
         items.pop();
       }
@@ -87,8 +86,8 @@ export function injectMpDropdownDsd(html: string): string {
 
     if (name === 'mp-dropdown-menu') {
       // While inside a menu but not inside one of ITS items… items host nested
-      // menus, so the stack keeps each menu's own mode for its own items.
-      menus.push({ mode: readAttribute(attrs, 'mode') === 'listbox' ? 'listbox' : 'menu', depth });
+      // menus, so the stack scopes each menu's stamping to its own items.
+      menus.push({ depth });
       if (!/^\s*<template\b[^>]*shadowrootmode/.test(html.slice(TAG.lastIndex, TAG.lastIndex + 120))) {
         insertions.push({ at: TAG.lastIndex, text: MP_DROPDOWN_MENU_DSD_CHROME });
       }
@@ -96,8 +95,7 @@ export function injectMpDropdownDsd(html: string): string {
       if (isVoid) {
         // A void item cannot contain a control; stamp it directly.
         if (readAttribute(attrs, 'role') === null) {
-          const mode = menus[menus.length - 1].mode;
-          insertions.push({ at: TAG.lastIndex - 1, text: ` role="${mode === 'listbox' ? 'option' : 'menuitem'}"` });
+          insertions.push({ at: TAG.lastIndex - 1, text: ' role="menuitem"' });
         }
       } else {
         items.push({ menuDepth: menus[menus.length - 1].depth, depth, tagEnd: TAG.lastIndex, attrs, name, done: false });
@@ -107,9 +105,8 @@ export function injectMpDropdownDsd(html: string): string {
       if (!item.done && menus.length && menus[menus.length - 1].depth === item.menuDepth) {
         item.done = true;
         if (readAttribute(item.attrs, 'role') === null && readAttribute(attrs, 'role') === null) {
-          const mode = menus[menus.length - 1].mode;
           insertions.push({ at: item.tagEnd - 1, text: ' role="presentation"' });
-          insertions.push({ at: TAG.lastIndex - 1, text: ` role="${mode === 'listbox' ? 'option' : 'menuitem'}"` });
+          insertions.push({ at: TAG.lastIndex - 1, text: ' role="menuitem"' });
         }
       }
     }

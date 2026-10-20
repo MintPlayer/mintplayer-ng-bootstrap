@@ -34,6 +34,11 @@
       "@mintplayer/ng-qr-code": ["./libs/mintplayer-ng-qr-code/src/index.ts"],
       "@mintplayer/pagination": ["./libs/mintplayer-pagination/src/index.ts"],
       "@mintplayer/qr-code": ["./libs/mintplayer-qr-code/src/index.ts"],
+      "@mintplayer/ui-core": ["./libs/mintplayer-ui-core/src/index.ts"],
+      "@mintplayer/ui-core/*": [
+        "./libs/mintplayer-ui-core/*/index.ts",
+        "./libs/mintplayer-ui-core/*"
+      ],
       "@mintplayer/web-components": [
         "./libs/mintplayer-web-components/src/index.ts"
       ],

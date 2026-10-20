@@ -162,6 +162,35 @@ Consequences to design around:
 
 `tsconfig.base.json` maps `@mintplayer/web-components/*` → `libs/mintplayer-web-components/*` (wildcard). A new `<name>/src/index.ts` is auto-discovered as a sub-entrypoint by `vite.config.mts` and resolves in dev/build with no extra config.
 
+## Headless core + fronts (new architecture; pilot: typeahead #436, programme: #437)
+
+Decided 2026-10-19: components move from "a Lit WC + three wrappers that render `<mp-*>`" to **a
+framework-neutral core in `@mintplayer/ui-core` + four fronts that each render their own template**
+(Angular, React, Vue, Lit). Reason: Angular SSR runs on domino (no `customElements`), so a wrapper around a
+WC emits an empty element and 24 of 30 WC-backed components showed nothing with JS off; light-tier
+elements cannot be Lit-SSR'd at all. **The shell PRD's "no HTML may be duplicated across the components" rule
+is reversed** for components on this architecture. The typeahead is the reference
+(`libs/mintplayer-ui-core/typeahead`, `docs/prd/typeahead-wc-436.md` §15 has the cost per front).
+
+- **Core** (`ui-core/<name>`): a class extending `Machine<S>` (`ui-core/store`: immutable snapshot,
+  `subscribe`, batched `update`). Commands, keyboard (`keydown(key) → consumed`), async via
+  `SupersedingRequest` (`ui-core/async`: debounce, abort previous, stale-drop). `connect(snapshot, id)` returns
+  **attribute bags per node** — the only place ARIA is written. Deterministic ids from a front-supplied root id
+  so SSR and client agree. No DOM, no reactivity library.
+- **Bridges** (one per lib, `machine/` entry): Angular `machineSignal()` + `[mpProps]` (diffing attribute
+  setter via `Renderer2`, SSR-safe, refuses URL/script names) + `useScopedStyles()`; React
+  `useMachine`/`useSnapshot` (`useSyncExternalStore`) + `reactProps()`; Vue `useMachine` (`shallowRef`);
+  Lit `MachineController` + the `props()` element-part directive.
+- **Styles**: one `<name>.scoped.scss` in the core → a plain-string `*.scoped.styles.ts` (ui-core `codegen`
+  target; no lit import), rescoped with `[data-mps=<name>]` like a light sheet. Every front writes
+  `data-mps="<name>"` on its own nodes (it is in the bags) and installs the sheet through the shared registry
+  (`ui-core/scoped-styles`, which `web-components/light-dom` re-exports). Angular writes it into `DOCUMENT.head`
+  on the server — no string post-processing. No `styleUrls`, no `::ng-deep`.
+- **Angular front SSR**: render the whole tree (including hidden popups) so server and client DOM are
+  identical; hydration then attaches to the same nodes. Drive everything from signals under OnPush.
+- **Fronts are transparent** to `aria-*`, `id`, `tabindex` — but never forward a consumer `role` onto a node
+  whose role is part of the core's contract (the React passthrough guard has `fixedRole` for this).
+
 ## Framework wrappers
 
 - **Angular** (`libs/mintplayer-ng-bootstrap/<name>/`): `@Component` with `CUSTOM_ELEMENTS_SCHEMA`, bridges `[attr.x]` inputs and `(custom-event)` outputs to the WC; `<ng-template>` directives are bridged to render-callbacks via `EmbeddedViewRef`. Form controls implement `ControlValueAccessor`.
@@ -231,7 +260,7 @@ it MUST keep its native role — `role="button"` on a checkbox suppresses the on
 It MUST carry `aria-controls` naming the region it reveals, MUST be named by a `<label for>` or
 `aria-label` that reads correctly in both positions, and `checked` MUST mean *revealed* with no
 viewport- or mode-dependent inversion. Reference implementation:
-`libs/mintplayer-web-components/accordion/src/components/mp-accordion.ts` (`#renderNoJsItem`).
+`libs/mintplayer-web-components/accordion/src/components/mp-accordion.ts` (native `<details name>` rows).
 
 **Tier 2 — DSD chrome via `@lit-labs/ssr` (visible but inert with no JS).** The chrome contains the
 **shadow** markup only, so: emit no role whose ARIA contract depends on attributes JS assigns to

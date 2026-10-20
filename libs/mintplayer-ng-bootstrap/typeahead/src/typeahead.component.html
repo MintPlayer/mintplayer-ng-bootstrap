@@ -1,45 +1,25 @@
-<bs-has-overlay></bs-has-overlay>
-<bs-form>
-    <div bsDropdown #dd="bsDropdown" popupRole="listbox" [(isOpen)]="isOpen" [hasBackdrop]="false" [sameDropdownWidth]="true">
-        <input type="text"
-            #textbox
-            [attr.aria-label]="inputLabel()"
-            [ngModel]="searchterm()"
-            (ngModelChange)="onProvideSuggestions($event)"
-            bsCombobox
-            (activate)="onActivate()"
-            (cancel)="onCancel()"
-            (keydown.enter)="onSubmit($event)"
-            autocomplete="off" />
-        <!--
-          `mode="activedescendant"` drives the a11y `bsRovingFocus` primitive;
-          `menuMode="listbox"` drives the WC-backed `bs-dropdown-menu`. Both
-          directives sit on this one element (so roving's `contentChildren` finds
-          the option `<li>`s as direct children) — the menu's mode input is aliased
-          to `menuMode` precisely so it doesn't clobber roving's `mode`. The menu
-          also mirrors the trigger's generated id + popup role (the `aria-controls`
-          target) via the exported `bsDropdown` reference.
-        -->
-        <bs-dropdown-menu *bsDropdownMenu bsRovingFocus mode="activedescendant" menuMode="listbox"
-            [attr.id]="dd.menuId() || null" [attr.role]="dd.popupRole()">
-            @if (isLoading()) {
-                <bs-progress [height]="2" [isIndeterminate]="true"></bs-progress>
-                <li bsDropdownItem [disabled]="true">
-                    {{ isLoadingText() }}
-                </li>
-            }
-            @if (!isLoading()) {
-                @if (showNoSuggestions()) {
-                    <li bsDropdownItem [disabled]="true">
-                        {{ noSuggestionsText() }}
-                    </li>
-                }
-                @for (suggestion of suggestions(); track suggestion) {
-                    <li bsDropdownItem bsRovingFocusItem (click)="suggestionClicked(suggestion)">
-                        {{ suggestion.text }}
-                    </li>
-                }
-            }
-        </bs-dropdown-menu>
-    </div>
-</bs-form>
+<div class="mp-typeahead" [mpProps]="api().root">
+  <input #input
+    class="form-control"
+    type="text"
+    [mpProps]="api().input"
+    [value]="state().term"
+    (input)="onInput($event)"
+    (keydown)="onKeydown($event)"
+    (blur)="onBlur()" />
+  <ul class="dropdown-menu" [mpProps]="api().listbox">
+    @if (api().status; as status) {
+      <li class="ta-status" [mpProps]="status.attrs">{{ status.text }}</li>
+    }
+    @for (item of state().items; track trackItem($index, item); let i = $index) {
+      <li class="dropdown-item" [mpProps]="api().option(i)" (mousedown)="$event.preventDefault()" (click)="machine.pick(i)">
+        <ng-container *ngTemplateOutlet="itemTemplate()?.templateRef ?? defaultItem; context: { $implicit: item, term: state().term }"></ng-container>
+      </li>
+    }
+  </ul>
+  <span class="visually-hidden" [mpProps]="api().live.attrs">{{ api().live.text }}</span>
+  @if (api().error; as error) {
+    <div class="ta-error" [mpProps]="error.attrs">{{ error.text }}</div>
+  }
+</div>
+<ng-template #defaultItem let-item>{{ machine.itemTextOf(item) }}</ng-template>

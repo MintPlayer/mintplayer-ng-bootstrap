@@ -162,6 +162,7 @@ axeAuditSuite(test, expect, [
   },
   { path: '/overlays/shell' },
   { path: '/overlays/modals' },
+  { path: '/overlays/typeahead' },
   { path: '/advanced/signature-pad' },
   { path: '/advanced/scrollspy' },
 ]);

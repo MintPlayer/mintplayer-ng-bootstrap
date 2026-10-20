@@ -1,5 +1,6 @@
 import { LitElement, nothing, render, type TemplateResult } from 'lit';
 import { OverlayController } from '@mintplayer/web-components/overlay';
+import { isAbortError, SupersedingRequest } from '@mintplayer/ui-core/async';
 import { installLightStyles, scopedHtml } from '@mintplayer/web-components/light-dom';
 import { FocusRestore, FocusRestoreController, HostAriaController, LiveAnnouncerController } from '@mintplayer/web-components/a11y';
 import {
@@ -189,12 +190,8 @@ interface ColumnFilterState {
    */
   operandText: string;
   loading: boolean;
-  /** Bumped per request; a stale response checks this before writing. */
-  generation: number;
-  /** Aborts the in-flight source request. */
-  controller: AbortController | null;
-  /** Pending debounce for a source re-query. */
-  debounce: ReturnType<typeof setTimeout> | null;
+  /** Debounce + abort-previous + stale-drop for the source re-query (`@mintplayer/ui-core/async`). */
+  runner: SupersedingRequest;
   /** Subscribers from `FilterContext.onChange`. */
   listeners: Set<() => void>;
   /** The `filterSelection` reference this state was seeded from, if any. */
@@ -219,7 +216,8 @@ function includesValue(values: readonly DistinctValue[], value: unknown): boolea
  * list is filtered in place on every keystroke, and this delay only gates the
  * round trip that a truncated list or a widened term makes necessary.
  */
-const FILTER_SEARCH_DEBOUNCE_MS = 250;
+/** The shared type-to-search quiet time (typeahead, tree-select, this panel; #436 D6). */
+const FILTER_SEARCH_DEBOUNCE_MS = 200;
 
 let instanceCounter = 0;
 
@@ -500,6 +498,8 @@ export class MpDatatable extends LitElement {
   private _fetch: DatatableFetch | null = null;
   /** Bumped on invalidation; in-flight responses from an older generation are dropped. */
   private _fetchGeneration = 0;
+  /** Aborts every in-flight `fetch` of the current generation; replaced on invalidation (#436 D4). */
+  private _fetchAbort = new AbortController();
   /** Guards the one-time initial page-1 load. Reset when the callback changes. */
   private _initialFetchDone = false;
   /** Coalesces multiple setter calls in one flush into a single reload. */
@@ -679,7 +679,7 @@ export class MpDatatable extends LitElement {
     this._childTotals.clear();
     this._pendingFetches.clear();
     // Invalidates every in-flight response: they check this before writing.
-    this._fetchGeneration++;
+    this.invalidateFetches();
     this._initialFetchDone = false;
     this._lastReloadKey = null;
     this.requestUpdate();
@@ -1574,9 +1574,7 @@ export class MpDatatable extends LitElement {
       term: '',
       operandText: col.filterSelection?.operand == null ? '' : String(col.filterSelection.operand),
       loading: false,
-      generation: 0,
-      controller: null,
-      debounce: null,
+      runner: new SupersedingRequest({ debounceMs: FILTER_SEARCH_DEBOUNCE_MS }),
       listeners: new Set(),
       // Assigned below: the context closes over `state`, which does not exist
       // until the literal is complete.
@@ -1618,10 +1616,7 @@ export class MpDatatable extends LitElement {
   }
 
   private abortFilterRequest(state: ColumnFilterState): void {
-    state.controller?.abort();
-    state.controller = null;
-    if (state.debounce != null) clearTimeout(state.debounce);
-    state.debounce = null;
+    state.runner.cancel();
     state.loading = false;
   }
 
@@ -1742,11 +1737,7 @@ export class MpDatatable extends LitElement {
     const needsRequery = !!state.loaded?.hasMore || !term.startsWith(loadedTerm);
     if (!needsRequery) return;
 
-    if (state.debounce != null) clearTimeout(state.debounce);
-    state.debounce = setTimeout(() => {
-      state.debounce = null;
-      void this.loadDistincts(name, term);
-    }, FILTER_SEARCH_DEBOUNCE_MS);
+    void this.loadDistincts(name, term, true);
   }
 
   /**
@@ -1757,40 +1748,35 @@ export class MpDatatable extends LitElement {
    * than a re-query. The source is asked first; a source resolving `null` means
    * it cannot answer for this column, and the local path takes over.
    */
-  private async loadDistincts(name: string, term: string): Promise<void> {
+  private async loadDistincts(name: string, term: string, debounced = false): Promise<void> {
     const state = this.filterState(name);
     if (!state) return;
 
-    const generation = ++state.generation;
-    state.controller?.abort();
-
     if (this._distincts) {
-      const controller = new AbortController();
-      state.controller = controller;
       state.loading = true;
       this.notifyFilterListeners(state);
-      try {
-        const response = await this._distincts({ column: name, search: term, signal: controller.signal });
-        if (generation !== state.generation) return;
-        state.loading = false;
-        state.controller = null;
-        if (response) {
-          state.loaded = response;
-          state.loadedTerm = term;
-          this.rebucket(state);
-          this.notifyFilterListeners(state);
-          return;
-        }
-        // `null` = "not mine"; fall through to the local path.
-      } catch {
-        if (generation !== state.generation) return;
-        state.loading = false;
-        state.controller = null;
+      // Wrapped so a `null` response ("not mine") stays distinguishable from a
+      // rejection, which the runner also reports as a null value.
+      const result = await state.runner.run(
+        async ({ signal }) => ({ response: await this._distincts!({ column: name, search: term, signal }) }),
+        { debounceMs: debounced ? undefined : 0 },
+      );
+      if (result.aborted) return;
+      state.loading = false;
+      if (result.value === null) {
         state.loaded = null;
         state.loadedTerm = term;
         this.notifyFilterListeners(state);
         return;
       }
+      if (result.value.response) {
+        state.loaded = result.value.response;
+        state.loadedTerm = term;
+        this.rebucket(state);
+        this.notifyFilterListeners(state);
+        return;
+      }
+      // `null` = "not mine"; fall through to the local path.
     }
 
     state.loaded = this.localDistincts(name);
@@ -2945,12 +2931,19 @@ export class MpDatatable extends LitElement {
    * that echoes a different page number can't deadlock the window.
    * Generation-guarded against responses that land after an invalidation.
    */
+  /** Drop every in-flight fetch response (generation) and abort the requests themselves (signal). */
+  private invalidateFetches(): void {
+    this._fetchGeneration++;
+    this._fetchAbort.abort();
+    this._fetchAbort = new AbortController();
+  }
+
   private async fetchWindowPage(page: number): Promise<void> {
     if (!this._fetch || page <= 1) return;
     this._pendingPageFetches.add(page);
     const generation = this._fetchGeneration;
     try {
-      const resp = await this._fetch({ parentId: null, page, perPage: this._perPage, sortColumns: [...this._sortColumns] });
+      const resp = await this._fetch({ parentId: null, page, perPage: this._perPage, sortColumns: [...this._sortColumns], signal: this._fetchAbort.signal });
       if (generation !== this._fetchGeneration || !this._fetch) return;
       this._pendingPageFetches.delete(page);
       this._pageCache.set(page, [...(resp?.data ?? [])]);
@@ -2959,6 +2952,7 @@ export class MpDatatable extends LitElement {
       this.requestUpdate();
     } catch (err) {
       this._pendingPageFetches.delete(page);
+      if (isAbortError(err)) return;
       console.error('[mp-datatable] fetch failed for root page', page, err);
     }
   }
@@ -2972,7 +2966,7 @@ export class MpDatatable extends LitElement {
     this._pendingFetches.add(parentId);
     const generation = this._fetchGeneration;
     try {
-      const resp = await this._fetch({ parentId, page: 1, perPage: this._perPage, sortColumns: [...this._sortColumns] });
+      const resp = await this._fetch({ parentId, page: 1, perPage: this._perPage, sortColumns: [...this._sortColumns], signal: this._fetchAbort.signal });
       if (generation !== this._fetchGeneration || !this._fetch) return;
       this._pendingFetches.delete(parentId);
       this._childCache.set(parentId, [...(resp?.data ?? [])]);
@@ -2980,6 +2974,7 @@ export class MpDatatable extends LitElement {
       this.requestUpdate();
     } catch (err) {
       this._pendingFetches.delete(parentId);
+      if (isAbortError(err)) return;
       console.error('[mp-datatable] fetch failed for children of', parentId, err);
     }
   }
@@ -2994,9 +2989,9 @@ export class MpDatatable extends LitElement {
     const generation = this._fetchGeneration;
     let resp: { data?: unknown[]; totalRecords?: number } | undefined;
     try {
-      resp = await this._fetch({ parentId: null, page, perPage: this._perPage, sortColumns: [...this._sortColumns] });
+      resp = await this._fetch({ parentId: null, page, perPage: this._perPage, sortColumns: [...this._sortColumns], signal: this._fetchAbort.signal });
     } catch (err) {
-      console.error('[mp-datatable] fetch failed for page', page, err);
+      if (!isAbortError(err)) console.error('[mp-datatable] fetch failed for page', page, err);
       return;
     }
     if (generation !== this._fetchGeneration || !this._fetch) return;
@@ -3027,7 +3022,7 @@ export class MpDatatable extends LitElement {
       if (this._initialFetchDone && key === this._lastReloadKey) return; // echo, no real change
       this._lastReloadKey = key;
       // New sort/perPage/page ⇒ the cached windows + children are stale.
-      this._fetchGeneration++;
+      this.invalidateFetches();
       this._pageCache.clear();
       this._pendingPageFetches.clear();
       this._childCache.clear();

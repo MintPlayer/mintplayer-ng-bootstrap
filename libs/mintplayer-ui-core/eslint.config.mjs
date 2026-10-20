@@ -1,0 +1,27 @@
+import baseConfig from '../../eslint.config.mjs';
+import jsoncEslintParser from 'jsonc-eslint-parser';
+
+export default [
+  ...baseConfig,
+  {
+    files: ['**/*.ts', '**/*.js'],
+    rules: {},
+  },
+  {
+    files: ['**/*.json'],
+    rules: {
+      '@nx/dependency-checks': [
+        'warn',
+        {
+          ignoredFiles: [
+            '{projectRoot}/eslint.config.{js,cjs,mjs,ts,cts,mts}',
+            '{projectRoot}/vite.config.{js,ts,mjs,mts}',
+          ],
+        },
+      ],
+    },
+    languageOptions: {
+      parser: jsoncEslintParser,
+    },
+  },
+];

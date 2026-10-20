@@ -23,8 +23,9 @@ const LIB_ROOT = existsSync(join(process.cwd(), 'light-dom'))
 
 /** Lib-relative files allowed to write document-level CSS. An entry here is a review decision. */
 const ALLOWED_WRITERS: readonly string[] = [
-  // The registry itself.
-  'light-dom/src/install-light-styles.ts',
+  // The registry itself lives in @mintplayer/ui-core/scoped-styles since #436;
+  // `light-dom/src/install-light-styles.ts` is a re-export and writes nothing.
+  // ui-core has its own copy of this guard for the registry file.
 ];
 
 const WRITER_PATTERNS: readonly RegExp[] = [

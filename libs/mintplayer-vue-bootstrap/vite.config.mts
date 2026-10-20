@@ -67,6 +67,7 @@ export default defineConfig(() => ({
       external: [
         'vue',
         /^@mintplayer\/web-components(\/.*)?$/,
+        /^@mintplayer\/ui-core(\/.*)?$/,
         'lit',
         /^lit\//,
         '@lit/context',

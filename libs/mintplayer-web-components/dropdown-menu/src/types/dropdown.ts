@@ -1,6 +1,3 @@
-/** How the menu exposes itself to assistive tech (and how items are roled). */
-export type DropdownMode = 'menu' | 'listbox';
-
 /**
  * A `.dropdown-item` carrying an opaque value for the menu's `select` event.
  * Assign any value (object, string, number) to `dropdownValue`; the menu reports

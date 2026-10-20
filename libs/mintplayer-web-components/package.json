@@ -1,6 +1,6 @@
 {
   "name": "@mintplayer/web-components",
-  "version": "2.20.0",
+  "version": "2.21.0",
   "description": "Framework-agnostic Lit web components for the @mintplayer/bootstrap design system. Consumed by @mintplayer/ng-bootstrap, @mintplayer/react-bootstrap, and @mintplayer/vue-bootstrap.",
   "license": "MIT",
   "repository": {
@@ -39,6 +39,7 @@
     }
   },
   "dependencies": {
+    "@mintplayer/ui-core": "^1.0.0",
     "tslib": "^2.3.0",
     "intl-tel-input": "^29.1.2",
     "libphonenumber-js": "^1.13.10"

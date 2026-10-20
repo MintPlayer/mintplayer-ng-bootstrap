@@ -6,6 +6,7 @@ import '@mintplayer/web-components/datatable';
 import '@mintplayer/web-components/treeview';
 import { InMemoryTreeSelectProvider } from '@mintplayer/web-components/tree-select';
 import '@mintplayer/web-components/query-builder';
+import { inMemoryTypeaheadProvider } from '@mintplayer/web-components/typeahead';
 
 /**
  * The boundary, checked in the direction nothing else checks it.
@@ -143,7 +144,7 @@ describe('consumer DOM mounted through a render callback', () => {
 
   it('has sheets to check — an empty registry would make every case vacuous', () => {
     expect(getLightStyleEntries().map((e) => e.key)).toEqual(
-      expect.arrayContaining(['datatable', 'treeview', 'tree-select']),
+      expect.arrayContaining(['datatable', 'treeview', 'tree-select', 'typeahead']),
     );
     expect(selectors.length).toBeGreaterThan(50);
   });
@@ -269,5 +270,23 @@ describe('consumer DOM mounted through a render callback', () => {
     for (const node of mounted) {
       expectUntouched(node as HTMLElement, 'tree-select suggestionTemplate', selectors);
     }
+  });
+
+  /** The typeahead's itemRenderer output is a lit child value: never stamped, never matched (#436). */
+  it('mp-typeahead itemRenderer', async () => {
+    document.body.innerHTML = '<mp-typeahead debounce-ms="0"></mp-typeahead>';
+    const el = document.querySelector('mp-typeahead') as unknown as HTMLElement & Record<string, unknown>;
+    el.provider = inMemoryTypeaheadProvider([{ text: 'Fruit' }, { text: 'Frog' }]);
+    el.itemRenderer = () => consumerNode('row');
+    await settle(el);
+    const input = el.querySelector('input') as HTMLInputElement;
+    input.value = 'fr';
+    input.dispatchEvent(new Event('input', { bubbles: true }));
+    await new Promise((r) => setTimeout(r, 0));
+    await settle(el);
+
+    const mounted = el.querySelectorAll(`.${CONSUMER_CLASS}`);
+    expect(mounted.length, 'itemRenderer output never reached the DOM').toBeGreaterThan(0);
+    for (const node of mounted) expectUntouched(node as HTMLElement, 'typeahead itemRenderer', selectors);
   });
 });
