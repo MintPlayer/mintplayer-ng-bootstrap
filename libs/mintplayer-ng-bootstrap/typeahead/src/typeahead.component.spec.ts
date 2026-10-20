@@ -50,7 +50,7 @@ class HarnessComponent {
   readonly disabled = signal(false);
   readonly withTemplate = signal(false);
   readonly items: Item[] = [];
-  value = '';
+  readonly value = signal('');
   selected: Item[] = [];
   submitted: string[] = [];
 }
@@ -149,12 +149,12 @@ describe('BsTypeaheadComponent (headless core front)', () => {
   it('is a form control whose value is the text, free text included; a pick writes the item text', async () => {
     type('Nieuwe straat');
     await fixture.whenStable();
-    expect(host.value).toBe('Nieuwe straat');
+    expect(host.value()).toBe('Nieuwe straat');
     answers[0].resolve([{ text: 'Kerkstraat' }]);
     await flush(fixture);
     options()[0].click();
     await fixture.whenStable();
-    expect(host.value).toBe('Kerkstraat');
+    expect(host.value()).toBe('Kerkstraat');
     expect(host.selected).toEqual([{ text: 'Kerkstraat' }]);
     expect(typeahead().selectedItem()).toEqual({ text: 'Kerkstraat' });
 

@@ -60,7 +60,7 @@
   keeps the item in <code>selectedItem()</code> until the text changes again.
 </p>
 
-<form class="row g-2 align-items-end" (ngSubmit)="submitted.set(street)">
+<form class="row g-2 align-items-end" (ngSubmit)="submitted.set(street())">
   <div class="col-auto">
     <label for="street-input" class="form-label">Street</label>
     <bs-typeahead id="street-input" name="street" [(ngModel)]="street" [provider]="instant" [debounceMs]="0"></bs-typeahead>
@@ -69,7 +69,7 @@
     <button type="submit" class="btn btn-primary">Submit</button>
   </div>
 </form>
-<p class="mt-2 small text-secondary">Model: {{ street || '—' }}</p>
+<p class="mt-2 small text-secondary">Model: {{ street() || '—' }}</p>
 
 <bs-code-snippet [code]="snippetFormsHtml" [language]="'html'"></bs-code-snippet>
 

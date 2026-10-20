@@ -47,7 +47,7 @@ export class TypeaheadComponent {
   readonly aborted = signal(0);
   readonly selected = signal<Artist | null>(null);
   readonly submitted = signal<string | null>(null);
-  street = '';
+  readonly street = signal('');
 
   /** Splits a label around the matched term for the highlighted row template. */
   parts(text: string, term: string): { before: string; match: string; after: string } {
