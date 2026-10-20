@@ -85,7 +85,7 @@ Each component milestone is the same checklist, done for every component in the 
 - [x] pagination (+ `hrefFor`)
 - [x] shell
 - [x] accordion (+ tab)
-- [ ] tab-control (+ page); delete `isServerSide`
+- [x] tab-control (+ page); delete `isServerSide` — the Lit `mp-tab-control` stays as-is until the dock converts (M6)
 - [ ] dropdown-menu
 - [ ] sparkline (+ Vue front)
 - [ ] Delete the shell, accordion and dropdown-menu chrome generators, injectors and targets (navbar and carousel follow in M4)

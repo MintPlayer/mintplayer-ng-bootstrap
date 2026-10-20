@@ -8,4 +8,5 @@ ssrSuite(test, expect, [
   { path: '/basic/forms/phone-input', expect: ['div.input-group[data-mps=input-group]'] },
   { path: '/enterprise/shell', expect: ['div.shell[data-mps=shell] > input.shell-toggle-wide[checked]', 'div.shell .sidebar-root > aside.sidebar > nav'] },
   { path: '/enterprise/accordion', expect: ['div.accordion[data-mps=accordion] > details.accordion-item > summary.accordion-button[aria-controls]', 'div.accordion > details.accordion-item > div.accordion-content[role=region]'] },
+  { path: '/basic/tab-control', expect: ['div.tab-control[data-mps=tab-control] > input.tab-radio[type=radio][checked][aria-controls]', 'div.tab-control > .tsc > ul.nav-tabs > li.nav-item > label.nav-link[for]', 'div.tab-control > .tab-content > .tab-pane[role=region]'] },
 ]);

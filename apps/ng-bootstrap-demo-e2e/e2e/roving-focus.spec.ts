@@ -4,8 +4,8 @@ import { rovingFocusSuite } from '../../../tools/e2e-shared/roving-focus-suites'
 rovingFocusSuite(test, expect, {
   name: 'tab-control',
   path: '/basic/containers/tab-control',
-  container: (page) => page.locator('mp-tab-control').first(),
-  items: (page) => page.locator('mp-tab-control').first().locator('[role="tab"]'),
+  container: (page) => page.locator('.tab-control[data-mps="tab-control"]').first(),
+  items: (page) => page.locator('.tab-control[data-mps="tab-control"]').first().locator('[role="tab"]'),
   forwardKey: 'ArrowRight',
 });
 

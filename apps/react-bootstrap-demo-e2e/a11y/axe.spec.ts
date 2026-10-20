@@ -34,7 +34,7 @@ axeAuditSuite(test, expect, [
   {
     path: '/basic/tab-control',
     interact: async (page) => {
-      await page.locator('mp-tab-control').first().locator('[role="tab"]').nth(1).click();
+      await page.locator('.tab-control[data-mps="tab-control"]').first().locator('[role="tab"]').nth(1).click();
     },
   },
   { path: '/basic/toggle-button' },

@@ -7,7 +7,7 @@ import {
   connectAccordion,
   type AccordionTabToggle,
 } from '@mintplayer/ui-core/accordion';
-import { cloneVNode, computed, Fragment, getCurrentInstance, provide, useSlots, useTemplateRef, type VNode } from 'vue';
+import { cloneVNode, computed, Fragment, provide, useId, useSlots, useTemplateRef, type VNode } from 'vue';
 import BsAccordionItem from './BsAccordionItem.vue';
 import { ACCORDION_CONTEXT } from './accordion-context';
 
@@ -27,7 +27,8 @@ const emit = defineEmits<{ tabToggle: [change: AccordionTabToggle] }>();
 
 installLightStyles(ACCORDION_SCOPE, accordionScopedStyles);
 
-const id = `bs-accordion-${getCurrentInstance()?.uid ?? Math.random().toString(36).slice(2)}`;
+// useId, not the instance uid: it matches between the server render and hydration.
+const id = `bs-accordion-${useId()}`;
 const options = computed(() => ({ id, multi: props.multi, highlightActiveTab: props.highlightActiveTab }));
 const root = useTemplateRef<HTMLDivElement>('root');
 provide(ACCORDION_CONTEXT, { options, root });

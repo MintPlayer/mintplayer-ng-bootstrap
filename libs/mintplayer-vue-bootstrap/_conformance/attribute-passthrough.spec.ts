@@ -69,6 +69,8 @@ describe('Vue wrapper attribute passthrough — the invariant, statically', () =
       '../pagination/src/BsPagination.vue',
       '../radio-group/src/BsRadioGroup.vue',
       '../shell/src/BsShell.vue',
+      '../tab-control/src/BsTabControl.vue',
+      '../tab-control/src/BsTabPage.vue',
       '../typeahead/src/BsTypeahead.vue',
     ];
     const offenders = Object.entries(SFC_SOURCES)
@@ -129,7 +131,9 @@ const TARGETS: Record<string, string> = {
   BsShell: 'div.shell',
   BsSignaturePad: 'mp-signature-pad',
   BsSplitter: 'mp-splitter',
-  BsTabControl: 'mp-tab-control',
+  BsTabControl: 'div.tab-control',
+  // A marker that renders nothing alone: mounted in BsTabControl (COMPOSED).
+  BsTabPage: 'div.tab-pane',
   BsThemeToggle: 'mp-theme-toggle',
   BsTileManager: 'mp-tile-manager',
   BsTimeline: 'mp-timeline',
@@ -151,6 +155,13 @@ const TARGETS: Record<string, string> = {
 const slots = { default: () => h('span', { class: 'slot-content' }, 'content') };
 
 const PROBE = { 'aria-label': 'probe-name', 'data-probe': 'x', id: 'probe-id' };
+
+/** Marker SFCs that render nothing alone: mounted inside their parent, with the probe on the marker. */
+const COMPOSED: Record<string, () => Component> = {
+  BsTabPage: () => ({
+    render: () => h(SFC_COMPONENTS['BsTabControl'], null, { default: () => [h(SFC_COMPONENTS['BsTabPage'], PROBE, slots)] }),
+  }),
+};
 
 const CASES = Object.entries(TARGETS).map(([name, target]) => ({ name, target }));
 
@@ -177,7 +188,9 @@ describe('Vue wrapper attribute passthrough — every SFC, at runtime', () => {
   });
 
   it.each(CASES)('$name forwards consumer attributes to $target', ({ name, target }) => {
-    const wrapper = mountWrapper(SFC_COMPONENTS[name], { attrs: PROBE, slots });
+    const wrapper = COMPOSED[name]
+      ? mountWrapper(COMPOSED[name]())
+      : mountWrapper(SFC_COMPONENTS[name], { attrs: PROBE, slots });
     const host: HTMLElement = (wrapper.element as Node).parentElement ?? document.body;
     const el = host.querySelector<HTMLElement>(target);
 
