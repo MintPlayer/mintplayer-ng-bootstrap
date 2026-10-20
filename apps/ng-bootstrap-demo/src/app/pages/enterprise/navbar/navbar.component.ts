@@ -5,11 +5,11 @@ import {
   BsNavbarComponent,
   BsNavbarNavComponent,
   BsNavbarItemComponent,
-  BsNavbarBrandComponent,
+  BsNavbarBrandDirective,
   BsNavbarDropdownComponent,
   BsNavbarDropdownLabelDirective,
 } from '@mintplayer/ng-bootstrap/navbar';
-import type { NavbarExpandedChangeEventDetail } from '@mintplayer/web-components/navbar';
+import type { NavbarExpandedChangeEventDetail } from '@mintplayer/ui-core/navbar';
 import { dedent } from 'ts-dedent';
 
 @Component({
@@ -20,7 +20,7 @@ import { dedent } from 'ts-dedent';
     BsNavbarComponent,
     BsNavbarNavComponent,
     BsNavbarItemComponent,
-    BsNavbarBrandComponent,
+    BsNavbarBrandDirective,
     BsNavbarDropdownComponent,
     BsNavbarDropdownLabelDirective,
   ],
@@ -37,9 +37,7 @@ export class NavbarComponent {
 
   protected readonly snippetHtml = dedent`
     <bs-navbar [breakpoint]="'lg'" [color]="'body-tertiary'" aria-label="Main navigation" (expandedchange)="onExpandedchange($event)">
-      <bs-navbar-brand>
-        <a routerLink="/">MyApp</a>
-      </bs-navbar-brand>
+        <a *bsNavbarBrand routerLink="/">MyApp</a>
 
       <bs-navbar-nav>
         <bs-navbar-item [active]="true">
@@ -72,11 +70,11 @@ export class NavbarComponent {
       BsNavbarComponent,
       BsNavbarNavComponent,
       BsNavbarItemComponent,
-      BsNavbarBrandComponent,
+      BsNavbarBrandDirective,
       BsNavbarDropdownComponent,
       BsNavbarDropdownLabelDirective,
     } from '@mintplayer/ng-bootstrap/navbar';
-    import type { NavbarExpandedChangeEventDetail } from '@mintplayer/web-components/navbar';
+    import type { NavbarExpandedChangeEventDetail } from '@mintplayer/ui-core/navbar';
 
     @Component({
       selector: 'my-navbar-demo',
@@ -86,7 +84,7 @@ export class NavbarComponent {
         BsNavbarComponent,
         BsNavbarNavComponent,
         BsNavbarItemComponent,
-        BsNavbarBrandComponent,
+        BsNavbarBrandDirective,
         BsNavbarDropdownComponent,
         BsNavbarDropdownLabelDirective,
       ],

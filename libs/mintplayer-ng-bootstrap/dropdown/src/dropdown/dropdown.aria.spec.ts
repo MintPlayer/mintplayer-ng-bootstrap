@@ -8,9 +8,6 @@ import { BsDropdownItemDirective, BsDropdownMenuComponent } from '@mintplayer/ng
 import { BsDropdownDirective } from './dropdown.directive';
 import { BsDropdownMenuDirective } from '../dropdown-menu/dropdown-menu.directive';
 import { BsDropdownToggleDirective } from '../dropdown-toggle/dropdown-toggle.directive';
-// Register <mp-dropdown-menu> so the wrapper's projected <li>s get their WC-driven
-// roles (role=menuitem/option, aria-selected) synchronously in the test.
-import '@mintplayer/web-components/dropdown-menu';
 
 @Component({
   selector: 'bs-dropdown-aria-test',
@@ -52,7 +49,7 @@ describe('Dropdown ARIA wiring', () => {
     fixture.detectChanges();
   });
 
-  // Let the projected <li>s render and the WC (mp-dropdown-menu) sync item roles.
+  // Let the projected <li>s render and the menu attachment sync item roles.
   const open = async () => {
     host.isOpen.set(true);
     fixture.detectChanges();
@@ -65,9 +62,9 @@ describe('Dropdown ARIA wiring', () => {
     fixture.nativeElement.querySelector<HTMLButtonElement>('button[bsDropdownToggle]')!;
   const queryMenu = () =>
     // The consumer's [attr.role]/[attr.id] land on <bs-dropdown-menu>, but
-    // BsForwardAriaDirective MOVES both onto the <mp-dropdown-menu> inside
-    // (duplicated ids break IDREFs); the custom element is the ARIA popup.
-    overlayContainerEl.querySelector<HTMLElement>('mp-dropdown-menu');
+    // BsForwardAriaDirective MOVES both onto the <ul> inside
+    // (duplicated ids break IDREFs); the list is the ARIA popup.
+    overlayContainerEl.querySelector<HTMLElement>('ul.dropdown-menu');
   const queryItems = () =>
     Array.from(overlayContainerEl.querySelectorAll<HTMLElement>('li[bsDropdownItem]'));
 

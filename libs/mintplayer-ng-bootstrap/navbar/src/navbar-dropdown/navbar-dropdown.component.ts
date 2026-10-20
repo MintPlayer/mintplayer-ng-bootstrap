@@ -1,18 +1,16 @@
 import { NgTemplateOutlet } from '@angular/common';
-import { ChangeDetectionStrategy, Component, contentChild, CUSTOM_ELEMENTS_SCHEMA, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, contentChild, inject, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { RouterLinkActive } from '@angular/router';
-import { BS_DROPDOWN_MENU_CONTEXT, BsDropdownMenuComponent } from '@mintplayer/ng-bootstrap/dropdown-menu';
+import { BS_DROPDOWN_MENU_CONTEXT } from '@mintplayer/ng-bootstrap/dropdown-menu';
+import { MpPropsDirective } from '@mintplayer/ng-bootstrap/machine';
+import { connectNavbarContents, connectNavbarDropdown } from '@mintplayer/ui-core/navbar';
 import { BsNavbarDropdownLabelDirective } from './navbar-dropdown-label.directive';
-import { BsForwardAriaDirective } from '@mintplayer/ng-bootstrap/a11y';
+
+const contents = connectNavbarContents();
 
 /**
- * `<bs-navbar-dropdown>` — Angular wrapper around `<mp-navbar-dropdown>`.
- *
- * The trigger content is the `*bsNavbarDropdownLabel` template — any HTML
- * (matches the React/Vue wrappers, which take the WC's `label` slot directly).
- * The dropdown panel (`<bs-dropdown-menu>`) is rendered internally — author
- * the items directly between the tags, uniformly with the rest of the navbar:
+ * `<bs-navbar-dropdown>` — a navbar dropdown, or a submenu when nested.
  *
  *     <bs-navbar-dropdown>
  *       <span *bsNavbarDropdownLabel>Basic</span>
@@ -20,41 +18,49 @@ import { BsForwardAriaDirective } from '@mintplayer/ng-bootstrap/a11y';
  *       <bs-navbar-dropdown>…</bs-navbar-dropdown>   <!-- submenu -->
  *     </bs-navbar-dropdown>
  *
- * `BS_DROPDOWN_MENU_CONTEXT` is provided here (element injectors follow the
- * consumer template's nesting, not the projection site — the internally
- * rendered menu is invisible to projected children's injectors), so nested
- * `<bs-navbar-item>`s render their `.dropdown-item` shape.
+ * Renders a native `<details>`: the `*bsNavbarDropdownLabel` template is the
+ * `<summary>`, the items are its `.dropdown-menu` panel. It opens and closes
+ * with JavaScript off; the navbar's attachment adds the arrow keys, Escape and
+ * outside-click closing. Dropdowns at one depth share a `name`, so opening one
+ * closes its siblings. This is disclosure navigation, not an ARIA menu: every
+ * link stays a link in the tab order.
  *
- * **Active-route trigger highlighting:** a `RouterLinkActive` host directive
- * collects the projected descendant `routerLink`s; when any is active
- * (non-exact — the whole subtree counts, like the legacy `[bsNavbarTrigger]`
- * prefix match) the WC gets its `active` attribute, which recolors the
- * shadow-rendered trigger (primary background for submenu triggers). Nested
- * dropdowns each report their own subtree, so the full trigger chain of the
- * active route highlights. Renders server-side, so it works with JS off.
+ * The host is taken out of the layout, so the `<details>` is the flex item.
+ * `BS_DROPDOWN_MENU_CONTEXT` is provided here, so nested `<bs-navbar-item>`s
+ * render their `.dropdown-item` shape.
  *
- * Reveal/positioning and the no-JS `:focus-within` fallback all live in the WC.
+ * A `RouterLinkActive` host directive collects the projected descendant
+ * `routerLink`s; while any is active the trigger is highlighted, so the whole
+ * trigger chain of the active route lights up, server-side too.
  */
 @Component({
   selector: 'bs-navbar-dropdown',
   templateUrl: './navbar-dropdown.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  schemas: [CUSTOM_ELEMENTS_SCHEMA],
-  imports: [BsForwardAriaDirective, NgTemplateOutlet, BsDropdownMenuComponent],
+  imports: [NgTemplateOutlet, MpPropsDirective],
   providers: [{ provide: BS_DROPDOWN_MENU_CONTEXT, useValue: true }],
   hostDirectives: [RouterLinkActive],
+  host: {
+    '[class]': 'contentsClass',
+    '[attr.data-mps]': 'contentsScope',
+  },
 })
 export class BsNavbarDropdownComponent {
   protected readonly label = contentChild.required(BsNavbarDropdownLabelDirective);
 
-  /** A projected descendant link's route is active → highlight the trigger. */
-  protected readonly routeActive = signal(false);
+  /** 0 in a nav group, one more per enclosing dropdown. */
+  readonly depth: number = (inject(BsNavbarDropdownComponent, { optional: true, skipSelf: true })?.depth ?? -1) + 1;
+
+  /** A projected descendant link's route is active. */
+  private readonly routeActive = signal(false);
+
+  protected readonly contentsClass = contents['class'];
+  protected readonly contentsScope = contents['data-mps'];
+  protected readonly view = computed(() => connectNavbarDropdown({ depth: this.depth, active: this.routeActive() }));
 
   constructor() {
     const rla = inject(RouterLinkActive, { self: true });
-    // No class on this host — the state is bridged to the WC's `active`
-    // attribute instead (the trigger lives in the WC's shadow, out of reach
-    // of any class-based styling from here).
+    // No class on this host: the state goes on the summary through the bag.
     rla.routerLinkActive = [];
     rla.isActiveChange.pipe(takeUntilDestroyed()).subscribe((active) => this.routeActive.set(active));
   }

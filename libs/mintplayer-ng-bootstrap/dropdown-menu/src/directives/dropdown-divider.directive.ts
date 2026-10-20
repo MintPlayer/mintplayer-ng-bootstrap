@@ -2,8 +2,8 @@ import { Directive } from '@angular/core';
 
 /**
  * `[bsDropdownDivider]` — marks an element (typically an `<li>`) as a Bootstrap
- * `.dropdown-divider` inside a `<bs-dropdown-menu>`. Styled by the menu shadow's
- * `::slotted(.dropdown-divider)` rule. Usage: `<li bsDropdownDivider></li>`.
+ * `.dropdown-divider` inside a `<bs-dropdown-menu>`. Styled by Bootstrap.
+ * Usage: `<li bsDropdownDivider></li>`.
  */
 @Directive({
   selector: '[bsDropdownDivider]',
