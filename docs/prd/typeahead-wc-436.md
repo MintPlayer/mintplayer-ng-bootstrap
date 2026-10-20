@@ -1,7 +1,7 @@
 # PRD — Typeahead as the pilot of the headless-core architecture: debounce, cancellable provider, item renderer, forms binding, across Angular, React, Vue and a web component (#436)
 
 Issue: [#436](https://github.com/MintPlayer/mintplayer-ng-bootstrap/issues/436)
-Status: **Proposed, decisions locked by grilling** (2026-10-19). Spikes S1–S5 not yet run; each decides a D below. Plan: [typeahead-wc-436-plan.md](./typeahead-wc-436-plan.md)
+Status: **Implemented** (2026-10-20) on `feat/typeahead-core-436`, draft PR #438; verification sweep pending. S1 and S2 PASS; S3–S5 folded into the permanent specs and e2e (see §16). Plan: [typeahead-wc-436-plan.md](./typeahead-wc-436-plan.md)
 Catalog migration: [#437](https://github.com/MintPlayer/mintplayer-ng-bootstrap/issues/437) — **out of scope for this PR**; this PR is its pilot and must produce the numbers #437 is sized with.
 Everything in scope lands in **one PR**.
 
@@ -237,12 +237,42 @@ Bumped by hand in the PR; published by `publish-master.yml`. Breaking changes sh
 
 #437 (catalog migration). Nothing else; everything in scope ships in one PR, Spark follows the publish.
 
-## 15. Pilot numbers for #437 (filled at the end)
+## 15. Pilot numbers for #437
+
+Non-blank, non-comment lines, measured on the branch (2026-10-20). For scale, the old Angular-only component
+was 105 lines of TypeScript.
 
 | Measure | Core | Angular | React | Vue | Lit |
 |---|---|---|---|---|---|
-| Template LOC | — | | | | |
-| Bridge/front LOC | | | | | |
-| Spec LOC | | | | | |
-| SSR result (no-JS) | — | | n/a | n/a | |
-| Days | | | | | |
+| Component (template + logic) | 407 (machine, connect, types, in-memory provider) + 82 SCSS | 193 TS + 25 HTML | 159 | 140 | 259 |
+| Shared bridge (one-time per lib) | 141 (`store` + `async`) | 51 | 27 | 15 | 59 |
+| Specs | 299 | 317 (unit, ARIA, SSR) | 136 | 121 | 152 |
+| SSR result, JS off | — | real named combobox input + sheet in `<head>` | not server-rendered here | not server-rendered here | emitted empty (light tier) |
+
+**Reading for #437.** The per-front component is 140–260 lines once the core exists; the core plus its specs
+is the larger, one-time share (about 700 lines for the typeahead). The bridges are paid once per library and
+are now done. The cost that will grow with bigger components is the template written four times: the
+typeahead's markup is small, while the datatable, scheduler and dock are 3,800–4,100-line elements whose
+template is most of the code. Size #437 by template weight, not by this pilot's ratio.
+
+## 16. As built (deviations from the plan)
+
+- **`OverlayController` not lifted.** It depends on the lit-bound `a11y` entry (dismiss stack, focus trap);
+  moving both is #437-sized. The listbox is absolutely positioned under a relative root, as Bootstrap's own
+  dropdowns are. Consequence: the list does not flip upward near the viewport bottom.
+- **Scoping conformance split.** The registry moved to `ui-core/scoped-styles`; the WC-source-scanning specs
+  stay in the WC lib, and ui-core has its own single-writer and no-leak specs.
+- **The Angular listbox is server-rendered, hidden** (D15 said "not rendered"), so server and client DOM are
+  identical and hydration has nothing to reconcile.
+- **Consumer `role` is never forwarded** in any front (the input is a combobox by contract). `bs-typeahead` has
+  its own forwarding spec instead of a row in the Angular `aria-passthrough` registry (which assumes an
+  `<mp-*>` target); React's guard gained an explicit `fixedRole`.
+- **`[mpProps]` lives in `@mintplayer/ng-bootstrap/machine`** with `machineSignal` and `useScopedStyles`,
+  not in a `scoped-styles` entry.
+- **The `*bsTypeaheadItem` microsyntax is `let item; let term = term; of: items`.** `of:` is an optional type
+  carrier so the template is typed; Angular cannot infer the item type from a component's generic.
+- **Spikes S3–S5** became permanent tests rather than throwaway evidence: S3 (identical DOM/ARIA) is covered by
+  the per-front ARIA specs plus one shared Playwright suite run against all three demo apps; S4 by the Angular
+  SSR spec and the `javaScriptEnabled:false` e2e; S5 (Observable unsubscribe) by the Angular unit spec.
+- **The datatable `fetch` abort uses one controller per page generation**, not the `SupersedingRequest`
+  runner: window and child fetches run concurrently by design, and only invalidation should abort them.

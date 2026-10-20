@@ -7,6 +7,32 @@ package version aligns its major with the supported Angular major.
 
 ### Breaking
 
+- **Typeahead rebuilt on a headless core (issue #436).** `@mintplayer/ng-bootstrap` 22.26.0,
+  `@mintplayer/web-components` 2.21.0, `@mintplayer/react-bootstrap` 19.25.0, `@mintplayer/vue-bootstrap` 3.26.0,
+  new `@mintplayer/ui-core` 1.0.0 (a peer of the three framework libraries). Migrating `bs-typeahead`:
+
+  | Was | Now |
+  |---|---|
+  | `[suggestions]` + `(provideSuggestions)` | `[provider]="(term, { signal }) => Promise \| Observable"`, or `inMemoryTypeaheadProvider(items)` |
+  | `[(searchterm)]` | `[(value)]`, `[(ngModel)]`, `formControlName`; `selectedItem()` holds the pick |
+  | `(suggestionSelected)` | `(select)` |
+  | `[(isOpen)]` | `(opened)` / `(closed)` |
+  | `[isLoadingText]`, `[noSuggestionsText]`, `[resultsAnnouncementSingular/Plural]` | `[loadingLabel]`, `[noResultsLabel]`, `[resultsLabel]` |
+  | a request per keystroke | `[debounceMs]` (200), `[minLength]` (1) |
+  | `{{ suggestion.text }}` only | `*bsTypeaheadItem="let item; let term = term"`, default = `itemText(item)` |
+
+  A superseded request is aborted through `request.signal` (an Observable is unsubscribed) and its late answer is
+  never shown. With JavaScript disabled, Angular SSR now renders a real, named combobox input.
+- **Removed with no remaining consumer:** `input[bsCombobox]` (`@mintplayer/ng-bootstrap/dropdown`), the
+  `[bsDropdown]` `popupRole` input (a toggle's `aria-haspopup` is always `menu`), the `[bsRovingFocus]`
+  `mode="activedescendant"` and `activeDescendantId()`, and `mp-dropdown-menu`'s `mode="listbox"` with its
+  `DropdownMode` type, Angular `menuMode` input and React/Vue `mode` prop. `mp-dropdown-menu` is a menu only.
+- **Datatable `fetch`:** the request gains `signal: AbortSignal`, aborted when the table invalidates its pages
+  (sort, page size, a new `fetch`, `reload()`). Hand it to `fetch`, or unsubscribe an `HttpClient` call on abort.
+  The filter panel's search quiet time is 200 ms (was 250), shared with the typeahead and tree-select.
+- **`@mintplayer/web-components/light-dom`** now re-exports the style registry from
+  `@mintplayer/ui-core/scoped-styles`; no consumer change.
+
 - **Card: no more global `.card-*` / `.text-bg-*` rules (issue #432).** `@mintplayer/web-components` 2.20.0.
   - `ensureCardStylesInjected` is removed from `@mintplayer/web-components/card`. Importing the element installs
     its stylesheet; no call is needed.
@@ -138,6 +164,15 @@ package version aligns its major with the supported Angular major.
     full-width table.
 
 ### Added
+
+- **Typeahead in every framework, from one headless core (issue #436).** `@mintplayer/ui-core/typeahead`
+  (`TypeaheadMachine`, `connect()`, `inMemoryTypeaheadProvider`) drives `bs-typeahead` (Angular), `BsTypeahead`
+  (React: `renderItem`, controlled `value` + `onValueChange`), `BsTypeahead.vue` (`#item` slot, `v-model`) and
+  the form-associated `<mp-typeahead>` (`itemRenderer`, `name`). All four share debounce (`debounceMs`, 200),
+  `minLength`, an abortable `provider`, a custom row with the current term, forms binding, and the WAI-ARIA
+  combobox pattern with `aria-activedescendant`.
+- **`@mintplayer/ui-core` 1.0.0**: the headless foundation (`store`, `async`, `scoped-styles`, `typeahead`) that
+  issue #437 will move the rest of the catalog onto.
 
 - **Datatable column resizing, per column and by touch (issue #426).**
   - **`DatatableColumnDef.resizable`** / Angular **`bsDatatableColumnResizable`**: removes or adds one column's
