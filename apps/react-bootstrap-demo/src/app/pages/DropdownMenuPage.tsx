@@ -13,7 +13,7 @@ const MENU_SOURCE = `const [selected, setSelected] = useState<string>('—');
 
 <BsDropdownMenu
   className="demo-dropdown-menu"
-  onSelect={(e) => setSelected(String(e.detail.value ?? '—'))}
+  onSelect={({ value }) => setSelected(String(value ?? '—'))}
 >
   <BsDropdownHeader>Actions</BsDropdownHeader>
   <BsDropdownItem value="new">New file</BsDropdownItem>
@@ -30,20 +30,19 @@ export function DropdownMenuPage() {
     <div className="demo-page">
       <h1>Dropdown menu</h1>
       <p className="text-body-secondary">
-        A Bootstrap <code>.dropdown-menu</code> rendered inside its shadow root.
-        Slot <code>&lt;BsDropdownItem&gt;</code> / <code>&lt;BsDropdownDivider&gt;</code> /{' '}
-        <code>&lt;BsDropdownHeader&gt;</code> children. In <code>menu</code> mode
-        (default) it provides roving-tabindex keyboard navigation; activating an
-        enabled item fires <code>onSelect</code> with the item's <code>value</code>.
+        A Bootstrap <code>.dropdown-menu</code> list rendered from the headless{' '}
+        <code>@mintplayer/ui-core/dropdown-menu</code> core. Put{' '}
+        <code>&lt;BsDropdownItem&gt;</code> / <code>&lt;BsDropdownDivider&gt;</code> /{' '}
+        <code>&lt;BsDropdownHeader&gt;</code> children inside. Once hydrated it provides
+        roving-tabindex keyboard navigation; activating an enabled item fires{' '}
+        <code>onSelect</code> with the item's <code>value</code>.
       </p>
 
       <section data-demo="menu">
         <h2>Menu</h2>
         <BsDropdownMenu
           className="demo-dropdown-menu"
-          onSelect={(e: CustomEvent<DropdownSelectEventDetail>) =>
-            setSelected(String(e.detail.value ?? '—'))
-          }
+          onSelect={({ value }: DropdownSelectEventDetail) => setSelected(String(value ?? '—'))}
         >
           <BsDropdownHeader>Actions</BsDropdownHeader>
           <BsDropdownItem value="new">New file</BsDropdownItem>

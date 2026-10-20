@@ -1,32 +1,48 @@
 import * as React from 'react';
-import { createComponent } from '@lit/react';
-import { MpNavbarDropdown } from '@mintplayer/web-components/navbar';
+import { useContext } from 'react';
+import { connectNavbarDropdown } from '@mintplayer/ui-core/navbar';
+import { reactProps } from '../../machine/src/react-props';
+import { NavbarNestingContext } from './navbar-context';
 
-export interface BsNavbarDropdownProps extends React.HTMLAttributes<HTMLElement> {
-  /** Set when nesting the dropdown into a parent slot (e.g. `"end"`). */
-  slot?: string;
-  className?: string;
+export interface BsNavbarDropdownProps extends React.DetailsHTMLAttributes<HTMLDetailsElement> {
+  /** The trigger content — any node (give an icon-only label an `aria-label`). */
+  label: React.ReactNode;
+  /** Highlights the trigger, e.g. while a descendant link's route is active. */
+  active?: boolean;
+  /** `BsNavbarItem`s and nested `BsNavbarDropdown`s (submenus). */
   children?: React.ReactNode;
 }
 
 /**
- * React wrapper for `<mp-navbar-dropdown>` — a navbar entry that opens a
- * dropdown. Slot the trigger label with `slot="label"` and a `<BsDropdownMenu>`
- * as the default content (the panel). Nest one inside a `<BsDropdownItem>` to
- * make a submenu. Renders the custom element directly so children project
- * cleanly. Side-effect-registers the WC on import.
+ * `BsNavbarDropdown` — a navbar dropdown, or a submenu when nested.
  *
- *     <BsNavbarDropdown>
- *       <span slot="label">Products</span>
- *       <BsDropdownMenu>
- *         <BsDropdownItem><a href="/p1">Product 1</a></BsDropdownItem>
- *       </BsDropdownMenu>
+ *     <BsNavbarDropdown label="Products">
+ *       <BsNavbarItem><a href="/widgets">Widgets</a></BsNavbarItem>
+ *       <BsNavbarDropdown label="More">…</BsNavbarDropdown>
  *     </BsNavbarDropdown>
+ *
+ * A native `<details>`: the label is the `<summary>`, the items its
+ * `.dropdown-menu` panel, so it opens with JavaScript off. Dropdowns at one
+ * depth share a `name`, so opening one closes its siblings. Disclosure
+ * navigation, not an ARIA menu: every link stays a link in the tab order.
  */
-export const BsNavbarDropdown = createComponent({
-  react: React,
-  tagName: 'mp-navbar-dropdown',
-  elementClass: MpNavbarDropdown,
-}) as unknown as React.ForwardRefExoticComponent<
-  BsNavbarDropdownProps & React.RefAttributes<MpNavbarDropdown>
->;
+export const BsNavbarDropdown = React.forwardRef<HTMLDetailsElement, BsNavbarDropdownProps>(function BsNavbarDropdown(
+  { label, active, className, children, ...rest },
+  ref,
+) {
+  const depth = useContext(NavbarNestingContext).depth + 1;
+  const view = connectNavbarDropdown({ depth, active });
+  const { class: detailsClass, ...detailsBag } = view.details;
+  return (
+    <details
+      ref={ref}
+      {...reactProps(detailsBag)}
+      {...rest}
+      className={[String(detailsClass), className].filter(Boolean).join(' ')}>
+      <summary {...reactProps(view.summary)}>{label}</summary>
+      <div {...reactProps(view.panel)}>
+        <NavbarNestingContext.Provider value={{ depth }}>{children}</NavbarNestingContext.Provider>
+      </div>
+    </details>
+  );
+});

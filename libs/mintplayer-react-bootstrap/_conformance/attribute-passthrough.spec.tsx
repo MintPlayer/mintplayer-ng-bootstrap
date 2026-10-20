@@ -36,7 +36,7 @@ import {
 import { BsFileManager } from '@mintplayer/react-bootstrap/file-manager';
 import { BsInputGroup } from '@mintplayer/react-bootstrap/input-group';
 import { BsMultiRange } from '@mintplayer/react-bootstrap/multi-range';
-import { BsNavbar, BsNavbarBrand, BsNavbarDropdown, BsNavbarItem } from '@mintplayer/react-bootstrap/navbar';
+import { BsNavbar, BsNavbarDropdown, BsNavbarItem, BsNavbarNav } from '@mintplayer/react-bootstrap/navbar';
 import { BsOtpInput } from '@mintplayer/react-bootstrap/otp-input';
 import { BsPagination } from '@mintplayer/react-bootstrap/pagination';
 import { BsPhoneInput } from '@mintplayer/react-bootstrap/phone-input';
@@ -178,8 +178,8 @@ const CASES: Case[] = [
   bare('BsDatepicker', 'mp-datepicker', BsDatepicker),
   bare('BsDatetimePicker', 'mp-datetime-picker', BsDatetimePicker),
   bare('BsDockManager', 'mint-dock-manager', BsDockManager),
-  bare('BsDropdownMenu', 'mp-dropdown-menu', BsDropdownMenu),
-  /* Rendered outside a menu on purpose: inside one, `<mp-dropdown-menu>` assigns
+  bare('BsDropdownMenu', 'ul.dropdown-menu', BsDropdownMenu),
+  /* Rendered outside a menu on purpose: inside one, the hydrated menu assigns
      the item roles itself (`menuitem`, `separator`), which would overwrite the
      probe's `role` and test the menu instead of the wrapper's rest-spread. */
   bare('BsDropdownItem', 'li.dropdown-item', BsDropdownItem),
@@ -188,22 +188,18 @@ const CASES: Case[] = [
   bare('BsFileManager', 'mp-file-manager', BsFileManager),
   bare('BsInputGroup', 'div.input-group', BsInputGroup),
   bare('BsMultiRange', 'mp-multi-range', BsMultiRange),
-  bare('BsNavbar', 'mp-navbar', BsNavbar),
-  {
-    name: 'BsNavbarBrand',
-    target: 'mp-navbar-brand',
-    render: (p) => <BsNavbar><BsNavbarBrand {...p} /></BsNavbar>,
-  },
+  bare('BsNavbar', 'nav.navbar', BsNavbar),
   {
     name: 'BsNavbarDropdown',
-    target: 'mp-navbar-dropdown',
-    render: (p) => <BsNavbar><BsNavbarDropdown {...p}><span slot="label">Menu</span></BsNavbarDropdown></BsNavbar>,
+    target: 'details.dropdown',
+    render: (p) => <BsNavbar><BsNavbarNav><BsNavbarDropdown label="Menu" {...p} /></BsNavbarNav></BsNavbar>,
   },
   {
     name: 'BsNavbarItem',
-    target: 'mp-navbar-item',
-    render: (p) => <BsNavbar><BsNavbarItem {...p} /></BsNavbar>,
+    target: 'div.nav-item',
+    render: (p) => <BsNavbar><BsNavbarNav><BsNavbarItem {...p} /></BsNavbarNav></BsNavbar>,
   },
+  bare('BsNavbarNav', 'div.navbar-nav', BsNavbarNav),
   bare('BsOtpInput', 'mp-otp-input', BsOtpInput),
   bare('BsPagination', 'nav', BsPagination),
   bare('BsPhoneInput', 'mp-phone-input', BsPhoneInput),

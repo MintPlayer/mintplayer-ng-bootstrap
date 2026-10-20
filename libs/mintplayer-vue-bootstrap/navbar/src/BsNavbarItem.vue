@@ -1,34 +1,28 @@
 <script setup lang="ts">
-import '@mintplayer/web-components/navbar';
-import type { MpNavbarItem } from '@mintplayer/web-components/navbar';
-import { ref } from 'vue';
+import { connectNavbarItem } from '@mintplayer/ui-core/navbar';
+import { computed, inject } from 'vue';
+import { NAVBAR_DEPTH } from './navbar-context';
 
-defineOptions({ inheritAttrs: false });
+/**
+ * `BsNavbarItem` — the wrapper around one consumer link or button. A
+ * `.nav-item` in a `BsNavbarNav`, a `.dropdown-item` inside a
+ * `BsNavbarDropdown`:
+ *
+ *     <BsNavbarItem active><a href="/">Home</a></BsNavbarItem>
+ */
+const props = defineProps<{
+  /** Marks the link as the current page. */
+  active?: boolean;
+  /** Disables the entry. */
+  disabled?: boolean;
+}>();
 
-withDefaults(
-  defineProps<{
-    /** Marks the link as the current page (boolean attribute). */
-    active?: boolean;
-    /** Disables the link (boolean attribute). */
-    disabled?: boolean;
-  }>(),
-  {
-    active: false,
-    disabled: false,
-  },
+const depth = inject(NAVBAR_DEPTH, -1);
+const bag = computed(() =>
+  connectNavbarItem({ inMenu: depth >= 0, active: props.active, disabled: props.disabled }),
 );
-
-const el = ref<MpNavbarItem | null>(null);
 </script>
 
 <template>
-  <!-- Slot a light-DOM <a href> child; the WC styles it as a .nav-link. -->
-  <mp-navbar-item
-    ref="el"
-    v-bind="$attrs"
-    :active="active ? '' : undefined"
-    :disabled="disabled ? '' : undefined"
-  >
-    <slot />
-  </mp-navbar-item>
+  <div v-bind="bag"><slot /></div>
 </template>

@@ -1,6 +1,6 @@
 <script setup lang="ts">
-// Renders a plain <li class="dropdown-header">; the menu WC styles it via
-// `::slotted(.dropdown-header)`. The label is the slotted content.
+// Renders a plain <li class="dropdown-header">, styled by the menu's scoped
+// sheet. The label is the slot content.
 defineOptions({ inheritAttrs: false });
 </script>
 
