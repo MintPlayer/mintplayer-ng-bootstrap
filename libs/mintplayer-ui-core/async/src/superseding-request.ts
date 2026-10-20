@@ -44,7 +44,12 @@ export class SupersedingRequest {
   constructor(options: SupersedingRequestOptions = {}) {
     this.#debounceMs = Math.max(0, options.debounceMs ?? 0);
     this.#onError = options.onError;
-    this.#timers = options.now ?? { setTimeout, clearTimeout };
+    // Wrapped, not the bare globals: called as this.#timers.setTimeout, a browser's
+    // setTimeout throws "Illegal invocation" on the wrong receiver (Node and jsdom do not).
+    this.#timers = options.now ?? {
+      setTimeout: ((handler: () => void, ms?: number) => setTimeout(handler, ms)) as typeof setTimeout,
+      clearTimeout: (id) => clearTimeout(id),
+    };
   }
 
   get debounceMs(): number {

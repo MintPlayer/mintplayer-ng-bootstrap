@@ -1,5 +1,6 @@
-import { NgTemplateOutlet } from '@angular/common';
+import { isPlatformBrowser, NgTemplateOutlet } from '@angular/common';
 import {
+  afterNextRender,
   ChangeDetectionStrategy,
   Component,
   computed,
@@ -12,6 +13,7 @@ import {
   input,
   model,
   output,
+  PLATFORM_ID,
   signal,
   untracked,
   viewChild,
@@ -115,6 +117,7 @@ export class BsTypeaheadComponent<T = unknown> implements ControlValueAccessor {
   private onTouched: () => void = () => undefined;
 
   constructor() {
+    const host = inject(ElementRef).nativeElement as HTMLElement;
     useScopedStyles(TYPEAHEAD_SCOPE, typeaheadScopedStyles);
     this.machine = new TypeaheadMachine<T>({
       id: this.id,
@@ -167,6 +170,29 @@ export class BsTypeaheadComponent<T = unknown> implements ControlValueAccessor {
     effect(() => {
       const next = this.value();
       if (next !== untracked(() => this.machine.snapshot.term)) this.machine.setValue(next);
+    });
+
+    this.adoptPreHydrationText(host);
+  }
+
+  /**
+   * Text typed or pasted into the server-rendered input before hydration lives
+   * only in the DOM. Hydration's [value] binding would overwrite it with the
+   * empty term, and the replayed input event then reads the empty field, so it
+   * is lost. Read it here, while the host still holds the server DOM, and keep
+   * it as the term; once effects have configured the provider, re-enter it as a
+   * typed term so it notifies the model and queries.
+   */
+  private adoptPreHydrationText(host: HTMLElement): void {
+    if (!isPlatformBrowser(inject(PLATFORM_ID))) return;
+    const typed = host.querySelector('input')?.value ?? '';
+    if (!typed || typed === this.machine.snapshot.term) return;
+    this.machine.setValue(typed);
+    this.value.set(typed);
+    afterNextRender(() => {
+      if (this.machine.snapshot.term !== typed) return; // superseded by the consumer or the user
+      this.machine.setValue('');
+      this.machine.setTerm(typed);
     });
   }
 
