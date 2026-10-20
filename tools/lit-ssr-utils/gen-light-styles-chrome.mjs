@@ -42,6 +42,8 @@ export const LIGHT_TIER_COMPONENTS = [
   ['mp-query-condition', 'query-condition', 'query-builder', 'queryConditionLightStyles'],
   ['mp-query-group', 'query-group', 'query-builder', 'queryGroupLightStyles'],
   ['mp-query-subquery', 'query-subquery', 'query-builder', 'querySubqueryLightStyles'],
+  // A plain string sheet from @mintplayer/ui-core, re-exported by the element's entry (#436).
+  ['mp-typeahead', 'typeahead', 'typeahead', 'typeaheadScopedStyles'],
 ];
 
 /** The `<style>` tag for one component's sheet, or a reported failure. */

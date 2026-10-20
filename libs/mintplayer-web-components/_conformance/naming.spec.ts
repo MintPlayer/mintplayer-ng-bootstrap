@@ -8,6 +8,7 @@ import '@mintplayer/web-components/dropdown-menu';
 import '@mintplayer/web-components/datepicker';
 import '@mintplayer/web-components/timepicker';
 import '@mintplayer/web-components/tree-select';
+import '@mintplayer/web-components/typeahead';
 import '@mintplayer/web-components/timeline';
 import '@mintplayer/web-components/datatable';
 import '@mintplayer/web-components/otp-input';
@@ -72,6 +73,8 @@ const CASES: NamingCase[] = [
   { tag: 'mp-timepicker', target: 'input.form-control', defaultName: 'Selected time' },
   // Placeholder-less tree-select falls back to 'Search' for its combobox input.
   { tag: 'mp-tree-select', target: 'input.ts-search', defaultName: 'Search' },
+  // Headless-core front (#436): the combobox input is the role-bearing node.
+  { tag: 'mp-typeahead', target: 'input' },
   { tag: 'mp-timeline', target: '.timeline' },
   { tag: 'mp-datatable', target: 'table' },
   // Class is MintOtpInputElement, but the registered tag is mp-otp-input.

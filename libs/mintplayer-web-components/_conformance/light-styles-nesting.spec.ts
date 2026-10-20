@@ -5,6 +5,7 @@ import '@mintplayer/web-components/file-manager';
 import '@mintplayer/web-components/datatable';
 import '@mintplayer/web-components/treeview';
 import '@mintplayer/web-components/tree-select';
+import '@mintplayer/web-components/typeahead';
 
 /**
  * The nesting rule, discovered the hard way: a light-tier component's stylesheet
@@ -21,7 +22,7 @@ import '@mintplayer/web-components/tree-select';
  * one fails here instead of shipping silently unstyled.
  */
 
-const LIGHT_TIER_TAGS = ['mp-datatable', 'mp-treeview', 'mp-tree-select'] as const;
+const LIGHT_TIER_TAGS = ['mp-datatable', 'mp-treeview', 'mp-tree-select', 'mp-typeahead'] as const;
 
 /** Shadow-rooted hosts that render a light-tier component inside themselves. */
 const SHADOW_HOSTS_EMBEDDING_LIGHT_TIER = ['mp-file-manager'] as const;
@@ -35,7 +36,7 @@ describe('light-tier components nested inside a shadow root', () => {
     const keys = getLightStyleEntries().map((e) => e.key);
     // Importing the elements above must have installed their sheets; an empty
     // registry would make every assertion below vacuous.
-    expect(keys).toEqual(expect.arrayContaining(['datatable', 'treeview', 'tree-select']));
+    expect(keys).toEqual(expect.arrayContaining(['datatable', 'treeview', 'tree-select', 'typeahead']));
   });
 
   for (const tag of SHADOW_HOSTS_EMBEDDING_LIGHT_TIER) {

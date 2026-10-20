@@ -41,10 +41,11 @@ describe.each(SHEETS)('scoped sheet "$scope"', ({ scope, css }) => {
     expect(rules.length).toBeGreaterThan(0);
   });
 
-  it('every compound of every selector carries the scope attribute', () => {
+  it('every compound of every selector carries the scope attribute (or is the component\'s own tag)', () => {
+    const hostTag = `mp-${scope}`;
     const offenders = rules
       .flatMap((rule) => compoundsOf(rule.selectorText).map((compound) => ({ compound, selector: rule.selectorText })))
-      .filter(({ compound }) => !compound.includes(marker))
+      .filter(({ compound }) => !compound.includes(marker) && compound !== hostTag)
       .map(({ selector }) => selector);
     expect([...new Set(offenders)]).toEqual([]);
   });

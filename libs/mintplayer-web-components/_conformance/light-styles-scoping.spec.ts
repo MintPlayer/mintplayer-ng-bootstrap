@@ -13,6 +13,7 @@ import '@mintplayer/web-components/datatable';
 import '@mintplayer/web-components/query-builder';
 import '@mintplayer/web-components/treeview';
 import '@mintplayer/web-components/tree-select';
+import '@mintplayer/web-components/typeahead';
 
 /**
  * The no-leak guarantee for every stylesheet installed at DOCUMENT level —

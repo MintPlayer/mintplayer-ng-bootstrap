@@ -16,6 +16,13 @@
 @import "node_modules/bootstrap/scss/forms/form-control";
 @import "node_modules/bootstrap/scss/dropdown";
 
+// The web-component host (other fronts have their own host); anchored on the
+// tag, so it still matches nothing outside the component.
+/*! @mps-global */
+mp-typeahead {
+  display: block;
+}
+
 .mp-typeahead {
   position: relative;
   display: block;
