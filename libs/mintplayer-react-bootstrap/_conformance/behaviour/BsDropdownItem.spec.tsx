@@ -11,25 +11,25 @@ import {
 import { render, renderEl } from './harness';
 
 /**
- * The dropdown-menu item helpers have no web component of their own: they render
- * the light-DOM `<li>` that `<mp-dropdown-menu>` slots and styles. What they own
- * is the class contract the menu keys on (`.dropdown-item`, `.active`,
- * `.disabled`), `aria-disabled` for a disabled item, the opaque `value` the menu
- * carries in its `select` event (a JS property, since it may be any value), and
- * ref forwarding to the `<li>`.
+ * The dropdown-menu item helpers render the `<li>`s inside `BsDropdownMenu`'s
+ * `<ul>`. What they own is the class contract the menu keys on
+ * (`.dropdown-item`, `.active`, `.disabled`), `aria-disabled` for a disabled
+ * item, the opaque `value` the menu reports through `onSelect` (a JS property,
+ * since it may be any value), and ref forwarding to the `<li>`.
  */
 
-const inMenu = (node: React.ReactElement) => <BsDropdownMenu>{node}</BsDropdownMenu>;
+const seen: unknown[] = [];
+const inMenu = (node: React.ReactElement) => (
+  <BsDropdownMenu onSelect={({ value }) => seen.push(value)}>{node}</BsDropdownMenu>
+);
 
-/** Click the first item and return the `value` the menu's `select` event carried. */
+/** Click the first item and return the `value` the menu's `onSelect` reported. */
 async function selectedValue(host: HTMLElement): Promise<unknown> {
-  const menu = host.querySelector('mp-dropdown-menu')!;
-  const seen: unknown[] = [];
-  menu.addEventListener('select', (e) => seen.push((e as CustomEvent<{ value: unknown }>).detail.value));
+  seen.splice(0);
   await act(async () => {
     host.querySelector<HTMLElement>('li.dropdown-item')!.click();
   });
-  expect(seen, 'the menu emitted no select event').toHaveLength(1);
+  expect(seen, 'the menu reported no selection').toHaveLength(1);
   return seen[0];
 }
 

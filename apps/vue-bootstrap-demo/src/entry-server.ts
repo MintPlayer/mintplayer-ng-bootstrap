@@ -11,17 +11,9 @@
 import './install-ssr-dom-globals';
 
 import { renderToString } from 'vue/server-renderer';
-// Splices the dropdown elements' Declarative Shadow DOM into the HTML so the
-// menu chrome is server-rendered.
-import { injectMpDropdownDsd } from '@mintplayer/web-components/dropdown-menu/ssr';
-// Splices the navbar elements' Declarative Shadow DOM into the HTML so the bar
-// chrome is server-rendered alongside the dropdowns'.
-import { injectMpNavbarDsd } from '@mintplayer/web-components/navbar/ssr';
-// Same pattern for <mp-carousel>: count-variant DSD chrome so the radio-driven
-// no-JS carousel navigates with JS disabled. Composed with the other injectors.
+// Splices <mp-carousel>'s count-variant DSD chrome so the radio-driven
+// no-JS carousel navigates with JS disabled.
 import { injectMpCarouselDsd } from '@mintplayer/web-components/carousel/ssr';
-// Same pattern for <mp-accordion>: [multi] x [tab-count] DSD chrome variants,
-// so tabs open and close through the shadow input state machine with JS off.
 // Re-exported for server.mjs, which splices the theme attribute onto <html> and
 // cannot resolve the @mintplayer path alias itself (PRD dark-mode D8, FR-6).
 // Import-safe on the server: the store is only created on first browser use.
@@ -42,5 +34,5 @@ export async function render(url: string): Promise<string> {
   await router.push(url);
   await router.isReady();
   const html = await renderToString(app);
-  return injectMpCarouselDsd(injectMpNavbarDsd(injectMpDropdownDsd(html)));
+  return injectMpCarouselDsd(html);
 }

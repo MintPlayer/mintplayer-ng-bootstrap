@@ -31,8 +31,9 @@ const SOURCE = `<BsDropdownMenu @select="onSelect">
     <h1>Dropdown menu</h1>
     <p class="text-body-secondary">
       A keyboard-navigable menu of items, dividers and headers. Items carry an
-      opaque <code>value</code>; activating one fires <code>select</code> with the
-      item element and its value.
+      opaque <code>value</code>. The list is rendered from the headless
+      <code>@mintplayer/ui-core/dropdown-menu</code> core; once mounted, activating an
+      item fires <code>select</code> with the item element and its value.
     </p>
 
     <section>

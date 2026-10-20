@@ -1,31 +1,29 @@
 <script setup lang="ts">
 import {
   BsNavbar,
-  BsNavbarItem,
-  BsNavbarBrand,
   BsNavbarDropdown,
+  BsNavbarItem,
+  BsNavbarNav,
 } from '@mintplayer/vue-bootstrap/navbar';
-import { BsDropdownMenu, BsDropdownItem } from '@mintplayer/vue-bootstrap/dropdown-menu';
 import { BsCodeSnippet } from '@mintplayer/vue-bootstrap/code-snippet';
 
 const SOURCE = `<BsNavbar breakpoint="lg" color="body-tertiary" aria-label="Main">
-  <BsNavbarBrand slot="brand">
-    <a href="#">Acme Inc.</a>
-  </BsNavbarBrand>
+  <template #brand><a href="#">Acme Inc.</a></template>
 
-  <BsNavbarItem active><a href="#">Home</a></BsNavbarItem>
-  <BsNavbarItem><a href="#">Pricing</a></BsNavbarItem>
+  <BsNavbarNav>
+    <BsNavbarItem active><a href="#">Home</a></BsNavbarItem>
+    <BsNavbarItem><a href="#">Pricing</a></BsNavbarItem>
 
-  <BsNavbarDropdown>
-    <template #label>Products</template>
-    <BsDropdownMenu>
-      <BsDropdownItem><a href="#">Web components</a></BsDropdownItem>
-      <BsDropdownItem><a href="#">Angular wrappers</a></BsDropdownItem>
-      <BsDropdownItem><a href="#">Vue wrappers</a></BsDropdownItem>
-    </BsDropdownMenu>
-  </BsNavbarDropdown>
+    <BsNavbarDropdown label="Products">
+      <BsNavbarItem><a href="#">Web components</a></BsNavbarItem>
+      <BsNavbarItem><a href="#">Angular bootstrap</a></BsNavbarItem>
+      <BsNavbarItem><a href="#">Vue bootstrap</a></BsNavbarItem>
+    </BsNavbarDropdown>
+  </BsNavbarNav>
 
-  <BsNavbarItem slot="end"><a href="#">Sign in</a></BsNavbarItem>
+  <BsNavbarNav align="end">
+    <BsNavbarItem><a href="#">Sign in</a></BsNavbarItem>
+  </BsNavbarNav>
 </BsNavbar>`;
 </script>
 
@@ -33,38 +31,41 @@ const SOURCE = `<BsNavbar breakpoint="lg" color="body-tertiary" aria-label="Main
   <div class="demo-page">
     <h1>Navbar</h1>
     <p class="text-body-secondary">
-      A responsive navigation bar. Below its <code>breakpoint</code> the items
-      collapse behind a toggle; at/above it they lay out horizontally. The
-      brand goes in <code>slot="brand"</code>, right-aligned items in
-      <code>slot="end"</code>, everything else is left-aligned.
+      <code>BsNavbar</code> renders Bootstrap's navbar markup from the headless
+      <code>@mintplayer/ui-core/navbar</code> core, server-side included. Below its
+      <code>breakpoint</code> the entries collapse behind a checkbox toggle and every
+      dropdown is a native <code>&lt;details&gt;</code>, so the bar works with JavaScript
+      off. The brand goes in the <code>#brand</code> slot, entries are grouped in a
+      <code>BsNavbarNav</code> (<code>align="end"</code> pushes a group to the far edge),
+      and <code>BsNavbarItem</code> is every entry — a nav-link in a group, a menu item
+      inside a <code>BsNavbarDropdown</code>.
     </p>
 
     <section>
       <h2>Navbar</h2>
       <p class="text-body-secondary">
-        One item is <code>active</code>, a dropdown labelled <code>Products</code>
-        holds a <code>BsDropdownMenu</code>, and a right-aligned <code>Sign in</code>
-        item sits at the end. Resize below <code>lg</code> to see it collapse.
+        One item is <code>active</code>, a dropdown labelled <code>Products</code> holds
+        three links, and a right-aligned <code>Sign in</code> group sits at the end. Resize
+        below <code>lg</code> to see it collapse.
       </p>
 
       <BsNavbar breakpoint="lg" color="body-tertiary" aria-label="Main">
-        <BsNavbarBrand slot="brand">
-          <a href="#">Acme Inc.</a>
-        </BsNavbarBrand>
+        <template #brand><a href="#">Acme Inc.</a></template>
 
-        <BsNavbarItem active><a href="#">Home</a></BsNavbarItem>
-        <BsNavbarItem><a href="#">Pricing</a></BsNavbarItem>
+        <BsNavbarNav>
+          <BsNavbarItem active><a href="#">Home</a></BsNavbarItem>
+          <BsNavbarItem><a href="#">Pricing</a></BsNavbarItem>
 
-        <BsNavbarDropdown>
-          <template #label>Products</template>
-          <BsDropdownMenu>
-            <BsDropdownItem><a href="#">Web components</a></BsDropdownItem>
-            <BsDropdownItem><a href="#">Angular wrappers</a></BsDropdownItem>
-            <BsDropdownItem><a href="#">Vue wrappers</a></BsDropdownItem>
-          </BsDropdownMenu>
-        </BsNavbarDropdown>
+          <BsNavbarDropdown label="Products">
+            <BsNavbarItem><a href="#">Web components</a></BsNavbarItem>
+            <BsNavbarItem><a href="#">Angular bootstrap</a></BsNavbarItem>
+            <BsNavbarItem><a href="#">Vue bootstrap</a></BsNavbarItem>
+          </BsNavbarDropdown>
+        </BsNavbarNav>
 
-        <BsNavbarItem slot="end"><a href="#">Sign in</a></BsNavbarItem>
+        <BsNavbarNav align="end">
+          <BsNavbarItem><a href="#">Sign in</a></BsNavbarItem>
+        </BsNavbarNav>
       </BsNavbar>
 
       <BsCodeSnippet :code="SOURCE" language="html" />

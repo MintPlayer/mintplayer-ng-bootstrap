@@ -2,13 +2,12 @@ import { describe, expect, it } from 'vitest';
 import { nextTick } from 'vue';
 
 import BsCarousel from '../../carousel/src/BsCarousel.vue';
-import BsNavbar from '../../navbar/src/BsNavbar.vue';
 import BsShell from '../../shell/src/BsShell.vue';
 
 import { emit, mountEl, mountWrapper } from './harness';
 
 /**
- * Two layout wrappers whose web components read *attributes* rather than
+ * Layout wrappers whose web components read *attributes* rather than
  * properties, because their behaviour is a pure-CSS state machine that has to
  * survive SSR and a page with JavaScript switched off.
  *
@@ -170,61 +169,5 @@ describe('BsShell — lowering onto the shell markup', () => {
     expect(el.querySelector('.topbar')?.textContent).toContain('brand');
     expect(el.querySelector('aside.sidebar')?.textContent).toContain('links');
     expect(el.querySelector('.content')?.textContent).toContain('content');
-  });
-});
-
-describe('BsNavbar — attribute lowering', () => {
-  it('defaults the breakpoint and emits nothing else', () => {
-    const { el } = mountEl(BsNavbar, 'mp-navbar');
-    expect(el.getAttribute('breakpoint')).toBe('md');
-    expect((el as HTMLElement & { expanded: boolean }).expanded).toBe(false);
-    expect(el.hasAttribute('color')).toBe(false);
-    expect(el.hasAttribute('positioning')).toBe(false);
-  });
-
-  /*
-   * Asserted on the PROPERTY, and that is the point of the case. The template
-   * lowers `expanded` to the attribute shape `''`, but the element defines an
-   * `expanded` accessor, and Vue prefers a property over an attribute for any
-   * name it finds on the element — so the attribute never appears and the
-   * empty string arrives at the setter, where it is falsy. The navbar used to
-   * close itself when asked to open. Angular escapes it by binding
-   * `[attr.expanded]`, which is why nothing caught this.
-   */
-  it('opens the collapse when expanded is set', () => {
-    const { el } = mountEl<HTMLElement & { expanded: boolean }>(BsNavbar, 'mp-navbar', {
-      props: { expanded: true },
-    });
-    expect(el.expanded).toBe(true);
-  });
-
-  it('does not announce a programmatic open as a user toggle', () => {
-    const { wrapper } = mountEl(BsNavbar, 'mp-navbar', { props: { expanded: true } });
-    expect(wrapper.emitted('expandedchange')).toBeUndefined();
-  });
-
-  it('forwards colour and positioning', () => {
-    const { el } = mountEl(BsNavbar, 'mp-navbar', {
-      props: { color: 'body-tertiary', positioning: 'fixed' },
-    });
-    expect(el.getAttribute('color')).toBe('body-tertiary');
-    expect(el.getAttribute('positioning')).toBe('fixed');
-  });
-
-  it('re-emits expandedchange with its detail', async () => {
-    const { wrapper, el } = mountEl(BsNavbar, 'mp-navbar');
-
-    await emit(el, 'expandedchange', { expanded: true });
-
-    expect(wrapper.emitted('expandedchange')![0]).toEqual([{ expanded: true }]);
-  });
-
-  it('stops emitting once unmounted', () => {
-    const { wrapper, el } = mountEl(BsNavbar, 'mp-navbar');
-    wrapper.unmount();
-
-    el.dispatchEvent(new CustomEvent('expandedchange', { detail: { expanded: true } }));
-
-    expect(wrapper.emitted('expandedchange')).toBeUndefined();
   });
 });

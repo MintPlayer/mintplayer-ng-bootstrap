@@ -1,39 +1,23 @@
 import { BsCodeSnippet } from '@mintplayer/react-bootstrap/code-snippet';
-import {
-  BsNavbar,
-  BsNavbarBrand,
-  BsNavbarItem,
-  BsNavbarDropdown,
-} from '@mintplayer/react-bootstrap/navbar';
-import { BsDropdownMenu, BsDropdownItem } from '@mintplayer/react-bootstrap/dropdown-menu';
+import { BsNavbar, BsNavbarDropdown, BsNavbarItem, BsNavbarNav } from '@mintplayer/react-bootstrap/navbar';
 
-const NAVBAR_SOURCE = `<BsNavbar breakpoint="lg" color="body-tertiary" aria-label="Demo navigation">
-  <BsNavbarBrand slot="brand">
-    <a href="/">MintPlayer</a>
-  </BsNavbarBrand>
+const NAVBAR_SOURCE = `<BsNavbar breakpoint="lg" color="body-tertiary" aria-label="Demo navigation"
+  brand={<a href="/">MintPlayer</a>}>
+  <BsNavbarNav>
+    <BsNavbarItem active><a href="/home">Home</a></BsNavbarItem>
+    <BsNavbarItem><a href="/features">Features</a></BsNavbarItem>
+    <BsNavbarItem disabled><a href="/pricing">Pricing</a></BsNavbarItem>
 
-  <BsNavbarItem active>
-    <a href="/home">Home</a>
-  </BsNavbarItem>
-  <BsNavbarItem>
-    <a href="/features">Features</a>
-  </BsNavbarItem>
-  <BsNavbarItem disabled>
-    <a href="/pricing">Pricing</a>
-  </BsNavbarItem>
+    <BsNavbarDropdown label="Products">
+      <BsNavbarItem><a href="/products/web">Web components</a></BsNavbarItem>
+      <BsNavbarItem><a href="/products/angular">Angular bootstrap</a></BsNavbarItem>
+      <BsNavbarItem><a href="/products/react">React bootstrap</a></BsNavbarItem>
+    </BsNavbarDropdown>
+  </BsNavbarNav>
 
-  <BsNavbarDropdown>
-    <span slot="label">Products</span>
-    <BsDropdownMenu>
-      <BsDropdownItem><a href="/products/web">Web components</a></BsDropdownItem>
-      <BsDropdownItem><a href="/products/angular">Angular bootstrap</a></BsDropdownItem>
-      <BsDropdownItem><a href="/products/react">React bootstrap</a></BsDropdownItem>
-    </BsDropdownMenu>
-  </BsNavbarDropdown>
-
-  <BsNavbarItem slot="end">
-    <a href="/login">Sign in</a>
-  </BsNavbarItem>
+  <BsNavbarNav align="end">
+    <BsNavbarItem><a href="/login">Sign in</a></BsNavbarItem>
+  </BsNavbarNav>
 </BsNavbar>`;
 
 export function NavbarPage() {
@@ -41,51 +25,47 @@ export function NavbarPage() {
     <div className="demo-page">
       <h1>Navbar</h1>
       <p className="text-body-secondary">
-        A responsive Bootstrap <code>.navbar</code>. The bar chrome (hamburger
-        toggle + collapsible region) lives in the WC's shadow root and collapses
-        below the <code>breakpoint</code> via a pure-CSS state machine, so it
-        works server-rendered with JavaScript disabled. Place the brand in{' '}
-        <code>&lt;BsNavbarBrand slot="brand"&gt;</code>, left items as default{' '}
-        <code>&lt;BsNavbarItem&gt;</code> children, and right-aligned items with{' '}
-        <code>slot="end"</code>. A <code>&lt;BsNavbarDropdown&gt;</code> opens a{' '}
-        <code>&lt;BsDropdownMenu&gt;</code> panel.
+        <code>BsNavbar</code> renders Bootstrap's navbar markup from the headless{' '}
+        <code>@mintplayer/ui-core/navbar</code> core, server-side included. The responsive
+        collapse is a checkbox and every dropdown a native <code>&lt;details&gt;</code>, so the
+        bar works with JavaScript off. Pass the brand as the <code>brand</code> prop, group
+        entries in a <code>BsNavbarNav</code> (<code>align="end"</code> pushes a group to the far
+        edge), and use <code>BsNavbarItem</code> for every entry — a nav-link in a group, a menu
+        item inside a <code>BsNavbarDropdown</code>.
       </p>
 
       <section data-demo="navbar">
         <h2>Navbar</h2>
-        <BsNavbar breakpoint="lg" color="body-tertiary" aria-label="Demo navigation">
-          <BsNavbarBrand slot="brand">
-            <a href="/">MintPlayer</a>
-          </BsNavbarBrand>
+        <BsNavbar breakpoint="lg" color="body-tertiary" aria-label="Demo navigation" brand={<a href="/">MintPlayer</a>}>
+          <BsNavbarNav>
+            <BsNavbarItem active>
+              <a href="/home">Home</a>
+            </BsNavbarItem>
+            <BsNavbarItem>
+              <a href="/features">Features</a>
+            </BsNavbarItem>
+            <BsNavbarItem disabled>
+              <a href="/pricing">Pricing</a>
+            </BsNavbarItem>
 
-          <BsNavbarItem active>
-            <a href="/home">Home</a>
-          </BsNavbarItem>
-          <BsNavbarItem>
-            <a href="/features">Features</a>
-          </BsNavbarItem>
-          <BsNavbarItem disabled>
-            <a href="/pricing">Pricing</a>
-          </BsNavbarItem>
-
-          <BsNavbarDropdown>
-            <span slot="label">Products</span>
-            <BsDropdownMenu>
-              <BsDropdownItem>
+            <BsNavbarDropdown label="Products">
+              <BsNavbarItem>
                 <a href="/products/web">Web components</a>
-              </BsDropdownItem>
-              <BsDropdownItem>
+              </BsNavbarItem>
+              <BsNavbarItem>
                 <a href="/products/angular">Angular bootstrap</a>
-              </BsDropdownItem>
-              <BsDropdownItem>
+              </BsNavbarItem>
+              <BsNavbarItem>
                 <a href="/products/react">React bootstrap</a>
-              </BsDropdownItem>
-            </BsDropdownMenu>
-          </BsNavbarDropdown>
+              </BsNavbarItem>
+            </BsNavbarDropdown>
+          </BsNavbarNav>
 
-          <BsNavbarItem slot="end">
-            <a href="/login">Sign in</a>
-          </BsNavbarItem>
+          <BsNavbarNav align="end">
+            <BsNavbarItem>
+              <a href="/login">Sign in</a>
+            </BsNavbarItem>
+          </BsNavbarNav>
         </BsNavbar>
         <BsCodeSnippet code={NAVBAR_SOURCE} language="tsx" />
       </section>

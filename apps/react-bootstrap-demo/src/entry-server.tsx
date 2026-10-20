@@ -13,13 +13,6 @@ import { StrictMode } from 'react';
 import { renderToPipeableStream } from 'react-dom/server';
 import { StaticRouter } from 'react-router-dom/server';
 import { Writable } from 'node:stream';
-// Splices each `<mp-dropdown-menu>`'s Declarative Shadow DOM into the HTML so
-// the menu renders styled with JavaScript disabled.
-import { injectMpDropdownDsd } from '@mintplayer/web-components/dropdown-menu/ssr';
-// Splices each `<mp-navbar>` family element's Declarative Shadow DOM into the
-// HTML so the navbar renders — and collapses/reveals via its pure-CSS state
-// machine — with JavaScript disabled.
-import { injectMpNavbarDsd } from '@mintplayer/web-components/navbar/ssr';
 // Same pattern for <mp-carousel>: count-variant DSD chrome so the radio-driven
 // no-JS carousel navigates with JS disabled. Composed with the other injectors.
 import { injectMpCarouselDsd } from '@mintplayer/web-components/carousel/ssr';
@@ -55,7 +48,7 @@ export function render(url: string): Promise<string> {
       },
       final(cb) {
         clearTimeout(timer);
-        resolve(injectMpCarouselDsd(injectMpNavbarDsd(injectMpDropdownDsd(Buffer.concat(chunks).toString('utf-8')))));
+        resolve(injectMpCarouselDsd(Buffer.concat(chunks).toString('utf-8')));
         cb();
       },
     });
