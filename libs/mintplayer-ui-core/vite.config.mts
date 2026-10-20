@@ -20,7 +20,9 @@ export default defineConfig(() => {
     resolve: { tsconfigPaths: true },
     plugins: [
       copyPackageJson(import.meta.dirname),
-      nxCopyAssetsPlugin(['*.md', '*/README.md']),
+      // The page baseline ships as Sass (to @use) and as the prebuilt bootstrap.css
+      // (to link); both resolve as @mintplayer/ui-core/styles/* (PRD #437 §6).
+      nxCopyAssetsPlugin(['*.md', '*/README.md', 'styles/**/*.scss', 'styles/bootstrap.css']),
       dts({
         entryRoot: '.',
         tsconfigPath: resolve(import.meta.dirname, 'tsconfig.lib.json'),
