@@ -1,7 +1,7 @@
 # PRD — Typeahead as the pilot of the headless-core architecture: debounce, cancellable provider, item renderer, forms binding, across Angular, React, Vue and a web component (#436)
 
 Issue: [#436](https://github.com/MintPlayer/mintplayer-ng-bootstrap/issues/436)
-Status: **Implemented** (2026-10-20) on `feat/typeahead-core-436`, draft PR #438; verification sweep pending. S1 and S2 PASS; S3–S5 folded into the permanent specs and e2e (see §16). Plan: [typeahead-wc-436-plan.md](./typeahead-wc-436-plan.md)
+Status: **Implemented** (2026-10-20) on `feat/typeahead-core-436`, draft PR #438; unit sweep green, the first CI run (39415902128) red on the SSR chrome generators, fixed in d0fd671d and 00b93211; targeted e2e, keyboard and no-JS checks pending. S1 and S2 PASS; S3–S5 folded into the permanent specs and e2e (see §16). Plan: [typeahead-wc-436-plan.md](./typeahead-wc-436-plan.md)
 Catalog migration: [#437](https://github.com/MintPlayer/mintplayer-ng-bootstrap/issues/437) — **out of scope for this PR**; this PR is its pilot and must produce the numbers #437 is sized with.
 Everything in scope lands in **one PR**.
 
@@ -110,7 +110,7 @@ Versioned `1.0.0`; `@mintplayer/web-components` depends on it (re-exporting `lig
 </div>
 ```
 
-The listbox is positioned by the existing `OverlayController` in the Lit front and by the same controller lifted into `@mintplayer/ui-core/overlay` for the others (it is already DOM-only, host-agnostic apart from `addController`; the pilot wraps it with a plain `attach(host)` API). Only the input and the row content differ per front. A conformance test (S3) renders the same state in all four and diffs the serialized DOM minus framework attributes.
+The listbox is absolutely positioned under a `position: relative` root in all four fronts, the way Bootstrap's dropdowns are. The `OverlayController` was not lifted into ui-core: it depends on the lit-bound `a11y` entry (dismiss stack, focus trap), and moving both is recorded in #437 (see §16). Only the input and the row content differ per front. A conformance test (S3) renders the same state in all four and diffs the serialized DOM minus framework attributes.
 
 ### 5.3 Angular — `@mintplayer/ng-bootstrap/typeahead`
 
