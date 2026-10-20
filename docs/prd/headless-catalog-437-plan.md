@@ -37,17 +37,17 @@ Each component milestone is the same checklist, done for every component in the 
 
 ## M1 — Bootstrap baseline (PRD §6)
 
-- [ ] `ui-core/styles/bootstrap.scss` plus prebuilt `bootstrap.css`:
+- [x] `ui-core/styles/bootstrap.scss` plus prebuilt `bootstrap.css`:
   - Bootstrap in `@layer mp.bootstrap`
   - the layer order declared once
   - the button re-bind, `color-mode.css` and the utility patches carried over
-- [ ] `libs/mintplayer-ng-bootstrap/_bootstrap.scss` becomes a re-export, and the commented-out partials are enabled through the baseline
-- [ ] React and Vue demos import the baseline instead of `bootstrap.min.css`
-- [ ] Scoped-sheet codegen wraps output in `@layer mp.components`
-- [ ] Typeahead scoped sheet: drop the `form-control` and `dropdown` partial imports (fixes the pilot's specificity trap)
-- [ ] `_conformance/no-bootstrap-partials-in-scoped.spec.ts`
-- [ ] `collectScopedStyles()`, wired into React and Vue `entry-server`
-- [ ] Permanent override-probe e2e (consumer CSS beats the component) in all three demos
+- [x] `libs/mintplayer-ng-bootstrap/_bootstrap.scss` becomes a re-export, and the commented-out partials are enabled through the baseline
+- [x] React and Vue demos import the baseline instead of `bootstrap.min.css`
+- [x] Scoped-sheet codegen wraps output in `@layer mp.components`
+- [x] Typeahead scoped sheet: drop the `form-control` and `dropdown` partial imports (fixes the pilot's specificity trap)
+- [x] `_conformance/no-bootstrap-partials-in-scoped.spec.ts`
+- [x] `collectScopedStyles()`, wired into React and Vue `entry-server`
+- [x] Permanent override-probe e2e (consumer CSS beats the component) in all three demos
 
 ## M2 — Shared ui-core infrastructure (PRD D8)
 

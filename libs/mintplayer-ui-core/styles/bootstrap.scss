@@ -1,0 +1,20 @@
+// @mintplayer/ui-core/styles/bootstrap — the page-level Bootstrap baseline
+// (PRD #437 §6). Load it ONCE per page, before any component sheet: the
+// Angular lib forwards it from bootstrap.scss, React/Vue apps link it (or the
+// prebuilt bootstrap.css next to it).
+//
+// The order statement must be the first rule on the page. It is repeated at
+// the top of every component sheet, so whichever arrives first fixes the same
+// order (S1, measured: without it a component sheet installed before the
+// baseline lost to Bootstrap). Consumer CSS that is not in a layer beats both.
+//
+// Trade-off (documented, C3): a consumer's unlayered !important now LOSES to
+// Bootstrap's layered !important utilities (.d-none and friends), because
+// layer order reverses for important declarations.
+@use 'sass:meta';
+
+@layer mp.bootstrap, mp.components;
+
+@layer mp.bootstrap {
+  @include meta.load-css('bootstrap-stack');
+}

@@ -220,6 +220,28 @@ Each spike is small and throwaway, lives on a scratch branch or under `_spike-*/
 | S11 | Theme toggle with the cookie read during SSR (no flash), and code-snippet highlighting on the server versus after hydration. | theme-toggle, code-snippet | no flash; no mismatch |
 | S12 | React and Vue SSR: scoped sheets collected into `<head>` by `entry-server`. | C7 | no unstyled first paint |
 
+### Verdicts
+
+- **S1: pass, with one documented trade-off.**
+  - Every scoped sheet begins with `@layer mp.bootstrap, mp.components;` and wraps its body in `@layer mp.components { … }`. The codegen does this in `wrapInComponentsLayer`, rescoping first.
+  - The baseline is `ui-core/styles/bootstrap.scss`, which puts the whole stack in `mp.bootstrap`.
+  - Unlayered consumer rules beat both layers at any specificity. The permanent `typeahead-suites.ts` probe pins this.
+  - The trade-off: a consumer's unlayered `!important` loses to Bootstrap's layered `!important` utilities, because layer order inverts for important declarations. This is documented in the baseline file.
+  - Tooling: lightningcss drops a bare order statement, so the order statement is repeated in every sheet rather than relying on one copy. esbuild keeps it. jsdom 27 parses both `CSSLayerStatementRule` and `CSSLayerBlockRule`, so `scoped-styles-scoping.spec.ts` asserts the shape.
+  - Still open: question (3), Angular beasties keeping the order, is checked at the M9 demo build.
+- **S8: native `<select class="form-select">` in every framework front.** `base-select` is progressive styling layered on top, not structure, so there is nothing to feature-detect on the server and no hydration mismatch.
+- **S12: pass by design.**
+  - Without a `document.head` (Node, or the lit-ssr shim), `installLightStyles` records the sheet.
+  - `collectScopedStyles()` returns marker `<style>` tags. `server.mjs` splices them into `<!--app-head-->`.
+  - The client registry treats the marker as already installed.
+  - The record is per process: a superset of the current page's sheets, which is harmless because every sheet carries the layer order.
+- **Deferred to the milestone that needs them:**
+  - S2 and S5 at radio-group (M3)
+  - S3 at tree-select (M5)
+  - S4 and S10 before M5
+  - S7 before M6
+  - S6, S9 and S11 at their components
+
 ## 8. Component catalog
 
 LOC is element code only (the investigation, 2026-10-20).

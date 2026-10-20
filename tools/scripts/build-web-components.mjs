@@ -36,6 +36,7 @@ import {
   buildPlainStylesModule,
   buildStylesModule,
   toCamelCase,
+  wrapInComponentsLayer,
   writeIfChanged,
 } from './lib/wc-codegen.mjs';
 import { rescopeCss } from './lib/rescope-css.mjs';
@@ -115,9 +116,9 @@ const BOOTSTRAP_SILENCED_DEPRECATIONS = [
   'legacy-js-api',
 ];
 
-export function compileScss(scssPath, repoRoot = REPO_ROOT) {
+export function compileScss(scssPath, repoRoot = REPO_ROOT, style = 'expanded') {
   const result = sass.compile(scssPath, {
-    style: 'expanded',
+    style,
     sourceMap: false,
     // repoRoot first → matches the workspace-relative paths VS Code Ctrl+click
     // resolves (e.g. `@import "node_modules/bootstrap/scss/functions"`).
@@ -194,7 +195,9 @@ export async function processScopedStyles(scssPath, repoRoot = REPO_ROOT) {
   const scope = base.replace(/^mp-/, '');
   const exportName = `${toCamelCase(scope)}ScopedStyles`;
 
-  const css = rescopeCss(compileScss(scssPath, repoRoot).trimEnd(), { scope });
+  // Rescope first, then layer: the rescoper walks rules, and the layer wrapper is
+  // a page-level concern it must not see (PRD #437 C1-C2).
+  const css = wrapInComponentsLayer(rescopeCss(compileScss(scssPath, repoRoot).trimEnd(), { scope }));
   const next = buildPlainStylesModule({
     css,
     sourceScssRel: toPosix(relative(dir, scssPath)),
@@ -202,6 +205,18 @@ export async function processScopedStyles(scssPath, repoRoot = REPO_ROOT) {
   });
 
   return { outPath, changed: await writeIfChanged(outPath, next) };
+}
+
+/**
+ * The prebuilt page baseline: `<libRoot>/styles/bootstrap.scss` compiles to a
+ * sibling `bootstrap.css` (gitignored), for consumers that link CSS rather than
+ * compile Sass (PRD #437 §6). Returns null when the lib has no baseline.
+ */
+export async function processBaseline(libRoot, repoRoot = REPO_ROOT) {
+  const scssPath = resolve(repoRoot, libRoot, 'styles', 'bootstrap.scss');
+  if (!existsSync(scssPath)) return null;
+  const outPath = join(dirname(scssPath), 'bootstrap.css');
+  return { outPath, changed: await writeIfChanged(outPath, compileScss(scssPath, repoRoot, 'compressed')) };
 }
 
 export async function runOnce(libRoots, repoRoot = REPO_ROOT) {
@@ -249,7 +264,13 @@ export async function runOnce(libRoots, repoRoot = REPO_ROOT) {
     if (changed) changedCount++;
   }
 
-  const total = elementHtml.length + stylesScss.length + lightScss.length + scopedScss.length;
+  const baselines = (await Promise.all(libRoots.map((libRoot) => processBaseline(libRoot, repoRoot)))).filter(Boolean);
+  for (const { outPath, changed } of baselines) {
+    console.log(`${changed ? 'wrote   ' : 'skipped '} ${toPosix(relative(repoRoot, outPath))}`);
+    if (changed) changedCount++;
+  }
+
+  const total = elementHtml.length + stylesScss.length + lightScss.length + scopedScss.length + baselines.length;
   console.log(
     `build-web-components: ${total} input(s) processed, ${changedCount} written.`,
   );

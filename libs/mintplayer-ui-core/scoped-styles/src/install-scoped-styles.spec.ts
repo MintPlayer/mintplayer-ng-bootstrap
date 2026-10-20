@@ -2,6 +2,7 @@ import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
 
 import {
   adoptLightStyles,
+  collectScopedStyles,
   getLightStyleEntries,
   installLightStyles,
   writeScopedStyleTag,
@@ -148,5 +149,15 @@ describe('installLightStyles — SSR guard', () => {
     installLightStyles('t-ssr', 'mp-k{color:red}');
     head.mockRestore();
     expect(getLightStyleEntries().some((e) => e.key === 't-ssr')).toBe(false);
+  });
+
+  it('records the sheet for collectScopedStyles, once per key, with </style> neutralised', () => {
+    const head = vi.spyOn(document, 'head', 'get').mockReturnValue(null as unknown as HTMLHeadElement);
+    installLightStyles('t-srv', 'mp-s{content:"</style>"}');
+    installLightStyles('t-srv', 'mp-s{color:blue}');
+    head.mockRestore();
+    const tags = collectScopedStyles();
+    expect(tags).toContain('<style data-mp-light-styles="t-srv">mp-s{content:"<\\/style>"}</style>');
+    expect(tags).not.toContain('color:blue');
   });
 });
