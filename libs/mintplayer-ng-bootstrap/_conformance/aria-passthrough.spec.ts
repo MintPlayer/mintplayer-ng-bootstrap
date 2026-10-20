@@ -18,7 +18,6 @@ import {
 import { BsFormComponent } from '@mintplayer/ng-bootstrap/form';
 import { BsPaginationComponent } from '@mintplayer/ng-bootstrap/pagination';
 import { BsQueryBuilderComponent } from '@mintplayer/ng-bootstrap/query-builder';
-import { BsRadioComponent } from '@mintplayer/ng-bootstrap/radio';
 import { BsSchedulerComponent } from '@mintplayer/ng-bootstrap/scheduler';
 import { BsPhoneInputComponent } from '@mintplayer/ng-bootstrap/phone-input';
 import { BsSelectComponent } from '@mintplayer/ng-bootstrap/select';
@@ -148,7 +147,6 @@ const WRAPPERS: WrapperCase[] = [
   },
   { selector: 'bs-pagination', tag: 'mp-pagination', component: BsPaginationComponent },
   { selector: 'bs-query-builder', tag: 'mp-query-builder', component: BsQueryBuilderComponent },
-  { selector: 'bs-radio', tag: 'mp-radio', component: BsRadioComponent },
   { selector: 'bs-scheduler', tag: 'mp-scheduler', component: BsSchedulerComponent },
   { selector: 'bs-phone-input', tag: 'mp-phone-input', component: BsPhoneInputComponent },
   { selector: 'bs-select', tag: 'mp-select', component: BsSelectComponent },

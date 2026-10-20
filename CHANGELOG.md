@@ -60,7 +60,23 @@ breaking change is a major. (2.20.0 and 2.21.0 broke `^2.x` consumers in a minor
     the input.
   - `<mp-toggle-button>` (Lit) renders in the light DOM. Its children become the label, and host `aria-label`,
     `aria-labelledby` and `aria-describedby` are written onto the input. The inner input has no `name`, because the
-    form-associated host submits. `toggleButtonStyles` is still exported for `mp-checkbox` / `mp-radio`.
+    form-associated host submits. `toggleButtonStyles` is still exported for `mp-checkbox`.
+
+- **Radios are native radios sharing a name in every front (issue #437, wave A).** A radio renders a plain
+  `<input type=radio>` in `.form-check` (or `.btn-check` + `label.btn` for `type="toggle_button"`) markup, and a
+  group renders an element with `role="radiogroup"` that hands every radio one `name`. The browser then supplies
+  one-of-N, the single tab stop, arrow move-and-select, position-in-set and form submission, with JS off and in
+  Angular SSR. The contract lives in `@mintplayer/ui-core/radio` (`connectRadio`, `radioClasses`,
+  `connectRadioGroup`, `radioGroupName`).
+  - Angular: `bsRadioGroup` also matches a `<bs-radio-group>` element, which takes `name`, `required`, `disabled`
+    and `ngModel` / `formControl`. `radioRef` is removed. `id`, `tabindex` and `aria-*` land on the input, and
+    `[inputLabel]` names a radio that has no visible label. A choice made before hydration is adopted.
+  - React: `BsRadioGroup` takes `value` + `onValueChange(value)` (or `defaultValue`), replacing `onGroupChange`.
+    A standalone `BsRadio` takes `checked` + `onCheckedChange`. The refs are the `div` and the input.
+  - Vue: `BsRadioGroup` keeps `v-model` and provides `radioGroupKey`. Attributes on `BsRadio` land on the input.
+  - `<mp-radio>` / `<mp-radio-group>` (Lit) render in the light DOM. The group is no longer form-associated: the
+    checked native input submits itself. The custom roving tabindex and arrow handling are gone in favour of the
+    native set. The `checked` attribute is the initial state only; the `checked` property reads the input.
 
 - **Tile manager rebuilt on a headless core, and responsive (issue #440).** `@mintplayer/web-components`
   **3.0.0**, `@mintplayer/ui-core` 1.1.0 (new `tile-manager` entry), `@mintplayer/ng-bootstrap` 22.27.0,

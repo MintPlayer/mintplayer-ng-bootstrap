@@ -2,14 +2,14 @@ import { describe, expect, it, beforeEach, afterEach } from 'vitest';
 import './mp-radio';
 import type { MpRadio, RadioChangeEventDetail } from './mp-radio';
 
-async function settled(el: HTMLElement): Promise<void> {
-  if ('updateComplete' in el) {
-    await (el as unknown as { updateComplete: Promise<void> }).updateComplete;
-  }
+async function settled(...els: HTMLElement[]): Promise<void> {
+  await Promise.all(els.map((el) => (el as unknown as { updateComplete: Promise<unknown> }).updateComplete));
 }
 
 describe('<mp-radio>', () => {
   let host: HTMLElement;
+  const radios = () => [...host.querySelectorAll('mp-radio')] as MpRadio[];
+  const inputs = () => [...host.querySelectorAll('input[type=radio]')] as HTMLInputElement[];
 
   beforeEach(() => {
     host = document.createElement('div');
@@ -20,69 +20,76 @@ describe('<mp-radio>', () => {
     host.remove();
   });
 
-  it('renders the form-check radio variant by default', async () => {
+  it('renders a native radio in .form-check in the light DOM, the children as its label', async () => {
     host.innerHTML = '<mp-radio value="red" name="color">Red</mp-radio>';
-    const el = host.firstElementChild as MpRadio;
-    await settled(el);
-    const input = el.shadowRoot!.querySelector('input[type="radio"]') as HTMLInputElement;
-    const label = el.shadowRoot!.querySelector('label');
-    expect(input).toBeTruthy();
+    await settled(...radios());
+    const [el] = radios();
+    const input = inputs()[0];
+    expect(el.shadowRoot).toBeNull();
     expect(input.className).toBe('form-check-input');
-    expect(label!.className).toBe('form-check');
-  });
-
-  it('renders the btn-check variant when type="toggle_button"', async () => {
-    host.innerHTML = '<mp-radio type="toggle_button" value="red" color="outline-success">Red</mp-radio>';
-    const el = host.firstElementChild as MpRadio;
-    await settled(el);
-    const input = el.shadowRoot!.querySelector('input[type="radio"]') as HTMLInputElement;
-    const label = el.shadowRoot!.querySelector('label')!;
-    expect(input.className).toBe('btn-check');
-    expect(label.className).toContain('btn-outline-success');
-  });
-
-  it('dispatches `change` with detail `{ checked, value }` when toggled', async () => {
-    host.innerHTML = '<mp-radio value="red" name="color">Red</mp-radio>';
-    const el = host.firstElementChild as MpRadio;
-    await settled(el);
-
-    const received: RadioChangeEventDetail[] = [];
-    el.addEventListener('change', (ev) => {
-      received.push((ev as CustomEvent<RadioChangeEventDetail>).detail);
-    });
-
-    const input = el.shadowRoot!.querySelector('input') as HTMLInputElement;
-    input.checked = true;
-    input.dispatchEvent(new Event('change', { bubbles: true }));
-
-    expect(received).toEqual([{ checked: true, value: 'red' }]);
-    expect(el.checked).toBe(true);
-    expect(el.hasAttribute('checked')).toBe(true);
-  });
-
-  it('reflects `checked` to attribute when set programmatically', async () => {
-    host.innerHTML = '<mp-radio value="red"></mp-radio>';
-    const el = host.firstElementChild as MpRadio;
-    await settled(el);
-    el.checked = true;
-    expect(el.hasAttribute('checked')).toBe(true);
-    el.checked = false;
-    expect(el.hasAttribute('checked')).toBe(false);
-  });
-
-  it('honours `name` on the inner input (required for native radio grouping within the same scope)', async () => {
-    host.innerHTML = '<mp-radio name="color" value="red"></mp-radio>';
-    const el = host.firstElementChild as MpRadio;
-    await settled(el);
-    const input = el.shadowRoot!.querySelector('input') as HTMLInputElement;
+    expect(input.closest('label')!.className).toBe('form-check');
+    expect(input.closest('label')!.textContent).toBe('Red');
     expect(input.name).toBe('color');
+    expect(input.value).toBe('red');
   });
 
-  it('disables the inner input when `disabled` is set', async () => {
-    host.innerHTML = '<mp-radio disabled value="red"></mp-radio>';
-    const el = host.firstElementChild as MpRadio;
-    await settled(el);
-    const input = el.shadowRoot!.querySelector('input') as HTMLInputElement;
-    expect(input.disabled).toBe(true);
+  it('renders .btn-check plus a label for the input when type="toggle_button"', async () => {
+    host.innerHTML = '<mp-radio type="toggle_button" value="red" color="outline-success">Red</mp-radio>';
+    await settled(...radios());
+    const input = inputs()[0];
+    const label = input.nextElementSibling as HTMLLabelElement;
+    expect(input.className).toBe('btn-check');
+    expect(label.className).toBe('btn btn-outline-success');
+    expect(label.htmlFor).toBe(input.id);
+  });
+
+  it('applies the checked attribute as the initial state', async () => {
+    host.innerHTML = '<mp-radio value="a" checked>A</mp-radio>';
+    await settled(...radios());
+    expect(inputs()[0].checked).toBe(true);
+    expect(radios()[0].checked).toBe(true);
+  });
+
+  it('forms a native set with radios sharing its name: picking one unchecks the other', async () => {
+    host.innerHTML = '<mp-radio name="n" value="a" checked>A</mp-radio><mp-radio name="n" value="b">B</mp-radio>';
+    await settled(...radios());
+    inputs()[1].click();
+    expect(radios().map((radio) => radio.checked)).toEqual([false, true]);
+  });
+
+  it('emits change with detail, and stops the native change', async () => {
+    host.innerHTML = '<mp-radio value="a">A</mp-radio>';
+    await settled(...radios());
+    const events: Event[] = [];
+    radios()[0].addEventListener('change', (event) => events.push(event));
+    inputs()[0].click();
+    expect(events).toHaveLength(1);
+    expect((events[0] as CustomEvent<RadioChangeEventDetail>).detail).toEqual({ checked: true, value: 'a' });
+  });
+
+  it('moves host aria-label and aria-describedby onto the input', async () => {
+    host.innerHTML = '<mp-radio value="a" aria-label="Pick A" aria-describedby="hint"></mp-radio>';
+    await settled(...radios());
+    expect(inputs()[0].getAttribute('aria-label')).toBe('Pick A');
+    expect(inputs()[0].getAttribute('aria-describedby')).toBe('hint');
+  });
+
+  it('marks the input invalid and references the error message only while invalid', async () => {
+    host.innerHTML = '<mp-radio value="a" error-text="Pick one.">A</mp-radio>';
+    await settled(...radios());
+    expect(inputs()[0].hasAttribute('aria-errormessage')).toBe(false);
+    radios()[0].setAttribute('invalid', '');
+    await settled(...radios());
+    const input = inputs()[0];
+    const id = input.getAttribute('aria-errormessage')!;
+    expect(input.getAttribute('aria-invalid')).toBe('true');
+    expect(input.getAttribute('aria-describedby')).toContain(id);
+    expect(host.querySelector(`[id="${id}"]`)!.textContent).toBe('Pick one.');
+  });
+
+  it('submits through the native input', async () => {
+    host.innerHTML = '<form><mp-radio name="n" value="a" checked>A</mp-radio></form>';
+    await settled(...radios());
+    expect(new FormData(host.querySelector('form')!).get('n')).toBe('a');
   });
 });

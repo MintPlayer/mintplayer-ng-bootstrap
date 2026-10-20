@@ -9,7 +9,7 @@ axeAuditSuite(test, expect, [
   {
     path: '/basic/forms/radio',
     interact: async (page) => {
-      await page.locator('mp-radio-group[name="fruitTemplate"] input[type="radio"]').first().click();
+      await page.locator('input[type="radio"][name="fruitTemplate"]').first().click();
     },
   },
   {

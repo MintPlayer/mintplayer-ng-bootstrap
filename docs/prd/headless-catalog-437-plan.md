@@ -23,9 +23,9 @@ Each component milestone is the same checklist, done for every component in the 
 
 - [x] S1 Bootstrap layering, all three demos
 - [x] S12 React/Vue SSR sheet collection (pairs with S1)
-- [ ] S2 compound cores (radio-group + radio, accordion + tab)
+- [ ] S2 compound cores (radio-group + radio [x], accordion + tab)
 - [ ] S3 nested cores (tree-select over treeview)
-- [ ] S5 hydration with consumer templates and pre-hydration text
+- [x] S5 hydration with consumer templates and pre-hydration text
 - [ ] S6 measurement-free server layout (carousel, splitter, hierarchy chart)
 - [ ] S9 navbar dropdown CSS-only open
 - [x] S8 base-select under SSR
@@ -81,7 +81,7 @@ Each component milestone is the same checklist, done for every component in the 
 - [x] input-group (no core): plain `.input-group` in every front; sheet in `ui-core/input-group` for RTL, bare and hosted controls. The Lit `mp-input-group` stays a shadow WC until phone-input converts (M4), because `mp-phone-input` composes it in its shadow root
 - [x] checkbox / switch (no machine; the native input is the state): ids, classes and the ARIA bag live in `ui-core/checkbox`. `BsControlValidityDirective` exposes signals the front renders, and the error node is `.invalid-feedback d-block`. The Lit `mp-checkbox` stays a shadow WC until datatable converts (M5), because `mp-datatable` renders it in its shadow root
 - [x] toggle-button (new Angular front): `bs-toggle-button` is a second selector of `BsCheckboxComponent` with the type fixed, so there is one code path, not a duplicate component. React and Vue compose `BsCheckbox`, and Lit `mp-toggle-button` is light DOM on `connectCheckbox`
-- [ ] radio + radio-group
+- [x] radio + radio-group
 - [ ] pagination (+ `hrefFor`)
 - [ ] shell
 - [ ] accordion (+ tab)

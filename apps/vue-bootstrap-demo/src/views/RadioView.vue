@@ -4,13 +4,12 @@ import { BsRadio } from '@mintplayer/vue-bootstrap/radio';
 import { BsRadioGroup } from '@mintplayer/vue-bootstrap/radio-group';
 import { BsCodeSnippet } from '@mintplayer/vue-bootstrap/code-snippet';
 
-// <BsRadioGroup> (the mp-radio-group WC) owns what shadow roots keep the
-// platform from providing: one-of-N exclusivity, role="radiogroup", the
-// roving tab stop and arrow move-and-select. v-model is the selected
-// radio's value; keyboard selection is covered too (it produces no
-// per-radio change event, only the group's group-change). Same rule for
-// BOTH the form-check variant AND the toggle_button variant, since
-// they're both <mp-radio>s under the hood.
+// <BsRadioGroup> renders a div with role="radiogroup" and hands its
+// <BsRadio>s one name. They are then native radios of one set, so the
+// browser supplies exclusivity, the single tab stop and arrow
+// move-and-select, with JavaScript off as well. v-model is the selected
+// radio value, for pointer and keyboard picks alike, for the form-check
+// and toggle_button variants both.
 const color = ref<string | null>('green');
 const size = ref<string | null>('m');
 

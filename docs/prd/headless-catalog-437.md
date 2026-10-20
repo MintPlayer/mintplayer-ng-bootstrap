@@ -236,8 +236,14 @@ Each spike is small and throwaway, lives on a scratch branch or under `_spike-*/
   - `collectScopedStyles()` returns marker `<style>` tags. `server.mjs` splices them into `<!--app-head-->`.
   - The client registry treats the marker as already installed.
   - The record is per process: a superset of the current page's sheets, which is harmless because every sheet carries the layer order.
+- **S2 (radio half): native carrier, context-only channel.**
+  - Radios that share one `name` in one tree are a native set. The browser supplies one-of-N, the single tab stop, arrow move-and-select, posinset/setsize and form submission, with no JS. A roving-tabindex core would only re-implement that, worse.
+  - The group-to-radio channel (Angular DI, React context, Vue `provide`, Lit `closest()`) carries only name, value, disabled, required and `select()`. Radios do not register with the group, so there is no runtime order to keep.
+  - Ids are deterministic: `radioGroupName(rootId)` is `${rootId}-name`, with the root id from each front's SSR-stable id source, so server and client agree.
+  - Registration is revisited with the accordion half, where tab panels need an order.
+- **S5 (radio): pre-hydration choice kept.** `preHydrationChoice(root)` in `ui-core/forms` reads the checked input the server DOM holds. The Angular group adopts it in `afterNextRender(() => queueMicrotask(...))`, after hydration has finished patching attributes. Datatable `ng-template` cells are checked at the datatable.
 - **Deferred to the milestone that needs them:**
-  - S2 and S5 at radio-group (M3)
+  - S2 accordion half at accordion (M3)
   - S3 at tree-select (M5)
   - S4 and S10 before M5
   - S7 before M6
@@ -255,7 +261,7 @@ LOC is element code only (the investigation, 2026-10-20).
 | input-group | 286 | — | slots | pure markup + scoped CSS; no core | L |
 | checkbox / switch | 492 | — | label | `<input type=checkbox name value>` + `<label>`; indeterminate after hydration | L |
 | toggle-button | 729 | — | label | checkbox `btn-check` + label (Angular gets a front; it has none today) | L |
-| radio + radio-group | 428 + 268 | — | compound (D1) | `<fieldset>` + native radios sharing `name` | M |
+| radio + radio-group | 428 + 268 | — | compound (D1) | `role="radiogroup"` element + native radios sharing `name` (S2) | M |
 | pagination | 597 | — | labels | `<nav><ul>` of `hrefFor` links | L |
 | shell | 795 | — | slots → projection | toggle checkbox + `<label for>` + `<aside>`, `:checked` rules | L |
 | accordion (+tab) | 939 | — | compound | `<details name>` / `<summary>` | L |
