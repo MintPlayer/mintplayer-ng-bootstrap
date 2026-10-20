@@ -100,7 +100,7 @@ const TARGETS: Record<string, string> = {
   BsCardTitle: 'div.card-title',
   BsCarousel: 'mp-carousel',
   BsHierarchyChart: 'mp-hierarchy-chart',
-  BsSparkline: 'mp-sparkline',
+  BsSparkline: 'span.sparkline',
   BsTrendChart: 'mp-trend-chart',
   BsCheckbox: 'input[type=checkbox]',
   BsCodeSnippet: 'mp-code-snippet',
