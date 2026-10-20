@@ -136,6 +136,17 @@ breaking change is a major. (2.20.0 and 2.21.0 broke `^2.x` consumers in a minor
     `BsTabPage` is exported. Page attributes land on the pane (except `role`).
   - **Removed:** the `MpTabControl` / `MpTabPage` re-exports from the framework libraries. The Lit
     `mp-tab-control` stays unchanged until the dock, which depends on it, converts.
+- **Sparkline renders its own svg in every front (issue #437, wave A).** The geometry and the accessible name
+  come from `@mintplayer/ui-core/charts/sparkline`, so the server HTML is the finished chart. A `.sparkline` box
+  holds a `role="img"` viewBox svg; the consumer's `aria-label` names the svg.
+  - **Angular:** `bs-sparkline` is the `.sparkline` box itself. `sparklineRef` is removed. Without a `locale`,
+    the summary is formatted for `LOCALE_ID`.
+  - **React:** the ref is the `.sparkline` `HTMLSpanElement`. The props are React props, no longer
+    custom-element properties. Other attributes land on the box.
+  - **Vue:** `points`, `area`, `showLastDot`, `yMin`, `yMax`, `locale`, `inputLabel` and `summaryFormatter`
+    are declared props, so numbers need a binding (`:y-min="0"`). Other attributes land on the box.
+  - The Lit `mp-sparkline` renders from the same core and keeps its shadow root.
+
 
 
 - **Tile manager rebuilt on a headless core, and responsive (issue #440).** `@mintplayer/web-components`

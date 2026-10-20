@@ -170,7 +170,7 @@ const CASES: Case[] = [
   bare('BsCardTitle', 'div.card-title', BsCardTitle),
   bare('BsCarousel', 'mp-carousel', BsCarousel),
   bare('BsHierarchyChart', 'mp-hierarchy-chart', BsHierarchyChart),
-  bare('BsSparkline', 'mp-sparkline', BsSparkline),
+  bare('BsSparkline', 'span.sparkline', BsSparkline),
   bare('BsTrendChart', 'mp-trend-chart', BsTrendChart),
   bare('BsCheckbox', 'input[type=checkbox]', BsCheckbox),
   bare('BsCodeSnippet', 'mp-code-snippet', BsCodeSnippet),

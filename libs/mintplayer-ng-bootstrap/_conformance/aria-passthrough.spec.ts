@@ -3,7 +3,6 @@ import { TestBed } from '@angular/core/testing';
 
 import { BsCarouselComponent } from '@mintplayer/ng-bootstrap/carousel';
 import { BsHierarchyChartComponent } from '@mintplayer/ng-bootstrap/charts/hierarchy';
-import { BsSparklineComponent } from '@mintplayer/ng-bootstrap/charts/sparkline';
 import { BsTrendChartComponent } from '@mintplayer/ng-bootstrap/charts/trend';
 import { BsDatatableComponent } from '@mintplayer/ng-bootstrap/datatable';
 import { BsDockManagerComponent } from '@mintplayer/ng-bootstrap/dock';
@@ -124,7 +123,6 @@ interface WrapperCase {
 const WRAPPERS: WrapperCase[] = [
   { selector: 'bs-carousel', tag: 'mp-carousel', component: BsCarouselComponent },
   { selector: 'bs-hierarchy-chart', tag: 'mp-hierarchy-chart', component: BsHierarchyChartComponent },
-  { selector: 'bs-sparkline', tag: 'mp-sparkline', component: BsSparklineComponent },
   { selector: 'bs-trend-chart', tag: 'mp-trend-chart', component: BsTrendChartComponent },
   { selector: 'bs-datatable', tag: 'mp-datatable', component: BsDatatableComponent },
   { selector: 'bs-dock-manager', tag: 'mint-dock-manager', component: BsDockManagerComponent },

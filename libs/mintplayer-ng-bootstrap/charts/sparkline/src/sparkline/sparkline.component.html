@@ -1,4 +1,12 @@
-<mp-sparkline bsForwardAria
-  #sparkline
-  class="bs-sparkline"
-></mp-sparkline>
+@let v = view();
+@if (v.svg) {
+  <svg [mpProps]="v.svg">
+    @if (v.fill) {
+      <svg:path [mpProps]="v.fill"></svg:path>
+    }
+    <svg:path [mpProps]="v.line"></svg:path>
+    @if (v.dot) {
+      <svg:circle [mpProps]="v.dot"></svg:circle>
+    }
+  </svg>
+}

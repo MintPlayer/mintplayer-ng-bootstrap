@@ -1,10 +1,8 @@
 import { LitElement, html, svg, nothing, type TemplateResult } from 'lit';
-import { booleanAttribute, linearScale, optionalNumberAttribute } from '@mintplayer/ui-core/charts/core';
+import { booleanAttribute, optionalNumberAttribute } from '@mintplayer/ui-core/charts/core';
+import { connectSparkline } from '@mintplayer/ui-core/charts/sparkline';
+import { props } from '@mintplayer/web-components/machine';
 import { sparklineStyles } from '../styles';
-
-const W = 100;
-const H = 28;
-const PAD = 3;
 
 /**
  * `<mp-sparkline>` — axis-less inline trend for table cells (the codecov
@@ -123,53 +121,23 @@ export class MpSparkline extends LitElement {
     }
   }
 
-  private accessibleName(): string {
-    const named = this.getAttribute('aria-label') ?? this._inputLabel;
-    if (named) return named;
-    const custom = this._summaryFormatter?.(this._points);
-    if (custom !== undefined) return custom;
-    const values = this._points.filter((p): p is number => p !== null);
-    if (!values.length) return '';
-    const numbers = new Intl.NumberFormat(this._locale || this.closest('[lang]')?.getAttribute('lang') || undefined);
-    return [
-      numbers.format(values[0]),
-      numbers.format(values[values.length - 1]),
-      numbers.format(Math.min(...values)),
-      numbers.format(Math.max(...values)),
-    ].join(', ');
-  }
-
   override render(): TemplateResult {
-    const values = this._points.filter((p): p is number => p !== null);
-    if (!values.length) return html``;
-    const lo = this._yMin ?? Math.min(...values);
-    const hi = this._yMax ?? Math.max(...values);
-    const x = linearScale([0, Math.max(1, this._points.length - 1)], [PAD, W - PAD]);
-    const y = linearScale(lo === hi ? [lo - 1, hi + 1] : [lo, hi], [H - PAD, PAD]);
-
-    // Runs of consecutive non-null points; a null renders as a gap.
-    const runs = this._points.reduce<Array<Array<{ px: number; py: number }>>>((acc, p, i) => {
-      if (p === null) return [...acc, []];
-      const last = acc[acc.length - 1] ?? [];
-      return [...acc.slice(0, -1), [...last, { px: x(i), py: y(p) }]];
-    }, [[]]).filter((run) => run.length > 0);
-
-    const line = runs
-      .map((run) => run.map((p, i) => `${i === 0 ? 'M' : 'L'} ${p.px} ${p.py}`).join(' '))
-      .join(' ');
-    const fill = runs
-      .filter((run) => run.length > 1)
-      .map((run) =>
-        `M ${run[0].px} ${H - PAD} ` +
-        run.map((p) => `L ${p.px} ${p.py}`).join(' ') +
-        ` L ${run[run.length - 1].px} ${H - PAD} Z`)
-      .join(' ');
-    const last = runs[runs.length - 1]?.[runs[runs.length - 1].length - 1];
-
-    return html`<svg viewBox="0 0 ${W} ${H}" role="img" aria-label=${this.accessibleName() || nothing} preserveAspectRatio="none">
-      ${this._area ? svg`<path class="fill" d=${fill}></path>` : nothing}
-      <path class="line" d=${line}></path>
-      ${this._showLastDot && last ? svg`<circle class="dot" cx=${last.px} cy=${last.py} r="3"></circle>` : nothing}
+    // The geometry and the name come from the shared core (#437); this shadow
+    // root keeps its own sheet, so the bags' scope marker is inert here.
+    const view = connectSparkline(this._points, {
+      area: this._area,
+      showLastDot: this._showLastDot,
+      yMin: this._yMin,
+      yMax: this._yMax,
+      locale: this._locale || this.closest('[lang]')?.getAttribute('lang') || undefined,
+      label: this.getAttribute('aria-label') ?? this._inputLabel,
+      summaryFormatter: this._summaryFormatter,
+    });
+    if (!view.svg) return html``;
+    return html`<svg ${props(view.svg)}>
+      ${view.fill ? svg`<path ${props(view.fill)}></path>` : nothing}
+      <path ${props(view.line)}></path>
+      ${view.dot ? svg`<circle ${props(view.dot)}></circle>` : nothing}
     </svg>`;
   }
 }

@@ -86,13 +86,13 @@ Each component milestone is the same checklist, done for every component in the 
 - [x] shell
 - [x] accordion (+ tab)
 - [x] tab-control (+ page); delete `isServerSide` — the Lit `mp-tab-control` stays as-is until the dock converts (M6)
-- [ ] dropdown-menu
-- [ ] sparkline (+ Vue front)
+- [x] dropdown-menu — moved to M4: the navbar dropdown detects submenus through it and its DSD injector reads the menu chrome, so it converts together with the navbar
+- [x] sparkline (+ Vue front)
 - [ ] Delete the shell, accordion and dropdown-menu chrome generators, injectors and targets (navbar and carousel follow in M4)
 
 ## M4 — Wave B
 
-- [ ] navbar (+ brand, item, dropdown); delete `SSR_NAVBAR_HEIGHT` and the navbar chrome
+- [ ] navbar (+ brand, item, dropdown) and dropdown-menu (moved from M3); delete `SSR_NAVBAR_HEIGHT`, the navbar chrome and the dropdown-menu chrome
 - [ ] select
 - [ ] otp-input
 - [ ] multi-range

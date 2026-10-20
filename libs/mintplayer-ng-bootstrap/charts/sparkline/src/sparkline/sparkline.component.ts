@@ -1,50 +1,62 @@
 import {
   ChangeDetectionStrategy,
   Component,
-  CUSTOM_ELEMENTS_SCHEMA,
-  effect,
+  computed,
   ElementRef,
+  inject,
   input,
-  viewChild,
+  LOCALE_ID,
 } from '@angular/core';
-import { MpSparkline } from '@mintplayer/web-components/charts/sparkline';
+import {
+  SPARKLINE_SCOPE,
+  connectSparkline,
+  sparklineScopedStyles,
+} from '@mintplayer/ui-core/charts/sparkline';
+import { takeHostAria } from '@mintplayer/ng-bootstrap/a11y';
+import { MpPropsDirective, useScopedStyles } from '@mintplayer/ng-bootstrap/machine';
 
-// Side-effect import: registers the `<mp-sparkline>` custom element.
-import '@mintplayer/web-components/charts/sparkline';
-
-import { BsForwardAriaDirective } from '@mintplayer/ng-bootstrap/a11y';
-
+/**
+ * An axis-less inline trend for table cells (#437), rendered by this
+ * component's own template from `@mintplayer/ui-core/charts/sparkline`, so the
+ * server HTML is the finished chart. `<bs-sparkline>` is the sized box; the
+ * `role="img"` svg inside is named by `inputLabel`, the host's `aria-label`,
+ * `summaryFormatter`, or the generated "first, last, lowest, highest".
+ */
 @Component({
   selector: 'bs-sparkline',
   templateUrl: './sparkline.component.html',
-  styleUrls: ['./sparkline.component.scss'],
-  imports: [BsForwardAriaDirective],
-  schemas: [CUSTOM_ELEMENTS_SCHEMA],
+  imports: [MpPropsDirective],
   changeDetection: ChangeDetectionStrategy.OnPush,
+  host: {
+    'data-mps': SPARKLINE_SCOPE,
+    'class': 'sparkline',
+  },
 })
 export class BsSparklineComponent {
+  private readonly hostAria = takeHostAria(inject(ElementRef).nativeElement as HTMLElement);
+  private readonly localeId = inject(LOCALE_ID);
+
   readonly points = input<(number | null)[]>([]);
   readonly area = input<boolean>(false);
   readonly showLastDot = input<boolean>(true);
   readonly yMin = input<number | undefined>(undefined);
   readonly yMax = input<number | undefined>(undefined);
+  /** Number formatting for the generated name. Defaults to the app's `LOCALE_ID`. */
   readonly locale = input<string | undefined>(undefined);
   readonly inputLabel = input<string | undefined>(undefined);
   readonly summaryFormatter = input<((points: (number | null)[]) => string | undefined) | undefined>(undefined);
 
-  readonly sparklineRef = viewChild.required<ElementRef<MpSparkline>>('sparkline');
+  readonly view = computed(() => connectSparkline(this.points(), {
+    area: this.area(),
+    showLastDot: this.showLastDot(),
+    yMin: this.yMin(),
+    yMax: this.yMax(),
+    locale: this.locale() ?? this.localeId,
+    label: this.inputLabel() ?? this.hostAria['aria-label'],
+    summaryFormatter: this.summaryFormatter(),
+  }));
 
   constructor() {
-    effect(() => { const el = this.sparklineRef().nativeElement; el.points = this.points(); });
-    effect(() => { const el = this.sparklineRef().nativeElement; el.area = this.area(); });
-    effect(() => { const el = this.sparklineRef().nativeElement; el.showLastDot = this.showLastDot(); });
-    effect(() => { const el = this.sparklineRef().nativeElement; el.yMin = this.yMin(); });
-    effect(() => { const el = this.sparklineRef().nativeElement; el.yMax = this.yMax(); });
-    effect(() => { const el = this.sparklineRef().nativeElement; el.locale = this.locale(); });
-    effect(() => {
-      const el = this.sparklineRef().nativeElement;
-      el.inputLabel = this.inputLabel() ?? null;
-    });
-    effect(() => { const el = this.sparklineRef().nativeElement; el.summaryFormatter = this.summaryFormatter(); });
+    useScopedStyles(SPARKLINE_SCOPE, sparklineScopedStyles);
   }
 }
