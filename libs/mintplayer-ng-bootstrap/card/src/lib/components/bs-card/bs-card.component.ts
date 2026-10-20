@@ -1,37 +1,25 @@
-import {
-  ChangeDetectionStrategy,
-  Component,
-  computed,
-  CUSTOM_ELEMENTS_SCHEMA,
-  input,
-} from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, input } from '@angular/core';
 import { Color } from '@mintplayer/ng-bootstrap';
-// Side-effect import registers <mp-card>.
-import '@mintplayer/web-components/card';
+import { cardColorClasses } from '@mintplayer/ui-core/card';
 
 /**
- * Angular wrapper for the Bootstrap card root.
- *
- * Renders an inner `<mp-card>` — the single card web component, which owns the
- * card chrome (border / radius / background) in its shadow DOM. Projected
- * `<bs-card-*>` content lands in `<mp-card>`'s default slot and is styled by
- * the WC's card-anchored document sheet (header / body / footer / img / title /
- * text). This is what makes the card render
- * correctly even when itself slotted inside another web component.
+ * The card root (PRD #437 wave A). The host IS the Bootstrap `.card`: no
+ * inner element and no core, so the server renders the finished card and the
+ * page baseline styles it with JS off. Projected `<bs-card-*>` children are
+ * plain class-carrying elements.
  */
 @Component({
   selector: 'bs-card',
-  template: `<mp-card [attr.color]="colorName()" [attr.outline]="outline() ? '' : null"><ng-content></ng-content></mp-card>`,
-  styles: [':host { display: block; }'],
-  schemas: [CUSTOM_ELEMENTS_SCHEMA],
+  template: '<ng-content></ng-content>',
+  host: { '[class]': 'classes()' },
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class BsCardComponent {
   readonly color = input<Color | undefined>(undefined);
   readonly outline = input(false);
 
-  protected readonly colorName = computed(() => {
+  protected readonly classes = computed(() => {
     const c = this.color();
-    return c === undefined ? null : Color[c];
+    return ['card', ...cardColorClasses(c === undefined ? null : Color[c], this.outline())];
   });
 }

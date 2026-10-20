@@ -10,6 +10,21 @@ breaking change is a major. (2.20.0 and 2.21.0 broke `^2.x` consumers in a minor
 
 ### Breaking
 
+- **Card is plain Bootstrap markup (issue #437, wave A).** No front renders `<mp-card>` any more:
+  `bs-card` (Angular) is the `.card` itself, `BsCard` (React/Vue) renders a `div.card`, and `mp-card` (Lit) is a
+  light-DOM element that toggles the same classes on itself. The card ships no stylesheet; the layered Bootstrap
+  baseline styles it, so the card renders with JS off and in Angular SSR.
+  - **`navStyle` removed** from `bs-card-header` / `BsCardHeader` in all three frameworks, and
+    `applyHeaderNavStyle` from `@mintplayer/web-components/card`. Put Bootstrap's own `card-header-tabs` /
+    `card-header-pills` class on the nav: `<ul class="nav card-header-tabs">`.
+  - The class mapping for `color` / `outline` / image `position` lives in `@mintplayer/ui-core/card`
+    (`cardColorClasses`, `capColorClasses`, `cardImgClass`, `CARD_COLORS`, `CardColor`, `CardImagePosition`).
+    `CardImagePosition` moved there from `@mintplayer/web-components/card`, which re-exports it.
+  - `mp-card`'s shadow root, its `part`s, its `--mp-card-*` custom properties and its document-level card sheet
+    are gone. Style a card with ordinary CSS on `.card`.
+  - `bs-card-title`, `bs-card-subtitle` and `bs-card-text` hosts carry `d-block`, and `bs-card-group` drops its
+    `:host { display: block }` so Bootstrap's `.card-group` flex layout applies.
+
 - **Tile manager rebuilt on a headless core, and responsive (issue #440).** `@mintplayer/web-components`
   **3.0.0**, `@mintplayer/ui-core` 1.1.0 (new `tile-manager` entry), `@mintplayer/ng-bootstrap` 22.27.0,
   `@mintplayer/react-bootstrap` 19.26.0, `@mintplayer/vue-bootstrap` 3.27.0. `mp-tile-manager` now runs on

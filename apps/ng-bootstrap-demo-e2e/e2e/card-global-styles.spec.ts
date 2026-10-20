@@ -1,25 +1,23 @@
 import { expect, test, type Page } from '@playwright/test';
 
 /**
- * Issue #432 — loading <mp-card> must not change anything OUTSIDE a card.
+ * Issue #432 — a card must not change anything OUTSIDE a card.
  *
  * The card used to append an unscoped sheet to document.head whose
  * `.text-bg-*` rules carried `RGBA(#hex, var(--bs-bg-opacity, 1)) !important`
  * — invalid at computed-value time, so `background-color` fell back to
- * transparent for every `.text-bg-*` on the page, card or not. Its unscoped
- * `.card-*` rules also restyled every plain Bootstrap card.
+ * transparent for every `.text-bg-*` on the page, card or not. Since #437 the
+ * card ships no sheet at all: every front renders plain Bootstrap markup and
+ * the layered baseline styles it. This keeps the guard, and asserts that the
+ * classes the fronts emit (ui-core/card) produce the colour contract.
  *
  * jsdom cannot compute a var()-dependent invalid value, so this is asserted in
  * a real engine, in light and dark mode. The probes are appended by the test,
- * outside any card, so the demo page itself stays unchanged.
- *
- * A plain span is used on purpose: the probes are raw markup, and a <bs-badge>
- * cannot be created from markup at runtime.
+ * so the demo page itself stays unchanged.
  */
 
 const COOKIE = 'bs-theme-mode';
 
-// Bootstrap 5.3 theme colours; --bs-*-rgb is identical in light and dark mode.
 // Bootstrap 5.3 --bs-<name>-rgb; [data-bs-theme=dark] does not redefine these.
 const THEME_COLORS: Record<string, string> = {
   primary: 'rgb(13, 110, 253)',
@@ -32,15 +30,12 @@ const THEME_COLORS: Record<string, string> = {
   dark: 'rgb(33, 37, 41)',
 };
 const WHITE = 'rgb(255, 255, 255)';
-const TRANSPARENT = 'rgba(0, 0, 0, 0)';
 
 const settle = async (page: Page) => {
   await page.waitForLoadState('networkidle', { timeout: 2000 }).catch(() => {
     /* HMR keeps the socket open, so the network never idles: settle briefly, never hang */
   });
-  // The card installs its document-level sheet at module load, before define,
-  // so an upgraded mp-card means the sheet is in place.
-  await page.waitForFunction(() => !!customElements.get('mp-card') && !!document.querySelector('mp-card:defined'));
+  await page.locator('bs-card.card').first().waitFor();
 };
 
 const appendProbes = (page: Page) =>
@@ -51,12 +46,10 @@ const appendProbes = (page: Page) =>
       ['primary', 'secondary', 'success', 'info', 'warning', 'danger', 'light', 'dark']
         .map((name) => `<span class="badge text-bg-${name}" id="probe-badge-${name}">${name}</span>`)
         .join('') +
-      '<mp-card color="dark" id="probe-filled-card"><div class="card-body" id="probe-filled-body">' +
-      '<div class="card-title" id="probe-filled-title">t</div>x</div></mp-card>' +
-      '<mp-card color="white" outline id="probe-outline-white">' +
-      '<div class="card-body" id="probe-outline-white-body">x</div></mp-card>' +
-      '<div class="card" id="probe-card"><div class="card-header" id="probe-card-header">x</div>' +
-      '<div class="card-body" id="probe-card-body"><div class="card-title" id="probe-card-title">t</div></div></div>';
+      '<div class="card text-bg-dark border-dark" id="probe-filled-card"><div class="card-body" id="probe-filled-body">' +
+      '<div class="card-title" id="probe-filled-title">t</div>x</div></div>' +
+      '<div class="card bg-transparent border-white" id="probe-outline-white">' +
+      '<div class="card-body" id="probe-outline-white-body">x</div></div>';
     document.body.appendChild(host);
   });
 
@@ -79,35 +72,30 @@ for (const mode of ['light', 'dark'] as const) {
       });
     }
 
-    test('the body text of an outline-white mp-card keeps the page colour', async ({ page }) => {
-      // The outline variant is transparent, so it must undo the filled white
-      // rule's black text — else black on the dark page background (1.4:1).
+    test('the body text of an outline-white card keeps the page colour', async ({ page }) => {
+      // The outline variant is transparent, so it must not carry the filled
+      // white text-black — else black on the dark page background (1.4:1).
       const pageColor = await page.evaluate(() => getComputedStyle(document.body).color);
       expect(await computed(page, '#probe-outline-white', 'color')).toBe(pageColor);
       expect(await computed(page, '#probe-outline-white-body', 'color')).toBe(pageColor);
     });
 
-    test('the body text of a filled dark mp-card follows its colour contract', async ({ page }) => {
-      // The regions read var(--mp-card-color); a variant that set only `color`
-      // left them on the body colour — rgb(33, 37, 41) on rgb(33, 37, 41).
+    test('the body text of a filled dark card follows its colour', async ({ page }) => {
       expect(await computed(page, '#probe-filled-card', 'background-color')).toBe(THEME_COLORS.dark);
       expect(await computed(page, '#probe-filled-body', 'color')).toBe(WHITE);
       expect(await computed(page, '#probe-filled-title', 'color')).toBe(WHITE);
     });
 
-    test('card header/footer colours inside mp-card are opaque', async ({ page }) => {
-      expect(await computed(page, 'demo-card mp-card .text-bg-dark', 'background-color')).toBe(THEME_COLORS.dark);
-      expect(await computed(page, 'demo-card mp-card .text-bg-success', 'background-color')).toBe(THEME_COLORS.success);
+    test('card header/footer colours in the demo are opaque', async ({ page }) => {
+      expect(await computed(page, 'bs-card .card-header.text-bg-dark', 'background-color')).toBe(THEME_COLORS.dark);
+      expect(await computed(page, 'bs-card .card-footer.text-bg-success', 'background-color')).toBe(THEME_COLORS.success);
     });
 
-    test('a plain Bootstrap card outside mp-card is not restyled by the card sheet', async ({ page }) => {
-      // The Angular demo does not ship Bootstrap's card partial globally
-      // (libs/mintplayer-ng-bootstrap/_bootstrap.scss), so a plain .card-* is
-      // an unstyled block: anything else came from the card's sheet.
-      expect(await computed(page, '#probe-card-header', 'background-color')).toBe(TRANSPARENT);
-      expect(await computed(page, '#probe-card-header', 'padding-top')).toBe('0px');
-      expect(await computed(page, '#probe-card-body', 'padding-top')).toBe('0px');
-      expect(await computed(page, '#probe-card-title', 'margin-bottom')).toBe('0px');
+    test('the baseline styles a bs-card as a Bootstrap card', async ({ page }) => {
+      // The card partial ships in the layered baseline (#437 M1), so the
+      // Angular card is Bootstrap's card with no component sheet of its own.
+      expect(await computed(page, 'bs-card.card', 'display')).toBe('flex');
+      expect(await computed(page, 'bs-card .card-body', 'padding-top')).not.toBe('0px');
     });
   });
 }

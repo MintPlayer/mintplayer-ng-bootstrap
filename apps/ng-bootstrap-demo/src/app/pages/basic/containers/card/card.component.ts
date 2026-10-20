@@ -81,8 +81,8 @@ export class CardComponent {
   readonly placeholderSquare = makePlaceholder(200, 100, 'Image');
   readonly placeholderHorizontal = makePlaceholder(200, 140, 'Image');
 
-  // Interactive tab / pill state for the demo. Demonstrates that the
-  // [navStyle] mechanism on bs-card-header is purely a class-applier:
+  // Interactive tab / pill state for the demo. The nav carries
+  // Bootstrap's card-header-tabs / card-header-pills class itself;
   // active-state toggling and content swapping are owned by the consumer.
   readonly tabPages = ['Profile', 'Activity', 'Settings'] as const;
   readonly activeTab = signal<typeof this.tabPages[number]>('Profile');
@@ -269,8 +269,8 @@ export class CardComponent {
 
   protected readonly snippetNavTabsHtml = dedent`
     <bs-card class="d-block">
-      <bs-card-header [navStyle]="'tabs'">
-        <ul class="nav">
+      <bs-card-header>
+        <ul class="nav card-header-tabs">
           @for (page of tabPages; track page) {
             <li class="nav-item">
               <a class="nav-link" [class.active]="page === activeTab()" href="#"
@@ -288,8 +288,8 @@ export class CardComponent {
 
   protected readonly snippetNavPillsHtml = dedent`
     <bs-card class="d-block">
-      <bs-card-header [navStyle]="'pills'">
-        <ul class="nav">
+      <bs-card-header>
+        <ul class="nav card-header-pills">
           @for (page of pillPages; track page) {
             <li class="nav-item">
               <a class="nav-link" [class.active]="page === activePill()" href="#"

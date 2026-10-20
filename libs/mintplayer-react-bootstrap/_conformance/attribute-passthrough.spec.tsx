@@ -158,7 +158,7 @@ const CASES: Case[] = [
     ),
   },
   bare('BsCalendar', 'mp-calendar', BsCalendar),
-  bare('BsCard', 'mp-card', BsCard),
+  bare('BsCard', 'div.card', BsCard),
   bare('BsCardBody', 'div.card-body', BsCardBody),
   bare('BsCardFooter', 'div.card-footer', BsCardFooter),
   bare('BsCardGroup', 'div.card-group', BsCardGroup),

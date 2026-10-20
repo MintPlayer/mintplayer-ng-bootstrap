@@ -78,7 +78,7 @@ const TARGETS: Record<string, string> = {
   BsAccordion: 'mp-accordion',
   BsAccordionItem: 'mp-accordion-tab',
   BsCalendar: 'mp-calendar',
-  BsCard: 'mp-card',
+  BsCard: 'div.card',
   BsCardBody: 'div.card-body',
   BsCardFooter: 'div.card-footer',
   BsCardGroup: 'div.card-group',
