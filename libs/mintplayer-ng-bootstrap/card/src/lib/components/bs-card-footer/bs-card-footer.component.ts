@@ -1,30 +1,18 @@
-import {
-  ChangeDetectionStrategy,
-  Component,
-  ElementRef,
-  effect,
-  inject,
-  input,
-} from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, input } from '@angular/core';
 import { Color } from '@mintplayer/ng-bootstrap';
-import { applyTextBgClass } from '@mintplayer/web-components/card';
+import { capColorClasses } from '@mintplayer/ui-core/card';
 
 @Component({
   selector: 'bs-card-footer',
   template: '<ng-content></ng-content>',
-  host: { class: 'card-footer' },
+  host: { '[class]': 'classes()' },
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class BsCardFooterComponent {
-  private readonly el = inject<ElementRef<HTMLElement>>(ElementRef);
-
   readonly color = input<Color | undefined>(undefined);
 
-  constructor() {
-    effect(() => {
-      const c = this.color();
-      const name = c === undefined ? null : Color[c];
-      applyTextBgClass(this.el.nativeElement, name);
-    });
-  }
+  protected readonly classes = computed(() => {
+    const c = this.color();
+    return ['card-footer', ...capColorClasses(c === undefined ? null : Color[c])];
+  });
 }

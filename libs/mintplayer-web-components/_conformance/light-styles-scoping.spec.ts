@@ -8,7 +8,6 @@ import selectorParser from 'postcss-selector-parser';
 import { getLightStyleEntries } from '@mintplayer/web-components/light-dom';
 // Every component that installs a document-level sheet. Completeness is
 // asserted below against the installLightStyles calls in the source.
-import '@mintplayer/web-components/card';
 import '@mintplayer/web-components/datatable';
 import '@mintplayer/web-components/query-builder';
 import '@mintplayer/web-components/treeview';
@@ -177,10 +176,6 @@ describe('document-level stylesheets are scoped to their own component', () => {
       .filter(({ key }) => !registered.includes(key))
       .map(({ file }) => file);
     expect(missing).toEqual([]);
-  });
-
-  it('importing mp-card registers its document-level sheet (#432)', () => {
-    expect(getLightStyleEntries().map((e) => e.key)).toContain('card');
   });
 
   for (const sheet of sheets) {

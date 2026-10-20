@@ -1,32 +1,18 @@
 <script setup lang="ts">
-import { applyHeaderNavStyle } from '@mintplayer/web-components/card';
-import { ref, onMounted, watch, nextTick } from 'vue';
+// A nav inside the header takes Bootstrap's own card-header-tabs /
+// card-header-pills class, written on the nav.
+import { computed } from 'vue';
+import { capColorClasses, type CardColor } from '@mintplayer/ui-core/card';
 
 defineOptions({ inheritAttrs: false });
 
-const props = defineProps<{ color?: string; navStyle?: 'tabs' | 'pills' }>();
+const props = defineProps<{ color?: CardColor }>();
 
-const el = ref<HTMLElement | null>(null);
-
-async function applyNavStyle() {
-  // Await the next tick so the slotted nav/ul exists before we decorate it.
-  await nextTick();
-  if (el.value) {
-    applyHeaderNavStyle(el.value, props.navStyle ?? null);
-  }
-}
-
-onMounted(applyNavStyle);
-watch(() => props.navStyle, applyNavStyle);
+const classes = computed(() => ['card-header', ...capColorClasses(props.color)]);
 </script>
 
 <template>
-  <div
-    ref="el"
-    class="card-header"
-    :class="color ? 'text-bg-' + color : null"
-    v-bind="$attrs"
-  >
+  <div :class="classes" v-bind="$attrs">
     <slot />
   </div>
 </template>
