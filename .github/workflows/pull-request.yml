@@ -147,9 +147,44 @@ jobs:
   # its project is affected by the PR and skips its browsers and its run when
   # it is not, exactly as the old single `nx affected --target=e2e` step did
   # for the whole set.
+  # The Playwright image for the installed @playwright/test, read from the
+  # lockfile (package.json holds only a range). Its browsers AND their OS
+  # libraries are baked in, so the browser jobs below never touch apt: the
+  # runners' Ubuntu mirror intermittently crawled at ~45 KB/s, turning a 5 min
+  # run into 10-24 min in `playwright install-deps`. A Playwright bump moves
+  # the image with it.
+  playwright-image:
+    name: playwright image
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    outputs:
+      image: ${{ steps.version.outputs.image }}
+
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v6
+      with:
+        sparse-checkout: package-lock.json
+        sparse-checkout-cone-mode: false
+
+    - name: Resolve the image
+      id: version
+      run: |
+        version=$(jq -er '.packages["node_modules/@playwright/test"].version' package-lock.json)
+        echo "image=mcr.microsoft.com/playwright:v$version-noble" >> "$GITHUB_OUTPUT"
+
+  # The browser jobs run inside the image. uid 1001 is the runner's own user,
+  # so the checked-out workspace stays writable; .NET goes to a dir that user
+  # can write (setup-dotnet's Linux default, /usr/share/dotnet, is root's).
   e2e:
     name: e2e (${{ matrix.label }})
+    needs: playwright-image
     runs-on: ubuntu-latest
+    container:
+      image: ${{ needs.playwright-image.outputs.image }}
+      options: --user 1001
+    env:
+      DOTNET_INSTALL_DIR: /tmp/dotnet
     timeout-minutes: 30
     strategy:
       fail-fast: false
@@ -191,12 +226,6 @@ jobs:
           echo "${{ matrix.project }} is not affected by this PR; skipping."
         fi
 
-    - name: Install Playwright browsers
-      if: steps.affected.outputs.run == 'true'
-      uses: ./.github/actions/playwright
-      with:
-        browsers: ${{ matrix.browser }}
-
     - name: E2E tests
       if: steps.affected.outputs.run == 'true'
       # Everything after `--` is forwarded to `playwright test` untouched. It
@@ -226,7 +255,13 @@ jobs:
   # tools/e2e-shared/axe-suites.ts). One runner per app.
   e2e-a11y:
     name: axe (${{ matrix.app }})
+    needs: playwright-image
     runs-on: ubuntu-latest
+    container:
+      image: ${{ needs.playwright-image.outputs.image }}
+      options: --user 1001
+    env:
+      DOTNET_INSTALL_DIR: /tmp/dotnet
     timeout-minutes: 30
     strategy:
       fail-fast: false
@@ -242,12 +277,6 @@ jobs:
       uses: ./.github/actions/setup
       with:
         dotnet: ${{ matrix.app == 'ng' }}
-
-    # The axe configs run chromium only.
-    - name: Install Playwright browsers
-      uses: ./.github/actions/playwright
-      with:
-        browsers: chromium
 
     - name: E2E accessibility gate (axe)
       run: npx nx run ${{ matrix.app }}-bootstrap-demo-e2e:e2e-a11y --output-style=stream
@@ -267,7 +296,13 @@ jobs:
   # sequential workflow needed a step that force-freed the port first).
   e2e-live:
     name: e2e (live API)
+    needs: playwright-image
     runs-on: ubuntu-latest
+    container:
+      image: ${{ needs.playwright-image.outputs.image }}
+      options: --user 1001
+    env:
+      DOTNET_INSTALL_DIR: /tmp/dotnet
     timeout-minutes: 20
 
     steps:
@@ -276,12 +311,6 @@ jobs:
 
     - name: Setup workspace
       uses: ./.github/actions/setup
-
-    # The live-API config runs chromium only.
-    - name: Install Playwright browsers
-      uses: ./.github/actions/playwright
-      with:
-        browsers: chromium
 
     - name: E2E (live API)
       run: npx nx run ng-bootstrap-demo-e2e:e2e-live --output-style=stream
@@ -302,7 +331,9 @@ jobs:
   pull-request:
     name: pull-request
     if: always()
-    needs: [build, tests, coverage, e2e, e2e-a11y, e2e-live]
+    # playwright-image is listed because its failure SKIPS the browser jobs,
+    # and a skip alone would not fail this check.
+    needs: [build, tests, coverage, playwright-image, e2e, e2e-a11y, e2e-live]
     runs-on: ubuntu-latest
     timeout-minutes: 5
 
