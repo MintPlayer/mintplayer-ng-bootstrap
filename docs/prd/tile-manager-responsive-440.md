@@ -190,7 +190,14 @@ change changes the grid's **height**, and it can also toggle a page scrollbar. W
 happens inside the callback, the browser raises `ResizeObserver loop` no matter what our code does
 with the notification. A deferred write lands in the next frame, where the browser delivers it as an
 ordinary notification and the width check ignores it. FLIP reflow animation is a small shared DOM helper in `ui-core`
-(`flip.ts`), used by all four fronts and gated by `prefers-reduced-motion` (S5).
+(`flip.ts`), used by all four fronts and gated by `prefers-reduced-motion`. S5 decided its shape
+(`docs/prd/spikes/issue-440/S5-reflow-animation.md`):
+- A count change animates the **whole reflow**, **position only**: a translate from the old rect to
+  the new one, 250 ms, `cubic-bezier(.2,.7,.3,1)`, through the Web Animations API.
+- Size snaps instead of animating. A scale transform would distort text and tables while it runs.
+- The "first" rects are read before running animations are cancelled, so a fast drag across several
+  counts continues smoothly from where each tile is on screen.
+- Reduced motion jumps.
 
 ### 5.4 SSR and no-JS (D14)
 
