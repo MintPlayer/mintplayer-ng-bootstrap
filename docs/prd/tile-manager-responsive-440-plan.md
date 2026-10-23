@@ -2,8 +2,9 @@
 
 PRD: [tile-manager-responsive-440.md](./tile-manager-responsive-440.md)
 
-Status: **Proposed** (2026-10-23), grilled with decisions D1–D15 and one review round, not started. The branch will be
-`feat/440-tile-manager-responsive`, targeting `master`. Everything lands in **one PR**: the core,
+Status: **In progress** (2026-10-23), grilled with decisions D1–D15 and one review round. S1–S5, M1
+(`19576ed2`) and M2 (`27ae0b55`, `1e3798c1`) are done; next is M3. Specs are written but run only in M10.
+The branch is `feat/440-tile-manager-responsive`, targeting `master`. Everything lands in **one PR**: the core,
 the four fronts, the demos, the docs and the version bumps.
 
 Spike artifacts go in `docs/prd/spikes/issue-440/`, one short `S<n>-*.md` per spike, recording what
@@ -88,6 +89,13 @@ against the running demos. Test suites run **once**, in M10.
   columns, rendered at 2, then a drag of the right-hand tile. The tile must move by the pointer
   delta. On `master` it jumps ~560 px right, because positions outside `1..n` create implicit grid
   tracks while `cellOrigin` assumes n equal ones.
+- The drag translate is measured from the cell the tile is **rendered** in, never from the gesture's
+  target rect. Over a locked cell the preview keeps the last valid place, so measuring from the
+  blocked target threw the tile ~800 px at each cell crossing (owner, S3 page, 2026-10-23). Regression spec.
+- Decided while implementing: `messages.ts` lands in M2 (the machine announces through it); M3 adds the
+  instruction strings. M or R on a tile that allows neither is not consumed; on a tile that allows only
+  the other one it announces "cannot be moved/resized". A column-count change waits until M/R mode ends
+  (the count is frozen) and is announced then. Pointer gestures are ignored while M/R mode is active.
 
 ## M3: connect, messages, styles
 - `connect(snapshot, rootId)` builds the bags for the board, tiles, handles, grips, instructions and
