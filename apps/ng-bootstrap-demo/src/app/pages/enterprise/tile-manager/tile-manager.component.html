@@ -73,8 +73,10 @@
     label="Demo dashboard"
     (columnCountChange)="onColumnCountChange($event)"
     (gestureBlocked)="latestBlocked.set($event)">
-    <span *bsTileHeader="let tile; of: tiles()">{{ tile.title }}</span>
-    <div *bsTileContent="let tile; of: tiles()" class="tile-body">{{ tile.body }}</div>
+    <ng-container *bsTile="let tile of tiles()">
+      <span *bsTileHeader>{{ tile.title }}</span>
+      <div *bsTileContent class="tile-body">{{ tile.body }}</div>
+    </ng-container>
   </bs-tile-manager>
 
   <bs-grid class="mt-3">

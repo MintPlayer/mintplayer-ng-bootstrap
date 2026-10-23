@@ -12,6 +12,7 @@ import {
   inject,
   Injector,
   input,
+  linkedSignal,
   model,
   output,
   PLATFORM_ID,
@@ -44,7 +45,7 @@ import {
   type TilePart,
   type TileResizeMode,
 } from '@mintplayer/ui-core/tile-manager';
-import { BsTileContentDirective, BsTileHeaderDirective, type BsTileTemplateContext } from '../directives/tile-template.directives';
+import { BsTileDirective, BsTileSlots, type BsTileContext } from '../directives/tile-template.directives';
 
 /** Payload of `columnCountChange`. */
 export interface BsTileColumnCountChange {
@@ -60,7 +61,7 @@ export interface BsTileColumnCountChange {
  * (layout per column count, gestures, keyboard, ARIA) is the machine's; this component renders
  * its own template from `connect()`'s bags with `[mpProps]`, measures the grid, owns pointer
  * capture and the FLIP animation, and turns the machine's events into outputs. Tile header and
- * body come from the `*bsTileHeader` / `*bsTileContent` templates.
+ * body come from the `*bsTileHeader` / `*bsTileContent` templates inside one `*bsTile` block.
  *
  * SSR: the whole tree is rendered, plus a `<style>` in `<head>` holding the `@container` rules
  * that place every tile at every column count (D14), so the server HTML paints the right layout
@@ -107,8 +108,7 @@ export class BsTileManagerComponent<T extends MintTile = MintTile> {
   readonly columnCountChange = output<BsTileColumnCountChange>();
   readonly gestureBlocked = output<TileGestureBlocked>();
 
-  readonly headerTemplate = contentChild(BsTileHeaderDirective);
-  readonly contentTemplate = contentChild(BsTileContentDirective);
+  readonly tileTemplate = contentChild<BsTileDirective<T>>(BsTileDirective);
 
   readonly id = inject(BsIdService).next('bs-tile-manager');
   readonly machine = new TileManagerMachine({ vibrate: (ms) => navigator.vibrate?.(ms) });
@@ -121,8 +121,13 @@ export class BsTileManagerComponent<T extends MintTile = MintTile> {
     const describedBy = [api.board.attrs['aria-describedby'], this.hostAria['aria-describedby']].filter(Boolean).join(' ') || null;
     return { ...api, board: { ...api.board, attrs: { ...api.board.attrs, ...this.hostAria, 'aria-describedby': describedBy } } };
   });
-  /** The `*bsTileHeader` / `*bsTileContent` context per tile id, stable across change detection. */
-  readonly tileContext = computed(() => new Map(this.tiles().map((t) => [t.id, { $implicit: t } as BsTileTemplateContext<T>])));
+  /** The `*bsTile` context per tile id, stable across change detection. */
+  readonly tileContext = computed(() => new Map(this.tiles().map((t) => [t.id, { $implicit: t } as BsTileContext<T>])));
+  /** Slots per tile id, kept while the id stays so the tile's view is reused, not rebuilt. */
+  readonly tileSlots = linkedSignal<readonly T[], ReadonlyMap<string, BsTileSlots>>({
+    source: this.tiles,
+    computation: (tiles, previous) => new Map(tiles.map((t) => [t.id, previous?.value.get(t.id) ?? new BsTileSlots(this.injector)])),
+  });
 
   // Not `.required`: the machine notifies (onChange) while effects configure it, before the view exists.
   private readonly grid = viewChild<ElementRef<HTMLElement>>('grid');

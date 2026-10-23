@@ -1,43 +1,75 @@
-import { Directive, inject, input, TemplateRef } from '@angular/core';
+import { DestroyRef, Directive, inject, Injector, input, TemplateRef } from '@angular/core';
 import type { MintTile } from '@mintplayer/ui-core/tile-manager';
 
-/** The context of a `*bsTileHeader` / `*bsTileContent` template: the tile it renders. */
-export interface BsTileTemplateContext<T extends MintTile = MintTile> {
+/** The context of a `*bsTile` template: the tile it renders. */
+export interface BsTileContext<T extends MintTile = MintTile> {
   $implicit: T;
 }
 
 /**
- * Renders a tile's header, the drag handle in `dragMode="header"`. Declared once inside
- * `<bs-tile-manager>` and stamped per tile.
+ * One tile's slots. The manager stamps the `*bsTile` template once per tile with an injector
+ * providing that tile's `BsTileSlots`; `*bsTileHeader` / `*bsTileContent` inside it register
+ * their template here, and the manager renders them into the tile's header and body. Kept per
+ * tile id, so a new tile object (a locked panel, say) updates the view instead of rebuilding it.
+ */
+export class BsTileSlots {
+  header: TemplateRef<unknown> | null = null;
+  content: TemplateRef<unknown> | null = null;
+  readonly injector: Injector;
+
+  constructor(parent: Injector) {
+    this.injector = Injector.create({ providers: [{ provide: BsTileSlots, useValue: this }], parent });
+  }
+}
+
+/**
+ * Declares the markup of every tile, once, inside `<bs-tile-manager>`. The header and body are
+ * its direct `*bsTileHeader` / `*bsTileContent` children, and both see the tile variable.
  *
  * ```html
  * <bs-tile-manager [tiles]="tiles()" [(layouts)]="layouts">
- *   <ng-container *bsTileHeader="let tile; of: tiles()">{{ tile.title }}</ng-container>
- *   <ng-container *bsTileContent="let tile; of: tiles()">{{ tile.body }}</ng-container>
+ *   <ng-container *bsTile="let tile of tiles()">
+ *     <span *bsTileHeader>{{ tile.title }}</span>
+ *     <div *bsTileContent>{{ tile.body }}</div>
+ *   </ng-container>
  * </bs-tile-manager>
  * ```
  *
- * `of:` is optional and only carries the tile type into the template (like `ngFor`'s `of`).
+ * `of` only carries the tile type into the template (like `ngFor`'s `of`); the tiles rendered
+ * are always the manager's `[tiles]`.
  */
-@Directive({ selector: '[bsTileHeader]' })
-export class BsTileHeaderDirective<T extends MintTile = MintTile> {
-  readonly templateRef = inject<TemplateRef<BsTileTemplateContext<T>>>(TemplateRef);
+@Directive({ selector: '[bsTile]' })
+export class BsTileDirective<T extends MintTile = MintTile> {
+  readonly templateRef = inject<TemplateRef<BsTileContext<T>>>(TemplateRef);
   /** Type carrier only; never read at runtime. */
-  readonly bsTileHeaderOf = input<readonly T[] | T | null | undefined>(undefined);
+  readonly bsTileOf = input<readonly T[] | null | undefined>(undefined);
 
-  static ngTemplateContextGuard<T extends MintTile>(_dir: BsTileHeaderDirective<T>, ctx: unknown): ctx is BsTileTemplateContext<T> {
+  static ngTemplateContextGuard<T extends MintTile>(_dir: BsTileDirective<T>, ctx: unknown): ctx is BsTileContext<T> {
     return true;
   }
 }
 
-/** Renders a tile's body. See `BsTileHeaderDirective`. */
-@Directive({ selector: '[bsTileContent]' })
-export class BsTileContentDirective<T extends MintTile = MintTile> {
-  readonly templateRef = inject<TemplateRef<BsTileTemplateContext<T>>>(TemplateRef);
-  /** Type carrier only; never read at runtime. */
-  readonly bsTileContentOf = input<readonly T[] | T | null | undefined>(undefined);
-
-  static ngTemplateContextGuard<T extends MintTile>(_dir: BsTileContentDirective<T>, ctx: unknown): ctx is BsTileTemplateContext<T> {
-    return true;
+/** A tile's header: the drag handle in `dragMode="header"`. Only valid inside `*bsTile`. */
+@Directive({ selector: '[bsTileHeader]' })
+export class BsTileHeaderDirective {
+  constructor() {
+    register('header');
   }
+}
+
+/** A tile's body. Only valid inside `*bsTile`. */
+@Directive({ selector: '[bsTileContent]' })
+export class BsTileContentDirective {
+  constructor() {
+    register('content');
+  }
+}
+
+function register(slot: 'header' | 'content'): void {
+  const slots = inject(BsTileSlots);
+  const template = inject(TemplateRef);
+  slots[slot] = template;
+  inject(DestroyRef).onDestroy(() => {
+    if (slots[slot] === template) slots[slot] = null;
+  });
 }

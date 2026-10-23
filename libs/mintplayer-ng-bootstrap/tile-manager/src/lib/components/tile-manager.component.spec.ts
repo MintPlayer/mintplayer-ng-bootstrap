@@ -3,7 +3,7 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import type { MintTile, TileBreakpoint, TileLayoutChange, TileLayouts } from '@mintplayer/ui-core/tile-manager';
 import { BsTileManagerComponent } from './tile-manager.component';
-import { BsTileContentDirective, BsTileHeaderDirective } from '../directives/tile-template.directives';
+import { BsTileContentDirective, BsTileDirective, BsTileHeaderDirective } from '../directives/tile-template.directives';
 
 // Wiring only: inputs reach the machine, the template renders connect()'s bags, events come back
 // out. The layout and ARIA rules themselves are pinned in ui-core's specs.
@@ -14,7 +14,7 @@ interface DemoTile extends MintTile {
 
 @Component({
   selector: 'bs-tile-manager-host',
-  imports: [BsTileManagerComponent, BsTileHeaderDirective, BsTileContentDirective],
+  imports: [BsTileManagerComponent, BsTileDirective, BsTileHeaderDirective, BsTileContentDirective],
   template: `
     <bs-tile-manager
       aria-label="Dashboard"
@@ -24,8 +24,10 @@ interface DemoTile extends MintTile {
       [dragMode]="dragMode()"
       (layoutChange)="changes.push($event)"
       (layoutPreview)="previews.push($event)">
-      <span *bsTileHeader="let tile; of: tiles()" class="head">{{ tile.title }}</span>
-      <p *bsTileContent="let tile; of: tiles()" class="body">{{ tile.id }} body</p>
+      <ng-container *bsTile="let tile of tiles()">
+        <span *bsTileHeader class="head">{{ tile.title }}</span>
+        <p *bsTileContent class="body">{{ tile.id }} body</p>
+      </ng-container>
     </bs-tile-manager>
   `,
 })
@@ -69,6 +71,14 @@ describe('BsTileManagerComponent', () => {
   it('renders the header and content templates per tile, with the tile as context', () => {
     expect(Array.from(el.querySelectorAll('.tile-header .head')).map((n) => n.textContent)).toEqual(['Alpha', 'Beta', 'Gamma']);
     expect(tile('b').querySelector('.tile-content .body')?.textContent).toBe('b body');
+  });
+
+  it('keeps a tile\'s template view when the tile object changes, and updates its binding', () => {
+    const before = tile('a').querySelector('.head');
+    host.tiles.update((tiles) => tiles.map((t) => (t.id === 'a' ? { ...t, title: 'Alpha 2' } : t)));
+    fixture.detectChanges();
+    expect(tile('a').querySelector('.head')).toBe(before);
+    expect(before?.textContent).toBe('Alpha 2');
   });
 
   it('renders no <mp-tile-manager>: the Angular template is the DOM', () => {

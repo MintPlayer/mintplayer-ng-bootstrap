@@ -128,13 +128,13 @@ against the running demos. Test suites run **once**, in M10.
 
 ## M5: Angular front
 - `bs-tile-manager` renders the §5.2 tree natively, with no `<mp-tile-manager>`.
-- `*bsTileHeader` / `*bsTileContent` replace `bs-tile` / `bs-tile-header`.
+- `*bsTile="let tile of tiles()"` wrapping `*bsTileHeader` / `*bsTileContent` replaces `bs-tile` / `bs-tile-header`.
 - `layouts = model()`, plus the outputs.
 - On SSR, render the full tree plus the `breakpointCss` `<style>`, and install the sheet via the
   scoped-styles server installer.
 - The specs drive inputs from signals.
-- Done as: `tile-manager.component.{ts,html}` + `directives/tile-template.directives.ts` (both carry an
-  `of` type input and a context guard); `bs-tile` / `bs-tile-header` are deleted. One effect per input
+- Done as: `tile-manager.component.{ts,html}` + `directives/tile-template.directives.ts` (`*bsTile` stamps the consumer block per tile with an injector holding that tile's `BsTileSlots`; `*bsTileHeader` / `*bsTileContent` register into it, so `tile` is in scope by closure; slots kept per id via `linkedSignal`, so a new tile object updates the view in place; `of` is a type carrier with a context guard).
+  `bs-tile` / `bs-tile-header` are deleted. One effect per input
   forwards only what changed, and `layouts` is echo-guarded by reference against the machine snapshot so
   an unrelated input change never re-pushes a stale record. Host `aria-label` / `-labelledby` /
   `-describedby` are read via `HostAttributeToken` (deterministic for hydration), removed from the host

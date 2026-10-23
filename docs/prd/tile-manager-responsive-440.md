@@ -194,7 +194,7 @@ rules alone. Writing them inline any earlier would beat every container rule and
 | Front | Tile content | Binding | Notes |
 |---|---|---|---|
 | Lit `mp-tile-manager` | named slots `${id}-header` / `${id}-content` | properties and events | Keeps its **shadow root**, because content only arrives through slots (light-tier admission rule). Adopts the scoped sheet into its shadow root via `adoptLightStyles`. `MachineController` and `props()` directive |
-| Angular `bs-tile-manager` | `*bsTileHeader` / `*bsTileContent` structural directives with an `{ $implicit: tile }` context (`bs-tile` is replaced; see §7) | `tiles`, `[(layouts)]`, `breakpoints`, `stackBelow`, …; outputs `layoutPreview`, `columnCountChange` | `machineSignal()` + `[mpProps]`, OnPush. SSR renders the full tree plus the D14 `<style>`. `withEventReplay` |
+| Angular `bs-tile-manager` | `*bsTile="let tile of tiles()"` wrapping `*bsTileHeader` / `*bsTileContent` (the tile is in scope for both) (`bs-tile` is replaced; see §7) | `tiles`, `[(layouts)]`, `breakpoints`, `stackBelow`, …; outputs `layoutPreview`, `columnCountChange` | `machineSignal()` + `[mpProps]`, OnPush. SSR renders the full tree plus the D14 `<style>`. `withEventReplay` |
 | React `BsTileManager` | `renderHeader(tile)` / `renderContent(tile)` | `layouts` / `defaultLayouts` + `onLayoutChange`, `onLayoutPreview`, `onColumnCountChange` | `useMachine` + `reactProps()`. Props extend `HTMLAttributes<HTMLDivElement>` and are spread onto the board |
 | Vue `BsTileManager` | `#header="{ tile }"` / `#content="{ tile }"` scoped slots | `v-model:layouts`, events | `useMachine` composable, `inheritAttrs:false` + `v-bind="$attrs"` on the board |
 
@@ -285,7 +285,7 @@ ordinary notification and the width check ignores it. FLIP reflow animation is a
 | `columnCount` | removed. Use `breakpoints` / `stackBelow`, or the generated map with `maxColumns` |
 | `tilelayoutchange`, `tilepositionchange` | `layoutchange` (commit, `{columnCount, layout, layouts, staleCounts}`), `layoutpreview` (steps) |
 | — | `layouts` (two-way), `breakpoints`, `stackBelow`, `maxColumns`, `messages`, `columncountchange`, `resetLayout(count)`, `withoutNarrowerLayouts()` |
-| Angular `bs-tile [position]` + `layoutChange` emitting an array | `*bsTileHeader` / `*bsTileContent` on `tiles`, `[(layouts)]`, `layoutPreview`, `columnCountChange` |
+| Angular `bs-tile [position]` + `layoutChange` emitting an array | `*bsTile` + `*bsTileHeader` / `*bsTileContent` on `tiles`, `[(layouts)]`, `layoutPreview`, `columnCountChange` |
 | React and Vue thin `@lit/react` / `$attrs` wrappers around `mp-tile-manager` | native fronts (§5.3) |
 | `captureLayout()` | kept on every front; it returns `{ columnCount, layout }` of what is rendered |
 

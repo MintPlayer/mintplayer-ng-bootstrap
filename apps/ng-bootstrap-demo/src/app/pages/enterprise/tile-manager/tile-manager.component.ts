@@ -7,6 +7,7 @@ import { BsCheckboxComponent } from '@mintplayer/ng-bootstrap/checkbox';
 import {
   BsTileColumnCountChange,
   BsTileContentDirective,
+  BsTileDirective,
   BsTileHeaderDirective,
   BsTileManagerComponent,
   MintTile,
@@ -48,6 +49,7 @@ const PANELS: readonly DemoTile[] = [
     BsSelectOption,
     BsCheckboxComponent,
     BsTileManagerComponent,
+    BsTileDirective,
     BsTileHeaderDirective,
     BsTileContentDirective,
     BsCodeSnippetComponent,
@@ -107,8 +109,10 @@ export class TileManagerComponent {
       [stackBelow]="576"
       [gap]="12"
       label="Dashboard">
-      <span *bsTileHeader="let tile; of: tiles()">{{ tile.title }}</span>
-      <div *bsTileContent="let tile; of: tiles()" class="tile-body">{{ tile.body }}</div>
+      <ng-container *bsTile="let tile of tiles()">
+        <span *bsTileHeader>{{ tile.title }}</span>
+        <div *bsTileContent class="tile-body">{{ tile.body }}</div>
+      </ng-container>
     </bs-tile-manager>
   `;
 
@@ -116,6 +120,7 @@ export class TileManagerComponent {
     import { Component, effect, signal } from '@angular/core';
     import {
       BsTileManagerComponent,
+      BsTileDirective,
       BsTileHeaderDirective,
       BsTileContentDirective,
       MintTile,
@@ -130,7 +135,7 @@ export class TileManagerComponent {
     @Component({
       selector: 'my-dashboard',
       templateUrl: './my-dashboard.component.html',
-      imports: [BsTileManagerComponent, BsTileHeaderDirective, BsTileContentDirective],
+      imports: [BsTileManagerComponent, BsTileDirective, BsTileHeaderDirective, BsTileContentDirective],
     })
     export class MyDashboardComponent {
       readonly tiles = signal<DashboardTile[]>([

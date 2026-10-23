@@ -2,7 +2,7 @@ import { Component, destroyPlatform } from '@angular/core';
 import { bootstrapApplication } from '@angular/platform-browser';
 import { provideServerRendering, renderApplication } from '@angular/platform-server';
 import { BsTileManagerComponent } from './tile-manager.component';
-import { BsTileContentDirective, BsTileHeaderDirective } from '../directives/tile-template.directives';
+import { BsTileContentDirective, BsTileDirective, BsTileHeaderDirective } from '../directives/tile-template.directives';
 
 /**
  * D14: Angular SSR emits the whole board (a Tier 2 group per tile, its header and content
@@ -11,11 +11,13 @@ import { BsTileContentDirective, BsTileHeaderDirective } from '../directives/til
  */
 @Component({
   selector: 'bs-tile-manager-ssr-root',
-  imports: [BsTileManagerComponent, BsTileHeaderDirective, BsTileContentDirective],
+  imports: [BsTileManagerComponent, BsTileDirective, BsTileHeaderDirective, BsTileContentDirective],
   template: `
     <bs-tile-manager [tiles]="tiles" [stackBelow]="600" label="Dashboard">
-      <span *bsTileHeader="let tile">{{ tile.id }} title</span>
-      <p *bsTileContent="let tile">{{ tile.id }} body</p>
+      <ng-container *bsTile="let tile of tiles">
+        <span *bsTileHeader>{{ tile.id }} title</span>
+        <p *bsTileContent>{{ tile.id }} body</p>
+      </ng-container>
     </bs-tile-manager>
   `,
 })
