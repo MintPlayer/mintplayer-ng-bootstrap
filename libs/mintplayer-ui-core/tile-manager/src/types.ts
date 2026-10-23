@@ -42,6 +42,31 @@ export type TileLayoutSnapshot = Array<{
   position: TilePosition;
 }>;
 
+/** A span without a placement: `defaultSize` on a tile, and the size of an appended tile (D8). */
+export interface TileSize {
+  colSpan: number;
+  rowSpan: number;
+}
+
+/** Identity and options of one tile. Positions live in `TileLayouts`, never on the tile (D4). */
+export interface MintTile {
+  id: string;
+  disableMove?: boolean;
+  disableResize?: boolean;
+  label?: string | null;
+  /** Size used when no layout places this tile (D5 step 4, D8). Defaults to 1×1, capped to the column count. */
+  defaultSize?: TileSize;
+}
+
+/** `minWidth` is in px of the board's content box. The entry with the largest `minWidth ≤ width` applies (D1). */
+export interface TileBreakpoint {
+  minWidth: number;
+  columns: number;
+}
+
+/** Stored layouts, keyed by column count (D4). A missing count is derived, never stored (D5). */
+export type TileLayouts = Readonly<Record<number, TileLayoutSnapshot>>;
+
 export interface TileGestureBlocked {
   id: string;
   reason: 'locked-overlap' | 'no-valid-layout';

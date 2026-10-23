@@ -1,7 +1,7 @@
 import { Machine } from '@mintplayer/ui-core/store';
 import { cellOrigin, dragTranslate, pointerToGridRect, resizeSpans, type CellMetrics, type GridPoint, type ResizeHandle } from './grid-geometry';
 import { pack } from './pack';
-import type { GridRect, TileLayoutSnapshot, TilePosition } from './types';
+import type { GridRect, MintTile, TileLayoutSnapshot, TilePosition } from './types';
 
 /**
  * S3 PROTOTYPE (docs/prd/spikes/issue-440/S3-gesture-split.md): the gesture and
@@ -10,13 +10,6 @@ import type { GridRect, TileLayoutSnapshot, TilePosition } from './types';
  * pointerdown, and act on the returned verdict (capture or not). Layouts keyed by
  * column count, measuring and derivation arrive in M2.
  */
-
-export interface MintTile {
-  id: string;
-  disableMove?: boolean;
-  disableResize?: boolean;
-  label?: string | null;
-}
 
 export type TileDragMode = 'tile' | 'header' | 'off';
 export type TileResizeMode = 'hover' | 'always' | 'off';

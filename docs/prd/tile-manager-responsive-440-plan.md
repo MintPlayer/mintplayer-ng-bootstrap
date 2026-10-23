@@ -74,6 +74,11 @@ against the running demos. Test suites run **once**, in M10.
 - Commit and preview semantics: Escape reverts, blur commits, and a no-op commit emits nothing.
 - The D15 commit payload (`layouts`, `staleCounts`) and `resetLayout(count)`.
 - Optimistic `layouts`: a new object from `setInputs` replaces the internal copy.
+- A keyboard step that lands on a locked tile **skips past it**: keep stepping in that direction to
+  the first cell where the pack is not blocked. Only announce "Move blocked." when there is no such
+  cell, and announce the edge ("Already in row 1.") instead of doing nothing silently. Owner,
+  2026-10-23: on the S3 page, M + ArrowDown on "Revenue" said "Move blocked." because the locked
+  "Notes" tile sat directly below, so up/down looked broken while left/right worked. Regression spec.
 - Every gesture computes from the **rendered** (projected) position, never the stored one.
   Regression spec, reproduced by the owner on the current WC on 2026-10-23: a layout authored for 4
   columns, rendered at 2, then a drag of the right-hand tile. The tile must move by the pointer

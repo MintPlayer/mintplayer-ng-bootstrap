@@ -19,34 +19,41 @@ interface Placement {
  *
  * Returns `blocked: true` if the pinned rect overlaps a locked tile or no
  * valid layout exists; the caller should snap back and not commit.
+ *
+ * With `pinned: null` nothing is pinned: every tile is placed in reading order
+ * (in place if it fits, else first fit) and slid up. That is the projection
+ * step of a narrower layout (D6).
+ *
+ * A tile wider than `columnCount` is capped to it, and a tile whose stored
+ * place lies outside `1..columnCount` is re-placed, never kept in place: a
+ * column past the last track would create an implicit grid track.
  */
 export function pack(
   tiles: ReadonlyArray<PackInputTile>,
-  pinned: { id: string; rect: GridRect },
+  pinned: { id: string; rect: GridRect } | null,
   columnCount: number,
 ): { layout: TileLayoutSnapshot; blocked: boolean } {
-  const pinnedTile = tiles.find((t) => t.id === pinned.id);
-  if (!pinnedTile) {
+  if (pinned && !tiles.some((t) => t.id === pinned.id)) {
     throw new Error(`pack: pinned tile "${pinned.id}" is not in the tiles array`);
   }
 
-  const pinnedPlacement: Placement = { id: pinned.id, position: { ...pinned.rect } };
+  const pinnedPlacement: Placement | null = pinned ? { id: pinned.id, position: { ...pinned.rect } } : null;
 
   const lockedPlacements: ReadonlyArray<Placement> = tiles
-    .filter((t) => t.locked && t.id !== pinned.id)
+    .filter((t) => t.locked && t.id !== pinned?.id)
     .map((t) => ({ id: t.id, position: { ...t.position } }));
 
-  const lockedOverlap = lockedPlacements.some((l) =>
+  const lockedOverlap = !!pinnedPlacement && lockedPlacements.some((l) =>
     rectsOverlap(l.position, pinnedPlacement.position),
   );
   if (lockedOverlap) {
     return { layout: snapshotFromInput(tiles), blocked: true };
   }
 
-  const fixed: ReadonlyArray<Placement> = [pinnedPlacement, ...lockedPlacements];
+  const fixed: ReadonlyArray<Placement> = pinnedPlacement ? [pinnedPlacement, ...lockedPlacements] : lockedPlacements;
 
   const movables = tiles
-    .filter((t) => !t.locked && t.id !== pinned.id)
+    .filter((t) => !t.locked && t.id !== pinned?.id)
     .slice()
     .sort((a, b) => {
       const dRow = a.position.rowStart - b.position.rowStart;
@@ -66,7 +73,7 @@ export function pack(
   const compacted = compactStable(placedMovables, fixed, columnCount);
 
   const placementById = new Map<string, TilePosition>(
-    [pinnedPlacement, ...lockedPlacements, ...compacted].map((p) => [p.id, p.position]),
+    [...fixed, ...compacted].map((p) => [p.id, p.position]),
   );
 
   // Preserve the input tile order in the output snapshot — keeps layout
@@ -88,12 +95,15 @@ function placeTile(
   obstacles: ReadonlyArray<Placement>,
   columnCount: number,
 ): Placement | null {
-  const { colSpan, rowSpan } = tile.position;
-  if (colSpan > columnCount) return null;
+  const colSpan = Math.min(tile.position.colSpan, columnCount);
+  const { rowSpan } = tile.position;
+  const position = { ...tile.position, colSpan };
 
-  const inPlaceFits = !obstacles.some((o) => rectsOverlap(tile.position, o.position));
+  const inRange =
+    position.colStart >= 1 && position.rowStart >= 1 && position.colStart + colSpan - 1 <= columnCount;
+  const inPlaceFits = inRange && !obstacles.some((o) => rectsOverlap(position, o.position));
   if (inPlaceFits) {
-    return { id: tile.id, position: { ...tile.position } };
+    return { id: tile.id, position };
   }
 
   const candidate = firstFit({ colSpan, rowSpan }, obstacles, columnCount);
