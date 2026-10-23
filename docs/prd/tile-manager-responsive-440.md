@@ -78,8 +78,8 @@ Three changes ship together:
 | D3 | With no `breakpoints`, the map is **generated**: one entry per `n = 1…max`, with `minWidth = n·minColumnWidth + (n−1)·gap`. `max` is the largest count in `layouts`, or `maxColumns` (default **6**) when `layouts` is empty |
 | D4 | **Positions live in `layouts: Record<columnCount, TileLayoutSnapshot>`.** `tiles` carries identity and options only. No layout is special. There is no `designColumnCount`, and no `position` on a tile |
 | D5 | **Derivation** for count `n`: (1) `layouts[n]` if present; else (2) **project down** from the nearest larger stored layout; else (3) **edge-scale up** from the nearest smaller one; else (4) place every tile from `defaultSize` in `tiles` order. It is pure, never emitted and never stored. **The derivation cascades by design:** once `layouts[3]` is stored, columns 2 and 1 derive from it, not from 6, so a user's tablet arrangement carries down to the phone. A unit test pins this |
-| D6 | **Project down:** sort by reading order (`rowStart`, `colStart`, then index), apply the span rule (S1: edge-scaling vs cap), then `pack()`. Edge-scaling *downward* can round a span to **0**: 6 → 1 maps edges 3 and 4 to `round(0.5) = 1` and `round(0.67) = 1`. Every downward span is therefore `max(1, …)`, and `pack()` always runs afterwards to resolve the overlaps this creates. A unit test covers that exact case |
-| D7 | **Scale up maps column *edges*:** `e → round(e × n / m)`. Touching tiles stay touching, the board fills the width, and spans stay ≥ 1 because `n > m`. This guarantee holds **only upward**; see D6 for downward. It is lossless because the result is never stored |
+| D6 | **Project down:** sort by reading order (`rowStart`, `colStart`, then index), apply the **plain cap**, then `pack()`. The cap is `colSpan' = min(colSpan, n)`, `colStart' = min(colStart, n − colSpan' + 1)`, with `rowSpan` unchanged. `pack()` then places the tiles in reading order (in place if they fit, otherwise first fit) and slides them up. In effect, tiles keep their width and wrap. The owner chose this over edge-scaling after S1 (`docs/prd/spikes/issue-440/S1-span-rule.md`): edge-scaling squeezed a datatable to half width at 768 px. The cost is 1-column holes near the design width until the user stores that count. `rowSpan` is never capped, because a row's height doesn't change with the width |
+| D7 | **Scale up maps column *edges*:** `e → round(e × n / m)`. Touching tiles stay touching, the board fills the width, and spans stay ≥ 1 because `n > m`. Edge mapping is used **only upward**; downward uses the cap (D6). It is lossless because the result is never stored |
 | D8 | A tile in `tiles` but missing from the rendered layout is placed **below the last occupied row**, in `tiles` order, at `defaultSize` (default 1×1, capped to `n`). This is not emitted |
 | D9 | **The host owns visibility:** `tiles` *is* the visible set. Layout entries for ids not in `tiles` take no space and are not rendered, but they are **passed through unchanged** in every emitted layout, so a re-shown panel returns to its spot. Pruning is the host's job |
 | D10 | Editing is allowed at **every** count. There is no lock input: `dragMode` / `resizeMode` (`'off'`) and the per-tile `disableMove` / `disableResize` govern every path. The most restrictive one wins |
@@ -279,8 +279,9 @@ that each front attaches to its grid element, which stays framework-neutral but 
   - `columns`: fit with gap, min 1, the breakpoint cap never exceeding fit, the generated map, the
     `stackBelow` sugar.
   - `derive`: exact match, project down from the *nearest* larger (the cascade: with
-    `layouts[3]` stored, 2 and 1 derive from it, not from 6), edge-scale up, edge-scale down with
-    the 6 → 1 span-0 case clamped to 1 and then packed, `staleCounts` and `resetLayout`, the
+    `layouts[3]` stored, 2 and 1 derive from it, not from 6), edge-scale up, project down with the
+    cap (a 3-wide tile at 2 columns becomes 2-wide, `colStart` is pulled in, `rowSpan` is
+    unchanged) and then packed, `staleCounts` and `resetLayout`, the
     `defaultSize`-only case, missing tiles appended below, unknown ids passed through and not
     rendered, input deep-equal before and after.
   - `scale`: edges preserved, no gaps or overlaps, a 6 → 8 → 6 round trip.
