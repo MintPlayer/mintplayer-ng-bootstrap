@@ -101,6 +101,17 @@ const FILL_SOURCE = `// The parent needs a definite height.
   <BsDatatable fill pagination perPage={20} columns={COLUMNS} data={rows} />
 </div>`;
 
+// Enough rows that virtual scroll has something to window.
+const FILL_VIRTUAL_ROWS: Artist[] = Array.from({ length: 2000 }, (_, i) => ({
+  ...ARTISTS[i % ARTISTS.length],
+  id: i + 1,
+}));
+
+const FILL_VIRTUAL_SOURCE = `// The parent's height replaces the default virtual viewport.
+<div style={{ height: 225 }}>
+  <BsDatatable fill virtualScroll itemSize={40} columns={COLUMNS} data={rows} />
+</div>`;
+
 const FILTER_SOURCE = `// filterable is the whole opt-in: with no filterRenderer the built-in
 // panel renders — search, include/exclude, a checkbox list of the
 // column's distinct values, and clear. No React code behind it.
@@ -479,6 +490,15 @@ export function DatatablePage() {
           <BsDatatable fill pagination perPage={20} columns={COLUMNS} data={FILL_ROWS} />
         </div>
         <BsCodeSnippet code={FILL_SOURCE} language="tsx" />
+        <p>
+          <code>fill</code> combines with <code>virtualScroll</code>: the
+          parent's height replaces the default virtual viewport, and only the
+          rows in view are rendered.
+        </p>
+        <div className="fill-parent border rounded">
+          <BsDatatable fill virtualScroll itemSize={40} columns={COLUMNS} data={FILL_VIRTUAL_ROWS} />
+        </div>
+        <BsCodeSnippet code={FILL_VIRTUAL_SOURCE} language="tsx" />
       </section>
 
       <section>

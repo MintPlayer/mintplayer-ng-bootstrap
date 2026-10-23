@@ -126,6 +126,31 @@ export class DatatablesComponent {
     </div>
   `;
 
+  fillVirtualSettings = signal(new DatatableSettings({
+    sortColumns: [],
+    perPage: { values: [25, 50, 100], selected: 25 },
+    page: { values: [1], selected: 1 },
+  }));
+
+  protected readonly snippetFillVirtualHtml = dedent`
+    <!-- The parent's height replaces the default virtual viewport. -->
+    <div style="height: 225px">
+      <bs-datatable fill [virtualScroll]="true" [itemSize]="40" [fetch]="fetchArtists"
+        [(settings)]="settings" [rowKey]="rowKey">
+        <div *bsDatatableColumn="'Name'">Artist</div>
+        <div *bsDatatableColumn="'YearStarted'">Year started</div>
+        <ng-container *bsRowTemplate="let artist; let isPlaceholder = isPlaceholder">
+          @if (isPlaceholder) {
+            <td colspan="2">Loading…</td>
+          } @else {
+            <td>{{ artist.name }}</td>
+            <td>{{ artist.yearStarted }}</td>
+          }
+        </ng-container>
+      </bs-datatable>
+    </div>
+  `;
+
   protected readonly snippetResizeHtml = dedent`
     <bs-datatable [fetch]="fetchArtists" [(settings)]="settings">
       <!-- No label needed: the generated names use the header text, "Artist". -->

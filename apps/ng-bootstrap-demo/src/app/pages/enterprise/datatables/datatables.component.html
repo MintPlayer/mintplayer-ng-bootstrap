@@ -133,6 +133,30 @@
 
 <bs-code-snippet [code]="snippetFillHtml" [language]="'html'"></bs-code-snippet>
 
+<p>
+  <code>fill</code> combines with <code>[virtualScroll]</code>: the parent's height replaces the
+  default virtual viewport, and only the rows in view are rendered and fetched.
+</p>
+
+<div class="fill-parent flex-shrink-0 border rounded">
+  <bs-datatable fill [virtualScroll]="true" [itemSize]="40" [fetch]="fetchArtists"
+    [(settings)]="fillVirtualSettings" [rowKey]="rowKey">
+    <div *bsDatatableColumn="'Name'">Artist</div>
+    <div *bsDatatableColumn="'YearStarted'">Year started</div>
+
+    <ng-container *bsRowTemplate="let artist; let isPlaceholder = isPlaceholder">
+      @if (isPlaceholder) {
+        <td colspan="2" class="text-muted small fst-italic">Loading&hellip;</td>
+      } @else {
+        <td class="text-nowrap">{{ $any(artist)?.name }}</td>
+        <td class="text-nowrap">{{ $any(artist)?.yearStarted }}</td>
+      }
+    </ng-container>
+  </bs-datatable>
+</div>
+
+<bs-code-snippet [code]="snippetFillVirtualHtml" [language]="'html'"></bs-code-snippet>
+
 <h2>Row selection</h2>
 
 <p>
