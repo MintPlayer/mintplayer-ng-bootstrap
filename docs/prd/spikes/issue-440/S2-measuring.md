@@ -39,10 +39,15 @@ then 2@530, 3@804 and 4@1077 on the way back. There was no oscillation at a thre
 - **There is a second, independent cause.** Even with a zero-height sentinel, a synchronous commit
   loops when the new grid height toggles a page scrollbar. The component cannot prevent this:
   `scrollbar-gutter` belongs to the page.
-- **The wiring (PRD §5.3, updated):** observe a zero-block-size `.tile-sizer` sentinel in
-  `.tile-container`, and call `machine.measure` in the next animation frame. The sentinel means only
-  inline-size changes notify, and the deferral absorbs the scrollbar case. The cost is that inline
-  positions trail a crossing by one frame.
+- **Filtering does not help.** Every variant already skipped unchanged counts, which is the
+  equivalent of `distinctUntilChanged()`. The browser raises the error because the observed box
+  changed during the callback's frame, whatever the callback does with the notification.
+- **The wiring (PRD §5.3, updated):** observe the grid itself, read only the inline size, and call
+  `machine.measure` in the next animation frame. The deferral alone gave 0 errors. The height change
+  then arrives as an ordinary notification, which the width check ignores. The sentinel was rejected:
+  it fixes only the first cause, and it would add a node to four fronts and to the SSR markup. The
+  cost of deferring is that inline positions trail a crossing by one frame, plus one ignored
+  callback per crossing.
 - **Risk kept for M9:** a scrollbar toggle at a threshold could flip the count back and forth, one
   change per frame. This did not happen here, because the scrollbar costs 15 px and the drag passed
   through the threshold. If e2e shows it, add hysteresis: require `fit(w)` to hold for a width that
