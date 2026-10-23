@@ -326,11 +326,16 @@ export class TileManagerMachine extends Machine<TileManagerState> {
     if (preview && !sameLayout(preview, layout)) this.#emitPreview(layout);
   }
 
-  /** The translate that keeps a dragged tile under the pointer between snaps; null for every other tile. */
+  /**
+   * The translate that keeps a dragged tile under the pointer between snaps; null for every other tile.
+   * Relative to the cell the tile is RENDERED in: over a blocked cell the preview keeps the last valid
+   * place, so measuring from the blocked target would throw the tile that whole distance away.
+   */
   dragOffset(tileId: string): GridPoint | null {
     const { gesture: g, cell } = this.snapshot;
-    if (g.kind !== 'drag' || g.tileId !== tileId || !cell) return null;
-    return dragTranslate({ pointer: g.pointer, gridOrigin: { x: 0, y: 0 }, pointerOffset: g.grab }, g.rect, cell);
+    const rendered = this.#position(tileId);
+    if (g.kind !== 'drag' || g.tileId !== tileId || !cell || !rendered) return null;
+    return dragTranslate({ pointer: g.pointer, gridOrigin: { x: 0, y: 0 }, pointerOffset: g.grab }, rendered, cell);
   }
 
   #pressFeedback(pointerId: number): void {

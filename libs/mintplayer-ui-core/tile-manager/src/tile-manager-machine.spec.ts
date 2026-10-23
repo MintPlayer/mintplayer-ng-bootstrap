@@ -74,6 +74,19 @@ describe('TileManagerMachine — gestures use the rendered position', () => {
     machine.pointerMove(mouse(50, 140));
     expect(pos(machine.rendered, 'b')?.colStart).toBe(1);
   });
+
+  // Owner's report (2026-10-23): dragging across locked cells threw the tile ~800 px left at
+  // each cell crossing; it must keep following the pointer from its last valid place.
+  it('keeps following the pointer over a locked cell', () => {
+    const { machine } = setup([{ id: 'a' }, { id: 'lock', disableMove: true }], { 4: [at('a', 1, 1), at('lock', 3, 1, 2)] }, 400);
+    machine.pointerDown('a', 'body', mouse(50, 40), cell);
+    machine.pointerMove(mouse(150, 40));
+    machine.pointerMove(mouse(260, 40));
+    expect(machine.snapshot.gesture.kind === 'drag' && machine.snapshot.gesture.blocked).toBe(true);
+    expect(pos(machine.rendered, 'a')?.colStart).toBe(2);
+    // Rendered at column 2 (origin 100); the pointer's top-left is at 210.
+    expect(machine.dragOffset('a')).toEqual({ x: 110, y: 0 });
+  });
 });
 
 describe('TileManagerMachine — commit and preview', () => {
