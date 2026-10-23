@@ -63,6 +63,11 @@ function rects(page: Page): Promise<Rect[]> {
   });
 }
 
+/** Where each tile sits, without its width: that wobbles by a sub-pixel when the page height changes. */
+function placement(boxes: Rect[]): Omit<Rect, 'width'>[] {
+  return boxes.map(({ width: _width, ...box }) => box);
+}
+
 function gridWidth(page: Page): Promise<number> {
   return board(page).evaluate((root) => Math.round(root.querySelector('.tile-grid')!.getBoundingClientRect().width));
 }
@@ -209,14 +214,14 @@ export function tileManagerSuite(test: Test, expect: Expect, { path }: TileManag
       await expect(second).toBeFocused();
 
       await settled(page);
-      const initial = await rects(page);
+      const initial = placement(await rects(page));
       await page.keyboard.press('m');
       await page.keyboard.press('ArrowDown');
       await settled(page);
-      expect(await rects(page)).not.toEqual(initial);
+      expect(placement(await rects(page))).not.toEqual(initial);
       await page.keyboard.press('Escape');
       await settled(page);
-      expect(await rects(page)).toEqual(initial);
+      expect(placement(await rects(page))).toEqual(initial);
       await expect(second).toBeFocused();
     });
 
