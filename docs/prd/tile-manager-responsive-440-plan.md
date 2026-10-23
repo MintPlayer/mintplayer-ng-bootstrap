@@ -74,6 +74,10 @@ against the running demos. Test suites run **once**, in M10.
 - Commit and preview semantics: Escape reverts, blur commits, and a no-op commit emits nothing.
 - The D15 commit payload (`layouts`, `staleCounts`) and `resetLayout(count)`.
 - Optimistic `layouts`: a new object from `setInputs` replaces the internal copy.
+- Keyboard state is `{ kind: 'move' | 'resize', tileId, entry }`. **R enters resize mode**, where
+  plain arrows resize (PRD §6, the owner's request of 2026-10-23); M/R switch mode and keep `entry`.
+  Announcements and instructions name the active mode. Specs: R gated by `resizeMode`/`disableResize`,
+  switching keeps Escape reverting to the entry layout, and Shift+arrow in M still resizes.
 - A keyboard step that lands on a locked tile **skips past it**: keep stepping in that direction to
   the first cell where the pack is not blocked. Only announce "Move blocked." when there is no such
   cell, and announce the edge ("Already in row 1.") instead of doing nothing silently. Owner,

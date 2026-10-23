@@ -241,7 +241,11 @@ ordinary notification and the width check ignores it. FLIP reflow animation is a
   description of the mode, "6 columns" or "6 columns, read-only".
 - **Each tile** is a `role="button"` with `aria-roledescription="tile"` (localized) and an
   accessible name (`label` or header text).
-  - `aria-pressed` reflects M mode.
+  - `aria-pressed` reflects M or R mode.
+  - **R enters resize mode** (owner, 2026-10-23): plain arrows resize, Enter commits, Escape
+    cancels, just like M for moving. Shift+arrow in M mode keeps working. Pressing M in R mode, or
+    R in M mode, switches mode but keeps the entry layout, so Escape still reverts both. R is
+    offered only when resize is allowed (`resizeMode` and `disableResize`), and M only when move is.
   - `aria-describedby` points to **per-capability** instructions: move only, resize only, both, or
     none. With none, M is not offered and the instructions say so.
   - Roving `tabindex` puts one stop on the board. Focus is restored **by tile id** across every
