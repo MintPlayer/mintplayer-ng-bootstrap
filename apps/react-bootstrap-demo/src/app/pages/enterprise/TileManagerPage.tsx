@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import {
   BsTileManager,
   type MintTile,
@@ -75,6 +75,9 @@ export function TileManagerPage() {
   const [layouts, setLayouts] = useState<TileLayouts>(loadLayouts);
   const [columnCount, setColumnCount] = useState<number | null>(null);
   const [blocked, setBlocked] = useState<TileGestureBlocked | null>(null);
+  // The board's width: what `stackBelow` and the column count are resolved against.
+  const boardRef = useRef<HTMLDivElement>(null);
+  const [boardWidth, setBoardWidth] = useState<number | null>(null);
 
   // Host-owned visibility (D9): a hidden panel is simply absent from `tiles`; its stored positions stay.
   const tiles = useMemo(
@@ -90,6 +93,12 @@ export function TileManagerPage() {
       // localStorage may be unavailable (private mode). The demo silently degrades.
     }
   }, [layouts]);
+
+  useEffect(() => {
+    const observer = new ResizeObserver(([entry]) => setBoardWidth(Math.round(entry.contentRect.width)));
+    if (boardRef.current) observer.observe(boardRef.current);
+    return () => observer.disconnect();
+  }, []);
 
   return (
     <div className="demo-page">
@@ -140,24 +149,27 @@ export function TileManagerPage() {
         ))}
       </div>
       <p className="mb-2">
+        Board width: <span className="badge text-bg-secondary">{boardWidth ?? '—'}px</span>
         Columns: <span className="badge text-bg-primary">{columnCount ?? '—'}</span>
       </p>
 
-      <BsTileManager
-        tiles={tiles}
-        layouts={layouts}
-        onLayoutsChange={setLayouts}
-        stackBelow={stackBelow || null}
-        gap={gap}
-        dragMode={editing ? 'header' : 'off'}
-        resizeMode={editing ? 'hover' : 'off'}
-        animateReflow={animateReflow}
-        label="Demo dashboard"
-        onColumnCountChange={(change) => setColumnCount(change.columnCount)}
-        onGestureBlocked={setBlocked}
-        renderHeader={(tile) => <span>{tile.title}</span>}
-        renderContent={(tile) => <div className="tile-body">{tile.body}</div>}
-      />
+      <div ref={boardRef}>
+        <BsTileManager
+          tiles={tiles}
+          layouts={layouts}
+          onLayoutsChange={setLayouts}
+          stackBelow={stackBelow || null}
+          gap={gap}
+          dragMode={editing ? 'header' : 'off'}
+          resizeMode={editing ? 'hover' : 'off'}
+          animateReflow={animateReflow}
+          label="Demo dashboard"
+          onColumnCountChange={(change) => setColumnCount(change.columnCount)}
+          onGestureBlocked={setBlocked}
+          renderHeader={(tile) => <span>{tile.title}</span>}
+          renderContent={(tile) => <div className="tile-body">{tile.body}</div>}
+        />
+      </div>
 
       <section className="mt-3">
         <button type="button" className="btn btn-outline-danger btn-sm mb-2" onClick={() => setLayouts({})}>Reset all widths</button>

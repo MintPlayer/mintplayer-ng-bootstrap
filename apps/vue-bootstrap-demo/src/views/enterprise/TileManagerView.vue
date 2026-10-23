@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, ref, watch } from 'vue';
+import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue';
 import {
   BsTileManager,
   type BsTileColumnCountChange,
@@ -94,6 +94,16 @@ watch(layouts, (next) => {
 });
 
 const onColumnCountChange = (change: BsTileColumnCountChange) => (columnCount.value = change.columnCount);
+
+// The board's width: what `stackBelow` and the column count are resolved against.
+const boardRef = ref<HTMLDivElement | null>(null);
+const boardWidth = ref<number | null>(null);
+let observer: ResizeObserver | null = null;
+onMounted(() => {
+  observer = new ResizeObserver(([entry]) => (boardWidth.value = Math.round(entry.contentRect.width)));
+  if (boardRef.value) observer.observe(boardRef.value);
+});
+onBeforeUnmount(() => observer?.disconnect());
 </script>
 
 <template>
@@ -141,24 +151,27 @@ const onColumnCountChange = (change: BsTileColumnCountChange) => (columnCount.va
       </BsCheckbox>
     </div>
     <p class="mb-2">
+      Board width: <span class="badge text-bg-secondary">{{ boardWidth ?? '—' }}px</span>
       Columns: <span class="badge text-bg-primary">{{ columnCount ?? '—' }}</span>
     </p>
 
-    <BsTileManager
-      v-model:layouts="layouts"
-      :tiles="tiles"
-      :stack-below="stackBelowPx"
-      :gap="gapPx"
-      :drag-mode="dragMode"
-      :resize-mode="resizeMode"
-      :animate-reflow="animateReflow"
-      label="Demo dashboard"
-      @column-count-change="onColumnCountChange"
-      @gesture-blocked="blocked = $event"
-    >
-      <template #header="{ tile }"><span>{{ tile.title }}</span></template>
-      <template #content="{ tile }"><div class="tile-body">{{ tile.body }}</div></template>
-    </BsTileManager>
+    <div ref="boardRef">
+      <BsTileManager
+        v-model:layouts="layouts"
+        :tiles="tiles"
+        :stack-below="stackBelowPx"
+        :gap="gapPx"
+        :drag-mode="dragMode"
+        :resize-mode="resizeMode"
+        :animate-reflow="animateReflow"
+        label="Demo dashboard"
+        @column-count-change="onColumnCountChange"
+        @gesture-blocked="blocked = $event"
+      >
+        <template #header="{ tile }"><span>{{ tile.title }}</span></template>
+        <template #content="{ tile }"><div class="tile-body">{{ tile.body }}</div></template>
+      </BsTileManager>
+    </div>
 
     <section class="mt-3">
       <button type="button" class="btn btn-outline-danger btn-sm mb-2" @click="layouts = {}">Reset all widths</button>

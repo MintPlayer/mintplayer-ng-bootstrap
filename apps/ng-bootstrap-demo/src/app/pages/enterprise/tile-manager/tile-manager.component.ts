@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, computed, effect, signal } from '@angular/core';
+import { afterNextRender, ChangeDetectionStrategy, Component, computed, DestroyRef, effect, ElementRef, inject, signal, viewChild } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { BsFormComponent } from '@mintplayer/ng-bootstrap/form';
 import { BsGridComponent, BsGridRowDirective, BsGridColumnDirective } from '@mintplayer/ng-bootstrap/grid';
@@ -78,6 +78,9 @@ export class TileManagerComponent {
   readonly columnCount = signal<number | null>(null);
   readonly latestBlocked = signal<TileGestureBlocked | null>(null);
   readonly layoutsJson = computed(() => JSON.stringify(this.layouts(), null, 2));
+  /** The board's width: what `stackBelow` and the column count are resolved against. */
+  readonly boardWidth = signal<number | null>(null);
+  private readonly board = viewChild.required(BsTileManagerComponent, { read: ElementRef });
 
   constructor() {
     effect(() => {
@@ -87,6 +90,13 @@ export class TileManagerComponent {
       } catch {
         // localStorage may be unavailable (private mode, SSR). The demo silently degrades.
       }
+    });
+
+    const destroyRef = inject(DestroyRef);
+    afterNextRender(() => {
+      const observer = new ResizeObserver(([entry]) => this.boardWidth.set(Math.round(entry.contentRect.width)));
+      observer.observe(this.board().nativeElement);
+      destroyRef.onDestroy(() => observer.disconnect());
     });
   }
 
