@@ -3,7 +3,7 @@
 PRD: [tile-manager-responsive-440.md](./tile-manager-responsive-440.md)
 
 Status: **In progress** (2026-10-23), grilled with decisions D1–D15 and one review round. S1–S5, M1
-(`19576ed2`), M2 (`27ae0b55`, `1e3798c1`), M3 (`b89b16d0`), M4 (`ddb695f5`), M5 (`f1b946a8`, `5c1ed56c`, `420b871b`) and M6 are done; next is M7. Specs are written but run only in M10.
+(`19576ed2`), M2 (`27ae0b55`, `1e3798c1`), M3 (`b89b16d0`), M4 (`ddb695f5`), M5 (`f1b946a8`, `5c1ed56c`, `420b871b`), M6 (`2d26609f`) and M7 are done; next is M8. Specs are written but run only in M10.
 The branch is `feat/440-tile-manager-responsive`, targeting `master`. Everything lands in **one PR**: the core,
 the four fronts, the demos, the docs and the version bumps.
 
