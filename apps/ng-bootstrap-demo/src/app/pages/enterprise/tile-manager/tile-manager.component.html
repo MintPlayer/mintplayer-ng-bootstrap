@@ -46,16 +46,16 @@
     </bs-grid>
   </bs-form>
 
-  <div class="mb-2">
+  <div class="tile-demo-checklist">
     <strong>Panels:</strong>
     @for (panel of panels; track panel.id) {
-      <bs-checkbox class="d-inline-block me-3" [type]="'checkbox'" [ngModel]="!hidden().has(panel.id)" (ngModelChange)="toggle('hidden', panel.id)">{{ panel.title }}</bs-checkbox>
+      <bs-checkbox [type]="'checkbox'" [ngModel]="!hidden().has(panel.id)" (ngModelChange)="toggle('hidden', panel.id)">{{ panel.title }}</bs-checkbox>
     }
   </div>
-  <div class="mb-2">
+  <div class="tile-demo-checklist">
     <strong>Lock:</strong>
     @for (panel of panels; track panel.id) {
-      <bs-checkbox class="d-inline-block me-3" [type]="'checkbox'" [ngModel]="locked().has(panel.id)" (ngModelChange)="toggle('locked', panel.id)">{{ panel.title }}</bs-checkbox>
+      <bs-checkbox [type]="'checkbox'" [ngModel]="locked().has(panel.id)" (ngModelChange)="toggle('locked', panel.id)">{{ panel.title }}</bs-checkbox>
     }
   </div>
   <p class="mb-2">

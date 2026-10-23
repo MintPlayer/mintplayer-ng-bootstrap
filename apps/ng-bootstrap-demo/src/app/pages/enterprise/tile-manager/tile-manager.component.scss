@@ -14,3 +14,11 @@
   overflow: auto;
   margin: 0;
 }
+
+.tile-demo-checklist {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0 1rem;
+  align-items: center;
+  margin-bottom: 0.5rem;
+}

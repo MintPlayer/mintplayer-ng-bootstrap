@@ -71,9 +71,39 @@ function stored(page: Page): Promise<Record<string, unknown>> {
   return page.evaluate((key) => JSON.parse(localStorage.getItem(key) ?? '{}'), STORAGE_KEY);
 }
 
-/** Wait until the FLIP animation (and any transition) has settled. */
+/** The grid's column tracks, as the browser resolved them. */
+function tracks(page: Page): Promise<number[]> {
+  return board(page).evaluate((root) =>
+    getComputedStyle(root.querySelector('.tile-grid')!).gridTemplateColumns.split(' ').map((t) => Number.parseFloat(t)),
+  );
+}
+
+/**
+ * Wait until the FLIP animation (and any transition) has settled. The animation starts a frame
+ * after the change renders, so first let two frames pass: checked any earlier, nothing is running
+ * yet and the tiles still sit at their inverted (old) position.
+ */
 async function settled(page: Page): Promise<void> {
+  await page.evaluate(() => new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve))));
   await page.waitForFunction(() => document.getAnimations().every((a) => a.playState !== 'running'));
+}
+
+/**
+ * Size the viewport so the board is `target` px wide. The page chrome around the board is not a
+ * constant (the sidebar collapses below md, and the container steps between widths), so correct
+ * from the measured width until it lands.
+ */
+async function boardAt(page: Page, expect: Expect, target: number): Promise<number> {
+  let viewport = page.viewportSize()!.width;
+  let width = await boardWidth(page);
+  for (let i = 0; i < 5 && width !== target; i++) {
+    viewport += target - width;
+    await page.setViewportSize({ width: viewport, height: 900 });
+    const previous = width;
+    await expect.poll(() => boardWidth(page)).not.toBe(previous);
+    width = await boardWidth(page);
+  }
+  return width;
 }
 
 /** Move the first tile one row down with the keyboard, committing with Enter. */
@@ -96,7 +126,7 @@ export function tileManagerSuite(test: Test, expect: Expect, { path }: TileManag
     });
 
     for (const width of [390, 700, 1280, 2560]) {
-      test(`at ${width}px: no tile is narrower than a column, nothing overflows, the layout fills the width`, async ({ page }) => {
+      test(`at ${width}px: no tile is narrower than a column, nothing overflows, the columns fill the width`, async ({ page }) => {
         await page.setViewportSize({ width, height: 900 });
         await expect.poll(() => boardWidth(page)).toBeLessThan(width + 1);
         await settled(page);
@@ -106,17 +136,22 @@ export function tileManagerSuite(test: Test, expect: Expect, { path }: TileManag
         for (const box of boxes) {
           expect(box.width === full || box.width >= MIN_COLUMN_WIDTH, `${box.id} is ${box.width}px wide`).toBe(true);
         }
-        expect(Math.max(...boxes.map((b) => b.left + b.width))).toBeGreaterThanOrEqual(full - 2);
+        // The grid has exactly the resolved columns, and they span the board. Whether the default
+        // placement fills the last column is the layout's business; an extra, empty track is not.
+        const cols = await tracks(page);
+        expect(cols).toHaveLength(await columns(page));
+        const gap = await board(page).evaluate((root) => Number.parseFloat(getComputedStyle(root.querySelector('.tile-grid')!).columnGap) || 0);
+        expect(cols.reduce((sum, t) => sum + t, 0) + gap * (cols.length - 1)).toBeGreaterThanOrEqual(full - 2);
         expect(await page.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth)).toBe(true);
       });
     }
 
     test('stackBelow: stacked just below the threshold, not just above it', async ({ page }) => {
+      await page.setViewportSize({ width: 1280, height: 900 });
       await page.getByRole('combobox', { name: 'Stack below' }).selectOption('768');
-      const chrome = 1280 - (await boardWidth(page));
-      await page.setViewportSize({ width: chrome + 760, height: 900 });
+      expect(await boardAt(page, expect, 760)).toBeLessThan(768);
       await expect.poll(() => columns(page)).toBe(1);
-      await page.setViewportSize({ width: chrome + 780, height: 900 });
+      expect(await boardAt(page, expect, 780)).toBeGreaterThanOrEqual(768);
       await expect.poll(() => columns(page)).toBeGreaterThan(1);
     });
 
