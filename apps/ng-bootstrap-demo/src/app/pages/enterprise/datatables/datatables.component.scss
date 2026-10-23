@@ -10,6 +10,11 @@
   height: 360px;
 }
 
+// A tile-sized parent for the fill demo (#442).
+.fill-parent {
+  height: 225px;
+}
+
 // ─── The override filter panel ─────────────────────────────────────────────
 // This markup is the PAGE's, not the component's, so the page styles it.
 //

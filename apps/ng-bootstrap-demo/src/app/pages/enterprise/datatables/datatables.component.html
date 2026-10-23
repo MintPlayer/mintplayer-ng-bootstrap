@@ -111,6 +111,28 @@
 
 <bs-code-snippet [code]="snippetResizeHtml" [language]="'html'"></bs-code-snippet>
 
+<h2>Fit a sized parent</h2>
+
+<p>
+  With <code>fill</code> the table fits a parent with a fixed height, such as a dashboard tile.
+  The header stays at the top and the pagination at the bottom; only the rows scroll in between.
+  Horizontally the whole table scrolls as one.
+</p>
+
+<div class="fill-parent flex-shrink-0 border rounded">
+  <bs-datatable fill [fetch]="fetchArtists" [(settings)]="fillSettings">
+    <div *bsDatatableColumn="'Name'">Artist</div>
+    <div *bsDatatableColumn="'YearStarted'">Year started</div>
+
+    <ng-container *bsRowTemplate="let artist">
+      <td class="text-nowrap">{{ $any(artist)?.name }}</td>
+      <td class="text-nowrap">{{ $any(artist)?.yearStarted }}</td>
+    </ng-container>
+  </bs-datatable>
+</div>
+
+<bs-code-snippet [code]="snippetFillHtml" [language]="'html'"></bs-code-snippet>
+
 <h2>Row selection</h2>
 
 <p>

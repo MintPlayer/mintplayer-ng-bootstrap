@@ -90,6 +90,17 @@ const RESIZE_SOURCE = `const RESIZE_COLUMNS: DatatableColumnDef[] = [
 
 <BsDatatable columns={RESIZE_COLUMNS} data={ARTISTS} />`;
 
+// Enough rows to overflow a tile-sized parent.
+const FILL_ROWS: Artist[] = Array.from({ length: 40 }, (_, i) => ({
+  ...ARTISTS[i % ARTISTS.length],
+  id: i + 1,
+}));
+
+const FILL_SOURCE = `// The parent needs a definite height.
+<div style={{ height: 225 }}>
+  <BsDatatable fill pagination perPage={20} columns={COLUMNS} data={rows} />
+</div>`;
+
 const FILTER_SOURCE = `// filterable is the whole opt-in: with no filterRenderer the built-in
 // panel renders — search, include/exclude, a checkbox list of the
 // column's distinct values, and clear. No React code behind it.
@@ -454,6 +465,20 @@ export function DatatablePage() {
         </ul>
         <BsDatatable columns={RESIZE_COLUMNS} data={ARTISTS} />
         <BsCodeSnippet code={RESIZE_SOURCE} language="tsx" />
+      </section>
+
+      <section>
+        <h2>Fit a sized parent</h2>
+        <p>
+          With <code>fill</code> the table fits a parent with a fixed height,
+          such as a dashboard tile. The header stays at the top and the
+          pagination at the bottom; only the rows scroll in between.
+          Horizontally the whole table scrolls as one.
+        </p>
+        <div className="fill-parent border rounded">
+          <BsDatatable fill pagination perPage={20} columns={COLUMNS} data={FILL_ROWS} />
+        </div>
+        <BsCodeSnippet code={FILL_SOURCE} language="tsx" />
       </section>
 
       <section>

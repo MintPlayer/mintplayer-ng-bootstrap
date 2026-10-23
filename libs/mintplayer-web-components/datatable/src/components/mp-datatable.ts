@@ -259,6 +259,7 @@ export class MpDatatable extends LitElement {
       'auto-sort',
       'empty-message',
       'virtual-scroll',
+      'fill',
       'item-size',
       'tree',
       'tree-indent',
@@ -545,6 +546,26 @@ export class MpDatatable extends LitElement {
       this.requestUpdate();
     }
   }
+
+  /**
+   * Fit a sized parent (#442). The element takes the parent's height and
+   * becomes the one scroll container for both axes: the header rows stick to
+   * its top, the footer to its bottom, and only the rows scroll in between.
+   * Horizontally the whole table, footer included, scrolls as one. Needs a
+   * parent with a definite height; without one it behaves like the default.
+   * Reflected as the `fill` attribute, which the stylesheet keys on.
+   */
+  get fill(): boolean {
+    return this._fill;
+  }
+  set fill(value: boolean) {
+    const next = !!value;
+    if (this._fill !== next) {
+      this._fill = next;
+      this.requestUpdate();
+    }
+  }
+  private _fill = false;
 
   /** Approximate row height in px (used by virtual scroll). Default `40`. */
   get itemSize(): number {
@@ -1133,6 +1154,8 @@ export class MpDatatable extends LitElement {
       this.emptyMessage = newValue ?? 'No data';
     } else if (name === 'virtual-scroll') {
       this.virtualScroll = newValue !== null;
+    } else if (name === 'fill') {
+      this.fill = newValue !== null;
     } else if (name === 'item-size') {
       const n = Number(newValue);
       if (Number.isFinite(n)) this.itemSize = n;
@@ -1162,28 +1185,57 @@ export class MpDatatable extends LitElement {
     // the shadow DOM but checks `aria-required-children` against the host's
     // *direct* children — which are layout <div>s, not rows — so setting it
     // on the host would fail the rule even though the table itself is fine.
+    // A re-attached element keeps its rendered DOM but lost its listeners.
+    if (this.hasUpdated) this.bindScroller();
   }
 
   protected override firstUpdated(): void {
-    this._scrollElement = this.renderRoot?.querySelector('.datatable-scroll') as HTMLElement | null;
-    if (this._scrollElement) {
-      this._scrollListener = () => this.refreshVirtualRange();
-      this._scrollElement.addEventListener('scroll', this._scrollListener, { passive: true });
-      if (typeof ResizeObserver !== 'undefined') {
-        this._resizeObserver = new ResizeObserver(() => {
-          this.refreshVirtualRange();
-          this.scheduleRefit();
-        });
-        this._resizeObserver.observe(this._scrollElement);
-      }
-    }
+    this.bindScroller();
     this.refreshVirtualRange();
     // References point at a specific node; re-land them after every render.
     this.hostAria.syncReferences();
   }
 
+  /**
+   * Listen on whichever element scrolls the rows: `.datatable-scroll` by
+   * default, the host itself in fill mode (there `.datatable-scroll` gives up
+   * its scroll box so `position: sticky` has a single reference for the header
+   * and the footer). Re-run after every render, so toggling `fill` moves the
+   * listener and the observer; a no-op while the scroller is unchanged.
+   */
+  private bindScroller(): void {
+    const next = this._fill ? this : this.renderRoot?.querySelector<HTMLElement>('.datatable-scroll') ?? null;
+    if (next === this._scrollElement) return;
+    this.unbindScroller();
+    this._scrollElement = next;
+    if (!next) return;
+    this._scrollListener = () => this.refreshVirtualRange();
+    next.addEventListener('scroll', this._scrollListener, { passive: true });
+    if (typeof ResizeObserver !== 'undefined') {
+      this._resizeObserver = new ResizeObserver(() => {
+        this.refreshVirtualRange();
+        this.scheduleRefit();
+      });
+      this._resizeObserver.observe(next);
+    }
+  }
+
+  private unbindScroller(): void {
+    if (this._scrollElement && this._scrollListener) {
+      this._scrollElement.removeEventListener('scroll', this._scrollListener);
+    }
+    this._scrollListener = null;
+    this._resizeObserver?.disconnect();
+    this._resizeObserver = null;
+    this._scrollElement = null;
+  }
+
   protected override willUpdate(changedProperties: Map<string, unknown>): void {
     super.willUpdate(changedProperties);
+    // `fill` is often set as a property (React, Angular); the stylesheet keys
+    // on the attribute, so reflect it. Writing the same value back through
+    // attributeChangedCallback is a no-op in the setter.
+    if (this.hasAttribute('fill') !== this._fill) this.toggleAttribute('fill', this._fill);
     // Invalidate per-render memos before each render. `getFlatList` is hit
     // from `computeVisibleRows`, `getVirtualSpacerHeights`, and the
     // `aria-rowcount` computation in `render()` — and re-runs sorting +
@@ -1202,6 +1254,7 @@ export class MpDatatable extends LitElement {
     // lazy-loaded, expandedIds toggled). Idempotent — refreshVirtualRange
     // only requestUpdates when the range actually changes, so this can't
     // loop.
+    this.bindScroller();
     this.refreshVirtualRange();
     this.nameRowCheckboxes();
     // Measure-once: lock per-column widths the first time a non-empty body
@@ -1370,17 +1423,11 @@ export class MpDatatable extends LitElement {
 
   override disconnectedCallback(): void {
     super.disconnectedCallback();
-    if (this._scrollElement && this._scrollListener) {
-      this._scrollElement.removeEventListener('scroll', this._scrollListener);
-    }
-    this._scrollListener = null;
-    this._resizeObserver?.disconnect();
-    this._resizeObserver = null;
+    this.unbindScroller();
     this._headerObserver?.disconnect();
     this._observedThead = null;
     if (this._refitFrame != null) cancelAnimationFrame(this._refitFrame);
     this._refitFrame = null;
-    this._scrollElement = null;
     // Timers and in-flight requests outlive the element otherwise, and a
     // debounced re-query firing after disconnect writes to a dead panel.
     this._filterStates.forEach((state) => this.abortFilterRequest(state));

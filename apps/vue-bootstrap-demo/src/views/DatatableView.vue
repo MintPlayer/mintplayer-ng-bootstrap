@@ -74,6 +74,17 @@ const RESIZE_SOURCE = `const RESIZE_COLUMNS: DatatableColumnDef[] = [
 
 <BsDatatable :columns="RESIZE_COLUMNS" :data="ARTISTS" />`;
 
+// Enough rows to overflow a tile-sized parent.
+const FILL_ROWS: Artist[] = Array.from({ length: 40 }, (_, i) => ({
+  ...ARTISTS[i % ARTISTS.length],
+  id: i + 1,
+}));
+
+const FILL_SOURCE = `<!-- The parent needs a definite height. -->
+<div style="height: 225px">
+  <BsDatatable fill pagination :perPage="20" :columns="COLUMNS" :data="rows" />
+</div>`;
+
 // ─── Column filters ─────────────────────────────────────────────────────────
 // The component holds no filter state and defines no predicate model: it
 // collects a selection and emits it. The master copy, the predicate,
@@ -445,6 +456,20 @@ const TREE_SOURCE = `<!-- The same callback, branching on req.parentId for roots
     </section>
 
     <section>
+      <h2>Fit a sized parent</h2>
+      <p>
+        With <code>fill</code> the table fits a parent with a fixed height,
+        such as a dashboard tile. The header stays at the top and the
+        pagination at the bottom; only the rows scroll in between.
+        Horizontally the whole table scrolls as one.
+      </p>
+      <div class="fill-parent border rounded">
+        <BsDatatable fill pagination :perPage="20" :columns="COLUMNS" :data="FILL_ROWS" />
+      </div>
+      <BsCodeSnippet :code="FILL_SOURCE" language="html" />
+    </section>
+
+    <section>
       <h2>Virtual scrolling &mdash; lazy windowed fetch</h2>
       <p>
         Set one <code>fetch</code> callback and the web component owns the whole
@@ -644,6 +669,11 @@ const TREE_SOURCE = `<!-- The same callback, branching on req.parentId for roots
 .windowed-table {
   display: block;
   height: 360px;
+}
+
+/* A tile-sized parent for the fill demo (#442). */
+.fill-parent {
+  height: 225px;
 }
 </style>
 

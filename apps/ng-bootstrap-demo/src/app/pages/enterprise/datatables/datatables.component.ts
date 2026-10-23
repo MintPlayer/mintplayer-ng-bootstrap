@@ -105,6 +105,27 @@ export class DatatablesComponent {
 
   inspectedArtist = signal<Artist | null>(null);
 
+  // ─── Fill demo ─────────────────────────────────────────────────────────
+  fillSettings = signal(new DatatableSettings({
+    sortColumns: [],
+    perPage: { values: [10, 20, 50], selected: 20 },
+    page: { values: [1], selected: 1 },
+  }));
+
+  protected readonly snippetFillHtml = dedent`
+    <!-- The parent needs a definite height. -->
+    <div style="height: 225px">
+      <bs-datatable fill [fetch]="fetchArtists" [(settings)]="settings">
+        <div *bsDatatableColumn="'Name'">Artist</div>
+        <div *bsDatatableColumn="'YearStarted'">Year started</div>
+        <ng-container *bsRowTemplate="let artist">
+          <td>{{ artist.name }}</td>
+          <td>{{ artist.yearStarted }}</td>
+        </ng-container>
+      </bs-datatable>
+    </div>
+  `;
+
   protected readonly snippetResizeHtml = dedent`
     <bs-datatable [fetch]="fetchArtists" [(settings)]="settings">
       <!-- No label needed: the generated names use the header text, "Artist". -->
