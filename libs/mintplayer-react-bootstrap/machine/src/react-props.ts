@@ -23,3 +23,18 @@ export function reactProps(bag: AttrBag): Record<string, string | boolean> {
       .map(([name, value]) => [RENAME[name] ?? name, value]),
   );
 }
+
+/** A style bag as a core's `connect()` returns it: CSS property names, `null` = unset. */
+export type StyleBag = Record<string, string | null>;
+
+/**
+ * Turn a core's style bag into a React `style` object: `null` is dropped and
+ * `grid-column` becomes `gridColumn`. Custom properties (`--x`) keep their name.
+ */
+export function reactStyle(bag: StyleBag): React.CSSProperties {
+  return Object.fromEntries(
+    Object.entries(bag)
+      .filter((entry): entry is [string, string] => entry[1] !== null)
+      .map(([name, value]) => [name.startsWith('--') ? name : name.replace(/-([a-z])/g, (_, c: string) => c.toUpperCase()), value]),
+  );
+}
