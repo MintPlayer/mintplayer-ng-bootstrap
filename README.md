@@ -60,6 +60,14 @@ Each demo's `serve` target lists the API serve as a dependency and is flagged `c
 
 The shorter `npm start -- --open` is wired to the Angular demo by default (see `scripts.start` in `package.json`).
 
+### Playwright browsers
+
+The e2e projects (`apps/*-bootstrap-demo-e2e`) run Chromium and Firefox; the React and Vue ones also run WebKit. Install all three once, with the Playwright version from `package.json`:
+
+    npx playwright install chromium firefox webkit
+
+Run e2e through Nx, e.g. `npx nx e2e vue-bootstrap-demo-e2e -- --project=webkit`.
+
 ## Styling and encapsulation
 
 Components come in two tiers. Which tier a component is in decides whether your stylesheets reach

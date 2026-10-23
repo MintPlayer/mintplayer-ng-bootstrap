@@ -145,6 +145,7 @@ front-supplied root id.
 <div class="mp-tile-manager" data-mps="tile-manager" …board bag (role=region, aria-label, aria-describedby)…>   <!-- min-inline-size floor -->
   <style data-mps-ssr>…D14 container rules, server only…</style>
   <div class="tile-container" data-mps="tile-manager">     <!-- container-type: inline-size -->
+  <div class="tile-sizer" data-mps="tile-manager" aria-hidden="true"></div>  <!-- block-size: 0; the ResizeObserver target (S2) -->
   <div class="tile-grid" data-mps="tile-manager">          <!-- grid-template-columns: @container on server, inline after measure() -->
     <div class="tile" data-mps="tile-manager" …tile(id) bag (role=button, aria-roledescription, aria-pressed, aria-describedby, tabindex; style only after measure())…>
       <div class="tile-header" …handle bag…><!-- front: header template --></div>
@@ -179,11 +180,15 @@ rules alone. Writing them inline any earlier would beat every container rule and
 | React `BsTileManager` | `renderHeader(tile)` / `renderContent(tile)` | `layouts` / `defaultLayouts` + `onLayoutChange`, `onLayoutPreview`, `onColumnCountChange` | `useMachine` + `reactProps()`. Props extend `HTMLAttributes<HTMLDivElement>` and are spread onto the board |
 | Vue `BsTileManager` | `#header="{ tile }"` / `#content="{ tile }"` scoped slots | `v-model:layouts`, events | `useMachine` composable, `inheritAttrs:false` + `v-bind="$attrs"` on the board |
 
-Each front measures with one `ResizeObserver` on the board's inner grid, reading
-`contentBoxSize`. It rAF-coalesces the reading and calls `machine.measure`, and the machine changes
-state only when the **resolved count** or the cell metrics change. The track template is always
-`repeat(n, minmax(0, 1fr))`, so a count change cannot change the observed width, and there is no
-observer loop (S2 verifies this). FLIP reflow animation is a small shared DOM helper in `ui-core`
+Each front measures with one `ResizeObserver` on a **zero-block-size sentinel** (`.tile-sizer`,
+`block-size: 0`, full inline size) that sits in `.tile-container` before the grid, reading
+`contentBoxSize[0].inlineSize`. It hands the reading to `machine.measure` in the next animation
+frame, never inside the observer callback. The machine changes state only when the **resolved count**
+changes. Cell metrics for pointer math are read at gesture start, not observed. S2 measured why both
+parts are needed (`docs/prd/spikes/issue-440/S2-measuring.md`):
+- Observing the grid itself loops, because a count change changes the grid's **height**.
+- A synchronous commit loops whenever the new height toggles a page scrollbar. The component cannot
+  prevent that toggle with `scrollbar-gutter`, because the page owns it. FLIP reflow animation is a small shared DOM helper in `ui-core`
 (`flip.ts`), used by all four fronts and gated by `prefers-reduced-motion` (S5).
 
 ### 5.4 SSR and no-JS (D14)
