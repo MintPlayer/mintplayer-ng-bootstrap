@@ -76,8 +76,14 @@ export interface BsTileColumnCountChange {
   host: { class: 'd-block' },
 })
 export class BsTileManagerComponent<T extends MintTile = MintTile> {
-  /** The visible tiles, in DOM order. */
-  readonly tiles = input<readonly T[]>([]);
+  /** The `*bsTile` block: the tile markup, and through its `of` the tiles themselves. */
+  readonly tileTemplate = contentChild<BsTileDirective<T>>(BsTileDirective);
+  /**
+   * The visible tiles, in DOM order: `*bsTile="let tile of tiles()"`. Read from the directive
+   * rather than pushed by it: its input is not set yet when its constructor runs, and a signal
+   * write while the view renders is NG0600.
+   */
+  readonly tiles = computed<readonly T[]>(() => this.tileTemplate()?.bsTileOf() ?? []);
   /** One layout per column count. Two-way: a commit writes the full next record. */
   readonly layouts = model<TileLayouts>({});
   /** Explicit `{ minWidth, columns }` map. Wins over `stackBelow` and the generated map. */
@@ -107,8 +113,6 @@ export class BsTileManagerComponent<T extends MintTile = MintTile> {
   readonly layoutChange = output<TileLayoutChange>();
   readonly columnCountChange = output<BsTileColumnCountChange>();
   readonly gestureBlocked = output<TileGestureBlocked>();
-
-  readonly tileTemplate = contentChild<BsTileDirective<T>>(BsTileDirective);
 
   readonly id = inject(BsIdService).next('bs-tile-manager');
   readonly machine = new TileManagerMachine({ vibrate: (ms) => navigator.vibrate?.(ms) });

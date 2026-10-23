@@ -13,7 +13,7 @@ import { BsTileContentDirective, BsTileDirective, BsTileHeaderDirective } from '
   selector: 'bs-tile-manager-ssr-root',
   imports: [BsTileManagerComponent, BsTileDirective, BsTileHeaderDirective, BsTileContentDirective],
   template: `
-    <bs-tile-manager [tiles]="tiles" [stackBelow]="600" label="Dashboard">
+    <bs-tile-manager [stackBelow]="600" label="Dashboard">
       <ng-container *bsTile="let tile of tiles">
         <span *bsTileHeader>{{ tile.id }} title</span>
         <p *bsTileContent>{{ tile.id }} body</p>

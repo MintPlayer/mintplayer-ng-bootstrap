@@ -194,7 +194,7 @@ rules alone. Writing them inline any earlier would beat every container rule and
 | Front | Tile content | Binding | Notes |
 |---|---|---|---|
 | Lit `mp-tile-manager` | named slots `${id}-header` / `${id}-content` | properties and events | Keeps its **shadow root**, because content only arrives through slots (light-tier admission rule). Adopts the scoped sheet into its shadow root via `adoptLightStyles`. `MachineController` and `props()` directive |
-| Angular `bs-tile-manager` | `*bsTile="let tile of tiles()"` wrapping `*bsTileHeader` / `*bsTileContent` (the tile is in scope for both) (`bs-tile` is replaced; see §7) | `tiles`, `[(layouts)]`, `breakpoints`, `stackBelow`, …; outputs `layoutPreview`, `columnCountChange` | `machineSignal()` + `[mpProps]`, OnPush. SSR renders the full tree plus the D14 `<style>`. `withEventReplay` |
+| Angular `bs-tile-manager` | `*bsTile="let tile of tiles()"` wrapping `*bsTileHeader` / `*bsTileContent` (the tile is in scope for both; `of` is the tile list, no `[tiles]` input) (`bs-tile` is replaced; see §7) | `tiles`, `[(layouts)]`, `breakpoints`, `stackBelow`, …; outputs `layoutPreview`, `columnCountChange` | `machineSignal()` + `[mpProps]`, OnPush. SSR renders the full tree plus the D14 `<style>`. `withEventReplay` |
 | React `BsTileManager` | `renderHeader(tile)` / `renderContent(tile)` | `layouts` / `defaultLayouts` + `onLayoutChange`, `onLayoutPreview`, `onColumnCountChange` | `useMachine` + `reactProps()`. Props extend `HTMLAttributes<HTMLDivElement>` and are spread onto the board |
 | Vue `BsTileManager` | `#header="{ tile }"` / `#content="{ tile }"` scoped slots | `v-model:layouts`, events | `useMachine` composable, `inheritAttrs:false` + `v-bind="$attrs"` on the board |
 
@@ -389,7 +389,7 @@ Spark consumes the published versions afterwards.
   - keep the stored entries for ids absent from the payload;
   - refuse ids the user cannot access;
   - then write.
-- `bs-tile-manager [tiles]="visible()" [(layouts)]="layouts"`, with persistence on `layoutChange`
+- `bs-tile-manager [(layouts)]="layouts"` with `*bsTile="let tile of visible()"`, with persistence on `layoutChange`
   only.
 - The edit/view toggle binds `dragMode` and `resizeMode` to `'off'`.
 - The panel picker is Spark's own, a query or persistent-object lookup. A re-shown panel returns to

@@ -18,7 +18,6 @@ interface DemoTile extends MintTile {
   template: `
     <bs-tile-manager
       aria-label="Dashboard"
-      [tiles]="tiles()"
       [(layouts)]="layouts"
       [breakpoints]="breakpoints"
       [dragMode]="dragMode()"

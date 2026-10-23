@@ -104,7 +104,6 @@ export class TileManagerComponent {
 
   protected readonly snippetHtml = dedent`
     <bs-tile-manager
-      [tiles]="tiles()"
       [(layouts)]="layouts"
       [stackBelow]="576"
       [gap]="12"

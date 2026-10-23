@@ -27,7 +27,7 @@ export class BsTileSlots {
  * its direct `*bsTileHeader` / `*bsTileContent` children, and both see the tile variable.
  *
  * ```html
- * <bs-tile-manager [tiles]="tiles()" [(layouts)]="layouts">
+ * <bs-tile-manager [(layouts)]="layouts">
  *   <ng-container *bsTile="let tile of tiles()">
  *     <span *bsTileHeader>{{ tile.title }}</span>
  *     <div *bsTileContent>{{ tile.body }}</div>
@@ -35,13 +35,12 @@ export class BsTileSlots {
  * </bs-tile-manager>
  * ```
  *
- * `of` only carries the tile type into the template (like `ngFor`'s `of`); the tiles rendered
- * are always the manager's `[tiles]`.
+ * `of` is the manager's tile list, like `ngFor`'s: the manager reads it from here.
  */
 @Directive({ selector: '[bsTile]' })
 export class BsTileDirective<T extends MintTile = MintTile> {
   readonly templateRef = inject<TemplateRef<BsTileContext<T>>>(TemplateRef);
-  /** Type carrier only; never read at runtime. */
+  /** The visible tiles, in DOM order. */
   readonly bsTileOf = input<readonly T[] | null | undefined>(undefined);
 
   static ngTemplateContextGuard<T extends MintTile>(_dir: BsTileDirective<T>, ctx: unknown): ctx is BsTileContext<T> {
