@@ -65,7 +65,10 @@ li {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  min-width: calc(var(--mp-pagination-padding-x) * 2 + 1ch);
+  // WCAG 2.5.8: a 24px target whatever the font's 1ch is. 25px because the
+  // next link's -1px margin overlaps this one; at size small 1rem + 1ch came
+  // to 23.4px clear in the Playwright CI image's fonts.
+  min-width: max(calc(var(--mp-pagination-padding-x) * 2 + 1ch), 25px);
   margin-left: -1px;
 }
 
