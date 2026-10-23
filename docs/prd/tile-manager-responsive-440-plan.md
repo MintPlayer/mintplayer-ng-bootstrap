@@ -3,7 +3,7 @@
 PRD: [tile-manager-responsive-440.md](./tile-manager-responsive-440.md)
 
 Status: **In progress** (2026-10-23), grilled with decisions D1–D15 and one review round. S1–S5, M1
-(`19576ed2`) and M2 (`27ae0b55`, `1e3798c1`) are done; next is M3. Specs are written but run only in M10.
+(`19576ed2`), M2 (`27ae0b55`, `1e3798c1`) and M3 are done; next is M4. Specs are written but run only in M10.
 The branch is `feat/440-tile-manager-responsive`, targeting `master`. Everything lands in **one PR**: the core,
 the four fronts, the demos, the docs and the version bumps.
 
@@ -108,6 +108,11 @@ against the running demos. Test suites run **once**, in M10.
 
   Add it to the ui-core codegen target.
 - Add `flip.ts`, the shared DOM helper.
+- Done as: `connect(machine, rootId)` with a keyed `descriptions` list (board description plus one
+  instruction node per capability set in use); `TileFlip` stays in `dom.ts` next to the other DOM
+  readers instead of a separate `flip.ts`; `label` and `minRowHeight` became machine inputs; state
+  data attributes are presence-only (`data-dragging`, not `="true"`). `connect.spec.ts` covers the
+  pre-measure Tier 2 render, modes off, a locked tile, M/R mode and a hidden then re-shown tile.
 
 ## M4: Lit front
 - Rewrite `libs/mintplayer-web-components/tile-manager` on `MachineController` with the `props()`

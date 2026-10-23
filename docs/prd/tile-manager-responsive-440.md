@@ -156,16 +156,26 @@ nodes mid-gesture detaches the dragged tile and loses its pointer capture and fo
   <div class="tile-container" data-mps="tile-manager">     <!-- container-type: inline-size -->
   <div class="tile-grid" data-mps="tile-manager">          <!-- grid-template-columns: @container on server, inline after measure() -->
     <div class="tile" data-mps="tile-manager" …tile(id) bag (role=button, aria-roledescription, aria-pressed, aria-describedby, tabindex; style only after measure())…>
-      <div class="tile-header" …handle bag…><!-- front: header template --></div>
-      <div class="tile-content"><!-- front: content template --></div>
-      <span class="tile-grip" …grip bag…></span>            <!-- absent when resize is not allowed -->
+      <div class="tile-header" …header bag (id; names the tile when there is no label)…><!-- front: header template --></div>
+      <div class="tile-content" …content bag…><!-- front: content template --></div>
+      <span class="tile-grip" …grip bag (data-part=side|bottom|corner, aria-hidden)…></span>   <!-- ×3; absent when resize is not allowed -->
     </div>
   </div>
   </div>
-  <div class="visually-hidden" id="…-instructions-<tileId>">…per-capability instructions…</div>
-  <span class="visually-hidden" role="status" aria-live="polite">…announcement…</span>
+  <div class="tile-sr-only" id="<root>-description">6 columns, read-only.</div>
+  <div class="tile-sr-only" id="<root>-instructions-<both|move|resize|none>">…one per capability set in use…</div>
+  <span class="tile-sr-only" role="status" aria-live="polite">…announcement…</span>
 </div>
 ```
+
+`connect(machine, rootId)` (M3) takes the machine, not only the snapshot, because positions,
+the tab stop, the drag offset and the capabilities are machine getters over the snapshot; it is
+still pure in the snapshot. The hidden nodes come back as one keyed `descriptions` list. The
+sheet ships its own `tile-sr-only` rule: the Lit front's shadow root sees no Bootstrap utility.
+Before the first `measure()` tiles are `role="group"` with no tab stop, grips or instructions
+(the Tier 2 render below). The board's inline style carries `--mp-tile-min-column`,
+`--mp-tile-gap` and `--mp-tile-row-height`, which are floors, not positions, so they are safe on
+the server. `minRowHeight` and `label` are machine inputs, so every front forwards them the same way.
 
 The board element has `display: block; inline-size: 100%` and a `min-inline-size` floor of one
 column. Containment sits on `.tile-container`, never on the board and never on `.tile-grid`:

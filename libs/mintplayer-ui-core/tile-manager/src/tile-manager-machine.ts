@@ -64,6 +64,10 @@ export interface TileManagerInputs {
   /** px between columns. */
   gap: number;
   maxColumns: number;
+  /** CSS length of one grid row; also each tile's min block size (D14). */
+  minRowHeight: string;
+  /** The board's accessible name; `messages.boardLabel` when null. */
+  label: string | null;
   dragMode: TileDragMode;
   resizeMode: TileResizeMode;
   messages: TileManagerMessages;
@@ -144,6 +148,8 @@ export class TileManagerMachine extends Machine<TileManagerState> {
       minColumnWidth: DEFAULT_MIN_COLUMN_WIDTH,
       gap: DEFAULT_GAP,
       maxColumns: 6,
+      minRowHeight: '8rem',
+      label: null,
       dragMode: 'header',
       resizeMode: 'hover',
       messages: DEFAULT_TILE_MANAGER_MESSAGES,

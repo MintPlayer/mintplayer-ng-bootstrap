@@ -3,6 +3,14 @@
  * partial override for localization; the machine and connect() read only from here.
  */
 export interface TileManagerMessages {
+  /** The board's accessible name when no `label` is set. */
+  boardLabel: string;
+  /** The board's description: the column count, and whether anything can be edited. `null` before the first measure. */
+  boardDescription(columns: number | null, readOnly: boolean): string;
+  /** `aria-roledescription` of a tile. */
+  tileRoleDescription: string;
+  /** The instructions a tile's `aria-describedby` points to, per capability (PRD §6). */
+  instructions(canMove: boolean, canResize: boolean): string;
   /** Accessible name of a tile without a `label`. */
   tileFallbackLabel(row: number, column: number): string;
   enterMoveMode(canResize: boolean): string;
@@ -28,6 +36,18 @@ export interface TileManagerMessages {
 }
 
 export const DEFAULT_TILE_MANAGER_MESSAGES: TileManagerMessages = {
+  boardLabel: 'Tile board',
+  boardDescription: (columns, readOnly) =>
+    columns === null ? 'Read-only.' : `${columns} ${columns === 1 ? 'column' : 'columns'}${readOnly ? ', read-only' : ''}.`,
+  tileRoleDescription: 'tile',
+  instructions: (canMove, canResize) =>
+    canMove && canResize
+      ? 'Press M to move this tile or R to resize it. Then use the arrow keys, Enter to commit, Escape to cancel.'
+      : canMove
+        ? 'Press M to move this tile. Then use the arrow keys, Enter to commit, Escape to cancel.'
+        : canResize
+          ? 'Press R to resize this tile. Then use the arrow keys, Enter to commit, Escape to cancel.'
+          : 'This tile cannot be moved or resized.',
   tileFallbackLabel: (row, column) => `tile at row ${row}, column ${column}`,
   enterMoveMode: (canResize) =>
     canResize
