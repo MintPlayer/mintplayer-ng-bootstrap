@@ -225,7 +225,8 @@ export function BsTileManager<T extends MintTile = MintTile>(props: BsTileManage
     }
     if (state.focusRequest && state.focusRequest.seq !== pending.current.focusSeq) {
       pending.current.focusSeq = state.focusRequest.seq;
-      boardRef.current?.querySelector<HTMLElement>(`[data-tile-id="${CSS.escape(state.focusRequest.tileId)}"]`)?.focus();
+      const tileId = state.focusRequest.tileId;
+      Array.from(boardRef.current?.querySelectorAll<HTMLElement>('[data-tile-id]') ?? []).find((el) => el.dataset['tileId'] === tileId)?.focus();
     }
   }, [state, flip]);
 

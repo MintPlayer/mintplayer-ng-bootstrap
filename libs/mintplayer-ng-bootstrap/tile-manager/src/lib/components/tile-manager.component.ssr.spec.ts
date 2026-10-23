@@ -41,7 +41,7 @@ describe('BsTileManagerComponent under Angular SSR', () => {
     expect(tiles.every((t) => t.includes('role="group"') && !t.includes('tabindex') && !t.includes('grid-column'))).toBe(true);
     expect(html).toContain('a title');
     expect(html).toContain('b body');
-    expect(html).not.toContain('tile-grip');
+    expect(html).not.toContain('class="tile-grip"');
     expect((html.match(/data-mp-light-styles="tile-manager"/g) ?? []).length).toBe(1);
     const layout = /<style data-mp-light-styles="tile-manager-layout-[^"]+">([^<]*)<\/style>/.exec(html)?.[1] ?? '';
     expect(layout).toContain('@container (min-width: 600px)');

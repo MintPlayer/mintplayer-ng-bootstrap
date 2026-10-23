@@ -299,7 +299,8 @@ export class BsTileManagerComponent<T extends MintTile = MintTile> {
         if (reflow && grid) this.flip.play(grid,now.gesture.kind === 'drag' ? now.gesture.tileId : null);
         if (now.focusRequest && now.focusRequest.seq !== this.focusSeq) {
           this.focusSeq = now.focusRequest.seq;
-          this.host.querySelector<HTMLElement>(`[data-tile-id="${CSS.escape(now.focusRequest.tileId)}"]`)?.focus();
+          const tileId = now.focusRequest.tileId;
+          Array.from(this.host.querySelectorAll<HTMLElement>('[data-tile-id]')).find((el) => el.dataset['tileId'] === tileId)?.focus();
         }
       },
       { injector: this.injector },

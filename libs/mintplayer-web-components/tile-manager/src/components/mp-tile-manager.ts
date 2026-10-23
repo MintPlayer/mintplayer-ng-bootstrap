@@ -183,7 +183,8 @@ export class MintTileManagerElement extends LitElement {
     }
     if (s.focusRequest && s.focusRequest.seq !== this.#focusSeq) {
       this.#focusSeq = s.focusRequest.seq;
-      this.renderRoot.querySelector<HTMLElement>(`[data-tile-id="${CSS.escape(s.focusRequest.tileId)}"]`)?.focus();
+      const tileId = s.focusRequest.tileId;
+      Array.from(this.renderRoot.querySelectorAll<HTMLElement>('[data-tile-id]')).find((el) => el.dataset['tileId'] === tileId)?.focus();
     }
   }
 

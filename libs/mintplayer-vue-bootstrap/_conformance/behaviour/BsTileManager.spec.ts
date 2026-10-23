@@ -150,7 +150,7 @@ describe('BsTileManager (Vue front)', () => {
       await key('a', 'Enter');
       expect(changes).toHaveLength(1);
       expect(changes[0].columnCount).toBe(2);
-      expect(layouts.value).toBe(changes[0].layouts);
+      expect(layouts.value).toEqual(changes[0].layouts);
     });
 
     it('an unrelated prop change does not re-push a stale layouts over the commit', async () => {

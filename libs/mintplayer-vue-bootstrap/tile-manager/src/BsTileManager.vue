@@ -193,7 +193,8 @@ watch(
     }
     if (snapshot.focusRequest && snapshot.focusRequest.seq !== focusSeq) {
       focusSeq = snapshot.focusRequest.seq;
-      boardRef.value?.querySelector<HTMLElement>(`[data-tile-id="${CSS.escape(snapshot.focusRequest.tileId)}"]`)?.focus();
+      const tileId = snapshot.focusRequest.tileId;
+      Array.from(boardRef.value?.querySelectorAll<HTMLElement>('[data-tile-id]') ?? []).find((el) => el.dataset['tileId'] === tileId)?.focus();
     }
   },
   { flush: 'post' },

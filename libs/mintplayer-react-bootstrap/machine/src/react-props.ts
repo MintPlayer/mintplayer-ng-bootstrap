@@ -15,12 +15,16 @@ const RENAME: Readonly<Record<string, string>> = {
  * dropped and DOM names are mapped to React's. The React counterpart of the
  * Angular `[mpProps]` directive and Lit's attribute bindings — every front
  * applies the same bag, so ARIA cannot drift between them.
+ *
+ * `true` means present-and-empty. React stringifies it on a hyphenated
+ * (`data-*`, `aria-*`) attribute, so those get `''`; a known boolean property
+ * (`hidden`, `inert`) keeps `true`, because React drops it when given `''`.
  */
 export function reactProps(bag: AttrBag): Record<string, string | boolean> {
   return Object.fromEntries(
     Object.entries(bag)
       .filter((entry): entry is [string, string | boolean] => entry[1] !== null)
-      .map(([name, value]) => [RENAME[name] ?? name, value]),
+      .map(([name, value]) => [RENAME[name] ?? name, value === true && name.includes('-') ? '' : value]),
   );
 }
 
