@@ -3,9 +3,34 @@
 All notable changes to `@mintplayer/ng-bootstrap` are documented here. The
 package version aligns its major with the supported Angular major.
 
+`@mintplayer/web-components` and `@mintplayer/ui-core` track no platform, so they follow semver: a
+breaking change is a major. (2.20.0 and 2.21.0 broke `^2.x` consumers in a minor; 3.0.0 ends that.)
+
 ## [Unreleased]
 
 ### Breaking
+
+- **Tile manager rebuilt on a headless core, and responsive (issue #440).** `@mintplayer/web-components`
+  **3.0.0**, `@mintplayer/ui-core` 1.1.0 (new `tile-manager` entry), `@mintplayer/ng-bootstrap` 22.27.0,
+  `@mintplayer/react-bootstrap` 19.26.0, `@mintplayer/vue-bootstrap` 3.27.0. `mp-tile-manager` now runs on
+  `TileManagerMachine` from `@mintplayer/ui-core/tile-manager`, and the Angular, React and Vue components render
+  their own DOM instead of wrapping `<mp-tile-manager>`. The board keeps one layout per column count, so a
+  rearrangement at one width leaves the others alone.
+
+  | Was | Now |
+  |---|---|
+  | `MintTile.position` | removed; positions live in `layouts[columnCount]`. `defaultSize?: { colSpan, rowSpan }` is new |
+  | `columnCount` / `column-count` | removed; `breakpoints`, `stackBelow`, or the generated map with `maxColumns` |
+  | `tilelayoutchange`, `tilepositionchange` | `layoutchange` on commit (`{ columnCount, layout, layouts, staleCounts }`), `layoutpreview` per step |
+  | `tilegestureblocked` | `gestureblocked` |
+  | — | `layouts` (two-way), `breakpoints`, `stackBelow`, `maxColumns`, `messages`, `columncountchange`, `resetLayout(count)`, `withoutNarrowerLayouts()` |
+  | Angular `<bs-tile [position]>` + `(layoutChange)` emitting an array | `*bsTile="let tile of tiles"` with `*bsTileHeader` / `*bsTileContent`, `[(layouts)]`, `(layoutPreview)`, `(columnCountChange)` |
+  | React / Vue thin wrappers around `mp-tile-manager` | native fronts: React `layouts` + `onLayoutsChange`, `renderHeader` / `renderContent`; Vue `v-model:layouts`, `#header` / `#content` slots |
+  | `captureLayout()` | kept on every front; returns `{ columnCount, layout }` of what is rendered |
+
+  `minColumnWidth`, `minRowHeight`, `gap`, `dragMode`, `resizeMode`, `animateReflow` and `label` are unchanged.
+  Exactly one tile is in the tab order; `M` / `R` enter move / resize mode, `Enter` commits, `Escape` restores.
+  With JavaScript disabled, Angular SSR renders every tile, placed by inline `@container` rules.
 
 - **Typeahead rebuilt on a headless core (issue #436).** `@mintplayer/ng-bootstrap` 22.26.0,
   `@mintplayer/web-components` 2.21.0, `@mintplayer/react-bootstrap` 19.25.0, `@mintplayer/vue-bootstrap` 3.26.0,

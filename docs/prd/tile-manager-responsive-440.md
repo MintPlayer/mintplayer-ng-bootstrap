@@ -362,7 +362,7 @@ capture verdict, changed-only inputs, and post-render focus and FLIP.
   `@mintplayer/react-bootstrap` (19.x tracks React) and `@mintplayer/vue-bootstrap` (3.x tracks Vue)
   take breaking changes in minors by repo policy, listed under `### Breaking`.
 - **`@mintplayer/ui-core` bumps minor.** The `tile-manager` entry is additive.
-- **`@mintplayer/web-components` is OPEN, for the owner to decide before M9.**
+- **`@mintplayer/web-components`: 3.0.0 (owner, 2026-10-23: the WC now depends on a ui-core class).**
   - Its 2.x major is tied to no platform. It went 1.6.0 → 2.0.0 for one breaking change (the
     datatable windowed fetch, #387).
   - Since then, breaking changes have shipped in minors: the card helpers removed in 2.20.0, the
