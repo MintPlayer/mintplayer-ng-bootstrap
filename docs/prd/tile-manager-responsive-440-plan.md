@@ -3,7 +3,7 @@
 PRD: [tile-manager-responsive-440.md](./tile-manager-responsive-440.md)
 
 Status: **In progress** (2026-10-23), grilled with decisions D1–D15 and one review round. S1–S5, M1
-(`19576ed2`), M2 (`27ae0b55`, `1e3798c1`) and M3 are done; next is M4. Specs are written but run only in M10.
+(`19576ed2`), M2 (`27ae0b55`, `1e3798c1`), M3 (`b89b16d0`) and M4 are done; next is M5. Specs are written but run only in M10.
 The branch is `feat/440-tile-manager-responsive`, targeting `master`. Everything lands in **one PR**: the core,
 the four fronts, the demos, the docs and the version bumps.
 
@@ -119,6 +119,12 @@ against the running demos. Test suites run **once**, in M10.
   directive.
 - Keep the shadow root with the named slots, and use `adoptLightStyles` for the scoped sheet.
 - Port the element and ARIA specs, translating them to the new API.
+- Done as: `mp-tile-manager.ts` (class `MintTileManagerElement` kept). One `ResizeObserver` on the grid,
+  `measure` in the next frame; only changed properties are forwarded. `minColumnWidth` and `gap` are now
+  numbers (px). The WC `types/`, `utils/` and `.element.html/.scss` are gone; the barrel re-exports the model
+  types and `withoutNarrowerLayouts` from ui-core by name. `TileFlip` tolerates a DOM without the Web
+  Animations API or `matchMedia` (jsdom). The old 1400 lines of element specs became two wiring specs; the
+  layout and keyboard rules they used to cover are pinned in the ui-core machine specs.
 
 ## M5: Angular front
 - `bs-tile-manager` renders the §5.2 tree natively, with no `<mp-tile-manager>`.

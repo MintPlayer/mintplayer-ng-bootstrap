@@ -44,14 +44,14 @@ export class TileFlip {
   first(grid: Element): void {
     // Read before cancelling, so an interrupted animation continues from where the tile is on screen.
     this.#first = new Map(tilesOf(grid).map((el) => [el.dataset['tileId'] ?? '', el.getBoundingClientRect()]));
-    tilesOf(grid).forEach((el) => el.getAnimations().forEach((a) => a.cancel()));
+    tilesOf(grid).forEach((el) => el.getAnimations?.().forEach((a) => a.cancel()));
   }
 
   /** `skipId`: the tile under the pointer, which follows the pointer instead. */
   play(grid: Element, skipId: string | null = null): void {
     const first = this.#first;
     this.#first = new Map();
-    if (first.size === 0 || matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+    if (first.size === 0 || typeof matchMedia !== 'function' || matchMedia('(prefers-reduced-motion: reduce)').matches) return;
     tilesOf(grid).forEach((el) => {
       const id = el.dataset['tileId'] ?? '';
       const before = first.get(id);
@@ -60,7 +60,7 @@ export class TileFlip {
       const dx = before.left - after.left;
       const dy = before.top - after.top;
       if (Math.abs(dx) < 0.5 && Math.abs(dy) < 0.5) return;
-      el.animate([{ transform: `translate(${dx}px, ${dy}px)` }, { transform: 'none' }], { duration: 250, easing: 'cubic-bezier(.2,.7,.3,1)' });
+      el.animate?.([{ transform: `translate(${dx}px, ${dy}px)` }, { transform: 'none' }], { duration: 250, easing: 'cubic-bezier(.2,.7,.3,1)' });
     });
   }
 }
