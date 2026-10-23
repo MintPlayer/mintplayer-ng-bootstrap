@@ -5,6 +5,7 @@ export * from './scale';
 export * from './ssr-css';
 export * from './pack';
 export * from './grid-geometry';
+export * from './messages';
 export * from './tile-manager-machine';
 export * from './connect';
 export * from './dom';

@@ -63,7 +63,7 @@ export function connect(machine: TileManagerMachine, rootId: string): TileManage
           ...scope,
           role: 'button',
           tabindex: tabStop === id ? '0' : '-1',
-          'aria-pressed': String(s.keyboard.kind === 'move' && s.keyboard.tileId === id),
+          'aria-pressed': String(s.keyboard.kind !== 'idle' && s.keyboard.tileId === id),
           'aria-describedby': instructionsId,
           'aria-label': tile.label ?? null,
           'data-tile-id': id,
