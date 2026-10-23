@@ -1,166 +1,160 @@
-import { Component, signal } from '@angular/core';
+import { Component, signal, viewChild } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { describe, it, expect, beforeEach } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import type { MintTile, TileBreakpoint, TileLayoutChange, TileLayouts } from '@mintplayer/ui-core/tile-manager';
+import { tileManagerDomMismatches } from '@mintplayer/ui-core/_conformance/tile-manager-dom';
 import { BsTileManagerComponent } from './tile-manager.component';
-import { BsTileComponent } from './tile.component';
-import { BsTileHeaderComponent } from './tile-header.component';
-import {
-  type TilePosition,
-  type TileLayoutSnapshot,
-  type TileGestureBlocked,
-  MintTileManagerElement,
-} from '@mintplayer/web-components/tile-manager';
+import { BsTileContentDirective, BsTileDirective, BsTileHeaderDirective } from '../directives/tile-template.directives';
 
-interface DemoTile {
-  id: string;
-  position: TilePosition;
-  locked: boolean;
+// Wiring only: inputs reach the machine, the template renders connect()'s bags, events come back
+// out. The layout and ARIA rules themselves are pinned in ui-core's specs.
+
+interface DemoTile extends MintTile {
+  title: string;
 }
 
 @Component({
   selector: 'bs-tile-manager-host',
-  imports: [BsTileManagerComponent, BsTileComponent, BsTileHeaderComponent],
+  imports: [BsTileManagerComponent, BsTileDirective, BsTileHeaderDirective, BsTileContentDirective],
   template: `
     <bs-tile-manager
-      [columnCount]="2"
-      (layoutChange)="lastLayout.set($event)"
-      (gestureBlocked)="lastBlocked.set($event)"
-    >
-      @for (t of tiles(); track t.id) {
-        <bs-tile
-          [id]="t.id"
-          [position]="t.position"
-          [disableMove]="t.locked"
-          (positionChange)="onPositionChange(t.id, $event)"
-        >
-          <bs-tile-header>{{ t.id }} title</bs-tile-header>
-          <div class="body">{{ t.id }} body</div>
-        </bs-tile>
-      }
+      aria-label="Dashboard"
+      [(layouts)]="layouts"
+      [breakpoints]="breakpoints"
+      [dragMode]="dragMode()"
+      (layoutChange)="changes.push($event)"
+      (layoutPreview)="previews.push($event)">
+      <ng-container *bsTile="let tile of tiles()">
+        <span *bsTileHeader class="head">{{ tile.title }}</span>
+        <p *bsTileContent class="body">{{ tile.id }} body</p>
+      </ng-container>
     </bs-tile-manager>
   `,
 })
 class HostComponent {
+  readonly manager = viewChild.required(BsTileManagerComponent);
   readonly tiles = signal<DemoTile[]>([
-    { id: 'a', position: { colStart: 1, rowStart: 1, colSpan: 1, rowSpan: 1 }, locked: false },
-    { id: 'b', position: { colStart: 2, rowStart: 1, colSpan: 1, rowSpan: 1 }, locked: false },
+    { id: 'a', title: 'Alpha' },
+    { id: 'b', title: 'Beta' },
+    { id: 'c', title: 'Gamma', disableResize: true },
   ]);
-
-  readonly lastLayout = signal<TileLayoutSnapshot | null>(null);
-  readonly lastBlocked = signal<TileGestureBlocked | null>(null);
-
-  onPositionChange(id: string, position: TilePosition): void {
-    this.tiles.update((tiles) =>
-      tiles.map((t) => (t.id === id ? { ...t, position } : t)),
-    );
-  }
+  readonly layouts = signal<TileLayouts>({});
+  readonly dragMode = signal<'header' | 'tile' | 'off'>('header');
+  readonly breakpoints: TileBreakpoint[] = [{ minWidth: 0, columns: 2 }];
+  readonly changes: TileLayoutChange[] = [];
+  readonly previews: TileLayoutChange[] = [];
 }
 
-describe('BsTileManagerComponent (Angular wrapper)', () => {
+describe('BsTileManagerComponent', () => {
   let fixture: ComponentFixture<HostComponent>;
   let host: HostComponent;
-  let wcEl: MintTileManagerElement;
+  let el: HTMLElement;
 
-  beforeEach(async () => {
-    await TestBed.configureTestingModule({
-      imports: [
-        HostComponent,
-        BsTileManagerComponent,
-        BsTileComponent,
-        BsTileHeaderComponent,
-      ],
-    }).compileComponents();
+  const tile = (id: string) => el.querySelector<HTMLElement>(`.tile[data-tile-id="${id}"]`)!;
+  const key = (id: string, k: string) => {
+    tile(id).dispatchEvent(new KeyboardEvent('keydown', { key: k, bubbles: true, cancelable: true }));
+    fixture.detectChanges();
+  };
+
+  beforeEach(() => {
+    TestBed.configureTestingModule({ imports: [HostComponent] });
     fixture = TestBed.createComponent(HostComponent);
     host = fixture.componentInstance;
+    el = fixture.nativeElement;
     fixture.detectChanges();
-    wcEl = fixture.nativeElement.querySelector('mp-tile-manager') as MintTileManagerElement;
-  });
-
-  it('renders the underlying mp-tile-manager web component', () => {
-    expect(wcEl).toBeTruthy();
-    expect(wcEl.tagName.toLowerCase()).toBe('mp-tile-manager');
-  });
-
-  it('projects each <bs-tile>\'s header and body into id-keyed light-DOM slot divs', () => {
-    const slotDivs = Array.from(wcEl.querySelectorAll<HTMLElement>(':scope > [slot]'));
-    const slotNames = slotDivs.map((d) => d.getAttribute('slot')).sort();
-    expect(slotNames).toEqual(['a-content', 'a-header', 'b-content', 'b-header']);
-
-    const aHeaderSlot = slotDivs.find((d) => d.getAttribute('slot') === 'a-header')!;
-    expect(aHeaderSlot.textContent?.trim()).toBe('a title');
-
-    const aBodySlot = slotDivs.find((d) => d.getAttribute('slot') === 'a-content')!;
-    expect(aBodySlot.textContent?.trim()).toBe('a body');
-  });
-
-  it('forwards Angular inputs as attributes on the underlying WC', () => {
-    expect(wcEl.getAttribute('column-count')).toBe('2');
-    // Defaults still applied
-    expect(wcEl.getAttribute('drag-mode')).toBe('header');
-    expect(wcEl.getAttribute('resize-mode')).toBe('hover');
-  });
-
-  it('writes the tiles array onto the WC reactive property', () => {
-    expect(wcEl.tiles.length).toBe(2);
-    expect(wcEl.tiles[0].id).toBe('a');
-    expect(wcEl.tiles[1].id).toBe('b');
-  });
-
-  it('emits the wrapper\'s (layoutChange) when the WC dispatches tilelayoutchange', () => {
-    const newLayout: TileLayoutSnapshot = [
-      { id: 'a', position: { colStart: 2, rowStart: 1, colSpan: 1, rowSpan: 1 } },
-      { id: 'b', position: { colStart: 1, rowStart: 1, colSpan: 1, rowSpan: 1 } },
-    ];
-    wcEl.dispatchEvent(new CustomEvent('tilelayoutchange', { detail: newLayout }));
+    host.manager().machine.measure(800);
     fixture.detectChanges();
-    expect(host.lastLayout()).toEqual(newLayout);
   });
 
-  it('routes tilepositionchange to the matching <bs-tile>\'s (positionChange)', () => {
-    const newPos: TilePosition = { colStart: 2, rowStart: 1, colSpan: 1, rowSpan: 1 };
-    wcEl.dispatchEvent(
-      new CustomEvent('tilepositionchange', { detail: { id: 'a', position: newPos } }),
-    );
+  afterEach(() => fixture.destroy());
+
+  it('renders the header and content templates per tile, with the tile as context', () => {
+    expect(Array.from(el.querySelectorAll('.tile-header .head')).map((n) => n.textContent)).toEqual(['Alpha', 'Beta', 'Gamma']);
+    expect(tile('b').querySelector('.tile-content .body')?.textContent).toBe('b body');
+  });
+
+  it('keeps a tile\'s template view when the tile object changes, and updates its binding', () => {
+    const before = tile('a').querySelector('.head');
+    host.tiles.update((tiles) => tiles.map((t) => (t.id === 'a' ? { ...t, title: 'Alpha 2' } : t)));
     fixture.detectChanges();
-    const a = host.tiles().find((t) => t.id === 'a')!;
-    expect(a.position).toEqual(newPos);
-    // Tile b unchanged.
-    const b = host.tiles().find((t) => t.id === 'b')!;
-    expect(b.position).toEqual({ colStart: 2, rowStart: 1, colSpan: 1, rowSpan: 1 });
+    expect(tile('a').querySelector('.head')).toBe(before);
+    expect(before?.textContent).toBe('Alpha 2');
   });
 
-  it('emits (gestureBlocked) when the WC dispatches tilegestureblocked', () => {
-    const detail: TileGestureBlocked = { id: 'a', reason: 'locked-overlap' };
-    wcEl.dispatchEvent(new CustomEvent('tilegestureblocked', { detail }));
+  it('renders no <mp-tile-manager>: the Angular template is the DOM', () => {
+    expect(el.querySelector('mp-tile-manager')).toBeNull();
+    expect(el.querySelector('.mp-tile-manager[data-mps="tile-manager"]')).not.toBeNull();
+  });
+
+  it('places tiles from the derived layout and sets the track template once measured', () => {
+    expect(el.querySelector<HTMLElement>('.tile-grid')!.style.gridTemplateColumns).toBe('repeat(2, minmax(0, 1fr))');
+    expect(tile('b').style.gridColumn).toContain('2');
+  });
+
+  it('renders exactly the DOM connect() describes (four-front conformance)', () => {
+    const inputs = { tiles: host.tiles(), breakpoints: host.breakpoints, dragMode: 'header' as const, label: 'Dashboard' };
+    expect(tileManagerDomMismatches(el, inputs, 800)).toEqual([]);
+  });
+
+  it('renders resize grips only where resizing is allowed', () => {
+    expect(tile('a').querySelectorAll('.tile-grip').length).toBe(3);
+    expect(tile('c').querySelectorAll('.tile-grip').length).toBe(0);
+  });
+
+  it('forwards a changed input to the machine', () => {
+    host.dragMode.set('tile');
     fixture.detectChanges();
-    expect(host.lastBlocked()).toEqual(detail);
+    expect(host.manager().machine.snapshot.dragMode).toBe('tile');
+    expect(tile('a').hasAttribute('data-draggable')).toBe(true);
   });
 
-  it('captureLayout() delegates to the underlying WC', () => {
-    const wrapper = fixture.debugElement.children[0].componentInstance as BsTileManagerComponent;
-    const snapshot = wrapper.captureLayout();
-    expect(snapshot.length).toBe(2);
-    expect(snapshot.map((s) => s.id).sort()).toEqual(['a', 'b']);
+  it('a host aria-label names the region and leaves the host', () => {
+    const board = el.querySelector('.mp-tile-manager')!;
+    expect(board.getAttribute('role')).toBe('region');
+    expect(board.getAttribute('aria-label')).toBe('Dashboard');
+    expect(el.querySelector('bs-tile-manager')!.hasAttribute('aria-label')).toBe(false);
   });
 
-  it('rebuilds the WC tiles array when consumer state changes', () => {
-    host.tiles.update((tiles) => [
-      ...tiles,
-      { id: 'c', position: { colStart: 1, rowStart: 2, colSpan: 1, rowSpan: 1 }, locked: false },
-    ]);
+  it('a keyboard commit writes [(layouts)] and emits layoutChange once', () => {
+    key('a', 'm');
+    key('a', 'ArrowDown');
+    expect(host.previews.length).toBeGreaterThan(0);
+    key('a', 'Enter');
+    expect(host.changes).toHaveLength(1);
+    expect(host.changes[0].columnCount).toBe(2);
+    expect(host.layouts()).toBe(host.changes[0].layouts);
+    expect(host.layouts()[2]).toEqual(host.changes[0].layout);
+  });
+
+  it('an unrelated input change does not re-push a stale layouts over the commit', () => {
+    key('a', 'm');
+    key('a', 'ArrowDown');
+    key('a', 'Enter');
+    const committed = host.manager().captureLayout();
+    host.dragMode.set('tile');
     fixture.detectChanges();
-    expect(wcEl.tiles.length).toBe(3);
-    expect(wcEl.tiles[2].id).toBe('c');
+    expect(host.manager().captureLayout()).toEqual(committed);
   });
 
-  it('passes disableMove through as a per-tile flag', () => {
-    host.tiles.update((tiles) =>
-      tiles.map((t) => (t.id === 'a' ? { ...t, locked: true } : t)),
-    );
+  it('a consumer write to layouts reaches the machine', () => {
+    host.layouts.set({ 2: [{ id: 'a', position: { colStart: 2, rowStart: 1, colSpan: 1, rowSpan: 1 } }] });
     fixture.detectChanges();
-    const aEntry = wcEl.tiles.find((t) => t.id === 'a')!;
-    expect(aEntry.disableMove).toBe(true);
-    const bEntry = wcEl.tiles.find((t) => t.id === 'b')!;
-    expect(bEntry.disableMove).toBe(false);
+    expect(host.manager().captureLayout().layout.find((p) => p.id === 'a')?.position.colStart).toBe(2);
+  });
+
+  it('resetLayout drops a stored count and commits', () => {
+    host.layouts.set({ 2: [{ id: 'a', position: { colStart: 2, rowStart: 1, colSpan: 1, rowSpan: 1 } }] });
+    fixture.detectChanges();
+    host.manager().resetLayout(2);
+    expect(host.changes.at(-1)?.layouts[2]).toBeUndefined();
+    expect(host.layouts()[2]).toBeUndefined();
+  });
+
+  it('arrow keys move focus between tiles', async () => {
+    tile('a').focus();
+    key('a', 'ArrowRight');
+    await fixture.whenStable();
+    expect(document.activeElement).toBe(tile('b'));
+    expect(tile('b').getAttribute('tabindex')).toBe('0');
   });
 });

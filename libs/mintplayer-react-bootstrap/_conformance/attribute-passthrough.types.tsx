@@ -149,7 +149,7 @@ export const everyWrapperProbes = [
   <BsSplitter role="none" id="x" tabIndex={-1} />,
   <BsTabControl role="none" id="x" tabIndex={-1} />,
   <BsTabPage role="none" id="x" tabIndex={-1} />,
-  <BsTileManager role="none" id="x" tabIndex={-1} />,
+  <BsTileManager tiles={[]} id="x" tabIndex={-1} />,
   <BsTimelineItem role="none" id="x" tabIndex={-1} />,
   <BsTimeList role="none" id="x" tabIndex={-1} />,
   <BsTimepicker role="none" id="x" tabIndex={-1} />,
@@ -160,6 +160,9 @@ export const everyWrapperProbes = [
   // The combobox contract owns the input's role (#436): a consumer role must not compile.
   // @ts-expect-error role is not an accepted prop
   <BsTypeahead role="none" />,
+  // The board is a region by contract (#440).
+  // @ts-expect-error role is not an accepted prop
+  <BsTileManager tiles={[]} role="none" />,
 ];
 
 /**

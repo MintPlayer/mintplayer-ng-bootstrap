@@ -76,9 +76,11 @@ export function accordionJsSuite(test: Test, expect: Expect, options: AccordionS
       // order and the a11y tree). The zero-height box is engine shape:
       // WebKit keeps a residual layout box (~40px) for closed details
       // content while still hiding it everywhere that matters.
+      // Polled, not read once: the 0.35s close transition keeps the content
+      // laid out (~40px) until it ends, and a slow runner can measure it
+      // mid-close after hydration.
       if (test.info().project.name !== 'webkit') {
-        const box = await content(accordion, 1).boundingBox();
-        expect(box?.height ?? 0).toBe(0);
+        await expect.poll(async () => (await content(accordion, 1).boundingBox())?.height ?? 0).toBe(0);
       }
     });
 

@@ -48,6 +48,7 @@
       "dependsOn": [
         { "projects": ["api"], "target": "serve" },
         { "projects": ["mintplayer-web-components"], "target": "codegen-wc" },
+        { "projects": ["mintplayer-ui-core"], "target": "codegen" },
         { "projects": ["mintplayer-web-components"], "target": "codegen-wc-watch" }
       ],
       "options": {

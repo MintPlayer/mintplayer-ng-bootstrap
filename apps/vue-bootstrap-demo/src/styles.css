@@ -82,9 +82,13 @@ body {
 }
 
 /* The top-bar slot lays brand + framework links out in a row with consistent
- * gaps (was an inline style; kept here so the markup stays class-driven). */
+ * gaps (was an inline style; kept here so the markup stays class-driven). It
+ * wraps on a phone instead of pushing the framework links, theme toggle and
+ * GitHub link past the viewport (390px scrolled the page sideways to 595px). */
 .app-shell-header {
-  gap: 1rem;
+  flex-wrap: wrap;
+  min-width: 0;
+  gap: 0.25rem 1rem;
 }
 
 /* <mp-shell> is the full-viewport layout root: a top bar over a sidebar/content

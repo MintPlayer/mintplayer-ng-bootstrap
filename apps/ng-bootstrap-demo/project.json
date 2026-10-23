@@ -148,6 +148,12 @@
         },
         {
           "projects": [
+            "mintplayer-ui-core"
+          ],
+          "target": "codegen"
+        },
+        {
+          "projects": [
             "mintplayer-ng-bootstrap"
           ],
           "target": "codegen-wc"

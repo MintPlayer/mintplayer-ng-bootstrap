@@ -1,4 +1,5 @@
 import { test, expect, type Page, type Locator } from '@playwright/test';
+import { ARTIST_QUERY_URL, mockArtistQuery } from './artist-query-mock';
 
 // Row selection (#422) against the "Row selection" demo: a 'checkbox'-mode
 // table with [fetch], perPage 10, [rowKey] = String(id), and a status line that
@@ -17,25 +18,7 @@ const ARTISTS = Array.from({ length: 200 }, (_, i) => ({
 }));
 
 async function mockArtistApi(page: Page) {
-  await page.route('**/api/v1/artist/page', async (route) => {
-    const req = JSON.parse(route.request().postData() ?? '{}') as {
-      page?: number; perPage?: number;
-    };
-    const page_ = req.page ?? 1;
-    const perPage = req.perPage ?? 20;
-    const start = (page_ - 1) * perPage;
-    await route.fulfill({
-      status: 200,
-      contentType: 'application/json',
-      body: JSON.stringify({
-        data: ARTISTS.slice(start, start + perPage),
-        totalRecords: ARTISTS.length,
-        totalPages: Math.ceil(ARTISTS.length / perPage),
-        page: page_,
-        perPage,
-      }),
-    });
-  });
+  await mockArtistQuery(page, ARTISTS);
 }
 
 /** The 'checkbox'-mode demo table, by its named hook — never by position. */
@@ -130,7 +113,7 @@ test.describe('bs-datatable row selection (#422)', () => {
     await tickViaCellPadding(page, '5');
     await expect(count(page)).toHaveText('Selected 1 artist(s)');
 
-    const refetch = page.waitForRequest('**/api/v1/artist/page');
+    const refetch = page.waitForRequest(ARTIST_QUERY_URL);
     await page.locator('button.selection-reload').click();
     await refetch;
 

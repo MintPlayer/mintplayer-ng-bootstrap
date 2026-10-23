@@ -1,0 +1,43 @@
+<div class="mp-tile-manager" [mpProps]="api().board.attrs" [style]="api().board.style">
+  <div class="tile-container" [mpProps]="api().container">
+    <div #grid class="tile-grid" [mpProps]="api().grid.attrs" [style]="api().grid.style">
+      <!-- A press on the header or a grip bubbles to the tile's body handler; the machine
+           ignores that second pointerdown for the same pointer, so the innermost part decides. -->
+      @for (t of api().tiles; track t.id) {
+        @let slots = tileSlots().get(t.id);
+        <div class="tile" [mpProps]="t.attrs" [style]="t.style"
+             (pointerdown)="down($event, t.id, 'body')"
+             (pointermove)="move($event)"
+             (pointerup)="machine.pointerUp($event)"
+             (pointercancel)="machine.pointerCancel($event)"
+             (lostpointercapture)="machine.pointerCancel($event)"
+             (keydown)="key($event, t.id)"
+             (focus)="machine.focus(t.id)"
+             (blur)="machine.blur(t.id)">
+          <!-- Stamps the consumer's *bsTile block first: its *bsTileHeader / *bsTileContent
+               register into this tile's slots before the outlets below read them. Not inside an
+               @if: an @if body refreshes after this view's own bindings, so the reads would run
+               first and the server would render empty headers. -->
+          <ng-container [ngTemplateOutlet]="tileTemplate()?.templateRef ?? null" [ngTemplateOutletContext]="tileContext().get(t.id)" [ngTemplateOutletInjector]="slots?.injector"></ng-container>
+          <div class="tile-header" [mpProps]="t.header" (pointerdown)="down($event, t.id, 'header')">
+            @if (slots?.header; as header) {
+              <ng-container [ngTemplateOutlet]="header"></ng-container>
+            }
+          </div>
+          <div class="tile-content" [mpProps]="t.content">
+            @if (slots?.content; as content) {
+              <ng-container [ngTemplateOutlet]="content"></ng-container>
+            }
+          </div>
+          @for (g of t.grips; track g.handle) {
+            <span class="tile-grip" [mpProps]="g.attrs" (pointerdown)="down($event, t.id, g.handle)"></span>
+          }
+        </div>
+      }
+    </div>
+  </div>
+  @for (n of api().descriptions; track n.key) {
+    <div class="tile-sr-only" [mpProps]="n.attrs">{{ n.text }}</div>
+  }
+  <span class="tile-sr-only" [mpProps]="api().live.attrs">{{ api().live.text }}</span>
+</div>

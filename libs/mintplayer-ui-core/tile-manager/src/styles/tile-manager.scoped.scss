@@ -1,0 +1,229 @@
+// The tile manager's stylesheet, shared by all four fronts (#440, PRD §5.2). Rescoped at
+// build time: every compound gains `[data-mps=tile-manager]`, so only nodes a front
+// stamped are matched. Header and content templates are the consumer's and are never
+// stamped. The Lit front adopts this sheet into its shadow root, where no page CSS
+// reaches, so nothing here may rely on a global utility (`visually-hidden` included).
+//
+// The board's inline style carries the inputs as custom properties:
+// --mp-tile-min-column, --mp-tile-gap and --mp-tile-row-height (connect()).
+
+/*! @mps-global */
+mp-tile-manager {
+  display: block;
+}
+
+.mp-tile-manager {
+  --bs-tile-radius: 0.5rem;
+  --bs-tile-bg: var(--bs-body-bg, #fff);
+  --bs-tile-border: var(--bs-border-color, #dee2e6);
+  --bs-tile-shadow: var(--bs-box-shadow-sm, 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075));
+  --bs-tile-handle-color: var(--bs-secondary, #6c757d);
+  --bs-tile-blocked-color: var(--bs-danger, #dc3545);
+  --bs-tile-focus-color: var(--bs-primary, #0d6efd);
+  position: relative;
+  display: block;
+  box-sizing: border-box;
+  inline-size: 100%;
+  // One column, on the uncontained board: a shrink-to-fit parent cannot collapse it to 0 (D14, S4).
+  min-inline-size: var(--mp-tile-min-column, 200px);
+}
+
+// The container, never the board or the grid: the grid must sit inside it for the
+// `breakpointCss` rules to reach its track template (D14).
+.tile-container {
+  container-type: inline-size;
+}
+
+.tile-grid {
+  position: relative;
+  display: grid;
+  grid-auto-rows: var(--mp-tile-row-height, 8rem);
+  gap: var(--mp-tile-gap, 8px);
+  inline-size: 100%;
+}
+
+.tile {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  box-sizing: border-box;
+  min-inline-size: 0;
+  min-block-size: var(--mp-tile-row-height, 8rem);
+  background: var(--bs-tile-bg);
+  border: 1px solid var(--bs-tile-border);
+  border-radius: var(--bs-tile-radius);
+  box-shadow: var(--bs-tile-shadow);
+  overflow: hidden;
+  transition: transform 150ms cubic-bezier(0.2, 0, 0, 1);
+}
+
+.tile:focus-visible {
+  outline: 2px solid var(--bs-tile-focus-color);
+  outline-offset: -2px;
+}
+
+.tile[data-mode] {
+  outline: 2px dashed var(--bs-tile-focus-color);
+  outline-offset: -2px;
+}
+
+.tile[data-draggable] {
+  touch-action: none;
+  cursor: grab;
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-touch-callout: none;
+}
+
+.tile[data-dragging] {
+  z-index: 5;
+  cursor: grabbing;
+  box-shadow: var(--bs-box-shadow, 0 0.5rem 1rem rgba(0, 0, 0, 0.15));
+  transition: none;
+  will-change: transform;
+}
+
+.tile[data-resizing] {
+  z-index: 4;
+  transition:
+    width 150ms cubic-bezier(0.2, 0, 0, 1),
+    height 150ms cubic-bezier(0.2, 0, 0, 1);
+}
+
+.tile[data-blocked] {
+  outline: 2px solid var(--bs-tile-blocked-color);
+  outline-offset: -2px;
+  animation: tile-shake 200ms ease-in-out;
+}
+
+@keyframes tile-shake {
+  0%, 100% { transform: translateX(0); }
+  25% { transform: translateX(-3px); }
+  75% { transform: translateX(3px); }
+}
+
+.tile[data-pressing] {
+  filter: brightness(0.96);
+  transition: filter 100ms ease-out;
+}
+
+.tile-header {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 0.75rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--bs-body-color, inherit);
+  background: linear-gradient(
+    to bottom,
+    rgba(var(--bs-primary-rgb, 13, 110, 253), 0.1),
+    rgba(var(--bs-primary-rgb, 13, 110, 253), 0.04)
+  );
+  border-bottom: 1px solid var(--bs-tile-border);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.tile-header[data-drag-handle] {
+  touch-action: none;
+  cursor: grab;
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-touch-callout: none;
+}
+
+.tile[data-dragging] .tile-header[data-drag-handle] {
+  cursor: grabbing;
+}
+
+.tile-content {
+  flex: 1 1 auto;
+  min-inline-size: 0;
+  min-block-size: 0;
+  overflow: auto;
+}
+
+.tile-grip {
+  position: absolute;
+  z-index: 2;
+  touch-action: none;
+  user-select: none;
+  -webkit-user-select: none;
+  opacity: 0;
+  transition: opacity 120ms ease-out;
+}
+
+.tile:hover .tile-grip,
+.tile:focus-visible .tile-grip,
+.tile[data-resizing] .tile-grip,
+.mp-tile-manager[data-resize-mode='always'] .tile-grip {
+  opacity: 1;
+}
+
+@media (pointer: coarse) {
+  .tile-grip {
+    opacity: 1;
+  }
+}
+
+.tile-grip[data-part='side'] {
+  inset-inline-end: -2px;
+  inset-block: 25%;
+  inline-size: 6px;
+  cursor: ew-resize;
+}
+
+.tile-grip[data-part='bottom'] {
+  inset-inline: 25%;
+  inset-block-end: -2px;
+  block-size: 6px;
+  cursor: ns-resize;
+}
+
+.tile-grip[data-part='corner'] {
+  inset-inline-end: -2px;
+  inset-block-end: -2px;
+  inline-size: 14px;
+  block-size: 14px;
+  cursor: nwse-resize;
+}
+
+.tile-grip[data-part='corner']::before {
+  content: '';
+  position: absolute;
+  inset-inline-end: 3px;
+  inset-block-end: 3px;
+  inline-size: 8px;
+  block-size: 8px;
+  border-inline-end: 2px solid var(--bs-tile-handle-color);
+  border-block-end: 2px solid var(--bs-tile-handle-color);
+  border-end-end-radius: 2px;
+}
+
+// The description, the instructions and the live region.
+.tile-sr-only {
+  position: absolute;
+  inline-size: 1px;
+  block-size: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .tile,
+  .tile[data-resizing],
+  .tile-grip {
+    transition: none;
+  }
+
+  .tile[data-blocked] {
+    animation: none;
+  }
+}

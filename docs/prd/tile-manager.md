@@ -1,5 +1,12 @@
 # PRD: BsTileManager — drag-and-resize grid of tiles
 
+> **Superseded in part by [`tile-manager-responsive-440.md`](tile-manager-responsive-440.md) (#440).**
+> The tile manager is now a headless `@mintplayer/ui-core/tile-manager` machine with four fronts
+> (Lit, Angular, React, Vue), and it is responsive: one stored layout per column count, a
+> `stackBelow` breakpoint, and a two-way `layouts` input replacing `MintTile.position` and
+> `columnCount` (the full table is in its §7). Where this document and #440 disagree,
+> #440 wins. The gesture model and the keyboard contract below still hold.
+
 **Status:** Proposed.
 **Author:** Pieterjan
 **Date:** 2026-05-09

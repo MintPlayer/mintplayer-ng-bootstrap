@@ -192,17 +192,25 @@ jobs:
         github-token: ${{ github.token }}
         images: ${{ env.IMAGE }}
 
-    - name: Build and push
-      id: push
+    # Built into the local image store and pushed separately, so a failed push
+    # (GHCR's "unknown blob" race between legs) retries the push alone.
+    - name: Build
       uses: docker/build-push-action@v7
       with:
         context: .
         file: ./apps/${{ matrix.app }}/Dockerfile
         target: ${{ matrix.prebuilt && 'prebuilt' || '' }}
         build-contexts: ${{ matrix.prebuilt && format('dist=dist/apps/{0}', matrix.app) || '' }}
-        push: true
+        push: false
+        load: true
         tags: ${{ steps.meta.outputs.tags }}
         labels: ${{ steps.meta.outputs.labels }}
+
+    - name: Push
+      id: push
+      uses: ./.github/actions/docker-push
+      with:
+        tags: ${{ steps.meta.outputs.tags }}
 
     - name: Generate artifact attestation
       uses: actions/attest-build-provenance@v4

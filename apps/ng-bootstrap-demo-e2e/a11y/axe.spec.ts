@@ -126,7 +126,17 @@ axeAuditSuite(test, expect, [
       await page.waitForSelector('mp-file-manager');
     },
   },
-  { path: '/enterprise/tile-manager' },
+  {
+    path: '/enterprise/tile-manager',
+    // Measured (a tile is in the tab order), then the projected state of move mode.
+    ready: async (page) => {
+      await page.waitForSelector('[data-tile-id][tabindex="0"]');
+    },
+    interact: async (page) => {
+      await page.focus('[data-tile-id][tabindex="0"]');
+      await page.keyboard.press('m');
+    },
+  },
   { path: '/enterprise/otp-input' },
   { path: '/enterprise/query-builder' },
   {

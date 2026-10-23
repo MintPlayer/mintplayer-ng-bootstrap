@@ -240,7 +240,12 @@ const CASES: Case[] = [
     render: (p) => <BsTabControl><BsTabPage {...p} /></BsTabControl>,
   },
   bare('BsThemeToggle', 'mp-theme-toggle', BsThemeToggle),
-  bare('BsTileManager', 'mp-tile-manager', BsTileManager),
+  {
+    name: 'BsTileManager',
+    target: '.mp-tile-manager',
+    render: (p) => <BsTileManager tiles={[{ id: 'a' }]} {...p} />,
+    fixedRole: 'region',
+  },
   bare('BsTimeline', 'mp-timeline', BsTimeline),
   bare('BsTimelineItem', 'mp-timeline-item', BsTimelineItem),
   bare('BsTimeList', 'mp-time-list', BsTimeList),

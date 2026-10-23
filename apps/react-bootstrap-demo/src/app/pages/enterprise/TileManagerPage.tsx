@@ -1,90 +1,185 @@
-import { useState } from 'react';
-import { BsTileManager } from '@mintplayer/react-bootstrap/tile-manager';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import {
+  BsTileManager,
+  type MintTile,
+  type TileGestureBlocked,
+  type TileLayouts,
+} from '@mintplayer/react-bootstrap/tile-manager';
+import { BsCheckbox } from '@mintplayer/react-bootstrap/checkbox';
+import { BsSelect } from '@mintplayer/react-bootstrap/select';
 import { BsCodeSnippet } from '@mintplayer/react-bootstrap/code-snippet';
-import type {
-  MintTile,
-  TileLayoutSnapshot,
-  TilePosition,
-} from '@mintplayer/web-components/tile-manager';
+import './TileManagerPage.scss';
 
-const INITIAL_TILES: MintTile[] = [
-  { id: 'weather',  position: { colStart: 1, rowStart: 1, colSpan: 2, rowSpan: 1 } },
-  { id: 'inbox',    position: { colStart: 3, rowStart: 1, colSpan: 1, rowSpan: 2 } },
-  { id: 'stats',    position: { colStart: 4, rowStart: 1, colSpan: 1, rowSpan: 1 } },
-  { id: 'calendar', position: { colStart: 1, rowStart: 2, colSpan: 2, rowSpan: 1 } },
+const STORAGE_KEY = 'tile-manager-demo-layouts-v2';
+
+interface DemoTile extends MintTile {
+  title: string;
+  body: string;
+}
+
+const PANELS: readonly DemoTile[] = [
+  { id: 'weather', title: 'Weather', label: 'Weather', body: 'Sunny · 22 °C · 5 km/h NW', defaultSize: { colSpan: 2, rowSpan: 1 } },
+  { id: 'inbox', title: 'Inbox', label: 'Inbox', body: '3 unread · 2 starred', defaultSize: { colSpan: 1, rowSpan: 2 } },
+  { id: 'stats', title: 'Stats', label: 'Stats', body: '1.2k visits · ↑12% week-over-week' },
+  { id: 'calendar', title: 'Calendar', label: 'Calendar', body: 'Next: Standup at 10:00', defaultSize: { colSpan: 2, rowSpan: 1 } },
+  { id: 'notes', title: 'Notes', label: 'Notes', body: '“Refactor packer · push v1 by Friday”' },
+  { id: 'activity', title: 'Activity', label: 'Activity', body: '7 commits · 2 PRs reviewed today', defaultSize: { colSpan: 4, rowSpan: 1 } },
 ];
 
-const SOURCE = `<BsTileManager
+const STACK_OPTIONS = [
+  { value: '0', label: 'never' },
+  { value: '576', label: '576px' },
+  { value: '768', label: '768px' },
+];
+const GAP_OPTIONS = [
+  { value: '4', label: 'tight' },
+  { value: '8', label: 'small' },
+  { value: '12', label: 'comfortable' },
+  { value: '20', label: 'spacious' },
+];
+
+const SOURCE = `const [layouts, setLayouts] = useState<TileLayouts>(
+  () => JSON.parse(localStorage.getItem('dashboard') ?? '{}'),
+);
+useEffect(() => localStorage.setItem('dashboard', JSON.stringify(layouts)), [layouts]);
+
+<BsTileManager
   tiles={tiles}
-  column-count={4}
-  drag-mode="header"
-  onTilelayoutchange={e => setSnapshot(e.detail)}>
-  <div slot="weather-header">Weather</div>
-  <div slot="weather-content">Sunny · 22 °C</div>
-  …
-</BsTileManager>`;
+  layouts={layouts}
+  onLayoutsChange={setLayouts}
+  stackBelow={576}
+  gap={12}
+  label="Dashboard"
+  renderHeader={(tile) => tile.title}
+  renderContent={(tile) => <div className="tile-body">{tile.body}</div>}
+/>`;
+
+function loadLayouts(): TileLayouts {
+  try {
+    return JSON.parse(localStorage.getItem(STORAGE_KEY) ?? '{}');
+  } catch {
+    return {};
+  }
+}
+
+const toggled = (ids: ReadonlySet<string>, id: string): ReadonlySet<string> =>
+  ids.has(id) ? new Set([...ids].filter((x) => x !== id)) : new Set([...ids, id]);
 
 export function TileManagerPage() {
-  // `tiles` must be reactive: @lit/react re-applies every prop on every
-  // render, so any parent re-render (e.g., to refresh the snapshot panel)
-  // would push the original `tiles` array back into the WC and snap the
-  // user's drag/resize back to seed positions. Listen for
-  // `tilepositionchange` and replay each commit into state.
-  const [tiles, setTiles] = useState<MintTile[]>(INITIAL_TILES);
-  const [snapshot, setSnapshot] = useState<TileLayoutSnapshot | null>(null);
+  const [stackBelow, setStackBelow] = useState(576);
+  const [gap, setGap] = useState(12);
+  const [editing, setEditing] = useState(true);
+  const [animateReflow, setAnimateReflow] = useState(true);
+  const [hidden, setHidden] = useState<ReadonlySet<string>>(new Set());
+  const [locked, setLocked] = useState<ReadonlySet<string>>(new Set());
+  const [layouts, setLayouts] = useState<TileLayouts>(loadLayouts);
+  const [columnCount, setColumnCount] = useState<number | null>(null);
+  const [blocked, setBlocked] = useState<TileGestureBlocked | null>(null);
+  // The board's width: what `stackBelow` and the column count are resolved against.
+  const boardRef = useRef<HTMLDivElement>(null);
+  const [boardWidth, setBoardWidth] = useState<number | null>(null);
 
-  const onTilepositionchange = (e: CustomEvent<{ id: string; position: TilePosition }>) => {
-    const { id, position } = e.detail;
-    setTiles((current) => current.map((t) => (t.id === id ? { ...t, position } : t)));
-  };
+  // Host-owned visibility (D9): a hidden panel is simply absent from `tiles`; its stored positions stay.
+  const tiles = useMemo(
+    () => PANELS.filter((p) => !hidden.has(p.id)).map((p) => (locked.has(p.id) ? { ...p, disableMove: true, disableResize: true } : p)),
+    [hidden, locked],
+  );
+  const layoutsJson = useMemo(() => JSON.stringify(layouts, null, 2), [layouts]);
+
+  useEffect(() => {
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(layouts));
+    } catch {
+      // localStorage may be unavailable (private mode). The demo silently degrades.
+    }
+  }, [layouts]);
+
+  useEffect(() => {
+    const observer = new ResizeObserver(([entry]) => setBoardWidth(Math.round(entry.contentRect.width)));
+    if (boardRef.current) observer.observe(boardRef.current);
+    return () => observer.disconnect();
+  }, []);
 
   return (
     <div className="demo-page">
       <h1>Tile manager</h1>
       <p className="text-body-secondary">
-        CSS-grid dashboard with draggable + resizable tiles. The WC owns
-        the layout math (collision-aware reflow via a 2D bin-packer);
-        consumers project content into named slots and listen for
-        <code> tilelayoutchange</code>.
+        Drag a tile by its header to move it; drag a side / bottom / corner grip to resize. The board
+        keeps one layout per column count: rearrange at one width and the other widths keep theirs.
+        Below the stack width the tiles stack in one column. Layouts persist to <code>localStorage</code>.
       </p>
 
-      <details className="mb-2">
+      <details className="mb-3">
         <summary>Keyboard shortcuts</summary>
         <ul className="mb-0">
-          <li><kbd>Tab</kbd> — focus the tile board. Exactly one tile is in the tab order (roving tabindex), so <kbd>Tab</kbd> again leaves the board.</li>
-          <li><kbd>→</kbd> / <kbd>↓</kbd> — focus the next tile · <kbd>←</kbd> / <kbd>↑</kbd> — the previous one. The order is row-major (top-to-bottom, then left-to-right) and it wraps around the ends; the arrows step through that sequence rather than moving geometrically, so <kbd>↓</kbd> does not necessarily land on the tile below.</li>
-          <li><kbd>Home</kbd> / <kbd>End</kbd> — first / last tile in row-major order</li>
-          <li><kbd>M</kbd> — enter move mode on the focused tile. Ignored on a tile that has both <code>disableMove</code> and <code>disableResize</code>.</li>
-          <li>In move mode: <kbd>↑</kbd> / <kbd>↓</kbd> / <kbd>←</kbd> / <kbd>→</kbd> move the tile by one grid cell, <kbd>Shift</kbd> + arrow grows or shrinks its span by one column / row. Each step reflows the other tiles through the packer and emits <code>tilelayoutchange</code>; a step the packer can't place is announced as “Move blocked” and changes nothing.</li>
-          <li><kbd>Enter</kbd> — commit and leave move mode · <kbd>Esc</kbd> — leave move mode and restore the layout as it was when move mode was entered</li>
-          <li><kbd>Esc</kbd> during a pointer drag or resize — cancel that gesture</li>
+          <li><kbd>Tab</kbd> — focus the board. Exactly one tile is in the tab order, so <kbd>Tab</kbd> again leaves it.</li>
+          <li><kbd>←</kbd> <kbd>→</kbd> <kbd>↑</kbd> <kbd>↓</kbd> — focus the previous / next tile in reading order · <kbd>Home</kbd> / <kbd>End</kbd> — first / last</li>
+          <li><kbd>M</kbd> — move mode: arrows move the tile one cell · <kbd>R</kbd> — resize mode: arrows grow or shrink it</li>
+          <li><kbd>Enter</kbd> — commit · <kbd>Esc</kbd> — restore the layout from before the mode, or cancel a pointer gesture</li>
         </ul>
       </details>
 
-      <section style={{ height: 400 }}>
-        <h2>4 tiles, 4-column grid</h2>
-        <BsTileManager
-          {...{ tiles, 'column-count': 4, 'drag-mode': 'header' } as React.ComponentProps<typeof BsTileManager>}
-          onTilelayoutchange={(e) => setSnapshot(e.detail)}
-          onTilepositionchange={onTilepositionchange}
-          style={{ display: 'block', height: '100%' }}
-        >
-          <div slot="weather-header">Weather</div>
-          <div slot="weather-content" className="p-2">Sunny · 22 °C · 5 km/h NW</div>
-          <div slot="inbox-header">Inbox</div>
-          <div slot="inbox-content" className="p-2">3 unread · 2 starred</div>
-          <div slot="stats-header">Stats</div>
-          <div slot="stats-content" className="p-2">1.2k visits · ↑12% week-over-week</div>
-          <div slot="calendar-header">Calendar</div>
-          <div slot="calendar-content" className="p-2">Next: Standup at 10:00</div>
-        </BsTileManager>
-      </section>
+      <div className="tile-demo-controls">
+        <div className="control-field">
+          <label className="form-label mb-1">Stack below</label>
+          <BsSelect aria-label="Stack below" value={String(stackBelow)} options={STACK_OPTIONS} onValueChange={(e) => setStackBelow(Number(e.detail.value ?? 0))} />
+        </div>
+        <div className="control-field">
+          <label className="form-label mb-1">Gap</label>
+          <BsSelect aria-label="Gap" value={String(gap)} options={GAP_OPTIONS} onValueChange={(e) => setGap(Number(e.detail.value ?? 12))} />
+        </div>
+        <BsCheckbox type="switch" checked={editing} onChange={(e) => setEditing(e.detail.checked)}>Edit layout</BsCheckbox>
+        <BsCheckbox type="checkbox" checked={animateReflow} onChange={(e) => setAnimateReflow(e.detail.checked)}>Animate reflow</BsCheckbox>
+      </div>
 
-      <section>
-        <h2>Latest layout</h2>
-        {snapshot
-          ? <BsCodeSnippet code={JSON.stringify(snapshot, null, 2)} language="json" />
-          : <p className="text-body-secondary">Drag a tile to capture a layout.</p>}
+      <div className="tile-demo-checklist">
+        <strong>Panels:</strong>
+        {PANELS.map((panel) => (
+          <BsCheckbox key={panel.id} type="checkbox" checked={!hidden.has(panel.id)} onChange={() => setHidden((ids) => toggled(ids, panel.id))}>
+            {panel.title}
+          </BsCheckbox>
+        ))}
+      </div>
+      <div className="tile-demo-checklist">
+        <strong>Lock:</strong>
+        {PANELS.map((panel) => (
+          <BsCheckbox key={panel.id} type="checkbox" checked={locked.has(panel.id)} onChange={() => setLocked((ids) => toggled(ids, panel.id))}>
+            {panel.title}
+          </BsCheckbox>
+        ))}
+      </div>
+      <p className="mb-2">
+        Board width: <span className="badge text-bg-secondary">{boardWidth ?? '—'}px</span>
+        Columns: <span className="badge text-bg-primary">{columnCount ?? '—'}</span>
+      </p>
+
+      <div ref={boardRef}>
+        <BsTileManager
+          tiles={tiles}
+          layouts={layouts}
+          onLayoutsChange={setLayouts}
+          stackBelow={stackBelow || null}
+          gap={gap}
+          dragMode={editing ? 'header' : 'off'}
+          resizeMode={editing ? 'hover' : 'off'}
+          animateReflow={animateReflow}
+          label="Demo dashboard"
+          onColumnCountChange={(change) => setColumnCount(change.columnCount)}
+          onGestureBlocked={setBlocked}
+          renderHeader={(tile) => <span>{tile.title}</span>}
+          renderContent={(tile) => <div className="tile-body">{tile.body}</div>}
+        />
+      </div>
+
+      <section className="mt-3">
+        <button type="button" className="btn btn-outline-danger btn-sm mb-2" onClick={() => setLayouts({})}>Reset all widths</button>
+        {blocked && (
+          <div className="alert alert-warning py-2">
+            Last gesture blocked: <code>{blocked.id}</code> — <code>{blocked.reason}</code>
+          </div>
+        )}
+        <strong className="d-block mb-1">Stored layouts</strong>
+        <BsCodeSnippet code={layoutsJson} language="json" />
       </section>
 
       <section>

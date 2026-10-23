@@ -1,0 +1,28 @@
+// Playground control bar: labelled selects + a stacked group of switches.
+.tile-demo-controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+  align-items: flex-end;
+  margin-bottom: 1rem;
+
+  .control-field {
+    display: flex;
+    flex-direction: column;
+    min-width: 12rem;
+  }
+}
+
+.tile-demo-checklist {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0 1rem;
+  align-items: center;
+  margin-bottom: 0.5rem;
+}
+
+.tile-body {
+  padding: 0.75rem;
+  font-size: 0.875rem;
+  color: var(--bs-secondary-color, #6c757d);
+}
