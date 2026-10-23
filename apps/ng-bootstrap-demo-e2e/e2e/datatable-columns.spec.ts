@@ -1,4 +1,5 @@
 import { test, expect, type Page } from '@playwright/test';
+import { mockArtistQuery } from './artist-query-mock';
 
 /**
  * Column widths and column resizing in a real browser (#426). jsdom has no
@@ -13,23 +14,7 @@ async function mockArtistApi(page: Page) {
     yearStarted: 1960 + (i % 30),
     yearQuit: i % 4 === 0 ? null : 2000 + (i % 20),
   }));
-  await page.route('**/api/v1/artist/page', async (route) => {
-    const req = JSON.parse(route.request().postData() ?? '{}') as { page?: number; perPage?: number };
-    const page_ = req.page ?? 1;
-    const perPage = req.perPage ?? 20;
-    const start = (page_ - 1) * perPage;
-    await route.fulfill({
-      status: 200,
-      contentType: 'application/json',
-      body: JSON.stringify({
-        data: artists.slice(start, start + perPage),
-        totalRecords: artists.length,
-        totalPages: Math.ceil(artists.length / perPage),
-        page: page_,
-        perPage,
-      }),
-    });
-  });
+  await mockArtistQuery(page, artists);
 }
 
 const TABLE = '.resize-table mp-datatable';

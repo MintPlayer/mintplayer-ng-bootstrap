@@ -1,4 +1,5 @@
 import { test, expect, type Page } from '@playwright/test';
+import { mockArtistQuery } from './artist-query-mock';
 
 // Mock the artist API so the test is deterministic and offline-friendly.
 async function mockArtistApi(page: Page) {
@@ -11,26 +12,7 @@ async function mockArtistApi(page: Page) {
     yearQuit: i % 5 === 0 ? null : 2000 + (i % 25),
   }));
 
-  await page.route('**/api/v1/artist/page', async (route) => {
-    const req = JSON.parse(route.request().postData() ?? '{}') as {
-      page?: number; perPage?: number;
-    };
-    const page_ = req.page ?? 1;
-    const perPage = req.perPage ?? 20;
-    const start = (page_ - 1) * perPage;
-    const slice = artists.slice(start, start + perPage);
-    await route.fulfill({
-      status: 200,
-      contentType: 'application/json',
-      body: JSON.stringify({
-        data: slice,
-        totalRecords: artists.length,
-        totalPages: Math.ceil(artists.length / perPage),
-        page: page_,
-        perPage,
-      }),
-    });
-  });
+  await mockArtistQuery(page, artists);
 }
 
 // Read rows out of the mp-datatable's shadow DOM. The Lit WC renders a single
