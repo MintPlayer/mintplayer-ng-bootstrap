@@ -434,7 +434,7 @@ tbody tr[data-placeholder="true"] {
   max-height: none;
 }
 
-:host([fill]) table {
+:host([fill]) .datatable-scroll > table {
   // `width: 100%` inside a `max-content` shell is cyclic, and Chromium resolved
   // it to 800000px. The measured header widths keep a narrow parent scrolling
   // horizontally instead of squeezing the columns.
@@ -446,7 +446,7 @@ tbody tr[data-placeholder="true"] {
   border-spacing: 0;
 }
 
-:host([fill]) thead {
+:host([fill]) .datatable-scroll > table > thead {
   position: sticky;
   top: 0;
   z-index: 2;
@@ -454,14 +454,17 @@ tbody tr[data-placeholder="true"] {
 
 // Opaque on the cells, not only on thead: the cell background (Bootstrap's
 // `--bs-table-bg` among others) is transparent and the rows would show through.
-:host([fill]) thead th {
-  background-color: var(--bs-body-bg, #fff);
+// `--mp-datatable-fill-bg` (header and footer) lets a container with its own
+// background, such as a card, match it. It is inherited, never declared here.
+// The `> table >` chain keeps a table rendered inside a cell template out.
+:host([fill]) .datatable-scroll > table > thead th {
+  background-color: var(--mp-datatable-fill-bg, var(--bs-body-bg, #fff));
 }
 
 // The hover tint is translucent; layer it over the opaque background, as in
 // virtual mode, so the header stays opaque while hovered.
-:host([fill]) thead th[data-sortable="true"]:hover {
-  background-color: var(--bs-body-bg, #fff);
+:host([fill]) .datatable-scroll > table > thead th[data-sortable="true"]:hover {
+  background-color: var(--mp-datatable-fill-bg, var(--bs-body-bg, #fff));
   background-image: linear-gradient(
     var(--mp-datatable-row-hover-bg),
     var(--mp-datatable-row-hover-bg)
@@ -472,7 +475,7 @@ tbody tr[data-placeholder="true"] {
   position: sticky;
   bottom: 0;
   z-index: 2;
-  background-color: var(--bs-body-bg, #fff);
+  background-color: var(--mp-datatable-fill-bg, var(--bs-body-bg, #fff));
 }
 
 // ─── Filter row ────────────────────────────────────────────────────────────
