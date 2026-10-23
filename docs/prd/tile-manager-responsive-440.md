@@ -1,6 +1,6 @@
 # PRD — Tile manager: headless core, responsive breakpoints, per-column-count layouts (#440)
 
-- **Status:** Proposed. Grilled 2026-10-23 (§13); not started.
+- **Status:** Implemented in PR [#441](https://github.com/MintPlayer/mintplayer-ng-bootstrap/pull/441) (2026-10-23). Grilled 2026-10-23 (§13). §12 (Spark) follows the publish.
 - **Issue:** [#440](https://github.com/MintPlayer/mintplayer-ng-bootstrap/issues/440)
 - **Packages:**
   - `@mintplayer/ui-core/tile-manager` (new)

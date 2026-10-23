@@ -2,8 +2,8 @@
 
 PRD: [tile-manager-responsive-440.md](./tile-manager-responsive-440.md)
 
-Status: **In progress** (2026-10-23), grilled with decisions D1–D15 and one review round. S1–S5, M1
-(`19576ed2`), M2 (`27ae0b55`, `1e3798c1`), M3 (`b89b16d0`), M4 (`ddb695f5`), M5 (`f1b946a8`, `5c1ed56c`, `420b871b`), M6 (`2d26609f`), M7, M8 (`b08f16cd`) and M9 (`4e169ae6` + versions) are done; next is M10. Specs are written but run only in M10.
+Status: **Done** (2026-10-23), grilled with decisions D1–D15 and one review round. S1–S5, M1
+(`19576ed2`), M2 (`27ae0b55`, `1e3798c1`), M3 (`b89b16d0`), M4 (`ddb695f5`), M5 (`f1b946a8`, `5c1ed56c`, `420b871b`), M6 (`2d26609f`), M7, M8 (`b08f16cd`), M9 (`4e169ae6` + versions) and M10 (`c9fd7346`, `61099fc0`, `4992c2a0`) are done. PR [#441](https://github.com/MintPlayer/mintplayer-ng-bootstrap/pull/441) is open and CI is green.
 The branch is `feat/440-tile-manager-responsive`, targeting `master`. Everything lands in **one PR**: the core,
 the four fronts, the demos, the docs and the version bumps.
 
