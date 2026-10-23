@@ -162,22 +162,26 @@ test.describe('offcanvas — Escape closes without stranding focus', () => {
 });
 
 test.describe('tile-manager — Escape genuinely reverts (4.10)', () => {
-  test('M, ArrowRight, Escape restores the starting layout', async ({ page }) => {
+  test('at 390px: M, ArrowDown, Escape restores the starting layout', async ({ page }) => {
+    await page.setViewportSize({ width: 390, height: 900 });
     await page.goto('/enterprise/tile-manager');
     await page.waitForLoadState('networkidle');
-    const board = page.locator('mp-tile-manager').first();
-    await expect(board).toBeVisible();
+    const board = page.getByRole('region', { name: 'Demo dashboard' });
+    const focusable = board.locator('[data-tile-id][tabindex="0"]');
+    await expect(focusable).toHaveCount(1);
 
+    // The tiles' placement, as the core writes it (inline grid-row / grid-column).
     const layoutOf = () =>
       board.evaluate((el) =>
-        (el as HTMLElement & { tiles: { id: string; position: { colStart: number; rowStart: number } }[] })
-          .tiles.map((t) => `${t.id}:${t.position.colStart},${t.position.rowStart}`).join(' '),
+        [...el.querySelectorAll<HTMLElement>('[data-tile-id]')]
+          .map((t) => `${t.dataset['tileId']}:${t.style.gridColumn},${t.style.gridRow}`)
+          .join(' '),
       );
 
     const initial = await layoutOf();
-    await board.evaluate((el) => el.shadowRoot?.querySelector<HTMLElement>('.tile[tabindex="0"]')?.focus());
+    await focusable.focus();
     await page.keyboard.press('m');
-    await page.keyboard.press('ArrowRight');
+    await page.keyboard.press('ArrowDown');
     await page.waitForTimeout(150);
     const stepped = await layoutOf();
     expect(stepped).not.toBe(initial);

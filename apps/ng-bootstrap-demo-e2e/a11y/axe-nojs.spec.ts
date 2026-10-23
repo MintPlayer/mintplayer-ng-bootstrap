@@ -13,4 +13,6 @@ axeNojsSuite(test, expect, [
   { path: '/overlays/shell' },
   // The headless-core typeahead server-renders a real input (#436).
   { path: '/overlays/typeahead' },
+  // The headless-core tile manager server-renders named tile groups (#440, tier 2).
+  { path: '/enterprise/tile-manager' },
 ]);

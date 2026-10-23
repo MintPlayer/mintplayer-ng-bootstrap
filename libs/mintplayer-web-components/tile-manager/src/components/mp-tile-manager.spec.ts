@@ -2,6 +2,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import './mp-tile-manager';
 import type { MintTileManagerElement } from './mp-tile-manager';
 import type { MintTile, TileLayoutChange } from '@mintplayer/ui-core/tile-manager';
+import { tileManagerDomMismatches } from '@mintplayer/ui-core/_conformance/tile-manager-dom';
 
 // Wiring only: inputs reach the machine, the DOM reflects it, events come back out. The
 // layout rules themselves are pinned in ui-core's machine and derive specs.
@@ -44,6 +45,11 @@ describe('mp-tile-manager', () => {
     const grid = el.renderRoot.querySelector<HTMLElement>('.tile-grid')!;
     expect(grid.style.gridTemplateColumns).toBe('repeat(2, minmax(0, 1fr))');
     expect(tile(el, 'b').style.gridColumn).toContain('2');
+  });
+
+  it('renders exactly the DOM connect() describes (four-front conformance)', async () => {
+    el = await mount();
+    expect(tileManagerDomMismatches(el.renderRoot, { tiles, breakpoints: [{ minWidth: 0, columns: 2 }] }, 800)).toEqual([]);
   });
 
   it('renders resize grips only where resizing is allowed', async () => {

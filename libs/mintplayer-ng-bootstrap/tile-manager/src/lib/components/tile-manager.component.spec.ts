@@ -2,6 +2,7 @@ import { Component, signal, viewChild } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import type { MintTile, TileBreakpoint, TileLayoutChange, TileLayouts } from '@mintplayer/ui-core/tile-manager';
+import { tileManagerDomMismatches } from '@mintplayer/ui-core/_conformance/tile-manager-dom';
 import { BsTileManagerComponent } from './tile-manager.component';
 import { BsTileContentDirective, BsTileDirective, BsTileHeaderDirective } from '../directives/tile-template.directives';
 
@@ -88,6 +89,11 @@ describe('BsTileManagerComponent', () => {
   it('places tiles from the derived layout and sets the track template once measured', () => {
     expect(el.querySelector<HTMLElement>('.tile-grid')!.style.gridTemplateColumns).toBe('repeat(2, minmax(0, 1fr))');
     expect(tile('b').style.gridColumn).toContain('2');
+  });
+
+  it('renders exactly the DOM connect() describes (four-front conformance)', () => {
+    const inputs = { tiles: host.tiles(), breakpoints: host.breakpoints, dragMode: 'header' as const, label: 'Dashboard' };
+    expect(tileManagerDomMismatches(el, inputs, 800)).toEqual([]);
   });
 
   it('renders resize grips only where resizing is allowed', () => {

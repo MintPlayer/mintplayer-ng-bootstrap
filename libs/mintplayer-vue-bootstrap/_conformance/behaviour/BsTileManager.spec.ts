@@ -3,6 +3,7 @@ import { createSSRApp, defineComponent, h, nextTick, ref } from 'vue';
 import { renderToString } from '@vue/server-renderer';
 import { mount, type VueWrapper } from '@vue/test-utils';
 import type { MintTile, TileLayoutChange, TileLayouts } from '@mintplayer/ui-core/tile-manager';
+import { tileManagerDomMismatches } from '@mintplayer/ui-core/_conformance/tile-manager-dom';
 import BsTileManager from '../../tile-manager/src/BsTileManager.vue';
 import type { BsTileManagerExposed } from '../../tile-manager/src/types';
 
@@ -124,6 +125,11 @@ describe('BsTileManager (Vue front)', () => {
       expect(root().querySelector<HTMLElement>('.tile-grid')!.style.gridTemplateColumns).toBe('repeat(2, minmax(0, 1fr))');
       expect(tile('b').style.gridColumn).toContain('2');
       expect(root().querySelector(':scope > style')).toBeNull();
+    });
+
+    it('renders exactly the DOM connect() describes (four-front conformance)', () => {
+      const inputs = { tiles: TILES, breakpoints: [{ minWidth: 0, columns: 2 }], dragMode: 'header' as const, label: 'Dashboard' };
+      expect(tileManagerDomMismatches(document.body, inputs, 800)).toEqual([]);
     });
 
     it('renders resize grips only where resizing is allowed', () => {

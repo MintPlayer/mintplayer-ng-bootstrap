@@ -4,6 +4,7 @@ import { act, useState } from 'react';
 import { createRoot, type Root } from 'react-dom/client';
 import { renderToString } from 'react-dom/server';
 import type { MintTile, TileLayoutChange, TileLayouts } from '@mintplayer/ui-core/tile-manager';
+import { tileManagerDomMismatches } from '@mintplayer/ui-core/_conformance/tile-manager-dom';
 import { BsTileManager, type BsTileManagerHandle } from '../../tile-manager/src/BsTileManager';
 
 /**
@@ -125,6 +126,11 @@ describe('BsTileManager (React front)', () => {
       expect(container.querySelector<HTMLElement>('.tile-grid')!.style.gridTemplateColumns).toBe('repeat(2, minmax(0, 1fr))');
       expect(tile('b').style.gridColumn).toContain('2');
       expect(container.querySelector('.mp-tile-manager > style')).toBeNull();
+    });
+
+    it('renders exactly the DOM connect() describes (four-front conformance)', () => {
+      const inputs = { tiles: TILES, breakpoints: [{ minWidth: 0, columns: 2 }], dragMode: 'header' as const, label: 'Dashboard' };
+      expect(tileManagerDomMismatches(container, inputs, 800)).toEqual([]);
     });
 
     it('renders resize grips only where resizing is allowed', () => {

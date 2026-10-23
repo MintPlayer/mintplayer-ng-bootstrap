@@ -103,7 +103,17 @@ axeAuditSuite(test, expect, [
     },
   },
   { path: '/enterprise/shell' },
-  { path: '/enterprise/tile-manager' },
+  {
+    path: '/enterprise/tile-manager',
+    // Measured (a tile is in the tab order), then the projected state of move mode.
+    ready: async (page) => {
+      await page.waitForSelector('[data-tile-id][tabindex="0"]');
+    },
+    interact: async (page) => {
+      await page.focus('[data-tile-id][tabindex="0"]');
+      await page.keyboard.press('m');
+    },
+  },
   { path: '/enterprise/timeline' },
   { path: '/advanced/otp-input' },
   { path: '/advanced/signature-pad' },
