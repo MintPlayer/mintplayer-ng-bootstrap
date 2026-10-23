@@ -405,6 +405,79 @@ tbody tr[data-placeholder="true"] {
   flex: 0 1 auto;
 }
 
+// ─── Fill mode (#442) ──────────────────────────────────────────────────────
+// The element fits a sized parent: header rows stick to the top, the footer to
+// the bottom, only the rows scroll in between, and horizontally the whole
+// table — footer included — scrolls as one. The HOST is the one scroll box for
+// both axes; `.datatable-scroll` gives up its own, or `thead` would stick to it
+// instead and scroll away with it. Each rule below out-ranks the default it
+// replaces by carrying the host attribute.
+
+:host([fill]) {
+  height: 100%;
+  overflow: auto;
+}
+
+:host([fill]) .datatable-shell {
+  height: auto;
+  // Few rows still put the footer at the bottom of the parent.
+  min-height: 100%;
+  // As wide as the table, so the footer spans and scrolls with it.
+  width: max-content;
+  min-width: 100%;
+}
+
+:host([fill]) .datatable-scroll {
+  overflow: visible;
+  flex: 1 0 auto;
+  // The virtual viewport cap: the parent sizes the scroller here.
+  max-height: none;
+}
+
+:host([fill]) .datatable-scroll > table {
+  // `width: 100%` inside a `max-content` shell is cyclic, and Chromium resolved
+  // it to 800000px. The measured header widths keep a narrow parent scrolling
+  // horizontally instead of squeezing the columns.
+  width: auto;
+  min-width: 100%;
+  // Collapsed borders do not travel with sticky cells: a 1px see-through gap
+  // opens between the header row and the filter row.
+  border-collapse: separate;
+  border-spacing: 0;
+}
+
+:host([fill]) .datatable-scroll > table > thead {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+}
+
+// Opaque on the cells, not only on thead: the cell background (Bootstrap's
+// `--bs-table-bg` among others) is transparent and the rows would show through.
+// `--mp-datatable-fill-bg` (header and footer) lets a container with its own
+// background, such as a card, match it. It is inherited, never declared here.
+// The `> table >` chain keeps a table rendered inside a cell template out.
+:host([fill]) .datatable-scroll > table > thead th {
+  background-color: var(--mp-datatable-fill-bg, var(--bs-body-bg, #fff));
+}
+
+// The hover tint is translucent; layer it over the opaque background, as in
+// virtual mode, so the header stays opaque while hovered.
+:host([fill]) .datatable-scroll > table > thead th[data-sortable="true"]:hover {
+  background-color: var(--mp-datatable-fill-bg, var(--bs-body-bg, #fff));
+  background-image: linear-gradient(
+    var(--mp-datatable-row-hover-bg),
+    var(--mp-datatable-row-hover-bg)
+  );
+}
+
+:host([fill]) .datatable-footer {
+  position: sticky;
+  bottom: 0;
+  z-index: 2;
+  background-color: var(--mp-datatable-fill-bg, var(--bs-body-bg, #fff));
+}
+
 // ─── Filter row ────────────────────────────────────────────────────────────
 
 tr.filter-row th {

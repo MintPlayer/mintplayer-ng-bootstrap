@@ -1,4 +1,5 @@
 import {
+  booleanAttribute,
   ChangeDetectionStrategy,
   Component,
   computed,
@@ -74,6 +75,9 @@ export interface BsDatatableTreeRowEvent<T> {
   styleUrls: ['./datatable.component.scss'],
   schemas: [CUSTOM_ELEMENTS_SCHEMA],
   changeDetection: ChangeDetectionStrategy.OnPush,
+  host: {
+    '[class.bs-datatable-fill]': 'fill()',
+  },
 })
 export class BsDatatableComponent<TData> {
   private readonly platformId = inject(PLATFORM_ID);
@@ -176,6 +180,13 @@ export class BsDatatableComponent<TData> {
   readonly itemSize = input<number>(40);
   /** Off-screen row buffer per side for virtual scrolling. */
   readonly virtualBuffer = input<number>(10);
+
+  /**
+   * Fit a sized parent: the header sticks to its top, the footer to its
+   * bottom, and only the rows scroll in between (horizontally the whole table
+   * scrolls as one). The parent needs a definite height.
+   */
+  readonly fill = input(false, { transform: booleanAttribute });
 
   /** Forwarded to the inner table (legacy responsive flag, currently a CSS hook). */
   readonly isResponsive = input<boolean>(false);
@@ -491,6 +502,10 @@ export class BsDatatableComponent<TData> {
       el.virtualScroll = this.virtualScroll();
       el.itemSize = this.itemSize();
       el.virtualBuffer = this.virtualBuffer();
+    });
+
+    effect(() => {
+      this.datatableRef().nativeElement.fill = this.fill();
     });
 
     // Tree-mode prop sync to the WC.

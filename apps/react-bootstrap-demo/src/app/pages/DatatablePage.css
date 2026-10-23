@@ -41,3 +41,8 @@
   outline: 2px solid var(--bs-focus-ring-color, #0d6efd);
   outline-offset: 1px;
 }
+
+/* A tile-sized parent for the fill demo (#442). */
+.fill-parent {
+  height: 225px;
+}
