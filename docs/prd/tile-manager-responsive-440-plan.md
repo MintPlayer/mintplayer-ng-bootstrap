@@ -74,6 +74,11 @@ against the running demos. Test suites run **once**, in M10.
 - Commit and preview semantics: Escape reverts, blur commits, and a no-op commit emits nothing.
 - The D15 commit payload (`layouts`, `staleCounts`) and `resetLayout(count)`.
 - Optimistic `layouts`: a new object from `setInputs` replaces the internal copy.
+- Every gesture computes from the **rendered** (projected) position, never the stored one.
+  Regression spec, reproduced by the owner on the current WC on 2026-10-23: a layout authored for 4
+  columns, rendered at 2, then a drag of the right-hand tile. The tile must move by the pointer
+  delta. On `master` it jumps ~560 px right, because positions outside `1..n` create implicit grid
+  tracks while `cellOrigin` assumes n equal ones.
 
 ## M3: connect, messages, styles
 - `connect(snapshot, rootId)` builds the bags for the board, tiles, handles, grips, instructions and

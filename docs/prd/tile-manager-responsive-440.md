@@ -122,9 +122,15 @@ libs/mintplayer-ui-core/tile-manager/
 
 **Commands:**
 - `setInputs(partial)` and `measure(width, cellMetrics)`;
-- `pointerDown/Move/Up/Cancel(tileId, part, {x, y, pointerType, button, time})`;
+- `pointerDown(tileId, part, point, cellMetrics)` and `pointerMove/Up/Cancel(point)`, where `point`
+  is grid-local `{x, y, pointerId, pointerType, button, time}` and the metrics are read once at
+  pointerdown. Down and move return a verdict, `'ignore' | 'track' | 'capture'`; the front calls
+  `setPointerCapture` and `preventDefault` only on `'capture'` (mouse captures lazily at 5 px);
 - `keydown(tileId, key, mods) → consumed`;
-- `focus(tileId)` and `blur()`.
+- `focus(tileId)` and `blur()`;
+- a `focusRequest {tileId, seq}` in the snapshot, which the front applies after it renders.
+
+S3 settled this contract (`docs/prd/spikes/issue-440/S3-gesture-split.md`).
 
 Long-press arming uses an injected timer, so it is testable with fake timers. The machine emits
 `layoutchange`, `layoutpreview` and `columncountchange` through `subscribe`-style callbacks, and the
@@ -135,9 +141,12 @@ re-resolves on commit or cancel, not before, so the coordinate system never chan
 pointer.
 
 **`connect()`** returns bags for the board, each tile, each tile's resize grip and drag handle,
-the instructions node and the live region. That includes `role`, `aria-*`, `tabindex`, `data-*`,
-the `grid-column`/`grid-row` style and `data-mps="tile-manager"`. Ids are deterministic from the
-front-supplied root id.
+the instructions node and the live region. That includes `role`, `aria-*`, `tabindex`, `data-*`
+and `data-mps="tile-manager"`. Ids are deterministic from the front-supplied root id. Inline style
+(`grid-column`/`grid-row`, the drag transform, the grid's track template) travels as a separate
+`StyleBag`, because `[mpProps]` refuses `style` and every framework has its own style binding.
+**Tiles are listed in `tiles` input order, never preview order** (S3): a framework that reorders
+nodes mid-gesture detaches the dragged tile and loses its pointer capture and focus.
 
 ### 5.2 Rendered tree (identical across the four fronts)
 
@@ -184,6 +193,14 @@ Each front measures with one `ResizeObserver` on the inner grid, reading only
 the **next animation frame, never inside the observer callback**. The machine changes state only when
 the **resolved count** changes; a plain comparison does this, with no reactivity library. Cell
 metrics for pointer math are read at gesture start, not observed.
+
+Gesture wiring, the same in every front (S3): pointer move/up/cancel/`lostpointercapture` are bound
+on the tile, never on `window`, and capture routes them there. Each front forwards **only the inputs
+that changed**: re-pushing a stale controlled `layouts` on an update the machine itself requested
+reverts the commit. FLIP `first()` runs in the store subscription and `play()` after the framework
+renders, as does applying `focusRequest`. Angular renders a frame after the notification, so it uses
+`afterNextRender`. With `withEventReplay`, a keydown before hydration is replayed, so the Angular
+front must not depend on `preventDefault` for it.
 
 S2 measured why the deferral is required (`docs/prd/spikes/issue-440/S2-measuring.md`). A count
 change changes the grid's **height**, and it can also toggle a page scrollbar. When that size change
@@ -266,9 +283,13 @@ ordinary notification and the width check ignores it. FLIP reflow animation is a
 Pointer gestures are the hardest part to make framework-neutral: long-press touch arming, pointer
 capture, the FLIP transforms during a drag, and the resize transition. The machine owns the
 decisions and the fronts own only `setPointerCapture` and the rAF/FLIP helper, but four fronts
-still means four places to wire it. S3 proves the split on two fronts (Lit and Angular) before M3
-fans out. If the split leaks, the fallback is a shared DOM-level `GestureController` in `ui-core`
-that each front attaches to its grid element, which stays framework-neutral but not DOM-free.
+still means four places to wire it.
+
+**Resolved by S3** (`docs/prd/spikes/issue-440/S3-gesture-split.md`): the split holds on the Lit and
+Angular fronts, for mouse, touch long-press, Escape, blocked moves, FLIP and the keyboard walkthrough
+at 390 px. The machine stays DOM-free and there is **no `GestureController`**. The wiring per front
+is about 40 lines, and the four rules it must follow are in §5.1 and §5.3: stable DOM order, the
+capture verdict, changed-only inputs, and post-render focus and FLIP.
 
 ## 9. Spikes
 
