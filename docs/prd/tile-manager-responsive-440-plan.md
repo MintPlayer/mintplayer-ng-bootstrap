@@ -3,7 +3,7 @@
 PRD: [tile-manager-responsive-440.md](./tile-manager-responsive-440.md)
 
 Status: **In progress** (2026-10-23), grilled with decisions D1–D15 and one review round. S1–S5, M1
-(`19576ed2`), M2 (`27ae0b55`, `1e3798c1`), M3 (`b89b16d0`) and M4 are done; next is M5. Specs are written but run only in M10.
+(`19576ed2`), M2 (`27ae0b55`, `1e3798c1`), M3 (`b89b16d0`), M4 (`ddb695f5`) and M5 are done; next is M6. Specs are written but run only in M10.
 The branch is `feat/440-tile-manager-responsive`, targeting `master`. Everything lands in **one PR**: the core,
 the four fronts, the demos, the docs and the version bumps.
 
@@ -133,6 +133,17 @@ against the running demos. Test suites run **once**, in M10.
 - On SSR, render the full tree plus the `breakpointCss` `<style>`, and install the sheet via the
   scoped-styles server installer.
 - The specs drive inputs from signals.
+- Done as: `tile-manager.component.{ts,html}` + `directives/tile-template.directives.ts` (both carry an
+  `of` type input and a context guard); `bs-tile` / `bs-tile-header` are deleted. One effect per input
+  forwards only what changed, and `layouts` is echo-guarded by reference against the machine snapshot so
+  an unrelated input change never re-pushes a stale record. Host `aria-label` / `-labelledby` /
+  `-describedby` are read via `HostAttributeToken` (deterministic for hydration), removed from the host
+  and merged into the board bag. `grid` is an optional `viewChild` because the machine notifies before
+  the view exists. Angular strips `<style>` from templates, so the D14 `breakpointCss` is written on the
+  server into `<head>` through the scoped-style registry (`tile-manager-layout-<id>`). Demo ported
+  (Edit-layout switch, hide/lock panels, column badge, stored-layouts JSON). Verified in the browser:
+  hydrates with no `<mp-tile-manager>`, stacks below 576px, 5 columns at 1280px, keyboard move commits
+  into `[(layouts)]` and localStorage.
 
 ## M6: React front
 - `BsTileManager` uses `useMachine` / `reactProps`.
