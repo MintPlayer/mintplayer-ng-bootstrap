@@ -1,6 +1,6 @@
 {
   "name": "@mintplayer/ui-core",
-  "version": "1.1.0",
+  "version": "0.0.0-PLACEHOLDER",
   "description": "Headless, framework-neutral cores for the @mintplayer/bootstrap design system: component state machines, ARIA prop bags, request lifecycles and scoped styles. Consumed by @mintplayer/ng-bootstrap, @mintplayer/react-bootstrap, @mintplayer/vue-bootstrap and @mintplayer/web-components, each of which renders its own template from these cores.",
   "license": "MIT",
   "repository": {
