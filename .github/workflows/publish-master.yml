@@ -251,7 +251,7 @@ jobs:
     timeout-minutes: 15
 
     permissions:
-      contents: read
+      contents: write
       packages: write
       id-token: write
 
@@ -264,6 +264,10 @@ jobs:
         with:
           name: dist
           path: dist
+
+      - name: Version the packages
+        id: versioning
+        uses: MintPlayer/MintPlayer.Spark/apps/CodeCoverage/versioning-action@fc5aa28d12bea9a9c91afee290e13cf586184714 # versioning-v1
 
       - name: Publish to NPM + GitHub Packages
         # Pinned to b08fbdd (v1.1.0) — the v1.1.0 tag isn't pushed yet on
@@ -287,12 +291,16 @@ jobs:
     timeout-minutes: 10
 
     permissions:
-      contents: read
+      contents: write
       id-token: write
 
     steps:
       - name: Checkout
         uses: actions/checkout@v6
+
+      - name: Version the packages
+        id: versioning
+        uses: MintPlayer/MintPlayer.Spark/apps/CodeCoverage/versioning-action@fc5aa28d12bea9a9c91afee290e13cf586184714 # versioning-v1
 
       - name: Publish snippets to NPM
         uses: MintPlayer/github-actions/publish-npm-packages@b08fbddf0b285a8633ac138b89d79ceb8cc8c888
