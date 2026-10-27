@@ -81,7 +81,7 @@ jobs:
     # for the tests, in the publish jobs' release step.
     - name: Plan the package versions
       id: plan
-      uses: MintPlayer/MintPlayer.Spark/apps/CodeCoverage/versioning-action@51effc6c373051603fbcc8a80c6410f5dc801f39 # versioning-v1 (plan/release phases, #552)
+      uses: MintPlayer/MintPlayer.Spark/apps/CodeCoverage/versioning-action@14900a6057ee305ac9b03690fcb2ff989452e2eb # versioning-v1.1.0
       with:
         phase: plan
 
@@ -304,7 +304,7 @@ jobs:
 
       # Tags exactly what `build` planned and stamps the checkout and dist again.
       - name: Release the planned versions
-        uses: MintPlayer/MintPlayer.Spark/apps/CodeCoverage/versioning-action@51effc6c373051603fbcc8a80c6410f5dc801f39 # versioning-v1 (plan/release phases, #552)
+        uses: MintPlayer/MintPlayer.Spark/apps/CodeCoverage/versioning-action@14900a6057ee305ac9b03690fcb2ff989452e2eb # versioning-v1.1.0
         with:
           phase: release
           plan: ${{ needs.build.outputs.plan }}
@@ -341,7 +341,7 @@ jobs:
         uses: actions/checkout@v6
 
       - name: Release the planned versions
-        uses: MintPlayer/MintPlayer.Spark/apps/CodeCoverage/versioning-action@51effc6c373051603fbcc8a80c6410f5dc801f39 # versioning-v1 (plan/release phases, #552)
+        uses: MintPlayer/MintPlayer.Spark/apps/CodeCoverage/versioning-action@14900a6057ee305ac9b03690fcb2ff989452e2eb # versioning-v1.1.0
         with:
           phase: release
           plan: ${{ needs.build.outputs.plan }}
