@@ -7,7 +7,7 @@ import ngBootstrapJson from '@mintplayer/ng-bootstrap/package.json';
 import { provideNavigationLock, provideNavigationLockRouter } from '@mintplayer/ng-bootstrap/navigation-lock';
 import { provideBsTheme } from "@mintplayer/ng-bootstrap/theming";
 import { GIT_REPO } from "./providers/git-repo.provider";
-import { BOOTSTRAP_VERSION } from "./providers/bootstrap-version.provider";
+import { BOOTSTRAP_VERSION, displayVersion } from "./providers/bootstrap-version.provider";
 
 export const config: ApplicationConfig = {
     providers: [
@@ -44,6 +44,6 @@ export const config: ApplicationConfig = {
         provideNavigationLock(),
         provideBsTheme(),
         { provide: GIT_REPO, useValue: 'https://github.com/MintPlayer/mintplayer-ng-bootstrap/tree/master/apps/ng-bootstrap-demo/src/app/' },
-        { provide: BOOTSTRAP_VERSION, useValue: ngBootstrapJson.version },
+        { provide: BOOTSTRAP_VERSION, useValue: displayVersion(ngBootstrapJson.version) },
     ]
 };
