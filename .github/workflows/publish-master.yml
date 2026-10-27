@@ -29,6 +29,12 @@ env:
 #                       └─► publish-snippets
 #   tests ─► coverage
 #
+# Versioning is split around the tests (docs/prd/package-version-in-demos.md):
+# `build` PLANS the versions after the library build, which stamps every
+# package.json without tagging, so the demos it builds next show the version
+# that ships. Both publish jobs RELEASE that one plan after the tests, so the
+# tags still promise a tested commit, and one decision covers every package.
+#
 # The publishing gate: nothing a test covers reaches npm or GHCR unless every
 # `tests` leg passed (the unit-test shards and the API's xUnit tests). The images are built from the very `dist` the build
 # job produced, so what is deployed is what was tested — the old image steps
@@ -40,6 +46,16 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 20
 
+    permissions:
+      contents: read
+      # Server-mode versioning: the plan step proves to the app which
+      # repository and workflow is asking. Without it the step silently falls
+      # back to the local engine.
+      id-token: write
+
+    outputs:
+      plan: ${{ steps.plan.outputs.plan }}
+
     steps:
     - name: Checkout
       uses: actions/checkout@v6
@@ -49,15 +65,36 @@ jobs:
       with:
         dotnet: 'false'
 
-    - name: Build
+    - name: Build libraries
       # run-many so EVERY publishable lib lands in dist/libs/ for the
       # discovery action. Plain `nx build` only builds the default
       # project (ng-bootstrap-demo) and its transitive deps — react-
       # and vue-bootstrap aren't reachable from there, so they were
       # silently absent from the publish plan on the first PR-4 deploy.
+      # The demos are left out: they build after the plan below.
+      # codegen-ssr-chrome is the demos' one non-^build dependency, which
+      # their --exclude-task-dependencies build would otherwise skip.
+      run: npx nx run-many -t build codegen-ssr-chrome --exclude=ng-bootstrap-demo,react-bootstrap-demo,vue-bootstrap-demo --configuration=production
+
+    # Decides every package's version from the built .d.ts files and stamps it
+    # into each package.json (source and dist), without tagging: the tags wait
+    # for the tests, in the publish jobs' release step.
+    - name: Plan the package versions
+      id: plan
+      uses: MintPlayer/MintPlayer.Spark/apps/CodeCoverage/versioning-action@51effc6c373051603fbcc8a80c6410f5dc801f39 # versioning-v1 (plan/release phases, #552)
+      with:
+        phase: plan
+
+    - name: Build demos
+      # They read the stamped package.json, so they show the version that
+      # ships. --exclude-task-dependencies: stamping changed the libraries'
+      # inputs, and a plain build would rebuild every one of them.
       # build-ssr: the React and Vue SSR server bundles, which the demo images
       # copy alongside the client bundles.
-      run: npx nx run-many -t build build-ssr --configuration=production
+      run: npx nx run-many -t build build-ssr --projects=ng-bootstrap-demo,react-bootstrap-demo,vue-bootstrap-demo --configuration=production --exclude-task-dependencies
+
+    - name: Check the demos carry their versions
+      run: node tools/scripts/check-demo-versions.mjs
 
     # Hands dist/ to the docker and publish-libs jobs. The snippets package
     # publishes from libs/ (source, not dist/), so it is not in here.
@@ -265,9 +302,12 @@ jobs:
           name: dist
           path: dist
 
-      - name: Version the packages
-        id: versioning
-        uses: MintPlayer/MintPlayer.Spark/apps/CodeCoverage/versioning-action@fc5aa28d12bea9a9c91afee290e13cf586184714 # versioning-v1
+      # Tags exactly what `build` planned and stamps the checkout and dist again.
+      - name: Release the planned versions
+        uses: MintPlayer/MintPlayer.Spark/apps/CodeCoverage/versioning-action@51effc6c373051603fbcc8a80c6410f5dc801f39 # versioning-v1 (plan/release phases, #552)
+        with:
+          phase: release
+          plan: ${{ needs.build.outputs.plan }}
 
       - name: Publish to NPM + GitHub Packages
         # Pinned to b08fbdd (v1.1.0) — the v1.1.0 tag isn't pushed yet on
@@ -283,10 +323,12 @@ jobs:
 
   # No test covers the snippets, but nothing publishes on a red run (D1), so
   # this still waits for both test jobs. It reads only the snippets source,
-  # not dist/.
+  # not dist/. It releases the same plan as publish-libs: it used to version on
+  # its own, without dist/, and as the earlier caller it decided every lib's
+  # version with each API counted as changed.
   publish-snippets:
     name: publish-snippets
-    needs: tests
+    needs: [build, tests]
     runs-on: ubuntu-latest
     timeout-minutes: 10
 
@@ -298,9 +340,11 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v6
 
-      - name: Version the packages
-        id: versioning
-        uses: MintPlayer/MintPlayer.Spark/apps/CodeCoverage/versioning-action@fc5aa28d12bea9a9c91afee290e13cf586184714 # versioning-v1
+      - name: Release the planned versions
+        uses: MintPlayer/MintPlayer.Spark/apps/CodeCoverage/versioning-action@51effc6c373051603fbcc8a80c6410f5dc801f39 # versioning-v1 (plan/release phases, #552)
+        with:
+          phase: release
+          plan: ${{ needs.build.outputs.plan }}
 
       - name: Publish snippets to NPM
         uses: MintPlayer/github-actions/publish-npm-packages@b08fbddf0b285a8633ac138b89d79ceb8cc8c888
