@@ -1,12 +1,15 @@
 /**
  * GitHub brand-mark + package version, mirroring the Angular demo's navbar
  * link. The version is read straight from the wrapper package's package.json
- * so it tracks @mintplayer/react-bootstrap rather than being hardcoded. The
- * mark is an inline SVG using fill="currentColor" so it adapts to the theme.
+ * so it tracks @mintplayer/react-bootstrap rather than being hardcoded. CI's
+ * versioning plan stamps it before the demo build; an unstamped build (local,
+ * pull request) still holds the placeholder and shows `dev`. The mark is an
+ * inline SVG using fill="currentColor" so it adapts to the theme.
  */
 import pkg from '@mintplayer/react-bootstrap/package.json';
 
 const REPO_URL = 'https://github.com/MintPlayer/mintplayer-ng-bootstrap';
+const VERSION = pkg.version === '0.0.0-PLACEHOLDER' ? 'dev' : pkg.version;
 
 export function GithubLink() {
   return (
@@ -17,7 +20,7 @@ export function GithubLink() {
       rel="noreferrer"
       title="@mintplayer/react-bootstrap on GitHub"
     >
-      <span className="github-link-version">{pkg.version}</span>
+      <span className="github-link-version">{VERSION}</span>
       <svg className="github-link-icon" viewBox="0 0 16 16" aria-hidden="true">
         <path
           fill="currentColor"

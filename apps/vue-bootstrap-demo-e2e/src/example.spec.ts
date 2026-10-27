@@ -5,6 +5,14 @@ test('home page renders the Vue demo brand', async ({ page }) => {
   await expect(page.locator('h1')).toContainText('Vue demo');
 });
 
+// CI's versioning plan stamps the library's package.json before the demo build; an unstamped
+// build shows `dev`. The placeholder itself must never reach the page.
+test('navbar shows the library version, or dev when unstamped', async ({ page }) => {
+  await page.goto('/');
+  const version = page.getByTitle('@mintplayer/vue-bootstrap on GitHub').locator('.github-link-version');
+  await expect(version).toHaveText(/^(dev|\d+\.\d+\.\d+(-[0-9A-Za-z.-]+)?)$/);
+});
+
 test('framework switcher links to Angular and React with matching path', async ({ page }) => {
   await page.goto('/basic/forms/datepicker');
 

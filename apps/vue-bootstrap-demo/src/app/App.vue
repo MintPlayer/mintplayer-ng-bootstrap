@@ -7,8 +7,10 @@ import pkg from '@mintplayer/vue-bootstrap/package.json';
 
 // Read the version from the wrapper package so the navbar tracks
 // @mintplayer/vue-bootstrap rather than a hardcoded string, mirroring the
-// Angular demo's GitHub link.
-const version = pkg.version;
+// Angular demo's GitHub link. CI's versioning plan stamps it before the demo
+// build; an unstamped build (local, pull request) still holds the placeholder
+// and shows `dev`.
+const version = pkg.version === '0.0.0-PLACEHOLDER' ? 'dev' : pkg.version;
 const repoUrl = 'https://github.com/MintPlayer/mintplayer-ng-bootstrap';
 
 const SECTIONS = [

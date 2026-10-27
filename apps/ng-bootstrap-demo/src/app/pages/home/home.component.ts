@@ -35,7 +35,9 @@ interface FlagshipCard {
 })
 export class HomeComponent {
   protected readonly colors = Color;
-  protected readonly version = inject(BOOTSTRAP_VERSION);
+  private readonly version = inject(BOOTSTRAP_VERSION);
+  /** `v22.28.0`, or plain `dev` for an unstamped build. */
+  protected readonly versionBadge = this.version === 'dev' ? 'dev' : `v${this.version}`;
 
   protected readonly flagshipCards: readonly FlagshipCard[] = [
     {
