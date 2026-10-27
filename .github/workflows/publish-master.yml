@@ -49,8 +49,8 @@ jobs:
     permissions:
       contents: read
       # Server-mode versioning: the plan step proves to the app which
-      # repository and workflow is asking. Without it the step silently falls
-      # back to the local engine.
+      # repository and workflow is asking. Without it the step warns and falls
+      # back to the local engine instead of failing.
       id-token: write
 
     outputs:
