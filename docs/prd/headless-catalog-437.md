@@ -165,6 +165,64 @@ The pilot did not lift any of this; it lands before the waves that need it.
 - **Every Lit front renders into the light DOM** (`createRenderRoot() { return this; }`), as the typeahead does. It stamps `data-mps` with `scopedHtml` and installs the same `<name>.scoped.styles.ts` sheet as the other three fronts. No front has a shadow root, so no front imports Bootstrap partials. The baseline reaches every node, and the shadow/light admission rule retires with the old elements in M7.
 - Slot-like content (a card body, an accordion panel) is consumer children that the element moves into its own rendered container once, before the first render. The element owns those nodes, and Lit never manages them.
 
+### D10. The component compiler: one source, four generated fronts *(owner request 2026-10-28; spikes S14–S19)*
+
+S13 proved that a component's markup can be written once. D10 widens that to the whole component. A component is authored once, as a **component source**. A workspace library compiles it into all four fronts and writes each one into the right front library. Hand-written fronts become the exception.
+
+**Requirements (owner, 2026-10-28):**
+1. It ships as a library: `libs/mintplayer-component-compiler`. It is an Nx plugin, `@mintplayer/nx-component-compiler`, private until S19 says it can be published.
+2. A component source holds:
+   - TypeScript code: the core plus a manifest.
+   - An IDE-interactive HTML template. Volar on `.vue` is the baseline; a VS Code extension is allowed if S18 shows a need.
+   - Styles per component or per component **group**. For example, `accordion` ships one sheet scoped to the elements in both the `accordion` and the `accordion-tab` templates.
+3. Angular, React, Vue and Lit components wrap this one TypeScript source.
+4. Those wrappers are **generated**, and they land in the correct library and entry point.
+5. It is a fully fledged library, delivered as an Nx plugin: inferred targets, a generator and an executor.
+6. All code lives in, and works in, this workspace.
+
+**Component source layout** (in `libs/mintplayer-ui-core/<group>/`):
+
+```
+<group>/
+  src/
+    <group>.ts                  core: Machine / connect() / attach(), as today (no DOM ownership changes)
+    <group>.component.ts        manifest: defineComponentGroup({ components: [...] })
+    templates/<el>.view.vue     one template per element of the group (S13 format)
+    styles/<group>.scoped.scss  ONE sheet for the group, rescoped to [data-mps=<group>]
+```
+
+The manifest is plain TypeScript, so it is type-checked against the core. For each element it declares:
+- the element name, which becomes `bs-<el>` / `Bs<El>` / `mp-<el>` per front;
+- its template;
+- **inputs**: name, type, default and attribute name;
+- **outputs**: event names and their detail types;
+- an optional **model**, giving Angular CVA, React `value` + `onChange`, Vue `defineModel` and Lit `value` + `change`;
+- slots, which come from `defineSlots` in the template;
+- the **parent** element, for groups (tab inside accordion), whose context travels by Angular DI, React context, Vue provide/inject and Lit `closest()`;
+- the **lifecycle hooks** the core needs: `connect(state) → bags`, `attach(root, callbacks) → dispose`, and machine construction.
+
+**Generation.** The compiler reads the manifest and the templates, then writes:
+- the S13 template output;
+- **the front component itself**: signal inputs and outputs, effects that drive the core, the bridge calls (`useHostProps` / `reactProps` / `v-bind` / `props()`), `installLightStyles` for the group sheet, SSR-stable ids and hydration flags.
+
+It writes into `libs/<front-lib>/<group>/src/generated/` and keeps each entry point's `index.ts` exporting the generated files. When the front library has no entry point for the group yet, the compiler creates one: ng-packagr secondary entry, React/Vue vite entry, WC sub-entry. All output is gitignored, except the entry-point scaffolding, which the generator writes once.
+
+**Escape hatch** (S16). Front-specific glue that a manifest cannot express goes into an optional hand-written `<el>.<front>.ts` *extension* next to the core. Examples: Angular `RouterLinkActive` as a host directive, React `forwardRef` imperative handles. The generated component composes it: an Angular `hostDirectives` entry, a React hook, a Vue composable, a Lit controller. When a component needs an extension in a front, that shows the manifest is missing a concept; each such case is listed in the verdict.
+
+**Styles.**
+- The group sheet compiles with the existing rescoping codegen.
+- The template compiler stamps `data-mps=<group>` on every element in every template of the group, so authors no longer carry scope in bags.
+- Bags keep only ARIA, state and classes.
+
+**Nx integration.**
+- A `createNodes` plugin infers a `compile-components` target on every project that holds `*.component.ts` manifests. Its inputs are the manifests, templates, sheets and the plugin source; its outputs are the generated directories.
+- Each front library's `build`, `test` and `typecheck` targets `dependsOn` it, so `nx build mintplayer-react-bootstrap` regenerates first. The plugin cache keys on inputs.
+- A generator, `nx g @mintplayer/nx-component-compiler:component <group> --elements=a,b`, scaffolds the source layout above.
+- `--check` mode runs in CI as a stale-output guard.
+- `tools/front-templates` (S13) is absorbed into the library and deleted.
+
+**What stays hand-written.** The core logic (`ui-core/<group>/src/<group>.ts`) and the extensions stay hand-written. The manifest is the API: renaming an input there renames it in all four fronts.
+
 ## 6. Bootstrap CSS integration
 
 ### Facts measured on the branch
@@ -221,6 +279,12 @@ Each spike is small and throwaway, lives on a scratch branch or under `_spike-*/
 | S11 | Theme toggle with the cookie read during SSR (no flash), and code-snippet highlighting on the server versus after hydration. | theme-toggle, code-snippet | no flash; no mismatch |
 | S12 | React and Vue SSR: scoped sheets collected into `<head>` by `entry-server`. | C7 | no unstyled first paint |
 | S13 | One template per component, declared in the core and compiled into the four fronts (owner request, 2026-10-28). Source: a `*.view.vue` SFC in `ui-core/<name>/src/templates` (Vue template syntax, typed by `defineProps` / `defineSlots`, so the Vue language tools give completion and type-checking). A build step reads it with `@vue/compiler-dom` and emits the Angular template, a React component, a Vue SFC and a Lit template function; the per-front glue (CVA, effects, refs, events) stays hand-written. Prototype on the navbar (+ dropdown, item, nav). | every M4–M6 front | the generated navbar fronts replace the hand-written templates with no behaviour change (navbar unit specs green in four fronts, Angular SSR output unchanged); go/no-go written here |
+| S14 | D10 manifest → generated front components. Generate the navbar family (navbar, nav, item, dropdown) and dropdown-menu in all four fronts from manifests, and delete the hand-written fronts. | D10, every M4–M6 front | the generated fronts pass the existing navbar/dropdown unit specs and the navbar e2e unchanged; diff of public API vs the hand-written fronts is empty or listed |
+| S15 | Group styles + compiler-stamped scope. One sheet per group (accordion + accordion-tab) and `data-mps` stamped by the compiler rather than carried in bags. | D10 styles | `_conformance` scoping specs green; no bag carries `data-mps` |
+| S16 | Escape hatches. Express the navbar dropdown's `RouterLinkActive`, a form control's CVA (checkbox), and a React imperative handle without editing generated output. | D10 | each case is either a manifest concept or a `<el>.<front>.ts` extension; list the ones that needed an extension |
+| S17 | Nx plugin. `createNodes` inference, cacheable `compile-components`, front builds `dependsOn` it, generator scaffolds a group, `--check` in CI. | D10 Nx | `nx build mintplayer-ng-bootstrap` from a clean tree regenerates and builds; second run is a cache hit; the generator's scaffold compiles |
+| S18 | IDE. Volar on `*.view.vue` with props typed by type-only imports from the core. Can a template error (unknown bag key, wrong prop type) fail CI via vue-tsc, and is completion good enough without our own VS Code extension? | D10 IDE | a deliberate template type error fails `typecheck`; verdict on whether an extension is needed |
+| S19 | Publishability. Build the plugin as an npm package and run it on a fixture workspace outside `libs/mintplayer-*` (paths and runtime modules all from config). | D10 req. 5 | the fixture generates and type-checks four fronts with no reference to this repo's paths |
 
 ### Verdicts
 

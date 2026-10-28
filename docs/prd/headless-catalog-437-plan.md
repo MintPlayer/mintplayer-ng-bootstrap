@@ -33,7 +33,7 @@ Each component milestone is the same checklist, done for every component in the 
 - [ ] S4 virtual window in React/Vue (before M5)
 - [ ] S10 query-builder editor contract (before M5)
 - [ ] S7 scheduler static grid go/no-go (before M6)
-- [x] S13 single template in the core, compiled into the four fronts (navbar prototype; gates the rest of M4)
+- [x] S13 single template in the core, compiled into the four fronts (navbar prototype); widened into D10 / M3b
 - [ ] Write each verdict into PRD §7, and update D1–D9 and C1–C8 accordingly
 
 ## M1 — Bootstrap baseline (PRD §6)
@@ -91,9 +91,31 @@ Each component milestone is the same checklist, done for every component in the 
 - [x] sparkline (+ Vue front)
 - [x] Delete the shell and accordion chrome generators, injectors and targets (removed with their components; dropdown-menu, navbar and carousel follow in M4)
 
+## M3b — Component compiler (PRD D10; gates the rest of M4)
+
+This turns S13 into the full library. Every M4–M6 component is then authored as a component source, and its fronts are generated.
+
+- [ ] `libs/mintplayer-component-compiler` Nx plugin project (`@mintplayer/nx-component-compiler`): move `tools/front-templates` into it as the template stage, keep its spec, delete `tools/front-templates`
+- [ ] Manifest API: `defineComponentGroup` / `defineComponent` (inputs, outputs, model, slots, parent, core hooks), typed against the core
+- [ ] Emitters for the front components: Angular (signal inputs and outputs, CVA for a model, `hostDirectives` extensions), React (`forwardRef`, `useMachine`, props extend `HTMLAttributes` + rest passthrough), Vue (`defineProps` / `defineEmits` / `defineModel`, `inheritAttrs: false`), Lit (properties, events, `LightChildren`, light DOM)
+- [ ] Group styles: one `<group>.scoped.scss`; the compiler stamps `data-mps=<group>` on every template element
+- [ ] Output routing: `<front-lib>/<group>/src/generated/` + entry-point scaffolding (ng-package secondary entry, React/Vue vite entry, WC sub-entry) written once by the generator
+- [ ] Nx: `createNodes` infers `compile-components` (cacheable inputs and outputs); front `build` / `test` / `typecheck` `dependsOn` it; `nx g …:component` scaffold; `--check` in CI
+- [ ] S14 navbar family + dropdown-menu fully generated; the hand-written fronts are deleted
+- [ ] S15 group styles on accordion (+ tab)
+- [ ] S16 escape hatches (RouterLinkActive, checkbox CVA, React imperative handle)
+- [ ] S17 clean-tree build + cache hit
+- [ ] S18 template type errors fail `typecheck`; decide on a VS Code extension
+- [ ] S19 fixture workspace run (publishability)
+- [ ] Verdicts S14–S19 written in PRD §7
+
 ## M4 — Wave B
 
+Every item below is authored as a D10 component source once M3b lands.
+
 - [ ] navbar (+ brand, item, dropdown) and dropdown-menu (moved from M3); delete `SSR_NAVBAR_HEIGHT`, the navbar chrome and the dropdown-menu chrome
+  - done so far: S13 templates; Lit navbar and dropdown-menu in light DOM; navbar and dropdown chrome deleted; `SSR_NAVBAR_HEIGHT` replaced by a CSS estimate; press-time triggers; new Lit, core and e2e specs
+  - left: CHANGELOG Breaking entries; then regenerate it under M3b/S14
 - [ ] select
 - [ ] otp-input
 - [ ] multi-range
