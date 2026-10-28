@@ -17,7 +17,7 @@ import { injectMpCarouselDsd } from '@mintplayer/web-components/carousel/ssr';
 // Re-exported for server.mjs, which splices the theme attribute onto <html> and
 // cannot resolve the @mintplayer path alias itself (PRD dark-mode D8, FR-6).
 // Import-safe on the server: the store is only created on first browser use.
-export { injectThemeAttribute, resolveServerTheme } from '@mintplayer/web-components/theming';
+export { injectThemeAttribute, resolveServerTheme } from '@mintplayer/ui-core/theming';
 // The component sheets the render installed, as marker <style> tags for the
 // <!--app-head--> slot (PRD #437 S12). Read AFTER render(): fronts install on first render.
 export { collectScopedStyles } from '@mintplayer/ui-core/scoped-styles';

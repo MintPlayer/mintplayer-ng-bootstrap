@@ -468,4 +468,4 @@ Charts have no Vue wrapper today. A Vue front is added, because parity is a goal
 ## 13. Open questions (owner)
 
 - **Q1.** Scheduler, dock, ribbon and tile-manager are in scope. Do they stay in scope if S7 is a no-go, or does the owner want them kept as Lit-only components (an explicit exception)? The default is in scope.
-- **Q2.** Should the theme toggle's no-JS form post to a demo endpoint, or should the toggle simply be hidden without JS?
+- **Q2.** Should the theme toggle's no-JS form post to a demo endpoint, or should the toggle simply be hidden without JS? *Resolved (default taken):* neither. The toggle is server-rendered **disabled** at its final size, and hydration enables it. A posting form would need an endpoint in every consumer's app, which a library cannot ship. Hiding it would move the navbar on hydration. No-JS visitors still get OS-following colours from the pre-boot script and the cookie SSR. The owner can still ask for the endpoint.

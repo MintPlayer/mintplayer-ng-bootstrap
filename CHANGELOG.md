@@ -288,6 +288,19 @@ breaking change is a major. (2.20.0 and 2.21.0 broke `^2.x` consumers in a minor
     `signature-pad-canvas`, `signature-pad-text`, `signature-pad-undo` and `signature-pad-clear`.
     `MpSignaturePadElement` is now `MpSignaturePad`. The `Signature`, `Stroke` and `Point` types come from
     `@mintplayer/ui-core/signature-pad` and are re-exported by every front.
+- **Theme toggle is generated from one source in every front (issue #437).** It is written once in
+  `@mintplayer/ui-core/theming` (`themeToggleCore`, `normaliseModes`, `toggleEntries`) and compiled into
+  all four fronts, so it is server-rendered everywhere. With JS off it renders disabled at its final size,
+  and hydration enables it without moving it.
+  - **Every front:** the root is `.theme-toggle` (a `span` in React and Vue, the host in Angular and Lit), and
+    consumer attributes land there. The icon is a single `<path>`; a multi-path icon is joined into one.
+    Invalid `modes` entries now warn once per list, not on every assignment.
+  - **`color-mode.css`** reserves the box through `.theme-toggle[data-mps=theme-toggle]` instead of
+    `mp-theme-toggle:not(:defined)`.
+  - **Lit:** `mp-theme-toggle` renders in the light DOM (no shadow root, no `delegatesFocus`). `modes` is a
+    plain property that keeps what you assign; the normalised list is no longer read back from it.
+  - **Angular, React, Vue:** the `theming` entries import from `@mintplayer/ui-core/theming` rather than
+    `@mintplayer/web-components/theming`, so they no longer pull in the Lit element.
 
 
 

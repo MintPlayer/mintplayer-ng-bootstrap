@@ -131,7 +131,7 @@ Every item below is authored as a D10 component source once M3b lands.
 - [x] datepicker, timepicker (+ time-list), datetime-picker: one D10 source each; a native `date` / `time` / `datetime-local` field before hydration, then a readonly display + hidden `name` input + native `popover="auto"` popups placed by `ui-core/overlay` `trackPopovers`; Angular CVA + validator as host directives
   - `mp-scheduler` (a shadow-root host) embeds `mp-datetime-picker`: it now adopts the light sheets and ships `_styles/input-group.styles` (Bootstrap `.input-group` + `.btn`), and its editor's Escape steps aside while a picker popover is open
 - [x] signature-pad
-- [ ] theme-toggle (Q2)
+- [x] theme-toggle (Q2)
 - [ ] code-snippet
 - [ ] phone-input; convert the Lit `mp-input-group` to a light front over `ui-core/input-group` with it
 - [ ] M4 controls that sit in a group (select, phone-input, datepicker, ...) read the `.input-group-sm/lg` ancestor and the `--mp-group-radius-*` channel in their own scoped sheets: the group no longer mirrors `size` onto them

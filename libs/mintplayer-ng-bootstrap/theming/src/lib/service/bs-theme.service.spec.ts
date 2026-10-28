@@ -5,7 +5,7 @@ import { TestBed } from '@angular/core/testing';
 import {
   __resetBsThemeStoreForTests,
   getBsThemeStore,
-} from '@mintplayer/web-components/theming';
+} from '@mintplayer/ui-core/theming';
 import { BsThemeService } from './bs-theme.service';
 import { installFakeBroadcastChannel } from '@mintplayer/ui-core/theming/src/testing/fake-broadcast-channel';
 import { provideBsTheme } from '../provide-bs-theme';

@@ -1,8 +1,8 @@
-export { default as BsThemeToggle } from './BsThemeToggle.vue';
+export * from './generated';
 export { useBsTheme, type UseBsThemeResult } from './useBsTheme';
 
 /* The framework-neutral core, re-exported so a Vue consumer needs one import.
-   `MpThemeToggle` (use `BsThemeToggle`) and the test-only store reset are
+   The test-only store reset is
    deliberately left out. */
 export {
   BS_THEME_COOKIE_NAME,
@@ -24,4 +24,4 @@ export {
   type BsThemeToggleMode,
   type ResolveServerThemeOptions,
   type WriteThemeCookieOptions,
-} from '@mintplayer/web-components/theming';
+} from '@mintplayer/ui-core/theming';

@@ -13,7 +13,6 @@ import { BsQueryBuilderComponent } from '@mintplayer/ng-bootstrap/query-builder'
 import { BsSchedulerComponent } from '@mintplayer/ng-bootstrap/scheduler';
 import { BsPhoneInputComponent } from '@mintplayer/ng-bootstrap/phone-input';
 import { BsSplitterComponent } from '@mintplayer/ng-bootstrap/splitter';
-import { BsThemeToggleComponent } from '@mintplayer/ng-bootstrap/theming';
 import { BsTimelineComponent } from '@mintplayer/ng-bootstrap/timeline';
 import { BsTreeSelectComponent } from '@mintplayer/ng-bootstrap/tree-select';
 import { BsTreeviewComponent } from '@mintplayer/ng-bootstrap/treeview';
@@ -125,7 +124,6 @@ const WRAPPERS: WrapperCase[] = [
   { selector: 'bs-scheduler', tag: 'mp-scheduler', component: BsSchedulerComponent },
   { selector: 'bs-phone-input', tag: 'mp-phone-input', component: BsPhoneInputComponent },
   { selector: 'bs-splitter', tag: 'mp-splitter', component: BsSplitterComponent },
-  { selector: 'bs-theme-toggle', tag: 'mp-theme-toggle', component: BsThemeToggleComponent },
   { selector: 'bs-timeline', tag: 'mp-timeline', component: BsTimelineComponent },
   {
     selector: 'bs-tree-select',

@@ -243,7 +243,7 @@ const CASES: Case[] = [
     render: (p) => <BsTabControl><BsTabPage header="Tab" {...p} /></BsTabControl>,
     fixedRole: 'tabpanel',
   },
-  bare('BsThemeToggle', 'mp-theme-toggle', BsThemeToggle),
+  bare('BsThemeToggle', 'span.theme-toggle', BsThemeToggle),
   {
     name: 'BsTileManager',
     target: '.mp-tile-manager',

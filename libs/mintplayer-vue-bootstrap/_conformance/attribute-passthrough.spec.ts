@@ -140,7 +140,7 @@ const TARGETS: Record<string, string> = {
   BsTabControl: 'div.tab-control',
   // A marker that renders nothing alone: mounted in BsTabControl (COMPOSED).
   BsTabPage: 'div.tab-pane',
-  BsThemeToggle: 'mp-theme-toggle',
+  BsThemeToggle: 'span.theme-toggle',
   BsTileManager: '.mp-tile-manager',
   BsTimeline: 'mp-timeline',
   BsTimelineItem: 'mp-timeline-item',

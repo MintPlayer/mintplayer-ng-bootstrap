@@ -14,7 +14,7 @@ import {
   resolveServerTheme,
   type BsEffectiveThemeMode,
   type BsThemeMode,
-} from '@mintplayer/web-components/theming';
+} from '@mintplayer/ui-core/theming';
 
 /**
  * Angular's view of the document's Bootstrap colour mode (PRD dark-mode D4).
@@ -30,7 +30,7 @@ import {
  * `setMode()` (libs/mintplayer-ui-core/theming/src/store.ts), which owns
  * validation, the `bs-theme-mode` cookie, the `data-bs-theme` write, the
  * `prefers-color-scheme` listener and cross-tab sync. So a change made anywhere
- * else (`<mp-theme-toggle>`, another tab, the OS) reaches these signals, and a
+ * else (`<bs-theme-toggle>`, another tab, the OS) reaches these signals, and a
  * copy here could never drift. Any behaviour added to the store's `setMode()`
  * must be reflected here, and vice versa; the mirror tests in
  * bs-theme.service.spec.ts pin it.
