@@ -105,17 +105,26 @@ function runtimeSpecifier(runtime, outDir, cwd) {
   return relativeSpecifier(runtime.file, outDir, cwd);
 }
 
-/** Every entry with a templates directory, with its sources and its manifest (if any). */
+/**
+ * Every entry with a templates directory, with its sources and its manifest (if any).
+ * An entry may sit one level down (`charts/trend`); its manifest is named after
+ * the last segment (`trend.component.ts`) and its group is the whole path.
+ */
 function findEntries(config, cwd) {
   const root = resolve(cwd, config.root);
   const templates = config.templates ?? 'src/templates';
-  return readdirSync(root, { withFileTypes: true })
-    .filter((d) => d.isDirectory() && existsSync(join(root, d.name, templates)))
-    .map((d) => {
-      const dir = join(root, d.name, templates);
-      const manifest = join(root, d.name, 'src', `${d.name}.component.ts`);
+  const dirs = (parent) =>
+    readdirSync(join(root, parent), { withFileTypes: true })
+      .filter((d) => d.isDirectory() && d.name !== 'node_modules' && !d.name.startsWith('.'))
+      .map((d) => (parent ? `${parent}/${d.name}` : d.name));
+  return dirs('')
+    .flatMap((top) => (existsSync(join(root, top, templates)) ? [top] : existsSync(join(root, top, 'src')) ? [] : dirs(top)))
+    .filter((entry) => existsSync(join(root, entry, templates)))
+    .map((entry) => {
+      const dir = join(root, entry, templates);
+      const manifest = join(root, entry, 'src', `${entry.split('/').pop()}.component.ts`);
       return {
-        entry: d.name,
+        entry,
         sources: readdirSync(dir)
           .filter((f) => f.endsWith('.view.vue'))
           .map((f) => ({ file: join(dir, f), base: f.replace(/\.vue$/, '') })),

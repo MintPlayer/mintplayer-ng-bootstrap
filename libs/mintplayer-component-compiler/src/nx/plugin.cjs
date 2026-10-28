@@ -28,13 +28,16 @@ async function createNodesInternal(configFile, options, context) {
   const templates = config.templates ?? 'src/templates';
   const fronts = Object.entries(config.fronts ?? {});
   // `outDir('*')` turns the per-entry function into a glob over the front lib.
-  const outputs = fronts.map(([, front]) => `{workspaceRoot}/${slash(front.outDir('*'))}`);
-  const extensions = fronts.map(([name, front]) => `{workspaceRoot}/${slash(dirname(front.outDir('*')))}/*.${name}.ts`);
+  const outputs = fronts.flatMap(([, front]) => [front.outDir('*'), front.outDir('*/*')].map((dir) => `{workspaceRoot}/${slash(dir)}`));
+  const extensions = fronts.flatMap(([name, front]) => ['*', '*/*'].map((e) => `{workspaceRoot}/${slash(dirname(front.outDir(e)))}/*.${name}.ts`));
   const rel = slash(relative(projectRoot, config.root));
   const root = rel ? `{projectRoot}/${rel}` : '{projectRoot}';
   const inputs = [
     `${root}/*/${templates}/*.view.vue`,
+    // Entries may sit one level down (`charts/trend`).
+    `${root}/*/*/${templates}/*.view.vue`,
     `${root}/*/src/*.component.ts`,
+    `${root}/*/*/src/*.component.ts`,
     `{projectRoot}/${slash(relative(projectRoot, configFile))}`,
     ...extensions,
     `{workspaceRoot}/${compiler}/src/**/*.mjs`,

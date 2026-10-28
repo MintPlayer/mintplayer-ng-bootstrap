@@ -137,7 +137,7 @@ Every item below is authored as a D10 component source once M3b lands.
 - [x] M4 controls that sit in a group (select, phone-input, datepicker, ...) read the `.input-group-sm/lg` ancestor and the `--mp-group-radius-*` channel in their own scoped sheets: the group no longer mirrors `size` onto them. Select and phone-input pair their own corners; a control that renders its own `.input-group` (date, time, datetime, phone pickers) is sized and paired by one generic nested-group rule in `input-group.scoped.scss`
 - [ ] splitter: MOVED to M6, lands with dock and file-manager. The dock renders every split node as a nested `mp-splitter` and reads its shadow dividers, `resizing` events and size pinning (`dock/src/core/intersection-sizing.ts`); converting it alone would break the dock until M6. It becomes a splitter + splitter-pane group (D1: the parent owns sizes, each pane registers and renders the divider before it)
 - [x] timeline (+ item): layout is CSS on the root classes, rows are light children, selection by key
-- [ ] trend-chart (+ Vue front)
+- [x] trend-chart (+ Vue front)
 - [ ] carousel; delete the carousel chrome
 - [ ] typeahead React/Vue fronts confirmed template-owning (PRD §8 Wave B note)
 

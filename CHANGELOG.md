@@ -336,6 +336,19 @@ breaking change is a major. (2.20.0 and 2.21.0 broke `^2.x` consumers in a minor
     `selectionChange` still reports the consumer's own item objects.
   - **Events:** Angular `(itemclick)`, `(selectionchange)`, `(selectedidschange)`; Lit `itemclick`,
     `selectionchange`, `selectedidschange` (were `item-click` and `selection-change`).
+- **Trend chart is generated from one source in every front (issue #437).** It is written once in
+  `@mintplayer/ui-core/charts/trend` (`trendChartCore`, `connectTrendChart`, `layoutTrend`) and compiled
+  into all four fronts, Vue included, so the server HTML is the finished SVG in every framework. Before
+  hydration the points are named images; once live they are a roving set of buttons.
+  - **Every front:** the root is `.trend-chart` (a `div` in React and Vue, the host in Angular and Lit) and
+    the `<svg>` is its child. There is no shadow root; style the `.trend-chart` classes and the
+    `--mp-trend-chart-*` custom properties.
+  - **Events:** `trend-point-hover` / `trend-point-select` are now `pointHover` / `pointSelect`: Angular
+    `(pointhover)` / `(pointselect)`, Lit `pointhover` / `pointselect`, React `onPointHover` /
+    `onPointSelect` (the payload, not a `CustomEvent`), Vue `@pointhover` / `@pointselect`.
+  - **Vue:** numeric inputs are typed numbers; bind them (`:y-min="0"`, not `y-min="0"`).
+  - The `TrendSeries` / `TrendPoint` / event types come from `@mintplayer/ui-core/charts/trend` and every
+    front re-exports them; `@mintplayer/web-components/charts/trend` no longer re-exports `charts/core`.
 - **`mp-input-group` is a light element (issue #437).** Like `bs-input-group`, the host is the
   `.input-group` itself: no shadow root, no slot, and its children are the group's items. It no longer
   writes `size` onto `mp-*` children, because a control in a group reads the group's classes and the

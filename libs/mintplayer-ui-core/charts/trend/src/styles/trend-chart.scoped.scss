@@ -1,5 +1,11 @@
-:host {
+// The trend chart's stylesheet, shared by all four fronts (PRD #437 D10).
+// Rescoped at build time: every compound gains `[data-mps=trend-chart]`.
+
+// The bs-trend-chart / mp-trend-chart host, or a div in React and Vue.
+.trend-chart {
   display: block;
+  position: relative;
+  box-sizing: border-box;
   width: 100%;
   aspect-ratio: 16 / 9;
 
@@ -12,20 +18,11 @@
   --mp-trend-chart-crosshair-color: var(--bs-secondary-color, #6c757d);
 }
 
-* {
-  box-sizing: border-box;
-}
-
-.chart {
-  position: relative;
-  width: 100%;
-  height: 100%;
-}
-
 svg {
   display: block;
   width: 100%;
   height: 100%;
+  overflow: visible;
 }
 
 .grid line {
@@ -38,12 +35,12 @@ svg {
   font-size: 22px; /* logical viewBox units */
 }
 
-.axis .y-label {
+.y-label {
   text-anchor: end;
   dominant-baseline: middle;
 }
 
-.axis .x-label {
+.x-label {
   text-anchor: middle;
   dominant-baseline: hanging;
 }

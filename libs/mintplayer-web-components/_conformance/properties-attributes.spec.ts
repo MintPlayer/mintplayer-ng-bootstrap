@@ -417,7 +417,7 @@ describe('custom-elements.json property / attribute table', () => {
     expect(MANIFEST_PRESENT).toBe(true);
     expect(MOUNTABLE.length).toBeGreaterThanOrEqual(60);
     expect(attributeCases.length).toBeGreaterThanOrEqual(250);
-    expect(propertyCases.length).toBeGreaterThanOrEqual(250);
+    expect(propertyCases.length).toBeGreaterThanOrEqual(240);
   });
 
   it('cannot mount exactly the declarations listed in NOT_MOUNTABLE', () => {

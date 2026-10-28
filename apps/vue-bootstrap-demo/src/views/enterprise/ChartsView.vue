@@ -5,7 +5,7 @@ import { BsTrendChart } from '@mintplayer/vue-bootstrap/charts/trend';
 import { BsSparkline } from '@mintplayer/vue-bootstrap/charts/sparkline';
 import { BsCodeSnippet } from '@mintplayer/vue-bootstrap/code-snippet';
 import type { HierarchyChartLayout, HierarchyNode } from '@mintplayer/web-components/charts/hierarchy';
-import type { TrendSeries } from '@mintplayer/web-components/charts/trend';
+import type { TrendSeries } from '@mintplayer/vue-bootstrap/charts/trend';
 
 const leaf = (id: string, name: string, value: number, coverage: number): HierarchyNode =>
   ({ id, name, value, colorValue: coverage });
@@ -71,7 +71,7 @@ const SOURCE = `<BsHierarchyChart
   value-unit-label="lines"
 />
 
-<BsTrendChart :series="series" y-min="0" y-max="100" goal="80"
+<BsTrendChart :series="series" :y-min="0" :y-max="100" :goal="80"
   goal-label="Goal 80%" input-label="Coverage over time" />
 
 <BsSparkline :points="sparkPoints" area :y-min="0" :y-max="100" />`;
@@ -127,9 +127,9 @@ const SOURCE = `<BsHierarchyChart
     <div class="trend-box">
       <BsTrendChart
         :series="series"
-        y-min="0"
-        y-max="100"
-        goal="80"
+        :y-min="0"
+        :y-max="100"
+        :goal="80"
         goal-label="Goal 80%"
         input-label="Coverage over time"
         locale="en-US"

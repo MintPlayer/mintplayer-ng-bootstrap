@@ -25,7 +25,7 @@ export function emitLit(src,{ generator = GENERATOR, runtime } = {}) {
   const slotMembers = src.slots.members.map(
     (s) => `${s.name}?: unknown${s.paramType ? ` | ((args: ${s.paramType}) => unknown)` : ''};`,
   );
-  const lit = ['html', 'nothing', 'type TemplateResult'].filter((u) => u === 'type TemplateResult' || ctx.uses.has(u));
+  const lit = ['html', 'svg', 'nothing', 'type TemplateResult'].filter((u) => u === 'type TemplateResult' || ctx.uses.has(u));
   const directives = [];
   if (ctx.uses.has('repeat')) directives.push("import { repeat } from 'lit/directives/repeat.js';");
   if (ctx.uses.has('ref')) directives.push("import { ref, type Ref } from 'lit/directives/ref.js';");
@@ -70,13 +70,17 @@ function children(ctx, nodes, depth) {
     .join('');
 }
 
-function sub(inner, depth) {
-  return `html\`\n${inner}${pad(depth)}\``;
+// A sub-template inside an <svg> is tagged svg, not html: html would parse its
+// elements in the HTML namespace, as unknown elements that never draw.
+function sub(ctx, inner, depth) {
+  const tag = ctx.svg ? 'svg' : 'html';
+  ctx.uses.add(tag);
+  return `${tag}\`\n${inner}${pad(depth)}\``;
 }
 
 function chain(ctx, branches, depth) {
   ctx.uses.add('nothing');
-  const parts = branches.map((b) => ({ cond: b.cond === null ? null : x(ctx, b.cond), tpl: sub(element(ctx, b.el, depth + 1), depth) }));
+  const parts = branches.map((b) => ({ cond: b.cond === null ? null : x(ctx, b.cond), tpl: sub(ctx, element(ctx, b.el, depth + 1), depth) }));
   const expr = parts.reduceRight((rest, part) => (part.cond === null ? part.tpl : `(${part.cond}) ? ${part.tpl} : ${rest}`), 'nothing');
   return `${pad(depth)}\${${expr}}\n`;
 }
@@ -94,7 +98,7 @@ function element(ctx, el, depth) {
     const list = x(ctx, loop.list);
     const inner = { ...ctx, locals: new Set([...ctx.locals, loop.item, ...(loop.index ? [loop.index] : [])]) };
     const params = `${loop.item}${loop.index ? `, ${loop.index}` : ''}`;
-    const tpl = sub(bare(inner, el, depth + 1), depth);
+    const tpl = sub(inner, bare(inner, el, depth + 1), depth);
     if (!loop.key) return `${pad(depth)}\${(${list}).map((${params}) => ${tpl})}\n`;
     ctx.uses.add('repeat');
     return `${pad(depth)}\${repeat(${list}, (${params}) => ${x(inner, loop.key)}, (${params}) => ${tpl})}\n`;
@@ -150,7 +154,8 @@ function bare(ctx, el, depth) {
       .trim();
     return `${pad(depth)}${open}${text}</${el.tag}>\n`;
   }
-  const inner = children(ctx, el.children, depth + 1);
+  const within = el.tag === 'svg' ? { ...ctx, svg: true } : el.tag === 'foreignObject' ? { ...ctx, svg: false } : ctx;
+  const inner = children(within, el.children, depth + 1);
   return inner ? `${pad(depth)}${open}\n${inner}${pad(depth)}</${el.tag}>\n` : `${pad(depth)}${open}</${el.tag}>\n`;
 }
 
@@ -159,7 +164,7 @@ function slot(ctx, el, depth) {
   const args = slotArgs(el).filter((a) => a.name !== 'name');
   const fallbackHtml = children(ctx, el.children, depth + 1);
   ctx.uses.add('nothing');
-  const fallback = fallbackHtml ? sub(fallbackHtml, depth) : 'nothing';
+  const fallback = fallbackHtml ? sub(ctx, fallbackHtml, depth) : 'nothing';
   const ref = `slots.${name}`;
   const value = args.length
     ? (ctx.uses.add('renderSlot'), `renderSlot(${ref}, { ${args.map((a) => `${a.name}: ${x(ctx, a.exp)}`).join(', ')} })`)
