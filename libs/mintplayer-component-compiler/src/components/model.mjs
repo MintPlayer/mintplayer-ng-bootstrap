@@ -52,7 +52,7 @@ function exportsOf(file) {
  * @param {(element: string) => object} args.template  The parsed view template of an element.
  * @param {(front: string, element: string) => string | null} args.extension  An extension file's path, if one exists.
  */
-export function componentModels({ group, entry, corePackage, template, extension, partials = new Map() }) {
+export function componentModels({ group, entry, corePackage, template, extension, partials = new Map(), components = new Map() }) {
   const entryModule = `${corePackage}/${entry}`;
   return Object.entries(group.components).map(([element, manifest]) => {
     const src = template(manifest.template ?? `${element}.view.vue`);
@@ -98,6 +98,8 @@ export function componentModels({ group, entry, corePackage, template, extension
       src,
       // The group's partials, by name, for the fronts that inline them (Angular).
       partials,
+      // The registry of composable elements, by tag, with each one's module in this front.
+      components,
       templateBase: src.file.replace(/^.*[\\/]/, '').replace(/\.vue$/, ''),
       templateName: src.name,
       rootTag: root.tag,

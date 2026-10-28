@@ -48,7 +48,7 @@ describe('BsDatatable', () => {
         columns={COLUMNS}
         data={DATA}
         selectionMode="single"
-        onSelectionChange={(d) => selections.push(d)}
+        onSelectionChanged={(d) => selections.push(d)}
         onRowClick={() => clicks++}
       />,
       'div.datatable',

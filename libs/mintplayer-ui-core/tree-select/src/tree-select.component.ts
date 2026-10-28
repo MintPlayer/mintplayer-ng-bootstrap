@@ -44,9 +44,9 @@ export default {
       },
       outputs: {
         valueChange: { type: 'TreeSelectValue', doc: 'The value, after the user changed it.' },
-        selectionChange: { type: 'TreeSelectChangeEventDetail', doc: 'The node added or removed (neither for a clear), with the value.' },
+        selectionChanged: { type: 'TreeSelectChangeEventDetail', doc: 'The node added or removed (neither for a clear), with the value.' },
         openChange: { type: 'boolean', doc: 'The panel opened (true) or closed (false).' },
-        search: { type: 'TreeSelectSearchEventDetail', doc: 'A search started (an empty query restores the browse tree).' },
+        searchStart: { type: 'TreeSelectSearchEventDetail', doc: 'A search started (an empty query restores the browse tree).' },
         loadError: { type: 'TreeSelectLoadErrorEventDetail', doc: 'A provider call rejected.' },
       },
       methods: {

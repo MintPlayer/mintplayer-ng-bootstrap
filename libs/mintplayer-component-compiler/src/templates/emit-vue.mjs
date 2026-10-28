@@ -3,14 +3,14 @@
 // `mp-attrs`), dropping React-only select seeds, and routing the consumer's
 // attributes to the `mp-attrs` element when that is not the root.
 import { basename } from 'node:path';
-import { ATTRS_MARKER, GENERATOR, HOST_MARKER, PROP, TemplateError, attrsTarget, componentTags, isSelectSeed, partialNames, partialUse, rootElement } from './source.mjs';
+import { ATTRS_MARKER, GENERATOR, HOST_MARKER, PROP, TemplateError, attrsTarget, componentTags, composedUse, isSelectSeed, partialNames, partialUse, rootElement } from './source.mjs';
 
 const walk = (node, visit) => {
   visit(node);
   (node.children ?? []).forEach((child) => walk(child, visit));
 };
 
-export function emitVue(src, { generator = GENERATOR, partials } = {}) {
+export function emitVue(src, { generator = GENERATOR, partials, components } = {}) {
   const header = `<!-- GENERATED from ${src.file.replace(/\\/g, '/')} by ${generator}. Do not edit. -->\n`;
   const text = src.sfcText;
   // AST offsets index the whole SFC; each edit replaces [start, end) of it.
@@ -28,9 +28,36 @@ export function emitVue(src, { generator = GENERATOR, partials } = {}) {
   );
 
   // A partial call forwards this template's slots into the partial, which declares a subset of them.
+  // A composed child is its Vue component, under its component name: an output listens
+  // to the lowercased event the child emits, v-model:x binds a ModelBinding's value and set.
+  const composed = new Map();
   componentTags(src).forEach((el) => {
+    const use = composedUse(src, el, components);
+    if (!use) return;
+    composed.set(use.child.tag, use.child);
+    const Name = use.child.names.component;
+    const start = el.loc.start.offset + 1;
+    edits.push({ start, end: start + el.tag.length, text: Name });
+    if (!el.isSelfClosing) edits.push({ start: el.loc.end.offset - el.tag.length - 1, end: el.loc.end.offset - 1, text: Name });
+    el.props
+      .filter((p) => p.type === PROP.DIRECTIVE && (p.name === 'on' || p.name === 'model'))
+      .forEach((p) => {
+        const exp = p.exp.content.trim();
+        const output = use.outputs.find((o) => o.output.name === p.arg.content);
+        const text = output
+          ? `@${output.output.lower}="${exp}"`
+          : `:${p.arg.content}="${exp}.value" @update:${p.arg.content}="${exp}.set"`;
+        edits.push({ start: p.loc.start.offset, end: p.loc.end.offset, text });
+      });
+  });
+  const composedImports = [...composed.values()]
+    .map((c) => (c.module.vue.endsWith('.vue') ? `import ${c.names.component} from '${c.module.vue}';\n` : `import { ${c.names.component} } from '${c.module.vue}';\n`))
+    .join('');
+
+  componentTags(src).forEach((el) => {
+    if (composed.has(el.tag)) return;
     const use = partialUse(src, el, partials);
-    if (!use) throw new TemplateError(src.file, el, `components are not supported (<${el.tag}>)`);
+    if (!use) throw new TemplateError(src.file, el, `<${el.tag}> is neither a partial nor a registered component`);
     const forward = use.partial.slots.members
       .map((s) => (s.paramType
         ? `<template v-if="$slots.${s.name}" #${s.name}="scope"><slot name="${s.name}" v-bind="scope" /></template>`
@@ -44,7 +71,7 @@ export function emitVue(src, { generator = GENERATOR, partials } = {}) {
 
   const { root } = rootElement(src);
   const target = attrsTarget(src, root);
-  let script = '';
+  let script = composedImports;
   // A partial imports its generated sibling; one that calls itself imports itself, since
   // Vue would name it after its generated file.
   if (partialNames(src).has(src.name)) script += `import ${src.name} from './${basename(src.file).replace(/\.vue$/, '')}.generated.vue';\n`;

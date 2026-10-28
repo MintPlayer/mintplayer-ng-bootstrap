@@ -10,6 +10,16 @@ breaking change is a major. (2.20.0 and 2.21.0 broke `^2.x` consumers in a minor
 
 ### Breaking
 
+- **Outputs no longer share a name with a native DOM event (issue #437).** Angular, Vue and Lit listen to a
+  lowercased output name on the element, which also catches the native event of that name bubbling from inside
+  the component, such as `selectionchange` from a filter `<input>` or `animationend` from a slide. The compiler
+  now refuses such a name, and these outputs are renamed:
+  - datatable, timeline and tree-select: `selectionChange` → `selectionChanged` (Angular `(selectionchanged)`,
+    React `onSelectionChanged`, Vue `@selectionchanged`, Lit `selectionchanged`);
+  - tree-select: `search` → `searchStart` (`searchstart`, `onSearchStart`);
+  - carousel: `animationStart` / `animationEnd` → `slideStart` / `slideEnd`.
+  **Migration**: rename the listener.
+
 - **Card is plain Bootstrap markup (issue #437, wave A).** No front renders `<mp-card>` any more:
   `bs-card` (Angular) is the `.card` itself, `BsCard` (React/Vue) renders a `div.card`, and `mp-card` (Lit) is a
   light-DOM element that toggles the same classes on itself. The card ships no stylesheet; the layered Bootstrap
@@ -438,8 +448,12 @@ breaking change is a major. (2.20.0 and 2.21.0 broke `^2.x` consumers in a minor
   `@mintplayer/ui-core/query-builder` (`queryBuilderCore`, `connectQueryBuilder`) and compiled into all four
   fronts, so the toolbar, the tree and the preview render on the server.
   - **One element.** `mp-query-group`, `mp-query-condition` and `mp-query-subquery` are gone: the tree renders as
-    flat rows (`li.qb-row` with `aria-level` and `data-row-id`) inside one `div.query-builder` root (the host in
-    Angular and Lit). Rows indent through `--qb-depth`. An `aria-label` names the root.
+    nested lists (`li.qb-row` with `data-row-id`, a group's children in its own `ul.qb-rows`) inside one
+    `div.query-builder` root (the host in Angular and Lit). Nesting carries the depth, so `aria-level` and
+    `--qb-depth` are gone; a nested `ul.qb-rows` indents and draws the guide line. An `aria-label` names the root.
+  - **`view.rows` is `view.tree`.** The core's view is a tree of `QueryBuilderNode` (`kind`, `item`, `group`,
+    `condition`, `subquery`, `note`, `text`, `list`, `children`), replacing the flat `QueryBuilderRow` list.
+    **Migration**: walk `children` instead of reading `rows`.
   - **Custom value editors are a slot.** Mark a field `editor: 'custom'` in the schema and the condition's value
     renders through the `editor` slot with an `EditorContext` (`field`, `operator`, `value`, `disabled`,
     `onChange`). Angular `<ng-template bsQueryBuilderEditor let-ctx="ctx">`, React `editor={({ ctx }) => …}`,

@@ -19,6 +19,15 @@
 export type CoreBag = Record<string, string | number | boolean | null>;
 
 /**
+ * A two-way binding a view hands a composed child: `v-model:x="view.binding"`
+ * reads `value` into the child's model input and calls `set` with each change.
+ */
+export interface ModelBinding<T> {
+  readonly value: T;
+  readonly set: (value: T) => void;
+}
+
+/**
  * A value handed from a component to its descendants: `provide` on the outer
  * core, `consume` on the inner one. Each front maps it onto its own mechanism
  * (an Angular `InjectionToken`, a React context, a Vue `provide` key, an

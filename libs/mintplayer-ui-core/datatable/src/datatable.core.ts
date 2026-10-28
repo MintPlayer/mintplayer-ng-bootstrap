@@ -159,7 +159,7 @@ export interface DatatableEvents {
   rowDblClick: RowEventDetail;
   /** Call `originalEvent.preventDefault()` to suppress the browser's menu. */
   rowContextMenu: RowEventDetail;
-  selectionChange: SelectionChangeEventDetail;
+  selectionChanged: SelectionChangeEventDetail;
   rowExpand: TreeRowExpandDetail;
   rowCollapse: TreeRowExpandDetail;
   loadError: DatatableLoadErrorDetail;
@@ -505,7 +505,7 @@ export const datatableCore = defineCore<
       api.setState({ selectedIds: ids });
       api.emit('selectedIdsChange', ids);
       announcer.announce(labels().announceSelection(ids.length));
-      api.emit('selectionChange', { selectedIds: ids, selectedRows: resolve(ids) });
+      api.emit('selectionChanged', { selectedIds: ids, selectedRows: resolve(ids) });
     };
     const toggleChecked = (flat: FlatRow) => {
       const inputs = api.inputs();

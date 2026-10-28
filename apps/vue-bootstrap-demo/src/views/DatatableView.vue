@@ -385,7 +385,7 @@ const TREE_SOURCE = `<!-- The same callback, branching on req.parentId for roots
   :virtualScroll="true" :itemSize="40"
   :tree="true" idKey="id" childCountKey="childCount"
   selectionMode="multiple" selectionStrategy="cascading"
-  @selectionchange="onSelectionChange"
+  @selectionchanged="onSelectionChange"
 />`;
 </script>
 
@@ -547,7 +547,7 @@ const TREE_SOURCE = `<!-- The same callback, branching on req.parentId for roots
         The same single <code>fetch</code> callback, branching on
         <code>req.parentId</code> for roots vs. children. The WC paginates roots
         lazily and loads children on expand; selected row objects arrive on
-        <code>@selectionChange</code> as <code>detail.selectedRows</code>.
+        <code>@selectionChanged</code> as <code>detail.selectedRows</code>.
       </p>
 
       <BsDatatable
@@ -562,7 +562,7 @@ const TREE_SOURCE = `<!-- The same callback, branching on req.parentId for roots
         :rowKey="rowKey"
         selectionMode="multiple"
         selectionStrategy="cascading"
-        @selectionchange="onSelectionChange"
+        @selectionchanged="onSelectionChange"
       />
       <small v-if="selectedRows.length" class="text-body-secondary">
         Selected {{ selectedRows.length }} item(s).

@@ -3,16 +3,16 @@
 // scoped slot), the default slot as `children`. The root element also takes
 // the consumer's `className` / `attrs` and the `rootRef`.
 import { rewrite } from './expressions.mjs';
-import { GENERATOR, NATIVE_TAGS, NODE, PROP, TAG, TemplateError, VOID_TAGS, checkElement, directive, groupChains, meaningful, parseFor, refName, renderedProps, rootElement, attrsTarget, partialUse, slotArgs, slotName } from './source.mjs';
+import { GENERATOR, NATIVE_TAGS, NODE, PROP, TAG, TemplateError, VOID_TAGS, checkElement, directive, groupChains, meaningful, parseFor, refName, renderedProps, rootElement, attrsTarget, composedUse, partialUse, slotArgs, slotName } from './source.mjs';
 
 const RENAME = { class: 'className', for: 'htmlFor', tabindex: 'tabIndex', readonly: 'readOnly', autocomplete: 'autoComplete', maxlength: 'maxLength', colspan: 'colSpan', rowspan: 'rowSpan' };
 const FORM_TAGS = new Set(['input', 'select', 'textarea']);
 
 const eventProp = (name) => 'on' + name.split('-').map((part) => part[0].toUpperCase() + part.slice(1)).join('');
 
-export function emitReact(src, { generator = GENERATOR, runtime, partials } = {}) {
+export function emitReact(src, { generator = GENERATOR, runtime, partials, components } = {}) {
   if (!runtime) throw new Error('emitReact: options.runtime must name the module that exports reactProps / reactFormProps');
-  const ctx = { src, locals: new Set(), refs: new Map(), uses: new Set(['reactProps']), root: null, partials, imports: new Set() };
+  const ctx = { src, locals: new Set(), refs: new Map(), uses: new Set(['reactProps']), root: null, partials, imports: new Set(), components, composed: new Map() };
   const { root } = rootElement(src);
   ctx.root = root;
   ctx.attrsTarget = attrsTarget(src, root);
@@ -42,6 +42,7 @@ export function emitReact(src, { generator = GENERATOR, runtime, partials } = {}
     "import * as React from 'react';",
     `import { ${machine} } from '${runtime}';`,
     ...src.imports,
+    ...[...ctx.composed.values()].map((c) => `import { ${c.names.component} } from '${c.module.react}';`),
     ...[...ctx.imports].map((p) => `import { ${p.name}Template } from './${src.partialImports.get(p.name).replace(/\.vue$/, '')}.generated';`),
     '',
     `export type ${name}Props = ${src.props.text} & {`,
@@ -108,8 +109,10 @@ function bare(ctx, el, depth) {
   if (el.tagType === TAG.SLOT) return slot(ctx, el, depth);
   if (el.tagType === TAG.TEMPLATE) return children(ctx, el.children, depth);
   if (el.tagType === TAG.COMPONENT) {
+    const composed = composedUse(ctx.src, el, ctx.components);
+    if (composed) return composedChild(ctx, composed, depth);
     const use = partialUse(ctx.src, el, ctx.partials);
-    if (!use) throw new TemplateError(ctx.src.file, el, `components are not supported (<${el.tag}>)`);
+    if (!use) throw new TemplateError(ctx.src.file, el, `<${el.tag}> is neither a partial nor a registered component`);
     // A partial is a function component of its own file; it fills its slots from this template's.
     if (use.partial !== ctx.src) ctx.imports.add(use.partial);
     const binds = use.binds.map((b) => `${b.name}={${x(ctx, b.exp)}}`).join(' ');
@@ -183,6 +186,34 @@ function bare(ctx, el, depth) {
   if (VOID_TAGS.has(el.tag)) return `${pad(depth)}${open} />\n`;
   const inner = children(ctx, el.children, depth + 1);
   return inner ? `${pad(depth)}${open}>\n${inner}${pad(depth)}</${el.tag}>\n` : `${pad(depth)}${open} />\n`;
+}
+
+/**
+ * A composed child is its React component: inputs as props, outputs as `on<Name>`
+ * callbacks (called with the payload), a named slot as a prop (a render function when
+ * scoped), default content as children.
+ */
+function composedChild(ctx, { child, inputs, outputs, models, attrs, binds, bag, slots, content }, depth) {
+  ctx.composed.set(child.tag, child);
+  const Name = child.names.component;
+  const fragmentOf = (inner, nodes) => `<>\n${children(inner, nodes, depth + 2)}${pad(depth + 1)}</>`;
+  const parts = [
+    ...(bag ? (ctx.uses.add('reactProps'), [`{...reactProps(${x(ctx, bag)})}`]) : []),
+    ...attrs.map((a) => `${RENAME[a.name] ?? a.name}=${JSON.stringify(a.value)}`),
+    ...binds.map((b) => `${RENAME[b.name] ?? b.name}={${x(ctx, b.exp)}}`),
+    ...inputs.map((i) => `${i.name}={${x(ctx, i.exp)}}`),
+    ...models.flatMap((m) => [`${m.name}={${x(ctx, m.exp)}.value}`, `${m.output.react}={${x(ctx, m.exp)}.set}`]),
+    ...outputs.map((o) => `${o.output.react}={${x(ctx, o.exp)}}`),
+    ...slots.map((slot) => {
+      const inner = { ...ctx, locals: new Set([...ctx.locals, ...slot.params]) };
+      return slot.scoped
+        ? `${slot.name}={({ ${slot.params.join(', ')} }) => (${fragmentOf(inner, slot.children)})}`
+        : `${slot.name}={${fragmentOf(ctx, slot.children)}}`;
+    }),
+  ];
+  const open = `<${Name}${parts.length ? ' ' + parts.join(' ') : ''}`;
+  const inner = children(ctx, content, depth + 1);
+  return inner ? `${pad(depth)}${open}>\n${inner}${pad(depth)}</${Name}>\n` : `${pad(depth)}${open} />\n`;
 }
 
 function slot(ctx, el, depth) {

@@ -260,6 +260,96 @@ export function slotName(el) {
 }
 
 /* ------------------------------------------------------------------------ */
+/* Composed children                                                        */
+/* ------------------------------------------------------------------------ */
+
+/** Native attributes a composed child takes besides its inputs; the front forwards them like a consumer's. */
+const isNativeAttribute = (name) => ['class', 'id', 'title'].includes(name) || /^(aria|data)-/.test(name);
+const isMemberPath = (exp) => /^[A-Za-z_$][\w$]*(\??\.[A-Za-z_$][\w$]*)*$/.test(exp.trim());
+
+/** `{ a, b }` → ['a', 'b']; a slot's parameters are destructured by name. */
+function slotParams(src, el, exp) {
+  if (!exp) return [];
+  const match = /^\s*\{([\s\w$,]*)\}\s*$/.exec(exp);
+  if (!match) throw new TemplateError(src.file, el, `destructure a slot's parameters by name (#slot="{ a, b }"), not "${exp}"`);
+  return match[1].split(',').map((name) => name.trim()).filter(Boolean);
+}
+
+/**
+ * A composed child's use site, `<mp-x :input="…" @output="…" v-model:y="…">content</mp-x>`:
+ * the child from the registry, and each binding sorted and checked against its manifest.
+ * Null when the tag is not a registered element.
+ *
+ * @param {Map<string, object>} [components]  tag → registry entry (see `componentModels`)
+ */
+export function composedUse(src, el, components) {
+  const child = components?.get(el.tag);
+  if (!child) return null;
+  const use = { child, inputs: [], outputs: [], models: [], attrs: [], binds: [], bag: null, slots: [], content: [] };
+  const inputNamed = (name) => child.inputs.find((input) => input.name === camelCase(name));
+  el.props.forEach((p) => {
+    if (p.type === PROP.ATTRIBUTE) {
+      if (inputNamed(p.name)) use.inputs.push({ name: inputNamed(p.name).name, exp: JSON.stringify(p.value?.content ?? '') });
+      else if (isNativeAttribute(p.name)) use.attrs.push({ name: p.name, value: p.value?.content ?? '' });
+      else throw new TemplateError(src.file, el, `<${el.tag}> has no input "${p.name}"`);
+      return;
+    }
+    if (['if', 'else-if', 'else', 'for'].includes(p.name) || (p.name === 'bind' && p.arg?.content === 'key')) return;
+    if (p.name === 'bind' && !p.arg) {
+      use.bag = p.exp.content;
+      return;
+    }
+    if (p.name === 'bind') {
+      const name = p.arg.content;
+      if (inputNamed(name)) use.inputs.push({ name: inputNamed(name).name, exp: p.exp.content });
+      else if (isNativeAttribute(name)) use.binds.push({ name, exp: p.exp.content });
+      else throw new TemplateError(src.file, el, `<${el.tag}> has no input "${name}"`);
+      return;
+    }
+    if (p.name === 'on') {
+      const output = child.outputs.find((o) => o.name === p.arg?.content);
+      if (!output) throw new TemplateError(src.file, el, `<${el.tag}> has no output "${p.arg?.content}" (write the manifest's name)`);
+      if (!isMemberPath(p.exp.content)) throw new TemplateError(src.file, el, `@${output.name} takes a handler path (view.onX), called with the output's payload`);
+      use.outputs.push({ output, exp: p.exp.content.trim() });
+      return;
+    }
+    if (p.name === 'model') {
+      const input = inputNamed(p.arg?.content ?? '');
+      if (!input?.model) throw new TemplateError(src.file, el, `v-model:${p.arg?.content} needs a model input of <${el.tag}>`);
+      const output = child.outputs.find((o) => o.name === `${input.name}Change`);
+      if (!output) throw new TemplateError(src.file, el, `v-model:${input.name} needs a ${input.name}Change output on <${el.tag}>`);
+      if (!isMemberPath(p.exp.content)) throw new TemplateError(src.file, el, `v-model:${input.name} takes a ModelBinding path (view.x)`);
+      use.models.push({ name: input.name, output, exp: p.exp.content.trim() });
+      return;
+    }
+    if (p.name === 'slot') throw new TemplateError(src.file, el, `put #slot on a <template> inside <${el.tag}>`);
+    throw new TemplateError(src.file, el, `<${el.tag}> takes inputs, native attributes, @outputs and v-model:x`);
+  });
+  const slotOf = (node) => (node.type === NODE.ELEMENT && node.tag === 'template' ? node.props.find((p) => p.type === PROP.DIRECTIVE && p.name === 'slot') : null);
+  meaningful(el.children).forEach((node) => {
+    const slot = slotOf(node);
+    const name = slot ? (slot.arg?.content ?? 'default') : 'default';
+    if (!child.slots.some((s) => s.name === name)) throw new TemplateError(src.file, node, `<${el.tag}> has no "${name}" slot`);
+    if (!slot) {
+      use.content.push(node);
+      return;
+    }
+    const declared = child.slots.find((s) => s.name === name);
+    const params = slotParams(src, node, slot.exp?.content);
+    if (params.length && !declared.params) throw new TemplateError(src.file, node, `the "${name}" slot of <${el.tag}> takes no parameters`);
+    if (name === 'default' && params.length) throw new TemplateError(src.file, node, 'a default slot takes no parameters');
+    if (name === 'default') use.content.push(...node.children);
+    else use.slots.push({ name, scoped: !!declared.params, params, children: node.children });
+  });
+  return use;
+}
+
+/** Every `mp-*` tag a template composes. */
+export function composedTags(src, components) {
+  return componentTags(src).filter((el) => components?.has(el.tag)).map((el) => el.tag);
+}
+
+/* ------------------------------------------------------------------------ */
 /* Partials                                                                 */
 /* ------------------------------------------------------------------------ */
 

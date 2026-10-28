@@ -93,7 +93,7 @@ describe('BsTimeline — selection', () => {
     rows(wrapper.element)[1].click();
     await nextTick();
     expect(wrapper.emitted('update:selectedIds')?.[0]).toEqual([['b']]);
-    const [detail] = wrapper.emitted('selectionchange')![0] as [TimelineSelectionChangeDetail];
+    const [detail] = wrapper.emitted('selectionchanged')![0] as [TimelineSelectionChangeDetail];
     // test-utils hands props over through reactive(); the core returns that same object.
     expect(toRaw(detail.selected[0])).toBe(ITEMS[1]);
     expect(rows(wrapper.element)[1].getAttribute('aria-selected')).toBe('true');

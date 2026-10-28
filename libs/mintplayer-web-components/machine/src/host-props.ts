@@ -36,13 +36,15 @@ export function applyHostProps(host: Element, previous: HostPropsState, bag: Att
 
 /**
  * A top-level node a compiled template rendered into a light-DOM host: a
- * stamped native element, or lit's markers and whitespace. A custom element is
- * never the template's, even once stamped: an `<mp-navbar-nav>` stamps itself.
+ * stamped native element, a composed child it marked `data-mp-owned`, or lit's
+ * markers and whitespace. A custom element is otherwise never the template's,
+ * even once stamped: an `<mp-navbar-nav>` stamps itself.
  */
 export const ownedByTemplate = (node: Node): boolean =>
   node.nodeType === Node.COMMENT_NODE ||
   (node.nodeType === Node.TEXT_NODE && !node.textContent?.trim()) ||
-  (node instanceof Element && node.hasAttribute('data-mps') && !node.localName.includes('-'));
+  (node instanceof Element &&
+    (node.hasAttribute('data-mp-owned') || (node.hasAttribute('data-mps') && !node.localName.includes('-'))));
 
 /**
  * The authored children of a light-DOM element whose compiled template places

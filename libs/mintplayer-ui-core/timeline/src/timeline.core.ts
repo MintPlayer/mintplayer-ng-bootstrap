@@ -52,7 +52,7 @@ export interface TimelineState {
 
 export interface TimelineEvents {
   itemClick: TimelineItemClickDetail;
-  selectionChange: TimelineSelectionChangeDetail;
+  selectionChanged: TimelineSelectionChangeDetail;
   selectedIdsChange: TimelineKeys;
 }
 
@@ -137,7 +137,7 @@ function select(api: Api, rows: HTMLElement[], row: HTMLElement, opts: { toggle:
       return r ? [modelOf(api, r)] : [];
     });
   api.emit('selectedIdsChange', next);
-  api.emit('selectionChange', { selected: models(next), added: models(added), removed: models(removed) });
+  api.emit('selectionChanged', { selected: models(next), added: models(added), removed: models(removed) });
 }
 
 /** The next enabled row from `from`, wrapping; `from` -1 starts at the tab stop. */

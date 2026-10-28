@@ -278,7 +278,7 @@ const fetchTree = useCallback(
   virtualScroll itemSize={40}
   tree idKey="id" childCountKey="childCount"
   selectionMode="multiple" selectionStrategy="cascading"
-  onSelectionChange={(d) => setSelected(d.selectedRows)}
+  onSelectionChanged={(d) => setSelected(d.selectedRows)}
 />`;
 
 export function DatatablePage() {
@@ -569,7 +569,7 @@ export function DatatablePage() {
           The same single <code>fetch</code> callback, branching on{' '}
           <code>req.parentId</code> for roots vs. children. The WC paginates
           roots lazily and loads children on expand; selected row objects arrive
-          on <code>onSelectionChange</code> as <code>detail.selectedRows</code>.
+          on <code>onSelectionChanged</code> as <code>detail.selectedRows</code>.
         </p>
 
         <BsDatatable
@@ -584,7 +584,7 @@ export function DatatablePage() {
           rowKey={(row: unknown) => String((row as TreeItem).id)}
           selectionMode="multiple"
           selectionStrategy="cascading"
-          onSelectionChange={onSelectionChange}
+          onSelectionChanged={onSelectionChange}
         />
         {selectedRows.length > 0 && (
           <small className="text-body-secondary">Selected {selectedRows.length} item(s).</small>

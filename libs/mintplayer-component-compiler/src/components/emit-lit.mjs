@@ -3,7 +3,7 @@
 // `CoreController` (PRD #437 D10). Authored children are captured by
 // `LightChildren` and placed by `slot="…"` into the template's slots.
 import { banner, coreImports, jsdoc, styleImports } from './model.mjs';
-import { slotArgsType } from '../templates/emit-lit.mjs';
+import { rendererProperty, slotArgsType } from '../templates/emit-lit.mjs';
 
 const LIT_TYPES = { string: 'String', boolean: 'Boolean', number: 'Number' };
 
@@ -24,8 +24,9 @@ function propertyOptions(input) {
 export function emitLitComponent(model, { generator, runtime }) {
   const { names } = model;
   const slotNames = model.slots.map((slot) => slot.name);
-  // A scoped slot also takes a render callback: the `<slot>Renderer` property.
-  const renderers = model.slots.filter((slot) => slot.params).map((slot) => ({ slot: slot.name, prop: `${slot.name.replace(/-(\w)/g, (_, c) => c.toUpperCase())}Renderer`, args: slotArgsType(model.src, slot.name) }));
+  // Every slot also takes a render callback, the `<slot>Renderer` property: a composing
+  // template passes its content that way, and a scoped slot's callback gets the args.
+  const renderers = model.slots.map((slot) => ({ slot: slot.name, prop: rendererProperty(slot.name), args: slot.params ? slotArgsType(model.src, slot.name) : null }));
   const types = [model.inputsType, model.methodsType].filter(Boolean);
 
   const lines = [
@@ -38,12 +39,17 @@ export function emitLitComponent(model, { generator, runtime }) {
   styleImports(model)
     .filter(({ module }) => module !== model.entryModule)
     .forEach(({ module, names: list }) => lines.push(`import { ${list.join(', ')} } from '${module}';`));
-  lines.push(`import { ${[templateFunction(model), ...renderers.map((r) => `type ${r.args}`)].join(', ')} } from './${model.templateBase}.generated';`, '');
+  lines.push(`import { ${[templateFunction(model), ...renderers.filter((r) => r.args).map((r) => `type ${r.args}`)].join(', ')} } from './${model.templateBase}.generated';`, '');
 
   lines.push(jsdoc(model.doc).trimEnd(), `export class ${names.lit} extends LitElement {`);
   lines.push(`  static override properties = {`, ...model.inputs.map((input) => `    ${input.name}: ${propertyOptions(input)},`), ...renderers.map((r) => `    ${r.prop}: { attribute: false },`), `  };`, '');
   model.inputs.forEach((input) => lines.push(`${jsdoc(input.doc, '  ')}  declare ${input.name}: ${model.inputsType}['${input.name}'];`));
-  renderers.forEach((r) => lines.push(`  /** Renders the ${r.slot} slot, called per use; wins over slot="${r.slot}" children. */`, `  declare ${r.prop}: ((args: ${r.args}) => unknown) | null | undefined;`));
+  renderers.forEach((r) =>
+    lines.push(
+      `  /** Renders the ${r.slot} slot${r.args ? ', called per use' : ''}; wins over slot="${r.slot}" children. */`,
+      `  declare ${r.prop}: ((${r.args ? `args: ${r.args}` : ''}) => unknown) | null | undefined;`,
+    ),
+  );
   if (model.inputs.length || renderers.length) lines.push('');
   if (slotNames.length) lines.push(`  readonly #children = new LightChildren(this);`);
   const options = [`idPrefix: '${names.tag}'`, `inputs: () => ({ ${model.inputs.map((i) => `${i.name}: this.${i.name}`).join(', ')} })`];
@@ -62,7 +68,8 @@ export function emitLitComponent(model, { generator, runtime }) {
   lines.push(`  protected override createRenderRoot(): HTMLElement {`, `    return this;`, `  }`, '');
   if (slotNames.length) lines.push(`  protected override willUpdate(): void {`, `    this.#children.capture();`, `  }`, '');
 
-  const callbacks = renderers.map((r) => `...(this.${r.prop} ? { ${JSON.stringify(r.slot)}: this.${r.prop} } : {})`);
+  // An unscoped slot's callback is called here: the template renders its value.
+  const callbacks = renderers.map((r) => `...(this.${r.prop} ? { ${JSON.stringify(r.slot)}: this.${r.prop}${r.args ? '' : '()'} } : {})`);
   const slots = slotNames.length ? (callbacks.length ? `, slots: { ...this.#children.slots, ${callbacks.join(', ')} }` : `, slots: this.#children.slots`) : '';
   lines.push(`  override render() {`, `    return ${templateFunction(model)}({ ...this.#core.props()${slots} });`, `  }`);
 

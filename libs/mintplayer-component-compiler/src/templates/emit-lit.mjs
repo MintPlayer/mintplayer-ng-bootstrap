@@ -4,7 +4,7 @@
 // `mp-host` root is the element itself: only its children are emitted, and the
 // element applies the root bag to itself with hostProps().
 import { rewrite } from './expressions.mjs';
-import { GENERATOR, NODE, PROP, TAG, TemplateError, VOID_TAGS, checkElement, directive, groupChains, parseFor, refName, renderedProps, rootElement, isSelectSeed, partialUse, slotArgs, slotName } from './source.mjs';
+import { GENERATOR, NODE, PROP, TAG, TemplateError, VOID_TAGS, checkElement, composedUse, directive, groupChains, meaningful, parseFor, refName, renderedProps, rootElement, isSelectSeed, partialUse, slotArgs, slotName } from './source.mjs';
 
 const escapeText = (text) => text.replace(/\\/g, '\\\\').replace(/`/g, '\\`').replace(/\$\{/g, '\\${').replace(/</g, '&lt;');
 const escapeAttr = (text) => escapeText(text).replace(/"/g, '&quot;');
@@ -17,9 +17,9 @@ export function slotArgsType(src, slot) {
 /** `navbar-dropdown.view.vue` → `navbarDropdownTemplate`. */
 const templateFunction = (src) => `${src.name[0].toLowerCase()}${src.name.slice(1)}Template`;
 
-export function emitLit(src, { generator = GENERATOR, runtime, partials } = {}) {
+export function emitLit(src, { generator = GENERATOR, runtime, partials, components } = {}) {
   if (!runtime) throw new Error('emitLit: options.runtime must name the module that exports the props() directive');
-  const ctx = { src, locals: new Set(), refs: new Map(), uses: new Set(['html']), partials, imports: new Set() };
+  const ctx = { src, locals: new Set(), refs: new Map(), uses: new Set(['html']), partials, imports: new Set(), components, composed: new Map() };
   const { root, host } = rootElement(src);
   const body = host ? children(ctx, root.children, 2) : children(ctx, src.root.children, 2);
   const name = templateFunction(src);
@@ -45,6 +45,8 @@ export function emitLit(src, { generator = GENERATOR, runtime, partials } = {}) 
     `import { ${lit.join(', ')} } from 'lit';`,
     ...directives,
     ...src.imports,
+    // A composed element registers itself on import; its class types the render callbacks.
+    ...[...ctx.composed.values()].flatMap((c) => [`import '${c.module.lit}';`, `import type { ${c.names.lit} } from '${c.module.lit}';`]),
     ...[...ctx.imports].map((p) => `import { ${templateFunction(p)} } from './${src.partialImports.get(p.name).replace(/\.vue$/, '')}.generated';`),
     '',
     // A scoped slot's arguments, for the element's `<slot>Renderer` property.
@@ -114,8 +116,10 @@ function bare(ctx, el, depth) {
   if (el.tagType === TAG.SLOT) return slot(ctx, el, depth);
   if (el.tagType === TAG.TEMPLATE) return children(ctx, el.children, depth);
   if (el.tagType === TAG.COMPONENT) {
+    const composed = composedUse(ctx.src, el, ctx.components);
+    if (composed) return composedChild(ctx, composed, depth);
     const use = partialUse(ctx.src, el, ctx.partials);
-    if (!use) throw new TemplateError(ctx.src.file, el, `components are not supported (<${el.tag}>)`);
+    if (!use) throw new TemplateError(ctx.src.file, el, `<${el.tag}> is neither a partial nor a registered component`);
     // A partial is a template function of its own file; it fills its slots from this template's.
     if (use.partial !== ctx.src) ctx.imports.add(use.partial);
     const args = [...use.binds.map((b) => `${b.name}: ${x(ctx, b.exp)}`), 'slots'].join(', ');
@@ -168,6 +172,37 @@ function bare(ctx, el, depth) {
   const within = el.tag === 'svg' ? { ...ctx, svg: true } : el.tag === 'foreignObject' ? { ...ctx, svg: false } : ctx;
   const inner = children(within, el.children, depth + 1);
   return inner ? `${pad(depth)}${open}\n${inner}${pad(depth)}</${el.tag}>\n` : `${pad(depth)}${open}</${el.tag}>\n`;
+}
+
+/** A slot's render-callback property on a compiled Lit element: `editor` → `editorRenderer`. */
+export const rendererProperty = (slot) => `${slot.replace(/-(\w)/g, (_, c) => c.toUpperCase())}Renderer`;
+
+/**
+ * A composed child is its element: inputs and models as properties, outputs as the
+ * lowercased events (the handler gets the detail), and all content as render callbacks,
+ * never as children: the element takes its light children out of itself, which would
+ * strand this template's parts. `data-mp-owned` keeps an enclosing host from adopting it.
+ */
+function composedChild(ctx, { child, inputs, outputs, models, attrs, binds, bag, slots, content }, depth) {
+  ctx.composed.set(child.tag, child);
+  ctx.uses.add('nothing');
+  const parts = [
+    'data-mp-owned',
+    ...attrs.map((a) => `${a.name}="${escapeAttr(a.value)}"`),
+    ...binds.map((b) => `${b.name}=\${(${x(ctx, b.exp)}) ?? nothing}`),
+    ...(bag ? (ctx.uses.add('props'), [`\${props(${x(ctx, bag)})}`]) : []),
+    ...inputs.map((i) => `.${i.name}=\${${x(ctx, i.exp)}}`),
+    ...models.flatMap((m) => [`.${m.name}=\${${x(ctx, m.exp)}.value}`, `@${m.output.lower}=\${(e: CustomEvent) => ${x(ctx, m.exp)}.set(e.detail)}`]),
+    ...outputs.map((o) => `@${o.output.lower}=\${(e: CustomEvent) => ${x(ctx, o.exp)}(e.detail)}`),
+    ...slots.map((slot) => {
+      const inner = { ...ctx, locals: new Set([...ctx.locals, ...slot.params]) };
+      const prop = rendererProperty(slot.name);
+      const args = slot.scoped ? `({ ${slot.params.join(', ')} }: Parameters<NonNullable<${child.names.lit}['${prop}']>>[0])` : '()';
+      return `.${prop}=\${${args} => ${sub(inner, children(inner, slot.children, depth + 2), depth + 1)}}`;
+    }),
+    ...(meaningful(content).length ? [`.defaultRenderer=\${() => ${sub(ctx, children(ctx, content, depth + 2), depth + 1)}}`] : []),
+  ];
+  return `${pad(depth)}<${child.tag} ${parts.join(' ')}></${child.tag}>\n`;
 }
 
 function slot(ctx, el, depth) {

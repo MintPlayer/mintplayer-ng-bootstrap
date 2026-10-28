@@ -288,7 +288,7 @@ export class DatatablesComponent {
 
          The selection is the row KEYS, from [rowKey], and survives paging,
          sorting and reload(). With [fetch] the key MUST be stable — taken from
-         the row, never from its position. (selectionchange) also hands over
+         the row, never from its position. (selectionchanged) also hands over
          the selected rows. -->
     <button type="button" (click)="table.reload()">Reload</button>
 

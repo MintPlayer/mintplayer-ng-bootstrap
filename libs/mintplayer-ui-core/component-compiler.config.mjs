@@ -11,6 +11,8 @@ export default defineConfig({
     angular: {
       outDir: (entry) => `libs/mintplayer-ng-bootstrap/${entry}/src/generated`,
       runtime: '@mintplayer/ng-bootstrap/machine',
+      // ng-packagr builds each entry apart: a composed child of another entry imports it by package name.
+      entryModule: (entry) => `@mintplayer/ng-bootstrap/${entry}`,
     },
     react: {
       outDir: (entry) => `libs/mintplayer-react-bootstrap/${entry}/src/generated`,
@@ -24,6 +26,7 @@ export default defineConfig({
     lit: {
       outDir: (entry) => `libs/mintplayer-web-components/${entry}/src/generated`,
       runtime: '@mintplayer/web-components/machine',
+      entryModule: (entry) => `@mintplayer/web-components/${entry}`,
     },
   },
 });

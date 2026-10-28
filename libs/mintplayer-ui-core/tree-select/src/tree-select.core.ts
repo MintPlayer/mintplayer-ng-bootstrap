@@ -75,10 +75,10 @@ export interface TreeSelectState {
 export interface TreeSelectEvents {
   valueChange: TreeSelectValue;
   /** What changed: the node added or removed, neither for a clear. */
-  selectionChange: TreeSelectChangeEventDetail;
+  selectionChanged: TreeSelectChangeEventDetail;
   /** The panel opened (true) or closed (false). */
   openChange: boolean;
-  search: TreeSelectSearchEventDetail;
+  searchStart: TreeSelectSearchEventDetail;
   loadError: TreeSelectLoadErrorEventDetail;
 }
 
@@ -180,7 +180,7 @@ export const treeSelectCore = defineCore<
         added ? fill(l.selected, { label: added.label }) : removed ? fill(l.removed, { label: removed.label }) : l.cleared,
       );
       api.emit('valueChange', value);
-      api.emit('selectionChange', { value, ...(added ? { added } : {}), ...(removed ? { removed } : {}) });
+      api.emit('selectionChanged', { value, ...(added ? { added } : {}), ...(removed ? { removed } : {}) });
     };
 
     const toggleNode = (node: TreeNode) => {
@@ -237,7 +237,7 @@ export const treeSelectCore = defineCore<
       const query = api.state().query;
       const offset = append ? (api.state().results?.length ?? 0) : 0;
       const page = await request((signal) => provider.search(query, { offset, signal }), debounced, () =>
-        api.emit('search', { query }),
+        api.emit('searchStart', { query }),
       );
       if (!page) return;
       const results = append ? [...(api.state().results ?? []), ...page.nodes] : page.nodes;
@@ -299,7 +299,7 @@ export const treeSelectCore = defineCore<
       // A blank query, after the same quiet time: drop any search in flight and show the browse tree.
       void runner.run(async () => {
         api.setState({ results: null, resultsHasMore: false, loading: false });
-        api.emit('search', { query: '' });
+        api.emit('searchStart', { query: '' });
       }, { debounceMs: Math.max(0, Number(api.inputs().searchDebounceMs) || 0) });
     };
 

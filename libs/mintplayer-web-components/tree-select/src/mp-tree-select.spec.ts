@@ -264,7 +264,7 @@ describe('mp-tree-select', () => {
   describe('search and the panel bodies', () => {
     it('searches, then restores the browse tree when the text is cleared', async () => {
       const el = await mount();
-      const searches = events<{ query: string }>(el, 'search');
+      const searches = events<{ query: string }>(el, 'searchstart');
       el.open();
       await flush(el);
       type('carrot', input(el));
@@ -462,7 +462,7 @@ describe('mp-tree-select', () => {
         e.showClear = true;
         e.value = [TREE[0]];
       });
-      const changes = events<{ added?: TreeNode; removed?: TreeNode }>(el, 'selectionchange');
+      const changes = events<{ added?: TreeNode; removed?: TreeNode }>(el, 'selectionchanged');
       const clear = q<HTMLButtonElement>(el, '.ts-clear')!;
       expect(clear.getAttribute('aria-label')).toBe('Clear');
       clear.click();

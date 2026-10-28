@@ -217,6 +217,64 @@ describe('partials', () => {
   });
 });
 
+describe('composition', () => {
+  const SCRIPT = 'defineProps<{ bag: Record<string, string | null>; view: { nodes: string[]; selected: { value: string; set: (v: string) => void }; onClick: (n: string) => void } }>();';
+  const cap = (s: string) => s[0].toUpperCase() + s.slice(1);
+  const tree = {
+    tag: 'mp-tree',
+    names: { angular: 'BsTreeComponent', component: 'BsTree', lit: 'MpTree', tag: 'mp-tree', selector: 'bs-tree', slotDirective: (s: string) => `BsTree${cap(s)}Directive`, slotSelector: (s: string) => `bsTree${cap(s)}` },
+    inputs: [{ name: 'nodes' }, { name: 'selected', model: true }],
+    outputs: [{ name: 'selectedChange', lower: 'selectedchange', react: 'onSelectedChange' }, { name: 'nodeClick', lower: 'nodeclick', react: 'onNodeClick' }],
+    slots: [{ name: 'default', params: null }, { name: 'item', params: '{ node: string }' }],
+    module: { angular: '@test/ng/tree', react: '../../tree/src/generated/index', vue: './bs-tree.generated.vue', lit: '@test/wc/tree' },
+  };
+  const components = new Map([['mp-tree', tree]]);
+  const compose = (inner: string) => readSource('core/x/src/templates/demo.view.vue', sfc(`<div v-bind="bag">${inner}</div>`, SCRIPT));
+  const src = compose('<mp-tree :nodes="view.nodes" v-model:selected="view.selected" @nodeClick="view.onClick" class="t" aria-label="Files"><template #item="{ node }"><b>{{ node }}</b></template><span>Empty</span></mp-tree>');
+
+  it('Angular renders the child component, a model as value + change, a scoped slot as its directive', () => {
+    const { text, composed } = emitAngular(src, { components });
+    expect(text).toContain('<bs-tree class="t" aria-label="Files" [nodes]="view().nodes" [selected]="view().selected.value" (selectedChange)="view().selected.set($event)" (nodeclick)="view().onClick($event)">');
+    expect(text).toContain('<ng-template bsTreeItem let-node="node">');
+    expect(text).toMatch(/<\/ng-template>\s*<span>\s*Empty\s*<\/span>\s*<\/bs-tree>/);
+    expect([...composed].map((c: { child: { tag: string }; slots: Set<string> }) => [c.child.tag, [...c.slots]])).toEqual([['mp-tree', ['item']]]);
+  });
+
+  it('React renders the child component with render props and children', () => {
+    const text = emitReact(src, { ...RUNTIME, components });
+    expect(text).toContain("import { BsTree } from '../../tree/src/generated/index';");
+    expect(text).toContain('<BsTree className="t" aria-label="Files" nodes={view.nodes} selected={view.selected.value} onSelectedChange={view.selected.set} onNodeClick={view.onClick} item={({ node }) => (<>');
+    expect(text).toMatch(/<span>\s*\{"Empty"\}\s*<\/span>\s*<\/BsTree>/);
+  });
+
+  it('Lit renders the element as owned, passing every slot as a renderer, never as children', () => {
+    const text = emitLit(src, { ...RUNTIME, components });
+    expect(text).toContain("import '@test/wc/tree';");
+    expect(text).toContain("import type { MpTree } from '@test/wc/tree';");
+    expect(text).toContain('<mp-tree data-mp-owned class="t" aria-label="Files" .nodes=${view.nodes} .selected=${view.selected.value} @selectedchange=${(e: CustomEvent) => view.selected.set(e.detail)} @nodeclick=${(e: CustomEvent) => view.onClick(e.detail)}');
+    expect(text).toContain(".itemRenderer=${({ node }: Parameters<NonNullable<MpTree['itemRenderer']>>[0]) => html`");
+    expect(text).toMatch(/\.defaultRenderer=\$\{\(\) => html`\s*<span>Empty<\/span>\s*`\}><\/mp-tree>/);
+  });
+
+  it('Vue renders the child component, a model as value + update, an output as its lowercased event', () => {
+    const text = emitVue(src, { components });
+    expect(text).toContain("import BsTree from './bs-tree.generated.vue';");
+    expect(text).toContain('<BsTree :nodes="view.nodes" :selected="view.selected.value" @update:selected="view.selected.set" @nodeclick="view.onClick" class="t" aria-label="Files"><template #item="{ node }"><b>{{ node }}</b></template><span>Empty</span></BsTree>');
+  });
+
+  it("checks every binding against the child's manifest", () => {
+    const fails = (inner: string, error: RegExp) => expect(() => emitAngular(compose(inner), { components })).toThrow(error);
+    fails('<mp-tree :nodez="view.nodes" />', /no input "nodez"/);
+    fails('<mp-tree spellcheck="x" />', /no input "spellcheck"/);
+    fails('<mp-tree @nodeclick="view.onClick" />', /no output "nodeclick"/);
+    fails('<mp-tree @nodeClick="view.onClick($event)" />', /takes a handler path/);
+    fails('<mp-tree v-model:nodes="view.nodes" />', /needs a model input/);
+    fails('<mp-tree><template #footer>x</template></mp-tree>', /no "footer" slot/);
+    fails('<mp-tree v-slot:item="{ node }" />', /on a <template>/);
+    expect(() => emitAngular(compose('<mp-list />'), { components })).toThrow(/neither a partial nor a registered component/);
+  });
+});
+
 describe('compileComponents (templates)', () => {
   let dir: string;
   afterEach(() => rmSync(dir, { recursive: true, force: true }));

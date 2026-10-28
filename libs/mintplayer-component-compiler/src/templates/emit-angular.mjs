@@ -4,7 +4,7 @@
 // A `mp-host` root is the component's host: only its children are emitted, and
 // the component applies the root bag to its host itself.
 import { rewrite } from './expressions.mjs';
-import { GENERATOR, NODE, PROP, TAG, TemplateError, VOID_TAGS, checkElement, directive, groupChains, parseFor, refName, renderedProps, rootElement, isSelectSeed, partialUse, slotArgs, slotName } from './source.mjs';
+import { GENERATOR, NODE, PROP, TAG, TemplateError, VOID_TAGS, checkElement, directive, groupChains, parseFor, refName, renderedProps, rootElement, composedUse, isSelectSeed, partialUse, slotArgs, slotName } from './source.mjs';
 
 const escapeText = (text) => text.replace(/&(?![a-z#0-9]+;)/gi, '&amp;').replace(/</g, '&lt;').replace(/@/g, '&#64;').replace(/\{/g, '&#123;').replace(/\}/g, '&#125;');
 const escapeAttr = (text) => text.replace(/&(?![a-z#0-9]+;)/gi, '&amp;').replace(/"/g, '&quot;');
@@ -16,19 +16,19 @@ const escapeAttr = (text) => text.replace(/&(?![a-z#0-9]+;)/gi, '&amp;').replace
 export const partialGuard = (partial) => ({ attribute: `mpPartial${partial.name}`, directive: `${partial.name}Partial` });
 const partialRef = (partial) => `partial_${partial.name}`;
 
-export function emitAngular(src, { generator = GENERATOR, prop = (name) => `${name}()`, letProps = false, partials } = {}) {
+export function emitAngular(src, { generator = GENERATOR, prop = (name) => `${name}()`, letProps = false, partials, components } = {}) {
   // With `letProps`, each prop the template reads is bound once with `@let`: the
   // type checker narrows a template variable after `@if (p_view.x)`, but never
   // through a call like `props().view.x`.
   const read = new Set();
-  const ctx = { src, prop: letProps ? (name) => (read.add(name), `p_${name}`) : prop, locals: new Set(), uses: new Set(), partials, called: new Set() };
+  const ctx = { src, prop: letProps ? (name) => (read.add(name), `p_${name}`) : prop, locals: new Set(), uses: new Set(), partials, called: new Set(), components, composed: new Map() };
   const { root, host } = rootElement(src);
   const body = host ? children(ctx, root.children, 0) : children(ctx, src.root.children, 0);
   const defined = new Map();
   const definitions = [...ctx.called].map((name) => definePartial(ctx, name, defined)).join('');
   const lets = [...read].map((name) => `@let p_${name} = ${prop(name)};\n`).join('');
   const header = `<!-- GENERATED from ${src.file.replace(/\\/g, '/')} by ${generator}. Do not edit. -->\n`;
-  return { text: header + lets + body + definitions, uses: [...ctx.uses], partials: [...defined.values()] };
+  return { text: header + lets + body + definitions, uses: [...ctx.uses], partials: [...defined.values()], composed: [...ctx.composed.values()] };
 }
 
 /** One partial's `<ng-template>`, then those it calls in turn; each once per template. */
@@ -37,11 +37,38 @@ function definePartial(ctx, name, defined) {
   const partial = ctx.partials.get(name);
   defined.set(name, partial);
   // A partial reads only its own props, which are the ng-template's let- variables.
-  const own = { src: partial, prop: (prop) => `pp_${prop}`, locals: new Set(), uses: ctx.uses, partials: ctx.partials, called: new Set() };
+  const own = { src: partial, prop: (prop) => `pp_${prop}`, locals: new Set(), uses: ctx.uses, partials: ctx.partials, called: new Set(), components: ctx.components, composed: ctx.composed };
   const body = children(own, partial.root.children, 1);
   const lets = partial.props.members.map((m) => ` let-pp_${m.name}="${m.name}"`).join('');
   const template = `<ng-template #${partialRef(partial)} ${partialGuard(partial).attribute}${lets}>\n${body}</ng-template>\n`;
   return template + [...own.called].map((next) => definePartial(ctx, next, defined)).join('');
+}
+
+/**
+ * A composed child is its Angular component: inputs and models as property bindings,
+ * outputs as events (lowercased, as the child declares them), a named slot as an
+ * `<ng-template>` carrying the child's slot directive, default content projected.
+ */
+function composedChild(ctx, { child, inputs, outputs, models, attrs, binds, bag, slots, content }, depth) {
+  const used = ctx.composed.get(child.tag) ?? { child, slots: new Set() };
+  ctx.composed.set(child.tag, used);
+  const parts = [
+    ...attrs.map((a) => `${a.name}="${escapeAttr(a.value)}"`),
+    ...binds.map((b) => (b.name === 'class' ? `[class]` : `[attr.${b.name}]`) + `="${escapeAttr(x(ctx, b.exp))}"`),
+    ...(bag ? (ctx.uses.add('MpPropsDirective'), [`[mpProps]="${escapeAttr(x(ctx, bag))}"`]) : []),
+    ...inputs.map((i) => `[${i.name}]="${escapeAttr(x(ctx, i.exp))}"`),
+    ...models.flatMap((m) => [`[${m.name}]="${escapeAttr(x(ctx, m.exp))}.value"`, `(${m.name}Change)="${escapeAttr(x(ctx, m.exp))}.set($event)"`]),
+    ...outputs.map((o) => `(${o.output.lower})="${escapeAttr(x(ctx, o.exp))}($event)"`),
+  ];
+  const named = slots.map((slot) => {
+    used.slots.add(slot.name);
+    const inner = { ...ctx, locals: new Set([...ctx.locals, ...slot.params]) };
+    const lets = slot.params.map((p) => ` let-${p}="${p}"`).join('');
+    return `${pad(depth + 1)}<ng-template ${child.names.slotSelector(slot.name)}${lets}>\n${children(inner, slot.children, depth + 2)}${pad(depth + 1)}</ng-template>\n`;
+  });
+  const inner = named.join('') + children(ctx, content, depth + 1);
+  const open = `<${child.names.selector}${parts.length ? ' ' + parts.join(' ') : ''}>`;
+  return inner ? `${pad(depth)}${open}\n${inner}${pad(depth)}</${child.names.selector}>\n` : `${pad(depth)}${open}</${child.names.selector}>\n`;
 }
 
 function partialCall(ctx, { partial, binds }, depth) {
@@ -99,7 +126,9 @@ function bare(ctx, el, depth) {
   if (el.tagType === TAG.COMPONENT) {
     const use = partialUse(ctx.src, el, ctx.partials);
     if (use) return partialCall(ctx, use, depth);
-    throw new TemplateError(ctx.src.file, el, `components are not supported (<${el.tag}>)`);
+    const composed = composedUse(ctx.src, el, ctx.components);
+    if (composed) return composedChild(ctx, composed, depth);
+    throw new TemplateError(ctx.src.file, el, `<${el.tag}> is neither a partial nor a registered component`);
   }
   checkElement(ctx.src, el);
 

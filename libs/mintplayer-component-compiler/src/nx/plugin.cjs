@@ -39,6 +39,8 @@ async function createNodesInternal(configFile, options, context) {
     `${root}/*/src/*.component.ts`,
     `${root}/*/*/src/*.component.ts`,
     `{projectRoot}/${slash(relative(projectRoot, configFile))}`,
+    // A composed child's manifest and template shape the parent's output.
+    ...(config.registry ?? []).flatMap((file) => [`{workspaceRoot}/${slash(file)}`, `{workspaceRoot}/${slash(dirname(file))}/**/*.view.vue`, `{workspaceRoot}/${slash(dirname(file))}/**/*.component.ts`]),
     ...extensions,
     `{workspaceRoot}/${compiler}/src/**/*.mjs`,
     `{workspaceRoot}/${compiler}/bin/*.mjs`,

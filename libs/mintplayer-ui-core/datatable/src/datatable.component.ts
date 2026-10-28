@@ -68,7 +68,7 @@ export default {
         rowClick: { type: 'RowEventDetail', doc: 'A row was clicked, or opened with Enter.' },
         rowDblClick: { type: 'RowEventDetail', doc: 'A row was double-clicked.' },
         rowContextMenu: { type: 'RowEventDetail', doc: "A row's context menu; `originalEvent.preventDefault()` suppresses the browser's." },
-        selectionChange: { type: 'SelectionChangeEventDetail', doc: 'The user changed the selection: the keys and their rows.' },
+        selectionChanged: { type: 'SelectionChangeEventDetail', doc: 'The user changed the selection: the keys and their rows.' },
         rowExpand: { type: 'TreeRowExpandDetail', doc: 'A tree row expanded.' },
         rowCollapse: { type: 'TreeRowExpandDetail', doc: 'A tree row collapsed.' },
         loadError: { type: 'DatatableLoadErrorDetail', doc: 'A `fetch` call rejected.' },

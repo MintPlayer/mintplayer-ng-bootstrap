@@ -44,10 +44,15 @@ export function emitAngularComponent(model, { generator, runtime = '@mintplayer/
   if (named.length) ['contentChild', 'Directive', 'TemplateRef'].forEach((n) => angularImports.add(n));
 
   // A template whose only bag is the host's never binds [mpProps]: importing it anyway is NG8113.
-  const template = emitAngular(model.src, { partials: model.partials, letProps: true });
+  const template = emitAngular(model.src, { partials: model.partials, components: model.components, letProps: true });
   const usesProps = template.uses.includes('MpPropsDirective');
   const usesOutlet = template.uses.includes('NgTemplateOutlet');
   const guards = template.partials.map((partial) => ({ partial, ...partialGuard(partial) }));
+  // Composed children and the slot directives their content uses. A standalone
+  // component is in its own template's scope, so composing itself imports nothing.
+  const composed = template.composed
+    .filter(({ child }) => child.names.angular !== names.angular)
+    .map(({ child, slots }) => ({ module: child.module.angular, names: [child.names.angular, ...[...slots].map((slot) => child.names.slotDirective(slot))] }));
   if (guards.length) angularImports.add('Directive');
   const machine = [...(usesProps ? ['MpPropsDirective'] : []), 'useCore', 'useScopedStyles'];
   const provides = model.provides;
@@ -64,6 +69,7 @@ export function emitAngularComponent(model, { generator, runtime = '@mintplayer/
     (partial.props.text.match(/\b[A-Za-z_]\w*\b/g) ?? []).filter((n) => partial.importedTypes.has(n)).map((n) => [partial.importedTypes.get(n), n]),
   );
   lines.push(coreImports(model, { values: coreNames, types, slotTypes: true, extraTypes: partialTypes }));
+  composed.forEach((c) => lines.push(`import { ${c.names.join(', ')} } from '${c.module}';`));
   styleImports(model)
     .filter(({ module }) => module !== model.entryModule)
     .forEach(({ module, names: list }) => lines.push(`import { ${list.join(', ')} } from '${module}';`));
@@ -103,7 +109,7 @@ export function emitAngularComponent(model, { generator, runtime = '@mintplayer/
   const meta = [
     `  selector: '${names.selector}',`,
     `  templateUrl: './${model.templateBase}.generated.html',`,
-    `  imports: [${[...(usesProps ? ['MpPropsDirective'] : []), ...(usesOutlet ? ['NgTemplateOutlet'] : []), ...guards.map((g) => g.directive)].join(', ')}],`,
+    `  imports: [${[...(usesProps ? ['MpPropsDirective'] : []), ...(usesOutlet ? ['NgTemplateOutlet'] : []), ...guards.map((g) => g.directive), ...composed.flatMap((c) => c.names)].join(', ')}],`,
     `  changeDetection: ChangeDetectionStrategy.OnPush,`,
   ];
   if (provides) meta.push(`  providers: [provideCoreContext(${provides}, ${names.angular})${has('providers') ? ', ...ext_providers' : ''}],`);

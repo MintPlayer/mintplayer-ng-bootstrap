@@ -102,7 +102,7 @@ describe('BsTimeline — selection', () => {
     const keys: (readonly string[])[] = [];
     const details: TimelineSelectionChangeDetail[] = [];
     const host = await render(
-      <BsTimeline items={ITEMS} selectable="single" onSelectedIdsChange={(k) => keys.push(k)} onSelectionChange={(d) => details.push(d)} />,
+      <BsTimeline items={ITEMS} selectable="single" onSelectedIdsChange={(k) => keys.push(k)} onSelectionChanged={(d) => details.push(d)} />,
     );
     await act(async () => rows(host)[1].click());
     expect(keys).toEqual([['b']]);

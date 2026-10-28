@@ -46,12 +46,12 @@ describe('BsDatatable', () => {
     wrapper.unmount();
   });
 
-  it('emits selectionchange and update:selectedIds on a row click', async () => {
+  it('emits selectionchanged and update:selectedIds on a row click', async () => {
     const { el, wrapper } = mountTable({ props: { selectionMode: 'single' } });
     el.querySelector<HTMLElement>('tbody tr[data-row-key="2"]')!.click();
     await settle();
     expect(wrapper.emitted('update:selectedIds')?.at(-1)).toEqual([['2']]);
-    expect(wrapper.emitted('selectionchange')?.at(-1)).toEqual([{ selectedIds: ['2'], selectedRows: [ROWS[1]] }]);
+    expect(wrapper.emitted('selectionchanged')?.at(-1)).toEqual([{ selectedIds: ['2'], selectedRows: [ROWS[1]] }]);
     expect(wrapper.emitted('rowclick')?.length).toBe(1);
     wrapper.unmount();
   });

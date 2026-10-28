@@ -45,7 +45,7 @@ export interface TreeSelectProvider {
   loadChildren(parentId: string, req: NodeRequest): Promise<NodePage>;
 }
 
-/** Detail of the `selectionChange` output. */
+/** Detail of the `selectionChanged` output. */
 export interface TreeSelectChangeEventDetail {
   /** Scalar in `single` mode, array otherwise. */
   value: TreeNode | TreeNode[] | null;

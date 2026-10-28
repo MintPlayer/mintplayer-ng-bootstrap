@@ -111,7 +111,7 @@ describe('mp-timeline — keyboard', () => {
     const keys: (readonly string[])[] = [];
     const changes: TimelineSelectionChangeDetail[] = [];
     el.addEventListener('selectedidschange', (e) => keys.push((e as CustomEvent).detail));
-    el.addEventListener('selectionchange', (e) => changes.push((e as CustomEvent).detail));
+    el.addEventListener('selectionchanged', (e) => changes.push((e as CustomEvent).detail));
     key(el, 'Enter');
     await settle(el);
     expect(keys).toEqual([['a']]);
@@ -173,7 +173,7 @@ describe('mp-timeline — selection by pointer', () => {
     const el = await mount({ items: ITEMS, selectable: 'single', selectedIds: ['c'] });
     expect(selected(el)).toEqual(['false', 'false', 'true']);
     const changes: unknown[] = [];
-    el.addEventListener('selectionchange', (e) => changes.push(e));
+    el.addEventListener('selectionchanged', (e) => changes.push(e));
     click(rows(el)[2]);
     expect(changes).toEqual([]);
   });
@@ -209,7 +209,7 @@ describe('mp-timeline — declarative items', () => {
   it('selects an item by its item-id and rebuilds its model from its text', async () => {
     const el = await mount({ selectable: 'single' }, ITEMS_HTML);
     const changes: TimelineSelectionChangeDetail[] = [];
-    el.addEventListener('selectionchange', (e) => changes.push((e as CustomEvent).detail));
+    el.addEventListener('selectionchanged', (e) => changes.push((e as CustomEvent).detail));
     rows(el)[2].click();
     await settle(el);
     expect(el.selectedIds).toEqual(['c']);

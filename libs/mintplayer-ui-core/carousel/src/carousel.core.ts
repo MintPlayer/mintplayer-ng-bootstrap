@@ -57,8 +57,8 @@ export interface CarouselState {
 export interface CarouselEvents {
   slideChange: CarouselSlideChangeEventDetail;
   pausedChange: boolean;
-  animationStart: void;
-  animationEnd: void;
+  slideStart: void;
+  slideEnd: void;
 }
 
 export interface CarouselMethods {
@@ -244,11 +244,11 @@ export const carouselCore = defineCore<
         },
         onAnimationStart: () => {
           api.setState({ animating: true });
-          api.emit('animationStart', undefined);
+          api.emit('slideStart', undefined);
         },
         onAnimationEnd: () => {
           api.setState({ animating: false });
-          api.emit('animationEnd', undefined);
+          api.emit('slideEnd', undefined);
         },
       },
       {
