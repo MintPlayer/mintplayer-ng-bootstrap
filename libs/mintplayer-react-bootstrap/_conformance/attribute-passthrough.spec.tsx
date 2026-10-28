@@ -208,7 +208,7 @@ const CASES: Case[] = [
   bare('BsNavbarNav', 'div.navbar-nav', BsNavbarNav),
   bare('BsOtpInput', 'input', BsOtpInput),
   bare('BsPagination', 'nav', BsPagination),
-  bare('BsPhoneInput', 'mp-phone-input', BsPhoneInput),
+  bare('BsPhoneInput', 'input[type=tel]', BsPhoneInput),
   bare('BsQueryBuilder', 'mp-query-builder', BsQueryBuilder),
   bare('BsRadio', 'input[type=radio]', BsRadio),
   { ...bare('BsRadioGroup', 'div', BsRadioGroup), fixedRole: 'radiogroup' },

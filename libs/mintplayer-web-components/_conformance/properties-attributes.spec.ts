@@ -124,12 +124,13 @@ const OVERRIDES: Record<string, Override> = {
     restored: new Date('2024-01-15T09:30:00'),
     reason: 'the date is navigation state the toolbar also changes; removing the attribute keeps the current date',
   },
+  'mp-input-group@size': { value: 'lg', reason: 'enum read straight from the attribute: sm | md | lg (md when absent)' },
   'mp-phone-input.value': { value: '+32470123456', reason: 'normalised to E.164 against the selected country' },
   'mp-phone-input@value': { value: '+32470123456', reason: 'normalised to E.164 against the selected country' },
   'mp-phone-input@country': {
     value: 'be',
-    restored: 'be',
-    reason: 'a phone input always has a country; removing the attribute keeps the current one',
+    restored: null,
+    reason: 'country is a model: removing the attribute clears the explicit pick, and the picker falls back to defaultCountry',
   },
 };
 

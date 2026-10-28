@@ -9,7 +9,7 @@ import { BsInputGroupComponent } from '@mintplayer/ng-bootstrap/input-group';
 import { BsPhoneInputComponent } from '@mintplayer/ng-bootstrap/phone-input';
 import { BsSelectComponent } from '@mintplayer/ng-bootstrap/select';
 import { BsCheckboxComponent } from '@mintplayer/ng-bootstrap/checkbox';
-import type { PhoneChangeEventDetail } from '@mintplayer/web-components/phone-input';
+import type { PhoneChangeEventDetail } from '@mintplayer/ng-bootstrap/phone-input';
 import { dedent } from 'ts-dedent';
 
 @Component({
@@ -65,7 +65,7 @@ export class PhoneInputComponent {
     <bs-form>
       <bs-phone-input [(ngModel)]="phone" name="phone"
                       defaultCountry="be"
-                      (phoneChange)="onPhoneChange($event)" />
+                      (phonechange)="onPhoneChange($event)" />
     </bs-form>
   `;
 
@@ -74,7 +74,7 @@ export class PhoneInputComponent {
     import { FormsModule } from '@angular/forms';
     import { BsFormComponent } from '@mintplayer/ng-bootstrap/form';
     import { BsPhoneInputComponent } from '@mintplayer/ng-bootstrap/phone-input';
-    import type { PhoneChangeEventDetail } from '@mintplayer/web-components/phone-input';
+    import type { PhoneChangeEventDetail } from '@mintplayer/ng-bootstrap/phone-input';
 
     @Component({
       selector: 'my-phone-demo',
@@ -102,8 +102,8 @@ export class PhoneInputComponent {
   `;
 
   protected readonly snippetGroupHtml = dedent`
-    <!-- bs-input-group joins any mix of controls, including ones that keep
-         their own shadow root: the corners pair and the borders collapse.
+    <!-- bs-input-group joins any mix of controls, including a whole phone
+         input: the corners pair and the borders collapse.
          Below ~6rem per control the row wraps instead of crushing them;
          override --mp-group-min-item-width for a denser toolbar. -->
     <bs-input-group>
@@ -113,10 +113,9 @@ export class PhoneInputComponent {
   `;
 
   protected readonly snippetValidationTs = dedent`
-    // error-text is mirrored inward by BsControlValidityDirective, which the
-    // wrapper applies automatically — the message is rendered INSIDE the
-    // component's shadow root and referenced by aria-errormessage, because an
-    // IDREF from the real input cannot reach a node in your template.
+    // The control's errors reach the field through BsControlValidityDirective,
+    // which the component applies itself: the message renders under the field,
+    // referenced by aria-errormessage from the number input.
     <bs-phone-input [(ngModel)]="phone" name="phone" required
                     [errorMessages]="{ required: 'A phone number is required.' }" />
   `;

@@ -133,7 +133,7 @@ Every item below is authored as a D10 component source once M3b lands.
 - [x] signature-pad
 - [x] theme-toggle (Q2)
 - [x] code-snippet: highlighting after hydration (S11); the rows set through the compiler's new `v-html`; highlight.js loaders moved to ui-core
-- [ ] phone-input; convert the Lit `mp-input-group` to a light front over `ui-core/input-group` with it
+- [x] phone-input; convert the Lit `mp-input-group` to a light front over `ui-core/input-group` with it. The flag corpus moved to `ui-core/flags`, the rich-option rules of the select became a shared Sass mixin (`select/src/styles/_rich-select.scss`), and the stacked layout is a container query (no ResizeObserver)
 - [ ] M4 controls that sit in a group (select, phone-input, datepicker, ...) read the `.input-group-sm/lg` ancestor and the `--mp-group-radius-*` channel in their own scoped sheets: the group no longer mirrors `size` onto them
 - [ ] splitter
 - [ ] timeline (+ item)

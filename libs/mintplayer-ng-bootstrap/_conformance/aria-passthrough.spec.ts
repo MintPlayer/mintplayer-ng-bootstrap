@@ -10,7 +10,6 @@ import { BsFileManagerComponent } from '@mintplayer/ng-bootstrap/file-manager';
 import { BsFormComponent } from '@mintplayer/ng-bootstrap/form';
 import { BsQueryBuilderComponent } from '@mintplayer/ng-bootstrap/query-builder';
 import { BsSchedulerComponent } from '@mintplayer/ng-bootstrap/scheduler';
-import { BsPhoneInputComponent } from '@mintplayer/ng-bootstrap/phone-input';
 import { BsSplitterComponent } from '@mintplayer/ng-bootstrap/splitter';
 import { BsTimelineComponent } from '@mintplayer/ng-bootstrap/timeline';
 import { BsTreeSelectComponent } from '@mintplayer/ng-bootstrap/tree-select';
@@ -120,7 +119,6 @@ const WRAPPERS: WrapperCase[] = [
   { selector: 'bs-file-manager', tag: 'mp-file-manager', component: BsFileManagerComponent },
   { selector: 'bs-query-builder', tag: 'mp-query-builder', component: BsQueryBuilderComponent },
   { selector: 'bs-scheduler', tag: 'mp-scheduler', component: BsSchedulerComponent },
-  { selector: 'bs-phone-input', tag: 'mp-phone-input', component: BsPhoneInputComponent },
   { selector: 'bs-splitter', tag: 'mp-splitter', component: BsSplitterComponent },
   { selector: 'bs-timeline', tag: 'mp-timeline', component: BsTimelineComponent },
   {

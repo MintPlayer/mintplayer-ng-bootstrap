@@ -42,7 +42,7 @@ const SOURCE_PKG = 'country-flag-icons';
 const SOURCE_VERSION = '1.6.20';
 
 export function flagPaths(repoRoot = REPO_ROOT) {
-  const flagsRoot = join(repoRoot, 'libs/mintplayer-web-components/flags');
+  const flagsRoot = join(repoRoot, 'libs/mintplayer-ui-core/flags');
   return { flagsRoot, assetsDir: join(flagsRoot, 'src/assets') };
 }
 

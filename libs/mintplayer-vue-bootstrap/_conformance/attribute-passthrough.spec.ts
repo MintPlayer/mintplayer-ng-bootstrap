@@ -127,7 +127,7 @@ const TARGETS: Record<string, string> = {
   BsNavbarItem: 'div.nav-item',
   BsOtpInput: 'input',
   BsPagination: 'nav',
-  BsPhoneInput: 'mp-phone-input',
+  BsPhoneInput: 'input[type=tel]',
   BsQueryBuilder: 'mp-query-builder',
   BsRadio: 'input[type=radio]',
   BsRadioGroup: 'div[role=radiogroup]',

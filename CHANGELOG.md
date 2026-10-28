@@ -288,6 +288,34 @@ breaking change is a major. (2.20.0 and 2.21.0 broke `^2.x` consumers in a minor
     `signature-pad-canvas`, `signature-pad-text`, `signature-pad-undo` and `signature-pad-clear`.
     `MpSignaturePadElement` is now `MpSignaturePad`. The `Signature`, `Stroke` and `Point` types come from
     `@mintplayer/ui-core/signature-pad` and are re-exported by every front.
+- **Phone input is generated from one source in every front (issue #437).** It is written once in
+  `@mintplayer/ui-core/phone-input` (`phoneInputCore`, `connectPhoneInput`) and compiled into all four
+  fronts, so it is server-rendered everywhere. With JS off it is a plain country select and tel input, and
+  the typed text submits under `name`; once live, a hidden input submits the E.164 value instead.
+  - **Every front:** the root is `.phone-input` (a `div` in React and Vue, the host in Angular and Lit), and
+    it holds one Bootstrap `.input-group`: a native `select.form-select`, a `span.input-group-text.addon`
+    with the flag and dial code, and the `input[type=tel]`. Consumer attributes (`aria-label`, `id`, ...)
+    land on the tel input. Validity is on that input too (`required`, and a custom error for a number the
+    rules reject).
+  - **Two-way:** `value` (E.164, or null) and `country`. The events are `valueChange` (the E.164 string),
+    `countryChange` (the ISO code) and `phoneChange` (`PhoneChangeEventDetail`): Angular `(valuechange)`,
+    `(countrychange)`, `(phonechange)`; React `onValueChange`, `onCountryChange`, `onPhoneChange`, each
+    with the payload itself rather than a DOM event.
+  - **Angular:** the component carries its own `ControlValueAccessor` and `BsControlValidityDirective` as
+    host directives, so `[(ngModel)]`, `[formControl]` and `errorMessages` work as before.
+  - **Narrow layout:** a container query on `.phone-input` stacks the picker above the number below 22rem.
+    The `ResizeObserver` and the `stacked` attribute are gone.
+  - **Methods:** `focusInput()` (the number field, never the picker) and `whenReady()` (flags and the rules in
+    flight have landed).
+  - **Removed:** the Lit element's form association (`formValue`, `formReset`, `formRestore`) and its
+    `nationalNumber` / `dialCode` / `valid` getters; read them from `phoneChange`.
+  - **Moved:** the flag corpus (`loadAllFlags`, `loadFlag`, `FlagMap`) is now `@mintplayer/ui-core/flags`,
+    no longer `@mintplayer/web-components/flags`. `PhoneChangeEventDetail` comes from ui-core and every front
+    re-exports it.
+- **`mp-input-group` is a light element (issue #437).** Like `bs-input-group`, the host is the
+  `.input-group` itself: no shadow root, no slot, and its children are the group's items. It no longer
+  writes `size` onto `mp-*` children, because a control in a group reads the group's classes and the
+  `--mp-group-radius-*` properties itself. `part="group"` is gone.
 - **Code snippet is generated from one source in every front (issue #437).** It is written once in
   `@mintplayer/ui-core/code-snippet` (`codeSnippetCore`, `connectCodeSnippet`) and compiled into all four
   fronts, so it is server-rendered everywhere. With JS off it shows the escaped source: line-numbered,

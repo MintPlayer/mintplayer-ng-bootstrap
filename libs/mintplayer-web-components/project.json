@@ -24,8 +24,6 @@
       "outputs": [
         "{projectRoot}/**/*.element.template.ts",
         "{projectRoot}/**/*.styles.ts",
-        "{projectRoot}/flags/src/flag-loaders.generated.ts",
-        "{projectRoot}/flags/src/all-flags.generated.ts",
         "{projectRoot}/theming/bs-theme-preboot.js"
       ],
       "inputs": [
@@ -33,11 +31,9 @@
         "{projectRoot}/**/*.element.scss",
         "{projectRoot}/**/*.styles.scss",
         "{projectRoot}/**/*.light.scss",
-        "{projectRoot}/flags/src/assets/*.svg",
         "{workspaceRoot}/tools/scripts/build-web-components.mjs",
         "{workspaceRoot}/tools/scripts/lib/wc-codegen.mjs",
         "{workspaceRoot}/tools/scripts/lib/rescope-css.mjs",
-        "{workspaceRoot}/tools/scripts/build-flag-loaders.mjs",
         "{projectRoot}/theming/src/**/*.ts",
         "{workspaceRoot}/libs/mintplayer-ui-core/theming/src/**/*.ts",
         "{workspaceRoot}/tools/scripts/build-theme-preboot.mjs",
@@ -48,7 +44,6 @@
         "parallel": false,
         "commands": [
           "node tools/scripts/build-web-components.mjs libs/mintplayer-web-components",
-          "node tools/scripts/build-flag-loaders.mjs",
           "node tools/scripts/build-theme-preboot.mjs"
         ]
       }

@@ -18,7 +18,7 @@ axeAuditSuite(test, expect, [
     // Open the picker: the closed control and the 244-option listbox are
     // different DOM, and only the second exercises the rich-option markup.
     interact: async (page) => {
-      await page.locator('mp-phone-input').first().click();
+      await page.locator('.phone-input select').first().click();
     },
   },
   { path: '/basic/forms/select' },

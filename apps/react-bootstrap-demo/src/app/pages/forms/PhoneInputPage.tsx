@@ -2,17 +2,18 @@ import { useState } from 'react';
 import { BsPhoneInput } from '@mintplayer/react-bootstrap/phone-input';
 import { BsInputGroup } from '@mintplayer/react-bootstrap/input-group';
 import { BsCodeSnippet } from '@mintplayer/react-bootstrap/code-snippet';
-import type { PhoneChangeEventDetail } from '@mintplayer/web-components/phone-input';
+import type { PhoneChangeEventDetail } from '@mintplayer/react-bootstrap/phone-input';
 
 const SOURCE = `<BsPhoneInput
-  value={phone ?? ''}
+  value={phone}
   defaultCountry="be"
   inputLabel="Phone number"
-  onValueChange={(e) => { setPhone(e.detail.value); setDetail(e.detail); }}
+  onValueChange={setPhone}
+  onPhoneChange={setDetail}
 />`;
 
-const GROUP_SOURCE = `{/* The group joins controls that keep their own shadow
-    root, which Bootstrap's own CSS cannot reach. */}
+const GROUP_SOURCE = `{/* The group joins a whole phone input: its outer
+    corners pair with the addon. */}
 <BsInputGroup>
   <span className="addon">Tel</span>
   <BsPhoneInput defaultCountry="be" />
@@ -38,14 +39,12 @@ export function PhoneInputPage() {
       <section data-demo="basic">
         <h2>Basic usage</h2>
         <BsPhoneInput
-          value={phone ?? ''}
+          value={phone}
           defaultCountry="be"
           inputLabel="Phone number"
-          locale={locale || undefined}
-          onValueChange={(e) => {
-            setPhone(e.detail.value);
-            setDetail(e.detail);
-          }}
+          locale={locale || null}
+          onValueChange={setPhone}
+          onPhoneChange={setDetail}
         />
         <p className="mt-2 mb-1">
           Value: <code>{phone ?? 'null'}</code>

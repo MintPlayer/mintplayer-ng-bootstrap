@@ -1,0 +1,108 @@
+// The rich-options tier of a customizable select (`appearance: base-select`),
+// shared by the select and the phone input's country picker. Every rule is
+// anchored on `$select` (a stamped select) and shipped verbatim (@mps-global):
+// the options, the button and <selectedcontent> carry no scope. See
+// select.scoped.scss for why each rule is doubly gated.
+@mixin rich-select($select) {
+  @supports (appearance: base-select) {
+    /*! @mps-global */
+    #{$select}:has(> button) {
+      appearance: base-select;
+      // Bootstrap's background caret would sit next to the UA's ::picker-icon, and
+      // its right gutter existed only for that caret. Symmetric padding, so RTL
+      // cannot drift.
+      background-image: none;
+      padding-inline: $form-select-padding-x;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      text-align: start;
+      // A flex closed face would WRAP the label and grow the control; a native select never wraps.
+      white-space: nowrap;
+      overflow: hidden;
+    }
+
+    /*! @mps-global */
+    #{$select}:has(> button)::picker(select) {
+      appearance: base-select;
+      border: var(--bs-border-width) solid var(--bs-border-color);
+      border-radius: var(--bs-border-radius);
+      background: var(--bs-body-bg);
+      padding: 0.25rem 0;
+      max-height: 20rem;
+      overflow-y: auto;
+      // Long localized labels set the picker's max-content width and overflowed a
+      // 320px viewport (measured, S11): cap it, never narrower than the trigger.
+      box-sizing: border-box;
+      min-width: anchor-size(self-inline);
+      max-width: min(100vw - 2rem, 22rem);
+    }
+
+    // Authored in the template (button > selectedcontent): WebKit's UA-generated
+    // button mirrors nothing into the closed face.
+    /*! @mps-global */
+    #{$select}:has(> button) selectedcontent {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      min-width: 0;
+    }
+
+    // Ellipsis must sit on .rich-label with min-width: 0: an option is a flex
+    // container here, so text-overflow on it is inert.
+    /*! @mps-global */
+    #{$select}:has(> button) selectedcontent .rich-label,
+    #{$select}:has(> button) option .rich-label {
+      min-width: 0;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    /*! @mps-global */
+    #{$select}:has(> button)::picker-icon {
+      margin-inline-start: auto;
+    }
+
+    /*! @mps-global */
+    #{$select}:has(> button):open::picker-icon {
+      rotate: 180deg;
+    }
+
+    /*! @mps-global */
+    #{$select}:has(> button) option {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.25rem 0.75rem;
+    }
+
+    /*! @mps-global */
+    #{$select}:has(> button) option:checked {
+      background-color: var(--bs-secondary-bg);
+    }
+
+    // A stable box for an inline flag SVG, decorative by contract.
+    /*! @mps-global */
+    #{$select}:has(> button) option svg,
+    #{$select}:has(> button) selectedcontent svg {
+      width: 1.25rem;
+      height: auto;
+      flex: 0 0 auto;
+    }
+
+    // selectedcontent CLONES the selected option's content, so these hooks decide
+    // which parts show where. display:none content is excluded from the option's
+    // accessible name.
+    /*! @mps-global */
+    #{$select}:has(> button) option [data-closed-only],
+    #{$select}:has(> button) selectedcontent [data-list-only] {
+      display: none;
+    }
+
+    /*! @mps-global */
+    #{$select}:has(> button) selectedcontent [data-closed-only] {
+      display: inline;
+    }
+  }
+}
