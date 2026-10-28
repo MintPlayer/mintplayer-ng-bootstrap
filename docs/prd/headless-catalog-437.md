@@ -1,6 +1,6 @@
 # PRD — Headless core + four fronts for the whole catalog (#437)
 
-**Status:** Proposed (2026-10-20). Spikes S1–S12 gate the design decisions marked *(spike)*.
+**Status:** In progress (updated 2026-10-28). Most of Waves A–C and the compiler nesting extension have landed (still open there: the navbar item, the spikes S2/S4/S6/S7/S9 and S15–S17/S19); Wave D has the file manager and tile manager done (plus the splitter, moved into M6), with the dock, ribbon and scheduler left. The plan file tracks each item. Spikes S1–S12 gate the design decisions marked *(spike)*.
 **Issue:** #437. **Pilot:** #436 typeahead (`docs/prd/typeahead-wc-436.md`, PR #438).
 **Plan:** `docs/prd/headless-catalog-437-plan.md`.
 **Delivery:** one pull request, per the workspace rule. Milestones are committed separately and the PR is squashed.
@@ -171,7 +171,7 @@ The pilot did not lift any of this; it lands before the waves that need it.
 
 ### D10. The component compiler: one source, four generated fronts *(owner request 2026-10-28; spikes S14–S19)*
 
-> **Extension (2026-10-28):** templates may use recursive **partials** and **compose** other D10 components; see `docs/prd/component-compiler-nesting-437.md` (spikes NS1–NS9, all passed). **Landed 2026-10-28:** the rule below that templates contain no components is superseded. A template may call partials and compose `mp-*` elements of any group; the compiler README has the rules.
+> **Extension (2026-10-28):** templates may use recursive **partials** and **compose** other D10 components; see `docs/prd/component-compiler-nesting-437.md` (spikes NS1–NS9, all passed). **Landed 2026-10-28:** the rule below that templates contain no components is superseded. A template may call partials and compose `mp-*` elements of any group; the compiler README has the rules. **`<teleport :to>` (2026-10-28, for the dock):** content renders into an element the core owns, through React `createPortal`, Vue `<Teleport>`, Angular `[mpTeleport]` and Lit `teleport()`. Nothing renders while the target is null, so teleported content does not server-render.
 
 S13 proved that a component's markup can be written once. D10 widens that to the whole component. A component is authored once, as a **component source**. A workspace library compiles it into all four fronts and writes each one into the right front library. Hand-written fronts become the exception.
 
@@ -433,9 +433,9 @@ LOC is element code only (the investigation, 2026-10-20).
 
 | Component | LOC | Depends on | No-JS target | Risk |
 |---|---|---|---|---|
-| file-manager | 2120 | splitter, treeview, datatable | breadcrumb + listing table with folder links + multipart upload form | H |
+| file-manager | 2120 | splitter, treeview, datatable | breadcrumb + listing table with folder links + multipart upload form. **Done (c875d03a):** the server renders the full browser with commands disabled, but folder links and the upload form were not built (deviation, see plan) | H |
 | tile-manager | 1654 | `drag` | a static tile grid — **done on master (#441)** | H |
-| dock (`mint-dock-manager`) | 5565 | `drag`, splitter | a static panel layout | H |
+| dock (`mint-dock-manager`) | 5565 | `drag`, splitter | a static panel layout. **Owner decision (2026-10-28):** pane content is portalled (`<teleport>`) into core-owned per-pane hosts, so it survives a redock but is not server-rendered; the layout chrome still is | H |
 | ribbon (+17) | 4249 | roving, dropdown-menu | static tabs (radio) + buttons | H |
 | scheduler | 11617 | scheduler-core, `virtual-window`, `drag`, `overlay` | S7: static grid with positioned events | H |
 
@@ -483,5 +483,5 @@ Charts have no Vue wrapper today. A Vue front is added, because parity is a goal
 
 ## 13. Open questions (owner)
 
-- **Q1.** Scheduler, dock, ribbon and tile-manager are in scope. Do they stay in scope if S7 is a no-go, or does the owner want them kept as Lit-only components (an explicit exception)? The default is in scope.
+- **Q1.** Scheduler, dock, ribbon and tile-manager are in scope. Do they stay in scope if S7 is a no-go, or does the owner want them kept as Lit-only components (an explicit exception)? The default is in scope. *Partly resolved (2026-10-28):* the tile manager landed headless (#441), and the owner rejected a Lit-only dock in favour of portals. The scheduler still waits on S7.
 - **Q2.** Should the theme toggle's no-JS form post to a demo endpoint, or should the toggle simply be hidden without JS? *Resolved (default taken):* neither. The toggle is server-rendered **disabled** at its final size, and hydration enables it. A posting form would need an endpoint in every consumer's app, which a library cannot ship. Hiding it would move the navbar on hydration. No-JS visitors still get OS-following colours from the pre-boot script and the cookie SSR. The owner can still ask for the endpoint.

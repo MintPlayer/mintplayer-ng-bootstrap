@@ -2,7 +2,7 @@
 
 **PRD:** `docs/prd/component-compiler-nesting-437.md`.
 **Parent plan:** `docs/prd/headless-catalog-437-plan.md` (this is milestone M5a there).
-**Status:** not started.
+**Status:** Complete (2026-10-28).
 **Branch / delivery:** `feat/headless-catalog-437`, same PR (#439). Commit per milestone; tests batched at the end of
 the milestone set (N5), targeted specs only, capped with `timeout` and `--testTimeout=15000`.
 

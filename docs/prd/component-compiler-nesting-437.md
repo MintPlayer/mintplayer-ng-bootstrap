@@ -2,7 +2,7 @@
 
 **Parent PRD:** `docs/prd/headless-catalog-437.md` §5 D10 (the component compiler).
 **Plan:** `docs/prd/component-compiler-nesting-437-plan.md`.
-**Status:** spikes not started. Raised 2026-10-28 by the owner after the query builder had to flatten its tree.
+**Status:** Complete (2026-10-28): spikes NS1–NS9 passed, implemented in f2b5b4b6, 89216a7c and b4bb6a05. Raised 2026-10-28 by the owner after the query builder had to flatten its tree. A later extension, `<teleport :to>` (215247ab), is documented in the parent PRD D10 and the compiler README.
 **Delivery:** in the #437 PR (`feat/headless-catalog-437`), before the hierarchy chart and M6.
 
 ## 1. Summary
