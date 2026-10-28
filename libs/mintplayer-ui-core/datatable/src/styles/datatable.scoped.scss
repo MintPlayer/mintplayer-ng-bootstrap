@@ -1,4 +1,4 @@
-:host {
+.datatable {
   display: block;
   width: 100%;
   position: relative;
@@ -337,10 +337,24 @@ tr[data-mps=datatable] > .checkbox-cell[data-mps=datatable] {
   cursor: pointer;
 }
 
+// The checkboxes are Bootstrap's .form-check-input; the cell centres them.
+.checkbox-cell .form-check-input {
+  margin: 0;
+  vertical-align: middle;
+}
+
+// Deselect-all shows only while something is selected. visibility also takes
+// it out of the tab order and the accessibility tree.
+.form-check-input[data-hidden='true'] {
+  visibility: hidden;
+}
+
 // ── Tree mode ──────────────────────────────────────────────────────────────
 .tree-chevron-cell {
   width: 2rem;
   padding-right: 0;
+  // The row's depth comes from the template; the indent per level from the table.
+  padding-inline-start: calc(var(--mp-datatable-depth, 0) * var(--mp-datatable-tree-indent, 1.25rem));
   white-space: nowrap;
   user-select: none;
 }
@@ -413,12 +427,12 @@ tbody tr[data-placeholder="true"] {
 // instead and scroll away with it. Each rule below out-ranks the default it
 // replaces by carrying the host attribute.
 
-:host([fill]) {
+.datatable[data-fill='true'] {
   height: 100%;
   overflow: auto;
 }
 
-:host([fill]) .datatable-shell {
+.datatable[data-fill='true'] .datatable-shell {
   height: auto;
   // Few rows still put the footer at the bottom of the parent.
   min-height: 100%;
@@ -427,14 +441,14 @@ tbody tr[data-placeholder="true"] {
   min-width: 100%;
 }
 
-:host([fill]) .datatable-scroll {
+.datatable[data-fill='true'] .datatable-scroll {
   overflow: visible;
   flex: 1 0 auto;
   // The virtual viewport cap: the parent sizes the scroller here.
   max-height: none;
 }
 
-:host([fill]) .datatable-scroll > table {
+.datatable[data-fill='true'] .datatable-scroll > table {
   // `width: 100%` inside a `max-content` shell is cyclic, and Chromium resolved
   // it to 800000px. The measured header widths keep a narrow parent scrolling
   // horizontally instead of squeezing the columns.
@@ -446,7 +460,7 @@ tbody tr[data-placeholder="true"] {
   border-spacing: 0;
 }
 
-:host([fill]) .datatable-scroll > table > thead {
+.datatable[data-fill='true'] .datatable-scroll > table > thead {
   position: sticky;
   top: 0;
   z-index: 2;
@@ -457,13 +471,13 @@ tbody tr[data-placeholder="true"] {
 // `--mp-datatable-fill-bg` (header and footer) lets a container with its own
 // background, such as a card, match it. It is inherited, never declared here.
 // The `> table >` chain keeps a table rendered inside a cell template out.
-:host([fill]) .datatable-scroll > table > thead th {
+.datatable[data-fill='true'] .datatable-scroll > table > thead th {
   background-color: var(--mp-datatable-fill-bg, var(--bs-body-bg, #fff));
 }
 
 // The hover tint is translucent; layer it over the opaque background, as in
 // virtual mode, so the header stays opaque while hovered.
-:host([fill]) .datatable-scroll > table > thead th[data-sortable="true"]:hover {
+.datatable[data-fill='true'] .datatable-scroll > table > thead th[data-sortable="true"]:hover {
   background-color: var(--mp-datatable-fill-bg, var(--bs-body-bg, #fff));
   background-image: linear-gradient(
     var(--mp-datatable-row-hover-bg),
@@ -471,7 +485,7 @@ tbody tr[data-placeholder="true"] {
   );
 }
 
-:host([fill]) .datatable-footer {
+.datatable[data-fill='true'] .datatable-footer {
   position: sticky;
   bottom: 0;
   z-index: 2;
@@ -563,19 +577,20 @@ tr.filter-row th {
   flex: 0 0 auto;
 }
 
-// ─── Filter panel (rendered into the document-root overlay pane) ───────────
-// Reached by the document-level light-tier sheet even though it sits outside
-// this element's subtree: the sheet is installed on the document and anchors on
-// [data-mps=datatable], which survives the move. Tag-scoping would not have.
+// ─── Filter panel ──────────────────────────────────────────────────────────
+// A native popover in its filter cell: the top layer escapes .datatable-scroll's
+// clipping, and trackPopovers places it under its trigger through the
+// --mp-popover-* properties.
 
 .filter-panel {
-  // REQUIRED, not decoration. OverlayController positions by writing
-  // `left`/`top` onto this element, and a statically-positioned element ignores
-  // both — the panel then renders at the pane's origin, i.e. the top-left
-  // corner of the viewport, wherever its trigger actually is. Every other
-  // OverlayController consumer declares this on its own panel for the same
-  // reason. jsdom has no layout, so no unit test can catch its absence.
   position: fixed;
+  inset: auto;
+  margin: 0;
+  left: var(--mp-popover-left);
+  top: var(--mp-popover-top);
+  // The panel lives in a header cell: do not inherit its alignment and weight.
+  text-align: start;
+  font-weight: 400;
   min-width: 12rem;
   max-width: min(22rem, calc(100vw - 2rem));
   padding: 0.5rem;
@@ -587,7 +602,7 @@ tr.filter-row th {
 }
 
 .filter-panel-body {
-  // Either the consumer's node or the built-in panel below is mounted here.
+  // Either the consumer's filter slot or the built-in panel below renders here.
   // Nothing in this block may assume anything about a consumer's contents.
   display: block;
   max-height: min(20rem, 60vh);
@@ -599,10 +614,12 @@ tr.filter-row th {
 // opened it may well be on a phone.
 
 .resize-panel {
-  // Required for the same reason as on .filter-panel: the controller writes
-  // left/top onto this element.
+  // A native popover, placed by trackPopovers through the --mp-popover-* properties.
   position: fixed;
-  display: flex;
+  inset: auto;
+  margin: 0;
+  left: var(--mp-popover-left);
+  top: var(--mp-popover-top);
   flex-direction: column;
   gap: 0.375rem;
   min-width: 12rem;
@@ -612,6 +629,11 @@ tr.filter-row th {
   border: 1px solid var(--mp-datatable-border-color, var(--bs-border-color, rgba(0, 0, 0, 0.125)));
   border-radius: 0.375rem;
   box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
+}
+
+// Only while open: a display value on the closed popover would show it.
+.resize-panel:popover-open {
+  display: flex;
 }
 
 .resize-panel-steps {
@@ -658,10 +680,9 @@ tr.filter-row th {
 }
 
 // ─── Built-in filter panel ─────────────────────────────────────────────────
-// Rendered only when the column supplies no `filterRenderer`, or supplies one
-// that returns null. A consumer's own panel reaches none of these rules: they
-// all anchor on class names this component renders, and the rewriter stamps
-// only what it rendered.
+// Rendered when no `filter` slot is supplied. A consumer's own panel reaches
+// none of these rules: they all anchor on class names this component renders,
+// and the rewriter stamps only what it rendered.
 
 .filter-clear,
 .filter-invert {

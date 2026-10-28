@@ -13,22 +13,13 @@ import { dedent } from 'ts-dedent';
 export class CodeSnippetComponent {
 
   html = dedent`
-    <bs-datatable #tabel [settings]="settings" (settingsChange)="loadArtists()">
-      <div *bsDatatableColumn="'Name'; sortable: true">
-        Artist
-      </div>
-      <div *bsDatatableColumn="'YearStarted'; sortable: true">
-        Year started
-      </div>
-      <div *bsDatatableColumn="'YearQuit'; sortable: true">
-        Year quit
-      </div>
-
-      <ng-container *bsRowTemplate="let artist of artists">
+    <bs-datatable #tabel [columns]="columns" [fetch]="fetchArtists"
+      [(sortColumns)]="sortColumns" pagination>
+      <ng-template bsDatatableRow let-artist="row">
         <td class="text-nowrap">{{ artist.name }}</td>
         <td class="text-nowrap">{{ artist.yearStarted }}</td>
         <td class="text-nowrap">{{ artist.yearQuit }}</td>
-      </ng-container>
+      </ng-template>
     </bs-datatable>`;
 
   sample = dedent`

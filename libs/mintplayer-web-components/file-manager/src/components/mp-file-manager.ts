@@ -12,10 +12,11 @@ import '@mintplayer/web-components/treeview';
 import '@mintplayer/web-components/datatable';
 
 import type { TreeNode } from '@mintplayer/web-components/treeview';
-import type {
-  DatatableColumnDef,
-  RowEventDetail,
-  SelectionChangeEventDetail as DatatableSelectionEvent,
+import {
+  cellText,
+  type DatatableColumnDef,
+  type RowEventDetail,
+  type SelectionChangeEventDetail as DatatableSelectionEvent,
 } from '@mintplayer/web-components/datatable';
 
 import { fileManagerStyles } from '../styles';
@@ -947,30 +948,33 @@ export class MpFileManager extends LitElement {
         label: m.name,
         sortable: true,
         cellClass: 'text-nowrap',
-        cellRenderer: (row) => this.renderNameCell(row),
       },
       {
         name: 'size',
         label: m.size,
         sortable: true,
         cellClass: 'text-nowrap',
-        cellRenderer: (row) => this.formatSize(row),
+        format: (row) => this.formatSize(row),
       },
       {
         name: 'modifiedAt',
         label: m.modified,
         sortable: true,
         cellClass: 'text-nowrap',
-        cellRenderer: (row) => this.formatDate(row),
+        format: (row) => this.formatDate(row),
       },
       {
         name: 'type',
         label: m.type,
         sortable: true,
         cellClass: 'text-nowrap',
-        cellRenderer: (row) => (row.type === 'folder' ? m.folder : (row.mimeType ?? m.file)),
+        format: (row) => (row.type === 'folder' ? m.folder : (row.mimeType ?? m.file)),
       },
     ];
+
+    // Only the name cell is markup (icon, rename box); the rest are their column's text.
+    const cell = ({ row, column, rowIndex }: { row: unknown; column: DatatableColumnDef; rowIndex: number }) =>
+      column.name === 'name' ? this.renderNameCell(row as FileSystemNode) : cellText(row, column, rowIndex);
 
     return html`
       <mp-datatable
@@ -978,15 +982,15 @@ export class MpFileManager extends LitElement {
         .data=${children}
         .selectedIds=${[...this._selection]}
         .rowKey=${(row: unknown) => (row as FileSystemNode).id}
+        .cellRenderer=${cell}
         selection-mode=${this._selectionMode}
-        resizable-columns
         virtual-scroll
         item-size="40"
         empty-message=${m.noFilesOrFolders}
-        @mp-datatable-selection-change=${this.onDatatableSelection}
-        @mp-datatable-row-click=${this.onRowClick}
-        @mp-datatable-row-dblclick=${this.onRowDblClick}
-        @mp-datatable-row-contextmenu=${this.onRowContextMenu}
+        @selectionchange=${this.onDatatableSelection}
+        @rowclick=${this.onRowClick}
+        @rowdblclick=${this.onRowDblClick}
+        @rowcontextmenu=${this.onRowContextMenu}
         @keydown=${this.onContentKeydown}
       ></mp-datatable>
     `;

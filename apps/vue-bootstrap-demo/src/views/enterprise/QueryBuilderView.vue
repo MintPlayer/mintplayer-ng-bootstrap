@@ -9,7 +9,7 @@ import {
   type Expression,
   type SortDescriptor,
 } from '@mintplayer/web-components/query-builder';
-import type { DatatableColumnDef } from '@mintplayer/web-components/datatable';
+import type { DatatableColumnDef } from '@mintplayer/vue-bootstrap/datatable';
 
 // In dev, /api is proxied to localhost:5000 by vite.config.mts. In prod we
 // POST cross-origin to the API subdomain (CORS-allowed in apps/api/Program.cs).

@@ -153,7 +153,8 @@ describe('consumer DOM mounted through a render callback', () => {
   it('mp-datatable cellRenderer', async () => {
     document.body.innerHTML = '<mp-datatable></mp-datatable>';
     const el = document.querySelector('mp-datatable') as HTMLElement & Record<string, unknown>;
-    el.columns = [{ ...COLUMNS[0], cellRenderer: () => consumerNode('cell') }];
+    el.columns = COLUMNS;
+    el.cellRenderer = () => consumerNode('cell');
     el.data = ROWS;
     await settle(el);
 
@@ -165,7 +166,8 @@ describe('consumer DOM mounted through a render callback', () => {
   it('mp-datatable headerRenderer', async () => {
     document.body.innerHTML = '<mp-datatable></mp-datatable>';
     const el = document.querySelector('mp-datatable') as HTMLElement & Record<string, unknown>;
-    el.columns = [{ ...COLUMNS[0], headerRenderer: () => consumerNode('header') }];
+    el.columns = COLUMNS;
+    el.headerRenderer = () => consumerNode('header');
     el.data = ROWS;
     await settle(el);
 
@@ -194,20 +196,18 @@ describe('consumer DOM mounted through a render callback', () => {
   it('mp-datatable filterRenderer', async () => {
     document.body.innerHTML = '<mp-datatable></mp-datatable>';
     const el = document.querySelector('mp-datatable') as HTMLElement & Record<string, unknown>;
-    el.columns = [{ ...COLUMNS[0], filterable: true, filterRenderer: () => consumerNode('filter') }];
+    el.columns = [{ ...COLUMNS[0], filterable: true, filterMode: 'custom' }];
+    el.filterRenderer = () => consumerNode('filter');
     el.data = ROWS;
     await settle(el);
 
-    const trigger = el.querySelector<HTMLButtonElement>('tr.filter-row .filter-trigger');
-    expect(trigger, 'no filter trigger rendered').not.toBeNull();
-    trigger!.click();
+    const panel = el.querySelector<HTMLElement>('tr.filter-row .filter-panel');
+    expect(panel, 'no filter panel rendered').not.toBeNull();
+    // jsdom has no popover: the panel opens through the toggle event the core listens for.
+    panel!.dispatchEvent(Object.assign(new Event('toggle'), { newState: 'open', oldState: 'closed' }));
     await settle(el);
 
-    // The panel is portalled to the document root, so unlike the other three
-    // renderers this content is NOT inside the element — which is precisely why
-    // it is worth asserting: the scoped sheet is installed on the document and
-    // reaches the pane, so an accidental stamp here would be styled by us.
-    const mounted = document.querySelectorAll(`.mp-overlay-pane .${CONSUMER_CLASS}`);
+    const mounted = el.querySelectorAll(`.filter-panel .${CONSUMER_CLASS}`);
     expect(mounted.length, 'filterRenderer output never reached the DOM').toBeGreaterThan(0);
     for (const node of mounted) expectUntouched(node as HTMLElement, 'datatable filterRenderer', selectors);
   });

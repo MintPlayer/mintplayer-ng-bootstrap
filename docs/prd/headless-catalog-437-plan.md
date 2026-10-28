@@ -145,11 +145,37 @@ Every item below is authored as a D10 component source once M3b lands.
 
 - [x] treeview: flat rows (APG flat tree), so no front needs a recursive template; lazy children merge in the core; `node` slot replaces `nodeRenderer(node, ctx)`
 - [x] tree-select (D2(a)): one D10 source; native popover panel; multiple mode is `aria-selected` + `aria-multiselectable`, checkbox mode `aria-checked` (mixed) with a decorative check glyph; `bs-form` ancestor no longer required
-- [ ] datatable:
+- [x] datatable:
   - `virtual-window`
   - `initialPage`
   - `hrefFor` sort and paging
   - delete the wrapper's `isPlatformServer` guards and `rowViews` bridges
+  - **Design (decided 2026-10-28):**
+    - **Consumer content is front-native slots (D3):**
+      - `header {column}`, `cell {row, column, rowIndex}`, `row {row, rowIndex, ctx}` (whole row: the consumer's `<td>`s), and `filter {column, ctx}` (a custom filter panel).
+      - The column def keeps only data: name, label, flags, filter config, and `format(row) → string` for the default cell text.
+      - `cellRenderer` / `headerRenderer` / `filterRenderer` (functions returning a DOM `Node`) are gone; Lit gets `cellRenderer({…})` etc. as slot renderers.
+      - Angular's `*bsDatatableColumn` (a header template that doubled as the column definition) gives way to `[columns]` plus `*bsDatatableHeader` / `*bsDatatableCell` / `*bsDatatableRow`. Angular already took `[columns]`, so all fronts now share one API.
+    - **Composition is by repeated markup (D2(b) is unavailable in a template):**
+      - The row checkbox is a native `input.form-check-input`. Its `indeterminate` is set after render (D4).
+      - The pager and the per-page picker are `nav > ul.pagination` built from `connectPagination` bags, with `hrefFor` links (D5).
+    - **The core** is built from a pure `connectDatatable(options) → view` plus the `datatableCore` machine:
+      - The machine owns data, sort, paging, selection, focus, tree expansion, the fetch lifecycle (`SupersedingRequest`), the windowed page cache and filter state.
+      - DOM work lives in `attach`: measuring column widths, resize drag, scroll tracking, and focus.
+    - **No Angular extras (revised while landing):** the `settings` and `selection` bridges were dropped rather
+      than ported. `[(sortColumns)]` / `[(page)]` / `[(perPage)]` / `[(selectedIds)]` are the API in all four
+      fronts, and `(selectionchange)` carries the rows; a second Angular-only model would only duplicate them.
+    - **Custom filter panels are per column (revised while landing):** `filterMode: 'custom'` renders the `filter`
+      slot for that column only. A table-wide slot would have replaced the built-in panel on every column.
+    - **Panels are native popovers:** the filter and resize panels are `popover="auto"` with a `popovertarget`
+      trigger, placed by `trackPopovers`; the document-root overlay portal is no longer involved.
+    - **Stages:**
+      - (1) flat table: sort, paging, selection, keyboard, row events, slots;
+      - (2) fetch, reload, windowed fetch, virtual scroll, fill;
+      - (3) tree mode;
+      - (4) filter row and panels, distincts;
+      - (5) column resize;
+      - (6) fronts' extras, specs, conformance, demos, e2e.
 - [ ] query-builder (+ group, condition, subquery), per S10
 - [ ] hierarchy-chart (+ Vue front)
 

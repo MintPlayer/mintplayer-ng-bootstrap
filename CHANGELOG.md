@@ -409,6 +409,31 @@ breaking change is a major. (2.20.0 and 2.21.0 broke `^2.x` consumers in a minor
   - Angular keeps its `ControlValueAccessor` (`BsTreeSelectValueAccessor`, a host directive).
   - The types and `InMemoryTreeSelectProvider` come from `@mintplayer/ui-core/tree-select`, re-exported by every
     front.
+- **The datatable is generated from one source in every front (issue #437).** It is written once in
+  `@mintplayer/ui-core/datatable` (`datatableCore`, `connectDatatable`) and compiled into all four fronts, so the
+  table, the pager and the filter row render on the server.
+  - **The root** is `div.datatable` (the host in Angular and Lit). An `aria-label` names the `<table>`.
+  - **Columns are data in every front.** `DatatableColumnDef` keeps the name, label, flags and filter config;
+    `format(row, rowIndex)` gives a cell's text. `cellRenderer`, `headerRenderer` and `filterRenderer` (functions
+    returning a DOM `Node`) are gone.
+  - **Templates are slots:** `header {column}`, `cell {row, column, rowIndex}`, `row {row, rowIndex, ctx}` (all of
+    a row's data cells) and `filter {column, ctx}`. Angular `<ng-template bsDatatableRow let-row="row">` and so on,
+    React `cell={({ row, column }) => …}`, Vue `#cell="{ row, column }"`, Lit `cellRenderer` / `headerRenderer` /
+    `rowRenderer` / `filterRenderer` taking the slot's arguments. A slot renders every column; return
+    `cellText(row, column, rowIndex)` for the columns you leave alone.
+  - **Angular:** `*bsDatatableColumn`, `*bsRowTemplate`, `*bsDatatableFilterPanel`, `DatatableSettings`,
+    `[(settings)]`, `[(selection)]`, `isResponsive` and `BsDatatableFetch` are gone. Use `[columns]`,
+    `[(sortColumns)]`, `[(page)]`, `[(perPage)]`, `[perPageOptions]`, `pagination`, `[(selectedIds)]` (row keys;
+    `(selectionchange)` also carries the rows) and `DatatableFetch` (`(req) => Promise<{ data, totalRecords }>`).
+  - **Two-way inputs** are `sortColumns`, `page`, `perPage`, `selectedIds` and `expandedIds` (an array, no longer a
+    `Set`). React reports them through `on<Name>Change(value)`. Outputs hand over the payload, not a `CustomEvent`,
+    and are lowercased in Angular, Vue and Lit (`rowclick`, `selectionchange`, `filterchange`).
+  - **A custom filter panel is per column:** `filterMode: 'custom'` renders the `filter` slot for that column, while
+    the others keep their built-in `values` or `comparison` panels. The slot's `FilterContext` is a snapshot
+    (`values`, `loading`, `selection`, `term`) plus the `search`, `apply`, `compare`, `clear` and `close` commands.
+  - **Filter and resize panels are native `popover="auto"`**, opened by their trigger's `popovertarget`. They are no
+    longer portalled into the document-root overlay.
+  - The types come from `@mintplayer/ui-core/datatable`, re-exported by every front.
 - **`mp-input-group` is a light element (issue #437).** Like `bs-input-group`, the host is the
   `.input-group` itself: no shadow root, no slot, and its children are the group's items. It no longer
   writes `size` onto `mp-*` children, because a control in a group reads the group's classes and the

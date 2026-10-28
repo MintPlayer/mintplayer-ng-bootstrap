@@ -1,4 +1,4 @@
-import type { SortColumn } from '@mintplayer/ui-core/datatable';
+import type { SortColumn } from '../sort';
 
 /**
  * Selector for the row's stable identity in tree mode. Used as the expansion

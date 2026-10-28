@@ -465,7 +465,7 @@ describe('what the datatable reports back in the list view', () => {
   it('opens a folder on row double-click', async () => {
     const navigations: unknown[] = [];
     fm.addEventListener('mp-navigate', (e) => navigations.push((e as CustomEvent).detail));
-    rowEvent('mp-datatable-row-dblclick', 'docs');
+    rowEvent('rowdblclick', 'docs');
     await settle();
 
     expect(navigations).toEqual([{ folderId: 'docs' }]);
@@ -474,14 +474,14 @@ describe('what the datatable reports back in the list view', () => {
   it('opens a file on row double-click', () => {
     const opened: unknown[] = [];
     fm.addEventListener('mp-node-open', (e) => opened.push((e as CustomEvent).detail.node.id));
-    rowEvent('mp-datatable-row-dblclick', 'readme');
+    rowEvent('rowdblclick', 'readme');
 
     expect(opened).toEqual(['readme']);
   });
 
   it('opens the context menu on a row right-click, suppressing the browser menu', async () => {
     const original = new MouseEvent('contextmenu', { cancelable: true });
-    rowEvent('mp-datatable-row-contextmenu', 'readme', original);
+    rowEvent('rowcontextmenu', 'readme', original);
     await settleAsync();
 
     expect(original.defaultPrevented).toBe(true);
@@ -490,7 +490,7 @@ describe('what the datatable reports back in the list view', () => {
 
   it('re-emits the selection on a row click', () => {
     internals()._selection = new Set(['readme']);
-    rowEvent('mp-datatable-row-click', 'readme');
+    rowEvent('rowclick', 'readme');
     expect(selections.at(-1)).toEqual(['readme']);
   });
 });

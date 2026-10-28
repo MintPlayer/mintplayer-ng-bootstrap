@@ -4,14 +4,17 @@ import { PaginationRequest, PaginationResponse } from '@mintplayer/pagination';
 import { Color } from '@mintplayer/ng-bootstrap';
 import {
   BsDatatableComponent,
-  BsDatatableColumnDirective,
-  BsDatatableFilterPanelDirective,
+  BsDatatableCellDirective,
+  BsDatatableFilterDirective,
+  BsDatatableHeaderDirective,
+  BsDatatableRowDirective,
+  type DatatableColumnDef,
+  type DatatableFetch,
+  type DatatableFetchRequest,
   type DistinctValue,
   type FilterChangeDetail,
   type FilterOperator,
-  BsRowTemplateDirective,
-  BsDatatableFetch,
-  DatatableSettings,
+  type SortColumn,
 } from '@mintplayer/ng-bootstrap/datatable';
 import { BsSelectComponent, BsSelectOption } from '@mintplayer/ng-bootstrap/select';
 import { BsCodeSnippetComponent } from '@mintplayer/ng-bootstrap/code-snippet';
@@ -58,7 +61,7 @@ function compare(value: number, operator: FilterOperator, operand: number): bool
   styleUrls: ['./datatables.component.scss'],
   imports: [
     FormsModule,
-    BsDatatableComponent, BsDatatableColumnDirective, BsDatatableFilterPanelDirective, BsRowTemplateDirective,
+    BsDatatableComponent, BsDatatableCellDirective, BsDatatableFilterDirective, BsDatatableHeaderDirective, BsDatatableRowDirective,
     BsSelectComponent, BsSelectOption,
     BsCodeSnippetComponent,
     BsBadgeComponent,
@@ -78,97 +81,94 @@ export class DatatablesComponent {
   mode = signal<'pagination' | 'virtualScroll'>('pagination');
   virtualScroll = computed(() => this.mode() === 'virtualScroll');
 
-  settings = signal(new DatatableSettings({
-    sortColumns: [{ property: 'YearStarted', direction: 'ascending' }],
-    perPage: { values: [10, 20, 50], selected: 20 },
-    page: { values: [1], selected: 1 },
-  }));
+  /**
+   * Columns are data. `name` is the sort key the server receives (Spark sorts
+   * on the PascalCase property); the row template renders the cells, so it
+   * need not match the row's own property names.
+   */
+  artistColumns: DatatableColumnDef[] = [
+    { name: 'Name', label: 'Artist' },
+    { name: 'YearStarted', label: 'Year started' },
+    { name: 'YearQuit', label: 'Year quit' },
+  ];
 
-  selection = signal<Artist[]>([]);
+  twoColumns: DatatableColumnDef[] = this.artistColumns.slice(0, 2);
 
-  fetchArtists: BsDatatableFetch<Artist> = (req: PaginationRequest) =>
-    this.artistService.pageArtists(req).then(
+  sortColumns = signal<SortColumn[]>([{ property: 'YearStarted', direction: 'ascending' }]);
+
+  /** The selected row keys (`rowKey`), which survive paging and sorting. */
+  selection = signal<string[]>([]);
+
+  fetchArtists: DatatableFetch<Artist> = (req: DatatableFetchRequest) =>
+    this.artistService.pageArtists(<PaginationRequest>req).then(
       (response) => response ?? <PaginationResponse<Artist>>{ data: [], totalRecords: 0, totalPages: 1, page: req.page, perPage: req.perPage },
     );
 
-  rowKey = (a: Artist) => String(a.id);
+  rowKey = (a: unknown) => String((a as Artist).id);
 
   // ─── Column resizing demo ──────────────────────────────────────────────
   // Per-column resizable + label: the actions column has a fixed width and an
   // icon-only header, so it opts out of resizing and names itself.
 
-  resizeSettings = signal(new DatatableSettings({
-    sortColumns: [],
-    perPage: { values: [10, 20, 50], selected: 10 },
-    page: { values: [1], selected: 1 },
-  }));
+  resizeColumns: DatatableColumnDef[] = [
+    ...this.twoColumns,
+    { name: 'actions', label: 'Actions', sortable: false, resizable: false },
+  ];
 
   inspectedArtist = signal<Artist | null>(null);
 
   // ─── Fill demo ─────────────────────────────────────────────────────────
-  fillSettings = signal(new DatatableSettings({
-    sortColumns: [],
-    perPage: { values: [10, 20, 50], selected: 20 },
-    page: { values: [1], selected: 1 },
-  }));
 
   protected readonly snippetFillHtml = dedent`
     <!-- The parent needs a definite height. -->
     <div style="height: 225px">
-      <bs-datatable fill [fetch]="fetchArtists" [(settings)]="settings">
-        <div *bsDatatableColumn="'Name'">Artist</div>
-        <div *bsDatatableColumn="'YearStarted'">Year started</div>
-        <ng-container *bsRowTemplate="let artist">
+      <bs-datatable fill pagination [columns]="columns" [fetch]="fetchArtists">
+        <ng-template bsDatatableRow let-artist="row">
           <td>{{ artist.name }}</td>
           <td>{{ artist.yearStarted }}</td>
-        </ng-container>
+        </ng-template>
       </bs-datatable>
     </div>
   `;
 
-  fillVirtualSettings = signal(new DatatableSettings({
-    sortColumns: [],
-    perPage: { values: [25, 50, 100], selected: 25 },
-    page: { values: [1], selected: 1 },
-  }));
-
   protected readonly snippetFillVirtualHtml = dedent`
-    <!-- The parent's height replaces the default virtual viewport. -->
+    <!-- The parent's height replaces the default virtual viewport. Rows still
+         loading render as placeholders, without calling the template. -->
     <div style="height: 225px">
-      <bs-datatable fill [virtualScroll]="true" [itemSize]="40" [fetch]="fetchArtists"
-        [(settings)]="settings" [rowKey]="rowKey">
-        <div *bsDatatableColumn="'Name'">Artist</div>
-        <div *bsDatatableColumn="'YearStarted'">Year started</div>
-        <ng-container *bsRowTemplate="let artist; let isPlaceholder = isPlaceholder">
-          @if (isPlaceholder) {
-            <td colspan="2">Loading…</td>
-          } @else {
-            <td>{{ artist.name }}</td>
-            <td>{{ artist.yearStarted }}</td>
-          }
-        </ng-container>
+      <bs-datatable fill [virtualScroll]="true" [itemSize]="40" [columns]="columns"
+        [fetch]="fetchArtists" [perPage]="25" [rowKey]="rowKey">
+        <ng-template bsDatatableRow let-artist="row">
+          <td>{{ artist.name }}</td>
+          <td>{{ artist.yearStarted }}</td>
+        </ng-template>
       </bs-datatable>
     </div>
   `;
 
   protected readonly snippetResizeHtml = dedent`
-    <bs-datatable [fetch]="fetchArtists" [(settings)]="settings">
-      <!-- No label needed: the generated names use the header text, "Artist". -->
-      <div *bsDatatableColumn="'Name'">Artist</div>
-      <div *bsDatatableColumn="'YearStarted'">Year started</div>
-      <!-- Icon-only header: label names it; resizable: false drops its handle. -->
-      <div *bsDatatableColumn="'actions'; sortable: false; resizable: false; label: 'Actions'">
-        <span aria-hidden="true">&#8943;</span>
-      </div>
+    <!-- columns: [
+           { name: 'Name', label: 'Artist' },
+           { name: 'YearStarted', label: 'Year started' },
+           // Icon-only header: label names it; resizable: false drops its handle.
+           { name: 'actions', label: 'Actions', sortable: false, resizable: false },
+         ] -->
+    <bs-datatable [columns]="columns" [fetch]="fetchArtists" pagination>
+      <ng-template bsDatatableHeader let-column="column">
+        @if (column.name === 'actions') {
+          <span aria-hidden="true">&#8943;</span>
+        } @else {
+          {{ column.label }}
+        }
+      </ng-template>
 
-      <ng-container *bsRowTemplate="let artist">
-        <td>{{ artist?.name }}</td>
-        <td>{{ artist?.yearStarted }}</td>
+      <ng-template bsDatatableRow let-artist="row">
+        <td>{{ artist.name }}</td>
+        <td>{{ artist.yearStarted }}</td>
         <td>
           <button type="button" class="btn btn-sm btn-outline-secondary"
                   (click)="inspect(artist)">Details</button>
         </td>
-      </ng-container>
+      </ng-template>
     </bs-datatable>
   `;
 
@@ -176,21 +176,14 @@ export class DatatablesComponent {
   // A row click only opens the row; the checkbox cell alone selects. The
   // selection is keyed by rowKey, so it survives paging, sorting and reload().
 
-  checkboxSettings = signal(new DatatableSettings({
-    sortColumns: [],
-    perPage: { values: [10, 20, 50], selected: 10 },
-    page: { values: [1], selected: 1 },
-  }));
-
-  checkboxSelection = signal<Artist[]>([]);
+  checkboxSelection = signal<string[]>([]);
   openedArtist = signal<Artist | null>(null);
 
-  rowLabel = (a: Artist) => a.name;
+  rowLabel = (a: unknown) => (a as Artist).name;
 
   checkboxSelectionSummary = computed(() => `Selected ${this.checkboxSelection().length} artist(s)`);
   checkboxSelectionKeys = computed(() =>
-    this.checkboxSelection()
-      .map((a) => a.id)
+    [...this.checkboxSelection()]
       .sort((a, b) => Number(a) - Number(b))
       .join(', ') || '—',
   );
@@ -201,65 +194,53 @@ export class DatatablesComponent {
   // The WC fetches only the pages near the viewport; the log proves it never
   // drains the whole result set.
 
-  windowedSettings = signal(new DatatableSettings({
-    sortColumns: [],
-    perPage: { values: [25, 50, 100], selected: 25 },
-    page: { values: [1], selected: 1 },
-  }));
-
   /** Pages actually fetched — proof that scrolling drives O(visible/perPage) requests, not a full drain. */
   windowedFetchedPages = signal<number[]>([]);
 
-  fetchWindowedArtists: BsDatatableFetch<Artist> = async (req: PaginationRequest) => {
+  fetchWindowedArtists: DatatableFetch<Artist> = async (req: DatatableFetchRequest) => {
     this.windowedFetchedPages.update((pages) =>
       pages.includes(req.page) ? pages : [...pages, req.page].sort((a, b) => a - b),
     );
-    const response = await this.artistService.pageArtists(req);
+    const response = await this.artistService.pageArtists(<PaginationRequest>req);
     return response ?? <PaginationResponse<Artist>>{ data: [], totalRecords: 0, totalPages: 1, page: req.page, perPage: req.perPage };
   };
 
   // ─── Tree-mode demo ────────────────────────────────────────────────────
 
-  treeSettings = signal(new DatatableSettings({
-    sortColumns: [],
-    perPage: { values: [50, 100, 200], selected: 100 },
-    page: { values: [1], selected: 1 },
-  }));
+  treeColumns: DatatableColumnDef[] = [
+    { name: 'name', label: 'Name' },
+    { name: 'code', label: 'Code' },
+    { name: 'headcount', label: 'Headcount' },
+  ];
 
-  treeExpanded = signal<Set<unknown>>(new Set());
-  treeSelection = signal<TreeItem[]>([]);
+  treeExpanded = signal<unknown[]>([]);
+  treeSelection = signal<string[]>([]);
 
-  fetchTreeItems: BsDatatableFetch<TreeItem> = this.treeItemService.fetch;
+  fetchTreeItems: DatatableFetch<TreeItem> = this.treeItemService.fetch;
 
-  treeRowKey = (item: TreeItem) => String(item.id);
+  treeRowKey = (item: unknown) => String((item as TreeItem).id);
   treeIdKey: keyof TreeItem = 'id';
   treeChildCountKey: keyof TreeItem = 'childCount';
 
   protected readonly snippetBasicHtml = dedent`
-    <bs-datatable
-      [fetch]="fetchArtists"
-      [(settings)]="settings">
-      <div *bsDatatableColumn="'Name'">Artist</div>
-      <div *bsDatatableColumn="'YearStarted'">Year started</div>
-      <div *bsDatatableColumn="'YearQuit'">Year quit</div>
-
-      <ng-container *bsRowTemplate="let artist">
-        <td class="text-nowrap">{{ artist?.name }}</td>
-        <td class="text-nowrap">{{ artist?.yearStarted }}</td>
-        <td class="text-nowrap">{{ artist?.yearQuit }}</td>
-      </ng-container>
+    <bs-datatable pagination [columns]="columns" [fetch]="fetchArtists"
+      [(sortColumns)]="sortColumns" [perPageOptions]="[10, 20, 50]">
+      <ng-template bsDatatableRow let-artist="row">
+        <td class="text-nowrap">{{ artist.name }}</td>
+        <td class="text-nowrap">{{ artist.yearStarted }}</td>
+        <td class="text-nowrap">{{ artist.yearQuit }}</td>
+      </ng-template>
     </bs-datatable>
   `;
 
   protected readonly snippetBasicTs = dedent`
     import { Component, inject, signal } from '@angular/core';
-    import { PaginationRequest, PaginationResponse } from '@mintplayer/pagination';
     import {
       BsDatatableComponent,
-      BsDatatableColumnDirective,
-      BsRowTemplateDirective,
-      BsDatatableFetch,
-      DatatableSettings,
+      BsDatatableRowDirective,
+      type DatatableColumnDef,
+      type DatatableFetch,
+      type SortColumn,
     } from '@mintplayer/ng-bootstrap/datatable';
     import { Artist } from './artist';
     import { ArtistService } from './artist.service';
@@ -267,164 +248,138 @@ export class DatatablesComponent {
     @Component({
       selector: 'my-artists',
       templateUrl: './my-artists.component.html',
-      imports: [
-        BsDatatableComponent,
-        BsDatatableColumnDirective,
-        BsRowTemplateDirective,
-      ],
+      imports: [BsDatatableComponent, BsDatatableRowDirective],
     })
     export class MyArtistsComponent {
       private artistService = inject(ArtistService);
 
-      settings = signal(new DatatableSettings({
-        perPage: { values: [10, 20, 50], selected: 20 },
-        page: { values: [1], selected: 1 },
-      }));
+      // name is the sort key the fetch receives; label is the header text.
+      columns: DatatableColumnDef[] = [
+        { name: 'Name', label: 'Artist' },
+        { name: 'YearStarted', label: 'Year started' },
+        { name: 'YearQuit', label: 'Year quit' },
+      ];
 
-      fetchArtists: BsDatatableFetch<Artist> = (req: PaginationRequest) =>
-        this.artistService.pageArtists(req).then(
-          (response) => response ?? <PaginationResponse<Artist>>{
-            data: [], totalRecords: 0, totalPages: 1, page: req.page, perPage: req.perPage,
-          },
-        );
+      sortColumns = signal<SortColumn[]>([]);
+
+      // Resolves { data, totalRecords }; req carries page, perPage,
+      // sortColumns and an AbortSignal.
+      fetchArtists: DatatableFetch<Artist> = (req) => this.artistService.pageArtists(req);
     }
   `;
 
   protected readonly snippetSortableHtml = dedent`
-    <!-- Add ; sortable: true to any column to enable click-to-sort headers.
-         The fetch callback receives req.sortColumns in its PaginationRequest. -->
-    <bs-datatable [fetch]="fetchArtists" [(settings)]="settings">
-      <div *bsDatatableColumn="'Name'; sortable: true">Artist</div>
-      <div *bsDatatableColumn="'YearStarted'; sortable: true">Year started</div>
-      <div *bsDatatableColumn="'YearQuit'; sortable: true">Year quit</div>
-
-      <ng-container *bsRowTemplate="let artist">
-        <td>{{ artist?.name }}</td>
-        <td>{{ artist?.yearStarted }}</td>
-        <td>{{ artist?.yearQuit }}</td>
-      </ng-container>
+    <!-- Every column sorts unless it says sortable: false. Clicking a header
+         cycles ascending, descending, off; the fetch callback receives
+         req.sortColumns, and [(sortColumns)] reads and writes it. -->
+    <bs-datatable [columns]="columns" [fetch]="fetchArtists" [(sortColumns)]="sortColumns">
+      <ng-template bsDatatableRow let-artist="row">
+        <td>{{ artist.name }}</td>
+        <td>{{ artist.yearStarted }}</td>
+        <td>{{ artist.yearQuit }}</td>
+      </ng-template>
     </bs-datatable>
   `;
 
   protected readonly snippetSelectionHtml = dedent`
     <!-- selectionMode = 'none' | 'single' | 'multiple' | 'checkbox'.
-         'checkbox': a row click only opens the row (rowClick); the checkbox
+         'checkbox': a row click only opens the row (rowclick); the checkbox
          cell alone selects. Enter opens, Space toggles.
 
-         The selection is keyed by [rowKey] and survives paging, sorting and
-         reload(). With [fetch] the key MUST be stable — taken from the row,
-         never from its position. The default, String(row.id), is stable only
-         when every row has an id. -->
+         The selection is the row KEYS, from [rowKey], and survives paging,
+         sorting and reload(). With [fetch] the key MUST be stable — taken from
+         the row, never from its position. (selectionchange) also hands over
+         the selected rows. -->
     <button type="button" (click)="table.reload()">Reload</button>
 
     <bs-datatable #table
+      [columns]="columns"
       [fetch]="fetchArtists"
-      [(settings)]="settings"
+      pagination
       selectionMode="checkbox"
       [rowKey]="rowKey"
       [rowLabel]="rowLabel"
-      [(selection)]="selection"
-      (rowClick)="opened.set($event.row)">
-      <!-- columns + row template as above -->
+      [(selectedIds)]="selection"
+      (rowclick)="opened.set($event.row)">
+      <!-- row template as above -->
     </bs-datatable>
   `;
 
   protected readonly snippetSelectionTs = dedent`
-    selection = signal<Artist[]>([]);
+    selection = signal<string[]>([]);
     opened = signal<Artist | null>(null);
 
     // Identity: a stable key per row. Required with [fetch].
-    rowKey = (a: Artist) => String(a.id);
+    rowKey = (a: unknown) => String((a as Artist).id);
     // Names each row checkbox for assistive technology: "Select Coldplay".
-    rowLabel = (a: Artist) => a.name;
+    rowLabel = (a: unknown) => (a as Artist).name;
   `;
 
   protected readonly snippetWindowedHtml = dedent`
     <!-- Virtual + fetch: the table fetches only the pages whose rows are in
-         (or near) the viewport, keyed by settings.perPage. Placeholder rows
-         (isPlaceholder) hold the scroll position until each window arrives.
-         The public [fetch] contract is unchanged — no new callback. -->
+         (or near) the viewport, keyed by [perPage]. Placeholder rows hold the
+         scroll position until each window arrives; the row template is not
+         called for them. The [fetch] contract is the same as paged mode. -->
     <bs-datatable
       [virtualScroll]="true"
       [itemSize]="40"
+      [columns]="columns"
       [fetch]="fetchWindowedArtists"
-      [(settings)]="windowedSettings"
+      [perPage]="25"
       [rowKey]="rowKey">
-
-      <div *bsDatatableColumn="'Name'">Artist</div>
-      <div *bsDatatableColumn="'YearStarted'">Year started</div>
-      <div *bsDatatableColumn="'YearQuit'">Year quit</div>
-
-      <ng-container *bsRowTemplate="let artist; let isPlaceholder = isPlaceholder">
-        @if (isPlaceholder) {
-          <td colspan="3" class="text-muted small fst-italic">Loading…</td>
-        } @else {
-          <td>{{ artist?.name }}</td>
-          <td>{{ artist?.yearStarted }}</td>
-          <td>{{ artist?.yearQuit }}</td>
-        }
-      </ng-container>
+      <ng-template bsDatatableRow let-artist="row">
+        <td>{{ artist.name }}</td>
+        <td>{{ artist.yearStarted }}</td>
+        <td>{{ artist.yearQuit }}</td>
+      </ng-template>
     </bs-datatable>
   `;
 
   protected readonly snippetWindowedTs = dedent`
-    // The same [fetch] callback as paginated/non-virtual mode — page + perPage.
+    // The same [fetch] callback as paged, non-virtual mode — page + perPage.
     // In flat virtual mode the table calls it once per *needed page* as the
     // user scrolls, instead of draining every page up front.
-    windowedSettings = signal(new DatatableSettings({
-      perPage: { values: [25, 50, 100], selected: 25 },
-      page: { values: [1], selected: 1 },
-    }));
-
-    fetchWindowedArtists: BsDatatableFetch<Artist> = (req: PaginationRequest) =>
-      this.artistService.pageArtists(req); // resolves PaginationResponse<Artist>
+    fetchWindowedArtists: DatatableFetch<Artist> = (req) =>
+      this.artistService.pageArtists(req); // resolves { data, totalRecords }
   `;
 
   protected readonly snippetTreeHtml = dedent`
     <!-- Tree mode: virtual scrolling composes with nested expandable rows.
          Each expanded row's children load lazily on demand; placeholders
          reserve viewport space until the children arrive so the scrollbar
-         stays accurate. -->
+         stays accurate. No row template: a cell template restyles one column
+         and the others keep their text. -->
     <bs-datatable class="flex-grow-1"
       [virtualScroll]="true"
       [itemSize]="40"
       [tree]="true"
       [idKey]="treeIdKey"
       [childCountKey]="treeChildCountKey"
+      [columns]="treeColumns"
       [fetch]="fetchTreeItems"
-      [(settings)]="treeSettings"
+      [perPage]="100"
       [(expandedIds)]="treeExpanded"
       [rowKey]="treeRowKey"
       selectionMode="multiple"
       selectionStrategy="cascading"
-      [(selection)]="treeSelection">
-
-      <div *bsDatatableColumn="'name'; sortable: true">Name</div>
-      <div *bsDatatableColumn="'code'; sortable: true">Code</div>
-      <div *bsDatatableColumn="'headcount'; sortable: true">Headcount</div>
-
-      <ng-container *bsRowTemplate="let item; let isPlaceholder = isPlaceholder">
-        @if (isPlaceholder) {
-          <td colspan="3" class="text-muted small fst-italic">Loading…</td>
+      [(selectedIds)]="treeSelection">
+      <ng-template bsDatatableCell let-row="row" let-column="column">
+        @if (column.name === 'code') {
+          <span class="font-monospace small">{{ row.code }}</span>
         } @else {
-          <td class="text-nowrap">{{ item?.name }}</td>
-          <td class="text-nowrap font-monospace small">{{ item?.code }}</td>
-          <td class="text-nowrap">{{ item?.headcount }}</td>
+          {{ row[column.name] }}
         }
-      </ng-container>
+      </ng-template>
     </bs-datatable>
   `;
 
   protected readonly snippetTreeTs = dedent`
     import { Component, inject, signal } from '@angular/core';
-    import { PaginationRequest } from '@mintplayer/pagination';
     import {
       BsDatatableComponent,
-      BsDatatableColumnDirective,
-      BsRowTemplateDirective,
-      BsDatatableFetch,
-      BsDatatableFetchRequest,
-      DatatableSettings,
+      BsDatatableCellDirective,
+      type DatatableColumnDef,
+      type DatatableFetch,
     } from '@mintplayer/ng-bootstrap/datatable';
     import { TreeItem } from './tree-item';
     import { TreeItemService } from './tree-item.service';
@@ -432,27 +387,24 @@ export class DatatablesComponent {
     @Component({
       selector: 'org-tree',
       templateUrl: './org-tree.component.html',
-      imports: [
-        BsDatatableComponent,
-        BsDatatableColumnDirective,
-        BsRowTemplateDirective,
-      ],
+      imports: [BsDatatableComponent, BsDatatableCellDirective],
     })
     export class OrgTreeComponent {
       private treeItemService = inject(TreeItemService);
 
-      treeSettings = signal(new DatatableSettings({
-        perPage: { values: [50, 100, 200], selected: 100 },
-        page: { values: [1], selected: 1 },
-      }));
+      treeColumns: DatatableColumnDef[] = [
+        { name: 'name', label: 'Name' },
+        { name: 'code', label: 'Code' },
+        { name: 'headcount', label: 'Headcount' },
+      ];
 
-      treeExpanded = signal<Set<unknown>>(new Set());
-      treeSelection = signal<TreeItem[]>([]);
+      treeExpanded = signal<unknown[]>([]);
+      treeSelection = signal<string[]>([]);
 
       // Single callback for both roots and children — branches on parentId.
-      fetchTreeItems: BsDatatableFetch<TreeItem> = this.treeItemService.fetch;
+      fetchTreeItems: DatatableFetch<TreeItem> = this.treeItemService.fetch;
 
-      treeRowKey = (item: TreeItem) => String(item.id);
+      treeRowKey = (item: unknown) => String((item as TreeItem).id);
       treeIdKey: keyof TreeItem = 'id';
       treeChildCountKey: keyof TreeItem = 'childCount';
     }
@@ -464,16 +416,15 @@ export class DatatablesComponent {
     export class TreeItemService {
       private readonly http = inject(HttpClient);
 
-      fetch: BsDatatableFetch<TreeItem> = async (req: BsDatatableFetchRequest) => {
+      fetch: DatatableFetch<TreeItem> = async (req: DatatableFetchRequest) => {
         const url = req.parentId == null
           ? '/api/treeItems'
           : \`/api/treeItems/\${req.parentId}/children\`;
         const params = new HttpParams()
-          .set('page', String(req.page ?? 1))
-          .set('perPage', String(req.perPage ?? 50));
-        // ... map PagedResult<TreeItem> → PaginationResponse<TreeItem>
-        return firstValueFrom(this.http.get<PagedResult<TreeItem>>(url, { params }))
-          .then(r => ({ data: r.items, totalRecords: r.totalCount, ... }));
+          .set('page', String(req.page))
+          .set('perPage', String(req.perPage));
+        const r = await firstValueFrom(this.http.get<PagedResult<TreeItem>>(url, { params }));
+        return { data: r.items, totalRecords: r.totalCount };
       };
     }
   `;
@@ -547,11 +498,46 @@ export class DatatablesComponent {
       .filter((a) => (activeOnly ? a.yearQuit == null : true));
   });
 
-  filterSettings = signal(new DatatableSettings({
-    sortColumns: [{ property: 'name', direction: 'ascending' }],
-    perPage: { values: [10, 20, 50], selected: 20 },
-    page: { values: [1], selected: 1 },
-  }));
+  filterSort = signal<SortColumn[]>([{ property: 'name', direction: 'ascending' }]);
+
+  /**
+   * The columns, rebuilt whenever a filter's state changes: `filterActive` and
+   * `filterSummary` are the page's to say, because only the page knows what
+   * its filter did.
+   */
+  filterColumns = computed<DatatableColumnDef[]>(() => {
+    const filterable = this.showFilters();
+    return [
+      // No filterMode: the built-in panel lists every distinct name in the data.
+      {
+        name: 'name',
+        label: 'Artist',
+        filterable,
+        filterActive: this.nameSelection().length > 0,
+        filterSummary: this.nameSummary(),
+      },
+      // Comparison mode: a year is a quantity, so an operator and one number
+      // beats ticking every distinct year. Still the built-in panel.
+      {
+        name: 'yearStarted',
+        label: 'Year started',
+        filterable,
+        filterMode: 'comparison',
+        filterInputType: 'number',
+        filterActive: this.yearOperand() !== null,
+        filterSummary: this.yearSummary(),
+      },
+      // Custom mode: the *bsDatatableFilter template renders this panel.
+      {
+        name: 'yearQuit',
+        label: 'Year quit',
+        sortable: false,
+        filterable,
+        filterMode: 'custom',
+        filterActive: this.activeOnly(),
+      },
+    ];
+  });
 
   /**
    * One handler for both panels. `mode` discriminates the union, so the
@@ -574,43 +560,20 @@ export class DatatablesComponent {
     <!-- filterable drives the row: with none, there is no second header row. -->
     <bs-checkbox [type]="'checkbox'" [(ngModel)]="showFilters">Show the filter row</bs-checkbox>
 
-    <bs-datatable [data]="filteredArtists()" [(settings)]="settings" [rowKey]="rowKey"
-      (filterChange)="onFilterChange($event)">
+    <bs-datatable [columns]="filterColumns()" [data]="filteredArtists()" [rowKey]="rowKey"
+      (filterchange)="onFilterChange($event)">
 
-      <!-- Default: a checkbox list of the column's distinct values, with
-           search, include/exclude and clear. No template, no wiring. -->
-      <div *bsDatatableColumn="'name';
-            filterable: showFilters();
-            filterActive: nameSelection().length > 0;
-            filterSummary: nameSummary()">
-        Artist
-      </div>
-
-      <!-- Comparison mode: an operator and one number. The right shape for a
-           quantity — ticking forty individual years is not a filter. -->
-      <div *bsDatatableColumn="'yearStarted';
-            filterable: showFilters();
-            filterMode: 'comparison';
-            filterInputType: 'number';
-            filterActive: yearOperand() !== null;
-            filterSummary: yearSummary()">
-        Year started
-      </div>
-
-      <!-- The escape hatch, nested INSIDE the column it belongs to. Style this
-           markup yourself: it is your DOM, the component never touches it, and
-           .form-control is only styled inside bs-* components here. -->
-      <div *bsDatatableColumn="'yearQuit'; filterable: showFilters()">
-        Year quit
-        <ng-container *bsDatatableFilterPanel="let values">
-          <div class="demo-filter-panel">
-            <label class="demo-filter-check">
-              <input type="checkbox" [ngModel]="activeOnly()" (ngModelChange)="activeOnly.set($event)" />
-              <span>Still active only</span>
-            </label>
-          </div>
-        </ng-container>
-      </div>
+      <!-- The escape hatch, for the column with filterMode: 'custom'. Style
+           this markup yourself: it is your DOM, and .form-control is only
+           styled inside bs-* components here. -->
+      <ng-template bsDatatableFilter let-ctx="ctx">
+        <div class="demo-filter-panel">
+          <label class="demo-filter-check">
+            <input type="checkbox" [ngModel]="activeOnly()" (ngModelChange)="activeOnly.set($event)" />
+            <span>Still active only</span>
+          </label>
+        </div>
+      </ng-template>
     </bs-datatable>
   `;
 
@@ -624,6 +587,21 @@ export class DatatablesComponent {
     nameInverse = signal(false);
     yearOperator = signal<FilterOperator>('gte');
     yearOperand = signal<number | null>(null);
+
+    filterColumns = computed<DatatableColumnDef[]>(() => [
+      // Default: a checkbox list of the column's distinct values, with
+      // search, include/exclude and clear. No template, no wiring.
+      { name: 'name', label: 'Artist', filterable: this.showFilters(),
+        filterActive: this.nameSelection().length > 0, filterSummary: this.nameSummary() },
+      // Comparison mode: an operator and one number. The right shape for a
+      // quantity — ticking forty individual years is not a filter.
+      { name: 'yearStarted', label: 'Year started', filterable: this.showFilters(),
+        filterMode: 'comparison', filterInputType: 'number',
+        filterActive: this.yearOperand() !== null, filterSummary: this.yearSummary() },
+      // Custom mode: the bsDatatableFilter template renders the panel.
+      { name: 'yearQuit', label: 'Year quit', filterable: this.showFilters(),
+        filterMode: 'custom', filterActive: this.activeOnly() },
+    ]);
 
     // One handler, one discriminated union. Switching on \`mode\` means the
     // comparison branch cannot read \`selected\` and the values branch cannot
@@ -647,8 +625,5 @@ export class DatatablesComponent {
     //     fetch(\`/api/distincts/\${column}?q=\${search}\`, { signal }).then(r => r.json());
     // Resolve null for a column to hand that one back to the local path.
     // Comparison columns never ask — that panel shows no list.
-
-    // filterActive and filterSummary are yours too: the component never derives
-    // them, because only you know what your filter did.
   `;
 }

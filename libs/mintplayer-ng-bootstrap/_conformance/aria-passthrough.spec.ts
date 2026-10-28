@@ -2,7 +2,6 @@ import { Component, type Type } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 
 import { BsHierarchyChartComponent } from '@mintplayer/ng-bootstrap/charts/hierarchy';
-import { BsDatatableComponent } from '@mintplayer/ng-bootstrap/datatable';
 import { BsDockManagerComponent } from '@mintplayer/ng-bootstrap/dock';
 import { BsFileManagerComponent } from '@mintplayer/ng-bootstrap/file-manager';
 import { BsQueryBuilderComponent } from '@mintplayer/ng-bootstrap/query-builder';
@@ -106,7 +105,6 @@ interface WrapperCase {
  */
 const WRAPPERS: WrapperCase[] = [
   { selector: 'bs-hierarchy-chart', tag: 'mp-hierarchy-chart', component: BsHierarchyChartComponent },
-  { selector: 'bs-datatable', tag: 'mp-datatable', component: BsDatatableComponent },
   { selector: 'bs-dock-manager', tag: 'mint-dock-manager', component: BsDockManagerComponent },
   { selector: 'bs-file-manager', tag: 'mp-file-manager', component: BsFileManagerComponent },
   { selector: 'bs-query-builder', tag: 'mp-query-builder', component: BsQueryBuilderComponent },

@@ -1,14 +1,14 @@
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 import { PaginationResponse } from '@mintplayer/pagination';
-import { BsDatatableFetch, BsDatatableFetchRequest } from '@mintplayer/ng-bootstrap/datatable';
+import type { DatatableFetch, DatatableFetchRequest } from '@mintplayer/ng-bootstrap/datatable';
 import { firstValueFrom } from 'rxjs';
 import { TreeItem } from '../../entities/tree-item';
 import { environment } from '../../../environments/environment';
 
 /**
  * Shape returned by the apps/api `TreeItemsController` endpoints. The Angular
- * `BsDatatableFetch` contract speaks `PaginationResponse<T>` (data /
+ * `DatatableFetch` contract speaks `PaginationResponse<T>` (data /
  * totalRecords / totalPages), so the service maps `PagedResult<T>` →
  * `PaginationResponse<T>` at the boundary.
  */
@@ -25,12 +25,12 @@ export class TreeItemService {
   private readonly baseUrl = `${environment.apiBase}/api/treeItems`;
 
   /**
-   * `BsDatatableFetch` callback that branches on `parentId`: undefined/null
+   * `DatatableFetch` callback that branches on `parentId`: undefined/null
    * loads roots; a numeric parentId loads that item's direct children. Both
    * paths share the same response shape so `<bs-datatable>` consumes them
    * identically.
    */
-  fetch: BsDatatableFetch<TreeItem> = async (req: BsDatatableFetchRequest) => {
+  fetch: DatatableFetch<TreeItem> = async (req: DatatableFetchRequest) => {
     const params = this.buildParams(req);
     const url = req.parentId == null
       ? this.baseUrl
@@ -39,7 +39,7 @@ export class TreeItemService {
     return this.toPaginationResponse(result, req);
   };
 
-  private buildParams(req: BsDatatableFetchRequest): HttpParams {
+  private buildParams(req: DatatableFetchRequest): HttpParams {
     let params = new HttpParams()
       .set('page', String(req.page ?? 1))
       .set('perPage', String(req.perPage ?? 50));
@@ -53,7 +53,7 @@ export class TreeItemService {
 
   private toPaginationResponse(
     result: PagedResult<TreeItem>,
-    req: BsDatatableFetchRequest,
+    req: DatatableFetchRequest,
   ): PaginationResponse<TreeItem> {
     const totalRecords = result?.totalCount ?? 0;
     const perPage = result?.pageSize ?? req.perPage ?? 50;

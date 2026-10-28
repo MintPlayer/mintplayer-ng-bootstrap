@@ -23,9 +23,9 @@ export interface PageChangeEventDetail {
  * resolves from their content's `max-content` — the consumer is responsible
  * for picking a cap that fits the host on their target viewports.
  *
- * This element keeps its shadow root until `mp-datatable` converts (#437 M5),
- * because the datatable renders it in its own shadow root. The framework
- * fronts render Bootstrap's `.pagination` markup from `connectPagination`.
+ * The framework fronts, and the datatable's own pager (#437 M5), render
+ * Bootstrap's `.pagination` markup from `connectPagination`; this element is
+ * the plain web-components consumer's.
  */
 export class MpPagination extends LitElement {
   static override styles = [paginationStyles];

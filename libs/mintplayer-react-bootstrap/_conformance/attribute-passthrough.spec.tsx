@@ -181,7 +181,7 @@ const CASES: Case[] = [
   bare('BsTrendChart', 'div.trend-chart', BsTrendChart),
   bare('BsCheckbox', 'input[type=checkbox]', BsCheckbox),
   bare('BsCodeSnippet', 'div.code-snippet', BsCodeSnippet),
-  bare('BsDatatable', 'mp-datatable', BsDatatable),
+  { ...bare('BsDatatable', 'div.datatable', BsDatatable), labelTarget: 'table' },
   bare('BsDatepicker', 'div.mp-datepicker', BsDatepicker),
   bare('BsDatetimePicker', 'div.mp-datetime-picker', BsDatetimePicker),
   bare('BsDockManager', 'mint-dock-manager', BsDockManager),

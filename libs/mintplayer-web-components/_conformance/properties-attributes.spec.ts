@@ -121,6 +121,14 @@ const OVERRIDES: Record<string, Override> = {
   'mp-input-group@size': { value: 'lg', reason: 'enum read straight from the attribute: sm | md | lg (md when absent)' },
   'mp-phone-input.value': { value: '+32470123456', reason: 'normalised to E.164 against the selected country' },
   'mp-phone-input@value': { value: '+32470123456', reason: 'normalised to E.164 against the selected country' },
+  'mp-datatable@page': {
+    restored: 1,
+    reason: 'page is a model: removing the attribute returns to the first page, written back by the model',
+  },
+  'mp-datatable@per-page': {
+    restored: 20,
+    reason: 'perPage is a model: removing the attribute returns to the default page size, written back by the model',
+  },
   'mp-phone-input@country': {
     value: 'be',
     restored: null,
@@ -411,7 +419,7 @@ describe('custom-elements.json property / attribute table', () => {
     expect(MANIFEST_PRESENT).toBe(true);
     expect(MOUNTABLE.length).toBeGreaterThanOrEqual(60);
     expect(attributeCases.length).toBeGreaterThanOrEqual(250);
-    expect(propertyCases.length).toBeGreaterThanOrEqual(225);
+    expect(propertyCases.length).toBeGreaterThanOrEqual(205);
   });
 
   it('cannot mount exactly the declarations listed in NOT_MOUNTABLE', () => {

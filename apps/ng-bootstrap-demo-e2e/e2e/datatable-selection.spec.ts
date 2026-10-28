@@ -23,7 +23,7 @@ async function mockArtistApi(page: Page) {
 
 /** The 'checkbox'-mode demo table, by its named hook — never by position. */
 function table(page: Page): Locator {
-  return page.locator('bs-datatable.selection-table mp-datatable');
+  return page.locator('bs-datatable.selection-table');
 }
 
 /** A body row by its key (tier L: rows are ordinary light-DOM descendants). */

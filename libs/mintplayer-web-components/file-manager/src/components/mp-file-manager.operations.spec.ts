@@ -81,7 +81,7 @@ async function selectInList(ids: string[]): Promise<void> {
   fm.viewMode = 'list';
   await settleAsync();
   datatable()!.dispatchEvent(
-    new CustomEvent('mp-datatable-selection-change', {
+    new CustomEvent('selectionchange', {
       detail: { selectedIds: ids, selectedRows: ids.map((id) => TREE.find((n) => n.id === id)) },
       bubbles: true,
       composed: true,

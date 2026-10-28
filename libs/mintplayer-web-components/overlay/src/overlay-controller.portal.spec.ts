@@ -4,8 +4,8 @@ import { OverlayController } from './overlay-controller';
 import { currentOverlayContainer, openPaneCount } from './overlay-portal';
 
 /**
- * A light-DOM host with a portalled overlay, shaped like `mp-datatable`'s
- * filter panel: the controller owns the pane, the host renders into it.
+ * A light-DOM host with a portalled overlay, such as a filter panel: the
+ * controller owns the pane, the host renders into it.
  */
 class PortalHost extends LitElement {
   readonly overlay: OverlayController = new OverlayController(this, {

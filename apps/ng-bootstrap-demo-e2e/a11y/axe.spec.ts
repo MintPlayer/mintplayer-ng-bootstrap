@@ -55,7 +55,7 @@ axeAuditSuite(test, expect, [
   {
     path: '/enterprise/datatables',
     ready: async (page) => {
-      await page.waitForSelector('mp-datatable');
+      await page.waitForSelector('bs-datatable div.datatable');
     },
   },
   {

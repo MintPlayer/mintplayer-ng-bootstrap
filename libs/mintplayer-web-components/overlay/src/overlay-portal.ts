@@ -12,7 +12,7 @@
  * component, which holds only while **no ancestor establishes a fixed
  * containing block**. That rule is enforced by comments, and it is unenforceable
  * outright when the ancestors belong to a consumer's application — as they do
- * for a light-DOM component such as `mp-datatable`.
+ * for a light-DOM component.
  *
  * Moving the panel to a container that is the last child of `<body>` removes
  * both problems at once: nothing clips it, and panes stack in DOM order rather

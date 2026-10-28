@@ -1,5 +1,5 @@
-import { useCallback, useRef, useState } from 'react';
-import { BsDatatable } from '@mintplayer/react-bootstrap/datatable';
+import { useCallback, useState, type ReactNode } from 'react';
+import { BsDatatable, cellText } from '@mintplayer/react-bootstrap/datatable';
 import { BsCodeSnippet } from '@mintplayer/react-bootstrap/code-snippet';
 import type {
   DatatableColumnDef,
@@ -9,8 +9,9 @@ import type {
   RowEventDetail,
   DistinctValue,
   FilterChangeDetail,
+  FilterContext,
   FilterOperator,
-} from '@mintplayer/web-components/datatable';
+} from '@mintplayer/react-bootstrap/datatable';
 import './DatatablePage.css';
 
 // In dev, /api is proxied to localhost:5000 by vite.config.mts. In prod we
@@ -57,38 +58,36 @@ const SIMPLE_SOURCE = `<BsDatatable columns={COLUMNS} data={ARTISTS} />`;
 
 // Column resizing: the actions column has an icon-only header, so `label`
 // names it in the generated strings, and `resizable: false` drops its handle.
-function actionsHeader(): Node {
-  const glyph = document.createElement('span');
-  glyph.setAttribute('aria-hidden', 'true');
-  glyph.textContent = '⋯';
-  return glyph;
-}
-
-function detailsButton(row: unknown): Node {
-  const button = document.createElement('button');
-  button.type = 'button';
-  button.className = 'btn btn-sm btn-outline-secondary';
-  button.textContent = 'Details';
-  button.setAttribute('aria-label', `Details for ${(row as Artist).name}`);
-  return button;
-}
-
 const RESIZE_COLUMNS: DatatableColumnDef[] = [
   { name: 'name',    label: 'Name' },
   { name: 'genre',   label: 'Genre' },
-  { name: 'actions', label: 'Actions', sortable: false, resizable: false,
-    headerRenderer: actionsHeader, cellRenderer: detailsButton },
+  { name: 'actions', label: 'Actions', sortable: false, resizable: false },
 ];
+
+// The header and cell slots render every column; the others keep their text.
+const resizeHeader = ({ column }: { column: DatatableColumnDef }): ReactNode =>
+  column.name === 'actions' ? <span aria-hidden="true">⋯</span> : column.label;
+
+const resizeCell = ({ row, column, rowIndex }: { row: unknown; column: DatatableColumnDef; rowIndex: number }): ReactNode =>
+  column.name === 'actions'
+    ? <button type="button" className="btn btn-sm btn-outline-secondary" aria-label={`Details for ${(row as Artist).name}`}>Details</button>
+    : cellText(row, column, rowIndex);
 
 const RESIZE_SOURCE = `const RESIZE_COLUMNS: DatatableColumnDef[] = [
   { name: 'name',  label: 'Name' },
   { name: 'genre', label: 'Genre' },
   // Icon-only header: label names it; resizable: false drops its handle.
-  { name: 'actions', label: 'Actions', sortable: false, resizable: false,
-    headerRenderer: actionsHeader, cellRenderer: detailsButton },
+  { name: 'actions', label: 'Actions', sortable: false, resizable: false },
 ];
 
-<BsDatatable columns={RESIZE_COLUMNS} data={ARTISTS} />`;
+<BsDatatable
+  columns={RESIZE_COLUMNS}
+  data={ARTISTS}
+  header={({ column }) => column.name === 'actions' ? <span aria-hidden="true">⋯</span> : column.label}
+  cell={({ row, column, rowIndex }) => column.name === 'actions'
+    ? <button type="button" className="btn btn-sm btn-outline-secondary">Details</button>
+    : cellText(row, column, rowIndex)}
+/>`;
 
 // Enough rows to overflow a tile-sized parent.
 const FILL_ROWS: Artist[] = Array.from({ length: 40 }, (_, i) => ({
@@ -112,7 +111,7 @@ const FILL_VIRTUAL_SOURCE = `// The parent's height replaces the default virtual
   <BsDatatable fill virtualScroll itemSize={40} columns={COLUMNS} data={rows} />
 </div>`;
 
-const FILTER_SOURCE = `// filterable is the whole opt-in: with no filterRenderer the built-in
+const FILTER_SOURCE = `// filterable is the whole opt-in: with no filterMode the built-in
 // panel renders — search, include/exclude, a checkbox list of the
 // column's distinct values, and clear. No React code behind it.
 const columns: DatatableColumnDef[] = COLUMNS.map((col) =>
@@ -132,8 +131,7 @@ const founded = { ...col, filterable: true,
 
 // One handler, one discriminated union: switching on \`mode\` means the
 // comparison branch cannot read \`selected\`, and vice versa.
-const onFilterChange = useCallback((e: CustomEvent<FilterChangeDetail>) => {
-  const d = e.detail;
+const onFilterChange = useCallback((d: FilterChangeDetail) => {
   if (d.mode === 'values' && d.column === 'name') {
     setNameSelection(d.selected);   // [] when the user clears
     setNameInverse(d.inverse);      // the include/exclude toggle
@@ -180,10 +178,10 @@ interface Order {
 const MATCH_ALL = { kind: 'group', id: '00000000-0000-4000-8000-000000000000', logic: 'and', children: [] };
 
 const ORDER_COLUMNS: DatatableColumnDef[] = [
-  { name: 'id',        label: 'Order',  cellRenderer: (r) => `#${(r as Order)?.id}` },
-  { name: 'total',     label: 'Total',  cellRenderer: (r) => `€${((r as Order)?.total ?? 0).toFixed(2)}` },
-  { name: 'status',    label: 'Status', cellRenderer: (r) => (r as Order)?.status ?? '' },
-  { name: 'orderDate', label: 'Date',   cellRenderer: (r) => {
+  { name: 'id',        label: 'Order',  format: (r) => `#${(r as Order)?.id}` },
+  { name: 'total',     label: 'Total',  format: (r) => `€${((r as Order)?.total ?? 0).toFixed(2)}` },
+  { name: 'status',    label: 'Status' },
+  { name: 'orderDate', label: 'Date',   format: (r) => {
     const d = (r as Order)?.orderDate;
     return d ? new Date(d).toLocaleDateString() : '';
   } },
@@ -205,7 +203,7 @@ async function fetchOrders(req: DatatableFetchRequest): Promise<DatatableFetchRe
   return { data: json.items, totalRecords: json.totalCount };
 }
 
-const WINDOWED_SOURCE = `// One callback. The WC owns page 1, every window, the total, and the scrollbar.
+const WINDOWED_SOURCE = `// One callback. The table owns page 1, every window, the total, and the scrollbar.
 const fetchOrders = useCallback(
   async (req: DatatableFetchRequest): Promise<DatatableFetchResponse<Order>> => {
     const res = await api.searchOrders(req.page, req.perPage, req.sortColumns);
@@ -229,8 +227,8 @@ const SELECTION_SOURCE = `<BsDatatable
   selectionMode="checkbox"     // row click opens; the checkbox cell selects
   rowKey={(row) => String(row.id)}       // stable identity, required with fetch
   rowLabel={(row) => \`order #\${row.id}\`} // "Select order #12"
-  onRowClick={(e) => setOpened(e.detail.row)}
-  onSelectionChange={(e) => setSelectedIds(e.detail.selectedIds)}
+  onRowClick={(d) => setOpened(d.row)}
+  onSelectedIdsChange={setSelectedIds}
 />`;
 
 // ─── Tree-mode demo ──────────────────────────────────────────────────────────
@@ -252,9 +250,9 @@ interface PagedResult<T> {
 }
 
 const TREE_COLUMNS: DatatableColumnDef[] = [
-  { name: 'name',      label: 'Name',      sortable: true, cellRenderer: (r) => (r as TreeItem)?.name ?? '' },
-  { name: 'code',      label: 'Code',      sortable: true, cellRenderer: (r) => (r as TreeItem)?.code ?? '' },
-  { name: 'headcount', label: 'Headcount', sortable: true, cellRenderer: (r) => String((r as TreeItem)?.headcount ?? '') },
+  { name: 'name',      label: 'Name',      sortable: true },
+  { name: 'code',      label: 'Code',      sortable: true },
+  { name: 'headcount', label: 'Headcount', sortable: true },
 ];
 
 async function fetchTreeItems(parentId: number | null, page: number, perPage: number): Promise<PagedResult<TreeItem>> {
@@ -280,7 +278,7 @@ const fetchTree = useCallback(
   virtualScroll itemSize={40}
   tree idKey="id" childCountKey="childCount"
   selectionMode="multiple" selectionStrategy="cascading"
-  onSelectionChange={(e) => setSelected(e.detail.selectedRows)}
+  onSelectionChange={(d) => setSelected(d.selectedRows)}
 />`;
 
 export function DatatablePage() {
@@ -289,11 +287,8 @@ export function DatatablePage() {
   const [selectedOrderIds, setSelectedOrderIds] = useState<string[]>([]);
   const [openedOrder, setOpenedOrder] = useState<Order | null>(null);
 
-  const onOrderSelectionChange = useCallback((e: CustomEvent<SelectionChangeEventDetail>) => {
-    setSelectedOrderIds(e.detail.selectedIds);
-  }, []);
-  const onOrderRowClick = useCallback((e: CustomEvent<RowEventDetail>) => {
-    setOpenedOrder(e.detail.row as Order);
+  const onOrderRowClick = useCallback((d: RowEventDetail) => {
+    setOpenedOrder(d.row as Order);
   }, []);
 
   // Real orders source (1000 seeded rows) + a live fetch log.
@@ -313,8 +308,8 @@ export function DatatablePage() {
     [],
   );
 
-  const onSelectionChange = useCallback((e: CustomEvent<SelectionChangeEventDetail>) => {
-    setSelectedRows(e.detail.selectedRows as TreeItem[]);
+  const onSelectionChange = useCallback((d: SelectionChangeEventDetail) => {
+    setSelectedRows(d.selectedRows as TreeItem[]);
   }, []);
 
   // ─── Column filters ───────────────────────────────────────────────────────
@@ -354,8 +349,7 @@ export function DatatablePage() {
   // One handler, one discriminated union: switching on `mode` means the
   // comparison branch cannot read `selected` and the values branch cannot read
   // `operand` — the compiler enforces the real runtime shape.
-  const onFilterChange = useCallback((e: CustomEvent<FilterChangeDetail>) => {
-    const d = e.detail;
+  const onFilterChange = useCallback((d: FilterChangeDetail) => {
     if (d.mode === 'values' && d.column === 'name') {
       setNameSelection(d.selected);
       setNameInverse(d.inverse);
@@ -367,36 +361,29 @@ export function DatatablePage() {
     }
   }, []);
 
-  // An override panel, for the case neither built-in question fits.
-  // `filterRenderer` returns a DOM Node — the same contract all three frameworks
-  // see — so it is built imperatively rather than as JSX, and it must return a
-  // STABLE node: the element mounts it once per open, so repainting it is this
-  // function's job, not the element's.
+  // An override panel, for the case neither built-in question fits: the
+  // column sets `filterMode: 'custom'` and the table's `filter` slot renders
+  // it, as ordinary JSX. The other columns keep their built-in panels.
   //
   // The classes below are the PAGE's (see DatatablePage.css). Bootstrap's
-  // `.form-control` is only styled inside `bs-*` components in this workspace,
-  // and the panel renders in the document-root overlay, outside the table.
-  const genrePanel = useRef<HTMLElement | null>(null);
-  const genrePanelNode = (): Node => {
-    if (genrePanel.current) return genrePanel.current;
-    const wrap = document.createElement('div');
-    wrap.className = 'demo-filter-panel';
-    const label = document.createElement('label');
-    label.className = 'demo-filter-label';
-    label.textContent = 'Genre starts with';
-    const input = document.createElement('input');
-    input.type = 'text';
-    input.className = 'demo-filter-input';
-    label.htmlFor = input.id = 'react-filter-genre';
-    input.addEventListener('input', () => setGenreStartsWith(input.value));
-    wrap.append(label, input);
-    genrePanel.current = wrap;
-    return wrap;
-  };
+  // `.form-control` is only styled inside `bs-*` components in this workspace.
+  const filterPanel = ({ column }: { column: DatatableColumnDef; ctx: FilterContext }): ReactNode =>
+    column.name === 'genre' && (
+      <div className="demo-filter-panel">
+        <label className="demo-filter-label" htmlFor="react-filter-genre">Genre starts with</label>
+        <input
+          id="react-filter-genre"
+          type="text"
+          className="demo-filter-input"
+          value={genreStartsWith}
+          onChange={(e) => setGenreStartsWith(e.target.value)}
+        />
+      </div>
+    );
 
   const filterColumns: DatatableColumnDef[] = COLUMNS.map((col) => {
     if (!showFilters) return col;
-    // No filterRenderer and no filterMode: the built-in value list renders.
+    // No filterMode: the built-in value list renders.
     // That is the whole opt-in.
     if (col.name === 'name') {
       return {
@@ -425,8 +412,8 @@ export function DatatablePage() {
         ...col,
         filterable: true,
         filterActive: genreStartsWith !== '',
+        filterMode: 'custom',
         filterSummary: genreStartsWith || undefined,
-        filterRenderer: genrePanelNode,
       };
     }
     return col;
@@ -474,7 +461,7 @@ export function DatatablePage() {
           <li><kbd>&larr;</kbd> / <kbd>&rarr;</kbd> make the column 10&nbsp;px narrower or wider.</li>
           <li><kbd>Enter</kbd> opens the resize options: narrower, wider, fit to content, reset. <kbd>Esc</kbd> closes them.</li>
         </ul>
-        <BsDatatable columns={RESIZE_COLUMNS} data={ARTISTS} />
+        <BsDatatable columns={RESIZE_COLUMNS} data={ARTISTS} header={resizeHeader} cell={resizeCell} />
         <BsCodeSnippet code={RESIZE_SOURCE} language="tsx" />
       </section>
 
@@ -556,7 +543,8 @@ export function DatatablePage() {
           rowKey={orderRowKey}
           rowLabel={orderRowLabel}
           onRowClick={onOrderRowClick}
-          onSelectionChange={onOrderSelectionChange}
+          selectedIds={selectedOrderIds}
+          onSelectedIdsChange={setSelectedOrderIds}
         />
 
         <p className="text-body-secondary">
@@ -617,7 +605,7 @@ export function DatatablePage() {
         <p>
           A filterable column gets a <strong>built-in panel</strong> for free: a
           search box, an include/exclude toggle, a checkbox list of the column's
-          distinct values, and a clear button. It lives in the web component, so
+          distinct values, and a clear button. It lives in the shared core, so
           there is no React code behind it at all &mdash; the <em>Artist</em>{' '}
           column below just sets <code>filterable</code>.
         </p>
@@ -627,7 +615,7 @@ export function DatatablePage() {
           operator (=, &ne;, &lt;, &le;, &gt;, &ge;) and a single input, with{' '}
           <code>filterInputType</code> choosing <code>number</code> (the
           default) or <code>date</code> &mdash; the <em>Founded</em> column
-          below. Still the built-in panel: no renderer, no styling of your own.
+          below. Still the built-in panel: no slot, no styling of your own.
           Narrow the list with <code>filterOperators</code> when only some
           operators make sense.
         </p>
@@ -644,20 +632,19 @@ export function DatatablePage() {
           so any guess would be wrong about half the time.
         </p>
         <p>
-          When neither built-in question fits, give the column a{' '}
-          <code>filterRenderer</code> &mdash; <em>Genre</em> does. It returns a
-          DOM <code>Node</code> (the same contract all three frameworks see) and
-          must return a <strong>stable</strong> one: the element mounts it once
-          per open, so repainting it is the renderer's job.{' '}
+          When neither built-in question fits, set{' '}
+          <code>filterMode: 'custom'</code> on the column and render the panel
+          in the table's <code>filter</code> slot &mdash; <em>Genre</em> does.
+          The slot receives the column and a context with the loaded values and
+          the search, apply and clear commands.{' '}
           <strong>That markup is yours, so you style it</strong> &mdash;
           Bootstrap's <code>.form-control</code> is only styled inside{' '}
-          <code>bs-*</code> components here, and the panel renders in the
-          document-root overlay, outside the table.
+          <code>bs-*</code> components here.
         </p>
         <p>
-          The panel opens in an overlay at the document root, so it is not
-          clipped by the scroll container and not hidden behind the sticky
-          header &mdash; this demo runs in virtual-scroll mode, where both would
+          The panel is a native popover in the top layer, so it is not clipped
+          by the scroll container and not hidden behind the sticky header
+          &mdash; this demo runs in virtual-scroll mode, where both would
           otherwise happen.
         </p>
         <p>
@@ -692,6 +679,7 @@ export function DatatablePage() {
           itemSize={40}
           rowKey={(row: unknown) => String((row as Artist).id)}
           onFilterChange={onFilterChange}
+          filter={filterPanel}
         />
         <small className="text-body-secondary">
           Showing {filteredArtists.length} of {ARTISTS.length} artists.

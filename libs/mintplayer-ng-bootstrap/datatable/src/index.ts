@@ -1,40 +1,36 @@
-export * from './datatable/datatable.component';
-export * from './datatable-settings';
-export * from './datatable-fetch';
-export * from './datatable-column/datatable-column.directive';
-export * from './datatable-filter-panel/datatable-filter-panel.directive';
-export * from './row-template/row-template.directive';
+// The datatable is generated from @mintplayer/ui-core/datatable (PRD #437 D10).
+export * from './generated';
+export { DEFAULT_DATATABLE_LABELS, cellText, computeNextSort, sortRows } from '@mintplayer/ui-core/datatable';
 export type {
-  DatatableColumnDef,
-  CellContent,
-  CellRenderer,
-  HeaderRenderer,
-  FilterRenderer,
-  FilterContext,
-  FilterSelection,
-  FilterChangeDetail,
-  ValuesFilterChangeDetail,
   ComparisonFilterChangeDetail,
-  FilterMode,
-  FilterOperator,
-  FilterInputType,
+  DatatableColumnDef,
+  DatatableDistincts,
+  DatatableFetch,
+  DatatableFetchRequest,
+  DatatableFetchResponse,
+  DatatableHrefFor,
+  DatatableHrefState,
+  DatatableLabels,
+  DatatableLoadErrorDetail,
+  DatatableReloadOptions,
+  DatatableSelectionMode,
   DistinctValue,
   DistinctValues,
   DistinctsRequest,
-  DatatableDistincts,
-  DatatableLabels,
-  RowKey,
-  RowRenderer,
-  RowRenderContext,
-  DatatableSelectionMode,
+  FilterChangeDetail,
+  FilterContext,
+  FilterInputType,
+  FilterMode,
+  FilterOperator,
+  FilterSelection,
   RowEventDetail,
-  SortChangeEventDetail,
+  RowKey,
+  RowRenderContext,
   SelectionChangeEventDetail,
+  SortColumn,
+  SortDirection,
   TreeIdKey,
-  TreeSelectionStrategy,
-  DatatableFetchRequest,
-  DatatableFetchResponse,
-  DatatableFetch,
   TreeRowExpandDetail,
-  TreeExpandedIdsChangeDetail,
-} from '@mintplayer/web-components/datatable';
+  TreeSelectionStrategy,
+  ValuesFilterChangeDetail,
+} from '@mintplayer/ui-core/datatable';

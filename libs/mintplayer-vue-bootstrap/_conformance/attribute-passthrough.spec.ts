@@ -113,7 +113,7 @@ const TARGETS: Record<string, string> = {
   BsTrendChart: 'div.trend-chart',
   BsCheckbox: 'input[type=checkbox]',
   BsCodeSnippet: 'div.code-snippet',
-  BsDatatable: 'mp-datatable',
+  BsDatatable: 'div.datatable',
   BsDatepicker: 'div.mp-datepicker',
   BsDatetimePicker: 'div.mp-datetime-picker',
   BsDockManager: 'mint-dock-manager',
@@ -177,6 +177,7 @@ const COMPOSED: Record<string, () => Component> = {
  * the sparkline's span is sized, its role=img svg is what aria-label names.
  */
 const LABEL_TARGETS: Record<string, string> = {
+  BsDatatable: 'table',
   BsSparkline: 'svg[role=img]',
 };
 

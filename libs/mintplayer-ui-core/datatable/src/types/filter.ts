@@ -61,12 +61,15 @@ export type DatatableDistincts = (request: DistinctsRequest) => Promise<Distinct
  * `'values'` lists the column's distinct values as checkboxes. `'comparison'`
  * offers an operator and a single operand — the right shape for a quantity,
  * where ticking forty individual years is a poor way to say "after 1990".
+ * `'custom'` renders the table's `filter` slot instead of a built-in panel, for
+ * that column only; the slot gets the column and a `FilterContext` (the
+ * distinct values load as in `'values'` mode).
  *
  * The consumer picks this per column and the component never infers it: a
  * numeric column is often an enum (a year, in a five-row table) and a string
  * column is often ordinal, so any guess would be wrong about half the time.
  */
-export type FilterMode = 'values' | 'comparison';
+export type FilterMode = 'values' | 'comparison' | 'custom';
 
 /** The comparison a `'comparison'` panel applies. */
 export type FilterOperator = 'eq' | 'neq' | 'lt' | 'lte' | 'gt' | 'gte';
@@ -100,26 +103,29 @@ export interface FilterSelection {
 }
 
 /**
- * Handed to `FilterRenderer` so a consumer's own panel can drive the same
- * machinery the default panel uses — the value list, the search re-query and
- * the change event are the component's, whatever renders them.
- *
- * `values()` and `loading()` are plain getters, not signals: the WC core is
- * framework-agnostic. Re-render on `onChange`.
+ * The `filter` slot's `ctx`: a snapshot of the open panel plus the commands the
+ * built-in panels use, so a consumer's own panel drives the same machinery — the
+ * value list, the search re-query and the change event stay the component's.
+ * The slot re-renders with a fresh snapshot on every change.
  */
 export interface FilterContext {
   /** The current list, or `null` while nothing has loaded (or nothing can). */
-  values(): DistinctValues | null;
+  readonly values: DistinctValues | null;
   /** `true` while a source request for this column is in flight. */
-  loading(): boolean;
+  readonly loading: boolean;
+  readonly selection: FilterSelection;
+  /** The search box's term. */
+  readonly term: string;
   /** Set the search term. Debounced; re-queries the source only when needed. */
   search(term: string): void;
   /** Replace the selection and emit the change event. */
   apply(values: DistinctValue[], inverse: boolean): void;
-  /** Clear the selection, reset `inverse`, and emit the change event. */
+  /** Set a comparison from the operand's raw text; empty or unparseable text clears it. */
+  compare(operator: FilterOperator, operand: string): void;
+  /** Clear the selection (in the column's own mode) and emit the change event. */
   clear(): void;
-  /** Subscribe to value-list and selection changes. Returns an unsubscribe. */
-  onChange(callback: () => void): () => void;
+  /** Close the panel. */
+  close(): void;
 }
 
 /**

@@ -1,15 +1,16 @@
 import { DemoFormStateComponent } from '../../../components/form-state/form-state.component';
 import { BsGridComponent, BsGridRowDirective, BsGridColumnDirective } from '@mintplayer/ng-bootstrap/grid';
-import { ChangeDetectionStrategy, Component, computed, effect, inject, signal, untracked } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, effect, inject, signal, untracked, viewChild } from '@angular/core';
 import { HttpClient, HttpErrorResponse } from '@angular/common/http';
 import { FormsModule, ReactiveFormsModule, FormControl } from '@angular/forms';
 import { firstValueFrom } from 'rxjs';
-import { PaginationRequest, PaginationResponse } from '@mintplayer/pagination';
 import {
   BsDatatableComponent,
-  BsRowTemplateDirective,
-  BsDatatableFetch,
-  DatatableSettings,
+  BsDatatableRowDirective,
+  type DatatableColumnDef,
+  type DatatableFetch,
+  type DatatableFetchRequest,
+  type SortColumn,
 } from '@mintplayer/ng-bootstrap/datatable';
 import { BsQueryBuilderComponent, BsQueryBuilderEditorDirective } from '@mintplayer/ng-bootstrap/query-builder';
 import { BsCodeSnippetComponent } from '@mintplayer/ng-bootstrap/code-snippet';
@@ -46,7 +47,7 @@ const SAVED_QUERIES_KEY = 'mp-qb-demo:savedQueries';
   styleUrls: ['./query-builder.component.scss'],
   imports: [ReactiveFormsModule, BsGridComponent, BsGridRowDirective, BsGridColumnDirective, DemoFormStateComponent, 
     BsQueryBuilderComponent, BsQueryBuilderEditorDirective,
-    BsDatatableComponent, BsRowTemplateDirective,
+    BsDatatableComponent, BsDatatableRowDirective,
     FormsModule,
     BsCodeSnippetComponent,
   ],
@@ -74,10 +75,9 @@ export class QueryBuilderDemoComponent {
   selectedFields = signal<string[]>([]);
   sortBy = signal<SortDescriptor[]>([]);
 
-  settings = signal(new DatatableSettings({
-    perPage: { values: [10, 20, 50, 100], selected: 20 },
-    page: { values: [1], selected: 1 },
-  }));
+  sortColumns = signal<SortColumn[]>([]);
+
+  private readonly table = viewChild(BsDatatableComponent);
 
   busy = signal(false);
   error = signal<string | null>(null);
@@ -93,7 +93,7 @@ export class QueryBuilderDemoComponent {
    * Empty `selectedFields()` is treated as "show everything" so the demo is
    * never blank.
    */
-  datatableColumns = computed(() => {
+  datatableColumns = computed<DatatableColumnDef[]>(() => {
     const entity = this.schema().find((s) => s.name === this.rootEntity());
     if (!entity) return [];
     const projectable = entity.fields.filter((f) => f.type !== 'relation');
@@ -104,7 +104,7 @@ export class QueryBuilderDemoComponent {
     return visible.map((f) => ({ name: f.name, label: f.label, sortable: true }));
   });
 
-  fetchRows: BsDatatableFetch<Record<string, unknown>> = async (req: PaginationRequest) => {
+  fetchRows: DatatableFetch<Record<string, unknown>> = async (req: DatatableFetchRequest) => {
     this.busy.set(true);
     this.error.set(null);
     try {
@@ -123,22 +123,14 @@ export class QueryBuilderDemoComponent {
       const url = `${environment.apiBase}/api/${this.rootEntity()}/search`;
       const r = await firstValueFrom(this.http.post<PagedResult<Record<string, unknown>>>(url, body));
       this.lastTotal.set(r.totalCount);
-      return <PaginationResponse<Record<string, unknown>>>{
-        data: r.items,
-        totalRecords: r.totalCount,
-        totalPages: Math.max(1, Math.ceil(r.totalCount / r.pageSize)),
-        page: r.page,
-        perPage: r.pageSize,
-      };
+      return { data: r.items, totalRecords: r.totalCount };
     } catch (err) {
       const detail = (err as HttpErrorResponse).error as { code?: string; detail?: string } | undefined;
       this.error.set(detail?.code
         ? `${detail.code}${detail.detail ? `: ${detail.detail}` : ''}`
         : 'Request failed');
       this.lastTotal.set(0);
-      return <PaginationResponse<Record<string, unknown>>>{
-        data: [], totalRecords: 0, totalPages: 1, page: req.page, perPage: req.perPage,
-      };
+      return { data: [], totalRecords: 0 };
     } finally {
       this.busy.set(false);
     }
@@ -153,31 +145,24 @@ export class QueryBuilderDemoComponent {
         this.query.set(emptyGroup('and'));
         this.selectedFields.set([]);
         this.sortBy.set([]);
-        this.settings.set(new DatatableSettings({
-          sortColumns: [],
-          perPage: this.settings().perPage,
-          page: { values: this.settings().page.values, selected: 1 },
-        }));
+        this.sortColumns.set([]);
+        this.table()?.reload({ resetPage: true });
       });
     });
 
     effect(() => {
       const sort = this.sortBy();
-      const current = untracked(() => this.settings());
+      const current = untracked(() => this.sortColumns());
       const nextSortColumns = sort.map((s) => ({
         property: s.field,
         direction: (s.direction === 'asc' ? 'ascending' : 'descending') as 'ascending' | 'descending',
       }));
-      if (sortColumnsEqual(current.sortColumns, nextSortColumns)) return;
-      this.settings.set(new DatatableSettings({
-        sortColumns: nextSortColumns,
-        perPage: current.perPage,
-        page: current.page,
-      }));
+      if (sortColumnsEqual(current, nextSortColumns)) return;
+      this.sortColumns.set(nextSortColumns);
     });
 
     effect(() => {
-      const cols = this.settings().sortColumns;
+      const cols = this.sortColumns();
       const current = untracked(() => this.sortBy());
       const next = cols.map((c) => ({
         field: c.property,
@@ -196,12 +181,7 @@ export class QueryBuilderDemoComponent {
   }
 
   search(): void {
-    const s = this.settings();
-    this.settings.set(new DatatableSettings({
-      sortColumns: s.sortColumns,
-      perPage: s.perPage,
-      page: { values: s.page.values, selected: 1 },
-    }));
+    this.table()?.reload({ resetPage: true });
   }
 
   onSaveQuery(e: { name: string; tree: Expression }): void {

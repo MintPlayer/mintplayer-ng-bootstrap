@@ -115,7 +115,11 @@ function bare(ctx, el, depth) {
   const spread = FORM_TAGS.has(el.tag) ? 'reactFormProps' : el.tag === 'option' ? 'reactOptionProps' : 'reactProps';
 
   let bagExpr = null;
-  const attrs = renderedProps(el).map((p) => {
+  // `.prop` bindings React has no prop for (`indeterminate`), or would make a
+  // controlled input of (`checked`): written onto the node by a ref callback,
+  // which React re-runs every render because the arrow is new each time.
+  const nodeProps = [];
+  const attrs = renderedProps(el).flatMap((p) => {
     if (p.type === PROP.ATTRIBUTE) {
       const name = RENAME[p.name] ?? p.name;
       return p.value ? `${name}=${JSON.stringify(p.value.content)}` : `${name}`;
@@ -132,17 +136,24 @@ function bare(ctx, el, depth) {
         ctx.uses.add('reactStyle');
         return `style={reactStyle(${exp})}`;
       }
-      const seed = FORM_TAGS.has(el.tag) && p.arg.content === 'value' && p.modifiers.some((m) => (m.content ?? m) === 'prop');
+      const isProp = p.modifiers.some((m) => (m.content ?? m) === 'prop');
+      const seed = FORM_TAGS.has(el.tag) && p.arg.content === 'value' && isProp;
+      if (isProp && !seed) {
+        nodeProps.push(`node.${p.arg.content} = ${exp};`);
+        return [];
+      }
       const name = seed ? 'defaultValue' : (RENAME[p.arg.content] ?? p.arg.content);
       return `${name}={${exp}}`;
     }
     return `${eventProp(p.arg.content)}={${exp}}`;
   });
   const ref = refName(el);
+  if (ref && nodeProps.length) throw new TemplateError(ctx.src.file, el, 'an element with a ref takes no .prop binding other than :value.prop');
   if (ref) {
     ctx.refs.set(ref, el.tag);
     attrs.push(`ref={${ref}Ref}`);
   }
+  if (nodeProps.length) attrs.push(`ref={(node: ${el.tag === 'input' ? 'HTMLInputElement' : 'HTMLElement & Record<string, unknown>'} | null) => { if (node) { ${nodeProps.join(' ')} } }}`);
   // v-html: core-produced markup, never consumer input.
   const html = directive(el, 'html');
   if (html) attrs.push(`dangerouslySetInnerHTML={{ __html: ${x(ctx, html.exp.content)} }}`);

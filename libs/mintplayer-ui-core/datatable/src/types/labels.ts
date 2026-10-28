@@ -21,6 +21,8 @@ export interface DatatableLabels {
   collapseRow: string;
   loading: string;
   rowsPerPage: string;
+  /** Names the page navigation. */
+  pagination: string;
   resizeColumn: (column: string) => string;
   /**
    * Announced once, the first time a resize handle takes focus: how to resize
@@ -146,6 +148,7 @@ export const DEFAULT_DATATABLE_LABELS: DatatableLabels = {
   collapseRow: 'Collapse row',
   loading: 'Loading',
   rowsPerPage: 'Rows per page',
+  pagination: 'Pagination',
   resizeColumn: (column) => `Resize column ${column}`,
   resizeColumnHint: 'Left and Right arrows resize the column. Enter opens the resize options.',
   resizeColumnOptions: (column) => `Resize options for ${column}`,
