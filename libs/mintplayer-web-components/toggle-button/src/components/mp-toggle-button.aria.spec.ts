@@ -51,8 +51,9 @@ describe('mp-toggle-button naming', () => {
     expect(host.shadowRoot).toBeNull();
     expect(label.querySelector('b')?.textContent).toBe('Bold');
     expect(label.htmlFor).toBe(input.id);
-    expect(input.getAttribute('role')).toBe('button');
-    expect(input.getAttribute('aria-pressed')).toBe('false');
+    // A native checkbox: its checked state is announced with or without JS.
+    expect(input.hasAttribute('role')).toBe(false);
+    expect(input.hasAttribute('aria-pressed')).toBe(false);
     expect(input.hasAttribute('name')).toBe(false);
   });
 

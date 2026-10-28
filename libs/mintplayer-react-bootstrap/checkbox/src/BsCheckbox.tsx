@@ -96,7 +96,7 @@ export const BsCheckbox = forwardRef<HTMLInputElement, BsCheckboxProps>(function
       className={[classes.input, className].filter(Boolean).join(' ')}
       {...reactProps(bags.input)}
       {...rest}
-      // switch / button roles are the contract; a plain checkbox keeps a consumer role.
+      // the switch role is the contract; a plain checkbox keeps a consumer role.
       role={bags.input.role === null ? (rest as { role?: string }).role : String(bags.input.role)}
       id={inputId}
       type="checkbox"

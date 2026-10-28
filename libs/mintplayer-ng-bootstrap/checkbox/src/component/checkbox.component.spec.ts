@@ -79,19 +79,20 @@ describe('BsCheckboxComponent', () => {
     expect(input().getAttribute('role')).toBe('switch');
   });
 
-  it('a toggle button is a .btn-check input + label[for], role=button with aria-pressed', () => {
+  it('a toggle button is a .btn-check input + label[for], keeping the native checkbox role', () => {
     fixture.componentInstance.type.set('toggle_button');
     fixture.detectChanges();
     expect(input().classList.contains('btn-check')).toBe(true);
     expect(label().classList.contains('btn')).toBe(true);
     expect(label().classList.contains('btn-primary')).toBe(true);
     expect(label().htmlFor).toBe(input().id);
-    expect(input().getAttribute('role')).toBe('button');
-    expect(input().getAttribute('aria-pressed')).toBe('false');
+    expect(input().hasAttribute('role')).toBe(false);
+    expect(input().hasAttribute('aria-pressed')).toBe(false);
+    expect(input().checked).toBe(false);
 
     fixture.componentInstance.checked.set(true);
     fixture.detectChanges();
-    expect(input().getAttribute('aria-pressed')).toBe('true');
+    expect(input().checked).toBe(true);
   });
 });
 
@@ -117,6 +118,6 @@ describe('bs-toggle-button', () => {
     input.click();
     fixture.detectChanges();
     expect(fixture.componentInstance.on()).toBe(true);
-    expect(input.getAttribute('aria-pressed')).toBe('true');
+    expect(input.checked).toBe(true);
   });
 });

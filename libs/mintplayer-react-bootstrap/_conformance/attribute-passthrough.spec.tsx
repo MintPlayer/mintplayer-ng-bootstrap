@@ -254,8 +254,7 @@ const CASES: Case[] = [
   bare('BsTimelineItem', 'mp-timeline-item', BsTimelineItem),
   bare('BsTimeList', 'mp-time-list', BsTimeList),
   bare('BsTimepicker', 'mp-timepicker', BsTimepicker),
-  // The APG toggle button: role=button + aria-pressed on the input is the core's contract.
-  { ...bare('BsToggleButton', 'input[type=checkbox]', BsToggleButton), fixedRole: 'button' },
+  bare('BsToggleButton', 'input[type=checkbox]', BsToggleButton),
   bare('BsTreeSelect', 'mp-tree-select', BsTreeSelect),
   bare('BsTreeview', 'mp-treeview', BsTreeview),
   { ...bare('BsTypeahead', 'input', BsTypeahead), fixedRole: 'combobox' },

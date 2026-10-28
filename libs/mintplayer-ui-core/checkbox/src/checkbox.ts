@@ -79,9 +79,8 @@ export function checkboxClasses(type: CheckboxType, color: ToggleButtonColor = '
 }
 
 /**
- * The input's attributes. `role` is part of the contract (`switch`, or
- * `button` + `aria-pressed` for a toggle button), so a front never forwards a
- * consumer role over it. `extraDescribedBy` merges a consumer's own
+ * The input's attributes. `role` is part of the contract for a switch, so a
+ * front never forwards a consumer role over it. `extraDescribedBy` merges a consumer's own
  * describedby ids after the error message.
  */
 export function connectCheckbox(state: CheckboxState, rootId: string, extraDescribedBy?: string | null): CheckboxBags {
@@ -97,8 +96,10 @@ export function connectCheckbox(state: CheckboxState, rootId: string, extraDescr
       value: state.value,
       disabled: state.disabled,
       required: state.required,
-      role: toggle ? 'button' : state.type === 'switch' ? 'switch' : null,
-      'aria-pressed': toggle ? String(state.checked) : null,
+      // A toggle button keeps the native checkbox role: its checked state is the
+      // only one AT can read that stays true with JS off (tier 1). An aria-pressed
+      // written from JS would freeze at its server value.
+      role: state.type === 'switch' ? 'switch' : null,
       'aria-checked': !toggle && state.indeterminate ? 'mixed' : null,
       'aria-invalid': state.invalid ? 'true' : null,
       'aria-required': state.required ? 'true' : null,

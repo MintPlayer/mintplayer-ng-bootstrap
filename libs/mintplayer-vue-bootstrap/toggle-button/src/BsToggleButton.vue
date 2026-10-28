@@ -1,7 +1,7 @@
 <script setup lang="ts">
 /**
  * A single Bootstrap on/off button: `<BsCheckbox type="toggle_button">`, an
- * input.btn-check + label.btn with role=button and aria-pressed (#437).
+ * input.btn-check + label.btn, a native checkbox that keeps its role (#437).
  * `v-model` is the checked state; `color`, `name`, `value`, `disabled`,
  * validity props and consumer attributes fall through to BsCheckbox, which
  * puts them on the input.

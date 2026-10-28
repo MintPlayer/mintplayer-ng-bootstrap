@@ -50,8 +50,9 @@ breaking change is a major. (2.20.0 and 2.21.0 broke `^2.x` consumers in a minor
   - `takeHostAria` moved to `@mintplayer/ng-bootstrap/a11y`.
   - `<mp-checkbox>` (Lit) is unchanged for now: `mp-datatable` renders it in its shadow root.
 - **Toggle button is a checkbox toggle button in every front (issue #437, wave A).** It renders
-  `input.btn-check` + `label.btn` with `role="button"` and `aria-pressed`, with the contract from
-  `@mintplayer/ui-core/checkbox`.
+  `input.btn-check` + `label.btn`, with the contract from `@mintplayer/ui-core/checkbox`. The input keeps the native
+  checkbox role: `role="button"` + `aria-pressed` are removed, because `aria-pressed` froze at its server value when a
+  click toggled the checkbox with JS off, while the native checked state stays correct either way.
   - Angular gains `<bs-toggle-button>`, a second selector of `BsCheckboxComponent` with the type fixed to
     `toggle_button`. It takes `[(isToggled)]`, `ngModel` / `formControl` and `color`.
   - React: `BsToggleButton` is `<BsCheckbox type="toggle_button">`. `onChange` is the native event; use

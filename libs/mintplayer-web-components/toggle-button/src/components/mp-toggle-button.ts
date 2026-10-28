@@ -21,8 +21,8 @@ let instanceCounter = 0;
 /**
  * `<mp-toggle-button>` — the Lit front of a single Bootstrap on/off button:
  * `input.btn-check` + `label.btn`, rendered in the light DOM (#437) and styled
- * by the page's Bootstrap baseline. The ARIA contract (`role=button` +
- * `aria-pressed`, validity, error message) comes from
+ * by the page's Bootstrap baseline. The ARIA contract (the native checkbox
+ * role and state, validity, error message) comes from
  * `@mintplayer/ui-core/checkbox`, as in the Angular, React and Vue fronts.
  *
  * The element's children become the label's content. The host is
