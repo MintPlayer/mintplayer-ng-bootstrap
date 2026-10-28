@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it } from 'vitest';
-import './mp-hierarchy-chart';
-import type { MpHierarchyChart } from './mp-hierarchy-chart';
+import './generated';
+import type { MpHierarchyChart } from './generated';
 import type { HierarchyNode } from '@mintplayer/ui-core/charts/core';
 
 /**
@@ -25,9 +25,9 @@ async function mount(attrs: string, data: HierarchyNode): Promise<MpHierarchyCha
 }
 
 const arcLabels = (el: MpHierarchyChart): Element[] =>
-  Array.from(el.shadowRoot!.querySelectorAll('text.arc-label'));
+  Array.from(el.querySelectorAll('text.arc-label'));
 const cellLabels = (el: MpHierarchyChart): Element[] =>
-  Array.from(el.shadowRoot!.querySelectorAll('.cell .cell-label'));
+  Array.from(el.querySelectorAll('.cell .cell-label'));
 
 /**
  * 100 sliver files under the root: 3.6deg each, so the arc length at the label
@@ -87,7 +87,7 @@ describe('sunburst label fitting', () => {
 
   it('suppresses labels on slivers but never the arcs themselves', async () => {
     const el = await mount('', SLIVERS);
-    expect(el.shadowRoot!.querySelectorAll('path.ring').length).toBe(100);
+    expect(el.querySelectorAll('path.ring').length).toBe(100);
     expect(arcLabels(el).length).toBe(0);
   });
 
@@ -120,7 +120,7 @@ describe('sunburst label fitting', () => {
   it('a font too large for the rings suppresses everything (constant-px contract)', async () => {
     const el = await mount('label-font-size="200"', MIXED);
     expect(arcLabels(el).length).toBe(0);
-    expect(el.shadowRoot!.querySelectorAll('path.ring').length).toBeGreaterThan(0);
+    expect(el.querySelectorAll('path.ring').length).toBeGreaterThan(0);
   });
 
   it('re-rooting reveals labels the packed view suppressed', async () => {
@@ -150,7 +150,7 @@ describe('label contrast (backdrop compositing)', () => {
 
   it('cells carry the tone too', async () => {
     const el = await mount('layout="icicle"', MIXED);
-    const cells = Array.from(el.shadowRoot!.querySelectorAll('.cell'));
+    const cells = Array.from(el.querySelectorAll('.cell'));
     expect(cells.length).toBeGreaterThan(0);
     cells.map((c) => expect(['light', 'dark']).toContain(c.getAttribute('data-surface')));
   });
@@ -164,7 +164,7 @@ describe('cartesian label fitting', () => {
   (['icicle', 'treemap'] as const).map((layout) =>
     it(`${layout}: sliver cells render without a label span`, async () => {
       const el = await mount(`layout="${layout}"`, MIXED);
-      const cells = el.shadowRoot!.querySelectorAll('.cell:not(.focus-cell)');
+      const cells = el.querySelectorAll('.cell:not(.focus-cell)');
       expect(cells.length).toBeGreaterThan(0);
       expect(cellLabels(el).length).toBeLessThan(cells.length);
       expect(cellLabels(el).length).toBeGreaterThan(0);
@@ -172,7 +172,7 @@ describe('cartesian label fitting', () => {
 
   it('cell font-size is the constant device-px value, not a host-relative unit', async () => {
     const el = await mount('layout="icicle" label-font-size="14"', MIXED);
-    const cell = el.shadowRoot!.querySelector<HTMLElement>('.cell')!;
+    const cell = el.querySelector<HTMLElement>('.cell')!;
     expect(cell.style.fontSize).toBe('14px');
   });
 });

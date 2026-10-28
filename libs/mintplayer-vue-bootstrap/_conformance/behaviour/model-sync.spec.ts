@@ -1,12 +1,11 @@
 import { describe, expect, it } from 'vitest';
 import { nextTick } from 'vue';
 
-import BsHierarchyChart from '../../charts/hierarchy/src/BsHierarchyChart.vue';
+import { BsHierarchyChart } from '@mintplayer/vue-bootstrap/charts/hierarchy';
 import { BsTreeview, type TreeNode } from '@mintplayer/vue-bootstrap/treeview';
-import type { MpHierarchyChart } from '@mintplayer/web-components/charts/hierarchy';
 import { BsQueryBuilder, type EntitySchema, type Expression } from '@mintplayer/vue-bootstrap/query-builder';
 
-import { emit, mountEl } from './harness';
+import { mountEl } from './harness';
 
 /**
  * Three wrappers whose entire job is a two-way binding over state the element
@@ -58,65 +57,42 @@ describe('BsTreeview — markup and write-back from the headless core', () => {
   });
 });
 
-describe('BsHierarchyChart — property sync and zoom write-back', () => {
-  const DATA = { id: 'root', label: 'Root', value: 1, children: [] };
+// BsHierarchyChart renders the headless chart itself (#437): nodes are its own
+// treeitems, and re-rooting writes back through update:rootId.
+describe('BsHierarchyChart — markup and rootId write-back from the headless core', () => {
+  const DATA = {
+    id: 'root',
+    name: 'Root',
+    children: [
+      { id: 'a', name: 'A', children: [{ id: 'a1', name: 'A1', value: 2 }] },
+      { id: 'b', name: 'B', value: 1 },
+    ],
+  };
+  const item = (el: Element, id: string) => el.querySelector<SVGElement>(`[role="treeitem"][data-id="${id}"]`);
 
-  // By value, not identity: Vue delivers props through a reactive Proxy, so
-  // what the element receives wraps the consumer's object rather than being it.
-  it('pushes the data graph as a property', () => {
-    const { el } = mountEl<MpHierarchyChart>(BsHierarchyChart, 'mp-hierarchy-chart', {
-      props: { data: DATA },
-    });
-    expect(el.data).toEqual(DATA);
+  it('renders a treeitem per node of the data graph', () => {
+    const { el } = mountEl(BsHierarchyChart, 'div.hierarchy-chart', { props: { data: DATA } });
+    expect(item(el, 'a')).not.toBeNull();
+    expect(item(el, 'b')).not.toBeNull();
   });
 
-  it('forwards the callbacks that cannot be attributes', () => {
-    const loadChildren = () => Promise.resolve([]);
-    const tooltipFormatter = () => 'tip';
-    const labelFormatter = () => 'label';
-    const { el } = mountEl<MpHierarchyChart>(BsHierarchyChart, 'mp-hierarchy-chart', {
-      props: { data: DATA, loadChildren, tooltipFormatter, labelFormatter },
-    });
-    expect(el.loadChildren).toBe(loadChildren);
-    expect(el.tooltipFormatter).toBe(tooltipFormatter);
-    expect(el.labelFormatter).toBe(labelFormatter);
+  it('honours a bound rootId', () => {
+    const { el } = mountEl(BsHierarchyChart, 'div.hierarchy-chart', { props: { data: DATA, rootId: 'a' } });
+    expect(item(el, 'a1')).not.toBeNull();
+    expect(item(el, 'b')).toBeNull();
   });
 
-  it('forwards an explicit layout', () => {
-    const { el } = mountEl<MpHierarchyChart>(BsHierarchyChart, 'mp-hierarchy-chart', {
-      props: { data: DATA, layout: 'treemap' },
-    });
-    expect(el.layout).toBe('treemap');
+  it('re-renders when the rootId binding changes', async () => {
+    const { wrapper, el } = mountEl(BsHierarchyChart, 'div.hierarchy-chart', { props: { data: DATA } });
+    await wrapper.setProps({ rootId: 'a' });
+    expect(item(el, 'b')).toBeNull();
   });
 
-  it('pushes the bound rootId', () => {
-    const { el } = mountEl<MpHierarchyChart>(BsHierarchyChart, 'mp-hierarchy-chart', {
-      props: { data: DATA, rootId: 'root' },
-    });
-    expect(el.rootId).toBe('root');
-  });
-
-  it('re-pushes rootId when the binding changes', async () => {
-    const { wrapper, el } = mountEl<MpHierarchyChart>(BsHierarchyChart, 'mp-hierarchy-chart', {
-      props: { data: DATA, rootId: 'root' },
-    });
-
-    await wrapper.setProps({ rootId: 'child' });
-
-    expect(el.rootId).toBe('child');
-  });
-
-  // The chart zooms itself when the user clicks an arc, so the binding is read
-  // back off the element rather than out of the event detail.
-  it('writes the element rootId back after a zoom', async () => {
-    const { wrapper, el } = mountEl<MpHierarchyChart>(BsHierarchyChart, 'mp-hierarchy-chart', {
-      props: { data: DATA, rootId: 'root' },
-    });
-    el.rootId = 'child';
-
-    await emit(el, 'hierarchy-zoom', {});
-
-    expect(wrapper.emitted('update:rootId')!.at(-1)).toEqual(['child']);
+  it('writes rootId back when the user zooms into a branch', async () => {
+    const { wrapper, el } = mountEl(BsHierarchyChart, 'div.hierarchy-chart', { props: { data: DATA } });
+    item(el, 'a')!.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+    await nextTick();
+    expect(wrapper.emitted('update:rootId')?.at(-1)).toEqual(['a']);
   });
 });
 

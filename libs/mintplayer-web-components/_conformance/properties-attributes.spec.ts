@@ -91,9 +91,6 @@ const OVERRIDES: Record<string, Override> = {
   'mp-datetime-picker@step': { value: '30', reason: SLOW_STEP },
   'mp-otp-input.value': { value: '482193', reason: 'the default numeric type strips non-digits' },
   'mp-radio-group.value': { expect: null, reason: 'a value must name a child mp-radio; the bare group has none, so it is refused' },
-  'mp-hierarchy-chart.zoomGestures': { value: 'wheel', reason: 'a space-separated gesture list; unknown tokens are dropped' },
-  'mp-hierarchy-chart@zoom-gestures': { value: 'wheel', reason: 'a space-separated gesture list; unknown tokens are dropped' },
-  'mp-hierarchy-chart@max-depth': { value: '3', expect: 3, reason: 'typed as a string attribute but parsed as a number (or "auto")' },
   'mp-tab-control@tabs-position': { value: 'bottom', reason: 'enum read straight from the attribute: top | bottom' },
   'mp-tab-control@border': { value: 'top', reason: 'enum read straight from the attribute: full | top | false' },
   'mp-otp-input@value': {
@@ -419,7 +416,8 @@ describe('custom-elements.json property / attribute table', () => {
     expect(MANIFEST_PRESENT).toBe(true);
     expect(MOUNTABLE.length).toBeGreaterThanOrEqual(60);
     expect(attributeCases.length).toBeGreaterThanOrEqual(250);
-    expect(propertyCases.length).toBeGreaterThanOrEqual(205);
+    // 205 before #437: D10 elements expose their inputs only, not the hand-written getters.
+    expect(propertyCases.length).toBeGreaterThanOrEqual(160);
   });
 
   it('cannot mount exactly the declarations listed in NOT_MOUNTABLE', () => {

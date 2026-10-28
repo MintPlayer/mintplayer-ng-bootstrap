@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it } from 'vitest';
-import './mp-hierarchy-chart';
-import type { MpHierarchyChart } from './mp-hierarchy-chart';
+import './generated';
+import type { MpHierarchyChart } from './generated';
 import type { HierarchyNode } from '@mintplayer/ui-core/charts/core';
 
 /**
@@ -39,7 +39,7 @@ async function mount(attrs = '', data: HierarchyNode = DATA): Promise<MpHierarch
 }
 
 const item = (el: MpHierarchyChart, id: string): Element =>
-  el.shadowRoot!.querySelector(`[role="treeitem"][data-id="${id}"]`) as Element;
+  el.querySelector(`[role="treeitem"][data-id="${id}"]`) as Element;
 
 function wheel(target: Element, init: WheelEventInit): WheelEvent {
   const event = new WheelEvent('wheel', { bubbles: true, composed: true, cancelable: true, ...init });
@@ -61,34 +61,34 @@ describe('ctrl+wheel geometric zoom', () => {
     const event = wheel(item(el, 'a'), { deltaY: -100, ctrlKey: true });
     await flush(el);
     expect(event.defaultPrevented).toBe(true);
-    expect(el.zoomLevel).toBeCloseTo(Math.exp(0.5), 3); // ~1.65x per full notch
-    expect(el.hasAttribute('root-id')).toBe(false); // semantic state untouched
+    expect(el.zoomLevel()).toBeCloseTo(Math.exp(0.5), 3); // ~1.65x per full notch
+    expect(el.rootId).toBeNull(); // semantic state untouched
     // The sunburst zooms via its viewBox — never a transform.
-    const viewBox = el.shadowRoot!.querySelector('svg')!.getAttribute('viewBox')!;
+    const viewBox = el.querySelector('svg')!.getAttribute('viewBox')!;
     expect(Number(viewBox.split(' ')[2])).toBeCloseTo(1000 / Math.exp(0.5), 0);
   });
 
   it('metaKey works like ctrlKey (⌘ on Apple platforms)', async () => {
     const el = await mount();
     wheel(item(el, 'a'), { deltaY: -100, metaKey: true });
-    expect(el.zoomLevel).toBeGreaterThan(1);
+    expect(el.zoomLevel()).toBeGreaterThan(1);
   });
 
   it('ctrl+wheel-down shrinks back and clamps at 1x', async () => {
     const el = await mount();
     wheel(item(el, 'a'), { deltaY: -100, ctrlKey: true });
-    const zoomed = el.zoomLevel;
+    const zoomed = el.zoomLevel();
     wheel(item(el, 'a'), { deltaY: 100, ctrlKey: true });
-    expect(el.zoomLevel).toBeLessThan(zoomed);
+    expect(el.zoomLevel()).toBeLessThan(zoomed);
     wheel(item(el, 'a'), { deltaY: 100, ctrlKey: true });
     wheel(item(el, 'a'), { deltaY: 100, ctrlKey: true });
-    expect(el.zoomLevel).toBe(1);
+    expect(el.zoomLevel()).toBe(1);
   });
 
   it('deltaMode LINE is normalized and per-event delta is clamped', async () => {
     const el = await mount();
     wheel(item(el, 'a'), { deltaY: -7, deltaMode: 1, ctrlKey: true }); // 112px -> clamped to 100
-    expect(el.zoomLevel).toBeCloseTo(Math.exp(0.5), 3);
+    expect(el.zoomLevel()).toBeCloseTo(Math.exp(0.5), 3);
   });
 
   it('zooming in reveals labels that did not fit at 1x, at the same font size', async () => {
@@ -101,10 +101,10 @@ describe('ctrl+wheel geometric zoom', () => {
       })),
     };
     const el = await mount('', slivers);
-    expect(el.shadowRoot!.querySelectorAll('text.arc-label').length).toBe(0);
+    expect(el.querySelectorAll('text.arc-label').length).toBe(0);
     el.setZoomLevel(8);
     await flush(el);
-    const labels = el.shadowRoot!.querySelectorAll('text.arc-label');
+    const labels = el.querySelectorAll('text.arc-label');
     expect(labels.length).toBeGreaterThan(0);
     // Constant device px: viewBox font-size shrinks by exactly the zoom factor.
     const fontVb = Number(labels[0].getAttribute('font-size'));
@@ -116,8 +116,8 @@ describe('ctrl+wheel geometric zoom', () => {
     const event = wheel(item(el, 'a'), { deltaY: -120 });
     await flush(el);
     expect(event.defaultPrevented).toBe(false); // page scroll survives
-    expect(el.zoomLevel).toBe(1);
-    const hint = el.shadowRoot!.querySelector('.zoom-hint')!;
+    expect(el.zoomLevel()).toBe(1);
+    const hint = el.querySelector('.zoom-hint')!;
     expect(hint.getAttribute('aria-hidden')).toBe('true');
     expect(hint.textContent).toContain('scroll to zoom');
   });
@@ -127,8 +127,8 @@ describe('ctrl+wheel geometric zoom', () => {
     const event = wheel(item(el, 'a'), { deltaY: -200, ctrlKey: true });
     await flush(el);
     expect(event.defaultPrevented).toBe(false);
-    expect(el.zoomLevel).toBe(1);
-    expect(el.shadowRoot!.querySelector('.zoom-hint')).toBeNull();
+    expect(el.zoomLevel()).toBe(1);
+    expect(el.querySelector('.zoom-hint')).toBeNull();
   });
 });
 
@@ -140,13 +140,13 @@ describe('keyboard zoom equivalents (+ / - / 0) and Escape ordering', () => {
   it('+ and - zoom around the focused node; 0 resets', async () => {
     const el = await mount();
     press(item(el, 'a'), '+');
-    expect(el.zoomLevel).toBeCloseTo(1.5, 5);
+    expect(el.zoomLevel()).toBeCloseTo(1.5, 5);
     press(item(el, 'a'), '+');
-    expect(el.zoomLevel).toBeCloseTo(2.25, 5);
+    expect(el.zoomLevel()).toBeCloseTo(2.25, 5);
     press(item(el, 'a'), '-');
-    expect(el.zoomLevel).toBeCloseTo(1.5, 5);
+    expect(el.zoomLevel()).toBeCloseTo(1.5, 5);
     press(item(el, 'a'), '0');
-    expect(el.zoomLevel).toBe(1);
+    expect(el.zoomLevel()).toBe(1);
   });
 
   it('Escape resets the magnified view BEFORE it re-roots out', async () => {
@@ -155,11 +155,11 @@ describe('keyboard zoom equivalents (+ / - / 0) and Escape ordering', () => {
     await flush(el);
     press(item(el, 'a'), 'Escape');
     await flush(el);
-    expect(el.zoomLevel).toBe(1); // first Escape: view reset
-    expect(el.getAttribute('root-id')).toBe('src');
+    expect(el.zoomLevel()).toBe(1); // first Escape: view reset
+    expect(el.rootId).toBe('src');
     press(item(el, 'a'), 'Escape');
     await flush(el);
-    expect(el.hasAttribute('root-id')).toBe(false); // second Escape: semantic out
+    expect(el.rootId).toBeNull(); // second Escape: semantic out
   });
 
   it('a semantic re-root resets the magnification (the subtree refits anyway)', async () => {
@@ -167,7 +167,7 @@ describe('keyboard zoom equivalents (+ / - / 0) and Escape ordering', () => {
     el.setZoomLevel(4);
     el.zoomTo('src');
     await flush(el);
-    expect(el.zoomLevel).toBe(1);
-    expect(el.getAttribute('root-id')).toBe('src');
+    expect(el.zoomLevel()).toBe(1);
+    expect(el.rootId).toBe('src');
   });
 });

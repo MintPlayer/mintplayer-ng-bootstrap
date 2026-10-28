@@ -1,6 +1,5 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { BsHierarchyChartComponent } from './hierarchy-chart.component';
-import type { HierarchyNode, MpHierarchyChart } from '@mintplayer/web-components/charts/hierarchy';
+import { BsHierarchyChartComponent, type HierarchyNode } from '@mintplayer/ng-bootstrap/charts/hierarchy';
 
 const DATA: HierarchyNode = {
   id: 'repo',
@@ -11,6 +10,8 @@ const DATA: HierarchyNode = {
   ],
 };
 
+// The generated front renders the headless chart itself (#437): the treeitems
+// are its own nodes, so the spec reads the DOM instead of element properties.
 describe('BsHierarchyChartComponent', () => {
   let fixture: ComponentFixture<BsHierarchyChartComponent>;
 
@@ -24,39 +25,37 @@ describe('BsHierarchyChartComponent', () => {
     fixture.detectChanges();
   });
 
-  function wc(): MpHierarchyChart {
-    return fixture.nativeElement.querySelector('mp-hierarchy-chart') as MpHierarchyChart;
-  }
+  const item = (id: string): Element | null =>
+    fixture.nativeElement.querySelector(`[role="treeitem"][data-id="${id}"]`);
 
-  it('reflects data and layout inputs onto the <mp-hierarchy-chart> properties', () => {
-    expect(wc().data).toBe(DATA);
+  it('renders the data in the chosen layout', () => {
+    expect(fixture.nativeElement.querySelector('svg')).not.toBeNull();
     fixture.componentRef.setInput('layout', 'icicle');
     fixture.detectChanges();
-    expect(wc().layout).toBe('icicle');
+    expect(fixture.nativeElement.querySelector('svg')).toBeNull();
+    expect(fixture.nativeElement.querySelector('.icicle')).not.toBeNull();
+    expect(item('tools')).not.toBeNull();
   });
 
   it('drives the controlled root-id via the model input', () => {
     fixture.componentRef.setInput('rootId', 'src');
     fixture.detectChanges();
-    expect(wc().rootId).toBe('src');
+    expect(item('a')).not.toBeNull();
+    expect(item('tools')).toBeNull();
   });
 
-  it('updates the rootId model and re-emits when the WC zooms', () => {
+  it('updates the rootId model and emits zoom when the chart re-roots', () => {
     const zooms: string[] = [];
     fixture.componentInstance.zoom.subscribe((d) => zooms.push(d.node.id));
-    wc().zoomTo('src');
+    fixture.componentInstance.zoomTo('src');
     fixture.detectChanges();
     expect(zooms).toEqual(['src']);
     expect(fixture.componentInstance.rootId()).toBe('src');
   });
 
-  it('forwards function properties (loadChildren, formatters)', () => {
-    const loader = () => Promise.resolve([]);
-    const formatter = () => 'x';
-    fixture.componentRef.setInput('loadChildren', loader);
-    fixture.componentRef.setInput('labelFormatter', formatter);
+  it('names nodes through a labelFormatter', () => {
+    fixture.componentRef.setInput('labelFormatter', (n: HierarchyNode) => `#${n.id}`);
     fixture.detectChanges();
-    expect(wc().loadChildren).toBe(loader);
-    expect(wc().labelFormatter).toBe(formatter);
+    expect(item('src')?.getAttribute('aria-label')).toMatch(/^#src/);
   });
 });

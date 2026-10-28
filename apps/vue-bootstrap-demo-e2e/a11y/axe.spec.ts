@@ -64,7 +64,7 @@ axeAuditSuite(test, expect, [
   {
     path: '/enterprise/charts',
     ready: async (page) => {
-      await page.waitForSelector('mp-hierarchy-chart [role="tree"]');
+      await page.waitForSelector('.hierarchy-chart [role="tree"]');
     },
     // The three hierarchy layouts are different DOM (svg paths vs positioned
     // divs) and the zoomed-in state adds the enabled zoom-out control, so the
@@ -74,17 +74,17 @@ axeAuditSuite(test, expect, [
     // lands on the <svg> rather than the arc.
     interact: async (page) => {
       await page.getByRole('button', { name: 'icicle' }).click();
-      await page.waitForSelector('mp-hierarchy-chart .icicle');
+      await page.waitForSelector('.hierarchy-chart .icicle');
       await page
-        .locator('mp-hierarchy-chart div[role="treeitem"][aria-expanded="true"]:not(.focus-cell)')
+        .locator('.hierarchy-chart div[role="treeitem"][aria-expanded="true"]:not(.focus-cell)')
         .first()
         .click();
       await page.getByRole('button', { name: 'treemap' }).click();
-      await page.waitForSelector('mp-hierarchy-chart .treemap');
+      await page.waitForSelector('.hierarchy-chart .treemap');
       // Back to the sunburst, now zoomed in: this is the state with an enabled
       // zoom-out control, which the root state never shows.
       await page.getByRole('button', { name: 'sunburst' }).click();
-      await page.waitForSelector('mp-hierarchy-chart .center-control:not([disabled])');
+      await page.waitForSelector('.hierarchy-chart .center-control:not([disabled])');
     },
   },
   {

@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it } from 'vitest';
-import './mp-hierarchy-chart';
-import type { MpHierarchyChart } from './mp-hierarchy-chart';
+import './generated';
+import type { MpHierarchyChart } from './generated';
 import type { HierarchyNode } from '@mintplayer/ui-core/charts/core';
 
 /**
@@ -40,7 +40,7 @@ async function mount(attrs = ''): Promise<MpHierarchyChart> {
 }
 
 const item = (el: MpHierarchyChart, id: string): Element =>
-  el.shadowRoot!.querySelector(`[role="treeitem"][data-id="${id}"]`) as Element;
+  el.querySelector(`[role="treeitem"][data-id="${id}"]`) as Element;
 
 function pointerEvent(type: string, pointerId: number, x: number, y: number, pointerType = 'touch'): Event {
   const event = new MouseEvent(type, {
@@ -63,8 +63,8 @@ describe('touch pinch magnification', () => {
     target.dispatchEvent(pointerEvent('pointerdown', 2, 140, 100));
     target.dispatchEvent(pointerEvent('pointermove', 2, 180, 100)); // 40 -> 80
     await flush(el);
-    expect(el.zoomLevel).toBeCloseTo(2, 5);
-    expect(el.hasAttribute('root-id')).toBe(false); // geometric, not semantic
+    expect(el.zoomLevel()).toBeCloseTo(2, 5);
+    expect(el.rootId).toBeNull(); // geometric, not semantic
   });
 
   it('a squeeze shrinks and clamps at 1x', async () => {
@@ -75,7 +75,7 @@ describe('touch pinch magnification', () => {
     target.dispatchEvent(pointerEvent('pointerdown', 2, 200, 100));
     target.dispatchEvent(pointerEvent('pointermove', 2, 120, 100)); // 100 -> 20
     await flush(el);
-    expect(el.zoomLevel).toBe(1);
+    expect(el.zoomLevel()).toBe(1);
   });
 
   it('pointercancel abandons the gesture (divergent engines degrade to tap)', async () => {
@@ -86,19 +86,19 @@ describe('touch pinch magnification', () => {
     target.dispatchEvent(pointerEvent('pointercancel', 2, 140, 100));
     target.dispatchEvent(pointerEvent('pointermove', 1, 400, 100));
     await flush(el);
-    expect(el.zoomLevel).toBe(1);
+    expect(el.zoomLevel()).toBe(1);
   });
 
   it('zoom-gestures="wheel" ignores touch pinch and drops the pinch touch-action class', async () => {
     const el = await mount('zoom-gestures="wheel"');
-    const chart = el.shadowRoot!.querySelector('.chart')!;
+    const chart = el.querySelector('.chart')!;
     expect(chart.classList.contains('pinch')).toBe(false);
     const target = item(el, 'a');
     target.dispatchEvent(pointerEvent('pointerdown', 1, 100, 100));
     target.dispatchEvent(pointerEvent('pointerdown', 2, 140, 100));
     target.dispatchEvent(pointerEvent('pointermove', 2, 300, 100));
     await flush(el);
-    expect(el.zoomLevel).toBe(1);
+    expect(el.zoomLevel()).toBe(1);
   });
 
   it('tap-to-re-root still works: a click after touch pointerdown is not suppressed', async () => {
@@ -110,7 +110,7 @@ describe('touch pinch magnification', () => {
     target.dispatchEvent(pointerEvent('pointerup', 1, 100, 100));
     target.dispatchEvent(new MouseEvent('click', { bubbles: true, composed: true }));
     await flush(el);
-    expect(el.getAttribute('root-id')).toBe('src');
+    expect(el.rootId).toBe('src');
   });
 });
 
@@ -129,8 +129,8 @@ describe('mouse drag pan', () => {
     target.dispatchEvent(pointerEvent('pointerup', 5, 60, 80, 'mouse'));
     target.dispatchEvent(new MouseEvent('click', { bubbles: true, composed: true }));
     await flush(el);
-    expect(el.hasAttribute('root-id')).toBe(false); // the drag did not re-root
-    expect(el.zoomLevel).toBeCloseTo(4, 5);
+    expect(el.rootId).toBeNull(); // the drag did not re-root
+    expect(el.zoomLevel()).toBeCloseTo(4, 5);
   });
 
   it('at 1x a mouse click is a plain activation (no drag machinery)', async () => {
@@ -140,6 +140,6 @@ describe('mouse drag pan', () => {
     target.dispatchEvent(pointerEvent('pointerup', 5, 100, 100, 'mouse'));
     target.dispatchEvent(new MouseEvent('click', { bubbles: true, composed: true }));
     await flush(el);
-    expect(el.getAttribute('root-id')).toBe('src');
+    expect(el.rootId).toBe('src');
   });
 });

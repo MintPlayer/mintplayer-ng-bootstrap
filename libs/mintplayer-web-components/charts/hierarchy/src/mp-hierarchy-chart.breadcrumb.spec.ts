@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it } from 'vitest';
-import './mp-hierarchy-chart';
-import type { MpHierarchyChart } from './mp-hierarchy-chart';
+import './generated';
+import type { MpHierarchyChart } from './generated';
 import type { HierarchyNode } from '@mintplayer/ui-core/charts/core';
 
 /** Breadcrumb (PRD B1): ancestor path as real buttons OUTSIDE the role=tree container. */
@@ -41,21 +41,21 @@ describe('breadcrumb', () => {
 
   it('absent by default; opt-in via show-breadcrumb', async () => {
     const plain = await mount();
-    expect(plain.shadowRoot!.querySelector('nav.breadcrumb')).toBeNull();
+    expect(plain.querySelector('nav.breadcrumb')).toBeNull();
     const el = await mount('show-breadcrumb');
-    expect(el.shadowRoot!.querySelector('nav.breadcrumb')).not.toBeNull();
+    expect(el.querySelector('nav.breadcrumb')).not.toBeNull();
   });
 
   it('lives OUTSIDE the role=tree container and is named (localizable)', async () => {
     const el = await mount('show-breadcrumb breadcrumb-label="Pad in de grafiek"');
-    const nav = el.shadowRoot!.querySelector('nav.breadcrumb')!;
+    const nav = el.querySelector('nav.breadcrumb')!;
     expect(nav.getAttribute('aria-label')).toBe('Pad in de grafiek');
     expect(nav.closest('[role="tree"]')).toBeNull();
   });
 
   it('ancestors are buttons, the focus is static text with aria-current', async () => {
     const el = await mount('show-breadcrumb root-id="src/app"');
-    const nav = el.shadowRoot!.querySelector('nav.breadcrumb')!;
+    const nav = el.querySelector('nav.breadcrumb')!;
     const buttons = Array.from(nav.querySelectorAll('button.crumb'));
     expect(buttons.map((b) => b.textContent)).toEqual(['repo', 'src']);
     const current = nav.querySelector('.crumb-current')!;
@@ -67,22 +67,22 @@ describe('breadcrumb', () => {
   it('clicking an ancestor re-roots there; the tree root clears root-id', async () => {
     const el = await mount('show-breadcrumb root-id="src/app"');
     const zooms: string[] = [];
-    el.addEventListener('hierarchy-zoom', (e) =>
+    el.addEventListener('zoom', (e) =>
       zooms.push((e as CustomEvent<{ node: HierarchyNode }>).detail.node.id));
-    const nav = el.shadowRoot!.querySelector('nav.breadcrumb')!;
+    const nav = el.querySelector('nav.breadcrumb')!;
     (Array.from(nav.querySelectorAll('button.crumb'))
       .find((b) => b.textContent === 'src') as HTMLElement).click();
     await flush(el);
-    expect(el.getAttribute('root-id')).toBe('src');
-    (el.shadowRoot!.querySelector('nav.breadcrumb button.crumb') as HTMLElement).click();
+    expect(el.rootId).toBe('src');
+    (el.querySelector('nav.breadcrumb button.crumb') as HTMLElement).click();
     await flush(el);
-    expect(el.hasAttribute('root-id')).toBe(false);
+    expect(el.rootId).toBeNull();
     expect(zooms).toEqual(['src', 'repo']);
   });
 
   it('at the tree root there is nothing to click — a single current crumb', async () => {
     const el = await mount('show-breadcrumb');
-    const nav = el.shadowRoot!.querySelector('nav.breadcrumb')!;
+    const nav = el.querySelector('nav.breadcrumb')!;
     expect(nav.querySelectorAll('button.crumb').length).toBe(0);
     expect(nav.querySelector('.crumb-current')!.textContent).toBe('repo');
   });

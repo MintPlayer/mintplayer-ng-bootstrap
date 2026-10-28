@@ -359,6 +359,30 @@ breaking change is a major. (2.20.0 and 2.21.0 broke `^2.x` consumers in a minor
   - **Vue:** numeric inputs are typed numbers; bind them (`:y-min="0"`, not `y-min="0"`).
   - The `TrendSeries` / `TrendPoint` / event types come from `@mintplayer/ui-core/charts/trend` and every
     front re-exports them; `@mintplayer/web-components/charts/trend` no longer re-exports `charts/core`.
+- **Hierarchy chart is generated from one source in every front (issue #437).** It is written once in
+  `@mintplayer/ui-core/charts/hierarchy` (`hierarchyChartCore`, `connectHierarchyChart`) and compiled into
+  all four fronts. The server HTML is the finished chart at a 420px fallback scale, its controls inert until
+  it is live.
+  - **Every front:** the root is `.hierarchy-chart` (a `div` in React and Vue, the host in Angular and Lit).
+    There is no shadow root; style the `.hierarchy-chart` classes and the `--mp-hierarchy-chart-*` custom
+    properties. `--mp-hierarchy-chart-transition-duration` is written on the inner `.chart`.
+  - **Events:** `hierarchy-zoom` / `hierarchy-node-select` / `hierarchy-node-hover` /
+    `hierarchy-node-load-error` are now `zoom` / `nodeSelect` / `nodeHover` / `nodeLoadError`, plus
+    `rootIdChange`: Angular `(zoom)`, `(nodeselect)`, `(nodehover)`, `(nodeloaderror)`; Lit the same
+    lowercased names; React `onZoom`, `onNodeSelect`, `onNodeHover`, `onNodeLoadError`, `onRootIdChange`
+    (the payload, not a `CustomEvent`); Vue `@zoom`, `@nodeselect`, … and `v-model:rootId`.
+  - **Lit element:** `zoomLevel` is a method (`el.zoomLevel()`), and `root-id` no longer reflects; read
+    `el.rootId`. `maxDepth`, `zoomGestures` and `zoomHintLabel` return what was set, not the resolved value.
+  - **Vue:** numeric inputs are typed numbers; bind them (`:color-min="60"`, not `color-min="60"`).
+  - The `HierarchyNode` / layout / event types come from `@mintplayer/ui-core/charts/hierarchy` and every
+    front re-exports them.
+- **Compiled Lit elements read their attributes the way the hand-written ones did (issue #437).** Removing an
+  attribute restores the input's default instead of leaving `null` behind (a removed `color-start` crashed the
+  hierarchy chart), a non-numeric number attribute keeps the default rather than becoming `NaN`, and a boolean
+  attribute set to `"false"` is false, so `show-labels="false"` can switch a default-true input off. Lit's own
+  `Boolean` reads any present attribute as true.
+- **The Lit bridge follows a consumer `aria-label` set after the element connects (issue #437).** It was
+  read once, on connect.
 - **Carousel is generated from one source in every front (issue #437).** It is written once in
   `@mintplayer/ui-core/carousel` (`carouselCore`, `connectCarousel`) and compiled into all four fronts. The
   server HTML is the complete deck in every framework: one radio per slide holds the index, so indicators,

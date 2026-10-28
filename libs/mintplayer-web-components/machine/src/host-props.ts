@@ -128,3 +128,36 @@ export function takeLightChildren(host: Element, keep: (node: Node) => boolean =
     });
   return groups;
 }
+
+/**
+ * The attribute converter of a compiled boolean input: present means true, except
+ * the literal `"false"`, so `show-labels="false"` switches a default-true flag off
+ * (HTML's presence rule alone could not), and removing the attribute restores the
+ * input's default. Reflects as an empty attribute.
+ */
+export const booleanAttribute = (fallback: boolean) => ({
+  fromAttribute: (value: string | null): boolean => (value === null ? fallback : value !== 'false'),
+  toAttribute: (value: unknown): string | null => (value ? '' : null),
+});
+
+/**
+ * The attribute converter of a compiled string input: removing the attribute
+ * restores the input's default rather than leaving `null` in a property the core
+ * types as a string.
+ */
+export const stringAttribute = <T extends string | null | undefined>(fallback: T) => ({
+  fromAttribute: (value: string | null): string | T => value ?? fallback,
+  toAttribute: (value: unknown): string | null => (value === null || value === undefined ? null : String(value)),
+});
+
+/**
+ * The attribute converter of a compiled number input: a missing, empty or
+ * non-numeric attribute restores the input's default, so the core never sees NaN.
+ */
+export const numberAttribute = <T extends number | null | undefined>(fallback: T) => ({
+  fromAttribute: (value: string | null): number | T => {
+    const parsed = value === null || value.trim() === '' ? NaN : Number(value);
+    return Number.isFinite(parsed) ? parsed : fallback;
+  },
+  toAttribute: (value: unknown): string | null => (value === null || value === undefined ? null : String(value)),
+});

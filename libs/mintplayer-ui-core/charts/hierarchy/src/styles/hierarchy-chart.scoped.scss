@@ -1,18 +1,17 @@
-:host {
-  /* Flex column so the optional breadcrumb takes its own row; without it the
-     chart is the only child and fills the host exactly as before. */
+// The hierarchy chart's stylesheet, shared by all four fronts (PRD #437 D10).
+// Rescoped at build time: every compound gains `[data-mps=hierarchy-chart]`.
+
+// The bs-hierarchy-chart / mp-hierarchy-chart host, or a div in React and Vue.
+// A flex column, so the optional breadcrumb takes its own row.
+.hierarchy-chart {
   display: flex;
   flex-direction: column;
   width: 100%;
   aspect-ratio: 1;
 
-  /* Two-level fallbacks: Bootstrap 5.3 reassigns --bs-* per data-bs-theme and
-     custom properties inherit through the shadow boundary, so dark mode needs
-     no media query here. */
-
-  /* Node labels contrast against the DATA-COLORED surface under them, not the
-     page theme — the element picks one of this pair per node from the fill
-     composited over the resolved backdrop. Deliberately NOT --bs-* driven. */
+  // Node labels contrast against the DATA-COLOURED surface under them, not the
+  // page theme: the core picks one of this pair per node from the fill
+  // composited over the resolved backdrop. Deliberately NOT --bs-* driven.
   --mp-hierarchy-chart-label-on-light: #1c1f23;
   --mp-hierarchy-chart-label-on-dark: #f8f9fa;
   --mp-hierarchy-chart-center-color: var(--bs-body-color, #212529);
@@ -99,7 +98,7 @@ svg {
   cursor: default;
 }
 
-/* font-size comes per-element from the component (device px converted to
+/* font-size comes per-element from the core (device px converted to
    viewBox units against the measured host scale — labels never scale with
    host size or zoom). */
 .arc-label {
@@ -151,7 +150,7 @@ svg {
   background: var(--mp-hierarchy-chart-node-fill);
   border: 1px solid var(--mp-hierarchy-chart-gap);
   border-radius: 2px;
-  /* font-size is set inline by the component (constant device px). */
+  /* font-size is set inline by the core (constant device px). */
   line-height: 1.25;
   padding: 1px 4px;
   cursor: pointer;

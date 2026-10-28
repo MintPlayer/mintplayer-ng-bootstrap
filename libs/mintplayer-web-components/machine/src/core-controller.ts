@@ -70,6 +70,7 @@ export class CoreController<I, S, P, E, C, PC, M> implements ReactiveController 
   #hydrated = false;
   #applied = EMPTY_HOST_PROPS;
   #provided: unknown;
+  #labelObserver: MutationObserver | undefined;
 
   constructor(host: ReactiveControllerHost & HTMLElement, core: ComponentCore<I, S, P, E, C, PC, M>, options: CoreControllerOptions<I, P>) {
     this.#host = host;
@@ -114,11 +115,17 @@ export class CoreController<I, S, P, E, C, PC, M> implements ReactiveController 
   hostConnected(): void {
     // The consumer's label, before the host bag writes its own aria-label.
     if (this.#label === undefined) this.#label = this.#host.getAttribute('aria-label');
+    // A consumer's later aria-label wins too; the host bag's own writes are not theirs.
+    if (typeof MutationObserver !== 'undefined') {
+      this.#labelObserver ??= new MutationObserver(() => this.#labelChanged());
+      this.#labelObserver.observe(this.#host, { attributes: true, attributeFilter: ['aria-label'] });
+    }
     // Moved by a parent's template after rendering once: re-attach on the next update.
     if (!this.#runtime.api && (this.#host as { hasUpdated?: boolean }).hasUpdated) this.#host.requestUpdate();
   }
 
   hostDisconnected(): void {
+    this.#labelObserver?.disconnect();
     // Re-subscribes on its next read, under whichever provider it lands in.
     if (this.#core.consume) this.#unsubscribe();
     this.#runtime.dispose();
@@ -136,6 +143,14 @@ export class CoreController<I, S, P, E, C, PC, M> implements ReactiveController 
     }
     this.#runtime.inputs(this.#options.inputs());
     this.#notifyConsumers();
+  }
+
+  #labelChanged(): void {
+    const value = this.#host.getAttribute('aria-label');
+    const ours = this.#applied.attrs['aria-label'];
+    if (value === (ours === null || ours === undefined || ours === false ? null : String(ours)) || value === this.#label) return;
+    this.#label = value;
+    this.#host.requestUpdate();
   }
 
   #unsubscribe(): void {

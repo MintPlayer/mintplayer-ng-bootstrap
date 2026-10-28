@@ -251,7 +251,7 @@ describe('composition', () => {
     const text = emitLit(src, { ...RUNTIME, components });
     expect(text).toContain("import '@test/wc/tree';");
     expect(text).toContain("import type { MpTree } from '@test/wc/tree';");
-    expect(text).toContain('<mp-tree data-mp-owned class="t" aria-label="Files" .nodes=${view.nodes} .selected=${view.selected.value} @selectedchange=${(e: CustomEvent) => view.selected.set(e.detail)} @nodeclick=${(e: CustomEvent) => view.onClick(e.detail)}');
+    expect(text).toContain('<mp-tree data-mp-owned class="t" aria-label="Files" .nodes=${view.nodes} .selected=${view.selected.value} @selectedchange=${(e: CustomEvent) => e.target === e.currentTarget && view.selected.set(e.detail)} @nodeclick=${(e: CustomEvent) => e.target === e.currentTarget && view.onClick(e.detail)}');
     expect(text).toContain(".itemRenderer=${({ node }: Parameters<NonNullable<MpTree['itemRenderer']>>[0]) => html`");
     expect(text).toMatch(/\.defaultRenderer=\$\{\(\) => html`\s*<span>Empty<\/span>\s*`\}><\/mp-tree>/);
   });

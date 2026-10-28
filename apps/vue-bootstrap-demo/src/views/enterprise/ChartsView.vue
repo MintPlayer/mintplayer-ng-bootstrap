@@ -1,10 +1,9 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue';
-import { BsHierarchyChart } from '@mintplayer/vue-bootstrap/charts/hierarchy';
+import { BsHierarchyChart, type HierarchyChartLayout, type HierarchyNode } from '@mintplayer/vue-bootstrap/charts/hierarchy';
 import { BsTrendChart } from '@mintplayer/vue-bootstrap/charts/trend';
 import { BsSparkline } from '@mintplayer/vue-bootstrap/charts/sparkline';
 import { BsCodeSnippet } from '@mintplayer/vue-bootstrap/code-snippet';
-import type { HierarchyChartLayout, HierarchyNode } from '@mintplayer/web-components/charts/hierarchy';
 import type { TrendSeries } from '@mintplayer/vue-bootstrap/charts/trend';
 
 const leaf = (id: string, name: string, value: number, coverage: number): HierarchyNode =>
@@ -65,8 +64,8 @@ const SOURCE = `<BsHierarchyChart
   :data="tree"
   :layout="layout"
   v-model:rootId="rootId"
-  color-min="60"
-  color-max="80"
+  :color-min="60"
+  :color-max="80"
   input-label="Coverage by folder"
   value-unit-label="lines"
 />
@@ -115,8 +114,8 @@ const SOURCE = `<BsHierarchyChart
         :data="activeTree"
         :layout="layout"
         v-model:rootId="rootId"
-        color-min="60"
-        color-max="80"
+        :color-min="60"
+        :color-max="80"
         show-breadcrumb
         input-label="Coverage by folder"
         value-unit-label="lines"

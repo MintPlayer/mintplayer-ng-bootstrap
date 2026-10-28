@@ -66,7 +66,7 @@ describe('mp-sparkline configuration', () => {
 
   it('a lone point between gaps draws a line stub but no area', async () => {
     const el = await mount([null, 4, null], 'area');
-    expect(el.shadowRoot!.querySelector('.fill')!.getAttribute('d')).toBe('');
+    expect(el.shadowRoot!.querySelector('.fill')).toBeNull(); // the core emits no fill bag for an empty area
     expect(el.shadowRoot!.querySelector('.line')!.getAttribute('d')).toMatch(/^M /);
   });
 

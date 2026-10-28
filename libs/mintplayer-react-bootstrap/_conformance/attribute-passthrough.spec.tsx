@@ -175,7 +175,7 @@ const CASES: Case[] = [
   bare('BsCardTitle', 'div.card-title', BsCardTitle),
   { ...bare('BsCarousel', 'div.carousel', BsCarousel), fixedRole: 'region' },
   { ...bare('BsCarouselItem', 'div.carousel-item', BsCarouselItem), fixedRole: 'group' },
-  bare('BsHierarchyChart', 'mp-hierarchy-chart', BsHierarchyChart),
+  bare('BsHierarchyChart', 'div.hierarchy-chart', BsHierarchyChart),
   // No points, no svg: the probe needs data for its labelled node to exist.
   { name: 'BsSparkline', target: 'span.sparkline', render: (p) => <BsSparkline {...p} points={[1, 3, 2]} />, labelTarget: 'svg[role=img]' },
   bare('BsTrendChart', 'div.trend-chart', BsTrendChart),

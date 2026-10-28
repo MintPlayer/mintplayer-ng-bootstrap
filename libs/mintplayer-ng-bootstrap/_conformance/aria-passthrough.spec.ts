@@ -1,7 +1,6 @@
 import { Component, type Type } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 
-import { BsHierarchyChartComponent } from '@mintplayer/ng-bootstrap/charts/hierarchy';
 import { BsDockManagerComponent } from '@mintplayer/ng-bootstrap/dock';
 import { BsFileManagerComponent } from '@mintplayer/ng-bootstrap/file-manager';
 import { BsSchedulerComponent } from '@mintplayer/ng-bootstrap/scheduler';
@@ -103,7 +102,6 @@ interface WrapperCase {
  * silently fall behind.
  */
 const WRAPPERS: WrapperCase[] = [
-  { selector: 'bs-hierarchy-chart', tag: 'mp-hierarchy-chart', component: BsHierarchyChartComponent },
   { selector: 'bs-dock-manager', tag: 'mint-dock-manager', component: BsDockManagerComponent },
   { selector: 'bs-file-manager', tag: 'mp-file-manager', component: BsFileManagerComponent },
   { selector: 'bs-scheduler', tag: 'mp-scheduler', component: BsSchedulerComponent },

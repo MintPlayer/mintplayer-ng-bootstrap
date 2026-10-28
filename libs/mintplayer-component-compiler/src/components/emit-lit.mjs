@@ -11,6 +11,9 @@ function propertyOptions(input) {
   const options = [];
   if (input.kind) options.push(`type: ${LIT_TYPES[input.kind]}`);
   else options.push('attribute: false');
+  // Removing an attribute restores the input's default, and show-labels="false" switches a
+  // default-true flag off, as the hand-written elements did.
+  if (input.kind) options.push(`converter: ${input.kind}Attribute(${input.kind === 'boolean' ? input.default === 'true' : input.default ?? 'undefined'})`);
   // camelCase inputs take a kebab-case attribute (number-visible), as hand-written elements do.
   const kebab = input.name.replace(/[A-Z]/g, (c) => `-${c.toLowerCase()}`);
   if (input.kind && kebab !== input.name) options.push(`attribute: '${kebab}'`);
@@ -33,7 +36,7 @@ export function emitLitComponent(model, { generator, runtime }) {
     banner(model, generator),
     `import { LitElement } from 'lit';`,
     `import { installLightStyles } from '@mintplayer/ui-core/scoped-styles';`,
-    `import { CoreController${slotNames.length ? ', LightChildren' : ''} } from '${runtime}';`,
+    `import { ${[...new Set(model.inputs.filter((i) => i.kind).map((i) => `${i.kind}Attribute`))].sort().map((name) => `${name}, `).join('')}CoreController${slotNames.length ? ', LightChildren' : ''} } from '${runtime}';`,
     coreImports(model, { values: [model.core], types }),
   ];
   styleImports(model)

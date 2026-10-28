@@ -139,7 +139,7 @@ axeAuditSuite(test, expect, [
   {
     path: '/enterprise/charts',
     ready: async (page) => {
-      await page.waitForSelector('mp-hierarchy-chart [role="tree"]');
+      await page.waitForSelector('.hierarchy-chart [role="tree"]');
     },
     // The three hierarchy layouts are different DOM (svg paths vs positioned
     // divs) and the zoomed-in state adds the enabled zoom-out control, so the
@@ -149,22 +149,22 @@ axeAuditSuite(test, expect, [
     // lands on the <svg> rather than the arc.
     interact: async (page) => {
       await page.getByRole('button', { name: 'icicle' }).click();
-      await page.waitForSelector('mp-hierarchy-chart .icicle');
+      await page.waitForSelector('.hierarchy-chart .icicle');
       await page
-        .locator('mp-hierarchy-chart div[role="treeitem"][aria-expanded="true"]:not(.focus-cell)')
+        .locator('.hierarchy-chart div[role="treeitem"][aria-expanded="true"]:not(.focus-cell)')
         .first()
         .click();
       await page.getByRole('button', { name: 'treemap' }).click();
-      await page.waitForSelector('mp-hierarchy-chart .treemap');
+      await page.waitForSelector('.hierarchy-chart .treemap');
       // Back to the sunburst, now zoomed in: this is the state with an enabled
       // zoom-out control, which the root state never shows.
       await page.getByRole('button', { name: 'sunburst' }).click();
-      await page.waitForSelector('mp-hierarchy-chart .center-control:not([disabled])');
+      await page.waitForSelector('.hierarchy-chart .center-control:not([disabled])');
       // Magnified: geometric zoom reveals many more labels and moves the
       // centre control, so audit that state too (roles must be unchanged).
-      await page.evaluate(() =>
-        (document.querySelector('mp-hierarchy-chart') as unknown as { setZoomLevel(z: number): void })
-          .setZoomLevel(4));
+      // Four + presses: about 5x (1.5 per step), the keyboard path to the same view.
+      await page.locator('.hierarchy-chart [role="treeitem"]').first().focus();
+      for (const _ of [1, 2, 3, 4]) await page.keyboard.press('+');
     },
   },
   { path: '/overlays/shell' },

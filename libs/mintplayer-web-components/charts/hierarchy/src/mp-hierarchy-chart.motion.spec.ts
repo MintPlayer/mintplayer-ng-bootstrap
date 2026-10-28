@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import './mp-hierarchy-chart';
-import type { MpHierarchyChart } from './mp-hierarchy-chart';
+import './generated';
+import type { MpHierarchyChart } from './generated';
 import type { HierarchyNode } from '@mintplayer/ui-core/charts/core';
 
 /**
@@ -39,11 +39,11 @@ async function mount(attrs = '', wrapper = ''): Promise<MpHierarchyChart> {
   return el;
 }
 
-const arcLabels = (el: MpHierarchyChart) => Array.from(el.shadowRoot!.querySelectorAll('text.arc-label'));
+const arcLabels = (el: MpHierarchyChart) => Array.from(el.querySelectorAll('text.arc-label'));
 const ring = (el: MpHierarchyChart, id: string) =>
-  el.shadowRoot!.querySelector(`path.ring[data-id="${id}"]`)!.getAttribute('d');
+  el.querySelector(`path.ring[data-id="${id}"]`)!.getAttribute('d');
 const item = (el: MpHierarchyChart, id: string) =>
-  el.shadowRoot!.querySelector(`[role="treeitem"][data-id="${id}"]`) as HTMLElement;
+  el.querySelector(`[role="treeitem"][data-id="${id}"]`) as HTMLElement;
 
 function stubReducedMotion(matches: boolean): void {
   vi.stubGlobal('matchMedia', (query: string) => ({ matches, media: query }) as MediaQueryList);
@@ -65,7 +65,7 @@ describe('sunburst re-root tween', () => {
     const settledAlpha = ring(reference, 'a');
 
     const el = await mount('transition-duration="100"');
-    expect(el.style.getPropertyValue('--mp-hierarchy-chart-transition-duration')).toBe('100ms');
+    expect(el.querySelector<HTMLElement>('.chart')!.style.getPropertyValue('--mp-hierarchy-chart-transition-duration')).toBe('100ms');
     const before = ring(el, 'a');
     el.rootId = 'comp';
     await settle(el);
@@ -96,7 +96,7 @@ describe('sunburst re-root tween', () => {
     await settle(el);
     vi.advanceTimersByTime(200);
     await settle(el);
-    expect(el.hasAttribute('root-id')).toBe(false);
+    expect(el.rootId).toBeNull();
     expect(item(el, 'tools')).not.toBeNull();
     expect(arcLabels(el).length).toBeGreaterThan(0);
   });
@@ -114,7 +114,7 @@ describe('sunburst re-root tween', () => {
     el.rootId = 'comp';
     await settle(el);
     expect(item(el, 'a')).not.toBeNull();
-    expect(el.shadowRoot!.querySelector('.focus-cell')!.getAttribute('data-id')).toBe('comp');
+    expect(el.querySelector('.focus-cell')!.getAttribute('data-id')).toBe('comp');
   });
 });
 
@@ -179,7 +179,7 @@ describe('backdrop auto-detection', () => {
     const onWhite = arcLabels(el).map((t) => t.getAttribute('data-surface'));
     el.removeAttribute('backdrop');
     await settle(el);
-    expect(el.backdrop).toBeUndefined();
+    expect(el.backdrop).toBeNull();
     expect(arcLabels(el).map((t) => t.getAttribute('data-surface'))).not.toEqual(onWhite);
   });
 });
@@ -191,24 +191,28 @@ describe('wheel hint', () => {
     expect(el.zoomHintLabel).toBe('Hold Ctrl to zoom');
     el.dispatchEvent(new WheelEvent('wheel', { deltaY: 10, bubbles: true, cancelable: true }));
     await settle(el);
-    expect(el.shadowRoot!.querySelector('.zoom-hint')!.textContent).toBe('Hold Ctrl to zoom');
+    expect(el.querySelector('.zoom-hint')!.textContent).toBe('Hold Ctrl to zoom');
     vi.advanceTimersByTime(1500);
     await settle(el);
-    expect(el.shadowRoot!.querySelector('.zoom-hint')).toBeNull();
+    expect(el.querySelector('.zoom-hint')).toBeNull();
   });
 
   it('the default hint names the platform modifier', async () => {
     const el = await mount('transition-duration="0"');
-    expect(el.zoomHintLabel).toMatch(/^Use (Ctrl|⌘) \+ scroll to zoom the chart$/);
-    el.zoomHintLabel = '';
-    expect(el.zoomHintLabel).toMatch(/scroll to zoom/);
+    el.dispatchEvent(new WheelEvent('wheel', { deltaY: 10, bubbles: true, cancelable: true }));
+    await settle(el);
+    expect(el.querySelector('.zoom-hint')!.textContent).toMatch(/^Use (Ctrl|⌘) \+ scroll to zoom the chart$/);
   });
 
-  it('zoom-gestures reports "none" once every gesture is disabled', async () => {
+  it('zoom-gestures="none" disables wheel magnification, and removing it restores the default', async () => {
     const el = await mount('transition-duration="0" zoom-gestures="none"');
-    expect(el.zoomGestures).toBe('none');
+    const ctrlWheel = () => item(el, 'tools').dispatchEvent(new WheelEvent('wheel', { deltaY: -100, ctrlKey: true, bubbles: true, cancelable: true }));
+    ctrlWheel();
+    expect(el.zoomLevel()).toBe(1);
     el.removeAttribute('zoom-gestures');
-    expect(el.zoomGestures).toBe('wheel pinch');
+    await settle(el);
+    ctrlWheel();
+    expect(el.zoomLevel()).toBeGreaterThan(1);
   });
 });
 
@@ -216,27 +220,27 @@ describe('activation edges', () => {
   it('clicking the focus cell zooms out one level', async () => {
     const el = await mount('transition-duration="0" layout="icicle" root-id="comp"');
     const zooms: Array<string | undefined> = [];
-    el.addEventListener('hierarchy-zoom', (e) => zooms.push((e as CustomEvent).detail.node.id));
-    el.shadowRoot!.querySelector<HTMLElement>('.focus-cell')!.click();
+    el.addEventListener('zoom', (e) => zooms.push((e as CustomEvent).detail.node.id));
+    el.querySelector<HTMLElement>('.focus-cell')!.click();
     await settle(el);
-    expect(el.hasAttribute('root-id')).toBe(false);
+    expect(el.rootId).toBeNull();
     expect(zooms).toEqual(['root']);
   });
 
   it('clicking a leaf selects it with its path; clicking empty chart space does nothing', async () => {
     const el = await mount('transition-duration="0"');
     const selected: string[][] = [];
-    el.addEventListener('hierarchy-node-select', (e) =>
+    el.addEventListener('nodeselect', (e) =>
       selected.push((e as CustomEvent).detail.path.map((n: HierarchyNode) => n.id)));
     item(el, 'tools').dispatchEvent(new MouseEvent('click', { bubbles: true, composed: true }));
-    el.shadowRoot!.querySelector('.chart')!.dispatchEvent(new MouseEvent('click', { bubbles: true, composed: true }));
+    el.querySelector('.chart')!.dispatchEvent(new MouseEvent('click', { bubbles: true, composed: true }));
     expect(selected).toEqual([['root', 'tools']]);
   });
 
   it('hovering a node then the focus root clears the hover exactly once', async () => {
     const el = await mount('transition-duration="0" layout="icicle"');
     const hovers: Array<string | null> = [];
-    el.addEventListener('hierarchy-node-hover', (e) => hovers.push((e as CustomEvent).detail.node?.id ?? null));
+    el.addEventListener('nodehover', (e) => hovers.push((e as CustomEvent).detail.node?.id ?? null));
     const move = (target: Element) => {
       const ev = new MouseEvent('pointermove', { bubbles: true, composed: true });
       Object.defineProperty(ev, 'pointerId', { value: 1 });
@@ -245,17 +249,19 @@ describe('activation edges', () => {
     };
     move(item(el, 'tools'));
     move(item(el, 'tools'));
-    expect(el.shadowRoot!.querySelector('.chart-tooltip')!.hasAttribute('data-visible')).toBe(true);
-    move(el.shadowRoot!.querySelector('.focus-cell')!);
-    move(el.shadowRoot!.querySelector('.focus-cell')!);
+    await el.updateComplete;
+    expect(el.querySelector('.chart-tooltip')!.hasAttribute('data-visible')).toBe(true);
+    move(el.querySelector('.focus-cell')!);
+    move(el.querySelector('.focus-cell')!);
     expect(hovers).toEqual(['tools', null]);
-    expect(el.shadowRoot!.querySelector('.chart-tooltip')!.hasAttribute('data-visible')).toBe(false);
+    await el.updateComplete;
+    expect(el.querySelector('.chart-tooltip')!.hasAttribute('data-visible')).toBe(false);
   });
 
   it('a single-finger touch move hovers like a mouse and never zooms', async () => {
     const el = await mount('transition-duration="0"');
     const hovers: Array<string | null> = [];
-    el.addEventListener('hierarchy-node-hover', (e) => hovers.push((e as CustomEvent).detail.node?.id ?? null));
+    el.addEventListener('nodehover', (e) => hovers.push((e as CustomEvent).detail.node?.id ?? null));
     const touch = (type: string, x: number) => {
       const ev = new MouseEvent(type, { bubbles: true, composed: true, clientX: x, clientY: 10 });
       Object.defineProperty(ev, 'pointerId', { value: 7 });
@@ -264,7 +270,7 @@ describe('activation edges', () => {
     };
     touch('pointerdown', 10);
     touch('pointermove', 90);
-    expect(el.zoomLevel).toBe(1);
+    expect(el.zoomLevel()).toBe(1);
     expect(hovers).toEqual(['tools']);
   });
 
@@ -277,7 +283,7 @@ describe('activation edges', () => {
     };
     expect(press(item(el, 'a')).defaultPrevented).toBe(true);
     await settle(el);
-    expect(el.hasAttribute('root-id')).toBe(false);
+    expect(el.rootId).toBeNull();
     expect(press(item(el, 'comp')).defaultPrevented).toBe(false);
   });
 });

@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it } from 'vitest';
-import './mp-hierarchy-chart';
-import type { MpHierarchyChart } from './mp-hierarchy-chart';
+import './generated';
+import type { MpHierarchyChart } from './generated';
 import type { HierarchyNode } from '@mintplayer/ui-core/charts/core';
 
 /**
@@ -37,9 +37,9 @@ async function mount(attrs = ''): Promise<MpHierarchyChart> {
 }
 
 const tooltip = (el: MpHierarchyChart): HTMLElement =>
-  el.shadowRoot!.querySelector('.chart-tooltip') as HTMLElement;
+  el.querySelector('.chart-tooltip') as HTMLElement;
 const item = (el: MpHierarchyChart, id: string): SVGElement =>
-  el.shadowRoot!.querySelector(`[role="treeitem"][data-id="${id}"]`) as SVGElement;
+  el.querySelector(`[role="treeitem"][data-id="${id}"]`) as SVGElement;
 
 function press(target: Element, key: string): void {
   target.dispatchEvent(new KeyboardEvent('keydown', { key, bubbles: true, composed: true, cancelable: true }));
@@ -53,15 +53,18 @@ describe('tooltip on keyboard focus', () => {
   it('focusing a node shows the tooltip with its text; blur hides it', async () => {
     const el = await mount();
     item(el, 'a').focus();
+    await el.updateComplete;
     expect(tooltip(el).hasAttribute('data-visible')).toBe(true);
     expect(tooltip(el).textContent).toContain('alpha.ts');
     item(el, 'a').blur();
+    await el.updateComplete;
     expect(tooltip(el).hasAttribute('data-visible')).toBe(false);
   });
 
   it('stays aria-hidden even while visible (one message, one channel)', async () => {
     const el = await mount();
     item(el, 'a').focus();
+    await el.updateComplete;
     expect(tooltip(el).getAttribute('aria-hidden')).toBe('true');
     expect(item(el, 'a').getAttribute('aria-describedby')).toBeNull();
   });
@@ -69,35 +72,39 @@ describe('tooltip on keyboard focus', () => {
   it('Escape dismisses the tooltip first and only then zooms out', async () => {
     const el = await mount('root-id="src"');
     const zooms: string[] = [];
-    el.addEventListener('hierarchy-zoom', () => zooms.push('zoom'));
+    el.addEventListener('zoom', () => zooms.push('zoom'));
     item(el, 'a').focus();
+    await el.updateComplete;
     expect(tooltip(el).hasAttribute('data-visible')).toBe(true);
 
     press(item(el, 'a'), 'Escape');
     await flush(el);
     expect(tooltip(el).hasAttribute('data-visible')).toBe(false);
     expect(zooms).toEqual([]); // first Escape consumed by the tooltip
-    expect(el.getAttribute('root-id')).toBe('src');
+    expect(el.rootId).toBe('src');
 
     press(item(el, 'a'), 'Escape');
     await flush(el);
     expect(zooms).toEqual(['zoom']); // second Escape zooms out
-    expect(el.hasAttribute('root-id')).toBe(false);
+    expect(el.rootId).toBeNull();
   });
 
   it('after an Escape dismissal, focusing a DIFFERENT node re-shows the tooltip', async () => {
     const el = await mount('root-id="src"');
     item(el, 'a').focus();
+    await el.updateComplete;
     press(item(el, 'a'), 'Escape');
+    await el.updateComplete;
     expect(tooltip(el).hasAttribute('data-visible')).toBe(false);
     item(el, 'b').focus();
+    await el.updateComplete;
     expect(tooltip(el).hasAttribute('data-visible')).toBe(true);
     expect(tooltip(el).textContent).toContain('beta.ts');
   });
 
   it('the focus root itself never gets a tooltip (its label is the center control)', async () => {
     const el = await mount('layout="icicle" root-id="src"');
-    (el.shadowRoot!.querySelector('.focus-cell') as HTMLElement).focus();
+    (el.querySelector('.focus-cell') as HTMLElement).focus();
     expect(tooltip(el).hasAttribute('data-visible')).toBe(false);
   });
 });
