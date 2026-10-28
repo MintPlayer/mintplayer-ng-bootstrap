@@ -7,7 +7,7 @@ import { BsDropdownMenu } from '@mintplayer/react-bootstrap/dropdown-menu';
 import { BsNavbar, BsNavbarDropdown, BsNavbarItem } from '@mintplayer/react-bootstrap/navbar';
 import { BsShell } from '@mintplayer/react-bootstrap/shell';
 
-import { renderEl } from './harness';
+import { emit, renderEl } from './harness';
 
 /**
  * These wrappers exist for one reason each: to turn an idiomatic React prop into

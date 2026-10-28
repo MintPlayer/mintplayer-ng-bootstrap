@@ -136,6 +136,11 @@ interface Case {
    * must still arrive.
    */
   fixedRole?: string;
+  /**
+   * Set when the target is a box around the role-bearing node, which is what
+   * `aria-label` names: the sparkline's sized span holds a role=img svg.
+   */
+  labelTarget?: string;
 }
 
 /** A case whose wrapper can be rendered bare, with nothing but the probe. */
@@ -170,7 +175,8 @@ const CASES: Case[] = [
   bare('BsCardTitle', 'div.card-title', BsCardTitle),
   bare('BsCarousel', 'mp-carousel', BsCarousel),
   bare('BsHierarchyChart', 'mp-hierarchy-chart', BsHierarchyChart),
-  bare('BsSparkline', 'span.sparkline', BsSparkline),
+  // No points, no svg: the probe needs data for its labelled node to exist.
+  { name: 'BsSparkline', target: 'span.sparkline', render: (p) => <BsSparkline {...p} points={[1, 3, 2]} />, labelTarget: 'svg[role=img]' },
   bare('BsTrendChart', 'mp-trend-chart', BsTrendChart),
   bare('BsCheckbox', 'input[type=checkbox]', BsCheckbox),
   bare('BsCodeSnippet', 'mp-code-snippet', BsCodeSnippet),
@@ -248,7 +254,8 @@ const CASES: Case[] = [
   bare('BsTimelineItem', 'mp-timeline-item', BsTimelineItem),
   bare('BsTimeList', 'mp-time-list', BsTimeList),
   bare('BsTimepicker', 'mp-timepicker', BsTimepicker),
-  bare('BsToggleButton', 'input[type=checkbox]', BsToggleButton),
+  // The APG toggle button: role=button + aria-pressed on the input is the core's contract.
+  { ...bare('BsToggleButton', 'input[type=checkbox]', BsToggleButton), fixedRole: 'button' },
   bare('BsTreeSelect', 'mp-tree-select', BsTreeSelect),
   bare('BsTreeview', 'mp-treeview', BsTreeview),
   { ...bare('BsTypeahead', 'input', BsTypeahead), fixedRole: 'combobox' },
@@ -312,7 +319,8 @@ describe('React wrapper attribute passthrough', () => {
       expect(target, `${entry.target} was not rendered by <${entry.name}>`).not.toBeNull();
       // Proves the wrapper spreads its rest props at all. A wrapper that
       // destructures every known prop and forgets `...rest` fails here.
-      expect(target!.getAttribute('aria-label')).toBe(PROBE['aria-label']);
+      const labelled = entry.labelTarget ? target!.querySelector(entry.labelTarget) : target;
+      expect(labelled?.getAttribute('aria-label')).toBe(PROBE['aria-label']);
       // The bare names travel a different road — `@lit/react` routes any name
       // it finds on the element prototype through a property rather than an
       // attribute — so they are a genuinely separate failure, not a repeat.

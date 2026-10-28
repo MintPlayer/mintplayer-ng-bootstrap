@@ -1,0 +1,18 @@
+{
+  "name": "mintplayer-component-compiler",
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "libs/mintplayer-component-compiler/src",
+  "projectType": "library",
+  "tags": [],
+  "targets": {
+    "test": {
+      "executor": "nx:run-commands",
+      "inputs": ["{projectRoot}/**/*", { "externalDependencies": ["vitest", "@vue/compiler-sfc", "@babel/parser"] }],
+      "cache": true,
+      "options": {
+        "cwd": "{projectRoot}",
+        "command": "npx vitest run"
+      }
+    }
+  }
+}

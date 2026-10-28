@@ -85,7 +85,10 @@ export class LightChildren implements ReactiveController {
 
   #adopt(): void {
     if (!this.#slots) return;
-    const strays = takeLightChildren(this.host, ownedByTemplate);
+    // A captured node the template placed directly in the host is not a stray:
+    // adopting it again would re-render, re-insert and re-adopt it forever.
+    const captured = new Set(Object.values(this.#slots).flat());
+    const strays = takeLightChildren(this.host, (node) => captured.has(node) || ownedByTemplate(node));
     if (Object.keys(strays).length === 0) return;
     Object.entries(strays).forEach(([name, nodes]) => (this.#slots![name] = [...(this.#slots![name] ?? []), ...nodes]));
     this.host.requestUpdate();

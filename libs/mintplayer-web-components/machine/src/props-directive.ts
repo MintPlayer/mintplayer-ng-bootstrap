@@ -2,7 +2,7 @@ import { noChange } from 'lit';
 import { Directive, directive, PartType, type ElementPart, type PartInfo } from 'lit/directive.js';
 
 /** An attribute bag as a `@mintplayer/ui-core` `connect()` returns it. */
-export type AttrBag = Record<string, string | boolean | null | undefined>;
+export type AttrBag = Record<string, string | number | boolean | null | undefined>;
 
 const REFUSED = new Set(['href', 'src', 'srcdoc', 'xlink:href', 'style', 'action', 'formaction', 'data']);
 

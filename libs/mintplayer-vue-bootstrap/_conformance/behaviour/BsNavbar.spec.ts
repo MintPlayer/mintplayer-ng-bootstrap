@@ -2,9 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { h, nextTick } from 'vue';
 
 import BsDropdownMenu from '../../dropdown-menu/src/BsDropdownMenu.vue';
-import BsNavbar from '../../navbar/src/BsNavbar.vue';
-import BsNavbarDropdown from '../../navbar/src/BsNavbarDropdown.vue';
-import BsNavbarItem from '../../navbar/src/BsNavbarItem.vue';
+import { BsNavbar, BsNavbarDropdown, BsNavbarItem } from '../../navbar/src/generated';
 
 import { mountEl, mountWrapper } from './harness';
 
@@ -30,8 +28,10 @@ describe('BsDropdownMenu — markup from the headless core', () => {
 describe('BsNavbar — markup from the headless core', () => {
   const toggle = (nav: Element) => nav.querySelector<HTMLInputElement>('input.navbar-toggle')!;
 
-  it('renders a collapsed navigation landmark by default', () => {
+  it('renders a collapsed navigation landmark by default', async () => {
     const { el } = mountEl(BsNavbar, 'nav');
+    // aria-expanded is written once hydrated: the server markup is the native checkbox alone.
+    await nextTick();
     expect(el.classList).toContain('navbar');
     expect(el.getAttribute('aria-label')).toBe('Main navigation');
     expect(toggle(el).checked).toBe(false);

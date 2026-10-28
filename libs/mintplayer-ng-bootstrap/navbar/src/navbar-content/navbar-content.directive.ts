@@ -1,5 +1,6 @@
-import { afterNextRender, Directive, ElementRef, inject, input, OnDestroy, Renderer2, RendererStyleFlags2 } from '@angular/core';
-import { BsNavbarComponent } from '../navbar/navbar.component';
+import { isPlatformServer } from '@angular/common';
+import { afterNextRender, Directive, ElementRef, inject, input, OnDestroy, PLATFORM_ID, Renderer2, RendererStyleFlags2 } from '@angular/core';
+import { BsNavbarComponent } from '../generated';
 
 /** The offset before the bar is measured: Bootstrap's default navbar is 3.5rem tall. */
 const ESTIMATE = 'var(--bs-navbar-content-offset, 3.5rem)';
@@ -30,6 +31,7 @@ export class BsNavbarContentDirective implements OnDestroy {
 
   constructor() {
     this.#renderer.setStyle(this.#element, 'padding-top', ESTIMATE, RendererStyleFlags2.DashCase);
+    if (isPlatformServer(inject(PLATFORM_ID))) return;
     afterNextRender(() => {
       // The bs-navbar host is the .navbar itself.
       const bar = this.navbar().elementRef.nativeElement;

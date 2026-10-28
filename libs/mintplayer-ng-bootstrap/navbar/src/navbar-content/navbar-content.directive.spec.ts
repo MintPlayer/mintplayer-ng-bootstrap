@@ -1,6 +1,6 @@
 import { Component, PLATFORM_ID } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
-import { BsNavbarComponent } from '../navbar/navbar.component';
+import { BsNavbarComponent } from '../generated';
 import { BsNavbarContentDirective } from './navbar-content.directive';
 
 @Component({

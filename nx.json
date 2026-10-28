@@ -101,6 +101,7 @@
     }
   },
   "plugins": [
+    "./libs/mintplayer-component-compiler/src/nx/plugin.cjs",
     {
       "plugin": "@nx/playwright/plugin",
       "options": {

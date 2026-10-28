@@ -318,6 +318,44 @@ Each spike is small and throwaway, lives on a scratch branch or under `_spike-*/
     - **Light-DOM children.** The Lit `LightChildren` controller captures them by `slot` attribute, so a light-DOM element can place them as binding values.
   - Limits are by design and listed in `tools/front-templates/README.md`: one bag per element, no functions or components, no `:style`. A template that needs more is a sign the logic belongs in the core.
   - The Lit navbar moved to the light DOM in the process, which retired its DSD chrome.
+- **S14: go.** The navbar family (navbar, navbar-nav, navbar-item, navbar-dropdown) is generated in all four
+  fronts from `ui-core/navbar/src/navbar.component.ts` + `navbar.core.ts` + the S13 templates. Every hand-written
+  navbar front is deleted. Measured: navbar unit specs green in Angular (12), Lit (16), Vue and React, ui-core
+  navbar (16), and the React/Vue attribute-passthrough sweeps (77 / 61). Public-API diff vs. the hand-written fronts
+  is listed in the CHANGELOG navbar entry: `label` → `aria-label`, `bs-navbar-brand` → `[bsNavbarBrand]`, new
+  `navbar-nav`, `expanded` two-way. Dropdown-menu is not yet a D10 source; it converts with M4.
+  - Bugs the generated Lit fronts exposed, fixed in the runtime rather than in output:
+    - `LightChildren` re-adopted a captured child that its template placed directly in the host, so it looped forever.
+    - A light-DOM element moved by its parent's template is disconnected, and its `CoreController` disposed.
+      It now re-attaches on reconnect.
+  - Angular `contentChild` cannot sit on an ES `#private` field (`FatalDiagnosticError`); slot queries are `private`.
+- **S16: go for two of three; CVA open.**
+  - `RouterLinkActive` is an extension, `navbar-dropdown.angular.ts` (`hostDirectives` + `extendInputs`). This is
+    the only extension so far.
+  - The React imperative handle is a manifest concept, `methods` (`useImperativeHandle`, Vue `defineExpose`,
+    Lit public methods).
+  - Two-way inputs became a manifest concept as well, `model: true`. `coreRuntime` writes a changed state key back
+    through `writeModel`: Angular `model()`, Vue `update:x`, the Lit property; React stays controlled via its output.
+  - The checkbox CVA is checked when M4 converts the form controls: `model` + an Angular `providers` extension is
+    the candidate.
+- **S17 (partial): inference and scaffold go; the clean-tree build and cache hit run in the M9 sweep.**
+  `nx show project mintplayer-ui-core` lists the inferred `compile-components` and `compile-components-check`;
+  `codegen` `dependsOn` it, so every front build reaches it transitively. `nx g ./libs/mintplayer-component-compiler:component`
+  scaffolds the core, manifest, view, sheet and the four front entries. `--check` is not added to CI: the outputs
+  are gitignored and CI always regenerates them, so it would check nothing. It is a local pre-commit aid.
+- **S18: go; no VS Code extension needed.** One planted error, `:data-probe="view.nope"` in
+  `navbar-dropdown.view.vue`, failed the type-check of all four fronts with the same `TS2339: Property 'nope' does
+  not exist on type 'NavbarDropdownView'`:
+  - Vue: vue-tsc.
+  - React and Lit: tsc.
+  - Angular: ngc strict templates, at the generated `.html`.
+
+  Volar gives completion and checking on the source `.view.vue` itself. One limit: a prop typed as an open
+  `Record` (`NavbarBag`) accepts any key, so a misspelled bag key is not caught. Use closed view interfaces where
+  a typo matters.
+- **S15 and S19: not run yet.** S15 (compiler-stamped `data-mps`, one sheet per group) runs at the accordion
+  conversion. The navbar group already shares two sheets across four components, but its bags still carry
+  `data-mps`. S19 (fixture workspace) runs before the package is made public.
 - **Deferred to the milestone that needs them:**
   - S2 accordion half at accordion (M3)
   - S3 at tree-select (M5)

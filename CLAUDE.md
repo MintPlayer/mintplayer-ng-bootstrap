@@ -186,11 +186,17 @@ is reversed** for components on this architecture. The typeahead is the referenc
   `data-mps="<name>"` on its own nodes (it is in the bags) and installs the sheet through the shared registry
   (`ui-core/scoped-styles`, which `web-components/light-dom` re-exports). Angular writes it into `DOCUMENT.head`
   on the server — no string post-processing. No `styleUrls`, no `::ng-deep`.
-- **Templates** (spike S13): a component's markup is written once, as
-  `ui-core/<name>/src/templates/<name>.view.vue` (Vue syntax, typed props/slots, IDE support for free), and
-  `tools/front-templates` compiles it into each front's `src/generated/` (gitignored; `mintplayer-ui-core:codegen`).
-  Fronts keep only their glue. The subset it accepts, and why, is in `tools/front-templates/README.md`; the
-  navbar is the reference.
+- **Component compiler** (PRD D10, `libs/mintplayer-component-compiler`, `@mintplayer/nx-component-compiler`):
+  a component is written ONCE in ui-core as a core (`ComponentCore`, `ui-core/component`), a Vue-syntax view
+  (`<name>/src/templates/*.view.vue`) and a plain-data manifest (`<name>/src/<name>.component.ts`, `import type`
+  only — Node loads it with types stripped). The compiler GENERATES the whole Angular / React / Vue / Lit
+  component into each front's `<entry>/src/generated/` (gitignored), via the inferred Nx target
+  `mintplayer-ui-core:compile-components` (`-check` fails on stale output). Never hand-write a front for a
+  component that has a manifest; a front-specific need goes in an extension file next to the entry
+  (`<element>.angular.ts`: `hostDirectives` / `providers` / `extendInputs`; React `useExtendInputs`). Two-way
+  inputs are `model: true` (Angular `model()`, Vue `update:x`, Lit property write-back). Scaffold a new group
+  with `nx g ./libs/mintplayer-component-compiler:component <name>`. The template subset is in the lib's
+  README; the navbar is the reference.
 - **Angular front SSR**: render the whole tree (including hidden popups) so server and client DOM are
   identical; hydration then attaches to the same nodes. Drive everything from signals under OnPush.
 - **Fronts are transparent** to `aria-*`, `id`, `tabindex` — but never forward a consumer `role` onto a node

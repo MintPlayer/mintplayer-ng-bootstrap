@@ -25,17 +25,10 @@
         "{projectRoot}/**/*.scoped.styles.ts",
         "{projectRoot}/styles/bootstrap.css",
         "{projectRoot}/phone-core/src/metadata-loaders.generated.ts",
-        "{projectRoot}/phone-core/src/metadata/*.generated.ts",
-        "{workspaceRoot}/libs/mintplayer-ng-bootstrap/*/src/generated",
-        "{workspaceRoot}/libs/mintplayer-react-bootstrap/*/src/generated",
-        "{workspaceRoot}/libs/mintplayer-vue-bootstrap/*/src/generated",
-        "{workspaceRoot}/libs/mintplayer-web-components/*/src/generated"
+        "{projectRoot}/phone-core/src/metadata/*.generated.ts"
       ],
       "inputs": [
         "{projectRoot}/**/*.scss",
-        "{projectRoot}/*/src/templates/*.view.vue",
-        "{workspaceRoot}/tools/front-templates/**/*.mjs",
-        "{projectRoot}/front-templates.config.mjs",
         "{workspaceRoot}/tools/scripts/build-web-components.mjs",
         "{workspaceRoot}/tools/scripts/lib/*.mjs",
         "{workspaceRoot}/tools/scripts/build-phone-metadata.mjs",
@@ -50,10 +43,12 @@
         "parallel": false,
         "commands": [
           "node tools/scripts/build-web-components.mjs libs/mintplayer-ui-core",
-          "node tools/scripts/build-phone-metadata.mjs",
-          "node tools/front-templates/bin/front-templates.mjs --config libs/mintplayer-ui-core/front-templates.config.mjs"
+          "node tools/scripts/build-phone-metadata.mjs"
         ]
-      }
+      },
+      "dependsOn": [
+        "compile-components"
+      ]
     },
     "build": {
       "executor": "@nx/vite:build",

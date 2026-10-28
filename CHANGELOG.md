@@ -146,6 +146,26 @@ breaking change is a major. (2.20.0 and 2.21.0 broke `^2.x` consumers in a minor
   - **Vue:** `points`, `area`, `showLastDot`, `yMin`, `yMax`, `locale`, `inputLabel` and `summaryFormatter`
     are declared props, so numbers need a binding (`:y-min="0"`). Other attributes land on the box.
   - The Lit `mp-sparkline` renders from the same core and keeps its shadow root.
+- **Navbar is generated from one source in every front (issue #437, wave A).** The navbar, nav, item and dropdown
+  are written once in `@mintplayer/ui-core/navbar` and compiled into all four fronts by the new component compiler
+  (`@mintplayer/nx-component-compiler`). Every front renders Bootstrap's `.navbar` markup, so the server HTML is the
+  finished bar, and the collapse works with JS off.
+  - **Every front:**
+    - The landmark is named by the consumer's `aria-label`. The `label` input/prop is removed.
+    - A new `navbar-nav` element groups items: `bs-navbar-nav` / `BsNavbarNav` / `mp-navbar-nav`, with `align`.
+    - `expanded` is two-way: Angular `[(expanded)]`, Vue `v-model:expanded`; the Lit property follows the bar.
+      The `expandedchange` output still reports only user toggles.
+    - Item nesting inside a dropdown comes from the navbar's own context, not `BS_DROPDOWN_MENU_CONTEXT`.
+  - **Angular:**
+    - `bs-navbar-brand` is replaced by the `[bsNavbarBrand]` directive on an `<ng-template>`.
+    - `bs-navbar-dropdown` takes a `label` input; `[bsNavbarDropdownLabel]` still overrides it with markup.
+    - `[bsNavbarContent]` reserves `var(--bs-navbar-content-offset, 3.5rem)` on the server and with JS off, then
+      follows the bar's measured height.
+  - **React / Vue:** the components are `forwardRef` / `defineExpose` components with a `toggle()` method.
+    Consumer attributes land on the rendered `.navbar`, `.navbar-nav`, `.nav-item` and `details.dropdown`.
+  - **Lit:** the elements render in the light DOM. `mp-navbar-brand` is removed (put a `slot="brand"` child in
+    `mp-navbar`), `slot="end"` is replaced by `<mp-navbar-nav align="end">`, `mp-navbar-dropdown` is a native `<details>` whose `label` attribute or `slot="label"` names it,
+    and the DSD chrome is retired. `mp-dropdown-menu`'s `input-label` is removed: name it with `aria-label`.
 
 
 
