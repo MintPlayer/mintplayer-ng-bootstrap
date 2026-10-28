@@ -2,6 +2,7 @@
 // component over the template stage's `.html`, hosting the core through
 // `useCore` (PRD #437 D10). Named slots become structural directives
 // (`*bsNavbarBrand`); the default slot is `<ng-content />`.
+import { emitAngular } from '../templates/emit-angular.mjs';
 import { banner, coreImports, jsdoc, styleImports } from './model.mjs';
 
 const angularOutput = (output) => output.lower;
@@ -42,7 +43,9 @@ export function emitAngularComponent(model, { generator, runtime = '@mintplayer/
   if (named.length) angularImports.add('computed');
   if (named.length) ['contentChild', 'Directive', 'TemplateRef'].forEach((n) => angularImports.add(n));
 
-  const machine = ['MpPropsDirective', 'useCore', 'useScopedStyles'];
+  // A template whose only bag is the host's never binds [mpProps]: importing it anyway is NG8113.
+  const usesProps = emitAngular(model.src).uses.includes('MpPropsDirective');
+  const machine = [...(usesProps ? ['MpPropsDirective'] : []), 'useCore', 'useScopedStyles'];
   const provides = model.provides;
   if (provides) machine.push('provideCoreContext');
 
@@ -78,7 +81,7 @@ export function emitAngularComponent(model, { generator, runtime = '@mintplayer/
   const meta = [
     `  selector: '${names.selector}',`,
     `  templateUrl: './${model.templateBase}.generated.html',`,
-    `  imports: [MpPropsDirective${named.length ? ', NgTemplateOutlet' : ''}],`,
+    `  imports: [${[...(usesProps ? ['MpPropsDirective'] : []), ...(named.length ? ['NgTemplateOutlet'] : [])].join(', ')}],`,
     `  changeDetection: ChangeDetectionStrategy.OnPush,`,
   ];
   if (provides) meta.push(`  providers: [provideCoreContext(${provides}, ${names.angular})${has('providers') ? ', ...ext_providers' : ''}],`);

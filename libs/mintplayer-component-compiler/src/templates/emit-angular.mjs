@@ -9,12 +9,17 @@ import { GENERATOR, NODE, PROP, TAG, TemplateError, VOID_TAGS, checkElement, dir
 const escapeText = (text) => text.replace(/&(?![a-z#0-9]+;)/gi, '&amp;').replace(/</g, '&lt;').replace(/@/g, '&#64;').replace(/\{/g, '&#123;').replace(/\}/g, '&#125;');
 const escapeAttr = (text) => text.replace(/&(?![a-z#0-9]+;)/gi, '&amp;').replace(/"/g, '&quot;');
 
-export function emitAngular(src, { generator = GENERATOR, prop = (name) => `${name}()` } = {}) {
-  const ctx = { src, prop, locals: new Set(), uses: new Set() };
+export function emitAngular(src, { generator = GENERATOR, prop = (name) => `${name}()`, letProps = false } = {}) {
+  // With `letProps`, each prop the template reads is bound once with `@let`: the
+  // type checker narrows a template variable after `@if (p_view.x)`, but never
+  // through a call like `props().view.x`.
+  const read = new Set();
+  const ctx = { src, prop: letProps ? (name) => (read.add(name), `p_${name}`) : prop, locals: new Set(), uses: new Set() };
   const { root, host } = rootElement(src);
   const body = host ? children(ctx, root.children, 0) : children(ctx, src.root.children, 0);
+  const lets = [...read].map((name) => `@let p_${name} = ${prop(name)};\n`).join('');
   const header = `<!-- GENERATED from ${src.file.replace(/\\/g, '/')} by ${generator}. Do not edit. -->\n`;
-  return { text: header + body, uses: [...ctx.uses] };
+  return { text: header + lets + body, uses: [...ctx.uses] };
 }
 
 function x(ctx, expr) {

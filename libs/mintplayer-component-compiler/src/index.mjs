@@ -150,7 +150,7 @@ async function entryOutputs(config, cwd, entry, name, front) {
     entry.sources.map(({ file, base }) => [`${base}.vue`, readSource(relative(cwd, file).replace(/\\/g, '/'), readFileSync(file, 'utf8'))]),
   );
   sources.forEach((src, key) => {
-    files.set(join(outDir, `${key.replace(/\.vue$/, '')}.generated.${FRONTS[name].ext}`), FRONTS[name].template(src, { runtime, ...(entry.manifest && name === 'angular' ? { prop: ANGULAR_PROP } : {}) }));
+    files.set(join(outDir, `${key.replace(/\.vue$/, '')}.generated.${FRONTS[name].ext}`), FRONTS[name].template(src, { runtime, ...(entry.manifest && name === 'angular' ? { prop: ANGULAR_PROP, letProps: true } : {}) }));
   });
 
   if (entry.manifest) {
