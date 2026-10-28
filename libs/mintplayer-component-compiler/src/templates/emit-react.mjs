@@ -35,7 +35,7 @@ export function emitReact(src, { generator = GENERATOR, runtime } = {}) {
       '',
     );
   }
-  const machine = [...ctx.uses].filter((u) => u === 'reactProps' || u === 'reactFormProps' || u === 'reactOptionProps').sort().join(', ');
+  const machine = [...ctx.uses].filter((u) => u === 'reactProps' || u === 'reactFormProps' || u === 'reactOptionProps' || u === 'reactStyle').sort().join(', ');
 
   return [
     `// GENERATED from ${src.file.replace(/\\/g, '/')} by ${generator}. Do not edit.`,
@@ -128,6 +128,10 @@ function bare(ctx, el, depth) {
     }
     if (p.name === 'bind') {
       // `:value.prop` on a form control seeds it, like its bag does.
+      if (p.arg.content === 'style') {
+        ctx.uses.add('reactStyle');
+        return `style={reactStyle(${exp})}`;
+      }
       const seed = FORM_TAGS.has(el.tag) && p.arg.content === 'value' && p.modifiers.some((m) => (m.content ?? m) === 'prop');
       const name = seed ? 'defaultValue' : (RENAME[p.arg.content] ?? p.arg.content);
       return `${name}={${exp}}`;

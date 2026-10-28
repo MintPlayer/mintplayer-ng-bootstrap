@@ -14,7 +14,7 @@ import {
 import { __resetBsThemeStoreForTests, type MpThemeToggle } from '@mintplayer/web-components/theming';
 
 import { render, renderEl } from './harness';
-import { installFakeBroadcastChannel } from '@mintplayer/web-components/theming/src/testing/fake-broadcast-channel';
+import { installFakeBroadcastChannel } from '@mintplayer/ui-core/theming/src/testing/fake-broadcast-channel';
 
 /**
  * `useBsTheme()` is a thin `useSyncExternalStore` adapter over the shared

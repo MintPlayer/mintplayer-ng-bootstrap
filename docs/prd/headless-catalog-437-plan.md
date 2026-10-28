@@ -122,7 +122,8 @@ Every item below is authored as a D10 component source once M3b lands.
   - left for every `mp-attrs` component: Angular and Lit keep consumer `aria-*` other than `aria-label` on the host
 - [x] dropdown-menu stays hand-written: its item, divider and header are attribute directives on the consumer's own `<li>`s, which a generated component cannot be
 - [ ] Angular `aria-passthrough.spec.ts` lists `PENDING_437` (calendar, code-snippet, datepicker, datetime-picker, timepicker): those wrappers do not forward ARIA today; drop each entry as its component converts
-- [ ] otp-input
+- [x] otp-input: one D10 source (`ui-core/otp-input`), one real input in every front, the boxes decorative; `case` renamed `letterCase`; Angular CVA + `focus()` delegation as host directives
+  - compiler fixes it needed: builtin output types (`string`) are not imported; the Vue `mp-attrs` merge coerces the bag's `class` to a string
 - [ ] multi-range
 - [ ] calendar
 - [ ] datepicker, timepicker (+ time-list), datetime-picker

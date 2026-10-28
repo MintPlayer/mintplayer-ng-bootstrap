@@ -88,7 +88,7 @@ describe('mp-attrs', () => {
   it('Vue merges $attrs into the marked bag and keeps class and style on the root', () => {
     const text = emitVue(src);
     expect(text).toContain('defineOptions({ inheritAttrs: false });');
-    expect(text).toContain(`<select v-bind="{ ...bag, ...$attrs, class: bag['class'], style: undefined }">`);
+    expect(text).toContain(`<select v-bind="{ ...bag, ...$attrs, class: String(bag['class'] ?? ''), style: undefined }">`);
     expect(text).toContain('<div :class="$attrs.class" :style="$attrs.style" v-bind="bag">');
     expect(text).not.toContain('mp-attrs');
   });
@@ -112,8 +112,23 @@ describe('refusals', () => {
     expect(() => emitAngular(read('<div :title="nope"></div>'))).toThrow();
   });
 
-  it('rejects :style', () => {
+  it('rejects :style on the root, where the consumer style lands', () => {
     expect(() => emitAngular(read('<div :style="label"></div>'))).toThrow();
+  });
+
+  it('Lit keeps text-only content on the element line, so textContent carries no indentation', () => {
+    const lit = emitLit(read('<div v-bind="bag">\n  <span v-if="label">\n    Hi {{ label }}\n  </span>\n</div>'), RUNTIME);
+    expect(lit).toContain('<span>Hi ${label}</span>');
+  });
+
+  it('binds a style bag below the root in every front', () => {
+    const styled = read('<div v-bind="bag"><span :style="bag"></span></div>');
+    expect(emitAngular(styled).text).toContain('<span [style]="bag()">');
+    expect(emitReact(styled, RUNTIME)).toContain('style={reactStyle(bag)}');
+    expect(emitVue(styled)).toContain('<span :style="bag">');
+    const lit = emitLit(styled, RUNTIME);
+    expect(lit).toContain('style=${styleMap(bag)}');
+    expect(lit).toContain("import { styleMap } from 'lit/directives/style-map.js';");
   });
 
   it('rejects a component', () => {

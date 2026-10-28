@@ -129,6 +129,8 @@ export function componentModels({ group, entry, corePackage, template, extension
 }
 
 /** Type names the generated front imports from the entry (or a style's `from`), grouped by module. */
+const BUILTIN_TYPES = new Set(['string', 'number', 'boolean', 'null', 'undefined', 'void', 'unknown', 'any', 'never', 'object', 'Record', 'Array', 'ReadonlyArray', 'Partial', 'Readonly', 'Date']);
+
 export function coreImports(model, { values = [], types = [], slotTypes = false } = {}) {
   const modules = new Map();
   const add = (module, name, isType) => {
@@ -141,7 +143,12 @@ export function coreImports(model, { values = [], types = [], slotTypes = false 
     .filter((style) => (style.from ?? model.entryModule) === model.entryModule)
     .forEach((style) => [style.scope, style.sheet].forEach((name) => add(model.entryModule, name, false)));
   types.forEach((name) => add(model.entryModule, name, true));
-  model.outputs.forEach((output) => add(output.from ?? model.entryModule, output.type, true));
+  // An output's type may be a builtin (`string`) or an expression (`Foo | null`): import its names only.
+  model.outputs.forEach((output) =>
+    (output.type.match(/\b[A-Za-z_]\w*\b/g) ?? [])
+      .filter((name) => !BUILTIN_TYPES.has(name))
+      .forEach((name) => add(output.from ?? model.entryModule, name, true)),
+  );
   // Types a slot's parameters name (Angular's slot directives spell them out).
   (slotTypes ? model.slots : [])
     .flatMap((slot) => slot.params?.match(/\b[A-Za-z_]\w*\b/g) ?? [])

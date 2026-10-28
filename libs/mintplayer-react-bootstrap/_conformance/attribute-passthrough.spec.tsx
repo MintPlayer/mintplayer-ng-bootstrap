@@ -206,7 +206,7 @@ const CASES: Case[] = [
     render: (p) => <BsNavbar><BsNavbarNav><BsNavbarItem {...p} /></BsNavbarNav></BsNavbar>,
   },
   bare('BsNavbarNav', 'div.navbar-nav', BsNavbarNav),
-  bare('BsOtpInput', 'mp-otp-input', BsOtpInput),
+  bare('BsOtpInput', 'input', BsOtpInput),
   bare('BsPagination', 'nav', BsPagination),
   bare('BsPhoneInput', 'mp-phone-input', BsPhoneInput),
   bare('BsQueryBuilder', 'mp-query-builder', BsQueryBuilder),

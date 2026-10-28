@@ -75,7 +75,8 @@ function bare(ctx, el, depth) {
     if (p.name === 'bind') {
       const name = p.arg.content;
       if (p.modifiers.some((m) => (m.content ?? m) === 'prop')) return `[${name}]="${escapeAttr(exp)}"`;
-      return name === 'class' ? `[class]="${escapeAttr(exp)}"` : `[attr.${name}]="${escapeAttr(exp)}"`;
+      if (name === 'class' || name === 'style') return `[${name}]="${escapeAttr(exp)}"`;
+      return `[attr.${name}]="${escapeAttr(exp)}"`;
     }
     // v-on: a bare handler name is called with the event.
     const call = /^[\w$.]+$/.test(p.exp.content.trim()) ? `${exp}($event)` : exp;

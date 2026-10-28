@@ -223,8 +223,14 @@ export function checkElement(src, el) {
   if (el.props.some((p) => p.type === PROP.DIRECTIVE && !['bind', 'on', 'if', 'else-if', 'else', 'for'].includes(p.name))) {
     throw new TemplateError(src.file, el, 'only v-bind, v-on, v-if/v-else-if/v-else and v-for are supported');
   }
+  // `:style` takes a core's style bag (geometry custom properties, PRD D7). The
+  // consumer's own style lands on the root and the mp-attrs element, so those
+  // two never take one.
   if (el.props.some((p) => p.type === PROP.DIRECTIVE && p.name === 'bind' && p.arg?.content === 'style')) {
-    throw new TemplateError(src.file, el, ':style is not supported; put geometry in the bag as a custom property');
+    const { root } = rootElement(src);
+    if (el === root || attribute(el, HOST_MARKER) || attribute(el, ATTRS_MARKER)) {
+      throw new TemplateError(src.file, el, ':style (a style bag) is not allowed on the root or the mp-attrs element');
+    }
   }
 }
 

@@ -12,7 +12,7 @@ import {
 } from '@mintplayer/web-components/theming';
 
 import { mountEl, mountWrapper } from './harness';
-import { installFakeBroadcastChannel } from '@mintplayer/web-components/theming/src/testing/fake-broadcast-channel';
+import { installFakeBroadcastChannel } from '@mintplayer/ui-core/theming/src/testing/fake-broadcast-channel';
 
 /**
  * `useBsTheme()` mirrors the shared browser store into `shallowRef`s and

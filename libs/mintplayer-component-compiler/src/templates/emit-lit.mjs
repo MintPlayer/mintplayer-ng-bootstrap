@@ -29,6 +29,7 @@ export function emitLit(src,{ generator = GENERATOR, runtime } = {}) {
   const directives = [];
   if (ctx.uses.has('repeat')) directives.push("import { repeat } from 'lit/directives/repeat.js';");
   if (ctx.uses.has('ref')) directives.push("import { ref, type Ref } from 'lit/directives/ref.js';");
+  if (ctx.uses.has('styleMap')) directives.push("import { styleMap } from 'lit/directives/style-map.js';");
   if (ctx.uses.has('props')) directives.push(`import { props } from '${runtime}';`);
   const helpers = ctx.uses.has('renderSlot')
     ? ["function renderSlot<A>(slot: unknown, args: A): unknown {", "  return typeof slot === 'function' ? (slot as (args: A) => unknown)(args) : slot;", '}', '']
@@ -115,6 +116,10 @@ function bare(ctx, el, depth) {
     }
     if (p.name === 'bind') {
       if (p.modifiers.some((m) => (m.content ?? m) === 'prop')) return `.${p.arg.content}=\${${exp}}`;
+      if (p.arg.content === 'style') {
+        ctx.uses.add('styleMap');
+        return `style=\${styleMap(${exp})}`;
+      }
       ctx.uses.add('nothing');
       return `${p.arg.content}=\${(${exp}) ?? nothing}`;
     }
@@ -128,6 +133,16 @@ function bare(ctx, el, depth) {
   }
   const open = `<${el.tag}${attrs.length ? ' ' + attrs.join(' ') : ''}>`;
   if (VOID_TAGS.has(el.tag)) return `${pad(depth)}${open}\n`;
+  // Text-only content stays on the element's line: indenting it would put the
+  // indentation into textContent, which the other fronts condense away.
+  const content = el.children.filter((c) => c.type !== NODE.COMMENT);
+  if (content.length && content.every((c) => c.type === NODE.TEXT || c.type === NODE.INTERPOLATION)) {
+    const text = content
+      .map((c) => (c.type === NODE.TEXT ? escapeText(c.content.replace(/\s+/g, ' ')) : `\${${x(ctx, c.content.content)}}`))
+      .join('')
+      .trim();
+    return `${pad(depth)}${open}${text}</${el.tag}>\n`;
+  }
   const inner = children(ctx, el.children, depth + 1);
   return inner ? `${pad(depth)}${open}\n${inner}${pad(depth)}</${el.tag}>\n` : `${pad(depth)}${open}</${el.tag}>\n`;
 }

@@ -79,8 +79,8 @@ const CASES: NamingCase[] = [
   { tag: 'mp-typeahead', target: 'input' },
   { tag: 'mp-timeline', target: '.timeline' },
   { tag: 'mp-datatable', target: 'table' },
-  // Class is MintOtpInputElement, but the registered tag is mp-otp-input.
-  { tag: 'mp-otp-input', target: 'input.hidden-input', defaultName: 'One-time code' },
+  // Generated from @mintplayer/ui-core/otp-input; the role lives on the inner input.
+  { tag: 'mp-otp-input', target: 'input', defaultName: 'One-time code' },
   { tag: 'mp-signature-pad', target: 'canvas', defaultName: 'Signature pad' },
   // The role-bearing control is the tel input; its picker is named separately by
   // `country-label`, which is why a host `aria-label` must not land on both.
@@ -169,19 +169,22 @@ describe.each(CASES)('$tag naming contract', ({ tag, target, extra, defaultName,
     else expect(node.hasAttribute('aria-label')).toBe(false);
   });
 
-  it('never copies IDREF strings into the shadow root', async () => {
+  it('never carries an IDREF that does not resolve in its own tree', async () => {
     const node = await mount(
       `<span id="outer">Name</span><${tag} ${attrs} aria-labelledby="outer" aria-describedby="outer"></${tag}>`,
       tag,
       target,
       setup,
     );
-    expect(node.getAttribute('aria-labelledby')).toBeNull();
-    // The host's IDREF must not appear inward. A component that describes its own
-    // control from inside its shadow root still has an attribute — it just must
-    // never contain the consumer's id, which would resolve to nothing in here.
-    if (ownDescribedBy) expect(node.getAttribute('aria-describedby')).not.toContain('outer');
-    else expect(node.getAttribute('aria-describedby')).toBeNull();
+    // A shadow-root control must not receive the host's IDREF (it resolves to
+    // nothing in there); a light-DOM control may forward it, because it still
+    // resolves. Either way every id it references exists in its own tree.
+    const tree = node.getRootNode() as Document | ShadowRoot;
+    const dangling = ['aria-labelledby', 'aria-describedby']
+      .flatMap((name) => (node.getAttribute(name) ?? '').split(/\s+/).filter(Boolean))
+      .filter((id) => !tree.getElementById(id));
+    expect(dangling).toEqual([]);
+    if (tree instanceof ShadowRoot && !ownDescribedBy) expect(node.getAttribute('aria-describedby')).toBeNull();
   });
 });
 

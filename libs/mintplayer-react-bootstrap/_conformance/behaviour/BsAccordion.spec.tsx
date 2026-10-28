@@ -157,8 +157,10 @@ describe('BsAccordion — events', () => {
 
     await act(async () => {
       const row = rows(host)[1];
+      // Flipping `open` fires the native toggle (once, asynchronously), as a click does.
+      const toggled = new Promise((resolve) => row.addEventListener('toggle', resolve, { once: true }));
       row.open = true;
-      row.dispatchEvent(new Event('toggle'));
+      await toggled;
     });
 
     expect(seen).toEqual([{ index: 1, active: true }]);

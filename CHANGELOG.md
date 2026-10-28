@@ -191,6 +191,20 @@ breaking change is a major. (2.20.0 and 2.21.0 broke `^2.x` consumers in a minor
   - **Lit:** `mp-select` renders in the light DOM (no shadow root, no `part`s). Attributes are kebab-case
     (`input-label`, `error-text`, `number-visible`).
   - `mp-query-builder` and `mp-scheduler` use plain native selects internally.
+- **OTP input is generated from one source in every front (issue #437, wave B).** It is written once in
+  `@mintplayer/ui-core/otp-input` and compiled into all four fronts. Each front renders one real `<input>` in
+  the light DOM, with the boxes as `aria-hidden` decoration. With JS off, and before hydration, it is a plain
+  `.form-control` that submits under `name` (masked for a `password` code).
+  - **Every front:**
+    - `case` is renamed `letterCase` (`letter-case` on the Lit element). `case` cannot be a React prop binding.
+    - The change event is `valuechange` (Angular `(valuechange)` and `[(value)]`, React `onValueChange`, Vue
+      `v-model:value`). `complete` reports the full code (React `onComplete` receives the string itself).
+    - The form value is the native input's own: there is no form-associated custom element any more.
+    - `clear()` and `focusInput()` are methods. `focus()` on the Angular host moves into the input.
+  - **Angular:** `BsOtpInputValueAccessor` is a host directive of `bs-otp-input`, and `BsControlValidityDirective`
+    (`errorMessages`) is applied to it as well.
+  - **Lit:** `mp-otp-input` renders in the light DOM (no shadow root, no `part`s). Attributes are kebab-case
+    (`input-label`, `error-text`, `letter-case`).
 
 
 

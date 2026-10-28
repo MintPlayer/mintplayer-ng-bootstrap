@@ -125,7 +125,7 @@ const TARGETS: Record<string, string> = {
   BsNavbarNav: 'div.navbar-nav',
   BsNavbarDropdown: 'details.dropdown',
   BsNavbarItem: 'div.nav-item',
-  BsOtpInput: 'mp-otp-input',
+  BsOtpInput: 'input',
   BsPagination: 'nav',
   BsPhoneInput: 'mp-phone-input',
   BsQueryBuilder: 'mp-query-builder',
