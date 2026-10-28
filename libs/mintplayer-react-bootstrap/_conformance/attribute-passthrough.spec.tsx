@@ -233,7 +233,7 @@ const CASES: Case[] = [
   bare('BsScheduler', 'mp-scheduler', BsScheduler),
   bare('BsSelect', 'select', BsSelect),
   bare('BsShell', 'div.shell', BsShell),
-  bare('BsSignaturePad', 'mp-signature-pad', BsSignaturePad),
+  bare('BsSignaturePad', 'div.mp-signature-pad', BsSignaturePad),
   bare('BsSplitter', 'mp-splitter', BsSplitter),
   bare('BsTabControl', 'div.tab-control', BsTabControl),
   {

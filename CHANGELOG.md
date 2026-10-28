@@ -266,6 +266,28 @@ breaking change is a major. (2.20.0 and 2.21.0 broke `^2.x` consumers in a minor
     (`datetime-picker-date`, `time-slot`, …), and the host's `focus()` override is gone; focus the
     `.form-control` field instead. `MpDatepickerElement`, `MpTimepickerElement` and `MpDatetimePickerElement`
     are now `MpDatepicker`, `MpTimepicker` and `MpDatetimePicker`.
+- **Signature pad is generated from one source in every front (issue #437).** It is written once in
+  `@mintplayer/ui-core/signature-pad` and compiled into all four fronts. A canvas cannot draw without JS, so
+  with JS off the pad renders but every control is disabled. The canvas repaints itself whenever a front
+  rewrites its `width` / `height`.
+  - **Every front:**
+    - The event is `signaturechange` (the Lit element emitted `signature-change`). React has
+      `onSignatureChange`, which receives the `Signature` rather than an event. Vue binds with
+      `v-model:signature` (plain `v-model` is gone).
+    - `labels` (`pad`, `type`, `undo`, `clear`) localises the names and button texts. `inputLabel` names the
+      canvas.
+    - Each takes `disabled`, `required`, `invalid` and `errorText`. The error describes the typed field, or
+      the canvas when the typed field is off.
+    - Undo and Clear stay enabled on an empty pad, so focus is never dropped; on an empty pad they do nothing.
+    - `showAccessibilityToggle` is a boolean input or property. The attribute `show-accessibility-toggle="false"`
+      no longer turns it off, because a present boolean attribute counts as true.
+  - **Angular:** `BsSignaturePadValueAccessor` is a host directive, so `ngModel` / `formControl` need no
+    extra import. `BsControlValidityDirective` carries the control's errors to the pad. A `null` write
+    clears the pad.
+  - **Lit:** `mp-signature-pad` renders in the light DOM (no shadow root, no `part`s). Its classes are
+    `signature-pad-canvas`, `signature-pad-text`, `signature-pad-undo` and `signature-pad-clear`.
+    `MpSignaturePadElement` is now `MpSignaturePad`. The `Signature`, `Stroke` and `Point` types come from
+    `@mintplayer/ui-core/signature-pad` and are re-exported by every front.
 
 
 

@@ -6,7 +6,7 @@ const SOURCE = `<BsSignaturePad
   width={500}
   height={300}
   signature={signature}
-  onSignatureChange={e => setSignature(e.detail)}
+  onSignatureChange={setSignature}
 />`;
 
 export function SignaturePadPage() {
@@ -26,8 +26,10 @@ export function SignaturePadPage() {
       <section>
         <h2>Basic usage</h2>
         <BsSignaturePad
-          {...{ width: 500, height: 300, signature } as React.ComponentProps<typeof BsSignaturePad>}
-          onSignatureChange={(e: CustomEvent<Signature>) => setSignature(e.detail)}
+          width={500}
+          height={300}
+          signature={signature}
+          onSignatureChange={setSignature}
         />
         <p className="text-body-secondary mt-2">
           Strokes: <code>{signature.strokes.length}</code>

@@ -130,7 +130,7 @@ Every item below is authored as a D10 component source once M3b lands.
   - compiler fix it needed: a `kind: 'number'` Angular input casts `numberAttribute` to the declared type (a literal union such as `FirstDayOfWeek`)
 - [x] datepicker, timepicker (+ time-list), datetime-picker: one D10 source each; a native `date` / `time` / `datetime-local` field before hydration, then a readonly display + hidden `name` input + native `popover="auto"` popups placed by `ui-core/overlay` `trackPopovers`; Angular CVA + validator as host directives
   - `mp-scheduler` (a shadow-root host) embeds `mp-datetime-picker`: it now adopts the light sheets and ships `_styles/input-group.styles` (Bootstrap `.input-group` + `.btn`), and its editor's Escape steps aside while a picker popover is open
-- [ ] signature-pad
+- [x] signature-pad
 - [ ] theme-toggle (Q2)
 - [ ] code-snippet
 - [ ] phone-input; convert the Lit `mp-input-group` to a light front over `ui-core/input-group` with it

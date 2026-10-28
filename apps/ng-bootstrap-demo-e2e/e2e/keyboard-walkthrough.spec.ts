@@ -197,14 +197,15 @@ test.describe('signature-pad — typed alternative is the keyboard path', () => 
   test('input, Undo, Clear are consecutive tab stops and typing lands on the model', async ({ page }) => {
     await page.goto('/advanced/signature-pad');
     await page.waitForLoadState('networkidle');
-    const pad = page.locator('mp-signature-pad').first();
-    await pad.evaluate((el) => (el as HTMLElement).focus());
+    const field = page.locator('bs-signature-pad input.signature-pad-text').first();
+    // Disabled until hydrated: the pad is inert without JavaScript.
+    await expect(field).toBeEnabled();
+    await field.focus();
     let active = await deepActive(page);
     expect(active.tag).toBe('input');
 
     await page.keyboard.type('Ada');
-    const text = await pad.evaluate((el) => (el as HTMLElement & { signature: { text?: string } }).signature.text);
-    expect(text).toBe('Ada');
+    await expect(field).toHaveValue('Ada');
 
     await page.keyboard.press('Tab');
     active = await deepActive(page);

@@ -1,0 +1,55 @@
+// The signature pad's stylesheet, shared by all four fronts (PRD #437).
+// Rescoped at build time: every compound gains `[data-mps=signature-pad]`.
+// `.form-control`, `.btn` and `.invalid-feedback` are global Bootstrap.
+
+// The wrapper: the bs-signature-pad / mp-signature-pad host, or a div in React and Vue.
+.mp-signature-pad {
+  display: inline-block;
+  // Without this the wrapper's shrink-to-fit floor is the controls row's
+  // intrinsic width, so on narrow viewports the pad overflowed the page even
+  // though the canvas was capped.
+  max-width: 100%;
+  box-sizing: border-box;
+  border: var(--bs-border-width) solid var(--bs-border-color);
+  border-radius: var(--bs-border-radius);
+  background-color: var(--bs-body-bg);
+}
+
+.mp-signature-pad-invalid {
+  border-color: var(--bs-form-invalid-border-color);
+}
+
+.signature-pad-canvas {
+  display: block;
+  // Never overflow a CSS-sized wrapper; height: auto keeps the aspect ratio
+  // the width/height attributes establish. The core maps CSS pixels to bitmap
+  // pixels, so drawing stays correct under any rendered size.
+  max-width: 100%;
+  height: auto;
+  // Scroll-or-draw is resolved at first touch; the pad always draws.
+  touch-action: none;
+  user-select: none;
+  cursor: crosshair;
+}
+
+.mp-signature-pad-disabled .signature-pad-canvas {
+  cursor: not-allowed;
+  opacity: 0.65;
+}
+
+.signature-pad-controls {
+  display: flex;
+  gap: 0.25rem;
+  padding: 0.25rem;
+  border-top: var(--bs-border-width) solid var(--bs-border-color);
+}
+
+.signature-pad-text {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.signature-pad-undo,
+.signature-pad-clear {
+  flex: 0 0 auto;
+}
