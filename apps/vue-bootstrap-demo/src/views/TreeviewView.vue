@@ -2,7 +2,7 @@
 import { ref } from 'vue';
 import { BsTreeview } from '@mintplayer/vue-bootstrap/treeview';
 import { BsCodeSnippet } from '@mintplayer/vue-bootstrap/code-snippet';
-import type { TreeNode } from '@mintplayer/web-components/treeview';
+import type { TreeNode } from '@mintplayer/vue-bootstrap/treeview';
 
 const items = ref<TreeNode[]>([
   {
@@ -35,7 +35,7 @@ const SOURCE = `<BsTreeview
     <p class="text-body-secondary">
       Hierarchical tree with keyboard navigation, expand/collapse state
       synchronisation, and pluggable node rendering. Bind <code>items</code>
-      as a JS array; the WC owns the visible tree.
+      as a JS array; the server render already shows every expanded level.
     </p>
 
     <details class="mt-3 mb-4">
@@ -64,7 +64,11 @@ const SOURCE = `<BsTreeview
         :items="items"
         selection-mode="single"
         v-model:selectedIds="selectedIds"
-      />
+      >
+        <template #node="{ node }">
+          <span :class="{ 'fw-semibold': !!node.children }">{{ node.label }}</span>
+        </template>
+      </BsTreeview>
       <p class="text-body-secondary mt-2">
         Selected: <code>{{ selectedIds.length ? selectedIds.join(', ') : '—' }}</code>
       </p>

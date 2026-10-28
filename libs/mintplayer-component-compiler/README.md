@@ -121,6 +121,8 @@ the template of every front. A template without a manifest is still compiled on 
   - React spreads `attrs` there and types the props for that element.
   - Vue sets `inheritAttrs: false` and merges `$attrs` into its bag. The consumer's `class` and
     `style` stay on the root.
+  - A `role` in the element's bag is the core's ARIA contract, so it wins over a consumer's
+    `role` in both fronts. A consumer's `role` applies only when the bag sets none.
   - The marked element must always render: no `v-if` or `v-for` on it.
   - Angular and Lit have a host element, which keeps the attributes. Their cores read `aria-label`
     as the view's `label` argument.

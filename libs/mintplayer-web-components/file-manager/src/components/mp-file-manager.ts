@@ -705,9 +705,9 @@ export class MpFileManager extends LitElement {
               .loadChildren=${this._loadChildren ? (parentId: string) => this.loadTreeChildren(parentId) : undefined}
               hide-borders
               selection-mode="single"
-              @tree-node-select=${this.onTreeNodeSelect}
-              @tree-node-expand=${this.onTreeNodeExpand}
-              @tree-node-collapse=${this.onTreeNodeCollapse}
+              @nodeselect=${this.onTreeNodeSelect}
+              @nodeexpand=${this.onTreeNodeExpand}
+              @nodecollapse=${this.onTreeNodeCollapse}
             ></mp-treeview>
           </div>
           <div

@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { BsTreeview } from '@mintplayer/react-bootstrap/treeview';
 import { BsCodeSnippet } from '@mintplayer/react-bootstrap/code-snippet';
-import type { TreeNode } from '@mintplayer/web-components/treeview';
+import type { TreeNode } from '@mintplayer/react-bootstrap/treeview';
 
 const NODES: TreeNode[] = [
   {
@@ -22,7 +22,9 @@ const NODES: TreeNode[] = [
 const SOURCE = `<BsTreeview
   items={items}
   selectionMode="single"
-  onTreeNodeSelect={e => setSelectedIds(e.detail.selectedIds)}
+  selectedIds={selectedIds}
+  onSelectedIdsChange={setSelectedIds}
+  node={({ node }) => <span className={node.children ? "fw-semibold" : undefined}>{node.label}</span>}
 />`;
 
 export function TreeviewPage() {
@@ -61,8 +63,11 @@ export function TreeviewPage() {
       <section>
         <h2>File system</h2>
         <BsTreeview
-          {...{ items, selectionMode: 'single' } as React.ComponentProps<typeof BsTreeview>}
-          onTreeNodeSelect={(e) => setSelectedIds([...e.detail.selectedIds])}
+          items={items}
+          selectionMode="single"
+          selectedIds={selectedIds}
+          onSelectedIdsChange={setSelectedIds}
+          node={({ node }) => <span className={node.children ? 'fw-semibold' : undefined}>{node.label}</span>}
         />
         <p className="text-body-secondary mt-2">
           Selected: <code>{selectedIds.length ? selectedIds.join(', ') : '—'}</code>

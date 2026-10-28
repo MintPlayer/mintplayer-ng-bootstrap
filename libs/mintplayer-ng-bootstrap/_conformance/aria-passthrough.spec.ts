@@ -10,7 +10,6 @@ import { BsQueryBuilderComponent } from '@mintplayer/ng-bootstrap/query-builder'
 import { BsSchedulerComponent } from '@mintplayer/ng-bootstrap/scheduler';
 import { BsSplitterComponent } from '@mintplayer/ng-bootstrap/splitter';
 import { BsTreeSelectComponent } from '@mintplayer/ng-bootstrap/tree-select';
-import { BsTreeviewComponent } from '@mintplayer/ng-bootstrap/treeview';
 
 /**
  * Every Angular wrapper whose template root is a `<mp-*>` / `<mint-*>` element
@@ -123,7 +122,6 @@ const WRAPPERS: WrapperCase[] = [
     wrap: ['<bs-form>', '</bs-form>'],
     needs: [BsFormComponent],
   },
-  { selector: 'bs-treeview', tag: 'mp-treeview', component: BsTreeviewComponent },
 ];
 
 function probeAttributes(): string {

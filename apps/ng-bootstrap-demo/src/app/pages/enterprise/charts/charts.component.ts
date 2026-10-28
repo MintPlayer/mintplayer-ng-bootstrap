@@ -169,7 +169,7 @@ export class ChartsComponent {
       [showBreadcrumb]="true"
       inputLabel="Coverage by folder"
       valueUnitLabel="lines"
-      (nodeSelect)="openFile($event.node)" />
+      (nodeselect)="openFile($event.node)" />
   `;
   protected readonly snippetHierarchyTs = dedent`
     readonly layout = signal<HierarchyChartLayout>('sunburst');

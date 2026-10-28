@@ -1,13 +1,15 @@
-export { MpTreeview } from './components';
+// The treeview is generated from @mintplayer/ui-core/treeview (PRD #437 D10).
+export * from './generated';
 export type {
-  TreeviewSelectionMode,
-  TreeNodeSelectEventDetail,
-  TreeNodeExpandEventDetail,
-  TreeNodeCollapseEventDetail,
   IconResolver,
-  TreeNodeRenderer,
-  TreeNodeRenderContext,
   TreeChildrenLoader,
-} from './components';
-export type { TreeNode } from './types';
-export { treeviewLightStyles } from './styles';
+  TreeNode,
+  TreeNodeCollapseEventDetail,
+  TreeNodeExpandEventDetail,
+  TreeNodeLoadErrorEventDetail,
+  TreeNodeRenderContext,
+  TreeNodeSelectEventDetail,
+  TreeviewIds,
+  TreeviewLabels,
+  TreeviewSelectionMode,
+} from '@mintplayer/ui-core/treeview';

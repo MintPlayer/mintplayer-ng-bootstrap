@@ -143,7 +143,7 @@ Every item below is authored as a D10 component source once M3b lands.
 
 ## M5 — Wave C
 
-- [ ] treeview
+- [x] treeview: flat rows (APG flat tree), so no front needs a recursive template; lazy children merge in the core; `node` slot replaces `nodeRenderer(node, ctx)`
 - [ ] tree-select (D2 per S3)
 - [ ] datatable:
   - `virtual-window`

@@ -366,6 +366,26 @@ breaking change is a major. (2.20.0 and 2.21.0 broke `^2.x` consumers in a minor
   - **Methods:** `previous()`, `next()`, `goto(index)`, `play()`, `pause()` and `togglePaused()`.
   - The animation, orientation and event types come from `@mintplayer/ui-core/carousel` and every front
     re-exports them. `CarouselPausedChangeEventDetail` is gone.
+- **Treeview is generated from one source in every front (issue #437).** It is written once in
+  `@mintplayer/ui-core/treeview` (`treeviewCore`, `connectTreeview`) and compiled into all four fronts. The rows
+  are a flat list of treeitems carrying `aria-level` / `aria-setsize` / `aria-posinset` (the APG's flat tree), so
+  the server HTML already shows every expanded level in every framework.
+  - **The root** is `.treeview` (a `div` in React and Vue, the host in Angular and Lit); the role, the name and
+    the consumer's `aria-*` / `id` land on the inner `ul.treeview-tree`. `hide-borders` is the
+    `.treeview-borderless` class. There is no `li[role=none]` / `ul[role=group]` nesting any more.
+  - **Node template:** the `node` slot gets `{ node, ctx }` (`ctx` is the `TreeNodeRenderContext`): Angular
+    `*bsTreeviewNode="let node = node"` (`BsTreeviewNodeTemplateDirective` is `BsTreeviewNodeDirective`), React
+    `node={({ node, ctx }) => …}`, Vue `#node="{ node, ctx }"`, Lit `nodeRenderer: ({ node, ctx }) => …` (it was
+    `(node, ctx)`).
+  - **Events:** `tree-node-select` / `-expand` / `-collapse` are `nodeSelect` / `nodeExpand` / `nodeCollapse`,
+    plus `nodeLoadError` (was `tree-node-load-error`): Angular `(nodeselect)`, Lit `nodeselect`, React
+    `onNodeSelect` (the payload, not a `CustomEvent`), Vue `@nodeselect`. `expandedIds` and `selectedIds` are
+    two-way in every front (React: `onExpandedIdsChange` / `onSelectedIdsChange`).
+  - **Lazy loading** (`loadChildren`) works in every front, and the loaded children show without the consumer
+    writing them back into `items` (once `items` carries them, those win). Its announcements are the `labels`
+    input. `selectionMode: 'none'` no longer clears ids set from outside; it only stops the user selecting.
+  - `mp-treeview.focus()` no longer forwards to the roving row; focus `[role=treeitem][tabindex="0"]`.
+  - The types come from `@mintplayer/ui-core/treeview`, re-exported by every front. `TreeNodeRenderer` is gone.
 - **`mp-input-group` is a light element (issue #437).** Like `bs-input-group`, the host is the
   `.input-group` itself: no shadow root, no slot, and its children are the group's items. It no longer
   writes `size` onto `mp-*` children, because a control in a group reads the group's classes and the

@@ -146,7 +146,11 @@ function bare(ctx, el, depth) {
   // v-html: core-produced markup, never consumer input.
   const html = directive(el, 'html');
   if (html) attrs.push(`dangerouslySetInnerHTML={{ __html: ${x(ctx, html.exp.content)} }}`);
-  if (el === ctx.attrsTarget) attrs.push('{...attrs}');
+  if (el === ctx.attrsTarget) {
+    attrs.push('{...attrs}');
+    // A role in the core's bag is its ARIA contract: a consumer role never replaces it.
+    if (bagExpr) attrs.push(`role={(${bagExpr}['role'] as string | null | undefined) ?? (attrs?.['role'] as string | undefined)}`);
+  }
   if (isRoot) {
     const base = bagExpr ? `${bagExpr}['class']` : JSON.stringify(el.props.find((p) => p.type === PROP.ATTRIBUTE && p.name === 'class')?.value?.content ?? '');
     attrs.push(`className={[${base}, className].filter(Boolean).join(' ') || undefined}`);

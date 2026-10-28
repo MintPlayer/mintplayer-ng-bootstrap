@@ -1,12 +1,15 @@
-export * from './treeview/treeview.component';
-export * from './treeview-node-template/treeview-node-template.directive';
+// The treeview is generated from @mintplayer/ui-core/treeview (PRD #437 D10).
+export * from './generated';
 export type {
-  TreeNode,
-  TreeviewSelectionMode,
   IconResolver,
-  TreeNodeRenderer,
+  TreeChildrenLoader,
+  TreeNode,
+  TreeNodeCollapseEventDetail,
+  TreeNodeExpandEventDetail,
+  TreeNodeLoadErrorEventDetail,
   TreeNodeRenderContext,
   TreeNodeSelectEventDetail,
-  TreeNodeExpandEventDetail,
-  TreeNodeCollapseEventDetail,
-} from '@mintplayer/web-components/treeview';
+  TreeviewIds,
+  TreeviewLabels,
+  TreeviewSelectionMode,
+} from '@mintplayer/ui-core/treeview';

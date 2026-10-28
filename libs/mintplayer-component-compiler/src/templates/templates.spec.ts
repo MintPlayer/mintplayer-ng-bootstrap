@@ -96,16 +96,20 @@ describe('v-html', () => {
 describe('mp-attrs', () => {
   const src = read('<div v-bind="bag"><select mp-attrs v-bind="bag"><slot /></select></div>');
 
-  it('React spreads the consumer attributes on the marked element, the class on the root', () => {
+  it("React spreads the consumer attributes on the marked element, the class on the root, the core's role last", () => {
     const text = emitReact(src, RUNTIME);
-    expect(text).toMatch(/<select \{\.\.\.reactFormProps\(bag\)\} \{\.\.\.attrs\}>/);
+    expect(text).toContain(
+      `<select {...reactFormProps(bag)} {...attrs} role={(bag['role'] as string | null | undefined) ?? (attrs?.['role'] as string | undefined)}>`,
+    );
     expect(text).toMatch(/<div \{\.\.\.reactProps\(bag\)\} className=/);
   });
 
-  it('Vue merges $attrs into the marked bag and keeps class and style on the root', () => {
+  it("Vue merges $attrs into the marked bag, keeps class and style on the root and the core's role over a consumer's", () => {
     const text = emitVue(src);
     expect(text).toContain('defineOptions({ inheritAttrs: false });');
-    expect(text).toContain(`<select v-bind="{ ...bag, ...$attrs, class: String(bag['class'] ?? ''), style: undefined }">`);
+    expect(text).toContain(
+      `<select v-bind="{ ...bag, ...$attrs, class: String(bag['class'] ?? ''), style: undefined, role: bag['role'] ?? $attrs['role'] }">`,
+    );
     expect(text).toContain('<div :class="$attrs.class" :style="$attrs.style" v-bind="bag">');
     expect(text).not.toContain('mp-attrs');
   });

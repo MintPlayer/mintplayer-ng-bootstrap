@@ -503,7 +503,7 @@ describe('what the folder tree reports back', () => {
 
   it('navigates to the folder chosen in the tree', async () => {
     treeview().dispatchEvent(
-      new CustomEvent('tree-node-select', {
+      new CustomEvent('nodeselect', {
         detail: { node: { id: 'work', label: 'Work', children: [] }, selectedIds: ['work'] },
       }),
     );
@@ -514,7 +514,7 @@ describe('what the folder tree reports back', () => {
 
   it('expands every ancestor of a deep folder it navigates to', async () => {
     treeview().dispatchEvent(
-      new CustomEvent('tree-node-select', {
+      new CustomEvent('nodeselect', {
         detail: { node: { id: 'deep', label: 'Deep', children: [] }, selectedIds: ['deep'] },
       }),
     );
@@ -544,12 +544,12 @@ describe('what the folder tree reports back', () => {
   });
 
   it('remembers what the tree expanded and collapsed', async () => {
-    treeview().dispatchEvent(new CustomEvent('tree-node-expand', { detail: { expandedIds: ['docs', 'pics'] } }));
+    treeview().dispatchEvent(new CustomEvent('nodeexpand', { detail: { expandedIds: ['docs', 'pics'] } }));
     internals().requestUpdate();
     await settle();
     expect(treeview().expandedIds).toEqual(['docs', 'pics']);
 
-    treeview().dispatchEvent(new CustomEvent('tree-node-collapse', { detail: { expandedIds: ['pics'] } }));
+    treeview().dispatchEvent(new CustomEvent('nodecollapse', { detail: { expandedIds: ['pics'] } }));
     internals().requestUpdate();
     await settle();
     expect(treeview().expandedIds).toEqual(['pics']);

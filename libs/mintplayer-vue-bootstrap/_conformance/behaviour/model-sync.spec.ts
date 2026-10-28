@@ -1,9 +1,9 @@
 import { describe, expect, it } from 'vitest';
+import { nextTick } from 'vue';
 
 import BsHierarchyChart from '../../charts/hierarchy/src/BsHierarchyChart.vue';
 import BsQueryBuilder from '../../query-builder/src/BsQueryBuilder.vue';
-import BsTreeview from '../../treeview/src/BsTreeview.vue';
-import type { MpTreeview, TreeNode } from '@mintplayer/web-components/treeview';
+import { BsTreeview, type TreeNode } from '@mintplayer/vue-bootstrap/treeview';
 import type { MpHierarchyChart } from '@mintplayer/web-components/charts/hierarchy';
 import type { MpQueryBuilderElement } from '@mintplayer/web-components/query-builder';
 
@@ -27,91 +27,35 @@ const NODES: TreeNode[] = [
   { id: '2', label: 'Two' },
 ];
 
-describe('BsTreeview — property sync and write-back', () => {
-  it('pushes items to the element', () => {
-    const { el } = mountEl<MpTreeview>(BsTreeview, 'mp-treeview', { props: { items: NODES } });
-    expect(el.items).toEqual(NODES);
+// BsTreeview renders the headless treeview itself (#437): rows are its own
+// markup, and the two-way ids write back through update:* events.
+describe('BsTreeview — markup and write-back from the headless core', () => {
+  const TREE: TreeNode[] = [{ id: 'p', label: 'Parent', children: [{ id: 'c', label: 'Child' }] }, ...NODES];
+  const rows = (el: Element) => [...el.querySelectorAll<HTMLElement>('[role="treeitem"]')];
+
+  it('renders a flat row per visible node, with every expanded level', () => {
+    const { el } = mountEl(BsTreeview, 'ul.treeview-tree', { props: { items: TREE, expandedIds: ['p'] } });
+    expect(el.getAttribute('role')).toBe('tree');
+    expect(rows(el).map((r) => r.getAttribute('data-node-id'))).toEqual(['p', 'c', '1', '2']);
+    expect(rows(el)[1].getAttribute('aria-level')).toBe('2');
   });
 
-  it('substitutes an empty array when there are no items', () => {
-    const { el } = mountEl<MpTreeview>(BsTreeview, 'mp-treeview');
-    expect(el.items).toEqual([]);
+  it('writes a row click back to the selectedIds and expandedIds models', async () => {
+    const { wrapper, el } = mountEl(BsTreeview, 'ul.treeview-tree', { props: { items: TREE } });
+    rows(el)[0].click();
+    await nextTick();
+    expect(wrapper.emitted('update:selectedIds')?.at(-1)).toEqual([['p']]);
+    expect(wrapper.emitted('update:expandedIds')?.at(-1)).toEqual([['p']]);
   });
 
-  it('defaults the selection mode rather than pushing undefined', () => {
-    const { el } = mountEl<MpTreeview>(BsTreeview, 'mp-treeview');
-    expect(el.selectionMode).toBe('single');
-  });
-
-  it('forwards an explicit selection mode', () => {
-    const { el } = mountEl<MpTreeview>(BsTreeview, 'mp-treeview', {
-      props: { selectionMode: 'multiple' },
-    });
-    expect(el.selectionMode).toBe('multiple');
-  });
-
-  it('pushes the bound expanded and selected ids', () => {
-    const { el } = mountEl<MpTreeview>(BsTreeview, 'mp-treeview', {
-      props: { items: NODES, expandedIds: ['1'], selectedIds: ['2'] },
-    });
-    expect(el.expandedIds).toEqual(['1']);
-    expect(el.selectedIds).toEqual(['2']);
-  });
-
-  it('re-pushes items when the array is replaced', async () => {
-    const { wrapper, el } = mountEl<MpTreeview>(BsTreeview, 'mp-treeview', {
-      props: { items: NODES },
-    });
-
-    await wrapper.setProps({ items: [NODES[0]] });
-
-    expect(el.items).toHaveLength(1);
-  });
-
-  it.each([
-    ['tree-node-expand', 'expandedIds'],
-    ['tree-node-collapse', 'expandedIds'],
-  ])('writes %s back to the %s model', async (event, model) => {
-    const { wrapper, el } = mountEl<MpTreeview>(BsTreeview, 'mp-treeview', {
-      props: { items: NODES },
-    });
-
-    await emit(el, event, { expandedIds: ['1', '2'] });
-
-    expect(wrapper.emitted(`update:${model}`)![0]).toEqual([['1', '2']]);
-  });
-
-  it('writes a selection back to the selectedIds model', async () => {
-    const { wrapper, el } = mountEl<MpTreeview>(BsTreeview, 'mp-treeview', {
-      props: { items: NODES },
-    });
-
-    await emit(el, 'tree-node-select', { selectedIds: ['2'] });
-
-    expect(wrapper.emitted('update:selectedIds')![0]).toEqual([['2']]);
-  });
-
-  // Copied, not aliased: the element keeps editing its own array, and a shared
-  // reference would mutate the consumer state without any notification.
-  it('copies the ids out of the event detail', async () => {
-    const { wrapper, el } = mountEl<MpTreeview>(BsTreeview, 'mp-treeview', {
-      props: { items: NODES },
-    });
-    const expandedIds = ['1'];
-
-    await emit(el, 'tree-node-expand', { expandedIds });
-
-    expect(wrapper.emitted('update:expandedIds')![0][0]).not.toBe(expandedIds);
-  });
-
-  it('ignores an event with no detail', async () => {
-    const { wrapper, el } = mountEl<MpTreeview>(BsTreeview, 'mp-treeview', {
-      props: { items: NODES },
-    });
-
-    await emit(el, 'tree-node-select', undefined);
-
-    expect(wrapper.emitted('update:selectedIds')).toBeUndefined();
+  it('copies the ids it writes back, so later edits never alias them', async () => {
+    const selectedIds: string[] = [];
+    const { wrapper, el } = mountEl(BsTreeview, 'ul.treeview-tree', { props: { items: NODES, selectedIds } });
+    rows(el)[1].click();
+    await nextTick();
+    const written = wrapper.emitted('update:selectedIds')?.at(-1)?.[0] as string[];
+    expect(written).toEqual(['2']);
+    expect(written).not.toBe(selectedIds);
   });
 });
 

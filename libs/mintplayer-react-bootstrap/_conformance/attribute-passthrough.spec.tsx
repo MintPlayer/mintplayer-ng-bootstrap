@@ -173,8 +173,8 @@ const CASES: Case[] = [
   bare('BsCardSubtitle', 'div.card-subtitle', BsCardSubtitle),
   bare('BsCardText', 'div.card-text', BsCardText),
   bare('BsCardTitle', 'div.card-title', BsCardTitle),
-  bare('BsCarousel', 'div.carousel', BsCarousel),
-  bare('BsCarouselItem', 'div.carousel-item', BsCarouselItem),
+  { ...bare('BsCarousel', 'div.carousel', BsCarousel), fixedRole: 'region' },
+  { ...bare('BsCarouselItem', 'div.carousel-item', BsCarouselItem), fixedRole: 'group' },
   bare('BsHierarchyChart', 'mp-hierarchy-chart', BsHierarchyChart),
   // No points, no svg: the probe needs data for its labelled node to exist.
   { name: 'BsSparkline', target: 'span.sparkline', render: (p) => <BsSparkline {...p} points={[1, 3, 2]} />, labelTarget: 'svg[role=img]' },
@@ -194,7 +194,7 @@ const CASES: Case[] = [
   bare('BsDropdownDivider', 'li.dropdown-divider', BsDropdownDivider),
   bare('BsFileManager', 'mp-file-manager', BsFileManager),
   bare('BsInputGroup', 'div.input-group', BsInputGroup),
-  bare('BsMultiRange', 'div.mp-multi-range', BsMultiRange),
+  { ...bare('BsMultiRange', 'div.mp-multi-range', BsMultiRange), fixedRole: 'group' },
   bare('BsNavbar', 'nav.navbar', BsNavbar),
   {
     name: 'BsNavbarDropdown',
@@ -251,13 +251,18 @@ const CASES: Case[] = [
     render: (p) => <BsTileManager tiles={[{ id: 'a' }]} {...p} />,
     fixedRole: 'region',
   },
-  bare('BsTimeline', 'div.timeline', BsTimeline),
-  bare('BsTimelineItem', 'div.timeline-item', BsTimelineItem),
-  bare('BsTimeList', 'div.mp-time-list', BsTimeList),
+  { ...bare('BsTimeline', 'div.timeline', BsTimeline), fixedRole: 'list' },
+  { ...bare('BsTimelineItem', 'div.timeline-item', BsTimelineItem), fixedRole: 'listitem' },
+  { ...bare('BsTimeList', 'div.mp-time-list', BsTimeList), fixedRole: 'listbox' },
   bare('BsTimepicker', 'div.mp-timepicker', BsTimepicker),
   bare('BsToggleButton', 'input[type=checkbox]', BsToggleButton),
   bare('BsTreeSelect', 'mp-tree-select', BsTreeSelect),
-  bare('BsTreeview', 'mp-treeview', BsTreeview),
+  {
+    name: 'BsTreeview',
+    target: 'ul.treeview-tree',
+    render: (p) => <BsTreeview items={[{ id: 'a', label: 'A' }]} {...p} />,
+    fixedRole: 'tree',
+  },
   { ...bare('BsTypeahead', 'input', BsTypeahead), fixedRole: 'combobox' },
 ];
 

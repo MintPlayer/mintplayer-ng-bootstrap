@@ -57,7 +57,6 @@ const NOT_YET_MIGRATED: readonly string[] = [
   'ng:scheduler',
   'ng:splitter',
   'ng:tree-select',
-  'ng:treeview',
   'react:charts',
   'react:datatable',
   'react:dock',
@@ -67,7 +66,6 @@ const NOT_YET_MIGRATED: readonly string[] = [
   'react:scheduler',
   'react:splitter',
   'react:tree-select',
-  'react:treeview',
   'vue:charts',
   'vue:datatable',
   'vue:dock',
@@ -77,7 +75,6 @@ const NOT_YET_MIGRATED: readonly string[] = [
   'vue:scheduler',
   'vue:splitter',
   'vue:tree-select',
-  'vue:treeview',
 ];
 
 describe('no custom elements in framework fronts (#437 §9.1)', () => {

@@ -17,10 +17,12 @@ import { deepActiveElement, HostAriaController, LiveAnnouncerController } from '
 import '@mintplayer/web-components/treeview';
 import type {
   MpTreeview,
-  TreeNodeRenderer,
   TreeNodeSelectEventDetail,
   TreeviewSelectionMode,
 } from '@mintplayer/web-components/treeview';
+
+/** The embedded treeview's node slot, as a Lit renderer. */
+type TreeNodeRenderer = NonNullable<MpTreeview['nodeRenderer']>;
 import { treeSelectLightStyles } from '../styles';
 import type {
   NodePage,
@@ -560,8 +562,8 @@ export class MpTreeSelect extends LitElement {
         void this.open();
         return;
       }
-      const tv = this.renderRoot?.querySelector<HTMLElement>('mp-treeview');
-      tv?.focus();
+      // The treeview's tab stop: the row a Tab would have reached.
+      this.renderRoot?.querySelector<HTMLElement>('mp-treeview [role="treeitem"][tabindex="0"]')?.focus();
       return;
     }
     if (e.key === 'Escape' && this.overlay.isOpen) {
@@ -713,7 +715,7 @@ export class MpTreeSelect extends LitElement {
     const key = `${this._mode}|${this.suggestionTemplate ? '1' : '0'}`;
     if (key === this._nodeRendererKey) return this._nodeRendererFn;
     this._nodeRendererKey = key;
-    this._nodeRendererFn = !showCheckbox && !this.suggestionTemplate ? undefined : (node) => {
+    this._nodeRendererFn = !showCheckbox && !this.suggestionTemplate ? undefined : ({ node }) => {
       const wrap = document.createElement('span');
       wrap.className = 'ts-node';
       if (showCheckbox) {
@@ -927,7 +929,7 @@ export class MpTreeSelect extends LitElement {
         .selectedIds=${[...this._selected.keys()]}
         .loadChildren=${this.treeviewLoadChildren}
         .nodeRenderer=${this.nodeRenderer}
-        @tree-node-select=${(e: Event) => this.onTreeSelect(e)}
+        @nodeselect=${(e: Event) => this.onTreeSelect(e)}
       ></mp-treeview>
     `;
   }
