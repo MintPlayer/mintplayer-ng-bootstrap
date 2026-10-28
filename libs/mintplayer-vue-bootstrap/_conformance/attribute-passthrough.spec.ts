@@ -71,8 +71,6 @@ describe('Vue wrapper attribute passthrough — the invariant, statically', () =
       '../shell/src/BsShell.vue',
       '../tab-control/src/BsTabControl.vue',
       '../tab-control/src/BsTabPage.vue',
-
-
       '../tile-manager/src/BsTileManager.vue',
       '../typeahead/src/BsTypeahead.vue',
     ];
