@@ -4,10 +4,13 @@ import {
   CUSTOM_ELEMENTS_SCHEMA,
   ElementRef,
   effect,
+  inject,
   input,
   model,
+  untracked,
   viewChild,
 } from '@angular/core';
+import { BsSignaturePadValueAccessor } from '../value-accessor/signature-pad-value-accessor';
 import { MpSignaturePadElement, Signature } from '@mintplayer/web-components/signature-pad';
 import { BsForwardAriaDirective } from '@mintplayer/ng-bootstrap/a11y';
 
@@ -42,6 +45,12 @@ void MpSignaturePadElement;
   // narrow viewports and the page scrolls horizontally.
   styles: [':host { display: inline-block; max-width: 100%; }'],
   imports: [BsForwardAriaDirective],
+  hostDirectives: [BsSignaturePadValueAccessor],
+  // A disabled pad takes no pointer or keyboard input and leaves the tab order.
+  host: {
+    '[attr.inert]': 'disabled() || null',
+    '[attr.aria-disabled]': 'disabled() || null',
+  },
   schemas: [CUSTOM_ELEMENTS_SCHEMA],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
@@ -65,7 +74,15 @@ export class BsSignaturePadComponent {
 
   readonly elementRef = viewChild.required<ElementRef<MpSignaturePadElement>>('el');
 
+  private readonly accessor = inject(BsSignaturePadValueAccessor, { self: true });
+  readonly disabled = this.accessor.disabled.asReadonly();
+
   constructor() {
+    // A form write lands in the model without echoing back to the form.
+    effect(() => {
+      const written = this.accessor.written();
+      if (written !== undefined) untracked(() => this.signature.set(written));
+    });
     // Forward model writes to the WC property. Writing back the same object
     // the WC just emitted is a no-op inside Lit (same reference), so the
     // event → model → property round trip cannot loop.
@@ -76,7 +93,9 @@ export class BsSignaturePadComponent {
   }
 
   protected onSignatureChange(event: Event): void {
-    this.signature.set((event as CustomEvent<Signature>).detail);
+    const signature = (event as CustomEvent<Signature>).detail;
+    this.signature.set(signature);
+    this.accessor.changed(signature);
   }
 
   /** Remove the most recent stroke. */

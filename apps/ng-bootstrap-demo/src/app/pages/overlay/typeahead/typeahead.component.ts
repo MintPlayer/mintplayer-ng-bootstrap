@@ -1,5 +1,7 @@
+import { DemoFormStateComponent } from '../../../components/form-state/form-state.component';
+import { BsGridComponent, BsGridRowDirective, BsGridColumnDirective } from '@mintplayer/ng-bootstrap/grid';
 import { ChangeDetectionStrategy, Component, signal } from '@angular/core';
-import { FormsModule } from '@angular/forms';
+import { FormsModule, ReactiveFormsModule, FormControl } from '@angular/forms';
 import { BsCodeSnippetComponent } from '@mintplayer/ng-bootstrap/code-snippet';
 import { BsTypeaheadComponent, BsTypeaheadItemDirective, inMemoryTypeaheadProvider, TypeaheadRequest } from '@mintplayer/ng-bootstrap/typeahead';
 import { dedent } from 'ts-dedent';
@@ -22,10 +24,21 @@ const ARTISTS: Artist[] = [
   selector: 'demo-typeahead',
   templateUrl: './typeahead.component.html',
   styleUrls: ['./typeahead.component.scss'],
-  imports: [BsCodeSnippetComponent, BsTypeaheadComponent, BsTypeaheadItemDirective, FormsModule],
+  imports: [ReactiveFormsModule, BsGridComponent, BsGridRowDirective, BsGridColumnDirective, DemoFormStateComponent, BsCodeSnippetComponent, BsTypeaheadComponent, BsTypeaheadItemDirective, FormsModule],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class TypeaheadComponent {
+  /** Angular forms: the same control bound template-driven and reactive. */
+  protected readonly formsValue = signal<string>('');
+  protected readonly formsControl = new FormControl<string>('', { nonNullable: true });
+  protected readonly snippetAngularFormsHtml = dedent`
+    <!-- template-driven (FormsModule) -->
+    <bs-typeahead [(ngModel)]="value" [provider]="instant" [debounceMs]="0" inputLabel="Artist"></bs-typeahead>
+
+    <!-- reactive (ReactiveFormsModule): control = new FormControl(...) -->
+    <bs-typeahead [formControl]="control" [provider]="instant" [debounceMs]="0" inputLabel="Artist"></bs-typeahead>
+  `;
+
   readonly artists = ARTISTS;
   /** An in-memory list: instant answers, so no debounce. */
   readonly instant = inMemoryTypeaheadProvider(ARTISTS);

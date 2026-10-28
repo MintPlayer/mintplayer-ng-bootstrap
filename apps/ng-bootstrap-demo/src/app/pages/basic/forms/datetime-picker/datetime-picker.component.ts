@@ -1,6 +1,8 @@
+import { DemoFormStateComponent } from '../../../../components/form-state/form-state.component';
+import { BsGridComponent, BsGridRowDirective, BsGridColumnDirective } from '@mintplayer/ng-bootstrap/grid';
 import { DatePipe, JsonPipe } from '@angular/common';
 import { Component, model, ChangeDetectionStrategy, signal } from '@angular/core';
-import { FormControl, ReactiveFormsModule } from '@angular/forms';
+import { FormControl, ReactiveFormsModule, FormsModule } from '@angular/forms';
 import { BsCodeSnippetComponent } from '@mintplayer/ng-bootstrap/code-snippet';
 import { BsDatetimePickerComponent } from '@mintplayer/ng-bootstrap/datetime-picker';
 import { dedent } from 'ts-dedent';
@@ -9,10 +11,21 @@ import { dedent } from 'ts-dedent';
   selector: 'demo-datetime-picker',
   templateUrl: './datetime-picker.component.html',
   styleUrls: ['./datetime-picker.component.scss'],
-  imports: [DatePipe, JsonPipe, BsCodeSnippetComponent, BsDatetimePickerComponent, ReactiveFormsModule],
+  imports: [FormsModule, BsGridComponent, BsGridRowDirective, BsGridColumnDirective, DemoFormStateComponent, DatePipe, JsonPipe, BsCodeSnippetComponent, BsDatetimePickerComponent, ReactiveFormsModule],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class DatetimePickerComponent {
+  /** Angular forms: the same control bound template-driven and reactive. */
+  protected readonly formsValue = signal<Date | null>(null);
+  protected readonly formsControl = new FormControl<Date | null>(null, { nonNullable: true });
+  protected readonly snippetFormsHtml = dedent`
+    <!-- template-driven (FormsModule) -->
+    <bs-datetime-picker [(ngModel)]="value" [showClear]="true"></bs-datetime-picker>
+
+    <!-- reactive (ReactiveFormsModule): control = new FormControl(...) -->
+    <bs-datetime-picker [formControl]="control" [showClear]="true"></bs-datetime-picker>
+  `;
+
   readonly minimal = model<Date | null>(null);
 
   readonly reactive = new FormControl<Date | null>(null);

@@ -1,6 +1,7 @@
+import { DemoFormStateComponent } from '../../../../components/form-state/form-state.component';
 import { JsonPipe } from '@angular/common';
 import { ChangeDetectionStrategy, Component, model, signal } from '@angular/core';
-import { FormsModule } from '@angular/forms';
+import { FormsModule, ReactiveFormsModule, FormControl } from '@angular/forms';
 import { BsCodeSnippetComponent } from '@mintplayer/ng-bootstrap/code-snippet';
 import { BsGridComponent, BsGridRowDirective, BsGridColumnDirective, BsGridColDirective } from '@mintplayer/ng-bootstrap/grid';
 import { BsFormComponent } from '@mintplayer/ng-bootstrap/form';
@@ -14,7 +15,7 @@ import { dedent } from 'ts-dedent';
 @Component({
   selector: 'demo-phone-input',
   templateUrl: './phone-input.component.html',
-  imports: [
+  imports: [ReactiveFormsModule, DemoFormStateComponent, 
     JsonPipe,
     FormsModule,
     BsCodeSnippetComponent,
@@ -31,6 +32,17 @@ import { dedent } from 'ts-dedent';
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class PhoneInputComponent {
+  /** Angular forms: the same control bound template-driven and reactive. */
+  protected readonly formsValue = signal<string | null>(null);
+  protected readonly formsControl = new FormControl<string | null>(null, { nonNullable: true });
+  protected readonly snippetFormsHtml = dedent`
+    <!-- template-driven (FormsModule) -->
+    <bs-phone-input [(ngModel)]="value" defaultCountry="be"></bs-phone-input>
+
+    <!-- reactive (ReactiveFormsModule): control = new FormControl(...) -->
+    <bs-phone-input [formControl]="control" defaultCountry="be"></bs-phone-input>
+  `;
+
   readonly phone = model<string | null>(null);
   readonly disabled = model(false);
   readonly required = model(false);

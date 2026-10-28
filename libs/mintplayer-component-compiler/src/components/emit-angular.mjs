@@ -59,11 +59,15 @@ export function emitAngularComponent(model, { generator, runtime = '@mintplayer/
 
   // Slot directives.
   named.forEach((slot) => {
+    // The outlet passes the params both as `$implicit` (`let-args`) and spread (`let-x="x"`).
+    const context = slot.params ? `${slot.params} & { $implicit: ${slot.params} }` : 'unknown';
+    const directive = names.slotDirective(slot.name);
     lines.push(
       `/** The \`${slot.name}\` slot of \`<${names.selector}>\`: \`<ng-template ${names.slotSelector(slot.name)}>\` or \`*${names.slotSelector(slot.name)}\`. */`,
       `@Directive({ selector: '[${names.slotSelector(slot.name)}]' })`,
-      `export class ${names.slotDirective(slot.name)} {`,
-      `  readonly templateRef = inject<TemplateRef<${slot.params ?? 'unknown'}>>(TemplateRef);`,
+      `export class ${directive} {`,
+      `  readonly templateRef = inject<TemplateRef<${context}>>(TemplateRef);`,
+      ...(slot.params ? [`  static ngTemplateContextGuard(_dir: ${directive}, ctx: unknown): ctx is ${context} {`, `    return true;`, `  }`] : []),
       `}`,
       '',
     );

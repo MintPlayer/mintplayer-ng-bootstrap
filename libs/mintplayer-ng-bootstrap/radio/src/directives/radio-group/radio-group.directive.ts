@@ -30,7 +30,7 @@ import { BsIdService } from '@mintplayer/ng-bootstrap/a11y';
     multi: true,
   }],
   host: {
-    '[attr.role]': 'groupAttrs().role',
+    '[attr.role]': 'groupAttrs()[\'role\']',
     '[attr.aria-required]': 'groupAttrs()["aria-required"]',
     '[attr.aria-disabled]': 'groupAttrs()["aria-disabled"]',
     '(focusout)': 'onTouched?.()',

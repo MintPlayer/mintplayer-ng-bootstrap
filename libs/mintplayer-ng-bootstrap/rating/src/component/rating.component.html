@@ -3,6 +3,7 @@
         #star
         class="cursor-pointer btn-star"
         role="radio"
+        [disabled]="disabled()"
         [attr.tabindex]="starTabIndexes()[i]"
         (mouseenter)="hoverValue(i)"
         (click)="selectValue(i)"

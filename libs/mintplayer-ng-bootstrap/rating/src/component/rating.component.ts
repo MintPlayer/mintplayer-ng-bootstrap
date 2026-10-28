@@ -1,11 +1,14 @@
-import { ChangeDetectionStrategy, Component, computed, effect, ElementRef, input, model, output, signal, viewChildren } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, effect, ElementRef, inject, input, model, output, signal, untracked, viewChildren } from '@angular/core';
+import { BsRatingValueAccessor } from '../value-accessor/rating-value-accessor';
 
 @Component({
   selector: 'bs-rating',
   templateUrl: './rating.component.html',
   styleUrls: ['./rating.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush,
+  hostDirectives: [BsRatingValueAccessor],
   host: {
+    '[attr.aria-disabled]': 'disabled() || null',
     'role': 'radiogroup',
     '[attr.aria-label]': 'ariaLabel()',
     '(mouseleave)': 'onMouseLeave()',
@@ -14,7 +17,15 @@ import { ChangeDetectionStrategy, Component, computed, effect, ElementRef, input
 })
 export class BsRatingComponent {
 
+  private readonly accessor = inject(BsRatingValueAccessor, { self: true });
+  readonly disabled = this.accessor.disabled.asReadonly();
+
   constructor() {
+    // A form write lands in the model without echoing back to the form.
+    effect(() => {
+      const written = this.accessor.written();
+      if (written !== undefined) untracked(() => this.value.set(written));
+    });
     effect(() => {
       const v = this.previewValue() ?? this.value();
       this.starsChange.emit(v);
@@ -68,11 +79,17 @@ export class BsRatingComponent {
   });
 
   hoverValue(index: number) {
+    if (this.disabled()) return;
     this.previewValue.set(index + 1);
   }
 
   selectValue(index: number) {
-    this.value.set(index + 1);
+    this.pick(index + 1);
+  }
+
+  private pick(value: number) {
+    this.value.set(value);
+    this.accessor.changed(value);
   }
 
   onMouseLeave() {
@@ -80,6 +97,7 @@ export class BsRatingComponent {
   }
 
   onKeydown(event: KeyboardEvent) {
+    if (this.disabled()) return;
     const max = this.maximum();
     const cur = this.value();
     let next: number | null = null;
@@ -103,7 +121,7 @@ export class BsRatingComponent {
     }
     event.preventDefault();
     if (next !== cur) {
-      this.value.set(next);
+      this.pick(next);
     }
     this.starButtons()[next - 1]?.nativeElement.focus();
   }

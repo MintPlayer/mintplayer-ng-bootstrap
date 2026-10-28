@@ -1,6 +1,8 @@
+import { DemoFormStateComponent } from '../../../components/form-state/form-state.component';
+import { BsGridComponent, BsGridRowDirective, BsGridColumnDirective } from '@mintplayer/ng-bootstrap/grid';
 import { ChangeDetectionStrategy, Component, computed, effect, inject, signal, untracked } from '@angular/core';
 import { HttpClient, HttpErrorResponse } from '@angular/common/http';
-import { FormsModule } from '@angular/forms';
+import { FormsModule, ReactiveFormsModule, FormControl } from '@angular/forms';
 import { firstValueFrom } from 'rxjs';
 import { PaginationRequest, PaginationResponse } from '@mintplayer/pagination';
 import {
@@ -42,7 +44,7 @@ const SAVED_QUERIES_KEY = 'mp-qb-demo:savedQueries';
   selector: 'demo-query-builder',
   templateUrl: './query-builder.component.html',
   styleUrls: ['./query-builder.component.scss'],
-  imports: [
+  imports: [ReactiveFormsModule, BsGridComponent, BsGridRowDirective, BsGridColumnDirective, DemoFormStateComponent, 
     BsQueryBuilderComponent, BsQueryBuilderEditorDirective,
     BsDatatableComponent, BsRowTemplateDirective,
     FormsModule,
@@ -51,6 +53,17 @@ const SAVED_QUERIES_KEY = 'mp-qb-demo:savedQueries';
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class QueryBuilderDemoComponent {
+  /** Angular forms: the same control bound template-driven and reactive. */
+  protected readonly formsValue = signal<Expression>(emptyGroup('and'));
+  protected readonly formsControl = new FormControl<Expression>(emptyGroup('and'), { nonNullable: true });
+  protected readonly snippetFormsHtml = dedent`
+    <!-- template-driven (FormsModule) -->
+    <bs-query-builder [schema]="schema()" [(ngModel)]="value"></bs-query-builder>
+
+    <!-- reactive (ReactiveFormsModule): control = new FormControl(...) -->
+    <bs-query-builder [schema]="schema()" [formControl]="control"></bs-query-builder>
+  `;
+
   private http = inject(HttpClient);
 
   schema = signal<EntitySchema[]>([]);
