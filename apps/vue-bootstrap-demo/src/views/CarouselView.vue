@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref } from 'vue';
-import { BsCarousel } from '@mintplayer/vue-bootstrap/carousel';
+import { BsCarousel, BsCarouselItem } from '@mintplayer/vue-bootstrap/carousel';
 import type { CarouselAnimation, CarouselOrientation, CarouselSlideChangeEventDetail } from '@mintplayer/vue-bootstrap/carousel';
 import { BsCodeSnippet } from '@mintplayer/vue-bootstrap/code-snippet';
 
@@ -23,10 +23,10 @@ function onSlideChange(detail: CarouselSlideChangeEventDetail) {
 }
 
 const BASIC_SOURCE = `<BsCarousel indicators :interval="4000" v-model:paused="paused"
-  aria-label="Animal photos" @slide-change="onSlideChange">
-  <img src="/assets/resized/deer.png" alt="A deer" />
-  <img src="/assets/resized/duck.png" alt="A duck" />
-  <img src="/assets/resized/lion.png" alt="A lion" />
+  aria-label="Animal photos" @slidechange="onSlideChange">
+  <BsCarouselItem><img src="/assets/resized/deer.png" alt="A deer" /></BsCarouselItem>
+  <BsCarouselItem><img src="/assets/resized/duck.png" alt="A duck" /></BsCarouselItem>
+  <BsCarouselItem><img src="/assets/resized/lion.png" alt="A lion" /></BsCarouselItem>
 </BsCarousel>`;
 </script>
 
@@ -34,8 +34,8 @@ const BASIC_SOURCE = `<BsCarousel indicators :interval="4000" v-model:paused="pa
   <div class="demo-page">
     <h1>Carousel</h1>
     <p>
-      <code>BsCarousel</code> wraps the framework-agnostic <code>&lt;mp-carousel&gt;</code> web
-      component: slides are plain children, with indicators, auto-advance, slide/fade animation
+      <code>BsCarousel</code> is generated from the headless carousel core: each slide is a
+      <code>BsCarouselItem</code>, with indicators, auto-advance, slide/fade animation
       in both orientations, touch swipe, keyboard support and a radio-driven no-JS tier.
     </p>
 
@@ -48,9 +48,9 @@ const BASIC_SOURCE = `<BsCarousel indicators :interval="4000" v-model:paused="pa
         :interval="4000"
         v-model:paused="paused"
         aria-label="Animal photos"
-        @slide-change="onSlideChange"
+        @slidechange="onSlideChange"
       >
-        <img v-for="img of IMAGES" :key="img.src" :src="img.src" :alt="img.alt" />
+        <BsCarouselItem v-for="img of IMAGES" :key="img.src"><img :src="img.src" :alt="img.alt" /></BsCarouselItem>
       </BsCarousel>
       <div class="mt-2 d-flex gap-2 align-items-center justify-content-center">
         <label>
@@ -81,10 +81,10 @@ const BASIC_SOURCE = `<BsCarousel indicators :interval="4000" v-model:paused="pa
       </p>
       <div class="nojs-pair">
         <BsCarousel animation="fade" :indicators="true" aria-label="Fade pair">
-          <img v-for="img of IMAGES.slice(0, 3)" :key="img.src" :src="img.src" :alt="img.alt" />
+          <BsCarouselItem v-for="img of IMAGES.slice(0, 3)" :key="img.src"><img :src="img.src" :alt="img.alt" /></BsCarouselItem>
         </BsCarousel>
         <BsCarousel animation="slide" :indicators="true" aria-label="Slide pair">
-          <img v-for="img of IMAGES.slice(3)" :key="img.src" :src="img.src" :alt="img.alt" />
+          <BsCarouselItem v-for="img of IMAGES.slice(3)" :key="img.src"><img :src="img.src" :alt="img.alt" /></BsCarouselItem>
         </BsCarousel>
       </div>
     </section>

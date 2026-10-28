@@ -1,8 +1,8 @@
 <h1 class="text-center">Carousel</h1>
 
 <p>
-  <code>bs-carousel</code> wraps the framework-agnostic <code>&lt;mp-carousel&gt;</code> web
-  component: slides are plain child elements, with optional indicators, auto-advance,
+  <code>bs-carousel</code> is generated from the headless carousel core: each slide is a
+  <code>bs-carousel-item</code>, with optional indicators, auto-advance,
   slide/fade animation in both orientations, touch swipe, keyboard + reduced-motion support,
   and a radio-driven no-JS tier (server-rendered pages keep navigating with JavaScript
   disabled).
@@ -17,15 +17,12 @@
             <div [col]>
                 <bs-carousel [orientation]="orientation()" [animation]="mode()" [indicators]="true"
                              [interval]="interval()" [(paused)]="paused" aria-label="Animal photos">
-                    <!-- The carousel ships a default Play/Pause button whenever an
-                         interval is set. Consumers wanting a custom control can
-                         project one with slot="play-pause". -->
-                    <img src="/assets/resized/deer.png" alt="A deer">
-                    <img src="/assets/resized/duck.png" alt="A duck">
-                    <img src="/assets/resized/leopard.png" alt="A leopard">
-                    <img src="/assets/resized/lion.png" alt="A lion">
-                    <img src="/assets/resized/peacock.png" alt="A peacock">
-                    <img src="/assets/resized/tiger.png" alt="A tiger">
+                    <bs-carousel-item><img src="/assets/resized/deer.png" alt="A deer"></bs-carousel-item>
+                    <bs-carousel-item><img src="/assets/resized/duck.png" alt="A duck"></bs-carousel-item>
+                    <bs-carousel-item><img src="/assets/resized/leopard.png" alt="A leopard"></bs-carousel-item>
+                    <bs-carousel-item><img src="/assets/resized/lion.png" alt="A lion"></bs-carousel-item>
+                    <bs-carousel-item><img src="/assets/resized/peacock.png" alt="A peacock"></bs-carousel-item>
+                    <bs-carousel-item><img src="/assets/resized/tiger.png" alt="A tiger"></bs-carousel-item>
                 </bs-carousel>
             </div>
         </div>
@@ -76,14 +73,14 @@
 
 <div class="nojs-pair">
     <bs-carousel animation="fade" [indicators]="true" aria-label="Fade pair" data-testid="nojs-fade">
-        <img src="/assets/resized/deer.png" alt="A deer">
-        <img src="/assets/resized/duck.png" alt="A duck">
-        <img src="/assets/resized/leopard.png" alt="A leopard">
+        <bs-carousel-item><img src="/assets/resized/deer.png" alt="A deer"></bs-carousel-item>
+        <bs-carousel-item><img src="/assets/resized/duck.png" alt="A duck"></bs-carousel-item>
+        <bs-carousel-item><img src="/assets/resized/leopard.png" alt="A leopard"></bs-carousel-item>
     </bs-carousel>
     <bs-carousel animation="slide" [indicators]="true" aria-label="Slide pair" data-testid="nojs-slide">
-        <img src="/assets/resized/lion.png" alt="A lion">
-        <img src="/assets/resized/peacock.png" alt="A peacock">
-        <img src="/assets/resized/tiger.png" alt="A tiger">
+        <bs-carousel-item><img src="/assets/resized/lion.png" alt="A lion"></bs-carousel-item>
+        <bs-carousel-item><img src="/assets/resized/peacock.png" alt="A peacock"></bs-carousel-item>
+        <bs-carousel-item><img src="/assets/resized/tiger.png" alt="A tiger"></bs-carousel-item>
     </bs-carousel>
 </div>
 
@@ -95,14 +92,14 @@
 </p>
 
 <bs-carousel orientation="vertical" [indicators]="true" aria-label="Outer vertical" data-testid="nested-outer">
-    <img src="/assets/resized/deer.png" alt="A deer">
-    <div>
+    <bs-carousel-item><img src="/assets/resized/deer.png" alt="A deer"></bs-carousel-item>
+    <bs-carousel-item>
         <bs-carousel animation="slide" [indicators]="true" aria-label="Inner horizontal" data-testid="nested-inner">
-            <img src="/assets/resized/duck.png" alt="A duck">
-            <img src="/assets/resized/leopard.png" alt="A leopard">
+            <bs-carousel-item><img src="/assets/resized/duck.png" alt="A duck"></bs-carousel-item>
+            <bs-carousel-item><img src="/assets/resized/leopard.png" alt="A leopard"></bs-carousel-item>
         </bs-carousel>
-    </div>
-    <img src="/assets/resized/lion.png" alt="A lion">
+    </bs-carousel-item>
+    <bs-carousel-item><img src="/assets/resized/lion.png" alt="A lion"></bs-carousel-item>
 </bs-carousel>
 
 <bs-code-snippet [code]="snippetNestedHtml" [language]="'html'"></bs-code-snippet>

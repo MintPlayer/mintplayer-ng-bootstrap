@@ -106,39 +106,12 @@
         "command": "node tools/lit-ssr-utils/gen-light-styles-chrome.mjs"
       }
     },
-    "codegen-carousel-chrome": {
-      "executor": "nx:run-commands",
-      "outputs": [
-        "{projectRoot}/carousel/ssr/mp-carousel-chrome.generated.ts"
-      ],
-      "inputs": [
-        "{projectRoot}/carousel/src/components/*.ts",
-        "{projectRoot}/carousel/src/styles/*.styles.scss",
-        "{workspaceRoot}/tools/lit-ssr-utils/gen-carousel-chrome.mjs",
-        "{workspaceRoot}/tools/lit-ssr-utils/lib/*.mjs",
-        "{workspaceRoot}/tools/scripts/lib/cli.mjs"
-      ],
-      "dependsOn": [
-        "build",
-        {
-          "projects": [
-            "mintplayer-ui-core"
-          ],
-          "target": "build"
-        }
-      ],
-      "cache": true,
-      "options": {
-        "command": "node tools/lit-ssr-utils/gen-carousel-chrome.mjs"
-      }
-    },
     "codegen-ssr-chrome": {
       "executor": "nx:run-commands",
       "options": {
-        "command": "echo \"SSR chrome generated (carousel DSD, light-tier style tags)\""
+        "command": "echo \"SSR chrome generated (light-tier style tags)\""
       },
       "dependsOn": [
-        "codegen-carousel-chrome",
         "codegen-light-styles-chrome"
       ]
     },

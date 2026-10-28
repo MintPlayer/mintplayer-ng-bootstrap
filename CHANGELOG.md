@@ -349,6 +349,23 @@ breaking change is a major. (2.20.0 and 2.21.0 broke `^2.x` consumers in a minor
   - **Vue:** numeric inputs are typed numbers; bind them (`:y-min="0"`, not `y-min="0"`).
   - The `TrendSeries` / `TrendPoint` / event types come from `@mintplayer/ui-core/charts/trend` and every
     front re-exports them; `@mintplayer/web-components/charts/trend` no longer re-exports `charts/core`.
+- **Carousel is generated from one source in every front (issue #437).** It is written once in
+  `@mintplayer/ui-core/carousel` (`carouselCore`, `connectCarousel`) and compiled into all four fronts. The
+  server HTML is the complete deck in every framework: one radio per slide holds the index, so indicators,
+  prev/next (with wrap-around) and the radio-group arrow keys work with JavaScript off. The Declarative Shadow
+  DOM chrome, `injectMpCarouselDsd` and `@mintplayer/web-components/carousel/ssr` are gone.
+  - **Slides are items:** wrap each slide in `bs-carousel-item` (Angular), `BsCarouselItem` (React, Vue) or
+    `mp-carousel-item` (Lit). The parent counts them on the server.
+  - **Every front:** the root is `.carousel` (a `div` in React and Vue, the host in Angular and Lit). There is
+    no shadow root; style the Bootstrap carousel classes. The deck is as tall as its tallest slide.
+  - **The `play-pause` slot is gone.** The built-in button is the only play/pause control.
+  - **Events:** `slide-change` is `slideChange` and `paused-change` is `pausedChange`, which carries the
+    boolean: Angular `(slidechange)` / `[(paused)]`, Lit `slidechange` / `pausedchange`, React
+    `onSlideChange` / `onPausedChange` (the payload, not a `CustomEvent`), Vue `@slidechange` /
+    `v-model:paused`. New `animationStart` / `animationEnd` outputs.
+  - **Methods:** `previous()`, `next()`, `goto(index)`, `play()`, `pause()` and `togglePaused()`.
+  - The animation, orientation and event types come from `@mintplayer/ui-core/carousel` and every front
+    re-exports them. `CarouselPausedChangeEventDetail` is gone.
 - **`mp-input-group` is a light element (issue #437).** Like `bs-input-group`, the host is the
   `.input-group` itself: no shadow root, no slot, and its children are the group's items. It no longer
   writes `size` onto `mp-*` children, because a control in a group reads the group's classes and the

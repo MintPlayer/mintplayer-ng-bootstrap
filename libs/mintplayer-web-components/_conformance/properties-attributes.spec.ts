@@ -90,7 +90,6 @@ const OVERRIDES: Record<string, Override> = {
   'mp-timepicker@step': { value: '30', reason: SLOW_STEP },
   'mp-datetime-picker@step': { value: '30', reason: SLOW_STEP },
   'mp-otp-input.value': { value: '482193', reason: 'the default numeric type strips non-digits' },
-  'mp-carousel.index': { expect: 0, reason: 'clamped to the slide count; a carousel with no slides only has index 0' },
   'mp-radio-group.value': { expect: null, reason: 'a value must name a child mp-radio; the bare group has none, so it is refused' },
   'mp-hierarchy-chart.zoomGestures': { value: 'wheel', reason: 'a space-separated gesture list; unknown tokens are dropped' },
   'mp-hierarchy-chart@zoom-gestures': { value: 'wheel', reason: 'a space-separated gesture list; unknown tokens are dropped' },

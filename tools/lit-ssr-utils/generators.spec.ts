@@ -16,23 +16,10 @@
 import { resolve } from 'node:path';
 import { describe, expect, it, vi } from 'vitest';
 
-import { main as carousel } from './gen-carousel-chrome.mjs';
 import { LIGHT_TIER_COMPONENTS, lightStyleTag, main as lightStyles } from './gen-light-styles-chrome.mjs';
-import { ChromeGeneratorError, MAX_CHROME_COUNT } from './lib/chrome-module.mjs';
+import { ChromeGeneratorError } from './lib/chrome-module.mjs';
 
 const REPO = resolve('/repo');
-
-/** A lit-like `html` that interpolates to a plain string. */
-const html = (strings: TemplateStringsArray, ...values: unknown[]) =>
-  strings.reduce((out, s, i) => out + s + (i < values.length ? String(values[i]) : ''), '');
-
-/** Echoes the template back inside a shadow root, the way @lit-labs/ssr wraps real chrome. */
-const echo = { html, render: async (tpl: string) => `<x><template shadowrootmode="open">${tpl}</template></x>` };
-
-/** A renderer whose output has no shadow root: the failure every DSD generator must refuse. */
-const noShadow = { html, render: async (tpl: string) => tpl };
-
-const dsd = (tpl: string) => `<template shadowrootmode="open">${tpl}</template>`;
 
 function harness() {
   const written: { path: string; content: string }[] = [];
@@ -48,28 +35,6 @@ function constant(content: string, name: string): unknown {
   if (!match) throw new Error(`${name} not found in:\n${content}`);
   return JSON.parse(match[1]);
 }
-
-describe('gen-carousel-chrome', () => {
-  it('renders one variant per slide count, index = count', async () => {
-    const h = harness();
-    expect(await carousel({ repoRoot: REPO, renderer: echo, ...h })).toBe(0);
-
-    const { path, content } = h.written[0];
-    expect(path).toBe(resolve(REPO, 'libs/mintplayer-web-components/carousel/ssr/mp-carousel-chrome.generated.ts'));
-    const table = constant(content, 'MP_CAROUSEL_DSD_CHROME_BY_COUNT') as string[];
-    expect(table).toHaveLength(MAX_CHROME_COUNT + 1);
-    expect(table.map((chrome) => chrome.match(/slide-count=(\d+)/)?.[1])).toEqual(
-      Array.from({ length: MAX_CHROME_COUNT + 1 }, (_, n) => String(n)),
-    );
-  });
-
-  it('exits 1 and writes nothing when a variant renders no shadow root', async () => {
-    const h = harness();
-    expect(await carousel({ repoRoot: REPO, renderer: noShadow, ...h })).toBe(1);
-    expect(h.write).not.toHaveBeenCalled();
-    expect(h.error.mock.calls[0][0]).toBe('gen-carousel-chrome: no DSD <template> for slide-count=0:\n');
-  });
-});
 
 describe('gen-light-styles-chrome', () => {
   const sheet = (name: string) => ({ cssText: `.${name}[data-mps=${name}]{color:red}` });

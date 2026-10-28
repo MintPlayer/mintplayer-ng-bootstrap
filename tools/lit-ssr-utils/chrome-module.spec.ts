@@ -27,7 +27,6 @@ import {
   dsdChromeOf,
   extractDsdTemplate,
   mapSequential,
-  MAX_CHROME_COUNT,
   REPO_ROOT,
   runChromeGenerator,
   staticChromeConstants,
@@ -183,13 +182,6 @@ describe('buildChromeModule', () => {
   it('emits header-only output for no declarations', () => {
     const empty = buildChromeModule({ generator: 'g.mjs', source: 's', declarations: [] });
     expect(empty.endsWith('// Source: s\n\n\n')).toBe(true);
-  });
-});
-
-describe('MAX_CHROME_COUNT', () => {
-  it('is the cap the accordion and carousel tables are built to', () => {
-    // Both generators loop 0..MAX inclusive, so the table length is MAX + 1.
-    expect(MAX_CHROME_COUNT).toBe(12);
   });
 });
 

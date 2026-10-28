@@ -44,13 +44,13 @@ export function mountWrapper(
   return wrapper;
 }
 
-/** The `mp-*` custom element a wrapper renders as its root. */
+/** The element matching `tag` (a selector) that a wrapper renders as or under its root. */
 export function elementOf<T extends Element = HTMLElement>(
   wrapper: VueWrapper,
   tag: string,
 ): T {
   const root = wrapper.element as Element;
-  const found = (root.tagName?.toLowerCase() === tag ? root : root.querySelector(tag)) as T | null;
+  const found = (root.matches?.(tag) ? root : root.querySelector(tag)) as T | null;
   expect(found, `<${tag}> was not rendered`).not.toBeNull();
   return found!;
 }

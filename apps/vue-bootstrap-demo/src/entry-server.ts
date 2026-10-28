@@ -11,9 +11,6 @@
 import './install-ssr-dom-globals';
 
 import { renderToString } from 'vue/server-renderer';
-// Splices <mp-carousel>'s count-variant DSD chrome so the radio-driven
-// no-JS carousel navigates with JS disabled.
-import { injectMpCarouselDsd } from '@mintplayer/web-components/carousel/ssr';
 // Re-exported for server.mjs, which splices the theme attribute onto <html> and
 // cannot resolve the @mintplayer path alias itself (PRD dark-mode D8, FR-6).
 // Import-safe on the server: the store is only created on first browser use.
@@ -24,7 +21,7 @@ export { collectScopedStyles } from '@mintplayer/ui-core/scoped-styles';
 import { createApp } from './main';
 
 /**
- * Render the app for `url` to an HTML string with the WCs' DSD chrome injected.
+ * Render the app for `url` to an HTML string.
  * Awaiting `router.isReady()` resolves the matched (lazily-imported) view so
  * its markup is in the response — the no-JavaScript page shows real content,
  * not just the shell.
@@ -33,6 +30,5 @@ export async function render(url: string): Promise<string> {
   const { app, router } = createApp(true);
   await router.push(url);
   await router.isReady();
-  const html = await renderToString(app);
-  return injectMpCarouselDsd(html);
+  return renderToString(app);
 }

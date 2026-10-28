@@ -1,123 +1,52 @@
 import { describe, expect, it } from 'vitest';
-import { nextTick } from 'vue';
+import { h, nextTick } from 'vue';
 
-import BsCarousel from '../../carousel/src/BsCarousel.vue';
+import { BsCarousel, BsCarouselItem } from '@mintplayer/vue-bootstrap/carousel';
 import BsShell from '../../shell/src/BsShell.vue';
 
-import { emit, mountEl, mountWrapper } from './harness';
+import { mountEl, mountWrapper } from './harness';
 
 /**
- * Layout wrappers whose web components read *attributes* rather than
- * properties, because their behaviour is a pure-CSS state machine that has to
- * survive SSR and a page with JavaScript switched off.
- *
- * In Vue the lowering is written as `:attr="cond ? '' : undefined"` in the
- * template, and `undefined` is the only value Vue omits — `false` and `null`
- * would render `attr="false"`, which a presence test reads as ON. That single
- * character is the whole risk, and it is invisible in a browser until the
- * no-JS path is exercised.
- *
- * `wrap` and `keyboardEvents` invert it: both default to ON, so the attribute
- * exists only to carry the literal string `"false"` for the opt-out.
+ * How each component lowers its props onto the markup the headless core
+ * renders. The layout is a CSS state machine that survives SSR and a page with
+ * JavaScript switched off, so only what is serialised into the HTML counts.
  */
 
-describe('BsCarousel — attribute lowering', () => {
-  it('emits only the defaulted attributes when nothing is asked for', () => {
-    const { el } = mountEl(BsCarousel, 'mp-carousel');
-    expect(el.getAttribute('animation')).toBe('slide');
-    expect(el.getAttribute('orientation')).toBe('horizontal');
-    expect(el.hasAttribute('indicators')).toBe(false);
-    expect(el.hasAttribute('interval')).toBe(false);
-    expect(el.hasAttribute('wrap')).toBe(false);
-    expect(el.hasAttribute('keyboard-events')).toBe(false);
-    expect(el.hasAttribute('paused')).toBe(false);
-  });
+// BsCarousel renders the headless carousel itself (#437): the server render
+// needs one radio, indicator and control pair per slide BEFORE the slides, so
+// the count comes from the default slot's vnodes (the Vue extension).
+describe('BsCarousel — markup from the headless core', () => {
+  const slides = (n: number) => () =>
+    Array.from({ length: n }, (_, i) => h(BsCarouselItem, { key: i }, () => h('img', { alt: `Slide ${i}` })));
 
-  it('sets indicators as a bare attribute', () => {
-    const { el } = mountEl(BsCarousel, 'mp-carousel', { props: { indicators: true } });
-    expect(el.getAttribute('indicators')).toBe('');
-  });
-
-  it('omits indicators rather than rendering a falsy value', () => {
-    const { el } = mountEl(BsCarousel, 'mp-carousel', { props: { indicators: false } });
-    expect(el.hasAttribute('indicators')).toBe(false);
-  });
-
-  it('forwards a positive interval', () => {
-    const { el } = mountEl(BsCarousel, 'mp-carousel', { props: { interval: 4000 } });
-    expect(el.getAttribute('interval')).toBe('4000');
-  });
-
-  // Zero means "no autoplay", which is the absence of the attribute — an
-  // `interval="0"` would arm a zero-delay timer.
-  it('drops a zero interval', () => {
-    const { el } = mountEl(BsCarousel, 'mp-carousel', { props: { interval: 0 } });
-    expect(el.hasAttribute('interval')).toBe(false);
-  });
-
-  it('emits the opt-out string for wrap', () => {
-    const { el } = mountEl(BsCarousel, 'mp-carousel', { props: { wrap: false } });
-    expect(el.getAttribute('wrap')).toBe('false');
-  });
-
-  it('emits no wrap attribute at the default', () => {
-    const { el } = mountEl(BsCarousel, 'mp-carousel', { props: { wrap: true } });
-    expect(el.hasAttribute('wrap')).toBe(false);
-  });
-
-  it('hyphenates the keyboard opt-out', () => {
-    const { el } = mountEl(BsCarousel, 'mp-carousel', { props: { keyboardEvents: false } });
-    expect(el.getAttribute('keyboard-events')).toBe('false');
-  });
-
-  it('sets paused from the v-model', () => {
-    const { el } = mountEl(BsCarousel, 'mp-carousel', { props: { paused: true } });
-    expect(el.getAttribute('paused')).toBe('');
-  });
-
-  // The element pauses itself on hover and on the play/pause control, so the
-  // binding needs the write-back or it desynchronises on the first hover.
-  it('writes a paused-change back to the v-model', async () => {
-    const { wrapper, el } = mountEl(BsCarousel, 'mp-carousel', { props: { paused: false } });
-
-    await emit(el, 'paused-change', { paused: true });
-
-    expect(wrapper.emitted('update:paused')![0]).toEqual([true]);
-  });
-
-  it.each([
-    ['slide-change', 'slideChange', { index: 2 }],
-    ['animation-start', 'animationStart', undefined],
-    ['animation-end', 'animationEnd', undefined],
-  ])('re-emits %s as %s', async (domEvent, vueEvent, detail) => {
-    const { wrapper, el } = mountEl(BsCarousel, 'mp-carousel');
-
-    await emit(el, domEvent, detail);
-
-    expect(wrapper.emitted(vueEvent), `${domEvent} never reached ${vueEvent}`).toHaveLength(1);
-  });
-
-  it('stops emitting once unmounted', async () => {
-    const { wrapper, el } = mountEl(BsCarousel, 'mp-carousel');
-    wrapper.unmount();
-
-    el.dispatchEvent(new CustomEvent('slide-change', { detail: { index: 1 } }));
-
-    expect(wrapper.emitted('slideChange')).toBeUndefined();
-  });
-
-  // A native custom element needs the slot attribute on a REAL child; Vue's
-  // template slot syntax cannot provide one, hence the wrapping span.
-  it('wraps a play-pause slot in an element carrying the slot attribute', () => {
-    const { el } = mountEl(BsCarousel, 'mp-carousel', {
-      slots: { 'play-pause': () => 'Pause' },
+  it('renders a radio, a control pair and an indicator per declared slide', () => {
+    const { el } = mountEl(BsCarousel, 'div.carousel', {
+      props: { indicators: true },
+      attrs: { 'aria-label': 'Photos' },
+      slots: { default: slides(3) },
     });
-    expect(el.querySelector('[slot="play-pause"]')?.textContent).toBe('Pause');
+    expect(el.getAttribute('role')).toBe('region');
+    expect(el.getAttribute('aria-label')).toBe('Photos');
+    expect(el.querySelectorAll(':scope > input.car-radio')).toHaveLength(3);
+    expect(el.querySelectorAll(':scope > .carousel-controls > .carousel-control-pair')).toHaveLength(3);
+    expect(el.querySelectorAll(':scope > .carousel-indicators > [data-bs-target]')).toHaveLength(3);
+    expect(el.querySelectorAll('.carousel-item')).toHaveLength(3);
   });
 
-  it('renders no play-pause wrapper when the slot is absent', () => {
-    const { el } = mountEl(BsCarousel, 'mp-carousel');
-    expect(el.querySelector('[slot="play-pause"]')).toBeNull();
+  it('starts on the first slide and renders no indicators unless asked', () => {
+    const { el } = mountEl(BsCarousel, 'div.carousel', { slots: { default: slides(2) } });
+    const radios = el.querySelectorAll<HTMLInputElement>(':scope > input.car-radio');
+    expect([...radios].map((r) => r.checked)).toEqual([true, false]);
+    expect(el.querySelector(':scope > .carousel-indicators')).toBeNull();
+  });
+
+  it('lowers animation and orientation onto data attributes', () => {
+    const { el } = mountEl(BsCarousel, 'div.carousel', {
+      props: { animation: 'fade', orientation: 'vertical' },
+      slots: { default: slides(1) },
+    });
+    expect(el.getAttribute('data-animation')).toBe('fade');
+    expect(el.getAttribute('data-orientation')).toBe('vertical');
   });
 });
 

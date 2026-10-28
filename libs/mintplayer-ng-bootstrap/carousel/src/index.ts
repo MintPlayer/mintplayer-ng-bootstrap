@@ -1,1 +1,8 @@
-export * from './carousel/carousel.component';
+// The carousel is generated from @mintplayer/ui-core/carousel (PRD #437 D10).
+export * from './generated';
+export type {
+  CarouselAnimation,
+  CarouselLabels,
+  CarouselOrientation,
+  CarouselSlideChangeEventDetail,
+} from '@mintplayer/ui-core/carousel';

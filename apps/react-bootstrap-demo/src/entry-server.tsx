@@ -13,11 +13,6 @@ import { StrictMode } from 'react';
 import { renderToPipeableStream } from 'react-dom/server';
 import { StaticRouter } from 'react-router-dom/server';
 import { Writable } from 'node:stream';
-// Same pattern for <mp-carousel>: count-variant DSD chrome so the radio-driven
-// no-JS carousel navigates with JS disabled. Composed with the other injectors.
-import { injectMpCarouselDsd } from '@mintplayer/web-components/carousel/ssr';
-// Same pattern for <mp-accordion>: [multi] x [tab-count] DSD chrome variants,
-// so tabs open and close through the shadow input state machine with JS off.
 // Re-exported for server.mjs, which splices the theme attribute onto <html> and
 // cannot resolve the @mintplayer path alias itself (PRD dark-mode D8, FR-6).
 // Import-safe on the server: the store is only created on first browser use.
@@ -28,7 +23,7 @@ export { collectScopedStyles } from '@mintplayer/ui-core/scoped-styles';
 import App from './app/app';
 
 /**
- * Render the app for `url` to an HTML string with the WCs' DSD chrome injected.
+ * Render the app for `url` to an HTML string.
  *
  * Uses `renderToPipeableStream` + `onAllReady` (rather than `renderToString`)
  * so lazy/`Suspense` routes fully resolve server-side — every page's markup is
@@ -48,7 +43,7 @@ export function render(url: string): Promise<string> {
       },
       final(cb) {
         clearTimeout(timer);
-        resolve(injectMpCarouselDsd(Buffer.concat(chunks).toString('utf-8')));
+        resolve(Buffer.concat(chunks).toString('utf-8'));
         cb();
       },
     });

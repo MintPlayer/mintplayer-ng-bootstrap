@@ -138,7 +138,7 @@ Every item below is authored as a D10 component source once M3b lands.
 - [ ] splitter: MOVED to M6, lands with dock and file-manager. The dock renders every split node as a nested `mp-splitter` and reads its shadow dividers, `resizing` events and size pinning (`dock/src/core/intersection-sizing.ts`); converting it alone would break the dock until M6. It becomes a splitter + splitter-pane group (D1: the parent owns sizes, each pane registers and renders the divider before it)
 - [x] timeline (+ item): layout is CSS on the root classes, rows are light children, selection by key
 - [x] trend-chart (+ Vue front)
-- [ ] carousel; delete the carousel chrome
+- [x] carousel (+ item); delete the carousel chrome. The radios stay the index store in both tiers; the parent learns the slide count from its declared items on the server (Angular content query, React children, Vue slot vnodes)
 - [ ] typeahead React/Vue fronts confirmed template-owning (PRD §8 Wave B note)
 
 ## M5 — Wave C

@@ -17,7 +17,7 @@ import {
   BsCardText,
   BsCardTitle,
 } from '@mintplayer/react-bootstrap/card';
-import { BsCarousel } from '@mintplayer/react-bootstrap/carousel';
+import { BsCarousel, BsCarouselItem } from '@mintplayer/react-bootstrap/carousel';
 import { BsHierarchyChart } from '@mintplayer/react-bootstrap/charts/hierarchy';
 import { BsSparkline } from '@mintplayer/react-bootstrap/charts/sparkline';
 import { BsTrendChart } from '@mintplayer/react-bootstrap/charts/trend';
@@ -173,7 +173,8 @@ const CASES: Case[] = [
   bare('BsCardSubtitle', 'div.card-subtitle', BsCardSubtitle),
   bare('BsCardText', 'div.card-text', BsCardText),
   bare('BsCardTitle', 'div.card-title', BsCardTitle),
-  bare('BsCarousel', 'mp-carousel', BsCarousel),
+  bare('BsCarousel', 'div.carousel', BsCarousel),
+  bare('BsCarouselItem', 'div.carousel-item', BsCarouselItem),
   bare('BsHierarchyChart', 'mp-hierarchy-chart', BsHierarchyChart),
   // No points, no svg: the probe needs data for its labelled node to exist.
   { name: 'BsSparkline', target: 'span.sparkline', render: (p) => <BsSparkline {...p} points={[1, 3, 2]} />, labelTarget: 'svg[role=img]' },

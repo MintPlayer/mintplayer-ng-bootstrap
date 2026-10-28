@@ -69,7 +69,7 @@ export function emitReactComponent(model, { generator, runtime, extension }) {
   lines.push(`  { ${params.join(', ')} },`, `  ref,`, `) {`);
   model.styles.forEach((style) => lines.push(`  installLightStyles(${style.scope}, ${style.sheet});`));
   lines.push(`  const rootRef = useRef<${element}>(null);`, `  useImperativeHandle(ref, () => rootRef.current as ${element});`);
-  const inputsExpr = has('useExtendInputs') ? `ext_useExtendInputs(${inputsObject})` : inputsObject;
+  const inputsExpr = has('useExtendInputs') ? `ext_useExtendInputs(${inputsObject}, { children })` : inputsObject;
   lines.push(
     `  const core = useCore(${model.core}, ${inputsExpr}, {`,
     `    idPrefix: '${names.selector}',`,

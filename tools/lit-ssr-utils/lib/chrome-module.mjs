@@ -3,7 +3,7 @@
  * Declarative Shadow DOM template out of an SSR render, emitting the generated
  * TypeScript module that holds it, and the generator loop around both.
  *
- * The six generators (`gen-{accordion,carousel,dropdown,navbar,shell,
+ * The generators (`gen-{accordion,carousel,dropdown,navbar,shell,
  * light-styles}-chrome.mjs`) each used to run that loop at module scope, behind
  * a static DOM-shim import and a top-level `await import()` of a built `dist/`
  * bundle. Importing one from a spec therefore needed a prior build and mutated
@@ -28,16 +28,6 @@ import { fileURLToPath, pathToFileURL } from 'node:url';
  */
 
 export const REPO_ROOT =resolve(fileURLToPath(import.meta.url), '..', '..', '..', '..');
-
-/**
- * The number of pre-rendered count variants a chrome table holds.
- *
- * Index 0 doubles as the over-cap fallback: styled and visible, with children
- * rendering through the default slot, but without the input machine. That is
- * honest Tier-2 — visible but inert — rather than a component that looks
- * interactive and is not.
- */
-export const MAX_CHROME_COUNT = 12;
 
 /** The `file:` URL of a built web-component entry, as the generators import it. */
 export function distEntryUrl(repoRoot, name) {

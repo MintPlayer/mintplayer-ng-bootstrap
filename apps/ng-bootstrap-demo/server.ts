@@ -7,11 +7,6 @@ import {
 import express from 'express';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
-// Injects <mp-carousel>'s count-variant Declarative Shadow DOM chrome into SSR output, so the radio-driven
-// no-JS carousel navigates with JS disabled. Composed with the other injectors.
-import { injectMpCarouselDsd } from '@mintplayer/web-components/carousel/ssr';
-// Same pattern for <mp-accordion>: [multi] x [tab-count] DSD chrome variants,
-// so tabs open and close through the shadow input state machine with JS off.
 // The light-tier WCs (datatable, treeview, tree-select, query-builder family)
 // have no shadow root, so there is no DSD chrome for them — their rescoped
 // sheets are document-level. This inserts those <style> tags into <head> for
@@ -91,10 +86,10 @@ app.use((req, res, next) => {
     .handle(req)
     .then(async (response) => {
       if (!response) return next();
-      // Splice the remaining WCs' Declarative Shadow DOM chrome into HTML responses.
+      // Insert the light-tier sheets into HTML responses.
       const contentType = response.headers.get('content-type') ?? '';
       if (contentType.includes('text/html')) {
-        const body = injectMpLightStyles(injectMpCarouselDsd(await response.text()));
+        const body = injectMpLightStyles(await response.text());
         const headers = new Headers(response.headers);
         headers.delete('content-length');
         // BsThemeService renders <html data-bs-theme> from the bs-theme-mode

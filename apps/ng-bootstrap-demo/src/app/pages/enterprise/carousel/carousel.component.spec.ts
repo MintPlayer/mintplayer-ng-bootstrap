@@ -4,7 +4,7 @@ import { MockComponent, MockDirective } from 'ng-mocks';
 import { CarouselComponent } from './carousel.component';
 import { BsFormComponent, BsFormGroupDirective, BsFormControlDirective } from '@mintplayer/ng-bootstrap/form';
 import { BsGridComponent, BsGridRowDirective, BsGridColumnDirective, BsColFormLabelDirective } from '@mintplayer/ng-bootstrap/grid';
-import { BsCarouselComponent } from '@mintplayer/ng-bootstrap/carousel';
+import { BsCarouselComponent, BsCarouselItemComponent } from '@mintplayer/ng-bootstrap/carousel';
 import { BsSelectComponent } from '@mintplayer/ng-bootstrap/select';
 
 describe('CarouselComponent', () => {
@@ -19,6 +19,7 @@ describe('CarouselComponent', () => {
         MockComponent(BsGridComponent), MockDirective(BsGridRowDirective), MockDirective(BsGridColumnDirective), MockDirective(BsColFormLabelDirective),
         MockComponent(BsSelectComponent),
         MockComponent(BsCarouselComponent),
+        MockComponent(BsCarouselItemComponent),
         CarouselComponent,
       ]
     })

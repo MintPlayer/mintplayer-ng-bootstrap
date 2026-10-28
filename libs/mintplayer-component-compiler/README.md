@@ -28,7 +28,7 @@ picks up these named exports:
 
 - Angular: `hostDirectives`, `providers`, `extendInputs`
 - Vue: `extendInputs`
-- React: `useExtendInputs`
+- React: `useExtendInputs(inputs, { children })` (a hook; the declared children let it read what the server render must know, like a carousel's slide count)
 
 `navbar-dropdown.angular.ts` (router-active state) is the example.
 
