@@ -857,11 +857,11 @@ $z-event-selected: 2;    // selected event: its straddling handles must win
   width: 40px;
 }
 
-/* The start/end fields are `<mp-datetime-picker>`s: input-group, popups and
-   Bootstrap styling all live in their own shadow roots, so only the width they
-   take in the row is ours to set. Their popups are `position: fixed` and
-   escape this panel's bounds by design — do not add overflow/transform to the
-   editor, which would clip them or become their containing block. */
+/* The start/end fields are `<mp-datetime-picker>`s. They render in the light
+   DOM of THIS shadow root, so their sheets arrive through adoptLightStyles and
+   Bootstrap's input-group and buttons through `inputGroupStyles`; only the
+   width they take in the row is ours to set. Their popups are native popovers
+   in the top layer and escape this panel's bounds by design. */
 .scheduler-event-editor mp-datetime-picker.editor-input {
   flex: 1 1 auto;
   display: block;

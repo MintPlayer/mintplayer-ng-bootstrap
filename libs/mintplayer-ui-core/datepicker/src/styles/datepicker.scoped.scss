@@ -1,0 +1,43 @@
+// The date picker's stylesheet (PRD #437). Rescoped at build time: every
+// compound gains `[data-mps=datepicker]`. The grid inside the popup is styled
+// by the calendar's own sheet, which the manifest installs alongside this one.
+// `.input-group`, `.form-control` and `.btn` are global Bootstrap.
+
+.mp-datepicker {
+  display: inline-block;
+  box-sizing: border-box;
+}
+
+// The readonly display still looks like a field, not a disabled one.
+.datepicker-input[readonly] {
+  background-color: var(--bs-body-bg);
+}
+
+// A calendar glyph in the button's own colour.
+.datepicker-trigger {
+  display: inline-flex;
+  align-items: center;
+
+  &::before {
+    content: '';
+    width: 16px;
+    height: 16px;
+    background-color: currentColor;
+    mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath d='M3.5 0a.5.5 0 0 1 .5.5V1h8V.5a.5.5 0 0 1 1 0V1h1a2 2 0 0 1 2 2v11a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2V3a2 2 0 0 1 2-2h1V.5a.5.5 0 0 1 .5-.5zM1 4v10a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V4H1z'/%3E%3C/svg%3E") center / contain no-repeat;
+  }
+}
+
+// A native popover in the top layer, placed by trackPopovers.
+.datepicker-popup {
+  position: fixed;
+  inset: auto;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  overflow: visible;
+  left: var(--mp-popover-left);
+  top: var(--mp-popover-top);
+  min-width: var(--mp-popover-min-width, auto);
+  box-shadow: var(--bs-box-shadow);
+}

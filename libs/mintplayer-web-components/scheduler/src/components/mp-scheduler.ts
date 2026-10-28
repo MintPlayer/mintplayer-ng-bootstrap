@@ -43,6 +43,9 @@ import { schedulerStyles } from '../styles/scheduler.styles';
 import { formControlStyles } from '../../../_styles/form-control.styles';
 import { formSelectStyles } from '../../../_styles/form-select.styles';
 import { invalidFeedbackStyles } from '../../../_styles/invalid-feedback.styles';
+import { inputGroupStyles } from '../../../_styles/input-group.styles';
+// mp-datetime-picker renders in the light DOM: its sheets must be adopted into this shadow root.
+import { adoptLightStyles } from '@mintplayer/web-components/light-dom';
 import { DragManager, PointerTarget, DragCompletionResult } from '../drag';
 import { InputHandler, NormalizedPointerEvent } from '../input';
 import { edgeScrollVector } from '../utils/geometry';
@@ -71,7 +74,7 @@ let schedulerInstanceCounter = 0;
  * - SchedulerEventEmitter: Dispatches custom events
  */
 export class MpScheduler extends LitElement {
-  static override styles = [formControlStyles, formSelectStyles, invalidFeedbackStyles, schedulerStyles];
+  static override styles = [formControlStyles, formSelectStyles, invalidFeedbackStyles, inputGroupStyles, schedulerStyles];
 
   static override get observedAttributes(): string[] {
     return [
@@ -90,6 +93,7 @@ export class MpScheduler extends LitElement {
   private stateManager: SchedulerStateManager;
   private currentView: BaseView | null = null;
   private currentViewType: ViewType | null = null;
+  private releaseLightStyles: (() => void) | undefined;
   private contentContainer: HTMLElement | null = null;
 
   // Managers
@@ -276,6 +280,7 @@ export class MpScheduler extends LitElement {
 
   override connectedCallback(): void {
     super.connectedCallback();
+    this.releaseLightStyles ??= adoptLightStyles(this.renderRoot as ShadowRoot);
     if (this.inputHandler) {
       // A RE-connection (the element was moved in the DOM; firstUpdated does
       // not run again). disconnectedCallback tore down the view, the drag
@@ -319,6 +324,8 @@ export class MpScheduler extends LitElement {
 
     this.stopEdgeScroll();
     this.cancelPendingDragUpdate();
+    this.releaseLightStyles?.();
+    this.releaseLightStyles = undefined;
     super.disconnectedCallback();
   }
 
@@ -1413,7 +1420,7 @@ export class MpScheduler extends LitElement {
             .value=${draft.start}
             .max=${startIsMove ? null : draft.end}
             ?disabled=${!canStart}
-            @value-change=${(e: Event) => this.onEditorStartChange(e)}
+            @valuechange=${(e: Event) => this.onEditorStartChange(e)}
             input-label=${this.msg('editorStartLabel')}
             locale=${options.locale ?? nothing}
             first-day-of-week=${this.firstDayOfWeek()}
@@ -1430,7 +1437,7 @@ export class MpScheduler extends LitElement {
             ?disabled=${!canEnd}
             ?invalid=${endInvalid}
             error-text=${endInvalid ? this.editorError!.message : nothing}
-            @value-change=${(e: Event) => this.onEditorEndChange(e)}
+            @valuechange=${(e: Event) => this.onEditorEndChange(e)}
             input-label=${this.msg('editorEndLabel')}
             locale=${options.locale ?? nothing}
             first-day-of-week=${this.firstDayOfWeek()}
@@ -1742,7 +1749,9 @@ export class MpScheduler extends LitElement {
     // this one. Focusing first would land on a control that is not yet
     // described by the reason it was refused.
     await (control as { updateComplete?: Promise<unknown> } | null | undefined)?.updateComplete;
-    control?.focus();
+    // The picker's host is not focusable: its field is.
+    const target = field === 'title' ? control : control?.querySelector<HTMLElement>('.datetime-picker-input');
+    target?.focus();
   }
 
   // ============================================
@@ -2797,14 +2806,13 @@ export class MpScheduler extends LitElement {
       if (this.eventInsidePanel(e, '.scheduler-day-popover')) return;
     }
     // Same rule for the event editor — and it is the one that needs the
-    // `isTopmost` guard: the editor CONTAINS `<mp-datetime-picker>`s, each of
-    // which opens its own overlay. Those push a dismiss frame on top of ours,
-    // so an Escape aimed at an open calendar belongs to the calendar. Without
-    // the guard this handler — which runs first, being on the element rather
-    // than the document — would close the whole editor under it and throw away
-    // the user's unsaved edits. Declining silently (no preventDefault, no
-    // stopPropagation) is what lets the event reach the document-level handler
-    // that arbitrates the stack.
+    // `isTopmost` guard: the editor CONTAINS `<mp-datetime-picker>`s, whose grid
+    // and list are native popovers, so an Escape aimed at an open calendar
+    // belongs to the calendar (the browser closes it as a close request).
+    // Without the guard this handler — which runs first — would close the whole
+    // editor under it, throw away the user's unsaved edits, and cancel the close
+    // request. Declining silently (no preventDefault, no stopPropagation) lets
+    // the browser dismiss the popover.
     if (this.eventEditorOverlay.isOpen) {
       if (e.key === 'Escape' && this.eventEditorOverlay.isTopmost) {
         e.preventDefault();

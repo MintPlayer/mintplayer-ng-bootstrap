@@ -259,10 +259,9 @@ test.describe('composite widgets are exactly ONE tab stop', () => {
 
   test('datetime-picker time list keeps a single tabbable option', async ({ page }) => {
     await page.goto('/basic/forms/datetime-picker');
-    await page.waitForSelector('mp-datetime-picker');
-    const counts = await page.locator('mp-datetime-picker mp-time-list').first().evaluate(async (el) => {
-      await (el as HTMLElement & { updateComplete: Promise<unknown> }).updateComplete;
-      const options = [...el.shadowRoot!.querySelectorAll<HTMLElement>('[role="option"], button.slot')];
+    await page.waitForSelector('bs-datetime-picker .mp-time-list');
+    const counts = await page.locator('bs-datetime-picker .mp-time-list').first().evaluate((el) => {
+      const options = [...el.querySelectorAll<HTMLElement>('[role="option"]')];
       return {
         options: options.length,
         stops: options.filter((o) => o.tabIndex === 0).length,

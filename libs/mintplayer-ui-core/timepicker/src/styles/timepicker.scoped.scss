@@ -1,0 +1,108 @@
+// The time list's and the time picker's stylesheet (PRD #437), also installed
+// by the datetime picker, which renders the same list. Rescoped at build time:
+// every compound gains `[data-mps=timepicker]`. `.input-group`, `.form-control`
+// and `.btn` are global Bootstrap.
+
+// The list: the bs-time-list / mp-time-list host, a div in React and Vue, or
+// the list inside a picker's popup.
+.mp-time-list {
+  display: block;
+  box-sizing: border-box;
+  max-height: 250px;
+  overflow-y: auto;
+  background: var(--bs-body-bg);
+  color: var(--bs-body-color);
+  border: 1px solid var(--bs-border-color);
+  border-radius: var(--bs-border-radius);
+  scrollbar-width: thin;
+}
+
+.time-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.time-slot {
+  display: block;
+  width: 100%;
+  padding: 0.375rem 0.75rem;
+  background: transparent;
+  border: 0;
+  text-align: start;
+  cursor: pointer;
+  color: inherit;
+  font: inherit;
+
+  &:hover {
+    background-color: var(--bs-secondary-bg);
+  }
+
+  &:focus {
+    outline: none;
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--bs-primary);
+    outline-offset: -2px;
+  }
+
+  &[aria-selected='true'] {
+    background-color: var(--bs-primary);
+    color: var(--bs-white, #fff);
+  }
+
+  // Inert before hydration: nothing to pick with JavaScript off.
+  &:disabled {
+    cursor: default;
+  }
+}
+
+.time-slot-disabled {
+  color: var(--bs-secondary-color);
+  cursor: not-allowed;
+}
+
+@media (pointer: coarse) {
+  .time-slot {
+    min-height: 44px;
+  }
+}
+
+.mp-timepicker {
+  display: inline-block;
+  box-sizing: border-box;
+}
+
+.timepicker-input[readonly] {
+  background-color: var(--bs-body-bg);
+}
+
+// A clock glyph in the button's own colour.
+.timepicker-trigger {
+  display: inline-flex;
+  align-items: center;
+
+  &::before {
+    content: '';
+    width: 16px;
+    height: 16px;
+    background-color: currentColor;
+    mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath d='M8 3.5a.5.5 0 0 0-1 0V9a.5.5 0 0 0 .252.434l3.5 2a.5.5 0 0 0 .496-.868L8 8.71V3.5z'/%3E%3Cpath d='M8 16A8 8 0 1 0 8 0a8 8 0 0 0 0 16zm7-8A7 7 0 1 1 1 8a7 7 0 0 1 14 0z'/%3E%3C/svg%3E") center / contain no-repeat;
+  }
+}
+
+// A native popover in the top layer, placed by trackPopovers.
+.timepicker-popup {
+  position: fixed;
+  inset: auto;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  overflow: visible;
+  left: var(--mp-popover-left);
+  top: var(--mp-popover-top);
+  min-width: var(--mp-popover-min-width, auto);
+  box-shadow: var(--bs-box-shadow);
+}

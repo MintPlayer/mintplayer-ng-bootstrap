@@ -1,0 +1,16 @@
+// Bootstrap's `.input-group` and `.btn` for a shadow root that renders a
+// light-tier component built from them (the scheduler's `mp-datetime-picker`s).
+// Those components rely on the page's global Bootstrap, which does not cross a
+// shadow boundary, so the host carries it — shared across every consuming
+// shadow root via `adoptedStyleSheets`, like `form-control.styles.scss`.
+//
+// Pass-through to Bootstrap's own modules so upgrades flow in automatically.
+
+@import "node_modules/bootstrap/scss/functions";
+@import "node_modules/bootstrap/scss/variables";
+@import "node_modules/bootstrap/scss/variables-dark";
+@import "node_modules/bootstrap/scss/maps";
+@import "node_modules/bootstrap/scss/mixins";
+@import "node_modules/bootstrap/scss/utilities";
+@import "node_modules/bootstrap/scss/buttons";
+@import "node_modules/bootstrap/scss/forms/input-group";

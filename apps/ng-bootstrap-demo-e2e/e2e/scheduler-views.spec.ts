@@ -1113,21 +1113,21 @@ test.describe('scheduler — nested datetime picker in the editor (R20)', () => 
       ),
     ).toBe(true);
 
-    // Open its calendar through the picker's own trigger button, two shadow
-    // roots deep. Playwright's CSS engine pierces open shadow roots.
-    await page.locator('mp-datetime-picker.editor-start-input button.date').click();
+    // Open its calendar through the picker's own trigger button, inside the
+    // scheduler's shadow root. Playwright's CSS engine pierces open shadow roots.
+    await page.locator('mp-datetime-picker.editor-start-input button.datetime-picker-date').click();
     await expect
       .poll(() =>
         schedulerRoot(page).evaluate(
           (sched) =>
             sched
-              .shadowRoot!.querySelector('mp-datetime-picker.editor-start-input')!
-              .getAttribute('data-open'),
+              .shadowRoot!.querySelector('mp-datetime-picker.editor-start-input .datetime-picker-popup-date')!
+              .matches(':popover-open'),
         ),
       )
-      .toBe('date');
+      .toBe(true);
 
-    // THE POINT: the calendar pushed a dismiss frame on top of the editor's, so
+    // THE POINT: the calendar is an open popover on top of the editor, so
     // this Escape belongs to the calendar. The editor — and the user's unsaved
     // edits — must survive it.
     await page.keyboard.press('Escape');
@@ -1136,11 +1136,11 @@ test.describe('scheduler — nested datetime picker in the editor (R20)', () => 
         schedulerRoot(page).evaluate(
           (sched) =>
             sched
-              .shadowRoot!.querySelector('mp-datetime-picker.editor-start-input')!
-              .getAttribute('data-open'),
+              .shadowRoot!.querySelector('mp-datetime-picker.editor-start-input .datetime-picker-popup-date')!
+              .matches(':popover-open'),
         ),
       )
-      .toBeNull();
+      .toBe(false);
     expect(
       await schedulerRoot(page).evaluate(
         (sched) => !!sched.shadowRoot!.querySelector('.scheduler-event-editor'),
@@ -1202,28 +1202,26 @@ test.describe('scheduler — editing an event moves it (B30)', () => {
       )
       .toBe(true);
 
-    await page.locator('mp-datetime-picker.editor-start-input button.date').click();
+    await page.locator('mp-datetime-picker.editor-start-input button.datetime-picker-date').click();
     await expect
       .poll(() =>
         schedulerRoot(page).evaluate((sched) =>
           sched
-            .shadowRoot!.querySelector('mp-datetime-picker.editor-start-input')!
-            .getAttribute('data-open'),
+            .shadowRoot!.querySelector('mp-datetime-picker.editor-start-input .datetime-picker-popup-date')!
+            .matches(':popover-open'),
         ),
       )
-      .toBe('date');
+      .toBe(true);
 
-    // A real click on a real day cell, three shadow roots deep
-    // (scheduler → picker → calendar).
+    // A real click on a real day cell inside the scheduler's shadow root.
     const cell = await page.evaluate(() => {
       const sched = document.querySelector('mp-scheduler')!;
       const picker = sched.shadowRoot!.querySelector('mp-datetime-picker.editor-start-input')!;
-      const cal = picker.shadowRoot!.querySelector('mp-calendar')!;
       const all = Array.from(
-        cal.shadowRoot!.querySelectorAll<HTMLElement>('td[role="gridcell"]'),
+        picker.querySelectorAll<HTMLElement>('.datetime-picker-popup-date td[role="gridcell"]'),
       );
       // A day strictly AFTER the selected one: the assertion below is "later".
-      const selectedAt = all.findIndex((td) => td.classList.contains('selected'));
+      const selectedAt = all.findIndex((td) => td.classList.contains('calendar-day-selected'));
       const cells = all
         .slice(selectedAt + 1)
         .filter(

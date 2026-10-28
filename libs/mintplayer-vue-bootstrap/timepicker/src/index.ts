@@ -1,2 +1,2 @@
-export { default as BsTimepicker } from './BsTimepicker.vue';
-export { default as BsTimeList } from './BsTimeList.vue';
+export * from './generated';
+export type { Hour12Mode, TimeListLabels, TimepickerLabels, TimeStep } from '@mintplayer/ui-core/timepicker';

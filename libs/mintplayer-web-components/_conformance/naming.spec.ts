@@ -6,6 +6,7 @@ import '@mintplayer/web-components/radio';
 import '@mintplayer/web-components/toggle-button';
 import '@mintplayer/web-components/datepicker';
 import '@mintplayer/web-components/timepicker';
+import '@mintplayer/web-components/datetime-picker';
 import '@mintplayer/web-components/tree-select';
 import '@mintplayer/web-components/typeahead';
 import '@mintplayer/web-components/timeline';
@@ -73,6 +74,7 @@ const CASES: NamingCase[] = [
   { tag: 'mp-toggle-button', target: 'input' },
   { tag: 'mp-datepicker', target: 'input.form-control', defaultName: 'Selected date' },
   { tag: 'mp-timepicker', target: 'input.form-control', defaultName: 'Selected time' },
+  { tag: 'mp-datetime-picker', target: 'input.form-control', defaultName: 'Selected date and time' },
   // Placeholder-less tree-select falls back to 'Search' for its combobox input.
   { tag: 'mp-tree-select', target: 'input.ts-search', defaultName: 'Search' },
   // Headless-core front (#436): the combobox input is the role-bearing node.

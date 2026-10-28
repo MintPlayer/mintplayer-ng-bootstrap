@@ -236,6 +236,36 @@ breaking change is a major. (2.20.0 and 2.21.0 broke `^2.x` consumers in a minor
     - `labels` localises the month buttons and the week column.
   - **Lit:** `mp-calendar` renders in the light DOM (no shadow root). Its classes are now `calendar-*`
     (`calendar-day-selected`, `calendar-chevron-previous`, …). `MpCalendarElement` is now `MpCalendar`.
+- **Datepicker, timepicker and datetime picker are generated from one source in every front (issue #437,
+  wave B).** Each is written once in `@mintplayer/ui-core/{datepicker,timepicker,datetime-picker}` and
+  compiled into all four fronts. With JS off each is a native `date` / `time` / `datetime-local` field that
+  submits `name` with the form and honours `min`, `max` and `step`. Once hydrated, the field becomes a
+  readonly display, a hidden input carries `name` (ISO `YYYY-MM-DD`, `HH:MM` or `YYYY-MM-DDTHH:MM`), and the
+  triggers open the grid and the slot list in native `popover="auto"` popups. The browser handles Escape,
+  light dismiss and focus return. The popups no longer animate in.
+  - **Every front:**
+    - `selectedDate` / `selectedTime` default to `null` (Angular defaulted to now).
+    - The events are `selecteddatechange`, `selectedtimechange` and `valuechange` (the Lit datetime picker
+      emitted `value-change`). React has `onSelectedDateChange` / `onSelectedTimeChange` / `onValueChange`,
+      which receive the value rather than an event. Vue has `v-model:selected-date` / `v-model:selected-time`
+      / `v-model:value`.
+    - Open state is an `openChange` event. The timepicker's `isOpen` model and the datetime picker's
+      `opened` / `closed` outputs are gone. The methods are `open()` / `close()`, or `openDate()`,
+      `openTime()`, `closePopups()` and `clear()` on the datetime picker.
+    - Accessible names go through `labels`, which replaces `triggerLabel`, `dateButtonLabel`,
+      `timeButtonLabel`, `clearLabel`, `todayLabel` and `nowLabel`. `calendarLabels` localises the grid.
+      `inputLabel` names the field.
+    - Each takes `name`, `required`, `invalid` and `errorText` (the forms contract). `min` / `max` default to
+      `null`, not `undefined`.
+  - **Angular:** every picker keeps a `ControlValueAccessor` and a validator (`min`, `max`, `disabledDate`)
+    as a host directive (`BsDatepickerValueAccessor`, `BsTimepickerValueAccessor`,
+    `BsDatetimePickerValueAccessor`). `BsControlValidityDirective` carries the control's errors to the field.
+  - **Lit:** `mp-datepicker`, `mp-timepicker`, `mp-time-list` and `mp-datetime-picker` render in the light DOM
+    (no shadow root, no `part`s, no `data-open`). A shadow-root host must call `adoptLightStyles` and provide
+    Bootstrap's `.input-group` / `.btn`, as `mp-scheduler` now does. The classes are prefixed
+    (`datetime-picker-date`, `time-slot`, …), and the host's `focus()` override is gone; focus the
+    `.form-control` field instead. `MpDatepickerElement`, `MpTimepickerElement` and `MpDatetimePickerElement`
+    are now `MpDatepicker`, `MpTimepicker` and `MpDatetimePicker`.
 
 
 

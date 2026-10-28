@@ -2,7 +2,7 @@ import { DemoFormStateComponent } from '../../../../components/form-state/form-s
 import { BsGridComponent, BsGridRowDirective, BsGridColumnDirective } from '@mintplayer/ng-bootstrap/grid';
 import { FormsModule, ReactiveFormsModule, FormControl } from '@angular/forms';
 import { DatePipe } from '@angular/common';
-import { Component, model, ChangeDetectionStrategy, signal } from '@angular/core';
+import { Component, ChangeDetectionStrategy, signal } from '@angular/core';
 import { BsCodeSnippetComponent } from '@mintplayer/ng-bootstrap/code-snippet';
 import { BsDatepickerComponent } from '@mintplayer/ng-bootstrap/datepicker';
 import { dedent } from 'ts-dedent';
@@ -27,7 +27,7 @@ export class DatepickerComponent {
   `;
 
 
-  selectedDate = model(new Date());
+  protected readonly selectedDate = signal<Date | null>(new Date());
   disableDate = (date: Date) => {
     return date.getDate() % 2 === 0;
   }

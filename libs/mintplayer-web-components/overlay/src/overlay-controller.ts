@@ -249,9 +249,24 @@ export class OverlayController implements ReactiveController {
    * under a nested overlay it contains (an editor closing when the user meant
    * to close the date picker inside it). Decline when this is false, and do not
    * stop propagation, so the event still reaches the layer that owns it.
+   *
+   * A native popover open inside the panel is a layer too, outside the stack:
+   * the browser closes it on that Escape, so the overlay is not top-most.
    */
   get isTopmost(): boolean {
-    return this.isTopOfStack();
+    return this.isTopOfStack() && !this.hasOpenNestedPopover();
+  }
+
+  private hasOpenNestedPopover(): boolean {
+    const popovers = this.options.panel()?.querySelectorAll<HTMLElement>('[popover]') ?? [];
+    return [...popovers].some((popover) => {
+      try {
+        return popover.matches(':popover-open');
+      } catch {
+        // An engine without popover support has no popover open.
+        return false;
+      }
+    });
   }
 
   async open(): Promise<void> {
@@ -634,7 +649,7 @@ export class OverlayController implements ReactiveController {
   }
 
   private onKeyDown = (event: KeyboardEvent): void => {
-    if (event.key === 'Escape' && this._open && this.isTopOfStack()) {
+    if (event.key === 'Escape' && this._open && this.isTopmost) {
       this.close();
       event.preventDefault();
     }

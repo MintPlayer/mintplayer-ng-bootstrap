@@ -487,7 +487,7 @@ describe('custom-elements.json property / attribute table', () => {
   });
 
   describe('pinned: the time-list step can never stall the slot loop', () => {
-    const slotCount = (el: Host) => (el.shadowRoot ?? el).querySelectorAll('button.slot').length;
+    const slotCount = (el: Host) => (el.shadowRoot ?? el).querySelectorAll('button.time-slot').length;
 
     it.each([
       ['removed', null],

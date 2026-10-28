@@ -1,1 +1,2 @@
-export * from './mp-datetime-picker.element';
+export * from './generated';
+export type { DatetimePickerLabels, DatetimePopup, TimePart } from '@mintplayer/ui-core/datetime-picker';

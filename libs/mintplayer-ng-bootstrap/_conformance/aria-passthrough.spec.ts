@@ -3,9 +3,6 @@ import { TestBed } from '@angular/core/testing';
 
 import { BsCarouselComponent } from '@mintplayer/ng-bootstrap/carousel';
 import { BsCodeSnippetComponent } from '@mintplayer/ng-bootstrap/code-snippet';
-import { BsDatepickerComponent } from '@mintplayer/ng-bootstrap/datepicker';
-import { BsDatetimePickerComponent } from '@mintplayer/ng-bootstrap/datetime-picker';
-import { BsTimepickerComponent } from '@mintplayer/ng-bootstrap/timepicker';
 import { BsHierarchyChartComponent } from '@mintplayer/ng-bootstrap/charts/hierarchy';
 import { BsTrendChartComponent } from '@mintplayer/ng-bootstrap/charts/trend';
 import { BsDatatableComponent } from '@mintplayer/ng-bootstrap/datatable';
@@ -120,9 +117,6 @@ interface WrapperCase {
 const WRAPPERS: WrapperCase[] = [
   { selector: 'bs-carousel', tag: 'mp-carousel', component: BsCarouselComponent },
   { selector: 'bs-code-snippet', tag: 'mp-code-snippet', component: BsCodeSnippetComponent },
-  { selector: 'bs-datepicker', tag: 'mp-datepicker', component: BsDatepickerComponent },
-  { selector: 'bs-datetime-picker', tag: 'mp-datetime-picker', component: BsDatetimePickerComponent },
-  { selector: 'bs-timepicker', tag: 'mp-timepicker', component: BsTimepickerComponent },
   { selector: 'bs-hierarchy-chart', tag: 'mp-hierarchy-chart', component: BsHierarchyChartComponent },
   { selector: 'bs-trend-chart', tag: 'mp-trend-chart', component: BsTrendChartComponent },
   { selector: 'bs-datatable', tag: 'mp-datatable', component: BsDatatableComponent },
@@ -204,7 +198,7 @@ async function render(entry: WrapperCase): Promise<{ host: HTMLElement; target: 
  * M4, whose front writes the attributes onto its own markup; patching the wrapper first
  * would be deleted with it. Remove an entry when its component converts.
  */
-const PENDING_437 = new Set(['bs-code-snippet', 'bs-datepicker', 'bs-datetime-picker', 'bs-timepicker']);
+const PENDING_437 = new Set(['bs-code-snippet']);
 
 describe('Angular wrapper ARIA passthrough', () => {
   afterEach(() => {

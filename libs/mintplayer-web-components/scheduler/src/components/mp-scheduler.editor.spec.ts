@@ -18,6 +18,13 @@ import {
 useFakeAnimationFrames();
 
 /**
+ * A user's pick in an `<mp-datetime-picker>`: the picker reports it as
+ * `valuechange`, and the scheduler only ever reads it from there.
+ */
+const pick = (picker: HTMLElement, value: Date | null) =>
+  picker.dispatchEvent(new CustomEvent('valuechange', { detail: value }));
+
+/**
  * M23 (R20) — the built-in event editor: a popover anchored to the event,
  * emitting the SAME requests every other surface emits (Save = event-update,
  * Delete = event-delete). §8.4 non-goal 3 reversed by user decision.
@@ -25,6 +32,11 @@ useFakeAnimationFrames();
 describe('mp-scheduler — built-in event editor (M23)', () => {
   let el: MpScheduler;
   afterEach(() => el?.remove());
+
+  /** The scheduler's own live region — each editor picker renders one too. */
+  const announcement = () =>
+    [...el.shadowRoot!.querySelectorAll('[role="status"]')].find((r) => !r.closest('mp-datetime-picker'))
+      ?.textContent;
 
   const EV = {
     id: 'task',
@@ -97,9 +109,8 @@ describe('mp-scheduler — built-in event editor (M23)', () => {
     // <mp-datetime-picker>: `value` is a Date, so no string round-trip.
     const end = editor()!.querySelector<HTMLElement & {
       value: Date | null;
-      setValue: (n: Date | null, emit?: boolean) => void;
     }>('mp-datetime-picker.editor-end-input')!;
-    end.setValue(new Date(2026, 4, 12, 11, 30));
+    pick(end, new Date(2026, 4, 12, 11, 30));
     await settle();
     let detail: { event: { title: string; end: Date }; oldEvent: { title: string } } | null = null;
     el.addEventListener('event-update', (e) => {
@@ -184,7 +195,7 @@ describe('mp-scheduler — built-in event editor (M23)', () => {
       save();
       await settle();
 
-      expect(el.shadowRoot!.querySelector('[role="status"]')?.textContent).not.toContain(
+      expect(announcement()).not.toContain(
         'Title is required',
       );
       // And exactly one message node exists, not one per field.
@@ -203,11 +214,7 @@ describe('mp-scheduler — built-in event editor (M23)', () => {
       expect(editor()!.querySelectorAll('.invalid-feedback').length).toBe(1);
 
       // Touching the END leaves the still-empty title marked.
-      editor()!
-        .querySelector<HTMLElement & { setValue: (n: Date | null, emit?: boolean) => void }>(
-          'mp-datetime-picker.editor-end-input',
-        )!
-        .setValue(new Date(2026, 4, 12, 11, 0));
+      pick(editor()!.querySelector<HTMLElement>('mp-datetime-picker.editor-end-input')!, new Date(2026, 4, 12, 11, 0));
       await settle();
       expect(editor()!.querySelectorAll('.invalid-feedback').length).toBe(1);
 
@@ -228,12 +235,9 @@ describe('mp-scheduler — built-in event editor (M23)', () => {
       await settle();
 
       const endPicker = editor()!.querySelector<HTMLElement>('mp-datetime-picker.editor-end-input')!;
-      expect(el.shadowRoot!.activeElement).toBe(endPicker);
-      // focus() delegates to the display input — the node carrying the name,
-      // the invalid state and the description.
-      expect(endPicker.shadowRoot!.activeElement).toBe(
-        endPicker.shadowRoot!.querySelector('input.form-control'),
-      );
+      // Focus lands on the picker's field — the node carrying the name, the
+      // invalid state and the description.
+      expect(el.shadowRoot!.activeElement).toBe(endPicker.querySelector('input.form-control'));
     });
   });
 
@@ -287,7 +291,6 @@ describe('mp-scheduler — built-in event editor (M23)', () => {
       editor()!.querySelector<HTMLElement & {
         value: Date | null;
         disabled: boolean;
-        setValue: (n: Date | null, emit?: boolean) => void;
       }>(`mp-datetime-picker.${cls}`)!;
 
     const openWith = async (permissions: Record<string, unknown>) => {
@@ -300,7 +303,7 @@ describe('mp-scheduler — built-in event editor (M23)', () => {
       expect(picker('editor-start-input').disabled).toBe(false);
       expect(picker('editor-end-input').disabled).toBe(false);
 
-      picker('editor-start-input').setValue(new Date(2026, 4, 12, 11, 0));
+      pick(picker('editor-start-input'), new Date(2026, 4, 12, 11, 0));
       await settle();
       // Duration preserved — the end followed.
       expect(picker('editor-end-input').value!.getTime()).toBe(
@@ -314,7 +317,7 @@ describe('mp-scheduler — built-in event editor (M23)', () => {
       // Editing the end ALONE is a resize, which is denied.
       expect(picker('editor-end-input').disabled).toBe(true);
 
-      picker('editor-start-input').setValue(new Date(2026, 4, 12, 11, 0));
+      pick(picker('editor-start-input'), new Date(2026, 4, 12, 11, 0));
       await settle();
 
       let detail: { event: { start: Date; end: Date } } | null = null;
@@ -335,19 +338,19 @@ describe('mp-scheduler — built-in event editor (M23)', () => {
       expect(picker('editor-end-input').disabled).toBe(false);
 
       // Well inside the range: the end holds still.
-      picker('editor-start-input').setValue(new Date(2026, 4, 12, 9, 15));
+      pick(picker('editor-start-input'), new Date(2026, 4, 12, 9, 15));
       await settle();
       expect(picker('editor-end-input').value!.getTime()).toBe(
         new Date(2026, 4, 12, 10, 0).getTime(),
       );
 
       // Past the end: clamped to one slot before it, and said out loud.
-      picker('editor-start-input').setValue(new Date(2026, 4, 12, 12, 0));
+      pick(picker('editor-start-input'), new Date(2026, 4, 12, 12, 0));
       await settle();
       expect(picker('editor-start-input').value!.getTime()).toBe(
         new Date(2026, 4, 12, 9, 30).getTime(),
       );
-      expect(el.shadowRoot!.querySelector('[role="status"]')?.textContent).toContain(
+      expect(announcement()).toContain(
         'Start adjusted to',
       );
     });
@@ -430,31 +433,28 @@ describe('mp-scheduler — built-in event editor (M23)', () => {
   });
 
   /**
-   * The editor CONTAINS overlays (each <mp-datetime-picker> opens its own). The
-   * scheduler's Escape handler sits on the host, so it runs BEFORE any
-   * document-level one — without deferring to the dismiss stack it would close
-   * the whole editor, and the user's unsaved edits with it, when they meant to
-   * dismiss a calendar.
+   * The editor CONTAINS popovers (each <mp-datetime-picker> has a grid and a
+   * list). The browser closes an open one on Escape, but the scheduler's
+   * handler runs first — without stepping aside it would close the whole
+   * editor, and the user's unsaved edits with it, when they meant to dismiss a
+   * calendar.
    */
-  it('Escape closes a nested picker popup, not the editor', async () => {
+  it('Escape aimed at an open picker popover leaves the editor open', async () => {
     await mountWeek();
     await openViaF2();
-    const picker = editor()!.querySelector<HTMLElement & { openDate?: () => Promise<void> }>(
-      'mp-datetime-picker.editor-start-input',
-    )!;
-    // Open the date popup through the picker's own trigger, as a user would.
-    const trigger = picker.shadowRoot!.querySelector<HTMLElement>('button.date')!;
-    trigger.click();
-    await settle();
-    expect(picker.getAttribute('data-open')).toBe('date');
+    const picker = editor()!.querySelector<HTMLElement>('mp-datetime-picker.editor-start-input')!;
+    const popup = picker.querySelector<HTMLElement>('.datetime-picker-popup-date')!;
+    // jsdom has no popover API: stand in for the browser's open state.
+    const matches = popup.matches.bind(popup);
+    popup.matches = (selector: string) => selector === ':popover-open' || matches(selector);
 
     // First Escape: the calendar owns it — the editor must survive.
     dispatchKey(el, 'Escape');
     await settle();
     expect(editor()).not.toBeNull();
-    expect(picker.getAttribute('data-open')).toBeNull();
 
-    // Second Escape: nothing is on top of the editor now, so it closes.
+    // Second Escape: the browser closed the popover, so the editor closes.
+    popup.matches = matches;
     dispatchKey(el, 'Escape');
     await settle();
     expect(editor()).toBeNull();
@@ -473,12 +473,10 @@ describe('mp-scheduler — built-in event editor (M23)', () => {
     const picker = (cls: string) =>
       editor()!.querySelector<HTMLElement & {
         value: Date | null;
-        setValue: (n: Date | null, emit?: boolean) => void;
       }>(`mp-datetime-picker.${cls}`)!;
 
-    // The user picks a start two days later — through setValue(), which is what
-    // the calendar itself calls, so the `value-change` this relies on fires.
-    picker('editor-start-input').setValue(new Date(2026, 4, 14, 9, 0));
+    // The user picks a start two days later.
+    pick(picker('editor-start-input'), new Date(2026, 4, 14, 9, 0));
     await settle();
 
     // The end followed, LIVE and visibly, keeping the original 1h duration.
@@ -506,10 +504,9 @@ describe('mp-scheduler — built-in event editor (M23)', () => {
     const picker = (cls: string) =>
       editor()!.querySelector<HTMLElement & {
         value: Date | null;
-        setValue: (n: Date | null, emit?: boolean) => void;
       }>(`mp-datetime-picker.${cls}`)!;
 
-    picker('editor-end-input').setValue(new Date(2026, 4, 12, 12, 0));
+    pick(picker('editor-end-input'), new Date(2026, 4, 12, 12, 0));
     await settle();
     expect(picker('editor-start-input').value!.getTime()).toBe(
       new Date(2026, 4, 12, 9, 0).getTime(),
@@ -530,14 +527,13 @@ describe('mp-scheduler — built-in event editor (M23)', () => {
         value: Date | null;
         min: Date | null;
         max: Date | null;
-        setValue: (n: Date | null, emit?: boolean) => void;
       }>(`mp-datetime-picker.${cls}`)!;
 
     it('an earlier time on the same day clamps to one slot, and says so', async () => {
       await mountWeek();
       await openViaF2();
 
-      picker('editor-end-input').setValue(new Date(2026, 4, 12, 8, 0));
+      pick(picker('editor-end-input'), new Date(2026, 4, 12, 8, 0));
       await settle();
 
       // One 30-minute slot after the 09:00 start — the floor keyboard resize
@@ -548,7 +544,7 @@ describe('mp-scheduler — built-in event editor (M23)', () => {
       expect(picker('editor-start-input').value!.getTime()).toBe(
         new Date(2026, 4, 12, 9, 0).getTime(),
       );
-      expect(el.shadowRoot!.querySelector('[role="status"]')?.textContent).toContain(
+      expect(announcement()).toContain(
         'End adjusted to',
       );
     });
@@ -557,13 +553,13 @@ describe('mp-scheduler — built-in event editor (M23)', () => {
       await mountWeek();
       await openViaF2();
 
-      picker('editor-end-input').setValue(new Date(2026, 4, 14, 8, 0)); // a LATER day
+      pick(picker('editor-end-input'), new Date(2026, 4, 14, 8, 0)); // a LATER day
       await settle();
 
       expect(picker('editor-end-input').value!.getTime()).toBe(
         new Date(2026, 4, 14, 8, 0).getTime(),
       );
-      expect(el.shadowRoot!.querySelector('[role="status"]')?.textContent).not.toContain(
+      expect(announcement()).not.toContain(
         'End adjusted to',
       );
     });
@@ -585,7 +581,7 @@ describe('mp-scheduler — built-in event editor (M23)', () => {
       await mountWeek();
       await openViaF2();
 
-      picker('editor-start-input').setValue(new Date(2026, 4, 14, 9, 0));
+      pick(picker('editor-start-input'), new Date(2026, 4, 14, 9, 0));
       await settle();
 
       expect(picker('editor-end-input').min!.getTime()).toBe(
@@ -776,11 +772,10 @@ describe('mp-scheduler — the editor survives a re-render (B31)', () => {
     const startPicker = () =>
       el.shadowRoot!.querySelector<HTMLElement & {
         value: Date | null;
-        setValue: (n: Date | null, emit?: boolean) => void;
       }>('mp-datetime-picker.editor-start-input')!;
 
     // The user moves the event two days later.
-    startPicker().setValue(new Date(2026, 4, 14, 9, 0));
+    pick(startPicker(), new Date(2026, 4, 14, 9, 0));
     await settle();
     expect(startPicker().value!.getTime()).toBe(new Date(2026, 4, 14, 9, 0).getTime());
 

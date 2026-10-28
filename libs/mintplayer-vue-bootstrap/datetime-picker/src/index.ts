@@ -1,1 +1,2 @@
-export { default as BsDatetimePicker } from './BsDatetimePicker.vue';
+export * from './generated';
+export type { DatetimePickerLabels, DatetimePopup, TimePart } from '@mintplayer/ui-core/datetime-picker';

@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { BsDatetimePicker } from '@mintplayer/react-bootstrap/datetime-picker';
 import { BsCodeSnippet } from '@mintplayer/react-bootstrap/code-snippet';
 
-const SOURCE = `<BsDatetimePicker value={dt} onValueChange={e => setDt(e.detail)} />`;
+const SOURCE = `<BsDatetimePicker value={dt} onValueChange={setDt} name="appointment" />`;
 
 const BOUNDS_SOURCE = `// A datetime bound, so the TIME half matters: on the bound's own day it
 // also limits the time list. A bare new Date(2026, 11, 31) is midnight.
@@ -10,7 +10,7 @@ const min = new Date(2026, 0, 1, 9, 0);
 const max = new Date(2026, 11, 31, 17, 0);
 
 <BsDatetimePicker value={dt} min={min} max={max} showClear
-                  onValueChange={e => setDt(e.detail)} />`;
+                  onValueChange={setDt} />`;
 
 // Deliberately carrying a time: these bound the datetime, and on their own day
 // the time list narrows to match.
@@ -27,14 +27,16 @@ export function DatetimePickerPage() {
       <p className="text-body-secondary">
         Single readonly input with two popups — a calendar for the date,
         a time list for the hour/minute. Both share one <code>Date</code>
-        value.
+        value. With JavaScript off it is a native <code>datetime-local</code>{' '}
+        field that submits <code>name</code> with the form.
       </p>
 
       <section>
         <h2>Default</h2>
         <BsDatetimePicker
           value={dt}
-          onValueChange={(e: CustomEvent<Date | null>) => setDt(e.detail)}
+          onValueChange={setDt}
+          name="appointment"
         />
         <p className="text-body-secondary mt-2">
           Selected: <code>{dt ? dt.toISOString() : '—'}</code>
@@ -53,7 +55,7 @@ export function DatetimePickerPage() {
           min={BOUNDS_MIN}
           max={BOUNDS_MAX}
           showClear
-          onValueChange={(e: CustomEvent<Date | null>) => setBounded(e.detail)}
+          onValueChange={setBounded}
         />
         <p className="text-body-secondary mt-2">
           Selected: <code>{bounded ? bounded.toISOString() : '—'}</code>

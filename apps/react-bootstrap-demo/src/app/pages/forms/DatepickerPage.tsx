@@ -2,30 +2,23 @@ import { useState } from 'react';
 import { BsDatepicker } from '@mintplayer/react-bootstrap/datepicker';
 import { BsCodeSnippet } from '@mintplayer/react-bootstrap/code-snippet';
 
-const SOURCE = `<BsDatepicker selectedDate={date} onSelectedDateChange={e => setDate(e.detail)} />`;
+const SOURCE = `<BsDatepicker selectedDate={date} onSelectedDateChange={setDate} name="date" />`;
 
 export function DatepickerPage() {
-  // mp-calendar expects a real Date for selectedDate — passing undefined
-  // crashes its `isSameDate` render path. Default to today, matching the
-  // Angular demo's `model<Date>(new Date())`.
-  const [date, setDate] = useState<Date>(() => new Date());
+  const [date, setDate] = useState<Date | null>(() => new Date());
 
   return (
     <div className="demo-page">
       <h1>Datepicker</h1>
       <p className="text-body-secondary">
-        A readonly input + calendar popup. Internally composes
-        <code> &lt;mp-calendar&gt; </code> via a default slot.
+        A date field with a month-grid popup. With JavaScript off it is a native date field.
       </p>
 
       <section>
         <h2>Default</h2>
-        <BsDatepicker
-          selectedDate={date}
-          onSelectedDateChange={(e: CustomEvent<Date>) => setDate(e.detail)}
-        />
+        <BsDatepicker selectedDate={date} onSelectedDateChange={setDate} name="date" />
         <p className="text-body-secondary mt-2">
-          Selected: <code>{date.toISOString().slice(0, 10)}</code>
+          Selected: <code>{date ? date.toDateString() : 'none'}</code>
         </p>
       </section>
 

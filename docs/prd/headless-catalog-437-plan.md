@@ -121,14 +121,15 @@ Every item below is authored as a D10 component source once M3b lands.
   - compiler additions it needed: `NATIVE_TAGS` (`<selectedcontent>`), `:value.prop` on a select as a React-only seed, `mp-attrs` (consumer attributes on a non-root element in React and Vue), a Lit `<slot>Renderer` per scoped slot, kebab-case Lit attributes, slot parameter types imported in Angular
   - left for every `mp-attrs` component: Angular and Lit keep consumer `aria-*` other than `aria-label` on the host
 - [x] dropdown-menu stays hand-written: its item, divider and header are attribute directives on the consumer's own `<li>`s, which a generated component cannot be
-- [ ] Angular `aria-passthrough.spec.ts` lists `PENDING_437` (calendar, code-snippet, datepicker, datetime-picker, timepicker): those wrappers do not forward ARIA today; drop each entry as its component converts
+- [ ] Angular `aria-passthrough.spec.ts` lists `PENDING_437` (code-snippet): that wrapper does not forward ARIA today; drop the entry when it converts
 - [x] otp-input: one D10 source (`ui-core/otp-input`), one real input in every front, the boxes decorative; `case` renamed `letterCase`; Angular CVA + `focus()` delegation as host directives
   - compiler fixes it needed: builtin output types (`string`) are not imported; the Vue `mp-attrs` merge coerces the bag's `class` to a string
 - [x] multi-range: one D10 source (`ui-core/multi-range`), native range inputs stacked on one track in every front; the core adds the neighbour constraint, the fill and press-on-track; Angular CVA as a host directive
   - compiler addition it needed: a `:style` bag below the root (Angular `[style]`, React `reactStyle()`, Lit `styleMap`), for the geometry custom properties of PRD D7
 - [x] calendar: one D10 source (`ui-core/calendar`); the grid, keymap and week numbers are pure functions and `attachCalendarGrid` is the shared DOM behaviour, so the pickers render the same grid; inert (disabled month buttons, no tabbable day) until hydrated
   - compiler fix it needed: a `kind: 'number'` Angular input casts `numberAttribute` to the declared type (a literal union such as `FirstDayOfWeek`)
-- [ ] datepicker, timepicker (+ time-list), datetime-picker
+- [x] datepicker, timepicker (+ time-list), datetime-picker: one D10 source each; a native `date` / `time` / `datetime-local` field before hydration, then a readonly display + hidden `name` input + native `popover="auto"` popups placed by `ui-core/overlay` `trackPopovers`; Angular CVA + validator as host directives
+  - `mp-scheduler` (a shadow-root host) embeds `mp-datetime-picker`: it now adopts the light sheets and ships `_styles/input-group.styles` (Bootstrap `.input-group` + `.btn`), and its editor's Escape steps aside while a picker popover is open
 - [ ] signature-pad
 - [ ] theme-toggle (Q2)
 - [ ] code-snippet
