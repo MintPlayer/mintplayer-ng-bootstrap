@@ -1,302 +1,156 @@
-import { LitElement, html } from 'lit';
-import { navbarStyles } from '../styles';
-import type { NavbarExpandedChangeEventDetail } from '../types';
+import { LitElement } from 'lit';
+import { installLightStyles } from '@mintplayer/web-components/light-dom';
+import { applyHostProps, EMPTY_HOST_PROPS, LightChildren } from '@mintplayer/web-components/machine';
+import { DROPDOWN_MENU_SCOPE, dropdownMenuScopedStyles } from '@mintplayer/ui-core/dropdown-menu';
+import {
+  NAVBAR_SCOPE,
+  attachNavbar,
+  connectNavbar,
+  connectNavbarBrand,
+  navbarScopedStyles,
+  setNavbarExpanded,
+  type NavbarBreakpoint,
+  type NavbarExpandedChangeEventDetail,
+} from '@mintplayer/ui-core/navbar';
+import { navbarTemplate } from '../generated/navbar.view.generated';
+
+const BREAKPOINTS = new Set<string>(['xs', 'sm', 'md', 'lg', 'xl', 'xxl']);
+const BRAND = connectNavbarBrand();
+let instanceCounter = 0;
+
 
 /**
- * `<mp-navbar>` — a responsive Bootstrap navbar whose chrome (the bar, the
- * hamburger toggle, the collapsible region) lives in its shadow root, with the
- * responsive collapse driven by a pure-CSS state machine (see
- * `navbar.styles.scss`). It therefore works with JavaScript disabled when the
- * shadow root is present (server-rendered as Declarative Shadow DOM).
+ * `<mp-navbar>` — the Lit front of the navbar (#437), rendered in the light
+ * DOM from the template compiled out of `@mintplayer/ui-core/navbar`. The
+ * element itself is the `.navbar` root and the navigation landmark; the
+ * collapse is a checkbox and every dropdown a native `<details>`.
  *
- * Authoring (vanilla): slot the brand into `slot="brand"`, the nav items as the
- * default slot (they are per-element WCs — `mp-navbar-item` etc. — that style
- * themselves; the navbar only owns the bar chrome). The hamburger is the
- * `toggler` slot's fallback — an animated 3-bar → X glyph driven by the same
- * no-JS `:checked` machine as the collapse. Slot a custom glyph via
- * `slot="toggler"`: it must be NON-interactive (no `<button>`/`<a href>`, or
- * native label→checkbox click forwarding dies) and can derive its open-state
- * from the inherited `--mp-navbar-expanded: 0|1` custom property.
- *
- *     <mp-navbar breakpoint="lg" color="body-tertiary">
+ *     <mp-navbar breakpoint="lg" color="body-tertiary" label="Main">
  *       <a slot="brand" href="/">MyApp</a>
- *       <mp-navbar-item href="/home">Home</mp-navbar-item>
- *       …
+ *       <mp-navbar-nav>
+ *         <mp-navbar-item active><a href="/home">Home</a></mp-navbar-item>
+ *         <mp-navbar-dropdown label="Products">
+ *           <mp-navbar-item><a href="/widgets">Widgets</a></mp-navbar-item>
+ *         </mp-navbar-dropdown>
+ *       </mp-navbar-nav>
+ *       <mp-navbar-nav align="end">…</mp-navbar-nav>
  *     </mp-navbar>
  *
- * Attributes:
- *  - `breakpoint` — Bootstrap breakpoint name (`xs`…`xxl`, default `md`); at/above
- *    it the nav is inline and the hamburger hidden, below it the nav collapses.
- *  - `color` — background: a theme color (`primary`…`dark`) or an adaptive
- *    `body` / `body-secondary` / `body-tertiary`. Solid colors also set
- *    `data-bs-theme` on the host for text/link contrast.
- *  - `expanded` — programmatic collapse state (narrow mode); reflects the toggle.
- *  - `aria-label` — landmark label for the `<nav>` (default `Main navigation`).
- *  - `positioning` — `fixed` pins the bar to the top of the viewport, full width
- *    (like Bootstrap's `.fixed-top`); omit for the default in-flow bar. The
- *    consumer is responsible for offsetting page content below a fixed bar.
+ * The element moves its authored children into the rendered bar once:
+ * `slot="brand"` into the brand, `slot="toggler"` (a non-interactive glyph that
+ * reads `--mp-navbar-expanded: 0|1`) into the hamburger, the rest into the
+ * collapse. Children appended later land in the collapse.
  *
- * Events: `expandedchange` (`detail: { expanded }`) when the collapse toggles.
+ * Tier: JS-only — server-rendered pages use a framework front, which emits the
+ * same markup as plain HTML.
+ *
+ * Attributes: `breakpoint` (`xs`…`xxl`, default `md`), `color` (a theme
+ * colour or `body` / `body-secondary` / `body-tertiary`), `expanded`,
+ * `positioning` (`fixed`), `label` (the landmark name; an `aria-label` works too).
+ *
+ * Events: `expandedchange` (`detail: { expanded }`).
  */
 export class MpNavbar extends LitElement {
-  static override styles = [navbarStyles];
+  static override properties = {
+    breakpoint: { type: String, reflect: true },
+    color: { type: String, reflect: true },
+    expanded: { type: Boolean, reflect: true },
+    positioning: { type: String, reflect: true },
+    label: { type: String },
+  };
 
-  static override get observedAttributes(): string[] {
-    return [
-      ...(super.observedAttributes ?? []),
-      'breakpoint',
-      'color',
-      'expanded',
-      'aria-label',
-      'positioning',
-    ];
+  declare breakpoint: NavbarBreakpoint;
+  declare color: string | null;
+  declare expanded: boolean;
+  declare positioning: 'fixed' | null;
+  declare label: string | null;
+
+  readonly #id = `mp-navbar-${++instanceCounter}`;
+  readonly #children = new LightChildren(this);
+  #host = EMPTY_HOST_PROPS;
+  #hydrated = false;
+  #dispose: (() => void) | null = null;
+
+  constructor() {
+    super();
+    this.breakpoint = 'md';
+    this.color = null;
+    this.expanded = false;
+    this.positioning = null;
+    this.label = null;
   }
 
-  protected override createRenderRoot(): HTMLElement | DocumentFragment {
-    // DSD handoff — identical to mp-shell / the dropdown WCs.
-    const observed = (this.constructor as typeof LitElement & { observedAttributes: string[] }).observedAttributes;
-    if (!observed.includes('defer-hydration')) {
-      this.shadowRoot?.replaceChildren();
-    }
-    return super.createRenderRoot();
+  protected override createRenderRoot(): HTMLElement {
+    return this;
   }
 
   override connectedCallback(): void {
     super.connectedCallback();
-    // Mark JS as present so the no-JS `:focus-within` collapse reveal
-    // disengages (mirrors mp-navbar-dropdown). Without the gate, clicking a
-    // top-level nav link leaves focus on a still-visible anchor inside the
-    // collapse, and `:focus-within` holds the menu open against the
-    // dismiss-on-navigate `toggle(false)`.
-    this.setAttribute('data-js', '');
-    // Ensure the breakpoint is published even when the attribute is absent
-    // (attributeChangedCallback only fires when it's present/changes).
-    if (!this.style.getPropertyValue('--mp-navbar-breakpoint')) {
-      this.#publishBreakpoint(this.getAttribute('breakpoint'));
-    }
-    this.addEventListener('click', this.#onNavLinkClick);
+    this.label ??= this.getAttribute('aria-label');
   }
 
   override disconnectedCallback(): void {
     super.disconnectedCallback();
-    this.removeEventListener('click', this.#onNavLinkClick);
+    this.#dispose?.();
+    this.#dispose = null;
   }
 
-  /**
-   * Clicking a navigation link (an `<a href>` — a routerLink renders one) should
-   * dismiss the menu: close every open dropdown and, in small mode, slide the
-   * collapse shut. Dropdown *triggers* are `<a role="button">` with no `href`
-   * (excluded), so opening a dropdown doesn't collapse the bar. Collapsing in
-   * wide mode is a no-op (the collapse is always shown there).
-   */
-  #onNavLinkClick = (event: MouseEvent): void => {
-    const link = event
-      .composedPath()
-      .find(
-        (el): el is HTMLAnchorElement =>
-          el instanceof HTMLAnchorElement &&
-          el.hasAttribute('href') &&
-          !el.classList.contains('dropdown-toggle'),
-      );
-    if (!link) return;
-    this.querySelectorAll('mp-navbar-dropdown').forEach((d) =>
-      (d as HTMLElement & { close?: () => void }).close?.(),
-    );
-    this.toggle(false);
-  };
-
-  override attributeChangedCallback(name: string, oldValue: string | null, newValue: string | null): void {
-    super.attributeChangedCallback(name, oldValue, newValue);
-    if (name === 'color') {
-      this.#applyTheme(newValue);
-    } else if (name === 'breakpoint') {
-      this.#publishBreakpoint(newValue);
-    } else if (name === 'expanded') {
-      // Programmatic control: sync the checkbox + aria, without re-emitting
-      // (the attribute write is the consumer's own act, not a state change to
-      // announce back). Before the first render there is no checkbox yet —
-      // `<mp-navbar expanded>` in the initial HTML lands here — so it is held
-      // and applied in firstUpdated.
-      this.#applyExpanded(newValue !== null);
-    } else if (name === 'aria-label') {
-      this.requestUpdate();
-    }
-  }
-
-  /** Solid colors need `data-bs-theme` for text/link contrast; adaptive names inherit the page theme. */
-  #applyTheme(color: string | null): void {
-    const theme = this.#themeFor(color);
-    if (theme) this.setAttribute('data-bs-theme', theme);
-    else if (this.getAttribute('data-bs-theme')) this.removeAttribute('data-bs-theme');
-  }
-
-  #themeFor(color: string | null): 'light' | 'dark' | null {
-    if (!color) return null;
-    if (color === 'light' || color === 'white') return 'light';
-    if (color === 'body' || color === 'transparent' || color.startsWith('body-')) return null;
-    return 'dark'; // primary, secondary, success, danger, warning, info, dark
-  }
-
-  /** min-width px for each Bootstrap breakpoint (xs = always collapsed → 0). */
-  static readonly #BREAKPOINT_PX: Record<string, number> = {
-    xs: 0, sm: 576, md: 768, lg: 992, xl: 1200, xxl: 1400,
-  };
-
-  /**
-   * Publish the resolved breakpoint so DESCENDANT dropdowns (a different shadow
-   * tree) can switch inline↔overlay. `data-breakpoint` is a convenience for JS;
-   * `--mp-navbar-breakpoint` is the load-bearing channel — CSS custom properties
-   * inherit THROUGH shadow boundaries, so `mp-navbar-dropdown` reads the px in JS
-   * (matchMedia gate) without any DI/context.
-   */
-  #publishBreakpoint(name: string | null): void {
-    const key = name ?? 'md';
-    const px = MpNavbar.#BREAKPOINT_PX[key] ?? 768;
-    this.setAttribute('data-breakpoint', key);
-    this.style.setProperty('--mp-navbar-breakpoint', `${px}px`);
-  }
-
-  get #toggleInput(): HTMLInputElement | null {
-    return this.renderRoot?.querySelector<HTMLInputElement>('.navbar-toggle') ?? null;
-  }
-
-  /**
-   * A programmatic write that arrives before the shadow tree exists. The
-   * checkbox IS the state, so there is nowhere to put the value until it has
-   * rendered, and `render()` deliberately does not bind `checked` (re-rendering
-   * must never clobber what the user toggled). Held here and applied in
-   * `firstUpdated`.
-   */
-  #pendingExpanded: boolean | null = null;
-
-  /** Whether the collapse is (visually) expanded — the toggle's checked state. */
-  get expanded(): boolean {
-    return this.#toggleInput?.checked ?? this.#pendingExpanded ?? this.hasAttribute('expanded');
-  }
-  /**
-   * Accepts the empty string as ON, the way an HTML boolean attribute does.
-   *
-   * This is not defensive coding — it is the only reason `expanded` works
-   * outside vanilla usage. The React and Vue wrappers both lower a `true` to
-   * the attribute *shape* `''` (the DSD chrome and the no-JS CSS select on
-   * attributes, and only an attribute is serialised by SSR), but both
-   * frameworks route any name they find on the element's prototype through the
-   * PROPERTY instead — and `''` is falsy in JavaScript, so the property setter
-   * used to close the navbar when asked to open it. `expanded` was a silent
-   * no-op in two of the three frameworks.
-   *
-   * Programmatic writes do not emit `expandedchange`: setting the state is the
-   * consumer's own act, not a change to announce back to them. That matches
-   * the `expanded` ATTRIBUTE path, which has always been silent.
-   */
-  set expanded(v: boolean | '') {
-    this.#applyExpanded(v === '' ? true : !!v);
-  }
-
-  #applyExpanded(on: boolean): void {
-    if (this.#toggleInput) this.#setExpanded(on, false);
-    else this.#pendingExpanded = on;
-  }
-
-  /**
-   * The single write path for the collapse state: checkbox + `aria-expanded`
-   * (+ event). Programmatic writes (`toggle()`, the `expanded` attribute,
-   * dismiss-on-navigate) don't fire the checkbox's `change` event, so syncing
-   * aria only there left `aria-expanded` stale after every programmatic close.
-   */
-  #setExpanded(expanded: boolean, emit = true): void {
-    const input = this.#toggleInput;
-    if (!input) return;
-    input.checked = expanded;
-    input.setAttribute('aria-expanded', String(expanded));
-    if (emit) this.#emit(expanded);
-  }
-
-  /** Programmatically open/close the collapse. */
+  /** Open or close the collapse (narrow mode). */
   toggle(force?: boolean): void {
-    this.#setExpanded(force ?? !(this.#toggleInput?.checked ?? false));
+    const next = force ?? !this.expanded;
+    if (setNavbarExpanded(this, next) === null) return;
+    this.#report(next);
+  }
+
+  #report(expanded: boolean): void {
+    this.expanded = expanded;
+    this.dispatchEvent(
+      new CustomEvent<NavbarExpandedChangeEventDetail>('expandedchange', { detail: { expanded }, bubbles: true, composed: true }),
+    );
+  }
+
+  protected override willUpdate(): void {
+    this.#children.capture();
   }
 
   protected override firstUpdated(): void {
-    // The JS tier presents the toggle as a disclosure button with a live
-    // aria-expanded — #setExpanded keeps it true from here on. lit-ssr never
-    // runs this, so the static chrome stays a plain (honest) checkbox.
-    const input = this.#toggleInput;
-    if (input) {
-      input.setAttribute('role', 'button');
-      if (this.#pendingExpanded !== null) {
-        this.#setExpanded(this.#pendingExpanded, false);
-        this.#pendingExpanded = null;
-      } else {
-        input.setAttribute('aria-expanded', String(input.checked));
-      }
-    }
+    this.#hydrated = true;
+    this.#dispose = attachNavbar(this, { onExpandedChange: (expanded) => this.#report(expanded) });
+    this.requestUpdate();
   }
 
-  #onToggleChange = (): void => {
-    // Native toggle (label click / Space): the checked state already flipped.
-    this.#setExpanded(this.#toggleInput?.checked ?? false);
-  };
-
-  #onToggleKeydown = (event: KeyboardEvent): void => {
-    // The checkbox presents as a disclosure BUTTON (role=button); support
-    // Enter like a real button — native checkboxes only toggle on Space.
-    if (event.key === 'Enter') {
-      event.preventDefault();
-      this.toggle();
-    }
-  };
-
-  #emit(expanded: boolean): void {
-    this.dispatchEvent(
-      new CustomEvent<NavbarExpandedChangeEventDetail>('expandedchange', {
-        detail: { expanded },
-        bubbles: true,
-        composed: true,
-      }),
-    );
+  protected override updated(changed: Map<string, unknown>): void {
+    // The bag only seeds the checkbox; a later change must also reach one the user flipped.
+    if (changed.has('expanded') && changed.get('expanded') !== undefined) setNavbarExpanded(this, this.expanded);
   }
 
   override render() {
-    const label = this.getAttribute('aria-label') ?? 'Main navigation';
-    return html`
-      <nav class="navbar" part="nav" aria-label=${label}>
-        <slot name="brand"></slot>
-        <!-- No role="button"/aria-expanded HERE: this render is also the
-             static DSD chrome, where no script can keep aria-expanded true —
-             the native checkbox's checked state is the correct self-updating
-             channel with JS off. firstUpdated() upgrades the live tier. -->
-        <input
-          type="checkbox"
-          id="mp-navbar-toggle"
-          class="navbar-toggle"
-          aria-label="Toggle navigation"
-          aria-controls="navbar-collapse"
-          @change=${this.#onToggleChange}
-          @keydown=${this.#onToggleKeydown}
-        />
-        <label for="mp-navbar-toggle" class="navbar-toggler" part="toggler" aria-hidden="true">
-          <slot name="toggler">
-            <span class="navbar-toggler-bar"></span>
-            <span class="navbar-toggler-bar"></span>
-            <span class="navbar-toggler-bar"></span>
-          </slot>
-        </label>
-        <div class="navbar-collapse" id="navbar-collapse" part="collapse">
-          <div class="navbar-collapse-inner">
-            <!-- div, not ul: the flat-tree children are slotted item WCs, not
-                 <li>, so a native list violates the ul content model (axe
-                 "list", serious, on every page). Nav items in a nav landmark
-                 need no list semantics. -->
-            <div class="navbar-nav nav-start" part="nav-start"><slot></slot></div>
-            <div class="navbar-nav nav-end" part="nav-end"><slot name="end"></slot></div>
-          </div>
-        </div>
-      </nav>
-    `;
+    const view = connectNavbar({
+      id: this.#id,
+      breakpoint: BREAKPOINTS.has(this.breakpoint) ? this.breakpoint : 'md',
+      color: this.color,
+      positioning: this.positioning,
+      expanded: this.expanded,
+      hydrated: this.#hydrated,
+      labels: this.label ? { nav: this.label } : null,
+    });
+    this.#host = applyHostProps(this, this.#host, { ...view.root, role: 'navigation' });
+    const { brand, toggler, default: content } = this.#children.slots;
+    return navbarTemplate({ view, brand: BRAND, slots: { brand, toggler, default: content } });
   }
+}
+
+if (typeof document !== 'undefined' && document.head) {
+  installLightStyles(NAVBAR_SCOPE, navbarScopedStyles);
+  installLightStyles(DROPDOWN_MENU_SCOPE, dropdownMenuScopedStyles);
 }
 
 if (!customElements.get('mp-navbar')) {
   customElements.define('mp-navbar', MpNavbar);
+}
+
+declare global {
+  interface HTMLElementTagNameMap {
+    'mp-navbar': MpNavbar;
+  }
 }

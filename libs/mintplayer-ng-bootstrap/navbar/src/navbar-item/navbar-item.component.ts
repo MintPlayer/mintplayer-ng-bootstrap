@@ -1,5 +1,6 @@
 import { ChangeDetectionStrategy, Component, computed, inject, input } from '@angular/core';
 import { BS_DROPDOWN_MENU_CONTEXT } from '@mintplayer/ng-bootstrap/dropdown-menu';
+import { useHostProps } from '@mintplayer/ng-bootstrap/machine';
 import { connectNavbarItem } from '@mintplayer/ui-core/navbar';
 
 /**
@@ -15,14 +16,9 @@ import { connectNavbarItem } from '@mintplayer/ui-core/navbar';
  */
 @Component({
   selector: 'bs-navbar-item',
-  template: '<ng-content></ng-content>',
+  // Compiled from @mintplayer/ui-core/navbar's navbar-item.view.vue (codegen); the root is the host.
+  templateUrl: '../generated/navbar-item.view.generated.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  host: {
-    '[class]': 'bag()["class"]',
-    '[attr.data-mps]': 'bag()["data-mps"]',
-    '[attr.aria-disabled]': 'bag()["aria-disabled"]',
-    '[attr.aria-current]': 'bag()["aria-current"]',
-  },
 })
 export class BsNavbarItemComponent {
   readonly active = input(false);
@@ -34,4 +30,8 @@ export class BsNavbarItemComponent {
   protected readonly bag = computed(() =>
     connectNavbarItem({ inMenu: this.inMenu, active: this.active(), disabled: this.disabled() }),
   );
+
+  constructor() {
+    useHostProps(() => this.bag());
+  }
 }

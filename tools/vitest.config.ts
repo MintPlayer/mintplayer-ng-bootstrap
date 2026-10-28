@@ -19,7 +19,7 @@ export default defineConfig({
       reportsDirectory: '../coverage/tools',
       // Vitest 4 removed `coverage.all`: without an explicit `include`, a source
       // file no test imports is absent from the report rather than 0%.
-      include: ['scripts/**/*.mjs', 'vite/**/*.mts', 'lit-ssr-utils/**/*.mjs'],
+      include: ['scripts/**/*.mjs', 'vite/**/*.mts', 'lit-ssr-utils/**/*.mjs', 'front-templates/**/*.mjs'],
       exclude: [
         ...coverageConfigDefaults.exclude,
         '**/*.d.ts',

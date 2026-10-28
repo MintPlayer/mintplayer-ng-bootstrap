@@ -12,7 +12,8 @@ import {
   type NavbarExpandedChangeEventDetail,
   type NavbarLabels,
 } from '@mintplayer/ui-core/navbar';
-import { computed, onBeforeUnmount, onMounted, ref, useAttrs, useId, useTemplateRef, watch } from 'vue';
+import { computed, onBeforeUnmount, onMounted, ref, useAttrs, useId, useTemplateRef, watch, type ComponentPublicInstance } from 'vue';
+import NavbarTemplate from './generated/navbar.view.generated.vue';
 
 /**
  * `BsNavbar` — Bootstrap's navbar rendered from the headless
@@ -55,7 +56,9 @@ installLightStyles(DROPDOWN_MENU_SCOPE, dropdownMenuScopedStyles);
 // useId, not the instance uid: it matches between the server render and hydration.
 const id = `bs-navbar-${useId()}`;
 const attrs = useAttrs();
-const root = useTemplateRef<HTMLElement>('root');
+// The markup is the compiled ui-core template; its root element is the <nav>.
+const template = useTemplateRef<ComponentPublicInstance>('template');
+const root = computed(() => (template.value?.$el as HTMLElement | undefined) ?? null);
 const hydrated = ref(false);
 const isExpanded = ref(props.expanded);
 
@@ -95,18 +98,9 @@ watch(
 </script>
 
 <template>
-  <nav ref="root" v-bind="view.root">
-    <div v-if="$slots.brand" v-bind="brand"><slot name="brand" /></div>
-    <input v-bind="view.toggle" />
-    <label v-bind="view.toggler">
-      <slot name="toggler">
-        <span v-bind="view.bar" />
-        <span v-bind="view.bar" />
-        <span v-bind="view.bar" />
-      </slot>
-    </label>
-    <div v-bind="view.collapse">
-      <div v-bind="view.inner"><slot /></div>
-    </div>
-  </nav>
+  <NavbarTemplate ref="template" :view="view" :brand="brand">
+    <template v-if="$slots.brand" #brand><slot name="brand" /></template>
+    <template v-if="$slots.toggler" #toggler><slot name="toggler" /></template>
+    <slot />
+  </NavbarTemplate>
 </template>

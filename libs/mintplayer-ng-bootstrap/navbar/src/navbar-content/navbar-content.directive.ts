@@ -1,6 +1,8 @@
-import { afterNextRender, Directive, ElementRef, inject, input, OnDestroy, PLATFORM_ID, Renderer2 } from '@angular/core';
-import { isPlatformServer } from '@angular/common';
+import { afterNextRender, Directive, ElementRef, inject, input, OnDestroy, Renderer2, RendererStyleFlags2 } from '@angular/core';
 import { BsNavbarComponent } from '../navbar/navbar.component';
+
+/** The offset before the bar is measured: Bootstrap's default navbar is 3.5rem tall. */
+const ESTIMATE = 'var(--bs-navbar-content-offset, 3.5rem)';
 
 /**
  * `[bsNavbarContent]` — offsets page content below a `positioning="fixed"`
@@ -11,9 +13,9 @@ import { BsNavbarComponent } from '../navbar/navbar.component';
  *
  * On the client a `ResizeObserver` tracks the bar (theme/viewport changes
  * resize it) and sets `padding-top` = the element's own initial padding + the
- * bar height. On the server — where the bar can't be measured — a fixed 58px
- * approximation is serialized into the HTML so SSR/no-JS pages still clear the
- * bar.
+ * bar height. Until then (on the server, and with JavaScript off) the offset
+ * is CSS: `--bs-navbar-content-offset`, defaulting to 3.5rem, the height of
+ * Bootstrap's default navbar. A theme with a taller bar sets that property.
  */
 @Directive({
   selector: '[bsNavbarContent]',
@@ -22,24 +24,18 @@ export class BsNavbarContentDirective implements OnDestroy {
   /** The `bs-navbar` to clear — pass its template reference (`#nav`). */
   readonly navbar = input.required<BsNavbarComponent>({ alias: 'bsNavbarContent' });
 
-  /** Server-side height approximation (px) — the bar isn't measurable there. */
-  static readonly SSR_NAVBAR_HEIGHT = 58;
-
   readonly #element = inject<ElementRef<HTMLElement>>(ElementRef).nativeElement;
   readonly #renderer = inject(Renderer2);
   #observer?: ResizeObserver;
 
   constructor() {
-    if (isPlatformServer(inject(PLATFORM_ID))) {
-      this.#setPadding(BsNavbarContentDirective.SSR_NAVBAR_HEIGHT);
-      return;
-    }
+    this.#renderer.setStyle(this.#element, 'padding-top', ESTIMATE, RendererStyleFlags2.DashCase);
     afterNextRender(() => {
       // The bs-navbar host is the .navbar itself.
       const bar = this.navbar().elementRef.nativeElement;
-      // Hydration reuses the SSR element, so the 58px approximation this
-      // directive wrote server-side is still inline here. Remove it BEFORE
-      // measuring, or the author's baseline would double-count it.
+      // The CSS estimate is still inline here (hydration reuses the server
+      // element). Remove it BEFORE measuring, or the author's baseline would
+      // count it.
       this.#renderer.removeStyle(this.#element, 'padding-top');
       const initial = parseFloat(getComputedStyle(this.#element).paddingTop) || 0;
       this.#observer = new ResizeObserver(() => this.#setPadding(initial + bar.offsetHeight));

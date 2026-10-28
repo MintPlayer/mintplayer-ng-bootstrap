@@ -42,7 +42,7 @@ export const BsDropdownMenu = forwardRef<HTMLUListElement | null, BsDropdownMenu
   installLightStyles(DROPDOWN_MENU_SCOPE, dropdownMenuScopedStyles);
 
   const menuRef = useRef<HTMLUListElement>(null);
-  useImperativeHandle(ref, () => menuRef.current);
+  useImperativeHandle(ref, () => menuRef.current as HTMLUListElement);
   const [hydrated, setHydrated] = useState(false);
 
   const latest = useRef(onSelect);

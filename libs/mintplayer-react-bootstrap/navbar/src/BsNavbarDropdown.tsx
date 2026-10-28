@@ -1,7 +1,7 @@
 import * as React from 'react';
 import { useContext } from 'react';
 import { connectNavbarDropdown } from '@mintplayer/ui-core/navbar';
-import { reactProps } from '../../machine/src/react-props';
+import { NavbarDropdownTemplate } from './generated/navbar-dropdown.view.generated';
 import { NavbarNestingContext } from './navbar-context';
 
 export interface BsNavbarDropdownProps extends React.DetailsHTMLAttributes<HTMLDetailsElement> {
@@ -32,17 +32,9 @@ export const BsNavbarDropdown = React.forwardRef<HTMLDetailsElement, BsNavbarDro
 ) {
   const depth = useContext(NavbarNestingContext).depth + 1;
   const view = connectNavbarDropdown({ depth, active });
-  const { class: detailsClass, ...detailsBag } = view.details;
   return (
-    <details
-      ref={ref}
-      {...reactProps(detailsBag)}
-      {...rest}
-      className={[String(detailsClass), className].filter(Boolean).join(' ')}>
-      <summary {...reactProps(view.summary)}>{label}</summary>
-      <div {...reactProps(view.panel)}>
-        <NavbarNestingContext.Provider value={{ depth }}>{children}</NavbarNestingContext.Provider>
-      </div>
-    </details>
+    <NavbarDropdownTemplate view={view} slots={{ label }} className={className} attrs={rest} rootRef={ref}>
+      <NavbarNestingContext.Provider value={{ depth }}>{children}</NavbarNestingContext.Provider>
+    </NavbarDropdownTemplate>
   );
 });

@@ -2,6 +2,7 @@
 import { connectNavbarDropdown } from '@mintplayer/ui-core/navbar';
 import { computed, inject, provide } from 'vue';
 import { NAVBAR_DEPTH } from './navbar-context';
+import NavbarDropdownTemplate from './generated/navbar-dropdown.view.generated.vue';
 
 /**
  * `BsNavbarDropdown` — a navbar dropdown, or a submenu when nested.
@@ -30,8 +31,8 @@ const view = computed(() => connectNavbarDropdown({ depth, active: props.active 
 </script>
 
 <template>
-  <details v-bind="view.details">
-    <summary v-bind="view.summary"><slot name="label">{{ label }}</slot></summary>
-    <div v-bind="view.panel"><slot /></div>
-  </details>
+  <NavbarDropdownTemplate :view="view" :label="label">
+    <template v-if="$slots.label" #label><slot name="label" /></template>
+    <slot />
+  </NavbarDropdownTemplate>
 </template>

@@ -1,8 +1,8 @@
 # Plan — Headless core + four fronts for the whole catalog (#437)
 
 **PRD:** `docs/prd/headless-catalog-437.md`.
-**Status:** not started; PRD Proposed (2026-10-20).
-**Branch:** to be created with owner permission, from `master` after #438 merges.
+**Status:** in progress — M0–M3 done, M4 under way. Draft PR #439.
+**Branch:** `feat/headless-catalog-437`, rebased onto `master` at fd49127e on 2026-10-28 (picks up tile-manager #441, datatable fill mode #443, package versioning #445 / #447).
 **Delivery:** one PR. Commit per milestone; the test sweep runs once at the end (M9).
 
 Each component milestone is the same checklist, done for every component in the wave:
@@ -33,6 +33,7 @@ Each component milestone is the same checklist, done for every component in the 
 - [ ] S4 virtual window in React/Vue (before M5)
 - [ ] S10 query-builder editor contract (before M5)
 - [ ] S7 scheduler static grid go/no-go (before M6)
+- [x] S13 single template in the core, compiled into the four fronts (navbar prototype; gates the rest of M4)
 - [ ] Write each verdict into PRD §7, and update D1–D9 and C1–C8 accordingly
 
 ## M1 — Bootstrap baseline (PRD §6)
@@ -124,7 +125,7 @@ Each component milestone is the same checklist, done for every component in the 
 ## M6 — Wave D
 
 - [ ] file-manager
-- [ ] tile-manager
+- [x] tile-manager — landed on master separately as #440 / PR #441 (headless core + four fronts)
 - [ ] dock
 - [ ] ribbon (+ 17 children)
 - [ ] scheduler, per S7 and Q1
@@ -144,7 +145,7 @@ Each component milestone is the same checklist, done for every component in the 
 ## M8 — Docs
 
 - [ ] CLAUDE.md: rewrite the WC-authoring, SSR chrome, Bootstrap and wrapper-trap sections for the new architecture; add the Bootstrap layering rules (C1–C5)
-- [ ] CHANGELOG, plus version bumps for ui-core, web-components, ng, react and vue
+- [ ] CHANGELOG. No hand version bumps: since #445 every `package.json` holds `0.0.0-PLACEHOLDER` and the publish workflow plans the versions, so CHANGELOG entries name no version numbers.
 - [ ] PRD Status → Complete, with an as-built summary and deviations
 
 ## M9 — Verification (once, at the end)

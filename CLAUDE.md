@@ -186,6 +186,11 @@ is reversed** for components on this architecture. The typeahead is the referenc
   `data-mps="<name>"` on its own nodes (it is in the bags) and installs the sheet through the shared registry
   (`ui-core/scoped-styles`, which `web-components/light-dom` re-exports). Angular writes it into `DOCUMENT.head`
   on the server — no string post-processing. No `styleUrls`, no `::ng-deep`.
+- **Templates** (spike S13): a component's markup is written once, as
+  `ui-core/<name>/src/templates/<name>.view.vue` (Vue syntax, typed props/slots, IDE support for free), and
+  `tools/front-templates` compiles it into each front's `src/generated/` (gitignored; `mintplayer-ui-core:codegen`).
+  Fronts keep only their glue. The subset it accepts, and why, is in `tools/front-templates/README.md`; the
+  navbar is the reference.
 - **Angular front SSR**: render the whole tree (including hidden popups) so server and client DOM are
   identical; hydration then attaches to the same nodes. Drive everything from signals under OnPush.
 - **Fronts are transparent** to `aria-*`, `id`, `tabindex` — but never forward a consumer `role` onto a node

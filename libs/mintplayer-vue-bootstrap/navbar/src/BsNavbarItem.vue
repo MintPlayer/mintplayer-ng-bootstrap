@@ -2,6 +2,7 @@
 import { connectNavbarItem } from '@mintplayer/ui-core/navbar';
 import { computed, inject } from 'vue';
 import { NAVBAR_DEPTH } from './navbar-context';
+import NavbarItemTemplate from './generated/navbar-item.view.generated.vue';
 
 /**
  * `BsNavbarItem` — the wrapper around one consumer link or button. A
@@ -24,5 +25,5 @@ const bag = computed(() =>
 </script>
 
 <template>
-  <div v-bind="bag"><slot /></div>
+  <NavbarItemTemplate :bag="bag"><slot /></NavbarItemTemplate>
 </template>

@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { connectNavbarNav } from '@mintplayer/ui-core/navbar';
 import { computed } from 'vue';
+import NavbarNavTemplate from './generated/navbar-nav.view.generated.vue';
 
 /**
  * `BsNavbarNav` — one group of navbar entries (`.navbar-nav`). Holds
@@ -15,5 +16,5 @@ const bag = computed(() => connectNavbarNav(props.align ?? 'start'));
 </script>
 
 <template>
-  <div v-bind="bag"><slot /></div>
+  <NavbarNavTemplate :bag="bag"><slot /></NavbarNavTemplate>
 </template>

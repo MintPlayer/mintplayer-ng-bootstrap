@@ -13,7 +13,7 @@ import {
   type NavbarExpandedChangeEventDetail,
   type NavbarLabels,
 } from '@mintplayer/ui-core/navbar';
-import { reactProps } from '../../machine/src/react-props';
+import { NavbarTemplate } from './generated/navbar.view.generated';
 
 export interface BsNavbarProps extends React.HTMLAttributes<HTMLElement> {
   /** Bootstrap breakpoint name (`xs`…`xxl`, default `md`); at/above it the nav is inline. */
@@ -62,7 +62,7 @@ export const BsNavbar = forwardRef<HTMLElement | null, BsNavbarProps>(function B
   const reactId = useId();
   const id = `bs-navbar-${reactId.replace(/[^a-zA-Z0-9_-]/g, '')}`;
   const rootRef = useRef<HTMLElement>(null);
-  useImperativeHandle(ref, () => rootRef.current);
+  useImperativeHandle(ref, () => rootRef.current as HTMLElement);
   const [hydrated, setHydrated] = useState(false);
   const [isExpanded, setIsExpanded] = useState(expanded);
 
@@ -100,30 +100,19 @@ export const BsNavbar = forwardRef<HTMLElement | null, BsNavbarProps>(function B
     hydrated,
     labels: { ...(ariaLabel ? { nav: ariaLabel } : {}), ...(labels ?? {}) },
   });
-  const { class: rootClass, ...rootBag } = view.root;
-  // Uncontrolled: React must not fight the checkbox the user toggles.
-  const { checked, ...toggleBag } = view.toggle;
-
+  // The markup is the compiled ui-core template; the checkbox is uncontrolled
+  // there (reactFormProps), so React never fights the user's toggle.
   return (
-    <nav
-      ref={rootRef}
-      {...reactProps(rootBag)}
-      {...rest}
-      className={[String(rootClass), className].filter(Boolean).join(' ')}>
-      {brand !== undefined && <div {...reactProps(connectNavbarBrand())}>{brand}</div>}
-      <input {...reactProps(toggleBag)} defaultChecked={!!checked} />
-      <label {...reactProps(view.toggler)}>
-        {toggler ?? (
-          <>
-            <span {...reactProps(view.bar)} />
-            <span {...reactProps(view.bar)} />
-            <span {...reactProps(view.bar)} />
-          </>
-        )}
-      </label>
-      <div {...reactProps(view.collapse)}>
-        <div {...reactProps(view.inner)}>{children}</div>
-      </div>
-    </nav>
+    <NavbarTemplate
+      view={view}
+      brand={BRAND}
+      slots={{ brand, toggler }}
+      className={className}
+      attrs={rest}
+      rootRef={rootRef}>
+      {children}
+    </NavbarTemplate>
   );
 });
+
+const BRAND = connectNavbarBrand();

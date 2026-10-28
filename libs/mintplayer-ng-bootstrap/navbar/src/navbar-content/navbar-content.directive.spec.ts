@@ -35,17 +35,17 @@ describe('BsNavbarContentDirective', () => {
     globalThis.ResizeObserver = original;
   });
 
-  it('on the server, clears the bar by a fixed approximation', () => {
+  it('on the server, clears the bar by a CSS estimate a theme can override', () => {
     TestBed.configureTestingModule({ providers: [{ provide: PLATFORM_ID, useValue: 'server' }] });
     TestBed.overrideComponent(HostComponent, {
       set: { template: `<bs-navbar #nav></bs-navbar><main [bsNavbarContent]="nav">Page</main>` },
     });
     const fixture = TestBed.createComponent(HostComponent);
     fixture.detectChanges();
-    expect((fixture.nativeElement.querySelector('main') as HTMLElement).style.paddingTop).toBe(`${BsNavbarContentDirective.SSR_NAVBAR_HEIGHT}px`);
+    expect((fixture.nativeElement.querySelector('main') as HTMLElement).style.getPropertyValue('padding-top')).toBe('var(--bs-navbar-content-offset, 3.5rem)');
   });
 
-  it('in the browser, drops the server approximation and follows the bar\'s measured height', async () => {
+  it('in the browser, drops the CSS estimate and follows the bar\'s measured height', async () => {
     const fixture = TestBed.createComponent(HostComponent);
     fixture.detectChanges();
     await fixture.whenStable();

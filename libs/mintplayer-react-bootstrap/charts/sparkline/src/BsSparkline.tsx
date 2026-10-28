@@ -35,7 +35,7 @@ export const BsSparkline = forwardRef<HTMLSpanElement | null, BsSparklineProps>(
   installLightStyles(SPARKLINE_SCOPE, sparklineScopedStyles);
 
   const rootRef = useRef<HTMLSpanElement>(null);
-  useImperativeHandle(ref, () => rootRef.current);
+  useImperativeHandle(ref, () => rootRef.current as HTMLSpanElement);
   const [lang, setLang] = useState<string | undefined>(undefined);
   useEffect(() => setLang(rootRef.current?.closest('[lang]')?.getAttribute('lang') ?? undefined), []);
 

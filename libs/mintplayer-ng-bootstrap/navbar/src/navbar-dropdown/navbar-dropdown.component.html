@@ -1,7 +1,0 @@
-<details [mpProps]="view().details">
-    <summary [mpProps]="view().summary"><ng-container [ngTemplateOutlet]="label().templateRef"></ng-container></summary>
-    <!-- A div, not a ul: the projected items are bs-* hosts, never li. -->
-    <div [mpProps]="view().panel">
-        <ng-content></ng-content>
-    </div>
-</details>

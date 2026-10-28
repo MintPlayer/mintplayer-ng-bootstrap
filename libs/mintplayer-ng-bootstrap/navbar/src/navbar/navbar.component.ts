@@ -1,7 +1,7 @@
 import { NgTemplateOutlet } from '@angular/common';
-import { afterNextRender, ChangeDetectionStrategy, Component, computed, contentChild, DestroyRef, ElementRef, inject, input, linkedSignal, output, signal } from '@angular/core';
+import { afterNextRender, ChangeDetectionStrategy, Component, computed, contentChild, DestroyRef, effect, ElementRef, inject, input, linkedSignal, output, signal, untracked } from '@angular/core';
 import { BsIdService } from '@mintplayer/ng-bootstrap/a11y';
-import { MpPropsDirective, useScopedStyles } from '@mintplayer/ng-bootstrap/machine';
+import { MpPropsDirective, useHostProps, useScopedStyles } from '@mintplayer/ng-bootstrap/machine';
 import { DROPDOWN_MENU_SCOPE, dropdownMenuScopedStyles } from '@mintplayer/ui-core/dropdown-menu';
 import {
   NAVBAR_SCOPE,
@@ -9,6 +9,7 @@ import {
   connectNavbar,
   connectNavbarBrand,
   navbarScopedStyles,
+  setNavbarExpanded,
   type NavbarBreakpoint,
   type NavbarExpandedChangeEventDetail,
   type NavbarLabels,
@@ -41,18 +42,12 @@ import { BsNavbarTogglerDirective } from '../navbar-toggler-slot/navbar-toggler.
  */
 @Component({
   selector: 'bs-navbar',
-  templateUrl: './navbar.component.html',
+  // Compiled from @mintplayer/ui-core/navbar's navbar.view.vue (codegen).
+  templateUrl: '../generated/navbar.view.generated.html',
   imports: [MpPropsDirective, NgTemplateOutlet],
   changeDetection: ChangeDetectionStrategy.OnPush,
-  host: {
-    role: 'navigation',
-    '[class]': 'view().root["class"]',
-    '[attr.data-mps]': 'view().root["data-mps"]',
-    '[attr.data-breakpoint]': 'view().root["data-breakpoint"]',
-    '[attr.data-bs-theme]': 'view().root["data-bs-theme"]',
-    '[attr.aria-label]': 'view().root["aria-label"]',
-    '[attr.data-mp-hydrated]': 'view().root["data-mp-hydrated"] ? "" : null',
-  },
+  // The template's root is the host (mp-host): its bag lands here via useHostProps.
+  host: { role: 'navigation' },
 })
 export class BsNavbarComponent {
   /** Host element — measured by `[bsNavbarContent]` to offset page content. */
@@ -72,9 +67,14 @@ export class BsNavbarComponent {
   /** Fires when the collapse opens or closes through the bar. */
   readonly expandedchange = output<NavbarExpandedChangeEventDetail>();
 
-  protected readonly brand = contentChild(BsNavbarBrandDirective);
-  protected readonly toggler = contentChild(BsNavbarTogglerDirective);
-  protected readonly brandBag = connectNavbarBrand();
+  private readonly brandSlot = contentChild(BsNavbarBrandDirective);
+  private readonly togglerSlot = contentChild(BsNavbarTogglerDirective);
+  /** The template's named slots. */
+  protected readonly slots = computed(() => ({
+    brand: this.brandSlot()?.templateRef,
+    toggler: this.togglerSlot()?.templateRef,
+  }));
+  protected readonly brand = signal(connectNavbarBrand()).asReadonly();
 
   private readonly id = inject(BsIdService).next('bs-navbar');
   private readonly hostLabel = this.elementRef.nativeElement.getAttribute('aria-label');
@@ -95,6 +95,7 @@ export class BsNavbarComponent {
   );
 
   constructor() {
+    useHostProps(() => this.view().root);
     useScopedStyles(NAVBAR_SCOPE, navbarScopedStyles);
     useScopedStyles(DROPDOWN_MENU_SCOPE, dropdownMenuScopedStyles);
     const destroyRef = inject(DestroyRef);
@@ -107,6 +108,12 @@ export class BsNavbarComponent {
         },
       });
       destroyRef.onDestroy(dispose);
+    });
+    // The bag only seeds the checkbox; a changed input must also reach one the
+    // user already flipped, whose `checked` attribute no longer applies.
+    effect(() => {
+      const expanded = this.expanded();
+      if (untracked(this.hydrated)) setNavbarExpanded(this.elementRef.nativeElement, expanded);
     });
   }
 }

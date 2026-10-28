@@ -1,7 +1,7 @@
 import * as React from 'react';
 import { useContext } from 'react';
 import { connectNavbarItem } from '@mintplayer/ui-core/navbar';
-import { reactProps } from '../../machine/src/react-props';
+import { NavbarItemTemplate } from './generated/navbar-item.view.generated';
 import { NavbarNestingContext } from './navbar-context';
 
 export interface BsNavbarItemProps extends React.HTMLAttributes<HTMLDivElement> {
@@ -21,10 +21,9 @@ export const BsNavbarItem = React.forwardRef<HTMLDivElement, BsNavbarItemProps>(
   ref,
 ) {
   const { depth } = useContext(NavbarNestingContext);
-  const { class: itemClass, ...bag } = connectNavbarItem({ inMenu: depth >= 0, active, disabled });
   return (
-    <div ref={ref} {...reactProps(bag)} {...rest} className={[String(itemClass), className].filter(Boolean).join(' ')}>
+    <NavbarItemTemplate bag={connectNavbarItem({ inMenu: depth >= 0, active, disabled })} className={className} attrs={rest} rootRef={ref}>
       {children}
-    </div>
+    </NavbarItemTemplate>
   );
 });

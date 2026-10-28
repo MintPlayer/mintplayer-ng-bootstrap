@@ -1,6 +1,6 @@
 import * as React from 'react';
 import { connectNavbarNav } from '@mintplayer/ui-core/navbar';
-import { reactProps } from '../../machine/src/react-props';
+import { NavbarNavTemplate } from './generated/navbar-nav.view.generated';
 
 export interface BsNavbarNavProps extends React.HTMLAttributes<HTMLDivElement> {
   /** `end` pushes the group to the far edge when the bar is wide. */
@@ -13,10 +13,9 @@ export const BsNavbarNav = React.forwardRef<HTMLDivElement, BsNavbarNavProps>(fu
   { align, className, children, ...rest },
   ref,
 ) {
-  const { class: navClass, ...bag } = connectNavbarNav(align);
   return (
-    <div ref={ref} {...reactProps(bag)} {...rest} className={[String(navClass), className].filter(Boolean).join(' ')}>
+    <NavbarNavTemplate bag={connectNavbarNav(align)} className={className} attrs={rest} rootRef={ref}>
       {children}
-    </div>
+    </NavbarNavTemplate>
   );
 });

@@ -67,7 +67,7 @@ export const BsTabControl = forwardRef<HTMLDivElement | null, BsTabControlProps>
   const reactId = useId();
   const id = `bs-tab-control-${reactId.replace(/[^a-zA-Z0-9_-]/g, '')}`;
   const rootRef = useRef<HTMLDivElement>(null);
-  useImperativeHandle(ref, () => rootRef.current);
+  useImperativeHandle(ref, () => rootRef.current as HTMLDivElement);
 
   // Server HTML and the hydrating render are the radio tier; tabs after mount.
   const [enhanced, setEnhanced] = useState(false);

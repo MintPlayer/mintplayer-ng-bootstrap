@@ -96,7 +96,7 @@ export const BsAccordion = forwardRef<HTMLDivElement | null, BsAccordionProps>(f
     highlightActiveTab,
   };
   const rootRef = useRef<HTMLDivElement>(null);
-  useImperativeHandle(ref, () => rootRef.current);
+  useImperativeHandle(ref, () => rootRef.current as HTMLDivElement);
 
   // `toggle` does not bubble: one capture-phase listener hears every row.
   const latest = useRef({ multi: !!multi, onTabToggle });

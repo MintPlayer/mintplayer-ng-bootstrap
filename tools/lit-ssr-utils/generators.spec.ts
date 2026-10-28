@@ -19,7 +19,6 @@ import { describe, expect, it, vi } from 'vitest';
 import { main as carousel } from './gen-carousel-chrome.mjs';
 import { main as dropdown } from './gen-dropdown-chrome.mjs';
 import { LIGHT_TIER_COMPONENTS, lightStyleTag, main as lightStyles } from './gen-light-styles-chrome.mjs';
-import { main as navbar } from './gen-navbar-chrome.mjs';
 import { ChromeGeneratorError, MAX_CHROME_COUNT } from './lib/chrome-module.mjs';
 
 const REPO = resolve('/repo');
@@ -88,38 +87,6 @@ describe('gen-dropdown-chrome', () => {
     const h = harness();
     expect(await dropdown({ repoRoot: REPO, renderer: noShadow, ...h })).toBe(1);
     expect(h.error.mock.calls[0][0]).toBe('gen-dropdown-chrome: no DSD <template> for <mp-dropdown-menu>:\n');
-  });
-});
-
-describe('gen-navbar-chrome', () => {
-  it('emits one constant per navbar element, each holding that element\'s own chrome', async () => {
-    const h = harness();
-    expect(await navbar({ repoRoot: REPO, renderer: echo, ...h })).toBe(0);
-
-    const { path, content } = h.written[0];
-    expect(path).toBe(resolve(REPO, 'libs/mintplayer-web-components/navbar/ssr/mp-navbar-chrome.generated.ts'));
-    expect(
-      Object.fromEntries(
-        [
-          ['MP_NAVBAR_DSD_CHROME', 'mp-navbar'],
-          ['MP_NAVBAR_ITEM_DSD_CHROME', 'mp-navbar-item'],
-          ['MP_NAVBAR_BRAND_DSD_CHROME', 'mp-navbar-brand'],
-          ['MP_NAVBAR_DROPDOWN_DSD_CHROME', 'mp-navbar-dropdown'],
-        ].map(([name, tag]) => [name, constant(content, name) === dsd(`<${tag}></${tag}>`)]),
-      ),
-    ).toEqual({
-      MP_NAVBAR_DSD_CHROME: true,
-      MP_NAVBAR_ITEM_DSD_CHROME: true,
-      MP_NAVBAR_BRAND_DSD_CHROME: true,
-      MP_NAVBAR_DROPDOWN_DSD_CHROME: true,
-    });
-  });
-
-  it('stops at the first element without a shadow root', async () => {
-    const h = harness();
-    const render = vi.fn(noShadow.render);
-    expect(await navbar({ repoRoot: REPO, renderer: { html, render }, ...h })).toBe(1);
-    expect(render).toHaveBeenCalledTimes(1);
   });
 });
 

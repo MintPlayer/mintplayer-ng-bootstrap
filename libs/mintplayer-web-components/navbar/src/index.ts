@@ -1,3 +1,2 @@
-export { MpNavbar, MpNavbarItem, MpNavbarBrand, MpNavbarDropdown } from './components';
-export type { NavbarBreakpoint, NavbarExpandedChangeEventDetail } from './types';
-export { navbarStyles, navbarItemStyles, navbarBrandStyles, navbarDropdownStyles } from './styles';
+export { MpNavbar, MpNavbarNav, MpNavbarItem, MpNavbarDropdown } from './components';
+export type { NavbarBreakpoint, NavbarExpandedChangeEventDetail } from '@mintplayer/ui-core/navbar';

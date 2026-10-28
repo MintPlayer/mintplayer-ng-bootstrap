@@ -145,32 +145,6 @@
         "command": "node tools/lit-ssr-utils/gen-light-styles-chrome.mjs"
       }
     },
-    "codegen-navbar-chrome": {
-      "executor": "nx:run-commands",
-      "outputs": [
-        "{projectRoot}/navbar/ssr/mp-navbar-chrome.generated.ts"
-      ],
-      "inputs": [
-        "{projectRoot}/navbar/src/components/*.ts",
-        "{projectRoot}/navbar/src/styles/*.styles.scss",
-        "{workspaceRoot}/tools/lit-ssr-utils/gen-navbar-chrome.mjs",
-        "{workspaceRoot}/tools/lit-ssr-utils/lib/*.mjs",
-        "{workspaceRoot}/tools/scripts/lib/cli.mjs"
-      ],
-      "dependsOn": [
-        "build",
-        {
-          "projects": [
-            "mintplayer-ui-core"
-          ],
-          "target": "build"
-        }
-      ],
-      "cache": true,
-      "options": {
-        "command": "node tools/lit-ssr-utils/gen-navbar-chrome.mjs"
-      }
-    },
     "codegen-carousel-chrome": {
       "executor": "nx:run-commands",
       "outputs": [
@@ -200,10 +174,9 @@
     "codegen-ssr-chrome": {
       "executor": "nx:run-commands",
       "options": {
-        "command": "echo \"SSR chrome generated (navbar + dropdown + carousel DSD, light-tier style tags)\""
+        "command": "echo \"SSR chrome generated (dropdown + carousel DSD, light-tier style tags)\""
       },
       "dependsOn": [
-        "codegen-navbar-chrome",
         "codegen-dropdown-chrome",
         "codegen-carousel-chrome",
         "codegen-light-styles-chrome"

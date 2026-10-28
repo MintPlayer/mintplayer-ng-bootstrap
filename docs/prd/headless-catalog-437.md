@@ -220,6 +220,7 @@ Each spike is small and throwaway, lives on a scratch branch or under `_spike-*/
 | S10 | Query-builder: the editor contract as front-native templates without regressing `query-builder.memory-leak.spec.ts`. | query-builder | leak spec green in four fronts |
 | S11 | Theme toggle with the cookie read during SSR (no flash), and code-snippet highlighting on the server versus after hydration. | theme-toggle, code-snippet | no flash; no mismatch |
 | S12 | React and Vue SSR: scoped sheets collected into `<head>` by `entry-server`. | C7 | no unstyled first paint |
+| S13 | One template per component, declared in the core and compiled into the four fronts (owner request, 2026-10-28). Source: a `*.view.vue` SFC in `ui-core/<name>/src/templates` (Vue template syntax, typed by `defineProps` / `defineSlots`, so the Vue language tools give completion and type-checking). A build step reads it with `@vue/compiler-dom` and emits the Angular template, a React component, a Vue SFC and a Lit template function; the per-front glue (CVA, effects, refs, events) stays hand-written. Prototype on the navbar (+ dropdown, item, nav). | every M4–M6 front | the generated navbar fronts replace the hand-written templates with no behaviour change (navbar unit specs green in four fronts, Angular SSR output unchanged); go/no-go written here |
 
 ### Verdicts
 
@@ -242,6 +243,17 @@ Each spike is small and throwaway, lives on a scratch branch or under `_spike-*/
   - Ids are deterministic: `radioGroupName(rootId)` is `${rootId}-name`, with the root id from each front's SSR-stable id source, so server and client agree.
   - Registration is revisited with the accordion half, where tab panels need an order.
 - **S5 (radio): pre-hydration choice kept.** `preHydrationChoice(root)` in `ui-core/forms` reads the checked input the server DOM holds. The Angular group adopts it in `afterNextRender(() => queueMicrotask(...))`, after hydration has finished patching attributes. Datatable `ng-template` cells are checked at the datatable.
+- **S13: go (provisional until the M9 sweep runs the navbar specs and the no-JS e2e).**
+  - The compiler is a workspace tool, `tools/front-templates` (`@mintplayer/front-templates`, private). It is config-driven: `libs/mintplayer-ui-core/front-templates.config.mjs` names each front's output dir and runtime module. It has a `--check` mode and is pinned by `front-templates.spec.ts`.
+  - `mintplayer-ui-core:codegen` runs it. The outputs are gitignored.
+  - The navbar, dropdown, item and nav templates generate cleanly for all four fronts. All four type-check with no new errors, and the hand-written navbar templates are deleted.
+  - Each front keeps its own glue: Angular signals and DI, React state and context, Vue `provide`, and Lit properties.
+  - Three runtime pieces made the shared template possible:
+    - **Host element.** `mp-host` marks the root element as the host in Angular and Lit, applied via `useHostProps` / `applyHostProps`. React and Vue render that element instead.
+    - **Uncontrolled form state.** `reactFormProps` turns a form control's `checked` / `value` into `defaultChecked` / `defaultValue`.
+    - **Light-DOM children.** The Lit `LightChildren` controller captures them by `slot` attribute, so a light-DOM element can place them as binding values.
+  - Limits are by design and listed in `tools/front-templates/README.md`: one bag per element, no functions or components, no `:style`. A template that needs more is a sign the logic belongs in the core.
+  - The Lit navbar moved to the light DOM in the process, which retired its DSD chrome.
 - **Deferred to the milestone that needs them:**
   - S2 accordion half at accordion (M3)
   - S3 at tree-select (M5)
@@ -304,7 +316,7 @@ LOC is element code only (the investigation, 2026-10-20).
 | Component | LOC | Depends on | No-JS target | Risk |
 |---|---|---|---|---|
 | file-manager | 2120 | splitter, treeview, datatable | breadcrumb + listing table with folder links + multipart upload form | H |
-| tile-manager | 1654 | `drag` | a static tile grid | H |
+| tile-manager | 1654 | `drag` | a static tile grid — **done on master (#441)** | H |
 | dock (`mint-dock-manager`) | 5565 | `drag`, splitter | a static panel layout | H |
 | ribbon (+17) | 4249 | roving, dropdown-menu | static tabs (radio) + buttons | H |
 | scheduler | 11617 | scheduler-core, `virtual-window`, `drag`, `overlay` | S7: static grid with positioned events | H |
@@ -322,7 +334,7 @@ Charts have no Vue wrapper today. A Vue front is added, because parity is a goal
 5. A11y: every existing `*.aria.spec.ts` ported to the core (bags) and to each front; axe and axe-nojs green in all three demos.
 6. Bootstrap: the S1 override probe runs as a permanent e2e in all three demos, and the `no-bootstrap-partials-in-scoped` conformance spec is green.
 7. Every item in §10 is deleted, with no remaining references.
-8. CHANGELOG `### Breaking` lists every API change in §11, and versions are bumped (minor, as for #436).
+8. CHANGELOG `### Breaking` lists every API change in §11. Versions are planned by the publish workflow (#445), not bumped by hand.
 
 ## 10. Removed infrastructure
 

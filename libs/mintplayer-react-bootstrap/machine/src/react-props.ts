@@ -1,5 +1,5 @@
 /** An attribute bag as a `@mintplayer/ui-core` `connect()` returns it. */
-export type AttrBag = Record<string, string | boolean | null>;
+export type AttrBag = Record<string, string | number | boolean | null>;
 
 /** DOM attribute names whose React prop name differs. */
 const RENAME: Readonly<Record<string, string>> = {
@@ -20,12 +20,26 @@ const RENAME: Readonly<Record<string, string>> = {
  * (`data-*`, `aria-*`) attribute, so those get `''`; a known boolean property
  * (`hidden`, `inert`) keeps `true`, because React drops it when given `''`.
  */
-export function reactProps(bag: AttrBag): Record<string, string | boolean> {
+export function reactProps(bag: AttrBag): Record<string, string | number | boolean> {
   return Object.fromEntries(
     Object.entries(bag)
-      .filter((entry): entry is [string, string | boolean] => entry[1] !== null)
+      .filter((entry): entry is [string, string | number | boolean] => entry[1] !== null)
       .map(([name, value]) => [RENAME[name] ?? name, value === true && name.includes('-') ? '' : value]),
   );
+}
+
+/** A form control's state attributes, and the uncontrolled React props that only seed them. */
+const SEED: Readonly<Record<string, string>> = { checked: 'defaultChecked', value: 'defaultValue' };
+
+/**
+ * `reactProps` for an `<input>` / `<select>` / `<textarea>` whose state the
+ * DOM owns once rendered (a checkbox the user flips, a field script writes):
+ * `checked` and `value` become `defaultChecked` / `defaultValue`, so React
+ * renders them on the server and never fights the user afterwards. The
+ * compiled front templates use it on every form control's bag.
+ */
+export function reactFormProps(bag: AttrBag): Record<string, string | number | boolean> {
+  return Object.fromEntries(Object.entries(reactProps(bag)).map(([name, value]) => [SEED[name] ?? name, value]));
 }
 
 /** A style bag as a core's `connect()` returns it: CSS property names, `null` = unset. */
