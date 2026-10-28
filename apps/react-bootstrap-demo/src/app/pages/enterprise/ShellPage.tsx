@@ -9,9 +9,9 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       size="14rem"
       className="app-shell"
       // The shell renders the hamburger at the top bar's left;
-      // `topbar` fills the rest (brand, nav, …).
+      // \`topbar\` fills the rest (brand, nav, …).
       topbar={<div>Brand · nav</div>}
-      // `sidebar` is the collapsible sidebar.
+      // \`sidebar\` is the collapsible sidebar.
       sidebar={<nav>…links…</nav>}
     >
       {/* The children are the main content area. */}
