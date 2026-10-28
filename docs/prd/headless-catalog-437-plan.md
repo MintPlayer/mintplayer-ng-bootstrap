@@ -183,6 +183,9 @@ Every item below is authored as a D10 component source once M3b lands.
       the core through a module-level map keyed by the root's `data-qb-instance` (the datatable precedent).
     - Live value inputs keep a per-input draft in the core, so a half-typed number survives a Vue re-render.
     - The light-styles SSR generator lost its stale datatable row and the four query-builder rows.
+- [ ] **M5a — compiler nesting** (recursive partials + component composition), before the hierarchy chart and
+  M6. Own PRD and plan: `docs/prd/component-compiler-nesting-437.md`, `docs/prd/component-compiler-nesting-437-plan.md`
+  (spikes NS1–NS6). Its N5 puts the query builder back on nested markup.
 - [ ] hierarchy-chart (+ Vue front)
 
 ## M6 — Wave D
