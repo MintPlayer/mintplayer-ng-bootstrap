@@ -238,6 +238,7 @@ export const carouselCore = defineCore<
           const radio = radios()[index];
           if (radio) radio.checked = true;
           markSlides(index);
+          applyHeights();
           api.setState({ index });
           api.emit('slideChange', { index });
         },
@@ -291,16 +292,47 @@ export const carouselCore = defineCore<
       syncAutoplay();
     };
 
+    // ---- heights: the viewport follows the CURRENT slide (horizontal, fade) or
+    // the tallest (vertical, where it is also the travel distance). Only a
+    // ResizeObserver knows when a slide's height settles (images, fonts, content
+    // changes), and it watches the slides' CONTENT: the items themselves are
+    // sized in vertical mode, and observing what we size would only ever grow.
+    const contentHeight = (item: HTMLElement) =>
+      Math.max(0, ...[...item.children].map((c) => (c as HTMLElement).offsetHeight ?? 0));
+    const applyHeights = () => {
+      const box = inner();
+      if (!box) return;
+      const heights = items().map(contentHeight);
+      const max = heights.length ? Math.max(...heights) : 0;
+      const current = heights[machine.getIndex()] ?? max;
+      const viewport = orientation() === 'vertical' ? max : current;
+      // >10px validity gate: an image measures 0 until its bytes arrive; until
+      // then the viewport stays auto (the grid stack's own height).
+      if (viewport > 10) box.style.setProperty('--mp-carousel-viewport-height', `${viewport}px`);
+      else box.style.removeProperty('--mp-carousel-viewport-height');
+      if (orientation() === 'vertical' && max > 10) box.style.setProperty('--mp-carousel-slide-height', `${max}px`);
+      else box.style.removeProperty('--mp-carousel-slide-height');
+    };
+    const resizer = typeof ResizeObserver === 'function' ? new ResizeObserver(() => applyHeights()) : null;
+    const observeContent = () => {
+      if (!resizer) return;
+      resizer.disconnect();
+      items().forEach((item) => [...item.children].forEach((c) => resizer.observe(c)));
+    };
+
     // ---- the deck: count, labels, a start index a no-JS user navigated to ----
     const syncCount = () => {
       const n = items().length;
       machine.setConfig({ count: n });
       if (api.state().count !== n) api.setState({ count: n });
       markSlides(machine.getIndex());
+      observeContent();
+      applyHeights();
     };
+    // Subtree: a slide's content swapped by its framework needs observing too.
     const observer = new MutationObserver(syncCount);
     const trackEl = track();
-    if (trackEl) observer.observe(trackEl, { childList: true });
+    if (trackEl) observer.observe(trackEl, { childList: true, subtree: true });
     syncCount();
     const checked = radios().findIndex((r) => r.checked);
     if (checked > 0 && checked < items().length) machine.goto(checked, { animate: false });
@@ -411,6 +443,7 @@ export const carouselCore = defineCore<
         machine.interrupt();
         arbiter.setOrientation(orientation());
       }
+      if (now.orientation !== prev.orientation || now.animation !== prev.animation) applyHeights();
       if (now.paused !== prev.paused && !!now.paused !== api.state().paused) api.setState({ paused: !!now.paused });
       syncAutoplay();
     };
@@ -431,6 +464,9 @@ export const carouselCore = defineCore<
       trackEl?.removeEventListener('touchend', onTouchEnd);
       trackEl?.removeEventListener('touchcancel', onTouchCancel);
       observer.disconnect();
+      resizer?.disconnect();
+      inner()?.style.removeProperty('--mp-carousel-viewport-height');
+      inner()?.style.removeProperty('--mp-carousel-slide-height');
       if (timer !== null) clearInterval(timer);
       arbiter.destroy();
       machine.destroy();

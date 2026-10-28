@@ -34,6 +34,23 @@ async function mount(count = 3, attrs: Record<string, string> = {}): Promise<MpC
   return el;
 }
 
+/** Slides whose content reports the given heights (jsdom has no layout). */
+async function mountSized(heights: number[], attrs: Record<string, string> = {}): Promise<MpCarousel> {
+  const el = document.createElement('mp-carousel') as MpCarousel;
+  Object.entries(attrs).forEach(([k, v]) => el.setAttribute(k, v));
+  heights.forEach((h) => {
+    const item = document.createElement('mp-carousel-item');
+    const content = document.createElement('div');
+    Object.defineProperty(content, 'offsetHeight', { value: h });
+    item.appendChild(content);
+    el.appendChild(item);
+  });
+  document.body.appendChild(el);
+  mounted.push(el);
+  await settle(el);
+  return el;
+}
+
 const radios = (el: Element) => [...el.querySelectorAll<HTMLInputElement>(':scope > input.car-radio')];
 const checkedIndex = (el: Element) => radios(el).findIndex((r) => r.checked);
 const items = (el: Element) => [...el.querySelectorAll<HTMLElement>('.carousel-track > .carousel-item')];
@@ -140,6 +157,27 @@ describe('mp-carousel', () => {
     await settle(el);
     expect(radios(el)).toHaveLength(3);
     expect(items(el)[2].getAttribute('aria-label')).toBe('3 of 3');
+  });
+
+  it('sizes the viewport to the current slide and follows it', async () => {
+    const el = await mountSized([120, 300, 200]);
+    const height = () => inner(el).style.getPropertyValue('--mp-carousel-viewport-height');
+    expect(height()).toBe('120px');
+    (visiblePair(el, 0).querySelector('[data-step="next"]') as HTMLElement).click();
+    await settle(el);
+    expect(height()).toBe('300px');
+    expect(inner(el).style.getPropertyValue('--mp-carousel-slide-height')).toBe('');
+  });
+
+  it('sizes a vertical viewport and its cells to the tallest slide', async () => {
+    const el = await mountSized([120, 300, 200], { orientation: 'vertical' });
+    expect(inner(el).style.getPropertyValue('--mp-carousel-viewport-height')).toBe('300px');
+    expect(inner(el).style.getPropertyValue('--mp-carousel-slide-height')).toBe('300px');
+  });
+
+  it('leaves the viewport auto while a slide measures under 10px', async () => {
+    const el = await mountSized([0, 300]);
+    expect(inner(el).style.getPropertyValue('--mp-carousel-viewport-height')).toBe('');
   });
 
   it('shows a play/pause button while auto-rotating and toggles paused', async () => {

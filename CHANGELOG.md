@@ -357,7 +357,7 @@ breaking change is a major. (2.20.0 and 2.21.0 broke `^2.x` consumers in a minor
   - **Slides are items:** wrap each slide in `bs-carousel-item` (Angular), `BsCarouselItem` (React, Vue) or
     `mp-carousel-item` (Lit). The parent counts them on the server.
   - **Every front:** the root is `.carousel` (a `div` in React and Vue, the host in Angular and Lit). There is
-    no shadow root; style the Bootstrap carousel classes. The deck is as tall as its tallest slide.
+    no shadow root; style the Bootstrap carousel classes. With JS the viewport follows the current slide's height (the tallest in vertical mode), measured by a ResizeObserver; with JS off it is as tall as the tallest slide.
   - **The `play-pause` slot is gone.** The built-in button is the only play/pause control.
   - **Events:** `slide-change` is `slideChange` and `paused-change` is `pausedChange`, which carries the
     boolean: Angular `(slidechange)` / `[(paused)]`, Lit `slidechange` / `pausedchange`, React

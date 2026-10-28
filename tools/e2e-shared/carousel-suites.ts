@@ -100,9 +100,9 @@ export function carouselJsSuite(test: Test, expect: Expect, options: CarouselSui
     });
 
     test('slides top-align in horizontal slide mode', async ({ page }) => {
-      // The demo images have different aspect ratios; the deck is as tall as
-      // the tallest, and a horizontally sliding top edge that jumps per slide
-      // is what the eye tracks — so every slide sits flush with the top.
+      // The demo images have different aspect ratios, and a horizontally
+      // sliding top edge that jumps per slide is what the eye tracks — so
+      // every slide sits flush with the top.
       await goto(page);
       const gaps = await main(page).evaluate((el: Element) => {
         const top = el.querySelector(':scope > .carousel-inner')!.getBoundingClientRect().top;
@@ -112,6 +112,22 @@ export function carouselJsSuite(test: Test, expect: Expect, options: CarouselSui
       });
       expect(gaps.length).toBeGreaterThan(1);
       gaps.forEach((gap) => expect(Math.abs(gap)).toBeLessThanOrEqual(1));
+    });
+
+    test('the viewport follows the current slide height', async ({ page }) => {
+      await goto(page);
+      const car = main(page);
+      // The viewport's height matches the active slide's content, after each move.
+      const fits = () =>
+        car.evaluate((el: Element) => {
+          const vp = el.querySelector(':scope > .carousel-inner')!.getBoundingClientRect().height;
+          const active = el.querySelector(':scope > .carousel-inner > .carousel-track > .carousel-item[data-active] > *')!;
+          return Math.abs(vp - active.getBoundingClientRect().height) <= 1;
+        });
+      await expect.poll(fits).toBe(true);
+      await indicator(car, 1).click();
+      await expect(radio(car, 1)).toBeChecked();
+      await expect.poll(fits).toBe(true);
     });
 
     test('the ARIA contract holds on the hydrated tree', async ({ page }) => {

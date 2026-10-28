@@ -38,6 +38,10 @@ $max-slides: 30;
   // Where a waiting slide parks in the no-JS slide tier.
   --mp-carousel-before: -100% 0;
   --mp-carousel-after: 100% 0;
+  // The measured heights are written on our own viewport; reset here so a
+  // nested carousel never inherits its parent's.
+  --mp-carousel-viewport-height: initial;
+  --mp-carousel-slide-height: initial;
 }
 
 .carousel[data-orientation="vertical"] {
@@ -50,6 +54,10 @@ $max-slides: 30;
   width: 100%;
   overflow: hidden;
   overscroll-behavior: contain;
+  // Published by the core from a ResizeObserver: the current slide's height
+  // (horizontal, fade) or the tallest (vertical). Auto until measured, and
+  // with JS off, where the grid stack makes the deck its tallest slide.
+  height: var(--mp-carousel-viewport-height, auto);
 }
 
 .carousel > .carousel-inner::after {
@@ -61,8 +69,8 @@ $max-slides: 30;
   outline-offset: 2px;
 }
 
-// Grid-stacked: every slide sits in one cell, so the deck is as tall as its
-// tallest slide with nothing measured, in both tiers and on the server.
+// Grid-stacked: every slide sits in one cell. With JS off the deck is as tall
+// as its tallest slide; with JS the viewport clips it to the measured height.
 .carousel > .carousel-inner > .carousel-track {
   display: grid;
   // Pull-to-refresh defence: declare the axis we own so mobile APZ leaves the
@@ -103,6 +111,17 @@ $max-slides: 30;
 
 .carousel > .carousel-inner > .carousel-track > .carousel-item[data-active] {
   z-index: 1;
+}
+
+// JS tier: a slide is as tall as its own content (not stretched to the stack),
+// pinned to the top of the viewport that is clipped to its height. Vertical
+// cells all take the tallest slide's height: it is also the travel distance.
+.carousel[data-mp-hydrated] > .carousel-inner > .carousel-track > .carousel-item {
+  align-self: start;
+}
+
+.carousel[data-mp-hydrated][data-orientation="vertical"] > .carousel-inner > .carousel-track > .carousel-item {
+  height: var(--mp-carousel-slide-height, auto);
 }
 
 // The slide's content is the consumer's: anchored on our stamped item, final form.
