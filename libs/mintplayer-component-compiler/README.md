@@ -95,7 +95,10 @@ the template of every front. A template without a manifest is still compiled on 
 - **Bindings.**
   - `:attr` becomes an attribute binding, `:class` a class binding, and `.prop` a property binding.
   - `@event="handler"` binds a handler passed in as a prop.
-  - `:style` is refused. Styles belong in the scoped sheet.
+  - `:style="bag"` takes a core-computed record of geometry custom properties (PRD D7), below the
+    root only: Angular `[style]`, React `style={reactStyle(bag)}`, Lit `styleMap`. It is refused on
+    the root, `mp-host` and `mp-attrs` elements, which belong to the consumer. Every other style
+    belongs in the scoped sheet.
 - **Control flow.**
   - `v-if` / `v-else-if` / `v-else` are supported.
   - `v-for="(item, i) in items"` is supported, with `:key`.

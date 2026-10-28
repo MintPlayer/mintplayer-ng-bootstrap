@@ -1,2 +1,2 @@
-export * from './mint-multi-range.element';
-export * from './types/multi-range-orientation';
+export * from './generated';
+export type { MultiRangeOrientation } from '@mintplayer/ui-core/multi-range';

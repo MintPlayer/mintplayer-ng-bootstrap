@@ -205,6 +205,22 @@ breaking change is a major. (2.20.0 and 2.21.0 broke `^2.x` consumers in a minor
     (`errorMessages`) is applied to it as well.
   - **Lit:** `mp-otp-input` renders in the light DOM (no shadow root, no `part`s). Attributes are kebab-case
     (`input-label`, `error-text`, `letter-case`).
+- **Multi-range is generated from one source in every front (issue #437, wave B).** It is written once in
+  `@mintplayer/ui-core/multi-range` and compiled into all four fronts. Every thumb is a native
+  `<input type="range">` stacked over one track, in the light DOM. The browser now owns the slider role, the
+  keyboard (including RTL mirroring) and form submission under `name`. With JS off the thumbs still drag, step
+  and submit. The core adds the neighbour constraint, the fill and the press-on-track.
+  - **Every front:**
+    - The events are `valueinput` (while moving) and `valuechange` (on commit), each carrying the
+      `number[]`. They were `value-input` and `value-change`.
+    - The value is the `value` model: Angular `[(value)]`, React `value` + `onValueInput` / `onValueChange`
+      (both receive the array itself), Vue `v-model:value`.
+    - A written value is sorted and clamped. `null` shows as `[min, max]` and is not reported back.
+    - `getValues()` is a method.
+  - **Angular:** `BsMultiRangeValueAccessor` is a host directive of `bs-multi-range`. A form write never marks the
+    control dirty.
+  - **Lit:** `mp-multi-range` has no shadow root and no `part`s. The `.thumb` and `.track` classes are now
+    `multi-range-thumb` and `multi-range-track`. `minDistance` is the `min-distance` attribute.
 
 
 

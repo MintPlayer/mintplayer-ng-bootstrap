@@ -124,7 +124,8 @@ Every item below is authored as a D10 component source once M3b lands.
 - [ ] Angular `aria-passthrough.spec.ts` lists `PENDING_437` (calendar, code-snippet, datepicker, datetime-picker, timepicker): those wrappers do not forward ARIA today; drop each entry as its component converts
 - [x] otp-input: one D10 source (`ui-core/otp-input`), one real input in every front, the boxes decorative; `case` renamed `letterCase`; Angular CVA + `focus()` delegation as host directives
   - compiler fixes it needed: builtin output types (`string`) are not imported; the Vue `mp-attrs` merge coerces the bag's `class` to a string
-- [ ] multi-range
+- [x] multi-range: one D10 source (`ui-core/multi-range`), native range inputs stacked on one track in every front; the core adds the neighbour constraint, the fill and press-on-track; Angular CVA as a host directive
+  - compiler addition it needed: a `:style` bag below the root (Angular `[style]`, React `reactStyle()`, Lit `styleMap`), for the geometry custom properties of PRD D7
 - [ ] calendar
 - [ ] datepicker, timepicker (+ time-list), datetime-picker
 - [ ] signature-pad

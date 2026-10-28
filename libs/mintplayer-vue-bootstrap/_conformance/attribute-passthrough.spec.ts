@@ -120,7 +120,7 @@ const TARGETS: Record<string, string> = {
   BsDropdownMenu: 'ul.dropdown-menu',
   BsFileManager: 'mp-file-manager',
   BsInputGroup: 'div.input-group',
-  BsMultiRange: 'mp-multi-range',
+  BsMultiRange: 'div.mp-multi-range',
   BsNavbar: 'nav.navbar',
   BsNavbarNav: 'div.navbar-nav',
   BsNavbarDropdown: 'details.dropdown',

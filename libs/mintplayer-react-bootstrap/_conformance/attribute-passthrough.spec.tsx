@@ -193,7 +193,7 @@ const CASES: Case[] = [
   bare('BsDropdownDivider', 'li.dropdown-divider', BsDropdownDivider),
   bare('BsFileManager', 'mp-file-manager', BsFileManager),
   bare('BsInputGroup', 'div.input-group', BsInputGroup),
-  bare('BsMultiRange', 'mp-multi-range', BsMultiRange),
+  bare('BsMultiRange', 'div.mp-multi-range', BsMultiRange),
   bare('BsNavbar', 'nav.navbar', BsNavbar),
   {
     name: 'BsNavbarDropdown',

@@ -39,9 +39,14 @@ describe('BsAccordionComponent', () => {
   const summaries = () => rows().map((row) => row.querySelector('summary') as HTMLElement);
 
   /** Open or close a row the way the platform does: flip `open`, then `toggle`. */
-  const flip = (row: HTMLDetailsElement, open: boolean) => {
-    row.open = open;
-    row.dispatchEvent(new Event('toggle'));
+  // Flipping `open` fires the native toggle (once, asynchronously), as a click
+  // does; a second, synthetic toggle would replay a stale state over the core's.
+  const flip = async (row: HTMLDetailsElement, open: boolean) => {
+    if (row.open !== open) {
+      const toggled = new Promise((resolve) => row.addEventListener('toggle', resolve, { once: true }));
+      row.open = open;
+      await toggled;
+    }
     fixture.detectChanges();
   };
 
@@ -111,42 +116,46 @@ describe('BsAccordionComponent', () => {
       expect(rows().map((row) => row.open)).toEqual([false, true, false]);
     });
 
-    it('writes a row toggle back into the tab model', () => {
-      flip(rows()[1], true);
+    it('writes a row toggle back into the tab model', async () => {
+      await flip(rows()[1], true);
       expect(component.tabs()[1].open()).toBe(true);
-      flip(rows()[1], false);
+      await flip(rows()[1], false);
       expect(component.tabs()[1].open()).toBe(false);
     });
 
-    it('closes the open sibling when single-open', () => {
-      flip(rows()[0], true);
-      flip(rows()[2], true);
+    it('closes the open sibling when single-open', async () => {
+      await flip(rows()[0], true);
+      // Closing the sibling fires its own toggle a task later: wait for it.
+      const closed = new Promise((resolve) => rows()[0].addEventListener('toggle', resolve, { once: true }));
+      await flip(rows()[2], true);
+      await closed;
+      fixture.detectChanges();
       expect(component.tabs().map((tab) => tab.open())).toEqual([false, false, true]);
     });
 
-    it('keeps siblings open when multi', () => {
+    it('keeps siblings open when multi', async () => {
       component.multi.set(true);
       fixture.detectChanges();
-      flip(rows()[0], true);
-      flip(rows()[2], true);
+      await flip(rows()[0], true);
+      await flip(rows()[2], true);
       expect(component.tabs().map((tab) => tab.open())).toEqual([true, false, true]);
     });
 
-    it('ignores a nested accordion row', () => {
+    it('ignores a nested accordion row', async () => {
       const nested = document.createElement('div');
       nested.className = 'accordion';
       nested.setAttribute('data-mps', 'accordion');
       nested.innerHTML = '<details class="accordion-item" data-mps="accordion"><summary>n</summary></details>';
       rows()[2].querySelector('.accordion-content')?.append(nested);
-      flip(nested.querySelector('details') as HTMLDetailsElement, true);
+      await flip(nested.querySelector('details') as HTMLDetailsElement, true);
       expect(component.tabs().map((tab) => tab.open())).toEqual([false, false, false]);
     });
 
-    it('closeAll closes every row', () => {
+    it('closeAll closes every row', async () => {
       component.multi.set(true);
       fixture.detectChanges();
-      flip(rows()[0], true);
-      flip(rows()[1], true);
+      await flip(rows()[0], true);
+      await flip(rows()[1], true);
       component.accordion().closeAll();
       expect(rows().some((row) => row.open)).toBe(false);
     });

@@ -1,0 +1,229 @@
+// The multi-range slider's stylesheet, shared by all four fronts (PRD #437
+// wave B). Rescoped at build time: every compound gains `[data-mps=multi-range]`.
+//
+// Each thumb is a native range input stacked over one track. The inputs let
+// pointer events through everywhere but their thumb, so a press on the bare
+// track reaches the track (the core moves the nearest thumb there), and a
+// press on a thumb drags that input natively. A native thumb's centre travels
+// from half a thumb in to half a thumb short of each end; the fill and the
+// tooltips use the same mapping, from the fractions in their custom properties.
+
+// The wrapper: the bs-multi-range / mp-multi-range host, or a div in React and Vue.
+.mp-multi-range {
+  display: block;
+  box-sizing: border-box;
+  width: 100%;
+  --bs-multi-range-track-bg: var(--bs-tertiary-bg, #e9ecef);
+  --bs-multi-range-track-radius: 1rem;
+  --bs-multi-range-track-thickness: 0.5rem;
+  --bs-multi-range-thumb-bg: var(--bs-primary, #0d6efd);
+  --bs-multi-range-thumb-bg-disabled: var(--bs-secondary, #6c757d);
+  --bs-multi-range-thumb-size: 1rem;
+  --bs-multi-range-thumb-shadow: 0 0.1rem 0.25rem rgba(0, 0, 0, 0.1);
+  --bs-multi-range-focus-shadow: 0 0 0 0.2rem rgba(var(--bs-primary-rgb, 13, 110, 253), 0.35);
+  --bs-multi-range-fill-bg: var(--bs-primary, #0d6efd);
+  --bs-multi-range-fill-bg-disabled: var(--bs-secondary, #6c757d);
+  --bs-multi-range-tooltip-bg: var(--bs-dark, #212529);
+  --bs-multi-range-tooltip-color: var(--bs-light, #f8f9fa);
+}
+
+.mp-multi-range-vertical {
+  width: auto;
+  height: 100%;
+  min-height: 8rem;
+}
+
+.mp-multi-range-disabled {
+  cursor: not-allowed;
+}
+
+.multi-range-track {
+  position: relative;
+  width: 100%;
+  height: var(--bs-multi-range-thumb-size);
+  touch-action: none;
+}
+
+.mp-multi-range-vertical .multi-range-track {
+  width: var(--bs-multi-range-thumb-size);
+  height: 100%;
+  min-height: inherit;
+}
+
+// The visible rail, centred in the thumb-high track.
+.multi-range-track::before {
+  content: '';
+  position: absolute;
+  inset-inline: 0;
+  top: calc(50% - var(--bs-multi-range-track-thickness) / 2);
+  height: var(--bs-multi-range-track-thickness);
+  background: var(--bs-multi-range-track-bg);
+  border-radius: var(--bs-multi-range-track-radius);
+}
+
+.mp-multi-range-vertical .multi-range-track::before {
+  inset-inline: auto;
+  top: 0;
+  bottom: 0;
+  left: calc(50% - var(--bs-multi-range-track-thickness) / 2);
+  width: var(--bs-multi-range-track-thickness);
+  height: auto;
+}
+
+.multi-range-fill {
+  position: absolute;
+  top: calc(50% - var(--bs-multi-range-track-thickness) / 2);
+  height: var(--bs-multi-range-track-thickness);
+  inset-inline-start: calc(var(--bs-multi-range-thumb-size) / 2 + (100% - var(--bs-multi-range-thumb-size)) * var(--mp-multi-range-from, 0));
+  width: calc((100% - var(--bs-multi-range-thumb-size)) * (var(--mp-multi-range-to, 0) - var(--mp-multi-range-from, 0)));
+  background: var(--bs-multi-range-fill-bg);
+  border-radius: var(--bs-multi-range-track-radius);
+  pointer-events: none;
+}
+
+.mp-multi-range-vertical .multi-range-fill {
+  top: auto;
+  inset-inline-start: auto;
+  left: calc(50% - var(--bs-multi-range-track-thickness) / 2);
+  width: var(--bs-multi-range-track-thickness);
+  bottom: calc(var(--bs-multi-range-thumb-size) / 2 + (100% - var(--bs-multi-range-thumb-size)) * var(--mp-multi-range-from, 0));
+  height: calc((100% - var(--bs-multi-range-thumb-size)) * (var(--mp-multi-range-to, 0) - var(--mp-multi-range-from, 0)));
+}
+
+.mp-multi-range-disabled .multi-range-fill {
+  background: var(--bs-multi-range-fill-bg-disabled);
+}
+
+// One thumb's input and tooltip; the input positions against the track.
+.multi-range-slot {
+  display: contents;
+}
+
+.multi-range-thumb {
+  appearance: none;
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  background: transparent;
+  pointer-events: none;
+  outline: none;
+}
+
+.multi-range-thumb-raised {
+  z-index: 1;
+}
+
+// Bottom is min, as for a vertical slider everywhere.
+.mp-multi-range-vertical .multi-range-thumb {
+  writing-mode: vertical-lr;
+  direction: rtl;
+}
+
+// Each engine's thumb in its own rule: a selector list with a pseudo-element
+// the engine does not know is dropped whole.
+.multi-range-thumb::-webkit-slider-runnable-track {
+  background: transparent;
+  border: 0;
+}
+
+.multi-range-thumb::-moz-range-track {
+  background: transparent;
+  border: 0;
+}
+
+.multi-range-thumb::-webkit-slider-thumb {
+  appearance: none;
+  width: var(--bs-multi-range-thumb-size);
+  height: var(--bs-multi-range-thumb-size);
+  background: var(--bs-multi-range-thumb-bg);
+  border: 0;
+  border-radius: 50%;
+  box-shadow: var(--bs-multi-range-thumb-shadow);
+  cursor: grab;
+  pointer-events: auto;
+}
+
+.multi-range-thumb::-moz-range-thumb {
+  width: var(--bs-multi-range-thumb-size);
+  height: var(--bs-multi-range-thumb-size);
+  background: var(--bs-multi-range-thumb-bg);
+  border: 0;
+  border-radius: 50%;
+  box-shadow: var(--bs-multi-range-thumb-shadow);
+  cursor: grab;
+  pointer-events: auto;
+}
+
+.multi-range-thumb:active::-webkit-slider-thumb {
+  cursor: grabbing;
+}
+
+.multi-range-thumb:active::-moz-range-thumb {
+  cursor: grabbing;
+}
+
+.multi-range-thumb:focus-visible::-webkit-slider-thumb {
+  box-shadow: var(--bs-multi-range-focus-shadow), var(--bs-multi-range-thumb-shadow);
+}
+
+.multi-range-thumb:focus-visible::-moz-range-thumb {
+  box-shadow: var(--bs-multi-range-focus-shadow), var(--bs-multi-range-thumb-shadow);
+}
+
+.multi-range-thumb:disabled::-webkit-slider-thumb {
+  background: var(--bs-multi-range-thumb-bg-disabled);
+  cursor: not-allowed;
+}
+
+.multi-range-thumb:disabled::-moz-range-thumb {
+  background: var(--bs-multi-range-thumb-bg-disabled);
+  cursor: not-allowed;
+}
+
+.multi-range-tooltip {
+  position: absolute;
+  bottom: calc(100% + 0.25rem);
+  inset-inline-start: calc(var(--bs-multi-range-thumb-size) / 2 + (100% - var(--bs-multi-range-thumb-size)) * var(--mp-multi-range-at, 0));
+  translate: -50% 0;
+  z-index: 2;
+  padding: 0.25rem 0.5rem;
+  border-radius: 0.25rem;
+  background: var(--bs-multi-range-tooltip-bg);
+  color: var(--bs-multi-range-tooltip-color);
+  font-size: 0.75rem;
+  font-weight: 500;
+  line-height: 1;
+  white-space: nowrap;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 120ms ease-out;
+}
+
+.multi-range-tooltip:dir(rtl) {
+  translate: 50% 0;
+}
+
+.mp-multi-range-vertical .multi-range-tooltip {
+  inset-inline-start: calc(100% + 0.5rem);
+  bottom: calc(var(--bs-multi-range-thumb-size) / 2 + (100% - var(--bs-multi-range-thumb-size)) * var(--mp-multi-range-at, 0));
+  translate: 0 50%;
+}
+
+.multi-range-thumb:hover + .multi-range-tooltip,
+.multi-range-thumb:focus-visible + .multi-range-tooltip,
+.multi-range-tooltip-shown {
+  opacity: 1;
+}
+
+.mp-multi-range-disabled .multi-range-tooltip {
+  display: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .multi-range-tooltip {
+    transition: none;
+  }
+}
