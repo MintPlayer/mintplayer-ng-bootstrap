@@ -139,7 +139,7 @@ Every item below is authored as a D10 component source once M3b lands.
 - [x] timeline (+ item): layout is CSS on the root classes, rows are light children, selection by key
 - [x] trend-chart (+ Vue front)
 - [x] carousel (+ item); delete the carousel chrome. The radios stay the index store in both tiers; the parent learns the slide count from its declared items on the server (Angular content query, React children, Vue slot vnodes)
-- [ ] typeahead React/Vue fronts confirmed template-owning (PRD §8 Wave B note)
+- [x] typeahead React/Vue fronts confirmed template-owning (PRD §8 Wave B note): both render their own markup from `connect()` bags through `useMachine`, no `<mp-typeahead>` inside
 
 ## M5 — Wave C
 
