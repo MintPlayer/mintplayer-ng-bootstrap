@@ -23,7 +23,7 @@ export default defineConfig(() => ({
       // starting with `mp-` or `mint-` as a custom element.
       template: {
         compilerOptions: {
-          isCustomElement: (tag) => tag.startsWith('mp-') || tag.startsWith('mint-'),
+          isCustomElement: (tag) => tag.startsWith('mp-') || tag.startsWith('mint-') || tag === 'selectedcontent',
         },
       },
     }),

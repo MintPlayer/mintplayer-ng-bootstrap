@@ -3,7 +3,7 @@
 // scoped slot), the default slot as `children`. The root element also takes
 // the consumer's `className` / `attrs` and the `rootRef`.
 import { rewrite } from './expressions.mjs';
-import { GENERATOR, NODE, PROP, TAG, TemplateError, VOID_TAGS, checkElement, groupChains, parseFor, refName, renderedProps, rootElement, slotArgs, slotName } from './source.mjs';
+import { GENERATOR, NATIVE_TAGS, NODE, PROP, TAG, TemplateError, VOID_TAGS, checkElement, groupChains, meaningful, parseFor, refName, renderedProps, rootElement, attrsTarget, slotArgs, slotName } from './source.mjs';
 
 const RENAME = { class: 'className', for: 'htmlFor', tabindex: 'tabIndex', readonly: 'readOnly', autocomplete: 'autoComplete', maxlength: 'maxLength', colspan: 'colSpan', rowspan: 'rowSpan' };
 const FORM_TAGS = new Set(['input', 'select', 'textarea']);
@@ -15,6 +15,7 @@ export function emitReact(src, { generator = GENERATOR, runtime } = {}) {
   const ctx = { src, locals: new Set(), refs: new Map(), uses: new Set(['reactProps']), root: null };
   const { root } = rootElement(src);
   ctx.root = root;
+  ctx.attrsTarget = attrsTarget(src, root);
   const body = children(ctx, src.root.children);
   const name = `${src.name}Template`;
 
@@ -34,7 +35,7 @@ export function emitReact(src, { generator = GENERATOR, runtime } = {}) {
       '',
     );
   }
-  const machine = [...ctx.uses].filter((u) => u === 'reactProps' || u === 'reactFormProps').sort().join(', ');
+  const machine = [...ctx.uses].filter((u) => u === 'reactProps' || u === 'reactFormProps' || u === 'reactOptionProps').sort().join(', ');
 
   return [
     `// GENERATED from ${src.file.replace(/\\/g, '/')} by ${generator}. Do not edit.`,
@@ -108,8 +109,10 @@ function bare(ctx, el, depth) {
   if (el.tagType === TAG.COMPONENT) throw new TemplateError(ctx.src.file, el, `components are not supported (<${el.tag}>)`);
   checkElement(ctx.src, el);
   const isRoot = el === ctx.root;
-  // A form control's bag seeds the DOM; script owns its state afterwards.
-  const spread = FORM_TAGS.has(el.tag) ? 'reactFormProps' : 'reactProps';
+  // A form control's bag seeds the DOM; script owns its state afterwards. An
+  // option's selection is seeded by its select's `defaultValue` (React refuses
+  // `selected` on an option), so its bag goes without it.
+  const spread = FORM_TAGS.has(el.tag) ? 'reactFormProps' : el.tag === 'option' ? 'reactOptionProps' : 'reactProps';
 
   let bagExpr = null;
   const attrs = renderedProps(el).map((p) => {
@@ -124,7 +127,9 @@ function bare(ctx, el, depth) {
       return `{...${spread}(${exp})}`;
     }
     if (p.name === 'bind') {
-      const name = RENAME[p.arg.content] ?? p.arg.content;
+      // `:value.prop` on a form control seeds it, like its bag does.
+      const seed = FORM_TAGS.has(el.tag) && p.arg.content === 'value' && p.modifiers.some((m) => (m.content ?? m) === 'prop');
+      const name = seed ? 'defaultValue' : (RENAME[p.arg.content] ?? p.arg.content);
       return `${name}={${exp}}`;
     }
     return `${eventProp(p.arg.content)}={${exp}}`;
@@ -134,10 +139,15 @@ function bare(ctx, el, depth) {
     ctx.refs.set(ref, el.tag);
     attrs.push(`ref={${ref}Ref}`);
   }
+  if (el === ctx.attrsTarget) attrs.push('{...attrs}');
   if (isRoot) {
-    attrs.push('{...attrs}');
     const base = bagExpr ? `${bagExpr}['class']` : JSON.stringify(el.props.find((p) => p.type === PROP.ATTRIBUTE && p.name === 'class')?.value?.content ?? '');
     attrs.push(`className={[${base}, className].filter(Boolean).join(' ') || undefined}`);
+  }
+  // React's JSX types do not list every native element yet (`selectedcontent`).
+  if (NATIVE_TAGS.has(el.tag)) {
+    if (attrs.length || meaningful(el.children).length) throw new TemplateError(ctx.src.file, el, `<${el.tag}> takes no attributes or content`);
+    return `${pad(depth)}{React.createElement('${el.tag}')}\n`;
   }
   const open = `<${el.tag}${attrs.length ? ' ' + attrs.join(' ') : ''}`;
   if (VOID_TAGS.has(el.tag)) return `${pad(depth)}${open} />\n`;

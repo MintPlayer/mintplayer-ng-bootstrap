@@ -3,7 +3,7 @@
 // the four emitters read (PRD #437 D10).
 import { existsSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
-import { attribute, directive, rootElement } from '../templates/source.mjs';
+import { attribute, attrsTarget, directive, rootElement } from '../templates/source.mjs';
 
 const pascal = (name) => name.split(/[-_]/).map((part) => part[0].toUpperCase() + part.slice(1)).join('');
 const camel = (name) => pascal(name).replace(/^./, (c) => c.toLowerCase());
@@ -99,6 +99,8 @@ export function componentModels({ group, entry, corePackage, template, extension
       templateBase: src.file.replace(/^.*[\\/]/, '').replace(/\.vue$/, ''),
       templateName: src.name,
       rootTag: root.tag,
+      // The element the consumer's attributes land on (mp-attrs), which types the React props.
+      attrsTag: attrsTarget(src, root).tag,
       host,
       hostExpression,
       hostRole: host ? (IMPLICIT_ROLES[root.tag] ?? null) : null,
@@ -127,7 +129,7 @@ export function componentModels({ group, entry, corePackage, template, extension
 }
 
 /** Type names the generated front imports from the entry (or a style's `from`), grouped by module. */
-export function coreImports(model, { values = [], types = [] } = {}) {
+export function coreImports(model, { values = [], types = [], slotTypes = false } = {}) {
   const modules = new Map();
   const add = (module, name, isType) => {
     if (!modules.has(module)) modules.set(module, new Map());
@@ -140,6 +142,11 @@ export function coreImports(model, { values = [], types = [] } = {}) {
     .forEach((style) => [style.scope, style.sheet].forEach((name) => add(model.entryModule, name, false)));
   types.forEach((name) => add(model.entryModule, name, true));
   model.outputs.forEach((output) => add(output.from ?? model.entryModule, output.type, true));
+  // Types a slot's parameters name (Angular's slot directives spell them out).
+  (slotTypes ? model.slots : [])
+    .flatMap((slot) => slot.params?.match(/\b[A-Za-z_]\w*\b/g) ?? [])
+    .filter((name) => model.src.importedTypes.has(name))
+    .forEach((name) => add(model.src.importedTypes.get(name), name, true));
   return [...modules]
     .map(([module, names]) => {
       const list = [...names].sort(([a], [b]) => a.localeCompare(b)).map(([name, isType]) => (isType ? `type ${name}` : name));

@@ -3,6 +3,7 @@
 // `CoreController` (PRD #437 D10). Authored children are captured by
 // `LightChildren` and placed by `slot="…"` into the template's slots.
 import { banner, coreImports, jsdoc, styleImports } from './model.mjs';
+import { slotArgsType } from '../templates/emit-lit.mjs';
 
 const LIT_TYPES = { string: 'String', boolean: 'Boolean', number: 'Number' };
 
@@ -10,6 +11,9 @@ function propertyOptions(input) {
   const options = [];
   if (input.kind) options.push(`type: ${LIT_TYPES[input.kind]}`);
   else options.push('attribute: false');
+  // camelCase inputs take a kebab-case attribute (number-visible), as hand-written elements do.
+  const kebab = input.name.replace(/[A-Z]/g, (c) => `-${c.toLowerCase()}`);
+  if (input.kind && kebab !== input.name) options.push(`attribute: '${kebab}'`);
   if (input.reflect && input.kind) options.push('reflect: true');
   return `{ ${options.join(', ')} }`;
 }
@@ -20,6 +24,8 @@ function propertyOptions(input) {
 export function emitLitComponent(model, { generator, runtime }) {
   const { names } = model;
   const slotNames = model.slots.map((slot) => slot.name);
+  // A scoped slot also takes a render callback: the `<slot>Renderer` property.
+  const renderers = model.slots.filter((slot) => slot.params).map((slot) => ({ slot: slot.name, prop: `${slot.name.replace(/-(\w)/g, (_, c) => c.toUpperCase())}Renderer`, args: slotArgsType(model.src, slot.name) }));
   const types = [model.inputsType, model.methodsType].filter(Boolean);
 
   const lines = [
@@ -32,12 +38,13 @@ export function emitLitComponent(model, { generator, runtime }) {
   styleImports(model)
     .filter(({ module }) => module !== model.entryModule)
     .forEach(({ module, names: list }) => lines.push(`import { ${list.join(', ')} } from '${module}';`));
-  lines.push(`import { ${templateFunction(model)} } from './${model.templateBase}.generated';`, '');
+  lines.push(`import { ${[templateFunction(model), ...renderers.map((r) => `type ${r.args}`)].join(', ')} } from './${model.templateBase}.generated';`, '');
 
   lines.push(jsdoc(model.doc).trimEnd(), `export class ${names.lit} extends LitElement {`);
-  lines.push(`  static override properties = {`, ...model.inputs.map((input) => `    ${input.name}: ${propertyOptions(input)},`), `  };`, '');
+  lines.push(`  static override properties = {`, ...model.inputs.map((input) => `    ${input.name}: ${propertyOptions(input)},`), ...renderers.map((r) => `    ${r.prop}: { attribute: false },`), `  };`, '');
   model.inputs.forEach((input) => lines.push(`${jsdoc(input.doc, '  ')}  declare ${input.name}: ${model.inputsType}['${input.name}'];`));
-  if (model.inputs.length) lines.push('');
+  renderers.forEach((r) => lines.push(`  /** Renders the ${r.slot} slot, called per use; wins over slot="${r.slot}" children. */`, `  declare ${r.prop}: ((args: ${r.args}) => unknown) | null | undefined;`));
+  if (model.inputs.length || renderers.length) lines.push('');
   if (slotNames.length) lines.push(`  readonly #children = new LightChildren(this);`);
   const options = [`idPrefix: '${names.tag}'`, `inputs: () => ({ ${model.inputs.map((i) => `${i.name}: this.${i.name}`).join(', ')} })`];
   if (model.host) {
@@ -55,7 +62,8 @@ export function emitLitComponent(model, { generator, runtime }) {
   lines.push(`  protected override createRenderRoot(): HTMLElement {`, `    return this;`, `  }`, '');
   if (slotNames.length) lines.push(`  protected override willUpdate(): void {`, `    this.#children.capture();`, `  }`, '');
 
-  const slots = slotNames.length ? `, slots: this.#children.slots` : '';
+  const callbacks = renderers.map((r) => `...(this.${r.prop} ? { ${JSON.stringify(r.slot)}: this.${r.prop} } : {})`);
+  const slots = slotNames.length ? (callbacks.length ? `, slots: { ...this.#children.slots, ${callbacks.join(', ')} }` : `, slots: this.#children.slots`) : '';
   lines.push(`  override render() {`, `    return ${templateFunction(model)}({ ...this.#core.props()${slots} });`, `  }`);
 
   model.methods.forEach((method) => {

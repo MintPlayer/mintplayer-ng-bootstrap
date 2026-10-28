@@ -36,14 +36,22 @@ export function emitReactComponent(model, { generator, runtime, extension }) {
   lines.push('');
 
   // Props interface.
-  lines.push(`export interface ${propsName} extends Omit<React.HTMLAttributes<${element}>, ${own.map((n) => `'${n}'`).join(' | ') || 'never'}> {`);
+  lines.push(`export interface ${propsName} extends Omit<React.HTMLAttributes<HTMLElementTagNameMap['${model.attrsTag}']>, ${own.map((n) => `'${n}'`).join(' | ') || 'never'}> {`);
   inputs.forEach((input) => lines.push(`${jsdoc(input.doc, '  ')}  ${input.name}?: ${model.inputsType}['${input.name}'];`));
   model.outputs.forEach((output) => lines.push(`${jsdoc(output.doc, '  ')}  ${output.react}?: (detail: ${output.type}) => void;`));
   named.forEach((slot) => lines.push(`  ${slot.name}?: React.ReactNode;`));
   lines.push(`  children?: React.ReactNode;`, `}`, '');
 
+  // An array or object default is hoisted: a literal in the destructure is a new value each
+  // render, which the core reads as a changed input, re-renders on, and loops forever.
+  const literal = (input) => /^[[{]/.test(input.default.trim());
+  const hoisted = inputs.filter((input) => input.default !== undefined && literal(input));
+  const constName = (input) => `DEFAULT_${input.name.replace(/[A-Z]/g, (c) => `_${c}`).toUpperCase()}`;
+  hoisted.forEach((input) => lines.push(`const ${constName(input)}: ${model.inputsType}['${input.name}'] = ${input.default};`));
+  if (hoisted.length) lines.push('');
+
   const params = [
-    ...inputs.map((input) => (input.default !== undefined ? `${input.name} = ${input.default}` : input.name)),
+    ...inputs.map((input) => (input.default === undefined ? input.name : `${input.name} = ${literal(input) ? constName(input) : input.default}`)),
     ...model.outputs.map((o) => o.react),
     ...named.map((s) => s.name),
     'className',

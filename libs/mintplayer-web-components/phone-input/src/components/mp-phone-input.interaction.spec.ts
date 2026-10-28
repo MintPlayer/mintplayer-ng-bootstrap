@@ -31,10 +31,11 @@ async function withRules(el: MpPhoneInput): Promise<void> {
   await el.updateComplete;
 }
 
-function pick(el: MpPhoneInput, value: string | null): CustomEvent {
-  const ev = new CustomEvent('value-change', { detail: { value }, bubbles: true, composed: true });
-  picker(el).dispatchEvent(ev);
-  return ev;
+/** A user pick on the country select: the native select changes, mp-select reports valuechange. */
+function pick(el: MpPhoneInput, value: string | null): void {
+  const select = picker(el).querySelector('select')!;
+  select.value = value ?? '';
+  select.dispatchEvent(new Event('change', { bubbles: true }));
 }
 
 describe('mp-phone-input interactions', () => {

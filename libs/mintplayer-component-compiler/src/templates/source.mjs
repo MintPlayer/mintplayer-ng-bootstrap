@@ -60,6 +60,17 @@ function typeMembers(scriptText, ast, callee) {
   return { text: scriptText.slice(literal.start, literal.end), members };
 }
 
+/**
+ * Native elements newer than Vue's tag list, which it would parse as components.
+ * The Vue front's build lists them in `isCustomElement` too.
+ */
+export const NATIVE_TAGS = new Set(['selectedcontent']);
+
+function markNativeTags(node) {
+  if (node.type === NODE.ELEMENT && node.tagType === TAG.COMPONENT && NATIVE_TAGS.has(node.tag)) node.tagType = TAG.ELEMENT;
+  (node.children ?? []).forEach(markNativeTags);
+}
+
 export function readSource(file, text) {
   const { descriptor, errors } = parseSfc(text, { filename: file });
   if (errors.length) throw new Error(`${file}: ${errors[0].message ?? errors[0]}`);
@@ -81,6 +92,7 @@ export function readSource(file, text) {
       return scriptText.slice(node.start, node.end).trim().replace(/;?$/, ';');
     });
 
+  markNativeTags(descriptor.template.ast);
   const props = typeMembers(scriptText, ast, 'defineProps');
   const slots = typeMembers(scriptText, ast, 'defineSlots');
   return {
@@ -90,6 +102,12 @@ export function readSource(file, text) {
     templateContent: descriptor.template.content,
     root: descriptor.template.ast,
     imports,
+    // name → module of every type the source imports, for fronts that rebuild their own import lines.
+    importedTypes: new Map(
+      ast.program.body
+        .filter((node) => node.type === 'ImportDeclaration')
+        .flatMap((node) => node.specifiers.map((s) => [s.local.name, node.source.value])),
+    ),
     props,
     slots,
     propNames: new Set(props.members.map((m) => m.name)),
@@ -99,6 +117,15 @@ export function readSource(file, text) {
 /* ------------------------------------------------------------------------ */
 /* Template helpers shared by the emitters                                  */
 /* ------------------------------------------------------------------------ */
+
+/**
+ * `:value.prop` on a `<select>` seeds the selection for React only (its `defaultValue`,
+ * since React refuses `selected` on options). The other fronts select through each
+ * option's `selected` and drop the binding: a live `select.value` write lands before the
+ * options exist, and stringifies a multiple select's array into a value nothing matches.
+ */
+export const isSelectSeed = (el, p) =>
+  el.tag === 'select' && p.type === PROP.DIRECTIVE && p.name === 'bind' && p.arg?.content === 'value' && p.modifiers.some((m) => (m.content ?? m) === 'prop');
 
 export const directive = (el, name) => el.props.find((p) => p.type === PROP.DIRECTIVE && p.name === name);
 export const attribute = (el, name) => el.props.find((p) => p.type === PROP.ATTRIBUTE && p.name === name);
@@ -141,7 +168,7 @@ export function parseFor(src, el) {
 /** The attributes an emitter renders: everything except structure directives and the host marker. */
 export function renderedProps(el) {
   return el.props.filter((p) => {
-    if (p.type === PROP.ATTRIBUTE) return p.name !== HOST_MARKER && p.name !== 'ref';
+    if (p.type === PROP.ATTRIBUTE) return p.name !== HOST_MARKER && p.name !== ATTRS_MARKER && p.name !== 'ref';
     if (['if', 'else-if', 'else', 'for'].includes(p.name)) return false;
     if (p.name === 'bind' && p.arg?.content === 'key') return false;
     return true;
@@ -154,6 +181,27 @@ export function refName(el) {
 
 export function isHost(el) {
   return !!attribute(el, HOST_MARKER);
+}
+
+/** Marks the element that receives the consumer's attributes (`aria-*`, `id`, ...) in React and Vue. */
+export const ATTRS_MARKER = 'mp-attrs';
+
+/**
+ * Where a consumer's attributes land: the `mp-attrs` element (the one carrying the role,
+ * when that is not the root), else the root. Its class stays on the root.
+ */
+export function attrsTarget(src, root) {
+  const marked = [];
+  const walk = (node) => {
+    if (node.type === NODE.ELEMENT && attribute(node, ATTRS_MARKER)) marked.push(node);
+    (node.children ?? []).forEach(walk);
+  };
+  walk(src.root);
+  if (marked.length > 1) throw new TemplateError(src.file, marked[1], `only one element can be ${ATTRS_MARKER}`);
+  if (marked[0] && marked[0].tag !== 'template' && (directive(marked[0], 'if') || directive(marked[0], 'for') || directive(marked[0], 'else') || directive(marked[0], 'else-if'))) {
+    throw new TemplateError(src.file, marked[0], `the ${ATTRS_MARKER} element must always render`);
+  }
+  return marked[0] ?? root;
 }
 
 /** The template's single root element, and whether it is marked as the host. */

@@ -41,10 +41,8 @@ import { queryBuilderLightStyles } from './mp-query-builder.light.styles';
  */
 const html = scopedHtml('query-builder');
 
-// Side-effect-registers <mp-select> and <mp-checkbox>. The toolbar uses
-// the former for the entity picker / sort-by rows and the latter for the
-// per-column projection toggles.
-import '@mintplayer/web-components/select';
+// Side-effect-registers <mp-checkbox>, the per-column projection toggles.
+// The entity picker and sort-by rows are native selects.
 import '@mintplayer/web-components/checkbox';
 
 void MpQueryGroupElement;
@@ -553,16 +551,14 @@ export class MpQueryBuilderElement extends LitElement {
       <div class="qb-toolbar">
         <label class="qb-toolbar-label">
           Entity:
-          <mp-select
-            class="qb-entity-picker"
-            size="sm"
-            .value=${this.rootEntity}
+          <select
+            class="form-select form-select-sm qb-entity-picker"
             ?disabled=${this.disabled}
             @change=${this._onRootEntityChange}
             aria-label=${messages.entity}
           >
-            ${this.schema.map((e) => html`<option value=${e.name}>${e.label}</option>`)}
-          </mp-select>
+            ${this.schema.map((e) => html`<option value=${e.name} ?selected=${e.name === this.rootEntity}>${e.label}</option>`)}
+          </select>
         </label>
         ${projectableFields.length > 0 ? html`
           <span class="qb-toolbar-section qb-field-projection" role="group" aria-label=${messages.columns}>
@@ -591,30 +587,26 @@ export class MpQueryBuilderElement extends LitElement {
         <span class="qb-toolbar-label">${messages.sortBy}:</span>
         ${this.sortBy.map((s, i) => html`
           <span class="qb-sort-row">
-            <mp-select
-              class="qb-sort-field"
-              size="sm"
-              .value=${s.field}
+            <select
+              class="form-select form-select-sm qb-sort-field"
               ?disabled=${this.disabled}
               @change=${(ev: Event) => this._onSortFieldChange(i, ev)}
               aria-label=${`Sort ${i + 1} field`}
             >
-              ${projectableFields.map((f) => html`<option value=${f.name}>${f.label}</option>`)}
+              ${projectableFields.map((f) => html`<option value=${f.name} ?selected=${f.name === s.field}>${f.label}</option>`)}
               ${projectableFields.some((f) => f.name === s.field) ? nothing : html`
-                <option value=${s.field}>(${s.field})</option>
+                <option value=${s.field} selected>(${s.field})</option>
               `}
-            </mp-select>
-            <mp-select
-              class="qb-sort-direction"
-              size="sm"
-              .value=${s.direction}
+            </select>
+            <select
+              class="form-select form-select-sm qb-sort-direction"
               ?disabled=${this.disabled}
               @change=${(ev: Event) => this._onSortDirectionChange(i, ev)}
               aria-label=${`Sort ${i + 1} direction`}
             >
-              <option value="asc">Asc</option>
-              <option value="desc">Desc</option>
-            </mp-select>
+              <option value="asc" ?selected=${s.direction === 'asc'}>Asc</option>
+              <option value="desc" ?selected=${s.direction === 'desc'}>Desc</option>
+            </select>
             <button
               type="button"
               class="btn btn-sm btn-link qb-sort-remove"

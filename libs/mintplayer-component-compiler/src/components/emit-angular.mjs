@@ -50,7 +50,7 @@ export function emitAngularComponent(model, { generator, runtime = '@mintplayer/
   const lines = [banner(model, generator), `import { ${[...angularImports].sort().join(', ')} } from '@angular/core';`];
   if (named.length) lines.push(`import { NgTemplateOutlet } from '@angular/common';`);
   lines.push(`import { ${[...new Set(machine)].sort().join(', ')} } from '${runtime}';`);
-  lines.push(coreImports(model, { values: coreNames, types }));
+  lines.push(coreImports(model, { values: coreNames, types, slotTypes: true }));
   styleImports(model)
     .filter(({ module }) => module !== model.entryModule)
     .forEach(({ module, names: list }) => lines.push(`import { ${list.join(', ')} } from '${module}';`));

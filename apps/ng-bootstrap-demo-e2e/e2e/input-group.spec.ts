@@ -124,8 +124,7 @@ test.describe('bs-input-group joins Angular-wrapped controls', () => {
     // The pre-existing defect (PRD §1.2) that the WC migration claimed to fix and
     // only half did: corners paired, sizing never applied.
     await page.goto('/enterprise/scheduler');
-    await page.waitForSelector('bs-input-group bs-select');
-    await page.waitForFunction(() => !!customElements.get('mp-select'));
+    await page.waitForSelector('bs-input-group bs-select select');
 
     const { boxes, lines, pageOverflow } = await slottedRow(page);
     expect(lines).toBe(1);
@@ -141,8 +140,7 @@ test.describe('bs-input-group joins Angular-wrapped controls', () => {
     // measures. Both properties are required; this asserts the pair.
     await page.setViewportSize({ width: 390, height: 844 });
     await page.goto('/enterprise/scheduler');
-    await page.waitForSelector('bs-input-group bs-select');
-    await page.waitForFunction(() => !!customElements.get('mp-select'));
+    await page.waitForSelector('bs-input-group bs-select select');
 
     const { boxes, lines, pageOverflow } = await slottedRow(page);
     expect(lines).toBeGreaterThan(1);

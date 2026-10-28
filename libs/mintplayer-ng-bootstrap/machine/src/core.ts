@@ -66,7 +66,8 @@ export function useCore<I, S, P, E, C, PC, M>(core: ComponentCore<I, S, P, E, C,
   // Read once: a host attribute is static content, and Angular does not observe it.
   const label = element.getAttribute('aria-label');
   const hydrated = signal(false);
-  const state = signal<S>(core.state ? core.state(untracked(options.inputs)) : ({} as S));
+  const seed = untracked(options.inputs);
+  const state = signal<S>(core.state ? core.state(seed) : ({} as S));
 
   const args = computed<ViewArgs<I, S, C>>(() => ({
     inputs: options.inputs(),
@@ -90,6 +91,9 @@ export function useCore<I, S, P, E, C, PC, M>(core: ComponentCore<I, S, P, E, C,
     models: Object.keys(options.models ?? {}) as never,
     writeModel: (name, value) => options.models?.[name]?.set(value as never),
   });
+  // The baseline the state was seeded from: inputs that change before attaching
+  // (a form control writing its value) reach inputsChanged on attach.
+  runtime.inputs(seed);
   afterNextRender(() => {
     hydrated.set(true);
     const root = options.hostBag ? element : (element.firstElementChild as HTMLElement | null);

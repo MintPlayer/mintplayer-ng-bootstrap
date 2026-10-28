@@ -101,7 +101,26 @@ the template of every front. A template without a manifest is still compiled on 
   - `v-for="(item, i) in items"` is supported, with `:key`.
 - **Expressions.** They may read props, loop locals and `$slots`, and nothing else. Functions
   and arrow functions are refused, so all logic stays in the core.
-- **Elements.** Only native elements and `<slot>` are allowed; no components.
+- **Elements.** Only native elements and `<slot>` are allowed; no components. Vue's parser reads an
+  unknown tag as a component, so newer native elements are listed in `NATIVE_TAGS`
+  (`source.mjs`), today only `<selectedcontent>`. Such an element takes no attributes or content.
+- **`:value.prop` on a `<select>`** is a seed for React only: React emits it as `defaultValue`
+  because it refuses `selected` on an `<option>`. The other fronts drop it and select through
+  each option's `selected` bag key. A live `select.value` write would land before the options
+  exist, and would turn a multiple select's array into a string that matches nothing.
+- **`mp-attrs`.** Marks the element that receives the consumer's attributes (`aria-*`, `id`,
+  `tabindex`, ...) when that is not the root, e.g. the `<select>` inside the select's wrapper.
+  - React spreads `attrs` there and types the props for that element.
+  - Vue sets `inheritAttrs: false` and merges `$attrs` into its bag. The consumer's `class` and
+    `style` stay on the root.
+  - The marked element must always render: no `v-if` or `v-for` on it.
+  - Angular and Lit have a host element, which keeps the attributes. Their cores read `aria-label`
+    as the view's `label` argument.
+- **Scoped slots in Lit.** A slot with parameters also gets a `<slot>Renderer` property on the Lit
+  element, typed with the template's exported `<Name><Slot>SlotArgs`. It wins over `slot="…"`
+  children. Angular's slot directives import the types named in the slot's parameters.
+- **Lit attributes** are the kebab-case form of a camelCase input (`numberVisible` →
+  `number-visible`).
 - **`mp-host`.** Marking the root element `mp-host` makes it the front's host element in
   Angular and Lit:
   - Those two fronts emit only its children. The component applies the root's bag to itself

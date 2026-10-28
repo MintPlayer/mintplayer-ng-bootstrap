@@ -6,7 +6,9 @@ import { unsafeHTML } from 'lit/directives/unsafe-html.js';
 // types plus a bare side-effect import for registration.
 import '@mintplayer/web-components/input-group';
 import '@mintplayer/web-components/select';
-import type { MpSelect, MpSelectOption, SelectChangeEventDetail } from '@mintplayer/web-components/select';
+import type { MpSelect, SelectChangeEventDetail, SelectOption } from '@mintplayer/web-components/select';
+// mp-select renders in the light DOM: its sheet must be adopted into this shadow root.
+import { adoptLightStyles } from '@mintplayer/web-components/light-dom';
 import {
   countryForDialString,
   loadPhoneRules,
@@ -123,6 +125,7 @@ export class MpPhoneInput extends FormAssociatedMixin(LitElement) {
   private _flags: FlagMap | undefined;
   private _flagsRequested = false;
   #stackObserver: ResizeObserver | undefined;
+  #releaseLightStyles: (() => void) | undefined;
   private _composing = false;
   private _preEdit: { value: string; start: number } | null = null;
   private readonly _inputRef: Ref<HTMLInputElement> = createRef();
@@ -342,6 +345,7 @@ export class MpPhoneInput extends FormAssociatedMixin(LitElement) {
 
   override connectedCallback(): void {
     super.connectedCallback();
+    this.#releaseLightStyles ??= adoptLightStyles(this.renderRoot as ShadowRoot);
     this.#wantFlags();
     if (this._digits) this.#wantRules();
 
@@ -368,6 +372,8 @@ export class MpPhoneInput extends FormAssociatedMixin(LitElement) {
 
   override disconnectedCallback(): void {
     super.disconnectedCallback();
+    this.#releaseLightStyles?.();
+    this.#releaseLightStyles = undefined;
     this.#stackObserver?.disconnect();
     this.#stackObserver = undefined;
   }
@@ -397,7 +403,7 @@ export class MpPhoneInput extends FormAssociatedMixin(LitElement) {
           .options=${this.selectOptions()}
           .optionRenderer=${this.renderCountryOption}
           .value=${country}
-          @value-change=${this.onCountryPicked}
+          @valuechange=${this.onCountryPicked}
         ></mp-select>
         <span class="addon" id=${this._dialId}>
           <!-- Always rendered; the stylesheet hides it when the picker's own closed
@@ -460,7 +466,7 @@ export class MpPhoneInput extends FormAssociatedMixin(LitElement) {
     );
   }
 
-  private selectOptions(): MpSelectOption[] {
+  private selectOptions(): SelectOption[] {
     return this.countryList().map((c) => ({
       value: c.iso2,
       // Name FIRST: native typeahead prefix-matches the option text, and
@@ -474,11 +480,11 @@ export class MpPhoneInput extends FormAssociatedMixin(LitElement) {
    * (the `data-*-only` hooks in mp-select's stylesheet). The flag is decorative;
    * the option's accessible name stays `name +dial`.
    */
-  private renderCountryOption = (option: MpSelectOption): string | undefined => {
+  private renderCountryOption = ({ option }: { option: SelectOption }): unknown => {
     const country = this.countryList().find((c) => c.iso2 === option.value);
-    if (!country) return undefined;
+    if (!country) return option.label;
     const flag = this._flags?.[country.iso2];
-    return (
+    return unsafeHTML(
       `<span class="flag-box" aria-hidden="true">${flag ?? ''}</span>` +
       `<span class="rich-label" data-list-only>${escapeHtml(country.name)}</span>` +
       `<span data-list-only>+${country.dialCode}</span>` +

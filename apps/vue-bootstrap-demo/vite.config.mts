@@ -31,7 +31,7 @@ export default defineConfig(({ isSsrBuild }) => ({
         compilerOptions: {
           // Tell the Vue compiler that <mp-*> and <mint-*> are custom
           // elements so it doesn't warn "unknown component".
-          isCustomElement: (tag) => tag.startsWith('mp-') || tag.startsWith('mint-'),
+          isCustomElement: (tag) => tag.startsWith('mp-') || tag.startsWith('mint-') || tag === 'selectedcontent',
         },
       },
     }),

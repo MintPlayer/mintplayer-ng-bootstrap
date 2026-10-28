@@ -167,6 +167,30 @@ breaking change is a major. (2.20.0 and 2.21.0 broke `^2.x` consumers in a minor
   - **Lit:** the elements render in the light DOM. `mp-navbar-brand` is removed (put a `slot="brand"` child in
     `mp-navbar`), `slot="end"` is replaced by `<mp-navbar-nav align="end">`, `mp-navbar-dropdown` is a native `<details>` whose `label` attribute or `slot="label"` names it,
     and the DSD chrome is retired. `mp-dropdown-menu`'s `input-label` is removed: name it with `aria-label`.
+- **Select is a native `<select>` generated from one source in every front (issue #437, wave B).** The select is
+  written once in `@mintplayer/ui-core/select` and compiled into all four fronts. Every front renders a
+  `<select class="form-select">` in the light DOM, so it opens, picks and submits with JS off and in Angular SSR;
+  the selection is the options' `selected` attribute on the server (React's `defaultValue`).
+  - **Every front:**
+    - The change event is `valuechange` (Angular `(valuechange)`, React `onValueChange`, Vue `@valuechange`) and
+      reports `{ value, values }`. React's callback receives that detail itself, not an event.
+    - `value` and `values` are two-way. A `value=""` option means no selection (`null`).
+    - The form value is the native select's own: there is no form-associated custom element any more. A `name`
+      submits one entry per selected option.
+    - `options` takes `{ value, label, disabled? }` items and `{ label, options }` groups (rendered as
+      `<optgroup>`). Without `options`, `<option>` / `<optgroup>` children are rendered inside the select.
+    - Rich options (customizable select, `appearance: base-select`) come from an `option` slot instead of an
+      `optionRenderer` that returned an HTML string: Angular `<ng-template bsSelectOption let-option="option">`,
+      React `option={({ option }) => …}`, Vue `#option="{ option }"`, Lit `optionRenderer` returning a template.
+      Only where the engine supports it; elsewhere the option is its label.
+    - A consumer's `aria-*`, `id` and `tabindex` reach the `<select>` in React and Vue, whose props are typed
+      for `HTMLSelectElement`. In Angular and Lit, `aria-label` on the host names the select.
+  - **Angular:** `identifier` is removed. `BsSelectOption` (the `option` directive) now writes the `selected`
+    attribute for SSR. The generated slot directive is `BsSelectOptionDirective`.
+  - **Vue:** `v-model` is now `v-model:value` (and `v-model:values` when `multiple`).
+  - **Lit:** `mp-select` renders in the light DOM (no shadow root, no `part`s). Attributes are kebab-case
+    (`input-label`, `error-text`, `number-visible`).
+  - `mp-query-builder` and `mp-scheduler` use plain native selects internally.
 
 
 

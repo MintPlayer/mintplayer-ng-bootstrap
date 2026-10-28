@@ -19,8 +19,6 @@ import { warnIfColorModeTokenMissing } from '../../_styles/color-mode-warning';
  */
 const html = scopedHtml('query-condition');
 
-// Side-effect-registers <mp-select> for the field + operator pickers.
-import '@mintplayer/web-components/select';
 
 export class MpQueryConditionElement extends LitElement {
   protected override createRenderRoot(): HTMLElement {
@@ -272,30 +270,26 @@ export class MpQueryConditionElement extends LitElement {
           title=${messages.reorderHint}
           @pointerdown=${this._onDragPointerDown}
         >⋮</button>
-        <mp-select
-          class="qb-field-select"
-          size="sm"
-          .value=${node.field}
+        <select
+          class="form-select form-select-sm qb-field-select"
           ?disabled=${disabled}
           @change=${this._onFieldChange}
           aria-label=${messages.field}
         >
-          ${fields.map((f) => html`<option value=${f.name}>${f.label}</option>`)}
-          ${field ? nothing : html`<option value=${node.field}>(${node.field})</option>`}
-        </mp-select>
-        <mp-select
-          class="qb-operator-select"
-          size="sm"
-          .value=${node.operator}
+          ${fields.map((f) => html`<option value=${f.name} ?selected=${f.name === node.field}>${f.label}</option>`)}
+          ${field ? nothing : html`<option value=${node.field} selected>(${node.field})</option>`}
+        </select>
+        <select
+          class="form-select form-select-sm qb-operator-select"
           ?disabled=${disabled || !field}
           @change=${this._onOperatorChange}
           aria-label=${messages.operator}
         >
           ${operators.map((op) => html`
-            <option value=${op}>${messages.operators[op] ?? op}</option>
+            <option value=${op} ?selected=${op === node.operator}>${messages.operators[op] ?? op}</option>
           `)}
-          ${operators.includes(node.operator) ? nothing : html`<option value=${node.operator}>${node.operator}</option>`}
-        </mp-select>
+          ${operators.includes(node.operator) ? nothing : html`<option value=${node.operator} selected>${node.operator}</option>`}
+        </select>
         ${shape === 'null'
           ? nothing
           : html`<span class="qb-value" ${ref(this._editorMount)}></span>`}

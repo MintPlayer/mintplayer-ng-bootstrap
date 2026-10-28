@@ -749,10 +749,7 @@ $z-event-selected: 2;    // selected event: its straddling handles must win
   font-size: 12px;
 }
 
-/* `<mp-select>` renders the native `<select>` and Bootstrap's `.form-select`
-   styling inside its OWN shadow root, so all that is left out here is how much
-   room the host takes in the row. Nothing inside it is reachable from this
-   stylesheet — and nothing needs to be. */
+/* A native select; .form-select comes from the shared formSelectStyles. */
 .scheduler-day-popover .popover-resource-select {
   flex: 1 1 auto;
   min-width: 0;

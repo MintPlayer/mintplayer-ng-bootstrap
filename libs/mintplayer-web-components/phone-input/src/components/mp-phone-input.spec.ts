@@ -280,9 +280,11 @@ describe('mp-phone-input', () => {
     await flagsRendered(el);
     const select = el.shadowRoot!.querySelector('mp-select') as HTMLElement & {
       options: { value: string }[] | null;
-      optionRenderer: ((o: { value: string }) => string | undefined) | null;
+      optionRenderer: ((args: { option: { value: string } }) => unknown) | null;
     };
-    const rendered = (select.options ?? []).map((o) => select.optionRenderer?.(o) ?? '');
+    // The renderer returns unsafeHTML(markup); the markup is the directive's argument.
+    const markup = (r: unknown) => String((r as { values?: unknown[] } | undefined)?.values?.[0] ?? '');
+    const rendered = (select.options ?? []).map((option) => markup(select.optionRenderer?.({ option })));
     expect(rendered).toHaveLength(244);
     // No option renders an empty flag box: one resolution fills the whole list.
     expect(rendered.filter((html) => !/<span class="flag-box" aria-hidden="true"><svg /.test(html))).toEqual([]);

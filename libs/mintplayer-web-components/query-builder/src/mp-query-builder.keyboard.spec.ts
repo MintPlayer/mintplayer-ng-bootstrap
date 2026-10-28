@@ -148,12 +148,10 @@ describe('mp-query-builder (FR-33 Alt+Arrow keyboard reorder)', () => {
   it('Alt+ArrowDown fired from a child input is ignored (path[0] !== row)', async () => {
     const el = await mount(threeConditions());
     const row = rowFor(el, 'c1');
-    // Find an inner mp-select inside the same row's shadow root —
-    // mp-query-condition now uses <mp-select> for the field + operator
-    // pickers instead of native <select>.
+    // The field picker: a native select inside the row.
     // `row` is a plain element (the condition row), not a LitElement — and the
     // whole family is light-DOM now, so the picker is an ordinary descendant.
-    const inner = row.querySelector('mp-select');
+    const inner = row.querySelector('select');
     expect(inner).toBeTruthy();
     inner!.dispatchEvent(new KeyboardEvent('keydown', {
       key: 'ArrowDown', altKey: true, bubbles: true, composed: true,

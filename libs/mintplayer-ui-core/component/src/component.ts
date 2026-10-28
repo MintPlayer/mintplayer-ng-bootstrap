@@ -157,10 +157,19 @@ export function coreRuntime<I, S, P, E, C, PC, M>(
         },
         emit: (name, detail) => hooks.emit(name, detail),
       };
+      // Inputs that changed between the first report and attaching (a form writing its
+      // value during creation) are delivered now; the state was seeded before them.
+      const seed = last;
       last = hooks.inputs();
       dispose = core.attach?.(api);
+      if (seed && !sameInputs(seed, last)) core.inputsChanged?.(api, seed);
     },
     inputs(inputs) {
+      // Before attaching, keep the first inputs seen: they are what the state was seeded from.
+      if (!api) {
+        last ??= inputs;
+        return;
+      }
       const prev = last;
       last = inputs;
       if (api && prev && !sameInputs(prev, inputs)) core.inputsChanged?.(api, prev);

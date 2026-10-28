@@ -65,6 +65,44 @@ describe('mp-host', () => {
   });
 });
 
+describe('select value seed', () => {
+  const src = read('<div v-bind="bag"><select v-bind="bag" :value.prop="label"><slot /></select></div>');
+
+  it('React seeds defaultValue; Angular, Lit and Vue drop the binding', () => {
+    expect(emitReact(src, RUNTIME)).toContain('defaultValue={label}');
+    expect(emitAngular(src).text).not.toContain('[value]');
+    expect(emitLit(src, RUNTIME)).not.toContain('.value=');
+    expect(emitVue(src)).toContain('<select v-bind="bag">');
+  });
+});
+
+describe('mp-attrs', () => {
+  const src = read('<div v-bind="bag"><select mp-attrs v-bind="bag"><slot /></select></div>');
+
+  it('React spreads the consumer attributes on the marked element, the class on the root', () => {
+    const text = emitReact(src, RUNTIME);
+    expect(text).toMatch(/<select \{\.\.\.reactFormProps\(bag\)\} \{\.\.\.attrs\}>/);
+    expect(text).toMatch(/<div \{\.\.\.reactProps\(bag\)\} className=/);
+  });
+
+  it('Vue merges $attrs into the marked bag and keeps class and style on the root', () => {
+    const text = emitVue(src);
+    expect(text).toContain('defineOptions({ inheritAttrs: false });');
+    expect(text).toContain(`<select v-bind="{ ...bag, ...$attrs, class: bag['class'], style: undefined }">`);
+    expect(text).toContain('<div :class="$attrs.class" :style="$attrs.style" v-bind="bag">');
+    expect(text).not.toContain('mp-attrs');
+  });
+
+  it('Angular and Lit drop the marker', () => {
+    expect(emitAngular(src).text).not.toContain('mp-attrs');
+    expect(emitLit(src, RUNTIME)).not.toContain('mp-attrs');
+  });
+
+  it('rejects a conditional target', () => {
+    expect(() => emitReact(read('<div v-bind="bag"><select v-if="label" mp-attrs v-bind="bag"></select></div>'), RUNTIME)).toThrow(/always render/);
+  });
+});
+
 describe('refusals', () => {
   it('rejects a function in an expression', () => {
     expect(() => emitAngular(read('<div :title="() => label"></div>'))).toThrow();

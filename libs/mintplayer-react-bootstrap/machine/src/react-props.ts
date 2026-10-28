@@ -42,6 +42,16 @@ export function reactFormProps(bag: AttrBag): Record<string, string | number | b
   return Object.fromEntries(Object.entries(reactProps(bag)).map(([name, value]) => [SEED[name] ?? name, value]));
 }
 
+/**
+ * `reactProps` for an `<option>`: `selected` is dropped, because React seeds an
+ * option's selection from its select's `defaultValue` and warns about it on an
+ * option. The other fronts render it, which is how their server HTML selects.
+ */
+export function reactOptionProps(bag: AttrBag): Record<string, string | number | boolean> {
+  const { selected: _selected, ...rest } = bag;
+  return reactProps(rest);
+}
+
 /** A style bag as a core's `connect()` returns it: CSS property names, `null` = unset. */
 export type StyleBag = Record<string, string | null>;
 

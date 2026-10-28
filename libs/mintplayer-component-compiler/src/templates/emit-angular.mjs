@@ -4,7 +4,7 @@
 // A `mp-host` root is the component's host: only its children are emitted, and
 // the component applies the root bag to its host itself.
 import { rewrite } from './expressions.mjs';
-import { GENERATOR, NODE, PROP, TAG, TemplateError, VOID_TAGS, checkElement, groupChains, parseFor, refName, renderedProps, rootElement, slotArgs, slotName } from './source.mjs';
+import { GENERATOR, NODE, PROP, TAG, TemplateError, VOID_TAGS, checkElement, groupChains, parseFor, refName, renderedProps, rootElement, isSelectSeed, slotArgs, slotName } from './source.mjs';
 
 const escapeText = (text) => text.replace(/&(?![a-z#0-9]+;)/gi, '&amp;').replace(/</g, '&lt;').replace(/@/g, '&#64;').replace(/\{/g, '&#123;').replace(/\}/g, '&#125;');
 const escapeAttr = (text) => text.replace(/&(?![a-z#0-9]+;)/gi, '&amp;').replace(/"/g, '&quot;');
@@ -65,7 +65,7 @@ function bare(ctx, el, depth) {
   if (el.tagType === TAG.COMPONENT) throw new TemplateError(ctx.src.file, el, `components are not supported (<${el.tag}>)`);
   checkElement(ctx.src, el);
 
-  const attrs = renderedProps(el).map((p) => {
+  const attrs = renderedProps(el).filter((p) => !isSelectSeed(el, p)).map((p) => {
     if (p.type === PROP.ATTRIBUTE) return p.value ? `${p.name}="${escapeAttr(p.value.content)}"` : p.name;
     const exp = x(ctx, p.exp.content);
     if (p.name === 'bind' && !p.arg) {

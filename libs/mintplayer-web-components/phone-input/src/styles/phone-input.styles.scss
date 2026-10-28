@@ -88,7 +88,7 @@ mp-select {
 // A sibling selector rather than JS: `mp-select` and the addon are children of the
 // same shadow root here, so the real state is directly selectable and can never
 // drift out of sync with what the picker is actually doing.
-mp-select[rich] ~ .addon .flag {
+mp-select:has(> select > button) ~ .addon .flag {
   display: none;
 }
 

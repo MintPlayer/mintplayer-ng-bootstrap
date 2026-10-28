@@ -104,6 +104,7 @@ This turns S13 into the full library. Every M4–M6 component is then authored a
 - [x] S14 navbar family + dropdown-menu fully generated; the hand-written fronts are deleted (dropdown-menu converts with M4)
 - [ ] S15 group styles on accordion (+ tab)
 - [ ] S16 escape hatches (RouterLinkActive, checkbox CVA, React imperative handle)
+  - the select's CVA is resolved: `select.angular.ts` adds the accessor and validity as `hostDirectives` and merges the form state over the inputs in `extendInputs`
 - [ ] S17 clean-tree build + cache hit
 - [x] S18 template type errors fail `typecheck`; decide on a VS Code extension
 - [ ] S19 fixture workspace run (publishability)
@@ -116,7 +117,11 @@ Every item below is authored as a D10 component source once M3b lands.
 - [ ] navbar (+ brand, item, dropdown) and dropdown-menu (moved from M3); delete `SSR_NAVBAR_HEIGHT`, the navbar chrome and the dropdown-menu chrome
   - done so far: S13 templates; Lit navbar and dropdown-menu in light DOM; navbar and dropdown chrome deleted; `SSR_NAVBAR_HEIGHT` replaced by a CSS estimate; press-time triggers; new Lit, core and e2e specs
   - left: CHANGELOG Breaking entries; then regenerate it under M3b/S14
-- [ ] select
+- [x] select: one D10 source (`ui-core/select`), a native `<select>` in every front; query-builder and scheduler use plain native selects inside
+  - compiler additions it needed: `NATIVE_TAGS` (`<selectedcontent>`), `:value.prop` on a select as a React-only seed, `mp-attrs` (consumer attributes on a non-root element in React and Vue), a Lit `<slot>Renderer` per scoped slot, kebab-case Lit attributes, slot parameter types imported in Angular
+  - left for every `mp-attrs` component: Angular and Lit keep consumer `aria-*` other than `aria-label` on the host
+- [x] dropdown-menu stays hand-written: its item, divider and header are attribute directives on the consumer's own `<li>`s, which a generated component cannot be
+- [ ] Angular `aria-passthrough.spec.ts` lists `PENDING_437` (calendar, code-snippet, datepicker, datetime-picker, timepicker): those wrappers do not forward ARIA today; drop each entry as its component converts
 - [ ] otp-input
 - [ ] multi-range
 - [ ] calendar

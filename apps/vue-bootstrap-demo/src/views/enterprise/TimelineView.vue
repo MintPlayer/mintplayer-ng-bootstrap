@@ -126,9 +126,9 @@ const DECLARATIVE_SOURCE = `<BsTimeline align="alternate">
           <label class="form-label mb-1">Orientation</label>
           <BsSelect
             aria-label="Orientation"
-            :model-value="orientation"
+            :value="orientation"
             :options="orientationOptions"
-            @update:model-value="orientation = $event as TimelineOrientation"
+            @update:value="orientation = $event as TimelineOrientation"
           />
         </div>
 
@@ -136,9 +136,9 @@ const DECLARATIVE_SOURCE = `<BsTimeline align="alternate">
           <label class="form-label mb-1">Alignment</label>
           <BsSelect
             aria-label="Alignment"
-            :model-value="align"
+            :value="align"
             :options="alignOptions"
-            @update:model-value="align = $event as TimelineAlign"
+            @update:value="align = $event as TimelineAlign"
           />
         </div>
 
@@ -146,9 +146,9 @@ const DECLARATIVE_SOURCE = `<BsTimeline align="alternate">
           <label class="form-label mb-1">Selectable</label>
           <BsSelect
             aria-label="Selectable"
-            :model-value="selectable"
+            :value="selectable"
             :options="selectableOptions"
-            @update:model-value="selectable = $event as TimelineSelectable"
+            @update:value="selectable = $event as TimelineSelectable"
           />
         </div>
 

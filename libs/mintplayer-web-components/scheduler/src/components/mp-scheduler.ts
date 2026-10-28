@@ -41,6 +41,7 @@ import { schedulerStyles } from '../styles/scheduler.styles';
 // without this. `formControlStyles` FIRST so the scheduler's own rules win any
 // tie on specificity.
 import { formControlStyles } from '../../../_styles/form-control.styles';
+import { formSelectStyles } from '../../../_styles/form-select.styles';
 import { invalidFeedbackStyles } from '../../../_styles/invalid-feedback.styles';
 import { DragManager, PointerTarget, DragCompletionResult } from '../drag';
 import { InputHandler, NormalizedPointerEvent } from '../input';
@@ -52,10 +53,6 @@ import { OverlayController } from '@mintplayer/web-components/overlay';
 // do not cross a shadow boundary — the WC carries its own, so it looks right
 // nested in here, where a bare input would render unstyled.
 import '@mintplayer/web-components/checkbox';
-// Same reasoning for the day popover's resource picker. `mp-select` wraps a
-// NATIVE `<select>` and owns no overlay of its own, so nesting it inside the
-// popover cannot interfere with the popover's own dismissal or focus handling.
-import '@mintplayer/web-components/select';
 // The editor's start/end fields. It owns TWO overlays of its own, which is why
 // the host's Escape handling has to defer to the dismiss stack — see
 // handleKeyDown. Its `value` is a real Date, so no string parsing on save.
@@ -74,7 +71,7 @@ let schedulerInstanceCounter = 0;
  * - SchedulerEventEmitter: Dispatches custom events
  */
 export class MpScheduler extends LitElement {
-  static override styles = [formControlStyles, invalidFeedbackStyles, schedulerStyles];
+  static override styles = [formControlStyles, formSelectStyles, invalidFeedbackStyles, schedulerStyles];
 
   static override get observedAttributes(): string[] {
     return [
@@ -867,15 +864,15 @@ export class MpScheduler extends LitElement {
           ? html`
               <label class="popover-resource">
                 <span class="popover-resource-label">${this.msg('newEventResource')}</span>
-                <mp-select
-                  class="popover-resource-select"
-                  input-label=${this.msg('newEventResource')}
+                <select
+                  class="form-select popover-resource-select"
+                  aria-label=${this.msg('newEventResource')}
                 >
                   <option value="">${this.msg('unassignedResource')}</option>
                   ${resources.map(
                     (resource) => html`<option value=${resource.id}>${resource.title}</option>`,
                   )}
-                </mp-select>
+                </select>
               </label>
             `
           : nothing}
@@ -1096,11 +1093,8 @@ export class MpScheduler extends LitElement {
     const day = this.popoverDate;
     if (!day) return;
     // Read the resource picker BEFORE closing — closing tears the panel down.
-    // `<mp-select>`, so `value` is a host property rather than a native one; it
-    // is `string | null` there, and an empty value means the bucket row.
-    const picker = this.shadowRoot?.querySelector<HTMLElement & { value: string | null }>(
-      'mp-select.popover-resource-select',
-    );
+    // An empty value means the bucket row.
+    const picker = this.shadowRoot?.querySelector<HTMLSelectElement>('select.popover-resource-select');
     const resourceId = picker?.value || undefined;
     const start = new Date(day);
     start.setHours(0, 0, 0, 0);

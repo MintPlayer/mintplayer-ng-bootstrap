@@ -81,7 +81,8 @@ describe('Vue wrapper attribute passthrough — the invariant, statically', () =
     const offenders = Object.entries(SFC_SOURCES)
       .filter(([path]) => !FILTERED_FORWARDING.includes(path))
       .filter(([, source]) => source.includes('inheritAttrs: false'))
-      .filter(([, source]) => !source.includes('v-bind="$attrs"'))
+      // A compiled view merges $attrs into its mp-attrs element's bag instead.
+      .filter(([, source]) => !/v-bind="(\$attrs"|\{[^"]*\.\.\.\$attrs)/.test(source))
       .map(([path]) => path);
 
     expect(offenders, 'these SFCs opt out of automatic forwarding and forward nothing').toEqual([]);
@@ -132,7 +133,7 @@ const TARGETS: Record<string, string> = {
   BsRadioGroup: 'div[role=radiogroup]',
   BsRibbon: 'mp-ribbon',
   BsScheduler: 'mp-scheduler',
-  BsSelect: 'mp-select',
+  BsSelect: 'select',
   BsShell: 'div.shell',
   BsSignaturePad: 'mp-signature-pad',
   BsSplitter: 'mp-splitter',
