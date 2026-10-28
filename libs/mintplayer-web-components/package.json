@@ -30,13 +30,7 @@
   },
   "peerDependencies": {
     "lit": "^3.3.0",
-    "@lit/context": "^1.1.6",
-    "highlight.js": "^11.0.0"
-  },
-  "peerDependenciesMeta": {
-    "highlight.js": {
-      "optional": true
-    }
+    "@lit/context": "^1.1.6"
   },
   "dependencies": {
     "@mintplayer/ui-core": "^1.1.0",

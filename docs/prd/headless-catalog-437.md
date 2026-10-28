@@ -353,6 +353,16 @@ Each spike is small and throwaway, lives on a scratch branch or under `_spike-*/
   Volar gives completion and checking on the source `.view.vue` itself. One limit: a prop typed as an open
   `Record` (`NavbarBag`) accepts any key, so a misspelled bag key is not caught. Use closed view interfaces where
   a typo matters.
+- **S11: pass; highlighting after hydration, never on the server.**
+  - Theme toggle: the cookie is read during SSR (`resolveServerTheme`), so there is no flash. The toggle
+    renders disabled at its final size and hydration enables it (Q2).
+  - Code snippet: the server and the first client render show the same escaped source. That source is
+    line-numbered, selectable and linkable. Highlighted rows are core state written after attach, and the
+    view uses them only while they match the current code and language. Nothing differs at hydration.
+  - Highlighting on the server was rejected. It would put every grammar in the server bundle, and it would
+    still need the client to fetch the same grammar for a later `code` change.
+  - The copy button is disabled until hydrated, because it cannot work without script.
+  - The rows are core-built markup, set through the compiler's new `v-html`.
 - **S15 and S19: not run yet.** S15 (compiler-stamped `data-mps`, one sheet per group) runs at the accordion
   conversion. The navbar group already shares two sheets across four components, but its bags still carry
   `data-mps`. S19 (fixture workspace) runs before the package is made public.
@@ -361,7 +371,7 @@ Each spike is small and throwaway, lives on a scratch branch or under `_spike-*/
   - S3 at tree-select (M5)
   - S4 and S10 before M5
   - S7 before M6
-  - S6, S9 and S11 at their components
+  - S6 and S9 at their components
 
 ## 8. Component catalog
 

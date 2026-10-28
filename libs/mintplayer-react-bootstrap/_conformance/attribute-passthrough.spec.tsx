@@ -179,7 +179,7 @@ const CASES: Case[] = [
   { name: 'BsSparkline', target: 'span.sparkline', render: (p) => <BsSparkline {...p} points={[1, 3, 2]} />, labelTarget: 'svg[role=img]' },
   bare('BsTrendChart', 'mp-trend-chart', BsTrendChart),
   bare('BsCheckbox', 'input[type=checkbox]', BsCheckbox),
-  bare('BsCodeSnippet', 'mp-code-snippet', BsCodeSnippet),
+  bare('BsCodeSnippet', 'div.code-snippet', BsCodeSnippet),
   bare('BsDatatable', 'mp-datatable', BsDatatable),
   bare('BsDatepicker', 'div.mp-datepicker', BsDatepicker),
   bare('BsDatetimePicker', 'div.mp-datetime-picker', BsDatetimePicker),

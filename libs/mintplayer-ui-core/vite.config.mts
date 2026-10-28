@@ -47,6 +47,8 @@ export default defineConfig(() => {
           // node_modules, and import('libphonenumber-js/max') stays a lazy chunk there.
           /^libphonenumber-js(\/.*)?$/,
           /^intl-tel-input(\/.*)?$/,
+          // Optional peer of the code snippet: each grammar stays its own lazy chunk in the consumer.
+          /^highlight\.js(\/.*)?$/,
         ],
         output: {
           preserveModules: false,

@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * Guards the one guarantee that makes `<mp-code-snippet>` cheap: highlight.js
+ * Guards the one guarantee that makes `the code snippet core` cheap: highlight.js
  * grammars are loaded on demand, never eagerly.
  *
  * Deliberately NOT a gzip budget like check-ribbon-bundle-size.mjs. hljs is
@@ -38,13 +38,13 @@ export const REPO_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '../..
 
 /** Where the built code-snippet entry may live, most-likely first. */
 export const ENTRY_CANDIDATES = [
-  'dist/libs/mintplayer-web-components/code-snippet/index.mjs',
-  'dist/libs/mintplayer-web-components/code-snippet.mjs',
+  'dist/libs/mintplayer-ui-core/code-snippet/index.mjs',
+  'dist/libs/mintplayer-ui-core/code-snippet.mjs',
 ];
 
 export const LABEL = 'check-code-snippet-hljs-lazy';
 
-export const BUILD_COMMAND = 'npx nx build mintplayer-web-components';
+export const BUILD_COMMAND = 'npx nx build mintplayer-ui-core';
 
 /**
  * The guard. Exit 2 when there is no build to audit, 1 when highlight.js is no

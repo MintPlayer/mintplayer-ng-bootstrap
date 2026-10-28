@@ -1,6 +1,6 @@
 import hljs from 'highlight.js/lib/core';
 import type { LanguageFn } from 'highlight.js';
-import { hljsLanguageIds, hljsLoaders, type HljsLanguageKey } from '../hljs-loaders.generated';
+import { hljsLanguageIds, hljsLoaders, type HljsLanguageKey } from './hljs-loaders.generated';
 
 /**
  * Lazy access to highlight.js.

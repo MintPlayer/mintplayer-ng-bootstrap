@@ -2,7 +2,6 @@ import { Component, type Type } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 
 import { BsCarouselComponent } from '@mintplayer/ng-bootstrap/carousel';
-import { BsCodeSnippetComponent } from '@mintplayer/ng-bootstrap/code-snippet';
 import { BsHierarchyChartComponent } from '@mintplayer/ng-bootstrap/charts/hierarchy';
 import { BsTrendChartComponent } from '@mintplayer/ng-bootstrap/charts/trend';
 import { BsDatatableComponent } from '@mintplayer/ng-bootstrap/datatable';
@@ -114,7 +113,6 @@ interface WrapperCase {
  */
 const WRAPPERS: WrapperCase[] = [
   { selector: 'bs-carousel', tag: 'mp-carousel', component: BsCarouselComponent },
-  { selector: 'bs-code-snippet', tag: 'mp-code-snippet', component: BsCodeSnippetComponent },
   { selector: 'bs-hierarchy-chart', tag: 'mp-hierarchy-chart', component: BsHierarchyChartComponent },
   { selector: 'bs-trend-chart', tag: 'mp-trend-chart', component: BsTrendChartComponent },
   { selector: 'bs-datatable', tag: 'mp-datatable', component: BsDatatableComponent },
@@ -189,13 +187,6 @@ async function render(entry: WrapperCase): Promise<{ host: HTMLElement; target: 
   };
 }
 
-/**
- * Wrappers that do not forward yet. Each is regenerated from a D10 source in issue #437
- * M4, whose front writes the attributes onto its own markup; patching the wrapper first
- * would be deleted with it. Remove an entry when its component converts.
- */
-const PENDING_437 = new Set(['bs-code-snippet']);
-
 describe('Angular wrapper ARIA passthrough', () => {
   afterEach(() => {
     TestBed.resetTestingModule();
@@ -205,7 +196,7 @@ describe('Angular wrapper ARIA passthrough', () => {
      root. These were `it.fails` until the directive landed — the inventory went
      from 0/19 transparent to 19/19 in one change, which is the whole reason the
      guard was written before the fix rather than after it. */
-  describe.each(WRAPPERS.filter((w) => !PENDING_437.has(w.selector)))('$selector', (entry) => {
+  describe.each(WRAPPERS)('$selector', (entry) => {
     it(`forwards aria-label, role, id and tabindex to <${entry.tag}>`, async () => {
       const { target } = await render(entry);
 

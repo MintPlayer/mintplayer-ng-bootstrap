@@ -29,7 +29,7 @@ Each component milestone is the same checklist, done for every component in the 
 - [ ] S6 measurement-free server layout (carousel, splitter, hierarchy chart)
 - [ ] S9 navbar dropdown CSS-only open
 - [x] S8 base-select under SSR
-- [ ] S11 theme cookie SSR and code-snippet highlighting
+- [x] S11 theme cookie SSR and code-snippet highlighting
 - [ ] S4 virtual window in React/Vue (before M5)
 - [ ] S10 query-builder editor contract (before M5)
 - [ ] S7 scheduler static grid go/no-go (before M6)
@@ -121,7 +121,7 @@ Every item below is authored as a D10 component source once M3b lands.
   - compiler additions it needed: `NATIVE_TAGS` (`<selectedcontent>`), `:value.prop` on a select as a React-only seed, `mp-attrs` (consumer attributes on a non-root element in React and Vue), a Lit `<slot>Renderer` per scoped slot, kebab-case Lit attributes, slot parameter types imported in Angular
   - left for every `mp-attrs` component: Angular and Lit keep consumer `aria-*` other than `aria-label` on the host
 - [x] dropdown-menu stays hand-written: its item, divider and header are attribute directives on the consumer's own `<li>`s, which a generated component cannot be
-- [ ] Angular `aria-passthrough.spec.ts` lists `PENDING_437` (code-snippet): that wrapper does not forward ARIA today; drop the entry when it converts
+- [x] Angular `aria-passthrough.spec.ts` lists `PENDING_437` (code-snippet): dropped with the conversion, the generated front puts consumer attributes on its root
 - [x] otp-input: one D10 source (`ui-core/otp-input`), one real input in every front, the boxes decorative; `case` renamed `letterCase`; Angular CVA + `focus()` delegation as host directives
   - compiler fixes it needed: builtin output types (`string`) are not imported; the Vue `mp-attrs` merge coerces the bag's `class` to a string
 - [x] multi-range: one D10 source (`ui-core/multi-range`), native range inputs stacked on one track in every front; the core adds the neighbour constraint, the fill and press-on-track; Angular CVA as a host directive
@@ -132,7 +132,7 @@ Every item below is authored as a D10 component source once M3b lands.
   - `mp-scheduler` (a shadow-root host) embeds `mp-datetime-picker`: it now adopts the light sheets and ships `_styles/input-group.styles` (Bootstrap `.input-group` + `.btn`), and its editor's Escape steps aside while a picker popover is open
 - [x] signature-pad
 - [x] theme-toggle (Q2)
-- [ ] code-snippet
+- [x] code-snippet: highlighting after hydration (S11); the rows set through the compiler's new `v-html`; highlight.js loaders moved to ui-core
 - [ ] phone-input; convert the Lit `mp-input-group` to a light front over `ui-core/input-group` with it
 - [ ] M4 controls that sit in a group (select, phone-input, datepicker, ...) read the `.input-group-sm/lg` ancestor and the `--mp-group-radius-*` channel in their own scoped sheets: the group no longer mirrors `size` onto them
 - [ ] splitter

@@ -1,12 +1,8 @@
-// highlight.js token -> colour map, shared by every component that renders
-// highlighted source. Declared ONCE here: components include the same
-// `hljsThemeStyles` CSSResult in their own `static styles`, so Lit attaches a
-// single underlying CSSStyleSheet to all of their shadow roots rather than one
-// copy per component.
+// highlight.js token -> colour map for the code snippet.
 //
 // The palette is a port of highlight.js's a11y-dark.css (@ericwbailey). It is
 // expressed as custom properties rather than literal colours so the theming
-// layer can swap the whole palette in one place — see the `light-dark()` block
+// layer can swap the whole palette in one place, see the `light-dark()` block
 // below and code-snippet-viewer.md §8.
 //
 // Two groups exist here that upstream a11y-dark does NOT define, and both are
@@ -16,12 +12,11 @@
 // JSON's parse tree. Tokens that ARE nested under a mapped ancestor (e.g.
 // `hljs-attr` inside `hljs-tag` in XML) deliberately inherit instead.
 
-// `light-dark()` is a CSS function, not a Sass one — written bare so Sass
+// `light-dark()` is a CSS function, not a Sass one, written bare so Sass
 // passes it through verbatim. It resolves against the `color-scheme` the page
-// sets on [data-bs-theme], which inherits across the shadow boundary; there is
-// no ancestor selector and no JS anywhere in this file. Measured in
-// code-snippet-viewer.md §14.1.
-:host {
+// sets on [data-bs-theme]; there is no ancestor selector and no JS anywhere in
+// this file. Measured in code-snippet-viewer.md §14.1.
+.code-snippet {
   // a11y-dark / a11y-light base surfaces.
   --mp-code-bg: light-dark(#fefefe, #2b2b2b);
   --mp-code-fg: light-dark(#545454, #f8f8f2);
@@ -40,7 +35,7 @@
   --mp-code-purple: light-dark(#7928a1, #dcc6e0);
 
   // Muted punctuation. The dark value is a light grey on #2b2b2b; the light
-  // value has to be CHOSEN, not converted — #c8c8c2 on #fefefe is ~1.6:1 and
+  // value has to be CHOSEN, not converted: #c8c8c2 on #fefefe is ~1.6:1 and
   // unreadable. #6a6a66 is the same hue family at 5.39:1.
   --mp-code-punctuation: light-dark(#6a6a66, #c8c8c2);
 
@@ -49,49 +44,36 @@
   // red 5.02, light green 5.09 ... dark red 7.12 ... dark fg 13.28.
 }
 
-/* Comment */
-.hljs-comment,
-.hljs-quote { color: var(--mp-code-comment); }
+// The token spans are highlight.js output inserted as markup, so the rewriter
+// cannot stamp them: every rule anchors on the stamped line text above them.
 
-/* Red */
-.hljs-variable,
-.hljs-template-variable,
-.hljs-tag,
-.hljs-name,
-.hljs-selector-id,
-.hljs-selector-class,
-.hljs-regexp,
-.hljs-deletion { color: var(--mp-code-red); }
+/*! @mps-global */
+.line-text[data-mps=code-snippet] :is(.hljs-comment, .hljs-quote) { color: var(--mp-code-comment); }
 
-/* Orange */
-.hljs-number,
-.hljs-built_in,
-.hljs-literal,
-.hljs-type,
-.hljs-params,
-.hljs-meta,
-.hljs-link { color: var(--mp-code-orange); }
+/*! @mps-global */
+.line-text[data-mps=code-snippet] :is(.hljs-variable, .hljs-template-variable, .hljs-tag, .hljs-name, .hljs-selector-id, .hljs-selector-class, .hljs-regexp, .hljs-deletion) { color: var(--mp-code-red); }
 
-/* Yellow */
-.hljs-attribute,
-.hljs-attr { color: var(--mp-code-yellow); }
+/*! @mps-global */
+.line-text[data-mps=code-snippet] :is(.hljs-number, .hljs-built_in, .hljs-literal, .hljs-type, .hljs-params, .hljs-meta, .hljs-link) { color: var(--mp-code-orange); }
 
-/* Green */
-.hljs-string,
-.hljs-symbol,
-.hljs-bullet,
-.hljs-addition { color: var(--mp-code-green); }
+/*! @mps-global */
+.line-text[data-mps=code-snippet] :is(.hljs-attribute, .hljs-attr) { color: var(--mp-code-yellow); }
 
-/* Muted (JSON punctuation — braces, brackets, commas, colons) */
-.hljs-punctuation { color: var(--mp-code-punctuation); }
+/*! @mps-global */
+.line-text[data-mps=code-snippet] :is(.hljs-string, .hljs-symbol, .hljs-bullet, .hljs-addition) { color: var(--mp-code-green); }
 
-/* Blue */
-.hljs-title,
-.hljs-section { color: var(--mp-code-blue); }
+// JSON punctuation: braces, brackets, commas, colons.
+/*! @mps-global */
+.line-text[data-mps=code-snippet] .hljs-punctuation { color: var(--mp-code-punctuation); }
 
-/* Purple */
-.hljs-keyword,
-.hljs-selector-tag { color: var(--mp-code-purple); }
+/*! @mps-global */
+.line-text[data-mps=code-snippet] :is(.hljs-title, .hljs-section) { color: var(--mp-code-blue); }
 
-.hljs-emphasis { font-style: italic; }
-.hljs-strong { font-weight: bold; }
+/*! @mps-global */
+.line-text[data-mps=code-snippet] :is(.hljs-keyword, .hljs-selector-tag) { color: var(--mp-code-purple); }
+
+/*! @mps-global */
+.line-text[data-mps=code-snippet] .hljs-emphasis { font-style: italic; }
+
+/*! @mps-global */
+.line-text[data-mps=code-snippet] .hljs-strong { font-weight: bold; }

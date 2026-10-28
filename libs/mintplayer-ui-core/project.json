@@ -25,16 +25,19 @@
         "{projectRoot}/**/*.scoped.styles.ts",
         "{projectRoot}/styles/bootstrap.css",
         "{projectRoot}/phone-core/src/metadata-loaders.generated.ts",
-        "{projectRoot}/phone-core/src/metadata/*.generated.ts"
+        "{projectRoot}/phone-core/src/metadata/*.generated.ts",
+        "{projectRoot}/code-snippet/src/hljs-loaders.generated.ts"
       ],
       "inputs": [
         "{projectRoot}/**/*.scss",
         "{workspaceRoot}/tools/scripts/build-web-components.mjs",
         "{workspaceRoot}/tools/scripts/lib/*.mjs",
         "{workspaceRoot}/tools/scripts/build-phone-metadata.mjs",
+        "{workspaceRoot}/tools/scripts/build-hljs-loaders.mjs",
         {
           "externalDependencies": [
-            "libphonenumber-js"
+            "libphonenumber-js",
+            "highlight.js"
           ]
         }
       ],
@@ -43,7 +46,8 @@
         "parallel": false,
         "commands": [
           "node tools/scripts/build-web-components.mjs libs/mintplayer-ui-core",
-          "node tools/scripts/build-phone-metadata.mjs"
+          "node tools/scripts/build-phone-metadata.mjs",
+          "node tools/scripts/build-hljs-loaders.mjs"
         ]
       },
       "dependsOn": [

@@ -26,7 +26,7 @@ axeAuditSuite(test, expect, [
     // the part with roles and names worth auditing.
     path: '/advanced/code-snippet',
     interact: async (page) => {
-      await page.locator('mp-code-snippet .line-number').first().waitFor();
+      await page.locator('bs-code-snippet .line-number').first().waitFor();
     },
   },
   { path: '/basic/forms/checkbox' },

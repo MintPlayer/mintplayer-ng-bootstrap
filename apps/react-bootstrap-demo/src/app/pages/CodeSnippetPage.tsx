@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { BsCodeSnippet } from '@mintplayer/react-bootstrap/code-snippet';
-import type { CodeLineAnnotation } from '@mintplayer/web-components/code-snippet';
+import type { CodeLineAnnotation } from '@mintplayer/react-bootstrap/code-snippet';
 import './CodeSnippetPage.css';
 
 const META_SOURCE = `import { BsCodeSnippet } from '@mintplayer/react-bootstrap/code-snippet';
@@ -52,11 +52,11 @@ const ANNOTATED_SOURCE = `const COVERAGE: CodeLineAnnotation[] = [
   annotations={COVERAGE}
   activeLine={active}
   lineHref={(line) => \`#L\${line}\`}
-  onLineActivate={(e) => { e.preventDefault(); setActive(e.detail.line); }}
+  onLineActivate={(e) => { e.preventDefault(); setActive(e.line); }}
 />
 
 /* kind is opaque — colour it yourself:
-   .coverage::part(annotation-uncovered) { background: rgb(220 53 69 / 16%); } */`;
+   .coverage .annotation-uncovered { background: rgb(220 53 69 / 16%); } */`;
 
 const SIZED_SOURCE = `<BsCodeSnippet className="sized-snippet" code={source} language="ts" lineNumbers />
 
@@ -115,7 +115,7 @@ export function CodeSnippetPage() {
           activeLine={activeLine}
           lineHref={(line: number) => `#L${line}`}
           label="Coverage report for greet()"
-          onLineActivate={(e) => { e.preventDefault(); setActiveLine(e.detail.line); }}
+          onLineActivate={(e) => { e.preventDefault(); setActiveLine(e.line); }}
         />
         <BsCodeSnippet code={ANNOTATED_SOURCE} language="tsx" />
       </section>

@@ -46,8 +46,8 @@ describe('check-code-snippet-hljs-lazy', () => {
 
   it('prefers the per-entrypoint output over the flat one', () => {
     expect(ENTRY_CANDIDATES).toEqual([
-      'dist/libs/mintplayer-web-components/code-snippet/index.mjs',
-      'dist/libs/mintplayer-web-components/code-snippet.mjs',
+      'dist/libs/mintplayer-ui-core/code-snippet/index.mjs',
+      'dist/libs/mintplayer-ui-core/code-snippet.mjs',
     ]);
   });
 
@@ -73,7 +73,7 @@ describe('check-code-snippet-hljs-lazy', () => {
 
   it('points at the build that produces its artifact', () => {
     expect(HLJS_LABEL).toBe('check-code-snippet-hljs-lazy');
-    expect(HLJS_BUILD_COMMAND).toContain('mintplayer-web-components');
+    expect(HLJS_BUILD_COMMAND).toContain('mintplayer-ui-core');
   });
 });
 
@@ -152,7 +152,7 @@ describe('check-code-snippet-hljs-lazy main', () => {
   it('exits 2 with the build hint when nothing is built', () => {
     const io = capture();
     expect(hljsMain({ repoRoot: repoWith({}), ...io })).toBe(2);
-    expect(io.errored()).toContain('  npx nx build mintplayer-web-components');
+    expect(io.errored()).toContain('  npx nx build mintplayer-ui-core');
   });
 
   it('passes a build that imports only lib/core statically and grammars on demand', () => {

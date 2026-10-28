@@ -288,6 +288,31 @@ breaking change is a major. (2.20.0 and 2.21.0 broke `^2.x` consumers in a minor
     `signature-pad-canvas`, `signature-pad-text`, `signature-pad-undo` and `signature-pad-clear`.
     `MpSignaturePadElement` is now `MpSignaturePad`. The `Signature`, `Stroke` and `Point` types come from
     `@mintplayer/ui-core/signature-pad` and are re-exported by every front.
+- **Code snippet is generated from one source in every front (issue #437).** It is written once in
+  `@mintplayer/ui-core/code-snippet` (`codeSnippetCore`, `connectCodeSnippet`) and compiled into all four
+  fronts, so it is server-rendered everywhere. With JS off it shows the escaped source: line-numbered,
+  selectable, and linkable when `lineHref` is set. Highlighting follows hydration, and the copy button is
+  disabled until then.
+  - **Every front:** the root is `.code-snippet` (a `div` in React and Vue, the host in Angular and Lit),
+    and consumer attributes land there. The markup is light DOM, so `::part()` is gone:
+    - an annotation's `kind` is the row class `annotation-<kind>` (`.coverage .annotation-uncovered`);
+    - Angular needs `::ng-deep` for it, Vue `:deep()`.
+  - **`theme` and `wrap`** are written on the root as `data-theme` and `data-wrap`.
+  - **Strings:** `copyLabel`, `lineLabel`, `regionLabel`, `copiedLabel`, `copiedAnnouncement` and
+    `keymapHint` are one `labels` input (`Partial<CodeSnippetLabels>`, defaults in `CODE_SNIPPET_LABELS`).
+    The copy button's visible text is `labels.copyText`.
+  - **Events:**
+    - `lineActivate` carries a `CodeLineActivation` (`{ line, preventDefault() }`) instead of a cancelable DOM
+      event. Angular emits it as `(lineactivate)`; React passes it to `onLineActivate`.
+    - The language event is `languageDetected` with the language as its payload: Angular
+      `(languagedetected)`, React `onLanguageDetected`, Lit `languagedetected`.
+  - **Methods:** `scrollToLine(line)` and the new `whenHighlighted()` are on every front.
+  - **Removed:** source passed as slot or children content (pass `code`).
+  - **Moved:** `registerLanguage`, `canHighlight` and `CodeLineAnnotation` now come from ui-core, and every
+    front re-exports them. `highlight.js` is now an optional peer of `@mintplayer/ui-core`, not of
+    `@mintplayer/web-components`.
+  - **Lit:** `mp-code-snippet` renders in the light DOM. Row ids are per instance (`<id>-L<n>`), since
+    `L<n>` would repeat across snippets on one page.
 - **Theme toggle is generated from one source in every front (issue #437).** It is written once in
   `@mintplayer/ui-core/theming` (`themeToggleCore`, `normaliseModes`, `toggleEntries`) and compiled into
   all four fronts, so it is server-rendered everywhere. With JS off it renders disabled at its final size,

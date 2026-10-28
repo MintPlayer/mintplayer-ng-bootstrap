@@ -1,21 +1,16 @@
 /*
   Annotation colours belong to the consumer: `kind` is an opaque string, so the
-  component ships no rule for it and `::part(annotation-<kind>)` is the channel.
-
-  @lit/react roots the component AT the custom element, so the className lands
-  straight on `<mp-code-snippet>` and `::part()` matches without any descendant
-  step. (Angular needs `::ng-deep mp-code-snippet::part(...)`, because there the
-  element sits inside the wrapper's template.)
+  component ships no rule for it and the row class `annotation-<kind>` is the channel.
 */
-.coverage::part(annotation-covered) {
+.coverage .annotation-covered {
   background: rgb(25 135 84 / 14%);
 }
 
-.coverage::part(annotation-partial) {
+.coverage .annotation-partial {
   background: rgb(255 193 7 / 20%);
 }
 
-.coverage::part(annotation-uncovered) {
+.coverage .annotation-uncovered {
   background: rgb(220 53 69 / 16%);
 }
 
@@ -28,7 +23,7 @@
   min-width: 0;
 }
 
-/* @lit/react roots at the custom element, so this reaches the part that scrolls. */
+/* The className lands on the snippet root, a flex column whose listing scrolls inside it. */
 .sized-snippet {
   max-height: 220px;
 }

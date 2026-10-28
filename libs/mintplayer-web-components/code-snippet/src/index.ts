@@ -1,5 +1,12 @@
-export * from './mp-code-snippet.element';
-export * from './types';
-// The escape hatch for a language outside the bundled set, plus the predicate
-// a consumer needs to ask whether one is available before rendering.
-export { registerLanguage, canHighlight } from './core/highlighter';
+export * from './generated';
+
+// The core's public types and the language escape hatch, so a consumer needs one import.
+export {
+  CODE_SNIPPET_LABELS,
+  canHighlight,
+  registerLanguage,
+  type CodeLineActivation,
+  type CodeLineAnnotation,
+  type CodeSnippetLabels,
+  type CodeSnippetTheme,
+} from '@mintplayer/ui-core/code-snippet';

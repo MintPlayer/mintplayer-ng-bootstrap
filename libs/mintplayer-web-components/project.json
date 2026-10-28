@@ -26,7 +26,6 @@
         "{projectRoot}/**/*.styles.ts",
         "{projectRoot}/flags/src/flag-loaders.generated.ts",
         "{projectRoot}/flags/src/all-flags.generated.ts",
-        "{projectRoot}/code-snippet/src/hljs-loaders.generated.ts",
         "{projectRoot}/theming/bs-theme-preboot.js"
       ],
       "inputs": [
@@ -39,16 +38,10 @@
         "{workspaceRoot}/tools/scripts/lib/wc-codegen.mjs",
         "{workspaceRoot}/tools/scripts/lib/rescope-css.mjs",
         "{workspaceRoot}/tools/scripts/build-flag-loaders.mjs",
-        "{workspaceRoot}/tools/scripts/build-hljs-loaders.mjs",
         "{projectRoot}/theming/src/**/*.ts",
         "{workspaceRoot}/libs/mintplayer-ui-core/theming/src/**/*.ts",
         "{workspaceRoot}/tools/scripts/build-theme-preboot.mjs",
-        "{workspaceRoot}/tools/scripts/lib/cli.mjs",
-        {
-          "externalDependencies": [
-            "highlight.js"
-          ]
-        }
+        "{workspaceRoot}/tools/scripts/lib/cli.mjs"
       ],
       "cache": true,
       "options": {
@@ -56,7 +49,6 @@
         "commands": [
           "node tools/scripts/build-web-components.mjs libs/mintplayer-web-components",
           "node tools/scripts/build-flag-loaders.mjs",
-          "node tools/scripts/build-hljs-loaders.mjs",
           "node tools/scripts/build-theme-preboot.mjs"
         ]
       }

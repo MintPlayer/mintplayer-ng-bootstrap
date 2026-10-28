@@ -87,18 +87,16 @@ async function isInMoveMode(page: Page): Promise<boolean> {
  * paragraph. Use a synchronous page.evaluate so the assertion can read
  * "empty before, populated after" without waiting on a locator timeout.
  *
- * Reads the `.code` property off the inner `<mp-code-snippet>` — that's
- * the source JSON the Angular wrapper forwards via `[codeToCopy]`.
+ * Reads the rendered source back out of the snippet's line rows, one row per
+ * source line.
  */
 async function readLiveLayout(page: Page): Promise<string> {
   return await page.evaluate(() => {
     const liveSnap = Array.from(document.querySelectorAll('.dock-demo__snapshot')).find(
       (d) => d.querySelector('.dock-demo__snapshot-title')?.textContent?.includes('Live layout'),
     );
-    const snippet = liveSnap?.querySelector('mp-code-snippet') as
-      | (HTMLElement & { code?: string })
-      | null;
-    return snippet?.code ?? '';
+    const rows = liveSnap?.querySelectorAll('bs-code-snippet .line-text') ?? [];
+    return Array.from(rows, (row) => row.textContent ?? '').join('\n');
   });
 }
 

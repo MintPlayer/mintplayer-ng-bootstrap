@@ -57,7 +57,6 @@ export default defineConfig(() => {
           // A declared dependency: the registry and the cores are shared with the framework fronts.
           /^@mintplayer\/ui-core(\/.*)?$/,
           'tslib',
-          /^highlight\.js(\/.*)?$/,
           // Declared `dependencies`, so consumers resolve them from their own
           // node_modules: an app that also uses libphonenumber-js ships one copy
           // instead of two, and `import('libphonenumber-js/max')` stays a bare

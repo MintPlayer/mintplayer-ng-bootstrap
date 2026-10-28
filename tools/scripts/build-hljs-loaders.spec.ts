@@ -126,7 +126,7 @@ describe('hljsPaths', () => {
   it('derives both paths from the injected repo root', () => {
     const root = join('base', 'repo');
     expect(hljsPaths(root).outPath).toBe(
-      join(root, 'libs/mintplayer-web-components/code-snippet/src/hljs-loaders.generated.ts'),
+      join(root, 'libs/mintplayer-ui-core/code-snippet/src/hljs-loaders.generated.ts'),
     );
     expect(hljsPaths(root).commonPath).toBe(join(root, 'node_modules/highlight.js/lib/common.js'));
   });
@@ -211,7 +211,7 @@ describe('main', () => {
     await main(root);
 
     expect(console.log).toHaveBeenCalledWith(
-      expect.stringContaining('skipped libs/mintplayer-web-components/code-snippet/src/hljs-loaders.generated.ts'),
+      expect.stringContaining('skipped libs/mintplayer-ui-core/code-snippet/src/hljs-loaders.generated.ts'),
     );
   });
 });

@@ -33,7 +33,7 @@
 <p>
     Each line can carry a <code>kind</code>, up to two gutter labels and a description.
     <code>kind</code> is an opaque string — the component ships no colours for it, so you
-    style <code>::part(annotation-&lt;kind&gt;)</code> from your own stylesheet and the
+    style the row class <code>annotation-&lt;kind&gt;</code> from your own stylesheet and the
     component stays coverage-agnostic.
 </p>
 <p class="text-body-secondary">
@@ -50,7 +50,7 @@
     [activeLine]="activeLine()"
     [lineHref]="lineHref"
     [label]="'Coverage report for total()'"
-    (lineActivate)="onLineActivate($event)"
+    (lineactivate)="onLineActivate($event)"
 ></bs-code-snippet>
 <bs-code-snippet [code]="snippetAnnotations" [language]="'html'"></bs-code-snippet>
 <bs-code-snippet [code]="snippetAnnotationsTs" [language]="'ts'"></bs-code-snippet>
