@@ -13,7 +13,10 @@ the milestone set (N5), targeted specs only, capped with `timeout` and `--testTi
 - [ ] NS3 composition fixture + Lit adoption fix
 - [ ] NS4 module identity of bundled composed children
 - [ ] NS5 output-name collisions with DOM events
-- [ ] NS6 cross-group check-mode staleness
+- [ ] NS6 cross-group and cross-config check-mode staleness
+- [ ] NS7 content (named, scoped, default) into a composed child; Lit adoption vs parent render
+- [ ] NS8 `v-model:x` on a composed child via `ModelBinding`
+- [ ] NS9 self-composition, three levels, Angular SSR included
 
 ## N1 — Source and pipeline
 
@@ -32,6 +35,8 @@ the milestone set (N5), targeted specs only, capped with `timeout` and `--testTi
 - [ ] Composed-child binding validation against the child manifest.
 - [ ] DOM-event output-name table and check (PRD §5.4).
 - [ ] `--check` covers cross-group staleness (NS6).
+- [ ] `registry: [configs]`: other configs' manifests join the registry read-only; the Nx plugin adds their globs to the inputs.
+- [ ] Slot names of a composed child validated against its template's `defineSlots`; `v-model:x` only on a `model: true` input.
 
 ## N2 — Partials in the four emitters
 
@@ -50,6 +55,9 @@ the milestone set (N5), targeted specs only, capped with `timeout` and `--testTi
 - [ ] Vue: `<BsX :in @lower / @update:x>`, with the import.
 - [ ] Lit: `<mp-x .in @lower>`, a registering import, and `data-mp-owned`.
 - [ ] `web-components/machine/src/host-props.ts`: `ownedByTemplate` honours `data-mp-owned`.
+- [ ] Content into a composed child (PRD §5.5): Angular slot directives + `ng-content`, React render props / children, Vue as written, Lit `<slot>Renderer` / owned children.
+- [ ] `ModelBinding<T>` in `ui-core/component`; `v-model:x` → value + set in every front (PRD §5.6).
+- [ ] Self-composition in every front; the cycle check exempts the self edge (PRD §5.7).
 
 ## N4 — Docs
 

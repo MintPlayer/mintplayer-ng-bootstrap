@@ -40,13 +40,17 @@ may call themselves. **Composed children** are other components, each with its o
 6. The query builder goes back to nested markup. The file-manager in M6 is the first component to use
    composition.
 
-## 3. Non-goals
+## 3. Scope
 
-- Passing slots into a composed child (`<mp-datatable><template #cell>…`). This is deferred until a component needs
-  it, and recorded in §8 as an open question rather than a parking lot.
-- `v-model` on a composed child. The first version uses `:x` together with `@xChange`.
-- A component that composes itself. Trees use partials, because the state lives in one core.
-- Partials or composition that cross compiler configs. One config holds all the groups that refer to one another.
+The owner pulled all four first-draft non-goals into scope (2026-10-28: "they may be unmissable"):
+
+- **Content into a composed child.** Named and scoped slots, plus default content (§5.5, NS7).
+- **`v-model:x` on a composed child** (§5.6, NS8).
+- **A component that composes itself**, each instance with its own core (§5.7, NS9).
+- **Composition across compiler configs.** A config can read another config's manifests into its registry (§5.8,
+  NS6).
+
+There are no non-goals.
 
 ## 4. Findings (investigation 2026-10-28)
 
@@ -173,7 +177,7 @@ Three read-only investigations, one per front pair and one for the pipeline. Not
 - The compiler validates every binding name against the child's manifest: an unknown input or output is an error.
 - A bag (`v-bind="view.x"`) may add native attributes such as `class`, `aria-*` and `data-*`, which the front
   forwards like a consumer's attributes.
-- A composed child has no children in this version, so no slots (§3).
+- A composed child takes content through its slots (§5.5).
 
 **Emitted per front:**
 
@@ -204,6 +208,59 @@ element: `toggle`, `select`, `change`, `input`, `close`. On a composed child the
 compiler refuses a lowercased output name that is in a list of standard event names, and the component renames
 the output. The list is a fixed table in the compiler. NS5 measures whether any current manifest collides.
 
+### 5.5 Content into a composed child
+
+**Source.** Content is passed with Vue's own syntax:
+- `<mp-x><template #name="{ a, b }">…</template></mp-x>` for a named or scoped slot;
+- plain children for the default slot.
+
+The compiler checks each slot name against the child's template slots (its `defineSlots`). Inside the slot, an
+expression may read the parent's props, loop locals and the slot's parameters.
+
+| Front | Emitted |
+|-|-|
+| Angular | `<ng-template bsXName let-a="a" let-b="b">…</ng-template>` inside `<bs-x>`, with the child's slot directive in `imports`. Default content is projected by `<ng-content>`. |
+| React | a render prop `name={({ a, b }) => <>…</>}`. Default content goes to `children`. |
+| Vue | `<template #name="{ a, b }">` as written. |
+| Lit | a scoped slot becomes `.nameRenderer=${({ a, b }) => html\`…\`}`. Unscoped and default content become children (named ones carry `slot="name"`), each marked `data-mp-owned` (§5.3). |
+
+**Lit risk.** A child's own adoption must not fight the parent's render (NS7).
+
+### 5.6 `v-model:x` on a composed child
+
+A pure view has nothing to assign to, so two-way binding needs a value object from the core.
+`ui-core/component` exports `ModelBinding<T> = { readonly value: T; readonly set: (v: T) => void }`.
+`v-model:x="view.thing"` compiles to `:x="view.thing.value"` plus `@xChange="view.thing.set"`.
+
+The compiler checks two things:
+- `x` is a `model: true` input of the child;
+- the expression is a member path.
+
+The type of `ModelBinding` does the rest.
+
+### 5.7 A component that composes itself
+
+A template may use its own element's tag. Each instance has its own core. Recursion ends with the data, because the
+template places the tag under a `v-if` or a `v-for` that ends.
+
+| Front | Self-reference |
+|-|-|
+| Angular | a standalone component can use itself in its own template without listing itself in `imports`; NS9 proves this under SSR |
+| React | the generated component refers to itself |
+| Vue | it refers to itself by file name |
+| Lit | it uses its own tag |
+
+The group-cycle check exempts a group's edge to itself.
+
+### 5.8 Composition across configs
+
+A config may list `registry: ['../other/component-compiler.config.mjs']`. The manifests of those configs join the
+registry read-only: they are resolved but never emitted. Their front packages come from their own config's front
+mapping.
+
+The Nx plugin adds the listed configs' manifest globs to `compile-components` inputs, so the cache key changes when a
+referenced manifest changes.
+
 ## 6. Spikes
 
 Each spike writes its verdict into §7 below before the milestone it gates starts.
@@ -215,7 +272,10 @@ Each spike writes its verdict into §7 below before the milestone it gates start
 | NS3 | Composition fixture: a minimal two-group fixture (a host that composes `mp-treeview`) in all four fronts, including the Lit adoption fix. | N3 | the child renders and its output reaches the host core in every front; the Lit host does not re-adopt it (no loop, measured by a mutation counter); Angular SSR renders the child |
 | NS4 | Module identity: does bundling a composed child into the parent entry's chunk duplicate the scoped-styles registry or a context key (React, Vue, Lit)? | N3 | one registry instance per page, measured by the count of `style[data-mps]` per scope = 1 |
 | NS5 | Output collisions: list every current manifest output whose lowercased name is a DOM event name. | N3 | list written; zero collisions after renames, or a rename recorded in the CHANGELOG |
-| NS6 | Cross-group staleness: `compile-components-check` detects a stale front when only the CHILD manifest changed. | N1 | edit a child input name → check fails on the parent's generated files |
+| NS6 | Cross-group and cross-config staleness: `compile-components-check` detects a stale front when only the CHILD manifest changed, including a child in a `registry` config. | N1 | edit a child input name → check fails on the parent's generated files; the Nx input hash changes |
+| NS7 | Content into a composed child: a scoped slot, a named unscoped slot and default content, in all four fronts; Lit adoption vs the parent's render. | N3 | the content renders in the child's slot with its params; a parent re-render keeps node identity in Lit; Angular SSR renders it |
+| NS8 | `v-model:x` on a composed child via `ModelBinding`. | N3 | a child edit reaches `set`; a parent change reaches the child; a non-model input is a compile error |
+| NS9 | Self-composition: a component that renders its own tag, three levels deep, in all four fronts, Angular SSR included. | N3 | three nested instances with independent cores; no compile cycle error; SSR hydrates |
 
 ## 7. Spike verdicts
 
@@ -223,8 +283,6 @@ Each spike writes its verdict into §7 below before the milestone it gates start
 
 ## 8. Open questions
 
-- Slots into composed children: needed once a component passes a template through (scheduler → datetime-picker
-  probably does not, file-manager → treeview may want a node template). Decide at the first real need, inside #437.
 - Hydration payload size for deep trees (NS1 measures it); if it is large, consider `ngSkipHydration` on the
   partial's container only.
 
