@@ -76,6 +76,23 @@ describe('select value seed', () => {
   });
 });
 
+describe('v-html', () => {
+  const src = read('<div v-bind="bag"><code v-bind="bag" v-html="label"></code></div>');
+
+  it('each front sets the markup its own way, as content rather than an attribute', () => {
+    expect(emitAngular(src).text).toContain('[innerHTML]="label()"');
+    expect(emitReact(src, RUNTIME)).toContain('dangerouslySetInnerHTML={{ __html: label }}');
+    const lit = emitLit(src, RUNTIME);
+    expect(lit).toContain("import { unsafeHTML } from 'lit/directives/unsafe-html.js'");
+    expect(lit).toContain('${unsafeHTML(label)}</code>');
+    expect(emitVue(src)).toContain('v-html="label"');
+  });
+
+  it('rejects content next to v-html', () => {
+    expect(() => emitLit(read('<div v-bind="bag"><code v-html="label">x</code></div>'), RUNTIME)).toThrow(/takes no content/);
+  });
+});
+
 describe('mp-attrs', () => {
   const src = read('<div v-bind="bag"><select mp-attrs v-bind="bag"><slot /></select></div>');
 

@@ -3,7 +3,7 @@
 // scoped slot), the default slot as `children`. The root element also takes
 // the consumer's `className` / `attrs` and the `rootRef`.
 import { rewrite } from './expressions.mjs';
-import { GENERATOR, NATIVE_TAGS, NODE, PROP, TAG, TemplateError, VOID_TAGS, checkElement, groupChains, meaningful, parseFor, refName, renderedProps, rootElement, attrsTarget, slotArgs, slotName } from './source.mjs';
+import { GENERATOR, NATIVE_TAGS, NODE, PROP, TAG, TemplateError, VOID_TAGS, checkElement, directive, groupChains, meaningful, parseFor, refName, renderedProps, rootElement, attrsTarget, slotArgs, slotName } from './source.mjs';
 
 const RENAME = { class: 'className', for: 'htmlFor', tabindex: 'tabIndex', readonly: 'readOnly', autocomplete: 'autoComplete', maxlength: 'maxLength', colspan: 'colSpan', rowspan: 'rowSpan' };
 const FORM_TAGS = new Set(['input', 'select', 'textarea']);
@@ -143,6 +143,9 @@ function bare(ctx, el, depth) {
     ctx.refs.set(ref, el.tag);
     attrs.push(`ref={${ref}Ref}`);
   }
+  // v-html: core-produced markup, never consumer input.
+  const html = directive(el, 'html');
+  if (html) attrs.push(`dangerouslySetInnerHTML={{ __html: ${x(ctx, html.exp.content)} }}`);
   if (el === ctx.attrsTarget) attrs.push('{...attrs}');
   if (isRoot) {
     const base = bagExpr ? `${bagExpr}['class']` : JSON.stringify(el.props.find((p) => p.type === PROP.ATTRIBUTE && p.name === 'class')?.value?.content ?? '');

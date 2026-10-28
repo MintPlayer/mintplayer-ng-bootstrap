@@ -4,7 +4,7 @@
 // A `mp-host` root is the component's host: only its children are emitted, and
 // the component applies the root bag to its host itself.
 import { rewrite } from './expressions.mjs';
-import { GENERATOR, NODE, PROP, TAG, TemplateError, VOID_TAGS, checkElement, groupChains, parseFor, refName, renderedProps, rootElement, isSelectSeed, slotArgs, slotName } from './source.mjs';
+import { GENERATOR, NODE, PROP, TAG, TemplateError, VOID_TAGS, checkElement, directive, groupChains, parseFor, refName, renderedProps, rootElement, isSelectSeed, slotArgs, slotName } from './source.mjs';
 
 const escapeText = (text) => text.replace(/&(?![a-z#0-9]+;)/gi, '&amp;').replace(/</g, '&lt;').replace(/@/g, '&#64;').replace(/\{/g, '&#123;').replace(/\}/g, '&#125;');
 const escapeAttr = (text) => text.replace(/&(?![a-z#0-9]+;)/gi, '&amp;').replace(/"/g, '&quot;');
@@ -82,6 +82,9 @@ function bare(ctx, el, depth) {
     const call = /^[\w$.]+$/.test(p.exp.content.trim()) ? `${exp}($event)` : exp;
     return `(${p.arg.content})="${escapeAttr(call)}"`;
   });
+  // v-html: core-produced markup. Angular sanitises it, which keeps spans and classes.
+  const html = directive(el, 'html');
+  if (html) attrs.push(`[innerHTML]="${escapeAttr(x(ctx, html.exp.content))}"`);
   const ref = refName(el);
   if (ref) attrs.push(`#${ref}`);
   const open = `<${el.tag}${attrs.length ? ' ' + attrs.join(' ') : ''}>`;

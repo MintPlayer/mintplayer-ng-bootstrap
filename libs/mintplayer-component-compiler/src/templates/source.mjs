@@ -169,7 +169,7 @@ export function parseFor(src, el) {
 export function renderedProps(el) {
   return el.props.filter((p) => {
     if (p.type === PROP.ATTRIBUTE) return p.name !== HOST_MARKER && p.name !== ATTRS_MARKER && p.name !== 'ref';
-    if (['if', 'else-if', 'else', 'for'].includes(p.name)) return false;
+    if (['if', 'else-if', 'else', 'for', 'html'].includes(p.name)) return false;
     if (p.name === 'bind' && p.arg?.content === 'key') return false;
     return true;
   });
@@ -220,8 +220,11 @@ export function checkElement(src, el) {
     // Angular's [mpProps] writes `class` as an attribute; a static class would be clobbered.
     throw new TemplateError(src.file, el, 'an element with a v-bind bag takes its class from the bag');
   }
-  if (el.props.some((p) => p.type === PROP.DIRECTIVE && !['bind', 'on', 'if', 'else-if', 'else', 'for'].includes(p.name))) {
-    throw new TemplateError(src.file, el, 'only v-bind, v-on, v-if/v-else-if/v-else and v-for are supported');
+  if (el.props.some((p) => p.type === PROP.DIRECTIVE && !['bind', 'on', 'if', 'else-if', 'else', 'for', 'html'].includes(p.name))) {
+    throw new TemplateError(src.file, el, 'only v-bind, v-on, v-if/v-else-if/v-else, v-for and v-html are supported');
+  }
+  if (directive(el, 'html') && meaningful(el.children).length) {
+    throw new TemplateError(src.file, el, 'an element with v-html takes no content');
   }
   // `:style` takes a core's style bag (geometry custom properties, PRD D7). The
   // consumer's own style lands on the root and the mp-attrs element, so those

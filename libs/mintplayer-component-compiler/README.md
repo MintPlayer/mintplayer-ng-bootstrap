@@ -102,6 +102,11 @@ the template of every front. A template without a manifest is still compiled on 
 - **Control flow.**
   - `v-if` / `v-else-if` / `v-else` are supported.
   - `v-for="(item, i) in items"` is supported, with `:key`.
+- **`v-html`** sets an element's content from a string: Angular `[innerHTML]` (sanitised), React
+  `dangerouslySetInnerHTML`, Lit `unsafeHTML`, Vue `v-html`. The element takes no other content.
+  The string must be markup the core built from escaped input (highlighted code, say), never
+  consumer HTML. Its nodes carry no `data-mps`, so style them by anchoring on a scoped ancestor
+  with `/*! @mps-global */`.
 - **Expressions.** They may read props, loop locals and `$slots`, and nothing else. Functions
   and arrow functions are refused, so all logic stays in the core.
 - **Elements.** Only native elements and `<slot>` are allowed; no components. Vue's parser reads an

@@ -4,7 +4,7 @@
 // `mp-host` root is the element itself: only its children are emitted, and the
 // element applies the root bag to itself with hostProps().
 import { rewrite } from './expressions.mjs';
-import { GENERATOR, NODE, PROP, TAG, TemplateError, VOID_TAGS, checkElement, groupChains, parseFor, refName, renderedProps, rootElement, isSelectSeed, slotArgs, slotName } from './source.mjs';
+import { GENERATOR, NODE, PROP, TAG, TemplateError, VOID_TAGS, checkElement, directive, groupChains, parseFor, refName, renderedProps, rootElement, isSelectSeed, slotArgs, slotName } from './source.mjs';
 
 const escapeText = (text) => text.replace(/\\/g, '\\\\').replace(/`/g, '\\`').replace(/\$\{/g, '\\${').replace(/</g, '&lt;');
 const escapeAttr = (text) => escapeText(text).replace(/"/g, '&quot;');
@@ -29,6 +29,7 @@ export function emitLit(src,{ generator = GENERATOR, runtime } = {}) {
   const directives = [];
   if (ctx.uses.has('repeat')) directives.push("import { repeat } from 'lit/directives/repeat.js';");
   if (ctx.uses.has('ref')) directives.push("import { ref, type Ref } from 'lit/directives/ref.js';");
+  if (ctx.uses.has('unsafeHTML')) directives.push("import { unsafeHTML } from 'lit/directives/unsafe-html.js';");
   if (ctx.uses.has('styleMap')) directives.push("import { styleMap } from 'lit/directives/style-map.js';");
   if (ctx.uses.has('props')) directives.push(`import { props } from '${runtime}';`);
   const helpers = ctx.uses.has('renderSlot')
@@ -133,6 +134,12 @@ function bare(ctx, el, depth) {
   }
   const open = `<${el.tag}${attrs.length ? ' ' + attrs.join(' ') : ''}>`;
   if (VOID_TAGS.has(el.tag)) return `${pad(depth)}${open}\n`;
+  // v-html: core-produced markup, never consumer input.
+  const html = directive(el, 'html');
+  if (html) {
+    ctx.uses.add('unsafeHTML');
+    return `${pad(depth)}${open}\${unsafeHTML(${x(ctx, html.exp.content)})}</${el.tag}>\n`;
+  }
   // Text-only content stays on the element's line: indenting it would put the
   // indentation into textContent, which the other fronts condense away.
   const content = el.children.filter((c) => c.type !== NODE.COMMENT);
