@@ -4,7 +4,7 @@
 // `mp-host` root is the element itself: only its children are emitted, and the
 // element applies the root bag to itself with hostProps().
 import { rewrite } from './expressions.mjs';
-import { GENERATOR, NODE, PROP, TAG, TemplateError, VOID_TAGS, checkElement, directive, groupChains, parseFor, refName, renderedProps, rootElement, isSelectSeed, slotArgs, slotName } from './source.mjs';
+import { GENERATOR, NODE, PROP, TAG, TemplateError, VOID_TAGS, checkElement, directive, groupChains, parseFor, refName, renderedProps, rootElement, isSelectSeed, partialUse, slotArgs, slotName } from './source.mjs';
 
 const escapeText = (text) => text.replace(/\\/g, '\\\\').replace(/`/g, '\\`').replace(/\$\{/g, '\\${').replace(/</g, '&lt;');
 const escapeAttr = (text) => escapeText(text).replace(/"/g, '&quot;');
@@ -14,12 +14,15 @@ export function slotArgsType(src, slot) {
   return `${src.name}${slot[0].toUpperCase()}${slot.slice(1).replace(/-(\w)/g, (_, c) => c.toUpperCase())}SlotArgs`;
 }
 
-export function emitLit(src,{ generator = GENERATOR, runtime } = {}) {
+/** `navbar-dropdown.view.vue` → `navbarDropdownTemplate`. */
+const templateFunction = (src) => `${src.name[0].toLowerCase()}${src.name.slice(1)}Template`;
+
+export function emitLit(src, { generator = GENERATOR, runtime, partials } = {}) {
   if (!runtime) throw new Error('emitLit: options.runtime must name the module that exports the props() directive');
-  const ctx = { src, locals: new Set(), refs: new Map(), uses: new Set(['html']) };
+  const ctx = { src, locals: new Set(), refs: new Map(), uses: new Set(['html']), partials, imports: new Set() };
   const { root, host } = rootElement(src);
   const body = host ? children(ctx, root.children, 2) : children(ctx, src.root.children, 2);
-  const name = `${src.name[0].toLowerCase()}${src.name.slice(1)}Template`;
+  const name = templateFunction(src);
   const type = `${src.name}TemplateProps`;
 
   const slotMembers = src.slots.members.map(
@@ -42,6 +45,7 @@ export function emitLit(src,{ generator = GENERATOR, runtime } = {}) {
     `import { ${lit.join(', ')} } from 'lit';`,
     ...directives,
     ...src.imports,
+    ...[...ctx.imports].map((p) => `import { ${templateFunction(p)} } from './${src.partialImports.get(p.name).replace(/\.vue$/, '')}.generated';`),
     '',
     // A scoped slot's arguments, for the element's `<slot>Renderer` property.
     ...src.slots.members.filter((s) => s.paramType).map((s) => `export type ${slotArgsType(src, s.name)} = ${s.paramType};`),
@@ -109,7 +113,14 @@ function element(ctx, el, depth) {
 function bare(ctx, el, depth) {
   if (el.tagType === TAG.SLOT) return slot(ctx, el, depth);
   if (el.tagType === TAG.TEMPLATE) return children(ctx, el.children, depth);
-  if (el.tagType === TAG.COMPONENT) throw new TemplateError(ctx.src.file, el, `components are not supported (<${el.tag}>)`);
+  if (el.tagType === TAG.COMPONENT) {
+    const use = partialUse(ctx.src, el, ctx.partials);
+    if (!use) throw new TemplateError(ctx.src.file, el, `components are not supported (<${el.tag}>)`);
+    // A partial is a template function of its own file; it fills its slots from this template's.
+    if (use.partial !== ctx.src) ctx.imports.add(use.partial);
+    const args = [...use.binds.map((b) => `${b.name}: ${x(ctx, b.exp)}`), 'slots'].join(', ');
+    return `${pad(depth)}\${${templateFunction(use.partial)}({ ${args} })}\n`;
+  }
   checkElement(ctx.src, el);
 
   const attrs = renderedProps(el).filter((p) => !isSelectSeed(el, p)).map((p) => {

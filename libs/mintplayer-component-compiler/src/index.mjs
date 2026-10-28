@@ -17,7 +17,7 @@
 import { existsSync, mkdirSync, readFileSync, readdirSync, rmSync, writeFileSync } from 'node:fs';
 import { dirname, join, relative, resolve } from 'node:path';
 import { pathToFileURL } from 'node:url';
-import { GENERATOR, readSource } from './templates/source.mjs';
+import { GENERATOR, groupPartials, readSource } from './templates/source.mjs';
 import { emitAngular } from './templates/emit-angular.mjs';
 import { emitReact } from './templates/emit-react.mjs';
 import { emitVue } from './templates/emit-vue.mjs';
@@ -28,7 +28,7 @@ import { emitReactComponent } from './components/emit-react.mjs';
 import { emitVueComponent } from './components/emit-vue.mjs';
 import { emitLitComponent } from './components/emit-lit.mjs';
 
-export { readSource, TemplateError, HOST_MARKER, GENERATOR } from './templates/source.mjs';
+export { readSource, groupPartials, TemplateError, HOST_MARKER, GENERATOR } from './templates/source.mjs';
 export { emitAngular, emitReact, emitVue, emitLit };
 export { emitAngularComponent, emitReactComponent, emitVueComponent, emitLitComponent, componentModels };
 
@@ -149,17 +149,25 @@ async function entryOutputs(config, cwd, entry, name, front) {
   const sources = new Map(
     entry.sources.map(({ file, base }) => [`${base}.vue`, readSource(relative(cwd, file).replace(/\\/g, '/'), readFileSync(file, 'utf8'))]),
   );
+  const group = entry.manifest ? await loadManifest(entry.manifest) : null;
+  if (group && group.group !== entry.entry) throw new Error(`${entry.manifest}: group "${group.group}" must match its entry "${entry.entry}"`);
+  const partials = groupPartials(
+    sources,
+    group ? new Set(Object.entries(group.components).map(([element, manifest]) => manifest.template ?? `${element}.view.vue`)) : null,
+  );
+  const partialFiles = new Set([...partials.values()]);
   sources.forEach((src, key) => {
-    files.set(join(outDir, `${key.replace(/\.vue$/, '')}.generated.${FRONTS[name].ext}`), FRONTS[name].template(src, { runtime, ...(entry.manifest && name === 'angular' ? { prop: ANGULAR_PROP, letProps: true } : {}) }));
+    // Angular inlines a partial into each template that calls it.
+    if (name === 'angular' && partialFiles.has(src)) return;
+    files.set(join(outDir, `${key.replace(/\.vue$/, '')}.generated.${FRONTS[name].ext}`), FRONTS[name].template(src, { runtime, partials, ...(entry.manifest && name === 'angular' ? { prop: ANGULAR_PROP, letProps: true } : {}) }));
   });
 
-  if (entry.manifest) {
-    const group = await loadManifest(entry.manifest);
-    if (group.group !== entry.entry) throw new Error(`${entry.manifest}: group "${group.group}" must match its entry "${entry.entry}"`);
+  if (group) {
     const models = componentModels({
       group,
       entry: entry.entry,
       corePackage: config.package,
+      partials,
       template: (file) => {
         const src = sources.get(file);
         if (!src) throw new Error(`${entry.entry}: no template ${file}`);

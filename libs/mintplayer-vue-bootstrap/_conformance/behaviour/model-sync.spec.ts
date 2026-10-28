@@ -134,13 +134,11 @@ describe('BsQueryBuilder — markup and write-back from the headless core', () =
   };
   const act = (el: Element, name: string) => el.querySelector<HTMLElement>(`[data-qb-act="${name}"]`)!;
 
-  it('renders a row per node, the condition one level below its group', () => {
+  it('nests the condition in the list of its group, through the recursive partial', () => {
     const { el } = mountEl(BsQueryBuilder, 'div.query-builder', { props: { schema: SCHEMA, rootEntity: 'orders', query: QUERY } });
     const rows = [...el.querySelectorAll<HTMLElement>('li.qb-row[data-row-id]')];
-    expect(rows.map((r) => [r.getAttribute('data-row-id'), r.getAttribute('aria-level')])).toEqual([
-      ['g', '1'],
-      ['c', '2'],
-    ]);
+    expect(rows.map((r) => r.getAttribute('data-row-id'))).toEqual(['g', 'c']);
+    expect(rows[1].parentElement!.closest('li.qb-row')).toBe(rows[0]);
   });
 
   it('writes an edit back to the query model without mutating the input', async () => {

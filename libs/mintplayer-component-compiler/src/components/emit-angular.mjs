@@ -2,7 +2,7 @@
 // component over the template stage's `.html`, hosting the core through
 // `useCore` (PRD #437 D10). Named slots become structural directives
 // (`*bsNavbarBrand`); the default slot is `<ng-content />`.
-import { emitAngular } from '../templates/emit-angular.mjs';
+import { emitAngular, partialGuard } from '../templates/emit-angular.mjs';
 import { banner, coreImports, jsdoc, styleImports } from './model.mjs';
 
 const angularOutput = (output) => output.lower;
@@ -44,7 +44,11 @@ export function emitAngularComponent(model, { generator, runtime = '@mintplayer/
   if (named.length) ['contentChild', 'Directive', 'TemplateRef'].forEach((n) => angularImports.add(n));
 
   // A template whose only bag is the host's never binds [mpProps]: importing it anyway is NG8113.
-  const usesProps = emitAngular(model.src).uses.includes('MpPropsDirective');
+  const template = emitAngular(model.src, { partials: model.partials, letProps: true });
+  const usesProps = template.uses.includes('MpPropsDirective');
+  const usesOutlet = template.uses.includes('NgTemplateOutlet');
+  const guards = template.partials.map((partial) => ({ partial, ...partialGuard(partial) }));
+  if (guards.length) angularImports.add('Directive');
   const machine = [...(usesProps ? ['MpPropsDirective'] : []), 'useCore', 'useScopedStyles'];
   const provides = model.provides;
   if (provides) machine.push('provideCoreContext');
@@ -53,9 +57,13 @@ export function emitAngularComponent(model, { generator, runtime = '@mintplayer/
   const coreNames = [model.core];
   if (provides) coreNames.push(provides);
   const lines = [banner(model, generator), `import { ${[...angularImports].sort().join(', ')} } from '@angular/core';`];
-  if (named.length) lines.push(`import { NgTemplateOutlet } from '@angular/common';`);
+  if (usesOutlet) lines.push(`import { NgTemplateOutlet } from '@angular/common';`);
   lines.push(`import { ${[...new Set(machine)].sort().join(', ')} } from '${runtime}';`);
-  lines.push(coreImports(model, { values: coreNames, types, slotTypes: true }));
+  // The partials' guard contexts name the types their props do.
+  const partialTypes = guards.flatMap(({ partial }) =>
+    (partial.props.text.match(/\b[A-Za-z_]\w*\b/g) ?? []).filter((n) => partial.importedTypes.has(n)).map((n) => [partial.importedTypes.get(n), n]),
+  );
+  lines.push(coreImports(model, { values: coreNames, types, slotTypes: true, extraTypes: partialTypes }));
   styleImports(model)
     .filter(({ module }) => module !== model.entryModule)
     .forEach(({ module, names: list }) => lines.push(`import { ${list.join(', ')} } from '${module}';`));
@@ -78,10 +86,24 @@ export function emitAngularComponent(model, { generator, runtime = '@mintplayer/
     );
   });
 
+  // Partial guards: they type each inlined partial's let- variables.
+  guards.forEach(({ partial, attribute, directive }) => {
+    lines.push(
+      `/** Types the \`${partial.name}\` partial's context in this template. */`,
+      `@Directive({ selector: 'ng-template[${attribute}]' })`,
+      `export class ${directive} {`,
+      `  static ngTemplateContextGuard(_dir: ${directive}, ctx: unknown): ctx is ${partial.props.text} {`,
+      `    return true;`,
+      `  }`,
+      `}`,
+      '',
+    );
+  });
+
   const meta = [
     `  selector: '${names.selector}',`,
     `  templateUrl: './${model.templateBase}.generated.html',`,
-    `  imports: [${[...(usesProps ? ['MpPropsDirective'] : []), ...(named.length ? ['NgTemplateOutlet'] : [])].join(', ')}],`,
+    `  imports: [${[...(usesProps ? ['MpPropsDirective'] : []), ...(usesOutlet ? ['NgTemplateOutlet'] : []), ...guards.map((g) => g.directive)].join(', ')}],`,
     `  changeDetection: ChangeDetectionStrategy.OnPush,`,
   ];
   if (provides) meta.push(`  providers: [provideCoreContext(${provides}, ${names.angular})${has('providers') ? ', ...ext_providers' : ''}],`);

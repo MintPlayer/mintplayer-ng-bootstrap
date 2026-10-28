@@ -8,7 +8,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { afterEach, describe, expect, it } from 'vitest';
 
-import { compileComponents, emitAngular, emitLit, emitReact, emitVue, readSource } from '../index.mjs';
+import { compileComponents, emitAngular, emitLit, emitReact, emitVue, groupPartials, readSource } from '../index.mjs';
 
 const sfc = (template: string, script = 'defineProps<{ bag: Record<string, string | null>; label?: string }>();\ndefineSlots<{ default?: () => unknown }>();') =>
   `<script setup lang="ts">\n${script}\n</script>\n\n<template>\n${template}\n</template>\n`;
@@ -154,6 +154,66 @@ describe('refusals', () => {
 
   it('rejects a component', () => {
     expect(() => emitAngular(read('<Other />'))).toThrow();
+  });
+});
+
+describe('partials', () => {
+  const NODE_SCRIPT = "import type { Tree } from '@test/core/x';\ndefineProps<{ node: Tree }>();\ndefineSlots<{ editor?: (args: { ctx: number }) => unknown }>();";
+  const node = readSource(
+    'core/x/src/templates/tree-item.view.vue',
+    sfc('<li v-bind="node.bag"><slot v-if="node.leaf" name="editor" :ctx="node.n" /><ul v-if="node.kids.length"><TreeItem v-for="k in node.kids" :key="k.id" :node="k" /></ul></li>', NODE_SCRIPT),
+  );
+  const PARENT_SCRIPT = "import type { Tree } from '@test/core/x';\nimport TreeItem from './tree-item.view.vue';\ndefineProps<{ tree: Tree }>();\ndefineSlots<{ editor?: (args: { ctx: number }) => unknown }>();";
+  const parent = readSource('core/x/src/templates/tree.view.vue', sfc('<ul><TreeItem :node="tree" /></ul>', PARENT_SCRIPT));
+  const partials = groupPartials(new Map([['tree.view.vue', parent], ['tree-item.view.vue', node]]), new Set(['tree.view.vue']));
+
+  it('Angular inlines the partial once as an ng-template that recurses through its own outlet', () => {
+    const { text, uses, partials: used } = emitAngular(parent, { partials });
+    expect(text).toContain('<ng-container [ngTemplateOutlet]="partial_TreeItem" [ngTemplateOutletContext]="{ node: tree() }" />');
+    expect(text.match(/<ng-template #partial_TreeItem mpPartialTreeItem let-pp_node="node">/g)).toHaveLength(1);
+    expect(text).toContain('@for (k of pp_node.kids; track k.id)');
+    expect(text).toContain('[ngTemplateOutletContext]="{ node: k }"');
+    // The slot inside the partial reads the component's own slots.
+    expect(text).toContain('@if (slots().editor; as slot_editor)');
+    expect(uses).toContain('NgTemplateOutlet');
+    expect(used).toEqual([node]);
+  });
+
+  it('React calls a function component of its own file and passes the slots down', () => {
+    expect(emitReact(parent, { ...RUNTIME, partials })).toContain("import { TreeItemTemplate } from './tree-item.view.generated';");
+    const self = emitReact(node, { ...RUNTIME, partials });
+    expect(self).toContain('<TreeItemTemplate node={k} slots={slots} />');
+    expect(self).not.toContain("from './tree-item.view.generated'");
+  });
+
+  it('Lit calls a template function and passes the slots down', () => {
+    expect(emitLit(parent, { ...RUNTIME, partials })).toContain("import { treeItemTemplate } from './tree-item.view.generated';");
+    expect(emitLit(node, { ...RUNTIME, partials })).toContain('${treeItemTemplate({ node: k, slots })}');
+  });
+
+  it('Vue imports the generated SFC, imports itself to recurse, and forwards the slots', () => {
+    expect(emitVue(parent, { partials })).toContain("import TreeItem from './tree-item.view.generated.vue';");
+    const self = emitVue(node, { partials });
+    expect(self).toContain("import TreeItem from './tree-item.view.generated.vue';");
+    expect(self).toContain('<template v-if="$slots.editor" #editor="scope"><slot name="editor" v-bind="scope" /></template></TreeItem>');
+  });
+
+  it('checks the bindings against the partial', () => {
+    const call = (template: string) => readSource('core/x/src/templates/tree.view.vue', sfc(template, PARENT_SCRIPT));
+    expect(() => emitAngular(call('<ul><TreeItem :nod="tree" /></ul>'), { partials })).toThrow(/no prop "nod"/);
+    expect(() => emitAngular(call('<ul><TreeItem /></ul>'), { partials })).toThrow(/needs its "node" prop/);
+    expect(() => emitAngular(call('<ul><TreeItem :node="tree">x</TreeItem></ul>'), { partials })).toThrow(/takes no content/);
+  });
+
+  it('rejects an orphan, a cycle between two partials, a component calling itself and a type clash', () => {
+    expect(() => groupPartials(new Map([['tree.view.vue', parent], ['tree-item.view.vue', node], ['lost.view.vue', readSource('core/x/src/templates/lost.view.vue', sfc('<b />'))]]), new Set(['tree.view.vue']))).toThrow(/orphan/);
+    const a = readSource('core/x/src/templates/a.view.vue', sfc('<b><B :bag="bag" /></b>', "import B from './b.view.vue';\ndefineProps<{ bag: Record<string, string> }>();"));
+    const b = readSource('core/x/src/templates/b.view.vue', sfc('<i><A :bag="bag" /></i>', "import A from './a.view.vue';\ndefineProps<{ bag: Record<string, string> }>();"));
+    const host = readSource('core/x/src/templates/host.view.vue', sfc('<p><A :bag="bag" /></p>', "import A from './a.view.vue';\ndefineProps<{ bag: Record<string, string> }>();"));
+    expect(() => groupPartials(new Map([['host.view.vue', host], ['a.view.vue', a], ['b.view.vue', b]]), new Set(['host.view.vue']))).toThrow(/call each other/);
+    expect(() => emitAngular(read('<div><Demo :bag="bag" /></div>'), { partials })).toThrow(/only a partial may call/);
+    const clash = readSource('core/x/src/templates/tree.view.vue', sfc('<ul><TreeItem :node="tree" /></ul>', PARENT_SCRIPT.replace('type { Tree }', 'type { Tree, TreeItem }')));
+    expect(() => groupPartials(new Map([['tree.view.vue', clash], ['tree-item.view.vue', node]]), new Set(['tree.view.vue']))).toThrow(/name of an imported type/);
   });
 });
 

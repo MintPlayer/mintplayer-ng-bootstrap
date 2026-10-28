@@ -3,16 +3,16 @@
 // scoped slot), the default slot as `children`. The root element also takes
 // the consumer's `className` / `attrs` and the `rootRef`.
 import { rewrite } from './expressions.mjs';
-import { GENERATOR, NATIVE_TAGS, NODE, PROP, TAG, TemplateError, VOID_TAGS, checkElement, directive, groupChains, meaningful, parseFor, refName, renderedProps, rootElement, attrsTarget, slotArgs, slotName } from './source.mjs';
+import { GENERATOR, NATIVE_TAGS, NODE, PROP, TAG, TemplateError, VOID_TAGS, checkElement, directive, groupChains, meaningful, parseFor, refName, renderedProps, rootElement, attrsTarget, partialUse, slotArgs, slotName } from './source.mjs';
 
 const RENAME = { class: 'className', for: 'htmlFor', tabindex: 'tabIndex', readonly: 'readOnly', autocomplete: 'autoComplete', maxlength: 'maxLength', colspan: 'colSpan', rowspan: 'rowSpan' };
 const FORM_TAGS = new Set(['input', 'select', 'textarea']);
 
 const eventProp = (name) => 'on' + name.split('-').map((part) => part[0].toUpperCase() + part.slice(1)).join('');
 
-export function emitReact(src, { generator = GENERATOR, runtime } = {}) {
+export function emitReact(src, { generator = GENERATOR, runtime, partials } = {}) {
   if (!runtime) throw new Error('emitReact: options.runtime must name the module that exports reactProps / reactFormProps');
-  const ctx = { src, locals: new Set(), refs: new Map(), uses: new Set(['reactProps']), root: null };
+  const ctx = { src, locals: new Set(), refs: new Map(), uses: new Set(['reactProps']), root: null, partials, imports: new Set() };
   const { root } = rootElement(src);
   ctx.root = root;
   ctx.attrsTarget = attrsTarget(src, root);
@@ -42,6 +42,7 @@ export function emitReact(src, { generator = GENERATOR, runtime } = {}) {
     "import * as React from 'react';",
     `import { ${machine} } from '${runtime}';`,
     ...src.imports,
+    ...[...ctx.imports].map((p) => `import { ${p.name}Template } from './${src.partialImports.get(p.name).replace(/\.vue$/, '')}.generated';`),
     '',
     `export type ${name}Props = ${src.props.text} & {`,
     `  slots?: { ${slotMembers.join(' ')} };`,
@@ -106,7 +107,14 @@ function element(ctx, el, depth) {
 function bare(ctx, el, depth) {
   if (el.tagType === TAG.SLOT) return slot(ctx, el, depth);
   if (el.tagType === TAG.TEMPLATE) return children(ctx, el.children, depth);
-  if (el.tagType === TAG.COMPONENT) throw new TemplateError(ctx.src.file, el, `components are not supported (<${el.tag}>)`);
+  if (el.tagType === TAG.COMPONENT) {
+    const use = partialUse(ctx.src, el, ctx.partials);
+    if (!use) throw new TemplateError(ctx.src.file, el, `components are not supported (<${el.tag}>)`);
+    // A partial is a function component of its own file; it fills its slots from this template's.
+    if (use.partial !== ctx.src) ctx.imports.add(use.partial);
+    const binds = use.binds.map((b) => `${b.name}={${x(ctx, b.exp)}}`).join(' ');
+    return `${pad(depth)}<${use.partial.name}Template ${binds} slots={slots} />\n`;
+  }
   checkElement(ctx.src, el);
   const isRoot = el === ctx.root;
   // A form control's bag seeds the DOM; script owns its state afterwards. An

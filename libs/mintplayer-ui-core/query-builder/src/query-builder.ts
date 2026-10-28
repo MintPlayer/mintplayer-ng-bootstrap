@@ -26,6 +26,7 @@ export type QueryBuilderBag = CoreBag;
 
 const scoped = (bag: QueryBuilderBag): QueryBuilderBag => ({ ...bag, 'data-mps': QUERY_BUILDER_SCOPE });
 const BLANK: QueryBuilderBag = scoped({});
+const LIST: QueryBuilderBag = scoped({ class: 'qb-rows' });
 
 /** Messages with the consumer's overrides merged per key (operators too). */
 export function mergeMessages(own: Partial<QueryBuilderMessages> | null | undefined): QueryBuilderMessages {
@@ -120,24 +121,27 @@ export interface QueryBuilderSubqueryRow {
   readonly remove: QueryBuilderBag;
 }
 
-export type QueryBuilderRowKind = 'group' | 'condition' | 'subquery' | 'empty' | 'drop' | 'deep';
+export type QueryBuilderNodeKind = 'group' | 'condition' | 'subquery' | 'empty' | 'drop' | 'deep';
 
 /**
- * One line of the editor, in reading order. The tree is flattened, so no
- * front needs a recursive template: nesting is the row's `aria-level` and its
- * indent. Every part is present on every row; `kind` says which renders.
+ * One item of the editor's tree, rendered by the recursive `query-builder-item`
+ * partial: a group or a sub-query holds its children in a nested list, so the
+ * nesting is the markup's own. Every part is present on every node; `kind` says
+ * which renders.
  */
-export interface QueryBuilderRow {
+export interface QueryBuilderNode {
   readonly key: string;
-  readonly kind: QueryBuilderRowKind;
+  readonly kind: QueryBuilderNodeKind;
   readonly item: QueryBuilderBag;
-  readonly style: Record<string, string>;
   readonly group: QueryBuilderGroupRow;
   readonly condition: QueryBuilderConditionRow;
   readonly subquery: QueryBuilderSubqueryRow;
   /** The empty-group text, the drop placeholder, or the too-deep alert. */
   readonly note: QueryBuilderBag;
   readonly text: string;
+  /** The nested list of a group's children, or of a sub-query's group. */
+  readonly list: QueryBuilderBag;
+  readonly children: readonly QueryBuilderNode[];
 }
 
 export interface QueryBuilderSortRow {
@@ -198,7 +202,8 @@ export interface QueryBuilderView {
   readonly previewText: string;
 
   readonly list: QueryBuilderBag;
-  readonly rows: readonly QueryBuilderRow[];
+  /** The root group (a non-group root sits in a synthetic AND group). */
+  readonly tree: QueryBuilderNode;
   readonly subqueryField: QueryBuilderBag;
   readonly subqueryOperator: QueryBuilderBag;
   readonly subqueryTarget: QueryBuilderBag;
@@ -502,25 +507,25 @@ export function connectQueryBuilder(o: QueryBuilderOptions): QueryBuilderView {
 
   const row = (
     key: string,
-    kind: QueryBuilderRowKind,
-    depth: number,
+    kind: QueryBuilderNodeKind,
     item: QueryBuilderBag,
-    parts: Partial<Pick<QueryBuilderRow, 'group' | 'condition' | 'subquery' | 'note' | 'text'>> = {},
-  ): QueryBuilderRow => ({
+    parts: Partial<Pick<QueryBuilderNode, 'group' | 'condition' | 'subquery' | 'note' | 'text' | 'children'>> = {},
+  ): QueryBuilderNode => ({
     key,
     kind,
-    item: scoped({ class: `qb-row qb-row-${kind}`, 'aria-level': depth + 1, ...item }),
-    style: { '--qb-depth': String(depth) },
+    item: scoped({ class: `qb-row qb-row-${kind}`, ...item }),
     group: EMPTY_GROUP,
     condition: EMPTY_CONDITION,
     subquery: EMPTY_SUBQUERY,
     note: BLANK,
     text: '',
+    list: LIST,
+    children: [],
     ...parts,
   });
 
-  const dropRow = (parent: Group, index: number, entity: string, depth: number): QueryBuilderRow =>
-    row(`${parent.id}-drop-${index}`, 'drop', depth, { 'aria-hidden': 'true' }, {
+  const dropRow = (parent: Group, index: number, entity: string): QueryBuilderNode =>
+    row(`${parent.id}-drop-${index}`, 'drop', { 'aria-hidden': 'true' }, {
       note: scoped({
         class: 'qb-drop-slot',
         'data-drop-slot': '',
@@ -530,9 +535,9 @@ export function connectQueryBuilder(o: QueryBuilderOptions): QueryBuilderView {
       }),
     });
 
-  const groupRows = (group: Group, entity: string, depth: number, isRoot: boolean): QueryBuilderRow[] => {
+  const groupNode = (group: Group, entity: string, depth: number, isRoot: boolean): QueryBuilderNode => {
     if (depth > o.maxDepth) {
-      return [row(`${group.id}-deep`, 'deep', depth, {}, { note: scoped({ class: 'qb-too-deep', role: 'alert' }), text: m.treeTooDeep })];
+      return row(`${group.id}-deep`, 'deep', {}, { note: scoped({ class: 'qb-too-deep', role: 'alert' }), text: m.treeTooDeep });
     }
     const logic = group.logic === 'and' ? 'AND' : 'OR';
     const hasRelation = (entityOf(o.schema, entity)?.fields ?? []).some((f) => f.type === 'relation' && !!f.targetEntity);
@@ -540,7 +545,25 @@ export function connectQueryBuilder(o: QueryBuilderOptions): QueryBuilderView {
       button(`btn ${group.logic === value ? 'btn-primary' : 'btn-outline-primary'} qb-logic-btn`, `logic-${value}`, group.id, {
         'aria-pressed': group.logic === value ? 'true' : 'false',
       });
-    const header = row(group.id, 'group', depth, { 'data-row-id': group.id }, {
+    const inner = depth + 1;
+    const slot = (index: number): QueryBuilderNode[] => (o.dragging ? [dropRow(group, index, entity)] : []);
+    const empty = o.dragging
+      ? row(`${group.id}-empty`, 'drop', { 'aria-hidden': 'true' }, {
+          note: scoped({
+            class: 'qb-drop-slot qb-drop-slot-placeholder',
+            'data-drop-slot': '',
+            'data-parent-id': group.id,
+            'data-index': 0,
+            'data-qb-root': `entity:${entity}`,
+          }),
+          text: m.dropHerePlaceholder,
+        })
+      : row(`${group.id}-empty`, 'empty', {}, { note: scoped({ class: 'qb-empty' }), text: m.emptyGroup });
+    return row(group.id, 'group', { 'data-row-id': group.id }, {
+      children:
+        group.children.length === 0
+          ? [empty]
+          : [...slot(0), ...group.children.flatMap((child, k) => [childNode(child, entity, inner), ...slot(k + 1)])],
       group: {
         header: scoped({
           class: 'qb-group-header',
@@ -559,33 +582,9 @@ export function connectQueryBuilder(o: QueryBuilderOptions): QueryBuilderView {
         remove: button('btn btn-sm btn-link qb-remove-group', 'remove', group.id, { 'aria-label': m.removeGroup, title: m.removeGroup }),
       },
     });
-    const inner = depth + 1;
-    if (group.children.length === 0) {
-      return [
-        header,
-        o.dragging
-          ? row(`${group.id}-empty`, 'drop', inner, { 'aria-hidden': 'true' }, {
-              note: scoped({
-                class: 'qb-drop-slot qb-drop-slot-placeholder',
-                'data-drop-slot': '',
-                'data-parent-id': group.id,
-                'data-index': 0,
-                'data-qb-root': `entity:${entity}`,
-              }),
-              text: m.dropHerePlaceholder,
-            })
-          : row(`${group.id}-empty`, 'empty', inner, {}, { note: scoped({ class: 'qb-empty' }), text: m.emptyGroup }),
-      ];
-    }
-    const slot = (index: number): QueryBuilderRow[] => (o.dragging ? [dropRow(group, index, entity, inner)] : []);
-    return [
-      header,
-      ...slot(0),
-      ...group.children.flatMap((child, k) => [...childRows(child, entity, inner), ...slot(k + 1)]),
-    ];
   };
 
-  const conditionRows = (node: Condition, entity: string, depth: number): QueryBuilderRow[] => {
+  const conditionNode = (node: Condition, entity: string): QueryBuilderNode => {
     const fieldsOfEntity = entityOf(o.schema, entity)?.fields ?? [];
     const field = fieldsOfEntity.find((f) => f.name === node.field);
     const fields = fieldsOfEntity.filter((f) => f.type !== 'relation');
@@ -601,8 +600,7 @@ export function connectQueryBuilder(o: QueryBuilderOptions): QueryBuilderView {
         disabled,
         ...extra,
       });
-    return [
-      row(node.id, 'condition', depth, { 'data-row-id': node.id }, {
+    return row(node.id, 'condition', { 'data-row-id': node.id }, {
         condition: {
           box: scoped({
             class: 'qb-condition',
@@ -629,16 +627,16 @@ export function connectQueryBuilder(o: QueryBuilderOptions): QueryBuilderView {
           editor,
           remove: button('btn btn-sm btn-link qb-remove', 'remove', node.id, { 'aria-label': m.removeRow, title: m.removeRow }),
         },
-      }),
-    ];
+      });
   };
 
-  const subqueryRows = (node: SubQueryCondition, entity: string, depth: number): QueryBuilderRow[] => {
+  // A sub-query's group is its only child, one level in.
+  const subqueryNode = (node: SubQueryCondition, entity: string, depth: number): QueryBuilderNode => {
     const field = entityOf(o.schema, entity)?.fields.find((f) => f.name === node.field);
     const fieldLabel = field?.label ?? node.field;
     const target = field?.targetEntity ?? '';
-    return [
-      row(node.id, 'subquery', depth, { 'data-row-id': node.id }, {
+    return row(node.id, 'subquery', { 'data-row-id': node.id }, {
+        children: [groupNode(node.subQuery, subqueryEntity(o.schema, entity, node), depth + 1, true)],
         subquery: {
           header: scoped({
             class: 'qb-subquery-header',
@@ -651,17 +649,15 @@ export function connectQueryBuilder(o: QueryBuilderOptions): QueryBuilderView {
           target,
           remove: button('btn btn-sm btn-link qb-remove', 'remove', node.id, { 'aria-label': m.removeSubquery, title: m.removeSubquery }),
         },
-      }),
-      ...groupRows(node.subQuery, subqueryEntity(o.schema, entity, node), depth + 1, true),
-    ];
+      });
   };
 
-  const childRows = (node: Expression, entity: string, depth: number): QueryBuilderRow[] =>
+  const childNode = (node: Expression, entity: string, depth: number): QueryBuilderNode =>
     node.kind === 'group'
-      ? groupRows(node, entity, depth, false)
+      ? groupNode(node, entity, depth, false)
       : node.kind === 'condition'
-        ? conditionRows(node, entity, depth)
-        : subqueryRows(node, entity, depth);
+        ? conditionNode(node, entity)
+        : subqueryNode(node, entity, depth);
 
   // A non-group root renders inside a synthetic AND group that cannot be removed.
   const tree = o.tree;
@@ -782,8 +778,8 @@ export function connectQueryBuilder(o: QueryBuilderOptions): QueryBuilderView {
     previewBox: scoped({ class: 'qb-preview' }),
     previewText: preview,
 
-    list: scoped({ class: 'qb-rows' }),
-    rows: groupRows(rootGroup, o.rootEntity, 0, true),
+    list: LIST,
+    tree: groupNode(rootGroup, o.rootEntity, 0, true),
     subqueryField: scoped({ class: 'qb-subquery-field' }),
     subqueryOperator: scoped({ class: 'qb-subquery-operator' }),
     subqueryTarget: scoped({ class: 'qb-subquery-target' }),

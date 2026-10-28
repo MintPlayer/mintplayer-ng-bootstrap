@@ -52,7 +52,7 @@ function exportsOf(file) {
  * @param {(element: string) => object} args.template  The parsed view template of an element.
  * @param {(front: string, element: string) => string | null} args.extension  An extension file's path, if one exists.
  */
-export function componentModels({ group, entry, corePackage, template, extension }) {
+export function componentModels({ group, entry, corePackage, template, extension, partials = new Map() }) {
   const entryModule = `${corePackage}/${entry}`;
   return Object.entries(group.components).map(([element, manifest]) => {
     const src = template(manifest.template ?? `${element}.view.vue`);
@@ -96,6 +96,8 @@ export function componentModels({ group, entry, corePackage, template, extension
       core: manifest.core,
       provides: manifest.provides ?? null,
       src,
+      // The group's partials, by name, for the fronts that inline them (Angular).
+      partials,
       templateBase: src.file.replace(/^.*[\\/]/, '').replace(/\.vue$/, ''),
       templateName: src.name,
       rootTag: root.tag,
@@ -131,7 +133,7 @@ export function componentModels({ group, entry, corePackage, template, extension
 /** Type names the generated front imports from the entry (or a style's `from`), grouped by module. */
 const BUILTIN_TYPES = new Set(['string', 'number', 'boolean', 'null', 'undefined', 'void', 'unknown', 'any', 'never', 'object', 'Record', 'Array', 'ReadonlyArray', 'Partial', 'Readonly', 'Date']);
 
-export function coreImports(model, { values = [], types = [], slotTypes = false } = {}) {
+export function coreImports(model, { values = [], types = [], slotTypes = false, extraTypes = [] } = {}) {
   const modules = new Map();
   const add = (module, name, isType) => {
     if (!modules.has(module)) modules.set(module, new Map());
@@ -154,6 +156,7 @@ export function coreImports(model, { values = [], types = [], slotTypes = false 
     .flatMap((slot) => slot.params?.match(/\b[A-Za-z_]\w*\b/g) ?? [])
     .filter((name) => model.src.importedTypes.has(name))
     .forEach((name) => add(model.src.importedTypes.get(name), name, true));
+  extraTypes.forEach(([module, name]) => add(module, name, true));
   return [...modules]
     .map(([module, names]) => {
       const list = [...names].sort(([a], [b]) => a.localeCompare(b)).map(([name, isType]) => (isType ? `type ${name}` : name));

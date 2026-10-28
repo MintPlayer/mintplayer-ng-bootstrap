@@ -5,8 +5,7 @@
 // Bootstrap baseline and reach these light-DOM nodes; importing them here would
 // ship them twice, and the scoped copy would win on specificity.
 //
-// The tree renders as flat rows. A row's level is --qb-depth, which turns into
-// its indent and one guide line per enclosing group.
+// The tree renders as nested lists: each level indents with one guide line.
 
 .query-builder {
   display: block;
@@ -160,26 +159,11 @@
   padding: 0;
 }
 
-.qb-row {
-  --qb-depth: 0;
-  padding-inline-start: calc(var(--qb-depth) * var(--qb-indent));
-  // One 3px guide per enclosing level, at the start of each indent step.
-  background-image: repeating-linear-gradient(
-    to right,
-    var(--qb-guide-color) 0 3px,
-    transparent 3px var(--qb-indent)
-  );
-  background-size: calc(var(--qb-depth) * var(--qb-indent)) 100%;
-  background-repeat: no-repeat;
-}
-
-.qb-row:dir(rtl) {
-  background-position: right top;
-  background-image: repeating-linear-gradient(
-    to left,
-    var(--qb-guide-color) 0 3px,
-    transparent 3px var(--qb-indent)
-  );
+// A nested list is one level in: an indent with a 3px guide at its start.
+.qb-rows .qb-rows {
+  margin-top: 0.125rem;
+  padding-inline-start: calc(var(--qb-indent) - 3px);
+  border-inline-start: 3px solid var(--qb-guide-color);
 }
 
 .qb-row-group {

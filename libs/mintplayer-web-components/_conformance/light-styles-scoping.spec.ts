@@ -8,10 +8,30 @@ import selectorParser from 'postcss-selector-parser';
 import { getLightStyleEntries } from '@mintplayer/web-components/light-dom';
 // Every component that installs a document-level sheet. Completeness is
 // asserted below against the installLightStyles calls in the source.
+import '@mintplayer/web-components/accordion';
+import '@mintplayer/web-components/calendar';
+import '@mintplayer/web-components/carousel';
+import '@mintplayer/web-components/charts/trend';
+import '@mintplayer/web-components/code-snippet';
 import '@mintplayer/web-components/datatable';
+import '@mintplayer/web-components/datepicker';
+import '@mintplayer/web-components/datetime-picker';
+import '@mintplayer/web-components/dropdown-menu';
+import '@mintplayer/web-components/input-group';
+import '@mintplayer/web-components/multi-range';
+import '@mintplayer/web-components/navbar';
+import '@mintplayer/web-components/otp-input';
+import '@mintplayer/web-components/phone-input';
 import '@mintplayer/web-components/query-builder';
-import '@mintplayer/web-components/treeview';
+import '@mintplayer/web-components/select';
+import '@mintplayer/web-components/shell';
+import '@mintplayer/web-components/signature-pad';
+import '@mintplayer/web-components/theming';
+import '@mintplayer/web-components/tile-manager';
+import '@mintplayer/web-components/timeline';
+import '@mintplayer/web-components/timepicker';
 import '@mintplayer/web-components/tree-select';
+import '@mintplayer/web-components/treeview';
 import '@mintplayer/web-components/typeahead';
 
 /**
@@ -64,13 +84,16 @@ const walk = (dir: string, keep: (name: string) => boolean, acc: string[] = []):
 const relative = (abs: string): string => abs.slice(LIB_ROOT.length + 1).replace(/\\/g, '/');
 
 /**
- * Every key passed to `installLightStyles('<key>', …)` anywhere in the lib's
- * source. Each must be registered once the components below are imported, so a
- * new document-level sheet cannot dodge this suite by not being imported here.
+ * The first argument of every `installLightStyles(…)` call in the lib's source:
+ * a literal key, or a core's scope constant (`TREEVIEW_SCOPE`, whose value is
+ * the core's name in kebab case). Each must be registered once the components
+ * below are imported, so a new document-level sheet cannot dodge this suite by
+ * not being imported here.
  */
 const installedKeysInSource = (): string[] =>
   walk(LIB_ROOT, (name) => name.endsWith('.ts') && !name.endsWith('.spec.ts') && !name.endsWith('.d.ts'))
-    .flatMap((abs) => [...readFileSync(abs, 'utf8').matchAll(/\binstallLightStyles\(\s*(['"`])([^'"`]+)\1/g)].map((m) => m[2]))
+    .flatMap((abs) => [...readFileSync(abs, 'utf8').matchAll(/\binstallLightStyles\(\s*(?:(['"`])([^'"`]+)\1|([A-Z][A-Z0-9_]*)_SCOPE\b)/g)])
+    .map((m) => m[2] ?? m[3].toLowerCase().replace(/_/g, '-'))
     .sort();
 
 /**

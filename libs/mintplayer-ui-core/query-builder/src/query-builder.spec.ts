@@ -5,6 +5,7 @@ import {
   inputKey,
   mergeMessages,
   parseScalar,
+  type QueryBuilderNode,
   type QueryBuilderOptions,
 } from './query-builder';
 import type { EntitySchema, Expression } from './model';
@@ -57,16 +58,17 @@ const options = (over: Partial<QueryBuilderOptions> = {}): QueryBuilderOptions =
   ...over,
 });
 
+const flatten = (node: QueryBuilderNode, depth = 0): [QueryBuilderNode, number][] => [[node, depth], ...node.children.flatMap((child) => flatten(child, depth + 1))];
 const nodeRows = (o: QueryBuilderOptions) =>
-  connectQueryBuilder(o).rows.filter((r) => r.kind !== 'drop');
+  flatten(connectQueryBuilder(o).tree).map(([node]) => node).filter((r) => r.kind !== 'drop');
 
 describe('connectQueryBuilder', () => {
-  it('flattens the tree into rows in reading order, each with its level', () => {
-    expect(nodeRows(options()).map((r) => [r.item['data-row-id'], r.kind, r.item['aria-level']])).toEqual([
-      ['g', 'group', 1],
-      ['c1', 'condition', 2],
-      ['g2', 'group', 2],
-      ['c2', 'condition', 3],
+  it('nests the tree: a group holds its children', () => {
+    expect(flatten(connectQueryBuilder(options()).tree).map(([r, depth]) => [r.item['data-row-id'], r.kind, depth])).toEqual([
+      ['g', 'group', 0],
+      ['c1', 'condition', 1],
+      ['g2', 'group', 1],
+      ['c2', 'condition', 2],
     ]);
   });
 

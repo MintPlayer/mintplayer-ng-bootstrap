@@ -80,8 +80,21 @@ export function readSource(file, text) {
 
   const scriptText = script.content;
   const ast = parseJs(scriptText, { sourceType: 'module', plugins: ['typescript'] });
-  const imports = ast.program.body
-    .filter((node) => node.type === 'ImportDeclaration')
+  const declarations = ast.program.body.filter((node) => node.type === 'ImportDeclaration');
+  // A partial (a sibling `.view.vue`) is the one value import, and the one relative one.
+  const isPartialImport = (node) => /^\.\/[\w.-]+\.view\.vue$/.test(node.source.value);
+  const partialImports = new Map(
+    declarations.filter(isPartialImport).map((node) => {
+      const spec = node.specifiers;
+      const target = node.source.value.slice(2);
+      if (node.importKind === 'type' || spec.length !== 1 || spec[0].type !== 'ImportDefaultSpecifier' || spec[0].local.name !== pascalName(target)) {
+        throw new Error(`${file}: import a partial as its default, named after its file (import ${pascalName(target)} from '${node.source.value}')`);
+      }
+      return [spec[0].local.name, target];
+    }),
+  );
+  const imports = declarations
+    .filter((node) => !isPartialImport(node))
     .map((node) => {
       if (node.importKind !== 'type' && !node.specifiers.every((s) => s.importKind === 'type')) {
         throw new Error(`${file}: the template source may import types only ("${node.source.value}")`);
@@ -103,11 +116,9 @@ export function readSource(file, text) {
     root: descriptor.template.ast,
     imports,
     // name → module of every type the source imports, for fronts that rebuild their own import lines.
-    importedTypes: new Map(
-      ast.program.body
-        .filter((node) => node.type === 'ImportDeclaration')
-        .flatMap((node) => node.specifiers.map((s) => [s.local.name, node.source.value])),
-    ),
+    importedTypes: new Map(declarations.filter((node) => !isPartialImport(node)).flatMap((node) => node.specifiers.map((s) => [s.local.name, node.source.value]))),
+    // Local name → file of each partial this template imports (`QbNode` → `qb-node.view.vue`).
+    partialImports,
     props,
     slots,
     propNames: new Set(props.members.map((m) => m.name)),
@@ -246,4 +257,107 @@ export function slotArgs(el) {
 
 export function slotName(el) {
   return attribute(el, 'name')?.value?.content ?? 'default';
+}
+
+/* ------------------------------------------------------------------------ */
+/* Partials                                                                 */
+/* ------------------------------------------------------------------------ */
+
+const camelCase = (name) => name.replace(/-(\w)/g, (_, c) => c.toUpperCase());
+
+/** Every component tag (a partial or a composed element) in a template. */
+export function componentTags(src) {
+  const tags = [];
+  const walk = (node) => {
+    if (node.type === NODE.ELEMENT && node.tagType === TAG.COMPONENT) tags.push(node);
+    (node.children ?? []).forEach(walk);
+  };
+  walk(src.root);
+  return tags;
+}
+
+/** The partials a template calls by name: its imports, and itself. */
+export function partialNames(src) {
+  return new Set(componentTags(src).map((el) => el.tag).filter((tag) => tag === src.name || src.partialImports.has(tag)));
+}
+
+/**
+ * A partial's use site, `<QbNode :node="child" />`: the partial (an import, or the template
+ * itself), and its bindings checked against the partial's props. Null when the tag is no partial.
+ *
+ * @param {Map<string, object>} [partials]  name → source of the group's partials
+ * @returns {{ partial: object, binds: { name: string, exp: string }[] } | null}
+ */
+export function partialUse(src, el, partials) {
+  const self = el.tag === src.name;
+  if (!self && !src.partialImports.has(el.tag)) return null;
+  const partial = partials?.get(el.tag);
+  if (!partial) {
+    throw new TemplateError(src.file, el, self ? `<${el.tag}> is this template itself, which only a partial may call` : `<${el.tag}> is not a partial of this group`);
+  }
+  if (meaningful(el.children).length) throw new TemplateError(src.file, el, `a partial takes no content: its slots are filled from this template's own`);
+  const binds = el.props.flatMap((p) => {
+    if (p.type === PROP.ATTRIBUTE) return [{ name: camelCase(p.name), exp: JSON.stringify(p.value?.content ?? '') }];
+    if (['if', 'else-if', 'else', 'for'].includes(p.name)) return [];
+    if (p.name === 'bind' && p.arg?.content === 'key') return [];
+    if (p.name === 'bind' && p.arg && !p.modifiers.length) return [{ name: camelCase(p.arg.content), exp: p.exp.content }];
+    throw new TemplateError(src.file, el, `a partial takes :prop bindings only`);
+  });
+  const unknown = binds.find((b) => !partial.propNames.has(b.name));
+  if (unknown) throw new TemplateError(src.file, el, `<${el.tag}> has no prop "${unknown.name}"`);
+  const missing = partial.props.members.find((m) => !m.optional && !binds.some((b) => b.name === m.name));
+  if (missing) throw new TemplateError(src.file, el, `<${el.tag}> needs its "${missing.name}" prop`);
+  const unfilled = partial.slots.members.find((s) => !src.slots.members.some((m) => m.name === s.name));
+  if (unfilled) throw new TemplateError(src.file, el, `<${el.tag}> has a "${unfilled.name}" slot this template does not declare`);
+  return { partial, binds };
+}
+
+/**
+ * The partials of one group: every source another one imports. A partial has no host,
+ * no mp-attrs and no ref, takes named slots only, and two partials may not call each
+ * other (only itself). `components` are the files a manifest names; any other source
+ * that nothing imports is an orphan.
+ *
+ * @param {Map<string, object>} sources  file → source
+ * @param {Set<string> | null} components  the manifest's template files, or null without one
+ * @returns {Map<string, object>}  name → source
+ */
+export function groupPartials(sources, components) {
+  const byFile = sources;
+  const imported = new Set([...byFile.values()].flatMap((src) => [...src.partialImports.values()]));
+  [...byFile.values()].forEach((src) =>
+    src.partialImports.forEach((target, name) => {
+      if (!byFile.has(target)) throw new Error(`${src.file}: no partial ${target} next to it (imported as ${name})`);
+    }),
+  );
+  if (components) {
+    const both = [...imported].find((file) => components.has(file));
+    if (both) throw new Error(`${byFile.get(both).file}: a component's template cannot also be a partial`);
+    const orphan = [...byFile.keys()].find((file) => !components.has(file) && !imported.has(file));
+    if (orphan) throw new Error(`${byFile.get(orphan).file}: an orphan partial (no manifest element names it and no template imports it)`);
+  }
+  const partials = new Map([...imported].map((file) => [byFile.get(file).name, byFile.get(file)]));
+  // Vue imports a partial under its name, so a type of that name would clash.
+  [...byFile.values()].forEach((src) => {
+    const clash = [...src.partialImports.keys(), ...(partials.has(src.name) ? [src.name] : [])].find((name) => src.importedTypes.has(name));
+    if (clash) throw new Error(`${src.file}: the partial ${clash} has the name of an imported type; rename one of them`);
+  });
+  partials.forEach((src) => {
+    if (src.slots.members.some((s) => s.name === 'default')) throw new Error(`${src.file}: a partial takes named slots only`);
+    const marked = [];
+    const walk = (node) => {
+      if (node.type === NODE.ELEMENT && [HOST_MARKER, ATTRS_MARKER, 'ref'].some((name) => attribute(node, name))) marked.push(node);
+      (node.children ?? []).forEach(walk);
+    };
+    walk(src.root);
+    if (marked.length) throw new TemplateError(src.file, marked[0], 'a partial has no mp-host, mp-attrs or ref');
+  });
+  // Two partials calling each other: Angular would inline them into each other forever.
+  const calls = (src) => [...partialNames(src)].filter((name) => name !== src.name);
+  const visit = (name, path) => {
+    if (path.includes(name)) throw new Error(`partials call each other: ${[...path.slice(path.indexOf(name)), name].join(' → ')} (only a partial calling itself is allowed)`);
+    calls(partials.get(name)).forEach((next) => visit(next, [...path, name]));
+  };
+  partials.forEach((_, name) => visit(name, []));
+  return partials;
 }
