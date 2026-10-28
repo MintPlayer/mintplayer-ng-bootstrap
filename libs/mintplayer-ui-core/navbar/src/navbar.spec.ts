@@ -210,6 +210,31 @@ describe('attachNavbar', () => {
     expect((top as HTMLDetailsElement).open).toBe(false);
   });
 
+  it('a mouse press on a trigger toggles at press time and swallows its click', () => {
+    const { root, top, sub } = mount();
+    attachNavbar(root);
+    const mousedown = (target: Element) =>
+      target.dispatchEvent(Object.assign(new Event('pointerdown', { bubbles: true }), { pointerType: 'mouse', button: 0 }));
+
+    mousedown(summary(top));
+    expect((top as HTMLDetailsElement).open).toBe(true);
+    const click = new MouseEvent('click', { bubbles: true, cancelable: true });
+    summary(top).dispatchEvent(click);
+    expect(click.defaultPrevented).toBe(true); // the native toggle would undo the press
+
+    // A submenu trigger keeps its ancestors open.
+    mousedown(summary(sub));
+    expect((sub as HTMLDetailsElement).open).toBe(true);
+    expect((top as HTMLDetailsElement).open).toBe(true);
+
+    // A drifted press: the click lands elsewhere and is not swallowed.
+    mousedown(summary(top));
+    expect((top as HTMLDetailsElement).open).toBe(false);
+    const drifted = new MouseEvent('click', { bubbles: true, cancelable: true });
+    anchor(root, 'home').dispatchEvent(drifted);
+    expect(drifted.defaultPrevented).toBe(false);
+  });
+
   it('stops listening once disposed', () => {
     const { root, top, toggle } = mount();
     const onExpandedChange = vi.fn();

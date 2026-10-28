@@ -91,32 +91,6 @@
         "command": "custom-elements-manifest analyze --litelement"
       }
     },
-    "codegen-dropdown-chrome": {
-      "executor": "nx:run-commands",
-      "outputs": [
-        "{projectRoot}/dropdown-menu/ssr/mp-dropdown-chrome.generated.ts"
-      ],
-      "inputs": [
-        "{projectRoot}/dropdown-menu/src/components/*.ts",
-        "{projectRoot}/dropdown-menu/src/styles/*.styles.scss",
-        "{workspaceRoot}/tools/lit-ssr-utils/gen-dropdown-chrome.mjs",
-        "{workspaceRoot}/tools/lit-ssr-utils/lib/*.mjs",
-        "{workspaceRoot}/tools/scripts/lib/cli.mjs"
-      ],
-      "dependsOn": [
-        "build",
-        {
-          "projects": [
-            "mintplayer-ui-core"
-          ],
-          "target": "build"
-        }
-      ],
-      "cache": true,
-      "options": {
-        "command": "node tools/lit-ssr-utils/gen-dropdown-chrome.mjs"
-      }
-    },
     "codegen-light-styles-chrome": {
       "executor": "nx:run-commands",
       "outputs": [
@@ -174,10 +148,9 @@
     "codegen-ssr-chrome": {
       "executor": "nx:run-commands",
       "options": {
-        "command": "echo \"SSR chrome generated (dropdown + carousel DSD, light-tier style tags)\""
+        "command": "echo \"SSR chrome generated (carousel DSD, light-tier style tags)\""
       },
       "dependsOn": [
-        "codegen-dropdown-chrome",
         "codegen-carousel-chrome",
         "codegen-light-styles-chrome"
       ]

@@ -1,3 +1,2 @@
 export { MpDropdownMenu } from './components';
-export type { DropdownItemElement, DropdownSelectEventDetail } from './types';
-export { dropdownMenuStyles } from './styles';
+export type { DropdownItemElement, DropdownSelectEventDetail } from '@mintplayer/ui-core/dropdown-menu';

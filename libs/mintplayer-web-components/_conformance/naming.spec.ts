@@ -4,7 +4,6 @@ import '@mintplayer/web-components/select';
 import '@mintplayer/web-components/checkbox';
 import '@mintplayer/web-components/radio';
 import '@mintplayer/web-components/toggle-button';
-import '@mintplayer/web-components/dropdown-menu';
 import '@mintplayer/web-components/datepicker';
 import '@mintplayer/web-components/timepicker';
 import '@mintplayer/web-components/tree-select';
@@ -32,6 +31,10 @@ import '@mintplayer/web-components/charts/sparkline';
  *  - host `aria-labelledby`/`aria-describedby` are never copied inward as IDREF
  *    strings (they resolve as cross-root element references — spike 0.2; jsdom
  *    cannot observe the positive path, so only the never-copied half is here).
+ *
+ * Not here: a front whose role-bearing node IS the host (mp-dropdown-menu since
+ * #437). There, `aria-label` / `aria-labelledby` apply directly and nothing is
+ * copied, so the contract has nothing to check.
  *
  * The per-component `.aria.spec.ts` files cover component-specific shapes (type
  * switches, caption, defaults); this file exists so the next component cannot
@@ -68,7 +71,6 @@ const CASES: NamingCase[] = [
   { tag: 'mp-checkbox', target: 'input' },
   { tag: 'mp-radio', target: 'input' },
   { tag: 'mp-toggle-button', target: 'input' },
-  { tag: 'mp-dropdown-menu', target: 'ul' },
   { tag: 'mp-datepicker', target: 'input.form-control', defaultName: 'Selected date' },
   { tag: 'mp-timepicker', target: 'input.form-control', defaultName: 'Selected time' },
   // Placeholder-less tree-select falls back to 'Search' for its combobox input.

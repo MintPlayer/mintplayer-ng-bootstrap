@@ -7,10 +7,7 @@ import {
 import express from 'express';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
-// Injects <mp-dropdown-menu> & friends' Declarative Shadow DOM into SSR output
-// so the dropdown WC renders with JS disabled.
-import { injectMpDropdownDsd } from '@mintplayer/web-components/dropdown-menu/ssr';
-// Same pattern for <mp-carousel>: count-variant DSD chrome so the radio-driven
+// Injects <mp-carousel>'s count-variant Declarative Shadow DOM chrome into SSR output, so the radio-driven
 // no-JS carousel navigates with JS disabled. Composed with the other injectors.
 import { injectMpCarouselDsd } from '@mintplayer/web-components/carousel/ssr';
 // Same pattern for <mp-accordion>: [multi] x [tab-count] DSD chrome variants,
@@ -97,7 +94,7 @@ app.use((req, res, next) => {
       // Splice the remaining WCs' Declarative Shadow DOM chrome into HTML responses.
       const contentType = response.headers.get('content-type') ?? '';
       if (contentType.includes('text/html')) {
-        const body = injectMpLightStyles(injectMpCarouselDsd(injectMpDropdownDsd(await response.text())));
+        const body = injectMpLightStyles(injectMpCarouselDsd(await response.text()));
         const headers = new Headers(response.headers);
         headers.delete('content-length');
         // BsThemeService renders <html data-bs-theme> from the bs-theme-mode

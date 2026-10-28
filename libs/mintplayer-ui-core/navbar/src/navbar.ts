@@ -289,6 +289,8 @@ export function attachNavbar(root: HTMLElement, options: AttachNavbarOptions = {
   const report = (expanded: boolean) => options.onExpandedChange?.(expanded);
   const rtl = () => typeof getComputedStyle !== 'undefined' && getComputedStyle(root).direction === 'rtl';
   let wide = isWide(root);
+  /** The trigger a mouse press just toggled; its click is swallowed (see onPointerdown). */
+  let pressed: HTMLElement | null = null;
 
   const collapse = () => {
     const input = toggleOf(root);
@@ -306,6 +308,12 @@ export function attachNavbar(root: HTMLElement, options: AttachNavbarOptions = {
   // A navigation closes the dropdowns and the collapse. A summary is a
   // disclosure, not a navigation, whatever it contains.
   const onClick = (event: MouseEvent) => {
+    const summary = pressed;
+    pressed = null;
+    if (summary && event.composedPath().includes(summary)) {
+      event.preventDefault(); // the press already toggled it
+      return;
+    }
     const link = event
       .composedPath()
       .find((el): el is HTMLAnchorElement => el instanceof HTMLAnchorElement && el.hasAttribute('href'));
@@ -393,9 +401,24 @@ export function attachNavbar(root: HTMLElement, options: AttachNavbarOptions = {
     if (overflows) details.setAttribute('data-flip', '');
   };
 
-  const onOutside = (event: PointerEvent) => {
+  // A mouse press on a trigger toggles its dropdown at press time, and the
+  // click that follows is swallowed. Resolving on the click loses a drifting
+  // press: the previous panel closes at pointerdown, the content under the
+  // pointer moves, the click lands on a common ancestor and the next dropdown
+  // never opens. Any other press closes every dropdown it is not inside.
+  const onPointerdown = (event: PointerEvent) => {
     const target = event.target as Node | null;
-    closeNavbarDropdowns(root, target && root.contains(target) ? target : null);
+    const inside = target && root.contains(target) ? target : null;
+    const summary = inside instanceof Element ? inside.closest('summary') : null;
+    const details = summary?.parentElement;
+    pressed = null;
+    if (summary instanceof HTMLElement && details instanceof HTMLDetailsElement && details.matches(DETAILS) && event.pointerType === 'mouse' && event.button === 0) {
+      pressed = summary;
+      closeNavbarDropdowns(root, details);
+      details.open = !details.open;
+      return;
+    }
+    closeNavbarDropdowns(root, inside);
   };
 
   // A breakpoint crossing changes where every panel sits: close them.
@@ -410,14 +433,14 @@ export function attachNavbar(root: HTMLElement, options: AttachNavbarOptions = {
   root.addEventListener('click', onClick);
   root.addEventListener('keydown', onKeydown);
   root.addEventListener('toggle', onToggle, true);
-  document.addEventListener('pointerdown', onOutside, true);
+  document.addEventListener('pointerdown', onPointerdown, true);
   addEventListener('resize', onResize);
   return () => {
     root.removeEventListener('change', onChange);
     root.removeEventListener('click', onClick);
     root.removeEventListener('keydown', onKeydown);
     root.removeEventListener('toggle', onToggle, true);
-    document.removeEventListener('pointerdown', onOutside, true);
+    document.removeEventListener('pointerdown', onPointerdown, true);
     removeEventListener('resize', onResize);
   };
 }

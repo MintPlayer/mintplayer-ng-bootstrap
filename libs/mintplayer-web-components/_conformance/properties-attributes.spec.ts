@@ -56,8 +56,6 @@ const MANIFEST = resolve(LIB_ROOT, 'custom-elements.json');
 
 /** Manifest declarations that are not a mountable tag. Asserted to be exactly these. */
 const NOT_MOUNTABLE: Record<string, string> = {
-  MpDropdownElement: 'abstract base of mp-dropdown-menu, never defined as a tag',
-  MpNavbarElement: 'abstract base of the navbar family, never defined as a tag',
   MpRibbonItemBase: 'abstract base of the ribbon items; its members are exercised through every concrete item',
   MpOverlayContainer: 'module-private portal host (not exported); OverlayController creates it',
 };

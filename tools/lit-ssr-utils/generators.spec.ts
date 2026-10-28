@@ -1,5 +1,5 @@
 /**
- * The six chrome generators, driven through their `main()` with the renderer
+ * The chrome generators, driven through their `main()` with the renderer
  * (or, for light styles, the dist loader) injected.
  *
  * What each generator still owns after the loop moved into lib/chrome-module.mjs
@@ -17,7 +17,6 @@ import { resolve } from 'node:path';
 import { describe, expect, it, vi } from 'vitest';
 
 import { main as carousel } from './gen-carousel-chrome.mjs';
-import { main as dropdown } from './gen-dropdown-chrome.mjs';
 import { LIGHT_TIER_COMPONENTS, lightStyleTag, main as lightStyles } from './gen-light-styles-chrome.mjs';
 import { ChromeGeneratorError, MAX_CHROME_COUNT } from './lib/chrome-module.mjs';
 
@@ -69,24 +68,6 @@ describe('gen-carousel-chrome', () => {
     expect(await carousel({ repoRoot: REPO, renderer: noShadow, ...h })).toBe(1);
     expect(h.write).not.toHaveBeenCalled();
     expect(h.error.mock.calls[0][0]).toBe('gen-carousel-chrome: no DSD <template> for slide-count=0:\n');
-  });
-});
-
-describe('gen-dropdown-chrome', () => {
-  it('emits the dropdown-menu chrome into the dropdown-menu ssr dir', async () => {
-    const h = harness();
-    expect(await dropdown({ repoRoot: REPO, renderer: echo, ...h })).toBe(0);
-
-    const { path, content } = h.written[0];
-    expect(path).toBe(resolve(REPO, 'libs/mintplayer-web-components/dropdown-menu/ssr/mp-dropdown-chrome.generated.ts'));
-    expect(constant(content, 'MP_DROPDOWN_MENU_DSD_CHROME')).toBe(dsd('<mp-dropdown-menu></mp-dropdown-menu>'));
-    expect(h.log).toHaveBeenCalledWith(expect.stringMatching(/^gen-dropdown-chrome: <mp-dropdown-menu> chrome \d+ chars$/));
-  });
-
-  it('exits 1 naming the element that rendered no shadow root', async () => {
-    const h = harness();
-    expect(await dropdown({ repoRoot: REPO, renderer: noShadow, ...h })).toBe(1);
-    expect(h.error.mock.calls[0][0]).toBe('gen-dropdown-chrome: no DSD <template> for <mp-dropdown-menu>:\n');
   });
 });
 
