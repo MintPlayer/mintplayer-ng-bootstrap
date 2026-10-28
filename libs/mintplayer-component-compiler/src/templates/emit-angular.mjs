@@ -4,7 +4,7 @@
 // A `mp-host` root is the component's host: only its children are emitted, and
 // the component applies the root bag to its host itself.
 import { rewrite } from './expressions.mjs';
-import { GENERATOR, NODE, PROP, TAG, TemplateError, VOID_TAGS, checkElement, directive, groupChains, parseFor, refName, renderedProps, rootElement, composedUse, isSelectSeed, partialUse, slotArgs, slotName } from './source.mjs';
+import { GENERATOR, NODE, PROP, TAG, TemplateError, VOID_TAGS, checkElement, directive, groupChains, parseFor, refName, renderedProps, rootElement, composedUse, isSelectSeed, partialUse, slotArgs, slotName, teleportTarget } from './source.mjs';
 
 const escapeText = (text) => text.replace(/&(?![a-z#0-9]+;)/gi, '&amp;').replace(/</g, '&lt;').replace(/@/g, '&#64;').replace(/\{/g, '&#123;').replace(/\}/g, '&#125;');
 const escapeAttr = (text) => text.replace(/&(?![a-z#0-9]+;)/gi, '&amp;').replace(/"/g, '&quot;');
@@ -122,6 +122,12 @@ function element(ctx, el, depth) {
 }
 
 function bare(ctx, el, depth) {
+  const to = teleportTarget(ctx.src, el);
+  if (to !== null) {
+    // The directive renders the template into the core's element, nothing where it sits.
+    ctx.uses.add('MpTeleportDirective');
+    return `${pad(depth)}<ng-template [mpTeleport]="${escapeAttr(x(ctx, to))}">\n${children(ctx, el.children, depth + 1)}${pad(depth)}</ng-template>\n`;
+  }
   if (el.tagType === TAG.SLOT) return slot(ctx, el, depth);
   if (el.tagType === TAG.TEMPLATE) return children(ctx, el.children, depth);
   if (el.tagType === TAG.COMPONENT) {

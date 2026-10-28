@@ -45,8 +45,8 @@ export function emitAngularComponent(model, { generator, runtime = '@mintplayer/
 
   // A template whose only bag is the host's never binds [mpProps]: importing it anyway is NG8113.
   const template = emitAngular(model.src, { partials: model.partials, components: model.components, letProps: true });
-  const usesProps = template.uses.includes('MpPropsDirective');
   const usesOutlet = template.uses.includes('NgTemplateOutlet');
+  const directives = ['MpPropsDirective', 'MpTeleportDirective'].filter((d) => template.uses.includes(d));
   const guards = template.partials.map((partial) => ({ partial, ...partialGuard(partial) }));
   // Composed children and the slot directives their content uses. A standalone
   // component is in its own template's scope, so composing itself imports nothing.
@@ -54,7 +54,7 @@ export function emitAngularComponent(model, { generator, runtime = '@mintplayer/
     .filter(({ child }) => child.names.angular !== names.angular)
     .map(({ child, slots }) => ({ module: child.module.angular, names: [child.names.angular, ...[...slots].map((slot) => child.names.slotDirective(slot))] }));
   if (guards.length) angularImports.add('Directive');
-  const machine = [...(usesProps ? ['MpPropsDirective'] : []), 'useCore', 'useScopedStyles'];
+  const machine = [...directives, 'useCore', 'useScopedStyles'];
   const provides = model.provides;
   if (provides) machine.push('provideCoreContext');
 
@@ -109,7 +109,7 @@ export function emitAngularComponent(model, { generator, runtime = '@mintplayer/
   const meta = [
     `  selector: '${names.selector}',`,
     `  templateUrl: './${model.templateBase}.generated.html',`,
-    `  imports: [${[...(usesProps ? ['MpPropsDirective'] : []), ...(usesOutlet ? ['NgTemplateOutlet'] : []), ...guards.map((g) => g.directive), ...composed.flatMap((c) => c.names)].join(', ')}],`,
+    `  imports: [${[...directives, ...(usesOutlet ? ['NgTemplateOutlet'] : []), ...guards.map((g) => g.directive), ...composed.flatMap((c) => c.names)].join(', ')}],`,
     `  changeDetection: ChangeDetectionStrategy.OnPush,`,
   ];
   if (provides) meta.push(`  providers: [provideCoreContext(${provides}, ${names.angular})${has('providers') ? ', ...ext_providers' : ''}],`);

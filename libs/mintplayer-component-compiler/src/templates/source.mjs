@@ -355,11 +355,26 @@ export function composedTags(src, components) {
 
 const camelCase = (name) => name.replace(/-(\w)/g, (_, c) => c.toUpperCase());
 
+/**
+ * `<teleport :to="exp">`: its content renders into the element `exp` names, and
+ * nothing renders while that is null (the server's case). React portals it, Vue
+ * teleports it, Angular moves an embedded view's nodes and Lit renders into it.
+ * It takes `:to` only: loop or guard it from a `<template>` around it, since Vue
+ * cannot combine the null guard it needs with a `v-for` on the same element.
+ * Returns the `:to` expression, or null for any other element.
+ */
+export function teleportTarget(src, el) {
+  if (el.type !== NODE.ELEMENT || el.tag.toLowerCase() !== 'teleport') return null;
+  const to = el.props.find((p) => p.type === PROP.DIRECTIVE && p.name === 'bind' && p.arg?.content === 'to');
+  if (!to || el.props.length !== 1) throw new TemplateError(src.file, el, '<teleport> takes :to only (put v-if / v-for on a <template> around it)');
+  return to.exp.content;
+}
+
 /** Every component tag (a partial or a composed element) in a template. */
 export function componentTags(src) {
   const tags = [];
   const walk = (node) => {
-    if (node.type === NODE.ELEMENT && node.tagType === TAG.COMPONENT) tags.push(node);
+    if (node.type === NODE.ELEMENT && node.tagType === TAG.COMPONENT && node.tag.toLowerCase() !== 'teleport') tags.push(node);
     (node.children ?? []).forEach(walk);
   };
   walk(src.root);

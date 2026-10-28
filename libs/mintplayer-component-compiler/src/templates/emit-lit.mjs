@@ -4,7 +4,7 @@
 // `mp-host` root is the element itself: only its children are emitted, and the
 // element applies the root bag to itself with hostProps().
 import { rewrite } from './expressions.mjs';
-import { GENERATOR, NODE, PROP, TAG, TemplateError, VOID_TAGS, checkElement, composedUse, directive, groupChains, meaningful, parseFor, refName, renderedProps, rootElement, isSelectSeed, partialUse, slotArgs, slotName } from './source.mjs';
+import { GENERATOR, NODE, PROP, TAG, TemplateError, VOID_TAGS, checkElement, composedUse, directive, groupChains, meaningful, parseFor, refName, renderedProps, rootElement, isSelectSeed, partialUse, slotArgs, slotName, teleportTarget } from './source.mjs';
 
 const escapeText = (text) => text.replace(/\\/g, '\\\\').replace(/`/g, '\\`').replace(/\$\{/g, '\\${').replace(/</g, '&lt;');
 const escapeAttr = (text) => escapeText(text).replace(/"/g, '&quot;');
@@ -34,7 +34,8 @@ export function emitLit(src, { generator = GENERATOR, runtime, partials, compone
   if (ctx.uses.has('ref')) directives.push("import { ref, type Ref } from 'lit/directives/ref.js';");
   if (ctx.uses.has('unsafeHTML')) directives.push("import { unsafeHTML } from 'lit/directives/unsafe-html.js';");
   if (ctx.uses.has('styleMap')) directives.push("import { styleMap } from 'lit/directives/style-map.js';");
-  if (ctx.uses.has('props')) directives.push(`import { props } from '${runtime}';`);
+  const runtimeDirectives = ['props', 'teleport'].filter((u) => ctx.uses.has(u));
+  if (runtimeDirectives.length) directives.push(`import { ${runtimeDirectives.join(', ')} } from '${runtime}';`);
   const helpers = ctx.uses.has('renderSlot')
     ? ["function renderSlot<A>(slot: unknown, args: A): unknown {", "  return typeof slot === 'function' ? (slot as (args: A) => unknown)(args) : slot;", '}', '']
     : [];
@@ -113,6 +114,12 @@ function element(ctx, el, depth) {
 }
 
 function bare(ctx, el, depth) {
+  const to = teleportTarget(ctx.src, el);
+  if (to !== null) {
+    // The directive renders the content into the core's element, nothing where it sits.
+    ctx.uses.add('teleport');
+    return `${pad(depth)}\${teleport(${x(ctx, to)}, ${sub(ctx, children(ctx, el.children, depth + 1), depth)})}\n`;
+  }
   if (el.tagType === TAG.SLOT) return slot(ctx, el, depth);
   if (el.tagType === TAG.TEMPLATE) return children(ctx, el.children, depth);
   if (el.tagType === TAG.COMPONENT) {

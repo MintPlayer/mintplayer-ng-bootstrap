@@ -3,7 +3,7 @@
 // scoped slot), the default slot as `children`. The root element also takes
 // the consumer's `className` / `attrs` and the `rootRef`.
 import { rewrite } from './expressions.mjs';
-import { GENERATOR, NATIVE_TAGS, NODE, PROP, TAG, TemplateError, VOID_TAGS, checkElement, directive, groupChains, meaningful, parseFor, refName, renderedProps, rootElement, attrsTarget, composedUse, partialUse, slotArgs, slotName } from './source.mjs';
+import { GENERATOR, NATIVE_TAGS, NODE, PROP, TAG, TemplateError, VOID_TAGS, checkElement, directive, groupChains, meaningful, parseFor, refName, renderedProps, rootElement, attrsTarget, composedUse, partialUse, slotArgs, slotName, teleportTarget } from './source.mjs';
 
 const RENAME = { class: 'className', for: 'htmlFor', tabindex: 'tabIndex', readonly: 'readOnly', autocomplete: 'autoComplete', maxlength: 'maxLength', colspan: 'colSpan', rowspan: 'rowSpan' };
 const FORM_TAGS = new Set(['input', 'select', 'textarea']);
@@ -40,6 +40,7 @@ export function emitReact(src, { generator = GENERATOR, runtime, partials, compo
   return [
     `// GENERATED from ${src.file.replace(/\\/g, '/')} by ${generator}. Do not edit.`,
     "import * as React from 'react';",
+    ...(ctx.uses.has('createPortal') ? ["import { createPortal } from 'react-dom';"] : []),
     `import { ${machine} } from '${runtime}';`,
     ...src.imports,
     ...[...ctx.composed.values()].map((c) => `import { ${c.names.component} } from '${c.module.react}';`),
@@ -106,6 +107,13 @@ function element(ctx, el, depth) {
 }
 
 function bare(ctx, el, depth) {
+  const to = teleportTarget(ctx.src, el);
+  if (to !== null) {
+    // A portal: the content renders into the core's element, nothing where the tag sits.
+    ctx.uses.add('createPortal');
+    const target = x(ctx, to);
+    return `${pad(depth)}{(${target}) ? createPortal(${fragment(ctx, children(ctx, el.children, depth + 1), depth)}, ${target}) : null}\n`;
+  }
   if (el.tagType === TAG.SLOT) return slot(ctx, el, depth);
   if (el.tagType === TAG.TEMPLATE) return children(ctx, el.children, depth);
   if (el.tagType === TAG.COMPONENT) {

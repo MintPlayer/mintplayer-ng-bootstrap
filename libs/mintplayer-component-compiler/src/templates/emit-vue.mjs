@@ -3,7 +3,7 @@
 // `mp-attrs`), dropping React-only select seeds, and routing the consumer's
 // attributes to the `mp-attrs` element when that is not the root.
 import { basename } from 'node:path';
-import { ATTRS_MARKER, GENERATOR, HOST_MARKER, PROP, TemplateError, attrsTarget, componentTags, composedUse, isSelectSeed, partialNames, partialUse, rootElement } from './source.mjs';
+import { ATTRS_MARKER, GENERATOR, HOST_MARKER, PROP, TemplateError, attrsTarget, componentTags, composedUse, isSelectSeed, partialNames, partialUse, rootElement, teleportTarget } from './source.mjs';
 
 const walk = (node, visit) => {
   visit(node);
@@ -26,6 +26,15 @@ export function emitVue(src, { generator = GENERATOR, partials, components } = {
       .filter((p) => (p.type === PROP.ATTRIBUTE && (p.name === HOST_MARKER || p.name === ATTRS_MARKER)) || isSelectSeed(node, p))
       .forEach((p) => remove(p.loc)),
   );
+
+  // A teleport renders nothing while its target is null (the server's case), as in the
+  // other fronts; Vue's own <Teleport> would warn and mount nowhere.
+  walk(src.root, (node) => {
+    const to = teleportTarget(src, node);
+    if (to === null) return;
+    const at = node.loc.start.offset + 1 + node.tag.length;
+    edits.push({ start: at, end: at, text: ` v-if="${to}"` });
+  });
 
   // A partial call forwards this template's slots into the partial, which declares a subset of them.
   // A composed child is its Vue component, under its component name: an output listens

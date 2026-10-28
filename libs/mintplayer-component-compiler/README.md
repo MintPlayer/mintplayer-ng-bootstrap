@@ -116,6 +116,13 @@ the template of every front. A template without a manifest is still compiled on 
   The string must be markup the core built from escaped input (highlighted code, say), never
   consumer HTML. Its nodes carry no `data-mps`, so style them by anchoring on a scoped ancestor
   with `/*! @mps-global */`.
+- **`<teleport :to="el">`** renders its content into the element `el` names, and nothing where the
+  tag sits. React uses `createPortal`, Vue `<Teleport>`, Angular the `[mpTeleport]` directive
+  (moves an embedded view's nodes) and Lit the `teleport()` directive. Nothing renders while `el`
+  is null, which is the server's case, so teleported content never server-renders. It takes `:to`
+  only: put `v-for` / `v-if` on a `<template>` around it. The target is a node the core owns and
+  keeps for the content's lifetime (the dock's per-pane hosts). The core moves it around the DOM,
+  and the content keeps its state in every front.
 - **Expressions.** They may read props, loop locals and `$slots`, and nothing else. Functions
   and arrow functions are refused, so all logic stays in the core.
 - **Elements.** Native elements, `<slot>`, partials and composed `mp-*` elements (below). Vue's

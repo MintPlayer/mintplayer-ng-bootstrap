@@ -93,6 +93,33 @@ describe('v-html', () => {
   });
 });
 
+describe('teleport', () => {
+  const script =
+    'defineProps<{ bag: Record<string, string | null>; hosts: Record<string, HTMLElement | null>; names: string[] }>();\ndefineSlots<{ pane?: (args: { pane: string }) => unknown }>();';
+  const src = read(
+    '<div v-bind="bag"><template v-for="name in names" :key="name"><teleport :to="hosts[name]"><slot name="pane" :pane="name" /></teleport></template></div>',
+    script,
+  );
+
+  it('each front renders the content into the target, and nothing without one', () => {
+    const angular = emitAngular(src).text;
+    expect(angular).toContain('<ng-template [mpTeleport]="hosts()[name]">');
+    expect(emitAngular(src).uses).toContain('MpTeleportDirective');
+    const react = emitReact(src, RUNTIME);
+    expect(react).toContain("import { createPortal } from 'react-dom';");
+    expect(react).toMatch(/\{\(hosts\[name\]\) \? createPortal\(<>[\s\S]*renderSlot\(slots\.pane, \{ pane: name \}\)[\s\S]*<\/>, hosts\[name\]\) : null\}/);
+    const lit = emitLit(src, RUNTIME);
+    expect(lit).toContain("import { props, teleport } from '@test/machine'");
+    expect(lit).toContain('${teleport(hosts[name], html`');
+    expect(emitVue(src)).toContain('<teleport v-if="hosts[name]" :to="hosts[name]">');
+  });
+
+  it('takes :to only, so Vue can guard it', () => {
+    expect(() => emitLit(read('<div v-bind="bag"><teleport v-if="label" :to="bag"></teleport></div>'), RUNTIME)).toThrow(/takes :to only/);
+    expect(() => emitLit(read('<div v-bind="bag"><teleport></teleport></div>'), RUNTIME)).toThrow(/takes :to only/);
+  });
+});
+
 describe('mp-attrs', () => {
   const src = read('<div v-bind="bag"><select mp-attrs v-bind="bag"><slot /></select></div>');
 
