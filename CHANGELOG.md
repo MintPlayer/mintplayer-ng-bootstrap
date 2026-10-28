@@ -315,7 +315,8 @@ breaking change is a major. (2.20.0 and 2.21.0 broke `^2.x` consumers in a minor
 - **`mp-input-group` is a light element (issue #437).** Like `bs-input-group`, the host is the
   `.input-group` itself: no shadow root, no slot, and its children are the group's items. It no longer
   writes `size` onto `mp-*` children, because a control in a group reads the group's classes and the
-  `--mp-group-radius-*` properties itself. `part="group"` is gone.
+  `--mp-group-radius-*` properties itself. `part="group"` is gone. A control that renders its own `.input-group` (the date, time and phone pickers)
+  takes the outer group's `sm`/`lg` size and has its two ends paired with its neighbours.
 - **Code snippet is generated from one source in every front (issue #437).** It is written once in
   `@mintplayer/ui-core/code-snippet` (`codeSnippetCore`, `connectCodeSnippet`) and compiled into all four
   fronts, so it is server-rendered everywhere. With JS off it shows the escaped source: line-numbered,

@@ -123,3 +123,64 @@ mp-input-group {
   font-size: $input-font-size-lg;
   border-radius: var(--bs-border-radius-lg);
 }
+
+// 3. A control that renders its OWN `.input-group` (date, time and phone
+//    pickers: field + trigger) is an item of this group, so the group's size
+//    and corner pairing must reach the inner group's ends. The group never
+//    writes onto the control (#437): the size travels as this rule and the
+//    pairing through the inherited --mp-group-radius-* properties. The inner
+//    hidden input submits the value and is never the visible end.
+/*! @mps-global */
+.input-group[data-mps=input-group] > * {
+  --mp-group-item-radius: var(--bs-border-radius);
+}
+
+/*! @mps-global */
+.input-group-sm[data-mps=input-group] > * {
+  --mp-group-item-radius: var(--bs-border-radius-sm);
+}
+
+/*! @mps-global */
+.input-group-lg[data-mps=input-group] > * {
+  --mp-group-item-radius: var(--bs-border-radius-lg);
+}
+
+/*! @mps-global */
+.input-group[data-mps=input-group] > * .input-group > :first-child {
+  border-top-left-radius: var(--mp-group-radius-start, var(--mp-group-item-radius));
+  border-bottom-left-radius: var(--mp-group-radius-start, var(--mp-group-item-radius));
+}
+
+/*! @mps-global */
+.input-group[data-mps=input-group] > * .input-group > :nth-last-child(1 of :not([type=hidden])) {
+  border-top-right-radius: var(--mp-group-radius-end, var(--mp-group-item-radius));
+  border-bottom-right-radius: var(--mp-group-radius-end, var(--mp-group-item-radius));
+}
+
+/*! @mps-global */
+.input-group[data-mps=input-group]:dir(rtl) > * .input-group > :first-child {
+  border-top-left-radius: 0 !important;
+  border-bottom-left-radius: 0 !important;
+  border-top-right-radius: var(--mp-group-radius-start, var(--mp-group-item-radius)) !important;
+  border-bottom-right-radius: var(--mp-group-radius-start, var(--mp-group-item-radius)) !important;
+}
+
+/*! @mps-global */
+.input-group[data-mps=input-group]:dir(rtl) > * .input-group > :nth-last-child(1 of :not([type=hidden])) {
+  border-top-right-radius: 0 !important;
+  border-bottom-right-radius: 0 !important;
+  border-top-left-radius: var(--mp-group-radius-end, var(--mp-group-item-radius)) !important;
+  border-bottom-left-radius: var(--mp-group-radius-end, var(--mp-group-item-radius)) !important;
+}
+
+/*! @mps-global */
+.input-group-sm[data-mps=input-group] > * .input-group > :is(.form-control, .form-select, .input-group-text, .btn) {
+  padding: $input-padding-y-sm $input-padding-x-sm;
+  font-size: $input-font-size-sm;
+}
+
+/*! @mps-global */
+.input-group-lg[data-mps=input-group] > * .input-group > :is(.form-control, .form-select, .input-group-text, .btn) {
+  padding: $input-padding-y-lg $input-padding-x-lg;
+  font-size: $input-font-size-lg;
+}
