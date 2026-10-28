@@ -84,10 +84,8 @@
         "{projectRoot}/light-dom/ssr/mp-light-styles-chrome.generated.ts"
       ],
       "inputs": [
-        "{projectRoot}/datatable/src/styles/*.light.scss",
         "{projectRoot}/treeview/src/styles/*.light.scss",
         "{projectRoot}/tree-select/src/styles/*.light.scss",
-        "{projectRoot}/query-builder/src/*.light.scss",
         "{workspaceRoot}/tools/lit-ssr-utils/gen-light-styles-chrome.mjs",
         "{workspaceRoot}/tools/lit-ssr-utils/lib/*.mjs",
         "{workspaceRoot}/tools/scripts/lib/cli.mjs"

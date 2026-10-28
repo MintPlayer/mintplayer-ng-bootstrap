@@ -36,11 +36,6 @@ const GENERATOR = 'gen-light-styles-chrome';
 // `installLightStyles('<key>', …)` call in the element, or the client would
 // install a second copy of the sheet instead of adopting the SSR one.
 export const LIGHT_TIER_COMPONENTS = [
-  ['mp-datatable', 'datatable', 'datatable', 'datatableLightStyles'],
-  ['mp-query-builder', 'query-builder', 'query-builder', 'queryBuilderLightStyles'],
-  ['mp-query-condition', 'query-condition', 'query-builder', 'queryConditionLightStyles'],
-  ['mp-query-group', 'query-group', 'query-builder', 'queryGroupLightStyles'],
-  ['mp-query-subquery', 'query-subquery', 'query-builder', 'querySubqueryLightStyles'],
   // A plain string sheet from @mintplayer/ui-core, re-exported by the element's entry (#436).
   ['mp-typeahead', 'typeahead', 'typeahead', 'typeaheadScopedStyles'],
 ];

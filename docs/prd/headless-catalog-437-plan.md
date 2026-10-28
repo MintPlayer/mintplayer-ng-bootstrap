@@ -31,7 +31,7 @@ Each component milestone is the same checklist, done for every component in the 
 - [x] S8 base-select under SSR
 - [x] S11 theme cookie SSR and code-snippet highlighting
 - [ ] S4 virtual window in React/Vue (before M5)
-- [ ] S10 query-builder editor contract (before M5)
+- [x] S10 query-builder editor contract (before M5): a front-native `editor` slot; the leak spec is moot (below)
 - [ ] S7 scheduler static grid go/no-go (before M6)
 - [x] S13 single template in the core, compiled into the four fronts (navbar prototype); widened into D10 / M3b
 - [ ] Write each verdict into PRD §7, and update D1–D9 and C1–C8 accordingly
@@ -176,7 +176,13 @@ Every item below is authored as a D10 component source once M3b lands.
       - (4) filter row and panels, distincts;
       - (5) column resize;
       - (6) fronts' extras, specs, conformance, demos, e2e.
-- [ ] query-builder (+ group, condition, subquery), per S10
+- [x] query-builder (+ group, condition, subquery), per S10: one D10 source (`ui-core/query-builder`).
+    - The recursive group / condition / subquery elements became flat rows with `aria-level` (the compiler has no
+      component recursion); `entityForNode` resolves a subquery's entity per row.
+    - Custom editors are one `editor` slot over fields marked `editor: 'custom'`; the slot's `onChange` reaches
+      the core through a module-level map keyed by the root's `data-qb-instance` (the datatable precedent).
+    - Live value inputs keep a per-input draft in the core, so a half-typed number survives a Vue re-render.
+    - The light-styles SSR generator lost its stale datatable row and the four query-builder rows.
 - [ ] hierarchy-chart (+ Vue front)
 
 ## M6 — Wave D

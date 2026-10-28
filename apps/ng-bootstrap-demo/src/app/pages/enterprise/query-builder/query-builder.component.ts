@@ -71,7 +71,7 @@ export class QueryBuilderDemoComponent {
   rootEntity = signal<string>('orders');
   query = signal<Expression>(emptyGroup('and'));
 
-  // Phase-2 signals: drive the new toolbar widgets in mp-query-builder.
+  // Phase-2 signals: drive the query builder toolbar widgets.
   selectedFields = signal<string[]>([]);
   sortBy = signal<SortDescriptor[]>([]);
 
@@ -175,7 +175,8 @@ export class QueryBuilderDemoComponent {
 
   refreshSchema(): void {
     this.http.get<EntitySchema[]>(`${environment.apiBase}/api/${this.rootEntity()}/schema`).subscribe({
-      next: (s) => this.schema.set(s),
+      // orderDate opts into the custom editor (the bsQueryBuilderEditor template).
+      next: (s) => this.schema.set(s.map((e) => ({ ...e, fields: e.fields.map((f) => (f.name === 'orderDate' ? { ...f, editor: 'custom' as const } : f)) }))),
       error: () => this.error.set('Could not fetch schema. Is apps/api running?'),
     });
   }
@@ -286,16 +287,19 @@ export class QueryBuilderDemoComponent {
   `;
 
   protected readonly snippetCustomEditorHtml = dedent`
-    <!-- Project a custom editor for a specific field via *bsQueryBuilderEditor.
-         The ctx exposes value, disabled, and an onChange callback. -->
+    <!-- Every field with editor: 'custom' renders its value through the
+         bsQueryBuilderEditor template; switch on ctx.field.name for several.
+         The ctx exposes field, operator, value, disabled and onChange. -->
     <bs-query-builder [schema]="schema()" [(query)]="query">
-      <input
-        *bsQueryBuilderEditor="'orderDate'; let ctx"
-        type="date"
-        class="form-control form-control-sm"
-        [value]="ctx.value ?? ''"
-        [disabled]="ctx.disabled"
-        (input)="ctx.onChange($any($event.target).value || null)" />
+      <ng-template bsQueryBuilderEditor let-ctx="ctx">
+        <input
+          type="date"
+          class="form-control form-control-sm"
+          [attr.aria-label]="ctx.field.label"
+          [value]="$any(ctx.value) ?? ''"
+          [disabled]="ctx.disabled"
+          (input)="ctx.onChange($any($event.target).value || null)" />
+      </ng-template>
     </bs-query-builder>
   `;
 

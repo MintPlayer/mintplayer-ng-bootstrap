@@ -4,7 +4,6 @@ import { TestBed } from '@angular/core/testing';
 import { BsHierarchyChartComponent } from '@mintplayer/ng-bootstrap/charts/hierarchy';
 import { BsDockManagerComponent } from '@mintplayer/ng-bootstrap/dock';
 import { BsFileManagerComponent } from '@mintplayer/ng-bootstrap/file-manager';
-import { BsQueryBuilderComponent } from '@mintplayer/ng-bootstrap/query-builder';
 import { BsSchedulerComponent } from '@mintplayer/ng-bootstrap/scheduler';
 import { BsSplitterComponent } from '@mintplayer/ng-bootstrap/splitter';
 
@@ -107,7 +106,6 @@ const WRAPPERS: WrapperCase[] = [
   { selector: 'bs-hierarchy-chart', tag: 'mp-hierarchy-chart', component: BsHierarchyChartComponent },
   { selector: 'bs-dock-manager', tag: 'mint-dock-manager', component: BsDockManagerComponent },
   { selector: 'bs-file-manager', tag: 'mp-file-manager', component: BsFileManagerComponent },
-  { selector: 'bs-query-builder', tag: 'mp-query-builder', component: BsQueryBuilderComponent },
   { selector: 'bs-scheduler', tag: 'mp-scheduler', component: BsSchedulerComponent },
   { selector: 'bs-splitter', tag: 'mp-splitter', component: BsSplitterComponent },
 ];

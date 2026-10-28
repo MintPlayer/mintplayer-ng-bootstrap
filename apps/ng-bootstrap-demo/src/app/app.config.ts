@@ -19,9 +19,8 @@ export const config: ApplicationConfig = {
         //  - Shadow-DOM WCs: the DSD shadow is parser-attached and therefore
         //    invisible to Angular's light-DOM walk, so the element + its
         //    slotted children are simply adopted; Lit hydrates the DSD (main.ts).
-        //  - Light-tier WCs (the query-builder family): their content IS in
-        //    that walk, but the wrappers guard rendering on isPlatformServer, so SSR emits the
-        //    element EMPTY and lit fills it after hydration completes.
+        //  - Headless-core components (#437) render their own Angular template
+        //    on the server, so server and client DOM are identical.
         //    Measured: no NG05xx mismatches, no ngSkipHydration needed.
         provideClientHydration(withEventReplay()),
         provideAnimations(),

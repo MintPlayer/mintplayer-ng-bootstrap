@@ -1,8 +1,8 @@
 import { describe, it, expect } from 'vitest';
 import { renderExpression } from './render-expression';
-import type { Condition, Expression, Group } from '@mintplayer/ui-core/query-builder';
-import type { EntitySchema } from '@mintplayer/ui-core/query-builder';
-import { MaxDepthExceededError } from '@mintplayer/ui-core/query-builder';
+import type { Condition, Expression, Group } from '../model';
+import type { EntitySchema } from '../model';
+import { MaxDepthExceededError } from '../model';
 
 const SCHEMA: EntitySchema[] = [
   {

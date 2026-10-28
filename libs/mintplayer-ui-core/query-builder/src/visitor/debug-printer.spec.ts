@@ -1,8 +1,8 @@
 import { describe, it, expect } from 'vitest';
 import type { TreeVisitor } from './visitor-types';
 import { visitTree } from './visit-tree';
-import type { Expression, Group } from '@mintplayer/ui-core/query-builder';
-import type { EntitySchema } from '@mintplayer/ui-core/query-builder';
+import type { Expression, Group } from '../model';
+import type { EntitySchema } from '../model';
 
 /**
  * Reference example: a `visitTree<string>` consumer that produces a pretty

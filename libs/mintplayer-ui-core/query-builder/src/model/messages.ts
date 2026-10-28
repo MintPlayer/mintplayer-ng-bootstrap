@@ -25,6 +25,20 @@ export interface QueryBuilderMessages {
   field: string;
   operator: string;
   groupLogic: string;
+  addSort: string;
+  removeSort: string;
+  ascending: string;
+  descending: string;
+  noSavedQueries: string;
+  /** `{n}` is the sort's position, from 1. */
+  sortField: string;
+  sortDirection: string;
+  /** `{name}` is the saved query's name. */
+  deleteSavedQuery: string;
+  removeSubquery: string;
+  /** `{logic}` is AND or OR; `{level}` the nesting level, from 1. */
+  groupName: string;
+  nestedGroupName: string;
   operators: Partial<Record<Operator, string>>;
 }
 
@@ -50,6 +64,17 @@ export const DEFAULT_MESSAGES: QueryBuilderMessages = {
   field: 'Field',
   operator: 'Operator',
   groupLogic: 'Group logic',
+  addSort: 'Add sort',
+  removeSort: 'Remove sort {n}',
+  ascending: 'Asc',
+  descending: 'Desc',
+  noSavedQueries: 'No saved queries',
+  sortField: 'Sort {n} field',
+  sortDirection: 'Sort {n} direction',
+  deleteSavedQuery: 'Delete {name}',
+  removeSubquery: 'Remove sub-query',
+  groupName: '{logic} group',
+  nestedGroupName: '{logic} group, level {level}',
   operators: {
     'equals': '=',
     'not-equals': '≠',

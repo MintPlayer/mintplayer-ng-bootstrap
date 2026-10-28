@@ -7,7 +7,7 @@ import {
 import express from 'express';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
-// The light-tier WCs (datatable, treeview, tree-select, query-builder family)
+// The light-tier WCs (the Lit typeahead front)
 // have no shadow root, so there is no DSD chrome for them — their rescoped
 // sheets are document-level. This inserts those <style> tags into <head> for
 // the tags the page actually contains, so they are styled with JS disabled;

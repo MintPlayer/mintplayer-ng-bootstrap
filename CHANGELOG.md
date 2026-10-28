@@ -434,6 +434,25 @@ breaking change is a major. (2.20.0 and 2.21.0 broke `^2.x` consumers in a minor
   - **Filter and resize panels are native `popover="auto"`**, opened by their trigger's `popovertarget`. They are no
     longer portalled into the document-root overlay.
   - The types come from `@mintplayer/ui-core/datatable`, re-exported by every front.
+- **The query builder is generated from one source in every front (issue #437).** It is written once in
+  `@mintplayer/ui-core/query-builder` (`queryBuilderCore`, `connectQueryBuilder`) and compiled into all four
+  fronts, so the toolbar, the tree and the preview render on the server.
+  - **One element.** `mp-query-group`, `mp-query-condition` and `mp-query-subquery` are gone: the tree renders as
+    flat rows (`li.qb-row` with `aria-level` and `data-row-id`) inside one `div.query-builder` root (the host in
+    Angular and Lit). Rows indent through `--qb-depth`. An `aria-label` names the root.
+  - **Custom value editors are a slot.** Mark a field `editor: 'custom'` in the schema and the condition's value
+    renders through the `editor` slot with an `EditorContext` (`field`, `operator`, `value`, `disabled`,
+    `onChange`). Angular `<ng-template bsQueryBuilderEditor let-ctx="ctx">`, React `editor={({ ctx }) => …}`,
+    Vue `#editor="{ ctx }"`. Switch on `ctx.field.name` for several fields.
+  - **Removed:** `editorRegistry`, `EditorRegistry`, `EditorFactory`, `EditorHandle`, the Angular
+    `*bsQueryBuilderEditor="'field'"` structural directive, `operatorOverrides` on the element, the Lit
+    contexts, and the `part=` attributes.
+  - **Two-way inputs** are `query`, `rootEntity`, `selectedFields` and `sortBy`. React reports them through
+    `on<Name>Change(value)` and Vue through `v-model:<name>`. Outputs hand over the payload, not a `CustomEvent`
+    with a `tree` field, and are lowercased in Angular, Vue and Lit (`savequery`, `loadquery`, `deletequery`).
+  - Angular keeps its `ControlValueAccessor` (`BsQueryBuilderValueAccessor`, a host directive).
+  - The model, `renderExpression`, `visitTree` and `DragController` moved to `@mintplayer/ui-core/query-builder`,
+    re-exported by every front.
 - **`mp-input-group` is a light element (issue #437).** Like `bs-input-group`, the host is the
   `.input-group` itself: no shadow root, no slot, and its children are the group's items. It no longer
   writes `size` onto `mp-*` children, because a control in a group reads the group's classes and the

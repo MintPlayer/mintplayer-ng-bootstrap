@@ -15,6 +15,11 @@ export interface FieldDef {
   type: FieldType;
   options?: FieldDefOption[];
   targetEntity?: string;
+  /**
+   * `'custom'` renders the condition's value through the query builder's
+   * `editor` slot instead of the built-in editor for the field's type.
+   */
+  editor?: 'builtin' | 'custom';
 }
 
 export interface EntitySchema {

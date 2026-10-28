@@ -48,7 +48,7 @@ test.describe('@a11y query-builder', () => {
     await page.waitForLoadState('networkidle', { timeout: 2000 }).catch(() => {
       /* HMR keeps the socket open, so the network never idles: settle briefly, never hang */
     });
-    await expect(page.locator('bs-query-builder')).toBeVisible();
+    await expect(page.locator('bs-query-builder').first()).toBeVisible();
 
     const results = await new AxeBuilder({ page })
       .include('main, .container, bs-query-builder')
@@ -69,14 +69,10 @@ test.describe('@a11y query-builder', () => {
       /* HMR keeps the socket open, so the network never idles: settle briefly, never hang */
     });
 
-    // Click the "+ Add condition" button inside the WC's shadow root.
-    await page.locator('mp-query-builder').evaluate((el) => {
-      // Light DOM (Tier L) — no shadow hops needed.
-      const btn = el.querySelector('mp-query-group .qb-add-condition') as HTMLButtonElement;
-      btn.click();
-    });
-    // Let the WC settle.
-    await page.waitForTimeout(100);
+    // The root group's "+ Add condition" button; the new row is rendered when the count is.
+    const qb = page.locator('bs-query-builder').first();
+    await qb.locator('.qb-add-condition').first().click();
+    await expect(qb.locator('li.qb-row-condition')).toHaveCount(1);
 
     const results = await new AxeBuilder({ page })
       .include('main, .container, bs-query-builder')

@@ -1,5 +1,5 @@
 /**
- * Pointer-events drag controller for mp-query-builder.
+ * Pointer-events drag controller for the query builder.
  *
  * Lifecycle:
  *   1. `start(sourceId, descendantIds, event)` — called on a handle's
@@ -29,7 +29,7 @@ export interface DropTarget {
   parentId: string;
   /** Insertion index within the parent's children array. */
   index: number;
-  /** The mp-query-builder root that owns this slot (cross-tree DnD). */
+  /** The query-builder root that owns this slot (cross-tree DnD). */
   qbRoot: string;
 }
 
@@ -38,7 +38,7 @@ export interface DragSource {
   id: string;
   /** Set of `id` values of this node and all its descendants (cycle guard). */
   descendantIds: Set<string>;
-  /** The mp-query-builder root the source belongs to. */
+  /** The query-builder root the source belongs to. */
   qbRoot: string;
   /** The source row element (cloned into the ghost). */
   rowElement: HTMLElement;

@@ -2,10 +2,9 @@ import { describe, expect, it } from 'vitest';
 import { nextTick } from 'vue';
 
 import BsHierarchyChart from '../../charts/hierarchy/src/BsHierarchyChart.vue';
-import BsQueryBuilder from '../../query-builder/src/BsQueryBuilder.vue';
 import { BsTreeview, type TreeNode } from '@mintplayer/vue-bootstrap/treeview';
 import type { MpHierarchyChart } from '@mintplayer/web-components/charts/hierarchy';
-import type { MpQueryBuilderElement } from '@mintplayer/web-components/query-builder';
+import { BsQueryBuilder, type EntitySchema, type Expression } from '@mintplayer/vue-bootstrap/query-builder';
 
 import { emit, mountEl } from './harness';
 
@@ -121,68 +120,45 @@ describe('BsHierarchyChart — property sync and zoom write-back', () => {
   });
 });
 
-describe('BsQueryBuilder — property sync and query write-back', () => {
-  const SCHEMA = [{ name: 'Person', fields: [] }];
-  const QUERY = { type: 'group', operator: 'and', children: [] };
+// BsQueryBuilder renders the headless query builder itself (#437): the tree is
+// flat rows, and every edit writes back through update:query.
+describe('BsQueryBuilder — markup and write-back from the headless core', () => {
+  const SCHEMA: EntitySchema[] = [
+    { name: 'orders', label: 'Orders', fields: [{ name: 'total', label: 'Total', type: 'number' }] },
+  ];
+  const QUERY: Expression = {
+    kind: 'group',
+    id: 'g',
+    logic: 'and',
+    children: [{ kind: 'condition', id: 'c', field: 'total', operator: 'gt', value: 5 }],
+  };
+  const act = (el: Element, name: string) => el.querySelector<HTMLElement>(`[data-qb-act="${name}"]`)!;
 
-  it('pushes the object props the element cannot receive as attributes', () => {
-    const editorRegistry = {};
-    const messages = { addRule: 'Add' };
-    const { el } = mountEl<MpQueryBuilderElement>(BsQueryBuilder, 'mp-query-builder', {
-      props: {
-        schema: SCHEMA,
-        selectedFields: ['a'],
-        sortBy: [{ field: 'a', direction: 'asc' }],
-        savedQueries: [],
-        editorRegistry,
-        messages,
-      },
-    });
-    expect(el.schema).toEqual(SCHEMA);
-    expect(el.selectedFields).toEqual(['a']);
-    expect(el.sortBy).toHaveLength(1);
-    expect(el.editorRegistry).toEqual(editorRegistry);
-    expect(el.messages).toEqual(messages);
+  it('renders a row per node, the condition one level below its group', () => {
+    const { el } = mountEl(BsQueryBuilder, 'div.query-builder', { props: { schema: SCHEMA, rootEntity: 'orders', query: QUERY } });
+    const rows = [...el.querySelectorAll<HTMLElement>('li.qb-row[data-row-id]')];
+    expect(rows.map((r) => [r.getAttribute('data-row-id'), r.getAttribute('aria-level')])).toEqual([
+      ['g', '1'],
+      ['c', '2'],
+    ]);
   });
 
-  it('writes the initial model value to the element query', () => {
-    const { el } = mountEl<MpQueryBuilderElement>(BsQueryBuilder, 'mp-query-builder', {
-      props: { schema: SCHEMA, modelValue: QUERY },
-    });
-    expect(el.query).toEqual(QUERY);
+  it('writes an edit back to the query model without mutating the input', async () => {
+    const { wrapper, el } = mountEl(BsQueryBuilder, 'div.query-builder', { props: { schema: SCHEMA, rootEntity: 'orders', query: QUERY } });
+    act(el, 'logic-or').click();
+    await nextTick();
+    const written = wrapper.emitted('update:query')?.at(-1)?.[0] as Expression;
+    expect(written).toMatchObject({ kind: 'group', id: 'g', logic: 'or' });
+    expect(written).not.toBe(QUERY);
+    expect((QUERY as { logic: string }).logic).toBe('and');
   });
 
-  it('pushes a later model change', async () => {
-    const { wrapper, el } = mountEl<MpQueryBuilderElement>(BsQueryBuilder, 'mp-query-builder', {
-      props: { schema: SCHEMA, modelValue: QUERY },
+  it('renders a field marked custom through the #editor slot', () => {
+    const custom: EntitySchema[] = [{ ...SCHEMA[0], fields: [{ ...SCHEMA[0].fields[0], editor: 'custom' }] }];
+    const { el } = mountEl(BsQueryBuilder, 'div.query-builder', {
+      props: { schema: custom, rootEntity: 'orders', query: QUERY },
+      slots: { editor: `<template #editor="{ ctx }"><output class="custom-editor">{{ ctx.field.name }}={{ ctx.value }}</output></template>` },
     });
-    const next = { type: 'group', operator: 'or', children: [] };
-
-    await wrapper.setProps({ modelValue: next });
-
-    expect(el.query).toEqual(next);
-  });
-
-  // The element wraps the expression in a `tree` field rather than sending it
-  // bare, so unwrapping is the whole write-back.
-  it('unwraps the tree field of query-change into the model', async () => {
-    const { wrapper, el } = mountEl<MpQueryBuilderElement>(BsQueryBuilder, 'mp-query-builder', {
-      props: { schema: SCHEMA, modelValue: QUERY },
-    });
-    const edited = { type: 'group', operator: 'or', children: [] };
-
-    await emit(el, 'query-change', { tree: edited });
-
-    expect(wrapper.emitted('update:modelValue')!.at(-1)).toEqual([edited]);
-  });
-
-  it('ignores a query-change with no detail', async () => {
-    const { wrapper, el } = mountEl<MpQueryBuilderElement>(BsQueryBuilder, 'mp-query-builder', {
-      props: { schema: SCHEMA, modelValue: QUERY },
-    });
-
-    await emit(el, 'query-change', undefined);
-
-    expect(wrapper.emitted('update:modelValue')).toBeUndefined();
+    expect(el.querySelector('.custom-editor')?.textContent).toBe('total=5');
   });
 });

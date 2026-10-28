@@ -39,20 +39,22 @@
     [showPreview]="true"
     [showSavedQueries]="true"
     [savedQueries]="savedQueries()"
-    (saveQuery)="onSaveQuery($event)"
-    (loadQuery)="onLoadQuery($event)"
-    (deleteQuery)="onDeleteQuery($event)"
+    (savequery)="onSaveQuery($event)"
+    (loadquery)="onLoadQuery($event)"
+    (deletequery)="onDeleteQuery($event)"
   >
-    <!-- Custom editor for the `orderDate` field: a vanilla <input type="date">
-         demonstrates the *bsQueryBuilderEditor projection. -->
-    <input
-      *bsQueryBuilderEditor="'orderDate'; let ctx"
-      type="date"
-      class="form-control form-control-sm custom-date-editor"
-      [value]="ctx.value ?? ''"
-      [disabled]="ctx.disabled"
-      (input)="ctx.onChange(($any($event.target).value || null))"
-    />
+    <!-- The value editor of every field with editor: 'custom' (here orderDate):
+         a vanilla <input type="date"> through the bsQueryBuilderEditor template. -->
+    <ng-template bsQueryBuilderEditor let-ctx="ctx">
+      <input
+        type="date"
+        class="form-control form-control-sm custom-date-editor"
+        [attr.aria-label]="ctx.field.label"
+        [value]="$any(ctx.value) ?? ''"
+        [disabled]="ctx.disabled"
+        (input)="ctx.onChange(($any($event.target).value || null))"
+      />
+    </ng-template>
   </bs-query-builder>
 
   <div class="d-flex gap-2 align-items-center my-3">
