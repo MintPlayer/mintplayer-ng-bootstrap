@@ -192,8 +192,10 @@ function composedChild(ctx, { child, inputs, outputs, models, attrs, binds, bag,
     ...binds.map((b) => `${b.name}=\${(${x(ctx, b.exp)}) ?? nothing}`),
     ...(bag ? (ctx.uses.add('props'), [`\${props(${x(ctx, bag)})}`]) : []),
     ...inputs.map((i) => `.${i.name}=\${${x(ctx, i.exp)}}`),
-    ...models.flatMap((m) => [`.${m.name}=\${${x(ctx, m.exp)}.value}`, `@${m.output.lower}=\${(e: CustomEvent) => ${x(ctx, m.exp)}.set(e.detail)}`]),
-    ...outputs.map((o) => `@${o.output.lower}=\${(e: CustomEvent) => ${x(ctx, o.exp)}(e.detail)}`),
+    // The element's events bubble, so a listener here also hears the same output from any
+    // element of that kind nested inside this one (a tree's subtrees): only its own count.
+    ...models.flatMap((m) => [`.${m.name}=\${${x(ctx, m.exp)}.value}`, `@${m.output.lower}=\${(e: CustomEvent) => e.target === e.currentTarget && ${x(ctx, m.exp)}.set(e.detail)}`]),
+    ...outputs.map((o) => `@${o.output.lower}=\${(e: CustomEvent) => e.target === e.currentTarget && ${x(ctx, o.exp)}(e.detail)}`),
     ...slots.map((slot) => {
       const inner = { ...ctx, locals: new Set([...ctx.locals, ...slot.params]) };
       const prop = rendererProperty(slot.name);

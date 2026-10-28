@@ -56,7 +56,8 @@ function composedChild(ctx, { child, inputs, outputs, models, attrs, binds, bag,
     ...attrs.map((a) => `${a.name}="${escapeAttr(a.value)}"`),
     ...binds.map((b) => (b.name === 'class' ? `[class]` : `[attr.${b.name}]`) + `="${escapeAttr(x(ctx, b.exp))}"`),
     ...(bag ? (ctx.uses.add('MpPropsDirective'), [`[mpProps]="${escapeAttr(x(ctx, bag))}"`]) : []),
-    ...inputs.map((i) => `[${i.name}]="${escapeAttr(x(ctx, i.exp))}"`),
+    // A static input stays an attribute: Angular binds it as a string, through the input's transform.
+    ...inputs.map((i) => (i.value !== undefined ? `${i.name}="${escapeAttr(i.value)}"` : `[${i.name}]="${escapeAttr(x(ctx, i.exp))}"`)),
     ...models.flatMap((m) => [`[${m.name}]="${escapeAttr(x(ctx, m.exp))}.value"`, `(${m.name}Change)="${escapeAttr(x(ctx, m.exp))}.set($event)"`]),
     ...outputs.map((o) => `(${o.output.lower})="${escapeAttr(x(ctx, o.exp))}($event)"`),
   ];

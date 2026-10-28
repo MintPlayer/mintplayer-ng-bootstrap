@@ -693,6 +693,14 @@ breaking change is a major. (2.20.0 and 2.21.0 broke `^2.x` consumers in a minor
 
 ### Added
 
+- **The component compiler nests templates (issue #437).** A D10 template may call **partials**: recursive sibling
+  `.view.vue` files with no manifest, folded into each front. It may also **compose** another generated element
+  (`<mp-x>`) of any group, its own included, with inputs, outputs, `v-model:x` (a `ModelBinding<T>` from
+  `@mintplayer/ui-core/component`) and slot content in Vue syntax. A view reaches its core for those handlers
+  through `ViewArgs.api()`. The compiler options `entryModule` (per front) and `registry` decide how a composed
+  child is imported. The compiler refuses an output named like a native DOM event, a cycle between groups, and a tag
+  claimed twice. See `docs/prd/component-compiler-nesting-437.md`.
+
 - **Typeahead in every framework, from one headless core (issue #436).** `@mintplayer/ui-core/typeahead`
   (`TypeaheadMachine`, `connect()`, `inMemoryTypeaheadProvider`) drives `bs-typeahead` (Angular), `BsTypeahead`
   (React: `renderItem`, controlled `value` + `onValueChange`), `BsTypeahead.vue` (`#item` slot, `v-model`) and
@@ -794,6 +802,12 @@ breaking change is a major. (2.20.0 and 2.21.0 broke `^2.x` consumers in a minor
     applyFetchState })`.
 
 ### Fixed
+
+- **Angular SSR renders a generated component's bound two-way inputs (issue #437).** A generated Angular
+  component used to seed its core from its inputs in the constructor, before Angular had bound them. On the client
+  the next change detection corrected that, but the server rendered the default (`[(count)]="5"` rendered `0`) and
+  the client then patched it after hydration. Seeding now happens at the first change detection, so the server
+  renders the bound value.
 
 - **`<bs-badge>` text contrasts with its background (issue #434).**
   - The badge painted `bg-{color}`, which sets only the background, so its text stayed `.badge`'s white: 1.63:1 on

@@ -43,7 +43,7 @@ export function defineContext<T>(name: string, defaultValue: T): CoreContext<T> 
 }
 
 /** What `view` and `provide` see. */
-export interface ViewArgs<I, S, C> {
+export interface ViewArgs<I, S, C, E = Record<never, never>> {
   readonly inputs: Readonly<I>;
   readonly state: Readonly<S>;
   /** Deterministic per instance: identical on the server and on hydration. */
@@ -54,6 +54,12 @@ export interface ViewArgs<I, S, C> {
   readonly context: C;
   /** The consumer's `aria-label` on the component, which names its role node. */
   readonly label: string | null;
+  /**
+   * The live api, for a handler the view hands a composed child (an `@output`
+   * handler, a `ModelBinding`'s `set`): null on the server and before attaching.
+   * Never call it from `view` itself, which stays pure.
+   */
+  readonly api: () => CoreApi<I, S, E> | null;
 }
 
 /** What `attach`, `inputsChanged` and the methods may do. Client only. */
@@ -80,14 +86,14 @@ export interface ComponentCore<I, S, P, E = Record<never, never>, C = undefined,
   /** Internal state, seeded from the first inputs. */
   state?(inputs: Readonly<I>): S;
   /** The template's props. Pure. */
-  view(args: ViewArgs<I, S, C>): P;
+  view(args: ViewArgs<I, S, C, E>): P;
   /**
    * Attributes for the front's own host element where the template root is NOT
    * the host (Angular and Lit only; React and Vue have no host). An `mp-host`
    * template needs none: its root's bag lands on the host.
    */
   host?(props: P): CoreBag;
-  provide?(args: ViewArgs<I, S, C>): PC;
+  provide?(args: ViewArgs<I, S, C, E>): PC;
   /** Wires DOM behaviour after the first client render; returns its disposer. */
   attach?(api: CoreApi<I, S, E>): (() => void) | void;
   /** An input changed after `attach`. `prev` holds the inputs before the change. */

@@ -99,7 +99,7 @@ export class CoreController<I, S, P, E, C, PC, M> implements ReactiveController 
     return (this.#state ??= this.#core.state ? this.#core.state(this.#options.inputs()) : ({} as S));
   }
 
-  #args(): ViewArgs<I, S, C> {
+  #args(): ViewArgs<I, S, C, E> {
     return {
       inputs: this.#options.inputs(),
       state: this.#currentState,
@@ -107,6 +107,7 @@ export class CoreController<I, S, P, E, C, PC, M> implements ReactiveController 
       hydrated: this.#hydrated,
       context: (this.#core.consume ? readContext(this.#host, this.#core.consume) : undefined) as C,
       label: this.#label ?? null,
+      api: () => this.#runtime.api,
     };
   }
 

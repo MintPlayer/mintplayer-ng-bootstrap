@@ -66,16 +66,29 @@ export function useCore<I, S, P, E, C, PC, M>(core: ComponentCore<I, S, P, E, C,
   // Read once: a host attribute is static content, and Angular does not observe it.
   const label = element.getAttribute('aria-label');
   const hydrated = signal(false);
-  const seed = untracked(options.inputs);
-  const state = signal<S>(core.state ? core.state(seed) : ({} as S));
+  // The state is seeded at its first read, in the first change detection: the
+  // template's bindings have set the inputs by then. In the constructor they
+  // have not, and the server would render a bound model input's default.
+  const written = signal<S | null>(null);
+  let seeded: S | null = null;
+  const seed = (): S => {
+    if (seeded) return seeded;
+    const inputs = untracked(options.inputs);
+    // The baseline the state was seeded from: inputs that change before attaching
+    // (a form control writing its value) reach inputsChanged on attach.
+    runtime.inputs(inputs);
+    return (seeded = core.state ? core.state(inputs) : ({} as S));
+  };
+  const state = computed(() => written() ?? seed());
 
-  const args = computed<ViewArgs<I, S, C>>(() => ({
+  const args = computed<ViewArgs<I, S, C, E>>(() => ({
     inputs: options.inputs(),
     state: state(),
     id,
     hydrated: hydrated(),
     context: (consumed ? consumed() : core.consume?.defaultValue) as C,
     label,
+    api: () => runtime.api,
   }));
   const props = computed(() => core.view(args()));
   const provided = computed(() => core.provide?.(args()) as PC);
@@ -86,14 +99,11 @@ export function useCore<I, S, P, E, C, PC, M>(core: ComponentCore<I, S, P, E, C,
   const runtime = coreRuntime(core, {
     inputs: () => untracked(options.inputs),
     state: () => untracked(state),
-    setState: (next) => state.set(next),
+    setState: (next) => written.set(next),
     emit: (name, detail) => options.outputs?.[name]?.emit(detail as never),
     models: Object.keys(options.models ?? {}) as never,
     writeModel: (name, value) => options.models?.[name]?.set(value as never),
   });
-  // The baseline the state was seeded from: inputs that change before attaching
-  // (a form control writing its value) reach inputsChanged on attach.
-  runtime.inputs(seed);
   afterNextRender(() => {
     hydrated.set(true);
     const root = options.hostBag ? element : (element.firstElementChild as HTMLElement | null);

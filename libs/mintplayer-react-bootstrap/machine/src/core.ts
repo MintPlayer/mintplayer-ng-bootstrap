@@ -64,13 +64,14 @@ export function useCore<I, S, P, E, C, PC, M>(core: ComponentCore<I, S, P, E, C,
   // Every commit; the runtime compares the inputs shallowly.
   useEffect(() => runtime.inputs(inputs));
 
-  const args: ViewArgs<I, S, C> = {
+  const args: ViewArgs<I, S, C, E> = {
     inputs,
     state,
     id,
     hydrated,
     context: (consumed ?? core.consume?.defaultValue) as C,
     label: options.label ?? null,
+    api: () => runtime.api,
   };
   return {
     props: core.view(args),

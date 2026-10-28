@@ -76,7 +76,7 @@ export class LightChildren implements ReactiveController {
   }
 
   hostConnected(): void {
-    this.#observer = new MutationObserver(() => this.#adopt());
+    this.#observer = new MutationObserver((records) => this.#adopt(records, true));
     this.#observer.observe(this.host, { childList: true });
   }
 
@@ -85,15 +85,29 @@ export class LightChildren implements ReactiveController {
     this.#observer = null;
   }
 
-  #adopt(): void {
+  /** Nodes appended since the last render are adopted now, so this render places them. */
+  hostUpdate(): void {
+    this.#adopt(this.#observer?.takeRecords() ?? [], false);
+  }
+
+  /**
+   * What the render itself inserted is the template's, whatever it is: a
+   * render callback's text or unstamped element lands directly in the host.
+   */
+  hostUpdated(): void {
+    this.#observer?.takeRecords();
+  }
+
+  #adopt(records: MutationRecord[], rerender: boolean): void {
     if (!this.#slots) return;
+    const added = new Set(records.flatMap((record) => [...record.addedNodes]));
     // A captured node the template placed directly in the host is not a stray:
     // adopting it again would re-render, re-insert and re-adopt it forever.
     const captured = new Set(Object.values(this.#slots).flat());
-    const strays = takeLightChildren(this.host, (node) => captured.has(node) || ownedByTemplate(node));
+    const strays = takeLightChildren(this.host, (node) => !added.has(node) || captured.has(node) || ownedByTemplate(node));
     if (Object.keys(strays).length === 0) return;
     Object.entries(strays).forEach(([name, nodes]) => (this.#slots![name] = [...(this.#slots![name] ?? []), ...nodes]));
-    this.host.requestUpdate();
+    if (rerender) this.host.requestUpdate();
   }
 }
 

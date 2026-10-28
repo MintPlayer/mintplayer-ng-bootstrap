@@ -289,7 +289,7 @@ export function composedUse(src, el, components) {
   const inputNamed = (name) => child.inputs.find((input) => input.name === camelCase(name));
   el.props.forEach((p) => {
     if (p.type === PROP.ATTRIBUTE) {
-      if (inputNamed(p.name)) use.inputs.push({ name: inputNamed(p.name).name, exp: JSON.stringify(p.value?.content ?? '') });
+      if (inputNamed(p.name)) use.inputs.push({ name: inputNamed(p.name).name, exp: JSON.stringify(p.value?.content ?? ''), value: p.value?.content ?? '' });
       else if (isNativeAttribute(p.name)) use.attrs.push({ name: p.name, value: p.value?.content ?? '' });
       else throw new TemplateError(src.file, el, `<${el.tag}> has no input "${p.name}"`);
       return;

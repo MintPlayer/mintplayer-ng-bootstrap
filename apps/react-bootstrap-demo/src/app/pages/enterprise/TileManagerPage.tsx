@@ -128,8 +128,8 @@ export function TileManagerPage() {
           <label className="form-label mb-1">Gap</label>
           <BsSelect aria-label="Gap" value={String(gap)} options={GAP_OPTIONS} onValueChange={({ value }) => setGap(Number(value ?? 12))} />
         </div>
-        <BsCheckbox type="switch" checked={editing} onChange={(e) => setEditing(e.detail.checked)}>Edit layout</BsCheckbox>
-        <BsCheckbox type="checkbox" checked={animateReflow} onChange={(e) => setAnimateReflow(e.detail.checked)}>Animate reflow</BsCheckbox>
+        <BsCheckbox type="switch" checked={editing} onCheckedChange={setEditing}>Edit layout</BsCheckbox>
+        <BsCheckbox type="checkbox" checked={animateReflow} onCheckedChange={setAnimateReflow}>Animate reflow</BsCheckbox>
       </div>
 
       <div className="tile-demo-checklist">

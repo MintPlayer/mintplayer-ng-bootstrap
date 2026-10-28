@@ -70,6 +70,15 @@ export default defineConfig({
 
 Give it as a package specifier, or as `{ file }` to have each generated file import it by a relative path.
 
+Two options serve composition:
+
+- `entryModule` (per front, `(entry) => specifier | { file }`) is how a template in another entry imports this entry's
+  components, e.g. `(e) => '@my/ng/' + e`. Without it, the import is a relative path to `<outDir>/index`. Set it
+  where a front publishes one package entry per directory (ng-packagr, Vite sub-entries), so the composed child is
+  not bundled twice.
+- `registry: ['libs/other/component-compiler.config.mjs']` lets templates here compose that config's elements. Those
+  manifests are read, never emitted. The Nx plugin adds their globs to the `compile-components` inputs.
+
 The same API is available programmatically as `await compileComponents(config, { cwd, check })`.
 The stages are also exported separately: `readSource`, `emitAngular` / `emitReact` / `emitVue` / `emitLit`
 (templates), and `emit*Component` (components).
@@ -109,9 +118,37 @@ the template of every front. A template without a manifest is still compiled on 
   with `/*! @mps-global */`.
 - **Expressions.** They may read props, loop locals and `$slots`, and nothing else. Functions
   and arrow functions are refused, so all logic stays in the core.
-- **Elements.** Only native elements and `<slot>` are allowed; no components. Vue's parser reads an
-  unknown tag as a component, so newer native elements are listed in `NATIVE_TAGS`
+- **Elements.** Native elements, `<slot>`, partials and composed `mp-*` elements (below). Vue's
+  parser reads an unknown tag as a component, so newer native elements are listed in `NATIVE_TAGS`
   (`source.mjs`), today only `<selectedcontent>`. Such an element takes no attributes or content.
+- **Partials** are how a template recurses (a tree, a nested query). A partial is a sibling
+  `<name>.view.vue` with no manifest, imported as its default under its PascalCase file name
+  (`import QbNode from './qb-node.view.vue'`). It may call itself by that name.
+  - A use site takes `:prop` bindings only (plus `v-if` / `v-for` / `:key`), checked against the
+    partial's `defineProps`. It takes no content; the partial's slots are filled from the calling
+    template's own slots, so every slot the partial declares must exist there.
+  - A partial has no standalone output. Each front folds it into the template that imports it: an
+    Angular `ng-template` called through `ngTemplateOutlet`, a React function component, a Vue SFC,
+    a Lit template function.
+  - A partial nobody imports, and a cycle between partials, are errors.
+- **Composed elements.** `<mp-x>` is another manifest element, of this group, of another group, or of
+  a config listed in `registry`. It compiles to `<bs-x>` (Angular), `<BsX>` (React, Vue) or `<mp-x>`
+  (Lit), imported from the child's entry. It renders the full child component with its own core.
+  - Static attributes, `:input`, `@output` and the bag's attributes are checked against the child's
+    manifest. A static input stays an attribute, so Angular runs it through the input's transform.
+  - `v-model:x="view.thing"` needs a `model: true` input `x` and a member path whose value is a
+    `ModelBinding<T>` (`ui-core/component`). It compiles to the value plus a `set` handler. A view
+    builds `set` from `api()` in its `ViewArgs`.
+  - Content uses Vue's own syntax: `<template #name="{ a }">` for a named or scoped slot, plain
+    children for the default one. Each name is checked against the child's `defineSlots`. Lit passes
+    every slot, the default one included, as a `<slot>Renderer` callback, never as light children.
+  - In Lit the composed listeners only hear the child's own events (`e.target === e.currentTarget`).
+    Otherwise a nested element of the same kind would bubble into them.
+  - A template may compose its own element (recursion ends with the data under `v-if` / `v-for`).
+    A cycle between groups is an error, and so is a tag claimed by two manifests.
+- **Output names.** An output whose lowercase name is a native DOM event (`change`, `select`,
+  `toggle`, `animationend`, ...) is refused. On a composed child, the native event would also reach
+  the listener.
 - **`:value.prop` on a `<select>`** is a seed for React only: React emits it as `defaultValue`
   because it refuses `selected` on an `<option>`. The other fronts drop it and select through
   each option's `selected` bag key. A live `select.value` write would land before the options

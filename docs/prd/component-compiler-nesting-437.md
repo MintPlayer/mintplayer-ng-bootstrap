@@ -201,6 +201,17 @@ edge through the generated import, so no `project.json` change is needed.
 `data-mp-owned` as owned. The marker is chosen over keeping a list of the nodes the template rendered: the check stays
 local, and SSR output shows it.
 
+**Amended after NS7.** The marker cannot cover everything a parent's render puts into a child: a renderer's text
+nodes and the unstamped nodes of slot content cannot carry an attribute. `LightChildren` therefore adopts only nodes
+that *someone else* added. Its MutationObserver still adopts (and re-renders) for foreign insertions. In
+`hostUpdate()` it takes the pending records and adopts them without a re-render. In `hostUpdated()` it discards the
+records that the host's own render produced. The `data-mp-owned` marker stays on composed children as a second,
+visible signal.
+
+**Event scope (Lit).** Lit events bubble, so a composed child's listener would also fire for the same event from a
+nested child of the same type (self-composition). Every composed model and output listener is emitted as
+`(e) => e.target === e.currentTarget && handler(e.detail)`.
+
 ### 5.4 Output-name collisions
 
 The Angular, Vue and Lit fronts lowercase output names, so they can match a DOM event that bubbles to the same
@@ -222,7 +233,7 @@ expression may read the parent's props, loop locals and the slot's parameters.
 | Angular | `<ng-template bsXName let-a="a" let-b="b">…</ng-template>` inside `<bs-x>`, with the child's slot directive in `imports`. Default content is projected by `<ng-content>`. |
 | React | a render prop `name={({ a, b }) => <>…</>}`. Default content goes to `children`. |
 | Vue | `<template #name="{ a, b }">` as written. |
-| Lit | a scoped slot becomes `.nameRenderer=${({ a, b }) => html\`…\`}`. Unscoped and default content become children (named ones carry `slot="name"`), each marked `data-mp-owned` (§5.3). |
+| Lit | every slot becomes a render callback: `.nameRenderer=${({ a, b }) => html\`…\`}`, unscoped ones with no argument, and default content `.defaultRenderer=${() => html\`…\`}`. No content is passed as light children, so the child's adoption never sees the parent's nodes (§5.3). |
 
 **Lit risk.** A child's own adoption must not fight the parent's render (NS7).
 
@@ -237,6 +248,21 @@ The compiler checks two things:
 - the expression is a member path.
 
 The type of `ModelBinding` does the rest.
+
+A view builds `set` from `ViewArgs.api()`, which returns the component's `CoreApi` (`null` before the front has
+mounted). `view` never calls it, so the view stays pure. It only closes over it:
+`count: { value: s.count, set: (c) => api()?.setState({ count: c }) }`. `@output` handlers on a composed child use
+the same channel. All four bridges pass `api`.
+
+**Angular static inputs.** `label="leaf"` on a composed child is emitted as the attribute `label="leaf"`, never as
+`[label]="'leaf'"`. Angular then binds it as a string through the input's transform, exactly as a consumer's
+attribute would be.
+
+**Angular seeding (found by NS8).** `useCore` used to seed the core state from the inputs in the constructor, before
+any input was bound. Under SSR there is no later change detection to correct it, so a bound model input rendered its
+default ("leaf 0" for `count: 5`). Seeding is now lazy: it happens at the first read of the state signal, during the
+first change detection, after the inputs are bound. This fixes the same bug for every two-way input in a consumer
+template, not only composed ones.
 
 ### 5.7 A component that composes itself
 
@@ -279,12 +305,28 @@ Each spike writes its verdict into §7 below before the milestone it gates start
 
 ## 7. Spike verdicts
 
-*(none yet)*
+Measured 2026-10-28.
+
+The composition fixture was a throwaway two-group pair (`spike-leaf`, `spike-host`) rather than `mp-treeview`. The
+leaf has a model input, two outputs, a default slot, a named slot and a scoped slot, and it composes itself. The host
+composes it with every binding kind. This exercises more than a treeview host would have. The fixture was deleted
+after the verdicts. M6 (file manager → treeview) is the first real composition.
+
+| # | Verdict | Evidence |
+|-|-|-|
+| NS1 | **Pass** | The query builder's group → children partial nests to depth 4 with an identical `li.qb-row` shape (`g1@1 … c4@5`) in all four fronts. `ngc --noEmit` rejects a wrong field on `let-node` (TS2339). Angular SSR of the depth-4 tree hydrates with no NG05xx and no console error, and the deepest row keeps its node identity. Hydration annotations are 2.5 KB of a 26 KB page. |
+| NS2 | **Pass** | The `editor` scoped slot renders with its typed ctx at the deepest condition (depth 5 in the shape above) in all four fronts, including Angular SSR. Changing the slot's argument type was not separately exercised. The `let-node` negative check covers the same ngc path. |
+| NS3 | **Pass, after two Lit fixes** | The child renders and its output reaches the host core in all four fronts, and Angular SSR renders the child. The Lit host did not loop (mutation counter), but it adopted the template's own slot content as strays, and nested same-type listeners fired for a grandchild's event. The adoption fix (§5.3, amended) and the event-scope guard (§5.3) fixed both. |
+| NS4 | **Pass** | The scoped-styles registry lives on `globalThis[Symbol.for('mp.lightStyles')]`, so a duplicated module still shares one registry. The Lit fixture measures exactly one `style[data-mps]` per scope. Context keys depend on a single `ui-core` copy, which the workspace guarantees. |
+| NS5 | **3 collisions, renamed** | `carousel.animationStart/End` → `slideStart/End`; `datatable`/`timeline`/`tree-select` `selectionChange` → `selectionChanged`; `tree-select.search` → `searchStart`. These are recorded in the CHANGELOG. The compiler now refuses a collision and reports all of them at once. |
+| NS6 | **Pass (same config)** | Renaming a child input makes the parent's generated template fail to compile, and `--check` reports a doc-only edit to a child manifest as stale. A `registry` config is wired (the plugin adds its manifest globs to the inputs), but no second real config exists to exercise it. |
+| NS7 | **Pass, after the adoption fix** | Scoped, named and default content render in the child's slots with their params in all four fronts. A parent re-render keeps node identity in Lit, and Angular SSR renders the content. |
+| NS8 | **Pass, after the Angular seeding fix** | A child edit reaches `ModelBinding.set` (the host stores `c × 10`), and the new value reaches the child in all four fronts. A `v-model` on a non-model input is a compile error. Angular SSR rendered the default until seeding became lazy (§5.6). |
+| NS9 | **Pass** | Three self-nested instances have independent cores in all four fronts. There is no cycle error, and Angular SSR hydrates. |
 
 ## 8. Open questions
 
-- Hydration payload size for deep trees (NS1 measures it); if it is large, consider `ngSkipHydration` on the
-  partial's container only.
+- *(resolved by NS1)* The hydration payload for a depth-4 tree is 2.5 KB, so `ngSkipHydration` is not needed.
 
 ## 9. Acceptance
 

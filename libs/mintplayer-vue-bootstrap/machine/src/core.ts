@@ -44,13 +44,14 @@ export function useCore<I extends object, S, P, E, C, PC, M>(
   const hydrated = shallowRef(false);
   const state = shallowRef<S>(core.state ? core.state(inputs()) : ({} as S));
 
-  const args = computed<ViewArgs<I, S, C>>(() => ({
+  const args = computed<ViewArgs<I, S, C, E>>(() => ({
     inputs: inputs(),
     state: state.value,
     id,
     hydrated: hydrated.value,
     context: (consumed ? consumed.value : core.consume?.defaultValue) as C,
     label: (attrs['aria-label'] as string | undefined) ?? null,
+    api: () => runtime.api,
   }));
   if (core.provides) provide(vueCoreContextKey(core.provides), computed(() => core.provide?.(args.value) as PC));
 
