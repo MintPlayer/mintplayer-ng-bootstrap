@@ -37,7 +37,6 @@ const GENERATOR = 'gen-light-styles-chrome';
 // install a second copy of the sheet instead of adopting the SSR one.
 export const LIGHT_TIER_COMPONENTS = [
   ['mp-datatable', 'datatable', 'datatable', 'datatableLightStyles'],
-  ['mp-tree-select', 'tree-select', 'tree-select', 'treeSelectLightStyles'],
   ['mp-query-builder', 'query-builder', 'query-builder', 'queryBuilderLightStyles'],
   ['mp-query-condition', 'query-condition', 'query-builder', 'queryConditionLightStyles'],
   ['mp-query-group', 'query-group', 'query-builder', 'queryGroupLightStyles'],

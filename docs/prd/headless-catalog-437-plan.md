@@ -24,7 +24,7 @@ Each component milestone is the same checklist, done for every component in the 
 - [x] S1 Bootstrap layering, all three demos
 - [x] S12 React/Vue SSR sheet collection (pairs with S1)
 - [ ] S2 compound cores (radio-group + radio [x], accordion [x] + tab)
-- [ ] S3 nested cores (tree-select over treeview)
+- [x] S3 nested cores (tree-select over treeview): (a) sub-machine. `attachTreeController` (ui-core/treeview) is the shared tree behaviour; the tree-select core attaches it with a `click` hook and reuses `connectTreeview` for the row bags
 - [x] S5 hydration with consumer templates and pre-hydration text
 - [ ] S6 measurement-free server layout (carousel, splitter, hierarchy chart)
 - [ ] S9 navbar dropdown CSS-only open
@@ -144,7 +144,7 @@ Every item below is authored as a D10 component source once M3b lands.
 ## M5 — Wave C
 
 - [x] treeview: flat rows (APG flat tree), so no front needs a recursive template; lazy children merge in the core; `node` slot replaces `nodeRenderer(node, ctx)`
-- [ ] tree-select (D2 per S3)
+- [x] tree-select (D2(a)): one D10 source; native popover panel; multiple mode is `aria-selected` + `aria-multiselectable`, checkbox mode `aria-checked` (mixed) with a decorative check glyph; `bs-form` ancestor no longer required
 - [ ] datatable:
   - `virtual-window`
   - `initialPage`

@@ -1,4 +1,4 @@
-import type { TreeNode } from '@mintplayer/web-components/treeview';
+import type { TreeNode } from '@mintplayer/ui-core/tree';
 
 /**
  * Selection arity / affordance.
@@ -45,7 +45,7 @@ export interface TreeSelectProvider {
   loadChildren(parentId: string, req: NodeRequest): Promise<NodePage>;
 }
 
-/** Detail of the `value-change` event. */
+/** Detail of the `selectionChange` output. */
 export interface TreeSelectChangeEventDetail {
   /** Scalar in `single` mode, array otherwise. */
   value: TreeNode | TreeNode[] | null;
@@ -53,6 +53,16 @@ export interface TreeSelectChangeEventDetail {
   added?: TreeNode;
   /** The node toggled off, when this change removed one. */
   removed?: TreeNode;
+}
+
+/** Detail of the `search` output: the query a search started with (empty when cleared). */
+export interface TreeSelectSearchEventDetail {
+  query: string;
+}
+
+/** Detail of the `loadError` output: what a provider call rejected with. */
+export interface TreeSelectLoadErrorEventDetail {
+  error: unknown;
 }
 
 export type { TreeNode };

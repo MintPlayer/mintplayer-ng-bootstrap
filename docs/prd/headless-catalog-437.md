@@ -98,6 +98,8 @@ There are two ways to do this, and S3 picks one:
 
 The leaning is (b) for visual nesting such as file-manager, because the inner component stays independently styled and tested, and (a) where the outer behaviour drives the inner state. Tree-select is the (a) case: cascade selection runs over the treeview's expand set.
 
+**S3 verdict (tree-select, 2026-10-28): (a).** The treeview's behaviour is a sub-machine, `attachTreeController(options)` in `ui-core/treeview`. It owns roving focus, the APG tree keys, expand/collapse and lazy loading over a `TreeSlice` that the host core stores in its own state. The treeview core and the tree-select core both attach it. The outer core supplies `select(node, additive)`, an optional `click(node, target)` hook (tree-select: a check glyph or leaf toggles, a folder row only expands) and an `expanded(change)` callback (tree-select: cascade over freshly loaded children). Rows reuse `connectTreeview` bags with tree-select fields added. Template composition was rejected here because a D10 template cannot include another component, and cascade needs the expansion events inside the same core. (b) stays the rule for visual nesting.
+
 ### D3. Consumer content is front-native
 
 Each front takes consumer content in its own framework's idiom:

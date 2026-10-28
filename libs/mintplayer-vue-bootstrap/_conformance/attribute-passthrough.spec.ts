@@ -150,7 +150,7 @@ const TARGETS: Record<string, string> = {
   BsTimeList: 'div.mp-time-list',
   BsTimepicker: 'div.mp-timepicker',
   BsToggleButton: 'input[type=checkbox]',
-  BsTreeSelect: 'mp-tree-select',
+  BsTreeSelect: 'div.tree-select',
   BsTreeview: 'ul.treeview-tree',
   // Headless-core front (#436): attributes land on its own combobox <input>.
   BsTypeahead: 'input',

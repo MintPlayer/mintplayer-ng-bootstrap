@@ -1,7 +1,7 @@
 import { test, expect } from '@playwright/test';
 
-// The mp-tree-select demos render entirely inside shadow DOM; Playwright's CSS
-// engine pierces shadow boundaries automatically. We assert against the
+// The tree-select renders in the light DOM (#437): its trigger, panel and rows
+// are ordinary descendants of `.tree-select`. We assert against the
 // in-memory demos only so the spec never depends on the .NET backend.
 
 test('tree-select page renders its heading and four demo sections', async ({ page }) => {
@@ -21,7 +21,7 @@ test('multiple demo opens a panel and selecting a node adds a chip', async ({ pa
   });
 
   // Second section is the in-memory "Multiple — chips" demo.
-  const demo = page.locator('section').nth(1).locator('mp-tree-select');
+  const demo = page.locator('section').nth(1).locator('.tree-select');
 
   // Open the dropdown by clicking the textbox trigger.
   await demo.locator('.ts-control').click();
@@ -31,8 +31,8 @@ test('multiple demo opens a panel and selecting a node adds a chip', async ({ pa
   await expect(panel).toBeVisible();
   await expect(panel.getByText('Engineering')).toBeVisible();
 
-  // Tick the checkbox on the first root row → one chip in the trigger.
-  await panel.locator('.ts-node-check').first().check();
+  // Click the check glyph on the first root row → one chip in the trigger.
+  await panel.locator('.ts-node-check').first().click();
   await expect(demo.locator('.ts-chip')).toHaveCount(1);
   await expect(demo.locator('.ts-chip-label')).toContainText('Engineering');
 });
@@ -44,7 +44,7 @@ test('checkbox + cascade demo selects descendants when a parent is checked', asy
   });
 
   // Third section is the "Checkbox — cascade" demo.
-  const demo = page.locator('section').nth(2).locator('mp-tree-select');
+  const demo = page.locator('section').nth(2).locator('.tree-select');
 
   await demo.locator('.ts-control').click();
   const panel = demo.locator('.ts-panel');
@@ -54,10 +54,10 @@ test('checkbox + cascade demo selects descendants when a parent is checked', asy
   // Expand the first root so its children load (they're lazy), then check the
   // parent. Cascade selects the parent + its loaded descendants, which surface
   // as chips on the trigger (checkbox mode renders chips too).
-  await panel.locator('.treeview-chevron').first().click();
+  await panel.locator('[data-tree-chevron]').first().click();
   await expect(panel.getByText('Frontend')).toBeVisible();
 
-  await panel.locator('.ts-node-check').first().check();
+  await panel.locator('.ts-node-check').first().click();
 
   // Parent + descendants → more than one chip (proves the cascade).
   await expect.poll(async () => demo.locator('.ts-chip').count()).toBeGreaterThan(1);

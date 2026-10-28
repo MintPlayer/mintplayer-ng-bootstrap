@@ -1,5 +1,5 @@
-import type { TreeNode } from '@mintplayer/web-components/treeview';
-import type { NodePage, NodeRequest, TreeSelectProvider } from '../types';
+import type { TreeNode } from '@mintplayer/ui-core/tree';
+import type { NodePage, NodeRequest, TreeSelectProvider } from './types';
 
 export interface InMemoryProviderOptions {
   /** Rows per page for roots / children / search. Default: 50. */

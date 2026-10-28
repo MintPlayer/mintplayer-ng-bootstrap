@@ -1,11 +1,17 @@
-export { BsTreeSelect } from './BsTreeSelect';
-export { InMemoryTreeSelectProvider } from '@mintplayer/web-components/tree-select';
+// The tree-select is generated from @mintplayer/ui-core/tree-select (PRD #437 D10).
+export * from './generated';
+export { InMemoryTreeSelectProvider } from '@mintplayer/ui-core/tree-select';
 export type {
-  TreeNode,
-  TreeSelectMode,
-  TreeSelectVariant,
-  TreeSelectProvider,
-  TreeSelectChangeEventDetail,
+  InMemoryProviderOptions,
   NodePage,
   NodeRequest,
-} from '@mintplayer/web-components/tree-select';
+  TreeNode,
+  TreeSelectChangeEventDetail,
+  TreeSelectLabels,
+  TreeSelectLoadErrorEventDetail,
+  TreeSelectMode,
+  TreeSelectProvider,
+  TreeSelectSearchEventDetail,
+  TreeSelectValue,
+  TreeSelectVariant,
+} from '@mintplayer/ui-core/tree-select';

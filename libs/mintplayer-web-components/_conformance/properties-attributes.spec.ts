@@ -96,11 +96,6 @@ const OVERRIDES: Record<string, Override> = {
   'mp-hierarchy-chart@max-depth': { value: '3', expect: 3, reason: 'typed as a string attribute but parsed as a number (or "auto")' },
   'mp-tab-control@tabs-position': { value: 'bottom', reason: 'enum read straight from the attribute: top | bottom' },
   'mp-tab-control@border': { value: 'top', reason: 'enum read straight from the attribute: full | top | false' },
-  'mp-tree-select@scroll-height': {
-    prop: 'panelScrollHeight',
-    value: '120px',
-    reason: 'backs panelScrollHeight, because HTMLElement.scrollHeight is read-only',
-  },
   'mp-otp-input@value': {
     value: '482193',
     restored: '',
@@ -416,7 +411,7 @@ describe('custom-elements.json property / attribute table', () => {
     expect(MANIFEST_PRESENT).toBe(true);
     expect(MOUNTABLE.length).toBeGreaterThanOrEqual(60);
     expect(attributeCases.length).toBeGreaterThanOrEqual(250);
-    expect(propertyCases.length).toBeGreaterThanOrEqual(230);
+    expect(propertyCases.length).toBeGreaterThanOrEqual(225);
   });
 
   it('cannot mount exactly the declarations listed in NOT_MOUNTABLE', () => {

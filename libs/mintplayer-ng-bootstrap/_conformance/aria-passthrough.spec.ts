@@ -5,11 +5,9 @@ import { BsHierarchyChartComponent } from '@mintplayer/ng-bootstrap/charts/hiera
 import { BsDatatableComponent } from '@mintplayer/ng-bootstrap/datatable';
 import { BsDockManagerComponent } from '@mintplayer/ng-bootstrap/dock';
 import { BsFileManagerComponent } from '@mintplayer/ng-bootstrap/file-manager';
-import { BsFormComponent } from '@mintplayer/ng-bootstrap/form';
 import { BsQueryBuilderComponent } from '@mintplayer/ng-bootstrap/query-builder';
 import { BsSchedulerComponent } from '@mintplayer/ng-bootstrap/scheduler';
 import { BsSplitterComponent } from '@mintplayer/ng-bootstrap/splitter';
-import { BsTreeSelectComponent } from '@mintplayer/ng-bootstrap/tree-select';
 
 /**
  * Every Angular wrapper whose template root is a `<mp-*>` / `<mint-*>` element
@@ -92,8 +90,8 @@ interface WrapperCase {
   content?: string;
   /**
    * Markup the wrapper must be nested inside, as `[open, close]`. Some wrappers
-   * throw in their constructor without an ancestor — `bs-tree-select` requires a
-   * `<bs-form>`.
+   * throw in their constructor without an ancestor (the WC-backed `bs-tree-select`
+   * required a `<bs-form>` before it became a generated front).
    */
   wrap?: readonly [string, string];
   /** Extra components/directives the harness template needs for `content`/`wrap`. */
@@ -114,14 +112,6 @@ const WRAPPERS: WrapperCase[] = [
   { selector: 'bs-query-builder', tag: 'mp-query-builder', component: BsQueryBuilderComponent },
   { selector: 'bs-scheduler', tag: 'mp-scheduler', component: BsSchedulerComponent },
   { selector: 'bs-splitter', tag: 'mp-splitter', component: BsSplitterComponent },
-  {
-    selector: 'bs-tree-select',
-    tag: 'mp-tree-select',
-    component: BsTreeSelectComponent,
-    // Its constructor throws '<bs-tree-select> must be inside a <bs-form>'.
-    wrap: ['<bs-form>', '</bs-form>'],
-    needs: [BsFormComponent],
-  },
 ];
 
 function probeAttributes(): string {

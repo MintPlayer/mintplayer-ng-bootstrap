@@ -33,7 +33,7 @@ export function emitVue(src, { generator = GENERATOR } = {}) {
     // The consumer's class and style stay on the root; everything else reaches the target.
     const bag = target.props.find((p) => p.type === PROP.DIRECTIVE && p.name === 'bind' && !p.arg);
     const merged = bag
-      ? `{ ...${bag.exp.content}, ...$attrs, class: String(${bag.exp.content}['class'] ?? ''), style: undefined, role: ${bag.exp.content}['role'] ?? $attrs['role'] }`
+      ? `{ ...${bag.exp.content}, ...$attrs, class: String(${bag.exp.content}['class'] ?? ''), style: undefined, role: String(${bag.exp.content}['role'] ?? $attrs['role'] ?? '') || undefined }`
       : `{ ...$attrs, class: undefined, style: undefined }`;
     if (bag) edits.push({ start: bag.loc.start.offset, end: bag.loc.end.offset, text: `v-bind="${merged}"` });
     else edits.push({ start: target.loc.start.offset + 1 + target.tag.length, end: target.loc.start.offset + 1 + target.tag.length, text: ` v-bind="${merged}"` });

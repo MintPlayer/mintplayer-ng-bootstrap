@@ -256,7 +256,7 @@ const CASES: Case[] = [
   { ...bare('BsTimeList', 'div.mp-time-list', BsTimeList), fixedRole: 'listbox' },
   bare('BsTimepicker', 'div.mp-timepicker', BsTimepicker),
   bare('BsToggleButton', 'input[type=checkbox]', BsToggleButton),
-  bare('BsTreeSelect', 'mp-tree-select', BsTreeSelect),
+  bare('BsTreeSelect', 'div.tree-select', BsTreeSelect),
   {
     name: 'BsTreeview',
     target: 'ul.treeview-tree',

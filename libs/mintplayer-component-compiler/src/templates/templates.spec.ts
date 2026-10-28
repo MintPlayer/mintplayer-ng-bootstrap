@@ -108,7 +108,7 @@ describe('mp-attrs', () => {
     const text = emitVue(src);
     expect(text).toContain('defineOptions({ inheritAttrs: false });');
     expect(text).toContain(
-      `<select v-bind="{ ...bag, ...$attrs, class: String(bag['class'] ?? ''), style: undefined, role: bag['role'] ?? $attrs['role'] }">`,
+      `<select v-bind="{ ...bag, ...$attrs, class: String(bag['class'] ?? ''), style: undefined, role: String(bag['role'] ?? $attrs['role'] ?? '') || undefined }">`,
     );
     expect(text).toContain('<div :class="$attrs.class" :style="$attrs.style" v-bind="bag">');
     expect(text).not.toContain('mp-attrs');

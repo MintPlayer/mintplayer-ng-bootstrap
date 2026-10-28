@@ -127,7 +127,7 @@ const [value, setValue] = useState<TreeNode | null>(null);
   mode="single"
   placeholder="Search the org…"
   value={value}
-  onValueChange={e => setValue(e.detail.value as TreeNode | null)}
+  onValueChange={v => setValue(v as TreeNode | null)}
 />`;
 
 const MULTIPLE_SOURCE = `const provider = useMemo(() => new InMemoryTreeSelectProvider(SAMPLE_TREE), []);
@@ -138,7 +138,7 @@ const [value, setValue] = useState<TreeNode[]>([]);
   mode="multiple"
   placeholder="Pick teams…"
   value={value}
-  onValueChange={e => setValue(e.detail.value as TreeNode[])}
+  onValueChange={v => setValue(v as TreeNode[])}
 />`;
 
 const CHECKBOX_SOURCE = `<BsTreeSelect
@@ -147,7 +147,7 @@ const CHECKBOX_SOURCE = `<BsTreeSelect
   cascadeSelect
   placeholder="Pick teams…"
   value={value}
-  onValueChange={e => setValue(e.detail.value as TreeNode[])}
+  onValueChange={v => setValue(v as TreeNode[])}
 />`;
 
 const BUTTON_SOURCE = `<BsTreeSelect
@@ -157,7 +157,7 @@ const BUTTON_SOURCE = `<BsTreeSelect
   showClear
   placeholder="Choose a department"
   value={value}
-  onValueChange={e => setValue(e.detail.value as TreeNode | null)}
+  onValueChange={v => setValue(v as TreeNode | null)}
 />`;
 
 export function TreeSelectPage() {
@@ -206,7 +206,7 @@ export function TreeSelectPage() {
           mode="single"
           placeholder="Search the org…"
           value={singleValue}
-          onValueChange={(e) => setSingleValue(e.detail.value as TreeNode | null)}
+          onValueChange={v => setSingleValue(v as TreeNode | null)}
         />
         <p className="text-body-secondary mt-2">
           Selected: <code>{nodeLabels(singleValue)}</code>
@@ -221,7 +221,7 @@ export function TreeSelectPage() {
           mode="multiple"
           placeholder="Pick teams…"
           value={multipleValue}
-          onValueChange={(e) => setMultipleValue(e.detail.value as TreeNode[])}
+          onValueChange={v => setMultipleValue(v as TreeNode[])}
         />
         <p className="text-body-secondary mt-2">
           Selected: <code>{nodeLabels(multipleValue)}</code>
@@ -237,7 +237,7 @@ export function TreeSelectPage() {
           cascadeSelect
           placeholder="Pick teams…"
           value={checkboxValue}
-          onValueChange={(e) => setCheckboxValue(e.detail.value as TreeNode[])}
+          onValueChange={v => setCheckboxValue(v as TreeNode[])}
         />
         <p className="text-body-secondary mt-2">
           Selected: <code>{nodeLabels(checkboxValue)}</code>
@@ -254,7 +254,7 @@ export function TreeSelectPage() {
           showClear
           placeholder="Choose a department"
           value={buttonValue}
-          onValueChange={(e) => setButtonValue(e.detail.value as TreeNode | null)}
+          onValueChange={v => setButtonValue(v as TreeNode | null)}
         />
         <p className="text-body-secondary mt-2">
           Selected: <code>{nodeLabels(buttonValue)}</code>

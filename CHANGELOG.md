@@ -386,6 +386,29 @@ breaking change is a major. (2.20.0 and 2.21.0 broke `^2.x` consumers in a minor
     input. `selectionMode: 'none'` no longer clears ids set from outside; it only stops the user selecting.
   - `mp-treeview.focus()` no longer forwards to the roving row; focus `[role=treeitem][tabindex="0"]`.
   - The types come from `@mintplayer/ui-core/treeview`, re-exported by every front. `TreeNodeRenderer` is gone.
+- **Tree-select is generated from one source in every front (issue #437).** It is written once in
+  `@mintplayer/ui-core/tree-select` (`treeSelectCore`, `connectTreeSelect`) on top of the treeview's tree
+  controller, and compiled into all four fronts, so the control and the panel render on the server.
+  - **The root** is `.tree-select` (a `div` in React and Vue, the host in Angular and Lit), and the consumer's
+    attributes land there. `aria-label` names the combobox. `bs-tree-select` no longer has to sit inside a
+    `<bs-form>`.
+  - **The panel** is a native `popover="auto"`, positioned under the control and matched to its width.
+    `scroll-height` is `panel-scroll-height` (`panelScrollHeight`), carried as `--mp-tree-select-panel-max-height`.
+  - **Selection state:** multiple mode marks rows `aria-selected` in an `aria-multiselectable` tree; checkbox mode
+    marks them `aria-checked` (`mixed` for a partial branch). The per-row checkbox `input.ts-node-check` is a
+    decorative `span.ts-node-check[data-state]`. In both multi modes, clicking a leaf row or a check glyph
+    toggles the node and clicking a folder row only expands it. A cascaded parent also checks children that are
+    loaded later.
+  - **Templates are slots:** `item`, `suggestion`, `button`, `header`, `footer`, `noResults`, `enterSearchTerm`.
+    Angular `*bsTreeSelectItem="let node = node"` and so on, React `item={({ node, query }) => …}`, Vue
+    `#item="{ node, query }"`, Lit `itemRenderer` / `suggestionRenderer` / `buttonRenderer` (they were
+    `itemTemplate` / `suggestionTemplate` / `buttonTemplate`) and `slot="header"` children.
+  - **Events:** `valueChange` (two-way `value` in every front; React `onValueChange(value)`, not a
+    `CustomEvent`; Vue `v-model:value`), `selectionChange`, `openChange`, `search` and `loadError`. Methods are
+    `open()` and `close()`.
+  - Angular keeps its `ControlValueAccessor` (`BsTreeSelectValueAccessor`, a host directive).
+  - The types and `InMemoryTreeSelectProvider` come from `@mintplayer/ui-core/tree-select`, re-exported by every
+    front.
 - **`mp-input-group` is a light element (issue #437).** Like `bs-input-group`, the host is the
   `.input-group` itself: no shadow root, no slot, and its children are the group's items. It no longer
   writes `size` onto `mp-*` children, because a control in a group reads the group's classes and the

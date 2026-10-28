@@ -4,7 +4,8 @@ import postcss from 'postcss';
 import { getLightStyleEntries } from '@mintplayer/web-components/light-dom';
 import '@mintplayer/web-components/datatable';
 import '@mintplayer/web-components/treeview';
-import { InMemoryTreeSelectProvider } from '@mintplayer/web-components/tree-select';
+import { InMemoryTreeSelectProvider } from '@mintplayer/ui-core/tree-select';
+import '@mintplayer/web-components/tree-select';
 import '@mintplayer/web-components/query-builder';
 import { inMemoryTypeaheadProvider } from '@mintplayer/web-components/typeahead';
 
@@ -223,52 +224,64 @@ describe('consumer DOM mounted through a render callback', () => {
     for (const node of mounted) expectUntouched(node as HTMLElement, 'treeview nodeRenderer', selectors);
   });
 
-  it('mp-tree-select itemTemplate', async () => {
+  it('mp-tree-select itemRenderer', async () => {
     document.body.innerHTML = '<mp-tree-select></mp-tree-select>';
     const el = document.querySelector('mp-tree-select') as HTMLElement & Record<string, unknown>;
-    el.itemTemplate = () => consumerNode('item');
+    el.itemRenderer = () => consumerNode('item');
     el.value = { id: '1', label: 'Fruit' };
     await settle(el);
 
     const mounted = el.querySelectorAll(`.${CONSUMER_CLASS}`);
-    expect(mounted.length, 'itemTemplate output never reached the DOM').toBeGreaterThan(0);
-    for (const node of mounted) expectUntouched(node as HTMLElement, 'tree-select itemTemplate', selectors);
+    expect(mounted.length, 'itemRenderer output never reached the DOM').toBeGreaterThan(0);
+    for (const node of mounted) expectUntouched(node as HTMLElement, 'tree-select itemRenderer', selectors);
   });
 
-  it('mp-tree-select buttonTemplate', async () => {
+  it('mp-tree-select buttonRenderer', async () => {
     document.body.innerHTML = '<mp-tree-select variant="button"></mp-tree-select>';
     const el = document.querySelector('mp-tree-select') as HTMLElement & Record<string, unknown>;
-    el.buttonTemplate = () => consumerNode('button');
+    el.buttonRenderer = () => consumerNode('button');
     await settle(el);
 
     const mounted = el.querySelectorAll(`.${CONSUMER_CLASS}`);
-    expect(mounted.length, 'buttonTemplate output never reached the DOM').toBeGreaterThan(0);
-    for (const node of mounted) expectUntouched(node as HTMLElement, 'tree-select buttonTemplate', selectors);
+    expect(mounted.length, 'buttonRenderer output never reached the DOM').toBeGreaterThan(0);
+    for (const node of mounted) expectUntouched(node as HTMLElement, 'tree-select buttonRenderer', selectors);
   });
 
   /**
    * The case that actually regressed (`6e1e57dd`), and the reason this suite is
-   * not decoration: tree-select's nodeRenderer builds a wrapper imperatively and
-   * calls `stampScope` on it, so the ORDER of stamping versus appending the
-   * consumer's node is what decides whether their DOM gets branded.
+   * not decoration: the old tree-select built its row wrapper imperatively and
+   * stamped it, so the ORDER of stamping versus appending the consumer's node
+   * decided whether their DOM got branded. The rows are now template-rendered
+   * (#437), and this pins that the consumer's node still stays unbranded.
    */
-  it('mp-tree-select suggestionTemplate', async () => {
+  it('mp-tree-select suggestionRenderer', async () => {
+    // jsdom has no popover: the panel opens through the toggle event the core listens for.
+    const proto = HTMLElement.prototype as HTMLElement & { showPopover?: () => void };
+    const original = proto.showPopover;
+    proto.showPopover = function (this: HTMLElement) {
+      this.dispatchEvent(Object.assign(new Event('toggle'), { newState: 'open', oldState: 'closed' }));
+    };
     document.body.innerHTML = '<mp-tree-select></mp-tree-select>';
     const el = document.querySelector('mp-tree-select') as HTMLElement & Record<string, unknown> & {
-      open(): Promise<void>;
+      open(): void;
     };
     el.searchDebounceMs = 0;
     el.mode = 'checkbox';
     el.provider = new InMemoryTreeSelectProvider(TREE);
-    el.suggestionTemplate = () => consumerNode('suggestion');
+    el.suggestionRenderer = () => consumerNode('suggestion');
     await settle(el);
-    await el.open();
+    try {
+      el.open();
+    } finally {
+      proto.showPopover = original;
+    }
+    await settle(el);
     await settle(el);
 
     const mounted = el.querySelectorAll(`.${CONSUMER_CLASS}`);
-    expect(mounted.length, 'suggestionTemplate output never reached the DOM').toBeGreaterThan(0);
+    expect(mounted.length, 'suggestionRenderer output never reached the DOM').toBeGreaterThan(0);
     for (const node of mounted) {
-      expectUntouched(node as HTMLElement, 'tree-select suggestionTemplate', selectors);
+      expectUntouched(node as HTMLElement, 'tree-select suggestionRenderer', selectors);
     }
   });
 
