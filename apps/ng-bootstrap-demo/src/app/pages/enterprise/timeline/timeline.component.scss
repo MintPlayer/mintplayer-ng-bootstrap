@@ -29,7 +29,7 @@
 // Custom marker (shown when the playground's "Custom markers" switch is on).
 // The marker template is projected through the bs-timeline wrapper's view,
 // so ::ng-deep is required to reach it. Colour comes from the per-item CSS
-// custom property the wrapper sets on each <mp-timeline-item> — no inline
+// custom property the core sets on each row's line — no inline
 // styles. Bootstrap-icons render via the projected `bi bi-*` class.
 ::ng-deep .tl-marker {
   display: inline-flex;

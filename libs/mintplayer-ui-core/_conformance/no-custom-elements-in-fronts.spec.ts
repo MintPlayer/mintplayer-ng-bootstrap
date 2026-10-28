@@ -57,7 +57,6 @@ const NOT_YET_MIGRATED: readonly string[] = [
   'ng:ribbon',
   'ng:scheduler',
   'ng:splitter',
-  'ng:timeline',
   'ng:tree-select',
   'ng:treeview',
   'react:carousel',
@@ -69,7 +68,6 @@ const NOT_YET_MIGRATED: readonly string[] = [
   'react:ribbon',
   'react:scheduler',
   'react:splitter',
-  'react:timeline',
   'react:tree-select',
   'react:treeview',
   'vue:carousel',
@@ -81,7 +79,6 @@ const NOT_YET_MIGRATED: readonly string[] = [
   'vue:ribbon',
   'vue:scheduler',
   'vue:splitter',
-  'vue:timeline',
   'vue:tree-select',
   'vue:treeview',
 ];

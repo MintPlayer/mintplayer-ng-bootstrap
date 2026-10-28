@@ -27,7 +27,7 @@ const ORIENTATION_OPTIONS = (['vertical', 'horizontal'] as const).map((v) => ({ 
 const ALIGN_OPTIONS = (['start', 'end', 'alternate', 'alternate-reverse'] as const).map((v) => ({ value: v, label: v }));
 const SELECTABLE_OPTIONS = (['none', 'single', 'multiple'] as const).map((v) => ({ value: v, label: v }));
 
-const RENDER_MARKER_SOURCE = `  renderMarker={(item) => (
+const RENDER_MARKER_SOURCE = `  marker={({ item }) => (
     <span
       className="timeline-marker-dot d-inline-flex align-items-center justify-content-center rounded-circle text-white"
       data-color={item.color as string}
@@ -36,7 +36,7 @@ const RENDER_MARKER_SOURCE = `  renderMarker={(item) => (
     </span>
   )}`;
 
-const RENDER_CONTENT_SOURCE = `  renderContent={(item) => (
+const RENDER_CONTENT_SOURCE = `  content={({ item }) => (
     <BsCard className="shadow-sm">
       <BsCardHeader className="py-2 px-3 h6 mb-0">{item.title}</BsCardHeader>
       <BsCardBody className="py-2 px-3">
@@ -48,15 +48,19 @@ const RENDER_CONTENT_SOURCE = `  renderContent={(item) => (
 
 const DECLARATIVE_SOURCE = `<BsTimeline align="alternate">
   {milestones.map((m) => (
-    <BsTimelineItem key={m.id} itemId={m.id} color={m.color}>
-      <BsCard slot="content" className="shadow-sm">
+    <BsTimelineItem
+      key={m.id}
+      itemId={String(m.id)}
+      color={m.color}
+      opposite={<small className="text-body-secondary">{m.time as string}</small>}
+    >
+      <BsCard className="shadow-sm">
         <BsCardHeader className="py-2 px-3 h6 mb-0">{m.title}</BsCardHeader>
         <BsCardBody className="py-2 px-3">
           <BsCardText className="small text-body-secondary mb-0">{m.description}</BsCardText>
         </BsCardBody>
         <BsCardFooter className="py-1 px-3 small text-body-secondary">{m.time as string}</BsCardFooter>
       </BsCard>
-      <small slot="opposite" className="text-body-secondary">{m.time as string}</small>
     </BsTimelineItem>
   ))}
 </BsTimeline>`;
@@ -68,7 +72,7 @@ export function TimelinePage() {
   const [reverse, setReverse] = useState(false);
   const [customMarkers, setCustomMarkers] = useState(false);
   const [cardContent, setCardContent] = useState(false);
-  const [selected, setSelected] = useState<TimelineItem[]>([]);
+  const [selected, setSelected] = useState<readonly string[]>([]);
 
   // Keep the copyable snippet in sync with the live controls.
   const playgroundSource = useMemo(() => {
@@ -78,16 +82,16 @@ export function TimelinePage() {
     if (reverse) lines.push('  reverse');
     if (selectable !== 'none') {
       lines.push(`  selectable="${selectable}"`);
-      lines.push('  selection={selected}');
-      lines.push('  onSelectionChange={setSelected}');
+      lines.push('  selectedIds={selected}');
+      lines.push('  onSelectedIdsChange={setSelected}');
     }
     if (customMarkers) lines.push(RENDER_MARKER_SOURCE);
     if (cardContent) lines.push(RENDER_CONTENT_SOURCE);
     return `<BsTimeline\n${lines.join('\n')}\n/>`;
   }, [orientation, align, reverse, selectable, customMarkers, cardContent]);
 
-  const renderMarker = customMarkers
-    ? (item: TimelineItem) => (
+  const marker = customMarkers
+    ? ({ item }: { item: TimelineItem }) => (
         <span
           className="timeline-marker-dot d-inline-flex align-items-center justify-content-center rounded-circle text-white"
           data-color={item.color as string}
@@ -97,8 +101,8 @@ export function TimelinePage() {
       )
     : undefined;
 
-  const renderContent = cardContent
-    ? (item: TimelineItem) => (
+  const content = cardContent
+    ? ({ item }: { item: TimelineItem }) => (
         <BsCard className="shadow-sm">
           <BsCardHeader className="py-2 px-3 h6 mb-0">{item.title}</BsCardHeader>
           <BsCardBody className="py-2 px-3">
@@ -115,10 +119,11 @@ export function TimelinePage() {
       <p className="text-body-secondary">
         Vertical or horizontal sequence of events with a connecting line,
         markers, and per-item content. Bind an <code>items</code> array for the
-        built-in row layout, or take over any region with a render-prop /
-        declarative <code>&lt;BsTimelineItem&gt;</code> child. Selection is
-        opt-in and two-way bound; clicks emit a typed
-        <code> item-click</code> detail.
+        built-in row layout, or take over any region with a slot function
+        (<code>marker</code>, <code>heading</code>, <code>content</code>, …) or
+        declarative <code>&lt;BsTimelineItem&gt;</code> children. Selection is
+        opt-in and controlled through <code>selectedIds</code>; clicks report
+        through <code>onItemClick</code>.
       </p>
 
       <section>
@@ -197,11 +202,11 @@ export function TimelinePage() {
           align={align}
           reverse={reverse}
           selectable={selectable}
-          selection={selected}
-          onSelectionChange={setSelected}
+          selectedIds={selected}
+          onSelectedIdsChange={setSelected}
           onItemClick={(detail: TimelineItemClickDetail) => console.log('clicked', detail.item.title)}
-          renderMarker={renderMarker}
-          renderContent={renderContent}
+          marker={marker}
+          content={content}
         />
 
         {selectable !== 'none' && (
@@ -210,7 +215,7 @@ export function TimelinePage() {
             {selected.length === 0 ? (
               <span className="text-body-secondary small">none</span>
             ) : (
-              <span>{selected.map((s) => s.title).join(', ')}</span>
+              <span>{MILESTONES.filter((m) => selected.includes(String(m.id))).map((m) => m.title).join(', ')}</span>
             )}
           </div>
         )}
@@ -222,20 +227,24 @@ export function TimelinePage() {
         <h2>Declarative authoring</h2>
         <p className="text-body-secondary">
           Instead of binding <code>items</code>, render{' '}
-          <code>&lt;BsTimelineItem&gt;</code> children and project into the named
-          slots. Handy when each item's markup is bespoke rather than uniform.
+          <code>&lt;BsTimelineItem&gt;</code> children: their content is the body,
+          and <code>opposite</code> / <code>heading</code> / <code>marker</code> take nodes. Handy when each item's markup is bespoke rather than uniform.
         </p>
         <BsTimeline align="alternate">
           {MILESTONES.map((m) => (
-            <BsTimelineItem key={m.id} itemId={m.id} color={m.color}>
-              <BsCard slot="content" className="shadow-sm">
+            <BsTimelineItem
+              key={m.id}
+              itemId={String(m.id)}
+              color={m.color}
+              opposite={<small className="text-body-secondary">{m.time as string}</small>}
+            >
+              <BsCard className="shadow-sm">
                 <BsCardHeader className="py-2 px-3 h6 mb-0">{m.title}</BsCardHeader>
                 <BsCardBody className="py-2 px-3">
                   <BsCardText className="small text-body-secondary mb-0">{m.description}</BsCardText>
                 </BsCardBody>
                 <BsCardFooter className="py-1 px-3 small text-body-secondary">{m.time as string}</BsCardFooter>
               </BsCard>
-              <small slot="opposite" className="text-body-secondary">{m.time as string}</small>
             </BsTimelineItem>
           ))}
         </BsTimeline>

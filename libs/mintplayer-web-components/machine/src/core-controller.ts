@@ -14,15 +14,32 @@ function contextSymbol(context: CoreContext<unknown>): symbol {
   return symbol;
 }
 
-/** The nearest ancestor's value for `context`, crossing shadow roots, or its default. */
-function readContext<T>(host: Element, context: CoreContext<T>): T {
+/** The elements that read a provider's context: re-rendered when the value changes. */
+const consumers = new WeakMap<Element, Set<ReactiveControllerHost & HTMLElement>>();
+
+/**
+ * The nearest ancestor's value for `context`, crossing shadow roots, or its
+ * default. The reader subscribes to that provider, which pushes its changes:
+ * a consumer's own update has no way to see a provider's state move.
+ */
+function readContext<T>(host: ReactiveControllerHost & HTMLElement, context: CoreContext<T>): T {
   const symbol = contextSymbol(context as CoreContext<unknown>);
   for (let node: Node | null = host.parentNode; node; node = node instanceof ShadowRoot ? node.host : node.parentNode) {
     const read = (node as unknown as Record<symbol, (() => T) | undefined>)[symbol];
-    if (read) return read();
+    if (read) {
+      const set = consumers.get(node as Element) ?? new Set();
+      consumers.set(node as Element, set.add(host));
+      return read();
+    }
   }
   return context.defaultValue;
 }
+
+const sameContext = (a: unknown, b: unknown): boolean =>
+  a === b ||
+  (!!a && !!b && typeof a === 'object' && typeof b === 'object' &&
+    Object.keys(a).length === Object.keys(b).length &&
+    Object.entries(a).every(([k, v]) => (b as Record<string, unknown>)[k] === v));
 
 let counter = 0;
 
@@ -52,6 +69,7 @@ export class CoreController<I, S, P, E, C, PC, M> implements ReactiveController 
   #label: string | null | undefined;
   #hydrated = false;
   #applied = EMPTY_HOST_PROPS;
+  #provided: unknown;
 
   constructor(host: ReactiveControllerHost & HTMLElement, core: ComponentCore<I, S, P, E, C, PC, M>, options: CoreControllerOptions<I, P>) {
     this.#host = host;
@@ -100,6 +118,8 @@ export class CoreController<I, S, P, E, C, PC, M> implements ReactiveController 
   }
 
   hostDisconnected(): void {
+    // Re-subscribes on its next read, under whichever provider it lands in.
+    if (this.#core.consume) this.#unsubscribe();
     this.#runtime.dispose();
     this.#hydrated = false;
   }
@@ -114,6 +134,22 @@ export class CoreController<I, S, P, E, C, PC, M> implements ReactiveController 
       return;
     }
     this.#runtime.inputs(this.#options.inputs());
+    this.#notifyConsumers();
+  }
+
+  #unsubscribe(): void {
+    for (let node: Node | null = this.#host.parentNode; node; node = node instanceof ShadowRoot ? node.host : node.parentNode) {
+      consumers.get(node as Element)?.delete(this.#host);
+    }
+  }
+
+  /** A provider re-renders its consumers when the value it provides changed. */
+  #notifyConsumers(): void {
+    if (!this.#core.provides || !this.#core.provide) return;
+    const next = this.#core.provide(this.#args());
+    if (sameContext(next, this.#provided)) return;
+    this.#provided = next;
+    consumers.get(this.#host)?.forEach((consumer) => (consumer.isConnected ? consumer.requestUpdate() : consumers.get(this.#host)?.delete(consumer)));
   }
 
   /** The template's props; also applies the host bag. */

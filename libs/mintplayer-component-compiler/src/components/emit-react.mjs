@@ -1,7 +1,7 @@
 // The React component of a compiled component: a forwardRef component over the
 // template stage's `<Name>Template`, hosting the core through `useCore` (PRD
 // #437 D10). Props extend the root element's HTML attributes and the rest is
-// spread onto the root; a named slot is a ReactNode prop of the same name.
+// spread onto the root; a named slot is a prop of the same name, typed as the template types it.
 import { banner, coreImports, jsdoc, styleImports } from './model.mjs';
 
 /**
@@ -30,7 +30,7 @@ export function emitReactComponent(model, { generator, runtime, extension }) {
   styleImports(model)
     .filter(({ module }) => module !== model.entryModule)
     .forEach(({ module, names: list }) => lines.push(`import { ${list.join(', ')} } from '${module}';`));
-  lines.push(`import { ${model.templateName}Template } from './${model.templateBase}.generated';`);
+  lines.push(`import { ${model.templateName}Template, type ${model.templateName}TemplateProps } from './${model.templateBase}.generated';`);
   if (ext) lines.push(`import { ${[...ext.exports].map((n) => `${n} as ext_${n}`).join(', ')} } from '${extension(ext.file)}';`);
   if (model.provides) lines.push('', `const Context = reactCoreContext(${model.provides});`);
   lines.push('');
@@ -39,7 +39,8 @@ export function emitReactComponent(model, { generator, runtime, extension }) {
   lines.push(`export interface ${propsName} extends Omit<React.HTMLAttributes<HTMLElementTagNameMap['${model.attrsTag}']>, ${own.map((n) => `'${n}'`).join(' | ') || 'never'}> {`);
   inputs.forEach((input) => lines.push(`${jsdoc(input.doc, '  ')}  ${input.name}?: ${model.inputsType}['${input.name}'];`));
   model.outputs.forEach((output) => lines.push(`${jsdoc(output.doc, '  ')}  ${output.react}?: (detail: ${output.type}) => void;`));
-  named.forEach((slot) => lines.push(`  ${slot.name}?: React.ReactNode;`));
+  // A slot prop takes what the template's slot takes: a node, or a function of the slot's args.
+  named.forEach((slot) => lines.push(`  ${slot.name}?: NonNullable<${model.templateName}TemplateProps['slots']>['${slot.name}'];`));
   lines.push(`  children?: React.ReactNode;`, `}`, '');
 
   // An array or object default is hoisted: a literal in the destructure is a new value each

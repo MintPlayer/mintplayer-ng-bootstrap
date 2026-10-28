@@ -312,6 +312,30 @@ breaking change is a major. (2.20.0 and 2.21.0 broke `^2.x` consumers in a minor
   - **Moved:** the flag corpus (`loadAllFlags`, `loadFlag`, `FlagMap`) is now `@mintplayer/ui-core/flags`,
     no longer `@mintplayer/web-components/flags`. `PhoneChangeEventDetail` comes from ui-core and every front
     re-exports it.
+- **Timeline is generated from one source in every front (issue #437).** It is written once in
+  `@mintplayer/ui-core/timeline` (`timelineCore`, `timelineItemCore`, `connectTimeline`) and compiled into all
+  four fronts, so it is server-rendered everywhere and already laid out with JS off: side, reverse and the
+  last connector are CSS on the root classes (`timeline-<orientation>`, `timeline-align-<align>`,
+  `timeline-reverse`), not attributes a script writes. `@mintplayer/ui-core/timeline-core` is gone; its
+  models and `resolveSides` are in `@mintplayer/ui-core/timeline` and re-exported by every front.
+  - **Every front:** the root is `.timeline` (a `div` in React and Vue, the host in Angular and Lit) and each
+    row is a `.timeline-item` child of it. There is no shadow root, so `::part()` hooks are gone; style the
+    `.timeline-*` classes. `input-label` (`inputLabel`) names the list, and a host `aria-label` wins.
+  - **Declarative items:** `<bs-timeline-item>` (Angular), `BsTimelineItem` (React/Vue) and
+    `<mp-timeline-item>` (Lit). The `title` input is now `itemTitle` (it shadowed `HTMLElement.title`), the
+    item's own content is its body (was `slot="content"`), and `opposite` / `heading` / `marker` /
+    `connector` are slots (Angular `*bsTimelineItemOpposite`, ...; React node props; Vue `#opposite`). The
+    authored `selected` attribute is gone: select through the timeline's `selectedIds`.
+  - **Data rows:** the `title` slot is now `heading`. The region slots are scoped with `{ item, ctx }`:
+    Angular `*bsTimelineMarker="let item = item"` (and `Heading`, `Timestamp`, `Opposite`, `Content`,
+    `Connector`), React `marker={({ item }) => ...}` (the `render*` props are gone), Vue `#marker="{ item }"`,
+    Lit `markerRenderer`.
+  - **Selection is by key and two-way:** `selectedIds` holds strings (an item's `id`, else a data row's index
+    or a declarative item's `itemId`). Angular `[(selectedIds)]` replaces the `selection` model of
+    `TimelineItem[]`; Vue `v-model:selectedIds`; React `selectedIds` + `onSelectedIdsChange`.
+    `selectionChange` still reports the consumer's own item objects.
+  - **Events:** Angular `(itemclick)`, `(selectionchange)`, `(selectedidschange)`; Lit `itemclick`,
+    `selectionchange`, `selectedidschange` (were `item-click` and `selection-change`).
 - **`mp-input-group` is a light element (issue #437).** Like `bs-input-group`, the host is the
   `.input-group` itself: no shadow root, no slot, and its children are the group's items. It no longer
   writes `size` onto `mp-*` children, because a control in a group reads the group's classes and the

@@ -24,11 +24,7 @@ export interface TimelineConnectorContext {
   orientation: TimelineOrientation;
 }
 
-/** A renderer that returns light-DOM node(s) for one item region. */
-export type ItemRenderer = (item: TimelineItem, ctx: TimelineItemContext) => Node | Node[];
 
-/** A renderer that returns light-DOM node(s) for a connector segment. */
-export type ConnectorRenderer = (ctx: TimelineConnectorContext) => Node | Node[];
 
 /** `detail` of the `item-click` CustomEvent. */
 export interface TimelineItemClickDetail {

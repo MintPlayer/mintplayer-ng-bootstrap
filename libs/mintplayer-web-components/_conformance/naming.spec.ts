@@ -138,7 +138,8 @@ async function mount(
   const host = document.querySelector(tag) as HTMLElement & { updateComplete?: Promise<unknown> };
   setup?.(host);
   await host.updateComplete;
-  const node = renderRootOf(host).querySelector(target);
+  // A light host whose root is the role-bearing node (mp-timeline) is its own target.
+  const node = host.matches(target) ? host : renderRootOf(host).querySelector(target);
   expect(node, `${tag}: no ${target} in its render root`).not.toBeNull();
   return node as HTMLElement;
 }
