@@ -223,8 +223,8 @@
   cursor: se-resize;
 }
 
-// `.dock-split` is now an <mp-splitter> element. Layout (flex, orientation,
-// dividers) is owned by the WC's shadow DOM. This rule just makes sure the
+// `.dock-split` is an <mp-splitter> element. Layout (flex, orientation,
+// dividers) is the splitter's own sheet. This rule just makes sure the
 // splitter fills its dock-flex parent.
 .dock-split {
   flex: 1 1 0;

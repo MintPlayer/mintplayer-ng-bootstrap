@@ -33,7 +33,7 @@ export class ChartsComponent {
   readonly Color = Color;
   readonly layouts: HierarchyChartLayout[] = ['sunburst', 'icicle', 'treemap'];
   readonly layout = signal<HierarchyChartLayout>('sunburst');
-  readonly rootId = signal<string | undefined>(undefined);
+  readonly rootId = signal<string | null>(null);
   /**
    * The element defaults to 2 (codecov's window, small DOM on a big tree); the
    * demo opts into 'auto' so the whole sample tree is visible without clicking
@@ -74,7 +74,7 @@ export class ChartsComponent {
       this.workspaceTree.set(await response.json() as HierarchyNode);
     }
     this.dataset.set(dataset);
-    this.rootId.set(undefined);
+    this.rootId.set(null);
   }
 
   readonly coverageTree: HierarchyNode = {
@@ -173,7 +173,7 @@ export class ChartsComponent {
   `;
   protected readonly snippetHierarchyTs = dedent`
     readonly layout = signal<HierarchyChartLayout>('sunburst');
-    readonly rootId = signal<string | undefined>(undefined);
+    readonly rootId = signal<string | null>(null);
     // The element caps at 2 levels by default; 'auto' draws every loaded level.
     readonly maxDepth = signal<number | 'auto'>('auto');
     readonly coverageTree: HierarchyNode = {

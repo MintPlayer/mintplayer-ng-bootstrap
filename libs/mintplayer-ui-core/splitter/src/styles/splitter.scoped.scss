@@ -1,0 +1,147 @@
+// The splitter's stylesheet, shared by all four fronts (PRD #437 D10).
+// Rescoped at build time: every compound gains `[data-mps=splitter]`.
+//
+// A panel is `display: contents`, so its divider and its pane are flex items of
+// the splitter. Every rule reaches them through child combinators: a splitter
+// nested in a pane must not match its outer splitter's rules.
+//
+// Before the core measures, every pane is `flex: 1 1 0` (an even split, which
+// is also the whole no-JS layout). The core then writes each pane's inline
+// size together with `flex: 0 1 auto`, so content cannot push a pane wider.
+
+.splitter {
+  --mp-splitter-size: 8px;
+  --mp-splitter-thumb-margin: 3px;
+  --mp-splitter-divider-color: var(--bs-border-color, #eee);
+  --mp-splitter-divider-hover-color: var(--bs-primary, #1389fd);
+
+  display: flex;
+  box-sizing: border-box;
+  width: 100%;
+  height: 100%;
+}
+
+.splitter.touch-mode {
+  --mp-splitter-thumb-margin: 20px;
+}
+
+.splitter.horizontal {
+  flex-direction: row;
+}
+
+.splitter.vertical {
+  flex-direction: column;
+}
+
+.splitter.resizing {
+  user-select: none;
+  cursor: col-resize;
+}
+
+.splitter.vertical.resizing {
+  cursor: row-resize;
+}
+
+.splitter > .splitter-panel {
+  display: contents;
+}
+
+.splitter > .splitter-panel > .splitter-pane {
+  box-sizing: border-box;
+  flex: 1 1 0;
+  min-width: 0;
+  min-height: 0;
+  overflow: hidden;
+  position: relative;
+}
+
+.splitter > .splitter-panel:first-child > .splitter-divider {
+  display: none;
+}
+
+.splitter > .splitter-panel > .splitter-divider {
+  box-sizing: border-box;
+  flex-shrink: 0;
+  transition: background-color 0.15s ease-in-out;
+  z-index: 3;
+  touch-action: none;
+}
+
+.splitter > .splitter-panel > .splitter-divider::before {
+  content: "";
+  display: block;
+  background-color: var(--mp-splitter-divider-color);
+  background-position: center center;
+  background-repeat: no-repeat;
+}
+
+.splitter > .splitter-panel > .splitter-divider:hover::before,
+.splitter > .splitter-panel > .splitter-divider[data-active]::before,
+.splitter > .splitter-panel > .splitter-divider:focus-visible::before {
+  background-color: var(--mp-splitter-divider-hover-color);
+  border-radius: calc(var(--mp-splitter-size) / 2);
+}
+
+.splitter > .splitter-panel > .splitter-divider:focus {
+  outline: none;
+}
+
+.splitter > .splitter-panel > .splitter-divider:focus-visible {
+  outline: 2px solid var(--mp-splitter-divider-hover-color);
+  outline-offset: 1px;
+}
+
+// Horizontal: dividers are vertical bars.
+.splitter.horizontal > .splitter-panel > .splitter-divider {
+  width: calc(var(--mp-splitter-size) + 2 * var(--mp-splitter-thumb-margin));
+  height: 100%;
+  cursor: col-resize;
+  border-left: var(--mp-splitter-thumb-margin) solid transparent;
+  border-right: var(--mp-splitter-thumb-margin) solid transparent;
+}
+
+.splitter.horizontal > .splitter-panel > .splitter-divider::before {
+  height: 100%;
+  width: var(--mp-splitter-size);
+  margin: 0 auto;
+  background-image: url(data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAUAAAAeCAYAAADkftS9AAAAIklEQVQoU2M4c+bMfxAGAgYYmwGrIIiDjrELjpo5aiZeMwF+yNnOs5KSvgAAAABJRU5ErkJggg==);
+}
+
+// The transparent borders are hit area: the panes slide under them.
+.splitter.horizontal > .splitter-panel:not(:first-child) > .splitter-pane {
+  margin-left: calc(-1 * var(--mp-splitter-thumb-margin));
+}
+
+.splitter.horizontal > .splitter-panel:not(:last-child) > .splitter-pane {
+  margin-right: calc(-1 * var(--mp-splitter-thumb-margin));
+}
+
+// Vertical: dividers are horizontal bars.
+.splitter.vertical > .splitter-panel > .splitter-divider {
+  width: 100%;
+  height: calc(var(--mp-splitter-size) + 2 * var(--mp-splitter-thumb-margin));
+  cursor: row-resize;
+  border-top: var(--mp-splitter-thumb-margin) solid transparent;
+  border-bottom: var(--mp-splitter-thumb-margin) solid transparent;
+}
+
+.splitter.vertical > .splitter-panel > .splitter-divider::before {
+  height: var(--mp-splitter-size);
+  width: 100%;
+  margin: auto 0;
+  background-image: url(data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAB4AAAAFCAMAAABl/6zIAAAABlBMVEUAAADMzMzIT8AyAAAAAXRSTlMAQObYZgAAABRJREFUeAFjYGRkwIMJSeMHlBkOABP7AEGzSuPKAAAAAElFTkSuQmCC);
+}
+
+.splitter.vertical > .splitter-panel:not(:first-child) > .splitter-pane {
+  margin-top: calc(-1 * var(--mp-splitter-thumb-margin));
+}
+
+.splitter.vertical > .splitter-panel:not(:last-child) > .splitter-pane {
+  margin-bottom: calc(-1 * var(--mp-splitter-thumb-margin));
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .splitter > .splitter-panel > .splitter-divider {
+    transition: none;
+  }
+}

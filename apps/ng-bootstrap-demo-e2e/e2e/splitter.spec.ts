@@ -1,25 +1,25 @@
 import { test, expect, Page } from '@playwright/test';
 
 /**
- * `bs-splitter` (Angular wrapper over `<mp-splitter>`) — APG Window Splitter
+ * `bs-splitter` — APG Window Splitter
  * keyboard resize on the "Sizing & events" example, asserted at behavioural
  * boundaries: the slotted pane's actual width, the divider's
- * `aria-valuenow`, and the wrapper's re-emitted `resizeEnd` output (the demo
- * page prints it as "Last event: resizeEnd → …").
+ * `aria-valuenow`, and the `resizeend` output (the demo page prints it as
+ * "Last event: resizeEnd → …").
  */
 
 const PATH = '/enterprise/splitter';
 
 // The sized example: a 2-pane splitter inside .dock-small.
-const splitter = (page: Page) => page.locator('.dock-small mp-splitter');
-const divider = (page: Page) => splitter(page).locator('.divider');
-const leftPane = (page: Page) => splitter(page).locator('> div').first();
+const splitter = (page: Page) => page.locator('.dock-small .splitter');
+// The first panel's divider is hidden: the visible one belongs to the second panel.
+const divider = (page: Page) => splitter(page).locator('> .splitter-panel:nth-child(2) > .splitter-divider');
+const leftPane = (page: Page) => splitter(page).locator('> .splitter-panel > .splitter-pane').first();
 
 async function goto(page: Page) {
   await page.goto(PATH);
-  // Deterministic readiness: the element upgraded and rendered its dividers
-  // (they're created a rAF after firstUpdated) — not networkidle.
-  await expect(divider(page)).toBeVisible();
+  // Deterministic readiness: the splitter measured and described its divider.
+  await expect(divider(page)).toHaveAttribute('aria-valuenow', /^\d+$/);
   await divider(page).scrollIntoViewIfNeeded();
 }
 
@@ -31,10 +31,10 @@ test.describe('splitter', () => {
     await expect(div).toHaveAttribute('aria-orientation', 'vertical');
     await expect(div).toHaveAttribute('tabindex', '0');
     await expect(div).toHaveAttribute('aria-valuenow', /^\d+$/);
-    await expect(div).toHaveAttribute('aria-controls', /panel-0 .*panel-1/);
+    await expect(div).toHaveAttribute('aria-controls', /-pane .*-pane$/);
   });
 
-  test('keyboard resize moves the divider and re-emits resizeEnd through bs-splitter', async ({ page }) => {
+  test('keyboard resize moves the divider and emits resizeend', async ({ page }) => {
     await goto(page);
     const div = divider(page);
 
@@ -53,8 +53,7 @@ test.describe('splitter', () => {
       .poll(async () => Number(await div.getAttribute('aria-valuenow')))
       .toBeGreaterThan(valueBefore);
 
-    // The wrapper re-emitted the WC's resize-end as its resizeEnd output —
-    // the page renders the detail sizes.
+    // The page renders the resizeend detail sizes.
     await expect(page.locator('p', { hasText: 'Last event:' }))
       .toContainText(/resizeEnd → \d+ \/ \d+/);
   });

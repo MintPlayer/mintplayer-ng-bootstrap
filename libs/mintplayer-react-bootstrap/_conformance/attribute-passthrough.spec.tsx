@@ -67,7 +67,7 @@ import { BsScheduler } from '@mintplayer/react-bootstrap/scheduler';
 import { BsSelect } from '@mintplayer/react-bootstrap/select';
 import { BsShell } from '@mintplayer/react-bootstrap/shell';
 import { BsSignaturePad } from '@mintplayer/react-bootstrap/signature-pad';
-import { BsSplitter } from '@mintplayer/react-bootstrap/splitter';
+import { BsSplitter, BsSplitterPanel } from '@mintplayer/react-bootstrap/splitter';
 import { BsTabControl, BsTabPage } from '@mintplayer/react-bootstrap/tab-control';
 import { BsThemeToggle } from '@mintplayer/react-bootstrap/theming';
 import { BsTileManager } from '@mintplayer/react-bootstrap/tile-manager';
@@ -235,7 +235,8 @@ const CASES: Case[] = [
   bare('BsSelect', 'select', BsSelect),
   bare('BsShell', 'div.shell', BsShell),
   bare('BsSignaturePad', 'div.mp-signature-pad', BsSignaturePad),
-  bare('BsSplitter', 'mp-splitter', BsSplitter),
+  bare('BsSplitter', 'div.splitter', BsSplitter),
+  bare('BsSplitterPanel', 'div.splitter-panel', BsSplitterPanel),
   bare('BsTabControl', 'div.tab-control', BsTabControl),
   {
     // A marker: BsTabControl renders its pane and forwards the page's attributes there.

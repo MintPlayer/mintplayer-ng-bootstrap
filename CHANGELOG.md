@@ -359,6 +359,24 @@ breaking change is a major. (2.20.0 and 2.21.0 broke `^2.x` consumers in a minor
   - **Vue:** numeric inputs are typed numbers; bind them (`:y-min="0"`, not `y-min="0"`).
   - The `TrendSeries` / `TrendPoint` / event types come from `@mintplayer/ui-core/charts/trend` and every
     front re-exports them; `@mintplayer/web-components/charts/trend` no longer re-exports `charts/core`.
+- **Splitter is generated from one source in every front, and its panels are declared (issue #437).** It is
+  written once in `@mintplayer/ui-core/splitter` (`splitterCore`, `splitterPanelCore`) and compiled into all
+  four fronts. The server HTML already splits the space evenly; the dividers take focus once live.
+  - **Panels:** wrap every pane in a splitter panel: `<bs-splitter-panel>` (Angular), `<BsSplitterPanel>`
+    (React, Vue), `<mp-splitter-panel>` (Lit). Direct children are no longer wrapped for you.
+  - **Every front:** the root is `.splitter` (a `div` in React and Vue, the host in Angular and Lit). There is
+    no shadow root. A panel is `.splitter-panel` (`display: contents`) holding a `.splitter-divider` and a
+    `.splitter-pane`; the pane takes the size. The `--mp-splitter-*` custom properties are unchanged, set
+    them on `.splitter`. `resizing` and `touch-mode` are classes on the root, not host attributes, and an
+    active divider carries `data-active`, not `.active`.
+  - **Events:** `resize-start` / `resize-end` are now `resizeStart` / `resizeEnd` (`resizing` keeps its
+    name): Angular `(resizestart)` / `(resizing)` / `(resizeend)`, Lit the same lowercased names, React
+    `onResizeStart` / `onResizing` / `onResizeEnd` (the payload), Vue `@resizestart` / `@resizing` /
+    `@resizeend`.
+  - **Accessible names** are localizable: `labels = { divider: 'Resize between panel ${before} and panel ${after}' }`.
+  - `getPanelSizes()` / `setPanelSizes()` / `resizeDividerBy()` remain on the Angular component and the Lit
+    element. The `SplitterStateManager`, `ResizeManager`, `InputHandler` and `splitterStyles` exports are
+    gone; `Direction` is `SplitterOrientation`, `ResizeKey` is `SplitterResizeKey`.
 - **Hierarchy chart is generated from one source in every front (issue #437).** It is written once in
   `@mintplayer/ui-core/charts/hierarchy` (`hierarchyChartCore`, `connectHierarchyChart`) and compiled into
   all four fronts. The server HTML is the finished chart at a 420px fallback scale, its controls inert until

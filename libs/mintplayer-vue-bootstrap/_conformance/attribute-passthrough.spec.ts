@@ -139,7 +139,8 @@ const TARGETS: Record<string, string> = {
   BsSelect: 'select',
   BsShell: 'div.shell',
   BsSignaturePad: 'div.mp-signature-pad',
-  BsSplitter: 'mp-splitter',
+  BsSplitter: 'div.splitter',
+  BsSplitterPanel: 'div.splitter-panel',
   BsTabControl: 'div.tab-control',
   // A marker that renders nothing alone: mounted in BsTabControl (COMPOSED).
   BsTabPage: 'div.tab-pane',

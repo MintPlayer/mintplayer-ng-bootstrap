@@ -1,10 +1,10 @@
 <script setup lang="ts">
-import { BsSplitter } from '@mintplayer/vue-bootstrap/splitter';
+import { BsSplitter, BsSplitterPanel } from '@mintplayer/vue-bootstrap/splitter';
 import { BsCodeSnippet } from '@mintplayer/vue-bootstrap/code-snippet';
 
 const SOURCE = `<BsSplitter orientation="horizontal" style="height: 240px">
-  <div>Left pane</div>
-  <div>Right pane</div>
+  <BsSplitterPanel>Left pane</BsSplitterPanel>
+  <BsSplitterPanel>Right pane</BsSplitterPanel>
 </BsSplitter>`;
 </script>
 
@@ -14,8 +14,8 @@ const SOURCE = `<BsSplitter orientation="horizontal" style="height: 240px">
     <p class="text-body-secondary">
       A draggable gutter between two (or more) panels. Pointer events
       from <code>mouse / touch / pen</code> are normalized; the gutter
-      emits <code>resize-start</code> / <code>resizing</code> /
-      <code>resize-end</code> with the current panel sizes as CSS px.
+      emits <code>resizestart</code> / <code>resizing</code> /
+      <code>resizeend</code> with the current panel sizes as CSS px.
     </p>
 
     <details class="mb-2">
@@ -33,8 +33,8 @@ const SOURCE = `<BsSplitter orientation="horizontal" style="height: 240px">
     <section>
       <h2>Horizontal split</h2>
       <BsSplitter orientation="horizontal" style="height: 240px; border: 1px solid var(--bs-border-color)">
-        <div style="padding: 0.75rem">Left pane</div>
-        <div style="padding: 0.75rem">Right pane</div>
+        <BsSplitterPanel><div style="padding: 0.75rem">Left pane</div></BsSplitterPanel>
+        <BsSplitterPanel><div style="padding: 0.75rem">Right pane</div></BsSplitterPanel>
       </BsSplitter>
     </section>
 

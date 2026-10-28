@@ -8,6 +8,7 @@ import '@mintplayer/web-components/tab-control';
 // as a nested <mp-splitter>, so this lib must load before any layout renders.
 import '@mintplayer/web-components/splitter';
 import { FocusRestore, LiveAnnouncerController } from '@mintplayer/web-components/a11y';
+import { adoptLightStyles } from '@mintplayer/web-components/light-dom';
 import {
   DockFloatingPaneBounds,
   DockFloatingStackLayout,
@@ -334,14 +335,21 @@ export class MintDockManagerElement extends LitElement {
     this.rootResizeObserver.observe(this.rootEl);
     this.dockedMutationObserver = new MutationObserver(() => this.scheduleRenderIntersectionHandles());
     this.dockedMutationObserver.observe(this.dockedEl, { childList: true, subtree: true });
-    // mp-splitter dispatches bubbling 'resizing' / 'resize-end' on user drag;
+    // mp-splitter dispatches bubbling 'resizing' / 'resizeend' on user drag;
     // delegating on dockedEl catches every nested splitter without per-instance wiring.
     this.dockedEl.addEventListener('resizing', this.onSplitterResize);
-    this.dockedEl.addEventListener('resize-end', this.onSplitterResize);
+    this.dockedEl.addEventListener('resizeend', this.onSplitterResize);
   }
+
+  /** Releases the light-tier sheets mirrored into the shadow root (the splitters render inside it). */
+  private releaseLightStyles?: () => void;
 
   override connectedCallback(): void {
     super.connectedCallback();
+    if (this.renderRoot instanceof ShadowRoot) {
+      this.releaseLightStyles?.();
+      this.releaseLightStyles = adoptLightStyles(this.renderRoot);
+    }
     if (!this.hasAttribute('role')) {
       // NOT role="application": that tells AT to hand every keystroke to the
       // page and disables the virtual cursor over the whole dock — pane
@@ -355,6 +363,8 @@ export class MintDockManagerElement extends LitElement {
   }
 
   override disconnectedCallback(): void {
+    this.releaseLightStyles?.();
+    this.releaseLightStyles = undefined;
     const win = this.windowRef;
     this.stopDragPointerTracking();
     win?.removeEventListener('pointermove', this.onPointerMove);
@@ -366,7 +376,7 @@ export class MintDockManagerElement extends LitElement {
     this.dockedMutationObserver?.disconnect();
     this.dockedMutationObserver = null;
     this.dockedEl?.removeEventListener('resizing', this.onSplitterResize);
-    this.dockedEl?.removeEventListener('resize-end', this.onSplitterResize);
+    this.dockedEl?.removeEventListener('resizeend', this.onSplitterResize);
     if (this.intersectionRaf !== null) {
       this.windowRef?.clearTimeout(this.intersectionRaf);
       this.intersectionRaf = null;
@@ -1551,9 +1561,11 @@ export class MintDockManagerElement extends LitElement {
     splitter.dataset['path'] = formatPath(splitPath);
 
     node.children.forEach((child, index) => {
-      // mp-splitter accepts direct children — it wraps each in a panel-wrapper
-      // inside its shadow DOM and projects via a named slot per index.
-      splitter.appendChild(this.renderNode(child, [...path, index], floatingIndex));
+      // One mp-splitter-panel per child: the panel renders the divider in front
+      // of its pane and places the child in the pane.
+      const panel = this.documentRef.createElement('mp-splitter-panel');
+      panel.appendChild(this.renderNode(child, [...path, index], floatingIndex));
+      splitter.appendChild(panel);
     });
 
     // Apply persisted sizes from the layout tree once mp-splitter has built
@@ -1588,7 +1600,7 @@ export class MintDockManagerElement extends LitElement {
     // mp-splitter fires resize-end with pixel sizes after a divider drag.
     // Convert back to flex weights (sum to a stable total — keep current sum
     // so future renders interpret consistently) and persist to the layout tree.
-    splitter.addEventListener('resize-end', (event) => {
+    splitter.addEventListener('resizeend', (event) => {
       // resize-end bubbles, so a nested mp-splitter's drag end would also
       // reach this listener. Only react to events from THIS splitter, not
       // from a descendant — otherwise we'd apply the inner's sizes to the
@@ -1765,27 +1777,26 @@ export class MintDockManagerElement extends LitElement {
   }
 
   /**
-   * Returns the dividers inside an `<mp-splitter>`'s shadow DOM, in DOM order.
-   * mp-splitter renders one `.divider` between each pair of adjacent panels,
+   * Returns the dividers of an `<mp-splitter>`, in DOM order. Every panel but
+   * the first renders one `.splitter-divider` in front of its pane,
    * so for an N-child split, length N-1.
    */
   private getSplitterDividers(splitter: HTMLElement): HTMLElement[] {
     if (splitter.tagName !== 'MP-SPLITTER') return [];
     return Array.from(
-      splitter.shadowRoot?.querySelectorAll<HTMLElement>('.divider') ?? [],
+      splitter.querySelectorAll<HTMLElement>(':scope > .splitter-panel:not(:first-child) > .splitter-divider'),
     );
   }
 
   /**
-   * Returns the panel wrappers inside an `<mp-splitter>`'s shadow DOM, in
-   * DOM order. These are the elements mp-splitter sizes (via setPanelSizes)
+   * Returns the panes of an `<mp-splitter>`, in DOM order. These are the elements mp-splitter sizes (via setPanelSizes)
    * during a divider drag — the dock reads their geometry for intersection
    * handle math and snap markers.
    */
   private getSplitterPanels(splitter: HTMLElement): HTMLElement[] {
     if (splitter.tagName !== 'MP-SPLITTER') return [];
     return Array.from(
-      splitter.shadowRoot?.querySelectorAll<HTMLElement>('.panel-wrapper') ?? [],
+      splitter.querySelectorAll<HTMLElement>(':scope > .splitter-panel > .splitter-pane'),
     );
   }
 

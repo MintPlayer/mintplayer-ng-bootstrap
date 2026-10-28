@@ -4,14 +4,14 @@ import { Color } from '@mintplayer/ng-bootstrap';
 import { BsButtonTypeDirective } from '@mintplayer/ng-bootstrap/button-type';
 import { BsCheckboxComponent } from '@mintplayer/ng-bootstrap/checkbox';
 import { BsCodeSnippetComponent } from '@mintplayer/ng-bootstrap/code-snippet';
-import { BsSplitterComponent, SplitterResizeEventDetail } from '@mintplayer/ng-bootstrap/splitter';
+import { BsSplitterComponent, BsSplitterPanelComponent, SplitterResizeEventDetail } from '@mintplayer/ng-bootstrap/splitter';
 import { dedent } from 'ts-dedent';
 
 @Component({
   selector: 'demo-splitter',
   templateUrl: './splitter.component.html',
   styleUrls: ['./splitter.component.scss'],
-  imports: [FormsModule, BsButtonTypeDirective, BsCheckboxComponent, BsCodeSnippetComponent, BsSplitterComponent],
+  imports: [FormsModule, BsButtonTypeDirective, BsCheckboxComponent, BsCodeSnippetComponent, BsSplitterComponent, BsSplitterPanelComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class SplitterComponent {
@@ -55,31 +55,33 @@ export class SplitterComponent {
 
   protected readonly snippetBasicHtml = dedent`
     <bs-splitter orientation="horizontal">
-      <div>Panel 1</div>
-      <bs-splitter orientation="vertical">
-        <div>Panel 2a</div>
-        <div>Panel 2b</div>
-      </bs-splitter>
+      <bs-splitter-panel>Panel 1</bs-splitter-panel>
+      <bs-splitter-panel>
+        <bs-splitter orientation="vertical">
+          <bs-splitter-panel>Panel 2a</bs-splitter-panel>
+          <bs-splitter-panel>Panel 2b</bs-splitter-panel>
+        </bs-splitter>
+      </bs-splitter-panel>
     </bs-splitter>
   `;
 
   protected readonly snippetBasicTs = dedent`
     import { Component } from '@angular/core';
-    import { BsSplitterComponent } from '@mintplayer/ng-bootstrap/splitter';
+    import { BsSplitterComponent, BsSplitterPanelComponent } from '@mintplayer/ng-bootstrap/splitter';
 
     @Component({
       selector: 'my-splitter-demo',
       templateUrl: './my-splitter-demo.component.html',
-      imports: [BsSplitterComponent],
+      imports: [BsSplitterComponent, BsSplitterPanelComponent],
     })
     export class MySplitterDemoComponent {}
   `;
 
   protected readonly snippetSizedHtml = dedent`
     <bs-splitter #splitter [minPanelSize]="120" [touchMode]="touchMode()"
-        (resizing)="onResizing($event)" (resizeEnd)="onResizeEnd($event)">
-      <div>Left</div>
-      <div>Right</div>
+        (resizing)="onResizing($event)" (resizeend)="onResizeEnd($event)">
+      <bs-splitter-panel>Left</bs-splitter-panel>
+      <bs-splitter-panel>Right</bs-splitter-panel>
     </bs-splitter>
   `;
 

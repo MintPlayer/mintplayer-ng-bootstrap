@@ -604,7 +604,7 @@ describe('the splitter reports a drag back as weights', () => {
    */
   const resizeEnd = (splitter: Element, sizes: number[]) =>
     splitter.dispatchEvent(
-      new CustomEvent('resize-end', { detail: { sizes }, bubbles: true, composed: true }),
+      new CustomEvent('resizeend', { detail: { sizes }, bubbles: true, composed: true }),
     );
 
   it('converts pixel sizes into proportional weights', async () => {
@@ -642,7 +642,7 @@ describe('the splitter reports a drag back as weights', () => {
   });
 
   /*
-   * `resize-end` bubbles, so a nested splitter's drag reaches the outer one's
+   * `resizeend` bubbles, so a nested splitter's drag reaches the outer one's
    * listener too. Applying the INNER sizes to the OUTER node would mangle the
    * outer weights on every inner drag — hence the target check.
    */
