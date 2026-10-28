@@ -57,7 +57,7 @@ axeAuditSuite(test, expect, [
   {
     path: '/enterprise/file-manager',
     ready: async (page) => {
-      await page.waitForSelector('mp-file-manager');
+      await page.waitForSelector('.file-manager[data-mp-hydrated]');
     },
   },
   { path: '/enterprise/query-builder' },

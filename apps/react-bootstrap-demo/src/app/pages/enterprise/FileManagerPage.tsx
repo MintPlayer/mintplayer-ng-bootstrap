@@ -24,10 +24,7 @@ export function FileManagerPage() {
 
       <section style={{ height: '500px' }}>
         <h2>Static seed</h2>
-        <BsFileManager
-          {...{ nodes: NODES, rootFolderId: 'root' } as React.ComponentProps<typeof BsFileManager>}
-          style={{ height: '100%' }}
-        />
+        <BsFileManager nodes={NODES} rootFolderId="root" style={{ height: '100%' }} />
       </section>
 
       <section>

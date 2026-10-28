@@ -377,6 +377,28 @@ breaking change is a major. (2.20.0 and 2.21.0 broke `^2.x` consumers in a minor
   - `getPanelSizes()` / `setPanelSizes()` / `resizeDividerBy()` remain on the Angular component and the Lit
     element. The `SplitterStateManager`, `ResizeManager`, `InputHandler` and `splitterStyles` exports are
     gone; `Direction` is `SplitterOrientation`, `ResizeKey` is `SplitterResizeKey`.
+- **File manager is generated from one source in every front, composed of the splitter, treeview and
+  datatable (issue #437).** It is written once in `@mintplayer/ui-core/file-manager` (`fileManagerCore`,
+  `connectFileManager`) and compiled into all four fronts. Each front renders its own splitter, treeview and
+  datatable, so the server HTML is the whole browser (toolbar, breadcrumb, tree and list). The commands
+  stay disabled until the component is live.
+  - **Every front:** the root is `.file-manager` with `role="region"` (a `div` in React and Vue, the host in
+    Angular and Lit). There is no shadow root, so page CSS reaches the internals. The `--mp-file-manager-*`
+    custom properties are unchanged; set them on `.file-manager`.
+  - **Two-way state:** `currentFolderId`, `viewMode`, `selectedIds`, `uploads` and `pending` are models.
+    Angular: `[(uploads)]`, and `fm.uploads()` still reads the signal. Vue: `v-model:uploads`. The old
+    `pendingOpIds` / `pendingCount` signals are gone; read `pending` instead (a `Record<id, OperationKind>`).
+  - **Events** are lowercased like every compiled component. Angular uses `(navigate)`, `(nodeopen)`,
+    `(selectionchanged)` (was `selectionChange`), `(uploadrequest)`, `(operation)`, `(errorreported)` and
+    `(childrenloaded)`. Lit uses the same names. React uses `onNavigate`, `onNodeOpen`, `onSelectionChanged`
+    and so on, receiving the payload. Vue uses `@navigate`, `@nodeopen` and so on.
+  - **Sorting** is the file manager's own: the list hands the datatable rows already sorted (`autoSort` off),
+    so folders-first ordering holds until a column is clicked.
+  - **Messages:** two new keys, `renameLabel(name)` (the rename editor's accessible name) and
+    `ariaFolderTree`.
+  - `markPending` / `clearPending` / `reportError` / `reportUploadProgress` / `clearUpload` remain on the
+    Angular component and the Lit element. The node, event and messages types come from
+    `@mintplayer/ui-core/file-manager`, and every front re-exports them.
 - **Hierarchy chart is generated from one source in every front (issue #437).** It is written once in
   `@mintplayer/ui-core/charts/hierarchy` (`hierarchyChartCore`, `connectHierarchyChart`) and compiled into
   all four fronts. The server HTML is the finished chart at a 420px fallback scale, its controls inert until

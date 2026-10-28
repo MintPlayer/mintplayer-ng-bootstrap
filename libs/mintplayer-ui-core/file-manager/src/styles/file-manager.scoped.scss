@@ -1,18 +1,22 @@
-:host {
-  display: flex;
-  flex-direction: column;
-  width: 100%;
-  height: 100%;
-  min-height: 24rem;
+// The file manager's stylesheet, shared by all four fronts (PRD #437 D10).
+// Rescoped at build time: every compound gains `[data-mps=file-manager]`.
+//
+// The composed splitter, treeview and datatable style themselves. Where this
+// sheet sizes one of them it anchors on our own scoped wrapper and is written
+// in final form.
 
+.file-manager {
   --mp-file-manager-border-color: var(--bs-border-color, rgba(0, 0, 0, 0.125));
   --mp-file-manager-pane-bg: var(--bs-body-bg, transparent);
   --mp-file-manager-drop-overlay-bg: rgba(13, 110, 253, 0.08);
   --mp-file-manager-drop-overlay-border: var(--bs-primary, #0d6efd);
-}
 
-* {
+  display: flex;
+  flex-direction: column;
   box-sizing: border-box;
+  width: 100%;
+  height: 100%;
+  min-height: 24rem;
 }
 
 .toolbar {
@@ -25,7 +29,8 @@
   flex-wrap: wrap;
 }
 
-.toolbar button {
+.toolbar-button,
+.view-toggle > button {
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -42,33 +47,56 @@
   color: inherit;
 }
 
-.toolbar button:hover:not([disabled]) {
+.toolbar-button:hover:not([disabled]),
+.view-toggle > button:hover:not([disabled]) {
   background-color: var(--bs-secondary-bg, rgba(0, 0, 0, 0.04));
 }
 
-.toolbar button[disabled] {
+.toolbar-button:focus-visible,
+.view-toggle > button:focus-visible,
+.breadcrumb-segment:focus-visible,
+.icon-card:focus-visible,
+.search-input:focus-visible {
+  outline: 2px solid var(--bs-primary, #0d6efd);
+  outline-offset: 1px;
+}
+
+.toolbar-button[disabled],
+.view-toggle > button[disabled] {
   opacity: 0.5;
   cursor: not-allowed;
 }
 
-.toolbar .view-toggle {
+.view-toggle {
   display: inline-flex;
   border: 1px solid var(--mp-file-manager-border-color);
   border-radius: 0.25rem;
   overflow: hidden;
 }
 
-.toolbar .view-toggle button {
+.view-toggle > button {
   border: 0;
   border-radius: 0;
 }
 
-.toolbar .view-toggle button[data-active='true'] {
+.view-toggle > button[data-active='true'] {
   background-color: var(--bs-primary, #0d6efd);
   color: #fff;
 }
 
-.toolbar .search-input {
+.toggle-icon {
+  display: inline-flex;
+  width: 1rem;
+  height: 1rem;
+}
+
+/*! @mps-global */
+.toggle-icon[data-mps=file-manager] svg {
+  width: 100%;
+  height: 100%;
+}
+
+.search-input {
   padding: 0.3rem 0.5rem;
   border: 1px solid var(--mp-file-manager-border-color);
   border-radius: 0.25rem;
@@ -79,7 +107,7 @@
   min-width: 8rem;
 }
 
-.toolbar .spacer {
+.spacer {
   flex: 1 1 auto;
 }
 
@@ -93,6 +121,12 @@
   flex: 0 0 auto;
   flex-wrap: wrap;
   background-color: var(--mp-file-manager-pane-bg);
+}
+
+.breadcrumb-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
 }
 
 .breadcrumb-segment {
@@ -126,8 +160,11 @@
   display: flex;
 }
 
-mp-splitter {
+// The composed splitter: whatever element a front renders for it.
+/*! @mps-global */
+.split-area[data-mps=file-manager] > * {
   flex: 1 1 auto;
+  min-width: 0;
   min-height: 0;
 }
 
@@ -153,10 +190,6 @@ mp-splitter {
   min-height: 0;
   overflow: auto;
   position: relative;
-}
-
-mp-datatable {
-  width: 100%;
 }
 
 .icon-grid {
@@ -191,11 +224,12 @@ mp-datatable {
   border-color: transparent;
 }
 
-.icon-card[data-cut='true'] {
+.icon-card[data-cut='true'],
+.icon-card[data-pending] {
   opacity: 0.55;
 }
 
-.icon-card .file-icon {
+.file-icon {
   width: 3rem;
   height: 3rem;
   display: flex;
@@ -204,12 +238,13 @@ mp-datatable {
   margin-bottom: 0.35rem;
 }
 
-.icon-card .file-icon svg {
+/*! @mps-global */
+.file-icon[data-mps=file-manager] svg {
   width: 100%;
   height: 100%;
 }
 
-.icon-card .file-name {
+.file-name {
   font-size: 0.85rem;
   word-break: break-word;
   display: -webkit-box;
@@ -224,7 +259,11 @@ mp-datatable {
   gap: 0.4rem;
 }
 
-.row-cell .row-icon {
+.row-cell[data-pending] {
+  opacity: 0.55;
+}
+
+.row-icon {
   flex: 0 0 1rem;
   width: 1rem;
   height: 1rem;
@@ -233,7 +272,8 @@ mp-datatable {
   justify-content: center;
 }
 
-.row-cell .row-icon svg {
+/*! @mps-global */
+.row-icon[data-mps=file-manager] svg {
   width: 1rem;
   height: 1rem;
 }
@@ -264,12 +304,14 @@ mp-datatable {
   color: var(--mp-file-manager-drop-overlay-border);
 }
 
-:host([drop-active]) .drop-overlay {
+.file-manager.drop-active .drop-overlay {
   display: flex;
 }
 
 .context-menu {
   position: fixed;
+  left: var(--mp-file-manager-menu-x, 0);
+  top: var(--mp-file-manager-menu-y, 0);
   z-index: 1080;
   min-width: 9rem;
   background-color: var(--bs-body-bg, #fff);
@@ -282,7 +324,7 @@ mp-datatable {
   font-size: 0.9rem;
 }
 
-.context-menu .menu-item {
+.menu-item {
   display: flex;
   width: 100%;
   align-items: center;
@@ -296,18 +338,23 @@ mp-datatable {
   cursor: pointer;
 }
 
-.context-menu .menu-item:hover:not([disabled]),
-.context-menu .menu-item:focus-visible:not([disabled]) {
+.menu-item:hover:not([disabled]),
+.menu-item:focus-visible:not([disabled]) {
   background-color: var(--bs-secondary-bg, rgba(0, 0, 0, 0.06));
+  outline: 2px solid var(--bs-primary, #0d6efd);
+  outline-offset: -2px;
+}
+
+.menu-item:hover:not([disabled]) {
   outline: none;
 }
 
-.context-menu .menu-item[disabled] {
+.menu-item[disabled] {
   opacity: 0.5;
   cursor: not-allowed;
 }
 
-.context-menu .menu-separator {
+.menu-separator {
   height: 1px;
   background-color: var(--mp-file-manager-border-color);
   margin: 0.25rem 0;
@@ -315,7 +362,7 @@ mp-datatable {
 
 @media (prefers-reduced-motion: reduce) {
   .icon-card,
-  .toolbar button {
+  .toolbar-button {
     transition: none !important;
   }
 }

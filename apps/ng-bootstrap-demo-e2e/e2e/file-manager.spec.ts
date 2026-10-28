@@ -1,8 +1,7 @@
 import { test, expect } from '@playwright/test';
 
-// Smoke-test the file-manager demo. The Lit web component renders into a
-// shadow DOM, but Playwright's selectors pierce open shadow roots — so we
-// can locate the breadcrumb, tree, and datatable via accessible names.
+// Smoke-test the file-manager demo. The component renders in the light DOM
+// (#437), so the breadcrumb, tree and datatable are located by accessible name.
 test('file manager renders tree, datatable and breadcrumb on the enterprise route', async ({ page }) => {
   await page.goto('/enterprise/file-manager');
   await page.waitForLoadState('networkidle', { timeout: 2000 }).catch(() => {
@@ -55,5 +54,5 @@ test('view mode toggle switches to icons grid', async ({ page }) => {
   await page.getByRole('button', { name: 'Icons view' }).click();
 
   // The icon-grid container should now render gridcells in place of rows.
-  await expect(page.locator('mp-file-manager').locator('.icon-card').first()).toBeVisible();
+  await expect(page.locator('.file-manager .icon-card').first()).toBeVisible();
 });

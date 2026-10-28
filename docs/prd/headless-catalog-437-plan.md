@@ -190,7 +190,7 @@ Every item below is authored as a D10 component source once M3b lands.
 
 ## M6 — Wave D
 
-- [ ] file-manager
+- [x] file-manager — composes the D10 splitter, treeview and datatable (`<mp-splitter>` / `<mp-treeview>` / `<mp-datatable>` in its view, so each front renders its own). The datatable's `cell` slot gets `row: unknown`, so the core sorts the rows itself (`autoSort=false`, `v-model:sortColumns`) and the slot reads its typed row as `view.rows[rowIndex]`. Columns are memoised per messages object, because a new `columns` array resets the widths. The no-custom-elements list lost 15 stale rows (charts, datatable, query-builder, splitter, tree-select), and the scoping spec now imports the hierarchy, splitter and file-manager sheets.
 - [x] tile-manager — landed on master separately as #440 / PR #441 (headless core + four fronts)
 - [ ] dock
 - [ ] ribbon (+ 17 children)
