@@ -1,2 +1,2 @@
-export * from './calendar.component';
-export * from '@mintplayer/web-components/calendar';
+export * from './generated';
+export type { CalendarLabels, FirstDayOfWeek } from '@mintplayer/ui-core/calendar';

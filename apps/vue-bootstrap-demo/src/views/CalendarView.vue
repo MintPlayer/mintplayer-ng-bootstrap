@@ -1,16 +1,18 @@
 <script setup lang="ts">
+import { ref } from 'vue';
 import { BsCalendar } from '@mintplayer/vue-bootstrap/calendar';
 import { BsCodeSnippet } from '@mintplayer/vue-bootstrap/code-snippet';
 
-const SOURCE = "<BsCalendar />";
+const selectedDate = ref<Date | null>(new Date());
+const SOURCE = '<BsCalendar v-model:selected-date="selectedDate" />';
 </script>
 
 <template>
   <div class="demo-page">
     <h1>Calendar</h1>
     <p class="text-body-secondary">
-      Accessible month-grid date picker with full keyboard navigation. The
-      same WC drives the Angular and React demos.
+      Accessible month-grid date picker with full keyboard navigation, generated
+      from one source for Angular, React, Vue and Lit.
     </p>
 
     <details class="mb-2">
@@ -28,7 +30,10 @@ const SOURCE = "<BsCalendar />";
 
     <section>
       <h2>Default</h2>
-      <BsCalendar />
+      <BsCalendar v-model:selected-date="selectedDate" />
+      <p class="text-body-secondary mt-2">
+        Selected: <code>{{ selectedDate?.toDateString() }}</code>
+      </p>
     </section>
 
     <section>

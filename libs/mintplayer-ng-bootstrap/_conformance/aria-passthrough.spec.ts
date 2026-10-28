@@ -1,7 +1,6 @@
 import { Component, type Type } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 
-import { BsCalendarComponent } from '@mintplayer/ng-bootstrap/calendar';
 import { BsCarouselComponent } from '@mintplayer/ng-bootstrap/carousel';
 import { BsCodeSnippetComponent } from '@mintplayer/ng-bootstrap/code-snippet';
 import { BsDatepickerComponent } from '@mintplayer/ng-bootstrap/datepicker';
@@ -119,7 +118,6 @@ interface WrapperCase {
  * silently fall behind.
  */
 const WRAPPERS: WrapperCase[] = [
-  { selector: 'bs-calendar', tag: 'mp-calendar', component: BsCalendarComponent },
   { selector: 'bs-carousel', tag: 'mp-carousel', component: BsCarouselComponent },
   { selector: 'bs-code-snippet', tag: 'mp-code-snippet', component: BsCodeSnippetComponent },
   { selector: 'bs-datepicker', tag: 'mp-datepicker', component: BsDatepickerComponent },
@@ -206,7 +204,7 @@ async function render(entry: WrapperCase): Promise<{ host: HTMLElement; target: 
  * M4, whose front writes the attributes onto its own markup; patching the wrapper first
  * would be deleted with it. Remove an entry when its component converts.
  */
-const PENDING_437 = new Set(['bs-calendar', 'bs-code-snippet', 'bs-datepicker', 'bs-datetime-picker', 'bs-timepicker']);
+const PENDING_437 = new Set(['bs-code-snippet', 'bs-datepicker', 'bs-datetime-picker', 'bs-timepicker']);
 
 describe('Angular wrapper ARIA passthrough', () => {
   afterEach(() => {

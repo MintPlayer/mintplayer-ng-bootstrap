@@ -8,7 +8,9 @@ const angularOutput = (output) => output.lower;
 
 function inputLine(model, input) {
   const type = `${model.inputsType}['${input.name}']`;
-  const transform = input.kind === 'boolean' ? 'booleanAttribute' : input.kind === 'number' ? 'numberAttribute' : null;
+  // A numeric input may be a literal union (`0 | 1 | … | 6`): the attribute's number is cast to it.
+  const transform =
+    input.kind === 'boolean' ? 'booleanAttribute' : input.kind === 'number' ? `(v: unknown) => numberAttribute(v) as ${type}` : null;
   const value = input.default ?? 'undefined';
   const call = input.model
     ? `model<${type}>(${value})`

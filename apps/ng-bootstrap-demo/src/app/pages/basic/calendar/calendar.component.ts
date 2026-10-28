@@ -11,7 +11,7 @@ import { dedent } from 'ts-dedent';
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class CalendarComponent {
-  protected readonly selectedDate = signal(new Date());
+  protected readonly selectedDate = signal<Date | null>(new Date());
 
   protected readonly snippetBasicHtml = dedent`
     <bs-calendar [(selectedDate)]="selectedDate"></bs-calendar>
@@ -27,7 +27,7 @@ export class CalendarComponent {
       imports: [BsCalendarComponent],
     })
     export class MyCalendarDemoComponent {
-      protected readonly selectedDate = signal(new Date());
+      protected readonly selectedDate = signal<Date | null>(new Date());
     }
   `;
 }

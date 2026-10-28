@@ -93,7 +93,7 @@ describe('Vue wrapper attribute passthrough — the invariant, statically', () =
 const TARGETS: Record<string, string> = {
   BsAccordion: 'div.accordion',
   BsAccordionItem: 'details.accordion-item',
-  BsCalendar: 'mp-calendar',
+  BsCalendar: 'div.mp-calendar',
   BsCard: 'div.card',
   BsCardBody: 'div.card-body',
   BsCardFooter: 'div.card-footer',

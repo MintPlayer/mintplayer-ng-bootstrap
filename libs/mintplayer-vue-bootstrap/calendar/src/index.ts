@@ -1,1 +1,2 @@
-export { default as BsCalendar } from './BsCalendar.vue';
+export * from './generated';
+export type { CalendarLabels, FirstDayOfWeek } from '@mintplayer/ui-core/calendar';

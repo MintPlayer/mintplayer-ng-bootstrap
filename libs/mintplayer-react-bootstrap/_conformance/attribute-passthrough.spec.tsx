@@ -162,7 +162,7 @@ const CASES: Case[] = [
       </BsAccordion>
     ),
   },
-  bare('BsCalendar', 'mp-calendar', BsCalendar),
+  bare('BsCalendar', 'div.mp-calendar', BsCalendar),
   bare('BsCard', 'div.card', BsCard),
   bare('BsCardBody', 'div.card-body', BsCardBody),
   bare('BsCardFooter', 'div.card-footer', BsCardFooter),

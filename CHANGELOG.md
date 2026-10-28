@@ -221,6 +221,21 @@ breaking change is a major. (2.20.0 and 2.21.0 broke `^2.x` consumers in a minor
     control dirty.
   - **Lit:** `mp-multi-range` has no shadow root and no `part`s. The `.thumb` and `.track` classes are now
     `multi-range-thumb` and `multi-range-track`. `minDistance` is the `min-distance` attribute.
+- **Calendar is generated from one source in every front (issue #437, wave B).** It is written once in
+  `@mintplayer/ui-core/calendar` and compiled into all four fronts. The month grid, its keymap and its
+  week numbers are pure functions there, so the date pickers render the same grid. With JS off the month
+  renders inert: the month buttons are disabled and no day is tabbable until the page hydrates.
+  - **Every front:**
+    - `selectedDate` and `currentMonth` are two-way and default to `null`. Angular's `selectedDate` used to
+      default to today. `null` for the month shows the selected day's month, else today's.
+    - The events are `selecteddatechange` and `currentmonthchange` (were `selected-date-change` /
+      `current-month-change`). React has `onSelectedDateChange` / `onCurrentMonthChange`; Vue has
+      `v-model:selected-date` / `v-model:current-month`, replacing the plain `v-model`.
+    - The methods are `previousMonth()`, `nextMonth()`, `select(date)` and `focusGrid()`. `goto(day)` and the
+      Lit host's `focus()` override are gone.
+    - `labels` localises the month buttons and the week column.
+  - **Lit:** `mp-calendar` renders in the light DOM (no shadow root). Its classes are now `calendar-*`
+    (`calendar-day-selected`, `calendar-chevron-previous`, …). `MpCalendarElement` is now `MpCalendar`.
 
 
 

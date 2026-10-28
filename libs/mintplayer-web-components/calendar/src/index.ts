@@ -1,1 +1,2 @@
-export * from './mp-calendar.element';
+export * from './generated';
+export type { CalendarLabels, FirstDayOfWeek } from '@mintplayer/ui-core/calendar';

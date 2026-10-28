@@ -126,7 +126,8 @@ Every item below is authored as a D10 component source once M3b lands.
   - compiler fixes it needed: builtin output types (`string`) are not imported; the Vue `mp-attrs` merge coerces the bag's `class` to a string
 - [x] multi-range: one D10 source (`ui-core/multi-range`), native range inputs stacked on one track in every front; the core adds the neighbour constraint, the fill and press-on-track; Angular CVA as a host directive
   - compiler addition it needed: a `:style` bag below the root (Angular `[style]`, React `reactStyle()`, Lit `styleMap`), for the geometry custom properties of PRD D7
-- [ ] calendar
+- [x] calendar: one D10 source (`ui-core/calendar`); the grid, keymap and week numbers are pure functions and `attachCalendarGrid` is the shared DOM behaviour, so the pickers render the same grid; inert (disabled month buttons, no tabbable day) until hydrated
+  - compiler fix it needed: a `kind: 'number'` Angular input casts `numberAttribute` to the declared type (a literal union such as `FirstDayOfWeek`)
 - [ ] datepicker, timepicker (+ time-list), datetime-picker
 - [ ] signature-pad
 - [ ] theme-toggle (Q2)

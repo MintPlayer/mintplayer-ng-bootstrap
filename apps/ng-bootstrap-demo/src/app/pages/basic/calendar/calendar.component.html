@@ -19,7 +19,8 @@
         <li><kbd>Enter</kbd> / <kbd>Space</kbd> — select the focused day</li>
     </ul>
 </details>
-<bs-calendar></bs-calendar>
+<bs-calendar [(selectedDate)]="selectedDate"></bs-calendar>
+<p class="text-body-secondary mt-2">Selected: <code>{{ selectedDate()?.toDateString() }}</code></p>
 
 <bs-code-snippet [code]="snippetBasicHtml" [language]="'html'"></bs-code-snippet>
 <bs-code-snippet [code]="snippetBasicTs" [language]="'ts'"></bs-code-snippet>
