@@ -1,6 +1,6 @@
 # PRD — Headless core + four fronts for the whole catalog (#437)
 
-**Status:** In progress (updated 2026-10-29). Most of Waves A–C and the compiler nesting extension have landed (still open there: the navbar item, the spikes S2/S4/S6/S7/S9 and S15–S17/S19); Wave D has the file manager, tile manager, dock and ribbon done (plus the splitter, moved into M6), with the scheduler left. The ribbon added compiler content queries (nested children whose parent server-renders chrome for them). The plan file tracks each item. Spikes S1–S12 gate the design decisions marked *(spike)*.
+**Status:** In progress (updated 2026-10-29). Most of Waves A–C and the compiler nesting extension have landed (still open there: the navbar item, the spikes S2/S4/S6/S7/S9 and S15–S17/S19); Wave D is done: the file manager, tile manager, dock, ribbon and scheduler (plus the splitter, moved into M6); the scheduler answered S7 with a go (every view a server-rendered static grid). The removal sweep (M7), docs (M8) and the batched verification (M9) remain. The ribbon added compiler content queries (nested children whose parent server-renders chrome for them). The plan file tracks each item. Spikes S1–S12 gate the design decisions marked *(spike)*.
 **Issue:** #437. **Pilot:** #436 typeahead (`docs/prd/typeahead-wc-436.md`, PR #438).
 **Plan:** `docs/prd/headless-catalog-437-plan.md`.
 **Delivery:** one pull request, per the workspace rule. Milestones are committed separately and the PR is squashed.
@@ -483,5 +483,5 @@ Charts have no Vue wrapper today. A Vue front is added, because parity is a goal
 
 ## 13. Open questions (owner)
 
-- **Q1.** Scheduler, dock, ribbon and tile-manager are in scope. Do they stay in scope if S7 is a no-go, or does the owner want them kept as Lit-only components (an explicit exception)? The default is in scope. *Partly resolved (2026-10-28):* the tile manager landed headless (#441), and the owner rejected a Lit-only dock in favour of portals. The scheduler still waits on S7.
+- **Q1.** Scheduler, dock, ribbon and tile-manager are in scope. Do they stay in scope if S7 is a no-go, or does the owner want them kept as Lit-only components (an explicit exception)? The default is in scope. *Partly resolved (2026-10-28):* the tile manager landed headless (#441), and the owner rejected a Lit-only dock in favour of portals. *Resolved (2026-10-29):* the scheduler landed headless too; S7 was a go.
 - **Q2.** Should the theme toggle's no-JS form post to a demo endpoint, or should the toggle simply be hidden without JS? *Resolved (default taken):* neither. The toggle is server-rendered **disabled** at its final size, and hydration enables it. A posting form would need an endpoint in every consumer's app, which a library cannot ship. Hiding it would move the navbar on hydration. No-JS visitors still get OS-following colours from the pre-boot script and the cookie SSR. The owner can still ask for the endpoint.

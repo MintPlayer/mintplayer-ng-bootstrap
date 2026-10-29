@@ -450,6 +450,27 @@ breaking change is a major. (2.20.0 and 2.21.0 broke `^2.x` consumers in a minor
   - **Tell me:** `slot="tell-me"` is replaced by the `tellMe` slot: Angular `<ng-template bsRibbonTellMe>`,
     React `tellMe={…}`, Vue `<template #tellMe>`.
   - The ribbon types come from `@mintplayer/ui-core/ribbon` and every front re-exports them.
+- **Scheduler is generated from one source in every front, its grid server-rendered (issue #437).** It is
+  written once in `@mintplayer/ui-core/scheduler` (`schedulerCore`; the state manager, drag, geometry and
+  keyboard-grid modules moved there from `@mintplayer/web-components/scheduler`) and compiled into all four
+  fronts. The hand-written `bs-scheduler` Angular, React and Vue wrappers around `<mp-scheduler>` are gone;
+  the Lit element keeps the `mp-scheduler` tag.
+  - **Server-rendered grid.** Every view (year, month, week, day, timeline) is a static grid with events
+    positioned by custom properties in slot units, so the server HTML is the whole grid, inert until the
+    scheduler is live. The root carries `data-mp-hydrated` once it is.
+  - **No shadow root.** The root is `.scheduler` (a `div` in React and Vue, the host in Angular and Lit).
+    Page CSS reaches the internals; `::part()` hooks are gone. The day popover, row panel and event editor
+    are native popovers; the editor composes the datetime picker.
+  - **Two-way models:** `view`, `date`, `selectedEvent` and `selectedRange`. Angular `[(view)]`,
+    `[(selectedRange)]`; React `view` + `onViewChange`; Vue `v-model:view`, `v-model:selectedRange`; Lit writes
+    the property back. Clear a range by setting `selectedRange` to `null`.
+  - **Events** are lowercased like every compiled component and carry named detail types
+    (`SchedulerEventCreateDetail`, `SchedulerEventUpdateDetail`, …): Angular `(eventcreate)`,
+    `(eventupdate)`, `(eventdelete)`, `(eventselected)`, …; React `onEventCreate`, … receiving the payload;
+    Vue `@eventcreate`, …. `selectionChange` is renamed `selectionChanged`.
+  - **Attribute hooks:** event buttons carry `data-start` / `data-end` (ISO), like the cells.
+  - `slotDuration` outside an integer 60..86400 seconds falls back to the default rather than hanging.
+  - The scheduler types come from `@mintplayer/ui-core/scheduler` and every front re-exports them.
 - **Navbar dropdown's label slot is `labelTemplate` (issue #437).** It shared its name with the `label`
   input, which made React and Vue pass the slot in place of the label. Angular: `*bsNavbarDropdownLabelTemplate`
   (`BsNavbarDropdownLabelTemplateDirective`); React `labelTemplate`; Vue `#labelTemplate`.

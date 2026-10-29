@@ -32,7 +32,7 @@ Each component milestone is the same checklist, done for every component in the 
 - [x] S11 theme cookie SSR and code-snippet highlighting
 - [ ] S4 virtual window in React/Vue (before M5)
 - [x] S10 query-builder editor contract (before M5): a front-native `editor` slot; the leak spec is moot (below)
-- [ ] S7 scheduler static grid go/no-go (before M6)
+- [x] S7 scheduler static grid: go, by building it (every view a server-rendered static grid, M6)
 - [x] S13 single template in the core, compiled into the four fronts (navbar prototype); widened into D10 / M3b
 - [ ] Write each verdict into PRD §7, and update D1–D9 and C1–C8 accordingly
 
@@ -207,7 +207,13 @@ Every item below is authored as a D10 component source once M3b lands.
   - [x] **Core + styles:** `ribbon.core.ts` carries the reflow, overflow, KeyTips, roving focus, contextual announcements; `ribbon.scoped.scss` is the old CSS ported, with item sizes derived in CSS from the group's `data-resolved-size` and the layout (no `size` rewrites), and the accent read from a consumer `--bs-ribbon-accent` (the `appAccent` input is gone).
   - [x] **Specs:** the moved pure specs, `mp-ribbon.spec.ts` (Lit front: ARIA, keyboard, contextual, KeyTips, items, QAT), the three ng e2e specs rewritten for the light DOM (the axe spec's `aria-valid-attr-value` exemption is gone), and the demo spec's tab-strip assertion. *Open for M9:* the Win32 visual baselines need regenerating.
   - [x] **Demos:** all three ported; QAT named by `aria-label` (its `label` attribute named nothing).
-- [ ] scheduler, per S7 and Q1
+- [x] scheduler (fcb66271, a4b3c944, 17eb4b92). S7 answered *go* by building it: month, week, day, timeline and year are static grids with events positioned from the core's geometry, so the server renders the whole grid.
+  - **Core:** `ui-core/scheduler` holds the pure modules (state, drag, input, geometry, keyboard grid) with their specs. The view is one D10 source. Pointer drag, resize and the keyboard grid stay attach-time behaviour that commits through the core. Selection follows `focusin`, and keys read `document.activeElement`.
+  - **Two-way models:** `view`, `date`, `selectedRange` and `selectedEvent` are `model: true`. A model is written back through `api.setState`, never `api.emit`. Removing the `view`/`date` attribute is not a command: the core keeps what it shows and writes it back (the properties conformance pins `mp-scheduler@view`).
+  - **Guards:** `slotDuration` outside an integer 60..86400 falls back to the default; a tiny or negative step hung the grid loop.
+  - **Test hooks:** the root carries `data-mp-hydrated` once live (never in server HTML). Event buttons carry `data-start`/`data-end` and the editor's date fields `data-value`. Angular outputs are `output()`s, not DOM events, so the e2e observes committed values in the DOM.
+  - **Specs:** the 13 old element specs and their fixtures were replaced by `mp-scheduler.spec.ts` (Lit front, 14 tests). The React event-map and Vue `BsScheduler` behaviour specs were deleted with the wrappers. The ng e2e (views, resize, keyboard walkthrough) and the three axe gates were rewritten for the light DOM; `aria-valid-attr-value` is audited again. Touch resize uses CDP `Input.dispatchTouchEvent`. *Open for M9:* run them.
+  - **Demos:** all three ported to the generated fronts, with inline styles moved to classes.
 
 ## M7 — Removal sweep (PRD §10)
 
