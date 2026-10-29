@@ -12,7 +12,7 @@ import { test, expect, type Page } from '@playwright/test';
 // .NET backend. The component is a generated Angular front (#437): its markup is
 // light DOM, the root bag on the `bs-tree-select.tree-select` host, and the panel is a native popover.
 
-const select = (page: Page, index: number) => page.locator('bs-tree-select.tree-select').nth(index);
+const select = (page: Page, index: number) => page.locator('bs-tree-select.tree-select[data-mp-hydrated]').nth(index);
 
 async function openTreeSelect(page: Page, index: number) {
   const ts = select(page, index);

@@ -49,6 +49,10 @@ export function render(url: string): Promise<string> {
         </StaticRouter>
       </StrictMode>,
       {
+        // React outlines a COMPLETED boundary bigger than this (default 12.8 KB)
+        // into a hidden <div id="S:n"> revealed by an inline script: with JS off
+        // the page stays hidden. A buffered render gains nothing from chunking.
+        progressiveChunkSize: Number.POSITIVE_INFINITY,
         onAllReady() {
           pipe(writable);
         },

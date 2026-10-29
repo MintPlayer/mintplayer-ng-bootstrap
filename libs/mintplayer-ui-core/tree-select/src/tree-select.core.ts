@@ -143,9 +143,10 @@ export const treeSelectCore = defineCore<
     tree: EMPTY_TREE_SLICE,
     announcement: '',
   }),
-  view: ({ inputs, state, id, label }) => ({
+  view: ({ inputs, state, id, hydrated, label }) => ({
     view: connectTreeSelect({
       id,
+      hydrated,
       mode: parseTreeSelectMode(inputs.mode),
       variant: parseTreeSelectVariant(inputs.variant),
       value: valueList(state.value),

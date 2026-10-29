@@ -1,6 +1,15 @@
 # PRD — Headless core + four fronts for the whole catalog (#437)
 
 **Status:** Complete, pending the CI run (2026-10-29). Every component is a ui-core core plus four fronts; Waves A–D, the removal sweep (M7) and the docs (M8) have landed, and the local M9 verification passed. *As built:* the dropdown-menu, `mp-tab-control` and `mp-typeahead` stay hand-written (the dropdown-menu over a ui-core core; the other two slot-based or light-tier Lit); the file manager's toolbar is disabled until hydrated rather than usable with no JS. *Open:* S4 (the 10k-row frame-time measurement was not taken), S15 (group styles not built; every bag already carries `data-mps`) and S19 (a fixture-workspace publish run, the owner's call before ui-core is first published). Verdicts are in §7; the plan file tracks each item.
+**CI round 1 (2026-10-29), as built:** the first PR run surfaced defects the local sweep could not, all fixed on the branch:
+- **Angular event replay shifts hydration paths.** platform-server inserts its `__jsaction_bootstrap` script after computing the body-relative paths of projected nodes rendered outside their host (an accordion tab's body, a tab page's body), so hydration landed one node off and the page stayed inert. `useScopedStyles` removes that script before any front hydrates (`repairEventReplayBodyPaths`); `e2e/hydration.spec.ts` pins it.
+- **`v-html` in Angular** compiles to `[innerHTML] | mpTrustedHtml`: the sanitiser dropped every core-produced `<svg>` (flags, file-type and treeview icons).
+- **Unlayered Bootstrap copies in old Angular sheets.** `bs-form` compiled the forms partials page-wide and unlayered, so its `.form-control { width: 100% }` beat the layered baseline and broke every input group. Its sheet and the `bs-range` and `bs-floating-label` ones are gone (C4/C5). The remaining hand-written Angular components still re-declare partials, but scoped to `:host`.
+- **Readiness marks.** Specs that drove a server-rendered control before hydration raced it, so shell, trend, hierarchy, multi-range, phone-input and tree-select now write `data-mp-hydrated`, and the specs wait on it.
+- **`<selectedcontent>` is a snapshot.** Chromium takes it on selection change only, so the phone input's flag (lazy chunk, after hydration) never reached the closed face. The core re-takes it when the selected option's content changes.
+- **Popover placement** re-runs when the panel resizes. A panel whose content renders from the open state measures empty at `toggle`, which made the datatable filter panel open off-screen instead of flipping.
+- **Vue hand-written fronts** take their ids from `useId`, not the instance uid, so the server's `for`/`id` pairs survive hydration.
+
 **Issue:** #437. **Pilot:** #436 typeahead (`docs/prd/typeahead-wc-436.md`, PR #438).
 **Plan:** `docs/prd/headless-catalog-437-plan.md`.
 **Delivery:** one pull request, per the workspace rule. Milestones are committed separately and the PR is squashed.

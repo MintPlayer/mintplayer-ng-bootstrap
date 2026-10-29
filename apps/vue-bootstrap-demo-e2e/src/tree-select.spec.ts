@@ -2,7 +2,9 @@ import { test, expect } from '@playwright/test';
 
 // The tree-select renders in the light DOM (#437): its trigger, panel and rows
 // are ordinary descendants of `.tree-select`. We assert against the
-// in-memory demos only so the spec never depends on the .NET backend.
+// in-memory demos only so the spec never depends on the .NET backend. Each
+// demo is addressed once its core is live (data-mp-hydrated): a click on the
+// server-rendered trigger before then does nothing.
 
 test('tree-select page renders its heading and four demo sections', async ({ page }) => {
   await page.goto('/basic/tree-select');
@@ -21,7 +23,7 @@ test('multiple demo opens a panel and selecting a node adds a chip', async ({ pa
   });
 
   // Second section is the in-memory "Multiple — chips" demo.
-  const demo = page.locator('section').nth(1).locator('.tree-select');
+  const demo = page.locator('section').nth(1).locator('.tree-select[data-mp-hydrated]');
 
   // Open the dropdown by clicking the textbox trigger.
   await demo.locator('.ts-control').click();
@@ -44,7 +46,7 @@ test('checkbox + cascade demo selects descendants when a parent is checked', asy
   });
 
   // Third section is the "Checkbox — cascade" demo.
-  const demo = page.locator('section').nth(2).locator('.tree-select');
+  const demo = page.locator('section').nth(2).locator('.tree-select[data-mp-hydrated]');
 
   await demo.locator('.ts-control').click();
   const panel = demo.locator('.ts-panel');

@@ -1,6 +1,7 @@
 import type { CoreBag } from '@mintplayer/ui-core/component';
 import { indexTree, type TreeIndex, type TreeNode } from '@mintplayer/ui-core/tree';
 import { connectTreeview, type TreeSlice, type TreeviewRow, type TreeviewView } from '@mintplayer/ui-core/treeview';
+import { hydratedAttr } from '@mintplayer/ui-core/store';
 import type { TreeSelectMode, TreeSelectVariant } from './types';
 
 /**
@@ -162,6 +163,8 @@ export interface TreeSelectOptions {
   readonly id: string;
   readonly mode: TreeSelectMode;
   readonly variant: TreeSelectVariant;
+  /** The core has attached: written as the readiness mark, never in server HTML. */
+  readonly hydrated?: boolean;
   readonly value: readonly TreeNode[];
   /** The displayed nodes (search results or the browse tree), loaded children merged in. */
   readonly nodes: readonly TreeNode[];
@@ -240,6 +243,7 @@ export function connectTreeSelect(o: TreeSelectOptions): TreeSelectView {
       'data-variant': o.variant,
       'data-open': o.open ? 'true' : 'false',
       'data-disabled': o.disabled ? 'true' : 'false',
+      ...hydratedAttr(o.hydrated ?? false),
     }),
     live: scoped({ class: 'visually-hidden', 'aria-live': 'polite', 'aria-atomic': 'true' }),
     announcement: o.announcement,

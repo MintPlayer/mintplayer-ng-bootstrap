@@ -2,7 +2,9 @@ import { test, expect } from '@playwright/test';
 
 // The tree-select demo lives at /basic/tree-select. Each demo is wrapped in a
 // `<section data-demo="…">`. The tree-select renders in the light DOM (#437), so
-// its trigger, panel and rows are ordinary descendants of `.tree-select`.
+// its trigger, panel and rows are ordinary descendants of `.tree-select`, which
+// is addressed once its core is live (data-mp-hydrated): a click on the
+// server-rendered trigger before then does nothing.
 
 test.beforeEach(async ({ page }) => {
   await page.goto('/basic/tree-select');
@@ -17,7 +19,7 @@ test('renders all four demo sections', async ({ page }) => {
 });
 
 test('opening the multiple demo shows the panel with in-memory roots', async ({ page }) => {
-  const select = page.locator('section[data-demo="multiple"] .tree-select');
+  const select = page.locator('section[data-demo="multiple"] .tree-select[data-mp-hydrated]');
   await select.locator('.ts-control').click();
 
   const panel = select.locator('.ts-panel');
@@ -27,7 +29,7 @@ test('opening the multiple demo shows the panel with in-memory roots', async ({ 
 });
 
 test('selecting nodes in the multiple demo adds chips', async ({ page }) => {
-  const select = page.locator('section[data-demo="multiple"] .tree-select');
+  const select = page.locator('section[data-demo="multiple"] .tree-select[data-mp-hydrated]');
   await select.locator('.ts-control').click();
 
   const panel = select.locator('.ts-panel');
@@ -45,7 +47,7 @@ test('selecting nodes in the multiple demo adds chips', async ({ page }) => {
 });
 
 test('checkbox + cascade selects descendants', async ({ page }) => {
-  const select = page.locator('section[data-demo="checkbox"] .tree-select');
+  const select = page.locator('section[data-demo="checkbox"] .tree-select[data-mp-hydrated]');
   await select.locator('.ts-control').click();
 
   const panel = select.locator('.ts-panel');
@@ -61,7 +63,7 @@ test('checkbox + cascade selects descendants', async ({ page }) => {
 });
 
 test('button variant opens a panel containing the search box', async ({ page }) => {
-  const select = page.locator('section[data-demo="button"] .tree-select');
+  const select = page.locator('section[data-demo="button"] .tree-select[data-mp-hydrated]');
   await select.locator('.ts-button').click();
 
   const panel = select.locator('.ts-panel');
@@ -81,7 +83,7 @@ test('single + server-search demo opens (backend-gated)', async ({ page, baseURL
   }
   test.skip(!backendUp, 'API backend not reachable; skipping server-search assertions');
 
-  const select = page.locator('section[data-demo="single"] .tree-select');
+  const select = page.locator('section[data-demo="single"] .tree-select[data-mp-hydrated]');
   await select.locator('.ts-control').click();
   await expect(select.locator('.ts-panel')).toBeVisible();
 });
