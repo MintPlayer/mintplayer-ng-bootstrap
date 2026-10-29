@@ -9,9 +9,9 @@ import {
   type ResourceGroup,
   type SchedulerEvent,
   type SchedulerOptions,
+  type TimeRange,
   type ViewType,
 } from '@mintplayer/ui-core/scheduler-core';
-import type { MpScheduler } from '@mintplayer/web-components/scheduler';
 import './SchedulerPage.css';
 
 const today = new Date();
@@ -50,9 +50,8 @@ const RESOURCE_SEED: (Resource | ResourceGroup)[] = [
   },
 ];
 
-// Module constant, NOT an inline literal: @lit/react re-asserts element
-// properties on every render, so a fresh object here would re-set `options` on
-// the WC (and re-resolve its permission table) on every keystroke elsewhere.
+// Module constant, NOT an inline literal: a fresh object on every render is a
+// new `options` input, which re-resolves the permission table each time.
 const OPTIONS: Partial<SchedulerOptions> = {
   moreLinkBehavior: 'popover',
   // Resource-tree editing is off in the component by default; this is opting in.
@@ -80,39 +79,33 @@ const insertInto = (
   );
 };
 
-const SOURCE = `// \`view\` and \`date\` are controlled props: @lit/react re-asserts
-// element properties on every render, and the WC changes both from
-// within (view switcher, prev/next/today navigation) — pair them with
-// onViewChange (the React equivalent of Angular's [(view)]/[(date)]),
-// whose detail carries both, or a re-render would clobber a WC-driven
-// change back to the stale literal.
+const SOURCE = `// view, date and selectedRange are two-way: pass the value and take it
+// back from on<Name>Change, like any controlled React input.
 const [view, setView] = useState<ViewType>('day');
 const [date, setDate] = useState(new Date());
+const [range, setRange] = useState<TimeRange | null>(null);
 
 <BsScheduler
   events={events}
-  view={view}
-  date={date}
-  onViewChange={e => { setView(e.detail.view); setDate(e.detail.date); }}
+  view={view} onViewChange={setView}
+  date={date} onDateChange={setDate}
+  selectedRange={range} onSelectedRangeChange={setRange}
   onEventCreate={e => {
     setEvents([...events, {
       id: generateEventId(), title: 'New Event',
-      start: e.detail.range.start, end: e.detail.range.end,
+      start: e.range.start, end: e.range.end,
       color: '#0d6efd',
     }]);
-    (e.target as MpScheduler).clearSelection();
+    setRange(null); // clears the scheduler's selection
   }}
 />`;
 
 export function SchedulerPage() {
   const [events, setEvents] = useState<SchedulerEvent[]>(SEED);
-  // Controlled view + date. @lit/react re-applies element properties on
-  // every render without dirty-checking, so both must track the WC's own
-  // changes (via onViewChange, which fires for date navigation too) —
-  // otherwise a re-render after a drag or a prev/next click would
-  // re-assert a stale literal and snap the scheduler back.
+  // Two-way inputs, controlled: each takes its value back from on<Name>Change.
   const [view, setView] = useState<ViewType>('day');
   const [date, setDate] = useState(new Date());
+  const [range, setRange] = useState<TimeRange | null>(null);
   const [resources, setResources] = useState<(Resource | ResourceGroup)[]>(RESOURCE_SEED);
 
   // App-owned double-click editor. Since phase 2 the WC ships its OWN editor
@@ -148,12 +141,12 @@ export function SchedulerPage() {
     <div className="demo-page">
       <h1>Scheduler</h1>
       <p className="text-body-secondary">
-        Calendar/agenda WC with day / week / month / year / timeline
-        views. Drag across the grid to select a range — the WC emits
-        <code> event-create</code> with the range; the consumer decides
+        Calendar/agenda with day / week / month / year / timeline
+        views. Drag across the grid to select a range — the scheduler calls
+        <code> onEventCreate</code> with the range; the consumer decides
         whether to materialise an event (or open a confirmation modal).
-        Events emit a discriminated union of CustomEvents — each mapped
-        onto a typed React <code>on*</code> prop.
+        Every output is a typed React <code>on*</code> prop that receives
+        its payload directly.
       </p>
 
       <details className="mb-2">
@@ -163,8 +156,8 @@ export function SchedulerPage() {
           <li><strong>Cell navigation</strong> — week / day: <kbd>↑</kbd> / <kbd>↓</kbd> move one time slot, <kbd>←</kbd> / <kbd>→</kbd> one day (week only). Timeline: <kbd>←</kbd> / <kbd>→</kbd> move one slot in time, <kbd>↑</kbd> / <kbd>↓</kbd> one resource. Month: <kbd>←</kbd> / <kbd>→</kbd> walk days, <kbd>↑</kbd> / <kbd>↓</kbd> one week. Year: <kbd>←</kbd> / <kbd>→</kbd> walk months, <kbd>↑</kbd> / <kbd>↓</kbd> three months. Crossing a month or year boundary advances the displayed period.</li>
           <li><strong>Jumps</strong>: <kbd>Home</kbd> / <kbd>End</kbd> first / last slot of the column · <kbd>Ctrl</kbd> + <kbd>Home</kbd> / <kbd>Ctrl</kbd> + <kbd>End</kbd> first / last cell of the view · <kbd>PageUp</kbd> / <kbd>PageDown</kbd> previous / next period</li>
           <li><strong>Selecting a range</strong>: <kbd>Shift</kbd> + arrow extends a time range, crossing day boundaries on the week view. <kbd>Esc</kbd> clears it.</li>
-          <li><strong>Committing</strong>: <kbd>Enter</kbd> on a cell or a selection emits <code>event-create</code> carrying the range — a <em>request</em>, not a write. The scheduler stores nothing itself; this page's handler materialises the event and then calls <code>clearSelection()</code>.</li>
-          <li><strong>On a focused event</strong>: <kbd>←</kbd> / <kbd>→</kbd> walk to the previous / next event by start time (no wrap) · <kbd>Delete</kbd> / <kbd>Backspace</kbd> emits <code>event-delete</code> · <kbd>Esc</kbd> returns focus to the grid</li>
+          <li><strong>Committing</strong>: <kbd>Enter</kbd> on a cell or a selection emits <code>onEventCreate</code> carrying the range — a <em>request</em>, not a write. The scheduler stores nothing itself; this page's handler materialises the event and then clears the two-way <code>selectedRange</code>.</li>
+          <li><strong>On a focused event</strong>: <kbd>←</kbd> / <kbd>→</kbd> walk to the previous / next event by start time (no wrap) · <kbd>Delete</kbd> / <kbd>Backspace</kbd> emits <code>onEventDelete</code> · <kbd>Esc</kbd> returns focus to the grid</li>
           <li><strong>Move mode</strong>: <kbd>M</kbd> or <kbd>Enter</kbd> on a focused event enters move mode. Arrow keys nudge the event in time (or across resources on the timeline), <kbd>Shift</kbd> + arrow resizes the end edge, <kbd>Alt</kbd> + <kbd>Shift</kbd> + arrow resizes the start edge. <kbd>Enter</kbd> commits, <kbd>Esc</kbd> cancels.</li>
           <li><strong>Touch resize</strong>: tap an event to select it, then drag the round handle at its top or bottom edge (left / right on the timeline) — the resize starts immediately, no hold needed. Moving an event by touch stays hold-then-drag (600&nbsp;ms).</li>
           <li><strong>Mouse resize</strong>: drag the top or bottom edge of any resizable event (selected or not); the selected event shows the round handles as the visual affordance.</li>
@@ -173,48 +166,50 @@ export function SchedulerPage() {
         </ul>
       </details>
 
-      <section style={{ height: 540 }}>
+      <section className="scheduler-demo-section">
         <h2>Today's agenda</h2>
         <BsScheduler
-          {...{ events, view, date, resources, options: OPTIONS, eventEditor: false } as React.ComponentProps<
-            typeof BsScheduler
-          >}
-          onViewChange={(e) => {
-            setView(e.detail.view);
-            setDate(e.detail.date);
-          }}
-          onEventDblClick={(e) => openEditor(e.detail.event)}
+          events={events}
+          resources={resources}
+          options={OPTIONS}
+          eventEditor={false}
+          view={view}
+          onViewChange={setView}
+          date={date}
+          onDateChange={setDate}
+          selectedRange={range}
+          onSelectedRangeChange={setRange}
+          onEventDblClick={(e) => openEditor(e.event)}
           onEventUpdate={(e) => {
             setEvents((current) =>
-              current.map((ev) => (ev.id === e.detail.event.id ? e.detail.event : ev)),
+              current.map((ev) => (ev.id === e.event.id ? e.event : ev)),
             );
           }}
           onEventCreate={(e) => {
             const newEvent: SchedulerEvent = {
               id: generateEventId(),
               title: 'New Event',
-              start: e.detail.range.start,
-              end: e.detail.range.end,
+              start: e.range.start,
+              end: e.range.end,
               // No colour: the event inherits its resource's colour (or the
               // default) via resolveEventColor — stamping one here would
               // defeat resource colouring for every created event.
-              ...(e.detail.resourceId ? { resourceId: e.detail.resourceId } : {}),
+              ...(e.resourceId ? { resourceId: e.resourceId } : {}),
             };
             setEvents((current) => [...current, newEvent]);
-            // Per PRD scheduler-controlled-selection: the WC no longer auto-
-            // clears its selection after `event-create`. Clear it here so a
-            // follow-up gesture doesn't re-emit the same range.
-            (e.target as MpScheduler).clearSelection();
+            // The scheduler keeps its selection after a create request; clearing
+            // the two-way range clears it, so a follow-up gesture starts fresh.
+            setRange(null);
           }}
           onEventDelete={(e) =>
-            setEvents((current) => current.filter((ev) => ev.id !== e.detail.event.id))
+            setEvents((current) => current.filter((ev) => ev.id !== e.event.id))
           }
           // Resource-tree requests: like event-create these are asks, not
-          // writes. The WC never edits its own `resources`, so the id and the
+          // writes. The scheduler never edits its own `resources`, so the id and the
           // initial colour are the consumer's to choose.
           onResourceCreate={(e) =>
             setResources((current) =>
-              insertInto(current, e.detail.parentId, {
+              insertInto(current, e.parentId, {
                 id: generateResourceId(),
                 title: 'New resource',
                 color: '#20c997',
@@ -223,7 +218,7 @@ export function SchedulerPage() {
           }
           onGroupCreate={(e) =>
             setResources((current) =>
-              insertInto(current, e.detail.parentId, {
+              insertInto(current, e.parentId, {
                 id: generateGroupId(),
                 title: 'New group',
                 children: [],
@@ -232,8 +227,8 @@ export function SchedulerPage() {
           }
           onResourceUpdate={(e) => {
             const apply = (item: Resource | ResourceGroup): Resource | ResourceGroup =>
-              item.id === e.detail.resource.id
-                ? { ...item, ...e.detail.changes }
+              item.id === e.resource.id
+                ? { ...item, ...e.changes }
                 : 'children' in item
                   ? { ...item, children: item.children.map(apply) }
                   : item;
@@ -242,20 +237,20 @@ export function SchedulerPage() {
           onResourceDelete={(e) => {
             const prune = (items: (Resource | ResourceGroup)[]): (Resource | ResourceGroup)[] =>
               items
-                .filter((item) => item.id !== e.detail.resource.id)
+                .filter((item) => item.id !== e.resource.id)
                 .map((item) =>
                   'children' in item ? { ...item, children: prune(item.children) } : item,
                 );
             setResources((current) => prune(current));
             // Move the deleted subtree's events to "(No resource)" instead of
-            // leaving them dangling (the WC buckets dangling ids defensively,
+            // leaving them dangling (the scheduler buckets dangling ids defensively,
             // with a console warning — this keeps the data honest).
             const removed = new Set<string>();
             const collect = (item: Resource | ResourceGroup): void => {
               removed.add(item.id);
               if ('children' in item) item.children.map(collect);
             };
-            collect(e.detail.resource);
+            collect(e.resource);
             setEvents((current) =>
               current.map((ev) => {
                 if (!ev.resourceId || !removed.has(ev.resourceId)) return ev;
@@ -265,7 +260,7 @@ export function SchedulerPage() {
               }),
             );
           }}
-          style={{ display: 'block', height: '100%' }}
+          className="scheduler-demo"
         />
       </section>
 

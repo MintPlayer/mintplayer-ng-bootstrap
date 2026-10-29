@@ -152,7 +152,7 @@ const TARGETS: Record<string, string> = {
   BsRibbonTemplateItem: 'div.ribbon-template-item',
   BsRibbonToggleButton: 'div.ribbon-toggle-button-host',
   BsQuickAccessToolbar: 'div.qat',
-  BsScheduler: 'mp-scheduler',
+  BsScheduler: 'div.scheduler',
   BsSelect: 'select',
   BsShell: 'div.shell',
   BsSignaturePad: 'div.mp-signature-pad',

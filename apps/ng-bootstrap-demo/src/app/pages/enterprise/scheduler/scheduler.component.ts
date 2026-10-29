@@ -12,14 +12,15 @@ import { BsCodeSnippetComponent } from '@mintplayer/ng-bootstrap/code-snippet';
 import { dedent } from 'ts-dedent';
 import {
   BsSchedulerComponent,
-  SchedulerEventSelectedEvent,
-  SchedulerEventCreateEvent,
-  SchedulerEventUpdateEvent,
-  SchedulerEventDeleteEvent,
-  SchedulerResourceCreateEvent,
-  SchedulerResourceUpdateEvent,
-  SchedulerResourceDeleteEvent,
-  DateClickEvent,
+  SchedulerEventSelectedDetail,
+  SchedulerEventCreateDetail,
+  SchedulerEventUpdateDetail,
+  SchedulerEventDeleteDetail,
+  SchedulerResourceCreateDetail,
+  SchedulerResourceUpdateDetail,
+  SchedulerResourceDeleteDetail,
+  SchedulerGroupCreateDetail,
+  SchedulerDateClickDetail,
 } from '@mintplayer/ng-bootstrap/scheduler';
 import {
   ViewType,
@@ -288,11 +289,11 @@ export class SchedulerComponent {
   }
 
   // Event handlers
-  onEventSelected(event: SchedulerEventSelectedEvent) {
+  onEventSelected(event: SchedulerEventSelectedDetail) {
     this.log(`Event selected: ${event.event.title}`);
   }
 
-  onEventCreate(event: SchedulerEventCreateEvent) {
+  onEventCreate(event: SchedulerEventCreateDetail) {
     // The WC emits a *request* with the selected range — this demo turns it
     // into a stored event with its own defaults (id, title, colour). A real
     // app could open a modal, gate on permissions, or skip creation entirely.
@@ -313,13 +314,13 @@ export class SchedulerComponent {
     this.schedulerComponent()?.clearSelection();
   }
 
-  onEventUpdate(event: SchedulerEventUpdateEvent) {
+  onEventUpdate(event: SchedulerEventUpdateDetail) {
     // Update the event wherever it lives (flat list or resource tree)
     this.applyEventUpdate(event.event);
     this.log(`Event updated: ${event.event.title}`);
   }
 
-  onEventDelete(event: SchedulerEventDeleteEvent) {
+  onEventDelete(event: SchedulerEventDeleteDetail) {
     // Both stores: the flat array AND the resource tree — sample events are
     // authored nested, and sweeping only the flat list silently ignored a
     // delete of any of them (the popover's delete button found this).
@@ -333,7 +334,7 @@ export class SchedulerComponent {
     this.log(`Event deleted: ${event.event.title}`);
   }
 
-  onDateClick(event: DateClickEvent) {
+  onDateClick(event: SchedulerDateClickDetail) {
     this.log(`Date clicked: ${this.formatDate(event.date)}`);
   }
 
@@ -354,7 +355,7 @@ export class SchedulerComponent {
   editStart = signal('');
   editEnd = signal('');
 
-  onEventDblClick(event: SchedulerEventSelectedEvent) {
+  onEventDblClick(event: SchedulerEventSelectedDetail) {
     if (!this.builtInEditor()) this.openEditor(event.event);
   }
 
@@ -445,7 +446,7 @@ export class SchedulerComponent {
   // signal themselves — including inventing the id and the initial colour,
   // which the WC deliberately does not do (it must stay a pure function of
   // its inputs).
-  onResourceCreate(e: SchedulerResourceCreateEvent) {
+  onResourceCreate(e: SchedulerResourceCreateDetail) {
     const resource: Resource = {
       id: generateResourceId(),
       title: 'New resource',
@@ -455,13 +456,13 @@ export class SchedulerComponent {
     this.log(`Resource created${e.parentId ? ' in group ' + e.parentId : ''}`);
   }
 
-  onGroupCreate(e: SchedulerResourceCreateEvent) {
+  onGroupCreate(e: SchedulerGroupCreateDetail) {
     const group: ResourceGroup = { id: generateGroupId(), title: 'New group', children: [] };
     this.resources.update((resources) => this.insertInto(resources, e.parentId, group));
     this.log(`Group created${e.parentId ? ' in group ' + e.parentId : ''}`);
   }
 
-  onResourceUpdate(e: SchedulerResourceUpdateEvent) {
+  onResourceUpdate(e: SchedulerResourceUpdateDetail) {
     const { id } = e.resource;
     const apply = (item: Resource | ResourceGroup): Resource | ResourceGroup =>
       item.id === id
@@ -482,7 +483,7 @@ export class SchedulerComponent {
    * A consumer could equally delete the events or reassign them; it stays
    * their call.
    */
-  onResourceDelete(e: SchedulerResourceDeleteEvent) {
+  onResourceDelete(e: SchedulerResourceDeleteDetail) {
     const { id } = e.resource;
     const removedIds = new Set(this.collectResourceIds(e.resource));
 
@@ -614,9 +615,9 @@ export class SchedulerComponent {
       [date]="date()"
       [events]="events()"
       [options]="options()"
-      (eventCreate)="onEventCreate($event)"
-      (eventUpdate)="onEventUpdate($event)"
-      (eventDelete)="onEventDelete($event)">
+      (eventcreate)="onEventCreate($event)"
+      (eventupdate)="onEventUpdate($event)"
+      (eventdelete)="onEventDelete($event)">
     </bs-scheduler>
   `;
 
@@ -624,9 +625,9 @@ export class SchedulerComponent {
     import { Component, computed, signal } from '@angular/core';
     import {
       BsSchedulerComponent,
-      SchedulerEventCreateEvent,
-      SchedulerEventUpdateEvent,
-      SchedulerEventDeleteEvent,
+      SchedulerEventCreateDetail,
+      SchedulerEventUpdateDetail,
+      SchedulerEventDeleteDetail,
     } from '@mintplayer/ng-bootstrap/scheduler';
     import {
       ViewType,
@@ -654,7 +655,7 @@ export class SchedulerComponent {
 
       // The WC emits a *request* with the selected range. The consumer
       // decides whether to materialise an event (or open a dialog first).
-      onEventCreate(e: SchedulerEventCreateEvent): void {
+      onEventCreate(e: SchedulerEventCreateDetail): void {
         this.events.update((events) => [...events, {
           id: generateEventId(),
           title: 'New Event',
@@ -664,12 +665,12 @@ export class SchedulerComponent {
         }]);
       }
 
-      onEventUpdate(e: SchedulerEventUpdateEvent): void {
+      onEventUpdate(e: SchedulerEventUpdateDetail): void {
         this.events.update((events) =>
           events.map((ev) => (ev.id === e.event.id ? e.event : ev)));
       }
 
-      onEventDelete(e: SchedulerEventDeleteEvent): void {
+      onEventDelete(e: SchedulerEventDeleteDetail): void {
         this.events.update((events) => events.filter((ev) => ev.id !== e.event.id));
       }
     }
@@ -681,7 +682,7 @@ export class SchedulerComponent {
     // clearSelection() so subsequent gestures don't re-emit the same range.
     private scheduler = viewChild<BsSchedulerComponent>(BsSchedulerComponent);
 
-    onEventCreate(e: SchedulerEventCreateEvent): void {
+    onEventCreate(e: SchedulerEventCreateDetail): void {
       this.api.createEvent(e.range).then((created) => {
         this.events.update((events) => [...events, created]);
         this.scheduler()?.clearSelection();

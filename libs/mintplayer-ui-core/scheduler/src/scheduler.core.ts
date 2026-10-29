@@ -171,6 +171,10 @@ function mergedOptions(inputs: Readonly<SchedulerInputs>): Partial<SchedulerOpti
   const day = inputs.firstDayOfWeek;
   if (day !== null && Number.isInteger(day) && day >= 0 && day <= 7) options.firstDayOfWeek = (day % 7) as DayOfWeek;
   if (inputs.slotDuration) options.slotDuration = inputs.slotDuration;
+  // Seconds per slot drives every grid loop: below a minute the grid is tens of
+  // thousands of cells, and zero or a negative step never terminates. Ignore it.
+  const slot = options.slotDuration;
+  if (slot !== undefined && !(Number.isInteger(slot) && slot >= 60 && slot <= 86400)) delete options.slotDuration;
   if (inputs.timeFormat === '12h' || inputs.timeFormat === '24h') options.timeFormat = inputs.timeFormat;
   return options;
 }
@@ -1733,6 +1737,9 @@ function attachScheduler(api: Api): () => void {
       if (inputs.events !== prev.events) manager.setEvents(inputs.events ?? []);
       if (inputs.view && inputs.view !== state().view) manager.setView(inputs.view);
       if (inputs.date && inputs.date.getTime() !== state().date.getTime()) manager.setDate(new Date(inputs.date));
+      // A cleared view or date is not a command: the scheduler keeps what it shows,
+      // and writes that back so the two-way model never reads null over a live grid.
+      if ((!inputs.view && prev.view) || (!inputs.date && prev.date)) api.setState({ view: state().view, date: state().date });
       if (inputs.selectedEvent !== prev.selectedEvent && (inputs.selectedEvent?.id ?? null) !== (state().selectedEvent?.id ?? null)) {
         manager.setSelectedEvent(inputs.selectedEvent);
       }

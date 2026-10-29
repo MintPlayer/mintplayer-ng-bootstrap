@@ -1,7 +1,6 @@
 import { Component, type Type } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 
-import { BsSchedulerComponent } from '@mintplayer/ng-bootstrap/scheduler';
 
 /**
  * Every Angular wrapper whose template root is a `<mp-*>` / `<mint-*>` element
@@ -99,7 +98,6 @@ interface WrapperCase {
  * silently fall behind.
  */
 const WRAPPERS: WrapperCase[] = [
-  { selector: 'bs-scheduler', tag: 'mp-scheduler', component: BsSchedulerComponent },
 ];
 
 function probeAttributes(): string {

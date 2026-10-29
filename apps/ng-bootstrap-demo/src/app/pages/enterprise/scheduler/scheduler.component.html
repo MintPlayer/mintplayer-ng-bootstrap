@@ -4,8 +4,8 @@
   Multi-view calendar (year / month / week / day / timeline) with drag-to-create,
   drag-to-move, drag-to-resize, and full keyboard navigation. Events and
   resources are inputs; the component emits semantic
-  <code>(eventCreate)</code> / <code>(eventUpdate)</code> /
-  <code>(eventDelete)</code> requests that the consumer translates into its
+  <code>(eventcreate)</code> / <code>(eventupdate)</code> /
+  <code>(eventdelete)</code> requests that the consumer translates into its
   own data mutations.
 </p>
 
@@ -112,17 +112,17 @@
           [resources]="resources()"
           [options]="options()"
           [(selectedEvent)]="selectedEvent"
-          (eventSelected)="onEventSelected($event)"
-          (eventDblClick)="onEventDblClick($event)"
-          (eventCreate)="onEventCreate($event)"
-          (eventUpdate)="onEventUpdate($event)"
-          (eventDelete)="onEventDelete($event)"
-          (dateClick)="onDateClick($event)"
-          (viewChange)="onViewChange($event)"
-          (resourceCreate)="onResourceCreate($event)"
-          (groupCreate)="onGroupCreate($event)"
-          (resourceUpdate)="onResourceUpdate($event)"
-          (resourceDelete)="onResourceDelete($event)"
+          (eventselected)="onEventSelected($event)"
+          (eventdblclick)="onEventDblClick($event)"
+          (eventcreate)="onEventCreate($event)"
+          (eventupdate)="onEventUpdate($event)"
+          (eventdelete)="onEventDelete($event)"
+          (dateclick)="onDateClick($event)"
+          (viewchange)="onViewChange($event)"
+          (resourcecreate)="onResourceCreate($event)"
+          (groupcreate)="onGroupCreate($event)"
+          (resourceupdate)="onResourceUpdate($event)"
+          (resourcedelete)="onResourceDelete($event)"
           [readonly]="readonly()"
           [eventEditor]="builtInEditor()">
         </bs-scheduler>

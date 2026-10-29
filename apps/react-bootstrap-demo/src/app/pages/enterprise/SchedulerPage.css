@@ -19,3 +19,12 @@
   background: var(--bs-body-bg);
   color: var(--bs-body-color);
 }
+
+.scheduler-demo-section {
+  height: 540px;
+}
+
+.scheduler-demo {
+  display: block;
+  height: 100%;
+}

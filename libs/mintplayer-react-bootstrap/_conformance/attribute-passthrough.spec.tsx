@@ -231,7 +231,7 @@ const CASES: Case[] = [
   bare('BsRibbonGallery', 'div.ribbon-gallery-host', BsRibbonGallery),
   { ...bare('BsRibbonGalleryItem', 'div.ribbon-gallery-item', BsRibbonGalleryItem), fixedRole: 'none' },
   bare('BsRibbonTemplateItem', 'div.ribbon-template-item', BsRibbonTemplateItem),
-  bare('BsScheduler', 'mp-scheduler', BsScheduler),
+  bare('BsScheduler', 'div.scheduler', BsScheduler),
   bare('BsSelect', 'select', BsSelect),
   bare('BsShell', 'div.shell', BsShell),
   bare('BsSignaturePad', 'div.mp-signature-pad', BsSignaturePad),

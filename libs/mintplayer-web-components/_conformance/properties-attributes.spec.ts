@@ -109,11 +109,7 @@ const OVERRIDES: Record<string, Override> = {
   'mp-scheduler@view': {
     value: 'year',
     restored: 'year',
-    reason: 'the view is navigation state the toolbar also changes; the attribute is a one-way command, so removing it keeps the current view',
-  },
-  'mp-scheduler@date': {
-    restored: new Date('2024-01-15T09:30:00'),
-    reason: 'the date is navigation state the toolbar also changes; removing the attribute keeps the current date',
+    reason: 'a two-way model over navigation state: removing the attribute is not a command, so the core keeps the view it shows and writes it back',
   },
   'mp-file-manager@view-mode': { value: 'icons', reason: 'a two-way model: list | icons; the core writes unknown values back as list' },
   'mp-input-group@size': { value: 'lg', reason: 'enum read straight from the attribute: sm | md | lg (md when absent)' },
