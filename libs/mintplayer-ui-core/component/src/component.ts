@@ -42,6 +42,33 @@ export function defineContext<T>(name: string, defaultValue: T): CoreContext<T> 
   return { name, defaultValue };
 }
 
+/**
+ * One child a content query found (the manifest's `content`): the inputs the
+ * consumer declared on it and on the `within` wrapper around it, if any. They
+ * are as written: React and Vue read the declaration, not a component, so an
+ * omitted input is missing rather than defaulted, and Vue's boolean shorthand is `''`.
+ */
+export interface ContentChild<I = Record<string, unknown>, W = Record<string, unknown>> {
+  readonly inputs: Readonly<Partial<I>>;
+  readonly within: Readonly<Partial<W>> | null;
+}
+
+function sameRecord(a: object | null, b: object | null): boolean {
+  if (a === b) return true;
+  if (!a || !b) return false;
+  return sameInputs(a, b);
+}
+
+/** Two query results with the same entries: lets a front keep the previous array, so the input is unchanged. */
+export function sameContent(a: readonly ContentChild[], b: readonly ContentChild[]): boolean {
+  return a.length === b.length && a.every((entry, i) => sameRecord(entry.inputs, b[i].inputs) && sameRecord(entry.within, b[i].within));
+}
+
+/** A declared boolean as a content query reports it: `true`, `''` (an attribute), `'true'`. */
+export function contentFlag(value: unknown): boolean {
+  return value === true || value === '' || value === 'true';
+}
+
 /** What `view` and `provide` see. */
 export interface ViewArgs<I, S, C, E = Record<never, never>> {
   readonly inputs: Readonly<I>;

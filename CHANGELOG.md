@@ -421,6 +421,41 @@ breaking change is a major. (2.20.0 and 2.21.0 broke `^2.x` consumers in a minor
     `dock-layout-changed` and Angular's `layoutSnapshotChange`) and the new `paneactivated`. React:
     `onLayoutChange`, `onPaneActivated`, receiving the payload.
   - `captureLayout()` remains on the Angular component, the Vue instance and the Lit element.
+- **Ribbon is generated from one source in every front, its tab strip server-rendered (issue #437).** The
+  ribbon, the quick access toolbar and all sixteen item / tab / group / menu elements are written once in
+  `@mintplayer/ui-core/ribbon` and compiled into all four fronts. The `bs-ribbon-*` Angular, React and Vue
+  wrappers around `<mp-ribbon-*>` are gone; the Lit elements keep their `mp-ribbon-*` tags.
+  - **Nested children stay the API.** Tabs, groups and items are still authored as children. The ribbon
+    reads its tabs (and the contextual sets around them) through a compiler content query, so the tab
+    strip, the contextual bands and every panel are in the server HTML, in every front.
+  - **No shadow root.** The root is `.ribbon` (`role="region"`), the QAT `.qat` (`role="toolbar"`, named by
+    its `aria-label`). Page CSS reaches the internals; `::part()` hooks are gone. Every tab's
+    `aria-controls` now resolves to its panel in the same tree. Item sizes are derived in CSS from the
+    group's resolved size and the layout, so items no longer have their `size` attribute rewritten.
+  - **`appAccent` is removed.** Set the `--bs-ribbon-accent` custom property on the ribbon or any
+    ancestor (`.excel { --bs-ribbon-accent: #217346; }`).
+  - **Contextual tab sets:** `hidden` is replaced by `visible` (default `true`):
+    `<bs-ribbon-contextual-tab-set [visible]="pictureSelected()">`.
+  - **Events** are lowercased like every compiled component: Angular `(itemclick)`, `(mainaction)`,
+    `(menuselect)`, `(galleryselect)`, `(tabchange)`, `(dialoglauncherclick)`; React `onItemClick`,
+    `onTabChange`, … receiving the payload rather than a `CustomEvent`; Vue `@itemclick`, `@tabchange`, ….
+    The value events are replaced by two-way models: `pressed` (toggle button, was `toggle`), `checked`
+    (check box, was `check-change`), `value` (combo box), `color` (colour picker), `selectedValue` (group
+    button, was `group-select` with `value`), `minimized` (was `minimize-toggle`) and `activeTabId`.
+    Angular `[(pressed)]` / `[(ngModel)]`, React `pressed` + `onPressedChange`, Vue `v-model:pressed`.
+  - **Icons:** `slot="icon"` is replaced by the `iconTemplate` slot: Angular `*bsRibbonButtonIconTemplate`
+    (one directive per item), React `iconTemplate={<svg …/>}`, Vue `<template #iconTemplate>`, Lit
+    `slot="iconTemplate"`. The `.ribbon-icon-*` utility classes are gone; the icon is sized from the size
+    the item renders at.
+  - **Tell me:** `slot="tell-me"` is replaced by the `tellMe` slot: Angular `<ng-template bsRibbonTellMe>`,
+    React `tellMe={…}`, Vue `<template #tellMe>`.
+  - The ribbon types come from `@mintplayer/ui-core/ribbon` and every front re-exports them.
+- **Navbar dropdown's label slot is `labelTemplate` (issue #437).** It shared its name with the `label`
+  input, which made React and Vue pass the slot in place of the label. Angular: `*bsNavbarDropdownLabelTemplate`
+  (`BsNavbarDropdownLabelTemplateDirective`); React `labelTemplate`; Vue `#labelTemplate`.
+- **Compiled Lit elements refuse an unknown enum attribute (issue #437).** A string input typed as a union
+  of literals ignores an attribute naming none of them and keeps its default (`orientation="sideways"` on
+  `mp-splitter` stays `horizontal`), as the hand-written elements did.
 - **Hierarchy chart is generated from one source in every front (issue #437).** It is written once in
   `@mintplayer/ui-core/charts/hierarchy` (`hierarchyChartCore`, `connectHierarchyChart`) and compiled into
   all four fronts. The server HTML is the finished chart at a 420px fallback scale, its controls inert until

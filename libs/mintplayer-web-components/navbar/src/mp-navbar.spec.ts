@@ -143,7 +143,7 @@ describe('mp-navbar-dropdown', () => {
   });
 
   it('a labelled slot wins over the label attribute', async () => {
-    const nav = mount('<mp-navbar><mp-navbar-dropdown label="Text"><b slot="label">Markup</b></mp-navbar-dropdown></mp-navbar>');
+    const nav = mount('<mp-navbar><mp-navbar-dropdown label="Text"><b slot="labelTemplate">Markup</b></mp-navbar-dropdown></mp-navbar>');
     await settle(nav);
     const dropdown = nav.querySelector('mp-navbar-dropdown') as MpNavbarDropdown;
     await settle(dropdown);

@@ -23,6 +23,7 @@ import { emitReact } from './templates/emit-react.mjs';
 import { emitVue } from './templates/emit-vue.mjs';
 import { emitLit } from './templates/emit-lit.mjs';
 import { componentModels } from './components/model.mjs';
+import { literalTypes } from './components/literal-types.mjs';
 import { emitAngularComponent } from './components/emit-angular.mjs';
 import { emitReactComponent } from './components/emit-react.mjs';
 import { emitVueComponent } from './components/emit-vue.mjs';
@@ -166,6 +167,7 @@ async function describeEntry(config, cwd, entry) {
         entry: entry.entry,
         corePackage: config.package,
         partials,
+        literals: literalTypes(dirname(entry.manifest)),
         template: (file) => {
           const src = sources.get(file);
           if (!src) throw new Error(`${entry.entry}: no template ${file}`);

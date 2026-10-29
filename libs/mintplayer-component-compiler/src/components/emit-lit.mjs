@@ -13,7 +13,11 @@ function propertyOptions(input) {
   else options.push('attribute: false');
   // Removing an attribute restores the input's default, and show-labels="false" switches a
   // default-true flag off, as the hand-written elements did.
-  if (input.kind) options.push(`converter: ${input.kind}Attribute(${input.kind === 'boolean' ? input.default === 'true' : input.default ?? 'undefined'})`);
+  if (input.kind) {
+    const fallback = input.kind === 'boolean' ? input.default === 'true' : input.default ?? 'undefined';
+    const values = input.values ? `, [${input.values.map((value) => `'${value}'`).join(', ')}]` : '';
+    options.push(`converter: ${input.kind}Attribute(${fallback}${values})`);
+  }
   // camelCase inputs take a kebab-case attribute (number-visible), as hand-written elements do.
   const kebab = input.name.replace(/[A-Z]/g, (c) => `-${c.toLowerCase()}`);
   if (input.kind && kebab !== input.name) options.push(`attribute: '${kebab}'`);
@@ -36,9 +40,13 @@ export function emitLitComponent(model, { generator, runtime }) {
     banner(model, generator),
     `import { LitElement } from 'lit';`,
     `import { installLightStyles } from '@mintplayer/ui-core/scoped-styles';`,
-    `import { ${[...new Set(model.inputs.filter((i) => i.kind).map((i) => `${i.kind}Attribute`))].sort().map((name) => `${name}, `).join('')}CoreController${slotNames.length ? ', LightChildren' : ''} } from '${runtime}';`,
+    `import { ${[...new Set(model.inputs.filter((i) => i.kind).map((i) => `${i.kind}Attribute`))].sort().map((name) => `${name}, `).join('')}${model.content.length ? 'ContentQuery, ' : ''}CoreController${slotNames.length ? ', LightChildren' : ''}${model.queried || model.wrapsContent ? ', notifyContentChange' : ''} } from '${runtime}';`,
     coreImports(model, { values: [model.core], types }),
   ];
+  // A content query reads upgraded children, so their definitions come first.
+  [...new Set(model.content.flatMap(({ child, within }) => [child, within].filter(Boolean)))]
+    .filter((other) => other !== model)
+    .forEach((other) => lines.push(`import './${other.names.tag}.generated';`));
   styleImports(model)
     .filter(({ module }) => module !== model.entryModule)
     .forEach(({ module, names: list }) => lines.push(`import { ${list.join(', ')} } from '${module}';`));
@@ -55,7 +63,13 @@ export function emitLitComponent(model, { generator, runtime }) {
   );
   if (model.inputs.length || renderers.length) lines.push('');
   if (slotNames.length) lines.push(`  readonly #children = new LightChildren(this);`);
-  const options = [`idPrefix: '${names.tag}'`, `inputs: () => ({ ${model.inputs.map((i) => `${i.name}: this.${i.name}`).join(', ')} })`];
+  // Before the core: controllers update in the order they were added.
+  model.content.forEach(({ input, child, within }) =>
+    lines.push(`  readonly #content_${input} = new ContentQuery(this, '${child.names.tag}', ${within ? `'${within.names.tag}'` : 'null'});`),
+  );
+  const ownInputs = `({ ${model.inputs.map((i) => `${i.name}: this.${i.name}`).join(', ')} })`;
+  const inputEntries = [...model.inputs.map((i) => `${i.name}: this.${i.name}`), ...model.content.map(({ input }) => `${input}: this.#content_${input}.value`)];
+  const options = [`idPrefix: '${names.tag}'`, `inputs: () => ({ ${inputEntries.join(', ')} })`];
   if (model.host) {
     const bag = `props.${model.hostExpression}`;
     options.push(`hostBag: (props) => ${model.hostRole ? `({ ...${bag}, role: '${model.hostRole}' })` : bag}`);
@@ -70,6 +84,19 @@ export function emitLitComponent(model, { generator, runtime }) {
   }
   lines.push(`  protected override createRenderRoot(): HTMLElement {`, `    return this;`, `  }`, '');
   if (slotNames.length) lines.push(`  protected override willUpdate(): void {`, `    this.#children.capture();`, `  }`, '');
+  if (model.queried || model.wrapsContent) {
+    lines.push(
+      `  /** This element's inputs, as a parent's content query reads them. */`,
+      `  get contentInputs(): Partial<${model.inputsType ?? 'Record<string, unknown>'}> {`,
+      `    return ${ownInputs};`,
+      `  }`,
+      '',
+      `  protected override updated(): void {`,
+      `    notifyContentChange(this);`,
+      `  }`,
+      '',
+    );
+  }
 
   // An unscoped slot's callback is called here: the template renders its value.
   const callbacks = renderers.map((r) => `...(this.${r.prop} ? { ${JSON.stringify(r.slot)}: this.${r.prop}${r.args ? '' : '()'} } : {})`);

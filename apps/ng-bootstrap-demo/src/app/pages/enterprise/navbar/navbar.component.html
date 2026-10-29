@@ -10,7 +10,7 @@
   edge), and use <code>bs-navbar-item</code> for every entry — directly in a
   group as a nav-link, or inside a <code>bs-navbar-dropdown</code> as a menu
   item; the same element adapts to where it is authored. A dropdown's trigger is
-  the <code>*bsNavbarDropdownLabel</code> template — any HTML (give an
+  the <code>*bsNavbarDropdownLabelTemplate</code> template — any HTML (give an
   icon-only label an <code>aria-label</code>). A custom hamburger glyph is the
   <code>*bsNavbarToggler</code> template. Toggling the collapse fires
   <code>(expandedchange)</code>.
@@ -31,7 +31,7 @@
       </bs-navbar-item>
 
       <bs-navbar-dropdown>
-        <span *bsNavbarDropdownLabel>Products</span>
+        <span *bsNavbarDropdownLabelTemplate>Products</span>
         <bs-navbar-item><a routerLink="/products/widgets">Widgets</a></bs-navbar-item>
         <bs-navbar-item><a routerLink="/products/gadgets">Gadgets</a></bs-navbar-item>
         <bs-navbar-item><a routerLink="/products/gizmos">Gizmos</a></bs-navbar-item>

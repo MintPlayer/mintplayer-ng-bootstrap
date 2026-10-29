@@ -24,7 +24,7 @@ export function emitReactComponent(model, { generator, runtime, extension }) {
     `import * as React from 'react';`,
     `import { forwardRef, useImperativeHandle, useRef } from 'react';`,
     `import { installLightStyles } from '@mintplayer/ui-core/scoped-styles';`,
-    `import { ${model.provides ? 'reactCoreContext, ' : ''}useCore } from '${runtime}';`,
+    `import { ${model.provides ? 'reactCoreContext, ' : ''}${model.content.length ? 'useContent, ' : ''}useCore } from '${runtime}';`,
     coreImports(model, { values: [model.core, ...(model.provides ? [model.provides] : [])], types: [model.inputsType].filter(Boolean) }),
   ];
   styleImports(model)
@@ -32,6 +32,10 @@ export function emitReactComponent(model, { generator, runtime, extension }) {
     .forEach(({ module, names: list }) => lines.push(`import { ${list.join(', ')} } from '${module}';`));
   lines.push(`import { ${model.templateName}Template, type ${model.templateName}TemplateProps } from './${model.templateBase}.generated';`);
   if (ext) lines.push(`import { ${[...ext.exports].map((n) => `${n} as ext_${n}`).join(', ')} } from '${extension(ext.file)}';`);
+  // A content query matches its components by identity, so it imports them.
+  [...new Set(model.content.flatMap(({ child, within }) => [child, within].filter(Boolean)))]
+    .filter((other) => other !== model)
+    .forEach((other) => lines.push(`import { ${other.names.component} } from './${other.names.component}.generated';`));
   if (model.provides) lines.push('', `const Context = reactCoreContext(${model.provides});`);
   lines.push('');
 
@@ -59,7 +63,10 @@ export function emitReactComponent(model, { generator, runtime, extension }) {
     'children',
     '...rest',
   ];
-  const inputsObject = `{ ${model.inputs.map((input) => (slotNames.has(input.name) ? `${input.name}: undefined` : input.name)).join(', ')} }`;
+  const inputsObject = `{ ${[
+    ...model.inputs.map((input) => (slotNames.has(input.name) ? `${input.name}: undefined` : input.name)),
+    ...model.content.map(({ input }) => `${input}: content_${input}`),
+  ].join(', ')} }`;
   const emit = model.outputs.length
     ? `(name, detail) => { ${model.outputs.map((o) => `if (name === '${o.name}') ${o.react}?.(detail as ${o.type});`).join(' ')} }`
     : `() => undefined`;
@@ -69,6 +76,9 @@ export function emitReactComponent(model, { generator, runtime, extension }) {
   lines.push(`  { ${params.join(', ')} },`, `  ref,`, `) {`);
   model.styles.forEach((style) => lines.push(`  installLightStyles(${style.scope}, ${style.sheet});`));
   lines.push(`  const rootRef = useRef<${element}>(null);`, `  useImperativeHandle(ref, () => rootRef.current as ${element});`);
+  model.content.forEach(({ input, child, within }) =>
+    lines.push(`  const content_${input} = useContent(children, { type: ${child.names.component}${within ? `, within: ${within.names.component}` : ''} });`),
+  );
   const inputsExpr = has('useExtendInputs') ? `ext_useExtendInputs(${inputsObject}, { children })` : inputsObject;
   lines.push(
     `  const core = useCore(${model.core}, ${inputsExpr}, {`,

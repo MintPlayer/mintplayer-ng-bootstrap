@@ -66,6 +66,14 @@ export interface ComponentNames {
   readonly tag?: string;
 }
 
+/** A content query: every `component` in the content, in document order. */
+export interface ContentQuery {
+  /** The queried element of the same group (`ribbon-tab`). */
+  readonly component: string;
+  /** An element of the same group that may wrap it; its inputs ride along as `within`. */
+  readonly within?: string;
+}
+
 export interface ComponentManifest {
   /** The `ComponentCore` export. */
   readonly core: string;
@@ -89,6 +97,14 @@ export interface ComponentManifest {
     readonly type: string;
     readonly fields: Readonly<Record<string, MethodField>>;
   };
+  /**
+   * Content queries, keyed by the input they fill (the core's inputs type must
+   * declare it as `readonly ContentChild[]`). Each front reads the inputs of the
+   * named components in the consumer's content WHILE RENDERING (Angular
+   * `contentChildren`, React `props.children`, Vue slot vnodes, Lit child
+   * elements), so a parent can render what its children declare on the server.
+   */
+  readonly content?: Readonly<Record<string, ContentQuery>>;
   readonly names?: ComponentNames;
   /** The component's documentation, copied onto every front. */
   readonly doc?: string;

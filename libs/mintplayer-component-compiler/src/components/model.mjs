@@ -51,10 +51,11 @@ function exportsOf(file) {
  * @param {string} args.corePackage  The core lib's package name; the entry imports as `<corePackage>/<entry>`.
  * @param {(element: string) => object} args.template  The parsed view template of an element.
  * @param {(front: string, element: string) => string | null} args.extension  An extension file's path, if one exists.
+ * @param {(inputsType: string, member: string) => string[] | null} [args.literals]  A string input's literal members (literal-types.mjs).
  */
-export function componentModels({ group, entry, corePackage, template, extension, partials = new Map(), components = new Map() }) {
+export function componentModels({ group, entry, corePackage, template, extension, literals = () => null, partials = new Map(), components = new Map() }) {
   const entryModule = `${corePackage}/${entry}`;
-  return Object.entries(group.components).map(([element, manifest]) => {
+  const models = Object.entries(group.components).map(([element, manifest]) => {
     const src = template(manifest.template ?? `${element}.view.vue`);
     const { root, host } = rootElement(src);
     const where = `${entry}/${element}`;
@@ -72,11 +73,21 @@ export function componentModels({ group, entry, corePackage, template, extension
     if (attribute(root, 'ref')?.value?.content !== 'root') throw new Error(`${where}: the template's root element needs ref="root"`);
 
     const fields = manifest.inputs?.fields ?? {};
-    const inputs = Object.entries(fields).map(([name, field]) => ({ name, ...field, kind: inputKind(field) }));
+    const inputs = Object.entries(fields).map(([name, field]) => {
+      const kind = inputKind(field);
+      // A string input typed as a literal union: the Lit attribute refuses any other value.
+      const values = kind === 'string' ? literals(manifest.inputs?.type, name) : null;
+      return { name, ...field, kind, values };
+    });
     const clash = inputs.find((input) => RESERVED.has(input.name));
     if (clash) throw new Error(`${where}: input "${clash.name}" shadows an HTMLElement member; pick another name`);
 
     const slots = src.slots.members.map((member) => ({ name: member.name, params: member.paramType }));
+    // A slot is a prop in React and Vue: one named like an input replaces it, silently.
+    slots.forEach((slot) => {
+      if (!/^[A-Za-z_$][\w$]*$/.test(slot.name)) throw new Error(`${where}: slot "${slot.name}" must be an identifier (camelCase); it names a prop and a directive`);
+      if (inputs.some((input) => input.name === slot.name)) throw new Error(`${where}: slot "${slot.name}" has the name of an input; rename one of them`);
+    });
     const names = manifest.names ?? {};
     const base = pascal(element);
     const extensions = Object.fromEntries(
@@ -128,8 +139,32 @@ export function componentModels({ group, entry, corePackage, template, extension
       },
       extensions,
       camel: camel(element),
+      // Content queries (filled below): what this parent reads from its content,
+      // and whether a parent queries this element or uses it as a `within`.
+      content: [],
+      queried: null,
+      wrapsContent: false,
     };
   });
+  return resolveContent(models, entry);
+}
+
+/** Links each manifest `content` query to the group's element models it names. */
+function resolveContent(models, entry) {
+  const byElement = new Map(models.map((model) => [model.element, model]));
+  models.forEach((model) => {
+    model.content = Object.entries(model.manifest.content ?? {}).map(([input, query]) => {
+      const child = byElement.get(query.component);
+      const within = query.within ? byElement.get(query.within) : null;
+      if (!child) throw new Error(`${entry}/${model.element}: content query "${input}" names "${query.component}", which is not in the group`);
+      if (query.within && !within) throw new Error(`${entry}/${model.element}: content query "${input}" names "${query.within}" as within, which is not in the group`);
+      if (model.inputs.some((i) => i.name === input)) throw new Error(`${entry}/${model.element}: content query "${input}" is also a manifest input`);
+      child.queried = { within };
+      if (within) within.wrapsContent = true;
+      return { input, child, within };
+    });
+  });
+  return models;
 }
 
 /** Type names the generated front imports from the entry (or a style's `from`), grouped by module. */

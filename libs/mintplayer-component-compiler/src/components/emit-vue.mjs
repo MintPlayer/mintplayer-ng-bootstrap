@@ -27,9 +27,13 @@ export function emitVueComponent(model, { generator, runtime, extension }) {
     banner(model, generator),
     `import { useTemplateRef, type ComponentPublicInstance${model.inputs.length ? ', type PropType' : ''} } from 'vue';`,
     `import { installLightStyles } from '@mintplayer/ui-core/scoped-styles';`,
-    `import { useCore } from '${runtime}';`,
+    `import { ${model.content.length ? 'useContent, ' : ''}useCore } from '${runtime}';`,
     coreImports(model, { values: [model.core], types: [model.inputsType, model.methodsType].filter(Boolean) }),
   ];
+  // A content query matches its components by identity, so it imports them.
+  [...new Set(model.content.flatMap(({ child, within }) => [child, within].filter(Boolean)))]
+    .filter((other) => other !== model)
+    .forEach((other) => script.push(`import ${other.names.component} from './${other.names.component}.generated.vue';`));
   styleImports(model)
     .filter(({ module }) => module !== model.entryModule)
     .forEach(({ module, names: list }) => script.push(`import { ${list.join(', ')} } from '${module}';`));
@@ -52,7 +56,10 @@ export function emitVueComponent(model, { generator, runtime, extension }) {
   script.push('');
   model.styles.forEach((style) => script.push(`installLightStyles(${style.scope}, ${style.sheet});`));
   script.push(`const template = useTemplateRef<ComponentPublicInstance>('template');`);
-  const inputsFn = `() => ({ ${model.inputs.map((i) => `${i.name}: props.${i.name}`).join(', ')} })`;
+  model.content.forEach(({ input, child, within }) =>
+    script.push(`const content_${input} = useContent({ type: ${child.names.component}${within ? `, within: ${within.names.component}` : ''} });`),
+  );
+  const inputsFn = `() => ({ ${[...model.inputs.map((i) => `${i.name}: props.${i.name}`), ...model.content.map(({ input }) => `${input}: content_${input}()`)].join(', ')} })`;
   // An output is lowercased; a v-model update keeps its input name.
   const emit = model.outputs.length || models.length
     ? `(name, detail) => emit((name.startsWith('update:') ? name : name.toLowerCase()) as never, detail as never)`

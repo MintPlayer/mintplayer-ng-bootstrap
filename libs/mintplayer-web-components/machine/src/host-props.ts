@@ -143,10 +143,11 @@ export const booleanAttribute = (fallback: boolean) => ({
 /**
  * The attribute converter of a compiled string input: removing the attribute
  * restores the input's default rather than leaving `null` in a property the core
- * types as a string.
+ * types as a string. An input typed as a literal union passes its `values`, and
+ * an attribute naming none of them restores the default too.
  */
-export const stringAttribute = <T extends string | null | undefined>(fallback: T) => ({
-  fromAttribute: (value: string | null): string | T => value ?? fallback,
+export const stringAttribute = <T extends string | null | undefined>(fallback: T, values?: readonly string[]) => ({
+  fromAttribute: (value: string | null): string | T => (value === null || (values && !values.includes(value)) ? fallback : value),
   toAttribute: (value: unknown): string | null => (value === null || value === undefined ? null : String(value)),
 });
 

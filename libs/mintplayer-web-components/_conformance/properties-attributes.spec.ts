@@ -16,6 +16,7 @@ import {
   publicFields,
   reflectedAttribute,
   representative,
+  scanInterfaceMembers,
   scanLiteralAliases,
 } from './cem-properties';
 
@@ -56,7 +57,6 @@ const MANIFEST = resolve(LIB_ROOT, 'custom-elements.json');
 
 /** Manifest declarations that are not a mountable tag. Asserted to be exactly these. */
 const NOT_MOUNTABLE: Record<string, string> = {
-  MpRibbonItemBase: 'abstract base of the ribbon items; its members are exercised through every concrete item',
   MpOverlayContainer: 'module-private portal host (not exported); OverlayController creates it',
 };
 
@@ -117,6 +117,12 @@ const OVERRIDES: Record<string, Override> = {
   },
   'mp-file-manager@view-mode': { value: 'icons', reason: 'a two-way model: list | icons; the core writes unknown values back as list' },
   'mp-input-group@size': { value: 'lg', reason: 'enum read straight from the attribute: sm | md | lg (md when absent)' },
+  'mp-calendar.currentMonth': { expect: new Date(2024, 0, 1), reason: 'a two-way model the core normalises to the first of the month' },
+  'mp-datepicker.currentMonth': { expect: new Date(2024, 0, 1), reason: 'a two-way model the core normalises to the first of the month' },
+  'mp-multi-range.value': {
+    skip: true,
+    reason: 'a two-way model: the core writes back one value per thumb, so an assigned null never reads back',
+  },
   'mp-phone-input.value': { value: '+32470123456', reason: 'normalised to E.164 against the selected country' },
   'mp-phone-input@value': { value: '+32470123456', reason: 'normalised to E.164 against the selected country' },
   'mp-datatable@page': {
@@ -245,7 +251,10 @@ function typedFromAttribute(domain: Domain, value: string): unknown {
 
 const MANIFEST_PRESENT = existsSync(MANIFEST);
 const DECLS = MANIFEST_PRESENT ? manifestElements(readFileSync(MANIFEST, 'utf8')) : [];
-const ALIASES = scanLiteralAliases(LIB_ROOT);
+// The D10 elements' inputs are typed by their cores, in ui-core (#437).
+const UI_CORE_ROOT = resolve(LIB_ROOT, '..', 'mintplayer-ui-core');
+const ALIASES = new Map([...scanLiteralAliases(UI_CORE_ROOT), ...scanLiteralAliases(LIB_ROOT)]);
+const MEMBERS = scanInterfaceMembers([UI_CORE_ROOT, LIB_ROOT]);
 const RESOLVED = await Promise.all(DECLS.map(resolveElement));
 const MOUNTABLE = RESOLVED.filter((r): r is Required<Resolved> => r.tag !== undefined && r.ctor !== undefined);
 
@@ -304,7 +313,7 @@ MOUNTABLE.map(({ decl, tag, ctor }) => {
     const override: Partial<Override> = OVERRIDES[id] ?? {};
     if (override.skip) return skipped.push({ id, reason: override.reason ?? '' });
     if (field.readonly) return skipped.push({ id, reason: 'readonly in the manifest' });
-    const domain = domainOf(field.type?.text, ALIASES);
+    const domain = domainOf(field.type?.text, ALIASES, MEMBERS);
     if (domain.kind === 'unsupported' && override.value === undefined) {
       return skipped.push({ id, reason: domain.reason });
     }
@@ -333,7 +342,7 @@ MOUNTABLE.map(({ decl, tag, ctor }) => {
     }
     const initial = probe[prop];
     const typeText = attr.type?.text || fieldByName.get(prop)?.type?.text;
-    const declared = domainOf(typeText, ALIASES);
+    const declared = domainOf(typeText, ALIASES, MEMBERS);
     const domain: Domain =
       declared.kind !== 'unsupported'
         ? declared

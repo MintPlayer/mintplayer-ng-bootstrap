@@ -13,6 +13,14 @@
   display: block;
 }
 
+/* The app accent: the ribbon reads --bs-ribbon-accent from any ancestor. */
+.demo-ribbon .ribbon-rtl-wrapper[data-accent='word'] { --bs-ribbon-accent: #2b579a; }
+.demo-ribbon .ribbon-rtl-wrapper[data-accent='excel'] { --bs-ribbon-accent: #217346; }
+.demo-ribbon .ribbon-rtl-wrapper[data-accent='powerpoint'] { --bs-ribbon-accent: #b7472a; }
+.demo-ribbon .ribbon-rtl-wrapper[data-accent='outlook'] { --bs-ribbon-accent: #0078d4; }
+.demo-ribbon .ribbon-rtl-wrapper[data-accent='onenote'] { --bs-ribbon-accent: #7719aa; }
+.demo-ribbon .ribbon-rtl-wrapper[data-accent='access'] { --bs-ribbon-accent: #a4373a; }
+
 .demo-ribbon .demo-tell-me {
   width: 220px;
   padding: 3px 8px;

@@ -20,11 +20,12 @@ import {
 } from '@mintplayer/react-bootstrap/ribbon';
 import { BsCodeSnippet } from '@mintplayer/react-bootstrap/code-snippet';
 import type {
+  RibbonItemClickEventDetail,
   RibbonComboBoxOption,
   RibbonGroupButtonOption,
   RibbonGroupSize,
   RibbonReduceStep,
-} from '@mintplayer/web-components/ribbon';
+} from '@mintplayer/react-bootstrap/ribbon';
 import './RibbonPage.css';
 
 type RibbonVersion = 'office-2007' | 'office-2010' | 'office-2013' | 'office-2016';
@@ -49,12 +50,12 @@ const TOUCH_MODES: TouchMode[] = ['on', 'off', 'auto'];
 const DIRECTIONS: Direction[] = ['ltr', 'rtl'];
 
 const APP_ACCENTS: AppAccentOption[] = [
-  { label: 'Word', value: '#2B579A' },
-  { label: 'Excel', value: '#217346' },
-  { label: 'PowerPoint', value: '#B7472A' },
-  { label: 'Outlook', value: '#0078D4' },
-  { label: 'OneNote', value: '#7719AA' },
-  { label: 'Access', value: '#A4373A' },
+  { label: 'Word', value: 'word' },
+  { label: 'Excel', value: 'excel' },
+  { label: 'PowerPoint', value: 'powerpoint' },
+  { label: 'Outlook', value: 'outlook' },
+  { label: 'OneNote', value: 'onenote' },
+  { label: 'Access', value: 'access' },
 ];
 
 const FONT_FAMILY_OPTIONS: RibbonComboBoxOption[] = [
@@ -104,7 +105,7 @@ const HOME_IDEAL_SIZES: Record<string, RibbonGroupSize> = {
   editing: 'large',
 };
 
-const SNIPPET_MINIMAL = `<BsRibbon minimized={minimized} onMinimizeToggle={(e) => setMinimized(e.detail.minimized)}>
+const SNIPPET_MINIMAL = `<BsRibbon minimized={minimized} onMinimizedChange={setMinimized}>
   <BsRibbonTab tabId="home" label="Home">
     <BsRibbonGroup groupId="clipboard" label="Clipboard"
                    dialogLauncher="Clipboard Dialog">
@@ -136,21 +137,21 @@ const SNIPPET_SPLIT_BUTTON = `<BsRibbonSplitButton
 
 const SNIPPET_VALUE_ITEMS = `<BsRibbonToggleButton itemId="bold" label="Bold" icon="B" size="small"
                       pressed={boldOn}
-                      onToggle={(e) => setBoldOn(e.detail.pressed)} />
+                      onPressedChange={setBoldOn} />
 
 <BsRibbonComboBox itemId="font-family" label="Font Family" size="medium"
                   options={fontFamilyOptions}
                   value={fontFamily}
-                  onValueChange={(e) => setFontFamily(String(e.detail.value))} />
+                  onValueChange={setFontFamily} />
 
 <BsRibbonColorPicker itemId="font-color" label="Font Color" size="small"
                      value={fontColor}
-                     onColorChange={(e) => setFontColor(e.detail.color)} />`;
+                     onColorChange={setFontColor} />`;
 
 const SNIPPET_CONTEXTUAL = `<BsRibbonContextualTabSet
   label="Picture Tools"
   color="#F2C744"
-  hidden={!pictureSelected}>
+  visible={pictureSelected}>
   <BsRibbonTab tabId="picture-format" label="Format">
     <BsRibbonGroup groupId="picture-styles" label="Picture Styles">
       …
@@ -158,9 +159,8 @@ const SNIPPET_CONTEXTUAL = `<BsRibbonContextualTabSet
   </BsRibbonTab>
 </BsRibbonContextualTabSet>`;
 
-const SNIPPET_QAT = `<BsQuickAccessToolbar label="Quick Access Toolbar"
-                       touchMode={touchMode}
-                       appAccent={appAccent}>
+const SNIPPET_QAT = `<BsQuickAccessToolbar aria-label="Quick Access Toolbar"
+                       touchMode={touchMode}>
   <BsRibbonButton itemId="save" label="Save" icon="💾" size="small"
                   onItemClick={onSave} />
   <BsRibbonButton itemId="undo" label="Undo" icon="↶" size="small"
@@ -171,40 +171,31 @@ const SNIPPET_QAT = `<BsQuickAccessToolbar label="Quick Access Toolbar"
 
 const SNIPPET_THEMING = `<BsRibbon
   version="office-2016"
-  appAccent="#217346"
+  className="excel" /* .excel { --bs-ribbon-accent: #217346; } */
   colorScheme="auto"
   touchMode="auto">
   …
 </BsRibbon>`;
 
-const SNIPPET_SLOT_ICONS = `{/* Project any element with slot="icon" — SVGs, <i> from an icon font,
-     images, whatever. The host auto-sizes it from the item's size,
-     or use one of the .ribbon-icon-large / -medium / -small utility
-     classes for an explicit override. */}
+const SNIPPET_SLOT_ICONS = `{/* Any element works as an icon: an SVG, an icon-font <i>, an image.
+     It is sized from the size the item renders at. */}
 <BsRibbonButton itemId="save" label="Save" size="large"
-                onItemClick={onSave}>
-  <i slot="icon" className="bi bi-save" />
-</BsRibbonButton>
+                onItemClick={onSave}
+                iconTemplate={<i className="bi bi-save" />} />
 
 <BsRibbonButton itemId="copy" label="Copy" size="small"
-                onItemClick={onCopy}>
-  <svg slot="icon" className="ribbon-icon-small" viewBox="0 0 16 16">…</svg>
-</BsRibbonButton>`;
+                onItemClick={onCopy}
+                iconTemplate={<svg viewBox="0 0 16 16">…</svg>} />`;
 
-// createComponent's generated prop type only covers public class fields,
-// so any string/object prop we want to pass through to the underlying mp-*
-// element has to be applied via the spread escape hatch:
-//   prop={value}
-
-function onItemClick(event: CustomEvent<{ itemId?: string }>): void {
-  console.log('Item clicked:', event);
+function onItemClick(detail: RibbonItemClickEventDetail): void {
+  console.log('Item clicked:', detail);
 }
 
 export function RibbonPage() {
   const [minimized, setMinimized] = useState(false);
   const [layout, setLayout] = useState<'classic' | 'simplified'>('classic');
   const [version, setVersion] = useState<RibbonVersion>('office-2016');
-  const [appAccent, setAppAccent] = useState<string>('#2B579A');
+  const [appAccent, setAppAccent] = useState<string>('word');
   const [colorScheme, setColorScheme] = useState<ColorScheme>('auto');
   const [touchMode, setTouchMode] = useState<TouchMode>('auto');
   const [direction, setDirection] = useState<Direction>('ltr');
@@ -234,15 +225,14 @@ export function RibbonPage() {
     [layout],
   );
 
-  const handlePasteModeSelect = (event: CustomEvent<{ itemId?: string }>) => {
-    const id = event.detail?.itemId ?? '';
-    const next = PASTE_MODES[id];
+  const handlePasteModeSelect = (detail: RibbonItemClickEventDetail) => {
+    const next = PASTE_MODES[detail.itemId];
     if (next) setPasteMode(next);
-    onItemClick(event);
+    onItemClick(detail);
   };
 
-  const handleShapeSelect = (event: CustomEvent<{ itemId?: string }>) => {
-    const id = event.detail?.itemId ?? '';
+  const handleShapeSelect = (detail: { itemId: string }) => {
+    const id = detail.itemId;
     setSelectedShape(id);
     console.log('Shape selected:', id);
   };
@@ -292,7 +282,7 @@ export function RibbonPage() {
             >
               {APP_ACCENTS.map((a) => (
                 <option key={a.value} value={a.value}>
-                  {a.label} ({a.value})
+                  {a.label}
                 </option>
               ))}
             </select>
@@ -338,11 +328,10 @@ export function RibbonPage() {
           </label>
         </div>
 
-        <div className="ribbon-rtl-wrapper" dir={direction}>
+        <div className="ribbon-rtl-wrapper" dir={direction} data-accent={appAccent}>
           <BsQuickAccessToolbar
-            label="Quick Access Toolbar"
+            aria-label="Quick Access Toolbar"
             touchMode={touchMode}
-            {...{ appAccent } as React.ComponentProps<typeof BsQuickAccessToolbar>}
           >
             <BsRibbonButton
               itemId="qat-save" label="Save" icon="💾" size="small" tooltip="Save (Ctrl+S)"
@@ -364,18 +353,18 @@ export function RibbonPage() {
             version={version}
             colorScheme={colorScheme}
             touchMode={touchMode}
-            {...{ appAccent } as React.ComponentProps<typeof BsRibbon>}
-            onMinimizeToggle={(e) => setMinimized(e.detail.minimized)}
-            onTabChange={(e) => console.log('Tab changed:', e.detail)}
+            onMinimizedChange={setMinimized}
+            onTabChange={(detail) => console.log('Tab changed:', detail)}
+            tellMe={
+              <input
+                type="search"
+                className="demo-tell-me"
+                placeholder="🔍 Tell me what you want to do…"
+                aria-label="Tell me what you want to do"
+              />
+            }
           >
             {/* Tell Me slot (FR-24) */}
-            <input
-              slot="tell-me"
-              type="search"
-              className="demo-tell-me"
-              placeholder="🔍 Tell me what you want to do…"
-              aria-label="Tell me what you want to do"
-            />
 
             {/* ============ Home tab ============ */}
             <BsRibbonTab
@@ -441,7 +430,7 @@ export function RibbonPage() {
                   tooltip="Font Family"
                   options={FONT_FAMILY_OPTIONS}
                   value={fontFamily}
-                  onValueChange={(e) => setFontFamily(String(e.detail.value))}
+                  onValueChange={setFontFamily}
                 />
                 <BsRibbonToggleButton
                   itemId="bold"
@@ -450,7 +439,7 @@ export function RibbonPage() {
                   size="small"
                   tooltip="Bold (Ctrl+B)"
                   pressed={boldOn}
-                  onToggle={(e) => setBoldOn(e.detail.pressed)}
+                  onPressedChange={setBoldOn}
                 />
                 <BsRibbonToggleButton
                   itemId="italic"
@@ -459,7 +448,7 @@ export function RibbonPage() {
                   size="small"
                   tooltip="Italic (Ctrl+I)"
                   pressed={italicOn}
-                  onToggle={(e) => setItalicOn(e.detail.pressed)}
+                  onPressedChange={setItalicOn}
                 />
                 <BsRibbonToggleButton
                   itemId="underline"
@@ -468,7 +457,7 @@ export function RibbonPage() {
                   size="small"
                   tooltip="Underline (Ctrl+U)"
                   pressed={underlineOn}
-                  onToggle={(e) => setUnderlineOn(e.detail.pressed)}
+                  onPressedChange={setUnderlineOn}
                 />
                 <BsRibbonButton
                   itemId="strikethrough" label="Strikethrough" icon="S̶" size="small"
@@ -486,8 +475,8 @@ export function RibbonPage() {
                   itemId="font-color"
                   label="Font Color"
                   size="small"
-                  {...{ value: fontColor } as React.ComponentProps<typeof BsRibbonColorPicker>}
-                  onColorChange={(e) => setFontColor(e.detail.color)}
+                  color={fontColor}
+                  onColorChange={setFontColor}
                 />
               </BsRibbonGroup>
 
@@ -538,8 +527,8 @@ export function RibbonPage() {
                   label="Alignment"
                   size="small"
                   buttons={ALIGNMENT_OPTIONS}
-                  {...{ value: alignment } as React.ComponentProps<typeof BsRibbonGroupButton>}
-                  onGroupSelect={(e) => setAlignment(String(e.detail.value))}
+                  selectedValue={alignment}
+                  onSelectedValueChange={setAlignment}
                 />
               </BsRibbonGroup>
 
@@ -586,7 +575,7 @@ export function RibbonPage() {
                   label="Match case"
                   size="small"
                   checked={matchCase}
-                  onCheckChange={(e) => setMatchCase(e.detail.checked)}
+                  onCheckedChange={setMatchCase}
                 />
               </BsRibbonGroup>
             </BsRibbonTab>
@@ -743,7 +732,7 @@ export function RibbonPage() {
             <BsRibbonContextualTabSet
               label="Picture Tools"
               color="#F2C744"
-              hidden={!pictureToolsVisible}
+              visible={pictureToolsVisible}
             >
               <BsRibbonTab
                 tabId="picture-format" label="Format"
@@ -1094,7 +1083,7 @@ export function RibbonPage() {
             <h4>1. Minimal ribbon &mdash; one tab, one group, three buttons</h4>
             <BsCodeSnippet code={SNIPPET_MINIMAL} language="tsx" />
             <p className="snippet-note">
-              The <code>minimized</code> prop + <code>onMinimizeToggle</code> handler
+              The <code>minimized</code> prop + <code>onMinimizedChange</code> handler
               mirror Angular's two-way <code>[(minimized)]</code> &mdash; Ctrl+F1
               and double-clicking a tab will fire the event and update your state.
             </p>
@@ -1147,7 +1136,8 @@ export function RibbonPage() {
             <p className="snippet-note">
               <code>version</code> picks one of <code>office-2007</code> /
               <code>2010</code> / <code>2013</code> / <code>2016</code>.
-              <code>appAccent</code> drives the brand colour (Word
+              The <code>--bs-ribbon-accent</code> custom property, set on the
+              ribbon or any ancestor, drives the brand colour (Word
               <code>#2B579A</code>, Excel <code>#217346</code>, etc.).
               <code>colorScheme="auto"</code> follows
               <code>prefers-color-scheme</code> and ancestor
@@ -1156,17 +1146,14 @@ export function RibbonPage() {
           </article>
 
           <article className="snippet-card">
-            <h4>7. Slot-based icons (FR-16)</h4>
+            <h4>7. Element icons (FR-16)</h4>
             <BsCodeSnippet code={SNIPPET_SLOT_ICONS} language="tsx" />
             <p className="snippet-note">
-              Every item exposes a <code>&lt;slot name="icon"&gt;</code> alongside
-              the existing <code>icon</code> string attribute. The host's
-              <code>size</code> attribute auto-sizes slotted icons via
-              <code>::slotted</code> rules; consumers wanting an explicit override
-              apply <code>.ribbon-icon-large</code> / <code>-medium</code> /
-              <code>-small</code> directly on the projected element. The
-              <code>icon=""</code> attribute remains supported as the fallback &mdash;
-              consumers can mix-and-match.
+              Every item takes an <code>iconTemplate</code> element alongside the
+              <code>icon</code> string prop. The element is sized from the size the
+              item renders at, so it follows the ribbon as groups collapse. The
+              <code>icon</code> string remains the fallback &mdash; consumers can
+              mix-and-match.
             </p>
           </article>
         </section>

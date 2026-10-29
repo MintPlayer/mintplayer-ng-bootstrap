@@ -7,7 +7,7 @@ import type { NavbarDropdownView } from '@mintplayer/ui-core/navbar';
 defineProps<{ view: NavbarDropdownView; label?: string }>();
 defineSlots<{
   /** Rich trigger content; falls back to the `label` text. */
-  label?: () => unknown;
+  labelTemplate?: () => unknown;
   /** The items and nested dropdowns. */
   default?: () => unknown;
 }>();
@@ -15,7 +15,7 @@ defineSlots<{
 
 <template>
   <details ref="root" v-bind="view.details">
-    <summary v-bind="view.summary"><slot name="label">{{ label }}</slot></summary>
+    <summary v-bind="view.summary"><slot name="labelTemplate">{{ label }}</slot></summary>
     <!-- A div, not a ul: the items are item wrappers, which a role-less list may not contain. -->
     <div v-bind="view.panel"><slot /></div>
   </details>

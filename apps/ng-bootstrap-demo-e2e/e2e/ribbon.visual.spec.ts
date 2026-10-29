@@ -8,35 +8,21 @@ import { expect, Page, test } from '@playwright/test';
  * Run `npx playwright test ribbon.visual.spec.ts --update-snapshots` after
  * intentional theme changes to refresh baselines.
  *
- * Screenshots target only the `mp-ribbon` element so the demo's surrounding
+ * Screenshots target only the `.ribbon` element so the demo's surrounding
  * controls panel doesn't pollute the diff. Each baseline is committed to
  * the repo under `__screenshots__/`.
  */
 const VERSIONS = ['office-2007', 'office-2010', 'office-2013', 'office-2016'] as const;
 type Version = (typeof VERSIONS)[number];
 
+const ribbon = (page: Page) => page.locator('.ribbon').first();
+
 async function selectVersion(page: Page, version: Version): Promise<void> {
   const versionField = page.locator('.control-field', { hasText: 'Version' });
   await versionField.locator('select').selectOption(version);
-  await expect
-    .poll(() =>
-      page.evaluate(() => document.querySelector('mp-ribbon')?.getAttribute('version'))
-    )
-    .toBe(version);
-  // Let the host paint with the new tokens.
+  await expect(ribbon(page)).toHaveAttribute('data-version', version);
+  // Let the ribbon paint with the new tokens.
   await page.waitForTimeout(120);
-}
-
-async function selectTab(page: Page, label: string): Promise<void> {
-  await page.evaluate((wanted) => {
-    const ribbon = document.querySelector('mp-ribbon');
-    if (!ribbon?.shadowRoot) throw new Error('mp-ribbon not mounted');
-    const tab = Array.from(
-      ribbon.shadowRoot.querySelectorAll<HTMLElement>('[role="tab"]')
-    ).find((b) => (b.textContent ?? '').trim() === wanted);
-    if (!tab) throw new Error(`tab "${wanted}" not found`);
-    tab.click();
-  }, label);
 }
 
 test.describe('ribbon — visual regression per version', () => {
@@ -59,16 +45,13 @@ test.describe('ribbon — visual regression per version', () => {
     await page.waitForLoadState('networkidle', { timeout: 2000 }).catch(() => {
       /* HMR keeps the socket open, so the network never idles: settle briefly, never hang */
     });
-    await page.waitForFunction(
-      () => !!document.querySelector('mp-ribbon')?.shadowRoot?.querySelector('[role="tab"]')
-    );
-    await selectTab(page, 'Insert');
+    await ribbon(page).getByRole('tab', { name: 'Insert', exact: true }).click();
   });
 
   for (const version of VERSIONS) {
     test(`Insert tab visual baseline — ${version}`, async ({ page }) => {
       await selectVersion(page, version);
-      await expect(page.locator('mp-ribbon')).toHaveScreenshot(`insert-${version}.png`, {
+      await expect(ribbon(page)).toHaveScreenshot(`insert-${version}.png`, {
         maxDiffPixelRatio: 0.01,
       });
     });

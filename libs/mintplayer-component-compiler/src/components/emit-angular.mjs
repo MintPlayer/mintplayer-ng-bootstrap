@@ -42,6 +42,12 @@ export function emitAngularComponent(model, { generator, runtime = '@mintplayer/
   if (model.outputs.length) angularImports.add('output');
   if (named.length) angularImports.add('computed');
   if (named.length) ['contentChild', 'Directive', 'TemplateRef'].forEach((n) => angularImports.add(n));
+  // Content queries: a parent reads each queried child's `contentChild`, which carries its wrapper's `contentInputs`.
+  if (model.content.length) angularImports.add('contentChildren');
+  if (model.queried || model.wrapsContent) angularImports.add('computed');
+  const contentImports = [...model.content.map(({ child }) => child), ...(model.queried?.within ? [model.queried.within] : [])].filter(
+    (other, i, all) => other !== model && all.indexOf(other) === i,
+  );
 
   // A template whose only bag is the host's never binds [mpProps]: importing it anyway is NG8113.
   const template = emitAngular(model.src, { partials: model.partials, components: model.components, letProps: true });
@@ -70,6 +76,7 @@ export function emitAngularComponent(model, { generator, runtime = '@mintplayer/
   );
   lines.push(coreImports(model, { values: coreNames, types, slotTypes: true, extraTypes: partialTypes }));
   composed.forEach((c) => lines.push(`import { ${c.names.join(', ')} } from '${c.module}';`));
+  contentImports.forEach((other) => lines.push(`import { ${other.names.angular} } from './${other.names.file}.component.generated';`));
   styleImports(model)
     .filter(({ module }) => module !== model.entryModule)
     .forEach(({ module, names: list }) => lines.push(`import { ${list.join(', ')} } from '${module}';`));
@@ -132,7 +139,24 @@ export function emitAngularComponent(model, { generator, runtime = '@mintplayer/
     );
   }
 
-  const inputsObject = `({ ${model.inputs.map((i) => `${i.name}: this.${i.name}()`).join(', ')} })`;
+  const ownInputs = `({ ${model.inputs.map((i) => `${i.name}: this.${i.name}()`).join(', ')} })`;
+  if (model.wrapsContent) {
+    lines.push(`  /** This element's inputs, as a content query reads them around a queried child. */`, `  readonly contentInputs = computed(() => ${ownInputs});`);
+  }
+  if (model.queried) {
+    const within = model.queried.within;
+    if (within) lines.push(`  readonly #contentWithin = inject(${within.names.angular}, { optional: true });`);
+    lines.push(
+      `  /** What a parent's content query reads from this element. */`,
+      `  readonly contentChild = computed(() => ({ inputs: ${ownInputs}, within: ${within ? 'this.#contentWithin?.contentInputs() ?? null' : 'null'} }));`,
+    );
+  }
+  model.content.forEach(({ input, child }) => lines.push(`  private readonly content_${input} = contentChildren(${child.names.angular}, { descendants: true });`));
+  const inputEntries = [
+    ...model.inputs.map((i) => `${i.name}: this.${i.name}()`),
+    ...model.content.map(({ input }) => `${input}: this.content_${input}().map((c) => c.contentChild())`),
+  ];
+  const inputsObject = `({ ${inputEntries.join(', ')} })`;
   const inputsFn = has('extendInputs') ? `ext_extendInputs(() => ${inputsObject})` : `() => ${inputsObject}`;
   const options = [`inputs: ${inputsFn}`, `idPrefix: '${names.selector}'`];
   if (model.outputs.length) options.push(`outputs: { ${model.outputs.map((o) => `${o.name}: this.${angularOutput(o)}`).join(', ')} }`);

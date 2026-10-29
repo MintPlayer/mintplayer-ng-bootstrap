@@ -26,6 +26,7 @@ import '@mintplayer/web-components/navbar';
 import '@mintplayer/web-components/otp-input';
 import '@mintplayer/web-components/phone-input';
 import '@mintplayer/web-components/query-builder';
+import '@mintplayer/web-components/ribbon';
 import '@mintplayer/web-components/select';
 import '@mintplayer/web-components/shell';
 import '@mintplayer/web-components/signature-pad';

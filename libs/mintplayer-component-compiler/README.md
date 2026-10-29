@@ -174,7 +174,24 @@ the template of every front. A template without a manifest is still compiled on 
   element, typed with the template's exported `<Name><Slot>SlotArgs`. It wins over `slot="…"`
   children. Angular's slot directives import the types named in the slot's parameters.
 - **Lit attributes** are the kebab-case form of a camelCase input (`numberVisible` →
-  `number-visible`).
+  `number-visible`). A string input typed in the core as a union of string literals (directly,
+  through an alias, or as `Other['member']`) gets those literals in its converter: an attribute
+  naming none of them restores the input's default rather than reaching the core.
+- **Slot names** are camelCase identifiers and never an input's name. A slot is a prop in React and
+  Vue, so a slot named like an input would silently replace it (the navbar dropdown's `label`
+  slot did, and is now `labelTemplate`). The compiler refuses both.
+- **Content queries** (the manifest's `content: { tabs: { component: 'ribbon-tab', within:
+  'ribbon-contextual-tab-set' } }`) hand a parent the children the consumer authored, so it can
+  render chrome for them that the children cannot render themselves (the ribbon's tab strip):
+  - The core receives `inputs.tabs` as `ContentChild[]` (`@mintplayer/ui-core/component`), in
+    document order: each child's declared inputs, plus its `within` wrapper's inputs or `null`.
+  - Every front reads the declaration, never a mounted component, so the list exists on the
+    server and the chrome is server-rendered: Angular `contentChildren()`, React and Vue `useContent()`, a walk
+    of the children/slot vnodes, Lit a `ContentQuery` over the light children kept current by a
+    `MutationObserver` and the children's `notifyContentChange`.
+  - The inputs are as written: an omitted input is missing rather than defaulted, and Vue's
+    boolean shorthand arrives as `''`. Normalise in the core.
+  - The query name may not also be a manifest input, and both elements must be in the group.
 - **`mp-host`.** Marking the root element `mp-host` makes it the front's host element in
   Angular and Lit:
   - Those two fronts emit only its children. The component applies the root's bag to itself
