@@ -83,7 +83,8 @@
     "test": {
       "executor": "@nx/vitest:test",
       "dependsOn": [
-        "codegen"
+        "codegen",
+        "typecheck-views"
       ],
       "outputs": [
         "{options.reportsDirectory}"
@@ -94,6 +95,32 @@
     },
     "lint": {
       "executor": "@nx/eslint:lint"
+    },
+    "typecheck-views": {
+      "dependsOn": [
+        "codegen"
+      ],
+      "executor": "nx:run-commands",
+      "cache": true,
+      "inputs": [
+        "{projectRoot}/tsconfig*.json",
+        "{projectRoot}/views.d.ts",
+        "{projectRoot}/**/*.view.vue",
+        "{projectRoot}/**/*.ts",
+        "!{projectRoot}/**/*.spec.ts",
+        {
+          "externalDependencies": [
+            "vue-tsc",
+            "vue"
+          ]
+        }
+      ],
+      "options": {
+        "command": "vue-tsc --noEmit -p {projectRoot}/tsconfig.views.json"
+      },
+      "metadata": {
+        "description": "Type-check the component compiler view templates as Vue (what an editor's Vue language service sees)."
+      }
     }
   }
 }
