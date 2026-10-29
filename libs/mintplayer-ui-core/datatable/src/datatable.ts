@@ -593,7 +593,7 @@ export function connectDatatable(o: DatatableOptions): DatatableView {
   const rovingKey = focusKnown ? o.focusedKey : (list[firstFocusable]?.key ?? null);
   const focusable = o.selectionMode !== 'none' || o.tree;
 
-  const headers: DatatableHeaderCell[] = o.columns.map((column) => {
+  const headers: DatatableHeaderCell[] = o.columns.map((column): DatatableHeaderCell => {
     const sortable = column.sortable ?? true;
     const at = o.sortColumns.findIndex((s) => s.property === column.name);
     const direction = at >= 0 ? o.sortColumns[at].direction : null;
@@ -622,18 +622,23 @@ export function connectDatatable(o: DatatableOptions): DatatableView {
       label,
       sortIndex: at >= 0 && o.sortColumns.length > 1 ? { class: 'sort-index' } : null,
       sortIndexText: at >= 0 ? String(at + 1) : '',
-      resize: isResizable(column, o.resizableColumns)
-        ? {
-            class: 'resize-handle',
-            role: 'separator',
-            tabindex: 0,
-            'aria-orientation': 'vertical',
-            'aria-label': labels.resizeColumn(label),
-            'aria-valuemin': MIN_COLUMN_WIDTH,
-            'aria-valuenow': typeof width === 'number' ? Math.round(width) : null,
-            'data-dt-resize': column.name,
-          }
-        : null,
+      // A focusable separator is a widget whose value is required. Until the
+      // column has a width (server HTML, or a table not yet measured because it
+      // has no rows) the grip is inert: hidden, out of the tab order.
+      resize: !isResizable(column, o.resizableColumns)
+        ? null
+        : typeof width === 'number'
+          ? {
+              class: 'resize-handle',
+              role: 'separator',
+              tabindex: 0,
+              'aria-orientation': 'vertical',
+              'aria-label': labels.resizeColumn(label),
+              'aria-valuemin': MIN_COLUMN_WIDTH,
+              'aria-valuenow': Math.round(width),
+              'data-dt-resize': column.name,
+            }
+          : { class: 'resize-handle', 'aria-hidden': 'true', 'data-dt-resize': column.name },
     };
   });
 

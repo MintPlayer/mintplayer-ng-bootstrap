@@ -120,6 +120,15 @@ describe('connectDatatable', () => {
     expect(view.filterRow).toBeNull();
   });
 
+  it('makes a resize grip a focusable separator only once its column has a width (axe aria-required-attr)', () => {
+    const unmeasured = connectDatatable(options({ resizableColumns: true })).headers[0].resize!;
+    expect(unmeasured).toMatchObject({ 'aria-hidden': 'true' });
+    expect(unmeasured).not.toHaveProperty('role');
+    expect(unmeasured).not.toHaveProperty('tabindex');
+    const measured = connectDatatable(options({ resizableColumns: true, columnWidths: { name: 180.4 } })).headers[0].resize!;
+    expect(measured).toMatchObject({ role: 'separator', tabindex: 0, 'aria-valuenow': 180 });
+  });
+
   it('is a multiselectable grid with named row checkboxes in checkbox mode', () => {
     const view = connectDatatable(options({ selectionMode: 'checkbox', selectedIds: ['2'] }));
     expect(view.table['role']).toBe('grid');

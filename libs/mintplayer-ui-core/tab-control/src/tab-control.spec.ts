@@ -32,12 +32,15 @@ describe('tab-control core', () => {
     expect(view.tabs[1].tab).toMatchObject({ id: 'c-t1', for: 'c-r1', role: null, 'aria-selected': null, tabindex: null });
     expect(view.tabs[1].pane).toMatchObject({ id: 'c-p1', role: 'region', 'aria-labelledby': 'c-t1' });
     expect(view.list['role']).toBeNull();
+    // The strip scrolls when the tabs overflow, and holds no focusable content (axe scrollable-region-focusable).
+    expect(view.list['tabindex']).toBe('0');
     expect(view.tabs[2].radio['disabled']).toBe(true);
   });
 
   it('switches to APG tabs when enhanced', () => {
     const view = connectTabControl({ id: 'c', enhanced: true }, three, 1);
     expect(view.list['role']).toBe('tablist');
+    expect(view.list['tabindex']).toBeNull(); // the tabs carry the roving stop
     expect(view.item['role']).toBe('presentation');
     expect(view.tabs.map((tab) => tab.tab['aria-selected'])).toEqual(['false', 'true', 'false']);
     expect(view.tabs.map((tab) => tab.tab['tabindex'])).toEqual(['-1', '0', '-1']);

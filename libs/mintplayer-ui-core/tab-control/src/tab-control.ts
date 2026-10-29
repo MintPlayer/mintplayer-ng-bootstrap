@@ -94,7 +94,9 @@ export function connectTabControl(options: TabControlOptions, tabs: readonly Tab
   return {
     root: { ...scope, class: 'tab-control', 'data-tabs-position': bottom ? 'bottom' : null },
     strip: { ...scope, class: bottom ? 'tsc bottom-tabs' : 'tsc' },
-    list: { ...scope, class: 'nav nav-tabs', role: enhanced ? 'tablist' : null },
+    // Not enhanced, the strip (which scrolls when the tabs overflow) holds only
+    // labels: a tab stop of its own is the keyboard's way to scroll it.
+    list: { ...scope, class: 'nav nav-tabs', role: enhanced ? 'tablist' : null, tabindex: enhanced ? null : '0' },
     item: { ...scope, class: 'nav-item', role: enhanced ? 'presentation' : null },
     content: {
       ...scope,

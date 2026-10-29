@@ -91,6 +91,14 @@
   --bs-btn-focus-shadow-rgb: var(--bs-primary-rgb);
 }
 
+// WCAG 2.2 target size (2.5.8, 24 x 24 CSS px). In .pagination-sm a link
+// holding one narrow glyph (the « and » arrows) measures 23px wide with the
+// Linux fonts CI renders with; the floor keeps every page link a valid target.
+.page-link {
+  min-inline-size: 24px;
+  text-align: center;
+}
+
 // Helpers
 @import "bootstrap/scss/helpers";
 

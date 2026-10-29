@@ -62,6 +62,12 @@
     },
     "cem": {
       "executor": "nx:run-commands",
+      "dependsOn": [
+        {
+          "projects": ["mintplayer-ui-core"],
+          "target": "codegen"
+        }
+      ],
       "outputs": [
         "{projectRoot}/custom-elements.json"
       ],

@@ -55,7 +55,8 @@ axeAuditSuite(test, expect, [
   {
     path: '/enterprise/datatables',
     ready: async (page) => {
-      await page.waitForSelector('bs-datatable div.datatable');
+      // The root bag lands on the host in Angular; hydrated means the core is attached.
+      await page.waitForSelector('bs-datatable.datatable[data-mp-hydrated]');
     },
   },
   {

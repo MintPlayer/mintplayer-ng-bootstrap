@@ -79,7 +79,10 @@ test.describe('bs-dock-manager — keyboard pane move-mode', () => {
   test('M does NOT arm move mode when focus is elsewhere (e.g. body)', async ({ page }) => {
     // Protects against the keymap leaking into other pages or input surfaces.
     const before = await readLiveLayout(page);
-    await page.locator('body').click({ position: { x: 5, y: 5 } });
+    // Blur rather than click a coordinate: whatever sits at a fixed point (the
+    // navbar brand, on CI's fonts) may navigate away and take the dock with it.
+    await page.evaluate(() => (document.activeElement as HTMLElement | null)?.blur());
+    await expect.poll(() => page.evaluate(() => document.activeElement === document.body)).toBe(true);
     await page.keyboard.press('m');
     await page.keyboard.press('t');
     expect(await readLiveAnnouncement(page)).not.toMatch(/Move mode/i);
