@@ -23,18 +23,18 @@ Each component milestone is the same checklist, done for every component in the 
 
 - [x] S1 Bootstrap layering, all three demos
 - [x] S12 React/Vue SSR sheet collection (pairs with S1)
-- [ ] S2 compound cores (radio-group + radio [x], accordion [x] + tab)
+- [x] S2 compound cores (radio-group + radio, accordion, tab: no machine, native radios)
 - [x] S3 nested cores (tree-select over treeview): (a) sub-machine. `attachTreeController` (ui-core/treeview) is the shared tree behaviour; the tree-select core attaches it with a `click` hook and reuses `connectTreeview` for the row bags
 - [x] S5 hydration with consumer templates and pre-hydration text
-- [ ] S6 measurement-free server layout (carousel, splitter, hierarchy chart)
-- [ ] S9 navbar dropdown CSS-only open
+- [x] S6 measurement-free server layout (carousel, splitter, hierarchy chart): pass per component, PRD §7
+- [x] S9 navbar dropdown CSS-only open: a native `<details>`
 - [x] S8 base-select under SSR
 - [x] S11 theme cookie SSR and code-snippet highlighting
-- [ ] S4 virtual window in React/Vue (before M5)
+- [ ] S4 virtual window in React/Vue (before M5). *Deviation:* runs and is specced, but the 10k-row frame-time measurement was not taken
 - [x] S10 query-builder editor contract (before M5): a front-native `editor` slot; the leak spec is moot (below)
 - [x] S7 scheduler static grid: go, by building it (every view a server-rendered static grid, M6)
 - [x] S13 single template in the core, compiled into the four fronts (navbar prototype); widened into D10 / M3b
-- [ ] Write each verdict into PRD §7, and update D1–D9 and C1–C8 accordingly
+- [x] Write each verdict into PRD §7 (closing verdicts, 2026-10-29), and update D1–D9 and C1–C8 accordingly
 
 ## M1 — Bootstrap baseline (PRD §6)
 
@@ -98,25 +98,25 @@ This turns S13 into the full library. Every M4–M6 component is then authored a
 - [x] `libs/mintplayer-component-compiler` Nx plugin project (`@mintplayer/nx-component-compiler`): move `tools/front-templates` into it as the template stage, keep its spec, delete `tools/front-templates`
 - [x] Manifest API: plain data `satisfies ComponentGroup` (inputs incl. `model`, outputs, methods, `provides`, styles), typed against the core; hooks live on `ComponentCore`
 - [x] Emitters for the front components: Angular (signal inputs and outputs, CVA for a model, `hostDirectives` extensions), React (`forwardRef`, `useMachine`, props extend `HTMLAttributes` + rest passthrough), Vue (`defineProps` / `defineEmits` / `defineModel`, `inheritAttrs: false`), Lit (properties, events, `LightChildren`, light DOM)
-- [ ] Group styles: one `<group>.scoped.scss`; the compiler stamps `data-mps=<group>` on every template element
+- [ ] Group styles: one `<group>.scoped.scss`; the compiler stamps `data-mps=<group>` on every template element. *Deviation (S15):* not built; every bag already carries `data-mps` and a group may share sheets
 - [x] Output routing: `<front-lib>/<group>/src/generated/` + entry-point scaffolding (ng-package secondary entry, React/Vue vite entry, WC sub-entry) written once by the generator
 - [x] Nx: `createNodes` infers `compile-components` (cacheable inputs and outputs); front `build` / `test` / `typecheck` `dependsOn` it; `nx g …:component` scaffold; `--check` in CI (CI `--check` dropped: outputs are gitignored, see S17)
 - [x] S14 navbar family + dropdown-menu fully generated; the hand-written fronts are deleted (dropdown-menu converts with M4)
-- [ ] S15 group styles on accordion (+ tab)
-- [ ] S16 escape hatches (RouterLinkActive, checkbox CVA, React imperative handle)
+- [ ] S15 group styles on accordion (+ tab). *Deviation:* see Group styles
+- [x] S16 escape hatches (RouterLinkActive, checkbox CVA, React imperative handle): three of three
   - the select's CVA is resolved: `select.angular.ts` adds the accessor and validity as `hostDirectives` and merges the form state over the inputs in `extendInputs`
-- [ ] S17 clean-tree build + cache hit
+- [ ] S17 clean-tree build + cache hit: read from the CI run (M9)
 - [x] S18 template type errors fail `typecheck`; decide on a VS Code extension
-- [ ] S19 fixture workspace run (publishability)
-- [ ] Verdicts S14–S19 written in PRD §7
+- [ ] S19 fixture workspace run (publishability). *Open:* the owner decides before ui-core is first published
+- [x] Verdicts S14–S19 written in PRD §7
 
 ## M4 — Wave B
 
 Every item below is authored as a D10 component source once M3b lands.
 
-- [ ] navbar (+ brand, item, dropdown) and dropdown-menu (moved from M3); delete `SSR_NAVBAR_HEIGHT`, the navbar chrome and the dropdown-menu chrome
-  - done so far: S13 templates; Lit navbar and dropdown-menu in light DOM; navbar and dropdown chrome deleted; `SSR_NAVBAR_HEIGHT` replaced by a CSS estimate; press-time triggers; new Lit, core and e2e specs
-  - left: CHANGELOG Breaking entries; then regenerate it under M3b/S14
+- [x] navbar (+ brand, item, dropdown) and dropdown-menu (moved from M3); delete `SSR_NAVBAR_HEIGHT`, the navbar chrome and the dropdown-menu chrome
+  - S13 templates; Lit navbar and dropdown-menu in light DOM; navbar and dropdown chrome deleted; `SSR_NAVBAR_HEIGHT` replaced by a CSS estimate; press-time triggers; new Lit, core and e2e specs; CHANGELOG entries written; the navbar family generated under S14
+  - *As built:* the dropdown-menu has no manifest. Its four fronts are hand-written over `ui-core/dropdown-menu`, rendering its bags
 - [x] select: one D10 source (`ui-core/select`), a native `<select>` in every front; query-builder and scheduler use plain native selects inside
   - compiler additions it needed: `NATIVE_TAGS` (`<selectedcontent>`), `:value.prop` on a select as a React-only seed, `mp-attrs` (consumer attributes on a non-root element in React and Vue), a Lit `<slot>Renderer` per scoped slot, kebab-case Lit attributes, slot parameter types imported in Angular
   - left for every `mp-attrs` component: Angular and Lit keep consumer `aria-*` other than `aria-label` on the host

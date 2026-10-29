@@ -369,15 +369,28 @@ Each spike is small and throwaway, lives on a scratch branch or under `_spike-*/
     still need the client to fetch the same grammar for a later `code` change.
   - The copy button is disabled until hydrated, because it cannot work without script.
   - The rows are core-built markup, set through the compiler's new `v-html`.
-- **S15 and S19: not run yet.** S15 (compiler-stamped `data-mps`, one sheet per group) runs at the accordion
-  conversion. The navbar group already shares two sheets across four components, but its bags still carry
-  `data-mps`. S19 (fixture workspace) runs before the package is made public.
-- **Deferred to the milestone that needs them:**
-  - S2 accordion half at accordion (M3)
-  - S3 at tree-select (M5)
-  - S4 and S10 before M5
-  - S7 before M6
-  - S6 and S9 at their components
+- **Closing verdicts (2026-10-29), each answered by the component that needed it:**
+  - **S2: pass.** The accordion is native `<details name>` rows under one parent core; the tab control has no
+    machine at all (one native radio per tab is the selection, the labels become APG tabs once enhanced).
+  - **S3: pass** (above, tree-select). **S10: pass** (front-native `editor` slot). **S7: go**, by building it:
+    every scheduler view is a static grid positioned in slot units, so the server renders the whole grid.
+  - **S6: pass, per component, with no server measurement.** The splitter renders every pane `flex: 1 1 0`
+    until it has measured; the carousel's radios are the index store and the parent learns the slide count
+    from its declared items; the hierarchy chart renders at `FALLBACK_HOST_SCALE` and a ResizeObserver refits
+    it once live.
+  - **S9: pass.** The navbar dropdown is a native `<details>`, so it opens with no script.
+  - **S16: go, three of three.** The CVA is an Angular extension (`<element>.angular.ts`: the accessor and
+    validity as `hostDirectives`, form state merged in `extendInputs`), first on the select, then on every form
+    control.
+  - **S4: not measured.** The datatable's virtual window runs in React and Vue and its specs pass, but the
+    10k-row frame-time measurement was not taken. *Deviation.*
+  - **S15: not built.** Compiler-stamped scopes would add nothing the bags do not already do: every bag
+    carries `data-mps`, and a group may already share sheets (the navbar group shares two across four
+    components). Per-component sheets stay. *Deviation.*
+  - **S17:** the clean-tree build is CI's (every run regenerates the gitignored output from nothing). The
+    cache hit is read from that run.
+  - **S19: not run.** The fixture-workspace publish check is the owner's call before `@mintplayer/ui-core` is
+    first published. *Open.*
 
 ## 8. Component catalog
 
