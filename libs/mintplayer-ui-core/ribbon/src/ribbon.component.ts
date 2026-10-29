@@ -32,6 +32,7 @@ export default {
   components: {
     ribbon: {
       core: 'ribbonCore',
+      provides: 'RIBBON_CONTEXT',
       doc: [
         'An Office-style ribbon (#437): tabs of groups of commands, with contextual tab sets, KeyTips (Alt),',
         'minimize (double-click a tab, Ctrl+F1), and a reflow that collapses groups as the width shrinks.',

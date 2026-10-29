@@ -75,9 +75,9 @@ test.describe('treeview — arrow navigation', () => {
   test('ArrowDown moves focus between rows', async ({ page }) => {
     await page.goto('/basic/treeview');
     await page.waitForLoadState('networkidle');
-    const tree = page.locator('mp-treeview').first();
+    const tree = page.locator('bs-treeview').first();
     await tree.evaluate((el) => {
-      // mp-treeview is light-DOM (Tier L): its roving tab stop is a descendant
+      // The treeview front renders in the light DOM: its roving tab stop is a descendant
       // of the host, not of a shadow root.
       (el.shadowRoot ?? el).querySelector<HTMLElement>('[tabindex="0"]')?.focus();
     });
@@ -254,7 +254,9 @@ test.describe('composite widgets are exactly ONE tab stop', () => {
 
   test('datetime-picker time list keeps a single tabbable option', async ({ page }) => {
     await page.goto('/basic/forms/datetime-picker');
-    await page.waitForSelector('bs-datetime-picker .mp-time-list');
+    // The list lives in the closed popup: present in the DOM, not visible. The
+    // roving tabindex is written on hydration, so wait for a -1 option.
+    await page.waitForSelector('bs-datetime-picker .mp-time-list [role="option"][tabindex="-1"]', { state: 'attached' });
     const counts = await page.locator('bs-datetime-picker .mp-time-list').first().evaluate((el) => {
       const options = [...el.querySelectorAll<HTMLElement>('[role="option"]')];
       return {

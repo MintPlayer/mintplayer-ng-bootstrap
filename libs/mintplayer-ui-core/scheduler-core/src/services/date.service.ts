@@ -123,15 +123,16 @@ export class DateService {
     const startSeconds = minHour * 3600 + minMinute * 60;
     const endSeconds = maxHour * 3600 + maxMinute * 60;
 
+    // Wall-clock times, not elapsed seconds from midnight: on a DST change day
+    // midnight + 12h is 11:00 or 13:00, which shifted every later row by an hour
+    // (and the week grid takes its rows from its first day, often a Sunday).
+    const atWallClock = (seconds: number) => {
+      const d = new Date(date);
+      d.setHours(Math.floor(seconds / 3600), Math.floor((seconds % 3600) / 60), seconds % 60, 0);
+      return d;
+    };
     for (let seconds = startSeconds; seconds < endSeconds; seconds += slotDuration) {
-      const slotStart = new Date(date);
-      slotStart.setHours(0, 0, 0, 0);
-      slotStart.setSeconds(seconds);
-
-      const slotEnd = new Date(slotStart);
-      slotEnd.setSeconds(slotStart.getSeconds() + slotDuration);
-
-      slots.push({ start: slotStart, end: slotEnd });
+      slots.push({ start: atWallClock(seconds), end: atWallClock(seconds + slotDuration) });
     }
 
     return slots;
@@ -149,33 +150,22 @@ export class DateService {
     timeFormat: TimeFormat = '24h'
   ): SchedulerGrid {
     const columns = this.getWeekDays(date, firstDayOfWeek);
-    const rows: TimeSlotRow[] = [];
-    const allSlots: TimeSlot[] = [];
 
-    // Get time slots for the first day to determine row structure
-    const daySlots = this.getTimeSlots(columns[0], slotDuration, minTime, maxTime);
+    // Each day on its own wall clock, zipped by index. Copying the first day's
+    // hours onto the others carried its DST shift across the whole week: on a
+    // spring-forward Sunday 02:00 reads back as 03:00 and the 02:00 row vanished.
+    const perDay = columns.map((day) => this.getTimeSlots(day, slotDuration, minTime, maxTime));
+    const [minHour = 0, minMinute = 0] = minTime.split(':').map(Number);
 
-    for (const slot of daySlots) {
-      const rowSlots: TimeSlot[] = [];
-
-      for (const day of columns) {
-        const slotStart = new Date(day);
-        slotStart.setHours(slot.start.getHours(), slot.start.getMinutes(), 0, 0);
-
-        const slotEnd = new Date(day);
-        slotEnd.setHours(slot.end.getHours(), slot.end.getMinutes(), 0, 0);
-
-        const timeSlot: TimeSlot = { start: slotStart, end: slotEnd };
-        rowSlots.push(timeSlot);
-        allSlots.push(timeSlot);
-      }
-
-      rows.push({
-        time: slot.start,
-        label: this.formatTime(slot.start, timeFormat),
-        slots: rowSlots,
-      });
-    }
+    const rows: TimeSlotRow[] = perDay[0].map((_, i) => {
+      const slots = perDay.map((daySlots) => daySlots[i]);
+      // The row's label: a day whose clock really shows this time (not the gap
+      // of a spring-forward day), else the first.
+      const minutes = minHour * 60 + minMinute + (i * slotDuration) / 60;
+      const labelSlot = slots.find((slot) => slot.start.getHours() * 60 + slot.start.getMinutes() === minutes) ?? slots[0];
+      return { time: labelSlot.start, label: this.formatTime(labelSlot.start, timeFormat), slots };
+    });
+    const allSlots = rows.flatMap((row) => row.slots);
 
     return { columns, rows, allSlots };
   }

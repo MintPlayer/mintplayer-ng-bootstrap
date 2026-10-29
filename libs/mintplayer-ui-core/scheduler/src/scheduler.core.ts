@@ -396,6 +396,7 @@ function attachScheduler(api: Api): () => void {
         scroller.scrollTop = 0;
       }
       if (hadFocus && !active()) focusFocusedCell();
+      measureColumn();
     });
   };
 
@@ -1671,6 +1672,16 @@ function attachScheduler(api: Api): () => void {
     setUi({ column: { width, percent: columnWidthPercent(width, scrollerWidth) } });
   };
 
+  // A focusable separator needs aria-valuenow from the start, not only after a
+  // resize: measure the default width once the timeline is in the DOM.
+  const measureColumn = () => {
+    if (ui().column) return;
+    const header = q('.scheduler-resource-header');
+    const scrollerWidth = content()?.clientWidth ?? 0;
+    if (!header || !scrollerWidth) return;
+    setUi({ column: { width: null, percent: columnWidthPercent(header.getBoundingClientRect().width, scrollerWidth) } });
+  };
+
   let columnDrag: { startX: number; startWidth: number } | null = null;
   const onColumnMove = (e: PointerEvent) => {
     if (columnDrag) applyColumnWidth(columnDrag.startWidth + (e.clientX - columnDrag.startX));
@@ -1701,6 +1712,7 @@ function attachScheduler(api: Api): () => void {
           const width = entries[0]?.contentRect.width ?? root.clientWidth;
           const narrow = width < NARROW_WIDTH;
           if (narrow !== ui().narrow) raf(() => setUi({ narrow }));
+          raf(measureColumn);
         });
   resizeObserver?.observe(root);
 

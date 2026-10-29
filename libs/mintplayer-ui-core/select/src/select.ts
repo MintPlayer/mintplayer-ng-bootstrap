@@ -158,14 +158,16 @@ export function connectSelect(options: SelectOptions): SelectView {
  * the first render (Angular's `[ngValue]`).
  */
 export function syncSelection(select: HTMLSelectElement, multiple: boolean, value: string | null, values: readonly string[]): void {
+  // Not `select.options`: Angular's server DOM (domino) has no iterable
+  // HTMLOptionsCollection, and a form control's writeValue runs there too.
+  const options = Array.from(select.querySelectorAll('option'));
   if (multiple) {
-    [...select.options].map((option) => (option.selected = values.includes(option.value)));
+    options.map((option) => (option.selected = values.includes(option.value)));
     return;
   }
   if (value == null) {
     // Nothing chosen: an empty-valued placeholder if there is one, else no selection.
-    const placeholder = [...select.options].find((option) => option.value === '');
-    select.selectedIndex = placeholder ? placeholder.index : -1;
+    select.selectedIndex = options.findIndex((option) => option.value === '');
     return;
   }
   select.value = value;

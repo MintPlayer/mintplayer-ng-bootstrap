@@ -66,8 +66,12 @@ export interface SchedulerUi {
   editor: { eventId: string; draft: SchedulerEditorDraft; error: { field: 'title' | 'end'; message: string } | null } | null;
   renaming: string | null;
   narrow: boolean;
-  /** The timeline's resource column, once the user resized it: px and the separator's percent. */
-  column: { width: number; percent: number } | null;
+  /**
+   * The timeline's resource column: the separator's percent once measured, and
+   * the px width once the user resized it (null until then, so the default
+   * width keeps following the container).
+   */
+  column: { width: number | null; percent: number } | null;
   /** The current time for the now indicator; null on the server and before hydration. */
   now: number | null;
 }
@@ -145,18 +149,6 @@ export function findResourceOrGroup(items: (Resource | ResourceGroup)[], id: str
     }
   }
   return null;
-}
-
-/** A slot's `[start, end)` moved onto `day`, keeping its time of day. */
-function rebaseSlotOntoDay(template: TimeSlot, day: Date): TimeSlot {
-  const templateMidnight = new Date(template.start);
-  templateMidnight.setHours(0, 0, 0, 0);
-  const offsetMs = template.start.getTime() - templateMidnight.getTime();
-  const durationMs = template.end.getTime() - template.start.getTime();
-  const start = new Date(day);
-  start.setHours(0, 0, 0, 0);
-  const startMs = start.getTime() + offsetMs;
-  return { start: new Date(startMs), end: new Date(startMs + durationMs) };
 }
 
 /** An event's fill and text colour, as the custom properties the sheet reads. */
@@ -255,7 +247,6 @@ function timeGridModel(id: string, s: SchedulerState, ui: SchedulerUi, kbdEvent:
   const { options } = s;
   const week = s.view === 'week';
   const days = week ? dateService.getWeekDays(s.date, firstDayOfWeek(options)) : [s.date];
-  const slots = dateService.getTimeSlots(days[0], options.slotDuration, options.slotMinTime, options.slotMaxTime);
   const messages = resolveMessages(options.messages);
   const rangeStart = new Date(days[0]);
   rangeStart.setHours(0, 0, 0, 0);
@@ -268,7 +259,16 @@ function timeGridModel(id: string, s: SchedulerState, ui: SchedulerUi, kbdEvent:
   const previewParts = s.previewEvent ? timelineService.splitInParts(s.previewEvent).parts : [];
 
   const focused = s.focusedCell;
-  const cells = days.map((day) => slots.map((slot) => rebaseSlotOntoDay(slot, day)));
+  // Each day on its own wall clock: a DST change day's elapsed-time offsets
+  // would put every other day's slots an hour off their rows.
+  const cells = days.map((day) => dateService.getTimeSlots(day, options.slotDuration, options.slotMinTime, options.slotMaxTime));
+  // A row's label comes from a day whose clock really shows that time (not the
+  // missing hour of a spring-forward day).
+  const [minHour = 0, minMinute = 0] = (options.slotMinTime ?? '00:00:00').split(':').map(Number);
+  const slots = cells[0].map((first, i) => {
+    const minutes = minHour * 60 + minMinute + (i * (options.slotDuration ?? 1800)) / 60;
+    return cells.map((col) => col[i]).find((slot) => slot.start.getHours() * 60 + slot.start.getMinutes() === minutes) ?? first;
+  });
   const anyFocused = !!focused && cells.some((col) => col.some((slot) => slot.start.getTime() === focused.start.getTime()));
   const greyed = (slot: TimeSlot) => !!s.dragState && !!s.previewEvent && slot.start < s.previewEvent.end && slot.end > s.previewEvent.start;
   const now = ui.now !== null && options.nowIndicator ? new Date(ui.now) : null;
@@ -1346,7 +1346,7 @@ export function connectScheduler(args: SchedulerViewArgs): SchedulerView {
       'aria-describedby': timeline ? null : kbdGrid,
       'aria-multiselectable': s.view === 'week' || s.view === 'day' ? 'true' : null,
     }),
-    contentStyle: ui.column
+    contentStyle: ui.column?.width != null
       ? { '--scheduler-resource-column-width': `min(${ui.column.width}px, calc(100% - 50px))` }
       : {},
     timeGrid: s.view === 'week' || s.view === 'day' ? timeGridModel(id, s, ui, kbdEvent) : null,

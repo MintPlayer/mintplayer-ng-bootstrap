@@ -229,6 +229,13 @@ $z-event-selected: 2;    // selected event: its straddling handles must win
   min-width: fit-content;
 }
 
+/* The header row's spacer over the time gutter: as wide as the gutter, or every
+   day header sits one gutter-width left of its column. */
+.scheduler-time-gutter-space {
+  width: var(--scheduler-time-gutter-width);
+  flex-shrink: 0;
+}
+
 .scheduler-time-gutter {
   width: var(--scheduler-time-gutter-width);
   flex-shrink: 0;

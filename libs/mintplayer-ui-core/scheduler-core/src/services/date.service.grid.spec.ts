@@ -89,6 +89,21 @@ describe('getWeekGrid', () => {
     expect(grid.rows.every((row) => row.slots.length === 7)).toBe(true);
   });
 
+  // DST change days in the EU and the US. Wall-clock rows hold in any time zone,
+  // so this only bites where the zone observes DST — which is where it broke: a
+  // Sunday-start week began on the fall-back day and every row after 03:00 was
+  // an hour late, so a drag landed an hour off its pointer.
+  it.each([new Date(2026, 2, 29), new Date(2026, 9, 25), new Date(2026, 2, 8), new Date(2026, 10, 1)])(
+    'keeps rows on the wall clock across a DST change (%s)',
+    (day) => {
+      const grid = dateService.getWeekGrid(day, 0, 1800);
+      // The change day itself is column 0, whose spring-forward hour does not
+      // exist; the other six days must not inherit its shift.
+      const clock = grid.rows.map((row) => row.slots.slice(1).map((slot) => slot.start.getHours() * 60 + slot.start.getMinutes()));
+      expect(clock.map((cells, i) => cells.every((minutes) => minutes === i * 30))).toEqual(clock.map(() => true));
+    },
+  );
+
   it('flattens every cell into allSlots', () => {
     const grid = dateService.getWeekGrid(JAN_15, 1, 3600);
     expect(grid.allSlots).toHaveLength(24 * 7);

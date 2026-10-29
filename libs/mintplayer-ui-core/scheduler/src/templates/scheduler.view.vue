@@ -34,6 +34,9 @@ defineProps<{ view: SchedulerView }>();
         <SchedMonth v-if="view.month" :month="view.month" />
         <SchedYear v-if="view.year" :year="view.year" />
         <SchedTimeline v-if="view.timeline" :timeline="view.timeline" />
+        <div v-if="view.timeline && view.timeline.addBar" v-bind="view.timeline.addBar.bag">
+          <button v-for="b in view.timeline.addBar.buttons" :key="b.key" v-bind="b.bag">{{ b.text }}</button>
+        </div>
       </div>
     </div>
     <div v-bind="view.kbdGrid">{{ view.kbdGridText }}</div>

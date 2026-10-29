@@ -39,24 +39,21 @@ defineProps<{ timeline: SchedulerTimeline }>();
         </div>
         <div v-bind="r.slots">
           <div v-for="c in r.cells" :key="c.key" v-bind="c.bag"></div>
-        </div>
-        <div v-if="r.events" v-bind="r.events">
-          <div v-for="b in r.boxes" :key="b.key" v-bind="b.bag" :style="b.style">
-            <div v-bind="b.content">
-              <div v-bind="b.titleBag">{{ b.title }}</div>
-              <div v-if="b.timeBag" v-bind="b.timeBag">{{ b.time }}</div>
+          <div v-if="r.events" v-bind="r.events">
+            <div v-for="b in r.boxes" :key="b.key" v-bind="b.bag" :style="b.style">
+              <div v-bind="b.content">
+                <div v-bind="b.titleBag">{{ b.title }}</div>
+                <div v-if="b.timeBag" v-bind="b.timeBag">{{ b.time }}</div>
+              </div>
+              <div v-for="h in b.handles" :key="h.key" v-bind="h.bag">
+                <span v-bind="h.glyph"></span>
+              </div>
             </div>
-            <div v-for="h in b.handles" :key="h.key" v-bind="h.bag">
-              <span v-bind="h.glyph"></span>
-            </div>
+            <div v-for="p in r.previews" :key="p.key" v-bind="p.bag" :style="p.style"></div>
           </div>
-          <div v-for="p in r.previews" :key="p.key" v-bind="p.bag" :style="p.style"></div>
         </div>
       </div>
       <div v-if="timeline.empty" v-bind="timeline.empty.bag">{{ timeline.empty.text }}</div>
-    </div>
-    <div v-if="timeline.addBar" v-bind="timeline.addBar.bag">
-      <button v-for="b in timeline.addBar.buttons" :key="b.key" v-bind="b.bag">{{ b.text }}</button>
     </div>
   </div>
 </template>

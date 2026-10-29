@@ -164,15 +164,15 @@ export function formatResizeAnnouncement(
 /**
  * A `HH:mm[:ss]` time on the same calendar day as `ref`.
  *
- * Uses `setSeconds` off local midnight rather than `setHours(h)` so that
- * `'24:00:00'` — the `slotMaxTime` default — resolves to the NEXT day's midnight
- * (the exclusive end of the window) instead of wrapping to 00:00 of the same day.
+ * Wall-clock `setHours`, never seconds elapsed since midnight, which are an
+ * hour off after a DST change. `setHours(24)` rolls over to the next day's
+ * midnight, so `'24:00:00'` (the `slotMaxTime` default) is still the exclusive
+ * end of the window.
  */
 export function timeOnDay(ref: Date, time: string): Date {
   const [h = 0, m = 0, s = 0] = time.split(':').map(Number);
   const d = new Date(ref);
-  d.setHours(0, 0, 0, 0);
-  d.setSeconds(h * 3600 + m * 60 + s);
+  d.setHours(h, m, s, 0);
   return d;
 }
 
