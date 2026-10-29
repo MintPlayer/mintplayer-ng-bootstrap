@@ -12,7 +12,7 @@ const base = { series: SERIES, id: 'tc', live: true, focusedKey: null, hoveredKe
 describe('layoutTrend', () => {
   it('drops gaps and keeps source indexes', () => {
     const { placed } = layoutTrend({ series: SERIES });
-    expect(placed.map(pointKey)).toEqual(['a\u00000', 'a\u00001', 'a\u00002', 'b\u00000', 'b\u00002']);
+    expect(placed.map(pointKey)).toEqual(['0:a', '1:a', '2:a', '0:b', '2:b']);
   });
 
   it('stacks on the running sum per x', () => {
@@ -48,7 +48,7 @@ describe('connectTrendChart', () => {
   });
 
   it('moves the tab stop to the focused key, and back to the first when it is gone', () => {
-    expect(connectTrendChart({ ...base, focusedKey: 'b\u00002' }).points.find((p) => p.bag['tabindex'] === 0)?.key).toBe('b\u00002');
+    expect(connectTrendChart({ ...base, focusedKey: '2:b' }).points.find((p) => p.bag['tabindex'] === 0)?.key).toBe('2:b');
     expect(connectTrendChart({ ...base, focusedKey: 'zz' }).points[0].bag['tabindex']).toBe(0);
   });
 
@@ -62,7 +62,7 @@ describe('connectTrendChart', () => {
 
   it('draws a crosshair and tooltip only while hovering', () => {
     expect(connectTrendChart(base).crosshair).toBeNull();
-    const hovered = connectTrendChart({ ...base, hoveredKey: 'a\u00001', tooltip: { text: 'hi', left: 5, top: 6 } });
+    const hovered = connectTrendChart({ ...base, hoveredKey: '1:a', tooltip: { text: 'hi', left: 5, top: 6 } });
     expect(hovered.crosshair).not.toBeNull();
     expect(hovered.tooltip.bag['data-visible']).toBe('');
     expect(hovered.tooltip.style).toEqual({ left: '5px', top: '6px' });

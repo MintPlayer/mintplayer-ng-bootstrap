@@ -97,8 +97,13 @@ export function layoutTrend(options: TrendLayoutOptions): TrendLayout {
   return { placed: placed.map((p) => ({ ...p, px: x(p.xMs), py: y(p.yPlot) })), xd, yd };
 }
 
-/** The key of a point: series id and source index, joined by a NUL no id can contain in practice. */
-export const pointKey = (p: PlacedPoint): string => `${p.seriesId}\u0000${p.pointIndex}`;
+/**
+ * The key of a point: source index, then series id. The all-digit index ends at
+ * the first colon, so any id is unambiguous. Never a control character: the key
+ * is server-rendered into data-key, the HTML parser rewrites NUL to U+FFFD, and
+ * React's hydration does not patch attributes, so the client never matched it.
+ */
+export const pointKey = (p: PlacedPoint): string => `${p.pointIndex}:${p.seriesId}`;
 
 /**
  * Null points are dropped before placement, so a gap shows up as a jump in

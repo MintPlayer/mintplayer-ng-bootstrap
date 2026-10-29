@@ -1,4 +1,4 @@
-import { computed, inject, onBeforeUnmount, onMounted, provide, shallowRef, useAttrs, useId, watch, type ComputedRef, type InjectionKey } from 'vue';
+import { computed, inject, onBeforeUnmount, onMounted, provide, shallowRef, toRaw, useAttrs, useId, watch, type ComputedRef, type InjectionKey } from 'vue';
 import { coreRuntime, type ComponentCore, type CoreContext, type ViewArgs } from '@mintplayer/ui-core/component';
 
 const keys = new WeakMap<CoreContext<unknown>, InjectionKey<ComputedRef<unknown>>>();
@@ -35,9 +35,13 @@ export interface CoreHandle<P> {
  */
 export function useCore<I extends object, S, P, E, C, PC, M>(
   core: ComponentCore<I, S, P, E, C, PC, M>,
-  inputs: () => I,
+  props: () => I,
   options: UseCoreOptions,
 ): CoreHandle<P> {
+  // The core sees raw values. A v-model target is usually a ref, which hands the
+  // written-back array back as a reactive Proxy: never === the core's own array,
+  // so a model that compares identity re-fits and writes again, forever.
+  const inputs = () => Object.fromEntries(Object.entries(props()).map(([key, value]) => [key, toRaw(value)])) as I;
   const id = `${options.idPrefix}-${useId()}`;
   const attrs = useAttrs();
   const consumed = core.consume ? inject(vueCoreContextKey(core.consume), null) : null;
